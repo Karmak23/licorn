@@ -27,8 +27,11 @@ def check_users() :
 	if opts.all :
 		users_to_check = []
 	else :
-		# don't unicode the logins, they should be standard strings.
-		users_to_check = opts.users.split(',')
+		if opts.users is None :
+			logging.error("You didn't specify any user !")
+		else :
+			# don't unicode the logins, they should be standard strings.
+			users_to_check = opts.users.split(',')
 
 	users.CheckUsers(users_to_check, opts.minimal, auto_answer = opts.auto_answer, batch = opts.batch)
 def check_groups() :
@@ -44,8 +47,11 @@ def check_groups() :
 	if opts.all :
 		groups_to_check = []
 	else :
-		# don't unicode the groups name, they should be standard strings.
-		groups_to_check = opts.groups.split(',')
+		if opts.groups is None :
+			logging.error("You didn't specify any group !")
+		else :
+			# don't unicode the groups name, they should be standard strings.
+			groups_to_check = opts.groups.split(',')
 
 	#print str(groups_to_check)
 

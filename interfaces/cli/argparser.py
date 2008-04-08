@@ -903,7 +903,7 @@ def __check_filter_group(app, parser, mode) :
 
 	elif mode is 'groups' :
 		filtergroup.add_option("--name",
-			action="store", type="string", dest="groups", default = False,
+			action="store", type="string", dest="groups", default = None,
 			help="Specify group(s) to check by their name (%s if --all not specified, separated by commas without spaces)." % styles.stylize(styles.ST_IMPORTANT, "required") )
 		"""
 
