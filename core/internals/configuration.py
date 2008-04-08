@@ -627,6 +627,18 @@ class LicornConfiguration (object) :
 					else : raise e
 			else :
 				raise exceptions.LicornRuntimeError( "Modifications in %s are mandatory for Licorn to work properly. Can't continue without this, sorry!" % login_defs)
+	def CheckDefaultProfile(self) :
+		"""If no profile exists on the system, create a default one with system group "users"."""
+
+		if self.profiles.profiles == [] :
+			logging.warning('adding a default profile on the system (this is mandatory for %s to work).' % self.app_name)
+			# Create a default profile with 'users' as default primary group, and use the Debian pre-existing group
+			# without complaining if it exists.
+			# TODO: translate/i18n these names ?
+			self.profiles.AddProfile('Users', 'users', 
+				shell = LicornConfiguration.users.default_shell,
+				skel  = LicornConfiguration.users.default_skel,
+				force_existing = True)
 				
 	### EXPORTS ###
 	def Export(self, doreturn = True, args = None, cli_format = None) :
@@ -762,9 +774,13 @@ class LicornConfiguration (object) :
 	def CheckBaseDirs(self, minimal = True, batch = False, auto_answer = None) :
 		"""Check and eventually repair default needed dirs."""
 
-		from licorn.core import groups
+		try :
+			os.makedirs(self.users.home_base_path)
+		except (OSError, IOError), e :
+			if e.errno != 17 :
+				raise e
 
-		self.CheckSystemGroups(groups, minimal, batch, auto_answer)
+		self.CheckSystemGroups(minimal, batch, auto_answer)
 
 		acl_base      = "u::rwx,g::---,o:---" 
 		acl_mask      = "m:rwx"
@@ -781,6 +797,8 @@ class LicornConfiguration (object) :
 				'access_acl'  : "%s,%s,g:www-data:--x,g:users:--x,%s" % (acl_base, acl_admins_ro, acl_mask),
 				'default_acl' : ""
 			} ]
+
+		from licorn.core import groups
 
 		try :
 			# batch this because it *has* to be corrected for system to work properly.
@@ -815,9 +833,10 @@ class LicornConfiguration (object) :
 
 			# no need to bother the user for that, correct it automatically anyway.
 			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify, batch = True, allgroups = groups)
-
-	def CheckSystemGroups(self, groups, minimal = True, batch = False, auto_answer = None) :
+	def CheckSystemGroups(self, minimal = True, batch = False, auto_answer = None) :
 		"""Check if needed groups are present on the system, and repair if asked for."""
+
+		from licorn.core import groups
 
 		if minimal :
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here

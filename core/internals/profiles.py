@@ -18,8 +18,7 @@ from licorn.core.internals import readers
 class ProfilesList :
 	""" representation of /etc/licorn/profiles.xml, compatible with gnome-system-tools.
 	"""
-	profiles      = None # dictionary
-
+	profiles      = None # Dictionary
 	users         = None # UsersList
 	groups        = None # GroupsList
 	configuration = None # LicornConfiguration
@@ -41,7 +40,6 @@ class ProfilesList :
 		
 		if ProfilesList.profiles is None :
 			ProfilesList.profiles = readers.profiles_conf_dict(self.configuration.profiles_config_file)
-
 	def WriteConf(self, filename = None) :
 		""" Write internal data into filename. """
 
@@ -51,7 +49,7 @@ class ProfilesList :
 		conffile = open(filename , "w")
 		conffile.write(self.ExportXML())
 		conffile.close()
-	def Select( self, filter_string ) :
+	def Select(self, filter_string) :
 		""" Filter profiles on different criteria. """
 
 		#
@@ -127,28 +125,19 @@ class ProfilesList :
 		data += "</profiledb>\n"
 
 		return data
-	def AddProfile(self, name, group, quota, groups, comment, shell, skeldir, force_existing) :
+	def AddProfile(self, name, group, quota = 1024, groups = [], comment = '', shell = None, skeldir = None, force_existing = False) :
 		""" Add a user profile (self.groups is an instance of GroupsList and is needed to create the profile group). """
 
-		if name is None :
-			raise exceptions.BadArgumentError, "You must specify a profile name."
-		if group is None :
-			raise exceptions.BadArgumentError, "You must specify a profile group name."
-		if quota is None :
-			raise exceptions.BadArgumentError, "You must specify a quota in Mb."
-		if comment is None :
+		if comment is '' :
 			comment = "The %s profile." % name
-		if shell is None :
-			raise exceptions.BadArgumentError, "You must specify a default shell."
-		if skeldir is None :
-			raise exceptions.BadArgumentError, "You must specify a default skel."
 
 		if not shell in self.configuration.users.shells :
-			raise exceptions.BadArgumentError("The shell you specified doesn't exist on this system. Valid shells are : %s." % str(self.configuration.users.shells))
+			raise exceptions.BadArgumentError("The shell you specified doesn't exist on this system. Valid shells are : %s." \
+				% str(self.configuration.users.shells))
 
 		if not skeldir in self.configuration.users.skels :
-			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are : %s." % str(self.configuration.users.skels))
-
+			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are : %s." \
+				% str(self.configuration.users.skels))
 
 		if not hlstr.cregex['profile_name'].match(name) :
 			raise exceptions.BadArgumentError, "Malformed profile Name « %s », must match /%s/i." % (name, hlstr.regex['profile_name'])
@@ -177,14 +166,6 @@ class ProfilesList :
 				logging.info("The group '%s' doesn't exist, ignored." % g)
 				index = groups.index(g)
 				del(groups[index])
-
-		# Create the profile's home
-		try :
-			os.mkdir(self.configuration.users.home_base_path + "/" + group)
-		except OSError, e :
-			if e.errno != 17 :
-				# 17 == file exists !
-				raise e
 
 		# Add the system group
 		if create_group :
