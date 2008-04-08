@@ -57,7 +57,7 @@ def check_groups() :
 
 	# TODO : do this more cleanly and not so hard-coded :
 	try :
-		os.system("/etc/init.d/hackd stop >/dev/null 2>&1")
+		os.system("/etc/init.d/licornd stop >/dev/null 2>&1")
 	except :
 		pass
 
@@ -65,7 +65,7 @@ def check_groups() :
 
 	# TODO : do this more cleanly and not so hard-coded :
 	try :
-		os.system("/etc/init.d/hackd start >/dev/null 2>&1")
+		os.system("/etc/init.d/licornd start >/dev/null 2>&1")
 	except :
 		pass
 def check_profiles() :
