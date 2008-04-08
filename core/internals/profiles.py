@@ -162,20 +162,19 @@ class ProfilesList :
 
 		create_group = True
 		
-		# fix #349
 		if ProfilesList.groups.HasGroup(name=group) :
 			if force_existing :
 				create_group = False
 			else :
-				raise exceptions.AlreadyExistsError, 'A system group named "%s" already exists. Please choose another group name for your profile.' % group
-		# end fix #349
+				raise exceptions.AlreadyExistsError('A system group named "%s" already exists. Please choose another group name for your profile.' \
+					% group)
 		
 		# Verify groups
 		for g in groups :
 			try :
 				gid = self.groups.name_to_gid(g)
 			except :
-				print "The group '" + g + "' doesn't exist, ignored."
+				logging.info("The group '%s' doesn't exist, ignored." % g)
 				index = groups.index(g)
 				del(groups[index])
 

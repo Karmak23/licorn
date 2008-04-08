@@ -438,9 +438,11 @@ class LicornConfiguration (object) :
 		# in unprivileged system users/groups, you will typically find www-data, proxy, nogroup, samba machines accounts...
 		#
 
-
+		#
+		# The default values are referenced in CheckAndLoadAdduserConf() too.
+		#
 		for (attr_name, conf_key, fallback) in (
-			('home_base_path', 'DHOME',     self.defaults.home_base_path),
+			('home_base_path', 'DHOME',    '/home/users'),
 			('default_shell', 'DSHELL',    '/bin/bash'),
 			('default_skel',  'SKEL',      '/etc/skel'),
 			('default_gid',   'USERS_GID', 100) ) :
@@ -485,9 +487,11 @@ class LicornConfiguration (object) :
 
 		# see groupadd(8), coming from addgroup(8)
 		LicornConfiguration.users.login_maxlenght = 31
+
+		# gettext this !
 		LicornConfiguration.users.names = { 
 			'singular' : 'user', 
-			'plural' : 'users'
+			'plural' :   'users'
 			}
 	def SetGroupsDefaults(self) :
 		"""Create LicornConfiguration.groups attributes and start feeding it."""
@@ -520,6 +524,12 @@ class LicornConfiguration (object) :
 		# warning: the order is important: in a default adduser.conf, only {FIRST,LAST}_SYSTEM_UID are
 		# present, and we assume this during the file patch.
 		defaults = (
+			('DHOME',  '/home/users'),
+			('DSHELL', '/bin/bash'),
+			('SKEL',   '/etc/skel'),
+			('GROUPHOMES',  'no'),
+			('LETTERHOMES', 'no'),
+			('USERGROUPS',  'no'),
 			('LAST_GID',  29999),
 			('FIRST_GID', 10000),
 			('LAST_UID',  29999),
@@ -532,14 +542,23 @@ class LicornConfiguration (object) :
 
 		for (directive, value) in defaults :
 			if directive in adduser_dict.keys() :
-				if value > adduser_dict[directive] :
-					logging.warning('In %s, directive %s should be at least %s, but it is %s.'
-						% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value, adduser_dict[directive]))
-					import re
-					adduser_dict[directive] = value
-					adduser_conf_alter      = True
-					adduser_data            = re.sub(r'%s=.*' % directive, r'%s=%s' % (directive, value), adduser_data)
-
+				if type(value) == type(1) :
+					if value > adduser_dict[directive] :
+						logging.warning('In %s, directive %s should be at least %s, but it is %s.'
+							% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value, adduser_dict[directive]))
+						import re
+						adduser_dict[directive] = value
+						adduser_conf_alter      = True
+						adduser_data            = re.sub(r'%s=.*' % directive, r'%s=%s' % (directive, value), adduser_data)
+				else :
+					if value != adduser_dict[directive] :
+						logging.warning('In %s, directive %s should be set to %s, but it is %s.'
+							% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value, adduser_dict[directive]))
+						import re
+						adduser_dict[directive] = value
+						adduser_conf_alter      = True
+						adduser_data            = re.sub(r'%s=.*' % directive, r'%s=%s' % (directive, value), adduser_data)
+						
 				# else : everything's OK !
 			else :
 				logging.warning('In %s, directive %s is missing. Setting it to %s.'
