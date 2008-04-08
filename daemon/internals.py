@@ -752,7 +752,9 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 			args = self.path[1:].split('/')
 
 			if len(args) == 1 :
-				args.append('list')
+				args.append('main')
+			elif args[1] == 'list' :
+				args[1] = 'main'
 
 			if args[0] in dir(web) :
 				logging.progress("Serving %s %s." % (self.path, args))

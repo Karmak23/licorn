@@ -54,14 +54,15 @@ class UsersList :
 				'gecos'         : entry[4],
 				'homeDirectory' : entry[5],
 				'loginShell'    : entry[6],
-				'groups'        : []              # a cache which will eventually be filled by groups.__init__() and others.
+				'groups'        : set()              # a cache which will eventually be filled by groups.__init__() and others.
 				}
-			# populate ['groups']
+
+			# populate ['groups'] ; this code is duplicated in groups.__init__, in case users/groups are loaded in different orders.
 			if UsersList.groups :
 				for g in UsersList.groups.groups :
 					for member in UsersList.groups.groups[g]['members'] :
 						if member == entry[0] :
-							temp_user_dict['groups'].append(UsersList.groups.groups[g]['name'])
+							temp_user_dict['groups'].add(UsersList.groups.groups[g]['name'])
 
 			# implicitly index accounts on « int(uid) »
 			UsersList.users[ temp_user_dict['uid'] ] = temp_user_dict
@@ -406,8 +407,7 @@ class UsersList :
 
 		return (uid, login, password)
 	def DeleteUser(self, login=None, no_archive=False, uid=None, batch=False) :
-		""" Delete a user
-		"""
+		""" Delete a user """
 		if login is None and uid is None :
 			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LGN_OR_UID)
 			
@@ -422,7 +422,7 @@ class UsersList :
 
 		# Delete user from his groups 
 		# '[:]' to fix #14, see http://docs.python.org/tut/node6.html#SECTION006200000000000000000
-		for group in UsersList.users[uid]['groups'][:] :
+		for group in UsersList.users[uid]['groups'].copy() :
 			UsersList.groups.RemoveUsersFromGroup(group, [ login ], batch=True)
 
 

@@ -430,9 +430,9 @@ def edit(uri, login) :
 		dbl_lists = {}
 		for filter, titles, id in groups_filters_lists_ids :
 			groups.Select(filter)
-			dest   = user['groups'][:]
+			dest   = list(user['groups'].copy())
 			source = [ groups.groups[gid]['name'] for gid in groups.filtered_groups ]
-			for current in user['groups'] :
+			for current in dest[:] :
 				try : source.remove(current)
 				except ValueError : dest.remove(current)
 			dest.sort()
@@ -494,7 +494,7 @@ def edit(uri, login) :
 	return w.page(title, data)
 
 # list user accounts.
-def list(uri, sort = "login", order = "asc") :
+def main(uri, sort = "login", order = "asc") :
 		
 	start = time.time()
 

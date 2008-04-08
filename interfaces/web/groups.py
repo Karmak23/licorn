@@ -489,7 +489,7 @@ def record(uri, name, skel = None, permissive = False, description = None,
 		err_msg = 'Impossible de modifier un ou plusieurs paramètre(s) du groupe <strong>%s</strong>&#160;!' % name))
 
 # list user accounts.
-def list(uri, sort = "name", order = "asc") :
+def main(uri, sort = "name", order = "asc") :
 		
 	start = time.time()
 

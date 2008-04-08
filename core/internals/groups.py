@@ -94,17 +94,18 @@ class GroupsList :
 			else :
 				members = entry[3].split(',')
 				
-				# FIXME : never reached, moved to UsersList.__init__. Delete follow
-#				if GroupsList.users :
-#					for member in members :
-#						# update the cache to avoid massive CPU load in getent users --long
-#						try :
-#							GroupsList.users.users[l2u(member)]['groups'].append(entry[0])
-#						except exceptions.LicornRuntimeException :
-#							if self.warnings :
-#								logging.warning("User %s is referenced in members of group %s but doesn't really exist on the system, removing it." % (styles.stylize(styles.ST_BAD, member), styles.stylize(styles.ST_NAME,entry[0])))
-#							members.remove(member)
-#							need_rewriting = True
+				# update the cache to avoid massive CPU load in getent users --long
+				# this code is also present in users.__init__, to cope with users/groups load
+				# in different orders.
+				if GroupsList.users :
+					for member in members :
+						try :
+							GroupsList.users.users[l2u(member)]['groups'].add(entry[0])
+						except exceptions.LicornRuntimeException :
+							if self.warnings :
+								logging.warning("User %s is referenced in members of group %s but doesn't really exist on the system, removing it." % (styles.stylize(styles.ST_BAD, member), styles.stylize(styles.ST_NAME,entry[0])))
+							members.remove(member)
+							need_rewriting = True
 
 			GroupsList.groups[gid] = 	{
 									'name' 			 : entry[0],
@@ -740,7 +741,7 @@ class GroupsList :
 				logging.info("Added user %s to members of %s." % (styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)) )
 
 				# update the users cache.
-				GroupsList.users.users[GroupsList.users.login_to_uid(u)]['groups'].append(name)
+				GroupsList.users.users[GroupsList.users.login_to_uid(u)]['groups'].add(name)
 				
 				if not batch :
 					self.WriteConf()
