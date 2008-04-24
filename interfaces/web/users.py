@@ -37,44 +37,44 @@ def __users_actions() :
 </div>
 	'''
 
-def export(uri, type = "") :
+def export(uri, type = "", yes = None) :
 	"""export."""
 
 	# TODO : reload(profiles)
-	reload(groups)
-	reload(users)
+	groups.reload()
+	users.reload()
 
-	title = "Export des comptes utilisateurs"
-	data  = '%s%s' % (w.backto(), __users_actions(title))
+	del yes
+
+	title = _("Export des comptes utilisateurs")
+	data  = '%s%s' % (w.backto(), __users_actions())
 
 	if type == "" :
-		description = '''Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur "Exporter", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur "Revenir".'''
+		description = _('''Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur "Exporter", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur "Revenir".''')
 		
-		form_options = "Sous quelle forme voulez-vous exporter les comptes&nbsp;? %s" % w.select("type", [ "CSV", "XML"])
+		form_options = _("Sous quelle forme voulez-vous exporter les comptes&nbsp;? %s") % w.select("type", [ "CSV", "XML"])
 	
-		data += w.question("Choisissez le format d'export pour la liste des comptes",
+		data += w.question(_("Choisissez le format d'export pour la liste des comptes"),
 			description,
-			yes_values   = [ "Exporter >>", "/users/export", "E" ],
-			no_values    = [ "<< Revenir",  "/users/list",   "N" ],
+			yes_values   = [ _("Exporter >>"), "/users/export", "E" ],
+			no_values    = [ _("<< Revenir"),  "/users/list",   "N" ],
 			form_options = form_options)
 
 		return w.page(title, data)
 
 	else :
+		users.Select(users.FILTER_STANDARD)
 
-		allusers  = users
-		allgroups = groups
-		allusers.Select(users.FILTER_STANDARD)
-
-		req.headers_out["Content-type"]        = "application/force-download"
-		req.headers_out["Content-Disposition"] = "attachment; filename=export.%s" % type.lower()
+		# TODO: convert this.
+		#req.headers_out["Content-type"]        = "application/force-download"
+		#req.headers_out["Content-Disposition"] = "attachment; filename=export.%s" % type.lower()
 		#header("Pragma: no-cache");
 		#header("Expires: 0");
 
 		if type == "CSV" : 
-			return allusers.ExportCSV()
+			return users.ExportCSV()
 		else :
-			return allusers.ExportXML()
+			return users.ExportXML()
 
 # delete a user account.
 def delete(uri, login, sure = False, no_archive = False, yes = None) :
