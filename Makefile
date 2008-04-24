@@ -1,4 +1,5 @@
 PROJECT_NAME=Licorn
+APP_NAME=licorn
 DEST?=/opt
 PYTHON_LIB_DIR?=$(DEST)/lib/python2.5/site-packages
 PROJECT_LIB_DIR?=$(DEST)/lib/$(BINARY_NAME)
@@ -12,7 +13,7 @@ install: binary-install installdoc
 
 configure:
 
-build: configure
+build: configure i18n
 
 binary-install: build
 	mkdir -p $(DEST) $(PYTHON_LIB_DIR) $(PROJECT_LIB_DIR) $(DEST)/bin $(DEST)/sbin $(SHARE_DIR)
@@ -36,7 +37,24 @@ clean: cleandoc
 	find ./ -type f \( -name '*~' -o -name '.*.swp' \
 		-o -name '*.pyc' -o -name '*.pyo' \) -exec rm "{}" \;
 	[ -d src/po/fr ] && rm -r src/po/fr || true
-	
+
+lang: i18n
+
+i18n: update-po
+	for lang in fr ; \
+		do \
+			msgfmt locale/$${lang}/LC_MESSAGES/$(APP_NAME).po -o locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+		done ;
+
+update-pot:
+	find . -type f \( -name '*.py' -or -name '*.glade' \) -exec xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot "{}" \;
+
+update-po: update-pot
+	for lang in fr ; \
+		do \
+			msgmerge -U locale/$${lang}/LC_MESSAGES/$(APP_NAME).po locale/$(APP_NAME).pot ; \
+		done ;
+
 cleandoc:
 
 .PHONY: all clean install build configure binary-install doc installdoc cleandoc
