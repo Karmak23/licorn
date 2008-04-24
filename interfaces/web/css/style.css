@@ -271,7 +271,7 @@ a:visited{
 	border-bottom: 3px solid #ff8c00;	
 }
 
-#userslist {
+#content {
 	background: #fff;
 	border-left: 3px solid #ff8c00;
 	border-top: 3px solid #ff8c00;
@@ -285,61 +285,61 @@ a:visited{
 	border-radius: 10px;
 }
 
-#userslist table {
+#content table {
 	width: 100%;
 	border-collapse: collapse;
 }
 
-#userslist a {
+#content a {
 	color: #147;
 }
 
-#userslist a:hover {
+#content a:hover {
 	background-color: transparent;
 	text-decoration: underline;
 }
 
-#userslist th {
+#content th {
 	font-size: 1.2em;
 	margin: 0;
 	padding: 0;
 }
 
-#userslist tr.userdata:hover {
+#content tr.userdata:hover {
 	background-color: #e4ff16;
 }
-#userslist td.group_class {
+#content td.group_class {
 	padding-top: 1em;
 	font-size: 1.3em;
 	border-bottom: 1px dotted #369;
 }
 
-#userslist td.nopadding {
+#content td.nopadding {
 	padding-left: 0.1em;
 	padding-right: 0.1em;
 }
-#userslist td.paddedleft {
+#content td.paddedleft {
 	padding-left: 3em;
 }
-#userslist td.group_name {
+#content td.group_name {
 	padding-left: 1em;
 }
-#userslist td.paddedright {
+#content td.paddedright {
 	text-align: right;
 	padding-right: 5em;
 }
 
-#userslist td.user_action {
+#content td.user_action {
 	padding-left: 0.5em;
 	padding-right: 0.5em;
 }
 
-#userslist td.user_action_center {
+#content td.user_action_center {
 	text-align: center;
 	padding: 0 1.5em;
 }
 
-#userslist td.faded {
+#content td.faded {
 	color: #AAA;
 }
 

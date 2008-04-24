@@ -106,7 +106,7 @@ def index(uri) :
 	start = time.time()
 
 	title = "État du serveur"
-	data  = '%s\n%s\n%s\n<div id="userslist">' % (w.backto(), __status_actions(), w.menu(uri)) 
+	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __status_actions(), w.menu(uri)) 
 
 	data += '''<table>
 	<tr>

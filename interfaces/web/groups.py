@@ -505,7 +505,7 @@ def main(uri, sort = "name", order = "asc") :
 	totals   = {}
 
 	title = "%s" % configuration.groups.names['plural']
-	data  = '%s\n%s\n%s\n<div id="groupslist">' % (w.backto(), __groups_actions(), w.menu(uri)) 
+	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __groups_actions(), w.menu(uri)) 
 
 	if order == "asc" : reverseorder = "desc"
 	else :              reverseorder = "asc"

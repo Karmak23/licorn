@@ -528,8 +528,8 @@ def main(uri, sort = "login", order = "asc") :
 		totals[p[profile]['name']] = 0
 	totals['compte standard'] = 0
 
-	title = "Comptes utilisateurs"
-	data  = '%s\n%s\n%s\n<div id="userslist">' % (w.backto(), __users_actions(), w.menu(uri)) 
+	title = _("User accounts")
+	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __users_actions(), w.menu(uri)) 
 
 	if order == "asc" : reverseorder = "desc"
 	else :              reverseorder = "asc"
