@@ -39,7 +39,7 @@ class ProfilesList :
 		self.filter_applied    = False
 		
 		if ProfilesList.profiles is None :
-			ProfilesList.reload()
+			self.reload()
 	def reload(self) :
 		ProfilesList.profiles = readers.profiles_conf_dict(self.configuration.profiles_config_file)
 	def WriteConf(self, filename = None) :
