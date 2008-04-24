@@ -1,0 +1,622 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-04-24 15:40+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: interfaces/web/users.py:531 interfaces/web/users.py:547
+#: _darcs/pristine/interfaces/web/users.py:531 interfaces/web/users.py:560
+msgid "User accounts"
+msgstr ""
+
+#: interfaces/web/users.py:539 interfaces/web/users.py:555
+#: interfaces/web/users.py:568
+msgid "Full name"
+msgstr ""
+
+#: interfaces/web/users.py:539 interfaces/web/users.py:555
+#: interfaces/web/users.py:568
+msgid "Identifier"
+msgstr ""
+
+#: interfaces/web/users.py:539 interfaces/web/users.py:555
+#: interfaces/web/users.py:568
+msgid "Profile"
+msgstr ""
+
+#: interfaces/web/users.py:539 interfaces/web/users.py:555
+#: interfaces/web/users.py:568
+msgid "Locked"
+msgstr ""
+
+#: interfaces/web/users.py:543 interfaces/web/users.py:559
+#: interfaces/web/users.py:572
+msgid "Click to sort in reverse order."
+msgstr ""
+
+#: interfaces/web/users.py:545 interfaces/web/users.py:561
+#: interfaces/web/users.py:574
+msgid "Click to sort on this column."
+msgstr ""
+
+#: interfaces/web/users.py:551 interfaces/web/users.py:567
+#: interfaces/web/users.py:580
+#, python-format
+msgid ""
+"<em>Éditer les paramètres actuels du compte utilisateur&#160;:</em><br />\n"
+"\t\t\t\tUID: <strong>%d</strong><br />\n"
+"\t\t\t\tGID: %d (groupe primaire <strong>%s</strong>)<br /><br />\n"
+"\t\t\t\tGroupes:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tPrivilèges:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tResponsabilités:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\t"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:7 _darcs/pristine/interfaces/gui/hkew.glade:7
+msgid "Licorn Keywords File Modifier"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:18 _darcs/pristine/interfaces/gui/hkew.glade:18
+msgid "<span size=\"xx-large\">Licorn Keywords modifier</span>"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:30 _darcs/pristine/interfaces/gui/hkew.glade:30
+msgid "  Paths affected by keywords  "
+msgstr ""
+
+#: interfaces/gui/hkew.glade:59 _darcs/pristine/interfaces/gui/hkew.glade:59
+msgid "Apply keywords recusively to dirs"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:97 _darcs/pristine/interfaces/gui/hkew.glade:97
+msgid "  Keywords (instant apply)  "
+msgstr ""
+
+#: interfaces/gui/hkew.glade:112 interfaces/gui/hkew.glade:222
+#: _darcs/pristine/interfaces/gui/hkew.glade:112
+#: _darcs/pristine/interfaces/gui/hkew.glade:222
+msgid "Current selection:"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:122 interfaces/gui/hkew.glade:232
+#: _darcs/pristine/interfaces/gui/hkew.glade:122
+#: _darcs/pristine/interfaces/gui/hkew.glade:232
+msgid "<b>-</b>"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:196 _darcs/pristine/interfaces/gui/hkew.glade:196
+msgid "Licorn Keywords File Query"
+msgstr ""
+
+#: interfaces/gui/hkew.glade:207 _darcs/pristine/interfaces/gui/hkew.glade:207
+msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
+msgstr ""
+
+#: interfaces/web/users.py:10
+msgid "Personnaliser les Groupes"
+msgstr ""
+
+#: interfaces/web/users.py:10
+msgid "Groupes disponibles"
+msgstr ""
+
+#: interfaces/web/users.py:10
+msgid "Groupes affectés"
+msgstr ""
+
+#: interfaces/web/users.py:11
+msgid "Affiner les privilèges"
+msgstr ""
+
+#: interfaces/web/users.py:11
+msgid "Privilèges disponibles"
+msgstr ""
+
+#: interfaces/web/users.py:11
+msgid "Privilèges octroyés"
+msgstr ""
+
+#: interfaces/web/users.py:12
+msgid "Responsabilités disponibles"
+msgstr ""
+
+#: interfaces/web/users.py:12
+msgid "Responsabilités attribuées"
+msgstr ""
+
+#: interfaces/web/users.py:12
+msgid "Attribuer des responsabilités)"
+msgstr ""
+
+#: interfaces/web/users.py:13
+msgid "Proposer des invitations"
+msgstr ""
+
+#: interfaces/web/users.py:13
+msgid "Invitations disponibles"
+msgstr ""
+
+#: interfaces/web/users.py:13
+msgid "Invitations offertes"
+msgstr ""
+
+#: interfaces/web/users.py:39
+msgid "Ajouter un nouvel utilisateur sur le système."
+msgstr ""
+
+#: interfaces/web/users.py:40
+msgid "Ajouter un compte."
+msgstr ""
+
+#: interfaces/web/users.py:41
+msgid "Ajouter un compte"
+msgstr ""
+
+#: interfaces/web/users.py:42
+msgid "Importer une liste de nouveaux utilisateurs depuis un fichier CSV."
+msgstr ""
+
+#: interfaces/web/users.py:43
+msgid "Importer des comptes."
+msgstr ""
+
+#: interfaces/web/users.py:44
+msgid "Importer des comptes"
+msgstr ""
+
+#: interfaces/web/users.py:45
+msgid "Exporter la liste des utilisateurs actuels vers un fichier CSV ou XML."
+msgstr ""
+
+#: interfaces/web/users.py:46
+msgid "Exporter les comptes."
+msgstr ""
+
+#: interfaces/web/users.py:47
+msgid "Exporter les comptes"
+msgstr ""
+
+#: interfaces/web/users.py:57
+msgid "Export des comptes utilisateurs"
+msgstr ""
+
+#: interfaces/web/users.py:61
+msgid ""
+"Le format CSV est utilisé par les tableurs et la plupart des systèmes qui "
+"offrent des possibilités d'import. Le format XML est un format d'échanges de "
+"données moderne utilisé par des applications qui respectent certaines normes "
+"ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez "
+"sur \"Exporter\", votre navigateur vous proposera automatiquement "
+"d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme "
+"une page web. Lorsque vous avez terminé, cliquez sur \"Revenir\"."
+msgstr ""
+
+#: interfaces/web/users.py:63
+#, python-format
+msgid "Sous quelle forme voulez-vous exporter les comptes&nbsp;? %s"
+msgstr ""
+
+#: interfaces/web/users.py:65
+msgid "Choisissez le format d'export pour la liste des comptes"
+msgstr ""
+
+#: interfaces/web/users.py:67
+msgid "Exporter >>"
+msgstr ""
+
+#: interfaces/web/users.py:68
+msgid "<< Revenir"
+msgstr ""
+
+#: interfaces/web/users.py:96
+#, python-format
+msgid "Suppression du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:101
+#, python-format
+msgid ""
+"Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;?"
+msgstr ""
+
+#: interfaces/web/users.py:102
+#, python-format
+msgid ""
+"<strong>Les données personnelles</strong> de l'utilisateur (son home dir) "
+"<strong>seront archivées</strong>\n"
+"\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du "
+"groupe\n"
+"\t\t\t\t<strong>administrateurs</strong> pour une récupération éventuelle."
+"<br />\n"
+"\t\t\t\tVous pouvez cependant décider de les effacer définitivement."
+msgstr ""
+
+#: interfaces/web/users.py:109
+msgid "Supprimer définitivement toutes les données avec le compte."
+msgstr ""
+
+#: interfaces/web/users.py:117 interfaces/web/users.py:210
+msgid "Suppression de compte impossible"
+msgstr ""
+
+#: interfaces/web/users.py:117 interfaces/web/users.py:210
+msgid "tentative de suppression de compte non standard."
+msgstr ""
+
+#: interfaces/web/users.py:117
+msgid ""
+"permissions insuffisantes pour mener à bien l'opération (non mais, tu "
+"croyais vraiment que j'allais le faire ?)."
+msgstr ""
+
+#: interfaces/web/users.py:126
+#, python-format
+msgid "Impossible de supprimer le compte <strong>%s</strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:132
+#, python-format
+msgid "Déverrouillage du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:137
+msgid "Déverrouillage de compte impossible"
+msgstr ""
+
+#: interfaces/web/users.py:137
+msgid "tentative de déverrouillage de compte non standard."
+msgstr ""
+
+#: interfaces/web/users.py:137 interfaces/web/users.py:210
+#: interfaces/web/users.py:439
+msgid "permissions insuffisantes pour mener à bien l'opération."
+msgstr ""
+
+#: interfaces/web/users.py:141
+#, python-format
+msgid "Impossible de déverrouiller le compte <strong>%s</strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:151
+#, python-format
+msgid "Verrouillage du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:155
+#, python-format
+msgid ""
+"Cela l'empêchera de se connecter sur les terminaux légers\n"
+"\t\t\t %s/Linux et les postes autonomes Windows&reg; et Macintosh&reg;."
+msgstr ""
+
+#: interfaces/web/users.py:160
+#, python-format
+msgid ""
+"<br /><br />\n"
+"\t\t\t\tMais <em>cela n'empêchera pas les connexions à distance par %s</em>\n"
+"\t\t\t\tsi cet utilisateur se sert de clés %s %s/%s pour se connecter.\n"
+"\t\t\t\tPour lui interdire complètement l'accès au système, \n"
+"\t\t\t\t<strong>retirez-le aussi du groupe remotessh</strong>."
+msgstr ""
+
+#: interfaces/web/users.py:166
+msgid "Supprimer l'utilisateur du groupe <code>remotessh</code> en même temps."
+msgstr ""
+
+#: interfaces/web/users.py:171
+#, python-format
+msgid ""
+"Êtes-vous sûr(e) de vouloir verrouiller le mot de passe du compte <strong>%"
+"s</strong>&#160;?"
+msgstr ""
+
+#: interfaces/web/users.py:173
+msgid "Verrouiller >>"
+msgstr ""
+
+#: interfaces/web/users.py:174 interfaces/web/users.py:234
+msgid "<< Annuler"
+msgstr ""
+
+#: interfaces/web/users.py:181
+msgid "Verrouillage de compte impossible"
+msgstr ""
+
+#: interfaces/web/users.py:181
+msgid "tentative de verrouillage de compte non standard."
+msgstr ""
+
+#: interfaces/web/users.py:181
+msgid ""
+"permissions insuffisantes pour mener à bien l'opération (non mais, tu y "
+"croyais vraiment ?)."
+msgstr ""
+
+#: interfaces/web/users.py:190
+#, python-format
+msgid "Impossible de verrouiller le compte <strong>%s</strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:206
+#, python-format
+msgid "Réapplication du profil pour le compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:213
+msgid ""
+"Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /"
+"><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour "
+"que l'opération réussisse.</strong>"
+msgstr ""
+
+#: interfaces/web/users.py:229
+#, python-format
+msgid "Quel skelette voulez-vous lui appliquer&nbsp;? %s"
+msgstr ""
+
+#: interfaces/web/users.py:231
+#, python-format
+msgid ""
+"Êtes-vous sûr(e) de vouloir ré-appliquer le profil au compte <strong>%s</"
+"strong>&#160;?"
+msgstr ""
+
+#: interfaces/web/users.py:233
+msgid "Appliquer >>"
+msgstr ""
+
+#: interfaces/web/users.py:244
+#, python-format
+msgid ""
+"Impossible d'appliquer le skelette <strong>%s</strong> sur le compte <strong>"
+"%s</strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:256
+msgid "Création d'un compte utilisateur"
+msgstr ""
+
+#: interfaces/web/users.py:266
+msgid "Ce compte sera un"
+msgstr ""
+
+#: interfaces/web/users.py:272
+msgid "Nom Complet"
+msgstr ""
+
+#: interfaces/web/users.py:317
+#, python-format
+msgid ""
+"Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser "
+"toutes\n"
+"\t\t\tles lettre de l'alphabet, les chiffres, les caractères spéciaux et les "
+"signes de\n"
+"\t\t\tponctuation sauf '?!'."
+msgstr ""
+
+#: interfaces/web/users.py:320
+msgid "Mot de passe"
+msgstr ""
+
+#: interfaces/web/users.py:320 interfaces/web/users.py:509
+#, python-format
+msgid "(%d car. min.)"
+msgstr ""
+
+#: interfaces/web/users.py:12
+msgid "Attribuer des responsabilités"
+msgstr ""
+
+#: interfaces/web/users.py:322 interfaces/web/users.py:510
+msgid "Confirmation du MDP."
+msgstr ""
+
+#: interfaces/web/users.py:326
+msgid "Identifiant"
+msgstr ""
+
+#: interfaces/web/users.py:327
+msgid ""
+"<strong>Shell de connexion</strong>br />(interpréteur de commandes Unix)"
+msgstr ""
+
+#: interfaces/web/users.py:323
+msgid ""
+"L'identifiant doit être saisi en lettres minuscules, sans accents ni "
+"caractères spéciaux "
+msgstr ""
+
+#: interfaces/web/users.py:342
+#, python-format
+msgid "Création du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:346 interfaces/web/users.py:408
+#, python-format
+msgid "Les mots de passe ne correspondent pas&#160;!%s"
+msgstr ""
+
+#: interfaces/web/users.py:349
+#, python-format
+msgid "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
+msgstr ""
+
+#: interfaces/web/users.py:368
+#, python-format
+msgid "Erreur à la création du compte <strong>%s</strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:382
+#, python-format
+msgid ""
+"Impossible d'inscrire l'utilisateur <strong>%s</strong> dans un ou plusieurs "
+"groupes demandés&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:398
+#, python-format
+msgid "Modification du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:404
+msgid "Enregistrement de compte impossible"
+msgstr ""
+
+#: interfaces/web/users.py:404
+msgid "tentative de modification de compte non standard."
+msgstr ""
+
+#: interfaces/web/users.py:404
+msgid ""
+"permissions insuffisantes pour mener à bien l'opération (dis-donc, tu "
+"n'essaierais pas de t'amuser par hasard ?)."
+msgstr ""
+
+#: interfaces/web/users.py:410
+#, python-format
+msgid "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
+msgstr ""
+
+#: interfaces/web/users.py:425
+#, python-format
+msgid ""
+"Impossible de modifier un ou plusieurs paramètre(s) du compte <strong>%s</"
+"strong>&#160;!"
+msgstr ""
+
+#: interfaces/web/users.py:435
+#, python-format
+msgid "Édition du compte %s"
+msgstr ""
+
+#: interfaces/web/users.py:439
+msgid "Édition de compte impossible"
+msgstr ""
+
+#: interfaces/web/users.py:439
+msgid "tentative d'édition de compte non standard."
+msgstr ""
+
+#: interfaces/web/users.py:447
+msgid "Compte Standard"
+msgstr ""
+
+#: interfaces/web/users.py:499
+msgid "<strong>UID</strong><br />(non modifiable)"
+msgstr ""
+
+#: interfaces/web/users.py:500
+msgid "<strong>Identifiant</strong><br />(non modifiable)"
+msgstr ""
+
+#: interfaces/web/users.py:501
+msgid "<strong>Profil</strong><br />(non modifiable)"
+msgstr ""
+
+#: interfaces/web/users.py:502
+msgid "<strong>Nom Complet</strong>"
+msgstr ""
+
+#: interfaces/web/users.py:509
+msgid "Nouveau mot de passe"
+msgstr ""
+
+#: interfaces/web/users.py:512
+msgid "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
+msgstr ""
+
+#: interfaces/web/users.py:506
+#, python-format
+msgid ""
+"Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser "
+"toutes"
+msgstr ""
+
+#: interfaces/web/users.py:323
+msgid ""
+"L'identifiant doit être saisi en lettres minuscules, sans accents ni "
+"caractères spéciaux \n"
+"\t\t\t(vous pouvez cependant utiliser le point et le tiret).<br /><br />Si "
+"vous laissez le champ\n"
+"\t\t\tvide, l'identifiant sera automatiquement déterminé depuis le nom "
+"complet."
+msgstr ""
+
+#: interfaces/web/users.py:506
+#, python-format
+msgid ""
+"Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser "
+"toutes\n"
+"\t\t\t\tles lettre de l'alphabet, les chiffres, les caractères spéciaux et "
+"les signes de \n"
+"\t\t\t\tponctuation sauf '?!'."
+msgstr ""
+
+#: interfaces/web/users.py:604
+msgid "Éditer les paramètres du compte."
+msgstr ""
+
+#: interfaces/web/users.py:613
+msgid ""
+"Déverrouiller le mot de passe (redonne l'accès terminaux légers et postes "
+"autonomes)."
+msgstr ""
+
+#: interfaces/web/users.py:613 interfaces/web/users.py:636
+msgid "Supprimer le compte."
+msgstr ""
+
+#: interfaces/web/users.py:620
+msgid ""
+"Verrouiller le mot de passe (bloque l'accès aux terminaux légers et postes "
+"autonomes)."
+msgstr ""
+
+#: interfaces/web/users.py:620
+msgid "Verrouiller le compte."
+msgstr ""
+
+#: interfaces/web/users.py:632
+msgid ""
+"Réappliquer les données du skelette d'origine dans le répertoire personnel "
+"de\n"
+"\t\t\t\tl'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou "
+"trop modifié le contenu de\n"
+"\t\t\t\tson bureau (icônes, menus, panneaux et barres d'outils) et permet de "
+"lui remettre le bureau\n"
+"\t\t\t\td'«&#160;usine&#160;»."
+msgstr ""
+
+#: interfaces/web/users.py:635
+msgid "Réappliquer le skelette."
+msgstr ""
+
+#: interfaces/web/users.py:636
+msgid "Supprimer définitivement le compte du système."
+msgstr ""
+
+#: interfaces/web/users.py:656
+msgid "Standard account"
+msgstr ""
+
+#: interfaces/web/users.py:681
+#, python-format
+msgid "nombre de comptes pour le profil <strong>%s</strong>&#160;:"
+msgstr ""
+
+#: interfaces/web/users.py:695
+msgid "<strong>Nombre total de comptes&#160;:</strong>"
+msgstr ""
