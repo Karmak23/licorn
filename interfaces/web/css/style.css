@@ -174,9 +174,9 @@ a:visited{
 	border-radius-topleft: 10px;
 	border-radius-topright: 10px;
 	border-bottom: 3px solid white;
-	border-right: 3px solid #ff8c00;
-	border-left: 3px solid #ff8c00;	
-	border-top: 3px solid #ff8c00;	
+	border-right: 3px solid #ffc821;
+	border-left: 3px solid #ffc821;	
+	border-top: 3px solid #ffc821;	
 }
 
 #actions a {
@@ -235,7 +235,7 @@ a:visited{
 	border-radius-topleft: 10px;
 	border-radius-bottomleft: 10px;
 	background: #ccc;
-	border-right: 3px solid #ff8c00;
+	border-right: 3px solid #ffc821;
 	margin: 1px 0 0 0;
 	padding: 5px 1em 5px 1em;
 }
@@ -250,7 +250,7 @@ a:visited{
 	border-radius-topleft: 10px;
 	border-radius-bottomleft: 10px;
 	background: #ddd;
-	border-right: 3px solid #ff8c00;
+	border-right: 3px solid #ffc821;
 	margin: 1px 0 0 0;
 	padding: 5px 1em 5px 1em;
 }
@@ -258,23 +258,23 @@ a:visited{
 #menu li.active {
 	background: #fff;
 	border-right: 3px solid white;	
-	border-left: 3px solid #ff8c00;	
-	border-top: 3px solid #ff8c00;	
-	border-bottom: 3px solid #ff8c00;	
+	border-left: 3px solid #ffc821;	
+	border-top: 3px solid #ffc821;	
+	border-bottom: 3px solid #ffc821;	
 }
 
 #helpmenu li.active {
 	background: #fff;
 	border-right: 3px solid white;	
-	border-left: 3px solid #ff8c00;	
-	border-top: 3px solid #ff8c00;	
-	border-bottom: 3px solid #ff8c00;	
+	border-left: 3px solid #ffc821;	
+	border-top: 3px solid #ffc821;	
+	border-bottom: 3px solid #ffc821;	
 }
 
 #content {
 	background: #fff;
-	border-left: 3px solid #ff8c00;
-	border-top: 3px solid #ff8c00;
+	border-left: 3px solid #ffc821;
+	border-top: 3px solid #ffc821;
 	margin: 45px 218px 2em 178px;
 	min-height: 500px;
 	min-width: 700px;
@@ -306,7 +306,7 @@ a:visited{
 }
 
 #content tr.userdata:hover {
-	background-color: #e4ff16;
+	background-color: #ffc821;
 }
 #content td.group_class {
 	padding-top: 1em;
