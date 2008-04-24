@@ -17,7 +17,7 @@ _app = {
 	"author"   		 : "Olivier Cortès <oc@5sys.fr>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-from licorn.foundations import logging, exceptions, options, hlstr, file_locks
+from licorn.foundations import logging, exceptions, options, hlstr, file_locks, styles
 from licorn.core        import configuration, users, groups, profiles
 
 def modify_user() :
