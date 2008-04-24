@@ -380,7 +380,11 @@ class UsersList :
 
 		# Samba: add Samba user account.
 		# TODO: put this into a module.
-		sys.stderr.write(process.pipecmd('%s\n%s\n' % (password, password), ['smbpasswd', '-a', login, '-s']))
+		try :
+			sys.stderr.write(process.pipecmd('%s\n%s\n' % (password, password), ['smbpasswd', '-a', login, '-s']))
+		except (IOError, OSError), e :
+			if e.errno != 32 :
+				raise e
 
 		if groups_to_add_user_to != [] :
 
@@ -426,8 +430,12 @@ class UsersList :
 			UsersList.groups.RemoveUsersFromGroup(group, [ login ], batch=True)
 
 
-		# samba stuff
-		os.popen2( [ 'smbpasswd', '-x', login ] )[1].read()
+		try :
+			# samba stuff
+			os.popen2([ 'smbpasswd', '-x', login ])[1].read()
+		except (IOError, OSError), e :
+			if e.errno != 32 :
+				raise e
 			
 		# keep the homedir path, to backup it if requested.
 		homedir = UsersList.users[uid]["homeDirectory"]
@@ -485,8 +493,12 @@ class UsersList :
 		else :
 			logging.info('Changed password for user %s.' % styles.stylize(styles.ST_NAME, login))
 		
-		# samba stuff
-		sys.stderr.write(process.pipecmd("%s\n%s\n" % (password, password), ['smbpasswd', login, '-s']))
+		try :
+			# samba stuff
+			sys.stderr.write(process.pipecmd("%s\n%s\n" % (password, password), ['smbpasswd', login, '-s']))
+		except (IOError, OSError), e :
+			if e.errno != 32 :
+				raise e
 	def ChangeUserGecos(self, login, gecos = "") :
 		""" Change the gecos of a user
 		"""

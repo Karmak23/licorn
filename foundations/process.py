@@ -103,14 +103,17 @@ def pipecmd(data, command) :
 
 	logging.debug('''pipecmd(): piping "%s" into "%s".''' % (data, command))
 
-	(pin, pouterr) = os.popen4(command)
+	(pin, pout, perr) = os.popen3(command)
 
-	if pin is None or pouterr is None :
+	if None in (pin, pout, perr) :
 		raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
 
 	pin.write(data)
 	pin.flush()
 	pin.close()
 
-	return pouterr.read()
+	# forget the output.
+	pout.read()
+
+	return perr.read()
 
