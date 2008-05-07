@@ -9,13 +9,19 @@ def __status_actions() :
 	return '''
 <div id="actions">
 	<div class="action">
-		<a href="/server/reboot" title="Redémarrer le serveur."><img src="/images/32x32/reboot.png" alt="Redémarrer le serveur." /><br />Redémarrer le serveur</a>
+		<a href="/server/reboot" title="%s"><img src="/images/32x32/reboot.png" alt="%s" /><br />%s</a>
 	</div>
 	<div class="action">
-		<a href="/server/halt" title="Éteindre le serveur."><img src="/images/32x32/shutdown.png" alt="Éteindre le serveur." /><br />Éteindre le serveur</a>
+		<a href="/server/halt" title="%s"><img src="/images/32x32/shutdown.png" alt="%s" /><br />%s</a>
 	</div>
 </div>
-	'''
+	''' % (
+		_('Restart server.'),
+		_('Restart server.'),
+		_('Restart server'),
+		_('Shutdown server.'),
+		_('Shutdown server.'),
+		_('Shutdown server'))
 
 def system_load() :
 	loads = open('/proc/loadavg').read().split(" ")
@@ -56,14 +62,14 @@ def system_load() :
 					s_hour = 's'
 				if uptime_day > 1 :
 					s_day = 's'
-				uptime_string += '%d jour%s, ' % (uptime_day, s_day)
-			uptime_string += '%d heure%s, ' % (uptime_hour, s_hour)
-		uptime_string += '%d min%s, ' % (uptime_min, s_min)
-	uptime_string += '%d sec%s' % (uptime_sec, s_sec)				
+				uptime_string += _('%d day%s, ') % (uptime_day, s_day)
+			uptime_string += _('%d hour%s, ') % (uptime_hour, s_hour)
+		uptime_string += _('%d min%s, ') % (uptime_min, s_min)
+	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)				
 			
-	return '''En marche depuis <strong>%s</strong>.<br /><br />
-Utilisateurs&nbsp;: <strong>%d</strong> au total, <strong>%d actuellement connecté%s</strong>.<br /><br />
-Charge sur les 1, 5, et 15 dernières minutes&nbsp;: <strong>%s</strong>, %s, %s''' % (uptime_string, nbusers, cxusers, s_users, loads[0], loads[1], loads[2]) 
+	return _('''Up and running since <strong>%s</strong>.<br /><br />
+Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.<br /><br />
+1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2]) 
 
 def system_info() :
 
@@ -94,26 +100,26 @@ def system_info() :
 		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers', 'Cached', 'SwapTotal', 'SwapFree' ) :
 			mem.update(compute_mem(line, x))
 
-	return '''
-Processeur%s&nbsp;: %d x <strong>%s</strong><br /><br />
-Mémoire Physique&nbsp;: <strong>%.2fGio</strong> au total,<br />
-%.2f Gio programmes, %.2f Gio cache, %.2f Gio tampons.<br /><br />
-Mémoire virtuelle&nbsp;: %.2f Gio au total, <strong>%.0f%% libre<strong>.
-''' % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
+	return _('''
+Processor%s: %d x <strong>%s</strong><br /><br />
+Physical memory: <strong>%.2fGib</strong> total,<br />
+%.2f Gib for programs, %.2f Gib for cache, %.2f Gib for buffers.<br /><br />
+Virtual memory: %.2f Gib total, <strong>%.0f%% free<strong>.
+''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
 	
 def index(uri) :
 		
 	start = time.time()
 
-	title = "État du serveur"
+	title = _("Server status")
 	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __status_actions(), w.menu(uri)) 
 
 	data += '''<table>
 	<tr>
-		<td><h1>Informations Système</h1><br />%s</td>
-		<td><h1>État du système</h1>%s</td>
+		<td><h1>%s</h1><br />%s</td>
+		<td><h1>%s</h1>%s</td>
 	</tr>
-''' % (system_info(), system_load())
+''' % (_('System information'), system_info(), _('System status'), system_load())
 
 	data += '''
 	<tr>

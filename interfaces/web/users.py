@@ -7,12 +7,12 @@ from licorn.core           import configuration, groups, users, profiles
 from licorn.interfaces.web import utils as w
 
 groups_filters_lists_ids = ( 
-	(groups.FILTER_STANDARD, [_('Personnaliser les Groupes'),     _('Groupes disponibles'),         _('Groupes affectés')],           'standard_groups'),
-	(groups.FILTER_PRIVILEGED, [_('Affiner les privilèges'),        _('Privilèges disponibles'),      _('Privilèges octroyés')],        'privileged_groups'),
-	(groups.FILTER_RESPONSIBLE, [_('Attribuer des responsabilités'), _('Responsabilités disponibles'), _('Responsabilités attribuées')], 'responsible_groups'), 
-	(groups.FILTER_GUEST, [_('Proposer des invitations'),      _('Invitations disponibles'),     _('Invitations offertes')],       'guest_groups') )
+	(groups.FILTER_STANDARD, [_('Customize groups'),           _('Available groups'),           _('Affected groups')],           'standard_groups'),
+	(groups.FILTER_PRIVILEGED, [_('Customize privileges'),     _('Available privileges'),       _('granted privileges')],        'privileged_groups'),
+	(groups.FILTER_RESPONSIBLE, [_('Assign responsibilities'), _('Available responsibilities'), _('Assigned responsibilities')], 'responsible_groups'), 
+	(groups.FILTER_GUEST, [_('Propose invitations'),           _('Available invitations'),      _('Offered invitations')],       'guest_groups') )
 
-rewind = "<br /><br />Revenez en arrière avec votre navigateur, vérifiez-les et revalidez le formulaire."
+rewind = "<br /><br />Go back with your browser, double-check data and validate the web-form."
 
 # private functions.
 def __merge_multi_select(*lists) :
@@ -36,19 +36,19 @@ def __users_actions() :
 </table>
 </div>
 	''' % (
-		_("Ajouter un nouvel utilisateur sur le système."),
-		_("Ajouter un compte."),
-		_("Ajouter un compte"),
-		_("Importer une liste de nouveaux utilisateurs depuis un fichier CSV."),
-		_("Importer des comptes."),
-		_("Importer des comptes"),
-		_("Exporter la liste des utilisateurs actuels vers un fichier CSV ou XML."),
-		_("Exporter les comptes."),
-		_("Exporter les comptes")
+		_("Add a new user account on the system."),
+		_("Add an account."),
+		_("Add an account"),
+		_("Import new user accounts from a CSV-delimited file."),
+		_("Import accounts."),
+		_("Import accounts"),
+		_("Export current user accounts list to a CSV or XML file."),
+		_("Export accounts."),
+		_("Export accounts")
 		)
 
 def export(uri, type = "", yes = None) :
-	"""export."""
+	""" Export user accounts list."""
 
 	# TODO : reload(profiles)
 	groups.reload()
@@ -56,18 +56,18 @@ def export(uri, type = "", yes = None) :
 
 	del yes
 
-	title = _("Export des comptes utilisateurs")
+	title = _("Export user accounts list")
 	data  = '%s%s' % (w.backto(), __users_actions())
 
 	if type == "" :
-		description = _('''Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur "Exporter", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur "Revenir".''')
+		description = _('''CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser.''')
 		
-		form_options = _("Sous quelle forme voulez-vous exporter les comptes&nbsp;? %s") % w.select("type", [ "CSV", "XML"])
+		form_options = _("Which file format do you want accounts to be exported to? %s") % w.select("type", [ "CSV", "XML"])
 	
-		data += w.question(_("Choisissez le format d'export pour la liste des comptes"),
+		data += w.question(_("Please choose file format for export list"),
 			description,
-			yes_values   = [ _("Exporter >>"), "/users/export", "E" ],
-			no_values    = [ _("<< Revenir"),  "/users/list",   "N" ],
+			yes_values   = [ _("Export >>"), "/users/export", "E" ],
+			no_values    = [ _("<< Cancel"),  "/users/list",   "N" ],
 			form_options = form_options)
 
 		return w.page(title, data)
@@ -93,20 +93,20 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del yes
 
-	title = _("Suppression du compte %s") % login
+	title = _("Remove user account %s") % login
 	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
 
 	
 	if not sure :
-		data += w.question(_("Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;?") % login,
-			_("""<strong>Les données personnelles</strong> de l'utilisateur (son home dir) <strong>seront archivées</strong>
-				dans le répertoire <code>%s</code> et accessibles aux membres du groupe
-				<strong>administrateurs</strong> pour une récupération éventuelle.<br />
-				Vous pouvez cependant décider de les effacer définitivement.""") % (configuration.home_archive_dir),
-			yes_values   = [ "Supprimer >>", "/users/delete/%s/sure" % login, "S" ],
-			no_values    = [ "<< Annuler",   "/users/list",                   "N" ],
+		data += w.question(_("Are you sure you want to remove account <strong>%s</strong>?") % login,
+			_("""User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong>
+				in directory <code>%s</code> and members of group <strong>%s</strong> will be able to access
+				it to operate an eventual recover.<br />However, you can decide to permanently 
+				remove it.""") % (configuration.home_archive_dir, configuration.defaults.admin_group),
+			yes_values   = [ "Remove >>", "/users/delete/%s/sure" % login, _("R") ],
+			no_values    = [ "<< Cancel",   "/users/list",                 _("C") ],
 			form_options = w.checkbox("no_archive", "True", 
-				_("Supprimer définitivement toutes les données avec le compte."),
+				_("Definitely remove account data (no archiving)."),
 				checked = False) )
 
 		return w.page(title, data)
@@ -114,7 +114,8 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 	else :
 		users.reload()
 		if users.is_system_login(login) :
-			return w.page(title, w.error(_("Suppression de compte impossible"), [ _("tentative de suppression de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération (non mais, tu croyais vraiment que j'allais le faire ?).")))
+			return w.page(title, w.error(_("Failed to remove account"), [ _("alter system account.") ],
+			_("insufficient permissions to perform operation.")))
 
 		# we are sure, do it !
 		command = [ 'sudo', 'del', 'user', '--quiet', '--no-colors', '--login', login ]
@@ -123,22 +124,22 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 			command.extend(['--no-archive'])
 		
 		return w.page(title, data + 
-			w.run(command, uri, err_msg = _("Impossible de supprimer le compte <strong>%s</strong>&#160;!") % login))
+			w.run(command, uri, err_msg = _("Failed to remove account <strong>%s</strong>!") % login))
 		
 # locking and unlocking.
 def unlock(uri, login) :
 	"""unlock a user account password."""
 
-	title   = _("Déverrouillage du compte %s") % login
+	title   = _("Unlock account %s") % login
 	data    = '%s<h1>%s</h1><br />' % (w.backto(), title)
 
 	users.reload()
 	if users.is_system_login(login) :
-		return w.page(title, w.error(_("Déverrouillage de compte impossible"), [ _("tentative de déverrouillage de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération.")))
+		return w.page(title, w.error(_("Failed to unlock account"), [ _("alter system account.") ], _("insufficient permission to perform operation.")))
 
 	command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--unlock" ]
 	return w.page(title, data + 
-		w.run(command, uri, err_msg = _("Impossible de déverrouiller le compte <strong>%s</strong>&#160;!") % login))
+		w.run(command, uri, err_msg = _("Failed to unlock account <strong>%s</strong>!") % login))
 def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 	"""lock a user account password."""
 
@@ -148,37 +149,36 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 	groups.reload()
 	users.reload()
 
-	title = _("Verrouillage du compte %s") % login
+	title = _("Lock account %s") % login
 	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
 
 	if not sure :
-		description = _('''Cela l'empêchera de se connecter sur les terminaux légers
-			 %s/Linux et les postes autonomes Windows&reg; et Macintosh&reg;.''') % w.acr('GNU')
+		description = _('''This will prevent user to connect to network clients (thin ones,
+			and Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones).''') % w.acr('GNU')
 		
 		# TODO : Vérifier que le groupe "remotessh" existe bien sur le système...
 		if login in groups.all_members('remotessh') :
 			description += _("""<br /><br />
-				Mais <em>cela n'empêchera pas les connexions à distance par %s</em>
-				si cet utilisateur se sert de clés %s %s/%s pour se connecter.
-				Pour lui interdire complètement l'accès au système, 
-				<strong>retirez-le aussi du groupe remotessh</strong>.""") % (w.acr('SSH'), w.acr('SSH'), w.acr('RSA'), w.acr('DSA'))
+				But this will not block incoming %s network connections, if the user
+				uses %s %s or %s public/private keys. To block ANY access to the system,
+				<strong>remove him/her from remotessh group</strong>.""") % (w.acr('SSH'), w.acr('SSH'), w.acr('RSA'), w.acr('DSA'))
 			form_options = w.checkbox("remove_remotessh", "True",
-				_("Supprimer l'utilisateur du groupe <code>remotessh</code> en même temps."),
-				checked = True, accesskey = 'R')
+				_("Remove user from group <code>remotessh</code> in the same time."),
+				checked = True, accesskey = _('R'))
 		else :
 			form_options = None
 	
-		data += w.question(_("Êtes-vous sûr(e) de vouloir verrouiller le mot de passe du compte <strong>%s</strong>&#160;?") % login,
+		data += w.question(_("Are you sure you want to lock account <strong>%s</strong>?") % login,
 			description,
-			yes_values   = [ _("Verrouiller >>"), "/users/lock/%s/sure" % login, "V" ],
-			no_values    = [ _("<< Annuler"),     "/users/list",                 "N" ],
+			yes_values   = [ _("Lock >>"), "/users/lock/%s/sure" % login, _("L") ],
+			no_values    = [ _("<< Cancel"),     "/users/list",           _("C") ],
 			form_options = form_options)
 
 		return w.page(title, data)
 
 	else :
 		if users.is_system_login(login) :
-			return w.page(title, w.error(_("Verrouillage de compte impossible"), [ _("tentative de verrouillage de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération (non mais, tu y croyais vraiment ?).")))
+			return w.page(title, w.error(_("Failed to lock account"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--lock" ]
@@ -187,7 +187,7 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 			command.extend(['--del-groups', 'remotessh'])
 		
 		return w.page(title, data +
-			w.run(command, uri, err_msg = _("Impossible de verrouiller le compte <strong>%s</strong>&#160;!") % login))
+			w.run(command, uri, err_msg = _("Failed to lock account <strong>%s</strong>!") % login))
 
 # skel reapplyin'
 def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel, yes = None) :
@@ -203,14 +203,14 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 	u = users.users
 	g = groups.groups
 
-	title = _("Réapplication du profil pour le compte %s") % login
+	title = _("Reapply skel to user account %s") % login
 	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
 
 	if users.is_system_login(login) :
-		return w.page(title, w.error(_("Suppression de compte impossible"), [ _("tentative de suppression de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération.")))
+		return w.page(title, w.error(_("Failed to reapply skel"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
 	if not sure :
-		description = _('''Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>''')
+		description = _('''This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.''')
 		
 		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
 		
@@ -226,12 +226,12 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 			'''
 			return sk_list
 			
-		form_options = _("Quel skelette voulez-vous lui appliquer&nbsp;? %s") % w.select("apply_skel", filter_skels(pri_group, configuration.users.skels), func = os.path.basename)
+		form_options = _("Which skel do you want to apply? %s") % w.select("apply_skel", filter_skels(pri_group, configuration.users.skels), func = os.path.basename)
 	
-		data += w.question(_("Êtes-vous sûr(e) de vouloir ré-appliquer le profil au compte <strong>%s</strong>&#160;?") % login,
+		data += w.question(_("Are you sure you want to apply this skel to account <strong>%s</strong>?") % login,
 			description,
-			yes_values   = [ _("Appliquer >>"), "/users/skel/%s/sure" % login, "V" ],
-			no_values    = [ _("<< Annuler"),     "/users/list",                 "N" ],
+			yes_values   = [ _("Apply >>"), "/users/skel/%s/sure" % login, _("A") ],
+			no_values    = [ _("<< Cancel"),     "/users/list",            _("C") ],
 			form_options = form_options)
 
 		return w.page(title, data)
@@ -241,7 +241,7 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
 
 		return w.page(title, data +
-			w.run(command, uri, err_msg = _("Impossible d'appliquer le skelette <strong>%s</strong> sur le compte <strong>%s</strong>&#160;!") % (os.path.basename(apply_skel), login)))
+			w.run(command, uri, err_msg = _("Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!") % (os.path.basename(apply_skel), login)))
 
 # user account creation
 def new(uri) :
@@ -253,7 +253,7 @@ def new(uri) :
 	g = groups.groups
 	p = profiles.profiles
 	
-	title = _("Création d'un compte utilisateur")
+	title = _("New user account")
 	data  = '%s%s\n%s\n' % (w.backto(), __users_actions(), w.menu(uri))
 
 	def profile_input() :
@@ -263,13 +263,13 @@ def new(uri) :
 	<tr>
 		<td><strong>%s</strong></td><td>%s</td>
 	</tr>
-			""" % (_("Ce compte sera un"), w.select('profile',  p.keys(), func = lambda x: p[x]['name']))
+			""" % (_("This user is a"), w.select('profile',  p.keys(), func = lambda x: p[x]['name']))
 	def gecos_input() :
 		return """
 	<tr>
 		<td><strong>%s</strong></td><td>%s</td>
 	</tr>
-			""" % (_("Nom Complet"), w.input('gecos', "", size = 30, maxlength = 64, accesskey = 'N'))
+			""" % (_("Full name"), w.input('gecos', "", size = 30, maxlength = 64, accesskey = 'N'))
 	def shell_input() :
 		return w.select('loginShell',  configuration.users.shells, current = configuration.users.default_shell, func = os.path.basename)
 
@@ -314,21 +314,20 @@ def new(uri) :
 	''' % ( form_name, form_name,
 		profile_input(),
 		gecos_input(),
-		_("""Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser toutes
-			les lettre de l'alphabet, les chiffres, les caractères spéciaux et les signes de
-			ponctuation sauf '?!'.""") % configuration.mAutoPasswdSize,
-		_("Mot de passe"), _("(%d car. min.)") % configuration.mAutoPasswdSize,
-		w.input('password', "", size = 30, maxlength = 64, accesskey = 'P', password = True),
-		_("Confirmation du MDP."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True ),
-		_("""L'identifiant doit être saisi en lettres minuscules, sans accents ni caractères spéciaux 
-			(vous pouvez cependant utiliser le point et le tiret).<br /><br />Si vous laissez le champ
-			vide, l'identifiant sera automatiquement déterminé depuis le nom complet."""),
-		_("Identifiant"), w.input('login', "", size = 30, maxlength = 64, accesskey = 'L'),
-		_("<strong>Shell de connexion</strong>br />(interpréteur de commandes Unix)"), shell_input(),	
+		_("""Password must be at least %d characters long. You can use all alphabet characters,
+			numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
+		_("Password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
+		w.input('password', "", size = 30, maxlength = 64, accesskey = _('P'), password = True),
+		_("Password confirmation."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True ),
+		_("""Identifier must be lowercase, without accents or special characters (you can use dots and carets).
+			<br /><br />If you let this field empty, identifier will be automaticcaly guessed from first name 
+			and last name."""),
+		_("Identifier"), w.input('login', "", size = 30, maxlength = 64, accesskey = _('I')),
+		_("<strong>Shell</strong><br />(Unix command line interpreter)"), shell_input(),	
 		dbl_lists[groups.FILTER_STANDARD], dbl_lists[groups.FILTER_PRIVILEGED],
 		dbl_lists[groups.FILTER_RESPONSIBLE], dbl_lists[groups.FILTER_GUEST],
-		w.button('<< Annuler', "/users/list"),
-		w.submit('create', 'Créer >>', onClick = "selectAllMultiValues('%s');" % form_name)
+		w.button('<< Cancel', "/users/list"),
+		w.submit('create', 'Create >>', onClick = "selectAllMultiValues('%s');" % form_name)
 		)
 	return w.page(title, data)
 def create(uri, loginShell, password, password_confirm, profile = None, login = "", gecos = "", firstname = "", lastname = "",
@@ -339,14 +338,14 @@ def create(uri, loginShell, password, password_confirm, profile = None, login = 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del create
 
-	title      = _("Création du compte %s") % login
+	title      = _("New user account %s") % login
 	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
 	
 	if password != password_confirm :
-		return w.page(title, data + w.error(_("Les mots de passe ne correspondent pas&#160;!%s") % rewind))
+		return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
 
 	if len(password) < configuration.mAutoPasswdSize :
-		return w.page(title, data + w.error(_("Le mot de passe doit comporter au moins %d caractères&#160;!%s") % (configuration.mAutoPasswdSize, rewind)))
+		return w.page(title, data + w.error(_("Password must be at least %d characters long!%s") % (configuration.mAutoPasswdSize, rewind)))
 
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors', '--password', password ]
 
@@ -365,7 +364,7 @@ def create(uri, loginShell, password, password_confirm, profile = None, login = 
 		# TODO : Idem, "gecos" should be tested against emptyness
 		command.extend([ '--login', hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
 	
-	retval = w.run(command, uri, err_msg = _('Erreur à la création du compte <strong>%s</strong>&#160;!') % login)
+	retval = w.run(command, uri, err_msg = _('Failed to create account <strong>%s</strong>!') % login)
 
 	# TODO : Change test since message received : Added user <login>
 	if retval != "" :
@@ -379,7 +378,7 @@ def create(uri, loginShell, password, password_confirm, profile = None, login = 
 
 	return w.page(title, 
 		data + w.run(command, uri,
-		err_msg = _('Impossible d\'inscrire l\'utilisateur <strong>%s</strong> dans un ou plusieurs groupes demandés&#160;!') % login))
+		err_msg = _('Failed to add user <strong>%s</strong> to requested groups/privileges/responsibilities/invitations!') % login))
 
 # record user account edition.
 def record(uri, login, loginShell = configuration.users.default_shell,
@@ -395,19 +394,19 @@ def record(uri, login, loginShell = configuration.users.default_shell,
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del record
 
-	title      = _("Modification du compte %s") % login
+	title      = _("Modification of account %s") % login
 	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 
 	users.reload()
 	if users.is_system_login(login) :
-		return w.page(title, w.error(_("Enregistrement de compte impossible"), [ _("tentative de modification de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération (dis-donc, tu n'essaierais pas de t'amuser par hasard ?).")))
+		return w.page(title, w.error(_("Recording of informations failed"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
 	if password != "" :
 		if password != password_confirm :
-			return w.page(title, data + w.error(_("Les mots de passe ne correspondent pas&#160;!%s") % rewind))
+			return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
 		if len(password) < configuration.mAutoPasswdSize :
-			return w.page(title, data + w.error(_("Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s") % (password, configuration.mAutoPasswdSize, rewind)))
+			return w.page(title, data + w.error(_("The password --%s-- must be at least %d characters long!%s") % (password, configuration.mAutoPasswdSize, rewind)))
 
 		command.extend([ '--password', password ])
 
@@ -422,7 +421,7 @@ def record(uri, login, loginShell = configuration.users.default_shell,
 	if del_groups != "" :
 		command.extend(['--del-groups', del_groups ])
 
-	return w.page(title, data + w.run(command, uri, err_msg = _('Impossible de modifier un ou plusieurs paramètre(s) du compte <strong>%s</strong>&#160;!') % login))
+	return w.page(title, data + w.run(command, uri, err_msg = _('Failed to modify one or more parameters of account <strong>%s</strong>!') % login))
 
 # edit user accout parameters.
 def edit(uri, login) :
@@ -432,11 +431,11 @@ def edit(uri, login) :
 	users.reload()
 	# TODO: profiles.reload()
 
-	title = _('Édition du compte %s') % login 
+	title = _('Edit account %s') % login 
 	data  = '%s\n%s\n%s<br />\n' % (w.backto(), __users_actions(), w.menu(uri))
 
 	if users.is_system_login(login) :
-		return w.page(title, w.error(_('Édition de compte impossible'), [ _("tentative d'édition de compte non standard.") ], _("permissions insuffisantes pour mener à bien l'opération.")))
+		return w.page(title, w.error(_('Account edition impossible.'), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
 	try :
 		user = users.users[users.login_to_uid(login)]
@@ -497,27 +496,26 @@ def edit(uri, login) :
 </div>
 		''' % (
 			form_name, form_name, login,
-			_("<strong>UID</strong><br />(non modifiable)"), user['uid'],
-			_("<strong>Identifiant</strong><br />(non modifiable)"), login,
-			_("<strong>Profil</strong><br />(non modifiable)"), profile,
-			_("<strong>Nom Complet</strong>"),
+			_("<strong>UID</strong><br />(fixed)"), user['uid'],
+			_("<strong>Identifier</strong><br />(fixed)"), login,
+			_("<strong>Profile</strong><br />(fixed)"), profile,
+			_("<strong>Full name</strong>"),
 			w.input('gecos', user['gecos'], size = 30, maxlength = 64, accesskey = 'N'),
-			_("""Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser toutes
-				les lettre de l'alphabet, les chiffres, les caractères spéciaux et les signes de 
-				ponctuation sauf '?!'.""") % configuration.mAutoPasswdSize,
-			_("Nouveau mot de passe"), _("(%d car. min.)") % configuration.mAutoPasswdSize,
+			_("""Password must be at least %d characters long. You can use all alphabet characters,
+			numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
+			_("New password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
 			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P', password = True),
-			_("Confirmation du MDP."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True),
-			_("<strong>Shell</strong><br />(interpréteur de commandes Unix)"),
+			_("password confirmation."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True),
+			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
 			w.select('loginShell',  configuration.users.shells, user['loginShell'], func = os.path.basename),
 			dbl_lists[groups.FILTER_STANDARD], dbl_lists[groups.FILTER_PRIVILEGED],
 			dbl_lists[groups.FILTER_RESPONSIBLE], dbl_lists[groups.FILTER_GUEST],
-			w.button(_('<< Annuler'), "/users/list"),
-			w.submit('record', _('Enregistrer >>'), onClick = "selectAllMultiValues('%s');" % form_name)
+			w.button(_('<< Cancel'), "/users/list"),
+			w.submit('record', _('Record changes >>'), onClick = "selectAllMultiValues('%s');" % form_name)
 			)
 	
 	except exceptions.LicornException, e :
-		data += w.error("Le compte %s n'existe pas (%s)&#160;!" % (login, "user = users.users[users.login_to_uid(login)]", e))
+		data += w.error("Account %s does not exist (%s)!" % (login, "user = users.users[users.login_to_uid(login)]", e))
 
 	return w.page(title, data)
 
@@ -576,12 +574,12 @@ def main(uri, sort = "login", order = "asc") :
 	def html_build_compact(index, accounts = accounts) :
 		uid   = ordered[index]
 		login = u[uid]['login']
-		edit  = (_("""<em>Éditer les paramètres actuels du compte utilisateur&#160;:</em><br />
+		edit  = (_("""<em>Click to edit current user account parameters:</em><br />
 				UID: <strong>%d</strong><br />
-				GID: %d (groupe primaire <strong>%s</strong>)<br /><br />
-				Groupes:&#160;<strong>%s</strong><br /><br />
-				Privilèges:&#160;<strong>%s</strong><br /><br />
-				Responsabilités:&#160;<strong>%s</strong><br /><br />
+				GID: %d (primary group <strong>%s</strong>)<br /><br />
+				Groups:&#160;<strong>%s</strong><br /><br />
+				Privileges:&#160;<strong>%s</strong><br /><br />
+				Responsabilities:&#160;<strong>%s</strong><br /><br />
 				Invitations:&#160;<strong>%s</strong><br /><br />
 				""") % (
 				uid, u[uid]['gid'], g[u[uid]['gid']]['name'],
@@ -600,7 +598,7 @@ def main(uri, sort = "login", order = "asc") :
 		</td>
 		<td style="text-align:center;">%s</td>
 			''' % (login, edit, u[uid]['gecos'],
-			login, edit, login, _("Éditer les paramètres du compte."),
+			login, edit, login, _("Edit user account parameters."),
 			accounts[uid]['profile_name'])
 
 		if u[uid]['locked'] :
@@ -609,14 +607,14 @@ def main(uri, sort = "login", order = "asc") :
 			<a href="/users/unlock/%s" title="%s">
 			<img src="/images/16x16/locked.png" alt="%s"/></a>
 		</td>
-			''' % (login, _("Déverrouiller le mot de passe (redonne l\'accès terminaux légers et postes autonomes)."), _("Supprimer le compte."))
+			''' % (login, _("Unlock password (re-grant access to machines)."), _("Remove account."))
 		else :
 			html_data += '''
 		<td class="user_action_center">
 			<a href="/users/lock/%s" title="%s">
 			<img src="/images/16x16/unlocked.png" alt="%s"/></a>
 		</td>
-			''' % (login, _("Verrouiller le mot de passe (bloque l\'accès aux terminaux légers et postes autonomes)."), _("Verrouiller le compte."))
+			''' % (login, _("Lock password (revoke access to machines)."), _("Lock account."))
 
 		html_data += '''
 		<td class="user_action">
@@ -628,11 +626,10 @@ def main(uri, sort = "login", order = "asc") :
 			<img src="/images/16x16/delete.png" alt="%s"/></a>
 		</td>
 	</tr>
-			''' % (login, _("""Réappliquer les données du skelette d'origine dans le répertoire personnel de
-				l'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou trop modifié le contenu de
-				son bureau (icônes, menus, panneaux et barres d'outils) et permet de lui remettre le bureau
-				d'«&#160;usine&#160;»."""), _("Réappliquer le skelette."), login,
-				_("Supprimer définitivement le compte du système."), _("Supprimer le compte."))
+			''' % (login, _("""Reapply origin skel data in the personnal directory of user. This is usefull
+				when user has lost icons, or modified too much his/her desktop (menus, panels and so on). 
+				This will get all his/her desktop back."""), _("Reapply skel."), login,
+				_("Definitely remove account from the system."), _("Remove account."))
 		return html_data
 		
 	users.Select(users.FILTER_STANDARD)
@@ -677,7 +674,7 @@ def main(uri, sort = "login", order = "asc") :
 		<td colspan="3" class="total_left">%s</td>
 		<td colspan="3" class="total_right">%d</td>
 	</tr>
-		''' % (_("nombre de comptes pour le profil <strong>%s</strong>&#160;:") % total, totals[total])
+		''' % (_("number of <strong>%s</strong>:") % total, totals[total])
 		return output
 
 	data += '''
@@ -691,7 +688,7 @@ def main(uri, sort = "login", order = "asc") :
 </table>
 </div>
 %s
-	''' % (print_totals(totals), _("<strong>Nombre total de comptes&#160;:</strong>"), 
+	''' % (print_totals(totals), _("<strong>Total number of accounts:</strong>"), 
 		reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
 
 	return w.page(title, data)

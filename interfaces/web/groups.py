@@ -6,7 +6,7 @@ from licorn.foundations    import exceptions, hlstr
 from licorn.core           import configuration, groups, users, profiles
 from licorn.interfaces.web import utils as w
 
-rewind = "<br /><br />Revenez en arrière avec votre navigateur, vérifiez-les et revalidez le formulaire."
+rewind = "<br /><br />Go back with your browser, double-check data and validate the web-form."
 
 # private functions.
 def __merge_multi_select(*lists) :
@@ -23,17 +23,17 @@ def __groups_actions() :
 <div id="actions">
 <table>
 	<tr>
-		<td><a href="/groups/new" title="Ajouter un nouveau groupe système."><img src="/images/32x32/group-new.png" alt="Ajouter un groupe." /><br />Ajouter un groupe</a></td>
+		<td><a href="/groups/new" title="%s"><img src="/images/32x32/group-new.png" alt="%s" /><br />%s</a></td>
 	</tr>
 </table>
 </div>
-	'''
+	''' % (_('Add a new group on the system.'), _('Add a new group on the system.'), _('Add a group'))
 
 # locking and unlocking.
 def unlock(uri, name, sure = False) :
-	"""make a shared group dir permissive."""
+	""" Make a shared group dir permissive. """
 
-	title = "Activation de la permissivité du groupe %s" % name
+	title = _("Make group %s permissive") % name
 	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	if not sure :
@@ -47,10 +47,10 @@ def unlock(uri, name, sure = False) :
 			les permissions de toutes les données actuelles</strong> (la durée est donc en fonction du volume de données, de l'ordre de 1 seconde pour 100Mio).
 			'''
 		
-		data += w.question("Êtes-vous sûr(e) de vouloir activer la permissivité du groupe <strong>%s</strong>&#160;?" % name,
+		data += w.question(_("Are you sure you want to active permissiveness to group <strong>%s</strong>?") % name,
 			description,
-			yes_values   = [ "Activer >>", "/groups/unlock/%s/sure" % name, "V" ],
-			no_values    = [ "<< Annuler", "/groups/list",                  "N" ])
+			yes_values   = [ _("Activate >>"), "/groups/unlock/%s/sure" % name, "V" ],
+			no_values    = [ _("<< Cancel"), "/groups/list",                    "N" ])
 		
 		return w.page(title, data)
 
@@ -59,11 +59,11 @@ def unlock(uri, name, sure = False) :
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-permissive" ]
 
 		return w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = "Impossible d'activer la permissivité du groupe <strong>%s</strong>&#160;!" % name))
+			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = _("Failed to activate permissivenes on group <strong>%s</strong>!") % name))
 def lock(uri, name, sure = False) :
-	"""make a group not permissive."""
+	""" Make a group not permissive. """
 
-	title = "Désactivation de la permissivité du groupe %s" % name
+	title = _("Make group %s not permissive") % name
 	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	if not sure :
@@ -75,10 +75,10 @@ def lock(uri, name, sure = False) :
 			les permissions de toutes les données actuelles</strong> (la durée est donc en fonction du volume de données, de l'ordre de 1 seconde pour 100Mio).
 			'''
 		
-		data += w.question("Êtes-vous sûr(e) de vouloir désactiver la permissivité du groupe <strong>%s</strong>&#160;?" % name,
+		data += w.question("Are you sure you want to make group <strong>%s</strong> not permissive?" % name,
 			description,
-			yes_values   = [ "Désactiver >>", "/groups/lock/%s/sure" % name, "V" ],
-			no_values    = [ "<< Annuler",    "/groups/list",                "N" ])
+			yes_values   = [ "Deactivate >>", "/groups/lock/%s/sure" % name, "V" ],
+			no_values    = [ "<< Cancel",    "/groups/list",                "N" ])
 		
 		return w.page(title, data)
 
@@ -87,11 +87,11 @@ def lock(uri, name, sure = False) :
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-not-permissive" ]
 
 		return w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = "Impossible d'enlever la permissivité du groupe <strong>%s</strong>&#160;!" % name))
+			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = "Failed to remove permissiveness from group <strong>%s</strong>!" % name))
 
 # delete a group.
 def delete(uri, name, sure = False, no_archive = False, yes = None) :
-	"""remove group."""
+	""" Remove group. """
 
 	title = "Suppression du groupe %s" % name
 	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))

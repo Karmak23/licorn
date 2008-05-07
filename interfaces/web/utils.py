@@ -14,24 +14,24 @@ import os, cStringIO
 
 from licorn.core import configuration
 
-licence_text = """
-%s GNU/Linux est distribué sous licence <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 2</a> sans aucune garantie d'aucune sorte. Copyleft et droits d'auteurs &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun pour le projet %s, ainsi qu'à tous les auteurs respectifs des logiciels libres utilisés (Notament Ubuntu, Debian, Python…).
-""" % (configuration.app_name, configuration.app_name)
+licence_text = _("""
+%s GNU/Linux is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 2</a> license, without any kind of waranty. Copyleft &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s, and all other libre software developers (Notably Ubuntu, Debian, Python…).
+""") % (configuration.app_name, configuration.app_name)
 
 acronyms = {
-	'SSH'  : 'Secure SHell (Protocole de connexion sécurisée à distance)',
-	'FTP'  : 'File Transfer Protocol (protocole de transfert de fichiers)',
-	'HTTP' : 'HyperText Transfert Protocol (Transfert de documents par liens HyperTexte)',
-	'IMAP' : 'Internet Message Access Protocol (Protocole d\'accès à distance au courrier électronique)',
-	'VNC'  : 'Virtual Network Computing (Protocole de prise en main d\'ordinateur à distance)',
-	'RDP'  : 'Remote Desktop Protocol (Protocole de prise en main de bureau graphique à distance)',
-	'POP'  : 'Post-Office Protocol (Procole simpliste de récupération du courrier électronique)',
-	'SMTP' : 'Simple Mail Transfer Protocol (Protocole d\'envoi et relai du courrier électronique).',
-	'RSA'  : 'Rivest Shamir Adleman (Protocole de cryptographie)',
-	'DSA'  : 'Digital Signature Algorithm (Protocole de cryptographie)',
-	'GNU'  : 'GNU is Not Unix (Acronyme récursif ; ensemble de logiciels libres composant le système de base d\' un Unix libre)',
-	'LCN'  : 'Licorn System Tools (outils pour les administrateurs systèmes GNU/Linux, voir http://dev.licorn.org/)',
-	'HAT'  : 'Licorn Admin Tools (outils de haut-niveau pour administrer un système GNU/Linux)'
+	'SSH'  : _('Secure SHell (Secure remote connexion and commands protocol)'),
+	'FTP'  : _('File Transfer Protocol'),
+	'HTTP' : _('HyperText Transfert Protocol'),
+	'IMAP' : _('Internet Message Access Protocol'),
+	'VNC'  : _('Virtual Network Computing (Desktop remote connexion protocol)'),
+	'RDP'  : _('Remote Desktop Protocol (Desktop remote connexion protocol)'),
+	'POP'  : _('Post-Office Protocol (Simple mail fetching protocol)'),
+	'SMTP' : _('Simple Mail Transfer Protocol'),
+	'RSA'  : _('Rivest Shamir Adleman (cryptography protocol)'),
+	'DSA'  : _('Digital Signature Algorithm'),
+	'GNU'  : _('GNU is Not Unix (recursive acronym ; a set of libre sofware composing a libre operating system)'),
+	'LCN'  : _('LiCorN system tools (tools for IT managers, see http://dev.licorn.org/)'),
+	'LAT'  : _('Licorn Admin Tools (High-level management tools for a GNU/Linux system)')
 	}
 
 # EXEC / SYSTEM functions.
@@ -239,22 +239,28 @@ def menu(uri) :
 	return '''
 <div id="menu">
 <ul>
-<li%s><a href="/" title="État et charge du serveur, de l'onduleur, des sous-systèmes matériels et logiciels de la machine.">État</a></li>
-<li%s><a href="/users/" title="Gérer les comptes utilisateurs.">Utilisateurs</a></li>
-<li%s><a href="/groups/" title="Gérer les groupes et les données partagées.">Groupes</a></li>
-<li%s><a href="/internet/" title="Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique.">Internet</a></li>
+<li%s><a href="/" title="%s">%s</a></li>
+<li%s><a href="/users/" title="%s">%s</a></li>
+<li%s><a href="/groups/" title="%s">%s</a></li>
+<li%s><a href="/internet/" title="%s">%s</a></li>
 </ul>
 </div>
 
 <div id="helpmenu">
 <ul>
-<li%s><a href="/support/" title="Obtenir du support sur le produit.">Support</a></li>
-<li><a href="http://docs.licorn.org/webadmin" title="Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet).">Documentation</a></li>
+<li%s><a href="/support/" title="%s">%s</a></li>
+<li><a href="http://docs.licorn.org/webadmin" title="%s">%s</a></li>
 </div>
-''' % (classes['/'], classes['users'], classes['groups'], classes['internet'], classes['support'])
+''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
+		classes['users'], _('Manage user accounts.'), _('Users'),
+		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
+		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
+		classes['support'], _('Get product support / help'), _('Support'),
+		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation')
+		)
 def page(title, data) :
 	return head(title) + data + tail()
-def head(title = "administration d'%s" % configuration.app_name) :
+def head(title = _("administration %s") % configuration.app_name) :
 	"""Build the HTML Page header.
 	Bubble Tooltips come from :	http://www.dustindiaz.com/sweet-titles
 	Rounded Divs comme from   : http://www.html.it/articoli/niftycube/index.html
