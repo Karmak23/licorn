@@ -47,13 +47,17 @@ i18n: update-po
 		done ;
 
 update-pot:
-	find . -type f \( -name '*.py' -or -name '*.glade' \) -exec xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot "{}" \;
+	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' | xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot 
 
 update-po: update-pot
-	for lang in fr ; \
-		do \
-			msgmerge -U locale/$${lang}/LC_MESSAGES/$(APP_NAME).po locale/$(APP_NAME).pot ; \
-		done ;
+	#
+	# WARNING: don't do this, this will overwrite changes in the .po.
+	# this will be handled manually by poedit.
+	#
+	#for lang in fr ; \
+	#	do \
+	#		msgmerge -U locale/$${lang}/LC_MESSAGES/$(APP_NAME).po locale/$(APP_NAME).pot ; \
+	#	done ;
 
 cleandoc:
 
