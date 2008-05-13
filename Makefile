@@ -43,7 +43,8 @@ lang: i18n
 i18n: update-po
 	for lang in fr ; \
 		do \
-			msgfmt locale/$${lang}/LC_MESSAGES/$(APP_NAME).po -o locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			mkdir -p $${lang}/LC_MESSAGES; ln -sf ../../$${lang}.po $${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
 		done ;
 
 update-pot:
