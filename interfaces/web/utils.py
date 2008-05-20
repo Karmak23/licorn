@@ -242,6 +242,7 @@ def menu(uri) :
 <li%s><a href="/" title="%s">%s</a></li>
 <li%s><a href="/users/" title="%s">%s</a></li>
 <li%s><a href="/groups/" title="%s">%s</a></li>
+<li%s><a href="/machines/" title="%s">%s</a></li>
 <li%s><a href="/internet/" title="%s">%s</a></li>
 </ul>
 </div>
@@ -254,6 +255,7 @@ def menu(uri) :
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
 		classes['users'], _('Manage user accounts.'), _('Users'),
 		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
+		classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines'),
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
 		classes['support'], _('Get product support / help'), _('Support'),
 		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation')

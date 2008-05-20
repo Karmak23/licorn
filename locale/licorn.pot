@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-05-07 10:32+0200\n"
+"POT-Creation-Date: 2008-05-20 12:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -265,7 +265,7 @@ msgstr ""
 msgid "Failed to reapply skel"
 msgstr ""
 
-#: interfaces/web/users.py:213
+#: interfaces/web/users.py:213 interfaces/web/groups.py:641
 msgid ""
 "This will rebuild his/her desktop from scratch, with defaults icons and so "
 "on.<br /><br />The user must be disconnected for the operation to be "
@@ -344,6 +344,7 @@ msgid ""
 msgstr ""
 
 #: interfaces/web/users.py:325 interfaces/web/users.py:565
+#: interfaces/web/groups.py:613
 msgid "Identifier"
 msgstr ""
 
@@ -455,11 +456,11 @@ msgstr ""
 msgid "Locked"
 msgstr ""
 
-#: interfaces/web/users.py:569
+#: interfaces/web/users.py:569 interfaces/web/groups.py:523
 msgid "Click to sort in reverse order."
 msgstr ""
 
-#: interfaces/web/users.py:571
+#: interfaces/web/users.py:571 interfaces/web/groups.py:525
 msgid "Click to sort on this column."
 msgstr ""
 
@@ -513,7 +514,7 @@ msgstr ""
 msgid "Definitely remove account from the system."
 msgstr ""
 
-#: interfaces/web/users.py:677
+#: interfaces/web/users.py:677 interfaces/web/groups.py:655
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr ""
@@ -587,58 +588,68 @@ msgstr ""
 msgid "Licorn Admin Tools (High-level management tools for a GNU/Linux system)"
 msgstr ""
 
-#: interfaces/web/utils.py:254
+#: interfaces/web/utils.py:255
 msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 
-#: interfaces/web/utils.py:254
+#: interfaces/web/utils.py:255
 msgid "Status"
 msgstr ""
 
-#: interfaces/web/utils.py:255
+#: interfaces/web/utils.py:256
 msgid "Manage user accounts."
 msgstr ""
 
-#: interfaces/web/utils.py:255
+#: interfaces/web/utils.py:256
 msgid "Users"
 msgstr ""
 
-#: interfaces/web/utils.py:256
+#: interfaces/web/utils.py:257
 msgid "Manage groups and shared data."
 msgstr ""
 
-#: interfaces/web/utils.py:256
+#: interfaces/web/utils.py:257
 msgid "Groups"
 msgstr ""
 
-#: interfaces/web/utils.py:257
+#: interfaces/web/utils.py:258
+msgid ""
+"Manage network clients: computers, printers, switches and other network "
+"enabled active systems."
+msgstr ""
+
+#: interfaces/web/utils.py:258
+msgid "Machines"
+msgstr ""
+
+#: interfaces/web/utils.py:259
 msgid ""
 "Manage Internet connexion and parameters, firewall protection, URL filter "
 "and e-mail parameters."
 msgstr ""
 
-#: interfaces/web/utils.py:257
+#: interfaces/web/utils.py:259
 msgid "Internet"
 msgstr ""
 
-#: interfaces/web/utils.py:258
+#: interfaces/web/utils.py:260
 msgid "Get product support / help"
 msgstr ""
 
-#: interfaces/web/utils.py:258
+#: interfaces/web/utils.py:260
 msgid "Support"
 msgstr ""
 
-#: interfaces/web/utils.py:259
+#: interfaces/web/utils.py:261
 msgid ""
 "Go to online documentation and community website (in new window or new tab)."
 msgstr ""
 
-#: interfaces/web/utils.py:259
+#: interfaces/web/utils.py:261
 msgid "Documentation"
 msgstr ""
 
-#: interfaces/web/utils.py:263
+#: interfaces/web/utils.py:265
 #, python-format
 msgid "administration %s"
 msgstr ""
@@ -674,6 +685,100 @@ msgstr ""
 #: interfaces/web/groups.py:66
 #, python-format
 msgid "Make group %s not permissive"
+msgstr ""
+
+#: interfaces/web/groups.py:515
+msgid "Name"
+msgstr ""
+
+#: interfaces/web/groups.py:515
+msgid "Skeleton"
+msgstr ""
+
+#: interfaces/web/groups.py:515
+msgid "Perm."
+msgstr ""
+
+#: interfaces/web/groups.py:515
+msgid "Responsibles"
+msgstr ""
+
+#: interfaces/web/groups.py:515
+msgid "Guests"
+msgstr ""
+
+#: interfaces/web/groups.py:523
+#, python-format
+msgid "%s order"
+msgstr ""
+
+#: interfaces/web/groups.py:532
+msgid "Privileges"
+msgstr ""
+
+#: interfaces/web/groups.py:594
+msgid ""
+"Shared group directory is currently <strong>permissive</strong>. Click to "
+"deactivate permissiveness."
+msgstr ""
+
+#: interfaces/web/groups.py:594
+msgid "Gropu is currently permissive."
+msgstr ""
+
+#: interfaces/web/groups.py:601
+msgid ""
+"Shared group directory is currently <strong>NOT</strong> permissive. Click "
+"ti activate permissiveness."
+msgstr ""
+
+#: interfaces/web/groups.py:601
+msgid "Group is NOT permissive."
+msgstr ""
+
+#: interfaces/web/groups.py:603
+msgid "Current members"
+msgstr ""
+
+#: interfaces/web/groups.py:603
+msgid "Current responsibles"
+msgstr ""
+
+#: interfaces/web/groups.py:603
+msgid "Current guests"
+msgstr ""
+
+#: interfaces/web/groups.py:613
+msgid "Full Name"
+msgstr ""
+
+#: interfaces/web/groups.py:613
+msgid "UID"
+msgstr ""
+
+#: interfaces/web/groups.py:620
+msgid "none"
+msgstr ""
+
+#: interfaces/web/groups.py:622
+#, python-format
+msgid "See %s of group %s."
+msgstr ""
+
+#: interfaces/web/groups.py:641
+msgid "Reapply skel to group members."
+msgstr ""
+
+#: interfaces/web/groups.py:641
+msgid "Definitely remove this group from system."
+msgstr ""
+
+#: interfaces/web/groups.py:641
+msgid "Remove this group."
+msgstr ""
+
+#: interfaces/web/groups.py:669
+msgid "Total number of groups:"
 msgstr ""
 
 #: interfaces/web/base.py:19 interfaces/web/base.py:20
@@ -780,6 +885,18 @@ msgstr ""
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr ""
 
-#: core/internals/configuration.py:479
-msgid "administrators"
+#: core/internals/configuration.py:496
+msgid "user"
+msgstr ""
+
+#: core/internals/configuration.py:497
+msgid "users"
+msgstr ""
+
+#: core/internals/configuration.py:515
+msgid "group"
+msgstr ""
+
+#: core/internals/configuration.py:516
+msgid "groups"
 msgstr ""

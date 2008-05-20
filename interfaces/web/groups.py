@@ -504,7 +504,7 @@ def main(uri, sort = "name", order = "asc") :
 	tgroups  = {}
 	totals   = {}
 
-	title = "%s" % configuration.groups.names['plural']
+	title = "%s" % configuration.groups.names['_plural']
 	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __groups_actions(), w.menu(uri)) 
 
 	if order == "asc" : reverseorder = "desc"
@@ -512,24 +512,24 @@ def main(uri, sort = "name", order = "asc") :
 
 	data += '<table>\n		<tr>\n'
 
-	sortcols = ( ('', '', False), ("name", "Nom", True), ("skel", "Squelette", True), ("permissive", "Perm.", True), ('members', "Membres", False), ("resps", "Responsables", False), ("guests", "Invités", False) )
+	sortcols = ( ('', '', False), ("name", _("Name"), True), ("skel", _("Skeleton"), True), ("permissive", _("Perm."), True), ('members', "Members", False), ("resps", _("Responsibles"), False), ("guests", _("Guests"), False) )
 	
 	for (column, name, can_sort) in sortcols :
 		if can_sort :
 			if column == sort :
 					data += '''
-		<th><img src="/images/sort_%s.gif" alt="ordre %s" />&#160;
-			<a href="/groups/list/%s/%s" title="cliquez pour trier dans l\'autre sens.">%s</a>
-		</th>\n''' % (order, order, column, reverseorder, name)
+		<th><img src="/images/sort_%s.gif" alt="%s" />&#160;
+			<a href="/groups/list/%s/%s" title="%s">%s</a>
+		</th>\n''' % (order, _('%s order') % order, column, reverseorder, _('Click to sort in reverse order.'), name)
 			else :
-				data += '		<th><a href="/groups/list/%s/asc" title="cliquez pour trier sur cette colonne.">%s</a></th>\n' % (column, name)
+				data += '		<th><a href="/groups/list/%s/asc" title="%s">%s</a></th>\n' % (column, _('Click to sort on this column.'), name)
 		else :
 			data += '		<th>%s</th>\n' % name
 			
 
 	data += '		</tr>\n'
 
-	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['plural']), (groups.FILTER_PRIVILEGED, "Privilèges") ) :
+	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['_plural']), (groups.FILTER_PRIVILEGED, _("Privileges")) ) :
 
 		tgroups  = {}
 		ordered  = {}
@@ -588,19 +588,19 @@ def main(uri, sort = "name", order = "asc") :
 				if g[gid]['permissive'] :
 					html_data += '''
 				<td class="user_action_center">
-					<a href="/groups/lock/%s" title="Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité.">
-					<img src="/images/16x16/unlocked.png" alt="Le groupe est actuellement permissif."/></a>
+					<a href="/groups/lock/%s" title="%s">
+					<img src="/images/16x16/unlocked.png" alt="%s"/></a>
 				</td>
-					''' % name
+					''' % (name, _('Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness.'), _('Gropu is currently permissive.'))
 				else :
 					html_data += '''
 				<td class="user_action_center">
-					<a href="/groups/unlock/%s" title="Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité.">
-					<img src="/images/16x16/locked.png" alt="Le groupe N'EST PAS permissif actuellement."/></a>
+					<a href="/groups/unlock/%s" title="%s">
+					<img src="/images/16x16/locked.png" alt="%sø"/></a>
 				</td>
-					''' % name
+					''' % (name, _('Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness.'), _('Group is NOT permissive.'))
 
-			for (keyname, text) in (('members', 'Membres actuels'), ('rsp-members', 'Responsables actuels'), ('gst-members', 'Invités actuels') ) :
+			for (keyname, text) in (('members', _('Current members')), ('rsp-members', _('Current responsibles')), ('gst-members', _('Current guests')) ) :
 				if tgroups[gid].has_key(keyname) :
 					accounts = {}
 					uordered = {}
@@ -610,16 +610,16 @@ def main(uri, sort = "name", order = "asc") :
 						uordered[hlstr.validate_name(accounts[uid]['gecos_sort'], aggressive = True)] = uid
 					memberkeys = uordered.keys()
 					memberkeys.sort()
-					mbdata = "<table><tr><th>Nom Complet</th><th>Identifiant</th><th>UID</th></tr>\n"
+					mbdata = "<table><tr><th>%s</th><th>%s</th><th>%s</th></tr>\n" % (_('Full Name'), _('Identifier'), _('UID'))
 					for member in memberkeys :
 						uid = uordered[member]
 						mbdata += '''<tr><td>%s</td><td>%s</td><td>%d</td></tr>\n''' % (accounts[uid]['gecos'], accounts[uid]['login'], uid)
 					mbdata += '</table>'
 					nb = len(tgroups[gid][keyname])
 					if nb == 0 :
-						html_data += '''<td class="paddedright faded">aucun</td>\n'''
+						html_data += '''<td class="paddedright faded">%s</td>\n''' % _('none')
 					else :
-						html_data += '''<td class="paddedright"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="voir les %s du groupe %s." /></a></td>\n''' % (text, mbdata, nb, text, name)	
+						html_data += '''<td class="paddedright"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="%s" /></a></td>\n''' % (text, mbdata, nb, _('See %s of group %s.') % (text, name))	
 				else :
 					html_data += '''<td>&#160;</td>\n'''
 	
@@ -629,16 +629,16 @@ def main(uri, sort = "name", order = "asc") :
 				html_data += '''
 					<!--
 					<td class="user_action">
-						<a href="/users/skel/%s" title="Réappliquer les données du skelette d'origine dans le répertoire personnel de l'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou trop modifié le contenu de son bureau (icônes, menus, panneaux et barres d'outils) et permet de lui remettre le bureau d'«&#160;usine&#160;».">
-						<img src="/images/16x16/reapply-skel.png" alt="Réappliquer le skelette à tous les membres."/></a>
+						<a href="/users/skel/%s" title="%s">
+						<img src="/images/16x16/reapply-skel.png" alt="%s"/></a>
 					</td>
 					-->
 					<td class="user_action">
-						<a href="/groups/delete/%s" title="Supprimer définitivement le groupe du système.">
-						<img src="/images/16x16/delete.png" alt="Supprimer le groupe."/></a>
+						<a href="/groups/delete/%s" title="%s">
+						<img src="/images/16x16/delete.png" alt="%s"/></a>
 					</td>
 				</tr>
-						''' % (name, name)
+						''' % (name, _('This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.'), _('Reapply skel to group members.'), name, _('Definitely remove this group from system.'), _('Remove this group.'))
 			return html_data
 	
 		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (filter_name, ''.join(map(html_build_group, gkeys)))
@@ -649,10 +649,10 @@ def main(uri, sort = "name", order = "asc") :
 			if totals[total] != 0 :
 				output += '''
 	<tr class="list_total">
-		<td colspan="6" class="total_left">nombre de <strong>%s</strong>&#160;:</td>
+		<td colspan="6" class="total_left">%s</td>
 		<td colspan="6" class="total_right">%d</td>
 	</tr>
-		''' % (total, totals[total])
+		''' % (_('number of <strong>%s</strong>:') % total, totals[total])
 		return output
 
 	data += '''
@@ -660,12 +660,12 @@ def main(uri, sort = "name", order = "asc") :
 		<td colspan="6">&#160;</td></tr>
 	%s
 	<tr class="list_total">
-		<td colspan="6" class="total_left"><strong>Nombre total de groupes&#160;:</strong></td>
+		<td colspan="6" class="total_left"><strong>%s</strong></td>
 		<td colspan="6" class="total_right">%d</td>
 	</tr>
 </table>
 </div>
 %s
-	''' % (print_totals(totals), reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
+	''' % (print_totals(totals), _('Total number of groups:'), reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
 
 	return w.page(title, data)

@@ -475,8 +475,9 @@ class LicornConfiguration (object) :
 
 		self.defaults.home_base_path = '/home'
 
+		# WARNING: Don't translate this. This still has to be discussed.
 		# TODO: move this into a plugin
-		self.defaults.admin_group = 'administrators'
+		self.defaults.admin_group = 'admins'
 
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
@@ -488,10 +489,12 @@ class LicornConfiguration (object) :
 		# see groupadd(8), coming from addgroup(8)
 		LicornConfiguration.users.login_maxlenght = 31
 
-		# gettext this !
+		# the _xxx variables are needed for gettextized interfaces (core and CLI are NOT gettextized)
 		LicornConfiguration.users.names = { 
 			'singular' : 'user', 
-			'plural' :   'users'
+			'plural' :   'users',
+			'_singular' : _('user'), 
+			'_plural' :   _('users')
 			}
 	def SetGroupsDefaults(self) :
 		"""Create LicornConfiguration.groups attributes and start feeding it."""
@@ -504,9 +507,13 @@ class LicornConfiguration (object) :
 		# maxlenght comes from groupadd(8), itself coming from addgroup(8)
 		# 31 - len(prefix)
 		LicornConfiguration.groups.name_maxlenght = 27
+
+		# the _xxx variables are needed for gettextized interfaces (core and CLI are NOT gettextized)
 		LicornConfiguration.groups.names = { 
 			'singular' : 'group', 
-			'plural' : 'groups'
+			'plural' : 'groups',
+			'_singular' : _('group'), 
+			'_plural' : _('groups')
 			}
 	
 		LicornConfiguration.groups.privileges_whitelist = PrivilegesWhiteList(self.privileges_whitelist_data_file)

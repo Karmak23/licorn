@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-05-07 10:32+0200\n"
-"PO-Revision-Date: 2008-05-07 10:32+0100\n"
+"POT-Creation-Date: 2008-05-20 12:38+0200\n"
+"PO-Revision-Date: 2008-05-20 12:38+0100\n"
 "Last-Translator: Olivier Cortès <olive@deep-ocean.net>\n"
 "Language-Team: French\n"
 "MIME-Version: 1.0\n"
@@ -267,6 +267,7 @@ msgid "Failed to reapply skel"
 msgstr "Impossible de réappliquer le squelette"
 
 #: interfaces/web/users.py:213
+#: interfaces/web/groups.py:641
 msgid "This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull."
 msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
 
@@ -346,6 +347,7 @@ msgstr ""
 
 #: interfaces/web/users.py:325
 #: interfaces/web/users.py:565
+#: interfaces/web/groups.py:613
 msgid "Identifier"
 msgstr "Identifiant"
 
@@ -459,10 +461,12 @@ msgid "Locked"
 msgstr "Verr."
 
 #: interfaces/web/users.py:569
+#: interfaces/web/groups.py:523
 msgid "Click to sort in reverse order."
 msgstr "Cliquer pour classer dans l'ordre inverse."
 
 #: interfaces/web/users.py:571
+#: interfaces/web/groups.py:525
 msgid "Click to sort on this column."
 msgstr "Cliquer pour classer sur cette colonne."
 
@@ -524,6 +528,7 @@ msgid "Definitely remove account from the system."
 msgstr "Supprime définitivement le compte du système."
 
 #: interfaces/web/users.py:677
+#: interfaces/web/groups.py:655
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr "nombre de <strong>%s</strong>&#160;:"
@@ -593,55 +598,63 @@ msgstr "LiCorN system tools (outils pour les administrateurs systèmes GNU/Linux
 msgid "Licorn Admin Tools (High-level management tools for a GNU/Linux system)"
 msgstr "Licorn Admin Tools (outils de haut-niveau pour administrer un système GNU/Linux)"
 
-#: interfaces/web/utils.py:254
+#: interfaces/web/utils.py:255
 msgid "Server, UPS and hardware sub-systems status."
 msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/web/utils.py:254
+#: interfaces/web/utils.py:255
 msgid "Status"
 msgstr "État"
 
-#: interfaces/web/utils.py:255
+#: interfaces/web/utils.py:256
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/web/utils.py:255
+#: interfaces/web/utils.py:256
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: interfaces/web/utils.py:256
+#: interfaces/web/utils.py:257
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/web/utils.py:256
+#: interfaces/web/utils.py:257
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/web/utils.py:257
+#: interfaces/web/utils.py:258
+msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
+msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
+
+#: interfaces/web/utils.py:258
+msgid "Machines"
+msgstr "Machines"
+
+#: interfaces/web/utils.py:259
 msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
 msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/web/utils.py:257
+#: interfaces/web/utils.py:259
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/web/utils.py:258
+#: interfaces/web/utils.py:260
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/web/utils.py:258
+#: interfaces/web/utils.py:260
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/web/utils.py:259
+#: interfaces/web/utils.py:261
 msgid "Go to online documentation and community website (in new window or new tab)."
 msgstr "Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet)."
 
-#: interfaces/web/utils.py:259
+#: interfaces/web/utils.py:261
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/web/utils.py:263
+#: interfaces/web/utils.py:265
 #, python-format
 msgid "administration %s"
 msgstr "Administration %s"
@@ -677,6 +690,96 @@ msgstr "Impossible de rendre le groupe <strong>%s</strong> permissif&#160;!"
 #, python-format
 msgid "Make group %s not permissive"
 msgstr "Rendre le groupe %s non permissif"
+
+#: interfaces/web/groups.py:515
+msgid "Name"
+msgstr "Nom"
+
+#: interfaces/web/groups.py:515
+msgid "Skeleton"
+msgstr "Squelette"
+
+#: interfaces/web/groups.py:515
+msgid "Perm."
+msgstr "Perm."
+
+#: interfaces/web/groups.py:515
+msgid "Responsibles"
+msgstr "Responsables"
+
+#: interfaces/web/groups.py:515
+msgid "Guests"
+msgstr "Invités"
+
+#: interfaces/web/groups.py:523
+#, python-format
+msgid "%s order"
+msgstr "ordre %s"
+
+#: interfaces/web/groups.py:532
+msgid "Privileges"
+msgstr "Privilèges"
+
+#: interfaces/web/groups.py:594
+msgid "Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness."
+msgstr "Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité."
+
+#: interfaces/web/groups.py:594
+msgid "Gropu is currently permissive."
+msgstr "Le groupe est actuellement permissif."
+
+#: interfaces/web/groups.py:601
+msgid "Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness."
+msgstr "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité."
+
+#: interfaces/web/groups.py:601
+msgid "Group is NOT permissive."
+msgstr "Le groupe N'EST PAS permissif actuellement."
+
+#: interfaces/web/groups.py:603
+msgid "Current members"
+msgstr "Membres actuels"
+
+#: interfaces/web/groups.py:603
+msgid "Current responsibles"
+msgstr "Responsables actuels"
+
+#: interfaces/web/groups.py:603
+msgid "Current guests"
+msgstr "Invités actuels"
+
+#: interfaces/web/groups.py:613
+msgid "Full Name"
+msgstr "Nom complet"
+
+#: interfaces/web/groups.py:613
+msgid "UID"
+msgstr "UID"
+
+#: interfaces/web/groups.py:620
+msgid "none"
+msgstr "aucun"
+
+#: interfaces/web/groups.py:622
+#, python-format
+msgid "See %s of group %s."
+msgstr "Voir les %s du groupe %s."
+
+#: interfaces/web/groups.py:641
+msgid "Reapply skel to group members."
+msgstr "Reappliquer un squelette aux membres du groupe."
+
+#: interfaces/web/groups.py:641
+msgid "Definitely remove this group from system."
+msgstr "Supprimer définitivement le compte du système."
+
+#: interfaces/web/groups.py:641
+msgid "Remove this group."
+msgstr "Supprimer le groupe."
+
+#: interfaces/web/groups.py:669
+msgid "Total number of groups:"
+msgstr "Nombre total de groupes&#160;:"
 
 #: interfaces/web/base.py:19
 #: interfaces/web/base.py:20
@@ -792,10 +895,30 @@ msgstr "Recherche par mot-clef — Licorn"
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn</spam>"
 
-#: core/internals/configuration.py:479
-msgid "administrators"
-msgstr "administrateurs"
+#: core/internals/configuration.py:496
+msgid "user"
+msgstr "utilisateur"
 
+#: core/internals/configuration.py:497
+msgid "users"
+msgstr "utilisateurs"
+
+#: core/internals/configuration.py:515
+msgid "group"
+msgstr "groupe"
+
+#: core/internals/configuration.py:516
+msgid "groups"
+msgstr "groupes"
+
+#~ msgid "Nom"
+#~ msgstr "Name"
+#~ msgid "Squelette"
+#~ msgstr "Skeleton"
+#~ msgid "Invités"
+#~ msgstr "Guests"
+#~ msgid "administrators"
+#~ msgstr "administrateurs"
 #~ msgid "Secure SHell (Protocole de connexion sécurisée à distance)"
 #~ msgstr "Secure SHell ("
 #~ msgid "File Transfer Protocol (protocole de transfert de fichiers)"
