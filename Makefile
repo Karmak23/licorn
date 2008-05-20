@@ -43,11 +43,12 @@ lang: i18n
 i18n: update-po
 	for lang in fr ; \
 		do \
-			mkdir -p $${lang}/LC_MESSAGES; ln -sf ../../$${lang}.po $${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			rm -rf locale/$${lang}; mkdir -p locale/$${lang}/LC_MESSAGES; ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
 		done ;
 
 update-pot:
+	rm locale/$(APP_NAME).pot ; cp locale/$(APP_NAME).template.pot locale/$(APP_NAME).pot
 	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' | xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot 
 
 update-po: update-pot
