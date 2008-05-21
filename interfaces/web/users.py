@@ -12,7 +12,7 @@ groups_filters_lists_ids = (
 	(groups.FILTER_RESPONSIBLE, [_('Assign responsibilities'), _('Available responsibilities'), _('Assigned responsibilities')], 'responsible_groups'), 
 	(groups.FILTER_GUEST, [_('Propose invitations'),           _('Available invitations'),      _('Offered invitations')],       'guest_groups') )
 
-rewind = "<br /><br />Go back with your browser, double-check data and validate the web-form."
+rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 
 # private functions.
 def __merge_multi_select(*lists) :
@@ -103,8 +103,8 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 				in directory <code>%s</code> and members of group <strong>%s</strong> will be able to access
 				it to operate an eventual recover.<br />However, you can decide to permanently 
 				remove it.""") % (configuration.home_archive_dir, configuration.defaults.admin_group),
-			yes_values   = [ "Remove >>", "/users/delete/%s/sure" % login, _("R") ],
-			no_values    = [ "<< Cancel",   "/users/list",                 _("C") ],
+			yes_values   = [ _("Remove >>"), "/users/delete/%s/sure" % login, _("R") ],
+			no_values    = [ _("<< Cancel"),   "/users/list",                 _("C") ],
 			form_options = w.checkbox("no_archive", "True", 
 				_("Definitely remove account data (no archiving)."),
 				checked = False) )

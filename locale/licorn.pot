@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-05-20 12:50+0200\n"
+"POT-Creation-Date: 2008-05-21 19:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -62,6 +62,12 @@ msgstr ""
 
 #: interfaces/web/users.py:13
 msgid "Offered invitations"
+msgstr ""
+
+#: interfaces/web/users.py:15 interfaces/web/groups.py:9
+msgid ""
+"<br /><br />Go back with your browser, double-check data and validate the "
+"web-form."
 msgstr ""
 
 #: interfaces/web/users.py:39
@@ -127,9 +133,11 @@ msgstr ""
 msgid "Export >>"
 msgstr ""
 
-#: interfaces/web/users.py:70 interfaces/web/users.py:174
-#: interfaces/web/users.py:234 interfaces/web/users.py:513
-#: interfaces/web/groups.py:53
+#: interfaces/web/users.py:70 interfaces/web/users.py:107
+#: interfaces/web/users.py:174 interfaces/web/users.py:234
+#: interfaces/web/users.py:513 interfaces/web/groups.py:53
+#: interfaces/web/groups.py:82 interfaces/web/groups.py:117
+#: interfaces/web/groups.py:175 interfaces/web/groups.py:231
 msgid "<< Cancel"
 msgstr ""
 
@@ -155,7 +163,12 @@ msgid ""
 "\t\t\t\tremove it."
 msgstr ""
 
+#: interfaces/web/users.py:106 interfaces/web/groups.py:116
+msgid "Remove >>"
+msgstr ""
+
 #: interfaces/web/users.py:106 interfaces/web/users.py:167
+#: interfaces/web/groups.py:116
 msgid "R"
 msgstr ""
 
@@ -265,7 +278,7 @@ msgstr ""
 msgid "Failed to reapply skel"
 msgstr ""
 
-#: interfaces/web/users.py:213 interfaces/web/groups.py:641
+#: interfaces/web/users.py:213 interfaces/web/groups.py:664
 msgid ""
 "This will rebuild his/her desktop from scratch, with defaults icons and so "
 "on.<br /><br />The user must be disconnected for the operation to be "
@@ -283,11 +296,11 @@ msgid ""
 "Are you sure you want to apply this skel to account <strong>%s</strong>?"
 msgstr ""
 
-#: interfaces/web/users.py:233
+#: interfaces/web/users.py:233 interfaces/web/groups.py:174
 msgid "Apply >>"
 msgstr ""
 
-#: interfaces/web/users.py:233
+#: interfaces/web/users.py:233 interfaces/web/groups.py:174
 msgid "A"
 msgstr ""
 
@@ -344,7 +357,8 @@ msgid ""
 msgstr ""
 
 #: interfaces/web/users.py:325 interfaces/web/users.py:565
-#: interfaces/web/groups.py:613
+#: interfaces/web/groups.py:282 interfaces/web/groups.py:307
+#: interfaces/web/groups.py:325 interfaces/web/groups.py:636
 msgid "Identifier"
 msgstr ""
 
@@ -456,11 +470,11 @@ msgstr ""
 msgid "Locked"
 msgstr ""
 
-#: interfaces/web/users.py:569 interfaces/web/groups.py:523
+#: interfaces/web/users.py:569 interfaces/web/groups.py:546
 msgid "Click to sort in reverse order."
 msgstr ""
 
-#: interfaces/web/users.py:571 interfaces/web/groups.py:525
+#: interfaces/web/users.py:571 interfaces/web/groups.py:548
 msgid "Click to sort on this column."
 msgstr ""
 
@@ -514,7 +528,7 @@ msgstr ""
 msgid "Definitely remove account from the system."
 msgstr ""
 
-#: interfaces/web/users.py:677 interfaces/web/groups.py:655
+#: interfaces/web/users.py:677 interfaces/web/groups.py:678
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr ""
@@ -667,10 +681,23 @@ msgstr ""
 msgid "Make group %s permissive"
 msgstr ""
 
+#: interfaces/web/groups.py:40
+msgid ""
+"This will permit large access to files and folders\n"
+"\t\t\tin the group shared dir, and will allow any member of the group to\n"
+"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
+"\t\t\tdocument. This option can be dangerous, but if group members are \n"
+"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
+"\t\t\tyou will use this feature on small working groups. <br /> Warning: \n"
+"\t\t\t<strong> The operation may be lengthy because the system will change\n"
+"\t\t\tpermissions of all current data </ strong> (duration is therefore \n"
+"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
+msgstr ""
+
 #: interfaces/web/groups.py:50
 #, python-format
 msgid ""
-"Are you sure you want to active permissiveness to group <strong>%s</strong>?"
+"Are you sure you want to active permissiveness on group <strong>%s</strong>?"
 msgstr ""
 
 #: interfaces/web/groups.py:52
@@ -687,97 +714,299 @@ msgstr ""
 msgid "Make group %s not permissive"
 msgstr ""
 
-#: interfaces/web/groups.py:515
-msgid "Name"
+#: interfaces/web/groups.py:70
+msgid ""
+"This will ensure finer write access to files and folders\n"
+"\t\tin the group shared dir. Only the owner / creator of a document will be "
+"able\n"
+"\t\tto modify it; other group members will only be able to read such a "
+"document\n"
+"\t\t(unless the owner manually assign other permissions, which are not "
+"guaranteed\n"
+"\t\tto be maintained by the system). <br /> Warning: <strong> The operation "
+"may be\n"
+"\t\tlengthy because the system will switch permissions of all current group "
+"shared\n"
+"\t\tdata</strong> (duration is therefore depending on the volume of data, "
+"about 1 \n"
+"\t\tsecond for 100Mio)."
 msgstr ""
 
-#: interfaces/web/groups.py:515
-msgid "Skeleton"
+#: interfaces/web/groups.py:79
+#, python-format
+msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
 msgstr ""
 
-#: interfaces/web/groups.py:515
-msgid "Perm."
+#: interfaces/web/groups.py:81
+msgid "Deactivate >>"
 msgstr ""
 
-#: interfaces/web/groups.py:515
+#: interfaces/web/groups.py:81
+msgid "D"
+msgstr ""
+
+#: interfaces/web/groups.py:82 interfaces/web/groups.py:117
+#: interfaces/web/groups.py:175
+msgid "N"
+msgstr ""
+
+#: interfaces/web/groups.py:92
+#, python-format
+msgid "Failed to remove permissiveness from group <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/web/groups.py:100
+#, python-format
+msgid "Remove group %s"
+msgstr ""
+
+#: interfaces/web/groups.py:106
+msgid "Failed to remove group"
+msgstr ""
+
+#: interfaces/web/groups.py:107
+msgid "alter system group."
+msgstr ""
+
+#: interfaces/web/groups.py:111
+#, python-format
+msgid "Are you sure you want to remove group <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/web/groups.py:112
+#, python-format
+msgid ""
+"Group shared data will be archived in directory %s,\n"
+"\t\t\t\tand accessible to members of group %s for eventual \n"
+"\t\t\t\trecovery. However, you can decideto remove them \n"
+"\t\t\t\tpermanently."
+msgstr ""
+
+#: interfaces/web/groups.py:119
+msgid "Definitely remove group shared data."
+msgstr ""
+
+#: interfaces/web/groups.py:133
+#, python-format
+msgid "Failed to remove group <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/web/groups.py:143
+#, python-format
+msgid "Skeleton reapplying for group %s"
+msgstr ""
+
+#: interfaces/web/groups.py:150
+msgid ""
+"This will reset the desktops, icons and menus\n"
+"\t\t\tof all members of the group, according to the content of the \n"
+"\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
+"\t\t\tdata, nor the group shared data."
+msgstr ""
+
+#: interfaces/web/groups.py:169
+#, python-format
+msgid "Which skel do you wish to reapply to members of this group? %s"
+msgstr ""
+
+#: interfaces/web/groups.py:172
+#, python-format
+msgid "Are you sure you want to reapply this skel to all of the members of %s?"
+msgstr ""
+
+#: interfaces/web/groups.py:186
+#, python-format
+msgid "Failed to apply skel %s to members of group %s."
+msgstr ""
+
+#: interfaces/web/groups.py:192
+msgid "Creating a new group"
+msgstr ""
+
+#: interfaces/web/groups.py:223
+msgid "Group name"
+msgstr ""
+
+#: interfaces/web/groups.py:225
+msgid "Group description"
+msgstr ""
+
+#: interfaces/web/groups.py:225
+msgid "(optional)"
+msgstr ""
+
+#: interfaces/web/groups.py:227
+msgid "Skel of future group members"
+msgstr ""
+
+#: interfaces/web/groups.py:229
+msgid "Permissive shared dir?"
+msgstr ""
+
+#: interfaces/web/groups.py:230
+msgid "Yes"
+msgstr ""
+
+#: interfaces/web/groups.py:232
+msgid "Create >>"
+msgstr ""
+
+#: interfaces/web/groups.py:237
+#, python-format
+msgid "Creating group %s"
+msgstr ""
+
+#: interfaces/web/groups.py:251
+#, python-format
+msgid "Failed to create group %s!"
+msgstr ""
+
+#: interfaces/web/groups.py:258
+#, python-format
+msgid "Showing details of group %s"
+msgstr ""
+
+#: interfaces/web/groups.py:282
+msgid "Members"
+msgstr ""
+
+#: interfaces/web/groups.py:282 interfaces/web/groups.py:306
+#: interfaces/web/groups.py:324
+msgid "(ordered by login)"
+msgstr ""
+
+#: interfaces/web/groups.py:282 interfaces/web/groups.py:307
+#: interfaces/web/groups.py:325 interfaces/web/groups.py:636
+msgid "Full Name"
+msgstr ""
+
+#: interfaces/web/groups.py:282 interfaces/web/groups.py:307
+#: interfaces/web/groups.py:325 interfaces/web/groups.py:636
+msgid "UID"
+msgstr ""
+
+#: interfaces/web/groups.py:306 interfaces/web/groups.py:538
 msgid "Responsibles"
 msgstr ""
 
-#: interfaces/web/groups.py:515
+#: interfaces/web/groups.py:311
+msgid "No responsibles for this group."
+msgstr ""
+
+#: interfaces/web/groups.py:324 interfaces/web/groups.py:538
 msgid "Guests"
 msgstr ""
 
-#: interfaces/web/groups.py:523
+#: interfaces/web/groups.py:328
+msgid "No guests for this group."
+msgstr ""
+
+#: interfaces/web/groups.py:351
+msgid "GID"
+msgstr ""
+
+#: interfaces/web/groups.py:351 interfaces/web/groups.py:353
+msgid "immutable"
+msgstr ""
+
+#: interfaces/web/groups.py:353 interfaces/web/groups.py:538
+msgid "Name"
+msgstr ""
+
+#: interfaces/web/groups.py:356
+msgid "<< Go back"
+msgstr ""
+
+#: interfaces/web/groups.py:357
+msgid "Print >>"
+msgstr ""
+
+#: interfaces/web/groups.py:361
+#, python-format
+msgid "Group %s doesn't exist (%s)!"
+msgstr ""
+
+#: interfaces/web/groups.py:488
+#, python-format
+msgid "Modifying group %s"
+msgstr ""
+
+#: interfaces/web/groups.py:512
+#, python-format
+msgid "Failed to modify one or more parameter of group %s!"
+msgstr ""
+
+#: interfaces/web/groups.py:538
+msgid "Skeleton"
+msgstr ""
+
+#: interfaces/web/groups.py:538
+msgid "Perm."
+msgstr ""
+
+#: interfaces/web/groups.py:546
 #, python-format
 msgid "%s order"
 msgstr ""
 
-#: interfaces/web/groups.py:532
+#: interfaces/web/groups.py:555
 msgid "Privileges"
 msgstr ""
 
-#: interfaces/web/groups.py:594
+#: interfaces/web/groups.py:617
 msgid ""
 "Shared group directory is currently <strong>permissive</strong>. Click to "
 "deactivate permissiveness."
 msgstr ""
 
-#: interfaces/web/groups.py:594
+#: interfaces/web/groups.py:617
 msgid "Gropu is currently permissive."
 msgstr ""
 
-#: interfaces/web/groups.py:601
+#: interfaces/web/groups.py:624
 msgid ""
 "Shared group directory is currently <strong>NOT</strong> permissive. Click "
 "ti activate permissiveness."
 msgstr ""
 
-#: interfaces/web/groups.py:601
+#: interfaces/web/groups.py:624
 msgid "Group is NOT permissive."
 msgstr ""
 
-#: interfaces/web/groups.py:603
+#: interfaces/web/groups.py:626
 msgid "Current members"
 msgstr ""
 
-#: interfaces/web/groups.py:603
+#: interfaces/web/groups.py:626
 msgid "Current responsibles"
 msgstr ""
 
-#: interfaces/web/groups.py:603
+#: interfaces/web/groups.py:626
 msgid "Current guests"
 msgstr ""
 
-#: interfaces/web/groups.py:613
-msgid "Full Name"
-msgstr ""
-
-#: interfaces/web/groups.py:613
-msgid "UID"
-msgstr ""
-
-#: interfaces/web/groups.py:620
+#: interfaces/web/groups.py:643
 msgid "none"
 msgstr ""
 
-#: interfaces/web/groups.py:622
+#: interfaces/web/groups.py:645
 #, python-format
 msgid "See %s of group %s."
 msgstr ""
 
-#: interfaces/web/groups.py:641
+#: interfaces/web/groups.py:664
 msgid "Reapply skel to group members."
 msgstr ""
 
-#: interfaces/web/groups.py:641
+#: interfaces/web/groups.py:664
 msgid "Definitely remove this group from system."
 msgstr ""
 
-#: interfaces/web/groups.py:641
+#: interfaces/web/groups.py:664
 msgid "Remove this group."
 msgstr ""
 
-#: interfaces/web/groups.py:669
+#: interfaces/web/groups.py:692
 msgid "Total number of groups:"
 msgstr ""
 
