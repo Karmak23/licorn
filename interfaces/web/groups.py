@@ -64,7 +64,7 @@ def lock(uri, name, sure = False) :
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
-	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	if not sure :
 		description = _('''This will ensure finer write access to files and folders
@@ -98,7 +98,7 @@ def delete(uri, name, sure = False, no_archive = False, yes = None) :
 	del yes
 
 	title = _("Remove group %s") % name
-	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	groups.reload()
 
@@ -194,7 +194,7 @@ def new(uri) :
 
 	form_name = "group_create"
 
-	data += '''<div id="create_group">
+	data += '''<div id="content">
 <form name="%s" id="%s" action="/groups/create" method="post">
 <table id="group_new">
 	<tr>
@@ -256,7 +256,7 @@ def view(uri, name) :
 	groups.reload()
 
 	title = _("Showing details of group %s") % name 
-	data  = '%s\n%s\n%s<br />\n' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 	
 	u = users.users
 	g = groups.groups
@@ -332,7 +332,7 @@ def view(uri, name) :
 
 		form_name = "group_print_form"
 		data += '''
-		<div id="edit_user">
+		<div id="content">
 		<form name="%s" id="%s" action="/groups/view/%s" method="post">
 		<table id="user_account">
 			<tr><td><strong>%s</strong><br />%s</td><td class="not_modifiable">%d</td></tr>
@@ -373,7 +373,7 @@ def edit(uri, name) :
 	g = groups.groups
 
 	title = "Édition du groupe %s" %  name
-	data  = '%s\n%s\n%s<br />\n' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	try :
 		group     = g[groups.name_to_gid(name)]
@@ -411,8 +411,6 @@ def edit(uri, name) :
 				return desc
 			else :
 				return w.input('description', desc, size = 30, maxlength = 256, accesskey = 'D')
-
-
 		def skel(cur_skel, system) :
 			if system :
 				return ''
@@ -422,7 +420,6 @@ def edit(uri, name) :
 					<td><strong>Squelette</strong></td><td>%s</td>
 				</tr>
 				''' % w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename)
-
 		def permissive(perm, sys) :
 
 			if sys :
@@ -436,7 +433,7 @@ def edit(uri, name) :
 
 		form_name = "user_edit_form"
 
-		data += '''<div id="edit_user">
+		data += '''<div id="content">
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
 	<table id="user_account">
 		<tr>
@@ -480,13 +477,13 @@ def record(uri, name, skel = None, permissive = False, description = None,
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
 	record = None) :
-	"""Record user account changes."""
+	"""Record group changes."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del record
 
 	title      = _("Modifying group %s") % name
-	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	data       = '%s<h1>%s</h1>' % (w.backto(), title)
 	command    = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors', '--name', name ]
 
 	if skel :
