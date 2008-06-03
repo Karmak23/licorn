@@ -30,7 +30,7 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.internals import Cache, FileSearchServer, InitialCollector, INotifier, pid_path, log_path, pname, fork_http_server
+from licorn.daemon.internals import Cache, FileSearchServer, InitialCollector, INotifier, pid_path, wpid_path, log_path, pname, fork_http_server
 
 def terminate(signum, frame) :
 
@@ -46,8 +46,9 @@ def terminate(signum, frame) :
 		notifier.stop()
 		configuration.CleanUp()
 		try : 
-			if os.path.exists(pid_path) :
-				os.unlink(pid_path)
+			for pid_file in (pid_path, wpid_path) :
+				if os.path.exists(pid_file) :
+					os.unlink(pid_file)
 		except (OSError, IOError), e :
 			logging.warning("Can't remove %s (was: %s)." % (styles.stylize(styles.ST_PATH, pid_path), e))
 

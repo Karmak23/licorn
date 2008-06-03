@@ -39,6 +39,7 @@ _http_port   = 3356
 _buffer_size = 16*1024
 log_path     = '/var/log/licornd.log'
 pid_path     = '/var/run/licornd.pid'
+wpid_path    = '/var/run/licornd-webadmin.pid'
 pname        = 'licornd'
 
 def fork_http_server() :
@@ -46,6 +47,7 @@ def fork_http_server() :
 		if os.fork() == 0 :
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')
 
+			open(wpid_path,'w').write("%s\n" % os.getpid())
 			process.set_name('%s/webadmin' % pname)
 			logging.progress("%s/webadmin: starting (pid %d)." % (pname, os.getpid()))
 			httpd = TCPServer(('127.0.0.1', _http_port), HTTPRequestHandler)
