@@ -521,7 +521,7 @@ class GroupsList :
 			if prim_memb != [] :
 				raise exceptions.BadArgumentError, "The group still has members. You must delete them first, or force their automatic deletion with an option."
 
-		home = "/home/" + GroupsList.configuration.groups.names['plural'] + "/" + name
+		home = '%s/%s/%s' % (GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], name)
 
 		# Delete the group and its (primary) member(s) even if it is not empty
 		if del_users :
@@ -584,8 +584,10 @@ class GroupsList :
 		except exceptions.LicornRuntimeException : # new_name is not an existing group
 
 			gid 		= self.name_to_gid(name)
-			home		= "/home/%s/%s" % (GroupsList.configuration.groups.names['plural'], GroupsList.groups[gid]['name'])
-			new_home	= "/home/%s/%s" % (GroupsList.configuration.groups.names['plural'], new_name)
+			home		= "%s/%s/%s" % (GroupsList.configuration.defaults.home_base_path,
+				GroupsList.configuration.groups.names['plural'], GroupsList.groups[gid]['name'])
+			new_home	= "%s/%s/%s" % (GroupsList.configuration.defaults.home_base_path,
+				GroupsList.configuration.groups.names['plural'], new_name)
 
 			GroupsList.groups[gid]['name'] = new_name
 
@@ -759,7 +761,7 @@ class GroupsList :
 					continue
 				
 				uid      = GroupsList.users.login_to_uid(u)
-				link_src = os.path.join("/home", GroupsList.configuration.groups.names['plural'], link_basename)
+				link_src = os.path.join(GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], link_basename)
 				link_dst = os.path.join(GroupsList.users.users[uid]['homeDirectory'], link_basename)
 				fsapi.make_symlink(link_src, link_dst)
 
@@ -809,7 +811,8 @@ class GroupsList :
 				if not self.is_system_gid(gid) :
 					# delete the shared group dir symlink in user's home.
 					uid      = GroupsList.users.login_to_uid(u)
-					link_src = os.path.join("/home", GroupsList.configuration.groups.names['plural'], GroupsList.groups[gid]['name'])
+					link_src = os.path.join(GroupsList.configuration.defaults.home_base_path,
+						GroupsList.configuration.groups.names['plural'], GroupsList.groups[gid]['name'])
 
 					for link in fsapi.minifind(GroupsList.users.users[uid]['homeDirectory'], maxdepth = 2, type = stat.S_IFLNK) :
 						try :
@@ -938,7 +941,8 @@ class GroupsList :
 			
 			all_went_ok &= self.CheckAssociatedSystemGroups(group, minimal, batch, auto_answer)
 
-			group_home              = "/home/%s/%s" % (GroupsList.configuration.groups.names['plural'], group)
+			group_home              = "%s/%s/%s" % (GroupsList.configuration.defaults.home_base_path, 
+				GroupsList.configuration.groups.names['plural'], group)
 			group_home_acl          = self.BuildGroupACL(gid)
 			group_home_acl['path']  = group_home
 			group_home_only         = group_home_acl.copy()
@@ -1018,11 +1022,12 @@ class GroupsList :
 			else :
 				link_basename = GroupsList.groups[gid]['name'].replace(strip_prefix, '', 1)
 			
-			link_src = os.path.join("/home", GroupsList.configuration.groups.names['plural'], link_basename)
+
+			link_src = os.path.join(GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], link_basename)
 			link_dst = os.path.join(GroupsList.users.users[uid]['homeDirectory'], link_basename)
 
 			if oldname :
-				link_src_old = os.path.join("/home", GroupsList.configuration.groups.names['plural'], oldname)
+				link_src_old = os.path.join(GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], oldname)
 			else :
 				link_src_old = None
 

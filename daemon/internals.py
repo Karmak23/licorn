@@ -596,7 +596,8 @@ class INotifier(ThreadedNotifier):
 		groups.Select(groups.FILTER_STANDARD)
 			
 		for gid in groups.filtered_groups :
-			group_home = "/home/%s/%s" % (groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
+			group_home = "%s/%s/%s" % (groups.configuration.defaults.home_base_path,
+				groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
 			wdd        = self.wm.add_watch(group_home, self.mask, 
 										proc_fun=ProcessInotifyGroupEvent(self, gid, group_home, self.getName(), self.cache, groups, self.mask),
 										rec=True)

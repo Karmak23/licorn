@@ -798,7 +798,7 @@ class LicornConfiguration (object) :
 
 		dirs_to_verify = [
 			{
-				'path'        : "/home/%s" % LicornConfiguration.groups.names['plural'],
+				'path'        : "%s/%s" % (LicornConfiguration.defaults.home_base_path, LicornConfiguration.groups.names['plural']),
 				'user'        : 'root',
 				'group'       : 'acl',
 				'access_acl'  : "%s,%s,g:www-data:--x,g:users:--x,%s" % (acl_base, acl_admins_ro, acl_mask),
