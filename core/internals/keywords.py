@@ -23,8 +23,8 @@ class KeywordsList :
 	
 	def __init__(self, configuration) :
 		
-		self.configuration = configuration
-		self.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % configuration.defaults.home_base_path, configuration.groups.names['plural']))
+		KeywordsList.configuration = configuration
+		KeywordsList.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (configuration.defaults.home_base_path, configuration.groups.names['plural']))
 		#
 		# TODO : work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).
