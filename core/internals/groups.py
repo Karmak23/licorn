@@ -710,7 +710,7 @@ class GroupsList :
 				print "Profile '" + str(p) + "' doesn't exist, it's ignored"
 
 		self.WriteConf()
-	def AddUsersInGroup(self, name, users_to_add, batch=False) :
+	def AddUsersInGroup(self, name, users_to_add, batch = False) :
 		""" Add a user list in the group 'name'. """
 
 		if name is None :
@@ -881,7 +881,7 @@ class GroupsList :
 
 		all_went_ok = True
 
-		for (prefix, title) in ( ( GroupsList.configuration.groups.resp_prefix, "responsables" ), ( GroupsList.configuration.groups.guest_prefix, "invités" ) ) :
+		for (prefix, title) in ( ( GroupsList.configuration.groups.resp_prefix, "responsibles" ), ( GroupsList.configuration.groups.guest_prefix, "guests" ) ) :
 
 			group_name = prefix + group
 			logging.progress("Checking system group %s..." % styles.stylize(styles.ST_NAME, group_name))
@@ -897,7 +897,7 @@ class GroupsList :
 				if batch or logging.ask_for_repair(warn_message, auto_answer) :
 					try :
 						temp_gid = self.__add_group(group_name, system=True)
-						GroupsList.groups[temp_gid]['description'] = "Les %s du groupe « %s »" % (title, group)
+						GroupsList.groups[temp_gid]['description'] = "%s of group “%s”" % (title, group)
 						GroupsList.groups[temp_gid]['skel'] = ""
 						GroupsList.name_cache[ prefix[0] + group ] = temp_gid
 						prefix_gid = temp_gid
@@ -1056,7 +1056,7 @@ class GroupsList :
 						raise exceptions.LicornRuntimeError("Unable to read symlink %s (error was : %s)." % (link, str(e)) )
 
 			if link_not_found and not delete :
-				warn_message = logging.SYSG_USER_LACKS_SYMLINK % (styles.stylize(styles.ST_LOGIN, user), styles.stylize(styles.ST_NAME, group))
+				warn_message = logging.SYSG_USER_LACKS_SYMLINK % (styles.stylize(styles.ST_LOGIN, user), styles.stylize(styles.ST_NAME, link_basename))
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer) : 
 					fsapi.make_symlink(link_src, link_dst)
