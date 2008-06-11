@@ -763,7 +763,7 @@ class GroupsList :
 				uid      = GroupsList.users.login_to_uid(u)
 				link_src = os.path.join(GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], link_basename)
 				link_dst = os.path.join(GroupsList.users.users[uid]['homeDirectory'], link_basename)
-				fsapi.make_symlink(link_src, link_dst)
+				fsapi.make_symlink(link_src, link_dst, batch = batch)
 
 	def RemoveUsersFromGroup(self, name, users_to_remove, batch=False) :
 		""" Delete a users list in the group 'name'. """
@@ -1059,7 +1059,7 @@ class GroupsList :
 				warn_message = logging.SYSG_USER_LACKS_SYMLINK % (styles.stylize(styles.ST_LOGIN, user), styles.stylize(styles.ST_NAME, link_basename))
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer) : 
-					fsapi.make_symlink(link_src, link_dst)
+					fsapi.make_symlink(link_src, link_dst, batch = batch, auto_answer = auto_answer)
 				else :
 					logging.warning(warn_message)
 					all_went_ok = False

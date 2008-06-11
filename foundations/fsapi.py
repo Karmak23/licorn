@@ -401,19 +401,16 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 
 	return all_went_ok
 def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = "", batch = False, auto_answer = None) :
-	"""Check if a [default] acl is present on a given path, repair if not and asked for."""
+	"""Check if a [default] acl is present on a given path, repair if not and asked for.
+	
+	Note: ACL aren't apply on symlinks (on ext2/ext3), they apply on the destination of 
+	the link, which could be bad when the destination is outside a particular
+	directory tree. This problem does not arise when working on XFS. I don't know
+	about reiserfs. Anyway this is a good idea to skip symlinks, because setting 
+	an ACL on a symlink has no real justification though.
 
-	#
-	# Note on ACLs :
-	#
-	# ACL don't apply on symlinks on ext2/ext3, they apply on the dest of the link,
-	# which is bad because it could be outside the directory tree. This problem does
-	# not arise when working on XFS. Don't know about reiserfs. Anyway this is a good
-	# idea to skip symlinks, because setting an ACL on a symlink has no real 
-	# justification though.
-	#
-	# see http://acl.bestbits.at/pipermail/acl-devel/2001-December/000834.html
-	#
+	see http://acl.bestbits.at/pipermail/acl-devel/2001-December/000834.html
+	"""
 
 	if onpath in ("", None) :
 		raise exceptions.BadArgumentError("The path you want to check ACL on must not be empty !")
@@ -483,29 +480,66 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 				all_went_ok = False
 
 	return all_went_ok
-def make_symlink( link_src, link_dst ) :
+def make_symlink(link_src, link_dst, batch = False, auto_answer = None) :
 	"""Try to make a symlink cleverly."""
 	try :
-		os.symlink( link_src, link_dst )
-		logging.info("Created symlink %s." % styles.stylize(styles.ST_LINK, link_dst))
+		os.symlink(link_src, link_dst)
+		logging.info("Created symlink %s, pointing to %s." % (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src)))
 	except OSError, e :
 		if e.errno == 17 :
 			# 17 == file exists
 			if os.path.islink(link_dst) :
 				try :
-					read_link = os.readlink(link_dst)
-					if os.path.abspath(read_link) != link_src :
-						# FIXME : raise an AlreadyExistException, so that the program can catch it
-						# (in groups.py/AddUsersInGroup() for example) and continue
-						raise exceptions.LicornRuntimeError("while making symlink to %s, a link named %s is already in the way, not pointing to the same location, please check !" % (link_src, link_dst))
+					read_link = os.path.abspath(os.readlink(link_dst))
+
+					if read_link != link_src :
+						if os.path.exists(read_link) :
+							warn_message = "A symlink %s already exists but badly points to %s, instead of %s. Correct it?" \
+								% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, read_link),
+								styles.stylize(styles.ST_PATH, link_src))
+
+							if batch or logging.ask_for_repair(warn_message, auto_answer) :
+								os.unlink(link_dst)
+								os.symlink(link_src, link_dst)
+								logging.info('Overwritten symlink %s with destination %s instead of %s.' \
+									% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src),
+									styles.stylize(styles.ST_PATH, read_link)))
+							else :
+								raise exceptions.LicornRuntimeException("Can't create symlink %s to %s!" % (link_dst, link_src))
+						else :
+							# TODO: should we ask the question ? This isn't really needed, as the link is broken.
+							# Just replace it and don't bother the administrator.
+							logging.info('Symlink %s is currently broken (pointing to non-existing target %s) ; making it point to %s.' \
+								% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, read_link),
+								styles.stylize(styles.ST_PATH, link_src)))
+							os.unlink(link_dst)
+							os.symlink(link_src, link_dst)
+
 				except OSError, e :
 					if e.errno == 2 :
-						# broken link
-						os.unlink(link_dst)
+						# no such file or directory, link has disapeared…
 						os.symlink(link_src, link_dst)
-						logging.info("Repaired broken symlink %s." % styles.stylize(styles.ST_LINK, link_dst))
+						logging.info("Repaired vanished symlink %s." % styles.stylize(styles.ST_LINK, link_dst))
 			else :
-				raise exceptions.LicornRuntimeError("while making symlink to %s, the destination %s already exists and is not a link. Please check it !" % (link_src, link_dst) )
+
+				# TODO / WARNING: we need to investigate a bit more : if current link_src is 
+				# a file, overwriting it could be very bad (e.g. user could loose a document).
+				# This is the same for a directory, modulo the user could loose much more than
+				# just a document. We should scan the dir and replace it only if empty (idem
+				# for the file), and rename it (thus find a unique name, like 
+				# 'the file.autosave.XXXXXX.txt' where XXXXXX is a random string…)
+
+				warn_message = "%s already exists but it isn't a symlink, thus doesn't point to %s. Replace it with a correct symlink?" \
+					% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src))
+
+				if batch or ask_for_repair(warn_message, auto_answer) :
+					os.unlink(link_dst)
+					os.symlink(link_src, link_dst)
+					logging.info('Replaced dir/file %s with destination %s instead of %s.' \
+						% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src),
+						styles.stylize(styles.ST_PATH, read_link)))
+				else :
+					raise exceptions.LicornRuntimeException("While making symlink to %s, the destination %s already exists and is not a link." % (link_src, link_dst))
 
 # various unordered functions, which still need to find a more elegant home.
 		
