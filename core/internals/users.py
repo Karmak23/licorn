@@ -691,7 +691,7 @@ class UsersList :
 				# don't need any ACLs.
 				# in the same time (for space optimization reasons), append them to special_dirs[]
 				# (which will be checked *after* home dir).
-				home_exclude_list = [ '.ssh', '.gnupg', '.gnome2_private' ]
+				home_exclude_list = [ '.ssh', '.gnupg', '.gnome2_private', '.gvfs' ]
 				special_dirs      = []
 
 				special_dirs.extend([ {
@@ -702,21 +702,27 @@ class UsersList :
 							'content_mode' : 00600
 						} for dir in home_exclude_list if os.path.exists('%s/%s' % (user_home, dir)) ])
 
-				home_exclude_list.append('public_html')
+				if os.path.exists('%s/public_html' % user_home) :
 
-				special_dirs.append ( {
-						'path'        : "%s/public_html" % user_home,
-						'user'        : user,
-						'group'       : 'acl',
-						'access_acl'  : "%s,g:%s:r-x,g:www-data:r-x,%s" % (acl_base, UsersList.configuration.defaults.admin_group, acl_restrictive_mask),
-						'default_acl' : "%s,g:%s:rwx,g:www-data:r-x,%s" % (acl_base, UsersList.configuration.defaults.admin_group, acl_mask),
-						'content_acl' : "%s,g:%s:rw-,g:www-data:r--,%s" % (file_acl_base, UsersList.configuration.defaults.admin_group, file_acl_mask),
-					} )
+					home_exclude_list.append('public_html')
+
+					special_dirs.append ( {
+							'path'        : "%s/public_html" % user_home,
+							'user'        : user,
+							'group'       : 'acl',
+							'access_acl'  : "%s,g:%s:r-x,g:www-data:r-x,%s" % (acl_base,
+								UsersList.configuration.defaults.admin_group, acl_restrictive_mask),
+							'default_acl' : "%s,g:%s:rwx,g:www-data:r-x,%s" % (acl_base,
+								UsersList.configuration.defaults.admin_group, acl_mask),
+							'content_acl' : "%s,g:%s:rw-,g:www-data:r--,%s" % (file_acl_base,
+								UsersList.configuration.defaults.admin_group, file_acl_mask),
+						} )
 
 				# if we are in charge of building the user's mailbox, do it and check it.
 				# This is particularly important for ~/Maildir because courier-imap will crash
 				# and eat CPU time if the Maildir doesn't exist prior to the daemon launch...
-				if UsersList.configuration.users.mailbox_auto_create and UsersList.configuration.users.mailbox_type == UsersList.configuration.MAIL_TYPE_HOME_MAILDIR :
+				if UsersList.configuration.users.mailbox_auto_create and \
+					UsersList.configuration.users.mailbox_type == UsersList.configuration.MAIL_TYPE_HOME_MAILDIR :
 
 					maildir_base = '%s/%s' % (user_home, UsersList.configuration.users.mailbox)
 
@@ -741,17 +747,23 @@ class UsersList :
 				# this will be handled in another manner later in this function.
 				# .procmailrc : fix #589
 				home_exclude_file_list = [ ".dmrc", ".procmailrc" ]
-				home_exclude_list.extend(home_exclude_file_list)
-
+				for file in home_exclude_file_list :
+					if os.path.exists('%s/%s' % (user_home, file)) :
+						home_exclude_list.append(file)
+						all_went_ok &= fsapi.check_posix_ugid_and_perms('%s/%s' % (user_home, file),
+							uid, gid, 00600, batch, auto_answer, self.groups, self)
 				# now that the exclusion list is complete, we can check the base home dir.
 
 				home_dir_info = {
 						'path'        : UsersList.users[uid]['homeDirectory'],
 						'user'        : user,
 						'group'       : 'acl',
-						'access_acl'  : "%s,g:%s:r-x,g:www-data:--x,%s" % (acl_base, UsersList.configuration.defaults.admin_group, acl_restrictive_mask),
-						'default_acl' : "%s,g:%s:rwx,%s" % (acl_base, UsersList.configuration.defaults.admin_group, acl_mask),
-						'content_acl' : "%s,g:%s:rw@GE,%s" % (file_acl_base, UsersList.configuration.defaults.admin_group, file_acl_mask),
+						'access_acl'  : "%s,g:%s:r-x,g:www-data:--x,%s" % (acl_base,
+							UsersList.configuration.defaults.admin_group, acl_restrictive_mask),
+						'default_acl' : "%s,g:%s:rwx,%s" % (acl_base,
+							UsersList.configuration.defaults.admin_group, acl_mask),
+						'content_acl' : "%s,g:%s:rw@GE,%s" % (file_acl_base,
+							UsersList.configuration.defaults.admin_group, file_acl_mask),
 						'exclude'     : home_exclude_list
 						}
 
@@ -764,8 +776,6 @@ class UsersList :
 					logging.warning("User home dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, user_home))
 					return False
 
-				for file in home_exclude_file_list :
-					all_went_ok &= fsapi.check_posix_ugid_and_perms('%s/%s' % (user_home, file), uid, gid, 00600, batch, auto_answer, self.groups, self)
 
 				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls( special_dirs, batch, auto_answer, UsersList.groups, self)
 
