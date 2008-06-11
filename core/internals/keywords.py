@@ -16,10 +16,10 @@ from licorn.core.internals import readers
 
 class KeywordsList :
 	
-	keywords = {}
+	keywords      = {}
 	configuration = None
-	licorn_xattr = "user.Licorn.keywords"
-	work_path = None
+	licorn_xattr  = "user.Licorn.keywords"
+	work_path     = None
 	
 	def __init__(self, configuration) :
 		
