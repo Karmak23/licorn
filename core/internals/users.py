@@ -694,14 +694,13 @@ class UsersList :
 				home_exclude_list = [ '.ssh', '.gnupg', '.gnome2_private' ]
 				special_dirs      = []
 
-				for dir in home_exclude_list :
-					special_dirs.append ( {
-						'path'         : "%s/%s" % (user_home, dir),
-						'user'         : user,
-						'group'        : group,
-						'mode'         : 00700,
-						'content_mode' : 00600
-					} )
+				special_dirs.extend([ {
+							'path'         : "%s/%s" % (user_home, dir),
+							'user'         : user,
+							'group'        : group,
+							'mode'         : 00700,
+							'content_mode' : 00600
+						} for dir in home_exclude_list if os.path.exists('%s/%s' % (user_home, dir)) ])
 
 				home_exclude_list.append('public_html')
 
@@ -779,8 +778,6 @@ class UsersList :
 
 					# TODO : tous les groupes de cet utilisateur existent et sont OK (CheckGroups recursif)
 					# WARNING : Forcer minimal = True pour éviter les checks récursifs avec CheckGroups()
-
-
 
 				return all_went_ok
 
