@@ -614,7 +614,7 @@ def main(uri, sort = "name", order = "asc") :
 					<a href="/groups/lock/%s" title="%s">
 					<img src="/images/16x16/unlocked.png" alt="%s"/></a>
 				</td>
-					''' % (name, _('Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness.'), _('Gropu is currently permissive.'))
+					''' % (name, _('Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness.'), _('Group is currently permissive.'))
 				else :
 					html_data += '''
 				<td class="user_action_center">
