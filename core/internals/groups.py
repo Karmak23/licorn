@@ -962,31 +962,33 @@ class GroupsList :
 				logging.warning("Shared group dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, group_home))
 				return False
 
-			# check the contents of the group home dir, without UID (fix #520 ; this is necessary for non-permissive groups
-			# to be functionnal). this will recheck the home dir, but this 2nd check does less than the previous. The 
-			# previous is necessary, and this one is unavoidable due to fsapi.check_dirs_and_contents_perms_and_acls() conception.
+			# check the contents of the group home dir, without checking UID (fix old#520;
+			# this is necessary for non-permissive groups to be functionnal). this will 
+			# recheck the home dir, but this 2nd check does less than the previous. The 
+			# previous is necessary, and this one is unavoidable due to 
+			# fsapi.check_dirs_and_contents_perms_and_acls() conception.
 			logging.progress("Checking shared group dir contents...")
 			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_acl ], batch, auto_answer, self)
 			
-			public_html             = "%s/public_html" % group_home
-			public_html_acl         = self.BuildGroupACL(gid, 'public_html')
-			public_html_acl['path'] =  public_html
-			public_html_only         = public_html_acl.copy()
-			public_html_only['path'] = public_html
+			if os.path.exists("%s/public_html" % group_home) :
+				public_html             = "%s/public_html" % group_home
+				public_html_acl         = self.BuildGroupACL(gid, 'public_html')
+				public_html_acl['path'] =  public_html
+				public_html_only         = public_html_acl.copy()
+				public_html_only['path'] = public_html
 
-			try :
-				logging.progress("Checking shared dir %s..." % styles.stylize(styles.ST_PATH, public_html))
-				del public_html_only['content_acl']
-				public_html_only['user'] = 'root'
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ], batch, auto_answer, self)
+				try :
+					logging.progress("Checking shared dir %s..." % styles.stylize(styles.ST_PATH, public_html))
+					del public_html_only['content_acl']
+					public_html_only['user'] = 'root'
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ], batch, auto_answer, self)
 
-			except exceptions.LicornCheckError :
-				logging.warning("Shared dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, public_html))
-				return False
+				except exceptions.LicornCheckError :
+					logging.warning("Shared dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, public_html))
+					return False
 
-			# check public_html contents, without UID too (#520).
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_acl ], batch, auto_answer, self)
-
+				# check only ~group/public_html and its contents, without checking UID, too.
+				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_acl ], batch, auto_answer, self)
 
 			if not minimal :
 				logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))
