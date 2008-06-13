@@ -49,8 +49,8 @@ def unlock(uri, name, sure = False) :
 		
 		data += w.question(_("Are you sure you want to active permissiveness on group <strong>%s</strong>?") % name,
 			description,
-			yes_values   = [ _("Activate >>"), "/groups/unlock/%s/sure" % name, "V" ],
-			no_values    = [ _("<< Cancel"), "/groups/list",                    "N" ])
+			yes_values   = [ _("Activate >>"), "/groups/unlock/%s/sure" % name, _("A") ],
+			no_values    = [ _("<< Cancel"), "/groups/list",                    _("N") ])
 		
 		return w.page(title, data)
 
@@ -105,7 +105,7 @@ def delete(uri, name, sure = False, no_archive = False, yes = None) :
 	if groups.is_system_group(name) :
 		return w.page(title, w.error(_("Failed to remove group"), 
 			[ _("alter system group.") ],
-			"insufficient permissions to perform operation."))
+			_("insufficient permissions to perform operation.")))
 
 	if not sure :
 		data += w.question(_("Are you sure you want to remove group <strong>%s</strong>?") % name,
@@ -221,15 +221,15 @@ def new(uri) :
 </div>
 	''' % ( form_name, form_name,
 		_('Group name'),
-		w.input('name',        "", size = 30, maxlength = 64, accesskey = 'N'),
+		w.input('name',        "", size = 30, maxlength = 64, accesskey = _('A')),
 		_('Group description'), _('(optional)'),
-		w.input('description', "", size = 30, maxlength = 256, accesskey = 'D'),
+		w.input('description', "", size = 30, maxlength = 256, accesskey = _('D')),
 		_('Skel of future group members'),
 		w.select('skel',  configuration.users.skels, current = configuration.users.default_skel, func = os.path.basename),
 		_('Permissive shared dir?'),
-		w.checkbox('permissive', "True", _("Yes")),
-		w.button(_('<< Cancel'), "/groups/list"),
-		w.submit('create', _('Create >>'), onClick = "selectAllMultiValues('%s');" % form_name)
+		w.checkbox('permissive', "True", _("Yes"), accesskey = _('P')),
+		w.button(_('<< Cancel'), "/groups/list", accesskey = _('N')),
+		w.submit('create', _('Create >>'), onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('T'))
 		)
 	return w.page(title, data)
 def create(uri, name, description = None, skel = "", permissive = False, create = None) :
@@ -353,12 +353,12 @@ def view(uri, name) :
 				_('Name'), _('immutable'),
 				name,
 				members_html, resps_html, guests_html,
-				w.button(_('<< Go back'), "/groups/list"),
-				w.submit('print', _('Print >>'), onClick = "javascript:window.print(); return false;")
+				w.button(_('<< Go back'), "/groups/list", accesskey = _('B')),
+				w.submit('print', _('Print >>'), onClick = "javascript:window.print(); return false;", accesskey = _('P'))
 				)
 
 	except exceptions.LicornException, e :
-		data += w.error(_("Group %s doesn't exist (%s)!") % (name, "group = g[groups.name_to_gid(name)]", e))
+		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = g[groups.name_to_gid(name)]", e))
 
 	return w.page(title, data)
 
@@ -372,7 +372,7 @@ def edit(uri, name) :
 	u = users.users
 	g = groups.groups
 
-	title = "Édition du groupe %s" %  name
+	title = _("Editing group %s") %  name
 	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 
 	try :
@@ -382,15 +382,15 @@ def edit(uri, name) :
 
 		if sys :
 			groups_filters_lists_ids   = ( 
-				(name, ( 'Gérer les membres', 'Utilisateurs non affectés', 'Membres actuels' ), 'members' ),
+				(name, ( _('Manage members'), _('Users not yet members'), _('Current members') ), 'members' ),
 				(configuration.groups.resp_prefix + name, None, '&#160;' ),
 				(configuration.groups.guest_prefix + name, None, '&#160;' )
 				)
 		else :
 			groups_filters_lists_ids = ( 
-				(name,            ['Gérer les membres',      'Utilisateurs non affectés', 'Membres actuels'],      'members'),
-				(configuration.groups.resp_prefix + name,  ['Gérer les responsables', 'Utilisateurs non affectés', 'Responsables actuels'], 'resps'), 
-				(configuration.groups.guest_prefix + name, ['Gérer les invités',      'Utilisateurs non affectés', 'Invités actuels'],      'guests') )
+				(name,            [_('Manage members'), _('Users not yet members'), _('Current members')],      'members'),
+				(configuration.groups.resp_prefix + name,  [_('Manage responsibles'), 'Users not yet responsibles', 'Current responsibles'], 'resps'), 
+				(configuration.groups.guest_prefix + name, [_('Manage guests'),      'Users not yet guests', 'Current guests'],      'guests') )
 
 		for (gname, titles, id) in groups_filters_lists_ids :
 			if titles is None :
@@ -417,9 +417,9 @@ def edit(uri, name) :
 			else :
 				return '''
 				<tr>
-					<td><strong>Squelette</strong></td><td>%s</td>
+					<td><strong>%s</strong></td><td>%s</td>
 				</tr>
-				''' % w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename)
+				''' % (_('Skeleton'), w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename))
 		def permissive(perm, sys) :
 
 			if sys :
@@ -427,9 +427,9 @@ def edit(uri, name) :
 			else :
 				return '''
 				<tr>
-					<td><strong>Répertoire permissif&#160;?</strong></td><td>%s</td>
+					<td><strong>%s</strong></td><td>%s</td>
 				</tr>
-				''' % w.checkbox('permissive', "True", "Oui", checked = perm )
+				''' % (_('Permissive shared dir?'), w.checkbox('permissive', "True", "Oui", checked = perm ))
 
 		form_name = "user_edit_form"
 
@@ -437,13 +437,13 @@ def edit(uri, name) :
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
 	<table id="user_account">
 		<tr>
-			<td><strong>GID</strong><br />(non modifiable)</td><td class="not_modifiable">%d</td>
+			<td><strong>%s</strong><br />%s</td><td class="not_modifiable">%d</td>
 		</tr>
 		<tr>
-			<td><strong>Nom de groupe</strong><br />(non modifiable)</td><td class="not_modifiable">%s</td>
+			<td><strong>%s</strong><br />%s</td><td class="not_modifiable">%s</td>
 		</tr>
 		<tr>
-			<td><strong>Description du groupe</strong></td><td>%s</td>
+			<td><strong>%s</strong></td><td>%s</td>
 		</tr>
 		%s
 		%s
@@ -458,18 +458,21 @@ def edit(uri, name) :
 </form>
 </div>
 		''' % ( form_name, form_name, name,
+			_('GID'), _('(immutable)'),
 			group['gid'],
+			_('Group name'), _('(immutable)'),
 			group['name'],
+			_('Group description'),
 			descr(group['description'], sys),
 			skel(group['skel'], sys),	
 			permissive(group['permissive'], sys),	
 			dbl_lists[name], dbl_lists[configuration.groups.resp_prefix+name], dbl_lists[configuration.groups.guest_prefix+name],
-			w.button('<< Annuler', "/groups/list"),
-			w.submit('record', 'Enregistrer >>', onClick = "selectAllMultiValues('%s');" % form_name)
+			w.button(_('<< Cancel'), "/groups/list", accesskey = _('N')),
+			w.submit('record', _('Record >>'), onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('R'))
 			)
 	
 	except exceptions.LicornException, e :
-		data += w.error("Le groupe %s n'existe pas (%s, %s)&#160;!" % (name, "group = allgroups.groups[groups.name_to_gid(name)]", e))
+		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = allgroups.groups[groups.name_to_gid(name)]", e))
 
 	return w.page(title, data)
 def record(uri, name, skel = None, permissive = False, description = None,
