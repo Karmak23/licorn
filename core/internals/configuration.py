@@ -137,8 +137,11 @@ class LicornConfiguration (object) :
 
 		# extensions to /etc/group
 		self.extendedgroup_data_file = self.config_dir + "/groups"
-		self.home_backup_dir         = "/home/backup"
-		self.home_archive_dir        = "/home/archives"
+
+		self.SetDefaultNamesAndPaths()
+
+		self.home_backup_dir         = "%s/backup" % self.defaults.home_base_path
+		self.home_archive_dir        = "%s/archives" % self.defaults.home_base_path
 
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
@@ -397,7 +400,7 @@ class LicornConfiguration (object) :
 
 		import stat
 
-		for skel_path in ("/home/skels", "/usr/share/skels") :
+		for skel_path in ("%s/skels" % self.defaults.home_base_path, "/usr/share/skels") :
 			if os.path.exists(skel_path) :
 				try :
 					for new_skel in fsapi.minifind(path = skel_path, type = stat.S_IFDIR, mindepth = 2, maxdepth = 2) :
@@ -410,7 +413,6 @@ class LicornConfiguration (object) :
 		""" Load Users and Groups managements configuration. """
 
 		# WARNING: don't change order of these.
-		self.SetDefaultNames()
 		self.SetUsersDefaults()
 		self.SetGroupsDefaults()
 
@@ -442,7 +444,7 @@ class LicornConfiguration (object) :
 		# The default values are referenced in CheckAndLoadAdduserConf() too.
 		#
 		for (attr_name, conf_key, fallback) in (
-			('home_base_path', 'DHOME',    '/home/users'),
+			('home_base_path', 'DHOME',    '%s/users' % self.defaults.home_base_path),
 			('default_shell', 'DSHELL',    '/bin/bash'),
 			('default_skel',  'SKEL',      '/etc/skel'),
 			('default_gid',   'USERS_GID', 100) ) :
@@ -468,7 +470,7 @@ class LicornConfiguration (object) :
 		except KeyError :
 			pass
 
-	def SetDefaultNames(self) :
+	def SetDefaultNamesAndPaths(self) :
 		""" *HARDCODE* some names before we pull them out into configuration files."""
 		
 		self.defaults =  LicornConfigObject()
@@ -531,7 +533,7 @@ class LicornConfiguration (object) :
 		# warning: the order is important: in a default adduser.conf, only {FIRST,LAST}_SYSTEM_UID are
 		# present, and we assume this during the file patch.
 		defaults = (
-			('DHOME',  '/home/users'),
+			('DHOME',  '%s/users' % self.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
@@ -798,7 +800,7 @@ class LicornConfiguration (object) :
 
 		dirs_to_verify = [
 			{
-				'path'        : "%s/%s" % ('/home', LicornConfiguration.groups.names['plural']),
+				'path'        : "%s/%s" % (self.defaults.home_base_path, LicornConfiguration.groups.names['plural']),
 				'user'        : 'root',
 				'group'       : 'acl',
 				'access_acl'  : "%s,%s,g:www-data:--x,g:users:--x,%s" % (acl_base, acl_admins_ro, acl_mask),
