@@ -9,6 +9,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 import sys, termios
+from time import time, localtime, strftime
 
 from licorn.foundations import hooks, styles, exceptions, options
 
@@ -41,6 +42,12 @@ from licorn.foundations import hooks, styles, exceptions, options
 #		- in the calling programs, we MUST catch the exceptions/errors raised and call 
 #		  logging.error() when appropriate.
 #
+
+def mytime() :
+	""" close http://dev.licorn.org/ticket/46 """
+	t = time()
+	return '[%s%s]' % (strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
+
 
 class LicornWarningsDB(object) :
         __singleton = None
@@ -76,7 +83,7 @@ def error(mesg, returncode = 1) :
 	#
 	hooks.run_hooks('onError')
 	
-	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s' % mesg.replace(styles.colors[styles.ST_NO], styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]) ) + "\n")
+	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s %s' % (mytime(), mesg.replace(styles.colors[styles.ST_NO], styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]))) + "\n")
 	if __debug__ :
 		import traceback
 		sys.stderr.write ('''>>> %s: %s
@@ -97,21 +104,21 @@ def warning(mesg, once = False) :
 		except KeyError, e :
 			__warningsdb[mesg] = True
 
-	sys.stderr.write( "%s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARNING:'), mesg) )
+	sys.stderr.write( "%s %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
 
 	#warnings.warn(" %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARN'), mesg), RuntimeWarning, stacklevel = 2)
 def notice(mesg) :
 	""" Display a non-styles.stylized informational message on stderr."""
 	if options.verbose >= options.VLEVEL_NOTICE :
-		sys.stderr.write(" %s %s\n" % (styles.stylize(styles.ST_INFO, '*'), mesg))
+		sys.stderr.write(" %s %s %s\n" % (styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
 def info(mesg) :
 	""" Display a styles.stylized informational message on stderr."""
 	if options.verbose >= options.VLEVEL_INFO :
-		sys.stderr.write(" * %s\n" % mesg)
+		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
 def progress(mesg) :
 	""" Display a styles.stylized informational message on stderr."""
 	if options.verbose >= options.VLEVEL_PROGRESS :
-		sys.stderr.write(" > %s\n" % mesg)
+		sys.stderr.write(" > %s %s\n" % (mytime(), mesg))
 
 if __debug__ :
 	def debug(mesg) :
