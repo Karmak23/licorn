@@ -48,7 +48,6 @@ def mytime() :
 	t = time()
 	return '[%s%s]' % (strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
 
-
 class LicornWarningsDB(object) :
         __singleton = None
         __db = {}
