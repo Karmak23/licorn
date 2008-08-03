@@ -416,7 +416,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 		raise exceptions.BadArgumentError("The path you want to check ACL on must not be empty !")
 
 	if access_acl_text is "" and default_acl_text is "" :
-		raise exceptions.BadArgumentError("You have to give at at least one of access or default ACL to check on %s !" % styles.stylize(styles.ST_PATH, onpath))
+		raise exceptions.BadArgumentError("You have to give at at least one of access or default ACL to check on %s !" % onpath)
 
 	if path_is_file :
 		execperms       = execbits2str(onpath)
@@ -427,7 +427,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 
 	all_went_ok = True
 
-	for (desired_acl_text, is_default) in ((access_acl_text, False), (default_acl_text, True) ) :
+	for (desired_acl_text, is_default, acl_type) in ((access_acl_text, False, posix1e.ACL_TYPE_ACCESS), (default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)) :
 
 		# if an ACL is "", the corresponding value will be deleted from the file,
 		# this is a desired behaviour, to delete superfluous ACLs.
@@ -442,15 +442,14 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 			desired_acl = posix1e.ACL()
 
 		if is_default :
-			if path_is_file : continue
+			if path_is_file :
+				continue
 			else :
 				# only test/apply default ACL on directories.
 				acl_qualif = "Default"	
-				acl_type   = posix1e.ACL_TYPE_DEFAULT
 				acl_value  = posix1e.ACL(filedef=onpath)
 		else :
 			acl_qualif = "Access"
-			acl_type   = posix1e.ACL_TYPE_ACCESS
 			acl_value  = posix1e.ACL(file=onpath)
 
 		#
