@@ -4,9 +4,8 @@ Licorn Daemon internals.
 
 Copyright (C) 2007-2008 Olivier Cortès <oc@5sys.fr>
 Licensed under the terms of the GNU GPL version 2.
-
 """
-import os, time, re, stat, xattr, inotify, socket, mimetypes, urlparse, posixpath, urllib
+import os, time, re, stat, xattr, inotify, socket, mimetypes, urlparse, posixpath, urllib, gamin
 
 # try python2.5 else python2.4
 try :  import sqlite3 as sqlite
@@ -247,7 +246,7 @@ class Cache(Thread):
 	__singleton   = None
 	allkeywords   = None
 	localKeywords = {}
-	_stopevent    = Event()
+	_stop_event   = Event()
 	_dbfname      = ''
 	_db           = None
 	_cursor       = None
@@ -260,7 +259,6 @@ class Cache(Thread):
 	def __init__(self, allkeywords = None, pname = '<unknown>', dbfname = _cache_path) :
 
 		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-
 		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
 
 		if Cache.allkeywords is None :
@@ -272,9 +270,9 @@ class Cache(Thread):
 		Cache._dbfname = dbfname
 	def stop(self) :
 		"""Stop this thread."""
-		if not Cache._stopevent.isSet() :
+		if not Cache._stop_event.isSet() :
 			logging.progress("%s: stopping thread." % (self.getName()))
-			Cache._stopevent.set()
+			Cache._stop_event.set()
 			Cache._queue.put((None, None, None))
 	def status(self) :
 		""" Return statistics as a sequence. """
@@ -374,12 +372,13 @@ class Cache(Thread):
 
 		c = Cache._cursor
 		q = Cache._queue
-		s = Cache._stopevent
+		s = Cache._stop_event
 
 		logging.progress('%s: thread running.' % self.getName())
 
 		while not s.isSet() :
 
+			# then process every action
 			request, arguments, result = q.get()
 
 			logging.debug2('%s: executing %s %s.' % (self.getName(), request, arguments))
@@ -434,7 +433,7 @@ class Cache(Thread):
 	def __cache_one_file(self, filename, batch = False, force = False) :
 		""" Add a file to the cache. """
 
-		if self._stopevent.isSet() :
+		if self._stop_event.isSet() :
 			raise exceptions.StopException("%s: stopped, can't cache." % self.getName())
 	
 		if fsapi.is_backup_file(filename) :
@@ -539,6 +538,224 @@ class Cache(Thread):
 						WHERE keywords.kname in (%s) 
 						GROUP BY files.fname 
 						ORDER BY files.fname;''' % (re.sub(r'(\w+)', r"'\1'", req)))
+class ACLChecker(Thread):
+	""" A Thread which gets paths to check from a Queue, and checks them in time. """
+	__singleton = None
+	_queue      = Queue(0)
+	_stop_event = Event()
+	def __new__(cls, *args, **kwargs) :
+		if cls.__singleton is None :
+			cls.__singleton = super(ACLChecker, cls).__new__(cls, *args, **kwargs)
+		return cls.__singleton
+	def __init__(self, cache, pname = '<unknown>') :
+
+		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
+		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+
+		self.cache      = cache
+
+		# will be filled later
+		self.inotifier  = None
+		self.groups     = None
+	def set_inotifier(self, inotifier) :
+		self.inotifier = inotifier
+	def set_groups(self, groups) :
+		self.groups = groups
+	def process(self, event):
+		""" Process Queue and apply ACL on the fly, then update the cache. """
+
+		path, gid = event
+
+		if path is None: return
+
+		acl = self.groups.BuildGroupACL(gid, path)
+
+		try :
+			if os.path.isdir(path) :
+				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl') , -1)
+				self.inotifier.just_checked.append(path)
+				fsapi.auto_check_posix1e_acl(path, False, acl['default_acl'], acl['default_acl'])
+				self.inotifier.just_checked.append(path)
+				self.inotifier.just_checked.append(path)
+			else :
+				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl'))
+				self.inotifier.just_checked.append(path)
+				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
+				self.inotifier.just_checked.append(path)
+
+		except (OSError, IOError), e :
+			if e.errno != 2 :
+				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
+
+		#self.cache.cache(path)
+	def enqueue(self, path, gid) :
+		if self._stop_event.isSet() :
+			logging.progress("%s: thread is stopped, not enqueuing %s|%s." % (self.getName(), path, gid))
+			return
+
+		self._queue.put((path, gid))
+	def run(self) :
+		logging.progress("%s: thread running." % (self.getName()))
+		Thread.run(self)
+
+		while not self._stop_event.isSet() :
+			self.process(self._queue.get())
+
+		logging.progress("%s: thread ended." % (self.getName()))
+	def stop(self) :
+		logging.progress("%s: stopping thread." % (self.getName()))
+		self._stop_event.set()
+		self._queue.put((None, None))
+class INotifier(Thread):
+	""" A Thread which collect INotify events and does what is appropriate with them. """
+	__singleton = None
+	_stop_event = Event()
+	def __new__(cls, *args, **kwargs) :
+		if cls.__singleton is None :
+			cls.__singleton = super(INotifier, cls).__new__(cls, *args, **kwargs)
+		return cls.__singleton
+	def __init__(self, checker, cache, pname = '<unknown>') :
+
+		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
+		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+
+		self.cache      = cache
+		self.aclchecker = checker
+		checker.set_inotifier(self)
+		self.just_checked = []
+
+		self.mon = gamin.WatchMonitor()
+
+		# keep track of watched directories, and func prototypes used 
+		# to chk the data inside. this will avoid massive CPU usage, 
+		# at the cost of a python dict.
+		self.wds = []
+
+		from licorn.core import groups
+		groups.Select(groups.FILTER_STANDARD)
+		self.groups = groups
+
+		checker.set_groups(groups)
+
+		#self.mon.no_exists()
+
+		for gid in groups.filtered_groups :
+			group_home = "%s/%s/%s" % (groups.configuration.defaults.home_base_path,
+							groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
+
+			def myfunc(path, event, gid = gid, dirname = group_home) :
+				return self.process_event(path, event, gid, dirname)
+
+			self.add_watch(group_home, myfunc)
+	def process_event(self, basename, event, gid, dirname):
+		""" Process Gamin events and apply ACLs on the fly. """
+
+		# with Gamin, sometimes it is an abspath, sometimes not.
+		# this happens on GAMChanged (observed the two), and 
+		# GAMDeleted (observed only abspath).
+		if basename[0] == '/' :
+			path = basename
+		else :
+			path = '%s/%s' % (dirname, basename)
+
+		if event == gamin.GAMExists and path in self.wds :
+			# skip already watched directories, and /home/groups/*
+			return
+
+		if event in (gamin.GAMExists, gamin.GAMCreated) :
+
+			logging.progress("%s: Inotify %s %s." %  (self.getName(), styles.stylize(styles.ST_MODE, 'GAMCreated/GAMExists'), path))
+
+			try :
+				if os.path.isdir(path) :
+					def myfunc(path, event, gid = gid, dirname = path) :
+						return self.process_event(path, event, gid, dirname)
+					self.add_watch(path, myfunc)
+
+				self.aclchecker.enqueue(path, gid)
+
+			except (OSError, IOError), e :
+				if e.errno != 2 :
+					logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
+
+		elif event == gamin.GAMChanged :
+
+			if path in self.just_checked :
+				# skip the first GAMChanged event, it was generated
+				# by the CHK in the GAMCreated part.
+				self.just_checked.remove(path)
+				return
+
+			logging.progress("%s: Inotify %s on %s." %  (self.getName(),
+				styles.stylize(styles.ST_URL, 'GAMChanged'), path))
+
+			self.aclchecker.enqueue(path, gid)
+
+		elif event == gamin.GAMMoved :
+
+			logging.progress('%s: Inotify %s, not handled yet %s.' % (self.getName(), 
+				styles.stylize(styles.ST_PKGNAME, 'GAMMoved'), styles.stylize(styles.ST_PATH, path)))
+
+		elif event == gamin.GAMDeleted :
+			# if a dir is deleted, we will get 2 GAMDeleted events: 
+			#  - one for the dir watched (itself deleted)
+			#  - one for its parent, signaling its child was deleted.
+
+			logging.progress("%s: Inotify %s for %s." %  (self.getName(), 
+				styles.stylize(styles.ST_BAD, 'GAMDeleted'), styles.stylize(styles.ST_PATH, path)))
+
+			# we can't test if the “path” was a dir, it has just been deleted
+			# just try to delete it, wait and see. If it was, this will work.
+			self.remove_watch(path)
+
+			# TODO: remove recursively if DIR.
+			self.cache.removeEntry(path)
+
+		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge) :
+			pass
+
+		else :
+			logging.progress('%s: unhandled Inotify event “%s” %s.' % (self.getName(), event, path))
+
+		# just for debug
+		#logging.notice(self.wds)
+	def add_watch(self, path, func) :
+		logging.progress("%s: %s inotify watch for %s." % (self.getName(), styles.stylize(styles.ST_OK, 'adding'), styles.stylize(styles.ST_PATH, path)))
+
+		if path in self.wds :
+			return 0
+
+		self.wds.append(path)
+		return self.mon.watch_directory(path, func)
+	def remove_watch(self, path) :
+		try :
+			self.wds.remove(path)
+			logging.progress("%s: %s inotify watch for %s." % (self.getName(), 
+				styles.stylize(styles.ST_BAD, 'removing'), styles.stylize(styles.ST_PATH, path)))
+
+			# TODO: recurse subdirs if existing, to remove subwatches
+			return self.mon.stop_watch(path) 
+		except :
+			return 0
+	def run(self) :
+		logging.progress("%s: thread running." % (self.getName()))
+		Thread.run(self)
+
+		while not self._stop_event.isSet() :
+			self.mon.handle_events()
+			time.sleep(0.01)
+
+		logging.progress("%s: thread is endind…" % (self.getName()))
+
+		for rep in self.wds :
+			self.mon.stop_watch(rep)
+		del self.mon
+
+		logging.progress("%s: thread ended." % (self.getName()))
+	def stop(self) :
+		if Thread.isAlive(self) and not self._stop_event.isSet() :
+			logging.progress("%s: stopping thread." % (self.getName()))
+			self._stop_event.set()
 class FileSearchServer(Thread) :
 	""" Thread which answers to queries sent through unix socket. """
 	def __init__(self, pname = '<unknown>') :
@@ -549,7 +766,7 @@ class FileSearchServer(Thread) :
 		# remove it, the ThreadingUnixStreamServer will create it.
 		#if os.path.exists(_socket_path) : os.unlink(_socket_path)
 		
-		self._stopevent = Event()
+		self._stop_event = Event()
 		self.server     = ThreadingTCPServer(('127.0.0.1', _socket_port), FileSearchRequestHandler)
 		self.server.allow_reuse_address = True
 
@@ -559,74 +776,18 @@ class FileSearchServer(Thread) :
 	def run(self) :
 		logging.progress("%s: thread running." % (self.getName()))
 		#os.chmod(_socket_path, stat.S_IRUSR|stat.S_IWUSR|stat.S_IRGRP|stat.S_IWGRP|stat.S_IROTH|stat.S_IWOTH)
-		while not self._stopevent.isSet() :
+		while not self._stop_event.isSet() :
 			self.server.handle_request()
 			time.sleep(0.01)
 		logging.progress("%s: thread ended." % (self.getName()))
 	def stop(self) :
-		if not self._stopevent.isSet() :
+		if not self._stop_event.isSet() :
 			logging.progress("%s: stopping thread." % (self.getName()))
-			self._stopevent.set()
+			self._stop_event.set()
 			self.server.socket.close()
 			self.server.server_close()
 			if os.path.exists(_socket_path) :
 				os.unlink(_socket_path)
-class INotifier(ThreadedNotifier):
-	""" A Thread which collect INotify events and does what is appropriate with them. """
-	def __init__(self, cache, pname = '<unknown>') :
-
-		self.cache = cache
-
-		# needed to watch a bunch of dirs/files
-		inotify.max_user_watches.value = 65535
-
-		self.wm = WatchManager()
-
-		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-
-		ThreadedNotifier.__init__(self, self.wm, None)
-		self.setName("%s/%s" % (pname, self.name))   # can't be passed as argument when instanciating.
-
-		logging.info('%s: set inotify max user watches to %d.' % (self.getName(), inotify.max_user_watches.value))
-
-		self.mask = EventsCodes.IN_CLOSE_WRITE | EventsCodes.IN_CREATE \
-			| EventsCodes.IN_MOVED_TO | EventsCodes.IN_MOVED_FROM | EventsCodes.IN_DELETE
-
-		from licorn.core import groups
-		groups.Select(groups.FILTER_STANDARD)
-			
-		for gid in groups.filtered_groups :
-			group_home = "%s/%s/%s" % (groups.configuration.defaults.home_base_path,
-				groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
-			wdd        = self.wm.add_watch(group_home, self.mask, 
-										proc_fun=ProcessInotifyGroupEvent(self, gid, group_home, self.getName(), self.cache, groups, self.mask),
-										rec=True)
-			logging.info("%s: added recursive watch for %s." % (self.getName(), styles.stylize(styles.ST_PATH, group_home)))
-	def run(self) :
-		logging.progress("%s: thread running." % (self.getName()))
-		ThreadedNotifier.run(self)
-		logging.progress("%s: thread ended." % (self.getName()))
-	def stop(self) :
-		if ThreadedNotifier.isAlive(self) :
-			logging.progress("%s: stopping thread." % (self.getName()))
-			try :
-				ThreadedNotifier.stop(self)
-			except KeyError, e :
-				logging.warning('%s: KeyError when stopping: %s' % (self.getName(), e))
-class InitialCollector(Thread) :
-	""" Thread which collects initial data to build internal database, then run RPC listener to ease database updates. """
-	def __init__(self, allkeywords, cache, pname = '<unknown>') :
-		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
-		self.allkeywords = allkeywords
-		self.cache = cache
-	def run(self) :
-		logging.progress("%s: thread running." % (self.getName()))
-		self.cache.cache(self.allkeywords.work_path)
-		logging.progress("%s: thread ended." % (self.getName()))
-	def stop(self) :
-		pass
 
 ### Request Handlers and Event Processors ###
 class HTTPRequestHandler(BaseHTTPRequestHandler) :
@@ -1052,107 +1213,3 @@ class FileSearchRequestHandler(BaseRequestHandler) :
 		else :
 			logging.progress("%s/HandleUpdateRequest(): NOT updating cache for %s, path does not exist." % (self.name, styles.stylize(styles.ST_PATH, path)))
 			self.request.send('%s:path_does_not_exist:\n' % (LCN_MSG_STATUS_ERROR))
-class ProcessInotifyGroupEvent(ProcessEvent):
-	""" Thread that receives inotify events and applies posix perms and posix1e ACLs on the fly."""
-
-	def __init__(self, notifier, gid, group_path, tname, cache, allgroups, mask) :
-		self.notifier  = notifier 
-		self.gid       = gid
-		self.home      = group_path
-		self.cache     = cache
-		self.tname     = tname
-		self.allgroups = allgroups
-		self.mask      = mask
-	def process_IN_CREATE(self, event) :
-		if event.is_dir :
-			fullpath = os.path.join(event.path, event.name)
-			logging.debug("%s: Inotify EVENT / %s CREATED." %  (self.tname, fullpath))
-			acl = self.allgroups.BuildGroupACL(self.gid, fullpath[len(self.home):])
-			try :
-				fsapi.check_posix_ugid_and_perms(fullpath, -1, self.allgroups.name_to_gid('acl') , -1, batch = True, auto_answer = True, allgroups = self.allgroups)
-				fsapi.check_posix1e_acl(fullpath, False, acl['default_acl'], acl['default_acl'], batch = True, auto_answer = True)
-
-				# watch this new subdir too...
-				self.notifier.wm.add_watch(fullpath, self.mask, proc_fun=self, rec=True)
-				logging.info("%s: added new recursive watch for %s." % (self.tname, styles.stylize(styles.ST_PATH, fullpath)))
-
-			except (OSError, IOError), e :
-				if e.errno != 2 :
-					logging.warning("%s: problem in process_IN_CREATE() on %s (was: %s, event=%s)." % (self.tname, fullpath, e, event))
-
-			self.cache.cache(fullpath)
-		else :
-			# TODO : what to do if it is a file ? handled by _CLOSE_WRITE ?
-			pass
-	def process_IN_CLOSE_WRITE(self, event) :
-		fullpath = os.path.join(event.path, event.name)
-		logging.debug("%s: Inotify EVENT / %s CLOSE_WRITE." %  (self.tname, fullpath))
-		if os.path.isfile(fullpath) :
-			acl = self.allgroups.BuildGroupACL(self.gid, fullpath[len(self.home):])
-
-			try :
-				fsapi.check_posix_ugid_and_perms(fullpath, -1, self.allgroups.name_to_gid('acl'), batch = True, auto_answer = True, allgroups = self.allgroups)
-				fsapi.check_posix1e_acl(fullpath, True, acl['content_acl'], '', batch = True, auto_answer = True)
-			except (OSError, IOError), e :
-					if e.errno != 2 :
-						logging.warning("%s: problem in process_IN_CLOSE_WRITE() on %s (was: %s, event=%s)." % (self.tname, fullpath, e, event))
-			self.cache.cache(fullpath)
-	def process_IN_DELETE(self, event) :
-		fullpath = os.path.join(event.path, event.name)
-		logging.debug("%s: Inotify EVENT / %s DELETED." %  (self.tname, styles.stylize(styles.ST_PATH, fullpath)))
-		try: 
-			self.notifier.wm.rm_watch(self.notifier.wm.get_wd(fullpath), rec=True)
-			logging.info("%s: removed watch for %s." % (self.tname, styles.stylize(styles.ST_PATH, fullpath)))
-		except Exception, e :
-			logging.warning("%s: problem in process_IN_DELETE() on %s (was: %s, event=%s)." % (self.tname, fullpath, e, event))
-
-		self.cache.removeEntry(fullpath)
-	def process_IN_MOVED_FROM(self, event) :
-		fullpath = os.path.join(event.path, event.name)
-		logging.debug("%s: Inotify EVENT / %s MOVED FROM." % (self.tname, fullpath))
-		try : 
-			self.notifier.wm.rm_watch(self.notifier.wm.get_wd(fullpath), rec=True)
-			logging.info("%s: removed watch for %s." % (self.tname, styles.stylize(styles.ST_PATH, fullpath)))
-
-		except Exception, e :
-			logging.warning("%s: problem in process_IN_MOVED_FROM() on %s (was: %s, event=%s)." % (self.tname, fullpath, e, event))
-
-		self.cache.removeEntry(fullpath)
-	def process_IN_MOVED_TO(self, event) :
-		fullpath = os.path.join(event.path, event.name)
-		logging.debug("%s: Inotify EVENT / %s MOVED." %  (self.tname, fullpath))
-		acl = self.allgroups.BuildGroupACL(self.gid, fullpath[len(self.home):])
-
-		try :
-			if event.is_dir :
-				fsapi.check_posix_ugid_and_perms(fullpath, -1, self.allgroups.name_to_gid('acl') , -1, batch = True, auto_answer = True, allgroups = self.allgroups)
-				fsapi.check_posix1e_acl(fullpath, False, acl['default_acl'], acl['default_acl'], batch = True, auto_answer = True)
-				dir_info = {	
-					"path"         : fullpath,
-					"type"         : stat.S_IFDIR,
-					"mode"         : -1,
-					"content_mode" : -1,
-					"access_acl"   : acl['default_acl'],
-					"default_acl"  : acl['default_acl'],
-					"content_acl"  : acl['content_acl']
-					}
-
-				fsapi.check_posix_dir_contents(dir_info, -1, self.allgroups.name_to_gid(acl['group']), batch = True, auto_answer = True)
-				fsapi.check_posix1e_dir_contents(dir_info, batch = True, auto_answer = True)
-
-				# watch this new subdir too...
-				self.notifier.wm.add_watch(fullpath, self.mask, proc_fun=self, rec=True)
-				logging.info("%s: added new recursive watch for %s." % (self.tname, styles.stylize(styles.ST_PATH, fullpath)))
-				self.cache.cache(fullpath)
-
-			elif os.path.isfile(fullpath) :
-				fsapi.check_posix_ugid_and_perms(fullpath, -1, self.allgroups.name_to_gid('acl'), batch = True, auto_answer = True, allgroups = self.allgroups)
-				fsapi.check_posix1e_acl(fullpath, True, acl['content_acl'], '', batch = True, auto_answer = True)
-				self.cache.cache(fullpath)
-		
-			# don't check symlinks, sockets and al.
-
-		except (OSError, IOError), e :
-			if e.errno != 2 :
-				logging.warning("%s: problem in process_IN_MOVED_TO() on %s (was: %s, event=%s)." % (self.tname, fullpath, e, event))
-	def process_IN_IGNORED(self, event) : pass

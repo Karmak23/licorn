@@ -30,7 +30,7 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.internals import Cache, FileSearchServer, InitialCollector, INotifier, pid_path, wpid_path, log_path, pname, fork_http_server
+from licorn.daemon.internals import Cache, FileSearchServer, INotifier, ACLChecker, pid_path, wpid_path, log_path, pname, fork_http_server
 
 def terminate(signum, frame) :
 
@@ -41,9 +41,12 @@ def terminate(signum, frame) :
 			logging.progress("%s/master: cleaning up and stopping threads..." % pname)
 		else :
 			logging.warning('%s/master: signal %s received, shutting down...' % (pname, signum))
-		cache.stop()
+
 		server.stop()
 		notifier.stop()
+		aclchecker.stop()
+		cache.stop()
+
 		configuration.CleanUp()
 		try : 
 			for pid_file in (pid_path, wpid_path) :
@@ -52,9 +55,11 @@ def terminate(signum, frame) :
 		except (OSError, IOError), e :
 			logging.warning("Can't remove %s (was: %s)." % (styles.stylize(styles.ST_PATH, pid_path), e))
 
-		cache.join()
+		logging.progress("%s/master: joining threads." % pname)
 		server.join()
+		cache.join()
 		notifier.join()
+		aclchecker.join()
 
 		logging.progress("%s/master: exiting." % pname)
 		is_running = False
@@ -89,16 +94,18 @@ if __name__ == "__main__" :
 	signal.signal(signal.SIGTERM, terminate)
 	signal.signal(signal.SIGHUP, terminate)
 
-	# create cache instance and threads.
-	cache     = Cache(keywords, pname)
-	server    = FileSearchServer(pname)
-	notifier  = INotifier(cache, pname)
+	# create thread instances.
+	server     = FileSearchServer(pname)
+	cache      = Cache(keywords, pname)
+	aclchecker = ACLChecker(cache, pname)
+	notifier   = INotifier(aclchecker, cache, pname)
 			
 	try :
 		try :
 			# start all threads.
 			cache.start()
 			notifier.start()
+			aclchecker.start()
 			server.start()
 
 			# TODO : auto check /home/backup and /home/archives
