@@ -400,6 +400,44 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 				all_went_ok = False
 
 	return all_went_ok
+def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1) :
+	"""	Auto-Check-And-Apply if some path has some desired perms, repair if told to do so.
+		This is an automatic version of check_posix_ugid_and_perms() function. """
+
+	try :
+		pathstat = os.lstat(onpath)
+
+		if uid == -1 :
+			uid = pathstat.st_uid
+		if gid == -1 :
+			gid = pathstat.st_gid
+
+		if pathstat.st_uid != uid or pathstat.st_gid != gid :
+			os.chown(onpath, uid, gid)
+			logging.progress("Auto-changed owner of %s to %s:%s." % (onpath, uid, gid))
+
+		if perms == -1 :
+			return True
+		
+		if has_acl_mask(onpath) :
+			posix1e.ACL(text="").applyto(str(onpath))
+			if pathstat.st_mode & 0170000 == S_IFDIR :
+				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
+				
+			logging.progress("Auto-deleted ACL from %s." % onpath)
+			pathstat = os.lstat(onpath)
+
+		mode = pathstat.st_mode & 07777
+
+		if perms != mode :
+			os.chmod(onpath, perms)
+			logging.progress("Auto-applyed perms %s on %s." % (perms, onpath))
+
+	except (IOError, OSError), e :
+		if e.errno != 2 :
+			raise e
+
+	return True
 def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = "", batch = False, auto_answer = None) :
 	"""Check if a [default] acl is present on a given path, repair if not and asked for.
 	
@@ -479,6 +517,32 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 				all_went_ok = False
 
 	return all_went_ok
+def auto_check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = "") :
+	"""	Auto_check (don't ask questions) if a [default] acl is present on a given path, repair if not and asked for.
+		This is a fast version of the check_posix1e_acl() function, without any confirmations.
+	"""
+
+	if path_is_file :
+		execperms       = execbits2str(onpath)
+		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
+
+	for (desired_acl_text, is_default, acl_type) in ((access_acl_text, False, posix1e.ACL_TYPE_ACCESS), (default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)) :
+
+		if is_default :
+			if path_is_file :
+				continue
+			else :
+				acl_value  = posix1e.ACL(filedef=onpath)
+		else :
+			acl_value  = posix1e.ACL(file=onpath)
+
+		desired_acl = posix1e.ACL(text = desired_acl_text)
+
+		if acl_value != desired_acl :
+			desired_acl.applyto(str(onpath), acl_type)
+			logging.progress('Auto-applyed ACL type %s on %s.' % (acl_type, onpath))
+
+	return True
 def make_symlink(link_src, link_dst, batch = False, auto_answer = None) :
 	"""Try to make a symlink cleverly."""
 	try :
