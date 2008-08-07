@@ -716,7 +716,7 @@ class INotifier(Thread):
 			self._to_remove.append(path)
 
 			# TODO: remove recursively if DIR.
-			self.cache.removeEntry(path)
+			#self.cache.removeEntry(path)
 
 		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge) :
 			logging.debug('%s: Inotify %s for %s.' % (self.getName(), styles.stylize(styles.ST_REGEX, 'GAMEndExist/GAMAcknowledge'), path))
