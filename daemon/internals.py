@@ -436,10 +436,6 @@ class Cache(Thread):
 		if self._stop_event.isSet() :
 			raise exceptions.StopException("%s: stopped, can't cache." % self.getName())
 	
-		if fsapi.is_backup_file(filename) :
-			logging.debug("%s: NOT updating cache for %s, it is a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, filename)))
-			return
-
 		fstat = os.lstat(filename)
 
 		c = Cache._cursor
@@ -650,6 +646,12 @@ class INotifier(Thread):
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
+		if basename[-1] == '/' :
+			# we received an event for the root dir of a new watch.
+			# this is a duplicate of the parent/new_dir. Just discard
+			# it.
+			return
+
 		# with Gamin, sometimes it is an abspath, sometimes not.
 		# this happens on GAMChanged (observed the two), and 
 		# GAMDeleted (observed only abspath).
@@ -660,6 +662,10 @@ class INotifier(Thread):
 
 		if event == gamin.GAMExists and path in self.wds :
 			# skip already watched directories, and /home/groups/*
+			return
+
+		if fsapi.is_backup_file(path) :
+			logging.debug("%s: discarding Inotify event on %s, it's a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, path)))
 			return
 
 		if event in (gamin.GAMExists, gamin.GAMCreated) :
