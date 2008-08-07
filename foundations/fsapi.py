@@ -614,7 +614,7 @@ def has_acl_mask(pathname) :
 	return False
 def is_backup_file(filename) :
 	"""Return true if file is a backup file (~,.bak,...)."""
-	if filename[-1:] == '~' :
+	if filename[-1] == '~' :
 		return True
 	if filename[-4:] in ('.bak', '.old', '.swp') :
 		return True
