@@ -670,7 +670,7 @@ class INotifier(Thread):
 
 		if event in (gamin.GAMExists, gamin.GAMCreated) :
 
-			logging.progress("%s: Inotify %s %s." %  (self.getName(), styles.stylize(styles.ST_MODE, 'GAMCreated/GAMExists'), path))
+			logging.debug("%s: Inotify %s %s." %  (self.getName(), styles.stylize(styles.ST_MODE, 'GAMCreated/GAMExists'), path))
 
 			try :
 				if os.path.isdir(path) :
@@ -692,7 +692,7 @@ class INotifier(Thread):
 				self.just_checked.remove(path)
 				return
 
-			logging.progress("%s: Inotify %s on %s." %  (self.getName(),
+			logging.debug("%s: Inotify %s on %s." %  (self.getName(),
 				styles.stylize(styles.ST_URL, 'GAMChanged'), path))
 
 			self.aclchecker.enqueue(path, gid)
@@ -707,7 +707,7 @@ class INotifier(Thread):
 			#  - one for the dir watched (itself deleted)
 			#  - one for its parent, signaling its child was deleted.
 
-			logging.progress("%s: Inotify %s for %s." %  (self.getName(), 
+			logging.debug("%s: Inotify %s for %s." %  (self.getName(), 
 				styles.stylize(styles.ST_BAD, 'GAMDeleted'), styles.stylize(styles.ST_PATH, path)))
 
 			# we can't test if the “path” was a dir, it has just been deleted
@@ -718,20 +718,20 @@ class INotifier(Thread):
 			self.cache.removeEntry(path)
 
 		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge) :
-			pass
+			logging.debug('%s: Inotify %s for %s.' % (self.getName(), styles.stylize(styles.ST_REGEX, 'GAMEndExist/GAMAcknowledge'), path))
 
 		else :
-			logging.progress('%s: unhandled Inotify event “%s” %s.' % (self.getName(), event, path))
-
-		# just for debug
-		#logging.notice(self.wds)
+			logging.debug('%s: unhandled Inotify event “%s” %s.' % (self.getName(), event, path))
 	def add_watch(self, path, func) :
-		logging.progress("%s: %s inotify watch for %s." % (self.getName(), styles.stylize(styles.ST_OK, 'adding'), styles.stylize(styles.ST_PATH, path)))
 
 		if path in self.wds :
 			return 0
 
 		self.wds.append(path)
+		logging.info("%s: %s inotify watch for %s [total: %d]." % (self.getName(),
+			styles.stylize(styles.ST_OK, 'adding'),
+			styles.stylize(styles.ST_PATH, path),
+			len(self.wds)))
 		return self.mon.watch_directory(path, func)
 	def remove_watch(self, path) :
 		try :
