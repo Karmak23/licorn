@@ -6,6 +6,7 @@ Copyright (C) 2007-2008 Olivier Cortès <oc@5sys.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 import os, time, re, stat, xattr, inotify, socket, mimetypes, urlparse, posixpath, urllib, gamin
+from collections import deque
 
 # try python2.5 else python2.4
 try :  import sqlite3 as sqlite
@@ -606,6 +607,8 @@ class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with them. """
 	__singleton = None
 	_stop_event = Event()
+	_to_watch   = deque()
+	_to_remove  = deque()
 	def __new__(cls, *args, **kwargs) :
 		if cls.__singleton is None :
 			cls.__singleton = super(INotifier, cls).__new__(cls, *args, **kwargs)
@@ -674,9 +677,7 @@ class INotifier(Thread):
 
 			try :
 				if os.path.isdir(path) :
-					def myfunc(path, event, gid = gid, dirname = path) :
-						return self.process_event(path, event, gid, dirname)
-					self.add_watch(path, myfunc)
+					self._to_watch.append((path, gid))
 
 				self.aclchecker.enqueue(path, gid)
 
@@ -712,7 +713,7 @@ class INotifier(Thread):
 
 			# we can't test if the “path” was a dir, it has just been deleted
 			# just try to delete it, wait and see. If it was, this will work.
-			self.remove_watch(path)
+			self._to_remove.append(path)
 
 			# TODO: remove recursively if DIR.
 			self.cache.removeEntry(path)
@@ -734,33 +735,80 @@ class INotifier(Thread):
 			len(self.wds)))
 		return self.mon.watch_directory(path, func)
 	def remove_watch(self, path) :
-		try :
-			self.wds.remove(path)
-			logging.progress("%s: %s inotify watch for %s." % (self.getName(), 
-				styles.stylize(styles.ST_BAD, 'removing'), styles.stylize(styles.ST_PATH, path)))
+		if path in self.wds :
+			try :
+				self.wds.remove(path)
+				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
+					styles.stylize(styles.ST_BAD, 'removing'),
+					styles.stylize(styles.ST_PATH, path),
+					len(self.wds)))
 
-			# TODO: recurse subdirs if existing, to remove subwatches
-			return self.mon.stop_watch(path) 
-		except :
-			return 0
+				# TODO: recurse subdirs if existing, to remove subwatches
+				ret = self.mon.stop_watch(path) 
+				return ret
+			except gamin.GaminException :
+				pass
 	def run(self) :
 		logging.progress("%s: thread running." % (self.getName()))
 		Thread.run(self)
 
-		while not self._stop_event.isSet() :
-			self.mon.handle_events()
-			time.sleep(0.01)
+		try :
+			already_waited = False
+			while not self._stop_event.isSet() :
 
-		logging.progress("%s: thread is endind…" % (self.getName()))
+				while (len(self._to_remove) > 0) :
+					# remove as many watches as possible in the same time,
+					# to help relieve the daemon.
+					self.remove_watch(self._to_remove.pop())
 
-		for rep in self.wds :
-			self.mon.stop_watch(rep)
-		del self.mon
+					# don't forget to handle_events(), to flush the GAM queue
+					self.mon.handle_events()
+
+
+				if len(self._to_watch) :
+					# add one path at a time, to not stress the daemon, and
+					# make new inotified paths come smoother.
+
+					path, gid = self._to_watch.pop()
+					def myfunc(path, event, gid = gid, dirname = path) :
+						return self.process_event(path, event, gid, dirname)
+					self.add_watch(path, myfunc)
+
+					# don't forget to handle_events(), to flush the GAM queue
+					self.mon.handle_events()
+
+				while self.mon.event_pending() :
+					self.mon.handle_one_event()
+					self.mon.handle_events()
+					already_waited = False
+				else :
+					if already_waited :
+						self.mon.handle_events()
+						time.sleep(0.01)
+					else :
+						already_waited = True
+						self.mon.handle_events()
+						time.sleep(0.001)
+		except :
+			if not self._stop_event.isSet() :
+				raise
 
 		logging.progress("%s: thread ended." % (self.getName()))
 	def stop(self) :
 		if Thread.isAlive(self) and not self._stop_event.isSet() :
 			logging.progress("%s: stopping thread." % (self.getName()))
+
+			while len(self.wds) :
+				rep = self.wds.pop()
+				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
+					styles.stylize(styles.ST_BAD, 'removing'),
+					styles.stylize(styles.ST_PATH, rep),
+					len(self.wds)))
+				self.mon.stop_watch(rep)
+				self.mon.handle_events()
+
+			del self.mon
+
 			self._stop_event.set()
 class FileSearchServer(Thread) :
 	""" Thread which answers to queries sent through unix socket. """
