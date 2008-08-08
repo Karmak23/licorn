@@ -73,8 +73,9 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 							next_paths_to_walk.append("%s/%s" % (entry, x))
 
 		except OSError, e :
-			if e.errno == 2 : continue
-			else : raise e
+			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs') : 
+				continue
+			raise e
 def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answer = None, allgroups = None, allusers = None) :
 	""" Check if a dir exists, else create it and apply ACLs on it eventually.
 		dirs_infos should be a n-tuple of dicts, composed like this :
