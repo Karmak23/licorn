@@ -798,6 +798,8 @@ class INotifier(Thread):
 		if Thread.isAlive(self) and not self._stop_event.isSet() :
 			logging.progress("%s: stopping thread." % (self.getName()))
 
+			self._stop_event.set()
+
 			while len(self.wds) :
 				rep = self.wds.pop()
 				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
@@ -809,7 +811,6 @@ class INotifier(Thread):
 
 			del self.mon
 
-			self._stop_event.set()
 class FileSearchServer(Thread) :
 	""" Thread which answers to queries sent through unix socket. """
 	def __init__(self, pname = '<unknown>') :
