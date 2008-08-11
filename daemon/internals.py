@@ -435,7 +435,7 @@ class Cache(Thread):
 		""" Add a file to the cache. """
 
 		if self._stop_event.isSet() :
-			raise exceptions.StopException("%s: stopped, can't cache." % self.getName())
+			raise exceptions.LicornStopException("%s: stopped, can't cache." % self.getName())
 	
 		fstat = os.lstat(filename)
 
