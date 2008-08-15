@@ -5,7 +5,7 @@ Licorn Daemon internals.
 Copyright (C) 2007-2008 Olivier Cortès <oc@5sys.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, time, re, stat, xattr, inotify, socket, mimetypes, urlparse, posixpath, urllib, gamin
+import os, time, re, stat, xattr, socket, mimetypes, urlparse, posixpath, urllib, gamin
 from collections import deque
 
 # try python2.5 else python2.4
@@ -14,7 +14,6 @@ except ImportError : from pysqlite2 import dbapi2 as sqlite
 
 from Queue              import Queue
 from threading          import Thread, Event
-from pyinotify          import ThreadedNotifier, WatchManager, EventsCodes, ProcessEvent
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler, TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler, HTTPServer
 from licorn.foundations import fsapi, logging, exceptions, styles, process

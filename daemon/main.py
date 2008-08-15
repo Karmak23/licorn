@@ -115,8 +115,10 @@ if __name__ == "__main__" :
 			#	     - stop watching during checks to avoid DDoS (can be very precise, 
 			#          eg stop monitoring only one group if the check is only about 
 			#          *one* group).
-			# TODO : create an inotifyThread which watches keywords_data_file and
-			#        updates the cache when it changes.
+			# TODO : create a Thread which watches keywords_data_file and
+			#        updates the cache when it changes. NOTE: this will eventually go
+			# into configuration module, which will launch its separate and dedicated 
+			# thread, to watch configuration files.
 
 			logging.progress("%s/master: going to sleep." % pname)
 
