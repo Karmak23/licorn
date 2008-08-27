@@ -217,7 +217,7 @@ class LicornConfiguration (object) :
 				if lsb_release['DISTRIB_ID'] == 'Licorn' :
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu" :
-					if lsb_release['DISTRIB_CODENAME'] in ('dapper', 'edgy', 'feisty', 'gutsy', 'hardy') :
+					if lsb_release['DISTRIB_CODENAME'] in ('dapper', 'edgy', 'feisty', 'gutsy', 'hardy', 'intrepid') :
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else :
 						raise exceptions.LicornRuntimeError("This Ubuntu version is not yet supported, sorry !")
