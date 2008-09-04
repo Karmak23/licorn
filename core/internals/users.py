@@ -796,6 +796,19 @@ class UsersList :
 			raise exceptions.LicornCheckError("Some user(s) check(s) didn't pass, or weren't corrected.")
 
 	@staticmethod
+	def user_exists(uid = None, login = None) :
+		if uid :
+			return UsersList.users.has_key(uid)
+		if login :
+			return UsersList.login_cache.has_key(login)
+		return False
+
+	@staticmethod
+	def check_password(login, password) :
+		crypted_passwd = UsersList.users[UsersList.login_cache[login]]['crypted_password']
+		return (crypted_passwd == crypt.crypt(password, crypted_passwd))
+
+	@staticmethod
 	def login_to_uid(login) :
 		""" Return the uid of the user 'login'
 		"""
