@@ -423,3 +423,7 @@ class ProfilesList :
 					del(ProfilesList.profiles[profile]['groups'][index])
 
 		self.WriteConf()
+	
+	@staticmethod
+	def profile_exists(profile) :
+		return ProfilesList.profiles.has_key(profile)
