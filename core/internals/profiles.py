@@ -153,7 +153,7 @@ class ProfilesList :
 
 		create_group = True
 		
-		if ProfilesList.groups.HasGroup(name=group) :
+		if ProfilesList.groups.group_exists(name = group) :
 			if force_existing :
 				create_group = False
 			else :

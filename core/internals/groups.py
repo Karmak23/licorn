@@ -233,16 +233,6 @@ class GroupsList :
 		lock_ext_group.Unlock()
 
 		logging.progress("Done writing groups configuration.")
-	def HasGroup(self, name = None, gid = None) :
-		"""Return true if the group or gid exists on the system. """
-
-		if gid is None :
-			return GroupsList.name_cache.has_key(name)
-
-		if name is None :
-			return GroupsList.groups.has_key(gid)
-		
-		raise exceptions.BadArgumentError("You must specify a GID or a name to test existence of.")
 	def Select(self, filter_string) :
 		""" Filter group accounts on different criteria :
 			- 'system groups' : show only «system» groups (root, bin, daemon, apache...),
@@ -1120,6 +1110,17 @@ class GroupsList :
 			logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once = True)
 			return None
 
+	@staticmethod
+	def group_exists(name = None, gid = None) :
+		"""Return true if the group or gid exists on the system. """
+
+		if name :
+			return GroupsList.name_cache.has_key(name)
+
+		if gid :
+			return GroupsList.groups.has_key(gid)
+		
+		raise exceptions.BadArgumentError("You must specify a GID or a name to test existence of.")
 	@staticmethod
 	def primary_members(name) :
 		"""Get the list of users which are in group 'name'."""
