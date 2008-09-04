@@ -49,12 +49,20 @@ def fork_http_server() :
 			open(wpid_path,'w').write("%s\n" % os.getpid())
 			process.set_name('%s/webadmin' % pname)
 			logging.progress("%s/webadmin: starting (pid %d)." % (pname, os.getpid()))
-			httpd = TCPServer(('127.0.0.1', _http_port), HTTPRequestHandler)
+			while True :
+				try :
+					httpd = TCPServer(('127.0.0.1', _http_port), HTTPRequestHandler)
+					break
+				except socket.error, e :
+					if e[0] == 98 :
+						logging.warning("%s/webadmin: socket alreadyin use. waiting 5 seconds." % pname)
+						time.sleep(5)
+					else :
+						logging.error("%s/webadmin: socket error %s." % (pname, e))
+						return
 			httpd.serve_forever()
 	except OSError, e: 
 		logging.error("%s/webadmin: fork failed: errno %d (%s)." % (pname, e.errno, e.strerror))
-	except socket.error, e :
-		logging.error("%s/webadmin: socket error %s." % (pname, e))
 	except KeyboardInterrupt :
 		logging.warning('%s/webadmin: terminating on interrupt signal.' % pname)
 		raise SystemExit
