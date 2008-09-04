@@ -40,8 +40,29 @@ class ProfilesList :
 		
 		if ProfilesList.profiles is None :
 			self.reload()
+
+		self.checkDefaultProfile()
 	def reload(self) :
 		ProfilesList.profiles = readers.profiles_conf_dict(self.configuration.profiles_config_file)
+	def checkDefaultProfile(self) :
+		"""If no profile exists on the system, create a default one with system group "users"."""
+
+		try :
+			if self.profiles == {} :
+				logging.warning('adding a default profile on the system (this is mandatory).')
+				# Create a default profile with 'users' as default primary group, and use the Debian pre-existing group
+				# without complaining if it exists.
+				# TODO: translate/i18n these names ?
+				self.AddProfile('Users', 'users', 
+					comment = 'Standard desktop users',
+					shell = self.configuration.users.default_shell,
+					skeldir  = self.configuration.users.default_skel,
+					force_existing = True)
+
+				self.WriteConf()
+		except (OSError, IOError), e :
+			# if 'permission denied', likely to be that we are not root. pass.
+			if e.errno != 13 : raise e
 	def WriteConf(self, filename = None) :
 		""" Write internal data into filename. """
 

@@ -636,18 +636,6 @@ class LicornConfiguration (object) :
 					else : raise e
 			else :
 				raise exceptions.LicornRuntimeError( "Modifications in %s are mandatory for Licorn to work properly. Can't continue without this, sorry!" % login_defs)
-	def CheckDefaultProfile(self) :
-		"""If no profile exists on the system, create a default one with system group "users"."""
-
-		if self.profiles.profiles == [] :
-			logging.warning('adding a default profile on the system (this is mandatory for %s to work).' % self.app_name)
-			# Create a default profile with 'users' as default primary group, and use the Debian pre-existing group
-			# without complaining if it exists.
-			# TODO: translate/i18n these names ?
-			self.profiles.AddProfile('Users', 'users', 
-				shell = LicornConfiguration.users.default_shell,
-				skel  = LicornConfiguration.users.default_skel,
-				force_existing = True)
 				
 	### EXPORTS ###
 	def Export(self, doreturn = True, args = None, cli_format = None) :
