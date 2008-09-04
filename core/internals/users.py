@@ -856,3 +856,13 @@ class UsersList :
 
 		# TODO : verify if the login doesn't already exist.
 		#while potential in UsersList.users :
+
+	@staticmethod
+	def primary_group(login = None, uid = None) :
+		if login :
+			return UsersList.users[UsersList.login_cache[login]]['primary_group']
+		if uid :
+			return UsersList.users[uid]['primary_group']
+
+		raise exceptions.BadArgumentError("You must specify an UID or a login to get primary_group of.")
+
