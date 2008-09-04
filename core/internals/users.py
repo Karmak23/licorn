@@ -802,7 +802,7 @@ class UsersList :
 		if login :
 			return UsersList.login_cache.has_key(login)
 
-		raise exceptions.BadArgumentError("You must specify an UID or a liogin to test existence of.")
+		raise exceptions.BadArgumentError("You must specify an UID or a login to test existence of.")
 
 	@staticmethod
 	def check_password(login, password) :
