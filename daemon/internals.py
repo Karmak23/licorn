@@ -17,6 +17,7 @@ from threading          import Thread, Event
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler, TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler, HTTPServer
 from licorn.foundations import fsapi, logging, exceptions, styles, process
+from licorn.core        import users, groups
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -36,6 +37,7 @@ _socket_path = '/var/run/licornd.sock'
 _socket_port = 3355
 _http_port   = 3356
 _buffer_size = 16*1024
+_wmi_group   = 'licorn-wmi'
 log_path     = '/var/log/licornd.log'
 pid_path     = '/var/run/licornd.pid'
 wpid_path    = '/var/run/licornd-webadmin.pid'
@@ -910,18 +912,21 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 		
 		retdata = None
 
-		if self.authorization() :
+		if self.user_authorized() :
 			try :
 				retdata = self.serve_virtual_uri()
 			except exceptions.LicornWebException :
 				retdata = self.serve_local_file()
+		else :
+			# return the 401 HTTP error code
+			self.send_response(401, 'Unauthorized.')	
+			self.send_header('WWW-authenticate', 'Basic realm="Licorn Web Management Interface"')
+			retdata = ''
 
 		self.end_headers()
 		return retdata
-	def authorization(self) :
+	def user_authorized(self) :
 		""" Return True if authorization exists AND user is authorized."""
-
-		return True
 
 		authorization = self.headers.getheader("authorization")
 		if authorization :
@@ -937,9 +942,14 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 						authorization = authorization.split(':')
 						if len(authorization) == 2 :
 							#
-							# TODO: authorization code goes here.
+							# TODO: make this a beautiful PAM authentication ?
 							#
-							return True
+							if users.user_exists(login = authorization[0]) and users.check_password(authorization[0], authorization[1]) :
+								if groups.group_exists(_wmi_group) :
+									if authorization[0] in groups.auxilliary_members(_wmi_group) :
+										return True
+								else :
+									return True
 		return False
 	def format_post_args(self) :
 		""" Prepare POST data for exec statement."""
