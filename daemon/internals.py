@@ -55,7 +55,7 @@ def fork_http_server() :
 					break
 				except socket.error, e :
 					if e[0] == 98 :
-						logging.warning("%s/webadmin: socket alreadyin use. waiting 5 seconds." % pname)
+						logging.warning("%s/webadmin: socket already in use. waiting 5 seconds." % pname)
 						time.sleep(5)
 					else :
 						logging.error("%s/webadmin: socket error %s." % (pname, e))
