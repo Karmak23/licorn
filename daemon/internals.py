@@ -927,8 +927,8 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 		if authorization :
 			authorization = authorization.split()
 			if len(authorization) == 2:
-				import base64, binascii
 				if authorization[0].lower() == "basic":
+					import base64, binascii
 					try:
 						authorization = base64.decodestring(authorization[1])
 					except binascii.Error:
