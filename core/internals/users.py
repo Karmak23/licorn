@@ -309,8 +309,8 @@ class UsersList :
 			try :
 				tmp_user_dict['loginShell']    = UsersList.profiles.profiles[profile]['shell']
 				tmp_user_dict['gid']           = UsersList.groups.name_to_gid(UsersList.profiles.profiles[profile]['primary_group'])
-				tmp_user_dict['homeDirectory'] = ("%s/%s/%s" 
-					% (UsersList.configuration.users.home_base_path, UsersList.profiles.profiles[profile]['primary_group'], login))
+				# fix #58.
+				tmp_user_dict['homeDirectory'] = ("%s/%s" % (UsersList.configuration.users.home_base_path, login))
 
 				if UsersList.profiles.profiles[profile]['groups'] != [] :
 					groups_to_add_user_to = UsersList.profiles.profiles[profile]['groups']
