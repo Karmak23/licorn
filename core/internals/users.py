@@ -776,8 +776,8 @@ class UsersList :
 					logging.warning("User home dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, user_home))
 					return False
 
-
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls( special_dirs, batch, auto_answer, UsersList.groups, self)
+				if special_dirs != [] :
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls( special_dirs, batch, auto_answer, UsersList.groups, self)
 
 				if not minimal :
 					logging.warning("Extended checks are not yet implemented for users.")
