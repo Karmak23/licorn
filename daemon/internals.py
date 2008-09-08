@@ -880,18 +880,23 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 		post_data = post_data.split('&')
 		self.post_args = {}
 		for var in post_data :
-			key, value = var.split('=')
+			if var not in ('', '=') :
+				try :
+					key, value = var.split('=')
+				except ValueError :
+					key = var
+					value = ''
 
-			if value != '' :
-				value = urllib.unquote_plus(value)
+				if value != '' :
+					value = urllib.unquote_plus(value)
 
-			if self.post_args.has_key(key) :
-				if type(self.post_args[key]) == type('') :
-					self.post_args[key] = [ self.post_args[key], value ]
+				if self.post_args.has_key(key) :
+					if type(self.post_args[key]) == type('') :
+						self.post_args[key] = [ self.post_args[key], value ]
+					else :
+						self.post_args[key].append(value)
 				else :
-					self.post_args[key].append(value)
-			else :
-				self.post_args[key] = value
+					self.post_args[key] = value
 			
 		#print '%s' % self.post_args
 
