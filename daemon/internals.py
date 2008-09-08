@@ -51,14 +51,16 @@ def fork_http_server() :
 			open(wpid_path,'w').write("%s\n" % os.getpid())
 			process.set_name('%s/webadmin' % pname)
 			logging.progress("%s/webadmin: starting (pid %d)." % (pname, os.getpid()))
+			count = 0
 			while True :
+				count += 1
 				try :
 					httpd = TCPServer(('127.0.0.1', _http_port), HTTPRequestHandler)
 					break
 				except socket.error, e :
 					if e[0] == 98 :
-						logging.warning("%s/webadmin: socket already in use. waiting 5 seconds." % pname)
-						time.sleep(5)
+						logging.warning("%s/webadmin: socket already in use. waiting (total: %dsec)." % (pname, count))
+						time.sleep(1)
 					else :
 						logging.error("%s/webadmin: socket error %s." % (pname, e))
 						return
