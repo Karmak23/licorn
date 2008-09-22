@@ -16,7 +16,11 @@ from licorn.foundations import exceptions
 regex = {}
 regex['uri']          = u'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
 regex['profile_name'] = u'''^[\w]([-_\w ]*[\w])?$'''
-regex['description']  = u'''^[-_…{}—–/'"\w«»() ,.]*$'''
+# REGEX discussion : shouldn't we disallow #$*!~& in description regexes ?
+# these characters could lead to potential crash/vulnerabilities. But refering
+# to passwd(5), there are no restrictions concerning the description field.
+# Thus we just disallow “:” to avoid a new field to be accidentally created.
+regex['description']  = u'''^[-@#~*!¡&_…{}—–™“”®©/'"\w«»() ,;.¿?‘’€⋅]*$'''
 regex['group_name']   = u'''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = u'''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
 regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
