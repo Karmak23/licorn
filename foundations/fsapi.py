@@ -207,7 +207,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 			return True
 
 	else :
-		raise exceptions.BadArgumentError("You must pass some dirs to check as arguments !")
+		raise exceptions.BadArgumentError("You must pass some dirs (through dirs_infos) to check as arguments !")
 def check_posix1e_dir_contents(dir_info, batch = False, auto_answer = None) :
 	"""TODO."""
 
