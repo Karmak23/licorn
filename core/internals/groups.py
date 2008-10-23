@@ -910,6 +910,90 @@ class GroupsList :
 
 		return all_went_ok
 
+	def __check_group(self, group, minimal = True, batch = False, auto_answer = None) :
+
+		all_went_ok = True
+		gid         = self.name_to_gid(group)
+
+		if self.is_system_gid(gid) :
+			return True
+
+		logging.progress("Checking group %s..." % styles.stylize(styles.ST_NAME, group))
+		
+		all_went_ok &= self.CheckAssociatedSystemGroups(group, minimal, batch, auto_answer)
+
+		group_home              = "%s/%s/%s" % (GroupsList.configuration.defaults.home_base_path, 
+			GroupsList.configuration.groups.names['plural'], group)
+		group_home_acl          = self.BuildGroupACL(gid)
+		group_home_acl['path']  = group_home
+
+		if os.path.exists("%s/public_html" % group_home) :
+			group_home_acl['exclude'] = [ 'public_html' ]
+			
+
+		# follow the symlink for the group home, only if link destination is a dir.
+		# this allows administrator to put big group dirs on different volumes (fixes #66).
+
+		if os.path.islink(group_home) :
+			if os.path.exists(group_home) and os.path.isdir(os.path.realpath(group_home)) :
+				group_home = os.path.realpath(group_home)
+				
+		# check only the group home dir (not its contents), its uid/gid and its (default) ACL.
+		# to check a dir without its content, just delete the content_acl or content_mode
+		# dictionnary key.
+		
+		try :
+			logging.progress("Checking shared group dir %s..." % styles.stylize(styles.ST_PATH,group_home))
+			group_home_only         = group_home_acl.copy()
+			group_home_only['path'] = group_home
+			group_home_only['user'] = 'root'
+			del group_home_only['content_acl']
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_only ], batch, auto_answer, self)
+
+		except exceptions.LicornCheckError :
+			logging.warning("Shared group dir %s is missing, please repair this first." \
+				% styles.stylize(styles.ST_PATH, group_home))
+			return False
+
+		# check the contents of the group home dir, without checking UID (fix old#520;
+		# this is necessary for non-permissive groups to be functionnal). this will 
+		# recheck the home dir, but this 2nd check does less than the previous. The 
+		# previous is necessary, and this one is unavoidable due to 
+		# fsapi.check_dirs_and_contents_perms_and_acls() conception.
+		logging.progress("Checking shared group dir contents...")
+		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_acl ], batch, auto_answer, self)
+		
+		if os.path.exists("%s/public_html" % group_home) :
+			public_html             = "%s/public_html" % group_home
+			public_html_acl         = self.BuildGroupACL(gid, 'public_html')
+			public_html_acl['path'] =  public_html
+
+			try :
+				logging.progress("Checking shared dir %s..." % styles.stylize(styles.ST_PATH, public_html))
+				public_html_only         = public_html_acl.copy()
+				public_html_only['path'] = public_html
+				public_html_only['user'] = 'root'
+				del public_html_only['content_acl']
+				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ], 
+					batch, auto_answer, self)
+
+			except exceptions.LicornCheckError :
+				logging.warning("Shared dir %s is missing, please repair this first." \
+					% styles.stylize(styles.ST_PATH, public_html))
+				return False
+
+			# check only ~group/public_html and its contents, without checking UID, too.
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_acl ], batch, auto_answer, self)
+
+		if not minimal :
+			logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))
+			all_went_ok &= self.CheckGroupSymlinks(gid, batch = batch, auto_answer = auto_answer)
+
+			# TODO : tous les membres du groupe existent et sont OK (CheckUsers recursif)
+			# WARNING : Forcer minimal = True pour éviter les checks récursifs avec CheckUsers()
+
+		return all_went_ok
+
 	def CheckGroups(self, groups_to_check = [], minimal = True, batch = False, auto_answer = None) :
 		"""Check the groups, the cache. If not system, check the shared dir, the resps/guests, the members symlinks."""
 
@@ -919,78 +1003,11 @@ class GroupsList :
 		# dependancy : base dirs must be OK before checking groups shared dirs.
 		GroupsList.configuration.CheckBaseDirs(minimal, batch, auto_answer)
 
-		def check_group(group, minimal = minimal, batch = batch, auto_answer = auto_answer) :
+		def _chk(group) :
+			return self.__check_group(group, minimal = minimal, batch = batch, auto_answer = auto_answer)
 
-			all_went_ok = True
-			gid         = self.name_to_gid(group)
-
-			if self.is_system_gid(gid) :
-				return True
-
-			logging.progress("Checking group %s..." % styles.stylize(styles.ST_NAME, group))
-			
-			all_went_ok &= self.CheckAssociatedSystemGroups(group, minimal, batch, auto_answer)
-
-			group_home              = "%s/%s/%s" % (GroupsList.configuration.defaults.home_base_path, 
-				GroupsList.configuration.groups.names['plural'], group)
-			group_home_acl          = self.BuildGroupACL(gid)
-			group_home_acl['path']  = group_home
-			group_home_only         = group_home_acl.copy()
-			group_home_only['path'] = group_home
-
-			# check only the group home dir (not its contents), its uid/gid and its (default) ACL.
-			# to check a dir without its content, just delete the content_acl or content_mode
-			# dictionnary key.
-			
-			try :
-				logging.progress("Checking shared group dir %s..." % styles.stylize(styles.ST_PATH,group_home))
-				del group_home_only['content_acl']
-				group_home_only['user'] = 'root'
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_only ], batch, auto_answer, self)
-
-			except exceptions.LicornCheckError :
-				logging.warning("Shared group dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, group_home))
-				return False
-
-			# check the contents of the group home dir, without checking UID (fix old#520;
-			# this is necessary for non-permissive groups to be functionnal). this will 
-			# recheck the home dir, but this 2nd check does less than the previous. The 
-			# previous is necessary, and this one is unavoidable due to 
-			# fsapi.check_dirs_and_contents_perms_and_acls() conception.
-			logging.progress("Checking shared group dir contents...")
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_acl ], batch, auto_answer, self)
-			
-			if os.path.exists("%s/public_html" % group_home) :
-				public_html             = "%s/public_html" % group_home
-				public_html_acl         = self.BuildGroupACL(gid, 'public_html')
-				public_html_acl['path'] =  public_html
-				public_html_only         = public_html_acl.copy()
-				public_html_only['path'] = public_html
-
-				try :
-					logging.progress("Checking shared dir %s..." % styles.stylize(styles.ST_PATH, public_html))
-					del public_html_only['content_acl']
-					public_html_only['user'] = 'root'
-					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ], batch, auto_answer, self)
-
-				except exceptions.LicornCheckError :
-					logging.warning("Shared dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, public_html))
-					return False
-
-				# check only ~group/public_html and its contents, without checking UID, too.
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_acl ], batch, auto_answer, self)
-
-			if not minimal :
-				logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))
-				all_went_ok &= self.CheckGroupSymlinks(gid, batch = batch, auto_answer = auto_answer)
-
-				# TODO : tous les membres du groupe existent et sont OK (CheckUsers recursif)
-				# WARNING : Forcer minimal = True pour éviter les checks récursifs avec CheckUsers()
-
-			return all_went_ok
-
-		if reduce(pyutils.keep_false, map(check_group, groups_to_check)) is False :
-			# don't test just "if reduce() :", the result could be None and everything is OK when None
+		if reduce(pyutils.keep_false, map(_chk, groups_to_check)) is False :
+			# don't test just "if reduce(…) :", the result could be None and everything is OK when None
 			raise exceptions.LicornCheckError("Some group(s) check(s) didn't pass, or weren't corrected.")
 	def CheckGroupSymlinks(self, gid = None, group = None, oldname = None, delete = False, strip_prefix = None, batch = False, auto_answer = None) :
 		"""For each member of a group, verify member has a symlink to the shared group dir inside his home (or under level 2 directory). If not, create the link. Eventually delete links pointing to the old group name if it is set."""
