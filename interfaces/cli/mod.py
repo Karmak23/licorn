@@ -4,7 +4,7 @@
 Licorn « modify » : modify system information, user accounts, etc.
 Built on top of Licorn System Library, part of Licorn System Tools (H-S-T).
 
-Copyright (C) 2005-2007 Olivier Cortès <oc@5sys.fr>,
+Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
@@ -14,7 +14,7 @@ import sys
 _app = {
 	"name"     		 : "licorn-modify",
 	"description"	 : "Licorn Modify Entries",
-	"author"   		 : "Olivier Cortès <oc@5sys.fr>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"author"   		 : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
 from licorn.foundations import logging, exceptions, options, hlstr, file_locks, styles

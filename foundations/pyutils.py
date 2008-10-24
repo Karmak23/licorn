@@ -4,7 +4,7 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
 pyutils - Pure Python utilities functions, which are not present in python 2.4
 
-Copyright (C) 2007 Olivier Cortès <oc@5sys.fr>
+Copyright (C) 2007 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 
 """

@@ -5,7 +5,7 @@ Licorn CLI - http://dev.licorn.org/documentation/cli
 argparser - command-line argument parser library.
 Contains all argument parsers for all licorn system tools (getent, add, modify, delete, check)
 
-Copyright (C) 2005-2008 Olivier Cortès <oc@5sys.fr>,
+Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>,
 Copyright (C) 2005,2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 

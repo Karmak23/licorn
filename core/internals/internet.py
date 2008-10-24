@@ -2,7 +2,7 @@
 """
 Licorn core - http://dev.licorn.org/documentation/core
 
-Copyright (C) 2005-2006 Olivier Cortès <oc@5sys.fr>
+Copyright (C) 2005-2006 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 
 """

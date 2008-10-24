@@ -5,7 +5,7 @@ Licorn CLI - http://ilcorn.org/documentation/cli
 
 add - add something on the system, a user account, a group...
 
-Copyright (C) 2005-2007 Olivier Cortès <oc@5sys.fr>,
+Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
@@ -18,7 +18,7 @@ from licorn.core        import configuration, users, groups, profiles
 _app = {
 	"name"     		 : "licorn-add",
 	"description"	 : "Licorn Add Entries",
-	"author"   		 : "Olivier Cortès <oc@5sys.fr>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"author"   		 : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
 def import_users() :

@@ -4,7 +4,7 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
 file_locks - Historic and backward compatible locks based on files '*.lock'
 
-Copyright (C) 2005-2008 Olivier Cortès <oc@5sys.fr>
+Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 
 """

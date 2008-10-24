@@ -2,7 +2,7 @@
 """
 Licorn Daemon internals.
 
-Copyright (C) 2007-2008 Olivier Cortès <oc@5sys.fr>
+Copyright (C) 2007-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 import os, time, re, stat, xattr, socket, mimetypes, urlparse, posixpath, urllib, gamin

@@ -5,7 +5,7 @@ Licorn CLI - http://dev.licorn.org/documentation/cli
 
 getent - display and export system information / lists.
 
-Copyright (C) 2005-2007 Olivier Cortès <oc@5sys.fr>,
+Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
@@ -18,7 +18,7 @@ from licorn.core        import configuration, users, groups, profiles, keywords
 _app = {
 	"name"     		 : "licorn-getent",
 	"description"	 : "Licorn Get Entries",
-	"author"   		 : "Olivier Cortès <oc@5sys.fr>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"author"   		 : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
 def getent_users() :

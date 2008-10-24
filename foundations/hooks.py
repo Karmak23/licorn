@@ -5,7 +5,7 @@ Licorn hook system.
 Every src/*.py or module/sub-module can register one or
 more function to be called on these events.
 
-Copyright 2006-2008 (C) Olivier Cortès <oc@5sys.fr>
+Copyright 2006-2008 (C) Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 
 """

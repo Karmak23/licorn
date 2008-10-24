@@ -11,14 +11,14 @@ This daemon exists :
   
 Built on top of Licorn System Library, part of Licorn System Tools (H-S-T).
 
-Copyright (C) 2005-2008 Olivier Cortès <oc@5sys.fr>.
+Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>.
 Licensed under the terms of the GNU GPL version 2.
 """
 
 _app = {
 	"name"        : "licorn-daemon",
 	"description" : "Licorn Daemon: ACL auto check and file meta-data crawler",
-	"author"      : "Olivier Cortès <oc@5sys.fr>"
+	"author"      : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
 import sys, os, time, signal
