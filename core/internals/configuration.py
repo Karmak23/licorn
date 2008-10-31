@@ -444,7 +444,7 @@ class LicornConfiguration (object) :
 		# The default values are referenced in CheckAndLoadAdduserConf() too.
 		#
 		for (attr_name, conf_key, fallback) in (
-			('home_base_path', 'DHOME',    '%s/users' % self.defaults.home_base_path),
+			('base_path', 'DHOME',    '%s/users' % self.defaults.home_base_path),
 			('default_shell', 'DSHELL',    '/bin/bash'),
 			('default_skel',  'SKEL',      '/etc/skel'),
 			('default_gid',   'USERS_GID', 100) ) :
