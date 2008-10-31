@@ -937,6 +937,7 @@ class GroupsList :
 		if os.path.islink(group_home) :
 			if os.path.exists(group_home) and os.path.isdir(os.path.realpath(group_home)) :
 				group_home = os.path.realpath(group_home)
+				group_home_acl['path']  = group_home
 				
 		# check only the group home dir (not its contents), its uid/gid and its (default) ACL.
 		# to check a dir without its content, just delete the content_acl or content_mode
