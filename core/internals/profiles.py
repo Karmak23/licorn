@@ -110,7 +110,7 @@ class ProfilesList :
 				+ "	Group   : " + ProfilesList.profiles[profile]['primary_group'] + "\n" \
 				+ "	Comment : " + ProfilesList.profiles[profile]['comment'] + "\n" \
 				+ "	Skeldir : " + ProfilesList.profiles[profile]['skel_dir'] + "\n" \
-				+ "	Home    : " + self.configuration.users.base_path + "/" + ProfilesList.profiles[profile]['primary_group'] + "\n" \
+				+ "	Home    : " + self.configuration.users.base_path + "\n" \
 				+ "	Shell   : " + ProfilesList.profiles[profile]['shell'] + "\n" \
 				+ "	Quota   : " + str(ProfilesList.profiles[profile]['quota']) + " Mo\n" \
 				+ "	Groups  : " + ", ".join(ProfilesList.profiles[profile]['groups']) + "\n"
