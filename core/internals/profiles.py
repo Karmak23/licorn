@@ -132,8 +132,7 @@ class ProfilesList :
 			data += "\t<profile>\n" \
 					+ "\t\t<name>"     + ProfilesList.profiles[profile]['name']          + "</name>\n"     \
 					+ "\t\t<comment>"  + ProfilesList.profiles[profile]['comment']       + "</comment>\n"  \
-					+ "\t\t<home>"     + self.configuration.users.base_path + "/" \
-					                    + ProfilesList.profiles[profile]['primary_group'] + "</home>\n"     \
+					+ "\t\t<home>"     + self.configuration.users.base_path              + "</home>\n"     \
 					+ "\t\t<quota>"    + str(ProfilesList.profiles[profile]['quota'])    + "</quota>\n"    \
 					+ "\t\t<shell>"    + ProfilesList.profiles[profile]['shell']         + "</shell>\n"    \
 					+ "\t\t<skel_dir>" + ProfilesList.profiles[profile]['skel_dir']      + "</skel_dir>\n" \
@@ -226,27 +225,6 @@ class ProfilesList :
 		self.WriteConf(self.configuration.profiles_config_file)
 		logging.info(logging.SYSP_DELETED_PROFILE % styles.stylize(styles.ST_NAME, group))
 
-		# Delete the profile's base dir. All users accounts must have been previously deleted.
-		profile_home_dir = "%s/%s" % (self.configuration.users.base_path, group) 
-	
-		if no_archive :
-			try :
-				os.rmdir(profile_home_dir)
-				logging.info("Deleted profile base directory %s." % styles.stylize(styles.ST_PATH, profile_home_dir) )
-			except OSError, e :
-				if e.errno == 39 :
-					# directory not empty
-					logging.warning("Can't delete the profile base directory %s (this is harmless) (was: %s)." % (styles.stylize(styles.ST_PATH, profile_home_dir), e))
-				else :
-					raise e
-		else :
-			archive_dir = "%s/%s.deleted.%s" % (self.configuration.home_archive_dir, group, time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
-			try :
-				os.rename(profile_home_dir, archive_dir)
-				logging.info("Archived %s as %s." % (profile_home_dir, archive_dir) )
-			except OSError, e :
-				raise exceptions.LicornRuntimeException("Can't archive profile base dir %s, but other profile related stuff was successfully deleted (was: %s)." % (styles.stylize(styles.ST_PATH, profile_home_dir), e))
-
 	def ChangeProfileSkel(self, group, skel) :
 		"""
 		"""
@@ -306,7 +284,6 @@ class ProfilesList :
 
 		self.groups.RenameGroup(self, ProfilesList.profiles[group]['primary_group'], newgroup)
 		# Rename group
-		os.rename(self.configuration.users.base_path + "/" + ProfilesList.profiles[group]['primary_group'], self.configuration.users.base_path + "/" + group) # rename home
 	def AddGroupsInProfile(self, group, groups) :
 		""" Add groups in the groups list of the profile 'group'
 		"""
