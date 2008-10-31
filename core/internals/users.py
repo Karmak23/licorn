@@ -310,7 +310,7 @@ class UsersList :
 				tmp_user_dict['loginShell']    = UsersList.profiles.profiles[profile]['shell']
 				tmp_user_dict['gid']           = UsersList.groups.name_to_gid(UsersList.profiles.profiles[profile]['primary_group'])
 				# fix #58.
-				tmp_user_dict['homeDirectory'] = ("%s/%s" % (UsersList.configuration.users.home_base_path, login))
+				tmp_user_dict['homeDirectory'] = ("%s/%s" % (UsersList.configuration.users.base_path, login))
 
 				if UsersList.profiles.profiles[profile]['groups'] != [] :
 					groups_to_add_user_to = UsersList.profiles.profiles[profile]['groups']
@@ -328,7 +328,7 @@ class UsersList :
 
 			tmp_user_dict['gid']           = pg_gid
 			tmp_user_dict['loginShell']    = UsersList.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = "%s/%s" % (UsersList.configuration.users.home_base_path, login)
+			tmp_user_dict['homeDirectory'] = "%s/%s" % (UsersList.configuration.users.base_path, login)
 			
 			# FIXME : use is_valid_skel() ?
 			if skel is None and os.path.isdir(UsersList.groups.groups[pg_gid]['skel']) :
@@ -338,7 +338,7 @@ class UsersList :
 
 			tmp_user_dict['gid']           = UsersList.configuration.users.default_gid
 			tmp_user_dict['loginShell']    = UsersList.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = "%s/%s" % (UsersList.configuration.users.home_base_path, login)
+			tmp_user_dict['homeDirectory'] = "%s/%s" % (UsersList.configuration.users.base_path, login)
 			# if skel is None, system default skel will be applied
 		
 		# FIXME : is this necessary here ? not done before ?

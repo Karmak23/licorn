@@ -772,7 +772,7 @@ class LicornConfiguration (object) :
 		"""Check and eventually repair default needed dirs."""
 
 		try :
-			os.makedirs(self.users.home_base_path)
+			os.makedirs(self.users.base_path)
 		except (OSError, IOError), e :
 			if e.errno != 17 :
 				raise e

@@ -110,7 +110,7 @@ class ProfilesList :
 				+ "	Group   : " + ProfilesList.profiles[profile]['primary_group'] + "\n" \
 				+ "	Comment : " + ProfilesList.profiles[profile]['comment'] + "\n" \
 				+ "	Skeldir : " + ProfilesList.profiles[profile]['skel_dir'] + "\n" \
-				+ "	Home    : " + self.configuration.users.home_base_path + "/" + ProfilesList.profiles[profile]['primary_group'] + "\n" \
+				+ "	Home    : " + self.configuration.users.base_path + "/" + ProfilesList.profiles[profile]['primary_group'] + "\n" \
 				+ "	Shell   : " + ProfilesList.profiles[profile]['shell'] + "\n" \
 				+ "	Quota   : " + str(ProfilesList.profiles[profile]['quota']) + " Mo\n" \
 				+ "	Groups  : " + ", ".join(ProfilesList.profiles[profile]['groups']) + "\n"
@@ -132,7 +132,7 @@ class ProfilesList :
 			data += "\t<profile>\n" \
 					+ "\t\t<name>"     + ProfilesList.profiles[profile]['name']          + "</name>\n"     \
 					+ "\t\t<comment>"  + ProfilesList.profiles[profile]['comment']       + "</comment>\n"  \
-					+ "\t\t<home>"     + self.configuration.users.home_base_path + "/" \
+					+ "\t\t<home>"     + self.configuration.users.base_path + "/" \
 					                    + ProfilesList.profiles[profile]['primary_group'] + "</home>\n"     \
 					+ "\t\t<quota>"    + str(ProfilesList.profiles[profile]['quota'])    + "</quota>\n"    \
 					+ "\t\t<shell>"    + ProfilesList.profiles[profile]['shell']         + "</shell>\n"    \
@@ -227,7 +227,7 @@ class ProfilesList :
 		logging.info(logging.SYSP_DELETED_PROFILE % styles.stylize(styles.ST_NAME, group))
 
 		# Delete the profile's base dir. All users accounts must have been previously deleted.
-		profile_home_dir = "%s/%s" % (self.configuration.users.home_base_path, group) 
+		profile_home_dir = "%s/%s" % (self.configuration.users.base_path, group) 
 	
 		if no_archive :
 			try :
@@ -306,7 +306,7 @@ class ProfilesList :
 
 		self.groups.RenameGroup(self, ProfilesList.profiles[group]['primary_group'], newgroup)
 		# Rename group
-		os.rename(self.configuration.users.home_base_path + "/" + ProfilesList.profiles[group]['primary_group'], self.configuration.users.home_base_path + "/" + group) # rename home
+		os.rename(self.configuration.users.base_path + "/" + ProfilesList.profiles[group]['primary_group'], self.configuration.users.base_path + "/" + group) # rename home
 	def AddGroupsInProfile(self, group, groups) :
 		""" Add groups in the groups list of the profile 'group'
 		"""
