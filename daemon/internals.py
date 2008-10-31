@@ -678,8 +678,8 @@ class INotifier(Thread):
 			# skip already watched directories, and /home/groups/*
 			return
 
-		if fsapi.is_backup_file(path) :
-			logging.debug("%s: discarding Inotify event on %s, it's a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, path)))
+		if os.path.islink(path) or fsapi.is_backup_file(path) :
+			logging.debug("%s: discarding Inotify event on %s, it's a symlink or a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, path)))
 			return
 
 		if event in (gamin.GAMExists, gamin.GAMCreated) :
