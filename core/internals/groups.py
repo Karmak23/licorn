@@ -92,20 +92,27 @@ class GroupsList :
 				# this happends when the group has no members.
 				members = []
 			else :
-				members = entry[3].split(',')
+				members   = entry[3].split(',')
+				to_remove = []
 				
 				# update the cache to avoid massive CPU load in getent users --long
 				# this code is also present in users.__init__, to cope with users/groups load
 				# in different orders.
 				if GroupsList.users :
 					for member in members :
-						try :
+						if GroupsList.users.login_cache.has_key(member) :
 							GroupsList.users.users[l2u(member)]['groups'].add(entry[0])
-						except exceptions.LicornRuntimeException :
+						else :
 							if self.warnings :
 								logging.warning("User %s is referenced in members of group %s but doesn't really exist on the system, removing it." % (styles.stylize(styles.ST_BAD, member), styles.stylize(styles.ST_NAME,entry[0])))
+							# don't directly remove member from members, 
+							# it will immediately stop the for_loop.
+							to_remove.append(member)
+
+					if to_remove != [] :
+						need_rewriting = True
+						for member in to_remove :
 							members.remove(member)
-							need_rewriting = True
 
 			GroupsList.groups[gid] = 	{
 									'name' 			 : entry[0],
