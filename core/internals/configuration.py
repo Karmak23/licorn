@@ -451,8 +451,8 @@ class LicornConfiguration (object) :
 		# uid/gid of another machine system users/groups ; whatever the name).
 		if LicornConfiguration.users.system_uid_min < 300 :
 			LicornConfiguration.users.system_uid_min = 300
-		if LicornConfiguration.groups.system_gid_min < 500 :
-			LicornConfiguration.groups.system_gid_min = 500
+		if LicornConfiguration.groups.system_gid_min < 300 :
+			LicornConfiguration.groups.system_gid_min = 300
 			
 		# ensure /etc/login.defs complies with /etc/adduser.conf
 		self.CheckLoginDefs()
