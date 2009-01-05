@@ -95,6 +95,8 @@ class LicornConfiguration (object) :
 			import tempfile
 			self.tmp_dir = tempfile.mkdtemp()
 	
+			self.VerifyPythonMods()
+
 			self.SetBaseDirsAndFiles()
 			self.FindUserDir()
 			self.LoadBaseConfiguration()
@@ -121,6 +123,22 @@ class LicornConfiguration (object) :
 			import shutil
 			# this is safe because tmp_dir was created with tempfile.mkdtemp()
 			shutil.rmtree(self.tmp_dir)
+	def VerifyPythonMods(self) :
+		"""
+		"""
+
+		mods = (
+			('posix1e', 'python-pylibacl'),
+			('xattr',   'python-xattr or python-pyxattr'),
+			('gamin',   'python-gamin')
+			)
+
+		for mod, package in mods :
+			try :
+				exec('import %s' % mod)
+			except :
+				logging.error('You miss %s python module (package %s).' % (mod, package))
+
 	def SetBaseDirsAndFiles(self) :
 		""" Find and create temporary, data and working directories."""
 
