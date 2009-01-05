@@ -444,6 +444,16 @@ class LicornConfiguration (object) :
 		LicornConfiguration.groups.system_gid_min = add_user_conf['FIRST_SYSTEM_GID']
 		LicornConfiguration.groups.system_gid_max = add_user_conf['LAST_SYSTEM_GID']
 
+		# fix #74: map uid/gid above 300/500, to avoid interfering with 
+		# Ubuntu/Debian/RedHat/whatever system users/groups. This will raise
+		# chances for uid/gid synchronization between servers (or client/server)
+		# to success (avoid a machine's system users/groups to take identical
+		# uid/gid of another machine system users/groups ; whatever the name).
+		if LicornConfiguration.users.system_uid_min < 300 :
+			LicornConfiguration.users.system_uid_min = 300
+		if LicornConfiguration.groups.system_gid_min < 500 :
+			LicornConfiguration.groups.system_gid_min = 500
+			
 		# ensure /etc/login.defs complies with /etc/adduser.conf
 		self.CheckLoginDefs()
 
