@@ -606,6 +606,7 @@ def make_symlink(link_src, link_dst, batch = False, auto_answer = None) :
 					raise exceptions.LicornRuntimeException("While making symlink to %s, the destination %s already exists and is not a link." % (link_src, link_dst))
 
 # various unordered functions, which still need to find a more elegant home.
+
 def has_extended_acl(pathname) :
 	# return True if the posix1e representation of pathname's ACL has a MASK.
 	for acl_entry in posix1e.ACL(file = pathname) :
