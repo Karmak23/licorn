@@ -353,7 +353,7 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 		# stop here, we just wanted to check uid/gid
 		return all_went_ok
 	
-	if has_acl_mask(onpath) :
+	if has_extended_acl(onpath) :
 		# if an ACL is present, this could be what is borking the Unix mode.
 		# an ACL is present if it has a mask, else it is just standard posix
 		# perms expressed in the ACL grammar. No mask == Not an ACL.
@@ -420,7 +420,7 @@ def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1) :
 		if perms == -1 :
 			return True
 		
-		if has_acl_mask(onpath) :
+		if has_extended_acl(onpath) :
 			posix1e.ACL(text="").applyto(str(onpath))
 			if pathstat.st_mode & 0170000 == S_IFDIR :
 				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
@@ -606,13 +606,18 @@ def make_symlink(link_src, link_dst, batch = False, auto_answer = None) :
 					raise exceptions.LicornRuntimeException("While making symlink to %s, the destination %s already exists and is not a link." % (link_src, link_dst))
 
 # various unordered functions, which still need to find a more elegant home.
-		
-def has_acl_mask(pathname) :
+def has_extended_acl(pathname) :
 	# return True if the posix1e representation of pathname's ACL has a MASK.
 	for acl_entry in posix1e.ACL(file = pathname) :
 		if acl_entry.tag_type is posix1e.ACL_MASK :
 			return True
 	return False
+
+# use pylibacl 0.4.0 accelerated C function if possible.
+if hasattr(posix1e, 'HAS_EXTENDED_CHECK') :
+	if posix1e.HAS_EXTENDED_CHECK :
+		has_extended_acl = posix1e.has_extended
+		
 def is_backup_file(filename) :
 	"""Return true if file is a backup file (~,.bak,...)."""
 	if filename[-1] == '~' :
