@@ -418,26 +418,29 @@ if __name__ == "__main__" :
 
 			if mode == 'user' :
 				(opts, args) = argparser.add_user_parse_arguments(_app)
+				options.SetFrom(opts)
+
 				if len(args) == 2 :
 					opts.login = args[1]
+					add_user()
 				elif len(args) == 3 :
 					login = args[1]
 					ingroups = args[2]
 					#
 					# FIXME : refactoring + why don't we see logging.info of groups.AddUsersInGroup ?
 					#
-					
+
 					for g in ingroups.split(',') :
 						if g != "" :
 							try :
-								groups.AddUsersInGroup(g, [ login ])
+								groups.AddUsersInGroup(g, login.split(','))
 							except exceptions.LicornRuntimeException, e :
 								logging.warning("Unable to add user %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 							except exceptions.LicornException, e:
 								raise exceptions.LicornRuntimeError("Unable to add user %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-					sys.exit()
-				options.SetFrom(opts)
-				add_user()
+				else :
+					add_user()
+					
 			elif mode == 'users' :
 				(opts, args) = argparser.addimport_parse_arguments(_app)
 				options.SetFrom(opts)
