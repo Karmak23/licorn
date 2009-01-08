@@ -88,7 +88,7 @@ def	shell_conf_load_dict(filename = None, data = None) :
 		Typical use case : /etc/licorn/names.conf, /etc/adduser.conf
 	"""
 	confdict = {}
-	conf_re	 = re.compile("^\s*(?P<param>\w+)\s*=\s*[\"]?(?P<value>[^\"]+)[\"]?\s*$", re.LOCALE | re.UNICODE)
+	conf_re	 = re.compile("^\s*(?P<param>[\w.]+)\s*=\s*[\"]?(?P<value>[^\"]+)[\"]?\s*$", re.LOCALE | re.UNICODE)
 
 	def parse_fields(line) :
 		directive = conf_re.match(line)
@@ -97,6 +97,10 @@ def	shell_conf_load_dict(filename = None, data = None) :
 			key = dicts['param']
 			if dicts['value'].isdigit() :
 				confdict[key] = int(dicts['value'])
+			elif dicts['value'] == 'True' :
+				confdict[key] = True
+			elif dicts['value'] == 'False' :
+				confdict[key] = False
 			else :
 				confdict[key] = dicts['value']
 			#sys.stderr.write('found directive %s → %s.\n' % (key, dicts['value']))
