@@ -127,9 +127,12 @@ if __name__ == "__main__" :
 
 			if mode == 'user' :
 				(opts, args) = argparser.delete_user_parse_arguments(_app)
+				options.SetFrom(opts)
+
 				if opts.login is None :
 					if len(args) == 2 :
 						opts.login = args[1]
+						delete_user()
 					elif len(args) == 3 :
 						login = args[1]
 						fromgroups = args[2]
@@ -139,16 +142,15 @@ if __name__ == "__main__" :
 						for g in fromgroups.split(',') :
 							if g != "" :
 								try :
-									groups.RemoveUsersFromGroup(g, [ login ])
+									groups.RemoveUsersFromGroup(g, login.split(','))
 								except exceptions.LicornRuntimeException, e :
 									logging.warning("Unable to remove user %s from group %s (was: %s)." 
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 								except exceptions.LicornException, e :
 									raise exceptions.LicornRuntimeError("Unable to remove user %s from group %s (was: %s)." 
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-						sys.exit()
-				options.SetFrom(opts)
-				delete_user()
+					else :
+						delete_user()
 
 			elif mode == 'group' :
 				(opts, args) = argparser.delete_group_parse_arguments(_app)
