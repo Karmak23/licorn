@@ -37,6 +37,7 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 	paths_to_walk      = [ path ]
 	next_paths_to_walk = []
 	current_depth      = 0
+	S_IFSTD            = S_IFDIR | S_IFREG
 
 	while True :
 
@@ -57,7 +58,7 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 			entry_mode = entry_stat.st_mode & 07777
 
 			if current_depth >= mindepth \
-				and ( (type is None and (entry_type & S_IFREG or entry_type & S_IFDIR)) or entry_type == type) \
+				and ( (type is None and entry_type & S_IFSTD) or entry_type == type) \
 				and (perms is None or (entry_mode & perms)) \
 				and entry.rsplit('/', 1)[0] not in exclude :
 				yield entry
