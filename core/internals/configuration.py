@@ -26,7 +26,7 @@ class LicornConfigObject :
 	def __str__(self) :
 		def strattr (myattr) :
 			return "%s = %s" % (str(myattr), str(getattr(self, myattr)))
-		return "\n\t\t".join([ strattr(i) for i in self.__dict__ ] )
+		return "\n\t".join([ strattr(i) for i in self.__dict__ ] )
 
 class LicornConfiguration (object) :
 	""" Contains all the underlying system configuration as attributes.
@@ -738,13 +738,13 @@ class LicornConfiguration (object) :
 				# skip methods and python internals.
 				continue
 
-			# 24 is the len() of the longest attribute name
-			data += u"\t\u21b3 %s%s : " % (" " * (32 - len(attr)), styles.stylize(styles.ST_ATTR, attr))
+			# 30 is the len() of the longest attribute name
+			data += u"\u21b3 %s%s : " % (" " * (30 - len(attr)), styles.stylize(styles.ST_ATTR, attr))
 
 			if attr is 'mLdapSecret' :
 				data += "%s\s" % styles.stylize(styles.ST_SECRET, str(self.mLdapSecret))
 			elif attr is 'mLdap' :
-				data += "\n\t\t" + str(self.mLdap).replace("', " , "',\n\t\t") + "\n"
+				data += "\n\t" + str(self.mLdap).replace("', " , "',\n\t") + "\n"
 			elif attr in ( 'mLdapEnabled', 'app_name', 'distro', 'mAutoPasswdSize', 'mCurrentHostname', 'mta') :
 				data += "%s\n" % styles.stylize(styles.ST_ATTRVALUE, str(self.__getattribute__(attr)))
 				# cf	http://www.reportlab.com/i18n/python_unicode_tutorial.html
@@ -756,9 +756,9 @@ class LicornConfiguration (object) :
 					data += "'" + str(name) + "' : " + str(self.main[name]) + ",\n\t\t"
 				data += "}\n"
 			elif attr in ('mHznGroup', 'mAddUser', 'mLoginDefs', 'mNssLdap') :
-				data += "\n\t\t%s\n" % str(self.__getattribute__(attr)).replace(", " , ",\n\t\t")
+				data += "\n\t%s\n" % str(self.__getattribute__(attr)).replace(", " , ",\n\t")
 			elif attr is 'mNsSwitch' :
-				data += "\n\t\t" + str(self.mNsSwitch).replace("], " , "]\n\t\t") + "\n"
+				data += "\n\t" + str(self.mNsSwitch).replace("], " , "]\n\t") + "\n"
 			elif attr.endswith('_dir') or attr.endswith('_file') or attr.endswith('_path') :
 				data += "%s\n" % str(self.__getattribute__(attr))
 			elif attr in ('users', 'groups', 'profiles', 'defaults') :
