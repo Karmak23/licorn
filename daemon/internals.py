@@ -17,7 +17,7 @@ from threading          import Thread, Event
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler, TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler, HTTPServer
 from licorn.foundations import fsapi, logging, exceptions, styles, process
-from licorn.core        import users, groups
+from licorn.core        import users, groups, configuration
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -43,7 +43,13 @@ pid_path     = '/var/run/licornd.pid'
 wpid_path    = '/var/run/licornd-webadmin.pid'
 pname        = 'licornd'
 
-def fork_http_server() :
+def fork_http_server(start_wmi = True) :
+
+	# FIXME : implement start_wmi in argparser module.
+
+	if not configuration.daemon.start_wmi or not start_wmi :
+		return
+
 	try: 
 		if os.fork() == 0 :
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')

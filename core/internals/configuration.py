@@ -206,16 +206,35 @@ class LicornConfiguration (object) :
 				logging.info("Automatically created %s." % styles.stylize(styles.ST_PATH, self.user_dir + "[/data]"))
 			except OSError, e:
 				raise exceptions.LicornRuntimeError("Can't create / chmod %s[/data]:\n\t%s" % (self.user_dir, e))
+	def SetMandatoryDefauts(self) :
+		""" The defaults set here are expected to exist by other parts of the programs. """	
+
+		self.daemon = LicornConfigObject()
+		self.daemon.start_wmi = True
 	def LoadBaseConfiguration(self) :
 		"""Load main configuration files."""
 
 		try :
-			 self.main = readers.shell_conf_load_dict(self.main_config_file)
+			main_conf = readers.shell_conf_load_dict(self.main_config_file)
+
+			for key in main_conf.keys() :
+				subkeys = key.split('.')
+				logging.info("working on %s → %s." % (subkeys, main_conf[key]))
+				if len(subkeys) > 1 :
+					curobj = self
+					for subkey in subkeys[:-1] :
+						setattr(curobj, subkey, LicornConfigObject())
+						curobj = getattr(curobj, subkey)
+					setattr(curobj, subkeys[-1], main_conf[key])
+				else :
+					setattr(self, key, main_conf[key])
+
 		except IOError, e :
 			if e.errno != 2 :
 				# errno == 2 is "no such file or directory"
 				raise e
-
+			else :
+				self.SetMandatoryDefauts()
 	def CreateConfigurationDir(self) :
 		"""Create the configuration dir if it doesn't exist."""
 
@@ -750,19 +769,14 @@ class LicornConfiguration (object) :
 				# cf	http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and	http://web.linuxfr.org/forums/29/9994.html#599760
 				# and	http://evanjones.ca/python-utf8.html
-			elif attr is 'main' :
-				data += "\n\t\t{\n\t\t"
-				for name in self.main :
-					data += "'" + str(name) + "' : " + str(self.main[name]) + ",\n\t\t"
-				data += "}\n"
 			elif attr in ('mHznGroup', 'mAddUser', 'mLoginDefs', 'mNssLdap') :
 				data += "\n\t%s\n" % str(self.__getattribute__(attr)).replace(", " , ",\n\t")
 			elif attr is 'mNsSwitch' :
 				data += "\n\t" + str(self.mNsSwitch).replace("], " , "]\n\t") + "\n"
 			elif attr.endswith('_dir') or attr.endswith('_file') or attr.endswith('_path') :
 				data += "%s\n" % str(self.__getattribute__(attr))
-			elif attr in ('users', 'groups', 'profiles', 'defaults') :
-				data += "\n\t\t%s\n" % str(self.__getattribute__(attr))
+			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults') :
+				data += "\n\t%s\n" % str(getattr(self, attr))
 			else :
 				data += "%s, to be implemented in licorn.core.configuration.Export()\n" % styles.stylize(styles.ST_IMPORTANT, "UNREPRESENTABLE YET")
 		return data
