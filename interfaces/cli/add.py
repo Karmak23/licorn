@@ -445,9 +445,9 @@ if __name__ == "__main__" :
 							try :
 								groups.AddUsersInGroup(g, login.split(','))
 							except exceptions.LicornRuntimeException, e :
-								logging.warning("Unable to add user %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
+								logging.warning("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 							except exceptions.LicornException, e:
-								raise exceptions.LicornRuntimeError("Unable to add user %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
+								raise exceptions.LicornRuntimeError("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 				else :
 					add_user()
 					

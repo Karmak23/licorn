@@ -152,10 +152,10 @@ if __name__ == "__main__" :
 								try :
 									groups.RemoveUsersFromGroup(g, login.split(','))
 								except exceptions.LicornRuntimeException, e :
-									logging.warning("Unable to remove user %s from group %s (was: %s)." 
+									logging.warning("Unable to remove user(s) %s from group %s (was: %s)." 
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 								except exceptions.LicornException, e :
-									raise exceptions.LicornRuntimeError("Unable to remove user %s from group %s (was: %s)." 
+									raise exceptions.LicornRuntimeError("Unable to remove user(s) %s from group %s (was: %s)." 
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 					else :
 						delete_user()
