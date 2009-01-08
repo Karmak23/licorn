@@ -19,6 +19,10 @@ class LicornConfigObject :
 	""" a base class just to be able to add/remove custom attributes
 		to other custom attributes (build a tree simply).
 	"""
+	def __init__(self, fromdict = {}):
+			for key in fromdict.keys() :
+				setattr(self, key, fromdict[key])
+		
 	def __str__(self) :
 		def strattr (myattr) :
 			return "%s = %s" % (str(myattr), str(getattr(self, myattr)))
