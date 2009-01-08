@@ -59,8 +59,7 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 
 			if current_depth >= mindepth \
 				and ( (type is None and entry_type & S_IFSTD) or entry_type == type) \
-				and (perms is None or (entry_mode & perms)) \
-				and entry.rsplit('/', 1)[0] not in exclude :
+				and ( perms is None or (entry_mode & perms) ) :
 				yield entry
 
 			if (entry_type & S_IFLNK and not followlinks) \
