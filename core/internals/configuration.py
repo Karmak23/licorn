@@ -212,14 +212,13 @@ class LicornConfiguration (object) :
 		self.daemon = LicornConfigObject()
 		self.daemon.start_wmi = True
 	def LoadBaseConfiguration(self) :
-		"""Load main configuration files."""
+		"""Load main configuration file, and set mandatory defaults if it doesn't exist."""
 
 		try :
 			main_conf = readers.shell_conf_load_dict(self.main_config_file)
 
 			for key in main_conf.keys() :
 				subkeys = key.split('.')
-				logging.info("working on %s → %s." % (subkeys, main_conf[key]))
 				if len(subkeys) > 1 :
 					curobj = self
 					for subkey in subkeys[:-1] :
