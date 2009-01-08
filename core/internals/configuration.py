@@ -664,7 +664,8 @@ class LicornConfiguration (object) :
 					else : raise e
 			else :
 				raise exceptions.LicornRuntimeError( "Modifications in %s are mandatory for Licorn to work properly. Can't continue without this, sorry!" % login_defs)
-				
+
+
 	### EXPORTS ###
 	def Export(self, doreturn = True, args = None, cli_format = None) :
 		""" Export «self» (the system configuration) to a human [styles.stylized and] readable form.
@@ -729,7 +730,7 @@ class LicornConfiguration (object) :
 		data = "%s\n" % styles.stylize(styles.ST_APPNAME, "LicornConfiguration")
 
 		for attr in dir(self) :
-			if attr[0] in '_ABCDEFGHIJKLMNOPQRSTUXWXYZ':
+			if attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ':
 				# skip methods and python internals.
 				continue
 
