@@ -14,6 +14,8 @@ install: binary-install installdoc
 configure:
 
 build: configure i18n
+	chmod a+x interfaces/cli/*.py
+	chmod a+x daemon/main.py
 
 binary-install: build
 	mkdir -p $(DEST) $(PYTHON_LIB_DIR) $(PROJECT_LIB_DIR) $(DEST)/bin $(DEST)/sbin $(SHARE_DIR)
