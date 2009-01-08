@@ -103,17 +103,20 @@ class LicornConfiguration (object) :
 
 			self.SetBaseDirsAndFiles()
 			self.FindUserDir()
-			self.LoadBaseConfiguration()
 
 			self.LoadManagersConfiguration()
 
-			self.Distro()
+			self.FindDistro()
 
 			self.LoadShells()
 			self.LoadSkels()
 
 			self.FindMTA()
 			self.FindMailboxType()
+
+			# this has to be done LAST, in order to eventually override any other
+			# configuration directive (eventually coming from Ubuntu/Debian, too).
+			self.LoadBaseConfiguration()
 
 			# TODO: monitor configuration files from a thread !
 
@@ -245,7 +248,7 @@ class LicornConfiguration (object) :
 				# user is not root, forget it !
 				pass
 
-	def Distro(self) :
+	def FindDistro(self) :
 		""" Determine which Linux / BSD / else distro we run on. """
 
 		LicornConfiguration.distro = ""
@@ -257,7 +260,7 @@ class LicornConfiguration (object) :
 				if lsb_release['DISTRIB_ID'] == 'Licorn' :
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu" :
-					if lsb_release['DISTRIB_CODENAME'] in ('dapper', 'edgy', 'feisty', 'gutsy', 'hardy', 'intrepid') :
+					if lsb_release['DISTRIB_CODENAME'] in ('dapper', 'edgy', 'feisty', 'gutsy', 'hardy', 'intrepid', 'jaunty') :
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else :
 						raise exceptions.LicornRuntimeError("This Ubuntu version is not yet supported, sorry !")
