@@ -85,7 +85,7 @@ def	shell_conf_load_dict(filename = None, data = None) :
 	""" Read a shell configuration file with variables (VAR=value on each line)
 		return a dictionary of param->value filled with the variables.
 
-		Typical use case : /etc/licorn/names.conf, /etc/adduser.conf
+		Typical use case : /etc/licorn/names.conf, /etc/adduser.conf, /etc/licorn/licorn.conf
 	"""
 	confdict = {}
 	conf_re	 = re.compile("^\s*(?P<param>[\w.]+)\s*=\s*[\"]?(?P<value>[^\"]+)[\"]?\s*$", re.LOCALE | re.UNICODE)
