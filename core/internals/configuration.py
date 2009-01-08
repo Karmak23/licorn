@@ -148,7 +148,7 @@ class LicornConfiguration (object) :
 
 		self.mAutoPasswdSize         = 8
 		self.config_dir              = "/etc/licorn"
-		self.main_config_file        = self.config_dir + "/main.conf"
+		self.main_config_file        = self.config_dir + "/licorn.conf"
 		self.backup_config_file      = self.config_dir + "/backup.conf"
 
 		# system profiles, compatible with gnome-system-tools
