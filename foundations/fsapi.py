@@ -66,11 +66,10 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 				or (os.path.ismount(entry) and not followmounts) :
 				continue	
 
-			if entry_type & S_IFDIR :
-				if current_depth < maxdepth :
-					for x in os.listdir(entry) :
-						if x not in exclude :
-							next_paths_to_walk.append("%s/%s" % (entry, x))
+			if entry_type & S_IFDIR and current_depth < maxdepth :
+				for x in os.listdir(entry) :
+					if x not in exclude :
+						next_paths_to_walk.append("%s/%s" % (entry, x))
 
 		except OSError, e :
 			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs') : 
