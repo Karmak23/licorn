@@ -66,16 +66,24 @@ def desimport_groups(delete_filename) :
 def delete_user() :
 	""" delete a user account. """
 
-	try :
-		users.DeleteUser(opts.login, opts.no_archive, opts.uid)
-	except KeyError :
-		logging.error("This user doesn't exist")
+	for login in opts.login.split(',') :
+		if login != '' :
+			try :
+				users.DeleteUser(login, opts.no_archive, opts.uid)
+			except KeyError :
+				logging.warning("User %s doesn't exist on the system." % login)
 
 	users.WriteConf()
 def delete_group() :
 	""" delete an Licorn group. """
 
-	groups.DeleteGroup(opts.name, opts.del_users, opts.no_archive, opts.gid)
+	for name in opts.name.split(',') :
+		if name != '' :
+			try :
+				groups.DeleteGroup(name, opts.del_users, opts.no_archive, opts.gid)
+			except KeyError :
+				logging.warning("Group %s doesn't exist on the system." % name)
+
 def delete_profile() :
 	""" Delete a system wide User profile. """
 
