@@ -20,12 +20,16 @@ class LicornConfigObject :
 		to other custom attributes (build a tree simply).
 	"""
 	def __init__(self, fromdict = {}):
-			for key in fromdict.keys() :
-				setattr(self, key, fromdict[key])
+		for key in fromdict.keys() :
+			setattr(self, key, fromdict[key])
 	def __str__(self) :
-		def strattr (myattr) :
-			return "%s = %s" % (str(myattr), str(getattr(self, myattr)))
-		return "\n\t".join([ strattr(i) for i in self.__dict__ ] )
+		data = ""
+		for i in self.__dict__ :
+			if type(getattr(self, i)) == type(self) :
+				data += u'\t\u21b3 %s:\n%s\n' % (i, str(getattr(self, i)))
+			else :
+				data += u"\t\u21b3 %s = %s\n" % (str(i), str(getattr(self, i)))
+		return data
 
 class LicornConfiguration (object) :
 	""" Contains all the underlying system configuration as attributes.
@@ -784,7 +788,7 @@ class LicornConfiguration (object) :
 			elif attr.endswith('_dir') or attr.endswith('_file') or attr.endswith('_path') :
 				data += "%s\n" % str(self.__getattribute__(attr))
 			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults') :
-				data += "\n\t%s\n" % str(getattr(self, attr))
+				data += "\n%s" % str(getattr(self, attr))
 			else :
 				data += "%s, to be implemented in licorn.core.configuration.Export()\n" % styles.stylize(styles.ST_IMPORTANT, "UNREPRESENTABLE YET")
 		return data
