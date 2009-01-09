@@ -30,7 +30,7 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.internals import Cache, FileSearchServer, INotifier, ACLChecker, pid_path, wpid_path, log_path, pname, fork_http_server
+from licorn.daemon.internals import Cache, FileSearchServer, INotifier, ACLChecker, pid_path, wpid_path, log_path, pname, fork_wmi_server
 
 def terminate(signum, frame) :
 
@@ -83,7 +83,7 @@ if __name__ == "__main__" :
 	else : 
 		open(pid_path, 'w').write("%s\n" % os.getpid())
 
-	fork_http_server()
+	fork_wmi_server()
 
 	process.set_name('%s/master' % pname)
 	logging.progress("%s/master: starting (pid %d)." % (pname, os.getpid()))

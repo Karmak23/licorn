@@ -43,7 +43,7 @@ pid_path     = '/var/run/licornd.pid'
 wpid_path    = '/var/run/licornd-webadmin.pid'
 pname        = 'licornd'
 
-def fork_http_server(start_wmi = True) :
+def fork_wmi_server(start_wmi = True) :
 
 	# FIXME : implement start_wmi in argparser module.
 
@@ -55,26 +55,26 @@ def fork_http_server(start_wmi = True) :
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')
 
 			open(wpid_path,'w').write("%s\n" % os.getpid())
-			process.set_name('%s/webadmin' % pname)
-			logging.progress("%s/webadmin: starting (pid %d)." % (pname, os.getpid()))
+			process.set_name('%s/wmi' % pname)
+			logging.progress("%s/wmi: starting (pid %d)." % (pname, os.getpid()))
 			count = 0
 			while True :
 				count += 1
 				try :
-					httpd = TCPServer(('127.0.0.1', _http_port), HTTPRequestHandler)
+					httpd = TCPServer(('127.0.0.1', _http_port), WMIHTTPRequestHandler)
 					break
 				except socket.error, e :
 					if e[0] == 98 :
-						logging.warning("%s/webadmin: socket already in use. waiting (total: %dsec)." % (pname, count))
+						logging.warning("%s/wmi: socket already in use. waiting (total: %dsec)." % (pname, count))
 						time.sleep(1)
 					else :
-						logging.error("%s/webadmin: socket error %s." % (pname, e))
+						logging.error("%s/wmi: socket error %s." % (pname, e))
 						return
 			httpd.serve_forever()
 	except OSError, e: 
-		logging.error("%s/webadmin: fork failed: errno %d (%s)." % (pname, e.errno, e.strerror))
+		logging.error("%s/wmi: fork failed: errno %d (%s)." % (pname, e.errno, e.strerror))
 	except KeyboardInterrupt :
-		logging.warning('%s/webadmin: terminating on interrupt signal.' % pname)
+		logging.warning('%s/wmi: terminating on interrupt signal.' % pname)
 		raise SystemExit
 
 ### Classes ###
@@ -862,7 +862,7 @@ class FileSearchServer(Thread) :
 				os.unlink(_socket_path)
 
 ### Request Handlers and Event Processors ###
-class HTTPRequestHandler(BaseHTTPRequestHandler) :
+class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 	def do_HEAD(self) :
 		f = self.send_head()
 		if f :
@@ -978,12 +978,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler) :
 
 		return postargs
 	def serve_virtual_uri(self) :
-		"""Serve dynamic URIs with our own code, and create pages on the fly.
-
-		TODO: integrate a caching mechanism, if it is needed, at least for /*/lists.
-		Note: the caching mechanism needs love to verify it is really needed. This is
-		a webadmin interface (used by only a few persons), and there are not many things
-		to compute in these /list/ commands. Caching is probably not really needed…"""
+		""" Serve dynamic URIs with our own code, and create pages on the fly. """
 
 		retdata = None
 		rettype = 'text'
