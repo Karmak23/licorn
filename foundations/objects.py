@@ -12,6 +12,12 @@ from Queue              import Queue
 from threading          import Thread, Event
 from licorn.foundations import exceptions
 
+class Singleton(object) :
+	__instances = {}
+	def __new__(cls, *args, **kargs): 
+		if Singleton.__instances.get(cls) is None:
+			Singleton.__instances[cls] = object.__new__(cls, *args, **kargs)
+		return Singleton.__instances[cls]
 
 class LicornThread(Thread) :
 	"""
@@ -25,10 +31,8 @@ class LicornThread(Thread) :
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
-
 	def dispatch_message(msg) :
 		self._input_queue.put(msg)
-
 	def run(self) :
 
 		if callable(getattr(self, 'process_message')) :
@@ -80,3 +84,5 @@ class StateMachine :
 				break 
 			else :
 				handler = self.handlers[newState]
+
+
