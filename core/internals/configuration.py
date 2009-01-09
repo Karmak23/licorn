@@ -22,7 +22,6 @@ class LicornConfigObject :
 	def __init__(self, fromdict = {}):
 			for key in fromdict.keys() :
 				setattr(self, key, fromdict[key])
-		
 	def __str__(self) :
 		def strattr (myattr) :
 			return "%s = %s" % (str(myattr), str(getattr(self, myattr)))
@@ -209,34 +208,41 @@ class LicornConfiguration (object) :
 				logging.info("Automatically created %s." % styles.stylize(styles.ST_PATH, self.user_dir + "[/data]"))
 			except OSError, e:
 				raise exceptions.LicornRuntimeError("Can't create / chmod %s[/data]:\n\t%s" % (self.user_dir, e))
-	def SetMandatoryDefauts(self) :
+	def _load_configuration(self, conf) :
+		""" Build the licorn configuration object from a dict. """
+		for key in conf.keys() :
+			subkeys = key.split('.')
+			if len(subkeys) > 1 :
+				curobj = LicornConfiguration
+				for subkey in subkeys[:-1] :
+					if not hasattr(curobj, subkey) :
+						setattr(curobj, subkey, LicornConfigObject())
+					#down one level.
+					curobj = getattr(curobj, subkey)
+				if not hasattr(curobj, subkeys[-1]) :
+					setattr(curobj, subkeys[-1], conf[key])
+			else :
+				if not hasattr(LicornConfiguration, key) :
+					setattr(LicornConfiguration, key, conf[key])
+	def SetMissingMandatoryDefauts(self) :
 		""" The defaults set here are expected to exist by other parts of the programs. """	
 
-		self.daemon = LicornConfigObject()
-		self.daemon.start_wmi = True
+		mandatory_dict = {
+			'daemon.wmi.enabled' : True
+			}
+
+		self._load_configuration(mandatory_dict)
 	def LoadBaseConfiguration(self) :
 		"""Load main configuration file, and set mandatory defaults if it doesn't exist."""
 
 		try :
-			main_conf = readers.shell_conf_load_dict(self.main_config_file)
-
-			for key in main_conf.keys() :
-				subkeys = key.split('.')
-				if len(subkeys) > 1 :
-					curobj = self
-					for subkey in subkeys[:-1] :
-						setattr(curobj, subkey, LicornConfigObject())
-						curobj = getattr(curobj, subkey)
-					setattr(curobj, subkeys[-1], main_conf[key])
-				else :
-					setattr(self, key, main_conf[key])
-
+			self._load_configuration(readers.shell_conf_load_dict(self.main_config_file))
 		except IOError, e :
 			if e.errno != 2 :
 				# errno == 2 is "no such file or directory"
 				raise e
-			else :
-				self.SetMandatoryDefauts()
+
+		self.SetMissingMandatoryDefauts()
 	def CreateConfigurationDir(self) :
 		"""Create the configuration dir if it doesn't exist."""
 
