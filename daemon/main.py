@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Licorn daemon :
-  - monitor shared group dirs and other special paths, and reapply posix perms or
-posix ACL the Right Way They Should Be (TM).
+  - monitor shared group dirs and other special paths, and reapply posix
+	perms or posix ACL the Right Way They Should Be (TM).
 
 This daemon exists :
   - to add user functionnality to Licorn systems.
@@ -21,7 +21,7 @@ _app = {
 	"author"      : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import sys, os, time, signal
+import sys, os, signal
 
 # argparser ?
 from licorn.foundations import process, logging, exceptions, styles, options
@@ -30,17 +30,22 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.internals import Cache, FileSearchServer, INotifier, ACLChecker, pid_path, wpid_path, log_path, pname, fork_wmi_server
+from licorn.daemon.core               import ACLChecker, INotifier, pid_path, wpid_path, log_path, dname
+from licorn.daemon.internals.wmi      import fork_wmi_server
+from licorn.daemon.internals.cache    import Cache
+from licorn.daemon.internals.searcher import FileSearchServer
 
 def terminate(signum, frame) :
+	""" Close threads, wipe pid files, clean everything before closing. """
 
 	global is_running
 
 	if is_running :
 		if signum is None :
-			logging.progress("%s/master: cleaning up and stopping threads..." % pname)
+			logging.progress("%s/master: cleaning up and stopping threads..." % dname)
 		else :
-			logging.warning('%s/master: signal %s received, shutting down...' % (pname, signum))
+			logging.warning('%s/master: signal %s received, shutting down...' % (dname,
+				signum))
 
 		server.stop()
 		notifier.stop()
@@ -53,15 +58,16 @@ def terminate(signum, frame) :
 				if os.path.exists(pid_file) :
 					os.unlink(pid_file)
 		except (OSError, IOError), e :
-			logging.warning("Can't remove %s (was: %s)." % (styles.stylize(styles.ST_PATH, pid_path), e))
+			logging.warning("Can't remove %s (was: %s)." % (
+				styles.stylize(styles.ST_PATH, pid_path), e))
 
-		logging.progress("%s/master: joining threads." % pname)
+		logging.progress("%s/master: joining threads." % dname)
 		server.join()
 		cache.join()
 		notifier.join()
 		aclchecker.join()
 
-		logging.progress("%s/master: exiting." % pname)
+		logging.progress("%s/master: exiting." % dname)
 		is_running = False
 		sys.exit(0)
 
@@ -72,11 +78,13 @@ if __name__ == "__main__" :
 	options.SetFrom(opts)
 
 	if process.already_running(pid_path) :
-		logging.notice("%s: already running (pid %s), not restarting." % (pname, open(pid_path, 'r').read()[:-1]))
+		logging.notice("%s: already running (pid %s), not restarting." % (
+			dname, open(pid_path, 'r').read()[:-1]))
 		sys.exit(0)
 
 	if os.getuid() != 0 or os.geteuid() != 0 :
-		logging.error("%s: must be run as %s." % (pname, styles.stylize(styles.ST_NAME, 'root')))	
+		logging.error("%s: must be run as %s." % (dname,
+			styles.stylize(styles.ST_NAME, 'root')))	
 
 	if opts.daemon : 
 		process.daemonize(log_path, pid_path)
@@ -85,8 +93,8 @@ if __name__ == "__main__" :
 
 	fork_wmi_server()
 
-	process.set_name('%s/master' % pname)
-	logging.progress("%s/master: starting (pid %d)." % (pname, os.getpid()))
+	process.set_name('%s/master' % dname)
+	logging.progress("%s/master: starting (pid %d)." % (dname, os.getpid()))
 
 	is_running = True
 
@@ -95,10 +103,10 @@ if __name__ == "__main__" :
 	signal.signal(signal.SIGHUP, terminate)
 
 	# create thread instances.
-	server     = FileSearchServer(pname)
-	cache      = Cache(keywords, pname)
-	aclchecker = ACLChecker(cache, pname)
-	notifier   = INotifier(aclchecker, cache, pname)
+	server     = FileSearchServer(dname)
+	cache      = Cache(keywords, dname)
+	aclchecker = ACLChecker(cache, dname)
+	notifier   = INotifier(aclchecker, cache, dname)
 			
 	try :
 		try :
@@ -120,7 +128,7 @@ if __name__ == "__main__" :
 			# into configuration module, which will launch its separate and dedicated 
 			# thread, to watch configuration files.
 
-			logging.progress("%s/master: going to sleep." % pname)
+			logging.progress("%s/master: going to sleep." % dname)
 
 			while True :
 				# wait for signals.
