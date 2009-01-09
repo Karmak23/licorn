@@ -21,7 +21,7 @@ _app = {
 	"author"      : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import sys, os, signal
+import sys, os, signal, time
 
 # argparser ?
 from licorn.foundations import process, logging, exceptions, styles, options
@@ -69,6 +69,10 @@ def terminate(signum, frame) :
 
 		logging.progress("%s/master: exiting." % dname)
 		is_running = False
+
+		# be sure there aren't any exceptions left anywhere…
+		time.sleep(0.1)
+
 		sys.exit(0)
 
 if __name__ == "__main__" :

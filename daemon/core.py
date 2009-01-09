@@ -7,12 +7,13 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import os, time, gamin
+
+from threading   import Thread, Event
 from collections import deque
 
-from Queue              import Queue
-from threading          import Thread, Event
-from licorn.foundations import fsapi, logging, exceptions, styles
-from licorn.core        import groups
+from licorn.foundations         import fsapi, logging, exceptions, styles
+from licorn.foundations.objects import LicornThread, Singleton
+from licorn.core                import groups
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -40,35 +41,29 @@ dname       = 'licornd'
 
 ### Main Licorn daemon threads ###
 # FIXME: convert these to LicornThread.
-class ACLChecker(Thread):
+class ACLChecker(LicornThread, Singleton):
 	""" A Thread which gets paths to check from a Queue, and checks them in time. """
-	__singleton = None
-	_queue      = Queue(0)
-	_stop_event = Event()
-	def __new__(cls, *args, **kwargs) :
-		if cls.__singleton is None :
-			cls.__singleton = super(ACLChecker, cls).__new__(cls, *args, **kwargs)
-		return cls.__singleton
 	def __init__(self, cache, pname = dname) :
-
-		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+		LicornThread.__init__(self, pname)
 
 		self.cache      = cache
 
 		# will be filled later
 		self.inotifier  = None
 		self.groups     = None
-	def set_inotifier(self, i) :
-		self.inotifier = i
-	def set_groups(self, g) :
-		self.groups = g
-	def process(self, event):
+	def set_inotifier(self, ino) :
+		""" Get the INotifier instance from elsewhere. """
+		self.inotifier = ino
+	def set_groups(self, grp) :
+		""" Get system groups from elsewhere. """
+		self.groups = grp
+	def process_message(self, event):
 		""" Process Queue and apply ACL on the fly, then update the cache. """
 
+		#logging.debug('%s: got message %s.' % (self.name, event))
 		path, gid = event
 
-		if path is None: return
+		if path is None : return
 
 		acl = self.groups.BuildGroupACL(gid, path)
 
@@ -89,35 +84,21 @@ class ACLChecker(Thread):
 			if e.errno != 2 :
 				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
 
+		# FIXME: to be re-added when cache is ok.
 		#self.cache.cache(path)
 	def enqueue(self, path, gid) :
+		""" Put an event into our queue, to be processed later. """
 		if self._stop_event.isSet() :
-			logging.progress("%s: thread is stopped, not enqueuing %s|%s." % (self.getName(), path, gid))
+			logging.warning("%s: thread is stopped, not enqueuing %s|%s." % (self.name, path, gid))
 			return
 
-		self._queue.put((path, gid))
-	def run(self) :
-		logging.progress("%s: thread running." % (self.getName()))
-		Thread.run(self)
-
-		while not self._stop_event.isSet() :
-			self.process(self._queue.get())
-
-		logging.progress("%s: thread ended." % (self.getName()))
-	def stop(self) :
-		logging.progress("%s: stopping thread." % (self.getName()))
-		self._stop_event.set()
-		self._queue.put((None, None))
-class INotifier(Thread):
+		#logging.progress('%s: enqueuing message %s.' % (self.name, (path, gid)))
+		LicornThread.dispatch_message(self, (path, gid))
+class INotifier(Thread, Singleton):
 	""" A Thread which collect INotify events and does what is appropriate with them. """
-	__singleton = None
 	_stop_event = Event()
 	_to_watch   = deque()
 	_to_remove  = deque()
-	def __new__(cls, *args, **kwargs) :
-		if cls.__singleton is None :
-			cls.__singleton = super(INotifier, cls).__new__(cls, *args, **kwargs)
-		return cls.__singleton
 	def __init__(self, checker, cache, pname = dname) :
 
 		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
@@ -301,7 +282,6 @@ class INotifier(Thread):
 	def stop(self) :
 		if Thread.isAlive(self) and not self._stop_event.isSet() :
 			logging.progress("%s: stopping thread." % (self.getName()))
-
 			self._stop_event.set()
 
 			while len(self.wds) :
