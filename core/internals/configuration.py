@@ -233,6 +233,7 @@ class LicornConfiguration (object) :
 
 		mandatory_dict = {
 			'daemon.wmi.enabled' : True
+			'daemon.role' : "server"
 			}
 
 		self._load_configuration(mandatory_dict)
