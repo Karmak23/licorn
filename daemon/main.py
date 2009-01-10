@@ -15,13 +15,13 @@ Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>.
 Licensed under the terms of the GNU GPL version 2.
 """
 
-_app = {
+current_app = {
 	"name"        : "licorn-daemon",
 	"description" : "Licorn Daemon: ACL auto check and file meta-data crawler",
 	"author"      : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import sys, os, signal, time
+import sys, os, signal
 
 # argparser ?
 from licorn.foundations import process, logging, exceptions, styles, options
@@ -30,116 +30,57 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.core               import ACLChecker, INotifier, pid_path, wpid_path, log_path, dname
-from licorn.daemon.internals.wmi      import fork_wmi_server
+from licorn.daemon.core               import ACLChecker, INotifier, dname, terminate_cleanly
+from licorn.daemon.core               import exit_if_already_running, exit_if_not_running_root
+from licorn.daemon.core               import eventually_daemonize, setup_signals_handler
+from licorn.daemon.internals.wmi      import eventually_fork_wmi_server
 from licorn.daemon.internals.cache    import Cache
 from licorn.daemon.internals.searcher import FileSearchServer
-
-def terminate(signum, frame) :
-	""" Close threads, wipe pid files, clean everything before closing. """
-
-	global is_running
-
-	if is_running :
-		if signum is None :
-			logging.progress("%s/master: cleaning up and stopping threads..." % dname)
-		else :
-			logging.warning('%s/master: signal %s received, shutting down...' % (dname,
-				signum))
-
-		server.stop()
-		notifier.stop()
-		aclchecker.stop()
-		cache.stop()
-
-		configuration.CleanUp()
-		try : 
-			for pid_file in (pid_path, wpid_path) :
-				if os.path.exists(pid_file) :
-					os.unlink(pid_file)
-		except (OSError, IOError), e :
-			logging.warning("Can't remove %s (was: %s)." % (
-				styles.stylize(styles.ST_PATH, pid_path), e))
-
-		logging.progress("%s/master: joining threads." % dname)
-		server.join()
-		cache.join()
-		notifier.join()
-		aclchecker.join()
-
-		logging.progress("%s/master: exiting." % dname)
-		is_running = False
-
-		# be sure there aren't any exceptions left anywhere…
-		time.sleep(0.1)
-
-		sys.exit(0)
+from licorn.daemon.internals.syncer   import ServerSyncer, ClientSyncer
 
 if __name__ == "__main__" :
 
-	(opts, args) = argparser.licornd_parse_arguments(_app)
-
+	(opts, args) = argparser.licornd_parse_arguments(current_app)
 	options.SetFrom(opts)
 
-	if process.already_running(pid_path) :
-		logging.notice("%s: already running (pid %s), not restarting." % (
-			dname, open(pid_path, 'r').read()[:-1]))
-		sys.exit(0)
+	exit_if_not_running_root()
+	exit_if_already_running()
 
-	if os.getuid() != 0 or os.geteuid() != 0 :
-		logging.error("%s: must be run as %s." % (dname,
-			styles.stylize(styles.ST_NAME, 'root')))	
-
-	if opts.daemon : 
-		process.daemonize(log_path, pid_path)
-	else : 
-		open(pid_path, 'w').write("%s\n" % os.getpid())
-
-	fork_wmi_server()
+	# remember our children threads.
+	threads = []
 
 	process.set_name('%s/master' % dname)
 	logging.progress("%s/master: starting (pid %d)." % (dname, os.getpid()))
 
-	is_running = True
+	setup_signals_handler(threads)
+	eventually_daemonize(opts)
+	eventually_fork_wmi_server()
 
-	signal.signal(signal.SIGINT, terminate)
-	signal.signal(signal.SIGTERM, terminate)
-	signal.signal(signal.SIGHUP, terminate)
+	if configuration.daemon.role == "client" :
+		syncer = ClientSyncer(dname)
+		threads.append(syncer)
 
-	# create thread instances.
-	server     = FileSearchServer(dname)
-	cache      = Cache(keywords, dname)
-	aclchecker = ACLChecker(cache, dname)
-	notifier   = INotifier(aclchecker, cache, dname)
-			
-	try :
-		try :
-			# start all threads.
-			cache.start()
-			notifier.start()
-			aclchecker.start()
-			server.start()
+		# TODO: get the cache from the server, it has the
+		# one in sync with the NFS-served files.
 
-			# TODO : auto check /home/backup and /home/archives
-			# TODO : auto check standard user's homes
-			# TODO : receive messages to :
-			#	     - remove watches on group deletion
-			#	     - stop watching during checks to avoid DDoS (can be very precise, 
-			#          eg stop monitoring only one group if the check is only about 
-			#          *one* group).
-			# TODO : create a Thread which watches keywords_data_file and
-			#        updates the cache when it changes. NOTE: this will eventually go
-			# into configuration module, which will launch its separate and dedicated 
-			# thread, to watch configuration files.
+	else :
+		syncer     = ServerSyncer(dname)
+		searcher   = FileSearchServer(dname)
+		aclchecker = ACLChecker(cache, dname)
+		notifier   = INotifier(aclchecker, cache, dname)
+		cache      = Cache(keywords, dname)
+		threads.append(aclchecker)
+		threads.append(notifier)
+		threads.append(syncer)
+		threads.append(search)
+		threads.append(cache)
 
-			logging.progress("%s/master: going to sleep." % dname)
+	for th in threads :
+		th.start()
 
-			while True :
-				# wait for signals.
-				signal.pause()
+	logging.progress("%s/master: going to sleep, waiting for signals." % dname)
 
-		except exceptions.LicornException, e :
-			logging.warning(str(e), e.errno)
+	while True :
+		signal.pause()
 
-	finally :
-		terminate(None, None)
+	terminate_cleanly(None, None, threads)

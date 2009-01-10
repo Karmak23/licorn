@@ -7,7 +7,7 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, mimetypes, urlparse, posixpath, urllib, socket
+import os, mimetypes, urlparse, posixpath, urllib, socket, time
 
 from SocketServer       import TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler
@@ -16,7 +16,7 @@ from licorn.foundations import logging, exceptions, styles, process
 from licorn.core        import configuration
 from licorn.daemon.core import dname, wpid_path, http_port
 
-def fork_wmi_server(start_wmi = True) :
+def eventually_fork_wmi_server(start_wmi = True) :
 
 	# FIXME : implement start_wmi in argparser module.
 

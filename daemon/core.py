@@ -6,14 +6,14 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, time, gamin
+import os, sys, time, gamin, signal
 
 from threading   import Thread, Event
 from collections import deque
 
-from licorn.foundations         import fsapi, logging, exceptions, styles
+from licorn.foundations         import fsapi, logging, exceptions, styles, process
 from licorn.foundations.objects import LicornThread, Singleton
-from licorn.core                import groups
+from licorn.core                import groups, configuration
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -38,6 +38,63 @@ log_path    = '/var/log/licornd.log'
 pid_path    = '/var/run/licornd.pid'
 wpid_path   = '/var/run/licornd-webadmin.pid'
 dname       = 'licornd'
+
+def terminate_cleanly(signum, frame, threads = []) :
+	""" Close threads, wipe pid files, clean everything before closing. """
+
+	if signum is None :
+		logging.progress("%s/master: cleaning up and stopping threads..." % dname)
+	else :
+		logging.warning('%s/master: signal %s received, shutting down...' % (dname,
+			signum))
+
+	for th in threads :
+		th.stop()
+
+	configuration.CleanUp()
+
+	try : 
+		for pid_file in (pid_path, wpid_path) :
+			if os.path.exists(pid_file) :
+				os.unlink(pid_file)
+	except (OSError, IOError), e :
+		logging.warning("Can't remove %s (was: %s)." % (
+			styles.stylize(styles.ST_PATH, pid_path), e))
+
+	logging.progress("%s/master: joining threads." % dname)
+
+	for th in threads :
+		th.join()
+
+	logging.progress("%s/master: exiting." % dname)
+
+	# be sure there aren't any exceptions left anywhere…
+	time.sleep(0.5)
+
+	sys.exit(0)
+def setup_signals_handler(threads) :
+	""" redirect termination signals to a the function which will clean everything. """
+
+	def terminate(signum, frame) :
+		return terminate_cleanly(signum, frame, threads)
+
+	signal.signal(signal.SIGINT, terminate)
+	signal.signal(signal.SIGTERM, terminate)
+	signal.signal(signal.SIGHUP, terminate)
+def exit_if_already_running() :
+	if process.already_running(pid_path) :
+		logging.notice("%s: already running (pid %s), not restarting." % (
+			dname, open(pid_path, 'r').read()[:-1]))
+		sys.exit(0)
+def exit_if_not_running_root() :
+	if os.getuid() != 0 or os.geteuid() != 0 :
+		logging.error("%s: must be run as %s." % (dname,
+			styles.stylize(styles.ST_NAME, 'root')))	
+def eventually_daemonize(opts) :
+	if opts.daemon : 
+		process.daemonize(log_path, pid_path)
+	else : 
+		open(pid_path, 'w').write("%s\n" % os.getpid())
 
 ### Main Licorn daemon threads ###
 # FIXME: convert these to LicornThread.
