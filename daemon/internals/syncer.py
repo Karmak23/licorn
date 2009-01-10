@@ -23,6 +23,50 @@ from licorn.daemon.core         import dname
 
 	if we are a server, advertise us on the network.
 
+
+PUBLISHING A SERVICE
+--------------------
+
+import Zeroconf
+import socket
+
+server = Zeroconf.Zeroconf()
+
+# Get local IP address
+local_ip = socket.gethostbyname(socket.gethostname())
+local_ip = socket.inet_aton(local_ip)
+
+svc1 = Zeroconf.ServiceInfo('_durus._tcp.local.',
+                              'Database 1._durus._tcp.local.',
+                              address = local_ip,
+                              port = 2972,
+                              weight = 0, priority=0,
+                              properties = {'description':
+                                            'Departmental server'}
+                             )
+server.registerService(svc1)
+
+
+DISCOVERING SERVICES
+--------------------
+
+import Zeroconf
+
+class MyListener(object):
+    def removeService(self, server, type, name):
+        print "Service", repr(name), "removed"
+
+    def addService(self, server, type, name):
+        print "Service", repr(name), "added"
+        # Request more information about the service
+        info = server.getServiceInfo(type, name)
+        print 'Additional info:', info
+
+if __name__ == '__main__':
+    server = Zeroconf.Zeroconf()
+    listener = MyListener()
+    browser = Zeroconf.ServiceBrowser(server, "_durus._tcp.local.", listener)
+
 """
 
 class ClientSyncer(LicornThread) :
