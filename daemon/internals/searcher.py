@@ -15,7 +15,7 @@ from threading          import Thread, Event
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler, TCPServer
 
 from licorn.foundations import logging, exceptions, styles
-from licorn.daemon.core import dname, socket_path, socket_port
+from licorn.daemon.core import dname, socket_path, searcher_port
 
 class SearcherClient :
 	""" Abstraction class to talk to the Licorn searcher through a socket.  """
@@ -24,7 +24,7 @@ class SearcherClient :
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		# don't. this is bad.
 		#self.socket.setblocking(False)
-		self.socket.connect(('localhost', socket_port))
+		self.socket.connect(('localhost', searcher_port))
 	def EndSession(self) :
 		""" Close the socket. Enclose this in an Event() because GTK apps can call us twice or more... """
 		if not self.is_closed.isSet() :
@@ -209,7 +209,7 @@ class FileSearchServer(Thread) :
 		#if os.path.exists(socket_path) : os.unlink(socket_path)
 		
 		self._stop_event = Event()
-		self.server     = ThreadingTCPServer(('127.0.0.1', socket_port), FileSearchRequestHandler)
+		self.server     = ThreadingTCPServer(('127.0.0.1', searcher_port), FileSearchRequestHandler)
 		self.server.allow_reuse_address = True
 
 		# TODO: the socket is set to non-blocking to be able to gracefully terminate the thread,
@@ -234,7 +234,7 @@ class FileSearchRequestHandler(BaseRequestHandler) :
 	""" Reads commands from a socket and execute actions related to keywords cache database. """
 	def findCallingUid(self) :
 		"""TODO: do syscalls instead of forking a netstat and a ps."""
-		pid = re.findall(r'127.0.0.1:%d\s+127.0.0.1:%d\s+ESTABLISHED(\d+)/' % (self.client_address[1], socket_port),
+		pid = re.findall(r'127.0.0.1:%d\s+127.0.0.1:%d\s+ESTABLISHED(\d+)/' % (self.client_address[1], searcher_port),
 			os.popen2(['netstat', '-antp'])[1].read())[0]
 		return os.popen2(['ps', '-p', pid, '-o', 'uid='])[1].read().strip()
 	

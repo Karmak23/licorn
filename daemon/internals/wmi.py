@@ -14,7 +14,7 @@ from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations import logging, exceptions, styles, process
 from licorn.core        import configuration
-from licorn.daemon.core import dname, wpid_path, http_port
+from licorn.daemon.core import dname, wpid_path, wmi_port
 
 def eventually_fork_wmi_server(start_wmi = True) :
 
@@ -34,7 +34,7 @@ def eventually_fork_wmi_server(start_wmi = True) :
 			while True :
 				count += 1
 				try :
-					httpd = TCPServer(('127.0.0.1', http_port), WMIHTTPRequestHandler)
+					httpd = TCPServer(('127.0.0.1', wmi_port), WMIHTTPRequestHandler)
 					break
 				except socket.error, e :
 					if e[0] == 98 :

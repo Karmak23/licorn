@@ -28,16 +28,17 @@ LCN_MSG_CMD_UPDATE      = 4
 LCN_MSG_CMD_END_SESSION = 254
 
 ### default paths ###
-cache_path  = '/var/cache/licorn/licornd.db'
-socket_path = '/var/run/licornd.sock'
-socket_port = 3355
-http_port   = 3356
-buffer_size = 16*1024
-wmi_group   = 'licorn-wmi'
-log_path    = '/var/log/licornd.log'
-pid_path    = '/var/run/licornd.pid'
-wpid_path   = '/var/run/licornd-webadmin.pid'
-dname       = 'licornd'
+cache_path    = '/var/cache/licorn/licornd.db'
+socket_path   = '/var/run/licornd.sock'
+syncer_port   = 3344
+searcher_port = 3355
+wmi_port      = 3356
+buffer_size   = 16*1024
+wmi_group     = 'licorn-wmi'
+log_path      = '/var/log/licornd.log'
+pid_path      = '/var/run/licornd.pid'
+wpid_path     = '/var/run/licornd-webadmin.pid'
+dname         = 'licornd'
 
 def terminate_cleanly(signum, frame, threads = []) :
 	""" Close threads, wipe pid files, clean everything before closing. """
