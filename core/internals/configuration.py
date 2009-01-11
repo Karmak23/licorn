@@ -232,7 +232,7 @@ class LicornConfiguration (object) :
 		""" The defaults set here are expected to exist by other parts of the programs. """	
 
 		mandatory_dict = {
-			'daemon.wmi.enabled' : True
+			'daemon.wmi.enabled' : True,
 			'daemon.role' : "server"
 			}
 
