@@ -19,16 +19,18 @@ class LicornConfigObject :
 	""" a base class just to be able to add/remove custom attributes
 		to other custom attributes (build a tree simply).
 	"""
-	def __init__(self, fromdict = {}):
+	def __init__(self, fromdict = {}, level = 1):
 		for key in fromdict.keys() :
 			setattr(self, key, fromdict[key])
+		self.level = level
 	def __str__(self) :
 		data = ""
 		for i in self.__dict__ :
+			if i == 'level' : continue
 			if type(getattr(self, i)) == type(self) :
-				data += u'\t\u21b3 %s:\n%s\n' % (i, str(getattr(self, i)))
+				data += u'%s\u21b3 %s:\n%s' % ('\t'*self.level, i, str(getattr(self, i)))
 			else :
-				data += u"\t\u21b3 %s = %s\n" % (str(i), str(getattr(self, i)))
+				data += u"%s\u21b3 %s = %s\n" % ('\t'*self.level, str(i), str(getattr(self, i)))
 		return data
 
 class LicornConfiguration (object) :
@@ -218,11 +220,13 @@ class LicornConfiguration (object) :
 			subkeys = key.split('.')
 			if len(subkeys) > 1 :
 				curobj = LicornConfiguration
+				level  = 1
 				for subkey in subkeys[:-1] :
 					if not hasattr(curobj, subkey) :
-						setattr(curobj, subkey, LicornConfigObject())
+						setattr(curobj, subkey, LicornConfigObject(level = level))
 					#down one level.
 					curobj = getattr(curobj, subkey)
+					level += 1
 				if not hasattr(curobj, subkeys[-1]) :
 					setattr(curobj, subkeys[-1], conf[key])
 			else :
