@@ -11,8 +11,9 @@ Licensed under the terms of the GNU GPL version 2
 import os, stat, posix1e, re
 from time import strftime, gmtime
 
-from licorn.foundations    import logging, exceptions, hlstr, styles, fsapi, pyutils, file_locks
-from licorn.core.internals import readers
+from licorn.foundations    import logging, exceptions, hlstr, styles, fsapi, pyutils
+from licorn.core.backends  import unix
+
 
 class GroupsList :
 	""" Manages the groups and the associated shared data on a Linux system. """
@@ -42,6 +43,8 @@ class GroupsList :
 
 		self.warnings = warnings
 
+		self.backend = unix.UnixFilesBackend(groups = self)
+
 		# see licorn.system.users for details
 		self.filter_applied = False
 
@@ -49,197 +52,13 @@ class GroupsList :
 			self.reload()
 	def reload(self) :
 		""" load or reload internal data structures from files on disk. """
-		GroupsList.groups     = {}
-		GroupsList.name_cache = {}
+		GroupsList.groups, GroupsList.name_cache = self.backend.load_groups()
 
-		# FIXME : move all this stuff to configreader.py
-
-		etc_group = readers.ug_conf_load_list("/etc/group")
-
-		# if some inconsistency is detected during load and it can be corrected automatically, do it !
-		need_rewriting = False
-
-		extras      = []
-		etc_gshadow = []
-		is_allowed  = True
-		try :
-			extras      = readers.ug_conf_load_list(GroupsList.configuration.extendedgroup_data_file)
-		except IOError, e :
-			if e.errno != 2 : raise e # no such file
-		try :
-			etc_gshadow = readers.ug_conf_load_list("/etc/gshadow")
-		except IOError, e :
-			if e.errno == 13 :
-				# don't raise an exception or display a warning, this is harmless if we
-				# are loading data for getent, and any other operation (add/mod/del) will
-				# fail anyway if we are not root or @admin.
-				is_allowed = False
-			else : raise e 
-
-		if GroupsList.users :
-			l2u      = GroupsList.users.login_to_uid
-			users = GroupsList.users.users
-
-		# TODO: transform this in 'for (gname, gid, gpass, gmembers) in etc_group :'
-
-		for entry in etc_group :
-			if len(entry) != 4 : continue # why continue ? why not raise CorruptFileError ??
-			
-			# implicitly index accounts on « int(gid) »
-			gid = int(entry[2])
-			
-			if entry[3] == '' :
-				# this happends when the group has no members.
-				members = []
-			else :
-				members   = entry[3].split(',')
-				to_remove = []
-				
-				# update the cache to avoid massive CPU load in getent users --long
-				# this code is also present in users.__init__, to cope with users/groups load
-				# in different orders.
-				if GroupsList.users :
-					for member in members :
-						if GroupsList.users.login_cache.has_key(member) :
-							GroupsList.users.users[l2u(member)]['groups'].add(entry[0])
-						else :
-							if self.warnings :
-								logging.warning("User %s is referenced in members of group %s but doesn't really exist on the system, removing it." % (styles.stylize(styles.ST_BAD, member), styles.stylize(styles.ST_NAME,entry[0])))
-							# don't directly remove member from members, 
-							# it will immediately stop the for_loop.
-							to_remove.append(member)
-
-					if to_remove != [] :
-						need_rewriting = True
-						for member in to_remove :
-							members.remove(member)
-
-			GroupsList.groups[gid] = 	{
-									'name' 			 : entry[0],
-									'passwd'		 : entry[1],
-									'gid'			 : gid,
-									'members'		 : members,
-									'description'	 :  "" , # empty string needed to skip error when we type GroupsList.groups[gid]['description']
-									'skel'			 :  "" , # idem
-									'permissive'     : None
-								}
-			# this will be used as a cache by name_to_gid()
-			GroupsList.name_cache[ entry[0] ] = gid
-
-			try :
-				GroupsList.groups[gid]['permissive']	= self.__is_permissive(GroupsList.groups[gid]['name'])
-			except exceptions.InsufficientPermissionsError :
-				#logging.warning("You don't have enough permissions to display permissive states.", once = True)
-				pass
-
-			#
-			# TODO : we could load the extras data in another structure before loading groups from /etc/group
-			# to avoid this for() loop and just get extras[GroupsList.groups[gid]['name']] directly. this could
-			# gain some time on systems with many groups.
-			#
-
-			extra_found = False
-			for extra_entry in extras :
-				if GroupsList.groups[gid]['name'] ==  extra_entry[0] :
-					try :
-						GroupsList.groups[gid]['description'] = extra_entry[1]
-						GroupsList.groups[gid]['skel']        = extra_entry[2]
-					except IndexError, e :
-						raise exceptions.CorruptFileError(GroupsList.configuration.extendedgroup_data_file, '''for group "%s" (was: %s).''' % (extra_entry[0], str(e)))
-					extra_found = True
-					break
-
-			if not extra_found :
-				logging.warning('added missing %s record for group %s.' % (styles.stylize(styles.ST_PATH, GroupsList.configuration.extendedgroup_data_file), styles.stylize(styles.ST_NAME, GroupsList.groups[gid]['name'])))
-				need_rewriting = True
-				GroupsList.groups[gid]['description'] = ""
-				GroupsList.groups[gid]['skel']        = ""
-					
-			gshadow_found = False
-			for gshadow_entry in etc_gshadow :
-				if GroupsList.groups[gid]['name'] ==  gshadow_entry[0] :
-					try :
-						GroupsList.groups[gid]['crypted_password'] = gshadow_entry[1]
-					except IndexError, e :
-						raise exceptions.CorruptFileError("/etc/gshadow", '''for group "%s" (was: %s).''' % (extra_entry[0], str(e)))
-					gshadow_found = True
-					break
-
-			if not gshadow_found and is_allowed : 
-				# do some auto-correction stuff if we are able too.
-				# this happens if debian tools were used between 2 Licorn CLI calls, 
-				# or on first call of CLI tools on a Debian/Ubuntu system.
-				logging.warning('added missing %s record for group %s.' 
-					% ( styles.stylize(styles.ST_PATH, '/etc/gshadow'), 
-						styles.stylize(styles.ST_NAME, GroupsList.groups[gid]['name'])))
-				need_rewriting = True
-				GroupsList.groups[gid]['crypted_password'] = 'x'
-
-		if need_rewriting and is_allowed :
-			try :
-				self.WriteConf()
-			except (OSError, IOError), e :
-				if self.warnings :
-					logging.warning("licorn.core.groups: can't correct inconsistencies (was: %s)." % e)
 	def SetProfiles(self, profiles) :
 		GroupsList.profiles = profiles
 
 	def WriteConf(self) :
-		""" Write the groups data in appropriate system files."""
-
-		if not GroupsList.groups[0].has_key('crypted_password') :
-			logging.error("You are not root or member of the shadow group, can't write configuration data.")
-		
-		lock_etc_group   = file_locks.FileLock(self.configuration, "/etc/group")
-		lock_etc_gshadow = file_locks.FileLock(self.configuration, "/etc/gshadow")
-		lock_ext_group   = file_locks.FileLock(self.configuration, GroupsList.configuration.extendedgroup_data_file)
-
-		logging.progress("Writing groups configuration to disk...")
-		
-		etcgroup   = []
-		etcgshadow = []
-		extgroup   = []
-
-		gids = GroupsList.groups.keys()
-		gids.sort()
-
-		for gid in gids :
-			#logging.debug2("Writing group %s (%s)." % (GroupsList.groups[gid]['name'], GroupsList.groups[gid]))
-
-			etcgroup.append(":".join((
-										GroupsList.groups[gid]['name'],
-										GroupsList.groups[gid]['passwd'],
-										str(gid),
-										','.join(GroupsList.groups[gid]['members'])
-									))
-							)
-			etcgshadow.append(":".join((
-										GroupsList.groups[gid]['name'],
-										GroupsList.groups[gid]['crypted_password'],
-										"",
-										','.join(GroupsList.groups[gid]['members'])
-									))
-							)
-			extgroup.append(':'.join((
-										GroupsList.groups[gid]['name'],
-										GroupsList.groups[gid]['description'],
-										GroupsList.groups[gid]['skel']
-									))
-							)
-
-		lock_etc_group.Lock()
-		open("/etc/group", "w").write("\n".join(etcgroup) + "\n")
-		lock_etc_group.Unlock()
-
-		lock_etc_gshadow.Lock()
-		open("/etc/gshadow", "w").write("\n".join(etcgshadow) + "\n")
-		lock_etc_gshadow.Unlock()
-
-		lock_ext_group.Lock()
-		open(GroupsList.configuration.extendedgroup_data_file, "w").write("\n".join(extgroup) + "\n")
-		lock_ext_group.Unlock()
-
-		logging.progress("Done writing groups configuration.")
+		self.backend.save_groups(self.groups)
 	def Select(self, filter_string) :
 		""" Filter group accounts on different criteria :
 			- 'system groups' : show only «system» groups (root, bin, daemon, apache...),
@@ -1107,13 +926,17 @@ class GroupsList :
 			logging.progress("Group %s is already%s permissive." % (styles.stylize(styles.ST_NAME, name), qualif) )
 
 	# TODO : make this @staticmethod
-	def __is_permissive(self, name) :
+	def is_permissive(self, name = None, gid = None) :
 		""" Return True if the shared dir of the group is permissive."""
 
-		if self.is_system_group(name) :
-			return None
+		if gid is None :
+			if name is None :
+				raise exceptions.BadArgumentError, "You must specify a group name or a GID."
+			
+			gid = self.name_to_gid(name)
 
-		gid = self.name_to_gid(name)
+		if self.is_system_gid(gid) :
+			return None
 
 		home = '%s/%s/%s' % (GroupsList.configuration.defaults.home_base_path, GroupsList.configuration.groups.names['plural'], name)
 

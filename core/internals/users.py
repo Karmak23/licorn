@@ -11,8 +11,8 @@ Licensed under the terms of the GNU GPL version 2
 import os, crypt, sys
 from time import time, strftime, gmtime
 
-from licorn.foundations    import logging, exceptions, process, hlstr, pyutils, file_locks, styles, fsapi
-from licorn.core.internals import readers
+from licorn.foundations    import logging, exceptions, process, hlstr, pyutils, styles, fsapi
+from licorn.core.backends  import unix
 
 class UsersList :
 
@@ -30,139 +30,29 @@ class UsersList :
 
 	def __init__(self, configuration) :
 		""" Create the user accounts list from the underlying system.
-			The arguments are None only for getent (ie Export and ExportXml)
-		"""
+			The arguments are None only for getent (ie Export and ExportXml) """
 
 		if UsersList.configuration is None :
 			UsersList.configuration = configuration
 
 		# see Select()
 		self.filter_applied = False
+
+		self.backend = unix.UnixFilesBackend(users = self)
 		
 		if UsersList.users is None :
 			self.reload()
 	def reload(self) :
 		""" Load (or reload) the data structures from the system files. """
-		UsersList.users       = {}
-		UsersList.login_cache = {}
+		UsersList.users, UsersList.login_cache = self.backend.load_users()
 
-		def import_user_from_etc_passwd(entry) :
-			temp_user_dict	= {
-				'login'         : entry[0],
-				'uid'           : int(entry[2]) ,
-				'gid'           : int(entry[3]) ,
-				'gecos'         : entry[4],
-				'homeDirectory' : entry[5],
-				'loginShell'    : entry[6],
-				'groups'        : set()              # a cache which will eventually be filled by groups.__init__() and others.
-				}
-
-			# populate ['groups'] ; this code is duplicated in groups.__init__, in case users/groups are loaded in different orders.
-			if UsersList.groups :
-				for g in UsersList.groups.groups :
-					for member in UsersList.groups.groups[g]['members'] :
-						if member == entry[0] :
-							temp_user_dict['groups'].add(UsersList.groups.groups[g]['name'])
-
-			# implicitly index accounts on « int(uid) »
-			UsersList.users[ temp_user_dict['uid'] ] = temp_user_dict
-			# this will be used as a cache for login_to_uid()
-			UsersList.login_cache[ entry[0] ] = temp_user_dict['uid']
-		def import_user_from_etc_shadow(entry) :
-			try :
-				uid = UsersList.login_to_uid(entry[0])
-			except exceptions.LicornException, e :
-				logging.warning("/etc/shadow seems to be corrupted: %s." % e)
-				return
-			
-			UsersList.users[uid]['crypted_password']    = entry[1]
-			if entry[1][0] == '!' :
-				UsersList.users[uid]['locked'] = True
-				# the shell could be /bin/bash (or else), this is valid for system accounts,
-				# and for a standard account this means it is not strictly locked because SSHd
-				# will bypass password check if using keypairs...
-				# don't bork with a warning, this doesn't concern us (Licorn work 99% of time on
-				# standard accounts).
-			else :
-				UsersList.users[uid]['locked'] = False
-			
-			if entry[2] == "" :
-				entry[2] = 0
-			UsersList.users[uid]['passwd_last_change']  = int(entry[2])
-			if entry[3] == "" :
-				entry[3] = 99999
-			UsersList.users[uid]['passwd_expire_delay'] = int(entry[3])
-			if entry[4] == "" :
-				UsersList.users[uid]['passwd_expire_warn']  = entry[4]
-			else :
-				UsersList.users[uid]['passwd_expire_warn']  = int(entry[4])
-			if entry[5] == "" :
-				UsersList.users[uid]['passwd_account_lock'] = entry[5]
-			else :
-				UsersList.users[uid]['passwd_account_lock'] = int(entry[5])
-
-			# Note: 
-			# the 7th field doesn't seem to be used by passwd(1) nor by usermod(8)
-			# and thus raises en exception because it's empty in 100% of cases.
-			# → temporarily disabled until we use it internally.
-			#
-			#UsersList.users[uid]['last_lock_date']      = int(entry[6])
-
-		map(import_user_from_etc_passwd, readers.ug_conf_load_list("/etc/passwd"))
-
-		try :
-			map(import_user_from_etc_shadow, readers.ug_conf_load_list("/etc/shadow"))
-		except (OSError,IOError), e :
-			if e.errno == 13 :
-				# don't raise an exception or display a warning, this is harmless if we
-				# are loading data for getent, and any other operation (add/mod/del) will
-				# fail anyway if we are not root or @admin.
-				pass
-			else : raise
 	def SetProfiles(self, profiles) :
 		UsersList.profiles = profiles
 	def SetGroups(self, groups) :
 		UsersList.groups = groups
 	def WriteConf(self) :
 		""" Write the user data in appropriate system files.""" 
-		#
-		# Write /etc/passwd and /etc/shadow
-		#
-		lock_etc_passwd = file_locks.FileLock(self.configuration, "/etc/passwd")
-		lock_etc_shadow = file_locks.FileLock(self.configuration, "/etc/shadow")
-		etcpasswd = []
-		etcshadow = []
-		uids = self.users.keys()
-		uids.sort()
-		for uid in uids:
-			etcpasswd.append(":".join((
-										self.users[uid]['login'],
-										"x",
-										str(uid),
-										str(self.users[uid]['gid']),
-										self.users[uid]['gecos'],
-										self.users[uid]['homeDirectory'],
-										self.users[uid]['loginShell']
-									))
-							)
-							
-			etcshadow.append(":".join((
-										self.users[uid]['login'],
-										self.users[uid]['crypted_password'],
-										str(self.users[uid]['passwd_last_change']),
-										str(self.users[uid]['passwd_expire_delay']),
-										str(self.users[uid]['passwd_expire_warn']),
-										str(self.users[uid]['passwd_account_lock']),
-										"","",""
-									))
-							)
-		lock_etc_passwd.Lock()
-		open("/etc/passwd" , "w").write("%s\n" % "\n".join(etcpasswd))
-		lock_etc_passwd.Unlock()
-		
-		lock_etc_shadow.Lock()
-		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
-		lock_etc_shadow.Unlock()
+		self.backend.save_users(UsersList.users)
 		
 	def Select( self, filter_string ) :
 		""" Filter user accounts on different criteria.
