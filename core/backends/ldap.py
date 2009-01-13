@@ -52,7 +52,6 @@ class ldap_backend(UGBackend) :
 						raise e
 
 				self.enabled = True
-
 	def get_defaults(self) :
 		""" Return mandatory defaults needed for LDAP Backend.
 
@@ -86,12 +85,7 @@ class ldap_backend(UGBackend) :
 			'backends.ldap.__ldap_secret' : '',
 			'backends.ldap.enabled'       : False
 			}
-	def save_all(self, users, groups) :
-		self.save_users(users)
-		self.save_groups(groups)
-
 	def save_users(self, users) :
 		pass
-
 	def save_groups(self, groups) :
 		pass

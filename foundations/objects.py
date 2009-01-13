@@ -120,6 +120,9 @@ class UGBackend :
 				self.users = self.groups.users
 		if users :
 			self.users = users
+
+		# for an abstract backend, this is quite sane.
+		self.enabled = False
 	def set_users(self, users) :
 		self.users = users
 	def set_groups(self, groups) :
@@ -127,7 +130,7 @@ class UGBackend :
 		self.users = groups.users
 	def get_defaults(self) :
 		return {}
-	def load_configuration(self) :
-		# don't set self.enabled here, it is the responsibility of the
-		# subclasses, not the abstract one.
-		return {}
+	def save_all(self, users, groups) :
+		self.save_users(users)
+		self.save_groups(groups)
+

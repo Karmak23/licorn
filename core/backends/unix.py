@@ -13,6 +13,10 @@ from licorn.foundations.objects import UGBackend
 class unix_backend(UGBackend) :
 	def __init__(self, configuration, users = None, groups = None) :
 		UGBackend.__init__(self, configuration, users, groups)
+
+		# this is always true on a Linux system.
+		# Any better and correctly configured backend will take over
+		# this one anyway, so there is no harm in setting this always True.
 		self.enabled = True
 		self.name    = "Unix"
 	def load_users(self, groups = None) :
@@ -91,7 +95,6 @@ class unix_backend(UGBackend) :
 				# fail anyway if we are not root or @admin.
 
 		return users, login_cache
-
 	def load_groups(self) :
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
@@ -227,11 +230,6 @@ class unix_backend(UGBackend) :
 					logging.warning("licorn.core.groups: can't correct inconsistencies (was: %s)." % e)
 
 		return groups, name_cache
-
-	def save_all(self, users, groups) :
-		self.save_users(users)
-		self.save_groups(groups)
-
 	def save_users(self, users) :
 		""" Write /etc/passwd and /etc/shadow """
 
@@ -244,7 +242,8 @@ class unix_backend(UGBackend) :
 		uids.sort()
 
 		if not users[0].has_key('crypted_password') :
-			logging.error('Insufficient permissions to write system configuration files.')
+			logging.warning('Insufficient permissions to write system configuration files.')
+			return
 
 		for uid in uids :
 			etcpasswd.append(":".join((
@@ -276,12 +275,12 @@ class unix_backend(UGBackend) :
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
-
 	def save_groups(self, groups) :
 		""" Write the groups data in appropriate system files."""
 
 		if not groups[0].has_key('crypted_password') :
-			logging.error("You are not root or member of the shadow group, can't write configuration data.")
+			logging.warning("You are not root or member of the shadow group, can't write configuration data.")
+			return
 		
 		lock_etc_group   = file_locks.FileLock(self.configuration, "/etc/group")
 		lock_etc_gshadow = file_locks.FileLock(self.configuration, "/etc/gshadow")
