@@ -11,27 +11,11 @@ Licensed under the terms of the GNU GPL version 2
 """
 import sys, os
 
-from   licorn.foundations import logging, exceptions, fsapi, styles
-from   privileges         import PrivilegesWhiteList
-import readers
+from licorn.foundations               import logging, exceptions, fsapi, styles
+from licorn.foundations.objects       import LicornConfigObject
+from licorn.core.internals.privileges import PrivilegesWhiteList
 
-class LicornConfigObject : 
-	""" a base class just to be able to add/remove custom attributes
-		to other custom attributes (build a tree simply).
-	"""
-	def __init__(self, fromdict = {}, level = 1):
-		for key in fromdict.keys() :
-			setattr(self, key, fromdict[key])
-		self.level = level
-	def __str__(self) :
-		data = ""
-		for i in self.__dict__ :
-			if i == 'level' : continue
-			if type(getattr(self, i)) == type(self) :
-				data += u'%s\u21b3 %s:\n%s' % ('\t'*self.level, i, str(getattr(self, i)))
-			else :
-				data += u"%s\u21b3 %s = %s\n" % ('\t'*self.level, str(i), str(getattr(self, i)))
-		return data
+import readers
 
 class LicornConfiguration (object) :
 	""" Contains all the underlying system configuration as attributes.

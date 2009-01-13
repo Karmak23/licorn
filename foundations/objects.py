@@ -12,6 +12,24 @@ from Queue              import Queue
 from threading          import Thread, Event
 from licorn.foundations import exceptions, logging
 
+class LicornConfigObject : 
+	""" a base class just to be able to add/remove custom attributes
+		to other custom attributes (build a tree simply).
+	"""
+	def __init__(self, fromdict = {}, level = 1):
+		for key in fromdict.keys() :
+			setattr(self, key, fromdict[key])
+		self._level = level
+	def __str__(self) :
+		data = ""
+		for i in self.__dict__ :
+			if i[0] == '_' : continue
+			if type(getattr(self, i)) == type(self) :
+				data += u'%s\u21b3 %s:\n%s' % ('\t'*self._level, i, str(getattr(self, i)))
+			else :
+				data += u"%s\u21b3 %s = %s\n" % ('\t'*self._level, str(i), str(getattr(self, i)))
+		return data
+
 class Singleton(object) :
 	__instances = {}
 	def __new__(cls, *args, **kargs): 
