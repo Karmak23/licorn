@@ -111,4 +111,23 @@ class StateMachine :
 			else :
 				handler = self.handlers[newState]
 
-
+class UGBackend :
+	def __init__(self, configuration, users = None, groups = None) :
+		self.configuration = configuration
+		if groups :
+			self.groups = groups
+			if self.groups.users :
+				self.users = self.groups.users
+		if users :
+			self.users = users
+	def set_users(self, users) :
+		self.users = users
+	def set_groups(self, groups) :
+		self.groups = groups
+		self.users = groups.users
+	def get_defaults(self) :
+		return {}
+	def load_configuration(self) :
+		# don't set self.enabled here, it is the responsibility of the
+		# subclasses, not the abstract one.
+		return {}
