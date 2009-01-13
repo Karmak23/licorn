@@ -30,8 +30,9 @@ from internals.groups        import GroupsList
 from internals.profiles      import ProfilesList
 from internals.keywords      import KeywordsList
 
-try :
+import backends
 
+try :
 	configuration = LicornConfiguration()
 	users         = UsersList(configuration)
 	groups        = GroupsList(configuration, users)

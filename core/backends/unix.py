@@ -6,23 +6,15 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations    import logging, exceptions, styles, file_locks
-from licorn.core.internals import readers
+from licorn.foundations         import logging, exceptions, styles, file_locks
+from licorn.core.internals      import readers
+from licorn.foundations.objects import UGBackend
 
-name="UnixFilesBackend"
-
-class UnixFilesBackend() :
-	def __init__(self, users = None, groups = None) :
-
-		if groups :
-			self.groups        = groups
-			self.users         = groups.users
-			self.configuration = groups.configuration
-
-		else :
-			self.users         = users
-			self.configuration = users.configuration
-
+class unix_backend(UGBackend) :
+	def __init__(self, configuration, users = None, groups = None) :
+		UGBackend.__init__(self, configuration, users, groups)
+		self.enabled = True
+		self.name    = "Unix"
 	def load_users(self, groups = None) :
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
@@ -236,7 +228,7 @@ class UnixFilesBackend() :
 
 		return groups, name_cache
 
-	def save(self, users, groups) :
+	def save_all(self, users, groups) :
 		self.save_users(users)
 		self.save_groups(groups)
 

@@ -12,7 +12,6 @@ import os, crypt, sys
 from time import time, strftime, gmtime
 
 from licorn.foundations    import logging, exceptions, process, hlstr, pyutils, styles, fsapi
-from licorn.core.backends  import unix
 
 class UsersList :
 
@@ -38,7 +37,8 @@ class UsersList :
 		# see Select()
 		self.filter_applied = False
 
-		self.backend = unix.UnixFilesBackend(users = self)
+		self.backend = self.configuration.backends.current
+		self.backend.set_users(self)
 		
 		if UsersList.users is None :
 			self.reload()

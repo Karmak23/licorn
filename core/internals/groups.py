@@ -12,8 +12,6 @@ import os, stat, posix1e, re
 from time import strftime, gmtime
 
 from licorn.foundations    import logging, exceptions, hlstr, styles, fsapi, pyutils
-from licorn.core.backends  import unix
-
 
 class GroupsList :
 	""" Manages the groups and the associated shared data on a Linux system. """
@@ -43,7 +41,8 @@ class GroupsList :
 
 		self.warnings = warnings
 
-		self.backend = unix.UnixFilesBackend(groups = self)
+		self.backend = self.configuration.backends.current
+		self.backend.set_groups(self)
 
 		# see licorn.system.users for details
 		self.filter_applied = False

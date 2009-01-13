@@ -106,6 +106,8 @@ class LicornConfiguration (object) :
 			# configuration directive (eventually coming from Ubuntu/Debian, too).
 			self.LoadBaseConfiguration()
 
+			self.LoadBackends()
+
 			# TODO: monitor configuration files from a thread !
 
 		except exceptions.LicornException, e :
@@ -220,7 +222,8 @@ class LicornConfiguration (object) :
 
 		mandatory_dict = {
 			'daemon.wmi.enabled' : True,
-			'daemon.role' : "server"
+			'daemon.role' : "server",
+			'backends.prefered' : 'ldap' 
 			}
 
 		self._load_configuration(mandatory_dict)
@@ -235,6 +238,28 @@ class LicornConfiguration (object) :
 				raise e
 
 		self.SetMissingMandatoryDefauts()
+	def LoadBackends(self) :
+		""" Load Configuration backends. """
+
+		from licorn.core.backends import backends
+
+		for backend in backends :
+			b = backend(self)
+			if b.enabled and b.name == LicornConfiguration.backends.prefered :
+				self.backends.current = b
+				self._load_configuration(b.get_defaults())
+				return
+
+		for backend in backends :
+			b = backend(self)
+			if b.enabled :
+				self.backends.current = b
+				self._load_configuration(b.get_defaults())
+				return
+
+		raise exceptions.LicornRuntimeError(
+			'''No suitable backend found. this shouldn't happen…''' )
+		
 	def CreateConfigurationDir(self) :
 		"""Create the configuration dir if it doesn't exist."""
 
