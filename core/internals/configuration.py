@@ -72,7 +72,6 @@ class LicornConfiguration (object) :
 			reload(sys)
 			sys.setdefaultencoding("utf-8")
 
-		self.main = {}
 		self.app_name = 'Licorn'
 
 		# THIS install_path is used in keywords / keywords gui, not elsewhere.
@@ -242,7 +241,8 @@ class LicornConfiguration (object) :
 		if not os.path.exists(self.config_dir) :
 			try :
 				os.makedirs(self.config_dir)
-				logging.info("Automatically created %s." % styles.stylize(styles.ST_PATH, self.config_dir))
+				logging.info("Automatically created %s." % \
+					styles.stylize(styles.ST_PATH, self.config_dir))
 			except (IOError,OSError), e :
 				# user is not root, forget it !
 				pass
@@ -356,62 +356,6 @@ class LicornConfiguration (object) :
 			LicornConfiguration.users.mailbox_auto_create = False
 			logging.progress("Mail{box,dir} system not supported yet. Please get in touch with cortex@5sys.fr.")
 
-	def Ldap(self) :
-		""" Loads LDAP configuration and parameters, if the system uses it.
-
-			If nsswitch is using ldap, then the system is LDAP centric.
-			We assume libnss_ldap is properly configured.
-		"""
-		#
-		# TODO : test everything to avoid bombing if libnss_ldap is not properly
-		# configured.
-		#
-
-		self.mNsSwitch = {}
-		self.mNsSwitch = readers.simple_conf_load_dict_lists("/etc/nsswitch.conf")
-
-		try :
-			if 'ldap' in self.mNsSwitch['passwd'] and 'ldap' in self.mNsSwitch['group'] :
-
-				#logging.debug("System is using LDAP for user accounts and groups.")
-
-				self.mLdap				= readers.simple_conf_load_dict("/etc/ldap/ldap.conf")
-				self.mLdapEnabled		= True
-				self.mNssLdap			= readers.simple_conf_load_dict("/etc/libnss-ldap.conf")
-
-				try :
-					#
-					# Get the LDAP secret. If we are root or SUDO it will succeed.
-					# Else assume we can't bind as manager.
-					# In case of any error, display a warning ; it could be a configuration
-					# problem, but it could be harmless if it is simply "Joe User" trying
-					# to use the program without any privileges.
-					# IOError is "permission denied"
-					#
-					line = open("/etc/ldap.secret").readline()
-					self.mLdapSecret = line[:-1]
-				except (OSError, IOError) :
-					self.mLdapSecret = None
-				#
-				# TODO : more LDAP sanity checks, and build needed defaults if empty
-				# fields can be built from non-empty other (splitting or combinning).
-				#
-				# NOTE :
-				# -> according to ldap.conf(5), HOST / PORT are deprecated in favor of URI.
-				# We just stick to URI, it is sufficient for python-ldap.
-
-				try :
-					if self.mNssLdap["uri"] is '' :
-						raise exceptions.LicornConfigurationError, "required field «uri» is EMPTY in /etc/libnss-ldap.conf !"
-				except KeyError, e :
-					raise exceptions.LicornConfigurationError, "required field «uri» is NOT SET in /etc/libnss-ldap.conf !"
-
-			else :
-				self.mLdapEnabled = False
-
-		except KeyError, e :
-			# XXX: encapsulate and raise a licorn exception ?
-			raise e
 	def LoadShells(self) :
 		"""Find valid shells on the local system"""
 
