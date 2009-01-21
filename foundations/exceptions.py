@@ -140,6 +140,13 @@ class SystemCommandError(LicornRuntimeError) :
 		self.errno = errno
 	def __str__(self) :
 		return "The command `%s` failed (error code %d)." % (self.cmd, self.errno)
+class SystemCommandSignalError(LicornRuntimeError) :
+	""" A system command has exited because it received a signal."""
+	def __init__(self, cmd, errno) :
+		self.cmd   = cmd
+		self.errno = errno
+	def __str__(self) :
+		return "Command `%s` terminated by signal %d." % (self.cmd, self.errno)
 
 class CorruptFileError(LicornIOError) :
 	""" A configuration is corrupt, or is empty and it was attended not to be.  """

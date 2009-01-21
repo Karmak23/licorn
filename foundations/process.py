@@ -90,14 +90,19 @@ def syscmd(command, expected_retcode = 0) :
 
 	result = os.system(command)
 	# res is a 16bit integer, decomposed as :
-	#	- a low byte : PID (with its high bit is set if a core was dumped)
-	#	- a high byte : the real exit status.
+	#	- a low byte : signal (with its high bit is set if a core was dumped)
+	#	- a high byte : the real exit status, if signal is 0
+	# see os.wait() documentation for more
 
-	retcode = (result & 0xFF00) >> 8
-	logging.progress('syscmd(): "%s" exited with code %s.' % (command, retcode))
+	signal = result & 0xFF00
+	if signal == 0 :
+		retcode = (result & 0xFF00) >> 8
+	logging.progress('syscmd(): "%s" exited with code %s (%s).' % (command, retcode, result))
 
 	if retcode != expected_retcode :
 		raise exceptions.SystemCommandError(command, retcode)
+	if signal != 0 :
+		raise exceptions.SystemCommandSignalError(command, signal)
 def pipecmd(data, command) :
 	"""Roughly pipe some data into a program. Return the (eventual) stdout and stderr merged into an array."""
 
