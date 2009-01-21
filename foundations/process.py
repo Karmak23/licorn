@@ -94,9 +94,11 @@ def syscmd(command, expected_retcode = 0) :
 	#	- a high byte : the real exit status, if signal is 0
 	# see os.wait() documentation for more
 
-	signal = result & 0xFF00
+	retcode = 0
+	signal  = result & 0x00FF
 	if signal == 0 :
 		retcode = (result & 0xFF00) >> 8
+
 	logging.progress('syscmd(): "%s" exited with code %s (%s).' % (command, retcode, result))
 
 	if retcode != expected_retcode :
