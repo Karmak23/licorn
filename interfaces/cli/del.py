@@ -27,7 +27,7 @@ def desimport_groups(delete_filename) :
 	"""
 	if delete_filename is None :
 		raise exceptions.BadArgumentError, "You must specify a file name"
-	
+
 	delete_file = file(delete_filename, 'r')
 
 	groups_to_del = []
@@ -51,7 +51,7 @@ def desimport_groups(delete_filename) :
 	delta = 100.0 / float(quantity) # increment for progress indicator
 	progression = 0.0
 	i = 0 # to print i/length
-	
+
 	for g in groups_to_del :
 		try :
 			i += 1
@@ -88,7 +88,7 @@ def delete_profile() :
 	""" Delete a system wide User profile. """
 
 	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users, batch=opts.no_sync)
-	
+
 	if opts.no_sync :
 		users.WriteConf()
 def delete_keyword() :
@@ -97,7 +97,7 @@ def delete_keyword() :
 	from licorn.system import keywords
 	kw = keywords.KeywordsController(configuration)
 	kw.DeleteKeyword(opts.name, opts.del_children)
-	
+
 def delete_workstation() :
 	raise NotImplementedError("delete_workstations not implemented.")
 def delete_webfilter() :
@@ -117,7 +117,7 @@ if __name__ == "__main__" :
 				options.SetNoColors(True)
 
 			from licorn.interfaces.cli import argparser
-				
+
 			if len(sys.argv) < 2 :
 				# automatically display help if no arg/option is given.
 				sys.argv.append("--help")
@@ -146,16 +146,16 @@ if __name__ == "__main__" :
 						fromgroups = args[2]
 
 						# TODO: put these cases in the testsuite !
-						
+
 						for g in fromgroups.split(',') :
 							if g != "" :
 								try :
 									groups.RemoveUsersFromGroup(g, login.split(','))
 								except exceptions.LicornRuntimeException, e :
-									logging.warning("Unable to remove user(s) %s from group %s (was: %s)." 
+									logging.warning("Unable to remove user(s) %s from group %s (was: %s)."
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 								except exceptions.LicornException, e :
-									raise exceptions.LicornRuntimeError("Unable to remove user(s) %s from group %s (was: %s)." 
+									raise exceptions.LicornRuntimeError("Unable to remove user(s) %s from group %s (was: %s)."
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 					else :
 						delete_user()
@@ -195,7 +195,7 @@ if __name__ == "__main__" :
 
 		except exceptions.LicornException, e :
 			logging.error (str(e), e.errno)
-	
+
 		except KeyboardInterrupt :
 			logging.warning(logging.GENERAL_INTERRUPTED)
 

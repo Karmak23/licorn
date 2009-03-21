@@ -24,7 +24,7 @@ def modify_user() :
 	""" Modify a POSIX user account (Samba / LDAP included). """
 
 	something_done = False
-	
+
 	if opts.newgecos is not None :
 		something_done = True
 		users.ChangeUserGecos(opts.login, unicode(opts.newgecos))
@@ -36,7 +36,7 @@ def modify_user() :
 	if opts.newpassword is not None :
 		something_done = True
 		users.ChangeUserPassword(opts.login, opts.newpassword)
-	
+
 	if opts.auto_passwd is not None :
 		something_done = True
 		users.ChangeUserPassword(opts.login, hlstr.generate_password(opts.passwd_size), display = True)
@@ -70,7 +70,7 @@ def modify_user() :
 	if opts.apply_skel is not None :
 		something_done = True
 		users.ApplyUserSkel(opts.login, opts.apply_skel)
-	
+
 	if not something_done :
 		raise exceptions.BadArgumentError("What do you want to modify about user(s) ? Use --help to know !")
 def modify_group() :
@@ -86,19 +86,19 @@ def modify_group() :
 
 	if opts.users_to_del != [] :
 		groups.RemoveUsersFromGroup(opts.name, opts.users_to_del.split(','))
-	
+
 	if opts.resps_to_add != [] :
 		groups.AddUsersInGroup(configuration.groups.resp_prefix + opts.name, opts.resps_to_add.split(','))
 
 	if opts.resps_to_del != [] :
 		groups.RemoveUsersFromGroup(configuration.groups.resp_prefix + opts.name, opts.resps_to_del.split(','))
-		
+
 	if opts.guests_to_add != [] :
 		groups.AddUsersInGroup(configuration.groups.guest_prefix + opts.name, opts.guests_to_add.split(','))
 
 	if opts.guests_to_del != [] :
 		groups.RemoveUsersFromGroup(configuration.groups.guest_prefix + opts.name, opts.guests_to_del.split(','))
-		
+
 	#
 	# FIXME : do the same for guests,  or make resp-guest simply --add-groups resp-...,group1,group2,guest-...
 	#
@@ -109,17 +109,17 @@ def modify_group() :
 	if opts.granted_profiles_to_del is not None :
 		groups.DeleteGrantedProfiles(users, profiles, opts.name, opts.granted_profiles_to_del.split(','))
 		profiles.WriteConf(configuration.profiles_config_file)
-	
+
 	if opts.permissive is not None :
 		groups.SetSharedDirPermissiveness(opts.name, opts.permissive)
 	if opts.newname is not None :
 		groups.RenameGroup(profiles, opts.name, opts.newname)
 def modify_profile() :
 	""" Modify a system wide User profile. """
-	
+
 	if opts.group is None :
 		raise exceptions.BadArgumentError("Which profile do you want to modify ? Specify it with --group . Use --help for details.")
-	
+
 	if opts.newname is not None :
 		profiles.ChangeProfileName(opts.group, unicode(opts.newname))
 	if opts.newgroup is not None :
@@ -132,7 +132,7 @@ def modify_profile() :
 		profiles.ChangeProfileQuota(opts.group, opts.newquota)
 	if opts.newskel is not None :
 		profiles.ChangeProfileSkel(opts.group, opts.newskel)
-		
+
 	if opts.groups_to_add is not None :
 		profiles.AddGroupsInProfile(opts.group, opts.groups_to_add.split(','))
 		if opts.instant_apply :
@@ -146,14 +146,14 @@ def modify_profile() :
 			prim_memb = groups.primary_members(opts.group)
 			for group in opts.groups_to_del.split(',') :
 				groups.RemoveUsersFromGroup(group, prim_memb, batch=opts.no_sync)
-	
+
 	if opts.no_sync :
 		groups.WriteConf()
-		
+
 	profiles.WriteConf(configuration.profiles_config_file)
-	
+
 	_users = []
-	
+
 	# making users list (or not) to reapply profiles
 	if opts.apply_to_all_accounts : # all users of standard groups
 		users.Select(users.FILTER_STANDARD)
@@ -197,13 +197,13 @@ def modify_path() :
 	""" Manage keywords of a file or directory. """
 	from licorn.system import keywords
 	kw = keywords.KeywordsController(configuration)
-	
+
 	# this should go directly into system.keywords.
 	from licorn.harvester import HarvestClient
 	hc = HarvestClient()
 	hc.UpdateRequest(opts.path)
 	return
-	
+
 	if opts.clear_keywords :
 		kw.ClearKeywords(opts.path, opts.recursive)
 	else :
@@ -232,17 +232,17 @@ def modify_configuration() :
 
 	elif opts.set_ip_address :
 		raise exceptions.NotImplementedError("changing server IP address is not yet implemented.")
-		
+
 	elif opts.privileges_to_add :
 		for privilege in opts.privileges_to_add.split(',') :
 			configuration.groups.privileges_whitelist.append(privilege)
 		configuration.groups.privileges_whitelist.WriteConf()
-	
+
 	elif opts.privileges_to_remove :
 		for privilege in opts.privileges_to_remove.split(',') :
 			configuration.groups.privileges_whitelist.remove(privilege)
 		configuration.groups.privileges_whitelist.WriteConf()
-		
+
 	else :
 		raise exceptions.BadArgumentError("what do you want to modify ? use --help to know !")
 

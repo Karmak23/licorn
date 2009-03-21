@@ -83,11 +83,11 @@ def import_users() :
 		if profiles.profiles[profile] : pass
 	except KeyError :
 		raise exceptions.LicornRuntimeException, "The profile '%s' doesn't exist." % profile
-	
+
 	firstline    = open(import_filename).readline()
-	hzndialect   = csv.Sniffer().sniff(firstline)
-	if hzndialect.delimiter != opts.separator :
-		separator = hzndialect.delimiter 
+	lcndialect   = csv.Sniffer().sniff(firstline)
+	if lcndialect.delimiter != opts.separator :
+		separator = lcndialect.delimiter
 	else :
 		separator =  opts.separator
 
@@ -109,7 +109,7 @@ def import_users() :
 
 		user = {}
 		for (column, number) in ( ("firstname", firstname_col), ("lastname", lastname_col), ("group", group_col), ("login", opts.login_col), ("password", opts.password_col) ) :
-	
+
 			try :
 				if number is None :
 					user[column] = None
@@ -135,7 +135,7 @@ def import_users() :
 				user['login'] =	users.UsersController.make_login(inputlogin = user['login'])
 			else :
 				user['login'] = users.UsersController.make_login(firstname = user['firstname'], lastname = user['lastname'])
-		
+
 		except IndexError, e :
 			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))
 
@@ -144,7 +144,7 @@ def import_users() :
 
 		try :
 			user['group'] =	groups.GroupsController.make_name(user['group'])
-		
+
 		except IndexError, e :
 			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))
 
@@ -199,7 +199,7 @@ def import_users() :
 				raise e
 			data_to_export_to_html[g]= {}
 			sys.stdout.flush()
-				
+
 	if not opts.confirm_import :
 		sys.stderr.write(styles.stylize(styles.ST_PATH, "Fields order : FIRSTname ; LASTname ; login ; password ; group") + "\n")
 
@@ -211,7 +211,7 @@ def import_users() :
 				(uid, login, password) = users.AddUser(u['lastname'], u['firstname'], login=u['login'], password=u['password'], profile=profile, batch=opts.no_sync)
 				groups.AddUsersInGroup(u['group'], [ login ], batch=opts.no_sync)
 
-				logging.progress("\rAdded user « %s %s » [login=%s,uid=%d,passwd=%s] (user %d/%d), progress : %d%%" 
+				logging.progress("\rAdded user « %s %s » [login=%s,uid=%d,passwd=%s] (user %d/%d), progress : %d%%"
 					% ( u['firstname'], u['lastname'], login, uid, password, i, length_users, math.ceil(progression)) )
 
 				# the dictionnary key is forged to have something that is sortable.
@@ -265,7 +265,7 @@ def import_users() :
 			+ "h1,h2,h3 { text-align:center; }\n"
 			+ "p,div { text-align:center; }\n"
 			+ "table { margin: 3em 10%; width: 80%; border: 5px groove #369; border-collapse: collapse; }\n"
-			+ "tr { border : 1px solid black; }\n" 
+			+ "tr { border : 1px solid black; }\n"
 			+ "th {border-bottom: 3px solid #369; background-color: #99c; }\n"
 			+ "td,th { text-align: center; padding: 0.7em; }\n"
 			+ ".even { background-color: #eef; }\n"
@@ -318,12 +318,12 @@ def import_users() :
 		html_file.close()
 		sys.stderr.write(" done." + "\n")
 		sys.stdout.write("report : %s\n" % html_file.name )
-	
+
 	if opts.no_sync :
 		groups.WriteConf()
 		users.WriteConf()
 		profiles.WriteConf(configuration.profiles_config_file)
-		
+
 def add_user() :
 	""" Add a user account on the system. """
 
@@ -331,22 +331,22 @@ def add_user() :
 		firstname = None
 	else :
 		firstname = unicode(opts.firstname)
-	
+
 	if opts.lastname is None :
 		lastname = None
 	else :
 		lastname = unicode(opts.lastname)
-	
+
 	if opts.gecos is None :
 		gecos = None
 	else :
 		gecos = unicode(opts.gecos)
-	
+
 	if opts.password is None :
 		password = None
 	else :
 		password = unicode(opts.password)
-	
+
 	for login in opts.login.split(',') :
 		if login != '' :
 			try :
@@ -360,7 +360,7 @@ def add_group() :
 		description = ''
 	else :
 		description = unicode(opts.description)
-	
+
 	for name in opts.name.split(',') :
 		if name != '' :
 			try :
@@ -378,7 +378,7 @@ def add_profile() :
 		name = unicode(opts.name)
 	else :
 		name = None
-	
+
 	if opts.comment :
 		comment = unicode(opts.comment)
 	else :
@@ -450,7 +450,7 @@ if __name__ == "__main__" :
 								raise exceptions.LicornRuntimeError("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 				else :
 					add_user()
-					
+
 			elif mode == 'users' :
 				(opts, args) = argparser.addimport_parse_arguments(_app)
 				options.SetFrom(opts)
