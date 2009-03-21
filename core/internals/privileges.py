@@ -33,9 +33,9 @@ class PrivilegesWhiteList(list) :
 			self.index(privilege)
 		except ValueError :
 			from licorn.system import groups, profiles, users
-			allgroups   = groups.GroupsList(configuration)
-			allprofiles = profiles.ProfilesList(configuration, allgroups)
-			allusers    = users.UsersList(configuration, allprofiles, allgroups)
+			allgroups   = groups.GroupsController(configuration)
+			allprofiles = profiles.ProfilesController(configuration, allgroups)
+			allusers    = users.UsersController(configuration, allprofiles, allgroups)
 			if allgroups.is_system_group(privilege) :
 				list.append(self, privilege)
 			else :

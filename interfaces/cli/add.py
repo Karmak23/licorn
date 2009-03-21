@@ -132,9 +132,9 @@ def import_users() :
 
 		try :
 			if opts.login_col is not None :
-				user['login'] =	users.UsersList.make_login(inputlogin = user['login'])
+				user['login'] =	users.UsersController.make_login(inputlogin = user['login'])
 			else :
-				user['login'] = users.UsersList.make_login(firstname = user['firstname'], lastname = user['lastname'])
+				user['login'] = users.UsersController.make_login(firstname = user['firstname'], lastname = user['lastname'])
 		
 		except IndexError, e :
 			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))
@@ -143,7 +143,7 @@ def import_users() :
 			raise exceptions.LicornRuntimeError("\nImport error on line %d (was: %s)." % (i+1, e))
 
 		try :
-			user['group'] =	groups.GroupsList.make_name(user['group'])
+			user['group'] =	groups.GroupsController.make_name(user['group'])
 		
 		except IndexError, e :
 			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))

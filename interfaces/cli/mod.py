@@ -184,7 +184,7 @@ def modify_profile() :
 def modify_keyword() :
 	""" Modify a keyword. """
 	from licorn.system import keywords
-	kw = keywords.KeywordsList(configuration)
+	kw = keywords.KeywordsController(configuration)
 	if opts.newname is not None :
 		kw.RenameKeyword(opts.name, opts.newname)
 	if opts.parent is not None :
@@ -196,7 +196,7 @@ def modify_keyword() :
 def modify_path() :
 	""" Manage keywords of a file or directory. """
 	from licorn.system import keywords
-	kw = keywords.KeywordsList(configuration)
+	kw = keywords.KeywordsController(configuration)
 	
 	# this should go directly into system.keywords.
 	from licorn.harvester import HarvestClient

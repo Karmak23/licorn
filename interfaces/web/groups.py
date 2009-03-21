@@ -144,15 +144,15 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 	data  = '%s%s' % (w.backto(), __groups_actions(title))
 
 	if not sure :
-		allusers  = u.UsersList(configuration)
-		allgroups = g.GroupsList(configuration, allusers)
+		allusers  = u.UsersController(configuration)
+		allgroups = g.GroupsController(configuration, allusers)
 
 		description = _('''This will reset the desktops, icons and menus
 			of all members of the group, according to the content of the 
 			skel you choose. This will NOT alter any of the user personnal
 			data, nor the group shared data.''')
 		
-		pri_group = allgroups.groups[allusers.users[users.UsersList.login_to_uid(login)]['gid']]['name']
+		pri_group = allgroups.groups[allusers.users[users.UsersController.login_to_uid(login)]['gid']]['name']
 		
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list) :

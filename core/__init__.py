@@ -25,19 +25,19 @@ __all__ = [
 from licorn.foundations      import exceptions, logging
 
 from internals.configuration import LicornConfiguration
-from internals.users         import UsersList
-from internals.groups        import GroupsList
-from internals.profiles      import ProfilesList
-from internals.keywords      import KeywordsList
+from internals.users         import UsersController
+from internals.groups        import GroupsController
+from internals.profiles      import ProfilesController
+from internals.keywords      import KeywordsController
 
 import backends
 
 try :
 	configuration = LicornConfiguration()
-	users         = UsersList(configuration)
-	groups        = GroupsList(configuration, users)
-	profiles      = ProfilesList(configuration, groups, users)
-	keywords      = KeywordsList(configuration)
+	users         = UsersController(configuration)
+	groups        = GroupsController(configuration, users)
+	profiles      = ProfilesController(configuration, groups, users)
+	keywords      = KeywordsController(configuration)
 
 except exceptions.LicornException, e :
 	logging.error("Licorn core initialization failed:\n\t%s" % e)

@@ -14,7 +14,7 @@ from licorn.foundations    import exceptions, logging, hlstr, pyutils, file_lock
 from licorn.core.internals import readers
 
 
-class KeywordsList :
+class KeywordsController :
 	
 	keywords      = {}
 	configuration = None
@@ -23,8 +23,8 @@ class KeywordsList :
 	
 	def __init__(self, configuration) :
 		
-		KeywordsList.configuration = configuration
-		KeywordsList.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (configuration.defaults.home_base_path, configuration.groups.names['plural']))
+		KeywordsController.configuration = configuration
+		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (configuration.defaults.home_base_path, configuration.groups.names['plural']))
 		#
 		# TODO : work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).

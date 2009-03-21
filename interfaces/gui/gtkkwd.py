@@ -21,7 +21,7 @@ class LicornKeywordsGtkWindow :
 		""" Create all widgets."""
 
 		# import keywords from current system.
-		self.kw = keywords.KeywordsList(configuration)
+		self.kw = keywords.KeywordsController(configuration)
 		self.hc = HarvestClient()
 
 		self.gui_name = gui_name
