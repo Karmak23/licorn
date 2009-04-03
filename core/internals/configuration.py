@@ -155,8 +155,8 @@ class LicornConfiguration (object) :
 
 		self.SetDefaultNamesAndPaths()
 
-		self.home_backup_dir         = "%s/backup" % self.defaults.home_base_path
-		self.home_archive_dir        = "%s/archives" % self.defaults.home_base_path
+		self.home_backup_dir         = "%s/backup" % LicornConfiguration.defaults.home_base_path
+		self.home_archive_dir        = "%s/archives" % LicornConfiguration.defaults.home_base_path
 
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
@@ -411,7 +411,7 @@ class LicornConfiguration (object) :
 
 		import stat
 
-		for skel_path in ("%s/skels" % self.defaults.home_base_path, "/usr/share/skels") :
+		for skel_path in ("%s/skels" % LicornConfiguration.defaults.home_base_path, "/usr/share/skels") :
 			if os.path.exists(skel_path) :
 				try :
 					for new_skel in fsapi.minifind(path = skel_path, type = stat.S_IFDIR, mindepth = 2, maxdepth = 2) :
@@ -426,6 +426,13 @@ class LicornConfiguration (object) :
 		# WARNING: don't change order of these.
 		self.SetUsersDefaults()
 		self.SetGroupsDefaults()
+
+		groups_dir = "%s/%s" % (LicornConfiguration.defaults.home_base_path,
+			LicornConfiguration.groups.names['plural'])
+
+		# defaults to False, because this is mostly annoying. Administrator must
+		# have a good reason to hide groups.
+		LicornConfiguration.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf()
 		LicornConfiguration.users.uid_min         = add_user_conf['FIRST_UID']
@@ -465,7 +472,7 @@ class LicornConfiguration (object) :
 		# The default values are referenced in CheckAndLoadAdduserConf() too.
 		#
 		for (attr_name, conf_key, fallback) in (
-			('base_path', 'DHOME',    '%s/users' % self.defaults.home_base_path),
+			('base_path', 'DHOME',    '%s/users' % LicornConfiguration.defaults.home_base_path),
 			('default_shell', 'DSHELL',    '/bin/bash'),
 			('default_skel',  'SKEL',      '/etc/skel'),
 			('default_gid',   'USERS_GID', 100) ) :
@@ -490,17 +497,16 @@ class LicornConfiguration (object) :
 			LicornConfiguration.users.mailbox_type     = LicornConfiguration.MAIL_TYPE_VAR_MBOX
 		except KeyError :
 			pass
-
 	def SetDefaultNamesAndPaths(self) :
 		""" *HARDCODE* some names before we pull them out into configuration files."""
 		
-		self.defaults =  LicornConfigObject()
+		LicornConfiguration.defaults =  LicornConfigObject()
 
-		self.defaults.home_base_path = '/home'
+		LicornConfiguration.defaults.home_base_path = '/home'
 
 		# WARNING: Don't translate this. This still has to be discussed.
 		# TODO: move this into a plugin
-		self.defaults.admin_group = 'admins'
+		LicornConfiguration.defaults.admin_group = 'admins'
 
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
@@ -554,7 +560,7 @@ class LicornConfiguration (object) :
 		# warning: the order is important: in a default adduser.conf, only {FIRST,LAST}_SYSTEM_UID are
 		# present, and we assume this during the file patch.
 		defaults = (
-			('DHOME',  '%s/users' % self.defaults.home_base_path),
+			('DHOME',  '%s/users' % LicornConfiguration.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
@@ -739,7 +745,7 @@ class LicornConfiguration (object) :
 				# cf	http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and	http://web.linuxfr.org/forums/29/9994.html#599760
 				# and	http://evanjones.ca/python-utf8.html
-			elif attr in ('mHznGroup', 'mAddUser', 'mLoginDefs', 'mNssLdap') :
+			elif attr in ('mLcnGroup', 'mAddUser', 'mLoginDefs', 'mNssLdap') :
 				data += "\n\t%s\n" % str(self.__getattribute__(attr)).replace(", " , ",\n\t")
 			elif attr is 'mNsSwitch' :
 				data += "\n\t" + str(self.mNsSwitch).replace("], " , "]\n\t") + "\n"
@@ -749,6 +755,7 @@ class LicornConfiguration (object) :
 				data += "\n%s" % str(getattr(self, attr))
 			else :
 				data += "%s, to be implemented in licorn.core.configuration.Export()\n" % styles.stylize(styles.ST_IMPORTANT, "UNREPRESENTABLE YET")
+			
 		return data
 	def ExportXML(self) :
 		""" Export «self» (the system configuration) to XML. """
@@ -796,19 +803,25 @@ class LicornConfiguration (object) :
 
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 
+		groups_dir    = "%s/%s" % (LicornConfiguration.defaults.home_base_path, LicornConfiguration.groups.names['plural'])
 		acl_base      = "u::rwx,g::---,o:---" 
 		acl_mask      = "m:rwx"
-		acl_admins_ro = "g:%s:r-x" % self.defaults.admin_group
-		acl_admins_rw = "g:%s:rwx" % self.defaults.admin_group
+		acl_admins_ro = "g:%s:r-x" % LicornConfiguration.defaults.admin_group
+		acl_admins_rw = "g:%s:rwx" % LicornConfiguration.defaults.admin_group
 
 		# TODO: add all profiles groups to the access ACL.
+			
+		if LicornConfiguration.groups.hidden :
+			users_acl = '--x'
+		else :
+			users_acl = 'r-x'
 
 		dirs_to_verify = [
 			{
-				'path'        : "%s/%s" % (self.defaults.home_base_path, LicornConfiguration.groups.names['plural']),
+				'path'        : groups_dir,
 				'user'        : 'root',
 				'group'       : 'acl',
-				'access_acl'  : "%s,%s,g:www-data:--x,g:users:--x,%s" % (acl_base, acl_admins_ro, acl_mask),
+				'access_acl'  : "%s,%s,g:www-data:--x,g:users:%s,%s" % (acl_base, acl_admins_ro, users_acl, acl_mask),
 				'default_acl' : ""
 			} ]
 
@@ -856,7 +869,7 @@ class LicornConfiguration (object) :
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages (plugins ?),
 			# and they are not strictly needed for Licorn to operate properly.
-			needed_groups = [ 'users', 'acl', self.defaults.admin_group ]
+			needed_groups = [ 'users', 'acl', LicornConfiguration.defaults.admin_group ]
 			
 		else :
 			needed_groups = LicornConfiguration.groups.privileges_whitelist
@@ -997,4 +1010,8 @@ class LicornConfiguration (object) :
 		"""
 
 		pass
+	def SetHiddenGroups(self, hidden = True) :
+		""" Set (un-)restrictive mode on the groups base directory. """
 
+		LicornConfiguration.groups.hidden = hidden
+		self.CheckBaseDirs(batch = True)

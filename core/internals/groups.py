@@ -49,9 +49,28 @@ class GroupsController :
 
 		if GroupsController.groups is None :
 			self.reload()
+
+		configuration.groups.hidden = self.GetHiddenState()
 	def reload(self) :
 		""" load or reload internal data structures from files on disk. """
 		GroupsController.groups, GroupsController.name_cache = self.backend.load_groups()
+	def GetHiddenState(self) :
+		""" see if /home/groups is readable or not.
+			FIXME: do not hardcode "users".
+		"""
+		
+		try :
+			for line in posix1e.ACL( file='%s/%s' % (GroupsController.configuration.defaults.home_base_path,
+				GroupsController.configuration.groups.names['plural']) ) :
+				if line.tag_type & posix1e.ACL_GROUP :
+					if line.qualifier == GroupsController.name_to_gid('users') :
+						return not line.permset.read
+		except (IOError, OSError), e :
+			if e.errno == 13 :
+				LicornConfiguration.groups.hidden = None
+			elif e.errno != 2 :
+				# 2 will be corrected in this function
+				raise e
 
 	def SetProfiles(self, profiles) :
 		GroupsController.profiles = profiles

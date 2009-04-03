@@ -243,6 +243,9 @@ def modify_configuration() :
 			configuration.groups.privileges_whitelist.remove(privilege)
 		configuration.groups.privileges_whitelist.WriteConf()
 
+	elif opts.hidden_groups != None :
+		configuration.SetHiddenGroups(opts.hidden_groups)
+		
 	else :
 		raise exceptions.BadArgumentError("what do you want to modify ? use --help to know !")
 
