@@ -36,7 +36,7 @@ from licorn.daemon.core               import eventually_daemonize, setup_signals
 from licorn.daemon.internals.wmi      import eventually_fork_wmi_server
 from licorn.daemon.internals.cache    import Cache
 from licorn.daemon.internals.searcher import FileSearchServer
-from licorn.daemon.internals.syncer   import ServerSyncer, ClientSyncer
+#from licorn.daemon.internals.syncer   import ServerSyncer, ClientSyncer
 
 if __name__ == "__main__" :
 
@@ -57,23 +57,25 @@ if __name__ == "__main__" :
 	eventually_fork_wmi_server()
 
 	if configuration.daemon.role == "client" :
-		syncer = ClientSyncer(dname)
-		threads.append(syncer)
+		pass
+		#syncer = ClientSyncer(dname)
+		#threads.append(syncer)
 
 		# TODO: get the cache from the server, it has the
 		# one in sync with the NFS-served files.
 
 	else :
-		syncer     = ServerSyncer(dname)
+		#syncer     = ServerSyncer(dname)
 		searcher   = FileSearchServer(dname)
+		cache      = Cache(keywords, dname)
 		aclchecker = ACLChecker(cache, dname)
 		notifier   = INotifier(aclchecker, cache, dname)
-		cache      = Cache(keywords, dname)
+		threads.append(cache)
 		threads.append(aclchecker)
 		threads.append(notifier)
-		threads.append(syncer)
-		threads.append(search)
-		threads.append(cache)
+		#threads.append(syncer)
+		threads.append(searcher)
+		
 
 	for th in threads :
 		th.start()
