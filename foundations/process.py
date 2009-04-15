@@ -106,21 +106,31 @@ def syscmd(command, expected_retcode = 0) :
 	if signal != 0 :
 		raise exceptions.SystemCommandSignalError(command, signal)
 def pipecmd(data, command) :
-	"""Roughly pipe some data into a program. Return the (eventual) stdout and stderr merged into an array."""
+	""" Roughly pipe some data into a program. Return the (eventual) stdout and stderr merged into an array. """
 
 	logging.debug('''pipecmd(): piping "%s" into "%s".''' % (data, command))
 
-	(pin, pout, perr) = os.popen3(command)
+	if sys.version_info[0:2] == (2, 6) :
+		from subprocess import Popen, PIPE
+		
+		p = Popen(command, shell=False,
+          stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
-	if None in (pin, pout, perr) :
-		raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
+		(out, err) = p.communicate(data)
 
-	pin.write(data)
-	pin.flush()
-	pin.close()
+		return err
 
-	# forget the output.
-	pout.read()
+	else :
+		(pin, pout, perr) = os.popen3(command)
+	
+		if None in (pin, pout, perr) :
+			raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
 
-	return perr.read()
+		pin.write(data)
+		pin.flush()
+		pin.close()
 
+		# forget the output.
+		pout.read()
+
+		return perr.read()
