@@ -273,7 +273,7 @@ class UsersController :
 		try :
 			sys.stderr.write(process.pipecmd('%s\n%s\n' % (password, password), ['smbpasswd', '-a', login, '-s']))
 		except (IOError, OSError), e :
-			if e.errno != 32 :
+			if e.errno not in (2, 32) :
 				raise e
 
 		if groups_to_add_user_to != [] :
@@ -322,9 +322,9 @@ class UsersController :
 
 		try :
 			# samba stuff
-			os.popen2([ 'smbpasswd', '-x', login ])[1].read()
+			sys.stderr.write(process.pipecmd('', ['smbpasswd', '-x', login]))
 		except (IOError, OSError), e :
-			if e.errno != 32 :
+			if e.errno not in (2, 32) :
 				raise e
 
 		# keep the homedir path, to backup it if requested.
