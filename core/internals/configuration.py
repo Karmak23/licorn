@@ -28,7 +28,7 @@ class LicornConfiguration (object) :
 	groups      = None
 
 	# constants
-	# TODO: move these constants into plugins
+	# TODO: move these constants elsewhere ?
 	DISTRO_UBUNTU   = 1
 	DISTRO_LICORN   = DISTRO_UBUNTU
 	DISTRO_DEBIAN   = 2
@@ -284,7 +284,7 @@ class LicornConfiguration (object) :
 				if lsb_release['DISTRIB_ID'] == 'Licorn' :
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu" :
-					if lsb_release['DISTRIB_CODENAME'] in ('dapper', 'edgy', 'feisty', 'gutsy', 'hardy', 'intrepid', 'jaunty') :
+					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'jaunty', 'intrepid', 'hardy', 'gutsy', 'feisty',  'edgy', 'dapper' ) :
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else :
 						raise exceptions.LicornRuntimeError("This Ubuntu version is not yet supported, sorry !")
@@ -295,8 +295,10 @@ class LicornConfiguration (object) :
 					raise exceptions.LicornRuntimeError("Gentoo is not yet supported, sorry !")
 				elif  os.path.exists( '/etc/debian_version' ) :
 					raise exceptions.LicornRuntimeError("Old Debian systems are not supported, sorry !")
-				elif  os.path.exists( '/etc/redhat_release' ) :
-					raise exceptions.LicornRuntimeError("RedHat/Mandrake is not yet supported, sorry !")
+				elif  os.path.exists( '/etc/SuSE-release' ) or os.path.exists( '/etc/suse-release' ) :
+					raise exceptions.LicornRuntimeError("SuSE are not yet supported, sorry !")
+				elif  os.path.exists( '/etc/redhat_release' ) or os.path.exists( '/etc/redhat-release' ):
+					raise exceptions.LicornRuntimeError("RedHat/Mandriva is not yet supported, sorry !")
 				else :
 					raise exceptions.LicornRuntimeError("Unknown Linux Distro, sorry !")
 		else :
