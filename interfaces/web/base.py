@@ -2,6 +2,7 @@
 
 import os, time, re
 
+from subprocess            import Popen, PIPE
 from licorn.core           import users
 from licorn.foundations    import logging
 from licorn.interfaces.web import utils as w
@@ -31,7 +32,7 @@ def system_load() :
 	allusers.Select(allusers.FILTER_STANDARD)
 	nbusers = len(allusers.filtered_users)
 
-	cxusers = len(os.popen2('who')[1].read().split('\n'))
+	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE, close_fds = True).stdout.read().split('\n'))
 	if cxusers > 1 :
 		s_users = 's'
 	else :
