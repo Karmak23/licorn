@@ -63,7 +63,7 @@ class LicornRuntimeError(LicornError) :
 class LicornWebException(LicornRuntimeException) :
 	errno = 601
 	pass
-class LicornWebException(LicornRuntimeError) :
+class LicornWebError(LicornRuntimeError) :
 	errno = 602
 	pass
 
