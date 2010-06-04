@@ -178,11 +178,11 @@ def access_key(key) :
 		return ''
 def reset(value = "Revenir au valeurs d'origine") :
 	return '<input type="reset" value="%s" />' % (value)
-def submit(name, value = "", onClick = "") :
+def submit(name, value = "", onClick = "", accesskey = None) :
 	if value == "" : value = name
 	if onClick != "" : onClickValue = 'onClick="%s"' % onClick
 	else : onClickValue = ""
-	return '<input type="submit" name="%s" value="%s" %s />' % (name, value, onClickValue)
+	return '<input type="submit" name="%s" value="%s" %s %s />' % (name, value, onClickValue, access_key(accesskey))
 def button(label, value, accesskey = None) :
 	return '<a href="%s"><button type="button" %s>%s</button></a>' % (value, access_key(accesskey), label)
 def select(name, values, current = "", dont_display = (), func = str, accesskey = None) :
