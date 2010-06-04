@@ -3,6 +3,7 @@
 import os, time, re
 
 from licorn.core           import users
+from licorn.foundations    import logging
 from licorn.interfaces.web import utils as w
 
 def __status_actions() :
@@ -88,11 +89,16 @@ def system_info() :
 	mem = {}
 
 	def compute_mem(line, x) :
-		#logging.debug(line[0:-1])
+		#logging.info(line[0:-1] + " -> " + re.split('\W+', line)[1])
 
-		if line[0:len(x)] == x :
-			#print 'ok'
-			return { x : float(re.split('\W+', line)[1]) / 1024000.0 }
+		split = re.split('[\W\(\)]+', line)
+
+		if split[0] == x :
+			try:
+				return { x : float(split[1]) / 1048576.0 }
+			except:
+				# skip "Active(xxx)" and other mixed entries from /proc/meminfo.
+				return {}
 		else :
 			return {}
 
@@ -102,9 +108,9 @@ def system_info() :
 
 	return _('''
 Processor%s: %d x <strong>%s</strong><br /><br />
-Physical memory: <strong>%.2fGib</strong> total,<br />
-%.2f Gib for programs, %.2f Gib for cache, %.2f Gib for buffers.<br /><br />
-Virtual memory: %.2f Gib total, <strong>%.0f%% free<strong>.
+Physical memory: <strong>%.2fGb</strong> total,<br />
+%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
+Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.
 ''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
 	
 def index(uri) :

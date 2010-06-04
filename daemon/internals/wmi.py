@@ -13,8 +13,8 @@ from SocketServer       import TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations import logging, exceptions, styles, process
-from licorn.core        import configuration
-from licorn.daemon.core import dname, wpid_path, wmi_port
+from licorn.core        import configuration, users, groups
+from licorn.daemon.core import dname, wpid_path, wmi_port, wmi_group, buffer_size
 
 def eventually_fork_wmi_server(start_wmi = True) :
 
@@ -61,10 +61,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 			if type(f) in (type(""), type(u'')) :
 				self.wfile.write(f)
 			else :
-				buf = f.read(_buffer_size)
+				buf = f.read(buffer_size)
 				while buf :
 					self.wfile.write(buf)
-					buf = f.read(_buffer_size)
+					buf = f.read(buffer_size)
 				f.close()
 	def do_POST(self) :
 		""" Handle POST data and create a dict to be used later."""
@@ -146,8 +146,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 							# TODO: make this a beautiful PAM authentication ?
 							#
 							if users.user_exists(login = authorization[0]) and users.check_password(authorization[0], authorization[1]) :
-								if groups.group_exists(_wmi_group) :
-									if authorization[0] in groups.auxilliary_members(_wmi_group) :
+								if groups.group_exists(wmi_group) :
+									if authorization[0] in groups.auxilliary_members(wmi_group) :
 										return True
 								else :
 									return True
