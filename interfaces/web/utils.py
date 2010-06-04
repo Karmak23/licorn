@@ -12,6 +12,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, cStringIO
 
+from subprocess import Popen, PIPE
 from licorn.core import configuration
 
 licence_text = _("""
@@ -40,14 +41,14 @@ def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur du
 	
 	if type(command) not in (type(()), type([])) :
 		return error("La commande passée en paramètre doit être un tuple ou une liste Python&#160;!", command, "if type(command) not in (type(()), type([])) :")
-	
-	pin, pout, perr = os.popen3(command)
 
-	# wait for the command to finish and close output pipe.
-	pout.read()
-	
-	# read standard error to see if something went wrong.
-	err = perr.read()[:-1]
+	p = Popen(command, executable = 'sudo' , shell = False, stdin = PIPE, stdout = PIPE, stderr = PIPE, close_fds = True)
+
+	(pin, pout, perr) = (p.stdin, p.stdout, p.stderr)
+
+	# FIXME: why this ?
+	err = "nothing"
+	(out, err) = p.communicate()
 
 	if err != "" :
 		return error(err_msg, command, err.replace('>', '&gt;').replace('<', '&lt;'))
