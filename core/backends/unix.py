@@ -11,7 +11,7 @@ from licorn.core.internals      import readers
 from licorn.foundations.objects import UGBackend
 
 class unix_backend(UGBackend) :
-	def __init__(self, configuration, users = None, groups = None) :
+	def __init__(self, configuration, users = None, groups = None, warnings = True) :
 		UGBackend.__init__(self, configuration, users, groups)
 
 		# this is always true on a Linux system.
@@ -19,6 +19,7 @@ class unix_backend(UGBackend) :
 		# this one anyway, so there is no harm in setting this always True.
 		self.enabled = True
 		self.name    = "Unix"
+		self.warnings = warnings
 	def load_users(self, groups = None) :
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
