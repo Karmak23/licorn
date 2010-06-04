@@ -213,7 +213,7 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 		description = _('''This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.''')
 		
 		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
-		
+
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list) :
 			'''
@@ -238,7 +238,7 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 
 	else :
 		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
+		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', apply_skel ]
 
 		return w.page(title, data +
 			w.run(command, uri, err_msg = _("Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!") % (os.path.basename(apply_skel), login)))
