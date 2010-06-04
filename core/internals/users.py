@@ -44,7 +44,7 @@ class UsersController :
 			self.reload()
 	def reload(self) :
 		""" Load (or reload) the data structures from the system files. """
-		UsersController.users, UsersController.login_cache = self.backend.load_users()
+		UsersController.users, UsersController.login_cache = self.backend.load_users(self.groups)
 
 	def SetProfiles(self, profiles) :
 		UsersController.profiles = profiles
