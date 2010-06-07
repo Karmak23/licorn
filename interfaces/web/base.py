@@ -43,6 +43,8 @@ def system_load() :
 	uptime_min  = 0
 	uptime_hour = 0
 	uptime_day  = 0
+	uptime_year = 0
+	s_year = ''
 	s_day  = ''
 	s_hour = ''
 	s_sec  = ''
@@ -51,23 +53,30 @@ def system_load() :
 	if uptime_sec > 60 :
 		uptime_min = uptime_sec / 60
 		uptime_sec -= (uptime_min * 60)
-		if uptime_sec > 1 :
-			s_sec = 's'
+
 		if uptime_min > 60 :
 			uptime_hour = uptime_min / 60
 			uptime_min -= (uptime_hour * 60)
-			if uptime_min > 1 :
-				s_min = 's'
 			if uptime_hour > 24 :
 				uptime_day = uptime_hour / 24
 				uptime_hour -= (uptime_day * 24)
-				if uptime_hour > 1 :
-					s_hour = 's'
+				if uptime_day > 365 :
+					uptime_year = uptime_day / 365
+					uptime_day -= (uptime_year * 365)
+					if uptime_year > 1 :
+						s_year = 's'
+					uptime_string += _('%d year%s, ') % (uptime_year, s_year)
 				if uptime_day > 1 :
 					s_day = 's'
 				uptime_string += _('%d day%s, ') % (uptime_day, s_day)
+			if uptime_hour > 1 :
+				s_hour = 's'
 			uptime_string += _('%d hour%s, ') % (uptime_hour, s_hour)
+		if uptime_min > 1 :
+			s_min = 's'
 		uptime_string += _('%d min%s, ') % (uptime_min, s_min)
+	if uptime_sec > 1 :
+		s_sec = 's'
 	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)				
 			
 	return _('''Up and running since <strong>%s</strong>.<br /><br />
