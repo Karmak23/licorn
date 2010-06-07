@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-07 12:07+0200\n"
+"POT-Creation-Date: 2010-06-07 18:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,25 +86,30 @@ msgstr ""
 
 #: interfaces/web/base.py:68
 #, python-format
-msgid "%d day%s, "
-msgstr ""
-
-#: interfaces/web/base.py:69
-#, python-format
-msgid "%d hour%s, "
-msgstr ""
-
-#: interfaces/web/base.py:70
-#, python-format
-msgid "%d min%s, "
+msgid "%d year%s, "
 msgstr ""
 
 #: interfaces/web/base.py:71
 #, python-format
+msgid "%d day%s, "
+msgstr ""
+
+#: interfaces/web/base.py:74
+#, python-format
+msgid "%d hour%s, "
+msgstr ""
+
+#: interfaces/web/base.py:77
+#, python-format
+msgid "%d min%s, "
+msgstr ""
+
+#: interfaces/web/base.py:80
+#, python-format
 msgid "%d sec%s"
 msgstr ""
 
-#: interfaces/web/base.py:73
+#: interfaces/web/base.py:82
 #, python-format
 msgid ""
 "Up and running since <strong>%s</strong>.<br /><br />\n"
@@ -113,7 +118,7 @@ msgid ""
 "1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
 msgstr ""
 
-#: interfaces/web/base.py:111
+#: interfaces/web/base.py:120
 #, python-format
 msgid ""
 "\n"
@@ -123,41 +128,41 @@ msgid ""
 "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.\n"
 msgstr ""
 
-#: interfaces/web/base.py:120
+#: interfaces/web/base.py:129
 msgid "Rebooting…"
 msgstr ""
 
-#: interfaces/web/base.py:139
+#: interfaces/web/base.py:148
 #, python-format
 msgid "Sure you want to reboot the %s server?"
 msgstr ""
 
-#: interfaces/web/base.py:140 interfaces/web/base.py:162
+#: interfaces/web/base.py:149 interfaces/web/base.py:171
 msgid "YES"
 msgstr ""
 
-#: interfaces/web/base.py:141 interfaces/web/base.py:163
+#: interfaces/web/base.py:150 interfaces/web/base.py:172
 msgid "NO"
 msgstr ""
 
-#: interfaces/web/base.py:144
+#: interfaces/web/base.py:153
 msgid "Shutting down…"
 msgstr ""
 
-#: interfaces/web/base.py:161
+#: interfaces/web/base.py:170
 #, python-format
 msgid "Sure you want to shutdown the %s server?"
 msgstr ""
 
-#: interfaces/web/base.py:168
+#: interfaces/web/base.py:177
 msgid "Server status"
 msgstr ""
 
-#: interfaces/web/base.py:176
+#: interfaces/web/base.py:185
 msgid "System information"
 msgstr ""
 
-#: interfaces/web/base.py:176
+#: interfaces/web/base.py:185
 msgid "System status"
 msgstr ""
 
