@@ -179,6 +179,7 @@ class INotifier(Thread, Singleton):
 
 		checker.set_groups(groups)
 
+		# disable the Exists() calls at gamin's launch ?
 		#self.mon.no_exists()
 
 		for gid in groups.filtered_groups :
@@ -313,7 +314,7 @@ class INotifier(Thread, Singleton):
 
 				if len(self._to_watch) :
 					# add one path at a time, to not stress the daemon, and
-					# make new inotified paths come smoother.
+					# make new inotified paths come in smoothly.
 
 					path, gid = self._to_watch.pop()
 					def myfunc(path, event, gid = gid, dirname = path) :
