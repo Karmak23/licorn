@@ -6,6 +6,9 @@ from licorn.foundations    import exceptions, hlstr, logging
 from licorn.core           import configuration, groups, users, profiles
 from licorn.interfaces.web import utils as w
 
+#remove this after testing
+reload(w)
+
 groups_filters_lists_ids = ( 
 	(groups.FILTER_STANDARD, [_('Customize groups'),           _('Available groups'),           _('Affected groups')],           'standard_groups'),
 	(groups.FILTER_PRIVILEGED, [_('Customize privileges'),     _('Available privileges'),       _('granted privileges')],        'privileged_groups'),
@@ -24,30 +27,34 @@ def __merge_multi_select(*lists) :
 		else :
 			final.extend(list)
 	return final
-def __users_actions() :
+def ctxtnav(active = True) :
+
+	if active :
+		disabled = '';
+		onClick = '';
+	else :
+		disabled = 'un-clickable';
+		onClick  = 'onClick="javascript: return(false);"' 
+
 	return '''
-<div id="actions">
-<table>
-	<tr>
-		<td><a href="/users/new" title="%s"><img src="/images/32x32/user-new.png" alt="%s" /><br />%s</a></td>
-		<td><a href="/users/import" title="%s"><img src="/images/import-users.png" alt="%s" /><br />%s</a></td>
-		<td><a href="/users/export" title="%s"><img src="/images/export-users.png" alt="%s" /><br />%s</a></td>
-	</tr>
-</table>
-</div>
+	<div id="ctxtnav" class="nav">
+		<h2>Context Navigation</h2>
+		<ul>
+			<li><a href="/users/new" title="%s" %s class="%s"><div class="ctxt-icon %s" id="icon-add">%s</div></a></li>
+			<li><a href="/users/import" title="%s" %s class="%s"><div class="ctxt-icon %s" id="icon-import">%s</div></a></li>
+			<li><a href="/users/export" title="%s" %s class="%s"><div class="ctxt-icon %s" id="icon-export">%s</div></a></li>
+		</ul>
+	</div>
 	''' % (
-		_("Add a new user account on the system."),
-		_("Add an account."),
+		_("Add a new user account on the system."), onClick, disabled, disabled,
 		_("Add an account"),
-		_("Import new user accounts from a CSV-delimited file."),
-		_("Import accounts."),
+		_("Import new user accounts from a CSV-delimited file."), onClick, disabled, disabled,
 		_("Import accounts"),
-		_("Export current user accounts list to a CSV or XML file."),
-		_("Export accounts."),
+		_("Export current user accounts list to a CSV or XML file."), onClick, disabled, disabled,
 		_("Export accounts")
 		)
 
-def export(uri, type = "", yes = None) :
+def export(uri, http_user, type = "", yes = None) :
 	""" Export user accounts list."""
 
 	# TODO : reload(profiles)
@@ -57,7 +64,8 @@ def export(uri, type = "", yes = None) :
 	del yes
 
 	title = _("Export user accounts list")
-	data  = '%s%s' % (w.backto(), __users_actions())
+	data  = '<div id="banner">\n%s\n%s</div>\n%s\n<div id="main">\n%s\n<div id="content"><h1>%s</h1>' % (
+		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title) 
 
 	if type == "" :
 		description = _('''CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser.''')
@@ -69,6 +77,8 @@ def export(uri, type = "", yes = None) :
 			yes_values   = [ _("Export >>"), "/users/export", "E" ],
 			no_values    = [ _("<< Cancel"),  "/users/list",   "N" ],
 			form_options = form_options)
+
+		data += '</div><!-- end main -->'
 
 		return w.page(title, data)
 
@@ -87,15 +97,14 @@ def export(uri, type = "", yes = None) :
 			return users.ExportXML()
 
 # delete a user account.
-def delete(uri, login, sure = False, no_archive = False, yes = None) :
+def delete(uri, http_user, login, sure = False, no_archive = False, yes = None) :
 	"""remove user account."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del yes
 
 	title = _("Remove user account %s") % login
-	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
-
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 	
 	if not sure :
 		data += w.question(_("Are you sure you want to remove account <strong>%s</strong>?") % login,
@@ -108,6 +117,8 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 			form_options = w.checkbox("no_archive", "True", 
 				_("Definitely remove account data (no archiving)."),
 				checked = False) )
+
+		data += w.page_body_end()
 
 		return w.page(title, data)
 
@@ -123,24 +134,31 @@ def delete(uri, login, sure = False, no_archive = False, yes = None) :
 		if no_archive :
 			command.extend(['--no-archive'])
 		
-		return w.page(title, data + 
-			w.run(command, uri, err_msg = _("Failed to remove account <strong>%s</strong>!") % login))
+		data += w.page_body_end()
+
+		return w.page(title, data + w.run(command, uri,
+			err_msg = _("Failed to remove account <strong>%s</strong>!") % login))
 		
 # locking and unlocking.
-def unlock(uri, login) :
+def unlock(uri, http_user, login) :
 	"""unlock a user account password."""
 
-	title   = _("Unlock account %s") % login
-	data    = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	title = _("Unlock account %s") % login
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	users.reload()
+
+	data += w.page_body_end()
+
 	if users.is_system_login(login) :
-		return w.page(title, w.error(_("Failed to unlock account"), [ _("alter system account.") ], _("insufficient permission to perform operation.")))
+		return w.page(title, w.error(_("Failed to unlock account"),
+			[ _("alter system account.") ], _("insufficient permission to perform operation.")))
 
 	command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--unlock" ]
+
 	return w.page(title, data + 
 		w.run(command, uri, err_msg = _("Failed to unlock account <strong>%s</strong>!") % login))
-def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
+def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = None) :
 	"""lock a user account password."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -150,7 +168,7 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 	users.reload()
 
 	title = _("Lock account %s") % login
-	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if not sure :
 		description = _('''This will prevent user to connect to network clients (thin ones,
@@ -161,7 +179,8 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 			description += _("""<br /><br />
 				But this will not block incoming %s network connections, if the user
 				uses %s %s or %s public/private keys. To block ANY access to the system,
-				<strong>remove him/her from remotessh group</strong>.""") % (w.acr('SSH'), w.acr('SSH'), w.acr('RSA'), w.acr('DSA'))
+				<strong>remove him/her from remotessh group</strong>.""") % (w.acr('SSH'),
+				w.acr('SSH'), w.acr('RSA'), w.acr('DSA'))
 			form_options = w.checkbox("remove_remotessh", "True",
 				_("Remove user from group <code>remotessh</code> in the same time."),
 				checked = True, accesskey = _('R'))
@@ -174,11 +193,15 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 			no_values    = [ _("<< Cancel"),     "/users/list",           _("C") ],
 			form_options = form_options)
 
+		data += w.page_body_end()
+
 		return w.page(title, data)
 
 	else :
 		if users.is_system_login(login) :
-			return w.page(title, w.error(_("Failed to lock account"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
+			return w.page(title, w.error(_("Failed to lock account"),
+				[ _("alter system account.") ],
+				_("insufficient permissions to perform operation.")))
 
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--lock" ]
@@ -186,11 +209,13 @@ def lock(uri, login, sure = False, remove_remotessh = False, yes = None) :
 		if remove_remotessh :
 			command.extend(['--del-groups', 'remotessh'])
 		
+		data += w.page_body_end()
+
 		return w.page(title, data +
 			w.run(command, uri, err_msg = _("Failed to lock account <strong>%s</strong>!") % login))
 
 # skel reapplyin'
-def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel, yes = None) :
+def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.default_skel, yes = None) :
 	"""reapply a user's skel with confirmation."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -204,7 +229,7 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 	g = groups.groups
 
 	title = _("Reapply skel to user account %s") % login
-	data  = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if users.is_system_login(login) :
 		return w.page(title, w.error(_("Failed to reapply skel"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
@@ -213,7 +238,7 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 		description = _('''This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.''')
 		
 		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
-
+		
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list) :
 			'''
@@ -234,17 +259,20 @@ def skel(uri, login, sure = False, apply_skel = configuration.users.default_skel
 			no_values    = [ _("<< Cancel"),     "/users/list",            _("C") ],
 			form_options = form_options)
 
+		data += w.page_body_end()
 		return w.page(title, data)
 
 	else :
 		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', apply_skel ]
+		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
 
-		return w.page(title, data +
-			w.run(command, uri, err_msg = _("Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!") % (os.path.basename(apply_skel), login)))
+		data += w.page_body_end()
+
+		return w.page(title, data + w.run(command, uri,
+			err_msg = _("Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!") % (os.path.basename(apply_skel), login)))
 
 # user account creation
-def new(uri) :
+def new(uri, http_user) :
 	"""Generate a form to create a new user on the system."""
 
 	# TODO : profiles.reload()
@@ -254,21 +282,25 @@ def new(uri) :
 	p = profiles.profiles
 	
 	title = _("New user account")
-	data  = '%s%s\n%s\n' % (w.backto(), __users_actions(), w.menu(uri))
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	def profile_input() :
 
 		#TODO : To be rewritten ?
 		return """
-	<tr>
-		<td><strong>%s</strong></td><td>%s</td>
-	</tr>
+			<tr>
+				<td><strong>%s</strong></td>
+				<td class="right">
+%s
+				</td>
+			</tr>
 			""" % (_("This user is a"), w.select('profile',  p.keys(), func = lambda x: p[x]['name']))
 	def gecos_input() :
 		return """
-	<tr>
-		<td><strong>%s</strong></td><td>%s</td>
-	</tr>
+			<tr>
+				<td><strong>%s</strong></td>
+				<td class="right">%s</td>
+			</tr>
 			""" % (_("Full name"), w.input('gecos', "", size = 30, maxlength = 64, accesskey = 'N'))
 	def shell_input() :
 		return w.select('loginShell',  configuration.users.shells, current = configuration.users.default_shell, func = os.path.basename)
@@ -283,54 +315,79 @@ def new(uri) :
 
 	form_name = "user_edit"
 
-	data += '''<div id="edit_user">
-<form name="%s" id="%s" action="/users/create" method="post">
-<table id="user_account">
-	%s
-	%s
-	<tr>
-		<td><strong><a href="#" class="help" title="%s">%s</a></strong> %s</td><td>%s</td>
-	</tr>
-	<tr>
-		<td><strong>%s</strong></td><td>%s</td>
-	</tr>
-	<tr>
-		<td><strong><a href="#" class="help" title="%s">%s</a></strong><br /></td><td>%s</td>
-	</tr>
-	<tr>
-		<td>%s</td><td>%s</td>
-	</tr>
-	<tr><td colspan="2" class="double_selector">%s</td></tr>
-	<tr><td colspan="2" class="double_selector">%s</td></tr>
-	<tr><td colspan="2" class="double_selector">%s</td></tr>
-	<tr><td colspan="2" class="double_selector">%s</td></tr>
-	<tr>
-		<td class="paddedleft">%s</td>
-		<td class="paddedright">%s</td>
-	</tr>
-</table>
-</form>
-</div>
+	data += '''
+	<div id="edit_form">
+	<form name="%s" id="%s" action="/users/create" method="post">
+		<table>
+%s
+%s
+			<tr>
+				<td><strong><a href="#" class="help" title="%s">%s</a></strong> %s</td>
+				<td class="right">%s</td>
+			</tr>
+			<tr>
+				<td><strong>%s</strong></td>
+				<td class="right">%s</td>
+			</tr>
+			<tr>
+				<td><strong><a href="#" class="help" title="%s">%s</a></strong></td>
+				<td class="right">%s</td>
+			</tr>
+			<tr>
+				<td>%s</td>
+				<td class="right">%s</td>
+			</tr>
+			<tr>
+				<td colspan="2" id="my-accordion">
+					<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+					<div class="accordion_content">%s</div>
+					<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+					<div class="accordion_content">%s</div>
+					<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+					<div class="accordion_content">%s</div>
+					<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+					<div class="accordion_content">%s</div>
+
+					<script type="text/javascript">
+						Event.observe(window, 'load', loadAccordions, false);
+						function loadAccordions() {
+							var prout = new accordion("my-accordion");
+							//prout.activate($$("#my-accordion .accordion_toggle")[0]);
+						}
+					</script>
+				</td>
+			</tr>
+			<tr>
+				<td>%s</td>
+				<td class="right">%s</td>
+			</tr>
+		</table>
+	</form>
 	''' % ( form_name, form_name,
 		profile_input(),
 		gecos_input(),
-		_("""Password must be at least %d characters long. You can use all alphabet characters,
-			numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
+		_("""Password must be at least %d characters long. You can use all alphabet characters, numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
 		_("Password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
 		w.input('password', "", size = 30, maxlength = 64, accesskey = _('P'), password = True),
 		_("Password confirmation."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True ),
-		_("""Identifier must be lowercase, without accents or special characters (you can use dots and carets).
-			<br /><br />If you let this field empty, identifier will be automaticcaly guessed from first name 
-			and last name."""),
+		_("""Identifier must be lowercase, without accents or special characters (you can use dots and carets).<br /><br />
+If you let this field empty, identifier will be automaticcaly guessed from first name and last name."""),
 		_("Identifier"), w.input('login', "", size = 30, maxlength = 64, accesskey = _('I')),
-		_("<strong>Shell</strong><br />(Unix command line interpreter)"), shell_input(),	
-		dbl_lists[groups.FILTER_STANDARD], dbl_lists[groups.FILTER_PRIVILEGED],
-		dbl_lists[groups.FILTER_RESPONSIBLE], dbl_lists[groups.FILTER_GUEST],
-		w.button('<< Cancel', "/users/list"),
-		w.submit('create', 'Create >>', onClick = "selectAllMultiValues('%s');" % form_name)
+		_("<strong>Shell</strong><br />(Unix command line interpreter)"), shell_input(),
+		_('Groups'), dbl_lists[groups.FILTER_STANDARD],
+		_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
+		_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
+		_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+		w.button('<< %s' % _('Cancel'), "/users/list"),
+		w.submit('create', '%s >>' % _('Create'), onClick = "selectAllMultiValues('%s');" % form_name)
 		)
+
+	data += w.page_body_end()
+
 	return w.page(title, data)
-def create(uri, loginShell, password, password_confirm, profile = None, login = "", gecos = "", firstname = "", lastname = "",
+
+# record the new user in the system database.
+def create(uri, http_user, loginShell, password, password_confirm, profile = None, login = "", gecos = "", firstname = "", lastname = "",
 	standard_groups_dest = [], privileged_groups_dest = [], responsible_groups_dest = [], guest_groups_dest = [],
 	standard_groups_source = [], privileged_groups_source = [], responsible_groups_source = [], guest_groups_source = [],
 	create = None ) :
@@ -338,8 +395,8 @@ def create(uri, loginShell, password, password_confirm, profile = None, login = 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del create
 
-	title      = _("New user account %s") % login
-	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	title = _("New user account %s") % login
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 	
 	if password != password_confirm :
 		return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
@@ -376,12 +433,138 @@ def create(uri, loginShell, password, password_confirm, profile = None, login = 
 	if add_groups != "" :
 		command.extend([ '--add-groups', add_groups ])
 
+	data += w.page_body_end()
+
 	return w.page(title, 
 		data + w.run(command, uri,
 		err_msg = _('Failed to add user <strong>%s</strong> to requested groups/privileges/responsibilities/invitations!') % login))
 
+# edit user accout parameters.
+def edit(uri, http_user, login) :
+	"""Edit an user account, based on login."""
+
+	groups.reload()
+	users.reload()
+	# TODO: profiles.reload()
+
+	title = _('Edit account %s') % login 
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+
+	if users.is_system_login(login) :
+		return w.minipage(title, w.error(_('Account edition impossible.'), [ _("alter system account.") ],
+			_("insufficient permissions to perform operation.")))
+
+	try :
+		user = users.users[users.login_to_uid(login)]
+
+		try :
+			profile = profiles.profiles[groups.groups[user['gid']]['name']]['name']
+		except KeyError :
+			profile = _("Standard account")
+
+		dbl_lists = {}
+		for filter, titles, id in groups_filters_lists_ids :
+			groups.Select(filter)
+			dest   = list(user['groups'].copy())
+			source = [ groups.groups[gid]['name'] for gid in groups.filtered_groups ]
+			for current in dest[:] :
+				try : source.remove(current)
+				except ValueError : dest.remove(current)
+			dest.sort()
+			source.sort()
+			dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
+
+		form_name = "user_edit_form"
+
+		data += '''<div id="edit_form">
+<form name="%s" id="%s" action="/users/record/%s" method="post">
+	<table id="user_account">
+		<tr>
+			<td>%s</td>
+			<td class="not_modifiable right">%d</td>
+		</tr>
+		<tr>
+			<td>%s</td>
+			<td class="not_modifiable right">%s</td>
+		</tr>
+		<tr>
+			<td>%s</td>
+			<td class="not_modifiable right">%s</td>
+		</tr>
+		<tr>
+			<td>%s</td>
+			<td class="right">%s</td>
+		</tr>
+		<tr>
+			<td><strong><a href="#" class="help" title="%s">%s</a></strong> %s</td>
+			<td class="right">%s</td>
+		</tr>
+		<tr>
+			<td><strong>%s</strong></td>
+			<td class="right">%s</td>
+		</tr>
+		<tr>
+			<td>%s</td>
+			<td class="right">%s</td>
+		</tr>
+		<tr>
+			<td colspan="2" id="my-accordion">
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+
+				<script type="text/javascript">
+					Event.observe(window, 'load', loadAccordions, false);
+					function loadAccordions() {
+						var prout = new accordion("my-accordion");
+						//prout.activate($$("#my-accordion .accordion_toggle")[0]);
+					}
+				</script>
+			</td>
+		</tr>
+		<tr>
+			<td>%s</td>
+			<td class="right">%s</td>
+		</tr>
+	</table>
+</form>
+</div>
+		''' % (
+			form_name, form_name, login,
+			_("<strong>UID</strong> (fixed)"), user['uid'],
+			_("<strong>Identifier</strong> (fixed)"), login,
+			_("<strong>Profile</strong> (fixed)"), profile,
+			_("<strong>Full name</strong>"),
+			w.input('gecos', user['gecos'], size = 30, maxlength = 64, accesskey = 'N'),
+			_("""Password must be at least %d characters long. You can use all alphabet characters,
+			numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
+			_("New password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
+			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P', password = True),
+			_("password confirmation."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True),
+			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
+			w.select('loginShell',  configuration.users.shells, user['loginShell'], func = os.path.basename),
+			_('Groups'), dbl_lists[groups.FILTER_STANDARD],
+			_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
+			_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
+			_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+			w.button(_('<< Cancel'), "/users/list"),
+			w.submit('record', _('Record changes >>'), onClick = "selectAllMultiValues('%s');" % form_name)
+			)
+	
+	except exceptions.LicornException, e :
+		data += w.error("Account %s does not exist (%s)!" % (login, "user = users.users[users.login_to_uid(login)]", e))
+	
+	data += w.page_body_end()
+
+	return w.page(title, data)
+
 # record user account edition.
-def record(uri, login, loginShell = configuration.users.default_shell,
+def record(uri, http_user, login, loginShell = configuration.users.default_shell,
 	password = "", password_confirm = "",
 	firstname = "", lastname = "", gecos = "",
 	standard_groups_source    = [],    standard_groups_dest = [],
@@ -394,9 +577,10 @@ def record(uri, login, loginShell = configuration.users.default_shell,
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del record
 
-	title      = _("Modification of account %s") % login
-	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
-	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
+	title = _("Modification of account %s") % login
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+
+	command = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 
 	users.reload()
 	if users.is_system_login(login) :
@@ -421,106 +605,13 @@ def record(uri, login, loginShell = configuration.users.default_shell,
 	if del_groups != "" :
 		command.extend(['--del-groups', del_groups ])
 
+	data += w.page_body_end()
+
 	return w.page(title, data + w.run(command, uri, err_msg = _('Failed to modify one or more parameters of account <strong>%s</strong>!') % login))
 
-# edit user accout parameters.
-def edit(uri, login) :
-	"""Edit an user account, based on login."""
-
-	groups.reload()
-	users.reload()
-	# TODO: profiles.reload()
-
-	title = _('Edit account %s') % login 
-	data  = '%s\n%s\n%s<br />\n' % (w.backto(), __users_actions(), w.menu(uri))
-
-	if users.is_system_login(login) :
-		return w.page(title, w.error(_('Account edition impossible.'), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
-
-	try :
-		user = users.users[users.login_to_uid(login)]
-
-		try :
-			profile = profiles.profiles[groups.groups[user['gid']]['name']]['name']
-		except KeyError :
-			profile = _("Standard account")
-
-		dbl_lists = {}
-		for filter, titles, id in groups_filters_lists_ids :
-			groups.Select(filter)
-			dest   = list(user['groups'].copy())
-			source = [ groups.groups[gid]['name'] for gid in groups.filtered_groups ]
-			for current in dest[:] :
-				try : source.remove(current)
-				except ValueError : dest.remove(current)
-			dest.sort()
-			source.sort()
-			dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
-
-		form_name = "user_edit_form"
-
-		data += '''<div id="edit_user">
-<form name="%s" id="%s" action="/users/record/%s" method="post">
-	<table id="user_account">
-		<tr>
-			<td>%s</td><td class="not_modifiable">%d</td>
-		</tr>
-		<tr>
-			<td>%s</td><td class="not_modifiable">%s</td>
-		</tr>
-		<tr>
-			<td>%s</td><td class="not_modifiable">%s</td>
-		</tr>
-		<tr>
-			<td>%s</td><td>%s</td>
-		</tr>
-		<tr>
-			<td><strong><a href="#" class="help" title="%s">%s</a></strong> %s</td><td>%s</td>
-		</tr>
-		<tr>
-			<td><strong>%s</strong></td><td>%s</td>
-		</tr>
-		<tr>
-			<td>%s</td><td>%s</td>
-		</tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr>
-			<td class="paddedleft">%s</td>
-			<td class="paddedright">%s</td>
-		</tr>
-	</table>
-</form>
-</div>
-		''' % (
-			form_name, form_name, login,
-			_("<strong>UID</strong><br />(fixed)"), user['uid'],
-			_("<strong>Identifier</strong><br />(fixed)"), login,
-			_("<strong>Profile</strong><br />(fixed)"), profile,
-			_("<strong>Full name</strong>"),
-			w.input('gecos', user['gecos'], size = 30, maxlength = 64, accesskey = 'N'),
-			_("""Password must be at least %d characters long. You can use all alphabet characters,
-			numbers, special characters and punctuation signs, except '?!'.""") % configuration.mAutoPasswdSize,
-			_("New password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
-			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P', password = True),
-			_("password confirmation."), w.input('password_confirm', "", size = 30, maxlength = 64, password = True),
-			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
-			w.select('loginShell',  configuration.users.shells, user['loginShell'], func = os.path.basename),
-			dbl_lists[groups.FILTER_STANDARD], dbl_lists[groups.FILTER_PRIVILEGED],
-			dbl_lists[groups.FILTER_RESPONSIBLE], dbl_lists[groups.FILTER_GUEST],
-			w.button(_('<< Cancel'), "/users/list"),
-			w.submit('record', _('Record changes >>'), onClick = "selectAllMultiValues('%s');" % form_name)
-			)
-	
-	except exceptions.LicornException, e :
-		data += w.error("Account %s does not exist (%s)!" % (login, "user = users.users[users.login_to_uid(login)]", e))
-
-	return w.page(title, data)
 
 # list user accounts.
-def main(uri, sort = "login", order = "asc") :
+def main(uri, http_user, sort = "login", order = "asc") :
 		
 	start = time.time()
 
@@ -555,7 +646,7 @@ def main(uri, sort = "login", order = "asc") :
 	totals[_('Standard account')] = 0
 
 	title = _("User accounts")
-	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __users_actions(), w.menu(uri)) 
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if order == "asc" : reverseorder = "desc"
 	else :              reverseorder = "asc"
@@ -591,14 +682,14 @@ def main(uri, sort = "login", order = "asc") :
 		html_data = '''
 	<tr class="userdata">
 		<td class="paddedleft">
-			<a href="/users/edit/%s" title="%s">%s</a></td>
+			<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
+		</td>
 		<td class="paddedright">
-			<a href="/users/edit/%s" title="%s">
-			%s&#160;<img src="/images/16x16/edit.png" alt="%s"/></a>
+			<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
 		</td>
 		<td style="text-align:center;">%s</td>
 			''' % (login, edit, u[uid]['gecos'],
-			login, edit, login, _("Edit user account parameters."),
+			login, edit, login, 
 			accounts[uid]['profile_name'])
 
 		if u[uid]['locked'] :
@@ -618,18 +709,16 @@ def main(uri, sort = "login", order = "asc") :
 
 		html_data += '''
 		<td class="user_action">
-			<a href="/users/skel/%s" title="%s">
-			<img src="/images/16x16/reapply-skel.png" alt="%s"/></a>
+			<a href="/users/skel/%s" title="%s" class="reapply-skel"><span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
 		</td>
 		<td class="user_action">
-			<a href="/users/delete/%s" title="%s">
-			<img src="/images/16x16/delete.png" alt="%s"/></a>
+			<a href="/users/delete/%s" title="%s" class="delete-entry"><span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
 		</td>
 	</tr>
 			''' % (login, _("""Reapply origin skel data in the personnal directory of user. This is usefull
 				when user has lost icons, or modified too much his/her desktop (menus, panels and so on). 
-				This will get all his/her desktop back."""), _("Reapply skel."), login,
-				_("Definitely remove account from the system."), _("Remove account."))
+				This will get all his/her desktop back."""), login,
+				_("Definitely remove account from the system."))
 		return html_data
 		
 	users.Select(users.FILTER_STANDARD)
@@ -686,9 +775,8 @@ def main(uri, sort = "login", order = "asc") :
 		<td colspan="3" class="total_right">%d</td>
 	</tr>
 </table>
-</div>
 %s
 	''' % (print_totals(totals), _("<strong>Total number of accounts:</strong>"), 
-		reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
+		reduce(lambda x,y: x+y, totals.values()), w.page_body_end(w.total_time(start, time.time())))
 
 	return w.page(title, data)

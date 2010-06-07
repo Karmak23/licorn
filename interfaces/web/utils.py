@@ -5,18 +5,17 @@ Licorn webadmin functions.
 These functions are used in the Web Administration Interface. They generate
 HTML code, or forms, or provide useful tools to help web coding without too much headhaches.
 
-Copyright (C) 2005-2008 Olivier Cortès <oc@5sys.fr>
+Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 
 """
 
 import os, cStringIO
-
-from subprocess import Popen, PIPE
+from subprocess  import Popen, PIPE
 from licorn.core import configuration
 
 licence_text = _("""
-%s GNU/Linux is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 2</a> license, without any kind of waranty. Copyleft &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s, and all other libre software developers (Notably Ubuntu, Debian, Python…).
+%s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 2</a> license, without any kind of waranty. Copyleft &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s, and all other libre software developers (Notably Ubuntu, Debian, Python…).
 """) % (configuration.app_name, configuration.app_name)
 
 acronyms = {
@@ -65,17 +64,17 @@ def total_time(start, end) :
 	ptime   = ""
 	if elapsed > 3600 :
 		h = elapsed / 3600
-		ptime += "%d heures," % h
+		ptime += _("%d&nbsp;hours,") % h
 		elapsed -= h * 3600
 	if elapsed > 60 :
 		m = elapsed / 60
-		ptime += " %d minutes," % m
+		ptime += _(" %d&nbsp;minutes,") % m
 		elapsed -= m * 60
-	ptime += " %.3f secondes." % elapsed
-	return '''<div id="timer_container"><div id="timer">Temps d'exécution total du moteur (hors temps de rendu graphique par le navigateur)&#160;: %s</div></div>''' % ptime
+	ptime += _(" %.3f&nbsp;seconds.") % elapsed
+	return ('''<div id="timer">%s</div>''' % _('Core execution time: %s')) % ptime
 
 # AJAX Functions
-def doubleListBox(titles, id, values_source = [], values_dest = []) :
+def doubleListBox_orig(titles, id, values_source = [], values_dest = []) :
 
 	def selectbox(legend, id, option_id_prefix = "", values = []) :
 		data = '<fieldset style="height: 100%%"><legend>%s</legend><select name="%s" class="multiselect" multiple="multiple" id="%s" style="width: 100%%; height: 90%%; vertical-align: middle;">' % (legend, id, id)
@@ -111,6 +110,40 @@ def doubleListBox(titles, id, values_source = [], values_dest = []) :
 	''' % (masker, titles[0], id, id,  id, masker, id,
 		selectbox(titles[1],  id_left, id, values_source),
 		id_left, id_right, id,
+		id_right, id_left, id,	
+		selectbox(titles[2], id_right, id, values_dest) )
+def doubleListBox(titles, id, values_source = [], values_dest = []) :
+
+	def selectbox(legend, id, option_id_prefix = "", values = []) :
+		data = '''<fieldset class="multi-group-fieldset">
+		<legend><span class="multi-group-fieldset-legend">%s</span></legend>
+		<select name="%s" id="%s" multiple="multiple" class="multi-group-select">''' % (legend, id, id)
+		for value in values :
+			data += '<option id="%s%s">%s</option>' % (option_id_prefix, value, value)
+		return data + '</select></fieldset>'
+
+	masker   = id + '_masker'
+	id_left  = id + '_source'
+	id_right = id + '_dest'
+	return '''
+	<div id="%s" class="accordion_content">
+		<table class="accordion-multi-group-table">
+			<tr>
+				<td class="multi-group-left-column">%s</td>
+				<td class="multi-group-center-column">
+					<input type="button" value="%s >>" onclick="ListBoxDropping('%s', '%s', '%s')" />
+					<div class="vspacer"></div>
+					<input type="button" value="<< %s" onclick="ListBoxDropping('%s', '%s', '%s')" />
+				</td>
+				<td class="multi-group-right-column">%s</td>
+			</tr>
+		</table>
+	</div>
+	''' % ( id, 
+		selectbox(titles[1],  id_left, id, values_source),
+		_('Add'),
+		id_left, id_right, id,
+		_('Remove'),
 		id_right, id_left, id,	
 		selectbox(titles[2], id_right, id, values_dest) )
 
@@ -152,12 +185,8 @@ def question(title, message, yes_values, no_values, form_options = None) :
 	"""
 
 	return data
-def hcadre(text, id = None) :
-	if id :
-		id = 'id="%s"' % id
-	else :
-		id = ""
-	return '''<div class="hcadre" %s>%s</div>''' % (id, text)
+def license(text) :
+	return '''<div id="license">%s</div>''' % text
 def error(text, command = [ "inconnue" ], error = "inconnue") :
 	return '''
 	<div id="command_error">
@@ -169,7 +198,27 @@ def error(text, command = [ "inconnue" ], error = "inconnue") :
 		</div>
 		''' % (text, " ".join(command), error)
 def backto() :
-	return '<div id="backto"><a href="/" title="retourner vers la racine de l\'interface d\'administration."><img src="/images/webadmin.png" alt="retourner vers la racine de l\'interface d\'administration." /></a></div>'
+	return '<div id="header"><a id="logo" href="/" title="retourner vers la racine de l\'interface d\'administration."><img src="/images/logo_licorn_120.png" alt="retourner vers la racine de l\'interface d\'administration." /></a></div>'
+def metanav(http_user) :
+	""" Minimal function to display the user logged in.
+		Will implement links to preferences, later.
+	"""
+	return '<div id="metanav" class="nav"><ul><li>%s</li></ul></div>' \
+	% (_('Logged in as %s') % http_user)
+def page_body_start(uri, http_user, ctxtnav, title, active = True) :
+	return '''<div id="banner">
+	%s
+	%s
+	%s
+</div><!-- banner -->
+<div id="main">
+%s
+<div id="content">
+	<h1>%s</h1>
+	''' % (
+		backto(), metanav(http_user), menu(uri), ctxtnav(active), title) 
+def page_body_end(data = '') :
+	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 
 # HTML FORM functions
 def access_key(key) :
@@ -178,29 +227,29 @@ def access_key(key) :
 	else :
 		return ''
 def reset(value = "Revenir au valeurs d'origine") :
-	return '<input type="reset" value="%s" />' % (value)
+	return '''<input type="reset" value="%s" />''' % (value)
 def submit(name, value = "", onClick = "", accesskey = None) :
 	if value == "" : value = name
 	if onClick != "" : onClickValue = 'onClick="%s"' % onClick
 	else : onClickValue = ""
-	return '<input type="submit" name="%s" value="%s" %s %s />' % (name, value, onClickValue, access_key(accesskey))
+	return '''<input type="submit" name="%s" value="%s" %s %s />''' % (name, value, onClickValue, access_key(accesskey))
 def button(label, value, accesskey = None) :
-	return '<a href="%s"><button type="button" %s>%s</button></a>' % (value, access_key(accesskey), label)
+	return '''<a href="%s"><button type="button" %s>%s</button></a>''' % (value, access_key(accesskey), label)
 def select(name, values, current = "", dont_display = (), func = str, accesskey = None) :
-	data = '\n			<select name="%s" %s>\n' % (name, access_key(accesskey))
+	data = '<select name="%s" %s>\n' % (name, access_key(accesskey))
 	for value in values :
 		if value in dont_display : continue
 		elif value == current : selected = "selected=selected"
 		else : selected = ""
-		data += '				<option value="%s" %s>%s</option>\n' % (value, selected, func(value))
-	data += '			</select>\n'
+		data += '	<option value="%s" %s>%s</option>\n' % (value, selected, func(value))
+	data += '</select>'
 	return data
 def	input(name, value, size = 20, maxlength = 1024, disabled = False, password = False, accesskey = None) :
 	if disabled : disabled = 'disabled="disabled"'
 	else : disabled = ""
 	if password : type = "password"
 	else : type = "text"
-	return '<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />\n' % (type, name, value, size, maxlength, disabled, access_key(accesskey)) 
+	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey)) 
 def	checkbox(name, value, label, checked = False, disabled = False, accesskey = None) :
 	if disabled :
 		disabled = 'disabled="disabled"'
@@ -210,7 +259,7 @@ def	checkbox(name, value, label, checked = False, disabled = False, accesskey = 
 		checked = 'checked="checked"'
 	else :
 		checked = ""
-	return '<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>\n' % (name, value, checked, disabled, access_key(accesskey), label) 
+	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>''' % (name, value, checked, disabled, access_key(accesskey), label) 
 
 # HTML DOCUMENT functions
 def acr(word) :
@@ -238,28 +287,28 @@ def menu(uri) :
 		classes[uri.split('/')[1].split('.')[0]] = ' class="active"'
 
 	return '''
-<div id="menu">
+<div id="mainnav" class="nav">
 <ul>
 <li%s><a href="/" title="%s">%s</a></li>
 <li%s><a href="/users/" title="%s">%s</a></li>
 <li%s><a href="/groups/" title="%s">%s</a></li>
-<li%s><a href="/machines/" title="%s">%s</a></li>
-<li%s><a href="/internet/" title="%s">%s</a></li>
+<!--<li%s><a href="/machines/" title="%s">%s</a></li>
+<li%s><a href="/internet/" title="%s">%s</a></li>-->
 </ul>
 </div>
-
-<div id="helpmenu">
+<div id="auxnav" class="nav">
 <ul>
-<li%s><a href="/support/" title="%s">%s</a></li>
 <li><a href="http://docs.licorn.org/webadmin" title="%s">%s</a></li>
+<li%s><a href="/support/" title="%s">%s</a></li>
+</ul>
 </div>
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
 		classes['users'], _('Manage user accounts.'), _('Users'),
 		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
 		classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines'),
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
-		classes['support'], _('Get product support / help'), _('Support'),
-		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation')
+		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation'),
+		classes['support'], _('Get product support / help'), _('Support')
 		)
 def page(title, data) :
 	return head(title) + data + tail()
@@ -276,20 +325,45 @@ def head(title = _("administration %s") % configuration.app_name) :
 <link rel="icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/sweetTitles.css" />
+<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/lightwindow.css" />
+<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/accordion.css" />
 <script type="text/javascript" src="/js/tools.js"></script>
 <script type="text/javascript" src="/js/niftyCube.js"></script>
 <script type="text/javascript" src="/js/sweetTitles.js"></script>
 <script type="text/javascript" src="/js/addEvent.js"></script>
+<script type="text/javascript" src="/js/prototype.js"></script>
+<script type="text/javascript" src="/js/effects.js"></script>
+<script type="text/javascript" src="/js/lightwindow.js"></script>
+<script type="text/javascript" src="/js/accordion.js"></script>
 </head>
 <body>
 """ % (title) 
 def tail() :
-	return """
-%s
-</body>
-</html>
-""" % hcadre(licence_text, "license")
+	return """\n</body></html>""" 
 
+# LightBox type windows
+def minihead(title = _("administration %s") % configuration.app_name) :
+	"""Build a mini-HTML page header, for lighbox type popups / windows.  """
+	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Webadmin : %s</title>
+<link rel="shortcut icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
+<script type="text/javascript" src="/js/tools.js"></script>
+<script type="text/javascript" src="/js/addEvent.js"></script>
+</head>
+<body>
+""" % (title) 
+def minitail() :
+	return """</body></html>"""
+def minipage(data) :
+	#return ('%s%s%s' % (minihead(title), data, minitail()))
+	return data
+
+def lbox(data, width = '300px', height = '100px') :
+	return '''<div style=" margin-top: 20px; text-align: center; min-width: %s; min-height: %s;">%s\n</div>''' % (width, height, data)
 
 # Image generation
 def img(type = 'progressbar', width = 150, height = 22, text = '') :

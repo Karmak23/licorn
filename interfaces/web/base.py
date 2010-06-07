@@ -3,25 +3,26 @@
 import os, time, re
 
 from subprocess            import Popen, PIPE
-from licorn.core           import users
+from licorn.core           import users, configuration
 from licorn.foundations    import logging
 from licorn.interfaces.web import utils as w
 
-def __status_actions() :
+#remove this after testing
+reload(w)
+
+def ctxtnav() :
 	return '''
-<div id="actions">
-	<div class="action">
-		<a href="/server/reboot" title="%s"><img src="/images/32x32/reboot.png" alt="%s" /><br />%s</a>
+	<div id="ctxtnav" class="nav">
+        <h2>Context Navigation</h2>
+		<ul>
+		<li><a href="/server/reboot" title="%s" class="lightwindow"><div class="ctxt-icon" id="icon-reboot">%s</div></a></li>
+		<li><a href="/server/halt" title="%s" class="lightwindow"><div class="ctxt-icon" id="icon-shutdown">%s</div></a></li>
+		</ul>
+        <hr />
 	</div>
-	<div class="action">
-		<a href="/server/halt" title="%s"><img src="/images/32x32/shutdown.png" alt="%s" /><br />%s</a>
-	</div>
-</div>
 	''' % (
 		_('Restart server.'),
-		_('Restart server.'),
 		_('Restart server'),
-		_('Shutdown server.'),
 		_('Shutdown server.'),
 		_('Shutdown server'))
 
@@ -90,7 +91,7 @@ def system_info() :
 	mem = {}
 
 	def compute_mem(line, x) :
-		#logging.info(line[0:-1] + " -> " + re.split('\W+', line)[1])
+		#logging.debug(line[0:-1] + " -> " + re.split('\W+', line)[1])
 
 		split = re.split('[\W\(\)]+', line)
 
@@ -114,12 +115,58 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.
 ''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
 	
-def index(uri) :
+def reboot(uri, http_user, sure = False) :
+	if sure :
+		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Rebooting…')))
+	else :
+		return w.minipage(w.lbox('''%s
+		<div class="vspacer"></div>
+		<table class="lbox-table">
+			<tr>
+				<td>
+					<form name="reboot_form" id="reboot_form" action="/server/reboot/sure" method="get">
+						<a href="/server/reboot/sure"  params="lightwindow_form=reboot_form,lightwindow_width=320,lightwindow_height=140" class="lightwindow_action" rel="submitForm">
+							<button>%s</button>
+						</a>
+					</form>
+				</td>
+				<td>
+					<a href="#" class="lightwindow_action" rel="deactivate"><button>%s</button></a>
+				</td>
+			</tr>
+		</table>
+		''' % (
+		_('Sure you want to reboot the %s server?') % configuration.app_name,
+		_('YES'),
+		_('NO'))))
+def halt(uri, http_user, sure = False) :
+	if sure :
+		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Shutting down…')))
+	else :
+		return w.minipage(w.lbox('''%s<div class="vspacer"></div>
+		<table class="lbox-table">
+			<tr>
+				<td>
+					<form name="shutdown_form" id="shutdown_form" action="/server/halt/sure" method="get">
+						<a href="/server/halt/sure"  params="lightwindow_form=shutdown_form,lightwindow_width=320,lightwindow_height=140" class="lightwindow_action" rel="submitForm">
+							<button>%s</button>
+						</a>
+					</form>
+				</td>
+				<td>
+					<a href="#" class="lightwindow_action" rel="deactivate"><button>%s</button></a>
+				</td>
+			</tr>
+		</table>''' % (
+		_('Sure you want to shutdown the %s server?') % configuration.app_name,
+		_('YES'),
+		_('NO'))))
+def index(uri, http_user) :
 		
 	start = time.time()
 
 	title = _("Server status")
-	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __status_actions(), w.menu(uri)) 
+	data  = '<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->\n<div id="main">\n%s\n<div id="content">' % (w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav()) 
 
 	data += '''<table>
 	<tr>
@@ -133,8 +180,9 @@ def index(uri) :
 		<td colspan="2">&#160;</td></tr>
 	</tr>
 </table>
-</div>
+</div><!-- content -->
 %s
+</div><!-- main -->
 	''' % (w.total_time(start, time.time()))
 
 	return w.page(title, data)

@@ -18,19 +18,26 @@ def __merge_multi_select(*lists) :
 		else :
 			final.extend(list)
 	return final
-def __groups_actions() :
+def ctxtnav(active = True) :
+
+	if active :
+		disabled = '';
+		onClick = '';
+	else :
+		disabled = 'un-clickable';
+		onClick  = 'onClick="javascript: return(false);"' 
+
 	return '''
-<div id="actions">
-<table>
-	<tr>
-		<td><a href="/groups/new" title="%s"><img src="/images/32x32/group-new.png" alt="%s" /><br />%s</a></td>
-	</tr>
-</table>
-</div>
-	''' % (_('Add a new group on the system.'), _('Add a new group on the system.'), _('Add a group'))
+	<div id="ctxtnav" class="nav">
+		<h2>Context Navigation</h2>
+		<ul>
+			<li><a href="/groups/new" title="%s" %s class="%s"><div class="ctxt-icon %s" id="icon-add">%s</div></a></li>
+		</ul>
+	</div>
+	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
 
 # locking and unlocking.
-def unlock(uri, name, sure = False) :
+def unlock(uri, http_user, name, sure = False) :
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
@@ -49,8 +56,8 @@ def unlock(uri, name, sure = False) :
 		
 		data += w.question(_("Are you sure you want to active permissiveness on group <strong>%s</strong>?") % name,
 			description,
-			yes_values   = [ _("Activate >>"), "/groups/unlock/%s/sure" % name, _("A") ],
-			no_values    = [ _("<< Cancel"), "/groups/list",                    _("N") ])
+			yes_values   = [ _("Activate") + ' >>', "/groups/unlock/%s/sure" % name, _("A") ],
+			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                    _("N") ])
 		
 		return w.page(title, data)
 
@@ -60,7 +67,7 @@ def unlock(uri, name, sure = False) :
 
 		return w.page(title, data +
 			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = _("Failed to activate permissivenes on group <strong>%s</strong>!") % name))
-def lock(uri, name, sure = False) :
+def lock(uri, http_user, name, sure = False) :
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
@@ -78,8 +85,8 @@ def lock(uri, name, sure = False) :
 		
 		data += w.question(_("Are you sure you want to make group <strong>%s</strong> not permissive?") % name,
 			description,
-			yes_values   = [ _("Deactivate >>"), "/groups/lock/%s/sure" % name, _("D") ],
-			no_values    = [ _("<< Cancel"),     "/groups/list",                _("N") ])
+			yes_values   = [ _("Deactivate") + ' >>', "/groups/lock/%s/sure" % name, _("D") ],
+			no_values    = [ '<< ' + _("Cancel"),     "/groups/list",                _("N") ])
 		
 		return w.page(title, data)
 
@@ -92,7 +99,7 @@ def lock(uri, name, sure = False) :
 			err_msg = _("Failed to remove permissiveness from group <strong>%s</strong>!") % name))
 
 # delete a group.
-def delete(uri, name, sure = False, no_archive = False, yes = None) :
+def delete(uri, http_user, name, sure = False, no_archive = False, yes = None) :
 	""" Remove group and archive (or not) group shared dir. """
 
 	del yes
@@ -113,8 +120,8 @@ def delete(uri, name, sure = False, no_archive = False, yes = None) :
 				and accessible to members of group %s for eventual 
 				recovery. However, you can decideto remove them 
 				permanently.""") % (configuration.home_archive_dir, configuration.defaults.admin_group),
-			yes_values   = [ _("Remove >>"), "/groups/delete/%s/sure" % name, _("R") ],
-			no_values    = [ _("<< Cancel"), "/groups/list",                  _("N") ],
+			yes_values   = [ _("Remove") + ' >>', "/groups/delete/%s/sure" % name, _("R") ],
+			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                  _("N") ],
 			form_options = w.checkbox("no_archive", "True", 
 				_("Definitely remove group shared data."),
 				checked = False) )
@@ -144,15 +151,15 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 	data  = '%s%s' % (w.backto(), __groups_actions(title))
 
 	if not sure :
-		allusers  = u.UsersController(configuration)
-		allgroups = g.GroupsController(configuration, allusers)
+		allusers  = u.UsersList(configuration)
+		allgroups = g.GroupsList(configuration, allusers)
 
 		description = _('''This will reset the desktops, icons and menus
 			of all members of the group, according to the content of the 
 			skel you choose. This will NOT alter any of the user personnal
 			data, nor the group shared data.''')
 		
-		pri_group = allgroups.groups[allusers.users[users.UsersController.login_to_uid(login)]['gid']]['name']
+		pri_group = allgroups.groups[allusers.users[users.UsersList.login_to_uid(login)]['gid']]['name']
 		
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list) :
@@ -171,8 +178,8 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 	
 		data += w.question( _("Are you sure you want to reapply this skel to all of the members of %s?") % login,
 			description,
-			yes_values   = [ _("Apply >>"),  "/users/skel/%s/sure" % login, _("A") ],
-			no_values    = [ _("<< Cancel"), "/groups/list",                _("N") ],
+			yes_values   = [ _("Apply") + ' >>',  "/users/skel/%s/sure" % login, _("A") ],
+			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                _("N") ],
 			form_options = form_options)
 
 		return w.page(title, data)
@@ -186,15 +193,15 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 			err_msg = _("Failed to apply skel %s to members of group %s.") % (os.path.basename(apply_skel), login)))
 
 # user account creation
-def new(uri) :
+def new(uri, http_user) :
 	"""Generate a form to create a new group on the system."""
 
 	title = _("Creating a new group")
-	data  = '%s%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
-	form_name = "group_create"
+	form_name = "group_create_form"
 
-	data += '''<div id="content">
+	data += '''<div id="edit_form">
 <form name="%s" id="%s" action="/groups/create" method="post">
 <table id="group_new">
 	<tr>
@@ -213,8 +220,8 @@ def new(uri) :
 		<td></td>	
 	</tr>
 	<tr>
-		<td class="paddedleft">%s</td>
-		<td class="paddedright">%s</td>
+		<td>%s</td>
+		<td class="right">%s</td>
 	</tr>
 </table>
 </form>
@@ -229,10 +236,10 @@ def new(uri) :
 		_('Permissive shared dir?'),
 		w.checkbox('permissive', "True", _("Yes"), accesskey = _('P')),
 		w.button(_('<< Cancel'), "/groups/list", accesskey = _('N')),
-		w.submit('create', _('Create >>'), onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('T'))
+		w.submit('create', _('Create') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('T'))
 		)
 	return w.page(title, data)
-def create(uri, name, description = None, skel = "", permissive = False, create = None) :
+def create(uri, http_user, name, description = None, skel = "", permissive = False, create = None) :
 
 	title      = _("Creating group %s") % name
 	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
@@ -249,7 +256,7 @@ def create(uri, name, description = None, skel = "", permissive = False, create 
 	
 	return w.page(title, data + w.run(command, uri,  successfull_redirect = "/groups/list",
 		err_msg = _('Failed to create group %s!') % name))
-def view(uri, name) :
+def view(uri, http_user, name) :
 	"""Prepare a group view to be printed."""
 
 	users.reload()
@@ -341,8 +348,8 @@ def view(uri, name) :
 			<tr><td colspan="2" class="double_selector">%s</td></tr>
 			<tr><td colspan="2" class="double_selector">%s</td></tr>
 			<tr>
-				<td class="paddedleft">%s</td>
-				<td class="paddedright">%s</td>
+				<td>%s</td>
+				<td class="right">%s</td>
 			</tr>
 		</table>
 		</form>
@@ -354,7 +361,7 @@ def view(uri, name) :
 				name,
 				members_html, resps_html, guests_html,
 				w.button(_('<< Go back'), "/groups/list", accesskey = _('B')),
-				w.submit('print', _('Print >>'), onClick = "javascript:window.print(); return false;", accesskey = _('P'))
+				w.submit('print', _('Print') + ' >>', onClick = "javascript:window.print(); return false;", accesskey = _('P'))
 				)
 
 	except exceptions.LicornException, e :
@@ -363,7 +370,7 @@ def view(uri, name) :
 	return w.page(title, data)
 
 # edit group parameters.
-def edit(uri, name) :
+def edit(uri, http_user, name) :
 	"""Edit a group."""
 
 	users.reload()
@@ -373,7 +380,7 @@ def edit(uri, name) :
 	g = groups.groups
 
 	title = _("Editing group %s") %  name
-	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try :
 		group     = g[groups.name_to_gid(name)]
@@ -389,8 +396,8 @@ def edit(uri, name) :
 		else :
 			groups_filters_lists_ids = ( 
 				(name,            [_('Manage members'), _('Users not yet members'), _('Current members')],      'members'),
-				(configuration.groups.resp_prefix + name,  [_('Manage responsibles'), 'Users not yet responsibles', 'Current responsibles'], 'resps'), 
-				(configuration.groups.guest_prefix + name, [_('Manage guests'),      'Users not yet guests', 'Current guests'],      'guests') )
+				(configuration.groups.resp_prefix + name,  [_('Manage responsibles'), _('Users not yet responsibles'), _('Current responsibles')], 'resps'), 
+				(configuration.groups.guest_prefix + name, [_('Manage guests'),      _('Users not yet guests'), _('Current guests')],      'guests') )
 
 		for (gname, titles, id) in groups_filters_lists_ids :
 			if titles is None :
@@ -417,7 +424,8 @@ def edit(uri, name) :
 			else :
 				return '''
 				<tr>
-					<td><strong>%s</strong></td><td>%s</td>
+					<td><strong>%s</strong></td>
+					<td class="right">%s</td>
 				</tr>
 				''' % (_('Skeleton'), w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename))
 		def permissive(perm, sys) :
@@ -427,32 +435,51 @@ def edit(uri, name) :
 			else :
 				return '''
 				<tr>
-					<td><strong>%s</strong></td><td>%s</td>
+					<td><strong>%s</strong></td>
+					<td class="right">%s</td>
 				</tr>
 				''' % (_('Permissive shared dir?'), w.checkbox('permissive', "True", "Oui", checked = perm ))
 
-		form_name = "user_edit_form"
+		form_name = "group_edit_form"
 
-		data += '''<div id="content">
+		data += '''<div id="edit_form">
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
 	<table id="user_account">
 		<tr>
-			<td><strong>%s</strong><br />%s</td><td class="not_modifiable">%d</td>
+			<td><strong>%s</strong><br />%s</td>
+			<td class="not_modifiable right">%d</td>
 		</tr>
 		<tr>
-			<td><strong>%s</strong><br />%s</td><td class="not_modifiable">%s</td>
-		</tr>
-		<tr>
-			<td><strong>%s</strong></td><td>%s</td>
+			<td><strong>%s</strong><br />%s</td>
+			<td class="not_modifiable right">%s</td>
 		</tr>
 		%s
-		%s
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
-		<tr><td colspan="2" class="double_selector">%s</td></tr>
 		<tr>
-			<td class="paddedleft">%s</td>
-			<td class="paddedright">%s</td>
+			<td><strong>%s</strong></td>
+			<td class="right">%s</td>
+		</tr>
+		%s
+		<tr>
+			<td colspan="2" id="my-accordion">
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+
+				<script type="text/javascript">
+					Event.observe(window, 'load', loadAccordions, false);
+					function loadAccordions() {
+						var prout = new accordion("my-accordion");
+						//prout.activate($$("#my-accordion .accordion_toggle")[0]);
+					}
+				</script>
+
+			</td>
+		<tr>
+			<td>%s</td>
+			<td class="right">%s</td>
 		</tr>
 	</table>
 </form>
@@ -462,20 +489,24 @@ def edit(uri, name) :
 			group['gid'],
 			_('Group name'), _('(immutable)'),
 			group['name'],
+			permissive(group['permissive'], sys),	
 			_('Group description'),
 			descr(group['description'], sys),
 			skel(group['skel'], sys),	
-			permissive(group['permissive'], sys),	
-			dbl_lists[name], dbl_lists[configuration.groups.resp_prefix+name], dbl_lists[configuration.groups.guest_prefix+name],
-			w.button(_('<< Cancel'), "/groups/list", accesskey = _('N')),
-			w.submit('record', _('Record >>'), onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('R'))
+			_('Group members'), dbl_lists[name],
+			_('Group responsibles'), dbl_lists[configuration.groups.resp_prefix+name],
+			_('Group guests'), dbl_lists[configuration.groups.guest_prefix+name],
+			w.button('<< ' + _('Cancel'), "/groups/list", accesskey = _('N')),
+			w.submit('record', _('Record') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('R'))
 			)
 	
 	except exceptions.LicornException, e :
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = allgroups.groups[groups.name_to_gid(name)]", e))
 
+	data += w.page_body_end()
+
 	return w.page(title, data)
-def record(uri, name, skel = None, permissive = False, description = None,
+def record(uri, http_user, name, skel = None, permissive = False, description = None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
@@ -512,7 +543,7 @@ def record(uri, name, skel = None, permissive = False, description = None,
 		err_msg = _('Failed to modify one or more parameter of group %s!') % name))
 
 # list user accounts.
-def main(uri, sort = "name", order = "asc") :
+def main(uri, http_user, sort = "name", order = "asc") :
 		
 	start = time.time()
 
@@ -528,7 +559,7 @@ def main(uri, sort = "name", order = "asc") :
 	totals   = {}
 
 	title = "%s" % configuration.groups.names['_plural']
-	data  = '%s\n%s\n%s\n<div id="content">' % (w.backto(), __groups_actions(), w.menu(uri)) 
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if order == "asc" : reverseorder = "desc"
 	else :              reverseorder = "asc"
@@ -549,7 +580,6 @@ def main(uri, sort = "name", order = "asc") :
 		else :
 			data += '		<th>%s</th>\n' % name
 			
-
 	data += '		</tr>\n'
 
 	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['_plural']), (groups.FILTER_PRIVILEGED, _("Privileges")) ) :
@@ -600,7 +630,7 @@ def main(uri, sort = "name", order = "asc") :
 			<td class="group_name">
 				<a href="/groups/edit/%s" title="%s"><img src="/images/16x16/edit.png" alt="éditer les paramètres du groupe."/>&#160;%s</a>
 			</td>
-			<td class="paddedright">
+			<td class="right">
 				<a href="/groups/edit/%s">%s</a>
 			</td>
 				''' % (name, name, g[gid]['description'], name, name, g[gid]['skel'])
@@ -640,9 +670,9 @@ def main(uri, sort = "name", order = "asc") :
 					mbdata += '</table>'
 					nb = len(tgroups[gid][keyname])
 					if nb == 0 :
-						html_data += '''<td class="paddedright faded">%s</td>\n''' % _('none')
+						html_data += '''<td class="right faded">%s</td>\n''' % _('none')
 					else :
-						html_data += '''<td class="paddedright"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="%s" /></a></td>\n''' % (text, mbdata, nb, _('See %s of group %s.') % (text, name))	
+						html_data += '''<td class="right"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="%s" /></a></td>\n''' % (text, mbdata, nb, _('See %s of group %s.') % (text, name))	
 				else :
 					html_data += '''<td>&#160;</td>\n'''
 	
@@ -687,8 +717,9 @@ def main(uri, sort = "name", order = "asc") :
 		<td colspan="6" class="total_right">%d</td>
 	</tr>
 </table>
-</div>
 %s
 	''' % (print_totals(totals), _('Total number of groups:'), reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
+
+	data += w.page_body_end()
 
 	return w.page(title, data)

@@ -148,8 +148,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 							if users.user_exists(login = authorization[0]) and users.check_password(authorization[0], authorization[1]) :
 								if groups.group_exists(wmi_group) :
 									if authorization[0] in groups.auxilliary_members(wmi_group) :
+										self.http_user = authorization[0]
 										return True
 								else :
+									self.http_user = authorization[0]
 									return True
 		return False
 	def format_post_args(self) :
@@ -174,7 +176,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 		import licorn.interfaces.web as web
 
 		if self.path == '/' :
-			retdata = web.base.index(self.path)
+			retdata = web.base.index(self.path, self.http_user)
 
 		else :
 			# remove the last '/' (useless for us, even it if is semantic for a dir/)
@@ -189,25 +191,27 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 				args[1] = 'main'
 
 			if args[0] in dir(web) :
-				logging.progress("Serving %s %s." % (self.path, args))
+				logging.progress("Serving %s %s for http_user %s." % (self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args') :
-					py_code = 'retdata = web.%s.%s("%s" %s %s)' % (args[0], args[1], self.path,
+					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (args[0], args[1], 
+						self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else ', ',
 						', '.join(self.format_post_args()) )
 				else :
-					py_code = 'retdata = web.%s.%s("%s" %s)' % (args[0], args[1], self.path, 
+					py_code = 'retdata = web.%s.%s("%s", "%s" %s)' % (args[0], args[1],
+						self.path, self.http_user, 
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else '')
 
 				try :
-					#print "Exec'ing %s." % py_code
+					#logging.debug("Exec'ing %s." % py_code)
 					exec py_code
 
 				except (AttributeError, NameError), e :
 					# this warning is needed as long as send_head() will produce a 404 for ANY error.
-					# when it will able to distinguish between bad requests and real 404, this warning
+					# When it will able to distinguish between bad requests and real 404, this warning
 					# will disapear.
-					logging.warning("Exec: %s." % e)
+					logging.warning("exec(%s): %s." % (py_code, e))
 					self.send_error(500, "Internal server error or bad request.")
 			else :
 				# not a web.* module
