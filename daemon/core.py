@@ -128,15 +128,15 @@ class ACLChecker(LicornThread, Singleton):
 		try :
 			if os.path.isdir(path) :
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl') , -1)
-				self.inotifier.just_checked.append(path)
+				self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, False, acl['default_acl'], acl['default_acl'])
-				self.inotifier.just_checked.append(path)
-				self.inotifier.just_checked.append(path)
+				self.inotifier.prevent_double_check(path)
+				self.inotifier.prevent_double_check(path)
 			else :
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl'))
-				self.inotifier.just_checked.append(path)
+				self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
-				self.inotifier.just_checked.append(path)
+				self.inotifier.prevent_double_check(path)
 
 		except (OSError, IOError), e :
 			if e.errno != 2 :
@@ -189,6 +189,9 @@ class INotifier(Thread, Singleton):
 				return self.process_event(path, event, gid, dirname)
 
 			self.add_watch(group_home, myfunc)
+	def prevent_double_check(path) :
+		""" store a just checked path a little while, to avoid double checks and other I/O consuming tasks. """
+		self.just_checked.append(path)
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
