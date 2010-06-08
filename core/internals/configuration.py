@@ -838,30 +838,36 @@ class LicornConfiguration (object) :
 				# this is the *first* "not supported" error encountered (on config load of first licorn command).
 				# try to make the error message kind of explicit and clear, to let administrator know he/she should
 				# mount the partition with 'acl' option.
-				raise exceptions.LicornRuntimeError("Filesystem must be mounted with `acl' option:\n\t%s" % e)
+				raise exceptions.LicornRuntimeError("Filesystem must be mounted with 'acl' option:\n\t%s" % e)
 			else : raise e
 
-		if not minimal :
-			dirs_to_verify = [
-				{
-					'path'             : self.home_backup_dir,
-					'user'             : 'root',
-					'group'            : 'acl',
-					'access_acl'       : "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask),
-					'default_acl'      : "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask),
-					'content_acl' : ("%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask)).replace('r-x', 'r--').replace('rwx', 'rw-'),
-				},
-				{
-					'path'             : self.home_archive_dir,
-					'user'             : 'root',
-					'group'            : 'acl',
-					'access_acl'       : "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
-					'default_acl'      : "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
-					'content_acl' : ("%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask)).replace('r-x', 'r--').replace('rwx', 'rw-'),
-				} ]
+		home_backup_dir_info = {
+			'path'        : self.home_backup_dir,
+			'user'        : 'root',
+			'group'       : 'acl',
+			'access_acl'  : "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask),
+			'default_acl' : "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask)
+			}
+				
+		home_archive_dir_info = {
+			'path'        : self.home_archive_dir,
+			'user'        : 'root',
+			'group'       : 'acl',
+			'access_acl'  : "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
+			'default_acl' : "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
+			}
 
-			# no need to bother the user for that, correct it automatically anyway.
-			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify, batch = True, allgroups = groups)
+		if not minimal :
+			# check the contents of these dirs, too (fixes #95)
+			home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask)
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
+			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask)
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
+
+		dirs_to_verify = [ home_backup_dir_info, home_archive_dir_info ]
+
+		# no need to bother the user for that, correct it automatically anyway.
+		fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify, batch = True, allgroups = groups)
 	def CheckSystemGroups(self, minimal = True, batch = False, auto_answer = None) :
 		"""Check if needed groups are present on the system, and repair if asked for."""
 
