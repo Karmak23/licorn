@@ -5,10 +5,10 @@ import sys, os, popen2, curses
 from licorn.foundations import pyutils, styles, logging
 from licorn.core        import configuration
 
-if __debug__ :
+if __debug__:
 	PYTHON = [ 'python' ]
 	verbose=True
-else :
+else:
 	# don't forget first ' '
 	PYTHON = [ 'python', '-OO' ]
 	verbose=False
@@ -25,35 +25,35 @@ system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
 				'licorn/profiles.xml')
 bkp_ext = 'licorn'
 
-if len(sys.argv) > 1 :
+if len(sys.argv) > 1:
 	args = sys.argv[1:]
-else :
+else:
 	args = []
 
-for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm', '/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff' ) :
-	if not os.path.exists(binary) :
+for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm', '/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff' ):
+	if not os.path.exists(binary):
 		logging.error('%s does not exist on this system and is mandatory for this testsuite.' % binary)
 
 curses.setupterm()
 clear = curses.tigetstr('clear')
 
-def clear_term() :
+def clear_term():
 	sys.stdout.write(clear)
 	sys.stdout.flush()
 
-def cmdfmt(cmd) :
+def cmdfmt(cmd):
 	'''convert a sequence to a colorized string.'''
 	return styles.stylize(styles.ST_NAME, ' '.join(cmd))
 
-def test_message(msg) :
+def test_message(msg):
 	""" display a message to stderr. """
 	sys.stderr.write("%s>>> %s%s\n" 
 		% (styles.colors[styles.ST_LOG], msg, styles.colors[styles.ST_NO]) )
 
-def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", verb = verbose) :
+def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", verb = verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
-	if not command.startswith('colordiff') :
+	if not command.startswith('colordiff'):
 		command += ' %s' % ' '.join(args)
 
 	sys.stderr.write("%s>>> running %s%s%s\n" % (styles.colors[styles.ST_LOG], styles.colors[styles.ST_PATH], command, styles.colors[styles.ST_NO]) )
@@ -61,13 +61,13 @@ def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", 
 	p4 = popen2.Popen4(command)
 	output = p4.fromchild.read()
 	result = p4.wait()
-	if os.WIFEXITED(result) :
+	if os.WIFEXITED(result):
 		retcode = os.WEXITSTATUS(result)
 
 	must_exit = False
 
 	#
-	# TODO : implement a precise test on a precise exit value.
+	# TODO: implement a precise test on a precise exit value.
 	# for example, when you try to add a group with an invalid name,
 	# licorn-add should exit (e.g.) 34. We must test on this precise
 	# value and not on != 0, because if something wrong but *other* than
@@ -75,20 +75,20 @@ def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", 
 	# program output.
 	#
 
-	if inverse_test :
-		if retcode != result_code :
+	if inverse_test:
+		if retcode != result_code:
 			must_exit = True
-	else :
-		if retcode != 0 :
+	else:
+		if retcode != 0:
 			must_exit = True
 
-	if must_exit :
-		if inverse_test :
-			test = ("	%s→ it should have failed with reason : %s%s%s\n" 
+	if must_exit:
+		if inverse_test:
+			test = ("	%s→ it should have failed with reason: %s%s%s\n" 
 				% (styles.colors[styles.ST_PATH], styles.colors[styles.ST_BAD], comment, styles.colors[styles.ST_NO]))
-		else :
+		else:
 			test = ""
-		sys.stderr.write("	%s→ return code of command : %s%d%s (expected : %d)%s\n%s	→ log follows:\n" 
+		sys.stderr.write("	%s→ return code of command: %s%d%s (expected: %d)%s\n%s	→ log follows:\n" 
 			% (	styles.colors[styles.ST_LOG], styles.colors[styles.ST_BAD], retcode, 
 				styles.colors[styles.ST_LOG], result_code, styles.colors[styles.ST_NO],
 				test) )
@@ -96,17 +96,17 @@ def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", 
 		sys.stderr.write("The last command failed to execute, or return something wrong !\n")
 		raise SystemExit(retcode)
 	
-	if verb :
+	if verb:
 		sys.stderr.write(output)		
 
-class FunctionnalTest :
+class FunctionnalTest:
 	counter = 0
 
-	def __init__(self, cmd, pre_cmds = [], chk_cmds = [], manual_output = False, reference_cmd = []) :
+	def __init__(self, cmd, pre_cmds = [], chk_cmds = [], manual_output = False, reference_cmd = []):
 
-		if type(cmd) == type('') :
+		if type(cmd) == type(''):
 			self.cmd = cmd.split(' ')
-		else : 
+		else: 
 			self.cmd = cmd
 
 		self.pre_cmds      = pre_cmds
@@ -114,7 +114,7 @@ class FunctionnalTest :
 		self.reference_cmd = reference_cmd
 		self.manual_output = manual_output
 		FunctionnalTest.counter += 1
-	def Prepare(self, cmd) :
+	def Prepare(self, cmd):
 		""" Run commands mandatory for func_test to succeed. """
 
 		make_path = lambda x: ('/'.join(x)).replace('../', '').replace('//','/')
@@ -122,34 +122,34 @@ class FunctionnalTest :
 		self.ref_output_file = 'data/%s/%s/out.txt'  % (make_path(self.reference_cmd), make_path(cmd))
 		self.ref_code_file   = 'data/%s/%s/code.txt' % (make_path(self.reference_cmd), make_path(cmd))
 
-		if self.pre_cmds != [] :
+		if self.pre_cmds != []:
 			logging.progress('preparing system for cmd %s.' % cmd)
-		for cmd in self.pre_cmds :
+		for cmd in self.pre_cmds:
 			os.popen2(cmd)[1].read()
-	def Execute(self, cmd) :
+	def Execute(self, cmd):
 		#logging.notice('executing "%s".' % (cmd,))
 		p4 = popen2.Popen4(cmd)
 		output = p4.fromchild.read()
 		result = p4.wait()
-		if os.WIFEXITED(result) :
+		if os.WIFEXITED(result):
 			retcode = os.WEXITSTATUS(result)
 
 		return output, retcode
-	def SaveOutput(self, output, code) :
+	def SaveOutput(self, output, code):
 
-		try :
+		try:
 			os.makedirs(os.path.dirname(self.ref_output_file))
-		except (OSError, IOError), e :
-			if e.errno != 17 :
+		except (OSError, IOError), e:
+			if e.errno != 17:
 				raise e
 
 		open(self.ref_output_file, 'w').write(output)
 		open(self.ref_code_file, 'w').write(str(code))
-	def PrepareReferenceOutput(self, cmd) :
+	def PrepareReferenceOutput(self, cmd):
 
-		if os.path.exists(self.ref_output_file) :
+		if os.path.exists(self.ref_output_file):
 			return (open(self.ref_output_file).read(), int(open(self.ref_code_file).read()))
-		else :
+		else:
 			clear_term()
 			logging.notice('no reference output for cmd "%s", creating one…' % cmdfmt(cmd))
 
@@ -157,92 +157,92 @@ class FunctionnalTest :
 
 			sys.stderr.write(output)
 
-			if logging.ask_for_repair('is this message good to keep as reference ?') :
+			if logging.ask_for_repair('is this message good to keep as reference ?'):
 				# Save the output AND the return code for future references and comparisons
 				self.SaveOutput(output, retcode)
 				# return them for current test
 				return (output, retcode)
-			else :
+			else:
 				logging.error('you MUST have a reference output; please fix code or rerun this test.')
-	def RunAndCheck(self, cmd, batch = False) :
+	def RunAndCheck(self, cmd, batch = False):
 		ref_output, ref_code = self.PrepareReferenceOutput(cmd)
 
 		output, code = self.Execute(cmd)
 
-		if ref_code !=  code :
+		if ref_code !=  code:
 			sys.stderr.write(output)
 			logging.error('command "%s" failed (exit code %d instead of %d).' % (cmdfmt(cmd), code, ref_code))
 
-		if ref_output !=  output :
+		if ref_output !=  output:
 			# TODO: tempfile -> write -> colordiff
 			sys.stderr.write(output)
 			logging.warning('command "%s" failed.' % cmdfmt(cmd))
-			if not batch and logging.ask_for_repair('Should I keep the trace as new reference ?') :
+			if not batch and logging.ask_for_repair('Should I keep the trace as new reference ?'):
 				self.SaveOutput(output, code)
-			else :
+			else:
 				raise exceptions.LicornRuntimeException('command "%s" failed.' % cmdfmt(cmd))
 
 		logging.notice('command #%d "%s" completed successfully.' % (FunctionnalTest.counter, cmdfmt(cmd)))
-	def Run(self, options = [], batch = False) :
+	def Run(self, options = [], batch = False):
 
-		if self.manual_output :
-			if batch :
+		if self.manual_output:
+			if batch:
 				logging.warning('batch mode, cmd "%s" not tested !' % cmdfmt(self.cmd))
-			else :
+			else:
 				clear_term()
 				test_message('running #%d "%s" for manual check…' % (FunctionnalTest.counter, cmdfmt(self.cmd)))
 				sys.stderr.write(self.Execute(self.cmd)[0])
 				return logging.ask_for_repair('does this output seems right to you ?')
-		else :
+		else:
 			self.Prepare(self.cmd)
 			self.RunAndCheck(self.cmd, batch = batch)
-			for chk_cmd in self.chk_cmds :
+			for chk_cmd in self.chk_cmds:
 				FunctionnalTest(chk_cmd, reference_cmd = self.cmd)
 
-			for option in options :
+			for option in options:
 				# XXX: turn this into another FunctionnalTest() instance ?
 				FunctionnalTest.counter += 1
 				self.Prepare(self.cmd + option)
 				self.RunAndCheck(self.cmd + option, batch = batch)
-				for chk_cmd in self.chk_cmds :
+				for chk_cmd in self.chk_cmds:
 					FunctionnalTest(chk_cmd)
 
-def test_integrated_help () :
+def test_integrated_help ():
 	"""Test extensively argmarser contents and intergated help."""
 
 	test_message('testing integrated help.')
 
-	for program in (GETENT, ADD, MODIFY, DELETE, CHECK) :
+	for program in (GETENT, ADD, MODIFY, DELETE, CHECK):
 
 		FunctionnalTest(program).Run(options = [['-h'], ['--help']])
 		
-		if program == ADD :
+		if program == ADD:
 			modes = [ 'user', 'users', 'group', 'profile' ]
-		elif program == MODIFY :
+		elif program == MODIFY:
 			modes = [ 'configuration', 'user', 'group', 'profile' ]
-		elif program == DELETE :
+		elif program == DELETE:
 			modes = [ 'user', 'group', 'groups', 'profile' ]
-		elif program == GETENT :
+		elif program == GETENT:
 			modes = ['user', 'users', 'passwd', 'group', 'groups', 'profiles', 'configuration' ]
-		elif program == CHECK :
+		elif program == CHECK:
 			modes = ['user', 'users', 'group', 'groups', 'profile', 'profiles', 'configuration' ]
 		
-		for mode in modes :
-			if program == GETENT and mode == 'configuration' :
+		for mode in modes:
+			if program == GETENT and mode == 'configuration':
 				FunctionnalTest(program + [mode], manual_output = True).Run()
-			else :
+			else:
 				FunctionnalTest(program + [mode]).Run(options = [['-h'], ['--help']])
 
 	test_message('integrated help testing finished.')
 
-def test_get() :
+def test_get():
 	"""Test GET a lot."""
 
 	test_message('''starting get tests.''')
 
-	for category in [ 'config_dir', 'main_config_file', 'extendedgroup_data_file' ] :
+	for category in [ 'config_dir', 'main_config_file', 'extendedgroup_data_file' ]:
 
-		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell', '-p', '--php-code' ] :
+		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell', '-p', '--php-code' ]:
 			command = GETENT + [ 'configuration', category, mode ]
 			FunctionnalTest(command).Run()
 
@@ -274,27 +274,27 @@ def test_get() :
 		GETENT + [ "profiles", "--xml" ],
 		)
 
-	for command in commands :
+	for command in commands:
 		FunctionnalTest(command)
 
 	test_message('''`get` tests finished.''')
 
-def test_find_new_indentifier() :
+def test_find_new_indentifier():
 	#test_message('''starting identifier routines tests.''')
 	assert(pyutils.next_free([5,6,48,2,1,4], 5, 30) == 7)
 	assert(pyutils.next_free([5,6,48,2,1,4], 1, 30) == 3)
 	assert(pyutils.next_free([1,3], 1, 30) == 2)
-	try :
+	try:
 		pyutils.next_free([1,2], 1, 2)
-	except :
+	except:
 		assert(True) # good behaviour
-	else :
+	else:
 		assert(False)
 	
 	assert(pyutils.next_free([1,2], 1, 30) == 3)
 	assert(pyutils.next_free([1,2,4,5], 3, 5) == 3)
 	#test_message('''identifier routines tests finished.''')
-def test_regexes() :
+def test_regexes():
 	""" Try funky strings to make regexes fail (they should not)."""
 
 	# TODO: test regexes directly from defs in licorn.core....
@@ -329,14 +329,14 @@ def test_regexes() :
 		ADD + [ 'user', "--login='**/*-'"]
 		])
 
-	for cmd in regexes_commands :
+	for cmd in regexes_commands:
 		FunctionnalTest(cmd).Run()
 
 	# TODO: profiles ?
 
 	test_message('''regexes tests finished.''')
 
-def clean_system() :
+def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
 
 	test_message('''cleaning system from previous runs.''')
@@ -363,23 +363,23 @@ def clean_system() :
 
 	test_message('''system cleaned from previous testsuite runs.''')
 
-def make_backups() :
+def make_backups():
 	"""Make backup of important system files before messing them up ;-) """
 
-	for file in system_files :
-		if os.path.exists('/etc/%s' % file) :
+	for file in system_files:
+		if os.path.exists('/etc/%s' % file):
 			os.popen4(['cp', '-f', '/etc/' + file, '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])[1].read()
 
 	test_message('''made backups of system config files.''')
-def compare_delete_backups() :
+def compare_delete_backups():
 	test_message('''comparing backups of system config files after tests for side-effects alterations.''')
-	for file in system_files :
-		if os.path.exists('/etc/%s' % file) :
+	for file in system_files:
+		if os.path.exists('/etc/%s' % file):
 			log_and_exec('colordiff /etc/%s /tmp/%s.bak.%s' % (file, file.replace('/', '_'), bkp_ext), False, comment="should not display any diff (system has been cleaned).", verb = True)
 			os.popen4(['rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])[1].read()
 	test_message('''system config files backup comparison finished successfully.''')
 
-def test_groups () :
+def test_groups ():
 	"""Test ADD/MOD/DEL on groups in various ways."""
 
 	test_message('''starting groups related tests.''')
@@ -452,7 +452,7 @@ def test_groups () :
 	log_and_exec(CHECK + " group -v --name=groupeB")
 
 	log_and_exec(DELETE + " group --name groupeB")
-	# FIXME : verify /etc/group /etc/licorn/groups /home/groupes/...
+	# FIXME: verify /etc/group /etc/licorn/groups /home/groupes/...
 
 	# should fail because group is not present anymore.
 	log_and_exec(CHECK + " group -v --name=groupeB", True, 5, comment = "groupeB doesn't exist, it has just been deleted.")
@@ -476,24 +476,24 @@ def test_groups () :
 	# RENAME IS NOT SUPPORTED YET !!
 	#log_and_exec(MODIFY + " group --name=TestGroup_A --rename=leTestGroup_A/etc/power")
 
-	# FIXME : get members of group for later verifications...
+	# FIXME: get members of group for later verifications...
 	log_and_exec(DELETE + " group --name=groupeC --del-users --no-archive")
-	# FIXME : verify deletion of groups + deletion of users...
+	# FIXME: verify deletion of groups + deletion of users...
 
-	# FIXME : get members.
+	# FIXME: get members.
 	log_and_exec(DELETE + " group --name=groupeD --del-users")
-	# FIXME : idem last group, verify users account were archived, shared dir ws archived.
+	# FIXME: idem last group, verify users account were archived, shared dir ws archived.
 	os.system("rm -rf %s >/dev/null 2>&1" % ("/home/" + configuration.groups.names['plural'] + "/groupeD") )
 
 	# already deleted, should fail...
 	log_and_exec(DELETE + " group --name=groupeD", True, 5, comment = "groupeD does not exist anymore, it has been deleted.")
-	# FIXME : verify deletion
+	# FIXME: verify deletion
 
 	# already deleted, should fail...
 	log_and_exec(MODIFY + " group --name=groupeC --not-permissive", True, 5, comment = "groupeC doesn't exist, it has been previouly deleted.")
 
 	test_message('''groups related tests finished.''')
-def test_users() :
+def test_users():
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
 	
 	test_message('''starting users related tests.''')
@@ -534,7 +534,7 @@ def test_users() :
 	#log_and_exec(CHECK + " user --name utilisager.normal --extended --auto-yes")
 
 	# checking for Maildir repair capacity...
-	if configuration.users.mailbox_type == configuration.MAIL_TYPE_HOME_MAILDIR :
+	if configuration.users.mailbox_type == configuration.MAIL_TYPE_HOME_MAILDIR:
 		os.system("rm -rf ~utilisager.normal/" + configuration.users.mailbox)
 		log_and_exec(CHECK + " user -v --name utilisager.normal --auto-no", True, 7, comment="user lacks ~/" + configuration.users.mailbox)
 		log_and_exec(CHECK + " user -v --name utilisager.normal --auto-yes")
@@ -546,7 +546,7 @@ def test_users() :
 	# all must be ok, the link is just renamed...
 	log_and_exec(CHECK + " group -vv --name test_users_B --extended")
 
-	# FIXME : verify the user can create things in shared group dirs.
+	# FIXME: verify the user can create things in shared group dirs.
 
 	log_and_exec(MODIFY + " user --login=utilisager.normal --del-groups test_users_A")
 
@@ -585,7 +585,7 @@ def test_users() :
 	#log_and_exec(DELETE + " user --login utilisager.normal")
 	#log_and_exec(DELETE + " user --login test.responsibilly")
 	test_message('''users related tests finished.''')
-def test_imports() :
+def test_imports():
 	"""Test massive user accounts imports."""
 
 	os.system(DELETE + " profile --group utilisagers         --del-users --no-archive")
@@ -613,7 +613,7 @@ def test_imports() :
 	log_and_exec(DELETE + " profile --group responsibilisateurs --del-users --no-archive")
 
 	log_and_exec(GETENT + " groups --empty | cut -d\":\" -f 1 | xargs -I% " + DELETE + " group --name % --no-archive")
-def test_profiles() :
+def test_profiles():
 	"""Test the applying feature of profiles."""
 
 	test_message('''starting profiles related tests.''')
@@ -639,7 +639,7 @@ def test_profiles() :
 	log_and_exec(DELETE + " profile --group utilisagers --del-users --no-archive")
 	
 	test_message('''profiles related tests finished.''')
-def to_be_implemented() :
+def to_be_implemented():
 	""" TO BE DONE !
 		#
 		# Profiles
@@ -666,7 +666,7 @@ def to_be_implemented() :
 	pass
 
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 
 	# Unit Tests
 	test_find_new_indentifier()

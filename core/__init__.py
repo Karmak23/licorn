@@ -32,12 +32,12 @@ from internals.keywords      import KeywordsController
 
 import backends
 
-try :
+try:
 	configuration = LicornConfiguration()
 	users         = UsersController(configuration)
 	groups        = GroupsController(configuration, users)
 	profiles      = ProfilesController(configuration, groups, users)
 	keywords      = KeywordsController(configuration)
 
-except exceptions.LicornException, e :
+except exceptions.LicornException, e:
 	logging.error("Licorn core initialization failed:\n\t%s" % e)

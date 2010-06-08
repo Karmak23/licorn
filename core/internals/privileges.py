@@ -15,43 +15,43 @@ import sys, os
 from licorn.foundations    import logging, exceptions, hlstr
 import readers
 
-class PrivilegesWhiteList(list) :
+class PrivilegesWhiteList(list):
 	""" Manage privileges whitelist. """
 	conf_file = ""
-	def __init__(self, conf_file) :
+	def __init__(self, conf_file):
 		""" Read the configuration file and populate itself """
 		self.conf_file = conf_file
-		try :
+		try:
 			self.extend(readers.very_simple_conf_load_list(conf_file))
-		except IOError, e :
-			if e.errno == 2 : pass
-			else : raise e
-		# si le fichier contient des doublons, faire plutot : map(lambda (x) : self.append(x), readers.very_simple_conf_load_list(conf_file))
-	def __del__(self) :
+		except IOError, e:
+			if e.errno == 2: pass
+			else: raise e
+		# si le fichier contient des doublons, faire plutot: map(lambda (x): self.append(x), readers.very_simple_conf_load_list(conf_file))
+	def __del__(self):
 		# just in case it wasn't done before (in batched operations, for example).
 		self.WriteConf()
-	def append(self, privilege) :
-		""" Set append like : no doubles."""
-		try :
+	def append(self, privilege):
+		""" Set append like: no doubles."""
+		try:
 			self.index(privilege)
-		except ValueError :
+		except ValueError:
 			from licorn.system import groups, profiles, users
 			allgroups   = groups.GroupsController(configuration)
 			allprofiles = profiles.ProfilesController(configuration, allgroups)
 			allusers    = users.UsersController(configuration, allprofiles, allgroups)
-			if allgroups.is_system_group(privilege) :
+			if allgroups.is_system_group(privilege):
 				list.append(self, privilege)
-			else :
-				logging.warning("%s is not a privilege." % styles.stylize(styles.ST_NAME,privilege))
-		else :
+			else:
+				logging.warning("%s is not a privilege." % styles.stylize(styles.ST_NAME, privilege))
+		else:
 			logging.info("privilege %s already whitelisted, skipped." % styles.stylize(styles.ST_NAME, privilege))
-	def remove(self, privilege) :
+	def remove(self, privilege):
 		""" Remove without throw of exception """
-		try :
+		try:
 			list.remove(self, privilege)
-		except ValueError :
+		except ValueError:
 			logging.warning("privilege %s doesn't exist in the whiteliste, skipped." % styles.stylize(styles.ST_NAME, privilege))
-	def WriteConf(self) :
+	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
 		open(self.conf_file, "w").write("%s\n" % "\n".join(self))
 

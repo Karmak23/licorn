@@ -9,21 +9,21 @@ from licorn.interfaces.web import utils as w
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 
 # private functions.
-def __merge_multi_select(*lists) :
+def __merge_multi_select(*lists):
 	final = []
-	for list in lists :
-		if list == [] : continue
-		if type(list) == type("") :
+	for list in lists:
+		if list == []: continue
+		if type(list) == type(""):
 			final.append(list)
-		else :
+		else:
 			final.extend(list)
 	return final
-def ctxtnav(active = True) :
+def ctxtnav(active = True):
 
-	if active :
+	if active:
 		disabled = '';
 		onClick = '';
-	else :
+	else:
 		disabled = 'un-clickable';
 		onClick  = 'onClick="javascript: return(false);"' 
 
@@ -37,13 +37,13 @@ def ctxtnav(active = True) :
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
 
 # locking and unlocking.
-def unlock(uri, http_user, name, sure = False) :
+def unlock(uri, http_user, name, sure = False):
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
 	data  = '%s\n%s\n%s' % (w.backto(), __groups_actions(), w.menu(uri))
 
-	if not sure :
+	if not sure:
 		description = _('''This will permit large access to files and folders
 			in the group shared dir, and will allow any member of the group to
 			modify / delete any document, even if he/she is not owner of the
@@ -61,19 +61,19 @@ def unlock(uri, http_user, name, sure = False) :
 		
 		return w.page(title, data)
 
-	else :
+	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-permissive" ]
 
 		return w.page(title, data +
 			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = _("Failed to activate permissivenes on group <strong>%s</strong>!") % name))
-def lock(uri, http_user, name, sure = False) :
+def lock(uri, http_user, name, sure = False):
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
 	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
 
-	if not sure :
+	if not sure:
 		description = _('''This will ensure finer write access to files and folders
 		in the group shared dir. Only the owner / creator of a document will be able
 		to modify it; other group members will only be able to read such a document
@@ -90,7 +90,7 @@ def lock(uri, http_user, name, sure = False) :
 		
 		return w.page(title, data)
 
-	else :
+	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-not-permissive" ]
 
@@ -99,7 +99,7 @@ def lock(uri, http_user, name, sure = False) :
 			err_msg = _("Failed to remove permissiveness from group <strong>%s</strong>!") % name))
 
 # delete a group.
-def delete(uri, http_user, name, sure = False, no_archive = False, yes = None) :
+def delete(uri, http_user, name, sure = False, no_archive = False, yes = None):
 	""" Remove group and archive (or not) group shared dir. """
 
 	del yes
@@ -109,12 +109,12 @@ def delete(uri, http_user, name, sure = False, no_archive = False, yes = None) :
 
 	groups.reload()
 
-	if groups.is_system_group(name) :
+	if groups.is_system_group(name):
 		return w.page(title, w.error(_("Failed to remove group"), 
 			[ _("alter system group.") ],
 			_("insufficient permissions to perform operation.")))
 
-	if not sure :
+	if not sure:
 		data += w.question(_("Are you sure you want to remove group <strong>%s</strong>?") % name,
 			_("""Group shared data will be archived in directory %s,
 				and accessible to members of group %s for eventual 
@@ -128,11 +128,11 @@ def delete(uri, http_user, name, sure = False, no_archive = False, yes = None) :
 
 		return w.page(title, data)
 
-	else :
+	else:
 		# we are sure, do it !
 		command = [ 'sudo', 'del', 'group', '--quiet', '--no-colors', '--name', name ]
 
-		if no_archive :
+		if no_archive:
 			command.extend(['--no-archive'])
 		
 		return w.page(title, data + 
@@ -140,7 +140,7 @@ def delete(uri, http_user, name, sure = False, no_archive = False, yes = None) :
 			err_msg = _("Failed to remove group <strong>%s</strong>!") % name))
 		
 # skel reapplyin'
-def skel(req, name, sure = False, apply_skel = configuration.users.default_skel) :
+def skel(req, name, sure = False, apply_skel = configuration.users.default_skel):
 	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
 
 	users.reload()
@@ -150,7 +150,7 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 	title = _("Skeleton reapplying for group %s") % name
 	data  = '%s%s' % (w.backto(), __groups_actions(title))
 
-	if not sure :
+	if not sure:
 		allusers  = u.UsersList(configuration)
 		allgroups = g.GroupsList(configuration, allusers)
 
@@ -162,14 +162,14 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 		pri_group = allgroups.groups[allusers.users[users.UsersList.login_to_uid(login)]['gid']]['name']
 		
 		# liste des skels du profile en cours.
-		def filter_skels(pri_group, sk_list) :
+		def filter_skels(pri_group, sk_list):
 			'''
 			TODO: to be converted to licorn model
-			if pri_group == configuration.mNames['RESPONSABLES_GROUP'] :
+			if pri_group == configuration.mNames['RESPONSABLES_GROUP']:
 				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
-			elif pri_group == configuration.mNames['USAGERS_GROUP'] :
+			elif pri_group == configuration.mNames['USAGERS_GROUP']:
 				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
-			else :
+			else:
 			'''
 			return sk_list
 			
@@ -184,7 +184,7 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 
 		return w.page(title, data)
 
-	else :
+	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
 
@@ -193,7 +193,7 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 			err_msg = _("Failed to apply skel %s to members of group %s.") % (os.path.basename(apply_skel), login)))
 
 # user account creation
-def new(uri, http_user) :
+def new(uri, http_user):
 	"""Generate a form to create a new group on the system."""
 
 	title = _("Creating a new group")
@@ -239,7 +239,7 @@ def new(uri, http_user) :
 		w.submit('create', _('Create') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('T'))
 		)
 	return w.page(title, data)
-def create(uri, http_user, name, description = None, skel = "", permissive = False, create = None) :
+def create(uri, http_user, name, description = None, skel = "", permissive = False, create = None):
 
 	title      = _("Creating group %s") % name
 	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
@@ -248,15 +248,15 @@ def create(uri, http_user, name, description = None, skel = "", permissive = Fal
 	
 	command = [ 'sudo', 'add', 'group', '--quiet', '--no-colors', '--name', name, '--skel', skel ]
 
-	if description :
+	if description:
 		command.extend([ '--description', description ])
 	
-	if permissive :
+	if permissive:
 		command.append('--permissive')
 	
 	return w.page(title, data + w.run(command, uri,  successfull_redirect = "/groups/list",
 		err_msg = _('Failed to create group %s!') % name))
-def view(uri, http_user, name) :
+def view(uri, http_user, name):
 	"""Prepare a group view to be printed."""
 
 	users.reload()
@@ -273,7 +273,7 @@ def view(uri, http_user, name) :
 	# apart from obfuscation which is not acceptable.
 	# Anyway, to see a system group, user must forge an URL.
 
-	try :
+	try:
 		group   = g[groups.name_to_gid(name)]
 		members = groups.all_members(name)
 		members.sort()
@@ -287,19 +287,19 @@ def view(uri, http_user, name) :
 			<th><strong>%s</strong></th>
 		</tr>
 		''' % (_('Members'), _('(ordered by login)'), _('Full Name'), _('Identifier'), _('UID'))
-		def user_line(login) :
+		def user_line(login):
 			uid = users.login_to_uid(login)
 			return '''<tr><td>%s</td><td>%s</td><td>%s</td></tr>''' % (u[uid]['gecos'], login, uid)
 
 		members_html += "\n".join(map(user_line, members)) + '</table>'
 
-		if not groups.is_system_group(name) :
+		if not groups.is_system_group(name):
 			resps  = groups.all_members(configuration.groups.resp_prefix + name)
 			resps.sort()
 			guests = groups.all_members(configuration.groups.guest_prefix + name)
 			guests.sort()
 
-			if resps != [] :
+			if resps != []:
 				resps_html = '''
 		<h2>%s</h2><div style="text-align:center;">%s</div>
 		<table class="group_members">
@@ -314,10 +314,10 @@ def view(uri, http_user, name) :
 				_('Full Name'), _('Identifier'), _('UID'),
 				"\n".join(map(user_line, resps)))
 
-			else :
+			else:
 				resps_html = "<h2>%s</h2>" % _('No responsibles for this group.')
 
-			if guests != [] :
+			if guests != []:
 				guests_html = '''
 		<h2>%s</h2><div style="text-align:center;">%s</div>
 		<table class="group_members">
@@ -331,10 +331,10 @@ def view(uri, http_user, name) :
 			''' % (_('Guests'), _('(ordered by login)'), 
 				_('Full Name'), _('Identifier'), _('UID'),
 				"\n".join(map(user_line, guests)))
-			else :
+			else:
 				guests_html = "<h2>%s</h2>" % _('No guests for this group.')
 
-		else :
+		else:
 			resps_html = guests_html = ''
 
 		form_name = "group_print_form"
@@ -364,13 +364,13 @@ def view(uri, http_user, name) :
 				w.submit('print', _('Print') + ' >>', onClick = "javascript:window.print(); return false;", accesskey = _('P'))
 				)
 
-	except exceptions.LicornException, e :
+	except exceptions.LicornException, e:
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = g[groups.name_to_gid(name)]", e))
 
 	return w.page(title, data)
 
 # edit group parameters.
-def edit(uri, http_user, name) :
+def edit(uri, http_user, name):
 	"""Edit a group."""
 
 	users.reload()
@@ -382,57 +382,57 @@ def edit(uri, http_user, name) :
 	title = _("Editing group %s") %  name
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
-	try :
+	try:
 		group     = g[groups.name_to_gid(name)]
 		sys       = groups.is_system_group(name)
 		dbl_lists = {}
 
-		if sys :
+		if sys:
 			groups_filters_lists_ids   = ( 
 				(name, ( _('Manage members'), _('Users not yet members'), _('Current members') ), 'members' ),
 				(configuration.groups.resp_prefix + name, None, '&#160;' ),
 				(configuration.groups.guest_prefix + name, None, '&#160;' )
 				)
-		else :
+		else:
 			groups_filters_lists_ids = ( 
 				(name,            [_('Manage members'), _('Users not yet members'), _('Current members')],      'members'),
 				(configuration.groups.resp_prefix + name,  [_('Manage responsibles'), _('Users not yet responsibles'), _('Current responsibles')], 'resps'), 
 				(configuration.groups.guest_prefix + name, [_('Manage guests'),      _('Users not yet guests'), _('Current guests')],      'guests') )
 
-		for (gname, titles, id) in groups_filters_lists_ids :
-			if titles is None :
+		for (gname, titles, id) in groups_filters_lists_ids:
+			if titles is None:
 				dbl_lists[gname] = id
-			else :
+			else:
 				users.Select(users.FILTER_STANDARD)
 				dest   = g[groups.name_to_gid(gname)]['members'][:]
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
-				for current in g[groups.name_to_gid(gname)]['members'] :
-					try : source.remove(current)
-					except ValueError : dest.remove(current)
+				for current in g[groups.name_to_gid(gname)]['members']:
+					try: source.remove(current)
+					except ValueError: dest.remove(current)
 				dest.sort()
 				source.sort()
 				dbl_lists[gname] = w.doubleListBox(titles, id, source, dest)
 
-		def descr(desc, system) :
-			if system :
+		def descr(desc, system):
+			if system:
 				return desc
-			else :
+			else:
 				return w.input('description', desc, size = 30, maxlength = 256, accesskey = 'D')
-		def skel(cur_skel, system) :
-			if system :
+		def skel(cur_skel, system):
+			if system:
 				return ''
-			else :
+			else:
 				return '''
 				<tr>
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
 				</tr>
 				''' % (_('Skeleton'), w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename))
-		def permissive(perm, sys) :
+		def permissive(perm, sys):
 
-			if sys :
+			if sys:
 				return ''
-			else :
+			else:
 				return '''
 				<tr>
 					<td><strong>%s</strong></td>
@@ -500,7 +500,7 @@ def edit(uri, http_user, name) :
 			w.submit('record', _('Record') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('R'))
 			)
 	
-	except exceptions.LicornException, e :
+	except exceptions.LicornException, e:
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = allgroups.groups[groups.name_to_gid(name)]", e))
 
 	data += w.page_body_end()
@@ -510,7 +510,7 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
-	record = None) :
+	record = None):
 	"""Record group changes."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -520,7 +520,7 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 	data       = '%s<h1>%s</h1>' % (w.backto(), title)
 	command    = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors', '--name', name ]
 
-	if skel :
+	if skel:
 		command.extend([ "--skel", skel ])
 
 	add_members = ','.join(__merge_multi_select(members_dest))
@@ -534,8 +534,8 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 
 	for (var, cmd) in ( (add_members, "--add-users"),  (del_members, "--del-users"),
 						(add_resps,   "--add-resps"),  (del_resps,   '--del-resps'),
-						(add_guests,  "--add-guests"), (del_guests,  '--del-guests') ) :
-		if var != "" :
+						(add_guests,  "--add-guests"), (del_guests,  '--del-guests') ):
+		if var != "":
 			command.extend([ cmd, var ])
 
 	return w.page(title, 
@@ -543,7 +543,7 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 		err_msg = _('Failed to modify one or more parameter of group %s!') % name))
 
 # list user accounts.
-def main(uri, http_user, sort = "name", order = "asc") :
+def main(uri, http_user, sort = "name", order = "asc"):
 		
 	start = time.time()
 
@@ -561,42 +561,42 @@ def main(uri, http_user, sort = "name", order = "asc") :
 	title = "%s" % configuration.groups.names['_plural']
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if order == "asc" : reverseorder = "desc"
-	else :              reverseorder = "asc"
+	if order == "asc": reverseorder = "desc"
+	else:              reverseorder = "asc"
 
 	data += '<table>\n		<tr>\n'
 
 	sortcols = ( ('', '', False), ("name", _("Name"), True), ("skel", _("Skeleton"), True), ("permissive", _("Perm."), True), ('members', "Members", False), ("resps", _("Responsibles"), False), ("guests", _("Guests"), False) )
 	
-	for (column, name, can_sort) in sortcols :
-		if can_sort :
-			if column == sort :
+	for (column, name, can_sort) in sortcols:
+		if can_sort:
+			if column == sort:
 					data += '''
 		<th><img src="/images/sort_%s.gif" alt="%s" />&#160;
 			<a href="/groups/list/%s/%s" title="%s">%s</a>
 		</th>\n''' % (order, _('%s order') % order, column, reverseorder, _('Click to sort in reverse order.'), name)
-			else :
+			else:
 				data += '		<th><a href="/groups/list/%s/asc" title="%s">%s</a></th>\n' % (column, _('Click to sort on this column.'), name)
-		else :
+		else:
 			data += '		<th>%s</th>\n' % name
 			
 	data += '		</tr>\n'
 
-	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['_plural']), (groups.FILTER_PRIVILEGED, _("Privileges")) ) :
+	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['_plural']), (groups.FILTER_PRIVILEGED, _("Privileges")) ):
 
 		tgroups  = {}
 		ordered  = {}
 		totals[filter_name] = 0
 		groups.Select(filter)
 
-		for gid in groups.filtered_groups :
+		for gid in groups.filtered_groups:
 			group = groups.groups[gid]
 			name  = group['name'] 
 
 			tgroups[gid] = {
-				'name'       : name,
-				'skel'       : group['skel'] + name,
-				'permissive' : group['permissive']
+				'name'      : name,
+				'skel'      : group['skel'] + name,
+				'permissive': group['permissive']
 				}
 			totals[filter_name] += 1
 
@@ -606,22 +606,22 @@ def main(uri, http_user, sort = "name", order = "asc") :
 			ordered[hlstr.validate_name(tgroups[gid][sort])] = gid
 
 			tgroups[gid]['members'] = []
-			for member in groups.groups[gid]['members'] :
-				if not users.is_system_login(member) :
+			for member in groups.groups[gid]['members']:
+				if not users.is_system_login(member):
 					tgroups[gid]['members'].append(users.users[users.login_to_uid(member)]) 
 
-			if not groups.is_system_gid(gid) :
-				for prefix in (configuration.groups.resp_prefix, configuration.groups.guest_prefix) :
+			if not groups.is_system_gid(gid):
+				for prefix in (configuration.groups.resp_prefix, configuration.groups.guest_prefix):
 					tgroups[gid][prefix + 'members'] = []
-					for member in groups.groups[groups.name_to_gid(prefix + name)]['members'] :
-						if not users.is_system_login(member) :
+					for member in groups.groups[groups.name_to_gid(prefix + name)]['members']:
+						if not users.is_system_login(member):
 							tgroups[gid][prefix + 'members'].append(users.users[users.login_to_uid(member)])
 
 		gkeys = ordered.keys()
 		gkeys.sort()
-		if order == "desc" : gkeys.reverse()
+		if order == "desc": gkeys.reverse()
 
-		def html_build_group(index, tgroups = tgroups ) :
+		def html_build_group(index, tgroups = tgroups ):
 			gid   = ordered[index]
 			name  = g[gid]['name']
 			html_data = '''
@@ -635,17 +635,17 @@ def main(uri, http_user, sort = "name", order = "asc") :
 			</td>
 				''' % (name, name, g[gid]['description'], name, name, g[gid]['skel'])
 	
-			if groups.is_system_gid(gid) :
+			if groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
-			else :
-				if g[gid]['permissive'] :
+			else:
+				if g[gid]['permissive']:
 					html_data += '''
 				<td class="user_action_center">
 					<a href="/groups/lock/%s" title="%s">
 					<img src="/images/16x16/unlocked.png" alt="%s"/></a>
 				</td>
 					''' % (name, _('Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness.'), _('Group is currently permissive.'))
-				else :
+				else:
 					html_data += '''
 				<td class="user_action_center">
 					<a href="/groups/unlock/%s" title="%s">
@@ -653,32 +653,32 @@ def main(uri, http_user, sort = "name", order = "asc") :
 				</td>
 					''' % (name, _('Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness.'), _('Group is NOT permissive.'))
 
-			for (keyname, text) in (('members', _('Current members')), ('rsp-members', _('Current responsibles')), ('gst-members', _('Current guests')) ) :
-				if tgroups[gid].has_key(keyname) :
+			for (keyname, text) in (('members', _('Current members')), ('rsp-members', _('Current responsibles')), ('gst-members', _('Current guests')) ):
+				if tgroups[gid].has_key(keyname):
 					accounts = {}
 					uordered = {}
-					for member in tgroups[gid][keyname] :
+					for member in tgroups[gid][keyname]:
 						uid = member['uid']
-						accounts[uid] = { 'login' : member['login'], 'gecos' : member['gecos'], 'gecos_sort' : member['gecos'] + member['login'] }
+						accounts[uid] = { 'login': member['login'], 'gecos': member['gecos'], 'gecos_sort': member['gecos'] + member['login'] }
 						uordered[hlstr.validate_name(accounts[uid]['gecos_sort'], aggressive = True)] = uid
 					memberkeys = uordered.keys()
 					memberkeys.sort()
 					mbdata = "<table><tr><th>%s</th><th>%s</th><th>%s</th></tr>\n" % (_('Full Name'), _('Identifier'), _('UID'))
-					for member in memberkeys :
+					for member in memberkeys:
 						uid = uordered[member]
 						mbdata += '''<tr><td>%s</td><td>%s</td><td>%d</td></tr>\n''' % (accounts[uid]['gecos'], accounts[uid]['login'], uid)
 					mbdata += '</table>'
 					nb = len(tgroups[gid][keyname])
-					if nb == 0 :
+					if nb == 0:
 						html_data += '''<td class="right faded">%s</td>\n''' % _('none')
-					else :
+					else:
 						html_data += '''<td class="right"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="%s" /></a></td>\n''' % (text, mbdata, nb, _('See %s of group %s.') % (text, name))	
-				else :
+				else:
 					html_data += '''<td>&#160;</td>\n'''
 	
-			if groups.is_system_gid(gid) :
+			if groups.is_system_gid(gid):
 				html_data += '<td colspan="1">&#160;</td></tr>\n'
-			else :
+			else:
 				html_data += '''
 					<!--
 					<td class="user_action">
@@ -696,10 +696,10 @@ def main(uri, http_user, sort = "name", order = "asc") :
 	
 		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (filter_name, ''.join(map(html_build_group, gkeys)))
 
-	def print_totals(totals) :
+	def print_totals(totals):
 		output = ""
-		for total in totals :
-			if totals[total] != 0 :
+		for total in totals:
+			if totals[total] != 0:
 				output += '''
 	<tr class="list_total">
 		<td colspan="6" class="total_left">%s</td>
@@ -718,7 +718,7 @@ def main(uri, http_user, sort = "name", order = "asc") :
 	</tr>
 </table>
 %s
-	''' % (print_totals(totals), _('Total number of groups:'), reduce(lambda x,y: x+y, totals.values()), w.total_time(start, time.time()))
+	''' % (print_totals(totals), _('Total number of groups:'), reduce(lambda x, y: x+y, totals.values()), w.total_time(start, time.time()))
 
 	data += w.page_body_end()
 

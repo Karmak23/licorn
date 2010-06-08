@@ -18,21 +18,21 @@ groups_filters_lists_ids = (
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 
 # private functions.
-def __merge_multi_select(*lists) :
+def __merge_multi_select(*lists):
 	final = []
-	for list in lists :
-		if list == [] : continue
-		if type(list) == type("") :
+	for list in lists:
+		if list == []: continue
+		if type(list) == type(""):
 			final.append(list)
-		else :
+		else:
 			final.extend(list)
 	return final
-def ctxtnav(active = True) :
+def ctxtnav(active = True):
 
-	if active :
+	if active:
 		disabled = '';
 		onClick = '';
-	else :
+	else:
 		disabled = 'un-clickable';
 		onClick  = 'onClick="javascript: return(false);"' 
 
@@ -54,10 +54,10 @@ def ctxtnav(active = True) :
 		_("Export accounts")
 		)
 
-def export(uri, http_user, type = "", yes = None) :
+def export(uri, http_user, type = "", yes = None):
 	""" Export user accounts list."""
 
-	# TODO : reload(profiles)
+	# TODO: reload(profiles)
 	groups.reload()
 	users.reload()
 
@@ -67,7 +67,7 @@ def export(uri, http_user, type = "", yes = None) :
 	data  = '<div id="banner">\n%s\n%s</div>\n%s\n<div id="main">\n%s\n<div id="content"><h1>%s</h1>' % (
 		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title) 
 
-	if type == "" :
+	if type == "":
 		description = _('''CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser.''')
 		
 		form_options = _("Which file format do you want accounts to be exported to? %s") % w.select("type", [ "CSV", "XML"])
@@ -82,7 +82,7 @@ def export(uri, http_user, type = "", yes = None) :
 
 		return w.page(title, data)
 
-	else :
+	else:
 		users.Select(users.FILTER_STANDARD)
 
 		# TODO: convert this.
@@ -91,13 +91,13 @@ def export(uri, http_user, type = "", yes = None) :
 		#header("Pragma: no-cache");
 		#header("Expires: 0");
 
-		if type == "CSV" : 
+		if type == "CSV": 
 			return users.ExportCSV()
-		else :
+		else:
 			return users.ExportXML()
 
 # delete a user account.
-def delete(uri, http_user, login, sure = False, no_archive = False, yes = None) :
+def delete(uri, http_user, login, sure = False, no_archive = False, yes = None):
 	"""remove user account."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -106,7 +106,7 @@ def delete(uri, http_user, login, sure = False, no_archive = False, yes = None) 
 	title = _("Remove user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 	
-	if not sure :
+	if not sure:
 		data += w.question(_("Are you sure you want to remove account <strong>%s</strong>?") % login,
 			_("""User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong>
 				in directory <code>%s</code> and members of group <strong>%s</strong> will be able to access
@@ -122,16 +122,16 @@ def delete(uri, http_user, login, sure = False, no_archive = False, yes = None) 
 
 		return w.page(title, data)
 
-	else :
+	else:
 		users.reload()
-		if users.is_system_login(login) :
+		if users.is_system_login(login):
 			return w.page(title, w.error(_("Failed to remove account"), [ _("alter system account.") ],
 			_("insufficient permissions to perform operation.")))
 
 		# we are sure, do it !
 		command = [ 'sudo', 'del', 'user', '--quiet', '--no-colors', '--login', login ]
 
-		if no_archive :
+		if no_archive:
 			command.extend(['--no-archive'])
 		
 		data += w.page_body_end()
@@ -140,7 +140,7 @@ def delete(uri, http_user, login, sure = False, no_archive = False, yes = None) 
 			err_msg = _("Failed to remove account <strong>%s</strong>!") % login))
 		
 # locking and unlocking.
-def unlock(uri, http_user, login) :
+def unlock(uri, http_user, login):
 	"""unlock a user account password."""
 
 	title = _("Unlock account %s") % login
@@ -150,7 +150,7 @@ def unlock(uri, http_user, login) :
 
 	data += w.page_body_end()
 
-	if users.is_system_login(login) :
+	if users.is_system_login(login):
 		return w.page(title, w.error(_("Failed to unlock account"),
 			[ _("alter system account.") ], _("insufficient permission to perform operation.")))
 
@@ -158,7 +158,7 @@ def unlock(uri, http_user, login) :
 
 	return w.page(title, data + 
 		w.run(command, uri, err_msg = _("Failed to unlock account <strong>%s</strong>!") % login))
-def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = None) :
+def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = None):
 	"""lock a user account password."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -170,12 +170,12 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 	title = _("Lock account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if not sure :
+	if not sure:
 		description = _('''This will prevent user to connect to network clients (thin ones,
 			and Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones).''') % w.acr('GNU')
 		
-		# TODO : Vérifier que le groupe "remotessh" existe bien sur le système...
-		if login in groups.all_members('remotessh') :
+		# TODO: Vérifier que le groupe "remotessh" existe bien sur le système...
+		if login in groups.all_members('remotessh'):
 			description += _("""<br /><br />
 				But this will not block incoming %s network connections, if the user
 				uses %s %s or %s public/private keys. To block ANY access to the system,
@@ -184,7 +184,7 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 			form_options = w.checkbox("remove_remotessh", "True",
 				_("Remove user from group <code>remotessh</code> in the same time."),
 				checked = True, accesskey = _('R'))
-		else :
+		else:
 			form_options = None
 	
 		data += w.question(_("Are you sure you want to lock account <strong>%s</strong>?") % login,
@@ -197,8 +197,8 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 
 		return w.page(title, data)
 
-	else :
-		if users.is_system_login(login) :
+	else:
+		if users.is_system_login(login):
 			return w.page(title, w.error(_("Failed to lock account"),
 				[ _("alter system account.") ],
 				_("insufficient permissions to perform operation.")))
@@ -206,7 +206,7 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--lock" ]
 
-		if remove_remotessh :
+		if remove_remotessh:
 			command.extend(['--del-groups', 'remotessh'])
 		
 		data += w.page_body_end()
@@ -215,13 +215,13 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 			w.run(command, uri, err_msg = _("Failed to lock account <strong>%s</strong>!") % login))
 
 # skel reapplyin'
-def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.default_skel, yes = None) :
+def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.default_skel, yes = None):
 	"""reapply a user's skel with confirmation."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del yes
 	
-	# TODO : profiles.reload()
+	# TODO: profiles.reload()
 	groups.reload()
 	users.reload()
 	
@@ -231,23 +231,23 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 	title = _("Reapply skel to user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if users.is_system_login(login) :
+	if users.is_system_login(login):
 		return w.page(title, w.error(_("Failed to reapply skel"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
-	if not sure :
+	if not sure:
 		description = _('''This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.''')
 		
 		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
 		
 		# liste des skels du profile en cours.
-		def filter_skels(pri_group, sk_list) :
+		def filter_skels(pri_group, sk_list):
 			'''
 			TODO: to be converted to licorn model
-			if pri_group == configuration.mNames['RESPONSABLES_GROUP'] :
+			if pri_group == configuration.mNames['RESPONSABLES_GROUP']:
 				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
-			elif pri_group == configuration.mNames['USAGERS_GROUP'] :
+			elif pri_group == configuration.mNames['USAGERS_GROUP']:
 				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
-			else :
+			else:
 			'''
 			return sk_list
 			
@@ -262,7 +262,7 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 		data += w.page_body_end()
 		return w.page(title, data)
 
-	else :
+	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
 
@@ -272,10 +272,10 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 			err_msg = _("Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!") % (os.path.basename(apply_skel), login)))
 
 # user account creation
-def new(uri, http_user) :
+def new(uri, http_user):
 	"""Generate a form to create a new user on the system."""
 
-	# TODO : profiles.reload()
+	# TODO: profiles.reload()
 	groups.reload()
 	
 	g = groups.groups
@@ -284,9 +284,9 @@ def new(uri, http_user) :
 	title = _("New user account")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
-	def profile_input() :
+	def profile_input():
 
-		#TODO : To be rewritten ?
+		#TODO: To be rewritten ?
 		return """
 			<tr>
 				<td><strong>%s</strong></td>
@@ -295,18 +295,18 @@ def new(uri, http_user) :
 				</td>
 			</tr>
 			""" % (_("This user is a"), w.select('profile',  p.keys(), func = lambda x: p[x]['name']))
-	def gecos_input() :
+	def gecos_input():
 		return """
 			<tr>
 				<td><strong>%s</strong></td>
 				<td class="right">%s</td>
 			</tr>
 			""" % (_("Full name"), w.input('gecos', "", size = 30, maxlength = 64, accesskey = 'N'))
-	def shell_input() :
+	def shell_input():
 		return w.select('loginShell',  configuration.users.shells, current = configuration.users.default_shell, func = os.path.basename)
 
 	dbl_lists = {}
-	for filter, titles, id in groups_filters_lists_ids :
+	for filter, titles, id in groups_filters_lists_ids:
 		groups.Select(filter)
 		dest   = []
 		source = [ g[gid]['name'] for gid in groups.filtered_groups ]
@@ -390,7 +390,7 @@ If you let this field empty, identifier will be automaticcaly guessed from first
 def create(uri, http_user, loginShell, password, password_confirm, profile = None, login = "", gecos = "", firstname = "", lastname = "",
 	standard_groups_dest = [], privileged_groups_dest = [], responsible_groups_dest = [], guest_groups_dest = [],
 	standard_groups_source = [], privileged_groups_source = [], responsible_groups_source = [], guest_groups_source = [],
-	create = None ) :
+	create = None ):
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del create
@@ -398,39 +398,39 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 	title = _("New user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 	
-	if password != password_confirm :
+	if password != password_confirm:
 		return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
 
-	if len(password) < configuration.mAutoPasswdSize :
+	if len(password) < configuration.mAutoPasswdSize:
 		return w.page(title, data + w.error(_("Password must be at least %d characters long!%s") % (configuration.mAutoPasswdSize, rewind)))
 
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors', '--password', password ]
 
-	if firstname != '' and lastname != '' :
+	if firstname != '' and lastname != '':
 		command.extend(['--firstname', firstname, '--lastname', lastname])
-	if gecos != '' :
+	if gecos != '':
 		command.extend(['--gecos', gecos])
 	
-	# TODO : set a default profile (see issue #6)
-	if profile != None :
+	# TODO: set a default profile (see issue #6)
+	if profile != None:
 		command.extend([ "--profile", profile ])
 
-	if login != "" :
+	if login != "":
 		command.extend([ "--login", login ])
-	else :
-		# TODO : Idem, "gecos" should be tested against emptyness
+	else:
+		# TODO: Idem, "gecos" should be tested against emptyness
 		command.extend([ '--login', hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
 	
 	retval = w.run(command, uri, err_msg = _('Failed to create account <strong>%s</strong>!') % login)
 
-	# TODO : Change test since message received : Added user <login>
-	if retval != "" :
+	# TODO: Change test since message received: Added user <login>
+	if retval != "":
 		return w.page(title, data + retval)
 	
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 	add_groups = ','.join(__merge_multi_select(standard_groups_dest, privileged_groups_dest, responsible_groups_dest, guest_groups_dest))
 
-	if add_groups != "" :
+	if add_groups != "":
 		command.extend([ '--add-groups', add_groups ])
 
 	data += w.page_body_end()
@@ -440,7 +440,7 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 		err_msg = _('Failed to add user <strong>%s</strong> to requested groups/privileges/responsibilities/invitations!') % login))
 
 # edit user accout parameters.
-def edit(uri, http_user, login) :
+def edit(uri, http_user, login):
 	"""Edit an user account, based on login."""
 
 	groups.reload()
@@ -450,26 +450,26 @@ def edit(uri, http_user, login) :
 	title = _('Edit account %s') % login 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
-	if users.is_system_login(login) :
+	if users.is_system_login(login):
 		return w.minipage(title, w.error(_('Account edition impossible.'), [ _("alter system account.") ],
 			_("insufficient permissions to perform operation.")))
 
-	try :
+	try:
 		user = users.users[users.login_to_uid(login)]
 
-		try :
+		try:
 			profile = profiles.profiles[groups.groups[user['gid']]['name']]['name']
-		except KeyError :
+		except KeyError:
 			profile = _("Standard account")
 
 		dbl_lists = {}
-		for filter, titles, id in groups_filters_lists_ids :
+		for filter, titles, id in groups_filters_lists_ids:
 			groups.Select(filter)
 			dest   = list(user['groups'].copy())
 			source = [ groups.groups[gid]['name'] for gid in groups.filtered_groups ]
-			for current in dest[:] :
-				try : source.remove(current)
-				except ValueError : dest.remove(current)
+			for current in dest[:]:
+				try: source.remove(current)
+				except ValueError: dest.remove(current)
 			dest.sort()
 			source.sort()
 			dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
@@ -556,7 +556,7 @@ def edit(uri, http_user, login) :
 			w.submit('record', _('Record changes >>'), onClick = "selectAllMultiValues('%s');" % form_name)
 			)
 	
-	except exceptions.LicornException, e :
+	except exceptions.LicornException, e:
 		data += w.error("Account %s does not exist (%s)!" % (login, "user = users.users[users.login_to_uid(login)]", e))
 	
 	data += w.page_body_end()
@@ -571,7 +571,7 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 	privileged_groups_source  = [],  privileged_groups_dest = [],
 	responsible_groups_source = [], responsible_groups_dest = [],
 	guest_groups_source       = [],       guest_groups_dest = [],
-	record = None) :
+	record = None):
 	"""Record user account changes."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
@@ -583,13 +583,13 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 	command = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 
 	users.reload()
-	if users.is_system_login(login) :
+	if users.is_system_login(login):
 		return w.page(title, w.error(_("Recording of informations failed"), [ _("alter system account.") ], _("insufficient permissions to perform operation.")))
 
-	if password != "" :
-		if password != password_confirm :
+	if password != "":
+		if password != password_confirm:
 			return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
-		if len(password) < configuration.mAutoPasswdSize :
+		if len(password) < configuration.mAutoPasswdSize:
 			return w.page(title, data + w.error(_("The password --%s-- must be at least %d characters long!%s") % (password, configuration.mAutoPasswdSize, rewind)))
 
 		command.extend([ '--password', password ])
@@ -599,10 +599,10 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 	add_groups = ','.join(__merge_multi_select(standard_groups_dest,   privileged_groups_dest,   responsible_groups_dest,   guest_groups_dest))
 	del_groups = ','.join(__merge_multi_select(standard_groups_source, privileged_groups_source, responsible_groups_source, guest_groups_source))
 
-	if add_groups != "" :
+	if add_groups != "":
 		command.extend([ '--add-groups', add_groups ])
 		
-	if del_groups != "" :
+	if del_groups != "":
 		command.extend(['--del-groups', del_groups ])
 
 	data += w.page_body_end()
@@ -611,7 +611,7 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 
 
 # list user accounts.
-def main(uri, http_user, sort = "login", order = "asc") :
+def main(uri, http_user, sort = "login", order = "asc"):
 		
 	start = time.time()
 
@@ -640,7 +640,7 @@ def main(uri, http_user, sort = "login", order = "asc") :
 	totals   = {}
 	prof     = {}
 
-	for profile in p :
+	for profile in p:
 		prof[groups.name_to_gid(profile)] = p[profile]
 		totals[p[profile]['name']] = 0
 	totals[_('Standard account')] = 0
@@ -648,21 +648,21 @@ def main(uri, http_user, sort = "login", order = "asc") :
 	title = _("User accounts")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if order == "asc" : reverseorder = "desc"
-	else :              reverseorder = "asc"
+	if order == "asc": reverseorder = "desc"
+	else:              reverseorder = "asc"
 
 	data += '<table>\n		<tr>\n'
 
-	for (sortcolumn, sortname) in ( ("gecos", _("Full name")), ("login", _("Identifier")), ("profile", _("Profile")), ("locked", _("Locked")) ) :
-		if sortcolumn == sort :
+	for (sortcolumn, sortname) in ( ("gecos", _("Full name")), ("login", _("Identifier")), ("profile", _("Profile")), ("locked", _("Locked")) ):
+		if sortcolumn == sort:
 			data += '''			<th><img src="/images/sort_%s.gif" alt="%s order image" />&#160;
 				<a href="/users/list/%s/%s" title="%s">%s</a>
 				</th>\n''' % (order, order, sortcolumn, reverseorder, _("Click to sort in reverse order."), sortname)
-		else :
+		else:
 			data += '			<th><a href="/users/list/%s/asc" title="%s">%s</a></th>\n' % (sortcolumn, _("Click to sort on this column."), sortname)
 	data += '		</tr>\n'
 
-	def html_build_compact(index, accounts = accounts) :
+	def html_build_compact(index, accounts = accounts):
 		uid   = ordered[index]
 		login = u[uid]['login']
 		edit  = (_("""<em>Click to edit current user account parameters:</em><br />
@@ -692,14 +692,14 @@ def main(uri, http_user, sort = "login", order = "asc") :
 			login, edit, login, 
 			accounts[uid]['profile_name'])
 
-		if u[uid]['locked'] :
+		if u[uid]['locked']:
 			html_data += '''
 		<td class="user_action_center">
 			<a href="/users/unlock/%s" title="%s">
 			<img src="/images/16x16/locked.png" alt="%s"/></a>
 		</td>
 			''' % (login, _("Unlock password (re-grant access to machines)."), _("Remove account."))
-		else :
+		else:
 			html_data += '''
 		<td class="user_action_center">
 			<a href="/users/lock/%s" title="%s">
@@ -722,7 +722,7 @@ def main(uri, http_user, sort = "login", order = "asc") :
 		return html_data
 		
 	users.Select(users.FILTER_STANDARD)
-	for uid in users.filtered_users :
+	for uid in users.filtered_users:
 		user  = u[uid]
 		login = user['login'] 
 			
@@ -731,13 +731,13 @@ def main(uri, http_user, sort = "login", order = "asc") :
 		# and when sorting on locked status (accounts would be overwritten and 
 		# lost because sorting must be done on unique values).
 		accounts[uid] = {
-			'login'   : login,
-			'gecos'   : "%s %s" % ( user['gecos'], login ),
-			'locked'  : "%s %s" % ( str(user['locked']), login )
+			'login'  : login,
+			'gecos'  : "%s %s" % ( user['gecos'], login ),
+			'locked' : "%s %s" % ( str(user['locked']), login )
 			}
-		try :
+		try:
 			p = prof[user['gid']]['name']
-		except KeyError :
+		except KeyError:
 			p = _("Standard account")
 
 		accounts[uid]['profile']      = "%s %s" % ( p, login )
@@ -750,14 +750,14 @@ def main(uri, http_user, sort = "login", order = "asc") :
 
 	memberkeys = ordered.keys()
 	memberkeys.sort()
-	if order == "desc" : memberkeys.reverse()
+	if order == "desc": memberkeys.reverse()
 	
 	data += ''.join(map(html_build_compact, memberkeys))
 
-	def print_totals(totals) :
+	def print_totals(totals):
 		output = ""
-		for total in totals :
-			if totals[total] != 0 :
+		for total in totals:
+			if totals[total] != 0:
 				output += '''
 	<tr class="list_total">
 		<td colspan="3" class="total_left">%s</td>
@@ -777,6 +777,6 @@ def main(uri, http_user, sort = "login", order = "asc") :
 </table>
 %s
 	''' % (print_totals(totals), _("<strong>Total number of accounts:</strong>"), 
-		reduce(lambda x,y: x+y, totals.values()), w.page_body_end(w.total_time(start, time.time())))
+		reduce(lambda x, y: x+y, totals.values()), w.page_body_end(w.total_time(start, time.time())))
 
 	return w.page(title, data)

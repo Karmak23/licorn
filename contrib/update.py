@@ -5,7 +5,7 @@ Licorn service update infrastructure.
 Copyright (C) 2007-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 
-This program conforms to :
+This program conforms to:
 sftp://licorn.org/documentation/specifications/update-licorn-star.dia
 
 
@@ -16,13 +16,13 @@ from licorn           import logging, exceptions
 from licorn.constants import *
 
 
-class ServiceUpdateController (object) :
+class ServiceUpdateController (object):
 	"""
 		A class to configure/reconfigure/check/update Unix services configuration.
 		You must derive this class, and implement some of its methods in your subclass,
 		for the whole thing to work.
 		
-		Implement these in subclasses :
+		Implement these in subclasses:
 		===============================
 
 		bool base_checks()			# totally optional;
@@ -62,7 +62,7 @@ class ServiceUpdateController (object) :
 		[...]
 	"""
 
-	def __init__ (self, name, init_script, default_conf = None) :
+	def __init__ (self, name, init_script, default_conf = None):
 		object.__init__(self)
 		
 		self.start   = False
@@ -74,73 +74,73 @@ class ServiceUpdateController (object) :
 		self.default_conf = default_conf
 		self.subparts     = []
 
-	def start_service (self) :
+	def start_service (self):
 		os.system("%s start" % self.init_script)
-	def stop_service (self) :
+	def stop_service (self):
 		os.system("%s stop" % self.init_script)
-	def restart_service (self) :
+	def restart_service (self):
 		os.system("%s restart" % self.init_script)
-	def reload_service (self) :
+	def reload_service (self):
 		os.system("%s reload" % self.init_script)
-	def consistency_ckecks (self) :
+	def consistency_ckecks (self):
 		
-		for part in self.subparts :
-			if not ( hasattr(self, '%s_need_reconfiguration' % part) and hasattr(self, '%s_reconfigure' % part)) :
-				raise exceptions.LicornRuntimeError("class %s : subpart %s lacks one method in ( %s_need_reconfiguration, %s_reconfigure)" % (self.__name__, part, part, part))
+		for part in self.subparts:
+			if not ( hasattr(self, '%s_need_reconfiguration' % part) and hasattr(self, '%s_reconfigure' % part)):
+				raise exceptions.LicornRuntimeError("class %s: subpart %s lacks one method in ( %s_need_reconfiguration, %s_reconfigure)" % (self.__name__, part, part, part))
 			
 		return True
-	def run (self) :
-		try :
+	def run (self):
+		try:
 			self.consistency_ckecks()
 
-			if hasattr(self, 'base_checks') :
+			if hasattr(self, 'base_checks'):
 				self.base_checks()
 
-			if self.service_enabled() :
+			if self.service_enabled():
 
-				if self.service_running() :
+				if self.service_running():
 
 					self.check_reconfiguration()
 
-				else :
+				else:
 					
 					self.check_configuration()	
 
-			else : 
+			else: 
 				self.check_configuration()
 
 			
-			if self.start :
+			if self.start:
 				self.start_service()
 
-			if self.restart :
+			if self.restart:
 				self.restart_service()
 
-		except exceptions.LicornManualConfigurationException, e :
+		except exceptions.LicornManualConfigurationException, e:
 			logging.notice(e)
-		except exceptions.LicornRuntimeException, e :
+		except exceptions.LicornRuntimeException, e:
 			logging.warning(e)
-	def check_configuration (self) :
+	def check_configuration (self):
 
-		if hasattr(self, 'need_first_configuration') and self.need_first_configuration() :
+		if hasattr(self, 'need_first_configuration') and self.need_first_configuration():
 
 			self.start = True
 			self.configure_first_time()
 		
-		elif hasattr(self, 'need_manual_configuration') and self.need_manual_configuration() :
+		elif hasattr(self, 'need_manual_configuration') and self.need_manual_configuration():
 			raise exceptions.LicornManualConfigurationException(self.manual_configuration_message)
 
-		else :
+		else:
 
 			self.check_reconfiguration()
-	def check_reconfiguration (self) :
+	def check_reconfiguration (self):
 
-		for part in self.subparts :
-			if getattr(self, '%s_need_reconfiguration' % part) () :
+		for part in self.subparts:
+			if getattr(self, '%s_need_reconfiguration' % part) ():
 				self.restart = True
 				getattr(self, '%s_reconfigure' % part) ()
 
-	def grep_wq(self, path, pattern) :
+	def grep_wq(self, path, pattern):
 		""" NOT USED YET. """
 		return ( re.match(pattern, open(path).read()) != None )
 

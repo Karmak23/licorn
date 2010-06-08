@@ -69,9 +69,9 @@ if __name__ == '__main__':
 
 """
 
-class ClientSyncer(LicornThread) :
+class ClientSyncer(LicornThread):
 	pass
 
-class ServerSyncer(LicornThread) :
+class ServerSyncer(LicornThread):
 	pass
 

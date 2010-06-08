@@ -16,7 +16,7 @@ from licorn.foundations import exceptions
 regex = {}
 regex['uri']          = u'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
 regex['profile_name'] = u'''^[\w]([-_\w ]*[\w])?$'''
-# REGEX discussion : shouldn't we disallow #$*!~& in description regexes ?
+# REGEX discussion: shouldn't we disallow #$*!~& in description regexes ?
 # these characters could lead to potential crash/vulnerabilities. But refering
 # to passwd(5), there are no restrictions concerning the description field.
 # Thus we just disallow “:” to avoid a new field to be accidentally created.
@@ -34,56 +34,56 @@ cregex['group_name']   = re.compile(regex['group_name'],   re.IGNORECASE | re.UN
 cregex['login']        = re.compile(regex['login'],                        re.UNICODE)
 cregex['keyword']      = re.compile(regex['keyword'],      re.IGNORECASE | re.UNICODE)
 
-def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.') :
+def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	""" make a valid login or group name from a random string.
 		Replace accentuated letters with non-accentuated ones, replace spaces, lower the name, etc.
 	"""
 	s = s.lower()
 
-	# TODO : see if there are not any special characters to replace...
+	# TODO: see if there are not any special characters to replace...
 	translation_map = { 
-						u'à' : u'a',
-						u'â' : u'a',
-						u'ä' : u'a',
-						u'ã' : u'a',
-						u'æ' : u'ae',
-						u'ç' : u'c',
-						u'é' : u'e',
-						u'è' : u'e',
-						u'ê' : u'e',
-						u'ë' : u'e',
-						u'î' : u'i',
-						u'ï' : u'i',
-						u'ì' : u'i',
-						u'í' : u'i',
-						u'ñ' : u'n',
-						u'ô' : u'o',
-						u'ö' : u'o',
-						u'ò' : u'o',
-						u'õ' : u'o',
-						u'œ' : u'oe',
-						u'ú' : u'u',
-						u'ù' : u'u',
-						u'û' : u'u',
-						u'ü' : u'u',
-						u'ŷ' : u'y',
-						u'ÿ' : u'y',
-						u'ý' : u'y',
-						u'ß' : u'ss',
-						u"'" : u'',
-						u'"' : u'',
-						u' ' : u'_'
+						u'à': u'a',
+						u'â': u'a',
+						u'ä': u'a',
+						u'ã': u'a',
+						u'æ': u'ae',
+						u'ç': u'c',
+						u'é': u'e',
+						u'è': u'e',
+						u'ê': u'e',
+						u'ë': u'e',
+						u'î': u'i',
+						u'ï': u'i',
+						u'ì': u'i',
+						u'í': u'i',
+						u'ñ': u'n',
+						u'ô': u'o',
+						u'ö': u'o',
+						u'ò': u'o',
+						u'õ': u'o',
+						u'œ': u'oe',
+						u'ú': u'u',
+						u'ù': u'u',
+						u'û': u'u',
+						u'ü': u'u',
+						u'ŷ': u'y',
+						u'ÿ': u'y',
+						u'ý': u'y',
+						u'ß': u'ss',
+						u"'": u'',
+						u'"': u'',
+						u' ': u'_'
 						}
 
-	for elem in translation_map :
+	for elem in translation_map:
 		s = s.replace(elem, translation_map[elem])
 
 	import re
 
 	# delete any strange (or forgotten by translation map...) char left
-	if aggressive :
+	if aggressive:
 		s = re.sub('[^.a-z0-9]', '', s)
-	else :
+	else:
 		# keep dashes (or custom characters)
 		s = re.sub('[^%sa-z0-9]' % custom_keep, '', s)
 
@@ -93,50 +93,50 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.') :
 	# strip left and rights punct signs
 	s = re.sub( r'(^[-._]*|[-._*]*$)', '', s)
 
-	if len(s) > maxlenght :
+	if len(s) > maxlenght:
 		raise exceptions.LicornRuntimeError("String %s too long (%d characters, but must be shorter or equal than %d)." % (s, len(s), maxlenght))
 		
 	# return a standard string (not unicode), because a login/group_name don't include
 	# accentuated letters or such strange things.
 	return str(s)
-def generate_password(maxlen = 8, use_all_chars = False) :
+def generate_password(maxlen = 8, use_all_chars = False):
 	"""Generate a random password."""
 
 	import random
 
-	# ascii table : 48+ = numbers, 65+ = upper letter, 97+ = lower letters
+	# ascii table: 48+ = numbers, 65+ = upper letter, 97+ = lower letters
 	special_chars = [ '$', '%', '&', '_', '*', '+', '-', '=', '?', '@' ]
 
-	if use_all_chars :
+	if use_all_chars:
 		special_chars.extend([ '!', '(', ')', ',', '.', '/', ':', ';', '<', '>', '[', ']', '{', '}' ])
 
 	special_chars_count = len(special_chars) -1
 
 	password = ""
 
-	for i in range(0, maxlen) :
+	for i in range(0, maxlen):
 		char_type = random.randint(1, 4)
 		
-		if char_type < 3 :
+		if char_type < 3:
 			number = random.randint(0, 25)
 
-			if char_type == 1 :
+			if char_type == 1:
 				# an uppercase letter
 				password += chr(65 + number)
-			else :
+			else:
 				# a lowercase letter
 				password += chr(97 + number)
-		else :
-			if char_type == 3 :
+		else:
+			if char_type == 3:
 				# a number
 				password += str(random.randint(0, 9))
-			else :
+			else:
 				# a special char
 				number = random.randint(0, special_chars_count)
 				password += special_chars[number]
 			
 	return password
-def statsize2human(size) :
+def statsize2human(size):
 	""" Convert an integer size (coming from a stat object) to a Human readable string.
 
 		TODO: NLS this !
@@ -145,19 +145,19 @@ def statsize2human(size) :
 	size *= 1.0
 	unit = 'byte(s)'
 
-	if size > 1024 :
+	if size > 1024:
 		size /= 1024.0
 		unit = 'Kib'
-	if size > 1024 :
+	if size > 1024:
 		size /= 1024.0
 		unit = 'Mib'
-	if size > 1024 :
+	if size > 1024:
 		size /= 1024.0
 		unit = 'Gib'
-	if size > 1024 :
+	if size > 1024:
 		size /= 1024.0
 		unit = 'Tib'
-	if size > 1024 :
+	if size > 1024:
 		size /= 1024.0
 		unit = 'Pib'
 	return '%d %s' % (round(size), unit)

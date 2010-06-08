@@ -13,13 +13,13 @@ import os, sys
 from licorn.foundations import exceptions, logging
 
 # daemon and process functions
-def daemonize(logfile, pidfile) :
+def daemonize(logfile, pidfile):
 	""" UNIX double-fork magic to create a daemon.
 		See Stevens' "Advanced Programming in the UNIX Environment"
 		for details (ISBN 0201563177)."""
 
 	try: 
-		if os.fork() > 0 :
+		if os.fork() > 0:
 			# exit first parent
 			sys.exit(0) 
 	except OSError, e: 
@@ -33,7 +33,7 @@ def daemonize(logfile, pidfile) :
 
 	# do second fork
 	try: 
-		if os.fork() > 0 :
+		if os.fork() > 0:
 			# exit from second parent
 			sys.exit(0) 
 	except OSError, e: 
@@ -55,32 +55,32 @@ def daemonize(logfile, pidfile) :
 	os.dup2(out_log.fileno(), sys.stderr.fileno())
 
 	open(pidfile,'w').write("%s\n" % os.getpid())
-def set_name(name) :
+def set_name(name):
 	""" Change process name in `ps`, `top`, gnome-system-monitor and al.
 
 		try to use proctitle to change name, else fallback to libc call
 		if proctitle not installed. Don't fail if anything goes wrong,
 		because changing process name is just a cosmetic hack.
 
-		See :
+		See:
 			http://mail.python.org/pipermail/python-list/2002-July/155471.html
 			http://davyd.livejournal.com/166352.html
 			
 		"""
-	try :
+	try:
 		import proctitle
 		proctitle.ProcTitle()[0:] = name
-	except ImportError :
-		try :
+	except ImportError:
+		try:
 			import dl
 			dl.open('/lib/libc.so.6').call('prctl', 15, name + '\0', 0, 0, 0)
-		except : 
+		except: 
 			pass
-def already_running(pidfile) :
+def already_running(pidfile):
 		return os.path.exists(pidfile) and open(pidfile, 'r').readline()[:-1] in os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ] )[1].read().split("\n")[:-1]
 
 # System() / Popen*() convenience wrappers.
-def syscmd(command, expected_retcode = 0) :
+def syscmd(command, expected_retcode = 0):
 	""" Execute `command` in a subshell and grab the return value to test it.
 		If the test fails, an exception is raised.
 		The exception must be an instance of exceptions.SystemCommandError or an inherited class.
@@ -89,28 +89,28 @@ def syscmd(command, expected_retcode = 0) :
 	logging.progress('syscmd(): executing "%s" in a subshell.' % command)
 
 	result = os.system(command)
-	# res is a 16bit integer, decomposed as :
-	#	- a low byte : signal (with its high bit is set if a core was dumped)
-	#	- a high byte : the real exit status, if signal is 0
+	# res is a 16bit integer, decomposed as:
+	#	- a low byte: signal (with its high bit is set if a core was dumped)
+	#	- a high byte: the real exit status, if signal is 0
 	# see os.wait() documentation for more
 
 	retcode = 0
 	signal  = result & 0x00FF
-	if signal == 0 :
+	if signal == 0:
 		retcode = (result & 0xFF00) >> 8
 
 	logging.progress('syscmd(): "%s" exited with code %s (%s).' % (command, retcode, result))
 
-	if retcode != expected_retcode :
+	if retcode != expected_retcode:
 		raise exceptions.SystemCommandError(command, retcode)
-	if signal != 0 :
+	if signal != 0:
 		raise exceptions.SystemCommandSignalError(command, signal)
-def pipecmd(data, command) :
+def pipecmd(data, command):
 	""" Roughly pipe some data into a program. Return the (eventual) stdout and stderr merged into an array. """
 
 	logging.debug('''pipecmd(): piping "%s" into "%s".''' % (data, command))
 
-	if sys.version_info[0:2] == (2, 6) :
+	if sys.version_info[0:2] == (2, 6):
 		from subprocess import Popen, PIPE
 		
 		p = Popen(command, shell=False,
@@ -120,10 +120,10 @@ def pipecmd(data, command) :
 
 		return err
 
-	else :
+	else:
 		(pin, pout, perr) = os.popen3(command)
 	
-		if None in (pin, pout, perr) :
+		if None in (pin, pout, perr):
 			raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
 
 		pin.write(data)

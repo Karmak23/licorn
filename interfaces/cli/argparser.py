@@ -17,17 +17,17 @@ from licorn.foundations import styles
 from licorn.core        import version, configuration
 
 ### General / common arguments ###
-def __build_version_string(app) :
+def __build_version_string(app):
 	"""return a string ready to be displayed, containing app_name, version, authors..."""
 	return "%s (%s) version %s\n(C) 2004-2008 %s\nlicensed under the terms of the GNU GPL v2. See %s for project details." \
 		% ( styles.stylize(styles.ST_APPNAME, app["name"]), app["description"], version, app["author"], styles.stylize(styles.ST_URL, "http://dev.licorn.org/") )
-def __common_behaviour_group(app, parser, mode = 'any') :
+def __common_behaviour_group(app, parser, mode = 'any'):
 	""" This group is common to all Licorn System Tools."""
 	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options "),
 							"Modify decisions / apply filter(s) on data manipulated by program.")
 
-	if mode != "getent" :
-		if mode == "check" :
+	if mode != "getent":
+		if mode == "check":
 			behaviorgroup.add_option("-e", "--extended",
 				action="store_false", dest="minimal", default = True,
 				help="Execute extended checks (%s, which is to make the bare minimum checks for the system to operate properly)." % styles.stylize(styles.ST_DEFAULT, "not the default") )
@@ -53,21 +53,21 @@ def __common_behaviour_group(app, parser, mode = 'any') :
 		help="no colors in any messages (CLI mode only).")
 
 	return behaviorgroup
-def general_parse_arguments(app) :
+def general_parse_arguments(app):
 	"""Common options and arguments to all Licorn System Tools, with specialties."""
 
-	usage_text = "\n\t%s [[%s] ...] [[%s] ...]\n\n\t%s is one of : " \
+	usage_text = "\n\t%s [[%s] ...] [[%s] ...]\n\n\t%s is one of: " \
 		% (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "mode"), styles.stylize(styles.ST_OPTION, "options"), styles.stylize(styles.ST_MODE, "mode"))
 
-	if app["name"] in ( "licorn-getent", "licorn-modify", "licorn-check" ) :
+	if app["name"] in ( "licorn-getent", "licorn-modify", "licorn-check" ):
 		usage_text +=  "config[uration], "
 
-	if app["name"] in ( "licorn-getent", "licorn-check" ) :
+	if app["name"] in ( "licorn-getent", "licorn-check" ):
 		usage_text += "user[s], group[s], profile[s], keywords."
 
-	else :
+	else:
 		usage_text += "user, "
-		if app["name"] == "licorn-add" :
+		if app["name"] == "licorn-add":
 			usage_text += "users (massive imports), "
 		usage_text	+= "group, profile."
 
@@ -76,7 +76,7 @@ def general_parse_arguments(app) :
 	return (parser.parse_args())
 
 ### Licorn daemon arguments ###
-def licornd_parse_arguments(app) :
+def licornd_parse_arguments(app):
 	""" Integrated help and options / arguments for harvestd."""
 
 	usage_text = "\n\t%s [-D|--no-daemon] [...]" \
@@ -92,13 +92,13 @@ def licornd_parse_arguments(app) :
 	return (parser.parse_args())
 
 ### Getent arguments ###
-def __getent_filter_group(app, parser, mode) :
+def __getent_filter_group(app, parser, mode):
 	"""Build Filter OptionGroup for all getent variants."""
 
 	filtergroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Filter options "),
 					"Filter data displayed / exported (WARNING: filters are not cumulative ! Unexpected behaviour is to be expected if you use more than one filter option).")
 
-	if mode in ( 'users', 'groups') :
+	if mode in ( 'users', 'groups'):
 		filtergroup.add_option("-a", "--all",
 			action="store_true", dest="factory", default = False,
 			help="also get factory and system data (rarely used), i.e. for users, output system accounts too, etc (%s: you can get huge output and easily flood your terminal)." % styles.stylize(styles.ST_BAD, "WARNING"))
@@ -106,12 +106,12 @@ def __getent_filter_group(app, parser, mode) :
 			action="store_true", dest="long", default = False,
 			help="long output (all info, attributes, etc). This is *NOT* enabled by default because it makes the program slower and extra infos are not needed so often.")
 
-	if mode is 'users' :
+	if mode is 'users':
 		filtergroup.add_option("--uid",
 			action="store", type="int", dest="uid", default = None,
 			help="Display only one user information (only valid for getent users).")
 
-	elif mode is 'groups' :
+	elif mode is 'groups':
 		filtergroup.add_option("--privileged",
 			action="store_true", dest="privileged", default = False,
 			help="Only get privileged groups.")
@@ -128,19 +128,19 @@ def __getent_filter_group(app, parser, mode) :
 			action="store", type="int", dest="gid", default = None,
 			help="Display only one group information, identified by its GID.")
 
-	elif mode is 'profiles' :
+	elif mode is 'profiles':
 		filtergroup.add_option("--profile",
 			action="store", type="string", dest="profile", default = None,
 			help="Profile's primary group. Display only one profile information, given its primary group.")
 
 	return filtergroup
-def __getent_output_group(app, parser, mode) :
+def __getent_output_group(app, parser, mode):
 	"""TODO"""
 
 	outputgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Output options "),
 							"Modify how data is printed/exported.")
 
-	if mode is 'configuration' :
+	if mode is 'configuration':
 		outputgroup.add_option("-s", "--short",
 			action="store_const", const = "short", dest="cli_format", default = "short",
 			help="Like previous option, but export the configuration subset in the shortest form factor (only the values when possible ; %s)." \
@@ -154,13 +154,13 @@ def __getent_output_group(app, parser, mode) :
 		outputgroup.add_option("-p", "--php-code",
 			action="store_const", const = "PHP", dest="cli_format", default = "short",
 			help="Like previous option, but export the configuration subset in a usefull way to be included in PHP code (i.e. $VAR=\"value\", use it with eval(`...`)).")
-	else :
+	else:
 		outputgroup.add_option("-x", "--xml",
 			action="store_true", dest="xml", default = False,
 			help="Output data as XML (no colors, no verbose). If not set, %s (for human beiings, but not easily parsable format)." % styles.stylize(styles.ST_DEFAULT, "default is to output for CLI"))
 
 	return outputgroup
-def getent_users_parse_arguments(app) :
+def getent_users_parse_arguments(app):
 	""" Integrated help and options / arguments for « getent user(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
@@ -170,10 +170,10 @@ def getent_users_parse_arguments(app) :
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
 	parser.add_option_group(__getent_filter_group(app, parser, 'users'))
-	parser.add_option_group(__getent_output_group(app,parser,'users'))
+	parser.add_option_group(__getent_output_group(app, parser,'users'))
 
 	return (parser.parse_args())
-def getent_groups_parse_arguments(app) :
+def getent_groups_parse_arguments(app):
 	""" Integrated help and options / arguments for « getent group(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
@@ -183,10 +183,10 @@ def getent_groups_parse_arguments(app) :
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
 	parser.add_option_group(__getent_filter_group(app, parser, 'groups'))
-	parser.add_option_group(__getent_output_group(app,parser,'groups'))
+	parser.add_option_group(__getent_output_group(app, parser,'groups'))
 
 	return (parser.parse_args())
-def getent_keywords_parse_arguments(app) :
+def getent_keywords_parse_arguments(app):
 	""" Integrated help and options / arguments for « getent keyword(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
@@ -195,10 +195,10 @@ def getent_keywords_parse_arguments(app) :
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_output_group(app,parser,'keywords'))
+	parser.add_option_group(__getent_output_group(app, parser,'keywords'))
 
 	return (parser.parse_args())
-def getent_profiles_parse_arguments(app) :
+def getent_profiles_parse_arguments(app):
 	""" Integrated help and options / arguments for « getent profile(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
@@ -208,26 +208,26 @@ def getent_profiles_parse_arguments(app) :
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
 	parser.add_option_group(__getent_filter_group(app, parser, 'profiles'))
-	parser.add_option_group(__getent_output_group(app,parser,'profiles'))
+	parser.add_option_group(__getent_output_group(app, parser,'profiles'))
 
 	return (parser.parse_args())
-def getent_configuration_parse_arguments(app) :
+def getent_configuration_parse_arguments(app):
 	""" Integrated help and options / arguments for « getent »."""
 
 	usage_text = "\n\t%s config [[%s] ...]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option")) \
 		+ "\t%s config [[%s] ...] %s [--short|--bourne-shell|--c-shell|--php-code] ]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option"), styles.stylize(styles.ST_OPTION, "category")) \
-		+ "%s is one of : app_name, names, shells, skels, config_dir, main_config_file, extendedgroup_data_file." % styles.stylize(styles.ST_OPTION, "category")
+		+ "%s is one of: app_name, names, shells, skels, config_dir, main_config_file, extendedgroup_data_file." % styles.stylize(styles.ST_OPTION, "category")
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_filter_group(app,parser,'configuration'))
-	parser.add_option_group(__getent_output_group(app,parser,'configuration'))
+	parser.add_option_group(__getent_filter_group(app, parser,'configuration'))
+	parser.add_option_group(__getent_output_group(app, parser,'configuration'))
 
 	return (parser.parse_args())
 
 ### Add arguments ###
-def add_user_parse_arguments(app) :
+def add_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « add user »."""
 
 	usage_text = "\n\t%s user --login <login> [--primary-group <group>] ... \n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -303,7 +303,7 @@ def add_user_parse_arguments(app) :
 	parser.add_option_group(user)
 
 	return (parser.parse_args())
-def add_group_parse_arguments(app) :
+def add_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « add group »."""
 
 	usage_text = "\n\t%s group --name=<nom_groupe> [--permissive] [--gid=<gid>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -339,7 +339,7 @@ def add_group_parse_arguments(app) :
 	parser.add_option_group(group)
 
 	return (parser.parse_args())
-def add_profile_parse_arguments(app) :
+def add_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « add profile »."""
 
 
@@ -382,7 +382,7 @@ def add_profile_parse_arguments(app) :
 	parser.add_option_group(profile)
 
 	return (parser.parse_args())
-def add_keyword_parse_arguments(app) :
+def add_keyword_parse_arguments(app):
 	"""Integrated help and options / arguments for « add keyword »."""
 
 
@@ -408,7 +408,7 @@ def add_keyword_parse_arguments(app) :
 	parser.add_option_group(keyword)
 
 	return (parser.parse_args())
-def addimport_parse_arguments(app) :
+def addimport_parse_arguments(app):
 	"""Integrated help and options / arguments for « import users »."""
 
 	usage_text = "\n\t%s users --filename=<fichier> --profile=<profil>\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -461,7 +461,7 @@ def addimport_parse_arguments(app) :
 	return (parser.parse_args())
 
 ### Delete arguments ###
-def delete_user_parse_arguments(app) :
+def delete_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete user »."""
 
 	usage_text = "\n\t%s user < --login=<login> | --uid=UID > [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -487,7 +487,7 @@ def delete_user_parse_arguments(app) :
 	parser.add_option_group(user)
 
 	return (parser.parse_args())
-def delete_group_parse_arguments(app) :
+def delete_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete group »."""
 
 	usage_text = "\n\t%s group < --name=<nom_groupe> | --uid=UID > [[--del-users] [--no-archive]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -515,7 +515,7 @@ def delete_group_parse_arguments(app) :
 	parser.add_option_group(group)
 
 	return (parser.parse_args())
-def delete_profile_parse_arguments(app) :
+def delete_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete profile »."""
 
 	usage_text = "\n\t%s profile --group=<nom> [[--del-users] [--no-archive] [--no-sync]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -543,7 +543,7 @@ def delete_profile_parse_arguments(app) :
 	parser.add_option_group(profile)
 
 	return (parser.parse_args())
-def delete_keyword_parse_arguments(app) :
+def delete_keyword_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete keyword »."""
 
 	usage_text = "\n\t%s keyword --name=<nom>" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -565,7 +565,7 @@ def delete_keyword_parse_arguments(app) :
 	parser.add_option_group(keyword)
 
 	return (parser.parse_args())
-def delimport_parse_arguments(app) :
+def delimport_parse_arguments(app):
 
 	usage_text = "\n\t%s --filename=<fichier> [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
 
@@ -588,7 +588,7 @@ def delimport_parse_arguments(app) :
 	return (parser.parse_args())
 
 ### Modify arguments ###
-def modify_user_parse_arguments(app) :
+def modify_user_parse_arguments(app):
 
 	usage_text = "\n\t%s user --login=<login> [--gecos=<new GECOS>] [--password=<new passwd> | --auto-password] [--password-size=<size>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ '\t\t[--lock|--unlock] [--add-groups=<group1[[,group2][,...]]>] [--del-groups=<group1[[,group2][,...]]>]\n' \
@@ -641,7 +641,7 @@ def modify_user_parse_arguments(app) :
 	parser.add_option_group(user)
 
 	return (parser.parse_args())
-def modify_group_parse_arguments(app) :
+def modify_group_parse_arguments(app):
 
 	usage_text = "\n\t%s group --name=<nom_actuel> [--rename=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--add-users=<user1[[,user2][,...]]>] [--del-users=<user1[[,user2][,...]]>]\n" \
@@ -701,7 +701,7 @@ def modify_group_parse_arguments(app) :
 	parser.add_option_group(group)
 
 	return (parser.parse_args())
-def modify_profile_parse_arguments(app) :
+def modify_profile_parse_arguments(app):
 
 	usage_text = "\n\t%s profile --group=<nom> [--name=<nouveau_nom>] [--rename-group=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--comment=<nouveau_commentaire>] [--shell=<nouveau_shell>] [--skel=<nouveau_skel>]\n" \
@@ -775,7 +775,7 @@ def modify_profile_parse_arguments(app) :
 	parser.add_option_group(profile)
 
 	return (parser.parse_args())
-def modify_keyword_parse_arguments(app) :
+def modify_keyword_parse_arguments(app):
 
 	usage_text = "\n\t%s keyword --name=<nom> [--rename=<nouveau_nom>] [--parent=<nouveau_parent>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--remove-parent] [--recursive]"
@@ -809,7 +809,7 @@ def modify_keyword_parse_arguments(app) :
 	parser.add_option_group(keyword)
 
 	return (parser.parse_args())
-def modify_path_parse_arguments(app) :
+def modify_path_parse_arguments(app):
 
 	usage_text = "\n\t%s path [--path=]<fichier_ou_repertoire> [--add-keywords=<kw1[,kw1,...]>] [--del-keywords=<kw1[,kw1,...]>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--clear-keywords] [--recursive]"
@@ -843,13 +843,13 @@ def modify_path_parse_arguments(app) :
 	parser.add_option_group(path)
 
 	return (parser.parse_args())
-def modify_configuration_parse_arguments(app) :
+def modify_configuration_parse_arguments(app):
 
 	usage_text = "\n\t%s config[uration] [--hide-groups|--set-hidden-groups|--unhide-groups|-u|-U] [--set-hostname <new hostname>] [--restrictive] [--set-ip-address <NEW.ETH0.IP.ADDR>]" % styles.stylize(styles.ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
 
-	# FIXME : review __common_behaviour_group to set eventual special options (for modify config ?).
+	# FIXME: review __common_behaviour_group to set eventual special options (for modify config ?).
 	parser.add_option_group(__common_behaviour_group(app, parser, 'mod_config'))
 
 	configuration_group = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify configuration options "))
@@ -895,7 +895,7 @@ def modify_configuration_parse_arguments(app) :
 	return (parser.parse_args())
 
 ### Check arguments ###
-def __check_filter_group(app, parser, mode) :
+def __check_filter_group(app, parser, mode):
 	"""Build Filter OptionGroup for all check variants."""
 
 	filtergroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Filter options "), "Filter data displayed / exported.")
@@ -904,23 +904,23 @@ def __check_filter_group(app, parser, mode) :
 		action="store_true", dest="batch", default = False,
 		help="batch all operations (don't ask questions, automate everything).")
 
-	if mode in ( 'users', 'groups') :
+	if mode in ( 'users', 'groups'):
 		filtergroup.add_option("-a", "--all",
 			action="store_true", dest="all", default = False,
 			help="check *all* %s. %s: this can be a very long operation, depending of the number of %s on your system." % (styles.stylize(styles.ST_MODE, mode), styles.stylize(styles.ST_IMPORTANT, "WARNING"), mode))
 
-	if mode is 'users' :
+	if mode is 'users':
 		filtergroup.add_option("--login", "--name",
 			action="store", type="string", dest="users", default = None,
 			help="Specify user account(s) to check by their login (%s if --all not specified, separated by commas without spaces)." % styles.stylize(styles.ST_IMPORTANT, "required") )
 
-	elif mode is 'groups' :
+	elif mode is 'groups':
 		filtergroup.add_option("--name",
 			action="store", type="string", dest="groups", default = None,
 			help="Specify group(s) to check by their name (%s if --all not specified, separated by commas without spaces)." % styles.stylize(styles.ST_IMPORTANT, "required") )
 		"""
 
-		# TODO : add these one day or not ?
+		# TODO: add these one day or not ?
 
 		filtergroup.add_option("--privileged",
 			action="store_true", dest="privileged", default = False,
@@ -935,13 +935,13 @@ def __check_filter_group(app, parser, mode) :
 			action="store", type="int", dest="gid", default = None,
 			help="Display only one group information, identified by its GID.")
 		"""
-	elif mode is 'profiles' :
+	elif mode is 'profiles':
 		filtergroup.add_option("--profile",
 			action="store", type="string", dest="profile", default = None,
 			help="TODO")
 
 	return filtergroup
-def check_users_parse_arguments(app) :
+def check_users_parse_arguments(app):
 	"""Integrated help and options / arguments for « check user(s) »."""
 
 	usage_text = "\n\t%s user[s] --login login1[[,login2][...]] [--minimal] [--yes|--no]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -953,7 +953,7 @@ def check_users_parse_arguments(app) :
 	parser.add_option_group(__check_filter_group(app, parser, 'users'))
 
 	return (parser.parse_args())
-def check_groups_parse_arguments(app) :
+def check_groups_parse_arguments(app):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
 	usage_text = "\n\t%s group[s] --name groupe1[[,groupe2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -964,7 +964,7 @@ def check_groups_parse_arguments(app) :
 	parser.add_option_group(__check_filter_group(app, parser, 'groups'))
 
 	return (parser.parse_args())
-def check_profiles_parse_arguments(app) :
+def check_profiles_parse_arguments(app):
 	"""Integrated help and options / arguments for « check profile(s) »."""
 
 	usage_text = "\n\t%s profile[s] --name profile1[[,profile2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -975,7 +975,7 @@ def check_profiles_parse_arguments(app) :
 	parser.add_option_group(__check_filter_group(app, parser, 'profiles'))
 
 	return (parser.parse_args())
-def check_configuration_parse_arguments(app) :
+def check_configuration_parse_arguments(app):
 	"""TODO"""
 
 	usage_text = "\n\t%s config[uration] names|hostname" % styles.stylize(styles.ST_APPNAME, "%prog")

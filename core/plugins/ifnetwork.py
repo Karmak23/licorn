@@ -9,7 +9,7 @@ Licensed under the terms of the GNU GPL version 2
 
 from licorn import exceptions
 
-def iface_address(iface_name, iface_address = None) :
+def iface_address(iface_name, iface_address = None):
 	""" Get an interface IPv4 adress and return it as a string. 
 	
 	We dig in /usr/include/linux to find all the values !
@@ -18,7 +18,7 @@ def iface_address(iface_name, iface_address = None) :
 		if.h
 	and probably some other files i forgot to list here...
 
-	a similar way to do this (which i don't like), without struct :
+	a similar way to do this (which i don't like), without struct:
 	http://mail.python.org/pipermail/python-list/1999-August/009100.html
 		
 	
@@ -95,12 +95,12 @@ def iface_address(iface_name, iface_address = None) :
 	
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	# mapping struct ifreq :
-	#	16s : union ifr_ifrn
-	#	16s : union ifr_irfu
+	# mapping struct ifreq:
+	#	16s: union ifr_ifrn
+	#	16s: union ifr_irfu
 	ifr = struct.pack('!16s16s', iface_name, '')
 
-	if iface_address is not None :
+	if iface_address is not None:
 		raise NotImplementedError("iface address setting is not implemented yet.")
 
 	# 0x8915 should be IN.SIOCGIFADDR, but it is not defined in
@@ -114,7 +114,7 @@ def iface_address(iface_name, iface_address = None) :
 	(ifr_name, sa_family, addr, padding) = struct.unpack('!16si4s8s', res)
 
 	return socket.inet_ntop(socket.AF_INET, addr)
-def iface_hostname(iface_name, iface_address = None) :
+def iface_hostname(iface_name, iface_address = None):
 	""" Get an interface IPv4 hostname and return it as a string. 
 		same doc as previous function.
 	"""
@@ -125,12 +125,12 @@ def iface_hostname(iface_name, iface_address = None) :
 	
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-	# mapping struct ifreq :
-	#	16s : union ifr_ifrn
-	#	16s : union ifr_irfu
+	# mapping struct ifreq:
+	#	16s: union ifr_ifrn
+	#	16s: union ifr_irfu
 	ifr = struct.pack('!16s16s', iface_name, '')
 
-	if iface_address is not None :
+	if iface_address is not None:
 		raise NotImplementedError("iface address setting is not implemented yet.")
 
 	# 0x8915 should be IN.SIOCGIFADDR, but it is not defined in
@@ -144,15 +144,15 @@ def iface_hostname(iface_name, iface_address = None) :
 	(ifr_name, sa_family, addr, padding) = struct.unpack('!16si4s8s', res)
 
 	return socket.inet_ntop(socket.AF_INET, addr)
-def nameservers() :
+def nameservers():
 	""" return system nameservers present in /etc/resolv.conf."""
 	
 	import re
 	ns_re = re.compile("^\s*nameserver\s+([-\w\.]+)\s*$")
 	
-	for line in open("/etc/resolv.conf") :
-		#logging.debug("line : " + line)
+	for line in open("/etc/resolv.conf"):
+		#logging.debug("line: " + line)
 		ns_matches = ns_re.match(line)
-		if  ns_matches :
+		if  ns_matches:
 			yield ns_matches.group(1)
 			

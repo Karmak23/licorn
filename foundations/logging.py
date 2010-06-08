@@ -13,15 +13,15 @@ from time import time, localtime, strftime
 
 from licorn.foundations import hooks, styles, exceptions, options
 
-# TODO : gettext this !
+# TODO: gettext this !
 #import gettext
 #from gettext           import gettext as _
 
 #
 # for now we use an unique gettext domain.
 
-# drawback : performance when program grows (now it is not noticeable i think).
-# advantage : don't need to pass a parameter or to call any function outside of
+# drawback: performance when program grows (now it is not noticeable i think).
+# advantage: don't need to pass a parameter or to call any function outside of
 # this licorn.logging. All programs just need to use _(), period.
 #
 
@@ -34,39 +34,39 @@ from licorn.foundations import hooks, styles, exceptions, options
 
 
 #
-# FIXME : define a policy explaining where we can call logging.error() (which impliesexit()), where we can't,
+# FIXME: define a policy explaining where we can call logging.error() (which impliesexit()), where we can't,
 # where we must raise an exception or an error.
 #
-# the short way : 
+# the short way: 
 #		- in *any* licorn modules or submodules, we MUST raise, not call logging.error().
 #		- in the calling programs, we MUST catch the exceptions/errors raised and call 
 #		  logging.error() when appropriate.
 #
 
-def mytime() :
+def mytime():
 	""" close http://dev.licorn.org/ticket/46 """
 	t = time()
 	return '[%s%s]' % (strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
 
-class LicornWarningsDB(object) :
+class LicornWarningsDB(object):
         __singleton = None
         __db = {}
 
-	def __new__(cls) :
+	def __new__(cls):
 		"""This is a Singleton Design Pattern."""
 
-		if cls.__singleton is None :
+		if cls.__singleton is None:
 			cls.__singleton = object.__new__(cls)
 		
 		return cls.__singleton
-	def __getitem__(self, key) :
+	def __getitem__(self, key):
 		return LicornWarningsDB.__db[key]
-	def __setitem__(self, key, value) :
+	def __setitem__(self, key, value):
 		LicornWarningsDB.__db[key] = value
 
 __warningsdb = LicornWarningsDB()
 
-def error(mesg, returncode = 1) :
+def error(mesg, returncode = 1):
 	""" Display a styles.stylized error message and exit badly.
 		Run hooks registered for 'onError' event, to cleanup
 		things which must be.
@@ -75,7 +75,7 @@ def error(mesg, returncode = 1) :
 	# these hooks are supposed to contain only cleanup code,
 	# which *must* be run before the program dies.
 	#
-	# FIXME : verify the hooks won't bork the program / system more
+	# FIXME: verify the hooks won't bork the program / system more
 	# than it is (remember, if in the present function, we are already
 	# dying... In reallity these checks are undoable, so we must define
 	# a policy of what hook_funcs can/may/must do and can/may/must not.
@@ -83,7 +83,7 @@ def error(mesg, returncode = 1) :
 	hooks.run_hooks('onError')
 	
 	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s %s' % (mytime(), mesg.replace(styles.colors[styles.ST_NO], styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]))) + "\n")
-	if __debug__ :
+	if __debug__:
 		import traceback
 		sys.stderr.write ('''>>> %s: %s
 >>> %s:
@@ -93,84 +93,84 @@ def error(mesg, returncode = 1) :
 		traceback.print_tb( sys.exc_info()[2] )
 		sys.stderr.write("\n")
 	raise SystemExit(returncode)
-def warning(mesg, once = False) :
+def warning(mesg, once = False):
 	"""Display a styles.stylized warning message on stderr."""
 
-	if once :
-		try :
+	if once:
+		try:
 			already_displayed = __warningsdb[mesg]
 			return
-		except KeyError, e :
+		except KeyError, e:
 			__warningsdb[mesg] = True
 
 	sys.stderr.write( "%s %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
 
 	#warnings.warn(" %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARN'), mesg), RuntimeWarning, stacklevel = 2)
-def notice(mesg) :
+def notice(mesg):
 	""" Display a non-styles.stylized informational message on stderr."""
-	if options.verbose >= options.VLEVEL_NOTICE :
+	if options.verbose >= options.VLEVEL_NOTICE:
 		sys.stderr.write(" %s %s %s\n" % (styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
-def info(mesg) :
+def info(mesg):
 	""" Display a styles.stylized informational message on stderr."""
-	if options.verbose >= options.VLEVEL_INFO :
+	if options.verbose >= options.VLEVEL_INFO:
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
-def progress(mesg) :
+def progress(mesg):
 	""" Display a styles.stylized informational message on stderr."""
-	if options.verbose >= options.VLEVEL_PROGRESS :
+	if options.verbose >= options.VLEVEL_PROGRESS:
 		sys.stderr.write(" > %s %s\n" % (mytime(), mesg))
 
-if __debug__ :
-	def debug(mesg) :
+if __debug__:
+	def debug(mesg):
 		"""Display a styles.stylized debug message on stderr."""
-		if options.verbose >= options.VLEVEL_DEBUG :
+		if options.verbose >= options.VLEVEL_DEBUG:
 			sys.stderr.write( "%s: %s\n" % (styles.stylize(styles.ST_DEBUG, 'DEBUG'), mesg) )
-	def debug2(mesg) :
+	def debug2(mesg):
 		"""Display a styles.stylized debug2 message on stderr."""
-		if options.verbose >= options.VLEVEL_DEBUG2 :
+		if options.verbose >= options.VLEVEL_DEBUG2:
 			sys.stderr.write("%s: %s\n" % (styles.stylize(styles.ST_DEBUG, 'DEBUG2'), mesg))
-else :
-	def debug(mesg) : pass
-	def debug2(mesg) : pass
+else:
+	def debug(mesg): pass
+	def debug2(mesg): pass
 
 
-class RepairChoice(object) :
+class RepairChoice(object):
 	"""a singleton, to be used in all checks."""
 
 	__instance = None
 	__choice   = None
 
-	def __new__(cls) :
-		if cls.__instance is None :
+	def __new__(cls):
+		if cls.__instance is None:
 			cls.__instance = object.__new__(cls)
 		return cls.__instance
 
-	def __getattr__(self, attrib) :
+	def __getattr__(self, attrib):
 		return RepairChoice.__choice.__getattr(attrib)
 	
-	def __setattr__(self, attrib, value) :
+	def __setattr__(self, attrib, value):
 		RepairChoice.__choice.__setattr__(attrib, value)
-def ask_for_repair(message, auto_answer = None) :
+def ask_for_repair(message, auto_answer = None):
 	"""ask the user if he wants to repair, store answer for next question."""
 
 	warning(message)
 	sys.stderr.write(MESG_FIX_PROBLEM_QUESTION)
 
 	global repair_choice
-	if auto_answer is not None :
+	if auto_answer is not None:
 		# auto-answer has biggest priority
 		repair_choice = auto_answer
 
-	if repair_choice is True :
+	if repair_choice is True:
 		sys.stderr.write(styles.stylize(styles.ST_OK, "Yes") + "\n")
 		return True
 
-	elif repair_choice is False :
+	elif repair_choice is False:
 		sys.stderr.write(styles.stylize(styles.ST_BAD, "No") + "\n")
 		return False
 
-	else :
-		while True :
-			if sys.stdin.isatty() :
+	else:
+		while True:
+			if sys.stdin.isatty():
 				# see tty and termios modules for implementation details.
 				fd = sys.stdin.fileno()
 				old = termios.tcgetattr(fd)
@@ -182,36 +182,36 @@ def ask_for_repair(message, auto_answer = None) :
 				new[6][termios.VMIN] = 1
 				new[6][termios.VTIME] = 0
 				try:
-					try :
+					try:
 						termios.tcsetattr(fd, termios.TCSAFLUSH, new)
 						char = sys.stdin.read(1)
-					except KeyboardInterrupt :
+					except KeyboardInterrupt:
 						sys.stderr.write("\n")
 						raise
 				finally:
 					# put it back in standard mode after input, whatever happened.
 					termios.tcsetattr(fd, termios.TCSADRAIN, old)
-			else :
+			else:
 				char = sys.stdin.read(1)
 
-			if char in ( 'y', 'Y' ) :
+			if char in ( 'y', 'Y' ):
 				sys.stderr.write(styles.stylize(styles.ST_OK, "Yes") + "\n")
 				return True
-			elif char in ( 'n', 'N' ) :
+			elif char in ( 'n', 'N' ):
 				sys.stderr.write(styles.stylize(styles.ST_BAD, "No") + "\n")
 				return False
-			elif char in ( 'a', 'A' ) :
+			elif char in ( 'a', 'A' ):
 				sys.stderr.write(styles.stylize(styles.ST_OK, "Yes, all") + "\n")
 				repair_choice = True
 				return True
-			elif char in ( 's', 'S' ) :
+			elif char in ( 's', 'S' ):
 				sys.stderr.write(styles.stylize(styles.ST_BAD, "No and skip all") + "\n")
 				repair_choice = False
 				return False
-			elif char in ( '?', 'h' ) :
+			elif char in ( '?', 'h' ):
 				sys.stderr.write("\n\nUsage:\n%s: fix the current problem\n%s: don't fix the current problem, skip to next (if possible).\n%s: fix all remaining problems\n%s: skip all remaining problems (don't fix them).\n" % (styles.stylize(styles.ST_OK, 'y'), styles.stylize(styles.ST_BAD, 'n'), styles.stylize(styles.ST_OK, 'a'), styles.stylize(styles.ST_BAD, 's')))
-			else :
-				if not sys.stdin.isatty() :
+			else:
+				if not sys.stdin.isatty():
 					raise exceptions.LicornRuntimeError("wrong command piped on stdin !")
 
 			sys.stderr.write("\n")
@@ -227,12 +227,12 @@ repair_choice = RepairChoice()
 
 ### getent / add / modify / delete strings ###
 GENERAL_CANT_ACQUIRE_HACKD_LOCK = "Can't acquire hackd global lock, hackd is probably already running. (original error was: %s)."
-GENERAL_CANT_ACQUIRE_GIANT_LOCK = "Can't acquire giant lock. You probably have another licorn-{getent,add,modify,delete,check} tool already running : wait for it to finish, or last execution didn't finish cleanly : check in your ~/.licorn directory and delete the file « giant.lock » (Original error was: %s)."
+GENERAL_CANT_ACQUIRE_GIANT_LOCK = "Can't acquire giant lock. You probably have another licorn-{getent,add,modify,delete,check} tool already running: wait for it to finish, or last execution didn't finish cleanly: check in your ~/.licorn directory and delete the file « giant.lock » (Original error was: %s)."
 GENERAL_INTERRUPTED = "Interrupted, cleaning up !"
 GENERAL_UNKNOWN_MODE = "Unknow mode %s !"
 
 ### Messages ###
-MESG_FIX_PROBLEM_QUESTION = "Fix this problem ? [Ynas], or ? for help : "
+MESG_FIX_PROBLEM_QUESTION = "Fix this problem ? [Ynas], or ? for help: "
 
 ### Config ###
 
@@ -243,7 +243,7 @@ CONFIG_NONASCII_CHARSET = "Licorn System Tools can't run on an ascii-only system
 CONFIG_SYSTEM_GROUP_REQUIRED = u"The system group %s is mandatory for the system to work properly, but it does not exist yet."
 MODULE_POSIX1E_IMPORT_ERROR  = u"Module posix1e is not installed or broken, won't be able to use ACLs (was: %s) !"
 
-### system.users : SYSU_* ###
+### system.users: SYSU_* ###
 SYSU_CREATED_USER        = "Created user %s (uid %s)."
 SYSU_DELETED_USER        = "Deleted user account %s."
 SYSU_ARCHIVED_USER       = "Archived %s as %s."
@@ -261,14 +261,14 @@ SYSU_SPECIFY_LGN_OR_UID  = "You must specify a login or a UID (use --help to kno
 SYSU_SPECIFY_LGN_FST_LST = "You must specify a login, or firstname *and* lastname (login will be automatically built from them)."
 SYSU_SPECIFY_LF_OR_GECOS = "You must specify a lastname and a firstname *or* a GECOS. If you specify the GECOS, don't specify first/last and vice-versa."
 
-### system.groups : SYSG_* ###
+### system.groups: SYSG_* ###
 SYSG_CREATED_GROUP         = "Created group %s."
 SYSG_DELETED_GROUP         = "Deleted group %s."
 SYSG_SYSTEM_GROUP_REQUIRED = "The system group %s is required for the group %s to be fully operationnal."
 SYSG_USER_LACKS_SYMLINK    = "The user %s lacks the symlink to group %s shared dir !"
 
 
-### system.profiles : SYSP_* ###
+### system.profiles: SYSP_* ###
 SYSP_DELETED_PROFILE = "Deleted profile %s."
 
 SYSP_SPECIFY_GROUP   = "You must specify a group to find the profile (use --help to know how)."
@@ -276,7 +276,7 @@ SYSP_SPECIFY_SKEL    = "You must specify a shell for the profile (use --help to 
 SYSP_SPECIFY_SHELL   = "You must specify a valid skel dir for the profile (use --help to know how)."
 
 
-### system.keywords : SYSK_* ###
+### system.keywords: SYSK_* ###
 SYSK_SPECIFY_KEYWORD   = "You must specify a keyword name."
 SYSK_MALFORMED_KEYWORD = "Malformed keyword name `%s', must match /%s/i."
 SYSK_MALFORMED_DESCR   = "Malformed keyword description `%s', must match /%s/i."

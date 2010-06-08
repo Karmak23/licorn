@@ -8,15 +8,15 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 
-class InternetConnexion :
+class InternetConnexion:
 	""" TODO: implement this.
 	"""
 	
-	def __init__(self) :
+	def __init__(self):
 		pass
-	def Select(self, filter_string) :
+	def Select(self, filter_string):
 		pass
-	def ExportCLI(self) :
+	def ExportCLI(self):
 		pass
-	def ExportXML(self) :
+	def ExportXML(self):
 		pass

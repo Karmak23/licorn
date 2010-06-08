@@ -16,55 +16,55 @@ from licorn.foundations import logging, exceptions, options, styles, hlstr, fsap
 from licorn.core        import configuration, users, groups, profiles
 
 _app = {
-	"name"     		 : "licorn-add",
-	"description"	 : "Licorn Add Entries",
-	"author"   		 : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"name"     		: "licorn-add",
+	"description"	: "Licorn Add Entries",
+	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def import_users() :
+def import_users():
 	""" Massively import user accounts from a CSV file."""
 
-	def clean_csv_field(field) :
+	def clean_csv_field(field):
 		return field.replace("'","").replace('"','')
 
-	if opts.filename is None :
+	if opts.filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name."
-	else :
+	else:
 		import_filename = opts.filename
 
-	if opts.profile is None :
+	if opts.profile is None:
 		raise exceptions.BadArgumentError, "You must specify a profile."
-	else :
+	else:
 		profile = opts.profile
 
-	if opts.firstname_col is None :
+	if opts.firstname_col is None:
 		raise  exceptions.BadArgumentError("You must specify a firstname column number.")
-	else :
+	else:
 		firstname_col = opts.firstname_col
 
-	if opts.lastname_col is None :
+	if opts.lastname_col is None:
 		raise  exceptions.BadArgumentError("You must specify a lastname column number.")
-	else :
+	else:
 		lastname_col = opts.lastname_col
 
-	if opts.group_col is None :
+	if opts.group_col is None:
 		raise  exceptions.BadArgumentError("You must specify a group column number.")
-	else :
+	else:
 		group_col = opts.group_col
 
-	if (firstname_col == lastname_col) or (firstname_col == group_col) or (lastname_col == group_col) :
+	if (firstname_col == lastname_col) or (firstname_col == group_col) or (lastname_col == group_col):
 		raise exceptions.BadArgumentError("two columns have the same number (lastname = %d, firstname = %d, group = %d)" %
 			(lastname_col, firstname_col, group_col) )
 
 	maxval = 0
 	import math
-	for number in (lastname_col, firstname_col, group_col) :
+	for number in (lastname_col, firstname_col, group_col):
 		maxval = max(maxval, number)
 
-	if maxval > 127 :
+	if maxval > 127:
 		raise exceptions.BadArgumentError("Sorry, CSV file must have no more than 128 columns.")
 
-	# WARNING :
+	# WARNING:
 	# we can't do any checks on login_col and password_col, because
 	# the admin can choose the firstname as password, the firstname as login
 	# the group as password (in elementary schools, children can't remember
@@ -72,93 +72,93 @@ def import_users() :
 	# overlap and this beiing intentionnal.
 
 	encoding = fsapi.get_file_encoding(import_filename)
-	if encoding is None :
+	if encoding is None:
 		# what to choose ? ascii or ~sys.getsystemencoding() ?
 		logging.warning("can't automatically detect the file encoding, assuming iso-8859-15 !")
 		encoding = 'iso-8859-15'
 
 	import csv
 
-	try :
-		if profiles.profiles[profile] : pass
-	except KeyError :
+	try:
+		if profiles.profiles[profile]: pass
+	except KeyError:
 		raise exceptions.LicornRuntimeException, "The profile '%s' doesn't exist." % profile
 
 	firstline    = open(import_filename).readline()
 	lcndialect   = csv.Sniffer().sniff(firstline)
-	if lcndialect.delimiter != opts.separator :
+	if lcndialect.delimiter != opts.separator:
 		separator = lcndialect.delimiter
-	else :
+	else:
 		separator =  opts.separator
 
-	try :
+	try:
 		import_fd   = open(import_filename,"rb")
-	except (OSError, IOError), e :
+	except (OSError, IOError), e:
 		raise exceptions.LicornRuntimeError("can't load CSV file (was: %s)" % str(e))
 
 	groups_to_add = []
 	users_to_add  = []
 
-	sys.stderr.write("Reading input file : ")
+	sys.stderr.write("Reading input file: ")
 
 	i = 0
-	for fdline in import_fd :
+	for fdline in import_fd:
 
 		line = fdline[:-1].split(separator)
 		#print(str(line))
 
 		user = {}
-		for (column, number) in ( ("firstname", firstname_col), ("lastname", lastname_col), ("group", group_col), ("login", opts.login_col), ("password", opts.password_col) ) :
+		for (column, number) in ( ("firstname", firstname_col), ("lastname", lastname_col), ("group", group_col), ("login", opts.login_col), ("password", opts.password_col) ):
 
-			try :
-				if number is None :
+			try:
+				if number is None:
 					user[column] = None
-				else :
-					if column == "password" and number in (lastname_col, firstname_col) :
+				else:
+					if column == "password" and number in (lastname_col, firstname_col):
 						# FIXME: decide wether to kill this code or not: 
 						# for small children, make the password as simple as the login to type.
 						# tell validate_name() to be aggressive to achieve this.
 						user[column] = hlstr.validate_name(unicode(line[number], encoding), True)
-					else :
+					else:
 						user[column] = unicode(clean_csv_field(line[number]), encoding)
 
-			except IndexError, e :
-				raise exceptions.LicornRuntimeError("\nImport error on line %d : no %s specified or bad %s data (was: %s)." % (i+1, column, column, e))
+			except IndexError, e:
+				raise exceptions.LicornRuntimeError("\nImport error on line %d: no %s specified or bad %s data (was: %s)." % (i+1, column, column, e))
 
-			except UnicodeEncodeError, e :
+			except UnicodeEncodeError, e:
 				raise exceptions.LicornRuntimeError("Encoding not supported for input filename (was: %s)." % str(e))
 
-		try :
-			if opts.login_col is not None :
+		try:
+			if opts.login_col is not None:
 				user['login'] =	users.UsersController.make_login(inputlogin = user['login'])
-			else :
+			else:
 				user['login'] = users.UsersController.make_login(firstname = user['firstname'], lastname = user['lastname'])
 
-		except IndexError, e :
-			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))
+		except IndexError, e:
+			raise exceptions.LicornRuntimeError("\nImport error on line %d: no group specified or bad group data (was: %s)." % (i+1, e))
 
-		except exceptions.LicornRuntimeError, e :
+		except exceptions.LicornRuntimeError, e:
 			raise exceptions.LicornRuntimeError("\nImport error on line %d (was: %s)." % (i+1, e))
 
-		try :
+		try:
 			user['group'] =	groups.GroupsController.make_name(user['group'])
 
-		except IndexError, e :
-			raise exceptions.LicornRuntimeError("\nImport error on line %d : no group specified or bad group data (was: %s)." % (i+1, e))
+		except IndexError, e:
+			raise exceptions.LicornRuntimeError("\nImport error on line %d: no group specified or bad group data (was: %s)." % (i+1, e))
 
-		except exceptions.LicornRuntimeError, e :
+		except exceptions.LicornRuntimeError, e:
 			raise exceptions.LicornRuntimeError("\nImport error on line %d (was: %s)." % (i+1, e))
 
-		if user['group'] not in groups_to_add :
+		if user['group'] not in groups_to_add:
 			groups_to_add.append(user['group'])
 
 		#print str(user)
 		users_to_add.append(user)
 
-		if not (i % 100) :
+		if not (i % 100):
 			sys.stderr.write(".")
 			sys.stderr.flush()
-		i+=1
+		i += 1
 		user['linenumber'] = i
 
 	import_fd.close()
@@ -175,79 +175,79 @@ def import_users() :
 	length_users  = len(users_to_add)
 
 	quantity = length_groups + length_users
-	if quantity <= 0 :
+	if quantity <= 0:
 		quantity = 1
 	delta = 100.0 / float(quantity) # increment for progress indicator
 	progression = 0.0
 
-	if opts.confirm_import :
+	if opts.confirm_import:
 		i = 0 # to print i/length
-		for g in groups_to_add :
-			try :
+		for g in groups_to_add:
+			try:
 				i += 1
 				groups.AddGroup(g, "", False, "/etc/skel", batch=opts.no_sync)
-				logging.progress("\rAdded group « %s » (group %d/%d), progress : %d%%" %
+				logging.progress("\rAdded group « %s » (group %d/%d), progress: %d%%" %
 					( g, i, length_groups, math.ceil(progression)) )
 				progression += delta
-			except exceptions.AlreadyExistsException, e :
+			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e))
 				progression += delta
-			except exceptions.LicornException, e :
+			except exceptions.LicornException, e:
 				sys.stdout.flush()
 				raise e
 			data_to_export_to_html[g]= {}
 			sys.stdout.flush()
 
-	if not opts.confirm_import :
-		sys.stderr.write(styles.stylize(styles.ST_PATH, "Fields order : FIRSTname ; LASTname ; login ; password ; group") + "\n")
+	if not opts.confirm_import:
+		sys.stderr.write(styles.stylize(styles.ST_PATH, "Fields order: FIRSTname ; LASTname ; login ; password ; group") + "\n")
 
 	i = 0
-	for u in users_to_add :
-		try :
+	for u in users_to_add:
+		try:
 			i += 1
-			if opts.confirm_import :
+			if opts.confirm_import:
 				(uid, login, password) = users.AddUser(u['lastname'], u['firstname'], login=u['login'], password=u['password'], profile=profile, batch=opts.no_sync)
 				groups.AddUsersInGroup(u['group'], [ login ], batch=opts.no_sync)
 
-				logging.progress("\rAdded user « %s %s » [login=%s,uid=%d,passwd=%s] (user %d/%d), progress : %d%%"
+				logging.progress("\rAdded user « %s %s » [login=%s,uid=%d,passwd=%s] (user %d/%d), progress: %d%%"
 					% ( u['firstname'], u['lastname'], login, uid, password, i, length_users, math.ceil(progression)) )
 
 				# the dictionnary key is forged to have something that is sortable.
 				# like this, the user accounts will be sorted in their group.
 				data_to_export_to_html[ u['group'] ][ u['lastname'] + u['firstname'] ] = [ u['firstname'], u['lastname'], login, password ]
-			else :
+			else:
 				# why make_login() for examples and not prepare the logins whenloading CSV file ?
 				# this is a pure arbitrary choice. It just feels more consistent for me.
-				if opts.login_col :
+				if opts.login_col:
 					login = u['login']
-				else :
-					try :
+				else:
+					try:
 						login = users.make_login(u['lastname'], u['firstname'])
-					except exceptions.LicornRuntimeError, e :
+					except exceptions.LicornRuntimeError, e:
 						raise exceptions.LicornRuntimeError("Import error on line %d.\n%s" % (u['linenumber'], e))
 
 				sys.stdout.write("%s;%s;%s;%s;%s;\n" % ( u['firstname'], u['lastname'], login, u['password'], u['group'] ) )
 
-				if i > 10 :
+				if i > 10:
 					# 10 examples should be sufficient for admin to see if his options
 					# are correct or not.
 					break
 			progression += delta
-		except exceptions.AlreadyExistsException, e :
+		except exceptions.AlreadyExistsException, e:
 			logging.warning(str(e))
 			progression += delta
-			# FIXME : if user already exists, don't put it in the data / HTML report.
+			# FIXME: if user already exists, don't put it in the data / HTML report.
 			continue
-		except exceptions.LicornException, e :
+		except exceptions.LicornException, e:
 			sys.stdout.flush()
 			raise e
 		sys.stdout.flush()
 
 	#print str(data_to_export_to_html)
 
-	if opts.confirm_import :
+	if opts.confirm_import:
 
-		sys.stderr.write ("Finished importing, creating summary HTML file : ")
+		sys.stderr.write ("Finished importing, creating summary HTML file: ")
 
 		groups = data_to_export_to_html.keys()
 		groups.sort()
@@ -263,7 +263,7 @@ def import_users() :
 			+ "h1,h2,h3 { text-align:center; }\n"
 			+ "p,div { text-align:center; }\n"
 			+ "table { margin: 3em 10%; width: 80%; border: 5px groove #369; border-collapse: collapse; }\n"
-			+ "tr { border : 1px solid black; }\n"
+			+ "tr { border: 1px solid black; }\n"
 			+ "th {border-bottom: 3px solid #369; background-color: #99c; }\n"
 			+ "td,th { text-align: center; padding: 0.7em; }\n"
 			+ ".even { background-color: #eef; }\n"
@@ -280,11 +280,11 @@ def import_users() :
 			+ "Merci de supprimer ce fichier et ses versions imprimées une fois les mots de passe distribués.\n"
 			+ "</div>\n"
 			+ "<div>Accès direct aux %s&nbsp;: " % configuration.groups.names['plural'])
-		for group in groups :
+		for group in groups:
 			html_file.write("&nbsp; <a href=\"#%s\">%s</a> &nbsp;" % (group, group))
 		html_file.write("</div>\n")
 
-		for group in groups :
+		for group in groups:
 			html_file.write(
 				"<a id=\"%s\"></a>\n" % group
 				+ "<h1>%s «&nbsp;%s&nbsp;»</h1>\n" % (configuration.groups.names['singular'], group)
@@ -299,7 +299,7 @@ def import_users() :
 			users.sort()
 			i        = 0
 			tr_style = [ "even", "odd" ]
-			for user in users :
+			for user in users:
 				html_file.write(
 				"<tr class=%s>\n" % tr_style[i%2]
 					+ "<td>" + groupdata[user][1] + "</td>\n"
@@ -307,185 +307,185 @@ def import_users() :
 					+ "<td><code>" + groupdata[user][2] + "</code></td>\n"
 					+ "<td><code>" + groupdata[user][3] + "</code></td>\n"
 				+ "</tr>\n")
-				i+=1
-				if not (i % 10) :
+				i += 1
+				if not (i % 10):
 					sys.stderr.write('.')
 			html_file.write("</table>\n")
 
 		html_file.write("</body>\n</html>\n")
 		html_file.close()
 		sys.stderr.write(" done." + "\n")
-		sys.stdout.write("report : %s\n" % html_file.name )
+		sys.stdout.write("report: %s\n" % html_file.name )
 
-	if opts.no_sync :
+	if opts.no_sync:
 		groups.WriteConf()
 		users.WriteConf()
 		profiles.WriteConf(configuration.profiles_config_file)
 
-def add_user() :
+def add_user():
 	""" Add a user account on the system. """
 
-	if opts.firstname is None :
+	if opts.firstname is None:
 		firstname = None
-	else :
+	else:
 		firstname = unicode(opts.firstname)
 
-	if opts.lastname is None :
+	if opts.lastname is None:
 		lastname = None
-	else :
+	else:
 		lastname = unicode(opts.lastname)
 
-	if opts.gecos is None :
+	if opts.gecos is None:
 		gecos = None
-	else :
+	else:
 		gecos = unicode(opts.gecos)
 
-	if opts.password is None :
+	if opts.password is None:
 		password = None
-	else :
+	else:
 		password = unicode(opts.password)
 
-	for login in opts.login.split(',') :
-		if login != '' :
-			try :
+	for login in opts.login.split(','):
+		if login != '':
+			try:
 				users.AddUser(lastname, firstname, password, opts.primary_group, opts.profile, opts.skel, login, gecos, False)
-			except exceptions.AlreadyExistsException :
+			except exceptions.AlreadyExistsException:
 				logging.warning('User %s already exists on the system.' % login)
-def add_group() :
+def add_group():
 	""" Add a POSIX group. """
 
-	if opts.description == '' :
+	if opts.description == '':
 		description = ''
-	else :
+	else:
 		description = unicode(opts.description)
 
-	for name in opts.name.split(',') :
-		if name != '' :
-			try :
+	for name in opts.name.split(','):
+		if name != '':
+			try:
 				groups.AddGroup(name, description = description, system = opts.system, skel = opts.skel, gid = opts.gid, permissive = opts.permissive)
-			except exceptions.AlreadyExistsException :
+			except exceptions.AlreadyExistsException:
 				logging.warning('Group %s already exists on the system.' % name)
-def add_profile() :
+def add_profile():
 	""" Add a system wide User profile. """
 
 	_groups = []
-	if opts.groups is not None :
+	if opts.groups is not None:
 		_groups = opts.groups.split(',')
 
-	if opts.name :
+	if opts.name:
 		name = unicode(opts.name)
-	else :
+	else:
 		name = None
 
-	if opts.comment :
+	if opts.comment:
 		comment = unicode(opts.comment)
-	else :
+	else:
 		comment = None
 
 	profiles.AddProfile(name, group = opts.group, quota = opts.quota, groups = _groups, comment = comment, shell = opts.shell, skeldir = opts.skeldir, force_existing = opts.force_existing)
 	profiles.WriteConf(configuration.profiles_config_file)
-def add_keyword() :
+def add_keyword():
 	""" Add a keyword on the system. """
 	from licorn.core import keywords
 	keywords.AddKeyword(unicode(opts.name), unicode(opts.parent), unicode(opts.description))
-def add_workstation() :
+def add_workstation():
 	raise NotImplementedError("add_workstations not implemented.")
-def add_webfilter() :
+def add_webfilter():
 	raise NotImplementedError("add_webfilters_types not implemented.")
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 
-	try :
+	try:
 		giantLock = file_locks.FileLock(configuration, "add", 10)
 		giantLock.Lock()
-	except (IOError, OSError), e :
+	except (IOError, OSError), e:
 		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
 
-	try :
-		try :
+	try:
+		try:
 
-			if "--no-colors" in sys.argv :
+			if "--no-colors" in sys.argv:
 				options.SetNoColors(True)
 
 			from licorn.interfaces.cli import argparser
 
-			if len(sys.argv) < 2 :
+			if len(sys.argv) < 2:
 				# automatically display help if no arg/option is given.
 				sys.argv.append("--help")
 				argparser.general_parse_arguments(_app)
 
-			if len(sys.argv) < 3 :
+			if len(sys.argv) < 3:
 				# this will display help, but when parsed later by specific functions.
 				# (for user/group/profile specific help)
 				sys.argv.append("--help")
 				help_appended = True
-			else :
+			else:
 				help_appended = False
 
 			mode = sys.argv[1]
 
-			if mode == 'user' :
+			if mode == 'user':
 				(opts, args) = argparser.add_user_parse_arguments(_app)
 				options.SetFrom(opts)
 
-				if len(args) == 2 :
+				if len(args) == 2:
 					opts.login = args[1]
 					add_user()
-				elif len(args) == 3 :
+				elif len(args) == 3:
 					login = args[1]
 					ingroups = args[2]
 					#
-					# FIXME : refactoring + why don't we see logging.info of groups.AddUsersInGroup ?
+					# FIXME: refactoring + why don't we see logging.info of groups.AddUsersInGroup ?
 					#
 
-					for g in ingroups.split(',') :
-						if g != "" :
-							try :
+					for g in ingroups.split(','):
+						if g != "":
+							try:
 								groups.AddUsersInGroup(g, login.split(','))
-							except exceptions.LicornRuntimeException, e :
+							except exceptions.LicornRuntimeException, e:
 								logging.warning("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
 							except exceptions.LicornException, e:
 								raise exceptions.LicornRuntimeError("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-				else :
+				else:
 					add_user()
 
-			elif mode == 'users' :
+			elif mode == 'users':
 				(opts, args) = argparser.addimport_parse_arguments(_app)
 				options.SetFrom(opts)
 				import_users()
-			elif mode == 'group' :
+			elif mode == 'group':
 				(opts, args) = argparser.add_group_parse_arguments(_app)
-				if len(args) == 2 :
+				if len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_group()
-			elif mode == 'profile' :
+			elif mode == 'profile':
 				(opts, args) = argparser.add_profile_parse_arguments(_app)
-				if len(args) == 2 :
+				if len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_profile()
-			elif mode == 'keyword' :
+			elif mode == 'keyword':
 				(opts, args) = argparser.add_keyword_parse_arguments(_app)
-				if len(args) == 2 :
+				if len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_keyword()
-			else :
-				if not help_appended :
+			else:
+				if not help_appended:
 					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
 					sys.argv.append("--help")
 
 				argparser.general_parse_arguments(_app)
 
-		except exceptions.LicornException, e :
+		except exceptions.LicornException, e:
 			configuration.CleanUp()
 			giantLock.Unlock()
 			logging.error (str(e), e.errno)
 
-		except KeyboardInterrupt :
+		except KeyboardInterrupt:
 			logging.warning(logging.GENERAL_INTERRUPTED)
 
-	finally :
+	finally:
 		configuration.CleanUp()
 		giantLock.Unlock()

@@ -14,7 +14,7 @@ Licensed under the terms of the GNU GPL version 2.
 # try to keep this class as small as possible !
 #
 
-class LicornOptions :
+class LicornOptions:
 	""" This Options class is meant to share options / preferences globally
 		accross all python modules loaded in a single session of any Licorn App.
 
@@ -34,20 +34,27 @@ class LicornOptions :
 	no_colors   = False
 	verbose     = VLEVEL_NOTICE
 
-	def __new__(cls) :
+	def __new__(cls):
 		"""This is a Singleton Design Pattern."""
 
-		if cls.__singleton is None :
+		if cls.__singleton is None:
 			cls.__singleton = object.__new__(cls)
 		
 		return cls.__singleton
-	def SetVerbose(self, verbose) :
-		LicornOptions.verbose = verbose
-	def SetQuiet(self) :
-		LicornOptions.verbose = LicornOptions.VLEVEL_QUIET
-	def SetNoColors(self, no_colors = True) :
-		LicornOptions.no_colors = no_colors
-	def SetFrom(self, opts) :
+	def __init__(self) :
+		pass
+	def SetVerbose(self, verbose):
+		""" Change verbose parameter. """
+		self.verbose = verbose
+	def SetQuiet(self):
+		""" Change verbose parameter. """
+		self.verbose = LicornOptions.VLEVEL_QUIET
+	def SetNoColors(self, no_colors = True):
+		""" Change color output parameter. """
+		self.no_colors = no_colors
+	def SetFrom(self, opts):
+		""" Change parameters, from an object given by an argparser """
+
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)
 		# put future functions here...

@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 # bright is to be added to dark colors (00;XXm) to obtain the brighter colors.
-#   "bright" : '\x1b[0;01m',
+#   "bright": '\x1b[0;01m',
 
 ST_NO     = 0
 ST_RED    = 1
@@ -29,21 +29,21 @@ ST_GRAY   = 13
 ST_WHITE  = 14
 
 __ascii = {
-	ST_RED    : '\x1b[01;31m',
-	ST_BRICK  : '\x1b[00;31m',
-	ST_FOREST : '\x1b[00;32m',
-	ST_GREEN  : '\x1b[01;32m',
-	ST_BROWN  : '\x1b[00;33m',
-	ST_YELLOW : '\x1b[01;33m',
-	ST_NAVY   : '\x1b[00;34m',
-	ST_BLUE   : '\x1b[01;34m',
-	ST_PURPLE : '\x1b[00;35m',
+	ST_RED   : '\x1b[01;31m',
+	ST_BRICK : '\x1b[00;31m',
+	ST_FOREST: '\x1b[00;32m',
+	ST_GREEN : '\x1b[01;32m',
+	ST_BROWN : '\x1b[00;33m',
+	ST_YELLOW: '\x1b[01;33m',
+	ST_NAVY  : '\x1b[00;34m',
+	ST_BLUE  : '\x1b[01;34m',
+	ST_PURPLE: '\x1b[00;35m',
 	ST_MAGENTA: '\x1b[01;35m',
-	ST_CADET  : '\x1b[00;36m',
-	ST_CYAN   : '\x1b[01;36m',
-	ST_GRAY   : '\x1b[00;37m',
-	ST_WHITE  : '\x1b[01;37m',
-	ST_NO     : '\x1b[0;0m'
+	ST_CADET : '\x1b[00;36m',
+	ST_CYAN  : '\x1b[01;36m',
+	ST_GRAY  : '\x1b[00;37m',
+	ST_WHITE : '\x1b[01;37m',
+	ST_NO    : '\x1b[0;0m'
 	}
 
 ST_OK        = 1
@@ -83,45 +83,45 @@ ST_WARNING   = 34
 ST_ERROR     = 35
 
 colors = {
-	ST_NO        : __ascii[ST_NO],
-	ST_OK        : __ascii[ST_GREEN],
-	ST_BAD       : __ascii[ST_RED],
-	ST_IMPORTANT : __ascii[ST_RED],
-	ST_SECRET    : __ascii[ST_BRICK],
-	ST_PATH      : __ascii[ST_NAVY],
-	ST_ATTR      : __ascii[ST_NAVY],
-	ST_URL       : __ascii[ST_BLUE],
-	ST_LOGIN     : __ascii[ST_CADET],
-	ST_NAME      : __ascii[ST_CADET],
-	ST_APPNAME   : __ascii[ST_YELLOW],
-	ST_OPTION    : __ascii[ST_NAVY],
-	ST_DEBUG	  : __ascii[ST_BROWN],
-	ST_REGEX     : __ascii[ST_BROWN],
-	ST_MODE      : __ascii[ST_FOREST],
-	ST_ATTRVALUE : __ascii[ST_FOREST],
-	ST_PKGNAME   : __ascii[ST_CADET],
-	ST_DEFAULT   : __ascii[ST_WHITE],
-	ST_SPECIAL   : __ascii[ST_CYAN],
-	ST_LINK      : __ascii[ST_CYAN],
-	ST_UGID      : __ascii[ST_BLUE],
-	ST_ACL       : __ascii[ST_FOREST],
-	ST_LOG       : __ascii[ST_YELLOW],
-	ST_LIST_L1   : __ascii[ST_BLUE],
-	ST_LIST_L2   : __ascii[ST_BLUE],
-	ST_LIST_L3   : __ascii[ST_BLUE],
-	ST_LIST_L4   : __ascii[ST_BLUE],
-	ST_LIST_L5   : __ascii[ST_BLUE],
-	ST_LIST_L6   : __ascii[ST_BLUE],
-	ST_DEBUG2    : __ascii[ST_BROWN],
-	ST_DEBUG     : __ascii[ST_BROWN],
-	ST_NOTICE    : __ascii[ST_YELLOW],
-	ST_INFO      : __ascii[ST_YELLOW],
-	ST_WARNING   : __ascii[ST_RED],
-	ST_ERROR     : __ascii[ST_RED]
+	ST_NO       : __ascii[ST_NO],
+	ST_OK       : __ascii[ST_GREEN],
+	ST_BAD      : __ascii[ST_RED],
+	ST_IMPORTANT: __ascii[ST_RED],
+	ST_SECRET   : __ascii[ST_BRICK],
+	ST_PATH     : __ascii[ST_NAVY],
+	ST_ATTR     : __ascii[ST_NAVY],
+	ST_URL      : __ascii[ST_BLUE],
+	ST_LOGIN    : __ascii[ST_CADET],
+	ST_NAME     : __ascii[ST_CADET],
+	ST_APPNAME  : __ascii[ST_YELLOW],
+	ST_OPTION   : __ascii[ST_NAVY],
+	ST_DEBUG	 : __ascii[ST_BROWN],
+	ST_REGEX    : __ascii[ST_BROWN],
+	ST_MODE     : __ascii[ST_FOREST],
+	ST_ATTRVALUE: __ascii[ST_FOREST],
+	ST_PKGNAME  : __ascii[ST_CADET],
+	ST_DEFAULT  : __ascii[ST_WHITE],
+	ST_SPECIAL  : __ascii[ST_CYAN],
+	ST_LINK     : __ascii[ST_CYAN],
+	ST_UGID     : __ascii[ST_BLUE],
+	ST_ACL      : __ascii[ST_FOREST],
+	ST_LOG      : __ascii[ST_YELLOW],
+	ST_LIST_L1  : __ascii[ST_BLUE],
+	ST_LIST_L2  : __ascii[ST_BLUE],
+	ST_LIST_L3  : __ascii[ST_BLUE],
+	ST_LIST_L4  : __ascii[ST_BLUE],
+	ST_LIST_L5  : __ascii[ST_BLUE],
+	ST_LIST_L6  : __ascii[ST_BLUE],
+	ST_DEBUG2   : __ascii[ST_BROWN],
+	ST_DEBUG    : __ascii[ST_BROWN],
+	ST_NOTICE   : __ascii[ST_YELLOW],
+	ST_INFO     : __ascii[ST_YELLOW],
+	ST_WARNING  : __ascii[ST_RED],
+	ST_ERROR    : __ascii[ST_RED]
 	}
 
 
-def stylize_choose(type, what) :
+def stylize_choose(type, what):
 	""" On first call of the function, choose what styling will be done for the entire run. """	
 
 	global stylize
@@ -131,9 +131,9 @@ def stylize_choose(type, what) :
 	# one day.
 	from licorn.foundations import options
 
-	if options.no_colors :
+	if options.no_colors:
 		stylize = stylize_cli_no_colors
-	else :
+	else:
 		stylize = stylize_cli_colors
 	
 	# TODO: create and use options.web_output and stylize_web()
@@ -141,11 +141,11 @@ def stylize_choose(type, what) :
 	# after the choice was made, call the real function
 	return stylize(type, what)
 
-def stylize_cli_no_colors(type, what) :
+def stylize_cli_no_colors(type, what):
 	"""Return a non-colorized acsii string."""
 	return what
 
-def stylize_cli_colors(type, what) :
+def stylize_cli_colors(type, what):
 	"""	Return a colorized acsii string.
 		This won't work as expected on nested styles, but in CLI they shouldn't be used anyway.
 	"""

@@ -10,7 +10,7 @@ from licorn.interfaces.web import utils as w
 #remove this after testing
 reload(w)
 
-def ctxtnav() :
+def ctxtnav():
 	return '''
 	<div id="ctxtnav" class="nav">
         <h2>Context Navigation</h2>
@@ -26,7 +26,7 @@ def ctxtnav() :
 		_('Shutdown server.'),
 		_('Shutdown server'))
 
-def system_load() :
+def system_load():
 	loads = open('/proc/loadavg').read().split(" ")
 	
 	allusers  = users
@@ -34,9 +34,9 @@ def system_load() :
 	nbusers = len(allusers.filtered_users)
 
 	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE, close_fds = True).stdout.read().split('\n'))
-	if cxusers > 1 :
+	if cxusers > 1:
 		s_users = 's'
-	else :
+	else:
 		s_users = ''
 
 	uptime_sec  = int(float(open('/proc/uptime').read().split(" ")[0]))
@@ -50,32 +50,32 @@ def system_load() :
 	s_sec  = ''
 	s_min  = ''
 	uptime_string = ''
-	if uptime_sec > 60 :
+	if uptime_sec > 60:
 		uptime_min = uptime_sec / 60
 		uptime_sec -= (uptime_min * 60)
 
-		if uptime_min > 60 :
+		if uptime_min > 60:
 			uptime_hour = uptime_min / 60
 			uptime_min -= (uptime_hour * 60)
-			if uptime_hour > 24 :
+			if uptime_hour > 24:
 				uptime_day = uptime_hour / 24
 				uptime_hour -= (uptime_day * 24)
-				if uptime_day > 365 :
+				if uptime_day > 365:
 					uptime_year = uptime_day / 365
 					uptime_day -= (uptime_year * 365)
-					if uptime_year > 1 :
+					if uptime_year > 1:
 						s_year = 's'
 					uptime_string += _('%d year%s, ') % (uptime_year, s_year)
-				if uptime_day > 1 :
+				if uptime_day > 1:
 					s_day = 's'
 				uptime_string += _('%d day%s, ') % (uptime_day, s_day)
-			if uptime_hour > 1 :
+			if uptime_hour > 1:
 				s_hour = 's'
 			uptime_string += _('%d hour%s, ') % (uptime_hour, s_hour)
-		if uptime_min > 1 :
+		if uptime_min > 1:
 			s_min = 's'
 		uptime_string += _('%d min%s, ') % (uptime_min, s_min)
-	if uptime_sec > 1 :
+	if uptime_sec > 1:
 		s_sec = 's'
 	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)				
 			
@@ -83,38 +83,38 @@ def system_load() :
 Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.<br /><br />
 1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2]) 
 
-def system_info() :
+def system_info():
 
 	cpus  = 0
 	model = ''
 
-	for line in open('/proc/cpuinfo') :
-		if line[0:9] == 'processor' : cpus += 1
-		if line[0:10] == 'model name' : model = line.split(': ')[1]
+	for line in open('/proc/cpuinfo'):
+		if line[0:9] == 'processor': cpus += 1
+		if line[0:10] == 'model name': model = line.split(': ')[1]
 
-	if cpus > 1 :
+	if cpus > 1:
 		s = 's'
-	else :
+	else:
 		s = ''
 
 	mem = {}
 
-	def compute_mem(line, x) :
+	def compute_mem(line, x):
 		#logging.debug(line[0:-1] + " -> " + re.split('\W+', line)[1])
 
 		split = re.split('[\W\(\)]+', line)
 
-		if split[0] == x :
+		if split[0] == x:
 			try:
-				return { x : float(split[1]) / 1048576.0 }
+				return { x: float(split[1]) / 1048576.0 }
 			except:
 				# skip "Active(xxx)" and other mixed entries from /proc/meminfo.
 				return {}
-		else :
+		else:
 			return {}
 
-	for line in open('/proc/meminfo') :
-		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers', 'Cached', 'SwapTotal', 'SwapFree' ) :
+	for line in open('/proc/meminfo'):
+		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers', 'Cached', 'SwapTotal', 'SwapFree' ):
 			mem.update(compute_mem(line, x))
 
 	return _('''
@@ -124,10 +124,10 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.
 ''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
 	
-def reboot(uri, http_user, sure = False) :
-	if sure :
+def reboot(uri, http_user, sure = False):
+	if sure:
 		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Rebooting…')))
-	else :
+	else:
 		return w.minipage(w.lbox('''%s
 		<div class="vspacer"></div>
 		<table class="lbox-table">
@@ -148,10 +148,10 @@ def reboot(uri, http_user, sure = False) :
 		_('Sure you want to reboot the %s server?') % configuration.app_name,
 		_('YES'),
 		_('NO'))))
-def halt(uri, http_user, sure = False) :
-	if sure :
+def halt(uri, http_user, sure = False):
+	if sure:
 		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Shutting down…')))
-	else :
+	else:
 		return w.minipage(w.lbox('''%s<div class="vspacer"></div>
 		<table class="lbox-table">
 			<tr>
@@ -170,7 +170,7 @@ def halt(uri, http_user, sure = False) :
 		_('Sure you want to shutdown the %s server?') % configuration.app_name,
 		_('YES'),
 		_('NO'))))
-def index(uri, http_user) :
+def index(uri, http_user):
 		
 	start = time.time()
 

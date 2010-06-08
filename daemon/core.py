@@ -40,31 +40,31 @@ pid_path      = '/var/run/licornd.pid'
 wpid_path     = '/var/run/licornd-wmi.pid'
 dname         = 'licornd'
 
-def terminate_cleanly(signum, frame, threads = []) :
+def terminate_cleanly(signum, frame, threads = []):
 	""" Close threads, wipe pid files, clean everything before closing. """
 
-	if signum is None :
+	if signum is None:
 		logging.progress("%s/master: cleaning up and stopping threads..." % dname)
-	else :
+	else:
 		logging.warning('%s/master: signal %s received, shutting down...' % (dname,
 			signum))
 
-	for th in threads :
+	for th in threads:
 		th.stop()
 
 	configuration.CleanUp()
 
-	try : 
-		for pid_file in (pid_path, wpid_path) :
-			if os.path.exists(pid_file) :
+	try: 
+		for pid_file in (pid_path, wpid_path):
+			if os.path.exists(pid_file):
 				os.unlink(pid_file)
-	except (OSError, IOError), e :
+	except (OSError, IOError), e:
 		logging.warning("Can't remove %s (was: %s)." % (
 			styles.stylize(styles.ST_PATH, pid_path), e))
 
 	logging.progress("%s/master: joining threads." % dname)
 
-	for th in threads :
+	for th in threads:
 		th.join()
 
 	logging.progress("%s/master: exiting." % dname)
@@ -73,35 +73,35 @@ def terminate_cleanly(signum, frame, threads = []) :
 	time.sleep(0.5)
 
 	sys.exit(0)
-def setup_signals_handler(threads) :
+def setup_signals_handler(threads):
 	""" redirect termination signals to a the function which will clean everything. """
 
-	def terminate(signum, frame) :
+	def terminate(signum, frame):
 		return terminate_cleanly(signum, frame, threads)
 
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)
 	signal.signal(signal.SIGHUP, terminate)
-def exit_if_already_running() :
-	if process.already_running(pid_path) :
+def exit_if_already_running():
+	if process.already_running(pid_path):
 		logging.notice("%s: already running (pid %s), not restarting." % (
 			dname, open(pid_path, 'r').read()[:-1]))
 		sys.exit(0)
-def exit_if_not_running_root() :
-	if os.getuid() != 0 or os.geteuid() != 0 :
+def exit_if_not_running_root():
+	if os.getuid() != 0 or os.geteuid() != 0:
 		logging.error("%s: must be run as %s." % (dname,
 			styles.stylize(styles.ST_NAME, 'root')))	
-def eventually_daemonize(opts) :
-	if opts.daemon : 
+def eventually_daemonize(opts):
+	if opts.daemon: 
 		process.daemonize(log_path, pid_path)
-	else : 
+	else: 
 		open(pid_path, 'w').write("%s\n" % os.getpid())
 
 ### Main Licorn daemon threads ###
 # FIXME: convert these to LicornThread.
 class ACLChecker(LicornThread, Singleton):
 	""" A Thread which gets paths to check from a Queue, and checks them in time. """
-	def __init__(self, cache, pname = dname) :
+	def __init__(self, cache, pname = dname):
 		LicornThread.__init__(self, pname)
 
 		self.cache      = cache
@@ -109,10 +109,10 @@ class ACLChecker(LicornThread, Singleton):
 		# will be filled later
 		self.inotifier  = None
 		self.groups     = None
-	def set_inotifier(self, ino) :
+	def set_inotifier(self, ino):
 		""" Get the INotifier instance from elsewhere. """
 		self.inotifier = ino
-	def set_groups(self, grp) :
+	def set_groups(self, grp):
 		""" Get system groups from elsewhere. """
 		self.groups = grp
 	def process_message(self, event):
@@ -121,32 +121,32 @@ class ACLChecker(LicornThread, Singleton):
 		#logging.debug('%s: got message %s.' % (self.name, event))
 		path, gid = event
 
-		if path is None : return
+		if path is None: return
 
 		acl = self.groups.BuildGroupACL(gid, path)
 
-		try :
-			if os.path.isdir(path) :
+		try:
+			if os.path.isdir(path):
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl') , -1)
 				self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, False, acl['default_acl'], acl['default_acl'])
 				self.inotifier.prevent_double_check(path)
 				self.inotifier.prevent_double_check(path)
-			else :
+			else:
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl'))
 				self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
 				self.inotifier.prevent_double_check(path)
 
-		except (OSError, IOError), e :
-			if e.errno != 2 :
+		except (OSError, IOError), e:
+			if e.errno != 2:
 				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
 
 		# FIXME: to be re-added when cache is ok.
 		#self.cache.cache(path)
-	def enqueue(self, path, gid) :
+	def enqueue(self, path, gid):
 		""" Put an event into our queue, to be processed later. """
-		if self._stop_event.isSet() :
+		if self._stop_event.isSet():
 			logging.warning("%s: thread is stopped, not enqueuing %s|%s." % (self.name, path, gid))
 			return
 
@@ -157,7 +157,7 @@ class INotifier(Thread, Singleton):
 	_stop_event = Event()
 	_to_watch   = deque()
 	_to_remove  = deque()
-	def __init__(self, checker, cache, pname = dname) :
+	def __init__(self, checker, cache, pname = dname):
 
 		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
 		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
@@ -182,21 +182,21 @@ class INotifier(Thread, Singleton):
 		# disable the Exists() calls at gamin's launch ?
 		#self.mon.no_exists()
 
-		for gid in groups.filtered_groups :
+		for gid in groups.filtered_groups:
 			group_home = "%s/%s/%s" % (groups.configuration.defaults.home_base_path,
 							groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
 
-			def myfunc(path, event, gid = gid, dirname = group_home) :
+			def myfunc(path, event, gid = gid, dirname = group_home):
 				return self.process_event(path, event, gid, dirname)
 
 			self.add_watch(group_home, myfunc)
-	def prevent_double_check(path) :
+	def prevent_double_check(path):
 		""" store a just checked path a little while, to avoid double checks and other I/O consuming tasks. """
 		self.just_checked.append(path)
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
-		if basename[-1] == '/' :
+		if basename[-1] == '/':
 			# we received an event for the root dir of a new watch.
 			# this is a duplicate of the parent/new_dir. Just discard
 			# it.
@@ -205,36 +205,36 @@ class INotifier(Thread, Singleton):
 		# with Gamin, sometimes it is an abspath, sometimes not.
 		# this happens on GAMChanged (observed the two), and 
 		# GAMDeleted (observed only abspath).
-		if basename[0] == '/' :
+		if basename[0] == '/':
 			path = basename
-		else :
+		else:
 			path = '%s/%s' % (dirname, basename)
 
-		if event == gamin.GAMExists and path in self.wds :
+		if event == gamin.GAMExists and path in self.wds:
 			# skip already watched directories, and /home/groups/*
 			return
 
-		if os.path.islink(path) or fsapi.is_backup_file(path) :
+		if os.path.islink(path) or fsapi.is_backup_file(path):
 			logging.debug("%s: discarding Inotify event on %s, it's a symlink or a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, path)))
 			return
 
-		if event in (gamin.GAMExists, gamin.GAMCreated) :
+		if event in (gamin.GAMExists, gamin.GAMCreated):
 
 			logging.debug("%s: Inotify %s %s." %  (self.getName(), styles.stylize(styles.ST_MODE, 'GAMCreated/GAMExists'), path))
 
-			try :
-				if os.path.isdir(path) :
+			try:
+				if os.path.isdir(path):
 					self._to_watch.append((path, gid))
 
 				self.aclchecker.enqueue(path, gid)
 
-			except (OSError, IOError), e :
-				if e.errno != 2 :
+			except (OSError, IOError), e:
+				if e.errno != 2:
 					logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
 
-		elif event == gamin.GAMChanged :
+		elif event == gamin.GAMChanged:
 
-			if path in self.just_checked :
+			if path in self.just_checked:
 				# skip the first GAMChanged event, it was generated
 				# by the CHK in the GAMCreated part.
 				self.just_checked.remove(path)
@@ -245,12 +245,12 @@ class INotifier(Thread, Singleton):
 
 			self.aclchecker.enqueue(path, gid)
 
-		elif event == gamin.GAMMoved :
+		elif event == gamin.GAMMoved:
 
 			logging.progress('%s: Inotify %s, not handled yet %s.' % (self.getName(), 
 				styles.stylize(styles.ST_PKGNAME, 'GAMMoved'), styles.stylize(styles.ST_PATH, path)))
 
-		elif event == gamin.GAMDeleted :
+		elif event == gamin.GAMDeleted:
 			# if a dir is deleted, we will get 2 GAMDeleted events: 
 			#  - one for the dir watched (itself deleted)
 			#  - one for its parent, signaling its child was deleted.
@@ -265,14 +265,14 @@ class INotifier(Thread, Singleton):
 			# TODO: remove recursively if DIR.
 			#self.cache.removeEntry(path)
 
-		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge) :
+		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge):
 			logging.debug('%s: Inotify %s for %s.' % (self.getName(), styles.stylize(styles.ST_REGEX, 'GAMEndExist/GAMAcknowledge'), path))
 
-		else :
+		else:
 			logging.debug('%s: unhandled Inotify event “%s” %s.' % (self.getName(), event, path))
-	def add_watch(self, path, func) :
+	def add_watch(self, path, func):
 
-		if path in self.wds :
+		if path in self.wds:
 			return 0
 
 		self.wds.append(path)
@@ -281,9 +281,9 @@ class INotifier(Thread, Singleton):
 			styles.stylize(styles.ST_PATH, path),
 			len(self.wds)))
 		return self.mon.watch_directory(path, func)
-	def remove_watch(self, path) :
-		if path in self.wds :
-			try :
+	def remove_watch(self, path):
+		if path in self.wds:
+			try:
 				self.wds.remove(path)
 				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
 					styles.stylize(styles.ST_BAD, 'removing'),
@@ -293,17 +293,17 @@ class INotifier(Thread, Singleton):
 				# TODO: recurse subdirs if existing, to remove subwatches
 				ret = self.mon.stop_watch(path) 
 				return ret
-			except gamin.GaminException :
+			except gamin.GaminException:
 				pass
-	def run(self) :
+	def run(self):
 		logging.progress("%s: thread running." % (self.getName()))
 		Thread.run(self)
 
-		try :
+		try:
 			already_waited = False
-			while not self._stop_event.isSet() :
+			while not self._stop_event.isSet():
 
-				while (len(self._to_remove) > 0) :
+				while (len(self._to_remove) > 0):
 					# remove as many watches as possible in the same time,
 					# to help relieve the daemon.
 					self.remove_watch(self._to_remove.pop())
@@ -312,41 +312,41 @@ class INotifier(Thread, Singleton):
 					self.mon.handle_events()
 
 
-				if len(self._to_watch) :
+				if len(self._to_watch):
 					# add one path at a time, to not stress the daemon, and
 					# make new inotified paths come in smoothly.
 
 					path, gid = self._to_watch.pop()
-					def myfunc(path, event, gid = gid, dirname = path) :
+					def myfunc(path, event, gid = gid, dirname = path):
 						return self.process_event(path, event, gid, dirname)
 					self.add_watch(path, myfunc)
 
 					# don't forget to handle_events(), to flush the GAM queue
 					self.mon.handle_events()
 
-				while self.mon.event_pending() :
+				while self.mon.event_pending():
 					self.mon.handle_one_event()
 					self.mon.handle_events()
 					already_waited = False
-				else :
-					if already_waited :
+				else:
+					if already_waited:
 						self.mon.handle_events()
 						time.sleep(0.01)
-					else :
+					else:
 						already_waited = True
 						self.mon.handle_events()
 						time.sleep(0.001)
-		except :
-			if not self._stop_event.isSet() :
+		except:
+			if not self._stop_event.isSet():
 				raise
 
 		logging.progress("%s: thread ended." % (self.getName()))
-	def stop(self) :
-		if Thread.isAlive(self) and not self._stop_event.isSet() :
+	def stop(self):
+		if Thread.isAlive(self) and not self._stop_event.isSet():
 			logging.progress("%s: stopping thread." % (self.getName()))
 			self._stop_event.set()
 
-			while len(self.wds) :
+			while len(self.wds):
 				rep = self.wds.pop()
 				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
 					styles.stylize(styles.ST_BAD, 'removing'),

@@ -1,11 +1,11 @@
 #!/usr/bin/python -OO
 # -*- coding: utf-8 -*-
 """
-Licorn daemon :
+Licorn daemon:
   - monitor shared group dirs and other special paths, and reapply posix
 	perms or posix ACL the Right Way They Should Be (TM).
 
-This daemon exists :
+This daemon exists:
   - to add user functionnality to Licorn systems.
   - because of bugs in other apps.
   
@@ -16,9 +16,9 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 current_app = {
-	"name"        : "licorn-daemon",
-	"description" : "Licorn Daemon: ACL auto check and file meta-data crawler",
-	"author"      : "Olivier Cortès <olive@deep-ocean.net>"
+	"name"       : "licorn-daemon",
+	"description": "Licorn Daemon: ACL auto check and file meta-data crawler",
+	"author"     : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
 import sys, os, signal
@@ -38,7 +38,7 @@ from licorn.daemon.internals.cache    import Cache
 from licorn.daemon.internals.searcher import FileSearchServer
 #from licorn.daemon.internals.syncer   import ServerSyncer, ClientSyncer
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 
 	(opts, args) = argparser.licornd_parse_arguments(current_app)
 	options.SetFrom(opts)
@@ -56,7 +56,7 @@ if __name__ == "__main__" :
 	eventually_daemonize(opts)
 	eventually_fork_wmi_server()
 
-	if configuration.daemon.role == "client" :
+	if configuration.daemon.role == "client":
 		pass
 		#syncer = ClientSyncer(dname)
 		#threads.append(syncer)
@@ -64,7 +64,7 @@ if __name__ == "__main__" :
 		# TODO: get the cache from the server, it has the
 		# one in sync with the NFS-served files.
 
-	else :
+	else:
 		#syncer     = ServerSyncer(dname)
 		searcher   = FileSearchServer(dname)
 		cache      = Cache(keywords, dname)
@@ -77,12 +77,12 @@ if __name__ == "__main__" :
 		threads.append(searcher)
 		
 
-	for th in threads :
+	for th in threads:
 		th.start()
 
 	logging.progress("%s/master: going to sleep, waiting for signals." % dname)
 
-	while True :
+	while True:
 		signal.pause()
 
 	terminate_cleanly(None, None, threads)

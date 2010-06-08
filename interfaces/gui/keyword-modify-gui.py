@@ -17,7 +17,7 @@ from licorn.gui.gtkkwd  import LicornKeywordsGtkWindow
 
 class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 	""" GUI for files and directories keywords managing. """
-	def __init__(self, args = []) :		
+	def __init__(self, args = []):		
 	
 		LicornKeywordsGtkWindow.__init__(self, 'modify')
 		self.TARGET_TYPE_TEXT = 80
@@ -52,7 +52,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		self.window.show_all()
 
 		# add paths given on the command line.
-		map(lambda x: self.liststore.append((x,)),args)
+		map(lambda x: self.liststore.append((x,)), args)
 
 		self.update_keyword_usage()
 		self.update_notebook()
@@ -61,22 +61,22 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 			self.__treeview_remove(None)
 			return True
 		return False
-	def __treeview_remove(self, item) :
+	def __treeview_remove(self, item):
 		model, paths = self.treeview.get_selection().get_selected_rows()
 		if model: 
 			map(self.liststore.remove, map(self.liststore.get_iter, paths))
 			self.update_keyword_usage()
 			self.update_notebook()
 
-	def __keyword_clicked(self, checkbox) :
+	def __keyword_clicked(self, checkbox):
 		""" When a keyword checkbox is clicked """
 
-		if self.clearing : return
+		if self.clearing: return
 
 		self.StatusMessage("Applying keywords, please wait...")
 		self.window.set_sensitive(False)
 
-		if checkbox.get_inconsistent() :
+		if checkbox.get_inconsistent():
 			# add keywords to all files at first click.
 			checkbox.set_inconsistent(False)
 			checkbox.set_active(True)
@@ -86,24 +86,24 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 
 		logging.progress('__keyword_clicked(%s) called.' % kw)
 
-		if checkbox.get_active() :
+		if checkbox.get_active():
 			func    = self.kw.AddKeywordsToPath
 			message = "Added keyword %s to %s."
 			status  = self.checked
-		else :
+		else:
 			func    = self.kw.DeleteKeywordsFromPath
 			message = "Removed keyword %s from %s."
 			status  = self.unchecked
 
-		for (path, ) in self.liststore :
-			try :
+		for (path, ) in self.liststore:
+			try:
 				func(path, [ kw ], rec)
 				self.keyword_usage[kw] = status
 				logging.progress(message % (kw, path))
 				self.hc.UpdateRequest(path)
 
-			except (OSError, IOError), e :
-				if e.errno not in (61, 95) :
+			except (OSError, IOError), e:
+				if e.errno not in (61, 95):
 					# TODO: refactor messagebox.
 					msgbox = gtk.MessageDialog(parent=self.window, type=gtk.MESSAGE_ERROR, 
 						buttons=gtk.BUTTONS_CLOSE, message_format=str(e))
@@ -112,20 +112,20 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 
 		self.window.set_sensitive(True)
 		self.StatusMessage("Done applying keywords.")
-	def empty_clicked(self, widget) :
+	def empty_clicked(self, widget):
 		""" When empty liststore is clicked. """
 
 		self.liststore.clear()
 		self.update_keyword_usage()
 		self.update_notebook()
-	def recursive_clicked(self, checkbox) :
+	def recursive_clicked(self, checkbox):
 		""" When recursive option checkbox is clicked. """
 
 		logging.progress('recursive_clicked() called.')
 
 		self.update_keyword_usage()
 		self.update_notebook()
-	def update_keyword_usage(self) :
+	def update_keyword_usage(self):
 		""" TODO """
 
 		logging.progress('update_keyword_usage() called.')
@@ -134,85 +134,85 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		self.window.set_sensitive(False)
 
 		# restart with nothing (all unknown)
-		for kw in self.kw.keywords.keys() :
+		for kw in self.kw.keywords.keys():
 			self.keyword_usage[kw] = self.unknown
 
-		for (path, ) in self.liststore :
+		for (path, ) in self.liststore:
 
-			if os.path.isfile(path) :
+			if os.path.isfile(path):
 				file_keywords = []
-				try :
+				try:
 					file_keywords = self.kw.GetKeywordsFromPath(path)
 					logging.debug('file has keywords: %s.' % str(file_keywords))
-				except (OSError, IOError), e :
-					if e.errno != 61 : raise e
+				except (OSError, IOError), e:
+					if e.errno != 61: raise e
 
-				for kw in self.keyword_usage.keys() :
-					if kw in file_keywords :
-						if self.keyword_usage[kw] == self.unknown :
+				for kw in self.keyword_usage.keys():
+					if kw in file_keywords:
+						if self.keyword_usage[kw] == self.unknown:
 							self.keyword_usage[kw] = self.checked
-						elif self.keyword_usage[kw] != self.checked :
+						elif self.keyword_usage[kw] != self.checked:
 							self.keyword_usage[kw] = self.inconsistent
-					else :
-						if self.keyword_usage[kw] == self.unknown :
+					else:
+						if self.keyword_usage[kw] == self.unknown:
 							self.keyword_usage[kw] = self.unchecked
-						elif self.keyword_usage[kw] != self.unchecked :
+						elif self.keyword_usage[kw] != self.unchecked:
 							self.keyword_usage[kw] = self.inconsistent
 
-			elif os.path.isdir(path) :
+			elif os.path.isdir(path):
 				keyword_usage_dir = self.get_keyword_usage_in_dir(path)
 
 				kuk = keyword_usage_dir.keys()
-				for kw in self.keyword_usage.keys() :
-					if kw in kuk :
-						if self.keyword_usage[kw] == self.unknown :
+				for kw in self.keyword_usage.keys():
+					if kw in kuk:
+						if self.keyword_usage[kw] == self.unknown:
 							self.keyword_usage[kw] = keyword_usage_dir[kw]
-						elif self.keyword_usage[kw] != keyword_usage_dir[kw] :
+						elif self.keyword_usage[kw] != keyword_usage_dir[kw]:
 							self.keyword_usage[kw] = self.inconsistent
-					else :
-						if self.keyword_usage[kw] == self.unknown :
+					else:
+						if self.keyword_usage[kw] == self.unknown:
 							self.keyword_usage[kw] = self.unchecked
-						elif self.keyword_usage[kw] != self.unchecked :
+						elif self.keyword_usage[kw] != self.unchecked:
 							self.keyword_usage[kw] = self.inconsistent
 
 		logging.debug('kwusage after update: %s.' % str(self.keyword_usage))
 
 		self.window.set_sensitive(True)
 		self.StatusMessage("Done updating keywords notebook.")
-	def update_notebook(self) :
+	def update_notebook(self):
 		""" TODO. """
 
 		logging.progress('update_notebook() called.')
 
-		if len(self.liststore) :
+		if len(self.liststore):
 			self.kframe.set_sensitive(True)
-		else :
+		else:
 			self.kframe.set_sensitive(False)
 			return
 
-		def update_checkbox(obj) :
-			if type(obj) == gtk.CheckButton :
+		def update_checkbox(obj):
+			if type(obj) == gtk.CheckButton:
 				label = obj.get_label()
 
-				if self.keyword_usage[label] == self.checked :
+				if self.keyword_usage[label] == self.checked:
 					obj.set_inconsistent(False)
 					obj.set_active(True)
-				elif self.keyword_usage[label] == self.unchecked :
+				elif self.keyword_usage[label] == self.unchecked:
 					obj.set_inconsistent(False)
 					obj.set_active(False)
-				else :
+				else:
 					obj.set_active(False)
 					obj.set_inconsistent(True)
 					
-			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox) : obj.foreach(update_checkbox)
+			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox): obj.foreach(update_checkbox)
 
 		self.clearing = True
 
-		for i in range(0, self.notebook.get_n_pages()) :
+		for i in range(0, self.notebook.get_n_pages()):
 			self.notebook.get_nth_page(i).foreach(update_checkbox)
 
 		self.clearing = False
-	def get_keyword_usage_in_dir(self, path) :
+	def get_keyword_usage_in_dir(self, path):
 		""" Look the keywords in subfiles of path.
 			A keyword which is present in all files will be checked (visualy),
 			and a keyword which is present in only some files will be
@@ -221,18 +221,18 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		keyword_usage = {}
 		keyword_usage['@fc@'] = 0
 		
-		def count_keywords(file_path) :
+		def count_keywords(file_path):
 			keyword_usage['@fc@'] += 1
-			try :
-				for kw in self.kw.GetKeywordsFromPath(file_path) :
-					if kw in keyword_usage.keys() :
+			try:
+				for kw in self.kw.GetKeywordsFromPath(file_path):
+					if kw in keyword_usage.keys():
 						keyword_usage[kw] += 1
-					else :
+					else:
 						keyword_usage[kw] = 1
-			except (OSError, IOError), e : pass
+			except (OSError, IOError), e: pass
 				
-		if self.recursive.get_active() : max = 99
-		else :                           max = 1
+		if self.recursive.get_active(): max = 99
+		else:                           max = 1
 		
 		map( lambda x: count_keywords(x),
 			fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
@@ -241,13 +241,13 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 
 		# look if each keyword is on all file or on only some files
 		kuk = keyword_usage.keys()
-		for kw in self.kw.keywords.keys() :
-			if kw in kuk :
-				if keyword_usage[kw] == keyword_usage['@fc@'] :
+		for kw in self.kw.keywords.keys():
+			if kw in kuk:
+				if keyword_usage[kw] == keyword_usage['@fc@']:
 					keyword_usage[kw] = self.checked
-				else :
+				else:
 					keyword_usage[kw] = self.inconsistent
-			else :
+			else:
 				keyword_usage[kw] = self.unchecked
 
 		logging.debug('Dir %s, %d files, final kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
@@ -258,23 +258,23 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		if targetType == self.TARGET_TYPE_TEXT:
 			# the DND data are separated by the MS-DOS newline...
 			files = selection.data.split('\r\n')
-			for file in files :
+			for file in files:
 				# and the split() gives an empty last argument, we must test «file»...
-				if file :
+				if file:
 					path = gnomevfs.get_local_path_from_uri(file)
 					logging.progress("Received %s by DND." % styles.stylize(styles.ST_PATH, path))
 
-					if os.path.exists(path) :
-						if os.path.isdir(path) or os.path.isfile(path) :
-							if path not in [ p for (p, ) in self.liststore ] :
+					if os.path.exists(path):
+						if os.path.isdir(path) or os.path.isfile(path):
+							if path not in [ p for (p, ) in self.liststore ]:
 								self.liststore.append((path,))
-						else :
+						else:
 							StatusMessage('''Sorry, can't apply keywords on %s, refusing it.''' % path)
 
 			self.update_keyword_usage()
 			self.update_notebook()
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 	options.SetVerbose(2)
 	LicornModifyKeywordsWindow(sys.argv[1:])
 	gtk.main()

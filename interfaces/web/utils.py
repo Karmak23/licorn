@@ -19,27 +19,27 @@ licence_text = _("""
 """) % (configuration.app_name, configuration.app_name)
 
 acronyms = {
-	'SSH'  : _('Secure SHell (Secure remote connexion and commands protocol)'),
-	'FTP'  : _('File Transfer Protocol'),
-	'HTTP' : _('HyperText Transfert Protocol'),
-	'IMAP' : _('Internet Message Access Protocol'),
-	'VNC'  : _('Virtual Network Computing (Desktop remote connexion protocol)'),
-	'RDP'  : _('Remote Desktop Protocol (Desktop remote connexion protocol)'),
-	'POP'  : _('Post-Office Protocol (Simple mail fetching protocol)'),
-	'SMTP' : _('Simple Mail Transfer Protocol'),
-	'RSA'  : _('Rivest Shamir Adleman (cryptography protocol)'),
-	'DSA'  : _('Digital Signature Algorithm'),
-	'GNU'  : _('GNU is Not Unix (recursive acronym ; a set of libre sofware composing a libre operating system)'),
-	'LCN'  : _('LiCorN system tools (tools for IT managers, see http://dev.licorn.org/)'),
-	'LAT'  : _('Licorn Admin Tools (High-level management tools for a GNU/Linux system)')
+	'SSH' : _('Secure SHell (Secure remote connexion and commands protocol)'),
+	'FTP' : _('File Transfer Protocol'),
+	'HTTP': _('HyperText Transfert Protocol'),
+	'IMAP': _('Internet Message Access Protocol'),
+	'VNC' : _('Virtual Network Computing (Desktop remote connexion protocol)'),
+	'RDP' : _('Remote Desktop Protocol (Desktop remote connexion protocol)'),
+	'POP' : _('Post-Office Protocol (Simple mail fetching protocol)'),
+	'SMTP': _('Simple Mail Transfer Protocol'),
+	'RSA' : _('Rivest Shamir Adleman (cryptography protocol)'),
+	'DSA' : _('Digital Signature Algorithm'),
+	'GNU' : _('GNU is Not Unix (recursive acronym ; a set of libre sofware composing a libre operating system)'),
+	'LCN' : _('LiCorN system tools (tools for IT managers, see http://dev.licorn.org/)'),
+	'LAT' : _('Licorn Admin Tools (High-level management tools for a GNU/Linux system)')
 	}
 
 # EXEC / SYSTEM functions.
-def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur durant l\'exécution de la commande') :
+def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur durant l\'exécution de la commande'):
 	"""Execute a command passed as a list or tuple"""
 	
-	if type(command) not in (type(()), type([])) :
-		return error("La commande passée en paramètre doit être un tuple ou une liste Python&#160;!", command, "if type(command) not in (type(()), type([])) :")
+	if type(command) not in (type(()), type([])):
+		return error("La commande passée en paramètre doit être un tuple ou une liste Python&#160;!", command, "if type(command) not in (type(()), type([])):")
 
 	p = Popen(command, executable = 'sudo' , shell = False, stdin = PIPE, stdout = PIPE, stderr = PIPE, close_fds = True)
 
@@ -49,24 +49,24 @@ def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur du
 	err = "nothing"
 	(out, err) = p.communicate()
 
-	if err != "" :
+	if err != "":
 		return error(err_msg, command, err.replace('>', '&gt;').replace('<', '&lt;'))
-	else :
-		if successfull_redirect != None :
+	else:
+		if successfull_redirect != None:
 			#util.redirect(req, successfull_redirect)
 			#return True
 			return ''
-		else :
+		else:
 			return ''
 			#return True
-def total_time(start, end) :
+def total_time(start, end):
 	elapsed = end - start
 	ptime   = ""
-	if elapsed > 3600 :
+	if elapsed > 3600:
 		h = elapsed / 3600
 		ptime += _("%d&nbsp;hours,") % h
 		elapsed -= h * 3600
-	if elapsed > 60 :
+	if elapsed > 60:
 		m = elapsed / 60
 		ptime += _(" %d&nbsp;minutes,") % m
 		elapsed -= m * 60
@@ -74,11 +74,11 @@ def total_time(start, end) :
 	return ('''<div id="timer">%s</div>''' % _('Core execution time: %s')) % ptime
 
 # AJAX Functions
-def doubleListBox_orig(titles, id, values_source = [], values_dest = []) :
+def doubleListBox_orig(titles, id, values_source = [], values_dest = []):
 
-	def selectbox(legend, id, option_id_prefix = "", values = []) :
+	def selectbox(legend, id, option_id_prefix = "", values = []):
 		data = '<fieldset style="height: 100%%"><legend>%s</legend><select name="%s" class="multiselect" multiple="multiple" id="%s" style="width: 100%%; height: 90%%; vertical-align: middle;">' % (legend, id, id)
-		for value in values :
+		for value in values:
 			data += '<option id="%s%s">%s</option>' % (option_id_prefix, value, value)
 		return data + '</select></fieldset>'
 
@@ -112,13 +112,13 @@ def doubleListBox_orig(titles, id, values_source = [], values_dest = []) :
 		id_left, id_right, id,
 		id_right, id_left, id,	
 		selectbox(titles[2], id_right, id, values_dest) )
-def doubleListBox(titles, id, values_source = [], values_dest = []) :
+def doubleListBox(titles, id, values_source = [], values_dest = []):
 
-	def selectbox(legend, id, option_id_prefix = "", values = []) :
+	def selectbox(legend, id, option_id_prefix = "", values = []):
 		data = '''<fieldset class="multi-group-fieldset">
 		<legend><span class="multi-group-fieldset-legend">%s</span></legend>
 		<select name="%s" id="%s" multiple="multiple" class="multi-group-select">''' % (legend, id, id)
-		for value in values :
+		for value in values:
 			data += '<option id="%s%s">%s</option>' % (option_id_prefix, value, value)
 		return data + '</select></fieldset>'
 
@@ -148,7 +148,7 @@ def doubleListBox(titles, id, values_source = [], values_dest = []) :
 		selectbox(titles[2], id_right, id, values_dest) )
 
 # GRAPHICAL functions
-def question(title, message, yes_values, no_values, form_options = None) :
+def question(title, message, yes_values, no_values, form_options = None):
 	"""Build ha HTML Question / Confirmation FORM.
 		{yes,no}_values = ("value of the button or link", "href of link, or action of form", "accesskey" )
 	***ACCESSKEYS for buttons are not yet implemented***
@@ -160,20 +160,20 @@ def question(title, message, yes_values, no_values, form_options = None) :
 	<div class="description">%s</div>
 	""" % (title, message)
 
-	if form_options :
+	if form_options:
 		data += '	<div class="options"><form name="yes_action" action="%s" method="post">%s</div>\n' % (yes_values[1], form_options)
 
 	data += """
 	<table>
 		<tr>"""
 
-	if form_options :
+	if form_options:
 		data+= """
 		<td class="cancel">%s</td>
 		<td class="confirm">%s</form></td>
 		""" % (button(no_values[0], no_values[1]), submit("yes", yes_values[0]))
 
-	else :
+	else:
 		data += """
 		<td class="cancel">%s</td>
 		<td class="confirm">%s</td>
@@ -185,9 +185,9 @@ def question(title, message, yes_values, no_values, form_options = None) :
 	"""
 
 	return data
-def license(text) :
+def license(text):
 	return '''<div id="license">%s</div>''' % text
-def error(text, command = [ "inconnue" ], error = "inconnue") :
+def error(text, command = [ "inconnue" ], error = "inconnue"):
 	return '''
 	<div id="command_error">
 		<div class="error_title">%s</div>
@@ -197,15 +197,15 @@ def error(text, command = [ "inconnue" ], error = "inconnue") :
 		<pre>%s</pre>
 		</div>
 		''' % (text, " ".join(command), error)
-def backto() :
+def backto():
 	return '<div id="header"><a id="logo" href="/" title="retourner vers la racine de l\'interface d\'administration."><img src="/images/logo_licorn_120.png" alt="retourner vers la racine de l\'interface d\'administration." /></a></div>'
-def metanav(http_user) :
+def metanav(http_user):
 	""" Minimal function to display the user logged in.
 		Will implement links to preferences, later.
 	"""
 	return '<div id="metanav" class="nav"><ul><li>%s</li></ul></div>' \
 	% (_('Logged in as %s') % http_user)
-def page_body_start(uri, http_user, ctxtnav, title, active = True) :
+def page_body_start(uri, http_user, ctxtnav, title, active = True):
 	return '''<div id="banner">
 	%s
 	%s
@@ -217,73 +217,73 @@ def page_body_start(uri, http_user, ctxtnav, title, active = True) :
 	<h1>%s</h1>
 	''' % (
 		backto(), metanav(http_user), menu(uri), ctxtnav(active), title) 
-def page_body_end(data = '') :
+def page_body_end(data = ''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 
 # HTML FORM functions
-def access_key(key) :
-	if key :
+def access_key(key):
+	if key:
 		return ' accesskey="%s"' % key
-	else :
+	else:
 		return ''
-def reset(value = "Revenir au valeurs d'origine") :
+def reset(value = "Revenir au valeurs d'origine"):
 	return '''<input type="reset" value="%s" />''' % (value)
-def submit(name, value = "", onClick = "", accesskey = None) :
-	if value == "" : value = name
-	if onClick != "" : onClickValue = 'onClick="%s"' % onClick
-	else : onClickValue = ""
+def submit(name, value = "", onClick = "", accesskey = None):
+	if value == "": value = name
+	if onClick != "": onClickValue = 'onClick="%s"' % onClick
+	else: onClickValue = ""
 	return '''<input type="submit" name="%s" value="%s" %s %s />''' % (name, value, onClickValue, access_key(accesskey))
-def button(label, value, accesskey = None) :
+def button(label, value, accesskey = None):
 	return '''<a href="%s"><button type="button" %s>%s</button></a>''' % (value, access_key(accesskey), label)
-def select(name, values, current = "", dont_display = (), func = str, accesskey = None) :
+def select(name, values, current = "", dont_display = (), func = str, accesskey = None):
 	data = '<select name="%s" %s>\n' % (name, access_key(accesskey))
-	for value in values :
-		if value in dont_display : continue
-		elif value == current : selected = "selected=selected"
-		else : selected = ""
+	for value in values:
+		if value in dont_display: continue
+		elif value == current: selected = "selected=selected"
+		else: selected = ""
 		data += '	<option value="%s" %s>%s</option>\n' % (value, selected, func(value))
 	data += '</select>'
 	return data
-def	input(name, value, size = 20, maxlength = 1024, disabled = False, password = False, accesskey = None) :
-	if disabled : disabled = 'disabled="disabled"'
-	else : disabled = ""
-	if password : type = "password"
-	else : type = "text"
+def	input(name, value, size = 20, maxlength = 1024, disabled = False, password = False, accesskey = None):
+	if disabled: disabled = 'disabled="disabled"'
+	else: disabled = ""
+	if password: type = "password"
+	else: type = "text"
 	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey)) 
-def	checkbox(name, value, label, checked = False, disabled = False, accesskey = None) :
-	if disabled :
+def	checkbox(name, value, label, checked = False, disabled = False, accesskey = None):
+	if disabled:
 		disabled = 'disabled="disabled"'
-	else :
+	else:
 		disabled = ""
-	if checked :
+	if checked:
 		checked = 'checked="checked"'
-	else :
+	else:
 		checked = ""
 	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>''' % (name, value, checked, disabled, access_key(accesskey), label) 
 
 # HTML DOCUMENT functions
-def acr(word) :
-	try :
+def acr(word):
+	try:
 		return '<acronym title="%s">%s</acronym>' % (acronyms[word.upper()], word)
-	except KeyError :
+	except KeyError:
 		return word
-def menu(uri) :
+def menu(uri):
 	
-	class defdict(dict) :
-		def __init__(self, default='') :
+	class defdict(dict):
+		def __init__(self, default=''):
 			dict.__init__(self)
 			self.default = default
-		def __getitem__(self, key) :
-			try :
+		def __getitem__(self, key):
+			try:
 				return dict.__getitem__(self, key)
-			except KeyError :
+			except KeyError:
 				return self.default
 
 	classes = defdict()
 
-	if uri == '/' :
+	if uri == '/':
 		classes['/'] = ' class="active"'
-	else :
+	else:
 		classes[uri.split('/')[1].split('.')[0]] = ' class="active"'
 
 	return '''
@@ -310,12 +310,12 @@ def menu(uri) :
 		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation'),
 		classes['support'], _('Get product support / help'), _('Support')
 		)
-def page(title, data) :
+def page(title, data):
 	return head(title) + data + tail()
-def head(title = _("administration %s") % configuration.app_name) :
+def head(title = _("administration %s") % configuration.app_name):
 	"""Build the HTML Page header.
-	Bubble Tooltips come from :	http://www.dustindiaz.com/sweet-titles
-	Rounded Divs comme from   : http://www.html.it/articoli/niftycube/index.html
+	Bubble Tooltips come from:	http://www.dustindiaz.com/sweet-titles
+	Rounded Divs comme from  : http://www.html.it/articoli/niftycube/index.html
 	"""
 	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -338,11 +338,11 @@ def head(title = _("administration %s") % configuration.app_name) :
 </head>
 <body>
 """ % (configuration.app_name, title) 
-def tail() :
+def tail():
 	return """\n</body></html>""" 
 
 # LightBox type windows
-def minihead(title = _("administration %s") % configuration.app_name) :
+def minihead(title = _("administration %s") % configuration.app_name):
 	"""Build a mini-HTML page header, for lighbox type popups / windows.  """
 	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -356,17 +356,17 @@ def minihead(title = _("administration %s") % configuration.app_name) :
 </head>
 <body>
 """ % (configuration.app_name, title) 
-def minitail() :
+def minitail():
 	return """</body></html>"""
-def minipage(data) :
+def minipage(data):
 	#return ('%s%s%s' % (minihead(title), data, minitail()))
 	return data
 
-def lbox(data, width = '300px', height = '100px') :
+def lbox(data, width = '300px', height = '100px'):
 	return '''<div style=" margin-top: 20px; text-align: center; min-width: %s; min-height: %s;">%s\n</div>''' % (width, height, data)
 
 # Image generation
-def img(type = 'progressbar', width = 150, height = 22, text = '') :
+def img(type = 'progressbar', width = 150, height = 22, text = ''):
 	"""Create an img with GD, but look in the cache first if the image already exists."""
 
 	# TODO: implement the cache here, before automatic file generation.
@@ -374,9 +374,9 @@ def img(type = 'progressbar', width = 150, height = 22, text = '') :
 	#f=cStringIO.StringIO()
 	#im.writePng(f)
 
-	if type == 'progressbar' :
+	if type == 'progressbar':
 		# return f
 		pass
-	else :
+	else:
 		return None
 
