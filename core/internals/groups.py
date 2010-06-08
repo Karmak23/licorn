@@ -557,23 +557,23 @@ class GroupsController :
 		if users_to_add is None :
 			raise exceptions.BadArgumentError, "You must specify a users list"
 
-		# remove inexistant users from users_to_add
-		tmp = []
+		# remove non-existing users and duplicate logins from users_to_add
+		tmp = {}
 		for login in users_to_add :
-			uid = self.users.login_to_uid(login)
+			if login == '': continue
+			
 			try :
-				self.users.users[uid]
-			except KeyError :
+				uid = self.users.login_to_uid(login)
+			except :
+				logging.notice('Skipping non-existing user %s.' % login)
 				continue
 			else :
-				tmp.append(login)
-		users_to_add = tmp
+				tmp[login] = 1
+		users_to_add = tmp.keys()
 
 		gid = self.name_to_gid(name)
 
 		for u in users_to_add :
-			if u == "" : continue
-
 			if u in GroupsController.groups[gid]['members'] :
 				logging.progress("User %s is already a member of %s, skipped." % (
 					styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)))
