@@ -647,8 +647,10 @@ class UsersController :
 				for file in home_exclude_file_list :
 					if os.path.exists('%s/%s' % (user_home, file)) :
 						home_exclude_list.append(file)
-						all_went_ok &= fsapi.check_posix_ugid_and_perms('%s/%s' % (user_home, file),
-							uid, gid, 00600, batch, auto_answer, self.groups, self)
+						all_went_ok &= fsapi.check_posix_ugid_and_perms('%s/%s' % (
+							user_home, file), uid, gid, 00600, batch, auto_answer,
+							self.groups, self)
+
 				# now that the exclusion list is complete, we can check the base home dir.
 
 				home_dir_info = {
@@ -656,25 +658,32 @@ class UsersController :
 						'user'        : user,
 						'group'       : 'acl',
 						'access_acl'  : "%s,g:%s:r-x,g:www-data:--x,%s" % (acl_base,
-							UsersController.configuration.defaults.admin_group, acl_restrictive_mask),
+							UsersController.configuration.defaults.admin_group,
+							acl_restrictive_mask),
 						'default_acl' : "%s,g:%s:rwx,%s" % (acl_base,
-							UsersController.configuration.defaults.admin_group, acl_mask),
+							UsersController.configuration.defaults.admin_group,
+							acl_mask),
 						'content_acl' : "%s,g:%s:rw@GE,%s" % (file_acl_base,
-							UsersController.configuration.defaults.admin_group, file_acl_mask),
+							UsersController.configuration.defaults.admin_group,
+							file_acl_mask),
 						'exclude'     : home_exclude_list
 						}
 
 				if not batch :
-					logging.progress("Checking user home dir %s contents, this can take a while..." % styles.stylize(styles.ST_PATH, user_home))
+					logging.progress("Checking user home dir %s contents, this can take a while..." % styles.stylize(
+						styles.ST_PATH, user_home))
 
 				try :
-					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls( [ home_dir_info ], batch, auto_answer, UsersController.groups, self)
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+						[ home_dir_info ], batch, auto_answer, UsersController.groups, self)
 				except exceptions.LicornCheckError :
-					logging.warning("User home dir %s is missing, please repair this first." % styles.stylize(styles.ST_PATH, user_home))
+					logging.warning("User home dir %s is missing, please repair this first." % styles.stylize(
+						styles.ST_PATH, user_home))
 					return False
 
 				if special_dirs != [] :
-					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls( special_dirs, batch, auto_answer, UsersController.groups, self)
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+						special_dirs, batch, auto_answer, UsersController.groups, self)
 
 				if not minimal :
 					logging.warning("Extended checks are not yet implemented for users.")
