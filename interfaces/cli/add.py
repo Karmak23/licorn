@@ -115,9 +115,7 @@ def import_users() :
 					user[column] = None
 				else :
 					if column == "password" and number in (lastname_col, firstname_col) :
-						# FIXME: decide wether to kill this code or not.
-						#
-						# AbulEdu specific :
+						# FIXME: decide wether to kill this code or not: 
 						# for small children, make the password as simple as the login to type.
 						# tell validate_name() to be aggressive to achieve this.
 						user[column] = hlstr.validate_name(unicode(line[number], encoding), True)

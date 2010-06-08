@@ -304,7 +304,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler) :
 		if os.getenv('LICORN_DEVEL') :
 			path = os.getcwd()
 		else :
-			path = '/usr/share/licorn/webadmin'
+			path = '/usr/share/licorn/wmi'
 		for word in words :
 			drive, word = os.path.splitdrive(word)
 			head, word = os.path.split(word)

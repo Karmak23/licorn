@@ -37,7 +37,7 @@ buffer_size   = 16*1024
 wmi_group     = 'licorn-wmi'
 log_path      = '/var/log/licornd.log'
 pid_path      = '/var/run/licornd.pid'
-wpid_path     = '/var/run/licornd-webadmin.pid'
+wpid_path     = '/var/run/licornd-wmi.pid'
 dname         = 'licornd'
 
 def terminate_cleanly(signum, frame, threads = []) :

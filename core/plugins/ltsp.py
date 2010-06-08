@@ -74,7 +74,6 @@ class LTSPConfiguration (dict) :
 			#	modern code...
 			#
 			# the comments are a legacy / backward compatibility system
-			# with AbulEdu PHP webadmin which needs these comments.
 			edata = '''#%s debut\n[%s]\n''' % (section, section)
 			section_keys = self[section].keys()
 			section_keys.sort()
