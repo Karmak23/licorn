@@ -603,6 +603,9 @@ class GroupsController :
 					# this is a system group, don't make any symlink !
 					continue
 
+				# brutal fix for #43
+				AddUsersInGroup('users', [ u ])
+
 				uid      = GroupsController.users.login_to_uid(u)
 				link_src = os.path.join(GroupsController.configuration.defaults.home_base_path,
 					GroupsController.configuration.groups.names['plural'], link_basename)
