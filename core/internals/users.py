@@ -330,25 +330,6 @@ class UsersController :
 		# keep the homedir path, to backup it if requested.
 		homedir = UsersController.users[uid]["homeDirectory"]
 
-		if no_archive :
-			import shutil
-			try :
-				shutil.rmtree(homedir)
-			except OSError, e :
-				logging.warning("Home dir %s does not exist, can't delete it !" % styles.stylize(styles.ST_PATH, homedir))
-
-		if not no_archive :
-			UsersController.configuration.CheckBaseDirs(minimal = True, batch = True)
-			user_archive_dir = "%s/%s.deleted.%s" % (UsersController.configuration.home_archive_dir, login, strftime("%Y%m%d-%H%M%S", gmtime()))
-			try :
-				os.rename(homedir, user_archive_dir)
-				logging.info(logging.SYSU_ARCHIVED_USER % (homedir, styles.stylize(styles.ST_PATH, user_archive_dir)))
-			except OSError, e :
-				if e.errno == 2 :
-					logging.warning("Home dir %s does not exist, can't archive it !" % styles.stylize(styles.ST_PATH, homedir))
-				else :
-					raise e
-
 		# Delete user from users list
 		del(UsersController.login_cache[login])
 		del(UsersController.users[uid])
@@ -356,6 +337,29 @@ class UsersController :
 
 		if not batch :
 			self.WriteConf()
+
+		# user is wiped from the system. We should delete or archive the HOME dir now.
+
+		if no_archive :
+			import shutil
+			try :
+				shutil.rmtree(homedir)
+			except OSError, e :
+				logging.warning("Problem deleting home dir %s (was: %s)" % (styles.stylize(styles.ST_PATH, homedir), e))
+
+		else :
+			UsersController.configuration.CheckBaseDirs(minimal = True, batch = True)
+			user_archive_dir = "%s/%s.deleted.%s" % (UsersController.configuration.home_archive_dir,
+				login, strftime("%Y%m%d-%H%M%S", gmtime()))
+			try :
+				os.rename(homedir, user_archive_dir)
+				logging.info(logging.SYSU_ARCHIVED_USER % (homedir,
+					styles.stylize(styles.ST_PATH, user_archive_dir)))
+			except OSError, e :
+				if e.errno == 2 :
+					logging.warning("Home dir %s doesn't exist, thus not archived." % styles.stylize(styles.ST_PATH, homedir))
+				else :
+					raise e
 
 	def ChangeUserPassword(self, login, password = None, display = False) :
 		""" Change the password of a user
