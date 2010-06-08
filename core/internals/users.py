@@ -42,6 +42,9 @@ class UsersController :
 
 		if UsersController.users is None :
 			self.reload()
+	def __del__(self) :
+		# just in case it wasn't done before (in batched operations, for example).
+		self.WriteConf()
 	def reload(self) :
 		""" Load (or reload) the data structures from the system files. """
 		UsersController.users, UsersController.login_cache = self.backend.load_users(self.groups)

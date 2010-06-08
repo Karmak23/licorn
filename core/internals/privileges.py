@@ -27,6 +27,9 @@ class PrivilegesWhiteList(list) :
 			if e.errno == 2 : pass
 			else : raise e
 		# si le fichier contient des doublons, faire plutot : map(lambda (x) : self.append(x), readers.very_simple_conf_load_list(conf_file))
+	def __del__(self) :
+		# just in case it wasn't done before (in batched operations, for example).
+		self.WriteConf()
 	def append(self, privilege) :
 		""" Set append like : no doubles."""
 		try :

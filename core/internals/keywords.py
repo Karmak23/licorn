@@ -24,7 +24,8 @@ class KeywordsController :
 	def __init__(self, configuration) :
 		
 		KeywordsController.configuration = configuration
-		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (configuration.defaults.home_base_path, configuration.groups.names['plural']))
+		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (
+			configuration.defaults.home_base_path, configuration.groups.names['plural']))
 		#
 		# TODO : work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).
@@ -48,6 +49,9 @@ class KeywordsController :
 				pass
 			else : 
 				raise e
+	def __del__(self) :
+		# just in case it wasn't done before (in batched operations, for example).
+		self.WriteConf()
 	def WriteConf(self) :
 		""" Write the keywords data in appropriate system files.""" 
 		lock_file = file_locks.FileLock(self.configuration, self.configuration.keywords_data_file)

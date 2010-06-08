@@ -51,6 +51,9 @@ class GroupsController :
 			self.reload()
 
 		configuration.groups.hidden = self.GetHiddenState()
+	def __del__(self) :
+		# just in case it wasn't done before (in batched operations, for example).
+		self.WriteConf()
 	def reload(self) :
 		""" load or reload internal data structures from files on disk. """
 		GroupsController.groups, GroupsController.name_cache = self.backend.load_groups()
@@ -509,10 +512,12 @@ class GroupsController :
 			if p in GroupsController.profiles :
 				# Add the group in groups list of profiles
 				if name in GroupsController.profiles[p]['groups'] :
-					logging.progress("Group %s already in the list of profile %s." % (styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
+					logging.progress("Group %s already in the list of profile %s." % (
+						styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
 				else :
 					profiles.AddGroupsInProfile([name])
-					logging.info("Added group %s in the groups list of profile %s." % (styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
+					logging.info("Added group %s in the groups list of profile %s." % (
+						styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
 					# Add all 'p''s users in the group 'name'
 					_users_to_add = self.__find_group_members(users, GroupsController.profiles[p]['primary_group'])
 					self.AddUsersInGroup(name, _users_to_add, users)
@@ -570,11 +575,13 @@ class GroupsController :
 			if u == "" : continue
 
 			if u in GroupsController.groups[gid]['members'] :
-				logging.progress("User %s is already a member of %s, skipped." % (styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)))
+				logging.progress("User %s is already a member of %s, skipped." % (
+					styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)))
 			else :
 				GroupsController.groups[gid]['members'].append(u)
 
-				logging.info("Added user %s to members of %s." % (styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)) )
+				logging.info("Added user %s to members of %s." % (
+					styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)) )
 
 				# update the users cache.
 				GroupsController.users.users[GroupsController.users.login_to_uid(u)]['groups'].add(name)
@@ -587,16 +594,20 @@ class GroupsController :
 					link_basename = GroupsController.groups[gid]['name']
 				elif name.startswith(GroupsController.configuration.groups.resp_prefix) :
 					# fix #587 : make symlinks for resps and guests too.
-					link_basename = GroupsController.groups[gid]['name'].replace(GroupsController.configuration.groups.resp_prefix, "", 1)
+					link_basename = GroupsController.groups[gid]['name'].replace(
+						GroupsController.configuration.groups.resp_prefix, "", 1)
 				elif name.startswith(GroupsController.configuration.groups.guest_prefix) :
-					link_basename = GroupsController.groups[gid]['name'].replace(GroupsController.configuration.groups.guest_prefix, "", 1)
+					link_basename = GroupsController.groups[gid]['name'].replace(
+						GroupsController.configuration.groups.guest_prefix, "", 1)
 				else :
 					# this is a system group, don't make any symlink !
 					continue
 
 				uid      = GroupsController.users.login_to_uid(u)
-				link_src = os.path.join(GroupsController.configuration.defaults.home_base_path, GroupsController.configuration.groups.names['plural'], link_basename)
-				link_dst = os.path.join(GroupsController.users.users[uid]['homeDirectory'], link_basename)
+				link_src = os.path.join(GroupsController.configuration.defaults.home_base_path,
+					GroupsController.configuration.groups.names['plural'], link_basename)
+				link_dst = os.path.join(GroupsController.users.users[uid]['homeDirectory'],
+					link_basename)
 				fsapi.make_symlink(link_src, link_dst, batch = batch)
 
 	def RemoveUsersFromGroup(self, name, users_to_remove, batch=False) :
