@@ -363,35 +363,57 @@ class GroupsController:
 		# Delete the group and its (primary) member(s) even if it is not empty
 		if del_users:
 			for login in prim_memb:
-				GroupsController.users.DeleteUser(login, no_archive, batch=batch)
+				GroupsController.users.DeleteUser(login, no_archive,
+					batch=batch)
 
 		if self.is_system_gid(gid):
+			# a system group has no data on disk (no shared directory), just
+			# delete its system data and exit.
 			self.__delete_group(name)
-			# no more to do for a system group
 			return
 
-		# Delete the responsible and guest groups, then the group
-		self.__delete_group('%s%s' % (GroupsController.configuration.groups.resp_prefix, name))
-		self.__delete_group('%s%s' % (GroupsController.configuration.groups.guest_prefix, name))
+		#
+		# For a standard group, there are a few steps more :
+		# 	- delete the responsible and guest groups,
+		#	- then delete the symlinks and the group,
+		#	- then the shared data.
+		# For responsible and guests symlinks, don't do anything : all symlinks
+		# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
+		# work.
+		#
+		self.__delete_group('%s%s' % (
+			GroupsController.configuration.groups.resp_prefix, name))
+		self.__delete_group('%s%s' % (
+			GroupsController.configuration.groups.guest_prefix, name))
 
-		# Remove the shared dir
+		self.CheckGroupSymlinks(gid = gid, group = name, delete = True,
+			batch = True)
+		self.__delete_group(name)
+
+		#
+		# the group information has been wiped out, remove or archive the shared
+		# directory. If anything fails now, this is not a real problem, because
+		# the system configuration data is safe. At worst, there is an orphaned
+		# directory remaining in the arbo, which is harmless.
+		#
 		if no_archive:
 			import shutil
 			shutil.rmtree(home)
 		else:
-			group_archive_dir = "%s/%s.deleted.%s" % (GroupsController.configuration.home_archive_dir, name, strftime("%Y%m%d-%H%M%S", gmtime()))
+			group_archive_dir = "%s/%s.deleted.%s" % (
+				GroupsController.configuration.home_archive_dir, name,
+				strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(home, group_archive_dir)
-				logging.info("Archived %s as %s." % (home, styles.stylize(styles.ST_PATH, group_archive_dir)))
+				logging.info("Archived %s as %s." % (home,
+					styles.stylize(styles.ST_PATH, group_archive_dir)))
 			except OSError, e:
 				if e.errno == 2:
 					# fix #608
-					logging.warning("Can't archive %s, it doesn't exist !" % styles.stylize(styles.ST_PATH, home))
+					logging.warning("Can't archive %s, it doesn't exist !" % \
+						styles.stylize(styles.ST_PATH, home))
 				else:
 					raise e
-
-		self.CheckGroupSymlinks(gid = gid, group = name, delete = True, batch = True)
-		self.__delete_group(name)
 
 	def __delete_group(self, name):
 		""" Delete a POSIX group."""
@@ -399,12 +421,17 @@ class GroupsController:
 		# Remove the group in the groups list of profiles
 		GroupsController.profiles.delete_group_in_profiles(name)
 
-		del(GroupsController.groups[GroupsController.name_cache[name]])
-		del(GroupsController.name_cache[name])
+		try:
+			del(GroupsController.groups[GroupsController.name_cache[name]])
+			del(GroupsController.name_cache[name])
 
-		self.WriteConf()
+			self.WriteConf()
 
-		logging.info(logging.SYSG_DELETED_GROUP % styles.stylize(styles.ST_NAME, name))
+			logging.info(logging.SYSG_DELETED_GROUP % styles.stylize(
+				styles.ST_NAME, name))
+		except KeyError:
+			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST % styles.stylize(
+				styles.ST_NAME, name))
 
 	def RenameGroup(self, profilelist, name, new_name):
 		""" Modify the name of a group."""
@@ -1040,7 +1067,7 @@ class GroupsController:
 				logging.warning('''You passed a gid to name_to_gid(): %s (guess its name is "%s").''' % (styles.stylize(styles.ST_UGID, name), styles.stylize(styles.ST_NAME, GroupsController.groups[name]['name'])))
 			except ValueError:
 				pass
-			raise exceptions.LicornRuntimeException, "The group `%s' doesn't exist." % name
+			raise exceptions.LicornRuntimeException, "The group '%s' doesn't exist." % name
 
 	@staticmethod
 	def is_system_gid(gid):

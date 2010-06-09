@@ -264,6 +264,7 @@ SYSU_SPECIFY_LF_OR_GECOS = "You must specify a lastname and a firstname *or* a G
 ### system.groups: SYSG_* ###
 SYSG_CREATED_GROUP         = "Created group %s."
 SYSG_DELETED_GROUP         = "Deleted group %s."
+SYSG_GROUP_DOESNT_EXIST    = "The group %s doesn't exist on this system."
 SYSG_SYSTEM_GROUP_REQUIRED = "The system group %s is required for the group %s to be fully operationnal."
 SYSG_USER_LACKS_SYMLINK    = "The user %s lacks the symlink to group %s shared dir !"
 
