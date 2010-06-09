@@ -8,7 +8,7 @@ Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 
 """
-import sys.version_info
+from sys                import version_info
 from Queue              import Queue
 from threading          import Thread, Event
 from licorn.foundations import exceptions, logging
@@ -32,7 +32,7 @@ class LicornConfigObject:
 		return data
 
 # in Python 2.6 and 3.0, the singleton implementation is different...
-if version_info[0] = 2 and version_info[1] < 6 :
+if version_info[0] == 2 and version_info[1] < 6 :
 	class Singleton(object):
 		__instances = {}
 		def __new__(cls, *args, **kargs): 
@@ -123,25 +123,30 @@ class StateMachine:
 				handler = self.handlers[newState]
 
 class UGBackend(Singleton):
+	configuration = None
+	users = None
+	groups = None
+	
 	def __init__(self, configuration, users = None, groups = None):
-		self.configuration = configuration
+
+		UGBackend.configuration = configuration
+		
 		if groups:
-			self.groups = groups
-			if self.groups.users:
-				self.users = self.groups.users
+			UGBackend.groups = groups
+			if UGBackend.groups.users:
+				UGBackend.users = UGBackend.groups.users
 		if users:
-			self.users = users
+			UGBackend.users = users
 
 		# for an abstract backend, this is quite sane.
 		self.enabled = False
 	def set_users(self, users):
-		self.users = users
+		UGBackend.users = users
 	def set_groups(self, groups):
-		self.groups = groups
-		self.users = groups.users
+		UGBackend.groups = groups
+		UGBackend.users = groups.users
 	def get_defaults(self):
 		return {}
 	def save_all(self, users, groups):
 		self.save_users(users)
 		self.save_groups(groups)
-
