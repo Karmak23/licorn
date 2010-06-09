@@ -248,12 +248,15 @@ class UsersController:
 					UsersController.configuration.users.base_path, login))
 
 				if UsersController.profiles.profiles[profile]['groups'] != []:
-					groups_to_add_user_to = UsersController.profiles.profiles[profile]['groups']
+					groups_to_add_user_to = \
+						UsersController.profiles.profiles[profile]['groups']
 
 					# don't directly add the user to the groups. prepare the
 					# groups to use the Licorn API later, to create the groups
 					# symlinks while adding user to them.
-					# useradd_options.append("-G " + ",".join(UsersController.profiles.profiles[profile]['groups']))
+					#
+					# useradd_options.append("-G " + ",".join(
+					# UsersController.profiles.profiles[profile]['groups']))
 					
 				if skel is None:
 					skel_to_apply = \
@@ -357,7 +360,8 @@ class UsersController:
 				pass
 				#os.popen2( [ 'quotatool', '-u', str(uid), '-b', UsersController.configuration.defaults.quota_device, '-l' '%sMB' % UsersController.profiles.profiles[profile]['quota'] ] )[1].read()
 				#logging.warning("quotas are disabled !")
-				# XXX: Quotatool can return 2 without apparent reason (the quota is etablished) !
+				# XXX: Quotatool can return 2 without apparent reason
+				# (the quota is etablished) !
 			except exceptions.LicornException, e:
 				logging.warning( "ROLLBACK create user because '%s'." % str(e))
 				self.DeleteUser(login, True)
@@ -406,8 +410,8 @@ class UsersController:
 		# Delete user from users list
 		del(UsersController.login_cache[login])
 		del(UsersController.users[uid])
-		logging.info(logging.SYSU_DELETED_USER % styles.stylize(styles.ST_LOGIN,
-			login))
+		logging.info(logging.SYSU_DELETED_USER % \
+			styles.stylize(styles.ST_LOGIN, login))
 
 		if not batch:
 			self.WriteConf()
@@ -492,7 +496,8 @@ class UsersController:
 
 		if not hlstr.cregex['description'].match(gecos):
 			raise exceptions.BadArgumentError(logging.SYSU_MALFORMED_GECOS % (
-				gecos, styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
+				gecos,
+				styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
 
 		uid = UsersController.login_to_uid(login)
 		UsersController.users[uid]['gecos'] = gecos
@@ -516,7 +521,6 @@ class UsersController:
 		"""(Un)Lock a user account."""
 		if login is None:
 			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
-
 
 		if lock:
 			# we must set /bin/false, else remote SSH connections with keys
@@ -698,34 +702,34 @@ class UsersController:
 				special_dirs      = []
 
 				special_dirs.extend([ {
-							'path'       : "%s/%s" % (user_home, dir),
-							'user'       : user,
-							'group'      : group,
-							'mode'       : 00700,
-							'content_mode': 00600
-						} for dir in home_exclude_list if \
-							os.path.exists('%s/%s' % (user_home, dir)) ])
+					'path'       : "%s/%s" % (user_home, dir),
+					'user'       : user,
+					'group'      : group,
+					'mode'       : 00700,
+					'content_mode': 00600
+					} for dir in home_exclude_list if \
+						os.path.exists('%s/%s' % (user_home, dir)) ])
 
 				if os.path.exists('%s/public_html' % user_home):
 
 					home_exclude_list.append('public_html')
 
 					special_dirs.append ( {
-							'path'      : "%s/public_html" % user_home,
-							'user'      : user,
-							'group'     : 'acl',
-							'access_acl': "%s,g:%s:r-x,g:www-data:r-x,%s" % (
-								acl_base,
-								UsersController.configuration.defaults.admin_group,
-								acl_restrictive_mask),
-							'default_acl': "%s,g:%s:rwx,g:www-data:r-x,%s" % (
-								acl_base,
-								UsersController.configuration.defaults.admin_group,
-								acl_mask),
-							'content_acl': "%s,g:%s:rw-,g:www-data:r--,%s" % (
-								file_acl_base,
-								UsersController.configuration.defaults.admin_group,
-								file_acl_mask),
+						'path'      : "%s/public_html" % user_home,
+						'user'      : user,
+						'group'     : 'acl',
+						'access_acl': "%s,g:%s:r-x,g:www-data:r-x,%s" % (
+							acl_base,
+							UsersController.configuration.defaults.admin_group,
+							acl_restrictive_mask),
+						'default_acl': "%s,g:%s:rwx,g:www-data:r-x,%s" % (
+							acl_base,
+							UsersController.configuration.defaults.admin_group,
+							acl_mask),
+						'content_acl': "%s,g:%s:rw-,g:www-data:r--,%s" % (
+							file_acl_base,
+							UsersController.configuration.defaults.admin_group,
+							file_acl_mask),
 						} )
 
 				#
@@ -776,21 +780,21 @@ class UsersController:
 				# dir. For that we need a dir_info with the correct information.
 
 				home_dir_info = {
-						'path'      : UsersController.users[uid]['homeDirectory'],
-						'user'      : user,
-						'group'     : 'acl',
-						'access_acl': "%s,g:%s:r-x,g:www-data:--x,%s" % (
-							acl_base,
-							UsersController.configuration.defaults.admin_group,
-							acl_restrictive_mask),
-						'default_acl': "%s,g:%s:rwx,%s" % (acl_base,
-							UsersController.configuration.defaults.admin_group,
-							acl_mask),
-						'content_acl': "%s,g:%s:rw@GE,%s" % (file_acl_base,
-							UsersController.configuration.defaults.admin_group,
-							file_acl_mask),
-						'exclude'   : home_exclude_list
-						}
+					'path'      : UsersController.users[uid]['homeDirectory'],
+					'user'      : user,
+					'group'     : 'acl',
+					'access_acl': "%s,g:%s:r-x,g:www-data:--x,%s" % (
+						acl_base,
+						UsersController.configuration.defaults.admin_group,
+						acl_restrictive_mask),
+					'default_acl': "%s,g:%s:rwx,%s" % (acl_base,
+						UsersController.configuration.defaults.admin_group,
+						acl_mask),
+					'content_acl': "%s,g:%s:rw@GE,%s" % (file_acl_base,
+						UsersController.configuration.defaults.admin_group,
+						file_acl_mask),
+					'exclude'   : home_exclude_list
+					}
 
 				if not batch:
 					logging.progress("Checking user home dir %s contents,"
@@ -820,8 +824,10 @@ class UsersController:
 					#	if not self.CleanUserHome(login, batch, auto_answer):
 					#		all_went_ok = False
 
-					# TODO: tous les groupes de cet utilisateur existent et sont OK (CheckGroups recursif)
-					# WARNING: Forcer minimal = True pour éviter les checks récursifs avec CheckGroups()
+					# TODO: tous les groupes de cet utilisateur existent et
+					# sont OK (CheckGroups recursif) WARNING: Forcer
+					# minimal = True pour éviter les checks récursifs avec
+					# CheckGroups().
 
 				return all_went_ok
 
@@ -843,7 +849,8 @@ class UsersController:
 
 	@staticmethod
 	def check_password(login, password):
-		crypted_passwd = UsersController.users[UsersController.login_cache[login]]['crypted_password']
+		crypted_passwd = UsersController.users[
+			UsersController.login_cache[login]]['crypted_password']
 		return (crypted_passwd == crypt.crypt(password, crypted_passwd))
 
 	@staticmethod
@@ -906,7 +913,8 @@ class UsersController:
 	@staticmethod
 	def primary_group(login = None, uid = None):
 		if login:
-			return UsersController.users[UsersController.login_cache[login]]['primary_group']
+			return UsersController.users[
+				UsersController.login_cache[login]]['primary_group']
 		if uid:
 			return UsersController.users[uid]['primary_group']
 
