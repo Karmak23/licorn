@@ -157,8 +157,8 @@ if __name__ == "__main__":
 								except exceptions.LicornException, e:
 									raise exceptions.LicornRuntimeError("Unable to remove user(s) %s from group %s (was: %s)."
 										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-					else:
-						delete_user()
+				else:
+					delete_user()
 
 			elif mode == 'group':
 				(opts, args) = argparser.delete_group_parse_arguments(_app)
