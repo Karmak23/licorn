@@ -43,6 +43,14 @@ class FileLock:
 		self.wait    = waitmax
 		self.verbose = verbose
 
+	#
+	# Make FileLock be usable as a context manager.
+	#
+	def __enter__(self):
+		self.Lock()
+	def __exit__(self, type, value, tb):
+		self.Unlock()
+
 	def Lock(self):
 		"""Acquire a lock, i.e. create $file.lock."""
 		logging.progress('%s: pseudo-locking %s.' % (self.pretty_name,
