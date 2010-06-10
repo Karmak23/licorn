@@ -330,7 +330,7 @@ class unix_backend(UGBackend):
 		lock_etc_gshadow = file_locks.FileLock(UGBackend.configuration,
 												"/etc/gshadow")
 		lock_ext_group   = file_locks.FileLock(UGBackend.configuration,
-									UGBackend.configuration.extendedgroup_data_file)
+								UGBackend.configuration.extendedgroup_data_file)
 
 		logging.progress("Writing groups configuration to disk...")
 		
