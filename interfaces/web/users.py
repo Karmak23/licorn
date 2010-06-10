@@ -264,7 +264,7 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 
 	else:
 		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
+		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', apply_skel ]
 
 		data += w.page_body_end()
 
