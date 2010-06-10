@@ -12,8 +12,8 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys
+output = sys.stdout.write
 from licorn.foundations import logging, exceptions, options
-from licorn.core        import configuration, users, groups, profiles, keywords
 
 _app = {
 	"name"     		: "licorn-getent",
@@ -21,8 +21,10 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def getent_users():
+def getent_users(opts, args):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
+
+	from licorn.core import users
 
 	if opts.uid is not None:
 		try:
@@ -38,9 +40,11 @@ def getent_users():
 		data = users.ExportCLI(opts.long)
 
 	if data and data != '\n':
-		sys.stdout.write(data)
-def getent_groups():
+		output(data)
+def getent_groups(opts, args):
 	""" Get the list of POSIX groups (can be LDAP). """
+
+	from licorn.core import groups
 
 	if opts.gid is not None:
 		try:
@@ -70,9 +74,11 @@ def getent_groups():
 		data = groups.ExportCLI()
 
 	if data and data != '\n':
-		sys.stdout.write(data)
-def getent_profiles():
+		output(data)
+def getent_profiles(opts, args):
 	""" Get the list of user profiles. """
+
+	from licorn.core import profiles
 
 	if opts.profile is not None:
 		try:
@@ -86,18 +92,20 @@ def getent_profiles():
 		data = profiles.ExportCLI()
 
 	if data:
-		sys.stdout.write(data)
-def getent_keywords():
+		output(data)
+def getent_keywords(opts, args):
 	""" Get the list of keywords. """
 
+	from licorn.core import keywords
+	
 	if opts.xml:
 		data = keywords.ExportXML()
 	else:		
 		data = keywords.Export()
 	
 	if data and data != '\n':
-		sys.stdout.write(data)
-def getent_webfilters(args):
+		output(data)
+def getent_webfilters(opts, args):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
 	"""
@@ -150,73 +158,45 @@ def getent_webfilters(args):
 			print fd.Export("whitelist", "domains")
 	else:
 		print "Options are: time-constraints | forbidden-destinations"
-def getent_workstations():
+def getent_workstations(opts, args):
 	""" Get the list of workstations known from the server (attached or not).
 	"""
 	raise NotImplementedError("getent_workstations not implemented.")
-def getent_internet_types():
+def getent_internet_types(opts, args):
 	""" Get the list of known internet connection types.
 
 		This list is static: there are only a fixed number of connexions
 		we know (pppoe, router on (eth0|eth1), analog modem, manual).
 	"""
 	raise NotImplementedError("getent_internet_types not implemented.")
-def getent_configuration():
+def getent_configuration(opts, args):
 	""" Output th current Licorn system configuration.
 	"""
+	from licorn.core import configuration
 
 	if len(args) > 1:
-		sys.stdout.write(configuration.Export(args = args[1:], cli_format = opts.cli_format))
+		output(configuration.Export(args = args[1:], cli_format = opts.cli_format))
 	else:
-		sys.stdout.write(configuration.Export())
+		output(configuration.Export())
 
 if __name__ == "__main__":
 
-	try:
-		try:
-			if "--no-colors" in sys.argv:
-				options.SetNoColors(True)
+	import argparser
+	from licorn.interfaces.cli import cli_main
+	
+	functions = {
+		'user':	         (argparser.getent_users_parse_arguments, getent_users),
+		'users':         (argparser.getent_users_parse_arguments, getent_users),
+		'passwd':        (argparser.getent_users_parse_arguments, getent_users),
+		'group':         (argparser.getent_groups_parse_arguments, getent_groups),
+		'groups':        (argparser.getent_groups_parse_arguments, getent_groups),
+		'profile':       (argparser.getent_profiles_parse_arguments, getent_profiles),
+		'profiles':      (argparser.getent_profiles_parse_arguments, getent_profiles),
+		'config':        (argparser.getent_configuration_parse_arguments, getent_configuration),
+		'configuration': (argparser.getent_configuration_parse_arguments, getent_configuration),
+		'kw':            (argparser.getent_keywords_parse_arguments, getent_keywords),
+		'keywords':      (argparser.getent_keywords_parse_arguments, getent_keywords),
+	}
 
-			import argparser
+	cli_main(functions, _app)
 
-			if len(sys.argv) < 2:
-				# auto-display usage when called with no arguments or just one.
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-			mode = sys.argv[1]
-
-			if mode in ('user', 'users', 'passwd'):
-				(opts, args) = argparser.getent_users_parse_arguments(_app)
-				options.SetFrom(opts)
-				getent_users()
-			elif mode in ('group', 'groups'):
-				(opts, args) = argparser.getent_groups_parse_arguments(_app)
-				options.SetFrom(opts)
-				getent_groups()
-			elif mode in ('profile', 'profiles'):
-				(opts, args) = argparser.getent_profiles_parse_arguments(_app)
-				options.SetFrom(opts)
-				getent_profiles()
-			elif mode in ('config', 'configuration'):
-				(opts, args) = argparser.getent_configuration_parse_arguments(_app)
-				options.SetFrom(opts)
-				getent_configuration()
-			elif mode in ('kw', 'keywords'):
-				(opts, args) = argparser.getent_keywords_parse_arguments(_app)
-				options.SetFrom(opts)
-				getent_keywords()
-			else:
-				if mode != '--version':
-					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-		except exceptions.LicornException, e:
-			logging.error (str(e), e.errno)
-
-		except KeyboardInterrupt:
-			logging.warning(logging.GENERAL_INTERRUPTED)
-
-	finally:
-		configuration.CleanUp()
