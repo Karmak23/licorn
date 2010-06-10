@@ -113,6 +113,14 @@ class LicornConfiguration (object):
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError("Configuration initialization failed:\n\t%s" % e)
 
+	#
+	# make configuration be usable as a context manager.
+	#
+	def __enter__(self):
+		pass
+	def __exit__(self, type, value, tb):
+		self.CleanUp()
+		
 	def CleanUp(self):
 		"""This is a sort of destructor. Clean-up before being deleted..."""
 
