@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import sys, os, time
-from licorn.foundations import styles
+from licorn.foundations import styles, logging, exceptions
 
 class FileLock:
 	"""
@@ -20,11 +20,14 @@ class FileLock:
 
 	"""
 
-	def __init__(self, configuration, filename = "default", waitmax = 30, verbose = True):
-		#
-		# TODO: use debug / logging in this class.
+	def __init__(self, configuration, filename = None, waitmax = 10, verbose = True):
+
 		# TODO: don't blow up if user_dir isn't set (which is the case for daemon user)
-		#
+
+		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
+
+		if filename is None :
+			raise exceptions.LicornRuntimeError("please specify a file to lock")
 
 		if filename[0] == '/':
 			self.filename = filename + '.lock'
@@ -33,11 +36,18 @@ class FileLock:
 			self.filename = "%s/%s.lock" % (configuration.user_dir, filename)
 			self.lockname = filename
 
+		logging.progress('%s: new instance with %s.' % (self.pretty_name,
+			styles.stylize(styles.ST_PATH, self.filename)))
+
 		self.waitmax = waitmax
 		self.wait    = waitmax
 		self.verbose = verbose
 
 	def Lock(self):
+		"""Acquire a lock, i.e. create $file.lock."""
+		logging.progress('%s: pseudo-locking %s.' % (self.pretty_name,
+			styles.stylize(styles.ST_PATH, self.lockname)))
+
 		try:
 			self.wait = self.waitmax
 			while os.path.exists(self.filename) and self.wait >= 0:
@@ -56,17 +66,32 @@ class FileLock:
 				try:
 					open(self.filename, "w")
 				except (IOError, OSError):
-					raise IOError, "can't create lockfile %s." % self.filename
+					raise IOError, "Can't create lockfile %s." % self.filename
 
 		except KeyboardInterrupt:
 			sys.stderr.write("\n")
 			raise
+
+		logging.progress('%s: successfully locked %s.' % (self.pretty_name,
+			styles.stylize(styles.ST_PATH, self.filename)))
+
 	def Unlock(self):
+		"""Free the lock by removing the associated lockfile."""
+		
+		logging.progress('%s: removing lock on %s.' % (self.pretty_name,
+			styles.stylize(styles.ST_PATH, self.lockname)))
+
 		if os.path.exists(self.filename):
 			try:
 				os.unlink(self.filename)
 			except (OSError):
 				raise OSError, "can't remove lockfile %s." % self.filename
+
+		logging.progress('%s: successfully unlocked %s.' % (self.pretty_name,
+			styles.stylize(styles.ST_PATH, self.filename)))
+
 	def IsLocked(self):
+		"""Tell if a file is currently locked by looking if the associated lock
+		is present."""
 		return os.path.exists(self.filename)
 
