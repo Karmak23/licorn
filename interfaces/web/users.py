@@ -426,6 +426,10 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 	# TODO: Change test since message received: Added user <login>
 	if retval != "":
 		return w.page(title, data + retval)
+		
+	# XXX: this is less than suboptimal to have to do this here...
+	# but without this, adding to supplemental groups doesnt work.
+	users.reload()
 	
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 	add_groups = ','.join(__merge_multi_select(standard_groups_dest, privileged_groups_dest, responsible_groups_dest, guest_groups_dest))
