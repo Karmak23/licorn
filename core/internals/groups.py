@@ -34,8 +34,10 @@ class GroupsController:
 
 	def __init__ (self, configuration, users, warnings = True):
 
-		GroupsController.configuration = configuration
+		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
+		GroupsController.configuration = configuration
+	
 		GroupsController.users = users
 		users.SetGroups(self)
 
@@ -51,6 +53,10 @@ class GroupsController:
 			self.reload()
 
 		configuration.groups.hidden = self.GetHiddenState()
+
+		logging.progress('%s: new instance created.' % self.pretty_name)
+	
+		
 	def __del__(self):
 		# just in case it wasn't done before (in batched operations, for example).
 		self.WriteConf()
@@ -79,6 +85,11 @@ class GroupsController:
 		GroupsController.profiles = profiles
 
 	def WriteConf(self):
+		""" Save Configuration (internal data structure to disk). """
+
+		logging.progress('%s: saving data structures to disk.' % \
+			self.pretty_name)
+			
 		self.backend.save_groups(self.groups)
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
