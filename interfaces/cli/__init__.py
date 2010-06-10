@@ -30,7 +30,8 @@ def __cli_main(functions, app_data):
 		if mode in functions.keys():
 			(opts, args) = functions[mode][0](app_data)
 			options.SetFrom(opts)
-			from licorn.core import configuration, users, groups, profiles, keywords
+			from licorn.core import configuration, users, groups, profiles, \
+				keywords
 			functions[mode][1](opts, args)
 		else:
 			if mode != '--version':
@@ -44,8 +45,12 @@ def __cli_main(functions, app_data):
 	except KeyboardInterrupt:
 		logging.warning(logging.GENERAL_INTERRUPTED)
 
-def cli_main(functions, app_data, giant_locked = False):
-	""" common structure for all licorn cli tools. """
+def cli_main(functions, app_data, second_level_help = False,
+				giant_locked = False):
+	""" common structure for all licorn cli tools.
+		Set second_level_help if commands have a more precise help messages
+		(this is mostly the case for all licorn commands).
+	"""
 
 	from licorn.core import configuration
 	from licorn.foundations.file_locks import FileLock
