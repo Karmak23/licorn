@@ -15,24 +15,26 @@ from licorn.core.internals import readers
 
 
 class KeywordsController:
-	
+
 	keywords      = {}
 	configuration = None
 	licorn_xattr  = "user.Licorn.keywords"
 	work_path     = None
-	
+
 	def __init__(self, configuration):
-		
+
+		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
+
 		KeywordsController.configuration = configuration
 		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (
 			configuration.defaults.home_base_path, configuration.groups.names['plural']))
 		#
 		# TODO: work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).
-		# 
+		#
 		# TODO: implement work_path with more than one path (/home/groups:/home/olive:/data/special)
 		#
-		
+
 		def import_keywords(entry):
 			if len(entry) == 3:
 				temp_kw_dict	= {
@@ -41,19 +43,22 @@ class KeywordsController:
 							'description': entry[2]
 							}
 				self.keywords[temp_kw_dict['name']] = temp_kw_dict
-			
+
 		try:
 			map(import_keywords, readers.ug_conf_load_list(configuration.keywords_data_file))
 		except IOError, e:
 			if e.errno == 2:
 				pass
-			else: 
+			else:
 				raise e
 	def __del__(self):
 		# just in case it wasn't done before (in batched operations, for example).
 		self.WriteConf()
 	def WriteConf(self):
-		""" Write the keywords data in appropriate system files.""" 
+		""" Write the keywords data in appropriate system files."""
+		logging.progress('%s: saving data structures to disk.' % \
+			self.pretty_name)
+
 		lock_file = file_locks.FileLock(self.configuration, self.configuration.keywords_data_file)
 
 		lock_file.Lock()
@@ -76,7 +81,7 @@ class KeywordsController:
 		<parent>%s</parent>
 		<description>%s</description>
 	</keyword>""" % (self.keywords[name]['name'], self.keywords[name]['parent'], self.keywords[name]['description'])
-			
+
 		return """<?xml version='1.0' encoding=\"UTF-8\"?>
 <keywords-list>
 	%s
@@ -86,10 +91,10 @@ class KeywordsController:
 		""" Add a new keyword on the system, provided some checks are OK. """
 		if name is None:
 			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
-		
+
 		if name in self.keywords.keys():
 			raise exceptions.AlreadyExistsException, "A keyword named « %s » already exists !" % name
-			
+
 		if parent != "":
 			if parent not in self.keywords.keys():
 				raise exceptions.BadArgumentError("The parent you specified doesn't exist on this system.")
@@ -109,7 +114,7 @@ class KeywordsController:
 		"""
 		if name is None:
 			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
-		
+
 		try:
 			children = self.Children(name)
 			if children != []:
@@ -119,7 +124,7 @@ class KeywordsController:
 				else:
 					raise exceptions.LicornException("The keyword is a parent which has children. If you want to delete children too, use option --del-children")
 			del(self.keywords[name])
-			
+
 			if modify_file:
 				# TODO: affine the path
 				self.DeleteKeywordsFromPath(self.work_path, [name], recursive=True)
@@ -230,11 +235,11 @@ class KeywordsController:
 					logging.warning("Unable to modify %s xattr of %s (was: %s)." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_PATH, file_path), e))
 				else:
 					raise e
-					
+
 		# file case
 		if os.path.isfile(path):
 			__add_keywords_to_file(path)
-			
+
 		# dir case
 		else:
 			if recursive: max = 99
@@ -244,7 +249,7 @@ class KeywordsController:
 				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG) )
 	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False):
 		""" Delete keywords from a file or directory files
-		"""	
+		"""
 		def __delete_keywords_from_file(file_path):
 			actual_kw = []
 			try:
@@ -272,11 +277,11 @@ class KeywordsController:
 					logging.warning("Unable to modify %s xattr of %s (was: %s)." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_PATH, file_path), e))
 				else:
 					raise e
-			
+
 		# file case
 		if os.path.isfile(path):
 			__delete_keywords_from_file(path)
-			
+
 		# dir case
 		else:
 			if recursive: max = 99
@@ -297,7 +302,7 @@ class KeywordsController:
 		if os.path.isfile(path):
 			logging.info("remove xattr from %s." % styles.stylize(styles.ST_PATH, path))
 			xattr.setxattr(path, self.licorn_xattr, "")
-			
+
 		# dir case
 		else:
 			if recursive: max = 99
@@ -323,7 +328,7 @@ class KeywordsController:
 			except (IOError,OSError), e:
 				if e.errno in (13,61):
 					return False
-					
+
 			for parent in search_dict:
 				bool = False
 				for k in search_dict[parent]:
@@ -331,7 +336,7 @@ class KeywordsController:
 				if not bool:
 					return False
 			return True
-		
+
 		# TODO: affine the path
 		paths = filter(
 			search,
