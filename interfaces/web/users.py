@@ -9,10 +9,10 @@ from licorn.interfaces.web import utils as w
 #remove this after testing
 reload(w)
 
-groups_filters_lists_ids = ( 
+groups_filters_lists_ids = (
 	(groups.FILTER_STANDARD, [_('Customize groups'),           _('Available groups'),           _('Affected groups')],           'standard_groups'),
 	(groups.FILTER_PRIVILEGED, [_('Customize privileges'),     _('Available privileges'),       _('granted privileges')],        'privileged_groups'),
-	(groups.FILTER_RESPONSIBLE, [_('Assign responsibilities'), _('Available responsibilities'), _('Assigned responsibilities')], 'responsible_groups'), 
+	(groups.FILTER_RESPONSIBLE, [_('Assign responsibilities'), _('Available responsibilities'), _('Assigned responsibilities')], 'responsible_groups'),
 	(groups.FILTER_GUEST, [_('Propose invitations'),           _('Available invitations'),      _('Offered invitations')],       'guest_groups') )
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
@@ -34,7 +34,7 @@ def ctxtnav(active = True):
 		onClick = '';
 	else:
 		disabled = 'un-clickable';
-		onClick  = 'onClick="javascript: return(false);"' 
+		onClick  = 'onClick="javascript: return(false);"'
 
 	return '''
 	<div id="ctxtnav" class="nav">
@@ -65,13 +65,13 @@ def export(uri, http_user, type = "", yes = None):
 
 	title = _("Export user accounts list")
 	data  = '<div id="banner">\n%s\n%s</div>\n%s\n<div id="main">\n%s\n<div id="content"><h1>%s</h1>' % (
-		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title) 
+		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title)
 
 	if type == "":
 		description = _('''CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser.''')
-		
+
 		form_options = _("Which file format do you want accounts to be exported to? %s") % w.select("type", [ "CSV", "XML"])
-	
+
 		data += w.question(_("Please choose file format for export list"),
 			description,
 			yes_values   = [ _("Export >>"), "/users/export", "E" ],
@@ -91,7 +91,7 @@ def export(uri, http_user, type = "", yes = None):
 		#header("Pragma: no-cache");
 		#header("Expires: 0");
 
-		if type == "CSV": 
+		if type == "CSV":
 			return users.ExportCSV()
 		else:
 			return users.ExportXML()
@@ -105,16 +105,16 @@ def delete(uri, http_user, login, sure = False, no_archive = False, yes = None):
 
 	title = _("Remove user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
-	
+
 	if not sure:
 		data += w.question(_("Are you sure you want to remove account <strong>%s</strong>?") % login,
 			_("""User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong>
 				in directory <code>%s</code> and members of group <strong>%s</strong> will be able to access
-				it to operate an eventual recover.<br />However, you can decide to permanently 
+				it to operate an eventual recover.<br />However, you can decide to permanently
 				remove it.""") % (configuration.home_archive_dir, configuration.defaults.admin_group),
 			yes_values   = [ _("Remove >>"), "/users/delete/%s/sure" % login, _("R") ],
 			no_values    = [ _("<< Cancel"),   "/users/list",                 _("C") ],
-			form_options = w.checkbox("no_archive", "True", 
+			form_options = w.checkbox("no_archive", "True",
 				_("Definitely remove account data (no archiving)."),
 				checked = False) )
 
@@ -133,12 +133,12 @@ def delete(uri, http_user, login, sure = False, no_archive = False, yes = None):
 
 		if no_archive:
 			command.extend(['--no-archive'])
-		
+
 		data += w.page_body_end()
 
 		return w.page(title, data + w.run(command, uri,
 			err_msg = _("Failed to remove account <strong>%s</strong>!") % login))
-		
+
 # locking and unlocking.
 def unlock(uri, http_user, login):
 	"""unlock a user account password."""
@@ -156,14 +156,14 @@ def unlock(uri, http_user, login):
 
 	command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--unlock" ]
 
-	return w.page(title, data + 
+	return w.page(title, data +
 		w.run(command, uri, err_msg = _("Failed to unlock account <strong>%s</strong>!") % login))
 def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = None):
 	"""lock a user account password."""
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del yes
-	
+
 	groups.reload()
 	users.reload()
 
@@ -173,20 +173,23 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 	if not sure:
 		description = _('''This will prevent user to connect to network clients (thin ones,
 			and Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones).''') % w.acr('GNU')
-		
-		# TODO: Vérifier que le groupe "remotessh" existe bien sur le système...
-		if login in groups.all_members('remotessh'):
-			description += _("""<br /><br />
-				But this will not block incoming %s network connections, if the user
-				uses %s %s or %s public/private keys. To block ANY access to the system,
-				<strong>remove him/her from remotessh group</strong>.""") % (w.acr('SSH'),
-				w.acr('SSH'), w.acr('RSA'), w.acr('DSA'))
-			form_options = w.checkbox("remove_remotessh", "True",
-				_("Remove user from group <code>remotessh</code> in the same time."),
-				checked = True, accesskey = _('R'))
+
+
+		if configuration.ssh.enabled :
+			if login in groups.all_members(configuration.ssh.group):
+				description += _("""<br /><br />
+					But this will not block incoming %s network connections, if the user
+					uses %s %s or %s public/private keys. To block ANY access to the system,
+					<strong>remove him/her from %s group</strong>.""") % (w.acr('SSH'),
+					w.acr('SSH'), w.acr('RSA'), w.acr('DSA'), configuration.ssh.group)
+				form_options = w.checkbox("remove_remotessh", "True",
+					_("Remove user from group <code>remotessh</code> in the same time."),
+					checked = True, accesskey = _('R'))
+			else:
+				form_options = None
 		else:
 			form_options = None
-	
+
 		data += w.question(_("Are you sure you want to lock account <strong>%s</strong>?") % login,
 			description,
 			yes_values   = [ _("Lock >>"), "/users/lock/%s/sure" % login, _("L") ],
@@ -206,9 +209,9 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False, yes = No
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, "--lock" ]
 
-		if remove_remotessh:
-			command.extend(['--del-groups', 'remotessh'])
-		
+		if configuration.ssh.enabled and remove_remotessh:
+			command.extend(['--del-groups', configuration.ssh.group])
+
 		data += w.page_body_end()
 
 		return w.page(title, data +
@@ -220,11 +223,11 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 
 	# forget about it, this is a scoria from the POST FORM to variable conversion.
 	del yes
-	
+
 	# TODO: profiles.reload()
 	groups.reload()
 	users.reload()
-	
+
 	u = users.users
 	g = groups.groups
 
@@ -236,9 +239,9 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 
 	if not sure:
 		description = _('''This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.''')
-		
+
 		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
-		
+
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
 			'''
@@ -250,9 +253,9 @@ def skel(uri, http_user, login, sure = False, apply_skel = configuration.users.d
 			else:
 			'''
 			return sk_list
-			
+
 		form_options = _("Which skel do you want to apply? %s") % w.select("apply_skel", filter_skels(pri_group, configuration.users.skels), func = os.path.basename)
-	
+
 		data += w.question(_("Are you sure you want to apply this skel to account <strong>%s</strong>?") % login,
 			description,
 			yes_values   = [ _("Apply >>"), "/users/skel/%s/sure" % login, _("A") ],
@@ -277,10 +280,10 @@ def new(uri, http_user):
 
 	# TODO: profiles.reload()
 	groups.reload()
-	
+
 	g = groups.groups
 	p = profiles.profiles
-	
+
 	title = _("New user account")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
@@ -397,7 +400,7 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 
 	title = _("New user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
-	
+
 	if password != password_confirm:
 		return w.page(title, data + w.error(_("Passwords do not match!%s") % rewind))
 
@@ -410,7 +413,7 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 		command.extend(['--firstname', firstname, '--lastname', lastname])
 	if gecos != '':
 		command.extend(['--gecos', gecos])
-	
+
 	# TODO: set a default profile (see issue #6)
 	if profile != None:
 		command.extend([ "--profile", profile ])
@@ -420,17 +423,17 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 	else:
 		# TODO: Idem, "gecos" should be tested against emptyness
 		command.extend([ '--login', hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
-	
+
 	retval = w.run(command, uri, err_msg = _('Failed to create account <strong>%s</strong>!') % login)
 
 	# TODO: Change test since message received: Added user <login>
 	if retval != "":
 		return w.page(title, data + retval)
-		
+
 	# XXX: this is less than suboptimal to have to do this here...
 	# but without this, adding to supplemental groups doesnt work.
 	users.reload()
-	
+
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login", login, "--shell", loginShell ]
 	add_groups = ','.join(__merge_multi_select(standard_groups_dest, privileged_groups_dest, responsible_groups_dest, guest_groups_dest))
 
@@ -439,7 +442,7 @@ def create(uri, http_user, loginShell, password, password_confirm, profile = Non
 
 	data += w.page_body_end()
 
-	return w.page(title, 
+	return w.page(title,
 		data + w.run(command, uri,
 		err_msg = _('Failed to add user <strong>%s</strong> to requested groups/privileges/responsibilities/invitations!') % login))
 
@@ -451,7 +454,7 @@ def edit(uri, http_user, login):
 	users.reload()
 	# TODO: profiles.reload()
 
-	title = _('Edit account %s') % login 
+	title = _('Edit account %s') % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if users.is_system_login(login):
@@ -559,10 +562,10 @@ def edit(uri, http_user, login):
 			w.button(_('<< Cancel'), "/users/list"),
 			w.submit('record', _('Record changes >>'), onClick = "selectAllMultiValues('%s');" % form_name)
 			)
-	
+
 	except exceptions.LicornException, e:
 		data += w.error("Account %s does not exist (%s)!" % (login, "user = users.users[users.login_to_uid(login)]", e))
-	
+
 	data += w.page_body_end()
 
 	return w.page(title, data)
@@ -605,7 +608,7 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 
 	if add_groups != "":
 		command.extend([ '--add-groups', add_groups ])
-		
+
 	if del_groups != "":
 		command.extend(['--del-groups', del_groups ])
 
@@ -616,7 +619,7 @@ def record(uri, http_user, login, loginShell = configuration.users.default_shell
 
 # list user accounts.
 def main(uri, http_user, sort = "login", order = "asc"):
-		
+
 	start = time.time()
 
 	groups.reload()
@@ -638,7 +641,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 
 	groups.Select(groups.FILTER_STANDARD)
 	std_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
-	
+
 	accounts = {}
 	ordered  = {}
 	totals   = {}
@@ -693,7 +696,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 		</td>
 		<td style="text-align:center;">%s</td>
 			''' % (login, edit, u[uid]['gecos'],
-			login, edit, login, 
+			login, edit, login,
 			accounts[uid]['profile_name'])
 
 		if u[uid]['locked']:
@@ -720,19 +723,19 @@ def main(uri, http_user, sort = "login", order = "asc"):
 		</td>
 	</tr>
 			''' % (login, _("""Reapply origin skel data in the personnal directory of user. This is usefull
-				when user has lost icons, or modified too much his/her desktop (menus, panels and so on). 
+				when user has lost icons, or modified too much his/her desktop (menus, panels and so on).
 				This will get all his/her desktop back."""), login,
 				_("Definitely remove account from the system."))
 		return html_data
-		
+
 	users.Select(users.FILTER_STANDARD)
 	for uid in users.filtered_users:
 		user  = u[uid]
-		login = user['login'] 
-			
-		# we add the login to gecosValue and lockedValue to be sure to obtain 
+		login = user['login']
+
+		# we add the login to gecosValue and lockedValue to be sure to obtain
 		# unique values. This prevents problems with empty or non-unique GECOS
-		# and when sorting on locked status (accounts would be overwritten and 
+		# and when sorting on locked status (accounts would be overwritten and
 		# lost because sorting must be done on unique values).
 		accounts[uid] = {
 			'login'  : login,
@@ -755,7 +758,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 	memberkeys = ordered.keys()
 	memberkeys.sort()
 	if order == "desc": memberkeys.reverse()
-	
+
 	data += ''.join(map(html_build_compact, memberkeys))
 
 	def print_totals(totals):
@@ -780,7 +783,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 	</tr>
 </table>
 %s
-	''' % (print_totals(totals), _("<strong>Total number of accounts:</strong>"), 
+	''' % (print_totals(totals), _("<strong>Total number of accounts:</strong>"),
 		reduce(lambda x, y: x+y, totals.values()), w.page_body_end(w.total_time(start, time.time())))
 
 	return w.page(title, data)
