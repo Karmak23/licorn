@@ -50,10 +50,10 @@ class unix_backend(UGBackend):
 
 			# implicitly index accounts on « int(uid) »
 			users[ temp_user_dict['uid'] ] = temp_user_dict
-			
+
 			# this will be used as a cache for login_to_uid()
 			login_cache[ entry[0] ] = temp_user_dict['uid']
-		
+
 		try:
 			for entry in readers.ug_conf_load_list("/etc/shadow"):
 				if login_cache.has_key(entry[0]):
@@ -69,7 +69,7 @@ class unix_backend(UGBackend):
 						# (Licorn work 99% of time on standard accounts).
 					else:
 						users[uid]['locked'] = False
-					
+
 					if entry[2] == "":
 						users[uid]['passwd_last_change']  = 0
 					else:
@@ -90,7 +90,7 @@ class unix_backend(UGBackend):
 					else:
 						users[uid]['passwd_account_lock'] = int(entry[5])
 
-					# Note: 
+					# Note:
 					# the 7th field doesn't seem to be used by passwd(1) nor by
 					# usermod(8) and thus raises en exception because it's empty
 					# in 100% of cases.
@@ -101,7 +101,7 @@ class unix_backend(UGBackend):
 					logging.warning(
 					"non-existing user '%s' referenced in /etc/shadow." % \
 						entry[0])
-				
+
 		except (OSError, IOError), e:
 			if e.errno != 13:
 				raise e
@@ -131,7 +131,7 @@ class unix_backend(UGBackend):
 		except IOError, e:
 			if e.errno != 2:
 				# other than no such file or directory
-				raise e 
+				raise e
 		try:
 			etc_gshadow = readers.ug_conf_load_list("/etc/gshadow")
 		except IOError, e:
@@ -141,7 +141,7 @@ class unix_backend(UGBackend):
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admin.
 				is_allowed = False
-			else: raise e 
+			else: raise e
 
 		if UGBackend.users:
 			l2u = UGBackend.users.login_to_uid
@@ -153,18 +153,18 @@ class unix_backend(UGBackend):
 			if len(entry) != 4:
 				# FIXME: should we really continue ?
 				# why not raise CorruptFileError ??
-				continue 
-			
+				continue
+
 			# implicitly index accounts on « int(gid) »
 			gid = int(entry[2])
-			
+
 			if entry[3] == '':
 				# this happends when the group has no members.
 				members = []
 			else:
 				members   = entry[3].split(',')
 				to_remove = []
-				
+
 				# update the cache to avoid massive CPU load in 'getent users
 				# --long'. This code is also present in users.__init__, to cope
 				# with users/groups load in different orders.
@@ -179,7 +179,7 @@ class unix_backend(UGBackend):
 									"exist on the system, removing it." % \
 									(styles.stylize(styles.ST_BAD, member),
 									styles.stylize(styles.ST_NAME, entry[0])))
-							# don't directly remove member from members, 
+							# don't directly remove member from members,
 							# it will immediately stop the for_loop.
 							to_remove.append(member)
 
@@ -197,7 +197,7 @@ class unix_backend(UGBackend):
 				'skel'			:  "" ,
 				'permissive'    : None
 				}
-			
+
 			# this will be used as a cache by name_to_gid()
 			name_cache[ entry[0] ] = gid
 
@@ -238,7 +238,7 @@ class unix_backend(UGBackend):
 				need_rewriting = True
 				groups[gid]['description'] = ""
 				groups[gid]['skel']        = ""
-					
+
 			gshadow_found = False
 			for gshadow_entry in etc_gshadow:
 				if groups[gid]['name'] ==  gshadow_entry[0]:
@@ -251,12 +251,12 @@ class unix_backend(UGBackend):
 					gshadow_found = True
 					break
 
-			if not gshadow_found and is_allowed: 
+			if not gshadow_found and is_allowed:
 				# do some auto-correction stuff if we are able too.
 				# this happens if debian tools were used between 2 Licorn CLI
 				# calls, or on first call of CLI tools on a Debian system.
-				logging.warning('added missing %s record for group %s.' 
-					% ( styles.stylize(styles.ST_PATH, '/etc/gshadow'), 
+				logging.warning('added missing %s record for group %s.'
+					% ( styles.stylize(styles.ST_PATH, '/etc/gshadow'),
 						styles.stylize(styles.ST_NAME, groups[gid]['name'])))
 				need_rewriting = True
 				groups[gid]['crypted_password'] = 'x'
@@ -277,7 +277,7 @@ class unix_backend(UGBackend):
 			UGBackend.configuration, "/etc/passwd")
 		lock_etc_shadow = file_locks.FileLock(
 			UGBackend.configuration, "/etc/shadow")
-		
+
 		etcpasswd = []
 		etcshadow = []
 		uids = users.keys()
@@ -298,7 +298,7 @@ class unix_backend(UGBackend):
 										users[uid]['loginShell']
 									))
 							)
-							
+
 			etcshadow.append(":".join((
 										users[uid]['login'],
 										users[uid]['crypted_password'],
@@ -309,11 +309,11 @@ class unix_backend(UGBackend):
 										"","",""
 									))
 							)
-		
+
 		lock_etc_passwd.Lock()
 		open("/etc/passwd" , "w").write("%s\n" % "\n".join(etcpasswd))
 		lock_etc_passwd.Unlock()
-		
+
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
@@ -321,10 +321,10 @@ class unix_backend(UGBackend):
 		""" Write the groups data in appropriate system files."""
 
 		if not groups[0].has_key('crypted_password'):
-			logging.warning("You are not root or member of the shadow group," \
+			raise exceptions.InsufficientPermissionsError("You are not root" \
+				" or member of the shadow group," \
 				" can't write configuration data.")
-			return
-		
+
 		lock_etc_group   = file_locks.FileLock(UGBackend.configuration,
 												"/etc/group")
 		lock_etc_gshadow = file_locks.FileLock(UGBackend.configuration,
@@ -333,7 +333,7 @@ class unix_backend(UGBackend):
 								UGBackend.configuration.extendedgroup_data_file)
 
 		logging.progress("Writing groups configuration to disk...")
-		
+
 		etcgroup   = []
 		etcgshadow = []
 		extgroup   = []
