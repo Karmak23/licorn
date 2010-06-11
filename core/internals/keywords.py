@@ -10,13 +10,14 @@ Licensed under the terms of the GNU GPL version 2
 
 import xattr, os.path, stat
 
-from licorn.foundations    import exceptions, logging, hlstr, pyutils, file_locks
+from licorn.foundations    import exceptions, logging, hlstr, pyutils, file_locks, fsapi
 from licorn.core.internals import readers
 
 
 class KeywordsController:
 
 	keywords      = {}
+	changed       = False
 	configuration = None
 	licorn_xattr  = "user.Licorn.keywords"
 	work_path     = None
@@ -56,14 +57,21 @@ class KeywordsController:
 		self.WriteConf()
 	def WriteConf(self):
 		""" Write the keywords data in appropriate system files."""
-		logging.progress('%s: saving data structures to disk.' % \
-			self.pretty_name)
 
-		lock_file = file_locks.FileLock(self.configuration, self.configuration.keywords_data_file)
+		if self.changed :
+			logging.progress('%s: saving data structures to disk.' % \
+				self.pretty_name)
 
-		lock_file.Lock()
-		open(self.configuration.keywords_data_file , "w").write(self.__build_cli_output())
-		lock_file.Unlock()
+			lock_file = file_locks.FileLock(self.configuration, self.configuration.keywords_data_file)
+
+			lock_file.Lock()
+			open(self.configuration.keywords_data_file , "w").write(self.__build_cli_output())
+			lock_file.Unlock()
+
+			logging.progress('%s: data structures saved.' % \
+				self.pretty_name)
+
+			self.changed = False
 	def __build_cli_output(self):
 		return '\n'.join(map(lambda x: ':'.join(
 					[	self.keywords[x]['name'],
@@ -99,8 +107,6 @@ class KeywordsController:
 			if parent not in self.keywords.keys():
 				raise exceptions.BadArgumentError("The parent you specified doesn't exist on this system.")
 
-		from licorn import system as hzsys
-
 		if not hlstr.cregex['keyword'].match(name):
 			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_KEYWORD % (name, styles.stylize(styles.ST_REGEX, hlstr.regex['keyword'])))
 
@@ -108,9 +114,10 @@ class KeywordsController:
 			raise exceptions.BadArgumentError, SYSK_MALFORMED_DESCR % (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description']))
 
 		self.keywords[name] = { 'name': name, 'parent': parent, 'description': description }
+		self.changed = True
 		self.WriteConf()
 	def DeleteKeyword(self, name=None, del_children=False, modify_file=True):
-		"""
+		""" Delete a keyword
 		"""
 		if name is None:
 			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
@@ -131,7 +138,7 @@ class KeywordsController:
 		except KeyError:
 			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
 		else:
-			self.WriteConf()
+			self.changed = True
 	def __has_no_parent(self, name):
 		""" Has'nt the keyword a parent ? """
 		return self.keywords[name]['parent'] == ""
@@ -172,6 +179,7 @@ class KeywordsController:
 				lambda x: __rename_keyword_from_path(x),
 				 fsapi.minifind(self.work_path, type = stat.S_IFREG) )
 			self.DeleteKeyword(name, del_children=True, modify_file=False)
+			self.WriteConf()
 		except KeyError:
 			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
 	def ChangeParent(self, name, parent):
@@ -181,21 +189,21 @@ class KeywordsController:
 			self.keywords[name]["parent"] = parent
 		except KeyError, e:
 			raise exceptions.BadArgumentError("The keyword %s doesn't exist on this system." % str(e))
-		self.WriteConf()
+		self.changed = True
 	def RemoveParent(self, name):
 		""" Remove parent of the keyword 'name' """
 		try:
 			self.keywords[name]["parent"] = ""
 		except KeyError, e:
 			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
-		self.WriteConf()
+		self.changed = True
 	def ChangeDescription(self, name, description):
 		""" Change the description of a keyword """
 		try:
 			self.keywords[name]["description"] = description
 		except KeyError, e:
 			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
-		self.WriteConf()
+		self.changed = True
 	def __remove_bad_keywords(self, keywords_list):
 		""" Remove parent and inexistant keywords """
 		good_keywords = []
