@@ -23,7 +23,7 @@ def eventually_fork_wmi_server(start_wmi = True):
 	if not configuration.daemon.wmi.enabled or not start_wmi:
 		return
 
-	try: 
+	try:
 		if os.fork() == 0:
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')
 
@@ -44,7 +44,7 @@ def eventually_fork_wmi_server(start_wmi = True):
 						logging.error("%s/wmi: socket error %s." % (dname, e))
 						return
 			httpd.serve_forever()
-	except OSError, e: 
+	except OSError, e:
 		logging.error("%s/wmi: fork failed: errno %d (%s)." % (dname, e.errno, e.strerror))
 	except KeyboardInterrupt:
 		logging.warning('%s/wmi: terminating on interrupt signal.' % dname)
@@ -70,7 +70,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		""" Handle POST data and create a dict to be used later."""
 
 		# TODO: protect ourselves against POST flood: if (too_much_data): send_header('BAD BAD') and stop()
-		
+
 		post_data = self.rfile.read(int(self.headers.getheader('content-length')))
 
 		post_data = post_data.split('&')
@@ -93,7 +93,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						self.post_args[key].append(value)
 				else:
 					self.post_args[key] = value
-			
+
 		#print '%s' % self.post_args
 
 		self.do_GET()
@@ -110,7 +110,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		"""
 
 		#logging.progress('serving HTTP Request: %s.' % self.path)
-		
+
 		retdata = None
 
 		if self.user_authorized():
@@ -120,7 +120,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				retdata = self.serve_local_file()
 		else:
 			# return the 401 HTTP error code
-			self.send_response(401, 'Unauthorized.')	
+			self.send_response(401, 'Unauthorized.')
 			self.send_header('WWW-authenticate', 'Basic realm="Licorn Web Management Interface"')
 			retdata = ''
 
@@ -194,13 +194,13 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				logging.progress("Serving %s %s for http_user %s." % (self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (args[0], args[1], 
+					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (args[0], args[1],
 						self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else ', ',
 						', '.join(self.format_post_args()) )
 				else:
 					py_code = 'retdata = web.%s.%s("%s", "%s" %s)' % (args[0], args[1],
-						self.path, self.http_user, 
+						self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else '')
 
 				try:
@@ -216,7 +216,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			else:
 				# not a web.* module
 				raise exceptions.LicornWebException('Bad base request (probably a regular file request).')
-						
+
 		if retdata:
 			self.send_response(200)
 
@@ -236,8 +236,9 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		path = self.translate_path(self.path)
 
+		logging.progress('serving file: %s.' % path)
+
 		if os.path.exists(path):
-			#logging.progress('serving file: %s.' % path)
 
 			ctype = self.guess_type(path)
 
