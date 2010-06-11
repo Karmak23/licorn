@@ -37,7 +37,7 @@ class GroupsController:
 		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
 		GroupsController.configuration = configuration
-	
+
 		GroupsController.users = users
 		users.SetGroups(self)
 
@@ -55,8 +55,8 @@ class GroupsController:
 		configuration.groups.hidden = self.GetHiddenState()
 
 		logging.progress('%s: new instance created.' % self.pretty_name)
-	
-		
+
+
 	def __del__(self):
 		# just in case it wasn't done before (in batched operations, for example).
 		self.WriteConf()
@@ -67,7 +67,7 @@ class GroupsController:
 		""" see if /home/groups is readable or not.
 			FIXME: do not hardcode "users".
 		"""
-		
+
 		try:
 			for line in posix1e.ACL( file='%s/%s' % (GroupsController.configuration.defaults.home_base_path,
 				GroupsController.configuration.groups.names['plural']) ):
@@ -89,7 +89,7 @@ class GroupsController:
 
 		logging.progress('%s: saving data structures to disk.' % \
 			self.pretty_name)
-			
+
 		self.backend.save_groups(self.groups)
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
@@ -599,7 +599,7 @@ class GroupsController:
 		tmp = {}
 		for login in users_to_add:
 			if login == '': continue
-			
+
 			try:
 				uid = self.users.login_to_uid(login)
 			except:
