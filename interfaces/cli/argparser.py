@@ -37,6 +37,9 @@ def __common_behaviour_group(app, parser, mode = 'any'):
 			behaviorgroup.add_option("--no", "--auto-no",
 				action="store_false", dest="auto_answer", default = None,
 				help="Automatically answer 'no' to all repair questions (i.e. don't repair anything, just print the warnings)." )
+			behaviorgroup.add_option("--batch", "-b",
+				action="store_true", dest="batch", default = False,
+				help="batch all operations (don't ask questions, automate everything).")
 
 		behaviorgroup.add_option("-f", "--force",
 			action="store_true", dest="force", default = False,
@@ -864,13 +867,13 @@ def modify_configuration_parse_arguments(app):
 
 	configuration_group.add_option("-u", "--hide-groups", "--set-groups-hidden",
 		action="store_true", dest="hidden_groups", default=None,
-		help="Set restrictive perms (710) on %s." % styles.stylize(styles.ST_PATH, 
+		help="Set restrictive perms (710) on %s." % styles.stylize(styles.ST_PATH,
 		"%s/%s" % (configuration.defaults.home_base_path,
 			configuration.groups.names['plural'])))
 
 	configuration_group.add_option("-U", "--unhide-groups", "--set-groups-visible",
 		action="store_false", dest="hidden_groups", default=None,
-		help="Set relaxed perms (750) on %s." % styles.stylize(styles.ST_PATH, 
+		help="Set relaxed perms (750) on %s." % styles.stylize(styles.ST_PATH,
 		"%s/%s" % (configuration.defaults.home_base_path,
 			configuration.groups.names['plural'])))
 
@@ -900,11 +903,7 @@ def __check_filter_group(app, parser, mode):
 
 	filtergroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Filter options "), "Filter data displayed / exported.")
 
-	filtergroup.add_option("--batch", "-b",
-		action="store_true", dest="batch", default = False,
-		help="batch all operations (don't ask questions, automate everything).")
-
-	if mode in ( 'users', 'groups'):
+	if mode in ( 'users', 'groups', 'config', 'configuration'):
 		filtergroup.add_option("-a", "--all",
 			action="store_true", dest="all", default = False,
 			help="check *all* %s. %s: this can be a very long operation, depending of the number of %s on your system." % (styles.stylize(styles.ST_MODE, mode), styles.stylize(styles.ST_IMPORTANT, "WARNING"), mode))
@@ -956,7 +955,7 @@ def check_users_parse_arguments(app):
 def check_groups_parse_arguments(app):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
-	usage_text = "\n\t%s group[s] --name groupe1[[,groupe2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s group[s] --name group1[[,group2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
 
@@ -978,10 +977,11 @@ def check_profiles_parse_arguments(app):
 def check_configuration_parse_arguments(app):
 	"""TODO"""
 
-	usage_text = "\n\t%s config[uration] names|hostname" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s config[uration] -a | (names|hostname)" % styles.stylize(styles.ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
 
 	parser.add_option_group(__common_behaviour_group(app, parser, 'check'))
+	parser.add_option_group(__check_filter_group(app, parser, 'configuration'))
 
 	return (parser.parse_args())

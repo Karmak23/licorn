@@ -75,7 +75,10 @@ def check_profiles():
 	raise NotImplementedError("Sorry, not yet.")
 def check_configuration():
 	""" TODO: to be implemented. """
-	raise NotImplementedError("Sorry, not yet.")
+
+	from licorn.core import configuration
+
+	configuration.check(opts.minimal, opts.batch, opts.auto_answer)
 
 if __name__ == "__main__":
 
