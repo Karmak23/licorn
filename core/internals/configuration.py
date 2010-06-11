@@ -874,7 +874,8 @@ class LicornConfiguration (object):
 
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 
-		groups_dir    = "%s/%s" % (LicornConfiguration.defaults.home_base_path, LicornConfiguration.groups.names['plural'])
+		groups_dir    = "%s/%s" % ( LicornConfiguration.defaults.home_base_path,
+			LicornConfiguration.groups.names['plural'])
 		acl_base      = "u::rwx,g::---,o:---"
 		acl_mask      = "m:rwx"
 		acl_admins_ro = "g:%s:r-x" % LicornConfiguration.defaults.admin_group
