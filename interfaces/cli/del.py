@@ -94,9 +94,8 @@ def delete_profile():
 def delete_keyword():
 	""" delete a system wide User profile. """
 
-	from licorn.system import keywords
-	kw = keywords.KeywordsController(configuration)
-	kw.DeleteKeyword(opts.name, opts.del_children)
+	from licorn.core import keywords
+	keywords.DeleteKeyword(opts.name, opts.del_children)
 
 def delete_workstation():
 	raise NotImplementedError("delete_workstations not implemented.")
