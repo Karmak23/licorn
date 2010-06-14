@@ -211,10 +211,14 @@ class GroupsController:
 
 		if name in (None, ''):
 			raise exceptions.BadArgumentError, "You must specify a group name."
+
 		if len(str(name)) > GroupsController.configuration.groups.name_maxlenght:
 			raise exceptions.LicornRuntimeError, "Group name must be smaller than %d characters." % GroupsController.configuration.groups.name_maxlenght
-		if description == '':
-			description = 'Les membres du groupe “%s”' % name
+
+		if not hlstr.cregex['group_name'].match(name):
+			raise exceptions.BadArgumentError("Malformed group name '%s', must match /%s/i."
+				% (name, styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])) )
+
 		if not system and skel is "":
 			raise exceptions.BadArgumentError, "You must specify a skel dir."
 
@@ -225,16 +229,9 @@ class GroupsController:
 				% GroupsController.configuration.users.skels)
 
 		if description == '':
-			description = '''Les membres du groupe "%s"''' % name
-
-		if not hlstr.cregex['group_name'].match(name):
-			raise exceptions.BadArgumentError("Malformed group name '%s', must match /%s/i."
-				% (name, styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])) )
-
-		#logging.warning('descr: %s.' % description)
-
-		if not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError("Malformed group description `%s', must match /%s/i."
+			description = 'Les membres du groupe “%s”' % name
+		elif not hlstr.cregex['description'].match(description):
+			raise exceptions.BadArgumentError("Malformed group description '%s', must match /%s/i."
 				% (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
 
 		home = '%s/%s/%s' % (GroupsController.configuration.defaults.home_base_path,
@@ -295,7 +292,8 @@ class GroupsController:
 			# re-raise the exception, for the calling program to know what happened...
 			raise e
 		return (gid, name)
-	def __add_group(self, name, system, manual_gid=None, description = "", skel = ""):
+	def __add_group(self, name, system, manual_gid=None, description = "",
+		skel = "", batch=False):
 		"""Add a POSIX group, write the system data files. Return the gid of the group created."""
 
 		try:
@@ -338,8 +336,14 @@ class GroupsController:
 			gid = manual_gid
 
 		# Add group in groups dictionary
-		temp_group_dict             = { 'name': name, 'passwd': 'x', 'gid': gid, 'members': [],
-										'description': description, 'skel': skel, 'crypted_password': 'x' }
+		temp_group_dict = {
+			'name': name,
+			'passwd': 'x',
+			'gid': gid,
+			'members': [],
+			'description': description,
+			'skel': skel,
+			'crypted_password': 'x' }
 
 		if system:
 			# we must fill the permissive status here, else WriteConf() will fail with a KeyError.
@@ -348,6 +352,9 @@ class GroupsController:
 
 		GroupsController.groups[gid]      = temp_group_dict
 		GroupsController.name_cache[name] = gid
+
+		if not batch:
+			self.WriteConf()
 
 		return gid
 	def DeleteGroup(self, name, del_users, no_archive, bygid = None, batch=False):
@@ -642,7 +649,7 @@ class GroupsController:
 					continue
 
 				# brutal fix for #43, batched for convenience.
-				AddUsersInGroup('users', [ u ], batch = True)
+				self.AddUsersInGroup('users', [ u ], batch = True)
 
 				uid      = GroupsController.users.login_to_uid(u)
 				link_src = os.path.join(GroupsController.configuration.defaults.home_base_path,
@@ -782,9 +789,11 @@ class GroupsController:
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer):
 					try:
-						temp_gid = self.__add_group(group_name, system=True)
-						GroupsController.groups[temp_gid]['description'] = "%s of group “%s”" % (title, group)
-						GroupsController.groups[temp_gid]['skel'] = ""
+						temp_gid = self.__add_group(group_name,
+							system=True,
+							manual_gid=None,
+							description="%s of group “%s”" % (title, group),
+							skel="")
 						GroupsController.name_cache[ prefix[0] + group ] = temp_gid
 						prefix_gid = temp_gid
 						del(temp_gid)

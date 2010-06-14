@@ -389,15 +389,27 @@ def edit(uri, http_user, name):
 
 		if sys:
 			groups_filters_lists_ids   = (
-				(name, ( _('Manage members'), _('Users not yet members'), _('Current members') ), 'members' ),
+				(name, ( _('Manage members'), _('Users not yet members'),
+				_('Current members') ), 'members' ),
 				(configuration.groups.resp_prefix + name, None, '&#160;' ),
 				(configuration.groups.guest_prefix + name, None, '&#160;' )
 				)
 		else:
 			groups_filters_lists_ids = (
-				(name,            [_('Manage members'), _('Users not yet members'), _('Current members')],      'members'),
-				(configuration.groups.resp_prefix + name,  [_('Manage responsibles'), _('Users not yet responsibles'), _('Current responsibles')], 'resps'),
-				(configuration.groups.guest_prefix + name, [_('Manage guests'),      _('Users not yet guests'), _('Current guests')],      'guests') )
+				(name,            [_('Manage members'),
+					_('Users not yet members'),
+					_('Current members')],
+					'members'),
+				(configuration.groups.resp_prefix + name,
+					[_('Manage responsibles'),
+					_('Users not yet responsibles'),
+					_('Current responsibles')],
+					'resps'),
+				(configuration.groups.guest_prefix + name,
+					[_('Manage guests'),
+					_('Users not yet guests'),
+					_('Current guests')],
+					'guests') )
 
 		for (gname, titles, id) in groups_filters_lists_ids:
 			if titles is None:
@@ -417,7 +429,8 @@ def edit(uri, http_user, name):
 			if system:
 				return desc
 			else:
-				return w.input('description', desc, size = 30, maxlength = 256, accesskey = 'D')
+				return w.input('description', desc, size = 30, maxlength = 256,
+					accesskey = 'D')
 		def skel(cur_skel, system):
 			if system:
 				return ''
@@ -427,7 +440,9 @@ def edit(uri, http_user, name):
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
 				</tr>
-				''' % (_('Skeleton'), w.select('skel',  configuration.users.skels, cur_skel, func = os.path.basename))
+				''' % (_('Skeleton'),
+					w.select('skel', configuration.users.skels,
+					cur_skel, func = os.path.basename))
 		def permissive(perm, sys):
 
 			if sys:
@@ -438,7 +453,8 @@ def edit(uri, http_user, name):
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
 				</tr>
-				''' % (_('Permissive shared dir?'), w.checkbox('permissive', "True", "Oui", checked = perm ))
+				''' % (_('Permissive shared dir?'), w.checkbox('permissive',
+					"True", "Oui", checked = perm ))
 
 		form_name = "group_edit_form"
 
@@ -472,7 +488,7 @@ def edit(uri, http_user, name):
 					Event.observe(window, 'load', loadAccordions, false);
 					function loadAccordions() {
 						var prout = new accordion("my-accordion");
-						//prout.activate($$("#my-accordion .accordion_toggle")[0]);
+					//prout.activate($$("#my-accordion .accordion_toggle")[0]);
 					}
 				</script>
 
@@ -493,20 +509,25 @@ def edit(uri, http_user, name):
 			_('Group description'),
 			descr(group['description'], sys),
 			skel(group['skel'], sys),
-			_('Group members'), dbl_lists[name],
-			_('Group responsibles'), dbl_lists[configuration.groups.resp_prefix+name],
-			_('Group guests'), dbl_lists[configuration.groups.guest_prefix+name],
+			_('Group members'),
+				dbl_lists[name],
+			_('Group responsibles'),
+				dbl_lists[configuration.groups.resp_prefix+name],
+			_('Group guests'),
+				dbl_lists[configuration.groups.guest_prefix+name],
 			w.button('<< ' + _('Cancel'), "/groups/list", accesskey = _('N')),
-			w.submit('record', _('Record') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('R'))
+			w.submit('record', _('Record') + ' >>',
+			onClick="selectAllMultiValues('%s');" % form_name, accesskey=_('R'))
 			)
 
 	except exceptions.LicornException, e:
-		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = allgroups.groups[groups.name_to_gid(name)]", e))
+		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name,
+			"group = allgroups.groups[groups.name_to_gid(name)]", e))
 
 	data += w.page_body_end()
 
 	return w.page(title, data)
-def record(uri, http_user, name, skel = None, permissive = False, description = None,
+def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
@@ -518,7 +539,8 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 
 	title      = _("Modifying group %s") % name
 	data       = '%s<h1>%s</h1>' % (w.backto(), title)
-	command    = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors', '--name', name ]
+	command    = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
+		'--name', name ]
 
 	if skel:
 		command.extend([ "--skel", skel ])
@@ -532,15 +554,20 @@ def record(uri, http_user, name, skel = None, permissive = False, description = 
 	add_guests = ','.join(__merge_multi_select(guests_dest))
 	del_guests = ','.join(__merge_multi_select(guests_source))
 
-	for (var, cmd) in ( (add_members, "--add-users"),  (del_members, "--del-users"),
-						(add_resps,   "--add-resps"),  (del_resps,   '--del-resps'),
-						(add_guests,  "--add-guests"), (del_guests,  '--del-guests') ):
+	for (var, cmd) in (
+		(add_members, "--add-users"),
+		(del_members, "--del-users"),
+		(add_resps,   "--add-resps"),
+		(del_resps,   '--del-resps'),
+		(add_guests,  "--add-guests"),
+		(del_guests,  '--del-guests') ):
 		if var != "":
 			command.extend([ cmd, var ])
 
 	return w.page(title,
 		data + w.run(command, uri, successfull_redirect = "/groups/list",
-		err_msg = _('Failed to modify one or more parameter of group %s!') % name))
+		err_msg = _('Failed to modify one or more parameter of group %s!') % \
+			name))
 
 # list user accounts.
 def main(uri, http_user, sort = "name", order = "asc"):
@@ -558,7 +585,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 	tgroups  = {}
 	totals   = {}
 
-	title = "%s" % configuration.groups.names['_plural']
+	title = _('Groups')
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if order == "asc": reverseorder = "desc"
@@ -566,7 +593,14 @@ def main(uri, http_user, sort = "name", order = "asc"):
 
 	data += '<table>\n		<tr>\n'
 
-	sortcols = ( ('', '', False), ("name", _("Name"), True), ("skel", _("Skeleton"), True), ("permissive", _("Perm."), True), ('members', "Members", False), ("resps", _("Responsibles"), False), ("guests", _("Guests"), False) )
+	sortcols = (
+		('', '', False),
+		("name", _("Name"), True),
+		("skel", _("Skeleton"), True),
+		("permissive", _("Perm."), True),
+		('members', "Members", False),
+		("resps", _("Responsibles"), False),
+		("guests", _("Guests"), False) )
 
 	for (column, name, can_sort) in sortcols:
 		if can_sort:
@@ -574,15 +608,20 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					data += '''
 		<th><img src="/images/sort_%s.gif" alt="%s" />&#160;
 			<a href="/groups/list/%s/%s" title="%s">%s</a>
-		</th>\n''' % (order, _('%s order') % order, column, reverseorder, _('Click to sort in reverse order.'), name)
+		</th>\n''' % (order, _('%s order') % order, column, reverseorder,
+			_('Click to sort in reverse order.'), name)
 			else:
-				data += '		<th><a href="/groups/list/%s/asc" title="%s">%s</a></th>\n' % (column, _('Click to sort on this column.'), name)
+				data += '''		<th><a href="/groups/list/%s/asc"
+					title="%s">%s</a></th>\n''' % (column,
+					_('Click to sort on this column.'), name)
 		else:
 			data += '		<th>%s</th>\n' % name
 
 	data += '		</tr>\n'
 
-	for (filter, filter_name) in ( (groups.FILTER_STANDARD, configuration.groups.names['_plural']), (groups.FILTER_PRIVILEGED, _("Privileges")) ):
+	for (filter, filter_name) in (
+		(groups.FILTER_STANDARD, configuration.groups.names['_plural']),
+		(groups.FILTER_PRIVILEGED, _("Privileges")) ):
 
 		tgroups  = {}
 		ordered  = {}
@@ -608,14 +647,20 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			tgroups[gid]['members'] = []
 			for member in groups.groups[gid]['members']:
 				if not users.is_system_login(member):
-					tgroups[gid]['members'].append(users.users[users.login_to_uid(member)])
+					tgroups[gid]['members'].append(
+						users.users[users.login_to_uid(member)])
 
 			if not groups.is_system_gid(gid):
-				for prefix in (configuration.groups.resp_prefix, configuration.groups.guest_prefix):
+				for prefix in (
+					configuration.groups.resp_prefix,
+					configuration.groups.guest_prefix):
 					tgroups[gid][prefix + 'members'] = []
-					for member in groups.groups[groups.name_to_gid(prefix + name)]['members']:
+					for member in \
+						groups.groups[groups.name_to_gid(
+							prefix + name)]['members']:
 						if not users.is_system_login(member):
-							tgroups[gid][prefix + 'members'].append(users.users[users.login_to_uid(member)])
+							tgroups[gid][prefix + 'members'].append(
+								users.users[users.login_to_uid(member)])
 
 		gkeys = ordered.keys()
 		gkeys.sort()
@@ -633,7 +678,8 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			<td class="right">
 				<a href="/groups/edit/%s">%s</a>
 			</td>
-				''' % (name, name, g[gid]['description'], name, name, g[gid]['skel'])
+				''' % (name, name, g[gid]['description'], name, name,
+					g[gid]['skel'])
 
 			if groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
@@ -644,35 +690,59 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					<a href="/groups/lock/%s" title="%s">
 					<img src="/images/16x16/unlocked.png" alt="%s"/></a>
 				</td>
-					''' % (name, _('Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness.'), _('Group is currently permissive.'))
+					''' % (name, _('''Shared group directory is currently '''
+					'''<strong>permissive</strong>. Click to deactivate '''
+					'''permissiveness.'''), _('Group is currently permissive.'))
 				else:
 					html_data += '''
 				<td class="user_action_center">
 					<a href="/groups/unlock/%s" title="%s">
 					<img src="/images/16x16/locked.png" alt="%sø"/></a>
 				</td>
-					''' % (name, _('Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness.'), _('Group is NOT permissive.'))
+					''' % (name, _('''Shared group directory is currently '''
+					'''<strong>NOT</strong> permissive. Click ti activate '''
+					'''permissiveness.'''), _('Group is NOT permissive.'))
 
-			for (keyname, text) in (('members', _('Current members')), ('rsp-members', _('Current responsibles')), ('gst-members', _('Current guests')) ):
+			for (keyname, text) in (
+				('members', _('Current members')),
+				('rsp-members', _('Current responsibles')),
+				('gst-members', _('Current guests')) ):
 				if tgroups[gid].has_key(keyname):
 					accounts = {}
 					uordered = {}
 					for member in tgroups[gid][keyname]:
 						uid = member['uid']
-						accounts[uid] = { 'login': member['login'], 'gecos': member['gecos'], 'gecos_sort': member['gecos'] + member['login'] }
-						uordered[hlstr.validate_name(accounts[uid]['gecos_sort'], aggressive = True)] = uid
+						accounts[uid] = {
+							'login': member['login'],
+							'gecos': member['gecos'],
+							'gecos_sort': member['gecos'] + member['login']
+							}
+						uordered[hlstr.validate_name(
+							accounts[uid]['gecos_sort'], aggressive=True)] = uid
+
 					memberkeys = uordered.keys()
 					memberkeys.sort()
-					mbdata = "<table><tr><th>%s</th><th>%s</th><th>%s</th></tr>\n" % (_('Full Name'), _('Identifier'), _('UID'))
+					mbdata = '''<table><tr><th>%s</th><th>%s</th>
+					<th>%s</th></tr>\n''' % (_('Full Name'),
+							_('Identifier'), _('UID'))
 					for member in memberkeys:
 						uid = uordered[member]
-						mbdata += '''<tr><td>%s</td><td>%s</td><td>%d</td></tr>\n''' % (accounts[uid]['gecos'], accounts[uid]['login'], uid)
+						mbdata += '''<tr><td>%s</td><td>%s</td>
+						<td>%d</td></tr>\n''' % (accounts[uid]['gecos'],
+							accounts[uid]['login'], uid)
+
 					mbdata += '</table>'
 					nb = len(tgroups[gid][keyname])
 					if nb == 0:
-						html_data += '''<td class="right faded">%s</td>\n''' % _('none')
+						html_data += '''<td class="right faded">%s</td>\n''' % \
+							_('none')
 					else:
-						html_data += '''<td class="right"><a class="nounder" title="<h4>%s</h4><br />%s"><strong>%d</strong>&#160;<img src="/images/16x16/details-light.png" alt="%s" /></a></td>\n''' % (text, mbdata, nb, _('See %s of group %s.') % (text, name))
+						html_data += '''<td class="right">
+							<a class="nounder" title="<h4>%s</h4><br />%s">
+							<strong>%d</strong>&#160;<img
+							src="/images/16x16/details-light.png" alt="%s"
+							/></a></td>\n''' % (text, mbdata, nb,
+							_('See %s of group %s.') % (text, name))
 				else:
 					html_data += '''<td>&#160;</td>\n'''
 
@@ -691,10 +761,17 @@ def main(uri, http_user, sort = "name", order = "asc"):
 						<img src="/images/16x16/delete.png" alt="%s"/></a>
 					</td>
 				</tr>
-						''' % (name, _('This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull.'), _('Reapply skel to group members.'), name, _('Definitely remove this group from system.'), _('Remove this group.'))
+						''' % (name, _('''This will rebuild his/her desktop '''
+						'''from scratch, with defaults icons and so on.'''
+						'''<br /><br />The user must be disconnected for the '''
+						'''operation to be completely successfull.'''),
+						_('Reapply skel to group members.'), name,
+						_('Definitely remove this group from system.'),
+						_('Remove this group.'))
 			return html_data
 
-		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (filter_name, ''.join(map(html_build_group, gkeys)))
+		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (
+			filter_name, ''.join(map(html_build_group, gkeys)))
 
 	def print_totals(totals):
 		output = ""
@@ -718,7 +795,8 @@ def main(uri, http_user, sort = "name", order = "asc"):
 	</tr>
 </table>
 %s
-	''' % (print_totals(totals), _('Total number of groups:'), reduce(lambda x, y: x+y, totals.values()), w.total_time(start, time.time()))
+	''' % (print_totals(totals), _('Total number of groups:'), reduce(
+		lambda x, y: x+y, totals.values()), w.total_time(start, time.time()))
 
 	data += w.page_body_end()
 
