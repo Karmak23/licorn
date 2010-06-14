@@ -20,7 +20,7 @@ regex['profile_name'] = u'''^[\w]([-_\w ]*[\w])?$'''
 # these characters could lead to potential crash/vulnerabilities. But refering
 # to passwd(5), there are no restrictions concerning the description field.
 # Thus we just disallow “:” to avoid a new field to be accidentally created.
-regex['description']  = u'''^[-@#~*!¡&_…{}—–™“”®©/'"\w«»() ,;.¿?‘’€⋅]*$'''
+regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
 regex['group_name']   = u'''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = u'''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
 regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
