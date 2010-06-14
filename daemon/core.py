@@ -38,23 +38,25 @@ wmi_group     = 'licorn-wmi'
 log_path      = '/var/log/licornd.log'
 pid_path      = '/var/run/licornd.pid'
 wpid_path     = '/var/run/licornd-wmi.pid'
+wlog_path     = '/var/log/licornd-wmi.log'
 dname         = 'licornd'
 
 def terminate_cleanly(signum, frame, threads = []):
 	""" Close threads, wipe pid files, clean everything before closing. """
 
 	if signum is None:
-		logging.progress("%s/master: cleaning up and stopping threads..." % dname)
+		logging.progress("%s/master: cleaning up and stopping threads..." % \
+			dname)
 	else:
-		logging.warning('%s/master: signal %s received, shutting down...' % (dname,
-			signum))
+		logging.warning('%s/master: signal %s received, shutting down...' % (
+			dname, signum))
 
 	for th in threads:
 		th.stop()
 
 	configuration.CleanUp()
 
-	try: 
+	try:
 		for pid_file in (pid_path, wpid_path):
 			if os.path.exists(pid_file):
 				os.unlink(pid_file)
@@ -90,12 +92,12 @@ def exit_if_already_running():
 def exit_if_not_running_root():
 	if os.getuid() != 0 or os.geteuid() != 0:
 		logging.error("%s: must be run as %s." % (dname,
-			styles.stylize(styles.ST_NAME, 'root')))	
+			styles.stylize(styles.ST_NAME, 'root')))
 def eventually_daemonize(opts):
-	if opts.daemon: 
+	if opts.daemon:
 		process.daemonize(log_path, pid_path)
-	else: 
-		open(pid_path, 'w').write("%s\n" % os.getpid())
+	else:
+		process.write_pid_file(pid_path)
 
 ### Main Licorn daemon threads ###
 # FIXME: convert these to LicornThread.
@@ -169,8 +171,8 @@ class INotifier(Thread, Singleton):
 
 		self.mon = gamin.WatchMonitor()
 
-		# keep track of watched directories, and func prototypes used 
-		# to chk the data inside. this will avoid massive CPU usage, 
+		# keep track of watched directories, and func prototypes used
+		# to chk the data inside. this will avoid massive CPU usage,
 		# at the cost of a python dict.
 		self.wds = []
 
@@ -203,7 +205,7 @@ class INotifier(Thread, Singleton):
 			return
 
 		# with Gamin, sometimes it is an abspath, sometimes not.
-		# this happens on GAMChanged (observed the two), and 
+		# this happens on GAMChanged (observed the two), and
 		# GAMDeleted (observed only abspath).
 		if basename[0] == '/':
 			path = basename
@@ -247,15 +249,15 @@ class INotifier(Thread, Singleton):
 
 		elif event == gamin.GAMMoved:
 
-			logging.progress('%s: Inotify %s, not handled yet %s.' % (self.getName(), 
+			logging.progress('%s: Inotify %s, not handled yet %s.' % (self.getName(),
 				styles.stylize(styles.ST_PKGNAME, 'GAMMoved'), styles.stylize(styles.ST_PATH, path)))
 
 		elif event == gamin.GAMDeleted:
-			# if a dir is deleted, we will get 2 GAMDeleted events: 
+			# if a dir is deleted, we will get 2 GAMDeleted events:
 			#  - one for the dir watched (itself deleted)
 			#  - one for its parent, signaling its child was deleted.
 
-			logging.debug("%s: Inotify %s for %s." %  (self.getName(), 
+			logging.debug("%s: Inotify %s for %s." %  (self.getName(),
 				styles.stylize(styles.ST_BAD, 'GAMDeleted'), styles.stylize(styles.ST_PATH, path)))
 
 			# we can't test if the “path” was a dir, it has just been deleted
@@ -285,13 +287,13 @@ class INotifier(Thread, Singleton):
 		if path in self.wds:
 			try:
 				self.wds.remove(path)
-				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
+				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(),
 					styles.stylize(styles.ST_BAD, 'removing'),
 					styles.stylize(styles.ST_PATH, path),
 					len(self.wds)))
 
 				# TODO: recurse subdirs if existing, to remove subwatches
-				ret = self.mon.stop_watch(path) 
+				ret = self.mon.stop_watch(path)
 				return ret
 			except gamin.GaminException:
 				pass
@@ -348,7 +350,7 @@ class INotifier(Thread, Singleton):
 
 			while len(self.wds):
 				rep = self.wds.pop()
-				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(), 
+				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(),
 					styles.stylize(styles.ST_BAD, 'removing'),
 					styles.stylize(styles.ST_PATH, rep),
 					len(self.wds)))

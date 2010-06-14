@@ -13,39 +13,50 @@ import os, sys
 from licorn.foundations import exceptions, logging
 
 # daemon and process functions
-def daemonize(logfile, pidfile):
+def daemonize(log_file, pid_file):
 	""" UNIX double-fork magic to create a daemon.
 		See Stevens' "Advanced Programming in the UNIX Environment"
 		for details (ISBN 0201563177)."""
 
-	try: 
+	try:
 		if os.fork() > 0:
 			# exit first parent
-			sys.exit(0) 
-	except OSError, e: 
+			sys.exit(0)
+	except OSError, e:
 		sys.stderr.write("fork #1 failed: errno %d (%s)" % (e.errno, e.strerror))
 		sys.exit(1)
 
 	# decouple from parent environment
-	os.chdir("/") 
-	os.setsid() 
-	os.umask(0) 
+	os.chdir("/")
+	os.setsid()
+	os.umask(0)
 
 	# do second fork
-	try: 
+	try:
 		if os.fork() > 0:
 			# exit from second parent
-			sys.exit(0) 
-	except OSError, e: 
+			sys.exit(0)
+	except OSError, e:
 		sys.stderr.write("fork #2 failed: errno %d (%s)" % (e.errno, e.strerror))
-		sys.exit(1) 
+		sys.exit(1)
 
-	out_log  = file(logfile, 'a')
+	use_log_file(log_file)
+	write_pid_file(pid_file)
+
+def write_pid_file(pid_file):
+	""" write PID into the pidfile. """
+	open(pid_file,'w').write("%s\n" % os.getpid())
+
+def use_log_file(log_file):
+	""" replace stdout/stderr with the logfile.
+		stderr becomes /dev/null.
+	"""
+	out_log  = file(log_file, 'a')
 	dev_null = file('/dev/null', 'r')
-	
+
 	sys.stdout.flush()
 	sys.stderr.flush()
-	
+
 	os.close(sys.stdin.fileno())
 	os.close(sys.stdout.fileno())
 	os.close(sys.stderr.fileno())
@@ -54,7 +65,6 @@ def daemonize(logfile, pidfile):
 	os.dup2(out_log.fileno(), sys.stdout.fileno())
 	os.dup2(out_log.fileno(), sys.stderr.fileno())
 
-	open(pidfile,'w').write("%s\n" % os.getpid())
 def set_name(name):
 	""" Change process name in `ps`, `top`, gnome-system-monitor and al.
 
@@ -65,7 +75,7 @@ def set_name(name):
 		See:
 			http://mail.python.org/pipermail/python-list/2002-July/155471.html
 			http://davyd.livejournal.com/166352.html
-			
+
 		"""
 	try:
 		import proctitle
@@ -74,10 +84,13 @@ def set_name(name):
 		try:
 			import dl
 			dl.open('/lib/libc.so.6').call('prctl', 15, name + '\0', 0, 0, 0)
-		except: 
+		except:
 			pass
-def already_running(pidfile):
-		return os.path.exists(pidfile) and open(pidfile, 'r').readline()[:-1] in os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ] )[1].read().split("\n")[:-1]
+def already_running(pid_file):
+		return os.path.exists(pid_file) and \
+			open(pid_file, 'r').readline()[:-1] in \
+				os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ]
+				)[1].read().split("\n")[:-1]
 
 # System() / Popen*() convenience wrappers.
 def syscmd(command, expected_retcode = 0):
@@ -112,7 +125,7 @@ def pipecmd(data, command):
 
 	if sys.version_info[0:2] == (2, 6):
 		from subprocess import Popen, PIPE
-		
+
 		p = Popen(command, shell=False,
           stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
 
@@ -122,7 +135,7 @@ def pipecmd(data, command):
 
 	else:
 		(pin, pout, perr) = os.popen3(command)
-	
+
 		if None in (pin, pout, perr):
 			raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
 

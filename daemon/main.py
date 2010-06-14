@@ -8,7 +8,7 @@ Licorn daemon:
 This daemon exists:
   - to add user functionnality to Licorn systems.
   - because of bugs in other apps.
-  
+
 Built on top of Licorn System Library, part of Licorn System Tools (H-S-T).
 
 Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>.
@@ -50,11 +50,13 @@ if __name__ == "__main__":
 	threads = []
 
 	process.set_name('%s/master' % dname)
-	logging.progress("%s/master: starting (pid %d)." % (dname, os.getpid()))
 
 	setup_signals_handler(threads)
 	eventually_daemonize(opts)
-	eventually_fork_wmi_server()
+
+	logging.progress("%s/master: starting (pid %d)." % (dname, os.getpid()))
+
+	eventually_fork_wmi_server(opts)
 
 	if configuration.daemon.role == "client":
 		pass
@@ -75,7 +77,7 @@ if __name__ == "__main__":
 		threads.append(notifier)
 		#threads.append(syncer)
 		threads.append(searcher)
-		
+
 
 	for th in threads:
 		th.start()

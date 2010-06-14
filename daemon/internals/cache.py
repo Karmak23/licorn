@@ -17,13 +17,13 @@ except ImportError: from pysqlite2 import dbapi2 as sqlite
 from Queue              import Queue
 from threading          import Thread, Event
 
-from licorn.foundations import logging, exceptions, styles, fsapi
-from licorn.daemon.core import dname, cache_path
+from licorn.foundations         import logging, exceptions, styles, fsapi
+from licorn.foundations.objects import Singleton
+from licorn.daemon.core         import dname, cache_path
 
 # FIXME: convert this to LicornThread.
-class Cache(Thread):
-	""" Thread & Singleton cache object to help files and keywords caching through an SQLite database. """
-	__singleton   = None
+class Cache(Thread, Singleton):
+	""" Thread cache object to help files and keywords caching through an SQLite database. """
 	allkeywords   = None
 	localKeywords = {}
 	_stop_event   = Event()
@@ -32,10 +32,6 @@ class Cache(Thread):
 	_cursor       = None
 	_queue        = Queue()
 
-	def __new__(cls, *args, **kwargs):
-		if cls.__singleton is None:
-			cls.__singleton = super(Cache, cls).__new__(cls, *args, **kwargs)
-		return cls.__singleton
 	def __init__(self, allkeywords = None, pname = dname, dbfname = cache_path):
 
 		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
@@ -95,7 +91,7 @@ class Cache(Thread):
 
 	CREATE TABLE groups (
 	gid INTEGER PRIMARY KEY,
-	gname TEXT 
+	gname TEXT
 	);
 
 	CREATE TABLE g_on_f (
@@ -106,7 +102,7 @@ class Cache(Thread):
 
 	CREATE TABLE keywords (
 	kid INTEGER PRIMARY KEY,
-	kname TEXT 
+	kname TEXT
 	);
 
 	CREATE TABLE k_on_f (
@@ -198,7 +194,7 @@ class Cache(Thread):
 		logging.progress("%s: Removed %d obsolete rows from cache database." % (self.getName(), c.rowcount))
 
 		c.execute('SELECT fid, fname FROM files;')
-		
+
 		files = c.fetchall()
 		for (fid, fname) in files:
 			if not os.path.exists(fname):
@@ -213,7 +209,7 @@ class Cache(Thread):
 
 		if self._stop_event.isSet():
 			raise exceptions.LicornStopException("%s: stopped, can't cache." % self.getName())
-	
+
 		fstat = os.lstat(filename)
 
 		q = Cache._queue
@@ -227,7 +223,7 @@ class Cache(Thread):
 
 			logging.progress("%s: updating cache record for %s." % (self.getName(), styles.stylize(styles.ST_PATH, filename)))
 
-			q.put(('''INSERT OR REPLACE INTO files(fid, fname, fsize, fmtime) VALUES(?,?,?,?);''', 
+			q.put(('''INSERT OR REPLACE INTO files(fid, fname, fsize, fmtime) VALUES(?,?,?,?);''',
 				(fstat.st_ino, filename, fstat.st_size, fstat.st_mtime), None))
 
 			try:
@@ -243,7 +239,7 @@ class Cache(Thread):
 
 					for k in good:
 						q.put(('''INSERT OR REPLACE INTO k_on_f(fid, kid) VALUES(?,?);''', (fstat.st_ino, Cache.localKeywords[k]), None))
-							
+
 			except (OSError, IOError), e:
 				if e.errno not in (2, 61, 95):
 					raise e
@@ -255,7 +251,7 @@ class Cache(Thread):
 				# TODO: get facl / perms and cache them, to answer user requests according to file perms.
 				#
 				# TODO: why not just return the queries and let the gui verify the user has rights on the file ?
-				# if it hasn't, he won't be able to open it any way. but this could be a 
+				# if it hasn't, he won't be able to open it any way. but this could be a
 				# security risk, knowing the exact name of the file. SO: the daemon should return only
 				# allowed files.
 				pass
@@ -296,7 +292,7 @@ class Cache(Thread):
 		""" Query the cache with some keywords and return some files as a sequence. """
 
 		#nbk   = len(req.split(','))
-		
+
 		# TODO: check req against injections, against bad chars (regex)
 		# and verify keyword existence...
 
@@ -304,10 +300,10 @@ class Cache(Thread):
 		# EG 'WHERE kname == '<...>' AND kname =='<...>' OR kname = '<...>' AND kname = '<...>'
 
 		return self.select('''
-						SELECT files.fname 
-						FROM keywords 
-							NATURAL JOIN k_on_f 
-							NATURAL JOIN files 
-						WHERE keywords.kname in (%s) 
-						GROUP BY files.fname 
+						SELECT files.fname
+						FROM keywords
+							NATURAL JOIN k_on_f
+							NATURAL JOIN files
+						WHERE keywords.kname in (%s)
+						GROUP BY files.fname
 						ORDER BY files.fname;''' % (re.sub(r'(\w+)', r"'\1'", req)))

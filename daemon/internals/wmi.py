@@ -14,9 +14,11 @@ from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations import logging, exceptions, styles, process
 from licorn.core        import configuration, users, groups
-from licorn.daemon.core import dname, wpid_path, wmi_port, wmi_group, buffer_size
+from licorn.daemon.core import dname, wpid_path, wmi_port, wlog_path, \
+	wmi_group, buffer_size
 
-def eventually_fork_wmi_server(start_wmi = True):
+def eventually_fork_wmi_server(opts, start_wmi = True):
+	""" Start the Web Management Interface (fork it). """
 
 	# FIXME: implement start_wmi in argparser module.
 
@@ -27,11 +29,20 @@ def eventually_fork_wmi_server(start_wmi = True):
 		if os.fork() == 0:
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')
 
-			open(wpid_path,'w').write("%s\n" % os.getpid())
+			process.write_pid_file(wpid_path)
+
+			if opts.daemon:
+				process.use_log_file(wlog_path)
+
 			process.set_name('%s/wmi' % dname)
 			logging.progress("%s/wmi: starting (pid %d)." % (dname, os.getpid()))
 			count = 0
 			while True:
+				# try creating an http server.
+				# if it fails because of socket already in use, just retry
+				# forever, displaying a message every second.
+				#
+				# when creation succeeds, break the loop and serve requets.
 				count += 1
 				try:
 					httpd = TCPServer(('127.0.0.1', wmi_port), WMIHTTPRequestHandler)
@@ -43,6 +54,7 @@ def eventually_fork_wmi_server(start_wmi = True):
 					else:
 						logging.error("%s/wmi: socket error %s." % (dname, e))
 						return
+
 			httpd.serve_forever()
 	except OSError, e:
 		logging.error("%s/wmi: fork failed: errno %d (%s)." % (dname, e.errno, e.strerror))
