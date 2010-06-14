@@ -98,7 +98,7 @@ def export(uri, http_user, type = "", yes = None):
 		'''and save the export-file (it won't be displayed). When you're '''
 		'''done, please click the “back” button of your browser.''')
 
-		form_options =
+		form_options = \
 			_("Which file format do you want accounts to be exported to? %s") \
 				% w.select("type", [ "CSV", "XML"])
 
