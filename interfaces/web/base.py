@@ -28,7 +28,7 @@ def ctxtnav():
 
 def system_load():
 	loads = open('/proc/loadavg').read().split(" ")
-	
+
 	allusers  = users
 	allusers.Select(allusers.FILTER_STANDARD)
 	nbusers = len(allusers.filtered_users)
@@ -77,11 +77,11 @@ def system_load():
 		uptime_string += _('%d min%s, ') % (uptime_min, s_min)
 	if uptime_sec > 1:
 		s_sec = 's'
-	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)				
-			
+	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)
+
 	return _('''Up and running since <strong>%s</strong>.<br /><br />
 Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.<br /><br />
-1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2]) 
+1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2])
 
 def system_info():
 
@@ -117,13 +117,21 @@ def system_info():
 		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers', 'Cached', 'SwapTotal', 'SwapFree' ):
 			mem.update(compute_mem(line, x))
 
-	return _('''
+	if mem['SwapTotal'] == 0:
+		# no swap on this system. Weird, but possible. fixes #40
+		swap_message = _("no virtual memory installed.")
+	else:
+		swap_message = \
+			_("Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.") % \
+				(mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']))
+
+	return (_('''
 Processor%s: %d x <strong>%s</strong><br /><br />
 Physical memory: <strong>%.2fGb</strong> total,<br />
 %.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
-Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.
-''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']), mem['Cached'], mem['Buffers'], mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']) )
-	
+%s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
+	mem['Cached'], mem['Buffers'], swap_message))
+
 def reboot(uri, http_user, sure = False):
 	if sure:
 		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Rebooting…')))
@@ -171,11 +179,11 @@ def halt(uri, http_user, sure = False):
 		_('YES'),
 		_('NO'))))
 def index(uri, http_user):
-		
+
 	start = time.time()
 
 	title = _("Server status")
-	data  = '<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->\n<div id="main">\n%s\n<div id="content">' % (w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav()) 
+	data  = '<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->\n<div id="main">\n%s\n<div id="content">' % (w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav())
 
 	data += '''<table>
 	<tr>
