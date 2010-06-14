@@ -41,7 +41,7 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	s = s.lower()
 
 	# TODO: see if there are not any special characters to replace...
-	translation_map = { 
+	translation_map = {
 						u'à': u'a',
 						u'â': u'a',
 						u'ä': u'a',
@@ -95,7 +95,7 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 
 	if len(s) > maxlenght:
 		raise exceptions.LicornRuntimeError("String %s too long (%d characters, but must be shorter or equal than %d)." % (s, len(s), maxlenght))
-		
+
 	# return a standard string (not unicode), because a login/group_name don't include
 	# accentuated letters or such strange things.
 	return str(s)
@@ -116,7 +116,7 @@ def generate_password(maxlen = 8, use_all_chars = False):
 
 	for i in range(0, maxlen):
 		char_type = random.randint(1, 4)
-		
+
 		if char_type < 3:
 			number = random.randint(0, 25)
 
@@ -134,7 +134,7 @@ def generate_password(maxlen = 8, use_all_chars = False):
 				# a special char
 				number = random.randint(0, special_chars_count)
 				password += special_chars[number]
-			
+
 	return password
 def statsize2human(size):
 	""" Convert an integer size (coming from a stat object) to a Human readable string.
