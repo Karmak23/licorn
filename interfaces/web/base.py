@@ -138,64 +138,6 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 %s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
 	mem['Cached'], mem['Buffers'], swap_message))
 
-def reboot(uri, http_user, sure = False):
-	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Rebooting…')))
-	else:
-		return w.minipage(w.lbox('''%s
-		<div class="vspacer"></div>
-		<table class="lbox-table">
-			<tr>
-				<td>
-					<form name="reboot_form" id="reboot_form"
-						action="/server/reboot/sure" method="get">
-						<a href="/server/reboot/sure"
-							params="lightwindow_form=reboot_form,'''
-							'''lightwindow_width=320,lightwindow_height=140"
-							class="lightwindow_action" rel="submitForm">
-							<button>%s</button>
-						</a>
-					</form>
-				</td>
-				<td>
-					<a href="#" class="lightwindow_action" rel="deactivate">
-						<button>%s</button></a>
-				</td>
-			</tr>
-		</table>
-		''' % (
-		_('Sure you want to reboot the %s server?') % configuration.app_name,
-		_('YES'),
-		_('NO'))))
-def halt(uri, http_user, sure = False):
-	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Shutting down…')))
-	else:
-		return w.minipage(w.lbox('''%s<div class="vspacer"></div>
-		<table class="lbox-table">
-			<tr>
-				<td>
-					<form name="shutdown_form" id="shutdown_form"
-						action="/server/halt/sure" method="get">
-						<a href="/server/halt/sure"
-							params="lightwindow_form=shutdown_form,'''
-							'''lightwindow_width=320,lightwindow_height=140"
-							class="lightwindow_action" rel="submitForm">
-							<button>%s</button>
-						</a>
-					</form>
-				</td>
-				<td>
-					<a href="#" class="lightwindow_action" rel="deactivate">
-					<button>%s</button></a>
-				</td>
-			</tr>
-		</table>''' % (
-		_('Sure you want to shutdown the %s server?') % configuration.app_name,
-		_('YES'),
-		_('NO'))))
 def index(uri, http_user):
 
 	start = time.time()

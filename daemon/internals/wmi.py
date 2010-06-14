@@ -81,9 +81,11 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_POST(self):
 		""" Handle POST data and create a dict to be used later."""
 
-		# TODO: protect ourselves against POST flood: if (too_much_data): send_header('BAD BAD') and stop()
+		# TODO: protect ourselves against POST flood: if (too_much_data):
+		# send_header('BAD BAD') and stop()
 
-		post_data = self.rfile.read(int(self.headers.getheader('content-length')))
+		post_data = self.rfile.read(
+			int(self.headers.getheader('content-length')))
 
 		post_data = post_data.split('&')
 		self.post_args = {}
@@ -133,7 +135,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		else:
 			# return the 401 HTTP error code
 			self.send_response(401, 'Unauthorized.')
-			self.send_header('WWW-authenticate', 'Basic realm="Licorn Web Management Interface"')
+			self.send_header('WWW-authenticate',
+				'Basic realm="Licorn Web Management Interface"')
 			retdata = ''
 
 		self.end_headers()
@@ -157,9 +160,12 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							#
 							# TODO: make this a beautiful PAM authentication ?
 							#
-							if users.user_exists(login = authorization[0]) and users.check_password(authorization[0], authorization[1]):
+							if users.user_exists(login = authorization[0]) \
+								and users.check_password(authorization[0],
+									authorization[1]):
 								if groups.group_exists(wmi_group):
-									if authorization[0] in groups.auxilliary_members(wmi_group):
+									if authorization[0] in \
+										groups.auxilliary_members(wmi_group):
 										self.http_user = authorization[0]
 										return True
 								else:
@@ -180,7 +186,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		return postargs
 	def serve_virtual_uri(self):
-		""" Serve dynamic URIs with our own code, and create pages on the fly. """
+		""" Serve dynamic URIs with our own code,
+		and create pages on the fly. """
 
 		retdata = None
 		rettype = 'text'
@@ -191,7 +198,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			retdata = web.base.index(self.path, self.http_user)
 
 		else:
-			# remove the last '/' (useless for us, even it if is semantic for a dir/)
+			# remove the last '/' (which is totally useless for us, even if it
+			# is considered semantic for a dir/)
 			if self.path[-1] == '/':
 				self.path = self.path[:-1]
 			# remove the first '/' before splitting (it is senseless here).
@@ -203,16 +211,18 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				args[1] = 'main'
 
 			if args[0] in dir(web):
-				logging.progress("Serving %s %s for http_user %s." % (self.path, args, self.http_user))
+				logging.progress("Serving %s %s for http_user %s." % (
+					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (args[0], args[1],
-						self.path, self.http_user,
-						', "%s",' % '","'.join(args[2:]) if len(args)>2 else ', ',
+					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (
+						args[0], args[1], self.path, self.http_user,
+						', "%s",' % '","'.join(args[2:]) \
+						if len(args)>2 else ', ',
 						', '.join(self.format_post_args()) )
 				else:
-					py_code = 'retdata = web.%s.%s("%s", "%s" %s)' % (args[0], args[1],
-						self.path, self.http_user,
+					py_code = 'retdata = web.%s.%s("%s", "%s" %s)' % (
+						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else '')
 
 				try:
@@ -220,14 +230,17 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					exec py_code
 
 				except (AttributeError, NameError), e:
-					# this warning is needed as long as send_head() will produce a 404 for ANY error.
-					# When it will able to distinguish between bad requests and real 404, this warning
-					# will disapear.
+					# this warning is needed as long as send_head() will produce
+					# a 404 for ANY error. When it will able to distinguish
+					# between bad requests and real 404, this warning will
+					# disapear.
 					logging.warning("exec(%s): %s." % (py_code, e))
-					self.send_error(500, "Internal server error or bad request.")
+					self.send_error(500,
+						"Internal server error or bad request.")
 			else:
 				# not a web.* module
-				raise exceptions.LicornWebException('Bad base request (probably a regular file request).')
+				raise exceptions.LicornWebException(
+					'Bad base request (probably a regular file request).')
 
 		if retdata:
 			self.send_response(200)
@@ -277,7 +290,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 			fs = os.fstat(retdata.fileno())
 			self.send_header("Content-Length", str(fs[6]))
-			self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+			self.send_header("Last-Modified",
+				self.date_time_string(fs.st_mtime))
 
 		return retdata
 	def guess_type(self, path):
@@ -326,7 +340,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		return path
 
 	#
-	# TODO: implement and override BaseHTTPRequestHandler.log_{request,error,message}(), to
+	# TODO: implement and override
+	# BaseHTTPRequestHandler.log_{request,error,message}(), to
 	# put logs into logfiles, like apache2 does ({access,error}.log). See
 	# /usr/lib/python2.5/BaseHTTPServer.py for details.
 	#
