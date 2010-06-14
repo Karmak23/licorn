@@ -214,7 +214,7 @@ class GroupsController:
 		if len(str(name)) > GroupsController.configuration.groups.name_maxlenght:
 			raise exceptions.LicornRuntimeError, "Group name must be smaller than %d characters." % GroupsController.configuration.groups.name_maxlenght
 		if description == '':
-			description = 'Les membres du groupe "%s"' % name
+			description = 'Les membres du groupe “%s”' % name
 		if not system and skel is "":
 			raise exceptions.BadArgumentError, "You must specify a skel dir."
 
@@ -228,7 +228,7 @@ class GroupsController:
 			description = '''Les membres du groupe "%s"''' % name
 
 		if not hlstr.cregex['group_name'].match(name):
-			raise exceptions.BadArgumentError("Malformed group name `%s', must match /%s/i."
+			raise exceptions.BadArgumentError("Malformed group name '%s', must match /%s/i."
 				% (name, styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])) )
 
 		#logging.warning('descr: %s.' % description)
