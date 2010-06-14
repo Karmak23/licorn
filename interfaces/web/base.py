@@ -15,8 +15,10 @@ def ctxtnav():
 	<div id="ctxtnav" class="nav">
         <h2>Context Navigation</h2>
 		<ul>
-		<li><a href="/server/reboot" title="%s" class="lightwindow"><div class="ctxt-icon" id="icon-reboot">%s</div></a></li>
-		<li><a href="/server/halt" title="%s" class="lightwindow"><div class="ctxt-icon" id="icon-shutdown">%s</div></a></li>
+		<li><a href="/server/reboot" title="%s" class="lightwindow">
+		<div class="ctxt-icon" id="icon-reboot">%s</div></a></li>
+		<li><a href="/server/halt" title="%s" class="lightwindow">
+		<div class="ctxt-icon" id="icon-shutdown">%s</div></a></li>
 		</ul>
         <hr />
 	</div>
@@ -33,7 +35,8 @@ def system_load():
 	allusers.Select(allusers.FILTER_STANDARD)
 	nbusers = len(allusers.filtered_users)
 
-	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE, close_fds = True).stdout.read().split('\n'))
+	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE,
+		close_fds = True).stdout.read().split('\n'))
 	if cxusers > 1:
 		s_users = 's'
 	else:
@@ -80,8 +83,10 @@ def system_load():
 	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)
 
 	return _('''Up and running since <strong>%s</strong>.<br /><br />
-Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.<br /><br />
-1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2])
+Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.
+<br /><br />
+1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (
+	uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2])
 
 def system_info():
 
@@ -114,7 +119,8 @@ def system_info():
 			return {}
 
 	for line in open('/proc/meminfo'):
-		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers', 'Cached', 'SwapTotal', 'SwapFree' ):
+		for x in ( 'MemTotal', 'Active', 'Inactive', 'MemFree', 'Buffers',
+			'Cached', 'SwapTotal', 'SwapFree' ):
 			mem.update(compute_mem(line, x))
 
 	if mem['SwapTotal'] == 0:
@@ -134,21 +140,27 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 
 def reboot(uri, http_user, sure = False):
 	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Rebooting…')))
+		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
+			_('Rebooting…')))
 	else:
 		return w.minipage(w.lbox('''%s
 		<div class="vspacer"></div>
 		<table class="lbox-table">
 			<tr>
 				<td>
-					<form name="reboot_form" id="reboot_form" action="/server/reboot/sure" method="get">
-						<a href="/server/reboot/sure"  params="lightwindow_form=reboot_form,lightwindow_width=320,lightwindow_height=140" class="lightwindow_action" rel="submitForm">
+					<form name="reboot_form" id="reboot_form"
+						action="/server/reboot/sure" method="get">
+						<a href="/server/reboot/sure"
+							params="lightwindow_form=reboot_form,'''
+							'''lightwindow_width=320,lightwindow_height=140"
+							class="lightwindow_action" rel="submitForm">
 							<button>%s</button>
 						</a>
 					</form>
 				</td>
 				<td>
-					<a href="#" class="lightwindow_action" rel="deactivate"><button>%s</button></a>
+					<a href="#" class="lightwindow_action" rel="deactivate">
+						<button>%s</button></a>
 				</td>
 			</tr>
 		</table>
@@ -158,20 +170,26 @@ def reboot(uri, http_user, sure = False):
 		_('NO'))))
 def halt(uri, http_user, sure = False):
 	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % _('Shutting down…')))
+		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
+			_('Shutting down…')))
 	else:
 		return w.minipage(w.lbox('''%s<div class="vspacer"></div>
 		<table class="lbox-table">
 			<tr>
 				<td>
-					<form name="shutdown_form" id="shutdown_form" action="/server/halt/sure" method="get">
-						<a href="/server/halt/sure"  params="lightwindow_form=shutdown_form,lightwindow_width=320,lightwindow_height=140" class="lightwindow_action" rel="submitForm">
+					<form name="shutdown_form" id="shutdown_form"
+						action="/server/halt/sure" method="get">
+						<a href="/server/halt/sure"
+							params="lightwindow_form=shutdown_form,'''
+							'''lightwindow_width=320,lightwindow_height=140"
+							class="lightwindow_action" rel="submitForm">
 							<button>%s</button>
 						</a>
 					</form>
 				</td>
 				<td>
-					<a href="#" class="lightwindow_action" rel="deactivate"><button>%s</button></a>
+					<a href="#" class="lightwindow_action" rel="deactivate">
+					<button>%s</button></a>
 				</td>
 			</tr>
 		</table>''' % (
@@ -183,14 +201,17 @@ def index(uri, http_user):
 	start = time.time()
 
 	title = _("Server status")
-	data  = '<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->\n<div id="main">\n%s\n<div id="content">' % (w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav())
+	data  = '''<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->
+		<div id="main">\n%s\n<div id="content">''' % (
+			w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav())
 
 	data += '''<table>
 	<tr>
 		<td><h1>%s</h1><br />%s</td>
 		<td><h1>%s</h1>%s</td>
 	</tr>
-''' % (_('System information'), system_info(), _('System status'), system_load())
+	''' % (_('System information'), system_info(),
+		_('System status'), system_load())
 
 	data += '''
 	<tr>
