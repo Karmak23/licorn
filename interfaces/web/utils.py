@@ -320,7 +320,7 @@ def head(title = _("administration %s") % configuration.app_name):
 	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>%s WMI: %s</title>
+<title>%s %s</title>
 <link rel="shortcut icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
 <link rel="icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
@@ -337,7 +337,7 @@ def head(title = _("administration %s") % configuration.app_name):
 <script type="text/javascript" src="/js/accordion.js"></script>
 </head>
 <body>
-""" % (configuration.app_name, title)
+""" % (_("%s WMI:") %configuration.app_name, title)
 def tail():
 	return """\n</body></html>"""
 
