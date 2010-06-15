@@ -14,9 +14,12 @@ import os, cStringIO
 from subprocess  import Popen, PIPE
 from licorn.core import configuration
 
-licence_text = _("""
-%s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU GPL version 2</a> license, without any kind of waranty. Copyleft &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s, and all other libre software developers (Notably Ubuntu, Debian, Python…).
-""") % (configuration.app_name, configuration.app_name)
+licence_text = _('''
+%s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU
+ GPL version 2</a> license, without any kind of waranty. Copyleft &copy;
+ 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,
+  and all other libre software developers (Notably Ubuntu, Debian, Python…).
+''') % (configuration.app_name, configuration.app_name)
 
 acronyms = {
 	'SSH' : _('Secure SHell (Secure remote connexion and commands protocol)'),
@@ -29,36 +32,34 @@ acronyms = {
 	'SMTP': _('Simple Mail Transfer Protocol'),
 	'RSA' : _('Rivest Shamir Adleman (cryptography protocol)'),
 	'DSA' : _('Digital Signature Algorithm'),
-	'GNU' : _('GNU is Not Unix (recursive acronym ; a set of libre sofware composing a libre operating system)'),
-	'LCN' : _('LiCorN system tools (tools for IT managers, see http://dev.licorn.org/)'),
-	'LAT' : _('Licorn Admin Tools (High-level management tools for a GNU/Linux system)')
+	'GNU' : _('''GNU is Not Unix (recursive acronym ; a set of libre sofware
+		composing a libre operating system)'''),
+	'LCN' : _('''LiCorN system tools (tools for IT managers,
+		see http://dev.licorn.org/)'''),
+	'LAT' : _('''Licorn Admin Tools (High-level management tools for
+		a GNU/Linux system)''')
 	}
 
 # EXEC / SYSTEM functions.
-def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur durant l\'exécution de la commande'):
+def run(command):
 	"""Execute a command passed as a list or tuple"""
 
 	if type(command) not in (type(()), type([])):
-		return error("La commande passée en paramètre doit être un tuple ou une liste Python&#160;!", command, "if type(command) not in (type(()), type([])):")
+		raise exceptions.LicornWebCommandError(
+			error(_("Command must be a list or tuple!"),
+			command, "if type(command) not in (type(()), type([])):"))
 
-	p = Popen(command, executable = 'sudo' , shell = False, stdin = PIPE, stdout = PIPE, stderr = PIPE, close_fds = True)
-
-	(pin, pout, perr) = (p.stdin, p.stdout, p.stderr)
+	p = Popen(command, executable='sudo' , shell=False, stdin=PIPE,
+		stdout=PIPE, stderr=PIPE, close_fds=True)
 
 	# FIXME: why this ?
-	err = "nothing"
+	err = False
 	(out, err) = p.communicate()
 
-	if err != "":
-		return error(err_msg, command, err.replace('>', '&gt;').replace('<', '&lt;'))
-	else:
-		if successfull_redirect != None:
-			#util.redirect(req, successfull_redirect)
-			#return True
-			return ''
-		else:
-			return ''
-			#return True
+	if err:
+		raise exceptions.LicornWebCommandException(
+			err.replace('>', '&gt;').replace('<', '&lt;'))
+
 def total_time(start, end):
 	elapsed = end - start
 	ptime   = ""
@@ -384,3 +385,4 @@ def img(type = 'progressbar', width = 150, height = 22, text = ''):
 HTTP_TYPE_TEXT     = 1
 HTTP_TYPE_IMG      = 2
 HTTP_TYPE_DOWNLOAD = 3
+HTTP_TYPE_REDIRECT = 4

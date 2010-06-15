@@ -46,7 +46,7 @@ def eventually_fork_wmi_server(opts, start_wmi = True):
 				# when creation succeeds, break the loop and serve requets.
 				count += 1
 				try:
-					httpd = TCPServer(('127.0.0.1', wmi_port), WMIHTTPRequestHandler)
+					httpd = TCPServer(('localhost', wmi_port), WMIHTTPRequestHandler)
 					break
 				except socket.error, e:
 					if e[0] == 98:
@@ -109,7 +109,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				else:
 					self.post_args[key] = value
 
-		#print '%s' % self.post_args
+		#logging.info('%s' % self.post_args)
 
 		self.do_GET()
 	def send_head(self):
@@ -121,7 +121,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		to the outputfile by the caller unless the command was HEAD,
 		and must be closed by the caller under all circumstances), or
 		None, in which case the caller has nothing further to do.
-
 		"""
 
 		#logging.progress('serving HTTP Request: %s.' % self.path)
@@ -250,21 +249,37 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		#	type(retdata), retdata))
 
 		if retdata:
-			self.send_response(200)
 
 			if rettype in ('img', w.HTTP_TYPE_IMG):
+				self.send_response(200)
 				self.send_header("Content-type", 'image/png')
 
 			elif rettype == w.HTTP_TYPE_DOWNLOAD:
 				# fix #104
+				self.send_response(200)
 				self.send_header("Content-type", 'application/force-download; charset=utf-8')
 				self.send_header("Content-Disposition", "attachment; filename=export.%s" % retdata[0])
 				self.send_header("Pragma", "no-cache")
 				self.send_header("Expires", "0")
 
+				# retdata was a tuple in this particular case.
+				# forget the first argument (the content type) and
+				# make retdata suitable for next operation.
 				retdata = retdata[1]
 
+			elif rettype == w.HTTP_TYPE_REDIRECT:
+				# special entry, which should not return any data, else
+				# the redirect won't work.
+				self.send_response(302)
+				self.send_header("Location", 'http://%s:%s%s' % (
+					socket.gethostbyaddr(self.server.server_address[0])[0],
+						wmi_port, retdata))
+				self.send_header("Connection", 'close')
+				self.end_headers()
+				return ''
+
 			else: # w.HTTP_TYPE_TEXT
+				self.send_response(200)
 				self.send_header("Content-type", 'text/html; charset=utf-8')
 				self.send_header("Pragma", "no-cache")
 

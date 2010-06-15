@@ -19,7 +19,7 @@ class LicornError(LicornException):
 	""" !!! NOT TO BE RAISED DIRECTLY !!!
 		This exception class is to be derivated to create every other *Error subclasses.
 		It is derivated from LicornException to stick to the python Exception classes,
-		and to permit to catch only one general Licorn class at the lowest levels in 
+		and to permit to catch only one general Licorn class at the lowest levels in
 		Licorn programs.
 	"""
 	errno = 2
@@ -65,6 +65,12 @@ class LicornWebException(LicornRuntimeException):
 	pass
 class LicornWebError(LicornRuntimeError):
 	errno = 602
+	pass
+class LicornWebCommandException(LicornWebException):
+	errno = 603
+	pass
+class LicornWebCommandError(LicornWebError):
+	errno = 604
 	pass
 
 class LicornHarvestException(LicornRuntimeException):
@@ -213,7 +219,7 @@ class UpstreamBugException(LicornException):
 		This Exception is likely to disappear in your code when upstream bug are solved.
 	"""
 	pass
-	
+
 class NoAvaibleIdentifierError(LicornRuntimeError):
 	errno = 300
 	""" Raised when there is no gid or uid avaible.

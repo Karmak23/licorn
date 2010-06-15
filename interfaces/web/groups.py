@@ -69,11 +69,14 @@ def unlock(uri, http_user, name, sure=False):
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name",
 			name, "--set-permissive" ]
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list",
-			err_msg = \
-			_("Failed to activate permissivenes on group <strong>%s</strong>!")\
-			% name)))
+		try:
+			w.run(command)
+			return (w.HTTP_TYPE_REDIRECT, "/groups/list")
+
+		except exceptions.LicornWebCommandException, myex:
+			return (w.HTTP_TYPE_TEXT, w.page(title, data +
+				error(_('''Failed to activate permissivenes on group
+				<strong>%s</strong>!''') % name, command, myex)))
 def lock(uri, http_user, name, sure=False):
 	""" Make a group not permissive. """
 
@@ -106,12 +109,15 @@ def lock(uri, http_user, name, sure=False):
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
 			"--name", name, "--set-not-permissive" ]
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list",
-			err_msg = _('''Failed to remove permissiveness from group
-			<strong>%s</strong>!''') % name)))
+		try:
+			w.run(command)
+			return (w.HTTP_TYPE_REDIRECT, "/groups/list")
 
-# delete a group.
+		except exceptions.LicornWebCommandException, myex:
+			return (w.HTTP_TYPE_TEXT, w.page(title,
+				data + error(_('''Failed to remove permissiveness from group
+				<strong>%s</strong>!''') % name, command, myex)))
+
 def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	""" Remove group and archive (or not) group shared dir. """
 
@@ -157,7 +163,6 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 			w.run(command, uri, successfull_redirect = "/groups/list",
 			err_msg = _("Failed to remove group <strong>%s</strong>!") % name))
 
-# skel reapplyin'
 def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
 
