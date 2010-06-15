@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-15 11:44+0200\n"
-"PO-Revision-Date: 2010-06-15 11:45+0100\n"
+"POT-Creation-Date: 2010-06-15 15:59+0200\n"
+"PO-Revision-Date: 2010-06-15 16:00+0100\n"
 "Last-Translator: Olivier Cortès <olivier.cortes@meta-it.fr>\n"
 "Language-Team: French\n"
 "MIME-Version: 1.0\n"
@@ -235,7 +235,7 @@ msgstr "A"
 #: interfaces/web/groups.py:99
 #: interfaces/web/groups.py:140
 #: interfaces/web/groups.py:206
-#: interfaces/web/groups.py:562
+#: interfaces/web/groups.py:594
 #: interfaces/web/users.py:325
 #: interfaces/web/users.py:462
 #: interfaces/web/users.py:666
@@ -247,7 +247,7 @@ msgstr "Annuler"
 #: interfaces/web/groups.py:141
 #: interfaces/web/groups.py:207
 #: interfaces/web/groups.py:267
-#: interfaces/web/groups.py:562
+#: interfaces/web/groups.py:594
 msgid "N"
 msgstr "N"
 
@@ -351,7 +351,7 @@ msgid "Remove"
 msgstr "Supprimer"
 
 #: interfaces/web/groups.py:139
-#: interfaces/web/groups.py:565
+#: interfaces/web/groups.py:597
 #: interfaces/web/users.py:146
 #: interfaces/web/users.py:231
 msgid "R"
@@ -412,12 +412,12 @@ msgid "Creating a new group"
 msgstr "Création d'un nouveau groupe"
 
 #: interfaces/web/groups.py:257
-#: interfaces/web/groups.py:550
+#: interfaces/web/groups.py:582
 msgid "Group name"
 msgstr "Nom de groupe"
 
 #: interfaces/web/groups.py:259
-#: interfaces/web/groups.py:553
+#: interfaces/web/groups.py:585
 msgid "Group description"
 msgstr "Description du groupe"
 
@@ -430,7 +430,7 @@ msgid "Skel of future group members"
 msgstr "Squelette des futurs membres du groupe"
 
 #: interfaces/web/groups.py:265
-#: interfaces/web/groups.py:499
+#: interfaces/web/groups.py:531
 msgid "Permissive shared dir?"
 msgstr "Répertoire de groupe permissif&#160;?"
 
@@ -439,7 +439,7 @@ msgid "Yes"
 msgstr "Oui"
 
 #: interfaces/web/groups.py:266
-#: interfaces/web/groups.py:406
+#: interfaces/web/groups.py:438
 #: interfaces/web/users.py:446
 msgid "P"
 msgstr "P"
@@ -472,257 +472,261 @@ msgstr "Impossible de créer le groupe %s&#160;!"
 
 #: interfaces/web/groups.py:299
 #, python-format
-msgid "Showing details of group %s"
-msgstr "Voir les détails du groupe %s."
+msgid "Details of group %s"
+msgstr "Détails du groupe %s"
 
-#: interfaces/web/groups.py:323
+#: interfaces/web/groups.py:327
 msgid "Members"
 msgstr "Membres"
 
-#: interfaces/web/groups.py:323
-#: interfaces/web/groups.py:350
+#: interfaces/web/groups.py:328
 #: interfaces/web/groups.py:369
+#: interfaces/web/groups.py:398
 msgid "(ordered by login)"
 msgstr "(classés par identifiant)"
 
-#: interfaces/web/groups.py:323
-#: interfaces/web/groups.py:351
+#: interfaces/web/groups.py:329
 #: interfaces/web/groups.py:370
-#: interfaces/web/groups.py:771
+#: interfaces/web/groups.py:399
+#: interfaces/web/groups.py:806
 msgid "Full Name"
 msgstr "Nom complet"
 
-#: interfaces/web/groups.py:324
-#: interfaces/web/groups.py:351
-#: interfaces/web/groups.py:370
-#: interfaces/web/groups.py:772
+#: interfaces/web/groups.py:330
+#: interfaces/web/groups.py:371
+#: interfaces/web/groups.py:400
+#: interfaces/web/groups.py:807
 #: interfaces/web/users.py:454
 #: interfaces/web/users.py:785
 msgid "Identifier"
 msgstr "Identifiant"
 
-#: interfaces/web/groups.py:324
-#: interfaces/web/groups.py:351
-#: interfaces/web/groups.py:370
-#: interfaces/web/groups.py:772
+#: interfaces/web/groups.py:331
+#: interfaces/web/groups.py:372
+#: interfaces/web/groups.py:401
+#: interfaces/web/groups.py:807
 msgid "UID"
 msgstr "UID"
 
-#: interfaces/web/groups.py:350
-#: interfaces/web/groups.py:647
+#: interfaces/web/groups.py:348
+msgid "No members in this group."
+msgstr "Aucun invité dans ce groupe."
+
+#: interfaces/web/groups.py:368
+#: interfaces/web/groups.py:682
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: interfaces/web/groups.py:356
+#: interfaces/web/groups.py:378
 msgid "No responsibles for this group."
 msgstr "Aucun responsable de ce groupe."
 
-#: interfaces/web/groups.py:369
-#: interfaces/web/groups.py:648
+#: interfaces/web/groups.py:397
+#: interfaces/web/groups.py:683
 msgid "Guests"
 msgstr "Invités"
 
-#: interfaces/web/groups.py:373
-msgid "No guests for this group."
+#: interfaces/web/groups.py:405
+msgid "No guests in this group."
 msgstr "Aucun invité dans ce groupe."
 
-#: interfaces/web/groups.py:398
-#: interfaces/web/groups.py:548
+#: interfaces/web/groups.py:430
+#: interfaces/web/groups.py:580
 msgid "GID"
 msgstr "GID"
 
-#: interfaces/web/groups.py:398
-#: interfaces/web/groups.py:400
+#: interfaces/web/groups.py:430
+#: interfaces/web/groups.py:431
 msgid "immutable"
 msgstr "non modifiable"
 
-#: interfaces/web/groups.py:400
-#: interfaces/web/groups.py:643
+#: interfaces/web/groups.py:431
+#: interfaces/web/groups.py:678
 msgid "Name"
 msgstr "Nom"
 
-#: interfaces/web/groups.py:403
+#: interfaces/web/groups.py:435
 msgid "<< Go back"
 msgstr "<< Revenir"
 
-#: interfaces/web/groups.py:403
+#: interfaces/web/groups.py:435
 msgid "B"
 msgstr "R"
 
-#: interfaces/web/groups.py:404
+#: interfaces/web/groups.py:436
 msgid "Print"
 msgstr "Imprimer"
 
-#: interfaces/web/groups.py:410
-#: interfaces/web/groups.py:569
+#: interfaces/web/groups.py:442
+#: interfaces/web/groups.py:601
 #, python-format
 msgid "Group %s doesn't exist (%s, %s)!"
 msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
 
-#: interfaces/web/groups.py:425
+#: interfaces/web/groups.py:457
 #, python-format
 msgid "Editing group %s"
 msgstr "Édition du groupe %s"
 
-#: interfaces/web/groups.py:435
-#: interfaces/web/groups.py:442
+#: interfaces/web/groups.py:467
+#: interfaces/web/groups.py:474
 msgid "Manage members"
 msgstr "Gérer les membres"
 
-#: interfaces/web/groups.py:435
-#: interfaces/web/groups.py:443
+#: interfaces/web/groups.py:467
+#: interfaces/web/groups.py:475
 msgid "Users not yet members"
 msgstr "Utilisateurs non-membres"
 
-#: interfaces/web/groups.py:436
-#: interfaces/web/groups.py:444
-#: interfaces/web/groups.py:752
+#: interfaces/web/groups.py:468
+#: interfaces/web/groups.py:476
+#: interfaces/web/groups.py:787
 msgid "Current members"
 msgstr "Membres actuels"
 
-#: interfaces/web/groups.py:447
+#: interfaces/web/groups.py:479
 msgid "Manage responsibles"
 msgstr "Gérer les responsables"
 
-#: interfaces/web/groups.py:448
+#: interfaces/web/groups.py:480
 msgid "Users not yet responsibles"
 msgstr "Utilisateurs pas encore responsables"
 
-#: interfaces/web/groups.py:449
-#: interfaces/web/groups.py:753
+#: interfaces/web/groups.py:481
+#: interfaces/web/groups.py:788
 msgid "Current responsibles"
 msgstr "Responsables actuels"
 
-#: interfaces/web/groups.py:452
+#: interfaces/web/groups.py:484
 msgid "Manage guests"
 msgstr "Gérer les invités"
 
-#: interfaces/web/groups.py:453
+#: interfaces/web/groups.py:485
 msgid "Users not yet guests"
 msgstr "Utilisateurs pas encore invités"
 
-#: interfaces/web/groups.py:454
-#: interfaces/web/groups.py:754
+#: interfaces/web/groups.py:486
+#: interfaces/web/groups.py:789
 msgid "Current guests"
 msgstr "Invités actuels"
 
-#: interfaces/web/groups.py:486
-#: interfaces/web/groups.py:644
+#: interfaces/web/groups.py:518
+#: interfaces/web/groups.py:679
 msgid "Skeleton"
 msgstr "Squelette"
 
-#: interfaces/web/groups.py:548
-#: interfaces/web/groups.py:550
+#: interfaces/web/groups.py:580
+#: interfaces/web/groups.py:582
 msgid "(immutable)"
 msgstr "(non modifiable)"
 
-#: interfaces/web/groups.py:556
+#: interfaces/web/groups.py:588
 msgid "Group members"
 msgstr "Membres du groupe"
 
-#: interfaces/web/groups.py:558
+#: interfaces/web/groups.py:590
 msgid "Group responsibles"
 msgstr "Responsables du groupe"
 
-#: interfaces/web/groups.py:560
+#: interfaces/web/groups.py:592
 msgid "Group guests"
 msgstr "Invités du groupe"
 
-#: interfaces/web/groups.py:563
+#: interfaces/web/groups.py:595
 msgid "Record"
 msgstr "Enregistrer"
 
-#: interfaces/web/groups.py:585
+#: interfaces/web/groups.py:617
 #, python-format
 msgid "Modifying group %s"
 msgstr "Modification du groupe %s"
 
-#: interfaces/web/groups.py:614
+#: interfaces/web/groups.py:649
 #, python-format
 msgid "Failed to modify one or more parameter of group %s!"
 msgstr "Impossible de modifier un ou plusieurs paramètres du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:633
+#: interfaces/web/groups.py:668
 #: interfaces/web/users.py:458
 #: interfaces/web/users.py:662
 #: interfaces/web/utils.py:307
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/web/groups.py:645
+#: interfaces/web/groups.py:680
 msgid "Perm."
 msgstr "Perm."
 
-#: interfaces/web/groups.py:656
+#: interfaces/web/groups.py:691
 #, python-format
 msgid "%s order"
 msgstr "ordre %s"
 
-#: interfaces/web/groups.py:657
+#: interfaces/web/groups.py:692
 #: interfaces/web/users.py:792
 msgid "Click to sort in reverse order."
 msgstr "Cliquer pour classer dans l'ordre inverse."
 
-#: interfaces/web/groups.py:661
+#: interfaces/web/groups.py:696
 #: interfaces/web/users.py:796
 msgid "Click to sort on this column."
 msgstr "Cliquer pour classer sur cette colonne."
 
-#: interfaces/web/groups.py:669
+#: interfaces/web/groups.py:704
 #: interfaces/web/users.py:459
 #: interfaces/web/users.py:663
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: interfaces/web/groups.py:738
+#: interfaces/web/groups.py:773
 msgid "Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness."
 msgstr "Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité."
 
-#: interfaces/web/groups.py:740
+#: interfaces/web/groups.py:775
 msgid "Group is currently permissive."
 msgstr "Le groupe est actuellement permissif."
 
-#: interfaces/web/groups.py:747
+#: interfaces/web/groups.py:782
 msgid "Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness."
 msgstr "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité."
 
-#: interfaces/web/groups.py:749
+#: interfaces/web/groups.py:784
 msgid "Group is NOT permissive."
 msgstr "Le groupe N'EST PAS permissif actuellement."
 
-#: interfaces/web/groups.py:783
+#: interfaces/web/groups.py:818
 msgid "none"
 msgstr "aucun"
 
-#: interfaces/web/groups.py:790
+#: interfaces/web/groups.py:825
 #, python-format
 msgid "See %s of group %s."
 msgstr "Voir les %s du groupe %s."
 
-#: interfaces/web/groups.py:809
+#: interfaces/web/groups.py:844
 #: interfaces/web/users.py:296
 msgid "This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull."
 msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
 
-#: interfaces/web/groups.py:813
+#: interfaces/web/groups.py:848
 msgid "Reapply skel to group members."
 msgstr "Reappliquer un squelette aux membres du groupe."
 
-#: interfaces/web/groups.py:814
+#: interfaces/web/groups.py:849
 msgid "Definitely remove this group from system."
 msgstr "Supprimer définitivement le compte du système."
 
-#: interfaces/web/groups.py:815
+#: interfaces/web/groups.py:850
 msgid "Remove this group."
 msgstr "Supprimer le groupe."
 
-#: interfaces/web/groups.py:830
+#: interfaces/web/groups.py:865
 #: interfaces/web/users.py:909
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr "nombre de <strong>%s</strong>&#160;:"
 
-#: interfaces/web/groups.py:843
+#: interfaces/web/groups.py:878
 msgid "Total number of groups:"
 msgstr "Nombre total de groupes&#160;:"
 

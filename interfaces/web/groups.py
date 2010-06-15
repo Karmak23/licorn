@@ -296,8 +296,8 @@ def view(uri, http_user, name):
 	users.reload()
 	groups.reload()
 
-	title = _("Showing details of group %s") % name
-	data  = '%s\n%s\n%s\n' % (w.backto(), __groups_actions(), w.menu(uri))
+	title = _("Details of group %s") % name
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	u = users.users
 	g = groups.groups
@@ -310,35 +310,52 @@ def view(uri, http_user, name):
 	try:
 		group   = g[groups.name_to_gid(name)]
 		members = groups.all_members(name)
-		members.sort()
 
-		members_html = '''
-		<h2>%s</h2><div style="text-align:center;">%s</div>
-		<table class="group_members">
-		<tr>
-			<td><strong>%s</strong></td>
-			<th><strong>%s</strong></th>
-			<th><strong>%s</strong></th>
-		</tr>
-		''' % (_('Members'), _('(ordered by login)'), _('Full Name'),
-			_('Identifier'), _('UID'))
-		def user_line(login):
-			uid = users.login_to_uid(login)
-			return '''<tr><td>%s</td><td>%s</td><td>%s</td></tr>''' % (
-				u[uid]['gecos'], login, uid)
+		if members != []:
+			members.sort()
 
-		members_html += "\n".join(map(user_line, members)) + '</table>'
+			members_html = '''
+			<h2>%s</h2>
+			<div style="text-align:left;">%s</div>
+			<table class="group_members">
+			<tr>
+				<th><strong>%s</strong></th>
+				<th><strong>%s</strong></th>
+				<th><strong>%s</strong></th>
+			</tr>
+			''' % (
+				_('Members'),
+				_('(ordered by login)'),
+				_('Full Name'),
+				_('Identifier'),
+				_('UID')
+				)
+			def user_line(login):
+				uid = users.login_to_uid(login)
+				return '''<tr>
+					<td>%s</td>
+					<td>%s</td>
+					<td>%s</td>
+					</tr>''' % (
+					u[uid]['gecos'],
+					login,
+					uid
+					)
+
+			members_html += "\n".join(map(user_line, members)) + '</table>'
+
+		else:
+			members_html = "<h2>%s</h2>" % _('No members in this group.')
+
 
 		if not groups.is_system_group(name):
-			resps  = groups.all_members(configuration.groups.resp_prefix + name)
-			resps.sort()
-			guests = \
-				groups.all_members(configuration.groups.guest_prefix + name)
-			guests.sort()
+			resps = groups.all_members(configuration.groups.resp_prefix + name)
 
 			if resps != []:
+				resps.sort()
 				resps_html = '''
-		<h2>%s</h2><div style="text-align:center;">%s</div>
+		<h2>%s</h2>
+		<div style="text-align:left;">%s</div>
 		<table class="group_members">
 		<tr>
 			<th><strong>%s</strong></th>
@@ -347,17 +364,27 @@ def view(uri, http_user, name):
 		</tr>
 		%s
 		</table>
-			''' % (_('Responsibles'), _('(ordered by login)'),
-				_('Full Name'), _('Identifier'), _('UID'),
-				"\n".join(map(user_line, resps)))
+			''' % (
+			_('Responsibles'),
+			_('(ordered by login)'),
+			_('Full Name'),
+			_('Identifier'),
+			_('UID'),
+			"\n".join(map(user_line, resps))
+			)
 
 			else:
 				resps_html = "<h2>%s</h2>" % \
 					_('No responsibles for this group.')
 
+			guests = \
+				groups.all_members(configuration.groups.guest_prefix + name)
+
 			if guests != []:
+				guests.sort()
 				guests_html = '''
-		<h2>%s</h2><div style="text-align:center;">%s</div>
+		<h2>%s</h2>
+		<div style="text-align:left;">%s</div>
 		<table class="group_members">
 		<tr>
 			<th><strong>%s</strong></th>
@@ -366,18 +393,23 @@ def view(uri, http_user, name):
 		</tr>
 		%s
 		</table>
-			''' % (_('Guests'), _('(ordered by login)'),
-				_('Full Name'), _('Identifier'), _('UID'),
-				"\n".join(map(user_line, guests)))
+			''' % (
+			_('Guests'),
+			_('(ordered by login)'),
+			_('Full Name'),
+			_('Identifier'),
+			_('UID'),
+			"\n".join(map(user_line, guests))
+			)
 			else:
-				guests_html = "<h2>%s</h2>" % _('No guests for this group.')
+				guests_html = "<h2>%s</h2>" % _('No guests in this group.')
 
 		else:
 			resps_html = guests_html = ''
 
 		form_name = "group_print_form"
 		data += '''
-		<div id="content">
+		<div id="details">
 		<form name="%s" id="%s" action="/groups/view/%s" method="post">
 		<table id="user_account">
 			<tr><td><strong>%s</strong><br />%s</td>
@@ -395,15 +427,15 @@ def view(uri, http_user, name):
 		</form>
 		</div>
 			''' % ( form_name, form_name, name,
-				_('GID'), _('immutable'),
-				group['gid'],
-				_('Name'), _('immutable'),
-				name,
-				members_html, resps_html, guests_html,
+				_('GID'), _('immutable'), group['gid'],
+				_('Name'), _('immutable'), name,
+				members_html,
+				resps_html,
+				guests_html,
 				w.button(_('<< Go back'), "/groups/list", accesskey=_('B')),
 				w.submit('print', _('Print') + ' >>',
-				onClick="javascript:window.print(); return false;",
-				accesskey=_('P'))
+					onClick="javascript:window.print(); return false;",
+					accesskey=_('P'))
 				)
 
 	except exceptions.LicornException, e:

@@ -23,7 +23,7 @@ h4 { font-size: 110%; margin: .5em 1em .3em 0 }
 /*
 
 	BANNER and top of page (logo…)
-	
+
 */
 
 div#banner {
@@ -46,7 +46,7 @@ div#header {
 img{
 	border: 0;
 	vertical-align: middle;
-} 
+}
 
 input, textarea, button, select {
    font-family: Luxi Sans, DejaVu Sans, Bitstream Vera Sans, sans-serif;
@@ -69,26 +69,30 @@ input[type=submit], button {
 ul, ol, li, p {
 	text-align: justify;
 	margin: 0.5em 1em;
-} 
-pre { 
+}
+pre {
 	font-family: Lucida Console, Andale Mono, Luxi Mono, Bitstream Vera Sans Mono, monospace;
 	border-top: 1px solid #a2c2e1;
 	border-bottom: 1px solid #a2c2e1;
 	padding: 1em 2em;
-} 
+}
 
 table, td, th {
 	padding: 0.2em;
-} 
+}
 
-a, a:link, a:visited { 
+th {
+	text-align: left;
+}
+
+a, a:link, a:visited {
 	color:#369;
 	text-decoration: none;
 	background-color: transparent;
-} 
-a:hover { 
+}
+a:hover {
 	color: #fec;
-} 
+}
 
 .nav h2, .nav hr { display: none }
 
@@ -179,7 +183,7 @@ a:hover {
 	padding: 0px 10px 10px;
 }
 /* Context-dependent navigation links */
-#ctxtnav { 
+#ctxtnav {
 	position: absolute;
 	clear: none;
 	top: 0px;
