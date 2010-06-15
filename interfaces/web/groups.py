@@ -587,8 +587,11 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	command = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
 		'--name', name ]
 
+	if description:
+		command.extend(["--description", description])
+
 	if skel:
-		command.extend([ "--skel", skel ])
+		command.extend(["--skel", skel])
 
 	add_members = ','.join(__merge_multi_select(members_dest))
 	del_members = ','.join(__merge_multi_select(members_source))
