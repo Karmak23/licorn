@@ -37,7 +37,7 @@ acronyms = {
 # EXEC / SYSTEM functions.
 def run(command, uri, successfull_redirect = '/users/list', err_msg = 'Erreur durant l\'exécution de la commande'):
 	"""Execute a command passed as a list or tuple"""
-	
+
 	if type(command) not in (type(()), type([])):
 		return error("La commande passée en paramètre doit être un tuple ou une liste Python&#160;!", command, "if type(command) not in (type(()), type([])):")
 
@@ -110,7 +110,7 @@ def doubleListBox_orig(titles, id, values_source = [], values_dest = []):
 	''' % (masker, titles[0], id, id,  id, masker, id,
 		selectbox(titles[1],  id_left, id, values_source),
 		id_left, id_right, id,
-		id_right, id_left, id,	
+		id_right, id_left, id,
 		selectbox(titles[2], id_right, id, values_dest) )
 def doubleListBox(titles, id, values_source = [], values_dest = []):
 
@@ -139,12 +139,12 @@ def doubleListBox(titles, id, values_source = [], values_dest = []):
 			</tr>
 		</table>
 	</div>
-	''' % ( id, 
+	''' % ( id,
 		selectbox(titles[1],  id_left, id, values_source),
 		_('Add'),
 		id_left, id_right, id,
 		_('Remove'),
-		id_right, id_left, id,	
+		id_right, id_left, id,
 		selectbox(titles[2], id_right, id, values_dest) )
 
 # GRAPHICAL functions
@@ -153,7 +153,7 @@ def question(title, message, yes_values, no_values, form_options = None):
 		{yes,no}_values = ("value of the button or link", "href of link, or action of form", "accesskey" )
 	***ACCESSKEYS for buttons are not yet implemented***
 	"""
-	
+
 	data = """
 <div id="question">
 	<div class="title">%s</div>
@@ -216,7 +216,7 @@ def page_body_start(uri, http_user, ctxtnav, title, active = True):
 <div id="content">
 	<h1>%s</h1>
 	''' % (
-		backto(), metanav(http_user), menu(uri), ctxtnav(active), title) 
+		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
 def page_body_end(data = ''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 
@@ -249,7 +249,7 @@ def	input(name, value, size = 20, maxlength = 1024, disabled = False, password =
 	else: disabled = ""
 	if password: type = "password"
 	else: type = "text"
-	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey)) 
+	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey))
 def	checkbox(name, value, label, checked = False, disabled = False, accesskey = None):
 	if disabled:
 		disabled = 'disabled="disabled"'
@@ -259,7 +259,7 @@ def	checkbox(name, value, label, checked = False, disabled = False, accesskey = 
 		checked = 'checked="checked"'
 	else:
 		checked = ""
-	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>''' % (name, value, checked, disabled, access_key(accesskey), label) 
+	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>''' % (name, value, checked, disabled, access_key(accesskey), label)
 
 # HTML DOCUMENT functions
 def acr(word):
@@ -268,7 +268,7 @@ def acr(word):
 	except KeyError:
 		return word
 def menu(uri):
-	
+
 	class defdict(dict):
 		def __init__(self, default=''):
 			dict.__init__(self)
@@ -337,9 +337,9 @@ def head(title = _("administration %s") % configuration.app_name):
 <script type="text/javascript" src="/js/accordion.js"></script>
 </head>
 <body>
-""" % (configuration.app_name, title) 
+""" % (configuration.app_name, title)
 def tail():
-	return """\n</body></html>""" 
+	return """\n</body></html>"""
 
 # LightBox type windows
 def minihead(title = _("administration %s") % configuration.app_name):
@@ -355,7 +355,7 @@ def minihead(title = _("administration %s") % configuration.app_name):
 <script type="text/javascript" src="/js/addEvent.js"></script>
 </head>
 <body>
-""" % (configuration.app_name, title) 
+""" % (configuration.app_name, title)
 def minitail():
 	return """</body></html>"""
 def minipage(data):
@@ -380,3 +380,7 @@ def img(type = 'progressbar', width = 150, height = 22, text = ''):
 	else:
 		return None
 
+
+HTTP_TYPE_TEXT     = 1
+HTTP_TYPE_IMG      = 2
+HTTP_TYPE_DOWNLOAD = 3

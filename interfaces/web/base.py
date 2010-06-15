@@ -131,12 +131,12 @@ def system_info():
 			_("Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.") % \
 				(mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']))
 
-	return (_('''
+	return  _('''
 Processor%s: %d x <strong>%s</strong><br /><br />
 Physical memory: <strong>%.2fGb</strong> total,<br />
 %.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
 %s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
-	mem['Cached'], mem['Buffers'], swap_message))
+	mem['Cached'], mem['Buffers'], swap_message)
 
 def index(uri, http_user):
 
@@ -165,5 +165,5 @@ def index(uri, http_user):
 </div><!-- main -->
 	''' % (w.total_time(start, time.time()))
 
-	return w.page(title, data)
+	return (w.HTTP_TYPE_TEXT, w.page(title, data))
 

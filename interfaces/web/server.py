@@ -30,10 +30,10 @@ def ctxtnav():
 
 def reboot(uri, http_user, sure = False):
 	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Rebooting…')))
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
+			_('Rebooting…'))))
 	else:
-		return w.minipage(w.lbox('''%s
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''%s
 		<div class="vspacer"></div>
 		<table class="lbox-table">
 			<tr>
@@ -57,13 +57,13 @@ def reboot(uri, http_user, sure = False):
 		''' % (
 		_('Sure you want to reboot the %s server?') % configuration.app_name,
 		_('YES'),
-		_('NO'))))
+		_('NO')))))
 def halt(uri, http_user, sure = False):
 	if sure:
-		return w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Shutting down…')))
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
+			_('Shutting down…'))))
 	else:
-		return w.minipage(w.lbox('''%s<div class="vspacer"></div>
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''%s<div class="vspacer"></div>
 		<table class="lbox-table">
 			<tr>
 				<td>
@@ -85,4 +85,4 @@ def halt(uri, http_user, sure = False):
 		</table>''' % (
 		_('Sure you want to shutdown the %s server?') % configuration.app_name,
 		_('YES'),
-		_('NO'))))
+		_('NO')))))

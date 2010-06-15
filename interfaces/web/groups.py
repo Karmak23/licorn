@@ -37,7 +37,7 @@ def ctxtnav(active = True):
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
 
 # locking and unlocking.
-def unlock(uri, http_user, name, sure = False):
+def unlock(uri, http_user, name, sure=False):
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
@@ -54,52 +54,65 @@ def unlock(uri, http_user, name, sure = False):
 			permissions of all current data </ strong> (duration is therefore
 			depending on the volume of data, about 1 second for 100Mio).''')
 
-		data += w.question(_("Are you sure you want to active permissiveness on group <strong>%s</strong>?") % name,
+		data += w.question(_('''Are you sure you want to active '''
+			'''permissiveness on group <strong>%s</strong>?''') % name,
 			description,
-			yes_values   = [ _("Activate") + ' >>', "/groups/unlock/%s/sure" % name, _("A") ],
-			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                    _("N") ])
+			yes_values   = [ _("Activate") + ' >>',
+			"/groups/unlock/%s/sure" % name, _("A") ],
+			no_values    = [ '<< ' + _("Cancel"),
+			"/groups/list", _("N") ])
 
-		return w.page(title, data)
+		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
 		# we are sure, do it !
-		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-permissive" ]
+		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name",
+			name, "--set-permissive" ]
 
-		return w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list", err_msg = _("Failed to activate permissivenes on group <strong>%s</strong>!") % name))
-def lock(uri, http_user, name, sure = False):
+		return (w.HTTP_TYPE_TEXT, w.page(title, data +
+			w.run(command, uri, successfull_redirect = "/groups/list",
+			err_msg = \
+			_("Failed to activate permissivenes on group <strong>%s</strong>!")\
+			% name)))
+def lock(uri, http_user, name, sure=False):
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
-		description = _('''This will ensure finer write access to files and folders
-		in the group shared dir. Only the owner / creator of a document will be able
-		to modify it; other group members will only be able to read such a document
-		(unless the owner manually assign other permissions, which are not guaranteed
-		to be maintained by the system). <br /> Warning: <strong> The operation may be
-		lengthy because the system will switch permissions of all current group shared
-		data</strong> (duration is therefore depending on the volume of data, about 1
-		second for 100Mio).''')
+		description = _('''This will ensure finer write access to files and
+		folders in the group shared dir. Only the owner / creator of a document
+		will be able to modify it; other group members will only be able to read
+		such a document (unless the owner manually assign other permissions,
+		which are not guaranteed to be maintained by the system). <br />
+		Warning: <strong> The operation may be lengthy because the system will
+		switch permissions of all current group shared data</strong> (duration
+		is therefore depending on the volume of data, about 1 sec. for 100Mio).
+		''')
 
-		data += w.question(_("Are you sure you want to make group <strong>%s</strong> not permissive?") % name,
+		data += w.question(_('''Are you sure you want to make group '''
+			'''<strong>%s</strong> not permissive?''') % name,
 			description,
-			yes_values   = [ _("Deactivate") + ' >>', "/groups/lock/%s/sure" % name, _("D") ],
-			no_values    = [ '<< ' + _("Cancel"),     "/groups/list",                _("N") ])
+			yes_values   = [ _("Deactivate") + ' >>',
+				"/groups/lock/%s/sure" % name, _("D") ],
+			no_values    = [ '<< ' + _("Cancel"),
+				"/groups/list", _("N") ])
 
-		return w.page(title, data)
+		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
 		# we are sure, do it !
-		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name", name, "--set-not-permissive" ]
+		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
+			"--name", name, "--set-not-permissive" ]
 
-		return w.page(title, data +
+		return (w.HTTP_TYPE_TEXT, w.page(title, data +
 			w.run(command, uri, successfull_redirect = "/groups/list",
-			err_msg = _("Failed to remove permissiveness from group <strong>%s</strong>!") % name))
+			err_msg = _('''Failed to remove permissiveness from group
+			<strong>%s</strong>!''') % name)))
 
 # delete a group.
-def delete(uri, http_user, name, sure = False, no_archive = False, yes = None):
+def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	""" Remove group and archive (or not) group shared dir. """
 
 	del yes
@@ -115,22 +128,27 @@ def delete(uri, http_user, name, sure = False, no_archive = False, yes = None):
 			_("insufficient permissions to perform operation.")))
 
 	if not sure:
-		data += w.question(_("Are you sure you want to remove group <strong>%s</strong>?") % name,
-			_("""Group shared data will be archived in directory %s,
+		data += w.question(_('''Are you sure you want to remove group
+			<strong>%s</strong>?''') % name,
+			_('''Group shared data will be archived in directory %s,
 				and accessible to members of group %s for eventual
 				recovery. However, you can decideto remove them
-				permanently.""") % (configuration.home_archive_dir, configuration.defaults.admin_group),
-			yes_values   = [ _("Remove") + ' >>', "/groups/delete/%s/sure" % name, _("R") ],
-			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                  _("N") ],
+				permanently.''') % (configuration.home_archive_dir,
+				configuration.defaults.admin_group),
+			yes_values   = [ _("Remove") + ' >>',
+				"/groups/delete/%s/sure" % name, _("R") ],
+			no_values    = [ '<< ' + _("Cancel"),
+				"/groups/list", _("N") ],
 			form_options = w.checkbox("no_archive", "True",
 				_("Definitely remove group shared data."),
 				checked = False) )
 
-		return w.page(title, data)
+		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
 		# we are sure, do it !
-		command = [ 'sudo', 'del', 'group', '--quiet', '--no-colors', '--name', name ]
+		command = [ 'sudo', 'del', 'group', '--quiet', '--no-colors',
+			'--name', name ]
 
 		if no_archive:
 			command.extend(['--no-archive'])
@@ -140,7 +158,7 @@ def delete(uri, http_user, name, sure = False, no_archive = False, yes = None):
 			err_msg = _("Failed to remove group <strong>%s</strong>!") % name))
 
 # skel reapplyin'
-def skel(req, name, sure = False, apply_skel = configuration.users.default_skel):
+def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
 
 	users.reload()
@@ -159,7 +177,8 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 			skel you choose. This will NOT alter any of the user personnal
 			data, nor the group shared data.''')
 
-		pri_group = allgroups.groups[allusers.users[users.UsersList.login_to_uid(login)]['gid']]['name']
+		pri_group = allgroups.groups[allusers.users[
+			users.UsersList.login_to_uid(login)]['gid']]['name']
 
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
@@ -173,24 +192,32 @@ def skel(req, name, sure = False, apply_skel = configuration.users.default_skel)
 			'''
 			return sk_list
 
-		form_options = _("Which skel do you wish to reapply to members of this group? %s") \
-			% w.select("apply_skel", filter_skels(pri_group, configuration.users.skels), func = os.path.basename)
+		form_options = _('''Which skel do you wish to reapply to members of
+			this group? %s''') \
+			% w.select("apply_skel",
+			filter_skels(pri_group, configuration.users.skels),
+			func=os.path.basename)
 
-		data += w.question( _("Are you sure you want to reapply this skel to all of the members of %s?") % login,
+		data += w.question( _('''Are you sure you want to reapply this skel to
+			all of the members of %s?''') % login,
 			description,
-			yes_values   = [ _("Apply") + ' >>',  "/users/skel/%s/sure" % login, _("A") ],
-			no_values    = [ '<< ' + _("Cancel"), "/groups/list",                _("N") ],
+			yes_values   = [ _("Apply") + ' >>',
+				"/users/skel/%s/sure" % login, _("A") ],
+			no_values    = [ '<< ' + _("Cancel"),
+				"/groups/list", _("N") ],
 			form_options = form_options)
 
-		return w.page(title, data)
+		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
 		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login", login, '--apply-skel', skel ]
+		command = [ "sudo", "mod", "user", "--quiet", "--no-colors",
+			"--login", login, '--apply-skel', skel ]
 
-		return w.page(title, data +
+		return (w.HTTP_TYPE_TEXT, w.page(title, data +
 			w.run(command, req,  successfull_redirect = "/groups/list",
-			err_msg = _("Failed to apply skel %s to members of group %s.") % (os.path.basename(apply_skel), login)))
+			err_msg = _("Failed to apply skel %s to members of group %s.") \
+			% (os.path.basename(apply_skel), login))))
 
 # user account creation
 def new(uri, http_user):
@@ -228,25 +255,31 @@ def new(uri, http_user):
 </div>
 	''' % ( form_name, form_name,
 		_('Group name'),
-		w.input('name',        "", size = 30, maxlength = 64, accesskey = _('A')),
+		w.input('name',        "", size=30, maxlength=64, accesskey=_('A')),
 		_('Group description'), _('(optional)'),
-		w.input('description', "", size = 30, maxlength = 256, accesskey = _('D')),
+		w.input('description', "", size=30, maxlength=256, accesskey=_('D')),
 		_('Skel of future group members'),
-		w.select('skel',  configuration.users.skels, current = configuration.users.default_skel, func = os.path.basename),
+		w.select('skel',  configuration.users.skels,
+		current = configuration.users.default_skel,
+		func = os.path.basename),
 		_('Permissive shared dir?'),
-		w.checkbox('permissive', "True", _("Yes"), accesskey = _('P')),
-		w.button(_('<< Cancel'), "/groups/list", accesskey = _('N')),
-		w.submit('create', _('Create') + ' >>', onClick = "selectAllMultiValues('%s');" % form_name, accesskey = _('T'))
+		w.checkbox('permissive', "True", _("Yes"), accesskey=_('P')),
+		w.button(_('<< Cancel'), "/groups/list", accesskey=_('N')),
+		w.submit('create', _('Create') + ' >>',
+		onClick="selectAllMultiValues('%s');" % form_name, accesskey=_('T'))
 		)
-	return w.page(title, data)
-def create(uri, http_user, name, description = None, skel = "", permissive = False, create = None):
+	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+def create(uri, http_user, name, description=None, skel="", permissive=False,
+	create=None):
 
-	title      = _("Creating group %s") % name
-	data       = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	title = _("Creating group %s") % name
+	data = '%s<h1>%s</h1><br />' % (w.backto(), title)
 
+	# web button (submit)
 	del create
 
-	command = [ 'sudo', 'add', 'group', '--quiet', '--no-colors', '--name', name, '--skel', skel ]
+	command = [ 'sudo', 'add', 'group', '--quiet', '--no-colors',
+		'--name', name, '--skel', skel ]
 
 	if description:
 		command.extend([ '--description', description ])
@@ -254,8 +287,9 @@ def create(uri, http_user, name, description = None, skel = "", permissive = Fal
 	if permissive:
 		command.append('--permissive')
 
-	return w.page(title, data + w.run(command, uri,  successfull_redirect = "/groups/list",
-		err_msg = _('Failed to create group %s!') % name))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.run(command, uri,
+		successfull_redirect = "/groups/list",
+		err_msg = _('Failed to create group %s!') % name)))
 def view(uri, http_user, name):
 	"""Prepare a group view to be printed."""
 
@@ -286,17 +320,20 @@ def view(uri, http_user, name):
 			<th><strong>%s</strong></th>
 			<th><strong>%s</strong></th>
 		</tr>
-		''' % (_('Members'), _('(ordered by login)'), _('Full Name'), _('Identifier'), _('UID'))
+		''' % (_('Members'), _('(ordered by login)'), _('Full Name'),
+			_('Identifier'), _('UID'))
 		def user_line(login):
 			uid = users.login_to_uid(login)
-			return '''<tr><td>%s</td><td>%s</td><td>%s</td></tr>''' % (u[uid]['gecos'], login, uid)
+			return '''<tr><td>%s</td><td>%s</td><td>%s</td></tr>''' % (
+				u[uid]['gecos'], login, uid)
 
 		members_html += "\n".join(map(user_line, members)) + '</table>'
 
 		if not groups.is_system_group(name):
 			resps  = groups.all_members(configuration.groups.resp_prefix + name)
 			resps.sort()
-			guests = groups.all_members(configuration.groups.guest_prefix + name)
+			guests = \
+				groups.all_members(configuration.groups.guest_prefix + name)
 			guests.sort()
 
 			if resps != []:
@@ -315,7 +352,8 @@ def view(uri, http_user, name):
 				"\n".join(map(user_line, resps)))
 
 			else:
-				resps_html = "<h2>%s</h2>" % _('No responsibles for this group.')
+				resps_html = "<h2>%s</h2>" % \
+					_('No responsibles for this group.')
 
 			if guests != []:
 				guests_html = '''
@@ -342,8 +380,10 @@ def view(uri, http_user, name):
 		<div id="content">
 		<form name="%s" id="%s" action="/groups/view/%s" method="post">
 		<table id="user_account">
-			<tr><td><strong>%s</strong><br />%s</td><td class="not_modifiable">%d</td></tr>
-			<tr><td><strong>%s</strong><br />%s</td><td class="not_modifiable">%s</td></tr>
+			<tr><td><strong>%s</strong><br />%s</td>
+			<td class="not_modifiable">%d</td></tr>
+			<tr><td><strong>%s</strong><br />%s</td>
+			<td class="not_modifiable">%s</td></tr>
 			<tr><td colspan="2" class="double_selector">%s</td></tr>
 			<tr><td colspan="2" class="double_selector">%s</td></tr>
 			<tr><td colspan="2" class="double_selector">%s</td></tr>
@@ -360,14 +400,17 @@ def view(uri, http_user, name):
 				_('Name'), _('immutable'),
 				name,
 				members_html, resps_html, guests_html,
-				w.button(_('<< Go back'), "/groups/list", accesskey = _('B')),
-				w.submit('print', _('Print') + ' >>', onClick = "javascript:window.print(); return false;", accesskey = _('P'))
+				w.button(_('<< Go back'), "/groups/list", accesskey=_('B')),
+				w.submit('print', _('Print') + ' >>',
+				onClick="javascript:window.print(); return false;",
+				accesskey=_('P'))
 				)
 
 	except exceptions.LicornException, e:
-		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name, "group = g[groups.name_to_gid(name)]", e))
+		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (
+			name, "group = g[groups.name_to_gid(name)]", e))
 
-	return w.page(title, data)
+	return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 # edit group parameters.
 def edit(uri, http_user, name):
@@ -429,8 +472,8 @@ def edit(uri, http_user, name):
 			if system:
 				return desc
 			else:
-				return w.input('description', desc, size = 30, maxlength = 256,
-					accesskey = 'D')
+				return w.input('description', desc, size=30, maxlength=256,
+					accesskey='D')
 		def skel(cur_skel, system):
 			if system:
 				return ''
@@ -453,7 +496,8 @@ def edit(uri, http_user, name):
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
 				</tr>
-				''' % (_('Permissive shared dir?'), w.checkbox('permissive',
+				''' % (_('Permissive shared dir?'),
+					w.checkbox('permissive',
 					"True", "Oui", checked = perm ))
 
 		form_name = "group_edit_form"
@@ -515,9 +559,10 @@ def edit(uri, http_user, name):
 				dbl_lists[configuration.groups.resp_prefix+name],
 			_('Group guests'),
 				dbl_lists[configuration.groups.guest_prefix+name],
-			w.button('<< ' + _('Cancel'), "/groups/list", accesskey = _('N')),
+			w.button('<< ' + _('Cancel'), "/groups/list", accesskey=_('N')),
 			w.submit('record', _('Record') + ' >>',
-			onClick="selectAllMultiValues('%s');" % form_name, accesskey=_('R'))
+			onClick="selectAllMultiValues('%s');" % form_name,
+			accesskey=_('R'))
 			)
 
 	except exceptions.LicornException, e:
@@ -526,7 +571,7 @@ def edit(uri, http_user, name):
 
 	data += w.page_body_end()
 
-	return w.page(title, data)
+	return (w.HTTP_TYPE_TEXT, w.page(title, data))
 def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
@@ -534,12 +579,12 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	record = None):
 	"""Record group changes."""
 
-	# forget about it, this is a scoria from the POST FORM to variable conversion.
+	# web submit -> forget it
 	del record
 
-	title      = _("Modifying group %s") % name
-	data       = '%s<h1>%s</h1>' % (w.backto(), title)
-	command    = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
+	title   = _("Modifying group %s") % name
+	data    = '%s<h1>%s</h1>' % (w.backto(), title)
+	command = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
 		'--name', name ]
 
 	if skel:
@@ -564,10 +609,10 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 		if var != "":
 			command.extend([ cmd, var ])
 
-	return w.page(title,
+	return (w.HTTP_TYPE_TEXT, w.page(title,
 		data + w.run(command, uri, successfull_redirect = "/groups/list",
 		err_msg = _('Failed to modify one or more parameter of group %s!') % \
-			name))
+			name)))
 
 # list user accounts.
 def main(uri, http_user, sort = "name", order = "asc"):
@@ -800,4 +845,4 @@ def main(uri, http_user, sort = "name", order = "asc"):
 
 	data += w.page_body_end()
 
-	return w.page(title, data)
+	return (w.HTTP_TYPE_TEXT, w.page(title, data))

@@ -12,9 +12,10 @@ import os, mimetypes, urlparse, posixpath, urllib, socket, time
 from SocketServer       import TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
-from licorn.foundations import logging, exceptions, styles, process
-from licorn.core        import configuration, users, groups
-from licorn.daemon.core import dname, wpid_path, wmi_port, wlog_path, \
+from licorn.foundations    import logging, exceptions, styles, process
+from licorn.core           import configuration, users, groups
+from licorn.interfaces.web import utils as w
+from licorn.daemon.core    import dname, wpid_path, wmi_port, wlog_path, \
 	wmi_group, buffer_size
 
 def eventually_fork_wmi_server(opts, start_wmi = True):
@@ -190,12 +191,15 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		and create pages on the fly. """
 
 		retdata = None
-		rettype = 'text'
+		rettype = None
 
 		import licorn.interfaces.web as web
 
+		#
+		# GET / has special treatment :-)
+		#
 		if self.path == '/':
-			retdata = web.base.index(self.path, self.http_user)
+			rettype, retdata = web.base.index(self.path, self.http_user)
 
 		else:
 			# remove the last '/' (which is totally useless for us, even if it
@@ -215,18 +219,18 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = 'retdata = web.%s.%s("%s", "%s" %s %s)' % (
+					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s %s)' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
 						if len(args)>2 else ', ',
 						', '.join(self.format_post_args()) )
 				else:
-					py_code = 'retdata = web.%s.%s("%s", "%s" %s)' % (
+					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s)' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else '')
 
 				try:
-					#logging.debug("Exec'ing %s." % py_code)
+					#logging.info("Exec'ing %s." % py_code)
 					exec py_code
 
 				except (AttributeError, NameError), e:
@@ -242,12 +246,25 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				raise exceptions.LicornWebException(
 					'Bad base request (probably a regular file request).')
 
+		#logging.info('>> %s: %s,\n %s: %s' % (type(rettype), rettype,
+		#	type(retdata), retdata))
+
 		if retdata:
 			self.send_response(200)
 
-			if rettype == 'img':
+			if rettype in ('img', w.HTTP_TYPE_IMG):
 				self.send_header("Content-type", 'image/png')
-			else:
+
+			elif rettype == w.HTTP_TYPE_DOWNLOAD:
+				# fix #104
+				self.send_header("Content-type", 'application/force-download; charset=utf-8')
+				self.send_header("Content-Disposition", "attachment; filename=export.%s" % retdata[0])
+				self.send_header("Pragma", "no-cache")
+				self.send_header("Expires", "0")
+
+				retdata = retdata[1]
+
+			else: # w.HTTP_TYPE_TEXT
 				self.send_header("Content-type", 'text/html; charset=utf-8')
 				self.send_header("Pragma", "no-cache")
 
