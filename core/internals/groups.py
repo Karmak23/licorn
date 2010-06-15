@@ -46,7 +46,7 @@ class GroupsController:
 		self.backend = self.configuration.backends.current
 		self.backend.set_groups(self)
 
-		# see licorn.system.users for details
+		# see licorn.core.users for details
 		self.filter_applied = False
 
 		if GroupsController.groups is None:

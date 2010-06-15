@@ -183,7 +183,7 @@ def modify_profile():
 			profiles.ReapplyProfileOfUsers(_users, apply_groups, apply_skel, batch=opts.force)
 def modify_keyword():
 	""" Modify a keyword. """
-	from licorn.system import keywords
+	from licorn.core import keywords
 	kw = keywords.KeywordsController(configuration)
 	if opts.newname is not None:
 		kw.RenameKeyword(opts.name, opts.newname)
@@ -195,7 +195,7 @@ def modify_keyword():
 		kw.ChangeDescription(opts.name, opts.description)
 def modify_path():
 	""" Manage keywords of a file or directory. """
-	from licorn.system import keywords
+	from licorn.core import keywords
 	kw = keywords.KeywordsController(configuration)
 
 	# this should go directly into system.keywords.

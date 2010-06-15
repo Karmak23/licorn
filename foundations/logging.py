@@ -25,7 +25,7 @@ from licorn.foundations import hooks, styles, exceptions, options
 # this licorn.logging. All programs just need to use _(), period.
 #
 
-#_APP="licorn-system-tools"
+#_APP="licorn-tools"
 #_DIR="/usr/share/locale"
 
 #gettext.bindtextdomain(_APP, _DIR)

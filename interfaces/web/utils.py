@@ -205,7 +205,7 @@ def metanav(http_user):
 	"""
 	return '<div id="metanav" class="nav"><ul><li>%s</li></ul></div>' \
 	% (_('Logged in as %s') % http_user)
-def page_body_start(uri, http_user, ctxtnav, title, active = True):
+def page_body_start(uri, http_user, ctxtnav, title, active=True):
 	return '''<div id="banner">
 	%s
 	%s
@@ -217,7 +217,7 @@ def page_body_start(uri, http_user, ctxtnav, title, active = True):
 	<h1>%s</h1>
 	''' % (
 		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
-def page_body_end(data = ''):
+def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 
 # HTML FORM functions

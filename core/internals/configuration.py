@@ -953,7 +953,7 @@ class LicornConfiguration (object):
 			needed_groups = LicornConfiguration.groups.privileges_whitelist
 
 		for group in needed_groups:
-			# licorn.system.groups is not loaded yet, and it would create a circular dependancy
+			# licorn.core.groups is not loaded yet, and it would create a circular dependancy
 			# to import it here, we HAVE to do this manually.
 			if not groups.group_exists(name = group):
 				if batch or logging.ask_for_repair(logging.CONFIG_SYSTEM_GROUP_REQUIRED % styles.stylize(styles.ST_NAME, group), auto_answer):
