@@ -276,6 +276,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						wmi_port, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()
+
 				return ''
 
 			else: # w.HTTP_TYPE_TEXT

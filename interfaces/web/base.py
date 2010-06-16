@@ -147,23 +147,15 @@ def index(uri, http_user):
 		<div id="main">\n%s\n<div id="content">''' % (
 			w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav())
 
-	data += '''<table>
+	data += '''
+	<table>
 	<tr>
 		<td><h1>%s</h1><br />%s</td>
 		<td><h1>%s</h1>%s</td>
 	</tr>
+	</table>
 	''' % (_('System information'), system_info(),
 		_('System status'), system_load())
 
-	data += '''
-	<tr>
-		<td colspan="2">&#160;</td></tr>
-	</tr>
-</table>
-</div><!-- content -->
-%s
-</div><!-- main -->
-	''' % (w.total_time(start, time.time()))
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
-
+	return (w.HTTP_TYPE_TEXT, w.page(title,
+		data + w.page_body_end(w.total_time(start, time.time()))))

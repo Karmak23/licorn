@@ -41,7 +41,7 @@ acronyms = {
 	}
 
 # EXEC / SYSTEM functions.
-def run(command):
+def run(command, successfull_redirect, page_data, error_message):
 	"""Execute a command passed as a list or tuple"""
 
 	if type(command) not in (type(()), type([])):
@@ -57,8 +57,17 @@ def run(command):
 	(out, err) = p.communicate()
 
 	if err:
-		raise exceptions.LicornWebCommandException(
-			err.replace('>', '&gt;').replace('<', '&lt;'))
+		return (
+			HTTP_TYPE_TEXT,
+			page_data % error(
+				error_message,
+				command,
+				err.replace('>', '&gt;').replace('<', '&lt;')
+				)
+			)
+
+	else:
+		return (HTTP_TYPE_REDIRECT, successfull_redirect)
 
 def total_time(start, end):
 	elapsed = end - start
@@ -313,7 +322,7 @@ def menu(uri):
 		)
 def page(title, data):
 	return head(title) + data + tail()
-def head(title = _("administration %s") % configuration.app_name):
+def head(title=_("%s Management") % configuration.app_name):
 	"""Build the HTML Page header.
 	Bubble Tooltips come from:	http://www.dustindiaz.com/sweet-titles
 	Rounded Divs comme from  : http://www.html.it/articoli/niftycube/index.html

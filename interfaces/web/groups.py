@@ -7,6 +7,7 @@ from licorn.core           import configuration, groups, users, profiles
 from licorn.interfaces.web import utils as w
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
+successfull_redirect = '/groups/list'
 
 # private functions.
 def __merge_multi_select(*lists):
@@ -56,27 +57,21 @@ def unlock(uri, http_user, name, sure=False):
 
 		data += w.question(_('''Are you sure you want to active '''
 			'''permissiveness on group <strong>%s</strong>?''') % name,
-			description,
-			yes_values   = [ _("Activate") + ' >>',
+			description, yes_values = [ _("Activate") + ' >>',
 			"/groups/unlock/%s/sure" % name, _("A") ],
-			no_values    = [ '<< ' + _("Cancel"),
-			"/groups/list", _("N") ])
+			no_values = [ '<< ' + _("Cancel"), "/groups/list", _("N") ])
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
-	else:
-		# we are sure, do it !
-		command = [ "sudo", "mod", "group", "--quiet", "--no-colors", "--name",
-			name, "--set-permissive" ]
+	else:		# we are sure, do it !
 
-		try:
-			w.run(command)
-			return (w.HTTP_TYPE_REDIRECT, "/groups/list")
+		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
+			"--name", name, "--set-permissive" ]
 
-		except exceptions.LicornWebCommandException, myex:
-			return (w.HTTP_TYPE_TEXT, w.page(title, data +
-				error(_('''Failed to activate permissivenes on group
-				<strong>%s</strong>!''') % name, command, myex)))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to activate permissivenes on group
+			<strong>%s</strong>!''') % name)
 def lock(uri, http_user, name, sure=False):
 	""" Make a group not permissive. """
 
@@ -96,31 +91,25 @@ def lock(uri, http_user, name, sure=False):
 
 		data += w.question(_('''Are you sure you want to make group '''
 			'''<strong>%s</strong> not permissive?''') % name,
-			description,
-			yes_values   = [ _("Deactivate") + ' >>',
+			description, yes_values   = [ _("Deactivate") + ' >>',
 				"/groups/lock/%s/sure" % name, _("D") ],
-			no_values    = [ '<< ' + _("Cancel"),
-				"/groups/list", _("N") ])
+			no_values    = [ '<< ' + _("Cancel"), "/groups/list", _("N") ])
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
-	else:
-		# we are sure, do it !
+	else:		# we are sure, do it.
 		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
 			"--name", name, "--set-not-permissive" ]
 
-		try:
-			w.run(command)
-			return (w.HTTP_TYPE_REDIRECT, "/groups/list")
-
-		except exceptions.LicornWebCommandException, myex:
-			return (w.HTTP_TYPE_TEXT, w.page(title,
-				data + error(_('''Failed to remove permissiveness from group
-				<strong>%s</strong>!''') % name, command, myex)))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to remove permissiveness from group
+				<strong>%s</strong>!''') % name)
 
 def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	""" Remove group and archive (or not) group shared dir. """
 
+	# submit button, forget it.
 	del yes
 
 	title = _("Remove group %s") % name
@@ -149,19 +138,18 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 				_("Definitely remove group shared data."),
 				checked = False) )
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
-	else:
-		# we are sure, do it !
+	else:		# we are sure, do it !
 		command = [ 'sudo', 'del', 'group', '--quiet', '--no-colors',
 			'--name', name ]
 
 		if no_archive:
 			command.extend(['--no-archive'])
 
-		return w.page(title, data +
-			w.run(command, uri, successfull_redirect = "/groups/list",
-			err_msg = _("Failed to remove group <strong>%s</strong>!") % name))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to remove group <strong>%s</strong>!''') % name)
 
 def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
@@ -212,17 +200,17 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 				"/groups/list", _("N") ],
 			form_options = form_options)
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors",
 			"--login", login, '--apply-skel', skel ]
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data +
-			w.run(command, req,  successfull_redirect = "/groups/list",
-			err_msg = _("Failed to apply skel %s to members of group %s.") \
-			% (os.path.basename(apply_skel), login))))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to apply skel %s to members of group %s.''') % (
+				os.path.basename(apply_skel), login))
 
 # user account creation
 def new(uri, http_user):
@@ -260,7 +248,7 @@ def new(uri, http_user):
 </div>
 	''' % ( form_name, form_name,
 		_('Group name'),
-		w.input('name',        "", size=30, maxlength=64, accesskey=_('A')),
+		w.input('name', "", size=30, maxlength=64, accesskey=_('A')),
 		_('Group description'), _('(optional)'),
 		w.input('description', "", size=30, maxlength=256, accesskey=_('D')),
 		_('Skel of future group members'),
@@ -273,7 +261,7 @@ def new(uri, http_user):
 		w.submit('create', _('Create') + ' >>',
 		onClick="selectAllMultiValues('%s');" % form_name, accesskey=_('T'))
 		)
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def create(uri, http_user, name, description=None, skel="", permissive=False,
 	create=None):
 
@@ -292,9 +280,9 @@ def create(uri, http_user, name, description=None, skel="", permissive=False,
 	if permissive:
 		command.append('--permissive')
 
-	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.run(command, uri,
-		successfull_redirect = "/groups/list",
-		err_msg = _('Failed to create group %s!') % name)))
+	return w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_('''Failed to create group %s!''') % name)
 def view(uri, http_user, name):
 	"""Prepare a group view to be printed."""
 
@@ -348,10 +336,8 @@ def view(uri, http_user, name):
 					)
 
 			members_html += "\n".join(map(user_line, members)) + '</table>'
-
 		else:
 			members_html = "<h2>%s</h2>" % _('No members in this group.')
-
 
 		if not groups.is_system_group(name):
 			resps = groups.all_members(configuration.groups.resp_prefix + name)
@@ -447,7 +433,7 @@ def view(uri, http_user, name):
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (
 			name, "group = g[groups.name_to_gid(name)]", e))
 
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 # edit group parameters.
 def edit(uri, http_user, name):
@@ -606,15 +592,13 @@ def edit(uri, http_user, name):
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name,
 			"group = allgroups.groups[groups.name_to_gid(name)]", e))
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
 	record = None):
-	"""Record group changes."""
+	""" Record group modification changes."""
 
 	# web submit -> forget it
 	del record
@@ -649,13 +633,12 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 		if var != "":
 			command.extend([ cmd, var ])
 
-	return (w.HTTP_TYPE_TEXT, w.page(title,
-		data + w.run(command, uri, successfull_redirect = "/groups/list",
-		err_msg = _('Failed to modify one or more parameter of group %s!') % \
-			name)))
-
-# list user accounts.
+	return w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_('''Failed to modify one or more parameter of group %s!''') % name)
 def main(uri, http_user, sort = "name", order = "asc"):
+	"""List all groups and provileges on the system, displaying them
+	in a nice HTML page. """
 
 	start = time.time()
 
@@ -879,10 +862,8 @@ def main(uri, http_user, sort = "name", order = "asc"):
 		<td colspan="6" class="total_right">%d</td>
 	</tr>
 </table>
-%s
 	''' % (print_totals(totals), _('Total number of groups:'), reduce(
-		lambda x, y: x+y, totals.values()), w.total_time(start, time.time()))
+		lambda x, y: x+y, totals.values()))
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title,
+		data + w.page_body_end(w.total_time(start, time.time()))))

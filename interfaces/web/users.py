@@ -25,6 +25,7 @@ groups_filters_lists_ids = (
 
 rewind = _('''<br /><br />Go back with your browser,'''
 	''' double-check data and validate the web-form.''')
+successfull_redirect = '/users/list'
 
 # private functions.
 def __merge_multi_select(*lists):
@@ -150,9 +151,7 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 				_("Definitely remove account data (no archiving)."),
 				checked = False) )
 
-		data += w.page_body_end()
-
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
 		users.reload()
@@ -168,11 +167,9 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 		if no_archive:
 			command.extend(['--no-archive'])
 
-		data += w.page_body_end()
-
-		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.run(command, uri,
-			err_msg = _("Failed to remove account <strong>%s</strong>!") % \
-				login)))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to remove account <strong>%s</strong>!''') % login)
 
 def unlock(uri, http_user, login):
 	"""unlock a user account password."""
@@ -182,26 +179,24 @@ def unlock(uri, http_user, login):
 
 	users.reload()
 
-	data += w.page_body_end()
-
 	if users.is_system_login(login):
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			w.error(_("Failed to unlock account"),
 			[ _("alter system account.") ],
-			_("insufficient permission to perform operation."))))
+			_("insufficient permission to perform operation.")) \
+			+ w.page_body_end()))
 
 	command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
 		login, "--unlock" ]
 
-	return (w.HTTP_TYPE_TEXT, w.page(title, data +
-		w.run(command, uri,
-			err_msg = _("Failed to unlock account <strong>%s</strong>!") % \
-				login)))
+	return w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_("Failed to unlock account <strong>%s</strong>!") % login)
 def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 	yes = None):
 	"""lock a user account password."""
 
-	# see above; "yes" is useless.
+	# submit button: forget it.
 	del yes
 
 	groups.reload()
@@ -214,7 +209,6 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 		description = _('''This will prevent user to connect to network '''
 			'''clients (thin ones, and Windows&reg;, %s/Linux&reg; and '''
 			'''Macintosh&reg; ones).''') % w.acr('GNU')
-
 
 		if configuration.ssh.enabled :
 			if login in groups.all_members(configuration.ssh.group):
@@ -244,9 +238,7 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 				[ _("<< Cancel"),     "/users/list",           _("C") ],
 			form_options = form_options)
 
-		data += w.page_body_end()
-
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
 		if users.is_system_login(login):
@@ -264,10 +256,9 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 
 		data += w.page_body_end()
 
-		return (w.HTTP_TYPE_TEXT, w.page(title, data +
-			w.run(command, uri,
-				err_msg = _("Failed to lock account <strong>%s</strong>!") % \
-					login)))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_("Failed to lock account <strong>%s</strong>!") % login)
 
 def skel(uri, http_user, login, sure = False,
 	apply_skel = configuration.users.default_skel, yes = None):
@@ -318,27 +309,24 @@ def skel(uri, http_user, login, sure = False,
 		data += w.question(_('''Are you sure you want to apply this skel to'''
 			''' account <strong>%s</strong>?''') % login,
 			description,
-			yes_values   = \
-				[ _("Apply") + "@nbsp;&gt;&gt;",
-					"/users/skel/%s/sure" % login, _("A") ],
-			no_values    = \
-				[ "&lt;&lt;&nbsp;" + _("Cancel"), "/users/list", _("C") ],
+			yes_values = [ _("Apply") + "@nbsp;&gt;&gt;",
+				"/users/skel/%s/sure" % login, _("A") ],
+			no_values = [ "&lt;&lt;&nbsp;" + _("Cancel"),
+				"/users/list", _("C") ],
 			form_options = form_options)
 
-		data += w.page_body_end()
-		return (w.HTTP_TYPE_TEXT, w.page(title, data))
+		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
 			login, '--apply-skel', apply_skel ]
 
-		data += w.page_body_end()
-
-		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.run(command, uri,
-			err_msg = _('''Failed to apply skel <strong>%s</strong> on user '''
-				'''account <strong>%s</strong>!''') % (
-					os.path.basename(apply_skel), login))))
+		return w.run(command, successfull_redirect,
+			w.page(title, data + '%s' + w.page_body_end()),
+			_('''Failed to apply skel <strong>%s</strong> on user
+			account <strong>%s</strong>!''') % (os.path.basename(apply_skel),
+				login))
 
 def new(uri, http_user):
 	"""Generate a form to create a new user on the system."""
@@ -464,9 +452,7 @@ def new(uri, http_user):
 			onClick = "selectAllMultiValues('%s');" % form_name)
 		)
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 def create(uri, http_user, loginShell, password, password_confirm,
 	profile=None, login="", gecos="", firstname="", lastname="",
@@ -510,14 +496,15 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		command.extend([ '--login',
 			hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
 
-	retval = w.run(command, uri,
-		err_msg = _('Failed to create account <strong>%s</strong>!') % login)
+	(rettype, retdata) = w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_('''Failed to create account <strong>%s</strong>!''') % login)
 
-	# TODO: Change test since message received: Added user <login>
-	if retval != "":
-		return (w.HTTP_TYPE_TEXT, w.page(title, data + retval))
+	if rettype == w.HTTP_TYPE_TEXT:
+		return (rettype, retdata)
+	# else: continue the creation by adding groups...
 
-	# XXX: this is less than suboptimal to have to do this here...
+	# XXX: this is less than suboptimal to have to reload this here...
 	# but without this, adding to supplemental groups doesnt work.
 	users.reload()
 
@@ -532,12 +519,10 @@ def create(uri, http_user, loginShell, password, password_confirm,
 	if add_groups != "":
 		command.extend([ '--add-groups', add_groups ])
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title,
-		data + w.run(command, uri,
-		err_msg = _('''Failed to add user <strong>%s</strong> to requested '''
-			'''groups/privileges/responsibilities/invitations!''') % login)))
+	return w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_('''Failed to add user <strong>%s</strong> to requested
+		groups/privileges/responsibilities/invitations!''') % login)
 
 def edit(uri, http_user, login):
 	"""Edit an user account, based on login."""
@@ -672,9 +657,7 @@ def edit(uri, http_user, login):
 		data += w.error("Account %s does not exist (%s)!" % (
 			login, "user = users.users[users.login_to_uid(login)]", e))
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 	password = "", password_confirm = "",
@@ -686,7 +669,7 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 	record = None):
 	"""Record user account changes."""
 
-	# forget it; useless.
+	# submit button. forget it.
 	del record
 
 	title = _("Modification of account %s") % login
@@ -732,12 +715,10 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 	if del_groups != "":
 		command.extend(['--del-groups', del_groups ])
 
-	data += w.page_body_end()
-
-	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.run(command, uri,
-		err_msg = _('''Failed to modify one or more parameters of account'''
-		''' <strong>%s</strong>!''') % login)))
-
+	return w.run(command, successfull_redirect,
+		w.page(title, data + '%s' + w.page_body_end()),
+		_('''Failed to modify one or more parameters of account
+		 <strong>%s</strong>!''') % login)
 
 def main(uri, http_user, sort = "login", order = "asc"):
 	""" display all users in a nice HTML page. """
@@ -918,10 +899,9 @@ def main(uri, http_user, sort = "login", order = "asc"):
 		<td colspan="3" class="total_right">%d</td>
 	</tr>
 </table>
-%s
 	''' % (print_totals(totals),
 		_("<strong>Total number of accounts:</strong>"),
-		reduce(lambda x, y: x+y, totals.values()),
-			w.page_body_end(w.total_time(start, time.time())))
+		reduce(lambda x, y: x+y, totals.values()))
 
-	return (w.HTTP_TYPE_TEXT, w.page(title, data))
+	return (w.HTTP_TYPE_TEXT, w.page(title,
+		data + w.page_body_end(w.total_time(start, time.time()))))
