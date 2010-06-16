@@ -639,7 +639,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 
 	users.reload()
 	groups.reload()
-	#reload(p)
+	#profiles.reload()
 
 	g = groups.groups
 

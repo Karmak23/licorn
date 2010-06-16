@@ -7,9 +7,6 @@ from licorn.core           import users, configuration
 from licorn.foundations    import logging
 from licorn.interfaces.web import utils as w
 
-#remove this after testing
-reload(w)
-
 def ctxtnav():
 	return '''
 	<div id="ctxtnav" class="nav">

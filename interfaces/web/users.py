@@ -6,9 +6,6 @@ from licorn.foundations    import exceptions, hlstr, logging
 from licorn.core           import configuration, groups, users, profiles
 from licorn.interfaces.web import utils as w
 
-#remove this after testing
-reload(w)
-
 groups_filters_lists_ids = (
 	(groups.FILTER_STANDARD, [_('Customize groups'),
 		_('Available groups'), _('Affected groups')],
@@ -73,10 +70,11 @@ def ctxtnav(active = True):
 def export(uri, http_user, type = "", yes = None):
 	""" Export user accounts list."""
 
-	# TODO: reload(profiles)
 	groups.reload()
 	users.reload()
+	# profiles.reload()
 
+	# submit button; forget it.
 	del yes
 
 	title = _("Export user accounts list")
@@ -264,12 +262,12 @@ def skel(uri, http_user, login, sure = False,
 	apply_skel = configuration.users.default_skel, yes = None):
 	"""reapply a user's skel with confirmation."""
 
-	# forget this (see above).
+	# submit button; forget it.
 	del yes
 
-	# TODO: profiles.reload()
 	groups.reload()
 	users.reload()
+	# profiles.reload()
 
 	u = users.users
 	g = groups.groups
@@ -331,8 +329,8 @@ def skel(uri, http_user, login, sure = False,
 def new(uri, http_user):
 	"""Generate a form to create a new user on the system."""
 
-	# TODO: profiles.reload()
 	groups.reload()
+	# profiles.reload()
 
 	g = groups.groups
 	p = profiles.profiles
@@ -504,8 +502,9 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		return (rettype, retdata)
 	# else: continue the creation by adding groups...
 
-	# XXX: this is less than suboptimal to have to reload this here...
+	# This is less than suboptimal to have to reload this here...
 	# but without this, adding to supplemental groups doesnt work.
+	# this will be resolved and not needed when #127 is fixed.
 	users.reload()
 
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors",
@@ -529,7 +528,7 @@ def edit(uri, http_user, login):
 
 	groups.reload()
 	users.reload()
-	# TODO: profiles.reload()
+	# profiles.reload()
 
 	title = _('Edit account %s') % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -726,7 +725,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 
 	groups.reload()
 	users.reload()
-	# TODO: profiles.reload()
+	# profiles.reload()
 
 	u = users.users
 	g = groups.groups
