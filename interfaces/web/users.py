@@ -856,8 +856,8 @@ def main(uri, http_user, sort = "login", order = "asc"):
 		# lost because sorting must be done on unique values).
 		accounts[uid] = {
 			'login'  : login,
-			'gecos'  : "%s %s" % ( user['gecos'], login ),
-			'locked' : "%s %s" % ( str(user['locked']), login )
+			'gecos'  : user['gecos'] + login ,
+			'locked' : str(user['locked']) + login
 			}
 		try:
 			p = prof[user['gid']]['name']

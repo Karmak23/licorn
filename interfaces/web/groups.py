@@ -212,7 +212,6 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 			_('''Failed to apply skel %s to members of group %s.''') % (
 				os.path.basename(apply_skel), login))
 
-# user account creation
 def new(uri, http_user):
 	"""Generate a form to create a new group on the system."""
 
@@ -435,7 +434,6 @@ def view(uri, http_user, name):
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
-# edit group parameters.
 def edit(uri, http_user, name):
 	"""Edit a group."""
 
@@ -492,11 +490,8 @@ def edit(uri, http_user, name):
 				dbl_lists[gname] = w.doubleListBox(titles, id, source, dest)
 
 		def descr(desc, system):
-			if system:
-				return desc
-			else:
-				return w.input('description', desc, size=30, maxlength=256,
-					accesskey='D')
+			return w.input('description', desc, size=30, maxlength=256,
+				accesskey='D')
 		def skel(cur_skel, system):
 			if system:
 				return ''
@@ -509,9 +504,9 @@ def edit(uri, http_user, name):
 				''' % (_('Skeleton'),
 					w.select('skel', configuration.users.skels,
 					cur_skel, func = os.path.basename))
-		def permissive(perm, sys):
+		def permissive(perm, system):
 
-			if sys:
+			if system:
 				return ''
 			else:
 				return '''
@@ -664,9 +659,10 @@ def main(uri, http_user, sort = "name", order = "asc"):
 	sortcols = (
 		('', '', False),
 		("name", _("Name"), True),
+		("description", _("Description"), True),
 		("skel", _("Skeleton"), True),
 		("permissive", _("Perm."), True),
-		('members', "Members", False),
+		('members', _("Members"), False),
 		("resps", _("Responsibles"), False),
 		("guests", _("Guests"), False) )
 
@@ -688,7 +684,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 	data += '		</tr>\n'
 
 	for (filter, filter_name) in (
-		(groups.FILTER_STANDARD, configuration.groups.names['_plural']),
+		(groups.FILTER_STANDARD, _('Groups')),
 		(groups.FILTER_PRIVILEGED, _("Privileges")) ):
 
 		tgroups  = {}
@@ -701,9 +697,10 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			name  = group['name']
 
 			tgroups[gid] = {
-				'name'      : name,
-				'skel'      : group['skel'] + name,
-				'permissive': group['permissive']
+				'name'        : name,
+				'description' : group['description'] + name,
+				'skel'        : group['skel'] + name,
+				'permissive'  : str(group['permissive']) + name
 				}
 			totals[filter_name] += 1
 
@@ -739,15 +736,27 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			name  = g[gid]['name']
 			html_data = '''
 		<tr class="userdata">
-			<td class="nopadding"><a href="/groups/view/%s" title="Visualiser le groupe, ses paramètres, ses membres, responsables et invités, en vue de les imprimer."><img src="/images/16x16/preview.png" alt="prévisualiser le groupe et ses données." /></a></td>
+			<td class="nopadding">
+				<a href="/groups/view/%s" title="%s" class="view-entry">
+				<span class="view-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+				</a>
+			</td>
 			<td class="group_name">
-				<a href="/groups/edit/%s" title="%s"><img src="/images/16x16/edit.png" alt="éditer les paramètres du groupe."/>&#160;%s</a>
+				<a href="/groups/edit/%s" title="%s" class="edit-entry">%s</a>
+			</td>
+			<td class="group_name">
+				<a href="/groups/edit/%s" title="%s" class="edit-entry">%s</a>
 			</td>
 			<td class="right">
 				<a href="/groups/edit/%s">%s</a>
 			</td>
-				''' % (name, name, g[gid]['description'], name, name,
-					g[gid]['skel'])
+				''' % (
+				name, _('''View the group details, its parameters,
+					members, responsibles and guests.
+					From there you can print all group-related informations.'''),
+				name, g[gid]['description'], name,
+				name, g[gid]['description'], g[gid]['description'],
+				name, g[gid]['skel'])
 
 			if groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
@@ -765,11 +774,11 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					html_data += '''
 				<td class="user_action_center">
 					<a href="/groups/unlock/%s" title="%s">
-					<img src="/images/16x16/locked.png" alt="%sø"/></a>
+					<img src="/images/16x16/locked.png" alt="%s"/></a>
 				</td>
-					''' % (name, _('''Shared group directory is currently '''
-					'''<strong>NOT</strong> permissive. Click ti activate '''
-					'''permissiveness.'''), _('Group is NOT permissive.'))
+					''' % (name, _('''Shared group directory is currently
+					<strong>NOT</strong> permissive. Click ti activate
+					permissiveness.'''), _('Group is NOT permissive.'))
 
 			for (keyname, text) in (
 				('members', _('Current members')),
@@ -818,24 +827,26 @@ def main(uri, http_user, sort = "name", order = "asc"):
 				html_data += '<td colspan="1">&#160;</td></tr>\n'
 			else:
 				html_data += '''
-					<!--
+					<!-- TODO: implement skel reapplying for all users of
+					curent group
 					<td class="user_action">
-						<a href="/users/skel/%s" title="%s">
-						<img src="/images/16x16/reapply-skel.png" alt="%s"/></a>
+					<a href="/users/skel/%s" title="%s" class="reapply-skel">
+					<span class="reapply-skel">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+					</a>
 					</td>
 					-->
 					<td class="user_action">
-						<a href="/groups/delete/%s" title="%s">
-						<img src="/images/16x16/delete.png" alt="%s"/></a>
+					<a href="/groups/delete/%s" title="%s" class="delete-entry">
+					<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+					</a>
 					</td>
 				</tr>
-						''' % (name, _('''This will rebuild his/her desktop '''
-						'''from scratch, with defaults icons and so on.'''
-						'''<br /><br />The user must be disconnected for the '''
-						'''operation to be completely successfull.'''),
-						_('Reapply skel to group members.'), name,
-						_('Definitely remove this group from system.'),
-						_('Remove this group.'))
+						''' % (name, _('''This will rebuild his/her desktop
+						from scratch, with defaults icons and so on.
+						<br /><br />The user must be disconnected for the
+						operation to be completely successfull.'''),
+						name,
+						_('''Definitely remove this group from system.'''))
 			return html_data
 
 		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (

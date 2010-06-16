@@ -307,8 +307,8 @@ def menu(uri):
 </div>
 <div id="auxnav" class="nav">
 <ul>
-<li><a href="http://docs.licorn.org/wmi" title="%s">%s</a></li>
-<li%s><a href="/support/" title="%s">%s</a></li>
+<li><a href="http://dev.licorn.org/wiki/UserDoc/WMI" title="%s">%s</a></li>
+<li%s><a href="mailto:support@meta-it.fr?subject=[support] " title="%s">%s</a></li>
 </ul>
 </div>
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),

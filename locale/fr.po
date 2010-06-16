@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-15 15:59+0200\n"
-"PO-Revision-Date: 2010-06-15 16:00+0100\n"
+"POT-Creation-Date: 2010-06-16 16:48+0200\n"
+"PO-Revision-Date: 2010-06-16 16:48+0100\n"
 "Last-Translator: Olivier Cortès <olivier.cortes@meta-it.fr>\n"
 "Language-Team: French\n"
 "MIME-Version: 1.0\n"
@@ -167,11 +167,11 @@ msgstr ""
 msgid "Server status"
 msgstr "État du serveur"
 
-#: interfaces/web/base.py:155
+#: interfaces/web/base.py:157
 msgid "System information"
 msgstr "Informations système"
 
-#: interfaces/web/base.py:156
+#: interfaces/web/base.py:158
 msgid "System status"
 msgstr "État du système"
 
@@ -180,20 +180,20 @@ msgstr "État du système"
 msgid "<br /><br />Go back with your browser, double-check data and validate the web-form."
 msgstr "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données saisies et re-validez le formulaire."
 
-#: interfaces/web/groups.py:37
+#: interfaces/web/groups.py:38
 msgid "Add a new group on the system."
 msgstr "Ajouter un nouveau groupe sur le système."
 
-#: interfaces/web/groups.py:37
+#: interfaces/web/groups.py:38
 msgid "Add a group"
 msgstr "Ajouter un groupe"
 
-#: interfaces/web/groups.py:43
+#: interfaces/web/groups.py:44
 #, python-format
 msgid "Make group %s permissive"
 msgstr "Rendre le groupe %s permissif"
 
-#: interfaces/web/groups.py:47
+#: interfaces/web/groups.py:48
 msgid ""
 "This will permit large access to files and folders\n"
 "\t\t\tin the group shared dir, and will allow any member of the group to\n"
@@ -215,7 +215,7 @@ msgstr ""
 "\t\t\t(la durée est donc en fonction\n"
 "\t\t\tdu volume de données, de l'ordre de 1 seconde pour 100Mio)."
 
-#: interfaces/web/groups.py:57
+#: interfaces/web/groups.py:58
 #, python-format
 msgid "Are you sure you want to active permissiveness on group <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir activer la permissivité sur le groupe <strong>%s</strong>&#160;?"
@@ -225,43 +225,45 @@ msgid "Activate"
 msgstr "Activer"
 
 #: interfaces/web/groups.py:61
-#: interfaces/web/groups.py:205
-#: interfaces/web/groups.py:258
-#: interfaces/web/users.py:323
+#: interfaces/web/groups.py:198
+#: interfaces/web/groups.py:250
+#: interfaces/web/users.py:313
 msgid "A"
 msgstr "A"
 
 #: interfaces/web/groups.py:62
-#: interfaces/web/groups.py:99
-#: interfaces/web/groups.py:140
-#: interfaces/web/groups.py:206
-#: interfaces/web/groups.py:594
-#: interfaces/web/users.py:325
-#: interfaces/web/users.py:462
-#: interfaces/web/users.py:666
+#: interfaces/web/groups.py:96
+#: interfaces/web/groups.py:135
+#: interfaces/web/groups.py:199
+#: interfaces/web/groups.py:580
+#: interfaces/web/users.py:314
+#: interfaces/web/users.py:450
+#: interfaces/web/users.py:651
 msgid "Cancel"
 msgstr "Annuler"
 
-#: interfaces/web/groups.py:63
-#: interfaces/web/groups.py:100
-#: interfaces/web/groups.py:141
-#: interfaces/web/groups.py:207
-#: interfaces/web/groups.py:267
-#: interfaces/web/groups.py:594
+#: interfaces/web/groups.py:62
+#: interfaces/web/groups.py:96
+#: interfaces/web/groups.py:136
+#: interfaces/web/groups.py:200
+#: interfaces/web/groups.py:259
+#: interfaces/web/groups.py:580
 msgid "N"
 msgstr "N"
 
-#: interfaces/web/groups.py:75
+#: interfaces/web/groups.py:73
 #, python-format
-msgid "Failed to activate permissivenes on group <strong>%s</strong>!"
+msgid ""
+"Failed to activate permissivenes on group\n"
+"\t\t\t<strong>%s</strong>!"
 msgstr "Impossible de rendre le groupe <strong>%s</strong> permissif&#160;!"
 
-#: interfaces/web/groups.py:80
+#: interfaces/web/groups.py:78
 #, python-format
 msgid "Make group %s not permissive"
 msgstr "Rendre le groupe %s non permissif"
 
-#: interfaces/web/groups.py:84
+#: interfaces/web/groups.py:82
 msgid ""
 "This will ensure finer write access to files and\n"
 "\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
@@ -282,57 +284,57 @@ msgstr ""
 "\t\t\tles permissions de toutes les données actuelles</strong> (la durée est donc en \n"
 "\t\t\tfonction du volume de données, de l'ordre de 1 seconde pour 100Mio)."
 
-#: interfaces/web/groups.py:94
+#: interfaces/web/groups.py:92
 #, python-format
 msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
 msgstr "Êtes-vous sûr(e) de vouloir rendre le groupe <strong>%s</strong> NON permissif&#160;?"
 
-#: interfaces/web/groups.py:97
+#: interfaces/web/groups.py:94
 msgid "Deactivate"
 msgstr "Désactiver"
 
-#: interfaces/web/groups.py:98
-#: interfaces/web/groups.py:260
+#: interfaces/web/groups.py:95
+#: interfaces/web/groups.py:252
 msgid "D"
 msgstr "D"
 
-#: interfaces/web/groups.py:111
+#: interfaces/web/groups.py:106
 #, python-format
 msgid ""
 "Failed to remove permissiveness from group\n"
-"\t\t\t<strong>%s</strong>!"
+"\t\t\t\t<strong>%s</strong>!"
 msgstr "Impossible de supprimer la permissivité du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:120
+#: interfaces/web/groups.py:115
 #, python-format
 msgid "Remove group %s"
 msgstr "Supprimer le groupe %s"
 
-#: interfaces/web/groups.py:126
+#: interfaces/web/groups.py:121
 msgid "Failed to remove group"
 msgstr "Impossible de supprimer le groupe"
 
-#: interfaces/web/groups.py:127
+#: interfaces/web/groups.py:122
 msgid "alter system group."
 msgstr "modification d'un groupe système."
 
-#: interfaces/web/groups.py:128
-#: interfaces/web/users.py:162
-#: interfaces/web/users.py:256
-#: interfaces/web/users.py:293
-#: interfaces/web/users.py:555
-#: interfaces/web/users.py:703
+#: interfaces/web/groups.py:123
+#: interfaces/web/users.py:161
+#: interfaces/web/users.py:248
+#: interfaces/web/users.py:284
+#: interfaces/web/users.py:540
+#: interfaces/web/users.py:686
 msgid "insufficient permissions to perform operation."
 msgstr "permissions insuffisantes pour accomplir l'opération."
 
-#: interfaces/web/groups.py:131
+#: interfaces/web/groups.py:126
 #, python-format
 msgid ""
 "Are you sure you want to remove group\n"
 "\t\t\t<strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:133
+#: interfaces/web/groups.py:128
 #, python-format
 msgid ""
 "Group shared data will be archived in directory %s,\n"
@@ -345,33 +347,33 @@ msgstr ""
 "\t\t\t\t<strong>%s</strong> pour une récupération éventuelle. Vous\n"
 "\t\t\t\tpouvez cependant décider de les effacer définitivement."
 
-#: interfaces/web/groups.py:138
-#: interfaces/web/utils.py:146
+#: interfaces/web/groups.py:133
+#: interfaces/web/utils.py:155
 msgid "Remove"
 msgstr "Supprimer"
 
-#: interfaces/web/groups.py:139
-#: interfaces/web/groups.py:597
-#: interfaces/web/users.py:146
-#: interfaces/web/users.py:231
+#: interfaces/web/groups.py:134
+#: interfaces/web/groups.py:583
+#: interfaces/web/users.py:147
+#: interfaces/web/users.py:225
 msgid "R"
 msgstr "S"
 
-#: interfaces/web/groups.py:143
+#: interfaces/web/groups.py:138
 msgid "Definitely remove group shared data."
 msgstr "Supprimer définitivement les données partagées."
 
-#: interfaces/web/groups.py:158
+#: interfaces/web/groups.py:152
 #, python-format
 msgid "Failed to remove group <strong>%s</strong>!"
 msgstr "Impossible de supprimer le groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:168
+#: interfaces/web/groups.py:161
 #, python-format
 msgid "Skeleton reapplying for group %s"
 msgstr "Ré-application de squelette pour le groupe %s"
 
-#: interfaces/web/groups.py:175
+#: interfaces/web/groups.py:168
 msgid ""
 "This will reset the desktops, icons and menus\n"
 "\t\t\tof all members of the group, according to the content of the\n"
@@ -383,350 +385,361 @@ msgstr ""
 "\t\t\t<strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération\n"
 "\t\t\tréussisse.</strong>"
 
-#: interfaces/web/groups.py:195
+#: interfaces/web/groups.py:188
 #, python-format
 msgid ""
 "Which skel do you wish to reapply to members of\n"
 "\t\t\tthis group? %s"
 msgstr "Quel skelette voulez-vous appliquer aux membres de ce groupe&#160;? %s"
 
-#: interfaces/web/groups.py:201
+#: interfaces/web/groups.py:194
 #, python-format
 msgid ""
 "Are you sure you want to reapply this skel to\n"
 "\t\t\tall of the members of %s?"
 msgstr "Êtes-vous sûr de vouloir appliquer ce squelette aux membres du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:204
-#: interfaces/web/users.py:322
+#: interfaces/web/groups.py:197
+#: interfaces/web/users.py:312
 msgid "Apply"
 msgstr "Appliquer"
 
-#: interfaces/web/groups.py:219
+#: interfaces/web/groups.py:212
 #, python-format
 msgid "Failed to apply skel %s to members of group %s."
 msgstr "Impossible d'appliquer le squelette <strong>%s</strong> aux membres du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:226
+#: interfaces/web/groups.py:218
 msgid "Creating a new group"
 msgstr "Création d'un nouveau groupe"
 
-#: interfaces/web/groups.py:257
-#: interfaces/web/groups.py:582
+#: interfaces/web/groups.py:249
+#: interfaces/web/groups.py:568
 msgid "Group name"
 msgstr "Nom de groupe"
 
-#: interfaces/web/groups.py:259
-#: interfaces/web/groups.py:585
+#: interfaces/web/groups.py:251
+#: interfaces/web/groups.py:571
 msgid "Group description"
 msgstr "Description du groupe"
 
-#: interfaces/web/groups.py:259
+#: interfaces/web/groups.py:251
 msgid "(optional)"
 msgstr "(optionnel)"
 
-#: interfaces/web/groups.py:261
+#: interfaces/web/groups.py:253
 msgid "Skel of future group members"
 msgstr "Squelette des futurs membres du groupe"
 
-#: interfaces/web/groups.py:265
-#: interfaces/web/groups.py:531
+#: interfaces/web/groups.py:257
+#: interfaces/web/groups.py:517
 msgid "Permissive shared dir?"
 msgstr "Répertoire de groupe permissif&#160;?"
 
-#: interfaces/web/groups.py:266
+#: interfaces/web/groups.py:258
 msgid "Yes"
 msgstr "Oui"
 
-#: interfaces/web/groups.py:266
-#: interfaces/web/groups.py:438
-#: interfaces/web/users.py:446
+#: interfaces/web/groups.py:258
+#: interfaces/web/groups.py:428
+#: interfaces/web/users.py:434
 msgid "P"
 msgstr "P"
 
-#: interfaces/web/groups.py:267
-#: interfaces/web/users.py:108
-#: interfaces/web/users.py:148
-#: interfaces/web/users.py:244
+#: interfaces/web/groups.py:259
+#: interfaces/web/users.py:109
+#: interfaces/web/users.py:149
+#: interfaces/web/users.py:238
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: interfaces/web/groups.py:268
-#: interfaces/web/users.py:463
+#: interfaces/web/groups.py:260
+#: interfaces/web/users.py:451
 msgid "Create"
 msgstr "Créer"
 
-#: interfaces/web/groups.py:269
+#: interfaces/web/groups.py:261
 msgid "T"
 msgstr "T"
 
-#: interfaces/web/groups.py:275
+#: interfaces/web/groups.py:267
 #, python-format
 msgid "Creating group %s"
 msgstr "Création du groupe %s"
 
-#: interfaces/web/groups.py:292
+#: interfaces/web/groups.py:284
 #, python-format
 msgid "Failed to create group %s!"
 msgstr "Impossible de créer le groupe %s&#160;!"
 
-#: interfaces/web/groups.py:299
+#: interfaces/web/groups.py:291
 #, python-format
 msgid "Details of group %s"
 msgstr "Détails du groupe %s"
 
-#: interfaces/web/groups.py:327
+#: interfaces/web/groups.py:319
+#: interfaces/web/groups.py:665
 msgid "Members"
 msgstr "Membres"
 
-#: interfaces/web/groups.py:328
-#: interfaces/web/groups.py:369
-#: interfaces/web/groups.py:398
+#: interfaces/web/groups.py:320
+#: interfaces/web/groups.py:359
+#: interfaces/web/groups.py:388
 msgid "(ordered by login)"
 msgstr "(classés par identifiant)"
 
-#: interfaces/web/groups.py:329
-#: interfaces/web/groups.py:370
-#: interfaces/web/groups.py:399
-#: interfaces/web/groups.py:806
+#: interfaces/web/groups.py:321
+#: interfaces/web/groups.py:360
+#: interfaces/web/groups.py:389
+#: interfaces/web/groups.py:803
 msgid "Full Name"
 msgstr "Nom complet"
 
-#: interfaces/web/groups.py:330
-#: interfaces/web/groups.py:371
-#: interfaces/web/groups.py:400
-#: interfaces/web/groups.py:807
-#: interfaces/web/users.py:454
-#: interfaces/web/users.py:785
+#: interfaces/web/groups.py:322
+#: interfaces/web/groups.py:361
+#: interfaces/web/groups.py:390
+#: interfaces/web/groups.py:804
+#: interfaces/web/users.py:442
+#: interfaces/web/users.py:766
 msgid "Identifier"
 msgstr "Identifiant"
 
-#: interfaces/web/groups.py:331
-#: interfaces/web/groups.py:372
-#: interfaces/web/groups.py:401
-#: interfaces/web/groups.py:807
+#: interfaces/web/groups.py:323
+#: interfaces/web/groups.py:362
+#: interfaces/web/groups.py:391
+#: interfaces/web/groups.py:804
 msgid "UID"
 msgstr "UID"
 
-#: interfaces/web/groups.py:348
+#: interfaces/web/groups.py:339
 msgid "No members in this group."
 msgstr "Aucun invité dans ce groupe."
 
-#: interfaces/web/groups.py:368
-#: interfaces/web/groups.py:682
+#: interfaces/web/groups.py:358
+#: interfaces/web/groups.py:666
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: interfaces/web/groups.py:378
+#: interfaces/web/groups.py:368
 msgid "No responsibles for this group."
 msgstr "Aucun responsable de ce groupe."
 
-#: interfaces/web/groups.py:397
-#: interfaces/web/groups.py:683
+#: interfaces/web/groups.py:387
+#: interfaces/web/groups.py:667
 msgid "Guests"
 msgstr "Invités"
 
-#: interfaces/web/groups.py:405
+#: interfaces/web/groups.py:395
 msgid "No guests in this group."
 msgstr "Aucun invité dans ce groupe."
 
-#: interfaces/web/groups.py:430
-#: interfaces/web/groups.py:580
+#: interfaces/web/groups.py:420
+#: interfaces/web/groups.py:566
 msgid "GID"
 msgstr "GID"
 
-#: interfaces/web/groups.py:430
-#: interfaces/web/groups.py:431
+#: interfaces/web/groups.py:420
+#: interfaces/web/groups.py:421
 msgid "immutable"
 msgstr "non modifiable"
 
-#: interfaces/web/groups.py:431
-#: interfaces/web/groups.py:678
+#: interfaces/web/groups.py:421
+#: interfaces/web/groups.py:661
 msgid "Name"
 msgstr "Nom"
 
-#: interfaces/web/groups.py:435
+#: interfaces/web/groups.py:425
 msgid "<< Go back"
 msgstr "<< Revenir"
 
-#: interfaces/web/groups.py:435
+#: interfaces/web/groups.py:425
 msgid "B"
 msgstr "R"
 
-#: interfaces/web/groups.py:436
+#: interfaces/web/groups.py:426
 msgid "Print"
 msgstr "Imprimer"
 
-#: interfaces/web/groups.py:442
-#: interfaces/web/groups.py:601
+#: interfaces/web/groups.py:432
+#: interfaces/web/groups.py:587
 #, python-format
 msgid "Group %s doesn't exist (%s, %s)!"
 msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
 
-#: interfaces/web/groups.py:457
+#: interfaces/web/groups.py:446
 #, python-format
 msgid "Editing group %s"
 msgstr "Édition du groupe %s"
 
-#: interfaces/web/groups.py:467
-#: interfaces/web/groups.py:474
+#: interfaces/web/groups.py:456
+#: interfaces/web/groups.py:463
 msgid "Manage members"
 msgstr "Gérer les membres"
 
-#: interfaces/web/groups.py:467
-#: interfaces/web/groups.py:475
+#: interfaces/web/groups.py:456
+#: interfaces/web/groups.py:464
 msgid "Users not yet members"
 msgstr "Utilisateurs non-membres"
 
-#: interfaces/web/groups.py:468
-#: interfaces/web/groups.py:476
-#: interfaces/web/groups.py:787
+#: interfaces/web/groups.py:457
+#: interfaces/web/groups.py:465
+#: interfaces/web/groups.py:784
 msgid "Current members"
 msgstr "Membres actuels"
 
-#: interfaces/web/groups.py:479
+#: interfaces/web/groups.py:468
 msgid "Manage responsibles"
 msgstr "Gérer les responsables"
 
-#: interfaces/web/groups.py:480
+#: interfaces/web/groups.py:469
 msgid "Users not yet responsibles"
 msgstr "Utilisateurs pas encore responsables"
 
-#: interfaces/web/groups.py:481
-#: interfaces/web/groups.py:788
+#: interfaces/web/groups.py:470
+#: interfaces/web/groups.py:785
 msgid "Current responsibles"
 msgstr "Responsables actuels"
 
-#: interfaces/web/groups.py:484
+#: interfaces/web/groups.py:473
 msgid "Manage guests"
 msgstr "Gérer les invités"
 
-#: interfaces/web/groups.py:485
+#: interfaces/web/groups.py:474
 msgid "Users not yet guests"
 msgstr "Utilisateurs pas encore invités"
 
-#: interfaces/web/groups.py:486
-#: interfaces/web/groups.py:789
+#: interfaces/web/groups.py:475
+#: interfaces/web/groups.py:786
 msgid "Current guests"
 msgstr "Invités actuels"
 
-#: interfaces/web/groups.py:518
-#: interfaces/web/groups.py:679
+#: interfaces/web/groups.py:504
+#: interfaces/web/groups.py:663
 msgid "Skeleton"
 msgstr "Squelette"
 
-#: interfaces/web/groups.py:580
-#: interfaces/web/groups.py:582
+#: interfaces/web/groups.py:566
+#: interfaces/web/groups.py:568
 msgid "(immutable)"
 msgstr "(non modifiable)"
 
-#: interfaces/web/groups.py:588
+#: interfaces/web/groups.py:574
 msgid "Group members"
 msgstr "Membres du groupe"
 
-#: interfaces/web/groups.py:590
+#: interfaces/web/groups.py:576
 msgid "Group responsibles"
 msgstr "Responsables du groupe"
 
-#: interfaces/web/groups.py:592
+#: interfaces/web/groups.py:578
 msgid "Group guests"
 msgstr "Invités du groupe"
 
-#: interfaces/web/groups.py:595
+#: interfaces/web/groups.py:581
 msgid "Record"
 msgstr "Enregistrer"
 
-#: interfaces/web/groups.py:617
+#: interfaces/web/groups.py:601
 #, python-format
 msgid "Modifying group %s"
 msgstr "Modification du groupe %s"
 
-#: interfaces/web/groups.py:649
+#: interfaces/web/groups.py:633
 #, python-format
 msgid "Failed to modify one or more parameter of group %s!"
 msgstr "Impossible de modifier un ou plusieurs paramètres du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/groups.py:668
-#: interfaces/web/users.py:458
-#: interfaces/web/users.py:662
-#: interfaces/web/utils.py:307
+#: interfaces/web/groups.py:651
+#: interfaces/web/groups.py:687
+#: interfaces/web/users.py:446
+#: interfaces/web/users.py:647
+#: interfaces/web/utils.py:316
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/web/groups.py:680
+#: interfaces/web/groups.py:662
+msgid "Description"
+msgstr "Description du groupe"
+
+#: interfaces/web/groups.py:664
 msgid "Perm."
 msgstr "Perm."
 
-#: interfaces/web/groups.py:691
+#: interfaces/web/groups.py:675
 #, python-format
 msgid "%s order"
 msgstr "ordre %s"
 
-#: interfaces/web/groups.py:692
-#: interfaces/web/users.py:792
+#: interfaces/web/groups.py:676
+#: interfaces/web/users.py:773
 msgid "Click to sort in reverse order."
 msgstr "Cliquer pour classer dans l'ordre inverse."
 
-#: interfaces/web/groups.py:696
-#: interfaces/web/users.py:796
+#: interfaces/web/groups.py:680
+#: interfaces/web/users.py:777
 msgid "Click to sort on this column."
 msgstr "Cliquer pour classer sur cette colonne."
 
-#: interfaces/web/groups.py:704
-#: interfaces/web/users.py:459
-#: interfaces/web/users.py:663
+#: interfaces/web/groups.py:688
+#: interfaces/web/users.py:447
+#: interfaces/web/users.py:648
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: interfaces/web/groups.py:773
+#: interfaces/web/groups.py:754
+msgid ""
+"View the group details, its parameters,\n"
+"\t\t\t\t\tmembers, responsibles and guests.\n"
+"\t\t\t\t\tFrom there you can print all group-related informations."
+msgstr "Visualiser le groupe, ses paramètres,ses membres, responsables et invités, en vue deles imprimer."
+
+#: interfaces/web/groups.py:770
 msgid "Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness."
 msgstr "Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité."
 
-#: interfaces/web/groups.py:775
+#: interfaces/web/groups.py:772
 msgid "Group is currently permissive."
 msgstr "Le groupe est actuellement permissif."
 
-#: interfaces/web/groups.py:782
-msgid "Shared group directory is currently <strong>NOT</strong> permissive. Click ti activate permissiveness."
+#: interfaces/web/groups.py:779
+msgid ""
+"Shared group directory is currently\n"
+"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
+"\t\t\t\t\tpermissiveness."
 msgstr "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité."
 
-#: interfaces/web/groups.py:784
+#: interfaces/web/groups.py:781
 msgid "Group is NOT permissive."
 msgstr "Le groupe N'EST PAS permissif actuellement."
 
-#: interfaces/web/groups.py:818
+#: interfaces/web/groups.py:815
 msgid "none"
 msgstr "aucun"
 
-#: interfaces/web/groups.py:825
+#: interfaces/web/groups.py:822
 #, python-format
 msgid "See %s of group %s."
 msgstr "Voir les %s du groupe %s."
 
 #: interfaces/web/groups.py:844
-#: interfaces/web/users.py:296
-msgid "This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull."
+msgid ""
+"This will rebuild his/her desktop\n"
+"\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
+"\t\t\t\t\t\t<br /><br />The user must be disconnected for the\n"
+"\t\t\t\t\t\toperation to be completely successfull."
 msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
-
-#: interfaces/web/groups.py:848
-msgid "Reapply skel to group members."
-msgstr "Reappliquer un squelette aux membres du groupe."
 
 #: interfaces/web/groups.py:849
 msgid "Definitely remove this group from system."
 msgstr "Supprimer définitivement le compte du système."
 
-#: interfaces/web/groups.py:850
-msgid "Remove this group."
-msgstr "Supprimer le groupe."
-
-#: interfaces/web/groups.py:865
-#: interfaces/web/users.py:909
+#: interfaces/web/groups.py:864
+#: interfaces/web/users.py:890
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr "nombre de <strong>%s</strong>&#160;:"
 
-#: interfaces/web/groups.py:878
+#: interfaces/web/groups.py:876
 msgid "Total number of groups:"
 msgstr "Nombre total de groupes&#160;:"
 
@@ -778,342 +791,352 @@ msgstr "Invitations disponibles"
 msgid "Offered invitations"
 msgstr "Invitation offertes"
 
-#: interfaces/web/users.py:61
+#: interfaces/web/users.py:62
 msgid "Add a new user account on the system."
 msgstr "Ajouter un nouveau compte utilisateur sur le système."
 
-#: interfaces/web/users.py:63
+#: interfaces/web/users.py:64
 msgid "Add an account"
 msgstr "Ajouter un compte"
 
-#: interfaces/web/users.py:64
+#: interfaces/web/users.py:65
 msgid "Import new user accounts from a CSV-delimited file."
 msgstr "Importer de nouveaux comptes utilisateurs depuis un fichier CSV."
 
-#: interfaces/web/users.py:66
+#: interfaces/web/users.py:67
 msgid "Import accounts"
 msgstr "Importer des comptes"
 
-#: interfaces/web/users.py:67
+#: interfaces/web/users.py:68
 msgid "Export current user accounts list to a CSV or XML file."
 msgstr "Exporter les comptes utilisateurs actuels vers un fichier CSV ou XML."
 
-#: interfaces/web/users.py:69
+#: interfaces/web/users.py:70
 msgid "Export accounts"
 msgstr "Exporter les comptes"
 
-#: interfaces/web/users.py:81
+#: interfaces/web/users.py:82
 msgid "Export user accounts list"
 msgstr "Exporter les comptes utilisateurs"
 
-#: interfaces/web/users.py:93
+#: interfaces/web/users.py:94
 msgid "CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser."
 msgstr "Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur \"Exporter\", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
 
-#: interfaces/web/users.py:102
+#: interfaces/web/users.py:103
 #, python-format
 msgid "Which file format do you want accounts to be exported to? %s"
 msgstr "Dans quel format de sortie voulez-vous exporter les comptes&#160;? %s"
 
-#: interfaces/web/users.py:105
+#: interfaces/web/users.py:106
 msgid "Please choose file format for export list"
 msgstr "Choisissez le format de fichier d'export"
 
-#: interfaces/web/users.py:107
+#: interfaces/web/users.py:108
 msgid "Export >>"
 msgstr "Exporter >>"
 
-#: interfaces/web/users.py:131
+#: interfaces/web/users.py:132
 #, python-format
 msgid "Remove user account %s"
 msgstr "Supprimer le compte %s"
 
-#: interfaces/web/users.py:136
+#: interfaces/web/users.py:137
 #, python-format
 msgid "Are you sure you want to remove account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:138
+#: interfaces/web/users.py:139
 #, python-format
 msgid "User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong> in directory <code>%s</code> and members of group <strong>%s</strong> will be able to  access it to operate an eventual recover.<br />However, you can decide to permanently remove it."
 msgstr "<strong>Les données personnelles</strong> de l'utilisateur (son home dir) <strong>seront archivées</strong>\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du groupe\t\t\t\t<strong>%s</strong> pour une récupération éventuelle.<br />\t\t\t\tVous pouvez cependant décider de les effacer définitivement."
 
-#: interfaces/web/users.py:146
+#: interfaces/web/users.py:147
 msgid "Remove >>"
 msgstr "Supprimer >>"
 
-#: interfaces/web/users.py:148
-#: interfaces/web/users.py:244
-#: interfaces/web/users.py:325
+#: interfaces/web/users.py:149
+#: interfaces/web/users.py:238
+#: interfaces/web/users.py:315
 msgid "C"
 msgstr "N"
 
-#: interfaces/web/users.py:150
+#: interfaces/web/users.py:151
 msgid "Definitely remove account data (no archiving)."
 msgstr "Supprimer définitivement toutes les données liées à ce compte (pas d'archivage)."
 
-#: interfaces/web/users.py:160
+#: interfaces/web/users.py:159
 msgid "Failed to remove account"
 msgstr "Impossible de supprimer le compte"
 
-#: interfaces/web/users.py:161
-#: interfaces/web/users.py:190
-#: interfaces/web/users.py:255
-#: interfaces/web/users.py:292
-#: interfaces/web/users.py:554
-#: interfaces/web/users.py:702
+#: interfaces/web/users.py:160
+#: interfaces/web/users.py:185
+#: interfaces/web/users.py:247
+#: interfaces/web/users.py:283
+#: interfaces/web/users.py:539
+#: interfaces/web/users.py:685
 msgid "alter system account."
 msgstr "modification d'un compte système"
 
-#: interfaces/web/users.py:174
+#: interfaces/web/users.py:172
 #, python-format
 msgid "Failed to remove account <strong>%s</strong>!"
 msgstr "Impossible de supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:180
+#: interfaces/web/users.py:177
 #, python-format
 msgid "Unlock account %s"
 msgstr "Déverrouiller le compte %s"
 
-#: interfaces/web/users.py:189
+#: interfaces/web/users.py:184
 msgid "Failed to unlock account"
 msgstr "Impossible de déverrouiller le compte"
 
-#: interfaces/web/users.py:191
+#: interfaces/web/users.py:186
 msgid "insufficient permission to perform operation."
 msgstr "permissions insuffisantes pour accomplir l'opération."
 
-#: interfaces/web/users.py:198
+#: interfaces/web/users.py:194
 #, python-format
 msgid "Failed to unlock account <strong>%s</strong>!"
 msgstr "Impossible de déverrouiller le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:210
+#: interfaces/web/users.py:205
 #, python-format
 msgid "Lock account %s"
 msgstr "Verrouiller le compte %s"
 
-#: interfaces/web/users.py:214
+#: interfaces/web/users.py:209
 #, python-format
 msgid "This will prevent user to connect to network clients (thin ones, and Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
 msgstr "Cela l'empêchera de se connecter sur les terminaux légers\t%s/Linux et les postes autonomes Windows&reg; et Macintosh&reg;."
 
-#: interfaces/web/users.py:221
+#: interfaces/web/users.py:215
 #, python-format
 msgid ""
 "<br /><br />\n"
 "\t\t\t\t\tBut this will not block incoming %s network connections, if the user uses %s %s or %s public/private keys. To block ANY access to the system, <strong>remove him/her from %s group</strong>."
 msgstr "<br /><br />\t\t\t\tMais <em>cela n'empêchera pas les connexions à distance par %s</em>\t\t\t\tsi cet utilisateur se sert de clés %s %s/%s pour se connecter.\t\t\t\tPour lui interdire complètement l'accès au système, \t\t\t\t<strong>retirez-le aussi du groupe %s</strong>."
 
-#: interfaces/web/users.py:229
+#: interfaces/web/users.py:223
 msgid "Remove user from group <code>remotessh</code> in the same time."
 msgstr "Supprimer l'utilisateur du groupe <code>remotessh</code> au passage."
 
-#: interfaces/web/users.py:238
+#: interfaces/web/users.py:232
 #, python-format
 msgid "Are you sure you want to lock account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir verrouiler le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:242
+#: interfaces/web/users.py:236
 msgid "Lock >>"
 msgstr "Verrouiller >>"
 
-#: interfaces/web/users.py:242
+#: interfaces/web/users.py:236
 msgid "L"
 msgstr "V"
 
-#: interfaces/web/users.py:254
+#: interfaces/web/users.py:246
 msgid "Failed to lock account"
 msgstr "Impossible de verrouiller le compte"
 
-#: interfaces/web/users.py:269
+#: interfaces/web/users.py:261
 #, python-format
 msgid "Failed to lock account <strong>%s</strong>!"
 msgstr "Impossible de verrouiller le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:286
+#: interfaces/web/users.py:277
 #, python-format
 msgid "Reapply skel to user account %s"
 msgstr "Reappliquer un squelette au compte %s"
 
-#: interfaces/web/users.py:291
+#: interfaces/web/users.py:282
 msgid "Failed to reapply skel"
 msgstr "Impossible de réappliquer le squelette"
 
-#: interfaces/web/users.py:314
+#: interfaces/web/users.py:287
+msgid "This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull."
+msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
+
+#: interfaces/web/users.py:305
 #, python-format
 msgid "Which skel do you want to apply? %s"
 msgstr "Quel skelette voulez-vous appliquer&#160;? %s"
 
-#: interfaces/web/users.py:318
+#: interfaces/web/users.py:309
 #, python-format
 msgid "Are you sure you want to apply this skel to account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr de vouloir appliquer ce squelette au compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:339
+#: interfaces/web/users.py:327
 #, python-format
-msgid "Failed to apply skel <strong>%s</strong> on user account <strong>%s</strong>!"
+msgid ""
+"Failed to apply skel <strong>%s</strong> on user\n"
+"\t\t\taccount <strong>%s</strong>!"
 msgstr "Impossible d'appliquer le squelette <strong>%s</strong> sur le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:352
+#: interfaces/web/users.py:340
 msgid "New user account"
 msgstr "Nouveau compte utilisateur"
 
-#: interfaces/web/users.py:365
+#: interfaces/web/users.py:353
 msgid "This user is a"
 msgstr "Cet utilisateur est un(e)"
 
-#: interfaces/web/users.py:373
-#: interfaces/web/users.py:784
+#: interfaces/web/users.py:361
+#: interfaces/web/users.py:765
 msgid "Full name"
 msgstr "Nom complet"
 
-#: interfaces/web/users.py:442
-#: interfaces/web/users.py:648
+#: interfaces/web/users.py:430
+#: interfaces/web/users.py:633
 #, python-format
 msgid "Password must be at least %d characters long. You can use all alphabet characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr "Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser toutes les lettre de l'alphabet, les chiffres, les caractères spéciaux et les signes de ponctuation sauf '?!'."
 
-#: interfaces/web/users.py:445
+#: interfaces/web/users.py:433
 msgid "Password"
 msgstr "Mot de passe"
 
-#: interfaces/web/users.py:445
-#: interfaces/web/users.py:652
+#: interfaces/web/users.py:433
+#: interfaces/web/users.py:637
 #, python-format
 msgid "(%d chars. min.)"
 msgstr "(%d car. min.)"
 
-#: interfaces/web/users.py:448
+#: interfaces/web/users.py:436
 msgid "Password confirmation."
 msgstr "Confirmation du mot de passe."
 
-#: interfaces/web/users.py:450
+#: interfaces/web/users.py:438
 msgid "Identifier must be lowercase, without accents or special characters (you can use dots and carets).<br /><br />If you let this field empty, identifier will be automaticaly guessed from first name and last name."
 msgstr ""
 "L'identifiant doit être en lettres minuscules, sans accents ni caractères spéciaux (vous pouvez utiliser seulement les points et les tirets).<br /><br />\n"
 "Si vous laissez le champ vide, l'identifiant sera automatiquement déterminé à partir du nom et du prénom."
 
-#: interfaces/web/users.py:455
+#: interfaces/web/users.py:443
 msgid "I"
 msgstr "I"
 
-#: interfaces/web/users.py:456
-#: interfaces/web/users.py:659
+#: interfaces/web/users.py:444
+#: interfaces/web/users.py:644
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
-#: interfaces/web/users.py:460
-#: interfaces/web/users.py:664
+#: interfaces/web/users.py:448
+#: interfaces/web/users.py:649
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: interfaces/web/users.py:461
-#: interfaces/web/users.py:665
+#: interfaces/web/users.py:449
+#: interfaces/web/users.py:650
 msgid "Invitations"
 msgstr "Invitations"
 
-#: interfaces/web/users.py:482
+#: interfaces/web/users.py:468
 #, python-format
 msgid "New user account %s"
 msgstr "Nouveau compte %s"
 
-#: interfaces/web/users.py:487
-#: interfaces/web/users.py:708
+#: interfaces/web/users.py:473
+#: interfaces/web/users.py:691
 #, python-format
 msgid "Passwords do not match!%s"
 msgstr "Les mots de passe ne correspondent pas&#160;!%s"
 
-#: interfaces/web/users.py:491
+#: interfaces/web/users.py:477
 #, python-format
 msgid "Password must be at least %d characters long!%s"
 msgstr "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
 
-#: interfaces/web/users.py:514
+#: interfaces/web/users.py:501
 #, python-format
 msgid "Failed to create account <strong>%s</strong>!"
 msgstr "Impossible de créer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:539
+#: interfaces/web/users.py:524
 #, python-format
-msgid "Failed to add user <strong>%s</strong> to requested groups/privileges/responsibilities/invitations!"
+msgid ""
+"Failed to add user <strong>%s</strong> to requested\n"
+"\t\tgroups/privileges/responsibilities/invitations!"
 msgstr "Impossible d'ajouter l'utilisateur <strong>%s</strong> aux groupes/privilèges/invitations/responsabilités&#160;!"
 
-#: interfaces/web/users.py:549
+#: interfaces/web/users.py:534
 #, python-format
 msgid "Edit account %s"
 msgstr "Édition du compte %s"
 
-#: interfaces/web/users.py:553
+#: interfaces/web/users.py:538
 msgid "Account edition impossible."
 msgstr "Édition du compte impossible."
 
-#: interfaces/web/users.py:564
-#: interfaces/web/users.py:774
-#: interfaces/web/users.py:884
+#: interfaces/web/users.py:549
+#: interfaces/web/users.py:755
+#: interfaces/web/users.py:865
 msgid "Standard account"
 msgstr "Compte standard"
 
-#: interfaces/web/users.py:642
+#: interfaces/web/users.py:627
 msgid "<strong>UID</strong> (fixed)"
 msgstr "<strong>UID</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:643
+#: interfaces/web/users.py:628
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr "<strong>Identifiant</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:644
+#: interfaces/web/users.py:629
 msgid "<strong>Profile</strong> (fixed)"
 msgstr "<strong>Profil</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:645
+#: interfaces/web/users.py:630
 msgid "<strong>Full name</strong>"
 msgstr "<strong>Nom complet</strong>"
 
-#: interfaces/web/users.py:652
+#: interfaces/web/users.py:637
 msgid "New password"
 msgstr "Nouveau mot de passe"
 
-#: interfaces/web/users.py:656
+#: interfaces/web/users.py:641
 msgid "password confirmation."
 msgstr "confirmation du mot de passe."
 
-#: interfaces/web/users.py:667
+#: interfaces/web/users.py:652
 msgid "Record changes"
 msgstr "Enregistrer les changements"
 
-#: interfaces/web/users.py:692
+#: interfaces/web/users.py:675
 #, python-format
 msgid "Modification of account %s"
 msgstr "Modification du compte %s"
 
-#: interfaces/web/users.py:701
+#: interfaces/web/users.py:684
 msgid "Recording of informations failed"
 msgstr "L'enregistrement des informations a échoué"
 
-#: interfaces/web/users.py:711
+#: interfaces/web/users.py:694
 #, python-format
 msgid "The password --%s-- must be at least %d characters long!%s"
 msgstr "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
 
-#: interfaces/web/users.py:738
+#: interfaces/web/users.py:720
 #, python-format
-msgid "Failed to modify one or more parameters of account <strong>%s</strong>!"
+msgid ""
+"Failed to modify one or more parameters of account\n"
+"\t\t <strong>%s</strong>!"
 msgstr "Impossible de modifier un ou plusieurs paramètres du compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:776
+#: interfaces/web/users.py:757
 msgid "User accounts"
 msgstr "Comptes utilisateurs"
 
-#: interfaces/web/users.py:785
+#: interfaces/web/users.py:766
 msgid "Profile"
 msgstr "Profil"
 
-#: interfaces/web/users.py:786
+#: interfaces/web/users.py:767
 msgid "Locked"
 msgstr "Verr."
 
-#: interfaces/web/users.py:802
+#: interfaces/web/users.py:783
 #, python-format
 msgid ""
 "<em>Click to edit current user account parameters:</em>\n"
@@ -1135,33 +1158,33 @@ msgstr ""
 "\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
 "\t\t\t\t"
 
-#: interfaces/web/users.py:838
+#: interfaces/web/users.py:819
 msgid "Unlock password (re-grant access to machines)."
 msgstr "Déverrouiller le mot de passe (redonne accès aux machines du réseau à l'utilisateur)."
 
-#: interfaces/web/users.py:839
+#: interfaces/web/users.py:820
 msgid "Remove account."
 msgstr "Supprimer le compte."
 
-#: interfaces/web/users.py:846
+#: interfaces/web/users.py:827
 msgid "Lock password (revoke access to machines)."
 msgstr "Verrouiller le mot de passe (supprime l'accès aux machines du réseau)."
 
-#: interfaces/web/users.py:847
+#: interfaces/web/users.py:828
 msgid "Lock account."
 msgstr "Verrouiller le compte."
 
-#: interfaces/web/users.py:859
+#: interfaces/web/users.py:840
 msgid ""
 "Reapply origin skel data in the personnal directory of user. This is usefull when user has lost icons, or modified too much his/her desktop (menus, panels and so on).\n"
 "\t\t\t\tThis will get all his/her desktop back."
 msgstr "Réappliquer les données du skelette d'origine dans le répertoire personnel de\t\t\t\tl'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou trop modifié le contenu de\t\t\t\tson bureau (icônes, menus, panneaux et barres d'outils) et permet de lui remettre le bureau\t\t\t\td'«&#160;usine&#160;»."
 
-#: interfaces/web/users.py:864
+#: interfaces/web/users.py:845
 msgid "Definitely remove account from the system."
 msgstr "Supprime définitivement le compte du système."
 
-#: interfaces/web/users.py:923
+#: interfaces/web/users.py:903
 msgid "<strong>Total number of accounts:</strong>"
 msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
 
@@ -1169,183 +1192,212 @@ msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
 #, python-format
 msgid ""
 "\n"
-"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU GPL version 2</a> license, without any kind of waranty. Copyleft &copy; 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s, and all other libre software developers (Notably Ubuntu, Debian, Python…).\n"
+"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU\n"
+" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
+" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,\n"
+"  and all other libre software developers (Notably Ubuntu, Debian, Python…).\n"
 msgstr ""
 "\n"
 "%s est distribué sous licence <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU GPL version 2</a> sans aucune garantie d'aucune sorte. Copyleft et droits d'auteurs &copy; 2007-2010 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun pour le projet %s, ainsi qu'à tous les auteurs respectifs des logiciels libres utilisés (Notament Ubuntu, Debian, Python…).\n"
 
-#: interfaces/web/utils.py:22
+#: interfaces/web/utils.py:25
 msgid "Secure SHell (Secure remote connexion and commands protocol)"
 msgstr "Secure SHell (Protocole de connexion sécurisée à distance)"
 
-#: interfaces/web/utils.py:23
+#: interfaces/web/utils.py:26
 msgid "File Transfer Protocol"
 msgstr "File Transfer Protocol (protocole de transfert de fichiers)"
 
-#: interfaces/web/utils.py:24
+#: interfaces/web/utils.py:27
 msgid "HyperText Transfert Protocol"
 msgstr "HyperText Transfert Protocol (Transfert de documents par liens HyperTexte)"
 
-#: interfaces/web/utils.py:25
+#: interfaces/web/utils.py:28
 msgid "Internet Message Access Protocol"
 msgstr "Internet Message Access Protocol (Protocole d'accès à distance au courrier électronique)"
 
-#: interfaces/web/utils.py:26
+#: interfaces/web/utils.py:29
 msgid "Virtual Network Computing (Desktop remote connexion protocol)"
 msgstr "Virtual Network Computing (Protocole de prise en main d'ordinateur à distance)"
 
-#: interfaces/web/utils.py:27
+#: interfaces/web/utils.py:30
 msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
 msgstr "Remote Desktop Protocol (Protocole de prise en main de bureau graphique à distance)"
 
-#: interfaces/web/utils.py:28
+#: interfaces/web/utils.py:31
 msgid "Post-Office Protocol (Simple mail fetching protocol)"
 msgstr "Post-Office Protocol (Procole simpliste de récupération du courrier électronique)"
 
-#: interfaces/web/utils.py:29
+#: interfaces/web/utils.py:32
 msgid "Simple Mail Transfer Protocol"
 msgstr "Simple Mail Transfer Protocol (Protocole d'envoi et relai du courrier électronique)"
 
-#: interfaces/web/utils.py:30
+#: interfaces/web/utils.py:33
 msgid "Rivest Shamir Adleman (cryptography protocol)"
 msgstr "Rivest Shamir Adleman (Protocole de cryptographie)"
 
-#: interfaces/web/utils.py:31
+#: interfaces/web/utils.py:34
 msgid "Digital Signature Algorithm"
 msgstr "Digital Signature Algorithm (Protocole de cryptographie)"
 
-#: interfaces/web/utils.py:32
-msgid "GNU is Not Unix (recursive acronym ; a set of libre sofware composing a libre operating system)"
+#: interfaces/web/utils.py:35
+msgid ""
+"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
+"\t\tcomposing a libre operating system)"
 msgstr "GNU is Not Unix (Acronyme récursif ; ensemble de logiciels libres composant le système de base d'un Unix libre)"
 
-#: interfaces/web/utils.py:33
-msgid "LiCorN system tools (tools for IT managers, see http://dev.licorn.org/)"
+#: interfaces/web/utils.py:37
+msgid ""
+"LiCorN system tools (tools for IT managers,\n"
+"\t\tsee http://dev.licorn.org/)"
 msgstr "LiCorN system tools (outils pour les administrateurs systèmes GNU/Linux, voir http://dev.licorn.org/)"
 
-#: interfaces/web/utils.py:34
-msgid "Licorn Admin Tools (High-level management tools for a GNU/Linux system)"
+#: interfaces/web/utils.py:39
+msgid ""
+"Licorn Admin Tools (High-level management tools for\n"
+"\t\ta GNU/Linux system)"
 msgstr "Licorn Admin Tools (outils de haut-niveau pour administrer un système GNU/Linux)"
 
-#: interfaces/web/utils.py:67
+#: interfaces/web/utils.py:49
+msgid "Command must be a list or tuple!"
+msgstr "La commande à exécuter doit être transmise sous forme de liste ou de tuple&nbsp;!"
+
+#: interfaces/web/utils.py:76
 #, python-format
 msgid "%d&nbsp;hours,"
 msgstr "%d&nbsp;heures, "
 
-#: interfaces/web/utils.py:71
+#: interfaces/web/utils.py:80
 #, python-format
 msgid " %d&nbsp;minutes,"
 msgstr " %d&nbsp;minutes,"
 
-#: interfaces/web/utils.py:73
+#: interfaces/web/utils.py:82
 #, python-format
 msgid " %.3f&nbsp;seconds."
 msgstr " %.3f&nbsp;secondes."
 
-#: interfaces/web/utils.py:74
+#: interfaces/web/utils.py:83
 #, python-format
 msgid "Core execution time: %s"
 msgstr "Temps d'exécution du moteur : %s"
 
-#: interfaces/web/utils.py:144
+#: interfaces/web/utils.py:153
 msgid "Add"
 msgstr "Ajouter"
 
-#: interfaces/web/utils.py:207
+#: interfaces/web/utils.py:216
 #, python-format
 msgid "Logged in as %s"
 msgstr "Connecté en tant que %s"
 
-#: interfaces/web/utils.py:305
+#: interfaces/web/utils.py:314
 msgid "Server, UPS and hardware sub-systems status."
 msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/web/utils.py:305
+#: interfaces/web/utils.py:314
 msgid "Status"
 msgstr "État"
 
-#: interfaces/web/utils.py:306
+#: interfaces/web/utils.py:315
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/web/utils.py:306
+#: interfaces/web/utils.py:315
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: interfaces/web/utils.py:307
+#: interfaces/web/utils.py:316
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/web/utils.py:308
+#: interfaces/web/utils.py:317
 msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
 msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
 
-#: interfaces/web/utils.py:308
+#: interfaces/web/utils.py:317
 msgid "Machines"
 msgstr "Machines"
 
-#: interfaces/web/utils.py:309
+#: interfaces/web/utils.py:318
 msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
 msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/web/utils.py:309
+#: interfaces/web/utils.py:318
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/web/utils.py:310
+#: interfaces/web/utils.py:319
 msgid "Go to online documentation and community website (in new window or new tab)."
 msgstr "Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet)."
 
-#: interfaces/web/utils.py:310
+#: interfaces/web/utils.py:319
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/web/utils.py:311
+#: interfaces/web/utils.py:320
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/web/utils.py:311
+#: interfaces/web/utils.py:320
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/web/utils.py:315
-#: interfaces/web/utils.py:345
+#: interfaces/web/utils.py:324
 #, python-format
-msgid "administration %s"
+msgid "%s Management"
 msgstr "Administration %s"
 
-#: interfaces/web/utils.py:340
+#: interfaces/web/utils.py:349
 #, python-format
 msgid "%s WMI:"
 msgstr "IGW %s&nbsp;:"
 
-#: interfaces/web/server.py:34
+#: interfaces/web/utils.py:354
+#, python-format
+msgid "administration %s"
+msgstr "Administration %s"
+
+#: interfaces/web/server.py:37
+msgid "Can't reboot the system."
+msgstr "Impossible de redémarrer le système."
+
+#: interfaces/web/server.py:40
 msgid "Rebooting…"
 msgstr "Redémarrage…"
 
-#: interfaces/web/server.py:58
+#: interfaces/web/server.py:66
 #, python-format
 msgid "Sure you want to reboot the %s server?"
 msgstr "Êtes-vous sûr(e) de vouloir redémarrer le serveur %s ?"
 
-#: interfaces/web/server.py:59
-#: interfaces/web/server.py:87
+#: interfaces/web/server.py:67
+#: interfaces/web/server.py:105
 msgid "YES"
 msgstr "OUI"
 
-#: interfaces/web/server.py:60
-#: interfaces/web/server.py:88
+#: interfaces/web/server.py:68
+#: interfaces/web/server.py:106
 msgid "NO"
 msgstr "NON"
 
-#: interfaces/web/server.py:64
+#: interfaces/web/server.py:75
+msgid "Can't shutdown the system."
+msgstr "Impossible d'arrêter le système."
+
+#: interfaces/web/server.py:78
 msgid "Shutting down…"
 msgstr "Arrêt en cours…"
 
-#: interfaces/web/server.py:86
+#: interfaces/web/server.py:104
 #, python-format
 msgid "Sure you want to shutdown the %s server?"
 msgstr "Êtes-vous sûr(e) de vouloir éteindre le serveur %s ?"
 
+#~ msgid "Reapply skel to group members."
+#~ msgstr "Reappliquer un squelette aux membres du groupe."
+#~ msgid "Remove this group."
+#~ msgstr "Supprimer le groupe."
 #~ msgid "Apply >>"
 #~ msgstr "Appliquer >>"
 #~ msgid ""

@@ -426,7 +426,16 @@ div#main {
 	height: 250px;
 }
 
+a.view-entry, a.view-entry:link, a.view-entry:visited {
+	background: url('/images/16x16/preview.png') no-repeat top left;
+	opacity: 0.2;
 
+}
+a.view-entry:hover {
+	background: url('/images/16x16/preview.png') no-repeat top left;
+	opacity: 1;
+	text-decoration: none;
+}
 
 a.edit-entry, a.edit-entry:link, a.edit-entry:visited {
 	padding-right: 18px;
@@ -455,7 +464,7 @@ a.delete-entry:hover {
 	text-decoration: none;
 }
 
-span.delete-entry {
+span.delete-entry, span.view-entry, span.reapply-skel {
 	width: 16px;
 	height: 16px;
 }
