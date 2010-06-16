@@ -33,8 +33,8 @@ def reboot(uri, http_user, sure = False):
 		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
 			_('Rebooting…'))))
 	else:
-		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''%s
-		<div class="vspacer"></div>
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''
+		<div style="line-height: 1.5em; padding-bottom:20px">%s</div>
 		<table class="lbox-table">
 			<tr>
 				<td>
@@ -60,10 +60,15 @@ def reboot(uri, http_user, sure = False):
 		_('NO')))))
 def halt(uri, http_user, sure = False):
 	if sure:
+		w.run(['sudo', 'shutdown', '-p'],
+		None,
+		)
+
 		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
 			_('Shutting down…'))))
 	else:
-		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''%s<div class="vspacer"></div>
+		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''
+		<div  style="line-height: 1.5em; padding-bottom:20px">%s</div>
 		<table class="lbox-table">
 			<tr>
 				<td>
