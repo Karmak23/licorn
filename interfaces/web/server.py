@@ -29,9 +29,17 @@ def ctxtnav():
 		_('Shutdown server'))
 
 def reboot(uri, http_user, sure = False):
+
+	data = ''
+
 	if sure:
-		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Rebooting…'))))
+		(rettype, retdata) = w.run(['sudo', 'shutdown', '-r', 'now'], None,
+		data, _('''Can't reboot the system.'''))
+
+		if rettype == w.HTTP_TYPE_REDIRECT :
+			return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox(_('Rebooting…'))))
+		else:
+			return rettype, w.minipage(w.lbox(retdata))
 	else:
 		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''
 		<div style="line-height: 1.5em; padding-bottom:20px">%s</div>
@@ -59,13 +67,18 @@ def reboot(uri, http_user, sure = False):
 		_('YES'),
 		_('NO')))))
 def halt(uri, http_user, sure = False):
-	if sure:
-		w.run(['sudo', 'shutdown', '-p'],
-		None,
-		)
 
-		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''<div class="vspacer"></div>%s''' % \
-			_('Shutting down…'))))
+	data = ''
+
+	if sure:
+		(rettype, retdata) = w.run(['sudo', 'shutdown', '-p', 'now'], None,
+		data, _('''Can't shutdown the system.'''))
+
+		if rettype == w.HTTP_TYPE_REDIRECT :
+			return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox(_('Shutting down…'))))
+		else:
+			return rettype, w.minipage(w.lbox(retdata))
+
 	else:
 		return (w.HTTP_TYPE_TEXT, w.minipage(w.lbox('''
 		<div  style="line-height: 1.5em; padding-bottom:20px">%s</div>

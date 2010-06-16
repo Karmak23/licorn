@@ -65,7 +65,6 @@ def run(command, successfull_redirect, page_data, error_message):
 				err.replace('>', '&gt;').replace('<', '&lt;')
 				)
 			)
-
 	else:
 		return (HTTP_TYPE_REDIRECT, successfull_redirect)
 
