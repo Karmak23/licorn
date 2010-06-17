@@ -192,7 +192,7 @@ class INotifier(Thread, Singleton):
 				return self.process_event(path, event, gid, dirname)
 
 			self.add_watch(group_home, myfunc)
-	def prevent_double_check(path):
+	def prevent_double_check(self, path):
 		""" store a just checked path a little while, to avoid double checks and other I/O consuming tasks. """
 		self.just_checked.append(path)
 	def process_event(self, basename, event, gid, dirname):
