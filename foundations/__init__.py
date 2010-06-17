@@ -26,7 +26,6 @@ __all__ = [
 	
 	# classes, objects, very low-level utility functions
 	'objects',
-	'file_locks',
 	'fsapi',
 	'process',
 	'hlstr',

@@ -6,7 +6,7 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations         import logging, exceptions, styles, file_locks
+from licorn.foundations         import logging, exceptions, styles, objects
 from licorn.core.internals      import readers
 from licorn.foundations.objects import UGBackend
 
@@ -273,9 +273,9 @@ class unix_backend(UGBackend):
 	def save_users(self, users):
 		""" Write /etc/passwd and /etc/shadow """
 
-		lock_etc_passwd = file_locks.FileLock(
+		lock_etc_passwd = objects.FileLock(
 			UGBackend.configuration, "/etc/passwd")
-		lock_etc_shadow = file_locks.FileLock(
+		lock_etc_shadow = objects.FileLock(
 			UGBackend.configuration, "/etc/shadow")
 
 		etcpasswd = []
@@ -325,11 +325,11 @@ class unix_backend(UGBackend):
 				" or member of the shadow group," \
 				" can't write configuration data.")
 
-		lock_etc_group   = file_locks.FileLock(UGBackend.configuration,
+		lock_etc_group   = objects.FileLock(UGBackend.configuration,
 												"/etc/group")
-		lock_etc_gshadow = file_locks.FileLock(UGBackend.configuration,
+		lock_etc_gshadow = objects.FileLock(UGBackend.configuration,
 												"/etc/gshadow")
-		lock_ext_group   = file_locks.FileLock(UGBackend.configuration,
+		lock_ext_group   = objects.FileLock(UGBackend.configuration,
 								UGBackend.configuration.extendedgroup_data_file)
 
 		logging.progress("Writing groups configuration to disk...")

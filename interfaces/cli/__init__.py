@@ -53,7 +53,7 @@ def cli_main(functions, app_data, second_level_help = False,
 	"""
 
 	from licorn.core import configuration
-	from licorn.foundations.file_locks import FileLock
+	from licorn.foundations.objects import FileLock
 
 	with configuration:
 		if giant_locked:

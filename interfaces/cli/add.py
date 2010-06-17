@@ -12,7 +12,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 
-from licorn.foundations import logging, exceptions, options, styles, hlstr, fsapi, file_locks
+from licorn.foundations import logging, exceptions, options, styles, hlstr, fsapi, objects
 from licorn.core        import configuration, users, groups, profiles
 
 _app = {
@@ -401,7 +401,7 @@ def add_webfilter():
 if __name__ == "__main__":
 
 	try:
-		giantLock = file_locks.FileLock(configuration, "add", 10)
+		giantLock = objects.FileLock(configuration, "add", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:
 		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))

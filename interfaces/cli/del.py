@@ -13,7 +13,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, re
 
-from licorn.foundations import logging, exceptions, options, file_locks, styles
+from licorn.foundations import logging, exceptions, options, objects, styles
 from licorn.core        import configuration, users, groups, profiles
 
 _app = {
@@ -105,7 +105,7 @@ def delete_webfilter():
 if __name__ == "__main__":
 
 	try:
-		giantLock = file_locks.FileLock(configuration, "giant", 10)
+		giantLock = objects.FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:
 		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))

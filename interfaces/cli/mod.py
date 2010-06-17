@@ -17,7 +17,7 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-from licorn.foundations import logging, exceptions, options, hlstr, file_locks, styles
+from licorn.foundations import logging, exceptions, options, hlstr, objects, styles
 from licorn.core        import configuration, users, groups, profiles
 
 def modify_user():
@@ -252,7 +252,7 @@ def modify_configuration():
 if __name__ == "__main__":
 
 	try:
-		giantLock = file_locks.FileLock(configuration, "giant", 10)
+		giantLock = objects.FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:
 		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))

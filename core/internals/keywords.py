@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 
 import xattr, os.path, stat
 
-from licorn.foundations    import exceptions, logging, hlstr, pyutils, file_locks, fsapi
+from licorn.foundations    import exceptions, logging, hlstr, pyutils, objects, fsapi
 from licorn.core.internals import readers
 
 
@@ -62,7 +62,7 @@ class KeywordsController:
 			logging.progress('%s: saving data structures to disk.' % \
 				self.pretty_name)
 
-			lock_file = file_locks.FileLock(self.configuration, self.configuration.keywords_data_file)
+			lock_file = objects.FileLock(self.configuration, self.configuration.keywords_data_file)
 
 			lock_file.Lock()
 			open(self.configuration.keywords_data_file , "w").write(self.__build_cli_output())
