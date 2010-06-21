@@ -60,9 +60,10 @@ class LicornThread(Thread):
 	"""
 
 	def __init__(self, pname = '<unknown>'):
-		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+		Thread.__init__(self)
 
+		self.name  = "%s/%s" % (
+			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
@@ -77,8 +78,10 @@ class LicornThread(Thread):
 
 		while not self._stop_event.isSet():
 			data = self._input_queue.get()
-			if data is None: break
+			if data is None:
+				break
 			self.process_message(data)
+			self._input_queue.task_done()
 
 		logging.progress('%s: thread ended.' % self.name)
 	def stop(self):

@@ -22,8 +22,8 @@ current_app = {
 	}
 
 import sys, os, signal
+from Queue              import Queue
 
-# argparser ?
 from licorn.foundations import process, logging, exceptions, styles, options
 from licorn.core        import keywords, configuration
 

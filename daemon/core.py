@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, sys, time, gamin, signal
 
-from threading   import Thread, Event
+from threading   import Thread, Event, Semaphore
 from collections import deque
 
 from licorn.foundations         import fsapi, logging, exceptions, styles, process
@@ -130,19 +130,19 @@ class ACLChecker(LicornThread, Singleton):
 		try:
 			if os.path.isdir(path):
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl') , -1)
-				self.inotifier.prevent_double_check(path)
+				#self.inotifier.gam_changed_expected.append(path)
 				fsapi.auto_check_posix1e_acl(path, False, acl['default_acl'], acl['default_acl'])
-				self.inotifier.prevent_double_check(path)
-				self.inotifier.prevent_double_check(path)
+				#self.inotifier.gam_changed_expected.append(path)
+				#self.inotifier.prevent_double_check(path)
 			else:
 				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl'))
-				self.inotifier.prevent_double_check(path)
+				#self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
-				self.inotifier.prevent_double_check(path)
+				#self.inotifier.prevent_double_check(path)
 
 		except (OSError, IOError), e:
 			if e.errno != 2:
-				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
+				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.name, path, e, event))
 
 		# FIXME: to be re-added when cache is ok.
 		#self.cache.cache(path)
@@ -157,24 +157,39 @@ class ACLChecker(LicornThread, Singleton):
 class INotifier(Thread, Singleton):
 	""" A Thread which collect INotify events and does what is appropriate with them. """
 	_stop_event = Event()
-	_to_watch   = deque()
+	_to_add   = deque()
 	_to_remove  = deque()
+
+	_ino_files  = 0
+	_ino_dirs   = 0
+
 	def __init__(self, checker, cache, pname = dname):
 
-		self.name  = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+		Thread.__init__(self)
+
+		self.name = "%s/%s" % (
+			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
 		self.cache      = cache
 		self.aclchecker = checker
 		checker.set_inotifier(self)
-		self.just_checked = []
+		#
+		# the next data structures are used to predict GAM behavior, to avoid
+		# doing things multiple times, and avoid missing events.
+		#
+		self.gam_ack_expected      = deque()
+		self.gam_created_expected  = deque()
+		self.gam_exists_expected   = deque()
+		self.gam_changed_expected  = deque()
+		self.gam_endexist_expected = deque()
 
 		self.mon = gamin.WatchMonitor()
 
 		# keep track of watched directories, and func prototypes used
 		# to chk the data inside. this will avoid massive CPU usage,
 		# at the cost of a python dict.
-		self.wds = []
+		self.wds = deque()
+		self.wds_sem = Semaphore()
 
 		groups.Select(groups.FILTER_STANDARD)
 		self.groups = groups
@@ -192,16 +207,19 @@ class INotifier(Thread, Singleton):
 				return self.process_event(path, event, gid, dirname)
 
 			self.add_watch(group_home, myfunc)
-	def prevent_double_check(self, path):
-		""" store a just checked path a little while, to avoid double checks and other I/O consuming tasks. """
-		self.just_checked.append(path)
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
+		logging.debug('''NEW inotify event %d on %s.''' % (event,
+			styles.stylize(styles.ST_PATH,
+			basename if basename[0] == '/' else '%s/%s' % (
+				dirname, basename))))
+
 		if basename[-1] == '/':
 			# we received an event for the root dir of a new watch.
-			# this is a duplicate of the parent/new_dir. Just discard
-			# it.
+			# this is a duplicate of the parent/new_dir. Just discard it.
+			logging.debug('''SKIPDUP Inotify event on %s.''' % (
+				styles.stylize(styles.ST_PATH, basename)))
 			return
 
 		# with Gamin, sometimes it is an abspath, sometimes not.
@@ -212,53 +230,85 @@ class INotifier(Thread, Singleton):
 		else:
 			path = '%s/%s' % (dirname, basename)
 
-		if event == gamin.GAMExists and path in self.wds:
-			# skip already watched directories, and /home/groups/*
+		if os.path.islink(path):
+			# or fsapi.is_backup_file(path):
+			logging.debug('''DISCARD Inotify event on symlink %s.'''\
+				% (styles.stylize(styles.ST_PATH, path)))
 			return
 
-		if os.path.islink(path) or fsapi.is_backup_file(path):
-			logging.debug("%s: discarding Inotify event on %s, it's a symlink or a backup file." % (self.getName(), styles.stylize(styles.ST_PATH, path)))
-			return
+		if event == gamin.GAMExists:
+			try:
+				if os.path.isdir(path):
+					if path in self.wds:
+						# skip already watched directories, and /home/groups/*
 
-		if event in (gamin.GAMExists, gamin.GAMCreated):
+						logging.debug('''SKIP Inotify %s event on already watched %s.''' % (
+							styles.stylize(styles.ST_MODE, 'GAMExists'),
+							styles.stylize(styles.ST_PATH, path)))
+						return
+					else:
+						self._to_add.append((path, gid))
+				else:
+					# path is a file, check it.
+					self.aclchecker.enqueue(path, gid)
 
-			logging.debug("%s: Inotify %s %s." %  (self.getName(), styles.stylize(styles.ST_MODE, 'GAMCreated/GAMExists'), path))
+			except (OSError, IOError), e:
+				if e.errno != 2:
+					logging.warning('''%s: problem in GAMExists on %s'''
+					''' (was: %s, event=%s).''' % (self.name,
+					path, e, event))
+
+		elif event == gamin.GAMCreated:
+
+			logging.debug("%s Inotify on %s." % (
+				styles.stylize(styles.ST_MODE, 'GAMCreated'), path))
 
 			try:
 				if os.path.isdir(path):
-					self._to_watch.append((path, gid))
+					self._to_add.append((path, gid))
 
 				self.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
-					logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.getName(), path, e, event))
+					logging.warning('''%s: problem in GAMCreated on %s'''
+					''' (was: %s, event=%s).''' % (self.name,
+					path, e, event))
 
 		elif event == gamin.GAMChanged:
 
-			if path in self.just_checked:
+			if path in self.gam_changed_expected:
 				# skip the first GAMChanged event, it was generated
 				# by the CHK in the GAMCreated part.
-				self.just_checked.remove(path)
+				self.gam_changed_expected.remove(path)
+
+				logging.debug('''QUICKSKIP GAMChanged on %s.''' % (
+					styles.stylize(styles.ST_PATH, basename)))
 				return
 
-			logging.debug("%s: Inotify %s on %s." %  (self.getName(),
-				styles.stylize(styles.ST_URL, 'GAMChanged'), path))
+			else:
 
-			self.aclchecker.enqueue(path, gid)
+				logging.debug("%s Inotify on %s." %  (
+					styles.stylize(styles.ST_URL, 'GAMChanged'),
+					styles.stylize(styles.ST_PATH, path)))
+
+				self.aclchecker.enqueue(path, gid)
 
 		elif event == gamin.GAMMoved:
 
-			logging.progress('%s: Inotify %s, not handled yet %s.' % (self.getName(),
-				styles.stylize(styles.ST_PKGNAME, 'GAMMoved'), styles.stylize(styles.ST_PATH, path)))
+			logging.progress('%s: Inotify %s, not handled yet %s.' % (
+				self.name,
+				styles.stylize(styles.ST_PKGNAME, 'GAMMoved'),
+				styles.stylize(styles.ST_PATH, path)))
 
 		elif event == gamin.GAMDeleted:
 			# if a dir is deleted, we will get 2 GAMDeleted events:
 			#  - one for the dir watched (itself deleted)
 			#  - one for its parent, signaling its child was deleted.
 
-			logging.debug("%s: Inotify %s for %s." %  (self.getName(),
-				styles.stylize(styles.ST_BAD, 'GAMDeleted'), styles.stylize(styles.ST_PATH, path)))
+			logging.debug("%s Inotify on %s." %  (
+				styles.stylize(styles.ST_BAD, 'GAMDeleted'),
+				styles.stylize(styles.ST_PATH, path)))
 
 			# we can't test if the “path” was a dir, it has just been deleted
 			# just try to delete it, wait and see. If it was, this will work.
@@ -267,64 +317,144 @@ class INotifier(Thread, Singleton):
 			# TODO: remove recursively if DIR.
 			#self.cache.removeEntry(path)
 
-		elif event in (gamin.GAMEndExist, gamin.GAMAcknowledge):
-			logging.debug('%s: Inotify %s for %s.' % (self.getName(), styles.stylize(styles.ST_REGEX, 'GAMEndExist/GAMAcknowledge'), path))
+		elif event == gamin.GAMEndExist:
+			logging.debug('%s Inotify on %s.' % (
+				styles.stylize(styles.ST_REGEX, 'GAMEndExist'),
+				styles.stylize(styles.ST_PATH, path)))
+			if path in self.gam_endexist_expected:
+				logging.debug('''QUICKSKIP GAMEndExist on %s.''' % (
+					styles.stylize(styles.ST_PATH, basename)))
+				self.gam_endexist_expected.remove(path)
+
+		elif event == gamin.GAMAcknowledge:
+			if path in self.gam_ack_expected:
+				# skip the GAMAcknoledge event, it is generated
+				# by the rmdir part.
+				self.gam_ack_expected.remove(path)
+				logging.debug('''QUICKSKIP GAMAcknoledge on %s.''' % (
+					styles.stylize(styles.ST_PATH, basename)))
+
+			else:
+				logging.warning('UNHANDLED %s Inotify on %s.' % (
+				styles.stylize(styles.ST_REGEX, 'GAMAcknowledge'),
+				styles.stylize(styles.ST_PATH, path)))
 
 		else:
-			logging.debug('%s: unhandled Inotify event “%s” %s.' % (self.getName(), event, path))
+			logging.progress('UNHANDLED Inotify “%s” on %s.' % (
+				styles.stylize(styles.ST_REGEX, event),
+				styles.stylize(styles.ST_PATH, path)))
 	def add_watch(self, path, func):
 
-		if path in self.wds:
-			return 0
+		#if path in self.wds:
+		#	return 0
 
+		self.wds_sem.acquire()
 		self.wds.append(path)
-		logging.info("%s: %s inotify watch for %s [total: %d]." % (self.getName(),
+		self.wds_sem.release()
+
+		logging.info('''%s: %s inotify watch for %s [total: %d] [to_add: %d] '''
+			'''[to_rem: %d].''' % (
+			self.name,
 			styles.stylize(styles.ST_OK, 'adding'),
 			styles.stylize(styles.ST_PATH, path),
-			len(self.wds)))
+			len(self.wds),
+			len(self._to_add),
+			len(self._to_remove)
+			))
+
 		return self.mon.watch_directory(path, func)
 	def remove_watch(self, path):
-		if path in self.wds:
-			try:
-				self.wds.remove(path)
-				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(),
-					styles.stylize(styles.ST_BAD, 'removing'),
-					styles.stylize(styles.ST_PATH, path),
-					len(self.wds)))
+		"""Remove a dir and all its subdirs from our GAM WatchMonitor. """
+		try:
+			import copy
+			wds_temp = copy.copy(self.wds)
+			for watched in wds_temp:
 
-				# TODO: recurse subdirs if existing, to remove subwatches
-				ret = self.mon.stop_watch(path)
-				return ret
-			except gamin.GaminException:
-				pass
+				#print '%s\n%s' % (path, watched)
+
+				if path in watched:
+					self.remove_one_watch(watched)
+
+			logging.debug('''remaining watches: %s.''' % self.wds)
+
+		except gamin.GaminException, e:
+			logging.warning('''%s.remove_watch(): exception %s.''' % e)
+	def remove_one_watch(self, path):
+		""" Remove a single watch from the GAM WatchMonitor."""
+		try:
+			self.gam_ack_expected.append(path)
+			self.mon.stop_watch(path)
+
+			self.wds_sem.acquire()
+			self.wds.remove(path)
+			self.wds_sem.release()
+
+			logging.info("%s: %s inotify watch for %s [total: %d]." % (
+				self.name,
+				styles.stylize(styles.ST_BAD, 'removed'),
+				styles.stylize(styles.ST_PATH, path),
+				len(self.wds)))
+
+		except KeyError, e:
+			logging.warning(e)
+
 	def run(self):
-		logging.progress("%s: thread running." % (self.getName()))
+		logging.progress("%s: thread running." % (self.name))
 		Thread.run(self)
 
 		try:
 			already_waited = False
+			#last_lens = (0, 0, 0, 0, 0, 0, 0, 0)
+			time_count = 0
 			while not self._stop_event.isSet():
 
-				while (len(self._to_remove) > 0):
+				lens = (
+					len(self.wds),
+					len(self._to_add),
+					len(self._to_remove),
+					len(self.gam_ack_expected),
+					len(self.gam_exists_expected),
+					len(self.gam_endexist_expected),
+					len(self.gam_created_expected),
+					len(self.gam_changed_expected)
+					)
+
+				if time_count >= 100000:
+					logging.notice('''%s: queues stati: [total: %d] '''
+						'''[add: %d] [rem: %d] [ack: %d] '''
+						'''[ext: %d] [end: %d] [cre: %d] [chg: %d].''' % (
+						self.name,
+						lens[0], lens[1], lens[2], lens[3],
+						lens[4], lens[5], lens[6], lens[7]
+							)
+						)
+					#last_lens = lens
+					time_count = 0
+
+					if(lens[7] > 0):
+						logging.info('chg: %s' % \
+						str(self.gam_changed_expected).replace(', ', ',\n\t'))
+
+				while len(self._to_remove):
 					# remove as many watches as possible in the same time,
 					# to help relieve the daemon.
-					self.remove_watch(self._to_remove.pop())
+					self.remove_watch(self._to_remove.popleft())
 
 					# don't forget to handle_events(), to flush the GAM queue
 					self.mon.handle_events()
 
+				add_count = 0
+				while add_count < 10 and len(self._to_add):
+					path, gid = self._to_add.popleft()
 
-				if len(self._to_watch):
-					# add one path at a time, to not stress the daemon, and
-					# make new inotified paths come in smoothly.
-
-					path, gid = self._to_watch.pop()
 					def myfunc(path, event, gid = gid, dirname = path):
 						return self.process_event(path, event, gid, dirname)
+
 					self.add_watch(path, myfunc)
 
 					# don't forget to handle_events(), to flush the GAM queue
 					self.mon.handle_events()
+					add_count += 1
 
 				while self.mon.event_pending():
 					self.mon.handle_one_event()
@@ -334,28 +464,27 @@ class INotifier(Thread, Singleton):
 					if already_waited:
 						self.mon.handle_events()
 						time.sleep(0.01)
+						time_count += 100
 					else:
 						already_waited = True
 						self.mon.handle_events()
 						time.sleep(0.001)
+						time_count += 10
+
 		except:
 			if not self._stop_event.isSet():
 				raise
 
-		logging.progress("%s: thread ended." % (self.getName()))
+		logging.progress("%s: thread ended." % (self.name))
 	def stop(self):
 		if Thread.isAlive(self) and not self._stop_event.isSet():
-			logging.progress("%s: stopping thread." % (self.getName()))
-			self._stop_event.set()
+			logging.progress("%s: stopping thread." % (self.name))
+			import copy
+			wds_temp = copy.copy(self.wds)
+			for watched in wds_temp:
+				self.remove_one_watch(watched)
 
-			while len(self.wds):
-				rep = self.wds.pop()
-				logging.info("%s: %s inotify watch for %s [left: %d]." % (self.getName(),
-					styles.stylize(styles.ST_BAD, 'removing'),
-					styles.stylize(styles.ST_PATH, rep),
-					len(self.wds)))
-				self.mon.stop_watch(rep)
-				self.mon.handle_events()
+			self._stop_event.set()
 
 			del self.mon
 

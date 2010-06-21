@@ -34,8 +34,11 @@ class Cache(Thread, Singleton):
 
 	def __init__(self, allkeywords = None, pname = dname, dbfname = cache_path):
 
-		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
+		Thread.__init__(self)
+
+		self.name = "%s/%s" % (
+			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+
 
 		if Cache.allkeywords is None:
 			if allkeywords is None:

@@ -54,10 +54,10 @@ class SearcherClient:
 
 					if buf == '\n':
 						splitted_line = line.split(':')
-						
+
 						try: status = int(splitted_line[0])
 						except: raise exceptions.LicornHarvestError('Malformed response from server.')
-						
+
 						if status in (LCN_MSG_STATUS_OK, LCN_MSG_STATUS_PARTIAL):
 							load = float(splitted_line[1].split('=')[1])
 							nrk  = float(splitted_line[2].split('=')[1])
@@ -75,7 +75,7 @@ class SearcherClient:
 
 					else:
 						line += buf
-					
+
 				except socket.error, e:
 					if e[0] == 11:
 						logging.debug("%s: socket is slow, waiting a bit..." % self.__class__)
@@ -103,10 +103,10 @@ class SearcherClient:
 					buf = s.recv(1)
 					if buf == '\n':
 						splitted_line = line.split(':')
-						
+
 						try: status = int(splitted_line[0])
 						except: raise exceptions.LicornHarvestError('Malformed response from server.')
-						
+
 						if status in (LCN_MSG_STATUS_OK, LCN_MSG_STATUS_PARTIAL):
 							# in update mode, server only answers ok|partial|error, nothing more.
 							break
@@ -135,7 +135,7 @@ class SearcherClient:
 		return status
 	def KeywordQueryRequest(self, keywords):
 
-		if keywords == []: 
+		if keywords == []:
 			return (LCN_MSG_STATUS_OK, 0, [])
 
 		status       = LCN_MSG_STATUS_OK
@@ -158,10 +158,10 @@ class SearcherClient:
 					if buf == '\n':
 						if sta_not_recv:
 							splitted_line = line.split(':')
-							
+
 							try: status = int(splitted_line[0])
 							except: raise exceptions.LicornHarvestError('Malformed response from server.')
-							
+
 							if status in (LCN_MSG_STATUS_OK, LCN_MSG_STATUS_PARTIAL):
 								nr = int(splitted_line[1])
 
@@ -201,13 +201,16 @@ class SearcherClient:
 class FileSearchServer(Thread):
 	""" Thread which answers to file/tag queries sent through unix socket. """
 	def __init__(self, pname = dname):
-		self.name = str(self.__class__).rsplit('.', 1)[1].split("'")[0]
-		Thread.__init__(self, name = "%s/%s" % (pname, self.name))
 
-		# old socket from a crashed daemon ? 
+		Thread.__init__(self)
+
+		self.name = "%s/%s" % (
+			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+
+		# old socket from a crashed daemon ?
 		# remove it, the ThreadingUnixStreamServer will create it.
 		#if os.path.exists(socket_path): os.unlink(socket_path)
-		
+
 		self._stop_event = Event()
 		self.server     = ThreadingTCPServer(('127.0.0.1', searcher_port), FileSearchRequestHandler)
 		self.server.allow_reuse_address = True
@@ -237,7 +240,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 		pid = re.findall(r'127.0.0.1:%d\s+127.0.0.1:%d\s+ESTABLISHED(\d+)/' % (self.client_address[1], searcher_port),
 			os.popen2(['netstat', '-antp'])[1].read())[0]
 		return os.popen2(['ps', '-p', pid, '-o', 'uid='])[1].read().strip()
-	
+
 	def handle(self):
 		""" Handle a request from the socket. WARNING: This function is WEAK (in QUERY phase)."""
 
@@ -252,7 +255,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 		line       = ''
 		self.cache = Cache()
 
-		try: 
+		try:
 			while True:
 				buf = self.request.recv(1)
 
@@ -265,13 +268,13 @@ class FileSearchRequestHandler(BaseRequestHandler):
 						self.request.send("%s:loaded:\n" % LCN_MSG_STATUS_UNAVAIL)
 					else:
 
-						req = line.split(':')	
+						req = line.split(':')
 						logging.progress("%s: handling request %s from client %s:%s." \
 							% (self.name, styles.stylize(styles.ST_PATH, req), self.client_address[0], self.client_address[1]))
 
 						try:
 							cmd = int(req[0])
-							if   cmd == LCN_MSG_CMD_QUERY: 
+							if   cmd == LCN_MSG_CMD_QUERY:
 								self.HandleQueryRequest(req)
 							elif cmd == LCN_MSG_CMD_UPDATE:
 								self.HandleUpdateRequest(req[1])
@@ -326,7 +329,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 			self.request.send("%s:%d:\n" % (msg, len(result)))
 			map(lambda x: self.request.send("%s\n" % x[0]), result)
 
-		except sqlite.OperationalError, e: 
+		except sqlite.OperationalError, e:
 			logging.warning('%s/HandleQueryRequest(): Database error (%s).' % (self.name, e))
 			self.request.send("%s:database_error:\n" % LCN_MSG_STATUS_UNAVAIL)
 	def HandleStatusRequest(self):
@@ -361,7 +364,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 
 		#else:
 		#	self.request.send("UNAVAIL:locked:\n")
-		
+
 		pass
 	def HandleUpdateRequest(self, path):
 		""" Handle an update request from a client: update the cache."""
@@ -372,7 +375,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 		if os.path.exists(path):
 
 			logging.progress("%s/HandleUpdateRequest(): updating cache for %s." % (self.name, styles.stylize(styles.ST_PATH, path)))
-			
+
 			# TODO: if Queue.notEmpty():
 			#
 			#if self.cache.refreshing: status = LCN_MSG_STATUS_PARTIAL
