@@ -30,13 +30,15 @@ from licorn.core        import keywords, configuration
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.core               import ACLChecker, INotifier, dname, terminate_cleanly
-from licorn.daemon.core               import exit_if_already_running, exit_if_not_running_root
-from licorn.daemon.core               import eventually_daemonize, setup_signals_handler
-from licorn.daemon.internals.wmi      import eventually_fork_wmi_server
-from licorn.daemon.internals.cache    import Cache
-from licorn.daemon.internals.searcher import FileSearchServer
-#from licorn.daemon.internals.syncer   import ServerSyncer, ClientSyncer
+from licorn.daemon.core                  import  dname, terminate_cleanly
+from licorn.daemon.core                  import exit_if_already_running, exit_if_not_running_root
+from licorn.daemon.core                  import eventually_daemonize, setup_signals_handler
+from licorn.daemon.internals.wmi         import eventually_fork_wmi_server
+from licorn.daemon.internals.acl_checker import ACLChecker
+from licorn.daemon.internals.inotifier   import INotifier
+from licorn.daemon.internals.cache       import Cache
+from licorn.daemon.internals.searcher    import FileSearchServer
+#from licorn.daemon.internals.syncer       import ServerSyncer, ClientSyncer
 
 if __name__ == "__main__":
 
