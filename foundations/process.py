@@ -9,10 +9,15 @@ Licensed under the terms of the GNU GPL version 2
 
 """
 
-import os, sys
-from licorn.foundations import exceptions, logging
+import os
+import sys
 
+from licorn.foundations import exceptions
+from licorn.foundations import logging
+
+#
 # daemon and process functions
+#
 def daemonize(log_file, pid_file):
 	""" UNIX double-fork magic to create a daemon.
 		See Stevens' "Advanced Programming in the UNIX Environment"
@@ -87,12 +92,17 @@ def set_name(name):
 		except:
 			pass
 def already_running(pid_file):
+	""" WARNING: this only works for root user... """
 		return os.path.exists(pid_file) and \
-			open(pid_file, 'r').readline()[:-1] in \
+			 get_pid(pid_file) in \
 				os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ]
 				)[1].read().split("\n")[:-1]
-
+def get_pid(pid_file):
+	'''return the PID included in the pidfile. '''
+	return open(pid_file, 'r').readline()[:-1]
+#
 # System() / Popen*() convenience wrappers.
+#
 def syscmd(command, expected_retcode = 0):
 	""" Execute `command` in a subshell and grab the return value to test it.
 		If the test fails, an exception is raised.

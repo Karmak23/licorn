@@ -6,14 +6,23 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time, gamin, signal
+import os
+import sys
+import time
+import signal
 
 from threading   import Thread, Event, Semaphore
 from collections import deque
 
-from licorn.foundations         import fsapi, logging, exceptions, styles, process
-from licorn.foundations.objects import LicornThread, Singleton
-from licorn.core                import groups, configuration
+from licorn.foundations.objects import LicornThread
+from licorn.foundations         import fsapi
+from licorn.foundations         import logging
+from licorn.foundations         import exceptions
+from licorn.foundations         import styles
+from licorn.foundations         import process
+from licorn.foundations         import Singleton
+from licorn.core                import groups
+from licorn.core                import configuration
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -87,7 +96,7 @@ def setup_signals_handler(threads):
 def exit_if_already_running():
 	if process.already_running(pid_path):
 		logging.notice("%s: already running (pid %s), not restarting." % (
-			dname, open(pid_path, 'r').read()[:-1]))
+			dname, process.get_pid(pid_path)))
 		sys.exit(0)
 def exit_if_not_running_root():
 	if os.getuid() != 0 or os.geteuid() != 0:
