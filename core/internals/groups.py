@@ -44,7 +44,7 @@ class GroupsController:
 		self.warnings = warnings
 
 		self.backend = self.configuration.backends.current
-		self.backend.set_groups(self)
+		self.backend.set_groups_controller(self)
 
 		# see licorn.core.users for details
 		self.filter_applied = False

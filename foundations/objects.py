@@ -237,13 +237,20 @@ class UGBackend(Singleton):
 
 		# for an abstract backend, this is quite sane.
 		self.enabled = False
-	def set_users(self, users):
+	def set_users_controller(self, users):
 		UGBackend.users = users
-	def set_groups(self, groups):
+	def set_groups_controller(self, groups):
 		UGBackend.groups = groups
 		UGBackend.users = groups.users
 	def get_defaults(self):
 		return {}
-	def save_all(self, users, groups):
-		self.save_users(users)
-		self.save_groups(groups)
+	def save_users(self):
+		""" Abstract method. """
+		pass
+	def save_users(self, groups):
+		""" Abstract method. """
+		pass
+	def save_all(self, users=None, groups=None):
+		''' Save all internal data to backend. '''
+		self.save_users(users if users != None else self.users)
+		self.save_groups(groups if groups != None else self.groups)

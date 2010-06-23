@@ -39,7 +39,7 @@ class UsersController:
 		self.filter_applied = False
 
 		self.backend = self.configuration.backends.current
-		self.backend.set_users(self)
+		self.backend.set_users_controller(self)
 
 		if UsersController.users is None:
 			self.reload()

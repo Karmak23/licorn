@@ -231,10 +231,12 @@ class unix_backend(UGBackend):
 					break
 
 			if not extra_found:
-				logging.warning('added missing %s record for group %s.' % \
-					(styles.stylize(styles.ST_PATH,
-					UGBackend.configuration.extendedgroup_data_file),
-					styles.stylize(styles.ST_NAME, groups[gid]['name'])))
+				logging.notice('added missing record for group %s in %s.' % \
+					(
+					styles.stylize(styles.ST_NAME, groups[gid]['name']),
+					styles.stylize(styles.ST_PATH,
+					UGBackend.configuration.extendedgroup_data_file)
+					))
 				need_rewriting = True
 				groups[gid]['description'] = ""
 				groups[gid]['skel']        = ""
@@ -255,9 +257,11 @@ class unix_backend(UGBackend):
 				# do some auto-correction stuff if we are able too.
 				# this happens if debian tools were used between 2 Licorn CLI
 				# calls, or on first call of CLI tools on a Debian system.
-				logging.warning('added missing %s record for group %s.'
-					% ( styles.stylize(styles.ST_PATH, '/etc/gshadow'),
-						styles.stylize(styles.ST_NAME, groups[gid]['name'])))
+				logging.notice('added missing record for group %s in %s.'
+					% (
+						styles.stylize(styles.ST_NAME, groups[gid]['name']),
+						styles.stylize(styles.ST_PATH, '/etc/gshadow')
+					))
 				need_rewriting = True
 				groups[gid]['crypted_password'] = 'x'
 

@@ -93,10 +93,10 @@ def set_name(name):
 			pass
 def already_running(pid_file):
 	""" WARNING: this only works for root user... """
-		return os.path.exists(pid_file) and \
-			 get_pid(pid_file) in \
-				os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ]
-				)[1].read().split("\n")[:-1]
+	return os.path.exists(pid_file) and \
+		 get_pid(pid_file) in \
+			os.popen2( [ 'ps', '-U', 'root', '-u', 'root', '-o', 'pid=' ]
+			)[1].read().split("\n")[:-1]
 def get_pid(pid_file):
 	'''return the PID included in the pidfile. '''
 	return open(pid_file, 'r').readline()[:-1]
