@@ -6,8 +6,8 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations         import logging, exceptions, styles, objects
-from licorn.core.internals      import readers
+from licorn.foundations         import logging, exceptions, styles
+from licorn.foundations         import objects, readers
 from licorn.foundations.objects import UGBackend
 
 class unix_backend(UGBackend):
@@ -15,11 +15,11 @@ class unix_backend(UGBackend):
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
 		UGBackend.__init__(self, configuration, users, groups)
 
-		# this is always true on a Linux system.
-		# Any better and correctly configured backend will take over
-		# this one anyway, so there is no harm in setting this always True.
-		self.enabled = True
+		# the UNIX backend is always enabled on a Linux system.
+		# Any better and correctly configured backend will take
+		# preference over this one.
 		self.name    = "Unix"
+		self.enabled = True
 		self.warnings = warnings
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """

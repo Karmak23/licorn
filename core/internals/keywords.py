@@ -10,8 +10,8 @@ Licensed under the terms of the GNU GPL version 2
 
 import xattr, os.path, stat
 
-from licorn.foundations    import exceptions, logging, hlstr, pyutils, objects, fsapi
-from licorn.core.internals import readers
+from licorn.foundations    import exceptions, logging, hlstr, pyutils
+from licorn.foundations    import objects, fsapi, readers
 
 
 class KeywordsController:

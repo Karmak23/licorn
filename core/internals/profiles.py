@@ -12,8 +12,8 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, re, time, stat, shutil
 
-from licorn.foundations    import process, fsapi, hlstr, logging, exceptions, styles
-from licorn.core.internals import readers
+from licorn.foundations    import process, fsapi, hlstr, logging
+from licorn.foundations    import exceptions, styles, readers
 
 class ProfilesController:
 	""" representation of /etc/licorn/profiles.xml, compatible with gnome-system-tools.
@@ -27,7 +27,7 @@ class ProfilesController:
 		""" Load profiles from system configuration file. """
 
 		ProfilesController.configuration = configuration
-		
+
 		ProfilesController.groups = groups
 		groups.SetProfiles(self)
 
@@ -37,7 +37,7 @@ class ProfilesController:
 		self.filtered_profiles = {}
 		# see Select()
 		self.filter_applied    = False
-		
+
 		if ProfilesController.profiles is None:
 			self.reload()
 
@@ -56,7 +56,7 @@ class ProfilesController:
 				# Create a default profile with 'users' as default primary group, and use the Debian pre-existing group
 				# without complaining if it exists.
 				# TODO: translate/i18n these names ?
-				self.AddProfile('Users', 'users', 
+				self.AddProfile('Users', 'users',
 					comment = 'Standard desktop users',
 					shell = self.configuration.users.default_shell,
 					skeldir  = self.configuration.users.default_skel,
@@ -85,10 +85,10 @@ class ProfilesController:
 		# in order to output a coherent result.
 		#
 		self.filter_applied = True
-		
+
 		profiles = ProfilesController.profiles.keys()
 		profiles.sort()
-		
+
 		arg_re = re.compile("^profile=(?P<profile>.*)", re.UNICODE)
 		arg = arg_re.match(filter_string)
 		if arg is not None:
@@ -103,7 +103,7 @@ class ProfilesController:
 		else:
 			profiles = ProfilesController.profiles.keys()
 		profiles.sort()
-		
+
 		#
 		# TODO: make all these strings "+" become "%s" % (... , ...)
 		#
@@ -122,13 +122,13 @@ class ProfilesController:
 		""" Export the user profiles list to XML. """
 
 		data = "<?xml version='1.0' encoding=\"UTF-8\"?>\n<profiledb>\n"
-		
+
 		if self.filter_applied:								# see Select()
 			profiles = self.filtered_profiles.keys()
 		else:
 			profiles = ProfilesController.profiles.keys()
 		profiles.sort()
-		
+
 		# TODO: make all these "+s become "%s"
 
 		for profile in profiles:
@@ -170,19 +170,19 @@ class ProfilesController:
 			raise exceptions.BadArgumentError, "Malformed profile group name « %s », must match /%s/i." % (group, hlstr.regex['group_name'])
 		if not hlstr.cregex['description'].match(comment):
 			raise exceptions.BadArgumentError, "Malformed profile description « %s », must match /%s/i." % (comment, hlstr.regex['description'])
-			
+
 		if group in ProfilesController.profiles.keys():
 			raise exceptions.AlreadyExistsException, "The profile '" + group + "' already exists."
 
 		create_group = True
-		
+
 		if ProfilesController.groups.group_exists(name = group):
 			if force_existing:
 				create_group = False
 			else:
 				raise exceptions.AlreadyExistsError('A system group named "%s" already exists. Please choose another group name for your profile.' \
 					% group)
-		
+
 		# Verify groups
 		for g in groups:
 			try:
@@ -213,7 +213,7 @@ class ProfilesController:
 			no_archive = False
 		if group not in ProfilesController.profiles.keys():
 			exceptions.LicornException, "The profile `%s' doesn't exist." % group
-		
+
 		try:
 			self.groups.DeleteGroup(ProfilesController.profiles[group]['primary_group'], del_users, no_archive, batch=batch)
 		except exceptions.LicornRuntimeException:
@@ -265,8 +265,8 @@ class ProfilesController:
 		if comment is None:
 			raise exceptions.BadArgumentError, "You must specify a comment."
 		if not hlstr.cregex['description'].match(str(comment)):
-			raise exceptions.BadArgumentError, "Malformed profile comment « %s », must match /%s/i." % (comment, hlstr.regex['description']) 
-			
+			raise exceptions.BadArgumentError, "Malformed profile comment « %s », must match /%s/i." % (comment, hlstr.regex['description'])
+
 		ProfilesController.profiles[group]['comment'] = [comment]
 	def ChangeProfileName(self, group, newname):
 		""" Setter
@@ -275,8 +275,8 @@ class ProfilesController:
 			raise exceptions.BadArgumentError, "You must specify a group"
 		if newname is None:
 			raise exceptions.BadArgumentError, "You must specify a new name"
-		
-			
+
+
 		ProfilesController.profiles[group]['name'] = [newname]
 	def ChangeProfileGroup(self, group, newgroup):
 		""" Setter """
@@ -294,7 +294,7 @@ class ProfilesController:
 			raise exceptions.BadArgumentError, "You must specify a group"
 		if groups is None:
 			raise exceptions.BadArgumentError, "You must specify a list of groups"
-			
+
 		for g in groups:
 			if g in ProfilesController.profiles[group]['groups']:
 				logging.progress("Group %s is already in groups of profile %s, skipped." % (styles.stylize(styles.ST_NAME, g), styles.stylize(styles.ST_NAME, group)))
@@ -310,7 +310,7 @@ class ProfilesController:
 
 		if profile_group is None:
 			raise exceptions.BadArgumentError, "You must specify a group"
-			
+
 		for g in groups_to_del:
 			if g in ProfilesController.profiles[profile_group]['groups']:
 				index = ProfilesController.profiles[profile_group]['groups'].index(g)
@@ -332,7 +332,7 @@ class ProfilesController:
 				# most probably "the user does not exist".
 				logging.warning(str(e))
 			else:
-				# search u's profile to 
+				# search u's profile to
 				for p in ProfilesController.profiles:
 					if ProfilesController.users.users[uid]['gid'] == ProfilesController.groups.name_to_gid(ProfilesController.profiles[p]['primary_group']):
 						if apply_groups:
@@ -381,7 +381,7 @@ class ProfilesController:
 							#map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['skel_dir'], maxdepth = 1, type = stat.S_IFLNK|stat.S_IFDIR|stat.S_IFREG))
 							map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['skel_dir'], mindepth = 1, maxdepth = 2))
 							ProfilesController.users.CheckUsers([ProfilesController.users.users[uid]['login']], batch = batch, auto_answer = auto_answer)
-						
+
 						# after having applyed the profile, break ; because a given user has only ONE profile.
 						break
 	def change_group_name_in_profiles(self, name, new_name):
@@ -403,7 +403,7 @@ class ProfilesController:
 					del(ProfilesController.profiles[profile]['groups'][index])
 
 		self.WriteConf()
-	
+
 	@staticmethod
 	def profile_exists(profile):
 		return ProfilesController.profiles.has_key(profile)

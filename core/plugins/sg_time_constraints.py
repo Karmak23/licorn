@@ -10,9 +10,8 @@ Licensed under the terms of the GNU GPL version 2
 
 import re, shutil
 
-from licorn.foundations    import exceptions
+from licorn.foundations    import exceptions, readers
 from licorn.core           import configuration
-from licorn.core.internals import readers
 
 _sysConfig = configuration
 

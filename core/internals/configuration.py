@@ -12,11 +12,10 @@ Licensed under the terms of the GNU GPL version 2
 import sys, os
 from gettext import gettext as _
 
-from licorn.foundations               import logging, exceptions, fsapi, styles
+from licorn.foundations               import logging, exceptions, fsapi
+from licorn.foundations               import styles, readers
 from licorn.foundations.objects       import LicornConfigObject
 from licorn.core.internals.privileges import PrivilegesWhiteList
-
-import readers
 
 class LicornConfiguration (object):
 	""" Contains all the underlying system configuration as attributes.

@@ -12,9 +12,8 @@ Licensed under the terms of the GNU GPL version 2
 
 import sys, os
 
-from licorn.foundations import logging, exceptions, hlstr, styles
+from licorn.foundations import logging, exceptions, hlstr, styles, readers
 from licorn.foundations.objects import Singleton
-import readers
 
 class PrivilegesWhiteList(list, Singleton):
 	""" Manage privileges whitelist. """

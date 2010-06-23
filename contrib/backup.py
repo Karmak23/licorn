@@ -10,10 +10,8 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, time, re
 
-from licorn.foundations    import logging, exceptions
+from licorn.foundations    import logging, exceptions, readers
 from licorn.core           import configuration
-from licorn.core.internals import readers
-
 
 ssh_cmd    = [ 'ssh',  '-q', '-o', 'PasswordAuthentication no', '-o', 'StrictHostKeyChecking no', '-o', 'BatchMode yes' ]
 rsync_cmd  = [ 'rsync', '-q' ]
