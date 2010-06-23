@@ -9,7 +9,8 @@ Licensed under the terms of the GNU GPL version 2
 
 """
 
-from licorn.foundations import exceptions
+import re
+from licorn.foundations import exceptions, readers, logging, styles
 
 def next_free(used_list, start, end):
 	""" Find a new ID (which is not used).
@@ -26,7 +27,7 @@ def next_free(used_list, start, end):
 			return cur
 	else:
 		return start
-		
+
 	raise exceptions.NoAvaibleIdentifierError()
 def list2set(in_list):
 	""" Transform a list to a set (ie remove duplicates). """
@@ -40,3 +41,66 @@ def keep_false(x, y):
 
 	if x is False: return x
 	else:          return y
+def check_file_against_dict(conf_file, defaults, configuration,
+	batch=False, auto_answer=None):
+	''' Check if a file has some configuration directives,
+	and check against values if given.
+	If the value is None, only the directive existence is tested. '''
+
+	conf_file_alter = False
+	conf_file_data  = open(conf_file, 'r').read()
+	conf_file_dict  = readers.simple_conf_load_dict(data=conf_file_data)
+
+	for (directive, value) in defaults:
+		if not conf_file_dict.has_key(directive):
+
+			logging.warning(
+				'''%s should include directive %s, but it doesn't.''' % (
+				styles.stylize(styles.ST_PATH, conf_file), directive))
+
+			conf_file_alter           = True
+			conf_file_dict[directive] = value
+			conf_file_data            = '%s %s\n%s' % (
+				directive, value, conf_file_data)
+
+		if value != None and conf_file_dict[directive] != value:
+
+			logging.warning('''%s should have directive %s be equal to %s, '''
+				'''but it is %s.'''	% (
+				styles.stylize(styles.ST_PATH, conf_file),
+				styles.stylize(styles.ST_REGEX, directive),
+				styles.stylize(styles.ST_OK, value),
+				styles.stylize(styles.ST_BAD, conf_file_dict[directive])))
+
+			conf_file_alter           = True
+			conf_file_dict[directive] = value
+			conf_file_data            = re.sub(r'%s.*' % directive,
+				r'%s	%s' % (directive, value), conf_file_data)
+
+		# else:
+		# everything is OK, just pass.
+
+	if conf_file_alter:
+		if batch or logging.ask_for_repair(
+			'''%s lacks mandatory configuration directive(s).''' % \
+				styles.stylize(styles.ST_PATH, conf_file), auto_answer):
+			try:
+				open(conf_file, 'w').write(conf_file_data)
+				logging.notice(
+					'''Altered %s to match %s pre-requisites.'''
+					% (styles.stylize(styles.ST_PATH, conf_file),
+					configuration.app_name))
+			except (IOError, OSError), e:
+				if e.errno == 13:
+					raise exceptions.LicornRuntimeError(
+						'''Insufficient permissions. '''
+						'''Are you root?\n\t%s''' % e)
+				else:
+					raise e
+		else:
+			raise exceptions.LicornRuntimeError(
+			'''Modifications in %s are mandatory for %s to work '''
+			'''properly. Can't continue without this, sorry!''' % (
+			conf_file, configuration.app_name))
+
+	return True

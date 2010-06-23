@@ -129,19 +129,18 @@ def syscmd(command, expected_retcode = 0):
 	if signal != 0:
 		raise exceptions.SystemCommandSignalError(command, signal)
 def pipecmd(data, command):
-	""" Roughly pipe some data into a program. Return the (eventual) stdout and stderr merged into an array. """
+	""" Roughly pipe some data into a program.
+	Return the (eventual) stdout and stderr in a tuple. """
 
 	logging.debug('''pipecmd(): piping "%s" into "%s".''' % (data, command))
 
 	if sys.version_info[0:2] == (2, 6):
 		from subprocess import Popen, PIPE
 
-		p = Popen(command, shell=False,
-          stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+		p = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+			close_fds=True)
 
-		(out, err) = p.communicate(data)
-
-		return err
+		return p.communicate(data)
 
 	else:
 		(pin, pout, perr) = os.popen3(command)
@@ -153,7 +152,9 @@ def pipecmd(data, command):
 		pin.flush()
 		pin.close()
 
-		# forget the output.
-		pout.read()
+		return (pout.read(), perr.read())
+def whoami():
+	''' Return current UNIX user. '''
+	from subprocess import Popen, PIPE
+	return (Popen(["whoami"], stdout=PIPE).communicate()[0])[:-1]
 
-		return perr.read()
