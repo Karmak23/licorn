@@ -249,9 +249,6 @@ class LicornConfiguration (object):
 			}
 
 		self._load_configuration(mandatory_dict)
-
-		print dir(self.backends)
-
 	def LoadBaseConfiguration(self):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
