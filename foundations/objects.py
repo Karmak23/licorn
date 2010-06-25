@@ -224,6 +224,8 @@ class UGBackend(Singleton):
 	users = None
 	groups = None
 
+	def __str__(self):
+		return '%s\n' % str(self.__class__).rsplit('.', 2)[1]
 	def __init__(self, configuration, users = None, groups = None):
 
 		UGBackend.configuration = configuration
