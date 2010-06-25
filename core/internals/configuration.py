@@ -245,7 +245,8 @@ class LicornConfiguration (object):
 		mandatory_dict = {
 			'daemon.wmi.enabled': True,
 			'daemon.role': "server",
-			'backends.prefered': 'ldap'
+			'backends.prefered': 'ldap',
+			'backends.ldap.enabled': 'true'
 			}
 
 		self._load_configuration(mandatory_dict)

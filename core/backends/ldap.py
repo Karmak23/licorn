@@ -33,10 +33,12 @@ class ldap_backend(UGBackend):
 		self.name    = "LDAP"
 		self.enabled = False
 		self.files   = LicornConfigObject()
-		self.files.ldap_conf      = "/etc/ldap.conf"
+		self.files.ldap_conf      = '/etc/ldap.conf'
 		self.files.ldap_secret    = '/etc/ldap.secret'
 		self.files.ldap_ldap_conf = '/etc/ldap/ldap.conf'
 
+		if not configuration.backends.ldap.enabled:
+			return
 
 		if self.check_system(minimal=True):
 
@@ -99,7 +101,7 @@ class ldap_backend(UGBackend):
 				open(self.files.ldap_secret).read().strip() == '') and \
 				batch or logging.ask_for_repair(
 				'''%s is empty, but should not.''' \
-				% styles.stylize(styles.ST_SECRET, ldap_secret), auto_answer):
+				% styles.stylize(styles.ST_SECRET, self.files.ldap_secret)):
 
 				try:
 					from licorn.foundations import hlstr
@@ -108,9 +110,9 @@ class ldap_backend(UGBackend):
 
 					logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
 						styles.stylize(styles.ST_LOGIN, 'manager'),
-						styles.stylize(styles.ST_SECRET, password)))
+						styles.stylize(styles.ST_SECRET, genpass)))
 
-					open(ldap_secret, 'w').write(genpass + '\n')
+					open(self.files.ldap_secret, 'w').write(genpass + '\n')
 
 					#
 					# TODO: update the LDAP database... Without this point, the
@@ -127,7 +129,7 @@ class ldap_backend(UGBackend):
 				raise exceptions.LicornRuntimeError(
 				'''%s is mandatory for %s to work '''
 				'''properly. Can't continue without this, sorry!''' % (
-				ldap_secret, self.configuration.app_name))
+				self.files.ldap_secret, self.configuration.app_name))
 		except (OSError, IOError), e :
 			if e.errno != 13:
 				raise e
