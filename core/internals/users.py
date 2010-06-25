@@ -257,7 +257,7 @@ class UsersController:
 					#
 					# useradd_options.append("-G " + ",".join(
 					# UsersController.profiles.profiles[profile]['groups']))
-					
+
 				if skel is None:
 					skel_to_apply = \
 						UsersController.profiles.profiles[profile]['skel_dir']
@@ -310,7 +310,7 @@ class UsersController:
 		if not os.path.exists(tmp_user_dict['homeDirectory']):
 			import shutil
 			# copytree automatically creates tmp_user_dict['homeDirectory']
-			shutil.copytree(skel_to_apply, tmp_user_dict['homeDirectory']) 
+			shutil.copytree(skel_to_apply, tmp_user_dict['homeDirectory'])
 		#
 		# else: the home directory already exists, we don't overwrite it
 		#
@@ -341,7 +341,7 @@ class UsersController:
 		# TODO: put this into a module.
 		try:
 			sys.stderr.write(process.pipecmd('%s\n%s\n' % (password, password),
-				['smbpasswd', '-a', login, '-s']))
+				['smbpasswd', '-a', login, '-s'])[1])
 		except (IOError, OSError), e:
 			if e.errno not in (2, 32):
 				raise e
@@ -399,7 +399,7 @@ class UsersController:
 
 		try:
 			# samba stuff
-			sys.stderr.write(process.pipecmd('', ['smbpasswd', '-x', login]))
+			sys.stderr.write(process.pipecmd('', ['smbpasswd', '-x', login])[1])
 		except (IOError, OSError), e:
 			if e.errno not in (2, 32):
 				raise e
@@ -484,7 +484,7 @@ class UsersController:
 		try:
 			# samba stuff
 			sys.stderr.write(process.pipecmd("%s\n%s\n" % (password, password),
-				['smbpasswd', login, '-s']))
+				['smbpasswd', login, '-s'])[1])
 		except (IOError, OSError), e:
 			if e.errno != 32:
 				raise e

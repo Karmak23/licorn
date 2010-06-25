@@ -146,7 +146,8 @@ def pipecmd(data, command):
 		(pin, pout, perr) = os.popen3(command)
 
 		if None in (pin, pout, perr):
-			raise exceptions.SystemCommandError('pipecmd(): command "%s" failed to start !' % command)
+			raise exceptions.SystemCommandError(
+			'''pipecmd(): command "%s" failed to start !''' % command)
 
 		pin.write(data)
 		pin.flush()
