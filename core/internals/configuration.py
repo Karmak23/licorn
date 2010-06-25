@@ -13,7 +13,7 @@ import sys, os
 from gettext import gettext as _
 
 from licorn.foundations               import logging, exceptions, fsapi
-from licorn.foundations               import styles, readers
+from licorn.foundations               import styles, readers, pyutils
 from licorn.foundations.objects       import LicornConfigObject
 from licorn.core.internals.privileges import PrivilegesWhiteList
 
@@ -102,16 +102,19 @@ class LicornConfiguration (object):
 
 			self.detect_services()
 
-			# this has to be done LAST, in order to eventually override any other
-			# configuration directive (eventually coming from Ubuntu/Debian, too).
+			# this has to be done LAST, in order to eventually override any
+			# other configuration directive (eventually coming from
+			# Ubuntu/Debian, too).
 			self.LoadBaseConfiguration()
+			self.SetMissingMandatoryDefauts()
 
 			self.LoadBackends()
 
 			# TODO: monitor configuration files from a thread !
 
 		except exceptions.LicornException, e:
-			raise exceptions.BadConfigurationError("Configuration initialization failed:\n\t%s" % e)
+			raise exceptions.BadConfigurationError(
+				'''Configuration initialization failed:\n\t%s''' % e)
 
 	#
 	# make configuration be usable as a context manager.
@@ -129,8 +132,7 @@ class LicornConfiguration (object):
 			# this is safe because tmp_dir was created with tempfile.mkdtemp()
 			shutil.rmtree(self.tmp_dir)
 	def VerifyPythonMods(self):
-		"""
-		"""
+		""" verify all required python modules are present on the system. """
 
 		mods = (
 			('posix1e', 'python-pylibacl'),
@@ -142,7 +144,8 @@ class LicornConfiguration (object):
 			try:
 				exec('import %s' % mod)
 			except:
-				logging.error('You miss %s python module (package %s).' % (mod, package))
+				logging.error('You miss %s python module (package %s).' % (
+					mod, package))
 
 	def SetBaseDirsAndFiles(self):
 		""" Find and create temporary, data and working directories."""
@@ -155,7 +158,8 @@ class LicornConfiguration (object):
 		# system profiles, compatible with gnome-system-tools
 		self.profiles_config_file    = self.config_dir + "/profiles.xml"
 
-		self.privileges_whitelist_data_file = self.config_dir + "/privileges-whitelist.conf"
+		self.privileges_whitelist_data_file = (
+			self.config_dir + "/privileges-whitelist.conf")
 		self.keywords_data_file             = self.config_dir + "/keywords.conf"
 
 		# extensions to /etc/group
@@ -163,14 +167,17 @@ class LicornConfiguration (object):
 
 		self.SetDefaultNamesAndPaths()
 
-		self.home_backup_dir         = "%s/backup" % LicornConfiguration.defaults.home_base_path
-		self.home_archive_dir        = "%s/archives" % LicornConfiguration.defaults.home_base_path
+		self.home_backup_dir         = (
+			"%s/backup" % LicornConfiguration.defaults.home_base_path)
+		self.home_archive_dir        = (
+			"%s/archives" % LicornConfiguration.defaults.home_base_path)
 
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
 
 	def FindUserDir(self):
-		"""if ~/ is writable, use it as user_dir to store some data, else use a tmp_dir."""
+		""" if ~/ is writable, use it as user_dir to store some data, else
+			use a tmp_dir."""
 		try:
 			home = os.environ["HOME"]
 		except KeyError:
@@ -179,7 +186,8 @@ class LicornConfiguration (object):
 		if home and os.path.exists(home):
 
 			try:
-				# if our home exists and we can write in it, assume we are a standard user.
+				# if our home exists and we can write in it,
+				# assume we are a standard user.
 				fakefd = open(home + "/.licorn.fakefile", "w")
 				fakefd.close()
 				os.unlink(home + "/.licorn.fakefile")
@@ -203,12 +211,17 @@ class LicornConfiguration (object):
 			try:
 				os.makedirs(self.user_data_dir)
 				import stat
-				os.chmod(self.user_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
-				logging.info("Automatically created %s." % styles.stylize(styles.ST_PATH, self.user_dir + "[/data]"))
+				os.chmod(self.user_dir,
+					stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR )
+				logging.info("Automatically created %s." % \
+					styles.stylize(styles.ST_PATH, self.user_dir + "[/data]"))
 			except OSError, e:
-				raise exceptions.LicornRuntimeError("Can't create / chmod %s[/data]:\n\t%s" % (self.user_dir, e))
+				raise exceptions.LicornRuntimeError(
+					'''Can't create / chmod %s[/data]:\n\t%s''' % (
+						self.user_dir, e))
 	def _load_configuration(self, conf):
 		""" Build the licorn configuration object from a dict. """
+
 		for key in conf.keys():
 			subkeys = key.split('.')
 			if len(subkeys) > 1:
@@ -216,7 +229,7 @@ class LicornConfiguration (object):
 				level  = 1
 				for subkey in subkeys[:-1]:
 					if not hasattr(curobj, subkey):
-						setattr(curobj, subkey, LicornConfigObject(level = level))
+						setattr(curobj, subkey, LicornConfigObject(level=level))
 					#down one level.
 					curobj = getattr(curobj, subkey)
 					level += 1
@@ -224,9 +237,10 @@ class LicornConfiguration (object):
 					setattr(curobj, subkeys[-1], conf[key])
 			else:
 				if not hasattr(LicornConfiguration, key):
-					setattr(LicornConfiguration, key, conf[key])
+					setattr(LicornConfiguration, key,conf[key])
 	def SetMissingMandatoryDefauts(self):
-		""" The defaults set here are expected to exist by other parts of the programs. """
+		""" The defaults set here are expected to exist
+			by other parts of the programs. """
 
 		mandatory_dict = {
 			'daemon.wmi.enabled': True,
@@ -235,17 +249,22 @@ class LicornConfiguration (object):
 			}
 
 		self._load_configuration(mandatory_dict)
+
+		print dir(self.backends)
+
 	def LoadBaseConfiguration(self):
-		"""Load main configuration file, and set mandatory defaults if it doesn't exist."""
+		"""Load main configuration file, and set mandatory defaults
+			if it doesn't exist."""
 
 		try:
-			self._load_configuration(readers.shell_conf_load_dict(self.main_config_file))
+			self._load_configuration(readers.shell_conf_load_dict(
+				self.main_config_file,
+				convert='full'))
 		except IOError, e:
 			if e.errno != 2:
-				# errno == 2 is "no such file or directory"
+				# errno == 2 is "no such file or directory" -> don't worry if
+				# main config file isn't here, this is not required.
 				raise e
-
-		self.SetMissingMandatoryDefauts()
 	def LoadBackends(self):
 		""" Load Configuration backends. """
 
@@ -292,25 +311,37 @@ class LicornConfiguration (object):
 				if lsb_release['DISTRIB_ID'] == 'Licorn':
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
-					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'jaunty', 'intrepid', 'hardy', 'gutsy', 'feisty',  'edgy', 'dapper' ):
+					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'jaunty',
+						'intrepid', 'hardy', 'gutsy',
+						'feisty',  'edgy', 'dapper' ):
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else:
-						raise exceptions.LicornRuntimeError("This Ubuntu version is not yet supported, sorry !")
+						raise exceptions.LicornRuntimeError(
+							'''This Ubuntu version is not '''
+							'''yet supported, sorry !''')
 
 			else:
 				# OLD / non-lsb compatible system or BSD
 				if  os.path.exists( '/etc/gentoo-release' ):
-					raise exceptions.LicornRuntimeError("Gentoo is not yet supported, sorry !")
+					raise exceptions.LicornRuntimeError(
+						"Gentoo is not yet supported, sorry !")
 				elif  os.path.exists( '/etc/debian_version' ):
-					raise exceptions.LicornRuntimeError("Old Debian systems are not supported, sorry !")
-				elif  os.path.exists( '/etc/SuSE-release' ) or os.path.exists( '/etc/suse-release' ):
-					raise exceptions.LicornRuntimeError("SuSE are not yet supported, sorry !")
-				elif  os.path.exists( '/etc/redhat_release' ) or os.path.exists( '/etc/redhat-release' ):
-					raise exceptions.LicornRuntimeError("RedHat/Mandriva is not yet supported, sorry !")
+					raise exceptions.LicornRuntimeError(
+						"Old Debian systems are not supported, sorry !")
+				elif  os.path.exists( '/etc/SuSE-release' ) \
+					or os.path.exists( '/etc/suse-release' ):
+					raise exceptions.LicornRuntimeError(
+						"SuSE are not yet supported, sorry !")
+				elif  os.path.exists( '/etc/redhat_release' ) \
+					or os.path.exists( '/etc/redhat-release' ):
+					raise exceptions.LicornRuntimeError(
+						"RedHat/Mandriva is not yet supported, sorry !")
 				else:
-					raise exceptions.LicornRuntimeError("Unknown Linux Distro, sorry !")
+					raise exceptions.LicornRuntimeError(
+						"Unknown Linux Distro, sorry !")
 		else:
-			raise exceptions.LicornRuntimeError("Not on a supported system ! Please send a patch ;)")
+			raise exceptions.LicornRuntimeError(
+				"Not on a supported system ! Please send a patch ;-)")
 
 		del(lsb_release)
 	def detect_services(self):
@@ -401,9 +432,12 @@ class LicornConfiguration (object):
 			return
 
 		LicornConfiguration.mta = LicornConfiguration.SRV_MTA_UNKNOWN
-		logging.progress("MTA not installed or unsupported, please get in touch with cortex@5sys.fr.")
+		logging.progress('''MTA not installed or unsupported, please get in '''
+			'''touch with dev@licorn.org.''')
 	def FindMailboxType(self):
-		"""Find how the underlying system handles Mailboxes (this can be Maidlir, mail spool, and we must find where they are)."""
+		"""Find how the underlying system handles Mailboxes
+			(this can be Maidlir, mail spool,
+			and we must find where they are)."""
 
 		# a sane (but arbitrary) default.
 		# TODO: detect this from /etc/…
@@ -411,27 +445,37 @@ class LicornConfiguration (object):
 
 		if LicornConfiguration.mta == LicornConfiguration.SRV_MTA_POSTFIX:
 
-			if LicornConfiguration.distro in (LicornConfiguration.DISTRO_UBUNTU, LicornConfiguration.DISTRO_DEBIAN, LicornConfiguration.DISTRO_GENTOO):
-				postfix_main_cf = readers.shell_conf_load_dict('/etc/postfix/main.cf')
+			if LicornConfiguration.distro in (LicornConfiguration.DISTRO_UBUNTU,
+				LicornConfiguration.DISTRO_DEBIAN,
+				LicornConfiguration.DISTRO_GENTOO):
+				postfix_main_cf = \
+					readers.shell_conf_load_dict('/etc/postfix/main.cf')
 
 			try:
-				LicornConfiguration.users.mailbox_base_dir = postfix_main_cf['mailbox_spool']
-				LicornConfiguration.users.mailbox_type     = LicornConfiguration.MAIL_TYPE_VAR_MBOX
+				LicornConfiguration.users.mailbox_base_dir = \
+					postfix_main_cf['mailbox_spool']
+				LicornConfiguration.users.mailbox_type     = \
+					LicornConfiguration.MAIL_TYPE_VAR_MBOX
 			except KeyError:
 				pass
 
 			try:
-				LicornConfiguration.users.mailbox = postfix_main_cf['home_mailbox']
+				LicornConfiguration.users.mailbox = \
+					postfix_main_cf['home_mailbox']
 
 				if LicornConfiguration.users.mailbox[-1:] == '/':
-					LicornConfiguration.users.mailbox_type = LicornConfiguration.MAIL_TYPE_HOME_MAILDIR
+					LicornConfiguration.users.mailbox_type = \
+						LicornConfiguration.MAIL_TYPE_HOME_MAILDIR
 				else:
-					LicornConfiguration.users.mailbox_type = LicornConfiguration.MAIL_TYPE_HOME_MBOX
+					LicornConfiguration.users.mailbox_type = \
+						LicornConfiguration.MAIL_TYPE_HOME_MBOX
 
 			except KeyError:
 				pass
 
-			logging.debug2("Mailbox type is %d and base is %s." % (LicornConfiguration.users.mailbox_type, LicornConfiguration.users.mailbox))
+			logging.debug2("Mailbox type is %d and base is %s." % (
+				LicornConfiguration.users.mailbox_type,
+				LicornConfiguration.users.mailbox))
 
 		elif LicornConfiguration.mta == LicornConfiguration.SRV_MTA_NULLMAILER:
 
@@ -447,15 +491,17 @@ class LicornConfiguration (object):
 
 			# totally forget about mail things.
 			LicornConfiguration.users.mailbox_auto_create = False
-			logging.progress("Mail{box,dir} system not supported yet. Please get in touch with cortex@5sys.fr.")
+			logging.progress('''Mail{box,dir} system not supported yet. '''
+				'''Please get in touch with dev@licorn.org.''')
 
 	def LoadShells(self):
 		"""Find valid shells on the local system"""
 
 		self.users.shells = []
 
-		# specialty on Debian / Ubuntu: /etc/shells contains shells that are not installed
-		# on the system. What is then the purpose of this file, knowing its definitions:
+		# specialty on Debian / Ubuntu: /etc/shells contains shells that
+		# are not installed on the system. What is then the purpose of this
+		# file, knowing its definitions:
 		# «/etc/shells contains the valid shells on a given system»...
 		# specialty 2: it does not contains /bin/false...
 
@@ -479,13 +525,20 @@ class LicornConfiguration (object):
 
 		import stat
 
-		for skel_path in ("%s/skels" % LicornConfiguration.defaults.home_base_path, "/usr/share/skels"):
+		for skel_path in ("%s/skels" % \
+			LicornConfiguration.defaults.home_base_path, "/usr/share/skels"):
 			if os.path.exists(skel_path):
 				try:
-					for new_skel in fsapi.minifind(path = skel_path, type = stat.S_IFDIR, mindepth = 2, maxdepth = 2):
+					for new_skel in fsapi.minifind(path=skel_path,
+						type=stat.S_IFDIR, mindepth=2, maxdepth=2):
 						self.users.skels.append(new_skel)
 				except OSError, e:
-					logging.warning("Custom skels must have at least %s perms on dirs and %s on files:\n\t%s" % (styles.stylize(styles.ST_MODE, "u+rwx,g+rx,o+rx"), styles.stylize(styles.ST_MODE, "u+rw,g+r,o+r"), e))
+					logging.warning('''Custom skels must have at least %s '''
+						'''perms on dirs and %s on files:\n\t%s''' % (
+							styles.stylize(styles.ST_MODE,
+								"u+rwx,g+rx,o+rx"),
+							styles.stylize(styles.ST_MODE,
+								"u+rw,g+r,o+r"), e))
 
 	### Users and Groups ###
 	def LoadManagersConfiguration(self):
@@ -507,10 +560,14 @@ class LicornConfiguration (object):
 		LicornConfiguration.users.uid_max         = add_user_conf['LAST_UID']
 		LicornConfiguration.groups.gid_min        = add_user_conf['FIRST_GID']
 		LicornConfiguration.groups.gid_max        = add_user_conf['LAST_GID']
-		LicornConfiguration.users.system_uid_min  = add_user_conf['FIRST_SYSTEM_UID']
-		LicornConfiguration.users.system_uid_max  = add_user_conf['LAST_SYSTEM_UID']
-		LicornConfiguration.groups.system_gid_min = add_user_conf['FIRST_SYSTEM_GID']
-		LicornConfiguration.groups.system_gid_max = add_user_conf['LAST_SYSTEM_GID']
+		LicornConfiguration.users.system_uid_min  = \
+			add_user_conf['FIRST_SYSTEM_UID']
+		LicornConfiguration.users.system_uid_max  = \
+			add_user_conf['LAST_SYSTEM_UID']
+		LicornConfiguration.groups.system_gid_min = \
+			add_user_conf['FIRST_SYSTEM_GID']
+		LicornConfiguration.groups.system_gid_max = \
+			add_user_conf['LAST_SYSTEM_GID']
 
 		# fix #74: map uid/gid above 300/500, to avoid interfering with
 		# Ubuntu/Debian/RedHat/whatever system users/groups. This will raise
@@ -540,7 +597,8 @@ class LicornConfiguration (object):
 		# The default values are referenced in CheckAndLoadAdduserConf() too.
 		#
 		for (attr_name, conf_key, fallback) in (
-			('base_path', 'DHOME',    '%s/users' % LicornConfiguration.defaults.home_base_path),
+			('base_path', 'DHOME',    '%s/users' % \
+				LicornConfiguration.defaults.home_base_path),
 			('default_shell', 'DSHELL',    '/bin/bash'),
 			('default_skel',  'SKEL',      '/etc/skel'),
 			('default_gid',   'USERS_GID', 100) ):
@@ -556,17 +614,21 @@ class LicornConfiguration (object):
 
 		try:
 			LicornConfiguration.users.mailbox      = add_user_conf["MAIL_FILE"]
-			LicornConfiguration.users.mailbox_type = LicornConfiguration.MAIL_TYPE_HOME_MBOX
+			LicornConfiguration.users.mailbox_type = \
+				LicornConfiguration.MAIL_TYPE_HOME_MBOX
 		except KeyError:
 			pass
 
 		try:
-			LicornConfiguration.users.mailbox_base_dir = add_user_conf["MAIL_DIR"]
-			LicornConfiguration.users.mailbox_type     = LicornConfiguration.MAIL_TYPE_VAR_MBOX
+			LicornConfiguration.users.mailbox_base_dir = \
+				add_user_conf["MAIL_DIR"]
+			LicornConfiguration.users.mailbox_type     = \
+				LicornConfiguration.MAIL_TYPE_VAR_MBOX
 		except KeyError:
 			pass
 	def SetDefaultNamesAndPaths(self):
-		""" *HARDCODE* some names before we pull them out into configuration files."""
+		""" *HARDCODE* some names before we pull them out
+			into configuration files."""
 
 		LicornConfiguration.defaults =  LicornConfigObject()
 
@@ -586,7 +648,8 @@ class LicornConfiguration (object):
 		# see groupadd(8), coming from addgroup(8)
 		LicornConfiguration.users.login_maxlenght = 31
 
-		# the _xxx variables are needed for gettextized interfaces (core and CLI are NOT gettextized)
+		# the _xxx variables are needed for gettextized interfaces
+		# (core and CLI are NOT gettextized)
 		LicornConfiguration.users.names = {
 			'singular': 'user',
 			'plural':   'users',
@@ -605,7 +668,8 @@ class LicornConfiguration (object):
 		# 31 - len(prefix)
 		LicornConfiguration.groups.name_maxlenght = 27
 
-		# the _xxx variables are needed for gettextized interfaces (core and CLI are NOT gettextized)
+		# the _xxx variables are needed for gettextized interfaces
+		# (core and CLI are NOT gettextized)
 		LicornConfiguration.groups.names = {
 			'singular': 'group',
 			'plural': 'groups',
@@ -613,7 +677,8 @@ class LicornConfiguration (object):
 			'_plural': _('groups')
 			}
 
-		LicornConfiguration.groups.privileges_whitelist = PrivilegesWhiteList(self.privileges_whitelist_data_file)
+		LicornConfiguration.groups.privileges_whitelist = \
+			PrivilegesWhiteList(self.privileges_whitelist_data_file)
 	def CheckAndLoadAdduserConf(self, batch = False, auto_answer = None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
@@ -623,12 +688,13 @@ class LicornConfiguration (object):
 		adduser_conf       = '/etc/adduser.conf'
 		adduser_conf_alter = False
 		adduser_data       = open(adduser_conf, 'r').read()
-		adduser_dict       = readers.shell_conf_load_dict(data = adduser_data)
+		adduser_dict       = readers.shell_conf_load_dict(data=adduser_data)
 
-		# warning: the order is important: in a default adduser.conf, only {FIRST,LAST}_SYSTEM_UID are
+		# warning: the order is important: in a default adduser.conf,
+		# only {FIRST,LAST}_SYSTEM_UID are
 		# present, and we assume this during the file patch.
 		defaults = (
-			('DHOME',  '%s/users' % LicornConfiguration.defaults.home_base_path),
+			('DHOME', '%s/users' % LicornConfiguration.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
@@ -648,43 +714,59 @@ class LicornConfiguration (object):
 			if directive in adduser_dict.keys():
 				if type(value) == type(1):
 					if value > adduser_dict[directive]:
-						logging.warning('In %s, directive %s should be at least %s, but it is %s.'
-							% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value, adduser_dict[directive]))
+						logging.warning('''In %s, directive %s should be at '''
+							'''least %s, but it is %s.'''
+							% (styles.stylize(styles.ST_PATH, adduser_conf),
+								directive, value, adduser_dict[directive]))
 						import re
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
-						adduser_data            = re.sub(r'%s=.*' % directive, r'%s=%s' % (directive, value), adduser_data)
+						adduser_data            = re.sub(r'%s=.*' % directive,
+							r'%s=%s' % (directive, value), adduser_data)
 				else:
 					if value != adduser_dict[directive]:
-						logging.warning('In %s, directive %s should be set to %s, but it is %s.'
-							% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value, adduser_dict[directive]))
+						logging.warning('''In %s, directive %s should be set '''
+							'''to %s, but it is %s.''' % (
+								styles.stylize(styles.ST_PATH, adduser_conf),
+								directive, value, adduser_dict[directive]))
 						import re
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
-						adduser_data            = re.sub(r'%s=.*' % directive, r'%s=%s' % (directive, value), adduser_data)
+						adduser_data            = re.sub(r'%s=.*' % directive,
+							r'%s=%s' % (directive, value), adduser_data)
 
 				# else: everything's OK !
 			else:
-				logging.warning('In %s, directive %s is missing. Setting it to %s.'
-					% (styles.stylize(styles.ST_PATH, adduser_conf), directive, value))
+				logging.warning(
+					'''In %s, directive %s is missing. Setting it to %s.'''
+					% (styles.stylize(styles.ST_PATH, adduser_conf),
+						directive, value))
 				import re
 				adduser_dict[directive] = value
 				adduser_conf_alter      = True
-				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)', r'\1\n%s=%s' % (directive, value), adduser_data)
+				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)',
+					r'\1\n%s=%s' % (directive, value), adduser_data)
 
 		if adduser_conf_alter:
-			if batch or logging.ask_for_repair('%s lacks mandatory configuration directive(s).'
-							% styles.stylize(styles.ST_PATH, adduser_conf), auto_answer):
+			if batch or logging.ask_for_repair(
+				'''%s lacks mandatory configuration directive(s).'''
+							% styles.stylize(styles.ST_PATH, adduser_conf),
+								auto_answer):
 				try:
 					open(adduser_conf, 'w').write(adduser_data)
 					logging.notice('Tweaked %s to match Licorn pre-requisites.'
 						% styles.stylize(styles.ST_PATH, adduser_conf))
 				except (IOError, OSError), e:
 					if e.errno == 13:
-						raise exceptions.LicornRuntimeError('Insufficient permissions. Are you root?\n\t%s' % e)
+						raise exceptions.LicornRuntimeError(
+							'''Insufficient permissions. '''
+							'''Are you root?\n\t%s''' % e)
 					else: raise e
 			else:
-				raise exceptions.LicornRuntimeError( "Modifications in %s are mandatory for Licorn to work properly with other system tools (adduser/useradd). Can't continue without this, sorry!" % adduser_conf)
+				raise exceptions.LicornRuntimeError('''Modifications in %s '''
+					'''are mandatory for Licorn to work properly with other '''
+					'''system tools (adduser/useradd). Can't continue '''
+					'''without this, sorry!''' % adduser_conf)
 
 		return adduser_dict
 	def CheckLoginDefs(self, batch = False, auto_answer = None):
@@ -711,32 +793,42 @@ class LicornConfiguration (object):
 
 		for (directive, value) in defaults:
 			if login_dict[directive] != value:
-				logging.warning('In %s, directive %s should be at least %s, but it is %s.'
-					% (styles.stylize(styles.ST_PATH, login_defs), directive, value, login_dict[directive]))
+				logging.warning('''In %s, directive %s should be at least %s,'''
+					''' but it is %s.''' % (
+						styles.stylize(styles.ST_PATH, login_defs),
+						directive, value, login_dict[directive]))
 				import re
 				login_defs_alter      = True
 				login_dict[directive] = value
-				login_data            = re.sub(r'%s.*' % directive, r'%s	%s' % (directive, value), login_data)
+				login_data            = re.sub(r'%s.*' % directive,
+					r'%s	%s' % (directive, value), login_data)
 
 		if login_defs_alter:
-			if batch or logging.ask_for_repair('%s lacks mandatory configuration directive(s).'
-							% styles.stylize(styles.ST_PATH, login_defs), auto_answer):
+			if batch or logging.ask_for_repair(
+				'''%s lacks mandatory configuration directive(s).''' % \
+					styles.stylize(styles.ST_PATH, login_defs), auto_answer):
 				try:
 					open(login_defs, 'w').write(login_data)
 					logging.notice('Tweaked %s to match Licorn pre-requisites.'
 						% styles.stylize(styles.ST_PATH, login_defs))
 				except (IOError, OSError), e:
 					if e.errno == 13:
-						raise exceptions.LicornRuntimeError('Insufficient permissions. Are you root?\n\t%s' % e)
-					else: raise e
+						raise exceptions.LicornRuntimeError(
+							'''Insufficient permissions. '''
+							'''Are you root?\n\t%s''' % e)
+					else:
+						raise e
 			else:
-				raise exceptions.LicornRuntimeError( "Modifications in %s are mandatory for Licorn to work properly. Can't continue without this, sorry!" % login_defs)
-
+				raise exceptions.LicornRuntimeError('''Modifications in %s '''
+					'''are mandatory for Licorn to work properly. Can't '''
+					'''continue without this, sorry!''' % login_defs)
 
 	### EXPORTS ###
 	def Export(self, doreturn = True, args = None, cli_format = None):
-		""" Export «self» (the system configuration) to a human [styles.stylized and] readable form.
-			if «doreturn» is True, return a "string", else write output directly to stdout.
+		""" Export «self» (the system configuration) to a human
+			[styles.stylized and] readable form.
+			if «doreturn» is True, return a "string", else write output
+			directly to stdout.
 		"""
 
 		if args is not None:
@@ -744,15 +836,36 @@ class LicornConfiguration (object):
 			data = ""
 
 			if cli_format == "bourne":
-				cli = { 'prefix': "export ", 'name': True, 'equals': "=", 'suffix': "" }
+				cli = {
+					'prefix': "export ",
+					'name': True,
+					'equals': "=",
+					'suffix': ""
+					}
 			elif  cli_format == "cshell":
-				cli = { 'prefix': "setenv ", 'name': True, 'equals': " ", 'suffix': "" }
+				cli = {
+					'prefix': "setenv ",
+					'name': True,
+					'equals': " ",
+					'suffix': ""
+					}
 			elif  cli_format == "PHP":
-				cli = { 'prefix': "$", 'name': True, 'equals': "=", 'suffix': ";" }
+				cli = {
+					'prefix': "$",
+					'name': True,
+					'equals': "=",
+					'suffix': ";"
+					}
 			elif  cli_format == "short":
-				cli = { 'prefix': "", 'name': False, 'equals': "=", 'suffix': "" }
+				cli = {
+					'prefix': "",
+					'name': False,
+					'equals': "=",
+					'suffix': ""
+					}
 			else:
-				raise exceptions.BadArgumentError("Bad CLI output format « %s » !" % cli_format)
+				raise exceptions.BadArgumentError(
+					"Bad CLI output format « %s » !" % cli_format)
 
 			if args[0] == "shells":
 				for shell in self.users.shells:
@@ -762,7 +875,8 @@ class LicornConfiguration (object):
 				for skel in self.users.skels:
 					data += "%s\n" % skel
 
-			elif args[0] in ("config_dir", "main_config_file", "backup_config_file", "extendedgroup_data_file", "app_name"):
+			elif args[0] in ("config_dir", "main_config_file",
+				"backup_config_file", "extendedgroup_data_file", "app_name"):
 
 				varname = args[0].upper()
 
@@ -778,11 +892,19 @@ class LicornConfiguration (object):
 					varval = self.app_name
 
 				if cli["name"]:
-					data +=	 "%s%s%s\"%s\"%s\n" % (cli["prefix"], varname, cli["equals"], varval, cli["suffix"])
+					data +=	 "%s%s%s\"%s\"%s\n" % (
+						cli["prefix"],
+						varname,
+						cli["equals"],
+						varval,
+						cli["suffix"]
+						)
 				else:
 					data +=	 "%s\n" % (varval)
 			else:
-				raise NotImplementedError("Sorry, outputing selectively %s is not yet implemented !" % args[0])
+				raise NotImplementedError(
+					"Sorry, outputing selectively %s is not yet implemented !" \
+						% args[0])
 
 		else:
 			data = self._export_all()
@@ -797,38 +919,35 @@ class LicornConfiguration (object):
 		data = "%s\n" % styles.stylize(styles.ST_APPNAME, "LicornConfiguration")
 
 		for attr in dir(self):
-			if attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' or \
-				attr[0:7] == 'detect_' :
+			if callable(getattr(self, attr)) \
+				or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' :
 				# skip methods and python internals.
 				continue
 
-			# 30 is the len() of the longest attribute name
-			data += u"\u21b3 %s%s: " % (" " * (30 - len(attr)), styles.stylize(styles.ST_ATTR, attr))
+			data += u"\u21b3 %s: " % styles.stylize(styles.ST_ATTR, attr)
 
-			if attr is 'mLdapSecret':
-				data += "%s\s" % styles.stylize(styles.ST_SECRET, str(self.mLdapSecret))
-			elif attr is 'mLdap':
-				data += "\n\t" + str(self.mLdap).replace("', " , "',\n\t") + "\n"
-			elif attr in ( 'mLdapEnabled', 'app_name', 'distro', 'mAutoPasswdSize', 'mCurrentHostname', 'mta'):
-				data += "%s\n" % styles.stylize(styles.ST_ATTRVALUE, str(self.__getattribute__(attr)))
-				# cf	http://www.reportlab.com/i18n/python_unicode_tutorial.html
-				# and	http://web.linuxfr.org/forums/29/9994.html#599760
-				# and	http://evanjones.ca/python-utf8.html
-			elif attr in ('mLcnGroup', 'mAddUser', 'mLoginDefs', 'mNssLdap'):
-				data += "\n\t%s\n" % str(self.__getattribute__(attr)).replace(", " , ",\n\t")
-			elif attr is 'mNsSwitch':
-				data += "\n\t" + str(self.mNsSwitch).replace("], " , "]\n\t") + "\n"
-			elif attr.endswith('_dir') or attr.endswith('_file') or attr.endswith('_path'):
+			if attr in ('app_name', 'distro', 'mta'):
+				data += "%s\n" % styles.stylize(styles.ST_ATTRVALUE,
+					str(self.__getattribute__(attr)))
+				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
+				# and http://web.linuxfr.org/forums/29/9994.html#599760
+				# and http://evanjones.ca/python-utf8.html
+			elif attr.endswith('_dir') or attr.endswith('_file') \
+				or attr.endswith('_path'):
 				data += "%s\n" % str(self.__getattribute__(attr))
-			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults', 'ssh', 'backends'):
+			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults',
+				'ssh', 'backends'):
 				data += "\n%s" % str(getattr(self, attr))
 			else:
-				data += "%s, to be implemented in licorn.core.configuration.Export()\n" % styles.stylize(styles.ST_IMPORTANT, "UNREPRESENTABLE YET")
+				data += ('''%s, to be implemented in '''
+					'''licorn.core.configuration.Export()\n''') % \
+					styles.stylize(styles.ST_IMPORTANT, "UNREPRESENTABLE YET")
 
 		return data
 	def ExportXML(self):
 		""" Export «self» (the system configuration) to XML. """
-		raise NotImplementedError("LicornConfig::ExportXML() not yet implemented !")
+		raise NotImplementedError(
+			'''LicornConfig::ExportXML() not yet implemented !''')
 
 	### MODIFY ###
 	def ModifyHostname(self, new_hostname):
@@ -839,8 +958,11 @@ class LicornConfiguration (object):
 
 		import re
 
-		if not re.compile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", re.IGNORECASE).match(new_hostname):
-			raise exceptions.BadArgumentError("new hostname must be composed only of letters, digits and hyphens, but not starting nor ending with an hyphen !")
+		if not re.compile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
+			re.IGNORECASE).match(new_hostname):
+			raise exceptions.BadArgumentError(
+				'''new hostname must be composed only of letters, digits and '''
+				'''hyphens, but not starting nor ending with an hyphen !''')
 
 		logging.progress("Doing preliminary checks...")
 		self.CheckHostname()
@@ -850,11 +972,14 @@ class LicornConfiguration (object):
 			etc_hostname.write(new_hostname)
 			etc_hostname.close()
 		except (IOError, OSError), e:
-			raise exceptions.LicornRuntimeError("can't modify /etc/hostname, verify the file is still clean:\n\t%s)" % e)
+			raise exceptions.LicornRuntimeError(
+				'''can't modify /etc/hostname, verify the file is still '''
+				'''clean:\n\t%s)''' % e)
 
 	### CHECKS ###
-	def check(self, minimal = True, batch = False, auto_answer = None):
-		"""Check all components of system configuration and repair if asked for."""
+	def check(self, minimal=True, batch=False, auto_answer=None):
+		""" Check all components of system configuration and repair
+		if asked for."""
 
 		self.CheckBaseDirs(minimal, batch, auto_answer)
 		self.CheckSystemGroups(minimal, batch, auto_answer)
@@ -862,7 +987,7 @@ class LicornConfiguration (object):
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
-	def CheckBaseDirs(self, minimal = True, batch = False, auto_answer = None):
+	def CheckBaseDirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
 
 		try:
@@ -873,7 +998,7 @@ class LicornConfiguration (object):
 
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 
-		groups_dir    = "%s/%s" % ( LicornConfiguration.defaults.home_base_path,
+		groups_dir    = "%s/%s" % (LicornConfiguration.defaults.home_base_path,
 			LicornConfiguration.groups.names['plural'])
 		acl_base      = "u::rwx,g::---,o:---"
 		acl_mask      = "m:rwx"
@@ -892,23 +1017,30 @@ class LicornConfiguration (object):
 				'path'      : groups_dir,
 				'user'      : 'root',
 				'group'     : 'acl',
-				'access_acl': "%s,%s,g:www-data:--x,g:users:%s,%s" % (acl_base, acl_admins_ro, users_acl, acl_mask),
+				'access_acl': "%s,%s,g:www-data:--x,g:users:%s,%s" % (
+					acl_base, acl_admins_ro, users_acl, acl_mask),
 				'default_acl': ""
 			} ]
 
 		from licorn.core import groups
 
 		try:
-			# batch this because it *has* to be corrected for system to work properly.
-			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify, batch = True, allgroups = groups)
+			# batch this because it *has* to be corrected
+			# for system to work properly.
+			fsapi.check_dirs_and_contents_perms_and_acls(
+				dirs_to_verify, batch=True, allgroups=groups)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
-				# this is the *first* "not supported" error encountered (on config load of first licorn command).
-				# try to make the error message kind of explicit and clear, to let administrator know he/she should
-				# mount the partition with 'acl' option.
-				raise exceptions.LicornRuntimeError("Filesystem must be mounted with 'acl' option:\n\t%s" % e)
-			else: raise e
+				# this is the *first* "not supported" error encountered (on
+				# config load of first licorn command). Try to make the error
+				# message kind of explicit and clear, to let administrator know
+				# he/she should mount the partition with 'acl' option.
+				raise exceptions.LicornRuntimeError(
+					'''Filesystem must be mounted with 'acl' option:\n\t%s''' \
+						% e)
+			else:
+				raise e
 
 		home_backup_dir_info = {
 			'path'      : self.home_backup_dir,
@@ -928,55 +1060,70 @@ class LicornConfiguration (object):
 
 		if not minimal:
 			# check the contents of these dirs, too (fixes #95)
-			home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask)
+			home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (
+				acl_base, acl_admins_ro, acl_mask)
 				).replace('r-x', 'r--').replace('rwx', 'rw-')
-			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask)
+			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (
+				acl_base, acl_admins_rw, acl_mask)
 				).replace('r-x', 'r--').replace('rwx', 'rw-')
 
 		dirs_to_verify = [ home_backup_dir_info, home_archive_dir_info ]
 
 		# no need to bother the user for that, correct it automatically anyway.
-		fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify, batch = True, allgroups = groups)
-	def CheckSystemGroups(self, minimal = True, batch = False, auto_answer = None):
-		"""Check if needed groups are present on the system, and repair if asked for."""
+		fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
+			batch=True, allgroups=groups)
+	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
+		"""Check if needed groups are present on the system, and repair
+			if asked for."""
 
 		from licorn.core import groups
 
 		if minimal:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
-			# because they will be added by their respective packages (plugins ?),
-			# and they are not strictly needed for Licorn to operate properly.
-			needed_groups = [ 'users', 'acl', LicornConfiguration.defaults.admin_group ]
+			# because they will be added by their respective packages
+			# (plugins ?), and they are not strictly needed for Licorn to
+			# operate properly.
+			needed_groups = [ 'users', 'acl',
+				LicornConfiguration.defaults.admin_group ]
 
 		else:
 			needed_groups = LicornConfiguration.groups.privileges_whitelist
 
 		for group in needed_groups:
-			# licorn.core.groups is not loaded yet, and it would create a circular dependancy
-			# to import it here, we HAVE to do this manually.
+			# licorn.core.groups is not loaded yet, and it would create a
+			# circular dependancy to import it now. We HAVE to do this manually.
 			if not groups.group_exists(name = group):
-				if batch or logging.ask_for_repair(logging.CONFIG_SYSTEM_GROUP_REQUIRED % styles.stylize(styles.ST_NAME, group), auto_answer):
+				if batch or logging.ask_for_repair(
+					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
+						styles.stylize(styles.ST_NAME, group), auto_answer):
 					groups.AddGroup(group, system = True)
 				else:
 					raise exceptions.LicornRuntimeError(
-						"The system group « %s » is mandatory but doesn't exist on your system !" % group + "\n"
-						+ "Use « licorn-check config --yes » or « licorn-add group --system --name \"%s\" » to solve the problem." % group
+						'''The system group « %s » is mandatory but doesn't '''
+						''' exist on your system !\nUse « licorn-check '''
+						'''config --yes » or « licorn-add group --system '''
+						'''--name "%s" » to solve the problem.''' % (
+							group, group)
 						)
 	def CheckHostname(self, batch = False, auto_answer = None):
-		""" Check hostname consistency (by DNS/reverse resolution), and check /etc/hosts against flakynesses."""
+		""" Check hostname consistency (by DNS/reverse resolution),
+			and check /etc/hosts against flakynesses."""
 
 		import stat
 		hosts_mode = os.stat("/etc/hosts").st_mode
 		if not stat.S_IMODE(hosts_mode) & stat.S_IROTH:
 			#
-			# nsswitch will fail to resolve localhost/127.0.0.1 if /etc/hosts don't have sufficient permissions.
+			# nsswitch will fail to resolve localhost/127.0.0.1 if
+			# /etc/hosts don't have sufficient permissions.
 			#
-			raise exceptions.BadConfigurationError("/etc/hosts must have at least o+r permissions.")
+			raise exceptions.BadConfigurationError(
+				'''/etc/hosts must have at least o+r permissions.''')
 
 
 		line = open("/etc/hostname").readline()
 		if line[:-1] != self.mCurrentHostname:
-			raise exceptions.BadConfigurationError("current hostname and /etc/hostname are not in sync !")
+			raise exceptions.BadConfigurationError(
+				'''current hostname and /etc/hostname are not in sync !''')
 
 		import socket
 
@@ -984,15 +1131,21 @@ class LicornConfiguration (object):
 		hostname_ip = socket.gethostbyname(self.mCurrentHostname)
 
 		if hostname_ip != '127.0.0.1':
-			raise exceptions.BadConfigurationError("hostname %s doesn't resolve to 127.0.0.1 but to %s, please check /etc/hosts !" % (self.mCurrentHostname, hostname_ip) )
+			raise exceptions.BadConfigurationError(
+				'''hostname %s doesn't resolve to 127.0.0.1 but to %s, '''
+				'''please check /etc/hosts !''' % (
+					self.mCurrentHostname, hostname_ip) )
 
-		# reverse DNS check for localhost. We use gethostbyaddr() to allow the hostname
-		# to be in the aliases (this is often the case for localhost in /etc/hosts).
+		# reverse DNS check for localhost. We use gethostbyaddr() to allow
+		# the hostname to be in the aliases (this is often the case for
+		# localhost in /etc/hosts).
 		localhost_data = socket.gethostbyaddr('127.0.0.1')
 
 		if not ( self.mCurrentHostname == localhost_data[0]
 				or self.mCurrentHostname in localhost_data[1] ):
-			raise exceptions.BadConfigurationError("127.0.0.1 doesn't resolve back to hostname %s, please check /etc/hosts and/or DNS !" % self.mCurrentHostname)
+			raise exceptions.BadConfigurationError(
+				'''127.0.0.1 doesn't resolve back to hostname %s, please '''
+				'''check /etc/hosts and/or DNS !''' % self.mCurrentHostname)
 
 		import licorn.tools.network as network
 
@@ -1006,18 +1159,18 @@ class LicornConfiguration (object):
 		eth0_ip = network.iface_address('eth0')
 
 		#
-		# FIXME: the only simple way to garantee we are on an licorn server is to
-		# check dpkg -l | grep licorn-server. We should check this to enforce there is
-		# only 127.0.0.1 in /etc/resolv.conf if licorn-server is installed.
+		# FIXME: the only simple way to garantee we are on an licorn server is
+		# to check dpkg -l | grep licorn-server. We should check this to enforce
+		# there is only 127.0.0.1 in /etc/resolv.conf if licorn-server is
+		# installed.
 		#
 
 		#
-		# FIXME2: when implementing previous FIXME, we should not but administrator if
-		# /etc/licorn_is_installing is present (for example),
-		# because during installation not everything is ready to go in production and this
-		# is totally normal.
+		# FIXME2: when implementing previous FIXME, we should not but
+		# administrator if /etc/licorn_is_installing is present (for example),
+		# because during installation not everything is ready to go in
+		# production and this is totally normal.
 		#
-
 
 		logging.debug2("configuration|eth0 IP: %s" % eth0_ip)
 
@@ -1034,40 +1187,59 @@ class LicornConfiguration (object):
 				# an Licorn server), we must verify.
 				#
 				if '127.0.0.1' in dns:
-					raise exceptions.BadConfigurationError("can't resolve %s (%s), is the dns server running on 127.0.0.1 ? Else check DNS files syntax !" % (eth0_ip, e.args[1]))
+					raise exceptions.BadConfigurationError('''can't resolve '''
+						'''%s (%s), is the dns server running on 127.0.0.1? '''
+						'''Else check DNS files syntax !''' % (
+							eth0_ip, e.args[1]))
 				elif eth0_ip in dns:
 					# FIXME put 127.0.0.1 automatically in configuration ?
-					raise exceptions.BadConfigurationError("127.0.0.1 *must* be in /etc/resolv.conf on an Licorn server.")
+					raise exceptions.BadConfigurationError(
+						'''127.0.0.1 *must* be in /etc/resolv.conf on an '''
+						'''Licorn server.''')
 				#
 				# if we reach here, this is the end of the function.
 				#
 		except Exception, e:
-			raise exceptions.BadConfigurationError("Problem while resolving %s, please check configuration:\n\terrno %d, %s" % (eth0_ip, e.args[0], e.args[1]))
+			raise exceptions.BadConfigurationError(
+				'''Problem while resolving %s, please check '''
+				'''configuration:\n\terrno %d, %s''' % (
+					eth0_ip, e.args[0], e.args[1]))
 
 		else:
 
-			# hostname DNS check fro eth0. use [0] (the hostname primary record) to enforce
-			# the full [reverse] DNS check is OK. This is needed for modern SMTP servers, SSL
-			# web certificates to be validated, among other things.
+			# hostname DNS check fro eth0. use [0] (the hostname primary record)
+			# to enforce the full [reverse] DNS check is OK. This is needed for
+			# modern SMTP servers, SSL web certificates to be validated, among
+			# other things.
 			eth0_reversed_ip = socket.gethostbyname(eth0_hostname[0])
 
 			if eth0_reversed_ip != eth0_ip:
 				if eth0_ip in dns:
 					# FIXME put 127.0.0.1 automatically in configuration ?
-					raise exceptions.BadConfigurationError("127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on an Licorn server.")
+					raise exceptions.BadConfigurationError(
+						'''127.0.0.1 *must* be the only nameserver in '''
+						'''/etc/resolv.conf on an Licorn server.''')
 				elif '127.0.0.1' in dns:
-					raise exceptions.BadConfigurationError("DNS seems not properly configured (%s doesn't resolve back to itself)." % eth0_ip )
+					raise exceptions.BadConfigurationError(
+						'''DNS seems not properly configured (%s doesn't '''
+						'''resolve back to itself).''' % eth0_ip)
 				else:
-					logging.warning("DNS not properly configured (%s doesn't resolve to %, but to %s)"% ( eth0_hostname, eth0_ip, eth0_reversed_ip) )
+					logging.warning(
+						'''DNS not properly configured (%s doesn't resolve '''
+						'''to %, but to %s)''' % (
+							eth0_hostname, eth0_ip, eth0_reversed_ip))
 
-			# everything worked, but it is safer to have 127.0.0.1 as the nameserver, inform administrator.
+			# everything worked, but it is safer to have 127.0.0.1 as the
+			# nameserver, inform administrator.
 			if eth0_ip in dns or '127.0.0.1':
 				# FIXME put 127.0.0.1 automatically in configuration ?
-				logging.warning("127.0.0.1 should be the only nameserver in /etc/resolv.conf on an Licorn server.")
+				logging.warning('''127.0.0.1 should be the only nameserver '''
+					'''in /etc/resolv.conf on an Licorn server.''')
 
-		# FIXME: vérifier que l'ip d'eth0 et son nom ne sont pas codés en dur dans /etc/hosts,
-		# la série de tests sur eth0 aurait pu marcher grâce à ça et donc rien ne dit que la conf DNS est OK...
-	def CheckMailboxConfigIntegrity(self, batch = False, auto_answer = None):
+		# FIXME: vérifier que l'ip d'eth0 et son nom ne sont pas codés en dur
+		# dans /etc/hosts, la série de tests sur eth0 aurait pu marcher grâce
+		# à ça et donc rien ne dit que la conf DNS est OK...
+	def CheckMailboxConfigIntegrity(self, batch=False, auto_answer=None):
 		"""Verify "slaves" configuration files are OK, else repair them."""
 
 		"""
@@ -1087,7 +1259,7 @@ class LicornConfiguration (object):
 		"""
 
 		pass
-	def SetHiddenGroups(self, hidden = True):
+	def SetHiddenGroups(self, hidden=True):
 		""" Set (un-)restrictive mode on the groups base directory. """
 
 		LicornConfiguration.groups.hidden = hidden

@@ -2,7 +2,7 @@
 """
 Licorn system configuration reader.
 
-The present module rassembles a set of tools to ease the parsing of known 
+The present module rassembles a set of tools to ease the parsing of known
 configuration files:
 	* classic ^PARAM value$ (login.defs, ldap.conf)
 	* classic ^PARAM=value$
@@ -16,6 +16,29 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, re
 from licorn.foundations import exceptions
+
+def to_type_semi(value):
+	"""Find the right type of value and convert it, but not for all types. """
+	if value.isdigit():
+		return int(value)
+	else:
+		return value
+
+def to_type_full(value):
+	"""Find the right type of value and convert it. """
+	if value.isdigit():
+		return int(value)
+	elif value.lower() in ('no', 'false'):
+		return False
+	elif value.lower() in ('yes', 'true'):
+		return True
+	else:
+		return value
+
+to_type = {
+	'semi':	to_type_semi,
+	'full': to_type_full
+	}
 
 def very_simple_conf_load_list(filename):
 	""" Read a very simple file (one value per line)
@@ -32,9 +55,9 @@ def very_simple_conf_load_list(filename):
 	map(parse_line, open(filename , "r"))
 
 	return retlist
-def	simple_conf_load_dict(filename = None, data = None):
+def	simple_conf_load_dict(filename=None, data=None, convert='semi'):
 	""" Read a simple configuration file ("param value" on each line)
-		and return a dictionary of param->value filled with the directives 
+		and return a dictionary of param->value filled with the directives
 		contained in the configuration file.
 
 		Warning, for performance optimisations in later comparisons, digit
@@ -50,11 +73,8 @@ def	simple_conf_load_dict(filename = None, data = None):
 		if directive:
 			dicts = directive.groupdict()
 			key = dicts['param']
-			if dicts['value'].isdigit():
-				confdict[key] = int(dicts['value'])
-			else:
-				confdict[key] = dicts['value']
-	
+			confdict[key] = to_type[convert](dicts['value'])
+
 	if filename:
 		data = open(filename , "r").read()
 
@@ -63,14 +83,14 @@ def	simple_conf_load_dict(filename = None, data = None):
 	return confdict
 def	simple_conf_load_dict_lists(filename):
 	""" Read a simple configuration file ("param value1 [value2 ...]" on each line)
-		and return a dictionary of param -> [ list of values ] filled with the directives 
+		and return a dictionary of param -> [ list of values ] filled with the directives
 		contained in the configuration file.
 
 		Typical use case: /etc/nsswitch.conf
 	"""
 	confdict = {}
 	conf_re	 = re.compile("^\s*(?P<database>\w+):(?P<types>(\s+\w+)+)\s*$")
-	
+
 	def parse_fields(line):
 		directive = conf_re.match(line[:-1])
 		if directive:
@@ -81,7 +101,7 @@ def	simple_conf_load_dict_lists(filename):
 	map(parse_fields, open(filename, "r" ))
 
 	return confdict
-def	shell_conf_load_dict(filename = None, data = None):
+def	shell_conf_load_dict(filename=None, data=None, convert='semi'):
 	""" Read a shell configuration file with variables (VAR=value on each line)
 		return a dictionary of param->value filled with the variables.
 
@@ -95,21 +115,14 @@ def	shell_conf_load_dict(filename = None, data = None):
 		if directive:
 			dicts = directive.groupdict()
 			key = dicts['param']
-			if dicts['value'].isdigit():
-				confdict[key] = int(dicts['value'])
-			elif dicts['value'] == 'True':
-				confdict[key] = True
-			elif dicts['value'] == 'False':
-				confdict[key] = False
-			else:
-				confdict[key] = dicts['value']
+			confdict[key] = to_type[convert](dicts['value'])
 			#sys.stderr.write('found directive %s → %s.\n' % (key, dicts['value']))
 
 	if filename:
 		data = open(filename , "r").read()
 
 	map(parse_fields, data.split('\n'))
-	
+
 	return confdict
 def ug_conf_load_list(filename):
 	""" Read a configuration file and return a list -> list of value
@@ -131,7 +144,7 @@ def profiles_conf_dict(filename):
 
 		dom = minidom.parse(filename)
 		confdict = {}
-		
+
 		def parse_profile(profile):
 			name = getProfileData(profile, "name").pop()
 			comment = getProfileData(profile, "comment").pop()
@@ -174,12 +187,12 @@ def getProfileData(rootelement, leaftag, isoptional=False):
 
 	if tags == [] and rootelement.nodeName != "groups":
 		raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> was not found.")
-	
+
 	for e in tags:
 		for node in e.childNodes:
 			if node.parentNode.parentNode == rootelement: # needed to ignore the other levels
 				data.append(unicode(node.data))
-				
+
 	if data == []:
 		if leaftag not in empty_allowed_tags and rootelement.nodeName != "groups":
 			raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> must not have an empty value.")
@@ -193,7 +206,7 @@ def timeconstraints_conf_dict(filename):
 	confdict	= {}
 	declaration_re		= re.compile("^\s*time\s*(?P<name>\w*)\s*{")
 	entry_re			= re.compile("^\s*weekly\s*(?P<weekdays>[smtwhfa]{1,7})\s*(?P<starthours>\d\d):(?P<startminutes>\d\d)-(?P<endhours>\d\d):(?P<endminutes>\d\d)\s*")
-	
+
 	acl_found = "" # The acl we are parsing (in order to find redirection
 	acl_re		= re.compile("^\s*\w*\s*outside\s*(?P<timespace>\w*)\s*{")
 	redirection_re		= re.compile("^\s*redirect\s*(?P<url>.*)\s*")
@@ -201,7 +214,7 @@ def timeconstraints_conf_dict(filename):
 
 	inblock = False # Are we in a timespace block ?
 	name = "" # timespace name
-	
+
 	for line in conffile:
 		# Search time constraints
 		if inblock:
@@ -214,7 +227,7 @@ def timeconstraints_conf_dict(filename):
 			inblock = True
 			name = mo_d.groupdict()["name"]
 			confdict[name] = {"constraints": []}
-		
+
 		# Search redirections in acl
 		if acl_found != "":
 			mo_r = redirection_re.match(line)
