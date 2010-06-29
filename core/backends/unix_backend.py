@@ -106,7 +106,7 @@ class unix_controller(UGBackend):
 			if e.errno != 13:
 				raise e
 				# don't raise an exception or display a warning, this is
-				# harmless if we are loading data for getent, and any other
+				# harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admin.
 
@@ -137,7 +137,7 @@ class unix_controller(UGBackend):
 		except IOError, e:
 			if e.errno == 13:
 				# don't raise an exception or display a warning, this is
-				# harmless if we are loading data for getent, and any other
+				# harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admin.
 				is_allowed = False
@@ -165,7 +165,7 @@ class unix_controller(UGBackend):
 				members   = entry[3].split(',')
 				to_remove = []
 
-				# update the cache to avoid massive CPU load in 'getent users
+				# update the cache to avoid massive CPU load in 'get users
 				# --long'. This code is also present in users.__init__, to cope
 				# with users/groups load in different orders.
 				if UGBackend.users:
