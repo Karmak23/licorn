@@ -10,11 +10,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 #
 # WARNING: Don't import 'logging' here ! this will introduce a circular loop.
-# if you need to debug this module, please use "print" statements. And thus 
+# if you need to debug this module, please use "print" statements. And thus
 # try to keep this class as small as possible !
 #
 
-class LicornOptions:
+from objects import Singleton
+from ltrace  import ltrace
+
+class LicornOptions(Singleton):
 	""" This Options class is meant to share options / preferences globally
 		accross all python modules loaded in a single session of any Licorn App.
 
@@ -34,17 +37,11 @@ class LicornOptions:
 	no_colors   = False
 	verbose     = VLEVEL_NOTICE
 
-	def __new__(cls):
-		"""This is a Singleton Design Pattern."""
-
-		if cls.__singleton is None:
-			cls.__singleton = object.__new__(cls)
-		
-		return cls.__singleton
 	def __init__(self) :
-		pass
+		ltrace('options', '__init__')
 	def SetVerbose(self, verbose):
 		""" Change verbose parameter. """
+		ltrace('options', 'setting verbose to %s.' % verbose)
 		self.verbose = verbose
 	def SetQuiet(self):
 		""" Change verbose parameter. """
@@ -58,5 +55,3 @@ class LicornOptions:
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)
 		# put future functions here...
-
-

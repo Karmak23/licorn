@@ -12,7 +12,9 @@ import sys, os, time
 from sys                import version_info
 from Queue              import Queue
 from threading          import Thread, Event
-from licorn.foundations import exceptions, logging, styles
+
+# licorn internals
+import exceptions, trace
 
 class LicornConfigObject:
 	""" a base class just to be able to add/remove custom attributes

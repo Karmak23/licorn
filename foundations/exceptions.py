@@ -7,6 +7,11 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 
 """
+
+#
+# WARNING: please do not import anything from licorn here.
+#
+
 class LicornException(Exception):
 	""" !!! NOT TO BE RAISED DIRECTLY !!!
 		This exception class is to be derivated to create every other *Exception subclasses.

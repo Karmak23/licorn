@@ -9,10 +9,11 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 import sys, termios
-from time import time, localtime, strftime
 
-from licorn.foundations import hooks, styles, exceptions, options
+import hooks, styles, exceptions
+from trace import mytime
 
+from licorn.foundations import options
 # TODO: gettext this !
 #import gettext
 #from gettext           import gettext as _
@@ -40,11 +41,6 @@ from licorn.foundations import hooks, styles, exceptions, options
 #		- in the calling programs, we MUST catch the exceptions/errors raised and call
 #		  logging.error() when appropriate.
 #
-
-def mytime():
-	""" close http://dev.licorn.org/ticket/46 """
-	t = time()
-	return '[%s%s]' % (strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
 
 class LicornWarningsDB(object):
         __singleton = None
@@ -108,15 +104,18 @@ def warning(mesg, once = False):
 
 def notice(mesg):
 	""" Display a non-styles.stylized informational message on stderr."""
+	#print 'verbose is %s.' % options.verbose
 	if options.verbose >= options.VLEVEL_NOTICE:
 		sys.stderr.write(" %s %s %s\n" % (
 			styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
 def info(mesg):
 	""" Display a styles.stylized informational message on stderr."""
+	#print 'verbose is %s.' % options.verbose
 	if options.verbose >= options.VLEVEL_INFO:
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
 def progress(mesg):
-	""" Display a styles.stylized informational message on stderr."""
+	""" Display a styles.stylized informational message on stderr. """
+	#print 'verbose is %s.' % options.verbose
 	if options.verbose >= options.VLEVEL_PROGRESS:
 		sys.stderr.write(" > %s %s\n" % (mytime(), mesg))
 
@@ -241,9 +240,9 @@ repair_choice = RepairChoice()
 # Standard strings used manywhere. All strings are centralized here.
 #
 
-### getent / add / modify / delete strings ###
+### get / add / modify / delete strings ###
 GENERAL_CANT_ACQUIRE_HACKD_LOCK = "Can't acquire hackd global lock, hackd is probably already running. (original error was: %s)."
-GENERAL_CANT_ACQUIRE_GIANT_LOCK = "Can't acquire giant lock. You probably have another licorn-{getent,add,modify,delete,check} tool already running: wait for it to finish, or last execution didn't finish cleanly: check in your ~/.licorn directory and delete the file « giant.lock » (Original error was: %s)."
+GENERAL_CANT_ACQUIRE_GIANT_LOCK = "Can't acquire giant lock. You probably have another licorn-{get,add,modify,delete,check} tool already running: wait for it to finish, or last execution didn't finish cleanly: check in your ~/.licorn directory and delete the file « giant.lock » (Original error was: %s)."
 GENERAL_INTERRUPTED = "Interrupted, cleaning up !"
 GENERAL_UNKNOWN_MODE = "Unknow mode %s !"
 

@@ -40,15 +40,11 @@ trc['unix']          = 0x00000200
 from os import getenv
 from time import time, localtime, strftime
 
-def mytime(braces=True):
+def mytime():
 	""" close http://dev.licorn.org/ticket/46 """
 	t = time()
-	if braces:
-		return '[%s%s]' % (
-			strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
-	else:
-		return '%s%s' % (
-			strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
+	return '[%s%s]' % (
+		strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
 
 if getenv('LICORN_TRACE', None) != None:
 
@@ -56,7 +52,7 @@ if getenv('LICORN_TRACE', None) != None:
 
 	def ltrace(module, message):
 		if  trc[getenv('LICORN_TRACE')] & trc[module] :
-			sys.stderr.write('TRACE[%s|%s]: %s\n' % (
-				module, mytime(False), message))
+			sys.stderr.write('TRACE%s %s: %s\n' % (
+				mytime(), module, message))
 else:
 	def ltrace(module, message): pass
