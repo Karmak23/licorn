@@ -14,6 +14,7 @@ from gettext import gettext as _
 
 from licorn.foundations               import logging, exceptions, fsapi
 from licorn.foundations               import styles, readers, pyutils
+from licorn.foundations.ltrace        import ltrace
 from licorn.foundations.objects       import LicornConfigObject
 from licorn.core.internals.privileges import PrivilegesWhiteList
 
@@ -69,6 +70,8 @@ class LicornConfiguration (object):
 	def __init__(self):
 		""" Gather underlying system configuration and load it for licorn.* """
 
+		ltrace('configuration', 'start(__init__).')
+
 		if sys.getdefaultencoding() == "ascii":
 			reload(sys)
 			sys.setdefaultencoding("utf-8")
@@ -116,6 +119,8 @@ class LicornConfiguration (object):
 			raise exceptions.BadConfigurationError(
 				'''Configuration initialization failed:\n\t%s''' % e)
 
+		ltrace('configuration', 'end(__init__).')
+
 	#
 	# make configuration be usable as a context manager.
 	#
@@ -127,12 +132,16 @@ class LicornConfiguration (object):
 	def CleanUp(self):
 		"""This is a sort of destructor. Clean-up before being deleted..."""
 
+		ltrace('configuration', 'CleanUp().')
+
 		if os.path.exists(self.tmp_dir):
 			import shutil
 			# this is safe because tmp_dir was created with tempfile.mkdtemp()
 			shutil.rmtree(self.tmp_dir)
 	def VerifyPythonMods(self):
 		""" verify all required python modules are present on the system. """
+
+		ltrace('configuration', '> VerifyPythonMods().')
 
 		mods = (
 			('posix1e', 'python-pylibacl'),
@@ -147,8 +156,14 @@ class LicornConfiguration (object):
 				logging.error('You miss %s python module (package %s).' % (
 					mod, package))
 
+		ltrace('configuration', '< VerifyPythonMods().')
+
+
 	def SetBaseDirsAndFiles(self):
 		""" Find and create temporary, data and working directories."""
+
+		ltrace('configuration', '> SetBaseDirsAndFiles().')
+
 
 		self.mAutoPasswdSize         = 8
 		self.config_dir              = "/etc/licorn"
@@ -174,6 +189,8 @@ class LicornConfiguration (object):
 
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
+
+		ltrace('configuration', '< SetBaseDirsAndFiles().')
 
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
@@ -254,6 +271,8 @@ class LicornConfiguration (object):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
 
+		ltrace('configuration', '> LoadBaseConfiguration().')
+
 		try:
 			self._load_configuration(readers.shell_conf_load_dict(
 				self.main_config_file,
@@ -263,8 +282,13 @@ class LicornConfiguration (object):
 				# errno == 2 is "no such file or directory" -> don't worry if
 				# main config file isn't here, this is not required.
 				raise e
+
+		ltrace('configuration', '< LoadBaseConfiguration().')
+
 	def LoadBackends(self):
 		""" Load Configuration backends. """
+
+		ltrace('configuration', '> LoadBackends().')
 
 		from licorn.core.backends import backends
 
@@ -273,6 +297,8 @@ class LicornConfiguration (object):
 			if b.enabled and b.name == LicornConfiguration.backends.prefered:
 				self.backends.current = b
 				self._load_configuration(b.get_defaults())
+				ltrace('configuration',
+					'< LoadBackends() found prefered %s.' % str(b)[:-1])
 				return
 
 		for backend in backends:
@@ -280,7 +306,11 @@ class LicornConfiguration (object):
 			if b.enabled:
 				self.backends.current = b
 				self._load_configuration(b.get_defaults())
+				ltrace('configuration',
+					'< LoadBackends() found default %s.' % str(b)[:-1])
 				return
+
+		ltrace('configuration', '< LoadBackends().')
 
 		raise exceptions.LicornRuntimeError(
 			'''No suitable backend found. this shouldn't happen…''' )
