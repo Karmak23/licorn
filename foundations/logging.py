@@ -31,15 +31,13 @@ from licorn.foundations import hooks, styles, exceptions, options
 #gettext.bindtextdomain(_APP, _DIR)
 #gettext.textdomain(_APP)
 
-
-
 #
 # FIXME: define a policy explaining where we can call logging.error() (which impliesexit()), where we can't,
 # where we must raise an exception or an error.
 #
-# the short way: 
+# the short way:
 #		- in *any* licorn modules or submodules, we MUST raise, not call logging.error().
-#		- in the calling programs, we MUST catch the exceptions/errors raised and call 
+#		- in the calling programs, we MUST catch the exceptions/errors raised and call
 #		  logging.error() when appropriate.
 #
 
@@ -57,7 +55,7 @@ class LicornWarningsDB(object):
 
 		if cls.__singleton is None:
 			cls.__singleton = object.__new__(cls)
-		
+
 		return cls.__singleton
 	def __getitem__(self, key):
 		return LicornWarningsDB.__db[key]
@@ -81,8 +79,10 @@ def error(mesg, returncode = 1):
 	# a policy of what hook_funcs can/may/must do and can/may/must not.
 	#
 	hooks.run_hooks('onError')
-	
-	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s %s' % (mytime(), mesg.replace(styles.colors[styles.ST_NO], styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]))) + "\n")
+
+	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s %s' % (mytime(),
+		mesg.replace(styles.colors[styles.ST_NO],
+		styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]))) + "\n")
 	if __debug__:
 		import traceback
 		sys.stderr.write ('''>>> %s: %s
@@ -103,13 +103,14 @@ def warning(mesg, once = False):
 		except KeyError, e:
 			__warningsdb[mesg] = True
 
-	sys.stderr.write( "%s %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
+	sys.stderr.write( "%s %s %s\n" % (
+		styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
 
-	#warnings.warn(" %s %s\n" % (styles.stylize(styles.ST_WARNING, 'WARN'), mesg), RuntimeWarning, stacklevel = 2)
 def notice(mesg):
 	""" Display a non-styles.stylized informational message on stderr."""
 	if options.verbose >= options.VLEVEL_NOTICE:
-		sys.stderr.write(" %s %s %s\n" % (styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
+		sys.stderr.write(" %s %s %s\n" % (
+			styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
 def info(mesg):
 	""" Display a styles.stylized informational message on stderr."""
 	if options.verbose >= options.VLEVEL_INFO:
@@ -123,11 +124,13 @@ if __debug__:
 	def debug(mesg):
 		"""Display a styles.stylized debug message on stderr."""
 		if options.verbose >= options.VLEVEL_DEBUG:
-			sys.stderr.write( "%s: %s\n" % (styles.stylize(styles.ST_DEBUG, 'DEBUG'), mesg) )
+			sys.stderr.write( "%s: %s\n" % (
+				styles.stylize(styles.ST_DEBUG, 'DEBUG'), mesg) )
 	def debug2(mesg):
 		"""Display a styles.stylized debug2 message on stderr."""
 		if options.verbose >= options.VLEVEL_DEBUG2:
-			sys.stderr.write("%s: %s\n" % (styles.stylize(styles.ST_DEBUG, 'DEBUG2'), mesg))
+			sys.stderr.write("%s: %s\n" % (
+				styles.stylize(styles.ST_DEBUG, 'DEBUG2'), mesg))
 else:
 	def debug(mesg): pass
 	def debug2(mesg): pass
@@ -146,7 +149,7 @@ class RepairChoice(object):
 
 	def __getattr__(self, attrib):
 		return RepairChoice.__choice.__getattr(attrib)
-	
+
 	def __setattr__(self, attrib, value):
 		RepairChoice.__choice.__setattr__(attrib, value)
 def ask_for_repair(message, auto_answer = None):
@@ -176,9 +179,11 @@ def ask_for_repair(message, auto_answer = None):
 				old = termios.tcgetattr(fd)
 				new = termios.tcgetattr(fd)
 
-				# put the TTY is nearly raw mode to be able to get characters one by one
-				# (not to wait for newline to get one).
-				new[3] = new[3] & ~(termios.ECHO | termios.ICANON | termios.IEXTEN)                   # lflags
+				# put the TTY is nearly raw mode to be able to get characters
+				# one by one (not to wait for newline to get one).
+
+				# lflags
+				new[3] = new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
 				new[6][termios.VMIN] = 1
 				new[6][termios.VTIME] = 0
 				try:
@@ -189,7 +194,8 @@ def ask_for_repair(message, auto_answer = None):
 						sys.stderr.write("\n")
 						raise
 				finally:
-					# put it back in standard mode after input, whatever happened.
+					# put it back in standard mode after input, whatever
+					# happened. The terminal has to be restored.
 					termios.tcsetattr(fd, termios.TCSADRAIN, old)
 			else:
 				char = sys.stdin.read(1)
@@ -201,24 +207,34 @@ def ask_for_repair(message, auto_answer = None):
 				sys.stderr.write(styles.stylize(styles.ST_BAD, "No") + "\n")
 				return False
 			elif char in ( 'a', 'A' ):
-				sys.stderr.write(styles.stylize(styles.ST_OK, "Yes, all") + "\n")
+				sys.stderr.write(
+					tyles.stylize(styles.ST_OK, "Yes, all") + "\n")
 				repair_choice = True
 				return True
 			elif char in ( 's', 'S' ):
-				sys.stderr.write(styles.stylize(styles.ST_BAD, "No and skip all") + "\n")
+				sys.stderr.write(
+					styles.stylize(styles.ST_BAD, "No and skip all") + "\n")
 				repair_choice = False
 				return False
 			elif char in ( '?', 'h' ):
-				sys.stderr.write("\n\nUsage:\n%s: fix the current problem\n%s: don't fix the current problem, skip to next (if possible).\n%s: fix all remaining problems\n%s: skip all remaining problems (don't fix them).\n" % (styles.stylize(styles.ST_OK, 'y'), styles.stylize(styles.ST_BAD, 'n'), styles.stylize(styles.ST_OK, 'a'), styles.stylize(styles.ST_BAD, 's')))
+				sys.stderr.write('''\n\nUsage:\n%s: fix the current problem
+%s: don't fix the current problem, skip to next (if possible).\n%s: fix all '''
+'''remaining problems\n%s: skip all remaining problems (don't fix them).''' % (
+					styles.stylize(styles.ST_OK, 'y'),
+					styles.stylize(styles.ST_BAD, 'n'),
+					styles.stylize(styles.ST_OK, 'a'),
+					styles.stylize(styles.ST_BAD, 's')))
 			else:
 				if not sys.stdin.isatty():
-					raise exceptions.LicornRuntimeError("wrong command piped on stdin !")
+					raise exceptions.LicornRuntimeError(
+						"wrong command piped on stdin !")
 
 			sys.stderr.write("\n")
 			warning(message)
 			sys.stderr.write(MESG_FIX_PROBLEM_QUESTION)
 
-# used during an interactive repair session to remember when the user answer "yes to all" or "skip all".
+# used during an interactive repair session to remember when the user
+# answers "yes to all" or "skip all".
 repair_choice = RepairChoice()
 
 #
@@ -236,7 +252,7 @@ MESG_FIX_PROBLEM_QUESTION = "Fix this problem ? [Ynas], or ? for help: "
 
 ### Config ###
 
-# do not put unicode chars (or anything outside ascii chars) for this one, 
+# do not put unicode chars (or anything outside ascii chars) for this one,
 # it is converted/displayed before the system is in utf-8 !!
 CONFIG_NONASCII_CHARSET = "Licorn System Tools can't run on an ascii-only system, we need support for accentuated letters and foreign characters (chinese and others). Forcing system character encoding to utf-8.\n\nThe most probable cause of this error is that there is a « export LANG=C » or « unset LANG/LANGUAGE » somewhere. If you don't understand what all this stuff is about, please ask your system administrator."
 
@@ -254,7 +270,7 @@ SYSU_USER_DOESNT_EXIST   = "User %s doesn't exist."
 SYSU_MALFORMED_LOGIN     = "Malformed login `%s', must match /%s/."
 SYSU_MALFORMED_GECOS     = "Malformed GECOS field `%s', must match /%s/i."
 
-SYSU_CANT_CREATE_USER    = "Unable to create user %s !" 
+SYSU_CANT_CREATE_USER    = "Unable to create user %s !"
 
 SYSU_SPECIFY_LOGIN       = "You must specify a login (use --help to know how)."
 SYSU_SPECIFY_LGN_OR_UID  = "You must specify a login or a UID (use --help to know how)."
@@ -283,7 +299,7 @@ SYSK_MALFORMED_KEYWORD = "Malformed keyword name `%s', must match /%s/i."
 SYSK_MALFORMED_DESCR   = "Malformed keyword description `%s', must match /%s/i."
 
 ### Swissknives ###
-SWKN_DIR_IS_NOT_A_DIR  = "The directory %s is *not* a directory !" 
+SWKN_DIR_IS_NOT_A_DIR  = "The directory %s is *not* a directory !"
 SWKN_DIR_BAD_OWNERSHIP = "Invalid ownership for %s (it is %s:%s but should be %s:%s)."
 SWKN_INVALID_ACL       = "Invalid %s ACL for %s (it is %s but should be %s)."
 SWKN_INVALID_MODE      = "Invalid Unix mode for %s (it is %s but should be %s)."
