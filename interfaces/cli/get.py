@@ -3,7 +3,7 @@
 """
 Licorn CLI - http://dev.licorn.org/documentation/cli
 
-getent - display and export system information / lists.
+get - display and export system information / lists.
 
 Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
@@ -16,12 +16,12 @@ output = sys.stdout.write
 from licorn.foundations import logging, exceptions, options
 
 _app = {
-	"name"     		: "licorn-getent",
+	"name"     		: "licorn-get",
 	"description"	: "Licorn Get Entries",
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def getent_users(opts, args):
+def get_users(opts, args):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
 	from licorn.core import users
@@ -41,7 +41,7 @@ def getent_users(opts, args):
 
 	if data and data != '\n':
 		output(data)
-def getent_groups(opts, args):
+def get_groups(opts, args):
 	""" Get the list of POSIX groups (can be LDAP). """
 
 	from licorn.core import groups
@@ -75,7 +75,7 @@ def getent_groups(opts, args):
 
 	if data and data != '\n':
 		output(data)
-def getent_profiles(opts, args):
+def get_profiles(opts, args):
 	""" Get the list of user profiles. """
 
 	from licorn.core import profiles
@@ -93,19 +93,19 @@ def getent_profiles(opts, args):
 
 	if data:
 		output(data)
-def getent_keywords(opts, args):
+def get_keywords(opts, args):
 	""" Get the list of keywords. """
 
 	from licorn.core import keywords
-	
+
 	if opts.xml:
 		data = keywords.ExportXML()
-	else:		
+	else:
 		data = keywords.Export()
-	
+
 	if data and data != '\n':
 		output(data)
-def getent_webfilters(opts, args):
+def get_webfilters(opts, args):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
 	"""
@@ -158,18 +158,18 @@ def getent_webfilters(opts, args):
 			print fd.Export("whitelist", "domains")
 	else:
 		print "Options are: time-constraints | forbidden-destinations"
-def getent_workstations(opts, args):
+def get_workstations(opts, args):
 	""" Get the list of workstations known from the server (attached or not).
 	"""
-	raise NotImplementedError("getent_workstations not implemented.")
-def getent_internet_types(opts, args):
+	raise NotImplementedError("get_workstations not implemented.")
+def get_internet_types(opts, args):
 	""" Get the list of known internet connection types.
 
 		This list is static: there are only a fixed number of connexions
 		we know (pppoe, router on (eth0|eth1), analog modem, manual).
 	"""
-	raise NotImplementedError("getent_internet_types not implemented.")
-def getent_configuration(opts, args):
+	raise NotImplementedError("get_internet_types not implemented.")
+def get_configuration(opts, args):
 	""" Output th current Licorn system configuration.
 	"""
 	from licorn.core import configuration
@@ -181,21 +181,26 @@ def getent_configuration(opts, args):
 
 if __name__ == "__main__":
 
-	import argparser
+	import argparser as agp
 	from licorn.interfaces.cli import cli_main
-	
+
 	functions = {
-		'user':	         (argparser.getent_users_parse_arguments, getent_users),
-		'users':         (argparser.getent_users_parse_arguments, getent_users),
-		'passwd':        (argparser.getent_users_parse_arguments, getent_users),
-		'group':         (argparser.getent_groups_parse_arguments, getent_groups),
-		'groups':        (argparser.getent_groups_parse_arguments, getent_groups),
-		'profile':       (argparser.getent_profiles_parse_arguments, getent_profiles),
-		'profiles':      (argparser.getent_profiles_parse_arguments, getent_profiles),
-		'config':        (argparser.getent_configuration_parse_arguments, getent_configuration),
-		'configuration': (argparser.getent_configuration_parse_arguments, getent_configuration),
-		'kw':            (argparser.getent_keywords_parse_arguments, getent_keywords),
-		'keywords':      (argparser.getent_keywords_parse_arguments, getent_keywords),
+		'usr':	         (agp.get_users_parse_arguments, get_users),
+		'user':	         (agp.get_users_parse_arguments, get_users),
+		'users':         (agp.get_users_parse_arguments, get_users),
+		'passwd':        (agp.get_users_parse_arguments, get_users),
+		'grp':           (agp.get_groups_parse_arguments, get_groups),
+		'group':         (agp.get_groups_parse_arguments, get_groups),
+		'groups':        (agp.get_groups_parse_arguments, get_groups),
+		'profile':       (agp.get_profiles_parse_arguments, get_profiles),
+		'profiles':      (agp.get_profiles_parse_arguments, get_profiles),
+		'conf':          (agp.get_configuration_parse_arguments, get_configuration),
+		'config':        (agp.get_configuration_parse_arguments, get_configuration),
+		'configuration': (agp.get_configuration_parse_arguments, get_configuration),
+		'kw':            (agp.get_keywords_parse_arguments, get_keywords),
+		'tag':           (agp.get_keywords_parse_arguments, get_keywords),
+		'tags':          (agp.get_keywords_parse_arguments, get_keywords),
+		'keywords':      (agp.get_keywords_parse_arguments, get_keywords),
 	}
 
 	cli_main(functions, _app)

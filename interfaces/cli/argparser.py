@@ -3,7 +3,7 @@
 Licorn CLI - http://dev.licorn.org/documentation/cli
 
 argparser - command-line argument parser library.
-Contains all argument parsers for all licorn system tools (getent, add, modify, delete, check)
+Contains all argument parsers for all licorn system tools (get, add, modify, delete, check)
 
 Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>,
 Copyright (C) 2005,2007 Régis Cobrun <reg53fr@yahoo.fr>
@@ -26,7 +26,7 @@ def __common_behaviour_group(app, parser, mode = 'any'):
 	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options "),
 							"Modify decisions / apply filter(s) on data manipulated by program.")
 
-	if mode != "getent":
+	if mode != "get":
 		if mode == "check":
 			behaviorgroup.add_option("-e", "--extended",
 				action="store_false", dest="minimal", default = True,
@@ -62,10 +62,10 @@ def general_parse_arguments(app):
 	usage_text = "\n\t%s [[%s] ...] [[%s] ...]\n\n\t%s is one of: " \
 		% (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "mode"), styles.stylize(styles.ST_OPTION, "options"), styles.stylize(styles.ST_MODE, "mode"))
 
-	if app["name"] in ( "licorn-getent", "licorn-modify", "licorn-check" ):
+	if app["name"] in ( "licorn-get", "licorn-modify", "licorn-check" ):
 		usage_text +=  "config[uration], "
 
-	if app["name"] in ( "licorn-getent", "licorn-check" ):
+	if app["name"] in ( "licorn-get", "licorn-check" ):
 		usage_text += "user[s], group[s], profile[s], keywords."
 
 	else:
@@ -95,8 +95,8 @@ def licornd_parse_arguments(app):
 	return (parser.parse_args())
 
 ### Getent arguments ###
-def __getent_filter_group(app, parser, mode):
-	"""Build Filter OptionGroup for all getent variants."""
+def __get_filter_group(app, parser, mode):
+	"""Build Filter OptionGroup for all get variants."""
 
 	filtergroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Filter options "),
 					"Filter data displayed / exported (WARNING: filters are not cumulative ! Unexpected behaviour is to be expected if you use more than one filter option).")
@@ -112,7 +112,7 @@ def __getent_filter_group(app, parser, mode):
 	if mode is 'users':
 		filtergroup.add_option("--uid",
 			action="store", type="int", dest="uid", default = None,
-			help="Display only one user information (only valid for getent users).")
+			help="Display only one user information (only valid for get users).")
 
 	elif mode is 'groups':
 		filtergroup.add_option("--privileged",
@@ -137,7 +137,7 @@ def __getent_filter_group(app, parser, mode):
 			help="Profile's primary group. Display only one profile information, given its primary group.")
 
 	return filtergroup
-def __getent_output_group(app, parser, mode):
+def __get_output_group(app, parser, mode):
 	"""TODO"""
 
 	outputgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Output options "),
@@ -163,59 +163,59 @@ def __getent_output_group(app, parser, mode):
 			help="Output data as XML (no colors, no verbose). If not set, %s (for human beiings, but not easily parsable format)." % styles.stylize(styles.ST_DEFAULT, "default is to output for CLI"))
 
 	return outputgroup
-def getent_users_parse_arguments(app):
-	""" Integrated help and options / arguments for « getent user(s) »."""
+def get_users_parse_arguments(app):
+	""" Integrated help and options / arguments for « get user(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
 		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "users"), styles.stylize(styles.ST_OPTION, "option") )
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_filter_group(app, parser, 'users'))
-	parser.add_option_group(__getent_output_group(app, parser,'users'))
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_filter_group(app, parser, 'users'))
+	parser.add_option_group(__get_output_group(app, parser,'users'))
 
 	return (parser.parse_args())
-def getent_groups_parse_arguments(app):
-	""" Integrated help and options / arguments for « getent group(s) »."""
+def get_groups_parse_arguments(app):
+	""" Integrated help and options / arguments for « get group(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
 		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "groups"), styles.stylize(styles.ST_OPTION, "option") )
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_filter_group(app, parser, 'groups'))
-	parser.add_option_group(__getent_output_group(app, parser,'groups'))
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_filter_group(app, parser, 'groups'))
+	parser.add_option_group(__get_output_group(app, parser,'groups'))
 
 	return (parser.parse_args())
-def getent_keywords_parse_arguments(app):
-	""" Integrated help and options / arguments for « getent keyword(s) »."""
+def get_keywords_parse_arguments(app):
+	""" Integrated help and options / arguments for « get keyword(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
 		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "keywords"), styles.stylize(styles.ST_OPTION, "option") )
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_output_group(app, parser,'keywords'))
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_output_group(app, parser,'keywords'))
 
 	return (parser.parse_args())
-def getent_profiles_parse_arguments(app):
-	""" Integrated help and options / arguments for « getent profile(s) »."""
+def get_profiles_parse_arguments(app):
+	""" Integrated help and options / arguments for « get profile(s) »."""
 
 	usage_text = "\n\t%s %s [[%s] ...]" \
 		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "profiles"), styles.stylize(styles.ST_OPTION, "option") )
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_filter_group(app, parser, 'profiles'))
-	parser.add_option_group(__getent_output_group(app, parser,'profiles'))
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_filter_group(app, parser, 'profiles'))
+	parser.add_option_group(__get_output_group(app, parser,'profiles'))
 
 	return (parser.parse_args())
-def getent_configuration_parse_arguments(app):
-	""" Integrated help and options / arguments for « getent »."""
+def get_configuration_parse_arguments(app):
+	""" Integrated help and options / arguments for « get »."""
 
 	usage_text = "\n\t%s config [[%s] ...]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option")) \
 		+ "\t%s config [[%s] ...] %s [--short|--bourne-shell|--c-shell|--php-code] ]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option"), styles.stylize(styles.ST_OPTION, "category")) \
@@ -223,9 +223,9 @@ def getent_configuration_parse_arguments(app):
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'getent'))
-	parser.add_option_group(__getent_filter_group(app, parser,'configuration'))
-	parser.add_option_group(__getent_output_group(app, parser,'configuration'))
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_filter_group(app, parser,'configuration'))
+	parser.add_option_group(__get_output_group(app, parser,'configuration'))
 
 	return (parser.parse_args())
 
