@@ -14,7 +14,8 @@ from Queue              import Queue
 from threading          import Thread, Event
 
 # licorn internals
-import exceptions, trace
+import exceptions
+from ltrace import ltrace
 
 class LicornConfigObject:
 	""" a base class just to be able to add/remove custom attributes
@@ -230,6 +231,8 @@ class UGBackend(Singleton):
 		return '%s\n' % str(self.__class__).rsplit('.', 2)[1]
 	def __init__(self, configuration, users = None, groups = None):
 
+		ltrace('objects', '> UGBackend.')
+
 		UGBackend.configuration = configuration
 
 		if groups:
@@ -238,6 +241,8 @@ class UGBackend(Singleton):
 				UGBackend.users = UGBackend.groups.users
 		if users:
 			UGBackend.users = users
+
+		ltrace('objects', '< UGBackend.')
 
 		# for an abstract backend, this is quite sane.
 		self.enabled = False
