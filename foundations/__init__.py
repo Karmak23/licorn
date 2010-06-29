@@ -13,17 +13,18 @@ __version__ = '@@VERSION@@'
 version     = __version__
 
 __all__ = [
-	# TODO: move this elsewhere ? interfaces/cli ? 
-	#		pull this out of 'foundations". see ROADMAP.
-	'styles',
-	'logging',       
+	# DEBUG / process tracing
+	'ltrace',
+	# basic output (CLI colors, verbose / quiet, etc)
 	'options',
+	'styles',
+	'logging',
 
 	# internal workflows mechanisms
 	'exceptions',
 	'hooks',
 	'transactions',
-	
+
 	# classes, objects, very low-level utility functions
 	'objects',
 	'fsapi',
