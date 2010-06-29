@@ -30,7 +30,7 @@ class UsersController:
 
 	def __init__(self, configuration):
 		""" Create the user accounts list from the underlying system.
-			The arguments are None only for getent (ie Export and ExportXml) """
+			The arguments are None only for get (ie Export and ExportXml) """
 
 		if UsersController.configuration is None:
 			UsersController.configuration = configuration
@@ -71,7 +71,7 @@ class UsersController:
 
 		#
 		# filter_applied is used to note if something has been selected (or
-		# tried to). Without this, «getent users» on a system with no users
+		# tried to). Without this, «get users» on a system with no users
 		# returns all system accounts, but it should return nothing, except
 		# when given --all of course. Even if nothing match the filter given
 		# we must note that a filter has been applied, in order to output a

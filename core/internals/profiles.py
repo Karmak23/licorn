@@ -80,7 +80,7 @@ class ProfilesController:
 
 		#
 		# filter_applied is used to note if something has been selected (or tried to).
-		# without this, «getent profiles» on a system with no profiles returns all system accounts.
+		# without this, «get profiles» on a system with no profiles returns all system accounts.
 		# even if nothing match the filter given we must note that a filter has been applied,
 		# in order to output a coherent result.
 		#

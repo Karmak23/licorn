@@ -139,7 +139,7 @@ class GroupsController:
 				self.filtered_groups.append(gid)
 
 	def ExportCLI(self):
-		""" Export the groups list to human readable (= « getent group ») form.  """
+		""" Export the groups list to human readable (= « get group ») form.  """
 		if self.filter_applied:
 			gids = self.filtered_groups
 		else:
@@ -147,17 +147,17 @@ class GroupsController:
 		gids.sort()
 
 		def ExportOneGroupFromGid(gid, mygroups = GroupsController.groups):
-			""" Export groups the way UNIX getent does, separating fields with ":" """
+			""" Export groups the way UNIX get does, separating fields with ":" """
 
 			accountdata = [	GroupsController.groups[gid]['name'],
 						mygroups[gid]['passwd'],
 						str(gid) ]
 
 			#
-			# TODO: implement a fully compatible output with traditionnal getent
+			# TODO: implement a fully compatible output with traditionnal get
 			# when there is no «long» option. For exemple, skel is an addition, it must
 			# not be displayed (only when options.long).
-			# HINT: put LICORN additions *after* standard getent values.
+			# HINT: put LICORN additions *after* standard get values.
 			#
 			if self.is_system_gid(gid):
 				accountdata.extend( [ "", ",".join(mygroups[gid]['members']), mygroups[gid]['description'] ] )
