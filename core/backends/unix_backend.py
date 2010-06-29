@@ -11,7 +11,7 @@ from licorn.foundations         import objects, readers
 from licorn.foundations.objects import UGBackend
 
 class unix_controller(UGBackend):
-	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)"""
+	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
 		UGBackend.__init__(self, configuration, users, groups)
 
@@ -20,6 +20,10 @@ class unix_controller(UGBackend):
 		# preference over this one.
 		self.name    = "Unix"
 		self.enabled = True
+
+		# nsswitch compatibility
+		self.compat  = ('compat', 'files')
+
 		self.warnings = warnings
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
@@ -34,9 +38,10 @@ class unix_controller(UGBackend):
 				'gecos'        : entry[4],
 				'homeDirectory': entry[5],
 				'loginShell'   : entry[6],
-				'groups'       : set()		# a cache which will
+				'groups'       : set(),		# a cache which will
 											# eventually be filled by
 											# groups.__init__() and others.
+				'backend'      : self.name
 				}
 
 			# populate ['groups'] ; this code is duplicated in groups.__init__,
@@ -195,7 +200,8 @@ class unix_controller(UGBackend):
 				'members'		: members,
 				'description'	:  "" ,
 				'skel'			:  "" ,
-				'permissive'    : None
+				'permissive'    : None,
+				'backend'       : self.name
 				}
 
 			# this will be used as a cache by name_to_gid()
@@ -292,6 +298,9 @@ class unix_controller(UGBackend):
 			return
 
 		for uid in uids:
+			if users[uid]['backend'] != self.name:
+				continue
+
 			etcpasswd.append(":".join((
 										users[uid]['login'],
 										"x",
@@ -346,6 +355,8 @@ class unix_controller(UGBackend):
 		gids.sort()
 
 		for gid in gids:
+			if groups[gid]['backend'] != self.name:
+				continue
 			# logging.debug2("Writing group %s (%s)." % (groups[gid]['name'],
 			#  groups[gid]))
 

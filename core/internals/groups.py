@@ -43,8 +43,10 @@ class GroupsController:
 
 		self.warnings = warnings
 
-		self.backend = self.configuration.backends.current
-		self.backend.set_groups_controller(self)
+		self.backends = self.configuration.backends
+
+		for b in self.backends :
+			b.set_groups_controller(self)
 
 		# see licorn.core.users for details
 		self.filter_applied = False
@@ -62,9 +64,17 @@ class GroupsController:
 		self.WriteConf()
 	def reload(self):
 		""" load or reload internal data structures from files on disk. """
-		GroupsController.groups, GroupsController.name_cache = self.backend.load_groups()
+
+		GroupsController.groups     = {}
+		GroupsController.name_cache = {}
+
+		for b in self.backends:
+			g, c = b.load_groups()
+			GroupsController.groups.update(g)
+			GroupsController.name_cache.update(c)
+
 	def GetHiddenState(self):
-		""" see if /home/groups is readable or not.
+		""" See if /home/groups is readable or not.
 			FIXME: do not hardcode "users".
 		"""
 
@@ -90,7 +100,8 @@ class GroupsController:
 		logging.progress('%s: saving data structures to disk.' % \
 			self.pretty_name)
 
-		self.backend.save_groups(self.groups)
+		for b in self.backends :
+			b.save_groups(self.groups)
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
 			- 'system groups': show only «system» groups (root, bin, daemon, apache...),

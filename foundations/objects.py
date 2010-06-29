@@ -228,10 +228,12 @@ class UGBackend(Singleton):
 	groups = None
 
 	def __str__(self):
-		return '%s\n' % str(self.__class__).rsplit('.', 2)[1]
+		return self.name
+	def __repr__(self):
+		return self.name
 	def __init__(self, configuration, users = None, groups = None):
 
-		ltrace('objects', '> UGBackend.')
+		ltrace('objects', '> UGBackend.__init__().')
 
 		UGBackend.configuration = configuration
 
@@ -242,10 +244,12 @@ class UGBackend(Singleton):
 		if users:
 			UGBackend.users = users
 
-		ltrace('objects', '< UGBackend.')
+		ltrace('objects', '< UGBackend.__init__().')
 
 		# for an abstract backend, this is quite sane.
 		self.enabled = False
+	def initialize(self):
+		pass
 	def set_users_controller(self, users):
 		UGBackend.users = users
 	def set_groups_controller(self, groups):
@@ -253,6 +257,8 @@ class UGBackend(Singleton):
 		UGBackend.users = groups.users
 	def get_defaults(self):
 		return {}
+	def load_defaults(self):
+		pass
 	def save_users(self):
 		""" Abstract method. """
 		pass

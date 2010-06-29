@@ -38,8 +38,9 @@ class UsersController:
 		# see Select()
 		self.filter_applied = False
 
-		self.backend = self.configuration.backends.current
-		self.backend.set_users_controller(self)
+		self.backends = self.configuration.backends
+		for b in self.backends :
+			b.set_users_controller(self)
 
 		if UsersController.users is None:
 			self.reload()
@@ -48,8 +49,14 @@ class UsersController:
 		self.WriteConf()
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
-		UsersController.users, UsersController.login_cache = \
-			self.backend.load_users(self.groups)
+
+		UsersController.users       = {}
+		UsersController.login_cache = {}
+
+		for b in self.backends:
+			u, c = b.load_users(self.groups)
+			UsersController.users.update(u)
+			UsersController.login_cache.update(c)
 
 	def SetProfiles(self, profiles):
 		UsersController.profiles = profiles

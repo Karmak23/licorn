@@ -11,6 +11,7 @@ import ldap
 
 from licorn.foundations         import logging, exceptions, styles, pyutils
 from licorn.foundations         import objects, readers, process
+from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.objects import LicornConfigObject, UGBackend
 
 class ldap_controller(UGBackend):
@@ -21,7 +22,6 @@ class ldap_controller(UGBackend):
 		dn, etc.
 	"""
 	def __init__(self, configuration, users = None, groups = None):
-		UGBackend.__init__(self, configuration, users, groups)
 		"""
 			Initialize the LDAP backend.
 
@@ -31,14 +31,60 @@ class ldap_controller(UGBackend):
 			If that fails, try to guess a little and help user resolving issue.
 			else, just fail miserably.
 		"""
+
+		UGBackend.__init__(self, configuration, users, groups)
+
+		ltrace('ldap', '| __init__().')
+
 		self.name    = "LDAP"
 		self.enabled = False
+
+		# nsswitch compatibility
+		self.compat  = ('ldap')
+	def load_defaults(self):
+		""" Return mandatory defaults needed for LDAP Backend.
+
+		TODO: what the hell is good to set defaults if pam-ldap and libnss-ldap
+		are not used ?
+		If they are in use, everything is already set up in system files, no ?
+		"""
+
+		ltrace('ldap', '> load_defaults() %s.' % self.enabled)
+
+		base = 'dc=licorn,dc=local'
+
+		if self.configuration.daemon.role == 'client':
+			waited = 0.1
+			while self.configuration.server is None:
+				#
+				time.sleep(0.1)
+				wait += 0.1
+				if wait > 5:
+					# FIXME: this is not the best thing to do, but server
+					# detection needs a little more love and thinking.
+					raise exceptions.LicornRuntimeException(
+						'No server detected, bailing out…' )
+			server = self.configuration.server
+
+		else:
+			server = '127.0.0.1'
+
+		self.base       = base
+		self.uri        = 'ldapi:///%s' % server
+		self.rootbinddn = 'cn=admin,%s' % base
+		self.secret     = ''
+
+		ltrace('ldap', '< load_defaults() %s.' % self.enabled)
+
+	def initialize(self):
+
+		self.load_defaults()
+
+		ltrace('ldap', '> initialize() %s.' % self.enabled)
+
 		self.files   = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
-
-		if not configuration.backends.ldap.enabled:
-			return
 
 		try:
 			for (key, value) in readers.simple_conf_load_dict(
@@ -59,20 +105,24 @@ class ldap_controller(UGBackend):
 					# permission denied.
 					# we will bind as current user.
 					self.bind_dn = 'uid=%s,%s' % (process.whoami(), self.base)
+					#
+					# TODO: ask the user for his/her password, because the
+					# server will refuse a binding without a password.
+					#
+					self.secret = ''
 
 				else:
 					raise e
 
 			self.check_defaults()
 
-			logging.info('%s: binding as %s.' % (
-			self.name, styles.stylize(styles.ST_LOGIN, self.bind_dn)))
-
-			dir(ldap)
+			ltrace('ldap', 'binding as %s.' % (
+				styles.stylize(styles.ST_LOGIN, self.bind_dn)))
 
 			self.ldap_conn = ldap.initialize(self.uri)
 
-			self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
+			# is this necessary ?
+			#self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
 
 			self.enabled = True
 
@@ -87,6 +137,8 @@ class ldap_controller(UGBackend):
 				# just discard the LDAP backend completely.
 			else:
 				raise e
+		ltrace('ldap', '< initialize() %s.' % self.enabled)
+
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
@@ -102,13 +154,15 @@ class ldap_controller(UGBackend):
 
 	def check_database(self, minimal=True, batch=False, auto_answer=None):
 
+		ltrace('ldap', '> check_database()')
+
 		if minimal:
 			#
 			# TODO: check frontend only
 			#
-			return False
-		else:
-			return False
+			ltrace('ldap', '< check_database() minimal %s.' % styles.stylize(
+				styles.ST_OK, 'True'))
+			return True
 
 		if self.check_system(minimal, batch, auto_answer):
 			#
@@ -121,9 +175,15 @@ class ldap_controller(UGBackend):
 			#
 			# backend
 			# frontend
-			pass
+			ltrace('ldap', '< check_database() %s.' % styles.stylize(
+				styles.ST_OK, 'True'))
+			return True
 		else:
+			ltrace('ldap', '< check_database() %s.' % styles.stylize(
+				styles.ST_BAD, 'False'))
 			return False
+
+
 	def check_database_frontend(self, minimal=True, batch=False,
 		auto_answer=None):
 		""" Check the LDAP database frontend (high-level check). """
@@ -137,10 +197,14 @@ class ldap_controller(UGBackend):
 	def check_system(self, minimal=True, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
+		ltrace('ldap', '> check_system()')
+
 		if not os.path.exists(self.files.ldap_conf):
 			# if this file exists, libpam-ldap is installed. It is fine to
 			# assume that we have to use it, so start to check it. Else,
 			# just discard the current module.
+			ltrace('ldap', '< check_database() %s.' % styles.stylize(
+				styles.ST_BAD, 'False'))
 			return False
 
 		if pyutils.check_file_against_dict(self.files.ldap_conf,
@@ -204,45 +268,19 @@ class ldap_controller(UGBackend):
 		# TODO: check ldap_ldap_conf, or verify it is useless.
 		#
 
+		ltrace('ldap', '< check_database() %s.' % styles.stylize(
+			styles.ST_OK, 'True'))
 		return True
 
-	def get_defaults(self):
-		""" Return mandatory defaults needed for LDAP Backend.
 
-		TODO: what the hell is good to set defaults if pam-ldap and libnss-ldap
-		are not used ?
-		If they are in use, everything is already set up in system files, no ?
-		"""
-
-		base_dn = 'dc=licorn,dc=local'
-
-		if self.configuration.daemon.role == 'client':
-			waited = 0.1
-			while self.configuration.server is None:
-				#
-				time.sleep(0.1)
-				wait += 0.1
-				if wait > 5:
-					# FIXME: this is not the best thing to do, but server
-					# detection needs a little more love and thinking.
-					raise exceptions.LicornRuntimeException(
-						'No server detected, bailing out…' )
-			server = self.configuration.server
-
-		else:
-			server = '127.0.0.1'
-
-		return {
-			'backends.ldap.base_dn'    : base_dn,
-			'backends.ldap.uri'        : 'ldapi:///%s' % server,
-			'backends.ldap.rootbinddn' : 'cn=admin,%s' % base_dn,
-			'backends.ldap.secret'     : '',
-			'backends.ldap.enabled'    : False
-			}
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
 		login_cache = {}
+
+		ltrace('ldap', '>< load_users()')
+
+		return users, login_cache
 
 		for entry in readers.ug_conf_load_list("/etc/passwd"):
 			temp_user_dict	= {
@@ -324,7 +362,7 @@ class ldap_controller(UGBackend):
 			if e.errno != 13:
 				raise e
 				# don't raise an exception or display a warning, this is
-				# harmless if we are loading data for getent, and any other
+				# harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admin.
 
@@ -336,17 +374,24 @@ class ldap_controller(UGBackend):
 		name_cache = {}
 		extras      = []
 
+		ltrace('ldap', '> load_groups()')
+
 		ldap_result = self.ldap_conn.search(
-			'%s,%s' % (self.nss_base_group, self.base_dn),
+			'%s,%s' % (self.nss_base_group, self.base),
 			ldap.SCOPE_SUBTREE,
 			'(objectClass=posixGroup)')
 
-		result = self.ldap_conn.result(ldap_result)
-		print result
-		while result != ():
-
-
+		try :
 			result = self.ldap_conn.result(ldap_result)
+			print result
+			while result != ():
+
+
+				result = self.ldap_conn.result(ldap_result)
+				print result
+
+		except ldap.NO_SUCH_OBJECT:
+			return groups, name_cache
 
 		is_allowed  = True
 		try:
@@ -384,7 +429,7 @@ class ldap_controller(UGBackend):
 				members   = entry[3].split(',')
 				to_remove = []
 
-				# update the cache to avoid massive CPU load in 'getent users
+				# update the cache to avoid massive CPU load in 'get users
 				# --long'. This code is also present in users.__init__, to cope
 				# with users/groups load in different orders.
 				if UGBackend.users:
@@ -414,7 +459,8 @@ class ldap_controller(UGBackend):
 				'members'		: members,
 				'description'	:  "" ,
 				'skel'			:  "" ,
-				'permissive'    : None
+				'permissive'    : None,
+				'backend'       : self.name
 				}
 
 			# this will be used as a cache by name_to_gid()
@@ -492,8 +538,15 @@ class ldap_controller(UGBackend):
 					logging.warning("licorn.core.groups: can't correct" \
 					" inconsistencies (was: %s)." % e)
 
+		ltrace('ldap', '< load_groups()')
 		return groups, name_cache
 	def save_users(self, users):
+		""" save users coming from LDAP... Well, into LDAP. """
+		#if users[uid]['backend'] != self.name:
+		#	continue
 		pass
 	def save_groups(self, groups):
+		""" """
+		#if users[uid]['backend'] != self.name:
+		#	continue
 		pass

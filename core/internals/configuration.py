@@ -111,7 +111,8 @@ class LicornConfiguration (object):
 			self.LoadBaseConfiguration()
 			self.SetMissingMandatoryDefauts()
 
-			self.LoadBackends()
+			self.load_nsswitch()
+			self.load_backends()
 
 			# TODO: monitor configuration files from a thread !
 
@@ -285,34 +286,35 @@ class LicornConfiguration (object):
 
 		ltrace('configuration', '< LoadBaseConfiguration().')
 
-	def LoadBackends(self):
+	def load_nsswitch(self):
+		""" Load the NS switch file (GLIBC system only). """
+
+		self.nsswitch = (
+			readers.simple_conf_load_dict_lists('/etc/nsswitch.conf'))
+
+	def load_backends(self):
 		""" Load Configuration backends. """
 
 		ltrace('configuration', '> LoadBackends().')
 
 		from licorn.core.backends import backends
+		self.backends = []
 
-		for backend in backends:
-			b = backend(self)
-			if b.enabled and b.name == LicornConfiguration.backends.prefered:
-				self.backends.current = b
-				self._load_configuration(b.get_defaults())
-				ltrace('configuration',
-					'< LoadBackends() found prefered %s.' % str(b)[:-1])
-				return
+		for ns_service in self.nsswitch['passwd']:
+			for backend in backends:
+				b = backend(self)
 
-		for backend in backends:
-			b = backend(self)
-			if b.enabled:
-				self.backends.current = b
-				self._load_configuration(b.get_defaults())
-				ltrace('configuration',
-					'< LoadBackends() found default %s.' % str(b)[:-1])
-				return
+				if ns_service in b.compat:
+					b.initialize()
+					if b.enabled:
+						ltrace('configuration',
+					'load_backend() found %s.' % str(b)[:-1])
+						self.backends.append(b)
 
 		ltrace('configuration', '< LoadBackends().')
 
-		raise exceptions.LicornRuntimeError(
+		if self.backends == []:
+			raise exceptions.LicornRuntimeError(
 			'''No suitable backend found. this shouldn't happen…''' )
 
 	def CreateConfigurationDir(self):
@@ -965,7 +967,7 @@ class LicornConfiguration (object):
 				data += "%s\n" % str(self.__getattribute__(attr))
 			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults',
 				'ssh', 'backends'):
-				data += "\n%s" % str(getattr(self, attr))
+				data += "\n\t%s\n" % str(getattr(self, attr))
 			else:
 				data += ('''%s, to be implemented in '''
 					'''licorn.core.configuration.Export()\n''') % \

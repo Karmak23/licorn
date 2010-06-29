@@ -60,7 +60,7 @@ def	simple_conf_load_dict(filename=None, data=None, convert='semi'):
 		and return a dictionary of param->value filled with the directives
 		contained in the configuration file.
 
-		Warning, for performance optimisations in later comparisons, digit
+		Warning, for performance optimisation in later comparisons, digit
 		values are converted to int().
 
 		Typical use case: /etc/login.defs, /etc/ldap/ldap.conf
