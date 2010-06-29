@@ -14,10 +14,8 @@ for entry in os.listdir(__path__[0]):
 	if entry == '__init__.py':
 		continue
 	if entry[-3:] == '.py':
-		modname = entry[:-3]
-		exec('from licorn.core.backends.%s import %s_backend' % (modname, modname))
-
-my_locals = locals()
-for modname in my_locals.keys():
-	if modname[-8:] == '_backend':
-		backends.append(my_locals[modname])
+		modname = entry[:-3]		# minus '.py'
+		backend_name = entry[:-11]	# minus '_backend.py'
+		exec('from licorn.core.backends.%s import %s_controller as %s' % (
+			modname, backend_name, backend_name))
+		exec('backends.append(%s)' % backend_name)
