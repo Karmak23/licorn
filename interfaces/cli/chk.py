@@ -12,7 +12,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, os
 
-from licorn.foundations import logging, exceptions, options, objects
+from licorn.foundations import logging, exceptions
 from licorn.core        import configuration, users, groups
 
 _app = {
@@ -83,13 +83,16 @@ def check_configuration():
 if __name__ == "__main__":
 
 	try:
-		giantLock = objects.FileLock(configuration, "giant", 10)
+		from licorn.foundations.objects import FileLock
+		giantLock = FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:
 		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
 
 	try:
 		try:
+
+			from licorn.foundations import options
 
 			if "--no-colors" in sys.argv:
 				options.SetNoColors(True)
