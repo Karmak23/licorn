@@ -14,7 +14,7 @@ from Queue              import Queue
 from threading          import Thread, Event
 
 # licorn internals
-import exceptions
+import exceptions, styles
 from ltrace import ltrace
 
 class LicornConfigObject:
@@ -70,14 +70,14 @@ class LicornThread(Thread):
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
-		#logging.progress('%s: thread initialized.' % self.name)
+		ltrace('thread', '%s: thread initialized.' % self.name)
 	def dispatch_message(self, msg):
 		""" get an incoming message in a generic way. """
 		self._input_queue.put(msg)
 	def run(self):
 		""" Process incoming messages until stop Event() is set. """
 
-		logging.progress('%s: thread started.' % self.name)
+		ltrace('thread', '%s: thread started.' % self.name)
 
 		while not self._stop_event.isSet():
 			data = self._input_queue.get()
@@ -86,12 +86,12 @@ class LicornThread(Thread):
 			self.process_message(data)
 			self._input_queue.task_done()
 
-		logging.progress('%s: thread ended.' % self.name)
+		ltrace('thread', '%s: thread ended.' % self.name)
 	def stop(self):
 		""" Stop current Thread
 		and put a special None entry in the queue, to be
 		sure that self.run() method exits properly. """
-		logging.progress('%s: stopping thread.' % self.name)
+		ltrace('thread', '%s: stopping thread.' % self.name)
 		self._stop_event.set()
 		self._input_queue.put(None)
 
@@ -153,7 +153,7 @@ class FileLock:
 			self.filename = "%s/%s.lock" % (configuration.user_dir, filename)
 			self.lockname = filename
 
-		logging.progress('%s: new instance with %s.' % (self.pretty_name,
+		ltrace('objects', '%s: new instance with %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 		self.waitmax = waitmax
@@ -170,7 +170,7 @@ class FileLock:
 
 	def Lock(self):
 		"""Acquire a lock, i.e. create $file.lock."""
-		logging.progress('%s: pseudo-locking %s.' % (self.pretty_name,
+		ltrace('objects', '%s: pseudo-locking %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.lockname)))
 
 		try:
@@ -197,13 +197,13 @@ class FileLock:
 			sys.stderr.write("\n")
 			raise
 
-		logging.progress('%s: successfully locked %s.' % (self.pretty_name,
+		ltrace('objects', '%s: successfully locked %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 	def Unlock(self):
 		"""Free the lock by removing the associated lockfile."""
 
-		logging.progress('%s: removing lock on %s.' % (self.pretty_name,
+		ltrace('objects', '%s: removing lock on %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.lockname)))
 
 		if os.path.exists(self.filename):
@@ -212,7 +212,7 @@ class FileLock:
 			except (OSError):
 				raise OSError, "can't remove lockfile %s." % self.filename
 
-		logging.progress('%s: successfully unlocked %s.' % (self.pretty_name,
+		ltrace('objects', '%s: successfully unlocked %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 	def IsLocked(self):
@@ -233,7 +233,11 @@ class UGBackend(Singleton):
 		return self.name
 	def __init__(self, configuration, users = None, groups = None):
 
-		ltrace('objects', '> UGBackend.__init__().')
+		ltrace('objects', '| UGBackend.__init__().')
+
+		self.enabled  = False
+		self.compat   = ()
+		self.priority = 0
 
 		UGBackend.configuration = configuration
 
@@ -244,12 +248,10 @@ class UGBackend(Singleton):
 		if users:
 			UGBackend.users = users
 
-		ltrace('objects', '< UGBackend.__init__().')
-
 		# for an abstract backend, this is quite sane.
 		self.enabled = False
 	def initialize(self):
-		pass
+		return self.enabled
 	def set_users_controller(self, users):
 		UGBackend.users = users
 	def set_groups_controller(self, groups):
