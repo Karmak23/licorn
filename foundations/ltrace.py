@@ -48,6 +48,8 @@ trc['crawler']       = 0x0f000000
 from os   import getenv
 from time import time, localtime, strftime
 
+import styles
+
 def mytime():
 	""" close http://dev.licorn.org/ticket/46 """
 	t = time()
@@ -65,7 +67,8 @@ if getenv('LICORN_TRACE', None) != None:
 
 	def ltrace(module, message):
 		if  ltrace_level & trc[module] :
-			sys.stderr.write('TRACE%s %s: %s\n' % (
-				mytime(), module, message))
+			sys.stderr.write('%s %s: %s\n' % (
+				styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
+				module, message))
 else:
 	def ltrace(module, message): pass
