@@ -25,7 +25,7 @@ ST_PURPLE = 9
 ST_MAGENTA= 10
 ST_CADET  = 11
 ST_CYAN   = 12
-ST_GRAY   = 13
+ST_GREY   = 13
 ST_WHITE  = 14
 
 __ascii = {
@@ -41,7 +41,7 @@ __ascii = {
 	ST_MAGENTA: '\x1b[01;35m',
 	ST_CADET : '\x1b[00;36m',
 	ST_CYAN  : '\x1b[01;36m',
-	ST_GRAY  : '\x1b[00;37m',
+	ST_GREY  : '\x1b[00;37m',
 	ST_WHITE : '\x1b[01;37m',
 	ST_NO    : '\x1b[0;0m'
 	}
@@ -81,6 +81,7 @@ ST_NOTICE    = 32
 ST_INFO      = 33
 ST_WARNING   = 34
 ST_ERROR     = 35
+ST_COMMENT   = 36
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -117,27 +118,32 @@ colors = {
 	ST_NOTICE   : __ascii[ST_YELLOW],
 	ST_INFO     : __ascii[ST_YELLOW],
 	ST_WARNING  : __ascii[ST_RED],
-	ST_ERROR    : __ascii[ST_RED]
+	ST_ERROR    : __ascii[ST_RED],
+	ST_COMMENT  : __ascii[ST_BROWN]
 	}
 
 
 def stylize_choose(type, what):
-	""" On first call of the function, choose what styling will be done for the entire run. """	
+	""" On first call of the function, choose what styling will be done for the entire run. """
 
 	global stylize
 
-	# we must do this here, else it will produce a circular loop at first load of 'styles".
-	# this happens because 'styles' is here (in foundations). It will be moved out of here
-	# one day.
-	from licorn.foundations import options
+	# we must use this try/except block here, else it will produce a circular
+	# loop at first load of 'styles'. This is a know problem between foundations
+	# components, and i've got no idea on how to avoid this.
+	try:
+		from licorn.foundations import options
 
-	if options.no_colors:
-		stylize = stylize_cli_no_colors
-	else:
-		stylize = stylize_cli_colors
-	
+		if options.no_colors:
+			stylize = stylize_cli_no_colors
+		else:
+			stylize = stylize_cli_colors
+
+	except:
+			stylize = stylize_cli_colors
+
 	# TODO: create and use options.web_output and stylize_web()
-	
+
 	# after the choice was made, call the real function
 	return stylize(type, what)
 
