@@ -70,24 +70,37 @@ def delete_user():
 		if login != '':
 			try:
 				users.DeleteUser(login, opts.no_archive, opts.uid)
-			except KeyError:
-				logging.warning("User %s doesn't exist on the system." % login)
+			except KeyError, e:
+				logging.warning(
+					"User %s doesn't exist on the system (was: %s)." % (
+						login,e))
 
 	users.WriteConf()
 def delete_group():
 	""" delete an Licorn group. """
 
-	for name in opts.name.split(','):
-		if name != '':
-			try:
-				groups.DeleteGroup(name, opts.del_users, opts.no_archive, opts.gid)
-			except KeyError:
-				logging.warning("Group %s doesn't exist on the system." % name)
+	if opts.name is None:
+		try:
+			groups.DeleteGroup(None, opts.del_users, opts.no_archive, opts.gid)
+
+		except KeyError:
+			logging.warning("Group %s doesn't exist on the system." % name)
+	else:
+		for name in opts.name.split(','):
+			if name != '':
+				try:
+					groups.DeleteGroup(name, opts.del_users, opts.no_archive,
+						opts.gid)
+
+				except KeyError:
+					logging.warning(
+						"Group %s doesn't exist on the system." % name)
 
 def delete_profile():
 	""" Delete a system wide User profile. """
 
-	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users, batch=opts.no_sync)
+	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users,
+		batch=opts.no_sync)
 
 	if opts.no_sync:
 		users.WriteConf()
