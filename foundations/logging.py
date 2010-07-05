@@ -11,7 +11,9 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, termios
 
 import hooks, styles, exceptions
-from trace import mytime
+
+from ltrace  import mytime
+from objects import Singleton
 
 from licorn.foundations import options
 # TODO: gettext this !
@@ -42,21 +44,10 @@ from licorn.foundations import options
 #		  logging.error() when appropriate.
 #
 
-class LicornWarningsDB(object):
-        __singleton = None
-        __db = {}
-
-	def __new__(cls):
-		"""This is a Singleton Design Pattern."""
-
-		if cls.__singleton is None:
-			cls.__singleton = object.__new__(cls)
-
-		return cls.__singleton
-	def __getitem__(self, key):
-		return LicornWarningsDB.__db[key]
-	def __setitem__(self, key, value):
-		LicornWarningsDB.__db[key] = value
+@Singleton
+class LicornWarningsDB(dict):
+	""" a singleton dict, to hold all warnings already displayed. """
+	pass
 
 __warningsdb = LicornWarningsDB()
 
@@ -134,17 +125,11 @@ else:
 	def debug(mesg): pass
 	def debug2(mesg): pass
 
-
-class RepairChoice(object):
+@Singleton
+class RepairChoice():
 	"""a singleton, to be used in all checks."""
 
-	__instance = None
 	__choice   = None
-
-	def __new__(cls):
-		if cls.__instance is None:
-			cls.__instance = object.__new__(cls)
-		return cls.__instance
 
 	def __getattr__(self, attrib):
 		return RepairChoice.__choice.__getattr(attrib)
