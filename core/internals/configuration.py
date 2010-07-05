@@ -293,23 +293,30 @@ class LicornConfiguration (object):
 			readers.simple_conf_load_dict_lists('/etc/nsswitch.conf'))
 
 	def load_backends(self):
-		""" Load Configuration backends. """
+		""" Load Configuration backends, and put the one with the greatest
+		priority at the beginning of the backend list. This makes it accessible
+		quickly on user/group/whatever creation. """
 
 		ltrace('configuration', '> LoadBackends().')
 
 		from licorn.core.backends import backends
-		self.backends = []
+		self.backends = {}
 
-		for ns_service in self.nsswitch['passwd']:
-			for backend in backends:
-				b = backend(self)
+		for backend in backends:
+			b = backend(self)
 
+			for ns_service in self.nsswitch['passwd']:
 				if ns_service in b.compat:
-					b.initialize()
-					if b.enabled:
-						ltrace('configuration',
-					'load_backend() found %s.' % str(b)[:-1])
-						self.backends.append(b)
+					if b.initialize():
+						ltrace('configuration', 'using %s backend.' % b)
+
+						self.backends[b.name] = b
+
+						if self.backends.has_key('prefered'):
+							if b.priority > self.backends['prefered'].priority:
+								self.backends['prefered'] = b
+						else:
+							self.backends['prefered'] = b
 
 		ltrace('configuration', '< LoadBackends().')
 
