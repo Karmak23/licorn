@@ -171,7 +171,7 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 			data, nor the group shared data.''')
 
 		pri_group = allgroups.groups[allusers.users[
-			users.UsersList.login_to_uid(login)]['gid']]['name']
+			users.UsersList.login_to_uid(login)]['gidNumber']]['name']
 
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
@@ -417,7 +417,7 @@ def view(uri, http_user, name):
 		</form>
 		</div>
 			''' % ( form_name, form_name, name,
-				_('GID'), _('immutable'), group['gid'],
+				_('GID'), _('immutable'), group['gidNumber'],
 				_('Name'), _('immutable'), name,
 				members_html,
 				resps_html,
@@ -564,7 +564,7 @@ def edit(uri, http_user, name):
 </div>
 		''' % ( form_name, form_name, name,
 			_('GID'), _('(immutable)'),
-			group['gid'],
+			group['gidNumber'],
 			_('Group name'), _('(immutable)'),
 			group['name'],
 			permissive(group['permissive'], sys),
@@ -788,7 +788,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					accounts = {}
 					uordered = {}
 					for member in tgroups[gid][keyname]:
-						uid = member['uid']
+						uid = member['uidNumber']
 						accounts[uid] = {
 							'login': member['login'],
 							'gecos': member['gecos'],

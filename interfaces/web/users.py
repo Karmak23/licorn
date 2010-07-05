@@ -286,7 +286,7 @@ def skel(uri, http_user, login, sure = False,
 		'''with defaults icons and so on.<br /><br />The user must be '''
 		'''disconnected for the operation to be completely successfull.''')
 
-		pri_group = g[u[users.login_to_uid(login)]['gid']]['name']
+		pri_group = g[u[users.login_to_uid(login)]['gidNumber']]['name']
 
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
@@ -543,7 +543,7 @@ def edit(uri, http_user, login):
 
 		try:
 			profile = \
-				profiles.profiles[groups.groups[user['gid']]['name']]['name']
+				profiles.profiles[groups.groups[user['gidNumber']]['name']]['name']
 		except KeyError:
 			profile = _("Standard account")
 
@@ -623,7 +623,7 @@ def edit(uri, http_user, login):
 </div>
 		''' % (
 			form_name, form_name, login,
-			_("<strong>UID</strong> (fixed)"), user['uid'],
+			_("<strong>UID</strong> (fixed)"), user['uidNumber'],
 			_("<strong>Identifier</strong> (fixed)"), login,
 			_("<strong>Profile</strong> (fixed)"), profile,
 			_("<strong>Full name</strong>"),
@@ -788,7 +788,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 				Responsabilities:&#160;<strong>%s</strong><br /><br />
 				Invitations:&#160;<strong>%s</strong><br /><br />
 				''') % (
-				uid, u[uid]['gid'], g[u[uid]['gid']]['name'],
+				uid, u[uid]['gidNumber'], g[u[uid]['gidNumber']]['name'],
 				", ".join(filter(lambda x: x in std_grps, u[uid]['groups'])),
 				", ".join(filter(lambda x: x in pri_grps, u[uid]['groups'])),
 				", ".join(filter(lambda x: x in rsp_grps, u[uid]['groups'])),
@@ -859,7 +859,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 			'locked' : str(user['locked']) + login
 			}
 		try:
-			p = prof[user['gid']]['name']
+			p = prof[user['gidNumber']]['name']
 		except KeyError:
 			p = _("Standard account")
 

@@ -8,7 +8,9 @@ Licensed under the terms of the GNU GPL version 2.
 
 from licorn.foundations         import logging, exceptions, styles
 from licorn.foundations         import objects, readers
+from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.objects import UGBackend
+
 
 class unix_controller(UGBackend):
 	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
@@ -16,13 +18,14 @@ class unix_controller(UGBackend):
 		UGBackend.__init__(self, configuration, users, groups)
 
 		# the UNIX backend is always enabled on a Linux system.
-		# Any better and correctly configured backend will take
-		# preference over this one.
-		self.name    = "Unix"
-		self.enabled = True
+		# Any better and correctly configured backend should take
+		# preference over this one, though.
+		self.name     = "Unix"
+		self.enabled  = True
 
 		# nsswitch compatibility
-		self.compat  = ('compat', 'files')
+		self.compat   = ('compat', 'files')
+		self.priority = 1
 
 		self.warnings = warnings
 	def load_users(self, groups = None):
@@ -33,8 +36,8 @@ class unix_controller(UGBackend):
 		for entry in readers.ug_conf_load_list("/etc/passwd"):
 			temp_user_dict	= {
 				'login'        : entry[0],
-				'uid'          : int(entry[2]) ,
-				'gid'          : int(entry[3]) ,
+				'uidNumber'          : int(entry[2]) ,
+				'gidNumber'          : int(entry[3]) ,
 				'gecos'        : entry[4],
 				'homeDirectory': entry[5],
 				'loginShell'   : entry[6],
@@ -48,22 +51,22 @@ class unix_controller(UGBackend):
 			# in case users/groups are loaded in different orders.
 			if groups is not None:
 				for g in groups.groups:
-					for member in groups.groups[g]['members']:
+					for member in groups.groups[g]['memberUid']:
 						if member == entry[0]:
 							temp_user_dict['groups'].add(
 								groups.groups[g]['name'])
 
-			# implicitly index accounts on « int(uid) »
-			users[ temp_user_dict['uid'] ] = temp_user_dict
+			# implicitly index accounts on « int(uidNumber) »
+			users[ temp_user_dict['uidNumber'] ] = temp_user_dict
 
 			# this will be used as a cache for login_to_uid()
-			login_cache[ entry[0] ] = temp_user_dict['uid']
+			login_cache[ entry[0] ] = temp_user_dict['uidNumber']
 
 		try:
 			for entry in readers.ug_conf_load_list("/etc/shadow"):
 				if login_cache.has_key(entry[0]):
 					uid = login_cache[entry[0]]
-					users[uid]['crypted_password'] = entry[1]
+					users[uid]['userPassword'] = entry[1]
 					if entry[1][0] == '!':
 						users[uid]['locked'] = True
 						# the shell could be /bin/bash (or else), this is valid
@@ -76,24 +79,24 @@ class unix_controller(UGBackend):
 						users[uid]['locked'] = False
 
 					if entry[2] == "":
-						users[uid]['passwd_last_change']  = 0
+						users[uid]['shadowLastChange']  = 0
 					else:
-						users[uid]['passwd_last_change']  = int(entry[2])
+						users[uid]['shadowLastChange']  = int(entry[2])
 
 					if entry[3] == "":
-						users[uid]['passwd_expire_delay'] = 99999
+						users[uid]['shadowInactive'] = 99999
 					else:
-						users[uid]['passwd_expire_delay'] = int(entry[3])
+						users[uid]['shadowInactive'] = int(entry[3])
 
 					if entry[4] == "":
-						users[uid]['passwd_expire_warn']  = entry[4]
+						users[uid]['shadowWarning']  = entry[4]
 					else:
-						users[uid]['passwd_expire_warn']  = int(entry[4])
+						users[uid]['shadowWarning']  = int(entry[4])
 
 					if entry[5] == "":
-						users[uid]['passwd_account_lock'] = entry[5]
+						users[uid]['shadowExpire'] = entry[5]
 					else:
-						users[uid]['passwd_account_lock'] = int(entry[5])
+						users[uid]['shadowExpire'] = int(entry[5])
 
 					# Note:
 					# the 7th field doesn't seem to be used by passwd(1) nor by
@@ -119,12 +122,15 @@ class unix_controller(UGBackend):
 	def load_groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
+		ltrace('unix', '> load_groups()')
+
 		groups     = {}
 		name_cache = {}
 		etc_group = readers.ug_conf_load_list("/etc/group")
 
 		# if some inconsistency is detected during load and it can be corrected
-		# automatically, do it now !
+		# automatically, do it now ! This flag is global for all groups, because
+		# unix-backend always rewrite everything (no need for more granularity).
 		need_rewriting = False
 
 		extras      = []
@@ -165,10 +171,10 @@ class unix_controller(UGBackend):
 
 			if entry[3] == '':
 				# this happends when the group has no members.
-				members = []
+				members = set()
 			else:
-				members   = entry[3].split(',')
-				to_remove = []
+				members   = set(entry[3].split(','))
+				to_remove = set()
 
 				# update the cache to avoid massive CPU load in 'get users
 				# --long'. This code is also present in users.__init__, to cope
@@ -188,20 +194,20 @@ class unix_controller(UGBackend):
 							# it will immediately stop the for_loop.
 							to_remove.append(member)
 
-					if to_remove != []:
+					if to_remove != set():
 						need_rewriting = True
 						for member in to_remove:
 							members.remove(member)
 
 			groups[gid] = 	{
-				'name' 			: entry[0],
-				'passwd'		: entry[1],
-				'gid'			: gid,
-				'members'		: members,
-				'description'	:  "" ,
-				'skel'			:  "" ,
-				'permissive'    : None,
-				'backend'       : self.name
+				'name'        : entry[0],
+				'passwd'      : entry[1],
+				'gidNumber'   : gid,
+				'memberUid'   : members,
+				'description' :  "" ,
+				'groupSkel'   :  "" ,
+				'permissive'  : None,
+				'backend'     : self.name
 				}
 
 			# this will be used as a cache by name_to_gid()
@@ -227,7 +233,7 @@ class unix_controller(UGBackend):
 				if groups[gid]['name'] ==  extra_entry[0]:
 					try:
 						groups[gid]['description'] = extra_entry[1]
-						groups[gid]['skel']        = extra_entry[2]
+						groups[gid]['groupSkel']        = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
 							UGBackend.configuration.extendedgroup_data_file, \
@@ -245,13 +251,13 @@ class unix_controller(UGBackend):
 					))
 				need_rewriting = True
 				groups[gid]['description'] = ""
-				groups[gid]['skel']        = ""
+				groups[gid]['groupSkel']        = ""
 
 			gshadow_found = False
 			for gshadow_entry in etc_gshadow:
 				if groups[gid]['name'] ==  gshadow_entry[0]:
 					try:
-						groups[gid]['crypted_password'] = gshadow_entry[1]
+						groups[gid]['userPassword'] = gshadow_entry[1]
 					except IndexError, e:
 						raise exceptions.CorruptFileError("/etc/gshadow",
 						'''for group "%s" (was: %s).''' % \
@@ -269,7 +275,7 @@ class unix_controller(UGBackend):
 						styles.stylize(styles.ST_PATH, '/etc/gshadow')
 					))
 				need_rewriting = True
-				groups[gid]['crypted_password'] = 'x'
+				groups[gid]['userPassword'] = 'x'
 
 		if need_rewriting and is_allowed:
 			try:
@@ -280,7 +286,7 @@ class unix_controller(UGBackend):
 					" inconsistencies (was: %s)." % e)
 
 		return groups, name_cache
-	def save_users(self, users):
+	def save_users(self):
 		""" Write /etc/passwd and /etc/shadow """
 
 		lock_etc_passwd = objects.FileLock(
@@ -290,11 +296,12 @@ class unix_controller(UGBackend):
 
 		etcpasswd = []
 		etcshadow = []
+		users = UGBackend.users
 		uids = users.keys()
 		uids.sort()
 
-		if not users[0].has_key('crypted_password'):
-			logging.warning('Insufficient permissions to write config. files.')
+		if not users[0].has_key('userPassword'):
+			logging.warning('Insufficient permissions to write config files.')
 			return
 
 		for uid in uids:
@@ -305,7 +312,7 @@ class unix_controller(UGBackend):
 										users[uid]['login'],
 										"x",
 										str(uid),
-										str(users[uid]['gid']),
+										str(users[uid]['gidNumber']),
 										users[uid]['gecos'],
 										users[uid]['homeDirectory'],
 										users[uid]['loginShell']
@@ -314,11 +321,11 @@ class unix_controller(UGBackend):
 
 			etcshadow.append(":".join((
 										users[uid]['login'],
-										users[uid]['crypted_password'],
-										str(users[uid]['passwd_last_change']),
-										str(users[uid]['passwd_expire_delay']),
-										str(users[uid]['passwd_expire_warn']),
-										str(users[uid]['passwd_account_lock']),
+										users[uid]['userPassword'],
+										str(users[uid]['shadowLastChange']),
+										str(users[uid]['shadowInactive']),
+										str(users[uid]['shadowWarning']),
+										str(users[uid]['shadowExpire']),
 										"","",""
 									))
 							)
@@ -330,10 +337,15 @@ class unix_controller(UGBackend):
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
-	def save_groups(self, groups):
+	def save_groups(self):
 		""" Write the groups data in appropriate system files."""
 
-		if not groups[0].has_key('crypted_password'):
+		groups = UGBackend.groups
+
+		#
+		# FIXME: this will generate a false positive if groups[0] comes from LDAP...
+		#
+		if not groups[0].has_key('userPassword'):
 			raise exceptions.InsufficientPermissionsError("You are not root" \
 				" or member of the shadow group," \
 				" can't write configuration data.")
@@ -364,20 +376,20 @@ class unix_controller(UGBackend):
 										groups[gid]['name'],
 										groups[gid]['passwd'],
 										str(gid),
-										','.join(groups[gid]['members'])
+										','.join(groups[gid]['memberUid'])
 									))
 							)
 			etcgshadow.append(":".join((
 										groups[gid]['name'],
-										groups[gid]['crypted_password'],
+										groups[gid]['userPassword'],
 										"",
-										','.join(groups[gid]['members'])
+										','.join(groups[gid]['memberUid'])
 									))
 							)
 			extgroup.append(':'.join((
 										groups[gid]['name'],
 										groups[gid]['description'],
-										groups[gid]['skel']
+										groups[gid]['groupSkel']
 									))
 							)
 
@@ -395,3 +407,19 @@ class unix_controller(UGBackend):
 		lock_ext_group.Unlock()
 
 		logging.progress("Done writing groups configuration.")
+	def save_user(self, uid):
+		""" Just a wrapper. Saving one user in Unix backend is not significantly
+		faster than saving all of them. """
+		self.save_users()
+	def save_group(self, gid):
+		""" Just a wrapper. Saving one group in Unix backend is not
+		significantly faster than saving all of them. """
+		self.save_groups()
+	def delete_user(self, uid):
+		""" Just a wrapper. Deleting one user in Unix backend is not significantly
+		faster than saving all of them. """
+		self.save_users()
+	def delete_group(self, gid):
+		""" Just a wrapper. Deleting one group in Unix backend is not
+		significantly faster than saving all of them. """
+		self.save_groups()

@@ -11,7 +11,9 @@ Licensed under the terms of the GNU GPL version 2
 import os, stat, posix1e, re
 from time import strftime, gmtime
 
-from licorn.foundations    import logging, exceptions, hlstr, styles, fsapi, pyutils
+from licorn.foundations        import logging, exceptions, hlstr, styles
+from licorn.foundations        import fsapi, pyutils
+from licorn.foundations.ltrace import ltrace
 
 class GroupsController:
 	""" Manages the groups and the associated shared data on a Linux system. """
@@ -43,10 +45,12 @@ class GroupsController:
 
 		self.warnings = warnings
 
-		self.backends = self.configuration.backends
+		GroupsController.backends = configuration.backends
 
-		for b in self.backends :
-			b.set_groups_controller(self)
+		for bkey in GroupsController.backends.keys() :
+			if bkey=='prefered':
+				continue
+			GroupsController.backends[bkey].set_groups_controller(self)
 
 		# see licorn.core.users for details
 		self.filter_applied = False
@@ -57,19 +61,26 @@ class GroupsController:
 		configuration.groups.hidden = self.GetHiddenState()
 
 		logging.progress('%s: new instance created.' % self.pretty_name)
-
-
 	def __del__(self):
 		# just in case it wasn't done before (in batched operations, for example).
 		self.WriteConf()
+
+	def __getitem__(self, item):
+		return GroupsController.groups[item]
+	def __setitem__(self, item, value):
+		GroupsController.groups[item]=value
+	def keys(self):
+		return GroupsController.groups.keys()
 	def reload(self):
 		""" load or reload internal data structures from files on disk. """
 
 		GroupsController.groups     = {}
 		GroupsController.name_cache = {}
 
-		for b in self.backends:
-			g, c = b.load_groups()
+		for bkey in GroupsController.backends.keys():
+			if bkey=='prefered':
+				continue
+			g, c = GroupsController.backends[bkey].load_groups()
 			GroupsController.groups.update(g)
 			GroupsController.name_cache.update(c)
 
@@ -94,14 +105,21 @@ class GroupsController:
 	def SetProfiles(self, profiles):
 		GroupsController.profiles = profiles
 
-	def WriteConf(self):
+	def WriteConf(self, gid=None):
 		""" Save Configuration (internal data structure to disk). """
 
-		logging.progress('%s: saving data structures to disk.' % \
-			self.pretty_name)
+		ltrace('groups', 'saving data structures to disk.')
 
-		for b in self.backends :
-			b.save_groups(self.groups)
+		if gid:
+			GroupsController.backends[
+				GroupsController.groups[gid]['backend']
+				].save_group(gid)
+
+		else:
+			for bkey in GroupsController.backends.keys():
+				if bkey=='prefered':
+					continue
+				GroupsController.backends[bkey].save_groups()
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
 			- 'system groups': show only «system» groups (root, bin, daemon, apache...),
@@ -160,9 +178,11 @@ class GroupsController:
 		def ExportOneGroupFromGid(gid, mygroups = GroupsController.groups):
 			""" Export groups the way UNIX get does, separating fields with ":" """
 
-			accountdata = [	GroupsController.groups[gid]['name'],
-						mygroups[gid]['passwd'],
-						str(gid) ]
+			accountdata = [
+				GroupsController.groups[gid]['name'],
+				mygroups[gid]['userPassword'] \
+					if mygroups[gid].has_key('userPassword') else '',
+				str(gid) ]
 
 			#
 			# TODO: implement a fully compatible output with traditionnal get
@@ -171,9 +191,22 @@ class GroupsController:
 			# HINT: put LICORN additions *after* standard get values.
 			#
 			if self.is_system_gid(gid):
-				accountdata.extend( [ "", ",".join(mygroups[gid]['members']), mygroups[gid]['description'] ] )
+				accountdata.extend(
+					[
+						"",
+						",".join(mygroups[gid]['memberUid']),
+						mygroups[gid]['description'] \
+							if mygroups[gid].has_key('description') else ''
+					] )
 			else:
-				accountdata.extend( [ mygroups[gid]['skel'], ",".join(mygroups[gid]['members']), mygroups[gid]['description'] ] )
+				accountdata.extend(
+					[
+						mygroups[gid]['groupSkel'] \
+							if mygroups[gid].has_key('groupSkel') else '',
+						",".join(mygroups[gid]['memberUid']),
+						mygroups[gid]['description'] \
+							if mygroups[gid].has_key('description') else ''
+					] )
 
 				if mygroups[gid]['permissive'] is None:
 					accountdata.append("UNKNOWN")
@@ -188,7 +221,8 @@ class GroupsController:
 	def ExportXML(self):
 		""" Export the groups list to XML. """
 
-		data = "<?xml version='1.0' encoding=\"UTF-8\"?>" + "\n" + "<groups-list>" + "\n"
+		data = ('''<?xml version='1.0' encoding=\"UTF-8\"?>\n'''
+				'''<groups-list>\n''')
 
 		if self.filter_applied:
 			gids = self.filtered_groups
@@ -201,23 +235,23 @@ class GroupsController:
 			group = GroupsController.groups[gid]
 			data += "	<group>\n" \
 				+ "		<name>"			+ group['name'] + "</name>\n" \
-				+ "		<passwd>" 		+ group['passwd'] + "</passwd>\n" \
+				+ "		<userPassword>" 		+ group['userPassword'] + "</userPassword>\n" \
 				+ "		<gid>"			+ str(gid) + "</gid>\n" \
 				+ "		<description>"			+ group['description'] + "</description>\n"
 			if not self.is_system_gid(gid):
-				data += "		<skel>"			+ group['skel'] + "</skel>\n"
+				data += "		<groupSkel>"			+ group['groupSkel'] + "</groupSkel>\n"
 				if group['permissive'] is None:
 					data += "		<permissive>[unknown]</permissive>\n"
 				else:
 					data += "		<permissive>"	+ str(group['permissive']) + "</permissive>\n"
-				if group['members'] != "":
-					data += "		<members>" + ", ".join(group['members']) + "</members>\n"
+				if group['memberUid'] != "":
+					data += "		<memberUid>" + ", ".join(group['memberUid']) + "</memberUid>\n"
 			data += "	</group>\n"
 
 		data += "</groups-list>\n"
 
 		return data
-	def AddGroup(self, name, gid=None, description="", skel="", system=False, permissive=False, batch=False):
+	def AddGroup(self, name, gid=None, description="", groupSkel="", system=False, permissive=False, batch=False):
 		""" Add an Licorn group (the group + the responsible group + the shared dir + permissions). """
 
 		if name in (None, ''):
@@ -230,12 +264,12 @@ class GroupsController:
 			raise exceptions.BadArgumentError("Malformed group name '%s', must match /%s/i."
 				% (name, styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])) )
 
-		if not system and skel is "":
-			raise exceptions.BadArgumentError, "You must specify a skel dir."
+		if not system and groupSkel is "":
+			raise exceptions.BadArgumentError, "You must specify a groupSkel dir."
 
-		if skel == "":
-			skel = GroupsController.configuration.users.default_skel
-		elif skel not in GroupsController.configuration.users.skels:
+		if groupSkel == "":
+			groupSkel = GroupsController.configuration.users.default_skel
+		elif groupSkel not in GroupsController.configuration.users.skels:
 			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are: %s."
 				% GroupsController.configuration.users.skels)
 
@@ -252,7 +286,7 @@ class GroupsController:
 
 		try:
 			not_already_exists = True
-			gid = self.__add_group(name, system, gid, description, skel)
+			gid = self.__add_group(name, system, gid, description, groupSkel)
 
 		except exceptions.AlreadyExistsException, e:
 			# don't bork if the group already exists, just continue.
@@ -266,9 +300,15 @@ class GroupsController:
 		if system:
 			# system groups don't have shared group dir nor resp- nor guest- nor special ACLs.
 			# so we don't execute the rest of the procedure.
-			self.WriteConf()
+
+			GroupsController.groups[gid]['action'] = 'create'
+			GroupsController.backends[
+				GroupsController.groups[gid]['backend']
+				].save_group(gid)
+
 			if not_already_exists:
-				logging.info(logging.SYSG_CREATED_GROUP % styles.stylize(styles.ST_NAME, name))
+				logging.info(logging.SYSG_CREATED_GROUP % \
+					styles.stylize(styles.ST_NAME, name))
 
 			return
 
@@ -276,6 +316,9 @@ class GroupsController:
 
 		try:
 			self.CheckGroups([ name ], minimal = True, batch = True)
+
+			# FIXME: is this needed here ?
+			# isn't it handled inside CheckGroups()?
 			self.WriteConf()
 
 			if not_already_exists:
@@ -291,12 +334,16 @@ class GroupsController:
 				self.__delete_group(name)
 			except: pass
 			try:
-				self.__delete_group('%s%s' % (GroupsController.configuration.groups.resp_prefix, name))
+				self.__delete_group('%s%s' % (
+					GroupsController.configuration.groups.resp_prefix, name))
 			except: pass
 			try:
-				self.__delete_group('%s%s' %(GroupsController.configuration.groups.guest_prefix, name))
+				self.__delete_group('%s%s' % (
+					GroupsController.configuration.groups.guest_prefix, name))
 			except: pass
 
+
+			# FIXME: really needed ? not already handled in __delete_group() ?
 			if not batch:
 				self.WriteConf()
 
@@ -304,7 +351,7 @@ class GroupsController:
 			raise e
 		return (gid, name)
 	def __add_group(self, name, system, manual_gid=None, description = "",
-		skel = "", batch=False):
+		groupSkel = "", batch=False):
 		"""Add a POSIX group, write the system data files. Return the gid of the group created."""
 
 		try:
@@ -348,13 +395,15 @@ class GroupsController:
 
 		# Add group in groups dictionary
 		temp_group_dict = {
-			'name': name,
-			'passwd': 'x',
-			'gid': gid,
-			'members': [],
-			'description': description,
-			'skel': skel,
-			'crypted_password': 'x' }
+			'name'        : name,
+			'userPassword': 'x',
+			'gidNumber'   : gid,
+			'memberUid'   : set(),
+			'description' : description,
+			'groupSkel'   : groupSkel,
+			'backend'     : GroupsController.backends['prefered'].name,
+			'action'      : 'create'
+			}
 
 		if system:
 			# we must fill the permissive status here, else WriteConf() will fail with a KeyError.
@@ -364,8 +413,15 @@ class GroupsController:
 		GroupsController.groups[gid]      = temp_group_dict
 		GroupsController.name_cache[name] = gid
 
-		if not batch:
-			self.WriteConf()
+		# do not skip the write/save part, else future actions could fail. E.g.
+		# when creating a group, skipping save() on rsp/gst group creation will
+		# result in unaplicable ACLs because of (yet) non-existing groups in the
+		# system files (or backends).
+		# DO NOT UNCOMMENT: -- if not batch:
+		GroupsController.groups[gid]['action'] = 'create'
+		GroupsController.backends[
+			GroupsController.groups[gid]['backend']
+			].save_group(gid)
 
 		return gid
 	def DeleteGroup(self, name, del_users, no_archive, bygid = None, batch=False):
@@ -380,7 +436,7 @@ class GroupsController:
 		else:
 			gid = self.name_to_gid(name)
 
-		prim_memb = GroupsController.primary_members(GroupsController.groups[gid]["name"])
+		prim_memb = GroupsController.primary_members(name)
 
 		if not del_users:
 			# search if some users still have the group has their primary group
@@ -451,10 +507,16 @@ class GroupsController:
 		GroupsController.profiles.delete_group_in_profiles(name)
 
 		try:
-			del(GroupsController.groups[GroupsController.name_cache[name]])
+
+			gid     = GroupsController.name_cache[name]
+			backend = GroupsController.groups[gid]['backend']
+
+			del(GroupsController.groups[gid])
 			del(GroupsController.name_cache[name])
 
-			self.WriteConf()
+			# delete the group in the backend after deleting it locally, else
+			# Unix backend will not know what to delete (this is quite a hack).
+			GroupsController.backends[backend].delete_group(name)
 
 			logging.info(logging.SYSG_DELETED_GROUP % styles.stylize(
 				styles.ST_NAME, name))
@@ -516,7 +578,10 @@ class GroupsController:
 				else:
 					GroupsController.users.users[u]['groups'][i] = new_name
 
-			self.WriteConf()
+			GroupsController.groups[gid]['action'] = 'rename'
+			GroupsController.backends[
+				GroupsController.groups[gid]['backend']
+				].save_group(gid)
 
 		#
 		# TODO: parse members, and sed -ie ~/.recently_used and other user files...
@@ -536,22 +601,29 @@ class GroupsController:
 		gid = self.name_to_gid(name)
 		GroupsController.groups[gid]['description'] = description
 
-		self.WriteConf()
-	def ChangeGroupSkel(self, name, skel):
+		GroupsController.groups[gid]['action'] = 'update'
+		GroupsController.backends[
+			GroupsController.groups[gid]['backend']
+			].save_group(gid)
+
+	def ChangeGroupSkel(self, name, groupSkel):
 		""" Change the description of a group
 		"""
 		if name is None:
 			raise exceptions.BadArgumentError, "You must specify a name"
-		if skel is None:
-			raise exceptions.BadArgumentError, "You must specify a skel"
+		if groupSkel is None:
+			raise exceptions.BadArgumentError, "You must specify a groupSkel"
 
-		if not skel in GroupsController.configuration.users.skels:
+		if not groupSkel in GroupsController.configuration.users.skels:
 			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are: %s." % str(GroupsController.configuration.users.skels))
 
 		gid = self.name_to_gid(name)
-		GroupsController.groups[gid]['skel'] = skel
+		GroupsController.groups[gid]['groupSkel'] = groupSkel
 
-		self.WriteConf()
+		GroupsController.groups[gid]['action'] = 'update'
+		GroupsController.backends[
+			GroupsController.groups[gid]['backend']
+			].save_group(gid)
 	def AddGrantedProfiles(self, users, profiles, name):
 		""" Allow the users of the profiles given to access to the shared dir
 			Warning: Don't give [] for profiles, but [""]
@@ -580,7 +652,13 @@ class GroupsController:
 			else:
 				logging.warning("Profile %s doesn't exist, ignored." % styles.stylize(styles.ST_NAME, p))
 
-		self.WriteConf()
+		#
+		# FIXME: is it needed to save() here ? isn't it already done by the
+		# profile() and the AddUsersInGroup() calls ?
+		GroupsController.groups[gid]['action'] = 'update'
+		GroupsController.backends[
+			GroupsController.groups[gid]['backend']
+			].save_group(gid)
 	def DeleteGrantedProfiles(self, users, profiles, name):
 		""" Disallow the users of the profiles given to access to the shared dir. """
 
@@ -604,6 +682,7 @@ class GroupsController:
 			else:
 				print "Profile '" + str(p) + "' doesn't exist, it's ignored"
 
+		# FIXME: same as preceding method: not already done ??
 		self.WriteConf()
 	def AddUsersInGroup(self, name, users_to_add, batch = False):
 		""" Add a user list in the group 'name'. """
@@ -612,6 +691,9 @@ class GroupsController:
 			raise exceptions.BadArgumentError, "You must specify a group name"
 		if users_to_add is None:
 			raise exceptions.BadArgumentError, "You must specify a users list"
+
+		ltrace('groups', '> AddUsersInGroup() %s->%s.' % (
+			name, users_to_add))
 
 		# remove non-existing users and duplicate logins from users_to_add
 		tmp = {}
@@ -625,25 +707,43 @@ class GroupsController:
 				continue
 			else:
 				tmp[login] = 1
+
+		work_done = False
 		users_to_add = tmp.keys()
 
 		gid = self.name_to_gid(name)
 
 		for u in users_to_add:
-			if u in GroupsController.groups[gid]['members']:
+			if u in GroupsController.groups[gid]['memberUid']:
 				logging.progress("User %s is already a member of %s, skipped." % (
 					styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)))
 			else:
-				GroupsController.groups[gid]['members'].append(u)
+				GroupsController.groups[gid]['memberUid'].add(u)
+
+				ltrace('groups', 'members are: %s.' % \
+					GroupsController.groups[gid]['memberUid'])
 
 				logging.info("Added user %s to members of %s." % (
 					styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)) )
 
 				# update the users cache.
-				GroupsController.users.users[GroupsController.users.login_to_uid(u)]['groups'].add(name)
+				GroupsController.users.users[
+					GroupsController.users.login_to_uid(u)
+					]['groups'].add(name)
 
-				if not batch:
-					self.WriteConf()
+				if batch:
+					work_done = True
+				else:
+					#
+					# save the group after each user addition.
+					# this is a quite expansive operation, it seems to me quite
+					# superflous, but you can make bets on security and
+					# reliability.
+					#
+					GroupsController.groups[gid]['action'] = 'update'
+					GroupsController.backends[
+						GroupsController.groups[gid]['backend']
+						].save_group(gid)
 
 				if self.is_standard_gid(gid):
 					# create the symlink to the shared group dir in the user's home dir.
@@ -669,6 +769,17 @@ class GroupsController:
 					link_basename)
 				fsapi.make_symlink(link_src, link_dst, batch = batch)
 
+		if batch and work_done:
+			# save the group after having added all users. This seems more fine
+			# than saving between each addition
+			GroupsController.groups[gid]['action'] = 'update'
+			GroupsController.backends[
+				GroupsController.groups[gid]['backend']
+				].save_group(gid)
+
+		ltrace('groups', '< AddUsersInGroup() %s = %s.' % (
+			name, GroupsController.groups[gid]['memberUid']))
+
 	def RemoveUsersFromGroup(self, name, users_to_remove, batch=False):
 		""" Delete a users list in the group 'name'. """
 		if name is None:
@@ -687,17 +798,19 @@ class GroupsController:
 			else:
 				tmp.append(login)
 		users_to_remove = tmp
+		work_done = False
 
-		logging.progress("Going to remove users %s from group %s." % (styles.stylize(styles.ST_NAME, str(users_to_remove)), styles.stylize(styles.ST_NAME, name)) )
+		logging.progress("Going to remove users %s from group %s." % (
+			styles.stylize(styles.ST_NAME, str(users_to_remove)),
+			styles.stylize(styles.ST_NAME, name)) )
 
 		gid = self.name_to_gid(name)
 
 		for u in users_to_remove:
 			if u == "": continue
 
-			if u in GroupsController.groups[gid]['members']:
-				index = GroupsController.groups[gid]['members'].index(u)
-				del(GroupsController.groups[gid]['members'][index])
+			if u in GroupsController.groups[gid]['memberUid']:
+				GroupsController.groups[gid]['memberUid'].remove(u)
 				# update the users cache
 				try:
 					GroupsController.users.users[GroupsController.users.login_to_uid(u)]['groups'].remove(name)
@@ -709,8 +822,13 @@ class GroupsController:
 					pass
 
 				#logging.debug("groups of user %s are now: %s " % (u, GroupsController.users.users[GroupsController.users.login_to_uid(u)]['groups']))
-
-				self.WriteConf()
+				if batch:
+					work_done = True
+				else:
+					GroupsController.groups[gid]['action'] = 'update'
+					GroupsController.backends[
+						GroupsController.groups[gid]['backend']
+						].save_group(gid)
 
 				if not self.is_system_gid(gid):
 					# delete the shared group dir symlink in user's home.
@@ -732,6 +850,12 @@ class GroupsController:
 				logging.info("Removed user %s from members of %s." % (styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)) )
 			else:
 				logging.progress("User %s is already not a member of %s, skipped." % (styles.stylize(styles.ST_LOGIN, u), styles.stylize(styles.ST_NAME, name)))
+
+		if batch and work_done:
+			GroupsController.groups[gid]['action'] = 'update'
+			GroupsController.backends[
+				GroupsController.groups[gid]['backend']
+				].save_group(gid)
 
 	def BuildGroupACL(self, gid, path = ""):
 		""" Return an ACL triolet (a dict) that will be used to check something in the group shared dir.
@@ -804,10 +928,12 @@ class GroupsController:
 							system=True,
 							manual_gid=None,
 							description="%s of group “%s”" % (title, group),
-							skel="")
+							groupSkel="")
 						GroupsController.name_cache[ prefix[0] + group ] = temp_gid
 						prefix_gid = temp_gid
 						del(temp_gid)
+
+						# FIXME: really needed ? not already done by __add_group() ?
 						self.WriteConf()
 						logging.info("Created system group %s." % styles.stylize(styles.ST_NAME, group_name))
 					except exceptions.AlreadyExistsException, e:
@@ -937,7 +1063,7 @@ class GroupsController:
 
 		all_went_ok = True
 
-		for user in GroupsController.groups[gid]['members']:
+		for user in GroupsController.groups[gid]['memberUid']:
 
 			uid = GroupsController.users.login_to_uid(user)
 
@@ -1066,7 +1192,7 @@ class GroupsController:
 		gid   = GroupsController.name_to_gid(name)
 
 		for u in GroupsController.users.users:
-			if GroupsController.users.users[u]['gid'] == gid:
+			if GroupsController.users.users[u]['gidNumber'] == gid:
 				ru.append(GroupsController.users.users[u]['login'])
 		return ru
 
@@ -1077,7 +1203,7 @@ class GroupsController:
 		# TODO: really verify, for each user, that their member ship is not
 		# duplicated between primary and auxilliary groups.
 
-		return GroupsController.groups[GroupsController.name_to_gid(name)]['members']
+		return GroupsController.groups[GroupsController.name_to_gid(name)]['memberUid']
 
 	@staticmethod
 	def all_members(name):
@@ -1129,7 +1255,7 @@ class GroupsController:
 
 	@staticmethod
 	def is_empty_gid(gid):
-			return GroupsController.is_standard_gid(gid) and GroupsController.groups[gid]['members'] == []
+			return GroupsController.is_standard_gid(gid) and GroupsController.groups[gid]['memberUid'] == []
 
 	@staticmethod
 	def is_empty_group(name):

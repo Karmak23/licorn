@@ -334,7 +334,7 @@ class ProfilesController:
 			else:
 				# search u's profile to
 				for p in ProfilesController.profiles:
-					if ProfilesController.users.users[uid]['gid'] == ProfilesController.groups.name_to_gid(ProfilesController.profiles[p]['primary_group']):
+					if ProfilesController.users.users[uid]['gidNumber'] == ProfilesController.groups.name_to_gid(ProfilesController.profiles[p]['primary_group']):
 						if apply_groups:
 							for g in ProfilesController.profiles[p]['groups']:
 								ProfilesController.groups.AddUsersInGroup(g, [u])

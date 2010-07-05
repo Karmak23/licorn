@@ -11,8 +11,9 @@ Licensed under the terms of the GNU GPL version 2
 import os, crypt, sys
 from time import time, strftime, gmtime
 
-from licorn.foundations    import logging, exceptions, process, hlstr, \
-									pyutils, styles, fsapi
+from licorn.foundations        import logging, exceptions, process, hlstr
+from licorn.foundations        import pyutils, styles, fsapi
+from licorn.foundations.ltrace import ltrace
 
 class UsersController:
 
@@ -38,23 +39,34 @@ class UsersController:
 		# see Select()
 		self.filter_applied = False
 
-		self.backends = self.configuration.backends
-		for b in self.backends :
-			b.set_users_controller(self)
+		UsersController.backends = self.configuration.backends
+		for bkey in UsersController.backends.keys():
+			if bkey=='prefered':
+				continue
+			UsersController.backends[bkey].set_users_controller(self)
 
 		if UsersController.users is None:
 			self.reload()
 	def __del__(self):
 		# just in case it wasn't done before (e.g. in batched operations).
 		self.WriteConf()
+
+	def __getitem__(self, item):
+		return UsersController.users[item]
+	def __setitem__(self, item, value):
+		UsersController.users[item]=value
+	def keys(self):
+		return UsersController.users.keys()
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
 		UsersController.users       = {}
 		UsersController.login_cache = {}
 
-		for b in self.backends:
-			u, c = b.load_users(self.groups)
+		for bkey in UsersController.backends.keys():
+			if bkey=='prefered':
+				continue
+			u, c = self.backends[bkey].load_users(self.groups)
 			UsersController.users.update(u)
 			UsersController.login_cache.update(c)
 
@@ -62,11 +74,22 @@ class UsersController:
 		UsersController.profiles = profiles
 	def SetGroups(self, groups):
 		UsersController.groups = groups
-	def WriteConf(self):
+	def WriteConf(self, uid=None):
 		""" Write the user data in appropriate system files."""
-		self.backend.save_users(UsersController.users)
 
-	def Select( self, filter_string ):
+		ltrace('users', 'saving data structures to disk.')
+
+		if uid:
+			UsersController.backends[
+				UsersController.users[uid]['backend']
+				].save_one_user(uid)
+		else:
+			for bkey in UsersController.backends.keys():
+				if bkey=='prefered':
+					continue
+				UsersController.backends[bkey].save_users()
+
+	def Select(self, filter_string):
 		""" Filter user accounts on different criteria.
 		Criteria are:
 			- 'system users': show only «system» users (root, bin, daemon,
@@ -247,7 +270,7 @@ class UsersController:
 			try:
 				tmp_user_dict['loginShell'] = \
 					UsersController.profiles.profiles[profile]['shell']
-				tmp_user_dict['gid'] = \
+				tmp_user_dict['gidNumber'] = \
 					UsersController.groups.name_to_gid(
 					UsersController.profiles.profiles[profile]['primary_group'])
 				# fix #58.
@@ -275,7 +298,7 @@ class UsersController:
 						% (profile, e))
 		elif primary_group is not None:
 
-			tmp_user_dict['gid']           = pg_gid
+			tmp_user_dict['gidNumber']           = pg_gid
 			tmp_user_dict['loginShell']    = \
 				UsersController.configuration.users.default_shell
 			tmp_user_dict['homeDirectory'] = "%s/%s" % (
@@ -283,12 +306,11 @@ class UsersController:
 
 			# FIXME: use is_valid_skel() ?
 			if skel is None and \
-				os.path.isdir(UsersController.groups.groups[pg_gid]['skel']):
-				skel_to_apply = UsersController.groups.groups[pg_gid]['skel']
+				os.path.isdir(UsersController.groups.groups[pg_gid]['groupSkel']):
+				skel_to_apply = UsersController.groups.groups[pg_gid]['groupSkel']
 
 		else:
-
-			tmp_user_dict['gid'] = \
+			tmp_user_dict['gidNumber'] = \
 				UsersController.configuration.users.default_gid
 			tmp_user_dict['loginShell'] = \
 				UsersController.configuration.users.default_shell
@@ -309,9 +331,9 @@ class UsersController:
 				self.configuration.users.uid_min,
 				self.configuration.users.uid_max)
 
-		tmp_user_dict['crypted_password']   = crypt.crypt(password,
+		tmp_user_dict['userPassword']   = crypt.crypt(password,
 			"$1$%s" % hlstr.generate_password())
-		tmp_user_dict['passwd_last_change'] = str(int(time()/86400))
+		tmp_user_dict['shadowLastChange'] = str(int(time()/86400))
 
 		# create home directory and apply skel
 		if not os.path.exists(tmp_user_dict['homeDirectory']):
@@ -322,27 +344,34 @@ class UsersController:
 		# else: the home directory already exists, we don't overwrite it
 		#
 
-		tmp_user_dict['uid']    = uid
-		tmp_user_dict['gecos']  = gecos
-		tmp_user_dict['login']  = login
+		tmp_user_dict['uidNumber']            = uid
+		tmp_user_dict['gecos']          = gecos
+		tmp_user_dict['login']          = login
 		# prepare the groups cache.
-		tmp_user_dict['groups'] = []
-		tmp_user_dict['passwd_expire_delay'] = 99999
-		tmp_user_dict['passwd_expire_warn']  = ""
-		tmp_user_dict['passwd_account_lock'] = ""
+		tmp_user_dict['groups']         = []
+		tmp_user_dict['shadowInactive'] = 99999
+		tmp_user_dict['shadowWarning']  = ""
+		tmp_user_dict['shadowExpire']   = ""
+		tmp_user_dict['backend']        = \
+			UsersController.backends['prefered'].name
 
 		# Add user in internal list and in the cache
 		UsersController.users[uid]         = tmp_user_dict
 		UsersController.login_cache[login] = uid
 
 		#
-		# we can't skip the WriteConf(), because this would break Samba stuff:
+		# we can't skip the WriteConf(), because this would break Samba stuff,
+		# and AddUsersInGroup stuff too:
 		# Samba needs Unix account to be present in /etc/* before creating the
 		# Samba account. We thus can't delay the WriteConf() call, even if we
-		# are in batch / import users mode.
+		# are in batch / import users mode. This is roughly the same with group
+		# Additions: the user must be present, prior to additions.
 		#
 		# DO NOT UNCOMMENT -- if not batch:
-		self.WriteConf()
+		UsersController.users[uid]['action'] = 'create'
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].save_user(uid)
 
 		# Samba: add Samba user account.
 		# TODO: put this into a module.
@@ -359,7 +388,7 @@ class UsersController:
 				styles.stylize(styles.ST_LOGIN, login), groups_to_add_user_to))
 
 			for group in groups_to_add_user_to:
-				UsersController.groups.AddUsersInGroup(group, [ login ])
+				UsersController.groups.AddUsersInGroup(group, [login])
 
 		# Set quota
 		if profile is not None:
@@ -393,7 +422,7 @@ class UsersController:
 			# «login» is needed for deluser system command.
 			login = UsersController.users[uid]["login"]
 
-		logging.progress("Going to remove user %s(%s), groups %s." % (
+		ltrace('users', "| DeleteUser() %s(%s), groups %s." % (
 			login, str(uid), UsersController.users[uid]['groups']) )
 
 		# Delete user from his groups
@@ -402,7 +431,6 @@ class UsersController:
 		for group in UsersController.users[uid]['groups'].copy():
 			UsersController.groups.RemoveUsersFromGroup(group, [ login ],
 				batch=True)
-
 
 		try:
 			# samba stuff
@@ -414,14 +442,19 @@ class UsersController:
 		# keep the homedir path, to backup it if requested.
 		homedir = UsersController.users[uid]["homeDirectory"]
 
+		# keep the backend, to notice the deletion
+		backend = UsersController.users[uid]['backend']
+
 		# Delete user from users list
 		del(UsersController.login_cache[login])
 		del(UsersController.users[uid])
 		logging.info(logging.SYSU_DELETED_USER % \
 			styles.stylize(styles.ST_LOGIN, login))
 
-		if not batch:
-			self.WriteConf()
+		# TODO: try/except and reload the user if unable to delete it
+		# delete the user in the backend after deleting it locally, else
+		# Unix backend will not know what to delete (this is quite a hack).
+		UsersController.backends[backend].delete_user(login)
 
 		# user is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
@@ -471,14 +504,20 @@ class UsersController:
 		uid = UsersController.login_to_uid(login)
 
 		# use real MD5 passwd, and generate a good salt (fixes #58).
-		UsersController.users[uid]['crypted_password']   = crypt.crypt(
+		UsersController.users[uid]['userPassword']   = crypt.crypt(
 			password, "$1$%s" % hlstr.generate_password())
 
 		# 3600*24 to have the number of days since epoch (fixes #57).
-		UsersController.users[uid]['passwd_last_change'] = str(
+		UsersController.users[uid]['shadowLastChange'] = str(
 			int(time()/86400) )
 
-		self.WriteConf()
+		#
+		# XXX: shouldn't we use ldap.change_pass*() in the backend ?
+		#
+		UsersController.users[uid]['action'] = 'update'
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].save_user(uid)
 
 		if display:
 			logging.notice("Set user %s's password to %s." % (
@@ -508,7 +547,12 @@ class UsersController:
 
 		uid = UsersController.login_to_uid(login)
 		UsersController.users[uid]['gecos'] = gecos
-		self.WriteConf()
+
+		UsersController.users[uid]['action'] = 'update'
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].save_user(uid)
+
 	def ChangeUserShell(self, login, shell = ""):
 		""" Change the shell of a user. """
 		if login is None:
@@ -522,37 +566,45 @@ class UsersController:
 					UsersController.configuration.users.shells)
 
 		UsersController.users[uid]['loginShell'] = shell
-		self.WriteConf()
+
+		UsersController.users[uid]['action'] = 'update'
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].save_user(uid)
 
 	def LockAccount(self, login, lock = True):
 		"""(Un)Lock a user account."""
 		if login is None:
 			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
 
-		if lock:
-			# we must set /bin/false, else remote SSH connections with keys
-			# would still succeed.
-			lockarg = '-L'
-		else:
-			# we cannot know what the last shell was, we arbitrary put back
-			# /bin/bash.
-			lockarg = '-U'
+		#
+		# TODO: lock the shell (not just the password), else SSH connections
+		# with private/public keys could still be usable. As an alternative,
+		# we could just remove user from remotessh group, which seems to be
+		# a Licorn prerequisite.
+		#
 
 		# update internal data structures.
 		uid = UsersController.login_to_uid(login)
+
 		if lock:
-			UsersController.users[uid]['crypted_password'] = '!' + \
-				UsersController.users[uid]['crypted_password']
+			UsersController.users[uid]['userPassword'] = '!' + \
+				UsersController.users[uid]['userPassword']
 			logging.info('Locked user account %s.' % \
 				styles.stylize(styles.ST_LOGIN, login))
 		else:
-			UsersController.users[uid]['crypted_password'] = \
-				UsersController.users[uid]['crypted_password'][1:]
+			UsersController.users[uid]['userPassword'] = \
+				UsersController.users[uid]['userPassword'][1:]
 			logging.info('Unlocked user account %s.' % \
 				styles.stylize(styles.ST_LOGIN, login))
 		UsersController.users[uid]['locked'] = lock
 
-		self.WriteConf()
+
+		UsersController.users[uid]['action'] = 'update'
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].save_user(uid)
+
 	def ApplyUserSkel(self, login, skel):
 		""" Apply a skel on a user """
 		if login is None:
@@ -564,14 +616,14 @@ class UsersController:
 
 		uid = UsersController.login_to_uid(login)
 		# not force option with shutil.copytree
-		process.syscmd("cp -r %s/* %s/.??* %s"    % (skel, skel,
+		process.syscmd("cp -r %s/* %s/.??* %s" % (skel, skel,
 			UsersController.users[uid]['homeDirectory']) )
 
 		# set permission (because root)
 		for fileordir in os.listdir(skel):
 			try:
 				# FIXME: do this with os.chmod()... and map() it.
-				process.syscmd("chown %s %s/%s" % (
+				process.syscmd("chown -R %s %s/%s" % (
 					UsersController.users[uid]['login'],
 					UsersController.users[uid]['homeDirectory'], fileordir) )
 			except Exception, e:
@@ -591,7 +643,7 @@ class UsersController:
 			account = [	users[uid]['login'],
 						"x",
 						str(uid),
-						str(users[uid]['gid']),
+						str(users[uid]['gidNumber']),
 						users[uid]['gecos'],
 						users[uid]['homeDirectory'],
 						users[uid]['loginShell'],
@@ -617,7 +669,7 @@ class UsersController:
 			return ';'.join(
 				[	UsersController.users[uid]['gecos'],
 					UsersController.users[uid]['login'],
-					str(UsersController.users[uid]['gid']),
+					str(UsersController.users[uid]['gidNumber']),
 					','.join(UsersController.users[uid]['groups']) ]
 				)
 
@@ -645,7 +697,7 @@ class UsersController:
 		<loginShell>%s</loginShell>\n''' % (
 					UsersController.users[uid]['login'],
 					uid,
-					UsersController.users[uid]['gid'],
+					UsersController.users[uid]['gidNumber'],
 					UsersController.users[uid]['gecos'],
 					UsersController.users[uid]['homeDirectory'],
 					UsersController.users[uid]['loginShell']
@@ -682,7 +734,7 @@ class UsersController:
 				logging.progress("Checking user %s..." % \
 					styles.stylize(styles.ST_LOGIN, user))
 
-				gid       = self.users[uid]['gid']
+				gid       = self.users[uid]['gidNumber']
 				group     = self.groups.groups[gid]['name']
 				user_home = self.users[uid]['homeDirectory']
 
@@ -857,7 +909,7 @@ class UsersController:
 	@staticmethod
 	def check_password(login, password):
 		crypted_passwd = UsersController.users[
-			UsersController.login_cache[login]]['crypted_password']
+			UsersController.login_cache[login]]['userPassword']
 		return (crypted_passwd == crypt.crypt(password, crypted_passwd))
 
 	@staticmethod
