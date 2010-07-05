@@ -254,9 +254,13 @@ class UGBackend(Singleton):
 		return self.enabled
 	def set_users_controller(self, users):
 		UGBackend.users = users
+		if users.groups is not None:
+			UGBackend.groups = users.groups
+
 	def set_groups_controller(self, groups):
 		UGBackend.groups = groups
-		UGBackend.users = groups.users
+		if groups.users is not None:
+			UGBackend.users = groups.users
 	def get_defaults(self):
 		return {}
 	def load_defaults(self):
