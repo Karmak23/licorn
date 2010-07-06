@@ -230,7 +230,6 @@ class unix_controller(UGBackend):
 			# get extras[self.groups[gid]['name']] directly. this could gain
 			# some time on systems with many groups.
 
-			extra_found = False
 			for extra_entry in extras:
 				if groups[gid]['name'] ==  extra_entry[0]:
 					try:
@@ -241,19 +240,7 @@ class unix_controller(UGBackend):
 							UGBackend.configuration.extendedgroup_data_file, \
 							'''for group "%s" (was: %s).''' % \
 							(extra_entry[0], str(e)))
-					extra_found = True
 					break
-
-			if not extra_found:
-				logging.notice('added missing record for group %s in %s.' % \
-					(
-					styles.stylize(styles.ST_NAME, groups[gid]['name']),
-					styles.stylize(styles.ST_PATH,
-					UGBackend.configuration.extendedgroup_data_file)
-					))
-				need_rewriting = True
-				#groups[gid]['description'] = ""
-				#groups[gid]['groupSkel']   = ""
 
 			gshadow_found = False
 			for gshadow_entry in etc_gshadow:
@@ -280,15 +267,9 @@ class unix_controller(UGBackend):
 				# nothing to do here...
 				#groups[gid]['userPassword'] = 'x'
 
-		#
-		# TODO: wipe out this section ? this will be done anyway at
-		# GroupsController shutdown and is incompatible with multi-backend mode.
-		#
 		if need_rewriting and is_allowed:
 			try:
-				pass
-				# this will be done at GroupsController shutdown anyway.
-				#self.save_groups()
+				self.save_groups(groups)
 			except (OSError, IOError), e:
 				if self.warnings:
 					logging.warning("licorn.core.groups: can't correct" \
@@ -346,10 +327,11 @@ class unix_controller(UGBackend):
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
-	def save_groups(self):
+	def save_groups(self, groups=None):
 		""" Write the groups data in appropriate system files."""
 
-		groups = UGBackend.groups
+		if groups is None:
+			groups = UGBackend.groups
 
 		#
 		# FIXME: this will generate a false positive if groups[0] comes from LDAP...
