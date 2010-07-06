@@ -269,9 +269,10 @@ class ldap_controller(UGBackend):
 			else:
 				raise e
 
+		self.check()
+
 		ltrace('ldap', '< initialize() %s.' % self.enabled)
 		return self.enabled
-
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
@@ -287,63 +288,39 @@ class ldap_controller(UGBackend):
 		for (key, value) in defaults :
 			if not hasattr(self, key):
 				setattr(self, key, value)
+	def check(self):
+		""" check the OpenLDAP daemon configuration and set it up if needed. """
+		ltrace('ldap', '> check_daemon()')
 
-	def check_database(self, minimal=True, batch=False, auto_answer=None):
+		if not self.bind_as_admin:
+			logging.warning('%s: you must be root or uid(0) to continue.' % (
+				self.name))
+			return
 
-		ltrace('ldap', '> check_database()')
+		self.sasl_bind()
 
-		if minimal:
-			#
-			# TODO: check frontend only
-			#
-			ltrace('ldap', '< check_database() minimal %s.' % styles.stylize(
-				styles.ST_OK, 'True'))
-			return True
+		try:
+			ldap_result = self.ldap_conn.search_s(
+				'cn=config',
+				ldap.SCOPE_SUBTREE,
+				'(objectClass=*)',
+				['dn', 'objectClass', 'cn'])
 
-		if self.check_system(minimal, batch, auto_answer):
-			#
-			# TODO:
+		except Exception, e:
+			print str(e)
 
-			# cosine
-			# nis
-			# inetorgperson
-			# samba
-			#
-			# backend
-			# frontend
-			ltrace('ldap', '< check_database() %s.' % styles.stylize(
-				styles.ST_OK, 'True'))
-			return True
-		else:
-			ltrace('ldap', '< check_database() %s.' % styles.stylize(
-				styles.ST_BAD, 'False'))
-			return False
+		for dn, entry in ldap_result:
+			print '%s, %s' % (dn, entry)
 
-
-	def check_database_frontend(self, minimal=True, batch=False,
-		auto_answer=None):
-		""" Check the LDAP database frontend (high-level check). """
-
-		ltrace('ldap', '| check_database_frontend()')
-
-		def check_people():
-			pass
-		if minimal:
-			pass
-		else:
-			return False
-	def check_system(self, minimal=True, batch=False, auto_answer=None):
+		ltrace('ldap', '< check_daemon()')
+	def check_system_files(self, minimal=True, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
 		ltrace('ldap', '> check_system()')
 
-		if not os.path.exists(self.files.ldap_conf):
-			# if this file exists, libpam-ldap is installed. It is fine to
-			# assume that we have to use it, so start to check it. Else,
-			# just discard the current module.
-			ltrace('ldap', '< check_database() %s.' % styles.stylize(
-				styles.ST_BAD, 'False'))
-			return False
+		if not self.enabled:
+			ltrace('ldap', '< check_system() [not enabled]')
+			return
 
 		if pyutils.check_file_against_dict(self.files.ldap_conf,
 				(
@@ -409,6 +386,62 @@ class ldap_controller(UGBackend):
 		ltrace('ldap', '< check_system() %s.' % styles.stylize(
 			styles.ST_OK, 'True'))
 		return True
+	def check_db_config(self, minimal=True, batch=False, auto_answer=None):
+
+		ltrace('ldap', '> check_database()')
+
+		if minimal:
+			#
+			# TODO: check frontend only
+			#
+			ltrace('ldap', '< check_database() minimal %s.' % styles.stylize(
+				styles.ST_OK, 'True'))
+			return True
+
+		if self.check_system(minimal, batch, auto_answer):
+			#
+			# TODO:
+
+			# cosine
+			# nis
+			# inetorgperson
+			# samba
+			#
+			# backend
+			# frontend
+			ltrace('ldap', '< check_database() %s.' % styles.stylize(
+				styles.ST_OK, 'True'))
+			return True
+		else:
+			ltrace('ldap', '< check_database() %s.' % styles.stylize(
+				styles.ST_BAD, 'False'))
+			return False
+	def check_db_backend(self, minimal=True, batch=False, auto_answer=None):
+		pass
+	def check_db_frontend(self, minimal=True, batch=False, auto_answer=None):
+		""" Check the LDAP database frontend (high-level check). """
+
+		ltrace('ldap', '| check_database_frontend()')
+
+		def check_people():
+			pass
+		if minimal:
+			pass
+		else:
+			return False
+	def can_be_enabled(self):
+		""" See if the underlying system isready for the current backend to be
+		enabled, else return False. """
+
+		if os.path.exists(self.files.ldap_conf) \
+			and os.path.exists("/etc/ldap/slapd.d"):
+			# if all of these exist, libpam-ldap and slapd are installed. It
+			# is fine to assume that we can use them to handle the backend data.
+			# Else, just forget about it.
+			return True
+
+		return False
+
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
@@ -625,7 +658,21 @@ class ldap_controller(UGBackend):
 
 			self.save_group(gid)
 
-	def bind(self):
+
+	def sasl_bind(self):
+		"""
+		Gain superadmin access to the OpenLDAP server.
+		This is far more than simple "cn=admin,*" access.
+		We are going to navigate the configuration and setup
+		the server if needed.
+
+		by the way, fix #133.
+		"""
+		import ldap.sasl
+		auth=ldap.sasl.external()
+		self.ldap_conn.sasl_interactive_bind_s('', auth)
+
+	def simple_bind(self):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
 		ltrace('ldap','binding as %s.' % (
 			styles.stylize(styles.ST_LOGIN, self.bind_dn)))
@@ -662,7 +709,7 @@ class ldap_controller(UGBackend):
 			)
 
 		try:
-			self.bind()
+			self.simple_bind()
 
 			if action == 'update':
 
@@ -733,7 +780,7 @@ class ldap_controller(UGBackend):
 			)
 
 		try:
-			self.bind()
+			self.simple_bind()
 
 			if action == 'update':
 
@@ -786,7 +833,7 @@ class ldap_controller(UGBackend):
 		""" Delete one user from the LDAP backend. """
 
 		try:
-			self.bind()
+			self.simple_bind()
 			self.ldap_conn.delete_s('uid=%s,%s' % (login, self.nss_base_shadow))
 
 		except ldap.NO_SUCH_OBJECT:
@@ -797,7 +844,7 @@ class ldap_controller(UGBackend):
 		""" Delete one group from the LDAP backend. """
 
 		try:
-			self.bind()
+			self.simple_bind()
 			self.ldap_conn.delete_s('cn=%s,%s' % (name, self.nss_base_group))
 
 		except ldap.NO_SUCH_OBJECT:
