@@ -210,7 +210,7 @@ class unix_controller(UGBackend):
 				'backend'      : self.name
 				}
 
-			ltrace('groups', 'adding group %s' % groups[gid])
+			#ltrace('groups', 'adding group %s' % groups[gid])
 
 			# this will be used as a cache by name_to_gid()
 			name_cache[ entry[0] ] = gid
