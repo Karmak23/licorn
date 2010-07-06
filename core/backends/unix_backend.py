@@ -200,15 +200,17 @@ class unix_controller(UGBackend):
 							members.remove(member)
 
 			groups[gid] = 	{
-				'name'        : entry[0],
-				'passwd'      : entry[1],
-				'gidNumber'   : gid,
-				'memberUid'   : members,
-				'description' :  "" ,
-				'groupSkel'   :  "" ,
-				'permissive'  : None,
-				'backend'     : self.name
+				'name'         : entry[0],
+				'userPassword' : entry[1],
+				'gidNumber'    : gid,
+				'memberUid'    : members,
+				'description'  : "",
+				'groupSkel'    : "",
+				'permissive'   : None,
+				'backend'      : self.name
 				}
+
+			ltrace('groups', 'adding group %s' % groups[gid])
 
 			# this will be used as a cache by name_to_gid()
 			name_cache[ entry[0] ] = gid
@@ -233,7 +235,7 @@ class unix_controller(UGBackend):
 				if groups[gid]['name'] ==  extra_entry[0]:
 					try:
 						groups[gid]['description'] = extra_entry[1]
-						groups[gid]['groupSkel']        = extra_entry[2]
+						groups[gid]['groupSkel']   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
 							UGBackend.configuration.extendedgroup_data_file, \
@@ -250,8 +252,8 @@ class unix_controller(UGBackend):
 					UGBackend.configuration.extendedgroup_data_file)
 					))
 				need_rewriting = True
-				groups[gid]['description'] = ""
-				groups[gid]['groupSkel']        = ""
+				#groups[gid]['description'] = ""
+				#groups[gid]['groupSkel']   = ""
 
 			gshadow_found = False
 			for gshadow_entry in etc_gshadow:
@@ -275,11 +277,18 @@ class unix_controller(UGBackend):
 						styles.stylize(styles.ST_PATH, '/etc/gshadow')
 					))
 				need_rewriting = True
-				groups[gid]['userPassword'] = 'x'
+				# nothing to do here...
+				#groups[gid]['userPassword'] = 'x'
 
+		#
+		# TODO: wipe out this section ? this will be done anyway at
+		# GroupsController shutdown and is incompatible with multi-backend mode.
+		#
 		if need_rewriting and is_allowed:
 			try:
-				self.save_groups()
+				pass
+				# this will be done at GroupsController shutdown anyway.
+				#self.save_groups()
 			except (OSError, IOError), e:
 				if self.warnings:
 					logging.warning("licorn.core.groups: can't correct" \
