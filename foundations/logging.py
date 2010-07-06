@@ -192,7 +192,7 @@ def ask_for_repair(message, auto_answer = None):
 				return False
 			elif char in ( 'a', 'A' ):
 				sys.stderr.write(
-					tyles.stylize(styles.ST_OK, "Yes, all") + "\n")
+					styles.stylize(styles.ST_OK, "Yes, all") + "\n")
 				repair_choice = True
 				return True
 			elif char in ( 's', 'S' ):
