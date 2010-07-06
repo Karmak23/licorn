@@ -279,7 +279,7 @@ class unix_controller(UGBackend):
 
 		if need_rewriting and is_allowed:
 			try:
-				self.save_groups(groups)
+				self.save_groups()
 			except (OSError, IOError), e:
 				if self.warnings:
 					logging.warning("licorn.core.groups: can't correct" \
