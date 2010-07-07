@@ -241,37 +241,73 @@ class UGBackend(Singleton):
 
 		UGBackend.configuration = configuration
 
-		if groups:
-			UGBackend.groups = groups
-			if UGBackend.groups.users:
-				UGBackend.users = UGBackend.groups.users
-		if users:
-			UGBackend.users = users
+		self.set_users_controller(users)
+		self.set_groups_controller(groups)
 
-		# for an abstract backend, this is quite sane.
-		self.enabled = False
+		#
+		# everything else should be done by a real implementation.
+		#
+	def can_be_enabled(self):
+		""" Check if the underlying system is ready for the backend to be
+		enabled (and thus return True), else return False.
+
+		This method itself just *checks*, it must not write anything, or *do*
+		anything inside the backend object.
+
+		It is called by the big core.configuration object in the scanning phase,
+		to see which backend will be used, and determinate priorities among
+		them.
+
+		To keep sane, an abstract backend cannot be enabled.
+		"""
+		return False
 	def initialize(self):
+		"""
+		For an abstract backend, initialize() always return False. """
 		return self.enabled
 	def set_users_controller(self, users):
+		""" save a reference of the UsersController for future use. """
 		UGBackend.users = users
 		if users.groups is not None:
 			UGBackend.groups = users.groups
-
 	def set_groups_controller(self, groups):
+		""" save a reference of the GroupsController for future use. """
 		UGBackend.groups = groups
 		if groups.users is not None:
 			UGBackend.users = groups.users
-	def get_defaults(self):
-		return {}
 	def load_defaults(self):
+		""" A real backend will setup its own needed attributes with values
+		*strictly needed* to work. This is done in case these values are not
+		present in configuration files.
+
+		Any configuration file containing these values, will be loaded
+		afterwards and will overwrite these attributes. """
 		pass
 	def save_users(self):
-		""" Abstract method. """
+		""" Take all users from UGBackend.users (typically in a for loop) and
+		save them into the backend. """
 		pass
-	def save_users(self, groups):
-		""" Abstract method. """
+	def save_groups(self):
+		""" Take all groups from UGBackend.groups (typically in a for loop) and
+		save them into the backend. """
+		pass
+	def save_group(self, gid):
+		""" save one group into the backend. Useful on system which have loads
+		of users/groups, to avoid saving all of them when there is only a small
+		update.	"""
+		pass
+	def save_user(self, uid):
+		""" save one user into the backend. Useful on system which have loads
+		of users/groups, to avoid saving all of them when there is only a small
+		update.	"""
 		pass
 	def save_all(self, users=None, groups=None):
-		''' Save all internal data to backend. '''
-		self.save_users(users if users != None else self.users)
-		self.save_groups(groups if groups != None else self.groups)
+		""" Save all internal data to backend. This is just a wrapper. """
+		self.save_users()
+		self.save_groups()
+	def compute_password(self, password):
+		""" Encode a password in a way the backend can understand.
+		For example the unix backend will use crypt() function, whereas
+		the LDAP backend will use the SHA1 hash only with a base64 encoding and
+		a '{SHA}' text header. """
+		pass
