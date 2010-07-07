@@ -73,7 +73,7 @@ def delete_user():
 			except KeyError, e:
 				logging.warning(
 					"User %s doesn't exist on the system (was: %s)." % (
-						login,e))
+						login, e))
 
 	users.WriteConf()
 def delete_group():

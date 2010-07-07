@@ -298,7 +298,7 @@ class UsersController:
 						% (profile, e))
 		elif primary_group is not None:
 
-			tmp_user_dict['gidNumber']           = pg_gid
+			tmp_user_dict['gidNumber']     = pg_gid
 			tmp_user_dict['loginShell']    = \
 				UsersController.configuration.users.default_shell
 			tmp_user_dict['homeDirectory'] = "%s/%s" % (
@@ -306,8 +306,10 @@ class UsersController:
 
 			# FIXME: use is_valid_skel() ?
 			if skel is None and \
-				os.path.isdir(UsersController.groups.groups[pg_gid]['groupSkel']):
-				skel_to_apply = UsersController.groups.groups[pg_gid]['groupSkel']
+				os.path.isdir(
+					UsersController.groups.groups[pg_gid]['groupSkel']):
+				skel_to_apply = \
+					UsersController.groups.groups[pg_gid]['groupSkel']
 
 		else:
 			tmp_user_dict['gidNumber'] = \
@@ -331,8 +333,9 @@ class UsersController:
 				self.configuration.users.uid_min,
 				self.configuration.users.uid_max)
 
-		tmp_user_dict['userPassword']   = crypt.crypt(password,
-			"$1$%s" % hlstr.generate_password())
+		tmp_user_dict['userPassword'] = \
+			UsersController.backends['prefered'].compute_password(password)
+
 		tmp_user_dict['shadowLastChange'] = str(int(time()/86400))
 
 		# create home directory and apply skel
@@ -344,14 +347,14 @@ class UsersController:
 		# else: the home directory already exists, we don't overwrite it
 		#
 
-		tmp_user_dict['uidNumber']            = uid
+		tmp_user_dict['uidNumber']      = uid
 		tmp_user_dict['gecos']          = gecos
 		tmp_user_dict['login']          = login
 		# prepare the groups cache.
 		tmp_user_dict['groups']         = []
 		tmp_user_dict['shadowInactive'] = 99999
-		tmp_user_dict['shadowWarning']  = ""
-		tmp_user_dict['shadowExpire']   = ""
+		tmp_user_dict['shadowWarning']  = ''
+		tmp_user_dict['shadowExpire']   = ''
 		tmp_user_dict['backend']        = \
 			UsersController.backends['prefered'].name
 
@@ -503,17 +506,15 @@ class UsersController:
 
 		uid = UsersController.login_to_uid(login)
 
-		# use real MD5 passwd, and generate a good salt (fixes #58).
-		UsersController.users[uid]['userPassword']   = crypt.crypt(
-			password, "$1$%s" % hlstr.generate_password())
+		UsersController.users[uid]['userPassword'] = \
+		UsersController.backends[
+			UsersController.users[uid]['backend']
+			].compute_password(password)
 
 		# 3600*24 to have the number of days since epoch (fixes #57).
 		UsersController.users[uid]['shadowLastChange'] = str(
 			int(time()/86400) )
 
-		#
-		# XXX: shouldn't we use ldap.change_pass*() in the backend ?
-		#
 		UsersController.users[uid]['action'] = 'update'
 		UsersController.backends[
 			UsersController.users[uid]['backend']

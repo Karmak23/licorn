@@ -9,6 +9,8 @@ import os
 import re
 import ldap
 import string
+import hashlib
+from base64 import encodestring, decodestring
 
 from licorn.foundations         import logging, exceptions, styles, pyutils
 from licorn.foundations         import objects, readers, process
@@ -260,8 +262,8 @@ class ldap_controller(UGBackend):
 		except (IOError, OSError), e:
 			if e.errno != 2:
 				if os.path.exists(self.files.ldap_conf):
-					logging.warning('''Problem initializing the LDAP backend. '''
-					'''LDAP seems installed but not configured or unusable. '''
+					logging.warning('''Problem initializing the LDAP backend.'''
+					''' LDAP seems installed but not configured or unusable. '''
 					'''Please run 'sudo chk config -evb' to correct. '''
 					'''(was: %s)''' % e)
 				#else:
@@ -269,7 +271,7 @@ class ldap_controller(UGBackend):
 			else:
 				raise e
 
-		self.check()
+		#self.check()
 
 		ltrace('ldap', '< initialize() %s.' % self.enabled)
 		return self.enabled
@@ -448,6 +450,10 @@ class ldap_controller(UGBackend):
 		login_cache = {}
 
 		ltrace('ldap', '> load_users() %s' % self.nss_base_shadow)
+
+		if process.whoami() == 'root':
+			self.simple_bind()
+
 		try:
 			ldap_result = self.ldap_conn.search_s(
 				self.nss_base_shadow,
@@ -458,14 +464,16 @@ class ldap_controller(UGBackend):
 
 		for dn, entry in ldap_result:
 
+			ltrace('ldap', 'load user %s.' % entry)
+
 			temp_user_dict	= {
 				# Get the cn from the dn here, else we could end in a situation
 				# where the user could not be deleted if it was created manually
 				# and the cn is inconsistent.
 				#'login'        : entry['uid'][0],
 				'login'         : dn.split(',')[0][4:],     # rip out uid=
-				'uidNumber'           : int(entry['uidNumber'][0]),
-				'gidNumber'           : int(entry['gidNumber'][0]),
+				'uidNumber'     : int(entry['uidNumber'][0]),
+				'gidNumber'     : int(entry['gidNumber'][0]),
 				'homeDirectory' : entry['homeDirectory'][0],
 				'groups'        : set(),
 					# a cache which will eventually be filled by
@@ -475,7 +483,13 @@ class ldap_controller(UGBackend):
 				}
 
 			def account_lock(value, tmp_entry=temp_user_dict):
-				if value[0] == '!':
+				try:
+					# get around an error where password is not base64 encoded.
+					password = decodestring(value.split('}',1)[1])
+				except Exception:
+					password = value
+
+				if password[0] == '!':
 					tmp_entry['locked'] = True
 					# the shell could be /bin/bash (or else), this is valid
 					# for system accounts, and for a standard account this
@@ -486,7 +500,7 @@ class ldap_controller(UGBackend):
 				else:
 					tmp_entry['locked'] = False
 
-				return value
+				return password
 
 			for key, func in (
 				('loginShell', str),
@@ -503,6 +517,8 @@ class ldap_controller(UGBackend):
 				):
 				if entry.has_key(key):
 					temp_user_dict[key] = func(entry[key][0])
+
+			#ltrace('ldap', 'uP: %s' % temp_user_dict['userPassword'])
 
 			if groups is not None:
 				for g in groups.groups:
@@ -680,8 +696,17 @@ class ldap_controller(UGBackend):
 		if self.bind_as_admin:
 			self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
 		else:
-			# TODO: ask for password, then bind.
-			pass
+			if process.whoami() == 'root':
+				self.sasl_bind()
+			else:
+				#
+				# this will lamentably fail if current user is not in LDAP tree,
+				# eg any system non-root user, any shadow user, etc.
+				#
+				import getpass
+				self.ldap_conn.bind_s('uid=%s,%s' % (
+					process.whoami(), self.base),
+					getpass.getpass(), ldap.AUTH_SIMPLE)
 
 	def save_user(self, uid):
 		""" Save one user in the LDAP backend.
@@ -708,43 +733,45 @@ class ldap_controller(UGBackend):
 			'groups'    # internal cache, not stored
 			)
 
+		# prepare this field, back to the form slapd expects it.
+		users[uid]['userPassword'] = \
+			'{SHA}' + encodestring(users[uid]['userPassword']).strip()
+
 		try:
 			self.simple_bind()
 
 			if action == 'update':
 
-				ltrace('ldap','updating user %s.' % (
-					styles.stylize(styles.ST_LOGIN, login)))
-
 				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_shadow,
 				ldap.SCOPE_SUBTREE, '(uid=%s)' % login)[0]
 
-				#print str(users[uid])  + '\n'
-				#print str(old_entry) + '\n'
-				#print str(modifyModlist(old_entry, users[uid], ignore_list,ignore_oldexistent=1)) + '\n'
+				ltrace('ldap', 'update user %s: %s\n%s' % (
+					styles.stylize(styles.ST_LOGIN, login),
+					old_entry,
+					modifyModlist(old_entry, users[uid],
+						ignore_list, ignore_oldexistent=1)))
 
 				self.ldap_conn.modify_s(dn, modifyModlist(
 					old_entry, users[uid], ignore_list, ignore_oldexistent=1))
 
 			elif action == 'create':
 
-				ltrace('ldap','creating user %s.' % (
-					styles.stylize(styles.ST_LOGIN, login)))
-
-				#
 				# prepare the LDAP entry like the LDAP daemon assumes it will
-				# be.
-				#
+				# be : add or change necessary fields.
 				users[uid]['cn'] = login
 				users[uid]['objectClass'] = [
 					'inetOrgPerson', 'posixAccount', 'shadowAccount']
 				users[uid]['sn'] = users[uid]['gecos']
 
+				ltrace('ldap', 'add user %s: %s' % (
+					styles.stylize(styles.ST_LOGIN, login),
+					addModlist(users[uid], ignore_list)))
+
 				self.ldap_conn.add_s(
 					'uid=%s,%s' % (login, self.nss_base_shadow),
 					addModlist(users[uid], ignore_list))
 			else:
-				logging.warning('%s: unknown action %s for user %s(uid=%s).' % (
+				logging.warning('%s: unknown action %s for user %s(uid=%s).' %(
 					self.name, action, login, uid))
 		except (
 			ldap.NO_SUCH_OBJECT,
@@ -851,3 +878,6 @@ class ldap_controller(UGBackend):
 			pass
 		# except BAD_BIND:
 		#	pass
+	def compute_password(self, password):
+		return hashlib.sha1(password).digest()
+

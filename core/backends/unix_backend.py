@@ -6,8 +6,11 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
+import crypt
+import hashlib
+
 from licorn.foundations         import logging, exceptions, styles
-from licorn.foundations         import objects, readers
+from licorn.foundations         import objects, readers, hlstr
 from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.objects import UGBackend
 
@@ -365,7 +368,7 @@ class unix_controller(UGBackend):
 
 			etcgroup.append(":".join((
 										groups[gid]['name'],
-										groups[gid]['passwd'],
+										groups[gid]['userPassword'],
 										str(gid),
 										','.join(groups[gid]['memberUid'])
 									))
@@ -414,3 +417,9 @@ class unix_controller(UGBackend):
 		""" Just a wrapper. Deleting one group in Unix backend is not
 		significantly faster than saving all of them. """
 		self.save_groups()
+	def compute_password(self, password):
+		return crypt.crypt(
+			password, "$6$%s" % hlstr.generate_password())
+		#return '$6$' + hashlib.sha512(password).hexdigest()
+
+
