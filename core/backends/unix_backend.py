@@ -39,8 +39,8 @@ class unix_controller(UGBackend):
 		for entry in readers.ug_conf_load_list("/etc/passwd"):
 			temp_user_dict	= {
 				'login'        : entry[0],
-				'uidNumber'          : int(entry[2]) ,
-				'gidNumber'          : int(entry[3]) ,
+				'uidNumber'    : int(entry[2]) ,
+				'gidNumber'    : int(entry[3]) ,
 				'gecos'        : entry[4],
 				'homeDirectory': entry[5],
 				'loginShell'   : entry[6],
@@ -81,33 +81,28 @@ class unix_controller(UGBackend):
 					else:
 						users[uid]['locked'] = False
 
-					if entry[2] == "":
-						users[uid]['shadowLastChange']  = 0
-					else:
-						users[uid]['shadowLastChange']  = int(entry[2])
+					users[uid]['shadowLastChange']  = int(entry[2]) \
+						if entry[2] != '' else 0
 
-					if entry[3] == "":
-						users[uid]['shadowInactive'] = 99999
-					else:
-						users[uid]['shadowInactive'] = int(entry[3])
+					users[uid]['shadowMin'] = int(entry[3]) \
+						if entry[3] != '' else 0
 
-					if entry[4] == "":
-						users[uid]['shadowWarning']  = entry[4]
-					else:
-						users[uid]['shadowWarning']  = int(entry[4])
+					users[uid]['shadowMax'] = int(entry[4]) \
+						if entry[4] != '' else 99999
 
-					if entry[5] == "":
-						users[uid]['shadowExpire'] = entry[5]
-					else:
-						users[uid]['shadowExpire'] = int(entry[5])
+					users[uid]['shadowWarning']  = int(entry[5]) \
+						if entry[5] != '' else 7
 
-					# Note:
-					# the 7th field doesn't seem to be used by passwd(1) nor by
-					# usermod(8) and thus raises en exception because it's empty
-					# in 100% of cases.
-					# → temporarily disabled until we use it internally.
-					#
-					#     users[uid]['last_lock_date']      = int(entry[6])
+					users[uid]['shadowInactive'] = int(entry[6]) \
+						if entry[6] != '' else ''
+
+					users[uid]['shadowExpire'] = int(entry[7]) \
+						if entry[7] != '' else ''
+
+					# reserved field, not used yet
+					users[uid]['shadowFlag'] = int(entry[8]) \
+						if entry[8] != '' else ''
+
 				else:
 					logging.warning(
 					"non-existing user '%s' referenced in /etc/shadow." % \
@@ -316,10 +311,12 @@ class unix_controller(UGBackend):
 										users[uid]['login'],
 										users[uid]['userPassword'],
 										str(users[uid]['shadowLastChange']),
-										str(users[uid]['shadowInactive']),
+										str(users[uid]['shadowMin']),
+										str(users[uid]['shadowMax']),
 										str(users[uid]['shadowWarning']),
+										str(users[uid]['shadowInactive']),
 										str(users[uid]['shadowExpire']),
-										"","",""
+										str(users[uid]['shadowFlag'])
 									))
 							)
 
