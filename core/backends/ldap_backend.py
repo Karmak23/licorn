@@ -180,11 +180,11 @@ class ldap_controller(UGBackend):
 
 		ltrace('ldap', '| load_defaults().')
 
-		base = 'dc=licorn,dc=local'
+		base = 'dc=licorn,dc=org'
 
-		if self.configuration.daemon.role == 'client':
+		if UGBackend.configuration.daemon.role == 'client':
 			waited = 0.1
-			while self.configuration.server is None:
+			while UGBackend.configuration.server is None:
 				#
 				time.sleep(0.1)
 				wait += 0.1
@@ -199,9 +199,11 @@ class ldap_controller(UGBackend):
 			server = '127.0.0.1'
 
 		self.base       = base
-		self.uri        = 'ldapi:///%s' % server
+		# Stay local (unix socket) for nows
+		# if server is None:
+		self.uri        = 'ldapi:///'
 		self.rootbinddn = 'cn=admin,%s' % base
-		self.secret     = ''
+		self.secret     = 'lcnadmin'
 
 	def initialize(self):
 
@@ -209,7 +211,7 @@ class ldap_controller(UGBackend):
 
 		ltrace('ldap', '> initialize().')
 
-		self.files   = LicornConfigObject()
+		self.files             = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
 
@@ -218,7 +220,7 @@ class ldap_controller(UGBackend):
 					self.files.ldap_conf).iteritems():
 				setattr(self, key, value)
 
-			# add self.base to self.nss_* if not present
+			# add the self.base extension to self.nss_* if not present.
 			for attr in (
 				'nss_base_group',
 				'nss_base_passwd',
@@ -231,10 +233,11 @@ class ldap_controller(UGBackend):
 				finally:
 					del i
 
+			# assume we are not admin, then see if we are.
 			self.bind_as_admin = False
 
 			try:
-				# if we have access to /etc/ldap.secret, we are root. Bind as admin.
+				# if we have access to /etc/ldap.secret, we are root.
 
 				self.secret = open(self.files.ldap_secret).read().strip()
 				self.bind_dn = self.rootbinddn
@@ -246,9 +249,18 @@ class ldap_controller(UGBackend):
 					# we will bind as current user.
 					self.bind_dn = 'uid=%s,%s' % (process.whoami(), self.base)
 					#
-					# TODO: ask the user for his/her password, because the
+					# NOTE 1: ask the user for his/her password, because the
 					# server will refuse a binding without a password.
 					#
+					# NOTE 2: if the current user is not in the LDAP tree, we
+					# must bind with external SASL, which will likely not work
+					# because any other user than root / cn=admin has no right
+					# on the LDAP tree.
+					#
+					# CONCLUSION: this case is not handled yet, because on
+					# a regular LDAP-enabled Licorn system, the user:
+					#	- is either root, thus cn=admin
+					#	- is a LDAP user, and thus can bind correctly.
 
 				else:
 					raise e
@@ -294,9 +306,9 @@ class ldap_controller(UGBackend):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
 		ltrace('ldap', '> check_daemon()')
 
-		if not self.bind_as_admin:
-			logging.warning('%s: you must be root or uid(0) to continue.' % (
-				self.name))
+		if process.whoami() != 'root' and not self.bind_as_admin:
+			logging.warning('''%s: you must be root or have cn=admin access'''
+			''' to continue.''' % self.name)
 			return
 
 		self.sasl_bind()
@@ -432,8 +444,7 @@ class ldap_controller(UGBackend):
 		else:
 			return False
 	def can_be_enabled(self):
-		""" See if the underlying system isready for the current backend to be
-		enabled, else return False. """
+		"""  """
 
 		if os.path.exists(self.files.ldap_conf) \
 			and os.path.exists("/etc/ldap/slapd.d"):
@@ -452,7 +463,7 @@ class ldap_controller(UGBackend):
 		ltrace('ldap', '> load_users() %s' % self.nss_base_shadow)
 
 		if process.whoami() == 'root':
-			self.simple_bind()
+			self.bind(False)
 
 		try:
 			ldap_result = self.ldap_conn.search_s(
@@ -688,7 +699,7 @@ class ldap_controller(UGBackend):
 		auth=ldap.sasl.external()
 		self.ldap_conn.sasl_interactive_bind_s('', auth)
 
-	def simple_bind(self):
+	def bind(self, need_write_access=True):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
 		ltrace('ldap','binding as %s.' % (
 			styles.stylize(styles.ST_LOGIN, self.bind_dn)))
@@ -699,14 +710,21 @@ class ldap_controller(UGBackend):
 			if process.whoami() == 'root':
 				self.sasl_bind()
 			else:
-				#
-				# this will lamentably fail if current user is not in LDAP tree,
-				# eg any system non-root user, any shadow user, etc.
-				#
-				import getpass
-				self.ldap_conn.bind_s('uid=%s,%s' % (
-					process.whoami(), self.base),
-					getpass.getpass(), ldap.AUTH_SIMPLE)
+				if need_write_access:
+					#
+					# this will lamentably fail if current user is not in LDAP tree,
+					# eg any system non-root user, any shadow user, etc. see
+					# self.initialize() for details.
+					#
+					import getpass
+					self.ldap_conn.bind_s(self.bind_dn,
+						getpass.getpass(), ldap.AUTH_SIMPLE)
+				#else:
+				# do nothing. We hit this case in all "get" commands, which
+				# don't need write access to the LDAP tree. With this, standard
+				# users can query the LDAP tree, without beiing bothered by a
+				# password-ask; they will get back only the data they have read
+				# access to, which seems quite fine.
 
 	def save_user(self, uid):
 		""" Save one user in the LDAP backend.
@@ -733,12 +751,12 @@ class ldap_controller(UGBackend):
 			'groups'    # internal cache, not stored
 			)
 
-		# prepare this field, back to the form slapd expects it.
+		# prepare this field in the form slapd expects it.
 		users[uid]['userPassword'] = \
 			'{SHA}' + encodestring(users[uid]['userPassword']).strip()
 
 		try:
-			self.simple_bind()
+			self.bind()
 
 			if action == 'update':
 
@@ -807,7 +825,7 @@ class ldap_controller(UGBackend):
 			)
 
 		try:
-			self.simple_bind()
+			self.bind()
 
 			if action == 'update':
 
@@ -860,7 +878,7 @@ class ldap_controller(UGBackend):
 		""" Delete one user from the LDAP backend. """
 
 		try:
-			self.simple_bind()
+			self.bind()
 			self.ldap_conn.delete_s('uid=%s,%s' % (login, self.nss_base_shadow))
 
 		except ldap.NO_SUCH_OBJECT:
@@ -871,7 +889,7 @@ class ldap_controller(UGBackend):
 		""" Delete one group from the LDAP backend. """
 
 		try:
-			self.simple_bind()
+			self.bind()
 			self.ldap_conn.delete_s('cn=%s,%s' % (name, self.nss_base_group))
 
 		except ldap.NO_SUCH_OBJECT:
