@@ -630,7 +630,7 @@ class UsersController:
 			except Exception, e:
 				logging.warning(str(e))
 
-	def ExportCLI( self, longOutput = False):
+	def ExportCLI( self, long_output = False):
 		""" Export the user accounts list to human readable («passwd») form.
 		"""
 		if self.filter_applied:
@@ -649,14 +649,14 @@ class UsersController:
 						users[uid]['homeDirectory'],
 						users[uid]['loginShell'],
 						]
-			if longOutput:
+			if long_output:
 				account.append(','.join(UsersController.users[uid]['groups']))
 			return ':'.join(account)
 
 		data = '\n'.join(map(build_cli_output_user_data, uids)) + '\n'
 
 		return data
-	def ExportCSV( self, longOutput = False):
+	def ExportCSV( self, long_output = False):
 		"""Export the user accounts list to CSV."""
 
 		if self.filter_applied:
@@ -677,7 +677,7 @@ class UsersController:
 		data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
 
 		return data
-	def ExportXML( self, longOutput = False):
+	def ExportXML( self, long_output = False):
 		""" Export the user accounts list to XML. """
 
 		if self.filter_applied:
@@ -703,7 +703,7 @@ class UsersController:
 					UsersController.users[uid]['homeDirectory'],
 					UsersController.users[uid]['loginShell']
 				)
-			if longOutput:
+			if long_output:
 				data += "		<groups>%s</groups>\n" % \
 					','.join(UsersController.users[uid]['groups'])
 
