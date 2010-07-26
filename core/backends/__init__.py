@@ -13,7 +13,7 @@ backends = []
 for entry in os.listdir(__path__[0]):
 	if entry == '__init__.py':
 		continue
-	if entry[-3:] == '.py':
+	if entry[-11:] == '_backend.py':
 		modname = entry[:-3]		# minus '.py'
 		backend_name = entry[:-11]	# minus '_backend.py'
 		exec('from licorn.core.backends.%s import %s_controller as %s' % (

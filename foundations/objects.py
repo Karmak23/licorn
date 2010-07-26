@@ -241,8 +241,11 @@ class UGBackend(Singleton):
 
 		UGBackend.configuration = configuration
 
-		self.set_users_controller(users)
-		self.set_groups_controller(groups)
+		if users:
+			self.set_users_controller(users)
+
+		if groups:
+			self.set_groups_controller(groups)
 
 		#
 		# everything else should be done by a real implementation.
@@ -265,6 +268,9 @@ class UGBackend(Singleton):
 		"""
 		For an abstract backend, initialize() always return False. """
 		return self.enabled
+	def check(self, batch=False, auto_answer=None):
+		""" default check method. """
+		pass
 	def set_users_controller(self, users):
 		""" save a reference of the UsersController for future use. """
 		UGBackend.users = users

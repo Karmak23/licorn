@@ -10,6 +10,7 @@ import re
 import ldap
 import string
 import hashlib
+from ldif import LDIFParser
 from base64 import encodestring, decodestring
 
 from licorn.foundations         import logging, exceptions, styles, pyutils
@@ -139,6 +140,22 @@ def modifyModlist(old_entry, new_entry, ignore_attr_types=None,
 			modlist.append((ldap.MOD_DELETE, attrtype, None))
 	return modlist # modifyModlist()
 
+class MyLDIFParser(LDIFParser):
+	def __init__(self, input_name):
+		LDIFParser.__init__(self, open('%s/schemas/%s.ldif' % (
+			os.path.dirname(__file__),input_name), 'r'))
+
+		#print '%s/schemas/%s.ldif' % (
+		#	os.path.dirname(__file__),input_name)
+
+		self.__lcn_data = []
+	def handle(self, dn, entry):
+		self.__lcn_data.append((dn,entry))
+	def get(self):
+		self.parse()
+		return self.__lcn_data
+
+
 class ldap_controller(UGBackend):
 	""" LDAP Backend for users and groups.
 
@@ -166,6 +183,11 @@ class ldap_controller(UGBackend):
 		# nsswitch compatibility
 		self.compat   = ('ldap')
 		self.priority = 5
+
+		self.files             = LicornConfigObject()
+		self.files.ldap_conf   = '/etc/ldap.conf'
+		self.files.ldap_secret = '/etc/ldap.secret'
+
 	def __del__(self):
 		self.ldap_conn.unbind_s()
 
@@ -179,8 +201,6 @@ class ldap_controller(UGBackend):
 		"""
 
 		ltrace('ldap', '| load_defaults().')
-
-		base = 'dc=licorn,dc=org'
 
 		if UGBackend.configuration.daemon.role == 'client':
 			waited = 0.1
@@ -198,22 +218,21 @@ class ldap_controller(UGBackend):
 		else:
 			server = '127.0.0.1'
 
-		self.base       = base
 		# Stay local (unix socket) for nows
 		# if server is None:
-		self.uri        = 'ldapi:///'
-		self.rootbinddn = 'cn=admin,%s' % base
-		self.secret     = 'lcnadmin'
+		self.uri             = 'ldapi:///'
+		self.base            = 'dc=meta-it,dc=local'
+		self.rootbinddn      = 'cn=admin,%s' % self.base
+		self.secret          = 'metasecret'
+		self.nss_base_group  = 'ou=Groups'
+		self.nss_base_passwd = 'ou=People'
+		self.nss_base_shadow = 'ou=People'
 
 	def initialize(self):
 
 		self.load_defaults()
 
 		ltrace('ldap', '> initialize().')
-
-		self.files             = LicornConfigObject()
-		self.files.ldap_conf   = '/etc/ldap.conf'
-		self.files.ldap_secret = '/etc/ldap.secret'
 
 		try:
 			for (key, value) in readers.simple_conf_load_dict(
@@ -230,8 +249,6 @@ class ldap_controller(UGBackend):
 					i = value.index(self.base)
 				except ValueError:
 					setattr(self, attr, '%s,%s' % (value, self.base))
-				finally:
-					del i
 
 			# assume we are not admin, then see if we are.
 			self.bind_as_admin = False
@@ -262,6 +279,20 @@ class ldap_controller(UGBackend):
 					#	- is either root, thus cn=admin
 					#	- is a LDAP user, and thus can bind correctly.
 
+				if e.errno == 2:
+					# no such file or directory. Assume we are root and fill
+					# the default password in the file. This will make
+					# everything go smoother.
+
+					logging.notice('''seting up default password in %s. You '''
+						'''can change it later if you want by running '''
+						'''%FIXME_COMMAND_HERE%.''' % (
+						styles.stylize(styles.ST_PATH, self.files.ldap_secret)))
+
+					open(self.files.ldap_secret, 'w').write(self.secret)
+					self.bind_as_admin = True
+
+
 				else:
 					raise e
 
@@ -269,7 +300,7 @@ class ldap_controller(UGBackend):
 
 			self.ldap_conn = ldap.initialize(self.uri)
 
-			self.enabled = True
+			self.enabled = self.last_init_check()
 
 		except (IOError, OSError), e:
 			if e.errno != 2:
@@ -282,8 +313,6 @@ class ldap_controller(UGBackend):
 				# just discard the LDAP backend completely.
 			else:
 				raise e
-
-		#self.check()
 
 		ltrace('ldap', '< initialize() %s.' % self.enabled)
 		return self.enabled
@@ -302,9 +331,23 @@ class ldap_controller(UGBackend):
 		for (key, value) in defaults :
 			if not hasattr(self, key):
 				setattr(self, key, value)
-	def check(self):
+	def last_init_check(self):
+		""" do a quick LDAP content check, to validate everything is valid. """
+
+		try:
+			ldap_result = self.ldap_conn.search_s(
+				'dc=meta-it,dc=local',
+				ldap.SCOPE_SUBTREE,
+				'(objectClass=o)')
+
+		except (ldap.NO_SUCH_OBJECT, ldap.INVALID_DN_SYNTAX):
+			return False
+
+		return True
+
+	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
-		ltrace('ldap', '> check_daemon()')
+		ltrace('ldap', '> check()')
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
 			logging.warning('''%s: you must be root or have cn=admin access'''
@@ -314,27 +357,104 @@ class ldap_controller(UGBackend):
 		self.sasl_bind()
 
 		try:
+			# load all config objects from the daemon.
+			# there may be none, eg on a fresh install.
+			#
 			ldap_result = self.ldap_conn.search_s(
 				'cn=config',
 				ldap.SCOPE_SUBTREE,
 				'(objectClass=*)',
-				['dn', 'objectClass', 'cn'])
+				['dn', 'cn'])
 
-		except Exception, e:
-			print str(e)
+			# they will be checked later, extract them and keep them hot.
+			dn_already_present = [ x for x,y in ldap_result ]
 
-		for dn, entry in ldap_result:
-			print '%s, %s' % (dn, entry)
+		except ldap.NO_SUCH_OBJECT:
+			dn_already_present = []
 
-		ltrace('ldap', '< check_daemon()')
+		try:
+			# search for the frontend, which is not in cn=config
+			ldap_result = self.ldap_conn.search_s(
+				self.base,
+				ldap.SCOPE_SUBTREE,
+				'(objectClass=*)',
+				['dn', 'cn'])
+
+			dn_already_present.extend([ x for x,y in ldap_result ])
+		except ldap.NO_SUCH_OBJECT:
+			# just forget this error, the schema will be automatically added
+			# if not found.
+			pass
+
+		# DEVEL DEBUG
+		#
+		#print dn_already_present
+		#for dn, entry in ldap_result:
+		#	ltrace('ldap', '%s -> %s' % (dn, entry))
+
+		# Here follows a list of which DN to check for presence, associated to
+		# which ldap_schema to load if the corresponding DN is not present in
+		# slapd configuration.
+		defaults = (
+			('cn={0}core,cn=schema,cn=config', 'core'),
+			('cn={1}cosine,cn=schema,cn=config', 'cosine'),
+			('cn={2}nis,cn=schema,cn=config', 'nis'),
+			('cn={3}inetorgperson,cn=schema,cn=config', 'inetorgperson'),
+			('cn={4}samba,cn=schema,cn=config', 'samba'),
+			('cn={5}licorn,cn=schema,cn=config', 'licorn'),
+			('cn=module{0},cn=config', 'backend'),
+			# SKIP dn: cn=config (should be already there at fresh install)
+				# ALREADY INCLUDED olcDatabase={-1}frontend,cn=config
+				# ALREADY INCLUDED olcDatabase={0}config,cn=config
+				# ALREADY INCLUDED olcDatabase={1}hdb,cn=config
+			# SKIP dn: cn=schema,cn=config (filled by followers)
+			#
+			# and don't forget the frontend.
+			(self.base, 'frontend')
+			)
+
+		to_load = []
+
+		for dn, schema in defaults:
+
+			if not dn in dn_already_present:
+				if batch or logging.ask_for_repair('''%s: %s lacks '''
+						'''mandatory schema %s.''' % (
+							self.name,
+							styles.stylize(styles.ST_PATH, 'slapd'),
+							schema),
+						auto_answer):
+
+					logging.info('%s: loading schema %s into slapd.' % (self.name,
+						schema))
+
+					if schema == 'frontend':
+						# the frontend is a special case which can't be filled by root.
+						# We have to bind as cn=admin, else it will fail with
+						# "Insufficient privileges" error.
+						self.bind()
+
+					for (dn, entry) in MyLDIFParser(schema).get():
+						try:
+							#ltrace('ldap', 'adding %s -> %s.' % (dn, entry))
+							ltrace('ldap', 'adding %s to slapd.' % dn)
+
+							self.ldap_conn.add_s(dn, addModlist(entry))
+						except ldap.ALREADY_EXISTS:
+							logging.notice('skipping already present dn %s.' % dn)
+
+				else:
+					# all these schemas are mandatory for Licorn to work,
+					# we should not reach here.
+					raise exceptions.LicornRuntimeError(
+						'''Can't continue without altering slapd '''
+						'''configuration.''')
+
+		ltrace('ldap', '< check()')
 	def check_system_files(self, minimal=True, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
-		ltrace('ldap', '> check_system()')
-
-		if not self.enabled:
-			ltrace('ldap', '< check_system() [not enabled]')
-			return
+		ltrace('ldap', '> check_system_files()')
 
 		if pyutils.check_file_against_dict(self.files.ldap_conf,
 				(
@@ -444,7 +564,10 @@ class ldap_controller(UGBackend):
 		else:
 			return False
 	def can_be_enabled(self):
-		"""  """
+		""" Check if pam-ldap and slapd are installed.
+		This function fo not check if they are *configured*. We must assume
+		they are, else this would cost too much. There are dedicated functions
+		to check and alter the configuration. """
 
 		if os.path.exists(self.files.ldap_conf) \
 			and os.path.exists("/etc/ldap/slapd.d"):
@@ -695,6 +818,9 @@ class ldap_controller(UGBackend):
 
 		by the way, fix #133.
 		"""
+
+		ltrace('ldap', 'binding as root in SASL/external mode.')
+
 		import ldap.sasl
 		auth=ldap.sasl.external()
 		self.ldap_conn.sasl_interactive_bind_s('', auth)

@@ -1018,12 +1018,38 @@ class LicornConfiguration (object):
 		""" Check all components of system configuration and repair
 		if asked for."""
 
+		ltrace('configuration', '> check()')
+
 		self.CheckBaseDirs(minimal, batch, auto_answer)
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 		self.check_OpenSSH(batch, auto_answer)
 
+		self.check_backends(batch, auto_answer)
+
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
+		ltrace('configuration', '< check()')
+	def check_backends(self, batch=False, auto_answer=None):
+		""" check all enabled backends, except the 'prefered', which is one of
+		the enabled anyway.
+
+		Checking them will make them configure themselves, and configure the
+		underlying system daemons and tools. """
+
+		ltrace('configuration', '> check_backends()')
+
+		from licorn.core.backends import backends
+
+		for backend in backends:
+			b = backend(self)
+
+		if b.name in self.backends:
+			self.backends[b.name].check(batch, auto_answer)
+		elif b.can_be_enabled():
+			b.initialize()
+			b.check(batch, auto_answer)
+
+		ltrace('configuration', '< check_backends()')
 	def CheckBaseDirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
 
