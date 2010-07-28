@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-16 16:48+0200\n"
+"POT-Creation-Date: 2010-07-28 15:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,29 +16,29 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: core/internals/configuration.py:358
+#: core/internals/configuration.py:486
 #, python-format
 msgid ""
 "SSH detection not supported yet on your system.Please get in touch with %s."
 msgstr ""
 
-#: core/internals/configuration.py:373
+#: core/internals/configuration.py:501
 msgid "Users allowed to connect via SSHd"
 msgstr ""
 
-#: core/internals/configuration.py:594
+#: core/internals/configuration.py:754
 msgid "user"
 msgstr ""
 
-#: core/internals/configuration.py:595
+#: core/internals/configuration.py:755
 msgid "users"
 msgstr ""
 
-#: core/internals/configuration.py:613
+#: core/internals/configuration.py:774
 msgid "group"
 msgstr ""
 
-#: core/internals/configuration.py:614
+#: core/internals/configuration.py:775
 msgid "groups"
 msgstr ""
 
@@ -78,48 +78,48 @@ msgstr ""
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr ""
 
-#: interfaces/web/base.py:26 interfaces/web/server.py:26
+#: interfaces/web/base.py:23 interfaces/web/server.py:23
 msgid "Restart server."
 msgstr ""
 
-#: interfaces/web/base.py:27 interfaces/web/server.py:27
+#: interfaces/web/base.py:24 interfaces/web/server.py:24
 msgid "Restart server"
 msgstr ""
 
-#: interfaces/web/base.py:28 interfaces/web/server.py:28
+#: interfaces/web/base.py:25 interfaces/web/server.py:25
 msgid "Shutdown server."
 msgstr ""
 
-#: interfaces/web/base.py:29 interfaces/web/server.py:29
+#: interfaces/web/base.py:26 interfaces/web/server.py:26
 msgid "Shutdown server"
 msgstr ""
 
-#: interfaces/web/base.py:71
+#: interfaces/web/base.py:68
 #, python-format
 msgid "%d year%s, "
 msgstr ""
 
-#: interfaces/web/base.py:74
+#: interfaces/web/base.py:71
 #, python-format
 msgid "%d day%s, "
 msgstr ""
 
-#: interfaces/web/base.py:77
+#: interfaces/web/base.py:74
 #, python-format
 msgid "%d hour%s, "
 msgstr ""
 
-#: interfaces/web/base.py:80
+#: interfaces/web/base.py:77
 #, python-format
 msgid "%d min%s, "
 msgstr ""
 
-#: interfaces/web/base.py:83
+#: interfaces/web/base.py:80
 #, python-format
 msgid "%d sec%s"
 msgstr ""
 
-#: interfaces/web/base.py:85
+#: interfaces/web/base.py:82
 #, python-format
 msgid ""
 "Up and running since <strong>%s</strong>.<br /><br />\n"
@@ -128,16 +128,16 @@ msgid ""
 "1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
 msgstr ""
 
-#: interfaces/web/base.py:128
+#: interfaces/web/base.py:125
 msgid "no virtual memory installed."
 msgstr ""
 
-#: interfaces/web/base.py:131
+#: interfaces/web/base.py:128
 #, python-format
 msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
 msgstr ""
 
-#: interfaces/web/base.py:134
+#: interfaces/web/base.py:131
 #, python-format
 msgid ""
 "\n"
@@ -147,19 +147,53 @@ msgid ""
 "%s"
 msgstr ""
 
-#: interfaces/web/base.py:145
+#: interfaces/web/base.py:142
 msgid "Server status"
 msgstr ""
 
-#: interfaces/web/base.py:157
+#: interfaces/web/base.py:154
 msgid "System information"
 msgstr ""
 
-#: interfaces/web/base.py:158
+#: interfaces/web/base.py:155
 msgid "System status"
 msgstr ""
 
-#: interfaces/web/groups.py:9 interfaces/web/users.py:26
+#: interfaces/web/server.py:34
+msgid "Can't reboot the system."
+msgstr ""
+
+#: interfaces/web/server.py:37
+msgid "Rebooting…"
+msgstr ""
+
+#: interfaces/web/server.py:63
+#, python-format
+msgid "Sure you want to reboot the %s server?"
+msgstr ""
+
+#: interfaces/web/server.py:64 interfaces/web/server.py:102
+msgid "YES"
+msgstr ""
+
+#: interfaces/web/server.py:65 interfaces/web/server.py:103
+msgid "NO"
+msgstr ""
+
+#: interfaces/web/server.py:72
+msgid "Can't shutdown the system."
+msgstr ""
+
+#: interfaces/web/server.py:75
+msgid "Shutting down…"
+msgstr ""
+
+#: interfaces/web/server.py:101
+#, python-format
+msgid "Sure you want to shutdown the %s server?"
+msgstr ""
+
+#: interfaces/web/groups.py:9 interfaces/web/users.py:23
 msgid ""
 "<br /><br />Go back with your browser, double-check data and validate the "
 "web-form."
@@ -202,14 +236,14 @@ msgid "Activate"
 msgstr ""
 
 #: interfaces/web/groups.py:61 interfaces/web/groups.py:198
-#: interfaces/web/groups.py:250 interfaces/web/users.py:313
+#: interfaces/web/groups.py:250 interfaces/web/users.py:311
 msgid "A"
 msgstr ""
 
 #: interfaces/web/groups.py:62 interfaces/web/groups.py:96
 #: interfaces/web/groups.py:135 interfaces/web/groups.py:199
-#: interfaces/web/groups.py:580 interfaces/web/users.py:314
-#: interfaces/web/users.py:450 interfaces/web/users.py:651
+#: interfaces/web/groups.py:580 interfaces/web/users.py:312
+#: interfaces/web/users.py:448 interfaces/web/users.py:650
 msgid "Cancel"
 msgstr ""
 
@@ -278,9 +312,9 @@ msgstr ""
 msgid "alter system group."
 msgstr ""
 
-#: interfaces/web/groups.py:123 interfaces/web/users.py:161
-#: interfaces/web/users.py:248 interfaces/web/users.py:284
-#: interfaces/web/users.py:540 interfaces/web/users.py:686
+#: interfaces/web/groups.py:123 interfaces/web/users.py:159
+#: interfaces/web/users.py:246 interfaces/web/users.py:282
+#: interfaces/web/users.py:539 interfaces/web/users.py:685
 msgid "insufficient permissions to perform operation."
 msgstr ""
 
@@ -305,7 +339,7 @@ msgid "Remove"
 msgstr ""
 
 #: interfaces/web/groups.py:134 interfaces/web/groups.py:583
-#: interfaces/web/users.py:147 interfaces/web/users.py:225
+#: interfaces/web/users.py:145 interfaces/web/users.py:223
 msgid "R"
 msgstr ""
 
@@ -345,7 +379,7 @@ msgid ""
 "\t\t\tall of the members of %s?"
 msgstr ""
 
-#: interfaces/web/groups.py:197 interfaces/web/users.py:312
+#: interfaces/web/groups.py:197 interfaces/web/users.py:310
 msgid "Apply"
 msgstr ""
 
@@ -383,16 +417,16 @@ msgid "Yes"
 msgstr ""
 
 #: interfaces/web/groups.py:258 interfaces/web/groups.py:428
-#: interfaces/web/users.py:434
+#: interfaces/web/users.py:432
 msgid "P"
 msgstr ""
 
-#: interfaces/web/groups.py:259 interfaces/web/users.py:109
-#: interfaces/web/users.py:149 interfaces/web/users.py:238
+#: interfaces/web/groups.py:259 interfaces/web/users.py:107
+#: interfaces/web/users.py:147 interfaces/web/users.py:236
 msgid "<< Cancel"
 msgstr ""
 
-#: interfaces/web/groups.py:260 interfaces/web/users.py:451
+#: interfaces/web/groups.py:260 interfaces/web/users.py:449
 msgid "Create"
 msgstr ""
 
@@ -431,7 +465,7 @@ msgstr ""
 
 #: interfaces/web/groups.py:322 interfaces/web/groups.py:361
 #: interfaces/web/groups.py:390 interfaces/web/groups.py:804
-#: interfaces/web/users.py:442 interfaces/web/users.py:766
+#: interfaces/web/users.py:440 interfaces/web/users.py:765
 msgid "Identifier"
 msgstr ""
 
@@ -566,7 +600,7 @@ msgid "Failed to modify one or more parameter of group %s!"
 msgstr ""
 
 #: interfaces/web/groups.py:651 interfaces/web/groups.py:687
-#: interfaces/web/users.py:446 interfaces/web/users.py:647
+#: interfaces/web/users.py:444 interfaces/web/users.py:646
 #: interfaces/web/utils.py:316
 msgid "Groups"
 msgstr ""
@@ -584,16 +618,16 @@ msgstr ""
 msgid "%s order"
 msgstr ""
 
-#: interfaces/web/groups.py:676 interfaces/web/users.py:773
+#: interfaces/web/groups.py:676 interfaces/web/users.py:772
 msgid "Click to sort in reverse order."
 msgstr ""
 
-#: interfaces/web/groups.py:680 interfaces/web/users.py:777
+#: interfaces/web/groups.py:680 interfaces/web/users.py:776
 msgid "Click to sort on this column."
 msgstr ""
 
-#: interfaces/web/groups.py:688 interfaces/web/users.py:447
-#: interfaces/web/users.py:648
+#: interfaces/web/groups.py:688 interfaces/web/users.py:445
+#: interfaces/web/users.py:647
 msgid "Privileges"
 msgstr ""
 
@@ -646,7 +680,7 @@ msgstr ""
 msgid "Definitely remove this group from system."
 msgstr ""
 
-#: interfaces/web/groups.py:864 interfaces/web/users.py:890
+#: interfaces/web/groups.py:864 interfaces/web/users.py:889
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr ""
@@ -655,83 +689,83 @@ msgstr ""
 msgid "Total number of groups:"
 msgstr ""
 
-#: interfaces/web/users.py:13
+#: interfaces/web/users.py:10
 msgid "Customize groups"
 msgstr ""
 
-#: interfaces/web/users.py:14
+#: interfaces/web/users.py:11
 msgid "Available groups"
 msgstr ""
 
-#: interfaces/web/users.py:14
+#: interfaces/web/users.py:11
 msgid "Affected groups"
 msgstr ""
 
-#: interfaces/web/users.py:16
+#: interfaces/web/users.py:13
 msgid "Customize privileges"
 msgstr ""
 
-#: interfaces/web/users.py:17
+#: interfaces/web/users.py:14
 msgid "Available privileges"
 msgstr ""
 
-#: interfaces/web/users.py:17
+#: interfaces/web/users.py:14
 msgid "granted privileges"
 msgstr ""
 
-#: interfaces/web/users.py:19
+#: interfaces/web/users.py:16
 msgid "Assign responsibilities"
 msgstr ""
 
-#: interfaces/web/users.py:20
+#: interfaces/web/users.py:17
 msgid "Available responsibilities"
 msgstr ""
 
-#: interfaces/web/users.py:20
+#: interfaces/web/users.py:17
 msgid "Assigned responsibilities"
 msgstr ""
 
-#: interfaces/web/users.py:22
+#: interfaces/web/users.py:19
 msgid "Propose invitations"
 msgstr ""
 
-#: interfaces/web/users.py:23
+#: interfaces/web/users.py:20
 msgid "Available invitations"
 msgstr ""
 
-#: interfaces/web/users.py:23
+#: interfaces/web/users.py:20
 msgid "Offered invitations"
 msgstr ""
 
-#: interfaces/web/users.py:62
+#: interfaces/web/users.py:59
 msgid "Add a new user account on the system."
 msgstr ""
 
-#: interfaces/web/users.py:64
+#: interfaces/web/users.py:61
 msgid "Add an account"
 msgstr ""
 
-#: interfaces/web/users.py:65
+#: interfaces/web/users.py:62
 msgid "Import new user accounts from a CSV-delimited file."
 msgstr ""
 
-#: interfaces/web/users.py:67
+#: interfaces/web/users.py:64
 msgid "Import accounts"
 msgstr ""
 
-#: interfaces/web/users.py:68
+#: interfaces/web/users.py:65
 msgid "Export current user accounts list to a CSV or XML file."
 msgstr ""
 
-#: interfaces/web/users.py:70
+#: interfaces/web/users.py:67
 msgid "Export accounts"
 msgstr ""
 
-#: interfaces/web/users.py:82
+#: interfaces/web/users.py:80
 msgid "Export user accounts list"
 msgstr ""
 
-#: interfaces/web/users.py:94
+#: interfaces/web/users.py:92
 msgid ""
 "CSV file-format is used by spreadsheets and most systems which offer import "
 "functionnalities. XML file-format is a modern exchange format, used in soma "
@@ -741,30 +775,30 @@ msgid ""
 "click the “back” button of your browser."
 msgstr ""
 
-#: interfaces/web/users.py:103
+#: interfaces/web/users.py:101
 #, python-format
 msgid "Which file format do you want accounts to be exported to? %s"
 msgstr ""
 
-#: interfaces/web/users.py:106
+#: interfaces/web/users.py:104
 msgid "Please choose file format for export list"
 msgstr ""
 
-#: interfaces/web/users.py:108
+#: interfaces/web/users.py:106
 msgid "Export >>"
 msgstr ""
 
-#: interfaces/web/users.py:132
+#: interfaces/web/users.py:130
 #, python-format
 msgid "Remove user account %s"
 msgstr ""
 
-#: interfaces/web/users.py:137
+#: interfaces/web/users.py:135
 #, python-format
 msgid "Are you sure you want to remove account <strong>%s</strong>?"
 msgstr ""
 
-#: interfaces/web/users.py:139
+#: interfaces/web/users.py:137
 #, python-format
 msgid ""
 "User's <strong>personnal data</strong> (his/her HOME dir) will be "
@@ -773,65 +807,65 @@ msgid ""
 "recover.<br />However, you can decide to permanently remove it."
 msgstr ""
 
-#: interfaces/web/users.py:147
+#: interfaces/web/users.py:145
 msgid "Remove >>"
 msgstr ""
 
-#: interfaces/web/users.py:149 interfaces/web/users.py:238
-#: interfaces/web/users.py:315
+#: interfaces/web/users.py:147 interfaces/web/users.py:236
+#: interfaces/web/users.py:313
 msgid "C"
 msgstr ""
 
-#: interfaces/web/users.py:151
+#: interfaces/web/users.py:149
 msgid "Definitely remove account data (no archiving)."
 msgstr ""
 
-#: interfaces/web/users.py:159
+#: interfaces/web/users.py:157
 msgid "Failed to remove account"
 msgstr ""
 
-#: interfaces/web/users.py:160 interfaces/web/users.py:185
-#: interfaces/web/users.py:247 interfaces/web/users.py:283
-#: interfaces/web/users.py:539 interfaces/web/users.py:685
+#: interfaces/web/users.py:158 interfaces/web/users.py:183
+#: interfaces/web/users.py:245 interfaces/web/users.py:281
+#: interfaces/web/users.py:538 interfaces/web/users.py:684
 msgid "alter system account."
 msgstr ""
 
-#: interfaces/web/users.py:172
+#: interfaces/web/users.py:170
 #, python-format
 msgid "Failed to remove account <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:177
+#: interfaces/web/users.py:175
 #, python-format
 msgid "Unlock account %s"
 msgstr ""
 
-#: interfaces/web/users.py:184
+#: interfaces/web/users.py:182
 msgid "Failed to unlock account"
 msgstr ""
 
-#: interfaces/web/users.py:186
+#: interfaces/web/users.py:184
 msgid "insufficient permission to perform operation."
 msgstr ""
 
-#: interfaces/web/users.py:194
+#: interfaces/web/users.py:192
 #, python-format
 msgid "Failed to unlock account <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:205
+#: interfaces/web/users.py:203
 #, python-format
 msgid "Lock account %s"
 msgstr ""
 
-#: interfaces/web/users.py:209
+#: interfaces/web/users.py:207
 #, python-format
 msgid ""
 "This will prevent user to connect to network clients (thin ones, and "
 "Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
 msgstr ""
 
-#: interfaces/web/users.py:215
+#: interfaces/web/users.py:213
 #, python-format
 msgid ""
 "<br /><br />\n"
@@ -840,224 +874,224 @@ msgid ""
 "system, <strong>remove him/her from %s group</strong>."
 msgstr ""
 
-#: interfaces/web/users.py:223
+#: interfaces/web/users.py:221
 msgid "Remove user from group <code>remotessh</code> in the same time."
 msgstr ""
 
-#: interfaces/web/users.py:232
+#: interfaces/web/users.py:230
 #, python-format
 msgid "Are you sure you want to lock account <strong>%s</strong>?"
 msgstr ""
 
-#: interfaces/web/users.py:236
+#: interfaces/web/users.py:234
 msgid "Lock >>"
 msgstr ""
 
-#: interfaces/web/users.py:236
+#: interfaces/web/users.py:234
 msgid "L"
 msgstr ""
 
-#: interfaces/web/users.py:246
+#: interfaces/web/users.py:244
 msgid "Failed to lock account"
 msgstr ""
 
-#: interfaces/web/users.py:261
+#: interfaces/web/users.py:259
 #, python-format
 msgid "Failed to lock account <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:277
+#: interfaces/web/users.py:275
 #, python-format
 msgid "Reapply skel to user account %s"
 msgstr ""
 
-#: interfaces/web/users.py:282
+#: interfaces/web/users.py:280
 msgid "Failed to reapply skel"
 msgstr ""
 
-#: interfaces/web/users.py:287
+#: interfaces/web/users.py:285
 msgid ""
 "This will rebuild his/her desktop from scratch, with defaults icons and so "
 "on.<br /><br />The user must be disconnected for the operation to be "
 "completely successfull."
 msgstr ""
 
-#: interfaces/web/users.py:305
+#: interfaces/web/users.py:303
 #, python-format
 msgid "Which skel do you want to apply? %s"
 msgstr ""
 
-#: interfaces/web/users.py:309
+#: interfaces/web/users.py:307
 #, python-format
 msgid ""
 "Are you sure you want to apply this skel to account <strong>%s</strong>?"
 msgstr ""
 
-#: interfaces/web/users.py:327
+#: interfaces/web/users.py:325
 #, python-format
 msgid ""
 "Failed to apply skel <strong>%s</strong> on user\n"
 "\t\t\taccount <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:340
+#: interfaces/web/users.py:338
 msgid "New user account"
 msgstr ""
 
-#: interfaces/web/users.py:353
+#: interfaces/web/users.py:351
 msgid "This user is a"
 msgstr ""
 
-#: interfaces/web/users.py:361 interfaces/web/users.py:765
+#: interfaces/web/users.py:359 interfaces/web/users.py:764
 msgid "Full name"
 msgstr ""
 
-#: interfaces/web/users.py:430 interfaces/web/users.py:633
+#: interfaces/web/users.py:428 interfaces/web/users.py:632
 #, python-format
 msgid ""
 "Password must be at least %d characters long. You can use all alphabet "
 "characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr ""
 
-#: interfaces/web/users.py:433
+#: interfaces/web/users.py:431
 msgid "Password"
 msgstr ""
 
-#: interfaces/web/users.py:433 interfaces/web/users.py:637
+#: interfaces/web/users.py:431 interfaces/web/users.py:636
 #, python-format
 msgid "(%d chars. min.)"
 msgstr ""
 
-#: interfaces/web/users.py:436
+#: interfaces/web/users.py:434
 msgid "Password confirmation."
 msgstr ""
 
-#: interfaces/web/users.py:438
+#: interfaces/web/users.py:436
 msgid ""
 "Identifier must be lowercase, without accents or special characters (you can "
 "use dots and carets).<br /><br />If you let this field empty, identifier "
 "will be automaticaly guessed from first name and last name."
 msgstr ""
 
-#: interfaces/web/users.py:443
+#: interfaces/web/users.py:441
 msgid "I"
 msgstr ""
 
-#: interfaces/web/users.py:444 interfaces/web/users.py:644
+#: interfaces/web/users.py:442 interfaces/web/users.py:643
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr ""
 
-#: interfaces/web/users.py:448 interfaces/web/users.py:649
+#: interfaces/web/users.py:446 interfaces/web/users.py:648
 msgid "Responsibilities"
 msgstr ""
 
-#: interfaces/web/users.py:449 interfaces/web/users.py:650
+#: interfaces/web/users.py:447 interfaces/web/users.py:649
 msgid "Invitations"
 msgstr ""
 
-#: interfaces/web/users.py:468
+#: interfaces/web/users.py:466
 #, python-format
 msgid "New user account %s"
 msgstr ""
 
-#: interfaces/web/users.py:473 interfaces/web/users.py:691
+#: interfaces/web/users.py:471 interfaces/web/users.py:690
 #, python-format
 msgid "Passwords do not match!%s"
 msgstr ""
 
-#: interfaces/web/users.py:477
+#: interfaces/web/users.py:475
 #, python-format
 msgid "Password must be at least %d characters long!%s"
 msgstr ""
 
-#: interfaces/web/users.py:501
+#: interfaces/web/users.py:499
 #, python-format
 msgid "Failed to create account <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:524
+#: interfaces/web/users.py:523
 #, python-format
 msgid ""
 "Failed to add user <strong>%s</strong> to requested\n"
 "\t\tgroups/privileges/responsibilities/invitations!"
 msgstr ""
 
-#: interfaces/web/users.py:534
+#: interfaces/web/users.py:533
 #, python-format
 msgid "Edit account %s"
 msgstr ""
 
-#: interfaces/web/users.py:538
+#: interfaces/web/users.py:537
 msgid "Account edition impossible."
 msgstr ""
 
-#: interfaces/web/users.py:549 interfaces/web/users.py:755
-#: interfaces/web/users.py:865
+#: interfaces/web/users.py:548 interfaces/web/users.py:754
+#: interfaces/web/users.py:864
 msgid "Standard account"
 msgstr ""
 
-#: interfaces/web/users.py:627
+#: interfaces/web/users.py:626
 msgid "<strong>UID</strong> (fixed)"
 msgstr ""
 
-#: interfaces/web/users.py:628
+#: interfaces/web/users.py:627
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr ""
 
-#: interfaces/web/users.py:629
+#: interfaces/web/users.py:628
 msgid "<strong>Profile</strong> (fixed)"
 msgstr ""
 
-#: interfaces/web/users.py:630
+#: interfaces/web/users.py:629
 msgid "<strong>Full name</strong>"
 msgstr ""
 
-#: interfaces/web/users.py:637
+#: interfaces/web/users.py:636
 msgid "New password"
 msgstr ""
 
-#: interfaces/web/users.py:641
+#: interfaces/web/users.py:640
 msgid "password confirmation."
 msgstr ""
 
-#: interfaces/web/users.py:652
+#: interfaces/web/users.py:651
 msgid "Record changes"
 msgstr ""
 
-#: interfaces/web/users.py:675
+#: interfaces/web/users.py:674
 #, python-format
 msgid "Modification of account %s"
 msgstr ""
 
-#: interfaces/web/users.py:684
+#: interfaces/web/users.py:683
 msgid "Recording of informations failed"
 msgstr ""
 
-#: interfaces/web/users.py:694
+#: interfaces/web/users.py:693
 #, python-format
 msgid "The password --%s-- must be at least %d characters long!%s"
 msgstr ""
 
-#: interfaces/web/users.py:720
+#: interfaces/web/users.py:719
 #, python-format
 msgid ""
 "Failed to modify one or more parameters of account\n"
 "\t\t <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/web/users.py:757
+#: interfaces/web/users.py:756
 msgid "User accounts"
 msgstr ""
 
-#: interfaces/web/users.py:766
+#: interfaces/web/users.py:765
 msgid "Profile"
 msgstr ""
 
-#: interfaces/web/users.py:767
+#: interfaces/web/users.py:766
 msgid "Locked"
 msgstr ""
 
-#: interfaces/web/users.py:783
+#: interfaces/web/users.py:782
 #, python-format
 msgid ""
 "<em>Click to edit current user account parameters:</em>\n"
@@ -1071,23 +1105,23 @@ msgid ""
 "\t\t\t\t"
 msgstr ""
 
-#: interfaces/web/users.py:819
+#: interfaces/web/users.py:818
 msgid "Unlock password (re-grant access to machines)."
 msgstr ""
 
-#: interfaces/web/users.py:820
+#: interfaces/web/users.py:819
 msgid "Remove account."
 msgstr ""
 
-#: interfaces/web/users.py:827
+#: interfaces/web/users.py:826
 msgid "Lock password (revoke access to machines)."
 msgstr ""
 
-#: interfaces/web/users.py:828
+#: interfaces/web/users.py:827
 msgid "Lock account."
 msgstr ""
 
-#: interfaces/web/users.py:840
+#: interfaces/web/users.py:839
 msgid ""
 "Reapply origin skel data in the personnal directory of user. This is usefull "
 "when user has lost icons, or modified too much his/her desktop (menus, "
@@ -1095,11 +1129,11 @@ msgid ""
 "\t\t\t\tThis will get all his/her desktop back."
 msgstr ""
 
-#: interfaces/web/users.py:845
+#: interfaces/web/users.py:844
 msgid "Definitely remove account from the system."
 msgstr ""
 
-#: interfaces/web/users.py:903
+#: interfaces/web/users.py:902
 msgid "<strong>Total number of accounts:</strong>"
 msgstr ""
 
@@ -1277,38 +1311,4 @@ msgstr ""
 #: interfaces/web/utils.py:354
 #, python-format
 msgid "administration %s"
-msgstr ""
-
-#: interfaces/web/server.py:37
-msgid "Can't reboot the system."
-msgstr ""
-
-#: interfaces/web/server.py:40
-msgid "Rebooting…"
-msgstr ""
-
-#: interfaces/web/server.py:66
-#, python-format
-msgid "Sure you want to reboot the %s server?"
-msgstr ""
-
-#: interfaces/web/server.py:67 interfaces/web/server.py:105
-msgid "YES"
-msgstr ""
-
-#: interfaces/web/server.py:68 interfaces/web/server.py:106
-msgid "NO"
-msgstr ""
-
-#: interfaces/web/server.py:75
-msgid "Can't shutdown the system."
-msgstr ""
-
-#: interfaces/web/server.py:78
-msgid "Shutting down…"
-msgstr ""
-
-#: interfaces/web/server.py:104
-#, python-format
-msgid "Sure you want to shutdown the %s server?"
 msgstr ""
