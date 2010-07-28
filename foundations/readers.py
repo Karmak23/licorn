@@ -89,13 +89,13 @@ def	simple_conf_load_dict_lists(filename):
 		Typical use case: /etc/nsswitch.conf
 	"""
 	confdict = {}
-	conf_re	 = re.compile("^\s*(?P<database>\w+):(?P<types>(\s+\w+)+)\s*$")
+	conf_re	 = re.compile("^\s*(?P<database>\w+):(?P<types>(\s+[\[=\]\w]+)+)\s*$")
 
 	def parse_fields(line):
 		directive = conf_re.match(line[:-1])
 		if directive:
 			key = directive.group("database")
-			types = re.findall('\w+', directive.group("types"))
+			types = re.findall('[\[=\]\w]+', directive.group("types"))
 			confdict[key] = types
 
 	map(parse_fields, open(filename, "r" ))
