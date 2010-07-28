@@ -235,9 +235,10 @@ class UGBackend(Singleton):
 
 		ltrace('objects', '| UGBackend.__init__().')
 
-		self.enabled  = False
-		self.compat   = ()
-		self.priority = 0
+		self.available          = False
+		self.enabled            = False
+		self.compat             = ()
+		self.priority           = 0
 
 		UGBackend.configuration = configuration
 
@@ -250,23 +251,27 @@ class UGBackend(Singleton):
 		#
 		# everything else should be done by a real implementation.
 		#
-	def can_be_enabled(self):
-		""" Check if the underlying system is ready for the backend to be
-		enabled (and thus return True), else return False.
 
-		This method itself just *checks*, it must not write anything, or *do*
-		anything inside the backend object.
-
-		It is called by the big core.configuration object in the scanning phase,
-		to see which backend will be used, and determinate priorities among
-		them.
-
-		To keep sane, an abstract backend cannot be enabled.
-		"""
 		return False
-	def initialize(self):
+	def enable(self):
+		return False
+	def disable(self):
+		return False
+	def initialize(self, active=True):
 		"""
-		For an abstract backend, initialize() always return False. """
+		For an abstract backend, initialize() always return False.
+
+		"active" is filled by core.configuration and gives a hint about the
+		system configuration:
+			- active will be true if the underlying system is configured to
+				use the backend. That doesn't imply the backend CAN be used,
+				for exemple on a partially configured system.
+			- active will be false if the backend is deactivated in the system
+				configuration. The backend can be fully operationnal anyway. In
+				this case "active" means that the backend will be used (or not)
+				by Licorn.
+
+		"""
 		return self.enabled
 	def check(self, batch=False, auto_answer=None):
 		""" default check method. """

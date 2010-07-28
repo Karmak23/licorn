@@ -15,7 +15,7 @@ from gettext import gettext as _
 from licorn.foundations               import logging, exceptions, fsapi
 from licorn.foundations               import styles, readers, pyutils
 from licorn.foundations.ltrace        import ltrace
-from licorn.foundations.objects       import LicornConfigObject
+from licorn.foundations.objects       import LicornConfigObject, FileLock
 from licorn.core.internals.privileges import PrivilegesWhiteList
 
 class LicornConfiguration (object):
@@ -112,9 +112,9 @@ class LicornConfiguration (object):
 			self.SetMissingMandatoryDefauts()
 
 			self.load_nsswitch()
-			self.load_backends()
-
 			# TODO: monitor configuration files from a thread !
+
+			self.load_backends()
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(
@@ -287,10 +287,58 @@ class LicornConfiguration (object):
 		ltrace('configuration', '< LoadBaseConfiguration().')
 
 	def load_nsswitch(self):
-		""" Load the NS switch file (GLIBC system only). """
+		""" Load the NS switch file. """
 
 		self.nsswitch = (
 			readers.simple_conf_load_dict_lists('/etc/nsswitch.conf'))
+	def save_nsswitch(self):
+		""" write the nsswitch.conf file. This method is meant to be called by
+		a backend which has modified. """
+
+		ltrace('configuration', '| save_nsswitch()')
+
+		nss_data = ''
+
+		for key in self.nsswitch:
+			nss_data += '%s:%s%s\n' % (key,
+			' ' * (15-len(key)),
+			' '.join(self.nsswitch[key]))
+
+		nss_lock = FileLock(self, '/etc/nsswitch.conf')
+		nss_lock.Lock()
+		open('/etc/nsswitch.conf', 'w').write(nss_data)
+		nss_lock.Unlock()
+
+	def enable_backend(self, backend):
+		""" try to enable a given backend. what to do exactly is left to the
+		backend itself."""
+
+		ltrace('configuration', '| enable_backend()')
+
+		if backend in self.backends.keys():
+			logging.notice('%s backend already enabled.' % backend)
+			return
+
+		if self.available_backends[backend].enable():
+			self.available_backends[backend].initialize()
+			self.backends[backend] = self.available_backends[backend]
+			del self.available_backends[backend]
+			logging.info('successfully enabled %s backend.' % backend)
+
+	def disable_backend(self, backend):
+		""" try to disable a given backend. what to do exactly is left to the
+		backend itself."""
+
+		ltrace('configuration', '| disable_backend()')
+
+		if backend in self.available_backends.keys():
+			logging.notice('%s backend already disabled.' % backend)
+			return
+
+		if self.backends[backend].disable():
+			self.available_backends[backend] = self.backends[backend]
+			del self.backends[backend]
+			logging.info('successfully disabled %s backend.' % backend)
 
 	def load_backends(self):
 		""" Load Configuration backends, and put the one with the greatest
@@ -300,23 +348,36 @@ class LicornConfiguration (object):
 		ltrace('configuration', '> LoadBackends().')
 
 		from licorn.core.backends import backends
-		self.backends = {}
+		self.backends           = {}
+		self.available_backends = {}
 
 		for backend in backends:
 			b = backend(self)
 
-			for ns_service in self.nsswitch['passwd']:
-				if ns_service in b.compat:
-					if b.initialize():
-						ltrace('configuration', 'using %s backend.' % b)
+			#ltrace('configuration', 'testing %s (%s).' % (
+			#	b.name, [
+			#	val for val in self.nsswitch['passwd'] if val in b.compat]))
 
-						self.backends[b.name] = b
+			if [val for val in self.nsswitch['passwd'] if val in b.compat] != []:
+				if b.initialize():
+					ltrace('configuration', 'using %s backend.' % b)
 
-						if self.backends.has_key('prefered'):
-							if b.priority > self.backends['prefered'].priority:
-								self.backends['prefered'] = b
-						else:
+					self.backends[b.name] = b
+
+					if self.backends.has_key('prefered'):
+						if b.priority > self.backends['prefered'].priority:
 							self.backends['prefered'] = b
+					else:
+						self.backends['prefered'] = b
+				else:
+					self.available_backends[b.name] = b
+			else:
+				# we don't care if the backend succeeds to initialize() or not
+				# but subsequent method calls expect it to be run prior to
+				# anything else.
+				b.initialize(enabled=False)
+				self.available_backends[b.name] = b
+
 
 		ltrace('configuration', '< LoadBackends().')
 

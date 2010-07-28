@@ -859,7 +859,9 @@ def modify_configuration_parse_arguments(app):
 
 	configuration_group.add_option("--setup-shared-dirs",
 		action="store_true", dest="setup_shared_dirs", default=False,
-		help="create system groups, directories and settings from system configuration (PARTIALLY OBSOLETED, TOTALLY UNSUPPORTED AND VERY DANGEROUS, USE WITH CAUTION).")
+		help='''create system groups, directories and settings from system '''
+			'''configuration (PARTIALLY OBSOLETED, TOTALLY UNSUPPORTED AND '''
+			'''VERY DANGEROUS, USE WITH CAUTION).''')
 
 	configuration_group.add_option("-r", "--restrictive", "--set-restrictive",
 		action="store_true", dest="restrictive", default=False,
@@ -876,6 +878,16 @@ def modify_configuration_parse_arguments(app):
 		help="Set relaxed perms (750) on %s." % styles.stylize(styles.ST_PATH,
 		"%s/%s" % (configuration.defaults.home_base_path,
 			configuration.groups.names['plural'])))
+
+	configuration_group.add_option('-b', "--enable-backends",
+		action="store", dest="enable_backends", default=None,
+		help='''enable given backend(s) on the current system (separated '''
+			'''by commas without spaces).''')
+
+	configuration_group.add_option('-B', "--disable-backends",
+		action="store", dest="disable_backends", default=None,
+		help='''disable given backend(s) on the current system (separated '''
+			'''by commas without spaces).''')
 
 	configuration_group.add_option("-e", "--set-hostname",
 		action="store", type="string", dest="set_hostname", default=None,

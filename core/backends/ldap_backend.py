@@ -159,19 +159,13 @@ class MyLDIFParser(LDIFParser):
 class ldap_controller(UGBackend):
 	""" LDAP Backend for users and groups.
 
-		TODO: implement auto-setup part: if backends.ldap.enabled is forced to
+		TODO: implement auto-setup part: if backends.ldap.available is forced to
 		True in licorn.conf, we should auto-install packages, setup dirs, LDAP
 		dn, etc.
 	"""
-	def __init__(self, configuration, users = None, groups = None):
+	def __init__(self, configuration, users=None, groups=None):
 		"""
-			Initialize the LDAP backend.
-
-			if manually disabled in configuration, exit immediately.
-			else, try to start it without any tests (it should work if it's
-			installed) and get enabled.
-			If that fails, try to guess a little and help user resolving issue.
-			else, just fail miserably.
+			Init the LDAP backend instance.
 		"""
 
 		UGBackend.__init__(self, configuration, users, groups)
@@ -189,8 +183,10 @@ class ldap_controller(UGBackend):
 		self.files.ldap_secret = '/etc/ldap.secret'
 
 	def __del__(self):
-		self.ldap_conn.unbind_s()
-
+		try:
+			self.ldap_conn.unbind_s()
+		except:
+			pass
 	def load_defaults(self):
 		""" Return mandatory defaults needed for LDAP Backend.
 
@@ -228,8 +224,14 @@ class ldap_controller(UGBackend):
 		self.nss_base_passwd = 'ou=People'
 		self.nss_base_shadow = 'ou=People'
 
-	def initialize(self):
+	def initialize(self, enabled=True):
+		"""	try to start it without any tests (it should work if it's
+			installed) and become available.
+			If that fails, try to guess a little and help user resolving issue.
+			else, just fail miserably.
 
+		setup the backend, by gathering LDAP related configuration in system
+		files. """
 		self.load_defaults()
 
 		ltrace('ldap', '> initialize().')
@@ -279,7 +281,7 @@ class ldap_controller(UGBackend):
 					#	- is either root, thus cn=admin
 					#	- is a LDAP user, and thus can bind correctly.
 
-				if e.errno == 2:
+				elif e.errno == 2:
 					# no such file or directory. Assume we are root and fill
 					# the default password in the file. This will make
 					# everything go smoother.
@@ -292,7 +294,6 @@ class ldap_controller(UGBackend):
 					open(self.files.ldap_secret, 'w').write(self.secret)
 					self.bind_as_admin = True
 
-
 				else:
 					raise e
 
@@ -300,7 +301,7 @@ class ldap_controller(UGBackend):
 
 			self.ldap_conn = ldap.initialize(self.uri)
 
-			self.enabled = self.last_init_check()
+			self.available = self.last_init_check()
 
 		except (IOError, OSError), e:
 			if e.errno != 2:
@@ -314,8 +315,8 @@ class ldap_controller(UGBackend):
 			else:
 				raise e
 
-		ltrace('ldap', '< initialize() %s.' % self.enabled)
-		return self.enabled
+		ltrace('ldap', '< initialize() %s.' % self.available)
+		return self.available
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
@@ -334,17 +335,75 @@ class ldap_controller(UGBackend):
 	def last_init_check(self):
 		""" do a quick LDAP content check, to validate everything is valid. """
 
-		try:
-			ldap_result = self.ldap_conn.search_s(
-				'dc=meta-it,dc=local',
-				ldap.SCOPE_SUBTREE,
-				'(objectClass=o)')
+		ltrace('ldap', '| last_init_check()')
 
+		try:
+			ldap_result = self.ldap_conn.search_s(self.base, ldap.SCOPE_SUBTREE,
+				'(objectClass=o)')
+			del ldap_result
 		except (ldap.NO_SUCH_OBJECT, ldap.INVALID_DN_SYNTAX):
 			return False
 
 		return True
+	def enable(self):
+		""" Do whatever is needed on the underlying system for the LDAP backend
+		to be fully operational (this is really a "force_enable" method).
+		This includes:
+			- verify everything is installed
+			- setup PAM-LDAP system files (the system must follow the licorn
+				configuration and vice-versa)
+			- setup slapd
+			- setup nsswitch.conf
 
+		-> raise an exception at any level if anything goes wrong.
+		-> return True if succeed (this is probably useless due to to previous
+		point).
+		"""
+
+		ltrace('ldap', '| enable_backend()')
+
+		if not ('ldap' in self.configuration.nsswitch['passwd'] and \
+			'ldap' in self.configuration.nsswitch['shadow'] and \
+			'ldap' in self.configuration.nsswitch['group']) :
+
+			self.configuration.nsswitch['passwd'].append('ldap')
+			self.configuration.nsswitch['shadow'].append('ldap')
+			self.configuration.nsswitch['group'].append('ldap')
+			self.configuration.save_nsswitch()
+
+		self.check_system_files(batch=True)
+
+		self.check(batch=True)
+
+		"""
+		for expression in (
+			('passwd:.*ldap.*', ''),
+			('passwd:.*ldap.*', ''),
+			('passwd:.*ldap.*', ''),
+		re.susbt(r'')
+		"""
+		return True
+	def disable(self):
+		""" make the LDAP backend inoperant. The receipe is simple, and follows
+		what the system sees: just modify nsswitch.conf, and neither licorn nor
+		PAM nor anything will use LDAP anymore.
+
+		We don't "unsetup" slapd nor PAM-ldap because we think this is a bad
+		thing thing to empty them if they have been in use. It is left to the
+		system administrator to clean them up if wanted.
+		"""
+
+		ltrace('ldap', '| disable_backend()')
+
+		for key in ('passwd', 'shadow', 'group'):
+			try:
+				self.configuration.nsswitch[key].remove('ldap')
+			except KeyError:
+				pass
+
+		self.configuration.save_nsswitch()
+
+		return True
 	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
 		ltrace('ldap', '> check()')
@@ -441,7 +500,8 @@ class ldap_controller(UGBackend):
 
 							self.ldap_conn.add_s(dn, addModlist(entry))
 						except ldap.ALREADY_EXISTS:
-							logging.notice('skipping already present dn %s.' % dn)
+							logging.notice('skipping already present dn %s.' \
+								% dn)
 
 				else:
 					# all these schemas are mandatory for Licorn to work,
@@ -451,7 +511,7 @@ class ldap_controller(UGBackend):
 						'''configuration.''')
 
 		ltrace('ldap', '< check()')
-	def check_system_files(self, minimal=True, batch=False, auto_answer=None):
+	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
 		ltrace('ldap', '> check_system_files()')
@@ -476,94 +536,52 @@ class ldap_controller(UGBackend):
 			#
 
 		try:
-			if (not os.path.exists(self.files.ldap_secret) or \
-				open(self.files.ldap_secret).read().strip() == '') and \
-				batch or logging.ask_for_repair(
-				'''%s is empty, but should not.''' \
-				% styles.stylize(styles.ST_SECRET, self.files.ldap_secret)):
+			if not os.path.exists(self.files.ldap_secret) or \
+				open(self.files.ldap_secret).read().strip() == '':
+				if batch or logging.ask_for_repair(
+					'''%s is empty, but should not.''' \
+					% styles.stylize(styles.ST_SECRET, self.files.ldap_secret)):
 
-				try:
-					from licorn.foundations import hlstr
-					genpass = hlstr.generate_password(
-					self.configuration.mAutoPasswdSize)
+					try:
+						from licorn.foundations import hlstr
+						genpass = hlstr.generate_password(
+						self.configuration.mAutoPasswdSize)
 
-					logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
-						styles.stylize(styles.ST_LOGIN, 'manager'),
-						styles.stylize(styles.ST_SECRET, genpass)))
+						logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
+							styles.stylize(styles.ST_LOGIN, 'manager'),
+							styles.stylize(styles.ST_SECRET, genpass)))
 
-					open(self.files.ldap_secret, 'w').write(genpass + '\n')
+						open(self.files.ldap_secret, 'w').write(genpass + '\n')
 
-					#
-					# TODO: update the LDAP database... Without this point, the
-					# purpose of this method is pretty pointless.
-					#
-				except (IOError, OSError), e:
-					if e.errno == 13:
-						raise exceptions.LicornRuntimeError(
-							'''Insufficient permissions. '''
-							'''Are you root?\n\t%s''' % e)
-					else:
-						raise e
-			else:
-				raise exceptions.LicornRuntimeError(
-				'''%s is mandatory for %s to work '''
-				'''properly. Can't continue without this, sorry!''' % (
-				self.files.ldap_secret, self.configuration.app_name))
+						#
+						# TODO: update the LDAP database... Without this point, the
+						# purpose of this method is pretty pointless.
+						#
+					except (IOError, OSError), e:
+						if e.errno == 13:
+							raise exceptions.LicornRuntimeError(
+								'''Insufficient permissions. '''
+								'''Are you root?\n\t%s''' % e)
+						else:
+							raise e
+				else:
+					raise exceptions.LicornRuntimeError(
+					'''%s is mandatory for %s to work '''
+					'''properly. Can't continue without this, sorry!''' % (
+					self.files.ldap_secret, self.configuration.app_name))
 		except (OSError, IOError), e :
 			if e.errno != 13:
 				raise e
 
 		#
-		# TODO: check ldap_ldap_conf, or verify it is useless.
+		# TODO: check ldap_ldap_conf contents, or verify by researcu that it is
+		# useless nowadays.
 		#
 
 		ltrace('ldap', '< check_system() %s.' % styles.stylize(
 			styles.ST_OK, 'True'))
 		return True
-	def check_db_config(self, minimal=True, batch=False, auto_answer=None):
-
-		ltrace('ldap', '> check_database()')
-
-		if minimal:
-			#
-			# TODO: check frontend only
-			#
-			ltrace('ldap', '< check_database() minimal %s.' % styles.stylize(
-				styles.ST_OK, 'True'))
-			return True
-
-		if self.check_system(minimal, batch, auto_answer):
-			#
-			# TODO:
-
-			# cosine
-			# nis
-			# inetorgperson
-			# samba
-			#
-			# backend
-			# frontend
-			ltrace('ldap', '< check_database() %s.' % styles.stylize(
-				styles.ST_OK, 'True'))
-			return True
-		else:
-			ltrace('ldap', '< check_database() %s.' % styles.stylize(
-				styles.ST_BAD, 'False'))
-			return False
-	def check_db_backend(self, minimal=True, batch=False, auto_answer=None):
-		pass
-	def check_db_frontend(self, minimal=True, batch=False, auto_answer=None):
-		""" Check the LDAP database frontend (high-level check). """
-
-		ltrace('ldap', '| check_database_frontend()')
-
-		def check_people():
-			pass
-		if minimal:
-			pass
-		else:
-			return False
-	def can_be_enabled(self):
+	def is_available(self):
 		""" Check if pam-ldap and slapd are installed.
 		This function fo not check if they are *configured*. We must assume
 		they are, else this would cost too much. There are dedicated functions
@@ -1024,4 +1042,3 @@ class ldap_controller(UGBackend):
 		#	pass
 	def compute_password(self, password):
 		return hashlib.sha1(password).digest()
-

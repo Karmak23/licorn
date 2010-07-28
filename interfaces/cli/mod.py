@@ -245,7 +245,15 @@ def modify_configuration():
 
 	elif opts.hidden_groups != None:
 		configuration.SetHiddenGroups(opts.hidden_groups)
-		
+
+	elif opts.disable_backends != None:
+		for backend in opts.disable_backends.split(','):
+			configuration.disable_backend(backend)
+
+	elif opts.enable_backends != None:
+		for backend in opts.enable_backends.split(','):
+			configuration.enable_backend(backend)
+
 	else:
 		raise exceptions.BadArgumentError("what do you want to modify ? use --help to know !")
 
