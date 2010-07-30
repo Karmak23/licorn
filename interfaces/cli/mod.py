@@ -17,11 +17,20 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-from licorn.foundations import logging, exceptions, options, hlstr, objects, styles
-from licorn.core        import configuration, users, groups, profiles
+from licorn.foundations        import logging, exceptions, options
+from licorn.foundations        import hlstr, objects, styles
+
+from licorn.core.configuration import LicornConfiguration
+from licorn.core.users         import UsersController
+from licorn.core.groups        import GroupsController
+from licorn.core.profiles      import ProfilesController
+from licorn.core.keywords      import KeywordsController
 
 def modify_user():
 	""" Modify a POSIX user account (Samba / LDAP included). """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
 
 	something_done = False
 
@@ -76,6 +85,10 @@ def modify_user():
 def modify_group():
 	""" Modify a group. """
 
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
 	if opts.newskel is not None:
 		groups.ChangeGroupSkel(opts.name, opts.newskel)
 	if opts.newdescription is not None:
@@ -116,6 +129,11 @@ def modify_group():
 		groups.RenameGroup(profiles, opts.name, opts.newname)
 def modify_profile():
 	""" Modify a system wide User profile. """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.group is None:
 		raise exceptions.BadArgumentError("Which profile do you want to modify ? Specify it with --group . Use --help for details.")
@@ -183,8 +201,10 @@ def modify_profile():
 			profiles.ReapplyProfileOfUsers(_users, apply_groups, apply_skel, batch=opts.force)
 def modify_keyword():
 	""" Modify a keyword. """
-	from licorn.core import keywords
-	kw = keywords.KeywordsController(configuration)
+
+	configuration = LicornConfiguration()
+	kw = KeywordsController(configuration)
+
 	if opts.newname is not None:
 		kw.RenameKeyword(opts.name, opts.newname)
 	if opts.parent is not None:
@@ -195,8 +215,9 @@ def modify_keyword():
 		kw.ChangeDescription(opts.name, opts.description)
 def modify_path():
 	""" Manage keywords of a file or directory. """
-	from licorn.core import keywords
-	kw = keywords.KeywordsController(configuration)
+
+	from licorn.core.keywords import KeywordsController
+	kw = KeywordsController(configuration)
 
 	# this should go directly into system.keywords.
 	from licorn.harvester import HarvestClient
@@ -220,6 +241,8 @@ def modify_webfilter():
 	raise NotImplementedError("modify_webfilters_types not implemented.")
 def modify_configuration():
 	""" Modify some aspects or abstract directives of the system configuration (use with caution)."""
+
+	configuration = LicornConfiguration()
 
 	if opts.setup_shared_dirs:
 		#
@@ -260,6 +283,7 @@ def modify_configuration():
 if __name__ == "__main__":
 
 	try:
+		configuration = LicornConfiguration()
 		giantLock = objects.FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:

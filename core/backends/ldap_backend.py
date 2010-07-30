@@ -288,10 +288,11 @@ class ldap_controller(UGBackend):
 
 					logging.notice('''seting up default password in %s. You '''
 						'''can change it later if you want by running '''
-						'''%FIXME_COMMAND_HERE%.''' % (
+						'''FIXME_COMMAND_HERE.''' % (
 						styles.stylize(styles.ST_PATH, self.files.ldap_secret)))
 
 					open(self.files.ldap_secret, 'w').write(self.secret)
+					self.bind_dn = self.rootbinddn
 					self.bind_as_admin = True
 
 				else:
@@ -301,7 +302,7 @@ class ldap_controller(UGBackend):
 
 			self.ldap_conn = ldap.initialize(self.uri)
 
-			self.available = self.last_init_check()
+			self.available = True
 
 		except (IOError, OSError), e:
 			if e.errno != 2:
@@ -332,20 +333,6 @@ class ldap_controller(UGBackend):
 		for (key, value) in defaults :
 			if not hasattr(self, key):
 				setattr(self, key, value)
-	def last_init_check(self):
-		""" do a quick LDAP content check, to validate everything is valid. """
-
-		ltrace('ldap', '| last_init_check()')
-
-		try:
-			self.bind()
-			ldap_result = self.ldap_conn.search_s(self.base, ldap.SCOPE_SUBTREE,
-				'(objectClass=organization)')
-			del ldap_result
-		except (ldap.NO_SUCH_OBJECT, ldap.INVALID_DN_SYNTAX):
-			return False
-
-		return True
 	def enable(self):
 		""" Do whatever is needed on the underlying system for the LDAP backend
 		to be fully operational (this is really a "force_enable" method).
@@ -456,20 +443,20 @@ class ldap_controller(UGBackend):
 		# which ldap_schema to load if the corresponding DN is not present in
 		# slapd configuration.
 		defaults = (
+			# SKIP dn: cn=config (should be already there at fresh install)
+			# SKIP dn: cn=schema,cn=config (filled by followers)
 			('cn={0}core,cn=schema,cn=config', 'core'),
 			('cn={1}cosine,cn=schema,cn=config', 'cosine'),
 			('cn={2}nis,cn=schema,cn=config', 'nis'),
 			('cn={3}inetorgperson,cn=schema,cn=config', 'inetorgperson'),
 			('cn={4}samba,cn=schema,cn=config', 'samba'),
 			('cn={5}licorn,cn=schema,cn=config', 'licorn'),
-			('cn=module{0},cn=config', 'backend'),
-			# SKIP dn: cn=config (should be already there at fresh install)
-				# ALREADY INCLUDED olcDatabase={-1}frontend,cn=config
-				# ALREADY INCLUDED olcDatabase={0}config,cn=config
-				# ALREADY INCLUDED olcDatabase={1}hdb,cn=config
-			# SKIP dn: cn=schema,cn=config (filled by followers)
-			#
-			# and don't forget the frontend.
+			('cn=module{0},cn=config', 'backend.module'),
+			('olcDatabase={1}hdb,cn=config', 'backend.hdb'),
+			# ALREADY INCLUDED olcDatabase={-1}frontend,cn=config
+			# ALREADY INCLUDED olcDatabase={0}config,cn=config
+			# and don't forget the frontend, handled in a special way (not with
+			# root user, but LDAP cn=admin).
 			(self.base, 'frontend')
 			)
 
@@ -850,7 +837,13 @@ class ldap_controller(UGBackend):
 			styles.stylize(styles.ST_LOGIN, self.bind_dn)))
 
 		if self.bind_as_admin:
-			self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
+			try:
+				self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
+			except ldap.INVALID_CREDENTIALS:
+				# in rare cases, the error could raise because the DB is empty.
+				# try to bind as root in last resort, in case we can correct
+				# the problem with it.
+				self.sasl_bind()
 		else:
 			if process.whoami() == 'root':
 				self.sasl_bind()

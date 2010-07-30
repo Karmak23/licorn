@@ -12,8 +12,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 
-from licorn.foundations import logging, exceptions, options, styles, hlstr, fsapi, objects
-from licorn.core        import configuration, users, groups, profiles
+from licorn.foundations        import logging, exceptions, options, styles
+from licorn.foundations        import hlstr, fsapi, objects
+
+from licorn.core.configuration import LicornConfiguration
+from licorn.core.users         import UsersController
+from licorn.core.groups        import GroupsController
+from licorn.core.profiles      import ProfilesController
+from licorn.core.keywords      import KeywordsController
 
 _app = {
 	"name"     		: "licorn-add",
@@ -23,6 +29,11 @@ _app = {
 
 def import_users():
 	""" Massively import user accounts from a CSV file."""
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
 
 	def clean_csv_field(field):
 		return field.replace("'","").replace('"','')
@@ -325,6 +336,9 @@ def import_users():
 def add_user():
 	""" Add a user account on the system. """
 
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+
 	if opts.firstname is None:
 		firstname = None
 	else:
@@ -357,6 +371,10 @@ def add_user():
 def add_group():
 	""" Add a POSIX group. """
 
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
 	if opts.description == '':
 		description = ''
 	else:
@@ -372,6 +390,11 @@ def add_group():
 				logging.warning('Group %s already exists on the system.' % name)
 def add_profile():
 	""" Add a system wide User profile. """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
 
 	_groups = []
 	if opts.groups is not None:
@@ -391,7 +414,9 @@ def add_profile():
 	profiles.WriteConf(configuration.profiles_config_file)
 def add_keyword():
 	""" Add a keyword on the system. """
-	from licorn.core import keywords
+	configuration = LicornConfiguration()
+	keywords = KeywordsController(configuration)
+
 	keywords.AddKeyword(unicode(opts.name), unicode(opts.parent), unicode(opts.description))
 def add_workstation():
 	raise NotImplementedError("add_workstations not implemented.")
@@ -401,6 +426,7 @@ def add_webfilter():
 if __name__ == "__main__":
 
 	try:
+		configuration = LicornConfiguration()
 		giantLock = objects.FileLock(configuration, "add", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:

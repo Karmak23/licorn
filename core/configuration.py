@@ -16,7 +16,7 @@ from licorn.foundations               import logging, exceptions, fsapi
 from licorn.foundations               import styles, readers, pyutils
 from licorn.foundations.ltrace        import ltrace
 from licorn.foundations.objects       import LicornConfigObject, FileLock
-from licorn.core.internals.privileges import PrivilegesWhiteList
+from licorn.core.privileges import PrivilegesWhiteList
 
 class LicornConfiguration (object):
 	""" Contains all the underlying system configuration as attributes.
@@ -493,7 +493,10 @@ class LicornConfiguration (object):
 		if not LicornConfiguration.ssh.enabled:
 			return
 
-		from licorn.core import groups
+		from licorn.core.groups import GroupsController
+		from licorn.core.users import UsersController
+		users = UsersController(self)
+		groups = GroupsController(self, users)
 
 		if not groups.group_exists(name = LicornConfiguration.ssh.group):
 
@@ -1081,11 +1084,15 @@ class LicornConfiguration (object):
 
 		ltrace('configuration', '> check()')
 
+		# users and groups must be OK before everything.
+		# for this, backends must be ready and configured.
+		# check the first.
+		self.check_backends(batch, auto_answer)
+
 		self.CheckBaseDirs(minimal, batch, auto_answer)
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 		self.check_OpenSSH(batch, auto_answer)
 
-		self.check_backends(batch, auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
@@ -1145,7 +1152,10 @@ class LicornConfiguration (object):
 				'default_acl': ""
 			} ]
 
-		from licorn.core import groups
+		from licorn.core.groups import GroupsController
+		from licorn.core.users import UsersController
+		users = UsersController(self)
+		groups = GroupsController(self)
 
 		try:
 			# batch this because it *has* to be corrected
@@ -1199,7 +1209,10 @@ class LicornConfiguration (object):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
-		from licorn.core import groups
+		from licorn.core.groups import GroupsController
+		from licorn.core.users import UsersController
+		users = UsersController(self)
+		groups = GroupsController(self)
 
 		if minimal:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here

@@ -35,11 +35,10 @@ def cli_main(functions, app_data, second_level_help = False,
 
 			options.SetFrom(opts)
 
-			from licorn.core import configuration
+			from licorn.core.configuration import LicornConfiguration
+			configuration = LicornConfiguration()
 
 			with configuration:
-
-				from licorn.core import users, groups, profiles, keywords
 
 				if giant_locked:
 					from licorn.foundations.objects import FileLock

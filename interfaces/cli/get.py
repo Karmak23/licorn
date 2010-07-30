@@ -13,7 +13,13 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 output = sys.stdout.write
-from licorn.foundations import logging, exceptions, options
+
+from licorn.foundations        import logging, exceptions, options
+from licorn.core.configuration import LicornConfiguration
+from licorn.core.users         import UsersController
+from licorn.core.groups        import GroupsController
+from licorn.core.profiles      import ProfilesController
+from licorn.core.keywords      import KeywordsController
 
 _app = {
 	"name"     		: "licorn-get",
@@ -24,7 +30,8 @@ _app = {
 def get_users(opts, args):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
-	from licorn.core import users
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
 
 	if opts.uid is not None:
 		try:
@@ -44,7 +51,9 @@ def get_users(opts, args):
 def get_groups(opts, args):
 	""" Get the list of POSIX groups (can be LDAP). """
 
-	from licorn.core import groups
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
 
 	if opts.gid is not None:
 		try:
@@ -78,7 +87,10 @@ def get_groups(opts, args):
 def get_profiles(opts, args):
 	""" Get the list of user profiles. """
 
-	from licorn.core import profiles
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.profile is not None:
 		try:
@@ -96,7 +108,8 @@ def get_profiles(opts, args):
 def get_keywords(opts, args):
 	""" Get the list of keywords. """
 
-	from licorn.core import keywords
+	configuration = LicornConfiguration()
+	keywords = KeywordsController(configuration)
 
 	if opts.xml:
 		data = keywords.ExportXML()
@@ -172,7 +185,8 @@ def get_internet_types(opts, args):
 def get_configuration(opts, args):
 	""" Output th current Licorn system configuration.
 	"""
-	from licorn.core import configuration
+
+	configuration = LicornConfiguration()
 
 	if len(args) > 1:
 		output(configuration.Export(args = args[1:], cli_format = opts.cli_format))

@@ -14,7 +14,12 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, re
 
 from licorn.foundations import logging, exceptions, options, objects, styles
-from licorn.core        import configuration, users, groups, profiles
+
+from licorn.core.configuration import LicornConfiguration
+from licorn.core.users         import UsersController
+from licorn.core.groups        import GroupsController
+from licorn.core.profiles      import ProfilesController
+from licorn.core.keywords      import KeywordsController
 
 _app = {
 	"name"     		: "licorn-delete",
@@ -25,6 +30,11 @@ _app = {
 def desimport_groups(delete_filename):
 	""" Delete the groups (and theyr members) present in a import file.
 	"""
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
 	if delete_filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name"
 
@@ -66,6 +76,9 @@ def desimport_groups(delete_filename):
 def delete_user():
 	""" delete a user account. """
 
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+
 	for login in opts.login.split(','):
 		if login != '':
 			try:
@@ -78,6 +91,10 @@ def delete_user():
 	users.WriteConf()
 def delete_group():
 	""" delete an Licorn group. """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
 
 	if opts.name is None:
 		try:
@@ -99,6 +116,12 @@ def delete_group():
 def delete_profile():
 	""" Delete a system wide User profile. """
 
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
+
+
 	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users,
 		batch=opts.no_sync)
 
@@ -107,7 +130,9 @@ def delete_profile():
 def delete_keyword():
 	""" delete a system wide User profile. """
 
-	from licorn.core import keywords
+	configuration = LicornConfiguration()
+	keywords = KeywordsController(configuration)
+
 	keywords.DeleteKeyword(opts.name, opts.del_children)
 
 def delete_workstation():
@@ -118,6 +143,7 @@ def delete_webfilter():
 if __name__ == "__main__":
 
 	try:
+		configuration = LicornConfiguration()
 		giantLock = objects.FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:

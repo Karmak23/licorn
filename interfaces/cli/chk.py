@@ -12,8 +12,12 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, os
 
-from licorn.foundations import logging, exceptions
-from licorn.core        import configuration, users, groups
+from licorn.foundations         import logging, exceptions
+from licorn.foundations.objects import FileLock
+
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
 
 _app = {
 	"name"     		: "licorn-check",
@@ -23,6 +27,9 @@ _app = {
 
 def check_users():
 	""" Check one or more user account(s). """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
 
 	if opts.all:
 		users_to_check = []
@@ -36,6 +43,10 @@ def check_users():
 	users.CheckUsers(users_to_check, opts.minimal, auto_answer = opts.auto_answer, batch = opts.batch)
 def check_groups():
 	""" Check one or more group(s). """
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
 
 	# don't show warnings. If user has asked for a check, he already
 	# thinks there is something wrong, which *will* be raised by the check,
@@ -62,7 +73,8 @@ def check_groups():
 	except:
 		pass
 
-	groups.CheckGroups(groups_to_check, opts.minimal, auto_answer = opts.auto_answer, batch = opts.batch)
+	groups.CheckGroups(groups_to_check, opts.minimal,
+		auto_answer=opts.auto_answer, batch=opts.batch)
 
 	# TODO: do this more cleanly and not so hard-coded:
 	try:
@@ -76,14 +88,14 @@ def check_profiles():
 def check_configuration():
 	""" TODO: to be implemented. """
 
-	from licorn.core import configuration
-
+	configuration = LicornConfiguration()
 	configuration.check(opts.minimal, opts.batch, opts.auto_answer)
 
 if __name__ == "__main__":
 
 	try:
-		from licorn.foundations.objects import FileLock
+		configuration = LicornConfiguration()
+
 		giantLock = FileLock(configuration, "giant", 10)
 		giantLock.Lock()
 	except (IOError, OSError), e:
