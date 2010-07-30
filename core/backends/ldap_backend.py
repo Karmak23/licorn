@@ -8,9 +8,9 @@ Licensed under the terms of the GNU GPL version 2.
 import os
 import re
 import ldap
+from ldif import LDIFParser
 import string
 import hashlib
-from ldif import LDIFParser
 from base64 import encodestring, decodestring
 
 from licorn.foundations         import logging, exceptions, styles, pyutils
