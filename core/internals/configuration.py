@@ -1106,9 +1106,8 @@ class LicornConfiguration (object):
 
 		if b.name in self.backends:
 			self.backends[b.name].check(batch, auto_answer)
-		elif b.can_be_enabled():
-			b.initialize()
-			b.check(batch, auto_answer)
+		elif b.name in self.available_backends:
+			self.available_backends[b.name].check(batch, auto_answer)
 
 		ltrace('configuration', '< check_backends()')
 	def CheckBaseDirs(self, minimal=True, batch=False, auto_answer=None):
