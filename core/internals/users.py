@@ -352,9 +352,12 @@ class UsersController:
 		tmp_user_dict['login']          = login
 		# prepare the groups cache.
 		tmp_user_dict['groups']         = []
-		tmp_user_dict['shadowInactive'] = 99999
-		tmp_user_dict['shadowWarning']  = ''
+		tmp_user_dict['shadowInactive'] = ''
+		tmp_user_dict['shadowWarning']  = 7
 		tmp_user_dict['shadowExpire']   = ''
+		tmp_user_dict['shadowMin']      = 0
+		tmp_user_dict['shadowMax']      = 99999
+		tmp_user_dict['shadowFlag']     = ''
 		tmp_user_dict['backend']        = \
 			UsersController.backends['prefered'].name
 
