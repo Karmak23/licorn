@@ -338,8 +338,9 @@ class ldap_controller(UGBackend):
 		ltrace('ldap', '| last_init_check()')
 
 		try:
+			self.bind()
 			ldap_result = self.ldap_conn.search_s(self.base, ldap.SCOPE_SUBTREE,
-				'(objectClass=o)')
+				'(objectClass=organization)')
 			del ldap_result
 		except (ldap.NO_SUCH_OBJECT, ldap.INVALID_DN_SYNTAX):
 			return False
