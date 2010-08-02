@@ -991,7 +991,8 @@ class GroupsController:
 			group_home_only['path'] = group_home
 			group_home_only['user'] = 'root'
 			del group_home_only['content_acl']
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_only ], batch, auto_answer, self)
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+				[ group_home_only ], batch, auto_answer, self, self.users)
 
 		except exceptions.LicornCheckError:
 			logging.warning("Shared group dir %s is missing, please repair this first." \
@@ -1004,7 +1005,8 @@ class GroupsController:
 		# previous is necessary, and this one is unavoidable due to
 		# fsapi.check_dirs_and_contents_perms_and_acls() conception.
 		logging.progress("Checking shared group dir contents...")
-		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ group_home_acl ], batch, auto_answer, self)
+		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+			[ group_home_acl ], batch, auto_answer, self, self.users)
 
 		if os.path.exists("%s/public_html" % group_home):
 			public_html             = "%s/public_html" % group_home
@@ -1018,7 +1020,7 @@ class GroupsController:
 				public_html_only['user'] = 'root'
 				del public_html_only['content_acl']
 				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ],
-					batch, auto_answer, self)
+					batch, auto_answer, self, self.users)
 
 			except exceptions.LicornCheckError:
 				logging.warning("Shared dir %s is missing, please repair this first." \
@@ -1026,7 +1028,8 @@ class GroupsController:
 				return False
 
 			# check only ~group/public_html and its contents, without checking UID, too.
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_acl ], batch, auto_answer, self)
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+				[ public_html_acl ], batch, auto_answer, self, self.users)
 
 		if not minimal:
 			logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))

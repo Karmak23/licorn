@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+	# -*- coding: utf-8 -*-
 """
 Licorn core - http://dev.licorn.org/documentation/core
 
@@ -1155,13 +1155,14 @@ class LicornConfiguration (object):
 		from licorn.core.groups import GroupsController
 		from licorn.core.users import UsersController
 		users = UsersController(self)
-		groups = GroupsController(self)
+		groups = GroupsController(self, users)
 
 		try:
 			# batch this because it *has* to be corrected
 			# for system to work properly.
 			fsapi.check_dirs_and_contents_perms_and_acls(
-				dirs_to_verify, batch=True, allgroups=groups)
+				dirs_to_verify, batch=True, allgroups=groups,
+				allusers=users)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1204,7 +1205,7 @@ class LicornConfiguration (object):
 
 		# no need to bother the user for that, correct it automatically anyway.
 		fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-			batch=True, allgroups=groups)
+			batch=True, allgroups=groups, allusers=users)
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
@@ -1212,7 +1213,7 @@ class LicornConfiguration (object):
 		from licorn.core.groups import GroupsController
 		from licorn.core.users import UsersController
 		users = UsersController(self)
-		groups = GroupsController(self)
+		groups = GroupsController(self, users)
 
 		if minimal:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here

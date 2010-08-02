@@ -472,14 +472,22 @@ class ldap_controller(UGBackend):
 							schema),
 						auto_answer):
 
-					logging.info('%s: loading schema %s into slapd.' % (self.name,
-						schema))
+					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
+					if schema == 'backend.hdb':
+						try:
+							logging.notice('disabling AppArmor profile for slapd.')
+							os.system('echo -n /usr/sbin/slapd > /sys/kernel/security/apparmor/.remove')
+						except Exception, e:
+							logging.warning(e)
 
 					if schema == 'frontend':
 						# the frontend is a special case which can't be filled by root.
 						# We have to bind as cn=admin, else it will fail with
 						# "Insufficient privileges" error.
 						self.bind()
+
+					logging.info('%s: loading schema %s into slapd.' % (
+						self.name, schema))
 
 					for (dn, entry) in MyLDIFParser(schema).get():
 						try:
@@ -490,6 +498,14 @@ class ldap_controller(UGBackend):
 						except ldap.ALREADY_EXISTS:
 							logging.notice('skipping already present dn %s.' \
 								% dn)
+
+					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
+					if schema == 'backend.hdb':
+						try:
+							logging.notice('enabling AppArmor profile for slapd.')
+							os.system('/sbin/apparmor_parser --write-cache --replace -- /etc/apparmor.d/usr.sbin.slapd')
+						except Exception, e:
+							logging.warning(e)
 
 				else:
 					# all these schemas are mandatory for Licorn to work,

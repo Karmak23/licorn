@@ -338,6 +338,8 @@ def add_user():
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
 
 	if opts.firstname is None:
 		firstname = None

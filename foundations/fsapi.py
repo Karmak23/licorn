@@ -27,7 +27,7 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 
 	if mindepth > maxdepth:
 		raise  exceptions.BadArgumentError("mindepth must be <= maxdepth.")
-	
+
 	if maxdepth > 99:
 		raise  exceptions.BadArgumentError("please don't try to exhaust maxdepth.")
 
@@ -64,7 +64,7 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 
 			if (entry_type & S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
-				continue	
+				continue
 
 			if entry_type & S_IFDIR and current_depth < maxdepth:
 				for x in os.listdir(entry):
@@ -72,10 +72,11 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 						next_paths_to_walk.append("%s/%s" % (entry, x))
 
 		except OSError, e:
-			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'): 
+			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
 				continue
 			raise e
-def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answer = None, allgroups = None, allusers = None):
+def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
+	auto_answer = None, allgroups = None, allusers = None):
 	""" Check if a dir exists, else create it and apply ACLs on it eventually.
 		dirs_infos should be a n-tuple of dicts, composed like this:
 		{
@@ -86,12 +87,12 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 			'exclude'     : [ ... ],         # dirs and files inside 'path' to be excluded from search)
 
 			*and*
-			
+
 			'mode'       : chmod_mode (INT), # always use 00600 for example, not just 600, else it won't work.
 			'content_mode': another int,      # mode for files inside 'path'
 
 			*or*
-			
+
 			'access_acl' : string,
 			'default_acl': string,
 			'content_acl': string,
@@ -105,7 +106,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 
 		When checking ACLs, default_acl will be applyed on dirs as access *and* default acl. 'default_acl'
 		will be applyed on dirs inside 'path', and 'content_acl' will be checked against files inside 'path'.
-		
+
 		TODO: 'default_acl' should be checked against files inside 'path', modulo the mask change from
 		'rwx' to 'rw-', which will should automagically imply "effective" ACLs computed on the fly.
 		"""
@@ -123,7 +124,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 
 		try:
 			if dir_info.has_key('user') and dir_info['user'] != '':
-				uid = allusers.login_to_uid(dir_info['user']) 
+				uid = allusers.login_to_uid(dir_info['user'])
 			else:
 				uid = -1
 
@@ -138,7 +139,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 
 		try:
 			logging.progress("Checking dir %s..." % styles.stylize(styles.ST_PATH, dir_info['path']))
-			dirstat = os.lstat(dir_info['path']) 
+			dirstat = os.lstat(dir_info['path'])
 
 		except OSError, e:
 			if e.errno == 13:
@@ -148,7 +149,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer):
 					os.mkdir(dir_info['path'])
-					dirstat = os.lstat(dir_info['path']) 
+					dirstat = os.lstat(dir_info['path'])
 					batch = True
 					logging.info("Created dir %s." % styles.stylize(styles.ST_PATH, dir_info['path']))
 				else:
@@ -165,7 +166,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 			if batch or logging.ask_for_repair(warn_message, auto_answer):
 				os.unlink(dir_info['path'])
 				os.mkdir(dir_info['path'])
-				dirstat = os.lstat(dir_info['path']) 
+				dirstat = os.lstat(dir_info['path'])
 				batch = True
 				logging.info("Created dir %s." % styles.stylize(styles.ST_PATH, dir_info['path']))
 			else:
@@ -176,12 +177,12 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 			all_went_ok &= check_posix_ugid_and_perms(dir_info['path'], uid, gid, dir_info['mode'], batch, auto_answer, allgroups, allusers)
 
 			if dir_info.has_key('content_mode'):
-				# check the contents of the dir (existing files and directories, except the ones which 
+				# check the contents of the dir (existing files and directories, except the ones which
 				# are excluded), only if the content_acl is set, else skip content check.
 
 				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid, batch, auto_answer)
 
-		else: 
+		else:
 			logging.progress("Checking %s's ACLs..." % styles.stylize(styles.ST_PATH, dir_info['path']))
 
 			# check uid/gid, but don't check the perms (thus -1) because ACLs overrride them.
@@ -192,17 +193,17 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False, auto_answe
 				# this hack is needed to use check_posix_dir_contents() to check only uid/gid (not perms)
 				dir_info['mode']          = -1
 				dir_info['content_mode' ] = -1
-				# check the contents of the dir (existing files and directories, except the ones which 
+				# check the contents of the dir (existing files and directories, except the ones which
 				# are excluded), only if "content_acl" is set, else skip content check.
 				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid, batch, auto_answer, allgroups, allusers)
 				all_went_ok &= check_posix1e_dir_contents(dir_info, batch, auto_answer)
-			
+
 		return all_went_ok
 
 	if dirs_infos:
 		if reduce(pyutils.keep_false, map(check_one_dir_and_acl, dirs_infos)) is False:
 			return False
-		else: 
+		else:
 			return True
 
 	else:
@@ -238,7 +239,7 @@ def check_posix1e_dir_contents(dir_info, batch = False, auto_answer = None):
 	except TypeError:
 		# same here if there are no files...
 		pass
-	
+
 	return all_went_ok
 def check_posix_dir_contents(dir_info, uid, gid, batch = False, auto_answer = None, allgroups = None, allusers = None):
 	"""TODO."""
@@ -268,7 +269,7 @@ def check_posix_dir_contents(dir_info, uid, gid, batch = False, auto_answer = No
 	except TypeError:
 		# same exception if there are no files...
 		pass
-	
+
 	return all_went_ok
 def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = False, auto_answer = None, allgroups = None, allusers = None):
 	"""Check if some path has some desired perms, repair if told to do so."""
@@ -285,13 +286,13 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 	all_went_ok = True
 
 	logging.progress("Checking posix uid/gid/perms of %s." % styles.stylize(styles.ST_PATH, onpath))
-	
+
 	try:
 		pathstat = os.lstat(onpath)
 	except OSError, e:
 		if e.errno == 2:
 			# causes of this error:
-			#     - this is a race condition: the dir/file has been deleted between the minifind() 
+			#     - this is a race condition: the dir/file has been deleted between the minifind()
 			#       and the check_*() call. Don't blow out on this.
 			#     - when we explicitely want to check a path which does not exist because it has not
 			#       been created yet (eg: ~/.dmrc on a brand new user account).
@@ -330,7 +331,7 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 			current_group = allgroups.groups[ pathstat.st_gid ]['name']
 		except KeyError:
 			current_group = str(pathstat.st_gid)
-		
+
 		warn_message = logging.SWKN_DIR_BAD_OWNERSHIP \
 				% (
 					styles.stylize(styles.ST_PATH, onpath),
@@ -343,7 +344,7 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 		if batch or logging.ask_for_repair(warn_message, auto_answer):
 			os.chown(onpath, uid, gid)
 			logging.info("Changed owner of %s from %s:%s to %s:%s." % (styles.stylize(styles.ST_PATH, onpath),
-				styles.stylize(styles.ST_UGID, current_login), styles.stylize(styles.ST_UGID, current_group), 
+				styles.stylize(styles.ST_UGID, current_login), styles.stylize(styles.ST_UGID, current_group),
 				styles.stylize(styles.ST_UGID, desired_login), styles.stylize(styles.ST_UGID, desired_group)))
 		else:
 			all_went_ok = False
@@ -351,7 +352,7 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 	if perms == -1:
 		# stop here, we just wanted to check uid/gid
 		return all_went_ok
-	
+
 	if has_extended_acl(onpath):
 		# if an ACL is present, this could be what is borking the Unix mode.
 		# an ACL is present if it has a mask, else it is just standard posix
@@ -366,7 +367,7 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 
 			if pathstat.st_mode & 0170000 == S_IFDIR:
 				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
-					
+
 			logging.info("Deleted ACL from %s." % styles.stylize(styles.ST_PATH, onpath))
 
 			# redo the stat, to get the current posix mode.
@@ -418,12 +419,12 @@ def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1):
 
 		if perms == -1:
 			return True
-		
+
 		if has_extended_acl(onpath):
 			posix1e.ACL(text="").applyto(str(onpath))
 			if pathstat.st_mode & 0170000 == S_IFDIR:
 				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
-				
+
 			logging.progress("Auto-deleted ACL from %s." % onpath)
 			pathstat = os.lstat(onpath)
 
@@ -440,11 +441,11 @@ def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1):
 	return True
 def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = "", batch = False, auto_answer = None):
 	"""Check if a [default] acl is present on a given path, repair if not and asked for.
-	
-	Note: ACL aren't apply on symlinks (on ext2/ext3), they apply on the destination of 
+
+	Note: ACL aren't apply on symlinks (on ext2/ext3), they apply on the destination of
 	the link, which could be bad when the destination is outside a particular
 	directory tree. This problem does not arise when working on XFS. I don't know
-	about reiserfs. Anyway this is a good idea to skip symlinks, because setting 
+	about reiserfs. Anyway this is a good idea to skip symlinks, because setting
 	an ACL on a symlink has no real justification though.
 
 	see http://acl.bestbits.at/pipermail/acl-devel/2001-December/000834.html
@@ -484,7 +485,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 				continue
 			else:
 				# only test/apply default ACL on directories.
-				acl_qualif = "Default"	
+				acl_qualif = "Default"
 				acl_value  = posix1e.ACL(filedef=onpath)
 		else:
 			acl_qualif = "Access"
@@ -492,7 +493,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 
 		#
 		# Warning: the next test REQUIRE pylibacl >= 0.3.0.
-		# else, the test will always fail, because Python will only 
+		# else, the test will always fail, because Python will only
 		# compare ACL objects basically, and they WILL be different.
 		#
 
@@ -585,11 +586,11 @@ def make_symlink(link_src, link_dst, batch = False, auto_answer = None):
 						logging.info("Repaired vanished symlink %s." % styles.stylize(styles.ST_LINK, link_dst))
 			else:
 
-				# TODO / WARNING: we need to investigate a bit more: if current link_src is 
+				# TODO / WARNING: we need to investigate a bit more: if current link_src is
 				# a file, overwriting it could be very bad (e.g. user could loose a document).
 				# This is the same for a directory, modulo the user could loose much more than
 				# just a document. We should scan the dir and replace it only if empty (idem
-				# for the file), and rename it (thus find a unique name, like 
+				# for the file), and rename it (thus find a unique name, like
 				# 'the file.autosave.XXXXXX.txt' where XXXXXX is a random string…)
 
 				warn_message = "%s already exists but it isn't a symlink, thus doesn't point to %s. Replace it with a correct symlink?" \
@@ -617,7 +618,7 @@ def has_extended_acl(pathname):
 if hasattr(posix1e, 'HAS_EXTENDED_CHECK'):
 	if posix1e.HAS_EXTENDED_CHECK:
 		has_extended_acl = posix1e.has_extended
-		
+
 def is_backup_file(filename):
 	"""Return true if file is a backup file (~,.bak,...)."""
 	if filename[-1] == '~':
@@ -634,7 +635,7 @@ def get_file_encoding(filename):
 
 	# file -b: brief (the file name is not printed)
 	encoding = os.popen2( [ 'file', '-b', filename ] ).read()[:-1].split(' ')
-	
+
 	if encoding[0] == "ISO-8859":
 		ret_encoding = "ISO-8859-15"
 	elif encoding[0] == "UTF-8" and encoding[1] == "Unicode":
@@ -644,21 +645,21 @@ def get_file_encoding(filename):
 		ret_encoding = None
 	else:
 		ret_encoding = None
-		
+
 	return ret_encoding
 def execbits2str(filename):
 	"""Find if a file has executable bits and return (only) then as a list of strings, used later to build an ACL permission string.
-		
+
 		TODO: as these exec perms are used for ACLs only, should not we avoid testing setuid and setgid bits ? what does setguid means in a posix1e ACL ?
 	"""
-	
+
 	fileperms = os.lstat(filename).st_mode & 07777
 	execperms = []
-	
+
 	# exec bit for owner ?
 	if fileperms & S_IXUSR:
 		execperms.append('x')
-	else:	
+	else:
 		execperms.append('-')
 
 	# exec bit for group ?
@@ -666,7 +667,7 @@ def execbits2str(filename):
 		execperms.append('x')
 	else:
 		execperms.append('-')
-	
+
 	# skip exec bit for other, not used in our ACLs.
 
 	return execperms

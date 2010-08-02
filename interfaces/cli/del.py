@@ -95,6 +95,7 @@ def delete_group():
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
+	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.name is None:
 		try:

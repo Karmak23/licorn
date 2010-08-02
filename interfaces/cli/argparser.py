@@ -13,8 +13,10 @@ Licensed under the terms of the GNU GPL version 2.
 
 from optparse import OptionParser, OptionGroup
 
-from licorn.foundations import styles
-from licorn.core        import version, configuration
+from licorn.foundations        import styles
+from licorn.core               import version
+from licorn.core.configuration import LicornConfiguration
+configuration = LicornConfiguration()
 
 ### General / common arguments ###
 def __build_version_string(app):
