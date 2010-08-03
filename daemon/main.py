@@ -24,13 +24,22 @@ current_app = {
 import sys, os, signal
 from Queue              import Queue
 
-from licorn.foundations import process, logging, exceptions, styles, options
-from licorn.core        import keywords, configuration
+from licorn.foundations         import process, logging, exceptions
+from licorn.foundations         import styles, options
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+from licorn.core.keywords       import KeywordsController
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
+keywords = KeywordsController(configuration)
 
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.core                  import  dname, terminate_cleanly
+from licorn.daemon.core                  import dname, terminate_cleanly
 from licorn.daemon.core                  import exit_if_already_running, exit_if_not_running_root
 from licorn.daemon.core                  import eventually_daemonize, setup_signals_handler
 from licorn.daemon.internals.wmi         import eventually_fork_wmi_server

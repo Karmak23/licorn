@@ -10,9 +10,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
+from gettext import gettext as _
+
 import os, cStringIO
 from subprocess  import Popen, PIPE
-from licorn.core import configuration
+
+from licorn.core.configuration import LicornConfiguration
+
+configuration = LicornConfiguration()
 
 licence_text = _('''
 %s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU

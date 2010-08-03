@@ -13,8 +13,14 @@ from collections import deque
 
 from licorn.foundations         import fsapi, logging, exceptions, styles, process
 from licorn.foundations.objects import LicornThread, Singleton
-from licorn.core                import groups, configuration
 from licorn.daemon.core         import dname
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
 
 class INotifier(Thread, Singleton):
 	""" A Thread which collect INotify events and does what is appropriate with them. """

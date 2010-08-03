@@ -12,11 +12,18 @@ import os, mimetypes, urlparse, posixpath, urllib, socket, time
 from SocketServer       import TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
-from licorn.foundations    import logging, exceptions, styles, process
-from licorn.core           import configuration, users, groups
-from licorn.interfaces.web import utils as w
-from licorn.daemon.core    import dname, wpid_path, wmi_port, wlog_path, \
+from licorn.foundations         import logging, exceptions, styles, process
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+from licorn.core.profiles       import ProfilesController
+from licorn.interfaces.web      import utils as w
+from licorn.daemon.core         import dname, wpid_path, wmi_port, wlog_path, \
 	wmi_group, buffer_size
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
 
 def eventually_fork_wmi_server(opts, start_wmi = True):
 	""" Start the Web Management Interface (fork it). """

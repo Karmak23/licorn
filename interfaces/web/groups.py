@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 
 import os, time
+from gettext import gettext as _
 
-from licorn.foundations    import exceptions, hlstr
-from licorn.core           import configuration, groups, users, profiles
+from licorn.foundations         import exceptions, hlstr
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+from licorn.core.profiles       import ProfilesController
+
 from licorn.interfaces.web import utils as w
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
+profiles = ProfilesController(configuration, groups, users)
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'

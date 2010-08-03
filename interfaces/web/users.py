@@ -1,10 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import os, time
+from gettext import gettext as _
 
 from licorn.foundations    import exceptions, hlstr, logging
-from licorn.core           import configuration, groups, users, profiles
+
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+from licorn.core.profiles       import ProfilesController
+
 from licorn.interfaces.web import utils as w
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
+profiles = ProfilesController(configuration, groups, users)
+
 
 groups_filters_lists_ids = (
 	(groups.FILTER_STANDARD, [_('Customize groups'),

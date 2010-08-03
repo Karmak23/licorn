@@ -1,11 +1,23 @@
 # -*- coding: utf-8 -*-
 
 import os, time, re
+from gettext import gettext as _
 
 from subprocess            import Popen, PIPE
-from licorn.core           import users, configuration
+
 from licorn.foundations    import logging
+
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+from licorn.core.profiles       import ProfilesController
+
 from licorn.interfaces.web import utils as w
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
+profiles = ProfilesController(configuration, groups, users)
 
 def ctxtnav():
 	return '''

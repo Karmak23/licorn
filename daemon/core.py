@@ -14,15 +14,20 @@ import signal
 from threading   import Thread, Event, Semaphore
 from collections import deque
 
-from licorn.foundations.objects import LicornThread
 from licorn.foundations         import fsapi
 from licorn.foundations         import logging
 from licorn.foundations         import exceptions
 from licorn.foundations         import styles
 from licorn.foundations         import process
-from licorn.foundations         import Singleton
-from licorn.core                import groups
-from licorn.core                import configuration
+from licorn.foundations.objects import LicornThread
+from licorn.foundations.objects import Singleton
+from licorn.core.configuration  import LicornConfiguration
+from licorn.core.users          import UsersController
+from licorn.core.groups         import GroupsController
+
+configuration = LicornConfiguration()
+users = UsersController(configuration)
+groups = GroupsController(configuration, users)
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1

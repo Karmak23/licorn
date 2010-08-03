@@ -16,7 +16,7 @@ from licorn.foundations               import logging, exceptions, fsapi
 from licorn.foundations               import styles, readers, pyutils
 from licorn.foundations.ltrace        import ltrace
 from licorn.foundations.objects       import LicornConfigObject, FileLock
-from licorn.core.privileges import PrivilegesWhiteList
+from licorn.core.privileges           import PrivilegesWhiteList
 
 class LicornConfiguration (object):
 	""" Contains all the underlying system configuration as attributes.
