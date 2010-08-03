@@ -47,10 +47,6 @@ class UsersController:
 
 		if UsersController.users is None:
 			self.reload()
-	def __del__(self):
-		# just in case it wasn't done before (e.g. in batched operations).
-		self.WriteConf()
-
 	def __getitem__(self, item):
 		return UsersController.users[item]
 	def __setitem__(self, item, value):

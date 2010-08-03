@@ -52,9 +52,6 @@ class KeywordsController:
 				pass
 			else:
 				raise e
-	def __del__(self):
-		# just in case it wasn't done before (in batched operations, for example).
-		self.WriteConf()
 	def WriteConf(self):
 		""" Write the keywords data in appropriate system files."""
 

@@ -61,10 +61,6 @@ class GroupsController:
 		configuration.groups.hidden = self.GetHiddenState()
 
 		logging.progress('%s: new instance created.' % self.pretty_name)
-	def __del__(self):
-		# just in case it wasn't done before (in batched operations, for example).
-		self.WriteConf()
-
 	def __getitem__(self, item):
 		return GroupsController.groups[item]
 	def __setitem__(self, item, value):

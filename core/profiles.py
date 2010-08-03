@@ -42,9 +42,6 @@ class ProfilesController:
 			self.reload()
 
 		self.checkDefaultProfile()
-	def __del__(self):
-		# just in case it wasn't done before (in batched operations, for example).
-		self.WriteConf()
 	def reload(self):
 		ProfilesController.profiles = readers.profiles_conf_dict(self.configuration.profiles_config_file)
 	def checkDefaultProfile(self):
