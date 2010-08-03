@@ -363,18 +363,21 @@ class unix_controller(UGBackend):
 			# logging.debug2("Writing group %s (%s)." % (groups[gid]['name'],
 			#  groups[gid]))
 
+			members = [ x for x in groups[gid]['memberUid']]
+			members.sort()
+
 			etcgroup.append(":".join((
 										groups[gid]['name'],
 										groups[gid]['userPassword'],
 										str(gid),
-										','.join(groups[gid]['memberUid'])
+										','.join(members)
 									))
 							)
 			etcgshadow.append(":".join((
 										groups[gid]['name'],
 										groups[gid]['userPassword'],
 										"",
-										','.join(groups[gid]['memberUid'])
+										','.join(members)
 									))
 							)
 			extgroup.append(':'.join((
