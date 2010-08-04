@@ -884,12 +884,16 @@ def modify_configuration_parse_arguments(app):
 	configuration_group.add_option('-b', "--enable-backends",
 		action="store", dest="enable_backends", default=None,
 		help='''enable given backend(s) on the current system (separated '''
-			'''by commas without spaces).''')
+			'''by commas without spaces). List of available backends with '''
+			'''`%s`.''' % styles.stylize(styles.ST_MODE,
+				'get config backends'))
 
 	configuration_group.add_option('-B', "--disable-backends",
 		action="store", dest="disable_backends", default=None,
 		help='''disable given backend(s) on the current system (separated '''
-			'''by commas without spaces).''')
+			'''by commas without spaces). List of available backends with '''
+			'''`%s`.''' % styles.stylize(styles.ST_MODE,
+				'get config backends'))
 
 	configuration_group.add_option("-e", "--set-hostname",
 		action="store", type="string", dest="set_hostname", default=None,

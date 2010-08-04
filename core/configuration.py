@@ -976,6 +976,15 @@ class LicornConfiguration (object):
 				for skel in self.users.skels:
 					data += "%s\n" % skel
 
+			elif args[0] == 'backends':
+				for b in self.backends:
+					if b == 'prefered': continue
+					data += '%s%s\n' % (self.backends[b].name,
+						styles.stylize(styles.ST_INFO, '*') \
+						if self.backends[b].name == self.backends['prefered'].name else '')
+				for b in self.available_backends:
+					data += '%s\n' % self.available_backends[b].name
+
 			elif args[0] in ("config_dir", "main_config_file",
 				"backup_config_file", "extendedgroup_data_file", "app_name"):
 
