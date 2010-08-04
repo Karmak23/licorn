@@ -155,7 +155,6 @@ class MyLDIFParser(LDIFParser):
 		self.parse()
 		return self.__lcn_data
 
-
 class ldap_controller(UGBackend):
 	""" LDAP Backend for users and groups.
 
@@ -172,7 +171,7 @@ class ldap_controller(UGBackend):
 
 		ltrace('ldap', '| __init__().')
 
-		self.name	  = "LDAP"
+		self.name	  = "ldap"
 
 		# nsswitch compatibility
 		self.compat   = ('ldap')

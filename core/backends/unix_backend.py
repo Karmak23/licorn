@@ -23,7 +23,7 @@ class unix_controller(UGBackend):
 		# the UNIX backend is always enabled on a Linux system.
 		# Any better and correctly configured backend should take
 		# preference over this one, though.
-		self.name     = "Unix"
+		self.name     = "unix"
 		self.enabled  = True
 
 		# nsswitch compatibility
