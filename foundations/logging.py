@@ -92,6 +92,11 @@ def warning(mesg, once = False):
 
 	sys.stderr.write( "%s %s %s\n" % (
 		styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
+def question(mesg):
+	"""Display a styles.stylized question message on stderr."""
+
+	sys.stderr.write( " %s %s %s" % (
+		styles.stylize(styles.ST_INFO, '?'), mytime(), mesg) )
 
 def notice(mesg):
 	""" Display a non-styles.stylized informational message on stderr."""
@@ -139,8 +144,7 @@ class RepairChoice():
 def ask_for_repair(message, auto_answer = None):
 	"""ask the user if he wants to repair, store answer for next question."""
 
-	warning(message)
-	sys.stderr.write(MESG_FIX_PROBLEM_QUESTION)
+	question(message + MESG_FIX_PROBLEM_QUESTION)
 
 	global repair_choice
 	if auto_answer is not None:
@@ -214,8 +218,7 @@ def ask_for_repair(message, auto_answer = None):
 						"wrong command piped on stdin !")
 
 			sys.stderr.write("\n")
-			warning(message)
-			sys.stderr.write(MESG_FIX_PROBLEM_QUESTION)
+			question(message + MESG_FIX_PROBLEM_QUESTION)
 
 # used during an interactive repair session to remember when the user
 # answers "yes to all" or "skip all".
@@ -232,7 +235,7 @@ GENERAL_INTERRUPTED = "Interrupted, cleaning up !"
 GENERAL_UNKNOWN_MODE = "Unknow mode %s !"
 
 ### Messages ###
-MESG_FIX_PROBLEM_QUESTION = "Fix this problem ? [Ynas], or ? for help: "
+MESG_FIX_PROBLEM_QUESTION = " [Ynas], or ? for help: "
 
 ### Config ###
 
