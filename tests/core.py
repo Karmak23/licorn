@@ -1,9 +1,12 @@
 #!/usr/bin/python -OO
 # -*- coding: utf-8 -*-
 
-import sys, os, popen2, curses
-from licorn.foundations import pyutils, styles, logging
-from licorn.core        import configuration
+import sys, os, curses, re
+from subprocess                import Popen, PIPE, STDOUT
+from licorn.foundations        import pyutils, styles, logging, exceptions
+from licorn.core.configuration import LicornConfiguration
+
+configuration = LicornConfiguration()
 
 if __debug__:
 	PYTHON = [ 'python' ]
@@ -20,9 +23,10 @@ MODIFY=PYTHON + [ CLIPATH + '/mod.py']
 GETENT=PYTHON + [ CLIPATH + '/get.py']
 CHECK =PYTHON + [ CLIPATH + '/chk.py']
 
-system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf', 
-				'login.defs', 'licorn/main.conf', 'licorn/group', 
+system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
+				'login.defs', 'licorn/main.conf', 'licorn/group',
 				'licorn/profiles.xml')
+
 bkp_ext = 'licorn'
 
 if len(sys.argv) > 1:
@@ -30,7 +34,8 @@ if len(sys.argv) > 1:
 else:
 	args = []
 
-for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm', '/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff' ):
+for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
+	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff' ):
 	if not os.path.exists(binary):
 		logging.error('%s does not exist on this system and is mandatory for this testsuite.' % binary)
 
@@ -47,23 +52,20 @@ def cmdfmt(cmd):
 
 def test_message(msg):
 	""" display a message to stderr. """
-	sys.stderr.write("%s>>> %s%s\n" 
+	sys.stderr.write("%s>>> %s%s\n"
 		% (styles.colors[styles.ST_LOG], msg, styles.colors[styles.ST_NO]) )
 
-def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", verb = verbose):
+def log_and_exec (command, inverse_test=False, result_code=0, comment="",
+	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
-	if not command.startswith('colordiff'):
-		command += ' %s' % ' '.join(args)
+	#if not command.startswith('colordiff'):
+	#	command += ' %s' % ' '.join(args)
 
-	sys.stderr.write("%s>>> running %s%s%s\n" % (styles.colors[styles.ST_LOG], styles.colors[styles.ST_PATH], command, styles.colors[styles.ST_NO]) )
+	sys.stderr.write("%s>>> running %s%s%s\n" % (styles.colors[styles.ST_LOG],
+		styles.colors[styles.ST_PATH], command, styles.colors[styles.ST_NO]))
 
-	p4 = popen2.Popen4(command)
-	output = p4.fromchild.read()
-	result = p4.wait()
-	if os.WIFEXITED(result):
-		retcode = os.WEXITSTATUS(result)
-
+	output, retcode = execute(command)
 	must_exit = False
 
 	#
@@ -84,57 +86,75 @@ def log_and_exec (command, inverse_test = False, result_code = 0, comment = "", 
 
 	if must_exit:
 		if inverse_test:
-			test = ("	%s→ it should have failed with reason: %s%s%s\n" 
-				% (styles.colors[styles.ST_PATH], styles.colors[styles.ST_BAD], comment, styles.colors[styles.ST_NO]))
+			test = ("	%s→ it should have failed with reason: %s%s%s\n"
+				% (styles.colors[styles.ST_PATH], styles.colors[styles.ST_BAD],
+					comment, styles.colors[styles.ST_NO]))
 		else:
 			test = ""
-		sys.stderr.write("	%s→ return code of command: %s%d%s (expected: %d)%s\n%s	→ log follows:\n" 
-			% (	styles.colors[styles.ST_LOG], styles.colors[styles.ST_BAD], retcode, 
-				styles.colors[styles.ST_LOG], result_code, styles.colors[styles.ST_NO],
-				test) )
+
+		sys.stderr.write("	%s→ return code of command: %s%d%s (expected: %d)%s\n%s	→ log follows:\n"
+			% (	styles.colors[styles.ST_LOG], styles.colors[styles.ST_BAD],
+				retcode, styles.colors[styles.ST_LOG], result_code,
+				styles.colors[styles.ST_NO], test) )
 		sys.stderr.write(output)
-		sys.stderr.write("The last command failed to execute, or return something wrong !\n")
+		sys.stderr.write(
+			"The last command failed to execute, or return something wrong !\n")
 		raise SystemExit(retcode)
-	
+
 	if verb:
-		sys.stderr.write(output)		
+		sys.stderr.write(output)
+
+def execute(cmd):
+	#logging.notice('running %s.' % ' '.join(cmd))
+	p4 = Popen(cmd, shell=False,
+		  stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+	output = p4.stdout.read()
+	retcode = p4.wait()
+	return output, retcode
+def strip_dates(str):
+	""" strip dates from warnings and traces, else outputs and references
+	always compare false ."""
+	return re.sub(r'\s\[\d\d\d\d/\d\d/\d\d\s\d\d:\d\d:\d\d\.\d\d\d\d\]\s',
+		r' [D/T] ', str)
 
 class FunctionnalTest:
 	counter = 0
 
-	def __init__(self, cmd, pre_cmds = [], chk_cmds = [], manual_output = False, reference_cmd = []):
+	def __init__(self, cmd, pre_cmds=[], chk_cmds=[], manual_output=False,
+		reference_cmd=[], context='std'):
 
 		if type(cmd) == type(''):
 			self.cmd = cmd.split(' ')
-		else: 
+		else:
 			self.cmd = cmd
 
 		self.pre_cmds      = pre_cmds
 		self.chk_cmds      = chk_cmds
 		self.reference_cmd = reference_cmd
+		self.context       = context
 		self.manual_output = manual_output
 		FunctionnalTest.counter += 1
 	def Prepare(self, cmd):
 		""" Run commands mandatory for func_test to succeed. """
 
-		make_path = lambda x: ('/'.join(x)).replace('../', '').replace('//','/')
+		make_path = lambda x: ('_'.join(x)).replace('../', '').replace('//','_').replace('/','_')
 
-		self.ref_output_file = 'data/%s/%s/out.txt'  % (make_path(self.reference_cmd), make_path(cmd))
-		self.ref_code_file   = 'data/%s/%s/code.txt' % (make_path(self.reference_cmd), make_path(cmd))
+		out_path = 'data/'
+
+		if self.reference_cmd != []:
+			out_path += 'ref_%s/' % make_path(self.reference_cmd)
 
 		if self.pre_cmds != []:
 			logging.progress('preparing system for cmd %s.' % cmd)
-		for cmd in self.pre_cmds:
-			os.popen2(cmd)[1].read()
-	def Execute(self, cmd):
-		#logging.notice('executing "%s".' % (cmd,))
-		p4 = popen2.Popen4(cmd)
-		output = p4.fromchild.read()
-		result = p4.wait()
-		if os.WIFEXITED(result):
-			retcode = os.WEXITSTATUS(result)
+			for cmd in self.pre_cmds:
+				out_path += 'pre_%s/' % make_path(cmd)
+				# shouldn't this turned into a FunctionnalTest either ?
+				execute(cmd)
 
-		return output, retcode
+		out_path += 'cmd_%s/context_%s' % (make_path(cmd), self.context)
+		self.ref_output_file = '%s/out.txt' % out_path
+		self.ref_code_file   = '%s/code.txt' % out_path
+
 	def SaveOutput(self, output, code):
 
 		try:
@@ -143,69 +163,103 @@ class FunctionnalTest:
 			if e.errno != 17:
 				raise e
 
-		open(self.ref_output_file, 'w').write(output)
+		open(self.ref_output_file, 'w').write(strip_dates(output))
+		#logging.notice('written output file %s.' % self.ref_output_file)
+
 		open(self.ref_code_file, 'w').write(str(code))
+		#logging.notice('written code reference in %s.' % self.ref_code_file)
+
 	def PrepareReferenceOutput(self, cmd):
 
 		if os.path.exists(self.ref_output_file):
-			return (open(self.ref_output_file).read(), int(open(self.ref_code_file).read()))
+			return (open(self.ref_output_file).read(),
+				int(open(self.ref_code_file).read()))
 		else:
 			clear_term()
-			logging.notice('no reference output for cmd "%s", creating one…' % cmdfmt(cmd))
+			logging.notice('no reference output for cmd #%d "%s" [%scontext=%s], creating one…' % (
+			FunctionnalTest.counter, cmdfmt(cmd),
+				'referer=%s, ' % cmdfmt(self.reference_cmd) \
+					if self.reference_cmd != [] else '',
+				self.context))
 
-			output, retcode = self.Execute(cmd)
+			output, retcode = execute(cmd)
 
-			sys.stderr.write(output)
+			sys.stderr.write(strip_dates(output))
 
-			if logging.ask_for_repair('is this message good to keep as reference ?'):
+			if logging.ask_for_repair('is this output good to keep as reference for future runs?'):
 				# Save the output AND the return code for future references and comparisons
 				self.SaveOutput(output, retcode)
-				# return them for current test
-				return (output, retcode)
+				# return them for current test, strip_dates to avoid an
+				# immediate false negative.
+				return (strip_dates(output), retcode)
 			else:
 				logging.error('you MUST have a reference output; please fix code or rerun this test.')
-	def RunAndCheck(self, cmd, batch = False):
+	def RunAndCheck(self, cmd, batch = False, inverse_test=False):
 		ref_output, ref_code = self.PrepareReferenceOutput(cmd)
 
-		output, code = self.Execute(cmd)
+		output, retcode = execute(cmd)
 
-		if ref_code !=  code:
-			sys.stderr.write(output)
-			logging.error('command "%s" failed (exit code %d instead of %d).' % (cmdfmt(cmd), code, ref_code))
+		bad_run = False
+		message = ''
 
-		if ref_output !=  output:
-			# TODO: tempfile -> write -> colordiff
-			sys.stderr.write(output)
-			logging.warning('command "%s" failed.' % cmdfmt(cmd))
-			if not batch and logging.ask_for_repair('Should I keep the trace as new reference ?'):
-				self.SaveOutput(output, code)
+		if retcode != ref_code:
+			logging.warning('command "%s" failed (retcode %d instead of %d).\nPath: %s' % (
+				cmdfmt(cmd), retcode, ref_code, self.ref_code_file))
+			if batch or logging.ask_for_repair(
+				'Should I keep the new return code as reference for future runs?'):
+				self.SaveOutput(output, retcode)
 			else:
-				raise exceptions.LicornRuntimeException('command "%s" failed.' % cmdfmt(cmd))
+				raise exceptions.LicornRuntimeException(
+					'command "%s" failed.\nPath: %s.' % (cmdfmt(cmd), self.ref_output_file))
 
-		logging.notice('command #%d "%s" completed successfully.' % (FunctionnalTest.counter, cmdfmt(cmd)))
-	def Run(self, options = [], batch = False):
+		if ref_output != strip_dates(output):
+			# TODO: tempfile -> write -> colordiff
+			logging.warning('command "%s" failed.\nPath: %s.\n%s New output follows:' % (
+				cmdfmt(cmd), self.ref_output_file, '-' * 50))
+			sys.stdout.write(strip_dates(output) + ('-' * 50) + '\n')
+
+			if batch or logging.ask_for_repair(
+				'Should I keep this new trace as reference for future runs?'):
+				self.SaveOutput(output, retcode)
+			else:
+				raise exceptions.LicornRuntimeException(
+					'command "%s" failed.\nPath: %s.' % (cmdfmt(cmd), self.ref_output_file))
+
+		logging.notice('command #%d "%s" completed successfully [%scontext=%s,retcode=%d].' % (
+			FunctionnalTest.counter, cmdfmt(cmd),
+				'referer=%s, ' % cmdfmt(self.reference_cmd) \
+					if self.reference_cmd != [] else '',
+				self.context, retcode))
+	def Run(self, options=[], batch=False, inverse_test=False):
+
+		#test_message('running #%d "%s".' % (FunctionnalTest.counter, cmdfmt(self.cmd)))
 
 		if self.manual_output:
 			if batch:
-				logging.warning('batch mode, cmd "%s" not tested !' % cmdfmt(self.cmd))
+				logging.warning('batch mode, cmd "%s" not tested !' % \
+					cmdfmt(self.cmd))
 			else:
 				clear_term()
-				test_message('running #%d "%s" for manual check…' % (FunctionnalTest.counter, cmdfmt(self.cmd)))
-				sys.stderr.write(self.Execute(self.cmd)[0])
-				return logging.ask_for_repair('does this output seems right to you ?')
+				test_message('running #%d "%s" for manual check…' % (
+					FunctionnalTest.counter, cmdfmt(self.cmd)))
+				sys.stderr.write(execute(self.cmd)[0])
+				return logging.ask_for_repair(
+					'does this output seems right to you for this command?')
 		else:
+			# run the command once, without any options.
 			self.Prepare(self.cmd)
-			self.RunAndCheck(self.cmd, batch = batch)
+			self.RunAndCheck(self.cmd, batch=batch, inverse_test=inverse_test)
 			for chk_cmd in self.chk_cmds:
-				FunctionnalTest(chk_cmd, reference_cmd = self.cmd)
+				FunctionnalTest(chk_cmd, reference_cmd=self.cmd).Run()
 
 			for option in options:
 				# XXX: turn this into another FunctionnalTest() instance ?
 				FunctionnalTest.counter += 1
 				self.Prepare(self.cmd + option)
-				self.RunAndCheck(self.cmd + option, batch = batch)
+				self.RunAndCheck(self.cmd + option, batch=batch,
+					inverse_test=inverse_test)
 				for chk_cmd in self.chk_cmds:
-					FunctionnalTest(chk_cmd)
+					FunctionnalTest(chk_cmd, reference_cmd=self.cmd).Run()
 
 def test_integrated_help ():
 	"""Test extensively argmarser contents and intergated help."""
@@ -215,7 +269,7 @@ def test_integrated_help ():
 	for program in (GETENT, ADD, MODIFY, DELETE, CHECK):
 
 		FunctionnalTest(program).Run(options = [['-h'], ['--help']])
-		
+
 		if program == ADD:
 			modes = [ 'user', 'users', 'group', 'profile' ]
 		elif program == MODIFY:
@@ -223,28 +277,35 @@ def test_integrated_help ():
 		elif program == DELETE:
 			modes = [ 'user', 'group', 'groups', 'profile' ]
 		elif program == GETENT:
-			modes = ['user', 'users', 'passwd', 'group', 'groups', 'profiles', 'configuration' ]
+			modes = ['user', 'users', 'passwd', 'group', 'groups', 'profiles',
+				'configuration' ]
 		elif program == CHECK:
-			modes = ['user', 'users', 'group', 'groups', 'profile', 'profiles', 'configuration' ]
-		
+			modes = ['user', 'users', 'group', 'groups', 'profile', 'profiles',
+				'configuration' ]
+
 		for mode in modes:
 			if program == GETENT and mode == 'configuration':
-				FunctionnalTest(program + [mode], manual_output = True).Run()
+				FunctionnalTest(program + [mode]).Run()
 			else:
-				FunctionnalTest(program + [mode]).Run(options = [['-h'], ['--help']])
+				FunctionnalTest(program + [mode]).Run(options = [['-h'],
+					['--help']])
 
 	test_message('integrated help testing finished.')
 
-def test_get():
+def test_get(context):
 	"""Test GET a lot."""
 
 	test_message('''starting get tests.''')
 
-	for category in [ 'config_dir', 'main_config_file', 'extendedgroup_data_file' ]:
+	for category in [ 'config_dir', 'main_config_file',
+		'extendedgroup_data_file' ]:
+		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell',
+			'-p', '--php-code' ]:
+			FunctionnalTest(GETENT + [ 'configuration', category, mode ],
+				context=context).Run()
 
-		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell', '-p', '--php-code' ]:
-			command = GETENT + [ 'configuration', category, mode ]
-			FunctionnalTest(command).Run()
+	for category in [ 'skels', 'shells', 'backends' ]:
+		FunctionnalTest(GETENT + [ 'config', category ], context=context).Run()
 
 	commands = (
 		# users
@@ -275,7 +336,7 @@ def test_get():
 		)
 
 	for command in commands:
-		FunctionnalTest(command)
+		FunctionnalTest(command, context=context)
 
 	test_message('''`get` tests finished.''')
 
@@ -290,7 +351,7 @@ def test_find_new_indentifier():
 		assert(True) # good behaviour
 	else:
 		assert(False)
-	
+
 	assert(pyutils.next_free([1,2], 1, 30) == 3)
 	assert(pyutils.next_free([1,2,4,5], 3, 5) == 3)
 	#test_message('''identifier routines tests finished.''')
@@ -340,135 +401,189 @@ def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
 
 	test_message('''cleaning system from previous runs.''')
+
 	# delete them first in case of a previous failed testsuite run.
 	# don't check exit codes or such, this will be done later.
-	os.popen4(DELETE + ['user', 'toto'])[1].read()
-	os.popen4(DELETE + ['user', 'tutu'])
-	os.popen4(DELETE + ['user', 'tata'])[1].read()
-	os.popen4(DELETE + ['user', '--login=utilisager.normal'])[1].read()
-	os.popen4(DELETE + ['user', '--login=test.responsibilly'])[1].read()
-	os.popen4(DELETE + ['user', '--login=utilicateur.accentue'])[1].read()
 
-	os.popen4(DELETE + ['profile --group=utilisagers', '--del-users', '--no-archive'])[1].read()
-	os.popen4(DELETE + ['profile --group=responsibilisateurs', '--del-users', '--no-archive'])[1].read()
+	for argument in (
+		['user', 'toto'],
+		['user', 'tutu'],
+		['user', 'tata'],
+		['user', '--login=utilisager.normal'],
+		['user', '--login=test.responsibilly'],
+		['user', '--login=utilicateur.accentue'],
+		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
+		['profile', '--group=responsibilisateurs', '--del-users',
+			'--no-archive'],
+		['group', '--name=test_users_A'],
+		['group', '--name=test_users_B'],
+		['group', '--name=groupeA'],
+		['group', '--name=B-Group_Test'],
+		['group', '--name=groupe_a_skel']
+	):
 
-	os.popen4(DELETE + ['group', '--name=test_users_A'])[1].read()
-	os.popen4(DELETE + ['group', '--name=test_users_B'])[1].read()
+		execute(DELETE + argument)
 
-	os.popen4(DELETE + ['group', '--name=groupeA'])[1].read()
-	os.popen4(DELETE + ['group', '--name=groupeB'])[1].read()
-	os.popen4(DELETE + ['group', '--name=groupeC'])[1].read()
-	os.popen4(DELETE + ['group', '--name=groupeD'])[1].read()
-	os.popen4(DELETE + ['group', '--name=groupeE'])[1].read()
+		os.system('rm -rf %s/* %s/*' % (configuration.home_backup_dir,
+			configuration.home_archive_dir))
 
 	test_message('''system cleaned from previous testsuite runs.''')
 
-def make_backups():
+def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
-	for file in system_files:
-		if os.path.exists('/etc/%s' % file):
-			os.popen4(['cp', '-f', '/etc/' + file, '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])[1].read()
+	if mode == 'unix':
+		for file in system_files:
+			if os.path.exists('/etc/%s' % file):
+				execute(['cp', '-f', '/etc/' + file,
+					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
+
+	elif mode == 'ldap':
+		execute(['slapcat', '-l', '/tmp/backup.1.ldif'])
+
+	else:
+		logging.error('backup mode not understood.')
 
 	test_message('''made backups of system config files.''')
-def compare_delete_backups():
-	test_message('''comparing backups of system config files after tests for side-effects alterations.''')
-	for file in system_files:
-		if os.path.exists('/etc/%s' % file):
-			log_and_exec('colordiff /etc/%s /tmp/%s.bak.%s' % (file, file.replace('/', '_'), bkp_ext), False, comment="should not display any diff (system has been cleaned).", verb = True)
-			os.popen4(['rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])[1].read()
+def compare_delete_backups(mode):
+	test_message('''comparing backups of system files after tests for side-effects alterations.''')
+
+	if mode == 'unix':
+
+		for file in system_files:
+			if os.path.exists('/etc/%s' % file):
+				log_and_exec(['/usr/bin/colordiff', '/etc/%s' % file,
+					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)], False,
+				comment="should not display any diff (system has been cleaned).",
+				verb = True)
+				execute(['rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
+
+	elif mode == 'ldap':
+		execute(['slapcat', '-l', '/tmp/backup.2.ldif'])
+		log_and_exec(['/usr/bin/colordiff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
+			False,
+			comment="should not display any diff (system has been cleaned).",
+			verb = True)
+		execute(['rm', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'])
+
+	else:
+		logging.error('backup mode not understood.')
+
 	test_message('''system config files backup comparison finished successfully.''')
 
-def test_groups ():
+def test_groups(context):
 	"""Test ADD/MOD/DEL on groups in various ways."""
 
 	test_message('''starting groups related tests.''')
 
-	remove_TestGroup_A_cmds = [ "rm -rf %s/%s/groupeA >/dev/null 2>&1" % (configuration.defaults.home_base_path, configuration.groups.names['plural']) ]
-	verify_TestGroup_A_cmds  = [ 'getfacl -R %s/%s/groupeA' % (configuration.defaults.home_base_path, configuration.groups.names['plural']) ]
+	group_name = 'groupeA'
+
+	def gen_chk_acls_cmds(group):
+
+		return [ 'getfacl', '-R', '%s/%s/%s' % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group) ]
 
 	FunctionnalTest(
-				ADD + ['group', '--name=groupeA'],
-				chk_cmds = verify_TestGroup_A_cmds
-				).Run()
+		ADD + [ 'group', '--name=%s' % group_name ],
+		chk_cmds = [ gen_chk_acls_cmds(group_name) ],
+		context=context+'+already').Run()
 
-	# done after
-	#FunctionalTest(CHECK + ['group', '--name=groupeA']).Run(options = [['-v'],['-vv'], ['-vvv']])
-
+	# re-run the ADD command and verify it fails.
 	FunctionnalTest(
-				CHECK + [ 'group', '--name=groupeA', '--auto-no'],
-				pre_cmd = remove_TestGroup_A_cmds,
-				).Run(options = [['-v']])
-	
-	# remove the group shared dir and let `chk` correct everything.
-	FunctionnalTest(
-				CHECK + [ 'group', '--name=TestGroup_A', '--auto-yes'],
-				pre_cmds = remove_TestGroup_A_cmds,
-				verify_cmds = verify_TestGroup_A_cmds,
-				).Run(options = [['-v'], ['-vv']])
+		ADD + [ 'group', '--name=%s' % group_name ],
+		chk_cmds = [ gen_chk_acls_cmds(group_name) ],
+		context=context).Run(inverse_test=True)
 
+	# completeny remove the shared group dir and verify CHK repairs it.
+	remove_group_cmds = [ "rm", "-rf", "%s/%s/%s" % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group_name), ">/dev/null", "2>&1" ]
 
-	os.system("rm -rf %s/%s/TestGroup_A/public_html >/dev/null 2>&1" 
-		% (configuration.defaults.home_base_path, configuration.groups.names['plural']))
-	test_message("removing TestGroup_A's public_html dir.")
+	# idem with public_html shared subdir.
+	remove_group_html_cmds = [ "rm", "-rf",
+		"%s/%s/%s/public_html" % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group_name), ">/dev/null", "2>&1" ]
 
-	log_and_exec(CHECK + " group -v --name=TestGroup_A --auto-no"                  , 
-		True, 7, comment = "/home/%s/TestGroup_A/public_html is missing." % configuration.groups.names['plural'])
-	log_and_exec(CHECK + " group -v --name=TestGroup_A --auto-yes")
+	# remove the posix ACLs and let CHK correct everything (after having
+	# declared an error first with --auto-no).
+	remove_group_acls_cmds = [ "setfacl", "-R", "-b", "%s/%s/%s" % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group_name), ">/dev/null", "2>&1" ]
 
-	os.system("setfacl -R -b %s/%s/TestGroup_A >/dev/null 2>&1" 
-		% ( configuration.defaults.home_base_path, configuration.groups.names['plural']))
-	test_message('''recursively removed ACLs on TestGroup_A's shared dir...''')
+	# idem for public_html subdir.
+	remove_group_html_acls_cmds = [ "setfacl", "-R", "-b",
+		"%s/%s/%s/public_html" % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group_name), ">/dev/null", "2>&1" ]
 
-	log_and_exec(CHECK + " group -vv --name=TestGroup_A --auto-no"                  ,
-		True, 7, comment = "ACLs are invalid.")
-	log_and_exec(CHECK + " group -vv --name=TestGroup_A --auto-yes")
+	bad_chown_group_cmds = ['chown', 'bin:daemon', '%s/%s/%s/public_html' % (
+		configuration.defaults.home_base_path,
+		configuration.groups.names['plural'],
+		group_name),
+		'>/dev/null', '2>&1']
 
-	test_message("removing ACLs on TestGroup_A's public_html dir.")
-	os.system("setfacl -b -R %s/%s/TestGroup_A/public_html >/dev/null 2>&1" 
-		% (configuration.defaults.home_base_path, configuration.groups.names['plural']))
-	log_and_exec(CHECK + " group -vv --name=TestGroup_A --auto-no"                  , 
-		True, 7, comment = "ACLs are invalid on public_html/." )
-	log_and_exec(CHECK + " group -vv --name=TestGroup_A --auto-yes")
+	for pre_cmd in (remove_group_cmds, remove_group_html_cmds,
+		remove_group_acls_cmds, remove_group_html_acls_cmds,
+		bad_chown_group_cmds):
 
-	os.system("chown bin:root %s/%s/TestGroup_A/public_html >/dev/null 2>&1" 
-		% (configuration.defaults.home_base_path, configuration.groups.names['plural']))
-	test_message("putting a bad owner:group on TestGroup_A's public_html dir.")
-	log_and_exec(CHECK + " group -v --name=TestGroup_A --auto-no"                  , True, 7, comment = "bad ownership of public_html/.")
-	log_and_exec(CHECK + " group -v --name=TestGroup_A --auto-yes")
+		for subopt in ('--auto-no', '--auto-yes', '-b'):
+			FunctionnalTest(
+				CHECK + [ 'group', '--name=%s' % group_name, subopt],
+				pre_cmds = [ remove_group_acls_cmds],
+				chk_cmds = [ gen_chk_acls_cmds(group_name) ],
+				context=context).Run(options = [['-v'], ['-ve'], ['-vv'], ['-vve']])
 
-	# should not fail now that the shared group dir is back.
-	log_and_exec(CHECK + " group -v --name=TestGroup_A")
-	log_and_exec(CHECK + " group -vv --name=TestGroup_A --extended")
-
-	log_and_exec(MODIFY + " group --name=TestGroup_A --skel=/etc/doesntexist", True, 12, comment = "/etc/doesntexist is not valid" )
+	# should fail
+	FunctionnalTest(MODIFY + [ "group", "--name=%s" % group_name,
+		"--skel=/etc/doesntexist" ],context=context).Run()
 
 	# delete it from the system, not to pollute
-	log_and_exec(DELETE + " group --name TestGroup_A --del-users --no-archive")
+	FunctionnalTest(DELETE + [ 'group', '--name', group_name, '--del-users',
+		'--no-archive'], context=context).Run()
 
-	log_and_exec(ADD + " group --name=groupeB --system")
+	group_name = 'B-Group_Test'
+
+	FunctionnalTest(ADD + [ 'group', "--name=%s" % group_name, "--system" ],
+		context=context).Run()
 
 	# should produce nothing
-	log_and_exec(CHECK + " group -v --name=groupeB")
+	FunctionnalTest(CHECK + [ "group", "-v", "--name=%s" % group_name],
+		context=context).Run()
 
-	log_and_exec(DELETE + " group --name groupeB")
+	FunctionnalTest(DELETE + ["group", "--name", group_name],
+		context=context).Run()
 	# FIXME: verify /etc/group /etc/licorn/groups /home/groupes/...
 
 	# should fail because group is not present anymore.
-	log_and_exec(CHECK + " group -v --name=groupeB", True, 5, comment = "groupeB doesn't exist, it has just been deleted.")
+	FunctionnalTest(CHECK + [ "group", "-v", "--name=%s" % group_name ],
+		context=context).Run()
 
-	log_and_exec(ADD + " group --name=groupeC --description=\"Le groupe C s'il vous plaît...\"")
+	group_name = "groupe_a_skel"
 
-	# should display a message saying that the group is already not permissive..
-	log_and_exec(MODIFY + " group --name=groupeC --not-permissive")
+	FunctionnalTest(ADD + [ "group", "--name=%s" % group_name,
+		'''--description="Le groupe C s'il vous plaît..."''' ],
+		context=context).Run()
+
+	# should display a message saying that the group is already not permissive...
+	FunctionnalTest(MODIFY + [ "group", '--name=%s' % group_name,
+		'--not-permissive' ], chk_cmds = [ gen_chk_acls_cmds(group_name) ],
+		context=context).Run()
 
 	# should change ACLs.
-	log_and_exec(MODIFY + " group --name=groupeC --permissive")
+	FunctionnalTest(MODIFY + [ "group", "--name=%s" % group_name,
+		"--permissive" ], chk_cmds = [ gen_chk_acls_cmds(group_name) ],
+		context=context).Run()
 
 	# another message saying that the group is already permissive.
-	log_and_exec(MODIFY + " group --name=groupeC --permissive")
-
-	log_and_exec(ADD + " group --name=groupeD --skel=/etc/skel --description='Vive les skel'")
+	FunctionnalTest(MODIFY + [ "group", "--name=%s" % group_name,
+		"--permissive" ], context=context+'+already').Run()
 
 	# NOT YET
 	#log_and_exec(ADD + " group --name=groupeE --gid=1520")
@@ -477,25 +592,32 @@ def test_groups ():
 	#log_and_exec(MODIFY + " group --name=TestGroup_A --rename=leTestGroup_A/etc/power")
 
 	# FIXME: get members of group for later verifications...
-	log_and_exec(DELETE + " group --name=groupeC --del-users --no-archive")
+	FunctionnalTest(DELETE + ["group", "--name", group_name, '--del-users',
+		'--no-archive'],
+		context=context).Run()
 	# FIXME: verify deletion of groups + deletion of users...
 
+	# already deleted, should fail...
+	FunctionnalTest(DELETE + ["group", "--name", group_name],
+		context=context+'+already').Run()
+
 	# FIXME: get members.
-	log_and_exec(DELETE + " group --name=groupeD --del-users")
+	#log_and_exec(DELETE + " group --name=groupeD --del-users")
 	# FIXME: idem last group, verify users account were archived, shared dir ws archived.
-	os.system("rm -rf %s >/dev/null 2>&1" % ("/home/" + configuration.groups.names['plural'] + "/groupeD") )
 
-	# already deleted, should fail...
-	log_and_exec(DELETE + " group --name=groupeD", True, 5, comment = "groupeD does not exist anymore, it has been deleted.")
-	# FIXME: verify deletion
+	#os.system("rm -rf %s >/dev/null 2>&1" % ("/home/" + configuration.groups.names['plural'] + "/groupeD") )
 
-	# already deleted, should fail...
-	log_and_exec(MODIFY + " group --name=groupeC --not-permissive", True, 5, comment = "groupeC doesn't exist, it has been previouly deleted.")
+	FunctionnalTest(ADD + ["group", "--name=%s" % group_name, "--skel=/etc/skel",
+		"--description='Vive les skel'"], context=context).Run()
+
+	FunctionnalTest(DELETE + ["group", "--name", group_name],
+		context=context).Run()
+	# FIXME: verify /etc/group /etc/licorn/groups /home/groupes/...
 
 	test_message('''groups related tests finished.''')
 def test_users():
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
-	
+
 	test_message('''starting users related tests.''')
 
 	log_and_exec(ADD + " group --name test_users_A --description 'groupe créé pour la suite de tests sur les utilisateurs, vous pouvez effacer'")
@@ -508,7 +630,8 @@ def test_users():
 	os.system(GETENT + " profiles")
 
 	log_and_exec(ADD + " user --firstname Utiliçateur --lastname Accentué")
-	log_and_exec(ADD + " user --gecos 'Utilisateur Accentué n°2'", True, 12, comment = "can't build a login from only a GECOS field.")
+	log_and_exec(ADD + " user --gecos 'Utilisateur Accentué n°2'", True, 12,
+		comment = "can't build a login from only a GECOS field.")
 	log_and_exec(ADD + " user --login utilisager.normal --profile utilisagers")
 
 	log_and_exec(MODIFY + " user --login=utilisager.normal -v --add-groups test_users_A")
@@ -523,7 +646,8 @@ def test_users():
 	log_and_exec(CHECK + " group -v --name test_users_A")
 
 	# the link to group_A isn't here !
-	log_and_exec(CHECK + " group -vv --name test_users_A --extended --auto-no", True, 7, comment = "a user lacks a symlink.")
+	log_and_exec(CHECK + " group -vv --name test_users_A --extended --auto-no",
+		True, 7, comment = "a user lacks a symlink.")
 	log_and_exec(CHECK + " group -vv --name test_users_A --extended --auto-yes")
 
 	# the same check, but checking from users.py
@@ -536,7 +660,8 @@ def test_users():
 	# checking for Maildir repair capacity...
 	if configuration.users.mailbox_type == configuration.MAIL_TYPE_HOME_MAILDIR:
 		os.system("rm -rf ~utilisager.normal/" + configuration.users.mailbox)
-		log_and_exec(CHECK + " user -v --name utilisager.normal --auto-no", True, 7, comment="user lacks ~/" + configuration.users.mailbox)
+		log_and_exec(CHECK + " user -v --name utilisager.normal --auto-no",
+			True, 7, comment="user lacks ~/" + configuration.users.mailbox)
 		log_and_exec(CHECK + " user -v --name utilisager.normal --auto-yes")
 
 	os.system("touch ~utilisager.normal/.dmrc ; chmod 666  ~utilisager.normal/.dmrc")
@@ -551,7 +676,8 @@ def test_users():
 	log_and_exec(MODIFY + " user --login=utilisager.normal --del-groups test_users_A")
 
 	# should fail
-	log_and_exec(MODIFY + " user --login=utilisager.normal --del-groups test_users_A", comment = "already not a member.")
+	log_and_exec(MODIFY + " user --login=utilisager.normal --del-groups test_users_A",
+		comment = "already not a member.")
 
 	log_and_exec(ADD + " user --login test.responsibilly --profile responsibilisateurs")
 
@@ -568,12 +694,14 @@ def test_users():
 
 	# clean the system
 	log_and_exec(DELETE + " user --login utilicateur.accentue")
-	log_and_exec(DELETE + " user --login utilisateur.accentuen2", True, 5, comment = "this user has *NOT* been created previously.")
+	log_and_exec(DELETE + " user --login utilisateur.accentuen2",
+		True, 5, comment = "this user has *NOT* been created previously.")
 	log_and_exec(DELETE + " profile -vvv --group utilisagers --del-users --no-archive")
 
 	#os.system(GETENT + " users")
 
-	log_and_exec(DELETE + " profile --group responsibilisateurs", True, 12, comment = "there are still some users in the pri group of this profile.")
+	log_and_exec(DELETE + " profile --group responsibilisateurs", True, 12,
+		comment = "there are still some users in the pri group of this profile.")
 	log_and_exec(DELETE + " group --name=test_users_A --del-users --no-archive")
 
 	log_and_exec(DELETE + " user --login test.responsibilly")
@@ -595,7 +723,8 @@ def test_imports():
 	log_and_exec(ADD + " profile --name Utilisagers         --group utilisagers                                                                 --comment 'profil normal créé pour la suite de tests utilisateurs'")
 	log_and_exec(ADD + " profile --name Responsibilisateurs --group responsibilisateurs --groups cdrom,lpadmin,plugdev,audio,video,scanner,fuse --comment 'profil power user créé pour la suite de tests utilisateurs.'")
 
-	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv", True, 12, comment = "You should specify a profile")
+	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv", True,
+		12, comment = "You should specify a profile")
 
 	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv --profile utilisagers")
 	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv --profile utilisagers --lastname-column 1 --firstname-column 0")
@@ -637,7 +766,7 @@ def test_profiles():
 	log_and_exec(DELETE + " user toto --no-archive")
 
 	log_and_exec(DELETE + " profile --group utilisagers --del-users --no-archive")
-	
+
 	test_message('''profiles related tests finished.''')
 def to_be_implemented():
 	""" TO BE DONE !
@@ -668,28 +797,52 @@ def to_be_implemented():
 
 if __name__ == "__main__":
 
+	#
 	# Unit Tests
+	#
+
 	test_find_new_indentifier()
 
 	clean_system()
-	make_backups()
 
+	#
 	# Functionnal Tests
+	#
+
 	test_integrated_help()
-	test_get()
 
 	#test_check_config()
 
-
 	test_regexes()
-	#test_groups()
-	#test_users()
-	#test_imports()
-	#test_profiles()
+
+	test_message('testing Unix backend.')
+
+	if execute(['mod', 'config', '-B', 'ldap'])[1] == 0:
+		make_backups('unix')
+		FunctionnalTest(GETENT + ['config'], context='unix').Run(
+			options=[['backends']])
+		test_get('unix')
+		test_groups('unix')
+		#test_users()
+		#test_imports()
+		#test_profiles()
+		compare_delete_backups('unix')
+		clean_system()
+
+	test_message('testing LDAP backend.')
+
+	if execute(['mod', 'config', '-b', 'ldap'])[1] == 0:
+		make_backups('ldap')
+		FunctionnalTest(GETENT + ['config'], context='ldap').Run(
+			options=[['backends']])
+		test_get('ldap')
+		test_groups('ldap')
+		#test_users()
+		#test_imports()
+		#test_profiles()
+		compare_delete_backups('ldap')
+		clean_system()
 
 	# TODO: test_concurrent_accesses()
-
-	compare_delete_backups()
-	clean_system()
 
 	print("\n%s Testsuite terminated successfully.\n" % styles.stylize(styles.ST_OK, "VICTORY !"))
