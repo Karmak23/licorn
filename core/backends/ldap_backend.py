@@ -310,9 +310,12 @@ class ldap_controller(UGBackend):
 					''' LDAP seems installed but not configured or unusable. '''
 					'''Please run 'sudo chk config -evb' to correct. '''
 					'''(was: %s)''' % e)
-				#else:
-				# just discard the LDAP backend completely.
+			elif e.errno == 2:
+				# ldap.conf not present -> pam-ldap not installed -> just
+				# discard the LDAP backend completely.
+				pass
 			else:
+				# another problem worth noticing.
 				raise e
 
 		ltrace('ldap', '< initialize() %s.' % self.available)
