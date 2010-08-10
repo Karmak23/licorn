@@ -231,6 +231,7 @@ class ldap_controller(UGBackend):
 
 		setup the backend, by gathering LDAP related configuration in system
 		files. """
+
 		self.load_defaults()
 
 		ltrace('ldap', '> initialize().')
@@ -858,9 +859,11 @@ class ldap_controller(UGBackend):
 			try:
 				self.ldap_conn.bind_s(self.bind_dn, self.secret, ldap.AUTH_SIMPLE)
 			except ldap.INVALID_CREDENTIALS:
-				# in rare cases, the error could raise because the DB is empty.
-				# try to bind as root in last resort, in case we can correct
-				# the problem with it.
+				# in rare cases, the error could raise because the LDAP DB is
+				# totally empty.
+				# try to bind as root as a last resort, in case we can correct
+				# the problem (we are probably in the first intialization of the
+				# backend, checking for everything).
 				self.sasl_bind()
 		else:
 			if process.whoami() == 'root':
@@ -874,7 +877,8 @@ class ldap_controller(UGBackend):
 					#
 					import getpass
 					self.ldap_conn.bind_s(self.bind_dn,
-						getpass.getpass(), ldap.AUTH_SIMPLE)
+						getpass.getpass(_('Please enter your LDAP password: ')),
+						ldap.AUTH_SIMPLE)
 				#else:
 				# do nothing. We hit this case in all "get" commands, which
 				# don't need write access to the LDAP tree. With this, standard
