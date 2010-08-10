@@ -367,7 +367,8 @@ def add_user():
 				users.AddUser(lastname, firstname, password,
 					primary_group=opts.primary_group,
 					profile=opts.profile, skel=opts.skel, login=login,
-					gecos=gecos, system=opts.system, batch=False)
+					gecos=gecos, system=opts.system, batch=False,
+					force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('User %s already exists on the system.' % login)
 def add_group():
@@ -387,7 +388,7 @@ def add_group():
 			try:
 				groups.AddGroup(name, description = description,
 					system = opts.system, groupSkel = opts.skel, gid = opts.gid,
-					permissive = opts.permissive)
+					permissive = opts.permissive, force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('Group %s already exists on the system.' % name)
 def add_profile():

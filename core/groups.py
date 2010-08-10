@@ -247,7 +247,7 @@ class GroupsController:
 		data += "</groups-list>\n"
 
 		return data
-	def AddGroup(self, name, gid=None, description="", groupSkel="", system=False, permissive=False, batch=False):
+	def AddGroup(self, name, gid=None, description="", groupSkel="", system=False, permissive=False, batch=False, force=False):
 		""" Add an Licorn group (the group + the responsible group + the shared dir + permissions). """
 
 		if name in (None, ''):
@@ -282,7 +282,8 @@ class GroupsController:
 
 		try:
 			not_already_exists = True
-			gid = self.__add_group(name, system, gid, description, groupSkel)
+			gid = self.__add_group(name, system, gid, description, groupSkel,
+				batch=batch, force=force)
 
 		except exceptions.AlreadyExistsException, e:
 			# don't bork if the group already exists, just continue.
@@ -347,7 +348,7 @@ class GroupsController:
 			raise e
 		return (gid, name)
 	def __add_group(self, name, system, manual_gid=None, description = "",
-		groupSkel = "", batch=False):
+		groupSkel = "", batch=False, force=False):
 		"""Add a POSIX group, write the system data files. Return the gid of the group created."""
 
 		try:
@@ -375,9 +376,9 @@ class GroupsController:
 
 		# Due to a bug of adduser perl script, we must check that there is no user which has 'name' as login
 		# see https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970 for details
-		if GroupsController.users.login_cache.has_key(name):
+		if GroupsController.users.login_cache.has_key(name) and not force:
 			raise exceptions.UpstreamBugException("A user account called %s already exists, this could trigger a bug"
-				"in the Ubuntu adduser code when deleting the user. Please choose another name for your group."
+				" in the Ubuntu adduser code when deleting the user. Please choose another name for your group, or use --force argument if you really want to add this group on the system."
 				% styles.stylize(styles.ST_NAME, name))
 
 		# Find a new GID
@@ -397,7 +398,8 @@ class GroupsController:
 			'memberUid'   : set(),
 			'description' : description,
 			'groupSkel'   : groupSkel,
-			'backend'     : GroupsController.backends['prefered'].name,
+			'backend'     : GroupsController.backends['unix'].name if system \
+				else GroupsController.backends['prefered'].name,
 			'action'      : 'create'
 			}
 
@@ -924,7 +926,7 @@ class GroupsController:
 							system=True,
 							manual_gid=None,
 							description="%s of group “%s”" % (title, group),
-							groupSkel="")
+							groupSkel="", batch=batch, force=force)
 						GroupsController.name_cache[ prefix[0] + group ] = temp_gid
 						prefix_gid = temp_gid
 						del(temp_gid)

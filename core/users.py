@@ -132,7 +132,7 @@ class UsersController:
 				self.filtered_users.append(uid)
 	def AddUser(self, lastname = None, firstname = None, password = None,
 		primary_group=None, profile=None, skel=None, login=None, gecos=None,
-		system = False, batch=False):
+		system = False, batch=False, force=False):
 		"""Add a user and return his/her (uid, login, pass)."""
 
 		logging.debug("Going to create a user...")
@@ -243,11 +243,13 @@ class UsersController:
 		#	without *any* message !!)
 		#
 		for gid in UsersController.groups.groups:
-			if UsersController.groups.groups[gid]['name'] == login:
+			if UsersController.groups.groups[gid]['name'] == login and not force:
 				raise exceptions.UpstreamBugException, \
 					"A group named `%s' exists on the system," \
 					" this could eventually conflict in Debian/Ubuntu system" \
-					" tools. Please choose another user's login." % login
+					" tools. Please choose another user's login, or use " \
+					"--force argument if you really want to add this user " \
+					"on the system." % login
 
 		if password is None:
 			# TODO: call cracklib2 to verify passwd strenght.
@@ -355,6 +357,7 @@ class UsersController:
 		tmp_user_dict['shadowMax']      = 99999
 		tmp_user_dict['shadowFlag']     = ''
 		tmp_user_dict['backend']        = \
+			UsersController.backends['unix'].name if system else \
 			UsersController.backends['prefered'].name
 
 		# Add user in internal list and in the cache
