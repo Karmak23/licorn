@@ -190,7 +190,7 @@ class unix_controller(UGBackend):
 									styles.stylize(styles.ST_NAME, entry[0])))
 							# don't directly remove member from members,
 							# it will immediately stop the for_loop.
-							to_remove.append(member)
+							to_remove.add(member)
 
 					if to_remove != set():
 						need_rewriting = True
