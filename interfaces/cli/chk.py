@@ -40,7 +40,8 @@ def check_users():
 			# don't unicode the logins, they should be standard strings.
 			users_to_check = opts.users.split(',')
 
-	users.CheckUsers(users_to_check, opts.minimal, auto_answer = opts.auto_answer, batch = opts.batch)
+	users.CheckUsers(users_to_check, opts.minimal, auto_answer=opts.auto_answer,
+		batch=opts.batch)
 def check_groups():
 	""" Check one or more group(s). """
 
@@ -74,7 +75,7 @@ def check_groups():
 		pass
 
 	groups.CheckGroups(groups_to_check, opts.minimal,
-		auto_answer=opts.auto_answer, batch=opts.batch)
+		auto_answer=opts.auto_answer, batch=opts.batch, force=opts.force)
 
 	# TODO: do this more cleanly and not so hard-coded:
 	try:
