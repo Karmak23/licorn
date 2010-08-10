@@ -378,19 +378,19 @@ def add_user_in_groups():
 	groups = GroupsController(configuration, users)
 
 	for g in opts.groups_to_add.split(','):
-	if g != "":
-		try:
-			groups = GroupsController(configuration)
-			groups.AddUsersInGroup(g, opts.login.split(','))
-		except exceptions.LicornRuntimeException, e:
-			logging.warning("Unable to add user(s) %s in group %s (was: %s)."
-				% (styles.stylize(styles.ST_LOGIN, opts.login),
-				styles.stylize(styles.ST_NAME, g), str(e)))
-		except exceptions.LicornException, e:
-			raise exceptions.LicornRuntimeError(
-				"Unable to add user(s) %s in group %s (was: %s)."
-				% (styles.stylize(styles.ST_LOGIN, opts.login),
-				styles.stylize(styles.ST_NAME, g), str(e)))
+		if g != "":
+			try:
+				groups = GroupsController(configuration)
+				groups.AddUsersInGroup(g, opts.login.split(','))
+			except exceptions.LicornRuntimeException, e:
+				logging.warning("Unable to add user(s) %s in group %s (was: %s)."
+					% (styles.stylize(styles.ST_LOGIN, opts.login),
+					styles.stylize(styles.ST_NAME, g), str(e)))
+			except exceptions.LicornException, e:
+				raise exceptions.LicornRuntimeError(
+					"Unable to add user(s) %s in group %s (was: %s)."
+					% (styles.stylize(styles.ST_LOGIN, opts.login),
+					styles.stylize(styles.ST_NAME, g), str(e)))
 
 def add_group():
 	""" Add a POSIX group. """

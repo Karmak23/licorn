@@ -202,8 +202,6 @@ if __name__ == "__main__":
 					elif len(args) == 3:
 						opts.login = args[1]
 						opts.groups_to_del = args[2]
-
-						# TODO: put these cases in the testsuite !
 						delete_user_from_groups()
 				else:
 					delete_user()
