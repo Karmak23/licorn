@@ -1042,8 +1042,8 @@ class LicornConfiguration (object):
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
-			elif attr.endswith('_dir') or attr.endswith('_file') \
-				or attr.endswith('_path'):
+			elif (attr.endswith('_dir') and attr != 'tmp_dir') or attr.endswith('_file') \
+				or attr.endswith('_path') :
 				data += "%s\n" % str(self.__getattribute__(attr))
 			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults',
 				'ssh', 'backends'):
