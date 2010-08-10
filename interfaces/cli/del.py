@@ -89,6 +89,25 @@ def delete_user():
 						login, e))
 
 	users.WriteConf()
+def delete_user_from_groups():
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
+	for g in opts.groups_to_del.split(','):
+		if g != "":
+			try:
+				groups.RemoveUsersFromGroup(g, opts.login.split(','))
+			except exceptions.LicornRuntimeException, e:
+				logging.warning(
+					"Unable to remove user(s) %s from group %s (was: %s)."
+					% (styles.stylize(styles.ST_LOGIN, opts.login),
+					styles.stylize(styles.ST_NAME, g), str(e)))
+			except exceptions.LicornException, e:
+				raise exceptions.LicornRuntimeError(
+					"Unable to remove user(s) %s from group %s (was: %s)."
+					% (styles.stylize(styles.ST_LOGIN, opts.login),
+					styles.stylize(styles.ST_NAME, g), str(e)))
 def delete_group():
 	""" delete an Licorn group. """
 
@@ -181,21 +200,11 @@ if __name__ == "__main__":
 						opts.login = args[1]
 						delete_user()
 					elif len(args) == 3:
-						login = args[1]
-						fromgroups = args[2]
+						opts.login = args[1]
+						opts.groups_to_del = args[2]
 
 						# TODO: put these cases in the testsuite !
-
-						for g in fromgroups.split(','):
-							if g != "":
-								try:
-									groups.RemoveUsersFromGroup(g, login.split(','))
-								except exceptions.LicornRuntimeException, e:
-									logging.warning("Unable to remove user(s) %s from group %s (was: %s)."
-										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-								except exceptions.LicornException, e:
-									raise exceptions.LicornRuntimeError("Unable to remove user(s) %s from group %s (was: %s)."
-										% (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
+						delete_user_from_groups()
 				else:
 					delete_user()
 

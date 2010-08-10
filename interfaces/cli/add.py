@@ -371,6 +371,27 @@ def add_user():
 					force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('User %s already exists on the system.' % login)
+def add_user_in_groups():
+
+	configuration = LicornConfiguration()
+	users = UsersController(configuration)
+	groups = GroupsController(configuration, users)
+
+	for g in opts.groups_to_add.split(','):
+	if g != "":
+		try:
+			groups = GroupsController(configuration)
+			groups.AddUsersInGroup(g, opts.login.split(','))
+		except exceptions.LicornRuntimeException, e:
+			logging.warning("Unable to add user(s) %s in group %s (was: %s)."
+				% (styles.stylize(styles.ST_LOGIN, opts.login),
+				styles.stylize(styles.ST_NAME, g), str(e)))
+		except exceptions.LicornException, e:
+			raise exceptions.LicornRuntimeError(
+				"Unable to add user(s) %s in group %s (was: %s)."
+				% (styles.stylize(styles.ST_LOGIN, opts.login),
+				styles.stylize(styles.ST_NAME, g), str(e)))
+
 def add_group():
 	""" Add a POSIX group. """
 
@@ -466,20 +487,9 @@ if __name__ == "__main__":
 					opts.login = args[1]
 					add_user()
 				elif len(args) == 3:
-					login = args[1]
-					ingroups = args[2]
-					#
-					# FIXME: refactoring + why don't we see logging.info of groups.AddUsersInGroup ?
-					#
-
-					for g in ingroups.split(','):
-						if g != "":
-							try:
-								groups.AddUsersInGroup(g, login.split(','))
-							except exceptions.LicornRuntimeException, e:
-								logging.warning("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
-							except exceptions.LicornException, e:
-								raise exceptions.LicornRuntimeError("Unable to add user(s) %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, login), styles.stylize(styles.ST_NAME, g), str(e)))
+					opts.login = args[1]
+					opts.groups_to_add = args[2]
+					add_user_in_groups()
 				else:
 					add_user()
 
