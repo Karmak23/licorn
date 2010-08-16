@@ -490,9 +490,9 @@ def edit(uri, http_user, name):
 				dbl_lists[gname] = id
 			else:
 				users.Select(users.FILTER_STANDARD)
-				dest   = g[groups.name_to_gid(gname)]['members'][:]
+				dest   = g[groups.name_to_gid(gname)]['memberUid'][:]
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
-				for current in g[groups.name_to_gid(gname)]['members']:
+				for current in g[groups.name_to_gid(gname)]['memberUid']:
 					try: source.remove(current)
 					except ValueError: dest.remove(current)
 				dest.sort()
@@ -580,7 +580,7 @@ def edit(uri, http_user, name):
 			permissive(group['permissive'], sys),
 			_('Group description'),
 			descr(group['description'], sys),
-			skel(group['skel'], sys),
+			skel(group['groupSkel'], sys),
 			_('Group members'),
 				dbl_lists[name],
 			_('Group responsibles'),
@@ -709,7 +709,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			tgroups[gid] = {
 				'name'        : name,
 				'description' : group['description'] + name,
-				'skel'        : group['skel'] + name,
+				'skel'        : group['groupSkel'] + name,
 				'permissive'  : str(group['permissive']) + name
 				}
 			totals[filter_name] += 1
@@ -719,10 +719,10 @@ def main(uri, http_user, sort = "name", order = "asc"):
 
 			ordered[hlstr.validate_name(tgroups[gid][sort])] = gid
 
-			tgroups[gid]['members'] = []
-			for member in groups.groups[gid]['members']:
+			tgroups[gid]['memberUid'] = []
+			for member in groups.groups[gid]['memberUid']:
 				if not users.is_system_login(member):
-					tgroups[gid]['members'].append(
+					tgroups[gid]['memberUid'].append(
 						users.users[users.login_to_uid(member)])
 
 			if not groups.is_system_gid(gid):
@@ -732,7 +732,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					tgroups[gid][prefix + 'members'] = []
 					for member in \
 						groups.groups[groups.name_to_gid(
-							prefix + name)]['members']:
+							prefix + name)]['memberUid']:
 						if not users.is_system_login(member):
 							tgroups[gid][prefix + 'members'].append(
 								users.users[users.login_to_uid(member)])
@@ -766,7 +766,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					From there you can print all group-related informations.'''),
 				name, g[gid]['description'], name,
 				name, g[gid]['description'], g[gid]['description'],
-				name, g[gid]['skel'])
+				name, g[gid]['groupSkel'])
 
 			if groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
