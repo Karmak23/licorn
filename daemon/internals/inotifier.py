@@ -272,11 +272,10 @@ class INotifier(Thread, Singleton):
 
 		try:
 			already_waited = False
-			#last_lens = (0, 0, 0, 0, 0, 0, 0, 0)
-			time_count = 0
+			time_count     = 0
 			while not self._stop_event.isSet():
 
-				lens = (
+				lengths = (
 					len(self.wds),
 					len(self._to_add),
 					len(self._to_remove),
@@ -288,18 +287,17 @@ class INotifier(Thread, Singleton):
 					)
 
 				if time_count >= 100000:
-					logging.notice('''%s: queues stati: [total: %d] '''
+					logging.progress('''%s: queues stati: [total: %d] '''
 						'''[add: %d] [rem: %d] [ack: %d] '''
 						'''[ext: %d] [end: %d] [cre: %d] [chg: %d].''' % (
 						self.name,
-						lens[0], lens[1], lens[2], lens[3],
-						lens[4], lens[5], lens[6], lens[7]
+						lenghts[0], lenghts[1], lenghts[2], lenghts[3],
+						lenghts[4], lenghts[5], lenghts[6], lenghts[7]
 							)
 						)
-					#last_lens = lens
 					time_count = 0
 
-					if(lens[7] > 0):
+					if(lenghts[7] > 0):
 						logging.info('chg: %s' % \
 						str(self.gam_changed_expected).replace(', ', ',\n\t'))
 
