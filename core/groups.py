@@ -1189,12 +1189,12 @@ class GroupsController:
 	@staticmethod
 	def primary_members(name):
 		"""Get the list of users which are in group 'name'."""
-		ru    = []
+		ru    = set()
 		gid   = GroupsController.name_to_gid(name)
 
 		for u in GroupsController.users.users:
 			if GroupsController.users.users[u]['gidNumber'] == gid:
-				ru.append(GroupsController.users.users[u]['login'])
+				ru.add(GroupsController.users.users[u]['login'])
 		return ru
 
 	@staticmethod
@@ -1210,7 +1210,7 @@ class GroupsController:
 	def all_members(name):
 		"""Return all members of a given group name."""
 
-		return GroupsController.primary_members(name) + GroupsController.auxilliary_members(name)
+		return GroupsController.primary_members(name).union(GroupsController.auxilliary_members(name))
 
 	@staticmethod
 	def name_to_gid(name):
