@@ -438,7 +438,7 @@ class GroupsController:
 
 		if not del_users:
 			# search if some users still have the group has their primary group
-			if prim_memb != []:
+			if prim_memb != set():
 				raise exceptions.BadArgumentError, "The group still has members. You must delete them first, or force their automatic deletion with an option."
 
 		home = '%s/%s/%s' % (GroupsController.configuration.defaults.home_base_path, GroupsController.configuration.groups.names['plural'], name)
@@ -1256,7 +1256,7 @@ class GroupsController:
 
 	@staticmethod
 	def is_empty_gid(gid):
-			return GroupsController.is_standard_gid(gid) and GroupsController.groups[gid]['memberUid'] == []
+			return GroupsController.is_standard_gid(gid) and GroupsController.groups[gid]['memberUid'] == set()
 
 	@staticmethod
 	def is_empty_group(name):
