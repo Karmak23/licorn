@@ -311,7 +311,7 @@ def view(uri, http_user, name):
 
 	try:
 		group   = g[groups.name_to_gid(name)]
-		members = groups.all_members(name)
+		members = list(groups.all_members(name))
 
 		if members != []:
 			members.sort()
@@ -349,7 +349,8 @@ def view(uri, http_user, name):
 			members_html = "<h2>%s</h2>" % _('No members in this group.')
 
 		if not groups.is_system_group(name):
-			resps = groups.all_members(configuration.groups.resp_prefix + name)
+			resps = list(
+				groups.all_members(configuration.groups.resp_prefix + name))
 
 			if resps != []:
 				resps.sort()
@@ -377,8 +378,8 @@ def view(uri, http_user, name):
 				resps_html = "<h2>%s</h2>" % \
 					_('No responsibles for this group.')
 
-			guests = \
-				groups.all_members(configuration.groups.guest_prefix + name)
+			guests = list(
+				groups.all_members(configuration.groups.guest_prefix + name))
 
 			if guests != []:
 				guests.sort()
@@ -490,7 +491,7 @@ def edit(uri, http_user, name):
 				dbl_lists[gname] = id
 			else:
 				users.Select(users.FILTER_STANDARD)
-				dest   = g[groups.name_to_gid(gname)]['memberUid'][:]
+				dest   = list(g[groups.name_to_gid(gname)]['memberUid'])
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
 				for current in g[groups.name_to_gid(gname)]['memberUid']:
 					try: source.remove(current)
