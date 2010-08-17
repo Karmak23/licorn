@@ -23,7 +23,6 @@ olcMonitoring: TRUE
 olcDbCheckpoint: 512 30
 olcAccess: to attrs=userPassword by dn="cn=admin,dc=meta-it,dc=local" write by self write by anonymous auth by * none
 olcAccess: to attrs=shadowLastChange by self write by anonymous auth by * none
-olcAccess: to dn.base="" by users read by * none
-# Below line modified from "*" to "users" to prevent anonymous access.
-olcAccess: to * by dn="cn=admin,dc=meta-it,dc=local" write by users read by * none
+olcAccess: to dn.base="" by * read
+olcAccess: to * by dn="cn=admin,dc=meta-it,dc=local" write by * read
 
