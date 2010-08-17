@@ -162,7 +162,7 @@ class ldap_controller(UGBackend):
 		True in licorn.conf, we should auto-install packages, setup dirs, LDAP
 		dn, etc.
 	"""
-	def __init__(self, configuration, users=None, groups=None):
+	def __init__(self, configuration, users=None, groups=None, warnings=True):
 		"""
 			Init the LDAP backend instance.
 		"""
@@ -172,6 +172,7 @@ class ldap_controller(UGBackend):
 		ltrace('ldap', '| __init__().')
 
 		self.name	  = "ldap"
+		self.warnings = warnings
 
 		# nsswitch compatibility
 		self.compat   = ('ldap')
