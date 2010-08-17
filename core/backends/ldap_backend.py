@@ -805,9 +805,6 @@ class ldap_controller(UGBackend):
 				#	"display permissive states.", once = True)
 				pass
 
-			if need_rewriting:
-				self.save_group(gid)
-
 		ltrace('ldap', '< load_groups()')
 		return groups, name_cache
 	def save_users(self):
