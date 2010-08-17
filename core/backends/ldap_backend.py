@@ -681,8 +681,8 @@ class ldap_controller(UGBackend):
 
 			if groups is not None:
 				for g in groups.groups:
-					for member in groups.groups[g]['members']:
-						if member == entry[0]:
+					for member in groups.groups[g]['memberUid']:
+						if member == temp_user_dict['login']:
 							temp_user_dict['groups'].add(
 								groups.groups[g]['name'])
 
