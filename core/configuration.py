@@ -1117,13 +1117,15 @@ class LicornConfiguration (object):
 
 		from licorn.core.backends import backends
 
-		for backend in backends:
-			b = backend(self)
+		for backend_name in self.backends:
+			if backend_name == 'prefered':
+				continue
+			self.backends[backend_name].check(batch, auto_answer)
 
-		if b.name in self.backends:
-			self.backends[b.name].check(batch, auto_answer)
-		elif b.name in self.available_backends:
-			self.available_backends[b.name].check(batch, auto_answer)
+		# check the available_backends too. It's the only way to make sure they
+		# can be fully usable before enabling them.
+		for backend_name in self.available_backends:
+			self.available_backends[backend_name].check(batch, auto_answer)
 
 		ltrace('configuration', '< check_backends()')
 	def CheckBaseDirs(self, minimal=True, batch=False, auto_answer=None):

@@ -14,7 +14,6 @@ from licorn.foundations         import objects, readers, hlstr
 from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.objects import UGBackend
 
-
 class unix_controller(UGBackend):
 	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
