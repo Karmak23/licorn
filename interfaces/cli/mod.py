@@ -59,6 +59,7 @@ def modify_user():
 		for g in opts.groups_to_add.split(','):
 			if g != "":
 				try:
+					groups = GroupsController(configuration, users)
 					groups.AddUsersInGroup(g, [ opts.login ])
 				except exceptions.LicornRuntimeException, e:
 					logging.warning("Unable to add user %s in group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, opts.login), styles.stylize(styles.ST_NAME, g), str(e)))
@@ -70,6 +71,7 @@ def modify_user():
 		for g in opts.groups_to_del.split(','):
 			if g != "":
 				try:
+					groups = GroupsController(configuration, users)
 					groups.RemoveUsersFromGroup(g, [ opts.login ])
 				except exceptions.LicornRuntimeException, e:
 					logging.warning("Unable to remove user %s from group %s (was: %s)." % (styles.stylize(styles.ST_LOGIN, opts.login), styles.stylize(styles.ST_NAME, g), str(e)))
