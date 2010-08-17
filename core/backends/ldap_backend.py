@@ -494,8 +494,8 @@ class ldap_controller(UGBackend):
 
 					for (dn, entry) in MyLDIFParser(schema).get():
 						try:
-							#ltrace('ldap', 'adding %s -> %s.' % (dn, entry))
-							ltrace('ldap', 'adding %s to slapd.' % dn)
+							logging.progress('ldap', '''adding %s -> %s into '''
+								'''schema %s.''' % (dn, entry, schema))
 
 							self.ldap_conn.add_s(dn, addModlist(entry))
 						except ldap.ALREADY_EXISTS:
