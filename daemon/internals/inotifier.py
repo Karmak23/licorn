@@ -291,13 +291,13 @@ class INotifier(Thread, Singleton):
 						'''[add: %d] [rem: %d] [ack: %d] '''
 						'''[ext: %d] [end: %d] [cre: %d] [chg: %d].''' % (
 						self.name,
-						lenghts[0], lenghts[1], lenghts[2], lenghts[3],
-						lenghts[4], lenghts[5], lenghts[6], lenghts[7]
+						lengths[0], lengths[1], lengths[2], lengths[3],
+						lengths[4], lengths[5], lengths[6], lengths[7]
 							)
 						)
 					time_count = 0
 
-					if(lenghts[7] > 0):
+					if(lengths[7] > 0):
 						logging.info('chg: %s' % \
 						str(self.gam_changed_expected).replace(', ', ',\n\t'))
 
