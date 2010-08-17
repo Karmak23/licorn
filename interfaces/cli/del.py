@@ -78,6 +78,9 @@ def delete_user():
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
+	# groups is needed to delete the user from its groups, else its name will
+	# stay dangling in memberUid.
+	groups = GroupsController(configuration, users)
 
 	for login in opts.login.split(','):
 		if login != '':
