@@ -13,6 +13,7 @@ from SocketServer       import TCPServer
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations         import logging, exceptions, styles, process
+from licorn.foundations.ltrace  import ltrace
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController
@@ -301,7 +302,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		path = self.translate_path(self.path)
 
-		logging.progress('serving file: %s.' % path)
+		ltrace('wmi', 'serving file: %s.' % path)
 
 		if os.path.exists(path):
 
