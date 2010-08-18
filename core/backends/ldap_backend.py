@@ -495,7 +495,7 @@ class ldap_controller(UGBackend):
 
 					for (dn, entry) in MyLDIFParser(schema).get():
 						try:
-							logging.progress('ldap', '''adding %s -> %s into '''
+							logging.progress('''adding %s -> %s into '''
 								'''schema %s.''' % (dn, entry, schema))
 
 							self.ldap_conn.add_s(dn, addModlist(entry))
