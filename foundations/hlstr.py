@@ -99,16 +99,51 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	# return a standard string (not unicode), because a login/group_name don't include
 	# accentuated letters or such strange things.
 	return str(s)
-def generate_password(maxlen = 8, use_all_chars = False):
+def generate_salt(maxlen = 12):
 	"""Generate a random password."""
 
 	import random
 
 	# ascii table: 48+ = numbers, 65+ = upper letter, 97+ = lower letters
-	special_chars = [ '$', '%', '&', '_', '*', '+', '-', '=', '?', '@' ]
+	special_chars = [ '.', '/' ]
+
+	special_chars_count = len(special_chars) -1
+
+	salt = ""
+
+	for i in range(0, maxlen):
+		char_type = random.randint(1, 4)
+
+		if char_type < 3:
+			number = random.randint(0, 25)
+
+			if char_type == 1:
+				# an uppercase letter
+				salt += chr(65 + number)
+			else:
+				# a lowercase letter
+				salt += chr(97 + number)
+		else:
+			if char_type == 3:
+				# a number
+				salt += str(random.randint(0, 9))
+			else:
+				# a special char
+				number = random.randint(0, special_chars_count)
+				salt += special_chars[number]
+
+	return salt
+def generate_password(maxlen = 12, use_all_chars = False):
+	"""Generate a random password."""
+
+	import random
+
+	# ascii table: 48+ = numbers, 65+ = upper letter, 97+ = lower letters
+	special_chars = [ '.', '/',  '_', '*', '+', '-', '=', '@' ]
 
 	if use_all_chars:
-		special_chars.extend([ '!', '(', ')', ',', '.', '/', ':', ';', '<', '>', '[', ']', '{', '}' ])
+		special_chars.extend([ '$', '%', '&', '!', '?', '(', ')', ',',
+			':', ';', '<', '>', '[', ']', '{', '}' ])
 
 	special_chars_count = len(special_chars) -1
 
