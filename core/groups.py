@@ -313,7 +313,7 @@ class GroupsController:
 		GroupsController.groups[gid]['permissive'] = permissive
 
 		try:
-			self.CheckGroups([ name ], minimal=True, batch=True)
+			self.CheckGroups([ name ], minimal=True, batch=True, force=force)
 
 			# FIXME: is this needed here ?
 			# isn't it handled inside CheckGroups()?
@@ -902,7 +902,8 @@ class GroupsController:
 					'content_acl': "%s,g:%s:%s,%s" %                 (file_acl_base, group, group_file_acl,    file_acl_mask),
 					'exclude'   : [ 'public_html' ]
 				}
-	def CheckAssociatedSystemGroups(self, group, minimal = True, batch = False, auto_answer = None):
+	def CheckAssociatedSystemGroups(self, group, minimal=True, batch=False,
+		auto_answer=None, force=False):
 		"""Check the system groups that a standard group need to fuction flawlessly.
 			For example, a group "toto" need 2 system groups "resp-toto" and "guest-toto" for its ACLs.
 		"""
@@ -949,11 +950,13 @@ class GroupsController:
 
 			if not minimal:
 				all_went_ok &= self.CheckGroupSymlinks(prefix_gid,
-					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
+					strip_prefix=prefix, batch=batch, auto_answer=auto_answer,
+					force=false)
 
 		return all_went_ok
 
-	def __check_group(self, group, minimal = True, batch = False, auto_answer = None):
+	def __check_group(self, group, minimal=True, batch=False, auto_answer=None,
+		force=False):
 
 		all_went_ok = True
 		gid         = self.name_to_gid(group)
@@ -987,7 +990,8 @@ class GroupsController:
 		# dictionnary key.
 
 		try:
-			logging.progress("Checking shared group dir %s..." % styles.stylize(styles.ST_PATH, group_home))
+			logging.progress("Checking shared group dir %s..." % \
+				styles.stylize(styles.ST_PATH, group_home))
 			group_home_only         = group_home_acl.copy()
 			group_home_only['path'] = group_home
 			group_home_only['user'] = 'root'
@@ -1015,16 +1019,19 @@ class GroupsController:
 			public_html_acl['path'] =  public_html
 
 			try:
-				logging.progress("Checking shared dir %s..." % styles.stylize(styles.ST_PATH, public_html))
+				logging.progress("Checking shared dir %s..." % \
+					styles.stylize(styles.ST_PATH, public_html))
 				public_html_only         = public_html_acl.copy()
 				public_html_only['path'] = public_html
 				public_html_only['user'] = 'root'
 				del public_html_only['content_acl']
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls([ public_html_only ],
+				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+					[ public_html_only ],
 					batch, auto_answer, self, self.users)
 
 			except exceptions.LicornCheckError:
-				logging.warning("Shared dir %s is missing, please repair this first." \
+				logging.warning(
+					"Shared dir %s is missing, please repair this first." \
 					% styles.stylize(styles.ST_PATH, public_html))
 				return False
 
@@ -1033,7 +1040,9 @@ class GroupsController:
 				[ public_html_acl ], batch, auto_answer, self, self.users)
 
 		if not minimal:
-			logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))
+			logging.progress(
+				"Checking %s symlinks in members homes, this can take a while..." \
+				% styles.stylize(styles.ST_NAME, group))
 			all_went_ok &= self.CheckGroupSymlinks(gid, batch=batch,
 				auto_answer=auto_answer)
 
@@ -1043,7 +1052,7 @@ class GroupsController:
 		return all_went_ok
 
 	def CheckGroups(self, groups_to_check = [], minimal=True, batch=False,
-		auto_answer=None):
+		auto_answer=None, force=False):
 		"""Check the groups, the cache. If not system, check the shared dir, the resps/guests, the members symlinks."""
 
 		if groups_to_check == []:
@@ -1053,7 +1062,8 @@ class GroupsController:
 		GroupsController.configuration.CheckBaseDirs(minimal, batch, auto_answer)
 
 		def _chk(group):
-			return self.__check_group(group, minimal = minimal, batch = batch, auto_answer = auto_answer)
+			return self.__check_group(group, minimal=minimal, batch=batch,
+				auto_answer=auto_answer, force=force)
 
 		if reduce(pyutils.keep_false, map(_chk, groups_to_check)) is False:
 			# don't test just "if reduce(…):", the result could be None and everything is OK when None
@@ -1082,25 +1092,40 @@ class GroupsController:
 				link_basename = GroupsController.groups[gid]['name'].replace(strip_prefix, '', 1)
 
 
-			link_src = os.path.join(GroupsController.configuration.defaults.home_base_path, GroupsController.configuration.groups.names['plural'], link_basename)
-			link_dst = os.path.join(GroupsController.users.users[uid]['homeDirectory'], link_basename)
+			link_src = os.path.join(
+				GroupsController.configuration.defaults.home_base_path,
+				GroupsController.configuration.groups.names['plural'],
+				link_basename)
+
+			link_dst = os.path.join(
+				GroupsController.users.users[uid]['homeDirectory'],
+				link_basename)
 
 			if oldname:
-				link_src_old = os.path.join(GroupsController.configuration.defaults.home_base_path, GroupsController.configuration.groups.names['plural'], oldname)
+				link_src_old = os.path.join(
+					GroupsController.configuration.defaults.home_base_path,
+					GroupsController.configuration.groups.names['plural'],
+					oldname)
 			else:
 				link_src_old = None
 
-			for link in fsapi.minifind(GroupsController.users.users[uid]['homeDirectory'], maxdepth = 2, type = stat.S_IFLNK):
+			for link in fsapi.minifind(
+				GroupsController.users.users[uid]['homeDirectory'], maxdepth=2,
+					type=stat.S_IFLNK):
 				try:
 					link_src_abs = os.path.abspath(os.readlink(link))
 					if link_src_abs == link_src:
 						if delete:
 							try:
 								os.unlink(link)
-								logging.info("Deleted symlink %s." % styles.stylize(styles.ST_LINK, link) )
+								logging.info("Deleted symlink %s." % \
+									styles.stylize(styles.ST_LINK, link) )
 							except (IOError, OSError), e:
 								if e.errno != 2:
-									raise exceptions.LicornRuntimeError("Unable to delete symlink %s (was: %s)." % (styles.stylize(styles.ST_LINK, link), str(e)) )
+									raise exceptions.LicornRuntimeError(
+										"Unable to delete symlink %s (was: %s)." \
+											% (styles.stylize(styles.ST_LINK,
+												link), str(e)) )
 						else:
 							link_not_found = False
 				except (IOError, OSError), e:
@@ -1126,7 +1151,7 @@ class GroupsController:
 		return all_went_ok
 
 	# TODO: make this @staticmethod
-	def SetSharedDirPermissiveness(self, name = None, permissive = True):
+	def SetSharedDirPermissiveness(self, name=None, permissive=True):
 		""" Set permissive or not permissive the shared directory of the group 'name'. """
 		if name is None:
 			raise exceptions.BadArgumentError, "You must specify a group name."
