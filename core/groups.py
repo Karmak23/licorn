@@ -247,7 +247,8 @@ class GroupsController:
 		data += "</groups-list>\n"
 
 		return data
-	def AddGroup(self, name, gid=None, description="", groupSkel="", system=False, permissive=False, batch=False, force=False):
+	def AddGroup(self, name, gid=None, description="", groupSkel="",
+		system=False, permissive=False, batch=False, force=False):
 		""" Add an Licorn group (the group + the responsible group + the shared dir + permissions). """
 
 		if name in (None, ''):
@@ -312,14 +313,15 @@ class GroupsController:
 		GroupsController.groups[gid]['permissive'] = permissive
 
 		try:
-			self.CheckGroups([ name ], minimal = True, batch = True)
+			self.CheckGroups([ name ], minimal=True, batch=True)
 
 			# FIXME: is this needed here ?
 			# isn't it handled inside CheckGroups()?
 			self.WriteConf()
 
 			if not_already_exists:
-				logging.info(logging.SYSG_CREATED_GROUP % styles.stylize(styles.ST_NAME, name))
+				logging.info(logging.SYSG_CREATED_GROUP % \
+					styles.stylize(styles.ST_NAME, name))
 
 		except exceptions.SystemCommandError, e:
 			logging.warning ("ROLLBACK of group creation: " + str(e))
@@ -469,8 +471,8 @@ class GroupsController:
 		self.__delete_group('%s%s' % (
 			GroupsController.configuration.groups.guest_prefix, name))
 
-		self.CheckGroupSymlinks(gid = gid, group = name, delete = True,
-			batch = True)
+		self.CheckGroupSymlinks(gid = gid, group = name, delete=True,
+			batch=True)
 		self.__delete_group(name)
 
 		#
@@ -560,10 +562,10 @@ class GroupsController:
 				os.rename(home, new_home) # Rename shared dir
 
 				# reapply new ACLs on shared group dir.
-				self.CheckGroups( [ new_name ], batch = True)
+				self.CheckGroups( [ new_name ], batch=True)
 
 				# delete symlinks to the old name... and create new ones.
-				self.CheckGroupSymlinks(gid, oldname = name, batch = True)
+				self.CheckGroupSymlinks(gid, oldname=name, batch=True)
 
 			# The name has changed, we have to update profiles
 			profilelist.change_group_name_in_profiles(name, new_name)
@@ -946,7 +948,8 @@ class GroupsController:
 			# a standard for() loop. This will skip some groups, which will not be checked !! BAD !
 
 			if not minimal:
-				all_went_ok &= self.CheckGroupSymlinks(prefix_gid, strip_prefix = prefix, batch = batch, auto_answer = auto_answer)
+				all_went_ok &= self.CheckGroupSymlinks(prefix_gid,
+					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
 
 		return all_went_ok
 
@@ -1031,14 +1034,16 @@ class GroupsController:
 
 		if not minimal:
 			logging.progress("Checking %s symlinks in members homes, this can take a while..." % styles.stylize(styles.ST_NAME, group))
-			all_went_ok &= self.CheckGroupSymlinks(gid, batch = batch, auto_answer = auto_answer)
+			all_went_ok &= self.CheckGroupSymlinks(gid, batch=batch,
+				auto_answer=auto_answer)
 
 			# TODO: tous les membres du groupe existent et sont OK (CheckUsers recursif)
 			# WARNING: Forcer minimal = True pour éviter les checks récursifs avec CheckUsers()
 
 		return all_went_ok
 
-	def CheckGroups(self, groups_to_check = [], minimal = True, batch = False, auto_answer = None):
+	def CheckGroups(self, groups_to_check = [], minimal=True, batch=False,
+		auto_answer=None):
 		"""Check the groups, the cache. If not system, check the shared dir, the resps/guests, the members symlinks."""
 
 		if groups_to_check == []:
@@ -1053,7 +1058,8 @@ class GroupsController:
 		if reduce(pyutils.keep_false, map(_chk, groups_to_check)) is False:
 			# don't test just "if reduce(…):", the result could be None and everything is OK when None
 			raise exceptions.LicornCheckError("Some group(s) check(s) didn't pass, or weren't corrected.")
-	def CheckGroupSymlinks(self, gid = None, group = None, oldname = None, delete = False, strip_prefix = None, batch = False, auto_answer = None):
+	def CheckGroupSymlinks(self, gid=None, group=None, oldname=None,
+		delete=False, strip_prefix=None, batch=False, auto_answer=None):
 		"""For each member of a group, verify member has a symlink to the shared group dir inside his home (or under level 2 directory). If not, create the link. Eventually delete links pointing to the old group name if it is set."""
 
 		if gid is None:
@@ -1138,7 +1144,7 @@ class GroupsController:
 			GroupsController.groups[gid]['permissive'] = permissive
 
 			# auto-apply the new permissiveness
-			self.CheckGroups( [ name ], batch = True)
+			self.CheckGroups( [ name ], batch=True)
 		else:
 			logging.progress("Group %s is already%s permissive." % (styles.stylize(styles.ST_NAME, name), qualif) )
 
