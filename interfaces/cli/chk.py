@@ -75,7 +75,7 @@ def check_groups():
 		pass
 
 	groups.CheckGroups(groups_to_check, opts.minimal,
-		auto_answer=opts.auto_answer, batch=opts.batch, force=opts.force)
+		batch=opts.batch, auto_answer=opts.auto_answer)
 
 	# TODO: do this more cleanly and not so hard-coded:
 	try:
