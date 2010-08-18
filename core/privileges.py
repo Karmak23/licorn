@@ -46,8 +46,12 @@ class PrivilegesWhiteList(list, Singleton):
 		try:
 			self.index(privilege)
 		except ValueError:
+			from licorn.core.users  import UsersController
 			from licorn.core.groups import GroupsController
-			groups = GroupsController(self.configuration)
+
+			users  = UsersController(self.configuration)
+			groups = GroupsController(self.configuration, users)
+
 			if groups.is_system_group(privilege):
 				list.append(self, privilege)
 			else:
