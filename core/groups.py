@@ -400,8 +400,7 @@ class GroupsController:
 			'memberUid'   : set(),
 			'description' : description,
 			'groupSkel'   : groupSkel,
-			'backend'     : GroupsController.backends['unix'].name if system \
-				else GroupsController.backends['prefered'].name,
+			'backend'     : GroupsController.backends['prefered'].name,
 			'action'      : 'create'
 			}
 
@@ -518,8 +517,8 @@ class GroupsController:
 			# Unix backend will not know what to delete (this is quite a hack).
 			GroupsController.backends[backend].delete_group(name)
 
-			logging.info(logging.SYSG_DELETED_GROUP % styles.stylize(
-				styles.ST_NAME, name))
+			logging.info(logging.SYSG_DELETED_GROUP % \
+				styles.stylize(styles.ST_NAME, name))
 		except KeyError:
 			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST % styles.stylize(
 				styles.ST_NAME, name))

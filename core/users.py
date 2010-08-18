@@ -357,7 +357,6 @@ class UsersController:
 		tmp_user_dict['shadowMax']      = 99999
 		tmp_user_dict['shadowFlag']     = ''
 		tmp_user_dict['backend']        = \
-			UsersController.backends['unix'].name if system else \
 			UsersController.backends['prefered'].name
 
 		# Add user in internal list and in the cache
