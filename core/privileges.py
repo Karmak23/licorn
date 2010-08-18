@@ -12,15 +12,18 @@ Licensed under the terms of the GNU GPL version 2
 
 import sys, os
 
-from licorn.foundations import logging, exceptions, hlstr, styles, readers
+from licorn.foundations         import logging, exceptions, hlstr, styles, readers
 from licorn.foundations.objects import Singleton
+
+
 
 class PrivilegesWhiteList(list, Singleton):
 	""" Manage privileges whitelist. """
 	conf_file = ""
 	changed = None
-	def __init__(self, conf_file):
+	def __init__(self, configuration, conf_file):
 		""" Read the configuration file and populate ourselves. """
+		self.configuration = configuration
 		self.conf_file = conf_file
 		self.changed   = False
 		try:
@@ -43,7 +46,8 @@ class PrivilegesWhiteList(list, Singleton):
 		try:
 			self.index(privilege)
 		except ValueError:
-			from licorn.core import groups, profiles, users
+			from licorn.core.groups import GroupsController
+			groups = GroupsController(self.configuration)
 			if groups.is_system_group(privilege):
 				list.append(self, privilege)
 			else:

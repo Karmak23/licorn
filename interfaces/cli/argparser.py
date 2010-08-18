@@ -219,9 +219,18 @@ def get_profiles_parse_arguments(app):
 def get_configuration_parse_arguments(app):
 	""" Integrated help and options / arguments for « get »."""
 
-	usage_text = "\n\t%s config [[%s] ...]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option")) \
-		+ "\t%s config [[%s] ...] %s [--short|--bourne-shell|--c-shell|--php-code] ]\n" % (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_OPTION, "option"), styles.stylize(styles.ST_OPTION, "category")) \
-		+ "%s is one of: app_name, names, shells, skels, config_dir, main_config_file, extendedgroup_data_file." % styles.stylize(styles.ST_OPTION, "category")
+	usage_text = "\n\t%s config [[%s] ...]\n" % (
+		styles.stylize(styles.ST_APPNAME, "%prog"),
+		styles.stylize(styles.ST_OPTION, "option")) \
+		+ "\t%s config [[%s] ...] %s [--short|--bourne-shell|--c-shell|--php-code] ]\n" % (
+		styles.stylize(styles.ST_APPNAME, "%prog"),
+		styles.stylize(styles.ST_OPTION, "option"),
+		styles.stylize(styles.ST_OPTION, "category")) \
+		+ ('''%s is one of: app_name, names, shells, skels, '''
+			'''priv|privs|privileges, config_dir, '''
+			'''sysgroups|system_group|system-groups '''
+			'''main_config_file, extendedgroup_data_file.''' % \
+				styles.stylize(styles.ST_OPTION, "category"))
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
 

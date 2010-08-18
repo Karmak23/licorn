@@ -739,6 +739,9 @@ class LicornConfiguration (object):
 		# TODO: move this into a plugin
 		LicornConfiguration.defaults.admin_group = 'admins'
 
+		LicornConfiguration.defaults.needed_groups = [ 'users', 'acl' ]
+
+
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
 	def SetUsersDefaults(self):
@@ -779,7 +782,7 @@ class LicornConfiguration (object):
 			}
 
 		LicornConfiguration.groups.privileges_whitelist = \
-			PrivilegesWhiteList(self.privileges_whitelist_data_file)
+			PrivilegesWhiteList(self, self.privileges_whitelist_data_file)
 	def CheckAndLoadAdduserConf(self, batch = False, auto_answer = None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
@@ -1011,6 +1014,22 @@ class LicornConfiguration (object):
 						)
 				else:
 					data +=	 "%s\n" % (varval)
+			elif args[0] in ('sysgroups', 'system_groups', 'system-groups'):
+
+				for group in self.defaults.needed_groups:
+					data += "%s\n" % styles.stylize(styles.ST_SECRET, group)
+
+				data += "%s\n" % styles.stylize(styles.ST_SECRET,
+					self.defaults.admin_group)
+
+				for priv in self.groups.privileges_whitelist:
+					data += "%s\n" % priv
+
+			elif args[0] in ('priv', 'privs', 'privileges'):
+
+				for priv in self.groups.privileges_whitelist:
+					data += "%s\n" % priv
+
 			else:
 				raise NotImplementedError(
 					"Sorry, outputing selectively %s is not yet implemented !" \
@@ -1222,8 +1241,8 @@ class LicornConfiguration (object):
 			if asked for."""
 
 		from licorn.core.groups import GroupsController
-		from licorn.core.users import UsersController
-		users = UsersController(self)
+		from licorn.core.users  import UsersController
+		users  = UsersController(self)
 		groups = GroupsController(self, users)
 
 		if minimal:
@@ -1231,11 +1250,13 @@ class LicornConfiguration (object):
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
 			# operate properly.
-			needed_groups = [ 'users', 'acl',
+			needed_groups = LicornConfiguration.defaults.needed_groups + [
 				LicornConfiguration.defaults.admin_group ]
 
 		else:
-			needed_groups = LicornConfiguration.groups.privileges_whitelist
+			needed_groups = LicornConfiguration.defaults.needed_groups + [
+				LicornConfiguration.defaults.admin_group ] + \
+					LicornConfiguration.groups.privileges_whitelist
 
 		for group in needed_groups:
 			# licorn.core.groups is not loaded yet, and it would create a
