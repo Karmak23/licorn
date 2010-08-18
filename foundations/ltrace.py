@@ -18,32 +18,39 @@ Licensed under the terms of the GNU GPL version 2.
 #
 
 trc={}
-trc['all']           = 0xffffffff
-trc['none']          = 0x00000000
+trc['all']           = 0xffffffffffffffff
+trc['none']          = 0x0000000000000000
 
-trc['foundations']   = 0x000000ff
-trc['logging']       = 0x00000001
-trc['foundations']   = 0x00000002
-trc['objects']       = 0x00000004
-trc['options']       = 0x00000008
+trc['foundations']   = 0x00000000000000ff
+trc['logging']       = 0x0000000000000001
+trc['foundations']   = 0x0000000000000002
+trc['objects']       = 0x0000000000000004
+trc['options']       = 0x0000000000000008
+trc['readers']       = 0x000000000000000f
 
-trc['core']          = 0x0000ff00
-trc['users']         = 0x00000100
-trc['groups']        = 0x00000200
-trc['configuration'] = 0x00000400
-trc['machines']      = 0x00000800
-trc['internet']      = 0x00000f00
+trc['core']          = 0x000000000000ff00
+trc['users']         = 0x0000000000000100
+trc['groups']        = 0x0000000000000200
+trc['configuration'] = 0x0000000000000400
+trc['machines']      = 0x0000000000000800
+trc['internet']      = 0x0000000000000f00
 
-trc['backends']      = 0x00ff0000
-trc['ldap']          = 0x00010000
-trc['unix']          = 0x00020000
+trc['backends']      = 0x0000000000ff0000
+trc['ldap']          = 0x0000000000010000
+trc['unix']          = 0x0000000000020000
 
-trc['daemon']        = 0xff000000
-trc['master']        = 0x01000000
-trc['inotifier']     = 0x02000000
-trc['aclchecker']    = 0x04000000
-trc['cache']         = 0x08000000
-trc['crawler']       = 0x0f000000
+trc['plugins']       = 0x00000000ff000000
+trc['dnsmasq']       = 0x0000000001000000
+
+trc['daemon']        = 0x000000ff00000000
+trc['master']        = 0x0000000100000000
+trc['inotifier']     = 0x0000000200000000
+trc['aclchecker']    = 0x0000000400000000
+trc['cache']         = 0x0000000800000000
+trc['crawler']       = 0x0000000f00000000
+trc['thread']        = 0x0000001000000000
+trc['wmi']           = 0x0000002000000000
+
 
 from os   import getenv
 from time import time, localtime, strftime
