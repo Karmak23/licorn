@@ -909,6 +909,12 @@ class ldap_controller(UGBackend):
 			'groups'    # internal cache, not stored
 			)
 
+		ltrace('ldap', 'password: %s.' % (users[uid]['userPassword']))
+
+		#
+		# TODO: please copy user before changing password field !!!
+		#
+
 		# prepare this field in the form slapd expects it.
 		users[uid]['userPassword'] = \
 			'{SHA}' + encodestring(users[uid]['userPassword']).strip()
@@ -1054,5 +1060,5 @@ class ldap_controller(UGBackend):
 			pass
 		# except BAD_BIND:
 		#	pass
-	def compute_password(self, password):
+	def compute_password(self, password, salt=None):
 		return hashlib.sha1(password).digest()

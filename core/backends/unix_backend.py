@@ -416,9 +416,9 @@ class unix_controller(UGBackend):
 		""" Just a wrapper. Deleting one group in Unix backend is not
 		significantly faster than saving all of them. """
 		self.save_groups()
-	def compute_password(self, password):
-		return crypt.crypt(
-			password, "$6$%s" % hlstr.generate_password())
+	def compute_password(self, password, salt=None):
+		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
+			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
 
 

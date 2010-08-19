@@ -910,9 +910,14 @@ class UsersController:
 
 	@staticmethod
 	def check_password(login, password):
-		crypted_passwd = UsersController.users[
+		crypted_passwd1 = UsersController.users[
 			UsersController.login_cache[login]]['userPassword']
-		return (crypted_passwd == crypt.crypt(password, crypted_passwd))
+		crypted_passwd2 = UsersController.backends[
+			UsersController.users[UsersController.login_cache[login]
+				]['backend']].compute_password(password, crypted_passwd1)
+		ltrace('users', 'comparing 2 crypted passwords:\n%s\n%s' % (
+			crypted_passwd1, crypted_passwd2))
+		return (crypted_passwd1 == crypted_passwd2)
 
 	@staticmethod
 	def login_to_uid(login):
