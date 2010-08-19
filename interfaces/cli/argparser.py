@@ -68,7 +68,7 @@ def general_parse_arguments(app):
 		usage_text +=  "config[uration], "
 
 	if app["name"] in ( "licorn-get", "licorn-check" ):
-		usage_text += "user[s], group[s], profile[s], keywords."
+		usage_text += "user[s], group[s], profile[s], kw|keyword[s]|tag[s], priv[ilege][s]."
 
 	else:
 		usage_text += "user, "
@@ -400,7 +400,7 @@ def add_keyword_parse_arguments(app):
 	"""Integrated help and options / arguments for « add keyword »."""
 
 
-	usage_text = "\n\t%s keyword --name=<keyword> [--parent=<parent_keyword> --description=<description>]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s kw|tag|keyword|keywords --name=<keyword> [--parent=<parent_keyword> --description=<description>]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
 
@@ -420,6 +420,25 @@ def add_keyword_parse_arguments(app):
 		help="Description of the keyword (free text).")
 
 	parser.add_option_group(keyword)
+
+	return (parser.parse_args())
+def add_privilege_parse_arguments(app):
+	"""Integrated help and options / arguments for « add keyword »."""
+
+	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],...]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+
+	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
+
+	# common behaviour group
+	parser.add_option_group(__common_behaviour_group(app, parser, 'add_privilege'))
+
+	priv = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add privilege options "))
+
+	priv.add_option("--name", "--names",
+		action="store", type="string", dest="privileges_to_add", default = None,
+		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+
+	parser.add_option_group(priv)
 
 	return (parser.parse_args())
 def addimport_parse_arguments(app):
@@ -577,6 +596,25 @@ def delete_keyword_parse_arguments(app):
 		help="delete the parent and his children.")
 
 	parser.add_option_group(keyword)
+
+	return (parser.parse_args())
+def del_privilege_parse_arguments(app):
+	"""Integrated help and options / arguments for « add keyword »."""
+
+	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],...]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+
+	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
+
+	# common behaviour group
+	parser.add_option_group(__common_behaviour_group(app, parser, 'del_privilege'))
+
+	priv = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete privilege options "))
+
+	priv.add_option("--name", "--names",
+		action="store", type="string", dest="privileges_to_remove", default = None,
+		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+
+	parser.add_option_group(priv)
 
 	return (parser.parse_args())
 def delimport_parse_arguments(app):

@@ -157,7 +157,10 @@ def delete_keyword():
 	keywords = KeywordsController(configuration)
 
 	keywords.DeleteKeyword(opts.name, opts.del_children)
-
+def delete_privilege():
+	configuration = LicornConfiguration()
+	configuration.groups.privileges_whitelist.delete(
+		opts.privileges_to_remove.split(','))
 def delete_workstation():
 	raise NotImplementedError("delete_workstations not implemented.")
 def delete_webfilter():
@@ -235,6 +238,12 @@ if __name__ == "__main__":
 					opts.name = args[1]
 				options.SetFrom(opts)
 				delete_keyword()
+			elif mode in ('priv', 'privilege', 'privs', 'privileges'):
+				(opts, args) = argparser.del_privilege_parse_arguments(_app)
+				if opts.privileges_to_remove is None and len(args) == 2:
+					opts.privileges_to_remove = args[1]
+				options.SetFrom(opts)
+				delete_privilege()
 			else:
 				if not help_appended:
 					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)

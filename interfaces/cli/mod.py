@@ -259,14 +259,12 @@ def modify_configuration():
 		raise exceptions.NotImplementedError("changing server IP address is not yet implemented.")
 
 	elif opts.privileges_to_add:
-		for privilege in opts.privileges_to_add.split(','):
-			configuration.groups.privileges_whitelist.append(privilege)
-		configuration.groups.privileges_whitelist.WriteConf()
+		configuration.groups.privileges_whitelist.add(
+			opts.privileges_to_add.split(','))
 
 	elif opts.privileges_to_remove:
-		for privilege in opts.privileges_to_remove.split(','):
-			configuration.groups.privileges_whitelist.remove(privilege)
-		configuration.groups.privileges_whitelist.WriteConf()
+		configuration.groups.privileges_whitelist.delete(
+			opts.privileges_to_remove.split(','))
 
 	elif opts.hidden_groups != None:
 		configuration.SetHiddenGroups(opts.hidden_groups)

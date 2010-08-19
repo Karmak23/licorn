@@ -41,6 +41,16 @@ class PrivilegesWhiteList(list, Singleton):
 		# just in case it wasn't done before (in batched operations, for example).
 		if self.changed :
 			self.WriteConf()
+	def add(self, privileges):
+		"""one-time multi-add method (list as argument)."""
+		for priv in privileges:
+			self.append(priv)
+		self.WriteConf()
+	def delete(self, privileges):
+		"""one-time multi-delete method (list as argument)."""
+		for priv in privileges:
+			self.remove(priv)
+		self.WriteConf()
 	def append(self, privilege):
 		""" Set append like: no doubles."""
 		try:

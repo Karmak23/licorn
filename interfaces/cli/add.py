@@ -441,6 +441,10 @@ def add_keyword():
 	keywords = KeywordsController(configuration)
 
 	keywords.AddKeyword(unicode(opts.name), unicode(opts.parent), unicode(opts.description))
+def add_privilege():
+	configuration = LicornConfiguration()
+	configuration.groups.privileges_whitelist.add(
+		opts.privileges_to_add.split(','))
 def add_workstation():
 	raise NotImplementedError("add_workstations not implemented.")
 def add_webfilter():
@@ -498,22 +502,28 @@ if __name__ == "__main__":
 				import_users()
 			elif mode == 'group':
 				(opts, args) = argparser.add_group_parse_arguments(_app)
-				if len(args) == 2:
+				if opts.name is None and len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_group()
 			elif mode == 'profile':
 				(opts, args) = argparser.add_profile_parse_arguments(_app)
-				if len(args) == 2:
+				if opts.name is None and len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_profile()
-			elif mode == 'keyword':
+			elif mode in ('tag', 'tags', 'kw', 'keyword', 'keywords'):
 				(opts, args) = argparser.add_keyword_parse_arguments(_app)
-				if len(args) == 2:
+				if opts.name is None and len(args) == 2:
 					opts.name = args[1]
 				options.SetFrom(opts)
 				add_keyword()
+			elif mode in ('priv', 'privilege', 'privs', 'privileges'):
+				(opts, args) = argparser.add_privilege_parse_arguments(_app)
+				if opts.privileges_to_add is None and len(args) == 2:
+					opts.privileges_to_add = args[1]
+				options.SetFrom(opts)
+				add_privilege()
 			else:
 				if not help_appended:
 					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
