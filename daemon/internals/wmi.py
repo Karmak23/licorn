@@ -168,17 +168,21 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							#
 							# TODO: make this a beautiful PAM authentication ?
 							#
-							if users.user_exists(login = authorization[0]) \
-								and users.check_password(authorization[0],
-									authorization[1]):
-								if groups.group_exists(wmi_group):
-									if authorization[0] in \
-										groups.auxilliary_members(wmi_group):
+							try :
+								if users.user_exists(login = authorization[0]) \
+									and users.check_password(authorization[0],
+										authorization[1]):
+									if groups.group_exists(wmi_group):
+										if authorization[0] in \
+											groups.auxilliary_members(wmi_group):
+											self.http_user = authorization[0]
+											return True
+									else:
 										self.http_user = authorization[0]
 										return True
-								else:
-									self.http_user = authorization[0]
-									return True
+							except exceptions.BadArgumentError:
+								logging.warning('empty username or password sent as authentification string into WMI.')
+								return False
 		return False
 	def format_post_args(self):
 		""" Prepare POST data for exec statement."""
