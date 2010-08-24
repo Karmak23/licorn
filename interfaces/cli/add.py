@@ -340,6 +340,8 @@ def add_user():
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 
+	if opts.profile:
+		profiles = ProfilesController(configuration, groups, users)
 
 	if opts.firstname is None:
 		firstname = None
