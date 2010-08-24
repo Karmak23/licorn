@@ -664,7 +664,7 @@ class ldap_controller(UGBackend):
 
 			for key, func in (
 				('loginShell', str),
-				('gecos', str),
+				('gecos', decodestring),
  				('userPassword', account_lock),
 				('shadowLastChange', int),
 				('shadowMin', int),
@@ -929,6 +929,14 @@ class ldap_controller(UGBackend):
 				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_shadow,
 				ldap.SCOPE_SUBTREE, '(uid=%s)' % login)[0]
 
+				# update these fields to match the eventual new value.
+				user['cn'] = user['gecos']
+				user['sn'] = user['gecos']
+				user['givenName'] = user['gecos']
+
+				# reencode this field, for slapd not to whym.
+				user['gecos'] = encodestring(user['gecos']).strip()
+
 				ltrace('ldap', 'update user %s: %s\n%s' % (
 					styles.stylize(styles.ST_LOGIN, login),
 					old_entry,
@@ -942,10 +950,19 @@ class ldap_controller(UGBackend):
 
 				# prepare the LDAP entry like the LDAP daemon assumes it will
 				# be : add or change necessary fields.
-				user['cn'] = login
 				user['objectClass'] = [
 					'inetOrgPerson', 'posixAccount', 'shadowAccount']
+
+				# we should Split these, but we don't have any reliable manner
+				# to do it (think of multi firstnames, composite lastnames, etc)
+				user['cn'] = user['gecos']
 				user['sn'] = user['gecos']
+				user['givenName'] = user['gecos']
+
+				# GECOS is IA5 only (ASCII 7bit). Anyway, it seems not used
+				# nowadays, and CN is prefered. We fill it for [put anything
+				# usefull here] purposes only
+				user['gecos'] = encodestring(user['gecos']).strip()
 
 				ltrace('ldap', 'add user %s: %s' % (
 					styles.stylize(styles.ST_LOGIN, login),
