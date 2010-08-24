@@ -897,7 +897,6 @@ class ldap_controller(UGBackend):
 		if action is None:
 			return
 
-		import ldap.modlist
 
 		#
 		# see http://www.python-ldap.org/doc/html/ldap-modlist.html#module-ldap.modlist
@@ -995,8 +994,6 @@ class ldap_controller(UGBackend):
 
 		if action is None:
 			return
-
-		import ldap.modlist
 
 		#
 		# see http://www.python-ldap.org/doc/html/ldap-modlist.html#module-ldap.modlist
