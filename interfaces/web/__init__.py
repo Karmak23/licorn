@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from gettext import gettext as _
+import gettext
+_ = gettext.gettext
+
+gettext.textdomain('licorn')
 
 import users, groups, base, utils, server
 
