@@ -163,7 +163,7 @@ class GroupsController:
 				gid = int(gid_match.group('gid'))
 				self.filtered_groups.append(gid)
 
-	def ExportCLI(self):
+	def ExportCLI(self, long):
 		""" Export the groups list to human readable (= « get group ») form.  """
 		if self.filter_applied:
 			gids = self.filtered_groups
@@ -211,10 +211,14 @@ class GroupsController:
 				else:
 					accountdata.append("NOT permissive")
 
+			if long:
+				accountdata.append('[%s]' % styles.stylize(
+					styles.ST_LINK, mygroups[gid]['backend']))
+
 			return ':'.join(accountdata)
 
 		return "\n".join(map(ExportOneGroupFromGid, gids)) + "\n"
-	def ExportXML(self):
+	def ExportXML(self, long):
 		""" Export the groups list to XML. """
 
 		data = ('''<?xml version='1.0' encoding=\"UTF-8\"?>\n'''
@@ -242,6 +246,8 @@ class GroupsController:
 					data += "		<permissive>"	+ str(group['permissive']) + "</permissive>\n"
 				if group['memberUid'] != "":
 					data += "		<memberUid>" + ", ".join(group['memberUid']) + "</memberUid>\n"
+				if long:
+					data += "		<backend>%s</backend>\n" %  group['backend']
 			data += "	</group>\n"
 
 		data += "</groups-list>\n"

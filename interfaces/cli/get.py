@@ -81,9 +81,9 @@ def get_groups(opts, args):
 		groups.Select(groups.FILTER_STANDARD)
 
 	if opts.xml:
-		data = groups.ExportXML()
+		data = groups.ExportXML(opts.long)
 	else:
-		data = groups.ExportCLI()
+		data = groups.ExportCLI(opts.long)
 
 	if data and data != '\n':
 		output(data)

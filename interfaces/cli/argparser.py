@@ -109,7 +109,7 @@ def __get_filter_group(app, parser, mode):
 			help="also get factory and system data (rarely used), i.e. for users, output system accounts too, etc (%s: you can get huge output and easily flood your terminal)." % styles.stylize(styles.ST_BAD, "WARNING"))
 		filtergroup.add_option("-l", "--long",
 			action="store_true", dest="long", default = False,
-			help="long output (all info, attributes, etc). This is *NOT* enabled by default because it makes the program slower and extra infos are not needed so often.")
+			help="long output (all info, attributes, etc). NOT enabled by default.")
 
 	if mode is 'users':
 		filtergroup.add_option("--uid",

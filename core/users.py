@@ -652,6 +652,8 @@ class UsersController:
 						]
 			if long_output:
 				account.append(','.join(UsersController.users[uid]['groups']))
+				account.append('[%s]' % styles.stylize(styles.ST_LINK, users[uid]['backend']))
+
 			return ':'.join(account)
 
 		data = '\n'.join(map(build_cli_output_user_data, uids)) + '\n'
@@ -669,10 +671,13 @@ class UsersController:
 
 		def build_csv_output_licorn(uid):
 			return ';'.join(
-				[	UsersController.users[uid]['gecos'],
+				[
+					UsersController.users[uid]['gecos'],
 					UsersController.users[uid]['login'],
 					str(UsersController.users[uid]['gidNumber']),
-					','.join(UsersController.users[uid]['groups']) ]
+					','.join(UsersController.users[uid]['groups']),
+					UsersController.users[uid]['backend']
+				]
 				)
 
 		data = '\n'.join(map(build_csv_output_licorn, uids)) +'\n'
@@ -705,8 +710,10 @@ class UsersController:
 					UsersController.users[uid]['loginShell']
 				)
 			if long_output:
-				data += "		<groups>%s</groups>\n" % \
-					','.join(UsersController.users[uid]['groups'])
+				data += '''		<groups>%s</groups>
+		<backend>%s</backend>\n''' % (
+					','.join(UsersController.users[uid]['groups']),
+					UsersController.users[uid]['backend'])
 
 			return data + "	</user>"
 
