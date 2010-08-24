@@ -888,9 +888,11 @@ class ldap_controller(UGBackend):
 		""" Save one user in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
-		users  = UGBackend.users
-		action = users[uid]['action']
-		login  = users[uid]['login']
+		# we have to duplicate the data, to avoid #206
+		user  = UGBackend.users[uid].copy()
+
+		action = user['action']
+		login  = user['login']
 
 		if action is None:
 			return
@@ -909,15 +911,15 @@ class ldap_controller(UGBackend):
 			'groups'    # internal cache, not stored
 			)
 
-		ltrace('ldap', 'password: %s.' % (users[uid]['userPassword']))
 
 		#
 		# TODO: please copy user before changing password field !!!
 		#
 
+		#ltrace('ldap', 'password: %s.' % (user['userPassword']))
 		# prepare this field in the form slapd expects it.
-		users[uid]['userPassword'] = \
-			'{SHA}' + encodestring(users[uid]['userPassword']).strip()
+		user['userPassword'] = \
+			'{SHA}' + encodestring(user['userPassword']).strip()
 
 		try:
 			self.bind()
@@ -930,28 +932,28 @@ class ldap_controller(UGBackend):
 				ltrace('ldap', 'update user %s: %s\n%s' % (
 					styles.stylize(styles.ST_LOGIN, login),
 					old_entry,
-					modifyModlist(old_entry, users[uid],
+					modifyModlist(old_entry, user,
 						ignore_list, ignore_oldexistent=1)))
 
 				self.ldap_conn.modify_s(dn, modifyModlist(
-					old_entry, users[uid], ignore_list, ignore_oldexistent=1))
+					old_entry, user, ignore_list, ignore_oldexistent=1))
 
 			elif action == 'create':
 
 				# prepare the LDAP entry like the LDAP daemon assumes it will
 				# be : add or change necessary fields.
-				users[uid]['cn'] = login
-				users[uid]['objectClass'] = [
+				user['cn'] = login
+				user['objectClass'] = [
 					'inetOrgPerson', 'posixAccount', 'shadowAccount']
-				users[uid]['sn'] = users[uid]['gecos']
+				user['sn'] = user['gecos']
 
 				ltrace('ldap', 'add user %s: %s' % (
 					styles.stylize(styles.ST_LOGIN, login),
-					addModlist(users[uid], ignore_list)))
+					addModlist(user, ignore_list)))
 
 				self.ldap_conn.add_s(
 					'uid=%s,%s' % (login, self.nss_base_shadow),
-					addModlist(users[uid], ignore_list))
+					addModlist(user, ignore_list))
 			else:
 				logging.warning('%s: unknown action %s for user %s(uid=%s).' %(
 					self.name, action, login, uid))
@@ -962,15 +964,17 @@ class ldap_controller(UGBackend):
 			), e:
 			logging.warning(e[0]['desc'])
 
-		users[uid]['action'] = None
+		# reset the action
+		UGBackend.users[uid]['action'] = None
 
 	def save_group(self, gid):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
-		groups = UGBackend.groups
-		action = groups[gid]['action']
-		name   = groups[gid]['name']
+		# we have to duplicate the data, to avoid #206
+		group  = UGBackend.groups[gid].copy()
+		action = group['action']
+		name   = group['name']
 
 		if action is None:
 			return
@@ -1007,7 +1011,7 @@ class ldap_controller(UGBackend):
 					old_entry, groups[gid], ignore_list, ignore_oldexistent=1)))
 				"""
 				self.ldap_conn.modify_s(dn, modifyModlist(
-					old_entry, groups[gid], ignore_list, ignore_oldexistent=1))
+					old_entry, group, ignore_list, ignore_oldexistent=1))
 			elif action == 'create':
 
 				ltrace('ldap','creating group %s.' % (
@@ -1017,13 +1021,13 @@ class ldap_controller(UGBackend):
 				# prepare the LDAP entry like the LDAP daemon assumes it will
 				# be.
 				#
-				groups[gid]['cn'] = name
-				groups[gid]['objectClass'] = [
+				group['cn'] = name
+				group['objectClass'] = [
 					'posixGroup', 'licornGroup']
 
 				self.ldap_conn.add_s(
 					'cn=%s,%s' % (name, self.nss_base_group),
-					addModlist(groups[gid], ignore_list))
+					addModlist(group, ignore_list))
 			else:
 				logging.warning('%s: unknown action %s for group %s(gid=%s).' % (
 					self.name, action, name, gid))
@@ -1036,7 +1040,8 @@ class ldap_controller(UGBackend):
 			# it is just repeat.
 			logging.warning(e[0]['desc'])
 
-		groups[gid]['action'] = None
+		# reset the action
+		UGBackend.groups[gid]['action'] = None
 
 	def delete_user(self, login):
 		""" Delete one user from the LDAP backend. """
