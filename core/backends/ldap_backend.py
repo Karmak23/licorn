@@ -875,7 +875,7 @@ class ldap_controller(UGBackend):
 					#
 					import getpass
 					self.ldap_conn.bind_s(self.bind_dn,
-						getpass.getpass(_('Please enter your LDAP password: ')),
+						getpass.getpass('Please enter your LDAP password: '),
 						ldap.AUTH_SIMPLE)
 				#else:
 				# do nothing. We hit this case in all "get" commands, which
