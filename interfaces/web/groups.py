@@ -12,9 +12,9 @@ from licorn.core.profiles       import ProfilesController
 from licorn.interfaces.web import utils as w
 
 configuration = LicornConfiguration()
-users = UsersController(configuration)
-groups = GroupsController(configuration, users)
-profiles = ProfilesController(configuration, groups, users)
+users         = UsersController(configuration)
+groups        = GroupsController(configuration, users)
+profiles      = ProfilesController(configuration, groups, users)
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'
@@ -463,15 +463,18 @@ def edit(uri, http_user, name):
 		dbl_lists = {}
 
 		if sys:
-			groups_filters_lists_ids   = (
-				(name, ( _('Manage members'), _('Users not yet members'),
-				_('Current members') ), 'members' ),
-				(configuration.groups.resp_prefix + name, None, '&#160;' ),
-				(configuration.groups.guest_prefix + name, None, '&#160;' )
-				)
+			groups_filters_lists_ids = [
+				(name, [ _('Manage members'), _('Users not yet members'),
+				_('Current members') ], 'members' )
+				]
+
+			#	,
+			#	(configuration.groups.resp_prefix + name, None, '&#160;' ),
+			#	(configuration.groups.guest_prefix + name, None, '&#160;' )
 		else:
 			groups_filters_lists_ids = (
-				(name,            [_('Manage members'),
+				(name,
+					[_('Manage members'),
 					_('Users not yet members'),
 					_('Current members')],
 					'members'),
@@ -491,11 +494,13 @@ def edit(uri, http_user, name):
 				dbl_lists[gname] = id
 			else:
 				users.Select(users.FILTER_STANDARD)
-				dest   = list(g[groups.name_to_gid(gname)]['memberUid'])
+				dest   = list(group['memberUid'])
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
-				for current in g[groups.name_to_gid(gname)]['memberUid']:
-					try: source.remove(current)
-					except ValueError: dest.remove(current)
+				for current in group['memberUid']:
+					try:
+						source.remove(current)
+					except ValueError:
+						dest.remove(current)
 				dest.sort()
 				source.sort()
 				dbl_lists[gname] = w.doubleListBox(titles, id, source, dest)
@@ -504,10 +509,8 @@ def edit(uri, http_user, name):
 			return w.input('description', desc, size=30, maxlength=256,
 				accesskey='D')
 		def skel(cur_skel, system):
-			if system:
-				return ''
-			else:
-				return '''
+			return '' if system else \
+				'''
 				<tr>
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
@@ -516,11 +519,8 @@ def edit(uri, http_user, name):
 					w.select('skel', configuration.users.skels,
 					cur_skel, func = os.path.basename))
 		def permissive(perm, system):
-
-			if system:
-				return ''
-			else:
-				return '''
+			return '' if system else \
+				'''
 				<tr>
 					<td><strong>%s</strong></td>
 					<td class="right">%s</td>
@@ -530,6 +530,22 @@ def edit(uri, http_user, name):
 					"True", "Oui", checked = perm ))
 
 		form_name = "group_edit_form"
+
+		if sys:
+			data_rsp_gst =''
+		else :
+			data_rsp_gst = '''
+<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
+				<div class="accordion_content">%s</div>
+
+			''' % (
+			_('Group responsibles') ,
+			dbl_lists[configuration.groups.resp_prefix+name],
+			_('Group guests'),
+			dbl_lists[configuration.groups.guest_prefix+name]
+			)
 
 		data += '''<div id="edit_form">
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
@@ -552,10 +568,7 @@ def edit(uri, http_user, name):
 			<td colspan="2" id="my-accordion">
 				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
 				<div class="accordion_content">%s</div>
-				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
-				<div class="accordion_content">%s</div>
-				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
-				<div class="accordion_content">%s</div>
+				%s
 
 				<script type="text/javascript">
 					Event.observe(window, 'load', loadAccordions, false);
@@ -584,10 +597,7 @@ def edit(uri, http_user, name):
 			skel(group['groupSkel'], sys),
 			_('Group members'),
 				dbl_lists[name],
-			_('Group responsibles'),
-				dbl_lists[configuration.groups.resp_prefix+name],
-			_('Group guests'),
-				dbl_lists[configuration.groups.guest_prefix+name],
+			data_rsp_gst,
 			w.button('<< ' + _('Cancel'), "/groups/list", accesskey=_('N')),
 			w.submit('record', _('Record') + ' >>',
 			onClick="selectAllMultiValues('%s');" % form_name,
@@ -727,7 +737,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 			ordered[hlstr.validate_name(tgroups[gid][sort])] = gid
 
 			tgroups[gid]['memberUid'] = []
-			for member in groups.groups[gid]['memberUid']:
+			for member in group['memberUid']:
 				if not users.is_system_login(member):
 					tgroups[gid]['memberUid'].append(
 						users.users[users.login_to_uid(member)])
@@ -736,12 +746,12 @@ def main(uri, http_user, sort = "name", order = "asc"):
 				for prefix in (
 					configuration.groups.resp_prefix,
 					configuration.groups.guest_prefix):
-					tgroups[gid][prefix + 'members'] = []
+					tgroups[gid][prefix + 'memberUid'] = []
 					for member in \
 						groups.groups[groups.name_to_gid(
 							prefix + name)]['memberUid']:
 						if not users.is_system_login(member):
-							tgroups[gid][prefix + 'members'].append(
+							tgroups[gid][prefix + 'memberUid'].append(
 								users.users[users.login_to_uid(member)])
 
 		gkeys = ordered.keys()
@@ -798,9 +808,9 @@ def main(uri, http_user, sort = "name", order = "asc"):
 					permissiveness.'''), _('Group is NOT permissive.'))
 
 			for (keyname, text) in (
-				('members', _('Current members')),
-				('rsp-members', _('Current responsibles')),
-				('gst-members', _('Current guests')) ):
+				('memberUid', _('Current members')),
+				('rsp-memberUid', _('Current responsibles')),
+				('gst-memberUid', _('Current guests')) ):
 				if tgroups[gid].has_key(keyname):
 					accounts = {}
 					uordered = {}
