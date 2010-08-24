@@ -33,6 +33,9 @@ def get_users(opts, args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 
+	if opts.long:
+		groups = GroupsController(configuration, users)
+
 	if opts.uid is not None:
 		try:
 			users.Select("uid=" + unicode(opts.uid))
