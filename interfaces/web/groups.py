@@ -620,6 +620,12 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	if skel:
 		command.extend(["--skel", skel])
 
+	# fix #194
+	if permissive:
+		command.extend([ '--permissive' ])
+	else:
+		command.extend([ '--not-permissive' ])
+
 	add_members = ','.join(__merge_multi_select(members_dest))
 	del_members = ','.join(__merge_multi_select(members_source))
 
