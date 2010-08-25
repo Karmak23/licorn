@@ -661,10 +661,18 @@ class ldap_controller(UGBackend):
 					tmp_entry['locked'] = False
 
 				return password
+			def gecos_decode(value):
+				try:
+					# get around an error where password is not base64 encoded.
+					gecos = decodestring(value)
+				except:
+					gecos = value
+
+				return gecos
 
 			for key, func in (
 				('loginShell', str),
-				('gecos', decodestring),
+				('gecos', gecos_decode),
  				('userPassword', account_lock),
 				('shadowLastChange', int),
 				('shadowMin', int),
