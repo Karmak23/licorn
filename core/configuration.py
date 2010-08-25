@@ -409,8 +409,8 @@ class LicornConfiguration (object):
 				if lsb_release['DISTRIB_ID'] == 'Licorn':
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
-					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'jaunty',
-						'intrepid', 'hardy', 'gutsy',
+					if lsb_release['DISTRIB_CODENAME'] in ('maverick', 'lucid',
+						'karmik', 'jaunty', 'intrepid', 'hardy', 'gutsy',
 						'feisty',  'edgy', 'dapper' ):
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else:
@@ -1120,7 +1120,6 @@ class LicornConfiguration (object):
 		self.CheckBaseDirs(minimal, batch, auto_answer)
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 		self.check_OpenSSH(batch, auto_answer)
-
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
