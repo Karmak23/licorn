@@ -1118,7 +1118,7 @@ class LicornConfiguration (object):
 		self.check_backends(batch, auto_answer)
 
 		self.CheckBaseDirs(minimal, batch, auto_answer)
-		self.CheckSystemGroups(minimal, batch, auto_answer)
+
 		self.check_OpenSSH(batch, auto_answer)
 
 		# not yet ready.

@@ -82,15 +82,20 @@ class GroupsController:
 
 	def GetHiddenState(self):
 		""" See if /home/groups is readable or not.
-			FIXME: do not hardcode "users".
 		"""
 
 		try:
 			for line in posix1e.ACL( file='%s/%s' % (GroupsController.configuration.defaults.home_base_path,
 				GroupsController.configuration.groups.names['plural']) ):
 				if line.tag_type & posix1e.ACL_GROUP:
+					#
+					# FIXME: do not hardcode "users".
+					#
 					if line.qualifier == GroupsController.name_to_gid('users'):
 						return not line.permset.read
+		except exceptions.LicornRuntimeException:
+			# the group "users" doesn't exist, or is not yet created.
+			return None
 		except (IOError, OSError), e:
 			if e.errno == 13:
 				LicornConfiguration.groups.hidden = None
@@ -288,7 +293,7 @@ class GroupsController:
 				% GroupsController.configuration.users.skels)
 
 		if description == '':
-			description = 'Les membres du groupe “%s”' % name
+			description = 'members of group “%s”' % name
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError('''Malformed group description '''
 				''''%s', must match /%s/i.'''
