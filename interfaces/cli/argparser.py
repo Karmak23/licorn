@@ -332,7 +332,7 @@ def add_group_parse_arguments(app):
 	group = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add group options "))
 
 	group.add_option("--name",
-		action="store", type="string", dest="name", default = "",
+		action="store", type="string", dest="name", default = None,
 		help="Specify group's name (%s)." % styles.stylize(styles.ST_IMPORTANT, "required") )
 	group.add_option("--permissive",
 		action="store_true", dest="permissive", default = False,

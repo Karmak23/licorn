@@ -104,7 +104,7 @@ class GroupsController:
 	def WriteConf(self, gid=None):
 		""" Save Configuration (internal data structure to disk). """
 
-		ltrace('groups', 'saving data structures to disk.')
+		ltrace('groups', '> WriteConf(%s)' % gid)
 
 		if gid:
 			GroupsController.backends[
@@ -116,6 +116,9 @@ class GroupsController:
 				if bkey=='prefered':
 					continue
 				GroupsController.backends[bkey].save_groups()
+
+		ltrace('groups', '< WriteConf()')
+
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
 			- 'system groups': show only «system» groups (root, bin, daemon, apache...),
@@ -244,7 +247,7 @@ class GroupsController:
 					data += "		<permissive>[unknown]</permissive>\n"
 				else:
 					data += "		<permissive>"	+ str(group['permissive']) + "</permissive>\n"
-				if group['memberUid'] != "":
+				if group['memberUid'] != set():
 					data += "		<memberUid>" + ", ".join(group['memberUid']) + "</memberUid>\n"
 				if long:
 					data += "		<backend>%s</backend>\n" %  group['backend']
@@ -255,37 +258,50 @@ class GroupsController:
 		return data
 	def AddGroup(self, name, gid=None, description="", groupSkel="",
 		system=False, permissive=False, batch=False, force=False):
-		""" Add an Licorn group (the group + the responsible group + the shared dir + permissions). """
+		""" Add a Licorn group (the group + the guest/responsible group +
+			the shared dir + permissions (ACL)). """
 
 		if name in (None, ''):
-			raise exceptions.BadArgumentError, "You must specify a group name."
-
-		if len(str(name)) > GroupsController.configuration.groups.name_maxlenght:
-			raise exceptions.LicornRuntimeError, "Group name must be smaller than %d characters." % GroupsController.configuration.groups.name_maxlenght
+			raise exceptions.BadArgumentError("You must specify a group name.")
 
 		if not hlstr.cregex['group_name'].match(name):
-			raise exceptions.BadArgumentError("Malformed group name '%s', must match /%s/i."
-				% (name, styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])) )
+			raise exceptions.BadArgumentError(
+				"Malformed group name '%s', must match /%s/i." % (name,
+				styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])))
+
+		if len(name) > GroupsController.configuration.groups.name_maxlenght:
+			raise exceptions.LicornRuntimeError('''Group name must be '''
+				'''smaller than %d characters.''' % \
+					GroupsController.configuration.groups.name_maxlenght)
+
+		ltrace('groups', '> AddGroup(%s)' % name)
 
 		if not system and groupSkel is "":
-			raise exceptions.BadArgumentError, "You must specify a groupSkel dir."
+			raise exceptions.BadArgumentError(
+				"You must specify a groupSkel dir.")
 
 		if groupSkel == "":
 			groupSkel = GroupsController.configuration.users.default_skel
 		elif groupSkel not in GroupsController.configuration.users.skels:
-			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are: %s."
+			raise exceptions.BadArgumentError('''The skel you specified '''
+				'''doesn't exist on this system. Valid skels are: %s.'''
 				% GroupsController.configuration.users.skels)
 
 		if description == '':
 			description = 'Les membres du groupe “%s”' % name
 		elif not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError("Malformed group description '%s', must match /%s/i."
-				% (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
+			raise exceptions.BadArgumentError('''Malformed group description '''
+				''''%s', must match /%s/i.'''
+				% (description, styles.stylize(
+					styles.ST_REGEX, hlstr.regex['description'])))
 
-		home = '%s/%s/%s' % (GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names['plural'], name)
+		home = '%s/%s/%s' % (
+			GroupsController.configuration.defaults.home_base_path,
+			GroupsController.configuration.groups.names['plural'],
+			name)
 
-		# TODO: permit to specify GID. Currently this doesn't seem to be done yet.
+		# TODO: permit to specify GID.
+		# Currently this doesn't seem to be done yet.
 
 		try:
 			not_already_exists = True
@@ -302,28 +318,20 @@ class GroupsController:
 			not_already_exists = False
 
 		if system:
-			# system groups don't have shared group dir nor resp- nor guest- nor special ACLs.
-			# so we don't execute the rest of the procedure.
-
-			GroupsController.groups[gid]['action'] = 'create'
-			GroupsController.backends[
-				GroupsController.groups[gid]['backend']
-				].save_group(gid)
 
 			if not_already_exists:
 				logging.info(logging.SYSG_CREATED_GROUP % \
 					styles.stylize(styles.ST_NAME, name))
 
+			# system groups don't have shared group dir nor resp-
+			# nor guest- nor special ACLs.
+			# so we don't execute the rest of the procedure.
 			return
 
 		GroupsController.groups[gid]['permissive'] = permissive
 
 		try:
 			self.CheckGroups([ name ], minimal=True, batch=True, force=force)
-
-			# FIXME: is this needed here ?
-			# isn't it handled inside CheckGroups()?
-			self.WriteConf()
 
 			if not_already_exists:
 				logging.info(logging.SYSG_CREATED_GROUP % \
@@ -337,64 +345,89 @@ class GroupsController:
 
 			try:
 				self.__delete_group(name)
-			except: pass
+			except:
+				pass
 			try:
 				self.__delete_group('%s%s' % (
 					GroupsController.configuration.groups.resp_prefix, name))
-			except: pass
+			except:
+				pass
 			try:
 				self.__delete_group('%s%s' % (
 					GroupsController.configuration.groups.guest_prefix, name))
-			except: pass
-
-
-			# FIXME: really needed ? not already handled in __delete_group() ?
-			if not batch:
-				self.WriteConf()
+			except:
+				pass
 
 			# re-raise the exception, for the calling program to know what happened...
 			raise e
+
+		ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
 		return (gid, name)
 	def __add_group(self, name, system, manual_gid=None, description = "",
 		groupSkel = "", batch=False, force=False):
-		"""Add a POSIX group, write the system data files. Return the gid of the group created."""
+		""" Add a POSIX group, write the system data files.
+			Return the gid of the group created."""
+
+		ltrace('groups', '> __add_group(%s)'%name)
 
 		try:
-			# Verify existance of group, don't use name_to_gid() else the exception is not KeyError.
-			# TODO: use "has_key()" and make these tests more readable (simple !!).
+			# Verify existance of group, don't use name_to_gid() else the
+			# exception is not KeyError.
+			# TODO: use "has_key()" and make these tests more readable.
 			existing_gid = GroupsController.name_cache[name]
 			if manual_gid is None:
 				# automatic GID selection upon creation.
 				if system and self.is_system_gid(existing_gid):
-					raise exceptions.AlreadyExistsException ("The group %s already exists." % styles.stylize(styles.ST_NAME, name))
+					raise exceptions.AlreadyExistsException(
+						"The group %s already exists." %
+						styles.stylize(styles.ST_NAME, name))
 				else:
-					raise exceptions.AlreadyExistsError("The group %s already exists but has not the same type. Please choose another name for your group." % styles.stylize(styles.ST_NAME, name))
+					raise exceptions.AlreadyExistsError(
+						'''The group %s already exists but has not the same '''
+						'''type. Please choose another name for your group.'''
+						% styles.stylize(styles.ST_NAME, name))
 			else:
 				# user has manually specified a GID to affect upon creation.
 				if system and self.is_system_gid(existing_gid):
 					if existing_gid == manual_gid:
-						raise exceptions.AlreadyExistsException ("The group %s already exists." % styles.stylize(styles.ST_NAME, name))
+						raise exceptions.AlreadyExistsException(
+							"The group %s already exists." %
+							styles.stylize(styles.ST_NAME, name))
 					else:
-						raise exceptions.AlreadyExistsError ("The group %s already exists with a different GID. Please check." % styles.stylize(styles.ST_NAME, name))
+						raise exceptions.AlreadyExistsError(
+							'''The group %s already exists with a different '''
+							'''GID. Please check.''' %
+							styles.stylize(styles.ST_NAME, name))
 				else:
-					raise exceptions.AlreadyExistsError ("The group %s already exists but has not the same type. Please choose another name for your group." % styles.stylize(styles.ST_NAME, name))
+					raise exceptions.AlreadyExistsError(
+						'''The group %s already exists but has not the same '''
+						'''type. Please choose another name for your group.'''
+						% styles.stylize(styles.ST_NAME, name))
 		except KeyError:
 			# the group doesn't exist, its name is not in the cache.
 			pass
 
-		# Due to a bug of adduser perl script, we must check that there is no user which has 'name' as login
-		# see https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970 for details
+		# Due to a bug of adduser perl script, we must check that there is
+		# no user which has 'name' as login. For details, see
+		# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
 		if GroupsController.users.login_cache.has_key(name) and not force:
-			raise exceptions.UpstreamBugException("A user account called %s already exists, this could trigger a bug"
-				" in the Ubuntu adduser code when deleting the user. Please choose another name for your group, or use --force argument if you really want to add this group on the system."
+			raise exceptions.UpstreamBugException('''A user account called '''
+				'''%s already exists, this could trigger a bug in the Ubuntu '''
+				'''adduser code when deleting the user. Please choose '''
+				'''another name for your group, or use --force argument if '''
+				'''you really want to add this group on the system.'''
 				% styles.stylize(styles.ST_NAME, name))
 
 		# Find a new GID
 		if manual_gid is None:
 			if system:
-				gid = pyutils.next_free(GroupsController.groups.keys(), self.configuration.groups.system_gid_min, self.configuration.groups.system_gid_max)
+				gid = pyutils.next_free(GroupsController.groups.keys(),
+					self.configuration.groups.system_gid_min,
+					self.configuration.groups.system_gid_max)
 			else:
-				gid = pyutils.next_free(GroupsController.groups.keys(), self.configuration.groups.gid_min, self.configuration.groups.gid_max)
+				gid = pyutils.next_free(GroupsController.groups.keys(),
+					self.configuration.groups.gid_min,
+					self.configuration.groups.gid_max)
 		else:
 			gid = manual_gid
 
@@ -427,6 +460,8 @@ class GroupsController:
 		GroupsController.backends[
 			GroupsController.groups[gid]['backend']
 			].save_group(gid)
+
+		ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
 		return gid
 	def DeleteGroup(self, name, del_users, no_archive, bygid = None, batch=False):
@@ -939,8 +974,6 @@ class GroupsController:
 						prefix_gid = temp_gid
 						del(temp_gid)
 
-						# FIXME: really needed ? not already done by __add_group() ?
-						self.WriteConf()
 						logging.info("Created system group %s." % styles.stylize(styles.ST_NAME, group_name))
 					except exceptions.AlreadyExistsException, e:
 						logging.notice(str(e))

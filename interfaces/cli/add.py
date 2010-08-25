@@ -397,23 +397,29 @@ def add_user_in_groups():
 def add_group():
 	""" Add a POSIX group. """
 
+	ltrace('add', '> add_group().')
+
 	configuration = LicornConfiguration()
-	users = UsersController(configuration)
+	users  = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 
-	if opts.description == '':
-		description = ''
-	else:
-		description = unicode(opts.description)
+	if opts.description:
+		opts.description = unicode(opts.description)
+
+	ltrace('add', 'group(s) to add: %s.' % opts.name)
 
 	for name in opts.name.split(','):
 		if name != '':
 			try:
-				groups.AddGroup(name, description = description,
+				ltrace('add', 'adding group %s.' % name)
+				groups.AddGroup(name, description = opts.description,
 					system = opts.system, groupSkel = opts.skel, gid = opts.gid,
 					permissive = opts.permissive, force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('Group %s already exists on the system.' % name)
+
+	ltrace('add', '< add_group().')
+
 def add_profile():
 	""" Add a system wide User profile. """
 
