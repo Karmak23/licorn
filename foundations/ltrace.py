@@ -29,11 +29,12 @@ trc['options']       = 0x0000000000000008
 trc['readers']       = 0x000000000000000f
 
 trc['core']          = 0x000000000000ff00
-trc['users']         = 0x0000000000000100
-trc['groups']        = 0x0000000000000200
-trc['configuration'] = 0x0000000000000400
-trc['machines']      = 0x0000000000000800
-trc['internet']      = 0x0000000000000f00
+trc['configuration'] = 0x0000000000000100
+trc['users']         = 0x0000000000000200
+trc['groups']        = 0x0000000000000400
+trc['profiles']      = 0x0000000000000800
+trc['machines']      = 0x0000000000000f00
+trc['internet']      = 0x0000000000001000
 
 trc['backends']      = 0x0000000000ff0000
 trc['ldap']          = 0x0000000000010000
@@ -50,6 +51,14 @@ trc['cache']         = 0x0000000800000000
 trc['crawler']       = 0x0000000f00000000
 trc['thread']        = 0x0000001000000000
 trc['wmi']           = 0x0000002000000000
+
+trc['interfaces']    = 0x00ffff0000000000
+trc['cli']           = 0x0000ff0000000000
+trc['add']           = 0x0000010000000000
+trc['mod']           = 0x0000020000000000
+trc['del']           = 0x0000040000000000
+trc['chk']           = 0x0000080000000000
+trc['get']           = 0x00000f0000000000
 
 
 from os   import getenv
