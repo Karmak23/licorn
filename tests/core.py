@@ -432,6 +432,11 @@ def clean_system():
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
+	# this is mandatory, else there could be some inconsistencies following
+	# backend (de)activation, and backup comparison could fail (false-negative)
+	# because of this.
+	execute(['chk', 'config', '-avvb'])
+
 	if mode == 'unix':
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
