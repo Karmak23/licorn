@@ -516,7 +516,7 @@ class GroupsController:
 		self.__delete_group('%s%s' % (
 			GroupsController.configuration.groups.guest_prefix, name))
 
-		self.CheckGroupSymlinks(gid = gid, group = name, delete=True,
+		self.CheckGroupSymlinks(gid=gid, group=name, delete=True,
 			batch=True)
 		self.__delete_group(name)
 
@@ -993,8 +993,7 @@ class GroupsController:
 
 			if not minimal:
 				all_went_ok &= self.CheckGroupSymlinks(prefix_gid,
-					strip_prefix=prefix, batch=batch, auto_answer=auto_answer,
-					force=false)
+					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
 
 		return all_went_ok
 
