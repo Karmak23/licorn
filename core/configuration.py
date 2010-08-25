@@ -1264,7 +1264,18 @@ class LicornConfiguration (object):
 				if batch or logging.ask_for_repair(
 					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
 						styles.stylize(styles.ST_NAME, group), auto_answer):
-					groups.AddGroup(group, system = True)
+					if group == 'users' and self.distro in (
+						LicornConfiguration.DISTRO_UBUNTU,
+						LicornConfiguration.DISTRO_DEBIAN):
+
+						# this is a special case: on deb.*, the "users" group
+						# has a reserved gid of 100. Many programs rely on this.
+						gid = 100
+					else:
+						gid = None
+
+					groups.AddGroup(group, system=True, gid=gid)
+					del  gid
 				else:
 					raise exceptions.LicornRuntimeError(
 						'''The system group « %s » is mandatory but doesn't '''
