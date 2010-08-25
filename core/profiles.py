@@ -12,8 +12,9 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, re, time, stat, shutil
 
-from licorn.foundations    import process, fsapi, hlstr, logging
-from licorn.foundations    import exceptions, styles, readers
+from licorn.foundations        import process, fsapi, hlstr, logging
+from licorn.foundations        import exceptions, styles, readers
+from licorn.foundations.ltrace import ltrace
 
 class ProfilesController:
 	""" representation of /etc/licorn/profiles.xml, compatible with gnome-system-tools.
@@ -150,8 +151,17 @@ class ProfilesController:
 	def AddProfile(self, name, group, quota = 1024, groups = [], comment = '', shell = None, skeldir = None, force_existing = False):
 		""" Add a user profile (self.groups is an instance of GroupsController and is needed to create the profile group). """
 
-		if comment is '':
-			comment = "The %s profile." % name
+		if comment == '':
+			comment = "The %s profile" % name
+
+		if group is None:
+			group = name
+
+		ltrace('profiles', '''AddProfile(%s): '''
+			'''group=%s, quota=%d, groups=%s, comment=%s, shell=%s, '''
+			'''skeldir=%s, force_existing=%s''' % (
+				styles.stylize(styles.ST_NAME, name), group, quota, groups,
+				comment, shell, skeldir, force_existing))
 
 		if not shell in self.configuration.users.shells:
 			raise exceptions.BadArgumentError("The shell you specified doesn't exist on this system. Valid shells are: %s." \
@@ -173,7 +183,7 @@ class ProfilesController:
 
 		create_group = True
 
-		if ProfilesController.groups.group_exists(name = group):
+		if ProfilesController.groups.group_exists(name=group):
 			if force_existing:
 				create_group = False
 			else:
@@ -191,11 +201,20 @@ class ProfilesController:
 
 		# Add the system group
 		if create_group:
-			self.groups.AddGroup(group, description = comment, system = True, skel = skeldir)
+			self.groups.AddGroup(group, description=comment, system=True,
+				groupSkel=skeldir)
 
 		try:
 			# Add the profile in the list
-			ProfilesController.profiles[group] = {'name': name, 'primary_group': group, 'comment': comment, 'skel_dir': skeldir, 'shell': shell, 'quota': quota, 'groups': groups}
+			ProfilesController.profiles[group] = {
+				'name': name,
+				'primary_group': group,
+				'comment': comment,
+				'skel_dir': skeldir,
+				'shell': shell,
+				'quota': quota,
+				'groups': groups}
+			self.WriteConf()
 		except Exception, e:
 			# Rollback
 			print "ROLLBACK because " + str(e)

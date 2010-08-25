@@ -375,7 +375,7 @@ def add_profile_parse_arguments(app):
 		action="store", type="string", dest="group", default = None,
 		help="Group name identifying the profile on the system (ie: «administrators», «power-users», «webmasters», «guests»). It should be a plural world and will become a system group. %s." % styles.stylize(styles.ST_IMPORTANT, "It is required"))
 	profile.add_option("--comment",
-		action="store", type="string", dest="comment", default = None,
+		action="store", type="string", dest="comment", default = '',
 		help="Description of the profile (free text).")
 	profile.add_option("--shell",
 		action="store", type="string", dest="shell", default = configuration.users.default_shell,
@@ -384,7 +384,7 @@ def add_profile_parse_arguments(app):
 		action="store", type="int", dest="quota", default = 1024,
 		help="User data quota in Mb (soft quota, defaults to %s)." % styles.stylize(styles.ST_DEFAULT, "1024"))
 	profile.add_option("--groups",
-		action="store", type="string", dest="groups", default = None,
+		action="store", type="string", dest="groups", default = [],
 		help="Groups users of this profile will become members of. Separated by commas without spaces.")
 	profile.add_option("--skel",
 		action="store", type="string", dest="skeldir", default = configuration.users.default_skel,

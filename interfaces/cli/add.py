@@ -14,6 +14,7 @@ import sys
 
 from licorn.foundations        import logging, exceptions, options, styles
 from licorn.foundations        import hlstr, fsapi, objects
+from licorn.foundations.ltrace import ltrace
 
 from licorn.core.configuration import LicornConfiguration
 from licorn.core.users         import UsersController
@@ -416,27 +417,29 @@ def add_group():
 def add_profile():
 	""" Add a system wide User profile. """
 
+	ltrace('add', '> add_profile().')
+
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
 
-	_groups = []
-	if opts.groups is not None:
-		_groups = opts.groups.split(',')
+	if opts.groups != []:
+		opts.groups = opts.groups.split(',')
 
 	if opts.name:
-		name = unicode(opts.name)
-	else:
-		name = None
+		opts.name = unicode(opts.name)
 
 	if opts.comment:
-		comment = unicode(opts.comment)
-	else:
-		comment = None
+		opts.comment = unicode(opts.comment)
 
-	profiles.AddProfile(name, group = opts.group, quota = opts.quota, groups = _groups, comment = comment, shell = opts.shell, skeldir = opts.skeldir, force_existing = opts.force_existing)
+	profiles.AddProfile(opts.name, group=opts.group, quota=opts.quota,
+		groups=opts.groups, comment=opts.comment, shell=opts.shell,
+		skeldir=opts.skeldir, force_existing=opts.force_existing)
 	profiles.WriteConf(configuration.profiles_config_file)
+
+	ltrace('add', '< add_profile().')
+
 def add_keyword():
 	""" Add a keyword on the system. """
 	configuration = LicornConfiguration()
