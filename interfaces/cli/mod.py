@@ -138,14 +138,24 @@ def modify_profile():
 	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.group is None:
-		raise exceptions.BadArgumentError("Which profile do you want to modify ? Specify it with --group . Use --help for details.")
+		if opts.name is None:
+			raise exceptions.BadArgumentError('''Which profile do you want '''
+				'''to modify ? Specify it with --group or --name. '''
+				'''Use --help for details.''')
+		else:
+			try:
+				#assume we got the name
+				opts.group = profiles.name_to_group(opts.name)
+			except:
+				# if we haven't got the name, assume we got the group.
+				opts.group = opts.name
 
 	if opts.newname is not None:
 		profiles.ChangeProfileName(opts.group, unicode(opts.newname))
 	if opts.newgroup is not None:
 		profiles.ChangeProfileGroup(opts.group, opts.newgroup)
-	if opts.newcomment is not None:
-		profiles.ChangeProfileComment(opts.group, unicode(opts.newcomment))
+	if opts.description is not None:
+		profiles.ChangeProfileComment(opts.group, unicode(opts.description))
 	if opts.newshell is not None:
 		profiles.ChangeProfileShell(opts.group, opts.newshell)
 	if opts.newquota is not None:
@@ -154,17 +164,19 @@ def modify_profile():
 		profiles.ChangeProfileSkel(opts.group, opts.newskel)
 
 	if opts.groups_to_add is not None:
-		profiles.AddGroupsInProfile(opts.group, opts.groups_to_add.split(','))
+		added_groups = profiles.AddGroupsInProfile(opts.group,
+			opts.groups_to_add.split(','))
 		if opts.instant_apply:
 			prim_memb = groups.primary_members(opts.group)
-			for group in opts.groups_to_add.split(','):
+			for group in added_groups:
 				groups.AddUsersInGroup(group, prim_memb, batch=opts.no_sync)
 
 	if opts.groups_to_del is not None:
-		profiles.DeleteGroupsFromProfile(opts.group, opts.groups_to_del.split(','))
+		deleted_groups = profiles.DeleteGroupsFromProfile(opts.group,
+			opts.groups_to_del.split(','))
 		if opts.instant_apply:
 			prim_memb = groups.primary_members(opts.group)
-			for group in opts.groups_to_del.split(','):
+			for group in deleted_groups:
 				groups.RemoveUsersFromGroup(group, prim_memb, batch=opts.no_sync)
 
 	if opts.no_sync:
@@ -326,7 +338,7 @@ if __name__ == "__main__":
 			elif mode == 'profile':
 				(opts, args) = argparser.modify_profile_parse_arguments(_app)
 				if len(args) == 2:
-					opts.group = args[1]
+					opts.name = args[1]
 				options.SetFrom(opts)
 				modify_profile()
 			elif mode == 'keyword':

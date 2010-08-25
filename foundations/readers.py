@@ -147,22 +147,30 @@ def profiles_conf_dict(filename):
 
 		def parse_profile(profile):
 			name = getProfileData(profile, "name").pop()
-			comment = getProfileData(profile, "comment").pop()
-			skel_dir = getProfileData(profile, "skel_dir").pop()
-			shell = getProfileData(profile, "shell").pop()
-			primarygroup = getProfileData(profile, "group").pop()
+			comment = getProfileData(profile, "description").pop()
+			skel_dir = getProfileData(profile, "profileSkel").pop()
+			shell = getProfileData(profile, "profileShell").pop()
+			primarygroup = getProfileData(profile, "groupName").pop()
 			# «groups» XML tag, contains nothing except «group» children
 			try:
-				groupselement = profile.getElementsByTagName("groups").pop()
+				groupselement = profile.getElementsByTagName("memberGid").pop()
 				# many groups, keep a list, don't pop()
-				groups = getProfileData(groupselement, "group")
+				groups = getProfileData(groupselement, "groupName")
 			except IndexError:
 				# this profile has no default groups to set users in.
 				# this is awesome, but this could be normal.
 				groups = []
 
-			quota = getProfileData(profile, "quota").pop()
-			confdict[primarygroup] = {'name': name, 'comment': comment, 'skel_dir': skel_dir, 'primary_group': primarygroup, 'groups': groups, 'quota': quota, 'shell': shell}
+			quota = getProfileData(profile, "profileQuota").pop()
+			confdict[primarygroup] = {
+				'name': name,
+				'description': comment,
+				'profileSkel': skel_dir,
+				'groupName': primarygroup,
+				'memberGid': groups,
+				'profileQuota': quota,
+				'profileShell': shell
+				}
 
 		map(parse_profile, dom.getElementsByTagName("profile"))
 
@@ -181,11 +189,11 @@ def getProfileData(rootelement, leaftag, isoptional=False):
 	""" Return a list of content of a leaftag (tag which has no child)
 		which has rootelement as parent.
 	"""
-	empty_allowed_tags = [ 'comment' ]
+	empty_allowed_tags = [ 'description' ]
 	data = []
 	tags = rootelement.getElementsByTagName(leaftag)
 
-	if tags == [] and rootelement.nodeName != "groups":
+	if tags == [] and rootelement.nodeName != "memberGid":
 		raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> was not found.")
 
 	for e in tags:
@@ -194,7 +202,7 @@ def getProfileData(rootelement, leaftag, isoptional=False):
 				data.append(unicode(node.data))
 
 	if data == []:
-		if leaftag not in empty_allowed_tags and rootelement.nodeName != "groups":
+		if leaftag not in empty_allowed_tags and rootelement.nodeName != "memberGid":
 			raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> must not have an empty value.")
 		else:
 			data = ['']

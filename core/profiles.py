@@ -20,6 +20,8 @@ class ProfilesController:
 	""" representation of /etc/licorn/profiles.xml, compatible with gnome-system-tools.
 	"""
 	profiles      = None # Dictionary
+	name_cache    = None  # dict
+
 	users         = None # UsersController
 	groups        = None # GroupsController
 	configuration = None # LicornConfiguration
@@ -44,35 +46,49 @@ class ProfilesController:
 
 		self.checkDefaultProfile()
 	def reload(self):
-		ProfilesController.profiles = readers.profiles_conf_dict(self.configuration.profiles_config_file)
+		ProfilesController.profiles   = readers.profiles_conf_dict(
+			self.configuration.profiles_config_file)
+		ProfilesController.name_cache = {}
+
+		# build the name cache a posteriori
+		for profile in self.profiles:
+			ProfilesController.name_cache[
+				ProfilesController.profiles[profile]['name']] = profile
 	def checkDefaultProfile(self):
 		"""If no profile exists on the system, create a default one with system group "users"."""
 
 		try:
 			if self.profiles == {}:
-				logging.warning('adding a default profile on the system (this is mandatory).')
-				# Create a default profile with 'users' as default primary group, and use the Debian pre-existing group
-				# without complaining if it exists.
+				logging.warning(
+				'Adding a default profile on the system (this is mandatory).')
+				# Create a default profile with 'users' as default primary
+				# group, and use the Debian pre-existing group without
+				# complaining if it exists.
 				# TODO: translate/i18n these names ?
 				self.AddProfile('Users', 'users',
-					comment = 'Standard desktop users',
-					shell = self.configuration.users.default_shell,
-					skeldir  = self.configuration.users.default_skel,
+					description = 'Standard desktop users',
+					profileShell = self.configuration.users.default_shell,
+					profileSkel = self.configuration.users.default_skel,
 					force_existing = True)
 
-				self.WriteConf()
 		except (OSError, IOError), e:
 			# if 'permission denied', likely to be that we are not root. pass.
-			if e.errno != 13: raise e
+			if e.errno != 13:
+				raise e
 	def WriteConf(self, filename = None):
 		""" Write internal data into filename. """
 
 		if filename is None:
 			filename = ProfilesController.configuration.profiles_config_file
 
+		ltrace('profiles', '> WriteConf(%s).' % filename)
+
 		conffile = open(filename , "w")
 		conffile.write(self.ExportXML())
 		conffile.close()
+
+		ltrace('profiles', '< WriteConf().')
+
 	def Select(self, filter_string):
 		""" Filter profiles on different criteria. """
 
@@ -107,14 +123,29 @@ class ProfilesController:
 		#
 
 		for profile in profiles:
-			data += " %s Profile %s:\n" % (styles.stylize(styles.ST_LIST_L1, '*'), ProfilesController.profiles[profile]['name']) \
-				+ "	Group : " + ProfilesController.profiles[profile]['primary_group'] + "\n" \
-				+ "	Comment: " + ProfilesController.profiles[profile]['comment'] + "\n" \
-				+ "	Skeldir: " + ProfilesController.profiles[profile]['skel_dir'] + "\n" \
-				+ "	Home  : " + self.configuration.users.base_path + "\n" \
-				+ "	Shell : " + ProfilesController.profiles[profile]['shell'] + "\n" \
-				+ "	Quota : " + str(ProfilesController.profiles[profile]['quota']) + " Mo\n" \
-				+ "	Groups: " + ", ".join(ProfilesController.profiles[profile]['groups']) + "\n"
+
+			data += ''' %s Profile %s:
+	Group: %s(%d)
+	description: %s
+	Home: %s
+	Default skel: %s
+	Default shell: %s
+	Quota: %sMb%s
+''' % (
+		styles.stylize(styles.ST_LIST_L1, '*'),
+		ProfilesController.profiles[profile]['name'],
+		ProfilesController.profiles[profile]['groupName'],
+		ProfilesController.groups.name_to_gid(
+			ProfilesController.profiles[profile]['groupName']),
+		ProfilesController.profiles[profile]['description'],
+		ProfilesController.profiles[profile]['profileSkel'],
+		ProfilesController.configuration.users.base_path,
+		ProfilesController.profiles[profile]['profileShell'],
+		ProfilesController.profiles[profile]['profileQuota'],
+		'\n	Groups: %s' % \
+			", ".join(ProfilesController.profiles[profile]['memberGid']) \
+			if ProfilesController.profiles[profile]['memberGid'] != [] else ''
+			)
 		return data
 	def ExportXML(self):
 		""" Export the user profiles list to XML. """
@@ -129,57 +160,83 @@ class ProfilesController:
 
 		# TODO: make all these "+s become "%s"
 
+
 		for profile in profiles:
-			data += "\t<profile>\n" \
-					+ "\t\t<name>"     + ProfilesController.profiles[profile]['name']          + "</name>\n"     \
-					+ "\t\t<comment>"  + ProfilesController.profiles[profile]['comment']       + "</comment>\n"  \
-					+ "\t\t<home>"     + self.configuration.users.base_path              + "</home>\n"     \
-					+ "\t\t<quota>"    + str(ProfilesController.profiles[profile]['quota'])    + "</quota>\n"    \
-					+ "\t\t<shell>"    + ProfilesController.profiles[profile]['shell']         + "</shell>\n"    \
-					+ "\t\t<skel_dir>" + ProfilesController.profiles[profile]['skel_dir']      + "</skel_dir>\n" \
-					+ "\t\t<group>"    + ProfilesController.profiles[profile]['primary_group'] + "</group>\n"
-			if ProfilesController.profiles[profile]['groups']:
-				groups = []
-				for g in ProfilesController.profiles[profile]['groups']:
-					if g != '':
-						groups.append("\t\t\t<group>%s</group>" % g)
-				data += "\t\t<groups>\n%s\t\t</groups>\n" % "\n".join(groups)
-			data += "\t</profile>\n"
+			data += '''	<profile>
+		<name>%s</name>
+		<groupName>%s</groupName>
+		<gidNumber>%d</gidNumber>
+		<description>%s</description>
+		<profileHome>%s</profileHome>
+		<profileQuota>%s</profileQuota>
+		<profileSkel>%s</profileSkel>
+		<profileShell>%s</profileShell>
+		%s
+	</profile>\n''' % (
+			ProfilesController.profiles[profile]['name'],
+			ProfilesController.profiles[profile]['groupName'],
+			ProfilesController.groups.name_to_gid(
+				ProfilesController.profiles[profile]['groupName']),
+			ProfilesController.profiles[profile]['description'] ,
+			ProfilesController.configuration.users.base_path,
+			ProfilesController.profiles[profile]['profileQuota'],
+			ProfilesController.profiles[profile]['profileSkel'],
+			ProfilesController.profiles[profile]['profileShell'],
+			'''<memberGid>%s</memberGid>''' % \
+				"\n".join( [ "\t\t\t<groupName>%s</groupName>" % x \
+					for x in ProfilesController.profiles[profile]['memberGid'] ]) \
+					if ProfilesController.profiles[profile]['memberGid'] != []	\
+					else ''
+			)
+
 		data += "</profiledb>\n"
 
 		return data
-	def AddProfile(self, name, group, quota = 1024, groups = [], comment = '', shell = None, skeldir = None, force_existing = False):
-		""" Add a user profile (self.groups is an instance of GroupsController and is needed to create the profile group). """
+	def AddProfile(self, name, group, profileQuota=1024, groups=[],
+		description='', profileShell=None, profileSkel=None, force_existing=False):
+		""" Add a user profile (self.groups is an instance of GroupsController
+			and is needed to create the profile group). """
 
-		if comment == '':
-			comment = "The %s profile" % name
+		if description == '':
+			description = "The %s profile" % name
 
 		if group is None:
 			group = name
 
 		ltrace('profiles', '''AddProfile(%s): '''
-			'''group=%s, quota=%d, groups=%s, comment=%s, shell=%s, '''
-			'''skeldir=%s, force_existing=%s''' % (
-				styles.stylize(styles.ST_NAME, name), group, quota, groups,
-				comment, shell, skeldir, force_existing))
+			'''group=%s, profileQuota=%d, groups=%s, description=%s, '''
+			'''profileShell=%s, profileSkel=%s, force_existing=%s''' % (
+				styles.stylize(styles.ST_NAME, name), group, profileQuota,
+				groups, description, profileShell, profileSkel, force_existing))
 
-		if not shell in self.configuration.users.shells:
-			raise exceptions.BadArgumentError("The shell you specified doesn't exist on this system. Valid shells are: %s." \
-				% str(self.configuration.users.shells))
+		if not profileShell in self.configuration.users.shells:
+			raise exceptions.BadArgumentError('''The shell you specified '''
+				'''doesn't exist on this system. Valid shells are: %s.''' %
+				str(self.configuration.users.shells))
 
-		if not skeldir in self.configuration.users.skels:
-			raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are: %s." \
-				% str(self.configuration.users.skels))
+		if not profileSkel in self.configuration.users.skels:
+			raise exceptions.BadArgumentError('''The skel you specified '''
+				'''doesn't exist on this system. Valid skels are: %s.''' %
+				str(self.configuration.users.skels))
 
 		if not hlstr.cregex['profile_name'].match(name):
-			raise exceptions.BadArgumentError, "Malformed profile Name « %s », must match /%s/i." % (name, hlstr.regex['profile_name'])
+			raise exceptions.BadArgumentError(
+			"Malformed profile Name « %s », must match /%s/i." % (
+				name, hlstr.regex['profile_name']))
+
 		if not hlstr.cregex['group_name'].match(group):
-			raise exceptions.BadArgumentError, "Malformed profile group name « %s », must match /%s/i." % (group, hlstr.regex['group_name'])
-		if not hlstr.cregex['description'].match(comment):
-			raise exceptions.BadArgumentError, "Malformed profile description « %s », must match /%s/i." % (comment, hlstr.regex['description'])
+			raise exceptions.BadArgumentError(
+				"Malformed profile group name « %s », must match /%s/i." % (
+					group, hlstr.regex['group_name']))
+
+		if not hlstr.cregex['description'].match(description):
+			raise exceptions.BadArgumentError(
+				"Malformed profile description « %s », must match /%s/i." % (
+					description, hlstr.regex['description']))
 
 		if group in ProfilesController.profiles.keys():
-			raise exceptions.AlreadyExistsException, "The profile '" + group + "' already exists."
+			raise exceptions.AlreadyExistsException(
+			"The profile '%s' already exists." % group)
 
 		create_group = True
 
@@ -187,7 +244,10 @@ class ProfilesController:
 			if force_existing:
 				create_group = False
 			else:
-				raise exceptions.AlreadyExistsError('A system group named "%s" already exists. Please choose another group name for your profile.' \
+				raise exceptions.AlreadyExistsError(
+					'''A system group named "%s" already exists.'''
+					''' Please choose another group name for your profile,'''
+					''' or use --force-existing to override.'''
 					% group)
 
 		# Verify groups
@@ -195,31 +255,31 @@ class ProfilesController:
 			try:
 				gid = self.groups.name_to_gid(g)
 			except:
-				logging.info("The group '%s' doesn't exist, ignored." % g)
-				index = groups.index(g)
-				del(groups[index])
+				logging.notice("The group '%s' doesn't exist, ignored." % g)
+				groups.remove(g)
 
 		# Add the system group
 		if create_group:
-			self.groups.AddGroup(group, description=comment, system=True,
-				groupSkel=skeldir)
+			self.groups.AddGroup(group, description=description, system=True,
+				groupSkel=profileSkel)
 
-		try:
+		#try:
 			# Add the profile in the list
-			ProfilesController.profiles[group] = {
-				'name': name,
-				'primary_group': group,
-				'comment': comment,
-				'skel_dir': skeldir,
-				'shell': shell,
-				'quota': quota,
-				'groups': groups}
-			self.WriteConf()
-		except Exception, e:
+		ProfilesController.profiles[group] = {
+			'name': name,
+			'groupName': group,
+			'description': description,
+			'profileSkel': profileSkel,
+			'profileShell': profileShell,
+			'profileQuota': profileQuota,
+			'memberGid': groups
+			}
+		self.WriteConf()
+		#except Exception, e:
 			# Rollback
-			print "ROLLBACK because " + str(e)
-			self.groups.DeleteGroup(self, group)
-			raise e
+		#	print "ROLLBACK because " + str(e)
+			#self.groups.DeleteGroup(self, group)
+		#	raise e
 	def DeleteProfile(self, group, del_users, no_archive, allusers, batch=False):
 		""" Delete a user profile (self.groups is an instance of GroupsController and is needed to delete the profile group)
 		"""
@@ -231,7 +291,7 @@ class ProfilesController:
 			exceptions.LicornException, "The profile `%s' doesn't exist." % group
 
 		try:
-			self.groups.DeleteGroup(ProfilesController.profiles[group]['primary_group'], del_users, no_archive, batch=batch)
+			self.groups.DeleteGroup(ProfilesController.profiles[group]['groupName'], del_users, no_archive, batch=batch)
 		except exceptions.LicornRuntimeException:
 			# don't fail if the group doesn't exist, it could have been previously deleted.
 			# just try tro continue and delete the profile.
@@ -254,36 +314,36 @@ class ProfilesController:
 		# FIXME: test the skel properly from configuration.
 		if not os.path.isabs(skel) or not os.path.isdir(skel):
 			raise exceptions.AbsolutePathError(skel)
-		ProfilesController.profiles[group]['skel_dir'] = skel
-	def ChangeProfileShell(self, group, shell):
+		ProfilesController.profiles[group]['profileSkel'] = skel
+	def ChangeProfileShell(self, group, profileShell):
 		""" Setter
 		"""
 		if group is None:
 			raise exceptions.BadArgumentError((logging.SYSP_SPECIFY_GROUP))
-		if shell is None:
-			raise exceptions.BadArgumentError((logging.SYSP_SPECIFY_SHELL))
-		if not os.path.isabs(shell) or not os.path.exists(shell):
-			raise exceptions.AbsolutePathError(shell)
-		ProfilesController.profiles[group]['shell'] = shell
-	def ChangeProfileQuota(self, group, quota):
+		if profileShell is None:
+			raise exceptions.BadArgumentError((logging.SYSP_SPECIFY_profileShell))
+		if not os.path.isabs(profileShell) or not os.path.exists(profileShell):
+			raise exceptions.AbsolutePathError(profileShell)
+		ProfilesController.profiles[group]['profileShell'] = profileShell
+	def ChangeProfileQuota(self, group, profileQuota):
 		""" Setter
 		"""
 		if group is None:
 			raise exceptions.BadArgumentError, "You must specify a group"
-		if quota is None:
-			raise exceptions.BadArgumentError, "You must specify a quota"
-		ProfilesController.profiles[group]['quota'] = quota
-	def ChangeProfileComment(self, group, comment):
-		""" Change profile's comment. """
+		if profileQuota is None:
+			raise exceptions.BadArgumentError, "You must specify a profileQuota"
+		ProfilesController.profiles[group]['profileQuota'] = profileQuota
+	def ChangeProfiledescription(self, group, description):
+		""" Change profile's description. """
 
 		if group is None:
 			raise exceptions.BadArgumentError, "You must specify a group."
-		if comment is None:
-			raise exceptions.BadArgumentError, "You must specify a comment."
-		if not hlstr.cregex['description'].match(str(comment)):
-			raise exceptions.BadArgumentError, "Malformed profile comment « %s », must match /%s/i." % (comment, hlstr.regex['description'])
+		if description is None:
+			raise exceptions.BadArgumentError, "You must specify a description."
+		if not hlstr.cregex['description'].match(str(description)):
+			raise exceptions.BadArgumentError, "Malformed profile description « %s », must match /%s/i." % (description, hlstr.regex['description'])
 
-		ProfilesController.profiles[group]['comment'] = [comment]
+		ProfilesController.profiles[group]['description'] = [description]
 	def ChangeProfileName(self, group, newname):
 		""" Setter
 		"""
@@ -301,7 +361,7 @@ class ProfilesController:
 		if newgroup is None:
 			raise exceptions.BadArgumentError, "You must specify a new group"
 
-		self.groups.RenameGroup(self, ProfilesController.profiles[group]['primary_group'], newgroup)
+		self.groups.RenameGroup(self, ProfilesController.profiles[group]['groupName'], newgroup)
 		# Rename group
 	def AddGroupsInProfile(self, group, groups):
 		""" Add groups in the groups list of the profile 'group'
@@ -311,28 +371,44 @@ class ProfilesController:
 		if groups is None:
 			raise exceptions.BadArgumentError, "You must specify a list of groups"
 
+		added_groups = []
+
 		for g in groups:
-			if g in ProfilesController.profiles[group]['groups']:
-				logging.progress("Group %s is already in groups of profile %s, skipped." % (styles.stylize(styles.ST_NAME, g), styles.stylize(styles.ST_NAME, group)))
+			if g in ProfilesController.profiles[group]['memberGid']:
+				logging.info(
+					"Group %s is already in groups of profile %s, skipped." % (
+					styles.stylize(styles.ST_NAME, g),
+					styles.stylize(styles.ST_NAME, group)))
 			else:
 				try:
 					self.groups.name_to_gid(g)
-				except:
-					logging.warning("Group %s doesn't exist, ignored." % styles.stylize(styles.ST_NAME, g))
+				except exceptions.LicornRuntimeException:
+					logging.warning("Group %s doesn't exist, ignored." %
+						styles.stylize(styles.ST_NAME, g))
 				else:
-					ProfilesController.profiles[group]['groups'].append(g)
+					ProfilesController.profiles[group]['memberGid'].append(g)
+					added_groups.append(g)
+		self.WriteConf()
+		return added_groups
 	def DeleteGroupsFromProfile(self, profile_group, groups_to_del):
 		""" Delete groups from the groups list of the profile 'profile_group'. """
 
 		if profile_group is None:
 			raise exceptions.BadArgumentError, "You must specify a group"
 
+		deleted_groups = []
+
 		for g in groups_to_del:
-			if g in ProfilesController.profiles[profile_group]['groups']:
-				index = ProfilesController.profiles[profile_group]['groups'].index(g)
-				del(ProfilesController.profiles[profile_group]['groups'][index])
+			if g in ProfilesController.profiles[profile_group]['memberGid']:
+				ProfilesController.profiles[profile_group]['memberGid'].remove(g)
+				deleted_groups.append(g)
 			else:
-				logging.progress("Group %s is not in groups of profile %s, ignored." % (styles.stylize(styles.ST_NAME, g), styles.stylize(styles.ST_NAME, profile_group)))
+				logging.notice(
+					'''Group %s is not in groups of profile %s, ignored.''' % (
+						styles.stylize(styles.ST_NAME, g),
+						styles.stylize(styles.ST_NAME, profile_group)))
+		self.WriteConf()
+		return deleted_groups
 	def ReapplyProfileOfUsers(self, users, apply_groups=False, apply_skel=False, batch=False, auto_answer = None):
 		""" Reapply the profile of users.
 			If apply_groups is True, each user will be put in groups listed in his profile
@@ -350,13 +426,13 @@ class ProfilesController:
 			else:
 				# search u's profile to
 				for p in ProfilesController.profiles:
-					if ProfilesController.users.users[uid]['gidNumber'] == ProfilesController.groups.name_to_gid(ProfilesController.profiles[p]['primary_group']):
+					if ProfilesController.users.users[uid]['gidNumber'] == ProfilesController.groups.name_to_gid(ProfilesController.profiles[p]['groupName']):
 						if apply_groups:
-							for g in ProfilesController.profiles[p]['groups']:
+							for g in ProfilesController.profiles[p]['memberGid']:
 								ProfilesController.groups.AddUsersInGroup(g, [u])
 						if apply_skel:
 
-							logging.progress('Applying skel %s to user %s.' % (styles.stylize(styles.ST_PATH, ProfilesController.profiles[p]['skel_dir']), styles.stylize(styles.ST_NAME, u)))
+							logging.progress('Applying skel %s to user %s.' % (styles.stylize(styles.ST_PATH, ProfilesController.profiles[p]['profileSkel']), styles.stylize(styles.ST_NAME, u)))
 
 							def install_to_user_homedir(entry, user_home = ProfilesController.users.users[uid]['homeDirectory']):
 								""" Copy a file/dir/link passed as an argument to the user home_dir,
@@ -394,8 +470,8 @@ class ProfilesController:
 								else:
 									copy_profile_entry()
 
-							#map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['skel_dir'], maxdepth = 1, type = stat.S_IFLNK|stat.S_IFDIR|stat.S_IFREG))
-							map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['skel_dir'], mindepth = 1, maxdepth = 2))
+							#map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['profileSkel'], maxdepth = 1, type = stat.S_IFLNK|stat.S_IFDIR|stat.S_IFREG))
+							map(install_to_user_homedir, fsapi.minifind(path = ProfilesController.profiles[p]['profileSkel'], mindepth = 1, maxdepth = 2))
 							ProfilesController.users.CheckUsers([ProfilesController.users.users[uid]['login']], batch = batch, auto_answer = auto_answer)
 
 						# after having applyed the profile, break ; because a given user has only ONE profile.
@@ -403,23 +479,32 @@ class ProfilesController:
 	def change_group_name_in_profiles(self, name, new_name):
 		""" Change a group's name in the profiles groups list """
 		for profile in ProfilesController.profiles:
-			for group in ProfilesController.profiles[profile]['groups']:
+			for group in ProfilesController.profiles[profile]['memberGid']:
 				if group == name:
-					index = ProfilesController.profiles[profile]['groups'].index(group)
-					ProfilesController.profiles[profile]['groups'][index] = new_name
-			if name in ProfilesController.profiles[profile]['primary_group']:
-				ProfilesController.profiles[profile]['primary_group'] = [ new_name ]
+					index = ProfilesController.profiles[profile]['memberGid'].index(group)
+					ProfilesController.profiles[profile]['memberGid'][index] = new_name
+			if name in ProfilesController.profiles[profile]['groupName']:
+				ProfilesController.profiles[profile]['groupName'] = [ new_name ]
 		self.WriteConf(self.configuration.profiles_config_file)
 	def delete_group_in_profiles(self, name):
 		""" Delete a group in the profiles groups list """
 		for profile in ProfilesController.profiles:
-			for group in ProfilesController.profiles[profile]['groups']:
+			for group in ProfilesController.profiles[profile]['memberGid']:
 				if group == name:
-					index = ProfilesController.profiles[profile]['groups'].index(group)
-					del(ProfilesController.profiles[profile]['groups'][index])
+					index = ProfilesController.profiles[profile]['memberGid'].index(group)
+					del(ProfilesController.profiles[profile]['memberGid'][index])
 
 		self.WriteConf()
 
 	@staticmethod
 	def profile_exists(profile):
 		return ProfilesController.profiles.has_key(profile)
+	@staticmethod
+	def name_to_group(name):
+		""" Return the group of the profile 'name'."""
+		try:
+			# use the cache, Luke !
+			return ProfilesController.name_cache[name]
+		except KeyError:
+			raise exceptions.LicornRuntimeException(
+				"The profile '%s' doesn't exist." % name)

@@ -144,6 +144,18 @@ def delete_profile():
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
 
+	if opts.group is None:
+		if opts.name is None:
+			raise exceptions.BadArgumentError('''Which profile do you want '''
+				'''to modify ? Specify it with --group or --name. '''
+				'''Use --help for details.''')
+		else:
+			try:
+				#assume we got the name
+				opts.group = profiles.name_to_group(opts.name)
+			except:
+				# if we haven't got the name, assume we got the group.
+				opts.group = opts.name
 
 	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users,
 		batch=opts.no_sync)
@@ -228,7 +240,7 @@ if __name__ == "__main__":
 			elif mode == 'profile':
 				(opts, args) = argparser.delete_profile_parse_arguments(_app)
 				if opts.group is None and len(args) == 2:
-					opts.group = args[1]
+					opts.name = args[1]
 				options.SetFrom(opts)
 				delete_profile()
 

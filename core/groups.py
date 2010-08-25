@@ -1291,10 +1291,15 @@ class GroupsController:
 		except KeyError:
 			try:
 				int(name)
-				logging.warning('''You passed a gid to name_to_gid(): %s (guess its name is "%s").''' % (styles.stylize(styles.ST_UGID, name), styles.stylize(styles.ST_NAME, GroupsController.groups[name]['name'])))
+				logging.warning('''You passed a gid to name_to_gid(): '''
+					'''%s (guess its name is "%s").''' % (
+					styles.stylize(styles.ST_UGID, name),
+					styles.stylize(styles.ST_NAME,
+						GroupsController.groups[name]['name'])))
 			except ValueError:
 				pass
-			raise exceptions.LicornRuntimeException, "The group '%s' doesn't exist." % name
+			raise exceptions.LicornRuntimeException(
+				"The group '%s' doesn't exist." % name)
 
 	@staticmethod
 	def is_system_gid(gid):

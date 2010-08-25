@@ -357,7 +357,7 @@ def add_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « add profile »."""
 
 
-	usage_text = "\n\t%s profile --name=<nom> --group=<groupe> [--comment=<commentaire>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s profile --name=<nom> --group=<groupName> [--description=<descr>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--shell=<shell>] [--quota=<quota>] [--skel=<nom_squelette>]\n" \
 		+ "\t\t[--groups=<groupe1>[[,groupe2][,...]] [--force-existing]"
 
@@ -374,8 +374,8 @@ def add_profile_parse_arguments(app):
 	profile.add_option("--group",
 		action="store", type="string", dest="group", default = None,
 		help="Group name identifying the profile on the system (ie: «administrators», «power-users», «webmasters», «guests»). It should be a plural world and will become a system group. %s." % styles.stylize(styles.ST_IMPORTANT, "It is required"))
-	profile.add_option("--comment",
-		action="store", type="string", dest="comment", default = '',
+	profile.add_option("--description",
+		action="store", type="string", dest="description", default = '',
 		help="Description of the profile (free text).")
 	profile.add_option("--shell",
 		action="store", type="string", dest="shell", default = configuration.users.default_shell,
@@ -778,17 +778,17 @@ def modify_profile_parse_arguments(app):
 	profile.add_option("--rename-group",
 		action="store", type="string", dest="newgroup", default = None,
 		help="Rename primary group.")
-	profile.add_option("--comment",
-		action="store", type="string", dest="newcomment", default = None,
-		help="Change profile's comment.")
+	profile.add_option("--description",
+		action="store", type="string", dest="description", default = None,
+		help="Change profile's description.")
 	profile.add_option("--shell",
-		action="store", type="string", dest="newshell", default = configuration.users.default_shell,
+		action="store", type="string", dest="newshell", default = None,
 		help="Change profile shell (defaults to %s if you specify --shell without argument)" % styles.stylize(styles.ST_DEFAULT, configuration.users.default_shell))
 	profile.add_option("--quota",
-		action="store", type="int", dest="newquota", default = 1024,
+		action="store", type="int", dest="newquota", default = None,
 		help="Change profile's user quota (in Mb, defaults to %s if you specify --quota without argument)." % styles.stylize(styles.ST_DEFAULT, "1024"))
 	profile.add_option("--skel",
-		action="store", type="string", dest="newskel", default = configuration.users.default_skel,
+		action="store", type="string", dest="newskel", default = None,
 		help="Change profile skel (specify a skel dir as an absolute pathname, defaults to %s if you give --skel without argument)." % styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
 	profile.add_option("--add-groups",
 		action="store", type="string", dest="groups_to_add", default = None,

@@ -436,13 +436,13 @@ def add_profile():
 	if opts.name:
 		opts.name = unicode(opts.name)
 
-	if opts.comment:
-		opts.comment = unicode(opts.comment)
+	if opts.description:
+		opts.description = unicode(opts.description)
 
-	profiles.AddProfile(opts.name, group=opts.group, quota=opts.quota,
-		groups=opts.groups, comment=opts.comment, shell=opts.shell,
-		skeldir=opts.skeldir, force_existing=opts.force_existing)
-	profiles.WriteConf(configuration.profiles_config_file)
+	profiles.AddProfile(opts.name, group=opts.group, profileQuota=opts.quota,
+		groups=opts.groups, description=opts.description,
+		profileShell=opts.shell, profileSkel=opts.skeldir,
+		force_existing=opts.force_existing)
 
 	ltrace('add', '< add_profile().')
 
