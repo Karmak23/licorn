@@ -55,45 +55,46 @@ wpid_path     = '/var/run/licornd-wmi.pid'
 wlog_path     = '/var/log/licornd-wmi.log'
 dname         = 'licornd'
 
-def terminate_cleanly(signum, frame, threads = []):
+def terminate_cleanly(signum, frame, pname, threads = []):
 	""" Close threads, wipe pid files, clean everything before closing. """
 
 	if signum is None:
-		logging.progress("%s/master: cleaning up and stopping threads..." % \
-			dname)
+		logging.progress("%s: cleaning up and stopping threads…" % \
+			pname)
 	else:
-		logging.warning('%s/master: signal %s received, shutting down...' % (
-			dname, signum))
+		logging.notice('%s: signal %s received, shutting down…' % (
+			pname, signum))
 
 	for th in threads:
 		th.stop()
 
 	configuration.CleanUp()
 
-	try:
-		for pid_file in (pid_path, wpid_path):
+	for pid_file in (pid_path, wpid_path):
+		try:
 			if os.path.exists(pid_file):
 				os.unlink(pid_file)
-	except (OSError, IOError), e:
-		logging.warning("Can't remove %s (was: %s)." % (
-			styles.stylize(styles.ST_PATH, pid_path), e))
+		except (OSError, IOError), e:
+			logging.warning("Can't remove %s (was: %s)." % (
+				styles.stylize(styles.ST_PATH, pid_file), e))
 
-	logging.progress("%s/master: joining threads." % dname)
+	if threads != []:
+		logging.progress("%s: joining threads." % pname)
 
 	for th in threads:
 		th.join()
 
-	logging.progress("%s/master: exiting." % dname)
+	logging.progress("%s: exiting." % pname)
 
 	# be sure there aren't any exceptions left anywhere…
 	time.sleep(0.5)
 
 	sys.exit(0)
-def setup_signals_handler(threads):
+def setup_signals_handler(pname, threads=[]):
 	""" redirect termination signals to a the function which will clean everything. """
 
 	def terminate(signum, frame):
-		return terminate_cleanly(signum, frame, threads)
+		return terminate_cleanly(signum, frame, pname, threads)
 
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)

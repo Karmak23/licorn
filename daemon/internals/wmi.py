@@ -20,7 +20,8 @@ from licorn.core.groups         import GroupsController
 from licorn.core.profiles       import ProfilesController
 from licorn.interfaces.web      import utils as w
 from licorn.daemon.core         import dname, wpid_path, wmi_port, wlog_path, \
-	wmi_group, buffer_size
+	wmi_group, buffer_size, setup_signals_handler
+
 
 configuration = LicornConfiguration()
 users = UsersController(configuration)
@@ -43,8 +44,11 @@ def eventually_fork_wmi_server(opts, start_wmi = True):
 			if opts.daemon:
 				process.use_log_file(wlog_path)
 
-			process.set_name('%s/wmi' % dname)
-			logging.progress("%s/wmi: starting (pid %d)." % (dname, os.getpid()))
+			pname = '%s/wmi' % dname
+			process.set_name(pname)
+			logging.progress("%s: starting (pid %d)." % (pname, os.getpid()))
+			setup_signals_handler(pname)
+
 			count = 0
 			while True:
 				# try creating an http server.

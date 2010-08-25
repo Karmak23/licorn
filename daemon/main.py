@@ -39,9 +39,9 @@ keywords = KeywordsController(configuration)
 # TODO: make our own argparser, for the daemon.
 from licorn.interfaces.cli import argparser
 
-from licorn.daemon.core                  import dname, terminate_cleanly
-from licorn.daemon.core                  import exit_if_already_running, exit_if_not_running_root
-from licorn.daemon.core                  import eventually_daemonize, setup_signals_handler
+from licorn.daemon.core                  import dname, terminate_cleanly, \
+	exit_if_already_running, exit_if_not_running_root, eventually_daemonize, \
+	setup_signals_handler
 from licorn.daemon.internals.wmi         import eventually_fork_wmi_server
 from licorn.daemon.internals.acl_checker import ACLChecker
 from licorn.daemon.internals.inotifier   import INotifier
@@ -60,14 +60,20 @@ if __name__ == "__main__":
 	# remember our children threads.
 	threads = []
 
-	process.set_name('%s/master' % dname)
+	pname = '%s/master' % dname
+	process.set_name(pname)
 
-	setup_signals_handler(threads)
 	eventually_daemonize(opts)
 
-	logging.progress("%s/master: starting (pid %d)." % (dname, os.getpid()))
+	# do this after having daemonized, else it doesn't get in the log, but on
+	# the console...
+	logging.progress("%s: starting (pid %d)." % (pname, os.getpid()))
 
 	eventually_fork_wmi_server(opts)
+
+	# do this after having forked the WMI, else she gets the same setup and
+	# tries to do things twice.
+	setup_signals_handler(pname, threads)
 
 	if configuration.daemon.role == "client":
 		pass
