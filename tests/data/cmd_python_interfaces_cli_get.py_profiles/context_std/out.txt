@@ -1,16 +1,16 @@
  [01;34m*[0;0m Profile Admins:
 	Group: admins(302)
 	description: The Admins profile
-	Home: /etc/skel
-	Default skel: /home/users
+	Home: /home/users
+	Default skel: /etc/skel
 	Default shell: /bin/bash
 	Quota: 1024Mb
 	Groups: admin, licorn-wmi, cdrom, fax, adm, dialout, floppy, tape, audio, dip, video, plugdev, fuse, lpadmin, netdev, sambashare
  [01;34m*[0;0m Profile Users:
 	Group: users(100)
 	description: Standard desktop users
-	Home: /etc/skel
-	Default skel: /home/users
+	Home: /home/users
+	Default skel: /etc/skel
 	Default shell: /bin/bash
 	Quota: 1024Mb
 	Groups: cdrom, floppy

@@ -1,7 +1,7 @@
 Usage: 
-	[01;33madd.py[0;0m profile --name=<nom> --group=<groupName> [--description=<descr>]
+	[01;33madd.py[0;0m profile [--name=]<name> [-g|--group=<groupName>] [--description=<descr>]
 		[--shell=<shell>] [--quota=<quota>] [--skel=<nom_squelette>]
-		[--groups=<groupe1>[[,groupe2][,...]] [--force-existing]
+		[-a|--[add-]groups=<groupe1>[[,groupe2][,...]] [--force-existing]
 
 Options:
   --version             show program's version number and exit
@@ -25,7 +25,8 @@ Options:
     --name=NAME         The profile's name (ie: «Administrator», «Power
                         user», «Webmaster», «Guest»). It should be a
                         singular word and [01;31mit is required[0;0m.
-    --group=GROUP       Group name identifying the profile on the system (ie:
+    -g GROUP, --group=GROUP
+                        Group name identifying the profile on the system (ie:
                         «administrators», «power-users», «webmasters»,
                         «guests»). It should be a plural world and will
                         become a system group. [01;31mIt is required[0;0m.
@@ -35,7 +36,8 @@ Options:
                         [01;37m/bin/bash[0;0m).
     --quota=QUOTA       User data quota in Mb (soft quota, defaults to
                         [01;37m1024[0;0m).
-    --groups=GROUPS     Groups users of this profile will become members of.
+    -a GROUPS, --groups=GROUPS, --add-groups=GROUPS
+                        Groups users of this profile will become members of.
                         Separated by commas without spaces.
     --skel=SKELDIR      skeleton dir for this profile (must be an absolute
                         path, defaults to [01;37m/etc/skel[0;0m).

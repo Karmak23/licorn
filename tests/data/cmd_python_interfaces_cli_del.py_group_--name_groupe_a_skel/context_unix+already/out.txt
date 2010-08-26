@@ -1,9 +1,9 @@
 [01;31m!! [D/T] The group 'groupe_a_skel' doesn't exist.[0;0m
 >>> [01;31mException[0;0m: [01;36m<class 'licorn.foundations.exceptions.LicornRuntimeException'>[0;0m
 >>> [01;32mCall trace[0;0m:
-  File "../interfaces/cli/del.py", line 232, in <module>
-    delete_group()
-  File "../interfaces/cli/del.py", line 133, in delete_group
+  File "/usr/lib/python2.6/dist-packages/licorn/interfaces/cli/__init__.py", line 47, in cli_main
+    functions[mode][1](opts, args)
+  File "../interfaces/cli/del.py", line 147, in del_group
     opts.gid)
   File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 482, in DeleteGroup
     gid = self.name_to_gid(name)

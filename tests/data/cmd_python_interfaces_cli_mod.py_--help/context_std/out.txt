@@ -1,7 +1,7 @@
 Usage: 
 	[01;33mmod.py[0;0m [[[00;32mmode[0;0m] ...] [[[00;34moptions[0;0m] ...]
 
-	[00;32mmode[0;0m is one of: config[uration], user, group, profile.
+	[00;32mmode[0;0m is one of: conf[ig[uration]], user, group, profile.
 
 Options:
   --version   show program's version number and exit
