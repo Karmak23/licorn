@@ -1333,8 +1333,23 @@ class GroupsController:
 			raise exceptions.LicornRuntimeException, "The group `%s' doesn't exist." % name
 
 	@staticmethod
+	def is_privilege(name=None, gid=None):
+		""" return True if a given GID or group name is recorded as a privilege,
+			else False, or raise an error if called without any argument."""
+		if name:
+			return name \
+				in GroupsController.configuration.groups.privileges_whitelist
+		if gid:
+			return GroupsController.groups[gid]['name'] in \
+				GroupsController.configuration.groups.privileges_whitelist
+
+		raise exceptions.BadArgumentError(
+			"You must specify a GID or name to test as a privilege.")
+
+	@staticmethod
 	def is_empty_gid(gid):
-			return GroupsController.is_standard_gid(gid) and GroupsController.groups[gid]['memberUid'] == set()
+			return GroupsController.is_standard_gid(gid) \
+				and GroupsController.groups[gid]['memberUid'] == set()
 
 	@staticmethod
 	def is_empty_group(name):
