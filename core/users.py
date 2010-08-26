@@ -267,17 +267,17 @@ class UsersController:
 			# Apply the profile after having created the home dir.
 			try:
 				tmp_user_dict['loginShell'] = \
-					UsersController.profiles.profiles[profile]['shell']
+					UsersController.profiles.profiles[profile]['profileShell']
 				tmp_user_dict['gidNumber'] = \
 					UsersController.groups.name_to_gid(
-					UsersController.profiles.profiles[profile]['primary_group'])
+					UsersController.profiles.profiles[profile]['groupName'])
 				# fix #58.
 				tmp_user_dict['homeDirectory'] = ("%s/%s" % (
 					UsersController.configuration.users.base_path, login))
 
-				if UsersController.profiles.profiles[profile]['groups'] != []:
+				if UsersController.profiles.profiles[profile]['memberGid'] != []:
 					groups_to_add_user_to = \
-						UsersController.profiles.profiles[profile]['groups']
+						UsersController.profiles.profiles[profile]['memberGid']
 
 					# don't directly add the user to the groups. prepare the
 					# groups to use the Licorn API later, to create the groups
@@ -288,7 +288,7 @@ class UsersController:
 
 				if skel is None:
 					skel_to_apply = \
-						UsersController.profiles.profiles[profile]['skel_dir']
+						UsersController.profiles.profiles[profile]['profileSkel']
 			except KeyError, e:
 				# fix #292
 				raise exceptions.LicornRuntimeError(

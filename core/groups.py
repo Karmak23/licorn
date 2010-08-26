@@ -684,7 +684,7 @@ class GroupsController:
 		for p in profiles:
 			if p in GroupsController.profiles:
 				# Add the group in groups list of profiles
-				if name in GroupsController.profiles[p]['groups']:
+				if name in GroupsController.profiles[p]['memberGid']:
 					logging.progress("Group %s already in the list of profile %s." % (
 						styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
 				else:
@@ -692,7 +692,7 @@ class GroupsController:
 					logging.info("Added group %s in the groups list of profile %s." % (
 						styles.stylize(styles.ST_NAME, name), styles.stylize(styles.ST_NAME, p)) )
 					# Add all 'p''s users in the group 'name'
-					_users_to_add = self.__find_group_members(users, GroupsController.profiles[p]['primary_group'])
+					_users_to_add = self.__find_group_members(users, GroupsController.profiles[p]['groupName'])
 					self.AddUsersInGroup(name, _users_to_add, users)
 			else:
 				logging.warning("Profile %s doesn't exist, ignored." % styles.stylize(styles.ST_NAME, p))
@@ -716,11 +716,11 @@ class GroupsController:
 		for p in profiles:
 			if p in profiles.profiles:
 				# Delete the group from groups list of profiles
-				if name in profiles.profiles[p]['groups']:
+				if name in profiles.profiles[p]['memberGid']:
 					print "Delete group '" + name + "' from the groups list of the profile '" + p + "'"
 					profiles.DeleteGroupsFromProfile([name])
 					# Delete all 'p''s users from the group 'name'
-					_users_to_del = self.__find_group_members(users, profiles.profiles[p]['primary_group'])
+					_users_to_del = self.__find_group_members(users, profiles.profiles[p]['groupName'])
 					self.RemoveUsersFromGroup(name, _users_to_del, users)
 				else:
 					print "The group '" + name + "' is not present in groups list of the profile '" + p + "'"
