@@ -128,7 +128,7 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	groups.reload()
 
 	if groups.is_system_group(name):
-		return w.page(title, w.error(_("Failed to remove group"),
+		return w.minipage(title, w.error(_("Failed to remove group"),
 			[ _("alter system group.") ],
 			_("insufficient permissions to perform operation.")))
 

@@ -166,9 +166,10 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 	else:
 		users.reload()
 		if users.is_system_login(login):
-			return w.page(title, w.error(_("Failed to remove account"),
+			return (w.HTTP_TYPE_TEXT, w.minipage(title,
+				w.error(_("Failed to remove account"),
 				[ _("alter system account.") ],
-				_("insufficient permissions to perform operation.")))
+				_("insufficient permissions to perform operation."))))
 
 		# we are sure, do it !
 		command = [ 'sudo', 'del', 'user', '--quiet', '--no-colors',
@@ -479,13 +480,13 @@ def create(uri, http_user, loginShell, password, password_confirm,
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if password != password_confirm:
-		return w.page(title,
-			data + w.error(_("Passwords do not match!%s") % rewind))
+		return (w.HTTP_TYPE_TEXT, w.minipage(title,
+			data + w.error(_("Passwords do not match!%s") % rewind)))
 
 	if len(password) < configuration.mAutoPasswdSize:
-		return w.page(title,
+		return (w.HTTP_TYPE_TEXT, w.minipage(title,
 			data + w.error(_("Password must be at least %d characters long!%s")\
-				% (configuration.mAutoPasswdSize, rewind)))
+				% (configuration.mAutoPasswdSize, rewind))))
 
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors',
 		'--password', password ]
@@ -546,16 +547,19 @@ def edit(uri, http_user, login):
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if users.is_system_login(login):
-		return w.minipage(title, w.error(_('Account edition impossible.'),
+		return (w.HTTP_TYPE_TEXT, w.minipage(title,
+			w.error(_('Account edition impossible.'),
 			[ _("alter system account.") ],
-			_("insufficient permissions to perform operation.")))
+			_("insufficient permissions to perform operation."))))
 
 	try:
 		user = users.users[users.login_to_uid(login)]
 
 		try:
 			profile = \
-				profiles.profiles[groups.groups[user['gidNumber']]['name']]['name']
+				profiles.profiles[
+					groups.groups[user['gidNumber']]['name']
+					]['name']
 		except KeyError:
 			profile = _("Standard account")
 
@@ -691,17 +695,17 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 
 	users.reload()
 	if users.is_system_login(login):
-		return (w.HTTP_TYPE_TEXT, w.page(title,
+		return (w.HTTP_TYPE_TEXT, w.minipage(title,
 			w.error(_("Recording of informations failed"),
 			[ _("alter system account.") ],
 			_("insufficient permissions to perform operation."))))
 
 	if password != "":
 		if password != password_confirm:
-			return (w.HTTP_TYPE_TEXT, w.page(title,
+			return (w.HTTP_TYPE_TEXT, w.minipage(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
 		if len(password) < configuration.mAutoPasswdSize:
-			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
+			return (w.HTTP_TYPE_TEXT, w.minipage(title, data + w.error(
 				_("The password --%s-- must be at least %d characters long!%s")\
 				% (password, configuration.mAutoPasswdSize, rewind))))
 
