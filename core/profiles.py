@@ -45,6 +45,12 @@ class ProfilesController:
 			self.reload()
 
 		self.checkDefaultProfile()
+	def __getitem__(self, item):
+		return ProfilesController.profiles[item]
+	def __setitem__(self, item, value):
+		ProfilesController.profiles[item]=value
+	def keys(self):
+		return ProfilesController.profiles.keys()
 	def reload(self):
 		ProfilesController.profiles   = readers.profiles_conf_dict(
 			self.configuration.profiles_config_file)
