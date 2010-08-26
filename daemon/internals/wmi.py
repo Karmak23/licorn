@@ -245,7 +245,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else '')
 
 				try:
-					#logging.info("Exec'ing %s." % py_code)
+					ltrace('wmi', '''serve_virtual_uri:exec("%s")''' % py_code)
 					exec py_code
 
 				except (AttributeError, NameError), e:
