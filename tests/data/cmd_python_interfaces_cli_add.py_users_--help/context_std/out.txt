@@ -1,0 +1,56 @@
+Usage: 
+	[01;33madd.py[0;0m users --filename=<fichier> --profile=<profil>
+		[--lastname-column=<COL>] [--firstname-column=<COL>]
+		[--group-column=<COL>] [--login-column=<COL>] [--password-column=<COL>]
+		[--separator=<SEP>] [--confirm-import] [--no-sync]
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+
+  [00;34mBehavior options [0;0m:
+    Modify decisions / apply filter(s) on data manipulated by program.
+
+    -f, --force         forces the current action (if applicable).
+    -q, --quiet         be quiet, don't display anything except on
+                        warnings/errors.
+    -v, --verbose       be more verbose (in command-line mode) ; you can get
+                        more with -vv, -vvv, etc.[01;37mthe default is INFO
+                        level of verbosity[0;0m, which is quite moderated.
+                        You will get information about auto-generated
+                        passwords and long-time actions, when you should
+                        expect to wait for them to complete.
+    --no-colors         no colors in any messages (CLI mode only).
+
+  [00;34mImport users and groups options [0;0m:
+    --filename=FILENAME
+                        name of the file you want to import accounts from
+                        (must point to a valid CSV file and [01;31mis
+                        required[0;0m).
+    --profile=PROFILE   profile the accounts will be affected upon creation
+                        ([01;31mrequired[0;0m).
+    --lastname-column=LASTNAME_COL
+                        lastname column number (default is [01;37m0[0;0m).
+    --firstname-column=FIRSTNAME_COL
+                        firstname column number (default is [01;37m1[0;0m).
+    --group-column=GROUP_COL
+                        [01;36mgroups[0;0m column number (default is
+                        [01;37m2[0;0m).
+    --login-column=LOGIN_COL
+                        [01;36mlogin[0;0m column number (default is
+                        [01;37mNone[0;0m: login will be guessed from
+                        firstname and lastname).
+    --password-column=PASSWORD_COL
+                        [01;36mpasswd[0;0m column number (default is
+                        [01;37mNone[0;0m: password will be randomly
+                        generated and 8 chars long).
+    --separator=SEPARATOR
+                        separator for the CSV fields (default is
+                        [01;37mdetermined automatically[0;0m by sniffing in
+                        the file).
+    --confirm-import    Really do the import. [01;31mWithout this flag the
+                        program will do nothing[0;0m on the system, only give
+                        you an example of what will be done, which is useful
+                        to verify your file has been correctly parsed (fields
+                        order, separator...).
+    --no-sync           Commit changes only after all modifications.

@@ -1,0 +1,10 @@
+[01;31m!! [D/T] The skel you specified doesn't exist on this system. Valid skels are: ['/etc/skel'].[0;0m
+>>> [01;31mException[0;0m: [01;36m<class 'licorn.foundations.exceptions.BadArgumentError'>[0;0m
+>>> [01;32mCall trace[0;0m:
+  File "../interfaces/cli/mod.py", line 337, in <module>
+    modify_group()
+  File "../interfaces/cli/mod.py", line 95, in modify_group
+    groups.ChangeGroupSkel(opts.name, opts.newskel)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 663, in ChangeGroupSkel
+    raise exceptions.BadArgumentError("The skel you specified doesn't exist on this system. Valid skels are: %s." % str(GroupsController.configuration.users.skels))
+

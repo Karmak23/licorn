@@ -1,0 +1,12 @@
+[01;31m!! [D/T] The group [00;36mgroupeA[0;0m[01;31m already exists but has not the same type. Please choose another name for your group.[0;0m
+>>> [01;31mException[0;0m: [01;36m<class 'licorn.foundations.exceptions.AlreadyExistsError'>[0;0m
+>>> [01;32mCall trace[0;0m:
+  File "../interfaces/cli/add.py", line 519, in <module>
+    add_group()
+  File "../interfaces/cli/add.py", line 417, in add_group
+    permissive = opts.permissive, force=opts.force)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 314, in AddGroup
+    batch=batch, force=force)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 393, in __add_group
+    % styles.stylize(styles.ST_NAME, name))
+

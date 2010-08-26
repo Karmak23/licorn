@@ -1,0 +1,16 @@
+[01;31m!! [D/T] The group 'B-Group_Test' doesn't exist.[0;0m
+>>> [01;31mException[0;0m: [01;36m<class 'licorn.foundations.exceptions.LicornRuntimeException'>[0;0m
+>>> [01;32mCall trace[0;0m:
+  File "../interfaces/cli/chk.py", line 141, in <module>
+    check_groups()
+  File "../interfaces/cli/chk.py", line 78, in check_groups
+    batch=opts.batch, auto_answer=opts.auto_answer, force=opts.force)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 1110, in CheckGroups
+    if reduce(pyutils.keep_false, map(_chk, groups_to_check)) is False:
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 1108, in _chk
+    auto_answer=auto_answer, force=force)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 1004, in __check_group
+    gid         = self.name_to_gid(group)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/groups.py", line 1306, in name_to_gid
+    "The group '%s' doesn't exist." % name)
+

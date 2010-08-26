@@ -1,0 +1,10 @@
+[01;31m!! [D/T] Malformed login `';-)'', must match /[00;33m^[a-z][-_.a-z0-9]*[a-z0-9]$[0;0m[01;31m/.[0;0m
+>>> [01;31mException[0;0m: [01;36m<class 'licorn.foundations.exceptions.BadArgumentError'>[0;0m
+>>> [01;32mCall trace[0;0m:
+  File "../interfaces/cli/add.py", line 508, in <module>
+    add_user()
+  File "../interfaces/cli/add.py", line 374, in add_user
+    force=opts.force)
+  File "/usr/lib/python2.6/dist-packages/licorn/core/users.py", line 179, in AddUser
+    hlstr.regex['login'])))
+

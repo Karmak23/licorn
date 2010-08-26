@@ -1,0 +1,1 @@
+setenv EXTENDEDGROUP_DATA_FILE "/etc/licorn/groups"

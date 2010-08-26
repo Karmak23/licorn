@@ -1,0 +1,8 @@
+Usage: 
+	[01;33mget.py[0;0m [[[00;32mmode[0;0m] ...] [[[00;34moptions[0;0m] ...]
+
+	[00;32mmode[0;0m is one of: config[uration], user[s], group[s], profile[s], kw|keyword[s]|tag[s], priv[ilege][s].
+
+Options:
+  --version   show program's version number and exit
+  -h, --help  show this help message and exit

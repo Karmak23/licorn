@@ -1,0 +1,39 @@
+Usage: 
+	[01;33mget.py[0;0m [00;32musers[0;0m [[[00;34moption[0;0m] ...]
+
+Options:
+  --version        show program's version number and exit
+  -h, --help       show this help message and exit
+
+  [00;34mBehavior options [0;0m:
+    Modify decisions / apply filter(s) on data manipulated by program.
+
+    -q, --quiet    be quiet, don't display anything except on warnings/errors.
+    -v, --verbose  be more verbose (in command-line mode) ; you can get more
+                   with -vv, -vvv, etc.[01;37mthe default is INFO level of
+                   verbosity[0;0m, which is quite moderated. You will get
+                   information about auto-generated passwords and long-time
+                   actions, when you should expect to wait for them to
+                   complete.
+    --no-colors    no colors in any messages (CLI mode only).
+
+  [00;34mFilter options [0;0m:
+    Filter data displayed / exported (WARNING: filters are not cumulative
+    ! Unexpected behaviour is to be expected if you use more than one
+    filter option).
+
+    -a, --all      also get factory and system data (rarely used), i.e. for
+                   users, output system accounts too, etc
+                   ([01;31mWARNING[0;0m: you can get huge output and easily
+                   flood your terminal).
+    -l, --long     long output (all info, attributes, etc). NOT enabled by
+                   default.
+    --uid=UID      Display only one user information (only valid for get
+                   users).
+
+  [00;34mOutput options [0;0m:
+    Modify how data is printed/exported.
+
+    -x, --xml      Output data as XML (no colors, no verbose). If not set,
+                   [01;37mdefault is to output for CLI[0;0m (for human
+                   beiings, but not easily parsable format).

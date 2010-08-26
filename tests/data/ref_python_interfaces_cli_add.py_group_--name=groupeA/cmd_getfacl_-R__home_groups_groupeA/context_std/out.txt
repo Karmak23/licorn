@@ -1,0 +1,22 @@
+getfacl : suppression du premier « / » des noms de chemins absolus
+# file: home/groups/groupeA
+# owner: root
+# group: remotessh
+user::rwx
+group::---
+group:www-data:--x
+group:admins:rwx
+group:rsp-groupeA:rwx
+group:gst-groupeA:r-x
+group:groupeA:rwx
+mask::rwx
+other::---
+default:user::rwx
+default:group::---
+default:group:admins:rwx
+default:group:rsp-groupeA:rwx
+default:group:gst-groupeA:r-x
+default:group:groupeA:r-x
+default:mask::rwx
+default:other::---
+
