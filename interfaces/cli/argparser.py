@@ -357,9 +357,9 @@ def add_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « add profile »."""
 
 
-	usage_text = "\n\t%s profile --name=<nom> --group=<groupName> [--description=<descr>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s profile [--name=]<name> [-g|--group=<groupName>] [--description=<descr>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--shell=<shell>] [--quota=<quota>] [--skel=<nom_squelette>]\n" \
-		+ "\t\t[--groups=<groupe1>[[,groupe2][,...]] [--force-existing]"
+		+ "\t\t[-a|--[add-]groups=<groupe1>[[,groupe2][,...]] [--force-existing]"
 
 	parser = OptionParser(usage = usage_text, version = __build_version_string(app))
 
@@ -371,7 +371,7 @@ def add_profile_parse_arguments(app):
 	profile.add_option("--name",
 		action="store", type="string", dest="name", default = None,
 		help="The profile's name (ie: «Administrator», «Power user», «Webmaster», «Guest»). It should be a singular word and %s." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
-	profile.add_option("--group",
+	profile.add_option('-g', "--group",
 		action="store", type="string", dest="group", default = None,
 		help="Group name identifying the profile on the system (ie: «administrators», «power-users», «webmasters», «guests»). It should be a plural world and will become a system group. %s." % styles.stylize(styles.ST_IMPORTANT, "It is required"))
 	profile.add_option("--description",
@@ -383,7 +383,7 @@ def add_profile_parse_arguments(app):
 	profile.add_option("--quota",
 		action="store", type="int", dest="quota", default = 1024,
 		help="User data quota in Mb (soft quota, defaults to %s)." % styles.stylize(styles.ST_DEFAULT, "1024"))
-	profile.add_option("--groups",
+	profile.add_option('-a', "--groups", "--add-groups",
 		action="store", type="string", dest="groups", default = [],
 		help="Groups users of this profile will become members of. Separated by commas without spaces.")
 	profile.add_option("--skel",
