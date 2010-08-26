@@ -349,7 +349,7 @@ class UsersController:
 		tmp_user_dict['gecos']          = gecos
 		tmp_user_dict['login']          = login
 		# prepare the groups cache.
-		tmp_user_dict['groups']         = []
+		tmp_user_dict['groups']         = set()
 		tmp_user_dict['shadowInactive'] = ''
 		tmp_user_dict['shadowWarning']  = 7
 		tmp_user_dict['shadowExpire']   = ''
