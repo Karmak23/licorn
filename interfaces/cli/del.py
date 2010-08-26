@@ -5,7 +5,7 @@ Licorn CLI - http://dev.licorn.org/documentation/cli
 
 delete - delete sompething on the system, an unser account, a group, etc.
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
@@ -22,23 +22,22 @@ from licorn.core.profiles      import ProfilesController
 from licorn.core.keywords      import KeywordsController
 
 _app = {
-	"name"     		: "licorn-delete",
-	"description"	: "Licorn Delete Entries",
-	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"name"        : "licorn-delete",
+	"description" : "Licorn Delete Entries",
+	"author"      : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def desimport_groups(delete_filename):
-	""" Delete the groups (and theyr members) present in a import file.
-	"""
+def desimport_groups(opts,args):
+	""" Delete the groups (and theyr members) present in a import file.	"""
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 
-	if delete_filename is None:
+	if opts.filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name"
 
-	delete_file = file(delete_filename, 'r')
+	delete_file = file(opts.filename, 'r')
 
 	groups_to_del = []
 
@@ -73,7 +72,7 @@ def desimport_groups(delete_filename):
 			logging.warning(str(e))
 	profiles.WriteConf(configuration.profiles_config_file)
 	print "\nFinished"
-def delete_user():
+def del_user(opts, args):
 	""" delete a user account. """
 
 	configuration = LicornConfiguration()
@@ -92,7 +91,7 @@ def delete_user():
 						login, e))
 
 	users.WriteConf()
-def delete_user_from_groups():
+def del_user_from_groups(opts, args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
@@ -111,13 +110,28 @@ def delete_user_from_groups():
 					"Unable to remove user(s) %s from group %s (was: %s)."
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
 					styles.stylize(styles.ST_NAME, g), str(e)))
-def delete_group():
+def dispatch_del_user(opts, args):
+	if opts.login is None:
+		if len(args) == 2:
+			opts.login = args[1]
+			del_user(opts, args)
+		elif len(args) == 3:
+			opts.login = args[1]
+			opts.groups_to_del = args[2]
+			del_user_from_groups(opts, args)
+	else:
+		del_user(opts, args)
+
+def del_group(opts, args):
 	""" delete an Licorn group. """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
+
+	if opts.name is None and len(args) == 2:
+		opts.name = args[1]
 
 	if opts.name is None:
 		try:
@@ -136,13 +150,16 @@ def delete_group():
 					logging.warning(
 						"Group %s doesn't exist on the system." % name)
 
-def delete_profile():
+def del_profile(opts, args):
 	""" Delete a system wide User profile. """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
+
+	if opts.group is None and len(args) == 2:
+		opts.name = args[1]
 
 	if opts.group is None:
 		if opts.name is None:
@@ -162,113 +179,48 @@ def delete_profile():
 
 	if opts.no_sync:
 		users.WriteConf()
-def delete_keyword():
+def del_keyword(opts, args):
 	""" delete a system wide User profile. """
 
 	configuration = LicornConfiguration()
 	keywords = KeywordsController(configuration)
 
+	if opts.name is None and len(args) == 2:
+		opts.name = args[1]
+
 	keywords.DeleteKeyword(opts.name, opts.del_children)
-def delete_privilege():
+def del_privilege(opts, args):
 	configuration = LicornConfiguration()
+
+	if opts.privileges_to_remove is None and len(args) == 2:
+		opts.privileges_to_remove = args[1]
+
 	configuration.groups.privileges_whitelist.delete(
 		opts.privileges_to_remove.split(','))
-def delete_workstation():
-	raise NotImplementedError("delete_workstations not implemented.")
-def delete_webfilter():
-	raise NotImplementedError("delete_webfilters_types not implemented.")
 
 if __name__ == "__main__":
 
-	try:
-		configuration = LicornConfiguration()
-		giantLock = objects.FileLock(configuration, "giant", 10)
-		giantLock.Lock()
-	except (IOError, OSError), e:
-		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
+	import argparser as agp
+	from licorn.interfaces.cli import cli_main
 
-	try:
-		try:
-			if "--no-colors" in sys.argv:
-				options.SetNoColors(True)
+	functions = {
+		'usr':	         (agp.del_user_parse_arguments, dispatch_del_user),
+		'user':	         (agp.del_user_parse_arguments, dispatch_del_user),
+		'users':         (agp.del_user_parse_arguments, dispatch_del_user),
+		'grp':           (agp.del_group_parse_arguments, del_group),
+		'group':         (agp.del_group_parse_arguments, del_group),
+		'groups':        (agp.delimport_parse_arguments, desimport_groups),
+		'profile':       (agp.del_profile_parse_arguments, del_profile),
+		'profiles':      (agp.del_profile_parse_arguments, del_profile),
+		'priv':			 (agp.del_privilege_parse_arguments, del_privilege),
+		'privs':		 (agp.del_privilege_parse_arguments, del_privilege),
+		'privilege':	 (agp.del_privilege_parse_arguments, del_privilege),
+		'privileges':	 (agp.del_privilege_parse_arguments, del_privilege),
+		'kw':            (agp.del_keyword_parse_arguments, del_keyword),
+		'tag':           (agp.del_keyword_parse_arguments, del_keyword),
+		'tags':          (agp.del_keyword_parse_arguments, del_keyword),
+		'keyword':       (agp.del_keyword_parse_arguments, del_keyword),
+		'keywords':      (agp.del_keyword_parse_arguments, del_keyword),
+	}
 
-			from licorn.interfaces.cli import argparser
-
-			if len(sys.argv) < 2:
-				# automatically display help if no arg/option is given.
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-			if len(sys.argv) < 3:
-				# this will display help, but when parsed later by specific functions.
-				# (for user/group/profile specific help)
-				sys.argv.append("--help")
-				help_appended = True
-			else:
-				help_appended = False
-
-			mode = sys.argv[1]
-
-			if mode == 'user':
-				(opts, args) = argparser.delete_user_parse_arguments(_app)
-				options.SetFrom(opts)
-
-				if opts.login is None:
-					if len(args) == 2:
-						opts.login = args[1]
-						delete_user()
-					elif len(args) == 3:
-						opts.login = args[1]
-						opts.groups_to_del = args[2]
-						delete_user_from_groups()
-				else:
-					delete_user()
-
-			elif mode == 'group':
-				(opts, args) = argparser.delete_group_parse_arguments(_app)
-				if opts.name is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				delete_group()
-
-			elif mode == 'groups':
-				# delete multiple groups and theyr members
-				(opts, args) = argparser.delimport_parse_arguments(_app)
-				options.SetFrom(opts)
-				desimport_groups(opts.filename)
-
-			elif mode == 'profile':
-				(opts, args) = argparser.delete_profile_parse_arguments(_app)
-				if opts.group is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				delete_profile()
-
-			elif mode == 'keyword':
-				(opts, args) = argparser.delete_keyword_parse_arguments(_app)
-				if opts.name is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				delete_keyword()
-			elif mode in ('priv', 'privilege', 'privs', 'privileges'):
-				(opts, args) = argparser.del_privilege_parse_arguments(_app)
-				if opts.privileges_to_remove is None and len(args) == 2:
-					opts.privileges_to_remove = args[1]
-				options.SetFrom(opts)
-				delete_privilege()
-			else:
-				if not help_appended:
-					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-					sys.argv.append("--help")
-
-				argparser.general_parse_arguments(_app)
-
-		except exceptions.LicornException, e:
-			logging.error (str(e), e.errno)
-
-		except KeyboardInterrupt:
-			logging.warning(logging.GENERAL_INTERRUPTED)
-
-	finally:
-		configuration.CleanUp()
-		giantLock.Unlock()
+	cli_main(functions, _app)

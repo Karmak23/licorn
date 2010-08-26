@@ -5,7 +5,7 @@ Licorn CLI - http://dev.licorn.org/documentation/cli
 
 check - check and repair things on an Licorn System.
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
@@ -25,11 +25,14 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-def check_users():
+def chk_user(opts, args):
 	""" Check one or more user account(s). """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
+
+	if len(args) == 2:
+		opts.users = args[1]
 
 	if opts.all:
 		users_to_check = []
@@ -42,19 +45,19 @@ def check_users():
 
 	users.CheckUsers(users_to_check, opts.minimal, auto_answer=opts.auto_answer,
 		batch=opts.batch)
-def check_groups():
+def chk_group(opts, args):
 	""" Check one or more group(s). """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
 
 	# don't show warnings. If user has asked for a check, he already
 	# thinks there is something wrong, which *will* be raised by the check,
 	# so don't print twice !
+	groups = GroupsController(configuration, users, warnings=False)
 
-	# XXX: in Licorn, groups are initialized earlyer, this can't be done anymore.
-	# groups.SetWarnings(False)
+	if len(args) == 2:
+		opts.groups = args[1]
 
 	if opts.all:
 		groups_to_check = []
@@ -83,10 +86,13 @@ def check_groups():
 		pass
 	except:
 		pass
-def check_profiles():
+def chk_profile(opts, args):
 	""" TODO: to be implemented. """
+	if len(args) == 2:
+		opts.name = args[1]
+
 	raise NotImplementedError("Sorry, not yet.")
-def check_configuration():
+def chk_configuration(opts, args):
 	""" TODO: to be implemented. """
 
 	configuration = LicornConfiguration()
@@ -94,74 +100,21 @@ def check_configuration():
 
 if __name__ == "__main__":
 
-	try:
-		configuration = LicornConfiguration()
+	import argparser as agp
+	from licorn.interfaces.cli import cli_main
 
-		giantLock = FileLock(configuration, "giant", 10)
-		giantLock.Lock()
-	except (IOError, OSError), e:
-		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
+	functions = {
+		'usr':	         (agp.chk_user_parse_arguments, chk_user),
+		'user':	         (agp.chk_user_parse_arguments, chk_user),
+		'users':         (agp.chk_user_parse_arguments, chk_user),
+		'grp':           (agp.chk_group_parse_arguments, chk_group),
+		'group':         (agp.chk_group_parse_arguments, chk_group),
+		'groups':        (agp.chk_group_parse_arguments, chk_group),
+		'profile':       (agp.chk_profile_parse_arguments, chk_profile),
+		'profiles':      (agp.chk_profile_parse_arguments, chk_profile),
+		'conf':			 (agp.chk_configuration_parse_arguments, chk_configuration),
+		'config':		 (agp.chk_configuration_parse_arguments, chk_configuration),
+		'configuration': (agp.chk_configuration_parse_arguments, chk_configuration),
+	}
 
-	try:
-		try:
-
-			from licorn.foundations import options
-
-			if "--no-colors" in sys.argv:
-				options.SetNoColors(True)
-
-			from licorn.interfaces.cli import argparser
-
-			if len(sys.argv) < 2:
-				# auto-display usage when called with no arguments or just one.
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-			if len(sys.argv) < 3:
-				# this will display help, but when parsed later by specific functions.
-				# (for user/group/profile specific help)
-				sys.argv.append("--help")
-				help_appended = True
-			else:
-				help_appended = False
-
-			mode = sys.argv[1]
-
-			if mode in ('user', 'users'):
-				(opts, args) = argparser.check_users_parse_arguments(_app)
-				if len(args) == 2:
-					opts.users = args[1]
-				options.SetFrom(opts)
-				check_users()
-			elif mode in ('group', 'groups'):
-				(opts, args) = argparser.check_groups_parse_arguments(_app)
-				if len(args) == 2:
-					opts.groups = args[1]
-				options.SetFrom(opts)
-				check_groups()
-			elif mode in ('profile', 'profiles'):
-				(opts, args) = argparser.check_profiles_parse_arguments(_app)
-				if len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				check_profiles()
-			elif mode in ('config', 'configuration'):
-				(opts, args) = argparser.check_configuration_parse_arguments(_app)
-				options.SetVerbose(opts.verbose)
-				check_configuration()
-			else:
-				if not help_appended:
-					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-					sys.argv.append("--help")
-
-				argparser.general_parse_arguments(_app)
-
-		except exceptions.LicornException, e:
-			logging.error (str(e), e.errno)
-
-		except KeyboardInterrupt:
-			logging.warning(logging.GENERAL_INTERRUPTED)
-
-	finally:
-		configuration.CleanUp()
-		giantLock.Unlock()
+	cli_main(functions, _app)

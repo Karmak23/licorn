@@ -5,7 +5,7 @@ Licorn CLI - http://dev.licorn.org/documentation/cli
 argparser - command-line argument parser library.
 Contains all argument parsers for all licorn system tools (get, add, modify, delete, check)
 
-Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Copyright (C) 2005,2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
@@ -65,7 +65,7 @@ def general_parse_arguments(app):
 		% (styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "mode"), styles.stylize(styles.ST_OPTION, "options"), styles.stylize(styles.ST_MODE, "mode"))
 
 	if app["name"] in ( "licorn-get", "licorn-modify", "licorn-check" ):
-		usage_text +=  "config[uration], "
+		usage_text +=  "conf[ig[uration]], "
 
 	if app["name"] in ( "licorn-get", "licorn-check" ):
 		usage_text += "user[s], group[s], profile[s], kw|keyword[s]|tag[s], priv[ilege][s]."
@@ -494,7 +494,7 @@ def addimport_parse_arguments(app):
 	return (parser.parse_args())
 
 ### Delete arguments ###
-def delete_user_parse_arguments(app):
+def del_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete user »."""
 
 	usage_text = "\n\t%s user < --login=<login> | --uid=UID > [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -520,7 +520,7 @@ def delete_user_parse_arguments(app):
 	parser.add_option_group(user)
 
 	return (parser.parse_args())
-def delete_group_parse_arguments(app):
+def del_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete group »."""
 
 	usage_text = "\n\t%s group < --name=<nom_groupe> | --uid=UID > [[--del-users] [--no-archive]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -548,7 +548,7 @@ def delete_group_parse_arguments(app):
 	parser.add_option_group(group)
 
 	return (parser.parse_args())
-def delete_profile_parse_arguments(app):
+def del_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete profile »."""
 
 	usage_text = "\n\t%s profile --group=<nom> [[--del-users] [--no-archive] [--no-sync]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -576,7 +576,7 @@ def delete_profile_parse_arguments(app):
 	parser.add_option_group(profile)
 
 	return (parser.parse_args())
-def delete_keyword_parse_arguments(app):
+def del_keyword_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete keyword »."""
 
 	usage_text = "\n\t%s keyword --name=<nom>" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -640,7 +640,7 @@ def delimport_parse_arguments(app):
 	return (parser.parse_args())
 
 ### Modify arguments ###
-def modify_user_parse_arguments(app):
+def mod_user_parse_arguments(app):
 
 	usage_text = "\n\t%s user --login=<login> [--gecos=<new GECOS>] [--password=<new passwd> | --auto-password] [--password-size=<size>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ '\t\t[--lock|--unlock] [--add-groups=<group1[[,group2][,...]]>] [--del-groups=<group1[[,group2][,...]]>]\n' \
@@ -693,7 +693,7 @@ def modify_user_parse_arguments(app):
 	parser.add_option_group(user)
 
 	return (parser.parse_args())
-def modify_group_parse_arguments(app):
+def mod_group_parse_arguments(app):
 
 	usage_text = "\n\t%s group --name=<nom_actuel> [--rename=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--add-users=<user1[[,user2][,...]]>] [--del-users=<user1[[,user2][,...]]>]\n" \
@@ -753,7 +753,7 @@ def modify_group_parse_arguments(app):
 	parser.add_option_group(group)
 
 	return (parser.parse_args())
-def modify_profile_parse_arguments(app):
+def mod_profile_parse_arguments(app):
 
 	usage_text = "\n\t%s profile --group=<nom> [--name=<nouveau_nom>] [--rename-group=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--comment=<nouveau_commentaire>] [--shell=<nouveau_shell>] [--skel=<nouveau_skel>]\n" \
@@ -827,7 +827,7 @@ def modify_profile_parse_arguments(app):
 	parser.add_option_group(profile)
 
 	return (parser.parse_args())
-def modify_keyword_parse_arguments(app):
+def mod_keyword_parse_arguments(app):
 
 	usage_text = "\n\t%s keyword --name=<nom> [--rename=<nouveau_nom>] [--parent=<nouveau_parent>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--remove-parent] [--recursive]"
@@ -861,7 +861,7 @@ def modify_keyword_parse_arguments(app):
 	parser.add_option_group(keyword)
 
 	return (parser.parse_args())
-def modify_path_parse_arguments(app):
+def mod_path_parse_arguments(app):
 
 	usage_text = "\n\t%s path [--path=]<fichier_ou_repertoire> [--add-keywords=<kw1[,kw1,...]>] [--del-keywords=<kw1[,kw1,...]>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
 		+ "\t\t[--clear-keywords] [--recursive]"
@@ -895,7 +895,7 @@ def modify_path_parse_arguments(app):
 	parser.add_option_group(path)
 
 	return (parser.parse_args())
-def modify_configuration_parse_arguments(app):
+def mod_configuration_parse_arguments(app):
 
 	usage_text = "\n\t%s config[uration] [--hide-groups|--set-hidden-groups|--unhide-groups|-u|-U] [--set-hostname <new hostname>] [--restrictive] [--set-ip-address <NEW.ETH0.IP.ADDR>]" % styles.stylize(styles.ST_APPNAME, "%prog")
 
@@ -1005,7 +1005,7 @@ def __check_filter_group(app, parser, mode):
 			help="TODO")
 
 	return filtergroup
-def check_users_parse_arguments(app):
+def chk_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « check user(s) »."""
 
 	usage_text = "\n\t%s user[s] --login login1[[,login2][...]] [--minimal] [--yes|--no]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -1017,7 +1017,7 @@ def check_users_parse_arguments(app):
 	parser.add_option_group(__check_filter_group(app, parser, 'users'))
 
 	return (parser.parse_args())
-def check_groups_parse_arguments(app):
+def chk_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
 	usage_text = "\n\t%s group[s] --name group1[[,group2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -1028,7 +1028,7 @@ def check_groups_parse_arguments(app):
 	parser.add_option_group(__check_filter_group(app, parser, 'groups'))
 
 	return (parser.parse_args())
-def check_profiles_parse_arguments(app):
+def chk_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « check profile(s) »."""
 
 	usage_text = "\n\t%s profile[s] --name profile1[[,profile2][...]]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -1039,7 +1039,7 @@ def check_profiles_parse_arguments(app):
 	parser.add_option_group(__check_filter_group(app, parser, 'profiles'))
 
 	return (parser.parse_args())
-def check_configuration_parse_arguments(app):
+def chk_configuration_parse_arguments(app):
 	"""TODO"""
 
 	usage_text = "\n\t%s config[uration] -a | (names|hostname)" % styles.stylize(styles.ST_APPNAME, "%prog")

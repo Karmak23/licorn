@@ -4,7 +4,7 @@
 Licorn « modify »: modify system information, user accounts, etc.
 Built on top of Licorn System Library, part of Licorn System Tools (H-S-T).
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
@@ -26,11 +26,14 @@ from licorn.core.groups        import GroupsController
 from licorn.core.profiles      import ProfilesController
 from licorn.core.keywords      import KeywordsController
 
-def modify_user():
+def mod_user(opts, args):
 	""" Modify a POSIX user account (Samba / LDAP included). """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
+
+	if len(args) == 2:
+		opts.login = args[1]
 
 	something_done = False
 
@@ -84,12 +87,15 @@ def modify_user():
 
 	if not something_done:
 		raise exceptions.BadArgumentError("What do you want to modify about user(s) ? Use --help to know !")
-def modify_group():
+def mod_group(opts, args):
 	""" Modify a group. """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
+
+	if len(args) == 2:
+		opts.name = args[1]
 
 	if opts.newskel is not None:
 		groups.ChangeGroupSkel(opts.name, opts.newskel)
@@ -129,13 +135,16 @@ def modify_group():
 		groups.SetSharedDirPermissiveness(opts.name, opts.permissive)
 	if opts.newname is not None:
 		groups.RenameGroup(profiles, opts.name, opts.newname)
-def modify_profile():
+def mod_profile(opts, args):
 	""" Modify a system wide User profile. """
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
+
+	if len(args) == 2:
+		opts.name = args[1]
 
 	if opts.group is None:
 		if opts.name is None:
@@ -213,11 +222,14 @@ def modify_profile():
 			if opts.apply_groups is not None:
 				apply_groups = opts.apply_groups
 			profiles.ReapplyProfileOfUsers(_users, apply_groups, apply_skel, batch=opts.force)
-def modify_keyword():
+def mod_keyword(opts, args):
 	""" Modify a keyword. """
 
 	configuration = LicornConfiguration()
 	kw = KeywordsController(configuration)
+
+	if len(args) == 2:
+		opts.name = args[1]
 
 	if opts.newname is not None:
 		kw.RenameKeyword(opts.name, opts.newname)
@@ -227,11 +239,14 @@ def modify_keyword():
 		kw.RemoveParent(opts.name)
 	if opts.description is not None:
 		kw.ChangeDescription(opts.name, opts.description)
-def modify_path():
+def mod_path(opts, args):
 	""" Manage keywords of a file or directory. """
 
 	from licorn.core.keywords import KeywordsController
 	kw = KeywordsController(configuration)
+
+	if len(args) == 2:
+		opts.path = args[1]
 
 	# this should go directly into system.keywords.
 	from licorn.harvester import HarvestClient
@@ -246,14 +261,7 @@ def modify_path():
 			kw.DeleteKeywordsFromPath(opts.path, opts.keywords_to_del.split(','), opts.recursive)
 		if opts.keywords_to_add is not None:
 			kw.AddKeywordsToPath(opts.path, opts.keywords_to_add.split(','), opts.recursive)
-
-def modify_workstation():
-	raise NotImplementedError("modify_workstations not implemented.")
-def modify_internet_type():
-	raise NotImplementedError("modify_internet_types not implemented.")
-def modify_webfilter():
-	raise NotImplementedError("modify_webfilters_types not implemented.")
-def modify_configuration():
+def mod_configuration(opts, args):
 	""" Modify some aspects or abstract directives of the system configuration (use with caution)."""
 
 	configuration = LicornConfiguration()
@@ -294,82 +302,27 @@ def modify_configuration():
 
 if __name__ == "__main__":
 
-	try:
-		configuration = LicornConfiguration()
-		giantLock = objects.FileLock(configuration, "giant", 10)
-		giantLock.Lock()
-	except (IOError, OSError), e:
-		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
+	import argparser as agp
+	from licorn.interfaces.cli import cli_main
 
-	try:
-		try:
-			if "--no-colors" in sys.argv:
-				options.SetNoColors(True)
+	functions = {
+		'usr':	         (agp.mod_user_parse_arguments, mod_user),
+		'user':	         (agp.mod_user_parse_arguments, mod_user),
+		'users':         (agp.mod_user_parse_arguments, mod_user),
+		'grp':           (agp.mod_group_parse_arguments, mod_group),
+		'group':         (agp.mod_group_parse_arguments, mod_group),
+		'groups':        (agp.mod_group_parse_arguments, mod_group),
+		'profile':       (agp.mod_profile_parse_arguments, mod_profile),
+		'profiles':      (agp.mod_profile_parse_arguments, mod_profile),
+		'conf':			 (agp.mod_configuration_parse_arguments, mod_configuration),
+		'config':		 (agp.mod_configuration_parse_arguments, mod_configuration),
+		'configuration': (agp.mod_configuration_parse_arguments, mod_configuration),
+		'kw':            (agp.mod_keyword_parse_arguments, mod_keyword),
+		'tag':           (agp.mod_keyword_parse_arguments, mod_keyword),
+		'tags':          (agp.mod_keyword_parse_arguments, mod_keyword),
+		'keyword':       (agp.mod_keyword_parse_arguments, mod_keyword),
+		'keywords':      (agp.mod_keyword_parse_arguments, mod_keyword),
+		'path':          (agp.mod_path_parse_arguments, mod_path),
+	}
 
-			from licorn.interfaces.cli import argparser
-
-			if len(sys.argv) < 2:
-				# automatically display help if no arg/option is given.
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-			if len(sys.argv) < 3:
-				# this will display help, but when parsed later by specific functions.
-				# (for user/group/profile specific help)
-				sys.argv.append("--help")
-				help_appended = True
-			else:
-				help_appended = False
-
-			mode = sys.argv[1]
-
-			if mode == 'user':
-				(opts, args) = argparser.modify_user_parse_arguments(_app)
-				if len(args) == 2:
-					opts.login = args[1]
-				options.SetFrom(opts)
-				modify_user()
-			elif mode == 'group':
-				(opts, args) = argparser.modify_group_parse_arguments(_app)
-				if len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				modify_group()
-			elif mode == 'profile':
-				(opts, args) = argparser.modify_profile_parse_arguments(_app)
-				if len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				modify_profile()
-			elif mode == 'keyword':
-				(opts, args) = argparser.modify_keyword_parse_arguments(_app)
-				if len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				modify_keyword()
-			elif mode == 'path':
-				(opts, args) = argparser.modify_path_parse_arguments(_app)
-				if len(args) == 2:
-					opts.path = args[1]
-				options.SetFrom(opts)
-				modify_path()
-			elif mode in ('config', 'configuration'):
-				(opts, args) = argparser.modify_configuration_parse_arguments(_app)
-				options.SetFrom(opts)
-				modify_configuration()
-			else:
-				if not help_appended:
-					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-					sys.argv.append("--help")
-
-				argparser.general_parse_arguments(_app)
-
-		except exceptions.LicornException, e:
-			logging.error(str(e), e.errno)
-
-		except KeyboardInterrupt:
-			logging.warning(logging.GENERAL_INTERRUPTED)
-
-	finally:
-		configuration.CleanUp()
-		giantLock.Unlock()
+	cli_main(functions, _app)

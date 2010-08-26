@@ -5,7 +5,7 @@ Licorn CLI - http://ilcorn.org/documentation/cli
 
 add - add something on the system, a user account, a group...
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
@@ -23,12 +23,12 @@ from licorn.core.profiles      import ProfilesController
 from licorn.core.keywords      import KeywordsController
 
 _app = {
-	"name"     		: "licorn-add",
-	"description"	: "Licorn Add Entries",
-	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
+	"name"        : "licorn-add",
+	"description" : "Licorn Add Entries",
+	"author"      : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def import_users():
+def import_users(opts, args):
 	""" Massively import user accounts from a CSV file."""
 
 	configuration = LicornConfiguration()
@@ -333,8 +333,7 @@ def import_users():
 		groups.WriteConf()
 		users.WriteConf()
 		profiles.WriteConf(configuration.profiles_config_file)
-
-def add_user():
+def add_user(opts, args):
 	""" Add a user account on the system. """
 
 	configuration = LicornConfiguration()
@@ -374,11 +373,13 @@ def add_user():
 					force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('User %s already exists on the system.' % login)
-def add_user_in_groups():
+def add_user_in_groups(opts, args):
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
+
+	ltrace('add', '> add_user_in_group().')
 
 	for g in opts.groups_to_add.split(','):
 		if g != "":
@@ -394,7 +395,27 @@ def add_user_in_groups():
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
 					styles.stylize(styles.ST_NAME, g), str(e)))
 
-def add_group():
+	ltrace('add', '< add_user_in_group().')
+def dispatch_add_user(opts, args):
+	""" guess how we were called:
+		- add a user (creation)
+		- add a user into one or more group(s)
+	"""
+
+	ltrace('add', '> dispatch_add_user(%s, %s)' % (opts, args))
+
+	if len(args) == 2:
+		opts.login = args[1]
+		add_user(opts, args)
+	elif len(args) == 3:
+		opts.login = args[1]
+		opts.groups_to_add = args[2]
+		add_user_in_groups(opts, args)
+	else:
+		add_user(opts, args)
+
+	ltrace('add', '< dispatch_add_user()')
+def add_group(opts, args):
 	""" Add a POSIX group. """
 
 	ltrace('add', '> add_group().')
@@ -402,6 +423,9 @@ def add_group():
 	configuration = LicornConfiguration()
 	users  = UsersController(configuration)
 	groups = GroupsController(configuration, users)
+
+	if opts.name is None and len(args) == 2:
+		opts.name = args[1]
 
 	if opts.description:
 		opts.description = unicode(opts.description)
@@ -419,8 +443,7 @@ def add_group():
 				logging.warning('Group %s already exists on the system.' % name)
 
 	ltrace('add', '< add_group().')
-
-def add_profile():
+def add_profile(opts, args):
 	""" Add a system wide User profile. """
 
 	ltrace('add', '> add_profile().')
@@ -429,6 +452,9 @@ def add_profile():
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
+
+	if opts.name is None and len(args) == 2:
+		opts.name = args[1]
 
 	if opts.groups != []:
 		opts.groups = opts.groups.split(',')
@@ -446,110 +472,47 @@ def add_profile():
 
 	ltrace('add', '< add_profile().')
 
-def add_keyword():
+def add_keyword(opts, args):
 	""" Add a keyword on the system. """
 	configuration = LicornConfiguration()
 	keywords = KeywordsController(configuration)
 
+	if opts.name is None and len(args) == 2:
+		opts.name = args[1]
+
 	keywords.AddKeyword(unicode(opts.name), unicode(opts.parent), unicode(opts.description))
-def add_privilege():
+def add_privilege(opts, args):
 	configuration = LicornConfiguration()
+
+	if opts.privileges_to_add is None and len(args) == 2:
+		opts.privileges_to_add = args[1]
+
 	configuration.groups.privileges_whitelist.add(
 		opts.privileges_to_add.split(','))
-def add_workstation():
-	raise NotImplementedError("add_workstations not implemented.")
-def add_webfilter():
-	raise NotImplementedError("add_webfilters_types not implemented.")
 
 if __name__ == "__main__":
 
-	try:
-		configuration = LicornConfiguration()
-		giantLock = objects.FileLock(configuration, "add", 10)
-		giantLock.Lock()
-	except (IOError, OSError), e:
-		logging.error(logging.GENERAL_CANT_ACQUIRE_GIANT_LOCK % str(e))
+	import argparser as agp
+	from licorn.interfaces.cli import cli_main
 
-	try:
-		try:
+	functions = {
+		'usr':	         (agp.add_user_parse_arguments, dispatch_add_user),
+		'user':	         (agp.add_user_parse_arguments, dispatch_add_user),
+		'users':         (agp.addimport_parse_arguments, import_users),
+		'grp':           (agp.add_group_parse_arguments, add_group),
+		'group':         (agp.add_group_parse_arguments, add_group),
+		'groups':        (agp.add_group_parse_arguments, add_group),
+		'profile':       (agp.add_profile_parse_arguments, add_profile),
+		'profiles':      (agp.add_profile_parse_arguments, add_profile),
+		'priv':			 (agp.add_privilege_parse_arguments, add_privilege),
+		'privs':		 (agp.add_privilege_parse_arguments, add_privilege),
+		'privilege':	 (agp.add_privilege_parse_arguments, add_privilege),
+		'privileges':	 (agp.add_privilege_parse_arguments, add_privilege),
+		'kw':            (agp.add_keyword_parse_arguments, add_keyword),
+		'tag':           (agp.add_keyword_parse_arguments, add_keyword),
+		'tags':          (agp.add_keyword_parse_arguments, add_keyword),
+		'keyword':       (agp.add_keyword_parse_arguments, add_keyword),
+		'keywords':      (agp.add_keyword_parse_arguments, add_keyword),
+	}
 
-			if "--no-colors" in sys.argv:
-				options.SetNoColors(True)
-
-			from licorn.interfaces.cli import argparser
-
-			if len(sys.argv) < 2:
-				# automatically display help if no arg/option is given.
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(_app)
-
-			if len(sys.argv) < 3:
-				# this will display help, but when parsed later by specific functions.
-				# (for user/group/profile specific help)
-				sys.argv.append("--help")
-				help_appended = True
-			else:
-				help_appended = False
-
-			mode = sys.argv[1]
-
-			if mode == 'user':
-				(opts, args) = argparser.add_user_parse_arguments(_app)
-				options.SetFrom(opts)
-
-				if len(args) == 2:
-					opts.login = args[1]
-					add_user()
-				elif len(args) == 3:
-					opts.login = args[1]
-					opts.groups_to_add = args[2]
-					add_user_in_groups()
-				else:
-					add_user()
-
-			elif mode == 'users':
-				(opts, args) = argparser.addimport_parse_arguments(_app)
-				options.SetFrom(opts)
-				import_users()
-			elif mode == 'group':
-				(opts, args) = argparser.add_group_parse_arguments(_app)
-				if opts.name is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				add_group()
-			elif mode == 'profile':
-				(opts, args) = argparser.add_profile_parse_arguments(_app)
-				if opts.name is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				add_profile()
-			elif mode in ('tag', 'tags', 'kw', 'keyword', 'keywords'):
-				(opts, args) = argparser.add_keyword_parse_arguments(_app)
-				if opts.name is None and len(args) == 2:
-					opts.name = args[1]
-				options.SetFrom(opts)
-				add_keyword()
-			elif mode in ('priv', 'privilege', 'privs', 'privileges'):
-				(opts, args) = argparser.add_privilege_parse_arguments(_app)
-				if opts.privileges_to_add is None and len(args) == 2:
-					opts.privileges_to_add = args[1]
-				options.SetFrom(opts)
-				add_privilege()
-			else:
-				if not help_appended:
-					logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-					sys.argv.append("--help")
-
-				argparser.general_parse_arguments(_app)
-
-		except exceptions.LicornException, e:
-			configuration.CleanUp()
-			giantLock.Unlock()
-			logging.error (str(e), e.errno)
-
-		except KeyboardInterrupt:
-			logging.warning(logging.GENERAL_INTERRUPTED)
-
-	finally:
-		configuration.CleanUp()
-		giantLock.Unlock()
+	cli_main(functions, _app)
