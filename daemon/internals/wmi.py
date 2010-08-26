@@ -18,7 +18,7 @@ from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController
 from licorn.core.profiles       import ProfilesController
-from licorn.interfaces.web      import utils as w
+from licorn.interfaces.wmi      import utils as w
 from licorn.daemon.core         import dname, wpid_path, wmi_port, wlog_path, \
 	wmi_group, buffer_size, setup_signals_handler
 
@@ -208,7 +208,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		retdata = None
 		rettype = None
 
-		import licorn.interfaces.web as web
+		import licorn.interfaces.wmi as web
 
 		#
 		# GET / has special treatment :-)

@@ -142,7 +142,7 @@ def stylize_choose(type, what):
 	except:
 			stylize = stylize_cli_colors
 
-	# TODO: create and use options.web_output and stylize_web()
+	# TODO: create and use options.wmi_output and stylize_web()
 
 	# after the choice was made, call the real function
 	return stylize(type, what)

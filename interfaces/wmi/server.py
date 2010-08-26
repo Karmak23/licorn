@@ -9,7 +9,7 @@ from licorn.foundations         import logging
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 
-from licorn.interfaces.web import utils as w
+from licorn.interfaces.wmi import utils as w
 
 configuration = LicornConfiguration()
 users = UsersController(configuration)

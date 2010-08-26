@@ -12,7 +12,7 @@ from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController
 from licorn.core.profiles       import ProfilesController
 
-from licorn.interfaces.web import utils as w
+from licorn.interfaces.wmi import utils as w
 
 configuration = LicornConfiguration()
 users = UsersController(configuration)
