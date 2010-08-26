@@ -138,8 +138,8 @@ class ProfilesController:
 		ProfilesController.groups.name_to_gid(
 			ProfilesController.profiles[profile]['groupName']),
 		ProfilesController.profiles[profile]['description'],
-		ProfilesController.profiles[profile]['profileSkel'],
 		ProfilesController.configuration.users.base_path,
+		ProfilesController.profiles[profile]['profileSkel'],
 		ProfilesController.profiles[profile]['profileShell'],
 		ProfilesController.profiles[profile]['profileQuota'],
 		'\n	Groups: %s' % \
