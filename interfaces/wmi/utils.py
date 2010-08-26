@@ -72,7 +72,6 @@ def run(command, successfull_redirect, page_data, error_message):
 			)
 	else:
 		return (HTTP_TYPE_REDIRECT, successfull_redirect)
-
 def total_time(start, end):
 	elapsed = end - start
 	ptime   = ""
@@ -233,6 +232,11 @@ def page_body_start(uri, http_user, ctxtnav, title, active=True):
 		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
+def forgery_error(title):
+	return (w.HTTP_TYPE_TEXT, w.page(title,
+		w.error(_("Forbidden action"),
+		[ _("Some parts of the system cannot be modified.") ],
+		_("insufficient permissions to perform operation."))))
 
 # HTML FORM functions
 def access_key(key):

@@ -17,7 +17,6 @@ users = UsersController(configuration)
 groups = GroupsController(configuration, users)
 profiles = ProfilesController(configuration, groups, users)
 
-
 groups_filters_lists_ids = (
 	(groups.FILTER_STANDARD, [_('Customize groups'),
 		_('Available groups'), _('Affected groups')],
@@ -78,6 +77,8 @@ def ctxtnav(active = True):
 			onClick, disabled, disabled,
 		_("Export accounts")
 		)
+def protected_user(login):
+	return users.is_system_login(login)
 
 def export(uri, http_user, type = "", yes = None):
 	""" Export user accounts list."""
@@ -135,11 +136,14 @@ def export(uri, http_user, type = "", yes = None):
 def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 	"""remove user account."""
 
-	# forget about this thing, it is a scoria of the
-	# POST FORM to variable conversion.
+	# form submit button, forget it.
 	del yes
 
 	title = _("Remove user account %s") % login
+
+	if protected_user(login):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if not sure:
@@ -164,13 +168,6 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-		users.reload()
-		if users.is_system_login(login):
-			return (w.HTTP_TYPE_TEXT, w.minipage(title,
-				w.error(_("Failed to remove account"),
-				[ _("alter system account.") ],
-				_("insufficient permissions to perform operation."))))
-
 		# we are sure, do it !
 		command = [ 'sudo', 'del', 'user', '--quiet', '--no-colors',
 			'--login', login ]
@@ -181,14 +178,15 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove account <strong>%s</strong>!''') % login)
-
 def unlock(uri, http_user, login):
 	"""unlock a user account password."""
 
 	title = _("Unlock account %s") % login
-	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	users.reload()
+	if protected_user(login):
+		return w.forgery_error(title)
+
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if users.is_system_login(login):
 		return (w.HTTP_TYPE_TEXT, w.page(title,
@@ -203,17 +201,17 @@ def unlock(uri, http_user, login):
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_("Failed to unlock account <strong>%s</strong>!") % login)
-def lock(uri, http_user, login, sure = False, remove_remotessh = False,
-	yes = None):
+def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None):
 	"""lock a user account password."""
 
 	# submit button: forget it.
 	del yes
 
-	groups.reload()
-	users.reload()
-
 	title = _("Lock account %s") % login
+
+	if protected_user(login):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if not sure:
@@ -252,12 +250,6 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-		if users.is_system_login(login):
-			return (w.HTTP_TYPE_TEXT, w.page(title,
-				w.error(_("Failed to lock account"),
-				[ _("alter system account.") ],
-				_("insufficient permissions to perform operation."))))
-
 		# we are sure, do it !
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
 			login, "--lock" ]
@@ -270,7 +262,6 @@ def lock(uri, http_user, login, sure = False, remove_remotessh = False,
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_("Failed to lock account <strong>%s</strong>!") % login)
-
 def skel(uri, http_user, login, sure = False,
 	apply_skel = configuration.users.default_skel, yes = None):
 	"""reapply a user's skel with confirmation."""
@@ -278,44 +269,21 @@ def skel(uri, http_user, login, sure = False,
 	# submit button; forget it.
 	del yes
 
-	groups.reload()
-	users.reload()
-	# profiles.reload()
-
-	u = users.users
-	g = groups.groups
-
 	title = _("Reapply skel to user account %s") % login
-	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if users.is_system_login(login):
-		return (w.HTTP_TYPE_TEXT, w.page(title,
-		w.error(_("Failed to reapply skel"),
-			[ _("alter system account.") ],
-			_("insufficient permissions to perform operation."))))
+	if protected_user(login):
+		return w.forgery_error(title)
+
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if not sure:
 		description = _('''This will rebuild his/her desktop from scratch, '''
 		'''with defaults icons and so on.<br /><br />The user must be '''
 		'''disconnected for the operation to be completely successfull.''')
 
-		pri_group = g[u[users.login_to_uid(login)]['gidNumber']]['name']
-
-		# liste des skels du profile en cours.
-		def filter_skels(pri_group, sk_list):
-			'''
-			TODO: to be converted to licorn model
-			if pri_group == configuration.mNames['RESPONSABLES_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
-			elif pri_group == configuration.mNames['USAGERS_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
-			else:
-			'''
-			return sk_list
-
 		form_options = _("Which skel do you want to apply? %s") % \
-			w.select("apply_skel", filter_skels(pri_group,
-				configuration.users.skels), func = os.path.basename)
+			w.select("apply_skel", configuration.users.skels,
+			func=os.path.basename)
 
 		data += w.question(_('''Are you sure you want to apply this skel to'''
 			''' account <strong>%s</strong>?''') % login,
@@ -338,15 +306,12 @@ def skel(uri, http_user, login, sure = False,
 			_('''Failed to apply skel <strong>%s</strong> on user
 			account <strong>%s</strong>!''') % (os.path.basename(apply_skel),
 				login))
-
 def new(uri, http_user):
 	"""Generate a form to create a new user on the system."""
 
 	groups.reload()
-	# profiles.reload()
-
-	g = groups.groups
-	p = profiles.profiles
+	g = groups
+	p = profiles
 
 	title = _("New user account")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -464,7 +429,6 @@ def new(uri, http_user):
 		)
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
 def create(uri, http_user, loginShell, password, password_confirm,
 	profile=None, login="", gecos="", firstname="", lastname="",
 	standard_groups_dest=[], privileged_groups_dest=[],
@@ -480,11 +444,11 @@ def create(uri, http_user, loginShell, password, password_confirm,
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if password != password_confirm:
-		return (w.HTTP_TYPE_TEXT, w.minipage(title,
+		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Passwords do not match!%s") % rewind)))
 
 	if len(password) < configuration.mAutoPasswdSize:
-		return (w.HTTP_TYPE_TEXT, w.minipage(title,
+		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Password must be at least %d characters long!%s")\
 				% (configuration.mAutoPasswdSize, rewind))))
 
@@ -535,22 +499,19 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to add user <strong>%s</strong> to requested
 		groups/privileges/responsibilities/invitations!''') % login)
-
 def edit(uri, http_user, login):
 	"""Edit an user account, based on login."""
 
-	groups.reload()
 	users.reload()
+	groups.reload()
 	# profiles.reload()
 
 	title = _('Edit account %s') % login
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
-	if users.is_system_login(login):
-		return (w.HTTP_TYPE_TEXT, w.minipage(title,
-			w.error(_('Account edition impossible.'),
-			[ _("alter system account.") ],
-			_("insufficient permissions to perform operation."))))
+	if protected_user(login):
+		return w.forgery_error(title)
+
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
 		user = users.users[users.login_to_uid(login)]
@@ -673,7 +634,6 @@ def edit(uri, http_user, login):
 			login, "user = users.users[users.login_to_uid(login)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
 def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 	password = "", password_confirm = "",
 	firstname = "", lastname = "", gecos = "",
@@ -686,26 +646,24 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 
 	# submit button. forget it.
 	del record
+	users.reload()
 
 	title = _("Modification of account %s") % login
+
+	if protected_user(login):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	command = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login",
 		login, "--shell", loginShell ]
 
-	users.reload()
-	if users.is_system_login(login):
-		return (w.HTTP_TYPE_TEXT, w.minipage(title,
-			w.error(_("Recording of informations failed"),
-			[ _("alter system account.") ],
-			_("insufficient permissions to perform operation."))))
-
 	if password != "":
 		if password != password_confirm:
-			return (w.HTTP_TYPE_TEXT, w.minipage(title,
+			return (w.HTTP_TYPE_TEXT, w.page(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
 		if len(password) < configuration.mAutoPasswdSize:
-			return (w.HTTP_TYPE_TEXT, w.minipage(title, data + w.error(
+			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
 				_("The password --%s-- must be at least %d characters long!%s")\
 				% (password, configuration.mAutoPasswdSize, rewind))))
 

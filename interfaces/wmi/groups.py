@@ -46,12 +46,21 @@ def ctxtnav(active = True):
 		</ul>
 	</div>
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
+def protected_group(name, complete=True):
+	if complete:
+		return groups.is_system_group(name)
+	else:
+		return groups.is_system_group(name) and not groups.is_privilege(name)
 
 # locking and unlocking.
 def unlock(uri, http_user, name, sure=False):
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
+
+	if protected_group(name):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
@@ -86,6 +95,10 @@ def lock(uri, http_user, name, sure=False):
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
+
+	if protected_group(name):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
@@ -115,7 +128,6 @@ def lock(uri, http_user, name, sure=False):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove permissiveness from group
 				<strong>%s</strong>!''') % name)
-
 def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	""" Remove group and archive (or not) group shared dir. """
 
@@ -123,14 +135,13 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 	del yes
 
 	title = _("Remove group %s") % name
+
+	if protected_group(name):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	groups.reload()
-
-	if groups.is_system_group(name):
-		return w.minipage(title, w.error(_("Failed to remove group"),
-			[ _("alter system group.") ],
-			_("insufficient permissions to perform operation.")))
 
 	if not sure:
 		data += w.question(_('''Are you sure you want to remove group
@@ -160,7 +171,6 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove group <strong>%s</strong>!''') % name)
-
 def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
 
@@ -169,6 +179,10 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 	groups.reload()
 
 	title = _("Skeleton reapplying for group %s") % name
+
+	if protected_group(name):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
@@ -221,7 +235,6 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to apply skel %s to members of group %s.''') % (
 				os.path.basename(apply_skel), login))
-
 def new(uri, http_user):
 	"""Generate a form to create a new group on the system."""
 
@@ -299,15 +312,14 @@ def view(uri, http_user, name):
 	groups.reload()
 
 	title = _("Details of group %s") % name
+
+	if protected_group(name, complete=False):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	u = users.users
 	g = groups.groups
-
-	# TODO: should we forbid system group view ? why not ?
-	# As of now, this is harmless and I don't see any reason
-	# apart from obfuscation which is not acceptable.
-	# Anyway, to see a system group, user must forge an URL.
 
 	try:
 		group   = g[groups.name_to_gid(name)]
@@ -444,7 +456,6 @@ def view(uri, http_user, name):
 			name, "group = g[groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
 def edit(uri, http_user, name):
 	"""Edit a group."""
 
@@ -455,6 +466,10 @@ def edit(uri, http_user, name):
 	g = groups.groups
 
 	title = _("Editing group %s") %  name
+
+	if protected_group(name, complete=False):
+		return w.forgery_error(title)
+
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
@@ -620,6 +635,10 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	del record
 
 	title   = _("Modifying group %s") % name
+
+	if protected_group(name, complete=False):
+		return w.forgery_error(title)
+
 	data    = '%s<h1>%s</h1>' % (w.backto(), title)
 	command = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
 		'--name', name ]
