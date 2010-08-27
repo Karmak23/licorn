@@ -233,8 +233,8 @@ def page_body_start(uri, http_user, ctxtnav, title, active=True):
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def forgery_error(title):
-	return (w.HTTP_TYPE_TEXT, w.page(title,
-		w.error(_("Forbidden action"),
+	return (HTTP_TYPE_TEXT, page(title,
+		error(_("Forbidden action"),
 		[ _("Some parts of the system cannot be modified.") ],
 		_("insufficient permissions to perform operation."))))
 
