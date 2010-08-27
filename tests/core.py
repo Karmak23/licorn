@@ -146,10 +146,10 @@ class FunctionnalTest:
 
 		if self.pre_cmds != []:
 			logging.progress('preparing system for cmd %s.' % cmd)
-			for cmd in self.pre_cmds:
-				out_path += 'pre_%s/' % make_path(cmd)
+			for pre_cmd in self.pre_cmds:
+				out_path += 'pre_%s/' % make_path(pre_cmd)
 				# shouldn't this turned into a FunctionnalTest either ?
-				execute(cmd)
+				execute(pre_cmd)
 
 		out_path += 'cmd_%s/context_%s' % (make_path(cmd), self.context)
 		self.ref_output_file = '%s/out.txt' % out_path
