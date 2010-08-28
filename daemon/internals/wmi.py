@@ -256,7 +256,12 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					self.send_error(500,
 						"Internal server error or bad request.")
 
+				except TypeError, e:
+					logging.warning('Bad_Request/TypeError: %s.' % e)
+					rettype, retdata = 	w.bad_arg_error()
+
 				except exceptions.LicornRuntimeException, e:
+					logging.warning('Bad_Request/LicornRuntimeException: %s.' % e)
 					rettype, retdata = w.forgery_error()
 			else:
 				# not a web.* module

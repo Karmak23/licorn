@@ -238,10 +238,18 @@ def page_body_start(uri, http_user, ctxtnav, title, active=True):
 		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
+def bad_arg_error():
+	return (HTTP_TYPE_TEXT, page(_('Bad request or argument'),
+		error(_("Bad request or argument"),
+			description = _('''There was a problem in the request you sent '''
+				'''to the WMI.''')
+		)))
+
 def forgery_error(title=_("Impossible action")):
 	return (HTTP_TYPE_TEXT, page(title,
 		error(_("Impossible action"),
-		description = _("Some parts of the system cannot be modified, for your own safety and the world to rest in peace."),
+			description = _('''Some parts of the system cannot be modified, '''
+				'''for your own safety and the world to rest in peace.''')
 		)))
 
 # HTML FORM functions
