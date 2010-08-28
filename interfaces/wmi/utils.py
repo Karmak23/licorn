@@ -214,7 +214,10 @@ def error(message, command=None, error=None, description=''):
 		'<br /><br />%s<br /><br /><pre>%s</pre>' % (
 			_('Error reported by system:'), error) if error else '')
 def backto():
-	return '<div id="header"><a id="logo" href="/" title="retourner vers la racine de l\'interface d\'administration."><img src="/images/logo_licorn_120.png" alt="retourner vers la racine de l\'interface d\'administration." /></a></div>'
+	return ('''<div id="header"><a id="logo" href="/" title="%s">'''
+		'''<img src="/images/logo_licorn_120.png" alt="%s" /></a></div>''' % (
+			_("Back to root of management interface"),
+			_("Back to root of management interface")))
 def metanav(http_user):
 	""" Minimal function to display the user logged in.
 		Will implement links to preferences, later.
