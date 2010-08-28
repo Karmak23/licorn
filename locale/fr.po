@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-08-28 08:16+0200\n"
-"PO-Revision-Date: 2010-08-28 08:58+0100\n"
+"POT-Creation-Date: 2010-08-28 10:02+0200\n"
+"PO-Revision-Date: 2010-08-28 10:03+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -183,35 +183,45 @@ msgstr "Retour à la racine de l'interface de gestion"
 msgid "Logged in as %s"
 msgstr "Connecté en tant que %s"
 
+#: interfaces/wmi/utils.py:242
 #: interfaces/wmi/utils.py:243
-msgid "Forbidden action"
-msgstr "Action interdite"
+msgid "Bad request or argument"
+msgstr "Requête ou argument erroné"
 
 #: interfaces/wmi/utils.py:244
+msgid "There was a problem in the request you sent to the WMI."
+msgstr "Il y a eu un problème dans le traitement de la requête que vous avez envoyé à la WMI."
+
+#: interfaces/wmi/utils.py:248
+#: interfaces/wmi/utils.py:250
+msgid "Impossible action"
+msgstr "Action impossible"
+
+#: interfaces/wmi/utils.py:251
 msgid "Some parts of the system cannot be modified, for your own safety and the world to rest in peace."
 msgstr "Certaines parties du système ne peuvent pas être modifiées, pour votre sécurité et pour que le monde reste en paix."
 
-#: interfaces/wmi/utils.py:329
+#: interfaces/wmi/utils.py:337
 msgid "Server, UPS and hardware sub-systems status."
 msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/wmi/utils.py:329
+#: interfaces/wmi/utils.py:337
 msgid "Status"
 msgstr "État"
 
-#: interfaces/wmi/utils.py:330
+#: interfaces/wmi/utils.py:338
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/wmi/utils.py:330
+#: interfaces/wmi/utils.py:338
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: interfaces/wmi/utils.py:331
+#: interfaces/wmi/utils.py:339
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/wmi/utils.py:331
+#: interfaces/wmi/utils.py:339
 #: interfaces/wmi/users.py:422
 #: interfaces/wmi/users.py:623
 #: interfaces/wmi/groups.py:697
@@ -219,49 +229,49 @@ msgstr "Gérer les groupes et les données partagées"
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/wmi/utils.py:332
+#: interfaces/wmi/utils.py:340
 msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
 msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
 
-#: interfaces/wmi/utils.py:332
+#: interfaces/wmi/utils.py:340
 msgid "Machines"
 msgstr "Machines"
 
-#: interfaces/wmi/utils.py:333
+#: interfaces/wmi/utils.py:341
 msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
 msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/wmi/utils.py:333
+#: interfaces/wmi/utils.py:341
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/wmi/utils.py:334
+#: interfaces/wmi/utils.py:342
 msgid "Go to online documentation and community website (in new window or new tab)."
 msgstr "Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet)."
 
-#: interfaces/wmi/utils.py:334
+#: interfaces/wmi/utils.py:342
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/wmi/utils.py:335
+#: interfaces/wmi/utils.py:343
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/wmi/utils.py:335
+#: interfaces/wmi/utils.py:343
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/wmi/utils.py:339
+#: interfaces/wmi/utils.py:347
 #, python-format
 msgid "%s Management"
 msgstr "Administration %s"
 
-#: interfaces/wmi/utils.py:364
+#: interfaces/wmi/utils.py:372
 #, python-format
 msgid "%s WMI:"
 msgstr "IGW %s&nbsp;:"
 
-#: interfaces/wmi/utils.py:369
+#: interfaces/wmi/utils.py:377
 #, python-format
 msgid "administration %s"
 msgstr "Administration %s"
