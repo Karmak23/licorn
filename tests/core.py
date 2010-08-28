@@ -17,11 +17,11 @@ else:
 	verbose=False
 
 CLIPATH='../interfaces/cli'
-ADD   =PYTHON + [ CLIPATH + '/add.py']
-DELETE=PYTHON + [ CLIPATH + '/del.py']
-MODIFY=PYTHON + [ CLIPATH + '/mod.py']
-GETENT=PYTHON + [ CLIPATH + '/get.py']
-CHECK =PYTHON + [ CLIPATH + '/chk.py']
+ADD    = PYTHON + [ CLIPATH + '/add.py']
+DELETE = PYTHON + [ CLIPATH + '/del.py']
+MODIFY = PYTHON + [ CLIPATH + '/mod.py']
+GETENT = PYTHON + [ CLIPATH + '/get.py']
+CHECK  = PYTHON + [ CLIPATH + '/chk.py']
 
 system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
 				'login.defs', 'licorn/main.conf', 'licorn/group',
@@ -34,10 +34,16 @@ if len(sys.argv) > 1:
 else:
 	args = []
 
+missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
-	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff' ):
+	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff', '/usr/sbin/slapcat'):
 	if not os.path.exists(binary):
-		logging.error('%s does not exist on this system and is mandatory for this testsuite.' % binary)
+		missing_error=True
+		logging.warning('''%s does not exist on this system and is '''
+			'''mandatory for this testsuite.''' % binary)
+
+if missing_error:
+	logging.error('Please install missing packages before continuing.')
 
 curses.setupterm()
 clear = curses.tigetstr('clear')
@@ -45,16 +51,13 @@ clear = curses.tigetstr('clear')
 def clear_term():
 	sys.stdout.write(clear)
 	sys.stdout.flush()
-
 def cmdfmt(cmd):
 	'''convert a sequence to a colorized string.'''
 	return styles.stylize(styles.ST_NAME, ' '.join(cmd))
-
 def test_message(msg):
 	""" display a message to stderr. """
 	sys.stderr.write("%s>>> %s%s\n"
 		% (styles.colors[styles.ST_LOG], msg, styles.colors[styles.ST_NO]) )
-
 def log_and_exec (command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
@@ -103,7 +106,6 @@ def log_and_exec (command, inverse_test=False, result_code=0, comment="",
 
 	if verb:
 		sys.stderr.write(output)
-
 def execute(cmd):
 	#logging.notice('running %s.' % ' '.join(cmd))
 	p4 = Popen(cmd, shell=False,
@@ -116,7 +118,6 @@ def strip_dates(str):
 	always compare false ."""
 	return re.sub(r'\s\[\d\d\d\d/\d\d/\d\d\s\d\d:\d\d:\d\d\.\d\d\d\d\]\s',
 		r' [D/T] ', str)
-
 class FunctionnalTest:
 	counter = 0
 
@@ -137,7 +138,9 @@ class FunctionnalTest:
 	def Prepare(self, cmd):
 		""" Run commands mandatory for func_test to succeed. """
 
-		make_path = lambda x: ('_'.join(x)).replace('../', '').replace('//','_').replace('/','_')
+		make_path = lambda x: ('_'.join(x)).replace('__', '_').replace(
+			'./', '').replace('../', '').replace('//','_').replace(
+			'/','_').replace('>','').replace('&', '')
 
 		out_path = 'data/'
 
@@ -203,8 +206,13 @@ class FunctionnalTest:
 		message = ''
 
 		if retcode != ref_code:
-			logging.warning('command "%s" failed (retcode %d instead of %d).\nPath: %s' % (
-				cmdfmt(cmd), retcode, ref_code, self.ref_code_file))
+			logging.warning(
+				'''command "%s" failed (retcode %d instead of %d).\n'''
+				'''(Reference path: %s)''' % (
+				styles.stylize(styles.ST_NAME, cmdfmt(cmd)),
+				styles.stylize(styles.ST_BAD,retcode),
+				styles.stylize(styles.ST_OK, ref_code),
+				self.ref_code_file))
 			if batch or logging.ask_for_repair(
 				'Should I keep the new return code as reference for future runs?'):
 				self.SaveOutput(output, retcode)
