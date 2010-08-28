@@ -42,7 +42,8 @@ acronyms = {
 	'LCN' : _('''LiCorN system tools (tools for IT managers,
 		see http://dev.licorn.org/)'''),
 	'LAT' : _('''Licorn Admin Tools (High-level management tools for
-		a GNU/Linux system)''')
+		a GNU/Linux system)'''),
+	'WMI' : _('Licorn® Web Management Interface')
 	}
 
 # EXEC / SYSTEM functions.
