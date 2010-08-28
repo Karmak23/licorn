@@ -579,28 +579,29 @@ class UsersController:
 		if login is None:
 			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
 
-		#
-		# TODO: lock the shell (not just the password), else SSH connections
-		# with private/public keys could still be usable. As an alternative,
-		# we could just remove user from remotessh group, which seems to be
-		# a Licorn prerequisite.
-		#
-
 		# update internal data structures.
 		uid = UsersController.login_to_uid(login)
 
 		if lock:
-			UsersController.users[uid]['userPassword'] = '!' + \
-				UsersController.users[uid]['userPassword']
-			logging.info('Locked user account %s.' % \
-				styles.stylize(styles.ST_LOGIN, login))
+			if UsersController.users[uid]['locked']:
+				logging.info('account %s already locked.' %
+					styles.stylize(styles.ST_NAME, login))
+			else:
+				UsersController.users[uid]['userPassword'] = '!' + \
+					UsersController.users[uid]['userPassword']
+				logging.info('Locked user account %s.' % \
+					styles.stylize(styles.ST_LOGIN, login))
 		else:
-			UsersController.users[uid]['userPassword'] = \
-				UsersController.users[uid]['userPassword'][1:]
-			logging.info('Unlocked user account %s.' % \
-				styles.stylize(styles.ST_LOGIN, login))
-		UsersController.users[uid]['locked'] = lock
+			if UsersController.users[uid]['locked']:
+				UsersController.users[uid]['userPassword'] = \
+					UsersController.users[uid]['userPassword'][1:]
+				logging.info('Unlocked user account %s.' % \
+					styles.stylize(styles.ST_LOGIN, login))
+			else:
+				logging.info('account %s already unlocked.' %
+					styles.stylize(styles.ST_NAME, login))
 
+		UsersController.users[uid]['locked'] = lock
 
 		UsersController.users[uid]['action'] = 'update'
 		UsersController.backends[
