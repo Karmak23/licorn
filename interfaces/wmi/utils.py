@@ -232,7 +232,7 @@ def page_body_start(uri, http_user, ctxtnav, title, active=True):
 		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
-def forgery_error(title):
+def forgery_error(title=_("Impossible action")):
 	return (HTTP_TYPE_TEXT, page(title,
 		error(_("Forbidden action"),
 		[ _("Some parts of the system cannot be modified.") ],
