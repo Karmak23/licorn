@@ -201,16 +201,18 @@ def question(title, message, yes_values, no_values, form_options = None):
 	return data
 def license(text):
 	return '''<div id="license">%s</div>''' % text
-def error(text, command = [ "inconnue" ], error = "inconnue"):
+def error(message, command=None, error=None, description=''):
 	return '''
 	<div id="command_error">
 		<div class="error_title">%s</div>
-		La commande lancée était&#160;:<br /><br />
-		<code>%s</code><br /><br />
-		L'erreur rapportée par le système est&#160;:<br /><br />
-		<pre>%s</pre>
-		</div>
-		''' % (text, " ".join(command), error)
+		%s%s%s</div>
+		''' % (message, '%s<br />' % description if description else '',
+			'''%s<br /><br />
+		<code>%s</code>''' % (
+			_('Executed command:'),
+			" ".join(command)) if command else '',
+		'<br /><br />%s<br /><br /><pre>%s</pre>' % (
+			_('Error reported by system:'), error) if error else '')
 def backto():
 	return '<div id="header"><a id="logo" href="/" title="retourner vers la racine de l\'interface d\'administration."><img src="/images/logo_licorn_120.png" alt="retourner vers la racine de l\'interface d\'administration." /></a></div>'
 def metanav(http_user):
@@ -235,9 +237,9 @@ def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def forgery_error(title=_("Impossible action")):
 	return (HTTP_TYPE_TEXT, page(title,
-		error(_("Forbidden action"),
-		[ _("Some parts of the system cannot be modified.") ],
-		_("insufficient permissions to perform operation."))))
+		error(_("Impossible action"),
+		description = _("Some parts of the system cannot be modified, for your own safety and the world to rest in peace."),
+		)))
 
 # HTML FORM functions
 def access_key(key):
