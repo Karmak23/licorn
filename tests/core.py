@@ -207,7 +207,7 @@ class FunctionnalTest:
 
 		if retcode != ref_code:
 			logging.warning(
-				'''command "%s" failed (retcode %d instead of %d).\n'''
+				'''command "%s" failed (retcode %s instead of %s).\n'''
 				'''(Reference path: %s)''' % (
 				styles.stylize(styles.ST_NAME, cmdfmt(cmd)),
 				styles.stylize(styles.ST_BAD,retcode),
