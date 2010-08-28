@@ -8,10 +8,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-06-16 16:48+0200\n"
-"PO-Revision-Date: 2010-06-16 16:48+0100\n"
-"Last-Translator: Olivier Cortès <olivier.cortes@meta-it.fr>\n"
+"POT-Creation-Date: 2010-08-28 08:16+0200\n"
+"PO-Revision-Date: 2010-08-28 08:58+0100\n"
+"Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,38 +20,13 @@ msgstr ""
 "X-Poedit-Language: French\n"
 "X-Poedit-Country: FRANCE\n"
 
-#: core/internals/configuration.py:358
-#, python-format
-msgid "SSH detection not supported yet on your system.Please get in touch with %s."
-msgstr "La détection de la configuration SSH n'est pas implémentée sur votre système. Merci de contacter %s."
-
-#: core/internals/configuration.py:373
-msgid "Users allowed to connect via SSHd"
-msgstr "Utilisateurs autorisés à se connecter à distance via SSHd."
-
-#: core/internals/configuration.py:594
-msgid "user"
-msgstr "utilisateur"
-
-#: core/internals/configuration.py:595
-msgid "users"
-msgstr "utilisateurs"
-
-#: core/internals/configuration.py:613
-msgid "group"
-msgstr "groupe"
-
-#: core/internals/configuration.py:614
-msgid "groups"
-msgstr "groupes"
-
 #: interfaces/gui/hkew.glade:7
 msgid "Licorn Keywords File Modifier"
-msgstr "Modification des mots-clef — Licorn"
+msgstr "Modification des mots-clef — Licorn®"
 
 #: interfaces/gui/hkew.glade:18
 msgid "<span size=\"xx-large\">Licorn Keywords modifier</span>"
-msgstr "<span size=\"xx-large\">Modification des mots-clef — Licorn</span>"
+msgstr "<span size=\"xx-large\">Modification des mots-clef — Licorn®</span>"
 
 #: interfaces/gui/hkew.glade:30
 msgid "  Paths affected by keywords  "
@@ -76,1067 +52,723 @@ msgstr "<b>-</b>"
 
 #: interfaces/gui/hkew.glade:196
 msgid "Licorn Keywords File Query"
-msgstr "Recherche par mot-clef — Licorn"
+msgstr "Recherche par mot-clef — Licorn®"
 
 #: interfaces/gui/hkew.glade:207
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
-msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn</spam>"
+msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn®</spam>"
 
-#: interfaces/web/base.py:26
-#: interfaces/web/server.py:26
-msgid "Restart server."
-msgstr "Redémarrer le serveur."
-
-#: interfaces/web/base.py:27
-#: interfaces/web/server.py:27
-msgid "Restart server"
-msgstr "Redémarrer le serveur"
-
-#: interfaces/web/base.py:28
-#: interfaces/web/server.py:28
-msgid "Shutdown server."
-msgstr "Éteindre le serveur."
-
-#: interfaces/web/base.py:29
-#: interfaces/web/server.py:29
-msgid "Shutdown server"
-msgstr "Éteindre le serveur"
-
-#: interfaces/web/base.py:71
-#, python-format
-msgid "%d year%s, "
-msgstr "%d année%s, "
-
-#: interfaces/web/base.py:74
-#, python-format
-msgid "%d day%s, "
-msgstr "%d jour%s, "
-
-#: interfaces/web/base.py:77
-#, python-format
-msgid "%d hour%s, "
-msgstr "%d heure%s, "
-
-#: interfaces/web/base.py:80
-#, python-format
-msgid "%d min%s, "
-msgstr "%d min%s, "
-
-#: interfaces/web/base.py:83
-#, python-format
-msgid "%d sec%s"
-msgstr "%d sec%s"
-
-#: interfaces/web/base.py:85
-#, python-format
-msgid ""
-"Up and running since <strong>%s</strong>.<br /><br />\n"
-"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
-"<br /><br />\n"
-"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
-msgstr ""
-"En marche depuis <strong>%s</strong>.<br /><br />\n"
-"Utilisateurs&nbsp;: <strong>%d</strong> au total, <strong>%d actuellement connecté(s)</strong>.<br /><br />\n"
-"Charge système sur les dernières 1, 5, et 15 minutes&nbsp;: <strong>%s</strong>, %s, %s"
-
-#: interfaces/web/base.py:128
-msgid "no virtual memory installed."
-msgstr "pas de mémoire virtuelle installée."
-
-#: interfaces/web/base.py:131
-#, python-format
-msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
-msgstr "Mémoire Virtuelle&nbsp;: %.2f Go total, <strong>%.0f%% libre<strong>."
-
-#: interfaces/web/base.py:134
+#: interfaces/wmi/utils.py:22
 #, python-format
 msgid ""
 "\n"
-"Processor%s: %d x <strong>%s</strong><br /><br />\n"
-"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
-"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
-"%s"
+"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU\n"
+" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
+" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,\n"
+"  and all other libre software developers (Notably Ubuntu, Debian, Python…).\n"
 msgstr ""
 "\n"
-"Processeur%s: %d x <strong>%s</strong><br /><br />\n"
-"Mémoire physique&nbsp;: <strong>%.2fGo</strong> au total,<br />\n"
-"%.2f Go pour les programmes, %.2f Go pour le cache, %.2f Go pour les tampons.<br /><br />\n"
-"%s"
+"%s est distribué sous licence <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU GPL version 2</a> sans aucune garantie d'aucune sorte. Copyleft et droits d'auteurs &copy; 2007-2010 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun pour le projet %s, ainsi qu'à tous les auteurs respectifs des logiciels libres utilisés (Notament Ubuntu, Debian, Python…).\n"
 
-#: interfaces/web/base.py:145
-msgid "Server status"
-msgstr "État du serveur"
+#: interfaces/wmi/utils.py:30
+msgid "Secure SHell (Secure remote connexion and commands protocol)"
+msgstr "Secure SHell (Protocole de connexion sécurisée à distance)"
 
-#: interfaces/web/base.py:157
-msgid "System information"
-msgstr "Informations système"
+#: interfaces/wmi/utils.py:31
+msgid "File Transfer Protocol"
+msgstr "File Transfer Protocol (protocole de transfert de fichiers)"
 
-#: interfaces/web/base.py:158
-msgid "System status"
-msgstr "État du système"
+#: interfaces/wmi/utils.py:32
+msgid "HyperText Transfert Protocol"
+msgstr "HyperText Transfert Protocol (Transfert de documents par liens HyperTexte)"
 
-#: interfaces/web/groups.py:9
-#: interfaces/web/users.py:26
-msgid "<br /><br />Go back with your browser, double-check data and validate the web-form."
-msgstr "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données saisies et re-validez le formulaire."
+#: interfaces/wmi/utils.py:33
+msgid "Internet Message Access Protocol"
+msgstr "Internet Message Access Protocol (Protocole d'accès à distance au courrier électronique)"
 
-#: interfaces/web/groups.py:38
-msgid "Add a new group on the system."
-msgstr "Ajouter un nouveau groupe sur le système."
+#: interfaces/wmi/utils.py:34
+msgid "Virtual Network Computing (Desktop remote connexion protocol)"
+msgstr "Virtual Network Computing (Protocole de prise en main d'ordinateur à distance)"
 
-#: interfaces/web/groups.py:38
-msgid "Add a group"
-msgstr "Ajouter un groupe"
+#: interfaces/wmi/utils.py:35
+msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
+msgstr "Remote Desktop Protocol (Protocole de prise en main de bureau graphique à distance)"
 
-#: interfaces/web/groups.py:44
-#, python-format
-msgid "Make group %s permissive"
-msgstr "Rendre le groupe %s permissif"
+#: interfaces/wmi/utils.py:36
+msgid "Post-Office Protocol (Simple mail fetching protocol)"
+msgstr "Post-Office Protocol (Procole simpliste de récupération du courrier électronique)"
 
-#: interfaces/web/groups.py:48
+#: interfaces/wmi/utils.py:37
+msgid "Simple Mail Transfer Protocol"
+msgstr "Simple Mail Transfer Protocol (Protocole d'envoi et relai du courrier électronique)"
+
+#: interfaces/wmi/utils.py:38
+msgid "Rivest Shamir Adleman (cryptography protocol)"
+msgstr "Rivest Shamir Adleman (Protocole de cryptographie)"
+
+#: interfaces/wmi/utils.py:39
+msgid "Digital Signature Algorithm"
+msgstr "Digital Signature Algorithm (Protocole de cryptographie)"
+
+#: interfaces/wmi/utils.py:40
 msgid ""
-"This will permit large access to files and folders\n"
-"\t\t\tin the group shared dir, and will allow any member of the group to\n"
-"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
-"\t\t\tdocument. This option can be dangerous, but if group members are\n"
-"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
-"\t\t\tyou will use this feature on small working groups. <br /> Warning:\n"
-"\t\t\t<strong> The operation may be lengthy because the system will change\n"
-"\t\t\tpermissions of all current data </ strong> (duration is therefore\n"
-"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
-msgstr ""
-"Cela déverrouillera les accès aux fichiers et dossiers, \n"
-"\t\t\tet permettra à n'importe quel membre du groupe de modifier/supprimer\n"
-"\t\t\tn'importe quel document, y compris si ce n'est pas lui le propriétaire/créateur.\n"
-"\t\t\tCette option peut donc être dangereuse, mais si les membres du groupe sont habitués\n"
-"\t\t\tà travailler ensemble, il n'y a pas de problème. En général on utilise cette fonctionnalité\n"
-"\t\t\tsur des petits groupes de travail.<br /> Attention&#160;: <strong>L'opération peut être\n"
-"\t\t\tlongue car le système va modifier les permissions de toutes les données actuelles</strong>\n"
-"\t\t\t(la durée est donc en fonction\n"
-"\t\t\tdu volume de données, de l'ordre de 1 seconde pour 100Mio)."
+"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
+"\t\tcomposing a libre operating system)"
+msgstr "GNU is Not Unix (Acronyme récursif ; ensemble de logiciels libres composant le système de base d'un Unix libre)"
 
-#: interfaces/web/groups.py:58
-#, python-format
-msgid "Are you sure you want to active permissiveness on group <strong>%s</strong>?"
-msgstr "Êtes-vous sûr(e) de vouloir activer la permissivité sur le groupe <strong>%s</strong>&#160;?"
-
-#: interfaces/web/groups.py:60
-msgid "Activate"
-msgstr "Activer"
-
-#: interfaces/web/groups.py:61
-#: interfaces/web/groups.py:198
-#: interfaces/web/groups.py:250
-#: interfaces/web/users.py:313
-msgid "A"
-msgstr "A"
-
-#: interfaces/web/groups.py:62
-#: interfaces/web/groups.py:96
-#: interfaces/web/groups.py:135
-#: interfaces/web/groups.py:199
-#: interfaces/web/groups.py:580
-#: interfaces/web/users.py:314
-#: interfaces/web/users.py:450
-#: interfaces/web/users.py:651
-msgid "Cancel"
-msgstr "Annuler"
-
-#: interfaces/web/groups.py:62
-#: interfaces/web/groups.py:96
-#: interfaces/web/groups.py:136
-#: interfaces/web/groups.py:200
-#: interfaces/web/groups.py:259
-#: interfaces/web/groups.py:580
-msgid "N"
-msgstr "N"
-
-#: interfaces/web/groups.py:73
-#, python-format
+#: interfaces/wmi/utils.py:42
 msgid ""
-"Failed to activate permissivenes on group\n"
-"\t\t\t<strong>%s</strong>!"
-msgstr "Impossible de rendre le groupe <strong>%s</strong> permissif&#160;!"
+"LiCorN system tools (tools for IT managers,\n"
+"\t\tsee http://dev.licorn.org/)"
+msgstr "LiCorN system tools (outils pour les administrateurs systèmes GNU/Linux, voir http://dev.licorn.org/)"
 
-#: interfaces/web/groups.py:78
-#, python-format
-msgid "Make group %s not permissive"
-msgstr "Rendre le groupe %s non permissif"
-
-#: interfaces/web/groups.py:82
+#: interfaces/wmi/utils.py:44
 msgid ""
-"This will ensure finer write access to files and\n"
-"\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
-"\t\twill be able to modify it; other group members will only be able to read\n"
-"\t\tsuch a document (unless the owner manually assign other permissions,\n"
-"\t\twhich are not guaranteed to be maintained by the system). <br />\n"
-"\t\tWarning: <strong> The operation may be lengthy because the system will\n"
-"\t\tswitch permissions of all current group shared data</strong> (duration\n"
-"\t\tis therefore depending on the volume of data, about 1 sec. for 100Mio).\n"
-"\t\t"
-msgstr ""
-"Cela autorisera des accès aux fichiers et dossiers gérés plus finement.\n"
-"\t\t\tSeul le propriétaire/créateur d'un document pourra le modifier,\n"
-"\t\t\tles autres membres du groupe pourront seulement le lire \n"
-"\t\t\t(sauf si l'utilisateur assigne manuellement d'autres permissions).<br />\n"
-"\t\t\tAttention&#160;:\n"
-"\t\t\t<strong>L'opération peut être longue car le système va modifier\n"
-"\t\t\tles permissions de toutes les données actuelles</strong> (la durée est donc en \n"
-"\t\t\tfonction du volume de données, de l'ordre de 1 seconde pour 100Mio)."
+"Licorn Admin Tools (High-level management tools for\n"
+"\t\ta GNU/Linux system)"
+msgstr "Licorn Admin Tools (outils de haut-niveau pour administrer un système GNU/Linux)"
 
-#: interfaces/web/groups.py:92
+#: interfaces/wmi/utils.py:46
+msgid "Licorn® Web Management Interface"
+msgstr "Interface de Gestion Web Licorn®"
+
+#: interfaces/wmi/utils.py:55
+msgid "Command must be a list or tuple!"
+msgstr "La commande à exécuter doit être transmise sous forme de liste ou de tuple&nbsp;!"
+
+#: interfaces/wmi/utils.py:81
 #, python-format
-msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
-msgstr "Êtes-vous sûr(e) de vouloir rendre le groupe <strong>%s</strong> NON permissif&#160;?"
+msgid "%d&nbsp;hours,"
+msgstr "%d&nbsp;heures, "
 
-#: interfaces/web/groups.py:94
-msgid "Deactivate"
-msgstr "Désactiver"
-
-#: interfaces/web/groups.py:95
-#: interfaces/web/groups.py:252
-msgid "D"
-msgstr "D"
-
-#: interfaces/web/groups.py:106
+#: interfaces/wmi/utils.py:85
 #, python-format
-msgid ""
-"Failed to remove permissiveness from group\n"
-"\t\t\t\t<strong>%s</strong>!"
-msgstr "Impossible de supprimer la permissivité du groupe <strong>%s</strong>&#160;!"
+msgid " %d&nbsp;minutes,"
+msgstr " %d&nbsp;minutes,"
 
-#: interfaces/web/groups.py:115
+#: interfaces/wmi/utils.py:87
 #, python-format
-msgid "Remove group %s"
-msgstr "Supprimer le groupe %s"
+msgid " %.3f&nbsp;seconds."
+msgstr " %.3f&nbsp;secondes."
 
-#: interfaces/web/groups.py:121
-msgid "Failed to remove group"
-msgstr "Impossible de supprimer le groupe"
-
-#: interfaces/web/groups.py:122
-msgid "alter system group."
-msgstr "modification d'un groupe système."
-
-#: interfaces/web/groups.py:123
-#: interfaces/web/users.py:161
-#: interfaces/web/users.py:248
-#: interfaces/web/users.py:284
-#: interfaces/web/users.py:540
-#: interfaces/web/users.py:686
-msgid "insufficient permissions to perform operation."
-msgstr "permissions insuffisantes pour accomplir l'opération."
-
-#: interfaces/web/groups.py:126
+#: interfaces/wmi/utils.py:88
 #, python-format
-msgid ""
-"Are you sure you want to remove group\n"
-"\t\t\t<strong>%s</strong>?"
-msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>%s</strong>&#160;!"
+msgid "Core execution time: %s"
+msgstr "Temps d'exécution du moteur : %s"
 
-#: interfaces/web/groups.py:128
-#, python-format
-msgid ""
-"Group shared data will be archived in directory %s,\n"
-"\t\t\t\tand accessible to members of group %s for eventual\n"
-"\t\t\t\trecovery. However, you can decideto remove them\n"
-"\t\t\t\tpermanently."
-msgstr ""
-"<strong>Les données partagées</strong> du groupe <strong>seront archivées</strong>\n"
-"\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du groupe\n"
-"\t\t\t\t<strong>%s</strong> pour une récupération éventuelle. Vous\n"
-"\t\t\t\tpouvez cependant décider de les effacer définitivement."
+#: interfaces/wmi/utils.py:158
+msgid "Add"
+msgstr "Ajouter"
 
-#: interfaces/web/groups.py:133
-#: interfaces/web/utils.py:155
+#: interfaces/wmi/utils.py:160
+#: interfaces/wmi/groups.py:154
 msgid "Remove"
 msgstr "Supprimer"
 
-#: interfaces/web/groups.py:134
-#: interfaces/web/groups.py:583
-#: interfaces/web/users.py:147
-#: interfaces/web/users.py:225
-msgid "R"
-msgstr "S"
+#: interfaces/wmi/utils.py:212
+msgid "Executed command:"
+msgstr "Commande exécutée&nbsp;:"
 
-#: interfaces/web/groups.py:138
-msgid "Definitely remove group shared data."
-msgstr "Supprimer définitivement les données partagées."
+#: interfaces/wmi/utils.py:215
+msgid "Error reported by system:"
+msgstr "Erreur rapportée par le système&nbsp;:"
 
-#: interfaces/web/groups.py:152
+#: interfaces/wmi/utils.py:219
+#: interfaces/wmi/utils.py:220
+msgid "Back to root of management interface"
+msgstr "Retour à la racine de l'interface de gestion"
+
+#: interfaces/wmi/utils.py:226
 #, python-format
-msgid "Failed to remove group <strong>%s</strong>!"
-msgstr "Impossible de supprimer le groupe <strong>%s</strong>&#160;!"
+msgid "Logged in as %s"
+msgstr "Connecté en tant que %s"
 
-#: interfaces/web/groups.py:161
-#, python-format
-msgid "Skeleton reapplying for group %s"
-msgstr "Ré-application de squelette pour le groupe %s"
+#: interfaces/wmi/utils.py:243
+msgid "Forbidden action"
+msgstr "Action interdite"
 
-#: interfaces/web/groups.py:168
-msgid ""
-"This will reset the desktops, icons and menus\n"
-"\t\t\tof all members of the group, according to the content of the\n"
-"\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
-"\t\t\tdata, nor the group shared data."
-msgstr ""
-"Cela remettra le bureau de tous les membres du groupe à zéro, y compris les icônes et les menus.\n"
-"\t\t\tCeci n'altèrera pas les données personnelles des utilisateurs, ni les données partagées du groupe.\n"
-"\t\t\t<strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération\n"
-"\t\t\tréussisse.</strong>"
+#: interfaces/wmi/utils.py:244
+msgid "Some parts of the system cannot be modified, for your own safety and the world to rest in peace."
+msgstr "Certaines parties du système ne peuvent pas être modifiées, pour votre sécurité et pour que le monde reste en paix."
 
-#: interfaces/web/groups.py:188
-#, python-format
-msgid ""
-"Which skel do you wish to reapply to members of\n"
-"\t\t\tthis group? %s"
-msgstr "Quel skelette voulez-vous appliquer aux membres de ce groupe&#160;? %s"
+#: interfaces/wmi/utils.py:329
+msgid "Server, UPS and hardware sub-systems status."
+msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/web/groups.py:194
-#, python-format
-msgid ""
-"Are you sure you want to reapply this skel to\n"
-"\t\t\tall of the members of %s?"
-msgstr "Êtes-vous sûr de vouloir appliquer ce squelette aux membres du groupe <strong>%s</strong>&#160;!"
+#: interfaces/wmi/utils.py:329
+msgid "Status"
+msgstr "État"
 
-#: interfaces/web/groups.py:197
-#: interfaces/web/users.py:312
-msgid "Apply"
-msgstr "Appliquer"
+#: interfaces/wmi/utils.py:330
+msgid "Manage user accounts."
+msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/web/groups.py:212
-#, python-format
-msgid "Failed to apply skel %s to members of group %s."
-msgstr "Impossible d'appliquer le squelette <strong>%s</strong> aux membres du groupe <strong>%s</strong>&#160;!"
+#: interfaces/wmi/utils.py:330
+msgid "Users"
+msgstr "Utilisateurs"
 
-#: interfaces/web/groups.py:218
-msgid "Creating a new group"
-msgstr "Création d'un nouveau groupe"
+#: interfaces/wmi/utils.py:331
+msgid "Manage groups and shared data."
+msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/web/groups.py:249
-#: interfaces/web/groups.py:568
-msgid "Group name"
-msgstr "Nom de groupe"
-
-#: interfaces/web/groups.py:251
-#: interfaces/web/groups.py:571
-msgid "Group description"
-msgstr "Description du groupe"
-
-#: interfaces/web/groups.py:251
-msgid "(optional)"
-msgstr "(optionnel)"
-
-#: interfaces/web/groups.py:253
-msgid "Skel of future group members"
-msgstr "Squelette des futurs membres du groupe"
-
-#: interfaces/web/groups.py:257
-#: interfaces/web/groups.py:517
-msgid "Permissive shared dir?"
-msgstr "Répertoire de groupe permissif&#160;?"
-
-#: interfaces/web/groups.py:258
-msgid "Yes"
-msgstr "Oui"
-
-#: interfaces/web/groups.py:258
-#: interfaces/web/groups.py:428
-#: interfaces/web/users.py:434
-msgid "P"
-msgstr "P"
-
-#: interfaces/web/groups.py:259
-#: interfaces/web/users.py:109
-#: interfaces/web/users.py:149
-#: interfaces/web/users.py:238
-msgid "<< Cancel"
-msgstr "<< Annuler"
-
-#: interfaces/web/groups.py:260
-#: interfaces/web/users.py:451
-msgid "Create"
-msgstr "Créer"
-
-#: interfaces/web/groups.py:261
-msgid "T"
-msgstr "T"
-
-#: interfaces/web/groups.py:267
-#, python-format
-msgid "Creating group %s"
-msgstr "Création du groupe %s"
-
-#: interfaces/web/groups.py:284
-#, python-format
-msgid "Failed to create group %s!"
-msgstr "Impossible de créer le groupe %s&#160;!"
-
-#: interfaces/web/groups.py:291
-#, python-format
-msgid "Details of group %s"
-msgstr "Détails du groupe %s"
-
-#: interfaces/web/groups.py:319
-#: interfaces/web/groups.py:665
-msgid "Members"
-msgstr "Membres"
-
-#: interfaces/web/groups.py:320
-#: interfaces/web/groups.py:359
-#: interfaces/web/groups.py:388
-msgid "(ordered by login)"
-msgstr "(classés par identifiant)"
-
-#: interfaces/web/groups.py:321
-#: interfaces/web/groups.py:360
-#: interfaces/web/groups.py:389
-#: interfaces/web/groups.py:803
-msgid "Full Name"
-msgstr "Nom complet"
-
-#: interfaces/web/groups.py:322
-#: interfaces/web/groups.py:361
-#: interfaces/web/groups.py:390
-#: interfaces/web/groups.py:804
-#: interfaces/web/users.py:442
-#: interfaces/web/users.py:766
-msgid "Identifier"
-msgstr "Identifiant"
-
-#: interfaces/web/groups.py:323
-#: interfaces/web/groups.py:362
-#: interfaces/web/groups.py:391
-#: interfaces/web/groups.py:804
-msgid "UID"
-msgstr "UID"
-
-#: interfaces/web/groups.py:339
-msgid "No members in this group."
-msgstr "Aucun invité dans ce groupe."
-
-#: interfaces/web/groups.py:358
-#: interfaces/web/groups.py:666
-msgid "Responsibles"
-msgstr "Responsables"
-
-#: interfaces/web/groups.py:368
-msgid "No responsibles for this group."
-msgstr "Aucun responsable de ce groupe."
-
-#: interfaces/web/groups.py:387
-#: interfaces/web/groups.py:667
-msgid "Guests"
-msgstr "Invités"
-
-#: interfaces/web/groups.py:395
-msgid "No guests in this group."
-msgstr "Aucun invité dans ce groupe."
-
-#: interfaces/web/groups.py:420
-#: interfaces/web/groups.py:566
-msgid "GID"
-msgstr "GID"
-
-#: interfaces/web/groups.py:420
-#: interfaces/web/groups.py:421
-msgid "immutable"
-msgstr "non modifiable"
-
-#: interfaces/web/groups.py:421
-#: interfaces/web/groups.py:661
-msgid "Name"
-msgstr "Nom"
-
-#: interfaces/web/groups.py:425
-msgid "<< Go back"
-msgstr "<< Revenir"
-
-#: interfaces/web/groups.py:425
-msgid "B"
-msgstr "R"
-
-#: interfaces/web/groups.py:426
-msgid "Print"
-msgstr "Imprimer"
-
-#: interfaces/web/groups.py:432
-#: interfaces/web/groups.py:587
-#, python-format
-msgid "Group %s doesn't exist (%s, %s)!"
-msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
-
-#: interfaces/web/groups.py:446
-#, python-format
-msgid "Editing group %s"
-msgstr "Édition du groupe %s"
-
-#: interfaces/web/groups.py:456
-#: interfaces/web/groups.py:463
-msgid "Manage members"
-msgstr "Gérer les membres"
-
-#: interfaces/web/groups.py:456
-#: interfaces/web/groups.py:464
-msgid "Users not yet members"
-msgstr "Utilisateurs non-membres"
-
-#: interfaces/web/groups.py:457
-#: interfaces/web/groups.py:465
-#: interfaces/web/groups.py:784
-msgid "Current members"
-msgstr "Membres actuels"
-
-#: interfaces/web/groups.py:468
-msgid "Manage responsibles"
-msgstr "Gérer les responsables"
-
-#: interfaces/web/groups.py:469
-msgid "Users not yet responsibles"
-msgstr "Utilisateurs pas encore responsables"
-
-#: interfaces/web/groups.py:470
-#: interfaces/web/groups.py:785
-msgid "Current responsibles"
-msgstr "Responsables actuels"
-
-#: interfaces/web/groups.py:473
-msgid "Manage guests"
-msgstr "Gérer les invités"
-
-#: interfaces/web/groups.py:474
-msgid "Users not yet guests"
-msgstr "Utilisateurs pas encore invités"
-
-#: interfaces/web/groups.py:475
-#: interfaces/web/groups.py:786
-msgid "Current guests"
-msgstr "Invités actuels"
-
-#: interfaces/web/groups.py:504
-#: interfaces/web/groups.py:663
-msgid "Skeleton"
-msgstr "Squelette"
-
-#: interfaces/web/groups.py:566
-#: interfaces/web/groups.py:568
-msgid "(immutable)"
-msgstr "(non modifiable)"
-
-#: interfaces/web/groups.py:574
-msgid "Group members"
-msgstr "Membres du groupe"
-
-#: interfaces/web/groups.py:576
-msgid "Group responsibles"
-msgstr "Responsables du groupe"
-
-#: interfaces/web/groups.py:578
-msgid "Group guests"
-msgstr "Invités du groupe"
-
-#: interfaces/web/groups.py:581
-msgid "Record"
-msgstr "Enregistrer"
-
-#: interfaces/web/groups.py:601
-#, python-format
-msgid "Modifying group %s"
-msgstr "Modification du groupe %s"
-
-#: interfaces/web/groups.py:633
-#, python-format
-msgid "Failed to modify one or more parameter of group %s!"
-msgstr "Impossible de modifier un ou plusieurs paramètres du groupe <strong>%s</strong>&#160;!"
-
-#: interfaces/web/groups.py:651
-#: interfaces/web/groups.py:687
-#: interfaces/web/users.py:446
-#: interfaces/web/users.py:647
-#: interfaces/web/utils.py:316
+#: interfaces/wmi/utils.py:331
+#: interfaces/wmi/users.py:422
+#: interfaces/wmi/users.py:623
+#: interfaces/wmi/groups.py:697
+#: interfaces/wmi/groups.py:733
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/web/groups.py:662
-msgid "Description"
-msgstr "Description du groupe"
+#: interfaces/wmi/utils.py:332
+msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
+msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
 
-#: interfaces/web/groups.py:664
-msgid "Perm."
-msgstr "Perm."
+#: interfaces/wmi/utils.py:332
+msgid "Machines"
+msgstr "Machines"
 
-#: interfaces/web/groups.py:675
+#: interfaces/wmi/utils.py:333
+msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
+msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
+
+#: interfaces/wmi/utils.py:333
+msgid "Internet"
+msgstr "Internet"
+
+#: interfaces/wmi/utils.py:334
+msgid "Go to online documentation and community website (in new window or new tab)."
+msgstr "Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet)."
+
+#: interfaces/wmi/utils.py:334
+msgid "Documentation"
+msgstr "Documentation"
+
+#: interfaces/wmi/utils.py:335
+msgid "Get product support / help"
+msgstr "Obtenir du support sur le produit"
+
+#: interfaces/wmi/utils.py:335
+msgid "Support"
+msgstr "Assistance"
+
+#: interfaces/wmi/utils.py:339
 #, python-format
-msgid "%s order"
-msgstr "ordre %s"
+msgid "%s Management"
+msgstr "Administration %s"
 
-#: interfaces/web/groups.py:676
-#: interfaces/web/users.py:773
-msgid "Click to sort in reverse order."
-msgstr "Cliquer pour classer dans l'ordre inverse."
-
-#: interfaces/web/groups.py:680
-#: interfaces/web/users.py:777
-msgid "Click to sort on this column."
-msgstr "Cliquer pour classer sur cette colonne."
-
-#: interfaces/web/groups.py:688
-#: interfaces/web/users.py:447
-#: interfaces/web/users.py:648
-msgid "Privileges"
-msgstr "Privilèges"
-
-#: interfaces/web/groups.py:754
-msgid ""
-"View the group details, its parameters,\n"
-"\t\t\t\t\tmembers, responsibles and guests.\n"
-"\t\t\t\t\tFrom there you can print all group-related informations."
-msgstr "Visualiser le groupe, ses paramètres,ses membres, responsables et invités, en vue deles imprimer."
-
-#: interfaces/web/groups.py:770
-msgid "Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness."
-msgstr "Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité."
-
-#: interfaces/web/groups.py:772
-msgid "Group is currently permissive."
-msgstr "Le groupe est actuellement permissif."
-
-#: interfaces/web/groups.py:779
-msgid ""
-"Shared group directory is currently\n"
-"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
-"\t\t\t\t\tpermissiveness."
-msgstr "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité."
-
-#: interfaces/web/groups.py:781
-msgid "Group is NOT permissive."
-msgstr "Le groupe N'EST PAS permissif actuellement."
-
-#: interfaces/web/groups.py:815
-msgid "none"
-msgstr "aucun"
-
-#: interfaces/web/groups.py:822
+#: interfaces/wmi/utils.py:364
 #, python-format
-msgid "See %s of group %s."
-msgstr "Voir les %s du groupe %s."
+msgid "%s WMI:"
+msgstr "IGW %s&nbsp;:"
 
-#: interfaces/web/groups.py:844
-msgid ""
-"This will rebuild his/her desktop\n"
-"\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
-"\t\t\t\t\t\t<br /><br />The user must be disconnected for the\n"
-"\t\t\t\t\t\toperation to be completely successfull."
-msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
-
-#: interfaces/web/groups.py:849
-msgid "Definitely remove this group from system."
-msgstr "Supprimer définitivement le compte du système."
-
-#: interfaces/web/groups.py:864
-#: interfaces/web/users.py:890
+#: interfaces/wmi/utils.py:369
 #, python-format
-msgid "number of <strong>%s</strong>:"
-msgstr "nombre de <strong>%s</strong>&#160;:"
+msgid "administration %s"
+msgstr "Administration %s"
 
-#: interfaces/web/groups.py:876
-msgid "Total number of groups:"
-msgstr "Nombre total de groupes&#160;:"
+#: interfaces/wmi/server.py:30
+#: interfaces/wmi/base.py:35
+msgid "Restart server."
+msgstr "Redémarrer le serveur."
 
-#: interfaces/web/users.py:13
+#: interfaces/wmi/server.py:31
+#: interfaces/wmi/base.py:36
+msgid "Restart server"
+msgstr "Redémarrer le serveur"
+
+#: interfaces/wmi/server.py:32
+#: interfaces/wmi/base.py:37
+msgid "Shutdown server."
+msgstr "Éteindre le serveur."
+
+#: interfaces/wmi/server.py:33
+#: interfaces/wmi/base.py:38
+msgid "Shutdown server"
+msgstr "Éteindre le serveur"
+
+#: interfaces/wmi/server.py:41
+msgid "Can't reboot the system."
+msgstr "Impossible de redémarrer le système."
+
+#: interfaces/wmi/server.py:44
+msgid "Rebooting…"
+msgstr "Redémarrage…"
+
+#: interfaces/wmi/server.py:70
+#, python-format
+msgid "Sure you want to reboot the %s server?"
+msgstr "Êtes-vous sûr(e) de vouloir redémarrer le serveur %s ?"
+
+#: interfaces/wmi/server.py:71
+#: interfaces/wmi/server.py:109
+msgid "YES"
+msgstr "OUI"
+
+#: interfaces/wmi/server.py:72
+#: interfaces/wmi/server.py:110
+msgid "NO"
+msgstr "NON"
+
+#: interfaces/wmi/server.py:79
+msgid "Can't shutdown the system."
+msgstr "Impossible d'arrêter le système."
+
+#: interfaces/wmi/server.py:82
+msgid "Shutting down…"
+msgstr "Arrêt en cours…"
+
+#: interfaces/wmi/server.py:108
+#, python-format
+msgid "Sure you want to shutdown the %s server?"
+msgstr "Êtes-vous sûr(e) de vouloir éteindre le serveur %s ?"
+
+#: interfaces/wmi/users.py:21
 msgid "Customize groups"
 msgstr "Personnaliser les groupes"
 
-#: interfaces/web/users.py:14
+#: interfaces/wmi/users.py:22
 msgid "Available groups"
 msgstr "Groupes disponibles"
 
-#: interfaces/web/users.py:14
+#: interfaces/wmi/users.py:22
 msgid "Affected groups"
 msgstr "Groupes affectés"
 
-#: interfaces/web/users.py:16
+#: interfaces/wmi/users.py:24
 msgid "Customize privileges"
 msgstr "Affiner les privilèges"
 
-#: interfaces/web/users.py:17
+#: interfaces/wmi/users.py:25
 msgid "Available privileges"
 msgstr "Privilèges disponibles"
 
-#: interfaces/web/users.py:17
+#: interfaces/wmi/users.py:25
 msgid "granted privileges"
 msgstr "Privilèges octroyés"
 
-#: interfaces/web/users.py:19
+#: interfaces/wmi/users.py:27
 msgid "Assign responsibilities"
 msgstr "Assigner des responsabilités"
 
-#: interfaces/web/users.py:20
+#: interfaces/wmi/users.py:28
 msgid "Available responsibilities"
 msgstr "Responsabilités disponibles"
 
-#: interfaces/web/users.py:20
+#: interfaces/wmi/users.py:28
 msgid "Assigned responsibilities"
 msgstr "Responsabilités assignées"
 
-#: interfaces/web/users.py:22
+#: interfaces/wmi/users.py:30
 msgid "Propose invitations"
 msgstr "Proposer des invitations"
 
-#: interfaces/web/users.py:23
+#: interfaces/wmi/users.py:31
 msgid "Available invitations"
 msgstr "Invitations disponibles"
 
-#: interfaces/web/users.py:23
+#: interfaces/wmi/users.py:31
 msgid "Offered invitations"
 msgstr "Invitation offertes"
 
-#: interfaces/web/users.py:62
+#: interfaces/wmi/users.py:34
+#: interfaces/wmi/groups.py:19
+msgid "<br /><br />Go back with your browser, double-check data and validate the web-form."
+msgstr "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données saisies et re-validez le formulaire."
+
+#: interfaces/wmi/users.py:70
 msgid "Add a new user account on the system."
 msgstr "Ajouter un nouveau compte utilisateur sur le système."
 
-#: interfaces/web/users.py:64
+#: interfaces/wmi/users.py:72
 msgid "Add an account"
 msgstr "Ajouter un compte"
 
-#: interfaces/web/users.py:65
+#: interfaces/wmi/users.py:73
 msgid "Import new user accounts from a CSV-delimited file."
 msgstr "Importer de nouveaux comptes utilisateurs depuis un fichier CSV."
 
-#: interfaces/web/users.py:67
+#: interfaces/wmi/users.py:75
 msgid "Import accounts"
 msgstr "Importer des comptes"
 
-#: interfaces/web/users.py:68
+#: interfaces/wmi/users.py:76
 msgid "Export current user accounts list to a CSV or XML file."
 msgstr "Exporter les comptes utilisateurs actuels vers un fichier CSV ou XML."
 
-#: interfaces/web/users.py:70
+#: interfaces/wmi/users.py:78
 msgid "Export accounts"
 msgstr "Exporter les comptes"
 
-#: interfaces/web/users.py:82
+#: interfaces/wmi/users.py:93
 msgid "Export user accounts list"
 msgstr "Exporter les comptes utilisateurs"
 
-#: interfaces/web/users.py:94
+#: interfaces/wmi/users.py:105
 msgid "CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser."
 msgstr "Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur \"Exporter\", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
 
-#: interfaces/web/users.py:103
+#: interfaces/wmi/users.py:114
 #, python-format
 msgid "Which file format do you want accounts to be exported to? %s"
 msgstr "Dans quel format de sortie voulez-vous exporter les comptes&#160;? %s"
 
-#: interfaces/web/users.py:106
+#: interfaces/wmi/users.py:117
 msgid "Please choose file format for export list"
 msgstr "Choisissez le format de fichier d'export"
 
-#: interfaces/web/users.py:108
+#: interfaces/wmi/users.py:119
 msgid "Export >>"
 msgstr "Exporter >>"
 
-#: interfaces/web/users.py:132
+#: interfaces/wmi/users.py:120
+#: interfaces/wmi/users.py:163
+#: interfaces/wmi/users.py:247
+#: interfaces/wmi/groups.py:282
+msgid "<< Cancel"
+msgstr "<< Annuler"
+
+#: interfaces/wmi/users.py:142
 #, python-format
 msgid "Remove user account %s"
 msgstr "Supprimer le compte %s"
 
-#: interfaces/web/users.py:137
+#: interfaces/wmi/users.py:151
 #, python-format
 msgid "Are you sure you want to remove account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:139
+#: interfaces/wmi/users.py:153
 #, python-format
 msgid "User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong> in directory <code>%s</code> and members of group <strong>%s</strong> will be able to  access it to operate an eventual recover.<br />However, you can decide to permanently remove it."
 msgstr "<strong>Les données personnelles</strong> de l'utilisateur (son home dir) <strong>seront archivées</strong>\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du groupe\t\t\t\t<strong>%s</strong> pour une récupération éventuelle.<br />\t\t\t\tVous pouvez cependant décider de les effacer définitivement."
 
-#: interfaces/web/users.py:147
+#: interfaces/wmi/users.py:161
 msgid "Remove >>"
 msgstr "Supprimer >>"
 
-#: interfaces/web/users.py:149
-#: interfaces/web/users.py:238
-#: interfaces/web/users.py:315
+#: interfaces/wmi/users.py:161
+#: interfaces/wmi/users.py:234
+#: interfaces/wmi/groups.py:155
+#: interfaces/wmi/groups.py:619
+msgid "R"
+msgstr "S"
+
+#: interfaces/wmi/users.py:163
+#: interfaces/wmi/users.py:247
+#: interfaces/wmi/users.py:294
 msgid "C"
 msgstr "N"
 
-#: interfaces/web/users.py:151
+#: interfaces/wmi/users.py:165
 msgid "Definitely remove account data (no archiving)."
 msgstr "Supprimer définitivement toutes les données liées à ce compte (pas d'archivage)."
 
-#: interfaces/web/users.py:159
-msgid "Failed to remove account"
-msgstr "Impossible de supprimer le compte"
-
-#: interfaces/web/users.py:160
-#: interfaces/web/users.py:185
-#: interfaces/web/users.py:247
-#: interfaces/web/users.py:283
-#: interfaces/web/users.py:539
-#: interfaces/web/users.py:685
-msgid "alter system account."
-msgstr "modification d'un compte système"
-
-#: interfaces/web/users.py:172
+#: interfaces/wmi/users.py:180
 #, python-format
 msgid "Failed to remove account <strong>%s</strong>!"
 msgstr "Impossible de supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:177
+#: interfaces/wmi/users.py:184
 #, python-format
 msgid "Unlock account %s"
 msgstr "Déverrouiller le compte %s"
 
-#: interfaces/web/users.py:184
+#: interfaces/wmi/users.py:193
 msgid "Failed to unlock account"
 msgstr "Impossible de déverrouiller le compte"
 
-#: interfaces/web/users.py:186
+#: interfaces/wmi/users.py:194
+msgid "alter system account."
+msgstr "modification d'un compte système"
+
+#: interfaces/wmi/users.py:195
 msgid "insufficient permission to perform operation."
 msgstr "permissions insuffisantes pour accomplir l'opération."
 
-#: interfaces/web/users.py:194
+#: interfaces/wmi/users.py:203
 #, python-format
 msgid "Failed to unlock account <strong>%s</strong>!"
 msgstr "Impossible de déverrouiller le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:205
+#: interfaces/wmi/users.py:210
 #, python-format
 msgid "Lock account %s"
 msgstr "Verrouiller le compte %s"
 
-#: interfaces/web/users.py:209
+#: interfaces/wmi/users.py:218
 #, python-format
 msgid "This will prevent user to connect to network clients (thin ones, and Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
 msgstr "Cela l'empêchera de se connecter sur les terminaux légers\t%s/Linux et les postes autonomes Windows&reg; et Macintosh&reg;."
 
-#: interfaces/web/users.py:215
+#: interfaces/wmi/users.py:224
 #, python-format
 msgid ""
 "<br /><br />\n"
 "\t\t\t\t\tBut this will not block incoming %s network connections, if the user uses %s %s or %s public/private keys. To block ANY access to the system, <strong>remove him/her from %s group</strong>."
 msgstr "<br /><br />\t\t\t\tMais <em>cela n'empêchera pas les connexions à distance par %s</em>\t\t\t\tsi cet utilisateur se sert de clés %s %s/%s pour se connecter.\t\t\t\tPour lui interdire complètement l'accès au système, \t\t\t\t<strong>retirez-le aussi du groupe %s</strong>."
 
-#: interfaces/web/users.py:223
+#: interfaces/wmi/users.py:232
 msgid "Remove user from group <code>remotessh</code> in the same time."
 msgstr "Supprimer l'utilisateur du groupe <code>remotessh</code> au passage."
 
-#: interfaces/web/users.py:232
+#: interfaces/wmi/users.py:241
 #, python-format
 msgid "Are you sure you want to lock account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir verrouiler le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:236
+#: interfaces/wmi/users.py:245
 msgid "Lock >>"
 msgstr "Verrouiller >>"
 
-#: interfaces/web/users.py:236
+#: interfaces/wmi/users.py:245
 msgid "L"
 msgstr "V"
 
-#: interfaces/web/users.py:246
-msgid "Failed to lock account"
-msgstr "Impossible de verrouiller le compte"
-
-#: interfaces/web/users.py:261
+#: interfaces/wmi/users.py:264
 #, python-format
 msgid "Failed to lock account <strong>%s</strong>!"
 msgstr "Impossible de verrouiller le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:277
+#: interfaces/wmi/users.py:272
 #, python-format
 msgid "Reapply skel to user account %s"
 msgstr "Reappliquer un squelette au compte %s"
 
-#: interfaces/web/users.py:282
-msgid "Failed to reapply skel"
-msgstr "Impossible de réappliquer le squelette"
-
-#: interfaces/web/users.py:287
+#: interfaces/wmi/users.py:280
 msgid "This will rebuild his/her desktop from scratch, with defaults icons and so on.<br /><br />The user must be disconnected for the operation to be completely successfull."
 msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
 
-#: interfaces/web/users.py:305
+#: interfaces/wmi/users.py:284
 #, python-format
 msgid "Which skel do you want to apply? %s"
 msgstr "Quel skelette voulez-vous appliquer&#160;? %s"
 
-#: interfaces/web/users.py:309
+#: interfaces/wmi/users.py:288
 #, python-format
 msgid "Are you sure you want to apply this skel to account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr de vouloir appliquer ce squelette au compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:327
+#: interfaces/wmi/users.py:291
+#: interfaces/wmi/groups.py:221
+msgid "Apply"
+msgstr "Appliquer"
+
+#: interfaces/wmi/users.py:292
+#: interfaces/wmi/groups.py:80
+#: interfaces/wmi/groups.py:222
+#: interfaces/wmi/groups.py:273
+msgid "A"
+msgstr "A"
+
+#: interfaces/wmi/users.py:293
+#: interfaces/wmi/users.py:426
+#: interfaces/wmi/users.py:627
+#: interfaces/wmi/groups.py:81
+#: interfaces/wmi/groups.py:119
+#: interfaces/wmi/groups.py:156
+#: interfaces/wmi/groups.py:223
+#: interfaces/wmi/groups.py:616
+msgid "Cancel"
+msgstr "Annuler"
+
+#: interfaces/wmi/users.py:306
 #, python-format
 msgid ""
 "Failed to apply skel <strong>%s</strong> on user\n"
 "\t\t\taccount <strong>%s</strong>!"
 msgstr "Impossible d'appliquer le squelette <strong>%s</strong> sur le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:340
+#: interfaces/wmi/users.py:316
 msgid "New user account"
 msgstr "Nouveau compte utilisateur"
 
-#: interfaces/web/users.py:353
+#: interfaces/wmi/users.py:329
 msgid "This user is a"
 msgstr "Cet utilisateur est un(e)"
 
-#: interfaces/web/users.py:361
-#: interfaces/web/users.py:765
+#: interfaces/wmi/users.py:337
+#: interfaces/wmi/users.py:738
 msgid "Full name"
 msgstr "Nom complet"
 
-#: interfaces/web/users.py:430
-#: interfaces/web/users.py:633
+#: interfaces/wmi/users.py:406
+#: interfaces/wmi/users.py:609
 #, python-format
 msgid "Password must be at least %d characters long. You can use all alphabet characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr "Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser toutes les lettre de l'alphabet, les chiffres, les caractères spéciaux et les signes de ponctuation sauf '?!'."
 
-#: interfaces/web/users.py:433
+#: interfaces/wmi/users.py:409
 msgid "Password"
 msgstr "Mot de passe"
 
-#: interfaces/web/users.py:433
-#: interfaces/web/users.py:637
+#: interfaces/wmi/users.py:409
+#: interfaces/wmi/users.py:613
 #, python-format
 msgid "(%d chars. min.)"
 msgstr "(%d car. min.)"
 
-#: interfaces/web/users.py:436
+#: interfaces/wmi/users.py:410
+#: interfaces/wmi/groups.py:281
+#: interfaces/wmi/groups.py:451
+msgid "P"
+msgstr "P"
+
+#: interfaces/wmi/users.py:412
 msgid "Password confirmation."
 msgstr "Confirmation du mot de passe."
 
-#: interfaces/web/users.py:438
+#: interfaces/wmi/users.py:414
 msgid "Identifier must be lowercase, without accents or special characters (you can use dots and carets).<br /><br />If you let this field empty, identifier will be automaticaly guessed from first name and last name."
 msgstr ""
 "L'identifiant doit être en lettres minuscules, sans accents ni caractères spéciaux (vous pouvez utiliser seulement les points et les tirets).<br /><br />\n"
 "Si vous laissez le champ vide, l'identifiant sera automatiquement déterminé à partir du nom et du prénom."
 
-#: interfaces/web/users.py:443
+#: interfaces/wmi/users.py:418
+#: interfaces/wmi/users.py:739
+#: interfaces/wmi/groups.py:344
+#: interfaces/wmi/groups.py:384
+#: interfaces/wmi/groups.py:413
+#: interfaces/wmi/groups.py:850
+msgid "Identifier"
+msgstr "Identifiant"
+
+#: interfaces/wmi/users.py:419
 msgid "I"
 msgstr "I"
 
-#: interfaces/web/users.py:444
-#: interfaces/web/users.py:644
+#: interfaces/wmi/users.py:420
+#: interfaces/wmi/users.py:620
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
-#: interfaces/web/users.py:448
-#: interfaces/web/users.py:649
+#: interfaces/wmi/users.py:423
+#: interfaces/wmi/users.py:624
+#: interfaces/wmi/groups.py:734
+msgid "Privileges"
+msgstr "Privilèges"
+
+#: interfaces/wmi/users.py:424
+#: interfaces/wmi/users.py:625
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: interfaces/web/users.py:449
-#: interfaces/web/users.py:650
+#: interfaces/wmi/users.py:425
+#: interfaces/wmi/users.py:626
 msgid "Invitations"
 msgstr "Invitations"
 
-#: interfaces/web/users.py:468
+#: interfaces/wmi/users.py:427
+#: interfaces/wmi/groups.py:283
+msgid "Create"
+msgstr "Créer"
+
+#: interfaces/wmi/users.py:443
 #, python-format
 msgid "New user account %s"
 msgstr "Nouveau compte %s"
 
-#: interfaces/web/users.py:473
-#: interfaces/web/users.py:691
+#: interfaces/wmi/users.py:448
+#: interfaces/wmi/users.py:664
 #, python-format
 msgid "Passwords do not match!%s"
 msgstr "Les mots de passe ne correspondent pas&#160;!%s"
 
-#: interfaces/web/users.py:477
+#: interfaces/wmi/users.py:452
 #, python-format
 msgid "Password must be at least %d characters long!%s"
 msgstr "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
 
-#: interfaces/web/users.py:501
+#: interfaces/wmi/users.py:476
 #, python-format
 msgid "Failed to create account <strong>%s</strong>!"
 msgstr "Impossible de créer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:524
+#: interfaces/wmi/users.py:500
 #, python-format
 msgid ""
 "Failed to add user <strong>%s</strong> to requested\n"
 "\t\tgroups/privileges/responsibilities/invitations!"
 msgstr "Impossible d'ajouter l'utilisateur <strong>%s</strong> aux groupes/privilèges/invitations/responsabilités&#160;!"
 
-#: interfaces/web/users.py:534
+#: interfaces/wmi/users.py:509
 #, python-format
 msgid "Edit account %s"
 msgstr "Édition du compte %s"
 
-#: interfaces/web/users.py:538
-msgid "Account edition impossible."
-msgstr "Édition du compte impossible."
-
-#: interfaces/web/users.py:549
-#: interfaces/web/users.py:755
-#: interfaces/web/users.py:865
+#: interfaces/wmi/users.py:525
+#: interfaces/wmi/users.py:728
+#: interfaces/wmi/users.py:838
 msgid "Standard account"
 msgstr "Compte standard"
 
-#: interfaces/web/users.py:627
+#: interfaces/wmi/users.py:603
 msgid "<strong>UID</strong> (fixed)"
 msgstr "<strong>UID</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:628
+#: interfaces/wmi/users.py:604
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr "<strong>Identifiant</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:629
+#: interfaces/wmi/users.py:605
 msgid "<strong>Profile</strong> (fixed)"
 msgstr "<strong>Profil</strong><br />(non-modifiable)"
 
-#: interfaces/web/users.py:630
+#: interfaces/wmi/users.py:606
 msgid "<strong>Full name</strong>"
 msgstr "<strong>Nom complet</strong>"
 
-#: interfaces/web/users.py:637
+#: interfaces/wmi/users.py:613
 msgid "New password"
 msgstr "Nouveau mot de passe"
 
-#: interfaces/web/users.py:641
+#: interfaces/wmi/users.py:617
 msgid "password confirmation."
 msgstr "confirmation du mot de passe."
 
-#: interfaces/web/users.py:652
+#: interfaces/wmi/users.py:628
 msgid "Record changes"
 msgstr "Enregistrer les changements"
 
-#: interfaces/web/users.py:675
+#: interfaces/wmi/users.py:651
 #, python-format
 msgid "Modification of account %s"
 msgstr "Modification du compte %s"
 
-#: interfaces/web/users.py:684
-msgid "Recording of informations failed"
-msgstr "L'enregistrement des informations a échoué"
-
-#: interfaces/web/users.py:694
+#: interfaces/wmi/users.py:667
 #, python-format
 msgid "The password --%s-- must be at least %d characters long!%s"
 msgstr "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
 
-#: interfaces/web/users.py:720
+#: interfaces/wmi/users.py:693
 #, python-format
 msgid ""
 "Failed to modify one or more parameters of account\n"
 "\t\t <strong>%s</strong>!"
 msgstr "Impossible de modifier un ou plusieurs paramètres du compte <strong>%s</strong>&#160;!"
 
-#: interfaces/web/users.py:757
+#: interfaces/wmi/users.py:730
 msgid "User accounts"
 msgstr "Comptes utilisateurs"
 
-#: interfaces/web/users.py:766
+#: interfaces/wmi/users.py:739
 msgid "Profile"
 msgstr "Profil"
 
-#: interfaces/web/users.py:767
+#: interfaces/wmi/users.py:740
 msgid "Locked"
 msgstr "Verr."
 
-#: interfaces/web/users.py:783
+#: interfaces/wmi/users.py:746
+#: interfaces/wmi/groups.py:722
+msgid "Click to sort in reverse order."
+msgstr "Cliquer pour classer dans l'ordre inverse."
+
+#: interfaces/wmi/users.py:750
+#: interfaces/wmi/groups.py:726
+msgid "Click to sort on this column."
+msgstr "Cliquer pour classer sur cette colonne."
+
+#: interfaces/wmi/users.py:756
 #, python-format
 msgid ""
 "<em>Click to edit current user account parameters:</em>\n"
@@ -1158,242 +790,610 @@ msgstr ""
 "\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
 "\t\t\t\t"
 
-#: interfaces/web/users.py:819
+#: interfaces/wmi/users.py:792
 msgid "Unlock password (re-grant access to machines)."
 msgstr "Déverrouiller le mot de passe (redonne accès aux machines du réseau à l'utilisateur)."
 
-#: interfaces/web/users.py:820
+#: interfaces/wmi/users.py:793
 msgid "Remove account."
 msgstr "Supprimer le compte."
 
-#: interfaces/web/users.py:827
+#: interfaces/wmi/users.py:800
 msgid "Lock password (revoke access to machines)."
 msgstr "Verrouiller le mot de passe (supprime l'accès aux machines du réseau)."
 
-#: interfaces/web/users.py:828
+#: interfaces/wmi/users.py:801
 msgid "Lock account."
 msgstr "Verrouiller le compte."
 
-#: interfaces/web/users.py:840
+#: interfaces/wmi/users.py:813
 msgid ""
 "Reapply origin skel data in the personnal directory of user. This is usefull when user has lost icons, or modified too much his/her desktop (menus, panels and so on).\n"
 "\t\t\t\tThis will get all his/her desktop back."
 msgstr "Réappliquer les données du skelette d'origine dans le répertoire personnel de\t\t\t\tl'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou trop modifié le contenu de\t\t\t\tson bureau (icônes, menus, panneaux et barres d'outils) et permet de lui remettre le bureau\t\t\t\td'«&#160;usine&#160;»."
 
-#: interfaces/web/users.py:845
+#: interfaces/wmi/users.py:818
 msgid "Definitely remove account from the system."
 msgstr "Supprime définitivement le compte du système."
 
-#: interfaces/web/users.py:903
+#: interfaces/wmi/users.py:863
+#: interfaces/wmi/groups.py:910
+#, python-format
+msgid "number of <strong>%s</strong>:"
+msgstr "nombre de <strong>%s</strong>&#160;:"
+
+#: interfaces/wmi/users.py:876
 msgid "<strong>Total number of accounts:</strong>"
 msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
 
-#: interfaces/web/utils.py:17
+#: interfaces/wmi/base.py:80
+#, python-format
+msgid "%d year%s, "
+msgstr "%d année%s, "
+
+#: interfaces/wmi/base.py:83
+#, python-format
+msgid "%d day%s, "
+msgstr "%d jour%s, "
+
+#: interfaces/wmi/base.py:86
+#, python-format
+msgid "%d hour%s, "
+msgstr "%d heure%s, "
+
+#: interfaces/wmi/base.py:89
+#, python-format
+msgid "%d min%s, "
+msgstr "%d min%s, "
+
+#: interfaces/wmi/base.py:92
+#, python-format
+msgid "%d sec%s"
+msgstr "%d sec%s"
+
+#: interfaces/wmi/base.py:94
+#, python-format
+msgid ""
+"Up and running since <strong>%s</strong>.<br /><br />\n"
+"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
+"<br /><br />\n"
+"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
+msgstr ""
+"En marche depuis <strong>%s</strong>.<br /><br />\n"
+"Utilisateurs&nbsp;: <strong>%d</strong> au total, <strong>%d actuellement connecté(s)</strong>.<br /><br />\n"
+"Charge système sur les dernières 1, 5, et 15 minutes&nbsp;: <strong>%s</strong>, %s, %s"
+
+#: interfaces/wmi/base.py:137
+msgid "no virtual memory installed."
+msgstr "pas de mémoire virtuelle installée."
+
+#: interfaces/wmi/base.py:140
+#, python-format
+msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
+msgstr "Mémoire Virtuelle&nbsp;: %.2f Go total, <strong>%.0f%% libre<strong>."
+
+#: interfaces/wmi/base.py:143
 #, python-format
 msgid ""
 "\n"
-"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU\n"
-" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
-" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,\n"
-"  and all other libre software developers (Notably Ubuntu, Debian, Python…).\n"
+"Processor%s: %d x <strong>%s</strong><br /><br />\n"
+"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
+"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
+"%s"
 msgstr ""
 "\n"
-"%s est distribué sous licence <a href=\"http://www.gnu.org/licenses/gpl.html\">GNU GPL version 2</a> sans aucune garantie d'aucune sorte. Copyleft et droits d'auteurs &copy; 2007-2010 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun pour le projet %s, ainsi qu'à tous les auteurs respectifs des logiciels libres utilisés (Notament Ubuntu, Debian, Python…).\n"
+"Processeur%s: %d x <strong>%s</strong><br /><br />\n"
+"Mémoire physique&nbsp;: <strong>%.2fGo</strong> au total,<br />\n"
+"%.2f Go pour les programmes, %.2f Go pour le cache, %.2f Go pour les tampons.<br /><br />\n"
+"%s"
 
-#: interfaces/web/utils.py:25
-msgid "Secure SHell (Secure remote connexion and commands protocol)"
-msgstr "Secure SHell (Protocole de connexion sécurisée à distance)"
+#: interfaces/wmi/base.py:154
+msgid "Server status"
+msgstr "État du serveur"
 
-#: interfaces/web/utils.py:26
-msgid "File Transfer Protocol"
-msgstr "File Transfer Protocol (protocole de transfert de fichiers)"
+#: interfaces/wmi/base.py:166
+msgid "System information"
+msgstr "Informations système"
 
-#: interfaces/web/utils.py:27
-msgid "HyperText Transfert Protocol"
-msgstr "HyperText Transfert Protocol (Transfert de documents par liens HyperTexte)"
+#: interfaces/wmi/base.py:167
+msgid "System status"
+msgstr "État du système"
 
-#: interfaces/web/utils.py:28
-msgid "Internet Message Access Protocol"
-msgstr "Internet Message Access Protocol (Protocole d'accès à distance au courrier électronique)"
+#: interfaces/wmi/groups.py:48
+msgid "Add a new group on the system."
+msgstr "Ajouter un nouveau groupe sur le système."
 
-#: interfaces/web/utils.py:29
-msgid "Virtual Network Computing (Desktop remote connexion protocol)"
-msgstr "Virtual Network Computing (Protocole de prise en main d'ordinateur à distance)"
+#: interfaces/wmi/groups.py:48
+msgid "Add a group"
+msgstr "Ajouter un groupe"
 
-#: interfaces/web/utils.py:30
-msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
-msgstr "Remote Desktop Protocol (Protocole de prise en main de bureau graphique à distance)"
+#: interfaces/wmi/groups.py:59
+#, python-format
+msgid "Make group %s permissive"
+msgstr "Rendre le groupe %s permissif"
 
-#: interfaces/web/utils.py:31
-msgid "Post-Office Protocol (Simple mail fetching protocol)"
-msgstr "Post-Office Protocol (Procole simpliste de récupération du courrier électronique)"
-
-#: interfaces/web/utils.py:32
-msgid "Simple Mail Transfer Protocol"
-msgstr "Simple Mail Transfer Protocol (Protocole d'envoi et relai du courrier électronique)"
-
-#: interfaces/web/utils.py:33
-msgid "Rivest Shamir Adleman (cryptography protocol)"
-msgstr "Rivest Shamir Adleman (Protocole de cryptographie)"
-
-#: interfaces/web/utils.py:34
-msgid "Digital Signature Algorithm"
-msgstr "Digital Signature Algorithm (Protocole de cryptographie)"
-
-#: interfaces/web/utils.py:35
+#: interfaces/wmi/groups.py:67
 msgid ""
-"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
-"\t\tcomposing a libre operating system)"
-msgstr "GNU is Not Unix (Acronyme récursif ; ensemble de logiciels libres composant le système de base d'un Unix libre)"
+"This will permit large access to files and folders\n"
+"\t\t\tin the group shared dir, and will allow any member of the group to\n"
+"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
+"\t\t\tdocument. This option can be dangerous, but if group members are\n"
+"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
+"\t\t\tyou will use this feature on small working groups. <br /> Warning:\n"
+"\t\t\t<strong> The operation may be lengthy because the system will change\n"
+"\t\t\tpermissions of all current data </ strong> (duration is therefore\n"
+"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
+msgstr ""
+"Cela déverrouillera les accès aux fichiers et dossiers, \n"
+"\t\t\tet permettra à n'importe quel membre du groupe de modifier/supprimer\n"
+"\t\t\tn'importe quel document, y compris si ce n'est pas lui le propriétaire/créateur.\n"
+"\t\t\tCette option peut donc être dangereuse, mais si les membres du groupe sont habitués\n"
+"\t\t\tà travailler ensemble, il n'y a pas de problème. En général on utilise cette fonctionnalité\n"
+"\t\t\tsur des petits groupes de travail.<br /> Attention&#160;: <strong>L'opération peut être\n"
+"\t\t\tlongue car le système va modifier les permissions de toutes les données actuelles</strong>\n"
+"\t\t\t(la durée est donc en fonction\n"
+"\t\t\tdu volume de données, de l'ordre de 1 seconde pour 100Mio)."
 
-#: interfaces/web/utils.py:37
+#: interfaces/wmi/groups.py:77
+#, python-format
+msgid "Are you sure you want to active permissiveness on group <strong>%s</strong>?"
+msgstr "Êtes-vous sûr(e) de vouloir activer la permissivité sur le groupe <strong>%s</strong>&#160;?"
+
+#: interfaces/wmi/groups.py:79
+msgid "Activate"
+msgstr "Activer"
+
+#: interfaces/wmi/groups.py:81
+#: interfaces/wmi/groups.py:119
+#: interfaces/wmi/groups.py:157
+#: interfaces/wmi/groups.py:224
+#: interfaces/wmi/groups.py:282
+#: interfaces/wmi/groups.py:616
+msgid "N"
+msgstr "N"
+
+#: interfaces/wmi/groups.py:92
+#, python-format
 msgid ""
-"LiCorN system tools (tools for IT managers,\n"
-"\t\tsee http://dev.licorn.org/)"
-msgstr "LiCorN system tools (outils pour les administrateurs systèmes GNU/Linux, voir http://dev.licorn.org/)"
+"Failed to activate permissivenes on group\n"
+"\t\t\t<strong>%s</strong>!"
+msgstr "Impossible de rendre le groupe <strong>%s</strong> permissif&#160;!"
 
-#: interfaces/web/utils.py:39
+#: interfaces/wmi/groups.py:97
+#, python-format
+msgid "Make group %s not permissive"
+msgstr "Rendre le groupe %s non permissif"
+
+#: interfaces/wmi/groups.py:105
 msgid ""
-"Licorn Admin Tools (High-level management tools for\n"
-"\t\ta GNU/Linux system)"
-msgstr "Licorn Admin Tools (outils de haut-niveau pour administrer un système GNU/Linux)"
+"This will ensure finer write access to files and\n"
+"\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
+"\t\twill be able to modify it; other group members will only be able to read\n"
+"\t\tsuch a document (unless the owner manually assign other permissions,\n"
+"\t\twhich are not guaranteed to be maintained by the system). <br />\n"
+"\t\tWarning: <strong> The operation may be lengthy because the system will\n"
+"\t\tswitch permissions of all current group shared data</strong> (duration\n"
+"\t\tis therefore depending on the volume of data, about 1 sec. for 100Mio).\n"
+"\t\t"
+msgstr ""
+"Cela autorisera des accès aux fichiers et dossiers gérés plus finement.\n"
+"\t\t\tSeul le propriétaire/créateur d'un document pourra le modifier,\n"
+"\t\t\tles autres membres du groupe pourront seulement le lire \n"
+"\t\t\t(sauf si l'utilisateur assigne manuellement d'autres permissions).<br />\n"
+"\t\t\tAttention&#160;:\n"
+"\t\t\t<strong>L'opération peut être longue car le système va modifier\n"
+"\t\t\tles permissions de toutes les données actuelles</strong> (la durée est donc en \n"
+"\t\t\tfonction du volume de données, de l'ordre de 1 seconde pour 100Mio)."
 
-#: interfaces/web/utils.py:49
-msgid "Command must be a list or tuple!"
-msgstr "La commande à exécuter doit être transmise sous forme de liste ou de tuple&nbsp;!"
-
-#: interfaces/web/utils.py:76
+#: interfaces/wmi/groups.py:115
 #, python-format
-msgid "%d&nbsp;hours,"
-msgstr "%d&nbsp;heures, "
+msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
+msgstr "Êtes-vous sûr(e) de vouloir rendre le groupe <strong>%s</strong> NON permissif&#160;?"
 
-#: interfaces/web/utils.py:80
+#: interfaces/wmi/groups.py:117
+msgid "Deactivate"
+msgstr "Désactiver"
+
+#: interfaces/wmi/groups.py:118
+#: interfaces/wmi/groups.py:275
+msgid "D"
+msgstr "D"
+
+#: interfaces/wmi/groups.py:129
 #, python-format
-msgid " %d&nbsp;minutes,"
-msgstr " %d&nbsp;minutes,"
+msgid ""
+"Failed to remove permissiveness from group\n"
+"\t\t\t\t<strong>%s</strong>!"
+msgstr "Impossible de supprimer la permissivité du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/utils.py:82
+#: interfaces/wmi/groups.py:137
 #, python-format
-msgid " %.3f&nbsp;seconds."
-msgstr " %.3f&nbsp;secondes."
+msgid "Remove group %s"
+msgstr "Supprimer le groupe %s"
 
-#: interfaces/web/utils.py:83
+#: interfaces/wmi/groups.py:147
 #, python-format
-msgid "Core execution time: %s"
-msgstr "Temps d'exécution du moteur : %s"
+msgid ""
+"Are you sure you want to remove group\n"
+"\t\t\t<strong>%s</strong>?"
+msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/utils.py:153
-msgid "Add"
-msgstr "Ajouter"
-
-#: interfaces/web/utils.py:216
+#: interfaces/wmi/groups.py:149
 #, python-format
-msgid "Logged in as %s"
-msgstr "Connecté en tant que %s"
+msgid ""
+"Group shared data will be archived in directory %s,\n"
+"\t\t\t\tand accessible to members of group %s for eventual\n"
+"\t\t\t\trecovery. However, you can decideto remove them\n"
+"\t\t\t\tpermanently."
+msgstr ""
+"<strong>Les données partagées</strong> du groupe <strong>seront archivées</strong>\n"
+"\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du groupe\n"
+"\t\t\t\t<strong>%s</strong> pour une récupération éventuelle. Vous\n"
+"\t\t\t\tpouvez cependant décider de les effacer définitivement."
 
-#: interfaces/web/utils.py:314
-msgid "Server, UPS and hardware sub-systems status."
-msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
+#: interfaces/wmi/groups.py:159
+msgid "Definitely remove group shared data."
+msgstr "Supprimer définitivement les données partagées."
 
-#: interfaces/web/utils.py:314
-msgid "Status"
-msgstr "État"
-
-#: interfaces/web/utils.py:315
-msgid "Manage user accounts."
-msgstr "Gérer les comptes utilisateurs."
-
-#: interfaces/web/utils.py:315
-msgid "Users"
-msgstr "Utilisateurs"
-
-#: interfaces/web/utils.py:316
-msgid "Manage groups and shared data."
-msgstr "Gérer les groupes et les données partagées"
-
-#: interfaces/web/utils.py:317
-msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
-msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
-
-#: interfaces/web/utils.py:317
-msgid "Machines"
-msgstr "Machines"
-
-#: interfaces/web/utils.py:318
-msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
-msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
-
-#: interfaces/web/utils.py:318
-msgid "Internet"
-msgstr "Internet"
-
-#: interfaces/web/utils.py:319
-msgid "Go to online documentation and community website (in new window or new tab)."
-msgstr "Accéder à l'aide en ligne de webadmin (dans une nouvelle fenêtre ou un nouvel onglet)."
-
-#: interfaces/web/utils.py:319
-msgid "Documentation"
-msgstr "Documentation"
-
-#: interfaces/web/utils.py:320
-msgid "Get product support / help"
-msgstr "Obtenir du support sur le produit"
-
-#: interfaces/web/utils.py:320
-msgid "Support"
-msgstr "Assistance"
-
-#: interfaces/web/utils.py:324
+#: interfaces/wmi/groups.py:173
 #, python-format
-msgid "%s Management"
-msgstr "Administration %s"
+msgid "Failed to remove group <strong>%s</strong>!"
+msgstr "Impossible de supprimer le groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/utils.py:349
+#: interfaces/wmi/groups.py:181
 #, python-format
-msgid "%s WMI:"
-msgstr "IGW %s&nbsp;:"
+msgid "Skeleton reapplying for group %s"
+msgstr "Ré-application de squelette pour le groupe %s"
 
-#: interfaces/web/utils.py:354
+#: interfaces/wmi/groups.py:192
+msgid ""
+"This will reset the desktops, icons and menus\n"
+"\t\t\tof all members of the group, according to the content of the\n"
+"\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
+"\t\t\tdata, nor the group shared data."
+msgstr ""
+"Cela remettra le bureau de tous les membres du groupe à zéro, y compris les icônes et les menus.\n"
+"\t\t\tCeci n'altèrera pas les données personnelles des utilisateurs, ni les données partagées du groupe.\n"
+"\t\t\t<strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération\n"
+"\t\t\tréussisse.</strong>"
+
+#: interfaces/wmi/groups.py:212
 #, python-format
-msgid "administration %s"
-msgstr "Administration %s"
+msgid ""
+"Which skel do you wish to reapply to members of\n"
+"\t\t\tthis group? %s"
+msgstr "Quel skelette voulez-vous appliquer aux membres de ce groupe&#160;? %s"
 
-#: interfaces/web/server.py:37
-msgid "Can't reboot the system."
-msgstr "Impossible de redémarrer le système."
-
-#: interfaces/web/server.py:40
-msgid "Rebooting…"
-msgstr "Redémarrage…"
-
-#: interfaces/web/server.py:66
+#: interfaces/wmi/groups.py:218
 #, python-format
-msgid "Sure you want to reboot the %s server?"
-msgstr "Êtes-vous sûr(e) de vouloir redémarrer le serveur %s ?"
+msgid ""
+"Are you sure you want to reapply this skel to\n"
+"\t\t\tall of the members of %s?"
+msgstr "Êtes-vous sûr de vouloir appliquer ce squelette aux membres du groupe <strong>%s</strong>&#160;!"
 
-#: interfaces/web/server.py:67
-#: interfaces/web/server.py:105
-msgid "YES"
-msgstr "OUI"
-
-#: interfaces/web/server.py:68
-#: interfaces/web/server.py:106
-msgid "NO"
-msgstr "NON"
-
-#: interfaces/web/server.py:75
-msgid "Can't shutdown the system."
-msgstr "Impossible d'arrêter le système."
-
-#: interfaces/web/server.py:78
-msgid "Shutting down…"
-msgstr "Arrêt en cours…"
-
-#: interfaces/web/server.py:104
+#: interfaces/wmi/groups.py:236
 #, python-format
-msgid "Sure you want to shutdown the %s server?"
-msgstr "Êtes-vous sûr(e) de vouloir éteindre le serveur %s ?"
+msgid "Failed to apply skel %s to members of group %s."
+msgstr "Impossible d'appliquer le squelette <strong>%s</strong> aux membres du groupe <strong>%s</strong>&#160;!"
 
+#: interfaces/wmi/groups.py:241
+msgid "Creating a new group"
+msgstr "Création d'un nouveau groupe"
+
+#: interfaces/wmi/groups.py:272
+#: interfaces/wmi/groups.py:607
+msgid "Group name"
+msgstr "Nom de groupe"
+
+#: interfaces/wmi/groups.py:274
+#: interfaces/wmi/groups.py:610
+msgid "Group description"
+msgstr "Description du groupe"
+
+#: interfaces/wmi/groups.py:274
+msgid "(optional)"
+msgstr "(optionnel)"
+
+#: interfaces/wmi/groups.py:276
+msgid "Skel of future group members"
+msgstr "Squelette des futurs membres du groupe"
+
+#: interfaces/wmi/groups.py:280
+#: interfaces/wmi/groups.py:543
+msgid "Permissive shared dir?"
+msgstr "Répertoire de groupe permissif&#160;?"
+
+#: interfaces/wmi/groups.py:281
+msgid "Yes"
+msgstr "Oui"
+
+#: interfaces/wmi/groups.py:284
+msgid "T"
+msgstr "T"
+
+#: interfaces/wmi/groups.py:290
+#, python-format
+msgid "Creating group %s"
+msgstr "Création du groupe %s"
+
+#: interfaces/wmi/groups.py:307
+#, python-format
+msgid "Failed to create group %s!"
+msgstr "Impossible de créer le groupe %s&#160;!"
+
+#: interfaces/wmi/groups.py:314
+#, python-format
+msgid "Details of group %s"
+msgstr "Détails du groupe %s"
+
+#: interfaces/wmi/groups.py:341
+#: interfaces/wmi/groups.py:711
+msgid "Members"
+msgstr "Membres"
+
+#: interfaces/wmi/groups.py:342
+#: interfaces/wmi/groups.py:382
+#: interfaces/wmi/groups.py:411
+msgid "(ordered by login)"
+msgstr "(classés par identifiant)"
+
+#: interfaces/wmi/groups.py:343
+#: interfaces/wmi/groups.py:383
+#: interfaces/wmi/groups.py:412
+#: interfaces/wmi/groups.py:849
+msgid "Full Name"
+msgstr "Nom complet"
+
+#: interfaces/wmi/groups.py:345
+#: interfaces/wmi/groups.py:385
+#: interfaces/wmi/groups.py:414
+#: interfaces/wmi/groups.py:850
+msgid "UID"
+msgstr "UID"
+
+#: interfaces/wmi/groups.py:361
+msgid "No members in this group."
+msgstr "Aucun invité dans ce groupe."
+
+#: interfaces/wmi/groups.py:381
+#: interfaces/wmi/groups.py:712
+msgid "Responsibles"
+msgstr "Responsables"
+
+#: interfaces/wmi/groups.py:391
+msgid "No responsibles for this group."
+msgstr "Aucun responsable de ce groupe."
+
+#: interfaces/wmi/groups.py:410
+#: interfaces/wmi/groups.py:713
+msgid "Guests"
+msgstr "Invités"
+
+#: interfaces/wmi/groups.py:418
+msgid "No guests in this group."
+msgstr "Aucun invité dans ce groupe."
+
+#: interfaces/wmi/groups.py:443
+#: interfaces/wmi/groups.py:605
+msgid "GID"
+msgstr "GID"
+
+#: interfaces/wmi/groups.py:443
+#: interfaces/wmi/groups.py:444
+msgid "immutable"
+msgstr "non modifiable"
+
+#: interfaces/wmi/groups.py:444
+#: interfaces/wmi/groups.py:707
+msgid "Name"
+msgstr "Nom"
+
+#: interfaces/wmi/groups.py:448
+msgid "<< Go back"
+msgstr "<< Revenir"
+
+#: interfaces/wmi/groups.py:448
+msgid "B"
+msgstr "R"
+
+#: interfaces/wmi/groups.py:449
+msgid "Print"
+msgstr "Imprimer"
+
+#: interfaces/wmi/groups.py:455
+#: interfaces/wmi/groups.py:623
+#, python-format
+msgid "Group %s doesn't exist (%s, %s)!"
+msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
+
+#: interfaces/wmi/groups.py:468
+#, python-format
+msgid "Editing group %s"
+msgstr "Édition du groupe %s"
+
+#: interfaces/wmi/groups.py:482
+#: interfaces/wmi/groups.py:492
+msgid "Manage members"
+msgstr "Gérer les membres"
+
+#: interfaces/wmi/groups.py:482
+#: interfaces/wmi/groups.py:493
+msgid "Users not yet members"
+msgstr "Utilisateurs non-membres"
+
+#: interfaces/wmi/groups.py:483
+#: interfaces/wmi/groups.py:494
+#: interfaces/wmi/groups.py:830
+msgid "Current members"
+msgstr "Membres actuels"
+
+#: interfaces/wmi/groups.py:497
+msgid "Manage responsibles"
+msgstr "Gérer les responsables"
+
+#: interfaces/wmi/groups.py:498
+msgid "Users not yet responsibles"
+msgstr "Utilisateurs pas encore responsables"
+
+#: interfaces/wmi/groups.py:499
+#: interfaces/wmi/groups.py:831
+msgid "Current responsibles"
+msgstr "Responsables actuels"
+
+#: interfaces/wmi/groups.py:502
+msgid "Manage guests"
+msgstr "Gérer les invités"
+
+#: interfaces/wmi/groups.py:503
+msgid "Users not yet guests"
+msgstr "Utilisateurs pas encore invités"
+
+#: interfaces/wmi/groups.py:504
+#: interfaces/wmi/groups.py:832
+msgid "Current guests"
+msgstr "Invités actuels"
+
+#: interfaces/wmi/groups.py:533
+#: interfaces/wmi/groups.py:709
+msgid "Skeleton"
+msgstr "Squelette"
+
+#: interfaces/wmi/groups.py:559
+msgid "Group responsibles"
+msgstr "Responsables du groupe"
+
+#: interfaces/wmi/groups.py:561
+msgid "Group guests"
+msgstr "Invités du groupe"
+
+#: interfaces/wmi/groups.py:605
+#: interfaces/wmi/groups.py:607
+msgid "(immutable)"
+msgstr "(non modifiable)"
+
+#: interfaces/wmi/groups.py:613
+msgid "Group members"
+msgstr "Membres du groupe"
+
+#: interfaces/wmi/groups.py:617
+msgid "Record"
+msgstr "Enregistrer"
+
+#: interfaces/wmi/groups.py:637
+#, python-format
+msgid "Modifying group %s"
+msgstr "Modification du groupe %s"
+
+#: interfaces/wmi/groups.py:679
+#, python-format
+msgid "Failed to modify one or more parameter of group %s!"
+msgstr "Impossible de modifier un ou plusieurs paramètres du groupe <strong>%s</strong>&#160;!"
+
+#: interfaces/wmi/groups.py:708
+msgid "Description"
+msgstr "Description du groupe"
+
+#: interfaces/wmi/groups.py:710
+msgid "Perm."
+msgstr "Perm."
+
+#: interfaces/wmi/groups.py:721
+#, python-format
+msgid "%s order"
+msgstr "ordre %s"
+
+#: interfaces/wmi/groups.py:800
+msgid ""
+"View the group details, its parameters,\n"
+"\t\t\t\t\tmembers, responsibles and guests.\n"
+"\t\t\t\t\tFrom there you can print all group-related informations."
+msgstr "Visualiser le groupe, ses paramètres,ses membres, responsables et invités, en vue deles imprimer."
+
+#: interfaces/wmi/groups.py:816
+msgid "Shared group directory is currently <strong>permissive</strong>. Click to deactivate permissiveness."
+msgstr "Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez pour désactiver la permissivité."
+
+#: interfaces/wmi/groups.py:818
+msgid "Group is currently permissive."
+msgstr "Le groupe est actuellement permissif."
+
+#: interfaces/wmi/groups.py:825
+msgid ""
+"Shared group directory is currently\n"
+"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
+"\t\t\t\t\tpermissiveness."
+msgstr "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. Cliquez pour activer la permissivité."
+
+#: interfaces/wmi/groups.py:827
+msgid "Group is NOT permissive."
+msgstr "Le groupe N'EST PAS permissif actuellement."
+
+#: interfaces/wmi/groups.py:861
+msgid "none"
+msgstr "aucun"
+
+#: interfaces/wmi/groups.py:868
+#, python-format
+msgid "See %s of group %s."
+msgstr "Voir les %s du groupe %s."
+
+#: interfaces/wmi/groups.py:890
+msgid ""
+"This will rebuild his/her desktop\n"
+"\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
+"\t\t\t\t\t\t<br /><br />The user must be disconnected for the\n"
+"\t\t\t\t\t\toperation to be completely successfull."
+msgstr "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour que l'opération réussisse.</strong>"
+
+#: interfaces/wmi/groups.py:895
+msgid "Definitely remove this group from system."
+msgstr "Supprimer définitivement le compte du système."
+
+#: interfaces/wmi/groups.py:922
+msgid "Total number of groups:"
+msgstr "Nombre total de groupes&#160;:"
+
+#: core/configuration.py:486
+#, python-format
+msgid "SSH detection not supported yet on your system.Please get in touch with %s."
+msgstr "La détection de la configuration SSH n'est pas implémentée sur votre système. Merci de contacter %s."
+
+#: core/configuration.py:504
+msgid "Users allowed to connect via SSHd"
+msgstr "Utilisateurs autorisés à se connecter à distance via SSHd."
+
+#: core/configuration.py:760
+msgid "user"
+msgstr "utilisateur"
+
+#: core/configuration.py:761
+msgid "users"
+msgstr "utilisateurs"
+
+#: core/configuration.py:780
+msgid "group"
+msgstr "groupe"
+
+#: core/configuration.py:781
+msgid "groups"
+msgstr "groupes"
+
+#~ msgid "Failed to remove group"
+#~ msgstr "Impossible de supprimer le groupe"
+#~ msgid "alter system group."
+#~ msgstr "modification d'un groupe système."
+#~ msgid "insufficient permissions to perform operation."
+#~ msgstr "permissions insuffisantes pour accomplir l'opération."
+#~ msgid "Failed to remove account"
+#~ msgstr "Impossible de supprimer le compte"
+#~ msgid "Failed to lock account"
+#~ msgstr "Impossible de verrouiller le compte"
+#~ msgid "Failed to reapply skel"
+#~ msgstr "Impossible de réappliquer le squelette"
+#~ msgid "Account edition impossible."
+#~ msgstr "Édition du compte impossible."
+#~ msgid "Recording of informations failed"
+#~ msgstr "L'enregistrement des informations a échoué"
 #~ msgid "Reapply skel to group members."
 #~ msgstr "Reappliquer un squelette aux membres du groupe."
 #~ msgid "Remove this group."
