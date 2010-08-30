@@ -1,0 +1,1 @@
+[01;31m!! [D/T] The group [00;36mgroupeA[0;0m[01;31m already exists but has not the same type. Please choose another name for your group.[0;0m

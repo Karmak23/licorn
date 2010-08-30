@@ -1,0 +1,1 @@
+[01;31m!! [D/T] The group 'groupe_a_skel' doesn't exist.[0;0m
