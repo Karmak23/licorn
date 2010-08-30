@@ -3,7 +3,7 @@
 Licorn Daemon WMI internals.
 WMI = Web Management Interface.
 
-Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
@@ -48,6 +48,30 @@ def eventually_fork_wmi_server(opts, start_wmi = True):
 			logging.progress("%s: starting (pid %d)." % (pname, os.getpid()))
 			setup_signals_handler(pname)
 
+			if opts.wmi_listen_address:
+				# the CLI launch argument has priority over the configuration
+				# directive, for testing purposes.
+
+				listen_address = opts.wmi_listen_address
+
+			elif configuration.daemon.wmi.listen_address:
+
+				listen_address = configuration.daemon.wmi.listen_address
+
+			else:
+				# the fallback is localhost
+				listen_address = 'localhost'
+
+			if listen_address.startswith('if:') \
+				or listen_address.startswith('iface:') \
+				or listen_address.startswith('interface:'):
+
+				raise NotImplementedError(
+					'getting interface address is not yet implemented.')
+
+			logging.progress('%s: bind on listen address %s.' % (
+				pname, styles.stylize(styles.ST_ADDRESS, listen_address)))
+
 			count = 0
 			while True:
 				# try creating an http server.
@@ -57,7 +81,7 @@ def eventually_fork_wmi_server(opts, start_wmi = True):
 				# when creation succeeds, break the loop and serve requets.
 				count += 1
 				try:
-					httpd = TCPServer(('localhost', wmi_port), WMIHTTPRequestHandler)
+					httpd = TCPServer((listen_address, wmi_port), WMIHTTPRequestHandler)
 					break
 				except socket.error, e:
 					if e[0] == 98:

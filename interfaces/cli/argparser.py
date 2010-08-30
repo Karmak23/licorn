@@ -21,7 +21,7 @@ configuration = LicornConfiguration()
 ### General / common arguments ###
 def __build_version_string(app):
 	"""return a string ready to be displayed, containing app_name, version, authors..."""
-	return "%s (%s) version %s\n(C) 2004-2008 %s\nlicensed under the terms of the GNU GPL v2. See %s for project details." \
+	return "%s (%s) version %s\n(C) 2004-2010 %s\nlicensed under the terms of the GNU GPL v2. See %s for project details." \
 		% ( styles.stylize(styles.ST_APPNAME, app["name"]), app["description"], version, app["author"], styles.stylize(styles.ST_URL, "http://dev.licorn.org/") )
 def __common_behaviour_group(app, parser, mode = 'any'):
 	""" This group is common to all Licorn System Tools."""
@@ -84,15 +84,30 @@ def general_parse_arguments(app):
 def licornd_parse_arguments(app):
 	""" Integrated help and options / arguments for harvestd."""
 
-	usage_text = "\n\t%s [-D|--no-daemon] [...]" \
+	usage_text = '''
+	%s [-D|--no-daemon] ''' \
+		'''[-W|--wmi-listen-address <IP_or_hostname|iface:...>] ''' \
+		'''[...]''' \
 		% ( styles.stylize(styles.ST_APPNAME, "%prog") )
 
 	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
+
 	parser.add_option("-D", "--no-daemon",
 		action="store_false", dest="daemon", default = True,
-		help="Don't fork as a daemon, stay on the current terminal instead. Logs will be printed onscreen instead of going into the logfile.")
+		help='''Don't fork as a daemon, stay on the current terminal instead.'''
+			''' Logs will be printed on standard output '''
+			'''instead of beiing written into the logfile.''')
 
-	parser.add_option_group(__common_behaviour_group(app, parser, 'harvestd'))
+	parser.add_option("-W", "--wmi-listen-address",
+		action="store", dest="wmi_listen_address", default = None,
+		help='''specify an IP address or a hostname to bind to. Only %s can '''
+			'''be specified (the WMI cannot yet bind on multiple interfaces '''
+			'''at the same time). This option takes precedence over the '''
+			'''configuration directive, if present in %s.''' % (
+			styles.stylize(styles.ST_IMPORTANT, 'ONE address or hostname'),
+			styles.stylize(styles.ST_PATH, configuration.main_config_file)))
+
+	parser.add_option_group(__common_behaviour_group(app, parser, 'licornd'))
 
 	return (parser.parse_args())
 

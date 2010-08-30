@@ -1,23 +1,26 @@
 #!/usr/bin/python -OO
 # -*- coding: utf-8 -*-
 """
-Licorn daemon:
+Licorn® daemon:
   - monitor shared group dirs and other special paths, and reapply posix
-	perms or posix ACL the Right Way They Should Be (TM).
+	perms and posix1e ACsL the Way They Should Be (TM) (as documented in posix1e
+	manuals).
+  - crawls against all shared group dirs, indexes metadata and provides a global
+    search engine for all users.
 
 This daemon exists:
-  - to add user functionnality to Licorn systems.
-  - because of bugs in other apps.
+  - to add user functionnality to Licorn® systems.
+  - because of bugs in external apps (which don't respect posix1e semantics and
+	can't or won't be fixed easily).
 
-Built on top of Licorn System Library, part of Licorn System Tools (H-S-T).
-
-Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>.
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
 Licensed under the terms of the GNU GPL version 2.
 """
 
 current_app = {
-	"name"       : "licorn-daemon",
-	"description": "Licorn Daemon: ACL auto check and file meta-data crawler",
+	"name"       : "licornd",
+	"description": '''Licorn® Daemon: posix1e ACL auto checker, Web ''' \
+		'''Management Interface server and file meta-data crawler''',
 	"author"     : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
