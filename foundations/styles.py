@@ -82,6 +82,7 @@ ST_INFO      = 33
 ST_WARNING   = 34
 ST_ERROR     = 35
 ST_COMMENT   = 36
+ST_ADDRESS   = 37
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -119,7 +120,8 @@ colors = {
 	ST_INFO     : __ascii[ST_YELLOW],
 	ST_WARNING  : __ascii[ST_RED],
 	ST_ERROR    : __ascii[ST_RED],
-	ST_COMMENT  : __ascii[ST_BROWN]
+	ST_COMMENT  : __ascii[ST_BROWN],
+	ST_ADDRESS  : __ascii[ST_BLUE]
 	}
 
 
