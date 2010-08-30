@@ -317,10 +317,17 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			elif rettype == w.HTTP_TYPE_REDIRECT:
 				# special entry, which should not return any data, else
 				# the redirect won't work.
+
+				try:
+					# fix #239
+					hostaddr = socket.gethostbyaddr(
+						self.server.server_address[0])[0]
+				except herror:
+					hostaddr = self.server.server_address
+
 				self.send_response(302)
 				self.send_header("Location", 'http://%s:%s%s' % (
-					socket.gethostbyaddr(self.server.server_address[0])[0],
-						wmi_port, retdata))
+					hostaddr, wmi_port, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()
 
