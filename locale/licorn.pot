@@ -8,14 +8,39 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-08-28 10:02+0200\n"
+"POT-Creation-Date: 2010-08-30 11:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: core/configuration.py:485
+#, python-format
+msgid ""
+"SSH detection not supported yet on your system.Please get in touch with %s."
+msgstr ""
+
+#: core/configuration.py:503
+msgid "Users allowed to connect via SSHd"
+msgstr ""
+
+#: core/configuration.py:759
+msgid "user"
+msgstr ""
+
+#: core/configuration.py:760
+msgid "users"
+msgstr ""
+
+#: core/configuration.py:779
+msgid "group"
+msgstr ""
+
+#: core/configuration.py:780
+msgid "groups"
+msgstr ""
 
 #: interfaces/gui/hkew.glade:7
 msgid "Licorn Keywords File Modifier"
@@ -51,276 +76,6 @@ msgstr ""
 
 #: interfaces/gui/hkew.glade:207
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
-msgstr ""
-
-#: interfaces/wmi/utils.py:22
-#, python-format
-msgid ""
-"\n"
-"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
-"\">GNU\n"
-" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
-" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project "
-"%s,\n"
-"  and all other libre software developers (Notably Ubuntu, Debian, "
-"Python…).\n"
-msgstr ""
-
-#: interfaces/wmi/utils.py:30
-msgid "Secure SHell (Secure remote connexion and commands protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:31
-msgid "File Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:32
-msgid "HyperText Transfert Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:33
-msgid "Internet Message Access Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:34
-msgid "Virtual Network Computing (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:35
-msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:36
-msgid "Post-Office Protocol (Simple mail fetching protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:37
-msgid "Simple Mail Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:38
-msgid "Rivest Shamir Adleman (cryptography protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:39
-msgid "Digital Signature Algorithm"
-msgstr ""
-
-#: interfaces/wmi/utils.py:40
-msgid ""
-"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
-"\t\tcomposing a libre operating system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:42
-msgid ""
-"LiCorN system tools (tools for IT managers,\n"
-"\t\tsee http://dev.licorn.org/)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:44
-msgid ""
-"Licorn Admin Tools (High-level management tools for\n"
-"\t\ta GNU/Linux system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:46
-msgid "Licorn® Web Management Interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:55
-msgid "Command must be a list or tuple!"
-msgstr ""
-
-#: interfaces/wmi/utils.py:81
-#, python-format
-msgid "%d&nbsp;hours,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:85
-#, python-format
-msgid " %d&nbsp;minutes,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:87
-#, python-format
-msgid " %.3f&nbsp;seconds."
-msgstr ""
-
-#: interfaces/wmi/utils.py:88
-#, python-format
-msgid "Core execution time: %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:158
-msgid "Add"
-msgstr ""
-
-#: interfaces/wmi/utils.py:160 interfaces/wmi/groups.py:154
-msgid "Remove"
-msgstr ""
-
-#: interfaces/wmi/utils.py:212
-msgid "Executed command:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:215
-msgid "Error reported by system:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:219 interfaces/wmi/utils.py:220
-msgid "Back to root of management interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:226
-#, python-format
-msgid "Logged in as %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:242 interfaces/wmi/utils.py:243
-msgid "Bad request or argument"
-msgstr ""
-
-#: interfaces/wmi/utils.py:244
-msgid "There was a problem in the request you sent to the WMI."
-msgstr ""
-
-#: interfaces/wmi/utils.py:248 interfaces/wmi/utils.py:250
-msgid "Impossible action"
-msgstr ""
-
-#: interfaces/wmi/utils.py:251
-msgid ""
-"Some parts of the system cannot be modified, for your own safety and the "
-"world to rest in peace."
-msgstr ""
-
-#: interfaces/wmi/utils.py:337
-msgid "Server, UPS and hardware sub-systems status."
-msgstr ""
-
-#: interfaces/wmi/utils.py:337
-msgid "Status"
-msgstr ""
-
-#: interfaces/wmi/utils.py:338
-msgid "Manage user accounts."
-msgstr ""
-
-#: interfaces/wmi/utils.py:338
-msgid "Users"
-msgstr ""
-
-#: interfaces/wmi/utils.py:339
-msgid "Manage groups and shared data."
-msgstr ""
-
-#: interfaces/wmi/utils.py:339 interfaces/wmi/users.py:422
-#: interfaces/wmi/users.py:623 interfaces/wmi/groups.py:697
-#: interfaces/wmi/groups.py:733
-msgid "Groups"
-msgstr ""
-
-#: interfaces/wmi/utils.py:340
-msgid ""
-"Manage network clients: computers, printers, switches and other network "
-"enabled active systems."
-msgstr ""
-
-#: interfaces/wmi/utils.py:340
-msgid "Machines"
-msgstr ""
-
-#: interfaces/wmi/utils.py:341
-msgid ""
-"Manage Internet connexion and parameters, firewall protection, URL filter "
-"and e-mail parameters."
-msgstr ""
-
-#: interfaces/wmi/utils.py:341
-msgid "Internet"
-msgstr ""
-
-#: interfaces/wmi/utils.py:342
-msgid ""
-"Go to online documentation and community website (in new window or new tab)."
-msgstr ""
-
-#: interfaces/wmi/utils.py:342
-msgid "Documentation"
-msgstr ""
-
-#: interfaces/wmi/utils.py:343
-msgid "Get product support / help"
-msgstr ""
-
-#: interfaces/wmi/utils.py:343
-msgid "Support"
-msgstr ""
-
-#: interfaces/wmi/utils.py:347
-#, python-format
-msgid "%s Management"
-msgstr ""
-
-#: interfaces/wmi/utils.py:372
-#, python-format
-msgid "%s WMI:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:377
-#, python-format
-msgid "administration %s"
-msgstr ""
-
-#: interfaces/wmi/server.py:30 interfaces/wmi/base.py:35
-msgid "Restart server."
-msgstr ""
-
-#: interfaces/wmi/server.py:31 interfaces/wmi/base.py:36
-msgid "Restart server"
-msgstr ""
-
-#: interfaces/wmi/server.py:32 interfaces/wmi/base.py:37
-msgid "Shutdown server."
-msgstr ""
-
-#: interfaces/wmi/server.py:33 interfaces/wmi/base.py:38
-msgid "Shutdown server"
-msgstr ""
-
-#: interfaces/wmi/server.py:41
-msgid "Can't reboot the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:44
-msgid "Rebooting…"
-msgstr ""
-
-#: interfaces/wmi/server.py:70
-#, python-format
-msgid "Sure you want to reboot the %s server?"
-msgstr ""
-
-#: interfaces/wmi/server.py:71 interfaces/wmi/server.py:109
-msgid "YES"
-msgstr ""
-
-#: interfaces/wmi/server.py:72 interfaces/wmi/server.py:110
-msgid "NO"
-msgstr ""
-
-#: interfaces/wmi/server.py:79
-msgid "Can't shutdown the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:82
-msgid "Shutting down…"
-msgstr ""
-
-#: interfaces/wmi/server.py:108
-#, python-format
-msgid "Sure you want to shutdown the %s server?"
 msgstr ""
 
 #: interfaces/wmi/users.py:21
@@ -644,6 +399,12 @@ msgstr ""
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr ""
 
+#: interfaces/wmi/users.py:422 interfaces/wmi/users.py:623
+#: interfaces/wmi/groups.py:697 interfaces/wmi/groups.py:733
+#: interfaces/wmi/utils.py:339
+msgid "Groups"
+msgstr ""
+
 #: interfaces/wmi/users.py:423 interfaces/wmi/users.py:624
 #: interfaces/wmi/groups.py:734
 msgid "Privileges"
@@ -814,71 +575,6 @@ msgstr ""
 msgid "<strong>Total number of accounts:</strong>"
 msgstr ""
 
-#: interfaces/wmi/base.py:80
-#, python-format
-msgid "%d year%s, "
-msgstr ""
-
-#: interfaces/wmi/base.py:83
-#, python-format
-msgid "%d day%s, "
-msgstr ""
-
-#: interfaces/wmi/base.py:86
-#, python-format
-msgid "%d hour%s, "
-msgstr ""
-
-#: interfaces/wmi/base.py:89
-#, python-format
-msgid "%d min%s, "
-msgstr ""
-
-#: interfaces/wmi/base.py:92
-#, python-format
-msgid "%d sec%s"
-msgstr ""
-
-#: interfaces/wmi/base.py:94
-#, python-format
-msgid ""
-"Up and running since <strong>%s</strong>.<br /><br />\n"
-"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
-"<br /><br />\n"
-"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
-msgstr ""
-
-#: interfaces/wmi/base.py:137
-msgid "no virtual memory installed."
-msgstr ""
-
-#: interfaces/wmi/base.py:140
-#, python-format
-msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
-msgstr ""
-
-#: interfaces/wmi/base.py:143
-#, python-format
-msgid ""
-"\n"
-"Processor%s: %d x <strong>%s</strong><br /><br />\n"
-"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
-"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
-"%s"
-msgstr ""
-
-#: interfaces/wmi/base.py:154
-msgid "Server status"
-msgstr ""
-
-#: interfaces/wmi/base.py:166
-msgid "System information"
-msgstr ""
-
-#: interfaces/wmi/base.py:167
-msgid "System status"
-msgstr ""
-
 #: interfaces/wmi/groups.py:48
 msgid "Add a new group on the system."
 msgstr ""
@@ -986,6 +682,10 @@ msgid ""
 "\t\t\t\tand accessible to members of group %s for eventual\n"
 "\t\t\t\trecovery. However, you can decideto remove them\n"
 "\t\t\t\tpermanently."
+msgstr ""
+
+#: interfaces/wmi/groups.py:154 interfaces/wmi/utils.py:160
+msgid "Remove"
 msgstr ""
 
 #: interfaces/wmi/groups.py:159
@@ -1286,28 +986,327 @@ msgstr ""
 msgid "Total number of groups:"
 msgstr ""
 
-#: core/configuration.py:486
+#: interfaces/wmi/utils.py:22
 #, python-format
 msgid ""
-"SSH detection not supported yet on your system.Please get in touch with %s."
+"\n"
+"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
+"\">GNU\n"
+" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
+" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %"
+"s,\n"
+"  and all other libre software developers (Notably Ubuntu, Debian, "
+"Python…).\n"
 msgstr ""
 
-#: core/configuration.py:504
-msgid "Users allowed to connect via SSHd"
+#: interfaces/wmi/utils.py:30
+msgid "Secure SHell (Secure remote connexion and commands protocol)"
 msgstr ""
 
-#: core/configuration.py:760
-msgid "user"
+#: interfaces/wmi/utils.py:31
+msgid "File Transfer Protocol"
 msgstr ""
 
-#: core/configuration.py:761
-msgid "users"
+#: interfaces/wmi/utils.py:32
+msgid "HyperText Transfert Protocol"
 msgstr ""
 
-#: core/configuration.py:780
-msgid "group"
+#: interfaces/wmi/utils.py:33
+msgid "Internet Message Access Protocol"
 msgstr ""
 
-#: core/configuration.py:781
-msgid "groups"
+#: interfaces/wmi/utils.py:34
+msgid "Virtual Network Computing (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:35
+msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:36
+msgid "Post-Office Protocol (Simple mail fetching protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:37
+msgid "Simple Mail Transfer Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:38
+msgid "Rivest Shamir Adleman (cryptography protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:39
+msgid "Digital Signature Algorithm"
+msgstr ""
+
+#: interfaces/wmi/utils.py:40
+msgid ""
+"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
+"\t\tcomposing a libre operating system)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:42
+msgid ""
+"LiCorN system tools (tools for IT managers,\n"
+"\t\tsee http://dev.licorn.org/)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:44
+msgid ""
+"Licorn Admin Tools (High-level management tools for\n"
+"\t\ta GNU/Linux system)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:46
+msgid "Licorn® Web Management Interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:55
+msgid "Command must be a list or tuple!"
+msgstr ""
+
+#: interfaces/wmi/utils.py:81
+#, python-format
+msgid "%d&nbsp;hours,"
+msgstr ""
+
+#: interfaces/wmi/utils.py:85
+#, python-format
+msgid " %d&nbsp;minutes,"
+msgstr ""
+
+#: interfaces/wmi/utils.py:87
+#, python-format
+msgid " %.3f&nbsp;seconds."
+msgstr ""
+
+#: interfaces/wmi/utils.py:88
+#, python-format
+msgid "Core execution time: %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:158
+msgid "Add"
+msgstr ""
+
+#: interfaces/wmi/utils.py:212
+msgid "Executed command:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:215
+msgid "Error reported by system:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:219 interfaces/wmi/utils.py:220
+msgid "Back to root of management interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:226
+#, python-format
+msgid "Logged in as %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:242 interfaces/wmi/utils.py:243
+msgid "Bad request or argument"
+msgstr ""
+
+#: interfaces/wmi/utils.py:244
+msgid "There was a problem in the request you sent to the WMI."
+msgstr ""
+
+#: interfaces/wmi/utils.py:248 interfaces/wmi/utils.py:250
+msgid "Impossible action"
+msgstr ""
+
+#: interfaces/wmi/utils.py:251
+msgid ""
+"Some parts of the system cannot be modified, for your own safety and the "
+"world to rest in peace."
+msgstr ""
+
+#: interfaces/wmi/utils.py:337
+msgid "Server, UPS and hardware sub-systems status."
+msgstr ""
+
+#: interfaces/wmi/utils.py:337
+msgid "Status"
+msgstr ""
+
+#: interfaces/wmi/utils.py:338
+msgid "Manage user accounts."
+msgstr ""
+
+#: interfaces/wmi/utils.py:338
+msgid "Users"
+msgstr ""
+
+#: interfaces/wmi/utils.py:339
+msgid "Manage groups and shared data."
+msgstr ""
+
+#: interfaces/wmi/utils.py:340
+msgid ""
+"Manage network clients: computers, printers, switches and other network "
+"enabled active systems."
+msgstr ""
+
+#: interfaces/wmi/utils.py:340
+msgid "Machines"
+msgstr ""
+
+#: interfaces/wmi/utils.py:341
+msgid ""
+"Manage Internet connexion and parameters, firewall protection, URL filter "
+"and e-mail parameters."
+msgstr ""
+
+#: interfaces/wmi/utils.py:341
+msgid "Internet"
+msgstr ""
+
+#: interfaces/wmi/utils.py:342
+msgid ""
+"Go to online documentation and community website (in new window or new tab)."
+msgstr ""
+
+#: interfaces/wmi/utils.py:342
+msgid "Documentation"
+msgstr ""
+
+#: interfaces/wmi/utils.py:343
+msgid "Get product support / help"
+msgstr ""
+
+#: interfaces/wmi/utils.py:343
+msgid "Support"
+msgstr ""
+
+#: interfaces/wmi/utils.py:347
+#, python-format
+msgid "%s Management"
+msgstr ""
+
+#: interfaces/wmi/utils.py:372
+#, python-format
+msgid "%s WMI:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:377
+#, python-format
+msgid "administration %s"
+msgstr ""
+
+#: interfaces/wmi/server.py:30 interfaces/wmi/base.py:35
+msgid "Restart server."
+msgstr ""
+
+#: interfaces/wmi/server.py:31 interfaces/wmi/base.py:36
+msgid "Restart server"
+msgstr ""
+
+#: interfaces/wmi/server.py:32 interfaces/wmi/base.py:37
+msgid "Shutdown server."
+msgstr ""
+
+#: interfaces/wmi/server.py:33 interfaces/wmi/base.py:38
+msgid "Shutdown server"
+msgstr ""
+
+#: interfaces/wmi/server.py:41
+msgid "Can't reboot the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:44
+msgid "Rebooting…"
+msgstr ""
+
+#: interfaces/wmi/server.py:70
+#, python-format
+msgid "Sure you want to reboot the %s server?"
+msgstr ""
+
+#: interfaces/wmi/server.py:71 interfaces/wmi/server.py:109
+msgid "YES"
+msgstr ""
+
+#: interfaces/wmi/server.py:72 interfaces/wmi/server.py:110
+msgid "NO"
+msgstr ""
+
+#: interfaces/wmi/server.py:79
+msgid "Can't shutdown the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:82
+msgid "Shutting down…"
+msgstr ""
+
+#: interfaces/wmi/server.py:108
+#, python-format
+msgid "Sure you want to shutdown the %s server?"
+msgstr ""
+
+#: interfaces/wmi/base.py:80
+#, python-format
+msgid "%d year%s, "
+msgstr ""
+
+#: interfaces/wmi/base.py:83
+#, python-format
+msgid "%d day%s, "
+msgstr ""
+
+#: interfaces/wmi/base.py:86
+#, python-format
+msgid "%d hour%s, "
+msgstr ""
+
+#: interfaces/wmi/base.py:89
+#, python-format
+msgid "%d min%s, "
+msgstr ""
+
+#: interfaces/wmi/base.py:92
+#, python-format
+msgid "%d sec%s"
+msgstr ""
+
+#: interfaces/wmi/base.py:94
+#, python-format
+msgid ""
+"Up and running since <strong>%s</strong>.<br /><br />\n"
+"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
+"<br /><br />\n"
+"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
+msgstr ""
+
+#: interfaces/wmi/base.py:137
+msgid "no virtual memory installed."
+msgstr ""
+
+#: interfaces/wmi/base.py:140
+#, python-format
+msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
+msgstr ""
+
+#: interfaces/wmi/base.py:143
+#, python-format
+msgid ""
+"\n"
+"Processor%s: %d x <strong>%s</strong><br /><br />\n"
+"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
+"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
+"%s"
+msgstr ""
+
+#: interfaces/wmi/base.py:154
+msgid "Server status"
+msgstr ""
+
+#: interfaces/wmi/base.py:166
+msgid "System information"
+msgstr ""
+
+#: interfaces/wmi/base.py:167
+msgid "System status"
 msgstr ""
