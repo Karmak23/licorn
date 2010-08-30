@@ -1,5 +1,11 @@
 #!/usr/bin/python -OO
 # -*- coding: utf-8 -*-
+"""
+Licorn testsuite for licorn.core objects.
+
+Copyright (C) 2007-2010 Olivier Cortès <oc@meta-it.fr>.
+Licensed under the terms of the GNU GPL version 2.
+"""
 
 import sys, os, curses, re
 from subprocess                import Popen, PIPE, STDOUT
