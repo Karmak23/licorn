@@ -111,11 +111,16 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
 		'rwx' to 'rw-', which will should automagically imply "effective" ACLs computed on the fly.
 		"""
 
-	if allgroups is None:
-		from licorn.core import groups as allgroups
-
 	if allusers is None:
-		from licorn.core import users as allusers
+		from licorn.core.configuration import LicornConfiguration
+		from licorn.core.users import UsersController
+		configuration = LicornConfiguration()
+		allusers = UsersController(configuration)
+
+	if allgroups is None:
+		from licorn.core.groups import GroupsController
+		allgroups = GroupsController(allusers.configuration, allusers)
+
 
 	def check_one_dir_and_acl(dir_info, batch = batch, auto_answer = auto_answer):
 
@@ -277,11 +282,15 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 	if onpath in ("", None):
 		raise exceptions.BadArgumentError("The path you want to check perms on must not be empty !")
 
-	if allgroups is None:
-		from licorn.core import groups as allgroups
-
 	if allusers is None:
-		from licorn.core import users as allusers
+		from licorn.core.configuration import LicornConfiguration
+		from licorn.core.users import UsersController
+		configuration = LicornConfiguration()
+		allusers = UsersController(configuration)
+
+	if allgroups is None:
+		from licorn.core.groups import GroupsController
+		allgroups = GroupsController(allusers.configuration, allusers)
 
 	all_went_ok = True
 
@@ -305,30 +314,30 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 	if uid == -1:
 		uid = pathstat.st_uid
 		try:
-			desired_login = allusers.users[ uid ]['login']
+			desired_login = allusers[uid]['login']
 		except KeyError:
 			desired_login = str(uid)
 	else:
-		desired_login = allusers.users[ uid ]['login']
+		desired_login = allusers[uid]['login']
 
 	if gid == -1:
 		gid = pathstat.st_gid
 		try:
-			desired_group = allgroups.groups[ gid ]['name']
+			desired_group = allgroups[gid]['name']
 		except KeyError:
 			desired_group = str(gid)
 	else:
-		desired_group = allgroups.groups[ gid ]['name']
+		desired_group = allgroups[gid]['name']
 
 	if pathstat.st_uid != uid or pathstat.st_gid != gid:
 
 		try:
-			current_login = allusers.users[ pathstat.st_uid ]['login']
+			current_login = allusers[pathstat.st_uid]['login']
 		except KeyError:
 			current_login = str(pathstat.st_uid)
 
 		try:
-			current_group = allgroups.groups[ pathstat.st_gid ]['name']
+			current_group = allgroups[pathstat.st_gid]['name']
 		except KeyError:
 			current_group = str(pathstat.st_gid)
 
