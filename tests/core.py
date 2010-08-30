@@ -144,9 +144,13 @@ class FunctionnalTest:
 	def Prepare(self, cmd):
 		""" Run commands mandatory for func_test to succeed. """
 
-		make_path = lambda x: ('_'.join(x)).replace('__', '_').replace(
-			'./', '').replace('../', '').replace('//','_').replace(
-			'/','_').replace('>','').replace('&', '')
+		make_path = lambda x: ('_'.join(x)).replace(
+			'../', '').replace('./', '').replace('//','_').replace(
+			'/','_').replace('>','_').replace('&', '_').replace(
+			'`', '_').replace('\\','_').replace("'",'_').replace(
+			'|','_').replace('^','_').replace('%', '_').replace(
+			'(', '_').replace(')', '_').replace ('*', '_').replace(
+			' ', '_').replace('__', '_')
 
 		out_path = 'data/'
 
@@ -864,4 +868,4 @@ if __name__ == "__main__":
 
 	# TODO: test_concurrent_accesses()
 
-	print("\n%s Testsuite terminated successfully.\n" % styles.stylize(styles.ST_OK, "VICTORY !"))
+	logging.notice("Testsuite terminated successfully.")
