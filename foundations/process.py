@@ -12,9 +12,9 @@ Licensed under the terms of the GNU GPL version 2
 import os
 import sys
 
-from licorn.foundations import exceptions
-from licorn.foundations import logging
-
+from licorn.foundations        import exceptions
+from licorn.foundations        import logging
+from licorn.foundations.ltrace import ltrace
 #
 # daemon and process functions
 #
@@ -47,11 +47,9 @@ def daemonize(log_file, pid_file):
 
 	use_log_file(log_file)
 	write_pid_file(pid_file)
-
 def write_pid_file(pid_file):
 	""" write PID into the pidfile. """
 	open(pid_file,'w').write("%s\n" % os.getpid())
-
 def use_log_file(log_file):
 	""" replace stdout/stderr with the logfile.
 		stderr becomes /dev/null.
@@ -69,7 +67,6 @@ def use_log_file(log_file):
 	os.dup2(dev_null.fileno(), sys.stdin.fileno())
 	os.dup2(out_log.fileno(), sys.stdout.fileno())
 	os.dup2(out_log.fileno(), sys.stderr.fileno())
-
 def set_name(name):
 	""" Change process name in `ps`, `top`, gnome-system-monitor and al.
 
@@ -80,7 +77,6 @@ def set_name(name):
 		See:
 			http://mail.python.org/pipermail/python-list/2002-July/155471.html
 			http://davyd.livejournal.com/166352.html
-
 		"""
 	try:
 		import proctitle
@@ -128,32 +124,23 @@ def syscmd(command, expected_retcode = 0):
 		raise exceptions.SystemCommandError(command, retcode)
 	if signal != 0:
 		raise exceptions.SystemCommandSignalError(command, signal)
-def pipecmd(data, command):
+def execute(command, input_data = ''):
 	""" Roughly pipe some data into a program.
 	Return the (eventual) stdout and stderr in a tuple. """
 
-	logging.debug('''pipecmd(): piping "%s" into "%s".''' % (data, command))
+	ltrace('process', '''execute(%s)%s.''' % (command,
+		' with input_data="%s"' % input_data if input_data != '' else ''))
 
-	if sys.version_info[0:2] == (2, 6):
-		from subprocess import Popen, PIPE
+	from subprocess import Popen, PIPE
 
+	if input_data != '':
 		p = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
 			close_fds=True)
-
-		return p.communicate(data)
-
+		return p.communicate(input_data)
 	else:
-		(pin, pout, perr) = os.popen3(command)
-
-		if None in (pin, pout, perr):
-			raise exceptions.SystemCommandError(
-			'''pipecmd(): command "%s" failed to start !''' % command)
-
-		pin.write(data)
-		pin.flush()
-		pin.close()
-
-		return (pout.read(), perr.read())
+		p = Popen(command, shell=False, stdout=PIPE, stderr=PIPE,
+			close_fds=True)
+		return p.communicate()
 def whoami():
 	''' Return current UNIX user. '''
 	from subprocess import Popen, PIPE

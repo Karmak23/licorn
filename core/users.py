@@ -11,9 +11,10 @@ Licensed under the terms of the GNU GPL version 2
 import os, crypt, sys
 from time import time, strftime, gmtime
 
-from licorn.foundations        import logging, exceptions, process, hlstr
-from licorn.foundations        import pyutils, styles, fsapi
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations         import logging, exceptions, process, hlstr
+from licorn.foundations         import pyutils, styles, fsapi
+from licorn.foundations.objects import Singleton
+from licorn.foundations.ltrace  import ltrace
 
 class UsersController:
 
@@ -382,8 +383,8 @@ class UsersController:
 		# Samba: add Samba user account.
 		# TODO: put this into a module.
 		try:
-			sys.stderr.write(process.pipecmd('%s\n%s\n' % (password, password),
-				['smbpasswd', '-a', login, '-s'])[1])
+			sys.stderr.write(process.execute(['smbpasswd', '-a', login, '-s'],
+				'%s\n%s\n' % (password, password))[1])
 		except (IOError, OSError), e:
 			if e.errno not in (2, 32):
 				raise e
@@ -436,7 +437,7 @@ class UsersController:
 
 		try:
 			# samba stuff
-			sys.stderr.write(process.pipecmd('', ['smbpasswd', '-x', login])[1])
+			sys.stderr.write(process.execute(['smbpasswd', '-x', login])[1])
 		except (IOError, OSError), e:
 			if e.errno not in (2, 32):
 				raise e
@@ -529,8 +530,8 @@ class UsersController:
 
 		try:
 			# samba stuff
-			sys.stderr.write(process.pipecmd("%s\n%s\n" % (password, password),
-				['smbpasswd', login, '-s'])[1])
+			sys.stderr.write(process.execute(['smbpasswd', login, '-s'],
+				"%s\n%s\n" % (password, password))[1])
 		except (IOError, OSError), e:
 			if e.errno != 32:
 				raise e
