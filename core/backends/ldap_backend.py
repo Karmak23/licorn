@@ -600,7 +600,6 @@ class ldap_controller(UGMBackend, Singleton):
 			return True
 
 		return False
-
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
@@ -621,7 +620,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		for dn, entry in ldap_result:
 
-			ltrace('ldap', 'load user %s.' % entry)
+			ltrace('ldap', '  load_user(%s)' % entry)
 
 			temp_user_dict	= {
 				# Get the cn from the dn here, else we could end in a situation
@@ -723,6 +722,8 @@ class ldap_controller(UGMBackend, Singleton):
 			return groups, name_cache
 
 		for dn, entry in ldap_result:
+
+			ltrace('ldap', '  load_group(%s).' % entry)
 
 			# Get the cn from the dn here, else we could end in a situation
 			# where the group could not be deleted if it was created manually
