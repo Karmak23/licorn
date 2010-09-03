@@ -144,5 +144,5 @@ def execute(command, input_data = ''):
 def whoami():
 	''' Return current UNIX user. '''
 	from subprocess import Popen, PIPE
-	return (Popen(["whoami"], stdout=PIPE).communicate()[0])[:-1]
+	return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
 

@@ -235,15 +235,12 @@ class INotifier(Thread, Singleton):
 		"""Remove a dir and all its subdirs from our GAM WatchMonitor. """
 		try:
 			import copy
-			wds_temp = copy.copy(self.wds)
-			for watched in wds_temp:
-
-				#print '%s\n%s' % (path, watched)
-
-				if path in watched:
+			self.wds_sem.acquire()
+			wds_copy = copy.copy(self.wds)
+			self.wds_sem.release()
+			for watch in wds_copy:
+				if watch.startswith(path):
 					self.remove_one_watch(watched)
-
-			logging.debug('''remaining watches: %s.''' % self.wds)
 
 		except gamin.GaminException, e:
 			logging.warning('''%s.remove_watch(): exception %s.''' % e)
@@ -301,7 +298,7 @@ class INotifier(Thread, Singleton):
 						logging.info('chg: %s' % \
 						str(self.gam_changed_expected).replace(', ', ',\n\t'))
 
-				while len(self._to_remove):
+				while len(self._to_remove) and not self._stop_event.isSet():
 					# remove as many watches as possible in the same time,
 					# to help relieve the daemon.
 					self.remove_watch(self._to_remove.popleft())
@@ -310,7 +307,8 @@ class INotifier(Thread, Singleton):
 					self.mon.handle_events()
 
 				add_count = 0
-				while add_count < 10 and len(self._to_add):
+				while add_count < 10 and len(self._to_add) \
+					and not self._stop_event.isSet():
 					path, gid = self._to_add.popleft()
 
 					def myfunc(path, event, gid = gid, dirname = path):
@@ -321,6 +319,9 @@ class INotifier(Thread, Singleton):
 					# don't forget to handle_events(), to flush the GAM queue
 					self.mon.handle_events()
 					add_count += 1
+
+				if self._stop_event.isSet():
+					break
 
 				while self.mon.event_pending():
 					self.mon.handle_one_event()
@@ -341,16 +342,19 @@ class INotifier(Thread, Singleton):
 			if not self._stop_event.isSet():
 				raise
 
+		del self.mon
+
 		logging.progress("%s: thread ended." % (self.name))
 	def stop(self):
 		if Thread.isAlive(self) and not self._stop_event.isSet():
 			logging.progress("%s: stopping thread." % (self.name))
+			"""
 			import copy
+			self.wds_sem.acquire()
 			wds_temp = copy.copy(self.wds)
+			self.wds_sem.release()
 			for watched in wds_temp:
 				self.remove_one_watch(watched)
+			"""
 
 			self._stop_event.set()
-
-			del self.mon
-
