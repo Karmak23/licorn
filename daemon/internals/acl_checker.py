@@ -64,7 +64,7 @@ class ACLChecker(LicornThread, Singleton):
 	def enqueue(self, path, gid):
 		""" Put an event into our queue, to be processed later. """
 		if self._stop_event.isSet():
-			logging.warning("%s: thread is stopped, not enqueuing %s|%s." % (self.name, path, gid))
+			#logging.warning("%s: thread is stopped, not enqueuing %s|%s." % (self.name, path, gid))
 			return
 
 		#logging.progress('%s: enqueuing message %s.' % (self.name, (path, gid)))
