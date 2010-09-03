@@ -88,21 +88,20 @@ if __name__ == "__main__":
 
 	else:
 		#syncer     = ServerSyncer(dname)
-		searcher   = FileSearchServer(dname)
-		cache      = Cache(keywords, dname)
-		aclchecker = ACLChecker(cache, dname)
-		notifier   = INotifier(aclchecker, cache, dname)
-		threads.append(cache)
+		#searcher   = FileSearchServer(dname)
+		#cache      = Cache(keywords, dname)
+		aclchecker = ACLChecker(None, dname)
+		notifier   = INotifier(aclchecker, None, dname)
+		#threads.append(cache)
 		threads.append(aclchecker)
 		threads.append(notifier)
 		#threads.append(syncer)
-		threads.append(searcher)
-
+		#threads.append(searcher)
 
 	for th in threads:
 		th.start()
 
-	logging.progress("%s/master: going to sleep, waiting for signals." % dname)
+	logging.progress("%s: going to sleep, waiting for signals." % pname)
 
 	while True:
 		signal.pause()
