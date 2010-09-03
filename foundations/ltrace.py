@@ -27,6 +27,7 @@ trc['foundations']   = 0x0000000000000002
 trc['objects']       = 0x0000000000000004
 trc['options']       = 0x0000000000000008
 trc['readers']       = 0x000000000000000f
+trc['process']       = 0x0000000000000010
 
 trc['core']          = 0x000000000000ff00
 trc['configuration'] = 0x0000000000000100
