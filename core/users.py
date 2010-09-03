@@ -737,7 +737,27 @@ class UsersController:
 			all_went_ok = True
 			uid         = UsersController.login_to_uid(user)
 
-			if not UsersController.is_system_uid(uid):
+			if UsersController.is_system_uid(uid):
+
+				logging.progress("Checking system account %s..." % \
+					styles.stylize(styles.ST_NAME, user))
+
+
+
+				if os.path.exists(self.users[uid]['homeDirectory']):
+					home_dir_info = [ {
+						'path'       : self.users[uid]['homeDirectory'],
+						'user'       : user,
+						'group'      : self.groups.groups[
+							self.users[uid]['gidNumber']]['name'],
+						'mode'       : 00700,
+						'content_mode': 00600
+						} ]
+
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+						home_dir_info, batch, auto_answer,
+						UsersController.groups, self)
+			else:
 				logging.progress("Checking user %s..." % \
 					styles.stylize(styles.ST_LOGIN, user))
 
