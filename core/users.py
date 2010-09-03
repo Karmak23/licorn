@@ -130,9 +130,9 @@ class UsersController:
 			if uid is not None:
 				uid = int(uid.group('uid'))
 				self.filtered_users.append(uid)
-	def AddUser(self, lastname = None, firstname = None, password = None,
+	def AddUser(self, lastname=None, firstname=None, password=None,
 		primary_group=None, profile=None, skel=None, login=None, gecos=None,
-		system = False, batch=False, force=False):
+		system=False, home=None, batch=False, force=False):
 		"""Add a user and return his/her (uid, login, pass)."""
 
 		logging.debug("Going to create a user...")
@@ -299,8 +299,9 @@ class UsersController:
 			tmp_user_dict['gidNumber']     = pg_gid
 			tmp_user_dict['loginShell']    = \
 				UsersController.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = "%s/%s" % (
-				UsersController.configuration.users.base_path, login)
+			tmp_user_dict['homeDirectory'] = home if home is not None \
+				and system else "%s/%s" % (
+					UsersController.configuration.users.base_path, login)
 
 			# FIXME: use is_valid_skel() ?
 			if skel is None and \
@@ -314,8 +315,9 @@ class UsersController:
 				UsersController.configuration.users.default_gid
 			tmp_user_dict['loginShell'] = \
 				UsersController.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = "%s/%s" % (
-				UsersController.configuration.users.base_path, login)
+			tmp_user_dict['homeDirectory'] = home if home is not None \
+				and system else "%s/%s" % (
+					UsersController.configuration.users.base_path, login)
 			# if skel is None, system default skel will be applied
 
 		# FIXME: is this necessary here ? not done before ?
@@ -387,10 +389,6 @@ class UsersController:
 				raise e
 
 		if groups_to_add_user_to != []:
-
-			logging.debug("user %s is going to be added to %s." % (
-				styles.stylize(styles.ST_LOGIN, login), groups_to_add_user_to))
-
 			for group in groups_to_add_user_to:
 				UsersController.groups.AddUsersInGroup(group, [login])
 
@@ -554,7 +552,6 @@ class UsersController:
 		UsersController.backends[
 			UsersController.users[uid]['backend']
 			].save_user(uid)
-
 	def ChangeUserShell(self, login, shell = ""):
 		""" Change the shell of a user. """
 		if login is None:

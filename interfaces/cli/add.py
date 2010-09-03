@@ -369,8 +369,8 @@ def add_user(opts, args):
 				users.AddUser(lastname, firstname, password,
 					primary_group=opts.primary_group,
 					profile=opts.profile, skel=opts.skel, login=login,
-					gecos=gecos, system=opts.system, batch=False,
-					force=opts.force)
+					gecos=gecos, system=opts.system, home=opts.home,
+					batch=False, force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('User %s already exists on the system.' % login)
 def add_user_in_groups(opts, args):

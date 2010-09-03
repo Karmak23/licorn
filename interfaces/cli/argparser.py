@@ -302,10 +302,10 @@ def add_user_parse_arguments(app):
 
 	# adduser, useradd compatibility
 	user.add_option("--home",
-		action="store", type="string", dest="shell", default = False,
+		action="store", type="string", dest="home", default = None,
 		help="")
 	user.add_option("-s", "--shell",
-		action="store", type="string", dest="shell", default = False,
+		action="store", type="string", dest="shell", default = None,
 		help="")
 	user.add_option("--no-create-home",
 		action="store_true", dest="no_create_home", default = False,
