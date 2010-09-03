@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import re
-from licorn.foundations import exceptions, readers, logging, styles
+from licorn.foundations import exceptions, logging, styles
 
 def next_free(used_list, start, end):
 	""" Find a new ID (which is not used).
@@ -46,6 +46,8 @@ def check_file_against_dict(conf_file, defaults, configuration,
 	''' Check if a file has some configuration directives,
 	and check against values if given.
 	If the value is None, only the directive existence is tested. '''
+
+	from licorn.foundations import readers
 
 	conf_file_alter = False
 	conf_file_data  = open(conf_file, 'r').read()
@@ -104,3 +106,28 @@ def check_file_against_dict(conf_file, defaults, configuration,
 			conf_file, configuration.app_name))
 
 	return True
+class masq_list(list):
+	def __init__(self, name, data=[], separator='/'):
+		list.__init__(self, data)
+		self.name      = name
+		self.separator = separator
+	def __str__(self):
+		if self.separator == '/':
+			return '%s=/%s' % (self.name, '/'.join(self[:]))
+		if self.separator == ',':
+			return '%s=%s' % (self.name, ','.join(self[:]))
+def add_or_dupe(confdict, name, value):
+	""" when adding a new entry into a dict, verify if an already existing entry
+	doesn't exist. If it is already present, make the current value become the
+	first velue of a list, and append the new value. if value is already a list,
+	just append at the end."""
+	if confdict.has_key(name):
+		if type(confdict[name]) == type([]):
+			if type(confdict[name][0]) in (type([]), type(masq_list('dummy'))):
+				confdict[name].append(value)
+			else:
+				confdict[name] = [ confdict[name], value ]
+		else:
+			confdict[name] = [ confdict[name], value ]
+	else:
+		confdict[name] = value
