@@ -45,7 +45,7 @@ from licorn.interfaces.cli import argparser
 from licorn.daemon.core                  import dname, terminate_cleanly, \
 	exit_if_already_running, exit_if_not_running_root, eventually_daemonize, \
 	setup_signals_handler
-from licorn.daemon.internals.wmi         import eventually_fork_wmi_server
+from licorn.daemon.internals.wmi         import fork_wmi
 from licorn.daemon.internals.acl_checker import ACLChecker
 from licorn.daemon.internals.inotifier   import INotifier
 from licorn.daemon.internals.cache       import Cache
@@ -72,7 +72,11 @@ if __name__ == "__main__":
 	# the console...
 	logging.progress("%s: starting (pid %d)." % (pname, os.getpid()))
 
-	eventually_fork_wmi_server(opts)
+	if configuration.daemon.wmi.enabled:
+		fork_wmi(opts)
+	else:
+		logging.progress('''%s: not starting WMI because disabled by '''
+			'''configuration directive.''' % pname)
 
 	# do this after having forked the WMI, else she gets the same setup and
 	# tries to do things twice.

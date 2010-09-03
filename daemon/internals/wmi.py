@@ -26,13 +26,10 @@ configuration = LicornConfiguration()
 users = UsersController(configuration)
 groups = GroupsController(configuration, users)
 
-def eventually_fork_wmi_server(opts, start_wmi = True):
+def fork_wmi(opts, start_wmi = True):
 	""" Start the Web Management Interface (fork it). """
 
 	# FIXME: implement start_wmi in argparser module.
-
-	if not configuration.daemon.wmi.enabled or not start_wmi:
-		return
 
 	try:
 		if os.fork() == 0:
@@ -45,6 +42,7 @@ def eventually_fork_wmi_server(opts, start_wmi = True):
 
 			pname = '%s/wmi' % dname
 			process.set_name(pname)
+
 			logging.progress("%s: starting (pid %d)." % (pname, os.getpid()))
 			setup_signals_handler(pname)
 
