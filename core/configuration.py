@@ -344,7 +344,7 @@ class LicornConfiguration (object):
 		priority at the beginning of the backend list. This makes it accessible
 		quickly on user/group/whatever creation. """
 
-		ltrace('configuration', '> LoadBackends().')
+		ltrace('configuration', '> load_backends().')
 
 		from licorn.core.backends import backends
 		self.backends           = {}
@@ -359,7 +359,7 @@ class LicornConfiguration (object):
 
 			if [val for val in self.nsswitch['passwd'] if val in b.compat] != []:
 				if b.initialize():
-					ltrace('configuration', 'using %s backend.' % b)
+					ltrace('configuration', '  load_backends(%s) OK' % b)
 
 					self.backends[b.name] = b
 
@@ -378,7 +378,7 @@ class LicornConfiguration (object):
 				self.available_backends[b.name] = b
 
 
-		ltrace('configuration', '< LoadBackends().')
+		ltrace('configuration', '< load_backends().')
 
 		if self.backends == []:
 			raise exceptions.LicornRuntimeError(
@@ -409,14 +409,12 @@ class LicornConfiguration (object):
 					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
 					if lsb_release['DISTRIB_CODENAME'] in ('maverick', 'lucid',
-						'karmik', 'jaunty', 'intrepid', 'hardy', 'gutsy',
-						'feisty',  'edgy', 'dapper' ):
+						'karmik', 'jaunty'):
 						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
 					else:
 						raise exceptions.LicornRuntimeError(
 							'''This Ubuntu version is not '''
-							'''yet supported, sorry !''')
-
+							'''supported, sorry !''')
 			else:
 				# OLD / non-lsb compatible system or BSD
 				if  os.path.exists( '/etc/gentoo-release' ):
