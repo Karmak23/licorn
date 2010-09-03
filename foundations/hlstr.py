@@ -24,6 +24,11 @@ regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.�
 regex['group_name']   = u'''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = u'''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
 regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
+regex['conf_comment'] = u'''^(#.*|\s*)$'''
+regex['ipv4']         = u'''^\d+\.\d+\.\d+\.\d+$'''
+regex['ether_addr']   = u'''^([\da-f]+:){5}[\da-f]+$'''
+regex['duration']     = u'''^(infinite|\d+[dhms])$'''
+
 
 # precompile all these to gain some time (in the licorn daemon).
 cregex = {}
@@ -33,6 +38,11 @@ cregex['description']  = re.compile(regex['description'],  re.IGNORECASE | re.UN
 cregex['group_name']   = re.compile(regex['group_name'],   re.IGNORECASE | re.UNICODE)
 cregex['login']        = re.compile(regex['login'],                        re.UNICODE)
 cregex['keyword']      = re.compile(regex['keyword'],      re.IGNORECASE | re.UNICODE)
+cregex['conf_comment'] = re.compile(regex['conf_comment'], re.IGNORECASE | re.UNICODE)
+cregex['ipv4']         = re.compile(regex['ipv4'],         re.IGNORECASE | re.UNICODE)
+cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE | re.UNICODE)
+cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE | re.UNICODE)
+
 
 def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	""" make a valid login or group name from a random string.
