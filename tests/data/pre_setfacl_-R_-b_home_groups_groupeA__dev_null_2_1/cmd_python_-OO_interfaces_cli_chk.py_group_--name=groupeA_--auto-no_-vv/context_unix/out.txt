@@ -1,6 +1,3 @@
- > [D/T] GroupsController: new instance created.
- > [D/T] GroupsController: new instance created.
- > [D/T] GroupsController: new instance created.
  > [D/T] Checking dir [00;34m/home/groups[0;0m...
  > [D/T] Checking [00;34m/home/groups[0;0m's ACLs...
  > [D/T] Checking posix uid/gid/perms of [00;34m/home/groups[0;0m.

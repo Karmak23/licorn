@@ -1,13 +1,14 @@
 [01;33mLicornConfiguration[0;0m
 ↳ [00;34mapp_name[0;0m: [00;32mLicorn[0;0m
 ↳ [00;34mavailable_backends[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
+↳ [00;34mavailable_plugins[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
 ↳ [00;34mbackends[0;0m: 
-	{'unix': unix, 'prefered': unix}
+	{'unix': unix, 'prefered': ldap, 'ldap': ldap}
 ↳ [00;34mbackup_config_file[0;0m: /etc/licorn/backup.conf
 ↳ [00;34mconfig_dir[0;0m: /etc/licorn
 ↳ [00;34mdaemon[0;0m: 
 		↳ wmi:
-		↳ listen_address = localhost
+		↳ listen_address = 10.0.0.103
 		↳ enabled = True
 	↳ role = server
 
@@ -28,16 +29,18 @@
 	↳ names = {'_singular': 'group', '_plural': 'groups', 'plural': 'groups', 'singular': 'group'}
 	↳ resp_prefix = rsp-
 	↳ gid_max = 29999
-	↳ privileges_whitelist = []
+	↳ privileges_whitelist = ['licorn-wmi', 'remotessh', 'admins']
 
 ↳ [00;34mhome_archive_dir[0;0m: /home/archives
 ↳ [00;34mhome_backup_dir[0;0m: /home/backup
+↳ [00;34minit_ok[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
 ↳ [00;34minstall_path[0;0m: /usr
 ↳ [00;34mkeywords_data_file[0;0m: /etc/licorn/keywords.conf
 ↳ [00;34mmAutoPasswdSize[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
 ↳ [00;34mmain_config_file[0;0m: /etc/licorn/licorn.conf
 ↳ [00;34mmta[0;0m: [00;32m2[0;0m
 ↳ [00;34mnsswitch[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
+↳ [00;34mplugins[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
 ↳ [00;34mprivileges_whitelist_data_file[0;0m: /etc/licorn/privileges-whitelist.conf
 ↳ [00;34mprofiles_config_file[0;0m: /etc/licorn/profiles.xml
 ↳ [00;34mshare_data_dir[0;0m: /usr/share/licorn
@@ -46,9 +49,9 @@
 	↳ group = remotessh
 
 ↳ [00;34mtmp_dir[0;0m: [01;31mUNREPRESENTABLE YET[0;0m, to be implemented in licorn.core.configuration.Export()
-↳ [00;34muser_config_file[0;0m: /home/users/olive/.licorn/config
-↳ [00;34muser_data_dir[0;0m: /home/users/olive/.licorn/data
-↳ [00;34muser_dir[0;0m: /home/users/olive/.licorn
+↳ [00;34muser_config_file[0;0m: /home/olive/.licorn/config
+↳ [00;34muser_data_dir[0;0m: /home/olive/.licorn/data
+↳ [00;34muser_dir[0;0m: /home/olive/.licorn
 ↳ [00;34musers[0;0m: 
 		↳ uid_max = 29999
 	↳ system_uid_min = 300

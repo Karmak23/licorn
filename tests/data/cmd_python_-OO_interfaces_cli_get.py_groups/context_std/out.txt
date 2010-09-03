@@ -1,0 +1,3 @@
+Groupe1:x:10000:/etc/skel::members of group “Groupe1”:NOT permissive
+Groupe_Perm:x:10001:/etc/skel::members of group “Groupe_Perm”:permissive
+Groupe2:x:10002:/etc/skel::Youpi la description:NOT permissive

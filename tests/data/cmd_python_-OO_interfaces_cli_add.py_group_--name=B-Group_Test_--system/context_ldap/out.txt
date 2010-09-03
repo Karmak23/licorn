@@ -1,1 +1,0 @@
- [01;33m*[0;0m [D/T] The group [00;36mB-Group_Test[0;0m already exists.

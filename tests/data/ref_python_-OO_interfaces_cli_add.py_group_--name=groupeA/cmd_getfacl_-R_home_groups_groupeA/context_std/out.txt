@@ -1,7 +1,7 @@
 getfacl : suppression du premier « / » des noms de chemins absolus
 # file: home/groups/groupeA
 # owner: root
-# group: remotessh
+# group: acl
 user::rwx
 group::---
 group:www-data:--x

@@ -43,7 +43,7 @@ Options:
                         first/last name, else from login).
     --system            Create a system account instead of a standard user
                         (root only).
-    --home=SHELL        
+    --home=HOME         
     -s SHELL, --shell=SHELL
     --no-create-home    
     --uid=UID           
