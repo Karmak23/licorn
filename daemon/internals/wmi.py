@@ -320,8 +320,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					# fix #239
 					hostaddr = socket.gethostbyaddr(
 						self.server.server_address[0])[0]
-				except herror:
-					hostaddr = self.server.server_address
+				except socket.herror:
+					hostaddr = self.server.server_address[0]
 
 				self.send_response(302)
 				self.send_header("Location", 'http://%s:%s%s' % (
