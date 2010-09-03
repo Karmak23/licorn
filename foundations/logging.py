@@ -44,10 +44,15 @@ from licorn.foundations import options
 #		  logging.error() when appropriate.
 #
 
-@Singleton
-class LicornWarningsDB(dict):
+class LicornWarningsDB(Singleton):
 	""" a singleton dict, to hold all warnings already displayed. """
-	pass
+	__warnings = {}
+	def __getitem__(self, item):
+		return LicornWarningsDB.__warnings[item]
+	def __setitem__(self, item, value):
+		LicornWarningsDB.__warningsdb[item] = value
+	def keys(self):
+		return LicornWarningsDB.__warningsdb.keys()
 
 __warningsdb = LicornWarningsDB()
 
@@ -130,8 +135,7 @@ else:
 	def debug(mesg): pass
 	def debug2(mesg): pass
 
-@Singleton
-class RepairChoice():
+class RepairChoice(Singleton):
 	"""a singleton, to be used in all checks."""
 
 	__choice   = None

@@ -20,6 +20,7 @@ from licorn.core.users         import UsersController
 from licorn.core.groups        import GroupsController
 from licorn.core.profiles      import ProfilesController
 from licorn.core.keywords      import KeywordsController
+from licorn.core.machines      import MachinesController
 
 _app = {
 	"name"     		: "licorn-get",
@@ -177,10 +178,26 @@ def get_webfilters(opts, args):
 			print fd.Export("whitelist", "domains")
 	else:
 		print "Options are: time-constraints | forbidden-destinations"
-def get_workstations(opts, args):
-	""" Get the list of workstations known from the server (attached or not).
-	"""
-	raise NotImplementedError("get_workstations not implemented.")
+def get_machines(opts, args):
+	""" Get the list of machines known from the server (attached or not). """
+	configuration = LicornConfiguration()
+	machines = MachinesController(configuration)
+
+	if opts.mid is not None:
+		try:
+			machines.Select("mid=" + unicode(opts.mid))
+		except KeyError:
+			logging.error(_("No matching machine found."))
+			return
+
+	if opts.xml:
+		data = machines.ExportXML(opts.long)
+	else:
+		data = machines.ExportCLI(opts.long)
+
+	if data and data != '\n':
+		output(data)
+
 def get_internet_types(opts, args):
 	""" Get the list of known internet connection types.
 
@@ -213,6 +230,12 @@ if __name__ == "__main__":
 		'groups':        (agp.get_groups_parse_arguments, get_groups),
 		'profile':       (agp.get_profiles_parse_arguments, get_profiles),
 		'profiles':      (agp.get_profiles_parse_arguments, get_profiles),
+		'machine':       (agp.get_machines_parse_arguments, get_machines),
+		'machines':      (agp.get_machines_parse_arguments, get_machines),
+		'client':        (agp.get_machines_parse_arguments, get_machines),
+		'clients':       (agp.get_machines_parse_arguments, get_machines),
+		'workstation':   (agp.get_machines_parse_arguments, get_machines),
+		'workstations':  (agp.get_machines_parse_arguments, get_machines),
 		'conf':          (agp.get_configuration_parse_arguments, get_configuration),
 		'config':        (agp.get_configuration_parse_arguments, get_configuration),
 		'configuration': (agp.get_configuration_parse_arguments, get_configuration),

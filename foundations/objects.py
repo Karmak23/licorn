@@ -34,25 +34,13 @@ class LicornConfigObject:
 			else:
 				data += u"%s\u21b3 %s = %s\n" % ('\t'*self._level, str(i), str(getattr(self, i)))
 		return data
-
-# in Python 2.6 and 3.0, the singleton implementation is different...
-if version_info[0] == 2 and version_info[1] < 6 :
-	class Singleton(object):
-		__instances = {}
-		def __new__(cls, *args, **kargs):
-			if Singleton.__instances.get(cls) is None:
-				Singleton.__instances[cls] = object.__new__(cls, *args, **kargs)
-			return Singleton.__instances[cls]
-else :
-	class Singleton:
-		def __init__(self, aClass):                 # on @ decoration
-			self.aClass = aClass
-			self.instance = None
-		def __call__(self, *args):                  # on instance creation
-			if self.instance == None:
-				self.instance = self.aClass(*args)  # one instance per class
-			return self.instance
-
+class Singleton(object):
+	__instances = {}
+	def __new__(cls, *args, **kargs):
+		if Singleton.__instances.get(cls) is None:
+			Singleton.__instances[cls] = object.__new__(cls)
+		#ltrace('objects', 'Singleton 2.6+: %s:%s.' % (cls, Singleton.__instances[cls]))
+		return Singleton.__instances[cls]
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to
@@ -94,41 +82,6 @@ class LicornThread(Thread):
 		ltrace('thread', '%s: stopping thread.' % self.name)
 		self._stop_event.set()
 		self._input_queue.put(None)
-
-class StateMachine:
-	"""
-		A Finite state machine design pattern.
-		Found at http://www.ibm.com/developerworks/library/l-python-state.html , thanks to David Mertz.
-	"""
-	def __init__(self):
-		self.handlers = {}
-		self.startState = None
-		self.endStates = []
-
-	def add_state(self, name, handler, end_state = False):
-		self.handlers[name] = handler
-		if end_state:
-			 self.endStates.append(name)
-
-	def set_start(self, name):
-		self.startState = name
-
-	def run(self, data):
-		try:
-			 handler = self.handlers[self.startState]
-		except:
-			 raise exceptions.LicornRuntimeError("LSM: must call .set_start() before .run()")
-
-		if not self.endStates:
-				 raise exceptions.LicornRuntimeError("LSM: at least one state must be an end_state.")
-
-		while True:
-			(newState, data) = handler(data)
-			if newState in self.endStates:
-				break
-			else:
-				handler = self.handlers[newState]
-
 class FileLock:
 	"""
 		This FileLock class is a reimplementation of basic locks with files.
@@ -219,28 +172,39 @@ class FileLock:
 		"""Tell if a file is currently locked by looking if the associated lock
 		is present."""
 		return os.path.exists(self.filename)
+class UGMBackend:
+	"""
+		Abstract backend class allowing access to users and groups data. The
+		UGMBackend presents an homogeneous API for operations on these
+		objects at a system level.
 
-
-
-class UGBackend(Singleton):
+		Please refer to http://dev.licorn.org/wiki/DynamicUGMBackendSystem for
+		a more general documentation.
+	"""
 	configuration = None
-	users = None
-	groups = None
+	users         = None
+	groups        = None
+	machines      = None
 
 	def __str__(self):
 		return self.name
 	def __repr__(self):
 		return self.name
-	def __init__(self, configuration, users = None, groups = None):
+	def __init__(self, configuration, users=None, groups=None, warnings=True):
 
-		ltrace('objects', '| UGBackend.__init__().')
+		self.name      = "UGMBackend"
 
-		self.available          = False
-		self.enabled            = False
-		self.compat             = ()
-		self.priority           = 0
+		ltrace('objects', '| UGMBackend.__init__()')
 
-		UGBackend.configuration = configuration
+		self.warnings      = warnings
+		self.available = False
+		self.enabled   = False
+		self.compat    = ()
+		self.priority  = 0
+		self.plugins   = {}
+
+
+		UGMBackend.configuration = configuration
 
 		if users:
 			self.set_users_controller(users)
@@ -249,7 +213,7 @@ class UGBackend(Singleton):
 			self.set_groups_controller(groups)
 
 		#
-		# everything else should be done by a real implementation.
+		# everything else __init__() should be done by a real implementation.
 		#
 
 		return False
@@ -272,20 +236,36 @@ class UGBackend(Singleton):
 				by Licorn.
 
 		"""
+
+		# return "self".enabled instead of UGMBackend.enabled, to get the
+		# instance attribute, if modified.
 		return self.enabled
 	def check(self, batch=False, auto_answer=None):
 		""" default check method. """
 		pass
 	def set_users_controller(self, users):
 		""" save a reference of the UsersController for future use. """
-		UGBackend.users = users
+		UGMBackend.users = users
 		if users.groups is not None:
-			UGBackend.groups = users.groups
+			UGMBackend.groups = users.groups
 	def set_groups_controller(self, groups):
 		""" save a reference of the GroupsController for future use. """
-		UGBackend.groups = groups
+		UGMBackend.groups = groups
 		if groups.users is not None:
-			UGBackend.users = groups.users
+			UGMBackend.users = groups.users
+	def set_machines_controller(self, machines):
+		UGMBackend.machines = machines
+	def connect_plugin(self, plugin):
+		""" """
+		ltrace('objects', '| UGMBackend.connect_plugin()')
+
+		if self.name in plugin.backend_compat:
+			ltrace('objects', '  UGMBackend.connect_plugin(%s <-> %s)' % (
+				self.name, plugin.name))
+			self.plugins[plugin.name] = plugin
+			plugin.set_backend(self)
+			return True
+		return False
 	def load_defaults(self):
 		""" A real backend will setup its own needed attributes with values
 		*strictly needed* to work. This is done in case these values are not
@@ -294,31 +274,85 @@ class UGBackend(Singleton):
 		Any configuration file containing these values, will be loaded
 		afterwards and will overwrite these attributes. """
 		pass
+	def load_machines(self):
+		""" gather the list of all known machines on the system. """
+
+		ltrace('objects', '| UGMBackend.load_machines(%s)' % self.plugins)
+
+		for p in self.plugins:
+			if self.plugins[p].purpose == 'machines':
+				return self.plugins[p].load_machines()
+
+		return {}, {}
+
 	def save_users(self):
-		""" Take all users from UGBackend.users (typically in a for loop) and
+		""" Take all users from UGMBackend.users (typically in a for loop) and
 		save them into the backend. """
 		pass
 	def save_groups(self):
-		""" Take all groups from UGBackend.groups (typically in a for loop) and
+		""" Take all groups from UGMBackend.groups (typically in a for loop) and
 		save them into the backend. """
 		pass
-	def save_group(self, gid):
-		""" save one group into the backend. Useful on system which have loads
-		of users/groups, to avoid saving all of them when there is only a small
-		update.	"""
+	def save_machines(self):
+		""" Take all machines from UGMBackend.machines (typically in a for loop)
+		and	save them into the backend. """
 		pass
 	def save_user(self, uid):
 		""" save one user into the backend. Useful on system which have loads
 		of users/groups, to avoid saving all of them when there is only a small
 		update.	"""
 		pass
-	def save_all(self, users=None, groups=None):
+	def save_group(self, gid):
+		""" save one group into the backend. Useful on system which have loads
+		of users/groups, to avoid saving all of them when there is only a small
+		update.	"""
+		pass
+	def save_machine(self, mid):
+		""" save one machine into the backend. Useful on system which have loads
+		of machines, to avoid saving all of them when there is only a small
+		update.	"""
+		pass
+	def save_all(self, users=None, groups=None, machines=None):
 		""" Save all internal data to backend. This is just a wrapper. """
 		self.save_users()
 		self.save_groups()
+		self.save_machines()
 	def compute_password(self, password):
 		""" Encode a password in a way the backend can understand.
 		For example the unix backend will use crypt() function, whereas
 		the LDAP backend will use the SHA1 hash only with a base64 encoding and
 		a '{SHA}' text header. """
 		pass
+class StateMachine:
+	"""
+		A Finite state machine design pattern.
+		Found at http://www.ibm.com/developerworks/library/l-python-state.html , thanks to David Mertz.
+	"""
+	def __init__(self):
+		self.handlers = {}
+		self.startState = None
+		self.endStates = []
+
+	def add_state(self, name, handler, end_state = False):
+		self.handlers[name] = handler
+		if end_state:
+			 self.endStates.append(name)
+
+	def set_start(self, name):
+		self.startState = name
+
+	def run(self, data):
+		try:
+			 handler = self.handlers[self.startState]
+		except:
+			 raise exceptions.LicornRuntimeError("LSM: must call .set_start() before .run()")
+
+		if not self.endStates:
+				 raise exceptions.LicornRuntimeError("LSM: at least one state must be an end_state.")
+
+		while True:
+			(newState, data) = handler(data)
+			if newState in self.endStates:
+				break
+			else:
+				handler = self.handlers[newState]

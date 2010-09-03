@@ -16,7 +16,7 @@ from licorn.foundations         import pyutils, styles, fsapi
 from licorn.foundations.objects import Singleton
 from licorn.foundations.ltrace  import ltrace
 
-class UsersController:
+class UsersController(Singleton):
 
 	users        = None # (dictionary)
 	login_cache  = None # (dictionary)
@@ -742,8 +742,6 @@ class UsersController:
 
 				logging.progress("Checking system account %s..." % \
 					styles.stylize(styles.ST_NAME, user))
-
-
 
 				if os.path.exists(self.users[uid]['homeDirectory']):
 					home_dir_info = [ {

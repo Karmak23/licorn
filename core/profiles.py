@@ -12,11 +12,12 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, re, time, stat, shutil
 
-from licorn.foundations        import process, fsapi, hlstr, logging
-from licorn.foundations        import exceptions, styles, readers
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations         import process, fsapi, hlstr, logging
+from licorn.foundations         import exceptions, styles, readers
+from licorn.foundations.objects import Singleton
+from licorn.foundations.ltrace  import ltrace
 
-class ProfilesController:
+class ProfilesController(Singleton):
 	""" representation of /etc/licorn/profiles.xml, compatible with gnome-system-tools.
 	"""
 	profiles      = None # Dictionary

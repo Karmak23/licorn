@@ -68,7 +68,7 @@ def general_parse_arguments(app):
 		usage_text +=  "conf[ig[uration]], "
 
 	if app["name"] in ( "licorn-get", "licorn-check" ):
-		usage_text += "user[s], group[s], profile[s], kw|keyword[s]|tag[s], priv[ilege][s]."
+		usage_text += "user[s]|group[s]|profile[s]|kw|keyword[s]|tag[s]|priv[ilege][s]|machine[s]|client[s]."
 
 	else:
 		usage_text += "user, "
@@ -122,6 +122,8 @@ def __get_filter_group(app, parser, mode):
 		filtergroup.add_option("-a", "--all",
 			action="store_true", dest="factory", default = False,
 			help="also get factory and system data (rarely used), i.e. for users, output system accounts too, etc (%s: you can get huge output and easily flood your terminal)." % styles.stylize(styles.ST_BAD, "WARNING"))
+
+	if mode in ('users', 'groups', 'machines'):
 		filtergroup.add_option("-l", "--long",
 			action="store_true", dest="long", default = False,
 			help="long output (all info, attributes, etc). NOT enabled by default.")
@@ -130,6 +132,11 @@ def __get_filter_group(app, parser, mode):
 		filtergroup.add_option("--uid",
 			action="store", type="int", dest="uid", default = None,
 			help="Display only one user information (only valid for get users).")
+
+	if mode is 'machines':
+		filtergroup.add_option("--mid",
+			action="store", type="int", dest="mid", default = None,
+			help="Display only one machine information (only valid for get machines).")
 
 	elif mode is 'groups':
 		filtergroup.add_option("--privileged",
@@ -229,6 +236,19 @@ def get_profiles_parse_arguments(app):
 	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
 	parser.add_option_group(__get_filter_group(app, parser, 'profiles'))
 	parser.add_option_group(__get_output_group(app, parser,'profiles'))
+
+	return (parser.parse_args())
+def get_machines_parse_arguments(app):
+	""" Integrated help and options / arguments for « get user(s) »."""
+
+	usage_text = "\n\t%s %s [[%s] ...]" \
+		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "client[s]|machine[s]|workstation[s]"), styles.stylize(styles.ST_OPTION, "option") )
+
+	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
+
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(__get_filter_group(app, parser, 'machines'))
+	parser.add_option_group(__get_output_group(app, parser,'machines'))
 
 	return (parser.parse_args())
 def get_configuration_parse_arguments(app):

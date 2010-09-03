@@ -10,26 +10,27 @@ import crypt
 import hashlib
 
 from licorn.foundations         import logging, exceptions, styles
-from licorn.foundations         import objects, readers, hlstr
+from licorn.foundations         import readers, hlstr
 from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.objects import UGBackend
+from licorn.foundations.objects import UGMBackend, Singleton, FileLock
 
-class unix_controller(UGBackend):
+
+class unix_controller(UGMBackend):
 	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
+
+
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
-		UGBackend.__init__(self, configuration, users, groups)
+		UGMBackend.__init__(self, configuration, users, groups)
+		self.name = "unix"
+		self.compat = ('compat', 'files')
+		self.priority = 1
 
 		# the UNIX backend is always enabled on a Linux system.
 		# Any better and correctly configured backend should take
 		# preference over this one, though.
-		self.name     = "unix"
 		self.enabled  = True
 
-		# nsswitch compatibility
-		self.compat   = ('compat', 'files')
-		self.priority = 1
-
-		self.warnings = warnings
+		UGMBackend.warnings = warnings
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
@@ -135,7 +136,7 @@ class unix_controller(UGBackend):
 		is_allowed  = True
 		try:
 			extras = readers.ug_conf_load_list(
-				UGBackend.configuration.extendedgroup_data_file)
+				UGMBackend.configuration.extendedgroup_data_file)
 		except IOError, e:
 			if e.errno != 2:
 				# other than no such file or directory
@@ -151,9 +152,9 @@ class unix_controller(UGBackend):
 				is_allowed = False
 			else: raise e
 
-		if UGBackend.users:
-			l2u = UGBackend.users.login_to_uid
-			u   = UGBackend.users.users
+		if UGMBackend.users:
+			l2u = UGMBackend.users.login_to_uid
+			u   = UGMBackend.users.users
 
 		# TODO: move this to 'for(gname, gid, gpass, gmembers) in etc_group:'
 
@@ -176,9 +177,9 @@ class unix_controller(UGBackend):
 				# update the cache to avoid massive CPU load in 'get users
 				# --long'. This code is also present in users.__init__, to cope
 				# with users/groups load in different orders.
-				if UGBackend.users:
+				if UGMBackend.users:
 					for member in members:
-						if UGBackend.users.login_cache.has_key(member):
+						if UGMBackend.users.login_cache.has_key(member):
 							u[l2u(member)]['groups'].add(entry[0])
 						else:
 							if self.warnings:
@@ -213,7 +214,7 @@ class unix_controller(UGBackend):
 			name_cache[ entry[0] ] = gid
 
 			try:
-				groups[gid]['permissive'] = UGBackend.groups.is_permissive(
+				groups[gid]['permissive'] = UGMBackend.groups.is_permissive(
 					name=groups[gid]['name'], gid = gid)
 			except exceptions.InsufficientPermissionsError:
 				# don't bother the user with a warning, he/she probably already
@@ -234,7 +235,7 @@ class unix_controller(UGBackend):
 						groups[gid]['groupSkel']   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
-							UGBackend.configuration.extendedgroup_data_file, \
+							UGMBackend.configuration.extendedgroup_data_file, \
 							'''for group "%s" (was: %s).''' % \
 							(extra_entry[0], str(e)))
 					break
@@ -276,14 +277,14 @@ class unix_controller(UGBackend):
 	def save_users(self):
 		""" Write /etc/passwd and /etc/shadow """
 
-		lock_etc_passwd = objects.FileLock(
-			UGBackend.configuration, "/etc/passwd")
-		lock_etc_shadow = objects.FileLock(
-			UGBackend.configuration, "/etc/shadow")
+		lock_etc_passwd = FileLock(
+			UGMBackend.configuration, "/etc/passwd")
+		lock_etc_shadow = FileLock(
+			UGMBackend.configuration, "/etc/shadow")
 
 		etcpasswd = []
 		etcshadow = []
-		users = UGBackend.users
+		users = UGMBackend.users
 		uids = users.keys()
 		uids.sort()
 
@@ -330,7 +331,7 @@ class unix_controller(UGBackend):
 		""" Write the groups data in appropriate system files."""
 
 		if groups is None:
-			groups = UGBackend.groups
+			groups = UGMBackend.groups
 
 		#
 		# FIXME: this will generate a false positive if groups[0] comes from LDAP...
@@ -340,12 +341,12 @@ class unix_controller(UGBackend):
 				" or member of the shadow group," \
 				" can't write configuration data.")
 
-		lock_etc_group   = objects.FileLock(UGBackend.configuration,
+		lock_etc_group   = FileLock(UGMBackend.configuration,
 												"/etc/group")
-		lock_etc_gshadow = objects.FileLock(UGBackend.configuration,
+		lock_etc_gshadow = FileLock(UGMBackend.configuration,
 												"/etc/gshadow")
-		lock_ext_group   = objects.FileLock(UGBackend.configuration,
-								UGBackend.configuration.extendedgroup_data_file)
+		lock_ext_group   = FileLock(UGMBackend.configuration,
+								UGMBackend.configuration.extendedgroup_data_file)
 
 		logging.progress("Writing groups configuration to disk...")
 
@@ -395,11 +396,14 @@ class unix_controller(UGBackend):
 		lock_etc_gshadow.Unlock()
 
 		lock_ext_group.Lock()
-		open(UGBackend.configuration.extendedgroup_data_file, "w").write(
+		open(UGMBackend.configuration.extendedgroup_data_file, "w").write(
 			"\n".join(extgroup) + "\n")
 		lock_ext_group.Unlock()
 
 		logging.progress("Done writing groups configuration.")
+	def save_machines(self):
+		""" save the list of machines. """
+		pass
 	def save_user(self, uid):
 		""" Just a wrapper. Saving one user in Unix backend is not significantly
 		faster than saving all of them. """
@@ -408,6 +412,10 @@ class unix_controller(UGBackend):
 		""" Just a wrapper. Saving one group in Unix backend is not
 		significantly faster than saving all of them. """
 		self.save_groups()
+	def save_machine(self, mid):
+		""" Just a wrapper. Saving one machine in Unix backend is not
+		significantly faster than saving all of them. """
+		self.save_machines()
 	def delete_user(self, uid):
 		""" Just a wrapper. Deleting one user in Unix backend is not significantly
 		faster than saving all of them. """
@@ -416,6 +424,10 @@ class unix_controller(UGBackend):
 		""" Just a wrapper. Deleting one group in Unix backend is not
 		significantly faster than saving all of them. """
 		self.save_groups()
+	def delete_machine(self, mid):
+		""" Just a wrapper. Deleting one group in Unix backend is not
+		significantly faster than saving all of them. """
+		self.save_machines()
 	def compute_password(self, password, salt=None):
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)

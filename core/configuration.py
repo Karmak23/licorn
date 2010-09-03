@@ -15,19 +15,20 @@ from gettext import gettext as _
 from licorn.foundations               import logging, exceptions, fsapi
 from licorn.foundations               import styles, readers, pyutils
 from licorn.foundations.ltrace        import ltrace
-from licorn.foundations.objects       import LicornConfigObject, FileLock
+from licorn.foundations.objects       import LicornConfigObject, Singleton, \
+	FileLock
 from licorn.core.privileges           import PrivilegesWhiteList
 
-class LicornConfiguration (object):
+class LicornConfiguration(Singleton):
 	""" Contains all the underlying system configuration as attributes.
 		Defines some methods for modifying the configuration.
-		This class is a singleton.
 	"""
-	__singleton = None
+
 	mta         = None
 	ssh         = None
 	users       = None
 	groups      = None
+	init_ok     = False
 
 	# constants
 	# TODO: move these constants elsewhere ?
@@ -38,39 +39,31 @@ class LicornConfiguration (object):
 	DISTRO_NOVELL   = 4
 	DISTRO_REDHAT   = 5
 	DISTRO_MANDRIVA = 6
-
 	MAIL_TYPE_VAR_MBOX     = 1
 	MAIL_TYPE_VAR_MAILDIR  = 2
 	MAIL_TYPE_HOME_MBOX    = 3
 	MAIL_TYPE_HOME_MAILDIR = 4
 	MAIL_TYPE_HOME_MH      = 5
-
 	SRV_MTA_UNKNOWN    = 0
 	SRV_MTA_POSTFIX    = 1
 	SRV_MTA_NULLMAILER = 2
 	SRV_MTA_EXIM4      = 3
 	SRV_MTA_QMAIL      = 4
 	SRV_MTA_SENDMAIL   = 5
-
 	SRV_IMAP_COURIER = 1
 	SRV_IMAP_CYRUS   = 2
 	SRV_IMAP_UW      = 3
-
 	SRV_POP3_COURIER = 1
 	SRV_POP3_QPOPPER = 2
 	# end constants
 
-	def __new__(cls):
-		"""This is a Singleton Design Pattern."""
-
-		if cls.__singleton is None:
-			cls.__singleton = object.__new__(cls)
-
-		return cls.__singleton
 	def __init__(self):
 		""" Gather underlying system configuration and load it for licorn.* """
 
-		ltrace('configuration', 'start(__init__).')
+		if LicornConfiguration.init_ok:
+			return
+
+		ltrace('configuration', '> __init__()')
 
 		if sys.getdefaultencoding() == "ascii":
 			reload(sys)
@@ -115,12 +108,15 @@ class LicornConfiguration (object):
 			# TODO: monitor configuration files from a thread !
 
 			self.load_backends()
+			self.load_plugins()
+			self.connect_plugins()
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(
 				'''Configuration initialization failed:\n\t%s''' % e)
 
-		ltrace('configuration', 'end(__init__).')
+		LicornConfiguration.init_ok = True
+		ltrace('configuration', '< __init__()')
 
 	#
 	# make configuration be usable as a context manager.
@@ -284,7 +280,6 @@ class LicornConfiguration (object):
 				raise e
 
 		ltrace('configuration', '< LoadBaseConfiguration().')
-
 	def load_nsswitch(self):
 		""" Load the NS switch file. """
 
@@ -307,7 +302,6 @@ class LicornConfiguration (object):
 		nss_lock.Lock()
 		open('/etc/nsswitch.conf', 'w').write(nss_data)
 		nss_lock.Unlock()
-
 	def enable_backend(self, backend):
 		""" try to enable a given backend. what to do exactly is left to the
 		backend itself."""
@@ -323,7 +317,6 @@ class LicornConfiguration (object):
 			self.backends[backend] = self.available_backends[backend]
 			del self.available_backends[backend]
 			logging.info('successfully enabled %s backend.' % backend)
-
 	def disable_backend(self, backend):
 		""" try to disable a given backend. what to do exactly is left to the
 		backend itself."""
@@ -338,7 +331,40 @@ class LicornConfiguration (object):
 			self.available_backends[backend] = self.backends[backend]
 			del self.backends[backend]
 			logging.info('successfully disabled %s backend.' % backend)
+	def load_plugins(self):
+		""" Load Configuration backends, and put the one with the greatest
+		priority at the beginning of the backend list. This makes it accessible
+		quickly on user/group/whatever creation. """
 
+		ltrace('configuration', '> load_plugins().')
+
+		from licorn.core.backends.plugins import plugins
+		self.plugins           = {}
+		self.available_plugins = {}
+
+		for plugin in plugins:
+			p = plugin(self)
+
+			if p.initialize():
+				ltrace('configuration', '  load_plugins(%s) OK' % p.name)
+
+				self.plugins[p.name] = p
+			else:
+				self.available_plugins[p.name] = p
+
+		ltrace('configuration', '< load_plugins().')
+
+	def connect_plugins(self):
+		""" add the enabled plugins to the enabled backends. """
+		ltrace('configuration', '| connect_plugins()')
+		for p in self.plugins:
+			for b in self.backends:
+				if self.backends[b].connect_plugin(self.plugins[p]):
+					# add the plugin to only one backend. the first enabled one
+					# is ok, just break.
+					ltrace('configuration', '  connect_plugins(%s/%s) OK' % (
+						b,p))
+					break
 	def load_backends(self):
 		""" Load Configuration backends, and put the one with the greatest
 		priority at the beginning of the backend list. This makes it accessible

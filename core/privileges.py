@@ -15,10 +15,9 @@ import sys, os
 from licorn.foundations         import logging, exceptions, hlstr, styles, readers
 from licorn.foundations.objects import Singleton
 
-
-
-class PrivilegesWhiteList(list, Singleton):
+class PrivilegesWhiteList(list):
 	""" Manage privileges whitelist. """
+
 	conf_file = ""
 	changed = None
 	def __init__(self, configuration, conf_file):

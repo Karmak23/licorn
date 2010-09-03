@@ -14,9 +14,9 @@ import hashlib
 from base64 import encodestring, decodestring
 
 from licorn.foundations         import logging, exceptions, styles, pyutils
-from licorn.foundations         import objects, readers, process
+from licorn.foundations         import readers, process
 from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.objects import LicornConfigObject, UGBackend
+from licorn.foundations.objects import LicornConfigObject, UGMBackend, Singleton
 
 def list_dict(l):
 	"""
@@ -155,29 +155,27 @@ class MyLDIFParser(LDIFParser):
 		self.parse()
 		return self.__lcn_data
 
-class ldap_controller(UGBackend):
+class ldap_controller(UGMBackend, Singleton):
 	""" LDAP Backend for users and groups.
 
 		TODO: implement auto-setup part: if backends.ldap.available is forced to
 		True in licorn.conf, we should auto-install packages, setup dirs, LDAP
 		dn, etc.
 	"""
+
+
+
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
 		"""
 			Init the LDAP backend instance.
 		"""
 
-		UGBackend.__init__(self, configuration, users, groups)
+		UGMBackend.__init__(self, configuration, users, groups)
 
 		ltrace('ldap', '| __init__().')
-
-		self.name	  = "ldap"
-		self.warnings = warnings
-
-		# nsswitch compatibility
+		self.name     = "ldap"
 		self.compat   = ('ldap')
 		self.priority = 5
-
 		self.files             = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
@@ -198,9 +196,9 @@ class ldap_controller(UGBackend):
 
 		ltrace('ldap', '| load_defaults().')
 
-		if UGBackend.configuration.daemon.role == 'client':
+		if UGMBackend.configuration.daemon.role == 'client':
 			waited = 0.1
-			while UGBackend.configuration.server is None:
+			while UGMBackend.configuration.server is None:
 				#
 				time.sleep(0.1)
 				wait += 0.1
@@ -223,7 +221,6 @@ class ldap_controller(UGBackend):
 		self.nss_base_group  = 'ou=Groups'
 		self.nss_base_passwd = 'ou=People'
 		self.nss_base_shadow = 'ou=People'
-
 	def initialize(self, enabled=True):
 		"""	try to start it without any tests (it should work if it's
 			installed) and become available.
@@ -713,9 +710,9 @@ class ldap_controller(UGBackend):
 
 		is_allowed  = True
 
-		if UGBackend.users:
-			l2u = UGBackend.users.login_to_uid
-			u   = UGBackend.users.users
+		if UGMBackend.users:
+			l2u = UGMBackend.users.login_to_uid
+			u   = UGMBackend.users.users
 
 		try:
 			ldap_result = self.ldap_conn.search_s(
@@ -757,9 +754,9 @@ class ldap_controller(UGBackend):
 
 				to_remove = set()
 
-				if UGBackend.users:
+				if UGMBackend.users:
 					for member in members:
-						if UGBackend.users.login_cache.has_key(member):
+						if UGMBackend.users.login_cache.has_key(member):
 							u[l2u(member)]['groups'].add(name)
 						else:
 							if self.warnings:
@@ -805,7 +802,7 @@ class ldap_controller(UGBackend):
 
 			try:
 				groups[gid]['permissive'] = \
-					UGBackend.groups.is_permissive(
+					UGMBackend.groups.is_permissive(
 					name=groups[gid]['name'], gid = gid)
 			except exceptions.InsufficientPermissionsError:
 				# don't bother with a warning, the user is not an admin.
@@ -818,7 +815,7 @@ class ldap_controller(UGBackend):
 	def save_users(self):
 		""" save users into LDAP, but only those who need it. """
 
-		users = UGBackend.users
+		users = UGMBackend.users
 
 		for uid in users.keys():
 			if users[uid]['backend'] != self.name \
@@ -830,7 +827,7 @@ class ldap_controller(UGBackend):
 	def save_groups(self):
 		""" Save groups into LDAP, but only those who need it. """
 
-		groups = UGBackend.groups
+		groups = UGMBackend.groups
 
 		for gid in groups.keys():
 			if groups[gid]['backend'] != self.name \
@@ -897,7 +894,7 @@ class ldap_controller(UGBackend):
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
-		user  = UGBackend.users[uid].copy()
+		user  = UGMBackend.users[uid].copy()
 
 		action = user['action']
 		login  = user['login']
@@ -918,12 +915,6 @@ class ldap_controller(UGBackend):
 			'groups'    # internal cache, not stored
 			)
 
-
-		#
-		# TODO: please copy user before changing password field !!!
-		#
-
-		#ltrace('ldap', 'password: %s.' % (user['userPassword']))
 		# prepare this field in the form slapd expects it.
 		user['userPassword'] = \
 			'{SHA}' + encodestring(user['userPassword']).strip()
@@ -989,14 +980,14 @@ class ldap_controller(UGBackend):
 			logging.warning(e[0]['desc'])
 
 		# reset the action
-		UGBackend.users[uid]['action'] = None
+		UGMBackend.users[uid]['action'] = None
 
 	def save_group(self, gid):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
-		group  = UGBackend.groups[gid].copy()
+		group = UGMBackend.groups[gid].copy()
 		action = group['action']
 		name   = group['name']
 
@@ -1063,7 +1054,7 @@ class ldap_controller(UGBackend):
 			logging.warning(e[0]['desc'])
 
 		# reset the action
-		UGBackend.groups[gid]['action'] = None
+		UGMBackend.groups[gid]['action'] = None
 
 	def delete_user(self, login):
 		""" Delete one user from the LDAP backend. """

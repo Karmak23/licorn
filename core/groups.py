@@ -11,11 +11,12 @@ Licensed under the terms of the GNU GPL version 2
 import os, stat, posix1e, re
 from time import strftime, gmtime
 
-from licorn.foundations        import logging, exceptions, hlstr, styles
-from licorn.foundations        import fsapi, pyutils
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations         import logging, exceptions, hlstr, styles
+from licorn.foundations         import fsapi, pyutils
+from licorn.foundations.objects import Singleton
+from licorn.foundations.ltrace  import ltrace
 
-class GroupsController:
+class GroupsController(Singleton):
 	""" Manages the groups and the associated shared data on a Linux system. """
 
 	groups       = None  # dict
@@ -59,8 +60,6 @@ class GroupsController:
 			self.reload()
 
 		configuration.groups.hidden = self.GetHiddenState()
-
-		logging.progress('%s: new instance created.' % self.pretty_name)
 	def __getitem__(self, item):
 		return GroupsController.groups[item]
 	def __setitem__(self, item, value):

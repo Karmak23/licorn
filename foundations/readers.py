@@ -15,7 +15,10 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import os, re
-from licorn.foundations import exceptions
+from xml.dom                    import minidom
+from xml                        import dom as xmldom
+from xml.parsers                import expat
+from licorn.foundations         import exceptions
 
 def to_type_semi(value):
 	"""Find the right type of value and convert it, but not for all types. """
@@ -129,11 +132,89 @@ def ug_conf_load_list(filename):
 		Typical use case: /etc/passwd, /etc/group, /etc/licorn/group{s}
 	"""
 	return map(lambda x: x[:-1].split(":"), open(filename , "r"))
+def	dnsmasq_read_conf(filename=None, data=None, convert='semi'):
+	""" Read a dnsmasq.conf file into a dict, using these conversion patterns:
 
-from xml.dom     import minidom
-from xml         import dom as xmldom
-from xml.parsers import expat
+			single-named-directive           -> s-n-d = True
+			named-directive=single-value     -> n-d = s-v
+			named-directive=/file/name       -> n-d = /f/n
+			named-directive=/value1/value2/  -> n-d = [value1, value2]
+			                                 -> n-d_sep = '/'
+			named-directive=value1,value2    -> n-d = [value1, value2]
+			                                 -> n-d_sep = ','
 
+		If a named-directive is repeated (typical for "dhcp-host"), the
+		different values are added to a list, instead of overwriting.
+	"""
+
+	from licorn.foundations.pyutils import masq_list, add_or_dupe
+	from licorn.foundations.hlstr   import cregex
+
+	def parse_fields(line):
+		""" barely parse a directive into a simple but usable object. """
+		try:
+			if cregex['conf_comment'].match(line) != None:
+				# skip empty lines & comments
+				return
+
+			name, value = line.split('=')
+			if value.find(','):
+				add_or_dupe(confdict, name, masq_list(name,
+					value.split(','), ','))
+			elif value.find('/'):
+				if os.path.exists(value):
+					add_or_dupe(confdict, name, value)
+				else:
+					add_or_dupe(confdict, name, masq_list(name,
+						value.split('/'), '/'))
+			else:
+				pass
+		except ValueError:
+			add_or_dupe(confdict, line, True)
+
+	if filename:
+		data = open(filename , "r").read()
+
+	confdict = {}
+
+	map(parse_fields, data.split('\n'))
+
+	return confdict
+def	dnsmasq_read_leases(filename=None, data=None, convert='semi'):
+	""" Read the dnsmasq lease file into a dict indexed on mac addresses.
+		if multiple leases for a same MAC are found, the one with the most
+		recent expiry time is kept.
+
+		for reference:
+		http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2005q1/000143.html
+	"""
+
+	from licorn.foundations.hlstr import cregex
+
+	def parse_fields(line):
+
+		if cregex['conf_comment'].match(line) != None:
+			# skip empty lines & comments
+			return
+
+		expiry, mac, ipaddr, hostname, clientid = line.split(' ')
+
+		if (not confdict.has_key(mac)) or expiry > confdict[mac]['expiry']:
+				confdict[mac] = {
+					'hostname':	hostname,
+					'ip': ipaddr,
+					'clientid': clientid,
+					'expiry': expiry
+				}
+
+	if filename:
+		data = open(filename , "r").read()
+
+	confdict = {}
+
+	map(parse_fields, data.split('\n'))
+
+	return confdict
 def profiles_conf_dict(filename):
 	""" Read a user profiles file (XML format) and return a dictionary
 		of profilename -> (dictionary of param -> value)
