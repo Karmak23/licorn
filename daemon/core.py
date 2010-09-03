@@ -99,6 +99,8 @@ def setup_signals_handler(pname, threads=[]):
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)
 	signal.signal(signal.SIGHUP, terminate)
+
+	signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 def exit_if_already_running():
 	if process.already_running(pid_path):
 		logging.notice("%s: already running (pid %s), not restarting." % (
