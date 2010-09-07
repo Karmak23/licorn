@@ -46,13 +46,20 @@ from licorn.foundations import options
 
 class LicornWarningsDB(Singleton):
 	""" a singleton dict, to hold all warnings already displayed. """
-	__warnings = {}
+
+	warnings = None
+
+	def __init__(self):
+		if LicornWarningsDB.warnings is None:
+			LicornWarningsDB.warnings = {}
 	def __getitem__(self, item):
-		return LicornWarningsDB.__warnings[item]
+		return LicornWarningsDB.warnings[item]
 	def __setitem__(self, item, value):
-		LicornWarningsDB.__warningsdb[item] = value
+		LicornWarningsDB.warnings[item] = value
 	def keys(self):
-		return LicornWarningsDB.__warningsdb.keys()
+		return LicornWarningsDB.warnings.keys()
+
+__warningsdb = LicornWarningsDB()
 
 __warningsdb = LicornWarningsDB()
 
