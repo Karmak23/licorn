@@ -382,6 +382,7 @@ class GroupsController(Singleton):
 			# exception is not KeyError.
 			# TODO: use "has_key()" and make these tests more readable.
 			existing_gid = GroupsController.name_cache[name]
+
 			if manual_gid is None:
 				# automatic GID selection upon creation.
 				if system and self.is_system_gid(existing_gid):
@@ -436,7 +437,20 @@ class GroupsController(Singleton):
 					self.configuration.groups.gid_min,
 					self.configuration.groups.gid_max)
 		else:
-			gid = manual_gid
+			if (system and GroupsController.is_system_gid(manual_gid)) \
+				or (not system and GroupsController.is_standard_gid(
+					manual_gid)):
+					gid = manual_gid
+			else:
+				raise exceptions.BadArgumentError('''GID out of range '''
+					'''for the kind of group you specified. System GID '''
+					'''must be between %d and %d, standard GID must be '''
+					'''between %d and %d.''' % (
+						self.configuration.groups.system_gid_min,
+						self.configuration.groups.system_gid_max,
+						self.configuration.groups.gid_min,
+						self.configuration.groups.gid_max)
+					)
 
 		# Add group in groups dictionary
 		temp_group_dict = {
