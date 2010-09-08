@@ -1,1 +1,0 @@
-$MAIN_CONFIG_FILE="/etc/licorn/licorn.conf";

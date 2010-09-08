@@ -1,7 +1,0 @@
- [01;34m*[0;0m Profile Users:
-	Group: users(100)
-	description: Standard desktop users
-	Home: /home/users
-	Default skel: /etc/skel
-	Default shell: /bin/bash
-	Quota: 1024Mb

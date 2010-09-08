@@ -1,1 +1,0 @@
-olive:x:1000:1000:Olivier Cortès:/home/olive:/bin/bash

@@ -1,1 +1,0 @@
-[01;31m!! [D/T] The skel you specified doesn't exist on this system. Valid skels are: ['/etc/skel'].[0;0m

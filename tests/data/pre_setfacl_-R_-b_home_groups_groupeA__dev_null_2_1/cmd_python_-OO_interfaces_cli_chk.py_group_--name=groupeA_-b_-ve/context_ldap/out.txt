@@ -1,2 +1,0 @@
- * [D/T] Applyed Access ACL [00;32mu::rwx,g::---,o:---,g:admins:rwx,g:gst-groupeA:r-x,g:rsp-groupeA:rwx,g:groupeA:rwx,g:www-data:--x,m:rwx[0;0m on [00;34m/home/groups/groupeA[0;0m.
- * [D/T] Applyed Default ACL [00;32mu::rwx,g::---,o:---,g:admins:rwx,g:gst-groupeA:r-x,g:rsp-groupeA:rwx,g:groupeA:r-x,m:rwx[0;0m on [00;34m/home/groups/groupeA[0;0m.

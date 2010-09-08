@@ -1,6 +1,0 @@
-/bin/sh
-/bin/dash
-/bin/bash
-/bin/rbash
-/usr/bin/screen
-/bin/false
