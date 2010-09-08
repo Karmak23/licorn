@@ -8,15 +8,14 @@ Licensed under the terms of the GNU GPL version 2.
 import os
 import re
 import ldap
-import string
 import hashlib
 from base64 import encodestring, decodestring
 
-from licorn.foundations         import logging, exceptions, styles, pyutils
-from licorn.foundations         import readers, process
-from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.objects import LicornConfigObject, UGMBackend, Singleton
-from licorn.foundations.ldap    import *
+from licorn.foundations           import logging, exceptions, styles, pyutils
+from licorn.foundations           import readers, process
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.objects   import LicornConfigObject, UGMBackend, Singleton
+from licorn.foundations.ldaputils import addModlist, modifyModlist, LicornSmallLDIFParser
 
 class ldap_controller(UGMBackend, Singleton):
 	""" LDAP Backend for users and groups.
