@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Daemon backend abstract class.
+Licorn core.backends autoload facility.
 
-Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 

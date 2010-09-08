@@ -2,10 +2,9 @@
 """
 Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 #

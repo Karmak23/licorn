@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Core plugins.
+Licorn Core backends plugins.
+These plugins are totally optionnal: they will be tryed (initialize()), and if
+not usable, no error will be produced. It's up to the plugin to determine if
+it can be used on a given system.
+
+An academic example can be found in the dnsmasq_plugin.s
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.

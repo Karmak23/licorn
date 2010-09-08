@@ -4,9 +4,8 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
 hlstr - High-Level String functions and common regexs.
 
-Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 import re

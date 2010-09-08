@@ -4,9 +4,8 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 
 styles - ascii colors and python "pseudo CSS".
 
-Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 # bright is to be added to dark colors (00;XXm) to obtain the brighter colors.

@@ -9,7 +9,7 @@ configuration files:
 	* other special types: smb.conf / lts.conf, squidguard.conf...
 
 
-Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>,
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """

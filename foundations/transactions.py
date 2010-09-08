@@ -4,9 +4,8 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 
 transactions - Offers transactions mechanisms (begin/end/commit/rollback)
 
-Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
+Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
-
 """
 
 from licorn.foundations import process, exceptions, logging
@@ -22,9 +21,9 @@ class LicornTransaction:
 		""" placebo function, which only sets a name to the transaction.
 			Eventually the name will be used somewhere in the future.
 		"""
-		
+
 		assert name is not None and name != ""
-	
+
 		self.name = name
 
 		#
@@ -72,19 +71,19 @@ class LicornTransaction:
 					func_name 	= action['value']
 					args		= action['args']
 					dict		= action['dict']
-				
+
 					if callable(func_name):
 						func_name( *args, **dict)
 					else:
 						raise exceptions.LicornRuntimeError("uncallable rollback function « %s »." % str(func_name))
 				else:
 					raise exceptions.LicornRuntimeError("unknown type of rollback action « %s »." % str(type))
-				
+
 			except exceptions.LicornError, e:
 				#
 				# An error shouldn't happen during a rollback, this is BAD BAD BAD !
 				# stop everything immediately, not to bork the system more.
-				# 
+				#
 				logging.error(str(e))
 			except exceptions.LicornException, e:
 				#

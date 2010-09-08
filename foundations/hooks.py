@@ -5,9 +5,8 @@ Licorn hook system.
 Every src/*.py or module/sub-module can register one or
 more function to be called on these events.
 
-Copyright 2006-2008 (C) Olivier Cortès <olive@deep-ocean.net>
+Copyright 2006-2010 (C) Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
-
 """
 
 import sys
@@ -17,7 +16,7 @@ from licorn.foundations import exceptions, styles
 # TODO: make this module create a singleton object, else this will not work as expected...
 
 _hooks = {	'onError'    : [],
-			'onInterrupt': [],		
+			'onInterrupt': [],
 			'onQuit'     : [],
 			'onLoad'     : [],
 			'onSuccess'  : [],
@@ -47,7 +46,7 @@ def unregister_event(event):
 		del _hooks[event]
 	else:
 		raise exceptions.LicornHookEventException('''Event "%s" doesn't exist in the events table.''' % event)
-		
+
 def register_hook(event, func_name, args = None, dict = None):
 	""" Add a function to be called when an event happens.
 		args and dict will be used as « func_name ( *args, **dict ) », like in the
@@ -88,13 +87,13 @@ def run_hooks(event):
 					# don't fail if some hooks are uncallable, others must be called !
 					from licorn.foundations import logging
 					logging.warning('uncallable hook: ' + str(hook_func))
-		
+
 			except exceptions.LicornException, e:
 				#
-				# we can't call licorn.error(), else run_hooks() will we called 
+				# we can't call licorn.error(), else run_hooks() will we called
 				# recursively if we've just been called by licorn.error() ('onError' event).
-				# 
-				# TODO: now we can do it if we priorly remove the 'onError' Event, but this 
+				#
+				# TODO: now we can do it if we priorly remove the 'onError' Event, but this
 				# is a little hackish and not very semantic. Think about it before implementing.
 
 				sys.stderr.write(styles.stylize(styles.ST_BAD, 'BAD, BAD: exception raised from inside an "%s" hook: %s.'% (styles.stylize(styles.ST_HOOK, event), str(e))) + "\n")

@@ -3,7 +3,9 @@
 """
 Licorn testsuite for licorn.core objects.
 
-Copyright (C) 2007-2010 Olivier Cortès <oc@meta-it.fr>.
+Copyright (C) 2007-2010 Olivier Cortès <oc@meta-it.fr>
+Copyright (C) 2010 Robin Lucqbernet <rl@meta-it.fr>
+
 Licensed under the terms of the GNU GPL version 2.
 """
 

@@ -4,13 +4,19 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 
 ltrace - light procedural trace (debug only)
 
-	set LICORN_TRACE={all,configuration,core,...} and watch your terminal
-	flooded with information.
-
+	set environment variable LICORN_TRACE={all,configuration,core,...} and
+	watch your terminal	flooded with information. You can combine values with
+	pipes:
+		export LICORN_TRACE=all
+		export LICORN_TRACE=configuration
+		export LICORN_TRACE="configuration|ldap"
+		export LICORN_TRACE="users|backends|plugins"
+		export LICORN_TRACE="groups|ldap"
+		export LICORN_TRACE="machines|dnsmasq"
+		(and so on...)
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
-
 """
 
 #
