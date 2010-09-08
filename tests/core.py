@@ -456,7 +456,9 @@ def clean_system():
 		['group', 'ACL_tests'],
 		['group', 'MOD_tests'],
 		['group', 'SYSTEM-test'],
-		['group', 'SKEL-tests']
+		['group', 'SKEL-tests'],
+		['group', 'group_test'],
+		['user', 'user_test']
 	):
 
 		execute(DEL + argument)
@@ -686,6 +688,22 @@ def test_groups(context):
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
 				'''shared dir contents.'''
+		).Run()
+
+	ScenarioTest([
+		ADD + [ 'user', '--login=user_test' ],
+		ADD + [ 'group', '--name=group_test' ],
+		MOD + [ 'user', '--login=user_test', '--add-groups=group_test' ],
+		GET + [ 'groups' ],
+		GET + [ 'users', '--long' ],
+		DEL + [ 'group', '--name=group_test' ],
+		GET + [ 'groups' ],
+		GET + [ 'users', '--long' ],
+		DEL + [ 'user', '--login=user_test' ]
+		],
+		context=context,
+		descr='''check if a user is assigned to a specified group and if'''
+				'''the user list is up to date when the group is deleted.'''
 		).Run()
 
 	# TODO: test other mod group arguments.
