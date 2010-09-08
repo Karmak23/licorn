@@ -22,6 +22,7 @@ class ProfilesController(Singleton):
 	"""
 	profiles      = None # Dictionary
 	name_cache    = None  # dict
+	init_ok       = False
 
 	users         = None # UsersController
 	groups        = None # GroupsController
@@ -29,6 +30,9 @@ class ProfilesController(Singleton):
 
 	def __init__(self, configuration, groups, users):
 		""" Load profiles from system configuration file. """
+
+		if ProfilesController.init_ok:
+			return
 
 		ProfilesController.configuration = configuration
 
@@ -46,6 +50,8 @@ class ProfilesController(Singleton):
 			self.reload()
 
 		self.checkDefaultProfile()
+
+		ProfilesController.init_ok = True
 	def __getitem__(self, item):
 		return ProfilesController.profiles[item]
 	def __setitem__(self, item, value):

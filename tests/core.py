@@ -933,5 +933,3 @@ if __name__ == "__main__":
 
 	clean_state_files()
 	logging.notice("Testsuite terminated successfully.")
-
-

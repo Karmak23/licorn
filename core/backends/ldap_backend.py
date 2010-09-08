@@ -26,12 +26,13 @@ class ldap_controller(UGMBackend, Singleton):
 		dn, etc.
 	"""
 
-
+	init_ok = False
 
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
-		"""
-			Init the LDAP backend instance.
-		"""
+		""" Init the LDAP backend instance. """
+
+		if ldap_controller.init_ok:
+			return
 
 		UGMBackend.__init__(self, configuration, users, groups)
 
@@ -42,6 +43,8 @@ class ldap_controller(UGMBackend, Singleton):
 		self.files             = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
+
+		ldap_controller.init_ok = True
 
 	def __del__(self):
 		try:

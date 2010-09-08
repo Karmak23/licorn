@@ -5,7 +5,6 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 import os, crypt, sys
@@ -20,6 +19,7 @@ class MachinesController(Singleton):
 
 	machines        = None # (dictionary)
 	hostname_cache  = None # (dictionary)
+	init_ok         = False
 
 	# cross-references to other common objects
 	configuration = None # (LicornConfiguration)
@@ -32,6 +32,9 @@ class MachinesController(Singleton):
 	def __init__(self, configuration):
 		""" Create the machine accounts list from the underlying system.
 			The arguments are None only for get (ie Export and ExportXml) """
+
+		if MachinesController.init_ok:
+			return
 
 		if MachinesController.configuration is None:
 			MachinesController.configuration = configuration
@@ -47,6 +50,8 @@ class MachinesController(Singleton):
 
 		if MachinesController.machines is None:
 			self.reload()
+
+		MachinesController.init_ok = True
 	def __getitem__(self, item):
 		return MachinesController.machines[item]
 	def __setitem__(self, item, value):

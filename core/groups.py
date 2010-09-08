@@ -21,6 +21,7 @@ class GroupsController(Singleton):
 
 	groups       = None  # dict
 	name_cache   = None  # dict
+	init_ok      = False
 
 	# cross-references to other common objects
 	configuration = None  # LicornConfiguration
@@ -36,6 +37,9 @@ class GroupsController(Singleton):
 	FILTER_EMPTY       = 6
 
 	def __init__ (self, configuration, users, warnings = True):
+
+		if GroupsController.init_ok:
+			return
 
 		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
@@ -60,6 +64,8 @@ class GroupsController(Singleton):
 			self.reload()
 
 		configuration.groups.hidden = self.GetHiddenState()
+
+		GroupsController.init_ok = True
 	def __getitem__(self, item):
 		return GroupsController.groups[item]
 	def __setitem__(self, item, value):

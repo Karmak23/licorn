@@ -15,11 +15,16 @@ from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.objects import UGMBackend, Singleton, FileLock
 
 
-class unix_controller(UGMBackend):
+class unix_controller(UGMBackend, Singleton):
 	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
 
+	init_ok = False
 
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
+
+		if unix_controller.init_ok:
+			return
+
 		UGMBackend.__init__(self, configuration, users, groups)
 		self.name = "unix"
 		self.compat = ('compat', 'files')
@@ -31,6 +36,8 @@ class unix_controller(UGMBackend):
 		self.enabled  = True
 
 		UGMBackend.warnings = warnings
+
+		unix_controller.init_ok = True
 	def load_users(self, groups = None):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}

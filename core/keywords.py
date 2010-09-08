@@ -5,24 +5,28 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 import xattr, os.path, stat
 
-from licorn.foundations    import exceptions, logging, hlstr, pyutils
-from licorn.foundations    import objects, fsapi, readers
+from licorn.foundations         import exceptions, logging, hlstr, pyutils
+from licorn.foundations         import fsapi, readers
+from licorn.foundations.objects import Singleton, FileLock
 
 
-class KeywordsController:
+class KeywordsController(Singleton):
 
 	keywords      = {}
+	init_ok       = False
 	changed       = False
 	configuration = None
 	licorn_xattr  = "user.Licorn.keywords"
 	work_path     = None
 
 	def __init__(self, configuration):
+
+		if KeywordsController.init_ok:
+			return
 
 		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
@@ -52,6 +56,8 @@ class KeywordsController:
 				pass
 			else:
 				raise e
+
+		KeywordsController.init_ok = True
 	def WriteConf(self):
 		""" Write the keywords data in appropriate system files."""
 
@@ -59,7 +65,7 @@ class KeywordsController:
 			logging.progress('%s: saving data structures to disk.' % \
 				self.pretty_name)
 
-			lock_file = objects.FileLock(self.configuration, self.configuration.keywords_data_file)
+			lock_file = FileLock(self.configuration, self.configuration.keywords_data_file)
 
 			lock_file.Lock()
 			open(self.configuration.keywords_data_file , "w").write(self.__build_cli_output())

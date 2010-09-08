@@ -5,7 +5,6 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 import os, crypt, sys
@@ -20,6 +19,7 @@ class UsersController(Singleton):
 
 	users        = None # (dictionary)
 	login_cache  = None # (dictionary)
+	init_ok      = False
 
 	# cross-references to other common objects
 	configuration = None # (LicornConfiguration)
@@ -33,6 +33,9 @@ class UsersController(Singleton):
 	def __init__(self, configuration):
 		""" Create the user accounts list from the underlying system.
 			The arguments are None only for get (ie Export and ExportXml) """
+
+		if UsersController.init_ok:
+			return
 
 		if UsersController.configuration is None:
 			UsersController.configuration = configuration
@@ -48,6 +51,8 @@ class UsersController(Singleton):
 
 		if UsersController.users is None:
 			self.reload()
+
+		UsersController.init_ok = True
 	def __getitem__(self, item):
 		return UsersController.users[item]
 	def __setitem__(self, item, value):

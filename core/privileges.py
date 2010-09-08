@@ -7,7 +7,6 @@ privileges - everything internal to system privileges management
 Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
-
 """
 
 import sys, os
@@ -15,13 +14,18 @@ import sys, os
 from licorn.foundations         import logging, exceptions, hlstr, styles, readers
 from licorn.foundations.objects import Singleton
 
-class PrivilegesWhiteList(list):
+class PrivilegesWhiteList(list, Singleton):
 	""" Manage privileges whitelist. """
 
 	conf_file = ""
-	changed = None
+	init_ok   = False
+	changed   = None
 	def __init__(self, configuration, conf_file):
 		""" Read the configuration file and populate ourselves. """
+
+		if PrivilegesWhiteList.init_ok:
+			return
+
 		self.configuration = configuration
 		self.conf_file = conf_file
 		self.changed   = False
@@ -35,6 +39,8 @@ class PrivilegesWhiteList(list):
 		# TODO: si le fichier contient des doublons, faire plutot:
 		# map(lambda (x): self.append(x),
 		# readers.very_simple_conf_load_list(conf_file))
+
+		PrivilegesWhiteList.init_ok = True
 	def __del__(self):
 		""" destructor. """
 		# just in case it wasn't done before (in batched operations, for example).
