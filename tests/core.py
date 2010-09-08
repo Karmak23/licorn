@@ -46,10 +46,14 @@ if len(sys.argv) > 1:
 else:
 	args = []
 
+def clean_state_files():
+	for state_type in state_files:
+		os.unlink(state_files[state_type])
+
 if '-f' in args:
 	try:
-		os.unlink(state_file)
-		logging.notice('State file deleted.')
+		clean_state_files()
+		logging.notice('State files deleted.')
 	except (OSError, IOError), e:
 		if e.errno != 2:
 			raise e
@@ -155,7 +159,6 @@ def get_state(state_type='scenarii'):
 		 return int(open(state_files[state_type]).read())
 	else:
 		return 0
-
 class ScenarioTest:
 	counter = 0
 
@@ -928,8 +931,7 @@ if __name__ == "__main__":
 
 	# TODO: test_concurrent_accesses()
 
-	for state_type in state_files:
-		os.unlink(state_files[state_type])
+	clean_state_files()
 	logging.notice("Testsuite terminated successfully.")
 
 
