@@ -476,7 +476,7 @@ class UsersController(Singleton):
 					styles.stylize(styles.ST_PATH, homedir), e))
 
 		else:
-			UsersController.configuration.CheckBaseDirs(minimal = True,
+			UsersController.configuration.check_base_dirs(minimal = True,
 				batch = True)
 			user_archive_dir = "%s/%s.deleted.%s" % (
 				UsersController.configuration.home_archive_dir,
@@ -735,7 +735,7 @@ class UsersController(Singleton):
 			users_to_check = UsersController.login_cache.keys()
 
 		# dependancy: base dirs must be OK before checking users's homes.
-		UsersController.configuration.CheckBaseDirs(minimal, batch, auto_answer)
+		UsersController.configuration.check_base_dirs(minimal, batch, auto_answer)
 
 		def check_user(user, minimal = minimal, batch = batch,
 			auto_answer = auto_answer):

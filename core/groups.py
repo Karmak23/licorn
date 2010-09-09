@@ -1227,7 +1227,7 @@ class GroupsController(Singleton):
 			groups_to_check = GroupsController.name_cache.keys()
 
 		# dependancy: base dirs must be OK before checking groups shared dirs.
-		GroupsController.configuration.CheckBaseDirs(
+		GroupsController.configuration.check_base_dirs(
 			minimal, batch, auto_answer)
 
 		def _chk(group):

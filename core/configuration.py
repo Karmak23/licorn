@@ -1174,7 +1174,7 @@ class LicornConfiguration(Singleton):
 		# check the first.
 		self.check_backends(batch, auto_answer)
 
-		self.CheckBaseDirs(minimal, batch, auto_answer)
+		self.check_base_dirs(minimal, batch, auto_answer)
 
 		self.check_OpenSSH(batch, auto_answer)
 
@@ -1203,8 +1203,10 @@ class LicornConfiguration(Singleton):
 			self.available_backends[backend_name].check(batch, auto_answer)
 
 		ltrace('configuration', '< check_backends()')
-	def CheckBaseDirs(self, minimal=True, batch=False, auto_answer=None):
+	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
+
+		ltrace('configuration', '> check_base_dirs()')
 
 		try:
 			os.makedirs(self.users.base_path)
@@ -1539,4 +1541,4 @@ class LicornConfiguration(Singleton):
 		""" Set (un-)restrictive mode on the groups base directory. """
 
 		LicornConfiguration.groups.hidden = hidden
-		self.CheckBaseDirs(batch = True)
+		self.check_base_dirs(batch = True)

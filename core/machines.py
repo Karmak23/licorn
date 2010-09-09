@@ -487,7 +487,7 @@ class MachinesController(Singleton):
 					styles.stylize(styles.ST_PATH, homedir), e))
 
 		else:
-			MachinesController.configuration.CheckBaseDirs(minimal = True,
+			MachinesController.configuration.check_base_dirs(minimal = True,
 				batch = True)
 			machine_archive_dir = "%s/%s.deleted.%s" % (
 				MachinesController.configuration.home_archive_dir,

@@ -270,7 +270,7 @@ def mod_configuration(opts, args):
 		#
 		# FIXME: this should go into checks.py
 		#
-		configuration.CheckBaseDirs(minimal = False, batch = True)
+		configuration.check_base_dirs(minimal = False, batch = True)
 
 	elif opts.set_hostname:
 		configuration.ModifyHostname(opts.set_hostname)
