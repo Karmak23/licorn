@@ -390,7 +390,8 @@ class GroupsController(Singleton):
 
 			if manual_gid is None:
 				# automatic GID selection upon creation.
-				if system and self.is_system_gid(existing_gid):
+				if system and self.is_system_gid(existing_gid) \
+					or not system and self.is_standard_gid(existing_gid):
 					raise exceptions.AlreadyExistsException(
 						"The group %s already exists." %
 						styles.stylize(styles.ST_NAME, name))
