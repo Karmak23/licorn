@@ -677,7 +677,7 @@ def test_groups(context):
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname) ],
-		[ 'sudo', 'mkdir',  		"%s/%s/%s/testdir" % (
+		[ 'sudo', 'mkdir', "%s/%s/%s/testdir" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname) ],
@@ -696,16 +696,19 @@ def test_groups(context):
 				'''shared dir contents.'''
 		).Run()
 
+	uname = 'user_test'
+	gname = 'group_test'
+
 	ScenarioTest([
-		ADD + [ 'user', '--login=user_test' ],
-		ADD + [ 'group', '--name=group_test' ],
-		MOD + [ 'user', '--login=user_test', '--add-groups=group_test' ],
+		ADD + [ 'user', '--login=%s' % uname ],
+		ADD + [ 'group', '--name=%s' % gname ],
+		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname ],
 		GET + [ 'groups' ],
 		GET + [ 'users', '--long' ],
-		DEL + [ 'group', '--name=group_test' ],
+		DEL + [ 'group', '--name=%s' % gname ],
 		GET + [ 'groups' ],
 		GET + [ 'users', '--long' ],
-		DEL + [ 'user', '--login=user_test' ]
+		DEL + [ 'user', '--login=%s' % uname ]
 		],
 		context=context,
 		descr='''check if a user is assigned to a specified group and if'''
@@ -713,9 +716,12 @@ def test_groups(context):
 		).Run()
 
 	ScenarioTest([
-		ADD + [ 'group', '--name=group_test' ],
-		['sudo', 'rm', '-rf', '/home/groups/group_test'],
-		DEL + [ 'group', '--name=group_test' ],
+		ADD + [ 'group', '--name=%s' % gname ],
+		['sudo', 'rm', '-rf', "%s/%s/%s" % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names['plural'],
+			gname)],
+		DEL + [ 'group', '--name=%s' % gname ],
 		],
 		context=context,
 		descr='''check the message when a group (wich group dir has been '''
