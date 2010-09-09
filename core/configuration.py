@@ -84,6 +84,11 @@ class LicornConfiguration(Singleton):
 			import tempfile
 			self.tmp_dir = tempfile.mkdtemp()
 
+			#
+			# WARNING: beside this point, order of method is VERY important,
+			# their contents depend on each other.
+			#
+
 			self.VerifyPythonMods()
 
 			self.SetBaseDirsAndFiles()
@@ -1080,8 +1085,10 @@ class LicornConfiguration(Singleton):
 
 		for attr in dir(self):
 			if callable(getattr(self, attr)) \
-				or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' :
-				# skip methods and python internals.
+				or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+				or attr in ('tmp_dir', 'init_ok'):
+				# skip methods, python internals, and too-much-moving targets
+				# which bork the testsuite.
 				continue
 
 			data += u"\u21b3 %s: " % styles.stylize(styles.ST_ATTR, attr)
@@ -1092,11 +1099,14 @@ class LicornConfiguration(Singleton):
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
-			elif (attr.endswith('_dir') and attr != 'tmp_dir') or attr.endswith('_file') \
+			elif attr.endswith('_dir') or attr.endswith('_file') \
 				or attr.endswith('_path') :
-				data += "%s\n" % str(self.__getattribute__(attr))
-			elif attr in ('daemon', 'users', 'groups', 'profiles', 'defaults',
-				'ssh', 'backends'):
+				data += "%s\n" % styles.stylize(styles.ST_PATH,
+					str(getattr(self, attr)))
+			elif type(getattr(self, attr)) == type(LicornConfigObject()):
+				data += "\n%s" % str(getattr(self, attr))
+			elif type(getattr(self, attr)) in (
+				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(getattr(self, attr))
 			else:
 				data += ('''%s, to be implemented in '''
