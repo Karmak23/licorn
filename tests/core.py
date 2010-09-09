@@ -576,7 +576,7 @@ def test_groups(context):
 		]
 
 	# idem for public_html subdir.
-	remove_group_html_acls_cmds = [ "setfacl", "-R", "-b",
+	remove_group_html_acls_cmds = [ 'sudo', "setfacl", "-R", "-b",
 		"%s/%s/%s/public_html" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
