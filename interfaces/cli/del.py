@@ -32,7 +32,7 @@ def desimport_groups(opts,args):
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+	groups = GroupsController(configuration, users, warnings=False)
 
 	if opts.filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name"
@@ -79,7 +79,7 @@ def del_user(opts, args):
 	users = UsersController(configuration)
 	# groups is needed to delete the user from its groups, else its name will
 	# stay dangling in memberUid.
-	groups = GroupsController(configuration, users)
+	groups = GroupsController(configuration, users, warnings=False)
 
 	for login in opts.login.split(','):
 		if login != '':
@@ -94,7 +94,7 @@ def del_user(opts, args):
 def del_user_from_groups(opts, args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+	groups = GroupsController(configuration, users, warnings=False)
 
 	for g in opts.groups_to_del.split(','):
 		if g != "":
@@ -127,7 +127,7 @@ def del_group(opts, args):
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+	groups = GroupsController(configuration, users, warnings=False)
 	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.name is None and len(args) == 2:
@@ -155,7 +155,7 @@ def del_profile(opts, args):
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+	groups = GroupsController(configuration, users, warnings=False)
 	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.group is None and len(args) == 2:
