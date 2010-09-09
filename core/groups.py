@@ -270,7 +270,7 @@ class GroupsController(Singleton):
 		data += "</groups-list>\n"
 
 		return data
-	def AddGroup(self, name, gid=None, description="", groupSkel="",
+	def AddGroup(self, name, desired_gid=None, description="", groupSkel="",
 		system=False, permissive=False, batch=False, force=False):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
@@ -288,7 +288,9 @@ class GroupsController(Singleton):
 				'''smaller than %d characters.''' % \
 					GroupsController.configuration.groups.name_maxlenght)
 
-		ltrace('groups', '> AddGroup(%s)' % name)
+		ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, descr=%s, '''
+			'''skel=%s, perm=%s)''' % (name, system, desired_gid, description,
+				groupSkel, permissive))
 
 		if not system and groupSkel is "":
 			raise exceptions.BadArgumentError(
@@ -319,8 +321,8 @@ class GroupsController(Singleton):
 
 		try:
 			not_already_exists = True
-			gid = self.__add_group(name, system, gid, description, groupSkel,
-				batch=batch, force=force)
+			gid = self.__add_group(name, system, desired_gid, description,
+				groupSkel, batch=batch, force=force)
 
 		except exceptions.AlreadyExistsException, e:
 			# don't bork if the group already exists, just continue.
@@ -338,6 +340,7 @@ class GroupsController(Singleton):
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
+			ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
 			return
 
 		GroupsController.groups[gid]['permissive'] = permissive
@@ -380,12 +383,23 @@ class GroupsController(Singleton):
 		""" Add a POSIX group, write the system data files.
 			Return the gid of the group created."""
 
-		ltrace('groups', '> __add_group(%s)'%name)
+		ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
+			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
+				groupSkel)
+			)
 
+		# first verify if GID is not already taken.
+		if GroupsController.groups.has_key(manual_gid):
+			raise exceptions.AlreadyExistsError('''The GID you want (%s) '''
+				'''is already taken by another group (%s). Please choose '''
+				'''another one.''' % (
+					styles.stylize(styles.ST_UGID, manual_gid),
+					styles.stylize(styles.ST_NAME,
+						GroupsController.groups[manual_gid]['name'])))
+
+		# Then verify if the name is not taken too.
+		# don't use name_to_gid() else the exception is not KeyError.
 		try:
-			# Verify existance of group, don't use name_to_gid() else the
-			# exception is not KeyError.
-			# TODO: use "has_key()" and make these tests more readable.
 			existing_gid = GroupsController.name_cache[name]
 
 			if manual_gid is None:
@@ -401,6 +415,8 @@ class GroupsController(Singleton):
 						'''type. Please choose another name for your group.'''
 						% styles.stylize(styles.ST_NAME, name))
 			else:
+				ltrace('groups', 'manual GID %d specified.' % manual_gid)
+
 				# user has manually specified a GID to affect upon creation.
 				if system and self.is_system_gid(existing_gid):
 					if existing_gid == manual_gid:
@@ -418,7 +434,7 @@ class GroupsController(Singleton):
 						'''type. Please choose another name for your group.'''
 						% styles.stylize(styles.ST_NAME, name))
 		except KeyError:
-			# the group doesn't exist, its name is not in the cache.
+			# name doesn't exist, path is clear.
 			pass
 
 		# Due to a bug of adduser perl script, we must check that there is

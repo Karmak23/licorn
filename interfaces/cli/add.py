@@ -436,9 +436,10 @@ def add_group(opts, args):
 		if name != '':
 			try:
 				ltrace('add', 'adding group %s.' % name)
-				groups.AddGroup(name, description = opts.description,
-					system = opts.system, groupSkel = opts.skel, gid = opts.gid,
-					permissive = opts.permissive, force=opts.force)
+				groups.AddGroup(name, description=opts.description,
+					system=opts.system, groupSkel=opts.skel,
+					desired_gid=opts.gid, permissive=opts.permissive,
+					force=opts.force)
 			except exceptions.AlreadyExistsException:
 				logging.warning('Group %s already exists on the system.' % name)
 

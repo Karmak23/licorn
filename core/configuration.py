@@ -1359,7 +1359,7 @@ class LicornConfiguration(Singleton):
 		for group in needed_groups:
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
-			if not groups.group_exists(name = group):
+			if not groups.group_exists(name=group):
 				if batch or logging.ask_for_repair(
 					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
 						styles.stylize(styles.ST_NAME, group), auto_answer):
@@ -1373,8 +1373,8 @@ class LicornConfiguration(Singleton):
 					else:
 						gid = None
 
-					groups.AddGroup(group, system=True, gid=gid)
-					del  gid
+					groups.AddGroup(group, system=True, desired_gid=gid)
+					del gid
 				else:
 					raise exceptions.LicornRuntimeError(
 						'''The system group « %s » is mandatory but doesn't '''
