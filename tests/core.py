@@ -583,7 +583,7 @@ def test_groups(context):
 			gname)
 		]
 
-	bad_chown_group_cmds = ['chown', 'bin:daemon', '--changes',
+	bad_chown_group_cmds = [ 'sudo', 'chown', 'bin:daemon', '--changes',
 		'%s/%s/%s/public_html' % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
