@@ -912,13 +912,17 @@ if __name__ == "__main__":
 	# clean old testsuite runs.
 	clean_system()
 
-	# Functionnal Tests
-	test_integrated_help()
-	#test_check_config()
-	test_regexes()
-
-	save_state(1, state_type='context')
-
+	if get_state(state_type='context') == 0:
+		# Functionnal Tests
+		test_integrated_help()
+		#test_check_config()
+		test_regexes()
+		save_state(1, state_type='context')
+		ctx_will_change = True
+	else:
+		logging.notice('Skipping context %s' % stylize(ST_NAME, "std"))
+		ctx_will_change = False
+		
 	for ctxnum, ctx, activate_cmd in (
 		(1, 'unix', ['sudo', 'mod', 'config', '-B', 'ldap']),
 		(2, 'ldap', ['sudo', 'mod', 'config', '-b', 'ldap'])
@@ -936,8 +940,9 @@ if __name__ == "__main__":
 
 			make_backups(ctx)
 
-			ScenarioTest.reinit()
-
+			if get_state(state_type='scenarii') == 0 or ctx_will_change == True:
+				ScenarioTest.reinit()
+				
 			test_get(ctx)
 			test_groups(ctx)
 			#test_users(ctx)
@@ -947,8 +952,7 @@ if __name__ == "__main__":
 			clean_system()
 
 			save_state(ctxnum + 1, state_type='context')
-
-
+			ctx_will_change = True
 	# TODO: test_concurrent_accesses()
 
 	clean_state_files()
