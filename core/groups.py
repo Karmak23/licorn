@@ -569,8 +569,12 @@ class GroupsController(Singleton):
 				strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(home, group_archive_dir)
+
 				logging.info("Archived %s as %s." % (home,
 					styles.stylize(styles.ST_PATH, group_archive_dir)))
+
+				GroupsController.configuration.check_archive_dir(
+					group_archive_dir, batch=True)
 			except OSError, e:
 				if e.errno == 2:
 					logging.notice("Can't archive %s, it doesn't exist !" % \

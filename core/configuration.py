@@ -95,6 +95,7 @@ class LicornConfiguration(Singleton):
 			self.FindUserDir()
 
 			self.LoadManagersConfiguration()
+			self.set_acl_defaults()
 
 			self.FindDistro()
 
@@ -130,7 +131,6 @@ class LicornConfiguration(Singleton):
 		pass
 	def __exit__(self, type, value, tb):
 		self.CleanUp()
-
 	def CleanUp(self):
 		"""This is a sort of destructor. Clean-up before being deleted..."""
 
@@ -803,7 +803,6 @@ class LicornConfiguration(Singleton):
 		LicornConfiguration.groups.guest_prefix = 'gst-'
 		LicornConfiguration.groups.resp_prefix = 'rsp-'
 
-
 		# maxlenght comes from groupadd(8), itself coming from addgroup(8)
 		# 31 - len(prefix)
 		LicornConfiguration.groups.name_maxlenght = 27
@@ -819,6 +818,23 @@ class LicornConfiguration(Singleton):
 
 		LicornConfiguration.groups.privileges_whitelist = \
 			PrivilegesWhiteList(self, self.privileges_whitelist_data_file)
+	def set_acl_defaults(self):
+		""" Prepare the basic ACL configuration inside us. """
+
+		ltrace("configuration", '| set_acl_defaults()')
+
+		LicornConfiguration.posix1e = LicornConfigObject()
+		LicornConfiguration.posix1e.groups_dir = "%s/%s" % (
+			LicornConfiguration.defaults.home_base_path,
+			LicornConfiguration.groups.names['plural'])
+		LicornConfiguration.posix1e.acl_base = 'u::rwx,g::---,o:---'
+		LicornConfiguration.posix1e.acl_mask = 'm:rwx'
+		LicornConfiguration.posix1e.acl_admins_ro = 'g:%s:r-x' % \
+			LicornConfiguration.defaults.admin_group
+		LicornConfiguration.posix1e.acl_admins_rw = 'g:%s:rwx' % \
+			LicornConfiguration.defaults.admin_group
+		LicornConfiguration.posix1e.acl_users = '--x' \
+			if LicornConfiguration.groups.hidden else 'r-x'
 	def CheckAndLoadAdduserConf(self, batch = False, auto_answer = None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
@@ -1198,28 +1214,16 @@ class LicornConfiguration(Singleton):
 
 		self.CheckSystemGroups(minimal, batch, auto_answer)
 
-		groups_dir    = "%s/%s" % (LicornConfiguration.defaults.home_base_path,
-			LicornConfiguration.groups.names['plural'])
-		acl_base      = "u::rwx,g::---,o:---"
-		acl_mask      = "m:rwx"
-		acl_admins_ro = "g:%s:r-x" % LicornConfiguration.defaults.admin_group
-		acl_admins_rw = "g:%s:rwx" % LicornConfiguration.defaults.admin_group
+		p = LicornConfiguration.posix1e
 
-		# TODO: add all profiles groups to the access ACL.
-
-		if LicornConfiguration.groups.hidden:
-			users_acl = '--x'
-		else:
-			users_acl = 'r-x'
-
-		dirs_to_verify = [
-			{
-				'path'      : groups_dir,
-				'user'      : 'root',
-				'group'     : 'acl',
-				'access_acl': "%s,%s,g:www-data:--x,g:users:%s,%s" % (
-					acl_base, acl_admins_ro, users_acl, acl_mask),
-				'default_acl': ""
+		dirs_to_verify = [ {
+			'path'      : p.groups_dir,
+			'user'      : 'root',
+			'group'     : 'acl',
+			'access_acl': "%s,%s,g:www-data:--x,g:users:%s,%s" % (
+				p.acl_base, p.acl_admins_ro,
+				p.acl_users, p.acl_mask),
+			'default_acl': ""
 			} ]
 
 		from licorn.core.groups import GroupsController
@@ -1231,7 +1235,7 @@ class LicornConfiguration(Singleton):
 			# batch this because it *has* to be corrected
 			# for system to work properly.
 			fsapi.check_dirs_and_contents_perms_and_acls(
-				dirs_to_verify, batch=True, allgroups=groups,
+				dirs_to_verify, batch=batch, allgroups=groups,
 				allusers=users)
 
 		except (IOError, OSError), e:
@@ -1250,32 +1254,84 @@ class LicornConfiguration(Singleton):
 			'path'      : self.home_backup_dir,
 			'user'      : 'root',
 			'group'     : 'acl',
-			'access_acl': "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask),
-			'default_acl': "%s,%s,%s" % (acl_base, acl_admins_ro, acl_mask)
-			}
-
-		home_archive_dir_info = {
-			'path'      : self.home_archive_dir,
-			'user'      : 'root',
-			'group'     : 'acl',
-			'access_acl': "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
-			'default_acl': "%s,%s,%s" % (acl_base, acl_admins_rw, acl_mask),
+			'access_acl': "%s,%s,%s" % (p.acl_base,
+				p.acl_admins_ro, p.acl_mask),
+			'default_acl': "%s,%s,%s" % (p.acl_base,
+				p.acl_admins_ro, p.acl_mask)
 			}
 
 		if not minimal:
 			# check the contents of these dirs, too (fixes #95)
 			home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (
-				acl_base, acl_admins_ro, acl_mask)
+				p.acl_base, p.acl_admins_ro, p.acl_mask)
 				).replace('r-x', 'r--').replace('rwx', 'rw-')
+
+		all_went_ok = True
+
+		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
+			[ home_backup_dir_info ], batch=True, allgroups=groups,
+			allusers=users)
+
+		all_went_ok &= self.check_archive_dir(batch=batch,
+			auto_answer=auto_answer)
+
+		ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
+		return all_went_ok
+	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
+		auto_answer=None):
+		""" Check only the archive dir, and eventually even only one of its
+			subdir. """
+
+		ltrace('configuration', '> check_archive_dir(%s)' % subdir)
+
+		p = LicornConfiguration.posix1e
+
+		home_archive_dir_info = {
+			'path'       : self.home_archive_dir,
+			'user'       : 'root',
+			'group'      : 'acl',
+			'access_acl' : "%s,%s,%s" % (
+				p.acl_base, p.acl_admins_rw, p.acl_mask),
+			'default_acl': "%s,%s,%s" % (
+				p.acl_base, p.acl_admins_rw, p.acl_mask),
+			}
+
+		if subdir:
+
+			if os.path.dirname(subdir) == self.home_archive_dir:
+
+				subdir_info = {
+					'path'       : self.home_archive_dir,
+					'user'       : 'root',
+					'group'      : 'acl',
+					'access_acl' : "%s,%s,%s" % (
+						p.acl_base, p.acl_admins_rw, p.acl_mask),
+					'default_acl': "%s,%s,%s" % (
+						p.acl_base, p.acl_admins_rw, p.acl_mask),
+					'content_acl': ("%s,%s,%s" % (
+						p.acl_base, p.acl_admins_rw, p.acl_mask)
+							).replace('r-x', 'r--').replace('rwx', 'rw-')
+					}
+			else:
+				logging.warning(
+					'the subdir you specified is not inside %s, skipped.' %
+						styles.stylize(styles.ST_PATH, self.home_archive_dir))
+				subdir=False
+
+		elif not minimal:
 			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (
-				acl_base, acl_admins_rw, acl_mask)
+				p.acl_base, p.acl_admins_rw, p.acl_mask)
 				).replace('r-x', 'r--').replace('rwx', 'rw-')
 
-		dirs_to_verify = [ home_backup_dir_info, home_archive_dir_info ]
+		dirs_to_verify = [ home_archive_dir_info ]
 
-		# no need to bother the user for that, correct it automatically anyway.
-		fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-			batch=True, allgroups=groups, allusers=users)
+		if subdir:
+			dirs_to_verify.append(subdir_info)
+
+		ltrace('configuration', '< check_archive_dir()')
+
+		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
+			batch=batch, auto_answer=auto_answer)
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
