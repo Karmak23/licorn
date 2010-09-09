@@ -554,7 +554,14 @@ class GroupsController(Singleton):
 		#
 		if no_archive:
 			import shutil
-			shutil.rmtree(home)
+			try:
+				shutil.rmtree(home)
+			except (IOError, OSError), e:
+				if e.errno == 2:
+					logging.notice("Can't remove %s, it doesn't exist !" % \
+						styles.stylize(styles.ST_PATH, home))
+				else:
+					raise e
 		else:
 			group_archive_dir = "%s/%s.deleted.%s" % (
 				GroupsController.configuration.home_archive_dir, name,
@@ -565,8 +572,7 @@ class GroupsController(Singleton):
 					styles.stylize(styles.ST_PATH, group_archive_dir)))
 			except OSError, e:
 				if e.errno == 2:
-					# fix #608
-					logging.warning("Can't archive %s, it doesn't exist !" % \
+					logging.notice("Can't archive %s, it doesn't exist !" % \
 						styles.stylize(styles.ST_PATH, home))
 				else:
 					raise e
