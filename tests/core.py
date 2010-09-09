@@ -712,6 +712,15 @@ def test_groups(context):
 				'''the user list is up to date when the group is deleted.'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'group', '--name=group_test' ],
+		['sudo', 'rm', '-rf', '/home/groups/group_test'],
+		DEL + [ 'group', '--name=group_test' ],
+		],
+		context=context,
+		descr='''check the message when a group (wich group dir has been '''
+			'''deleted) is deleted'''
+		).Run()
 	# TODO: test other mod group arguments.
 
 	# TODO:
