@@ -9,7 +9,8 @@ Copyright (C) 2010 Robin Lucqbernet <rl@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, curses, re, hashlib, tempfile
+import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct
+
 from subprocess                import Popen, PIPE, STDOUT
 from licorn.foundations        import pyutils, logging, exceptions, process
 from licorn.foundations.styles import *
@@ -85,6 +86,15 @@ def clean_path_name(command):
 def clear_term():
 	sys.stdout.write(clear)
 	sys.stdout.flush()
+def term_size():
+	#print '(rows, cols, x pixels, y pixels) =',
+	return struct.unpack("HHHH",
+		fcntl.ioctl(
+			sys.stdout.fileno(),
+			termios.TIOCGWINSZ,
+			struct.pack("HHHH", 0, 0, 0, 0)
+			)
+		)
 def cmdfmt(cmd):
 	'''convert a sequence to a colorized string.'''
 	return stylize(ST_NAME, ' '.join(cmd))
@@ -152,10 +162,8 @@ def strip_dates(str):
 	always compare false ."""
 	return re.sub(r'(\.\d\d\d\d\d\d\d\d-\d\d\d\d\d\d|\s\[\d\d\d\d/\d\d/\d\d\s\d\d:\d\d:\d\d\.\d\d\d\d\]\s)',
 		r' [D/T] ', str)
-
 def save_state(num, state_type='scenarii'):
 	open(state_files[state_type],'w').write('%d' % num)
-
 def get_state(state_type='scenarii'):
 	if os.path.exists(state_files[state_type]):
 		 return int(open(state_files[state_type]).read())
@@ -208,6 +216,9 @@ class ScenarioTest:
 		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
 	def RunCommand(self, cmdnum, batch=False):
 
+		term_columns = term_size()[1]
+		separator    = '--------8<--------' * (term_columns/18)
+
 		if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
 			ref_output = open('%s/%s/out.txt' % (self.base_path, cmdnum)).read()
 			ref_code = int(open(
@@ -227,15 +238,15 @@ class ScenarioTest:
 					tmpfilename])[0]
 
 				logging.warning(
-					'''command #%s failed. Retcode %s (ref %s).\n%s\n%s '''
-					'''Diffed output follows:\n%s\n%s''' % (
+					'''command #%s failed. Retcode %s (ref %s).\n\n%s\n\n%s'''
+					'''\n%s%s\n''' % (
 					stylize(ST_OK, cmdnum),
 					stylize(ST_BAD, retcode),
 					stylize(ST_OK, ref_code),
 					stylize(ST_NAME, cmdfmt(self.cmds[cmdnum])),
-					'-' * 50,
+					separator,
 					diff_output,
-					'-' * 50))
+					separator))
 				if batch or logging.ask_for_repair('''Should I keep the new '''
 					'''return code and trace as reference for future runs?'''):
 					self.SaveOutput(cmdnum, output, retcode)
@@ -247,18 +258,21 @@ class ScenarioTest:
 			else:
 				logging.notice('command #%d "%s" completed successfully.' % (
 				cmdnum, cmdfmt(self.cmds[cmdnum])))
-
 		else:
 			clear_term()
-			logging.notice('''no reference output for %s, cmd #%s (%s),'''
-				''' creating one…'''
-				% (self.name,
-					stylize(ST_OK, cmdnum),
-					cmdfmt(self.cmds[cmdnum])))
 
 			output, retcode = execute(self.cmds[cmdnum])
 
-			sys.stderr.write(strip_dates(output))
+			logging.notice('''no reference output for %s, cmd #%s:'''
+				'''\n\n%s\n\n%s\n%s%s\n'''
+				% (
+					self.name,
+					stylize(ST_OK, cmdnum),
+					cmdfmt(self.cmds[cmdnum]),
+					separator,
+					strip_dates(output),
+					separator
+					))
 
 			if logging.ask_for_repair('''is this output good to keep as '''
 				'''reference for future runs?'''):
@@ -271,9 +285,7 @@ class ScenarioTest:
 			else:
 				logging.error('''you MUST have a reference output; please '''
 					'''fix code or rerun this test.''')
-
-	def Run(self, options=[], batch=False, inverse_test=False,
-		):
+	def Run(self, options=[], batch=False, inverse_test=False):
 		""" run each command of the scenario, in turn. """
 
 		start_scenario = get_state()
@@ -294,7 +306,6 @@ class ScenarioTest:
 	def reinit():
 		ScenarioTest.counter = 0
 		save_state(0)
-
 def test_integrated_help():
 	"""Test extensively argmarser contents and intergated help."""
 
@@ -329,7 +340,6 @@ def test_integrated_help():
 					])
 
 	ScenarioTest(commands, descr="integrated help").Run()
-
 def test_get(context):
 	"""Test GET a lot."""
 
@@ -373,7 +383,6 @@ def test_get(context):
 		]
 
 	ScenarioTest(commands, context=context, descr="get tests").Run()
-
 def test_find_new_indentifier():
 	#test_message('''starting identifier routines tests.''')
 	assert(pyutils.next_free([5,6,48,2,1,4], 5, 30) == 7)
@@ -429,7 +438,6 @@ def test_regexes():
 	# TODO: profiles ?
 
 	test_message('''regexes tests finished.''')
-
 def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
 
@@ -467,7 +475,6 @@ def clean_system():
 			configuration.home_archive_dir))
 
 	test_message('''system cleaned from previous testsuite runs.''')
-
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
@@ -514,7 +521,6 @@ def compare_delete_backups(mode):
 		logging.error('backup mode not understood.')
 
 	test_message('''system config files backup comparison finished successfully.''')
-
 def test_groups(context):
 	"""Test ADD/MOD/DEL on groups in various ways."""
 
@@ -922,7 +928,7 @@ if __name__ == "__main__":
 	else:
 		logging.notice('Skipping context %s' % stylize(ST_NAME, "std"))
 		ctx_will_change = False
-		
+
 	for ctxnum, ctx, activate_cmd in (
 		(1, 'unix', ['sudo', 'mod', 'config', '-B', 'ldap']),
 		(2, 'ldap', ['sudo', 'mod', 'config', '-b', 'ldap'])
@@ -942,7 +948,7 @@ if __name__ == "__main__":
 
 			if get_state(state_type='scenarii') == 0 or ctx_will_change == True:
 				ScenarioTest.reinit()
-				
+
 			test_get(ctx)
 			test_groups(ctx)
 			#test_users(ctx)
