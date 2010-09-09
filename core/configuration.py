@@ -129,12 +129,20 @@ class LicornConfiguration(Singleton):
 	def CleanUp(self):
 		"""This is a sort of destructor. Clean-up before being deleted..."""
 
-		ltrace('configuration', 'CleanUp().')
+		ltrace('configuration', '> CleanUp()')
 
-		if os.path.exists(self.tmp_dir):
+		try:
 			import shutil
 			# this is safe because tmp_dir was created with tempfile.mkdtemp()
 			shutil.rmtree(self.tmp_dir)
+		except (OSError, IOerror), e:
+			if e.errno == 2:
+				logging.info('tmp dir %s has vanished during run.' %
+					self.tmp_dir)
+			else:
+				raise e
+		ltrace('configuration', '< CleanUp()')
+
 	def VerifyPythonMods(self):
 		""" verify all required python modules are present on the system. """
 
