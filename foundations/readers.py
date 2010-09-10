@@ -243,6 +243,9 @@ def profiles_conf_dict(filename):
 				groups = []
 
 			quota = getProfileData(profile, "profileQuota").pop()
+
+			groups.sort()
+
 			confdict[primarygroup] = {
 				'name': name,
 				'description': comment,
