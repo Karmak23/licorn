@@ -230,6 +230,8 @@ class ScenarioTest:
 
 			if retcode != ref_code or ref_output != output:
 
+				clear_term()
+
 				handle, tmpfilename = tempfile.mkstemp(
 					prefix=clean_path_name(self.cmds[cmdnum]))
 				open(tmpfilename, 'w').write(output)
@@ -238,7 +240,7 @@ class ScenarioTest:
 					tmpfilename])[0]
 
 				logging.warning(
-					'''command #%s failed. Retcode %s (ref %s).\n\n%s\n\n%s'''
+					'''command #%s failed. Retcode %s (ref %s).\n\n	%s\n\n%s'''
 					'''\n%s%s\n''' % (
 					stylize(ST_OK, cmdnum),
 					stylize(ST_BAD, retcode),
@@ -264,7 +266,7 @@ class ScenarioTest:
 			output, retcode = execute(self.cmds[cmdnum])
 
 			logging.notice('''no reference output for %s, cmd #%s:'''
-				'''\n\n%s\n\n%s\n%s%s\n'''
+				'''\n\n	%s\n\n%s\n%s%s\n'''
 				% (
 					self.name,
 					stylize(ST_OK, cmdnum),
@@ -447,26 +449,16 @@ def clean_system():
 	# don't check exit codes or such, this will be done later.
 
 	for argument in (
-		['user', 'toto'],
-		['user', 'tutu'],
-		['user', 'tata'],
-		['user', '--login=utilisager.normal'],
-		['user', '--login=test.responsibilly'],
-		['user', '--login=utilicateur.accentue'],
+		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
+			'''test.responsibilly,utilicateur.accentue,user_test''' \
+			'''GRP-ACL-user''',
+			 '--no-archive'],
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
 		['profile', '--group=responsibilisateurs', '--del-users',
 			'--no-archive'],
-		['group', 'test_users_A'],
-		['group', 'test_users_B'],
-		['group', 'groupeA'],
-		['group', 'B-Group_Test'],
-		['group', 'groupe_a_skel'],
-		['group', 'ACL_tests'],
-		['group', 'MOD_tests'],
-		['group', 'SYSTEM-test'],
-		['group', 'SKEL-tests'],
-		['group', 'group_test'],
-		['user', 'user_test']
+		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
+			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
+			'''ARCHIVES-test,group_test,GRP-ACL-test'''],
 	):
 
 		execute(DEL + argument)
