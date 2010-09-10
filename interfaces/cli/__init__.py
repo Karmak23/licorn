@@ -55,7 +55,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 		argparser.general_parse_arguments(app_data)
 
 	except exceptions.LicornException, e:
-		logging.error (str(e), e.errno)
+		logging.error ('%s (%s, errno=%s).' % (str(e),e.__class__, e.errno), e.errno)
 
 	except KeyboardInterrupt:
 		logging.warning(logging.GENERAL_INTERRUPTED)
