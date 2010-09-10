@@ -727,6 +727,37 @@ def test_groups(context):
 		descr='''check the message when a group (wich group dir has been '''
 			'''deleted) is deleted'''
 		).Run()
+
+	uname = 'GRP-ACL-user'
+	gname = 'GRP-ACL-test'
+
+	#
+	# TODO: activate this scenario with ".Run()" at the end and wipe out this
+	# comment when #268 is fixed and this scenario is tested (#269).
+	#
+	ScenarioTest([
+		ADD + [ 'user', uname, '-v' ],
+		ADD + [ 'group', gname, '-v' ],
+		chk_acls_cmds(gname),
+		[ 'sudo', 'chown', '-R', '-c', uname, "%s/%s/%s" % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names['plural'],
+			gname)],
+		chk_acls_cmds(gname),
+		CHK + [ 'group', gname, '-vb' ],
+		chk_acls_cmds(gname),
+		[ 'sudo', 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names['plural'],
+			gname)],
+		chk_acls_cmds(gname),
+		CHK + [ 'group', gname, '-vb' ],
+		chk_acls_cmds(gname),
+		],
+		context=context,
+		descr='''avoid #268.'''
+		)
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
