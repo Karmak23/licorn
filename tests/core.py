@@ -97,7 +97,12 @@ def term_size():
 		)
 def cmdfmt(cmd):
 	'''convert a sequence to a colorized string.'''
-	return stylize(ST_NAME, ' '.join(cmd))
+	return stylize(ST_NAME, small_cmd(cmd))
+def cmdfmt_big(cmd):
+	'''convert a sequence to a colorized string.'''
+	return stylize(ST_LOG, small_cmd(cmd))
+def small_cmd(cmd):
+	return re.sub(r'((sudo|python|-OO) |\.\./interfaces/cli/|\.py\b)', r'', ' '.join(cmd))
 def test_message(msg):
 	""" display a message to stderr. """
 	sys.stderr.write("%s>>> %s%s\n"
@@ -105,9 +110,6 @@ def test_message(msg):
 def log_and_exec (command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
-
-	#if not command.startswith('colordiff'):
-	#	command += ' %s' % ' '.join(args)
 
 	sys.stderr.write("%s>>> running %s%s%s\n" % (colors[ST_LOG],
 		colors[ST_PATH], command, colors[ST_NO]))
@@ -150,12 +152,15 @@ def log_and_exec (command, inverse_test=False, result_code=0, comment="",
 
 	if verb:
 		sys.stderr.write(output)
-def execute(cmd):
-	#logging.notice('running %s.' % ' '.join(cmd))
+def execute(cmd, verbose=False):
+	if verbose:
+		logging.notice('running %s.' % ' '.join(cmd))
 	p4 = Popen(cmd, shell=False,
 		  stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 	output = p4.stdout.read()
 	retcode = p4.wait()
+	if verbose:
+		sys.stderr.write(output)
 	return output, retcode
 def strip_moving_data(str):
 	""" strip dates from warnings and traces, else outputs and references
@@ -240,15 +245,14 @@ class ScenarioTest:
 					tmpfilename])[0]
 
 				logging.warning(
-					'''command #%s failed. Retcode %s (ref %s).\n\n	%s\n\n%s'''
-					'''\n%s%s\n''' % (
+					'''command #%s failed (sce#%s). Retcode %s (ref %s).\n\n	%s\n\n'''
+					'''%s''' % (
 					stylize(ST_OK, cmdnum),
+					stylize(ST_OK, self.sce_number),
 					stylize(ST_BAD, retcode),
 					stylize(ST_OK, ref_code),
-					stylize(ST_NAME, cmdfmt(self.cmds[cmdnum])),
-					separator,
-					diff_output,
-					separator))
+					cmdfmt_big(self.cmds[cmdnum]),
+					diff_output))
 				if batch or logging.ask_for_repair('''Should I keep the new '''
 					'''return code and trace as reference for future runs?'''):
 					self.SaveOutput(cmdnum, output, retcode)
@@ -266,15 +270,12 @@ class ScenarioTest:
 			output, retcode = execute(self.cmds[cmdnum])
 
 			logging.notice('''no reference output for %s, cmd #%s:'''
-				'''\n\n	%s\n\n%s\n%s%s\n'''
+				'''\n\n	%s\n\n%s'''
 				% (
 					self.name,
 					stylize(ST_OK, cmdnum),
-					cmdfmt(self.cmds[cmdnum]),
-					separator,
-					strip_moving_data(output),
-					separator
-					))
+					cmdfmt_big(self.cmds[cmdnum]),
+					strip_moving_data(output)))
 
 			if logging.ask_for_repair('''is this output good to keep as '''
 				'''reference for future runs?'''):
