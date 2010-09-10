@@ -989,7 +989,7 @@ if __name__ == "__main__":
 
 			test_get(ctx)
 			test_groups(ctx)
-			#test_users(ctx)
+			test_users(ctx)
 			#test_imports(ctx)
 			#test_profiles(ctx)
 			compare_delete_backups(ctx)
