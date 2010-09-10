@@ -707,6 +707,7 @@ def test_groups(context):
 				'''the user list is up to date when the group is deleted.'''
 		).Run()
 
+	#fix 259
 	ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname ],
 		['sudo', 'rm', '-rf', "%s/%s/%s" % (
@@ -768,24 +769,24 @@ def test_groups(context):
 
 	test_message('''groups related tests finished.''')
 def test_users(context):
+	uname = 'user_test'
+	gname = 'group_test'
+	pname = 'profil_test'
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
 
-	test_message('''starting users related tests.''')
-
-	log_and_exec(ADD + " group --name test_users_A --description 'groupe créé pour la suite de tests sur les utilisateurs, vous pouvez effacer'")
-	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
-	log_and_exec(ADD + " profile --name Responsibilisateurs --group responsibilisateurs --groups cdrom,lpadmin,plugdev,audio,video,scanner,fuse --comment 'profil power user créé pour la suite de tests utilisateurs.'")
-
-	log_and_exec(ADD + " group --name test_users_B --description 'groupe créé pour la suite de tests sur les utilisateurs, vous pouvez effacer'")
-
-	os.system(GET + " groups")
-	os.system(GET + " profiles")
-
-	log_and_exec(ADD + " user --firstname Utiliçateur --lastname Accentué")
-
-	log_and_exec(ADD + " user --gecos 'Utilisateur Accentué n°2'", True, 12,
-		comment = "can't build a login from only a GECOS field.")
-	log_and_exec(ADD + " user --login utilisager.normal --profile utilisagers")
+	ScenarioTest([
+		ADD + [ 'user', '--login=%s' % uname, '-v' ],
+		GET + [ 'users' ],
+		#should fail (incorrect shell)
+		MOD + [ 'user', '--login=%s' % uname, '--shell=/bin/badshell' ],
+		GET + [ 'users' ],
+		MOD + [ 'user', '--login=%s' % uname, '--shell=/bin/sh', '-v' ],
+		GET + [ 'users' ],
+		DEL + [ 'user', '--login=%s' % uname ],
+		],
+		context=context,
+		descr='''check if a user can be modified with an incorrect shell and with a correct shell'''
+		).Run()
 
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
