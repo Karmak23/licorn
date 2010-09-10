@@ -451,7 +451,7 @@ def clean_system():
 
 	for argument in (
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
-			'''test.responsibilly,utilicateur.accentue,user_test''' \
+			'''test.responsibilly,utilicateur.accentue,user_test,''' \
 			'''GRP-ACL-user''',
 			 '--no-archive'],
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
@@ -682,7 +682,7 @@ def test_groups(context):
 		DEL + [ 'group', gname ],
 		[ 'sudo', 'find', configuration.home_archive_dir ],
 		[ 'sudo', 'getfacl', '-R', configuration.home_archive_dir ],
-		[ 'sudo', 'rm', '-rf', '%s/*' % configuration.home_archive_dir ]
+		[ 'sudo', 'rm', '-vrf', '%s/*' % configuration.home_archive_dir ]
 		],
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
@@ -708,10 +708,10 @@ def test_groups(context):
 				'''the user list is up to date when the group is deleted.'''
 		).Run()
 
-	#fix 259
+	#fix #259
 	ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname ],
-		['sudo', 'rm', '-rf', "%s/%s/%s" % (
+		['sudo', 'rm', '-vrf', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname)],
@@ -719,7 +719,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''check the message when a group (wich group dir has been '''
-			'''deleted) is deleted'''
+			'''deleted) is deleted (avoids #259).'''
 		).Run()
 
 	uname = 'GRP-ACL-user'
