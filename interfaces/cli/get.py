@@ -124,7 +124,7 @@ def get_keywords(opts, args):
 		output(data)
 def get_privileges(opts, args):
 	configuration = LicornConfiguration()
-	output(configuration.Export(args = ['privileges'], cli_format = opts.cli_format))
+	output(configuration.Export(args = ['privileges']))
 def get_webfilters(opts, args):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
@@ -239,10 +239,10 @@ if __name__ == "__main__":
 		'conf':          (agp.get_configuration_parse_arguments, get_configuration),
 		'config':        (agp.get_configuration_parse_arguments, get_configuration),
 		'configuration': (agp.get_configuration_parse_arguments, get_configuration),
-		'priv':			 (agp.get_configuration_parse_arguments, get_privileges),
-		'privs':		 (agp.get_configuration_parse_arguments, get_privileges),
-		'privilege':	 (agp.get_configuration_parse_arguments, get_privileges),
-		'privileges':	 (agp.get_configuration_parse_arguments, get_privileges),
+		'priv':			 (agp.get_privileges_parse_arguments, get_privileges),
+		'privs':		 (agp.get_privileges_parse_arguments, get_privileges),
+		'privilege':	 (agp.get_privileges_parse_arguments, get_privileges),
+		'privileges':	 (agp.get_privileges_parse_arguments, get_privileges),
 		'kw':            (agp.get_keywords_parse_arguments, get_keywords),
 		'tag':           (agp.get_keywords_parse_arguments, get_keywords),
 		'tags':          (agp.get_keywords_parse_arguments, get_keywords),

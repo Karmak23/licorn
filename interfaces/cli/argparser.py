@@ -200,6 +200,20 @@ def get_users_parse_arguments(app):
 	parser.add_option_group(__get_output_group(app, parser,'users'))
 
 	return (parser.parse_args())
+def get_privileges_parse_arguments(app):
+	""" Integrated help and options / arguments for « get user(s) »."""
+
+	usage_text = "\n\t%s %s" \
+		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "priv[ilege][s]"))
+
+	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
+
+	parser.add_option_group(__common_behaviour_group(app, parser, 'get'))
+	# no filter yet for privileges
+	#parser.add_option_group(__get_filter_group(app, parser, 'privileges'))
+	parser.add_option_group(__get_output_group(app, parser,'privileges'))
+
+	return (parser.parse_args())
 def get_groups_parse_arguments(app):
 	""" Integrated help and options / arguments for « get group(s) »."""
 

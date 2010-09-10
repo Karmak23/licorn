@@ -980,7 +980,7 @@ class LicornConfiguration(Singleton):
 					'''continue without this, sorry!''' % login_defs)
 
 	### EXPORTS ###
-	def Export(self, doreturn = True, args = None, cli_format = None):
+	def Export(self, doreturn=True, args=None, cli_format='short'):
 		""" Export «self» (the system configuration) to a human
 			[styles.stylized and] readable form.
 			if «doreturn» is True, return a "string", else write output
