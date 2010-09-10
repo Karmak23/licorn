@@ -98,7 +98,7 @@ class GroupsController(Singleton):
 					#
 					if line.qualifier == GroupsController.name_to_gid('users'):
 						return not line.permset.read
-		except exceptions.LicornRuntimeException:
+		except exceptions.DoesntExistsException:
 			# the group "users" doesn't exist, or is not yet created.
 			return None
 		except (IOError, OSError), e:
@@ -156,7 +156,7 @@ class GroupsController(Singleton):
 				try:
 					gid = GroupsController.name_to_gid(name)
 					self.filtered_groups.append(gid)
-				except exceptions.LicornRuntimeException:
+				except exceptions.DoesntExistsException:
 					# this system group doesn't exist on the system
 					pass
 
@@ -727,7 +727,7 @@ class GroupsController(Singleton):
 			raise exceptions.BadArgumentError, "You must specify a groupSkel"
 
 		if not groupSkel in GroupsController.configuration.users.skels:
-			raise exceptions.BadArgumentError('''The skel you specified '''
+			raise exceptions.DoesntExistsError('''The skel you specified '''
 				'''doesn't exist on this system. Valid skels are: %s.''' % \
 					str(GroupsController.configuration.users.skels))
 
@@ -1477,7 +1477,7 @@ class GroupsController(Singleton):
 						GroupsController.groups[name]['name'])))
 			except ValueError:
 				pass
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
 
 	@staticmethod
@@ -1499,7 +1499,7 @@ class GroupsController(Singleton):
 			return GroupsController.is_system_gid(
 				GroupsController.name_to_gid(name))
 		except KeyError:
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
 
 	@staticmethod
@@ -1509,7 +1509,7 @@ class GroupsController(Singleton):
 			return GroupsController.is_standard_gid(
 				GroupsController.name_to_gid(name))
 		except KeyError:
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
 
 	@staticmethod
@@ -1537,7 +1537,7 @@ class GroupsController(Singleton):
 			return GroupsController.is_empty_gid(
 				GroupsController.name_to_gid(name))
 		except KeyError:
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
 
 	@staticmethod
@@ -1550,7 +1550,7 @@ class GroupsController(Singleton):
 		groupname = hlstr.validate_name(groupname, maxlenght = maxlenght)
 
 		if not hlstr.cregex['group_name'].match(groupname):
-			raise exceptions.LicornRuntimeError(
+			raise exceptions.BadArgumentError(
 				'''Can't build a valid UNIX group name (got %s, '''
 				'''which doesn't verify %s) with the string you '''
 				'''provided "%s".''' % (

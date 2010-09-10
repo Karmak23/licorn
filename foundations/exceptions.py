@@ -193,18 +193,31 @@ class IndexNotFoundError(LicornIOError):
 	errno = 63
 	pass
 
-class AlreadyExistsException(LicornException):
+class AlreadyExistsException(LicornRuntimeException):
 	""" Raised when an object (user, group, profile) [strictly] already exists.
-		The already existing object must be exactly the same (same name, same type, same attributes...).
-		When this happens, the program can continue and assume the object has been created correctly.
+		The already existing object must be exactly the same (same name, same
+		type, same attributes...).
+		When this happens, the program can continue and assume the object has
+		been created correctly.
 	"""
 	errno = 100
 	pass
-class AlreadyExistsError(LicornError):
-	""" Raised when an object already exists but is not exactly of the same type.
-		The creation thus cannot happen, the program must exit, something must be done manually
-		to correct the problem.  """
+class AlreadyExistsError(LicornRuntimeError):
+	""" Raised when an object already exists but is not exactly of the same
+		type. The creation thus cannot happen, the program must exit, something
+		must be done manually to correct the problem.  """
 	errno = 101
+	pass
+class DoesntExistsException(LicornRuntimeException):
+	""" Raised when an object (user, group, profile) [strictly] doesn't exist,
+		but the situation can be recovered at some extend.
+	"""
+	errno = 102
+	pass
+class DoesntExistsError(LicornRuntimeError):
+	""" Raised when an object doesn't exists and the situation is know to be
+		completely unrecoverable. """
+	errno = 103
 	pass
 
 class NetworkError(LicornError):

@@ -159,6 +159,7 @@ def mod_profile(opts, args):
 				# if we haven't got the name, assume we got the group.
 				opts.group = opts.name
 
+
 	if opts.newname is not None:
 		profiles.ChangeProfileName(opts.group, unicode(opts.newname))
 	if opts.newgroup is not None:

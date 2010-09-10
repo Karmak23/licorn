@@ -300,7 +300,7 @@ class ProfilesController(Singleton):
 		if no_archive is None:
 			no_archive = False
 		if group not in ProfilesController.profiles.keys():
-			exceptions.LicornException, "The profile `%s' doesn't exist." % group
+			raise exceptions.DoesntExistsException("The profile `%s' doesn't exist." % group)
 
 		try:
 			self.groups.DeleteGroup(ProfilesController.profiles[group]['groupName'], del_users, no_archive, batch=batch)
@@ -309,7 +309,7 @@ class ProfilesController(Singleton):
 			# just try tro continue and delete the profile.
 			pass
 		except KeyError:
-			raise exceptions.LicornException, "The profile `%s' doesn't exist." % group
+			raise exceptions.DoesntExistsException("The profile `%s' doesn't exist." % group)
 
 
 		del(ProfilesController.profiles[group])
@@ -394,7 +394,7 @@ class ProfilesController(Singleton):
 			else:
 				try:
 					self.groups.name_to_gid(g)
-				except exceptions.LicornRuntimeException:
+				except exceptions.DoesntExistsException:
 					logging.warning("Group %s doesn't exist, ignored." %
 						styles.stylize(styles.ST_NAME, g))
 				else:
@@ -432,7 +432,7 @@ class ProfilesController(Singleton):
 		for u in users:
 			try:
 				uid = ProfilesController.users.login_to_uid(u)
-			except exceptions.LicornRuntimeException, e:
+			except exceptions.DoesntExistsException, e:
 				# most probably "the user does not exist".
 				logging.warning(str(e))
 			else:
@@ -518,5 +518,5 @@ class ProfilesController(Singleton):
 			# use the cache, Luke !
 			return ProfilesController.name_cache[name]
 		except KeyError:
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				"The profile '%s' doesn't exist." % name)

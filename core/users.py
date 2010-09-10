@@ -297,8 +297,8 @@ class UsersController(Singleton):
 						UsersController.profiles.profiles[profile]['profileSkel']
 			except KeyError, e:
 				# fix #292
-				raise exceptions.LicornRuntimeError(
-					"The profile %s does not exist on this system (was: %s) !" \
+				raise exceptions.DoesntExistsError(
+					"The profile %s doesn't exist on this system (was: %s) !" \
 						% (profile, e))
 		elif primary_group is not None:
 
@@ -963,7 +963,7 @@ class UsersController(Singleton):
 						login, UsersController.users[login]['login']))
 			except ValueError:
 				pass
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				logging.SYSU_USER_DOESNT_EXIST % login)
 
 	@staticmethod
@@ -979,7 +979,7 @@ class UsersController(Singleton):
 			return UsersController.is_system_uid(
 				UsersController.login_cache[login])
 		except KeyError:
-			raise exceptions.LicornRuntimeException(
+			raise exceptions.DoesntExistsException(
 				logging.SYSU_USER_DOESNT_EXIST % login)
 
 	@staticmethod
@@ -995,7 +995,7 @@ class UsersController(Singleton):
 				maxlenght = UsersController.configuration.users.login_maxlenght)
 
 		if not hlstr.cregex['login'].match(login):
-			raise exceptions.LicornRuntimeError(
+			raise exceptions.BadArgumentError(
 				"Can't build a valid login (got %s, which doesn't verify %s)"
 				" with the firstname/lastname you provided (%s %s)." % (
 					login, hlstr.regex['login'], firstname, lastname) )

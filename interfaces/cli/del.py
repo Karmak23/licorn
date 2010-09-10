@@ -85,10 +85,8 @@ def del_user(opts, args):
 		if login != '':
 			try:
 				users.DeleteUser(login, opts.no_archive, opts.uid)
-			except KeyError, e:
-				logging.warning(
-					"User %s doesn't exist on the system (was: %s)." % (
-						login, e))
+			except exceptions.DoesntExistsException:
+				logging.notice("User %s doesn't exist, skipped." % login)
 
 	users.WriteConf()
 def del_user_from_groups(opts, args):
@@ -100,7 +98,7 @@ def del_user_from_groups(opts, args):
 		if g != "":
 			try:
 				groups.RemoveUsersFromGroup(g, opts.login.split(','))
-			except exceptions.LicornRuntimeException, e:
+			except exceptions.DoesntExistsException, e:
 				logging.warning(
 					"Unable to remove user(s) %s from group %s (was: %s)."
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
@@ -137,8 +135,8 @@ def del_group(opts, args):
 		try:
 			groups.DeleteGroup(None, opts.del_users, opts.no_archive, opts.gid)
 
-		except KeyError:
-			logging.warning("Group %s doesn't exist on the system." % name)
+		except exceptions.DoesntExistsException:
+			logging.notice("Group %s doesn't exist, skipped." % name)
 	else:
 		for name in opts.name.split(','):
 			if name != '':
@@ -146,9 +144,8 @@ def del_group(opts, args):
 					groups.DeleteGroup(name, opts.del_users, opts.no_archive,
 						opts.gid)
 
-				except KeyError:
-					logging.warning(
-						"Group %s doesn't exist on the system." % name)
+				except exceptions.DoesntExistsException:
+					logging.notice("Group %s doesn't exist, skipped." % name)
 
 def del_profile(opts, args):
 	""" Delete a system wide User profile. """
