@@ -818,9 +818,12 @@ def mod_profile_parse_arguments(app):
 
 	profile = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify profile options "))
 
-	profile.add_option("--group", "--name",
+	profile.add_option("--name",
+		action="store", type="string", dest="name", default = None,
+		help="specify profile to modify by its name (%s)." % styles.stylize(styles.ST_IMPORTANT, "one of --name or --group is required"))
+	profile.add_option("--group",
 		action="store", type="string", dest="group", default = None,
-		help="specify profile to modify by its primary group (%s)." % styles.stylize(styles.ST_IMPORTANT, "required"))
+		help="specify profile to modify by its primary group (%s)." % styles.stylize(styles.ST_IMPORTANT, "one of --name or --group is required"))
 	profile.add_option("--rename",
 		action="store", type="string", dest="newname", default = None,
 		help="specify profile's name")
