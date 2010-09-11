@@ -66,6 +66,12 @@ def get_groups(opts, args):
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 
+	if len(args) > 1:
+		try:
+			opts.gid = int(args[1])
+		except ValueError:
+			opts.gid = GroupsController.name_to_gid(args[1])
+
 	if opts.gid is not None:
 		try:
 			groups.Select("gid=" + unicode(opts.gid))
