@@ -973,6 +973,11 @@ class UsersController(Singleton):
 			uid > UsersController.configuration.users.uid_max
 
 	@staticmethod
+	def is_standard_uid(uid):
+		""" Return true if gid is standard (not system). """
+		return uid >= UsersController.configuration.users.uid_min \
+			and uid <= UsersController.configuration.users.uid_max
+	@staticmethod
 	def is_system_login(login):
 		""" return true if login is system. """
 		try:
@@ -981,7 +986,15 @@ class UsersController(Singleton):
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				logging.SYSU_USER_DOESNT_EXIST % login)
-
+	@staticmethod
+	def is_standard_login(login):
+		""" Return true if login is standard (not system). """
+		try:
+			return UsersController.is_standard_uid(
+				UsersController.login_cache[login])
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				logging.SYSU_USER_DOESNT_EXIST % login)
 	@staticmethod
 	def make_login(lastname = "", firstname = "", inputlogin = ""):
 		""" Make a valid login from  user's firstname and lastname."""
