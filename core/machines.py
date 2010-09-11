@@ -628,23 +628,24 @@ class MachinesController(Singleton):
 
 		mids.sort()
 
-		def build_cli_output_machine_data(mid,
-			machines=MachinesController.machines):
+		m = MachinesController.machines
+
+		def build_cli_output_machine_data(mid):
 
 			account = [	styles.stylize(styles.ST_SPECIAL \
-							if machines[mid]['floating'] else styles.ST_NAME,
-							machines[mid]['hostname']),
+							if m[mid]['floating'] else styles.ST_NAME,
+							m[mid]['hostname']),
 						styles.stylize(styles.ST_OK, 'Online') \
-								if machines[mid]['status'] \
+								if m[mid]['status'] \
 								else styles.stylize(styles.ST_BAD, 'Offline'),
-						'floating' if machines[mid]['floating'] \
+						'floating' if m[mid]['floating'] \
 								else 'fixed',
 						str(mid),
-						str(machines[mid]['ether']),
+						str(m[mid]['ether']),
 						styles.stylize(styles.ST_ATTR,
 							strftime('%Y-%d-%m %H:%M:%S',
-							localtime(float(machines[mid]['expiry'])))) \
-							if machines[mid]['expiry'] else '',
+							localtime(float(m[mid]['expiry'])))) \
+							if m[mid]['expiry'] else '',
 						]
 			return '/'.join(account)
 
