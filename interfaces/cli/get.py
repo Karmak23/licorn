@@ -37,6 +37,12 @@ def get_users(opts, args):
 	if opts.long:
 		groups = GroupsController(configuration, users)
 
+	if len(args) > 1:
+		try:
+			opts.uid = int(args[1])
+		except ValueError:
+			opts.uid = UsersController.login_to_uid(args[1])
+
 	if opts.uid is not None:
 		try:
 			users.Select("uid=" + unicode(opts.uid))
@@ -45,6 +51,7 @@ def get_users(opts, args):
 			return
 	elif not opts.factory:
 		users.Select(users.FILTER_STANDARD)
+
 	if opts.xml:
 		data = users.ExportXML(opts.long)
 	else:
