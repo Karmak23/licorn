@@ -678,8 +678,6 @@ class MachinesController(Singleton):
 	def ExportXML( self, long_output = False):
 		""" Export the machine accounts list to XML. """
 
-		raise NotImplementedError('to be rewritten')
-
 		if self.filter_applied:
 			mids = self.filtered_machines
 		else:
@@ -687,25 +685,23 @@ class MachinesController(Singleton):
 
 		mids.sort()
 
+		m = MachinesController.machines
+
 		def build_xml_output_machine_data(mid):
-			data = '''
-	<machine>
+			data = '''	<machine>
 		<hostname>%s</hostname>
-		<mid>%d</mid>
-		<gid>%d</gid>
-		<gecos>%s</gecos>
-		<homeDirectory>%s</homeDirectory>
-		<hostnameShell>%s</hostnameShell>\n''' % (
-					MachinesController.machines[mid]['hostname'],
+		<mid>%s</mid>
+		<floating>%s</floating>
+		<status>%s</status>
+		<ether>%s</ether>
+		<expiry>%s</expiry>\n''' % (
+					m[mid]['hostname'],
 					mid,
-					MachinesController.machines[mid]['gidNumber'],
-					MachinesController.machines[mid]['gecos'],
-					MachinesController.machines[mid]['homeDirectory'],
-					MachinesController.machines[mid]['hostnameShell']
+					m[mid]['floating'],
+					m[mid]['status'],
+					m[mid]['ether'],
+					m[mid]['expiry'] if m[mid]['expiry'] else ''
 				)
-			if long_output:
-				data += "		<groups>%s</groups>\n" % \
-					','.join(MachinesController.machines[mid]['groups'])
 
 			return data + "	</machine>"
 
