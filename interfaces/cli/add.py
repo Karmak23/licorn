@@ -363,11 +363,18 @@ def add_user(opts, args):
 	else:
 		password = unicode(opts.password)
 
+	if opts.primary_gid:
+		# if the opts.primary_gid is not an existing GID, try to guess if it is
+		# an existing group name, and then convert it to a GID.
+		if not groups.has_key(opts.primary_gid):
+			opts.primary_gid = groups.name_to_gid(opts.primary_gid)
+
 	for login in opts.login.split(','):
 		if login != '':
 			try:
-				users.AddUser(lastname, firstname, password,
-					primary_group=opts.primary_group,
+				users.AddUser(lastname=lastname, firstname=firstname,
+					password=password, primary_gid=opts.primary_gid,
+					desired_uid=opts.uid,
 					profile=opts.profile, skel=opts.skel, login=login,
 					gecos=gecos, system=opts.system, home=opts.home,
 					batch=False, force=opts.force)
