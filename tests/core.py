@@ -22,7 +22,6 @@ if __debug__:
 	PYTHON = [ 'sudo', 'python' ]
 	verbose=True
 else:
-	# don't forget first ' '
 	PYTHON = [ 'sudo', 'python', '-OO' ]
 	verbose=False
 
@@ -60,6 +59,10 @@ if '-f' in args:
 	except (OSError, IOError), e:
 		if e.errno != 2:
 			raise e
+
+if '-v' in args:
+	logging.notice('starting in verbose mode.')
+	verbose=True
 
 missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
@@ -152,7 +155,7 @@ def log_and_exec (command, inverse_test=False, result_code=0, comment="",
 
 	if verb:
 		sys.stderr.write(output)
-def execute(cmd, verbose=False):
+def execute(cmd, verbose=verbose):
 	if verbose:
 		logging.notice('running %s.' % ' '.join(cmd))
 	p4 = Popen(cmd, shell=False,
@@ -221,9 +224,6 @@ class ScenarioTest:
 			strip_moving_data(output))
 		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
 	def RunCommand(self, cmdnum, batch=False):
-
-		term_columns = term_size()[1]
-		separator    = '--------8<--------' * (term_columns/18)
 
 		if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
 			ref_output = open('%s/%s/out.txt' % (self.base_path, cmdnum)).read()
@@ -464,8 +464,10 @@ def clean_system():
 
 		execute(DEL + argument)
 
-		os.system('sudo rm -rf %s/* %s/*' % (configuration.home_backup_dir,
-			configuration.home_archive_dir))
+		execute([ 'sudo', 'rm', '-rf', '%s/*' % configuration.home_backup_dir,
+			'%s/*' % configuration.home_archive_dir ])
+
+		execute(ADD + ['group', '--system', 'acl,admins,remotessh,licorn-wmi'])
 
 	test_message('''system cleaned from previous testsuite runs.''')
 def make_backups(mode):
@@ -474,7 +476,7 @@ def make_backups(mode):
 	# this is mandatory, else there could be some inconsistencies following
 	# backend (de)activation, and backup comparison could fail (false-negative)
 	# because of this.
-	execute(['chk', 'config', '-avvb'])
+	execute(['sudo', 'chk', 'config', '-avvb'])
 
 	if mode == 'unix':
 		for file in system_files:
