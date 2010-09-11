@@ -369,7 +369,7 @@ def add_user(opts, args):
 		if not groups.has_key(opts.primary_gid):
 			opts.primary_gid = groups.name_to_gid(opts.primary_gid)
 
-	for login in opts.login.split(','):
+	for login in opts.login.split(',') if opts.login != None else [ None ]:
 		if login != '':
 			try:
 				users.AddUser(lastname=lastname, firstname=firstname,
