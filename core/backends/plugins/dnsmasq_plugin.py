@@ -23,6 +23,10 @@ class dnsmasq_controller(Singleton):
 	purpose        = 'machines'
 	backend_compat = ('unix')
 
+	def __str__(self):
+		return self.name
+	def __repr__(self):
+		return self.name
 	def __init__(self, configuration, backend=None, warnings=True):
 		ltrace('dnsmasq', '| __init__()')
 		self.configuration = configuration
