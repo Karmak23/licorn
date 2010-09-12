@@ -452,14 +452,14 @@ def clean_system():
 	for argument in (
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
-			'''GRP-ACL-user''',
+			'''GRP-ACL-user,utest_267''',
 			 '--no-archive'],
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
 		['profile', '--group=responsibilisateurs', '--del-users',
 			'--no-archive'],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,GRP-ACL-test'''],
+			'''ARCHIVES-test,group_test,GRP-ACL-test,gtest_267'''],
 	):
 
 		execute(DEL + argument)
@@ -753,6 +753,45 @@ def test_groups(context):
 		context=context,
 		descr='''avoid #268.'''
 		)
+
+	# don't test this one on other context than Unix. The related code is
+	# generic (doesn't lie in backends) and the conditions to reproduce it are
+	# quite difficult with LDAP. The result will be the same anyway.
+	if context == 'unix' :
+
+		uname = 'utest_267'
+		gname = 'gtest_267'
+
+		ScenarioTest([
+			ADD + [ 'user', uname, '-v' ],
+			ADD + [ 'group', gname, '-v' ],
+			GET + [ 'users', '-l' ],
+			GET + [ 'groups' ],
+			# should do nothing
+			CHK + [ 'groups', '-avb' ],
+			CHK + [ 'groups', '-aveb' ],
+			[ 'sudo', 'sed', '-i', '/etc/group',
+				'-e', r's/^\(root:.*\)$/\1nouser/',
+				'-e', r's/^\(audio:.*\)$/\1,foobar,%s/' % uname,
+				'-e', r's/^\(%s:.*\)$/\1foobar,%s/' % (gname, uname),
+				'-e', r's/^\(adm:.*\)$/\1,perenoel,%s,schproudleboy/' % uname ],
+			# should display the dangling users
+			GET + [ 'users', '-l' ],
+			GET + [ 'groups' ],
+			# should do nothing
+			CHK + [ 'groups', '-avb' ],
+			# should point the problems with dangling users
+			CHK + [ 'groups', '-ave', '--auto-no' ],
+			# should repair everything
+			CHK + [ 'groups', '-aveb' ],
+			GET + [ 'users', '-l' ],
+			GET + [ 'groups' ],
+			DEL + [ 'user', uname ],
+			DEL + [ 'group', gname ],
+			],
+			context=context,
+			descr='''avoid #267.'''
+			).Run()
 
 	# TODO: test other mod group arguments.
 
