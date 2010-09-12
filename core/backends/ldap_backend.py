@@ -465,7 +465,7 @@ class ldap_controller(UGMBackend, Singleton):
 			return True
 
 		return False
-	def load_users(self, groups = None):
+	def load_users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
 		login_cache = {}
@@ -547,14 +547,7 @@ class ldap_controller(UGMBackend, Singleton):
 				if entry.has_key(key):
 					temp_user_dict[key] = func(entry[key][0])
 
-			#ltrace('ldap', 'uP: %s' % temp_user_dict['userPassword'])
-
-			if groups is not None:
-				for g in groups.groups:
-					for member in groups.groups[g]['memberUid']:
-						if member == temp_user_dict['login']:
-							temp_user_dict['groups'].add(
-								groups.groups[g]['name'])
+			#ltrace('ldap', 'userPassword: %s' % temp_user_dict['userPassword'])
 
 			# implicitly index accounts on « int(uidNumber) »
 			users[ temp_user_dict['uidNumber'] ] = temp_user_dict
@@ -608,38 +601,13 @@ class ldap_controller(UGMBackend, Singleton):
 
 				#ltrace('ldap', 'members of %s are:\n%s\n%s' % (
 				#	name, members, entry['memberUid']))
-
-				#
-				# 2 things to do if a group has members:
-				#	- populate the cache in users, to speed up future lookups
-				#		in 'get users --long'. This code is also present in
-				# 		users.__init__, to cope with users/groups loaded in
-				#		different orders.
-				#	- check all members really exist, else remove them.
-				#
-
-				to_remove = set()
+				# Here we populate the cache in users, to speed up future
+				# lookups in 'get users --long'.
 
 				if UGMBackend.users:
 					for member in members:
 						if UGMBackend.users.login_cache.has_key(member):
 							u[l2u(member)]['groups'].add(name)
-						else:
-							if self.warnings:
-								logging.warning("User %s is referenced in " \
-									"members of group %s but doesn't really " \
-									"exist on the system, removing it." % \
-									(styles.stylize(styles.ST_BAD, member),
-									styles.stylize(styles.ST_NAME, name)))
-							# don't directly remove member from members,
-							# it will immediately stop the for_loop.
-							to_remove.add(member)
-
-					if to_remove != set():
-						need_rewriting = True
-						for member in to_remove:
-							members.remove(member)
-
 			else:
 				members = set()
 

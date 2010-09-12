@@ -38,7 +38,7 @@ class unix_controller(UGMBackend, Singleton):
 		UGMBackend.warnings = warnings
 
 		unix_controller.init_ok = True
-	def load_users(self, groups = None):
+	def load_users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
 		login_cache = {}
@@ -53,18 +53,9 @@ class unix_controller(UGMBackend, Singleton):
 				'loginShell'   : entry[6],
 				'groups'       : set(),		# a cache which will
 											# eventually be filled by
-											# groups.__init__() and others.
+											# load_groups().
 				'backend'      : self.name
 				}
-
-			# populate ['groups'] ; this code is duplicated in groups.__init__,
-			# in case users/groups are loaded in different orders.
-			if groups is not None:
-				for g in groups.groups:
-					for member in groups.groups[g]['memberUid']:
-						if member == entry[0]:
-							temp_user_dict['groups'].add(
-								groups.groups[g]['name'])
 
 			# implicitly index accounts on « int(uidNumber) »
 			users[ temp_user_dict['uidNumber'] ] = temp_user_dict
@@ -118,10 +109,10 @@ class unix_controller(UGMBackend, Singleton):
 		except (OSError, IOError), e:
 			if e.errno != 13:
 				raise e
-				# don't raise an exception or display a warning, this is
+				# don't display a warning, this is
 				# harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
-				# or group @admin.
+				# or group @admins.
 
 		return users, login_cache
 	def load_groups(self):
@@ -179,30 +170,13 @@ class unix_controller(UGMBackend, Singleton):
 				members = set()
 			else:
 				members   = set(entry[3].split(','))
-				to_remove = set()
 
-				# update the cache to avoid massive CPU load in 'get users
-				# --long'. This code is also present in users.__init__, to cope
-				# with users/groups load in different orders.
+				# update the cache to avoid brute double loops when calling
+				# 'get users --long'.
 				if UGMBackend.users:
 					for member in members:
 						if UGMBackend.users.login_cache.has_key(member):
 							u[l2u(member)]['groups'].add(entry[0])
-						else:
-							if self.warnings:
-								logging.warning("User %s is referenced in " \
-									"members of group %s but doesn't really " \
-									"exist on the system, removing it." % \
-									(styles.stylize(styles.ST_BAD, member),
-									styles.stylize(styles.ST_NAME, entry[0])))
-							# don't directly remove member from members,
-							# it will immediately stop the for_loop.
-							to_remove.add(member)
-
-					if to_remove != set():
-						need_rewriting = True
-						for member in to_remove:
-							members.remove(member)
 
 			groups[gid] = 	{
 				'name'         : entry[0],
@@ -215,7 +189,7 @@ class unix_controller(UGMBackend, Singleton):
 				'backend'      : self.name
 				}
 
-			#ltrace('groups', 'adding group %s' % groups[gid])
+			ltrace('groups', 'loading group %s' % groups[gid])
 
 			# this will be used as a cache by name_to_gid()
 			name_cache[ entry[0] ] = gid
@@ -269,8 +243,6 @@ class unix_controller(UGMBackend, Singleton):
 						styles.stylize(styles.ST_PATH, '/etc/gshadow')
 					))
 				need_rewriting = True
-				# nothing to do here...
-				#groups[gid]['userPassword'] = 'x'
 
 		if need_rewriting and is_allowed:
 			try:

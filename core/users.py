@@ -68,7 +68,7 @@ class UsersController(Singleton):
 		for bkey in UsersController.backends.keys():
 			if bkey=='prefered':
 				continue
-			u, c = self.backends[bkey].load_users(self.groups)
+			u, c = self.backends[bkey].load_users()
 			UsersController.users.update(u)
 			UsersController.login_cache.update(c)
 

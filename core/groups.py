@@ -110,7 +110,6 @@ class GroupsController(Singleton):
 
 	def SetProfiles(self, profiles):
 		GroupsController.profiles = profiles
-
 	def WriteConf(self, gid=None):
 		""" Save Configuration (internal data structure to disk). """
 
@@ -1237,7 +1236,46 @@ class GroupsController(Singleton):
 			# the current "minimal" value.
 
 		return all_went_ok
+	def check_nonexisting_users(self, groups_to_check, batch=False,
+		auto_answer=None):
+		""" Go by all groups, and find members which are referenced but don't
+			exist on the system, and wipe them. """
 
+		ltrace('groups', '> check_nonexisting_users(%s)' % groups_to_check)
+
+		for gid in GroupsController.groups:
+			to_remove = set()
+
+			logging.progress('''Checking for dangling references in group %s.'''
+				% styles.stylize(styles.ST_NAME,
+					GroupsController.groups[gid]['name']))
+
+			for member in GroupsController.groups[gid]['memberUid']:
+				if not GroupsController.users.login_cache.has_key(member):
+					if batch or logging.ask_for_repair('''User %s is '''
+						'''referenced in members of group %s but doesn't '''
+						'''really exist on the system. Remove this dangling '''
+						'''reference?''' % \
+							(styles.stylize(styles.ST_BAD, member),
+							styles.stylize(styles.ST_NAME,
+								GroupsController.groups[gid]['name'])),
+						auto_answer=auto_answer):
+						# don't directly remove member from members,
+						# it will immediately stop the for_loop. Instead, note
+						# the reference to remove, to do it a bit later.
+						logging.info('''Removed dangling reference to '''
+							'''non-existing user %s in group %s.''' % (
+							styles.stylize(styles.ST_BAD, member),
+							styles.stylize(styles.ST_NAME,
+								GroupsController.groups[gid]['name'])))
+						to_remove.add(member)
+
+			if to_remove != set():
+				for member in to_remove:
+					GroupsController.groups[gid]['memberUid'].remove(member)
+					self.WriteConf(gid)
+
+		ltrace('groups', '< check_nonexisting_users()')
 	def CheckGroups(self, groups_to_check = [], minimal=True, batch=False,
 		auto_answer=None, force=False):
 		""" Check the groups, the cache. If not system, check the shared dir,
@@ -1245,6 +1283,10 @@ class GroupsController(Singleton):
 
 		if groups_to_check == []:
 			groups_to_check = GroupsController.name_cache.keys()
+
+		if not minimal:
+			self.check_nonexisting_users(groups_to_check, batch=batch,
+				auto_answer=auto_answer)
 
 		# dependancy: base dirs must be OK before checking groups shared dirs.
 		GroupsController.configuration.check_base_dirs(
