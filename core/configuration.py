@@ -140,7 +140,7 @@ class LicornConfiguration(Singleton):
 			import shutil
 			# this is safe because tmp_dir was created with tempfile.mkdtemp()
 			shutil.rmtree(self.tmp_dir)
-		except (OSError, IOerror), e:
+		except (OSError, IOError), e:
 			if e.errno == 2:
 				logging.info('tmp dir %s has vanished during run.' %
 					self.tmp_dir)
