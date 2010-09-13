@@ -452,7 +452,8 @@ def clean_system():
 	for argument in (
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
-			'''GRP-ACL-user,utest_267''',
+			'''GRP-ACL-user,utest_267,user_test2,user_test3,user_testsys,''' \
+			'''user_testsys2,user_testsys3''',
 			 '--no-archive'],
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
 		['profile', '--group=responsibilisateurs', '--del-users',
