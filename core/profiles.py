@@ -421,7 +421,8 @@ class ProfilesController(Singleton):
 						styles.stylize(styles.ST_NAME, profile_group)))
 		self.WriteConf()
 		return deleted_groups
-	def ReapplyProfileOfUsers(self, users, apply_groups=False, apply_skel=False, batch=False, auto_answer = None):
+	def ReapplyProfileOfUsers(self, users, apply_groups=False, apply_skel=False,
+		batch=False, auto_answer=None):
 		""" Reapply the profile of users.
 			If apply_groups is True, each user will be put in groups listed in his profile
 			If apply_skel is True, the skel of each user will be copied as in user creation

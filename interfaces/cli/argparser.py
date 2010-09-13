@@ -23,7 +23,7 @@ def __build_version_string(app):
 	"""return a string ready to be displayed, containing app_name, version, authors..."""
 	return "%s (%s) version %s\n(C) 2004-2010 %s\nlicensed under the terms of the GNU GPL v2. See %s for project details." \
 		% ( styles.stylize(styles.ST_APPNAME, app["name"]), app["description"], version, app["author"], styles.stylize(styles.ST_URL, "http://dev.licorn.org/") )
-def __common_behaviour_group(app, parser, mode = 'any'):
+def __common_behaviour_group(app, parser, mode='any'):
 	""" This group is common to all Licorn System Tools."""
 	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options "),
 							"Modify decisions / apply filter(s) on data manipulated by program.")
@@ -33,6 +33,8 @@ def __common_behaviour_group(app, parser, mode = 'any'):
 			behaviorgroup.add_option("-e", "--extended",
 				action="store_false", dest="minimal", default = True,
 				help="Execute extended checks (%s, which is to make the bare minimum checks for the system to operate properly)." % styles.stylize(styles.ST_DEFAULT, "not the default") )
+
+		if mode in ('check', 'mod_profile'):
 			behaviorgroup.add_option("-y", "--yes", "--auto-yes",
 				action="store_true", dest="auto_answer", default = None,
 				help="Automatically answer 'yes' to all repair questions (i.e. repair everything that can be) (default: %s, each question will be asked at one time)." % styles.stylize(styles.ST_DEFAULT, "no"))

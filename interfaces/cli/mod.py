@@ -214,7 +214,8 @@ def mod_profile(opts, args):
 
 	if _users != []:
 		if opts.apply_all_attributes:
-			profiles.ReapplyProfileOfUsers(_users, apply_groups=True, apply_skel=True, batch=opts.force)
+			profiles.ReapplyProfileOfUsers(_users, apply_groups=True,
+				apply_skel=True, batch=opts.batch, auto_answer=opts.auto_answer)
 		else:
 			apply_groups = False
 			apply_skel = False
@@ -222,7 +223,8 @@ def mod_profile(opts, args):
 				apply_skel = opts.apply_skel
 			if opts.apply_groups is not None:
 				apply_groups = opts.apply_groups
-			profiles.ReapplyProfileOfUsers(_users, apply_groups, apply_skel, batch=opts.force)
+			profiles.ReapplyProfileOfUsers(_users, apply_groups, apply_skel,
+				batch=opts.batch, auto_answer=opts.auto_answer)
 def mod_keyword(opts, args):
 	""" Modify a keyword. """
 
