@@ -58,6 +58,14 @@ class KeywordsController(Singleton):
 				raise e
 
 		KeywordsController.init_ok = True
+	def __getitem__(self, item):
+		return KeywordsController.keywords[item]
+	def __setitem__(self, item, value):
+		KeywordsController.keywords[item]=value
+	def keys(self):
+		return KeywordsController.keywords.keys()
+	def has_key(self, key):
+		return KeywordsController.keywords.has_key(key)
 	def WriteConf(self):
 		""" Write the keywords data in appropriate system files."""
 

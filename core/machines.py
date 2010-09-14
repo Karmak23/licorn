@@ -57,6 +57,8 @@ class MachinesController(Singleton):
 		MachinesController.machines[item]=value
 	def keys(self):
 		return MachinesController.machines.keys()
+	def has_key(self, key):
+		return MachinesController.machines.has_key(key)
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
@@ -75,7 +77,6 @@ class MachinesController(Singleton):
 			MachinesController.hostname_cache.update(c)
 
 		ltrace('machines', '< reload()')
-
 	def SetGroups(self, groups):
 		MachinesController.groups = groups
 	def WriteConf(self, mid=None):

@@ -57,6 +57,8 @@ class ProfilesController(Singleton):
 		ProfilesController.profiles[item]=value
 	def keys(self):
 		return ProfilesController.profiles.keys()
+	def has_key(self, key):
+		return ProfilesController.profiles.has_key(key)
 	def reload(self):
 		ProfilesController.profiles   = readers.profiles_conf_dict(
 			self.configuration.profiles_config_file)

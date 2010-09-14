@@ -71,6 +71,8 @@ class GroupsController(Singleton):
 		GroupsController.groups[item]=value
 	def keys(self):
 		return GroupsController.groups.keys()
+	def has_key(self, key):
+		return GroupsController.groups.has_key(key)
 	def reload(self):
 		""" load or reload internal data structures from files on disk. """
 
@@ -918,7 +920,6 @@ class GroupsController(Singleton):
 
 		ltrace('groups', '< AddUsersInGroup() %s = %s.' % (
 			name, GroupsController.groups[gid]['memberUid']))
-
 	def RemoveUsersFromGroup(self, name, users_to_remove, batch=False):
 		""" Delete a users list in the group 'name'. """
 		if name is None:

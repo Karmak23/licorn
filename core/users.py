@@ -59,6 +59,8 @@ class UsersController(Singleton):
 		UsersController.users[item]=value
 	def keys(self):
 		return UsersController.users.keys()
+	def has_key(self, key):
+		return UsersController.users.has_key(key)
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
