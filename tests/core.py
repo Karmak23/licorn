@@ -728,10 +728,6 @@ def test_groups(context):
 	uname = 'GRP-ACL-user'
 	gname = 'GRP-ACL-test'
 
-	#
-	# TODO: activate this scenario with ".Run()" at the end and wipe out this
-	# comment when #268 is fixed and this scenario is tested (#269).
-	#
 	ScenarioTest([
 		ADD + [ 'user', uname, '-v' ],
 		ADD + [ 'group', gname, '-v' ],
@@ -753,7 +749,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''avoid #268.'''
-		)
+		).Run()
 
 	# don't test this one on other context than Unix. The related code is
 	# generic (doesn't lie in backends) and the conditions to reproduce it are
