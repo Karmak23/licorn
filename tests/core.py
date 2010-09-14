@@ -689,7 +689,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
-				'''shared dir contents.'''
+				'''shared dir contents, ensure #256 if off.'''
 		).Run()
 
 	uname = 'user_test'
