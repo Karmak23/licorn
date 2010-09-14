@@ -854,6 +854,7 @@ def test_users(context):
 		descr='''User tests with --uid option (avoid #273)'''
 		).Run()
 
+	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
 
@@ -933,6 +934,7 @@ def test_users(context):
 	#log_and_exec(DEL + " user --login utilisager.normal")
 	#log_and_exec(DEL + " user --login test.responsibilly")
 	test_message('''users related tests finished.''')
+	""" # end of old test_users() commands
 def test_imports(context):
 	"""Test massive user accounts imports."""
 
