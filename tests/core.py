@@ -831,6 +831,29 @@ def test_users(context):
 		descr='''check if a user can be modified with an incorrect shell and with a correct shell'''
 		).Run()
 
+	# fix #275
+	ScenarioTest([
+		GET + [ 'users', '-a' ],
+		# should be OK
+		ADD + [ 'user', '--login=%s' % uname, '--uid=1100' ],
+		# should fail (already taken)
+		ADD + [ 'user', '--login=%s2' % uname, '--uid=1100' ],
+		# should fail, <1000 are for system accounts
+		ADD + [ 'user', '--login=%s3' % uname, '--uid=200' ],
+		# should be OK
+		ADD + [ 'user', '--login=%ssys' % uname, '--system', '--uid=200' ],
+		# should fail, >1000 are for standard accounts
+		ADD + [ 'user', '--login=%ssys2' % uname, '--system', '--uid=1101' ],
+		# should fail (already taken)
+		ADD + [ 'user', '--login=%ssys3' % uname, '--system', '--uid=1' ], 
+		GET + [ 'users', '-a' ],
+		DEL + [ 'user', '--login=%s' % uname ],
+		DEL + [ 'user', '--login=%ssys' % uname ],
+		],
+		context=context,
+		descr='''User tests with --uid option (avoid #273)'''
+		).Run()
+
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
 
