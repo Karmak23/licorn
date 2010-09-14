@@ -967,6 +967,7 @@ def test_imports(context):
 def test_profiles(context):
 	"""Test the applying feature of profiles."""
 
+	""" # start of old test_profiles() commands
 	test_message('''starting profiles related tests.''')
 	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
 	log_and_exec(ADD + " profile --name Responsibilisateurs --group responsibilisateurs --groups cdrom,lpadmin,plugdev,audio,video,scanner,fuse --comment 'profil power user créé pour la suite de tests utilisateurs.'")
@@ -990,6 +991,7 @@ def test_profiles(context):
 	log_and_exec(DEL + " profile --group utilisagers --del-users --no-archive")
 
 	test_message('''profiles related tests finished.''')
+	""" # ends of old test_profiles() commands
 def to_be_implemented():
 	""" TO BE DONE !
 		#
