@@ -458,9 +458,13 @@ def clean_system():
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
 		['profile', '--group=responsibilisateurs', '--del-users',
 			'--no-archive'],
+		['profile', '--group=profil_test', '--del-users',
+			'--no-archive'],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,GRP-ACL-test,gtest_267'''],
+			'''ARCHIVES-test,group_test,group_test2,group_test3,''' \
+			'''GRP-ACL-test,gtest_267'''],
+		['privilege', '--name=group_test' ],
 	):
 
 		execute(DEL + argument)
