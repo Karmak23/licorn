@@ -967,6 +967,8 @@ def test_imports(context):
 def test_profiles(context):
 	"""Test the applying feature of profiles."""
 
+	pname = 'profil_test'
+	gname = 'group_test'
 	""" # start of old test_profiles() commands
 	test_message('''starting profiles related tests.''')
 	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
