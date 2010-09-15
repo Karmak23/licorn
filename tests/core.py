@@ -969,6 +969,38 @@ def test_profiles(context):
 
 	pname = 'profil_test'
 	gname = 'group_test'
+
+	#fix #271
+	ScenarioTest([
+		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
+		GET + [ 'profiles' ],
+		ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
+		ADD + [ 'group', '--name=%s2' % gname, '--system', '-v' ],
+		ADD + [ 'group', '--name=%s3' % gname, '--system', '-v' ],
+		GET + [ 'privileges' ],
+		ADD + [ 'privilege', '--name=%s' % gname ],
+		GET + [ 'groups', '-a' ],
+		GET + [ 'privileges' ],
+		MOD + [ 'profile', '--name=%s' % pname, '--add-groups=%s,%s2,%s3' %
+			(gname, gname, gname), '-v' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'group', '--name=%s' % gname, '-v' ],
+		GET + [ 'profiles' ],
+		MOD + [ 'profile', '--name=%s' % pname, '--del-groups=%s' % gname,
+			'-v' ],
+		MOD + [ 'profile', '--name=%s' % pname, '--del-groups=%s2,%s3' %
+			(gname, gname), '-v' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'group', '--name=%s2' % gname, '-v' ],
+		DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+		# don't work with --name option
+		DEL + [ 'profile', '--group=%s' % pname, '-v' ],
+		DEL + [ 'privilege', '--name=%s' % gname, '-v' ],
+		],
+		context=context,
+		descr='''scenario for ticket #271 - test some commands of mod profile --add-group and --del-groups'''
+		).Run()
+
 	""" # start of old test_profiles() commands
 	test_message('''starting profiles related tests.''')
 	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
