@@ -548,6 +548,12 @@ class GroupsController(Singleton):
 			# a system group has no data on disk (no shared directory), just
 			# delete its system data and exit.
 			self.__delete_group(name)
+
+			# don't forget to wipe it from privileges if it's recorded there.
+			if name in GroupsController.configuration.groups.privileges_whitelist:
+				GroupsController.configuration.groups.privileges_whitelist.delete([name])
+
+			# no more things to do for a system group.
 			return
 
 		#
@@ -602,7 +608,6 @@ class GroupsController(Singleton):
 						styles.stylize(styles.ST_PATH, home))
 				else:
 					raise e
-
 	def __delete_group(self, name):
 		""" Delete a POSIX group."""
 
