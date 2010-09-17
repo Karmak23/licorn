@@ -474,8 +474,8 @@ def clean_system():
 			'--no-archive'],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,group_test2,group_test3,''' \
-			'''GRP-ACL-test,gtest_267'''],
+			'''ARCHIVES-test,group_test,group_testsys,group_test2,group_test3,''' \
+			'''GRP-ACL-test,gtest_267,group_testsys'''],
 		['privilege', '--name=group_test' ],
 	):
 
@@ -920,7 +920,7 @@ def test_users(context):
 		# should fail, >1000 are for standard accounts
 		ADD + [ 'user', '--login=%ssys2' % uname, '--system', '--uid=1101' ],
 		# should fail (already taken)
-		ADD + [ 'user', '--login=%ssys3' % uname, '--system', '--uid=1' ], 
+		ADD + [ 'user', '--login=%ssys3' % uname, '--system', '--uid=1' ],
 		GET + [ 'users', '-a' ],
 		DEL + [ 'user', '--login=%s' % uname ],
 		DEL + [ 'user', '--login=%ssys' % uname ],
