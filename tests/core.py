@@ -969,6 +969,31 @@ def test_users(context):
 		descr='test add user with --firstname and --lastname options (fix #284)'
 		).Run()
 
+	#fix #182
+	ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '-v' ],
+		ADD + [ 'group', '--name=%s2' % gname, '-v' ],
+		ADD + [ 'group', '--name=%s3' % gname, '-v' ],
+		ADD + [ 'user', '--login=%s' % uname ],
+		GET + [ 'user' , uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname ],
+		GET + [ 'user' , uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s2,%s3' %
+			(gname, gname), '--del-groups=%s' % gname,
+			'--gecos=Robin Lucbernet', '--shell=/bin/sh'  ],
+		GET + [ 'user', uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname,
+			'--del-groups=%s2,%s3' % (gname, gname) ],
+		GET + [ 'user', uname, '--long' ],
+		DEL + [ 'group', '--name=%s' % gname, '-v' ],
+		DEL + [ 'group', '--name=%s2' % gname, '-v' ],
+		DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+		DEL + [ 'user', '--login=%s' % uname, '-v' ],
+		],
+		context=context,
+		descr='modify one or more parameters of a user (avoid #181)'
+		).Run()
+
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
