@@ -994,6 +994,24 @@ def test_users(context):
 		descr='modify one or more parameters of a user (avoid #181)'
 		).Run()
 
+	#fix #248
+	ScenarioTest([
+		# should work but doesn't record the specfied home dir
+		# (non sytem user can't specify home dir)
+		ADD + [ 'user', '--login=%s' % uname, '--home=/home/users/folder_test',
+			'-v' ],
+		GET + [ 'users', uname, '--long' ],
+		ADD + [ 'user', '--login=%ssys' % uname, '--system',
+			'--home=/home/folder_test', '-v' ],
+		chk_acls_cmds('/home/folder_test'),
+		GET + [ 'users', '-a', '%ssys' %uname, '--long' ],
+		DEL + [ 'user', uname ],
+		DEL + [ 'user', '%ssys' %uname ],
+		],
+		context=context,
+		descr='check option --home of user command (fix #248)'
+		).Run()
+
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
