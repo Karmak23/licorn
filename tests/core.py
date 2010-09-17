@@ -806,6 +806,21 @@ def test_groups(context):
 			descr='''avoid #267.'''
 			).Run()
 
+	#fix #297
+	gname = 'group_test'
+	ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
+		[ 'get', 'group', gname ],
+		ADD + [ 'privileges', '--name=%s' % gname, '-v'],
+		GET + [ 'privileges' ],
+		DEL + [ 'group', '--name=%s' % gname, '-v' ],
+		[ 'get', 'groups', gname ],
+		GET + [ 'privileges' ],
+		],
+		context=context,
+		descr='Check if privilege list is up to date after group deletion (fix #297)'
+		).Run()
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
