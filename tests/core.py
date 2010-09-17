@@ -821,6 +821,24 @@ def test_groups(context):
 		descr='Check if privilege list is up to date after group deletion (fix #297)'
 		).Run()
 
+	#fix #293
+	ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '--gid=15200', '-v' ],
+		# should fail (gid already in use)
+		ADD + [ 'group', '--name=%s2' % gname, '--gid=15200', '-v' ],
+		ADD + [ 'group', '--name=%ssys' % gname, '--gid=199', '--system',
+			'-v' ],
+		# should fail (gid already in use)
+		ADD + [ 'group', '--name=%ssys2' % gname, '--gid=199', '--system',
+			'-v' ],
+		GET + [ 'groups', '-la' ],
+		DEL + [ 'group', '--name=%s' % gname, '-v' ],
+		DEL + [ 'group', '--name=%ssys' % gname, '-v' ],
+		],
+		context=context,
+		descr='tests of groups commands with --gid option (fix #293)'
+		).Run()
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
