@@ -464,7 +464,7 @@ def clean_system():
 	for argument in (
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
-			'''GRP-ACL-user,utest_267,user_test2,user_test3,user_testsys,''' \
+			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
 			'''user_testsys2,user_testsys3''',
 			 '--no-archive'],
 		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
@@ -741,7 +741,7 @@ def test_groups(context):
 			'''deleted) is deleted (avoids #259).'''
 		).Run()
 
-	uname = 'GRP-ACL-user'
+	uname = 'grp-acl-user'
 	gname = 'GRP-ACL-test'
 
 	ScenarioTest([
