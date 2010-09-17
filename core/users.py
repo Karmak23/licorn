@@ -311,6 +311,7 @@ class UsersController(Singleton):
 				UsersController.configuration.mAutoPasswdSize)
 			logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
 				styles.stylize(styles.ST_LOGIN, login),
+				styles.stylize(styles.ST_UGID, uid),
 				styles.stylize(styles.ST_SECRET, password)))
 
 		groups_to_add_user_to = []
@@ -451,6 +452,7 @@ class UsersController(Singleton):
 		self.CheckUsers([ login ], batch = True)
 
 		logging.info(logging.SYSU_CREATED_USER % (
+			'system ' if system else '',
 			styles.stylize(styles.ST_LOGIN, login),
 			styles.stylize(styles.ST_UGID, uid)))
 
@@ -564,12 +566,14 @@ class UsersController(Singleton):
 			].save_user(uid)
 
 		if display:
-			logging.notice("Set user %s's password to %s." % (
+			logging.notice("Set password for user %s(%s) to %s." % (
 				styles.stylize(styles.ST_NAME, login),
+				styles.stylize(styles.ST_UGID, uid),
 				styles.stylize(styles.ST_IMPORTANT, password)))
 		else:
-			logging.info('Changed password for user %s.' % \
-				styles.stylize(styles.ST_NAME, login))
+			logging.info('Changed password for user %s(%s).' % (
+				styles.stylize(styles.ST_NAME, login),
+				styles.stylize(styles.ST_UGID, uid)))
 
 		try:
 			# samba stuff

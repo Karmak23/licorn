@@ -336,8 +336,9 @@ class GroupsController(Singleton):
 
 		if system:
 			if not_already_exists:
-				logging.info(logging.SYSG_CREATED_GROUP % \
-					styles.stylize(styles.ST_NAME, name))
+				logging.info('Created system group %s (gid=%s).' % (
+					styles.stylize(styles.ST_NAME, name),
+					styles.stylize(styles.ST_UGID, gid)))
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
@@ -350,8 +351,9 @@ class GroupsController(Singleton):
 			self.CheckGroups([ name ], minimal=True, batch=True, force=force)
 
 			if not_already_exists:
-				logging.info(logging.SYSG_CREATED_GROUP % \
-					styles.stylize(styles.ST_NAME, name))
+				logging.info('Created group %s (gid=%s).' % (
+					styles.stylize(styles.ST_NAME, name),
+					styles.stylize(styles.ST_UGID, gid)))
 
 		except exceptions.SystemCommandError, e:
 			logging.warning ("ROLLBACK of group creation: " + str(e))
