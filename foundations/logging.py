@@ -63,7 +63,7 @@ __warningsdb = LicornWarningsDB()
 
 __warningsdb = LicornWarningsDB()
 
-def error(mesg, returncode = 1):
+def error(mesg, returncode=1, full=False):
 	""" Display a styles.stylized error message and exit badly.
 		Run hooks registered for 'onError' event, to cleanup
 		things which must be.
@@ -79,18 +79,18 @@ def error(mesg, returncode = 1):
 	#
 	hooks.run_hooks('onError')
 
-	sys.stderr.write(styles.stylize(styles.ST_BAD, '!! %s %s' % (mytime(),
-		mesg.replace(styles.colors[styles.ST_NO],
-		styles.colors[styles.ST_NO] + styles.colors[styles.ST_BAD]))) + "\n")
-	if __debug__:
+	if full:
 		import traceback
-		sys.stderr.write ('''>>> %s: %s
->>> %s:
-''' 	% ( styles.stylize(styles.ST_BAD, "Exception"),
-			styles.stylize(styles.ST_SPECIAL, str(sys.exc_type)),
-			styles.stylize(styles.ST_OK, "Call trace")))
+		sys.stderr.write ('''>>> %s:
+	''' 	% (styles.stylize(styles.ST_OK, "Call trace")))
 		traceback.print_tb( sys.exc_info()[2] )
 		sys.stderr.write("\n")
+
+	sys.stderr.write('%s %s %s\n' % (
+		styles.stylize(styles.ST_BAD, 'ERROR:'),
+		mytime(),
+		mesg))
+
 	raise SystemExit(returncode)
 def warning(mesg, once = False):
 	"""Display a styles.stylized warning message on stderr."""

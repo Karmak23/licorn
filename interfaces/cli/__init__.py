@@ -8,6 +8,10 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
+from licorn.foundations        import exceptions, logging
+from licorn.foundations.ltrace import ltrace
+from licorn.foundations.styles import *
+
 def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 	""" common structure for all licorn cli tools. """
 
@@ -54,11 +58,25 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 		sys.argv.append("--help")
 		argparser.general_parse_arguments(app_data)
 
-	except exceptions.LicornException, e:
-		logging.error ('%s (%s, errno=%s).' % (str(e),e.__class__, e.errno), e.errno)
-
-	except KeyboardInterrupt:
+	except KeyboardInterrupt, e:
 		logging.warning(logging.GENERAL_INTERRUPTED)
+
+	except exceptions.LicornError, e:
+		logging.error('%s (%s, errno=%s).' % (
+			str(e), stylize(ST_SPECIAL, str(e.__class__).replace(
+			"<class '",'').replace("'>", '')), e.errno), e.errno)
+
+	except exceptions.LicornException, e:
+		logging.error('%s: %s (errno=%s).' % (
+			stylize(ST_SPECIAL, str(e.__class__).replace(
+			"<class '",'').replace("'>", '')),
+			str(e), e.errno), e.errno,
+			full=True)
+
+	except Exception, e:
+		logging.error('%s: %s.' % (stylize(ST_SPECIAL, str(e.__class__).replace(
+			"<class '",'').replace("<type '",'').replace("'>", '')),
+			str(e)), 254, full=True)
 
 	ltrace('cli', '< cli_main(%s).' % sys.argv[0])
 
