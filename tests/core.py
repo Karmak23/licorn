@@ -824,6 +824,10 @@ def test_groups(context):
 
 	test_message('''groups related tests finished.''')
 def test_users(context):
+
+	def chk_acls_cmds(dir):
+		return [ 'sudo', 'getfacl', '-R', dir ]
+
 	uname = 'user_test'
 	gname = 'group_test'
 	pname = 'profil_test'
