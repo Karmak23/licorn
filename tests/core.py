@@ -955,6 +955,20 @@ def test_users(context):
 		descr='''test command get user <uid|user> (fix #286)'''
 		).Run()
 
+	#fix #284
+	ScenarioTest([
+		ADD + [ 'user', '--firstname=Robin', '--lastname=Lucbernet', '-v' ],
+		ADD + [ 'user', '--firstname=Robin',
+			'--lastname=LucbernetLucbernetLucbernetLucbernetLucbernetLucbernet',
+			'-v' ],
+		GET + [ 'users' ],
+		DEL + [ 'user', '--login=robin.lucbernet' ],
+		GET + [ 'users' ],
+		],
+		context=context,
+		descr='test add user with --firstname and --lastname options (fix #284)'
+		).Run()
+
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
