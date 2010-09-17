@@ -1017,6 +1017,19 @@ def test_profiles(context):
 		descr='''scenario for ticket #271 - test some commands of mod profile --add-group and --del-groups'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
+		GET + [ 'profiles' ],
+		#should fail
+		MOD + [ 'profile', '--name=%s' % pname, '--add-groups=%s' %	gname,
+			'-v' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'profile', '--group=%s' % pname, '-v' ],
+		],
+		context=context,
+		descr='check if a error occurs when a non-existing group is added to a profile'
+		).Run()
+
 	""" # start of old test_profiles() commands
 	test_message('''starting profiles related tests.''')
 	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
