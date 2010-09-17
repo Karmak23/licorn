@@ -85,4 +85,5 @@ class PrivilegesWhiteList(list, Singleton):
 					styles.stylize(styles.ST_NAME, privilege))
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
+		self.sort()
 		open(self.conf_file, "w").write("%s\n" % "\n".join(self))
