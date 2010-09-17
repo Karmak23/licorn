@@ -1430,8 +1430,8 @@ class GroupsController(Singleton):
 				styles.stylize(styles.ST_NAME, name), qualif) )
 
 	# TODO: make this @staticmethod
-	def is_permissive(self, name = None, gid = None):
-		""" Return True if the shared dir of the group is permissive."""
+	def is_permissive(self, gid, name):
+		""" Return True if the shared dir of the group is permissive.
 
 		if gid is None:
 			if name is None:

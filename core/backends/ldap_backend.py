@@ -637,7 +637,7 @@ class ldap_controller(UGMBackend, Singleton):
 			try:
 				groups[gid]['permissive'] = \
 					UGMBackend.groups.is_permissive(
-					name=groups[gid]['name'], gid = gid)
+					gid=gid, name=name)
 			except exceptions.InsufficientPermissionsError:
 				# don't bother with a warning, the user is not an admin.
 				# logging.warning("You don't have enough permissions to " \

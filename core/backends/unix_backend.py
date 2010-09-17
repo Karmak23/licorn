@@ -196,7 +196,7 @@ class unix_controller(UGMBackend, Singleton):
 
 			try:
 				groups[gid]['permissive'] = UGMBackend.groups.is_permissive(
-					name=groups[gid]['name'], gid = gid)
+					gid=gid, name=entry[0])
 			except exceptions.InsufficientPermissionsError:
 				# don't bother the user with a warning, he/she probably already
 				# knows that :
