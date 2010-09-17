@@ -839,6 +839,32 @@ def test_groups(context):
 		descr='tests of groups commands with --gid option (fix #293)'
 		).Run()
 
+	# fix #286
+	ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '-v' ],
+		GET + [ 'groups' ],
+		GET + [ 'group', gname ],
+		GET + [ 'group', gname, '-l' ],
+		GET + [ 'group', '10000' ],
+		GET + [ 'group', '10000' , '-l' ],
+		#should fail (gid 11000 is not used)
+		GET + [ 'group', '11000' ],
+		GET + [ 'group', '11000' , '-l' ],
+		GET + [ 'group', '%s,root' % gname ],
+		GET + [ 'group', '0,root' ],
+		DEL + [ 'group', '--name=%s' % gname, '-v' ],
+		GET + [ 'group', 'root' ],
+		GET + [ 'group', 'root', '-l' ],
+		GET + [ 'group', '0' ],
+		GET + [ 'group', '0', '-l' ],
+		GET + [ 'group', '1' ],
+		GET + [ 'group', '1', '-l' ],
+		GET + [ 'groups' ],
+		],
+		context=context,
+		descr='''test command get group <gid|group> (fix #286)'''
+		).Run()
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
@@ -901,6 +927,32 @@ def test_users(context):
 		],
 		context=context,
 		descr='''User tests with --uid option (avoid #273)'''
+		).Run()
+
+	# fix #286
+	ScenarioTest([
+		ADD + [ 'user', '--name=%s' % uname, '-v' ],
+		GET + [ 'users' ],
+		GET + [ 'user', uname ],
+		GET + [ 'user', uname, '-l' ],
+		GET + [ 'user', '1001' ],
+		GET + [ 'user', '1001' , '-l' ],
+		#should fail (uid 1100 is not used)
+		GET + [ 'user', '1100' ],
+		GET + [ 'user', '1100' , '-l' ],
+		GET + [ 'users', '%s,root' % uname ],
+		GET + [ 'users', '0,root' ],
+		DEL + [ 'user', '--name=%s' % uname, '-v' ],
+		GET + [ 'user', 'root' ],
+		GET + [ 'user', 'root', '-l' ],
+		GET + [ 'user', '0' ],
+		GET + [ 'user', '0', '-l' ],
+		GET + [ 'user', '1' ],
+		GET + [ 'user', '1', '-l' ],
+		GET + [ 'users' ],
+		],
+		context=context,
+		descr='''test command get user <uid|user> (fix #286)'''
 		).Run()
 
 	""" # start of old test_users() commands
