@@ -65,7 +65,12 @@ parser.add_option("-c", "--context", dest="context_number", type="int",
 	help="start at this context number")
 parser.add_option("-r", "--reload", action="store_true", dest="reload",
 	help="reload testsuite. Start from beginning")
+parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
+	default=False, help="display commands before executing them.")
+
 (options, args) = parser.parse_args()
+
+verbose = options.verbose
 
 if options.scenario_number != None:
 	save_state(options.scenario_number)
@@ -78,10 +83,6 @@ if options.reload == True:
 	except (OSError, IOError), e:
 		if e.errno != 2:
 			raise e
-
-if '-v' in args:
-	logging.notice('starting in verbose mode.')
-	verbose=True
 
 missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
