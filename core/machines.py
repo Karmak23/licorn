@@ -9,10 +9,11 @@ Licensed under the terms of the GNU GPL version 2
 import os, crypt, sys
 from time import time, strftime, gmtime, localtime
 
-from licorn.foundations         import logging, exceptions, process, hlstr
-from licorn.foundations         import pyutils, styles, fsapi
-from licorn.foundations.objects import Singleton
-from licorn.foundations.ltrace  import ltrace
+from licorn.foundations           import logging, exceptions, process, hlstr
+from licorn.foundations           import pyutils, styles, fsapi
+from licorn.foundations.objects   import Singleton
+from licorn.foundations.constants import host_status, filters
+from licorn.foundations.ltrace    import ltrace
 
 class MachinesController(Singleton):
 
@@ -23,10 +24,6 @@ class MachinesController(Singleton):
 	# cross-references to other common objects
 	configuration = None # (LicornConfiguration)
 	groups        = None # (GroupsController)
-
-	# Filters for Select() method.
-	FILTER_STANDARD = 1
-	FILTER_SYSTEM   = 2
 
 	def __init__(self, configuration):
 		""" Create the machine accounts list from the underlying system.
@@ -119,14 +116,17 @@ class MachinesController(Singleton):
 		mids = MachinesController.machines.keys()
 		mids.sort()
 
-		if MachinesController.FILTER_STANDARD == filter_string:
+		if filters.NONE == filter_string:
+			self.filtered_machines = []
+
+		elif filters.STANDARD == filter_string:
 			def keep_mid_if_not_system(mid):
 				if not MachinesController.is_system_mid(mid):
 					self.filtered_machines.append(mid)
 
 			map(keep_mid_if_not_system, mids)
 
-		elif MachinesController.FILTER_SYSTEM == filter_string:
+		elif filters.SYSTEM == filter_string:
 			def keep_mid_if_system(mid):
 				if MachinesController.is_system_mid(mid):
 					self.filtered_machines.append(mid)
@@ -140,6 +140,8 @@ class MachinesController(Singleton):
 			if mid is not None:
 				mid = int(mid.group('mid'))
 				self.filtered_machines.append(mid)
+
+		return self.filtered_machines
 	def AddMachine(self, lastname = None, firstname = None, password = None,
 		primary_group=None, profile=None, skel=None, hostname=None, gecos=None,
 		system = False, batch=False, force=False):
@@ -633,14 +635,14 @@ class MachinesController(Singleton):
 
 		def build_cli_output_machine_data(mid):
 
-			account = [	styles.stylize(styles.ST_SPECIAL \
-							if m[mid]['floating'] else styles.ST_NAME,
+			account = [	styles.stylize(styles.ST_NAME \
+							if m[mid]['managed'] else styles.ST_SPECIAL,
 							m[mid]['hostname']),
 						styles.stylize(styles.ST_OK, 'Online') \
-								if m[mid]['status'] \
+								if m[mid]['status'] == host_status.IN_USE \
 								else styles.stylize(styles.ST_BAD, 'Offline'),
-						'floating' if m[mid]['floating'] \
-								else 'fixed',
+						'managed' if m[mid]['managed'] \
+								else 'floating',
 						str(mid),
 						str(m[mid]['ether']),
 						styles.stylize(styles.ST_ATTR,
@@ -713,7 +715,7 @@ class MachinesController(Singleton):
 		return data
 
 	@staticmethod
-	def machine_exists(mid = None, hostname = None):
+	def exists(mid = None, hostname = None):
 		if mid:
 			return MachinesController.machines.has_key(mid)
 		if hostname:

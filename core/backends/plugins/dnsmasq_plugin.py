@@ -7,10 +7,11 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import os
 
-from licorn.foundations         import logging, exceptions, styles, readers, \
+from licorn.foundations           import logging, exceptions, styles, readers, \
 	process
-from licorn.foundations.objects import Singleton
-from licorn.foundations.ltrace  import ltrace
+from licorn.foundations.objects   import Singleton
+from licorn.foundations.constants import host_status
+from licorn.foundations.ltrace    import ltrace
 
 class dnsmasq_controller(Singleton):
 	""" A plugin to cope with dnsmasq files."""
@@ -134,8 +135,8 @@ class dnsmasq_controller(Singleton):
 						if temp_host.has_key('lease_time') else None,
 					'expiry': temp_host['expiry'] \
 						if temp_host.has_key('expiry') else None,
-					'status': False,
-					'floating': False
+					'status': host_status.OFFLINE,
+					'managed': True
 					}
 
 				hostname_cache[temp_host['hostname']] = temp_host['ip']
@@ -155,8 +156,8 @@ class dnsmasq_controller(Singleton):
 				'lease_time': None,
 				'expiry': leases[ether]['expiry'] \
 					if leases[ether].has_key('expiry') else None,
-				'status': False,
-				'floating': True
+				'status': host_status.OFFLINE,
+				'managed': False
 				}
 
 			hostname_cache[machines[leases[ether]['ip']]['hostname']] = \
@@ -172,7 +173,7 @@ class dnsmasq_controller(Singleton):
 			if splitted[0] == '#':
 				continue
 			if splitted[4] == 'Up':
-					machines[splitted[1]]['status'] = True
+					machines[splitted[1]]['status'] = status.IN_USE
 
 		ltrace('dnsmasq', '< load_machines()')
 
