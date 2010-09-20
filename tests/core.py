@@ -1128,6 +1128,11 @@ def test_profiles(context):
 	pname = 'profil_test'
 	gname = 'group_test'
 
+	def chk_acls_cmd(user):
+		return [ 'sudo', 'getfacl', '-R', '%s/%s' % (
+		configuration.users.base_path,
+		user) ]
+
 	#fix #271 & #219
 	ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
