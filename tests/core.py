@@ -117,12 +117,12 @@ def term_size():
 			struct.pack("HHHH", 0, 0, 0, 0)
 			)
 		)
-def cmdfmt(cmd):
+def cmdfmt(cmd, prefix=''):
 	'''convert a sequence to a colorized string.'''
-	return stylize(ST_NAME, small_cmd(cmd))
-def cmdfmt_big(cmd):
+	return '%s%s' % (prefix, stylize(ST_NAME, small_cmd(cmd)))
+def cmdfmt_big(cmd, prefix=''):
 	'''convert a sequence to a colorized string.'''
-	return stylize(ST_LOG, small_cmd(cmd))
+	return '%s%s' % (prefix, stylize(ST_LOG, small_cmd(cmd)))
 def small_cmd(cmd):
 	return re.sub(r'((sudo|python|-OO) |\.\./interfaces/cli/|\.py\b)', r'', ' '.join(cmd))
 def test_message(msg):
@@ -235,6 +235,29 @@ class ScenarioTest:
 		open('%s/%s/out.txt' % (self.base_path, cmdnum), 'w').write(
 			strip_moving_data(output))
 		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
+	def show_commands(self, highlight_num):
+		""" output all commands, to get an history of the current scenario,
+			and higlight the current one. """
+
+		data = ''
+
+		for cmdcounter in self.cmds:
+			if cmdcounter < highlight_num:
+				data += '	%s\n' % cmdfmt(self.cmds[cmdcounter],
+					prefix='  ')
+			elif cmdcounter == highlight_num:
+				data += '	%s\n' % cmdfmt_big(self.cmds[cmdcounter],
+					prefix='> ')
+			elif cmdcounter > highlight_num:
+				data += '	%s%s\n' % (
+					cmdfmt(self.cmds[cmdcounter],
+						prefix='  '),
+					'\n	%s' % cmdfmt(u'[…]', prefix='  ') \
+						if len(self.cmds) > cmdcounter+1 \
+						else '')
+				break
+
+		return data
 	def RunCommand(self, cmdnum, batch=False):
 
 		if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
@@ -252,18 +275,23 @@ class ScenarioTest:
 				handle, tmpfilename = tempfile.mkstemp(
 					prefix=clean_path_name(self.cmds[cmdnum]))
 				open(tmpfilename, 'w').write(output)
-				diff_output = process.execute(['colordiff', '-u',
+				diff_output = process.execute(['diff', '-u',
 					'%s/%s/out.txt' % (self.base_path, cmdnum),
 					tmpfilename])[0]
 
 				logging.warning(
-					'''command #%s failed (sce#%s). Retcode %s (ref %s).\n\n	%s\n\n'''
-					'''%s''' % (
-					stylize(ST_OK, cmdnum),
+					'''command #%s/%s failed (sce#%s, ctx %s). Retcode %s '''
+					'''(ref %s).
+
+%s
+
+%s''' % (
+					stylize(ST_OK, cmdnum+1), stylize(ST_OK, len(self.cmds)),
 					stylize(ST_OK, self.sce_number),
+					stylize(ST_OK, self.context),
 					stylize(ST_BAD, retcode),
 					stylize(ST_OK, ref_code),
-					cmdfmt_big(self.cmds[cmdnum]),
+					self.show_commands(highlight_num=cmdnum),
 					diff_output))
 				if batch or logging.ask_for_repair('''Should I keep the new '''
 					'''return code and trace as reference for future runs?'''):
@@ -275,18 +303,18 @@ class ScenarioTest:
 								self.base_path, cmdnum)))
 			else:
 				logging.notice('command #%d "%s" completed successfully.' % (
-				cmdnum, cmdfmt(self.cmds[cmdnum])))
+				cmdnum+1, cmdfmt(self.cmds[cmdnum])))
 		else:
 			clear_term()
 
 			output, retcode = execute(self.cmds[cmdnum])
 
-			logging.notice('''no reference output for %s, cmd #%s:'''
-				'''\n\n	%s\n\n%s'''
+			logging.notice('''no reference output for %s, cmd #%s/%s:'''
+				'''\n\n%s\n\n%s'''
 				% (
 					self.name,
-					stylize(ST_OK, cmdnum),
-					cmdfmt_big(self.cmds[cmdnum]),
+					stylize(ST_OK, cmdnum+1), stylize(ST_OK, len(self.cmds)),
+					self.show_commands(highlight_num=cmdnum),
 					strip_moving_data(output)))
 
 			if logging.ask_for_repair('''is this output good to keep as '''
