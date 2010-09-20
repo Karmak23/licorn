@@ -1165,6 +1165,9 @@ def test_profiles(context):
 	ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
 		GET + [ 'profiles' ],
+		# should fail
+		MOD + [ 'profile', '--name=%s' % pname, '--add-groups=%s' %
+			pname, '-v' ],
 		ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
 		ADD + [ 'group', '--name=%s2' % gname, '--system', '-v' ],
 		ADD + [ 'group', '--name=%s3' % gname, '--system', '-v' ],
