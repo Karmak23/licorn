@@ -9,10 +9,10 @@ Copyright (C) 2010 Robin Lucbernet <rl@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct
+import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct, stat, shutil
 
 from subprocess                import Popen, PIPE, STDOUT
-from licorn.foundations        import pyutils, logging, exceptions, process
+from licorn.foundations        import pyutils, logging, exceptions, process, fsapi
 from licorn.foundations.styles import *
 from licorn.core.configuration import LicornConfiguration
 
@@ -508,12 +508,37 @@ def clean_system():
 
 		execute(DEL + argument)
 
-		execute([ 'sudo', 'rm', '-rf', '%s/*' % configuration.home_backup_dir,
-			'%s/*' % configuration.home_archive_dir ])
+	for directory in (
+		configuration.home_backup_dir,
+		configuration.home_archive_dir
+		):
+		clean_dir_contents(directory)
 
-		execute(ADD + ['group', '--system', 'acl,admins,remotessh,licorn-wmi'])
+	execute(ADD + ['group', '--system', 'acl,admins,remotessh,licorn-wmi'])
 
 	test_message('''system cleaned from previous testsuite runs.''')
+def clean_dir_contents(directory):
+	""" Totally empty the contents of a given directory, the licorn way. """
+
+	if verbose:
+		test_message('Cleaning directory %s.' % directory)
+
+	def delete_entry(entry):
+		if verbose:
+			logging.notice('Deleting %s.' % entry)
+
+		if os.path.isdir(entry):
+			shutil.rmtree(entry)
+		else:
+			os.unlink(entry)
+
+	for entry in fsapi.minifind(directory, mindepth=1, maxdepth=2,
+		type=stat.S_IFDIR|stat.S_IFREG):
+		delete_entry(entry)
+
+	if verbose:
+		test_message('Cleaned directory %s.' % directory)
+
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
@@ -710,8 +735,9 @@ def test_groups(context):
 
 	gname = 'ARCHIVES-test'
 
+	clean_dir_contents(configuration.home_archive_dir)
+
 	ScenarioTest([
-		[ 'sudo', 'rm', '-vrf', '%s/*' % configuration.home_archive_dir ],
 		ADD + [ 'group', gname, '-v' ],
 		[ 'sudo', 'touch', 		"%s/%s/%s/test.txt" % (
 			configuration.defaults.home_base_path,
@@ -728,13 +754,14 @@ def test_groups(context):
 		CHK + [ "group", "-vb", gname ],
 		DEL + [ 'group', gname ],
 		[ 'sudo', 'find', configuration.home_archive_dir ],
-		[ 'sudo', 'getfacl', '-R', configuration.home_archive_dir ],
-		[ 'sudo', 'rm', '-vrf', '%s/*' % configuration.home_archive_dir ]
+		[ 'sudo', 'getfacl', '-R', configuration.home_archive_dir ]
 		],
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
 				'''shared dir contents, ensure #256 if off.'''
 		).Run()
+
+	clean_dir_contents(configuration.home_archive_dir)
 
 	uname = 'user_test'
 	gname = 'group_test'
