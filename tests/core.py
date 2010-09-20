@@ -1128,7 +1128,7 @@ def test_profiles(context):
 	pname = 'profil_test'
 	gname = 'group_test'
 
-	#fix #271
+	#fix #271 & #219
 	ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
 		GET + [ 'profiles' ],
@@ -1156,7 +1156,8 @@ def test_profiles(context):
 		DEL + [ 'privilege', '--name=%s' % gname, '-v' ],
 		],
 		context=context,
-		descr='''scenario for ticket #271 - test some commands of mod profile --add-group and --del-groups'''
+		descr='''scenario for ticket #271 - test some commands of mod profile'''
+			''' --add-group and --del-groups & fix #219'''
 		).Run()
 
 	ScenarioTest([
