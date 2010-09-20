@@ -593,6 +593,10 @@ class GroupsController(Singleton):
 				else:
 					raise e
 		else:
+			# /home/archives must be OK befor moving
+			GroupsController.configuration.check_base_dirs(minimal=True,
+				batch=True)
+
 			group_archive_dir = "%s/%s.deleted.%s" % (
 				GroupsController.configuration.home_archive_dir, name,
 				strftime("%Y%m%d-%H%M%S", gmtime()))

@@ -516,8 +516,10 @@ class UsersController(Singleton):
 					styles.stylize(styles.ST_PATH, homedir), e))
 
 		else:
-			UsersController.configuration.check_base_dirs(minimal = True,
-				batch = True)
+			# /home/archives must be OK befor moving
+			UsersController.configuration.check_base_dirs(minimal=True,
+				batch=True)
+
 			user_archive_dir = "%s/%s.deleted.%s" % (
 				UsersController.configuration.home_archive_dir,
 				login, strftime("%Y%m%d-%H%M%S", gmtime()))
@@ -525,6 +527,10 @@ class UsersController(Singleton):
 				os.rename(homedir, user_archive_dir)
 				logging.info(logging.SYSU_ARCHIVED_USER % (homedir,
 					styles.stylize(styles.ST_PATH, user_archive_dir)))
+
+				UsersController.configuration.check_archive_dir(
+					user_archive_dir, batch=True)
+
 			except OSError, e:
 				if e.errno == 2:
 					logging.warning(
