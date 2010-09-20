@@ -496,17 +496,15 @@ def clean_system():
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
 			'''user_testsys2,user_testsys3''',
 			 '--no-archive'],
-		['profile', '--group=utilisagers', '--del-users', '--no-archive'],
-		['profile', '--group=responsibilisateurs', '--del-users',
-			'--no-archive'],
-		['profile', '--group=profil_test', '--del-users',
+		['profile', '''--group=utilisagers,responsibilisateurs,'''
+			'''profil_test''', '--del-users',
 			'--no-archive'],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,group_testsys,group_test2,group_test3,''' \
-			'''GRP-ACL-test,gtest_267,group_testsys'''],
-		['privilege', '--name=group_test' ],
-	):
+			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
+			'''group_test3,GRP-ACL-test,gtest_267,group_testsys''' ],
+		['privilege', '--name=group_test' ]
+		):
 
 		execute(DEL + argument)
 
@@ -713,6 +711,7 @@ def test_groups(context):
 	gname = 'ARCHIVES-test'
 
 	ScenarioTest([
+		[ 'sudo', 'rm', '-vrf', '%s/*' % configuration.home_archive_dir ],
 		ADD + [ 'group', gname, '-v' ],
 		[ 'sudo', 'touch', 		"%s/%s/%s/test.txt" % (
 			configuration.defaults.home_base_path,
@@ -753,7 +752,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''check if a user is assigned to a specified group and if'''
-				'''the user list is up to date when the group is deleted.'''
+				''' the user list is up to date when the group is deleted.'''
 		).Run()
 
 	#fix #259
@@ -791,6 +790,8 @@ def test_groups(context):
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
+		DEL + [ 'group', gname ],
+		DEL + [ 'user', uname ]
 		],
 		context=context,
 		descr='''avoid #268.'''
@@ -829,7 +830,7 @@ def test_groups(context):
 			GET + [ 'users', '-l' ],
 			GET + [ 'groups' ],
 			DEL + [ 'user', uname ],
-			DEL + [ 'group', gname ],
+			DEL + [ 'group', gname ]
 			],
 			context=context,
 			descr='''avoid #267.'''
@@ -844,10 +845,11 @@ def test_groups(context):
 		GET + [ 'privileges' ],
 		DEL + [ 'group', '--name=%s' % gname, '-v' ],
 		[ 'get', 'groups', gname ],
-		GET + [ 'privileges' ],
+		GET + [ 'privileges' ]
 		],
 		context=context,
-		descr='Check if privilege list is up to date after group deletion (fix #297)'
+		descr='''Check if privilege list is up to date after group deletion'''
+			''' (fix #297)'''
 		).Run()
 
 	#fix #293
@@ -888,7 +890,7 @@ def test_groups(context):
 		GET + [ 'group', '0', '-l' ],
 		GET + [ 'group', '1' ],
 		GET + [ 'group', '1', '-l' ],
-		GET + [ 'groups' ],
+		GET + [ 'groups' ]
 		],
 		context=context,
 		descr='''test command get group <gid|group> (fix #286)'''
@@ -918,7 +920,7 @@ def test_users(context):
 
 	uname = 'user_test'
 	gname = 'group_test'
-	pname = 'profil_test'
+
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
 
 	ScenarioTest([
