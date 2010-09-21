@@ -1063,7 +1063,7 @@ def test_users(context):
 		DEL + [ 'user', '--login=%s' % uname, '-v' ],
 		],
 		context=context,
-		descr='modify one or more parameters of a user (avoid #181)'
+		descr='modify one or more parameters of a user (avoid #181 #197)'
 		).Run()
 
 	#fix #248
