@@ -1338,6 +1338,9 @@ def test_profiles(context):
 
 	test_message('''profiles related tests finished.''')
 	""" # ends of old test_profiles() commands
+def test_privileges(context):
+	# test features of privileges
+
 def to_be_implemented():
 	""" TO BE DONE !
 		#
@@ -1411,6 +1414,7 @@ if __name__ == "__main__":
 				test_users(ctx)
 				#test_imports(ctx)
 				test_profiles(ctx)
+				test_privileges(ctx)
 				compare_delete_backups(ctx)
 				clean_system()
 
