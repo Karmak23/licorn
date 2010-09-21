@@ -43,20 +43,6 @@ state_files = {
 	'scenarii':	'data/.sce_status'
 	}
 
-if len(sys.argv) > 1:
-	args = sys.argv[1:]
-else:
-	args = []
-def save_state(num, state_type='scenarii'):
-	open(state_files[state_type],'w').write('%d' % num)
-def get_state(state_type='scenarii'):
-	if os.path.exists(state_files[state_type]):
-		 return int(open(state_files[state_type]).read())
-	else:
-		return 0
-def clean_state_files():
-	for state_type in state_files:
-		os.unlink(state_files[state_type])
 from optparse import OptionParser
 parser = OptionParser()
 parser.add_option("-s", "--scenario", dest="scenario_number", type="int",
@@ -69,6 +55,17 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
 	default=False, help="display commands before executing them.")
 
 (options, args) = parser.parse_args()
+
+def save_state(num, state_type='scenarii'):
+	open(state_files[state_type],'w').write('%d' % num)
+def get_state(state_type='scenarii'):
+	if os.path.exists(state_files[state_type]):
+		 return int(open(state_files[state_type]).read())
+	else:
+		return 0
+def clean_state_files():
+	for state_type in state_files:
+		os.unlink(state_files[state_type])
 
 verbose = options.verbose
 
