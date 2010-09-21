@@ -342,6 +342,8 @@ def add_user(opts, args):
 
 	if opts.profile:
 		profiles = ProfilesController(configuration, groups, users)
+		if not profiles.has_key(opts.profile):
+			opts.profile = profiles.name_to_group(opts.profile)
 
 	if opts.firstname is None:
 		firstname = None
