@@ -19,10 +19,10 @@ from licorn.core.configuration import LicornConfiguration
 configuration = LicornConfiguration()
 
 if __debug__:
-	PYTHON = [ 'sudo', 'python' ]
+	PYTHON = [ 'python' ]
 	verbose=True
 else:
-	PYTHON = [ 'sudo', 'python', '-OO' ]
+	PYTHON = [ 'python', '-OO' ]
 	verbose=False
 
 CLIPATH='../interfaces/cli'
@@ -40,7 +40,8 @@ bkp_ext = 'licorn'
 
 state_files = {
 	'context':  'data/.ctx_status',
-	'scenarii':	'data/.sce_status'
+	'scenarii':	'data/.sce_status',
+	'owner':    'data/.owner'
 	}
 
 from optparse import OptionParser
@@ -56,6 +57,22 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
 
 (options, args) = parser.parse_args()
 
+verbose = options.verbose
+
+if os.getuid() != 0 or os.geteuid() != 0:
+
+	cmd=[ 'licorn-testsuite' ]
+	cmd.extend(sys.argv)
+
+	open(state_files['owner'], 'w').write('%s,%s' % (os.getuid(), os.getgid()))
+
+	if verbose:
+		logging.notice(
+			'Relauching ourselves with sudo to gain root privileges...')
+		logging.info('execvp(sudo %s)' % cmd)
+
+	os.execvp('sudo', cmd)
+
 def save_state(num, state_type='scenarii'):
 	open(state_files[state_type],'w').write('%d' % num)
 def get_state(state_type='scenarii'):
@@ -65,9 +82,9 @@ def get_state(state_type='scenarii'):
 		return 0
 def clean_state_files():
 	for state_type in state_files:
+		if state_type == 'owner':
+			continue
 		os.unlink(state_files[state_type])
-
-verbose = options.verbose
 
 if options.scenario_number != None:
 	save_state(options.scenario_number)
@@ -365,10 +382,10 @@ def test_integrated_help():
 		elif program == DEL:
 			modes = [ 'user', 'group', 'groups', 'profile' ]
 		elif program == GET:
-			modes = ['user', 'users', 'passwd', 'group', 'groups', 'profiles',
+			modes = [ 'user', 'users', 'passwd', 'group', 'groups', 'profiles',
 				'configuration' ]
 		elif program == CHK:
-			modes = ['user', 'users', 'group', 'groups', 'profile', 'profiles',
+			modes = [ 'user', 'users', 'group', 'groups', 'profile', 'profiles',
 				'configuration' ]
 
 		for mode in modes:
@@ -376,8 +393,8 @@ def test_integrated_help():
 				commands.append(program + [ mode ])
 			else:
 				commands.extend([
-					program + [ mode, '-h'],
-					program + [ mode, '--help']
+					program + [ mode, '-h' ],
+					program + [ mode, '--help' ]
 					])
 
 	ScenarioTest(commands, descr="integrated help").Run()
@@ -449,29 +466,29 @@ def test_regexes():
 
 	# groups related
 	regexes_commands.extend([
-		ADD + [ 'group', "--name='_-  -_'"],
-		CHK + [ 'group', "--name='_-  -_'"],
-		ADD + [ 'group', "--name=';-)'"],
-		ADD + [ 'group', "--name='^_^'"],
-		ADD + [ 'group', "--name='le copain des groupes'"],
-		CHK + [ 'group', '-v', "--name='le copain des groupes'"],
-		ADD + [ 'group', "--name='héhéhé'"],
-		ADD + [ 'group', "--name='%(\`ls -la /etc/passwd\`)'"],
-		ADD + [ 'group', "--name='echo print coucou | python | nothing'"],
-		ADD + [ 'group', "--name='**/*-'"],
-		CHK + [ 'group', '-v', "--name='**/*-'"]
+		ADD + [ 'group', "--name='_-  -_'" ],
+		CHK + [ 'group', "--name='_-  -_'" ],
+		ADD + [ 'group', "--name=';-)'" ],
+		ADD + [ 'group', "--name='^_^'" ],
+		ADD + [ 'group', "--name='le copain des groupes'" ],
+		CHK + [ 'group', '-v', "--name='le copain des groupes'" ],
+		ADD + [ 'group', "--name='héhéhé'" ],
+		ADD + [ 'group', "--name='%(\`ls -la /etc/passwd\`)'" ],
+		ADD + [ 'group', "--name='echo print coucou | python | nothing'" ],
+		ADD + [ 'group', "--name='**/*-'" ],
+		CHK + [ 'group', '-v', "--name='**/*-'" ]
 		])
 
 	# users related
 	regexes_commands.extend([
-		ADD + [ 'user', "--login='_-  -_'"],
-		ADD + [ 'user', "--login=';-)'"],
-		ADD + [ 'user', "--login='^_^'"],
-		ADD + [ 'user', "--login='le copain des utilisateurs'"],
-		ADD + [ 'user', "--login='héhéhé'"],
-		ADD + [ 'user', "--login='%(\`ls -la /etc/passwd\`)'"],
-		ADD + [ 'user', "--login='echo print coucou | python'"],
-		ADD + [ 'user', "--login='**/*-'"]
+		ADD + [ 'user', "--login='_-  -_'" ],
+		ADD + [ 'user', "--login=';-)'" ],
+		ADD + [ 'user', "--login='^_^'" ],
+		ADD + [ 'user', "--login='le copain des utilisateurs'" ],
+		ADD + [ 'user', "--login='héhéhé'" ],
+		ADD + [ 'user', "--login='%(\`ls -la /etc/passwd\`)'" ],
+		ADD + [ 'user', "--login='echo print coucou | python'" ],
+		ADD + [ 'user', "--login='**/*-'" ]
 		])
 
 	ScenarioTest(regexes_commands).Run()
@@ -543,16 +560,16 @@ def make_backups(mode):
 	# this is mandatory, else there could be some inconsistencies following
 	# backend (de)activation, and backup comparison could fail (false-negative)
 	# because of this.
-	execute(['sudo', 'chk', 'config', '-avvb'])
+	execute([ 'chk', 'config', '-avvb'])
 
 	if mode == 'unix':
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
-				execute([ 'sudo', 'cp', '-f', '/etc/%s' % file,
+				execute([ 'cp', '-f', '/etc/%s' % file,
 					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
 
 	elif mode == 'ldap':
-		execute(['sudo', 'slapcat', '-l', '/tmp/backup.1.ldif'])
+		execute([ 'slapcat', '-l', '/tmp/backup.1.ldif' ])
 
 	else:
 		logging.error('backup mode not understood.')
@@ -565,19 +582,19 @@ def compare_delete_backups(mode):
 
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
-				log_and_exec(['sudo', '/usr/bin/colordiff', '/etc/%s' % file,
+				log_and_exec([ '/usr/bin/colordiff', '/etc/%s' % file,
 					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)], False,
 				comment="should not display any diff (system has been cleaned).",
 				verb = True)
-				execute(['sudo', 'rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
+				execute([ 'rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
 
 	elif mode == 'ldap':
-		execute(['sudo', 'slapcat', '-l', '/tmp/backup.2.ldif'])
-		log_and_exec(['sudo', '/usr/bin/colordiff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
+		execute([ 'slapcat', '-l', '/tmp/backup.2.ldif'])
+		log_and_exec([ '/usr/bin/colordiff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
 			False,
 			comment="should not display any diff (system has been cleaned).",
 			verb = True)
-		execute(['sudo', 'rm', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'])
+		execute([ 'rm', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'])
 
 	else:
 		logging.error('backup mode not understood.')
@@ -589,7 +606,7 @@ def test_groups(context):
 	gname = 'groupeA'
 
 	def chk_acls_cmds(group, subdir=None):
-		return [ 'sudo', 'getfacl', '-R', '%s/%s/%s%s' % (
+		return [ 'getfacl', '-R', '%s/%s/%s%s' % (
 		configuration.defaults.home_base_path,
 		configuration.groups.names['plural'],
 		group,
@@ -613,7 +630,7 @@ def test_groups(context):
 	gname = 'ACL_tests'
 
 	# completeny remove the shared group dir and verify CHK repairs it.
-	remove_group_cmds = [ 'sudo', "rm", "-vrf",
+	remove_group_cmds = [ "rm", "-vrf",
 		"%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
@@ -621,7 +638,7 @@ def test_groups(context):
 		]
 
 	# idem with public_html shared subdir.
-	remove_group_html_cmds = [ 'sudo', "rm", "-vrf",
+	remove_group_html_cmds = [ "rm", "-vrf",
 		"%s/%s/%s/public_html" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
@@ -630,7 +647,7 @@ def test_groups(context):
 
 	# remove the posix ACLs and let CHK correct everything (after having
 	# declared an error first with --auto-no).
-	remove_group_acls_cmds = [ 'sudo', "setfacl", "-R", "-b",
+	remove_group_acls_cmds = [ "setfacl", "-R", "-b",
 		"%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
@@ -638,14 +655,14 @@ def test_groups(context):
 		]
 
 	# idem for public_html subdir.
-	remove_group_html_acls_cmds = [ 'sudo', "setfacl", "-R", "-b",
+	remove_group_html_acls_cmds = [ "setfacl", "-R", "-b",
 		"%s/%s/%s/public_html" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname)
 		]
 
-	bad_chown_group_cmds = [ 'sudo', 'chown', 'bin:daemon', '--changes',
+	bad_chown_group_cmds = [ 'chown', 'bin:daemon', '--changes',
 		'%s/%s/%s/public_html' % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
@@ -737,22 +754,22 @@ def test_groups(context):
 
 	ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
-		[ 'sudo', 'touch', 		"%s/%s/%s/test.txt" % (
+		[ 'touch', 		"%s/%s/%s/test.txt" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname) ],
-		[ 'sudo', 'mkdir', "%s/%s/%s/testdir" % (
+		[ 'mkdir', "%s/%s/%s/testdir" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname) ],
-		[ 'sudo', 'touch', "%s/%s/%s/testdir/testfile" % (
+		[ 'touch', "%s/%s/%s/testdir/testfile" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname) ],
 		CHK + [ "group", "-vb", gname ],
 		DEL + [ 'group', gname ],
-		[ 'sudo', 'find', configuration.home_archive_dir ],
-		[ 'sudo', 'getfacl', '-R', configuration.home_archive_dir ]
+		[ 'find', configuration.home_archive_dir ],
+		[ 'getfacl', '-R', configuration.home_archive_dir ]
 		],
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
@@ -783,7 +800,7 @@ def test_groups(context):
 	#fix #259
 	ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname ],
-		['sudo', 'rm', '-vrf', "%s/%s/%s" % (
+		[ 'rm', '-vrf', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname)],
@@ -801,14 +818,14 @@ def test_groups(context):
 		ADD + [ 'user', uname, '-v' ],
 		ADD + [ 'group', gname, '-v' ],
 		chk_acls_cmds(gname),
-		[ 'sudo', 'chown', '-R', '-c', uname, "%s/%s/%s" % (
+		[ 'chown', '-R', '-c', uname, "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname)],
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
-		[ 'sudo', 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
+		[ 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names['plural'],
 			gname)],
@@ -838,7 +855,7 @@ def test_groups(context):
 			# should do nothing
 			CHK + [ 'groups', '-avb' ],
 			CHK + [ 'groups', '-aveb' ],
-			[ 'sudo', 'sed', '-i', '/etc/group',
+			[ 'sed', '-i', '/etc/group',
 				'-e', r's/^\(root:.*\)$/\1nouser/',
 				'-e', r's/^\(audio:.*\)$/\1,foobar,%s/' % uname,
 				'-e', r's/^\(%s:.*\)$/\1foobar,%s/' % (gname, uname),
@@ -941,7 +958,7 @@ def test_groups(context):
 def test_users(context):
 
 	def chk_acls_cmds(dir):
-		return [ 'sudo', 'getfacl', '-R', dir ]
+		return [ 'getfacl', '-R', dir ]
 
 	uname = 'user_test'
 	gname = 'group_test'
@@ -1185,7 +1202,7 @@ def test_profiles(context):
 	gname = 'group_test'
 
 	def chk_acls_cmd(user):
-		return [ 'sudo', 'getfacl', '-R', '%s/%s' % (
+		return [ 'getfacl', '-R', '%s/%s' % (
 		configuration.users.base_path,
 		user) ]
 
@@ -1349,55 +1366,65 @@ def to_be_implemented():
 
 
 if __name__ == "__main__":
+	try:
+		# Unit Tests.
+		test_find_new_indentifier()
 
-	# Unit Tests.
-	test_find_new_indentifier()
+		# clean old testsuite runs.
+		clean_system()
 
-	# clean old testsuite runs.
-	clean_system()
-
-	if get_state(state_type='context') == 0:
-		# Functionnal Tests
-		test_integrated_help()
-		#test_check_config()
-		test_regexes()
-		save_state(1, state_type='context')
-		ctx_will_change = True
-	else:
-		logging.notice('Skipping context %s' % stylize(ST_NAME, "std"))
-		ctx_will_change = False
-
-	for ctxnum, ctx, activate_cmd in (
-		(1, 'unix', ['sudo', 'mod', 'config', '-B', 'ldap']),
-		(2, 'ldap', ['sudo', 'mod', 'config', '-b', 'ldap'])
-		):
-
-		if execute(activate_cmd)[1] == 0:
-
-			start_ctx = get_state('context')
-
-			if ctxnum < start_ctx:
-				logging.notice('Skipping context %s' % stylize(ST_NAME, ctx))
-				continue
-
-			test_message('testing %s context.' % ctx)
-
-			make_backups(ctx)
-
-			if get_state(state_type='scenarii') == 0 or ctx_will_change == True:
-				ScenarioTest.reinit()
-
-			test_get(ctx)
-			test_groups(ctx)
-			test_users(ctx)
-			#test_imports(ctx)
-			test_profiles(ctx)
-			compare_delete_backups(ctx)
-			clean_system()
-
-			save_state(ctxnum + 1, state_type='context')
+		if get_state(state_type='context') == 0:
+			# Functionnal Tests
+			test_integrated_help()
+			#test_check_config()
+			test_regexes()
+			save_state(1, state_type='context')
 			ctx_will_change = True
-	# TODO: test_concurrent_accesses()
+		else:
+			logging.notice('Skipping context %s' % stylize(ST_NAME, "std"))
+			ctx_will_change = False
 
-	clean_state_files()
-	logging.notice("Testsuite terminated successfully.")
+		for ctxnum, ctx, activate_cmd in (
+			(1, 'unix', [ 'mod', 'config', '-B', 'ldap']),
+			(2, 'ldap', [ 'mod', 'config', '-b', 'ldap'])
+			):
+
+			if execute(activate_cmd)[1] == 0:
+
+				start_ctx = get_state('context')
+
+				if ctxnum < start_ctx:
+					logging.notice('Skipping context %s' %
+						stylize(ST_NAME, ctx))
+					continue
+
+				test_message('testing %s context.' % ctx)
+
+				make_backups(ctx)
+
+				if get_state(state_type='scenarii') == 0 \
+					or ctx_will_change == True:
+					ScenarioTest.reinit()
+
+				test_get(ctx)
+				test_groups(ctx)
+				test_users(ctx)
+				#test_imports(ctx)
+				test_profiles(ctx)
+				compare_delete_backups(ctx)
+				clean_system()
+
+				save_state(ctxnum + 1, state_type='context')
+				ctx_will_change = True
+		# TODO: test_concurrent_accesses()
+
+		clean_state_files()
+		logging.notice("Testsuite terminated successfully.")
+	finally:
+		# give back all the scenarii tree to calling user.
+		uid, gid = [ int(x) for x in \
+			open(state_files['owner']).read().strip().split(',') ]
+		logging.notice('giving back all scenarii data to %s:%s.' % (
+			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
+		for entry in fsapi.minifind('data'):
+			os.chown(entry, uid, gid)
