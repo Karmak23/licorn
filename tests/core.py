@@ -1341,6 +1341,33 @@ def test_profiles(context):
 def test_privileges(context):
 	# test features of privileges
 
+	gname = 'group_test'
+	for cmd in [ 'priv', 'privs', 'privilege', 'privileges' ]:
+		ScenarioTest([
+			GET + [ cmd ],
+			ADD + [ 'group', '--name=%s' % gname, '-v' ],
+			ADD + [ cmd, '--name=%s' % gname, '-v' ],
+			GET + [ cmd ],
+			DEL + [ 'group', '--name=%s' % gname, '-v' ],
+			ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
+			ADD + [ 'group', '--name=%s2' % gname, '--system', '-v' ],
+			ADD + [ 'group', '--name=%s3' % gname, '--system', '-v' ],
+			ADD + [ cmd, '--name=%s' % gname, '-v' ],
+			GET + [ cmd ],
+			ADD + [ cmd, '--name=%s2,%s3' % (gname, gname), '-v' ],
+			GET + [ cmd ],
+			DEL + [ cmd, '--name=%s' % gname, '-v' ],
+			GET + [ cmd ],
+			DEL + [ cmd, '--name=%s2,%s3' % (gname, gname), '-v' ],
+			GET + [ cmd ],
+			DEL + [ 'group', '--name=%s' % gname, '-v' ],
+			DEL + [ 'group', '--name=%s2' % gname, '-v' ],
+			DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+			],
+			context=context,
+			descr='test new privileges commands (using argument %s)' % cmd
+			).Run()
+
 def to_be_implemented():
 	""" TO BE DONE !
 		#
