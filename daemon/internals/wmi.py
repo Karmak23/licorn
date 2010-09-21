@@ -196,9 +196,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 								if users.exists(login = authorization[0]) \
 									and users.check_password(authorization[0],
 										authorization[1]):
-									if groups.exists(wmi_group):
+									if groups.exists(name=wmi_group):
 										if authorization[0] in \
-											groups.auxilliary_members(wmi_group):
+											groups.auxilliary_members(
+												name=wmi_group):
 											self.http_user = authorization[0]
 											return True
 									else:

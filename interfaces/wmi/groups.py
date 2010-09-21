@@ -3,7 +3,9 @@
 import os, time
 from gettext import gettext as _
 
-from licorn.foundations         import exceptions, hlstr
+from licorn.foundations           import exceptions, hlstr
+from licorn.foundations.constants import filters
+
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController

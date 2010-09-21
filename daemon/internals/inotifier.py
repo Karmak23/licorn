@@ -70,8 +70,10 @@ class INotifier(Thread, Singleton):
 		#self.mon.no_exists()
 
 		for gid in groups.filtered_groups:
-			group_home = "%s/%s/%s" % (groups.configuration.defaults.home_base_path,
-							groups.configuration.groups.names['plural'], groups.groups[gid]['name'])
+			group_home = "%s/%s/%s" % (
+				groups.configuration.defaults.home_base_path,
+				groups.configuration.groups.names['plural'],
+				groups.groups[gid]['name'])
 
 			def myfunc(path, event, gid = gid, dirname = group_home):
 				return self.process_event(path, event, gid, dirname)

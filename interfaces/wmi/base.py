@@ -5,6 +5,8 @@ from gettext import gettext as _
 
 from subprocess            import Popen, PIPE
 
+from licorn.foundations.constants import filters
+
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController

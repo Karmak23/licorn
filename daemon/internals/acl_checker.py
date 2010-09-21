@@ -41,20 +41,25 @@ class ACLChecker(LicornThread, Singleton):
 
 		try:
 			if os.path.isdir(path):
-				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl') , -1)
+				fsapi.auto_check_posix_ugid_and_perms(path, -1,
+					self.groups.name_to_gid('acl') , -1)
 				#self.inotifier.gam_changed_expected.append(path)
-				fsapi.auto_check_posix1e_acl(path, False, acl['default_acl'], acl['default_acl'])
+				fsapi.auto_check_posix1e_acl(path, False,
+					acl['default_acl'], acl['default_acl'])
 				#self.inotifier.gam_changed_expected.append(path)
 				#self.inotifier.prevent_double_check(path)
 			else:
-				fsapi.auto_check_posix_ugid_and_perms(path, -1, self.groups.name_to_gid('acl'))
+				fsapi.auto_check_posix_ugid_and_perms(path, -1,
+					self.groups.name_to_gid('acl'))
 				#self.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
 				#self.inotifier.prevent_double_check(path)
 
 		except (OSError, IOError), e:
 			if e.errno != 2:
-				logging.warning("%s: problem in GAMCreated on %s (was: %s, event=%s)." % (self.name, path, e, event))
+				logging.warning(
+					"%s: problem in ACLChecker on %s (was: %s, event=%s)." % (
+						self.name, path, e, event))
 
 		# FIXME: to be re-added when cache is ok.
 		#self.cache.cache(path)
