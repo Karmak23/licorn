@@ -1098,6 +1098,23 @@ def test_users(context):
 			(avoid #277)'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'user', uname, '--password=toto', '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '%s2' % uname, '--password=toto', '--force', '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '%s3' % uname, '-S 32', '-v' ],
+		GET + [ 'users' ],
+		MOD + [ 'user', uname, '-P', '-S 128', '-v' ],
+		MOD + [ 'user', uname, '-p totototo', '-v' ],
+		DEL + [ 'user', uname, '-v' ],
+		DEL + [ 'user', '%s2' % uname, '-v' ],
+		DEL + [ 'user', '%s3' % uname, '-v' ],
+		],
+		context=context,
+		descr='''various password change tests (avoid #184)'''
+		).Run()
+
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
