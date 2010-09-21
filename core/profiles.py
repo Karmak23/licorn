@@ -74,8 +74,9 @@ class ProfilesController(Singleton):
 
 		try:
 			if self.profiles == {}:
-				logging.warning(
-				'Adding a default profile on the system (this is mandatory).')
+				logging.warning('''Adding a default %s profile on the system '''
+					'''(this is mandatory).''' %
+						styles.stylize(styles.ST_NAME, 'Users'))
 				# Create a default profile with 'users' as default primary
 				# group, and use the Debian pre-existing group without
 				# complaining if it exists.
@@ -222,7 +223,8 @@ class ProfilesController(Singleton):
 
 		return data
 	def AddProfile(self, name, group, profileQuota=1024, groups=[],
-		description='', profileShell=None, profileSkel=None, force_existing=False):
+		description='', profileShell=None, profileSkel=None,
+		force_existing=False):
 		""" Add a user profile (self.groups is an instance of GroupsController
 			and is needed to create the profile group). """
 
@@ -292,6 +294,8 @@ class ProfilesController(Singleton):
 		if create_group:
 			gid, group = self.groups.AddGroup(group, description=description,
 				system=True, groupSkel=profileSkel)
+		else:
+			gid = self.groups.name_to_gid(group)
 
 		#try:
 			# Add the profile in the list
