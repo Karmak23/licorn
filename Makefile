@@ -33,6 +33,7 @@ binary-install: build
 	cp -a locale/* $(LOCALE_DIR)
 	#find src/po -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" $(LOCALE_DIR) \;
 	ln -sf ../$(EXEC_LINK_DIR)/interfaces/wmi $(SHARE_DIR)/wmi
+	ln -sf ../$(EXEC_LINK_DIR)/core/backends/schemas $(SHARE_DIR)/schemas
 
 doc: 
 

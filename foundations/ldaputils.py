@@ -134,7 +134,7 @@ def modifyModlist(old_entry, new_entry, ignore_attr_types=None,
 class LicornSmallLDIFParser(LDIFParser):
 	def __init__(self, input_name):
 		LDIFParser.__init__(self, open('%s/schemas/%s.ldif' % (
-			os.path.dirname(__file__),input_name), 'r'))
+			'/usr/share/licorn', input_name), 'r'))
 
 		#print '%s/schemas/%s.ldif' % (
 		#	os.path.dirname(__file__),input_name)
