@@ -10,10 +10,11 @@ Licensed under the terms of the GNU GPL version 2
 import os, stat, posix1e, re
 from time import strftime, gmtime
 
-from licorn.foundations         import logging, exceptions, hlstr, styles
-from licorn.foundations         import fsapi, pyutils
-from licorn.foundations.objects import Singleton
-from licorn.foundations.ltrace  import ltrace
+from licorn.foundations           import logging, exceptions, hlstr, styles
+from licorn.foundations           import fsapi, pyutils
+from licorn.foundations.objects   import Singleton
+from licorn.foundations.constants import filters
+from licorn.foundations.ltrace    import ltrace
 
 class GroupsController(Singleton):
 	""" Manages the groups and the associated shared data on a Linux system. """
@@ -26,14 +27,6 @@ class GroupsController(Singleton):
 	configuration = None  # LicornConfiguration
 	users         = None  # UsersController
 	profiles      = None  # ProfilesController
-
-	# Filters for Select() method.
-	FILTER_STANDARD    = 1
-	FILTER_SYSTEM      = 2
-	FILTER_PRIVILEGED  = 3
-	FILTER_GUEST       = 4
-	FILTER_RESPONSIBLE = 5
-	FILTER_EMPTY       = 6
 
 	def __init__ (self, configuration, users, warnings = True):
 
@@ -87,8 +80,7 @@ class GroupsController(Singleton):
 			GroupsController.name_cache.update(c)
 
 	def GetHiddenState(self):
-		""" See if /home/groups is readable or not.
-		"""
+		""" See if /home/groups is readable or not. """
 
 		try:
 			for line in posix1e.ACL( file='%s/%s' % (
@@ -98,7 +90,7 @@ class GroupsController(Singleton):
 					#
 					# FIXME: do not hardcode "users".
 					#
-					if line.qualifier == GroupsController.name_to_gid('users'):
+					if line.qualifier == self.name_to_gid('users'):
 						return not line.permset.read
 		except exceptions.DoesntExistsException:
 			# the group "users" doesn't exist, or is not yet created.
@@ -129,7 +121,6 @@ class GroupsController(Singleton):
 				GroupsController.backends[bkey].save_groups()
 
 		ltrace('groups', '< WriteConf()')
-
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
 			- 'system groups': show only «system» groups (root, bin, daemon,
@@ -139,43 +130,72 @@ class GroupsController(Singleton):
 			The criteria values are defined in /etc/{login.defs,adduser.conf}
 		"""
 
+		ltrace('groups', '> Select(%s)' % filter_string)
+
 		# see users.Select() for details
 		self.filter_applied  = True
 		self.filtered_groups = []
 
-		if GroupsController.FILTER_STANDARD == filter_string:
-			self.filtered_groups = filter(self.is_standard_gid,
-				GroupsController.groups.keys())
+		if filters.NONE == filter_string:
+			self.filtered_groups = []
 
-		elif GroupsController.FILTER_SYSTEM == filter_string:
-			self.filtered_groups = filter(self.is_system_gid,
-				GroupsController.groups.keys())
+		elif type(filter_string) == type([]):
+			self.filtered_groups = filter_string
 
-		elif GroupsController.FILTER_PRIVILEGED == filter_string:
-			for name in \
-				GroupsController.configuration.groups.privileges_whitelist:
-				try:
-					gid = GroupsController.name_to_gid(name)
-					self.filtered_groups.append(gid)
-				except exceptions.DoesntExistsException:
-					# this system group doesn't exist on the system
-					pass
+		elif filters.ALL == filter_string:
+			ltrace('groups', '> Select(ALL:%s/%s)' % (
+				filters.ALL, filter_string))
 
-		elif GroupsController.FILTER_GUEST == filter_string:
-			for gid in GroupsController.groups.keys():
-				if GroupsController.groups[gid]['name'].startswith(
-					GroupsController.configuration.groups.guest_prefix):
-					self.filtered_groups.append(gid)
+		elif filters.STANDARD == filter_string:
+			ltrace('groups', '> Select(STD:%s/%s)' % (
+				filters.STD, filter_string))
 
-		elif GroupsController.FILTER_RESPONSIBLE == filter_string:
-			for gid in GroupsController.groups.keys():
-				if GroupsController.groups[gid]['name'].startswith(
-					GroupsController.configuration.groups.resp_prefix):
-					self.filtered_groups.append(gid)
+			self.filtered_groups.extend(filter(self.is_standard_gid,
+				GroupsController.groups.keys()))
 
-		elif GroupsController.FILTER_EMPTY == filter_string:
-			self.filtered_groups = filter(self.is_empty_gid,
-				GroupsController.groups.keys())
+		elif filters.EMPTY == filter_string:
+			ltrace('groups', '> Select(EMPTY:%s/%s)' % (
+				filters.EMPTY, filter_string))
+
+			self.filtered_groups.extend(filter(self.is_empty_gid,
+				GroupsController.groups.keys()))
+
+		elif filters.SYSTEM & filter_string:
+
+			if filters.GUEST == filter_string:
+				ltrace('groups', '> Select(GST:%s/%s)' % (
+					filters.GST, filter_string))
+				for gid in GroupsController.groups.keys():
+					if GroupsController.groups[gid]['name'].startswith(
+						GroupsController.configuration.groups.guest_prefix):
+						self.filtered_groups.append(gid)
+
+			elif filters.RESPONSIBLE == filter_string:
+				ltrace('groups', '> Select(RSP:%s/%s)' % (
+					filters.RSP, filter_string))
+
+				for gid in GroupsController.groups.keys():
+					if GroupsController.groups[gid]['name'].startswith(
+						GroupsController.configuration.groups.resp_prefix):
+						self.filtered_groups.append(gid)
+
+			elif filters.PRIVILEGED == filter_string:
+				ltrace('groups', '> Select(PRI:%s/%s)' % (
+					filters.PRI, filter_string))
+
+				for name in \
+					GroupsController.configuration.groups.privileges_whitelist:
+					try:
+						self.filtered_groups.append(
+							self.name_to_gid(name))
+					except exceptions.DoesntExistsException:
+						# this system group doesn't exist on the system
+						pass
+			else:
+				ltrace('groups', '> Select(SYS:%s/%s)' % (
+					filters.SYS, filter_string))
+				self.filtered_groups.extend(filter(self.is_system_gid,
+					GroupsController.groups.keys()))
 
 		else:
 			gid_re    = re.compile("^gid=(?P<gid>\d+)")
@@ -184,6 +204,8 @@ class GroupsController(Singleton):
 				gid = int(gid_match.group('gid'))
 				self.filtered_groups.append(gid)
 
+		ltrace('groups', '< Select(%s)' % self.filtered_groups)
+		return self.filtered_groups
 	def ExportCLI(self, long):
 		""" Export the groups list to human readable (= « get group ») form. """
 		if self.filter_applied:
@@ -331,7 +353,7 @@ class GroupsController(Singleton):
 			# ACLs), it is a good idea to verify everything is really OK by
 			# continuing the creation procedure.
 			logging.notice(str(e))
-			gid = GroupsController.name_to_gid(name)
+			gid = self.name_to_gid(name)
 			not_already_exists = False
 
 		if system:
@@ -342,13 +364,13 @@ class GroupsController(Singleton):
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
-			ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
-			return
+			ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (name, gid))
+			return gid, name
 
 		GroupsController.groups[gid]['permissive'] = permissive
 
 		try:
-			self.CheckGroups([ name ], minimal=True, batch=True, force=force)
+			self.CheckGroups([ gid ], minimal=True, batch=True, force=force)
 
 			if not_already_exists:
 				logging.info('Created group %s (gid=%s).' % (
@@ -380,7 +402,7 @@ class GroupsController(Singleton):
 			raise e
 
 		ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
-		return (gid, name)
+		return gid, name
 	def __add_group(self, name, system, manual_gid=None, description = "",
 		groupSkel = "", batch=False, force=False):
 		""" Add a POSIX group, write the system data files.
@@ -514,20 +536,13 @@ class GroupsController(Singleton):
 		ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
 		return gid
-	def DeleteGroup(self, name, del_users, no_archive, bygid=None, batch=False):
-		""" Delete an Licorn group
-		"""
-		if name is None and bygid is None:
-			raise exceptions.BadArgumentError(
-				"You must specify a name or a GID.")
+	def DeleteGroup(self, name=None, gid=None, del_users=False,
+		no_archive=False, batch=False):
+		""" Delete an Licorn group """
 
-		if bygid:
-			gid = bygid
-			name = GroupsController.groups[gid]["name"]
-		else:
-			gid = self.name_to_gid(name)
+		gid, name = self.resolve_gid_or_name(gid, name)
 
-		prim_memb = GroupsController.primary_members(name)
+		prim_memb = self.primary_members(gid=gid)
 
 		if prim_memb != set() and not del_users:
 			raise exceptions.BadArgumentError('''The group still has '''
@@ -543,8 +558,8 @@ class GroupsController(Singleton):
 		# Delete the group and its (primary) member(s) even if it is not empty
 		if del_users:
 			for login in prim_memb:
-				GroupsController.users.DeleteUser(login, no_archive,
-					batch=batch)
+				GroupsController.users.DeleteUser(login=login,
+					no_archive=no_archive, batch=batch)
 
 		if self.is_system_gid(gid):
 			# a system group has no data on disk (no shared directory), just
@@ -558,7 +573,6 @@ class GroupsController(Singleton):
 			# no more things to do for a system group.
 			return
 
-		#
 		# For a standard group, there are a few steps more :
 		# 	- delete the responsible and guest groups,
 		#	- then delete the symlinks and the group,
@@ -566,22 +580,19 @@ class GroupsController(Singleton):
 		# For responsible and guests symlinks, don't do anything : all symlinks
 		# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
 		# work.
-		#
 		self.__delete_group('%s%s' % (
 			GroupsController.configuration.groups.resp_prefix, name))
 		self.__delete_group('%s%s' % (
 			GroupsController.configuration.groups.guest_prefix, name))
 
-		self.CheckGroupSymlinks(gid=gid, group=name, delete=True,
+		self.CheckGroupSymlinks(gid=gid, name=name, delete=True,
 			batch=True)
 		self.__delete_group(name)
 
-		#
 		# the group information has been wiped out, remove or archive the shared
 		# directory. If anything fails now, this is not a real problem, because
 		# the system configuration data is safe. At worst, there is an orphaned
 		# directory remaining in the arbo, which is harmless.
-		#
 		if no_archive:
 			import shutil
 			try:
@@ -618,7 +629,7 @@ class GroupsController(Singleton):
 		""" Delete a POSIX group."""
 
 		# Remove the group in the groups list of profiles
-		GroupsController.profiles.delete_group_in_profiles(name)
+		GroupsController.profiles.delete_group_in_profiles(name=name)
 
 		try:
 
@@ -637,15 +648,14 @@ class GroupsController(Singleton):
 		except KeyError:
 			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST % styles.stylize(
 				styles.ST_NAME, name))
-
-	def RenameGroup(self, profilelist, name, new_name):
+	def RenameGroup(self, name=None, gid=None, new_name=None):
 		""" Modify the name of a group."""
 
 		raise NotImplementedError(
 			"This function is disabled, it is not yet complete.")
 
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a name."
+		gid, name = self.resolve_gid_or_name(gid, name)
+
 		if new_name is None:
 			raise exceptions.BadArgumentError, "You must specify a new name."
 		try:
@@ -684,10 +694,10 @@ class GroupsController(Singleton):
 				os.rename(home, new_home) # Rename shared dir
 
 				# reapply new ACLs on shared group dir.
-				self.CheckGroups( [ new_name ], batch=True)
+				self.CheckGroups( [ gid ], batch=True)
 
 				# delete symlinks to the old name... and create new ones.
-				self.CheckGroupSymlinks(gid, oldname=name, batch=True)
+				self.CheckGroupSymlinks(gid=gid, oldname=name, batch=True)
 
 			# The name has changed, we have to update profiles
 			profilelist.change_group_name_in_profiles(name, new_name)
@@ -718,27 +728,25 @@ class GroupsController(Singleton):
 				'''the new name you have choosen, %s, is already taken by '''
 				'''another group !''' % \
 					styles.stylize(styles.ST_NAME, new_name))
-	def ChangeGroupDescription(self, name, description):
-		""" Change the description of a group
-		"""
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a name"
+	def ChangeGroupDescription(self, name=None, gid=None, description=None):
+		""" Change the description of a group. """
+
+		gid, name = self.resolve_gid_or_name(gid, name)
+
 		if description is None:
 			raise exceptions.BadArgumentError, "You must specify a description"
 
-		gid = self.name_to_gid(name)
 		GroupsController.groups[gid]['description'] = description
 
 		GroupsController.groups[gid]['action'] = 'update'
 		GroupsController.backends[
 			GroupsController.groups[gid]['backend']
 			].save_group(gid)
+	def ChangeGroupSkel(self, name=None, gid=None, groupSkel=None):
+		""" Change the description of a group. """
 
-	def ChangeGroupSkel(self, name, groupSkel):
-		""" Change the description of a group
-		"""
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a name"
+		gid, name = self.resolve_gid_or_name(gid, name)
+
 		if groupSkel is None:
 			raise exceptions.BadArgumentError, "You must specify a groupSkel"
 
@@ -747,24 +755,23 @@ class GroupsController(Singleton):
 				'''doesn't exist on this system. Valid skels are: %s.''' % \
 					str(GroupsController.configuration.users.skels))
 
-		gid = self.name_to_gid(name)
 		GroupsController.groups[gid]['groupSkel'] = groupSkel
 
 		GroupsController.groups[gid]['action'] = 'update'
 		GroupsController.backends[
 			GroupsController.groups[gid]['backend']
 			].save_group(gid)
-	def AddGrantedProfiles(self, users, profiles, name):
+	def AddGrantedProfiles(self, name=None, gid=None, users=None,
+		profiles=None):
 		""" Allow the users of the profiles given to access to the shared dir
 			Warning: Don't give [] for profiles, but [""]
 		"""
-		if name is None:
-			raise exceptions.BadArgumentError(
-				'You must specify a group name to add.')
+
+		raise NotImplementedError('to be refreshed.')
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		assert(GroupsController.profiles != None)
-
-		# TODO: verify group is valid !! (regex match and exists on the system)
 
 		# The profiles exist ? Delete bad profiles
 		for p in profiles:
@@ -795,12 +802,14 @@ class GroupsController(Singleton):
 		GroupsController.backends[
 			GroupsController.groups[gid]['backend']
 			].save_group(gid)
-	def DeleteGrantedProfiles(self, users, profiles, name):
+	def DeleteGrantedProfiles(self, name=None, gid=None, users=None,
+		profiles=None):
 		""" Disallow the users of the profiles given
 			to access to the shared dir. """
 
-		if name is None:
-			raise exceptions.BadArgumentError,("You must specify a name")
+		raise NotImplementedError('to be refreshed.')
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		assert(GroupsController.profiles != None)
 
@@ -815,7 +824,7 @@ class GroupsController(Singleton):
 				# Delete all 'p''s users from the group 'name'
 				_users_to_del = self.__find_group_members(users,
 					profiles[p]['groupName'])
-				self.RemoveUsersFromGroup(name, _users_to_del, users)
+				self.DeleteUsersFromGroup(name, _users_to_del, users)
 			else:
 				logging.info('Group %s already absent from profile %s.' % (
 					styles.stylize(styles.ST_NAME, name),
@@ -823,55 +832,45 @@ class GroupsController(Singleton):
 
 		# FIXME: not already done ??
 		self.WriteConf()
-	def AddUsersInGroup(self, name, users_to_add, batch = False):
+	def AddUsersInGroup(self, name=None, gid=None, users_to_add=None,
+		batch=False):
 		""" Add a user list in the group 'name'. """
 
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a group name"
-		if users_to_add is None:
-			raise exceptions.BadArgumentError, "You must specify a users list"
+		ltrace('groups', '> AddUsersInGroup(gid=%s, name=%s, users_to_add=%s)' %
+			(gid, name, users_to_add))
+
+		if users_to_add in (None, []):
+			raise exceptions.BadArgumentError("You must specify a users list")
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		ltrace('groups', '> AddUsersInGroup() %s->%s.' % (
 			name, users_to_add))
 
-		# remove non-existing users and duplicate logins from users_to_add
-		tmp = {}
-		for login in users_to_add:
-			if login == '': continue
-
-			try:
-				uid = self.users.login_to_uid(login)
-			except:
-				logging.notice('Skipping non-existing user %s.' % login)
-				continue
-			else:
-				tmp[login] = 1
+		uids_to_add = self.users.guess_identifiers(users_to_add)
 
 		work_done = False
-		users_to_add = tmp.keys()
+		u2l = self.users.uid_to_login
 
-		gid = self.name_to_gid(name)
-
-		for u in users_to_add:
-			if u in GroupsController.groups[gid]['memberUid']:
+		for uid in uids_to_add:
+			login = u2l(uid)
+			if login in GroupsController.groups[gid]['memberUid']:
 				logging.progress(
 					"User %s is already a member of %s, skipped." % (
-					styles.stylize(styles.ST_LOGIN, u),
+					styles.stylize(styles.ST_LOGIN, login),
 					styles.stylize(styles.ST_NAME, name)))
 			else:
-				GroupsController.groups[gid]['memberUid'].add(u)
+				GroupsController.groups[gid]['memberUid'].add(login)
 
 				ltrace('groups', 'members are: %s.' % \
 					GroupsController.groups[gid]['memberUid'])
 
 				logging.info("Added user %s to members of %s." % (
-					styles.stylize(styles.ST_LOGIN, u),
+					styles.stylize(styles.ST_LOGIN, login),
 					styles.stylize(styles.ST_NAME, name)))
 
 				# update the users cache.
-				GroupsController.users.users[
-					GroupsController.users.login_to_uid(u)
-					]['groups'].add(name)
+				GroupsController.users.users[uid]['groups'].add(name)
 
 				if batch:
 					work_done = True
@@ -909,9 +908,9 @@ class GroupsController(Singleton):
 					continue
 
 				# brutal fix for #43, batched for convenience.
-				self.AddUsersInGroup('users', [ u ], batch = True)
+				self.AddUsersInGroup(name='users', users_to_add=[ uid ],
+					batch=True)
 
-				uid      = GroupsController.users.login_to_uid(u)
 				link_src = os.path.join(
 					GroupsController.configuration.defaults.home_base_path,
 					GroupsController.configuration.groups.names['plural'],
@@ -919,7 +918,7 @@ class GroupsController(Singleton):
 				link_dst = os.path.join(
 					GroupsController.users.users[uid]['homeDirectory'],
 					link_basename)
-				fsapi.make_symlink(link_src, link_dst, batch = batch)
+				fsapi.make_symlink(link_src, link_dst, batch=batch)
 
 		if batch and work_done:
 			# save the group after having added all users. This seems more fine
@@ -929,44 +928,35 @@ class GroupsController(Singleton):
 				GroupsController.groups[gid]['backend']
 				].save_group(gid)
 
-		ltrace('groups', '< AddUsersInGroup() %s = %s.' % (
+		ltrace('groups', '< AddUsersInGroup(%s->%s)' % (
 			name, GroupsController.groups[gid]['memberUid']))
-	def RemoveUsersFromGroup(self, name, users_to_remove, batch=False):
+	def DeleteUsersFromGroup(self, name=None, gid=None, users_to_del=None,
+		batch=False):
 		""" Delete a users list in the group 'name'. """
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a name"
-		if users_to_remove is None:
-			raise exceptions.BadArgumentError, "You must specify a users list"
 
-		# remove inexistant users from users_to_remove
-		tmp = []
-		for login in users_to_remove:
-			uid = self.users.login_to_uid(login)
-			try:
-				self.users.users[uid]
-			except KeyError:
-				continue
-			else:
-				tmp.append(login)
-		users_to_remove = tmp
-		work_done = False
+		gid, name = self.resolve_gid_or_name(gid, name)
+
+		if users_to_del in (None, []):
+			raise exceptions.BadArgumentError("You must specify a users list")
+
+		uids_to_del = self.users.guess_identifiers(users_to_del)
+
 
 		logging.progress("Going to remove users %s from group %s." % (
-			styles.stylize(styles.ST_NAME, str(users_to_remove)),
+			styles.stylize(styles.ST_NAME, str(uids_to_del)),
 			styles.stylize(styles.ST_NAME, name)) )
 
-		gid = self.name_to_gid(name)
+		work_done = False
+		u2l = self.users.uid_to_login
 
-		for u in users_to_remove:
-			if u == "": continue
+		for uid in uids_to_del:
 
-			if u in GroupsController.groups[gid]['memberUid']:
-				GroupsController.groups[gid]['memberUid'].remove(u)
+			login = u2l(uid)
+			if login in GroupsController.groups[gid]['memberUid']:
+				GroupsController.groups[gid]['memberUid'].remove(login)
 				# update the users cache
 				try:
-					GroupsController.users.users[
-						GroupsController.users.login_to_uid(u)
-						]['groups'].remove(name)
+					GroupsController.users.users[uid]['groups'].remove(name)
 				except ValueError:
 					# don't bork if the group is not in the cache: when
 					# removing a user from a group, we don't rebuild the cache
@@ -989,15 +979,14 @@ class GroupsController(Singleton):
 
 				if not self.is_system_gid(gid):
 					# delete the shared group dir symlink in user's home.
-					uid      = GroupsController.users.login_to_uid(u)
 					link_src = os.path.join(
 						GroupsController.configuration.defaults.home_base_path,
 						GroupsController.configuration.groups.names['plural'],
 						GroupsController.groups[gid]['name'])
 
 					for link in fsapi.minifind(
-						GroupsController.users.users[uid]['homeDirectory'],
-						maxdepth = 2, type = stat.S_IFLNK):
+						GroupsController.users[uid]['homeDirectory'],
+						maxdepth=2, type=stat.S_IFLNK):
 						try:
 							if os.path.abspath(os.readlink(link)) == link_src:
 								os.unlink(link)
@@ -1013,12 +1002,12 @@ class GroupsController(Singleton):
 										styles.stylize(styles.ST_LINK, link),
 										str(e)) )
 				logging.info("Removed user %s from members of %s." % (
-					styles.stylize(styles.ST_LOGIN, u),
+					styles.stylize(styles.ST_LOGIN, login),
 					styles.stylize(styles.ST_NAME, name)))
 			else:
 				logging.info(
 					"User %s is already not a member of %s, skipped." % (
-						styles.stylize(styles.ST_LOGIN, u),
+						styles.stylize(styles.ST_LOGIN, login),
 						styles.stylize(styles.ST_NAME, name)))
 
 		if batch and work_done:
@@ -1081,12 +1070,14 @@ class GroupsController(Singleton):
 						file_acl_base, group, group_file_acl, file_acl_mask),
 					'exclude'   : [ 'public_html' ]
 				}
-	def CheckAssociatedSystemGroups(self, group, minimal=True, batch=False,
-		auto_answer=None, force=False):
+	def CheckAssociatedSystemGroups(self, name=None, gid=None, minimal=True,
+		batch=False, auto_answer=None, force=False):
 		"""Check the system groups that a standard group need to fuction
 			flawlessly.	For example, a group "toto" need 2 system groups
 			"resp-toto" and "guest-toto" for its ACLs.
 		"""
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		all_went_ok = True
 
@@ -1096,7 +1087,7 @@ class GroupsController(Singleton):
 			(GroupsController.configuration.groups.guest_prefix, "guests")
 			):
 
-			group_name = prefix + group
+			group_name = prefix + name
 			logging.progress("Checking system group %s..." %
 				styles.stylize(styles.ST_NAME, group_name))
 
@@ -1109,16 +1100,16 @@ class GroupsController(Singleton):
 
 				warn_message = logging.SYSG_SYSTEM_GROUP_REQUIRED % (
 					styles.stylize(styles.ST_NAME, group_name),
-					styles.stylize(styles.ST_NAME, group))
+					styles.stylize(styles.ST_NAME, name))
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer):
 					try:
 						temp_gid = self.__add_group(group_name,
 							system=True,
 							manual_gid=None,
-							description="%s of group “%s”" % (title, group),
+							description="%s of group “%s”" % (title, name),
 							groupSkel="", batch=batch, force=force)
-						GroupsController.name_cache[prefix[0]+group] = temp_gid
+						GroupsController.name_cache[prefix[0]+name] = temp_gid
 						prefix_gid = temp_gid
 						del(temp_gid)
 
@@ -1137,29 +1128,34 @@ class GroupsController(Singleton):
 			# This will skip some groups, which will not be checked !! BAD !
 
 			if not minimal:
-				all_went_ok &= self.CheckGroupSymlinks(prefix_gid,
+				all_went_ok &= self.CheckGroupSymlinks(gid=prefix_gid,
 					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
 
 		return all_went_ok
 
-	def __check_group(self, group, minimal=True, batch=False, auto_answer=None,
-		force=False):
+	def __check_group(self, gid=None, name=None, minimal=True, batch=False,
+		auto_answer=None, force=False):
+
+		ltrace('groups', '> __check_group(gid=%s,name=%s)' % (
+		styles.stylize(styles.ST_UGID, gid),
+		styles.stylize(styles.ST_NAME, name)))
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		all_went_ok = True
-		gid         = self.name_to_gid(group)
 
 		if self.is_system_gid(gid):
 			return True
 
 		logging.progress("Checking group %s..." %
-			styles.stylize(styles.ST_NAME, group))
+			styles.stylize(styles.ST_NAME, name))
 
 		all_went_ok &= self.CheckAssociatedSystemGroups(
-			group, minimal, batch, auto_answer)
+			name=name, minimal=minimal, batch=batch, auto_answer=auto_answer)
 
 		group_home = "%s/%s/%s" % (
 			GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names['plural'], group)
+			GroupsController.configuration.groups.names['plural'], name)
 		group_home_acl = self.BuildGroupACL(gid)
 		group_home_acl['path'] = group_home
 
@@ -1236,8 +1232,8 @@ class GroupsController(Singleton):
 		if not minimal:
 			logging.progress(
 				"Checking %s symlinks in members homes, this can be long…"  %
-					styles.stylize(styles.ST_NAME, group))
-			all_went_ok &= self.CheckGroupSymlinks(gid, batch=batch,
+					styles.stylize(styles.ST_NAME, name))
+			all_went_ok &= self.CheckGroupSymlinks(gid=gid, batch=batch,
 				auto_answer=auto_answer)
 
 			# TODO: if extended / not minimal: all group members' homes are OK
@@ -1247,13 +1243,14 @@ class GroupsController(Singleton):
 			# CheckGroups()… use minimal=True as argument here, don't forward
 			# the current "minimal" value.
 
+		ltrace('groups', '< __check_group(%s)' % all_went_ok)
+
 		return all_went_ok
-	def check_nonexisting_users(self, groups_to_check, batch=False,
-		auto_answer=None):
+	def check_nonexisting_users(self, batch=False, auto_answer=None):
 		""" Go by all groups, and find members which are referenced but don't
 			exist on the system, and wipe them. """
 
-		ltrace('groups', '> check_nonexisting_users(%s)' % groups_to_check)
+		ltrace('groups', '> check_nonexisting_users(batch=%s)' % batch)
 
 		for gid in GroupsController.groups:
 			to_remove = set()
@@ -1288,59 +1285,61 @@ class GroupsController(Singleton):
 					self.WriteConf(gid)
 
 		ltrace('groups', '< check_nonexisting_users()')
-	def CheckGroups(self, groups_to_check = [], minimal=True, batch=False,
+	def CheckGroups(self, gids_to_check, minimal=True, batch=False,
 		auto_answer=None, force=False):
 		""" Check the groups, the cache. If not system, check the shared dir,
 			the resps/guests, the members symlinks."""
 
-		if groups_to_check == []:
-			groups_to_check = GroupsController.name_cache.keys()
+		ltrace('groups', '''> CheckGroups(gids_to_check=%s, minimal=%s, '''
+			'''batch=%s, force=%s)''' %	(gids_to_check, minimal, batch, force))
 
 		if not minimal:
-			self.check_nonexisting_users(groups_to_check, batch=batch,
-				auto_answer=auto_answer)
+			self.check_nonexisting_users(batch=batch, auto_answer=auto_answer)
 
 		# dependancy: base dirs must be OK before checking groups shared dirs.
 		GroupsController.configuration.check_base_dirs(
 			minimal, batch, auto_answer)
 
-		def _chk(group):
-			return self.__check_group(group, minimal=minimal, batch=batch,
+		def _chk(gid):
+			ltrace('groups', '> CheckGroups._chk(%s)' % gid)
+			return self.__check_group(gid=gid, minimal=minimal, batch=batch,
 				auto_answer=auto_answer, force=force)
 
-		if reduce(pyutils.keep_false, map(_chk, groups_to_check)) is False:
+		if reduce(pyutils.keep_false, map(_chk, gids_to_check)) is False:
 			# don't test just "if reduce(…):", the result could be None and
 			# everything is OK when None
 			raise exceptions.LicornCheckError(
 				"Some group(s) check(s) didn't pass, or weren't corrected.")
-	def CheckGroupSymlinks(self, gid=None, group=None, oldname=None,
+
+		ltrace('groups', '< CheckGroups()')
+	def CheckGroupSymlinks(self, name=None, gid=None, oldname=None,
 		delete=False, strip_prefix=None, batch=False, auto_answer=None):
 		""" For each member of a group, verify member has a symlink to the
 			shared group dir inside his home (or under level 2 directory). If
 			not, create the link. Eventually delete links pointing to the old
 			group name if it is set. """
 
-		if gid is None:
-			gid = self.name_to_gid(group)
-
-		if group is None:
-			group = GroupsController.groups[gid]['name']
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		all_went_ok = True
 
 		for user in GroupsController.groups[gid]['memberUid']:
 
-			uid = GroupsController.users.login_to_uid(user)
+			try:
+				uid = GroupsController.users.login_to_uid(user)
+			except exceptions.DoesntExistsException:
+				logging.notice('Skipped non existing group member %s.' %
+					styles.stylize(styles.ST_NAME, user))
+				continue
 
 			link_not_found = True
 
 			if strip_prefix is None:
-				link_basename = GroupsController.groups[gid]['name']
+				link_basename = name
 			else:
 				link_basename = \
-					GroupsController.groups[gid]['name'].replace(strip_prefix,
+					name.replace(strip_prefix,
 						'', 1)
-
 
 			link_src = os.path.join(
 				GroupsController.configuration.defaults.home_base_path,
@@ -1410,27 +1409,31 @@ class GroupsController(Singleton):
 		return all_went_ok
 
 	# TODO: make this @staticmethod
-	def SetSharedDirPermissiveness(self, name=None, permissive=True):
+	def SetSharedDirPermissiveness(self, gid=None, name=None, permissive=True):
 		""" Set permissive or not permissive the shared directory of
 			the group 'name'. """
-		if name is None:
-			raise exceptions.BadArgumentError, "You must specify a group name."
 
-		gid = self.name_to_gid(name)
+		ltrace('groups', '''> SetSharedDirPermissivenes(gid=%s, name=%s, '''
+			'''permissive=%s)''' % (gid, name, permissive))
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		if permissive:
 			qualif = ""
 		else:
 			qualif = " not"
 
-		#logging.progress("trying to set %s, original %s." % (
-		#	permissive, GroupsController.groups[gid]['permissive'])
+		logging.progress('''trying to set permissive=%s for group %s, '''
+			'''original %s.''' % (styles.stylize(styles.ST_OK, permissive),
+			styles.stylize(styles.ST_NAME, name),
+			styles.stylize(styles.ST_BAD,
+			GroupsController.groups[gid]['permissive'])))
 
 		if GroupsController.groups[gid]['permissive'] != permissive:
 			GroupsController.groups[gid]['permissive'] = permissive
 
 			# auto-apply the new permissiveness
-			self.CheckGroups([ name ], batch=True)
+			self.CheckGroups([ gid ], batch=True)
 		else:
 			logging.info("Group %s is already%s permissive." % (
 				styles.stylize(styles.ST_NAME, name), qualif) )
@@ -1439,12 +1442,12 @@ class GroupsController(Singleton):
 	def is_permissive(self, gid, name):
 		""" Return True if the shared dir of the group is permissive.
 
-		if gid is None:
-			if name is None:
-				raise exceptions.BadArgumentError(
-					"You must specify a group name or a GID.")
+			This method MUST be called with the 2 arguments GID and name.
 
-			gid = self.name_to_gid(name)
+			WARNING: don't use self.resolve_gid_or_name() here.
+			This method is used very early, from the __init__(), when groups
+			are in the process of beiing loaded. The resolve() method will fail.
+		"""
 
 		if self.is_system_gid(gid):
 			return None
@@ -1476,67 +1479,101 @@ class GroupsController(Singleton):
 		except ImportError, e:
 			logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once=True)
 			return None
+	def confirm_gid(self, gid):
+		""" verify a GID or raise DoesntExists. """
+		try:
+			return GroupsController.groups[uid]['uid']
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				"GID %s doesn't exist" % gid)
+	def resolve_gid_or_name(self, gid, name):
+		""" method used every where to get gid / name of a group object to
+			do something onto. a non existing gid / name will raise an
+			exception from the gid_to_name() / name_to_gid() methods."""
 
-	@staticmethod
-	def group_exists(name=None, gid=None):
+		if name is None and gid is None:
+			raise exceptions.BadArgumentError(
+				"You must specify a name or GID to resolve from.")
+
+		ltrace('groups', '| resolve_gid_or_name(gid=%s, name=%s)' % (gid, name))
+
+		# we cannot just test "if gid:" because with root(0) this doesn't work.
+		if gid is not None:
+			name = self.gid_to_name(gid)
+		else:
+			gid = self.name_to_gid(name)
+		return (gid, name)
+	def guess_identifier(self, value):
+		""" Try to guess everything of a group from a
+			single and unknonw-typed info. """
+		try:
+			gid = int(value)
+			self.gid_to_name(gid)
+		except ValueError, e:
+			gid = self.name_to_gid(value)
+		return gid
+	def guess_identifiers(self, value_list):
+		valid_ids=set()
+		for value in value_list:
+			try:
+				valid_ids.add(self.guess_identifier(value))
+			except exceptions.DoesntExistsException:
+				logging.notice("Skipped non-existing group name or GID '%s'." %
+					styles.stylize(styles.ST_NAME,value))
+		return valid_ids
+	def exists(self, name=None, gid=None):
 		"""Return true if the group or gid exists on the system. """
 
 		if name:
-			return GroupsController.name_cache.has_key(name)
+			return self.name_cache.has_key(name)
 
 		if gid:
-			return GroupsController.groups.has_key(gid)
+			return self.groups.has_key(gid)
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or a name to test existence of.")
-	@staticmethod
-	def primary_members(name):
+	def primary_members(self, gid=None, name=None):
 		"""Get the list of users which are in group 'name'."""
 		ru    = set()
-		gid   = GroupsController.name_to_gid(name)
+
+		gid, name = self.resolve_gid_or_name(gid, name)
 
 		for u in GroupsController.users.users:
 			if GroupsController.users.users[u]['gidNumber'] == gid:
 				ru.add(GroupsController.users.users[u]['login'])
 		return ru
-
-	@staticmethod
-	def auxilliary_members(name):
+	def auxilliary_members(self, gid=None, name=None):
 		""" Return all members of a group, which are not members of this group
 			in their primary group."""
 
 		# TODO: really verify, for each user, that their member ship is not
 		# duplicated between primary and auxilliary groups.
 
-		return GroupsController.groups[
-			GroupsController.name_to_gid(name)]['memberUid']
+		gid, name = self.resolve_gid_or_name(gid, name)
 
-	@staticmethod
-	def all_members(name):
+		return GroupsController.groups[gid]['memberUid']
+	def all_members(self, gid=None, name=None):
 		"""Return all members of a given group name."""
 
-		return GroupsController.primary_members(name).union(
-			GroupsController.auxilliary_members(name))
+		gid, name = self.resolve_gid_or_name(gid, name)
 
-	@staticmethod
-	def name_to_gid(name):
+		return self.primary_members(gid=gid).union(
+			self.auxilliary_members(gid=gid))
+	def gid_to_name(self, gid):
+		""" Return the group name for a given GID."""
+		try:
+			return GroupsController.groups[gid]['name']
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				"GID %s doesn't exist" % gid)
+	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
-
 		try:
 			# use the cache, Luke !
 			return GroupsController.name_cache[name]
 		except KeyError:
-			try:
-				int(name)
-				logging.warning('''You passed a gid to name_to_gid(): '''
-					'''%s (guess its name is "%s").''' % (
-					styles.stylize(styles.ST_UGID, name),
-					styles.stylize(styles.ST_NAME,
-						GroupsController.groups[name]['name'])))
-			except ValueError:
-				pass
 			raise exceptions.DoesntExistsException(
-				"The group '%s' doesn't exist." % name)
+				"Group %s doesn't exist" % name)
 	@staticmethod
 	def is_system_gid(gid):
 		""" Return true if gid is system. """
@@ -1547,21 +1584,19 @@ class GroupsController(Singleton):
 		""" Return true if gid is standard (not system). """
 		return gid >= GroupsController.configuration.groups.gid_min \
 			and gid <= GroupsController.configuration.groups.gid_max
-	@staticmethod
-	def is_system_group(name):
+	def is_system_group(self, name):
 		""" Return true if group is system. """
 		try:
 			return GroupsController.is_system_gid(
-				GroupsController.name_to_gid(name))
+				self.name_to_gid(name))
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
-	@staticmethod
-	def is_standard_group(name):
+	def is_standard_group(self, name):
 		""" Return true if group is standard (not system). """
 		try:
 			return GroupsController.is_standard_gid(
-				GroupsController.name_to_gid(name))
+				self.name_to_gid(name))
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"The group '%s' doesn't exist." % name)
@@ -1578,23 +1613,14 @@ class GroupsController(Singleton):
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or name to test as a privilege.")
-
-	@staticmethod
-	def is_empty_gid(gid):
+	def is_empty_gid(self, gid):
 			return GroupsController.is_standard_gid(gid) \
-				and GroupsController.groups[gid]['memberUid'] == set()
-
-	@staticmethod
-	def is_empty_group(name):
-		try:
+				and self.groups[gid]['memberUid'] == set()
+	def is_empty_group(self, name):
 			return GroupsController.is_empty_gid(
-				GroupsController.name_to_gid(name))
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				"The group '%s' doesn't exist." % name)
-
+				self.name_to_gid(name))
 	@staticmethod
-	def make_name(inputname):
+	def make_name(inputname=None):
 		""" Make a valid login from  user's firstname and lastname."""
 
 		maxlenght = GroupsController.configuration.groups.name_maxlenght
@@ -1609,7 +1635,6 @@ class GroupsController(Singleton):
 				'''provided "%s".''' % (
 					groupname, hlstr.regex['group_name'], inputname) )
 
-		return groupname
-
 		# TODO: verify if the group doesn't already exist.
 		#while potential in UsersController.users:
+		return groupname

@@ -11,8 +11,10 @@ import os, sys, time, gamin, signal
 from threading   import Thread, Event, Semaphore
 from collections import deque
 
-from licorn.foundations         import fsapi, logging, exceptions, styles, process
-from licorn.foundations.objects import LicornThread, Singleton
+from licorn.foundations           import fsapi, logging, exceptions, styles, process
+from licorn.foundations.objects   import LicornThread, Singleton
+from licorn.foundations.constants import filters
+
 from licorn.daemon.core         import dname
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
@@ -59,7 +61,7 @@ class INotifier(Thread, Singleton):
 		self.wds = deque()
 		self.wds_sem = Semaphore()
 
-		groups.Select(groups.FILTER_STANDARD)
+		groups.Select(filters.STD)
 		self.groups = groups
 
 		checker.set_groups(groups)

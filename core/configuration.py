@@ -534,7 +534,7 @@ class LicornConfiguration(Singleton):
 		users = UsersController(self)
 		groups = GroupsController(self, users)
 
-		if not groups.group_exists(name = LicornConfiguration.ssh.group):
+		if not groups.exists(name = LicornConfiguration.ssh.group):
 
 			groups.AddGroup(name=LicornConfiguration.ssh.group,
 				description=_('Users allowed to connect via SSHd'),
@@ -1343,6 +1343,9 @@ class LicornConfiguration(Singleton):
 		users  = UsersController(self)
 		groups = GroupsController(self, users)
 
+		ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
+			(minimal, batch))
+
 		if minimal:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
@@ -1359,7 +1362,7 @@ class LicornConfiguration(Singleton):
 		for group in needed_groups:
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
-			if not groups.group_exists(name=group):
+			if not groups.exists(name=group):
 				if batch or logging.ask_for_repair(
 					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
 						styles.stylize(styles.ST_NAME, group), auto_answer):
@@ -1383,6 +1386,8 @@ class LicornConfiguration(Singleton):
 						'''--name "%s" » to solve the problem.''' % (
 							group, group)
 						)
+
+		ltrace('configuration', '< CheckSystemGroups()')
 	def CheckHostname(self, batch = False, auto_answer = None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""

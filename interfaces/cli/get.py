@@ -14,13 +14,15 @@ Licensed under the terms of the GNU GPL version 2.
 import sys
 output = sys.stdout.write
 
-from licorn.foundations        import logging, exceptions, options
-from licorn.core.configuration import LicornConfiguration
-from licorn.core.users         import UsersController
-from licorn.core.groups        import GroupsController
-from licorn.core.profiles      import ProfilesController
-from licorn.core.keywords      import KeywordsController
-from licorn.core.machines      import MachinesController
+from licorn.foundations           import logging, exceptions, options
+from licorn.foundations.constants import filters
+
+from licorn.core.configuration    import LicornConfiguration
+from licorn.core.users            import UsersController
+from licorn.core.groups           import GroupsController
+from licorn.core.profiles         import ProfilesController
+from licorn.core.keywords         import KeywordsController
+from licorn.core.machines         import MachinesController
 
 _app = {
 	"name"     		: "licorn-get",
@@ -37,20 +39,16 @@ def get_users(opts, args):
 	if opts.long:
 		groups = GroupsController(configuration, users)
 
-	if len(args) > 1:
-		try:
-			opts.uid = int(args[1])
-		except ValueError:
-			opts.uid = UsersController.login_to_uid(args[1])
-
-	if opts.uid is not None:
-		try:
-			users.Select("uid=" + unicode(opts.uid))
-		except KeyError:
-			logging.error("No user found")
-			return
-	elif not opts.factory:
-		users.Select(users.FILTER_STANDARD)
+	users.Select(
+		cli_select(users, 'user',
+			args,
+			[
+				(opts.login, users.login_to_uid),
+				(opts.uid, users.confirm_uid)
+			],
+			filters.STANDARD,
+			opts.all)
+		)
 
 	if opts.xml:
 		data = users.ExportXML(opts.long)
@@ -66,33 +64,32 @@ def get_groups(opts, args):
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users)
 
-	if len(args) > 1:
-		try:
-			opts.gid = int(args[1])
-		except ValueError:
-			opts.gid = GroupsController.name_to_gid(args[1])
+	selection = filters.NONE
 
-	if opts.gid is not None:
-		try:
-			groups.Select("gid=" + unicode(opts.gid))
-		except KeyError:
-			logging.error("No group found")
-
-	elif opts.privileged:
-		groups.Select(groups.FILTER_PRIVILEGED)
-
+	if opts.privileged:
+		selection = filters.PRIVILEGED
 	elif opts.responsibles:
-		groups.Select(groups.FILTER_RESPONSIBLE)
-
+		selection = filters.RESPONSIBLE
 	elif opts.guests:
-		groups.Select(groups.FILTER_GUEST)
-
+		selection = filters.GUEST
+	elif opts.system:
+		selection = filters.SYSTEM
 	elif opts.empty:
-		groups.Select(groups.FILTER_EMPTY)
+		selection = filters.EMPTY
+	elif not opts.all:
+		# must be the last case !
+		selection = filters.STANDARD
 
-	# must be the last case !
-	elif not opts.factory:
-		groups.Select(groups.FILTER_STANDARD)
+	groups.Select(
+		cli_select(groups, 'group',
+			args,
+			[
+				(opts.name, groups.name_to_gid),
+				(opts.gid, groups.confirm_gid)
+			],
+			selection,
+			opts.all)
+		)
 
 	if opts.xml:
 		data = groups.ExportXML(opts.long)
@@ -109,18 +106,22 @@ def get_profiles(opts, args):
 	groups = GroupsController(configuration, users)
 	profiles = ProfilesController(configuration, groups, users)
 
-	if opts.profile is not None:
-		try:
-			profiles.Select("profile=" + unicode(opts.profile))
-		except KeyError:
-			logging.error("No profile found")
-			return
+	profiles.Select(
+		cli_select(profiles, 'profile',
+			args,
+			[
+				(opts.name, profiles.name_to_group),
+				(opts.group, profiles.confirm_group)
+			],
+			filters.ALL)
+		)
+
 	if opts.xml:
 		data = profiles.ExportXML()
 	else:
 		data = profiles.ExportCLI()
 
-	if data:
+	if data and data != '\n':
 		output(data)
 def get_keywords(opts, args):
 	""" Get the list of keywords. """
@@ -231,7 +232,7 @@ def get_configuration(opts, args):
 if __name__ == "__main__":
 
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main
+	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.get_users_parse_arguments, get_users),

@@ -280,7 +280,7 @@ SYSG_CREATED_GROUP         = "Created group %s."
 SYSG_DELETED_GROUP         = "Deleted group %s."
 SYSG_GROUP_DOESNT_EXIST    = "The group %s doesn't exist"
 SYSG_SYSTEM_GROUP_REQUIRED = "The system group %s is required for the group %s to be fully operationnal."
-SYSG_USER_LACKS_SYMLINK    = "The user %s lacks the symlink to group %s shared dir !"
+SYSG_USER_LACKS_SYMLINK    = "User %s lacks the symlink to group %s shared dir. Create it?"
 
 
 ### system.profiles: SYSP_* ###

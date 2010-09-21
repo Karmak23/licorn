@@ -324,8 +324,8 @@ def menu(uri):
 <li%s><a href="/" title="%s">%s</a></li>
 <li%s><a href="/users/" title="%s">%s</a></li>
 <li%s><a href="/groups/" title="%s">%s</a></li>
-<!--<li%s><a href="/machines/" title="%s">%s</a></li>
-<li%s><a href="/internet/" title="%s">%s</a></li>-->
+<li%s><a href="/machines/" title="%s">%s</a></li>
+<!--<li%s><a href="/internet/" title="%s">%s</a></li>-->
 </ul>
 </div>
 <div id="auxnav" class="nav">

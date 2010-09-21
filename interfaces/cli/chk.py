@@ -14,6 +14,8 @@ import sys, os
 
 from licorn.foundations         import logging, exceptions
 from licorn.foundations.objects import FileLock
+from licorn.foundations.constants import filters
+from licorn.foundations.ltrace    import ltrace
 
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
@@ -31,20 +33,22 @@ def chk_user(opts, args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 
-	if len(args) == 2:
-		opts.users = args[1]
+	uids_to_chk = cli_select(users, 'user',
+			args,
+			[
+				(opts.login, users.login_to_uid),
+				(opts.uid, users.confirm_uid)
+			],
+			filters.NONE,
+			opts.all)
 
-	if opts.all:
-		users_to_check = []
-	else:
-		if opts.users is None:
-			logging.error("You didn't specify any user !")
-		else:
-			# don't unicode the logins, they should be standard strings.
-			users_to_check = opts.users.split(',')
+	ltrace('chk', '> chk_user(%s)' % uids_to_chk)
 
-	users.CheckUsers(users_to_check, opts.minimal, auto_answer=opts.auto_answer,
-		batch=opts.batch)
+	if uids_to_chk != []:
+		users.CheckUsers(uids_to_chk, opts.minimal, auto_answer=opts.auto_answer,
+			batch=opts.batch)
+
+	ltrace('chk', '< chk_user()')
 def chk_group(opts, args):
 	""" Check one or more group(s). """
 
@@ -56,40 +60,23 @@ def chk_group(opts, args):
 	# so don't print twice !
 	groups = GroupsController(configuration, users, warnings=False)
 
-	if len(args) == 2:
-		opts.groups = args[1]
+	gids_to_chk = cli_select(groups, 'group',
+			args,
+			[
+				(opts.name, groups.name_to_gid),
+				(opts.gid, groups.confirm_gid)
+			],
+			filters.STD,
+			opts.all)
 
-	if opts.all:
-		groups_to_check = []
-	else:
-		if opts.groups is None:
-			logging.error("You didn't specify any group !")
-		else:
-			# don't unicode the groups name, they should be standard strings.
-			groups_to_check = opts.groups.split(',')
+	ltrace('chk', '> chk_group(%s)' % gids_to_chk)
 
-	#print str(groups_to_check)
-
-	# TODO: do this more cleanly and not so hard-coded:
-	try:
-		#os.system("/etc/init.d/licornd stop >/dev/null 2>&1")
-		pass
-	except:
-		pass
-
-	groups.CheckGroups(groups_to_check, opts.minimal,
-		batch=opts.batch, auto_answer=opts.auto_answer, force=opts.force)
-
-	# TODO: do this more cleanly and not so hard-coded:
-	try:
-		#os.system("/etc/init.d/licornd start >/dev/null 2>&1")
-		pass
-	except:
-		pass
+	if gids_to_chk != []:
+		groups.CheckGroups(gids_to_chk, minimal=opts.minimal,
+			batch=opts.batch, auto_answer=opts.auto_answer, force=opts.force)
+	ltrace('chk', '< chk_group()')
 def chk_profile(opts, args):
 	""" TODO: to be implemented. """
-	if len(args) == 2:
-		opts.name = args[1]
 
 	raise NotImplementedError("Sorry, not yet.")
 def chk_configuration(opts, args):
@@ -101,7 +88,7 @@ def chk_configuration(opts, args):
 if __name__ == "__main__":
 
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main
+	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.chk_user_parse_arguments, chk_user),

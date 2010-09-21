@@ -508,7 +508,7 @@ def edit(uri, http_user, name):
 			if titles is None:
 				dbl_lists[gname] = id
 			else:
-				users.Select(users.FILTER_STANDARD)
+				users.Select(filters.STANDARD)
 				dest   = list(group['memberUid'])
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
 				for current in group['memberUid']:
@@ -689,7 +689,7 @@ def main(uri, http_user, sort = "name", order = "asc"):
 
 	g = groups.groups
 
-	users.Select(users.FILTER_STANDARD)
+	users.Select(filters.STANDARD)
 
 	tgroups  = {}
 	totals   = {}
@@ -730,8 +730,8 @@ def main(uri, http_user, sort = "name", order = "asc"):
 	data += '		</tr>\n'
 
 	for (filter, filter_name) in (
-		(groups.FILTER_STANDARD, _('Groups')),
-		(groups.FILTER_PRIVILEGED, _("Privileges")) ):
+		(filters.STANDARD, _('Groups')),
+		(filters.PRIVILEGED, _("Privileges")) ):
 
 		tgroups  = {}
 		ordered  = {}

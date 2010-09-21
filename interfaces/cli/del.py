@@ -13,13 +13,15 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, re
 
-from licorn.foundations import logging, exceptions, options, objects, styles
+from licorn.foundations           import logging, exceptions, options, objects, \
+	styles
+from licorn.foundations.constants import filters
 
-from licorn.core.configuration import LicornConfiguration
-from licorn.core.users         import UsersController
-from licorn.core.groups        import GroupsController
-from licorn.core.profiles      import ProfilesController
-from licorn.core.keywords      import KeywordsController
+from licorn.core.configuration    import LicornConfiguration
+from licorn.core.users            import UsersController
+from licorn.core.groups           import GroupsController
+from licorn.core.profiles         import ProfilesController
+from licorn.core.keywords         import KeywordsController
 
 _app = {
 	"name"        : "licorn-delete",
@@ -81,23 +83,33 @@ def del_user(opts, args):
 	# stay dangling in memberUid.
 	groups = GroupsController(configuration, users, warnings=False)
 
-	for login in opts.login.split(','):
-		if login != '':
-			try:
-				users.DeleteUser(login, opts.no_archive, opts.uid)
-			except exceptions.DoesntExistsException:
-				logging.notice("User %s doesn't exist, skipped." % login)
+	uids_to_del = cli_select(users, 'user',
+			args,
+			[
+				(opts.login, users.login_to_uid),
+				(opts.uid, users.confirm_uid)
+			],
+			filters.NONE)
 
-	users.WriteConf()
+	for uid in uids_to_del:
+		users.DeleteUser(uid=uid, no_archive=opts.no_archive)
 def del_user_from_groups(opts, args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users, warnings=False)
 
+	uids_to_del = cli_select(users, 'user',
+			args,
+			[
+				(opts.login, users.login_to_uid),
+				(opts.uid, users.confirm_uid)
+			],
+			filters.NONE)
+
 	for g in opts.groups_to_del.split(','):
 		if g != "":
 			try:
-				groups.RemoveUsersFromGroup(g, opts.login.split(','))
+				groups.DeleteUsersFromGroup(name=g, users_to_del=uids_to_del)
 			except exceptions.DoesntExistsException, e:
 				logging.warning(
 					"Unable to remove user(s) %s from group %s (was: %s)."
@@ -112,11 +124,16 @@ def dispatch_del_user(opts, args):
 	if opts.login is None:
 		if len(args) == 2:
 			opts.login = args[1]
+			args[1] = ''
 			del_user(opts, args)
 		elif len(args) == 3:
 			opts.login = args[1]
 			opts.groups_to_del = args[2]
+			args[1] = ''
+			args[2] = ''
 			del_user_from_groups(opts, args)
+		else:
+			del_user(opts, args)
 	else:
 		del_user(opts, args)
 
@@ -128,25 +145,17 @@ def del_group(opts, args):
 	groups = GroupsController(configuration, users, warnings=False)
 	profiles = ProfilesController(configuration, groups, users)
 
-	if opts.name is None and len(args) == 2:
-		opts.name = args[1]
+	gids_to_del = cli_select(groups, 'group',
+			args,
+			[
+				(opts.name, groups.name_to_gid),
+				(opts.gid, groups.confirm_gid)
+			],
+			filters.NONE)
 
-	if opts.name is None:
-		try:
-			groups.DeleteGroup(None, opts.del_users, opts.no_archive, opts.gid)
-
-		except exceptions.DoesntExistsException:
-			logging.notice("Group %s doesn't exist, skipped." % name)
-	else:
-		for name in opts.name.split(','):
-			if name != '':
-				try:
-					groups.DeleteGroup(name, opts.del_users, opts.no_archive,
-						opts.gid)
-
-				except exceptions.DoesntExistsException:
-					logging.notice("Group %s doesn't exist, skipped." % name)
-
+	for gid in gids_to_del:
+		groups.DeleteGroup(gid=gid, del_users=opts.del_users,
+			no_archive=opts.no_archive)
 def del_profile(opts, args):
 	""" Delete a system wide User profile. """
 
@@ -155,27 +164,17 @@ def del_profile(opts, args):
 	groups = GroupsController(configuration, users, warnings=False)
 	profiles = ProfilesController(configuration, groups, users)
 
-	if opts.group is None and len(args) == 2:
-		opts.name = args[1]
+	profiles_to_del = cli_select(profiles, 'profile',
+			args,
+			[
+				(opts.name, profiles.name_to_group),
+				(opts.group, profiles.confirm_group)
+			],
+			filters.NONE)
 
-	if opts.group is None:
-		if opts.name is None:
-			raise exceptions.BadArgumentError('''Which profile do you want '''
-				'''to modify ? Specify it with --group or --name. '''
-				'''Use --help for details.''')
-		else:
-			try:
-				#assume we got the name
-				opts.group = profiles.name_to_group(opts.name)
-			except:
-				# if we haven't got the name, assume we got the group.
-				opts.group = opts.name
-
-	profiles.DeleteProfile(opts.group, opts.del_users, opts.no_archive, users,
-		batch=opts.no_sync)
-
-	if opts.no_sync:
-		users.WriteConf()
+	for p in profiles_to_del:
+		profiles.DeleteProfile(group=p, del_users=opts.del_users,
+			no_archive=opts.no_archive)
 def del_keyword(opts, args):
 	""" delete a system wide User profile. """
 
@@ -198,7 +197,7 @@ def del_privilege(opts, args):
 if __name__ == "__main__":
 
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main
+	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.del_user_parse_arguments, dispatch_del_user),

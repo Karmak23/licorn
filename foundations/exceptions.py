@@ -28,7 +28,7 @@ class LicornError(LicornException):
 	"""
 	errno = 2
 	pass
-class LicornConfigurationException (LicornException):
+class LicornConfigurationException(LicornException):
 	""" Raised when a fatal configuration error is encountered.
 
 		This exception is used when parsing a configuration file can't be done,
@@ -36,7 +36,7 @@ class LicornConfigurationException (LicornException):
 	"""
 	errno = 3
 	pass
-class LicornConfigurationError (LicornError):
+class LicornConfigurationError(LicornError):
 	""" Raised when a correctable configuration problem is encountered.
 
 		This exception is used when parsing a configuration file can't be done,
@@ -44,7 +44,7 @@ class LicornConfigurationError (LicornError):
 	"""
 	errno = 4
 	pass
-class LicornManualConfigurationException (LicornConfigurationException):
+class LicornManualConfigurationException(LicornConfigurationException):
 	""" Raised when system needs manual intervention of administrator to work properly or activate a feature.
 	"""
 	errno = 41

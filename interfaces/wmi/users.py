@@ -4,6 +4,7 @@ import os, time
 from gettext import gettext as _
 
 from licorn.foundations    import exceptions, hlstr, logging
+from licorn.foundations.constants import filters
 
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
@@ -18,16 +19,16 @@ groups = GroupsController(configuration, users)
 profiles = ProfilesController(configuration, groups, users)
 
 groups_filters_lists_ids = (
-	(groups.FILTER_STANDARD, [_('Customize groups'),
+	(filters.STANDARD, [_('Customize groups'),
 		_('Available groups'), _('Affected groups')],
 				'standard_groups'),
-	(groups.FILTER_PRIVILEGED, [_('Customize privileges'),
+	(filters.PRIVILEGED, [_('Customize privileges'),
 		_('Available privileges'), 	_('granted privileges')],
 			'privileged_groups'),
-	(groups.FILTER_RESPONSIBLE, [_('Assign responsibilities'),
+	(filters.RESPONSIBLE, [_('Assign responsibilities'),
 		_('Available responsibilities'), _('Assigned responsibilities')],
 			'responsible_groups'),
-	(groups.FILTER_GUEST, [_('Propose invitations'),
+	(filters.GUEST, [_('Propose invitations'),
 		_('Available invitations'), _('Offered invitations')],
 			'guest_groups') )
 
@@ -125,7 +126,7 @@ def export(uri, http_user, type = "", yes = None):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
-		users.Select(users.FILTER_STANDARD)
+		users.Select(filters.STANDARD)
 
 		if type == "CSV":
 			data = users.ExportCSV()
@@ -419,10 +420,10 @@ def new(uri, http_user):
 			accesskey = _('I')),
 		_("<strong>Shell</strong><br />(Unix command line interpreter)"),
 		shell_input(),
-		_('Groups'), dbl_lists[groups.FILTER_STANDARD],
-		_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
-		_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
-		_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+		_('Groups'), dbl_lists[filters.STANDARD],
+		_('Privileges'), dbl_lists[filters.PRIVILEGED],
+		_('Responsibilities'), dbl_lists[filters.RESPONSIBLE],
+		_('Invitations'), dbl_lists[filters.GUEST],
 		w.button('&lt;&lt;&nbsp;' + _('Cancel'), "/users/list"),
 		w.submit('create', _('Create') + '&nbsp;&gt;&gt;',
 			onClick = "selectAllMultiValues('%s');" % form_name)
@@ -620,10 +621,10 @@ def edit(uri, http_user, login):
 			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
 			w.select('loginShell',  configuration.users.shells,
 			user['loginShell'], func = os.path.basename),
-			_('Groups'), dbl_lists[groups.FILTER_STANDARD],
-			_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
-			_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
-			_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+			_('Groups'), dbl_lists[filters.STANDARD],
+			_('Privileges'), dbl_lists[filters.PRIVILEGED],
+			_('Responsibilities'), dbl_lists[filters.RESPONSIBLE],
+			_('Invitations'), dbl_lists[filters.GUEST],
 			w.button('&lt;&lt;&nbsp;' + _('Cancel'), "/users/list"),
 			w.submit('record', _('Record changes') + '&nbsp;&gt;&gt;',
 				onClick = "selectAllMultiValues('%s');" % form_name)
@@ -705,16 +706,16 @@ def main(uri, http_user, sort = "login", order = "asc"):
 	g = groups.groups
 	p = profiles.profiles
 
-	groups.Select(groups.FILTER_PRIVILEGED)
+	groups.Select(filters.PRIVILEGED)
 	pri_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
 
-	groups.Select(groups.FILTER_RESPONSIBLE)
+	groups.Select(filters.RESPONSIBLE)
 	rsp_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
 
-	groups.Select(groups.FILTER_GUEST)
+	groups.Select(filters.GUEST)
 	gst_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
 
-	groups.Select(groups.FILTER_STANDARD)
+	groups.Select(filters.STANDARD)
 	std_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
 
 	accounts = {}
@@ -818,7 +819,7 @@ def main(uri, http_user, sort = "login", order = "asc"):
 				_("Definitely remove account from the system."))
 		return html_data
 
-	users.Select(users.FILTER_STANDARD)
+	users.Select(filters.STANDARD)
 	for uid in users.filtered_users:
 		user  = u[uid]
 		login = user['login']

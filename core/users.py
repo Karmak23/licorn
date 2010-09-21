@@ -10,10 +10,11 @@ Licensed under the terms of the GNU GPL version 2
 import os, crypt, sys
 from time import time, strftime, gmtime
 
-from licorn.foundations         import logging, exceptions, process, hlstr
-from licorn.foundations         import pyutils, styles, fsapi
-from licorn.foundations.objects import Singleton
-from licorn.foundations.ltrace  import ltrace
+from licorn.foundations           import logging, exceptions, process, hlstr
+from licorn.foundations           import pyutils, styles, fsapi
+from licorn.foundations.objects   import Singleton
+from licorn.foundations.constants import filters
+from licorn.foundations.ltrace    import ltrace
 
 class UsersController(Singleton):
 
@@ -25,10 +26,6 @@ class UsersController(Singleton):
 	configuration = None # (LicornConfiguration)
 	profiles      = None # (ProfilesController)
 	groups        = None # (GroupsController)
-
-	# Filters for Select() method.
-	FILTER_STANDARD = 1
-	FILTER_SYSTEM   = 2
 
 	def __init__(self, configuration):
 		""" Create the user accounts list from the underlying system.
@@ -117,19 +114,25 @@ class UsersController(Singleton):
 		uids = UsersController.users.keys()
 		uids.sort()
 
-		if UsersController.FILTER_STANDARD == filter_string:
+		if filters.NONE == filter_string:
+			self.filtered_users = []
+
+		elif filters.STANDARD == filter_string:
 			def keep_uid_if_not_system(uid):
 				if not UsersController.is_system_uid(uid):
 					self.filtered_users.append(uid)
 
 			map(keep_uid_if_not_system, uids)
 
-		elif UsersController.FILTER_SYSTEM == filter_string:
+		elif filters.SYSTEM == filter_string:
 			def keep_uid_if_system(uid):
 				if UsersController.is_system_uid(uid):
 					self.filtered_users.append(uid)
 
 			map(keep_uid_if_system, uids)
+
+		elif type(filter_string) == type([]):
+			self.filtered_users = filter_string
 
 		else:
 			import re
@@ -138,6 +141,8 @@ class UsersController(Singleton):
 			if uid is not None:
 				uid = int(uid.group('uid'))
 				self.filtered_users.append(uid)
+
+		return self.filtered_users
 	def AddUser(self, login=None, system=False, password=None, gecos=None,
 		desired_uid=None, primary_gid=None, profile=None, skel=None,
 		home=None, lastname=None, firstname=None, batch=False, force=False):
@@ -304,19 +309,61 @@ class UsersController(Singleton):
 						self.configuration.users.uid_max)
 					)
 
-		# autogenerate password if not given.
-		if password is None:
-			# TODO: call cracklib2 to verify passwd strenght.
-			password = hlstr.generate_password(
-				UsersController.configuration.mAutoPasswdSize)
-			logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
-				styles.stylize(styles.ST_LOGIN, login),
-				styles.stylize(styles.ST_UGID, uid),
-				styles.stylize(styles.ST_SECRET, password)))
+		def validate_home_dir(home=home, login=login, system=system,
+			force=force):
+			""" Do some basic but sane tests on the home dir provided. """
 
-		groups_to_add_user_to = []
+			if system:
+				if home:
+					if os.path.exists(home) and not force:
+						raise exceptions.BadArgumentError(
+							'''Directory specified %s for system user %s '''
+							'''already exists. If you really want to use '''
+							'''it, please specify --force argument.''' % (
+							styles.stylize(styles.ST_PATH, home),
+							styles.stylize(styles.ST_NAME,login)))
+
+					if not home.startswith(
+							self.configuration.defaults.home_base_path) \
+						and not home.startswith('/var') \
+						or home.startswith('%s/%s' %(
+							self.configuration.defaults.home_base_path,
+							self.configuration.groups.names['plural'])):
+						raise exceptions.BadArgumentError(
+							'''Specified home directory %s for system user '''
+							'''%s is outside %s and /var, or inside %s/%s. '''
+							'''This is unsupported, '''
+							'''sorry. Aborting.''' % (
+							styles.stylize(styles.ST_PATH, home),
+							styles.stylize(styles.ST_NAME,login),
+							self.configuration.defaults.home_base_path,
+							self.configuration.defaults.home_base_path,
+							self.configuration.groups.names['plural']))
+
+					if home in [ self.users[uid]['homeDirectory'] for uid in
+						self.users ]:
+						raise exceptions.BadArgumentError(
+							'''Specified home directory %s for system user '''
+							'''%s is already owned by another user. It can't '''
+							'''be used, sorry.''' % (
+							styles.stylize(styles.ST_PATH, home),
+							styles.stylize(styles.ST_NAME,login)))
+
+					return home
+			else: # not system
+				if home:
+					logging.warning('''Specify an alternative home '''
+					'''directory is not allowed for standard users. Using '''
+					'''standard home path %s instead.''' % (styles.stylize(
+					styles.ST_PATH, '%s/%s' % (
+					UsersController.configuration.users.base_path, login))))
+
+			return "%s/%s" % (
+					UsersController.configuration.users.base_path, login)
 
 		skel_to_apply = "/etc/skel"
+		groups_to_add_user_to = []
+
 		# 3 cases:
 		if profile is not None:
 			# Apply the profile after having created the home dir.
@@ -326,13 +373,12 @@ class UsersController(Singleton):
 				tmp_user_dict['gidNumber'] = \
 					UsersController.groups.name_to_gid(
 					UsersController.profiles.profiles[profile]['groupName'])
-				# fix #58.
-				tmp_user_dict['homeDirectory'] = ("%s/%s" % (
-					UsersController.configuration.users.base_path, login))
 
-				if UsersController.profiles.profiles[profile]['memberGid'] != []:
+				tmp_user_dict['homeDirectory'] = validate_home_dir()
+
+				if UsersController.profiles[profile]['memberGid'] != []:
 					groups_to_add_user_to = \
-						UsersController.profiles.profiles[profile]['memberGid']
+						UsersController.profiles[profile]['memberGid']
 
 					# don't directly add the user to the groups. prepare the
 					# groups to use the Licorn API later, to create the groups
@@ -353,9 +399,8 @@ class UsersController(Singleton):
 			tmp_user_dict['gidNumber']     = pg_gid
 			tmp_user_dict['loginShell']    = \
 				UsersController.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = home if home is not None \
-				and system else "%s/%s" % (
-					UsersController.configuration.users.base_path, login)
+
+			tmp_user_dict['homeDirectory'] = validate_home_dir()
 
 			# FIXME: use is_valid_skel() ?
 			if skel is None and \
@@ -368,14 +413,24 @@ class UsersController(Singleton):
 				UsersController.configuration.users.default_gid
 			tmp_user_dict['loginShell'] = \
 				UsersController.configuration.users.default_shell
-			tmp_user_dict['homeDirectory'] = home if home is not None \
-				and system else "%s/%s" % (
-					UsersController.configuration.users.base_path, login)
+
+			tmp_user_dict['homeDirectory'] = validate_home_dir()
+
 			# if skel is None, system default skel will be applied
 
 		# FIXME: is this necessary here ? not done before ?
 		if skel is not None:
 			skel_to_apply = skel
+
+		# autogenerate password if not given.
+		if password is None:
+			# TODO: call cracklib2 to verify passwd strenght.
+			password = hlstr.generate_password(
+				UsersController.configuration.mAutoPasswdSize)
+			logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
+				styles.stylize(styles.ST_LOGIN, login),
+				styles.stylize(styles.ST_UGID, uid),
+				styles.stylize(styles.ST_SECRET, password)))
 
 		tmp_user_dict['userPassword'] = \
 			UsersController.backends['prefered'].compute_password(password)
@@ -434,7 +489,8 @@ class UsersController(Singleton):
 
 		if groups_to_add_user_to != []:
 			for group in groups_to_add_user_to:
-				UsersController.groups.AddUsersInGroup(group, [login])
+				UsersController.groups.AddUsersInGroup(name=group,
+					users_to_add=[uid])
 
 		# Set quota
 		if profile is not None:
@@ -449,7 +505,7 @@ class UsersController(Singleton):
 				self.DeleteUser(login, True)
 				return (False, False, False)
 
-		self.CheckUsers([ login ], batch = True)
+		self.CheckUsers([ uid ], batch = True)
 
 		logging.info(logging.SYSU_CREATED_USER % (
 			'system ' if system else '',
@@ -458,17 +514,10 @@ class UsersController(Singleton):
 
 		ltrace('users', '< AddUser()')
 		return (uid, login, password)
-	def DeleteUser(self, login=None, no_archive=False, uid=None, batch=False):
+	def DeleteUser(self, login=None, uid=None, no_archive=False, batch=False):
 		""" Delete a user """
-		if login is None and uid is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LGN_OR_UID)
 
-		if uid is None:
-			uid = UsersController.login_to_uid(login)
-
-		elif login is None:
-			# «login» is needed for deluser system command.
-			login = UsersController.users[uid]["login"]
+		uid, login = self.resolve_uid_or_login(uid, login)
 
 		ltrace('users', "| DeleteUser() %s(%s), groups %s." % (
 			login, str(uid), UsersController.users[uid]['groups']) )
@@ -477,8 +526,8 @@ class UsersController(Singleton):
 		# '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
 		for group in UsersController.users[uid]['groups'].copy():
-			UsersController.groups.RemoveUsersFromGroup(group, [ login ],
-				batch=True)
+			UsersController.groups.DeleteUsersFromGroup(name=group,
+				users_to_del=[ uid ], batch=True)
 
 		try:
 			# samba stuff
@@ -525,6 +574,7 @@ class UsersController(Singleton):
 				login, strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(homedir, user_archive_dir)
+
 				logging.info(logging.SYSU_ARCHIVED_USER % (homedir,
 					styles.stylize(styles.ST_PATH, user_archive_dir)))
 
@@ -539,11 +589,12 @@ class UsersController(Singleton):
 				else:
 					raise e
 
-	def ChangeUserPassword(self, login, password = None, display = False):
-		""" Change the password of a user
-		"""
-		if login is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
+	def ChangeUserPassword(self, login=None, uid=None, password=None,
+		display=False):
+		""" Change the password of a user. """
+
+		uid, login = self.resolve_uid_or_login(uid, login)
+
 		if password is None:
 			password = hlstr.generate_password(
 				UsersController.configuration.mAutoPasswdSize)
@@ -554,8 +605,6 @@ class UsersController(Singleton):
 			# SECURITY concern: if password is empty, shouldn't we
 			# automatically remove user from remotessh ?
 			#
-
-		uid = UsersController.login_to_uid(login)
 
 		UsersController.users[uid]['userPassword'] = \
 		UsersController.backends[
@@ -588,34 +637,30 @@ class UsersController(Singleton):
 		except (IOError, OSError), e:
 			if e.errno != 32:
 				raise e
-	def ChangeUserGecos(self, login, gecos = ""):
-		""" Change the gecos of a user
-		"""
-		if login is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
+	def ChangeUserGecos(self, login=None, uid=None, gecos=""):
+		""" Change the gecos of a user. """
+
+		uid, login = self.resolve_uid_or_login(uid, login)
 
 		if not hlstr.cregex['description'].match(gecos):
 			raise exceptions.BadArgumentError(logging.SYSU_MALFORMED_GECOS % (
 				gecos,
 				styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
 
-		uid = UsersController.login_to_uid(login)
 		UsersController.users[uid]['gecos'] = gecos
 
 		UsersController.users[uid]['action'] = 'update'
 		UsersController.backends[
 			UsersController.users[uid]['backend']
 			].save_user(uid)
-	def ChangeUserShell(self, login, shell = ""):
+	def ChangeUserShell(self, login=None, uid=None, shell=None):
 		""" Change the shell of a user. """
-		if login is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
 
-		uid = UsersController.login_to_uid(login)
+		uid, login = self.resolve_uid_or_login(uid, login)
 
 		if shell not in UsersController.configuration.users.shells:
 			raise exceptions.LicornRuntimeError(
-				"Invalid shell ! valid shells are %s." % \
+				"Invalid shell. Valid shells are %s." % \
 					UsersController.configuration.users.shells)
 
 		UsersController.users[uid]['loginShell'] = shell
@@ -625,13 +670,10 @@ class UsersController(Singleton):
 			UsersController.users[uid]['backend']
 			].save_user(uid)
 
-	def LockAccount(self, login, lock = True):
-		"""(Un)Lock a user account."""
-		if login is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
+	def LockAccount(self, login=None, uid=None, lock=True):
+		"""(Un)Lock a user account. """
 
-		# update internal data structures.
-		uid = UsersController.login_to_uid(login)
+		uid, login = self.resolve_uid_or_login(uid, login)
 
 		if lock:
 			if UsersController.users[uid]['locked']:
@@ -659,16 +701,16 @@ class UsersController(Singleton):
 			UsersController.users[uid]['backend']
 			].save_user(uid)
 
-	def ApplyUserSkel(self, login, skel):
-		""" Apply a skel on a user """
-		if login is None:
-			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
+	def ApplyUserSkel(self, login=None, uid=None, skel=None):
+		""" Apply a skel on a user. """
+
+		uid, login = self.resolve_uid_or_login(uid, login)
+
 		if skel is None:
 			raise exceptions.BadArgumentError, "You must specify a skel"
 		if not os.path.isabs(skel) or not os.path.isdir(skel):
 			raise exceptions.AbsolutePathError(skel)
 
-		uid = UsersController.login_to_uid(login)
 		# not force option with shutil.copytree
 		process.syscmd("cp -r %s/* %s/.??* %s" % (skel, skel,
 			UsersController.users[uid]['homeDirectory']) )
@@ -775,31 +817,33 @@ class UsersController(Singleton):
 
 		return data
 
-	def CheckUsers(self, users_to_check = [], minimal = True, batch = False,
-		auto_answer = None):
+	def CheckUsers(self, uids_to_check = [], minimal=True, batch=False,
+		auto_answer=None):
 		"""Check user accounts and account data consistency."""
 
-		if users_to_check == []:
-			users_to_check = UsersController.login_cache.keys()
+		ltrace('users', '> CheckUsers(uids_to_check=%s, minimal=%s, batch=%s)' %
+			(uids_to_check, minimal, batch))
 
 		# dependancy: base dirs must be OK before checking users's homes.
 		UsersController.configuration.check_base_dirs(minimal, batch, auto_answer)
 
-		def check_user(user, minimal = minimal, batch = batch,
-			auto_answer = auto_answer):
+		def check_uid(uid, minimal=minimal, batch=batch,
+			auto_answer=auto_answer):
 
+			ltrace('users', '> CheckUsers.check_uid(uid=%s)' % uid)
+
+			login = self.uid_to_login(uid)
 			all_went_ok = True
-			uid         = UsersController.login_to_uid(user)
 
 			if UsersController.is_system_uid(uid):
 
 				logging.progress("Checking system account %s..." % \
-					styles.stylize(styles.ST_NAME, user))
+					styles.stylize(styles.ST_NAME, login))
 
 				if os.path.exists(self.users[uid]['homeDirectory']):
 					home_dir_info = [ {
 						'path'       : self.users[uid]['homeDirectory'],
-						'user'       : user,
+						'user'       : login,
 						'group'      : self.groups.groups[
 							self.users[uid]['gidNumber']]['name'],
 						'mode'       : 00700,
@@ -811,14 +855,14 @@ class UsersController(Singleton):
 						UsersController.groups, self)
 			else:
 				logging.progress("Checking user %s..." % \
-					styles.stylize(styles.ST_LOGIN, user))
+					styles.stylize(styles.ST_LOGIN, login))
 
 				gid       = self.users[uid]['gidNumber']
 				group     = self.groups.groups[gid]['name']
 				user_home = self.users[uid]['homeDirectory']
 
 				logging.progress("Checking user account %s..." % \
-					styles.stylize(styles.ST_NAME, user))
+					styles.stylize(styles.ST_NAME, login))
 
 				acl_base                  = "u::rwx,g::---,o:---"
 				file_acl_base             = "u::rw@UE,g::---,o:---"
@@ -841,7 +885,7 @@ class UsersController(Singleton):
 
 				special_dirs.extend([ {
 					'path'       : "%s/%s" % (user_home, dir),
-					'user'       : user,
+					'user'       : login,
 					'group'      : group,
 					'mode'       : 00700,
 					'content_mode': 00600
@@ -854,7 +898,7 @@ class UsersController(Singleton):
 
 					special_dirs.append ( {
 						'path'      : "%s/public_html" % user_home,
-						'user'      : user,
+						'user'      : login,
 						'group'     : 'acl',
 						'access_acl': "%s,g:%s:r-x,g:www-data:r-x,%s" % (
 							acl_base,
@@ -897,15 +941,13 @@ class UsersController(Singleton):
 						'%scur' % maildir_base,'%snew' % maildir_base ):
 						special_dirs.append ( {
 							'path'       : dir,
-							'user'       : user,
+							'user'       : login,
 							'group'      : group,
 							'mode'       : 00700,
 							'content_mode': 00600
 						} )
 
-
 				# this will be handled in another manner later in this function.
-				# .procmailrc: fix #589
 				home_exclude_file_list = [ ".dmrc", ".procmailrc" ]
 				for file in home_exclude_file_list:
 					if os.path.exists('%s/%s' % (user_home, file)):
@@ -919,7 +961,7 @@ class UsersController(Singleton):
 
 				home_dir_info = {
 					'path'      : UsersController.users[uid]['homeDirectory'],
-					'user'      : user,
+					'user'      : login,
 					'group'     : 'acl',
 					'access_acl': "%s,g:%s:r-x,g:www-data:--x,%s" % (
 						acl_base,
@@ -958,7 +1000,9 @@ class UsersController(Singleton):
 					logging.warning(
 						"Extended checks are not yet implemented for users.")
 					# TODO:
-					#	logging.progress("Checking symlinks in user's home dir, this can take a while..." % styles.stylize(styles.ST_NAME, user))
+					#	logging.progress("Checking symlinks in user's home dir,
+					# this can take a while..." % styles.stylize(
+					# styles.ST_NAME, user))
 					#	if not self.CleanUserHome(login, batch, auto_answer):
 					#		all_went_ok = False
 
@@ -967,16 +1011,60 @@ class UsersController(Singleton):
 					# minimal = True pour éviter les checks récursifs avec
 					# CheckGroups().
 
+				ltrace('users', '> CheckUsers.check_uid(all_went_ok=%s)' %
+					all_went_ok)
 				return all_went_ok
 
-		if reduce(pyutils.keep_false, map(check_user, users_to_check)) is False:
+		all_went_ok=reduce(pyutils.keep_false, map(check_uid, uids_to_check))
+		if all_went_ok is False:
 			# NOTICE: don't test just "if reduce():", the result could be None
 			# and everything is OK when None...
 			raise exceptions.LicornCheckError(
 				"Some user(s) check(s) didn't pass, or weren't corrected.")
 
+		ltrace('users', '< CheckUsers(%s)' % all_went_ok)
+		return all_went_ok
+	def confirm_uid(self, uid):
+		""" return a login (AS A TUPLE) from an UID. """
+		try:
+			return UsersController.users[uid]['uid']
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				"UID %s doesn't exist" % uid)
+	def resolve_uid_or_login(self, uid, login):
+		""" method used every where to get uid / login of a user object to
+			do something onto. a non existing user / uid will raise an
+			exception from the uid_to_login() / login_to_uid() methods."""
+
+		if login is None and uid is None:
+			raise exceptions.BadArgumentError(
+				"You must specify a login or an UID to resolve from.")
+
+		# we cannot just test "if uid:" because with root(0) this doesn't work.
+		if uid is not None:
+			login = UsersController.uid_to_login(uid)
+		else:
+			uid = UsersController.login_to_uid(login)
+		return (uid, login)
+	def guess_identifier(self, value):
+		""" Try to guess everything of a user from a
+			single and unknonw-typed info. """
+		try:
+			uid = int(value)
+			UsersController.uid_to_login(uid)
+		except ValueError, e:
+			uid = UsersController.login_to_uid(value)
+		return uid
+	def guess_identifiers(self, value_list):
+		valid_ids=set()
+		for value in value_list:
+			try:
+				valid_ids.add(self.guess_identifier(value))
+			except exceptions.DoesntExistsException:
+				logging.notice('Skipped non-existing login or UID %s' % value)
+		return valid_ids
 	@staticmethod
-	def user_exists(uid = None, login = None):
+	def exists(uid=None, login=None):
 		if uid:
 			return UsersController.users.has_key(uid)
 		if login:
@@ -984,7 +1072,6 @@ class UsersController(Singleton):
 
 		raise exceptions.BadArgumentError(
 			"You must specify an UID or a login to test existence of.")
-
 	@staticmethod
 	def check_password(login, password):
 		crypted_passwd1 = UsersController.users[
@@ -995,31 +1082,28 @@ class UsersController(Singleton):
 		ltrace('users', 'comparing 2 crypted passwords:\n%s\n%s' % (
 			crypted_passwd1, crypted_passwd2))
 		return (crypted_passwd1 == crypted_passwd2)
-
 	@staticmethod
 	def login_to_uid(login):
-		""" Return the uid of the user 'login'
-		"""
+		""" Return the uid of the user 'login' """
 		try:
 			# use the cache, Luke !
 			return UsersController.login_cache[login]
 		except KeyError:
-			try:
-				int(login)
-				logging.warning("You passed an uid to login_to_uid():"
-					" %d (guess its login is « %s » )." % (
-						login, UsersController.users[login]['login']))
-			except ValueError:
-				pass
 			raise exceptions.DoesntExistsException(
-				logging.SYSU_USER_DOESNT_EXIST % login)
-
+				"User %s doesn't exist" % login)
+	@staticmethod
+	def uid_to_login(uid):
+		""" Return the login for an UID, or raise Doesn't exists. """
+		try:
+			return UsersController.users[uid]['login']
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				"UID %s doesn't exist" % uid)
 	@staticmethod
 	def is_system_uid(uid):
 		""" Return true if uid is system."""
 		return uid < UsersController.configuration.users.uid_min or \
 			uid > UsersController.configuration.users.uid_max
-
 	@staticmethod
 	def is_standard_uid(uid):
 		""" Return true if gid is standard (not system). """
@@ -1061,11 +1145,9 @@ class UsersController(Singleton):
 				" with the firstname/lastname you provided (%s %s)." % (
 					login, hlstr.regex['login'], firstname, lastname) )
 
-		return login
-
 		# TODO: verify if the login doesn't already exist.
 		#while potential in UsersController.users:
-
+		return login
 	@staticmethod
 	def primary_gid(login = None, uid = None):
 		if login:
@@ -1076,4 +1158,3 @@ class UsersController(Singleton):
 
 		raise exceptions.BadArgumentError(
 			"You must specify an UID or a login to get primary_gid of.")
-

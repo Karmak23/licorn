@@ -41,7 +41,7 @@ def system_load():
 	loads = open('/proc/loadavg').read().split(" ")
 
 	allusers  = users
-	allusers.Select(allusers.FILTER_STANDARD)
+	allusers.Select(filters.STANDARD)
 	nbusers = len(allusers.filtered_users)
 
 	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE,

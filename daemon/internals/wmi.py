@@ -194,10 +194,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							# TODO: make this a beautiful PAM authentication ?
 							#
 							try :
-								if users.user_exists(login = authorization[0]) \
+								if users.exists(login = authorization[0]) \
 									and users.check_password(authorization[0],
 										authorization[1]):
-									if groups.group_exists(wmi_group):
+									if groups.exists(wmi_group):
 										if authorization[0] in \
 											groups.auxilliary_members(wmi_group):
 											self.http_user = authorization[0]

@@ -81,8 +81,8 @@ class PrivilegesWhiteList(list, Singleton):
 		try:
 			list.remove(self, privilege)
 		except ValueError:
-			logging.warning(
-				"privilege %s doesn't exist in the whiteliste, skipped." % \
+			logging.warning('''privilege %s is already not present in the '''
+				'''whitelist, skipped.''' % \
 					styles.stylize(styles.ST_NAME, privilege))
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
