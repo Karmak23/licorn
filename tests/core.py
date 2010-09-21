@@ -1084,6 +1084,20 @@ def test_users(context):
 		descr='check option --home of user command (fix #248)'
 		).Run()
 
+	pname = 'profil_test'
+	ScenarioTest([
+		ADD + [ 'profile', '--name', 'Profil-Test-Name', '--group=profil_test',
+			'-v' ],
+		GET + [ 'profiles' ],
+		ADD + [ 'user', '--login=%s' % uname, '--profile=%s' % pname, '-v' ],
+		GET + [ 'users', uname, '--long' ],
+		DEL + [ 'profile', '--group=%s' % pname, '--del-users', '-v' ],
+		],
+		context=context,
+		descr='''Add a profil and check if it has been affected to a new user
+			(avoid #277)'''
+		).Run()
+
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
