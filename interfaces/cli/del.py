@@ -13,9 +13,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, re
 
-from licorn.foundations           import logging, exceptions, options, objects, \
-	styles
-from licorn.foundations.constants import filters
+from licorn.foundations           import logging, exceptions, styles
 
 from licorn.core.configuration    import LicornConfiguration
 from licorn.core.users            import UsersController
@@ -35,6 +33,7 @@ def desimport_groups(opts,args):
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
 	groups = GroupsController(configuration, users, warnings=False)
+	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name"

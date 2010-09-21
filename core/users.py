@@ -7,7 +7,7 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, crypt, sys
+import os, sys
 from time import time, strftime, gmtime
 
 from licorn.foundations           import logging, exceptions, process, hlstr

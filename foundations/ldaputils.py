@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import ldap
+import os, ldap
 import string
 from ldif import LDIFParser
 

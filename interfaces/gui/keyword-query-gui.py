@@ -8,19 +8,17 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, signal, gtk, pango, gobject, gnomevfs, gnome.ui
-from time import localtime, strftime
+import os, gtk, gnomevfs, gnome.ui
 
-from licorn.foundations import logging, exceptions, options
-from licorn.core        import configuration, keywords
-from licorn.harvester   import HarvestClient, LCN_MSG_STATUS_PARTIAL
+from licorn.foundations import exceptions, options
+from licorn.core        import keywords
 from licorn.gui.gtkkwd  import LicornKeywordsGtkWindow
 
 class LicornKeywordsQueryWindow(LicornKeywordsGtkWindow):
 	""" GUI for querying files with Licorn keyword system."""
 	default_application = "gedit"
-	
-	def __init__(self):				
+
+	def __init__(self):
 		""" Create all widgets."""
 
 		LicornKeywordsGtkWindow.__init__(self, 'query')
@@ -37,7 +35,7 @@ class LicornKeywordsQueryWindow(LicornKeywordsGtkWindow):
 		""" Launch application when user click on a file in the treeview."""
 		#path = self.liststore.get_value(self.liststore.get_iter(store_path), 0)
 		filename    = self.liststore[path][1] + '/' + self.liststore[path][0]
-		application = gnomevfs.mime_get_default_application(self.get_mime_type(filename)) 
+		application = gnomevfs.mime_get_default_application(self.get_mime_type(filename))
 		if application is None:
 			application = self.default_application
 		else:
@@ -78,7 +76,7 @@ class LicornKeywordsQueryWindow(LicornKeywordsGtkWindow):
 			(status, nrf, paths) = self.hc.KeywordQueryRequest(self.selected_keywords_list())
 			if nrf > 1: results = 's'
 			else:      results = ''
-	
+
 			self.update_listmodel(paths)
 
 			if status == LCN_MSG_STATUS_PARTIAL:
@@ -87,7 +85,7 @@ class LicornKeywordsQueryWindow(LicornKeywordsGtkWindow):
 				message = 'Query returned %d result%s.' % (nrf, results)
 
 			self.StatusMessage(message)
-			
+
 		except exceptions.LicornHarvestException, e:
 			self.StatusMessage(str(e))
 		except exceptions.LicornHarvestError, e:

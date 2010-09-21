@@ -11,9 +11,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 from gettext import gettext as _
-
-import os, cStringIO
-from subprocess  import Popen, PIPE
+from subprocess import Popen, PIPE
 
 from licorn.core.configuration import LicornConfiguration
 

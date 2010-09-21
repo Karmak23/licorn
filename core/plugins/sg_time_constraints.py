@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2
 
 """
 
-import re, shutil
+import re
 
 from licorn.foundations    import exceptions, readers
 from licorn.core           import configuration
@@ -96,9 +96,9 @@ class TimeConstraintsList:
 			+ "\t\t" + "<endhours>" + str(i['endhours']) + "</endhours>\n" \
 			+ "\t\t" + "<endminutes>" + str(i['endminutes']) + "</endminutes>\n"
 			data += "\t" + "</time-constraint>\n"
-	
+
 		data += "</time-constraints-list>"
-	
+
 		if doreturn:
 			return data
 		else:
@@ -117,7 +117,7 @@ class TimeConstraintsList:
 				+ str(i['endhours']) + ":" \
 				+ str(i['endminutes']) + "\n"
 			identifier += 1
-					
+
 		if doreturn:
 			return data
 		else:

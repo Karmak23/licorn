@@ -8,20 +8,20 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import gtk, pango, gnomevfs
+import gtk, gnomevfs
 import sys, os.path, stat
 
 from licorn.foundations import logging
-from licorn.core        import configuration, keywords
+from licorn.core        import keywords
 from licorn.gui.gtkkwd  import LicornKeywordsGtkWindow
 
 class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 	""" GUI for files and directories keywords managing. """
-	def __init__(self, args = []):		
-	
+	def __init__(self, args = []):
+
 		LicornKeywordsGtkWindow.__init__(self, 'modify')
 		self.TARGET_TYPE_TEXT = 80
-		
+
 		drag_dest = self.gui.get_widget('modify_paths_frame')
 		drag_dest.drag_dest_set(
 			gtk.DEST_DEFAULT_ALL,
@@ -63,7 +63,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		return False
 	def __treeview_remove(self, item):
 		model, paths = self.treeview.get_selection().get_selected_rows()
-		if model: 
+		if model:
 			map(self.liststore.remove, map(self.liststore.get_iter, paths))
 			self.update_keyword_usage()
 			self.update_notebook()
@@ -105,7 +105,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 			except (OSError, IOError), e:
 				if e.errno not in (61, 95):
 					# TODO: refactor messagebox.
-					msgbox = gtk.MessageDialog(parent=self.window, type=gtk.MESSAGE_ERROR, 
+					msgbox = gtk.MessageDialog(parent=self.window, type=gtk.MESSAGE_ERROR,
 						buttons=gtk.BUTTONS_CLOSE, message_format=str(e))
 					msgbox.set_modal(True)
 					msgbox.show()
@@ -203,7 +203,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 				else:
 					obj.set_active(False)
 					obj.set_inconsistent(True)
-					
+
 			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox): obj.foreach(update_checkbox)
 
 		self.clearing = True
@@ -220,7 +220,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		"""
 		keyword_usage = {}
 		keyword_usage['@fc@'] = 0
-		
+
 		def count_keywords(file_path):
 			keyword_usage['@fc@'] += 1
 			try:
@@ -230,10 +230,10 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 					else:
 						keyword_usage[kw] = 1
 			except (OSError, IOError), e: pass
-				
+
 		if self.recursive.get_active(): max = 99
 		else:                           max = 1
-		
+
 		map( lambda x: count_keywords(x),
 			fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
 
@@ -251,7 +251,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 				keyword_usage[kw] = self.unchecked
 
 		logging.debug('Dir %s, %d files, final kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
-				
+
 		return keyword_usage
 	def receive_dnd (self, widget, context, x, y, selection, targetType, time):
 		""" TODO """

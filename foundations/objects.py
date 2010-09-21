@@ -9,7 +9,6 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import sys, os, time
-from sys                import version_info
 from Queue              import Queue
 from threading          import Thread, Event
 

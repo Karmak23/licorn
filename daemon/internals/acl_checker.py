@@ -6,14 +6,11 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time, gamin, signal
+import os
 
-from threading   import Thread, Event, Semaphore
-from collections import deque
-
-from licorn.foundations         import fsapi, logging, exceptions, styles, process
+from licorn.foundations         import fsapi, logging
 from licorn.foundations.objects import LicornThread, Singleton
-from licorn.core                import groups, configuration
+
 from licorn.daemon.core         import dname
 
 class ACLChecker(LicornThread, Singleton):

@@ -7,7 +7,6 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import crypt
-import hashlib
 
 from licorn.foundations         import logging, exceptions, styles
 from licorn.foundations         import readers, hlstr

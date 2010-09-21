@@ -11,16 +11,8 @@ import sys
 import time
 import signal
 
-from threading   import Thread, Event, Semaphore
-from collections import deque
+from licorn.foundations         import logging, styles, process
 
-from licorn.foundations         import fsapi
-from licorn.foundations         import logging
-from licorn.foundations         import exceptions
-from licorn.foundations         import styles
-from licorn.foundations         import process
-from licorn.foundations.objects import LicornThread
-from licorn.foundations.objects import Singleton
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController

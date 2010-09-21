@@ -7,8 +7,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import os
 
-from licorn.foundations           import logging, exceptions, styles, readers, \
-	process
+from licorn.foundations           import exceptions, readers, process
 from licorn.foundations.objects   import Singleton
 from licorn.foundations.constants import host_status
 from licorn.foundations.ltrace    import ltrace

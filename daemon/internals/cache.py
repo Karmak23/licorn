@@ -9,10 +9,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import os, xattr, stat, re
-
-# try python2.5 else python2.4
-try:  import sqlite3 as sqlite
-except ImportError: from pysqlite2 import dbapi2 as sqlite
+import sqlite3 as sqlite
 
 from Queue              import Queue
 from threading          import Thread, Event

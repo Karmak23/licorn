@@ -9,7 +9,7 @@ Licensed under the terms of the GNU GPL version 2
 
 import xattr, os.path, stat
 
-from licorn.foundations         import exceptions, logging, hlstr, pyutils
+from licorn.foundations         import exceptions, logging, hlstr, pyutils, styles
 from licorn.foundations         import fsapi, readers
 from licorn.foundations.objects import Singleton, FileLock
 
@@ -122,7 +122,7 @@ class KeywordsController(Singleton):
 			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_KEYWORD % (name, styles.stylize(styles.ST_REGEX, hlstr.regex['keyword'])))
 
 		if not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError, SYSK_MALFORMED_DESCR % (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description']))
+			raise exceptions.BadArgumentError, logging.SYSK_MALFORMED_DESCR % (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description']))
 
 		self.keywords[name] = { 'name': name, 'parent': parent, 'description': description }
 		self.changed = True

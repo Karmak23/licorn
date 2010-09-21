@@ -10,10 +10,6 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os
-
-from licorn.foundations         import logging, exceptions
-from licorn.foundations.objects import FileLock
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
 

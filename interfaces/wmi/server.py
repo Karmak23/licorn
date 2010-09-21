@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os, time, re
 from gettext import gettext as _
 
-from subprocess import Popen, PIPE
-
-from licorn.foundations         import logging
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 

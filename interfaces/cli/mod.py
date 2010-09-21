@@ -9,16 +9,14 @@ Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys
-
 _app = {
 	"name"     		: "licorn-modify",
 	"description"	: "Licorn Modify Entries",
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-from licorn.foundations           import logging, exceptions, options
-from licorn.foundations           import hlstr, objects, styles
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import hlstr, styles
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
 
@@ -306,7 +304,7 @@ def mod_keyword(opts, args):
 def mod_path(opts, args):
 	""" Manage keywords of a file or directory. """
 
-	from licorn.core.keywords import KeywordsController
+	configuration = LicornConfiguration()
 	kw = KeywordsController(configuration)
 
 	if len(args) == 2:

@@ -9,9 +9,9 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, re, time, stat, shutil
+import os, re, shutil
 
-from licorn.foundations           import process, fsapi, hlstr, logging
+from licorn.foundations           import fsapi, hlstr, logging
 from licorn.foundations           import exceptions, styles, readers, pyutils
 from licorn.foundations.objects   import Singleton
 from licorn.foundations.constants import filters

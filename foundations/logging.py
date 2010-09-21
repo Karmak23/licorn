@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, termios
 
-import hooks, styles, exceptions
+import styles, exceptions
 
 from ltrace  import mytime
 from objects import Singleton
@@ -64,20 +64,7 @@ __warningsdb = LicornWarningsDB()
 __warningsdb = LicornWarningsDB()
 
 def error(mesg, returncode=1, full=False):
-	""" Display a styles.stylized error message and exit badly.
-		Run hooks registered for 'onError' event, to cleanup
-		things which must be.
-	"""
-	#
-	# these hooks are supposed to contain only cleanup code,
-	# which *must* be run before the program dies.
-	#
-	# FIXME: verify the hooks won't bork the program / system more
-	# than it is (remember, if in the present function, we are already
-	# dying... In reallity these checks are undoable, so we must define
-	# a policy of what hook_funcs can/may/must do and can/may/must not.
-	#
-	hooks.run_hooks('onError')
+	""" Display a styles.stylized error message and exit badly.	"""
 
 	if full:
 		import traceback

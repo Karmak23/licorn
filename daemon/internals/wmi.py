@@ -17,7 +17,6 @@ from licorn.foundations.ltrace  import ltrace
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController
-from licorn.core.profiles       import ProfilesController
 from licorn.interfaces.wmi      import utils as w
 from licorn.daemon.core         import dname, wpid_path, wmi_port, wlog_path, \
 	wmi_group, buffer_size, setup_signals_handler

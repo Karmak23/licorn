@@ -7,17 +7,17 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, signal, gtk, gtk.glade, pango, gobject, gnomevfs, gnome.ui
+import signal, gtk, gtk.glade, pango, gnomevfs, gnome.ui
 from time import localtime, strftime
 
-from licorn.foundations import logging, exceptions, options, hlstr
+from licorn.foundations import exceptions, hlstr
 from licorn.core        import configuration, keywords
 from licorn.harvester   import HarvestClient, LCN_MSG_STATUS_PARTIAL
 
 class LicornKeywordsGtkWindow:
 	""" base GUI for keywords operations. """
-	
-	def __init__(self, gui_name):				
+
+	def __init__(self, gui_name):
 		""" Create all widgets."""
 
 		# import keywords from current system.
@@ -31,7 +31,7 @@ class LicornKeywordsGtkWindow:
 
 		self.statusbar  = self.gui.get_widget("%s_statusbar" % self.gui_name)
 		self.clearbut   = self.gui.get_widget('%s_clear_button' % self.gui_name)
-		
+
 		self.sellabel   = self.gui.get_widget('%s_cursel_value_label' % self.gui_name)
 		# used to avoid a bunch of requests to the server when clearing all checkboxes.
 		self.clearing   = False
@@ -181,7 +181,7 @@ class LicornKeywordsGtkWindow:
 		def clear_checkbox(obj):
 			if type(obj) == gtk.CheckButton:                 obj.set_active(False)
 			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox): obj.foreach(clear_checkbox)
-		
+
 		self.clearing = True
 
 		for i in range(0, self.notebook.get_n_pages()):
@@ -192,22 +192,22 @@ class LicornKeywordsGtkWindow:
 		"""TODO"""
 
 		def connect_checkbox(obj):
-			if type(obj) == gtk.CheckButton: obj.connect("clicked", func) 
+			if type(obj) == gtk.CheckButton: obj.connect("clicked", func)
 			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox): obj.foreach(connect_checkbox)
-		
+
 		for i in range(0, self.notebook.get_n_pages()):
 			self.notebook.get_nth_page(i).foreach(connect_checkbox)
 	def selected_keywords_list(self):
 		""" Look all keyword checkboxes and build a list with their names. """
 
-		tmp = [] 
-		
+		tmp = []
+
 		def looking_for_selected_keywords(obj):
 			if type(obj) == gtk.CheckButton and obj.get_active():
 				tmp.append(obj.get_label())
 			elif type(obj) in (gtk.Box, gtk.VBox, gtk.HBox):
 				obj.foreach(looking_for_selected_keywords)
-		
+
 		for i in range(0, self.notebook.get_n_pages()):
 			self.notebook.get_nth_page(i).foreach(looking_for_selected_keywords)
 
@@ -239,7 +239,7 @@ class LicornKeywordsGtkWindow:
 			else:
 				message = 'Server is ready, with currently %d keyword%s and %d file%s in its database.' % (nrk, kresults, nrf, fresults)
 			self.StatusMessage(message)
-			
+
 		except exceptions.LicornHarvestException, e:
 			self.StatusMessage(str(e))
 		except exceptions.LicornHarvestError, e:

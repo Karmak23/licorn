@@ -24,11 +24,10 @@ current_app = {
 	"author"     : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import sys, os, signal
-from Queue              import Queue
+import os, signal
 
-from licorn.foundations         import process, logging, exceptions
-from licorn.foundations         import styles, options
+from licorn.foundations         import process, logging, options
+
 from licorn.core.configuration  import LicornConfiguration
 from licorn.core.users          import UsersController
 from licorn.core.groups         import GroupsController
@@ -48,8 +47,8 @@ from licorn.daemon.core                  import dname, terminate_cleanly, \
 from licorn.daemon.internals.wmi         import fork_wmi
 from licorn.daemon.internals.acl_checker import ACLChecker
 from licorn.daemon.internals.inotifier   import INotifier
-from licorn.daemon.internals.cache       import Cache
-from licorn.daemon.internals.searcher    import FileSearchServer
+#from licorn.daemon.internals.cache       import Cache
+#from licorn.daemon.internals.searcher    import FileSearchServer
 #from licorn.daemon.internals.syncer       import ServerSyncer, ClientSyncer
 
 if __name__ == "__main__":

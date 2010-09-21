@@ -14,7 +14,7 @@ Licensed under the terms of the GNU GPL version 2.
 import sys
 output = sys.stdout.write
 
-from licorn.foundations           import logging, exceptions, options
+from licorn.foundations           import logging
 from licorn.foundations.constants import filters
 
 from licorn.core.configuration    import LicornConfiguration
@@ -148,7 +148,7 @@ def get_machines(opts, args):
 		try:
 			machines.Select("mid=" + unicode(opts.mid))
 		except KeyError:
-			logging.error(_("No matching machine found."))
+			logging.error("No matching machine found.")
 			return
 
 	if opts.xml:

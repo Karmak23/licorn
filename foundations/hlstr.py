@@ -87,8 +87,6 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	for elem in translation_map:
 		s = s.replace(elem, translation_map[elem])
 
-	import re
-
 	# delete any strange (or forgotten by translation map...) char left
 	if aggressive:
 		s = re.sub('[^.a-z0-9]', '', s)

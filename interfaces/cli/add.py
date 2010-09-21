@@ -12,8 +12,8 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 
-from licorn.foundations           import logging, exceptions, options, styles
-from licorn.foundations           import hlstr, fsapi, objects
+from licorn.foundations           import logging, exceptions, styles
+from licorn.foundations           import hlstr, fsapi
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
 

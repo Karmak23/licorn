@@ -6,11 +6,11 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, crypt, sys
+import os, sys
 from time import time, strftime, gmtime, localtime
 
 from licorn.foundations           import logging, exceptions, process, hlstr
-from licorn.foundations           import pyutils, styles, fsapi
+from licorn.foundations           import pyutils, styles
 from licorn.foundations.objects   import Singleton
 from licorn.foundations.constants import host_status, filters
 from licorn.foundations.ltrace    import ltrace

@@ -10,9 +10,8 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, time
 
-from Queue              import Queue
 from threading          import Thread, Event
-from SocketServer       import ThreadingTCPServer, BaseRequestHandler, TCPServer
+from SocketServer       import ThreadingTCPServer, BaseRequestHandler
 
 from licorn.foundations import logging, exceptions, styles
 from licorn.daemon.core import dname, socket_path, searcher_port

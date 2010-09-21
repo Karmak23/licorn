@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, time, re
 
-from licorn.foundations    import logging, exceptions, readers
+from licorn.foundations    import exceptions, readers
 from licorn.core           import configuration
 
 ssh_cmd    = [ 'ssh',  '-q', '-o', 'PasswordAuthentication no', '-o', 'StrictHostKeyChecking no', '-o', 'BatchMode yes' ]
@@ -23,7 +23,7 @@ def check_user():
 	""" TODO: check if user is root of member of admin group. """
 	if True:
 		return True
-	
+
 	return False
 def mail_report():
 	#

@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys
-from licorn.foundations import exceptions, styles
+from licorn.foundations import exceptions, styles, logging
 
 
 # TODO: make this module create a singleton object, else this will not work as expected...
@@ -23,8 +23,7 @@ _hooks = {	'onError'    : [],
 		}
 
 def register_event(event):
-	""" Add a new event to the event table.
-	"""
+	""" Add a new event to the event table. """
 
 	global _hooks
 
@@ -33,14 +32,12 @@ def register_event(event):
 	else:
 		_hooks[event] = []
 def unregister_event(event):
-	""" Remove an event from the event table.
-	"""
+	""" Remove an event from the event table. """
 
 	global _hooks
 
 	if event in _hooks.keys():
 		if _hooks[event] != []:
-			from licorn.foundations import logging
 			logging.warning('''When removing event '%s', hooks list not empty !''' % event)
 
 		del _hooks[event]
@@ -85,7 +82,6 @@ def run_hooks(event):
 					hook_func( *hook_args, **hook_dict)
 				else:
 					# don't fail if some hooks are uncallable, others must be called !
-					from licorn.foundations import logging
 					logging.warning('uncallable hook: ' + str(hook_func))
 
 			except exceptions.LicornException, e:
@@ -100,6 +96,4 @@ def run_hooks(event):
 				sys.exit(127)
 
 	else:
-		from licorn.foundations import logging
 		logging.warning("run_hook(): Event '%s' doesn't exist in the events table !")
-

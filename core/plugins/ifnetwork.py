@@ -7,11 +7,9 @@ Licensed under the terms of the GNU GPL version 2
 
 """
 
-from licorn import exceptions
-
 def iface_address(iface_name, iface_address = None):
-	""" Get an interface IPv4 adress and return it as a string. 
-	
+	""" Get an interface IPv4 adress and return it as a string.
+
 	We dig in /usr/include/linux to find all the values !
 		bits/socket.h
 		sockios.h
@@ -20,8 +18,8 @@ def iface_address(iface_name, iface_address = None):
 
 	a similar way to do this (which i don't like), without struct:
 	http://mail.python.org/pipermail/python-list/1999-August/009100.html
-		
-	
+
+
 		struct if_settings
 		{
 		    unsigned int type;      /* Type of physical device or protocol */
@@ -88,11 +86,11 @@ def iface_address(iface_name, iface_address = None):
 			__SOCKADDR_COMMON (sa_);    /* Common data: address family and length.  */
 			char sa_data[14];           /* Address data.  */
 		};
-		
+
 	"""
 
 	import fcntl, struct, socket
-	
+
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 	# mapping struct ifreq:
@@ -115,14 +113,14 @@ def iface_address(iface_name, iface_address = None):
 
 	return socket.inet_ntop(socket.AF_INET, addr)
 def iface_hostname(iface_name, iface_address = None):
-	""" Get an interface IPv4 hostname and return it as a string. 
+	""" Get an interface IPv4 hostname and return it as a string.
 		same doc as previous function.
 	"""
 
 	raise NotImplementedError("TODO !")
 
 	import fcntl, struct, socket
-	
+
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 	# mapping struct ifreq:
@@ -146,13 +144,13 @@ def iface_hostname(iface_name, iface_address = None):
 	return socket.inet_ntop(socket.AF_INET, addr)
 def nameservers():
 	""" return system nameservers present in /etc/resolv.conf."""
-	
+
 	import re
 	ns_re = re.compile("^\s*nameserver\s+([-\w\.]+)\s*$")
-	
+
 	for line in open("/etc/resolv.conf"):
 		#logging.debug("line: " + line)
 		ns_matches = ns_re.match(line)
 		if  ns_matches:
 			yield ns_matches.group(1)
-			
+

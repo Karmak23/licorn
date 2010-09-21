@@ -9,11 +9,11 @@ Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import sys, os
+import sys, os, re
 from gettext import gettext as _
 
 from licorn.foundations               import logging, exceptions, fsapi
-from licorn.foundations               import styles, readers, pyutils
+from licorn.foundations               import styles, readers
 from licorn.foundations.ltrace        import ltrace
 from licorn.foundations.objects       import LicornConfigObject, Singleton, \
 	FileLock
@@ -874,7 +874,6 @@ class LicornConfiguration(Singleton):
 							'''least %s, but it is %s.'''
 							% (styles.stylize(styles.ST_PATH, adduser_conf),
 								directive, value, adduser_dict[directive]))
-						import re
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -885,7 +884,6 @@ class LicornConfiguration(Singleton):
 							'''to %s, but it is %s.''' % (
 								styles.stylize(styles.ST_PATH, adduser_conf),
 								directive, value, adduser_dict[directive]))
-						import re
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -897,7 +895,6 @@ class LicornConfiguration(Singleton):
 					'''In %s, directive %s is missing. Setting it to %s.'''
 					% (styles.stylize(styles.ST_PATH, adduser_conf),
 						directive, value))
-				import re
 				adduser_dict[directive] = value
 				adduser_conf_alter      = True
 				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)',
@@ -953,7 +950,6 @@ class LicornConfiguration(Singleton):
 					''' but it is %s.''' % (
 						styles.stylize(styles.ST_PATH, login_defs),
 						directive, value, login_dict[directive]))
-				import re
 				login_defs_alter      = True
 				login_dict[directive] = value
 				login_data            = re.sub(r'%s.*' % directive,
@@ -1142,8 +1138,6 @@ class LicornConfiguration(Singleton):
 		if new_hostname == self.mCurrentHostname:
 			return
 
-		import re
-
 		if not re.compile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$",
 			re.IGNORECASE).match(new_hostname):
 			raise exceptions.BadArgumentError(
@@ -1189,8 +1183,6 @@ class LicornConfiguration(Singleton):
 		underlying system daemons and tools. """
 
 		ltrace('configuration', '> check_backends()')
-
-		from licorn.core.backends import backends
 
 		for backend_name in self.backends:
 			if backend_name == 'prefered':
