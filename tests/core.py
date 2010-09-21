@@ -492,15 +492,16 @@ def clean_system():
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
 			'''user_testsys2,user_testsys3''',
-			 '--no-archive'],
+			 '--no-archive', '-v' ],
 		['profile', '''--group=utilisagers,responsibilisateurs,'''
-			'''profil_test''', '--del-users',
-			'--no-archive'],
+			'''profil_test''',
+			'--del-users', '--no-archive', '-v' ],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
 			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
-			'''group_test3,GRP-ACL-test,gtest_267,group_testsys''' ],
-		['privilege', '--name=group_test' ]
+			'''group_test3,GRP-ACL-test,gtest_267,group_testsys''',
+			'--no-archive', '-v' ],
+		['privilege', '--name=group_test', '-v' ]
 		):
 
 		execute(DEL + argument)
@@ -1246,8 +1247,8 @@ def test_profiles(context):
 			'--description="power testsuite profile, feel free to delete"',
 			'-v' ],
 		GET + [ 'profiles' ],
-		ADD + [ 'user', '--name=toto', '--profile=Utilisagers' ],  
-		ADD + [ 'user', '--name=tutu', '--profile=Utilisagers' ], 
+		ADD + [ 'user', '--name=toto', '--profile=Utilisagers' ],
+		ADD + [ 'user', '--name=tutu', '--profile=Utilisagers' ],
 		ADD + [ 'user', '--name=tata', '--profile=Responsibilisateurs' ],
 		GET + [ 'user', '-l' ],
 		ADD + [ 'group', gname, '-v' ],
