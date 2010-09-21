@@ -1365,7 +1365,8 @@ def test_privileges(context):
 			DEL + [ 'group', '--name=%s3' % gname, '-v' ],
 			],
 			context=context,
-			descr='test new privileges commands (using argument %s)' % cmd
+			descr='''test new privileges commands (using argument %s) '''
+				'''(avoid #204 #174)''' % cmd
 			).Run()
 
 def to_be_implemented():
