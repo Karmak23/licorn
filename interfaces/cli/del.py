@@ -88,8 +88,7 @@ def del_user(opts, args):
 			[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
-			],
-			filters.NONE)
+			])
 
 	for uid in uids_to_del:
 		users.DeleteUser(uid=uid, no_archive=opts.no_archive)
@@ -103,8 +102,7 @@ def del_user_from_groups(opts, args):
 			[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
-			],
-			filters.NONE)
+			])
 
 	for g in opts.groups_to_del.split(','):
 		if g != "":
@@ -150,8 +148,7 @@ def del_group(opts, args):
 			[
 				(opts.name, groups.name_to_gid),
 				(opts.gid, groups.confirm_gid)
-			],
-			filters.NONE)
+			])
 
 	for gid in gids_to_del:
 		groups.DeleteGroup(gid=gid, del_users=opts.del_users,
@@ -169,8 +166,7 @@ def del_profile(opts, args):
 			[
 				(opts.name, profiles.name_to_group),
 				(opts.group, profiles.confirm_group)
-			],
-			filters.NONE)
+			])
 
 	for p in profiles_to_del:
 		profiles.DeleteProfile(group=p, del_users=opts.del_users,

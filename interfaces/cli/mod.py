@@ -39,8 +39,7 @@ def mod_user(opts, args):
 			[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
-			],
-			filters.NONE)
+			])
 
 	ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
@@ -131,8 +130,7 @@ def mod_group(opts, args):
 			[
 				(opts.name, groups.name_to_gid),
 				(opts.gid, groups.confirm_gid)
-			],
-			filters.NONE)
+			])
 
 	ltrace('mod', '> mod_group(%s)' % gids_to_mod)
 
@@ -204,8 +202,7 @@ def mod_profile(opts, args):
 			[
 				(opts.name, profiles.name_to_group),
 				(opts.group, profiles.confirm_group)
-			],
-			filters.NONE)
+			])
 
 	ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
 

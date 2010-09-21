@@ -40,6 +40,11 @@ def keep_false(x, y):
 
 	if x is False: return x
 	else:          return y
+def keep_true(x, y):
+	""" function used in reduce(), keepping only True values in lists. """
+
+	if x is True: return x
+	else:         return y
 def check_file_against_dict(conf_file, defaults, configuration,
 	batch=False, auto_answer=None):
 	''' Check if a file has some configuration directives,

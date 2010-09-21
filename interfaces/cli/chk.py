@@ -39,8 +39,7 @@ def chk_user(opts, args):
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
 			],
-			filters.NONE,
-			opts.all)
+			all=opts.all)
 
 	ltrace('chk', '> chk_user(%s)' % uids_to_chk)
 

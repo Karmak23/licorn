@@ -8,17 +8,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-from licorn.foundations           import exceptions, logging
+import sys
+from licorn.foundations           import options, exceptions, logging
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
 
 def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 	""" common structure for all licorn cli tools. """
-
-	import sys
-	from licorn.foundations import options, exceptions, logging
-	from licorn.foundations.ltrace import ltrace
 
 	ltrace('cli', '> cli_main(%s).' % sys.argv[0])
 
@@ -65,7 +62,8 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 	except exceptions.LicornError, e:
 		logging.error('%s (%s, errno=%s).' % (
 			str(e), stylize(ST_SPECIAL, str(e.__class__).replace(
-			"<class '",'').replace("'>", '')), e.errno), e.errno)
+			"<class '",'').replace("'>", '')), e.errno), e.errno,
+			full=True if options.verbose > 2 else False)
 
 	except exceptions.LicornException, e:
 		logging.error('%s: %s (errno=%s).' % (
@@ -80,7 +78,8 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			str(e)), 254, full=True)
 
 	ltrace('cli', '< cli_main(%s).' % sys.argv[0])
-def cli_select(controller, ctype, args, id_lists, default_selection, all=False):
+def cli_select(controller, ctype, args, id_lists,
+	default_selection=filters.NONE, all=False):
 
 	ltrace('cli', '> cli_select()')
 

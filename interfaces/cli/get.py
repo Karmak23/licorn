@@ -139,6 +139,34 @@ def get_keywords(opts, args):
 def get_privileges(opts, args):
 	configuration = LicornConfiguration()
 	output(configuration.Export(args = ['privileges']))
+def get_machines(opts, args):
+	""" Get the list of machines known from the server (attached or not). """
+	configuration = LicornConfiguration()
+	machines = MachinesController(configuration)
+
+	if opts.mid is not None:
+		try:
+			machines.Select("mid=" + unicode(opts.mid))
+		except KeyError:
+			logging.error(_("No matching machine found."))
+			return
+
+	if opts.xml:
+		data = machines.ExportXML(opts.long)
+	else:
+		data = machines.ExportCLI(opts.long)
+
+	if data and data != '\n':
+		output(data)
+def get_configuration(opts, args):
+	""" Output th current Licorn system configuration. """
+
+	configuration = LicornConfiguration()
+
+	if len(args) > 1:
+		output(configuration.Export(args = args[1:], cli_format = opts.cli_format))
+	else:
+		output(configuration.Export())
 def get_webfilters(opts, args):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
@@ -192,26 +220,6 @@ def get_webfilters(opts, args):
 			print fd.Export("whitelist", "domains")
 	else:
 		print "Options are: time-constraints | forbidden-destinations"
-def get_machines(opts, args):
-	""" Get the list of machines known from the server (attached or not). """
-	configuration = LicornConfiguration()
-	machines = MachinesController(configuration)
-
-	if opts.mid is not None:
-		try:
-			machines.Select("mid=" + unicode(opts.mid))
-		except KeyError:
-			logging.error(_("No matching machine found."))
-			return
-
-	if opts.xml:
-		data = machines.ExportXML(opts.long)
-	else:
-		data = machines.ExportCLI(opts.long)
-
-	if data and data != '\n':
-		output(data)
-
 def get_internet_types(opts, args):
 	""" Get the list of known internet connection types.
 
@@ -219,15 +227,6 @@ def get_internet_types(opts, args):
 		we know (pppoe, router on (eth0|eth1), analog modem, manual).
 	"""
 	raise NotImplementedError("get_internet_types not implemented.")
-def get_configuration(opts, args):
-	""" Output th current Licorn system configuration. """
-
-	configuration = LicornConfiguration()
-
-	if len(args) > 1:
-		output(configuration.Export(args = args[1:], cli_format = opts.cli_format))
-	else:
-		output(configuration.Export())
 
 if __name__ == "__main__":
 
