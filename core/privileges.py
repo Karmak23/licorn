@@ -70,7 +70,8 @@ class PrivilegesWhiteList(list, Singleton):
 			if groups.is_system_group(privilege):
 				list.append(self, privilege)
 			else:
-				logging.warning("%s is not a privilege." % \
+				logging.warning('''group %s can't be promoted as privilege, '''
+					'''it is not a system group.''' % \
 					styles.stylize(styles.ST_NAME, privilege))
 		else:
 			logging.info("privilege %s already whitelisted, skipped." % \
