@@ -295,7 +295,14 @@ class ProfilesController(Singleton):
 			gid, group = self.groups.AddGroup(group, description=description,
 				system=True, groupSkel=profileSkel)
 		else:
-			gid = self.groups.name_to_gid(group)
+			if self.groups.is_standard_group(group):
+				raise exceptions.BadArgumentError(
+					'''The group %s(%s) is not a system group. It cannot be '''
+					'''added as primary group of a profile.''' % (
+					styles.stylize(styles.ST_NAME, group),
+					styles.stylize(styles.ST_UGID, self.groups.name_to_gid(group))))
+			else:
+				gid = self.groups.name_to_gid(group)
 
 		#try:
 			# Add the profile in the list
