@@ -1284,6 +1284,29 @@ def test_profiles(context):
 		descr='check if a error occurs when a non-existing group is added to a profile'
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '-v' ],
+		#should fail (group already exists)
+		ADD + [ 'profile', '--name=%s' % pname, '--group=%s' % gname,
+			"--description='test_profil'", '-v' ],
+		GET + [ 'profiles' ],
+		#should fail (group is not a system group)
+		ADD + [ 'profile', '--name=%s' % pname, '--group=%s' % gname,
+			"--description='test_profil'", '-v', '--force-existing' ],
+		GET + [ 'profiles' ],
+		#should work (creating a new system group)
+		ADD + [ 'group', '--name=%s2' % gname, '--system', '-v' ],
+		ADD + [ 'profile', '--name=%s' % pname, '--group=%s2' % gname,
+			"--description='test_profil'", '-v', '--force-existing' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'profile', '--name=%s' % pname, '-v' ],
+		DEL + [ 'group', gname, '-v' ],
+		],
+		context=context,
+		descr='''Check if it is possible to force a profil group to a non '''
+			'''system group (avoid #300)'''
+		).Run()
+
 	# profile scenario implemented with old commands (fix #292)
 	ScenarioTest([
 		ADD + [ 'profile', '--name=Utilisagers', '--group=utilisagers',
