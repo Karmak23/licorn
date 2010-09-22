@@ -835,7 +835,18 @@ class UsersController(Singleton):
 			login = self.uid_to_login(uid)
 			all_went_ok = True
 
-			if UsersController.is_system_uid(uid):
+			# Refering to #322, we should avoid checking system users under uid
+			# 100, they are all very special, have strange home dirs which must
+			# NEVER been checked the licorn way, else this renders the system
+			# totally unusable.
+			# Generally speaking, to avoid future bugs with predefined system
+			# accounts, we will avoid checking system users which we didn't
+			# create (everything under uid 300 by default).
+			# Sanely enough, we will do the same and avoid checking reserved
+			# uids > 65000, like nobody. Just stick to adduser or licorn created
+			# system uids.
+			if  uid > self.configuration.users.system_uid_min \
+				and uid < self.configuration.users.system_uid_max:
 
 				logging.progress("Checking system account %s..." % \
 					styles.stylize(styles.ST_NAME, login))
@@ -853,8 +864,8 @@ class UsersController(Singleton):
 					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 						home_dir_info, batch, auto_answer,
 						UsersController.groups, self)
-			else:
-				logging.progress("Checking user %s..." % \
+			elif self.is_standard_uid(uid):
+				logging.progress("Checking standard account %s..." % \
 					styles.stylize(styles.ST_LOGIN, login))
 
 				gid       = self.users[uid]['gidNumber']
@@ -1013,7 +1024,15 @@ class UsersController(Singleton):
 
 				ltrace('users', '> CheckUsers.check_uid(all_went_ok=%s)' %
 					all_went_ok)
-				return all_went_ok
+			else:
+				login = self.uid_to_login(uid)
+				# not system account between 300 < 999, not standard account.
+				# the account is thus a special (reserved) system account, below
+				# uid 300 or above uid 65000. Just don't do anything.
+				logging.info('''Skipped reserved system account %s '''
+					'''(we don't check them at all).''' %
+						styles.stylize(styles.ST_NAME, login))
+			return all_went_ok
 
 		all_went_ok=reduce(pyutils.keep_false, map(check_uid, uids_to_check))
 		if all_went_ok is False:
