@@ -78,14 +78,10 @@ def set_name(name):
 			http://davyd.livejournal.com/166352.html
 		"""
 	try:
-		import proctitle
-		proctitle.ProcTitle()[0:] = name
-	except ImportError:
-		try:
-			import dl
-			dl.open('/lib/libc.so.6').call('prctl', 15, name + '\0', 0, 0, 0)
-		except:
-			pass
+		import ctypes
+		ctypes.cdll.LoadLibrary('libc.so.6').prctl(15, name + '\0', 0, 0, 0)
+	except exception, e:
+		logging.warning('''Can't set process name (was %s).''' % e)
 def already_running(pid_file):
 	""" WARNING: this only works for root user... """
 	return os.path.exists(pid_file) and \
