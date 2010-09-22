@@ -1307,6 +1307,20 @@ def test_profiles(context):
 			'''system group (avoid #300)'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'group', '--name=%s' % pname],
+		GET + [ 'profiles' ],
+		GET + [ 'group', pname ],
+		DEL + [ 'profile', pname, '-v' ],
+		GET + [ 'group', pname ],
+		],
+		context=context,
+		descr='''when a profile group is deleted, an error message has to be '''
+			'''presented (avoid #302)'''
+		).Run()
+
 	# profile scenario implemented with old commands (fix #292)
 	ScenarioTest([
 		ADD + [ 'profile', '--name=Utilisagers', '--group=utilisagers',
