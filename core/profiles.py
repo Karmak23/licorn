@@ -265,9 +265,15 @@ class ProfilesController(Singleton):
 				"Malformed profile description « %s », must match /%s/i." % (
 					description, hlstr.regex['description']))
 
+		if name in ProfilesController.name_cache:
+			raise exceptions.AlreadyExistsException(
+			'''The profile '%s' already exists on the system''' % name)
+
 		if group in ProfilesController.profiles.keys():
 			raise exceptions.AlreadyExistsException(
-			"The profile '%s' already exists." % group)
+			'''The group '%s' is already taken by another profile (%s). '''
+			'''Please choose another one.''' % (
+				group, self.group_to_name(group)))
 
 		create_group = True
 
