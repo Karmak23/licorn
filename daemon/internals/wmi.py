@@ -76,13 +76,13 @@ def fork_wmi(opts, start_wmi = True):
 				# forever, displaying a message every second.
 				#
 				# when creation succeeds, break the loop and serve requets.
-				count += 1
 				try:
 					httpd = TCPServer((listen_address, wmi_port), WMIHTTPRequestHandler)
 					break
 				except socket.error, e:
 					if e[0] == 98:
-						logging.warning("%s/wmi: socket already in use. waiting (total: %dsec)." % (dname, count))
+						logging.warning("%s/wmi: socket already in use. waiting (total: %ds)." % (dname, count))
+						count += 1
 						time.sleep(1)
 					else:
 						logging.error("%s/wmi: socket error %s." % (dname, e))
