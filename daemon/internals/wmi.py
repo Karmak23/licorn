@@ -276,11 +276,12 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					# disapear.
 					logging.warning("exec(%s): %s." % (py_code, e))
 					self.send_error(500,
-						"Internal server error or bad request.")
+						"Internal server error or bad request.\n\n%s" %
+							w.get_traceback(e))
 
 				except TypeError, e:
 					logging.warning('Bad_Request/TypeError: %s.' % e)
-					rettype, retdata = 	w.bad_arg_error()
+					rettype, retdata = 	w.bad_arg_error(w.get_traceback(e))
 
 				except exceptions.LicornRuntimeException, e:
 					logging.warning('Bad_Request/LicornRuntimeException: %s.' % e)

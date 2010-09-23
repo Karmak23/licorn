@@ -8,8 +8,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os
-import sys
+import os, sys, traceback
 
 from licorn.foundations        import exceptions
 from licorn.foundations        import logging
@@ -140,4 +139,6 @@ def whoami():
 	''' Return current UNIX user. '''
 	from subprocess import Popen, PIPE
 	return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
+def get_traceback():
+	return traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))
 
