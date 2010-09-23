@@ -65,7 +65,7 @@ def mod_user(opts, args):
 
 		if opts.lock is not None:
 			something_done = True
-			users.LockAccount(uid, opts.lock)
+			users.LockAccount(uid=uid, lock=opts.lock)
 
 		if opts.groups_to_add:
 			something_done = True
