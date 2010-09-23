@@ -1098,6 +1098,32 @@ def test_users(context):
 			(avoid #277)'''
 		).Run()
 
+	fname = 'nibor'
+	lname = 'tenrebcul'
+	ScenarioTest([
+		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=%s' % lname, '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=%s' % lname, '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '--firstname=.', '--lastname=%s' % lname, '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=.', '-v' ],
+		GET + [ 'users' ],
+		ADD + [ 'user', '--firstname=', '--lastname=', '-v' ],
+		ADD + [ 'user', '--firstname=%s2' % fname, '--lastname=', '-v' ],
+		ADD + [ 'user', '--firstname=%s2' % fname, '--lastname=', '-v' ],
+		ADD + [ 'user', '--firstname=', '--lastname=%s2' % lname, '-v' ],
+		ADD + [ 'user', '--firstname=', '--lastname=%s2' % lname, '-v' ],
+		DEL + [ 'user', '--login=%s.%s' % (fname, lname), '-v' ],
+		DEL + [ 'user', '--login=%s' % fname, '-v' ],
+		DEL + [ 'user', '--login=%s' % lname, '-v' ],
+		DEL + [ 'user', '--login=%s2' % lname, '-v' ],
+		DEL + [ 'user', '--login=%s2' % fname, '-v' ],
+		],
+		context=context,
+		descr='check add user with --firstname and --lastname (avoid #303 #305)'
+		).Run()
+
 	ScenarioTest([
 		ADD + [ 'user', uname, '--password=toto', '-v' ],
 		GET + [ 'users' ],
