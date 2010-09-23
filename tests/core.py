@@ -1330,7 +1330,7 @@ def test_profiles(context):
 		],
 		context=context,
 		descr='''Check if it is possible to force a profil group to a non '''
-			'''system group (avoid #300)'''
+			'''system group (avoid #300 #320)'''
 		).Run()
 
 	ScenarioTest([
