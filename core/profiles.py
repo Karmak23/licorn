@@ -345,7 +345,7 @@ class ProfilesController(Singleton):
 
 		try:
 			self.groups.DeleteGroup(gid=gid, del_users=del_users,
-				no_archive=no_archive, batch=batch)
+				no_archive=no_archive, batch=batch, check_profiles=False)
 		except exceptions.DoesntExistsException:
 			logging.info('Group %s already deleted, skipped.' % group)
 

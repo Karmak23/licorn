@@ -537,7 +537,7 @@ class GroupsController(Singleton):
 
 		return gid
 	def DeleteGroup(self, name=None, gid=None, del_users=False,
-		no_archive=False, batch=False):
+		no_archive=False, batch=False, check_profiles=True):
 		""" Delete an Licorn group """
 
 		gid, name = self.resolve_gid_or_name(gid, name)
@@ -549,6 +549,14 @@ class GroupsController(Singleton):
 				'''members. You must delete them first, or force their '''
 				'''automatic deletion with the --del-users option. WARNING: '''
 				'''this is a bad idea, use with caution.''')
+
+		if check_profiles and name in self.profiles.keys():
+			raise exceptions.BadArgumentError('''can't delete group %s, '''
+			'''currently associated with profile %s. Please delete the '''
+			'''profile, and the group will be deleted too.''' % (
+				styles.stylize(styles.ST_NAME, name),
+				styles.stylize(styles.ST_NAME,
+					self.profiles.group_to_name(name))))
 
 		home = '%s/%s/%s' % (
 			GroupsController.configuration.defaults.home_base_path,
