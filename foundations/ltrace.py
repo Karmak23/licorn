@@ -83,10 +83,6 @@ if getenv('LICORN_TRACE', None) != None:
 
 	import sys
 
-	sys.stderr.write('%s: tracing %s\n' % (
-		styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
-		getenv('LICORN_TRACE')))
-
 	# TODO: make this clever, by understanding '^' (binary exclusions) too.
 	ltrace_level = 0
 	for env_mod in getenv('LICORN_TRACE').split('|'):
