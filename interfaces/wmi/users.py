@@ -406,8 +406,8 @@ def new(uri, http_user):
 		gecos_input(),
 		_('''Password must be at least %d characters long. You can use all '''
 		'''alphabet characters, numbers, special characters and punctuation '''
-		'''signs, except '?!'.''') % configuration.mAutoPasswdSize,
-		_("Password"), _("(%d chars. min.)") % configuration.mAutoPasswdSize,
+		'''signs, except '?!'.''') % configuration.users.min_passwd_size,
+		_("Password"), _("(%d chars. min.)") % configuration.users.min_passwd_size,
 		w.input('password', "", size = 30, maxlength = 64, accesskey = _('P'),
 			password = True),
 		_("Password confirmation."), w.input('password_confirm', "", size = 30,
@@ -448,10 +448,10 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Passwords do not match!%s") % rewind)))
 
-	if len(password) < configuration.mAutoPasswdSize:
+	if len(password) < configuration.users.min_passwd_size:
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Password must be at least %d characters long!%s")\
-				% (configuration.mAutoPasswdSize, rewind))))
+				% (configuration.users.min_passwd_size, rewind))))
 
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors',
 		'--password', password ]
@@ -610,9 +610,9 @@ def edit(uri, http_user, login):
 			_('''Password must be at least %d characters long. You can use '''
 			'''all alphabet characters, numbers, special characters and '''
 			'''punctuation signs, except '?!'.''') % \
-				configuration.mAutoPasswdSize,
+				configuration.users.min_passwd_size,
 			_("New password"), _("(%d chars. min.)") % \
-				configuration.mAutoPasswdSize,
+				configuration.users.min_passwd_size,
 			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P',
 				password = True),
 			_("password confirmation."),
@@ -663,10 +663,10 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 		if password != password_confirm:
 			return (w.HTTP_TYPE_TEXT, w.page(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
-		if len(password) < configuration.mAutoPasswdSize:
+		if len(password) < configuration.users.min_passwd_size:
 			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
 				_("The password --%s-- must be at least %d characters long!%s")\
-				% (password, configuration.mAutoPasswdSize, rewind))))
+				% (password, configuration.users.min_passwd_size, rewind))))
 
 		command.extend([ '--password', password ])
 

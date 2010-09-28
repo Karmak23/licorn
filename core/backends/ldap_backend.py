@@ -414,7 +414,7 @@ class ldap_controller(UGMBackend, Singleton):
 					try:
 						from licorn.foundations import hlstr
 						genpass = hlstr.generate_password(
-						self.configuration.mAutoPasswdSize)
+						self.configuration.users.min_passwd_size)
 
 						logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
 							styles.stylize(styles.ST_LOGIN, 'manager'),

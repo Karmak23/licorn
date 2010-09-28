@@ -268,7 +268,7 @@ class MachinesController(Singleton):
 		if password is None:
 			# TODO: call cracklib2 to verify passwd strenght.
 			password = hlstr.generate_password(
-				MachinesController.configuration.mAutoPasswdSize)
+				MachinesController.configuration.users.min_passwd_size)
 			logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
 				styles.stylize(styles.ST_LOGIN, hostname),
 				styles.stylize(styles.ST_SECRET, password) ) )
@@ -513,7 +513,7 @@ class MachinesController(Singleton):
 			raise exceptions.BadArgumentError(logging.SYSU_SPECIFY_LOGIN)
 		if password is None:
 			password = hlstr.generate_password(
-				MachinesController.configuration.mAutoPasswdSize)
+				MachinesController.configuration.users.min_passwd_size)
 		elif password == "":
 			logging.warning(logging.SYSU_SET_EMPTY_PASSWD % \
 				styles.stylize(styles.ST_LOGIN, hostname))

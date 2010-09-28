@@ -175,7 +175,6 @@ class LicornConfiguration(Singleton):
 		ltrace('configuration', '> SetBaseDirsAndFiles().')
 
 
-		self.mAutoPasswdSize         = 8
 		self.config_dir              = "/etc/licorn"
 		self.main_config_file        = self.config_dir + "/licorn.conf"
 		self.backup_config_file      = self.config_dir + "/backup.conf"
@@ -693,6 +692,7 @@ class LicornConfiguration(Singleton):
 		LicornConfiguration.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf()
+		LicornConfiguration.users.min_passwd_size = 8
 		LicornConfiguration.users.uid_min         = add_user_conf['FIRST_UID']
 		LicornConfiguration.users.uid_max         = add_user_conf['LAST_UID']
 		LicornConfiguration.groups.gid_min        = add_user_conf['FIRST_GID']
