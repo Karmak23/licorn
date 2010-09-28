@@ -698,8 +698,8 @@ def main(uri, http_user, sort = "login", order = "asc"):
 	""" display all users in a nice HTML page. """
 	start = time.time()
 
-	groups.reload()
 	users.reload()
+	groups.reload()
 	# profiles.reload()
 
 	u = users.users
