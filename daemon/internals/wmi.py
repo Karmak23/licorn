@@ -10,6 +10,8 @@ Licensed under the terms of the GNU GPL version 2.
 import os, mimetypes, urlparse, posixpath, urllib, socket, time
 
 from SocketServer       import TCPServer
+TCPServer.allow_reuse_address = True
+
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations         import logging, exceptions, styles, process
