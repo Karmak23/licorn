@@ -25,8 +25,8 @@ def __build_version_string(app):
 		% ( styles.stylize(styles.ST_APPNAME, app["name"]), app["description"], version, app["author"], styles.stylize(styles.ST_URL, "http://dev.licorn.org/") )
 def common_behaviour_group(app, parser, mode='any'):
 	""" This group is common to all Licorn System Tools."""
-	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options "),
-							"Modify decisions / apply filter(s) on data manipulated by program.")
+	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options"),
+							"Modify decisions / output of program.")
 
 	if mode != "get":
 		if mode == "check":
@@ -64,25 +64,27 @@ def common_filter_group(app, parser, tool, mode):
 	"""Build Filter OptionGroup for all get variants."""
 
 	filtergroup = OptionGroup(parser,
-		styles.stylize(styles.ST_OPTION, "Filter options "),
-		"""Filter targetted object(s). WARNING: filters are not """
+		styles.stylize(styles.ST_OPTION, "Filter options"),
+		"""Filter %s. WARNING: filters are not """
 		"""cumulative! Unexpected behaviour is to be expected if you use """
-		"""more than one filter option.""")
+		"""more than one filter option.""" % ('targetted %s' % mode if mode != 'configuration' \
+			else mode))
 
-	if tool is 'get' :
-		if mode in ( 'users', 'groups'):
+	if tool in ('get', 'mod', 'del') :
+		if mode in ( 'users', 'groups', 'machines'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default = False,
 				help="""Also select system data. I.e. for users/groups, """
 					"""output system accounts/groups too.""")
 
+	if tool is 'get':
 		if mode in ('users', 'groups', 'machines'):
 			filtergroup.add_option('-l', '--long',
 				action="store_true", dest="long", default = False,
 				help="long output (all info, attributes, etc). NOT enabled by default.")
 
 	if tool is 'chk' \
-		and mode in ( 'users', 'groups', 'config', 'configuration'):
+		and mode in ( 'users', 'groups', 'configuration'):
 		filtergroup.add_option('-a', '--all',
 			action="store_true", dest="all", default = False,
 			help="""%s"""
@@ -118,7 +120,7 @@ def common_filter_group(app, parser, tool, mode):
 			help="""Specify group(s) by their GID (separated by commas """
 				"""without spaces).""")
 
-		if tool is 'get':
+		if tool in ('get', 'mod', 'del', 'chk'):
 			filtergroup.add_option('--system', '--system-groups', '--sys',
 				action="store_true", dest="system", default = False,
 				help="Only select system groups.")
@@ -163,6 +165,17 @@ def common_filter_group(app, parser, tool, mode):
 			action="store", type="string", dest="mid", default = None,
 			help="""Specify machine(s) by their IP address (separated by """
 				"""commas without spaces).""")
+
+		if tool in ('get', 'mod', 'del', 'chk'):
+			filtergroup.add_option('--asleep', '--asleep-machines',
+				action="store_true", dest="asleep", default = False,
+				help="Only select asleep machines.")
+			filtergroup.add_option('--idle', '--idle-machines',
+				action="store_true", dest="idle", default = False,
+				help="Only select idle machines.")
+			filtergroup.add_option('--active', '--active-machines',
+				action="store_true", dest="active", default = False,
+				help="Only select active machines.")
 
 	return filtergroup
 def general_parse_arguments(app):
