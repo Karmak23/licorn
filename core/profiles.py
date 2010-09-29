@@ -351,7 +351,8 @@ class ProfilesController(Singleton):
 
 		del(ProfilesController.profiles[group])
 		self.WriteConf()
-		logging.info(logging.SYSP_DELETED_PROFILE % styles.stylize(styles.ST_NAME, group))
+		logging.info(logging.SYSP_DELETED_PROFILE %
+			styles.stylize(styles.ST_NAME, name))
 
 		ltrace('profiles', '< DeleteProfile()')
 	def ChangeProfileSkel(self, gid=None, group=None, name=None,
