@@ -716,9 +716,6 @@ class LicornConfiguration(Singleton):
 		if LicornConfiguration.groups.system_gid_min < 300:
 			LicornConfiguration.groups.system_gid_min = 300
 
-		# ensure /etc/login.defs complies with /etc/adduser.conf
-		self.CheckLoginDefs()
-
 		#
 		# WARNING: these values are meant to be used like this:
 		#
@@ -733,17 +730,14 @@ class LicornConfiguration(Singleton):
 		#
 		# The default values are referenced in CheckAndLoadAdduserConf() too.
 		#
-		for (attr_name, conf_key, fallback) in (
-			('base_path', 'DHOME',    '%s/users' % \
-				LicornConfiguration.defaults.home_base_path),
-			('default_shell', 'DSHELL',    '/bin/bash'),
-			('default_skel',  'SKEL',      '/etc/skel'),
-			('default_gid',   'USERS_GID', 100) ):
-			try:
-				val = add_user_conf[conf_key]
-				setattr(LicornConfiguration.users, attr_name, val)
-			except KeyError:
-				setattr(LicornConfiguration.users, attr_name, fallback)
+		for (attr_name, conf_key) in (
+			('base_path', 'DHOME'),
+			('default_shell', 'DSHELL'),
+			('default_skel',  'SKEL'),
+			('default_gid',   'USERS_GID')
+			):
+			val = add_user_conf[conf_key]
+			setattr(LicornConfiguration.users, attr_name, val)
 
 		# first guesses to find Mail system.
 		LicornConfiguration.users.mailbox_type = 0
@@ -763,6 +757,11 @@ class LicornConfiguration(Singleton):
 				LicornConfiguration.MAIL_TYPE_VAR_MBOX
 		except KeyError:
 			pass
+
+		# ensure /etc/login.defs  and /etc/defaults/useradd comply with
+		# /etc/adduser.conf tweaked for Licorn®.
+		self.CheckLoginDefs()
+		self.CheckUserAdd()
 	def SetDefaultNamesAndPaths(self):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
@@ -850,12 +849,14 @@ class LicornConfiguration(Singleton):
 		# only {FIRST,LAST}_SYSTEM_UID are
 		# present, and we assume this during the file patch.
 		defaults = (
-			('DHOME', '%s/users' % LicornConfiguration.defaults.home_base_path),
+			('DHOME', '%s/users' % \
+				LicornConfiguration.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
 			('LETTERHOMES', 'no'),
 			('USERGROUPS',  'no'),
+			('USERS_GID', 100),
 			('LAST_GID',  29999),
 			('FIRST_GID', 10000),
 			('LAST_UID',  29999),
@@ -927,42 +928,77 @@ class LicornConfiguration(Singleton):
 			Load data, alter it if needed and save the new file.
 		"""
 
-		login_defs       = "/etc/login.defs"
-		login_defs_alter = False
-		login_data       = open(login_defs, 'r').read()
-		login_dict       = readers.simple_conf_load_dict(data = login_data)
+		self.check_system_file_generic(filename="/etc/login.defs",
+			reader=readers.simple_conf_load_dict,
+			defaults=(
+				('UID_MIN', LicornConfiguration.users.uid_min),
+				('UID_MAX', LicornConfiguration.users.uid_max),
+				('GID_MIN', LicornConfiguration.groups.gid_min),
+				('GID_MAX', LicornConfiguration.groups.gid_max),
+				('SYS_GID_MAX', LicornConfiguration.groups.system_gid_max),
+				('SYS_GID_MIN', LicornConfiguration.groups.system_gid_min),
+				('SYS_UID_MAX', LicornConfiguration.users.system_uid_max),
+				('SYS_UID_MIN', LicornConfiguration.users.system_uid_min),
+				('USERGROUPS_ENAB', 'no'),
+				('CREATE_HOME', 'yes')
+			),
+			separator='	',
+			batch=batch,
+			auto_answer=auto_answer)
+	def CheckUserAdd(self, batch=False, auto_answer=None):
+		""" Check /etc/defaults/useradd if it exists, for compatibility with
+			Licorn®.
+		"""
 
-		defaults = (
-			('UID_MIN', LicornConfiguration.users.uid_min),
-			('UID_MAX', LicornConfiguration.users.uid_max),
-			('GID_MIN', LicornConfiguration.groups.gid_min),
-			('GID_MAX', LicornConfiguration.groups.gid_max)
-			)
+		self.check_system_file_generic(filename="/etc/default/useradd",
+			reader=readers.shell_conf_load_dict,
+			defaults=(
+				('GROUP', LicornConfiguration.users.default_gid),
+				('HOME', LicornConfiguration.users.base_path)
+			),
+			separator='=',
+			check_exists=True,
+			batch=batch,
+			auto_answer=auto_answer)
+	def check_system_file_generic(self, filename, reader, defaults, separator,
+		check_exists=False, batch=False, auto_answer=None):
 
-		#
-		# We assume login.defs has already all directives inside. This is sane,
-		# because without one of them, any system will not run properly.
-		#
+		if check_exists and not os.path.exists(filename):
+			logging.warning2('''%s doesn't exist on this system.''' % filename)
+			return
+
+		alter_file = False
+		file_data  = open(filename, 'r').read()
+		data_dict  = reader(data=file_data)
 
 		for (directive, value) in defaults:
-			if login_dict[directive] != value:
-				logging.warning('''In %s, directive %s should be at least %s,'''
-					''' but it is %s.''' % (
-						styles.stylize(styles.ST_PATH, login_defs),
-						directive, value, login_dict[directive]))
-				login_defs_alter      = True
-				login_dict[directive] = value
-				login_data            = re.sub(r'%s.*' % directive,
-					r'%s	%s' % (directive, value), login_data)
+			try:
+				if data_dict[directive] != value:
+					logging.warning('''In %s, directive %s should be %s,'''
+						''' but it is %s.''' % (
+							styles.stylize(styles.ST_PATH, filename),
+							directive, value, data_dict[directive]))
+					alter_file           = True
+					data_dict[directive] = value
+					file_data            = re.sub(r'%s.*' % directive,
+						r'%s%s%s' % (directive, separator, value), file_data)
+			except KeyError:
+				logging.warning('''In %s, directive %s isn't present but '''
+					'''should be, with value %s.''' % (
+						styles.stylize(styles.ST_PATH, filename),
+						directive, value))
+				alter_file           = True
+				data_dict[directive] = value
+				file_data += '%s%s%s\n' % (directive, separator, value)
 
-		if login_defs_alter:
+		if alter_file:
 			if batch or logging.ask_for_repair(
-				'''%s lacks mandatory configuration directive(s).''' % \
-					styles.stylize(styles.ST_PATH, login_defs), auto_answer):
+				'''%s should be altered to be in sync with Licorn®. Fix it ?'''
+				% styles.stylize(styles.ST_PATH, filename), auto_answer):
 				try:
-					open(login_defs, 'w').write(login_data)
+					open(filename, 'w').write(file_data)
 					logging.notice('Tweaked %s to match Licorn pre-requisites.'
-						% styles.stylize(styles.ST_PATH, login_defs))
+						% styles.stylize(styles.ST_PATH, filename))
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -973,7 +1009,7 @@ class LicornConfiguration(Singleton):
 			else:
 				raise exceptions.LicornRuntimeError('''Modifications in %s '''
 					'''are mandatory for Licorn to work properly. Can't '''
-					'''continue without this, sorry!''' % login_defs)
+					'''continue without this, sorry!''' % filename)
 
 	### EXPORTS ###
 	def Export(self, doreturn=True, args=None, cli_format='short'):
@@ -1338,18 +1374,19 @@ class LicornConfiguration(Singleton):
 		ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
 			(minimal, batch))
 
-		if minimal:
+		needed_groups = LicornConfiguration.defaults.needed_groups + [
+			LicornConfiguration.defaults.admin_group ]
+
+		if not minimal \
+			and LicornConfiguration.groups.privileges_whitelist != []:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
 			# operate properly.
-			needed_groups = LicornConfiguration.defaults.needed_groups + [
-				LicornConfiguration.defaults.admin_group ]
 
-		else:
-			needed_groups = LicornConfiguration.defaults.needed_groups + [
-				LicornConfiguration.defaults.admin_group ] + \
-					LicornConfiguration.groups.privileges_whitelist
+			for groupname in LicornConfiguration.groups.privileges_whitelist:
+				if groupname not in needed_groups:
+					needed_groups.append(groupname)
 
 		for group in needed_groups:
 			# licorn.core.groups is not loaded yet, and it would create a

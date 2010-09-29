@@ -85,4 +85,4 @@ class PrivilegesWhiteList(list, Singleton):
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
 		self.sort()
-		open(self.conf_file, "w").write("%s\n" % "\n".join(self))
+		open(self.conf_file, 'w').write('%s\n' % '\n'.join(self))

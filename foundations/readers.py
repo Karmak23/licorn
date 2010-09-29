@@ -46,16 +46,17 @@ to_type = {
 def very_simple_conf_load_list(filename):
 	""" Read a very simple file (one value per line)
 		and return a list built from the values.
-		Typical use case: /var/lib/squidguard/db/customblacklist/urls, /etc/shells
+		Typical use case: /var/lib/squidguard/db/customblacklist/urls,
+		/etc/shells, /etc/licorn/privileges-whitelist.conf
 	"""
 
 	retlist = []
 
 	def parse_line(line):
-		if line[0] != "#":
-			retlist.append(line[:-1])
+		if line[0] != '#' and line != '\n':
+			retlist.append(line.strip())
 
-	map(parse_line, open(filename , "r"))
+	map(parse_line, open(filename , 'r'))
 
 	return retlist
 def	simple_conf_load_dict(filename=None, data=None, convert='semi'):
