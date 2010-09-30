@@ -5,5 +5,5 @@ _ = gettext.gettext
 
 gettext.textdomain('licorn')
 
-import users, groups, machines, base, utils, server
+import users, groups, base, utils, server
 

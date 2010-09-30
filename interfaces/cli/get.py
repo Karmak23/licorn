@@ -22,7 +22,6 @@ from licorn.core.users            import UsersController
 from licorn.core.groups           import GroupsController
 from licorn.core.profiles         import ProfilesController
 from licorn.core.keywords         import KeywordsController
-from licorn.core.machines         import MachinesController
 
 _app = {
 	"name"     		: "licorn-get",
@@ -139,25 +138,6 @@ def get_keywords(opts, args):
 def get_privileges(opts, args):
 	configuration = LicornConfiguration()
 	output(configuration.Export(args = ['privileges']))
-def get_machines(opts, args):
-	""" Get the list of machines known from the server (attached or not). """
-	configuration = LicornConfiguration()
-	machines = MachinesController(configuration)
-
-	if opts.mid is not None:
-		try:
-			machines.Select("mid=" + unicode(opts.mid))
-		except KeyError:
-			logging.error("No matching machine found.")
-			return
-
-	if opts.xml:
-		data = machines.ExportXML(opts.long)
-	else:
-		data = machines.ExportCLI(opts.long)
-
-	if data and data != '\n':
-		output(data)
 def get_configuration(opts, args):
 	""" Output th current Licorn system configuration. """
 
@@ -243,12 +223,6 @@ if __name__ == "__main__":
 		'groups':        (agp.get_groups_parse_arguments, get_groups),
 		'profile':       (agp.get_profiles_parse_arguments, get_profiles),
 		'profiles':      (agp.get_profiles_parse_arguments, get_profiles),
-		'machine':       (agp.get_machines_parse_arguments, get_machines),
-		'machines':      (agp.get_machines_parse_arguments, get_machines),
-		'client':        (agp.get_machines_parse_arguments, get_machines),
-		'clients':       (agp.get_machines_parse_arguments, get_machines),
-		'workstation':   (agp.get_machines_parse_arguments, get_machines),
-		'workstations':  (agp.get_machines_parse_arguments, get_machines),
 		'conf':          (agp.get_configuration_parse_arguments, get_configuration),
 		'config':        (agp.get_configuration_parse_arguments, get_configuration),
 		'configuration': (agp.get_configuration_parse_arguments, get_configuration),

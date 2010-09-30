@@ -71,14 +71,14 @@ def common_filter_group(app, parser, tool, mode):
 			else mode))
 
 	if tool in ('get', 'mod', 'del') :
-		if mode in ( 'users', 'groups', 'machines'):
+		if mode in ( 'users', 'groups'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default = False,
 				help="""Also select system data. I.e. for users/groups, """
 					"""output system accounts/groups too.""")
 
 	if tool is 'get':
-		if mode in ('users', 'groups', 'machines'):
+		if mode in ('users', 'groups'):
 			filtergroup.add_option('-l', '--long',
 				action="store_true", dest="long", default = False,
 				help="long output (all info, attributes, etc). NOT enabled by default.")
@@ -153,29 +153,6 @@ def common_filter_group(app, parser, tool, mode):
 			action="store", type="string", dest="group", default = None,
 			help="""specify profile by its primary group (separated by """
 				"""commas without spaces).""")
-
-	if mode is 'machines':
-		filtergroup.add_option('--hostname', '--hostnames', '--name', '--names',
-			'--client-name', '--client-names',
-			action="store", type="string", dest="hostname", default = None,
-			help="""Specify machine(s) by their hostname (separated by """
-				"""commas without spaces).""")
-		filtergroup.add_option('--mid', '--mids', '--ip', '--ips',
-			'--ip-address', '--ip-addresses',
-			action="store", type="string", dest="mid", default = None,
-			help="""Specify machine(s) by their IP address (separated by """
-				"""commas without spaces).""")
-
-		if tool in ('get', 'mod', 'del', 'chk'):
-			filtergroup.add_option('--asleep', '--asleep-machines',
-				action="store_true", dest="asleep", default = False,
-				help="Only select asleep machines.")
-			filtergroup.add_option('--idle', '--idle-machines',
-				action="store_true", dest="idle", default = False,
-				help="Only select idle machines.")
-			filtergroup.add_option('--active', '--active-machines',
-				action="store_true", dest="active", default = False,
-				help="Only select active machines.")
 
 	return filtergroup
 def general_parse_arguments(app):
@@ -323,19 +300,6 @@ def get_profiles_parse_arguments(app):
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
 	parser.add_option_group(common_filter_group(app, parser, 'get', 'profiles'))
 	parser.add_option_group(__get_output_group(app, parser,'profiles'))
-
-	return parser.parse_args()
-def get_machines_parse_arguments(app):
-	""" Integrated help and options / arguments for « get user(s) »."""
-
-	usage_text = "\n\t%s %s [[%s] ...]" \
-		% ( styles.stylize(styles.ST_APPNAME, "%prog"), styles.stylize(styles.ST_MODE, "client[s]|machine[s]|workstation[s]"), styles.stylize(styles.ST_OPTION, "option") )
-
-	parser = OptionParser( usage = usage_text, version = __build_version_string(app))
-
-	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
-	parser.add_option_group(common_filter_group(app, parser, 'get', 'machines'))
-	parser.add_option_group(__get_output_group(app, parser,'machines'))
 
 	return parser.parse_args()
 def get_configuration_parse_arguments(app):
