@@ -457,10 +457,12 @@ a.reapply-skel:hover {
 	text-decoration: none;
 }
 a.delete-entry, a.delete-entry:link, a.delete-entry:visited {
-	background: url('/images/supprimer_16.png') no-repeat top left;
+	background: url('/images/16x16/supprimer.png') no-repeat top left;
+	opacity: 0.2;
 }
 a.delete-entry:hover {
-	background: url('/images/supprimer_over_16.png') no-repeat top left;
+	background: url('/images/16x16/supprimer.png') no-repeat top left;
+	opacity: 1;
 	text-decoration: none;
 }
 
