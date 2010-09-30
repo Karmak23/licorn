@@ -1084,6 +1084,24 @@ def test_users(context):
 		descr='check option --home of user command (fix #248)'
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'user', '--login=%s' % uname ],
+		GET + [ 'users', uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--lock', '-v' ],
+		GET + [ 'users', uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--lock', '-v' ],
+		GET + [ 'users', uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--unlock', '-v' ],
+		GET + [ 'users', uname, '--long' ],
+		MOD + [ 'user', '--login=%s' % uname, '--unlock', '-v' ],
+		GET + [ 'users', uname, '--long' ],
+		DEL + [ 'user', '--login=%s' % uname, '-v' ],
+		],
+		context=context,
+		descr='''check messages of --lock and --unlock on mod user command
+			and answer of get user --long (avoid #309)'''
+		).Run()
+
 	pname = 'profil_test'
 	ScenarioTest([
 		ADD + [ 'profile', '--name', 'Profil-Test-Name', '--group=profil_test',
