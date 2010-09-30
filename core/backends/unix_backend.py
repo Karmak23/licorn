@@ -107,12 +107,15 @@ class unix_controller(UGMBackend, Singleton):
 						entry[0])
 
 		except (OSError, IOError), e:
-			if e.errno != 13:
-				raise e
-				# don't display a warning, this is
-				# harmless if we are loading data for get, and any other
+			if e.errno == 13:
+				# don't display a warning on error 13 (permission denied), this
+				# is harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
-				# or group @admins.
+				# or group @admins/@shadow.
+				ltrace('unix', '''can't load /etc/shadow (perhaps you are '''
+					'''not root or a member of group shadow.''')
+			else:
+				raise e
 
 		return users, login_cache
 	def load_groups(self):

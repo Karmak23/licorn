@@ -130,7 +130,8 @@ def	shell_conf_load_dict(filename=None, data=None, convert='semi'):
 	return confdict
 def ug_conf_load_list(filename):
 	""" Read a configuration file and return a list -> list of value
-		Typical use case: /etc/passwd, /etc/group, /etc/licorn/group{s}
+		Typical use case: /etc/passwd, /etc/shadow, /etc/group, /etc/gshadow,
+		/etc/licorn/group{s}.
 	"""
 	return map(lambda x: x[:-1].split(":"), open(filename , "r"))
 def	dnsmasq_read_conf(filename=None, data=None, convert='semi'):

@@ -736,8 +736,26 @@ class UsersController(Singleton):
 		uids.sort()
 
 		def build_cli_output_user_data(uid, users = UsersController.users):
-			account = [	users[uid]['login'],
-						"x",
+			#
+			# If we don't have access to 'locked', we are not root and cannot
+			# display locked status of account. don't bother and don't display
+			# anything about it, admin won't bother knowing he/she is not root.
+			#
+			#ltrace('users', 'building cli output for user %s(%s), locked=%s' % (
+			#	uid, users[uid]['login'], users[uid]['locked'] \
+			#		if users[uid].has_key('locked') else 'None'))
+			if users[uid].has_key('locked'):
+				if users[uid]['locked']:
+					user_login = "!%s" % styles.stylize(styles.ST_BAD,
+						users[uid]['login'])
+				else:
+					user_login = styles.stylize(styles.ST_OK,
+						users[uid]['login'])
+			else:
+				user_login = styles.stylize(styles.ST_NAME,
+						users[uid]['login'])
+
+			account = [	user_login,
 						str(uid),
 						str(users[uid]['gidNumber']),
 						users[uid]['gecos'],
