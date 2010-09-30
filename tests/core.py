@@ -507,7 +507,7 @@ def clean_system():
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
-			'''user_testsys2,user_testsys3''',
+			'''user_testsys2,user_testsys3,user_test_DEBIAN''',
 			 '--no-archive', '-v' ],
 		['profile', '''--group=utilisagers,responsibilisateurs,'''
 			'''profil_test''',
@@ -515,7 +515,7 @@ def clean_system():
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
 			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
-			'''group_test3,GRP-ACL-test,gtest_267,group_testsys''',
+			'''group_test3,GRP-ACL-test,gtest_267,group_test4''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
