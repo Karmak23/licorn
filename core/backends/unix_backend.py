@@ -67,16 +67,17 @@ class unix_controller(UGMBackend, Singleton):
 				if login_cache.has_key(entry[0]):
 					uid = login_cache[entry[0]]
 					users[uid]['userPassword'] = entry[1]
-					if entry[1][0] == '!':
-						users[uid]['locked'] = True
-						# the shell could be /bin/bash (or else), this is valid
-						# for system accounts, and for a standard account this
-						# means it is not strictly locked because SSHd will
-						# bypass password check if using keypairs...
-						# don't bork with a warning, this doesn't concern us
-						# (Licorn work 99% of time on standard accounts).
-					else:
-						users[uid]['locked'] = False
+					if entry[1] != "":
+						if entry[1][0] == '!':
+							users[uid]['locked'] = True
+							# the shell could be /bin/bash (or else), this is valid
+							# for system accounts, and for a standard account this
+							# means it is not strictly locked because SSHd will
+							# bypass password check if using keypairs...
+							# don't bork with a warning, this doesn't concern us
+							# (Licorn work 99% of time on standard accounts).
+						else:
+							users[uid]['locked'] = False
 
 					users[uid]['shadowLastChange']  = int(entry[2]) \
 						if entry[2] != '' else 0

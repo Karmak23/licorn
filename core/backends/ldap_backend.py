@@ -509,16 +509,17 @@ class ldap_controller(UGMBackend, Singleton):
 				except Exception:
 					password = value
 
-				if password[0] == '!':
-					tmp_entry['locked'] = True
-					# the shell could be /bin/bash (or else), this is valid
-					# for system accounts, and for a standard account this
-					# means it is not strictly locked because SSHd will
-					# bypass password check if using keypairs...
-					# don't bork with a warning, this doesn't concern us
-					# (Licorn work 99% of time on standard accounts).
-				else:
-					tmp_entry['locked'] = False
+				if password != "":
+					if password[0] == '!':
+						tmp_entry['locked'] = True
+						# the shell could be /bin/bash (or else), this is valid
+						# for system accounts, and for a standard account this
+						# means it is not strictly locked because SSHd will
+						# bypass password check if using keypairs...
+						# don't bork with a warning, this doesn't concern us
+						# (Licorn work 99% of time on standard accounts).
+					else:
+						tmp_entry['locked'] = False
 
 				return password
 			def gecos_decode(value):
