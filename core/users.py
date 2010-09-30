@@ -863,8 +863,8 @@ class UsersController(Singleton):
 			# Sanely enough, we will do the same and avoid checking reserved
 			# uids > 65000, like nobody. Just stick to adduser or licorn created
 			# system uids.
-			if  uid > self.configuration.users.system_uid_min \
-				and uid < self.configuration.users.system_uid_max:
+			if  uid >= self.configuration.users.system_uid_min \
+				and uid <= self.configuration.users.system_uid_max:
 
 				logging.progress("Checking system account %s..." % \
 					styles.stylize(styles.ST_NAME, login))
