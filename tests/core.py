@@ -1553,9 +1553,9 @@ if __name__ == "__main__":
 				test_get(ctx)
 				test_groups(ctx)
 				test_users(ctx)
-				#test_imports(ctx)
 				test_profiles(ctx)
 				test_privileges(ctx)
+				test_imports(ctx)
 				compare_delete_backups(ctx)
 				clean_system()
 
