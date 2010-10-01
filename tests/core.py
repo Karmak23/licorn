@@ -1241,8 +1241,9 @@ def test_users(context):
 	test_message('''users related tests finished.''')
 	""" # end of old test_users() commands
 def test_imports(context):
-	"""Test massive user accounts imports."""
 
+
+	"""
 	os.system(DEL + " profile --group utilisagers         --del-users --no-archive")
 	os.system(DEL + " profile --group responsibilisateurs --del-users --no-archive")
 	log_and_exec(GET + " groups --empty | cut -d\":\" -f 1 | xargs -I% " + DEL + " group --name % --no-archive")
@@ -1269,6 +1270,7 @@ def test_imports(context):
 	log_and_exec(DEL + " profile --group responsibilisateurs --del-users --no-archive")
 
 	log_and_exec(GET + " groups --empty | cut -d\":\" -f 1 | xargs -I% " + DEL + " group --name % --no-archive")
+	"""
 def test_profiles(context):
 	"""Test the applying feature of profiles."""
 
