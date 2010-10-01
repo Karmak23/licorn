@@ -315,12 +315,11 @@ class GroupsController(Singleton):
 			'''skel=%s, perm=%s)''' % (name, system, desired_gid, description,
 				groupSkel, permissive))
 
-		if not system and groupSkel is "":
-			raise exceptions.BadArgumentError(
-				"You must specify a groupSkel dir.")
-
-		if groupSkel == "":
+		if groupSkel is "":
+			logging.progress('Using default skel dir %s' %
+				self.configuration.users.default_skel)
 			groupSkel = GroupsController.configuration.users.default_skel
+
 		elif groupSkel not in GroupsController.configuration.users.skels:
 			raise exceptions.BadArgumentError('''The skel you specified '''
 				'''doesn't exist on this system. Valid skels are: %s.'''
@@ -519,6 +518,8 @@ class GroupsController(Singleton):
 			# we must fill the permissive status here, else WriteConf() will
 			# fail with a KeyError. if not system, this has already been filled.
 			temp_group_dict['permissive'] = False
+			# no skel for a system group
+			temp_group_dict['groupSkel'] = ''
 
 		GroupsController.groups[gid]      = temp_group_dict
 		GroupsController.name_cache[name] = gid

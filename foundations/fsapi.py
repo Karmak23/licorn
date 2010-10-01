@@ -15,7 +15,7 @@ Licensed under the terms of the GNU GPL version 2
 import os, posix1e
 from stat import *
 
-from licorn.foundations import logging, exceptions, pyutils, styles
+from licorn.foundations import logging, exceptions, pyutils, styles, process
 
 # WARNING: DON'T IMPORT licorn.core.configuration HERE.
 # just pass "configuration" as a parameter if you need it somewhere.
@@ -642,7 +642,7 @@ def get_file_encoding(filename):
 	"""
 
 	# file -b: brief (the file name is not printed)
-	encoding = os.popen2( [ 'file', '-b', filename ] ).read()[:-1].split(' ')
+	encoding = process.execute(['file', '-b', filename])[0][:-1].split(' ')
 
 	if encoding[0] == "ISO-8859":
 		ret_encoding = "ISO-8859-15"
