@@ -810,6 +810,34 @@ def test_groups(context):
 			'''deleted) is deleted (avoids #259).'''
 		).Run()
 
+	ScenarioTest([
+		# should fail because gid 50 is "staff" on debian systems.
+		ADD + [ 'group', '--name=%s' % gname, '--gid=50', '-v' ],
+		GET + [ 'groups', '50' ],
+		ADD + [ 'group', '--name=%s2' % gname, '--gid=15000', '-v' ],
+		GET + [ 'groups', '15000' ],
+		# should fail too, 150 is now taken.
+		ADD + [ 'group', '--name=%s3' % gname, '--gid=15000', '-v' ],
+		GET + [ 'groups', '15000' ],
+		# should fail too, 150 is now taken.
+		ADD + [ 'group', '--name=%s3' % gname, '--gid=15000',
+			'--description=description', '-v' ],
+		GET + [ 'groups', '15000' ],
+		# should fail too, 150 is now taken.
+		ADD + [ 'group', '--name=%s3' % gname, '--gid=15000', '--permissive',
+			'-v' ],
+		GET + [ 'groups', '15000' ],
+		# should fail too, 150 is now taken.
+		ADD + [ 'group', '--name=%s3' % gname, '--gid=15000', '--skel=/etc/skel',
+			'-v' ],
+		GET + [ 'groups', '15000' ],
+		DEL + [ 'group', '--name=%s' % gname, '--no-archive' ],
+		DEL + [ 'group', '%s2,%s3' % (gname, gname), '--no-archive' ],
+		],
+		context=context,
+		descr='''check if add 2 groups with same GID produce an error (avoid #262)'''
+		).Run()
+
 	uname = 'grp-acl-user'
 	gname = 'GRP-ACL-test'
 
