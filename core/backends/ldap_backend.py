@@ -495,7 +495,7 @@ class ldap_controller(UGMBackend, Singleton):
 				'uidNumber'     : int(entry['uidNumber'][0]),
 				'gidNumber'     : int(entry['gidNumber'][0]),
 				'homeDirectory' : entry['homeDirectory'][0],
-				'groups'        : set(),
+				'groups'        : [],
 					# a cache which will eventually be filled by
 					# groups.__init__() and others in this set().
 				'backend'      : self.name,
@@ -597,7 +597,7 @@ class ldap_controller(UGMBackend, Singleton):
 			need_rewriting = False
 
 			if entry.has_key('memberUid'):
-				members = set(entry['memberUid'])
+				members = entry['memberUid']
 
 				#ltrace('ldap', 'members of %s are:\n%s\n%s' % (
 				#	name, members, entry['memberUid']))
@@ -609,7 +609,7 @@ class ldap_controller(UGMBackend, Singleton):
 						if UGMBackend.users.login_cache.has_key(member):
 							u[l2u(member)]['groups'].add(name)
 			else:
-				members = set()
+				members = []
 
 			temp_group_dict = {
 				'name'       : name,

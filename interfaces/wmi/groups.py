@@ -511,7 +511,7 @@ def edit(uri, http_user, name):
 				dbl_lists[gname] = id
 			else:
 				users.Select(filters.STANDARD)
-				dest   = list(group['memberUid'])
+				dest   = group['memberUid']
 				source = [ u[uid]['login'] for uid in users.filtered_users ]
 				for current in group['memberUid']:
 					try:

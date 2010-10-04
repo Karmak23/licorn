@@ -50,7 +50,7 @@ class unix_controller(UGMBackend, Singleton):
 				'gecos'        : entry[4],
 				'homeDirectory': entry[5],
 				'loginShell'   : entry[6],
-				'groups'       : set(),		# a cache which will
+				'groups'       : [],		# a cache which will
 											# eventually be filled by
 											# load_groups().
 				'backend'      : self.name
@@ -170,9 +170,9 @@ class unix_controller(UGMBackend, Singleton):
 
 			if entry[3] == '':
 				# this happends when the group has no members.
-				members = set()
+				members = []
 			else:
-				members   = set(entry[3].split(','))
+				members   = entry[3].split(',')
 
 				# update the cache to avoid brute double loops when calling
 				# 'get users --long'.

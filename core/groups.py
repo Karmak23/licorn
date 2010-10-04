@@ -285,7 +285,7 @@ class GroupsController(Singleton):
 			'' if self.is_system_gid(gid) \
 				else '		<groupSkel>%s</groupSkel>\n' % group['groupSkel'],
 			'		<memberUid>%s</memberUid>\n' % \
-				", ".join(group['memberUid']) if group['memberUid'] != set() \
+				", ".join(group['memberUid']) if group['memberUid'] != [] \
 				else '',
 			"		<backend>%s</backend>\n" %  group['backend'] if long else ''
 			)
@@ -507,7 +507,7 @@ class GroupsController(Singleton):
 			'name'        : name,
 			'userPassword': 'x',
 			'gidNumber'   : gid,
-			'memberUid'   : set(),
+			'memberUid'   : [],
 			'description' : description,
 			'groupSkel'   : groupSkel,
 			'backend'     : GroupsController.backends['prefered'].name,
@@ -869,7 +869,7 @@ class GroupsController(Singleton):
 					styles.stylize(styles.ST_LOGIN, login),
 					styles.stylize(styles.ST_NAME, name)))
 			else:
-				GroupsController.groups[gid]['memberUid'].add(login)
+				GroupsController.groups[gid]['memberUid'].append(login)
 
 				ltrace('groups', 'members are: %s.' % \
 					GroupsController.groups[gid]['memberUid'])
@@ -879,7 +879,7 @@ class GroupsController(Singleton):
 					styles.stylize(styles.ST_NAME, name)))
 
 				# update the users cache.
-				GroupsController.users.users[uid]['groups'].add(name)
+				GroupsController.users.users[uid]['groups'].append(name)
 
 				if batch:
 					work_done = True
@@ -1624,7 +1624,7 @@ class GroupsController(Singleton):
 			"You must specify a GID or name to test as a privilege.")
 	def is_empty_gid(self, gid):
 			return GroupsController.is_standard_gid(gid) \
-				and self.groups[gid]['memberUid'] == set()
+				and self.groups[gid]['memberUid'] == []
 	def is_empty_group(self, name):
 			return GroupsController.is_empty_gid(
 				self.name_to_gid(name))

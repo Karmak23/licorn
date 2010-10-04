@@ -450,7 +450,7 @@ class UsersController(Singleton):
 		tmp_user_dict['gecos']          = gecos
 		tmp_user_dict['login']          = login
 		# prepare the groups cache.
-		tmp_user_dict['groups']         = set()
+		tmp_user_dict['groups']         = []
 		tmp_user_dict['shadowInactive'] = ''
 		tmp_user_dict['shadowWarning']  = 7
 		tmp_user_dict['shadowExpire']   = ''
@@ -525,7 +525,7 @@ class UsersController(Singleton):
 		# Delete user from his groups
 		# '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
-		for group in UsersController.users[uid]['groups'].copy():
+		for group in UsersController.users[uid]['groups'][:]:
 			UsersController.groups.DeleteUsersFromGroup(name=group,
 				users_to_del=[ uid ], batch=True)
 
