@@ -746,7 +746,7 @@ class UsersController(Singleton):
 			#		if users[uid].has_key('locked') else 'None'))
 			if users[uid].has_key('locked'):
 				if users[uid]['locked']:
-					user_login = "!%s" % styles.stylize(styles.ST_BAD,
+					user_login = "%s" % styles.stylize(styles.ST_BAD,
 						users[uid]['login'])
 				else:
 					user_login = styles.stylize(styles.ST_OK,
