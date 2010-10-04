@@ -514,8 +514,8 @@ def clean_system():
 			'--del-users', '--no-archive', '-v' ],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
-			'''group_test3,GRP-ACL-test,gtest_267,group_test4''',
+			'''ARCHIVES-test,group_test,group_testsys,group_test2,''' \
+			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,cp''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
