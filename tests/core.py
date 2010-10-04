@@ -1241,7 +1241,23 @@ def test_users(context):
 	test_message('''users related tests finished.''')
 	""" # end of old test_users() commands
 def test_imports(context):
-
+	pname = 'profil_test'
+	ScenarioTest([
+		ADD + [ 'profile', pname, '-v' ],
+		ADD + [ 'users', '--filename=data/tests_users.csv',
+			'--profile=%s' % pname ],
+		ADD + [ 'users', '--filename=data/tests_users.csv',
+			'--profile=%s' % pname, '--confirm-import' ],
+		GET + [ 'users', '-l' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'profiles', pname, '--del-users', '--no-archive' ],
+		GET + [ 'users', '-l' ],
+		GET + [ 'profiles' ],
+		DEL + [ 'group', '--empty', '--no-archive', '-v' ],
+		],
+		context=context,
+		descr='''test user import from csv file'''
+		).Run()
 
 	"""
 	os.system(DEL + " profile --group utilisagers         --del-users --no-archive")
