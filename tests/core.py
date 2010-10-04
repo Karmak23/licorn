@@ -1287,6 +1287,23 @@ def test_imports(context):
 		descr='''test user import from csv file'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'profile', pname, '-v' ],
+		ADD + [ 'users', '--filename=data/tests_users.csv',
+			'--profile=%s' % pname, '--lastname-column=0',
+			'--firstname-column=1' ],
+		ADD + [ 'users', '--filename=data/tests_users.csv',
+			'--profile=%s' % pname, '--lastname-column=1',
+			'--firstname-column=0', '--group-column=2',
+			'--password-column=3', '--confirm-import', '-v' ],
+		GET + [ 'users' ],
+		DEL + [ 'profiles', pname, '--del-users', '--no-archive', '-v' ],
+		DEL + [ 'group', 'cp,ce1,ce2,cm2', '--no-archive', '-v' ],
+		],
+		context=context,
+		descr='''various test on user import'''
+		).Run()
+
 	"""
 	os.system(DEL + " profile --group utilisagers         --del-users --no-archive")
 	os.system(DEL + " profile --group responsibilisateurs --del-users --no-archive")
