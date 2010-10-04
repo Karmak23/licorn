@@ -1706,6 +1706,7 @@ if __name__ == "__main__":
 			test_integrated_help()
 			#test_check_config()
 			test_regexes()
+			test_short_syntax()
 			save_state(1, state_type='context')
 			ctx_will_change = True
 		else:
