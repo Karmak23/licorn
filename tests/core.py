@@ -507,7 +507,7 @@ def clean_system():
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
-			'''user_testsys2,user_testsys3,user_test_DEBIAN''',
+			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian''',
 			 '--no-archive', '-v' ],
 		['profile', '''--group=utilisagers,responsibilisateurs,'''
 			'''profil_test''',
