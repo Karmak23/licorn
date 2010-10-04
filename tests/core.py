@@ -1543,6 +1543,129 @@ def test_privileges(context):
 				'''(avoid #204 #174)''' % cmd
 			).Run()
 
+def test_short_syntax():
+	uname = 'user_test'
+	gname = 'group_test'
+	pname = 'profil_test'
+
+	ScenarioTest([
+		ADD + [ 'user', uname, '-v' ],
+		GET + [ 'user', uname ],
+		ADD + [ 'group', gname, '-v' ],
+		GET + [ 'group', gname ],
+		ADD + [ 'user', uname, gname, '-v' ],
+		GET + [ 'user', uname, '-l' ],
+		ADD + [ 'group', '%s2' % gname, '-v' ],
+		GET + [ 'group', '%s2' % gname ],
+		ADD + [ 'group', '%s3,%s4' % (gname, gname), '-v' ],
+		# should fail (already present)
+		GET + [ 'group', '%s3,%s4' % (gname, gname) ],
+		# should add user2 & user3
+		ADD + [ 'user', '%s2,%s3' % (uname, uname), '-v' ],
+		GET + [ 'user', '%s2,%s3' % (uname, uname) ],
+		# add 2 users in 3 groups each
+		ADD + [ 'user', '%s2,%s3' % (uname, uname), '%s2,%s3,%s4' %
+			(gname,gname,gname), '-v' ],
+		GET + [ 'user', '%s2,%s3' % (uname, uname), '-l' ],
+		# should add ONLY ONE user in a group and bypass empty one
+		ADD + [ 'user', ',%s' % uname, ',%s2' % gname, '-v' ],
+		# idem
+		ADD + [ 'user', '%s,' % uname, '%s3,' % gname, '-v' ],
+		GET + [ 'user', uname, '-l' ],
+		# should delete only one user and bypass empty one
+		DEL + [ 'user', ',%s' % uname, '-v'],
+		# should fail (already deleted)
+		DEL + [ 'user', '%s,' % uname, '-v'],
+		# IDEM
+		DEL + [ 'user', uname, '-v'],
+		# delete 2 users at same time
+		DEL + [ 'user', '%s2,%s3' % (uname, uname), '-v'],
+		# delete groups, one, then two, then one (bypassing empty)
+		DEL + [ 'group', gname, '-v'],
+		DEL + [ 'group', '%s2,%s3' %  (gname, gname), '-v'],
+		DEL + [ 'group', ',%s4' %  gname, '-v'],
+		DEL + [ 'group', '%s4,' %  gname, '-v'],
+		DEL + [ 'group', '%s4' %  gname, '-v'],
+		],
+		descr='test short users/groups commands'
+		).Run()
+
+	ScenarioTest([
+		ADD + [ 'group', gname, '-v' ],
+		#should fail (the group is not a system group)
+		ADD + [ 'privilege', gname, '-v' ],
+		GET + [ 'privileges' ],
+		ADD + [ 'group', '%ssys' % gname, '--system', '-v' ],
+		ADD + [ 'privilege', '%ssys' % gname, '-v' ],
+		GET + [ 'privileges' ],
+		DEL + [ 'privilege', '%ssys' % gname ],
+		GET + [ 'privileges' ],
+		DEL + [ 'group', gname ],
+		DEL + [ 'group', '%ssys' % gname ],
+		],
+		descr='test short privileges commands'
+		).Run()
+
+	ScenarioTest([
+		ADD + [ 'group', gname, '--system', '-v' ],
+		ADD + [ 'group', '%s2' % gname, '-v' ],
+		ADD + [ 'group', '%s3' % gname, '-v' ],
+		# should fail (not a system group)
+		ADD + [ 'profile', pname, '--group=%s2' % gname, '--force-existing' ],
+		GET + [ 'profiles' ],
+		# should be OK
+		ADD + [ 'profile', pname, '--group=%s' % gname, '--force-existing' ],
+		GET + [ 'profiles' ],
+		MOD + [ 'profile', pname, '--add-groups=%s2,%s3' % (gname,gname) ],
+		GET + [ 'profiles' ],
+		MOD + [ 'profile', pname, '--del-groups=%s2,%s3' % (gname,gname) ],
+		GET + [ 'profiles' ],
+		DEL + [ 'profile', pname ],
+		DEL + [ 'group', '%s2' % gname, '-v' ],
+		DEL + [ 'group', '%s3' % gname, '-v' ],
+		GET + [ 'profiles' ],
+		],
+		descr='test short profiles commands'
+		).Run()
+
+	ScenarioTest([
+		ADD + [ 'group', gname, '-v' ],
+		ADD + [ 'group', '%s2' % gname, '-v' ],
+		CHK + [ 'group', gname, '--auto-no', '-vv' ],
+		CHK + [ 'group', gname, '--auto-yes', '-vv' ],
+		CHK + [ 'group', gname, '-vb' ],
+		CHK + [ 'group', '%s,%s2' % (gname,gname), '--auto-no', '-vv' ],
+		CHK + [ 'group', '%s,%s2' % (gname,gname), '--auto-yes', '-vv' ],
+		CHK + [ 'group', '%s,%s2' % (gname,gname), '-vb' ],
+		DEL + [ 'group', '%s,%s2' % (gname,gname), '-v' ],
+		CHK + [ 'config','--auto-no', '-vvae' ],
+		CHK + [ 'config','--auto-yes', '-vvae' ],
+		CHK + [ 'config','--batch', '-vvae' ],
+		ADD + [ 'user', uname, '-v' ],
+		CHK + [ 'user', uname, '--auto-no', '-v' ],
+		CHK + [ 'user', uname, '--auto-yes', '-v' ],
+		CHK + [ 'user', uname, '-vb' ],
+		DEL + [ 'user', uname, '-v' ],
+		],
+		descr='test short chk commands'
+		).Run()
+
+	"""
+	# extended check on user not implemented yet
+	CHK + [ 'user', '%s,%s2' % (uname,uname), '--auto-no', '-vve' ],
+	CHK + [ 'user', '%s,%s2' % (uname,uname), '--auto-yes', '-vve' ],
+	CHK + [ 'user', '%s,%s2' % (uname,uname), '--batch', '-vve' ],
+	DEL + [ 'user', '%s,%s2' % (uname,uname), '-v' ],
+	# check on profile not implemented yet
+	ADD + [ 'profile', '%s,%s2' % (pname,pname), '-v' ],
+	CHK + [ 'profile', pname, '--auto-no', '-vve' ],
+	CHK + [ 'profile', pname, '--auto-yes', '-vve' ],
+	CHK + [ 'profile', pname, '--batch', '-vve' ],
+	CHK + [ 'profile', '%s,%s2' % (pname,pname), '--auto-no', '-vve' ],
+	CHK + [ 'profile', '%s,%s2' % (pname,pname), '--auto-yes', '-vve' ],
+	CHK + [ 'profile', '%s,%s2' % (pname,pname), '--batch', '-vve' ],
+	DEL + [ 'profile', '%s,%s2' % (pname,pname), '-v' ],
+	"""
 def to_be_implemented():
 	""" TO BE DONE !
 		#
