@@ -14,15 +14,16 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, posix1e
 from stat import *
-
+from ltrace import ltrace
 from licorn.foundations import logging, exceptions, pyutils, styles, process
 
 # WARNING: DON'T IMPORT licorn.core.configuration HERE.
 # just pass "configuration" as a parameter if you need it somewhere.
 # fsapi is meant to to be totally independant of licorn.core.configuration !!
 
-def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclude = [], followlinks = False, followmounts = False):
-	"""mimic the GNU find behaviour in python. returns an iterator. WARNING: recursive function !"""
+def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
+	followlinks=False, followmounts=True):
+	""" Mimic the GNU find behaviour in python. returns an iterator. """
 
 	if mindepth > maxdepth:
 		raise  exceptions.BadArgumentError("mindepth must be <= maxdepth.")
@@ -30,8 +31,9 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 	if maxdepth > 99:
 		raise  exceptions.BadArgumentError("please don't try to exhaust maxdepth.")
 
-	logging.debug("starting minifind in %s, type=%s, mindepth=%s, maxdepth=%s, exclude=%s." \
-		% (path, type, mindepth, maxdepth, exclude))
+	ltrace('fsapi', '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
+		'''exclude=%s, followlinks=%s, followmounts=%s)''' % (
+			path, type, mindepth, maxdepth, exclude, followlinks, followmounts))
 
 	paths_to_walk      = [ path ]
 	next_paths_to_walk = []
@@ -49,7 +51,8 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 			entry              = paths_to_walk.pop(0)
 			current_depth     += 1
 
-		else: break
+		else:
+			break
 
 		try:
 			entry_stat = os.lstat(entry)
@@ -57,20 +60,28 @@ def minifind(path, type = None, perms = None, mindepth = 0, maxdepth = 99, exclu
 			entry_mode = entry_stat.st_mode & 07777
 
 			if current_depth >= mindepth \
-				and ( (type is None and entry_type & S_IFSTD) or entry_type == type) \
+				and ( (type is None and entry_type & S_IFSTD) \
+					or entry_type == type) \
 				and ( perms is None or (entry_mode & perms) ):
+				#ltrace('fsapi', '  minifind(yield=%s)' % entry)
 				yield entry
 
-			if (entry_type & S_IFLNK and not followlinks) \
+			#print 'type %s %s %s' % (entry_type, S_IFLNK, entry_type & S_IFLNK)
+
+			if (entry_type == S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
+				logging.progress('minifind(): skipping link or mountpoint %s.' %
+					styles.stylize(styles.ST_PATH, entry))
 				continue
 
 			if entry_type & S_IFDIR and current_depth < maxdepth:
 				for x in os.listdir(entry):
 					if x not in exclude:
 						next_paths_to_walk.append("%s/%s" % (entry, x))
+					else:
+						ltrace('fsapi', '  minifind(excluded=%s)' % entry)
 
-		except OSError, e:
+		except (IOError, OSError), e:
 			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
 				continue
 			raise e
