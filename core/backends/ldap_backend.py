@@ -598,6 +598,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 			if entry.has_key('memberUid'):
 				members = entry['memberUid']
+				members.sort() # catch users modifications outside Licorn
 
 				#ltrace('ldap', 'members of %s are:\n%s\n%s' % (
 				#	name, members, entry['memberUid']))
@@ -605,9 +606,16 @@ class ldap_controller(UGMBackend, Singleton):
 				# lookups in 'get users --long'.
 
 				if UGMBackend.users:
+					uids_to_sort=[]
 					for member in members:
 						if UGMBackend.users.login_cache.has_key(member):
-							u[l2u(member)]['groups'].add(name)
+							cache_uid=l2u(member)
+							uids_to_sort.append(cache_uid)
+							u[cache_uid]['groups'].append(name)
+					for cache_uid in uids_to_sort:
+						# sort the users, but one time only for each.
+						u[cache_uid]['groups'].sort()
+					del uids_to_sort
 			else:
 				members = []
 

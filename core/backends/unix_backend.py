@@ -173,13 +173,21 @@ class unix_controller(UGMBackend, Singleton):
 				members = []
 			else:
 				members   = entry[3].split(',')
+				members.sort() # catch users modifications outside Licorn
 
 				# update the cache to avoid brute double loops when calling
 				# 'get users --long'.
 				if UGMBackend.users:
+					uids_to_sort=[]
 					for member in members:
 						if UGMBackend.users.login_cache.has_key(member):
-							u[l2u(member)]['groups'].add(entry[0])
+							cache_uid=l2u(member)
+							uids_to_sort.append(cache_uid)
+							u[cache_uid]['groups'].append(entry[0])
+					for cache_uid in uids_to_sort:
+						# sort the users, but one time only for each.
+						u[cache_uid]['groups'].sort()
+					del uids_to_sort
 
 			groups[gid] = 	{
 				'name'         : entry[0],
