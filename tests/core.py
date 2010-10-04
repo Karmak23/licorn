@@ -1187,6 +1187,20 @@ def test_users(context):
 		descr='''various password change tests (avoid #184)'''
 		).Run()
 
+	# scenario not tested with the debian command adduser because it is an
+	# interactive command (for the password).
+	ScenarioTest([
+		[ 'useradd', 'usertestdebian' ],
+		MOD + [ 'user', 'usertestdebian', '--add-groups=plugdev,adm', '-v' ],
+		GET + [ 'users', '-l' ],
+		GET + [ 'groups', 'plugdev,adm' ],
+		DEL + [ 'user', 'usertestdebian' ],
+		GET + [ 'groups', 'plugdev,adm' ],
+		GET + [ 'users', '-l' ],
+		],
+		context=context,
+		descr='''(avoid #169)'''
+		).Run()
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
