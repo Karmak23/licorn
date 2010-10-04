@@ -136,6 +136,10 @@ def dispatch_del_user(opts, args):
 
 def del_group(opts, args):
 	""" delete an Licorn group. """
+	from licorn.foundations.constants import filters
+	selection = filters.NONE
+	if opts.empty:
+		selection = filters.EMPTY
 
 	configuration = LicornConfiguration()
 	users = UsersController(configuration)
@@ -146,8 +150,10 @@ def del_group(opts, args):
 			args,
 			[
 				(opts.name, groups.name_to_gid),
-				(opts.gid, groups.confirm_gid)
-			])
+				(opts.gid, groups.confirm_gid),
+			],
+			selection
+			)
 
 	for gid in gids_to_del:
 		groups.DeleteGroup(gid=gid, del_users=opts.del_users,
