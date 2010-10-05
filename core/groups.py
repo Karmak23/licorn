@@ -206,7 +206,7 @@ class GroupsController(Singleton):
 
 		ltrace('groups', '< Select(%s)' % self.filtered_groups)
 		return self.filtered_groups
-	def ExportCLI(self, long):
+	def ExportCLI(self, long, no_colors=False):
 		""" Export the groups list to human readable (= « get group ») form. """
 		if self.filter_applied:
 			gids = self.filtered_groups
@@ -214,11 +214,21 @@ class GroupsController(Singleton):
 			gids = GroupsController.groups.keys()
 		gids.sort()
 
-		def ExportOneGroupFromGid(gid, mygroups = GroupsController.groups):
+		def ExportOneGroupFromGid(gid, mygroups=GroupsController.groups):
 			""" Export groups the way UNIX get does, separating with ":" """
 
+			if mygroups[gid]['permissive'] is None:
+				group_name = '%s' % styles.stylize(styles.ST_NAME,
+					GroupsController.groups[gid]['name'])
+			elif mygroups[gid]['permissive']:
+				group_name = '%s' % styles.stylize(styles.ST_OK,
+					GroupsController.groups[gid]['name'])
+			else:
+				group_name = '%s' % styles.stylize(styles.ST_BAD,
+					GroupsController.groups[gid]['name'])
+
 			accountdata = [
-				GroupsController.groups[gid]['name'],
+				group_name,
 				mygroups[gid]['userPassword'] \
 					if mygroups[gid].has_key('userPassword') else '',
 				str(gid) ]
@@ -241,12 +251,17 @@ class GroupsController(Singleton):
 							if mygroups[gid].has_key('description') else ''
 					] )
 
-				if mygroups[gid]['permissive'] is None:
-					accountdata.append("UNKNOWN")
-				elif mygroups[gid]['permissive']:
-					accountdata.append("permissive")
-				else:
-					accountdata.append("NOT permissive")
+				if no_colors:
+					# if --no-colors is set, we have to display if the group
+					# is permissive or not in real words, else user don't get
+					# the information because normally it is encoded simply with
+					# colors..
+					if mygroups[gid]['permissive'] is None:
+						accountdata.append("UNKNOWN")
+					elif mygroups[gid]['permissive']:
+						accountdata.append("permissive")
+					else:
+						accountdata.append("NOT permissive")
 
 			if long:
 				accountdata.append('[%s]' % styles.stylize(

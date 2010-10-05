@@ -93,7 +93,7 @@ def get_groups(opts, args):
 	if opts.xml:
 		data = groups.ExportXML(opts.long)
 	else:
-		data = groups.ExportCLI(opts.long)
+		data = groups.ExportCLI(long=opts.long, no_colors=opts.no_colors)
 
 	if data and data != '\n':
 		output(data)
