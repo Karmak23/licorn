@@ -528,7 +528,7 @@ def edit(uri, http_user, login):
 		dbl_lists = {}
 		for filter, titles, id in groups_filters_lists_ids:
 			groups.Select(filter)
-			dest   = list(user['groups'].copy())
+			dest   = list(user['groups'][:])
 			source = [ groups.groups[gid]['name'] \
 				for gid in groups.filtered_groups ]
 			for current in dest[:]:
