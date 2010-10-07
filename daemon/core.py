@@ -98,10 +98,13 @@ def exit_if_already_running():
 		logging.notice("%s: already running (pid %s), not restarting." % (
 			dname, process.get_pid(pid_path)))
 		sys.exit(0)
-def exit_if_not_running_root():
+def refork_if_not_running_root_or_die():
 	if os.getuid() != 0 or os.geteuid() != 0:
-		logging.error("%s: must be run as %s." % (dname,
-			styles.stylize(styles.ST_NAME, 'root')))
+		try:
+			process.refork_as_root_or_die(process_title='licorn-daemon')
+		except exceptions.LicornRuntimeException, e:
+			logging.error("%s: must be run as %s (was: %s)." % (dname,
+				styles.stylize(styles.ST_NAME, 'root'), e))
 def eventually_daemonize(opts):
 	if opts.daemon:
 		process.daemonize(log_path, pid_path)

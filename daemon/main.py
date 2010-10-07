@@ -42,8 +42,9 @@ keywords = KeywordsController(configuration)
 from licorn.interfaces.cli import argparser
 
 from licorn.daemon.core                  import dname, terminate_cleanly, \
-	exit_if_already_running, exit_if_not_running_root, eventually_daemonize, \
-	setup_signals_handler
+	exit_if_already_running, refork_if_not_running_root_or_die, \
+	eventually_daemonize, setup_signals_handler, licornd_parse_arguments
+
 from licorn.daemon.internals.wmi         import fork_wmi
 from licorn.daemon.internals.acl_checker import ACLChecker
 from licorn.daemon.internals.inotifier   import INotifier
@@ -56,8 +57,8 @@ if __name__ == "__main__":
 	(opts, args) = argparser.licornd_parse_arguments(current_app)
 	options.SetFrom(opts)
 
-	exit_if_not_running_root()
 	exit_if_already_running()
+	refork_if_not_running_root_or_die()
 
 	# remember our children threads.
 	threads = []

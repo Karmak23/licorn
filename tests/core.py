@@ -60,19 +60,12 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
 
 verbose = options.verbose
 
-if os.getuid() != 0 or os.geteuid() != 0:
-
-	cmd=[ 'licorn-testsuite' ]
-	cmd.extend(sys.argv)
-
+def prefunc():
 	open(state_files['owner'], 'w').write('%s,%s' % (os.getuid(), os.getgid()))
 
-	if verbose:
-		logging.notice(
-			'Relauching ourselves with sudo to gain root privileges...')
-		logging.info('execvp(sudo %s)' % cmd)
-
-	os.execvp('sudo', cmd)
+if os.getuid() != 0 or os.geteuid() != 0:
+	process.refork_as_root_or_die(process_title='licorn-testsuite',
+		prefunc=prefunc)
 
 def save_state(num, state_type='scenarii'):
 	open(state_files[state_type],'w').write('%d' % num)

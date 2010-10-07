@@ -8,10 +8,9 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, traceback
+import os, sys, traceback, pwd, grp
 
-from licorn.foundations        import exceptions
-from licorn.foundations        import logging
+from licorn.foundations        import exceptions, logging
 from licorn.foundations.ltrace import ltrace
 #
 # daemon and process functions
@@ -136,9 +135,36 @@ def execute(command, input_data = ''):
 			close_fds=True)
 		return p.communicate()
 def whoami():
-	''' Return current UNIX user. '''
-	from subprocess import Popen, PIPE
-	return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
+	''' Return current UNIX user. Do it with traditionnal syscalls, because the
+		rest of Licorn® is not initialized if we run this function. '''
+	#from subprocess import Popen, PIPE
+	#return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
+	return pwd.getpwuid(os.getuid()).pw_name
+def refork_as_root_or_die(process_title='licorn-generic', prefunc=None):
+	""" check if current user is root. if not, check if he/she is member of
+		group "admins" and then refork ourselves with sudo, to gain root
+		privileges, needed for Licorn® daemon.
+		Do it with traditionnal syscalls, because the rest of Licorn® is not
+		initialized if we run this function. """
+
+	group = 'admins'
+
+	if pwd.getpwuid(os.getuid()).pw_name in grp.getgrnam(group).gr_mem:
+
+		cmd=[ process_title ]
+		cmd.extend(sys.argv)
+
+		if prefunc != None:
+			prefunc()
+
+		logging.info('''Exec'ing ourselves with sudo to gain root privileges '''
+			'''(cmd=%s).''' % cmd)
+
+		os.execvp('sudo', cmd)
+
+	else:
+		raise exceptions.LicornRuntimeError('''You're not a member of group '''
+			'''%s, can't do anything for you, sorry!''' % group)
 def get_traceback():
 	return traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))
 
