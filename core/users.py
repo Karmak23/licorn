@@ -328,10 +328,12 @@ class UsersController(Singleton):
 						and not home.startswith('/var') \
 						or home.startswith('%s/%s' %(
 							self.configuration.defaults.home_base_path,
-							self.configuration.groups.names['plural'])):
+							self.configuration.groups.names['plural'])) \
+						or home.find('/tmp') != -1:
 						raise exceptions.BadArgumentError(
 							'''Specified home directory %s for system user '''
-							'''%s is outside %s and /var, or inside %s/%s. '''
+							'''%s is outside %s and /var, or inside %s/%s '''
+							'''and a temporary directory (/var/tmp, /tmp). '''
 							'''This is unsupported, '''
 							'''sorry. Aborting.''' % (
 							styles.stylize(styles.ST_PATH, home),
