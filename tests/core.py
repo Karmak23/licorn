@@ -10,6 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct, stat, shutil
+import gzip
 
 from subprocess                import Popen, PIPE, STDOUT
 from licorn.foundations        import pyutils, logging, exceptions, process, fsapi
@@ -246,9 +247,16 @@ class ScenarioTest:
 
 		open('%s/%s/cmdline.txt' % (self.base_path, cmdnum), 'w').write(
 			' '.join(self.cmds[cmdnum]))
-		open('%s/%s/out.txt' % (self.base_path, cmdnum), 'w').write(
-			strip_moving_data(output))
 		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
+		if len(output) > 1024:
+			file = gzip.GzipFile(
+				filename='%s/%s/out.txt.gz' % (self.base_path, cmdnum),
+				mode='wb',
+				compresslevel=9)
+		else:
+			file = open('%s/%s/out.txt' % (self.base_path, cmdnum), 'w')
+		file.write(strip_moving_data(output))
+		file.close()
 	def show_commands(self, highlight_num):
 		""" output all commands, to get an history of the current scenario,
 			and higlight the current one. """
@@ -275,7 +283,12 @@ class ScenarioTest:
 	def RunCommand(self, cmdnum, batch=False):
 
 		if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
-			ref_output = open('%s/%s/out.txt' % (self.base_path, cmdnum)).read()
+			if os.path.exists('%s/%s/out.txt.gz' % (self.base_path, cmdnum)):
+				ref_output = gzip.open('%s/%s/out.txt.gz' %
+					(self.base_path, cmdnum), 'r').read()
+			else:
+				ref_output = open('%s/%s/out.txt' %
+					(self.base_path, cmdnum)).read()
 			ref_code = int(open(
 				'%s/%s/code.txt' % (self.base_path, cmdnum)).read())
 
