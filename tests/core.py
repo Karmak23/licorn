@@ -228,7 +228,8 @@ class ScenarioTest:
 			self.cmds[self.cmd_counter] = cmd
 			self.cmd_counter += 1
 
-		self.hash = hashlib.sha1(self.name).hexdigest()
+		string_to_hash = "%s%s" % (self.context, str(cmds))
+		self.hash = hashlib.sha1(string_to_hash).hexdigest()
 		self.base_path = 'data/scenarii/%s' % self.hash
 
 	def SaveOutput(self, cmdnum, output, code):
