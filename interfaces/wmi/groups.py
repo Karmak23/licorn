@@ -510,10 +510,11 @@ def edit(uri, http_user, name):
 			if titles is None:
 				dbl_lists[gname] = id
 			else:
-				users.Select(filters.STANDARD)
-				dest   = group['memberUid']
-				source = [ u[uid]['login'] for uid in users.filtered_users ]
-				for current in group['memberUid']:
+
+				dest   = groups[groups.name_to_gid(gname)]['memberUid'][:]
+				source = [ u[uid]['login'] \
+					for uid in users.Select(filters.STANDARD) ]
+				for current in dest[:]:
 					try:
 						source.remove(current)
 					except ValueError:
