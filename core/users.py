@@ -1101,7 +1101,7 @@ class UsersController(Singleton):
 				valid_ids.add(self.guess_identifier(value))
 			except exceptions.DoesntExistsException:
 				logging.notice('Skipped non-existing login or UID %s' % value)
-		return valid_ids
+		return list(valid_ids)
 	@staticmethod
 	def exists(uid=None, login=None):
 		if uid:

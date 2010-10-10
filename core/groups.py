@@ -560,7 +560,7 @@ class GroupsController(Singleton):
 
 		prim_memb = self.primary_members(gid=gid)
 
-		if prim_memb != set() and not del_users:
+		if prim_memb != [] and not del_users:
 			raise exceptions.BadArgumentError('''The group still has '''
 				'''members. You must delete them first, or force their '''
 				'''automatic deletion with the --del-users option. WARNING: '''
@@ -1544,7 +1544,7 @@ class GroupsController(Singleton):
 			except exceptions.DoesntExistsException:
 				logging.notice("Skipped non-existing group name or GID '%s'." %
 					styles.stylize(styles.ST_NAME,value))
-		return valid_ids
+		return list(valid_ids)
 	def exists(self, name=None, gid=None):
 		"""Return true if the group or gid exists on the system. """
 
@@ -1558,13 +1558,13 @@ class GroupsController(Singleton):
 			"You must specify a GID or a name to test existence of.")
 	def primary_members(self, gid=None, name=None):
 		"""Get the list of users which are in group 'name'."""
-		ru    = set()
+		ru = []
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
 		for u in GroupsController.users.users:
 			if GroupsController.users.users[u]['gidNumber'] == gid:
-				ru.add(GroupsController.users.users[u]['login'])
+				ru.append(GroupsController.users.users[u]['login'])
 		return ru
 	def auxilliary_members(self, gid=None, name=None):
 		""" Return all members of a group, which are not members of this group
@@ -1581,8 +1581,9 @@ class GroupsController(Singleton):
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		return self.primary_members(gid=gid).union(
-			self.auxilliary_members(gid=gid))
+		member_list = self.primary_members(gid=gid)
+		member_list.extend(self.auxilliary_members(gid=gid))
+		return member_list
 	def gid_to_name(self, gid):
 		""" Return the group name for a given GID."""
 		try:
