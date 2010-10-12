@@ -50,7 +50,7 @@ class LTSPConfiguration (dict):
 						g = d.groupdict()
 						section_data[g['key']] = g['value']
 
-				# else (d is None): skip the line, it is a comment or a blank line...
+				# else (d is None): skip the line, it is a comment or a blank line…
 
 			line_no += 1
 
@@ -71,7 +71,7 @@ class LTSPConfiguration (dict):
 '''
 		def export_section(section):
 			# FIXME: dont put the backward compat comments, just parse the file with
-			#	modern code...
+			#	modern code…
 			#
 			# the comments are a legacy / backward compatibility system
 			edata = '''#%s debut\n[%s]\n''' % (section, section)

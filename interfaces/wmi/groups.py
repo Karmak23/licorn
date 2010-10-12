@@ -6,17 +6,7 @@ from gettext import gettext as _
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 
-from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-from licorn.core.groups         import GroupsController
-from licorn.core.profiles       import ProfilesController
-
 from licorn.interfaces.wmi import utils as w
-
-configuration = LicornConfiguration()
-users         = UsersController(configuration)
-groups        = GroupsController(configuration, users)
-profiles      = ProfilesController(configuration, groups, users)
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'
@@ -31,7 +21,7 @@ def __merge_multi_select(*lists):
 		else:
 			final.extend(list)
 	return final
-def ctxtnav(active = True):
+def ctxtnav(active=True):
 
 	if active:
 		disabled = '';
@@ -48,19 +38,19 @@ def ctxtnav(active = True):
 		</ul>
 	</div>
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
-def protected_group(name, complete=True):
+def protected_group(name, groups, complete=True):
 	if complete:
 		return groups.is_system_group(name)
 	else:
 		return groups.is_system_group(name) and not groups.is_privilege(name)
 
 # locking and unlocking.
-def unlock(uri, http_user, name, sure=False):
+def unlock(uri, http_user, name, sure=False, groups=None, **kwargs):
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
 
-	if protected_group(name):
+	if protected_group(name, groups):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -93,12 +83,12 @@ def unlock(uri, http_user, name, sure=False):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to activate permissivenes on group
 			<strong>%s</strong>!''') % name)
-def lock(uri, http_user, name, sure=False):
+def lock(uri, http_user, name, sure=False, groups=None, **kwargs):
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
 
-	if protected_group(name):
+	if protected_group(name, groups):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -130,7 +120,8 @@ def lock(uri, http_user, name, sure=False):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove permissiveness from group
 				<strong>%s</strong>!''') % name)
-def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
+def delete(uri, http_user, name, sure=False, no_archive=False, yes=None,
+	configuration=None, groups=None, **kwargs):
 	""" Remove group and archive (or not) group shared dir. """
 
 	# submit button, forget it.
@@ -138,12 +129,10 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 
 	title = _("Remove group %s") % name
 
-	if protected_group(name):
+	if protected_group(name, groups):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
-
-	groups.reload()
 
 	if not sure:
 		data += w.question(_('''Are you sure you want to remove group
@@ -173,31 +162,28 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove group <strong>%s</strong>!''') % name)
-def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
-	""" TO BE IMPLEMENTED ! reapply a user's skel with confirmation."""
-
-	users.reload()
-	profiles.reload()
-	groups.reload()
+def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
+	groups=None, **kwargs):
+	""" TO BE IMPLEMENTED ! reapply a group's users' skel with confirmation."""
 
 	title = _("Skeleton reapplying for group %s") % name
 
-	if protected_group(name):
+	if protected_group(name, groups):
 		return w.forgery_error(title)
+
+	if apply_skel is None:
+		apply_skel = configuration.users.default_skel
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
-		allusers  = u.UsersList(configuration)
-		allgroups = g.GroupsList(configuration, allusers)
-
 		description = _('''This will reset the desktops, icons and menus
 			of all members of the group, according to the content of the
 			skel you choose. This will NOT alter any of the user personnal
 			data, nor the group shared data.''')
 
-		pri_group = allgroups.groups[allusers.users[
-			users.UsersList.login_to_uid(login)]['gidNumber']]['name']
+		pri_group = groups.groups[allusers.users[
+			users.login_to_uid(login)]['gidNumber']]['name']
 
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
@@ -237,7 +223,7 @@ def skel(req, name, sure=False, apply_skel=configuration.users.default_skel):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to apply skel %s to members of group %s.''') % (
 				os.path.basename(apply_skel), login))
-def new(uri, http_user):
+def new(uri, http_user, configuration=None, **kwargs):
 	"""Generate a form to create a new group on the system."""
 
 	title = _("Creating a new group")
@@ -287,7 +273,7 @@ def new(uri, http_user):
 		)
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def create(uri, http_user, name, description=None, skel="", permissive=False,
-	create=None):
+	create=None, **kwargs):
 
 	title = _("Creating group %s") % name
 	data = '%s<h1>%s</h1><br />' % (w.backto(), title)
@@ -307,15 +293,13 @@ def create(uri, http_user, name, description=None, skel="", permissive=False,
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to create group %s!''') % name)
-def view(uri, http_user, name):
+def view(uri, http_user, name, configuration=None, users=None, groups=None,
+	**kwargs):
 	"""Prepare a group view to be printed."""
-
-	users.reload()
-	groups.reload()
 
 	title = _("Details of group %s") % name
 
-	if protected_group(name, complete=False):
+	if protected_group(name, groups, complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -325,7 +309,7 @@ def view(uri, http_user, name):
 
 	try:
 		group   = g[groups.name_to_gid(name)]
-		members = list(groups.all_members(name))
+		members = list(groups.all_members(name=name))
 
 		if members != []:
 			members.sort()
@@ -364,7 +348,7 @@ def view(uri, http_user, name):
 
 		if not groups.is_system_group(name):
 			resps = list(
-				groups.all_members(configuration.groups.resp_prefix + name))
+				groups.all_members(name=configuration.groups.resp_prefix+name))
 
 			if resps != []:
 				resps.sort()
@@ -393,7 +377,7 @@ def view(uri, http_user, name):
 					_('No responsibles for this group.')
 
 			guests = list(
-				groups.all_members(configuration.groups.guest_prefix + name))
+				groups.all_members(name=configuration.groups.guest_prefix+name))
 
 			if guests != []:
 				guests.sort()
@@ -458,18 +442,16 @@ def view(uri, http_user, name):
 			name, "group = g[groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-def edit(uri, http_user, name):
+def edit(uri, http_user, name, configuration=None, users=None, groups=None,
+	**kwargs):
 	"""Edit a group."""
-
-	users.reload()
-	groups.reload()
 
 	u = users.users
 	g = groups.groups
 
 	title = _("Editing group %s") %  name
 
-	if protected_group(name, complete=False):
+	if protected_group(name, groups, complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -631,7 +613,7 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
-	record = None):
+	record=None, configuration=None, users=None, groups=None, **kwargs):
 	""" Record group modification changes."""
 
 	# web submit -> forget it
@@ -639,7 +621,7 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 
 	title   = _("Modifying group %s") % name
 
-	if protected_group(name, complete=False):
+	if protected_group(name, groups, complete=False):
 		return w.forgery_error(title)
 
 	data    = '%s<h1>%s</h1>' % (w.backto(), title)
@@ -680,15 +662,12 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to modify one or more parameter of group %s!''') % name)
-def main(uri, http_user, sort = "name", order = "asc"):
+def main(uri, http_user, sort="name", order="asc", configuration=None,
+	users=None, groups=None, **kwargs):
 	"""List all groups and provileges on the system, displaying them
 	in a nice HTML page. """
 
 	start = time.time()
-
-	users.reload()
-	groups.reload()
-	#profiles.reload()
 
 	g = groups.groups
 
@@ -739,9 +718,8 @@ def main(uri, http_user, sort = "name", order = "asc"):
 		tgroups  = {}
 		ordered  = {}
 		totals[filter_name] = 0
-		groups.Select(filter)
 
-		for gid in groups.filtered_groups:
+		for gid in groups.Select(filter):
 			group = groups.groups[gid]
 			name  = group['name']
 

@@ -3,7 +3,7 @@
 """
 Licorn CLI - http://ilcorn.org/documentation/cli
 
-add - add something on the system, a user account, a group...
+add - add something on the system, a user account, a group…
 
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
@@ -17,11 +17,7 @@ from licorn.foundations           import hlstr, fsapi
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
 
-from licorn.core.configuration import LicornConfiguration
-from licorn.core.users         import UsersController
-from licorn.core.groups        import GroupsController
-from licorn.core.profiles      import ProfilesController
-from licorn.core.keywords      import KeywordsController
+from licorn.interfaces.cli import cli_main, cli_select
 
 _app = {
 	"name"        : "licorn-add",
@@ -29,15 +25,10 @@ _app = {
 	"author"      : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def import_users(opts, args):
+def import_users(opts, args, configuration, users, groups, profiles, **kwargs):
 	""" Massively import user accounts from a CSV file."""
 
 	ltrace('add', '> import_user(%s,%s)' % (opts, args))
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
-	profiles = ProfilesController(configuration, groups, users)
 
 	def clean_csv_field(field):
 		return field.replace("'","").replace('"','')
@@ -316,7 +307,7 @@ def import_users(opts, args):
 				Merci de supprimer ce fichier et ses versions imprimées une fois les mots de passe distribués.
 				</div>
 				<div>Accès direct aux %s&nbsp;:''' % (profile, date_time,
-					configuration.groups.names['plural']))
+					configuration.groups.names.plural))
 
 		for group in groups:
 			html_file.write("&nbsp; <a href=\"#%s\">%s</a> &nbsp;" % (group, group))
@@ -329,7 +320,7 @@ def import_users(opts, args):
 				<table>
 				<tr>
 				<th>Nom</th><th>Prénom</th><th>identifiant</th><th>mot de passe</th>
-				</tr>\n''' % (group,configuration.groups.names['singular'], group))
+				</tr>\n''' % (group,configuration.groups.names.singular, group))
 			sys.stderr.write('.')
 
 			groupdata = data_to_export_to_html[group]
@@ -361,19 +352,13 @@ def import_users(opts, args):
 		groups.WriteConf()
 		users.WriteConf()
 		profiles.WriteConf(configuration.profiles_config_file)
-def add_user(opts, args):
+def add_user(opts, args, users, groups, profiles):
 	""" Add a user account on the system. """
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
 
 	ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
 
-	if opts.profile:
-		profiles = ProfilesController(configuration, groups, users)
-		if not profiles.has_key(opts.profile):
-			opts.profile = profiles.name_to_group(opts.profile)
+	if opts.profile and not profiles.has_key(opts.profile):
+		opts.profile = profiles.name_to_group(opts.profile)
 
 	if opts.firstname is None:
 		firstname = None
@@ -408,18 +393,14 @@ def add_user(opts, args):
 			try:
 				users.AddUser(lastname=lastname, firstname=firstname,
 					password=password, primary_gid=opts.primary_gid,
-					desired_uid=opts.uid,
-					profile=opts.profile, skel=opts.skel, login=login,
-					gecos=gecos, system=opts.system, home=opts.home,
-					batch=False, force=opts.force)
+					desired_uid=opts.uid, profile=opts.profile, skel=opts.skel,
+					login=login, gecos=gecos, system=opts.system,
+					home=opts.home,	batch=False, force=opts.force,
+					listener=opts.listener)
 			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e))
 	ltrace('add', '< add_user()')
-def add_user_in_groups(opts, args):
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+def add_user_in_groups(opts, args, users, groups):
 
 	ltrace('add', '> add_user_in_group().')
 
@@ -429,13 +410,13 @@ def add_user_in_groups(opts, args):
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
 			],
-			filters.NONE)
+			default_selection=filters.NONE)
 
 	for g in opts.groups_to_add.split(','):
 		if g != '':
 			try:
 				groups.AddUsersInGroup(name=g,
-					users_to_add=uids_to_add)
+					users_to_add=uids_to_add, listener=opts.listener)
 			except exceptions.LicornRuntimeException, e:
 				logging.warning("Unable to add user(s) %s in group %s (was: %s)."
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
@@ -447,7 +428,7 @@ def add_user_in_groups(opts, args):
 					styles.stylize(styles.ST_NAME, g), str(e)))
 
 	ltrace('add', '< add_user_in_group().')
-def dispatch_add_user(opts, args):
+def dispatch_add_user(opts, args, users, groups, profiles, **kwargs):
 	""" guess how we were called:
 		- add a user (creation)
 		- add a user into one or more group(s)
@@ -459,27 +440,23 @@ def dispatch_add_user(opts, args):
 		if len(args) == 2:
 			opts.login = args[1]
 			args[1] = ''
-			add_user(opts, args)
+			add_user(opts, args, users, groups, profiles)
 		elif len(args) == 3:
 			opts.login = args[1]
 			opts.groups_to_add = args[2]
 			args[1] = ''
 			args[2] = ''
-			add_user_in_groups(opts, args)
+			add_user_in_groups(opts, args, users, groups)
 		else:
-			add_user(opts, args)
+			add_user(opts, args, users, groups, profiles)
 	else:
-		add_user(opts, args)
+		add_user(opts, args, users, groups, profiles)
 
 	ltrace('add', '< dispatch_add_user()')
-def add_group(opts, args):
+def add_group(opts, args, groups, **kwargs):
 	""" Add a POSIX group. """
 
 	ltrace('add', '> add_group().')
-
-	configuration = LicornConfiguration()
-	users  = UsersController(configuration)
-	groups = GroupsController(configuration, users)
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
@@ -496,20 +473,15 @@ def add_group(opts, args):
 				groups.AddGroup(name, description=opts.description,
 					system=opts.system, groupSkel=opts.skel,
 					desired_gid=opts.gid, permissive=opts.permissive,
-					force=opts.force)
+					force=opts.force, listener=opts.listener)
 			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e))
 
 	ltrace('add', '< add_group().')
-def add_profile(opts, args):
+def add_profile(opts, args, profiles, **kwargs):
 	""" Add a system wide User profile. """
 
 	ltrace('add', '> add_profile().')
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
-	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
@@ -530,34 +502,27 @@ def add_profile(opts, args):
 			profiles.AddProfile(name, group=opts.group, profileQuota=opts.quota,
 				groups=opts.groups, description=opts.description,
 				profileShell=opts.shell, profileSkel=opts.skeldir,
-				force_existing=opts.force_existing)
+				force_existing=opts.force_existing, listener=opts.listener)
 		except exceptions.AlreadyExistsException, e:
 			logging.warning(str(e))
 
 	ltrace('add', '< add_profile().')
-def add_keyword(opts, args):
+def add_keyword(opts, args, keywords, **kwargs):
 	""" Add a keyword on the system. """
-	configuration = LicornConfiguration()
-	keywords = KeywordsController(configuration)
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
 
 	keywords.AddKeyword(unicode(opts.name), unicode(opts.parent),
-		unicode(opts.description))
-def add_privilege(opts, args):
-	configuration = LicornConfiguration()
+		unicode(opts.description), listener=opts.listener)
+def add_privilege(opts, args, privileges, **kwargs):
 
 	if opts.privileges_to_add is None and len(args) == 2:
 		opts.privileges_to_add = args[1]
 
-	configuration.groups.privileges_whitelist.add(
-		opts.privileges_to_add.split(','))
-
-if __name__ == "__main__":
-
+	privileges.add(opts.privileges_to_add.split(','), listener=opts.listener)
+def add_main():
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.add_user_parse_arguments, dispatch_add_user),
@@ -580,3 +545,6 @@ if __name__ == "__main__":
 	}
 
 	cli_main(functions, _app)
+
+if __name__ == "__main__":
+	add_main()

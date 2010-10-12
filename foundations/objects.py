@@ -9,18 +9,21 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import sys, os, time
+import Pyro.core, Pyro.util
+
 from Queue              import Queue
 from threading          import Thread, Event
 
-# licorn internals
+# PLEASE do not import "logging" here.
 import exceptions, styles
-from ltrace import ltrace
+from ltrace    import ltrace
+from constants import message_type, verbose, interactions
 
-class LicornConfigObject:
+class LicornConfigObject():
 	""" a base class just to be able to add/remove custom attributes
 		to other custom attributes (build a tree simply).
 	"""
-	def __init__(self, fromdict = {}, level = 1):
+	def __init__(self, fromdict={}, level=1):
 		for key in fromdict.keys():
 			setattr(self, key, fromdict[key])
 		self._level = level
@@ -33,6 +36,12 @@ class LicornConfigObject:
 			else:
 				data += u"%s\u21b3 %s = %s\n" % ('\t'*self._level, str(i), str(getattr(self, i)))
 		return data
+	def __iter__(self):
+		""" make this object sequence-compatible, for use in
+			LicornConfiguration(). """
+		for attribute_name in dir(self):
+			if attribute_name[0] != '_':
+				yield getattr(self, attribute_name)
 class Singleton(object):
 	__instances = {}
 	def __new__(cls, *args, **kargs):
@@ -40,47 +49,6 @@ class Singleton(object):
 			Singleton.__instances[cls] = object.__new__(cls)
 		#ltrace('objects', 'Singleton 2.6+: %s:%s.' % (cls, Singleton.__instances[cls]))
 		return Singleton.__instances[cls]
-class LicornThread(Thread):
-	"""
-		A simple thread with an Event() used to stop it properly, and a Queue() to
-		get events from other threads asynchronically.
-
-		Every subclass must implement a process_message() method, which will be called
-		by the main loop until the thread stops.
-	"""
-
-	def __init__(self, pname = '<unknown>'):
-		Thread.__init__(self)
-
-		self.name  = "%s/%s" % (
-			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
-
-		self._stop_event  = Event()
-		self._input_queue = Queue()
-		ltrace('thread', '%s: thread initialized.' % self.name)
-	def dispatch_message(self, msg):
-		""" get an incoming message in a generic way. """
-		self._input_queue.put(msg)
-	def run(self):
-		""" Process incoming messages until stop Event() is set. """
-
-		ltrace('thread', '%s: thread started.' % self.name)
-
-		while not self._stop_event.isSet():
-			data = self._input_queue.get()
-			if data is None:
-				break
-			self.process_message(data)
-			self._input_queue.task_done()
-
-		ltrace('thread', '%s: thread ended.' % self.name)
-	def stop(self):
-		""" Stop current Thread
-		and put a special None entry in the queue, to be
-		sure that self.run() method exits properly. """
-		ltrace('thread', '%s: stopping thread.' % self.name)
-		self._stop_event.set()
-		self._input_queue.put(None)
 class FileLock:
 	"""
 		This FileLock class is a reimplementation of basic locks with files.
@@ -129,7 +97,7 @@ class FileLock:
 			self.wait = self.waitmax
 			while os.path.exists(self.filename) and self.wait >= 0:
 				if self.verbose:
-					sys.stderr.write("\r %s waiting %d second(s) for %s lock to be released... " \
+					sys.stderr.write("\r %s waiting %d second(s) for %s lock to be released… " \
 						% (styles.stylize(styles.ST_NOTICE, '*'), self.wait, self.lockname))
 					sys.stderr.flush()
 				self.wait = self.wait - 1
@@ -171,7 +139,7 @@ class FileLock:
 		"""Tell if a file is currently locked by looking if the associated lock
 		is present."""
 		return os.path.exists(self.filename)
-class UGMBackend:
+class UGMBackend(Pyro.core.ObjBase):
 	"""
 		Abstract backend class allowing access to users and groups data. The
 		UGMBackend presents an homogeneous API for operations on these
@@ -180,10 +148,6 @@ class UGMBackend:
 		Please refer to http://dev.licorn.org/wiki/DynamicUGMBackendSystem for
 		a more general documentation.
 	"""
-	configuration = None
-	users         = None
-	groups        = None
-	machines      = None
 
 	def __str__(self):
 		return self.name
@@ -191,19 +155,26 @@ class UGMBackend:
 		return self.name
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
 
+		Pyro.core.ObjBase.__init__(self)
+
 		self.name      = "UGMBackend"
 
 		ltrace('objects', '| UGMBackend.__init__()')
 
+		self.users         = None
+		self.groups        = None
+		self.machines      = None
+
+		# abstract defaults
 		self.warnings      = warnings
-		self.available = False
-		self.enabled   = False
-		self.compat    = ()
-		self.priority  = 0
-		self.plugins   = {}
+		self.available     = False
+		self.enabled       = False
+		self.compat        = ()
+		self.priority      = 0
+		self.plugins       = {}
 
 
-		UGMBackend.configuration = configuration
+		self.configuration = configuration
 
 		if users:
 			self.set_users_controller(users)
@@ -244,16 +215,16 @@ class UGMBackend:
 		pass
 	def set_users_controller(self, users):
 		""" save a reference of the UsersController for future use. """
-		UGMBackend.users = users
+		self.users = users
 		if users.groups is not None:
-			UGMBackend.groups = users.groups
+			self.groups = users.groups
 	def set_groups_controller(self, groups):
 		""" save a reference of the GroupsController for future use. """
-		UGMBackend.groups = groups
+		self.groups = groups
 		if groups.users is not None:
-			UGMBackend.users = groups.users
+			self.users = groups.users
 	def set_machines_controller(self, machines):
-		UGMBackend.machines = machines
+		self.machines = machines
 	def connect_plugin(self, plugin):
 		""" """
 		ltrace('objects', '| UGMBackend.connect_plugin()')
@@ -280,10 +251,10 @@ class UGMBackend:
 
 		for p in self.plugins:
 			if self.plugins[p].purpose == 'machines':
+				# the first plugin found is the good, don't try others.
 				return self.plugins[p].load_machines()
 
 		return {}, {}
-
 	def save_users(self):
 		""" Take all users from UGMBackend.users (typically in a for loop) and
 		save them into the backend. """
@@ -355,3 +326,68 @@ class StateMachine:
 				break
 			else:
 				handler = self.handlers[newState]
+class MessageProcessor(Pyro.core.CallbackObjBase):
+	channels = {
+		1:	sys.stdout,
+		2:	sys.stderr,
+		}
+
+	def __init__(self, verbose=verbose.NOTICE):
+		Pyro.core.CallbackObjBase.__init__(self)
+		self.verbose = verbose
+		ltrace('objects', '| MessageProcessor(%s)' % self.verbose)
+	def process(self, message, callback):
+		""" process a message. """
+
+		if message.type == message_type.EMIT:
+			# We are in the server, the message has just been built.
+			# Forward it nearly "as is". Only the message type is changed,
+			# to make us know it has been processed one time since emission,
+			# and thus the next hop will be the client, which has the task
+			# to display it, and eventually get an interactive answer.
+
+			ltrace('objects', '  MessageProcessor.process(EMIT)')
+
+			if message.interaction:
+
+				from ttyutils import interactive_ask_for_repair
+
+				if message.interaction == interactions.ASK_FOR_REPAIR:
+
+					message.answer = interactive_ask_for_repair(message.data,
+						auto_answer=message.auto_answer)
+				else:
+					ltrace('objects',
+						'unsupported interaction type in message %s.' % message)
+					message.answer = None
+			else:
+				MessageProcessor.channels[message.channel].write(message.data)
+				message.answer = None
+
+			message.type   = message_type.ANSWER
+			return callback.process(message, self.getAttrProxy())
+		else: # message_type.ANSWER
+			# We are on the server, this is the answer from the client to
+			# ourquestion. Return it directly to the calling process. The
+			# message loop ends here.
+
+			ltrace('objects', '  MessageProcessor.process(ANSWER)')
+
+			#message.channel.write(message.data)
+			return message.answer
+class LicornMessage(Pyro.core.CallbackObjBase):
+	def __init__(self, my_type=message_type.EMIT, data='', interaction=None,
+		answer=None, auto_answer=None, channel=2):
+
+		Pyro.core.CallbackObjBase.__init__(self)
+
+		ltrace('objects', '''| LicornMessage(data=%s,type=%s,interaction=%s,'''
+			'''answer=%s,auto_answer=%s,channel=%s)''' % (data, my_type,
+			interaction, answer, auto_answer, channel))
+
+		self.data = data
+		self.type = my_type
+		self.interaction = interaction
+		self.answer = answer
+		self.auto_answer = auto_answer
+		self.channel = channel

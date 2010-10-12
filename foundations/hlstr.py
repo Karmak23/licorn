@@ -49,7 +49,7 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	"""
 	s = s.lower()
 
-	# TODO: see if there are not any special characters to replace...
+	# TODO: see if there are not any special characters to replace…
 	translation_map = {
 						u'à': u'a',
 						u'â': u'a',
@@ -87,7 +87,7 @@ def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
 	for elem in translation_map:
 		s = s.replace(elem, translation_map[elem])
 
-	# delete any strange (or forgotten by translation map...) char left
+	# delete any strange (or forgotten by translation map…) char left
 	if aggressive:
 		s = re.sub('[^.a-z0-9]', '', s)
 	else:

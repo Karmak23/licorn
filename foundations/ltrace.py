@@ -4,7 +4,7 @@ Licorn foundations - http://dev.licorn.org/documentation/foundations
 
 ltrace - light procedural trace (debug only)
 
-	set environment variable LICORN_TRACE={all,configuration,core,...} and
+	set environment variable LICORN_TRACE={all,configuration,core,…} and
 	watch your terminal	flooded with information. You can combine values with
 	pipes:
 		export LICORN_TRACE=all
@@ -13,7 +13,7 @@ ltrace - light procedural trace (debug only)
 		export LICORN_TRACE="users|backends|plugins"
 		export LICORN_TRACE="groups|ldap"
 		export LICORN_TRACE="machines|dnsmasq"
-		(and so on...)
+		(and so on…)
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
@@ -26,6 +26,7 @@ Licensed under the terms of the GNU GPL version 2.
 trc={}
 trc['all']           = 0xffffffffffffffff
 trc['none']          = 0x0000000000000000
+trc['timings']       = 0x0100000000000000
 
 trc['foundations']   = 0x00000000000000ff
 trc['logging']       = 0x0000000000000001
@@ -94,5 +95,6 @@ if getenv('LICORN_TRACE', None) != None:
 			sys.stderr.write('%s %s: %s\n' % (
 				styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
 				module, message))
+		return True
 else:
-	def ltrace(module, message): pass
+	def ltrace(module, message): return True

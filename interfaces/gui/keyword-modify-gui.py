@@ -73,7 +73,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 
 		if self.clearing: return
 
-		self.StatusMessage("Applying keywords, please wait...")
+		self.StatusMessage("Applying keywords, please wait…")
 		self.window.set_sensitive(False)
 
 		if checkbox.get_inconsistent():
@@ -130,7 +130,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 
 		logging.progress('update_keyword_usage() called.')
 
-		self.StatusMessage("Updating keywords notebook, please wait...")
+		self.StatusMessage("Updating keywords notebook, please wait…")
 		self.window.set_sensitive(False)
 
 		# restart with nothing (all unknown)
@@ -256,10 +256,10 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 	def receive_dnd (self, widget, context, x, y, selection, targetType, time):
 		""" TODO """
 		if targetType == self.TARGET_TYPE_TEXT:
-			# the DND data are separated by the MS-DOS newline...
+			# the DND data are separated by the MS-DOS newline…
 			files = selection.data.split('\r\n')
 			for file in files:
-				# and the split() gives an empty last argument, we must test «file»...
+				# and the split() gives an empty last argument, we must test «file»…
 				if file:
 					path = gnomevfs.get_local_path_from_uri(file)
 					logging.progress("Received %s by DND." % styles.stylize(styles.ST_PATH, path))

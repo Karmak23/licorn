@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 """ Multicast DNS Service Discovery for Python, v0.12
     Copyright (C) 2003, Paul Scott-Murphy
 
@@ -19,7 +20,7 @@
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-	
+
 """
 
 """0.12 update - allow selection of binding interface
@@ -101,7 +102,7 @@ _LISTENER_TIME = 200
 _BROWSER_TIME = 500
 
 # Some DNS constants
-	
+
 _MDNS_ADDR = '224.0.0.251'
 _MDNS_PORT = 5353;
 _DNS_PORT = 53;
@@ -208,7 +209,7 @@ class BadTypeInNameException(Exception):
 
 class DNSEntry(object):
 	"""A DNS entry"""
-	
+
 	def __init__(self, name, type, clazz):
 		self.key = string.lower(name)
 		self.name = name
@@ -256,7 +257,7 @@ class DNSEntry(object):
 
 class DNSQuestion(DNSEntry):
 	"""A DNS question entry"""
-	
+
 	def __init__(self, name, type, clazz):
 		if not name.endswith(".local."):
 			raise NonLocalNameException
@@ -273,7 +274,7 @@ class DNSQuestion(DNSEntry):
 
 class DNSRecord(DNSEntry):
 	"""A DNS record - like a DNS entry, but has a TTL"""
-	
+
 	def __init__(self, name, type, clazz, ttl):
 		DNSEntry.__init__(self, name, type, clazz)
 		self.ttl = ttl
@@ -334,7 +335,7 @@ class DNSRecord(DNSEntry):
 
 class DNSAddress(DNSRecord):
 	"""A DNS address record"""
-	
+
 	def __init__(self, name, type, clazz, ttl, address):
 		DNSRecord.__init__(self, name, type, clazz, ttl)
 		self.address = address
@@ -378,10 +379,10 @@ class DNSHinfo(DNSRecord):
 	def __repr__(self):
 		"""String representation"""
 		return self.cpu + " " + self.os
-	
+
 class DNSPointer(DNSRecord):
 	"""A DNS pointer record"""
-	
+
 	def __init__(self, name, type, clazz, ttl, alias):
 		DNSRecord.__init__(self, name, type, clazz, ttl)
 		self.alias = alias
@@ -402,7 +403,7 @@ class DNSPointer(DNSRecord):
 
 class DNSText(DNSRecord):
 	"""A DNS text record"""
-	
+
 	def __init__(self, name, type, clazz, ttl, text):
 		DNSRecord.__init__(self, name, type, clazz, ttl)
 		self.text = text
@@ -420,13 +421,13 @@ class DNSText(DNSRecord):
 	def __repr__(self):
 		"""String representation"""
 		if len(self.text) > 10:
-			return self.toString(self.text[:7] + "...")
+			return self.toString(self.text[:7] + "…")
 		else:
 			return self.toString(self.text)
 
 class DNSService(DNSRecord):
 	"""A DNS service record"""
-	
+
 	def __init__(self, name, type, clazz, ttl, priority, weight, port, server):
 		DNSRecord.__init__(self, name, type, clazz, ttl)
 		self.priority = priority
@@ -453,7 +454,7 @@ class DNSService(DNSRecord):
 
 class DNSIncoming(object):
 	"""Object representation of an incoming DNS packet"""
-	
+
 	def __init__(self, data):
 		"""Constructor from string holding bytes of packet"""
 		self.offset = 0
@@ -464,7 +465,7 @@ class DNSIncoming(object):
 		self.numAnswers = 0
 		self.numAuthorities = 0
 		self.numAdditionals = 0
-		
+
 		self.readHeader()
 		self.readQuestions()
 		self.readOthers()
@@ -491,7 +492,7 @@ class DNSIncoming(object):
 			name = self.readName()
 			info = struct.unpack(format, self.data[self.offset:self.offset+length])
 			self.offset += length
-			
+
 			question = DNSQuestion(name, info[0], info[1])
 			self.questions.append(question)
 
@@ -561,7 +562,7 @@ class DNSIncoming(object):
 
 			if rec is not None:
 				self.answers.append(rec)
-				
+
 	def isQuery(self):
 		"""Returns true if this is a query"""
 		return (self.flags & _FLAGS_QR_MASK) == _FLAGS_QR_QUERY
@@ -574,7 +575,7 @@ class DNSIncoming(object):
 		"""Reads a UTF-8 string of a given length from the packet"""
 		result = self.data[offset:offset+len].decode('utf-8')
 		return result
-		
+
 	def readName(self):
 		"""Reads a domain name from the packet"""
 		result = ''
@@ -607,11 +608,11 @@ class DNSIncoming(object):
 			self.offset = off
 
 		return result
-	
-		
+
+
 class DNSOutgoing(object):
 	"""Object representation of an outgoing packet"""
-	
+
 	def __init__(self, flags, multicast = 1):
 		self.finished = 0
 		self.id = 0
@@ -620,7 +621,7 @@ class DNSOutgoing(object):
 		self.names = {}
 		self.data = []
 		self.size = 12
-		
+
 		self.questions = []
 		self.answers = []
 		self.authorities = []
@@ -660,7 +661,7 @@ class DNSOutgoing(object):
 		format = '!H'
 		self.data.insert(index, struct.pack(format, value))
 		self.size += 2
-		
+
 	def writeShort(self, value):
 		"""Writes an unsigned short to the packet"""
 		format = '!H'
@@ -739,7 +740,7 @@ class DNSOutgoing(object):
 		self.size += 2
 		record.write(self)
 		self.size -= 2
-		
+
 		length = len(''.join(self.data[index:]))
 		self.insertShort(index, length) # Here is the short we adjusted for
 
@@ -758,7 +759,7 @@ class DNSOutgoing(object):
 				self.writeRecord(authority, 0)
 			for additional in self.additionals:
 				self.writeRecord(additional, 0)
-		
+
 			self.insertShort(0, len(self.additionals))
 			self.insertShort(0, len(self.authorities))
 			self.insertShort(0, len(self.answers))
@@ -773,7 +774,7 @@ class DNSOutgoing(object):
 
 class DNSCache(object):
 	"""A cache of DNS entries"""
-	
+
 	def __init__(self):
 		self.cache = {}
 
@@ -871,7 +872,7 @@ class Engine(threading.Thread):
 		result = self.readers.keys()
 		self.condition.release()
 		return result
-	
+
 	def addReader(self, reader, socket):
 		self.condition.acquire()
 		self.readers[socket] = reader
@@ -896,7 +897,7 @@ class Listener(object):
 
 	It requires registration with an Engine object in order to have
 	the read() method called when a socket is availble for reading."""
-	
+
 	def __init__(self, zeroconf):
 		self.zeroconf = zeroconf
 		self.zeroconf.engine.addReader(self, self.zeroconf.socket)
@@ -923,7 +924,7 @@ class Listener(object):
 class Reaper(threading.Thread):
 	"""A Reaper is used by this module to remove cache entries that
 	have expired."""
-	
+
 	def __init__(self, zeroconf):
 		threading.Thread.__init__(self)
 		self.zeroconf = zeroconf
@@ -947,7 +948,7 @@ class ServiceBrowser(threading.Thread):
 	The listener object will have its addService() and
 	removeService() methods called when this browser
 	discovers changes in the services availability."""
-	
+
 	def __init__(self, zeroconf, type, listener):
 		"""Creates a browser for a specific type"""
 		threading.Thread.__init__(self)
@@ -958,7 +959,7 @@ class ServiceBrowser(threading.Thread):
 		self.nextTime = currentTimeMillis()
 		self.delay = _BROWSER_TIME
 		self.list = []
-		
+
 		self.done = 0
 
 		self.zeroconf.addListener(self, DNSQuestion(self.type, _TYPE_PTR, _CLASS_IN))
@@ -1018,11 +1019,11 @@ class ServiceBrowser(threading.Thread):
 
 			if event is not None:
 				event(self.zeroconf)
-				
+
 
 class ServiceInfo(object):
 	"""Service information"""
-	
+
 	def __init__(self, type, name, address=None, port=None, weight=0, priority=0, properties=None, server=None):
 		"""Create a service description.
 
@@ -1088,7 +1089,7 @@ class ServiceInfo(object):
 				index += 1
 				strs.append(text[index:index+length])
 				index += length
-			
+
 			for s in strs:
 				eindex = s.find('=')
 				if eindex == -1:
@@ -1111,7 +1112,7 @@ class ServiceInfo(object):
 		except:
 			traceback.print_exc()
 			self.properties = None
-			
+
 	def getType(self):
 		"""Type accessor"""
 		return self.type
@@ -1200,7 +1201,7 @@ class ServiceInfo(object):
 			result = 1
 		finally:
 			zeroconf.removeListener(self)
-			
+
 		return result
 
 	def __eq__(self, other):
@@ -1222,10 +1223,10 @@ class ServiceInfo(object):
 			if len(self.text) < 20:
 				result += self.text
 			else:
-				result += self.text[:17] + "..."
+				result += self.text[:17] + "…"
 		result += "]"
 		return result
-				
+
 
 class Zeroconf(object):
 	"""Implementation of Zeroconf Multicast DNS Service Discovery
@@ -1275,7 +1276,7 @@ class Zeroconf(object):
 		self.cache = DNSCache()
 
 		self.condition = threading.Condition()
-		
+
 		self.engine = Engine(self)
 		self.listener = Listener(self)
 		self.reaper = Reaper(self)
@@ -1462,7 +1463,7 @@ class Zeroconf(object):
 						record = entry
 			else:
 				self.cache.add(record)
-				
+
 			self.updateRecord(now, record)
 
 	def handleQuery(self, msg, addr, port):
@@ -1476,7 +1477,7 @@ class Zeroconf(object):
 			out = DNSOutgoing(_FLAGS_QR_RESPONSE | _FLAGS_AA, 0)
 			for question in msg.questions:
 				out.addQuestion(question)
-		
+
 		for question in msg.questions:
 			if question.type == _TYPE_PTR:
 				for service in self.services.values():
@@ -1488,16 +1489,16 @@ class Zeroconf(object):
 				try:
 					if out is None:
 						out = DNSOutgoing(_FLAGS_QR_RESPONSE | _FLAGS_AA)
-					
+
 					# Answer A record queries for any service addresses we know
 					if question.type == _TYPE_A or question.type == _TYPE_ANY:
 						for service in self.services.values():
 							if service.server == question.name.lower():
 								out.addAnswer(msg, DNSAddress(question.name, _TYPE_A, _CLASS_IN | _CLASS_UNIQUE, _DNS_TTL, service.address))
-					
+
 					service = self.services.get(question.name.lower(), None)
 					if not service: continue
-					
+
 					if question.type == _TYPE_SRV or question.type == _TYPE_ANY:
 						out.addAnswer(msg, DNSService(question.name, _TYPE_SRV, _CLASS_IN | _CLASS_UNIQUE, _DNS_TTL, service.priority, service.weight, service.port, service.server))
 					if question.type == _TYPE_TXT or question.type == _TYPE_ANY:
@@ -1506,7 +1507,7 @@ class Zeroconf(object):
 						out.addAdditionalAnswer(DNSAddress(service.server, _TYPE_A, _CLASS_IN | _CLASS_UNIQUE, _DNS_TTL, service.address))
 				except:
 					traceback.print_exc()
-				
+
 		if out is not None and out.answers:
 			out.id = msg.id
 			self.send(out, addr, port)
@@ -1531,26 +1532,26 @@ class Zeroconf(object):
 			self.unregisterAllServices()
 			self.socket.setsockopt(socket.SOL_IP, socket.IP_DROP_MEMBERSHIP, socket.inet_aton(_MDNS_ADDR) + socket.inet_aton('0.0.0.0'))
 			self.socket.close()
-			
+
 # Test a few module features, including service registration, service
 # query (for Zoe), and service unregistration.
 
-if __name__ == '__main__':	
+if __name__ == '__main__':
 	print "Multicast DNS Service Discovery for Python, version", __version__
 	r = Zeroconf()
-	print "1. Testing registration of a service..."
+	print "1. Testing registration of a service…"
 	desc = {'version':'0.10','a':'test value', 'b':'another value'}
 	info = ServiceInfo("_http._tcp.local.", "My Service Name._http._tcp.local.", socket.inet_aton("127.0.0.1"), 1234, 0, 0, desc)
-	print "   Registering service..."
+	print "   Registering service…"
 	r.registerService(info)
 	print "   Registration done."
-	print "2. Testing query of service information..."
+	print "2. Testing query of service information…"
 	print "   Getting ZOE service:", str(r.getServiceInfo("_http._tcp.local.", "ZOE._http._tcp.local."))
 	print "   Query done."
-	print "3. Testing query of own service..."
+	print "3. Testing query of own service…"
 	print "   Getting self:", str(r.getServiceInfo("_http._tcp.local.", "My Service Name._http._tcp.local."))
 	print "   Query done."
-	print "4. Testing unregister of service information..."
+	print "4. Testing unregister of service information…"
 	r.unregisterService(info)
 	print "   Unregister done."
 	r.close()

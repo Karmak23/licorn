@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-08-30 11:20+0200\n"
+"POT-Creation-Date: 2010-10-09 22:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,30 +16,1488 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: core/configuration.py:485
+#: interfaces/wmi/utils.py:23
 #, python-format
 msgid ""
-"SSH detection not supported yet on your system.Please get in touch with %s."
+"\n"
+"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
+"\">GNU\n"
+" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
+" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %"
+"s,\n"
+"  and all other libre software developers (Notably Ubuntu, Debian, "
+"Python…).\n"
 msgstr ""
 
-#: core/configuration.py:503
-msgid "Users allowed to connect via SSHd"
+#: interfaces/wmi/utils.py:31
+msgid "Secure SHell (Secure remote connexion and commands protocol)"
 msgstr ""
 
-#: core/configuration.py:759
-msgid "user"
+#: interfaces/wmi/utils.py:32
+msgid "File Transfer Protocol"
 msgstr ""
 
-#: core/configuration.py:760
-msgid "users"
+#: interfaces/wmi/utils.py:33
+msgid "HyperText Transfert Protocol"
 msgstr ""
 
-#: core/configuration.py:779
-msgid "group"
+#: interfaces/wmi/utils.py:34
+msgid "Internet Message Access Protocol"
 msgstr ""
 
-#: core/configuration.py:780
-msgid "groups"
+#: interfaces/wmi/utils.py:35
+msgid "Virtual Network Computing (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:36
+msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:37
+msgid "Post-Office Protocol (Simple mail fetching protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:38
+msgid "Simple Mail Transfer Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:39
+msgid "Rivest Shamir Adleman (cryptography protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:40
+msgid "Digital Signature Algorithm"
+msgstr ""
+
+#: interfaces/wmi/utils.py:41
+msgid ""
+"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
+"\t\tcomposing a libre operating system)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:43
+msgid ""
+"LiCorN system tools (tools for IT managers,\n"
+"\t\tsee http://dev.licorn.org/)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:45
+msgid ""
+"Licorn Admin Tools (High-level management tools for\n"
+"\t\ta GNU/Linux system)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:47
+msgid "Licorn® Web Management Interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:58
+msgid "Command must be a list or tuple!"
+msgstr ""
+
+#: interfaces/wmi/utils.py:84
+#, python-format
+msgid "%d&nbsp;hours,"
+msgstr ""
+
+#: interfaces/wmi/utils.py:88
+#, python-format
+msgid " %d&nbsp;minutes,"
+msgstr ""
+
+#: interfaces/wmi/utils.py:90
+#, python-format
+msgid " %.3f&nbsp;seconds."
+msgstr ""
+
+#: interfaces/wmi/utils.py:91
+#, python-format
+msgid "Core execution time: %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:161
+msgid "Add"
+msgstr ""
+
+#: interfaces/wmi/utils.py:163 interfaces/wmi/groups.py:145
+msgid "Remove"
+msgstr ""
+
+#: interfaces/wmi/utils.py:215
+msgid "Executed command:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:218
+msgid "Error reported by system:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:222 interfaces/wmi/utils.py:223
+msgid "Back to root of management interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:229
+#, python-format
+msgid "Logged in as %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:245 interfaces/wmi/utils.py:246
+msgid "Bad request or argument"
+msgstr ""
+
+#: interfaces/wmi/utils.py:248
+msgid "There was a problem in the request you sent to the WMI."
+msgstr ""
+
+#: interfaces/wmi/utils.py:252 interfaces/wmi/utils.py:254
+msgid "Impossible action"
+msgstr ""
+
+#: interfaces/wmi/utils.py:255
+msgid ""
+"Some parts of the system cannot be modified, for your own safety and the "
+"world to rest in peace."
+msgstr ""
+
+#: interfaces/wmi/utils.py:344
+msgid "Server, UPS and hardware sub-systems status."
+msgstr ""
+
+#: interfaces/wmi/utils.py:344 interfaces/wmi/machines.py:706
+msgid "Status"
+msgstr ""
+
+#: interfaces/wmi/utils.py:345
+msgid "Manage user accounts."
+msgstr ""
+
+#: interfaces/wmi/utils.py:345
+msgid "Users"
+msgstr ""
+
+#: interfaces/wmi/utils.py:346
+msgid "Manage groups and shared data."
+msgstr ""
+
+#: interfaces/wmi/utils.py:346 interfaces/wmi/machines.py:414
+#: interfaces/wmi/machines.py:610 interfaces/wmi/users.py:412
+#: interfaces/wmi/users.py:605 interfaces/wmi/groups.py:679
+#: interfaces/wmi/groups.py:715
+msgid "Groups"
+msgstr ""
+
+#: interfaces/wmi/utils.py:347
+msgid ""
+"Manage network clients: computers, printers, switches and other network "
+"enabled active systems."
+msgstr ""
+
+#: interfaces/wmi/utils.py:347 interfaces/wmi/machines.py:697
+msgid "Machines"
+msgstr ""
+
+#: interfaces/wmi/utils.py:348
+msgid ""
+"Manage Internet connexion and parameters, firewall protection, URL filter "
+"and e-mail parameters."
+msgstr ""
+
+#: interfaces/wmi/utils.py:348
+msgid "Internet"
+msgstr ""
+
+#: interfaces/wmi/utils.py:349
+msgid ""
+"Go to online documentation and community website (in new window or new tab)."
+msgstr ""
+
+#: interfaces/wmi/utils.py:349
+msgid "Documentation"
+msgstr ""
+
+#: interfaces/wmi/utils.py:350
+msgid "Get product support / help"
+msgstr ""
+
+#: interfaces/wmi/utils.py:350
+msgid "Support"
+msgstr ""
+
+#: interfaces/wmi/utils.py:354
+#, python-format
+msgid "%s Management"
+msgstr ""
+
+#: interfaces/wmi/utils.py:379
+#, python-format
+msgid "%s WMI:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:384
+#, python-format
+msgid "administration %s"
+msgstr ""
+
+#: interfaces/wmi/server.py:20 interfaces/wmi/base.py:27
+msgid "Restart server."
+msgstr ""
+
+#: interfaces/wmi/server.py:21 interfaces/wmi/base.py:28
+msgid "Restart server"
+msgstr ""
+
+#: interfaces/wmi/server.py:22 interfaces/wmi/base.py:29
+msgid "Shutdown server."
+msgstr ""
+
+#: interfaces/wmi/server.py:23 interfaces/wmi/base.py:30
+msgid "Shutdown server"
+msgstr ""
+
+#: interfaces/wmi/server.py:31
+msgid "Can't reboot the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:34
+msgid "Rebooting…"
+msgstr ""
+
+#: interfaces/wmi/server.py:60
+#, python-format
+msgid "Sure you want to reboot the %s server?"
+msgstr ""
+
+#: interfaces/wmi/server.py:61 interfaces/wmi/server.py:99
+msgid "YES"
+msgstr ""
+
+#: interfaces/wmi/server.py:62 interfaces/wmi/server.py:100
+msgid "NO"
+msgstr ""
+
+#: interfaces/wmi/server.py:69
+msgid "Can't shutdown the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:72
+msgid "Shutting down…"
+msgstr ""
+
+#: interfaces/wmi/server.py:98
+#, python-format
+msgid "Sure you want to shutdown the %s server?"
+msgstr ""
+
+#: interfaces/wmi/machines.py:12 interfaces/wmi/users.py:25
+#: interfaces/wmi/groups.py:11
+msgid ""
+"<br /><br />Go back with your browser, double-check data and validate the "
+"web-form."
+msgstr ""
+
+#: interfaces/wmi/machines.py:50
+msgid ""
+"Create a configuration record for a machine which is not yet on the network."
+msgstr ""
+
+#: interfaces/wmi/machines.py:53
+msgid "Add a machine"
+msgstr ""
+
+#: interfaces/wmi/machines.py:54
+msgid "Shutdown machines on the network."
+msgstr ""
+
+#: interfaces/wmi/machines.py:56
+msgid "Shutdown machines"
+msgstr ""
+
+#: interfaces/wmi/machines.py:57
+msgid "Edit Energy &amp; power saving policies."
+msgstr ""
+
+#: interfaces/wmi/machines.py:59
+msgid "Energy policies"
+msgstr ""
+
+#: interfaces/wmi/machines.py:60
+msgid "Export current machines list to a CSV or XML file."
+msgstr ""
+
+#: interfaces/wmi/machines.py:62
+msgid "Export this list"
+msgstr ""
+
+#: interfaces/wmi/machines.py:71
+#, python-format
+msgid "Shutdown machine %s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:75
+#, python-format
+msgid "Are you sure you want to remotely shutdown machine %s?"
+msgstr ""
+
+#: interfaces/wmi/machines.py:79
+msgid "Warn connected user(s) before shuting system down."
+msgstr ""
+
+#: interfaces/wmi/machines.py:81
+msgid "Please confirm operation"
+msgstr ""
+
+#: interfaces/wmi/machines.py:83 interfaces/wmi/machines.py:139
+msgid "Shutdown"
+msgstr ""
+
+#: interfaces/wmi/machines.py:84 interfaces/wmi/machines.py:140
+#: interfaces/wmi/machines.py:418 interfaces/wmi/machines.py:614
+#: interfaces/wmi/users.py:284 interfaces/wmi/users.py:416
+#: interfaces/wmi/users.py:609 interfaces/wmi/groups.py:73
+#: interfaces/wmi/groups.py:111 interfaces/wmi/groups.py:147
+#: interfaces/wmi/groups.py:211 interfaces/wmi/groups.py:601
+msgid "Cancel"
+msgstr ""
+
+#: interfaces/wmi/machines.py:104
+#, python-format
+msgid "Failed to shutdown machine %s!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:112
+msgid "Massive shutdown"
+msgstr ""
+
+#: interfaces/wmi/machines.py:116
+msgid ""
+"You can shutdown all currently running and/or idle machines. This is a quite "
+"dangerous operation, because users will be disconnected, and there is a "
+"potential to loose unsaved work on idle machines (users are not in front of "
+"them, they won't notice the system is shuting down.<br /><br />Systems will "
+"be shut down <strong>ONE minute</strong> after validation."
+msgstr ""
+
+#: interfaces/wmi/machines.py:126
+msgid "Shutdown <strong>active</strong> machines"
+msgstr ""
+
+#: interfaces/wmi/machines.py:128
+msgid "Shutdown <strong>idle</strong> machines"
+msgstr ""
+
+#: interfaces/wmi/machines.py:130
+msgid "Shutdown <strong>asleep</strong> machines"
+msgstr ""
+
+#: interfaces/wmi/machines.py:132
+msgid ""
+"Shutdown the <strong>administrator</strong> machine too<br/>(the one "
+"currently connected to the WMI)."
+msgstr ""
+
+#: interfaces/wmi/machines.py:134
+msgid "Warn connected users before shuting systems down."
+msgstr ""
+
+#: interfaces/wmi/machines.py:137
+msgid "Choose machines to shutdown"
+msgstr ""
+
+#: interfaces/wmi/machines.py:164
+msgid "Failed to shutdown one or more machines!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:171
+msgid "Energy saving policies"
+msgstr ""
+
+#: interfaces/wmi/machines.py:174 interfaces/wmi/machines.py:225
+#: interfaces/wmi/users.py:91
+msgid ""
+"CSV file-format is used by spreadsheets and most systems which offer import "
+"functionnalities. XML file-format is a modern exchange format, used in soma "
+"applications which respect interoperability constraints.<br /><br />When you "
+"submit this form, your web browser will automatically offer you to download "
+"and save the export-file (it won't be displayed). When you're done, please "
+"click the “back” button of your browser."
+msgstr ""
+
+#: interfaces/wmi/machines.py:183 interfaces/wmi/machines.py:234
+#, python-format
+msgid "Which file format do you want the machines list to be exported to? %s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:186 interfaces/wmi/machines.py:237
+#: interfaces/wmi/users.py:103
+msgid "Please choose file format for export list"
+msgstr ""
+
+#: interfaces/wmi/machines.py:188 interfaces/wmi/machines.py:239
+#: interfaces/wmi/users.py:105
+msgid "Export >>"
+msgstr ""
+
+#: interfaces/wmi/machines.py:189 interfaces/wmi/machines.py:240
+#: interfaces/wmi/machines.py:285 interfaces/wmi/users.py:106
+#: interfaces/wmi/users.py:150 interfaces/wmi/users.py:235
+#: interfaces/wmi/groups.py:270
+msgid "<< Cancel"
+msgstr ""
+
+#: interfaces/wmi/machines.py:213
+msgid "Export machines list"
+msgstr ""
+
+#: interfaces/wmi/machines.py:264
+#, python-format
+msgid "Remove machine %s's record"
+msgstr ""
+
+#: interfaces/wmi/machines.py:273
+#, python-format
+msgid "Are you sure you want to remove record for machine <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/machines.py:275 interfaces/wmi/users.py:140
+#, python-format
+msgid ""
+"User's <strong>personnal data</strong> (his/her HOME dir) will be "
+"<strong>archived</strong> in directory <code>%s</code> and members of group "
+"<strong>%s</strong> will be able to  access it to operate an eventual "
+"recover.<br />However, you can decide to permanently remove it."
+msgstr ""
+
+#: interfaces/wmi/machines.py:283 interfaces/wmi/users.py:148
+msgid "Remove >>"
+msgstr ""
+
+#: interfaces/wmi/machines.py:283 interfaces/wmi/users.py:148
+#: interfaces/wmi/users.py:222 interfaces/wmi/groups.py:146
+#: interfaces/wmi/groups.py:604
+msgid "R"
+msgstr ""
+
+#: interfaces/wmi/machines.py:285 interfaces/wmi/users.py:150
+#: interfaces/wmi/users.py:235 interfaces/wmi/users.py:285
+msgid "C"
+msgstr ""
+
+#: interfaces/wmi/machines.py:287
+msgid "Definitely remove record data (no archiving)."
+msgstr ""
+
+#: interfaces/wmi/machines.py:302
+#, python-format
+msgid "Failed to remove record <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:308
+msgid "New machine record"
+msgstr ""
+
+#: interfaces/wmi/machines.py:321
+msgid "This machine is a"
+msgstr ""
+
+#: interfaces/wmi/machines.py:329 interfaces/wmi/users.py:328
+#: interfaces/wmi/users.py:717
+msgid "Full name"
+msgstr ""
+
+#: interfaces/wmi/machines.py:398 interfaces/wmi/machines.py:596
+#: interfaces/wmi/users.py:396 interfaces/wmi/users.py:591
+#, python-format
+msgid ""
+"Password must be at least %d characters long. You can use all alphabet "
+"characters, numbers, special characters and punctuation signs, except '?!'."
+msgstr ""
+
+#: interfaces/wmi/machines.py:401 interfaces/wmi/users.py:399
+msgid "Password"
+msgstr ""
+
+#: interfaces/wmi/machines.py:401 interfaces/wmi/machines.py:600
+#: interfaces/wmi/users.py:399 interfaces/wmi/users.py:595
+#, python-format
+msgid "(%d chars. min.)"
+msgstr ""
+
+#: interfaces/wmi/machines.py:402 interfaces/wmi/users.py:400
+#: interfaces/wmi/groups.py:269 interfaces/wmi/groups.py:437
+msgid "P"
+msgstr ""
+
+#: interfaces/wmi/machines.py:404 interfaces/wmi/users.py:402
+msgid "Password confirmation."
+msgstr ""
+
+#: interfaces/wmi/machines.py:406 interfaces/wmi/users.py:404
+msgid ""
+"Identifier must be lowercase, without accents or special characters (you can "
+"use dots and carets).<br /><br />If you let this field empty, identifier "
+"will be automaticaly guessed from first name and last name."
+msgstr ""
+
+#: interfaces/wmi/machines.py:410 interfaces/wmi/users.py:408
+#: interfaces/wmi/users.py:718 interfaces/wmi/groups.py:330
+#: interfaces/wmi/groups.py:370 interfaces/wmi/groups.py:399
+#: interfaces/wmi/groups.py:831
+msgid "Identifier"
+msgstr ""
+
+#: interfaces/wmi/machines.py:411 interfaces/wmi/users.py:409
+msgid "I"
+msgstr ""
+
+#: interfaces/wmi/machines.py:412 interfaces/wmi/machines.py:607
+#: interfaces/wmi/users.py:410 interfaces/wmi/users.py:602
+msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
+msgstr ""
+
+#: interfaces/wmi/machines.py:415 interfaces/wmi/machines.py:611
+#: interfaces/wmi/users.py:413 interfaces/wmi/users.py:606
+#: interfaces/wmi/groups.py:716
+msgid "Privileges"
+msgstr ""
+
+#: interfaces/wmi/machines.py:416 interfaces/wmi/machines.py:612
+#: interfaces/wmi/users.py:414 interfaces/wmi/users.py:607
+msgid "Responsibilities"
+msgstr ""
+
+#: interfaces/wmi/machines.py:417 interfaces/wmi/machines.py:613
+#: interfaces/wmi/users.py:415 interfaces/wmi/users.py:608
+msgid "Invitations"
+msgstr ""
+
+#: interfaces/wmi/machines.py:419 interfaces/wmi/users.py:417
+#: interfaces/wmi/groups.py:271
+msgid "Create"
+msgstr ""
+
+#: interfaces/wmi/machines.py:437
+#, python-format
+msgid "New machine record %s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:442 interfaces/wmi/machines.py:652
+#: interfaces/wmi/users.py:439 interfaces/wmi/users.py:648
+#, python-format
+msgid "Passwords do not match!%s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:446 interfaces/wmi/users.py:443
+#, python-format
+msgid "Password must be at least %d characters long!%s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:470
+#, python-format
+msgid "Failed to create record <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:489
+#, python-format
+msgid ""
+"Failed to add machine <strong>%s</strong> to requested\n"
+"\t\tgroups/privileges/responsibilities/invitations!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:496
+#, python-format
+msgid "Edit %s's record"
+msgstr ""
+
+#: interfaces/wmi/machines.py:512 interfaces/wmi/users.py:508
+#: interfaces/wmi/users.py:707 interfaces/wmi/users.py:817
+msgid "Standard account"
+msgstr ""
+
+#: interfaces/wmi/machines.py:590
+msgid "<strong>mid</strong> (fixed)"
+msgstr ""
+
+#: interfaces/wmi/machines.py:591 interfaces/wmi/users.py:586
+msgid "<strong>Identifier</strong> (fixed)"
+msgstr ""
+
+#: interfaces/wmi/machines.py:592 interfaces/wmi/users.py:587
+msgid "<strong>Profile</strong> (fixed)"
+msgstr ""
+
+#: interfaces/wmi/machines.py:593 interfaces/wmi/users.py:588
+msgid "<strong>Full name</strong>"
+msgstr ""
+
+#: interfaces/wmi/machines.py:600 interfaces/wmi/users.py:595
+msgid "New password"
+msgstr ""
+
+#: interfaces/wmi/machines.py:604 interfaces/wmi/users.py:599
+msgid "password confirmation."
+msgstr ""
+
+#: interfaces/wmi/machines.py:615 interfaces/wmi/users.py:610
+msgid "Record changes"
+msgstr ""
+
+#: interfaces/wmi/machines.py:639
+#, python-format
+msgid "Modification of %s's record"
+msgstr ""
+
+#: interfaces/wmi/machines.py:655 interfaces/wmi/users.py:651
+#, python-format
+msgid "The password --%s-- must be at least %d characters long!%s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:681
+#, python-format
+msgid ""
+"Failed to modify one or more parameters of record\n"
+"\t\t <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/machines.py:693 interfaces/wmi/machines.py:733
+msgid "managed"
+msgstr ""
+
+#: interfaces/wmi/machines.py:694 interfaces/wmi/machines.py:735
+msgid "floating"
+msgstr ""
+
+#: interfaces/wmi/machines.py:707
+msgid "Host name"
+msgstr ""
+
+#: interfaces/wmi/machines.py:708
+msgid "IP address"
+msgstr ""
+
+#: interfaces/wmi/machines.py:709
+msgid "Hardware address"
+msgstr ""
+
+#: interfaces/wmi/machines.py:710
+msgid "Expiry"
+msgstr ""
+
+#: interfaces/wmi/machines.py:711
+msgid "Managed"
+msgstr ""
+
+#: interfaces/wmi/machines.py:719 interfaces/wmi/users.py:725
+#: interfaces/wmi/groups.py:704
+msgid "Click to sort in reverse order."
+msgstr ""
+
+#: interfaces/wmi/machines.py:725 interfaces/wmi/users.py:729
+#: interfaces/wmi/groups.py:708
+msgid "Click to sort on this column."
+msgstr ""
+
+#: interfaces/wmi/machines.py:739
+#, python-format
+msgid ""
+"Host %s is in an unknown state. Nothing is possible. Please wait for a "
+"reconnection."
+msgstr ""
+
+#: interfaces/wmi/machines.py:742
+#, python-format
+msgid ""
+"Host %s is offline, and cannot be powered on from here,Only from the machine "
+"itself."
+msgstr ""
+
+#: interfaces/wmi/machines.py:745 interfaces/wmi/machines.py:747
+#: interfaces/wmi/machines.py:749
+#, python-format
+msgid "Shutdown the machine %s"
+msgstr ""
+
+#: interfaces/wmi/machines.py:798
+msgid "This machine is an ALT® client."
+msgstr ""
+
+#: interfaces/wmi/machines.py:814
+msgid ""
+"Unmanage machine (remove it from configuration, in order to allow it to be "
+"managed by another server."
+msgstr ""
+
+#: interfaces/wmi/machines.py:825
+msgid ""
+"Manage machine (fix its IP address and configure various aspects of the "
+"client)."
+msgstr ""
+
+#: interfaces/wmi/machines.py:866
+#, python-format
+msgid "number of <strong>%s</strong> machines:"
+msgstr ""
+
+#: interfaces/wmi/machines.py:879
+msgid "<strong>Total number of machines:</strong>"
+msgstr ""
+
+#: interfaces/wmi/users.py:12
+msgid "Customize groups"
+msgstr ""
+
+#: interfaces/wmi/users.py:13
+msgid "Available groups"
+msgstr ""
+
+#: interfaces/wmi/users.py:13
+msgid "Affected groups"
+msgstr ""
+
+#: interfaces/wmi/users.py:15
+msgid "Customize privileges"
+msgstr ""
+
+#: interfaces/wmi/users.py:16
+msgid "Available privileges"
+msgstr ""
+
+#: interfaces/wmi/users.py:16
+msgid "granted privileges"
+msgstr ""
+
+#: interfaces/wmi/users.py:18
+msgid "Assign responsibilities"
+msgstr ""
+
+#: interfaces/wmi/users.py:19
+msgid "Available responsibilities"
+msgstr ""
+
+#: interfaces/wmi/users.py:19
+msgid "Assigned responsibilities"
+msgstr ""
+
+#: interfaces/wmi/users.py:21
+msgid "Propose invitations"
+msgstr ""
+
+#: interfaces/wmi/users.py:22
+msgid "Available invitations"
+msgstr ""
+
+#: interfaces/wmi/users.py:22
+msgid "Offered invitations"
+msgstr ""
+
+#: interfaces/wmi/users.py:61
+msgid "Add a new user account on the system."
+msgstr ""
+
+#: interfaces/wmi/users.py:63
+msgid "Add an account"
+msgstr ""
+
+#: interfaces/wmi/users.py:64
+msgid "Import new user accounts from a CSV-delimited file."
+msgstr ""
+
+#: interfaces/wmi/users.py:66
+msgid "Import accounts"
+msgstr ""
+
+#: interfaces/wmi/users.py:67
+msgid "Export current user accounts list to a CSV or XML file."
+msgstr ""
+
+#: interfaces/wmi/users.py:69
+msgid "Export accounts"
+msgstr ""
+
+#: interfaces/wmi/users.py:79
+msgid "Export user accounts list"
+msgstr ""
+
+#: interfaces/wmi/users.py:100
+#, python-format
+msgid "Which file format do you want accounts to be exported to? %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:129
+#, python-format
+msgid "Remove user account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:138
+#, python-format
+msgid "Are you sure you want to remove account <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/users.py:152
+msgid "Definitely remove account data (no archiving)."
+msgstr ""
+
+#: interfaces/wmi/users.py:167
+#, python-format
+msgid "Failed to remove account <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:171
+#, python-format
+msgid "Unlock account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:180
+msgid "Failed to unlock account"
+msgstr ""
+
+#: interfaces/wmi/users.py:181
+msgid "alter system account."
+msgstr ""
+
+#: interfaces/wmi/users.py:182
+msgid "insufficient permission to perform operation."
+msgstr ""
+
+#: interfaces/wmi/users.py:190
+#, python-format
+msgid "Failed to unlock account <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:198
+#, python-format
+msgid "Lock account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:206
+#, python-format
+msgid ""
+"This will prevent user to connect to network clients (thin ones, and "
+"Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
+msgstr ""
+
+#: interfaces/wmi/users.py:212
+#, python-format
+msgid ""
+"<br /><br />\n"
+"\t\t\t\t\tBut this will not block incoming %s network connections, if the "
+"user uses %s %s or %s public/private keys. To block ANY access to the "
+"system, <strong>remove him/her from %s group</strong>."
+msgstr ""
+
+#: interfaces/wmi/users.py:220
+msgid "Remove user from group <code>remotessh</code> in the same time."
+msgstr ""
+
+#: interfaces/wmi/users.py:229
+#, python-format
+msgid "Are you sure you want to lock account <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/users.py:233
+msgid "Lock >>"
+msgstr ""
+
+#: interfaces/wmi/users.py:233
+msgid "L"
+msgstr ""
+
+#: interfaces/wmi/users.py:252
+#, python-format
+msgid "Failed to lock account <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:260
+#, python-format
+msgid "Reapply skel to user account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:271
+msgid ""
+"This will rebuild his/her desktop from scratch, with defaults icons and so "
+"on.<br /><br />The user must be disconnected for the operation to be "
+"completely successfull."
+msgstr ""
+
+#: interfaces/wmi/users.py:275
+#, python-format
+msgid "Which skel do you want to apply? %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:279
+#, python-format
+msgid ""
+"Are you sure you want to apply this skel to account <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/users.py:282 interfaces/wmi/groups.py:209
+msgid "Apply"
+msgstr ""
+
+#: interfaces/wmi/users.py:283 interfaces/wmi/groups.py:72
+#: interfaces/wmi/groups.py:210 interfaces/wmi/groups.py:261
+msgid "A"
+msgstr ""
+
+#: interfaces/wmi/users.py:297
+#, python-format
+msgid ""
+"Failed to apply skel <strong>%s</strong> on user\n"
+"\t\t\taccount <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:307
+msgid "New user account"
+msgstr ""
+
+#: interfaces/wmi/users.py:320
+msgid "This user is a"
+msgstr ""
+
+#: interfaces/wmi/users.py:434
+#, python-format
+msgid "New user account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:467
+#, python-format
+msgid "Failed to create account <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:486
+#, python-format
+msgid ""
+"Failed to add user <strong>%s</strong> to requested\n"
+"\t\tgroups/privileges/responsibilities/invitations!"
+msgstr ""
+
+#: interfaces/wmi/users.py:492
+#, python-format
+msgid "Edit account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:585
+msgid "<strong>UID</strong> (fixed)"
+msgstr ""
+
+#: interfaces/wmi/users.py:632
+#, python-format
+msgid "Modification of account %s"
+msgstr ""
+
+#: interfaces/wmi/users.py:677
+#, python-format
+msgid ""
+"Failed to modify one or more parameters of account\n"
+"\t\t <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/users.py:709
+msgid "User accounts"
+msgstr ""
+
+#: interfaces/wmi/users.py:718
+msgid "Profile"
+msgstr ""
+
+#: interfaces/wmi/users.py:719
+msgid "Locked"
+msgstr ""
+
+#: interfaces/wmi/users.py:735
+#, python-format
+msgid ""
+"<em>Click to edit current user account parameters:</em>\n"
+"\t\t\t\t<br />\n"
+"\t\t\t\tUID: <strong>%d</strong><br />\n"
+"\t\t\t\tGID: %d (primary group <strong>%s</strong>)<br /><br />\n"
+"\t\t\t\tGroups:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tPrivileges:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tResponsabilities:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
+"\t\t\t\t"
+msgstr ""
+
+#: interfaces/wmi/users.py:771
+msgid "Unlock password (re-grant access to machines)."
+msgstr ""
+
+#: interfaces/wmi/users.py:772
+msgid "Remove account."
+msgstr ""
+
+#: interfaces/wmi/users.py:779
+msgid "Lock password (revoke access to machines)."
+msgstr ""
+
+#: interfaces/wmi/users.py:780
+msgid "Lock account."
+msgstr ""
+
+#: interfaces/wmi/users.py:792
+msgid ""
+"Reapply origin skel data in the personnal directory of user. This is usefull "
+"when user has lost icons, or modified too much his/her desktop (menus, "
+"panels and so on).\n"
+"\t\t\t\tThis will get all his/her desktop back."
+msgstr ""
+
+#: interfaces/wmi/users.py:797
+msgid "Definitely remove account from the system."
+msgstr ""
+
+#: interfaces/wmi/users.py:842 interfaces/wmi/groups.py:891
+#, python-format
+msgid "number of <strong>%s</strong>:"
+msgstr ""
+
+#: interfaces/wmi/users.py:855
+msgid "<strong>Total number of accounts:</strong>"
+msgstr ""
+
+#: interfaces/wmi/groups.py:40
+msgid "Add a new group on the system."
+msgstr ""
+
+#: interfaces/wmi/groups.py:40
+msgid "Add a group"
+msgstr ""
+
+#: interfaces/wmi/groups.py:51
+#, python-format
+msgid "Make group %s permissive"
+msgstr ""
+
+#: interfaces/wmi/groups.py:59
+msgid ""
+"This will permit large access to files and folders\n"
+"\t\t\tin the group shared dir, and will allow any member of the group to\n"
+"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
+"\t\t\tdocument. This option can be dangerous, but if group members are\n"
+"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
+"\t\t\tyou will use this feature on small working groups. <br /> Warning:\n"
+"\t\t\t<strong> The operation may be lengthy because the system will change\n"
+"\t\t\tpermissions of all current data </ strong> (duration is therefore\n"
+"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
+msgstr ""
+
+#: interfaces/wmi/groups.py:69
+#, python-format
+msgid ""
+"Are you sure you want to active permissiveness on group <strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:71
+msgid "Activate"
+msgstr ""
+
+#: interfaces/wmi/groups.py:73 interfaces/wmi/groups.py:111
+#: interfaces/wmi/groups.py:148 interfaces/wmi/groups.py:212
+#: interfaces/wmi/groups.py:270 interfaces/wmi/groups.py:601
+msgid "N"
+msgstr ""
+
+#: interfaces/wmi/groups.py:84
+#, python-format
+msgid ""
+"Failed to activate permissivenes on group\n"
+"\t\t\t<strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:89
+#, python-format
+msgid "Make group %s not permissive"
+msgstr ""
+
+#: interfaces/wmi/groups.py:97
+msgid ""
+"This will ensure finer write access to files and\n"
+"\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
+"\t\twill be able to modify it; other group members will only be able to "
+"read\n"
+"\t\tsuch a document (unless the owner manually assign other permissions,\n"
+"\t\twhich are not guaranteed to be maintained by the system). <br />\n"
+"\t\tWarning: <strong> The operation may be lengthy because the system will\n"
+"\t\tswitch permissions of all current group shared data</strong> (duration\n"
+"\t\tis therefore depending on the volume of data, about 1 sec. for 100Mio).\n"
+"\t\t"
+msgstr ""
+
+#: interfaces/wmi/groups.py:107
+#, python-format
+msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:109
+msgid "Deactivate"
+msgstr ""
+
+#: interfaces/wmi/groups.py:110 interfaces/wmi/groups.py:263
+msgid "D"
+msgstr ""
+
+#: interfaces/wmi/groups.py:121
+#, python-format
+msgid ""
+"Failed to remove permissiveness from group\n"
+"\t\t\t\t<strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:130
+#, python-format
+msgid "Remove group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:138
+#, python-format
+msgid ""
+"Are you sure you want to remove group\n"
+"\t\t\t<strong>%s</strong>?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:140
+#, python-format
+msgid ""
+"Group shared data will be archived in directory %s,\n"
+"\t\t\t\tand accessible to members of group %s for eventual\n"
+"\t\t\t\trecovery. However, you can decideto remove them\n"
+"\t\t\t\tpermanently."
+msgstr ""
+
+#: interfaces/wmi/groups.py:150
+msgid "Definitely remove group shared data."
+msgstr ""
+
+#: interfaces/wmi/groups.py:164
+#, python-format
+msgid "Failed to remove group <strong>%s</strong>!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:169
+#, python-format
+msgid "Skeleton reapplying for group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:180
+msgid ""
+"This will reset the desktops, icons and menus\n"
+"\t\t\tof all members of the group, according to the content of the\n"
+"\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
+"\t\t\tdata, nor the group shared data."
+msgstr ""
+
+#: interfaces/wmi/groups.py:200
+#, python-format
+msgid ""
+"Which skel do you wish to reapply to members of\n"
+"\t\t\tthis group? %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:206
+#, python-format
+msgid ""
+"Are you sure you want to reapply this skel to\n"
+"\t\t\tall of the members of %s?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:224
+#, python-format
+msgid "Failed to apply skel %s to members of group %s."
+msgstr ""
+
+#: interfaces/wmi/groups.py:229
+msgid "Creating a new group"
+msgstr ""
+
+#: interfaces/wmi/groups.py:260 interfaces/wmi/groups.py:592
+msgid "Group name"
+msgstr ""
+
+#: interfaces/wmi/groups.py:262 interfaces/wmi/groups.py:595
+msgid "Group description"
+msgstr ""
+
+#: interfaces/wmi/groups.py:262
+msgid "(optional)"
+msgstr ""
+
+#: interfaces/wmi/groups.py:264
+msgid "Skel of future group members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:268 interfaces/wmi/groups.py:528
+msgid "Permissive shared dir?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:269
+msgid "Yes"
+msgstr ""
+
+#: interfaces/wmi/groups.py:272
+msgid "T"
+msgstr ""
+
+#: interfaces/wmi/groups.py:278
+#, python-format
+msgid "Creating group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:295
+#, python-format
+msgid "Failed to create group %s!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:300
+#, python-format
+msgid "Details of group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:327 interfaces/wmi/groups.py:693
+msgid "Members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:328 interfaces/wmi/groups.py:368
+#: interfaces/wmi/groups.py:397
+msgid "(ordered by login)"
+msgstr ""
+
+#: interfaces/wmi/groups.py:329 interfaces/wmi/groups.py:369
+#: interfaces/wmi/groups.py:398 interfaces/wmi/groups.py:830
+msgid "Full Name"
+msgstr ""
+
+#: interfaces/wmi/groups.py:331 interfaces/wmi/groups.py:371
+#: interfaces/wmi/groups.py:400 interfaces/wmi/groups.py:831
+msgid "UID"
+msgstr ""
+
+#: interfaces/wmi/groups.py:347
+msgid "No members in this group."
+msgstr ""
+
+#: interfaces/wmi/groups.py:367 interfaces/wmi/groups.py:694
+msgid "Responsibles"
+msgstr ""
+
+#: interfaces/wmi/groups.py:377
+msgid "No responsibles for this group."
+msgstr ""
+
+#: interfaces/wmi/groups.py:396 interfaces/wmi/groups.py:695
+msgid "Guests"
+msgstr ""
+
+#: interfaces/wmi/groups.py:404
+msgid "No guests in this group."
+msgstr ""
+
+#: interfaces/wmi/groups.py:429 interfaces/wmi/groups.py:590
+msgid "GID"
+msgstr ""
+
+#: interfaces/wmi/groups.py:429 interfaces/wmi/groups.py:430
+msgid "immutable"
+msgstr ""
+
+#: interfaces/wmi/groups.py:430 interfaces/wmi/groups.py:689
+msgid "Name"
+msgstr ""
+
+#: interfaces/wmi/groups.py:434
+msgid "<< Go back"
+msgstr ""
+
+#: interfaces/wmi/groups.py:434
+msgid "B"
+msgstr ""
+
+#: interfaces/wmi/groups.py:435
+msgid "Print"
+msgstr ""
+
+#: interfaces/wmi/groups.py:441 interfaces/wmi/groups.py:608
+#, python-format
+msgid "Group %s doesn't exist (%s, %s)!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:452
+#, python-format
+msgid "Editing group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:466 interfaces/wmi/groups.py:476
+msgid "Manage members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:466 interfaces/wmi/groups.py:477
+msgid "Users not yet members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:467 interfaces/wmi/groups.py:478
+#: interfaces/wmi/groups.py:811
+msgid "Current members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:481
+msgid "Manage responsibles"
+msgstr ""
+
+#: interfaces/wmi/groups.py:482
+msgid "Users not yet responsibles"
+msgstr ""
+
+#: interfaces/wmi/groups.py:483 interfaces/wmi/groups.py:812
+msgid "Current responsibles"
+msgstr ""
+
+#: interfaces/wmi/groups.py:486
+msgid "Manage guests"
+msgstr ""
+
+#: interfaces/wmi/groups.py:487
+msgid "Users not yet guests"
+msgstr ""
+
+#: interfaces/wmi/groups.py:488 interfaces/wmi/groups.py:813
+msgid "Current guests"
+msgstr ""
+
+#: interfaces/wmi/groups.py:518 interfaces/wmi/groups.py:691
+msgid "Skeleton"
+msgstr ""
+
+#: interfaces/wmi/groups.py:544
+msgid "Group responsibles"
+msgstr ""
+
+#: interfaces/wmi/groups.py:546
+msgid "Group guests"
+msgstr ""
+
+#: interfaces/wmi/groups.py:590 interfaces/wmi/groups.py:592
+msgid "(immutable)"
+msgstr ""
+
+#: interfaces/wmi/groups.py:598
+msgid "Group members"
+msgstr ""
+
+#: interfaces/wmi/groups.py:602
+msgid "Record"
+msgstr ""
+
+#: interfaces/wmi/groups.py:622
+#, python-format
+msgid "Modifying group %s"
+msgstr ""
+
+#: interfaces/wmi/groups.py:664
+#, python-format
+msgid "Failed to modify one or more parameter of group %s!"
+msgstr ""
+
+#: interfaces/wmi/groups.py:690
+msgid "Description"
+msgstr ""
+
+#: interfaces/wmi/groups.py:692
+msgid "Perm."
+msgstr ""
+
+#: interfaces/wmi/groups.py:703
+#, python-format
+msgid "%s order"
+msgstr ""
+
+#: interfaces/wmi/groups.py:781
+msgid ""
+"View the group details, its parameters,\n"
+"\t\t\t\t\tmembers, responsibles and guests.\n"
+"\t\t\t\t\tFrom there you can print all group-related informations."
+msgstr ""
+
+#: interfaces/wmi/groups.py:797
+msgid ""
+"Shared group directory is currently <strong>permissive</strong>. Click to "
+"deactivate permissiveness."
+msgstr ""
+
+#: interfaces/wmi/groups.py:799
+msgid "Group is currently permissive."
+msgstr ""
+
+#: interfaces/wmi/groups.py:806
+msgid ""
+"Shared group directory is currently\n"
+"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
+"\t\t\t\t\tpermissiveness."
+msgstr ""
+
+#: interfaces/wmi/groups.py:808
+msgid "Group is NOT permissive."
+msgstr ""
+
+#: interfaces/wmi/groups.py:842
+msgid "none"
+msgstr ""
+
+#: interfaces/wmi/groups.py:849
+#, python-format
+msgid "See %s of group %s."
+msgstr ""
+
+#: interfaces/wmi/groups.py:871
+msgid ""
+"This will rebuild his/her desktop\n"
+"\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
+"\t\t\t\t\t\t<br /><br />The user must be disconnected for the\n"
+"\t\t\t\t\t\toperation to be completely successfull."
+msgstr ""
+
+#: interfaces/wmi/groups.py:876
+msgid "Definitely remove this group from system."
+msgstr ""
+
+#: interfaces/wmi/groups.py:903
+msgid "Total number of groups:"
+msgstr ""
+
+#: interfaces/wmi/base.py:45
+#, python-format
+msgid ""
+"Up and running since <strong>%s</strong>.<br /><br />\n"
+"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
+"<br /><br />\n"
+"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
+msgstr ""
+
+#: interfaces/wmi/base.py:87
+msgid "no virtual memory installed."
+msgstr ""
+
+#: interfaces/wmi/base.py:90
+#, python-format
+msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
+msgstr ""
+
+#: interfaces/wmi/base.py:93
+#, python-format
+msgid ""
+"\n"
+"Processor%s: %d x <strong>%s</strong><br /><br />\n"
+"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
+"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
+"%s"
+msgstr ""
+
+#: interfaces/wmi/base.py:103
+msgid "Server status"
+msgstr ""
+
+#: interfaces/wmi/base.py:115
+msgid "System information"
+msgstr ""
+
+#: interfaces/wmi/base.py:116
+msgid "System status"
 msgstr ""
 
 #: interfaces/gui/hkew.glade:7
@@ -78,1235 +1536,67 @@ msgstr ""
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr ""
 
-#: interfaces/wmi/users.py:21
-msgid "Customize groups"
-msgstr ""
-
-#: interfaces/wmi/users.py:22
-msgid "Available groups"
-msgstr ""
-
-#: interfaces/wmi/users.py:22
-msgid "Affected groups"
-msgstr ""
-
-#: interfaces/wmi/users.py:24
-msgid "Customize privileges"
-msgstr ""
-
-#: interfaces/wmi/users.py:25
-msgid "Available privileges"
-msgstr ""
-
-#: interfaces/wmi/users.py:25
-msgid "granted privileges"
-msgstr ""
-
-#: interfaces/wmi/users.py:27
-msgid "Assign responsibilities"
-msgstr ""
-
-#: interfaces/wmi/users.py:28
-msgid "Available responsibilities"
-msgstr ""
-
-#: interfaces/wmi/users.py:28
-msgid "Assigned responsibilities"
-msgstr ""
-
-#: interfaces/wmi/users.py:30
-msgid "Propose invitations"
-msgstr ""
-
-#: interfaces/wmi/users.py:31
-msgid "Available invitations"
-msgstr ""
-
-#: interfaces/wmi/users.py:31
-msgid "Offered invitations"
-msgstr ""
-
-#: interfaces/wmi/users.py:34 interfaces/wmi/groups.py:19
-msgid ""
-"<br /><br />Go back with your browser, double-check data and validate the "
-"web-form."
-msgstr ""
-
-#: interfaces/wmi/users.py:70
-msgid "Add a new user account on the system."
-msgstr ""
-
-#: interfaces/wmi/users.py:72
-msgid "Add an account"
-msgstr ""
-
-#: interfaces/wmi/users.py:73
-msgid "Import new user accounts from a CSV-delimited file."
-msgstr ""
-
-#: interfaces/wmi/users.py:75
-msgid "Import accounts"
-msgstr ""
-
-#: interfaces/wmi/users.py:76
-msgid "Export current user accounts list to a CSV or XML file."
-msgstr ""
-
-#: interfaces/wmi/users.py:78
-msgid "Export accounts"
-msgstr ""
-
-#: interfaces/wmi/users.py:93
-msgid "Export user accounts list"
-msgstr ""
-
-#: interfaces/wmi/users.py:105
-msgid ""
-"CSV file-format is used by spreadsheets and most systems which offer import "
-"functionnalities. XML file-format is a modern exchange format, used in soma "
-"applications which respect interoperability constraints.<br /><br />When you "
-"submit this form, your web browser will automatically offer you to download "
-"and save the export-file (it won't be displayed). When you're done, please "
-"click the “back” button of your browser."
-msgstr ""
-
-#: interfaces/wmi/users.py:114
-#, python-format
-msgid "Which file format do you want accounts to be exported to? %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:117
-msgid "Please choose file format for export list"
-msgstr ""
-
-#: interfaces/wmi/users.py:119
-msgid "Export >>"
-msgstr ""
-
-#: interfaces/wmi/users.py:120 interfaces/wmi/users.py:163
-#: interfaces/wmi/users.py:247 interfaces/wmi/groups.py:282
-msgid "<< Cancel"
-msgstr ""
-
-#: interfaces/wmi/users.py:142
-#, python-format
-msgid "Remove user account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:151
-#, python-format
-msgid "Are you sure you want to remove account <strong>%s</strong>?"
-msgstr ""
-
-#: interfaces/wmi/users.py:153
-#, python-format
-msgid ""
-"User's <strong>personnal data</strong> (his/her HOME dir) will be "
-"<strong>archived</strong> in directory <code>%s</code> and members of group "
-"<strong>%s</strong> will be able to  access it to operate an eventual "
-"recover.<br />However, you can decide to permanently remove it."
-msgstr ""
-
-#: interfaces/wmi/users.py:161
-msgid "Remove >>"
-msgstr ""
-
-#: interfaces/wmi/users.py:161 interfaces/wmi/users.py:234
-#: interfaces/wmi/groups.py:155 interfaces/wmi/groups.py:619
-msgid "R"
-msgstr ""
-
-#: interfaces/wmi/users.py:163 interfaces/wmi/users.py:247
-#: interfaces/wmi/users.py:294
-msgid "C"
-msgstr ""
-
-#: interfaces/wmi/users.py:165
-msgid "Definitely remove account data (no archiving)."
-msgstr ""
-
-#: interfaces/wmi/users.py:180
-#, python-format
-msgid "Failed to remove account <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:184
-#, python-format
-msgid "Unlock account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:193
-msgid "Failed to unlock account"
-msgstr ""
-
-#: interfaces/wmi/users.py:194
-msgid "alter system account."
-msgstr ""
-
-#: interfaces/wmi/users.py:195
-msgid "insufficient permission to perform operation."
-msgstr ""
-
-#: interfaces/wmi/users.py:203
-#, python-format
-msgid "Failed to unlock account <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:210
-#, python-format
-msgid "Lock account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:218
-#, python-format
-msgid ""
-"This will prevent user to connect to network clients (thin ones, and "
-"Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
-msgstr ""
-
-#: interfaces/wmi/users.py:224
-#, python-format
-msgid ""
-"<br /><br />\n"
-"\t\t\t\t\tBut this will not block incoming %s network connections, if the "
-"user uses %s %s or %s public/private keys. To block ANY access to the "
-"system, <strong>remove him/her from %s group</strong>."
-msgstr ""
-
-#: interfaces/wmi/users.py:232
-msgid "Remove user from group <code>remotessh</code> in the same time."
-msgstr ""
-
-#: interfaces/wmi/users.py:241
-#, python-format
-msgid "Are you sure you want to lock account <strong>%s</strong>?"
-msgstr ""
-
-#: interfaces/wmi/users.py:245
-msgid "Lock >>"
-msgstr ""
-
-#: interfaces/wmi/users.py:245
-msgid "L"
-msgstr ""
-
-#: interfaces/wmi/users.py:264
-#, python-format
-msgid "Failed to lock account <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:272
-#, python-format
-msgid "Reapply skel to user account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:280
-msgid ""
-"This will rebuild his/her desktop from scratch, with defaults icons and so "
-"on.<br /><br />The user must be disconnected for the operation to be "
-"completely successfull."
-msgstr ""
-
-#: interfaces/wmi/users.py:284
-#, python-format
-msgid "Which skel do you want to apply? %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:288
-#, python-format
-msgid ""
-"Are you sure you want to apply this skel to account <strong>%s</strong>?"
-msgstr ""
-
-#: interfaces/wmi/users.py:291 interfaces/wmi/groups.py:221
-msgid "Apply"
-msgstr ""
-
-#: interfaces/wmi/users.py:292 interfaces/wmi/groups.py:80
-#: interfaces/wmi/groups.py:222 interfaces/wmi/groups.py:273
-msgid "A"
-msgstr ""
-
-#: interfaces/wmi/users.py:293 interfaces/wmi/users.py:426
-#: interfaces/wmi/users.py:627 interfaces/wmi/groups.py:81
-#: interfaces/wmi/groups.py:119 interfaces/wmi/groups.py:156
-#: interfaces/wmi/groups.py:223 interfaces/wmi/groups.py:616
-msgid "Cancel"
-msgstr ""
-
-#: interfaces/wmi/users.py:306
-#, python-format
-msgid ""
-"Failed to apply skel <strong>%s</strong> on user\n"
-"\t\t\taccount <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:316
-msgid "New user account"
-msgstr ""
-
-#: interfaces/wmi/users.py:329
-msgid "This user is a"
-msgstr ""
-
-#: interfaces/wmi/users.py:337 interfaces/wmi/users.py:738
-msgid "Full name"
-msgstr ""
-
-#: interfaces/wmi/users.py:406 interfaces/wmi/users.py:609
-#, python-format
-msgid ""
-"Password must be at least %d characters long. You can use all alphabet "
-"characters, numbers, special characters and punctuation signs, except '?!'."
-msgstr ""
-
-#: interfaces/wmi/users.py:409
-msgid "Password"
-msgstr ""
-
-#: interfaces/wmi/users.py:409 interfaces/wmi/users.py:613
-#, python-format
-msgid "(%d chars. min.)"
-msgstr ""
-
-#: interfaces/wmi/users.py:410 interfaces/wmi/groups.py:281
-#: interfaces/wmi/groups.py:451
-msgid "P"
-msgstr ""
-
-#: interfaces/wmi/users.py:412
-msgid "Password confirmation."
-msgstr ""
-
-#: interfaces/wmi/users.py:414
-msgid ""
-"Identifier must be lowercase, without accents or special characters (you can "
-"use dots and carets).<br /><br />If you let this field empty, identifier "
-"will be automaticaly guessed from first name and last name."
-msgstr ""
-
-#: interfaces/wmi/users.py:418 interfaces/wmi/users.py:739
-#: interfaces/wmi/groups.py:344 interfaces/wmi/groups.py:384
-#: interfaces/wmi/groups.py:413 interfaces/wmi/groups.py:850
-msgid "Identifier"
-msgstr ""
-
-#: interfaces/wmi/users.py:419
-msgid "I"
-msgstr ""
-
-#: interfaces/wmi/users.py:420 interfaces/wmi/users.py:620
-msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
-msgstr ""
-
-#: interfaces/wmi/users.py:422 interfaces/wmi/users.py:623
-#: interfaces/wmi/groups.py:697 interfaces/wmi/groups.py:733
-#: interfaces/wmi/utils.py:339
-msgid "Groups"
-msgstr ""
-
-#: interfaces/wmi/users.py:423 interfaces/wmi/users.py:624
-#: interfaces/wmi/groups.py:734
-msgid "Privileges"
-msgstr ""
-
-#: interfaces/wmi/users.py:424 interfaces/wmi/users.py:625
-msgid "Responsibilities"
-msgstr ""
-
-#: interfaces/wmi/users.py:425 interfaces/wmi/users.py:626
-msgid "Invitations"
-msgstr ""
-
-#: interfaces/wmi/users.py:427 interfaces/wmi/groups.py:283
-msgid "Create"
-msgstr ""
-
-#: interfaces/wmi/users.py:443
-#, python-format
-msgid "New user account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:448 interfaces/wmi/users.py:664
-#, python-format
-msgid "Passwords do not match!%s"
-msgstr ""
-
-#: interfaces/wmi/users.py:452
-#, python-format
-msgid "Password must be at least %d characters long!%s"
-msgstr ""
-
-#: interfaces/wmi/users.py:476
-#, python-format
-msgid "Failed to create account <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:500
-#, python-format
-msgid ""
-"Failed to add user <strong>%s</strong> to requested\n"
-"\t\tgroups/privileges/responsibilities/invitations!"
-msgstr ""
-
-#: interfaces/wmi/users.py:509
-#, python-format
-msgid "Edit account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:525 interfaces/wmi/users.py:728
-#: interfaces/wmi/users.py:838
-msgid "Standard account"
-msgstr ""
-
-#: interfaces/wmi/users.py:603
-msgid "<strong>UID</strong> (fixed)"
-msgstr ""
-
-#: interfaces/wmi/users.py:604
-msgid "<strong>Identifier</strong> (fixed)"
-msgstr ""
-
-#: interfaces/wmi/users.py:605
-msgid "<strong>Profile</strong> (fixed)"
-msgstr ""
-
-#: interfaces/wmi/users.py:606
-msgid "<strong>Full name</strong>"
-msgstr ""
-
-#: interfaces/wmi/users.py:613
-msgid "New password"
-msgstr ""
-
-#: interfaces/wmi/users.py:617
-msgid "password confirmation."
-msgstr ""
-
-#: interfaces/wmi/users.py:628
-msgid "Record changes"
-msgstr ""
-
-#: interfaces/wmi/users.py:651
-#, python-format
-msgid "Modification of account %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:667
-#, python-format
-msgid "The password --%s-- must be at least %d characters long!%s"
-msgstr ""
-
-#: interfaces/wmi/users.py:693
-#, python-format
-msgid ""
-"Failed to modify one or more parameters of account\n"
-"\t\t <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/users.py:730
-msgid "User accounts"
-msgstr ""
-
-#: interfaces/wmi/users.py:739
-msgid "Profile"
-msgstr ""
-
-#: interfaces/wmi/users.py:740
-msgid "Locked"
-msgstr ""
-
-#: interfaces/wmi/users.py:746 interfaces/wmi/groups.py:722
-msgid "Click to sort in reverse order."
-msgstr ""
-
-#: interfaces/wmi/users.py:750 interfaces/wmi/groups.py:726
-msgid "Click to sort on this column."
-msgstr ""
-
-#: interfaces/wmi/users.py:756
-#, python-format
-msgid ""
-"<em>Click to edit current user account parameters:</em>\n"
-"\t\t\t\t<br />\n"
-"\t\t\t\tUID: <strong>%d</strong><br />\n"
-"\t\t\t\tGID: %d (primary group <strong>%s</strong>)<br /><br />\n"
-"\t\t\t\tGroups:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tPrivileges:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tResponsabilities:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t"
-msgstr ""
-
-#: interfaces/wmi/users.py:792
-msgid "Unlock password (re-grant access to machines)."
-msgstr ""
-
-#: interfaces/wmi/users.py:793
-msgid "Remove account."
-msgstr ""
-
-#: interfaces/wmi/users.py:800
-msgid "Lock password (revoke access to machines)."
-msgstr ""
-
-#: interfaces/wmi/users.py:801
-msgid "Lock account."
-msgstr ""
-
-#: interfaces/wmi/users.py:813
-msgid ""
-"Reapply origin skel data in the personnal directory of user. This is usefull "
-"when user has lost icons, or modified too much his/her desktop (menus, "
-"panels and so on).\n"
-"\t\t\t\tThis will get all his/her desktop back."
-msgstr ""
-
-#: interfaces/wmi/users.py:818
-msgid "Definitely remove account from the system."
-msgstr ""
-
-#: interfaces/wmi/users.py:863 interfaces/wmi/groups.py:910
-#, python-format
-msgid "number of <strong>%s</strong>:"
-msgstr ""
-
-#: interfaces/wmi/users.py:876
-msgid "<strong>Total number of accounts:</strong>"
-msgstr ""
-
-#: interfaces/wmi/groups.py:48
-msgid "Add a new group on the system."
-msgstr ""
-
-#: interfaces/wmi/groups.py:48
-msgid "Add a group"
-msgstr ""
-
-#: interfaces/wmi/groups.py:59
-#, python-format
-msgid "Make group %s permissive"
-msgstr ""
-
-#: interfaces/wmi/groups.py:67
-msgid ""
-"This will permit large access to files and folders\n"
-"\t\t\tin the group shared dir, and will allow any member of the group to\n"
-"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
-"\t\t\tdocument. This option can be dangerous, but if group members are\n"
-"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
-"\t\t\tyou will use this feature on small working groups. <br /> Warning:\n"
-"\t\t\t<strong> The operation may be lengthy because the system will change\n"
-"\t\t\tpermissions of all current data </ strong> (duration is therefore\n"
-"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
-msgstr ""
-
-#: interfaces/wmi/groups.py:77
-#, python-format
-msgid ""
-"Are you sure you want to active permissiveness on group <strong>%s</strong>?"
-msgstr ""
-
-#: interfaces/wmi/groups.py:79
-msgid "Activate"
-msgstr ""
-
-#: interfaces/wmi/groups.py:81 interfaces/wmi/groups.py:119
-#: interfaces/wmi/groups.py:157 interfaces/wmi/groups.py:224
-#: interfaces/wmi/groups.py:282 interfaces/wmi/groups.py:616
-msgid "N"
-msgstr ""
-
-#: interfaces/wmi/groups.py:92
-#, python-format
-msgid ""
-"Failed to activate permissivenes on group\n"
-"\t\t\t<strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:97
-#, python-format
-msgid "Make group %s not permissive"
-msgstr ""
-
-#: interfaces/wmi/groups.py:105
-msgid ""
-"This will ensure finer write access to files and\n"
-"\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
-"\t\twill be able to modify it; other group members will only be able to "
-"read\n"
-"\t\tsuch a document (unless the owner manually assign other permissions,\n"
-"\t\twhich are not guaranteed to be maintained by the system). <br />\n"
-"\t\tWarning: <strong> The operation may be lengthy because the system will\n"
-"\t\tswitch permissions of all current group shared data</strong> (duration\n"
-"\t\tis therefore depending on the volume of data, about 1 sec. for 100Mio).\n"
-"\t\t"
-msgstr ""
-
-#: interfaces/wmi/groups.py:115
-#, python-format
-msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
-msgstr ""
-
-#: interfaces/wmi/groups.py:117
-msgid "Deactivate"
-msgstr ""
-
-#: interfaces/wmi/groups.py:118 interfaces/wmi/groups.py:275
-msgid "D"
-msgstr ""
-
-#: interfaces/wmi/groups.py:129
-#, python-format
-msgid ""
-"Failed to remove permissiveness from group\n"
-"\t\t\t\t<strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:137
-#, python-format
-msgid "Remove group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:147
-#, python-format
-msgid ""
-"Are you sure you want to remove group\n"
-"\t\t\t<strong>%s</strong>?"
-msgstr ""
-
-#: interfaces/wmi/groups.py:149
-#, python-format
-msgid ""
-"Group shared data will be archived in directory %s,\n"
-"\t\t\t\tand accessible to members of group %s for eventual\n"
-"\t\t\t\trecovery. However, you can decideto remove them\n"
-"\t\t\t\tpermanently."
-msgstr ""
-
-#: interfaces/wmi/groups.py:154 interfaces/wmi/utils.py:160
-msgid "Remove"
-msgstr ""
-
-#: interfaces/wmi/groups.py:159
-msgid "Definitely remove group shared data."
-msgstr ""
-
-#: interfaces/wmi/groups.py:173
-#, python-format
-msgid "Failed to remove group <strong>%s</strong>!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:181
-#, python-format
-msgid "Skeleton reapplying for group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:192
-msgid ""
-"This will reset the desktops, icons and menus\n"
-"\t\t\tof all members of the group, according to the content of the\n"
-"\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
-"\t\t\tdata, nor the group shared data."
-msgstr ""
-
-#: interfaces/wmi/groups.py:212
-#, python-format
-msgid ""
-"Which skel do you wish to reapply to members of\n"
-"\t\t\tthis group? %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:218
-#, python-format
-msgid ""
-"Are you sure you want to reapply this skel to\n"
-"\t\t\tall of the members of %s?"
-msgstr ""
-
-#: interfaces/wmi/groups.py:236
-#, python-format
-msgid "Failed to apply skel %s to members of group %s."
-msgstr ""
-
-#: interfaces/wmi/groups.py:241
-msgid "Creating a new group"
-msgstr ""
-
-#: interfaces/wmi/groups.py:272 interfaces/wmi/groups.py:607
-msgid "Group name"
-msgstr ""
-
-#: interfaces/wmi/groups.py:274 interfaces/wmi/groups.py:610
-msgid "Group description"
-msgstr ""
-
-#: interfaces/wmi/groups.py:274
-msgid "(optional)"
-msgstr ""
-
-#: interfaces/wmi/groups.py:276
-msgid "Skel of future group members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:280 interfaces/wmi/groups.py:543
-msgid "Permissive shared dir?"
-msgstr ""
-
-#: interfaces/wmi/groups.py:281
-msgid "Yes"
-msgstr ""
-
-#: interfaces/wmi/groups.py:284
-msgid "T"
-msgstr ""
-
-#: interfaces/wmi/groups.py:290
-#, python-format
-msgid "Creating group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:307
-#, python-format
-msgid "Failed to create group %s!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:314
-#, python-format
-msgid "Details of group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:341 interfaces/wmi/groups.py:711
-msgid "Members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:342 interfaces/wmi/groups.py:382
-#: interfaces/wmi/groups.py:411
-msgid "(ordered by login)"
-msgstr ""
-
-#: interfaces/wmi/groups.py:343 interfaces/wmi/groups.py:383
-#: interfaces/wmi/groups.py:412 interfaces/wmi/groups.py:849
-msgid "Full Name"
-msgstr ""
-
-#: interfaces/wmi/groups.py:345 interfaces/wmi/groups.py:385
-#: interfaces/wmi/groups.py:414 interfaces/wmi/groups.py:850
-msgid "UID"
-msgstr ""
-
-#: interfaces/wmi/groups.py:361
-msgid "No members in this group."
-msgstr ""
-
-#: interfaces/wmi/groups.py:381 interfaces/wmi/groups.py:712
-msgid "Responsibles"
-msgstr ""
-
-#: interfaces/wmi/groups.py:391
-msgid "No responsibles for this group."
-msgstr ""
-
-#: interfaces/wmi/groups.py:410 interfaces/wmi/groups.py:713
-msgid "Guests"
-msgstr ""
-
-#: interfaces/wmi/groups.py:418
-msgid "No guests in this group."
-msgstr ""
-
-#: interfaces/wmi/groups.py:443 interfaces/wmi/groups.py:605
-msgid "GID"
-msgstr ""
-
-#: interfaces/wmi/groups.py:443 interfaces/wmi/groups.py:444
-msgid "immutable"
-msgstr ""
-
-#: interfaces/wmi/groups.py:444 interfaces/wmi/groups.py:707
-msgid "Name"
-msgstr ""
-
-#: interfaces/wmi/groups.py:448
-msgid "<< Go back"
-msgstr ""
-
-#: interfaces/wmi/groups.py:448
-msgid "B"
-msgstr ""
-
-#: interfaces/wmi/groups.py:449
-msgid "Print"
-msgstr ""
-
-#: interfaces/wmi/groups.py:455 interfaces/wmi/groups.py:623
-#, python-format
-msgid "Group %s doesn't exist (%s, %s)!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:468
-#, python-format
-msgid "Editing group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:482 interfaces/wmi/groups.py:492
-msgid "Manage members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:482 interfaces/wmi/groups.py:493
-msgid "Users not yet members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:483 interfaces/wmi/groups.py:494
-#: interfaces/wmi/groups.py:830
-msgid "Current members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:497
-msgid "Manage responsibles"
-msgstr ""
-
-#: interfaces/wmi/groups.py:498
-msgid "Users not yet responsibles"
-msgstr ""
-
-#: interfaces/wmi/groups.py:499 interfaces/wmi/groups.py:831
-msgid "Current responsibles"
-msgstr ""
-
-#: interfaces/wmi/groups.py:502
-msgid "Manage guests"
-msgstr ""
-
-#: interfaces/wmi/groups.py:503
-msgid "Users not yet guests"
-msgstr ""
-
-#: interfaces/wmi/groups.py:504 interfaces/wmi/groups.py:832
-msgid "Current guests"
-msgstr ""
-
-#: interfaces/wmi/groups.py:533 interfaces/wmi/groups.py:709
-msgid "Skeleton"
-msgstr ""
-
-#: interfaces/wmi/groups.py:559
-msgid "Group responsibles"
-msgstr ""
-
-#: interfaces/wmi/groups.py:561
-msgid "Group guests"
-msgstr ""
-
-#: interfaces/wmi/groups.py:605 interfaces/wmi/groups.py:607
-msgid "(immutable)"
-msgstr ""
-
-#: interfaces/wmi/groups.py:613
-msgid "Group members"
-msgstr ""
-
-#: interfaces/wmi/groups.py:617
-msgid "Record"
-msgstr ""
-
-#: interfaces/wmi/groups.py:637
-#, python-format
-msgid "Modifying group %s"
-msgstr ""
-
-#: interfaces/wmi/groups.py:679
-#, python-format
-msgid "Failed to modify one or more parameter of group %s!"
-msgstr ""
-
-#: interfaces/wmi/groups.py:708
-msgid "Description"
-msgstr ""
-
-#: interfaces/wmi/groups.py:710
-msgid "Perm."
-msgstr ""
-
-#: interfaces/wmi/groups.py:721
-#, python-format
-msgid "%s order"
-msgstr ""
-
-#: interfaces/wmi/groups.py:800
-msgid ""
-"View the group details, its parameters,\n"
-"\t\t\t\t\tmembers, responsibles and guests.\n"
-"\t\t\t\t\tFrom there you can print all group-related informations."
-msgstr ""
-
-#: interfaces/wmi/groups.py:816
-msgid ""
-"Shared group directory is currently <strong>permissive</strong>. Click to "
-"deactivate permissiveness."
-msgstr ""
-
-#: interfaces/wmi/groups.py:818
-msgid "Group is currently permissive."
-msgstr ""
-
-#: interfaces/wmi/groups.py:825
-msgid ""
-"Shared group directory is currently\n"
-"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
-"\t\t\t\t\tpermissiveness."
-msgstr ""
-
-#: interfaces/wmi/groups.py:827
-msgid "Group is NOT permissive."
-msgstr ""
-
-#: interfaces/wmi/groups.py:861
-msgid "none"
-msgstr ""
-
-#: interfaces/wmi/groups.py:868
-#, python-format
-msgid "See %s of group %s."
-msgstr ""
-
-#: interfaces/wmi/groups.py:890
-msgid ""
-"This will rebuild his/her desktop\n"
-"\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
-"\t\t\t\t\t\t<br /><br />The user must be disconnected for the\n"
-"\t\t\t\t\t\toperation to be completely successfull."
-msgstr ""
-
-#: interfaces/wmi/groups.py:895
-msgid "Definitely remove this group from system."
-msgstr ""
-
-#: interfaces/wmi/groups.py:922
-msgid "Total number of groups:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:22
-#, python-format
-msgid ""
-"\n"
-"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
-"\">GNU\n"
-" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
-" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %"
-"s,\n"
-"  and all other libre software developers (Notably Ubuntu, Debian, "
-"Python…).\n"
-msgstr ""
-
-#: interfaces/wmi/utils.py:30
-msgid "Secure SHell (Secure remote connexion and commands protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:31
-msgid "File Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:32
-msgid "HyperText Transfert Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:33
-msgid "Internet Message Access Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:34
-msgid "Virtual Network Computing (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:35
-msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:36
-msgid "Post-Office Protocol (Simple mail fetching protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:37
-msgid "Simple Mail Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:38
-msgid "Rivest Shamir Adleman (cryptography protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:39
-msgid "Digital Signature Algorithm"
-msgstr ""
-
-#: interfaces/wmi/utils.py:40
-msgid ""
-"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
-"\t\tcomposing a libre operating system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:42
-msgid ""
-"LiCorN system tools (tools for IT managers,\n"
-"\t\tsee http://dev.licorn.org/)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:44
-msgid ""
-"Licorn Admin Tools (High-level management tools for\n"
-"\t\ta GNU/Linux system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:46
-msgid "Licorn® Web Management Interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:55
-msgid "Command must be a list or tuple!"
-msgstr ""
-
-#: interfaces/wmi/utils.py:81
-#, python-format
-msgid "%d&nbsp;hours,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:85
-#, python-format
-msgid " %d&nbsp;minutes,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:87
-#, python-format
-msgid " %.3f&nbsp;seconds."
-msgstr ""
-
-#: interfaces/wmi/utils.py:88
-#, python-format
-msgid "Core execution time: %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:158
-msgid "Add"
-msgstr ""
-
-#: interfaces/wmi/utils.py:212
-msgid "Executed command:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:215
-msgid "Error reported by system:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:219 interfaces/wmi/utils.py:220
-msgid "Back to root of management interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:226
-#, python-format
-msgid "Logged in as %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:242 interfaces/wmi/utils.py:243
-msgid "Bad request or argument"
-msgstr ""
-
-#: interfaces/wmi/utils.py:244
-msgid "There was a problem in the request you sent to the WMI."
-msgstr ""
-
-#: interfaces/wmi/utils.py:248 interfaces/wmi/utils.py:250
-msgid "Impossible action"
-msgstr ""
-
-#: interfaces/wmi/utils.py:251
-msgid ""
-"Some parts of the system cannot be modified, for your own safety and the "
-"world to rest in peace."
-msgstr ""
-
-#: interfaces/wmi/utils.py:337
-msgid "Server, UPS and hardware sub-systems status."
-msgstr ""
-
-#: interfaces/wmi/utils.py:337
-msgid "Status"
-msgstr ""
-
-#: interfaces/wmi/utils.py:338
-msgid "Manage user accounts."
-msgstr ""
-
-#: interfaces/wmi/utils.py:338
-msgid "Users"
-msgstr ""
-
-#: interfaces/wmi/utils.py:339
-msgid "Manage groups and shared data."
-msgstr ""
-
-#: interfaces/wmi/utils.py:340
-msgid ""
-"Manage network clients: computers, printers, switches and other network "
-"enabled active systems."
-msgstr ""
-
-#: interfaces/wmi/utils.py:340
-msgid "Machines"
-msgstr ""
-
-#: interfaces/wmi/utils.py:341
-msgid ""
-"Manage Internet connexion and parameters, firewall protection, URL filter "
-"and e-mail parameters."
-msgstr ""
-
-#: interfaces/wmi/utils.py:341
-msgid "Internet"
-msgstr ""
-
-#: interfaces/wmi/utils.py:342
-msgid ""
-"Go to online documentation and community website (in new window or new tab)."
-msgstr ""
-
-#: interfaces/wmi/utils.py:342
-msgid "Documentation"
-msgstr ""
-
-#: interfaces/wmi/utils.py:343
-msgid "Get product support / help"
-msgstr ""
-
-#: interfaces/wmi/utils.py:343
-msgid "Support"
-msgstr ""
-
-#: interfaces/wmi/utils.py:347
-#, python-format
-msgid "%s Management"
-msgstr ""
-
-#: interfaces/wmi/utils.py:372
-#, python-format
-msgid "%s WMI:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:377
-#, python-format
-msgid "administration %s"
-msgstr ""
-
-#: interfaces/wmi/server.py:30 interfaces/wmi/base.py:35
-msgid "Restart server."
-msgstr ""
-
-#: interfaces/wmi/server.py:31 interfaces/wmi/base.py:36
-msgid "Restart server"
-msgstr ""
-
-#: interfaces/wmi/server.py:32 interfaces/wmi/base.py:37
-msgid "Shutdown server."
-msgstr ""
-
-#: interfaces/wmi/server.py:33 interfaces/wmi/base.py:38
-msgid "Shutdown server"
-msgstr ""
-
-#: interfaces/wmi/server.py:41
-msgid "Can't reboot the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:44
-msgid "Rebooting…"
-msgstr ""
-
-#: interfaces/wmi/server.py:70
-#, python-format
-msgid "Sure you want to reboot the %s server?"
-msgstr ""
-
-#: interfaces/wmi/server.py:71 interfaces/wmi/server.py:109
-msgid "YES"
-msgstr ""
-
-#: interfaces/wmi/server.py:72 interfaces/wmi/server.py:110
-msgid "NO"
-msgstr ""
-
-#: interfaces/wmi/server.py:79
-msgid "Can't shutdown the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:82
-msgid "Shutting down…"
-msgstr ""
-
-#: interfaces/wmi/server.py:108
-#, python-format
-msgid "Sure you want to shutdown the %s server?"
-msgstr ""
-
-#: interfaces/wmi/base.py:80
+#: foundations/pyutils.py:86
 #, python-format
 msgid "%d year%s, "
 msgstr ""
 
-#: interfaces/wmi/base.py:83
+#: foundations/pyutils.py:91
 #, python-format
 msgid "%d day%s, "
 msgstr ""
 
-#: interfaces/wmi/base.py:86
+#: foundations/pyutils.py:96
 #, python-format
 msgid "%d hour%s, "
 msgstr ""
 
-#: interfaces/wmi/base.py:89
+#: foundations/pyutils.py:101
 #, python-format
 msgid "%d min%s, "
 msgstr ""
 
-#: interfaces/wmi/base.py:92
+#: foundations/pyutils.py:105
 #, python-format
 msgid "%d sec%s"
 msgstr ""
 
-#: interfaces/wmi/base.py:94
+#: core/configuration.py:528
 #, python-format
 msgid ""
-"Up and running since <strong>%s</strong>.<br /><br />\n"
-"Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.\n"
-"<br /><br />\n"
-"1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s"
+"SSH detection not supported yet on your system.Please get in touch with %s."
 msgstr ""
 
-#: interfaces/wmi/base.py:137
-msgid "no virtual memory installed."
+#: core/configuration.py:541
+msgid "Users allowed to connect via SSHd"
 msgstr ""
 
-#: interfaces/wmi/base.py:140
+#: core/configuration.py:795
+msgid "user"
+msgstr ""
+
+#: core/configuration.py:796
+msgid "users"
+msgstr ""
+
+#: core/configuration.py:814
+msgid "group"
+msgstr ""
+
+#: core/configuration.py:815
+msgid "groups"
+msgstr ""
+
+#: core/machines.py:813
 #, python-format
-msgid "Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>."
+msgid "machine %s doesn't exist."
 msgstr ""
 
-#: interfaces/wmi/base.py:143
+#: core/machines.py:845
+msgid "You must pass a hostname to verify!"
+msgstr ""
+
+#: core/machines.py:853
 #, python-format
-msgid ""
-"\n"
-"Processor%s: %d x <strong>%s</strong><br /><br />\n"
-"Physical memory: <strong>%.2fGb</strong> total,<br />\n"
-"%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />\n"
-"%s"
-msgstr ""
-
-#: interfaces/wmi/base.py:154
-msgid "Server status"
-msgstr ""
-
-#: interfaces/wmi/base.py:166
-msgid "System information"
-msgstr ""
-
-#: interfaces/wmi/base.py:167
-msgid "System status"
+msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
 msgstr ""

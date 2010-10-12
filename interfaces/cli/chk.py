@@ -13,9 +13,7 @@ Licensed under the terms of the GNU GPL version 2.
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
 
-from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-from licorn.core.groups         import GroupsController
+from licorn.interfaces.cli import cli_main, cli_select
 
 _app = {
 	"name"     		: "licorn-check",
@@ -23,67 +21,67 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-def chk_user(opts, args):
+def chk_user(opts, args, users, **kwargs):
 	""" Check one or more user account(s). """
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
 
 	uids_to_chk = cli_select(users, 'user',
 			args,
-			[
+			include_id_lists=[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
+			],
+			exclude_id_lists=[
+				(opts.exclude, users.guess_identifier),
+				(opts.exclude_login, users.login_to_uid),
+				(opts.exclude_uid, users.confirm_uid)
 			],
 			all=opts.all)
 
 	ltrace('chk', '> chk_user(%s)' % uids_to_chk)
 
 	if uids_to_chk != []:
-		users.CheckUsers(uids_to_chk, opts.minimal, auto_answer=opts.auto_answer,
-			batch=opts.batch)
+		users.CheckUsers(uids_to_chk, minimal=opts.minimal,
+			auto_answer=opts.auto_answer, batch=opts.batch,
+			listener=opts.listener)
 
 	ltrace('chk', '< chk_user()')
-def chk_group(opts, args):
+def chk_group(opts, args, groups, **kwargs):
 	""" Check one or more group(s). """
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-
-	# don't show warnings. If user has asked for a check, he already
-	# thinks there is something wrong, which *will* be raised by the check,
-	# so don't print twice !
-	groups = GroupsController(configuration, users, warnings=False)
 
 	gids_to_chk = cli_select(groups, 'group',
 			args,
-			[
+			include_id_lists=[
 				(opts.name, groups.name_to_gid),
 				(opts.gid, groups.confirm_gid)
 			],
-			filters.STD,
-			opts.all)
+			exclude_id_lists = [
+				(opts.exclude, groups.guess_identifier),
+				(opts.exclude_group, groups.name_to_gid),
+				(opts.exclude_gid, groups.confirm_gid)
+			],
+			default_selection=filters.STD,
+			all=opts.all)
 
 	ltrace('chk', '> chk_group(%s)' % gids_to_chk)
 
 	if gids_to_chk != []:
-		groups.CheckGroups(gids_to_chk, minimal=opts.minimal,
-			batch=opts.batch, auto_answer=opts.auto_answer, force=opts.force)
+		groups.CheckGroups(gids_to_check=gids_to_chk,
+			minimal=opts.minimal, batch=opts.batch,
+			auto_answer=opts.auto_answer, force=opts.force,
+			listener=opts.listener)
+
 	ltrace('chk', '< chk_group()')
-def chk_profile(opts, args):
+def chk_profile(opts, args, profiles, **kwargs):
 	""" TODO: to be implemented. """
 
 	raise NotImplementedError("Sorry, not yet.")
-def chk_configuration(opts, args):
+def chk_configuration(opts, args, configuration, **kwargs):
 	""" TODO: to be implemented. """
 
-	configuration = LicornConfiguration()
-	configuration.check(opts.minimal, opts.batch, opts.auto_answer)
-
-if __name__ == "__main__":
-
+	configuration.check(opts.minimal, batch=opts.batch,
+		auto_answer=opts.auto_answer, listener=opts.listener)
+def chk_main():
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.chk_user_parse_arguments, chk_user),
@@ -100,3 +98,6 @@ if __name__ == "__main__":
 	}
 
 	cli_main(functions, _app)
+
+if __name__ == "__main__":
+	chk_main()

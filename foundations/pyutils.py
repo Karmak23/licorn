@@ -9,6 +9,8 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import re
+from gettext import gettext as _
+
 from licorn.foundations import exceptions, logging, styles
 
 def next_free(used_list, start, end):
@@ -45,6 +47,63 @@ def keep_true(x, y):
 
 	if x is True: return x
 	else:         return y
+def format_time_delta(delta_in_seconds, use_neg=False):
+
+	if use_neg:
+		if delta_in_seconds < 0:
+			time_delta_string = 'il y a '
+			delta_in_seconds = abs(delta_in_seconds)
+		else:
+			time_delta_string = 'dans '
+	else:
+		time_delta_string = ''
+
+	time_delta_sec  = int(delta_in_seconds)
+	time_delta_min  = 0
+	time_delta_hour = 0
+	time_delta_day  = 0
+	time_delta_year = 0
+	s_year = ''
+	s_day  = ''
+	s_hour = ''
+	s_sec  = ''
+	s_min  = ''
+	if time_delta_sec > 60:
+		time_delta_min = time_delta_sec / 60
+		time_delta_sec -= (time_delta_min * 60)
+		if time_delta_min > 60:
+			time_delta_hour = time_delta_min / 60
+			time_delta_min -= (time_delta_hour * 60)
+			if time_delta_hour > 24:
+				time_delta_day = time_delta_hour / 24
+				time_delta_hour -= (time_delta_day * 24)
+				if time_delta_day > 365:
+					time_delta_year = time_delta_day / 365
+					time_delta_day -= (time_delta_year * 365)
+					if time_delta_year > 1:
+						s_year = 's'
+					if time_delta_year > 0:
+						time_delta_string += _('%d year%s, ') % (
+							time_delta_year, s_year)
+				if time_delta_day > 1:
+					s_day = 's'
+				if time_delta_day > 0:
+					time_delta_string += _('%d day%s, ') % (
+						time_delta_day, s_day)
+			if time_delta_hour > 1:
+				s_hour = 's'
+			if time_delta_hour > 0:
+				time_delta_string += _('%d hour%s, ') % (
+					time_delta_hour, s_hour)
+		if time_delta_min > 1:
+			s_min = 's'
+		if time_delta_min > 0:
+			time_delta_string += _('%d min%s, ') % (time_delta_min, s_min)
+	if time_delta_sec > 1:
+		s_sec = 's'
+	if time_delta_sec > 0:
+		time_delta_string += _('%d sec%s') % (time_delta_sec, s_sec)
+	return time_delta_string
 def check_file_against_dict(conf_file, defaults, configuration,
 	batch=False, auto_answer=None):
 	''' Check if a file has some configuration directives,

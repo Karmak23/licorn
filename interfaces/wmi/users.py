@@ -3,20 +3,10 @@
 import os, time
 from gettext import gettext as _
 
-from licorn.foundations    import exceptions, hlstr
+from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 
-from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-from licorn.core.groups         import GroupsController
-from licorn.core.profiles       import ProfilesController
-
 from licorn.interfaces.wmi import utils as w
-
-configuration = LicornConfiguration()
-users = UsersController(configuration)
-groups = GroupsController(configuration, users)
-profiles = ProfilesController(configuration, groups, users)
 
 groups_filters_lists_ids = (
 	(filters.STANDARD, [_('Customize groups'),
@@ -46,7 +36,7 @@ def __merge_multi_select(*lists):
 		else:
 			final.extend(list)
 	return final
-def ctxtnav(active = True):
+def ctxtnav(active=True):
 
 	if active:
 		disabled = '';
@@ -78,15 +68,10 @@ def ctxtnav(active = True):
 			onClick, disabled, disabled,
 		_("Export accounts")
 		)
-def protected_user(login):
+def protected_user(login, users):
 	return users.is_system_login(login)
-
-def export(uri, http_user, type = "", yes = None):
+def export(uri, http_user, type="", yes=None, users=None, **kwargs):
 	""" Export user accounts list."""
-
-	groups.reload()
-	users.reload()
-	# profiles.reload()
 
 	# submit button; forget it.
 	del yes
@@ -134,7 +119,8 @@ def export(uri, http_user, type = "", yes = None):
 			data = users.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
-def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
+def delete(uri, http_user, login, sure=False, no_archive=False, yes=None,
+	configuration=None, users=None, **kwargs):
 	"""remove user account."""
 
 	# form submit button, forget it.
@@ -142,7 +128,7 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 
 	title = _("Remove user account %s") % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -179,12 +165,12 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove account <strong>%s</strong>!''') % login)
-def unlock(uri, http_user, login):
+def unlock(uri, http_user, login, users=None, **kwargs):
 	"""unlock a user account password."""
 
 	title = _("Unlock account %s") % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -202,7 +188,8 @@ def unlock(uri, http_user, login):
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_("Failed to unlock account <strong>%s</strong>!") % login)
-def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None):
+def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
+	users=None, **kwargs):
 	"""lock a user account password."""
 
 	# submit button: forget it.
@@ -210,7 +197,7 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None):
 
 	title = _("Lock account %s") % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -263,8 +250,8 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_("Failed to lock account <strong>%s</strong>!") % login)
-def skel(uri, http_user, login, sure = False,
-	apply_skel = configuration.users.default_skel, yes = None):
+def skel(uri, http_user, login, sure=False, apply_skel=None, yes=None,
+	configuration=None, users=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
 
 	# submit button; forget it.
@@ -272,8 +259,11 @@ def skel(uri, http_user, login, sure = False,
 
 	title = _("Reapply skel to user account %s") % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
+
+	if apply_skel is None:
+		apply_skel = configuration.users.default_skel
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
@@ -307,10 +297,10 @@ def skel(uri, http_user, login, sure = False,
 			_('''Failed to apply skel <strong>%s</strong> on user
 			account <strong>%s</strong>!''') % (os.path.basename(apply_skel),
 				login))
-def new(uri, http_user):
+def new(uri, http_user, configuration=None, users=None, groups=None,
+	profiles=None, **kwargs):
 	"""Generate a form to create a new user on the system."""
 
-	groups.reload()
 	g = groups
 	p = profiles
 
@@ -343,9 +333,8 @@ def new(uri, http_user):
 
 	dbl_lists = {}
 	for filter, titles, id in groups_filters_lists_ids:
-		groups.Select(filter)
 		dest   = []
-		source = [ g[gid]['name'] for gid in groups.filtered_groups ]
+		source = [ g[gid]['name'] for gid in groups.Select(filter) ]
 		source.sort()
 		dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
 
@@ -436,7 +425,8 @@ def create(uri, http_user, loginShell, password, password_confirm,
 	responsible_groups_dest=[], guest_groups_dest=[],
 	standard_groups_source=[], privileged_groups_source=[],
 	responsible_groups_source=[], guest_groups_source=[],
-	create = None ):
+	create=None, configuration=None, users=None, groups=None, profiles=None,
+	**kwargs):
 
 	# forget it; useless
 	del create
@@ -478,12 +468,7 @@ def create(uri, http_user, loginShell, password, password_confirm,
 
 	if rettype == w.HTTP_TYPE_TEXT:
 		return (rettype, retdata)
-	# else: continue the creation by adding groups...
-
-	# This is less than suboptimal to have to reload this here...
-	# but without this, adding to supplemental groups doesnt work.
-	# this will be resolved and not needed when #127 is fixed.
-	users.reload()
+	# else: continue the creation by adding groups…
 
 	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors",
 		"--login", login, "--shell", loginShell ]
@@ -500,16 +485,13 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to add user <strong>%s</strong> to requested
 		groups/privileges/responsibilities/invitations!''') % login)
-def edit(uri, http_user, login):
+def edit(uri, http_user, login, configuration=None, users=None, groups=None,
+	profiles=None, **kwargs):
 	"""Edit an user account, based on login."""
-
-	users.reload()
-	groups.reload()
-	# profiles.reload()
 
 	title = _('Edit account %s') % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -527,10 +509,9 @@ def edit(uri, http_user, login):
 
 		dbl_lists = {}
 		for filter, titles, id in groups_filters_lists_ids:
-			groups.Select(filter)
 			dest   = list(user['groups'][:])
-			source = [ groups.groups[gid]['name'] \
-				for gid in groups.filtered_groups ]
+			source = [ groups.groups[gid]['name']
+				for gid in groups.Select(filter) ]
 			for current in dest[:]:
 				try: source.remove(current)
 				except ValueError: dest.remove(current)
@@ -635,24 +616,26 @@ def edit(uri, http_user, login):
 			login, "user = users.users[users.login_to_uid(login)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-def record(uri, http_user, login, loginShell=configuration.users.default_shell,
-	password = "", password_confirm = "",
-	firstname = "", lastname = "", gecos = "",
+def record(uri, http_user, login, loginShell=None, password="",
+	password_confirm="", firstname="", lastname="", gecos="",
 	standard_groups_source    = [],    standard_groups_dest = [],
 	privileged_groups_source  = [],  privileged_groups_dest = [],
 	responsible_groups_source = [], responsible_groups_dest = [],
 	guest_groups_source       = [],       guest_groups_dest = [],
-	record = None):
+	record=None, configuration=None, users=None, groups=None, profiles=None,
+	**kwargs):
 	"""Record user account changes."""
 
 	# submit button. forget it.
 	del record
-	users.reload()
 
 	title = _("Modification of account %s") % login
 
-	if protected_user(login):
+	if protected_user(login, users):
 		return w.forgery_error(title)
+
+	if loginShell is None:
+		loginShell = configuration.users.default_shell
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
@@ -693,30 +676,25 @@ def record(uri, http_user, login, loginShell=configuration.users.default_shell,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to modify one or more parameters of account
 		 <strong>%s</strong>!''') % login)
-
-def main(uri, http_user, sort = "login", order = "asc"):
+def main(uri, http_user, sort="login", order="asc", configuration=None,
+	users=None, groups=None, profiles=None, **kwargs):
 	""" display all users in a nice HTML page. """
 	start = time.time()
 
-	users.reload()
-	groups.reload()
-	# profiles.reload()
+	#print globals()
+	#print locals()
 
 	u = users.users
 	g = groups.groups
 	p = profiles.profiles
 
-	groups.Select(filters.PRIVILEGED)
-	pri_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
+	pri_grps = [ g[gid]['name'] for gid in groups.Select(filters.PRIVILEGED) ]
 
-	groups.Select(filters.RESPONSIBLE)
-	rsp_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
+	rsp_grps = [ g[gid]['name'] for gid in groups.Select(filters.RESPONSIBLE) ]
 
-	groups.Select(filters.GUEST)
-	gst_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
+	gst_grps = [ g[gid]['name'] for gid in groups.Select(filters.GUEST) ]
 
-	groups.Select(filters.STANDARD)
-	std_grps = [ g[gid]['name'] for gid in groups.filtered_groups ]
+	std_grps = [ g[gid]['name'] for gid in groups.Select(filters.STANDARD) ]
 
 	accounts = {}
 	ordered  = {}
@@ -819,8 +797,8 @@ def main(uri, http_user, sort = "login", order = "asc"):
 				_("Definitely remove account from the system."))
 		return html_data
 
-	users.Select(filters.STANDARD)
-	for uid in users.filtered_users:
+
+	for uid in users.Select(filters.STANDARD):
 		user  = u[uid]
 		login = user['login']
 

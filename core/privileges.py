@@ -9,10 +9,12 @@ Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
+import Pyro.core
+
 from licorn.foundations         import logging, styles, readers
 from licorn.foundations.objects import Singleton
 
-class PrivilegesWhiteList(list, Singleton):
+class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 	""" Manage privileges whitelist. """
 
 	conf_file = ""
@@ -24,11 +26,30 @@ class PrivilegesWhiteList(list, Singleton):
 		if PrivilegesWhiteList.init_ok:
 			return
 
+		Pyro.core.ObjBase.__init__(self)
+
 		self.configuration = configuration
+		configuration.set_controller('privileges', self)
+
 		self.conf_file = conf_file
+		self.groups    = None
 		self.changed   = False
+
+		self.reload()
+
+		PrivilegesWhiteList.init_ok = True
+	def __del__(self):
+		""" destructor. """
+		# just in case it wasn't done before (in batched operations, for example).
+		if self.changed :
+			self.WriteConf()
+	def reload(self):
+		""" reload internal data  """
+
+		self[:] = []
+
 		try:
-			self.extend(readers.very_simple_conf_load_list(conf_file))
+			self.extend(readers.very_simple_conf_load_list(self.conf_file))
 		except IOError, e:
 			if e.errno == 2:
 				pass
@@ -38,50 +59,60 @@ class PrivilegesWhiteList(list, Singleton):
 		# map(lambda (x): self.append(x),
 		# readers.very_simple_conf_load_list(conf_file))
 
-		PrivilegesWhiteList.init_ok = True
-	def __del__(self):
-		""" destructor. """
-		# just in case it wasn't done before (in batched operations, for example).
-		if self.changed :
-			self.WriteConf()
-	def add(self, privileges):
+	def set_groups_controller(self, groups):
+		self.groups = groups
+		groups.set_privileges_controller(self)
+	def add(self, privileges, listener=None):
 		"""one-time multi-add method (list as argument)."""
 		for priv in privileges:
-			self.append(priv)
+			self.append(priv, listener=listener)
 		self.WriteConf()
-	def delete(self, privileges):
+	def delete(self, privileges, listener=None):
 		"""one-time multi-delete method (list as argument)."""
 		for priv in privileges:
-			self.remove(priv)
+			self.remove(priv, listener=listener)
 		self.WriteConf()
-	def append(self, privilege):
+	def append(self, privilege, listener=None):
 		""" Set append like: no doubles."""
 		try:
 			self.index(privilege)
 		except ValueError:
-			from licorn.core.users  import UsersController
-			from licorn.core.groups import GroupsController
-
-			users  = UsersController(self.configuration)
-			groups = GroupsController(self.configuration, users)
-
-			if groups.is_system_group(privilege):
+			if self.groups.is_system_group(privilege):
 				list.append(self, privilege)
+				logging.info('Added privilege %s to whitelist.' %
+					styles.stylize(styles.ST_NAME, privilege),
+					listener=listener)
 			else:
 				logging.warning('''group %s can't be promoted as privilege, '''
 					'''it is not a system group.''' % \
-					styles.stylize(styles.ST_NAME, privilege))
+					styles.stylize(styles.ST_NAME, privilege),
+					listener=listener)
 		else:
 			logging.info("privilege %s already whitelisted, skipped." % \
-				styles.stylize(styles.ST_NAME, privilege))
-	def remove(self, privilege):
+				styles.stylize(styles.ST_NAME, privilege), listener=listener)
+	def remove(self, privilege, listener=None):
 		""" Remove without throw of exception """
 		try:
 			list.remove(self, privilege)
+			logging.info('Removed privilege %s from whitelist.' %
+				styles.stylize(styles.ST_NAME, privilege),
+				listener=listener)
 		except ValueError:
 			logging.info('''privilege %s is already not present in the '''
 				'''whitelist, skipped.''' % \
-					styles.stylize(styles.ST_NAME, privilege))
+					styles.stylize(styles.ST_NAME, privilege),
+					listener=listener)
+	def ExportCLI(self):
+		""" present the privileges whitelist on command-line: one by line. """
+		return '%s%s' % (
+			'\n'.join(self),
+			'\n' if len(self)>0 else ''
+			)
+	def ExportXML(self):
+		return '''<?xml version='1.0' encoding=\"UTF-8\"?>
+<privileges-whitelist>\n%s%s</privileges-whitelist>\n''' % (
+				'\n'.join(['	<privilege>%s</privilege>' % x for x in self]),
+				'\n' if len(self)>0 else '')
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
 		self.sort()

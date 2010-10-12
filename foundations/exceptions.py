@@ -196,7 +196,7 @@ class IndexNotFoundError(LicornIOError):
 class AlreadyExistsException(LicornRuntimeException):
 	""" Raised when an object (user, group, profile) [strictly] already exists.
 		The already existing object must be exactly the same (same name, same
-		type, same attributes...).
+		type, same attributes…).
 		When this happens, the program can continue and assume the object has
 		been created correctly.
 	"""

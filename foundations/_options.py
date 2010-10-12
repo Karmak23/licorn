@@ -14,8 +14,9 @@ Licensed under the terms of the GNU GPL version 2.
 # try to keep this class as small as possible !
 #
 
-from objects import Singleton
-from ltrace  import ltrace
+from objects   import Singleton
+from ltrace    import ltrace
+from constants import verbose
 
 class LicornOptions(Singleton):
 	""" This Options class is meant to share options / preferences globally
@@ -26,32 +27,28 @@ class LicornOptions(Singleton):
 		This class is a singleton (this is needed for it to work as expected).
 	"""
 
-	VLEVEL_QUIET    = 0
-	VLEVEL_NOTICE   = 1
-	VLEVEL_INFO     = 2
-	VLEVEL_PROGRESS = 3
-	VLEVEL_DEBUG    = 4
-	VLEVEL_DEBUG2   = 5
-
-	__singleton = None
 	no_colors   = False
-	verbose     = VLEVEL_NOTICE
 
 	def __init__(self) :
-		ltrace('options', '__init__')
-	def SetVerbose(self, verbose):
+		ltrace('options', '| __init__()')
+		self.msgproc = None
+		self.verbose = verbose.NOTICE
+
+	def SetVerbose(self, level):
 		""" Change verbose parameter. """
-		ltrace('options', 'setting verbose to %s.' % verbose)
-		self.verbose = verbose
+		ltrace('options', '| SetVerbose(%s)' % verbose)
+		self.verbose = level
 	def SetQuiet(self):
 		""" Change verbose parameter. """
-		self.verbose = LicornOptions.VLEVEL_QUIET
-	def SetNoColors(self, no_colors = True):
+		self.verbose = verbose.QUIET
+	def SetNoColors(self, no_colors=True):
 		""" Change color output parameter. """
+		ltrace('options', '| SetNoColors(%s)' % no_colors)
 		self.no_colors = no_colors
 	def SetFrom(self, opts):
 		""" Change parameters, from an object given by an argparser """
+		ltrace('options', '| SetFrom(%s)' % opts)
 
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)
-		# put future functions here...
+		# put future functions here…

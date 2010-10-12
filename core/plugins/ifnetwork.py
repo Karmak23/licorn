@@ -14,7 +14,7 @@ def iface_address(iface_name, iface_address = None):
 		bits/socket.h
 		sockios.h
 		if.h
-	and probably some other files i forgot to list here...
+	and probably some other files i forgot to list here…
 
 	a similar way to do this (which i don't like), without struct:
 	http://mail.python.org/pipermail/python-list/1999-August/009100.html

@@ -2,18 +2,21 @@
 """
 Licorn foundations - http://dev.licorn.org/documentation/foundations
 
-logging - logging extensions and facilities (stderr/out messages, syslog, logfiles...)
+logging - logging extensions and facilities (stderr/out messages, syslog, logfiles…)
 
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, termios
+import sys
+import Pyro.core
 
 import styles, exceptions
 
-from ltrace  import mytime
-from objects import Singleton
+from constants import verbose, interactions
+from ttyutils  import interactive_ask_for_repair
+from ltrace    import ltrace, mytime
+from objects   import Singleton, MessageProcessor, LicornMessage
 
 from licorn.foundations import options
 # TODO: gettext this !
@@ -35,13 +38,14 @@ from licorn.foundations import options
 #gettext.textdomain(_APP)
 
 #
-# FIXME: define a policy explaining where we can call logging.error() (which impliesexit()), where we can't,
-# where we must raise an exception or an error.
+# FIXME: define a policy explaining where we can call logging.error() (which
+# implies exit()), where we can't, where we must raise an exception or an error.
 #
 # the short way:
-#		- in *any* licorn modules or submodules, we MUST raise, not call logging.error().
-#		- in the calling programs, we MUST catch the exceptions/errors raised and call
-#		  logging.error() when appropriate.
+#		- in *any* licorn modules or submodules, we MUST raise, not call
+#			logging.error().
+#		- in the calling programs, we MUST catch the exceptions/errors raised
+#			and call logging.error() when appropriate.
 #
 
 class LicornWarningsDB(Singleton):
@@ -63,23 +67,25 @@ __warningsdb = LicornWarningsDB()
 
 __warningsdb = LicornWarningsDB()
 
-def error(mesg, returncode=1, full=False):
+def error(mesg, returncode=1, full=False, tb=None, listener=None):
 	""" Display a styles.stylized error message and exit badly.	"""
 
 	if full:
-		import traceback
-		sys.stderr.write ('''>>> %s:
-	''' 	% (styles.stylize(styles.ST_OK, "Call trace")))
-		traceback.print_tb( sys.exc_info()[2] )
-		sys.stderr.write("\n")
+		if tb:
+			sys.stderr.write(tb + '\n')
+		else:
+			import traceback
+			sys.stderr.write ('''>>> %s:
+		''' 	% (styles.stylize(styles.ST_OK, "Call trace")))
+			traceback.print_tb( sys.exc_info()[2] )
+			sys.stderr.write("\n")
 
 	sys.stderr.write('%s %s %s\n' % (
 		styles.stylize(styles.ST_BAD, 'ERROR:'),
 		mytime(),
 		mesg))
-
 	raise SystemExit(returncode)
-def warning(mesg, once = False):
+def warning(mesg, once=False, listener=None):
 	"""Display a styles.stylized warning message on stderr."""
 
 	if once:
@@ -89,138 +95,101 @@ def warning(mesg, once = False):
 		except KeyError, e:
 			__warningsdb[mesg] = True
 
-	sys.stderr.write( "%s %s %s\n" % (
-		styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg) )
-def question(mesg):
-	"""Display a styles.stylized question message on stderr."""
+	text_message = "%s %s %s\n" % (
+		styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg)
 
-	sys.stderr.write( " %s %s %s" % (
-		styles.stylize(styles.ST_INFO, '?'), mytime(), mesg) )
+	if listener:
+		listener.process(
+			LicornMessage(data=text_message),
+			options.msgproc.getProxy())
 
-def notice(mesg):
-	""" Display a non-styles.stylized informational message on stderr."""
-	#print 'verbose is %s.' % options.verbose
-	if options.verbose >= options.VLEVEL_NOTICE:
+	sys.stderr.write(text_message)
+def warning2(mesg, once=False, listener=None):
+	""" Display a styles.stylized warning message on stderr, only if verbose
+		level > INFO. """
+
+	if once:
+		try:
+			already_displayed = __warningsdb[mesg]
+			return
+		except KeyError, e:
+			__warningsdb[mesg] = True
+
+	if listener and listener.verbose >= verbose.INFO:
+		listener.process(
+			LicornMessage(data="%s%s %s\n" % (
+			styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg)),
+			options.msgproc.getProxy())
+
+	if options.verbose >= verbose.INFO:
+		sys.stderr.write("%s%s %s\n" % (
+			styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg))
+def notice(mesg, listener=None):
+	""" Display a non-styles.stylized notice message on stderr."""
+	ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
+		options.verbose, listener.verbose if listener else '-'))
+	if listener and listener.verbose >= verbose.NOTICE:
+		listener.process(LicornMessage(data=" %s %s %s\n" % (
+		styles.stylize(styles.ST_INFO, '*'), mytime(), mesg)),
+			options.msgproc.getProxy())
+
+	if options.verbose >= verbose.NOTICE:
 		sys.stderr.write(" %s %s %s\n" % (
-			styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
-def info(mesg):
-	""" Display a styles.stylized informational message on stderr."""
-	#print 'verbose is %s.' % options.verbose
-	if options.verbose >= options.VLEVEL_INFO:
+		styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
+def info(mesg, listener=None):
+	""" Display a styles.stylized information message on stderr."""
+	ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
+		options.verbose, listener.verbose if listener else '-'))
+	if listener and listener.verbose >= verbose.INFO:
+			listener.process(
+				LicornMessage(data=" * %s %s\n" % (mytime(), mesg)),
+				options.msgproc.getProxy())
+
+	if options.verbose >= verbose.INFO:
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
-def progress(mesg):
-	""" Display a styles.stylized informational message on stderr. """
-	#print 'verbose is %s.' % options.verbose
-	if options.verbose >= options.VLEVEL_PROGRESS:
+def progress(mesg, listener=None):
+	""" Display a styles.stylized progress message on stderr. """
+	ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
+		options.verbose, listener.verbose if listener else '-'))
+	if listener and listener.verbose >= verbose.PROGRESS:
+		listener.process(
+			LicornMessage(data=" > %s %s\n" % (mytime(), mesg)),
+			options.msgproc.getProxy())
+
+	if options.verbose >= verbose.PROGRESS:
 		sys.stderr.write(" > %s %s\n" % (mytime(), mesg))
 
 if __debug__:
+	# FIXME: add listener here, too.
 	def debug(mesg):
 		"""Display a styles.stylized debug message on stderr."""
-		if options.verbose >= options.VLEVEL_DEBUG:
+		if options.verbose >= verbose.DEBUG:
 			sys.stderr.write( "%s: %s\n" % (
 				styles.stylize(styles.ST_DEBUG, 'DEBUG'), mesg) )
 	def debug2(mesg):
 		"""Display a styles.stylized debug2 message on stderr."""
-		if options.verbose >= options.VLEVEL_DEBUG2:
+		if options.verbose >= verbose.DEBUG2:
 			sys.stderr.write("%s: %s\n" % (
 				styles.stylize(styles.ST_DEBUG, 'DEBUG2'), mesg))
 else:
 	def debug(mesg): pass
 	def debug2(mesg): pass
 
-class RepairChoice(Singleton):
-	"""a singleton, to be used in all checks."""
-
-	__choice   = None
-
-	def __getattr__(self, attrib):
-		return RepairChoice.__choice.__getattr(attrib)
-
-	def __setattr__(self, attrib, value):
-		RepairChoice.__choice.__setattr__(attrib, value)
-def ask_for_repair(message, auto_answer = None):
+def ask_for_repair(message, auto_answer=None, listener=None):
 	"""ask the user if he wants to repair, store answer for next question."""
 
-	question(message + MESG_FIX_PROBLEM_QUESTION)
+	ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
 
-	global repair_choice
-	if auto_answer is not None:
-		# auto-answer has biggest priority
-		repair_choice = auto_answer
-
-	if repair_choice is True:
-		sys.stderr.write(styles.stylize(styles.ST_OK, "Yes") + "\n")
-		return True
-
-	elif repair_choice is False:
-		sys.stderr.write(styles.stylize(styles.ST_BAD, "No") + "\n")
-		return False
+	if listener:
+		return listener.process(
+			LicornMessage(
+				data=message,
+				interaction=interactions.ASK_FOR_REPAIR,
+				auto_answer=auto_answer),
+			options.msgproc.getProxy())
 
 	else:
-		while True:
-			if sys.stdin.isatty():
-				# see tty and termios modules for implementation details.
-				fd = sys.stdin.fileno()
-				old = termios.tcgetattr(fd)
-				new = termios.tcgetattr(fd)
-
-				# put the TTY is nearly raw mode to be able to get characters
-				# one by one (not to wait for newline to get one).
-
-				# lflags
-				new[3] = new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
-				new[6][termios.VMIN] = 1
-				new[6][termios.VTIME] = 0
-				try:
-					try:
-						termios.tcsetattr(fd, termios.TCSAFLUSH, new)
-						char = sys.stdin.read(1)
-					except KeyboardInterrupt:
-						sys.stderr.write("\n")
-						raise
-				finally:
-					# put it back in standard mode after input, whatever
-					# happened. The terminal has to be restored.
-					termios.tcsetattr(fd, termios.TCSADRAIN, old)
-			else:
-				char = sys.stdin.read(1)
-
-			if char in ( 'y', 'Y' ):
-				sys.stderr.write(styles.stylize(styles.ST_OK, "Yes") + "\n")
-				return True
-			elif char in ( 'n', 'N' ):
-				sys.stderr.write(styles.stylize(styles.ST_BAD, "No") + "\n")
-				return False
-			elif char in ( 'a', 'A' ):
-				sys.stderr.write(
-					styles.stylize(styles.ST_OK, "Yes, all") + "\n")
-				repair_choice = True
-				return True
-			elif char in ( 's', 'S' ):
-				sys.stderr.write(
-					styles.stylize(styles.ST_BAD, "No and skip all") + "\n")
-				repair_choice = False
-				return False
-			elif char in ( '?', 'h' ):
-				sys.stderr.write('''\n\nUsage:\n%s: fix the current problem
-%s: don't fix the current problem, skip to next (if possible).\n%s: fix all '''
-'''remaining problems\n%s: skip all remaining problems (don't fix them).''' % (
-					styles.stylize(styles.ST_OK, 'y'),
-					styles.stylize(styles.ST_BAD, 'n'),
-					styles.stylize(styles.ST_OK, 'a'),
-					styles.stylize(styles.ST_BAD, 's')))
-			else:
-				if not sys.stdin.isatty():
-					raise exceptions.LicornRuntimeError(
-						"wrong command piped on stdin !")
-
-			sys.stderr.write("\n")
-			question(message + MESG_FIX_PROBLEM_QUESTION)
-
-# used during an interactive repair session to remember when the user
-# answers "yes to all" or "skip all".
-repair_choice = RepairChoice()
+		return interactive_ask_for_repair(message, auto_answer)
 
 #
 # Standard strings used manywhere. All strings are centralized here.
@@ -231,9 +200,6 @@ GENERAL_CANT_ACQUIRE_HACKD_LOCK = "Can't acquire hackd global lock, hackd is pro
 GENERAL_CANT_ACQUIRE_GIANT_LOCK = "Can't acquire giant lock. You probably have another licorn-{get,add,modify,delete,check} tool already running: wait for it to finish, or last execution didn't finish cleanly: check in your ~/.licorn directory and delete the file « giant.lock » (Original error was: %s)."
 GENERAL_INTERRUPTED = "Interrupted, cleaning up !"
 GENERAL_UNKNOWN_MODE = "Unknow mode %s !"
-
-### Messages ###
-MESG_FIX_PROBLEM_QUESTION = " [Ynas], or ? for help: "
 
 ### Config ###
 

@@ -278,7 +278,7 @@ class Cache(Thread, Singleton):
 		row = list(self.select('''SELECT fid FROM files WHERE fname=?;''', (path,)))
 
 		if row == []:
-			# we've got a dir...
+			# we've got a dir…
 			for regular_file in self.select('SELECT fid FROM files WHERE fname LIKE ?;', (os.path.dirname(path),)):
 				q.put(('DELETE FROM k_on_f WHERE fid=?;', (regular_file[0],), None))
 				q.put(('DELETE FROM files  WHERE fid=?;', (regular_file[0],), None))
@@ -294,10 +294,10 @@ class Cache(Thread, Singleton):
 		#nbk   = len(req.split(','))
 
 		# TODO: check req against injections, against bad chars (regex)
-		# and verify keyword existence...
+		# and verify keyword existence…
 
 		# TODO: implement '+' and '|' in incoming request to build a more precise SELECT.
-		# EG 'WHERE kname == '<...>' AND kname =='<...>' OR kname = '<...>' AND kname = '<...>'
+		# EG 'WHERE kname == '<…>' AND kname =='<…>' OR kname = '<…>' AND kname = '<…>'
 
 		return self.select('''
 						SELECT files.fname

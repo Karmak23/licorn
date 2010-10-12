@@ -236,6 +236,12 @@ a:hover {
 #icon-shutdown {
 	background: url('/images/eteindre_48.png') no-repeat top left;
 }
+#icon-massshutdown {
+	background: url('/images/eteindre_48.png') no-repeat top left;
+}
+#icon-energyprefs {
+	background: url('/images/redemarrer_48.png') no-repeat top left;
+}
 
 #icon-add {
 	background: url('/images/ajouter_48.png') no-repeat top left;
@@ -443,10 +449,54 @@ a.edit-entry, a.edit-entry:link, a.edit-entry:visited {
 }
 a.edit-entry:hover {
 	padding-right: 18px;
-	background: url('/images/16x16/edit_over.png') no-repeat top right;
+	background: url('/images/16x16/edit.png') no-repeat top right;
 	text-decoration: none;
 }
 
+span.offline {
+	background: url('/images/16x16/offline.png') no-repeat top left;
+}
+span.unknown {
+	background: url('/images/16x16/unknown.png') no-repeat top left;
+}
+
+a.active, a.active:link, a.active:visited {
+	background: url('/images/16x16/active.png') no-repeat top left;
+}
+a.active:hover {
+	background: url('/images/16x16/shutdown.png') no-repeat top left;
+	text-decoration: none;
+}
+a.idle, a.idle:link, a.idle:visited {
+	background: url('/images/16x16/idle.png') no-repeat top left;
+}
+a.idle:hover {
+	background: url('/images/16x16/shutdown.png') no-repeat top left;
+	text-decoration: none;
+}
+a.asleep, a.asleep:link, a.asleep:visited {
+	background: url('/images/16x16/asleep.png') no-repeat top left;
+}
+a.asleep:hover {
+	background: url('/images/16x16/shutdown.png') no-repeat top left;
+	text-decoration: none;
+}
+
+
+a.managed, a.managed:link, a.managed:visited {
+	background: url('/images/16x16/managed.png') no-repeat top left;
+}
+a.managed:hover {
+	background: url('/images/16x16/unmanage.png') no-repeat top left;
+	text-decoration: none;
+}
+a.floating, a.floating:link, a.floating:visited {
+	background: url('/images/16x16/floating.png') no-repeat top left;
+}
+a.floating:hover {
+	background: url('/images/16x16/manage.png') no-repeat top left;
+	text-decoration: none;
+}
 a.reapply-skel, a.reapply-skel:link, a.reapply-skel:visited {
 	background: url('/images/16x16/reapply-skel.png') no-repeat top left;
 	opacity: 0.2;

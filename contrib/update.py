@@ -47,7 +47,7 @@ class ServiceUpdateController (object):
 		# to configure. multiparts helps when configuring complex services, to speed 
 		# up when reconfiguration is not needed.
 		
-		subparts = [part1, part2, part3, ...]
+		subparts = [part1, part2, part3, …]
 
 		# each subpart must have 2 methods. these are checked in consistency_ckecks().
 		bool part1_need_reconfigure()
@@ -59,7 +59,7 @@ class ServiceUpdateController (object):
 		bool *_need_reconfiguration()
 		*_reconfigure()
 
-		[...]
+		[…]
 	"""
 
 	def __init__ (self, name, init_script, default_conf = None):

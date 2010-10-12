@@ -14,10 +14,11 @@ from gettext import gettext as _
 from subprocess import Popen, PIPE
 
 from licorn.foundations import process
+from licorn.foundations.ltrace import ltrace
 
+# used for static data only
 from licorn.core.configuration import LicornConfiguration
-
-configuration = LicornConfiguration()
+configuration = LicornConfiguration(minimal=True)
 
 licence_text = _('''
 %s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU
@@ -49,6 +50,8 @@ acronyms = {
 # EXEC / SYSTEM functions.
 def run(command, successfull_redirect, page_data, error_message):
 	"""Execute a command passed as a list or tuple"""
+
+	ltrace('wmi', 'w.run(%s)' % command)
 
 	if type(command) not in (type(()), type([])):
 		raise exceptions.LicornWebCommandError(
@@ -286,7 +289,7 @@ def	input(name, value, size = 20, maxlength = 1024, disabled = False, password =
 	if password: type = "password"
 	else: type = "text"
 	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey))
-def	checkbox(name, value, label, checked = False, disabled = False, accesskey = None):
+def	checkbox(name, value, label, checked=False, disabled=False, accesskey=None):
 	if disabled:
 		disabled = 'disabled="disabled"'
 	else:
@@ -328,8 +331,8 @@ def menu(uri):
 <li%s><a href="/" title="%s">%s</a></li>
 <li%s><a href="/users/" title="%s">%s</a></li>
 <li%s><a href="/groups/" title="%s">%s</a></li>
-<!--<li%s><a href="/machines/" title="%s">%s</a></li>
-<li%s><a href="/internet/" title="%s">%s</a></li>-->
+<li%s><a href="/machines/" title="%s">%s</a></li>
+<!--<li%s><a href="/internet/" title="%s">%s</a></li>-->
 </ul>
 </div>
 <div id="auxnav" class="nav">

@@ -101,7 +101,7 @@ def __compute_needed_space():
 				total -= space
 			except:
 				# DU failed, probably because the path contained a shell globbing pattern.
-				# don't bother now, this is harmless to skip some bytes...
+				# don't bother now, this is harmless to skip some bytes…
 				pass
 
 	except IndexError:

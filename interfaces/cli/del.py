@@ -14,12 +14,9 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, re
 
 from licorn.foundations           import logging, exceptions, styles
+from licorn.foundations.constants import filters
 
-from licorn.core.configuration    import LicornConfiguration
-from licorn.core.users            import UsersController
-from licorn.core.groups           import GroupsController
-from licorn.core.profiles         import ProfilesController
-from licorn.core.keywords         import KeywordsController
+from licorn.interfaces.cli import cli_main, cli_select
 
 _app = {
 	"name"        : "licorn-delete",
@@ -27,13 +24,8 @@ _app = {
 	"author"      : "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def desimport_groups(opts,args):
+def desimport_groups(opts, args, groups, **kwargs):
 	""" Delete the groups (and theyr members) present in a import file.	"""
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users, warnings=False)
-	profiles = ProfilesController(configuration, groups, users)
 
 	if opts.filename is None:
 		raise exceptions.BadArgumentError, "You must specify a file name"
@@ -73,32 +65,29 @@ def desimport_groups(opts,args):
 			logging.warning(str(e))
 	profiles.WriteConf(configuration.profiles_config_file)
 	print "\nFinished"
-def del_user(opts, args):
+def del_user(opts, args, users, **kwargs):
 	""" delete a user account. """
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	# groups is needed to delete the user from its groups, else its name will
-	# stay dangling in memberUid.
-	groups = GroupsController(configuration, users, warnings=False)
 
 	uids_to_del = cli_select(users, 'user',
 			args,
-			[
+			include_id_lists=[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
+			],
+			exclude_id_lists=[
+				(opts.exclude, users.guess_identifier),
+				(opts.exclude_login, users.login_to_uid),
+				(opts.exclude_uid, users.confirm_uid)
 			])
 
 	for uid in uids_to_del:
-		users.DeleteUser(uid=uid, no_archive=opts.no_archive)
-def del_user_from_groups(opts, args):
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users, warnings=False)
+		users.DeleteUser(uid=uid, no_archive=opts.no_archive, batch=opts.batch,
+			listener=opts.listener)
+def del_user_from_groups(opts, args, users, groups):
 
 	uids_to_del = cli_select(users, 'user',
 			args,
-			[
+			include_id_lists=[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
 			])
@@ -106,7 +95,8 @@ def del_user_from_groups(opts, args):
 	for g in opts.groups_to_del.split(','):
 		if g != "":
 			try:
-				groups.DeleteUsersFromGroup(name=g, users_to_del=uids_to_del)
+				groups.DeleteUsersFromGroup(name=g, users_to_del=uids_to_del,
+					batch=opts.batch, listener=opts.listener)
 			except exceptions.DoesntExistsException, e:
 				logging.warning(
 					"Unable to remove user(s) %s from group %s (was: %s)."
@@ -117,54 +107,48 @@ def del_user_from_groups(opts, args):
 					"Unable to remove user(s) %s from group %s (was: %s)."
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
 					styles.stylize(styles.ST_NAME, g), str(e)))
-def dispatch_del_user(opts, args):
+def dispatch_del_user(opts, args, users, groups, **kwargs):
 	if opts.login is None:
 		if len(args) == 2:
 			opts.login = args[1]
 			args[1] = ''
-			del_user(opts, args)
+			del_user(opts, args, users)
 		elif len(args) == 3:
 			opts.login = args[1]
 			opts.groups_to_del = args[2]
 			args[1] = ''
 			args[2] = ''
-			del_user_from_groups(opts, args)
+			del_user_from_groups(opts, args, users, groups)
 		else:
-			del_user(opts, args)
+			del_user(opts, args, users)
 	else:
-		del_user(opts, args)
+		del_user(opts, args, users)
 
-def del_group(opts, args):
+def del_group(opts, args, groups, **kwargs):
 	""" delete an Licorn group. """
-	from licorn.foundations.constants import filters
 	selection = filters.NONE
 	if opts.empty:
 		selection = filters.EMPTY
 
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users, warnings=False)
-	profiles = ProfilesController(configuration, groups, users)
-
 	gids_to_del = cli_select(groups, 'group',
 			args,
-			[
+			include_id_lists=[
 				(opts.name, groups.name_to_gid),
 				(opts.gid, groups.confirm_gid),
 			],
-			selection
+			exclude_id_lists = [
+				(opts.exclude, groups.guess_identifier),
+				(opts.exclude_group, groups.name_to_gid),
+				(opts.exclude_gid, groups.confirm_gid)
+			],
+			default_selection=selection
 			)
 
 	for gid in gids_to_del:
 		groups.DeleteGroup(gid=gid, del_users=opts.del_users,
-			no_archive=opts.no_archive)
-def del_profile(opts, args):
+			no_archive=opts.no_archive, listener=opts.listener)
+def del_profile(opts, args, profiles, **kwargs):
 	""" Delete a system wide User profile. """
-
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users, warnings=False)
-	profiles = ProfilesController(configuration, groups, users)
 
 	profiles_to_del = cli_select(profiles, 'profile',
 			args,
@@ -175,30 +159,24 @@ def del_profile(opts, args):
 
 	for p in profiles_to_del:
 		profiles.DeleteProfile(group=p, del_users=opts.del_users,
-			no_archive=opts.no_archive)
-def del_keyword(opts, args):
+			no_archive=opts.no_archive, listener=opts.listener)
+def del_keyword(opts, args, keywords, **kwargs):
 	""" delete a system wide User profile. """
-
-	configuration = LicornConfiguration()
-	keywords = KeywordsController(configuration)
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
 
-	keywords.DeleteKeyword(opts.name, opts.del_children)
-def del_privilege(opts, args):
-	configuration = LicornConfiguration()
+	keywords.DeleteKeyword(opts.name, opts.del_children, listener=opts.listener)
+def del_privilege(opts, args, privileges, **kwargs):
 
 	if opts.privileges_to_remove is None and len(args) == 2:
 		opts.privileges_to_remove = args[1]
 
-	configuration.groups.privileges_whitelist.delete(
-		opts.privileges_to_remove.split(','))
-
-if __name__ == "__main__":
+	privileges.delete(
+		opts.privileges_to_remove.split(','), listener=opts.listener)
+def del_main():
 
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.del_user_parse_arguments, dispatch_del_user),
@@ -221,3 +199,6 @@ if __name__ == "__main__":
 	}
 
 	cli_main(functions, _app)
+
+if __name__ == "__main__":
+	del_main()

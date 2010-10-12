@@ -35,9 +35,10 @@ class ldap_controller(UGMBackend, Singleton):
 		UGMBackend.__init__(self, configuration, users, groups)
 
 		ltrace('ldap', '| __init__().')
-		self.name     = "ldap"
-		self.compat   = ('ldap')
-		self.priority = 5
+
+		self.name              = "ldap"
+		self.compat            = ('ldap')
+		self.priority          = 5
 		self.files             = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
@@ -60,9 +61,9 @@ class ldap_controller(UGMBackend, Singleton):
 
 		ltrace('ldap', '| load_defaults().')
 
-		if UGMBackend.configuration.daemon.role == 'client':
+		if self.configuration.licornd.role == 'client':
 			waited = 0.1
-			while UGMBackend.configuration.server is None:
+			while self.configuration.server is None:
 				#
 				time.sleep(0.1)
 				wait += 0.1
@@ -423,7 +424,7 @@ class ldap_controller(UGMBackend, Singleton):
 						open(self.files.ldap_secret, 'w').write(genpass + '\n')
 
 						#
-						# TODO: update the LDAP database... Without this point, the
+						# TODO: update the LDAP database… Without this point, the
 						# purpose of this method is pretty pointless.
 						#
 					except (IOError, OSError), e:
@@ -515,7 +516,7 @@ class ldap_controller(UGMBackend, Singleton):
 						# the shell could be /bin/bash (or else), this is valid
 						# for system accounts, and for a standard account this
 						# means it is not strictly locked because SSHd will
-						# bypass password check if using keypairs...
+						# bypass password check if using keypairs…
 						# don't bork with a warning, this doesn't concern us
 						# (Licorn work 99% of time on standard accounts).
 					else:
@@ -567,9 +568,9 @@ class ldap_controller(UGMBackend, Singleton):
 
 		is_allowed  = True
 
-		if UGMBackend.users:
-			l2u = UGMBackend.users.login_to_uid
-			u   = UGMBackend.users.users
+		if self.users:
+			l2u = self.users.login_to_uid
+			u   = self.users.users
 
 		try:
 			ldap_result = self.ldap_conn.search_s(
@@ -605,10 +606,10 @@ class ldap_controller(UGMBackend, Singleton):
 				# Here we populate the cache in users, to speed up future
 				# lookups in 'get users --long'.
 
-				if UGMBackend.users:
+				if self.users:
 					uids_to_sort=[]
 					for member in members:
-						if UGMBackend.users.login_cache.has_key(member):
+						if self.users.login_cache.has_key(member):
 							cache_uid=l2u(member)
 							uids_to_sort.append(cache_uid)
 							u[cache_uid]['groups'].append(name)
@@ -644,7 +645,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 			try:
 				groups[gid]['permissive'] = \
-					UGMBackend.groups.is_permissive(
+					self.groups.is_permissive(
 					gid=gid, name=name)
 			except exceptions.InsufficientPermissionsError:
 				# don't bother with a warning, the user is not an admin.
@@ -657,7 +658,7 @@ class ldap_controller(UGMBackend, Singleton):
 	def save_users(self):
 		""" save users into LDAP, but only those who need it. """
 
-		users = UGMBackend.users
+		users = self.users
 
 		for uid in users.keys():
 			if users[uid]['backend'] != self.name \
@@ -669,7 +670,7 @@ class ldap_controller(UGMBackend, Singleton):
 	def save_groups(self):
 		""" Save groups into LDAP, but only those who need it. """
 
-		groups = UGMBackend.groups
+		groups = self.groups
 
 		for gid in groups.keys():
 			if groups[gid]['backend'] != self.name \
@@ -736,7 +737,7 @@ class ldap_controller(UGMBackend, Singleton):
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
-		user  = UGMBackend.users[uid].copy()
+		user  = self.users[uid].copy()
 
 		action = user['action']
 		login  = user['login']
@@ -822,14 +823,14 @@ class ldap_controller(UGMBackend, Singleton):
 			logging.warning(e[0]['desc'])
 
 		# reset the action
-		UGMBackend.users[uid]['action'] = None
+		self.users[uid]['action'] = None
 
 	def save_group(self, gid):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
-		group = UGMBackend.groups[gid].copy()
+		group = self.groups[gid].copy()
 		action = group['action']
 		name   = group['name']
 
@@ -896,7 +897,7 @@ class ldap_controller(UGMBackend, Singleton):
 			logging.warning(e[0]['desc'])
 
 		# reset the action
-		UGMBackend.groups[gid]['action'] = None
+		self.groups[gid]['action'] = None
 
 	def delete_user(self, login):
 		""" Delete one user from the LDAP backend. """

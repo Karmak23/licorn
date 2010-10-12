@@ -8,13 +8,14 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import xattr, os.path, stat
+import Pyro.core
 
 from licorn.foundations         import exceptions, logging, hlstr, pyutils, styles
 from licorn.foundations         import fsapi, readers
 from licorn.foundations.objects import Singleton, FileLock
+from licorn.foundations.ltrace  import ltrace
 
-
-class KeywordsController(Singleton):
+class KeywordsController(Singleton, Pyro.core.ObjBase):
 
 	keywords      = {}
 	init_ok       = False
@@ -28,17 +29,32 @@ class KeywordsController(Singleton):
 		if KeywordsController.init_ok:
 			return
 
+		Pyro.core.ObjBase.__init__(self)
+
 		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
 		KeywordsController.configuration = configuration
 		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (
-			configuration.defaults.home_base_path, configuration.groups.names['plural']))
+			configuration.defaults.home_base_path, configuration.groups.names.plural))
 		#
 		# TODO: work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).
 		#
 		# TODO: implement work_path with more than one path (/home/groups:/home/olive:/data/special)
 		#
+
+		self.reload()
+
+		KeywordsController.init_ok = True
+	def __getitem__(self, item):
+		return KeywordsController.keywords[item]
+	def __setitem__(self, item, value):
+		KeywordsController.keywords[item]=value
+	def reload(self):
+		""" reload data from system files / databases. """
+		ltrace('keywords', '| reload()')
+
+		self.keywords = {}
 
 		def import_keywords(entry):
 			if len(entry) == 3:
@@ -50,37 +66,35 @@ class KeywordsController(Singleton):
 				self.keywords[temp_kw_dict['name']] = temp_kw_dict
 
 		try:
-			map(import_keywords, readers.ug_conf_load_list(configuration.keywords_data_file))
+			map(import_keywords, readers.ug_conf_load_list(
+				self.configuration.keywords_data_file))
 		except IOError, e:
 			if e.errno == 2:
 				pass
 			else:
 				raise e
 
-		KeywordsController.init_ok = True
-	def __getitem__(self, item):
-		return KeywordsController.keywords[item]
-	def __setitem__(self, item, value):
-		KeywordsController.keywords[item]=value
 	def keys(self):
 		return KeywordsController.keywords.keys()
 	def has_key(self, key):
 		return KeywordsController.keywords.has_key(key)
-	def WriteConf(self):
+	def WriteConf(self, listener=None):
 		""" Write the keywords data in appropriate system files."""
 
 		if self.changed :
 			logging.progress('%s: saving data structures to disk.' % \
-				self.pretty_name)
+				self.pretty_name, listener=listener)
 
-			lock_file = FileLock(self.configuration, self.configuration.keywords_data_file)
+			lock_file = FileLock(self.configuration,
+				self.configuration.keywords_data_file)
 
 			lock_file.Lock()
-			open(self.configuration.keywords_data_file , "w").write(self.__build_cli_output())
+			open(self.configuration.keywords_data_file , "w").write(
+				self.__build_cli_output())
 			lock_file.Unlock()
 
 			logging.progress('%s: data structures saved.' % \
-				self.pretty_name)
+				self.pretty_name, listener=listener)
 
 			self.changed = False
 	def __build_cli_output(self):
@@ -106,28 +120,42 @@ class KeywordsController(Singleton):
 	%s
 </keywords-list>
 """ % '\n'.join(map(build_output, self.keywords.keys()))
-	def AddKeyword(self, name = None, parent = "", description = ""):
+	def AddKeyword(self, name = None, parent = "", description = "",
+		listener=None):
 		""" Add a new keyword on the system, provided some checks are OK. """
 		if name is None:
 			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
 
 		if name in self.keywords.keys():
-			raise exceptions.AlreadyExistsException, "A keyword named « %s » already exists !" % name
+			raise exceptions.AlreadyExistsException(
+				"A keyword named « %s » already exists !" % name)
 
 		if parent != "":
 			if parent not in self.keywords.keys():
-				raise exceptions.BadArgumentError("The parent you specified doesn't exist on this system.")
+				raise exceptions.BadArgumentError(
+					"The parent you specified doesn't exist on this system.")
 
 		if not hlstr.cregex['keyword'].match(name):
-			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_KEYWORD % (name, styles.stylize(styles.ST_REGEX, hlstr.regex['keyword'])))
+			raise exceptions.BadArgumentError(
+				logging.SYSK_MALFORMED_KEYWORD % (name,
+					styles.stylize(styles.ST_REGEX, hlstr.regex['keyword'])))
 
 		if not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError, logging.SYSK_MALFORMED_DESCR % (description, styles.stylize(styles.ST_REGEX, hlstr.regex['description']))
+			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_DESCR % (
+				description, styles.stylize(styles.ST_REGEX,
+					hlstr.regex['description'])))
 
-		self.keywords[name] = { 'name': name, 'parent': parent, 'description': description }
+		self.keywords[name] = {
+			'name': name,
+			'parent': parent,
+			'description': description
+			}
+
+		logging.info('Added keyword %s.' % name, listener=listener)
 		self.changed = True
 		self.WriteConf()
-	def DeleteKeyword(self, name=None, del_children=False, modify_file=True):
+	def DeleteKeyword(self, name=None, del_children=False, modify_file=True,
+		listener=None):
 		""" Delete a keyword
 		"""
 		if name is None:
@@ -140,16 +168,23 @@ class KeywordsController(Singleton):
 					for child in children:
 						del(self.keywords[child])
 				else:
-					raise exceptions.LicornException("The keyword is a parent which has children. If you want to delete children too, use option --del-children")
+					raise exceptions.LicornException('''The keyword is a '''
+						'''parent which has children. If you want to delete '''
+						'''children too, use option --del-children''')
 			del(self.keywords[name])
+
+			logging.info('Deleted keyword %s.' % name, listener=listener)
+			self.changed = True
+			self.WriteConf()
 
 			if modify_file:
 				# TODO: affine the path
-				self.DeleteKeywordsFromPath(self.work_path, [name], recursive=True)
+				self.DeleteKeywordsFromPath(self.work_path, [name],
+					recursive=True, listener=listener)
 		except KeyError:
-			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
-		else:
-			self.changed = True
+			raise exceptions.BadArgumentError(
+				"The keyword you specified doesn't exist on this system.")
+
 	def __has_no_parent(self, name):
 		""" Has'nt the keyword a parent ? """
 		return self.keywords[name]['parent'] == ""
@@ -165,9 +200,11 @@ class KeywordsController(Singleton):
 		def __rename_keyword_from_path(file_path):
 			actual_kw = []
 			try:
-				actual_kw = xattr.getxattr(file_path, self.licorn_xattr).split(',')
+				actual_kw = xattr.getxattr(file_path,
+					self.licorn_xattr).split(',')
 			except IOError, e:
-				if e.errno == 61: # No data available (ie self.licorn_xattr is not created)
+				if e.errno == 61:
+					# No data available (ie self.licorn_xattr is not created)
 					pass
 				else: raise e
 			try:
@@ -176,12 +213,16 @@ class KeywordsController(Singleton):
 			else:
 				actual_kw[i] = newname
 			try:
-				xattr.setxattr(file_path, self.licorn_xattr, ','.join(actual_kw))
+				xattr.setxattr(file_path, self.licorn_xattr,
+					','.join(actual_kw))
 			except IOError, e:
-				if e.errno == 1: # Operation not permitted
+				if e.errno == 1:
+					# Operation not permitted
 					pass
 		try:
-			self.AddKeyword(newname, description=self.keywords[name]['description'])
+			self.AddKeyword(newname,
+				description=self.keywords[name]['description'],
+				listener=listener)
 			for child in self.Children(name):
 				self.keywords[child]["parent"] = newname
 
@@ -189,31 +230,36 @@ class KeywordsController(Singleton):
 			map(
 				lambda x: __rename_keyword_from_path(x),
 				 fsapi.minifind(self.work_path, type = stat.S_IFREG) )
-			self.DeleteKeyword(name, del_children=True, modify_file=False)
+			self.DeleteKeyword(name, del_children=True, modify_file=False,
+				listener=listener)
 			self.WriteConf()
 		except KeyError:
-			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
+			raise exceptions.BadArgumentError(
+				"The keyword you specified doesn't exist on this system.")
 	def ChangeParent(self, name, parent):
 		""" Change keyword's parent """
 		try:
 			self.keywords[parent]
 			self.keywords[name]["parent"] = parent
 		except KeyError, e:
-			raise exceptions.BadArgumentError("The keyword %s doesn't exist on this system." % str(e))
+			raise exceptions.BadArgumentError(
+				"The keyword %s doesn't exist on this system." % str(e))
 		self.changed = True
 	def RemoveParent(self, name):
 		""" Remove parent of the keyword 'name' """
 		try:
 			self.keywords[name]["parent"] = ""
 		except KeyError, e:
-			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
+			raise exceptions.BadArgumentError(
+				"The keyword you specified doesn't exist on this system.")
 		self.changed = True
 	def ChangeDescription(self, name, description):
 		""" Change the description of a keyword """
 		try:
 			self.keywords[name]["description"] = description
 		except KeyError, e:
-			raise exceptions.BadArgumentError("The keyword you specified doesn't exist on this system.")
+			raise exceptions.BadArgumentError(
+				"The keyword you specified doesn't exist on this system.")
 		self.changed = True
 	def __remove_bad_keywords(self, keywords_list):
 		""" Remove parent and inexistant keywords """
@@ -231,27 +277,41 @@ class KeywordsController(Singleton):
 			except: pass
 			good_keywords.append(k)
 		return good_keywords
-	def AddKeywordsToPath(self, path, keywords_to_add, recursive=False):
+	def AddKeywordsToPath(self, path, keywords_to_add, recursive=False,
+		listener=None):
 		""" Add keywords to a file or directory files
 		"""
-		def __add_keywords_to_file(file_path):
+		def __add_keywords_to_file(file_path, listener=listener):
 			actual_kw = []
 			try:
-				actual_kw = xattr.getxattr(file_path, self.licorn_xattr).split(',')
+				actual_kw = xattr.getxattr(file_path,
+					self.licorn_xattr).split(',')
 			except IOError, e:
-				if e.errno in (61, 95): # No data available (ie self.licorn_xattr is not created) / not supported
-					pass
-				else: raise e
+				if e.errno in (61, 95):
+					# No data available (ie self.licorn_xattr is not created) or
+					# attr not supported (FS not mounted with user_xattr option)
+					logging.warning2('''Can't get current keywords.''',
+					once=True, listener=listener)
+				else:
+					raise e
 			keywords_to_add_tmp = list(keywords_to_add)
 			keywords_to_add_tmp.extend(actual_kw)
 			keywords_to_set = pyutils.list2set(keywords_to_add_tmp)
 			try:
 				attr = ','.join(self.__remove_bad_keywords(keywords_to_set))
 				xattr.setxattr(file_path, self.licorn_xattr, attr)
-				logging.info("Applyed %s xattr %s on %s." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_ACL, attr), styles.stylize(styles.ST_PATH, file_path)))
+				logging.info("Applyed %s xattr %s on %s." % (
+					styles.stylize(styles.ST_NAME, self.licorn_xattr),
+					styles.stylize(styles.ST_ACL, attr),
+					styles.stylize(styles.ST_PATH, file_path)),
+					listener=listener)
 			except IOError, e:
 				if e.errno is (1, 95): # Operation not permitted / not supported
-					logging.warning("Unable to modify %s xattr of %s (was: %s)." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_PATH, file_path), e))
+					logging.warning2(
+						"Unable to modify %s xattr of %s (was: %s)." % (
+						styles.stylize(styles.ST_NAME, self.licorn_xattr),
+						styles.stylize(styles.ST_PATH, file_path), e),
+						listener=listener)
 				else:
 					raise e
 
@@ -263,20 +323,24 @@ class KeywordsController(Singleton):
 		else:
 			if recursive: max = 99
 			else:         max = 1
-			map(
-				lambda x: __add_keywords_to_file(x),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG) )
-	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False):
+			map(lambda x: __add_keywords_to_file(x),
+				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False,
+		listener=None):
 		""" Delete keywords from a file or directory files
 		"""
-		def __delete_keywords_from_file(file_path):
+		def __delete_keywords_from_file(file_path, listener=listener):
 			actual_kw = []
 			try:
-				actual_kw = xattr.getxattr(file_path, self.licorn_xattr).split(',')
+				actual_kw = xattr.getxattr(file_path,
+					self.licorn_xattr).split(',')
 			except IOError, e:
 				if e.errno in (61, 95):
 					# No data available (ie self.licorn_xattr is not created)
-					# or Operation not supported (partition is not mounted with user_xattr)
+					# or Operation not supported (partition is not mounted
+					# with user_xattr option).
+					logging.warning2('''Can't get current keywords.''',
+					once=True, listener=listener)
 					pass
 				else: raise e
 			keywords_to_set = []
@@ -286,14 +350,25 @@ class KeywordsController(Singleton):
 			try:
 				if keywords_to_set == []:
 					xattr.removexattr(file_path, self.licorn_xattr)
-					logging.info("Removed xattr %s from %s." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_PATH, file_path)))
+					logging.info("Removed xattr %s from %s." % (
+						styles.stylize(styles.ST_NAME, self.licorn_xattr),
+						styles.stylize(styles.ST_PATH, file_path)),
+						listener=listener)
 				else:
 					attr = ','.join(self.__remove_bad_keywords(keywords_to_set))
 					xattr.setxattr(file_path, self.licorn_xattr, attr)
-					logging.info("Applyed %s xattr %s on %s." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_ACL, attr), styles.stylize(styles.ST_PATH, file_path)))
+					logging.info("Applyed %s xattr %s on %s." % (
+						styles.stylize(styles.ST_NAME, self.licorn_xattr),
+							styles.stylize(styles.ST_ACL, attr),
+							styles.stylize(styles.ST_PATH, file_path)),
+							listener=listener)
 			except IOError, e:
 				if e.errno in (1, 95): # Operation not permitted / not supported
-					logging.warning("Unable to modify %s xattr of %s (was: %s)." % (styles.stylize(styles.ST_NAME, self.licorn_xattr), styles.stylize(styles.ST_PATH, file_path), e))
+					logging.warning(
+						"Unable to modify %s xattr of %s (was: %s)." % (
+							styles.stylize(styles.ST_NAME, self.licorn_xattr),
+							styles.stylize(styles.ST_PATH, file_path), e),
+							listener=listener)
 				else:
 					raise e
 
@@ -301,37 +376,33 @@ class KeywordsController(Singleton):
 		if os.path.isfile(path):
 			__delete_keywords_from_file(path)
 
-		# dir case
+		# directory case
 		else:
 			if recursive: max = 99
 			else:         max = 1
 
-			#
 			# TODO: if fsapi.minifind is not configured for cross-mount finding,
-			# skip appropriate files if mount point is not mounted with user_xattr.
-			#
+			# skip related files if mount point is not mounted with user_xattr.
 
-			map(
-				lambda x: __delete_keywords_from_file(x),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG) )
-	def ClearKeywords(self, path, recursive=False):
+			map(lambda x: __delete_keywords_from_file(x),
+				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+	def ClearKeywords(self, path, recursive=False, listener=None):
 		""" Delete all keywords from a file or directory files
 		"""
 		# file case
 		if os.path.isfile(path):
-			logging.info("remove xattr from %s." % styles.stylize(styles.ST_PATH, path))
+			logging.info("remove xattr from %s." %
+				styles.stylize(styles.ST_PATH, path), listener=listener)
 			xattr.setxattr(path, self.licorn_xattr, "")
 
 		# dir case
 		else:
 			if recursive: max = 99
 			else:         max = 1
-			map(
-				lambda x: xattr.setxattr(x, self.licorn_xattr, ""),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG) )
+			map(lambda x: xattr.setxattr(x, self.licorn_xattr, ""),
+				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
 	def GetKeywordsFromPath(self, path):
-		"""
-		"""
+		""" get user_xattr keywords from a given path. """
 		return xattr.getxattr(path, self.licorn_xattr).split(',')
 	def SearchPathWithKeywords(self, search_dict):
 		""" search_dict {parent: [child_keywords]}

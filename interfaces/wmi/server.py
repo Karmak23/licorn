@@ -2,13 +2,7 @@
 
 from gettext import gettext as _
 
-from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-
 from licorn.interfaces.wmi import utils as w
-
-configuration = LicornConfiguration()
-users = UsersController(configuration)
 
 def ctxtnav():
 	return '''
@@ -28,7 +22,7 @@ def ctxtnav():
 		_('Shutdown server.'),
 		_('Shutdown server'))
 
-def reboot(uri, http_user, sure = False):
+def reboot(uri, http_user, sure=False):
 
 	data = ''
 
@@ -66,7 +60,7 @@ def reboot(uri, http_user, sure = False):
 		_('Sure you want to reboot the %s server?') % configuration.app_name,
 		_('YES'),
 		_('NO')))))
-def halt(uri, http_user, sure = False):
+def halt(uri, http_user, sure=False):
 
 	data = ''
 

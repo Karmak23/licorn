@@ -13,7 +13,7 @@ import sys
 from licorn.foundations import exceptions, styles, logging
 
 
-# TODO: make this module create a singleton object, else this will not work as expected...
+# TODO: make this module create a singleton object, else this will not work as expected…
 
 _hooks = {	'onError'    : [],
 			'onInterrupt': [],

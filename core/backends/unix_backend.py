@@ -34,7 +34,7 @@ class unix_controller(UGMBackend, Singleton):
 		# preference over this one, though.
 		self.enabled  = True
 
-		UGMBackend.warnings = warnings
+		self.warnings = warnings
 
 		unix_controller.init_ok = True
 	def load_users(self):
@@ -73,7 +73,7 @@ class unix_controller(UGMBackend, Singleton):
 							# the shell could be /bin/bash (or else), this is valid
 							# for system accounts, and for a standard account this
 							# means it is not strictly locked because SSHd will
-							# bypass password check if using keypairs...
+							# bypass password check if using keypairs…
 							# don't bork with a warning, this doesn't concern us
 							# (Licorn work 99% of time on standard accounts).
 						else:
@@ -137,7 +137,7 @@ class unix_controller(UGMBackend, Singleton):
 		is_allowed  = True
 		try:
 			extras = readers.ug_conf_load_list(
-				UGMBackend.configuration.extendedgroup_data_file)
+				self.configuration.extendedgroup_data_file)
 		except IOError, e:
 			if e.errno != 2:
 				# other than no such file or directory
@@ -153,9 +153,9 @@ class unix_controller(UGMBackend, Singleton):
 				is_allowed = False
 			else: raise e
 
-		if UGMBackend.users:
-			l2u = UGMBackend.users.login_to_uid
-			u   = UGMBackend.users.users
+		if self.users:
+			l2u = self.users.login_to_uid
+			u   = self.users.users
 
 		# TODO: move this to 'for(gname, gid, gpass, gmembers) in etc_group:'
 
@@ -177,10 +177,10 @@ class unix_controller(UGMBackend, Singleton):
 
 				# update the cache to avoid brute double loops when calling
 				# 'get users --long'.
-				if UGMBackend.users:
+				if self.users:
 					uids_to_sort=[]
 					for member in members:
-						if UGMBackend.users.login_cache.has_key(member):
+						if self.users.login_cache.has_key(member):
 							cache_uid=l2u(member)
 							uids_to_sort.append(cache_uid)
 							u[cache_uid]['groups'].append(entry[0])
@@ -206,7 +206,7 @@ class unix_controller(UGMBackend, Singleton):
 			name_cache[ entry[0] ] = gid
 
 			try:
-				groups[gid]['permissive'] = UGMBackend.groups.is_permissive(
+				groups[gid]['permissive'] = self.groups.is_permissive(
 					gid=gid, name=entry[0])
 			except exceptions.InsufficientPermissionsError:
 				# don't bother the user with a warning, he/she probably already
@@ -227,7 +227,7 @@ class unix_controller(UGMBackend, Singleton):
 						groups[gid]['groupSkel']   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
-							UGMBackend.configuration.extendedgroup_data_file, \
+							self.configuration.extendedgroup_data_file, \
 							'''for group "%s" (was: %s).''' % \
 							(extra_entry[0], str(e)))
 					break
@@ -268,13 +268,13 @@ class unix_controller(UGMBackend, Singleton):
 		""" Write /etc/passwd and /etc/shadow """
 
 		lock_etc_passwd = FileLock(
-			UGMBackend.configuration, "/etc/passwd")
+			self.configuration, "/etc/passwd")
 		lock_etc_shadow = FileLock(
-			UGMBackend.configuration, "/etc/shadow")
+			self.configuration, "/etc/shadow")
 
 		etcpasswd = []
 		etcshadow = []
-		users = UGMBackend.users
+		users = self.users
 		uids = users.keys()
 		uids.sort()
 
@@ -321,24 +321,24 @@ class unix_controller(UGMBackend, Singleton):
 		""" Write the groups data in appropriate system files."""
 
 		if groups is None:
-			groups = UGMBackend.groups
+			groups = self.groups
 
 		#
-		# FIXME: this will generate a false positive if groups[0] comes from LDAP...
+		# FIXME: this will generate a false positive if groups[0] comes from LDAP…
 		#
 		if not groups[0].has_key('userPassword'):
 			raise exceptions.InsufficientPermissionsError("You are not root" \
 				" or member of the shadow group," \
 				" can't write configuration data.")
 
-		lock_etc_group   = FileLock(UGMBackend.configuration,
+		lock_etc_group   = FileLock(self.configuration,
 												"/etc/group")
-		lock_etc_gshadow = FileLock(UGMBackend.configuration,
+		lock_etc_gshadow = FileLock(self.configuration,
 												"/etc/gshadow")
-		lock_ext_group   = FileLock(UGMBackend.configuration,
-								UGMBackend.configuration.extendedgroup_data_file)
+		lock_ext_group   = FileLock(self.configuration,
+								self.configuration.extendedgroup_data_file)
 
-		logging.progress("Writing groups configuration to disk...")
+		logging.progress("Writing groups configuration to disk…")
 
 		etcgroup   = []
 		etcgshadow = []
@@ -386,7 +386,7 @@ class unix_controller(UGMBackend, Singleton):
 		lock_etc_gshadow.Unlock()
 
 		lock_ext_group.Lock()
-		open(UGMBackend.configuration.extendedgroup_data_file, "w").write(
+		open(self.configuration.extendedgroup_data_file, "w").write(
 			"\n".join(extgroup) + "\n")
 		lock_ext_group.Unlock()
 

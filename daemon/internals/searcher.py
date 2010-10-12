@@ -25,7 +25,7 @@ class SearcherClient:
 		#self.socket.setblocking(False)
 		self.socket.connect(('localhost', searcher_port))
 	def EndSession(self):
-		""" Close the socket. Enclose this in an Event() because GTK apps can call us twice or more... """
+		""" Close the socket. Enclose this in an Event() because GTK apps can call us twice or more… """
 		if not self.is_closed.isSet():
 			self.socket.sendall('%s:\n' % LCN_MSG_CMD_END_SESSION)
 			self.socket.shutdown(socket.SHUT_WR)
@@ -77,7 +77,7 @@ class SearcherClient:
 
 				except socket.error, e:
 					if e[0] == 11:
-						logging.debug("%s: socket is slow, waiting a bit..." % self.__class__)
+						logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
 						time.sleep(0.01)
 					else:
 						raise exceptions.LicornHarvestError('Socket error %s.' % e)
@@ -123,7 +123,7 @@ class SearcherClient:
 						line += buf
 				except socket.error, e:
 					if e[0] == 11:
-						logging.debug("%s: socket is slow, waiting a bit..." % self.__class__)
+						logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
 						time.sleep(0.005)
 					else:
 						raise exceptions.LicornHarvestError('Socket error (%s).' % e)

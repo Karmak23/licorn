@@ -29,7 +29,8 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		raise  exceptions.BadArgumentError("mindepth must be <= maxdepth.")
 
 	if maxdepth > 99:
-		raise  exceptions.BadArgumentError("please don't try to exhaust maxdepth.")
+		raise  exceptions.BadArgumentError(
+			"please don't try to exhaust maxdepth.")
 
 	ltrace('fsapi', '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
 		'''exclude=%s, followlinks=%s, followmounts=%s)''' % (
@@ -58,7 +59,12 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 			entry_stat = os.lstat(entry)
 			entry_type = entry_stat.st_mode & 0170000
 			entry_mode = entry_stat.st_mode & 07777
-
+		except (IOError, OSError), e:
+			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
+				continue
+			else:
+				raise e
+		else:
 			if current_depth >= mindepth \
 				and ( (type is None and entry_type & S_IFSTD) \
 					or entry_type == type) \
@@ -74,19 +80,22 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 					styles.stylize(styles.ST_PATH, entry))
 				continue
 
-			if entry_type & S_IFDIR and current_depth < maxdepth:
-				for x in os.listdir(entry):
-					if x not in exclude:
-						next_paths_to_walk.append("%s/%s" % (entry, x))
+			if entry_type == S_IFDIR and current_depth < maxdepth:
+				try:
+					for x in os.listdir(entry):
+						if x not in exclude:
+							next_paths_to_walk.append("%s/%s" % (entry, x))
+						else:
+							ltrace('fsapi', '  minifind(excluded=%s)' % entry)
+				except (IOError, OSError), e:
+					if e.errno == 2:
+						# happens on recursive delete() applyed on minifind()
+						# results: the dir vanishes during the os.listdir().
+						continue
 					else:
-						ltrace('fsapi', '  minifind(excluded=%s)' % entry)
-
-		except (IOError, OSError), e:
-			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
-				continue
-			raise e
-def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
-	auto_answer = None, allgroups = None, allusers = None):
+						raise e
+def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
+	auto_answer=None, allgroups=None, allusers=None, listener=None):
 	""" Check if a dir exists, else create it and apply ACLs on it eventually.
 		dirs_infos should be a n-tuple of dicts, composed like this:
 		{
@@ -94,7 +103,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
 			'type'        : stat.S_IF???,    # what type the "path" should be
 			'user'        : 'owner',         # the name, not the uid
 			'group'       : 'group',         # the name too,
-			'exclude'     : [ ... ],         # dirs and files inside 'path' to be excluded from search)
+			'exclude'     : [ … ],         # dirs and files inside 'path' to be excluded from search)
 
 			*and*
 
@@ -131,8 +140,8 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
 		from licorn.core.groups import GroupsController
 		allgroups = GroupsController(allusers.configuration, allusers)
 
-
-	def check_one_dir_and_acl(dir_info, batch = batch, auto_answer = auto_answer):
+	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
+		listener=listener):
 
 		all_went_ok = True
 		#logging.debug('checking %s' % styles.stylize(styles.ST_PATH, dir_info['path']))
@@ -148,82 +157,123 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch = False,
 			else:
 				gid = -1
 		except KeyError, e:
-			raise exceptions.LicornRuntimeError("You just encountered a programmer bug. Get in touch with cortex@5sys.fr (was: %s)." % e)
+			raise exceptions.LicornRuntimeError('''You just encountered a '''
+				'''programmer bug. Get in touch with cortex@5sys.fr (was: '''
+				'''%s).''' % e)
 		except exceptions.LicornRuntimeException, e:
-			raise exceptions.LicornRuntimeError("The uid/gid you want to check against does not exist on this system ! This shouldn't happen and is probably a programmer/packager bug. Get in touch with cortex@5sys.fr (was: %s)." % e)
+			raise exceptions.LicornRuntimeError('''The uid/gid you want to '''
+				'''check against does not exist on this system ! This '''
+				'''shouldn't happen and is probably a programmer/packager '''
+				'''bug. Get in touch with oc@meta-it.fr (was: %s).''' % e)
 
 		try:
-			logging.progress("Checking dir %s..." % styles.stylize(styles.ST_PATH, dir_info['path']))
+			logging.progress("Checking dir %s…" %
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				listener=listener)
 			dirstat = os.lstat(dir_info['path'])
 
 		except OSError, e:
 			if e.errno == 13:
 				raise exceptions.InsufficientPermissionsError(str(e))
 			elif e.errno == 2:
-				warn_message = "Directory %s does not exist." % styles.stylize(styles.ST_PATH, dir_info['path'])
+				warn_message = ("Directory %s does not exist." %
+					styles.stylize(styles.ST_PATH, dir_info['path']))
 
-				if batch or logging.ask_for_repair(warn_message, auto_answer):
+				if batch or logging.ask_for_repair(warn_message, auto_answer,
+					listener=listener):
 					os.mkdir(dir_info['path'])
 					dirstat = os.lstat(dir_info['path'])
 					batch = True
-					logging.info("Created dir %s." % styles.stylize(styles.ST_PATH, dir_info['path']))
+					logging.info("Created dir %s." %
+						styles.stylize(styles.ST_PATH, dir_info['path']),
+						listener=listener)
 				else:
 					# we cannot continue if dir does not exist.
-					raise exceptions.LicornCheckError("Can't continue checks for directory %s (was: %s)." % (dir_info['path'], e) )
+					raise exceptions.LicornCheckError(
+						"Can't continue checks for directory %s (was: %s)." % (
+							dir_info['path'], e) )
 			else:
-				# FIXME: do more things to recover from more system errors...
+				# FIXME: do more things to recover from more system errors…
 				raise e
 
 		if ( dirstat.st_mode & 0170000 ) != S_IFDIR:
 
-			warn_message = logging.SWKN_DIR_IS_NOT_A_DIR % styles.stylize(styles.ST_PATH, dir_info['path'])
+			warn_message = (logging.SWKN_DIR_IS_NOT_A_DIR %
+				styles.stylize(styles.ST_PATH, dir_info['path']))
 
-			if batch or logging.ask_for_repair(warn_message, auto_answer):
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
 				os.unlink(dir_info['path'])
 				os.mkdir(dir_info['path'])
 				dirstat = os.lstat(dir_info['path'])
 				batch = True
-				logging.info("Created dir %s." % styles.stylize(styles.ST_PATH, dir_info['path']))
+				logging.info("Created dir %s." %
+					styles.stylize(styles.ST_PATH, dir_info['path']),
+					listener=listener)
 			else:
-				raise exceptions.LicornCheckError("Can't continue checks for directory %s (was: %s)." % (dir_info['path'], e) )
+				raise exceptions.LicornCheckError(
+					"Can't continue checks for directory %s (was: %s)." % (
+						dir_info['path'], e) )
 
 		if dir_info.has_key('mode'):
-			logging.progress("Checking %s's posix perms..." % styles.stylize(styles.ST_PATH, dir_info['path']))
-			all_went_ok &= check_posix_ugid_and_perms(dir_info['path'], uid, gid, dir_info['mode'], batch, auto_answer, allgroups, allusers)
+			logging.progress("Checking %s's posix perms…" %
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				listener=listener)
+
+			all_went_ok &= check_posix_ugid_and_perms(dir_info['path'], uid,
+				gid, dir_info['mode'], batch, auto_answer, allgroups, allusers,
+				listener=listener)
 
 			if dir_info.has_key('content_mode'):
-				# check the contents of the dir (existing files and directories, except the ones which
-				# are excluded), only if the content_acl is set, else skip content check.
+				# check the contents of the dir (existing files and directories,
+				# except the ones which are excluded), only if the content_mode
+				# is set, else skip content check.
 
-				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid, batch, auto_answer)
+				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid,
+				batch=batch, auto_answer=auto_answer, listener=listener)
 
 		else:
-			logging.progress("Checking %s's ACLs..." % styles.stylize(styles.ST_PATH, dir_info['path']))
+			logging.progress("Checking %s's ACLs…" %
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				listener=listener)
 
-			# check uid/gid, but don't check the perms (thus -1) because ACLs overrride them.
-			all_went_ok &= check_posix_ugid_and_perms(dir_info['path'], uid, gid, -1, batch, auto_answer, allgroups, allusers)
-			all_went_ok &= check_posix1e_acl(dir_info['path'], False, dir_info['access_acl'], dir_info['default_acl'], batch, auto_answer)
+			# check uid/gid, but don't check the perms (thus -1) because ACLs
+			# overrride them.
+			all_went_ok &= check_posix_ugid_and_perms(dir_info['path'], uid,
+				gid, -1, batch, auto_answer, allgroups, allusers,
+				listener=listener)
+
+			all_went_ok &= check_posix1e_acl(dir_info['path'], False,
+				dir_info['access_acl'], dir_info['default_acl'], batch,
+				auto_answer, listener=listener)
 
 			if dir_info.has_key('content_acl'):
-				# this hack is needed to use check_posix_dir_contents() to check only uid/gid (not perms)
+				# this hack is needed to use check_posix_dir_contents() to check
+				# only uid/gid (not perms)
 				dir_info['mode']          = -1
 				dir_info['content_mode' ] = -1
-				# check the contents of the dir (existing files and directories, except the ones which
-				# are excluded), only if "content_acl" is set, else skip content check.
-				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid, batch, auto_answer, allgroups, allusers)
-				all_went_ok &= check_posix1e_dir_contents(dir_info, batch, auto_answer)
+				# check the contents of the dir (existing files and directories,
+				# except the ones which are excluded), only if "content_acl" is
+				# set, else skip content check.
+				all_went_ok &= check_posix_dir_contents(dir_info, uid, gid,
+					batch, auto_answer, allgroups, allusers, listener=listener)
+				all_went_ok &= check_posix1e_dir_contents(dir_info, batch,
+					auto_answer, listener=listener)
 
 		return all_went_ok
 
 	if dirs_infos:
-		if reduce(pyutils.keep_false, map(check_one_dir_and_acl, dirs_infos)) is False:
+		if reduce(pyutils.keep_false,
+			map(check_one_dir_and_acl, dirs_infos)) is False:
 			return False
 		else:
 			return True
 
 	else:
-		raise exceptions.BadArgumentError("You must pass some dirs (through dirs_infos) to check as arguments !")
-def check_posix1e_dir_contents(dir_info, batch = False, auto_answer = None):
+		raise exceptions.BadArgumentError(
+			"You must pass something through dirs_infos to check!")
+def check_posix1e_dir_contents(dir_info, batch=False, auto_answer=None,
+	listener=None):
 	"""TODO."""
 
 	all_went_ok = True
@@ -233,33 +283,45 @@ def check_posix1e_dir_contents(dir_info, batch = False, auto_answer = None):
 	except KeyError:
 		exclude_list = []
 
-	logging.progress("Checking %s's contents ACLs..." % styles.stylize(styles.ST_PATH, dir_info['path']))
+	logging.progress("Checking %s's contents ACLs…" %
+		styles.stylize(styles.ST_PATH, dir_info['path']), listener=listener)
 
 	try:
-		if reduce(pyutils.keep_false, map(
-			lambda x: check_posix1e_acl(x, False, dir_info['default_acl'], dir_info['default_acl'], batch, auto_answer),
-			 minifind(dir_info['path'], exclude = exclude_list, mindepth = 1, type = S_IFDIR) ) ) is False:
+		if reduce(pyutils.keep_false, map(lambda x: check_posix1e_acl(x, False,
+			dir_info['default_acl'], dir_info['default_acl'], batch=batch,
+			auto_answer=auto_answer, listener=listener),
+			 minifind(dir_info['path'], exclude=exclude_list, mindepth=1,
+				type=S_IFDIR))) is False:
 			all_went_ok = False
 
 	except TypeError:
 		# TypeError: reduce() of empty sequence with no initial value
-		# happens when shared dir has no directory at all in it (except public_html which is excluded).
-		pass
+		# happens when shared dir has no directory at all in it (except
+		# public_html which is excluded).
+		logging.progress('no subdir to check in %s.' %
+			styles.stylize(styles.ST_PATH, dir_info['path']))
 
 	try:
 		if reduce(pyutils.keep_false, map(
-			lambda x: check_posix1e_acl(x, True, dir_info['content_acl'], "", batch, auto_answer),
-			minifind(dir_info['path'], exclude = exclude_list, mindepth = 1, type = S_IFREG) ) ) is False:
+			lambda x: check_posix1e_acl(x, True, dir_info['content_acl'], "",
+				batch=batch, auto_answer=auto_answer, listener=listener),
+			minifind(dir_info['path'], exclude=exclude_list, mindepth=1,
+				type=S_IFREG))) is False:
 			all_went_ok = False
 	except TypeError:
-		# same here if there are no files...
-		pass
+		# same here if there are no files…
+		logging.progress('no files to check in %s.' %
+			styles.stylize(styles.ST_PATH, dir_info['path']))
 
 	return all_went_ok
-def check_posix_dir_contents(dir_info, uid, gid, batch = False, auto_answer = None, allgroups = None, allusers = None):
+def check_posix_dir_contents(dir_info, uid, gid, batch=False, auto_answer=None,
+	allgroups=None, allusers=None, listener=None):
 	"""TODO."""
 
 	all_went_ok = True
+
+	logging.progress("Checking %s's contents posix perms…" %
+		styles.stylize(styles.ST_PATH, dir_info['path']), listener=listener)
 
 	if dir_info.has_key('exclude'):
 		exclude_list = dir_info['exclude']
@@ -268,29 +330,37 @@ def check_posix_dir_contents(dir_info, uid, gid, batch = False, auto_answer = No
 
 	try:
 		if reduce(pyutils.keep_false, map(
-			lambda x: check_posix_ugid_and_perms(x, uid, gid, dir_info['mode'], batch, auto_answer, allgroups, allusers),
-			 minifind(dir_info['path'], exclude = exclude_list, mindepth = 1, type = S_IFDIR) ) ) is False:
+			lambda x: check_posix_ugid_and_perms(x, uid, gid, dir_info['mode'],
+				batch, auto_answer, allgroups, allusers, listener=listener),
+			 minifind(dir_info['path'], exclude=exclude_list, mindepth=1,
+				type=S_IFDIR))) is False:
 			all_went_ok = False
 	except TypeError:
 		# TypeError: reduce() of empty sequence with no initial value
-		# happens when shared dir has no directory at all in it (except public_html which is excluded).
+		# happens when shared dir has no directory at all in it (except
+		# public_html which is excluded).
 		pass
 
 	try:
 		if reduce(pyutils.keep_false, map(
-			lambda x: check_posix_ugid_and_perms(x, uid, gid, dir_info['content_mode'], batch, auto_answer, allgroups, allusers),
-			minifind(dir_info['path'], exclude = exclude_list, mindepth = 1, type = S_IFREG) ) ) is False:
+			lambda x: check_posix_ugid_and_perms(x, uid, gid,
+				dir_info['content_mode'], batch, auto_answer, allgroups,
+				allusers, listener=listener),
+			minifind(dir_info['path'], exclude=exclude_list, mindepth=1,
+				type=S_IFREG))) is False:
 			all_went_ok = False
 	except TypeError:
-		# same exception if there are no files...
+		# same exception if there are no files…
 		pass
 
 	return all_went_ok
-def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = False, auto_answer = None, allgroups = None, allusers = None):
+def check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1, batch=False,
+	auto_answer=None, allgroups=None, allusers=None, listener=None):
 	"""Check if some path has some desired perms, repair if told to do so."""
 
 	if onpath in ("", None):
-		raise exceptions.BadArgumentError("The path you want to check perms on must not be empty !")
+		raise exceptions.BadArgumentError(
+			"The path you want to check perms on must not be empty !")
 
 	if allusers is None:
 		from licorn.core.configuration import LicornConfiguration
@@ -304,7 +374,8 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 
 	all_went_ok = True
 
-	logging.progress("Checking posix uid/gid/perms of %s." % styles.stylize(styles.ST_PATH, onpath))
+	logging.progress("Checking posix uid/gid/perms of %s." %
+		styles.stylize(styles.ST_PATH, onpath), listener=listener)
 
 	try:
 		pathstat = os.lstat(onpath)
@@ -360,11 +431,16 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 					styles.stylize(styles.ST_UGID, desired_group),
 				)
 
-		if batch or logging.ask_for_repair(warn_message, auto_answer):
+		if batch or logging.ask_for_repair(warn_message, auto_answer,
+			listener=listener):
 			os.chown(onpath, uid, gid)
-			logging.info("Changed owner of %s from %s:%s to %s:%s." % (styles.stylize(styles.ST_PATH, onpath),
-				styles.stylize(styles.ST_UGID, current_login), styles.stylize(styles.ST_UGID, current_group),
-				styles.stylize(styles.ST_UGID, desired_login), styles.stylize(styles.ST_UGID, desired_group)))
+			logging.info("Changed owner of %s from %s:%s to %s:%s." % (
+				styles.stylize(styles.ST_PATH, onpath),
+				styles.stylize(styles.ST_UGID, current_login),
+				styles.stylize(styles.ST_UGID, current_group),
+				styles.stylize(styles.ST_UGID, desired_login),
+				styles.stylize(styles.ST_UGID, desired_group)),
+				listener=listener)
 		else:
 			all_went_ok = False
 
@@ -381,13 +457,17 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 
 		warn_message = "An ACL is present on %s, but it should not." % styles.stylize(styles.ST_PATH, onpath)
 
-		if batch or logging.ask_for_repair(warn_message, auto_answer):
+		if batch or logging.ask_for_repair(warn_message, auto_answer,
+			listener=listener):
 			posix1e.ACL(text="").applyto(str(onpath))
 
 			if pathstat.st_mode & 0170000 == S_IFDIR:
-				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
+				posix1e.ACL(text="").applyto(str(onpath),
+					posix1e.ACL_TYPE_DEFAULT)
 
-			logging.info("Deleted ACL from %s." % styles.stylize(styles.ST_PATH, onpath))
+			logging.info("Deleted ACL from %s." %
+				styles.stylize(styles.ST_PATH, onpath),
+				listener=listener)
 
 			# redo the stat, to get the current posix mode.
 			pathstat = os.lstat(onpath)
@@ -413,14 +493,19 @@ def check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1, batch = F
 			perms_txt    = perms2str(perms)
 			warn_message = logging.SWKN_INVALID_MODE % (styles.stylize(styles.ST_PATH, onpath), styles.stylize(styles.ST_BAD, mode_txt), styles.stylize(styles.ST_ACL, perms_txt))
 
-			if batch or logging.ask_for_repair(warn_message, auto_answer):
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
 					os.chmod(onpath, perms)
-					logging.info("Applyed perms %s on %s." % (styles.stylize(styles.ST_ACL, perms_txt), styles.stylize(styles.ST_PATH, onpath)))
+					logging.info("Applyed perms %s on %s." % (
+						styles.stylize(styles.ST_ACL, perms_txt),
+						styles.stylize(styles.ST_PATH, onpath)),
+						listener=listener)
 			else:
 				all_went_ok = False
 
 	return all_went_ok
-def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1):
+def auto_check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1,
+	listener=None):
 	"""	Auto-Check-And-Apply if some path has some desired perms, repair if told to do so.
 		This is an automatic version of check_posix_ugid_and_perms() function. """
 
@@ -434,7 +519,9 @@ def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1):
 
 		if pathstat.st_uid != uid or pathstat.st_gid != gid:
 			os.chown(onpath, uid, gid)
-			logging.progress("Auto-changed owner of %s to %s:%s." % (onpath, uid, gid))
+			logging.progress("Auto-changed owner of %s to %s:%s." %
+				(onpath, uid, gid),
+				listener=listener)
 
 		if perms == -1:
 			return True
@@ -442,23 +529,27 @@ def auto_check_posix_ugid_and_perms(onpath, uid = -1, gid = -1, perms = -1):
 		if has_extended_acl(onpath):
 			posix1e.ACL(text="").applyto(str(onpath))
 			if pathstat.st_mode & 0170000 == S_IFDIR:
-				posix1e.ACL(text="").applyto(str(onpath), posix1e.ACL_TYPE_DEFAULT)
+				posix1e.ACL(text="").applyto(str(onpath),
+					posix1e.ACL_TYPE_DEFAULT)
 
-			logging.progress("Auto-deleted ACL from %s." % onpath)
+			logging.progress("Auto-deleted ACL from %s." % onpath,
+				listener=listener)
 			pathstat = os.lstat(onpath)
 
 		mode = pathstat.st_mode & 07777
 
 		if perms != mode:
 			os.chmod(onpath, perms)
-			logging.progress("Auto-applyed perms %s on %s." % (perms, onpath))
+			logging.progress("Auto-applyed perms %s on %s." % (perms, onpath),
+				listener=listener)
 
 	except (IOError, OSError), e:
 		if e.errno != 2:
 			raise e
 
 	return True
-def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = "", batch = False, auto_answer = None):
+def check_posix1e_acl(onpath, path_is_file, access_acl_text="",
+	default_acl_text="", batch=False, auto_answer=None, listener=None):
 	"""Check if a [default] acl is present on a given path, repair if not and asked for.
 
 	Note: ACL aren't apply on symlinks (on ext2/ext3), they apply on the destination of
@@ -481,21 +572,29 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 		#logging.debug2("Exec perms are %s before replacement." % execperms)
 		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
 
-	logging.progress("Checking posix1e ACL of %s." % styles.stylize(styles.ST_PATH, onpath))
+	logging.progress("Checking posix1e ACL of %s." %
+		styles.stylize(styles.ST_PATH, onpath), listener=listener)
 
 	all_went_ok = True
 
-	for (desired_acl_text, is_default, acl_type) in ((access_acl_text, False, posix1e.ACL_TYPE_ACCESS), (default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)):
+	for (desired_acl_text, is_default, acl_type) in (
+		(access_acl_text, False, posix1e.ACL_TYPE_ACCESS),
+		(default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)
+		):
 
 		# if an ACL is "", the corresponding value will be deleted from the file,
 		# this is a desired behaviour, to delete superfluous ACLs.
 		try:
-			desired_acl = posix1e.ACL(text = desired_acl_text)
+			desired_acl = posix1e.ACL(text=desired_acl_text)
 		except NameError, e:
-			logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once = True)
+			logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once=True,
+				listener=listener)
 			return True
-		except IOError, e:
-			logging.warning("Unable to create ACL object on %s (the system may miss some needed groups). Creating an empty one. You will need to check this carrefully." % onpath)
+		except (OSError,IOError), e:
+			logging.warning('''Unable to create ACL object on %s (the system '''
+				'''may miss some needed groups), creating an empty one (was: '''
+				'''%s, desired_acl=%s).''' % (onpath, e, desired_acl_text),
+				listener=listener)
 			# FIXME: why not exit here ? why create an empty ACL ?
 			desired_acl = posix1e.ACL()
 
@@ -518,35 +617,49 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_te
 
 		if acl_value != desired_acl:
 
-			acl_value_text = str(acl_value).replace("\n", ",").replace("group:","g:").replace("user:","u:").replace("other::","o:").replace("mask::","m:")[:-1]
+			acl_value_text = str(acl_value).replace("\n", ",").replace(
+				"group:","g:").replace("user:","u:").replace(
+				"other::","o:").replace("mask::","m:")[:-1]
 
 			if acl_value_text == "":
 				acl_value_text = "none"
 
-			warn_message = logging.SWKN_INVALID_ACL % (acl_qualif, styles.stylize(styles.ST_PATH, onpath), styles.stylize(styles.ST_BAD, acl_value_text), styles.stylize(styles.ST_ACL, desired_acl_text))
+			warn_message = logging.SWKN_INVALID_ACL % (acl_qualif,
+				styles.stylize(styles.ST_PATH, onpath),
+				styles.stylize(styles.ST_BAD, acl_value_text),
+				styles.stylize(styles.ST_ACL, desired_acl_text))
 
-			if batch or logging.ask_for_repair(warn_message, auto_answer):
-					logging.debug2("Going to apply %s ACL on %s (%s)." % (acl_qualif, onpath, str(onpath.__class__)))
-
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
 					# be sure to pass an str() to acl.applyto(), else it will
-					# raise a TypeError if onpath is an unicode string...
+					# raise a TypeError if onpath is an unicode string…
 					# (checked 2006 08 08 on Ubuntu Dapper)
 					desired_acl.applyto(str(onpath), acl_type)
-					logging.info("Applyed %s ACL %s on %s." % (acl_qualif, styles.stylize(styles.ST_ACL, desired_acl_text), styles.stylize(styles.ST_PATH, onpath)))
+					logging.info("Applyed %s ACL %s on %s." % (
+						acl_qualif,
+						styles.stylize(styles.ST_ACL, desired_acl_text),
+						styles.stylize(styles.ST_PATH, onpath)),
+						listener=listener)
 			else:
 				all_went_ok = False
 
 	return all_went_ok
-def auto_check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_acl_text = ""):
-	"""	Auto_check (don't ask questions) if a [default] acl is present on a given path, repair if not and asked for.
-		This is a fast version of the check_posix1e_acl() function, without any confirmations.
+def auto_check_posix1e_acl(onpath, path_is_file, access_acl_text="",
+	default_acl_text="", listener=None):
+	"""	Auto_check (don't ask questions) if a [default] acl is present on a
+		given path, repair if not and asked for.
+		This is a fast version of the check_posix1e_acl() function, without
+			any confirmations.
 	"""
 
 	if path_is_file:
 		execperms       = execbits2str(onpath)
 		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
 
-	for (desired_acl_text, is_default, acl_type) in ((access_acl_text, False, posix1e.ACL_TYPE_ACCESS), (default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)):
+	for (desired_acl_text, is_default, acl_type) in (
+		(access_acl_text, False, posix1e.ACL_TYPE_ACCESS),
+		(default_acl_text, True, posix1e.ACL_TYPE_DEFAULT)
+		):
 
 		if is_default:
 			if path_is_file:
@@ -560,14 +673,19 @@ def auto_check_posix1e_acl(onpath, path_is_file, access_acl_text = "", default_a
 
 		if acl_value != desired_acl:
 			desired_acl.applyto(str(onpath), acl_type)
-			logging.progress('Auto-applyed ACL type %s on %s.' % (acl_type, onpath))
+			logging.progress('Auto-applyed ACL type %s on %s.' %
+				(acl_type, onpath), listener=listener)
 
 	return True
-def make_symlink(link_src, link_dst, batch = False, auto_answer = None):
+def make_symlink(link_src, link_dst, batch=False, auto_answer=None,
+	listener=None):
 	"""Try to make a symlink cleverly."""
 	try:
 		os.symlink(link_src, link_dst)
-		logging.info("Created symlink %s, pointing to %s." % (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src)))
+		logging.info("Created symlink %s, pointing to %s." % (
+			styles.stylize(styles.ST_LINK, link_dst),
+			styles.stylize(styles.ST_PATH, link_src)),
+			listener=listener)
 	except OSError, e:
 		if e.errno == 17:
 			# 17 == file exists
@@ -577,24 +695,38 @@ def make_symlink(link_src, link_dst, batch = False, auto_answer = None):
 
 					if read_link != link_src:
 						if os.path.exists(read_link):
-							warn_message = "A symlink %s already exists but badly points to %s, instead of %s. Correct it?" \
-								% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, read_link),
-								styles.stylize(styles.ST_PATH, link_src))
+							warn_message = ('''A symlink %s already exists '''
+								'''but badly points to %s, instead of %s. '''
+								'''Correct it? ''' % (
+									styles.stylize(styles.ST_LINK, link_dst),
+									styles.stylize(styles.ST_PATH, read_link),
+									styles.stylize(styles.ST_PATH, link_src)))
 
-							if batch or logging.ask_for_repair(warn_message, auto_answer):
+							if batch or logging.ask_for_repair(warn_message,
+								auto_answer, listener=listener):
 								os.unlink(link_dst)
 								os.symlink(link_src, link_dst)
-								logging.info('Overwritten symlink %s with destination %s instead of %s.' \
-									% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src),
-									styles.stylize(styles.ST_PATH, read_link)))
+								logging.info('''Overwritten symlink %s with '''
+									'''destination %s instead of %s.''' % (
+									styles.stylize(styles.ST_LINK, link_dst),
+									styles.stylize(styles.ST_PATH, link_src),
+									styles.stylize(styles.ST_PATH, read_link)),
+									listener=listener)
 							else:
-								raise exceptions.LicornRuntimeException("Can't create symlink %s to %s!" % (link_dst, link_src))
+								raise exceptions.LicornRuntimeException(
+									"Can't create symlink %s to %s!" % (
+										link_dst, link_src))
 						else:
-							# TODO: should we ask the question ? This isn't really needed, as the link is broken.
+							# TODO: should we ask the question ? This isn't
+							# really needed, as the link is broken.
 							# Just replace it and don't bother the administrator.
-							logging.info('Symlink %s is currently broken (pointing to non-existing target %s) ; making it point to %s.' \
-								% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, read_link),
-								styles.stylize(styles.ST_PATH, link_src)))
+							logging.info('''Symlink %s is currently broken '''
+								'''(pointing to non-existing target %s) ; '''
+								'''making it point to %s.''' % (
+								styles.stylize(styles.ST_LINK, link_dst),
+								styles.stylize(styles.ST_PATH, read_link),
+								styles.stylize(styles.ST_PATH, link_src)),
+								listener=listener)
 							os.unlink(link_dst)
 							os.symlink(link_src, link_dst)
 
@@ -602,27 +734,40 @@ def make_symlink(link_src, link_dst, batch = False, auto_answer = None):
 					if e.errno == 2:
 						# no such file or directory, link has disapeared…
 						os.symlink(link_src, link_dst)
-						logging.info("Repaired vanished symlink %s." % styles.stylize(styles.ST_LINK, link_dst))
+						logging.info("Repaired vanished symlink %s." %
+							styles.stylize(styles.ST_LINK, link_dst),
+							listener=listener)
 			else:
 
-				# TODO / WARNING: we need to investigate a bit more: if current link_src is
-				# a file, overwriting it could be very bad (e.g. user could loose a document).
-				# This is the same for a directory, modulo the user could loose much more than
-				# just a document. We should scan the dir and replace it only if empty (idem
-				# for the file), and rename it (thus find a unique name, like
-				# 'the file.autosave.XXXXXX.txt' where XXXXXX is a random string…)
+				# TODO / WARNING: we need to investigate a bit more: if current
+				# link_src is a file, overwriting it could be very bad (e.g.
+				# user could loose a document). This is the same for a
+				# directory, modulo the user could loose much more than just a
+				# document. We should scan the dir and replace it only if empty
+				# (idem for the file), and rename it (thus find a unique name,
+				# like 'the file.autosave.XXXXXX.txt' where XXXXXX is a random
+				# string…)
 
-				warn_message = "%s already exists but it isn't a symlink, thus doesn't point to %s. Replace it with a correct symlink?" \
-					% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src))
+				warn_message = ('''%s already exists but it isn't a symlink, '''
+					'''thus doesn't point to %s. Replace it with a correct '''
+					'''symlink?''' % (
+						styles.stylize(styles.ST_LINK, link_dst),
+						styles.stylize(styles.ST_PATH, link_src)))
 
-				if batch or ask_for_repair(warn_message, auto_answer):
+				if batch or ask_for_repair(warn_message, auto_answer,
+					listener=listener):
 					os.unlink(link_dst)
 					os.symlink(link_src, link_dst)
-					logging.info('Replaced dir/file %s with destination %s instead of %s.' \
-						% (styles.stylize(styles.ST_LINK, link_dst), styles.stylize(styles.ST_PATH, link_src),
-						styles.stylize(styles.ST_PATH, read_link)))
+					logging.info('''Replaced dir/file %s with destination %s '''
+						'''instead of %s.''' % (
+						styles.stylize(styles.ST_LINK, link_dst),
+						styles.stylize(styles.ST_PATH, link_src),
+						styles.stylize(styles.ST_PATH, read_link)),
+						listener=listener)
 				else:
-					raise exceptions.LicornRuntimeException("While making symlink to %s, the destination %s already exists and is not a link." % (link_src, link_dst))
+					raise exceptions.LicornRuntimeException('''While making '''
+						'''symlink to %s, the destination %s already exists '''
+						'''and is not a link.''' % (link_src, link_dst))
 
 # various unordered functions, which still need to find a more elegant home.
 
@@ -639,7 +784,7 @@ if hasattr(posix1e, 'HAS_EXTENDED_CHECK'):
 		has_extended_acl = posix1e.has_extended
 
 def is_backup_file(filename):
-	"""Return true if file is a backup file (~,.bak,...)."""
+	"""Return true if file is a backup file (~,.bak,…)."""
 	if filename[-1] == '~':
 		return True
 	if filename[-4:] in ('.bak', '.old', '.swp'):

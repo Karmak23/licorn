@@ -61,24 +61,36 @@ class INotifier(Thread, Singleton):
 		self.wds = deque()
 		self.wds_sem = Semaphore()
 
-		groups.Select(filters.STD)
 		self.groups = groups
+		self.configuration = configuration
+		self.users = groups.users
 
 		checker.set_groups(groups)
 
 		# disable the Exists() calls at gamin's launch ?
 		#self.mon.no_exists()
 
-		for gid in groups.filtered_groups:
-			group_home = "%s/%s/%s" % (
-				groups.configuration.defaults.home_base_path,
-				groups.configuration.groups.names['plural'],
-				groups.groups[gid]['name'])
+		for gid in groups.Select(filters.STD):
+			self.add_group_watch(gid)
+	def del_group_watch(self, gid):
+		""" delete a group watch. """
+		group_home = "%s/%s/%s" % (
+			self.groups.configuration.defaults.home_base_path,
+			self.groups.configuration.groups.names.plural,
+			self.groups.gid_to_name(gid))
+		self.remove_watch(group_home)
+	def add_group_watch(self, gid):
+		""" add a group watch. """
 
-			def myfunc(path, event, gid = gid, dirname = group_home):
-				return self.process_event(path, event, gid, dirname)
+		group_home = "%s/%s/%s" % (
+			self.groups.configuration.defaults.home_base_path,
+			self.groups.configuration.groups.names.plural,
+			self.groups.gid_to_name(gid))
 
-			self.add_watch(group_home, myfunc)
+		def myfunc(path, event, gid=gid, dirname=group_home):
+			return self.process_event(path, event, gid, dirname)
+
+		self.add_watch(group_home, myfunc)
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
@@ -244,7 +256,7 @@ class INotifier(Thread, Singleton):
 			self.wds_sem.release()
 			for watch in wds_copy:
 				if watch.startswith(path):
-					self.remove_one_watch(watched)
+					self.remove_one_watch(watch)
 
 		except gamin.GaminException, e:
 			logging.warning('''%s.remove_watch(): exception %s.''' % e)

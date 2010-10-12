@@ -5,19 +5,11 @@ from gettext import gettext as _
 
 from subprocess            import Popen, PIPE
 
+from licorn.foundations           import process
 from licorn.foundations.constants import filters
-
-from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-from licorn.core.groups         import GroupsController
-from licorn.core.profiles       import ProfilesController
+from licorn.foundations.pyutils   import format_time_delta
 
 from licorn.interfaces.wmi import utils as w
-
-configuration = LicornConfiguration()
-users = UsersController(configuration)
-groups = GroupsController(configuration, users)
-profiles = ProfilesController(configuration, groups, users)
 
 def ctxtnav():
 	return '''
@@ -37,66 +29,24 @@ def ctxtnav():
 		_('Shutdown server.'),
 		_('Shutdown server'))
 
-def system_load():
+def system_load(users):
 	loads = open('/proc/loadavg').read().split(" ")
+	nbusers = len(users.Select(filters.STANDARD))
 
-	allusers  = users
-	allusers.Select(filters.STANDARD)
-	nbusers = len(allusers.filtered_users)
-
-	cxusers = len(Popen('who', shell = True, stdin = PIPE, stdout = PIPE,
-		close_fds = True).stdout.read().split('\n'))
+	cxusers = len(process.execute(['who'])[0].split('\n'))
 	if cxusers > 1:
 		s_users = 's'
 	else:
 		s_users = ''
 
-	uptime_sec  = int(float(open('/proc/uptime').read().split(" ")[0]))
-	uptime_min  = 0
-	uptime_hour = 0
-	uptime_day  = 0
-	uptime_year = 0
-	s_year = ''
-	s_day  = ''
-	s_hour = ''
-	s_sec  = ''
-	s_min  = ''
-	uptime_string = ''
-	if uptime_sec > 60:
-		uptime_min = uptime_sec / 60
-		uptime_sec -= (uptime_min * 60)
-
-		if uptime_min > 60:
-			uptime_hour = uptime_min / 60
-			uptime_min -= (uptime_hour * 60)
-			if uptime_hour > 24:
-				uptime_day = uptime_hour / 24
-				uptime_hour -= (uptime_day * 24)
-				if uptime_day > 365:
-					uptime_year = uptime_day / 365
-					uptime_day -= (uptime_year * 365)
-					if uptime_year > 1:
-						s_year = 's'
-					uptime_string += _('%d year%s, ') % (uptime_year, s_year)
-				if uptime_day > 1:
-					s_day = 's'
-				uptime_string += _('%d day%s, ') % (uptime_day, s_day)
-			if uptime_hour > 1:
-				s_hour = 's'
-			uptime_string += _('%d hour%s, ') % (uptime_hour, s_hour)
-		if uptime_min > 1:
-			s_min = 's'
-		uptime_string += _('%d min%s, ') % (uptime_min, s_min)
-	if uptime_sec > 1:
-		s_sec = 's'
-	uptime_string += _('%d sec%s') % (uptime_sec, s_sec)
+	uptime_string = format_time_delta(
+		int(float(open('/proc/uptime').read().split(" ")[0])))
 
 	return _('''Up and running since <strong>%s</strong>.<br /><br />
 Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.
 <br /><br />
 1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (
 	uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2])
-
 def system_info():
 
 	cpus  = 0
@@ -146,8 +96,7 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 %.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
 %s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
 	mem['Cached'], mem['Buffers'], swap_message)
-
-def index(uri, http_user):
+def index(uri, http_user, users=None, **kwargs):
 
 	start = time.time()
 
@@ -164,7 +113,7 @@ def index(uri, http_user):
 	</tr>
 	</table>
 	''' % (_('System information'), system_info(),
-		_('System status'), system_load())
+		_('System status'), system_load(users))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
 		data + w.page_body_end(w.total_time(start, time.time()))))

@@ -10,66 +10,45 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import sys, os, re
+import Pyro.core
 from gettext import gettext as _
 
-from licorn.foundations               import logging, exceptions, fsapi
-from licorn.foundations               import styles, readers
-from licorn.foundations.ltrace        import ltrace
-from licorn.foundations.objects       import LicornConfigObject, Singleton, \
+from licorn.foundations           import logging, exceptions, fsapi
+from licorn.foundations           import styles, readers
+from licorn.foundations.constants import distros, servers, mailboxes
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.objects   import LicornConfigObject, Singleton, \
 	FileLock
-from licorn.core.privileges           import PrivilegesWhiteList
+from licorn.core.privileges       import PrivilegesWhiteList
 
-class LicornConfiguration(Singleton):
+class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
 		Defines some methods for modifying the configuration.
 	"""
 
-	mta         = None
-	ssh         = None
-	users       = None
-	groups      = None
+	# bypass multiple init and del calls (we are a singleton)
 	init_ok     = False
+	del_ok      = False
 
-	# constants
-	# TODO: move these constants elsewhere ?
-	DISTRO_UBUNTU   = 1
-	DISTRO_LICORN   = DISTRO_UBUNTU
-	DISTRO_DEBIAN   = 2
-	DISTRO_GENTOO   = 3
-	DISTRO_NOVELL   = 4
-	DISTRO_REDHAT   = 5
-	DISTRO_MANDRIVA = 6
-	MAIL_TYPE_VAR_MBOX     = 1
-	MAIL_TYPE_VAR_MAILDIR  = 2
-	MAIL_TYPE_HOME_MBOX    = 3
-	MAIL_TYPE_HOME_MAILDIR = 4
-	MAIL_TYPE_HOME_MH      = 5
-	SRV_MTA_UNKNOWN    = 0
-	SRV_MTA_POSTFIX    = 1
-	SRV_MTA_NULLMAILER = 2
-	SRV_MTA_EXIM4      = 3
-	SRV_MTA_QMAIL      = 4
-	SRV_MTA_SENDMAIL   = 5
-	SRV_IMAP_COURIER = 1
-	SRV_IMAP_CYRUS   = 2
-	SRV_IMAP_UW      = 3
-	SRV_POP3_COURIER = 1
-	SRV_POP3_QPOPPER = 2
-	# end constants
-
-	def __init__(self):
+	def __init__(self, minimal=False):
 		""" Gather underlying system configuration and load it for licorn.* """
 
 		if LicornConfiguration.init_ok:
 			return
 
-		ltrace('configuration', '> __init__()')
+		ltrace('configuration', '> __init__(minimal=%s)' % minimal)
+
+		Pyro.core.ObjBase.__init__(self)
 
 		if sys.getdefaultencoding() == "ascii":
 			reload(sys)
 			sys.setdefaultencoding("utf-8")
 
 		self.app_name = 'Licorn'
+		self.controllers = LicornConfigObject()
+
+		self.mta         = None
+		self.ssh         = None
 
 		# THIS install_path is used in keywords / keywords gui, not elsewhere.
 		# it is a hack to be able to test guis when Licorn is not installed.
@@ -94,15 +73,16 @@ class LicornConfiguration(Singleton):
 			self.SetBaseDirsAndFiles()
 			self.FindUserDir()
 
-			self.LoadManagersConfiguration()
-			self.set_acl_defaults()
+			if not minimal:
 
-			self.FindDistro()
+				self.LoadManagersConfiguration()
+				self.set_acl_defaults()
 
-			self.LoadShells()
-			self.LoadSkels()
+				self.FindDistro()
 
-			self.detect_services()
+				self.LoadShells()
+				self.LoadSkels()
+				self.detect_services()
 
 			# this has to be done LAST, in order to eventually override any
 			# other configuration directive (eventually coming from
@@ -110,12 +90,13 @@ class LicornConfiguration(Singleton):
 			self.LoadBaseConfiguration()
 			self.SetMissingMandatoryDefauts()
 
-			self.load_nsswitch()
-			# TODO: monitor configuration files from a thread !
+			if not minimal:
+				self.load_nsswitch()
+				# TODO: monitor configuration files from a thread !
 
-			self.load_backends()
-			self.load_plugins()
-			self.connect_plugins()
+				self.load_backends()
+				self.load_plugins()
+				self.connect_plugins()
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(
@@ -131,10 +112,15 @@ class LicornConfiguration(Singleton):
 		pass
 	def __exit__(self, type, value, tb):
 		self.CleanUp()
-	def CleanUp(self):
-		"""This is a sort of destructor. Clean-up before being deleted..."""
+	def set_controller(self, name, controller):
+		setattr(self.controllers, name, controller)
+	def CleanUp(self, listener=None):
+		"""This is a sort of destructor. Clean-up before being deleted…"""
 
-		ltrace('configuration', '> CleanUp()')
+		if LicornConfiguration.del_ok:
+			return
+
+		ltrace('configuration', '> CleanUp(%s)' % LicornConfiguration.del_ok)
 
 		try:
 			import shutil
@@ -142,12 +128,14 @@ class LicornConfiguration(Singleton):
 			shutil.rmtree(self.tmp_dir)
 		except (OSError, IOError), e:
 			if e.errno == 2:
-				logging.info('tmp dir %s has vanished during run.' %
-					self.tmp_dir)
+				logging.warning2('''Temporary directory %s has vanished during '''
+					'''run, or already been wiped by another process.''' %
+					self.tmp_dir, listener=listener)
 			else:
 				raise e
-		ltrace('configuration', '< CleanUp()')
 
+		LicornConfiguration.del_ok = True
+		ltrace('configuration', '< CleanUp()')
 	def VerifyPythonMods(self):
 		""" verify all required python modules are present on the system. """
 
@@ -167,8 +155,6 @@ class LicornConfiguration(Singleton):
 					mod, package))
 
 		ltrace('configuration', '< VerifyPythonMods().')
-
-
 	def SetBaseDirsAndFiles(self):
 		""" Find and create temporary, data and working directories."""
 
@@ -192,9 +178,9 @@ class LicornConfiguration(Singleton):
 		self.SetDefaultNamesAndPaths()
 
 		self.home_backup_dir         = (
-			"%s/backup" % LicornConfiguration.defaults.home_base_path)
+			"%s/backup" % self.defaults.home_base_path)
 		self.home_archive_dir        = (
-			"%s/archives" % LicornConfiguration.defaults.home_base_path)
+			"%s/archives" % self.defaults.home_base_path)
 
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
@@ -221,12 +207,12 @@ class LicornConfiguration(Singleton):
 				self.user_config_file	= self.user_dir + "/config"
 
 			except (OSError, IOError):
-				# we are «apache» or another special user (aesd...), we don't
+				# we are «apache» or another special user (aesd…), we don't
 				# have a home, but need a dir to put lock-files in.
 				self.user_dir			= self.tmp_dir
 				self.user_config_file	= None
 		else:
-			# we are «apache» or another special user (aesd...), we don't
+			# we are «apache» or another special user (aesd…), we don't
 			# have a home, but need a dir to put lock-files in.
 			self.user_dir			= self.tmp_dir
 			self.user_config_file	= None
@@ -248,10 +234,12 @@ class LicornConfiguration(Singleton):
 	def _load_configuration(self, conf):
 		""" Build the licorn configuration object from a dict. """
 
+		ltrace('configuration', '| _load_configuration(%s)' % conf)
+
 		for key in conf.keys():
 			subkeys = key.split('.')
 			if len(subkeys) > 1:
-				curobj = LicornConfiguration
+				curobj = self
 				level  = 1
 				for subkey in subkeys[:-1]:
 					if not hasattr(curobj, subkey):
@@ -262,16 +250,24 @@ class LicornConfiguration(Singleton):
 				if not hasattr(curobj, subkeys[-1]):
 					setattr(curobj, subkeys[-1], conf[key])
 			else:
-				if not hasattr(LicornConfiguration, key):
-					setattr(LicornConfiguration, key,conf[key])
+				if not hasattr(self, key):
+					setattr(self, key,conf[key])
+	def noop(self):
+		""" No-op function, called when connecting pyro, to check if link
+		is OK betwwen the server and the client. """
+		ltrace('configuration', '| noop(True)')
+		return True
 	def SetMissingMandatoryDefauts(self):
 		""" The defaults set here are expected to exist
 			by other parts of the programs. """
 
+		ltrace('configuration', '| SetMissingMandatoryDefaults()')
+
 		mandatory_dict = {
-			'daemon.wmi.enabled': True,
-			'daemon.wmi.listen_address': 'localhost',
-			'daemon.role': "server",
+			'licornd.wmi.enabled': True,
+			'licornd.wmi.listen_address': 'localhost',
+			'licornd.role': 'server',
+			'licornd.pyro.max_retries': 3
 			}
 
 		self._load_configuration(mandatory_dict)
@@ -279,7 +275,7 @@ class LicornConfiguration(Singleton):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
 
-		ltrace('configuration', '> LoadBaseConfiguration().')
+		ltrace('configuration', '> LoadBaseConfiguration()')
 
 		try:
 			self._load_configuration(readers.shell_conf_load_dict(
@@ -291,7 +287,7 @@ class LicornConfiguration(Singleton):
 				# main config file isn't here, this is not required.
 				raise e
 
-		ltrace('configuration', '< LoadBaseConfiguration().')
+		ltrace('configuration', '< LoadBaseConfiguration()')
 	def load_nsswitch(self):
 		""" Load the NS switch file. """
 
@@ -314,35 +310,73 @@ class LicornConfiguration(Singleton):
 		nss_lock.Lock()
 		open('/etc/nsswitch.conf', 'w').write(nss_data)
 		nss_lock.Unlock()
-	def enable_backend(self, backend):
+	def enable_backend(self, backend, listener=None):
 		""" try to enable a given backend. what to do exactly is left to the
 		backend itself."""
 
 		ltrace('configuration', '| enable_backend()')
 
 		if backend in self.backends.keys():
-			logging.notice('%s backend already enabled.' % backend)
+			logging.notice('%s backend already enabled.' % backend,
+				listener=listener)
 			return
 
 		if self.available_backends[backend].enable():
 			self.available_backends[backend].initialize()
 			self.backends[backend] = self.available_backends[backend]
 			del self.available_backends[backend]
-			logging.info('successfully enabled %s backend.' % backend)
-	def disable_backend(self, backend):
+
+			logging.notice('''successfully enabled %s backend, reloading '''
+				'''controllers.''' % backend, listener=listener)
+
+			self.find_new_prefered_backend(listener=listener)
+
+			for controller in self.controllers:
+				controller.reload()
+	def disable_backend(self, backend, listener=None):
 		""" try to disable a given backend. what to do exactly is left to the
 		backend itself."""
 
 		ltrace('configuration', '| disable_backend()')
 
 		if backend in self.available_backends.keys():
-			logging.notice('%s backend already disabled.' % backend)
+			logging.notice('%s backend already disabled.' % backend,
+				listener=listener)
 			return
 
+		got_to_find_new_prefered = False
 		if self.backends[backend].disable():
+			if self.backends['prefered'] == self.backends[backend]:
+				del self.backends['prefered']
+				got_to_find_new_prefered = True
 			self.available_backends[backend] = self.backends[backend]
 			del self.backends[backend]
-			logging.info('successfully disabled %s backend.' % backend)
+			logging.notice('''successfully disabled %s backend, reloading '''
+				'''controllers.''' % backend, listener=listener)
+
+			if got_to_find_new_prefered:
+				self.find_new_prefered_backend(listener=listener)
+
+			for controller in self.controllers:
+				controller.reload()
+
+	def find_new_prefered_backend(self, listener=None):
+		""" iterate through active backends and find the prefered one.
+			We use a copy, in case there is no prefered yet: self.backends
+			will change and this would crash the for_loop. """
+		for backend_name in self.backends.copy():
+			if self.backends.has_key('prefered'):
+				if self.backends[backend_name].priority \
+					> self.backends['prefered'].priority:
+					self.backends['prefered'] = \
+						self.backends[backend_name]
+			else:
+				self.backends['prefered'] = self.backends[backend_name]
+
+		# FIXME: this doesn't belong here, but could help fixing #380.
+		#reload(fsapi.posix1e)
+		reload(fsapi)
+		logging.info('''reloaded fsapi module.''', listener=listener)
 	def load_plugins(self):
 		""" Load Configuration backends, and put the one with the greatest
 		priority at the beginning of the backend list. This makes it accessible
@@ -365,7 +399,6 @@ class LicornConfiguration(Singleton):
 				self.available_plugins[p.name] = p
 
 		ltrace('configuration', '< load_plugins().')
-
 	def connect_plugins(self):
 		""" add the enabled plugins to the enabled backends. """
 		ltrace('configuration', '| connect_plugins()')
@@ -401,11 +434,6 @@ class LicornConfiguration(Singleton):
 
 					self.backends[b.name] = b
 
-					if self.backends.has_key('prefered'):
-						if b.priority > self.backends['prefered'].priority:
-							self.backends['prefered'] = b
-					else:
-						self.backends['prefered'] = b
 				else:
 					self.available_backends[b.name] = b
 			else:
@@ -415,6 +443,7 @@ class LicornConfiguration(Singleton):
 				b.initialize(enabled=False)
 				self.available_backends[b.name] = b
 
+		self.find_new_prefered_backend()
 
 		ltrace('configuration', '< load_backends().')
 
@@ -437,18 +466,18 @@ class LicornConfiguration(Singleton):
 	def FindDistro(self):
 		""" Determine which Linux / BSD / else distro we run on. """
 
-		LicornConfiguration.distro = ""
+		self.distro = None
 
 		if os.name is "posix":
 			if os.path.exists( '/etc/lsb-release' ):
 				lsb_release = readers.shell_conf_load_dict('/etc/lsb-release')
 
 				if lsb_release['DISTRIB_ID'] == 'Licorn':
-					LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
+					self.distro = distros.UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
 					if lsb_release['DISTRIB_CODENAME'] in ('maverick', 'lucid',
 						'karmik', 'jaunty'):
-						LicornConfiguration.distro = LicornConfiguration.DISTRO_UBUNTU
+						self.distro = distros.UBUNTU
 					else:
 						raise exceptions.LicornRuntimeError(
 							'''This Ubuntu version is not '''
@@ -491,7 +520,7 @@ class LicornConfiguration(Singleton):
 			 - TODO: implement sshd_config modifications to include
 				'AllowGroups remotessh'
 		"""
-		LicornConfiguration.ssh = LicornConfigObject()
+		self.ssh = LicornConfigObject()
 
 		piddir   = "/var/run"
 		spooldir = "/var/spool"
@@ -500,48 +529,43 @@ class LicornConfiguration(Singleton):
 		# Finding Postfix
 		#
 
-		if LicornConfiguration.distro in (
-			LicornConfiguration.DISTRO_LICORN,
-			LicornConfiguration.DISTRO_UBUNTU,
-			LicornConfiguration.DISTRO_DEBIAN,
-			LicornConfiguration.DISTRO_REDHAT,
-			LicornConfiguration.DISTRO_GENTOO,
-			LicornConfiguration.DISTRO_MANDRIVA,
-			LicornConfiguration.DISTRO_NOVELL
+		if self.distro in (
+			distros.LICORN,
+			distros.UBUNTU,
+			distros.DEBIAN,
+			distros.REDHAT,
+			distros.GENTOO,
+			distros.MANDRIVA,
+			distros.NOVELL
 			):
 
 			if os.path.exists("/etc/ssh/sshd_config"):
-				LicornConfiguration.ssh.enabled = True
-				LicornConfiguration.ssh.group = 'remotessh'
+				self.ssh.enabled = True
+				self.ssh.group = 'remotessh'
 
 			else:
-				LicornConfiguration.ssh.enabled = False
+				self.ssh.enabled = False
 
 		else:
 			logging.progress(_("SSH detection not supported yet on your system."
 				"Please get in touch with %s." % \
 				LicornConfiguration.developers_address))
 
-		return LicornConfiguration.ssh.enabled
+		return self.ssh.enabled
 	def check_OpenSSH(self, batch=False, auto_answer=None):
 		""" Verify mandatory defaults for OpenSSHd. """
-		if not LicornConfiguration.ssh.enabled:
+		if not self.ssh.enabled:
 			return
 
-		from licorn.core.groups import GroupsController
-		from licorn.core.users import UsersController
-		users = UsersController(self)
-		groups = GroupsController(self, users)
+		if not self.controllers.groups.exists(name = self.ssh.group):
 
-		if not groups.exists(name = LicornConfiguration.ssh.group):
-
-			groups.AddGroup(name=LicornConfiguration.ssh.group,
+			self.controllers.groups.AddGroup(name=self.ssh.group,
 				description=_('Users allowed to connect via SSHd'),
 				system=True, batch=True)
 	def FindMTA(self):
 		"""detect which is the underlying MTA."""
 
-		LicornConfiguration.mta = None
+		self.mta = None
 
 		piddir   = "/var/run"
 		spooldir = "/var/spool"
@@ -550,24 +574,24 @@ class LicornConfiguration(Singleton):
 		# Finding Postfix
 		#
 
-		if LicornConfiguration.distro == LicornConfiguration.DISTRO_UBUNTU:
+		if self.distro == distros.UBUNTU:
 			# postfix is chrooted on Ubuntu Dapper.
 			if os.path.exists("/var/spool/postfix/pid/master.pid"):
-				LicornConfiguration.mta = LicornConfiguration.SRV_MTA_POSTFIX
+				self.mta = servers.MTA_POSTFIX
 				return
 		else:
 			if os.path.exists("%s/postfix.pid" % piddir):
-				LicornConfiguration.mta = LicornConfiguration.SRV_MTA_POSTFIX
+				self.mta = servers.MTA_POSTFIX
 				return
 
 		#
 		# Finding NullMailer
 		#
 		if os.path.exists("%s/nullmailer/trigger" % spooldir):
-			LicornConfiguration.mta = LicornConfiguration.SRV_MTA_NULLMAILER
+			self.mta = servers.MTA_NULLMAILER
 			return
 
-		LicornConfiguration.mta = LicornConfiguration.SRV_MTA_UNKNOWN
+		self.mta = servers.MTA_UNKNOWN
 		logging.progress('''MTA not installed or unsupported, please get in '''
 			'''touch with dev@licorn.org.''')
 	def FindMailboxType(self):
@@ -577,59 +601,57 @@ class LicornConfiguration(Singleton):
 
 		# a sane (but arbitrary) default.
 		# TODO: detect this from /etc/…
-		LicornConfiguration.users.mailbox_auto_create = True
+		self.users.mailbox_auto_create = True
 
-		if LicornConfiguration.mta == LicornConfiguration.SRV_MTA_POSTFIX:
+		if self.mta == servers.MTA_POSTFIX:
 
-			if LicornConfiguration.distro in (LicornConfiguration.DISTRO_UBUNTU,
-				LicornConfiguration.DISTRO_DEBIAN,
-				LicornConfiguration.DISTRO_GENTOO):
+			if self.distro in (distros.UBUNTU,
+				distros.DEBIAN,
+				distros.GENTOO):
 				postfix_main_cf = \
 					readers.shell_conf_load_dict('/etc/postfix/main.cf')
 
 			try:
-				LicornConfiguration.users.mailbox_base_dir = \
+				self.users.mailbox_base_dir = \
 					postfix_main_cf['mailbox_spool']
-				LicornConfiguration.users.mailbox_type     = \
-					LicornConfiguration.MAIL_TYPE_VAR_MBOX
+				self.users.mailbox_type     = \
+					mailboxes.VAR_MBOX
 			except KeyError:
 				pass
 
 			try:
-				LicornConfiguration.users.mailbox = \
+				self.users.mailbox = \
 					postfix_main_cf['home_mailbox']
 
-				if LicornConfiguration.users.mailbox[-1:] == '/':
-					LicornConfiguration.users.mailbox_type = \
-						LicornConfiguration.MAIL_TYPE_HOME_MAILDIR
+				if self.users.mailbox[-1:] == '/':
+					self.users.mailbox_type = \
+						mailboxes.HOME_MAILDIR
 				else:
-					LicornConfiguration.users.mailbox_type = \
-						LicornConfiguration.MAIL_TYPE_HOME_MBOX
+					self.users.mailbox_type = \
+						mailboxes.HOME_MBOX
 
 			except KeyError:
 				pass
 
 			logging.debug2("Mailbox type is %d and base is %s." % (
-				LicornConfiguration.users.mailbox_type,
-				LicornConfiguration.users.mailbox))
+				self.users.mailbox_type,
+				self.users.mailbox))
 
-		elif LicornConfiguration.mta == LicornConfiguration.SRV_MTA_NULLMAILER:
+		elif self.mta == servers.MTA_NULLMAILER:
 
 			# mail is not handled on this machine, forget the mailbox creation.
-			LicornConfiguration.users.mailbox_auto_create = False
+			self.users.mailbox_auto_create = False
 
-		elif LicornConfiguration.mta == LicornConfiguration.SRV_MTA_UNKNOWN:
+		elif self.mta == servers.MTA_UNKNOWN:
 
 			# totally forget about mail things.
-			LicornConfiguration.users.mailbox_auto_create = False
+			self.users.mailbox_auto_create = False
 
 		else:
-
 			# totally forget about mail things.
-			LicornConfiguration.users.mailbox_auto_create = False
+			self.users.mailbox_auto_create = False
 			logging.progress('''Mail{box,dir} system not supported yet. '''
 				'''Please get in touch with dev@licorn.org.''')
-
 	def LoadShells(self):
 		"""Find valid shells on the local system"""
 
@@ -638,8 +660,8 @@ class LicornConfiguration(Singleton):
 		# specialty on Debian / Ubuntu: /etc/shells contains shells that
 		# are not installed on the system. What is then the purpose of this
 		# file, knowing its definitions:
-		# «/etc/shells contains the valid shells on a given system»...
-		# specialty 2: it does not contains /bin/false...
+		# «/etc/shells contains the valid shells on a given system»…
+		# specialty 2: it does not contains /bin/false…
 
 		for shell in readers.very_simple_conf_load_list("/etc/shells"):
 			if os.path.exists(shell):
@@ -662,7 +684,7 @@ class LicornConfiguration(Singleton):
 		import stat
 
 		for skel_path in ("%s/skels" % \
-			LicornConfiguration.defaults.home_base_path, "/usr/share/skels"):
+			self.defaults.home_base_path, "/usr/share/skels"):
 			if os.path.exists(skel_path):
 				try:
 					for new_skel in fsapi.minifind(path=skel_path,
@@ -684,26 +706,26 @@ class LicornConfiguration(Singleton):
 		self.SetUsersDefaults()
 		self.SetGroupsDefaults()
 
-		groups_dir = "%s/%s" % (LicornConfiguration.defaults.home_base_path,
-			LicornConfiguration.groups.names['plural'])
+		groups_dir = "%s/%s" % (self.defaults.home_base_path,
+			self.groups.names.plural)
 
 		# defaults to False, because this is mostly annoying. Administrator must
 		# have a good reason to hide groups.
-		LicornConfiguration.groups.hidden = None
+		self.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf()
-		LicornConfiguration.users.min_passwd_size = 8
-		LicornConfiguration.users.uid_min         = add_user_conf['FIRST_UID']
-		LicornConfiguration.users.uid_max         = add_user_conf['LAST_UID']
-		LicornConfiguration.groups.gid_min        = add_user_conf['FIRST_GID']
-		LicornConfiguration.groups.gid_max        = add_user_conf['LAST_GID']
-		LicornConfiguration.users.system_uid_min  = \
+		self.users.min_passwd_size = 8
+		self.users.uid_min         = add_user_conf['FIRST_UID']
+		self.users.uid_max         = add_user_conf['LAST_UID']
+		self.groups.gid_min        = add_user_conf['FIRST_GID']
+		self.groups.gid_max        = add_user_conf['LAST_GID']
+		self.users.system_uid_min  = \
 			add_user_conf['FIRST_SYSTEM_UID']
-		LicornConfiguration.users.system_uid_max  = \
+		self.users.system_uid_max  = \
 			add_user_conf['LAST_SYSTEM_UID']
-		LicornConfiguration.groups.system_gid_min = \
+		self.groups.system_gid_min = \
 			add_user_conf['FIRST_SYSTEM_GID']
-		LicornConfiguration.groups.system_gid_max = \
+		self.groups.system_gid_max = \
 			add_user_conf['LAST_SYSTEM_GID']
 
 		# fix #74: map uid/gid above 300/500, to avoid interfering with
@@ -711,10 +733,10 @@ class LicornConfiguration(Singleton):
 		# chances for uid/gid synchronization between servers (or client/server)
 		# to success (avoid a machine's system users/groups to take identical
 		# uid/gid of another machine system users/groups ; whatever the name).
-		if LicornConfiguration.users.system_uid_min < 300:
-			LicornConfiguration.users.system_uid_min = 300
-		if LicornConfiguration.groups.system_gid_min < 300:
-			LicornConfiguration.groups.system_gid_min = 300
+		if self.users.system_uid_min < 300:
+			self.users.system_uid_min = 300
+		if self.groups.system_gid_min < 300:
+			self.groups.system_gid_min = 300
 
 		#
 		# WARNING: these values are meant to be used like this:
@@ -724,7 +746,7 @@ class LicornConfiguration(Singleton):
 		#  |-------//--------|------------//-----------|--------------//------------|-----------//------------|------//---------|
 		#  0            system_*id_min             *id_min                       *id_max             system_*id_max           65535
 		#
-		# in unprivileged system users/groups, you will typically find www-data, proxy, nogroup, samba machines accounts...
+		# in unprivileged system users/groups, you will typically find www-data, proxy, nogroup, samba machines accounts…
 		#
 
 		#
@@ -737,24 +759,24 @@ class LicornConfiguration(Singleton):
 			('default_gid',   'USERS_GID')
 			):
 			val = add_user_conf[conf_key]
-			setattr(LicornConfiguration.users, attr_name, val)
+			setattr(self.users, attr_name, val)
 
 		# first guesses to find Mail system.
-		LicornConfiguration.users.mailbox_type = 0
-		LicornConfiguration.users.mailbox      = ""
+		self.users.mailbox_type = 0
+		self.users.mailbox      = ""
 
 		try:
-			LicornConfiguration.users.mailbox      = add_user_conf["MAIL_FILE"]
-			LicornConfiguration.users.mailbox_type = \
-				LicornConfiguration.MAIL_TYPE_HOME_MBOX
+			self.users.mailbox      = add_user_conf["MAIL_FILE"]
+			self.users.mailbox_type = \
+				mailboxes.HOME_MBOX
 		except KeyError:
 			pass
 
 		try:
-			LicornConfiguration.users.mailbox_base_dir = \
+			self.users.mailbox_base_dir = \
 				add_user_conf["MAIL_DIR"]
-			LicornConfiguration.users.mailbox_type     = \
-				LicornConfiguration.MAIL_TYPE_VAR_MBOX
+			self.users.mailbox_type     = \
+				mailboxes.VAR_MBOX
 		except KeyError:
 			pass
 
@@ -766,75 +788,71 @@ class LicornConfiguration(Singleton):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
 
-		LicornConfiguration.defaults =  LicornConfigObject()
+		self.defaults =  LicornConfigObject()
 
-		LicornConfiguration.defaults.home_base_path = '/home'
+		self.defaults.home_base_path = '/home'
 
 		# WARNING: Don't translate this. This still has to be discussed.
 		# TODO: move this into a plugin
-		LicornConfiguration.defaults.admin_group = 'admins'
+		self.defaults.admin_group = 'admins'
 
-		LicornConfiguration.defaults.needed_groups = [ 'users', 'acl' ]
+		self.defaults.needed_groups = [ 'users', 'acl' ]
 
 
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
 	def SetUsersDefaults(self):
-		"""Create LicornConfiguration.users attributes and start feeding it."""
+		"""Create self.users attributes and start feeding it."""
 
-		LicornConfiguration.users  = LicornConfigObject()
+		self.users  = LicornConfigObject()
 
 		# see groupadd(8), coming from addgroup(8)
-		LicornConfiguration.users.login_maxlenght = 31
+		self.users.login_maxlenght = 31
 
 		# the _xxx variables are needed for gettextized interfaces
 		# (core and CLI are NOT gettextized)
-		LicornConfiguration.users.names = {
-			'singular': 'user',
-			'plural':   'users',
-			'_singular': _('user'),
-			'_plural':   _('users')
-			}
-	def SetGroupsDefaults(self):
-		"""Create LicornConfiguration.groups attributes and start feeding it."""
+		self.users.names = LicornConfigObject()
+		self.users.names.singular = 'user'
+		self.users.names.plural = 'users'
+		self.users.names._singular = _('user')
+		self.users.names._plural = _('users')
 
-		LicornConfiguration.groups = LicornConfigObject()
-		LicornConfiguration.groups.guest_prefix = 'gst-'
-		LicornConfiguration.groups.resp_prefix = 'rsp-'
+	def SetGroupsDefaults(self):
+		"""Create self.groups attributes and start feeding it."""
+
+		self.groups = LicornConfigObject()
+		self.groups.guest_prefix = 'gst-'
+		self.groups.resp_prefix = 'rsp-'
 
 		# maxlenght comes from groupadd(8), itself coming from addgroup(8)
 		# 31 - len(prefix)
-		LicornConfiguration.groups.name_maxlenght = 27
+		self.groups.name_maxlenght = 27
 
 		# the _xxx variables are needed for gettextized interfaces
 		# (core and CLI are NOT gettextized)
-		LicornConfiguration.groups.names = {
-			'singular': 'group',
-			'plural': 'groups',
-			'_singular': _('group'),
-			'_plural': _('groups')
-			}
-
-		LicornConfiguration.groups.privileges_whitelist = \
-			PrivilegesWhiteList(self, self.privileges_whitelist_data_file)
+		self.groups.names = LicornConfigObject()
+		self.groups.names.singular = 'group'
+		self.groups.names.plural = 'groups'
+		self.groups.names._singular = _('group')
+		self.groups.names._plural = _('groups')
 	def set_acl_defaults(self):
 		""" Prepare the basic ACL configuration inside us. """
 
 		ltrace("configuration", '| set_acl_defaults()')
 
-		LicornConfiguration.posix1e = LicornConfigObject()
-		LicornConfiguration.posix1e.groups_dir = "%s/%s" % (
-			LicornConfiguration.defaults.home_base_path,
-			LicornConfiguration.groups.names['plural'])
-		LicornConfiguration.posix1e.acl_base = 'u::rwx,g::---,o:---'
-		LicornConfiguration.posix1e.acl_mask = 'm:rwx'
-		LicornConfiguration.posix1e.acl_admins_ro = 'g:%s:r-x' % \
-			LicornConfiguration.defaults.admin_group
-		LicornConfiguration.posix1e.acl_admins_rw = 'g:%s:rwx' % \
-			LicornConfiguration.defaults.admin_group
-		LicornConfiguration.posix1e.acl_users = '--x' \
-			if LicornConfiguration.groups.hidden else 'r-x'
-	def CheckAndLoadAdduserConf(self, batch = False, auto_answer = None):
+		self.posix1e = LicornConfigObject()
+		self.posix1e.groups_dir = "%s/%s" % (
+			self.defaults.home_base_path,
+			self.groups.names.plural)
+		self.posix1e.acl_base = 'u::rwx,g::---,o:---'
+		self.posix1e.acl_mask = 'm:rwx'
+		self.posix1e.acl_admins_ro = 'g:%s:r-x' % \
+			self.defaults.admin_group
+		self.posix1e.acl_admins_rw = 'g:%s:rwx' % \
+			self.defaults.admin_group
+		self.posix1e.acl_users = '--x' \
+			if self.groups.hidden else 'r-x'
+	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
 			Then load it in a way i can be used in LicornConfiguration.
@@ -850,7 +868,7 @@ class LicornConfiguration(Singleton):
 		# present, and we assume this during the file patch.
 		defaults = (
 			('DHOME', '%s/users' % \
-				LicornConfiguration.defaults.home_base_path),
+				self.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
@@ -923,7 +941,7 @@ class LicornConfiguration(Singleton):
 					'''without this, sorry!''' % adduser_conf)
 
 		return adduser_dict
-	def CheckLoginDefs(self, batch = False, auto_answer = None):
+	def CheckLoginDefs(self, batch=False, auto_answer=None, listener=None):
 		""" Check /etc/login.defs for compatibility with Licorn.
 			Load data, alter it if needed and save the new file.
 		"""
@@ -931,21 +949,21 @@ class LicornConfiguration(Singleton):
 		self.check_system_file_generic(filename="/etc/login.defs",
 			reader=readers.simple_conf_load_dict,
 			defaults=(
-				('UID_MIN', LicornConfiguration.users.uid_min),
-				('UID_MAX', LicornConfiguration.users.uid_max),
-				('GID_MIN', LicornConfiguration.groups.gid_min),
-				('GID_MAX', LicornConfiguration.groups.gid_max),
-				('SYS_GID_MAX', LicornConfiguration.groups.system_gid_max),
-				('SYS_GID_MIN', LicornConfiguration.groups.system_gid_min),
-				('SYS_UID_MAX', LicornConfiguration.users.system_uid_max),
-				('SYS_UID_MIN', LicornConfiguration.users.system_uid_min),
+				('UID_MIN', self.users.uid_min),
+				('UID_MAX', self.users.uid_max),
+				('GID_MIN', self.groups.gid_min),
+				('GID_MAX', self.groups.gid_max),
+				('SYS_GID_MAX', self.groups.system_gid_max),
+				('SYS_GID_MIN', self.groups.system_gid_min),
+				('SYS_UID_MAX', self.users.system_uid_max),
+				('SYS_UID_MIN', self.users.system_uid_min),
 				('USERGROUPS_ENAB', 'no'),
 				('CREATE_HOME', 'yes')
 			),
 			separator='	',
 			batch=batch,
-			auto_answer=auto_answer)
-	def CheckUserAdd(self, batch=False, auto_answer=None):
+			auto_answer=auto_answer, listener=listener)
+	def CheckUserAdd(self, batch=False, auto_answer=None, listener=None):
 		""" Check /etc/defaults/useradd if it exists, for compatibility with
 			Licorn®.
 		"""
@@ -953,18 +971,19 @@ class LicornConfiguration(Singleton):
 		self.check_system_file_generic(filename="/etc/default/useradd",
 			reader=readers.shell_conf_load_dict,
 			defaults=(
-				('GROUP', LicornConfiguration.users.default_gid),
-				('HOME', LicornConfiguration.users.base_path)
+				('GROUP', self.users.default_gid),
+				('HOME', self.users.base_path)
 			),
 			separator='=',
 			check_exists=True,
 			batch=batch,
-			auto_answer=auto_answer)
+			auto_answer=auto_answer, listener=listener)
 	def check_system_file_generic(self, filename, reader, defaults, separator,
-		check_exists=False, batch=False, auto_answer=None):
+		check_exists=False, batch=False, auto_answer=None, listener=None):
 
 		if check_exists and not os.path.exists(filename):
-			logging.warning2('''%s doesn't exist on this system.''' % filename)
+			logging.warning2('''%s doesn't exist on this system.''' % filename,
+				listener=listener)
 			return
 
 		alter_file = False
@@ -977,7 +996,8 @@ class LicornConfiguration(Singleton):
 					logging.warning('''In %s, directive %s should be %s,'''
 						''' but it is %s.''' % (
 							styles.stylize(styles.ST_PATH, filename),
-							directive, value, data_dict[directive]))
+							directive, value, data_dict[directive]),
+							listener=listener)
 					alter_file           = True
 					data_dict[directive] = value
 					file_data            = re.sub(r'%s.*' % directive,
@@ -986,7 +1006,8 @@ class LicornConfiguration(Singleton):
 				logging.warning('''In %s, directive %s isn't present but '''
 					'''should be, with value %s.''' % (
 						styles.stylize(styles.ST_PATH, filename),
-						directive, value))
+						directive, value),
+						listener=listener)
 				alter_file           = True
 				data_dict[directive] = value
 				file_data += '%s%s%s\n' % (directive, separator, value)
@@ -994,11 +1015,13 @@ class LicornConfiguration(Singleton):
 		if alter_file:
 			if batch or logging.ask_for_repair(
 				'''%s should be altered to be in sync with Licorn®. Fix it ?'''
-				% styles.stylize(styles.ST_PATH, filename), auto_answer):
+				% styles.stylize(styles.ST_PATH, filename), auto_answer,
+				listener=listener):
 				try:
 					open(filename, 'w').write(file_data)
 					logging.notice('Tweaked %s to match Licorn pre-requisites.'
-						% styles.stylize(styles.ST_PATH, filename))
+						% styles.stylize(styles.ST_PATH, filename),
+						listener=listener)
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -1020,7 +1043,6 @@ class LicornConfiguration(Singleton):
 		"""
 
 		if args is not None:
-
 			data = ""
 
 			if cli_format == "bourne":
@@ -1106,12 +1128,12 @@ class LicornConfiguration(Singleton):
 				data += "%s\n" % styles.stylize(styles.ST_SECRET,
 					self.defaults.admin_group)
 
-				for priv in self.groups.privileges_whitelist:
+				for priv in self.privileges_whitelist:
 					data += "%s\n" % priv
 
 			elif args[0] in ('priv', 'privs', 'privileges'):
 
-				for priv in self.groups.privileges_whitelist:
+				for priv in self.controllers.privileges:
 					data += "%s\n" % priv
 
 			else:
@@ -1134,9 +1156,10 @@ class LicornConfiguration(Singleton):
 		for attr in dir(self):
 			if callable(getattr(self, attr)) \
 				or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-				or attr in ('tmp_dir', 'init_ok'):
-				# skip methods, python internals, and too-much-moving targets
-				# which bork the testsuite.
+				or attr in ('tmp_dir', 'init_ok', 'del_ok', 'objectGUID',
+					'lastUsed', 'delegate', 'daemon', 'controllers'):
+				# skip methods, python internals, pyro internals and
+				# too-much-moving targets which bork the testsuite.
 				continue
 
 			data += u"\u21b3 %s: " % styles.stylize(styles.ST_ATTR, attr)
@@ -1180,7 +1203,7 @@ class LicornConfiguration(Singleton):
 				'''new hostname must be composed only of letters, digits and '''
 				'''hyphens, but not starting nor ending with an hyphen !''')
 
-		logging.progress("Doing preliminary checks...")
+		logging.progress("Doing preliminary checks…")
 		self.CheckHostname()
 
 		try:
@@ -1193,7 +1216,7 @@ class LicornConfiguration(Singleton):
 				'''clean:\n\t%s)''' % e)
 
 	### CHECKS ###
-	def check(self, minimal=True, batch=False, auto_answer=None):
+	def check(self, minimal=True, batch=False, auto_answer=None, listener=None):
 		""" Check all components of system configuration and repair
 		if asked for."""
 
@@ -1202,11 +1225,12 @@ class LicornConfiguration(Singleton):
 		# users and groups must be OK before everything.
 		# for this, backends must be ready and configured.
 		# check the first.
-		self.check_backends(batch, auto_answer)
+		self.check_backends(batch=batch, auto_answer=auto_answer)
 
-		self.check_base_dirs(minimal, batch, auto_answer)
+		self.check_base_dirs(minimal=minimal, batch=batch,
+			auto_answer=auto_answer, listener=listener)
 
-		self.check_OpenSSH(batch, auto_answer)
+		self.check_OpenSSH(batch=batch, auto_answer=auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
@@ -1216,7 +1240,10 @@ class LicornConfiguration(Singleton):
 		the enabled anyway.
 
 		Checking them will make them configure themselves, and configure the
-		underlying system daemons and tools. """
+		underlying system daemons and tools.
+
+		FIXME listener=listener
+		"""
 
 		ltrace('configuration', '> check_backends()')
 
@@ -1224,6 +1251,7 @@ class LicornConfiguration(Singleton):
 			if backend_name == 'prefered':
 				continue
 			self.backends[backend_name].check(batch, auto_answer)
+			# FIXME listener=listener
 
 		# check the available_backends too. It's the only way to make sure they
 		# can be fully usable before enabling them.
@@ -1231,7 +1259,8 @@ class LicornConfiguration(Singleton):
 			self.available_backends[backend_name].check(batch, auto_answer)
 
 		ltrace('configuration', '< check_backends()')
-	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
+	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None,
+		listener=None):
 		"""Check and eventually repair default needed dirs."""
 
 		ltrace('configuration', '> check_base_dirs()')
@@ -1242,9 +1271,9 @@ class LicornConfiguration(Singleton):
 			if e.errno != 17:
 				raise e
 
-		self.CheckSystemGroups(minimal, batch, auto_answer)
+		self.CheckSystemGroups(minimal, batch, auto_answer, listener=listener)
 
-		p = LicornConfiguration.posix1e
+		p = self.posix1e
 
 		dirs_to_verify = [ {
 			'path'      : p.groups_dir,
@@ -1256,17 +1285,12 @@ class LicornConfiguration(Singleton):
 			'default_acl': ""
 			} ]
 
-		from licorn.core.groups import GroupsController
-		from licorn.core.users import UsersController
-		users = UsersController(self)
-		groups = GroupsController(self, users)
-
 		try:
 			# batch this because it *has* to be corrected
 			# for system to work properly.
-			fsapi.check_dirs_and_contents_perms_and_acls(
-				dirs_to_verify, batch=batch, allgroups=groups,
-				allusers=users)
+			fsapi.check_dirs_and_contents_perms_and_acls( dirs_to_verify,
+				batch=batch, allgroups=self.controllers.groups,
+				allusers=self.controllers.users, listener=listener)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1299,22 +1323,23 @@ class LicornConfiguration(Singleton):
 		all_went_ok = True
 
 		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-			[ home_backup_dir_info ], batch=True, allgroups=groups,
-			allusers=users)
+			[ home_backup_dir_info ], batch=True,
+			allgroups=self.controllers.groups, allusers=self.controllers.users,
+			listener=listener)
 
 		all_went_ok &= self.check_archive_dir(batch=batch,
-			auto_answer=auto_answer)
+			auto_answer=auto_answer, listener=listener)
 
 		ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
-		auto_answer=None):
+		auto_answer=None, listener=None):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
 		ltrace('configuration', '> check_archive_dir(%s)' % subdir)
 
-		p = LicornConfiguration.posix1e
+		p = self.posix1e
 
 		home_archive_dir_info = {
 			'path'       : self.home_archive_dir,
@@ -1345,7 +1370,8 @@ class LicornConfiguration(Singleton):
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
-						styles.stylize(styles.ST_PATH, self.home_archive_dir))
+						styles.stylize(styles.ST_PATH, self.home_archive_dir),
+						listener=listener)
 				subdir=False
 
 		elif not minimal:
@@ -1361,43 +1387,42 @@ class LicornConfiguration(Singleton):
 		ltrace('configuration', '< check_archive_dir()')
 
 		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-			batch=batch, auto_answer=auto_answer)
-	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
+			batch=batch, auto_answer=auto_answer,
+			allgroups=self.controllers.groups, allusers=self.controllers.users,
+			listener=listener)
+	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None,
+		listener=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
-
-		from licorn.core.groups import GroupsController
-		from licorn.core.users  import UsersController
-		users  = UsersController(self)
-		groups = GroupsController(self, users)
 
 		ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
 			(minimal, batch))
 
-		needed_groups = LicornConfiguration.defaults.needed_groups + [
-			LicornConfiguration.defaults.admin_group ]
+		needed_groups = self.defaults.needed_groups + [
+			self.defaults.admin_group ]
 
 		if not minimal \
-			and LicornConfiguration.groups.privileges_whitelist != []:
+			and self.controllers.privileges != []:
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
 			# operate properly.
 
-			for groupname in LicornConfiguration.groups.privileges_whitelist:
+			for groupname in self.controllers.privileges:
 				if groupname not in needed_groups:
 					needed_groups.append(groupname)
 
 		for group in needed_groups:
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
-			if not groups.exists(name=group):
+			if not self.controllers.groups.exists(name=group):
 				if batch or logging.ask_for_repair(
 					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
-						styles.stylize(styles.ST_NAME, group), auto_answer):
+						styles.stylize(styles.ST_NAME, group), auto_answer,
+						listener=listener):
 					if group == 'users' and self.distro in (
-						LicornConfiguration.DISTRO_UBUNTU,
-						LicornConfiguration.DISTRO_DEBIAN):
+						distros.UBUNTU,
+						distros.DEBIAN):
 
 						# this is a special case: on deb.*, the "users" group
 						# has a reserved gid of 100. Many programs rely on this.
@@ -1405,7 +1430,8 @@ class LicornConfiguration(Singleton):
 					else:
 						gid = None
 
-					groups.AddGroup(group, system=True, desired_gid=gid)
+					self.controllers.groups.AddGroup(group, system=True,
+						desired_gid=gid, listener=listener)
 					del gid
 				else:
 					raise exceptions.LicornRuntimeError(
@@ -1550,7 +1576,7 @@ class LicornConfiguration(Singleton):
 
 		# FIXME: vérifier que l'ip d'eth0 et son nom ne sont pas codés en dur
 		# dans /etc/hosts, la série de tests sur eth0 aurait pu marcher grâce
-		# à ça et donc rien ne dit que la conf DNS est OK...
+		# à ça et donc rien ne dit que la conf DNS est OK…
 	def CheckMailboxConfigIntegrity(self, batch=False, auto_answer=None):
 		"""Verify "slaves" configuration files are OK, else repair them."""
 
@@ -1559,7 +1585,7 @@ class LicornConfiguration(Singleton):
 				warning(unsupported)
 			elif maildir:
 				if courier-*:
-					if batch or ...:
+					if batch or …:
 
 					else:
 						warning()
@@ -1571,8 +1597,8 @@ class LicornConfiguration(Singleton):
 		"""
 
 		pass
-	def SetHiddenGroups(self, hidden=True):
+	def SetHiddenGroups(self, hidden=True, listener=None):
 		""" Set (un-)restrictive mode on the groups base directory. """
 
-		LicornConfiguration.groups.hidden = hidden
-		self.check_base_dirs(batch = True)
+		self.groups.hidden = hidden
+		self.check_base_dirs(batch=True, listener=listener)

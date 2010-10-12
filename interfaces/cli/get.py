@@ -16,12 +16,9 @@ output = sys.stdout.write
 
 from licorn.foundations           import logging
 from licorn.foundations.constants import filters
+from licorn.foundations.ltrace    import ltrace
 
-from licorn.core.configuration    import LicornConfiguration
-from licorn.core.users            import UsersController
-from licorn.core.groups           import GroupsController
-from licorn.core.profiles         import ProfilesController
-from licorn.core.keywords         import KeywordsController
+from licorn.interfaces.cli import cli_main, cli_select
 
 _app = {
 	"name"     		: "licorn-get",
@@ -29,39 +26,40 @@ _app = {
 	"author"   		: "Olivier Cortès <olive@deep-ocean.net>, Régis Cobrun <reg53fr@yahoo.fr>"
 	}
 
-def get_users(opts, args):
+def get_users(opts, args, users, **kwargs):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
+	ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
-	if opts.long:
-		groups = GroupsController(configuration, users)
-
-	users.Select(
+	users_to_get = users.Select(
 		cli_select(users, 'user',
 			args,
-			[
+			include_id_lists=[
 				(opts.login, users.login_to_uid),
 				(opts.uid, users.confirm_uid)
 			],
-			filters.STANDARD,
-			opts.all)
+			exclude_id_lists=[
+				(opts.exclude, users.guess_identifier),
+				(opts.exclude_login, users.login_to_uid),
+				(opts.exclude_uid, users.confirm_uid)
+			],
+			default_selection=filters.STANDARD,
+			all=opts.all)
 		)
 
 	if opts.xml:
-		data = users.ExportXML(opts.long)
+		data = users.ExportXML(selected=users_to_get, long_output=opts.long)
 	else:
-		data = users.ExportCLI(opts.long)
+		data = users.ExportCLI(selected=users_to_get, long_output=opts.long)
 
 	if data and data != '\n':
 		output(data)
-def get_groups(opts, args):
+
+	ltrace('get', '< get_users()')
+def get_groups(opts, args, groups, **kwargs):
 	""" Get the list of POSIX groups (can be LDAP). """
 
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
+	ltrace('get', '> get_groups(%s,%s)' % (opts, args))
 
 	selection = filters.NONE
 
@@ -79,54 +77,60 @@ def get_groups(opts, args):
 		# must be the last case !
 		selection = filters.STANDARD
 
-	groups.Select(
+	groups_to_get = groups.Select(
 		cli_select(groups, 'group',
 			args,
 			[
 				(opts.name, groups.name_to_gid),
 				(opts.gid, groups.confirm_gid)
 			],
-			selection,
-			opts.all)
+			exclude_id_lists = [
+				(opts.exclude, groups.guess_identifier),
+				(opts.exclude_group, groups.name_to_gid),
+				(opts.exclude_gid, groups.confirm_gid)
+			],
+			default_selection=selection,
+			all=opts.all)
 		)
 
 	if opts.xml:
-		data = groups.ExportXML(opts.long)
+		data = groups.ExportXML(selected=groups_to_get, long_output=opts.long)
 	else:
-		data = groups.ExportCLI(long=opts.long, no_colors=opts.no_colors)
+		data = groups.ExportCLI(selected=groups_to_get, long_output=opts.long,
+			no_colors=opts.no_colors)
 
 	if data and data != '\n':
 		output(data)
-def get_profiles(opts, args):
+
+	ltrace('get', '< get_groups()')
+def get_profiles(opts, args, profiles, **kwargs):
 	""" Get the list of user profiles. """
 
-	configuration = LicornConfiguration()
-	users = UsersController(configuration)
-	groups = GroupsController(configuration, users)
-	profiles = ProfilesController(configuration, groups, users)
+	ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
 
-	profiles.Select(
+	profiles_to_get = profiles.Select(
 		cli_select(profiles, 'profile',
 			args,
-			[
+			include_id_lists=[
 				(opts.name, profiles.name_to_group),
 				(opts.group, profiles.confirm_group)
 			],
-			filters.ALL)
+			default_selection=filters.ALL)
 		)
 
 	if opts.xml:
-		data = profiles.ExportXML()
+		data = profiles.ExportXML(profiles_to_get)
 	else:
-		data = profiles.ExportCLI()
+		data = profiles.ExportCLI(profiles_to_get)
 
 	if data and data != '\n':
 		output(data)
-def get_keywords(opts, args):
+
+	ltrace('get', '< get_profiles()')
+def get_keywords(opts, args, keywords, **kwargs):
 	""" Get the list of keywords. """
 
-	configuration = LicornConfiguration()
-	keywords = KeywordsController(configuration)
+	ltrace('get', '> get_keywords(%s,%s)' % (opts, args))
 
 	if opts.xml:
 		data = keywords.ExportXML()
@@ -135,19 +139,56 @@ def get_keywords(opts, args):
 
 	if data and data != '\n':
 		output(data)
-def get_privileges(opts, args):
-	configuration = LicornConfiguration()
-	output(configuration.Export(args = ['privileges']))
-def get_configuration(opts, args):
+
+	ltrace('get', '< get_keywords()')
+def get_privileges(opts, args, privileges, **kwargs):
+	""" Return the current privileges whitelist, one priv by line. """
+
+	ltrace('get', '> get_privileges(%s,%s)' % (opts, args))
+
+	if opts.xml:
+		data = privileges.ExportXML()
+	else:
+		data = privileges.ExportCLI()
+
+	output(data)
+
+	ltrace('get', '< get_privileges()')
+def get_machines(opts, args, machines, **kwargs):
+	""" Get the list of machines known from the server (attached or not). """
+
+	ltrace('get', '> get_machines(%s,%s)' % (opts, args))
+
+	if opts.mid is not None:
+		try:
+			machines_to_get = machines.Select("mid=" + unicode(opts.mid))
+		except KeyError:
+			logging.error("No matching machine found.")
+			return
+
+	if opts.xml:
+		data = machines.ExportXML(selected=machines_to_get,
+			long_output=opts.long)
+	else:
+		data = machines.ExportCLI(selected=machines_to_get,
+			long_output=opts.long)
+
+	if data and data != '\n':
+		output(data)
+
+	ltrace('get', '< get_machines()')
+def get_configuration(opts, args, configuration, **kwargs):
 	""" Output th current Licorn system configuration. """
 
-	configuration = LicornConfiguration()
+	ltrace('get', '> get_configuration(%s,%s)' % (opts, args))
 
 	if len(args) > 1:
-		output(configuration.Export(args = args[1:], cli_format = opts.cli_format))
+		output(configuration.Export(args=args[1:], cli_format=opts.cli_format))
 	else:
 		output(configuration.Export())
-def get_webfilters(opts, args):
+
+	ltrace('get', '< get_configuration()')
+def get_webfilters(*args, **kwargs):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
 	"""
@@ -200,18 +241,9 @@ def get_webfilters(opts, args):
 			print fd.Export("whitelist", "domains")
 	else:
 		print "Options are: time-constraints | forbidden-destinations"
-def get_internet_types(opts, args):
-	""" Get the list of known internet connection types.
 
-		This list is static: there are only a fixed number of connexions
-		we know (pppoe, router on (eth0|eth1), analog modem, manual).
-	"""
-	raise NotImplementedError("get_internet_types not implemented.")
-
-if __name__ == "__main__":
-
+def get_main():
 	import argparser as agp
-	from licorn.interfaces.cli import cli_main, cli_select
 
 	functions = {
 		'usr':	         (agp.get_users_parse_arguments, get_users),
@@ -223,6 +255,12 @@ if __name__ == "__main__":
 		'groups':        (agp.get_groups_parse_arguments, get_groups),
 		'profile':       (agp.get_profiles_parse_arguments, get_profiles),
 		'profiles':      (agp.get_profiles_parse_arguments, get_profiles),
+		'machine':       (agp.get_machines_parse_arguments, get_machines),
+		'machines':      (agp.get_machines_parse_arguments, get_machines),
+		'client':        (agp.get_machines_parse_arguments, get_machines),
+		'clients':       (agp.get_machines_parse_arguments, get_machines),
+		'workstation':   (agp.get_machines_parse_arguments, get_machines),
+		'workstations':  (agp.get_machines_parse_arguments, get_machines),
 		'conf':          (agp.get_configuration_parse_arguments, get_configuration),
 		'config':        (agp.get_configuration_parse_arguments, get_configuration),
 		'configuration': (agp.get_configuration_parse_arguments, get_configuration),
@@ -239,3 +277,5 @@ if __name__ == "__main__":
 
 	cli_main(functions, _app, expected_min_args=2)
 
+if __name__ == "__main__":
+	get_main()

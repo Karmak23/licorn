@@ -9,7 +9,8 @@ Licensed under the terms of the GNU GPL version 2.
 import os
 
 from licorn.foundations         import fsapi, logging
-from licorn.foundations.objects import LicornThread, Singleton
+from licorn.foundations.objects import Singleton
+from licorn.foundations.threads import LicornThread
 
 from licorn.daemon.core         import dname
 

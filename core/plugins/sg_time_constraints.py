@@ -129,7 +129,7 @@ class TimeConstraintsList:
 			- weekdays: string of day letters (smtwhfa)
 			- timezone: a valid timezone HH:MM-HH:MM
 		"""
-		# Redondant tests but skip borring rollback...
+		# Redondant tests but skip borring rollback…
 		if not self.__is_a_valid_timezone(timezone):
 			raise exceptions.BadArgumentError, "The time zone is not valid (format is HH:MM-HH:MM)"
 		if not self.__is_a_valid_weekdays(weekdays):

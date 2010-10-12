@@ -6,7 +6,7 @@ The present module rassembles a set of tools to ease the parsing of known
 configuration files:
 	* classic ^PARAM value$ (login.defs, ldap.conf)
 	* classic ^PARAM=value$
-	* other special types: smb.conf / lts.conf, squidguard.conf...
+	* other special types: smb.conf / lts.conf, squidguard.conf…
 
 
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
@@ -86,7 +86,7 @@ def	simple_conf_load_dict(filename=None, data=None, convert='semi'):
 
 	return confdict
 def	simple_conf_load_dict_lists(filename):
-	""" Read a simple configuration file ("param value1 [value2 ...]" on each line)
+	""" Read a simple configuration file ("param value1 [value2 …]" on each line)
 		and return a dictionary of param -> [ list of values ] filled with the directives
 		contained in the configuration file.
 
@@ -269,7 +269,7 @@ def profiles_conf_dict(filename):
 	except expat.ExpatError, e:
 		raise exceptions.CorruptFileError(filename, str(e))
 	except (OSError, IOError):
-		# FIXME: do something when there is no profiles on the system...
+		# FIXME: do something when there is no profiles on the system…
 		return {}
 def getProfileData(rootelement, leaftag, isoptional=False):
 	""" Return a list of content of a leaftag (tag which has no child)

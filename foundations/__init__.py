@@ -11,26 +11,5 @@ Licensed under the terms of the GNU GPL version 2
 __version__ = '@@VERSION@@'
 version     = __version__
 
-__all__ = [
-	# DEBUG / process tracing
-	'ltrace',
-	# basic output (CLI colors, verbose / quiet, etc)
-	'options',
-	'styles',
-	'logging',
-
-	# internal workflows mechanisms
-	'exceptions',
-	'hooks',
-	'transactions',
-
-	# classes, objects, very low-level utility functions
-	'objects',
-	'fsapi',
-	'process',
-	'hlstr',
-	'pyutils'
-	]
-
 from _options import LicornOptions
 options = LicornOptions()

@@ -6,20 +6,23 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os
-import sys
-import time
-import signal
+import os, sys, time, signal
 
-from licorn.foundations         import logging, styles, process
+from optparse import OptionParser, OptionGroup
+
+from licorn.foundations         import logging, styles, process, exceptions
+from licorn.foundations.argparser import build_version_string, \
+	common_behaviour_group
+
+from licorn.core import version
 
 from licorn.core.configuration  import LicornConfiguration
-from licorn.core.users          import UsersController
-from licorn.core.groups         import GroupsController
+#from licorn.core.users          import UsersController
+#from licorn.core.groups         import GroupsController
 
 configuration = LicornConfiguration()
-users = UsersController(configuration)
-groups = GroupsController(configuration, users)
+#users = UsersController(configuration)
+#groups = GroupsController(configuration, users)
 
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
@@ -47,6 +50,44 @@ wpid_path     = '/var/run/licornd-wmi.pid'
 wlog_path     = '/var/log/licornd-wmi.log'
 dname         = 'licornd'
 
+def licornd_parse_arguments(app, configuration):
+	""" Integrated help and options / arguments for harvestd."""
+
+	usage_text = '''
+	%s [-D|--no-daemon] ''' \
+		'''[-W|--wmi-listen-address <IP_or_hostname|iface:…>] ''' \
+		'''[-p|--pid-to-wake <PID>] ''' \
+		'''[…]''' \
+		% (styles.stylize(styles.ST_APPNAME, "%prog"))
+
+	parser = OptionParser(
+		usage=usage_text,
+		version=build_version_string(app, version)
+		)
+
+	parser.add_option("-D", "--no-daemon",
+		action="store_false", dest="daemon", default=True,
+		help='''Don't fork as a daemon, stay on the current terminal instead.'''
+			''' Logs will be printed on standard output '''
+			'''instead of beiing written into the logfile.''')
+
+	parser.add_option("-W", "--wmi-listen-address",
+		action="store", dest="wmi_listen_address", default=None,
+		help='''specify an IP address or a hostname to bind to. Only %s can '''
+			'''be specified (the WMI cannot yet bind on multiple interfaces '''
+			'''at the same time). This option takes precedence over the '''
+			'''configuration directive, if present in %s.''' % (
+			styles.stylize(styles.ST_IMPORTANT, 'ONE address or hostname'),
+			styles.stylize(styles.ST_PATH, configuration.main_config_file)))
+
+	parser.add_option("-p", "--pid-to-wake",
+		action="store", type="int", dest="pid_to_wake", default=None,
+		help='''specify a PID to be sent SIGUSR1 when daemon is ready. Used '''
+			'''when CLI starts the daemon itself, else not used. ''')
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
+
+	return parser.parse_args()
 def terminate_cleanly(signum, frame, pname, threads = []):
 	""" Close threads, wipe pid files, clean everything before closing. """
 
@@ -57,10 +98,9 @@ def terminate_cleanly(signum, frame, pname, threads = []):
 		logging.notice('%s: signal %s received, shutting down…' % (
 			pname, signum))
 
-	for th in threads:
+	for th in reversed(threads):
+		# stop threads in the reverse order they were started.
 		th.stop()
-
-	configuration.CleanUp()
 
 	for pid_file in (pid_path, wpid_path):
 		try:
@@ -73,8 +113,11 @@ def terminate_cleanly(signum, frame, pname, threads = []):
 	if threads != []:
 		logging.progress("%s: joining threads." % pname)
 
-	for th in threads:
+	for th in reversed(threads):
+		# join threads in the reverse order they were started.
 		th.join()
+
+	configuration.CleanUp()
 
 	logging.progress("%s: exiting." % pname)
 
@@ -91,6 +134,11 @@ def setup_signals_handler(pname, threads=[]):
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)
 	signal.signal(signal.SIGHUP, terminate)
+
+	if pname == 'licornd/wmi':
+		# wmi will receive this signal from master when all threads are started,
+		# this will wake it from its signal.pause().
+		signal.signal(signal.SIGUSR1, lambda x,y: True)
 
 	#signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 def exit_if_already_running():
