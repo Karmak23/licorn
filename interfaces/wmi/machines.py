@@ -62,7 +62,8 @@ def ctxtnav(active = True):
 		_("Export this list")
 		)
 
-def shutdown(uri, http_user, hostname=None, sure=False, warn_users=True, yes=None):
+def shutdown(uri, http_user, hostname=None, sure=False, warn_users=True,
+	yes=None, configuration=None, machines=None, **kwargs):
 	""" Export machine list."""
 
 	# submit button; forget it.
@@ -103,7 +104,8 @@ def shutdown(uri, http_user, hostname=None, sure=False, warn_users=True, yes=Non
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to shutdown machine %s!''' % hostname))
 def massshutdown(uri, http_user, sure=False, asleep=None, idle=None,
-	active=None, warn_users=None, admin=None, yes=None):
+	active=None, warn_users=None, admin=None, yes=None, configuration=None,
+	machines=None, **kwargs):
 	""" Export machine list."""
 
 	# submit button; forget it.
@@ -162,7 +164,7 @@ def massshutdown(uri, http_user, sure=False, asleep=None, idle=None,
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to shutdown one or more machines!'''))
-def energyprefs(uri, http_user):
+def energyprefs(uri, http_user, configuration=None, machines=None, **kwargs):
 	""" Export machine list."""
 
 	# submit button; forget it.
@@ -202,7 +204,8 @@ def energyprefs(uri, http_user):
 			data = machines.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
-def export(uri, http_user, type = "", yes = None):
+def export(uri, http_user, type = "", yes=None, configuration=None,
+	machines=None, **kwargs):
 	""" Export machine list."""
 
 	# submit button; forget it.
@@ -253,7 +256,8 @@ def export(uri, http_user, type = "", yes = None):
 			data = machines.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
-def forget(uri, http_user, hostname, sure=False, yes=None):
+def forget(uri, http_user, hostname, sure=False, yes=None, configuration=None,
+	machines=None, **kwargs):
 	"""remove machine account."""
 
 	# form submit button, forget it.
@@ -300,7 +304,7 @@ def forget(uri, http_user, hostname, sure=False, yes=None):
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove record <strong>%s</strong>!''') % hostname)
-def new(uri, http_user):
+def new(uri, http_user, configuration=None, machines=None, **kwargs):
 	"""Generate a form to create a new machine on the system."""
 
 	return (w.HTTP_TYPE_TEXT, "not implemented yet.")
@@ -427,7 +431,7 @@ def create(uri, http_user, loginShell, password, password_confirm,
 	responsible_groups_dest=[], guest_groups_dest=[],
 	standard_groups_source=[], privileged_groups_source=[],
 	responsible_groups_source=[], guest_groups_source=[],
-	create = None ):
+	create=None, configuration=None, machines=None, **kwargs):
 
 	# forget it; useless
 	del create
@@ -488,7 +492,7 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to add machine <strong>%s</strong> to requested
 		groups/privileges/responsibilities/invitations!''') % hostname)
-def edit(uri, http_user, hostname):
+def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 	"""Edit an machine record, based on hostname."""
 
 	return (w.HTTP_TYPE_TEXT, "not implemented yet.")
@@ -628,7 +632,7 @@ def record(uri, http_user, hostname, loginShell=None,
 	privileged_groups_source  = [],  privileged_groups_dest = [],
 	responsible_groups_source = [], responsible_groups_dest = [],
 	guest_groups_source       = [],       guest_groups_dest = [],
-	record = None):
+	record=None, configuration=None, machines=None, **kwargs):
 	"""Record machine changes."""
 
 	# submit button. forget it.
@@ -680,7 +684,8 @@ def record(uri, http_user, hostname, loginShell=None,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to modify one or more parameters of record
 		 <strong>%s</strong>!''') % hostname)
-def main(uri, http_user, sort = "hostname", order = "asc"):
+def main(uri, http_user, sort="hostname", order="asc", configuration=None,
+	machines=None, **kwargs):
 	""" display all machines in a nice HTML page. """
 
 	start = time.time()
