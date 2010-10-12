@@ -138,7 +138,7 @@ def test_message(msg):
 	""" display a message to stderr. """
 	sys.stderr.write("%s>>> %s%s\n"
 		% (colors[ST_LOG], msg, colors[ST_NO]) )
-def log_and_exec (command, inverse_test=False, result_code=0, comment="",
+def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
@@ -284,6 +284,7 @@ class ScenarioTest:
 				ref_output = open('%s/%s/out.txt' %
 					(self.base_path, cmdnum)).read()
 				gz_file = False
+
 			ref_code = int(open(
 				'%s/%s/code.txt' % (self.base_path, cmdnum)).read())
 			output, retcode = execute(self.cmds[cmdnum])
@@ -350,7 +351,7 @@ class ScenarioTest:
 				self.SaveOutput(cmdnum, output, retcode)
 				# return them for current test, strip_dates to avoid an
 				# immediate false negative.
-				return (strip_moving_data(output), retcode)
+				#return (strip_moving_data(output), retcode)
 			else:
 				logging.error('''you MUST have a reference output; please '''
 					'''fix code or rerun this test.''')
@@ -375,138 +376,6 @@ class ScenarioTest:
 	def reinit():
 		ScenarioTest.counter = 0
 		save_state(0)
-def test_integrated_help():
-	"""Test extensively argmarser contents and intergated help."""
-
-	commands = []
-
-	for program in (GET, ADD, MOD, DEL, CHK):
-
-		commands.extend([
-			program + ['-h'],
-			program + ['--help']])
-
-		if program == ADD:
-			modes = [ 'user', 'users', 'group', 'profile' ]
-		elif program == MOD:
-			modes = [ 'configuration', 'user', 'group', 'profile' ]
-		elif program == DEL:
-			modes = [ 'user', 'group', 'groups', 'profile' ]
-		elif program == GET:
-			modes = [ 'user', 'users', 'passwd', 'group', 'groups', 'profiles',
-				'configuration' ]
-		elif program == CHK:
-			modes = [ 'user', 'users', 'group', 'groups', 'profile', 'profiles',
-				'configuration' ]
-
-		for mode in modes:
-			if program == GET and mode == 'configuration':
-				commands.append(program + [ mode ])
-			else:
-				commands.extend([
-					program + [ mode, '-h' ],
-					program + [ mode, '--help' ]
-					])
-
-	ScenarioTest(commands, descr="integrated help").Run()
-def test_get(context):
-	"""Test GET a lot."""
-
-	commands = []
-
-	for category in [ 'config_dir', 'main_config_file',
-		'extendedgroup_data_file' ]:
-		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell',
-			'-p', '--php-code' ]:
-			commands.append(GET + [ 'configuration', category, mode ])
-
-	for category in [ 'skels', 'shells', 'backends' ]:
-		commands.append(GET + [ 'config', category ])
-
-	commands += [
-		# users
-		GET + [ "users" ],
-		GET + [ "users", "--xml" ],
-		GET + [ "users", "--long" ],
-		GET + [ "users", "--long", "--xml" ],
-		GET + [ "users", "--all" ],
-		GET + [ "users", "--xml", "--all" ],
-		GET + [ "users", "--all", "--long" ],
-		GET + [ "users", "--xml", "--all", "--long" ],
-		# groups
-		GET + [ "groups" ],
-		GET + [ "groups", "--xml" ],
-		GET + [ "groups", "--long" ],
-		GET + [ "groups", "--long", "--xml" ],
-		GET + [ "groups", "--xml", "--all" ],
-		GET + [ "groups", "--xml", "--all", "--long" ],
-		GET + [ "groups", "--xml", "--guests" ],
-		GET + [ "groups", "--xml", "--guests", "--long" ],
-		GET + [ "groups", "--xml", "--responsibles" ],
-		GET + [ "groups", "--xml", "--responsibles", "--long" ],
-		GET + [ "groups", "--xml", "--privileged" ],
-		GET + [ "groups", "--xml", "--privileged", "--long" ],
-		# Profiles
-		GET + [ "profiles" ],
-		GET + [ "profiles", "--xml" ],
-		]
-
-	ScenarioTest(commands, context=context, descr="get tests").Run()
-def test_find_new_indentifier():
-	#test_message('''starting identifier routines tests.''')
-	assert(pyutils.next_free([5,6,48,2,1,4], 5, 30) == 7)
-	assert(pyutils.next_free([5,6,48,2,1,4], 1, 30) == 3)
-	assert(pyutils.next_free([1,3], 1, 30) == 2)
-	try:
-		pyutils.next_free([1,2], 1, 2)
-	except:
-		assert(True) # good behaviour
-	else:
-		assert(False)
-
-	assert(pyutils.next_free([1,2], 1, 30) == 3)
-	assert(pyutils.next_free([1,2,4,5], 3, 5) == 3)
-	#test_message('''identifier routines tests finished.''')
-def test_regexes():
-	""" Try funky strings to make regexes fail (they should not)."""
-
-	# TODO: test regexes directly from defs in licorn.core....
-
-	test_message('''starting regexes tests.''')
-	regexes_commands = []
-
-	# groups related
-	regexes_commands.extend([
-		ADD + [ 'group', "--name='_-  -_'" ],
-		CHK + [ 'group', "--name='_-  -_'" ],
-		ADD + [ 'group', "--name=';-)'" ],
-		ADD + [ 'group', "--name='^_^'" ],
-		ADD + [ 'group', "--name='le copain des groupes'" ],
-		CHK + [ 'group', '-v', "--name='le copain des groupes'" ],
-		ADD + [ 'group', "--name='héhéhé'" ],
-		ADD + [ 'group', "--name='%(\`ls -la /etc/passwd\`)'" ],
-		ADD + [ 'group', "--name='echo print coucou | python | nothing'" ],
-		ADD + [ 'group', "--name='**/*-'" ],
-		CHK + [ 'group', '-v', "--name='**/*-'" ]
-		])
-
-	# users related
-	regexes_commands.extend([
-		ADD + [ 'user', "--login='_-  -_'" ],
-		ADD + [ 'user', "--login=';-)'" ],
-		ADD + [ 'user', "--login='^_^'" ],
-		ADD + [ 'user', "--login='le copain des utilisateurs'" ],
-		ADD + [ 'user', "--login='héhéhé'" ],
-		ADD + [ 'user', "--login='%(\`ls -la /etc/passwd\`)'" ],
-		ADD + [ 'user', "--login='echo print coucou | python'" ],
-		ADD + [ 'user', "--login='**/*-'" ]
-		])
-
-	ScenarioTest(regexes_commands).Run()
-
-	# TODO: profiles ?
-
-	test_message('''regexes tests finished.''')
 def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
 
@@ -519,15 +388,18 @@ def clean_system():
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
-			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian''',
+			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,''' \
+			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,''' \
+			'''tenrebcul2,utest,utest1,utest2,utest3,utest4''',
 			 '--no-archive', '-v' ],
-		['profile', '''--group=utilisagers,responsibilisateurs,'''
+		['profile', '''utilisagers,responsibilisateurs,'''
 			'''profil_test''',
 			'--del-users', '--no-archive', '-v' ],
 		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
 			'''ARCHIVES-test,group_test,group_testsys,group_test2,''' \
-			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,cp''',
+			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,'''
+			'''cp,gtest,gtest1,gtest2,gtest3,gtest4''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
@@ -558,13 +430,10 @@ def clean_dir_contents(directory):
 		else:
 			os.unlink(entry)
 
-	for entry in fsapi.minifind(directory, mindepth=1, maxdepth=2,
-		type=stat.S_IFDIR|stat.S_IFREG):
-		delete_entry(entry)
+	map(delete_entry, fsapi.minifind(directory, mindepth=1, maxdepth=2))
 
 	if verbose:
 		test_message('Cleaned directory %s.' % directory)
-
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
@@ -611,6 +480,144 @@ def compare_delete_backups(mode):
 		logging.error('backup mode not understood.')
 
 	test_message('''system config files backup comparison finished successfully.''')
+def test_integrated_help():
+	"""Test extensively argmarser contents and intergated help."""
+
+	commands = []
+
+	for program in (GET, ADD, MOD, DEL, CHK):
+
+		commands.extend([
+			program + ['-h'],
+			program + ['--help']])
+
+		if program == ADD:
+			modes = [ 'user', 'users', 'group', 'profile' ]
+		elif program == MOD:
+			modes = [ 'configuration', 'user', 'group', 'profile' ]
+		elif program == DEL:
+			modes = [ 'user', 'group', 'groups', 'profile' ]
+		elif program == GET:
+			modes = [ 'user', 'users', 'passwd', 'group', 'groups', 'profiles',
+				'configuration' ]
+		elif program == CHK:
+			modes = [ 'user', 'users', 'group', 'groups', 'profile', 'profiles',
+				'configuration' ]
+
+		for mode in modes:
+			if program == GET and mode == 'configuration':
+				commands.append(program + [ mode ])
+			else:
+				commands.extend([
+					program + [ mode, '-h' ],
+					program + [ mode, '--help' ]
+					])
+
+	ScenarioTest(commands, descr='''test integrated help of all CLI commands'''
+		).Run()
+def test_get(context):
+	"""Test GET a lot."""
+
+	commands = []
+
+	for category in [ 'config_dir', 'main_config_file',
+		'extendedgroup_data_file' ]:
+		for mode in [ '', '-s', '-b', '--bourne-shell', '-c', '--c-shell',
+			'-p', '--php-code' ]:
+			commands.append(GET + [ 'configuration', category, mode ])
+
+	for category in [ 'skels', 'shells', 'backends' ]:
+		commands.append(GET + [ 'config', category ])
+
+	commands += [
+		# users
+		GET + [ "users" ],
+		GET + [ "users", "--xml" ],
+		GET + [ "users", "--long" ],
+		GET + [ "users", "--long", "--xml" ],
+		GET + [ "users", "--all" ],
+		GET + [ "users", "--xml", "--all" ],
+		GET + [ "users", "--all", "--long" ],
+		GET + [ "users", "--xml", "--all", "--long" ],
+		# groups
+		GET + [ "groups" ],
+		GET + [ "groups", "--xml" ],
+		GET + [ "groups", "--long" ],
+		GET + [ "groups", "--long", "--xml" ],
+		GET + [ "groups", "--xml", "--all" ],
+		GET + [ "groups", "--xml", "--all", "--long" ],
+		GET + [ "groups", "--xml", "--guests" ],
+		GET + [ "groups", "--xml", "--guests", "--long" ],
+		GET + [ "groups", "--xml", "--responsibles" ],
+		GET + [ "groups", "--xml", "--responsibles", "--long" ],
+		GET + [ "groups", "--xml", "--privileged" ],
+		GET + [ "groups", "--xml", "--privileged", "--long" ],
+		# Profiles
+		GET + [ "profiles" ],
+		GET + [ "profiles", '-x' ],
+		GET + [ "profiles", "--xml" ],
+		# Privileges
+		GET + [ "privileges" ],
+		GET + [ "privileges", "-x" ],
+		GET + [ "privileges", "--xml" ],
+		]
+
+	ScenarioTest(commands, context=context, descr='''CLI get tests''').Run()
+def test_find_new_indentifier():
+	#test_message('''starting identifier routines tests.''')
+	assert(pyutils.next_free([5,6,48,2,1,4], 5, 30) == 7)
+	assert(pyutils.next_free([5,6,48,2,1,4], 1, 30) == 3)
+	assert(pyutils.next_free([1,3], 1, 30) == 2)
+	try:
+		pyutils.next_free([1,2], 1, 2)
+	except:
+		assert(True) # good behaviour
+	else:
+		assert(False)
+
+	assert(pyutils.next_free([1,2], 1, 30) == 3)
+	assert(pyutils.next_free([1,2,4,5], 3, 5) == 3)
+	#test_message('''identifier routines tests finished.''')
+def test_regexes():
+	""" Try funky strings to make regexes fail (they should not)."""
+
+	# TODO: test regexes directly from defs in licorn.core….
+
+	test_message('''starting regexes tests.''')
+	regexes_commands = []
+
+	# groups related
+	regexes_commands.extend([
+		ADD + [ 'group', "--name='_-  -_'" ],
+		CHK + [ 'group', "--name='_-  -_'" ],
+		ADD + [ 'group', "--name=';-)'" ],
+		ADD + [ 'group', "--name='^_^'" ],
+		ADD + [ 'group', "--name='le copain des groupes'" ],
+		CHK + [ 'group', '-v', "--name='le copain des groupes'" ],
+		ADD + [ 'group', "--name='héhéhé'" ],
+		ADD + [ 'group', "--name='%(\`ls -la /etc/passwd\`)'" ],
+		ADD + [ 'group', "--name='echo print coucou | python | nothing'" ],
+		ADD + [ 'group', "--name='**/*-'" ],
+		CHK + [ 'group', '-v', "--name='**/*-'" ]
+		])
+
+	# users related
+	regexes_commands.extend([
+		ADD + [ 'user', "--login='_-  -_'" ],
+		ADD + [ 'user', "--login=';-)'" ],
+		ADD + [ 'user', "--login='^_^'" ],
+		ADD + [ 'user', "--login='le copain des utilisateurs'" ],
+		ADD + [ 'user', "--login='héhéhé'" ],
+		ADD + [ 'user', "--login='%(\`ls -la /etc/passwd\`)'" ],
+		ADD + [ 'user', "--login='echo print coucou | python'" ],
+		ADD + [ 'user', "--login='**/*-'" ]
+		])
+
+	ScenarioTest(regexes_commands).Run()
+
+	# TODO: profiles ?
+
+	test_message('''regexes tests finished.''')
 def test_groups(context):
 	"""Test ADD/MOD/DEL on groups in various ways."""
 
@@ -756,7 +763,7 @@ def test_groups(context):
 		DEL + ["group", gname ],
 		GET + [ 'groups', '-la' ]
 		],
-		descr='ADD group with specified skel and descr',
+		descr='''ADD group with specified skel and descr''',
 		context=context).Run()
 
 	gname = 'ARCHIVES-test'
@@ -929,8 +936,8 @@ def test_groups(context):
 		GET + [ 'privileges' ]
 		],
 		context=context,
-		descr='''Check if privilege list is up to date after group deletion'''
-			''' (fix #297)'''
+		descr='''Check if privilege list is up to date after group deletion '''
+			'''(fix #297).'''
 		).Run()
 
 	#fix #293
@@ -948,7 +955,7 @@ def test_groups(context):
 		DEL + [ 'group', '--name=%ssys' % gname, '-v' ],
 		],
 		context=context,
-		descr='tests of groups commands with --gid option (fix #293)'
+		descr='''tests of groups commands with --gid option (fix #293)'''
 		).Run()
 
 	# fix #286
@@ -986,11 +993,11 @@ def test_groups(context):
 	# RENAME IS NOT SUPPORTED YET !!
 	#log_and_exec(MOD + " group --name=TestGroup_A --rename=leTestGroup_A/etc/power")
 
-	# FIXME: get members of group for later verifications...
+	# FIXME: get members of group for later verifications…
 	#FunctionnalTest(DEL + ["group", "--name", gname, '--del-users',
 	#	'--no-archive'],
 	#	context=context).Run()
-	# FIXME: verify deletion of groups + deletion of users...
+	# FIXME: verify deletion of groups + deletion of users…
 	# FIXME: idem last group, verify users account were archived, shared dir ws archived.
 
 	test_message('''groups related tests finished.''')
@@ -1015,7 +1022,8 @@ def test_users(context):
 		DEL + [ 'user', '--login=%s' % uname ],
 		],
 		context=context,
-		descr='''check if a user can be modified with an incorrect shell and with a correct shell'''
+		descr='''check if a user can be modified with an incorrect shell and '''
+			'''with a correct shell'''
 		).Run()
 
 	# fix #275
@@ -1078,7 +1086,8 @@ def test_users(context):
 		GET + [ 'users' ],
 		],
 		context=context,
-		descr='test add user with --firstname and --lastname options (fix #284)'
+		descr='''test add user with --firstname and --lastname options '''
+			'''(fix #284)'''
 		).Run()
 
 	#fix #182
@@ -1103,7 +1112,7 @@ def test_users(context):
 		DEL + [ 'user', '--login=%s' % uname, '-v' ],
 		],
 		context=context,
-		descr='modify one or more parameters of a user (avoid #181 #197)'
+		descr='''modify one or more parameters of a user (avoid #181 #197)'''
 		).Run()
 
 	#fix #248
@@ -1121,7 +1130,7 @@ def test_users(context):
 		DEL + [ 'user', '%ssys' %uname ],
 		],
 		context=context,
-		descr='check option --home of user command (fix #248)'
+		descr='''check option --home of user command (fix #248)'''
 		).Run()
 
 	ScenarioTest([
@@ -1138,8 +1147,8 @@ def test_users(context):
 		DEL + [ 'user', '--login=%s' % uname, '-v' ],
 		],
 		context=context,
-		descr='''check messages of --lock and --unlock on mod user command
-			and answer of get user --long (avoid #309)'''
+		descr='''check messages of --lock and --unlock on mod user command '''
+			'''and answer of get user --long (avoid #309)'''
 		).Run()
 
 	pname = 'profil_test'
@@ -1152,8 +1161,8 @@ def test_users(context):
 		DEL + [ 'profile', '--group=%s' % pname, '--del-users', '-v' ],
 		],
 		context=context,
-		descr='''Add a profil and check if it has been affected to a new user
-			(avoid #277)'''
+		descr='''Add a profil and check if it has been affected to a new '''
+			'''user (avoid #277)'''
 		).Run()
 
 	fname = 'nibor'
@@ -1179,7 +1188,8 @@ def test_users(context):
 		DEL + [ 'user', '--login=%s2' % fname, '-v' ],
 		],
 		context=context,
-		descr='check add user with --firstname and --lastname (avoid #303 #305)'
+		descr='''check add user with --firstname and --lastname (avoid #303 '''
+			'''#305)'''
 		).Run()
 
 	ScenarioTest([
@@ -1211,7 +1221,7 @@ def test_users(context):
 		GET + [ 'users', '-l' ],
 		],
 		context=context,
-		descr='''(avoid #169)'''
+		descr='''avoid #169'''
 		).Run()
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
@@ -1237,7 +1247,7 @@ def test_users(context):
 	#log_and_exec(CHK + " user --name utilisager.normal --extended --auto-no", True, 7, comment="user lacks symlink")
 	#log_and_exec(CHK + " user --name utilisager.normal --extended --auto-yes")
 
-	# checking for Maildir repair capacity...
+	# checking for Maildir repair capacity…
 	if configuration.users.mailbox_type == configuration.MAIL_TYPE_HOME_MAILDIR:
 		os.system("rm -rf ~utilisager.normal/" + configuration.users.mailbox)
 		log_and_exec(CHK + " user -v --name utilisager.normal --auto-no",
@@ -1248,7 +1258,7 @@ def test_users(context):
 	log_and_exec(CHK + " user -v --name utilisager.normal --auto-yes")
 
 	os.system("mv -f ~utilisager.normal/test_users_B ~utilisager.normal/mon_groupe_B_préféré")
-	# all must be ok, the link is just renamed...
+	# all must be ok, the link is just renamed…
 	log_and_exec(CHK + " group -vv --name test_users_B --extended")
 
 	# FIXME: verify the user can create things in shared group dirs.
@@ -1348,7 +1358,7 @@ def test_imports(context):
 	log_and_exec(ADD + " users --filename ./testsuite/tests_resps.csv --profile responsibilisateurs --lastname-column 1 --firstname-column 0")
 	log_and_exec("time " + ADD + " users --filename ./testsuite/tests_resps.csv --profile responsibilisateurs --lastname-column 1 --firstname-column 0 --confirm-import")
 
-	# activer les 2 lignes suivantes pour importer 860 utilisateurs de Latresne...
+	# activer les 2 lignes suivantes pour importer 860 utilisateurs de Latresne…
 	log_and_exec(ADD + " users --filename ./testsuite/tests_users2.csv --profile utilisagers")
 	log_and_exec("time " + ADD + " users --filename ./testsuite/tests_users2.csv --profile utilisagers --confirm-import")
 
@@ -1414,7 +1424,8 @@ def test_profiles(context):
 		DEL + [ 'profile', '--group=%s' % pname, '-v' ],
 		],
 		context=context,
-		descr='check if a error occurs when a non-existing group is added to a profile'
+		descr='''check if a error occurs when a non-existing group is added '''
+			'''to a profile'''
 		).Run()
 
 	ScenarioTest([
@@ -1615,7 +1626,7 @@ def test_short_syntax():
 		DEL + [ 'group', '%s4,' %  gname, '-v'],
 		DEL + [ 'group', '%s4' %  gname, '-v'],
 		],
-		descr='test short users/groups commands'
+		descr='''test short users/groups commands'''
 		).Run()
 
 	ScenarioTest([
@@ -1631,7 +1642,7 @@ def test_short_syntax():
 		DEL + [ 'group', gname ],
 		DEL + [ 'group', '%ssys' % gname ],
 		],
-		descr='test short privileges commands'
+		descr='''test short privileges commands'''
 		).Run()
 
 	ScenarioTest([
@@ -1653,7 +1664,7 @@ def test_short_syntax():
 		DEL + [ 'group', '%s3' % gname, '-v' ],
 		GET + [ 'profiles' ],
 		],
-		descr='test short profiles commands'
+		descr='''test short profiles commands'''
 		).Run()
 
 	ScenarioTest([
@@ -1675,7 +1686,7 @@ def test_short_syntax():
 		CHK + [ 'user', uname, '-vb' ],
 		DEL + [ 'user', uname, '-v' ],
 		],
-		descr='test short chk commands'
+		descr='''test short chk commands'''
 		).Run()
 
 	"""
