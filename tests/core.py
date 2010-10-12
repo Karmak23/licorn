@@ -286,12 +286,13 @@ class ScenarioTest:
 			if os.path.exists('%s/%s/out.txt.gz' % (self.base_path, cmdnum)):
 				ref_output = gzip.open('%s/%s/out.txt.gz' %
 					(self.base_path, cmdnum), 'r').read()
+				gz_file = True
 			else:
 				ref_output = open('%s/%s/out.txt' %
 					(self.base_path, cmdnum)).read()
+				gz_file = False
 			ref_code = int(open(
 				'%s/%s/code.txt' % (self.base_path, cmdnum)).read())
-
 			output, retcode = execute(self.cmds[cmdnum])
 			output = strip_moving_data(output)
 
@@ -301,9 +302,14 @@ class ScenarioTest:
 
 				handle, tmpfilename = tempfile.mkstemp(
 					prefix=clean_path_name(self.cmds[cmdnum]))
+				if gz_file:
+					handle2, tmpfilename2 = tempfile.mkstemp(
+						prefix=clean_path_name(self.cmds[cmdnum]))
+					open(tmpfilename2, 'w').write(ref_output)
 				open(tmpfilename, 'w').write(output)
 				diff_output = process.execute(['diff', '-u',
-					'%s/%s/out.txt' % (self.base_path, cmdnum),
+					tmpfilename2 if gz_file else
+						'%s/%s/out.txt' % (self.base_path, cmdnum),
 					tmpfilename])[0]
 
 				logging.warning(
