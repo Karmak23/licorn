@@ -619,7 +619,7 @@ def test_groups(context):
 	def chk_acls_cmds(group, subdir=None):
 		return [ 'getfacl', '-R', '%s/%s/%s%s' % (
 		configuration.defaults.home_base_path,
-		configuration.groups.names['plural'],
+		configuration.groups.names.plural,
 		group,
 		'/%s' % subdir if subdir else '') ]
 
@@ -644,7 +644,7 @@ def test_groups(context):
 	remove_group_cmds = [ "rm", "-vrf",
 		"%s/%s/%s" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)
 		]
 
@@ -652,7 +652,7 @@ def test_groups(context):
 	remove_group_html_cmds = [ "rm", "-vrf",
 		"%s/%s/%s/public_html" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)
 		]
 
@@ -661,7 +661,7 @@ def test_groups(context):
 	remove_group_acls_cmds = [ "setfacl", "-R", "-b",
 		"%s/%s/%s" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)
 		]
 
@@ -669,14 +669,14 @@ def test_groups(context):
 	remove_group_html_acls_cmds = [ "setfacl", "-R", "-b",
 		"%s/%s/%s/public_html" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)
 		]
 
 	bad_chown_group_cmds = [ 'chown', 'bin:daemon', '--changes',
 		'%s/%s/%s/public_html' % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)
 		]
 
@@ -767,15 +767,15 @@ def test_groups(context):
 		ADD + [ 'group', gname, '-v' ],
 		[ 'touch', 		"%s/%s/%s/test.txt" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname) ],
 		[ 'mkdir', "%s/%s/%s/testdir" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname) ],
 		[ 'touch', "%s/%s/%s/testdir/testfile" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname) ],
 		CHK + [ "group", "-vb", gname ],
 		DEL + [ 'group', gname ],
@@ -813,7 +813,7 @@ def test_groups(context):
 		ADD + [ 'group', '--name=%s' % gname ],
 		[ 'rm', '-vrf', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)],
 		DEL + [ 'group', '--name=%s' % gname ],
 		],
@@ -859,14 +859,14 @@ def test_groups(context):
 		chk_acls_cmds(gname),
 		[ 'chown', '-R', '-c', uname, "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)],
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
 		[ 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
-			configuration.groups.names['plural'],
+			configuration.groups.names.plural,
 			gname)],
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
@@ -1455,6 +1455,8 @@ def test_profiles(context):
 		).Run()
 
 	# profile scenario implemented with old commands (fix #292)
+
+	exclude_uid = open(state_files['owner']).read().split(',')[0]
 	ScenarioTest([
 		ADD + [ 'profile', '--name=Utilisagers', '--group=utilisagers',
 			'--description="testsuite profile, feel free to delete."', '-v' ],
@@ -1499,11 +1501,11 @@ def test_profiles(context):
 		MOD + [ 'profile', '--group=utilisagers', '--apply-all',
 			'--to-users=toto', '--batch', '-v' ],
 		MOD + [ 'profile', '--group=utilisagers', '--apply-all',  '--to-all',
-			'--auto-no' ],
+			'--exclude-uid', exclude_uid, '--auto-no' ],
 		MOD + [ 'profile', '--group=utilisagers', '--apply-all',  '--to-all',
-			'--auto-yes' ],
+			'--exclude-uid', exclude_uid, '--auto-yes' ],
 		MOD + [ 'profile', '--group=utilisagers', '--apply-all',  '--to-all',
-			'--batch', '-v' ],
+			'--exclude-uid', exclude_uid, '--batch', '-v' ],
 		DEL + [ 'profile', '--group=responsibilisateurs', '--no-archive',
 			'--del-users', '-v' ],
 		DEL + [ 'profile', '--group=utilisagers', '--del-users',
@@ -1692,6 +1694,121 @@ def test_short_syntax():
 	CHK + [ 'profile', '%s,%s2' % (pname,pname), '--batch', '-vve' ],
 	DEL + [ 'profile', '%s,%s2' % (pname,pname), '-v' ],
 	"""
+def test_exclusions():
+	""" test all kind of exclusion parameters. """
+	uname = 'utest'
+	gname = 'gtest'
+
+	ScenarioTest([
+		ADD + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
+		GET + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
+		# real tests come here. No need to test other things than GET,
+		# the exclusion mechanisms are located in cli_select, which is common
+		# to all CLI tools.
+		#
+		# should show utestXXX but not utest
+		GET + [ 'user', '%s1,%s2,%s3' % (uname, uname, uname) ], # without exc.
+		GET + [ 'user', '-X', uname ], # with exclusion
+		GET + [ 'user', '--exclude', uname ], # with exclusion (same flag)
+		# should succeed, because --exclude accepts IDs and names (but is a
+		# little slower than --not-users when used with names).
+		GET + [ 'user', '--exclude', '1002' ],
+
+		# should output the same, but with different internal mechanism
+		GET + [ 'user', '--not-login', uname ],
+		GET + [ 'user', '--exclude-login', uname ],
+		GET + [ 'user', '--not-logins', uname ],
+		GET + [ 'user', '--exclude-logins', uname ],
+		GET + [ 'user', '--not-user', uname ],
+		GET + [ 'user', '--exclude-user', uname ],
+		GET + [ 'user', '--not-users', uname ],
+		GET + [ 'user', '--exclude-users', uname ],
+		GET + [ 'user', '--not-username', uname ],
+		GET + [ 'user', '--exclude-username', uname ],
+		GET + [ 'user', '--not-usernames', uname ],
+		GET + [ 'user', '--exclude-usernames', uname ],
+		# should fail, because --not-user accept only user names
+		GET + [ 'user', '--not-user', '1002' ],
+
+		# should output the same (modulo the UID is the good...), but with
+		# different internal mechanism
+		GET + [ 'user', '--not-uid', '1002' ],
+		GET + [ 'user', '--not-uids', '1002' ],
+		GET + [ 'user', '--exclude-uid', '1002' ],
+		GET + [ 'user', '--exclude-uids', '1002' ],
+		# should fail because --not-uid accepts only UIDs
+		GET + [ 'user', '--not-uid', uname ],
+
+		# should output utest and utest1
+		GET + [ 'user', '--not-users', '%s2,%s3' % (uname, uname) ],
+
+		# should fail, because --not-user accept only user names
+		GET + [ 'user', '--not-user', '1002,1001' ],
+		# should fail, because --not-user accept only user names
+		GET + [ 'user', '--not-uid', '%s2,%s3' % (uname, uname) ],
+
+		# should show all users but not utest
+		GET + [ 'users', '-a', '-X', uname ], # with exclusion
+		GET + [ 'users', '-a', '--exclude', uname ], # with exclusion (same flag)
+		# should succeed, because --exclude accepts IDs and names (but is a
+		# little slower than --not-users when used with names).
+		GET + [ 'user', '-a', '--exclude', '1002' ],
+
+		# all shoud succeed
+		GET + [ 'users', '-a', '-X', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '--exclude', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '-X', '%s,0,1,proot' % uname ],
+		GET + [ 'users', '-a', '--exclude', '%s,0,1,proot' % uname ],
+
+		# a part should succeed, a part should fail
+		GET + [ 'users', '-a', '--not-username', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '--not-usernames', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '--not-user', '%s,0,1,proot' % uname ],
+		GET + [ 'users', '-a', '--not-users', '%s,0,1,proot' % uname ],
+
+		# other part should succeed, other part should fail
+		GET + [ 'users', '-a', '--not-uid', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '--not-uids', '%s,root,proot' % uname ],
+		GET + [ 'users', '-a', '--exclude-uid', '%s,0,1,proot' % uname ],
+		GET + [ 'users', '-a', '--exclude-uids', '%s,0,1,proot' % uname ],
+
+		DEL + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
+		GET + [ 'users' ]
+		],
+		descr='''test exclusions in different manners on users'''
+	).Run()
+
+	ScenarioTest([
+		ADD + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
+		GET + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
+
+		GET + [ 'group', '-X', '10000,%s3' % gname ],
+		GET + [ 'group', '--not', '10000,%s3' % gname ],
+		GET + [ 'group', '--exclude', '10000,%s3' % gname ],
+
+		# should fail
+		GET + [ 'group', '--not-group', '10000,10001'  ],
+
+		# should all succeed
+		GET + [ 'group', '--not-group', '%s2,%s3' % (gname, gname) ],
+		GET + [ 'group', '--not-groups', '%s2,%s3' % (gname, gname) ],
+		GET + [ 'group', '--exclude-group', '%s2,%s3' % (gname, gname) ],
+		GET + [ 'group', '--exclude-groups', '%s2,%s3' % (gname, gname) ],
+
+		# should fail
+		GET + [ 'group', '--not-gids', '%s2,%s3' % (gname, gname) ],
+
+		# should all succeed
+		GET + [ 'group', '--not-gid', '10000,10001' ],
+		GET + [ 'group', '--not-gids', '10000,10001' ],
+		GET + [ 'group', '--exclude-gid', '10000,10001' ],
+		GET + [ 'group', '--exclude-gids', '10000,10001' ],
+
+		DEL + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
+		GET + [ 'groups' ],
+	],
+	descr='''test exclusions in different manners on groups'''
+	).Run()
 def to_be_implemented():
 	""" TO BE DONE !
 		#
@@ -1733,6 +1850,7 @@ if __name__ == "__main__":
 			#test_check_config()
 			test_regexes()
 			test_short_syntax()
+			test_exclusions()
 			save_state(1, state_type='context')
 			ctx_will_change = True
 		else:
@@ -1782,5 +1900,5 @@ if __name__ == "__main__":
 			open(state_files['owner']).read().strip().split(',') ]
 		logging.notice('giving back all scenarii data to %s:%s.' % (
 			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
-		for entry in fsapi.minifind('data'):
+		for entry in fsapi.minifind('data', followlinks=True):
 			os.chown(entry, uid, gid)
