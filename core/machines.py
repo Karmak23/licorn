@@ -74,7 +74,9 @@ class MachinesController(Singleton, Pyro.core.ObjBase):
 			MachinesController.machines.update(m)
 			MachinesController.hostname_cache.update(c)
 
-		self.update_statuses()
+		# don't do this here, this will speed up daemon boot, and will be done
+		# in the next 30 seconds anyway.
+		#self.update_statuses()
 	def update_statuses(self, listener=None, *args, **kwargs):
 		""" run across all IPs and find which machines are up or down. """
 		nmap_cmd = self.nmap_cmd_base[:]
