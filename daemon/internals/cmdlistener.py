@@ -14,7 +14,7 @@ from threading   import Thread, Event, Semaphore, Timer
 from collections import deque
 
 from licorn.foundations           import logging, styles, process
-from licorn.foundations.objects   import Singleton
+from licorn.foundations.threads   import LicornBasicThread
 from licorn.foundations.constants import filters
 
 from licorn.daemon.core           import dname
@@ -70,12 +70,12 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			logging.warning('connection tentative from %s:%s' % (client_addr,
 				client_socket))
 			return 0, Pyro.constants.DENIED_HOSTBLOCKED
-class CommandListener(Thread, Singleton):
+class CommandListener(LicornBasicThread):
 	""" A Thread which collect INotify events and does what is appropriate with them. """
 
 	def __init__(self, pname=dname, pids_to_wake=[], **kwargs):
 
-		Thread.__init__(self)
+		LicornBasicThread.__init__(self)
 
 		self.name = "%s/%s" % (
 			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
@@ -87,7 +87,6 @@ class CommandListener(Thread, Singleton):
 			setattr(self, attr, kwargs[attr])
 
 	def run(self):
-		Thread.run(self)
 		logging.progress("%s: thread running." % (self.name))
 
 		Pyro.core.initServer()
@@ -130,16 +129,15 @@ class CommandListener(Thread, Singleton):
 			self.wake_threads.append(t)
 			t.start()
 
-		self.pyro_daemon.requestLoop()
+		while not self._stop_event.isSet():
+			self.pyro_daemon.handleRequests(0.1)
 
-		logging.progress("%s: thread ended." % (self.name))
-	def stop(self):
-		if Thread.isAlive(self):
-			logging.progress("%s: stopping thread in 2 seconds." % (self.name))
-			time.sleep(2.0)
-			self.pyro_daemon.shutdown(True)
-			logging.info("%s: %s Pyro daemon." % (self.name,
-				styles.stylize(styles.ST_BAD, "stopped")))
+		logging.info("%s: %s Pyro daemon." % (self.name,
+			styles.stylize(styles.ST_BAD, "stopped")))
+		self.pyro_daemon.shutdown(True)
+
 		# don't forget to join these, to clean everything before exiting.
 		for thread in self.wake_threads:
 			thread.join()
+
+		logging.progress("%s: thread ended." % (self.name))

@@ -113,7 +113,7 @@ if __name__ == "__main__":
 		#searcher   = FileSearchServer(dname)
 		#cache      = Cache(keywords, dname)
 		msu         = LicornJobThread(dname, machines.update_statuses,
-						delay=10.0, tname='MachineStatusesUpdater')
+						delay=30.0, tname='MachineStatusesUpdater')
 		aclchecker  = ACLChecker(None, dname)
 		inotifier    = INotifier(aclchecker, None, dname)
 		groups.set_inotifier(inotifier)

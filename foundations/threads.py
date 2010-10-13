@@ -117,7 +117,16 @@ class LicornJobThread(LicornBasicThread):
 		if (self.loop or self.count) and not self.delay:
 			raise exceptions.BadArgumentError(
 				'must provide a delay for looping.')
-
+	def sleep(self):
+		""" sleep at most self.delay, but with smaller intervals, to allow
+			interruption without waiting to the end of self.delay, which can
+			be very long.
+		"""
+		current_delay = 0.0
+		while current_delay < self.delay and not self._stop_event.isSet():
+			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
+			time.sleep(0.1)
+			current_delay += 0.1
 	def run(self):
 		LicornBasicThread.run(self)
 		logging.progress('%s: thread started.' % self.name)
@@ -130,7 +139,7 @@ class LicornJobThread(LicornBasicThread):
 		elif self.delay:
 			# we just have to wait a delay before starting (this is a
 			# simple timer thread).
-			time.sleep(self.delay)
+			self.sleep()
 
 		while not self._stop_event.isSet() and \
 			(self.loop or self.current_loop < self.count):
@@ -138,6 +147,5 @@ class LicornJobThread(LicornBasicThread):
 			self.target(args=self.args, kwargs=self.kwargs)
 
 			self.current_loop += 1
-			time.sleep(self.delay)
-
+			self.sleep()
 		logging.progress('%s: thread ended.' % self.name)
