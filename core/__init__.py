@@ -29,9 +29,6 @@ def connect():
 	from configuration import LicornConfiguration
 	localconfig = LicornConfiguration(minimal=True)
 
-	connect_tries = 1
-	max_retries = localconfig.licornd.pyro.max_retries
-
 	if localconfig.licornd.role == 'server':
 		pyroloc = 'PYROLOC://localhost:7766'
 	else:
