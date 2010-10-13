@@ -95,8 +95,8 @@ def warning(mesg, once=False, listener=None):
 		except KeyError, e:
 			__warningsdb[mesg] = True
 
-	text_message = "%s %s %s\n" % (
-		styles.stylize(styles.ST_WARNING, 'WARNING:'), mytime(), mesg)
+	text_message = "%s%s %s\n" % (
+		styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg)
 
 	if listener:
 		listener.process(
@@ -118,12 +118,12 @@ def warning2(mesg, once=False, listener=None):
 	if listener and listener.verbose >= verbose.INFO:
 		listener.process(
 			LicornMessage(data="%s%s %s\n" % (
-			styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg)),
+			styles.stylize(styles.ST_WARNING, '/2\\'), mytime(), mesg)),
 			options.msgproc.getProxy())
 
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write("%s%s %s\n" % (
-			styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg))
+			styles.stylize(styles.ST_WARNING, '/2\\'), mytime(), mesg))
 def notice(mesg, listener=None):
 	""" Display a non-styles.stylized notice message on stderr."""
 	ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
