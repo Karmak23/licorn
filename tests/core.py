@@ -241,13 +241,26 @@ class ScenarioTest:
 		open('%s/%s/cmdline.txt' % (self.base_path, cmdnum), 'w').write(
 			' '.join(self.cmds[cmdnum]))
 		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
+
+		filename_gz = '%s/%s/out.txt.gz' % (self.base_path, cmdnum)
+		filename_txt = '%s/%s/out.txt' % (self.base_path, cmdnum)
+		# we have to try to delete the other logfile, bacause in some rare
+		# cases (when output raises above 1024 or lower besides), the format
+		# changes and testsuite loops comparing to a wrong output.
 		if len(output) > 1024:
-			file = gzip.GzipFile(
-				filename='%s/%s/out.txt.gz' % (self.base_path, cmdnum),
-				mode='wb',
-				compresslevel=9)
+			try:
+				os.unlink(filename_txt)
+			except (OSError, IOError), e:
+				if e.errno != 2:
+					raise e
+			file = gzip.GzipFile(filename=filename_gz, mode='wb', compresslevel=9)
 		else:
-			file = open('%s/%s/out.txt' % (self.base_path, cmdnum), 'w')
+			try:
+				os.unlink(filename_gz)
+			except (OSError, IOError), e:
+				if e.errno != 2:
+					raise e
+			file = open(filename_txt, 'w')
 		file.write(strip_moving_data(output))
 		file.close()
 	def show_commands(self, highlight_num):
@@ -285,8 +298,9 @@ class ScenarioTest:
 					(self.base_path, cmdnum)).read()
 				gz_file = False
 
-			ref_code = int(open(
-				'%s/%s/code.txt' % (self.base_path, cmdnum)).read())
+			ref_code = int(
+				open('%s/%s/code.txt' % (self.base_path, cmdnum)).read()
+				)
 			output, retcode = execute(self.cmds[cmdnum])
 			output = strip_moving_data(output)
 
