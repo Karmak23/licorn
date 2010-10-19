@@ -87,3 +87,17 @@ servers.IMAP_CYRUS   = 2
 servers.IMAP_UW      = 3
 servers.POP3_COURIER = 1
 servers.POP3_QPOPPER = 2
+
+# this is a replica of python.gamin, to help displaying messages in a
+# human-readable form.
+gamin_events = {
+	1: 'GAMChanged',
+	2: 'GAMDeleted',
+	3: 'GAMStartExecuting',
+	4: 'GAMStopExecuting',
+	5: 'GAMCreated',
+	6: 'GAMMoved',
+	7: 'GAMAcknowledge',
+	8: 'GAMExists',
+	9: 'GAMEndExist'
+	}

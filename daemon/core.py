@@ -73,7 +73,7 @@ def licornd_parse_arguments(app, configuration):
 
 	parser.add_option("-W", "--wmi-listen-address",
 		action="store", dest="wmi_listen_address", default=None,
-		help='''specify an IP address or a hostname to bind to. Only %s can '''
+		help='''Specify an IP address or a hostname to bind to. Only %s can '''
 			'''be specified (the WMI cannot yet bind on multiple interfaces '''
 			'''at the same time). This option takes precedence over the '''
 			'''configuration directive, if present in %s.''' % (
@@ -82,8 +82,18 @@ def licornd_parse_arguments(app, configuration):
 
 	parser.add_option("-p", "--pid-to-wake",
 		action="store", type="int", dest="pid_to_wake", default=None,
-		help='''specify a PID to be sent SIGUSR1 when daemon is ready. Used '''
-			'''when CLI starts the daemon itself, else not used. ''')
+		help='''Specify a PID to send SIGUSR1 to, when daemon is ready. Used '''
+			'''internaly only when CLI tools start the daemon themselves.''')
+
+	parser.add_option("-B", "--no-boot-check",
+		action="store_true", dest="no_boot_check", default=False,
+		help='''Don't run the initial check on all shared directories. This '''
+			'''makes daemon be ready faster to answer users legitimate '''
+			'''requests, at the cost of consistency of shared data. %s: don't'''
+			''' use this flag at server boot in init scripts. Only on daemon '''
+			'''relaunch, on an already running system, for testing or '''
+			'''debugging purposes.''' % styles.stylize(styles.ST_IMPORTANT,
+			'EXTREME CAUTION'))
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 

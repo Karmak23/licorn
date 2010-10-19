@@ -115,7 +115,7 @@ if __name__ == "__main__":
 		msu         = LicornJobThread(dname, machines.update_statuses,
 						delay=30.0, tname='MachineStatusesUpdater')
 		aclchecker  = ACLChecker(None, dname)
-		inotifier    = INotifier(aclchecker, None, dname)
+		inotifier    = INotifier(aclchecker, None, dname, opts.no_boot_check)
 		groups.set_inotifier(inotifier)
 		cmdlistener = CommandListener(dname,
 			pids_to_wake=pids_to_wake,

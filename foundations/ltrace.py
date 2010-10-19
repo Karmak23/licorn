@@ -47,7 +47,6 @@ trc['internet']      = 0x0000000000002000
 trc['privileges']    = 0x0000000000004000
 trc['keywords']      = 0x0000000000008000
 
-
 trc['backends']      = 0x0000000000ff0000
 trc['ldap']          = 0x0000000000010000
 trc['unix']          = 0x0000000000020000
