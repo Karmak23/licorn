@@ -373,9 +373,9 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				self.backends['prefered'] = self.backends[backend_name]
 
 		# FIXME: this doesn't belong here, but could help fixing #380.
-		#reload(fsapi.posix1e)
-		reload(fsapi)
-		logging.info('''reloaded fsapi module.''', listener=listener)
+		reload(fsapi.posix1e)
+		#reload(fsapi)
+		logging.info('''reloaded fsapi's posix1e module.''', listener=listener)
 	def load_plugins(self):
 		""" Load Configuration backends, and put the one with the greatest
 		priority at the beginning of the backend list. This makes it accessible
