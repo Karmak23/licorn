@@ -34,7 +34,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		UGMBackend.__init__(self, configuration, users, groups)
 
-		ltrace('ldap', '| __init__().')
+		assert ltrace('ldap', '| __init__().')
 
 		self.name              = "ldap"
 		self.compat            = ('ldap')
@@ -59,7 +59,7 @@ class ldap_controller(UGMBackend, Singleton):
 		twice.
 		"""
 
-		ltrace('ldap', '| load_defaults().')
+		assert ltrace('ldap', '| load_defaults().')
 
 		if self.configuration.licornd.role == 'client':
 			waited = 0.1
@@ -97,7 +97,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		self.load_defaults()
 
-		ltrace('ldap', '> initialize().')
+		assert ltrace('ldap', '> initialize().')
 
 		try:
 			for (key, value) in readers.simple_conf_load_dict(
@@ -182,12 +182,12 @@ class ldap_controller(UGMBackend, Singleton):
 				# another problem worth noticing.
 				raise e
 
-		ltrace('ldap', '< initialize() %s.' % self.available)
+		assert ltrace('ldap', '< initialize() %s.' % self.available)
 		return self.available
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
-		ltrace('ldap', '| check_defaults()')
+		assert ltrace('ldap', '| check_defaults()')
 
 		defaults = (
 			('nss_base_passwd', 'ou=People'),
@@ -214,7 +214,7 @@ class ldap_controller(UGMBackend, Singleton):
 		point).
 		"""
 
-		ltrace('ldap', '| enable_backend()')
+		assert ltrace('ldap', '| enable_backend()')
 
 		if not ('ldap' in self.configuration.nsswitch['passwd'] and \
 			'ldap' in self.configuration.nsswitch['shadow'] and \
@@ -247,7 +247,7 @@ class ldap_controller(UGMBackend, Singleton):
 		system administrator to clean them up if wanted.
 		"""
 
-		ltrace('ldap', '| disable_backend()')
+		assert ltrace('ldap', '| disable_backend()')
 
 		for key in ('passwd', 'shadow', 'group'):
 			try:
@@ -260,7 +260,7 @@ class ldap_controller(UGMBackend, Singleton):
 		return True
 	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
-		ltrace('ldap', '> check()')
+		assert ltrace('ldap', '> check()')
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
 			logging.warning('''%s: you must be root or have cn=admin access'''
@@ -380,11 +380,11 @@ class ldap_controller(UGMBackend, Singleton):
 						'''Can't continue without altering slapd '''
 						'''configuration.''')
 
-		ltrace('ldap', '< check()')
+		assert ltrace('ldap', '< check()')
 	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
-		ltrace('ldap', '> check_system_files()')
+		assert ltrace('ldap', '> check_system_files()')
 
 		if pyutils.check_file_against_dict(self.files.ldap_conf,
 				(
@@ -448,7 +448,7 @@ class ldap_controller(UGMBackend, Singleton):
 		# useless nowadays.
 		#
 
-		ltrace('ldap', '< check_system() %s.' % styles.stylize(
+		assert ltrace('ldap', '< check_system() %s.' % styles.stylize(
 			styles.ST_OK, 'True'))
 		return True
 	def is_available(self):
@@ -470,7 +470,7 @@ class ldap_controller(UGMBackend, Singleton):
 		users       = {}
 		login_cache = {}
 
-		ltrace('ldap', '> load_users() %s' % self.nss_base_shadow)
+		assert ltrace('ldap', '> load_users() %s' % self.nss_base_shadow)
 
 		if process.whoami() == 'root':
 			self.bind(False)
@@ -485,7 +485,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		for dn, entry in ldap_result:
 
-			ltrace('ldap', '  load_user(%s)' % entry)
+			assert ltrace('ldap', '  load_user(%s)' % entry)
 
 			temp_user_dict	= {
 				# Get the cn from the dn here, else we could end in a situation
@@ -556,7 +556,7 @@ class ldap_controller(UGMBackend, Singleton):
 			# this will be used as a cache for login_to_uid()
 			login_cache[ temp_user_dict['login'] ] = temp_user_dict['uidNumber']
 
-		ltrace('ldap', '< load_users()')
+		assert ltrace('ldap', '< load_users()')
 		return users, login_cache
 	def load_groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
@@ -564,7 +564,7 @@ class ldap_controller(UGMBackend, Singleton):
 		groups     = {}
 		name_cache = {}
 
-		ltrace('ldap', '> load_groups() %s' % self.nss_base_group)
+		assert ltrace('ldap', '> load_groups() %s' % self.nss_base_group)
 
 		is_allowed  = True
 
@@ -582,7 +582,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		for dn, entry in ldap_result:
 
-			ltrace('ldap', '  load_group(%s).' % entry)
+			assert ltrace('ldap', '  load_group(%s).' % entry)
 
 			# Get the cn from the dn here, else we could end in a situation
 			# where the group could not be deleted if it was created manually
@@ -653,7 +653,7 @@ class ldap_controller(UGMBackend, Singleton):
 				#	"display permissive states.", once = True)
 				pass
 
-		ltrace('ldap', '< load_groups()')
+		assert ltrace('ldap', '< load_groups()')
 		return groups, name_cache
 	def save_users(self):
 		""" save users into LDAP, but only those who need it. """
@@ -690,7 +690,7 @@ class ldap_controller(UGMBackend, Singleton):
 		by the way, fix #133.
 		"""
 
-		ltrace('ldap', 'binding as root in SASL/external mode.')
+		assert ltrace('ldap', 'binding as root in SASL/external mode.')
 
 		import ldap.sasl
 		auth=ldap.sasl.external()
@@ -698,7 +698,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 	def bind(self, need_write_access=True):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
-		ltrace('ldap','binding as %s.' % (
+		assert ltrace('ldap','binding as %s.' % (
 			styles.stylize(styles.ST_LOGIN, self.bind_dn)))
 
 		if self.bind_as_admin:
@@ -778,7 +778,7 @@ class ldap_controller(UGMBackend, Singleton):
 				# reencode this field, for slapd not to whym.
 				user['gecos'] = encodestring(user['gecos']).strip()
 
-				ltrace('ldap', 'update user %s: %s\n%s' % (
+				assert ltrace('ldap', 'update user %s: %s\n%s' % (
 					styles.stylize(styles.ST_LOGIN, login),
 					old_entry,
 					modifyModlist(old_entry, user,
@@ -805,7 +805,7 @@ class ldap_controller(UGMBackend, Singleton):
 				# usefull here] purposes only
 				user['gecos'] = encodestring(user['gecos']).strip()
 
-				ltrace('ldap', 'add user %s: %s' % (
+				assert ltrace('ldap', 'add user %s: %s' % (
 					styles.stylize(styles.ST_LOGIN, login),
 					addModlist(user, ignore_list)))
 
@@ -856,7 +856,7 @@ class ldap_controller(UGMBackend, Singleton):
 				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_group,
 				ldap.SCOPE_SUBTREE, '(cn=%s)' % name)[0]
 
-				ltrace('ldap','updating group %s.' % \
+				assert ltrace('ldap','updating group %s.' % \
 					styles.stylize(styles.ST_LOGIN, name))
 
 				""": \n%s\n%s\n%s.' % (
@@ -870,7 +870,7 @@ class ldap_controller(UGMBackend, Singleton):
 					old_entry, group, ignore_list, ignore_oldexistent=1))
 			elif action == 'create':
 
-				ltrace('ldap','creating group %s.' % (
+				assert ltrace('ldap','creating group %s.' % (
 					styles.stylize(styles.ST_LOGIN, name)))
 
 				#

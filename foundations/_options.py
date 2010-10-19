@@ -30,24 +30,24 @@ class LicornOptions(Singleton):
 	no_colors   = False
 
 	def __init__(self) :
-		ltrace('options', '| __init__()')
+		assert ltrace('options', '| __init__()')
 		self.msgproc = None
 		self.verbose = verbose.NOTICE
 
 	def SetVerbose(self, level):
 		""" Change verbose parameter. """
-		ltrace('options', '| SetVerbose(%s)' % verbose)
+		assert ltrace('options', '| SetVerbose(%s)' % verbose)
 		self.verbose = level
 	def SetQuiet(self):
 		""" Change verbose parameter. """
 		self.verbose = verbose.QUIET
 	def SetNoColors(self, no_colors=True):
 		""" Change color output parameter. """
-		ltrace('options', '| SetNoColors(%s)' % no_colors)
+		assert ltrace('options', '| SetNoColors(%s)' % no_colors)
 		self.no_colors = no_colors
 	def SetFrom(self, opts):
 		""" Change parameters, from an object given by an argparser """
-		ltrace('options', '| SetFrom(%s)' % opts)
+		assert ltrace('options', '| SetFrom(%s)' % opts)
 
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)

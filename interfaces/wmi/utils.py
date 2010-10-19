@@ -51,7 +51,7 @@ acronyms = {
 def run(command, successfull_redirect, page_data, error_message):
 	"""Execute a command passed as a list or tuple"""
 
-	ltrace('wmi', 'w.run(%s)' % command)
+	assert ltrace('wmi', 'w.run(%s)' % command)
 
 	if type(command) not in (type(()), type([])):
 		raise exceptions.LicornWebCommandError(

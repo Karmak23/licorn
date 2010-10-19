@@ -73,7 +73,7 @@ class FileLock:
 			self.filename = "%s/%s.lock" % (configuration.user_dir, filename)
 			self.lockname = filename
 
-		ltrace('objects', '%s: new instance with %s.' % (self.pretty_name,
+		assert ltrace('objects', '%s: new instance with %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 		self.waitmax = waitmax
@@ -90,7 +90,7 @@ class FileLock:
 
 	def Lock(self):
 		"""Acquire a lock, i.e. create $file.lock."""
-		ltrace('objects', '%s: pseudo-locking %s.' % (self.pretty_name,
+		assert ltrace('objects', '%s: pseudo-locking %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.lockname)))
 
 		try:
@@ -117,13 +117,13 @@ class FileLock:
 			sys.stderr.write("\n")
 			raise
 
-		ltrace('objects', '%s: successfully locked %s.' % (self.pretty_name,
+		assert ltrace('objects', '%s: successfully locked %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 	def Unlock(self):
 		"""Free the lock by removing the associated lockfile."""
 
-		ltrace('objects', '%s: removing lock on %s.' % (self.pretty_name,
+		assert ltrace('objects', '%s: removing lock on %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.lockname)))
 
 		if os.path.exists(self.filename):
@@ -132,7 +132,7 @@ class FileLock:
 			except (OSError):
 				raise OSError, "can't remove lockfile %s." % self.filename
 
-		ltrace('objects', '%s: successfully unlocked %s.' % (self.pretty_name,
+		assert ltrace('objects', '%s: successfully unlocked %s.' % (self.pretty_name,
 			styles.stylize(styles.ST_PATH, self.filename)))
 
 	def IsLocked(self):
@@ -159,7 +159,7 @@ class UGMBackend(Pyro.core.ObjBase):
 
 		self.name      = "UGMBackend"
 
-		ltrace('objects', '| UGMBackend.__init__()')
+		assert ltrace('objects', '| UGMBackend.__init__()')
 
 		self.users         = None
 		self.groups        = None
@@ -227,10 +227,10 @@ class UGMBackend(Pyro.core.ObjBase):
 		self.machines = machines
 	def connect_plugin(self, plugin):
 		""" """
-		ltrace('objects', '| UGMBackend.connect_plugin()')
+		assert ltrace('objects', '| UGMBackend.connect_plugin()')
 
 		if self.name in plugin.backend_compat:
-			ltrace('objects', '  UGMBackend.connect_plugin(%s <-> %s)' % (
+			assert ltrace('objects', '  UGMBackend.connect_plugin(%s <-> %s)' % (
 				self.name, plugin.name))
 			self.plugins[plugin.name] = plugin
 			plugin.set_backend(self)
@@ -247,7 +247,7 @@ class UGMBackend(Pyro.core.ObjBase):
 	def load_machines(self):
 		""" gather the list of all known machines on the system. """
 
-		ltrace('objects', '| UGMBackend.load_machines(%s)' % self.plugins)
+		assert ltrace('objects', '| UGMBackend.load_machines(%s)' % self.plugins)
 
 		for p in self.plugins:
 			if self.plugins[p].purpose == 'machines':
@@ -335,7 +335,7 @@ class MessageProcessor(Pyro.core.CallbackObjBase):
 	def __init__(self, verbose=verbose.NOTICE):
 		Pyro.core.CallbackObjBase.__init__(self)
 		self.verbose = verbose
-		ltrace('objects', '| MessageProcessor(%s)' % self.verbose)
+		assert ltrace('objects', '| MessageProcessor(%s)' % self.verbose)
 	def process(self, message, callback):
 		""" process a message. """
 
@@ -346,7 +346,7 @@ class MessageProcessor(Pyro.core.CallbackObjBase):
 			# and thus the next hop will be the client, which has the task
 			# to display it, and eventually get an interactive answer.
 
-			ltrace('objects', '  MessageProcessor.process(EMIT)')
+			assert ltrace('objects', '  MessageProcessor.process(EMIT)')
 
 			if message.interaction:
 
@@ -357,7 +357,7 @@ class MessageProcessor(Pyro.core.CallbackObjBase):
 					message.answer = interactive_ask_for_repair(message.data,
 						auto_answer=message.auto_answer)
 				else:
-					ltrace('objects',
+					assert ltrace('objects',
 						'unsupported interaction type in message %s.' % message)
 					message.answer = None
 			else:
@@ -371,7 +371,7 @@ class MessageProcessor(Pyro.core.CallbackObjBase):
 			# ourquestion. Return it directly to the calling process. The
 			# message loop ends here.
 
-			ltrace('objects', '  MessageProcessor.process(ANSWER)')
+			assert ltrace('objects', '  MessageProcessor.process(ANSWER)')
 
 			#message.channel.write(message.data)
 			return message.answer
@@ -381,7 +381,7 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 
 		Pyro.core.CallbackObjBase.__init__(self)
 
-		ltrace('objects', '''| LicornMessage(data=%s,type=%s,interaction=%s,'''
+		assert ltrace('objects', '''| LicornMessage(data=%s,type=%s,interaction=%s,'''
 			'''answer=%s,auto_answer=%s,channel=%s)''' % (data, my_type,
 			interaction, answer, auto_answer, channel))
 

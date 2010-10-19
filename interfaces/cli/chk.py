@@ -37,14 +37,14 @@ def chk_user(opts, args, users, **kwargs):
 			],
 			all=opts.all)
 
-	ltrace('chk', '> chk_user(%s)' % uids_to_chk)
+	assert ltrace('chk', '> chk_user(%s)' % uids_to_chk)
 
 	if uids_to_chk != []:
 		users.CheckUsers(uids_to_chk, minimal=opts.minimal,
 			auto_answer=opts.auto_answer, batch=opts.batch,
 			listener=opts.listener)
 
-	ltrace('chk', '< chk_user()')
+	assert ltrace('chk', '< chk_user()')
 def chk_group(opts, args, groups, **kwargs):
 	""" Check one or more group(s). """
 
@@ -62,7 +62,7 @@ def chk_group(opts, args, groups, **kwargs):
 			default_selection=filters.STD,
 			all=opts.all)
 
-	ltrace('chk', '> chk_group(%s)' % gids_to_chk)
+	assert ltrace('chk', '> chk_group(%s)' % gids_to_chk)
 
 	if gids_to_chk != []:
 		groups.CheckGroups(gids_to_check=gids_to_chk,
@@ -70,7 +70,7 @@ def chk_group(opts, args, groups, **kwargs):
 			auto_answer=opts.auto_answer, force=opts.force,
 			listener=opts.listener)
 
-	ltrace('chk', '< chk_group()')
+	assert ltrace('chk', '< chk_group()')
 def chk_profile(opts, args, profiles, **kwargs):
 	""" TODO: to be implemented. """
 

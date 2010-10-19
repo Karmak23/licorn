@@ -27,9 +27,9 @@ for entry in os.listdir(__path__[0]):
 			exec('from licorn.core.backends.plugins.%s import %s_controller as %s' % (
 				modname, plugin_name, plugin_name))
 			exec('plugins.append(%s)' % plugin_name)
-			ltrace('plugins', 'imported %s.' % plugin_name)
+			assert ltrace('plugins', 'imported %s.' % plugin_name)
 
 		except ImportError:
-			ltrace('plugins', 'could not import %s.' % plugin_name)
+			assert ltrace('plugins', 'could not import %s.' % plugin_name)
 
 ltrace('plugins', '< __init__()')

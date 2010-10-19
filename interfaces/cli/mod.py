@@ -37,7 +37,7 @@ def mod_user(opts, args, users, groups, **kwargs):
 				(opts.exclude_uid, users.confirm_uid)
 			])
 
-	ltrace('mod', '> mod_user(%s)' % uids_to_mod)
+	assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
 	something_done = False
 
@@ -132,7 +132,7 @@ def mod_group(opts, args, groups, configuration, **kwargs):
 				(opts.exclude_gid, groups.confirm_gid)
 			])
 
-	ltrace('mod', '> mod_group(%s)' % gids_to_mod)
+	assert ltrace('mod', '> mod_group(%s)' % gids_to_mod)
 
 	g2n = groups.gid_to_name
 
@@ -210,7 +210,7 @@ def mod_profile(opts, args, users, groups, profiles, **kwargs):
 				(opts.group, profiles.confirm_group)
 			])
 
-	ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
+	assert ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
 
 	ggi = groups.guess_identifiers
 
@@ -294,7 +294,7 @@ def mod_profile(opts, args, users, groups, profiles, **kwargs):
 					all=opts.apply_to_all_accounts)
 				)
 
-			ltrace('mod',"  mod_profile(on_users=%s)" % _users)
+			assert ltrace('mod',"  mod_profile(on_users=%s)" % _users)
 
 			if _users != []:
 				profiles.ReapplyProfileOfUsers(_users,
@@ -302,7 +302,7 @@ def mod_profile(opts, args, users, groups, profiles, **kwargs):
 					apply_skel=opts.apply_skel,
 					batch=opts.batch, auto_answer=opts.auto_answer,
 					listener=opts.listener)
-	ltrace('mod', '< mod_profile()')
+	assert ltrace('mod', '< mod_profile()')
 def shut(i, listener=None):
 	""" FIXME: find a way to get the listener, else we have no output.
 	opts.listener doesn't work here because opts doesn't yet exist.

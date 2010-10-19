@@ -28,7 +28,7 @@ class dnsmasq_controller(Singleton):
 	def __repr__(self):
 		return self.name
 	def __init__(self, configuration, backend=None, warnings=True):
-		ltrace('dnsmasq', '| __init__()')
+		assert ltrace('dnsmasq', '| __init__()')
 		self.configuration = configuration
 		self.warnings = warnings
 
@@ -37,7 +37,7 @@ class dnsmasq_controller(Singleton):
 
 	def initialize(self):
 
-		ltrace('dnsmasq', '> initialize()')
+		assert ltrace('dnsmasq', '> initialize()')
 
 		self.dnsmasq_conf_file   = '/etc/dnsmasq.conf'
 		self.dnsmasq_leases_file = '/var/lib/misc/dnsmasq.leases'
@@ -48,7 +48,7 @@ class dnsmasq_controller(Singleton):
 			# etc/default/dnsmasq.
 			self.enabled = True
 
-		ltrace('dnsmasq', '< initialize(%s)' % self.enabled)
+		assert ltrace('dnsmasq', '< initialize(%s)' % self.enabled)
 		return self.enabled
 	def set_backend(self, backend):
 		if backend is not None:
@@ -57,7 +57,7 @@ class dnsmasq_controller(Singleton):
 		""" get the machines from static conf and leases, and create the pivot
 		data for our internal data structures. """
 
-		ltrace('dnsmasq', '> load_machines()')
+		assert ltrace('dnsmasq', '> load_machines()')
 
 		dnsmasq_conf = readers.dnsmasq_read_conf(self.dnsmasq_conf_file)
 
@@ -78,7 +78,7 @@ class dnsmasq_controller(Singleton):
 
 				temp_host = {}
 
-				ltrace('dnsmasq', '  load_machines(host_record=%s)'
+				assert ltrace('dnsmasq', '  load_machines(host_record=%s)'
 					% host_record)
 
 				for value in host_record:
@@ -162,7 +162,7 @@ class dnsmasq_controller(Singleton):
 			hostname_cache[machines[leases[ether]['ip']]['hostname']] = \
 				leases[ether]['ip']
 
-		ltrace('dnsmasq', '< load_machines()')
+		assert ltrace('dnsmasq', '< load_machines()')
 
 		return machines, hostname_cache
 	def refresh_status(self):

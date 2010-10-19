@@ -29,7 +29,7 @@ _app = {
 def get_users(opts, args, users, **kwargs):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
-	ltrace('get', '> get_users(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
 	users_to_get = users.Select(
 		cli_select(users, 'user',
@@ -55,11 +55,11 @@ def get_users(opts, args, users, **kwargs):
 	if data and data != '\n':
 		output(data)
 
-	ltrace('get', '< get_users()')
+	assert ltrace('get', '< get_users()')
 def get_groups(opts, args, groups, **kwargs):
 	""" Get the list of POSIX groups (can be LDAP). """
 
-	ltrace('get', '> get_groups(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_groups(%s,%s)' % (opts, args))
 
 	selection = filters.NONE
 
@@ -102,11 +102,11 @@ def get_groups(opts, args, groups, **kwargs):
 	if data and data != '\n':
 		output(data)
 
-	ltrace('get', '< get_groups()')
+	assert ltrace('get', '< get_groups()')
 def get_profiles(opts, args, profiles, **kwargs):
 	""" Get the list of user profiles. """
 
-	ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
 
 	profiles_to_get = profiles.Select(
 		cli_select(profiles, 'profile',
@@ -126,11 +126,11 @@ def get_profiles(opts, args, profiles, **kwargs):
 	if data and data != '\n':
 		output(data)
 
-	ltrace('get', '< get_profiles()')
+	assert ltrace('get', '< get_profiles()')
 def get_keywords(opts, args, keywords, **kwargs):
 	""" Get the list of keywords. """
 
-	ltrace('get', '> get_keywords(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_keywords(%s,%s)' % (opts, args))
 
 	if opts.xml:
 		data = keywords.ExportXML()
@@ -140,11 +140,11 @@ def get_keywords(opts, args, keywords, **kwargs):
 	if data and data != '\n':
 		output(data)
 
-	ltrace('get', '< get_keywords()')
+	assert ltrace('get', '< get_keywords()')
 def get_privileges(opts, args, privileges, **kwargs):
 	""" Return the current privileges whitelist, one priv by line. """
 
-	ltrace('get', '> get_privileges(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_privileges(%s,%s)' % (opts, args))
 
 	if opts.xml:
 		data = privileges.ExportXML()
@@ -153,11 +153,11 @@ def get_privileges(opts, args, privileges, **kwargs):
 
 	output(data)
 
-	ltrace('get', '< get_privileges()')
+	assert ltrace('get', '< get_privileges()')
 def get_machines(opts, args, machines, **kwargs):
 	""" Get the list of machines known from the server (attached or not). """
 
-	ltrace('get', '> get_machines(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_machines(%s,%s)' % (opts, args))
 
 	if opts.mid is not None:
 		try:
@@ -176,18 +176,18 @@ def get_machines(opts, args, machines, **kwargs):
 	if data and data != '\n':
 		output(data)
 
-	ltrace('get', '< get_machines()')
+	assert ltrace('get', '< get_machines()')
 def get_configuration(opts, args, configuration, **kwargs):
 	""" Output th current Licorn system configuration. """
 
-	ltrace('get', '> get_configuration(%s,%s)' % (opts, args))
+	assert ltrace('get', '> get_configuration(%s,%s)' % (opts, args))
 
 	if len(args) > 1:
 		output(configuration.Export(args=args[1:], cli_format=opts.cli_format))
 	else:
 		output(configuration.Export())
 
-	ltrace('get', '< get_configuration()')
+	assert ltrace('get', '< get_configuration()')
 def get_webfilters(*args, **kwargs):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.

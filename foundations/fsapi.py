@@ -32,7 +32,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		raise  exceptions.BadArgumentError(
 			"please don't try to exhaust maxdepth.")
 
-	ltrace('fsapi', '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
+	assert ltrace('fsapi', '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
 		'''exclude=%s, followlinks=%s, followmounts=%s)''' % (
 			path, type, mindepth, maxdepth, exclude, followlinks, followmounts))
 
@@ -86,7 +86,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 						if x not in exclude:
 							next_paths_to_walk.append("%s/%s" % (entry, x))
 						else:
-							ltrace('fsapi', '  minifind(excluded=%s)' % entry)
+							assert ltrace('fsapi', '  minifind(excluded=%s)' % entry)
 				except (IOError, OSError), e:
 					if e.errno == 2:
 						# happens on recursive delete() applyed on minifind()
@@ -184,7 +184,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 					os.mkdir(dir_info['path'])
 					dirstat = os.lstat(dir_info['path'])
 					batch = True
-					logging.info("Created dir %s." %
+					logging.info("Created directory %s." %
 						styles.stylize(styles.ST_PATH, dir_info['path']),
 						listener=listener)
 				else:
@@ -207,7 +207,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 				os.mkdir(dir_info['path'])
 				dirstat = os.lstat(dir_info['path'])
 				batch = True
-				logging.info("Created dir %s." %
+				logging.info("Created directory %s." %
 					styles.stylize(styles.ST_PATH, dir_info['path']),
 					listener=listener)
 			else:

@@ -464,6 +464,14 @@ def add_user_parse_arguments(app, configuration):
 			"""a group name or a GID). This parameter is overriden by the """
 			"""profile argument if you specify both. Default: %s.""" %
 				configuration.users.default_gid)
+	user.add_option('-G', '--in-groups', '--auxilliary-groups',
+		'--add-to-groups',
+		action="store", type="string", dest="in_groups", default=None,
+		help='''Specify future user's auxilliary groups (at your preference '''
+			'''as groupnames or GIDs, which can be mixed, and separated by '''
+			'''commas without spaces). These supplemental groups are added '''
+			'''to the list of groups defined by the profile, if you specify '''
+			'''both. Default: None.''')
 	user.add_option('-s', "--system",
 		action="store_true", dest="system", default = False,
 		help="Create a system account instead of a standard user (root only).")
@@ -532,23 +540,28 @@ def add_group_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_group'))
 
-	group = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add group options "))
+	group = OptionGroup(parser,
+		styles.stylize(styles.ST_OPTION, "Add group options "))
 
 	group.add_option("--name",
 		action="store", type="string", dest="name", default = None,
-		help="Specify group's name (%s)." % styles.stylize(styles.ST_IMPORTANT, "required") )
+		help="Specify group's name (%s)." %
+			styles.stylize(styles.ST_IMPORTANT, "required") )
 	group.add_option("--permissive",
 		action="store_true", dest="permissive", default = False,
-		help="The shared group directory will be permissive (default is %s)." % styles.stylize(styles.ST_DEFAULT, "not permissive"))
+		help="The shared group directory will be permissive (default is %s)." %
+			styles.stylize(styles.ST_DEFAULT, "not permissive"))
 	group.add_option("--gid",
 		action="store", type="int", dest="gid", default=None,
 		help="Specify the GID (root / @admin members only).")
 	group.add_option("--description",
-		action="store", type="string", dest="description", default = '',
+		action="store", type="string", dest="description", default=None,
 		help="Description of the group (free text).")
 	group.add_option("--skel",
-		action="store", type="string", dest="skel", default = configuration.users.default_skel,
-		help="skeleton directory for the group (default is %s)." %  styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
+		action="store", type="string", dest="skel",
+		default=configuration.users.default_skel,
+		help="skeleton directory for the group (default is %s)." %
+		styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
 	group.add_option("--system",
 		action="store_true", dest="system", default = False,
 		help="The group will be a system group (root / @admin members only).")

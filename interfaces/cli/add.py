@@ -28,7 +28,7 @@ _app = {
 def import_users(opts, args, configuration, users, groups, profiles, **kwargs):
 	""" Massively import user accounts from a CSV file."""
 
-	ltrace('add', '> import_user(%s,%s)' % (opts, args))
+	assert ltrace('add', '> import_user(%s,%s)' % (opts, args))
 
 	def clean_csv_field(field):
 		return field.replace("'","").replace('"','')
@@ -167,7 +167,7 @@ def import_users(opts, args, configuration, users, groups, profiles, **kwargs):
 		i += 1
 		user['linenumber'] = i
 
-	ltrace('add', '  import_users: users_to_add=%s,\ngroups_to_add=%s' % (
+	assert ltrace('add', '  import_users: users_to_add=%s,\ngroups_to_add=%s' % (
 		users_to_add, groups_to_add))
 
 	import_fd.close()
@@ -355,7 +355,7 @@ def import_users(opts, args, configuration, users, groups, profiles, **kwargs):
 def add_user(opts, args, users, groups, profiles):
 	""" Add a user account on the system. """
 
-	ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
+	assert ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
 
 	if opts.profile and not profiles.has_key(opts.profile):
 		opts.profile = profiles.name_to_group(opts.profile)
@@ -396,13 +396,15 @@ def add_user(opts, args, users, groups, profiles):
 					desired_uid=opts.uid, profile=opts.profile, skel=opts.skel,
 					login=login, gecos=gecos, system=opts.system,
 					home=opts.home,	batch=False, force=opts.force,
+					shell=opts.shell, in_groups=groups.guess_identifiers(
+						opts.in_groups.split(',')) if opts.in_groups else [],
 					listener=opts.listener)
 			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e))
-	ltrace('add', '< add_user()')
+	assert ltrace('add', '< add_user()')
 def add_user_in_groups(opts, args, users, groups):
 
-	ltrace('add', '> add_user_in_group().')
+	assert ltrace('add', '> add_user_in_group().')
 
 	uids_to_add = cli_select(users, 'user',
 			args,
@@ -427,14 +429,14 @@ def add_user_in_groups(opts, args, users, groups):
 					% (styles.stylize(styles.ST_LOGIN, opts.login),
 					styles.stylize(styles.ST_NAME, g), str(e)))
 
-	ltrace('add', '< add_user_in_group().')
+	assert ltrace('add', '< add_user_in_group().')
 def dispatch_add_user(opts, args, users, groups, profiles, **kwargs):
 	""" guess how we were called:
 		- add a user (creation)
 		- add a user into one or more group(s)
 	"""
 
-	ltrace('add', '> dispatch_add_user(%s, %s)' % (opts, args))
+	assert ltrace('add', '> dispatch_add_user(%s, %s)' % (opts, args))
 
 	if opts.login is None:
 		if len(args) == 2:
@@ -452,11 +454,11 @@ def dispatch_add_user(opts, args, users, groups, profiles, **kwargs):
 	else:
 		add_user(opts, args, users, groups, profiles)
 
-	ltrace('add', '< dispatch_add_user()')
+	assert ltrace('add', '< dispatch_add_user()')
 def add_group(opts, args, groups, **kwargs):
 	""" Add a POSIX group. """
 
-	ltrace('add', '> add_group().')
+	assert ltrace('add', '> add_group().')
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
@@ -464,12 +466,12 @@ def add_group(opts, args, groups, **kwargs):
 	if opts.description:
 		opts.description = unicode(opts.description)
 
-	ltrace('add', 'group(s) to add: %s.' % opts.name)
+	assert ltrace('add', 'group(s) to add: %s.' % opts.name)
 
 	for name in opts.name.split(',')if opts.name != None else []:
 		if name != '':
 			try:
-				ltrace('add', 'adding group %s.' % name)
+				assert ltrace('add', 'adding group %s.' % name)
 				groups.AddGroup(name, description=opts.description,
 					system=opts.system, groupSkel=opts.skel,
 					desired_gid=opts.gid, permissive=opts.permissive,
@@ -477,11 +479,11 @@ def add_group(opts, args, groups, **kwargs):
 			except exceptions.AlreadyExistsException, e:
 				logging.warning(str(e))
 
-	ltrace('add', '< add_group().')
+	assert ltrace('add', '< add_group().')
 def add_profile(opts, args, profiles, **kwargs):
 	""" Add a system wide User profile. """
 
-	ltrace('add', '> add_profile().')
+	assert ltrace('add', '> add_profile().')
 
 	if opts.name is None and len(args) == 2:
 		opts.name = args[1]
@@ -506,7 +508,7 @@ def add_profile(opts, args, profiles, **kwargs):
 		except exceptions.AlreadyExistsException, e:
 			logging.warning(str(e))
 
-	ltrace('add', '< add_profile().')
+	assert ltrace('add', '< add_profile().')
 def add_keyword(opts, args, keywords, **kwargs):
 	""" Add a keyword on the system. """
 

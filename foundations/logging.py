@@ -126,7 +126,7 @@ def warning2(mesg, once=False, listener=None):
 			styles.stylize(styles.ST_WARNING, '/2\\'), mytime(), mesg))
 def notice(mesg, listener=None):
 	""" Display a non-styles.stylized notice message on stderr."""
-	ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
+	assert ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.NOTICE:
 		listener.process(LicornMessage(data=" %s %s %s\n" % (
@@ -138,7 +138,7 @@ def notice(mesg, listener=None):
 		styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
 def info(mesg, listener=None):
 	""" Display a styles.stylized information message on stderr."""
-	ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
+	assert ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.INFO:
 			listener.process(
@@ -149,7 +149,7 @@ def info(mesg, listener=None):
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
 def progress(mesg, listener=None):
 	""" Display a styles.stylized progress message on stderr. """
-	ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
+	assert ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.PROGRESS:
 		listener.process(
@@ -178,7 +178,7 @@ else:
 def ask_for_repair(message, auto_answer=None, listener=None):
 	"""ask the user if he wants to repair, store answer for next question."""
 
-	ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
+	assert ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
 
 	if listener:
 		return listener.process(

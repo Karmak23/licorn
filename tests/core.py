@@ -390,7 +390,8 @@ def clean_system():
 			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
 			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,''' \
 			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,''' \
-			'''tenrebcul2,utest,utest1,utest2,utest3,utest4''',
+			'''tenrebcul2,utest,utest1,utest2,utest3,utest4,ingroups_test1,''' \
+			'''ingroups_test2,ingroups_test3,ingroups_test4''',
 			 '--no-archive', '-v' ],
 		['profile', '''utilisagers,responsibilisateurs,'''
 			'''profil_test''',
@@ -1222,6 +1223,23 @@ def test_users(context):
 		],
 		context=context,
 		descr='''avoid #169'''
+		).Run()
+
+	uname = 'ingroups_test'
+
+	ScenarioTest([
+		ADD + [ 'user', '%s1' % uname, '--in-groups', 'audio,video', '-v' ],
+		ADD + [ 'user', '%s2' % uname, '-G', 'prout,audio,15000,', '--force', '-v' ],
+		ADD + [ 'user', '%s3' % uname, '--add-to-groups',
+			',aucun,groupe,valide', '-v' ],
+		ADD + [ 'user', '%s4' % uname, '--auxilliary-groups',
+			'audio,video,puis,plus,rien!', '-v' ],
+		GET + [ 'users' , '%s1,%s2,%s3,%s4' % (uname, uname, uname, uname),
+			'-l' ],
+		DEL + [ 'users', '%s1,%s2,%s3,%s4' % (uname, uname, uname, uname), '-v' ],
+		],
+		context=context,
+		descr='''verify #383 implementation (fixes #384).'''
 		).Run()
 	""" # start of old test_users() commands
 	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")

@@ -20,7 +20,7 @@ from licorn.foundations.constants import filters
 from licorn.daemon.core           import dname
 
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
-	valid_users = grp.getgrnam('admins').gr_mem
+	valid_users = [] #grp.getgrnam('admins').gr_mem
 	@staticmethod
 	def reload():
 		LicornPyroValidator.valid_users = grp.getgrnam('admins').gr_mem
@@ -96,6 +96,8 @@ class CommandListener(LicornBasicThread):
 		#Pyro.config.PYRO_USER_LOGFILE='pyro.user.log'
 
 		self.pyro_daemon=Pyro.core.Daemon()
+		LicornPyroValidator.valid_users = self.groups[
+			self.groups.name_to_gid('admins')]['memberUid']
 		self.pyro_daemon.setNewConnectionValidator(LicornPyroValidator())
 		self.pyro_daemon.cmdlistener = self
 		self.uris = {}

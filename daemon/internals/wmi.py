@@ -84,7 +84,7 @@ def fork_wmi(opts, start_wmi=True):
 				raise NotImplementedError(
 					'getting interface address is not yet implemented.')
 
-			ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (listen_address,
+			assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (listen_address,
 				wmi_port))
 
 			count = 0
@@ -329,7 +329,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						', "%s",' % '","'.join(args[2:]) if len(args)>2 else ', ')
 
 				try:
-					ltrace('wmi', '''serve_virtual_uri:exec("%s")''' % py_code)
+					assert ltrace('wmi', '''serve_virtual_uri:exec("%s")''' % py_code)
 					exec py_code
 
 				except (AttributeError, NameError), e:
@@ -413,7 +413,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		path = self.translate_path(self.path)
 
-		ltrace('wmi', 'serving file: %s.' % path)
+		assert ltrace('wmi', 'serving file: %s.' % path)
 
 		if os.path.exists(path):
 

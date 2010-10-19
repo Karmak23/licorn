@@ -20,7 +20,7 @@ def daemonize(log_file=None, pid_file=None):
 		See Stevens' "Advanced Programming in the UNIX Environment"
 		for details (ISBN 0201563177)."""
 
-	ltrace('process', '> daemonize(%s)' % os.getpid())
+	assert ltrace('process', '> daemonize(%s)' % os.getpid())
 
 	try:
 		if os.fork() > 0:
@@ -35,7 +35,7 @@ def daemonize(log_file=None, pid_file=None):
 	os.setsid()
 	os.umask(0)
 
-	ltrace('process', '  daemonize(%s)' % os.getpid())
+	assert ltrace('process', '  daemonize(%s)' % os.getpid())
 
 	# do second fork
 	try:
@@ -46,7 +46,7 @@ def daemonize(log_file=None, pid_file=None):
 		logging.error("fork #2 failed: errno %d (%s)" % (
 			e.errno, e.strerror))
 
-	ltrace('process', '< daemonize(%s)' % os.getpid())
+	assert ltrace('process', '< daemonize(%s)' % os.getpid())
 
 	use_log_file(log_file)
 	write_pid_file(pid_file)
@@ -131,7 +131,7 @@ def execute(command, input_data = ''):
 	""" Roughly pipe some data into a program.
 	Return the (eventual) stdout and stderr in a tuple. """
 
-	ltrace('process', '''execute(%s)%s.''' % (command,
+	assert ltrace('process', '''execute(%s)%s.''' % (command,
 		' with input_data="%s"' % input_data if input_data != '' else ''))
 
 	from subprocess import Popen, PIPE

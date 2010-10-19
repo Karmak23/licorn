@@ -10,6 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 import os, stat, posix1e, re
 import Pyro.core
 from time import strftime, gmtime
+from threading import RLock
 
 from licorn.foundations           import logging, exceptions, hlstr, styles
 from licorn.foundations           import fsapi, pyutils
@@ -20,85 +21,80 @@ from licorn.foundations.ltrace    import ltrace
 class GroupsController(Singleton, Pyro.core.ObjBase):
 	""" Manages the groups and the associated shared data on a Linux system. """
 
-	groups       = None  # dict
-	name_cache   = None  # dict
 	init_ok      = False
-
-	# cross-references to other common objects
-	configuration = None  # LicornConfiguration
-	users         = None  # UsersController
-	profiles      = None  # ProfilesController
 
 	def __init__ (self, configuration, users, warnings=True):
 
+		assert ltrace('groups', '> GroupsController.__init__(%s)' %
+			GroupsController.init_ok)
+
 		if GroupsController.init_ok:
 			return
-
-		ltrace('groups', '> __init__(%s)' % GroupsController.init_ok)
 
 		Pyro.core.ObjBase.__init__(self)
 
 		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
 
-		GroupsController.configuration = configuration
+		self.lock = RLock()
+		self.configuration = configuration
 		configuration.set_controller('groups', self)
 
-		GroupsController.users = users
+		self.profiles = None  # ProfilesController
+
+		self.users = users
 		users.set_groups_controller(self)
 
+		self.backends = configuration.backends
 		self.warnings = warnings
 
-		GroupsController.backends = configuration.backends
-
-		for bkey in GroupsController.backends.keys() :
-			if bkey=='prefered':
-				continue
-
-		if GroupsController.groups is None:
-			self.reload()
+		self.reload()
 
 		configuration.groups.hidden = self.GetHiddenState()
 
 		GroupsController.init_ok = True
-		ltrace('groups', '< __init__(%s)' % GroupsController.init_ok)
+		assert ltrace('groups', '< GroupsController.__init__(%s)' %
+			GroupsController.init_ok)
 	def set_privileges_controller(self, privileges):
 		self.privileges = privileges
 	def __del__(self):
-		ltrace('groups', '| __del__()')
+		assert ltrace('groups', '| __del__()')
 	def __getitem__(self, item):
-		return GroupsController.groups[item]
+		return self.groups[item]
 	def __setitem__(self, item, value):
-		GroupsController.groups[item]=value
+		self.groups[item]=value
 	def keys(self):
-		return GroupsController.groups.keys()
+		with self.lock:
+			return self.groups.keys()
 	def has_key(self, key):
-		return GroupsController.groups.has_key(key)
+		with self.lock:
+			return self.groups.has_key(key)
 	def reload(self):
 		""" load or reload internal data structures from files on disk. """
 
-		ltrace('groups', '| reload()')
+		assert ltrace('groups', '| reload()')
 
-		GroupsController.groups     = {}
-		GroupsController.name_cache = {}
+		# lock users too, because we feed the members cache inside.
+		with self.lock:
+			with self.users.lock:
+				self.groups     = {}
+				self.name_cache = {}
 
-		for bkey in GroupsController.backends.keys():
-			if bkey=='prefered':
-				continue
-			self.backends[bkey].set_groups_controller(self)
-			g, c = self.backends[bkey].load_groups()
-			GroupsController.groups.update(g)
-			GroupsController.name_cache.update(c)
+				for bkey in self.backends.keys():
+					if bkey=='prefered':
+						continue
+					self.backends[bkey].set_groups_controller(self)
+					g, c = self.backends[bkey].load_groups()
+					self.groups.update(g)
+					self.name_cache.update(c)
 	def GetHiddenState(self):
 		""" See if /home/groups is readable or not. """
 
 		try:
 			for line in posix1e.ACL( file='%s/%s' % (
-				GroupsController.configuration.defaults.home_base_path,
-				GroupsController.configuration.groups.names.plural) ):
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural) ):
 				if line.tag_type & posix1e.ACL_GROUP:
-					#
 					# FIXME: do not hardcode "users".
-					#
 					if line.qualifier == self.name_to_gid('users'):
 						return not line.permset.read
 		except exceptions.DoesntExistsException:
@@ -111,26 +107,27 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				# 2 will be corrected in this function
 				raise e
 	def set_profiles_controller(self, profiles):
-		GroupsController.profiles = profiles
+		self.profiles = profiles
 	def set_inotifier(self, inotifier):
 		self.inotifier = inotifier
 	def WriteConf(self, gid=None):
 		""" Save Configuration (internal data structure to disk). """
 
-		ltrace('groups', '> WriteConf(%s)' % gid)
+		assert ltrace('groups', '> WriteConf(%s)' % gid)
 
-		if gid:
-			GroupsController.backends[
-				GroupsController.groups[gid]['backend']
-				].save_group(gid)
+		with self.lock:
+			if gid:
+				self.backends[
+					self.groups[gid]['backend']
+					].save_group(gid)
 
-		else:
-			for bkey in GroupsController.backends.keys():
-				if bkey=='prefered':
-					continue
-				GroupsController.backends[bkey].save_groups()
+			else:
+				for bkey in self.backends.keys():
+					if bkey=='prefered':
+						continue
+					self.backends[bkey].save_groups()
 
-		ltrace('groups', '< WriteConf()')
+		assert ltrace('groups', '< WriteConf()')
 	def Select(self, filter_string):
 		""" Filter group accounts on different criteria:
 			- 'system groups': show only «system» groups (root, bin, daemon,
@@ -142,191 +139,191 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		filtered_groups = []
 
-		ltrace('groups', '> Select(%s)' % filter_string)
+		assert ltrace('groups', '> Select(%s)' % filter_string)
 
-		if filters.NONE == filter_string:
-			filtered_groups = []
+		with self.lock:
+			if filters.NONE == filter_string:
+				filtered_groups = []
 
-		elif type(filter_string) == type([]):
-			filtered_groups = filter_string
+			elif type(filter_string) == type([]):
+				filtered_groups = filter_string
 
-		elif filters.ALL == filter_string:
-			ltrace('groups', '> Select(ALL:%s/%s)' % (
-				filters.ALL, filter_string))
+			elif filters.ALL == filter_string:
+				assert ltrace('groups', '> Select(ALL:%s/%s)' % (
+					filters.ALL, filter_string))
 
-		elif filters.STANDARD == filter_string:
-			ltrace('groups', '> Select(STD:%s/%s)' % (
-				filters.STD, filter_string))
+			elif filters.STANDARD == filter_string:
+				assert ltrace('groups', '> Select(STD:%s/%s)' % (
+					filters.STD, filter_string))
 
-			filtered_groups.extend(filter(self.is_standard_gid,
-				GroupsController.groups.keys()))
+				filtered_groups.extend(filter(self.is_standard_gid,
+					self.groups.keys()))
 
-		elif filters.EMPTY == filter_string:
-			ltrace('groups', '> Select(EMPTY:%s/%s)' % (
-				filters.EMPTY, filter_string))
+			elif filters.EMPTY == filter_string:
+				assert ltrace('groups', '> Select(EMPTY:%s/%s)' % (
+					filters.EMPTY, filter_string))
 
-			filtered_groups.extend(filter(self.is_empty_gid,
-				GroupsController.groups.keys()))
+				filtered_groups.extend(filter(self.is_empty_gid,
+					self.groups.keys()))
 
-		elif filters.SYSTEM & filter_string:
+			elif filters.SYSTEM & filter_string:
 
-			if filters.GUEST == filter_string:
-				ltrace('groups', '> Select(GST:%s/%s)' % (
-					filters.GST, filter_string))
-				for gid in GroupsController.groups.keys():
-					if GroupsController.groups[gid]['name'].startswith(
-						GroupsController.configuration.groups.guest_prefix):
-						filtered_groups.append(gid)
+				if filters.GUEST == filter_string:
+					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+						filters.GST, filter_string))
+					for gid in self.groups.keys():
+						if self.groups[gid]['name'].startswith(
+							self.configuration.groups.guest_prefix):
+							filtered_groups.append(gid)
 
-			elif filters.RESPONSIBLE == filter_string:
-				ltrace('groups', '> Select(RSP:%s/%s)' % (
-					filters.RSP, filter_string))
+				elif filters.RESPONSIBLE == filter_string:
+					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+						filters.RSP, filter_string))
 
-				for gid in GroupsController.groups.keys():
-					if GroupsController.groups[gid]['name'].startswith(
-						GroupsController.configuration.groups.resp_prefix):
-						filtered_groups.append(gid)
+					for gid in self.groups.keys():
+						if self.groups[gid]['name'].startswith(
+							self.configuration.groups.resp_prefix):
+							filtered_groups.append(gid)
 
-			elif filters.PRIVILEGED == filter_string:
-				ltrace('groups', '> Select(PRI:%s/%s)' % (
-					filters.PRI, filter_string))
+				elif filters.PRIVILEGED == filter_string:
+					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+						filters.PRI, filter_string))
 
-				for name in self.privileges:
-					try:
-						filtered_groups.append(
-							self.name_to_gid(name))
-					except exceptions.DoesntExistsException:
-						# this system group doesn't exist on the system
-						pass
+					for name in self.privileges:
+						try:
+							filtered_groups.append(
+								self.name_to_gid(name))
+						except exceptions.DoesntExistsException:
+							# this system group doesn't exist on the system
+							pass
+				else:
+					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
+						filters.SYS, filter_string))
+					filtered_groups.extend(filter(self.is_system_gid,
+						self.groups.keys()))
+
 			else:
-				ltrace('groups', '> Select(SYS:%s/%s)' % (
-					filters.SYS, filter_string))
-				filtered_groups.extend(filter(self.is_system_gid,
-					GroupsController.groups.keys()))
+				gid_re    = re.compile("^gid=(?P<gid>\d+)")
+				gid_match = gid_re.match(filter_string)
+				if gid_match is not None:
+					gid = int(gid_match.group('gid'))
+					filtered_groups.append(gid)
 
-		else:
-			gid_re    = re.compile("^gid=(?P<gid>\d+)")
-			gid_match = gid_re.match(filter_string)
-			if gid_match is not None:
-				gid = int(gid_match.group('gid'))
-				filtered_groups.append(gid)
-
-		ltrace('groups', '< Select(%s)' % filtered_groups)
+		assert ltrace('groups', '< Select(%s)' % filtered_groups)
 		return filtered_groups
 	def ExportCLI(self, selected=None, long_output=False, no_colors=False):
 		""" Export the groups list to human readable (= « get group ») form. """
-		if selected is None:
-			gids = GroupsController.groups.keys()
-		else:
-			gids = selected
-		gids.sort()
 
-		ltrace('groups', '| ExportCLI(%s)' % gids)
-
-		def ExportOneGroupFromGid(gid, mygroups=GroupsController.groups):
-			""" Export groups the way UNIX get does, separating with ":" """
-
-			if mygroups[gid]['permissive'] is None:
-				group_name = '%s' % styles.stylize(styles.ST_NAME,
-					GroupsController.groups[gid]['name'])
-			elif mygroups[gid]['permissive']:
-				group_name = '%s' % styles.stylize(styles.ST_OK,
-					GroupsController.groups[gid]['name'])
+		with self.lock:
+			if selected is None:
+				gids = self.groups.keys()
 			else:
-				group_name = '%s' % styles.stylize(styles.ST_BAD,
-					GroupsController.groups[gid]['name'])
+				gids = selected
+			gids.sort()
 
-			accountdata = [
-				group_name,
-				mygroups[gid]['userPassword'] \
-					if mygroups[gid].has_key('userPassword') else '',
-				str(gid) ]
+			assert ltrace('groups', '| ExportCLI(%s)' % gids)
 
-			if self.is_system_gid(gid):
-				accountdata.extend(
-					[
-						"",
-						",".join(mygroups[gid]['memberUid']),
-						mygroups[gid]['description'] \
-							if mygroups[gid].has_key('description') else ''
-					] )
-			else:
-				accountdata.extend(
-					[
-						mygroups[gid]['groupSkel'] \
-							if mygroups[gid].has_key('groupSkel') else '',
-						",".join(mygroups[gid]['memberUid']),
-						mygroups[gid]['description'] \
-							if mygroups[gid].has_key('description') else ''
-					] )
+			def ExportOneGroupFromGid(gid, mygroups=self.groups):
+				""" Export groups the way UNIX get does, separating with ":" """
 
-				if no_colors:
-					# if --no-colors is set, we have to display if the group
-					# is permissive or not in real words, else user don't get
-					# the information because normally it is encoded simply with
-					# colors..
-					if mygroups[gid]['permissive'] is None:
-						accountdata.append("UNKNOWN")
-					elif mygroups[gid]['permissive']:
-						accountdata.append("permissive")
-					else:
-						accountdata.append("NOT permissive")
+				if mygroups[gid]['permissive'] is None:
+					group_name = '%s' % styles.stylize(styles.ST_NAME,
+						self.groups[gid]['name'])
+				elif mygroups[gid]['permissive']:
+					group_name = '%s' % styles.stylize(styles.ST_OK,
+						self.groups[gid]['name'])
+				else:
+					group_name = '%s' % styles.stylize(styles.ST_BAD,
+						self.groups[gid]['name'])
 
-			if long_output:
-				accountdata.append('[%s]' % styles.stylize(
-					styles.ST_LINK, mygroups[gid]['backend']))
+				accountdata = [
+					group_name,
+					mygroups[gid]['userPassword'] \
+						if mygroups[gid].has_key('userPassword') else '',
+					str(gid) ]
 
-			return ':'.join(accountdata)
+				if self.is_system_gid(gid):
+					accountdata.extend(
+						[
+							"",
+							",".join(mygroups[gid]['memberUid']),
+							mygroups[gid]['description'] \
+								if mygroups[gid].has_key('description') else ''
+						] )
+				else:
+					accountdata.extend(
+						[
+							mygroups[gid]['groupSkel'] \
+								if mygroups[gid].has_key('groupSkel') else '',
+							",".join(mygroups[gid]['memberUid']),
+							mygroups[gid]['description'] \
+								if mygroups[gid].has_key('description') else ''
+						] )
 
-		return "\n".join(map(ExportOneGroupFromGid, gids)) + "\n"
+					if no_colors:
+						# if --no-colors is set, we have to display if the group
+						# is permissive or not in real words, else user don't get
+						# the information because normally it is encoded simply with
+						# colors..
+						if mygroups[gid]['permissive'] is None:
+							accountdata.append("UNKNOWN")
+						elif mygroups[gid]['permissive']:
+							accountdata.append("permissive")
+						else:
+							accountdata.append("NOT permissive")
+
+				if long_output:
+					accountdata.append('[%s]' % styles.stylize(
+						styles.ST_LINK, mygroups[gid]['backend']))
+
+				return ':'.join(accountdata)
+
+			return "\n".join(map(ExportOneGroupFromGid, gids)) + "\n"
 	def ExportXML(self, selected=None, long_output=False):
 		""" Export the groups list to XML. """
 
 		data = ('''<?xml version='1.0' encoding=\"UTF-8\"?>\n'''
 				'''<groups-list>\n''')
 
-		if selected is None:
-			gids = GroupsController.groups.keys()
-		else:
-			gids = selected
-		gids.sort()
+		with self.lock:
+			if selected is None:
+				gids = self.groups.keys()
+			else:
+				gids = selected
+			gids.sort()
 
-		ltrace('groups', '| ExportXML(%s)' % gids)
+			assert ltrace('groups', '| ExportXML(%s)' % gids)
 
-		for gid in gids:
-			# TODO: put this into formatted strings.
-			group = GroupsController.groups[gid]
-			data += '''	<group>
-		<name>%s</name>
-		<gid>%s</gid>%s%s
-		<permissive>%s</permissive>\n%s%s%s</group>\n''' % (
-			group['name'],
-			str(gid),
-			'\n		<userPassword>%s</userPassword>' % group['userPassword'] \
-				if group.has_key('userPassword') else '',
-			'\n		<description>%s</description>' % group['description'] \
-				if group.has_key('description') else '',
-			'unknown' if group['permissive'] is None \
-				else str(group['permissive']),
-			'' if self.is_system_gid(gid) \
-				else '		<groupSkel>%s</groupSkel>\n' % group['groupSkel'],
-			'		<memberUid>%s</memberUid>\n' % \
-				", ".join(group['memberUid']) if group['memberUid'] != [] \
-				else '',
-			"		<backend>%s</backend>\n" %  group['backend'] \
-				if long_output else ''
-			)
+			for gid in gids:
+				# TODO: put this into formatted strings.
+				group = self.groups[gid]
+				data += '''	<group>
+			<name>%s</name>
+			<gid>%s</gid>%s%s
+			<permissive>%s</permissive>\n%s%s%s</group>\n''' % (
+				group['name'],
+				str(gid),
+				'\n		<userPassword>%s</userPassword>' % group['userPassword'] \
+					if group.has_key('userPassword') else '',
+				'\n		<description>%s</description>' % group['description'] \
+					if group.has_key('description') else '',
+				'unknown' if group['permissive'] is None \
+					else str(group['permissive']),
+				'' if self.is_system_gid(gid) \
+					else '		<groupSkel>%s</groupSkel>\n' % group['groupSkel'],
+				'		<memberUid>%s</memberUid>\n' % \
+					", ".join(group['memberUid']) if group['memberUid'] != [] \
+					else '',
+				"		<backend>%s</backend>\n" %  group['backend'] \
+					if long_output else ''
+				)
 
-		data += "</groups-list>\n"
+			data += "</groups-list>\n"
 
-		return data
-	def AddGroup(self, name, desired_gid=None, description="", groupSkel="",
-		system=False, permissive=False, batch=False, force=False,
-		listener=None):
-		""" Add a Licorn group (the group + the guest/responsible group +
-			the shared dir + permissions (ACL)). """
-
-		if name in (None, ''):
+			return data
+	def _validate_fields(self, name, description, groupSkel, listener=None):
+		""" apply sane tests on AddGroup needed arguments. """
+		if name is None:
 			raise exceptions.BadArgumentError("You must specify a group name.")
 
 		if not hlstr.cregex['group_name'].match(name):
@@ -334,54 +331,70 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				"Malformed group name '%s', must match /%s/i." % (name,
 				styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])))
 
-		if len(name) > GroupsController.configuration.groups.name_maxlenght:
+		if len(name) > self.configuration.groups.name_maxlenght:
 			raise exceptions.LicornRuntimeError('''Group name must be '''
 				'''smaller than %d characters.''' % \
-					GroupsController.configuration.groups.name_maxlenght)
+					self.configuration.groups.name_maxlenght)
 
-		ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, descr=%s, '''
-			'''skel=%s, perm=%s)''' % (name, system, desired_gid, description,
-				groupSkel, permissive))
-
-		if groupSkel is "":
-			logging.progress('Using default skel dir %s' %
-				self.configuration.users.default_skel, listener=listener)
-			groupSkel = GroupsController.configuration.users.default_skel
-
-		elif groupSkel not in GroupsController.configuration.users.skels:
-			raise exceptions.BadArgumentError('''The skel you specified '''
-				'''doesn't exist on this system. Valid skels are: %s.'''
-				% GroupsController.configuration.users.skels)
-
-		if description == '':
+		if description is None:
 			description = 'members of group “%s”' % name
+
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError('''Malformed group description '''
 				''''%s', must match /%s/i.'''
 				% (description, styles.stylize(
 					styles.ST_REGEX, hlstr.regex['description'])))
 
-		home = '%s/%s/%s' % (
-			GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names.plural,
-			name)
+		if groupSkel is None:
+			logging.progress('Using default skel dir %s' %
+				self.configuration.users.default_skel, listener=listener)
+			groupSkel = self.configuration.users.default_skel
 
-		# TODO: permit to specify GID.
-		# Currently this doesn't seem to be done yet.
+		elif groupSkel not in self.configuration.users.skels:
+			raise exceptions.BadArgumentError('''Invalid skel. Valid skels '''
+				'''are: %s.''' % self.configuration.users.skels)
 
-		try:
-			not_already_exists = True
-			gid = self.__add_group(name, system, desired_gid, description,
-				groupSkel, batch=batch, force=force, listener=listener)
+		return name, description, groupSkel
+	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
+		system=False, permissive=False, batch=False, force=False,
+		listener=None):
+		""" Add a Licorn group (the group + the guest/responsible group +
+			the shared dir + permissions (ACL)). """
 
-		except exceptions.AlreadyExistsException, e:
-			# don't bork if the group already exists, just continue.
-			# some things could be missing (resp- , guest- , shared dir or
-			# ACLs), it is a good idea to verify everything is really OK by
-			# continuing the creation procedure.
-			logging.notice(str(e), listener=listener)
-			gid = self.name_to_gid(name)
-			not_already_exists = False
+		assert ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, '''
+			'''descr=%s, skel=%s, perm=%s)''' % (name, system, desired_gid,
+				description, groupSkel, permissive))
+
+		with self.lock:
+			name, description, groupSkel = self._validate_fields(name,
+				description, groupSkel, listener=listener)
+
+			home = '%s/%s/%s' % (
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural,
+				name)
+
+			# TODO: permit to specify GID.
+			# Currently this doesn't seem to be done yet.
+
+			try:
+				not_already_exists = True
+				gid = self.__add_group(name, system, desired_gid, description,
+					groupSkel, batch=batch, force=force, listener=listener)
+
+			except exceptions.AlreadyExistsException, e:
+				# don't bork if the group already exists, just continue.
+				# some things could be missing (resp- , guest- , shared dir or
+				# ACLs), it is a good idea to verify everything is really OK by
+				# continuing the creation procedure.
+				logging.notice(str(e), listener=listener)
+				gid = self.name_to_gid(name)
+				not_already_exists = False
+
+		# LOCKS: can be released, because everything after now is FS operations,
+		# not needing the internal data structures. It can fail if someone
+		# delete a group during the CheckGroups() phase (a little later in this
+		# method), but this will be harmless.
 
 		if system:
 			if not_already_exists:
@@ -391,10 +404,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
-			ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (name, gid))
+			assert ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (name, gid))
 			return gid, name
 
-		GroupsController.groups[gid]['permissive'] = permissive
+		self.groups[gid]['permissive'] = permissive
 
 		try:
 			self.CheckGroups([ gid ], minimal=True, batch=True, force=force,
@@ -406,7 +419,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					styles.stylize(styles.ST_UGID, gid)), listener=listener)
 
 		except exceptions.SystemCommandError, e:
-			logging.warning ("ROLLBACK of group creation: " + str(e),
+			logging.warning("ROLLBACK of group creation: " + str(e),
 				listener=listener)
 
 			import shutil
@@ -418,13 +431,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				pass
 			try:
 				self.__delete_group('%s%s' % (
-					GroupsController.configuration.groups.resp_prefix, name),
+					self.configuration.groups.resp_prefix, name),
 					listener=listener)
 			except:
 				pass
 			try:
 				self.__delete_group('%s%s' % (
-					GroupsController.configuration.groups.guest_prefix, name),
+					self.configuration.groups.guest_prefix, name),
 					listener=listener)
 			except:
 				pass
@@ -432,32 +445,35 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			# re-raise, for the calling process to know what happened…
 			raise e
 
-		ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
-		self.inotifier.add_group_watch(gid)
+		assert ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
+		if not_already_exists:
+			self.inotifier.add_group_watch(gid)
 		return gid, name
-	def __add_group(self, name, system, manual_gid=None, description = "",
+	def __add_group(self, name, system, manual_gid=None, description=None,
 		groupSkel = "", batch=False, force=False, listener=None):
 		""" Add a POSIX group, write the system data files.
-			Return the gid of the group created."""
+			Return the gid of the group created. """
 
-		ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
+		# LOCKS: No need to use self.lock, already encapsulated in AddGroup().
+
+		assert ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
 			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
 				groupSkel)
 			)
 
 		# first verify if GID is not already taken.
-		if GroupsController.groups.has_key(manual_gid):
+		if self.groups.has_key(manual_gid):
 			raise exceptions.AlreadyExistsError('''The GID you want (%s) '''
 				'''is already taken by another group (%s). Please choose '''
 				'''another one.''' % (
 					styles.stylize(styles.ST_UGID, manual_gid),
 					styles.stylize(styles.ST_NAME,
-						GroupsController.groups[manual_gid]['name'])))
+						self.groups[manual_gid]['name'])))
 
 		# Then verify if the name is not taken too.
 		# don't use name_to_gid() else the exception is not KeyError.
 		try:
-			existing_gid = GroupsController.name_cache[name]
+			existing_gid = self.name_cache[name]
 
 			if manual_gid is None:
 				# automatic GID selection upon creation.
@@ -472,7 +488,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						'''type. Please choose another name for your group.'''
 						% styles.stylize(styles.ST_NAME, name))
 			else:
-				ltrace('groups', 'manual GID %d specified.' % manual_gid)
+				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
 
 				# user has manually specified a GID to affect upon creation.
 				if system and self.is_system_gid(existing_gid):
@@ -497,7 +513,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		# Due to a bug of adduser perl script, we must check that there is
 		# no user which has 'name' as login. For details, see
 		# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
-		if GroupsController.users.login_cache.has_key(name) and not force:
+		if self.users.login_cache.has_key(name) and not force:
 			raise exceptions.UpstreamBugException('''A user account called '''
 				'''%s already exists, this could trigger a bug in the Ubuntu '''
 				'''adduser code when deleting the user. Please choose '''
@@ -508,17 +524,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		# Find a new GID
 		if manual_gid is None:
 			if system:
-				gid = pyutils.next_free(GroupsController.groups.keys(),
+				gid = pyutils.next_free(self.groups.keys(),
 					self.configuration.groups.system_gid_min,
 					self.configuration.groups.system_gid_max)
 			else:
-				gid = pyutils.next_free(GroupsController.groups.keys(),
+				gid = pyutils.next_free(self.groups.keys(),
 					self.configuration.groups.gid_min,
 					self.configuration.groups.gid_max)
 
 			logging.progress('Autogenerated GID for group %s: %s.' % (
 				styles.stylize(styles.ST_LOGIN, name),
-				styles.stylize(styles.ST_SECRET, gid)), listener=listener)
+				styles.stylize(styles.ST_UGID, gid)), listener=listener)
 		else:
 			if (system and self.is_system_gid(manual_gid)) \
 				or (not system and self.is_standard_gid(
@@ -543,7 +559,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			'memberUid'   : [],
 			'description' : description,
 			'groupSkel'   : groupSkel,
-			'backend'     : GroupsController.backends['prefered'].name,
+			'backend'     : self.backends['prefered'].name,
 			'action'      : 'create'
 			}
 
@@ -554,86 +570,105 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			# no skel for a system group
 			temp_group_dict['groupSkel'] = ''
 
-		GroupsController.groups[gid]      = temp_group_dict
-		GroupsController.name_cache[name] = gid
+		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
+			gid, name))
+		self.groups[gid]      = temp_group_dict
+		self.name_cache[name] = gid
 
 		# do not skip the write/save part, else future actions could fail. E.g.
 		# when creating a group, skipping save() on rsp/gst group creation will
 		# result in unaplicable ACLs because of (yet) non-existing groups in the
 		# system files (or backends).
 		# DO NOT UNCOMMENT: -- if not batch:
-		GroupsController.groups[gid]['action'] = 'create'
-		GroupsController.backends[
-			GroupsController.groups[gid]['backend']
+		self.groups[gid]['action'] = 'create'
+		self.backends[
+			self.groups[gid]['backend']
 			].save_group(gid)
 
-		ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
+		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
 		return gid
 	def DeleteGroup(self, name=None, gid=None, del_users=False,
 		no_archive=False, batch=False, check_profiles=True, listener=None):
-		""" Delete an Licorn group """
+		""" Delete an Licorn® group. """
+
+		assert ltrace('groups', '''> DeleteGroup(gid=%s, name=%s, '''
+			'''del_users=%s, no_archive=%s, batch=%s, check_profiles=%s)''' % (
+			gid, name, del_users, no_archive, batch, check_profiles))
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		prim_memb = self.primary_members(gid=gid)
+		assert ltrace('groups', '  DeleteGroup(%s,%s)' % (name, gid))
 
-		if prim_memb != [] and not del_users:
-			raise exceptions.BadArgumentError('''The group still has '''
-				'''members. You must delete them first, or force their '''
-				'''automatic deletion with the --del-users option. WARNING: '''
-				'''this is a bad idea, use with caution.''')
+		# lock everything we *eventually* need, to be sure there are no errors.
+		with self.lock:
+			with self.users.lock:
+				with self.privileges.lock:
+					prim_memb = self.primary_members(gid=gid)
 
-		if check_profiles and name in self.profiles.keys():
-			raise exceptions.BadArgumentError('''can't delete group %s, '''
-			'''currently associated with profile %s. Please delete the '''
-			'''profile, and the group will be deleted too.''' % (
-				styles.stylize(styles.ST_NAME, name),
-				styles.stylize(styles.ST_NAME,
-					self.profiles.group_to_name(name))))
+					if prim_memb != [] and not del_users:
+						raise exceptions.BadArgumentError('''The group still has '''
+							'''members. You must delete them first, or force their '''
+							'''automatic deletion with the --del-users option. WARNING: '''
+							'''this is a bad idea, use with caution.''')
 
-		home = '%s/%s/%s' % (
-			GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names.plural,
-			name)
+					if check_profiles and name in self.profiles.keys():
+						raise exceptions.BadArgumentError('''can't delete group %s, '''
+						'''currently associated with profile %s. Please delete the '''
+						'''profile, and the group will be deleted too.''' % (
+							styles.stylize(styles.ST_NAME, name),
+							styles.stylize(styles.ST_NAME,
+								self.profiles.group_to_name(name))))
 
-		# Delete the group and its (primary) member(s) even if it is not empty
-		if del_users:
-			for login in prim_memb:
-				GroupsController.users.DeleteUser(login=login,
-					no_archive=no_archive, batch=batch, listener=listener)
+					home = '%s/%s/%s' % (
+						self.configuration.defaults.home_base_path,
+						self.configuration.groups.names.plural,
+						name)
 
-		if self.is_system_gid(gid):
-			# wipe the group from the privileges if present there.
-			if name in self.privileges:
-				self.privileges.delete([name], listener=listener)
+					# Delete the group and its (primary) member(s) even if it is not empty
+					if del_users:
+						for login in prim_memb:
+							self.users.DeleteUser(login=login, no_archive=no_archive,
+								batch=batch, listener=listener)
 
-			# a system group has no data on disk (no shared directory), just
-			# delete its internal data and exit.
-			self.__delete_group(name, listener=listener)
+					if self.is_system_gid(gid):
+						# wipe the group from the privileges if present there.
+						if name in self.privileges:
+							self.privileges.delete([name], listener=listener)
 
-			return
+						# a system group has no data on disk (no shared directory), just
+						# delete its internal data and exit.
+						self.__delete_group(name, listener=listener)
 
-		# remove the inotifier watch before archiving group shared data.
-		self.inotifier.del_group_watch(gid)
+						return
 
-		# For a standard group, there are a few steps more :
-		# 	- delete the responsible and guest groups,
-		#	- then delete the symlinks and the group,
-		#	- then the shared data.
-		# For responsible and guests symlinks, don't do anything : all symlinks
-		# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
-		# work.
-		self.__delete_group('%s%s' % (
-			GroupsController.configuration.groups.resp_prefix, name),
-			listener=listener)
-		self.__delete_group('%s%s' % (
-			GroupsController.configuration.groups.guest_prefix, name),
-			listener=listener)
+					# remove the inotifier watch before deleting the group, else
+					# the call will fail, and before archiving group shared
+					# data, else it will leave ghost notifies in our gamin
+					# daemon, which doesn't need that.
+					self.inotifier.del_group_watch(gid)
 
-		self.CheckGroupSymlinks(gid=gid, name=name, delete=True,
-			batch=True, listener=listener)
-		self.__delete_group(name, listener=listener)
+					# For a standard group, there are a few steps more :
+					# 	- delete the responsible and guest groups,
+					#	- then delete the symlinks and the group,
+					#	- then the shared data.
+					# For responsible and guests symlinks, don't do anything : all symlinks
+					# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
+					# work.
+					self.__delete_group('%s%s' % (
+						self.configuration.groups.resp_prefix, name),
+						listener=listener)
+					self.__delete_group('%s%s' % (
+						self.configuration.groups.guest_prefix, name),
+						listener=listener)
+
+					self.CheckGroupSymlinks(gid=gid, name=name, delete=True,
+						batch=True, listener=listener)
+					self.__delete_group(name, listener=listener)
+
+		# LOCKS: from here, everything is deleted in internal structures, we
+		# don't need the locks anymore. The inotifier and the archiving parts
+		# can be very long, releasing the locks is good idea.
 
 		# the group information has been wiped out, remove or archive the shared
 		# directory. If anything fails now, this is not a real problem, because
@@ -651,11 +686,11 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					raise e
 		else:
 			# /home/archives must be OK befor moving
-			GroupsController.configuration.check_base_dirs(minimal=True,
+			self.configuration.check_base_dirs(minimal=True,
 				batch=True, listener=listener)
 
 			group_archive_dir = "%s/%s.deleted.%s" % (
-				GroupsController.configuration.home_archive_dir, name,
+				self.configuration.home_archive_dir, name,
 				strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(home, group_archive_dir)
@@ -664,7 +699,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					styles.stylize(styles.ST_PATH, group_archive_dir)),
 					listener=listener)
 
-				GroupsController.configuration.check_archive_dir(
+				self.configuration.check_archive_dir(
 					group_archive_dir, batch=True, listener=listener)
 			except OSError, e:
 				if e.errno == 2:
@@ -675,36 +710,49 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def __delete_group(self, name, listener=None):
 		""" Delete a POSIX group."""
 
-		gid     = GroupsController.name_cache[name]
-		backend = GroupsController.groups[gid]['backend']
+		# LOCKS: this method is never called directly, and must always be
+		# encapsulated in another, which will acquire self.lock. This is the
+		# case in DeleteGroup().
+
+		assert ltrace('groups', '> __delete_group(%s)' % name)
+
+		try:
+			gid = self.name_cache[name]
+		except KeyError, e:
+			logging.info('''Group %s doesn't exist.''' % styles.stylize(
+				styles.ST_NAME, name))
+			return
+
+		backend = self.groups[gid]['backend']
 
 		# Remove the group in the groups list of profiles
-		GroupsController.profiles.delete_group_in_profiles(name=name,
+		self.profiles.delete_group_in_profiles(name=name,
 			listener=listener)
 
 		# clear the user cache.
-		for user in GroupsController.groups[gid]['memberUid']:
+		for user in self.groups[gid]['memberUid']:
 			self.users.users[
 				self.users.login_cache[user]
 				]['groups'].remove(name)
 
 		try:
-			del GroupsController.groups[gid]
-			del GroupsController.name_cache[name]
+			del self.groups[gid]
+			del self.name_cache[name]
 
-			# delete the group in the backend after deleting it locally, else
-			# Unix backend will not know what to delete (this is quite a hack).
-			GroupsController.backends[backend].delete_group(name)
+			self.backends[backend].delete_group(name)
 
 			logging.info(logging.SYSG_DELETED_GROUP % \
 				styles.stylize(styles.ST_NAME, name), listener=listener)
 		except KeyError:
-			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST % styles.stylize(
-				styles.ST_NAME, name), listener=listener)
+			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST %
+				styles.stylize(styles.ST_NAME, name), listener=listener)
+
+		assert ltrace('groups', '< __delete_group(%s)' % name)
 	def RenameGroup(self, name=None, gid=None, new_name=None, listener=None):
 		""" Modify the name of a group.
 
-		#FIXME listener=listener
+		# FIXME: 1) listener=listener
+		# FIXME: 2) with self.lock
 		"""
 
 		raise NotImplementedError(
@@ -722,28 +770,26 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 			gid 		= self.name_to_gid(name)
 			home		= "%s/%s/%s" % (
-				GroupsController.configuration.defaults.home_base_path,
-				GroupsController.configuration.groups.names.plural,
-				GroupsController.groups[gid]['name'])
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural,
+				self.groups[gid]['name'])
 			new_home	= "%s/%s/%s" % (
-				GroupsController.configuration.defaults.home_base_path,
-				GroupsController.configuration.groups.names.plural,
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural,
 				new_name)
 
-			GroupsController.groups[gid]['name'] = new_name
+			self.groups[gid]['name'] = new_name
 
 			if not self.is_system_gid(gid):
-				tmpname = GroupsController.configuration.groups.resp_prefix \
-					+ name
+				tmpname = self.configuration.groups.resp_prefix + name
 				resp_gid = self.name_to_gid(tmpname)
-				GroupsController.groups[resp_gid]['name'] = tmpname
-				GroupsController.name_cache[tmpname] = resp_gid
+				self.groups[resp_gid]['name'] = tmpname
+				self.name_cache[tmpname] = resp_gid
 
-				tmpname = GroupsController.configuration.groups.guest_prefix \
-					+ name
+				tmpname = self.configuration.groups.guest_prefix + name
 				guest_gid = self.name_to_gid(tmpname)
-				GroupsController.groups[guest_gid]['name'] = tmpname
-				GroupsController.name_cache[tmpname] = guest_gid
+				self.groups[guest_gid]['name'] = tmpname
+				self.name_cache[tmpname] = guest_gid
 
 				del tmpname
 
@@ -758,19 +804,19 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			# The name has changed, we have to update profiles
 			profilelist.change_group_name_in_profiles(name, new_name)
 
-			# update GroupsController.users.users[*]['groups']
-			for u in GroupsController.users.users:
+			# update self.users.users[*]['groups']
+			for u in self.users.users:
 				try:
-					i = GroupsController.users.users[u]['groups'].index(name)
+					i = self.users.users[u]['groups'].index(name)
 				except ValueError:
 					 # user u is not in the group which was renamed
 					pass
 				else:
-					GroupsController.users.users[u]['groups'][i] = new_name
+					self.users.users[u]['groups'][i] = new_name
 
-			GroupsController.groups[gid]['action'] = 'rename'
-			GroupsController.backends[
-				GroupsController.groups[gid]['backend']
+			self.groups[gid]['action'] = 'rename'
+			self.backends[
+				self.groups[gid]['backend']
 				].save_group(gid)
 
 		#
@@ -788,37 +834,49 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		listener=None):
 		""" Change the description of a group. #FIXME listener=listener """
 
-		gid, name = self.resolve_gid_or_name(gid, name)
-
 		if description is None:
 			raise exceptions.BadArgumentError, "You must specify a description"
 
-		GroupsController.groups[gid]['description'] = description
+		with self.lock:
+			gid, name = self.resolve_gid_or_name(gid, name)
 
-		GroupsController.groups[gid]['action'] = 'update'
-		GroupsController.backends[
-			GroupsController.groups[gid]['backend']
-			].save_group(gid)
+			self.groups[gid]['description'] = description
+
+			self.groups[gid]['action'] = 'update'
+			self.backends[
+				self.groups[gid]['backend']
+				].save_group(gid)
+
+			logging.info('Changed group %s description to "%s".' % (
+				styles.stylize(styles.ST_NAME, name),
+				styles.stylize(styles.ST_COMMENT, description)
+				), listener=listener)
 	def ChangeGroupSkel(self, name=None, gid=None, groupSkel=None,
 		listener=None):
 		""" Change the description of a group. #FIXME listener=listener """
 
-		gid, name = self.resolve_gid_or_name(gid, name)
-
 		if groupSkel is None:
 			raise exceptions.BadArgumentError, "You must specify a groupSkel"
 
-		if not groupSkel in GroupsController.configuration.users.skels:
+		if not groupSkel in self.configuration.users.skels:
 			raise exceptions.DoesntExistsError('''The skel you specified '''
 				'''doesn't exist on this system. Valid skels are: %s.''' % \
-					str(GroupsController.configuration.users.skels))
+					str(self.configuration.users.skels))
 
-		GroupsController.groups[gid]['groupSkel'] = groupSkel
+		with self.lock:
+			gid, name = self.resolve_gid_or_name(gid, name)
 
-		GroupsController.groups[gid]['action'] = 'update'
-		GroupsController.backends[
-			GroupsController.groups[gid]['backend']
-			].save_group(gid)
+			self.groups[gid]['groupSkel'] = groupSkel
+
+			self.groups[gid]['action'] = 'update'
+			self.backends[
+				self.groups[gid]['backend']
+				].save_group(gid)
+
+			logging.info('Changed group %s description to "%s".' % (
+				styles.stylize(styles.ST_NAME, name),
+				styles.stylize(styles.ST_COMMENT, description)
+				), listener=listener)
 	def AddGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):
 		""" Allow the users of the profiles given to access to the shared dir
@@ -827,15 +885,16 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		raise NotImplementedError('to be refreshed.')
 
+		# FIXME: with self.lock
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		assert(GroupsController.profiles != None)
+		assert(self.profiles != None)
 
 		# The profiles exist ? Delete bad profiles
 		for p in profiles:
-			if p in GroupsController.profiles:
+			if p in self.profiles:
 				# Add the group in groups list of profiles
-				if name in GroupsController.profiles[p]['memberGid']:
+				if name in self.profiles[p]['memberGid']:
 					logging.progress(
 						"Group %s already in the list of profile %s." % (
 						styles.stylize(styles.ST_NAME, name),
@@ -850,7 +909,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						listener=listener)
 					# Add all 'p''s users in the group 'name'
 					_users_to_add = self.__find_group_members(users,
-						GroupsController.profiles[p]['groupName'])
+						self.profiles[p]['groupName'])
 					self.AddUsersInGroup(name, _users_to_add, users,
 						listener=listener)
 			else:
@@ -860,9 +919,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		# FIXME: is it needed to save() here ? isn't it already done by the
 		# profile() and the AddUsersInGroup() calls ?
-		GroupsController.groups[gid]['action'] = 'update'
-		GroupsController.backends[
-			GroupsController.groups[gid]['backend']
+		self.groups[gid]['action'] = 'update'
+		self.backends[
+			self.groups[gid]['backend']
 			].save_group(gid)
 	def DeleteGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):
@@ -871,9 +930,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		raise NotImplementedError('to be refreshed.')
 
+		# FIXME: with self.lock
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		assert(GroupsController.profiles != None)
+		assert(self.profiles != None)
 
 		# The profiles exist ?
 		for p in profiles:
@@ -901,102 +961,109 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		batch=False, listener=None):
 		""" Add a user list in the group 'name'. """
 
-		ltrace('groups', '''> AddUsersInGroup(gid=%s, name=%s, '''
+		assert ltrace('groups', '''> AddUsersInGroup(gid=%s, name=%s, '''
 			'''users_to_add=%s, batch=%s)''' % (gid, name, users_to_add, batch))
 
 		if users_to_add is None:
 			raise exceptions.BadArgumentError("You must specify a users list")
 
-		gid, name = self.resolve_gid_or_name(gid, name)
+		# we need to lock users to be sure they don't dissapear during this phase.
+		with self.lock:
+			with self.users.lock:
+				gid, name = self.resolve_gid_or_name(gid, name)
 
-		uids_to_add = self.users.guess_identifiers(users_to_add,
-			listener=listener)
-
-		work_done = False
-		u2l = self.users.uid_to_login
-
-		for uid in uids_to_add:
-			login = u2l(uid)
-			if login in GroupsController.groups[gid]['memberUid']:
-				logging.progress(
-					"User %s is already a member of %s, skipped." % (
-					styles.stylize(styles.ST_LOGIN, login),
-					styles.stylize(styles.ST_NAME, name)),
-					listener=listener)
-			else:
-				GroupsController.groups[gid]['memberUid'].append(login)
-
-				# update the users cache.
-				GroupsController.users.users[uid]['groups'].append(name)
-
-				logging.info("Added user %s to members of %s." % (
-					styles.stylize(styles.ST_LOGIN, login),
-					styles.stylize(styles.ST_NAME, name)),
+				uids_to_add = self.users.guess_identifiers(users_to_add,
 					listener=listener)
 
-				if batch:
-					work_done = True
-				else:
-					#
-					# save the group after each user addition.
-					# this is a quite expansive operation, it seems to me quite
-					# superflous, but you can make bets on security and
-					# reliability.
-					#
-					GroupsController.groups[gid]['action'] = 'update'
-					GroupsController.backends[
-						GroupsController.groups[gid]['backend']
+				work_done = False
+				u2l = self.users.uid_to_login
+
+				for uid in uids_to_add:
+					login = u2l(uid)
+					if login in self.groups[gid]['memberUid']:
+						logging.progress(
+							"User %s is already a member of %s, skipped." % (
+							styles.stylize(styles.ST_LOGIN, login),
+							styles.stylize(styles.ST_NAME, name)),
+							listener=listener)
+					else:
+						self.groups[gid]['memberUid'].append(login)
+
+						# update the users cache.
+						self.users.users[uid]['groups'].append(name)
+
+						logging.info("Added user %s to members of %s." % (
+							styles.stylize(styles.ST_LOGIN, login),
+							styles.stylize(styles.ST_NAME, name)),
+							listener=listener)
+
+						if batch:
+							work_done = True
+						else:
+							#
+							# save the group after each user addition.
+							# this is a quite expansive operation, it seems to me quite
+							# superflous, but you can make bets on security and
+							# reliability.
+							#
+							self.groups[gid]['action'] = 'update'
+							self.backends[
+								self.groups[gid]['backend']
+								].save_group(gid)
+
+							#self.reload_admins_group_in_validator(name)
+
+						if self.is_standard_gid(gid):
+							# create the symlink to the shared group dir
+							# in the user's home dir.
+							link_basename = self.groups[gid]['name']
+						elif name.startswith(
+							self.configuration.groups.resp_prefix):
+							# fix #587: make symlinks for resps and guests too.
+							link_basename = \
+								self.groups[gid]['name'].replace(
+								self.configuration.groups.resp_prefix,
+								"", 1)
+						elif name.startswith(
+							self.configuration.groups.guest_prefix):
+							link_basename = \
+								self.groups[gid]['name'].replace(
+								self.configuration.groups.guest_prefix,
+								"", 1)
+						else:
+							# this is a system group, don't make any symlink !
+							continue
+
+						# brutal fix for #43, batched for convenience.
+						self.AddUsersInGroup(name='users', users_to_add=[ uid ],
+							batch=True, listener=listener)
+
+						link_src = os.path.join(
+							self.configuration.defaults.home_base_path,
+							self.configuration.groups.names.plural,
+							link_basename)
+						link_dst = os.path.join(
+							self.users.users[uid]['homeDirectory'],
+							link_basename)
+						fsapi.make_symlink(link_src, link_dst, batch=batch,
+							listener=listener)
+
+				if batch and work_done:
+					# save the group after having added all users. This seems more fine
+					# than saving between each addition
+					self.groups[gid]['action'] = 'update'
+					self.backends[
+						self.groups[gid]['backend']
 						].save_group(gid)
 
-					self.reload_admins_group_in_validator(name)
+					#self.reload_admins_group_in_validator(name)
 
-				if self.is_standard_gid(gid):
-					# create the symlink to the shared group dir
-					# in the user's home dir.
-					link_basename = GroupsController.groups[gid]['name']
-				elif name.startswith(
-					GroupsController.configuration.groups.resp_prefix):
-					# fix #587: make symlinks for resps and guests too.
-					link_basename = \
-						GroupsController.groups[gid]['name'].replace(
-						GroupsController.configuration.groups.resp_prefix,
-						"", 1)
-				elif name.startswith(
-					GroupsController.configuration.groups.guest_prefix):
-					link_basename = \
-						GroupsController.groups[gid]['name'].replace(
-						GroupsController.configuration.groups.guest_prefix,
-						"", 1)
-				else:
-					# this is a system group, don't make any symlink !
-					continue
-
-				# brutal fix for #43, batched for convenience.
-				self.AddUsersInGroup(name='users', users_to_add=[ uid ],
-					batch=True, listener=listener)
-
-				link_src = os.path.join(
-					GroupsController.configuration.defaults.home_base_path,
-					GroupsController.configuration.groups.names.plural,
-					link_basename)
-				link_dst = os.path.join(
-					GroupsController.users.users[uid]['homeDirectory'],
-					link_basename)
-				fsapi.make_symlink(link_src, link_dst, batch=batch,
-					listener=listener)
-
-		if batch and work_done:
-			# save the group after having added all users. This seems more fine
-			# than saving between each addition
-			GroupsController.groups[gid]['action'] = 'update'
-			GroupsController.backends[
-				GroupsController.groups[gid]['backend']
-				].save_group(gid)
-
-			self.reload_admins_group_in_validator(name)
-
-		ltrace('groups', '< AddUsersInGroup()')
+		assert ltrace('groups', '< AddUsersInGroup()')
 	def reload_admins_group_in_validator(self, name):
+		""" Reload a LicornPyroValidator class attribute in the CommandListener
+			thread, to be sure the foreign list of members of group "admins" is
+			up-to-date. This is needed because there are so many calls to the
+			validator that """
 		# FIXME: this doesn't belong here, but it is the only way to start
 		# that I found.
 		if name == 'admins':
@@ -1008,7 +1075,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		batch=False, listener=None):
 		""" Delete a users list in the group 'name'. """
 
-		ltrace('groups', '''> DeleteUsersFromGroup(gid=%s, name=%s,
+		assert ltrace('groups', '''> DeleteUsersFromGroup(gid=%s, name=%s,
 			users_to_del=%s, batch=%s)''' % (gid, name, users_to_del, batch))
 
 		if users_to_del is None:
@@ -1030,11 +1097,11 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		for uid in uids_to_del:
 
 			login = u2l(uid)
-			if login in GroupsController.groups[gid]['memberUid']:
-				GroupsController.groups[gid]['memberUid'].remove(login)
+			if login in self.groups[gid]['memberUid']:
+				self.groups[gid]['memberUid'].remove(login)
 
 				# update the users cache
-				GroupsController.users.users[uid]['groups'].remove(name)
+				self.users.users[uid]['groups'].remove(name)
 
 				logging.info("Removed user %s from members of %s." % (
 					styles.stylize(styles.ST_LOGIN, login),
@@ -1044,22 +1111,22 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				if batch:
 					work_done = True
 				else:
-					GroupsController.groups[gid]['action'] = 'update'
-					GroupsController.backends[
-						GroupsController.groups[gid]['backend']
+					self.groups[gid]['action'] = 'update'
+					self.backends[
+						self.groups[gid]['backend']
 						].save_group(gid)
 
-					self.reload_admins_group_in_validator(name)
+					#self.reload_admins_group_in_validator(name)
 
 				if not self.is_system_gid(gid):
 					# delete the shared group dir symlink in user's home.
 					link_src = os.path.join(
-						GroupsController.configuration.defaults.home_base_path,
-						GroupsController.configuration.groups.names.plural,
-						GroupsController.groups[gid]['name'])
+						self.configuration.defaults.home_base_path,
+						self.configuration.groups.names.plural,
+						self.groups[gid]['name'])
 
 					for link in fsapi.minifind(
-						GroupsController.users[uid]['homeDirectory'],
+						self.users[uid]['homeDirectory'],
 						maxdepth=2, type=stat.S_IFLNK):
 						try:
 							if os.path.abspath(os.readlink(link)) == link_src:
@@ -1084,28 +1151,33 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						listener=listener)
 
 		if batch and work_done:
-			GroupsController.groups[gid]['action'] = 'update'
-			GroupsController.backends[
-				GroupsController.groups[gid]['backend']
+			self.groups[gid]['action'] = 'update'
+			self.backends[
+				self.groups[gid]['backend']
 				].save_group(gid)
 
-			self.reload_admins_group_in_validator(name)
+			#self.reload_admins_group_in_validator(name)
 
-		ltrace('groups', '< DeleteUsersFromGroup()')
+		assert ltrace('groups', '< DeleteUsersFromGroup()')
 	def BuildGroupACL(self, gid, path=""):
-		""" Return an ACL triolet (a dict) that will be used to check something
-			in the group shared dir. path must be the name of a file/dir,
-			relative from group_home (this will help affining the ACL).
-			EG: path \
-				in [ 'toto.odt', 'somedir', 'public_html/images/logo.img' ].
+		""" Return an ACL triolet (a dict) used later to check something
+			in the group shared dir.
 
-			the "@GE" and "@UE" strings will be later replaced by individual
+			NOTE: the "@GE" and "@UE" strings will be later replaced by individual
 			execution bits of certain files which must be kept executable.
+
+			NOT locked, because called from methods which already lock.
+
+			gid: the GID for which we are building the ACL.
+			path: a unicode string, the name of a file/dir (or subdir) relative
+				from group_home (this will help affining the ACL).
+				EG: path can be 'toto.odt', 'somedir',
+				'public_html/images/logo.img'.
 		"""
 
-		group = GroupsController.groups[gid]['name']
+		group = self.groups[gid]['name']
 
-		if GroupsController.groups[gid]['permissive']:
+		if self.groups[gid]['permissive']:
 			group_default_acl = "rwx"
 			group_file_acl    = "rw@GE"
 		else:
@@ -1113,14 +1185,14 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			group_file_acl    = "r-@GE"
 
 		acl_base      = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x,g:%s:rwx" \
-			% (GroupsController.configuration.defaults.admin_group,
-			GroupsController.configuration.groups.guest_prefix + group,
-			GroupsController.configuration.groups.resp_prefix + group)
+			% (self.configuration.defaults.admin_group,
+			self.configuration.groups.guest_prefix + group,
+			self.configuration.groups.resp_prefix + group)
 		file_acl_base = \
 			"u::rw@UE,g::---,o:---,g:%s:rw@GE,g:%s:r-@GE,g:%s:rw@GE" \
-			% (GroupsController.configuration.defaults.admin_group,
-			GroupsController.configuration.groups.guest_prefix + group,
-			GroupsController.configuration.groups.resp_prefix + group)
+			% (self.configuration.defaults.admin_group,
+			self.configuration.groups.guest_prefix + group,
+			self.configuration.groups.resp_prefix + group)
 		acl_mask      = "m:rwx"
 		file_acl_mask = "m:rw@GE"
 
@@ -1148,63 +1220,81 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				}
 	def CheckAssociatedSystemGroups(self, name=None, gid=None, minimal=True,
 		batch=False, auto_answer=None, force=False, listener=None):
-		"""Check the system groups that a standard group need to fuction
-			flawlessly.	For example, a group "toto" need 2 system groups
-			"resp-toto" and "guest-toto" for its ACLs.
+		"""Check the system groups that a standard group needs to be valid.	For
+			example, a group "MountainBoard" needs 2 system groups,
+			rsp-MountainBoard and gst-MountainBoard for its ACLs on the group
+			shared dir.
+
+			NOT locked because called from already locked methods.
+
+			name/gid: the standard group to verify depended upon system groups.
+			minimal: if True, only the system groups are checked. Else, symlinks
+				in the homes of standard group members and responsibles are also
+				checked (can be long, depending on the number of members).
+			batch: correct all errors without prompting.
+			auto_answer: an eventual pre-typed answer to a preceding question
+				asked outside of this method, forwarded to apply same answer to
+				all questions.
+			force: not used directly in this method, but forwarded to called
+				methods which can use it.
+			listener: the pyro client to send messages to.
 		"""
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
 		all_went_ok = True
 
-		for (prefix, title) in (
-			(GroupsController.configuration.groups.resp_prefix,
-				"responsibles" ),
-			(GroupsController.configuration.groups.guest_prefix, "guests")
-			):
+		with self.lock:
+			for (prefix, title) in (
+				(self.configuration.groups.resp_prefix, "responsibles"),
+				(self.configuration.groups.guest_prefix, "guests")
+				):
 
-			group_name = prefix + name
-			logging.progress("Checking system group %s…" %
-				styles.stylize(styles.ST_NAME, group_name),
-				listener=listener)
-
-			try:
-				# FIXME: (convert this into an LicornKeyError ?) and use
-				# name_to_gid() inside of direct cache access.
-				prefix_gid = GroupsController.name_cache[group_name]
-
-			except KeyError:
-
-				warn_message = logging.SYSG_SYSTEM_GROUP_REQUIRED % (
+				group_name = prefix + name
+				logging.progress("Checking system group %s…" %
 					styles.stylize(styles.ST_NAME, group_name),
-					styles.stylize(styles.ST_NAME, name))
+					listener=listener)
 
-				if batch or logging.ask_for_repair(warn_message, auto_answer,
-					listener=listener):
-					try:
-						temp_gid = self.__add_group(group_name,
-							system=True,
-							manual_gid=None,
-							description="%s of group “%s”" % (title, name),
-							groupSkel="", batch=batch, force=force)
-						GroupsController.name_cache[prefix[0]+name] = temp_gid
-						prefix_gid = temp_gid
-						del temp_gid
+				try:
+					# FIXME: (convert this into an LicornKeyError ?) and use
+					# name_to_gid() inside of direct cache access.
+					prefix_gid = self.name_cache[group_name]
 
-						logging.info("Created system group %s." %
-							styles.stylize(styles.ST_NAME, group_name),
-							listener=listener)
-					except exceptions.AlreadyExistsException, e:
-						logging.notice(str(e), listener=listener)
-						pass
-				else:
-					logging.warning(warn_message, listener=listener)
-					all_went_ok &= False
+				except KeyError:
+					warn_message = logging.SYSG_SYSTEM_GROUP_REQUIRED % (
+						styles.stylize(styles.ST_NAME, group_name),
+						styles.stylize(styles.ST_NAME, name))
+
+					if batch or logging.ask_for_repair(warn_message,
+						auto_answer, listener=listener):
+						try:
+							temp_gid = self.__add_group(group_name,
+								system=True, manual_gid=None,
+								description="%s of group “%s”" % (title, name),
+								groupSkel="", batch=batch, force=force)
+							prefix_gid = temp_gid
+							del temp_gid
+
+							logging.info("Created system group %s(%s)." %
+								(styles.stylize(styles.ST_NAME, group_name),
+								styles.stylize(styles.ST_UGID, prefix_gid)),
+								listener=listener)
+						except exceptions.AlreadyExistsException, e:
+							logging.notice(str(e), listener=listener)
+							pass
+					else:
+						logging.warning(warn_message, listener=listener)
+						all_went_ok &= False
 
 			# WARNING: don't even try to remove() group_name from the list of
 			# groups_to_check. This will not behave as expected because
 			# groups_to_check is used with map() and not a standard for() loop.
 			# This will skip some groups, which will not be checked !! BAD !
+
+
+			# LOCKS: the following part can be very long and blocking for the
+			# rest of the world. we do it ouside locks, and damn'it it it fails,
+			# I consider it harmless.
 
 			if not minimal:
 				all_went_ok &= self.CheckGroupSymlinks(gid=prefix_gid,
@@ -1212,32 +1302,51 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					listener=listener)
 
 		return all_went_ok
-
 	def __check_group(self, gid=None, name=None, minimal=True, batch=False,
 		auto_answer=None, force=False, listener=None):
+		""" Check a group (the real implementation, private: don't call directly
+			but use CheckGroups() instead). Will verify the various needed
+			conditions for a Licorn® group to be valid, and then check all
+			entries in the shared group directory.
 
-		ltrace('groups', '> __check_group(gid=%s,name=%s)' % (
-		styles.stylize(styles.ST_UGID, gid),
-		styles.stylize(styles.ST_NAME, name)))
+			PARTIALLY locked, because very long to run (depending on the shared
+			group dir size). Harmless if the unlocked part fails.
 
-		gid, name = self.resolve_gid_or_name(gid, name)
+			gid/name: the group to check.
+			minimal: don't check member's symlinks to shared group dir if True
+			batch: correct all errors without prompting.
+			auto_answer: an eventual pre-typed answer to a preceding question
+				asked outside of this method, forwarded to apply same answer to
+				all questions.
+			force: not used directly in this method, but forwarded to called
+				methods which can use it.
+			listener: the pyro client to send messages to.
+		"""
 
-		all_went_ok = True
+		assert ltrace('groups', '> __check_group(gid=%s,name=%s)' % (
+			styles.stylize(styles.ST_UGID, gid),
+			styles.stylize(styles.ST_NAME, name)))
 
-		if self.is_system_gid(gid):
-			return True
+		with self.lock:
+			gid, name = self.resolve_gid_or_name(gid, name)
 
-		logging.progress("Checking group %s…" %
-			styles.stylize(styles.ST_NAME, name), listener=listener)
+			all_went_ok = True
 
-		all_went_ok &= self.CheckAssociatedSystemGroups(
-			name=name, minimal=minimal, batch=batch, auto_answer=auto_answer,
-			listener=listener)
+			if self.is_system_gid(gid):
+				return True
+
+			logging.progress("Checking group %s…" %
+				styles.stylize(styles.ST_NAME, name), listener=listener)
+
+			all_went_ok &= self.CheckAssociatedSystemGroups(
+				name=name, minimal=minimal, batch=batch,
+				auto_answer=auto_answer, force=force, listener=listener)
+
+			group_home_acl = self.BuildGroupACL(gid)
 
 		group_home = "%s/%s/%s" % (
-			GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names.plural, name)
-		group_home_acl = self.BuildGroupACL(gid)
+			self.configuration.defaults.home_base_path,
+			self.configuration.groups.names.plural, name)
 		group_home_acl['path'] = group_home
 
 		if os.path.exists("%s/public_html" % group_home):
@@ -1330,57 +1439,83 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			# CheckGroups()… use minimal=True as argument here, don't forward
 			# the current "minimal" value.
 
-		ltrace('groups', '< __check_group(%s)' % all_went_ok)
+		assert ltrace('groups', '< __check_group(%s)' % all_went_ok)
 
 		return all_went_ok
 	def check_nonexisting_users(self, batch=False, auto_answer=None,
 		listener=None):
-		""" Go by all groups, and find members which are referenced but don't
-			exist on the system, and wipe them. """
+		""" Go through all groups, find members which are referenced but
+			don't really exist on the system, and wipe them.
 
-		ltrace('groups', '> check_nonexisting_users(batch=%s)' % batch)
+			LOCKED to be thread-safe for groups and users.
 
-		for gid in GroupsController.groups:
-			to_remove = set()
+			batch: correct all errors without prompting.
+			auto_answer: an eventual pre-typed answer to a preceding question
+				asked outside of this method, forwarded to apply same answer to
+				all questions.
+			listener: the pyro client to send messages to.
+		"""
 
-			logging.progress('''Checking for dangling references in group %s.'''
-				% styles.stylize(styles.ST_NAME,
-					GroupsController.groups[gid]['name']),
-				listener=listener)
+		assert ltrace('groups', '> check_nonexisting_users(batch=%s)' % batch)
 
-			for member in GroupsController.groups[gid]['memberUid']:
-				if not GroupsController.users.login_cache.has_key(member):
-					if batch or logging.ask_for_repair('''User %s is '''
-						'''referenced in members of group %s but doesn't '''
-						'''really exist on the system. Remove this dangling '''
-						'''reference?''' % \
-							(styles.stylize(styles.ST_BAD, member),
-							styles.stylize(styles.ST_NAME,
-								GroupsController.groups[gid]['name'])),
-						auto_answer=auto_answer, listener=listener):
-						# don't directly remove member from members,
-						# it will immediately stop the for_loop. Instead, note
-						# the reference to remove, to do it a bit later.
-						logging.info('''Removed dangling reference to '''
-							'''non-existing user %s in group %s.''' % (
-							styles.stylize(styles.ST_BAD, member),
-							styles.stylize(styles.ST_NAME,
-								GroupsController.groups[gid]['name'])),
-							listener=listener)
-						to_remove.add(member)
+		with self.lock:
+			with self.users.lock:
+				for gid in self.groups:
+					to_remove = set()
 
-			if to_remove != set():
-				for member in to_remove:
-					GroupsController.groups[gid]['memberUid'].remove(member)
-					self.WriteConf(gid)
+					logging.progress('''Checking for dangling references in group %s.'''
+						% styles.stylize(styles.ST_NAME,
+							self.groups[gid]['name']),
+						listener=listener)
 
-		ltrace('groups', '< check_nonexisting_users()')
+					for member in self.groups[gid]['memberUid']:
+						if not self.users.login_cache.has_key(member):
+							if batch or logging.ask_for_repair('''User %s is '''
+								'''referenced in members of group %s but doesn't '''
+								'''really exist on the system. Remove this dangling '''
+								'''reference?''' % \
+									(styles.stylize(styles.ST_BAD, member),
+									styles.stylize(styles.ST_NAME,
+										self.groups[gid]['name'])),
+								auto_answer=auto_answer, listener=listener):
+								# don't directly remove member from members,
+								# it will immediately stop the for_loop. Instead, note
+								# the reference to remove, to do it a bit later.
+								logging.info('''Removed dangling reference to '''
+									'''non-existing user %s in group %s.''' % (
+									styles.stylize(styles.ST_BAD, member),
+									styles.stylize(styles.ST_NAME,
+										self.groups[gid]['name'])),
+									listener=listener)
+								to_remove.add(member)
+
+					if to_remove != set():
+						for member in to_remove:
+							self.groups[gid]['memberUid'].remove(member)
+							self.WriteConf(gid)
+
+		assert ltrace('groups', '< check_nonexisting_users()')
 	def CheckGroups(self, gids_to_check, minimal=True, batch=False,
 		auto_answer=None, force=False, listener=None):
-		""" Check the groups, the cache. If not system, check the shared dir,
-			the resps/guests, the members symlinks."""
+		""" Check groups, groups dependancies and groups-related caches. If a
+			given group is not system, check it's shared dir, the depended upon
+			system groups, and eventually the members symlinks.
 
-		ltrace('groups', '''> CheckGroups(gids_to_check=%s, minimal=%s, '''
+			NOT locked because subparts are, where needed.
+
+			gids_to_check: a list of GIDs to check. If you don't have GIDs but
+				group names, use name_to_gid() before.
+			minimal: don't check group symlinks in member's homes if True.
+			batch: correct all errors without prompting.
+			auto_answer: an eventual pre-typed answer to a preceding question
+				asked outside of this method, forwarded to apply same answer to
+				all questions.
+			force: not used directly in this method, but forwarded to called
+				methods which can use it.
+			listener: the pyro client to send messages to.
+		"""
+
+		assert ltrace('groups', '''> CheckGroups(gids_to_check=%s, minimal=%s, '''
 			'''batch=%s, force=%s)''' %	(gids_to_check, minimal, batch, force))
 
 		if not minimal:
@@ -1388,11 +1523,11 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				listener=listener)
 
 		# dependancy: base dirs must be OK before checking groups shared dirs.
-		GroupsController.configuration.check_base_dirs(
-			minimal, batch, auto_answer, listener=listener)
+		self.configuration.check_base_dirs(minimal=minimal, batch=batch,
+			auto_answer=auto_answer, listener=listener)
 
 		def _chk(gid):
-			ltrace('groups', '> CheckGroups._chk(%s)' % gid)
+			assert ltrace('groups', '| CheckGroups._chk(%s)' % gid)
 			return self.__check_group(gid=gid, minimal=minimal, batch=batch,
 				auto_answer=auto_answer, force=force, listener=listener)
 
@@ -1402,23 +1537,26 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.LicornCheckError(
 				"Some group(s) check(s) didn't pass, or weren't corrected.")
 
-		ltrace('groups', '< CheckGroups()')
+		assert ltrace('groups', '< CheckGroups()')
 	def CheckGroupSymlinks(self, name=None, gid=None, oldname=None,
 		delete=False, strip_prefix=None, batch=False, auto_answer=None,
 		listener=None):
 		""" For each member of a group, verify member has a symlink to the
 			shared group dir inside his home (or under level 2 directory). If
 			not, create the link. Eventually delete links pointing to the old
-			group name if it is set. """
+			group name if it is set.
+
+			NOT locked because can be long, and harmless if fails.
+		"""
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
 		all_went_ok = True
 
-		for user in GroupsController.groups[gid]['memberUid']:
+		for user in self.groups[gid]['memberUid']:
 
 			try:
-				uid = GroupsController.users.login_to_uid(user)
+				uid = self.users.login_to_uid(user)
 			except exceptions.DoesntExistsException:
 				logging.notice('Skipped non existing group member %s.' %
 					styles.stylize(styles.ST_NAME, user), listener=listener)
@@ -1434,24 +1572,24 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						'', 1)
 
 			link_src = os.path.join(
-				GroupsController.configuration.defaults.home_base_path,
-				GroupsController.configuration.groups.names.plural,
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural,
 				link_basename)
 
 			link_dst = os.path.join(
-				GroupsController.users.users[uid]['homeDirectory'],
+				self.users.users[uid]['homeDirectory'],
 				link_basename)
 
 			if oldname:
 				link_src_old = os.path.join(
-					GroupsController.configuration.defaults.home_base_path,
-					GroupsController.configuration.groups.names.plural,
+					self.configuration.defaults.home_base_path,
+					self.configuration.groups.names.plural,
 					oldname)
 			else:
 				link_src_old = None
 
 			for link in fsapi.minifind(
-				GroupsController.users.users[uid]['homeDirectory'], maxdepth=2,
+				self.users.users[uid]['homeDirectory'], maxdepth=2,
 					type=stat.S_IFLNK):
 				try:
 					link_src_abs = os.path.abspath(os.readlink(link))
@@ -1505,85 +1643,100 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def SetSharedDirPermissiveness(self, gid=None, name=None, permissive=True,
 		listener=None):
 		""" Set permissive or not permissive the shared directory of
-			the group 'name'. """
+			the group 'name'.
 
-		ltrace('groups', '''> SetSharedDirPermissivenes(gid=%s, name=%s, '''
+			LOCKED because we assume we don't want a group to be deleted /
+			modified during this operation, which is very quick.
+		"""
+
+		assert ltrace('groups', '''> SetSharedDirPermissivenes(gid=%s, name=%s, '''
 			'''permissive=%s)''' % (gid, name, permissive))
 
-		gid, name = self.resolve_gid_or_name(gid, name)
+		with self.lock:
+			gid, name = self.resolve_gid_or_name(gid, name)
 
-		if permissive:
-			qualif = ""
-		else:
-			qualif = " not"
+			if permissive:
+				qualif = ""
+			else:
+				qualif = " not"
 
-		logging.progress('''trying to set permissive=%s for group %s, '''
-			'''original %s.''' % (styles.stylize(styles.ST_OK, permissive),
-			styles.stylize(styles.ST_NAME, name),
-			styles.stylize(styles.ST_BAD,
-			GroupsController.groups[gid]['permissive'])),
-			listener=listener)
-
-		if GroupsController.groups[gid]['permissive'] != permissive:
-			GroupsController.groups[gid]['permissive'] = permissive
-
-			# auto-apply the new permissiveness
-			self.CheckGroups([ gid ], batch=True, listener=listener)
-		else:
-			logging.info("Group %s is already%s permissive." % (
-				styles.stylize(styles.ST_NAME, name), qualif),
+			logging.progress('''trying to set permissive=%s for group %s, '''
+				'''original %s.''' % (styles.stylize(styles.ST_OK, permissive),
+				styles.stylize(styles.ST_NAME, name),
+				styles.stylize(styles.ST_BAD,
+				self.groups[gid]['permissive'])),
 				listener=listener)
+
+			if self.groups[gid]['permissive'] != permissive:
+				self.groups[gid]['permissive'] = permissive
+
+				# auto-apply the new permissiveness
+				self.CheckGroups([ gid ], batch=True, listener=listener)
+			else:
+				logging.info("Group %s is already%s permissive." % (
+					styles.stylize(styles.ST_NAME, name), qualif),
+					listener=listener)
 	def is_permissive(self, gid, name, listener=None):
 		""" Return True if the shared dir of the group is permissive.
 
 			This method MUST be called with the 2 arguments GID and name.
 
-			WARNING: don't use self.resolve_gid_or_name() here.
-			This method is used very early, from the __init__(), when groups
-			are in the process of beiing loaded. The resolve() method will fail.
+			WARNING: don't use self.resolve_gid_or_name() here. This method is
+			used very early, from the GroupsController.__init__(), when groups
+			are in the process of beiing loaded. The resolve*() calls will fail.
+
+			LOCKED because very important.
+
+			gid and name are mandatory, this function won't resolve them.
+			listener: the pyro client to send messages to.
 		"""
 
-		if self.is_system_gid(gid):
-			return None
+		with self.lock:
+			if self.is_system_gid(gid):
+				return None
 
-		home = '%s/%s/%s' % (
-			GroupsController.configuration.defaults.home_base_path,
-			GroupsController.configuration.groups.names.plural,
-			name)
+			home = '%s/%s/%s' % (
+				self.configuration.defaults.home_base_path,
+				self.configuration.groups.names.plural,
+				name)
 
-		try:
-			# only check default ACLs, which is what we need for
-			# testing permissiveness.
-			for line in posix1e.ACL(filedef=home):
-				if line.tag_type & posix1e.ACL_GROUP:
-					if line.qualifier == gid:
-						return line.permset.write
-		except IOError, e:
-			if e.errno == 13:
-				raise exceptions.InsufficientPermissionsError(str(e))
-			elif e.errno == 2:
-				if self.warnings:
-					logging.warning('''Shared dir %s doesn't exist, please '''
-						'''run "licorn-check group --name %s" to fix.''' % (
-							styles.stylize(styles.ST_PATH, home),
-							styles.stylize(styles.ST_NAME, name)), once=True,
-							listener=listener)
-			else:
-				raise exceptions.LicornIOError("IO error on %s (was: %s)." %
-					(home, e))
-		except ImportError, e:
-			logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once=True,
-			listener=listener)
-			return None
+			try:
+				# only check default ACLs, which is what we need for
+				# testing permissiveness.
+				for line in posix1e.ACL(filedef=home):
+					if line.tag_type & posix1e.ACL_GROUP:
+						if line.qualifier == gid:
+							return line.permset.write
+			except IOError, e:
+				if e.errno == 13:
+					raise exceptions.InsufficientPermissionsError(str(e))
+				elif e.errno == 2:
+					if self.warnings:
+						logging.warning('''Shared dir %s doesn't exist, please '''
+							'''run "licorn-check group --name %s" to fix.''' % (
+								styles.stylize(styles.ST_PATH, home),
+								styles.stylize(styles.ST_NAME, name)), once=True,
+								listener=listener)
+				else:
+					raise exceptions.LicornIOError("IO error on %s (was: %s)." %
+						(home, e))
+			except ImportError, e:
+				logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once=True,
+				listener=listener)
+				return None
+
+	# LOCKS: subsequent methods are not locked because vey fast and read-only.
+	# We assume that calling methods already lock the data structures, to avoid
+	# many acquire()/release() cycles which could slow down the operations.
 	def confirm_gid(self, gid):
 		""" verify a GID or raise DoesntExists. """
 		try:
-			return GroupsController.groups[gid]['gidNumber']
+			return self.groups[gid]['gidNumber']
 		except KeyError:
 			try:
 				# try to int(), in case this is a call from cli_select(), which
 				# gets only strings.
-				return GroupsController.groups[int(gid)]['gidNumber']
+				return self.groups[int(gid)]['gidNumber']
 			except ValueError:
 				raise exceptions.DoesntExistsException(
 					"GID %s doesn't exist" % gid)
@@ -1596,7 +1749,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.BadArgumentError(
 				"You must specify a name or GID to resolve from.")
 
-		ltrace('groups', '| resolve_gid_or_name(gid=%s, name=%s)' % (gid, name))
+		assert ltrace('groups', '| resolve_gid_or_name(gid=%s, name=%s)' % (gid, name))
 
 		# we cannot just test "if gid:" because with root(0) this doesn't work.
 		if gid is not None:
@@ -1610,10 +1763,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		try:
 			gid = int(value)
 			self.gid_to_name(gid)
+			assert ltrace('groups', '| guess_identifier: int(%s) -> %s' % (
+				value, gid))
 		except ValueError, e:
 			gid = self.name_to_gid(value)
+			assert ltrace('groups', '| guess_identifier: name_to_gid(%s) -> %s'
+				% (value, gid))
+
 		return gid
 	def guess_identifiers(self, value_list, listener=None):
+		""" return a list of valid and existing GIDs, given a list of 'things'
+		 to validate existence of (can be GIDs or names). """
 		valid_ids=set()
 		for value in value_list:
 			try:
@@ -1625,7 +1785,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def exists(self, name=None, gid=None):
 		"""Return true if the group or gid exists on the system. """
 
-		ltrace('groups', '|  exists(name=%s, gid=%s)' % (name, gid))
+		assert ltrace('groups', '|  exists(name=%s, gid=%s)' % (name, gid))
 
 		if name:
 			return self.name_cache.has_key(name)
@@ -1641,9 +1801,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		for u in GroupsController.users.users:
-			if GroupsController.users.users[u]['gidNumber'] == gid:
-				ru.append(GroupsController.users.users[u]['login'])
+		for u in self.users.users:
+			if self.users.users[u]['gidNumber'] == gid:
+				ru.append(self.users.users[u]['login'])
 		return ru
 	def auxilliary_members(self, gid=None, name=None):
 		""" Return all members of a group, which are not members of this group
@@ -1654,7 +1814,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		return GroupsController.groups[gid]['memberUid']
+		return self.groups[gid]['memberUid']
 	def all_members(self, gid=None, name=None):
 		"""Return all members of a given group name."""
 
@@ -1666,26 +1826,28 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def gid_to_name(self, gid):
 		""" Return the group name for a given GID."""
 		try:
-			return GroupsController.groups[gid]['name']
+			return self.groups[gid]['name']
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"GID %s doesn't exist" % gid)
 	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
 		try:
+			assert ltrace('groups', '| name_to_gid(%s) -> %s \nfrom: \n%s' % (
+				name, self.name_cache[name], str(self.name_cache).replace(', ', '\n')))
 			# use the cache, Luke !
-			return GroupsController.name_cache[name]
+			return self.name_cache[name]
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"Group %s doesn't exist" % name)
 	def is_system_gid(self, gid):
 		""" Return true if gid is system. """
-		return gid < GroupsController.configuration.groups.gid_min \
-			or gid > GroupsController.configuration.groups.gid_max
+		return gid < self.configuration.groups.gid_min \
+			or gid > self.configuration.groups.gid_max
 	def is_standard_gid(self, gid):
 		""" Return true if gid is standard (not system). """
-		return gid >= GroupsController.configuration.groups.gid_min \
-			and gid <= GroupsController.configuration.groups.gid_max
+		return gid >= self.configuration.groups.gid_min \
+			and gid <= self.configuration.groups.gid_max
 	def is_system_group(self, name):
 		""" Return true if group is system. """
 		try:
@@ -1709,20 +1871,22 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if name:
 			return name in self.privileges
 		if gid:
-			return GroupsController.groups[gid]['name'] in self.privileges
+			return self.groups[gid]['name'] in self.privileges
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or name to test as a privilege.")
 	def is_empty_gid(self, gid):
-			return self.is_standard_gid(gid) \
-				and self.groups[gid]['memberUid'] == []
+		""" return True if GID is empty (has no members) """
+		return self.is_standard_gid(gid) \
+			and self.groups[gid]['memberUid'] == []
 	def is_empty_group(self, name):
-			return self.is_empty_gid(
-				self.name_to_gid(name))
+		""" return True if group is empty (has no members) """
+		return self.is_empty_gid(
+			self.name_to_gid(name))
 	def make_name(self, inputname=None):
 		""" Make a valid login from  user's firstname and lastname."""
 
-		maxlenght = GroupsController.configuration.groups.name_maxlenght
+		maxlenght = self.configuration.groups.name_maxlenght
 		groupname = inputname
 
 		groupname = hlstr.validate_name(groupname, maxlenght = maxlenght)

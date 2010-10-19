@@ -36,7 +36,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		if LicornConfiguration.init_ok:
 			return
 
-		ltrace('configuration', '> __init__(minimal=%s)' % minimal)
+		assert ltrace('configuration', '> __init__(minimal=%s)' % minimal)
 
 		Pyro.core.ObjBase.__init__(self)
 
@@ -103,7 +103,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				'''Configuration initialization failed:\n\t%s''' % e)
 
 		LicornConfiguration.init_ok = True
-		ltrace('configuration', '< __init__()')
+		assert ltrace('configuration', '< __init__()')
 
 	#
 	# make configuration be usable as a context manager.
@@ -120,7 +120,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		if LicornConfiguration.del_ok:
 			return
 
-		ltrace('configuration', '> CleanUp(%s)' % LicornConfiguration.del_ok)
+		assert ltrace('configuration', '> CleanUp(%s)' % LicornConfiguration.del_ok)
 
 		try:
 			import shutil
@@ -135,11 +135,11 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				raise e
 
 		LicornConfiguration.del_ok = True
-		ltrace('configuration', '< CleanUp()')
+		assert ltrace('configuration', '< CleanUp()')
 	def VerifyPythonMods(self):
 		""" verify all required python modules are present on the system. """
 
-		ltrace('configuration', '> VerifyPythonMods().')
+		assert ltrace('configuration', '> VerifyPythonMods().')
 
 		mods = (
 			('posix1e', 'python-pylibacl'),
@@ -154,11 +154,11 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				logging.error('You miss %s python module (package %s).' % (
 					mod, package))
 
-		ltrace('configuration', '< VerifyPythonMods().')
+		assert ltrace('configuration', '< VerifyPythonMods().')
 	def SetBaseDirsAndFiles(self):
 		""" Find and create temporary, data and working directories."""
 
-		ltrace('configuration', '> SetBaseDirsAndFiles().')
+		assert ltrace('configuration', '> SetBaseDirsAndFiles().')
 
 
 		self.config_dir              = "/etc/licorn"
@@ -185,7 +185,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
 
-		ltrace('configuration', '< SetBaseDirsAndFiles().')
+		assert ltrace('configuration', '< SetBaseDirsAndFiles().')
 
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
@@ -234,7 +234,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	def _load_configuration(self, conf):
 		""" Build the licorn configuration object from a dict. """
 
-		ltrace('configuration', '| _load_configuration(%s)' % conf)
+		assert ltrace('configuration', '| _load_configuration(%s)' % conf)
 
 		for key in conf.keys():
 			subkeys = key.split('.')
@@ -255,13 +255,13 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	def noop(self):
 		""" No-op function, called when connecting pyro, to check if link
 		is OK betwwen the server and the client. """
-		ltrace('configuration', '| noop(True)')
+		assert ltrace('configuration', '| noop(True)')
 		return True
 	def SetMissingMandatoryDefauts(self):
 		""" The defaults set here are expected to exist
 			by other parts of the programs. """
 
-		ltrace('configuration', '| SetMissingMandatoryDefaults()')
+		assert ltrace('configuration', '| SetMissingMandatoryDefaults()')
 
 		mandatory_dict = {
 			'licornd.wmi.enabled': True,
@@ -274,7 +274,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
 
-		ltrace('configuration', '> LoadBaseConfiguration()')
+		assert ltrace('configuration', '> LoadBaseConfiguration()')
 
 		try:
 			self._load_configuration(readers.shell_conf_load_dict(
@@ -286,7 +286,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				# main config file isn't here, this is not required.
 				raise e
 
-		ltrace('configuration', '< LoadBaseConfiguration()')
+		assert ltrace('configuration', '< LoadBaseConfiguration()')
 	def load_nsswitch(self):
 		""" Load the NS switch file. """
 
@@ -296,7 +296,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		""" write the nsswitch.conf file. This method is meant to be called by
 		a backend which has modified. """
 
-		ltrace('configuration', '| save_nsswitch()')
+		assert ltrace('configuration', '| save_nsswitch()')
 
 		nss_data = ''
 
@@ -313,7 +313,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		""" try to enable a given backend. what to do exactly is left to the
 		backend itself."""
 
-		ltrace('configuration', '| enable_backend()')
+		assert ltrace('configuration', '| enable_backend()')
 
 		if backend in self.backends.keys():
 			logging.notice('%s backend already enabled.' % backend,
@@ -336,7 +336,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		""" try to disable a given backend. what to do exactly is left to the
 		backend itself."""
 
-		ltrace('configuration', '| disable_backend()')
+		assert ltrace('configuration', '| disable_backend()')
 
 		if backend in self.available_backends.keys():
 			logging.notice('%s backend already disabled.' % backend,
@@ -381,7 +381,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		priority at the beginning of the backend list. This makes it accessible
 		quickly on user/group/whatever creation. """
 
-		ltrace('configuration', '> load_plugins().')
+		assert ltrace('configuration', '> load_plugins().')
 
 		from licorn.core.backends.plugins import plugins
 		self.plugins           = {}
@@ -391,22 +391,22 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			p = plugin(self)
 
 			if p.initialize():
-				ltrace('configuration', '  load_plugins(%s) OK' % p.name)
+				assert ltrace('configuration', '  load_plugins(%s) OK' % p.name)
 
 				self.plugins[p.name] = p
 			else:
 				self.available_plugins[p.name] = p
 
-		ltrace('configuration', '< load_plugins().')
+		assert ltrace('configuration', '< load_plugins().')
 	def connect_plugins(self):
 		""" add the enabled plugins to the enabled backends. """
-		ltrace('configuration', '| connect_plugins()')
+		assert ltrace('configuration', '| connect_plugins()')
 		for p in self.plugins:
 			for b in self.backends:
 				if self.backends[b].connect_plugin(self.plugins[p]):
 					# add the plugin to only one backend. the first enabled one
 					# is ok, just break.
-					ltrace('configuration', '  connect_plugins(%s/%s) OK' % (
+					assert ltrace('configuration', '  connect_plugins(%s/%s) OK' % (
 						b,p))
 					break
 	def load_backends(self):
@@ -414,7 +414,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		priority at the beginning of the backend list. This makes it accessible
 		quickly on user/group/whatever creation. """
 
-		ltrace('configuration', '> load_backends().')
+		assert ltrace('configuration', '> load_backends().')
 
 		from licorn.core.backends import backends
 		self.backends           = {}
@@ -429,7 +429,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 			if [val for val in self.nsswitch['passwd'] if val in b.compat] != []:
 				if b.initialize():
-					ltrace('configuration', '  load_backends(%s) OK' % b)
+					assert ltrace('configuration', '  load_backends(%s) OK' % b)
 
 					self.backends[b.name] = b
 
@@ -444,7 +444,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 		self.find_new_prefered_backend()
 
-		ltrace('configuration', '< load_backends().')
+		assert ltrace('configuration', '< load_backends().')
 
 		if self.backends == []:
 			raise exceptions.LicornRuntimeError(
@@ -837,7 +837,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	def set_acl_defaults(self):
 		""" Prepare the basic ACL configuration inside us. """
 
-		ltrace("configuration", '| set_acl_defaults()')
+		assert ltrace("configuration", '| set_acl_defaults()')
 
 		self.posix1e = LicornConfigObject()
 		self.posix1e.groups_dir = "%s/%s" % (
@@ -1219,7 +1219,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		""" Check all components of system configuration and repair
 		if asked for."""
 
-		ltrace('configuration', '> check()')
+		assert ltrace('configuration', '> check()')
 
 		# users and groups must be OK before everything.
 		# for this, backends must be ready and configured.
@@ -1233,7 +1233,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
-		ltrace('configuration', '< check()')
+		assert ltrace('configuration', '< check()')
 	def check_backends(self, batch=False, auto_answer=None):
 		""" check all enabled backends, except the 'prefered', which is one of
 		the enabled anyway.
@@ -1244,7 +1244,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		FIXME listener=listener
 		"""
 
-		ltrace('configuration', '> check_backends()')
+		assert ltrace('configuration', '> check_backends()')
 
 		for backend_name in self.backends:
 			if backend_name == 'prefered':
@@ -1257,12 +1257,12 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		for backend_name in self.available_backends:
 			self.available_backends[backend_name].check(batch, auto_answer)
 
-		ltrace('configuration', '< check_backends()')
+		assert ltrace('configuration', '< check_backends()')
 	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None,
 		listener=None):
 		"""Check and eventually repair default needed dirs."""
 
-		ltrace('configuration', '> check_base_dirs()')
+		assert ltrace('configuration', '> check_base_dirs()')
 
 		try:
 			os.makedirs(self.users.base_path)
@@ -1329,14 +1329,14 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		all_went_ok &= self.check_archive_dir(batch=batch,
 			auto_answer=auto_answer, listener=listener)
 
-		ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
+		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
 		auto_answer=None, listener=None):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
-		ltrace('configuration', '> check_archive_dir(%s)' % subdir)
+		assert ltrace('configuration', '> check_archive_dir(%s)' % subdir)
 
 		p = self.posix1e
 
@@ -1383,7 +1383,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		if subdir:
 			dirs_to_verify.append(subdir_info)
 
-		ltrace('configuration', '< check_archive_dir()')
+		assert ltrace('configuration', '< check_archive_dir()')
 
 		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
 			batch=batch, auto_answer=auto_answer,
@@ -1394,7 +1394,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
-		ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
+		assert ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
 			(minimal, batch))
 
 		needed_groups = self.defaults.needed_groups + [
@@ -1441,7 +1441,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 							group, group)
 						)
 
-		ltrace('configuration', '< CheckSystemGroups()')
+		assert ltrace('configuration', '< CheckSystemGroups()')
 	def CheckHostname(self, batch = False, auto_answer = None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""

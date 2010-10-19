@@ -52,7 +52,7 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 		KeywordsController.keywords[item]=value
 	def reload(self):
 		""" reload data from system files / databases. """
-		ltrace('keywords', '| reload()')
+		assert ltrace('keywords', '| reload()')
 
 		self.keywords = {}
 

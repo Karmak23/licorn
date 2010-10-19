@@ -110,7 +110,7 @@ class LicornJobThread(LicornBasicThread):
 			elif self.count >= 1:
 				self.loop = False
 
-		ltrace('thread', '''| LicornJobThread.__init__(target=%s, time=%s, '''
+		assert ltrace('thread', '''| LicornJobThread.__init__(target=%s, time=%s, '''
 			'''count=%s, delay=%s, loop=%s)''' % (self.target, self.time,
 				self.count, self.delay, self.loop))
 

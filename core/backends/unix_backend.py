@@ -21,6 +21,8 @@ class unix_controller(UGMBackend, Singleton):
 
 	def __init__(self, configuration, users=None, groups=None, warnings=True):
 
+		assert ltrace('unix', '> __init__(%s)' % unix_controller.init_ok)
+
 		if unix_controller.init_ok:
 			return
 
@@ -37,8 +39,12 @@ class unix_controller(UGMBackend, Singleton):
 		self.warnings = warnings
 
 		unix_controller.init_ok = True
+		assert ltrace('unix', '< __init__(%s)' % unix_controller.init_ok)
 	def load_users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
+
+		assert ltrace('unix', '> load_users()')
+
 		users       = {}
 		login_cache = {}
 
@@ -61,6 +67,9 @@ class unix_controller(UGMBackend, Singleton):
 
 			# this will be used as a cache for login_to_uid()
 			login_cache[ entry[0] ] = temp_user_dict['uidNumber']
+
+			assert ltrace('unix', 'loaded user %s' %
+				users[temp_user_dict['uidNumber']])
 
 		try:
 			for entry in readers.ug_conf_load_list("/etc/shadow"):
@@ -112,16 +121,17 @@ class unix_controller(UGMBackend, Singleton):
 				# is harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admins/@shadow.
-				ltrace('unix', '''can't load /etc/shadow (perhaps you are '''
+				assert ltrace('unix', '''can't load /etc/shadow (perhaps you are '''
 					'''not root or a member of group shadow.''')
 			else:
 				raise e
 
+		assert ltrace('unix', '< load_users()')
 		return users, login_cache
 	def load_groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		ltrace('unix', '> load_groups()')
+		assert ltrace('unix', '> load_groups()')
 
 		groups     = {}
 		name_cache = {}
@@ -200,10 +210,10 @@ class unix_controller(UGMBackend, Singleton):
 				'backend'      : self.name
 				}
 
-			ltrace('groups', 'loading group %s' % groups[gid])
+			assert ltrace('unix', 'loaded group %s' % groups[gid])
 
 			# this will be used as a cache by name_to_gid()
-			name_cache[ entry[0] ] = gid
+			name_cache[entry[0]] = gid
 
 			try:
 				groups[gid]['permissive'] = self.groups.is_permissive(
