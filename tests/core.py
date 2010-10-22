@@ -94,7 +94,8 @@ if options.reload == True:
 
 missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
-	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff', '/usr/sbin/slapcat'):
+	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff', '/usr/sbin/slapcat',
+	'/usr/bin/getfacl'):
 	if not os.path.exists(binary):
 		missing_error=True
 		logging.warning('''%s does not exist on this system and is '''
@@ -999,6 +1000,44 @@ def test_groups(context):
 		descr='''test command get group <gid|group> (fix #286)'''
 		).Run()
 
+	ScenarioTest([
+		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-v' ],
+		GET + [ 'groups', '-l' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--description'''
+			'''=This is a massive test description"''', '-iv', '--auto-no' ],
+		GET + [ 'groups', '-l' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--description'''
+			'''=This is a massive test description"''', '-iv', '--auto-yes' ],
+		GET + [ 'groups', '-l' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--description'''
+			'''=This is a massive test description2''', '-iv', '--batch' ],
+		GET + [ 'groups', '-l' ],
+		ADD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-v' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--add-users='''
+			'''%s,%s2,%s3''' % (uname,uname,uname), '-iv', '--auto-no' ],
+		GET + [ 'groups', '-l' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--add-users='''
+			'''%s,%s2,%s3''' % (uname,uname,uname), '-iv', '--auto-yes' ],
+		GET + [ 'groups', '-l' ],
+		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--del-users='''
+			'''%s,%s2,%s3''' % (uname,uname,uname), '-iv', '--batch' ],
+		GET + [ 'groups', '-l' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-v' ],
+		CHK + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-no' ],
+		CHK + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-yes' ],
+		CHK + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv', '--batch' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-no' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-yes' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv', '--batch' ],
+		],
+		context=context,
+		descr="test groups interactive commands"
+		).Run()
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
@@ -1237,6 +1276,53 @@ def test_users(context):
 		],
 		context=context,
 		descr='''avoid #169'''
+		).Run()
+
+	ScenarioTest([
+		ADD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname) ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--gecos=This '''
+			'''is a massive test GECOS''', '-iv', '--auto-no' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--gecos=This '''
+			'''is a massive test GECOS''', '-iv', '--auto-yes' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--gecos=This '''
+			'''is a massive test GECOS2''', '-iv', '--batch' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '--shell=/bin/sh',
+			'-iv', '--auto-no' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '--shell=/bin/sh',
+			'-iv', '--auto-yes' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '--shell=/bin/bash',
+			'-iv', '--batch' ],
+		GET + [ 'user', '-l' ],
+		ADD + [ 'group', '%s,%s2' % (gname,gname) ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--add-groups='''
+			'''%s,%s2''' % (gname,gname), '-iv', '--auto-no' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--add-groups='''
+			'''%s,%s2''' % (gname,gname), '-iv', '--auto-yes' ],
+		GET + [ 'user', '-l' ],
+		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--del-groups='''
+			'''%s,%s2''' % (gname,gname), '-iv', '--batch' ],
+		GET + [ 'user', '-l' ],
+		DEL + [ 'group', '%s,%s2' % (gname,gname) ],
+		CHK + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv',
+			'--auto-no' ],
+		CHK + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv',
+			'--auto-yes' ],
+		CHK + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv', '--batch' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv',
+			'--auto-no' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv',
+			'--auto-yes' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv', '--batch' ],
+		],
+		context=context,
+		descr="test user interactive commands"
 		).Run()
 
 	uname = 'ingroups_test'
@@ -1558,6 +1644,50 @@ def test_profiles(context):
 		context=context,
 		descr='''various tests on profiles (fix #292)'''
 		).Run()
+
+	ScenarioTest([
+		ADD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-v' ],
+		GET + [ 'profile' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--description=This is a test description''', '-iv',
+			'--auto-no' ],
+		GET + [ 'profile' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--description=This is a test description''', '-iv',
+			'--auto-yes' ],
+		GET + [ 'profile' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--description=This is a test description2''', '-iv', '--batch' ],
+		GET + [ 'profile' ],
+		ADD + [ 'group', '%s,%s2' % (gname,gname), '-v' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--add-groups=%s,%s2''' % (gname,gname), '-iv', '--auto-no' ],
+		GET + [ 'profile' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--add-groups=%s,%s2''' % (gname,gname), '-iv', '--auto-yes' ],
+		GET + [ 'profile' ],
+		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
+			'''--del-groups=%s,%s2''' % (gname,gname), '-iv', '--batch' ],
+		GET + [ 'profile' ],
+		DEL + [ 'group', '%s,%s2' % (gname,gname), '-v' ],
+		GET + [ 'profile' ],
+		CHK + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--auto-no' ],
+		CHK + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--auto-yes' ],
+		CHK + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--batch' ],
+		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--auto-no' ],
+		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--auto-yes' ],
+		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
+			'--batch' ],
+		],
+		context=context,
+		descr="test profile interactive commands"
+		).Run()
+
 	""" # start of old test_profiles() commands
 	test_message('''starting profiles related tests.''')
 	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
@@ -1613,6 +1743,23 @@ def test_privileges(context):
 			descr='''test new privileges commands (using argument %s) '''
 				'''(avoid #204 #174)''' % cmd
 			).Run()
+
+	ScenarioTest([
+		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '--system', '-v' ],
+		ADD + [ 'privilege', '%s,%s2,%s3' % (gname,gname,gname) ],
+		GET + [ 'privileges' ],
+		DEL + [ 'privilege', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-no' ],
+		DEL + [ 'privilege', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--auto-yes' ],
+		DEL + [ 'privilege', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
+			'--batch' ],
+		GET + [ 'privileges' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname) ]
+		],
+		context=context,
+		descr="test privilege interactive commands"
+		).Run()
 
 def test_short_syntax():
 	uname = 'user_test'
@@ -1937,6 +2084,8 @@ if __name__ == "__main__":
 
 		clean_state_files()
 		logging.notice("Testsuite terminated successfully.")
+		test_message('''Don't forget to test massive del/mod/chk with -a '''
+			''' argument (not tested because too dangerous)''')
 	finally:
 		# give back all the scenarii tree to calling user.
 		uid, gid = [ int(x) for x in \
