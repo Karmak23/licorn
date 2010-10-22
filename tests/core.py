@@ -144,7 +144,7 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
 	sys.stderr.write("%s>>> running %s%s%s\n" % (colors[ST_LOG],
-		colors[ST_PATH], command, colors[ST_NO]))
+		colors[ST_PATH], ' '.join(command), colors[ST_NO]))
 
 	output, retcode = execute(command)
 	must_exit = False
