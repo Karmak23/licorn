@@ -270,11 +270,10 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						gecos, styles.stylize(styles.ST_REGEX,
 						hlstr.regex['description'])))
 
-		if shell is not None and shell not in self.configuration.users.skels:
+		if shell is not None and shell not in self.configuration.users.shells:
 			raise exceptions.BadArgumentError(
-				"The shell you specified doesn't exist on this system." \
-				" Valid shells are: %s." % \
-					self.configuration.users.shells)
+				"Invalid shell %s. Valid shells are: %s." % (shell,
+					self.configuration.users.shells))
 
 		if skel is not None \
 			and skel not in self.configuration.users.skels:

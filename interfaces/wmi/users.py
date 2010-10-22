@@ -448,43 +448,36 @@ def create(uri, http_user, loginShell, password, password_confirm,
 
 	if firstname != '' and lastname != '':
 		command.extend(['--firstname', firstname, '--lastname', lastname])
-	if gecos != '':
-		command.extend(['--gecos', gecos])
 
-	# TODO: set a default profile (see issue #6)
-	if profile != None:
-		command.extend([ "--profile", profile ])
+	for value, argument in (
+		(loginShell, '--shell'),
+		(profile, '--profile'),
+		(gecos, '--gecos')):
+		if value is not None and value != '':
+			command.extend([ argument, value ])
 
-	if login != "":
-		command.extend([ "--login", login ])
-	else:
-		# TODO: Idem, "gecos" should be tested against emptyness
-		command.extend([ '--login',
-			hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
-
-	(rettype, retdata) = w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to create account <strong>%s</strong>!''') % login)
-
-	if rettype == w.HTTP_TYPE_TEXT:
-		return (rettype, retdata)
-	# else: continue the creation by adding groups…
-
-	command    = [ "sudo", "mod", "user", '--quiet', "--no-colors",
-		"--login", login, "--shell", loginShell ]
 	add_groups = ','.join(__merge_multi_select(
 							standard_groups_dest,
 							privileged_groups_dest,
 							responsible_groups_dest,
 							guest_groups_dest))
 
-	if add_groups != "":
-		command.extend([ '--add-groups', add_groups ])
+	if add_groups != '':
+		command.extend([ '--add-to-groups', add_groups ])
+
+	if login != '':
+		command.extend(['--login', login])
+	elif gecos != '':
+		command.extend([ '--login',
+			hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
+	else:
+		return (w.HTTP_TYPE_TEXT, w.page(title,
+			data + w.error(_("GECOS and login can't be both empty!%s") %
+				rewind)))
 
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to add user <strong>%s</strong> to requested
-		groups/privileges/responsibilities/invitations!''') % login)
+		_('''Failed to create account <strong>%s</strong>!''') % login)
 def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 	profiles=None, **kwargs):
 	"""Edit an user account, based on login."""
