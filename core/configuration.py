@@ -19,7 +19,6 @@ from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.objects   import LicornConfigObject, Singleton, \
 	FileLock
-from licorn.core.privileges       import PrivilegesWhiteList
 
 class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
@@ -30,13 +29,15 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 	init_ok     = False
 	del_ok      = False
 
-	def __init__(self, minimal=False):
+	def __init__(self, minimal=False, batch=False, auto_answer=None,
+		listener=None):
 		""" Gather underlying system configuration and load it for licorn.* """
 
 		if LicornConfiguration.init_ok:
 			return
 
-		assert ltrace('configuration', '> __init__(minimal=%s)' % minimal)
+		assert ltrace('configuration', '> __init__(minimal=%s, batch=%s)' % (
+			minimal, batch))
 
 		Pyro.core.ObjBase.__init__(self)
 
@@ -44,11 +45,11 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			reload(sys)
 			sys.setdefaultencoding("utf-8")
 
-		self.app_name = 'Licorn'
+		self.app_name = 'Licorn®'
 		self.controllers = LicornConfigObject()
 
-		self.mta         = None
-		self.ssh         = None
+		self.mta = None
+		self.ssh = None
 
 		# THIS install_path is used in keywords / keywords gui, not elsewhere.
 		# it is a hack to be able to test guis when Licorn is not installed.
@@ -75,7 +76,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 			if not minimal:
 
-				self.LoadManagersConfiguration()
+				self.LoadManagersConfiguration(batch=batch,
+					auto_answer=auto_answer, listener=listener)
 				self.set_acl_defaults()
 
 				self.FindDistro()
@@ -373,9 +375,9 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				self.backends['prefered'] = self.backends[backend_name]
 
 		# FIXME: this doesn't belong here, but could help fixing #380.
+		reload(fsapi)
 		reload(fsapi.posix1e)
-		#reload(fsapi)
-		logging.info('''reloaded fsapi's posix1e module.''', listener=listener)
+		logging.info('''reloaded posix1e module.''', listener=listener)
 	def load_plugins(self):
 		""" Load Configuration backends, and put the one with the greatest
 		priority at the beginning of the backend list. This makes it accessible
@@ -406,8 +408,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				if self.backends[b].connect_plugin(self.plugins[p]):
 					# add the plugin to only one backend. the first enabled one
 					# is ok, just break.
-					assert ltrace('configuration', '  connect_plugins(%s/%s) OK' % (
-						b,p))
+					assert ltrace('configuration',
+						'  connect_plugins(%s/%s) OK' % (b, p))
 					break
 	def load_backends(self):
 		""" Load Configuration backends, and put the one with the greatest
@@ -427,7 +429,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			#	b.name, [
 			#	val for val in self.nsswitch['passwd'] if val in b.compat]))
 
-			if [val for val in self.nsswitch['passwd'] if val in b.compat] != []:
+			if [ val for val in self.nsswitch['passwd'] \
+				if val in b.compat ] != []:
 				if b.initialize():
 					assert ltrace('configuration', '  load_backends(%s) OK' % b)
 
@@ -556,7 +559,10 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		if not self.ssh.enabled:
 			return
 
-		if not self.controllers.groups.exists(name = self.ssh.group):
+		logging.progress('Checking existence of group %s…' %
+			styles.stylize(styles.ST_NAME, self.ssh.group))
+
+		if not self.controllers.groups.exists(name=self.ssh.group):
 
 			self.controllers.groups.AddGroup(name=self.ssh.group,
 				description=_('Users allowed to connect via SSHd'),
@@ -698,8 +704,12 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 								"u+rw,g+r,o+r"), e))
 
 	### Users and Groups ###
-	def LoadManagersConfiguration(self):
+	def LoadManagersConfiguration(self, batch=False, auto_answer=None,
+		listener=None):
 		""" Load Users and Groups managements configuration. """
+
+		assert ltrace('configuration', '> LoadManagersConfiguration(batch=%s)' %
+			batch)
 
 		# WARNING: don't change order of these.
 		self.SetUsersDefaults()
@@ -712,7 +722,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		# have a good reason to hide groups.
 		self.groups.hidden = None
 
-		add_user_conf = self.CheckAndLoadAdduserConf()
+		add_user_conf = self.CheckAndLoadAdduserConf(batch=batch,
+			auto_answer=auto_answer, listener=listener)
 		self.users.min_passwd_size = 8
 		self.users.uid_min         = add_user_conf['FIRST_UID']
 		self.users.uid_max         = add_user_conf['LAST_UID']
@@ -781,8 +792,12 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 		# ensure /etc/login.defs  and /etc/defaults/useradd comply with
 		# /etc/adduser.conf tweaked for Licorn®.
-		self.CheckLoginDefs()
-		self.CheckUserAdd()
+		self.CheckLoginDefs(batch=batch, auto_answer=auto_answer,
+			listener=listener)
+		self.CheckUserAdd(batch=batch, auto_answer=auto_answer,
+			listener=listener)
+
+		assert ltrace('configuration', '< LoadManagersConfiguration()')
 	def SetDefaultNamesAndPaths(self):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
@@ -851,11 +866,15 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			self.defaults.admin_group
 		self.posix1e.acl_users = '--x' \
 			if self.groups.hidden else 'r-x'
-	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
+	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None,
+		listener=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
 			Then load it in a way i can be used in LicornConfiguration.
 		"""
+
+		assert ltrace('configuration', '> CheckAndLoadAdduserConf(batch=%s)' %
+			batch)
 
 		adduser_conf       = '/etc/adduser.conf'
 		adduser_conf_alter = False
@@ -891,7 +910,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 						logging.warning('''In %s, directive %s should be at '''
 							'''least %s, but it is %s.'''
 							% (styles.stylize(styles.ST_PATH, adduser_conf),
-								directive, value, adduser_dict[directive]))
+								directive, value, adduser_dict[directive]),
+								listener=listener)
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -901,7 +921,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 						logging.warning('''In %s, directive %s should be set '''
 							'''to %s, but it is %s.''' % (
 								styles.stylize(styles.ST_PATH, adduser_conf),
-								directive, value, adduser_dict[directive]))
+								directive, value, adduser_dict[directive]),
+								listener=listener)
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -912,7 +933,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				logging.warning(
 					'''In %s, directive %s is missing. Setting it to %s.'''
 					% (styles.stylize(styles.ST_PATH, adduser_conf),
-						directive, value))
+						directive, value), listener=listener)
 				adduser_dict[directive] = value
 				adduser_conf_alter      = True
 				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)',
@@ -922,11 +943,13 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			if batch or logging.ask_for_repair(
 				'''%s lacks mandatory configuration directive(s).'''
 							% styles.stylize(styles.ST_PATH, adduser_conf),
-								auto_answer):
+								auto_answer, listener=listener):
 				try:
+					fsapi.backup_file(adduser_conf)
 					open(adduser_conf, 'w').write(adduser_data)
-					logging.notice('Tweaked %s to match Licorn pre-requisites.'
-						% styles.stylize(styles.ST_PATH, adduser_conf))
+					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
+						% styles.stylize(styles.ST_PATH, adduser_conf),
+						listener=listener)
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -939,11 +962,16 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 					'''system tools (adduser/useradd). Can't continue '''
 					'''without this, sorry!''' % adduser_conf)
 
+		assert ltrace('configuration', '< CheckAndLoadAdduserConf(%s)' %
+			adduser_dict)
+
 		return adduser_dict
 	def CheckLoginDefs(self, batch=False, auto_answer=None, listener=None):
 		""" Check /etc/login.defs for compatibility with Licorn.
 			Load data, alter it if needed and save the new file.
 		"""
+
+		assert ltrace('configuration', '| CheckLoginDefs(batch=%s)' % batch)
 
 		self.check_system_file_generic(filename="/etc/login.defs",
 			reader=readers.simple_conf_load_dict,
@@ -960,12 +988,13 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				('CREATE_HOME', 'yes')
 			),
 			separator='	',
-			batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			batch=batch, auto_answer=auto_answer, listener=listener)
 	def CheckUserAdd(self, batch=False, auto_answer=None, listener=None):
 		""" Check /etc/defaults/useradd if it exists, for compatibility with
 			Licorn®.
 		"""
+
+		assert ltrace('configuration', '| CheckUserAdd(batch=%s)' % batch)
 
 		self.check_system_file_generic(filename="/etc/default/useradd",
 			reader=readers.shell_conf_load_dict,
@@ -973,12 +1002,14 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				('GROUP', self.users.default_gid),
 				('HOME', self.users.base_path)
 			),
-			separator='=',
-			check_exists=True,
-			batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			separator='=', check_exists=True,
+			batch=batch, auto_answer=auto_answer, listener=listener)
 	def check_system_file_generic(self, filename, reader, defaults, separator,
 		check_exists=False, batch=False, auto_answer=None, listener=None):
+
+		assert ltrace('configuration', '''> check_system_file_generic('''
+			'''filename=%s, separator='%s', batch=%s)''' % (filename, separator,
+			batch))
 
 		if check_exists and not os.path.exists(filename):
 			logging.warning2('''%s doesn't exist on this system.''' % filename,
@@ -1017,8 +1048,9 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				% styles.stylize(styles.ST_PATH, filename), auto_answer,
 				listener=listener):
 				try:
+					fsapi.backup_file(filename)
 					open(filename, 'w').write(file_data)
-					logging.notice('Tweaked %s to match Licorn pre-requisites.'
+					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
 						% styles.stylize(styles.ST_PATH, filename),
 						listener=listener)
 				except (IOError, OSError), e:
@@ -1032,7 +1064,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('''Modifications in %s '''
 					'''are mandatory for Licorn to work properly. Can't '''
 					'''continue without this, sorry!''' % filename)
-
+		assert ltrace('configuration', '< check_system_file_generic()')
 	### EXPORTS ###
 	def Export(self, doreturn=True, args=None, cli_format='short'):
 		""" Export «self» (the system configuration) to a human
@@ -1089,7 +1121,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 					if b == 'prefered': continue
 					data += '%s%s\n' % (self.backends[b].name,
 						styles.stylize(styles.ST_INFO, '*') \
-						if self.backends[b].name == self.backends['prefered'].name else '')
+						if self.backends[b].name == \
+							self.backends['prefered'].name else '')
 				for b in self.available_backends:
 					data += '%s\n' % self.available_backends[b].name
 
@@ -1223,7 +1256,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 
 		# users and groups must be OK before everything.
 		# for this, backends must be ready and configured.
-		# check the first.
+		# check them first.
 		self.check_backends(batch=batch, auto_answer=auto_answer)
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
@@ -1270,7 +1303,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			if e.errno != 17:
 				raise e
 
-		self.CheckSystemGroups(minimal, batch, auto_answer, listener=listener)
+		self.CheckSystemGroups(minimal=minimal, batch=batch,
+			auto_answer=auto_answer, listener=listener)
 
 		p = self.posix1e
 
@@ -1287,7 +1321,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		try:
 			# batch this because it *has* to be corrected
 			# for system to work properly.
-			fsapi.check_dirs_and_contents_perms_and_acls( dirs_to_verify,
+			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
 				batch=batch, allgroups=self.controllers.groups,
 				allusers=self.controllers.users, listener=listener)
 
@@ -1383,7 +1417,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		if subdir:
 			dirs_to_verify.append(subdir_info)
 
-		assert ltrace('configuration', '< check_archive_dir()')
+		assert ltrace('configuration', ''''< check_archive_dir(return '''
+			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
 		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
 			batch=batch, auto_answer=auto_answer,
@@ -1394,8 +1429,8 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
-		assert ltrace('configuration', '> CheckSystemGroups(minimal=%s, batch=%s)' %
-			(minimal, batch))
+		assert ltrace('configuration',
+			'> CheckSystemGroups(minimal=%s, batch=%s)' % (minimal, batch))
 
 		needed_groups = self.defaults.needed_groups + [
 			self.defaults.admin_group ]
@@ -1412,6 +1447,10 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 					needed_groups.append(groupname)
 
 		for group in needed_groups:
+
+			logging.progress('Checking existence of group %s…' %
+				styles.stylize(styles.ST_NAME, group))
+
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
 			if not self.controllers.groups.exists(name=group):

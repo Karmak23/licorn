@@ -53,13 +53,21 @@ from licorn.daemon.internals.cmdlistener import CommandListener
 
 if __name__ == "__main__":
 
-	configuration = LicornConfiguration()
-
-	(opts, args) = licornd_parse_arguments(current_app, configuration)
-	options.SetFrom(opts)
-
 	exit_if_already_running()
 	refork_if_not_running_root_or_die()
+
+	configuration = LicornConfiguration(batch=True)
+
+	(opts, args) = licornd_parse_arguments(current_app, configuration)
+
+	# This is needed generally in the daemon, because it is per nature a
+	# non-interactive process. At first launch, it will have to tweak the system
+	# a little (in some conditions), and won't be able to as user / admin if
+	# forked in the background. It must have the ability to solve relatively
+	# simple problems on its own. Only --force related questions will make it
+	# stop, and there should not be any of these in its daemon's life.
+	opts.batch = True
+	options.SetFrom(opts)
 
 	# remember our children threads.
 	threads = []
@@ -85,7 +93,7 @@ if __name__ == "__main__":
 	logging.notice("%s(%d): starting all threads (this can take a while)." % (
 		pname, os.getpid()))
 
-	setup_signals_handler(pname, threads)
+	setup_signals_handler(pname, configuration, threads)
 
 	if configuration.licornd.role == "client":
 		pass
@@ -98,12 +106,20 @@ if __name__ == "__main__":
 	else:
 		users = UsersController(configuration)
 		groups = GroupsController(configuration, users)
-		profiles = ProfilesController(configuration, groups, users)
 		privileges = PrivilegesWhiteList(configuration,
 			configuration.privileges_whitelist_data_file)
 		privileges.set_groups_controller(groups)
+
+		# Now that the daemon holds every core object, this check must be done
+		# prior to everything else, to ensure the system is in a good state
+		# before modifying it. Not a minimal check, to be sure every needed
+		# group is created.
+		configuration.check(minimal=False, batch=True)
+
+		profiles = ProfilesController(configuration, groups, users)
 		machines = MachinesController(configuration)
 		keywords = KeywordsController(configuration)
+
 
 		# here is the Message processor, used to communicate with clients, via Pyro.
 		msgproc = MessageProcessor()
@@ -115,7 +131,8 @@ if __name__ == "__main__":
 		msu         = LicornJobThread(dname, machines.update_statuses,
 						delay=30.0, tname='MachineStatusesUpdater')
 		aclchecker  = ACLChecker(None, dname)
-		inotifier    = INotifier(aclchecker, None, dname, opts.no_boot_check)
+		inotifier    = INotifier(aclchecker, None, configuration, groups,
+			dname, opts.no_boot_check)
 		groups.set_inotifier(inotifier)
 		cmdlistener = CommandListener(dname,
 			pids_to_wake=pids_to_wake,

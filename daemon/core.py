@@ -16,14 +16,6 @@ from licorn.foundations.argparser import build_version_string, \
 
 from licorn.core import version
 
-from licorn.core.configuration  import LicornConfiguration
-#from licorn.core.users          import UsersController
-#from licorn.core.groups         import GroupsController
-
-configuration = LicornConfiguration()
-#users = UsersController(configuration)
-#groups = GroupsController(configuration, users)
-
 ### status codes ###
 LCN_MSG_STATUS_OK      = 1
 LCN_MSG_STATUS_PARTIAL = 2
@@ -98,7 +90,7 @@ def licornd_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 	return parser.parse_args()
-def terminate_cleanly(signum, frame, pname, threads = []):
+def terminate_cleanly(signum, frame, pname, configuration=None, threads=[]):
 	""" Close threads, wipe pid files, clean everything before closing. """
 
 	if signum is None:
@@ -127,7 +119,8 @@ def terminate_cleanly(signum, frame, pname, threads = []):
 		# join threads in the reverse order they were started.
 		th.join()
 
-	configuration.CleanUp()
+	if configuration:
+		configuration.CleanUp()
 
 	logging.progress("%s: exiting." % pname)
 
@@ -135,11 +128,11 @@ def terminate_cleanly(signum, frame, pname, threads = []):
 	time.sleep(0.5)
 
 	sys.exit(0)
-def setup_signals_handler(pname, threads=[]):
+def setup_signals_handler(pname, configuration=None, threads=[]):
 	""" redirect termination signals to a the function which will clean everything. """
 
 	def terminate(signum, frame):
-		return terminate_cleanly(signum, frame, pname, threads)
+		return terminate_cleanly(signum, frame, pname, configuration, threads)
 
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)

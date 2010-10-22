@@ -60,8 +60,9 @@ trc['inotifier']     = 0x0000000200000000
 trc['aclchecker']    = 0x0000000400000000
 trc['cache']         = 0x0000000800000000
 trc['crawler']       = 0x0000001000000000
-trc['thread']        = 0x0000002000000000
-trc['wmi']           = 0x0000004000000000
+trc['cmdlistener']   = 0x0000002000000000
+trc['thread']        = 0x0000004000000000
+trc['wmi']           = 0x0000008000000000
 
 trc['interfaces']    = 0x00ffff0000000000
 trc['cli']           = 0x0000ff0000000000

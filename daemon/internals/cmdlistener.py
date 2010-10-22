@@ -14,17 +14,14 @@ from threading   import Thread, Event, Semaphore, Timer
 from collections import deque
 
 from licorn.foundations           import logging, styles, process
+from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.threads   import LicornBasicThread
 from licorn.foundations.constants import filters
 
 from licorn.daemon.core           import dname
 
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
-	valid_users = [] #grp.getgrnam('admins').gr_mem
-	@staticmethod
-	def reload():
-		LicornPyroValidator.valid_users = grp.getgrnam('admins').gr_mem
-		logging.info('Reloaded list of users granted to connect to the daemon.')
+	valid_users = []
 	def __init__(self):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
 	def acceptHost(self, daemon, connection):
@@ -47,7 +44,12 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					# is at best as quick as users.uid_to_login(), but generally
 					# slower. Thus we use our internals.
 					#client_login = pwd.getpwuid(client_uid).pw_name
-					client_login = daemon.cmdlistener.users.uid_to_login(client_uid)
+					client_login = daemon.cmdlistener.users.uid_to_login(
+						client_uid)
+
+					assert ltrace('cmdlistener',
+						'currently auhorized users: %s' %
+							LicornPyroValidator.valid_users)
 
 					if client_uid == 0 \
 						or client_login in LicornPyroValidator.valid_users:
@@ -96,8 +98,13 @@ class CommandListener(LicornBasicThread):
 		#Pyro.config.PYRO_USER_LOGFILE='pyro.user.log'
 
 		self.pyro_daemon=Pyro.core.Daemon()
+
+		# get a direct reference to the members of group authorized to connect,
+		# this avoids any needs to reload it after a change.
 		LicornPyroValidator.valid_users = self.groups[
-			self.groups.name_to_gid('admins')]['memberUid']
+			self.groups.name_to_gid(
+				self.configuration.defaults.admin_group
+				)]['memberUid']
 		self.pyro_daemon.setNewConnectionValidator(LicornPyroValidator())
 		self.pyro_daemon.cmdlistener = self
 		self.uris = {}
