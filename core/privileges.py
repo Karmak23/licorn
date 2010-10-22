@@ -12,8 +12,9 @@ Licensed under the terms of the GNU GPL version 2
 import Pyro.core
 from threading import RLock
 
-from licorn.foundations         import logging, styles, readers
+from licorn.foundations         import logging, styles, readers, exceptions
 from licorn.foundations.objects import Singleton
+from licorn.foundations.constants import filters
 from licorn.foundations.ltrace  import ltrace
 
 class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
@@ -50,6 +51,7 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 		# just in case it wasn't done before (in batched operations, for example).
 		if self.changed :
 			self.WriteConf()
+
 	def reload(self):
 		""" reload internal data  """
 
@@ -118,6 +120,25 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 					'''whitelist, skipped.''' % \
 						styles.stylize(styles.ST_NAME, privilege),
 						listener=listener)
+	def Select(self, filter_string):
+		""" filter self against various criteria and return a list of matching
+			privileges. """
+		with self.lock:
+			privs = self[:]
+			filtered_privs = []
+			if filters.ALL == filter_string:
+				filtered_privs = privs
+			return filtered_privs
+	def confirm_privilege(self, priv):
+		""" return a UID if it exists in the database. """
+		if priv in self:
+			return priv
+		else:
+			raise exceptions.DoesntExistsException(
+				"Privilege %s doesn't exist" % priv)
+	def guess_identifier(self, priv):
+		if priv in self:
+			return priv
 	def ExportCLI(self):
 		""" present the privileges whitelist on command-line: one by line. """
 		with self.lock:

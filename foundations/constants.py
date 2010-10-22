@@ -29,6 +29,10 @@ filters.STD         = filters.STANDARD
 
 filters.SYSTEM      = 0x0000ff00
 filters.SYS         = filters.SYSTEM
+filters.SYSTEM_RESTRICTED= 0x00001000
+filters.SYSRSTR     = filters.SYSTEM_RESTRICTED
+filters.SYSTEM_UNRESTRICTED= 0x00002000
+filters.SYSUNRSTR     = filters.SYSTEM_UNRESTRICTED
 
 filters.PRIVILEGED  = 0x00000100
 filters.PRI         = filters.PRIVILEGED

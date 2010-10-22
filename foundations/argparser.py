@@ -26,16 +26,20 @@ def build_version_string(app, version):
 		)
 def common_behaviour_group(app, parser, mode='any'):
 	""" This group is common to all Licorn System Tools."""
-	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Behavior options"),
-							"Modify decisions / output of program.")
+	behaviorgroup = OptionGroup(parser, styles.stylize(styles.ST_OPTION,
+		"Behavior options"),
+		"Modify decisions / output of program.")
 
 	if mode != "get":
 		if mode == "check":
 			behaviorgroup.add_option("-e", "--extended",
 				action="store_false", dest="minimal", default = True,
-				help="Execute extended checks (%s, which is to make the bare minimum checks for the system to operate properly)." % styles.stylize(styles.ST_DEFAULT, "not the default") )
+				help='''Execute extended checks (%s, which is to make the '''
+				'''bare minimum checks for the system to operate properly).''' %
+				styles.stylize(styles.ST_DEFAULT, "not the default") )
 
-		if mode in ('check', 'mod_profile', 'del_users'):
+		if mode in ('check', 'mod_user', 'mod_group','mod_profile', 'del_user',
+			'del_group','del_profile', 'del_privilege'):
 			behaviorgroup.add_option("-y", "--yes", "--auto-yes",
 				action="store_true", dest="auto_answer", default = None,
 				help="Automatically answer 'yes' to all repair questions (i.e. repair everything that can be) (default: %s, each question will be asked at one time)." % styles.stylize(styles.ST_DEFAULT, "no"))
@@ -45,6 +49,13 @@ def common_behaviour_group(app, parser, mode='any'):
 			behaviorgroup.add_option("--batch", "-b",
 				action="store_true", dest="batch", default = False,
 				help="batch all operations (don't ask questions, automate everything).")
+		if mode in ('check', 'del_user', 'del_group', 'del_profile',
+			'del_privilege', 'mod_user', 'mod_group', 'mod_profile'):
+			behaviorgroup.add_option('-i', "--interactive",
+				action="store_false", dest="non_interactive", default = True,
+				help='''Make the command interactive, ie. ask for '''
+					'''confirmation at every important step (default: '''
+					'''False).''')
 
 		behaviorgroup.add_option("-f", "--force",
 			action="store_true", dest="force", default = False,

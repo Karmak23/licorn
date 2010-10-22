@@ -176,6 +176,20 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							self.configuration.groups.guest_prefix):
 							filtered_groups.append(gid)
 
+				elif filters.SYSTEM_RESTRICTED == filter_string:
+					ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
+						filters.SYSTEM_RESTRICTED, filter_string))
+
+					filtered_groups.extend(filter(self.is_restricted_system_gid,
+						self.groups.keys()))
+
+				elif filters.SYSTEM_UNRESTRICTED == filter_string:
+					ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
+						filters.SYSTEM_UNRESTRICTED, filter_string))
+
+					filtered_groups.extend(filter(
+						self.is_unrestricted_system_gid, self.groups.keys()))
+
 				elif filters.RESPONSIBLE == filter_string:
 					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
 						filters.RSP, filter_string))
@@ -1875,6 +1889,34 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or name to test as a privilege.")
+	def is_restricted_system_gid(self, gid):
+		""" Return true if gid is system, but outside the range of Licorn®
+			controlled GIDs."""
+		return gid < self.configuration.groups.system_gid_min \
+			and gid > self.configuration.groups.gid_max
+	def is_restricted_system_name(self, group_name):
+		""" return true if login is system, but outside the range of Licorn®
+			controlled UIDs. """
+		try:
+			return self.is_restricted_system_gid(
+				self.name_cache[group_name])
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				logging.SYSG_GROUP_DOESNT_EXIST % group_name)
+	def is_unrestricted_system_gid(self, gid):
+		""" Return true if gid is system, but outside the range of Licorn®
+			controlled GIDs."""
+		return gid > self.configuration.groups.system_gid_min \
+			and gid < self.configuration.groups.gid_max
+	def is_unrestricted_system_name(self, group_name):
+		""" return true if login is system, but outside the range of Licorn®
+			controlled UIDs. """
+		try:
+			return self.is_unrestricted_system_gid(
+				self.name_cache[group_name])
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				logging.SYSG_GROUP_DOESNT_EXIST % group_name)
 	def is_empty_gid(self, gid):
 		""" return True if GID is empty (has no members) """
 		return self.is_standard_gid(gid) \

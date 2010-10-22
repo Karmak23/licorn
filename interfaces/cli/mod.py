@@ -24,284 +24,349 @@ _app = {
 
 def mod_user(opts, args, users, groups, **kwargs):
 	""" Modify a POSIX user account (Samba / LDAP included). """
+	include_id_lists=[
+		(opts.login, users.login_to_uid),
+		(opts.uid, users.confirm_uid)
+		]
+	exclude_id_lists=[
+		(opts.exclude, users.guess_identifier),
+		(opts.exclude_login, users.login_to_uid),
+		(opts.exclude_uid, users.confirm_uid)
+		]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to modify all users ?',
+				auto_answer=opts.auto_answer) \
+			or not opts.non_interactive)
+		):
+			include_id_lists.extend([
+				(users.Select(filters.STD), users.confirm_uid),
+				(users.Select(filters.SYSUNRSTR), users.confirm_uid)
+				])
 
-	uids_to_mod = cli_select(users, 'user',
-			args,
-			[
-				(opts.login, users.login_to_uid),
-				(opts.uid, users.confirm_uid)
-			],
-			exclude_id_lists=[
-				(opts.exclude, users.guess_identifier),
-				(opts.exclude_login, users.login_to_uid),
-				(opts.exclude_uid, users.confirm_uid)
-			])
+	uids_to_mod = cli_select(users, 'user',	args=args,
+			include_id_lists=include_id_lists,
+			exclude_id_lists=exclude_id_lists)
 
 	assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
 	something_done = False
 
 	for uid in uids_to_mod:
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Modify user %s ?''' % styles.stylize(
+			styles.ST_LOGIN,users.uid_to_login(uid)),
+			auto_answer=opts.auto_answer):
 
-		if opts.newgecos is not None:
-			something_done = True
-			users.ChangeUserGecos(uid=uid, gecos=unicode(opts.newgecos),
-			listener=opts.listener)
-
-		if opts.newshell is not None:
-			something_done = True
-			users.ChangeUserShell(uid=uid, shell=opts.newshell,
-			listener=opts.listener)
-
-		if opts.newpassword is not None:
-			something_done = True
-			users.ChangeUserPassword(uid=uid, password=opts.newpassword,
-			listener=opts.listener)
-
-		if opts.auto_passwd is not None:
-			something_done = True
-			users.ChangeUserPassword(uid=uid,
-				password=hlstr.generate_password(opts.passwd_size),
-				display=True, listener=opts.listener)
-
-		if opts.lock is not None:
-			something_done = True
-			users.LockAccount(uid=uid, lock=opts.lock, listener=opts.listener)
-
-		if opts.groups_to_add:
-			something_done = True
-			for g in opts.groups_to_add.split(','):
-				if g != '':
-					try:
-						groups.AddUsersInGroup(name=g, users_to_add=[ uid ],
-							listener=opts.listener)
-					except exceptions.LicornRuntimeException, e:
-						logging.warning('''Unable to add user %s in group '''
-							'''%s (was: %s).''' % (
-								styles.stylize(styles.ST_LOGIN,
-									users.uid_to_login(uid)),
-								styles.stylize(styles.ST_NAME, g), str(e)))
-					except exceptions.LicornException, e:
-						raise exceptions.LicornRuntimeError(
-							'''Unable to add user %s in group %s (was: %s).'''
-								% (styles.stylize(styles.ST_LOGIN,
-									users.uid_to_login(uid)),
-									styles.stylize(styles.ST_NAME, g), str(e)))
-
-		if opts.groups_to_del:
-			something_done = True
-			for g in opts.groups_to_del.split(','):
-				if g != '':
-					try:
-						groups.DeleteUsersFromGroup(name=g,
-							users_to_del=[ uid ], listener=opts.listener)
-					except exceptions.LicornRuntimeException, e:
-						logging.warning('''Unable to remove user %s from '''
-							'''group %s (was: %s).''' % (
-								styles.stylize(styles.ST_LOGIN, opts.login),
-								styles.stylize(styles.ST_NAME, g),
-								str(e)))
-					except exceptions.LicornException, e:
-						raise exceptions.LicornRuntimeError(
-							'''Unable to remove user %s from '''
-							'''group %s (was: %s).''' % (
-								styles.stylize(styles.ST_LOGIN, opts.login),
-								styles.stylize(styles.ST_NAME, g),
-								str(e)))
-
-		if opts.apply_skel is not None:
-			something_done = True
-			users.ApplyUserSkel(opts.login, opts.apply_skel,
+			if opts.newgecos is not None:
+				something_done = True
+				users.ChangeUserGecos(uid=uid, gecos=unicode(opts.newgecos),
 				listener=opts.listener)
+
+			if opts.newshell is not None:
+				something_done = True
+				users.ChangeUserShell(uid=uid, shell=opts.newshell,
+				listener=opts.listener)
+
+			if opts.newpassword is not None:
+				something_done = True
+				users.ChangeUserPassword(uid=uid, password=opts.newpassword,
+				listener=opts.listener)
+
+			if opts.auto_passwd is not None:
+				something_done = True
+				users.ChangeUserPassword(uid=uid,
+					password=hlstr.generate_password(opts.passwd_size),
+					display=True, listener=opts.listener)
+
+			if opts.lock is not None:
+				something_done = True
+				users.LockAccount(uid=uid, lock=opts.lock,
+					listener=opts.listener)
+
+			if opts.groups_to_add:
+				something_done = True
+				for g in opts.groups_to_add.split(','):
+					if g != '':
+						try:
+							groups.AddUsersInGroup(name=g, users_to_add=[ uid ],
+								listener=opts.listener)
+						except exceptions.LicornRuntimeException, e:
+							logging.warning(
+								'''Unable to add user %s in group %s (was: '''
+								'''%s).''' % (
+									styles.stylize(styles.ST_LOGIN,
+										users.uid_to_login(uid)),
+									styles.stylize(styles.ST_NAME, g), str(e)))
+						except exceptions.LicornException, e:
+							raise exceptions.LicornRuntimeError(
+								'''Unable to add user %s in group %s (was: '''
+								'''%s).'''
+									% (styles.stylize(styles.ST_LOGIN,
+										users.uid_to_login(uid)),
+										styles.stylize(styles.ST_NAME, g),
+										str(e)))
+
+			if opts.groups_to_del:
+				something_done = True
+				for g in opts.groups_to_del.split(','):
+					if g != '':
+						try:
+							groups.DeleteUsersFromGroup(name=g,
+								users_to_del=[ uid ], listener=opts.listener)
+						except exceptions.LicornRuntimeException, e:
+							logging.warning('''Unable to remove user %s from '''
+								'''group %s (was: %s).''' % (
+									styles.stylize(styles.ST_LOGIN, opts.login),
+									styles.stylize(styles.ST_NAME, g),
+									str(e)))
+						except exceptions.LicornException, e:
+							raise exceptions.LicornRuntimeError(
+								'''Unable to remove user %s from '''
+								'''group %s (was: %s).''' % (
+									styles.stylize(styles.ST_LOGIN, opts.login),
+									styles.stylize(styles.ST_NAME, g),
+									str(e)))
+
+			if opts.apply_skel is not None:
+				something_done = True
+				users.ApplyUserSkel(opts.login, opts.apply_skel,
+					listener=opts.listener)
 
 	if not something_done:
 		raise exceptions.BadArgumentError('''What do you want to modify '''
 			'''about user(s) ? Use --help to know !''')
 def mod_group(opts, args, groups, configuration, **kwargs):
 	""" Modify a group. """
-
-	gids_to_mod = cli_select(groups, 'group',
-			args,
-			include_id_lists=[
-				(opts.name, groups.name_to_gid),
-				(opts.gid, groups.confirm_gid)
-			],
-			exclude_id_lists = [
-				(opts.exclude, groups.guess_identifier),
-				(opts.exclude_group, groups.name_to_gid),
-				(opts.exclude_gid, groups.confirm_gid)
-			])
+	include_id_lists=[
+		(opts.name, groups.name_to_gid),
+		(opts.gid, groups.confirm_gid)
+	]
+	exclude_id_lists = [
+		(opts.exclude, groups.guess_identifier),
+		(opts.exclude_group, groups.name_to_gid),
+		(opts.exclude_gid, groups.confirm_gid)
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to modify all groups ?',
+				auto_answer=opts.auto_answer) or not opts.non_interactive)
+		):
+				include_id_lists.extend([
+					(groups.Select(filters.STD), groups.confirm_gid),
+					(groups.Select(filters.SYSUNRSTR), groups.confirm_gid)
+				])
+	gids_to_mod = cli_select(groups, 'group', args,
+			include_id_lists=include_id_lists,
+			exclude_id_lists=exclude_id_lists)
 
 	assert ltrace('mod', '> mod_group(%s)' % gids_to_mod)
 
 	g2n = groups.gid_to_name
 
 	for gid in gids_to_mod:
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Modify group %s ?''' % styles.stylize(
+			styles.ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
+			if opts.permissive is not None:
+				groups.SetSharedDirPermissiveness(gid=gid,
+					permissive=opts.permissive)
 
-		if opts.permissive is not None:
-			groups.SetSharedDirPermissiveness(gid=gid,
-				permissive=opts.permissive, listener=opts.listener)
+			if opts.permissive is not None:
+				groups.SetSharedDirPermissiveness(gid=gid,
+					permissive=opts.permissive, listener=opts.listener)
 
-		if opts.newname is not None:
-			groups.RenameGroup(gid=gid, newname=opts.newname,
-				listener=opts.listener)
+			if opts.newname is not None:
+				groups.RenameGroup(gid=gid, newname=opts.newname,
+					listener=opts.listener)
 
-		if opts.newskel is not None:
-			groups.ChangeGroupSkel(gid=gid, groupSkel=opts.newskel,
-				listener=opts.listener)
+			if opts.newskel is not None:
+				groups.ChangeGroupSkel(gid=gid, groupSkel=opts.newskel,
+					listener=opts.listener)
 
-		if opts.newdescription is not None:
-			groups.ChangeGroupDescription(gid=gid,
-				description=unicode(opts.newdescription),
-				listener=opts.listener)
+			if opts.newdescription is not None:
+				groups.ChangeGroupDescription(gid=gid,
+					description=unicode(opts.newdescription),
+					listener=opts.listener)
 
-		if opts.users_to_add != []:
-			groups.AddUsersInGroup(gid=gid,
-				users_to_add=opts.users_to_add.split(','),
-				listener=opts.listener)
+			if opts.users_to_add != []:
+				groups.AddUsersInGroup(gid=gid,
+					users_to_add=opts.users_to_add.split(','),
+					listener=opts.listener)
 
-		if opts.users_to_del != []:
-			groups.DeleteUsersFromGroup(gid=gid,
-				users_to_del=opts.users_to_del.split(','),
-				listener=opts.listener)
+			if opts.users_to_del != []:
+				groups.DeleteUsersFromGroup(gid=gid,
+					users_to_del=opts.users_to_del.split(','),
+					listener=opts.listener)
 
-		if opts.resps_to_add != []:
-			groups.AddUsersInGroup(
-				name=configuration.groups.resp_prefix + g2n(gid),
-				users_to_add=opts.resps_to_add.split(','),
-				listener=opts.listener)
+			if opts.resps_to_add != []:
+				groups.AddUsersInGroup(
+					name=configuration.groups.resp_prefix + g2n(gid),
+					users_to_add=opts.resps_to_add.split(','),
+					listener=opts.listener)
 
-		if opts.resps_to_del != []:
-			groups.DeleteUsersFromGroup(
-				name=configuration.groups.resp_prefix + g2n(gid),
-				users_to_del=opts.resps_to_del.split(','),
-				listener=opts.listener)
+			if opts.resps_to_del != []:
+				groups.DeleteUsersFromGroup(
+					name=configuration.groups.resp_prefix + g2n(gid),
+					users_to_del=opts.resps_to_del.split(','),
+					listener=opts.listener)
 
-		if opts.guests_to_add != []:
-			groups.AddUsersInGroup(
-				name=configuration.groups.guest_prefix + g2n(gid),
-				users_to_add=opts.guests_to_add.split(','),
-				listener=opts.listener)
+			if opts.guests_to_add != []:
+				groups.AddUsersInGroup(
+					name=configuration.groups.guest_prefix + g2n(gid),
+					users_to_add=opts.guests_to_add.split(','),
+					listener=opts.listener)
 
-		if opts.guests_to_del != []:
-			groups.DeleteUsersFromGroup(
-				name=configuration.groups.guest_prefix + g2n(gid),
-				users_to_del=opts.guests_to_del.split(','),
-				listener=opts.listener)
+			if opts.guests_to_del != []:
+				groups.DeleteUsersFromGroup(
+					name=configuration.groups.guest_prefix + g2n(gid),
+					users_to_del=opts.guests_to_del.split(','),
+					listener=opts.listener)
 
-		# FIXME: do the same for guests,  or make resp-guest simply
-		# --add-groups resp-…,group1,group2,guest-…
+			# FIXME: do the same for guests,  or make resp-guest simply
+			# --add-groups resp-…,group1,group2,guest-…
 
-		if opts.granted_profiles_to_add is not None:
-			groups.AddGrantedProfiles(gid=gid,
-				profiles=opts.granted_profiles_to_add.split(','),
-				listener=opts.listener)
-		if opts.granted_profiles_to_del is not None:
-			groups.DeleteGrantedProfiles(gid=gid,
-				profiles=opts.granted_profiles_to_del.split(','),
-				listener=opts.listener)
+			if opts.granted_profiles_to_add is not None:
+				groups.AddGrantedProfiles(gid=gid,
+					profiles=opts.granted_profiles_to_add.split(','),
+					listener=opts.listener)
+			if opts.granted_profiles_to_del is not None:
+				groups.DeleteGrantedProfiles(gid=gid,
+					profiles=opts.granted_profiles_to_del.split(','),
+					listener=opts.listener)
 def mod_profile(opts, args, users, groups, profiles, **kwargs):
 	""" Modify a system wide User profile. """
-
-	profiles_to_mod = cli_select(profiles, 'profile',
-			args,
-			include_id_lists=[
-				(opts.name, profiles.name_to_group),
-				(opts.group, profiles.confirm_group)
-			])
+	include_id_lists=[
+		(opts.name, profiles.name_to_group),
+		(opts.group, profiles.confirm_group)
+	]
+	exclude_id_lists=[
+		(opts.exclude, profiles.guess_identifier),
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to modify all profiles ?',
+				opts.auto_answer) \
+			or not opts.non_interactive)
+		):
+			include_id_lists.extend([
+				(profiles.Select(filters.ALL), profiles.guess_identifier)
+			]),
+	profiles_to_mod = cli_select(profiles, 'profile', args,
+			include_id_lists=include_id_lists,
+			exclude_id_lists=exclude_id_lists)
 
 	assert ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
 
 	ggi = groups.guess_identifiers
 
 	for group in profiles_to_mod:
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Modify profile %s ?''' % styles.stylize(
+			styles.ST_LOGIN,profiles.group_to_name(group)),
+			auto_answer=opts.auto_answer):
 
-		if opts.newname is not None:
-			profiles.ChangeProfileName(group=group,
-				newname=unicode(opts.newname), listener=opts.listener)
+			if opts.newname is not None:
+				profiles.ChangeProfileName(group=group,
+					newname=unicode(opts.newname), listener=opts.listener)
 
-		if opts.newgroup is not None:
-			profiles.ChangeProfileGroup(group=group, newgroup=opts.newgroup,
-				listener=opts.listener)
-
-		if opts.description is not None:
-			profiles.ChangeProfileDescription(group=group,
-				description=unicode(opts.description),
-				listener=opts.listener)
-
-		if opts.newshell is not None:
-			profiles.ChangeProfileShell(group=group, profileShell=opts.newshell,
-				listener=opts.listener)
-
-		if opts.newquota is not None:
-			profiles.ChangeProfileQuota(group=group, profileQuota=opts.newquota,
-				listener=opts.listener)
-
-		if opts.newskel is not None:
-			profiles.ChangeProfileSkel(group=group, profileSkel=opts.newskel,
-				listener=opts.listener)
-
-		if opts.groups_to_add is not None:
-			added_groups = profiles.AddGroupsInProfile(group=group,
-				groups_to_add=opts.groups_to_add.split(','),
-				listener=opts.listener)
-			if opts.instant_apply:
-				prim_memb = groups.primary_members(name=group)
-				for added_group in added_groups:
-					groups.AddUsersInGroup(name=added_group,
-						users_to_add=prim_memb,	batch=opts.no_sync,
-						listener=opts.listener)
-
-		if opts.groups_to_del is not None:
-			deleted_groups = profiles.DeleteGroupsFromProfile(group=group,
-				groups_to_del=opts.groups_to_del.split(','),
-				listener=opts.listener)
-			if opts.instant_apply:
-				prim_memb = groups.primary_members(name=group)
-				for deleted_group in deleted_groups:
-					groups.DeleteUsersFromGroup(name=deleted_group,
-						users_to_del=prim_memb,	batch=opts.no_sync,
-						listener=opts.listener)
-
-		if opts.no_sync:
-			groups.WriteConf()
-
-		include_id_lists = []
-
-		if opts.apply_to_members:
-			include_id_lists.append(
-				(groups.primary_members(name=group), users.login_to_uid))
-		if opts.apply_to_users is not None:
-			include_id_lists.append(
-				(opts.apply_to_users.split(','), users.guess_identifier))
-		if opts.apply_to_groups is not None:
-			for gid in ggi(opts.apply_to_groups.split(',')):
-				include_id_lists.append(
-					(groups.primary_members(gid=gid), users.login_to_uid))
-
-		if opts.apply_all_attributes or opts.apply_skel or opts.apply_groups:
-
-			_users = users.Select(
-				cli_select(users, 'user',
-					args,
-					include_id_lists=include_id_lists,
-					exclude_id_lists=[
-						(opts.exclude, users.guess_identifier),
-						(opts.exclude_login, users.login_to_uid),
-						(opts.exclude_uid, users.confirm_uid)
-					],
-					default_selection=filters.NONE,
-					all=opts.apply_to_all_accounts)
-				)
-
-			assert ltrace('mod',"  mod_profile(on_users=%s)" % _users)
-
-			if _users != []:
-				profiles.ReapplyProfileOfUsers(_users,
-					apply_groups=opts.apply_groups,
-					apply_skel=opts.apply_skel,
-					batch=opts.batch, auto_answer=opts.auto_answer,
+			if opts.newgroup is not None:
+				profiles.ChangeProfileGroup(group=group, newgroup=opts.newgroup,
 					listener=opts.listener)
+
+			if opts.description is not None:
+				profiles.ChangeProfileDescription(group=group,
+					description=unicode(opts.description),
+					listener=opts.listener)
+
+			if opts.newshell is not None:
+				profiles.ChangeProfileShell(group=group,
+					profileShell=opts.newshell,	listener=opts.listener)
+
+			if opts.newskel is not None:
+				profiles.ChangeProfileSkel(group=group,
+				profileSkel=opts.newskel, listener=opts.listener)
+
+			if opts.newquota is not None:
+				profiles.ChangeProfileQuota(group=group,
+				profileQuota=opts.newquota,	listener=opts.listener)
+
+			if opts.groups_to_add is not None:
+				added_groups = profiles.AddGroupsInProfile(group=group,
+					groups_to_add=opts.groups_to_add.split(','),
+					listener=opts.listener)
+				if opts.instant_apply:
+					prim_memb = groups.primary_members(name=group)
+					for added_group in added_groups:
+						groups.AddUsersInGroup(name=added_group,
+							users_to_add=prim_memb,	batch=opts.no_sync,
+							listener=opts.listener)
+
+			if opts.groups_to_del is not None:
+				deleted_groups = profiles.DeleteGroupsFromProfile(group=group,
+					groups_to_del=opts.groups_to_del.split(','),
+					listener=opts.listener)
+				if opts.instant_apply:
+					prim_memb = groups.primary_members(name=group)
+					for deleted_group in deleted_groups:
+						groups.DeleteUsersFromGroup(name=deleted_group,
+							users_to_del=prim_memb,	batch=opts.no_sync,
+							listener=opts.listener)
+
+			if opts.no_sync:
+				groups.WriteConf()
+
+			include_id_lists = []
+
+			if opts.apply_to_members:
+				include_id_lists.append(
+					(groups.primary_members(name=group), users.login_to_uid))
+			if opts.apply_to_users is not None:
+				include_id_lists.append(
+					(opts.apply_to_users.split(','), users.guess_identifier))
+			if opts.apply_to_groups is not None:
+				for gid in ggi(opts.apply_to_groups.split(',')):
+					include_id_lists.append(
+						(groups.primary_members(gid=gid), users.login_to_uid))
+
+			if opts.apply_all_attributes or opts.apply_skel or opts.apply_groups:
+
+				_users = users.Select(
+					cli_select(users, 'user',
+						args,
+						include_id_lists=include_id_lists,
+						exclude_id_lists=[
+							(opts.exclude, users.guess_identifier),
+							(opts.exclude_login, users.login_to_uid),
+							(opts.exclude_uid, users.confirm_uid)
+						],
+						default_selection=filters.NONE,
+						all=opts.apply_to_all_accounts)
+					)
+
+				assert ltrace('mod',"  mod_profile(on_users=%s)" % _users)
+
+				if _users != []:
+					profiles.ReapplyProfileOfUsers(_users,
+						apply_groups=opts.apply_groups,
+						apply_skel=opts.apply_skel,
+						batch=opts.batch, auto_answer=opts.auto_answer,
+						listener=opts.listener)
 	assert ltrace('mod', '< mod_profile()')
 def shut(i, listener=None):
 	""" FIXME: find a way to get the listener, else we have no output.

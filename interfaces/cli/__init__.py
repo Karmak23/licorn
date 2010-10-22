@@ -66,7 +66,6 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 			(opts, args) = functions[mode][0](app=app_data,
 				configuration=configuration)
-
 			options.SetFrom(opts)
 
 			assert ltrace('cli', '  cli_main: starting pyro')
@@ -157,7 +156,6 @@ def cli_select(controller, ctype, args, include_id_lists, exclude_id_lists=[],
 		'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
 		'''all=%s)''' % (controller, ctype, args, include_id_lists,
 			exclude_id_lists, default_selection, all))
-
 	# use a set() to avoid duplicates during selections. This will allow us,
 	# later in implementation to do more complex selections (unions,
 	# differences, intersections and al.
@@ -201,10 +199,9 @@ def cli_select(controller, ctype, args, include_id_lists, exclude_id_lists=[],
 	for id_arg, resolver in exclude_id_lists:
 		if id_arg is None:
 			continue
-		for id in id_arg.split(','):
+		for id in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
 			if id is '':
 				continue
-
 			try:
 				xids.add(resolver(id))
 			except (KeyError, exceptions.DoesntExistsException):

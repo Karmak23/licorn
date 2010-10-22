@@ -11,12 +11,14 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-import sys, re
+import sys, re, os
 
 from licorn.foundations           import logging, exceptions, styles
 from licorn.foundations.constants import filters
 
 from licorn.interfaces.cli import cli_main, cli_select
+from licorn.core.configuration import LicornConfiguration
+configuration = LicornConfiguration()
 
 _app = {
 	"name"        : "licorn-delete",
@@ -67,22 +69,43 @@ def desimport_groups(opts, args, groups, **kwargs):
 	print "\nFinished"
 def del_user(opts, args, users, **kwargs):
 	""" delete a user account. """
-
-	uids_to_del = cli_select(users, 'user',
-			args,
-			include_id_lists=[
-				(opts.login, users.login_to_uid),
-				(opts.uid, users.confirm_uid)
-			],
-			exclude_id_lists=[
-				(opts.exclude, users.guess_identifier),
-				(opts.exclude_login, users.login_to_uid),
-				(opts.exclude_uid, users.confirm_uid)
-			])
+	include_id_lists=[
+		(opts.login, users.login_to_uid),
+		(opts.uid, users.confirm_uid)
+	]
+	exclude_id_lists=[
+		(opts.exclude, users.guess_identifier),
+		(opts.exclude_login, users.login_to_uid),
+		(opts.exclude_uid, users.confirm_uid),
+		([os.getuid()], users.confirm_uid)
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to delete all users ?',
+				auto_answer=opts.auto_answer) or not opts.non_interactive)
+		):
+			include_id_lists.extend([
+				(users.Select(filters.STD), users.confirm_uid),
+				(users.Select(filters.SYSUNRSTR), users.confirm_uid)
+				])
+	uids_to_del = cli_select(users, 'user',	args=args,
+			include_id_lists=include_id_lists,
+			exclude_id_lists=exclude_id_lists)
 
 	for uid in uids_to_del:
-		users.DeleteUser(uid=uid, no_archive=opts.no_archive, batch=opts.batch,
-			listener=opts.listener)
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Delete user %s ?''' % styles.stylize(
+			styles.ST_LOGIN,users.uid_to_login(uid)),
+			auto_answer=opts.auto_answer):
+			users.DeleteUser(uid=uid, no_archive=opts.no_archive,
+				listener=opts.listener)
+			#logging.notice("Deleting user : %s" % users.uid_to_login(uid))
+
 def del_user_from_groups(opts, args, users, groups):
 
 	uids_to_del = cli_select(users, 'user',
@@ -123,43 +146,84 @@ def dispatch_del_user(opts, args, users, groups, **kwargs):
 			del_user(opts, args, users)
 	else:
 		del_user(opts, args, users)
-
 def del_group(opts, args, groups, **kwargs):
 	""" delete an Licorn group. """
 	selection = filters.NONE
 	if opts.empty:
 		selection = filters.EMPTY
-
+	include_id_lists=[
+		(opts.name, groups.name_to_gid),
+		(opts.gid, groups.confirm_gid),
+	]
+	exclude_id_lists = [
+		(opts.exclude, groups.guess_identifier),
+		(opts.exclude_group, groups.name_to_gid),
+		(opts.exclude_gid, groups.confirm_gid)
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to delete all groups ?',
+				auto_answer=opts.auto_answer) or not opts.non_interactive)
+		):
+			include_id_lists.extend([
+				(groups.Select(filters.STD), groups.confirm_gid),
+				(groups.Select(filters.SYSUNRSTR), groups.confirm_gid)
+				])
 	gids_to_del = cli_select(groups, 'group',
-			args,
-			include_id_lists=[
-				(opts.name, groups.name_to_gid),
-				(opts.gid, groups.confirm_gid),
-			],
-			exclude_id_lists = [
-				(opts.exclude, groups.guess_identifier),
-				(opts.exclude_group, groups.name_to_gid),
-				(opts.exclude_gid, groups.confirm_gid)
-			],
-			default_selection=selection
-			)
-
+				args,
+				include_id_lists=include_id_lists,
+				exclude_id_lists = exclude_id_lists,
+				default_selection=selection
+				)
 	for gid in gids_to_del:
-		groups.DeleteGroup(gid=gid, del_users=opts.del_users,
-			no_archive=opts.no_archive, listener=opts.listener)
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Delete group %s ?''' % styles.stylize(
+			styles.ST_LOGIN,groups.gid_to_name(gid)),
+			auto_answer=opts.auto_answer):
+			groups.DeleteGroup(gid=gid, del_users=opts.del_users,
+				no_archive=opts.no_archive, listener=opts.listener)
+			#logging.notice("Deleting group : %s" % groups.gid_to_name(gid))
 def del_profile(opts, args, profiles, **kwargs):
 	""" Delete a system wide User profile. """
+	include_id_lists=[
+		(opts.name, profiles.name_to_group),
+		(opts.group, profiles.confirm_group)
+	]
+	exclude_id_lists=[
+		(opts.exclude, profiles.guess_identifier)
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to delete all profiles ?',
+				opts.auto_answer) \
+			or not opts.non_interactive)
+		):
+			include_id_lists.extend([
+					(profiles.Select(filters.ALL), profiles.guess_identifier)
+				])
 
-	profiles_to_del = cli_select(profiles, 'profile',
-			args,
-			[
-				(opts.name, profiles.name_to_group),
-				(opts.group, profiles.confirm_group)
-			])
+	profiles_to_del = cli_select(profiles, 'profile', args,
+			include_id_lists=include_id_lists,
+			exclude_id_lists=exclude_id_lists)
 
 	for p in profiles_to_del:
-		profiles.DeleteProfile(group=p, del_users=opts.del_users,
-			no_archive=opts.no_archive, listener=opts.listener)
+		if opts.non_interactive or opts.batch or opts.force or \
+			logging.ask_for_repair('''Delete profile %s ?''' % styles.stylize(
+			styles.ST_LOGIN,profiles.group_to_name(p)),
+			auto_answer=opts.auto_answer):
+			profiles.DeleteProfile(group=p, del_users=opts.del_users,
+				no_archive=opts.no_archive, listener=opts.listener)
+			#logging.notice("Deleting profile : %s" % profiles.group_to_name(p))
 def del_keyword(opts, args, keywords, **kwargs):
 	""" delete a system wide User profile. """
 
@@ -168,14 +232,42 @@ def del_keyword(opts, args, keywords, **kwargs):
 
 	keywords.DeleteKeyword(opts.name, opts.del_children, listener=opts.listener)
 def del_privilege(opts, args, privileges, **kwargs):
-
 	if opts.privileges_to_remove is None and len(args) == 2:
 		opts.privileges_to_remove = args[1]
+	include_priv_lists=[
+		(opts.privileges_to_remove, privileges.confirm_privilege),
+	]
+	exclude_priv_lists=[
+		(opts.exclude, privileges.confirm_privilege),
+	]
+	if opts.all and (
+		(
+			# NOTE TO THE READER: don't event try to simplify these conditions,
+			# or the order the tests: they just MATTER. Read the tests in pure
+			# english to undestand them and why the order is important.
+			opts.non_interactive and opts.force) or opts.batch \
+			or (opts.non_interactive and logging.ask_for_repair(
+				'Are you sure you want to delete all users ?',
+				auto_answer=opts.auto_answer) or not opts.non_interactive)
+		):
+			include_priv_lists.extend([
+				(privileges.Select(filters.ALL), privileges.confirm_privilege),
+				])
+	privs_to_del = cli_select(privileges, 'privilege',args=args,
+			include_id_lists=include_priv_lists,
+			exclude_id_lists=exclude_priv_lists)
 
-	privileges.delete(
-		opts.privileges_to_remove.split(','), listener=opts.listener)
+	for priv_name in privs_to_del:
+		if priv_name is not None and (
+		opts.non_interactive or opts.batch or opts.force or \
+		logging.ask_for_repair('''Delete privilege %s ?''' %
+			styles.stylize(styles.ST_LOGIN, priv_name),
+			auto_answer=opts.auto_answer)):
+			privileges.delete(
+				[priv_name], listener=opts.listener)
+
 def del_main():
-
+	""" DELETE main function. """
 	import argparser as agp
 
 	functions = {

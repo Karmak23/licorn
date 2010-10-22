@@ -13,7 +13,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 from optparse import OptionParser, OptionGroup
 
-from licorn.foundations         import styles
+from licorn.foundations         import styles, exceptions
 from licorn.foundations.argparser import build_version_string, \
 	common_behaviour_group
 
@@ -58,7 +58,7 @@ def common_filter_group(app, parser, tool, mode):
 		)
 
 	if tool in ('get', 'mod', 'del') :
-		if mode in ( 'users', 'groups', 'profiles', 'machines'):
+		if mode in ( 'users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default=False,
 				help="""Also select system data. I.e. """
@@ -77,7 +77,7 @@ def common_filter_group(app, parser, tool, mode):
 					'''NOT enabled by default.''')
 
 	if tool is 'chk':
-		if mode in ( 'users', 'groups', 'configuration'):
+		if mode in ( 'users', 'groups', 'configuration', 'profiles'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default = False,
 				help="""%s"""
@@ -90,7 +90,7 @@ def common_filter_group(app, parser, tool, mode):
 						styles.stylize(styles.ST_IMPORTANT, "WARNING"),
 						""", depending of the current number of %s.""" %
 							mode if mode != 'configuration' else ''))
-		if mode in ('users', 'groups'):
+		if mode in ('users', 'groups', 'profiles'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
 				help='''exclude %s from the selection. Can be IDs or %s '''
@@ -210,6 +210,13 @@ def common_filter_group(app, parser, tool, mode):
 				help="Only select active machines.")
 
 	return filtergroup
+def check_opts_and_args(parse_args):
+	(opts, args) = parse_args
+	if opts.force and opts.batch:
+		raise exceptions.BadArgumentError('''options --force and '''
+		'''--batch are mutually exclusive''')
+	else:
+		return (opts, args)
 def general_parse_arguments(app):
 	"""Common options and arguments to all Licorn System Tools,
 		with specialties."""
@@ -721,7 +728,7 @@ def del_user_parse_arguments(app, configuration):
 		version=build_version_string(app, version))
 
 	# common behaviour group
-	parser.add_option_group(common_behaviour_group(app, parser, 'del_users'))
+	parser.add_option_group(common_behaviour_group(app, parser, 'del_user'))
 	parser.add_option_group(common_filter_group(app, parser, 'del', 'users'))
 
 	user = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete user options "))
@@ -732,8 +739,7 @@ def del_user_parse_arguments(app, configuration):
 			(styles.stylize(styles.ST_PATH, configuration.home_archive_dir), styles.stylize(styles.ST_DEFAULT, "to make a backup")))
 
 	parser.add_option_group(user)
-
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def del_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete group »."""
 
@@ -754,10 +760,9 @@ def del_group_parse_arguments(app, configuration):
 	group.add_option("--no-archive",
 		action="store_true", dest="no_archive", default = False,
 		help="Don't make a backup of users home directories in %s when deleting members (default is %s)" % (styles.stylize(styles.ST_PATH, configuration.home_archive_dir), styles.stylize(styles.ST_DEFAULT, "to make backups")))
-
 	parser.add_option_group(group)
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def del_profile_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete profile »."""
 
@@ -783,7 +788,7 @@ def del_profile_parse_arguments(app, configuration):
 
 	parser.add_option_group(profile)
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def del_keyword_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete keyword »."""
 
@@ -817,6 +822,8 @@ def del_privilege_parse_arguments(app, configuration):
 
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_privilege'))
+	parser.add_option_group(common_filter_group(app, parser, 'del', 'privileges'))
+
 
 	priv = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete privilege options "))
 
@@ -826,7 +833,7 @@ def del_privilege_parse_arguments(app, configuration):
 
 	parser.add_option_group(priv)
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def delimport_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s --filename=<fichier> [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
@@ -928,7 +935,7 @@ def mod_machine_parse_arguments(app, configuration):
 
 	parser.add_option_group(user)
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def mod_group_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s group --name=<nom_actuel> [--rename=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -985,9 +992,10 @@ def mod_group_parse_arguments(app, configuration):
 	group.add_option("--del-granted-profiles",
 		action="store", type="string", dest="granted_profiles_to_del", default = None,
 		help="Delete the profiles which the users can access to the group's shared directory. The profiles are separated by commas without spaces.")
+
 	parser.add_option_group(group)
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def mod_profile_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s profile --group=<nom> [--name=<nouveau_nom>] [--rename-group=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
@@ -1061,7 +1069,7 @@ def mod_profile_parse_arguments(app, configuration):
 
 	parser.add_option_group(profile)
 
-	(opts, args) = parser.parse_args()
+	(opts, args) = check_opts_and_args(parser.parse_args())
 
 	if opts.apply_all_attributes:
 		opts.apply_skel = True
@@ -1228,7 +1236,7 @@ def chk_user_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'check'))
 	parser.add_option_group(common_filter_group(app, parser, 'chk', 'users'))
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def chk_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
@@ -1240,7 +1248,7 @@ def chk_group_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'check'))
 	parser.add_option_group(common_filter_group(app, parser, 'chk', 'groups'))
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def chk_profile_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « check profile(s) »."""
 
@@ -1252,7 +1260,7 @@ def chk_profile_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'check'))
 	parser.add_option_group(common_filter_group(app, parser, 'chk', 'profiles'))
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def chk_configuration_parse_arguments(app, configuration):
 	"""TODO"""
 

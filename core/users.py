@@ -123,6 +123,20 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 				map(keep_uid_if_system, uids)
 
+			elif filters.SYSTEM_RESTRICTED == filter_string:
+				def keep_uid_if_system_restricted(uid):
+					if self.is_restricted_system_uid(uid):
+						filtered_users.append(uid)
+
+				map(keep_uid_if_system_restricted, uids)
+
+			elif filters.SYSTEM_UNRESTRICTED == filter_string:
+				def keep_uid_if_system_unrestricted(uid):
+					if self.is_unrestricted_system_uid(uid):
+						filtered_users.append(uid)
+
+				map(keep_uid_if_system_unrestricted, uids)
+
 			elif type(filter_string) == type([]):
 				filtered_users = filter_string
 
@@ -406,8 +420,9 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						home, login, system, force, listener)
 
 					if self.profiles[profile]['memberGid'] != []:
-						groups_to_add_user_to.append(
-							self.profiles[profile]['memberGid'])
+						groups_to_add_user_to.extend([
+							self.groups.name_to_gid(x) for x in
+							self.profiles[profile]['memberGid']])
 
 					if skel is None:
 						skel_to_apply = \
@@ -936,10 +951,9 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				# Sanely enough, we will do the same and avoid checking reserved
 				# uids > 65000, like nobody. Just stick to adduser or licorn created
 				# system uids.
-				if  uid >= self.configuration.users.system_uid_min \
-					and uid <= self.configuration.users.system_uid_max:
+				if self.is_unrestricted_system_uid(uid):
 
-					logging.progress("Checking system account %s…" % \
+					logging.progress("Checking system account %s..." % \
 						styles.stylize(styles.ST_NAME, login), listener=listener)
 
 					if os.path.exists(self.users[uid]['homeDirectory']):
@@ -1017,7 +1031,6 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 								file_acl_mask),
 							} )
 
-					#
 					# if we are in charge of building the user's mailbox, do it and
 					# check it. This is particularly important for ~/Maildir
 					# because courier-imap will hog CPU time if the Maildir doesn't
@@ -1218,6 +1231,34 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"UID %s doesn't exist" % uid)
+	def is_restricted_system_uid(self, uid):
+		""" Return true if uid is system, but outside the range of Licorn®
+			controlled UIDs."""
+		return uid < UsersController.configuration.users.system_uid_min \
+			and uid > self.configuration.users.uid_max
+	def is_restricted_system_login(self, login):
+		""" return true if login is system, but outside the range of Licorn®
+			controlled UIDs. """
+		try:
+			return self.is_restricted_system_uid(
+				self.login_cache[login])
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				logging.SYSU_USER_DOESNT_EXIST % login)
+	def is_unrestricted_system_uid(self, uid):
+		""" Return true if uid is system, but inside the range of Licorn®
+			controlled UIDs."""
+		return uid >= self.configuration.users.system_uid_min \
+			and uid <= self.configuration.users.system_uid_max
+	def is_unrestricted_system_login(self, login):
+		""" return true if login is system, but inside the range of Licorn®
+			controlled UIDs. """
+		try:
+			return self.is_unrestricted_system_uid(
+				self.login_cache[login])
+		except KeyError:
+			raise exceptions.DoesntExistsException(
+				logging.SYSU_USER_DOESNT_EXIST % login)
 	def is_system_uid(self, uid):
 		""" Return true if uid is system."""
 		return uid < self.configuration.users.uid_min or \
