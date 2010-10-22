@@ -55,6 +55,8 @@ parser.add_option("-r", "--reload", action="store_true", dest="reload",
 	help="reload testsuite. Start from beginning")
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
 	default=False, help="display commands before executing them.")
+parser.add_option("--clean", action="store_true", dest="clean",
+	default=False, help="clean the scenarii directory.")
 
 (options, args) = parser.parse_args()
 
@@ -68,8 +70,14 @@ if os.getuid() != 0 or os.geteuid() != 0:
 		prefunc=prefunc)
 
 def save_state(num, state_type='scenarii'):
+	if options.clean:
+		return
 	open(state_files[state_type],'w').write('%d' % num)
 def get_state(state_type='scenarii'):
+
+	if options.clean:
+		return 0
+#kes t'en pense ? ca se tente
 	if os.path.exists(state_files[state_type]):
 		 return int(open(state_files[state_type]).read())
 	else:
@@ -78,7 +86,11 @@ def clean_state_files():
 	for state_type in state_files:
 		if state_type == 'owner':
 			continue
-		os.unlink(state_files[state_type])
+		try:
+			os.unlink(state_files[state_type])
+		except (IOError, OSError), e:
+				if e.errno != 2:
+					raise e
 
 if options.scenario_number != None:
 	save_state(options.scenario_number)
@@ -92,6 +104,9 @@ if options.reload == True:
 		if e.errno != 2:
 			raise e
 
+# init the list of scenarii (for clean_scenarii_directory())
+scenarii_list = []
+clean = options.clean
 missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
 	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff', '/usr/sbin/slapcat',
@@ -139,6 +154,13 @@ def test_message(msg):
 	""" display a message to stderr. """
 	sys.stderr.write("%s>>> %s%s\n"
 		% (colors[ST_LOG], msg, colors[ST_NO]) )
+def clean_scenarii_directory():
+	""" clean the directory of scenarii in order to remove unused directory """
+	for dir in os.listdir('data/scenarii'):
+		if not dir in scenarii_list:
+			shutil.rmtree('data/scenarii/%s' % dir)
+	logging.notice("Scenarii directory has been cleaned.")
+
 def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
@@ -236,6 +258,7 @@ class ScenarioTest:
 
 		string_to_hash = "%s%s" % (self.context, str(cmds))
 		self.hash = hashlib.sha1(string_to_hash).hexdigest()
+		scenarii_list.append(self.hash)
 		self.base_path = 'data/scenarii/%s' % self.hash
 
 	def SaveOutput(self, cmdnum, output, code):
@@ -380,6 +403,8 @@ class ScenarioTest:
 	def Run(self, options=[], batch=False, inverse_test=False):
 		""" run each command of the scenario, in turn. """
 
+		if clean:
+			return
 		start_scenario = get_state()
 
 		if self.sce_number < start_scenario:
@@ -387,19 +412,20 @@ class ScenarioTest:
 			return
 
 		logging.notice('Running %s' % stylize(ST_NAME, self.name))
-
 		for cmdnum in self.cmds:
 			self.RunCommand(cmdnum)
-
+		logging.notice('End run %s' % stylize(ST_NAME, self.name))
 		save_state(self.sce_number+1)
 
-		logging.notice('End run %s' % stylize(ST_NAME, self.name))
 	@staticmethod
 	def reinit():
 		ScenarioTest.counter = 0
 		save_state(0)
 def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
+
+	if options.clean:
+		return
 
 	test_message('''cleaning system from previous runs.''')
 
@@ -441,6 +467,9 @@ def clean_system():
 def clean_dir_contents(directory):
 	""" Totally empty the contents of a given directory, the licorn way. """
 
+	if options.clean:
+		return
+
 	if verbose:
 		test_message('Cleaning directory %s.' % directory)
 
@@ -479,6 +508,11 @@ def make_backups(mode):
 
 	test_message('''made backups of system config files.''')
 def compare_delete_backups(mode):
+	""" """
+
+	if options.clean:
+		return
+
 	test_message('''comparing backups of system files after tests for side-effects alterations.''')
 
 	if mode == 'unix':
@@ -605,8 +639,6 @@ def test_regexes():
 	""" Try funky strings to make regexes fail (they should not)."""
 
 	# TODO: test regexes directly from defs in licorn.core….
-
-	test_message('''starting regexes tests.''')
 	regexes_commands = []
 
 	# groups related
@@ -639,8 +671,6 @@ def test_regexes():
 	ScenarioTest(regexes_commands).Run()
 
 	# TODO: profiles ?
-
-	test_message('''regexes tests finished.''')
 def test_groups(context):
 	"""Test ADD/MOD/DEL on groups in various ways."""
 
@@ -1061,7 +1091,7 @@ def test_groups(context):
 	# FIXME: verify deletion of groups + deletion of users…
 	# FIXME: idem last group, verify users account were archived, shared dir ws archived.
 
-	test_message('''groups related tests finished.''')
+
 def test_users(context):
 
 	def chk_acls_cmds(dir):
@@ -2082,22 +2112,26 @@ if __name__ == "__main__":
 				test_profiles(ctx)
 				test_privileges(ctx)
 				test_imports(ctx)
+
 				compare_delete_backups(ctx)
 				clean_system()
 
 				save_state(ctxnum + 1, state_type='context')
 				ctx_will_change = True
 		# TODO: test_concurrent_accesses()
-
-		clean_state_files()
-		logging.notice("Testsuite terminated successfully.")
-		test_message('''Don't forget to test massive del/mod/chk with -a '''
-			''' argument (not tested because too dangerous)''')
+				clean_state_files()
+				logging.notice("Testsuite terminated successfully.")
+				test_message('''Don't forget to test massive del/mod/chk with -a '''
+					''' argument (not tested because too dangerous)''')
 	finally:
-		# give back all the scenarii tree to calling user.
-		uid, gid = [ int(x) for x in \
-			open(state_files['owner']).read().strip().split(',') ]
-		logging.notice('giving back all scenarii data to %s:%s.' % (
-			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
-		for entry in fsapi.minifind('data', followlinks=True):
-			os.chown(entry, uid, gid)
+		# clean the scenarii directory
+		if options.clean:
+			clean_scenarii_directory()
+		else:
+			# give back all the scenarii tree to calling user.
+			uid, gid = [ int(x) for x in \
+				open(state_files['owner']).read().strip().split(',') ]
+			logging.notice('giving back all scenarii data to %s:%s.' % (
+				stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
+			for entry in fsapi.minifind('data', followlinks=True):
+				os.chown(entry, uid, gid)
