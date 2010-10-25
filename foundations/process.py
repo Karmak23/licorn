@@ -155,16 +155,22 @@ def whoami():
 	#from subprocess import Popen, PIPE
 	#return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
 	return pwd.getpwuid(os.getuid()).pw_name
-def refork_as_root_or_die(process_title='licorn-generic', prefunc=None):
+def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
+	group='admins'):
 	""" check if current user is root. if not, check if he/she is member of
 		group "admins" and then refork ourselves with sudo, to gain root
 		privileges, needed for Licorn® daemon.
 		Do it with traditionnal syscalls, because the rest of Licorn® is not
 		initialized if we run this function. """
 
-	group = 'admins'
+	try:
+		gmembers = grp.getgrnam(group).gr_mem
+	except KeyError:
+		logging.error('''group %s doesn't exist and we are not root, '''
+			'''aborting. Please manually relaunch this program with root '''
+			'''privileges for the group to be created.''' % group)
 
-	if pwd.getpwuid(os.getuid()).pw_name in grp.getgrnam(group).gr_mem:
+	if pwd.getpwuid(os.getuid()).pw_name in gmembers:
 
 		cmd=[ process_title ]
 		cmd.extend(sys.argv)
