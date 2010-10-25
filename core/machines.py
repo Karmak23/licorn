@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn foundations - http://dev.licorn.org/documentation/foundations
+Licorn core - http://dev.licorn.org/documentation/core
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2

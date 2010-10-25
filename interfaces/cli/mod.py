@@ -368,12 +368,6 @@ def mod_profile(opts, args, users, groups, profiles, **kwargs):
 						batch=opts.batch, auto_answer=opts.auto_answer,
 						listener=opts.listener)
 	assert ltrace('mod', '< mod_profile()')
-def shut(i, listener=None):
-	""" FIXME: find a way to get the listener, else we have no output.
-	opts.listener doesn't work here because opts doesn't yet exist.
-
-	putting the def in mo_machines isn't compatible with multithreading.Pool."""
-	return machines.shutdown(i, listener=listener)
 def mod_machine(opts, args, machines, **kwargs):
 	""" Modify a machine. """
 
@@ -397,12 +391,12 @@ def mod_machine(opts, args, machines, **kwargs):
 				(opts.hostname, machines.hostname_to_mid),
 				(opts.mid, machines.confirm_mid)
 			],
-			selection)
+			default_selection=selection)
 
-	if opts.shutdown:
-		from multiprocessing import Pool
-		p = Pool(5)
-		p.map(shut, mids_to_mod)
+	for machine_addr in mids_to_mod:
+		if opts.shutdown:
+			machines.shutdown(machine_addr, warn_users=opts.warn_users,
+				listener=opts.listener)
 def mod_keyword(opts, args, keywords, **kwargs):
 	""" Modify a keyword. """
 
