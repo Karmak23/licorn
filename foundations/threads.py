@@ -135,7 +135,11 @@ class LicornJobThread(LicornBasicThread):
 
 		# first occurence: we need to wait until time if it is set.
 		if self.time:
-			time.sleep(self.time - time.time())
+			# only sleep 'til initial time if not already passed. Else just run
+			# the loop, to have the job done as soon as possible.
+			first_delay = self.time - time.time()
+			if first_delay > 0:
+				time.sleep(first_delay)
 		elif self.delay:
 			# we just have to wait a delay before starting (this is a
 			# simple timer thread).

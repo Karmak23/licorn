@@ -24,7 +24,7 @@ current_app = {
 	"author"     : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import os, signal
+import os, signal, time
 
 from licorn.foundations         import process, logging, options
 from licorn.foundations.objects import MessageProcessor
@@ -128,8 +128,13 @@ if __name__ == "__main__":
 		#syncer     = ServerSyncer(dname)
 		#searcher   = FileSearchServer(dname)
 		#cache      = Cache(keywords, dname)
+
+		# launch a machine status update every 30 seconds, but the first update
+		# will be in only 1.0 seconds, else we don't have any info when opening
+		# the WMI right now.
 		msu         = LicornJobThread(dname, machines.update_statuses,
-						delay=30.0, tname='MachineStatusesUpdater')
+						time=(time.time()+1.0), delay=30.0,
+						tname='MachineStatusesUpdater')
 		aclchecker  = ACLChecker(None, dname)
 		inotifier    = INotifier(aclchecker, None, configuration, groups,
 			dname, opts.no_boot_check)
