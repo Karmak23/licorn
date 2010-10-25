@@ -1362,6 +1362,43 @@ def test_users(context):
 		descr="test user interactive commands"
 		).Run()
 
+	ScenarioTest([
+		# should fail
+		ADD + [ 'user', uname, '--system', '--home=/dev', '-v' ],
+		ADD + [ 'user', uname, '--system', '--home=/dev', '--force', '-v' ],
+		# should fail
+		ADD + [ 'user', uname, '--system', '--home=/proc', '-v' ],
+		ADD + [ 'user', uname, '--system', '--home=/proc', '--force', '-v' ],
+		# should fail
+		ADD + [ 'user', uname, '--system', '--home=/usr/share/homes/test',
+			'-v' ],
+		ADD + [ 'user', uname, '--system', '--home=/usr/share/homes/test',
+			'--force', '-v' ],
+		# should succeed
+		ADD + [ 'user', '%s' % uname, '--system', '--home=/var/homes/test',
+			'-v' ],
+		DEL + [ 'user', uname, '-v' ],
+		# should fail
+		ADD + [ 'user', uname, '--system', '--home=/var/tmp', '-v' ],
+		ADD + [ 'user', uname, '--system', '--home=/var/tmp', '--force', '-v' ],
+		# should fail (it will create the user, but with another home dir)
+		ADD + [ 'user', uname ],
+		ADD + [ 'user', '%s2' % uname, '--home=/home/user/%s' % uname,
+			'--force', '-v' ],
+		DEL + [ 'user', uname, '-v' ],
+		DEL + [ 'user', '%s2' % uname, '-v' ],
+		# should fail
+		ADD + [ 'user', uname, '--system' ],
+		ADD + [ 'user', '%s2' % uname, '--home=/home/users/%s' % uname,
+			'--system', '-v' ],
+		ADD + [ 'user', '%s2' % uname, '--home=/home/users/%s' % uname,
+			'--system', '--force', '-v' ],
+		DEL + [ 'user', uname, '-v' ],
+		],
+		context=context,
+		descr="test adding user with specified --home option"
+		).Run()
+
 	uname = 'ingroups_test'
 
 	ScenarioTest([
