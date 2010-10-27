@@ -108,7 +108,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		assert ltrace('configuration', '< __init__()')
 
 	#
-	# make configuration be usable as a context manager.
+	# make LicornConfiguration object be usable as a context manager.
 	#
 	def __enter__(self):
 		pass
@@ -327,10 +327,11 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			self.backends[backend] = self.available_backends[backend]
 			del self.available_backends[backend]
 
-			logging.notice('''successfully enabled %s backend, reloading '''
-				'''controllers.''' % backend, listener=listener)
+			logging.notice('''successfully enabled %s backend.'''% backend,
+				listener=listener)
 
-			self.find_new_prefered_backend(listener=listener)
+			if self.find_new_prefered_backend(listener=listener):
+				raise exceptions.NeedRestartException('backends changed.')
 
 			for controller in self.controllers:
 				controller.reload()
@@ -352,11 +353,12 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				got_to_find_new_prefered = True
 			self.available_backends[backend] = self.backends[backend]
 			del self.backends[backend]
-			logging.notice('''successfully disabled %s backend, reloading '''
-				'''controllers.''' % backend, listener=listener)
+			logging.notice('''successfully disabled %s backend. ''' % backend,
+				listener=listener)
 
 			if got_to_find_new_prefered:
-				self.find_new_prefered_backend(listener=listener)
+				if self.find_new_prefered_backend(listener=listener):
+					raise exceptions.NeedRestartException('backends changed.')
 
 			for controller in self.controllers:
 				controller.reload()
@@ -365,19 +367,21 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 		""" iterate through active backends and find the prefered one.
 			We use a copy, in case there is no prefered yet: self.backends
 			will change and this would crash the for_loop. """
+
+		changed = False
+
 		for backend_name in self.backends.copy():
 			if self.backends.has_key('prefered'):
 				if self.backends[backend_name].priority \
 					> self.backends['prefered'].priority:
 					self.backends['prefered'] = \
 						self.backends[backend_name]
+					changed = True
 			else:
 				self.backends['prefered'] = self.backends[backend_name]
+				changed = True
 
-		# FIXME: this doesn't belong here, but could help fixing #380.
-		reload(fsapi)
-		reload(fsapi.posix1e)
-		logging.info('''reloaded posix1e module.''', listener=listener)
+		return changed
 	def load_plugins(self):
 		""" Load Configuration backends, and put the one with the greatest
 		priority at the beginning of the backend list. This makes it accessible

@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-import sys, time, Pyro.core
+import os, signal, sys, time, Pyro.core
 from threading import Thread
 
 from licorn.foundations           import options, exceptions, logging
@@ -117,6 +117,10 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 	except KeyboardInterrupt, e:
 		logging.warning(logging.GENERAL_INTERRUPTED)
+
+	except exceptions.NeedRestartException, e:
+		logging.notice('daemon needs a restart, sending USR1.')
+		os.kill(e.pid, signal.SIGUSR1)
 
 	except exceptions.LicornError, e:
 		logging.error('%s (%s, errno=%s).' % (

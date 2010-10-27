@@ -83,17 +83,19 @@ if __name__ == "__main__":
 		pids_to_wake.append(opts.pid_to_wake)
 
 	if configuration.licornd.wmi.enabled:
-		pids_to_wake.append(fork_wmi(opts))
+		wmi_pid = fork_wmi(opts)
+		pids_to_wake.append(wmi_pid)
 	else:
+		wmi_pid = None
 		logging.info('''%s: not starting WMI, disabled by '''
 			'''configuration directive.''' % pname)
 
-	# do this after having daemonized, else it doesn't show in the log, but on
-	# the terminal.
-	logging.notice("%s(%d): starting all threads (this can take a while)." % (
+	# log things after having daemonized, else it doesn't show in the log,
+	# but on the terminal.
+	logging.notice("%s(%d): starting all threads." % (
 		pname, os.getpid()))
 
-	setup_signals_handler(pname, configuration, threads)
+	setup_signals_handler(pname, configuration, threads, opts, wmi_pid)
 
 	if configuration.licornd.role == "client":
 		pass

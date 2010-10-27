@@ -100,6 +100,11 @@ def terminate_cleanly(signum, frame, pname, configuration=None, threads=[]):
 		logging.notice('%s: signal %s received, shutting down…' % (
 			pname, signum))
 
+	clean_before_terminating(pname, threads, configuration)
+
+	logging.progress("%s: exiting." % pname)
+	sys.exit(0)
+def clean_before_terminating(pname, threads, configuration):
 	for th in reversed(threads):
 		# stop threads in the reverse order they were started.
 		th.stop()
@@ -121,22 +126,48 @@ def terminate_cleanly(signum, frame, pname, configuration=None, threads=[]):
 
 	if configuration:
 		configuration.CleanUp()
+def restart_daemon(pname, options, threads, configuration, wmi_pid):
+	logging.notice('%s: SIGUSR1 received, restarting completely.' % pname)
 
-	logging.progress("%s: exiting." % pname)
+	if wmi_pid:
+		logging.progress("%s: killing WMI child before restart." % pname)
 
-	# be sure there aren't any exceptions left anywhere…
-	time.sleep(0.5)
+		os.kill(wmi_pid, signal.SIGKILL)
 
-	sys.exit(0)
-def setup_signals_handler(pname, configuration=None, threads=[]):
+	clean_before_terminating(pname, threads, configuration)
+
+	# close every file descriptor (except stdin/out/err, used for logging and
+	# on the console). This is needed for Pyro thread to release its socket,
+	# else it's done too late and on restart the port can't be rebinded on.
+	os.closerange(3, 32)
+
+	cmd = [ 'licornd' ]
+
+	# we need to rebuild all command line options, else the new process will
+	# not behave exactly like the old. This could lead it to fork into the
+	# background, start the WMI on another socket, or such strange things.
+	if options.verbose > 0:
+		cmd.append('-%s' % ('v' * (options.verbose-1)))
+	if options.wmi_listen_address:
+		cmd.extend(['-W', options.wmi_listen_address])
+	if not options.daemon:
+		cmd.append('-D')
+
+	os.execvp('licornd', cmd)
+def setup_signals_handler(pname, configuration=None, threads=[], options=None,
+	wmi_pid=None):
 	""" redirect termination signals to a the function which will clean everything. """
 
 	def terminate(signum, frame):
 		return terminate_cleanly(signum, frame, pname, configuration, threads)
 
+	def restart(signum, frame):
+		return restart_daemon(pname, options, threads, configuration, wmi_pid)
+
 	signal.signal(signal.SIGINT, terminate)
 	signal.signal(signal.SIGTERM, terminate)
 	signal.signal(signal.SIGHUP, terminate)
+	signal.signal(signal.SIGUSR1, restart)
 
 	if pname == 'licornd/wmi':
 		# wmi will receive this signal from master when all threads are started,
