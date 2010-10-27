@@ -71,6 +71,15 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				u, c = self.backends[bkey].load_users()
 				self.users.update(u)
 				self.login_cache.update(c)
+	def reload_backend(self, backend_name):
+		""" Reload only one backend data (called from inotifier). """
+
+		assert ltrace('users', '| reload_backend(%s)' % backend_name)
+
+		with self.lock:
+			u, c = self.backends[backend_name].load_users()
+			self.users.update(u)
+			self.login_cache.update(c)
 	def set_profiles_controller(self, profiles):
 		self.profiles = profiles
 	def set_groups_controller(self, groups):

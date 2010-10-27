@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, time, gamin
 
-from threading   import Thread, Event, Semaphore, RLock
+from threading   import Thread, Event, Semaphore, RLock, Timer
 from collections import deque
 
 from licorn.foundations           import logging, styles
@@ -72,8 +72,61 @@ class INotifier(Thread, Singleton):
 		if disable_boot_check:
 			self.mon.no_exists()
 
+		self.watch_configuration_files()
+
 		for gid in groups.Select(filters.STD):
 			self.add_group_watch(gid)
+	def watch_configuration_files(self):
+		""" monitor important configuration files, to know when another program
+			touch them, and apply appropriate actions on change. """
+
+		def reload_controller_unix(path, controller, *args, **kwargs):
+			""" Timer() callback for watch threads.
+			*args and **kwargs are not used. """
+			logging.notice('%s: configuration file %s changed, reloading controller %s.' %
+				(self.name, styles.stylize(styles.ST_PATH, path), controller))
+			controller.reload_backend('unix')
+
+		def event_on_config_file(path, event, controller, index):
+			""" We only watch GAMCreated events, because when
+				{user,group}{add,mod,del} change their files, they create it
+				from another, everytime (for atomic reasons). We, in licorn
+				overwrite them, and this will generate a GAMChanged event,
+				which permits us to distringuish between the different uses.
+			"""
+			assert ltrace('inotifier',
+				'gam event %s on %s -> controller %s (index %s)' % (
+				gamin_events[event], path, controller, index))
+
+			if event == gamin.GAMCreated:
+				create_thread = False
+				try:
+					if not self.conffiles_threads[index].isAlive():
+						self.conffiles_threads[index].join()
+						del self.conffiles_threads[index]
+						create_thread = True
+				except (KeyError, AttributeError):
+					create_thread = True
+
+				if create_thread:
+					self.conffiles_threads[index] = Timer(0.25,
+						reload_controller_unix, [ path, controller ])
+					self.conffiles_threads[index].start()
+
+		self.conffiles_threads = {}
+
+		def event_on_passwd(path, event):
+			return event_on_config_file(path, event, self.users, 1)
+		def event_on_group(path, event):
+			return event_on_config_file(path, event, self.groups, 2)
+
+		for watched_file, callback_func in (
+				('/etc/passwd', event_on_passwd),
+				('/etc/shadow', event_on_passwd),
+				('/etc/group', event_on_group),
+				('/etc/gshadow', event_on_group)
+			):
+			self.add_watch(watched_file, callback_func,	is_dir=False)
 	def del_group_watch(self, gid):
 		""" delete a group watch. """
 		self.remove_watch("%s/%s/%s" % (
@@ -263,21 +316,22 @@ class INotifier(Thread, Singleton):
 		"""
 
 		assert ltrace('inotifier', '| add_watch(path=%s, func=%s, is_dir=%s)' % (
-			path, func,is_dir))
+			path, func, is_dir))
 
 		with self.lock:
-			#self.expected[gamin.GAMExists].append(path)
-			self.expected[gamin.GAMEndExist].append(path)
-
 			if is_dir:
 				self.mon.watch_directory(path, func)
+				self.expected[gamin.GAMEndExist].append(path)
+				attribute = 'directory'
 			else:
 				self.mon.watch_file(path, func)
+				attribute = 'file'
 
-			logging.info('''%s: %s inotify watch for %s [total: %d] '''
+			logging.info('''%s: %s inotify watch for %s %s [total: %d] '''
 				'''[to_add: %d] [to_rem: %d].''' % (
 				self.name,
 				styles.stylize(styles.ST_OK, 'added'),
+				attribute,
 				styles.stylize(styles.ST_PATH, path),
 				len(self.mon.objects),
 				len(self._to_add),
@@ -422,6 +476,11 @@ class INotifier(Thread, Singleton):
 				raise
 
 		del self.mon
+
+		for timer in self.conffiles_threads.itervalues():
+			if timer.isAlive():
+				timer.cancel()
+			timer.join()
 
 		logging.progress("%s: thread ended." % (self.name))
 	def stop(self):

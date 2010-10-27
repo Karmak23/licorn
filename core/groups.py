@@ -80,12 +80,22 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				self.name_cache = {}
 
 				for bkey in self.backends.keys():
-					if bkey=='prefered':
+					if bkey == 'prefered':
 						continue
 					self.backends[bkey].set_groups_controller(self)
 					g, c = self.backends[bkey].load_groups()
 					self.groups.update(g)
 					self.name_cache.update(c)
+	def reload_backend(self, backend_name):
+		""" reload only one backend contents (used from inotifier). """
+		assert ltrace('groups', '| reload_backend(%s)' % backend_name)
+
+		# lock users too, because we feed the members cache inside.
+		with self.lock:
+			with self.users.lock:
+				g, c = self.backends[backend_name].load_groups()
+				self.groups.update(g)
+				self.name_cache.update(c)
 	def GetHiddenState(self):
 		""" See if /home/groups is readable or not. """
 
