@@ -471,9 +471,11 @@ class INotifier(Thread, Singleton):
 						time.sleep(0.001)
 						time_count += 10
 
-		except:
-			if not self._stop_event.isSet():
-				raise
+		except Exception, e:
+			if self._stop_event.isSet():
+				logging.warning('%s: ignored exception while stopping: %s' % e)
+			else:
+				raise e
 
 		del self.mon
 
