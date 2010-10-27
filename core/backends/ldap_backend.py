@@ -34,7 +34,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		UGMBackend.__init__(self, configuration, users, groups)
 
-		assert ltrace('ldap', '| __init__().')
+		assert ltrace('ldap', '| __init__()')
 
 		self.name              = "ldap"
 		self.compat            = ('ldap')
@@ -42,7 +42,6 @@ class ldap_controller(UGMBackend, Singleton):
 		self.files             = LicornConfigObject()
 		self.files.ldap_conf   = '/etc/ldap.conf'
 		self.files.ldap_secret = '/etc/ldap.secret'
-
 		ldap_controller.init_ok = True
 
 	def __del__(self):
@@ -97,7 +96,7 @@ class ldap_controller(UGMBackend, Singleton):
 
 		self.load_defaults()
 
-		assert ltrace('ldap', '> initialize().')
+		assert ltrace('ldap', '> initialize()')
 
 		try:
 			for (key, value) in readers.simple_conf_load_dict(
@@ -182,7 +181,7 @@ class ldap_controller(UGMBackend, Singleton):
 				# another problem worth noticing.
 				raise e
 
-		assert ltrace('ldap', '< initialize() %s.' % self.available)
+		assert ltrace('ldap', '< initialize(%s)' % self.available)
 		return self.available
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
@@ -260,6 +259,10 @@ class ldap_controller(UGMBackend, Singleton):
 		return True
 	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
+
+		if not self.available:
+			return
+
 		assert ltrace('ldap', '> check()')
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
