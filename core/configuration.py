@@ -269,6 +269,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 			'licornd.wmi.enabled': True,
 			'licornd.wmi.listen_address': 'localhost',
 			'licornd.role': 'server',
+			'experimental.enabled': False,
 			}
 
 		self._load_configuration(mandatory_dict)
