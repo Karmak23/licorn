@@ -19,21 +19,21 @@ build: configure i18n
 	chmod a+x daemon/main.py
 
 binary-install: build
-	mkdir -p $(DESTDIR) $(PROJECT_LIB_DIR) $(DESTDIR)/usr/bin $(DESTDIR)/usr/sbin $(SHARE_DIR)
-	cp -a interfaces/gui/*.glade $(SHARE_DIR)
-	cp -a interfaces daemon core foundations contrib __init__.py $(PROJECT_LIB_DIR)
+	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)"
+	cp -a interfaces/gui/*.glade "$(SHARE_DIR)"
+	cp -a interfaces daemon core foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
 	( \
 		for executable in $(EXECUTABLES); do \
-		ln -sf $(EXEC_LINK_DIR)/$$executable \
-			$(DESTDIR)/usr/bin/`basename $$executable | sed -e "s%\.py%%g"`; \
+		ln -sf "$(EXEC_LINK_DIR)"/$$executable \
+			"$(DESTDIR)"/usr/bin/`basename $$executable | sed -e "s%\.py%%g"`; \
 		done \
 	)
-	( cd $(DESTDIR)/usr/sbin; ln -sf $(EXEC_LINK_DIR)/daemon/main.py licornd )
-	mkdir -p $(LOCALE_DIR)
-	cp -a locale/* $(LOCALE_DIR)
-	#find src/po -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" $(LOCALE_DIR) \;
-	ln -sf ../$(EXEC_LINK_DIR)/interfaces/wmi $(SHARE_DIR)/wmi
-	ln -sf ../$(EXEC_LINK_DIR)/core/backends/schemas $(SHARE_DIR)/schemas
+	( cd "$(DESTDIR)"/usr/sbin; ln -sf "$(EXEC_LINK_DIR)"/daemon/main.py licornd )
+	mkdir -p "$(LOCALE_DIR)"
+	cp -a locale/* "$(LOCALE_DIR)"
+	#find src/po -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" "$(LOCALE_DIR)" \;
+	ln -sf ../"$(EXEC_LINK_DIR)"/interfaces/wmi "$(SHARE_DIR)"/wmi
+	ln -sf ../"$(EXEC_LINK_DIR)"/core/backends/schemas "$(SHARE_DIR)"/schemas
 
 doc: 
 
