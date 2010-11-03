@@ -1165,7 +1165,7 @@ class LicornConfiguration(Singleton, Pyro.core.ObjBase):
 				data += "%s\n" % styles.stylize(styles.ST_SECRET,
 					self.defaults.admin_group)
 
-				for priv in self.privileges_whitelist:
+				for priv in self.controllers.privileges:
 					data += "%s\n" % priv
 
 			elif args[0] in ('priv', 'privs', 'privileges'):
