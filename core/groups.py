@@ -1012,10 +1012,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							listener=listener)
 					else:
 						self.groups[gid]['memberUid'].append(login)
-
+						self.groups[gid]['memberUid'].sort()
 						# update the users cache.
 						self.users.users[uid]['groups'].append(name)
-
+						self.users.users[uid]['groups'].sort()
 						logging.info("Added user %s to members of %s." % (
 							styles.stylize(styles.ST_LOGIN, login),
 							styles.stylize(styles.ST_NAME, name)),
