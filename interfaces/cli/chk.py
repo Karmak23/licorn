@@ -85,7 +85,7 @@ def chk_group(opts, args, groups, **kwargs):
 			# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 			or (opts.non_interactive and logging.ask_for_repair(
-				'Are you sure you want to check all users ?',
+				'Are you sure you want to check all groups ?',
 				auto_answer=opts.auto_answer) or not opts.non_interactive)
 		):
 			include_id_lists.extend([

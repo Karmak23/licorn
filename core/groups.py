@@ -897,9 +897,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				self.groups[gid]['backend']
 				].save_group(gid)
 
-			logging.info('Changed group %s description to "%s".' % (
+			logging.info('Changed group %s skel to "%s".' % (
 				styles.stylize(styles.ST_NAME, name),
-				styles.stylize(styles.ST_COMMENT, description)
+				styles.stylize(styles.ST_COMMENT, groupSkel)
 				), listener=listener)
 	def AddGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):

@@ -258,7 +258,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		postargs = []
 		for key, val in self.post_args.items():
 			if type(val) == type(''):
-				postargs.append('%s="%s"' % (key, val.replace('"', '\"')))
+				if val in ('True', 'False'):
+					postargs.append('%s=%s' % (key, val))
+				else:
+					postargs.append('%s="%s"' % (key, val.replace('"', '\"')))
 			else:
 				postargs.append('%s=%s' % (key, val))
 

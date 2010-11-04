@@ -189,7 +189,7 @@ def unlock(uri, http_user, login, users=None, **kwargs):
 		w.page(title, data + '%s' + w.page_body_end()),
 		_("Failed to unlock account <strong>%s</strong>!") % login)
 def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
-	users=None, **kwargs):
+	users=None, configuration=None, groups=None, **kwargs):
 	"""lock a user account password."""
 
 	# submit button: forget it.
@@ -419,14 +419,13 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 		)
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-def create(uri, http_user, loginShell, password, password_confirm,
-	profile=None, login="", gecos="", firstname="", lastname="",
-	standard_groups_dest=[], privileged_groups_dest=[],
-	responsible_groups_dest=[], guest_groups_dest=[],
-	standard_groups_source=[], privileged_groups_source=[],
-	responsible_groups_source=[], guest_groups_source=[],
-	create=None, configuration=None, users=None, groups=None, profiles=None,
-	**kwargs):
+def create(uri, http_user, password, password_confirm, loginShell=None,
+	profile=None, login="", gecos="", standard_groups_dest=[],
+	privileged_groups_dest=[], responsible_groups_dest=[],
+	guest_groups_dest=[], standard_groups_source=[],
+	privileged_groups_source=[], responsible_groups_source=[],
+	guest_groups_source=[],	create=None, configuration=None, users=None,
+	profiles=None, **kwargs):
 
 	# forget it; useless
 	del create
@@ -443,11 +442,11 @@ def create(uri, http_user, loginShell, password, password_confirm,
 			data + w.error(_("Password must be at least %d characters long!%s")\
 				% (configuration.users.min_passwd_size, rewind))))
 
+	if loginShell == None:
+		loginShell = configuration.users.default_shell
+
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors',
 		'--password', password ]
-
-	if firstname != '' and lastname != '':
-		command.extend(['--firstname', firstname, '--lastname', lastname])
 
 	for value, argument in (
 		(loginShell, '--shell'),
@@ -610,7 +609,7 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, login, loginShell=None, password="",
-	password_confirm="", firstname="", lastname="", gecos="",
+	password_confirm="", gecos="",
 	standard_groups_source    = [],    standard_groups_dest = [],
 	privileged_groups_source  = [],  privileged_groups_dest = [],
 	responsible_groups_source = [], responsible_groups_dest = [],
