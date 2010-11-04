@@ -165,6 +165,8 @@ def get_machines(opts, args, machines, **kwargs):
 		except KeyError:
 			logging.error("No matching machine found.")
 			return
+	else:
+		machines_to_get = None
 
 	if opts.xml:
 		data = machines.ExportXML(selected=machines_to_get,
