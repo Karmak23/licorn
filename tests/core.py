@@ -10,12 +10,14 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct, stat, shutil
-import gzip
+import gzip, time
 
 from subprocess                import Popen, PIPE, STDOUT
 from licorn.foundations        import pyutils, logging, exceptions, process, fsapi
 from licorn.foundations.styles import *
+from licorn.tests import *
 from licorn.core.configuration import LicornConfiguration
+from optparse import OptionParser
 
 configuration = LicornConfiguration()
 
@@ -38,30 +40,11 @@ system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
 				'licorn/profiles.xml')
 
 bkp_ext = 'licorn'
-
 state_files = {
 	'context':  'data/.ctx_status',
 	'scenarii':	'data/.sce_status',
 	'owner':    'data/.owner'
 	}
-
-from optparse import OptionParser
-parser = OptionParser()
-parser.add_option("-s", "--scenario", dest="scenario_number", type="int",
-	help="start at this scenario number")
-parser.add_option("-c", "--context", dest="context_number", type="int",
-	help="start at this context number")
-parser.add_option("-r", "--reload", action="store_true", dest="reload",
-	help="reload testsuite. Start from beginning")
-parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
-	default=False, help="display commands before executing them.")
-parser.add_option("--clean", action="store_true", dest="clean",
-	default=False, help="clean the scenarii directory.")
-
-(options, args) = parser.parse_args()
-
-verbose = options.verbose
-
 def prefunc():
 	open(state_files['owner'], 'w').write('%s,%s' % (os.getuid(), os.getgid()))
 
@@ -69,44 +52,6 @@ if os.getuid() != 0 or os.geteuid() != 0:
 	process.refork_as_root_or_die(process_title='licorn-testsuite',
 		prefunc=prefunc)
 
-def save_state(num, state_type='scenarii'):
-	if options.clean:
-		return
-	open(state_files[state_type],'w').write('%d' % num)
-def get_state(state_type='scenarii'):
-
-	if options.clean:
-		return 0
-#kes t'en pense ? ca se tente
-	if os.path.exists(state_files[state_type]):
-		 return int(open(state_files[state_type]).read())
-	else:
-		return 0
-def clean_state_files():
-	for state_type in state_files:
-		if state_type == 'owner':
-			continue
-		try:
-			os.unlink(state_files[state_type])
-		except (IOError, OSError), e:
-				if e.errno != 2:
-					raise e
-
-if options.scenario_number != None:
-	save_state(options.scenario_number)
-if options.context_number != None:
-	save_state(options.context_number,state_type='context')
-if options.reload == True:
-	try:
-		clean_state_files()
-		logging.notice('State files deleted.')
-	except (OSError, IOError), e:
-		if e.errno != 2:
-			raise e
-
-# init the list of scenarii (for clean_scenarii_directory())
-scenarii_list = []
-clean = options.clean
 missing_error=False
 for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
 	'/usr/bin/touch', '/bin/chown', '/usr/bin/colordiff', '/usr/sbin/slapcat',
@@ -118,49 +63,6 @@ for binary in ( '/usr/bin/setfacl', '/usr/bin/attr', '/bin/chmod', '/bin/rm',
 
 if missing_error:
 	logging.error('Please install missing packages before continuing.')
-
-curses.setupterm()
-clear = curses.tigetstr('clear')
-def clean_path_name(command):
-	""" return a multo-OS friendly path for a given command."""
-	return ('_'.join(command)).replace(
-		'../', '').replace('./', '').replace('//','_').replace(
-		'/','_').replace('>','_').replace('&', '_').replace(
-		'`', '_').replace('\\','_').replace("'",'_').replace(
-		'|','_').replace('^','_').replace('%', '_').replace(
-		'(', '_').replace(')', '_').replace ('*', '_').replace(
-		' ', '_').replace('__', '_')
-def clear_term():
-	sys.stdout.write(clear)
-	sys.stdout.flush()
-def term_size():
-	#print '(rows, cols, x pixels, y pixels) =',
-	return struct.unpack("HHHH",
-		fcntl.ioctl(
-			sys.stdout.fileno(),
-			termios.TIOCGWINSZ,
-			struct.pack("HHHH", 0, 0, 0, 0)
-			)
-		)
-def cmdfmt(cmd, prefix=''):
-	'''convert a sequence to a colorized string.'''
-	return '%s%s' % (prefix, stylize(ST_NAME, small_cmd(cmd)))
-def cmdfmt_big(cmd, prefix=''):
-	'''convert a sequence to a colorized string.'''
-	return '%s%s' % (prefix, stylize(ST_LOG, small_cmd(cmd)))
-def small_cmd(cmd):
-	return re.sub(r'((sudo|python|-OO) |\.\./interfaces/cli/|\.py\b)', r'', ' '.join(cmd))
-def test_message(msg):
-	""" display a message to stderr. """
-	sys.stderr.write("%s>>> %s%s\n"
-		% (colors[ST_LOG], msg, colors[ST_NO]) )
-def clean_scenarii_directory():
-	""" clean the directory of scenarii in order to remove unused directory """
-	for dir in os.listdir('data/scenarii'):
-		if not dir in scenarii_list:
-			shutil.rmtree('data/scenarii/%s' % dir)
-	logging.notice("Scenarii directory has been cleaned.")
-
 def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
@@ -229,13 +131,12 @@ def strip_moving_data(output):
 		)
 class ScenarioTest:
 	counter = 0
-
 	def __init__(self, cmds, context='std', descr=None):
 
 		self.context = context
-
+		self.counter=None
 		self.sce_number = ScenarioTest.counter
-
+		self.descr = descr
 		# we have to give a unique number to commands in case they are repeated.
 		# this is quite common, to test commands twice (the second call should
 		# fail in that case).
@@ -243,7 +144,7 @@ class ScenarioTest:
 
 		self.name = '%s%s%s%s%s' % (
 			stylize(ST_NAME, 'Scenario #'),
-			stylize(ST_OK, ScenarioTest.counter),
+			stylize(ST_OK, ScenarioTest.counter+1),
 			stylize(ST_NAME, ' (%s)' % descr) if descr else '',
 			stylize(ST_NAME, ', context '),
 			stylize(ST_OK, self.context))
@@ -258,11 +159,26 @@ class ScenarioTest:
 
 		string_to_hash = "%s%s" % (self.context, str(cmds))
 		self.hash = hashlib.sha1(string_to_hash).hexdigest()
-		scenarii_list.append(self.hash)
 		self.base_path = 'data/scenarii/%s' % self.hash
+	def set_number(self, num):
+		self.counter = num
+	def check_for_context(self):
+		""" check if the scenario's context is the same than the user. """
+		changed = False
+		if self.context == 'unix' and str(testsuite.current_context) != 'unix':
+			execute([ 'mod', 'config', '-B', 'ldap'])
+			test_message("Backend changed to UNIX")
+			testsuite.current_context = 'unix'
+			changed = True
+		if self.context == 'ldap' and str(testsuite.current_context) != 'ldap':
+			execute([ 'mod', 'config', '-b', 'ldap'])
+			test_message("Backend changed to LDAP")
+			testsuite.current_context = 'ldap'
+			changed = True
+		if changed:
+			time.sleep(2.5)
 
 	def SaveOutput(self, cmdnum, output, code):
-
 		try:
 			os.makedirs('%s/%s' % (self.base_path, cmdnum))
 		except (OSError, IOError), e:
@@ -302,16 +218,16 @@ class ScenarioTest:
 
 		for cmdcounter in self.cmds:
 			if cmdcounter < highlight_num:
-				data += '	%s\n' % cmdfmt(self.cmds[cmdcounter],
+				data += '	%s\n' % testsuite.cmdfmt(self.cmds[cmdcounter],
 					prefix='  ')
 			elif cmdcounter == highlight_num:
-				data += '	%s\n' % cmdfmt_big(self.cmds[cmdcounter],
+				data += '	%s\n' % testsuite.cmdfmt_big(self.cmds[cmdcounter],
 					prefix='> ')
 			elif cmdcounter > highlight_num:
 				data += '	%s%s\n' % (
-					cmdfmt(self.cmds[cmdcounter],
+					testsuite.cmdfmt(self.cmds[cmdcounter],
 						prefix='  '),
-					'\n	%s' % cmdfmt(u'[…]', prefix='  ') \
+					'\n	%s' % testsuite.cmdfmt(u'[…]', prefix='  ') \
 						if len(self.cmds) > cmdcounter+1 \
 						else '')
 				break
@@ -359,7 +275,7 @@ class ScenarioTest:
 
 %s''' % (
 					stylize(ST_OK, cmdnum+1), stylize(ST_OK, len(self.cmds)),
-					stylize(ST_OK, self.sce_number),
+					stylize(ST_OK, self.sce_number+1),
 					stylize(ST_OK, self.context),
 					stylize(ST_BAD, retcode),
 					stylize(ST_OK, ref_code),
@@ -371,11 +287,11 @@ class ScenarioTest:
 				else:
 					raise exceptions.LicornRuntimeException(
 						'command "%s" failed.\nPath: %s.' % (
-							cmdfmt(self.cmds[cmdnum]), '%s/%s/*' % (
+							testsuite.cmdfmt(self.cmds[cmdnum]), '%s/%s/*' % (
 								self.base_path, cmdnum)))
 			else:
 				logging.notice('command #%d "%s" completed successfully.' % (
-				cmdnum+1, cmdfmt(self.cmds[cmdnum])))
+				cmdnum+1, testsuite.cmdfmt(self.cmds[cmdnum])))
 		else:
 			clear_term()
 
@@ -402,36 +318,16 @@ class ScenarioTest:
 					'''fix code or rerun this test.''')
 	def Run(self, options=[], batch=False, inverse_test=False):
 		""" run each command of the scenario, in turn. """
-
-		if clean:
-			return
-		start_scenario = get_state()
-
-		if self.sce_number < start_scenario:
-			logging.notice('Skipping %s' % stylize(ST_NAME, self.name))
-			return
-
 		logging.notice('Running %s' % stylize(ST_NAME, self.name))
+		self.check_for_context()
 		for cmdnum in self.cmds:
 			self.RunCommand(cmdnum)
 		logging.notice('End run %s' % stylize(ST_NAME, self.name))
-		save_state(self.sce_number+1)
-
-	@staticmethod
-	def reinit():
-		ScenarioTest.counter = 0
-		save_state(0)
 def clean_system():
 	""" Remove all stuff to make the system clean, testsuite-wise."""
-
-	if options.clean:
-		return
-
 	test_message('''cleaning system from previous runs.''')
-
 	# delete them first in case of a previous failed testsuite run.
 	# don't check exit codes or such, this will be done later.
-
 	for argument in (
 		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
 			'''test.responsibilly,utilicateur.accentue,user_test,''' \
@@ -452,24 +348,16 @@ def clean_system():
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
-
 		execute(DEL + argument)
-
 	for directory in (
 		configuration.home_backup_dir,
 		configuration.home_archive_dir
 		):
 		clean_dir_contents(directory)
-
 	execute(ADD + ['group', '--system', 'acl,admins,remotessh,licorn-wmi'])
-
 	test_message('''system cleaned from previous testsuite runs.''')
 def clean_dir_contents(directory):
 	""" Totally empty the contents of a given directory, the licorn way. """
-
-	if options.clean:
-		return
-
 	if verbose:
 		test_message('Cleaning directory %s.' % directory)
 
@@ -506,33 +394,27 @@ def make_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message('''made backups of system config files.''')
+	test_message('''backups of system config files made for context %s.''' %
+		mode)
 def compare_delete_backups(mode):
 	""" """
-
-	if options.clean:
-		return
-
 	test_message('''comparing backups of system files after tests for side-effects alterations.''')
 
 	if mode == 'unix':
-
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
-				log_and_exec([ '/usr/bin/colordiff', '/etc/%s' % file,
+				log_and_exec([ '/usr/bin/diff', '/etc/%s' % file,
 					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)], False,
 				comment="should not display any diff (system has been cleaned).",
 				verb = True)
 				execute([ 'rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
-
 	elif mode == 'ldap':
 		execute([ 'slapcat', '-l', '/tmp/backup.2.ldif'])
-		log_and_exec([ '/usr/bin/colordiff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
+		log_and_exec([ '/usr/bin/diff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
 			False,
 			comment="should not display any diff (system has been cleaned).",
 			verb = True)
 		execute([ 'rm', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'])
-
 	else:
 		logging.error('backup mode not understood.')
 
@@ -570,8 +452,8 @@ def test_integrated_help():
 					program + [ mode, '--help' ]
 					])
 
-	ScenarioTest(commands, descr='''test integrated help of all CLI commands'''
-		).Run()
+	testsuite.add_scenario(ScenarioTest(commands, descr='''test integrated '''
+	'''help of all CLI commands'''))
 def test_get(context):
 	"""Test GET a lot."""
 
@@ -619,7 +501,7 @@ def test_get(context):
 		GET + [ "privileges", "--xml" ],
 		]
 
-	ScenarioTest(commands, context=context, descr='''CLI get tests''').Run()
+	testsuite.add_scenario(ScenarioTest(commands, context=context, descr='''CLI get tests'''))
 def test_find_new_indentifier():
 	#test_message('''starting identifier routines tests.''')
 	assert(pyutils.next_free([5,6,48,2,1,4], 5, 30) == 7)
@@ -668,7 +550,8 @@ def test_regexes():
 		ADD + [ 'user', "--login='**/*-'" ]
 		])
 
-	ScenarioTest(regexes_commands).Run()
+	testsuite.add_scenario(ScenarioTest(regexes_commands,descr='''Test '''
+		'''internal regex'''))
 
 	# TODO: profiles ?
 def test_groups(context):
@@ -683,7 +566,7 @@ def test_groups(context):
 		group,
 		'/%s' % subdir if subdir else '') ]
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
 		chk_acls_cmds(gname),
 		ADD + [ 'group', gname ],
@@ -696,7 +579,7 @@ def test_groups(context):
 			'''try to create again in short mode, '''
 			'''remove various components then check, '''
 			'''then delete group and try to re-delete.'''
-		).Run()
+		))
 
 	gname = 'ACL_tests'
 
@@ -750,7 +633,7 @@ def test_groups(context):
 		for subopt_l1 in ('--auto-no', '--auto-yes', '-b'):
 			for subopt_l2 in ('-v', '-ve', '-vv', '-vve'):
 
-				ScenarioTest([
+				testsuite.add_scenario(ScenarioTest([
 					ADD + [ 'group', gname, '-v' ],
 					break_acl_pre_cmd,
 					CHK + [ 'group', gname, subopt_l1, subopt_l2 ],
@@ -759,11 +642,11 @@ def test_groups(context):
 				],
 				descr='''Various ACLs tests on groups, '''
 					'''with various and combined options''',
-				context=context).Run()
+				context=context))
 
 	gname = 'MOD_tests'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
 		MOD + [ "group", "--name=%s" % gname, "--skel=/etc/doesntexist" ],
 		MOD + [ "group", '--name=%s' % gname, '--not-permissive' ],
@@ -775,11 +658,11 @@ def test_groups(context):
 		],
 		descr='''modify with a non-existing profile, re-make not-permissive, '''
 			'''make permissive.''',
-		context=context).Run()
+		context=context))
 
 	gname = 'SYSTEM-test'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', "--name=%s" % gname, "--system" ],
 		GET + [ 'groups' ],
 		CHK + [ "group", "-v", "--name=%s" % gname ],
@@ -788,9 +671,9 @@ def test_groups(context):
 		CHK + [ "group", "-v", "--name=%s" % gname ]
 		],
 		descr='''add --system, check, delete and recheck.''',
-		context=context).Run()
+		context=context))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '--gid=1520' ],
 		GET + [ 'groups', '-la' ],
 		DEL + ["group", gname ],
@@ -805,11 +688,11 @@ def test_groups(context):
 		GET + [ 'groups', '-la' ]
 		],
 		context=context,
-		descr='''ADD and DEL groups with fixed GIDs (ONE should fail).''').Run()
+		descr='''ADD and DEL groups with fixed GIDs (ONE should fail).'''))
 
 	gname = 'SKEL-tests'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + ["group", "--name=%s" % gname, "--skel=/etc/skel",
 			"--description='Vive les skel'"],
 		GET + [ 'groups', '-la' ],
@@ -817,13 +700,13 @@ def test_groups(context):
 		GET + [ 'groups', '-la' ]
 		],
 		descr='''ADD group with specified skel and descr''',
-		context=context).Run()
+		context=context))
 
 	gname = 'ARCHIVES-test'
 
 	clean_dir_contents(configuration.home_archive_dir)
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
 		[ 'touch', 		"%s/%s/%s/test.txt" % (
 			configuration.defaults.home_base_path,
@@ -845,14 +728,14 @@ def test_groups(context):
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
 				'''shared dir contents, ensure #256 if off.'''
-		).Run()
+		))
 
 	clean_dir_contents(configuration.home_archive_dir)
 
 	uname = 'user_test'
 	gname = 'group_test'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--login=%s' % uname ],
 		ADD + [ 'group', '--name=%s' % gname ],
 		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname ],
@@ -866,10 +749,10 @@ def test_groups(context):
 		context=context,
 		descr='''check if a user is assigned to a specified group and if'''
 				''' the user list is up to date when the group is deleted.'''
-		).Run()
+		))
 
 	#fix #259
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname ],
 		[ 'rm', '-vrf', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
@@ -880,9 +763,9 @@ def test_groups(context):
 		context=context,
 		descr='''check the message when a group (wich group dir has been '''
 			'''deleted) is deleted (avoids #259).'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		# should fail because gid 50 is "staff" on debian systems.
 		ADD + [ 'group', '--name=%s' % gname, '--gid=50', '-v' ],
 		GET + [ 'groups', '50' ],
@@ -908,12 +791,12 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''check if add 2 groups with same GID produce an error (avoid #262)'''
-		).Run()
+		))
 
 	uname = 'grp-acl-user'
 	gname = 'GRP-ACL-test'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', uname, '-v' ],
 		ADD + [ 'group', gname, '-v' ],
 		chk_acls_cmds(gname),
@@ -936,7 +819,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''avoid #268'''
-		).Run()
+		))
 
 	# don't test this one on other context than Unix. The related code is
 	# generic (doesn't lie in backends) and the conditions to reproduce it are
@@ -946,7 +829,7 @@ def test_groups(context):
 		uname = 'utest_267'
 		gname = 'gtest_267'
 
-		ScenarioTest([
+		testsuite.add_scenario(ScenarioTest([
 			ADD + [ 'user', uname, '-v' ],
 			ADD + [ 'group', gname, '-v' ],
 			GET + [ 'users', '-l' ],
@@ -975,11 +858,11 @@ def test_groups(context):
 			],
 			context=context,
 			descr='''avoid #267'''
-			).Run()
+			))
 
 	#fix #297
 	gname = 'group_test'
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
 		[ 'get', 'group', gname ],
 		ADD + [ 'privileges', '--name=%s' % gname, '-v'],
@@ -991,10 +874,10 @@ def test_groups(context):
 		context=context,
 		descr='''Check if privilege list is up to date after group deletion '''
 			'''(fix #297).'''
-		).Run()
+		))
 
 	#fix #293
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '--gid=15200', '-v' ],
 		# should fail (gid already in use)
 		ADD + [ 'group', '--name=%s2' % gname, '--gid=15200', '-v' ],
@@ -1009,10 +892,10 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''tests of groups commands with --gid option (fix #293)'''
-		).Run()
+		))
 
 	# fix #286
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
 		GET + [ 'groups' ],
 		GET + [ 'group', gname ],
@@ -1035,9 +918,9 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''test command get group <gid|group> (fix #286)'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-v' ],
 		GET + [ 'groups', '-l' ],
 		MOD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '''--description'''
@@ -1073,7 +956,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr="test groups interactive commands"
-		).Run()
+		))
 
 	# TODO: test other mod group arguments.
 
@@ -1102,7 +985,7 @@ def test_users(context):
 
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--login=%s' % uname, '-v' ],
 		GET + [ 'users' ],
 		#should fail (incorrect shell)
@@ -1115,10 +998,10 @@ def test_users(context):
 		context=context,
 		descr='''check if a user can be modified with an incorrect shell and '''
 			'''with a correct shell'''
-		).Run()
+		))
 
 	# fix #275
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		GET + [ 'users', '-a' ],
 		# should be OK
 		ADD + [ 'user', '--login=%s' % uname, '--uid=1100' ],
@@ -1138,10 +1021,10 @@ def test_users(context):
 		],
 		context=context,
 		descr='''User tests with --uid option (avoid #273)'''
-		).Run()
+		))
 
 	# fix #286
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--name=%s' % uname, '-v' ],
 		GET + [ 'users' ],
 		GET + [ 'user', uname ],
@@ -1164,10 +1047,10 @@ def test_users(context):
 		],
 		context=context,
 		descr='''test command get user <uid|user> (fix #286)'''
-		).Run()
+		))
 
 	#fix #284
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--firstname=Robin', '--lastname=Lucbernet', '-v' ],
 		ADD + [ 'user', '--firstname=Robin',
 			'--lastname=LucbernetLucbernetLucbernetLucbernetLucbernetLucbernet',
@@ -1179,10 +1062,10 @@ def test_users(context):
 		context=context,
 		descr='''test add user with --firstname and --lastname options '''
 			'''(fix #284)'''
-		).Run()
+		))
 
 	#fix #182
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
 		ADD + [ 'group', '--name=%s2' % gname, '-v' ],
 		ADD + [ 'group', '--name=%s3' % gname, '-v' ],
@@ -1204,10 +1087,10 @@ def test_users(context):
 		],
 		context=context,
 		descr='''modify one or more parameters of a user (avoid #181 #197)'''
-		).Run()
+		))
 
 	#fix #248
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		# should work but doesn't record the specfied home dir
 		# (non sytem user can't specify home dir)
 		ADD + [ 'user', '--login=%s' % uname, '--home=/home/users/folder_test',
@@ -1222,9 +1105,9 @@ def test_users(context):
 		],
 		context=context,
 		descr='''check option --home of user command (fix #248)'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--login=%s' % uname ],
 		GET + [ 'users', uname, '--long' ],
 		MOD + [ 'user', '--login=%s' % uname, '--lock', '-v' ],
@@ -1240,10 +1123,10 @@ def test_users(context):
 		context=context,
 		descr='''check messages of --lock and --unlock on mod user command '''
 			'''and answer of get user --long (avoid #309)'''
-		).Run()
+		))
 
 	pname = 'profil_test'
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name', 'Profil-Test-Name', '--group=profil_test',
 			'-v' ],
 		GET + [ 'profiles' ],
@@ -1254,11 +1137,11 @@ def test_users(context):
 		context=context,
 		descr='''Add a profil and check if it has been affected to a new '''
 			'''user (avoid #277)'''
-		).Run()
+		))
 
 	fname = 'nibor'
 	lname = 'tenrebcul'
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=%s' % lname, '-v' ],
 		GET + [ 'users' ],
 		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=%s' % lname, '-v' ],
@@ -1281,9 +1164,9 @@ def test_users(context):
 		context=context,
 		descr='''check add user with --firstname and --lastname (avoid #303 '''
 			'''#305)'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', uname, '--password=toto', '-v' ],
 		GET + [ 'users' ],
 		ADD + [ 'user', '%s2' % uname, '--password=toto', '--force', '-v' ],
@@ -1298,11 +1181,11 @@ def test_users(context):
 		],
 		context=context,
 		descr='''various password change tests (avoid #184)'''
-		).Run()
+		))
 
 	# scenario not tested with the debian command adduser because it is an
 	# interactive command (for the password).
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		[ 'useradd', 'usertestdebian' ],
 		MOD + [ 'user', 'usertestdebian', '--add-groups=plugdev,adm', '-v' ],
 		GET + [ 'users', '-l' ],
@@ -1313,9 +1196,9 @@ def test_users(context):
 		],
 		context=context,
 		descr='''avoid #169'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname) ],
 		GET + [ 'user', '-l' ],
 		MOD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '''--gecos=This '''
@@ -1360,9 +1243,9 @@ def test_users(context):
 		],
 		context=context,
 		descr="test user interactive commands"
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		# should fail
 		ADD + [ 'user', uname, '--system', '--home=/dev', '-v' ],
 		ADD + [ 'user', uname, '--system', '--home=/dev', '--force', '-v' ],
@@ -1397,11 +1280,11 @@ def test_users(context):
 		],
 		context=context,
 		descr="test adding user with specified --home option"
-		).Run()
+		))
 
 	uname = 'ingroups_test'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s1' % uname, '--in-groups', 'audio,video', '-v' ],
 		ADD + [ 'user', '%s2' % uname, '-G', 'prout,audio,15000,', '--force', '-v' ],
 		ADD + [ 'user', '%s3' % uname, '--add-to-groups',
@@ -1414,91 +1297,10 @@ def test_users(context):
 		],
 		context=context,
 		descr='''verify #383 implementation (fixes #384).'''
-		).Run()
-	""" # start of old test_users() commands
-	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_A")
-	log_and_exec(MOD + " user --login=utilisager.normal -v --add-groups test_users_B")
-
-	# should produce nothing, because nothing is wrong.
-	log_and_exec(CHK + " group -v --name test_users_B")
-
-	os.system("rm ~utilisager.normal/test_users_A")
-
-	# all must be OK, extended checks are not enabled, the program will not "see" the missing link.
-	log_and_exec(CHK + " group -v --name test_users_A")
-
-	# the link to group_A isn't here !
-	log_and_exec(CHK + " group -vv --name test_users_A --extended --auto-no",
-		True, 7, comment = "a user lacks a symlink.")
-	log_and_exec(CHK + " group -vv --name test_users_A --extended --auto-yes")
-
-	# the same check, but checking from users.py
-	#os.system("rm ~utilisager.normal/test_users_A")
-	#log_and_exec(CHK + " user --name utilisager.normal")
-	# not yet implemented
-	#log_and_exec(CHK + " user --name utilisager.normal --extended --auto-no", True, 7, comment="user lacks symlink")
-	#log_and_exec(CHK + " user --name utilisager.normal --extended --auto-yes")
-
-	# checking for Maildir repair capacity…
-	if configuration.users.mailbox_type == configuration.MAIL_TYPE_HOME_MAILDIR:
-		os.system("rm -rf ~utilisager.normal/" + configuration.users.mailbox)
-		log_and_exec(CHK + " user -v --name utilisager.normal --auto-no",
-			True, 7, comment="user lacks ~/" + configuration.users.mailbox)
-		log_and_exec(CHK + " user -v --name utilisager.normal --auto-yes")
-
-	os.system("touch ~utilisager.normal/.dmrc ; chmod 666  ~utilisager.normal/.dmrc")
-	log_and_exec(CHK + " user -v --name utilisager.normal --auto-yes")
-
-	os.system("mv -f ~utilisager.normal/test_users_B ~utilisager.normal/mon_groupe_B_préféré")
-	# all must be ok, the link is just renamed…
-	log_and_exec(CHK + " group -vv --name test_users_B --extended")
-
-	# FIXME: verify the user can create things in shared group dirs.
-
-	log_and_exec(MOD + " user --login=utilisager.normal --del-groups test_users_A")
-
-	# should fail
-	log_and_exec(MOD + " user --login=utilisager.normal --del-groups test_users_A",
-		comment = "already not a member.")
-
-	log_and_exec(ADD + " user --login test.responsibilly --profile responsibilisateurs")
-
-	log_and_exec(MOD + " profile --group utilisagers --add-groups cdrom")
-	log_and_exec(MOD + " profile --group utilisagers --add-groups cdrom,test_users_B")
-
-	log_and_exec(MOD + " profile --group utilisagers --apply-groups")
-
-
-	log_and_exec(MOD + " profile --group responsibilisateurs --add-groups plugdev,audio,test_users_A")
-	log_and_exec(MOD + " profile --group responsibilisateurs --del-groups audio")
-
-	log_and_exec(MOD + " profile --group responsibilisateurs --apply-groups")
-
-	# clean the system
-	log_and_exec(DEL + " user --login utilicateur.accentue")
-	log_and_exec(DEL + " user --login utilisateur.accentuen2",
-		True, 5, comment = "this user has *NOT* been created previously.")
-	log_and_exec(DEL + " profile -vvv --group utilisagers --del-users --no-archive")
-
-	#os.system(GET + " users")
-
-	log_and_exec(DEL + " profile --group responsibilisateurs", True, 12,
-		comment = "there are still some users in the pri group of this profile.")
-	log_and_exec(DEL + " group --name=test_users_A --del-users --no-archive")
-
-	log_and_exec(DEL + " user --login test.responsibilly")
-	# this should work now that the last user has been deleted
-	log_and_exec(DEL + " profile --group responsibilisateurs")
-	log_and_exec(DEL + " group --name=test_users_B -vv")
-
-	# already deleted before
-	#log_and_exec(DEL + " user --login utilisager.normal")
-	#log_and_exec(DEL + " user --login test.responsibilly")
-	test_message('''users related tests finished.''')
-	""" # end of old test_users() commands
+		))
 def test_imports(context):
 	pname = 'profil_test'
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', pname, '-v' ],
 		ADD + [ 'users', '--filename=data/tests_users.csv',
 			'--profile=%s' % pname ],
@@ -1513,9 +1315,9 @@ def test_imports(context):
 		],
 		context=context,
 		descr='''test user import from csv file'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', pname, '-v' ],
 		ADD + [ 'users', '--filename=data/tests_users.csv',
 			'--profile=%s' % pname, '--lastname-column=0',
@@ -1530,36 +1332,7 @@ def test_imports(context):
 		],
 		context=context,
 		descr='''various test on user import'''
-		).Run()
-
-	"""
-	os.system(DEL + " profile --group utilisagers         --del-users --no-archive")
-	os.system(DEL + " profile --group responsibilisateurs --del-users --no-archive")
-	log_and_exec(GET + " groups --empty | cut -d\":\" -f 1 | xargs -I% " + DEL + " group --name % --no-archive")
-
-	log_and_exec(ADD + " profile --name Utilisagers         --group utilisagers                                                                 --comment 'profil normal créé pour la suite de tests utilisateurs'")
-	log_and_exec(ADD + " profile --name Responsibilisateurs --group responsibilisateurs --groups cdrom,lpadmin,plugdev,audio,video,scanner,fuse --comment 'profil power user créé pour la suite de tests utilisateurs.'")
-
-	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv", True,
-		12, comment = "You should specify a profile")
-
-	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv --profile utilisagers")
-	log_and_exec(ADD + " users --filename ./testsuite/tests_users.csv --profile utilisagers --lastname-column 1 --firstname-column 0")
-	log_and_exec("time " + ADD + " users --filename ./testsuite/tests_users.csv --profile utilisagers --lastname-column 1 --firstname-column 0 --confirm-import")
-	log_and_exec(ADD + " users --filename ./testsuite/tests_resps.csv --profile responsibilisateurs")
-	log_and_exec(ADD + " users --filename ./testsuite/tests_resps.csv --profile responsibilisateurs --lastname-column 1 --firstname-column 0")
-	log_and_exec("time " + ADD + " users --filename ./testsuite/tests_resps.csv --profile responsibilisateurs --lastname-column 1 --firstname-column 0 --confirm-import")
-
-	# activer les 2 lignes suivantes pour importer 860 utilisateurs de Latresne…
-	log_and_exec(ADD + " users --filename ./testsuite/tests_users2.csv --profile utilisagers")
-	log_and_exec("time " + ADD + " users --filename ./testsuite/tests_users2.csv --profile utilisagers --confirm-import")
-
-	os.system("sleep 5")
-	log_and_exec(DEL + " profile --group utilisagers         --del-users --no-archive")
-	log_and_exec(DEL + " profile --group responsibilisateurs --del-users --no-archive")
-
-	log_and_exec(GET + " groups --empty | cut -d\":\" -f 1 | xargs -I% " + DEL + " group --name % --no-archive")
-	"""
+		))
 def test_profiles(context):
 	"""Test the applying feature of profiles."""
 
@@ -1572,7 +1345,7 @@ def test_profiles(context):
 		user) ]
 
 	#fix #271 & #219
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
 		GET + [ 'profiles' ],
 		# should fail
@@ -1604,9 +1377,9 @@ def test_profiles(context):
 		context=context,
 		descr='''scenario for ticket #271 - test some commands of mod profile'''
 			''' --add-group and --del-groups & fix #219'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
 		GET + [ 'profiles' ],
 		#should fail
@@ -1618,9 +1391,9 @@ def test_profiles(context):
 		context=context,
 		descr='''check if a error occurs when a non-existing group is added '''
 			'''to a profile'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
 		#should fail (group already exists)
 		ADD + [ 'profile', '--name=%s' % pname, '--group=%s' % gname,
@@ -1641,9 +1414,9 @@ def test_profiles(context):
 		context=context,
 		descr='''Check if it is possible to force a profil group to a non '''
 			'''system group (avoid #300 #320)'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
 		GET + [ 'profiles' ],
 		DEL + [ 'group', '--name=%s' % pname],
@@ -1655,12 +1428,10 @@ def test_profiles(context):
 		context=context,
 		descr='''when a profile group is deleted, an error message has to be '''
 			'''presented (avoid #302)'''
-		).Run()
-
-	# profile scenario implemented with old commands (fix #292)
+		))
 
 	exclude_uid = open(state_files['owner']).read().split(',')[0]
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=Utilisagers', '--group=utilisagers',
 			'--description="testsuite profile, feel free to delete."', '-v' ],
 		ADD + [ 'profile', '--name=Responsibilisateurs',
@@ -1717,9 +1488,9 @@ def test_profiles(context):
 		],
 		context=context,
 		descr='''various tests on profiles (fix #292)'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-v' ],
 		GET + [ 'profile' ],
 		MOD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname),
@@ -1760,39 +1531,13 @@ def test_profiles(context):
 		],
 		context=context,
 		descr="test profile interactive commands"
-		).Run()
-
-	""" # start of old test_profiles() commands
-	test_message('''starting profiles related tests.''')
-	log_and_exec(ADD + " profile --name Utilisagers --group utilisagers --comment 'profil normal créé pour la suite de tests utilisateurs'")
-	log_and_exec(ADD + " profile --name Responsibilisateurs --group responsibilisateurs --groups cdrom,lpadmin,plugdev,audio,video,scanner,fuse --comment 'profil power user créé pour la suite de tests utilisateurs.'")
-
-	log_and_exec(ADD + " user toto --profile utilisagers")
-	log_and_exec(ADD + " user tutu --profile utilisagers")
-	log_and_exec(ADD + " user tata --profile utilisagers")
-
-	log_and_exec(MOD + " profile --group utilisagers --apply-groups --to-groups utilisagers")
-	log_and_exec(MOD + " profile --group utilisagers --apply-groups --to-members")
-	log_and_exec(MOD + " profile --group utilisagers --apply-skel --to-users toto --auto-no")
-	log_and_exec(MOD + " profile --group utilisagers --apply-skel --to-users toto --batch")
-	log_and_exec(MOD + " profile --group utilisagers --apply-group --to-users toto")
-	log_and_exec(MOD + " profile --group utilisagers --apply-all --to-users toto")
-	log_and_exec(MOD + " profile --group utilisagers --apply-all --to-users toto")
-	log_and_exec(MOD + " profile --group utilisagers --apply-all --to-all")
-
-	log_and_exec(DEL + " profile --group responsibilisateurs --no-archive")
-	log_and_exec(DEL + " user toto --no-archive")
-
-	log_and_exec(DEL + " profile --group utilisagers --del-users --no-archive")
-
-	test_message('''profiles related tests finished.''')
-	""" # ends of old test_profiles() commands
+		))
 def test_privileges(context):
 	# test features of privileges
 
 	gname = 'group_test'
 	for cmd in [ 'priv', 'privs', 'privilege', 'privileges' ]:
-		ScenarioTest([
+		testsuite.add_scenario(ScenarioTest([
 			GET + [ cmd ],
 			ADD + [ 'group', '--name=%s' % gname, '-v' ],
 			ADD + [ cmd, '--name=%s' % gname, '-v' ],
@@ -1816,9 +1561,9 @@ def test_privileges(context):
 			context=context,
 			descr='''test new privileges commands (using argument %s) '''
 				'''(avoid #204 #174)''' % cmd
-			).Run()
+			))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '--system', '-v' ],
 		ADD + [ 'privilege', '%s,%s2,%s3' % (gname,gname,gname) ],
 		GET + [ 'privileges' ],
@@ -1833,14 +1578,14 @@ def test_privileges(context):
 		],
 		context=context,
 		descr="test privilege interactive commands"
-		).Run()
+		))
 
 def test_short_syntax():
 	uname = 'user_test'
 	gname = 'group_test'
 	pname = 'profil_test'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', uname, '-v' ],
 		GET + [ 'user', uname ],
 		ADD + [ 'group', gname, '-v' ],
@@ -1880,9 +1625,9 @@ def test_short_syntax():
 		DEL + [ 'group', '%s4' %  gname, '-v'],
 		],
 		descr='''test short users/groups commands'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
 		#should fail (the group is not a system group)
 		ADD + [ 'privilege', gname, '-v' ],
@@ -1896,9 +1641,9 @@ def test_short_syntax():
 		DEL + [ 'group', '%ssys' % gname ],
 		],
 		descr='''test short privileges commands'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '--system', '-v' ],
 		ADD + [ 'group', '%s2' % gname, '-v' ],
 		ADD + [ 'group', '%s3' % gname, '-v' ],
@@ -1918,9 +1663,9 @@ def test_short_syntax():
 		GET + [ 'profiles' ],
 		],
 		descr='''test short profiles commands'''
-		).Run()
+		))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
 		ADD + [ 'group', '%s2' % gname, '-v' ],
 		CHK + [ 'group', gname, '--auto-no', '-vv' ],
@@ -1940,7 +1685,7 @@ def test_short_syntax():
 		DEL + [ 'user', uname, '-v' ],
 		],
 		descr='''test short chk commands'''
-		).Run()
+		))
 
 	"""
 	# extended check on user not implemented yet
@@ -1963,7 +1708,7 @@ def test_exclusions():
 	uname = 'utest'
 	gname = 'gtest'
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
 		GET + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
 		# real tests come here. No need to test other things than GET,
@@ -2040,9 +1785,9 @@ def test_exclusions():
 		GET + [ 'users' ]
 		],
 		descr='''test exclusions in different manners on users'''
-	).Run()
+	))
 
-	ScenarioTest([
+	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
 		GET + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
 
@@ -2072,7 +1817,7 @@ def test_exclusions():
 		GET + [ 'groups' ],
 	],
 	descr='''test exclusions in different manners on groups'''
-	).Run()
+	))
 def to_be_implemented():
 	""" TO BE DONE !
 		#
@@ -2101,74 +1846,78 @@ def to_be_implemented():
 
 
 if __name__ == "__main__":
-	try:
-		# Unit Tests.
-		test_find_new_indentifier()
 
-		# clean old testsuite runs.
-		clean_system()
+	# init the TS.
+	testsuite = Testsuite(name="CLI", state_file=state_files,
+		directory_scenarii='data/scenarii',
+		clean_func=clean_system, cmd_display_func=small_cmd_cli)
 
-		if get_state(state_type='context') == 0:
-			# Functionnal Tests
-			test_integrated_help()
-			#test_check_config()
-			test_regexes()
-			test_short_syntax()
-			test_exclusions()
-			save_state(1, state_type='context')
-			ctx_will_change = True
+	# add scenario to the testsuite
+	test_integrated_help()
+	test_regexes()
+	test_short_syntax()
+	test_exclusions()
+	for ctx in ('unix', 'ldap'):
+		test_get(ctx)
+		test_groups(ctx)
+		test_users(ctx)
+		test_profiles(ctx)
+		test_privileges(ctx)
+		test_imports(ctx)
+
+	# Unit Tests.
+	test_find_new_indentifier()
+
+	# deals with options
+	parser = testsuite_parse_args()
+	(options, args) = parser.parse_args()
+	Testsuite.verbose = options.verbose
+	if not options.all and not options.list and not options.execute and \
+		not options.start_from and not options.start_from and \
+		not options.clean and not options.delete_trace and not options.stats:
+			sys.argv.append('-a')
+			(options, args) = parser.parse_args()
+	if options.reload:
+		testsuite.clean_state_file()
+	if options.list:
+		testsuite.get_scenarii()
+	if options.execute:
+		testsuite.select(options.execute-1)
+	if options.start_from:
+		testsuite.select(options.start_from, mode='start')
+	if options.clean:
+		testsuite.clean_scenarii_directory()
+	if options.delete_trace:
+		testsuite.clean_scenarii_directory(scenario_number=options.delete_trace)
+	if options.stats:
+		testsuite.get_stats()
+	if options.all:
+		if testsuite.get_state() == None:
+			testsuite.select(all=True)
 		else:
-			logging.notice('Skipping context %s' % stylize(ST_NAME, "std"))
-			ctx_will_change = False
-
-		for ctxnum, ctx, activate_cmd in (
-			(1, 'unix', [ 'mod', 'config', '-B', 'ldap']),
-			(2, 'ldap', [ 'mod', 'config', '-b', 'ldap'])
-			):
-
-			if execute(activate_cmd)[1] == 0:
-
-				start_ctx = get_state('context')
-
-				if ctxnum < start_ctx:
-					logging.notice('Skipping context %s' %
-						stylize(ST_NAME, ctx))
-					continue
-
-				test_message('testing %s context.' % ctx)
-
+			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
+	if options.start_from or options.execute or options.all:
+		try :
+			for ctx in ('unix', 'ldap'):
 				make_backups(ctx)
-
-				if get_state(state_type='scenarii') == 0 \
-					or ctx_will_change == True:
-					ScenarioTest.reinit()
-
-				test_get(ctx)
-				test_groups(ctx)
-				test_users(ctx)
-				test_profiles(ctx)
-				test_privileges(ctx)
-				test_imports(ctx)
-
+			testsuite.run()
+			# compare delete backups
+			for ctx in ('unix','ldap'):
 				compare_delete_backups(ctx)
-				clean_system()
-
-				save_state(ctxnum + 1, state_type='context')
-				ctx_will_change = True
-		# TODO: test_concurrent_accesses()
-				clean_state_files()
-				logging.notice("Testsuite terminated successfully.")
-				test_message('''Don't forget to test massive del/mod/chk with -a '''
-					''' argument (not tested because too dangerous)''')
-	finally:
-		# clean the scenarii directory
-		if options.clean:
-			clean_scenarii_directory()
-		else:
+			# TODO: test_concurrent_accesses()
+			testsuite.clean_state_file()
+			test_message("Testsuite terminated successfully.")
+			test_message('''Don't forget to test massive del/mod/chk with -a '''
+				''' argument (not tested because too dangerous)''')
+		finally:
+			# clean the system
+			testsuite.clean_system()
+			# restore initial user backend
+			testsuite.restore_user_context()
 			# give back all the scenarii tree to calling user.
 			uid, gid = [ int(x) for x in \
 				open(state_files['owner']).read().strip().split(',') ]
-			logging.notice('giving back all scenarii data to %s:%s.' % (
+			test_message('giving back all scenarii data to %s:%s.' % (
 				stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
 			for entry in fsapi.minifind('data', followlinks=True):
 				os.chown(entry, uid, gid)
