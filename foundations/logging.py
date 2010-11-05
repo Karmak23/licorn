@@ -11,8 +11,8 @@ Licensed under the terms of the GNU GPL version 2.
 import sys
 import Pyro.core
 
-import styles, exceptions
-
+import exceptions
+from styles    import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 from ltrace    import ltrace, mytime
@@ -68,7 +68,7 @@ __warningsdb = LicornWarningsDB()
 __warningsdb = LicornWarningsDB()
 
 def error(mesg, returncode=1, full=False, tb=None, listener=None):
-	""" Display a styles.stylized error message and exit badly.	"""
+	""" Display a stylized error message and exit badly.	"""
 
 	if full:
 		if tb:
@@ -76,17 +76,17 @@ def error(mesg, returncode=1, full=False, tb=None, listener=None):
 		else:
 			import traceback
 			sys.stderr.write ('''>>> %s:
-		''' 	% (styles.stylize(styles.ST_OK, "Call trace")))
+		''' 	% (stylize(ST_OK, "Call trace")))
 			traceback.print_tb( sys.exc_info()[2] )
 			sys.stderr.write("\n")
 
 	sys.stderr.write('%s %s %s\n' % (
-		styles.stylize(styles.ST_BAD, 'ERROR:'),
+		stylize(ST_BAD, 'ERROR:'),
 		mytime(),
 		mesg))
 	raise SystemExit(returncode)
 def warning(mesg, once=False, listener=None):
-	"""Display a styles.stylized warning message on stderr."""
+	"""Display a stylized warning message on stderr."""
 
 	if once:
 		try:
@@ -96,7 +96,7 @@ def warning(mesg, once=False, listener=None):
 			__warningsdb[mesg] = True
 
 	text_message = "%s%s %s\n" % (
-		styles.stylize(styles.ST_WARNING, '/!\\'), mytime(), mesg)
+		stylize(ST_WARNING, '/!\\'), mytime(), mesg)
 
 	if listener:
 		listener.process(
@@ -105,7 +105,7 @@ def warning(mesg, once=False, listener=None):
 
 	sys.stderr.write(text_message)
 def warning2(mesg, once=False, listener=None):
-	""" Display a styles.stylized warning message on stderr, only if verbose
+	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
 
 	if once:
@@ -118,26 +118,26 @@ def warning2(mesg, once=False, listener=None):
 	if listener and listener.verbose >= verbose.INFO:
 		listener.process(
 			LicornMessage(data="%s%s %s\n" % (
-			styles.stylize(styles.ST_WARNING, '/2\\'), mytime(), mesg)),
+			stylize(ST_WARNING, '/2\\'), mytime(), mesg)),
 			options.msgproc.getProxy())
 
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write("%s%s %s\n" % (
-			styles.stylize(styles.ST_WARNING, '/2\\'), mytime(), mesg))
+			stylize(ST_WARNING, '/2\\'), mytime(), mesg))
 def notice(mesg, listener=None):
-	""" Display a non-styles.stylized notice message on stderr."""
+	""" Display a non-stylized notice message on stderr."""
 	assert ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.NOTICE:
 		listener.process(LicornMessage(data=" %s %s %s\n" % (
-		styles.stylize(styles.ST_INFO, '*'), mytime(), mesg)),
+		stylize(ST_INFO, '*'), mytime(), mesg)),
 			options.msgproc.getProxy())
 
 	if options.verbose >= verbose.NOTICE:
 		sys.stderr.write(" %s %s %s\n" % (
-		styles.stylize(styles.ST_INFO, '*'), mytime(), mesg))
+		stylize(ST_INFO, '*'), mytime(), mesg))
 def info(mesg, listener=None):
-	""" Display a styles.stylized information message on stderr."""
+	""" Display a stylized information message on stderr."""
 	assert ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.INFO:
@@ -148,7 +148,7 @@ def info(mesg, listener=None):
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
 def progress(mesg, listener=None):
-	""" Display a styles.stylized progress message on stderr. """
+	""" Display a stylized progress message on stderr. """
 	assert ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
 		options.verbose, listener.verbose if listener else '-'))
 	if listener and listener.verbose >= verbose.PROGRESS:
@@ -162,15 +162,15 @@ def progress(mesg, listener=None):
 if __debug__:
 	# FIXME: add listener here, too.
 	def debug(mesg):
-		"""Display a styles.stylized debug message on stderr."""
+		"""Display a stylized debug message on stderr."""
 		if options.verbose >= verbose.DEBUG:
 			sys.stderr.write( "%s: %s\n" % (
-				styles.stylize(styles.ST_DEBUG, 'DEBUG'), mesg) )
+				stylize(ST_DEBUG, 'DEBUG'), mesg) )
 	def debug2(mesg):
-		"""Display a styles.stylized debug2 message on stderr."""
+		"""Display a stylized debug2 message on stderr."""
 		if options.verbose >= verbose.DEBUG2:
 			sys.stderr.write("%s: %s\n" % (
-				styles.stylize(styles.ST_DEBUG, 'DEBUG2'), mesg))
+				stylize(ST_DEBUG, 'DEBUG2'), mesg))
 else:
 	def debug(mesg): pass
 	def debug2(mesg): pass
