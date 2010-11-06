@@ -75,8 +75,8 @@ class LicornThread(Thread):
 		self._stop_event.set()
 		self._input_queue.put(None)
 class LicornJobThread(LicornBasicThread):
-	def __init__(self, name, target, time=None, count=None, delay=None,
-		tname=None,	args=(), kwargs={}):
+	def __init__(self, name, target, time=None, count=None, delay=0.0,
+		tname=None,	target_args=(), target_kwargs={}):
 		""" Create a scheduled job thread.
 			time: is a time.time() object before first execution, or for
 				one-shot jobs ("AT" like)
@@ -99,8 +99,10 @@ class LicornJobThread(LicornBasicThread):
 		self.time = time
 		self.delay = delay
 		self.count = count
-		self.args = args
-		self.kwargs = kwargs
+		self.args = target_args
+		self.kwargs = target_kwargs
+
+		#print 'caller %s for target %s' % (self.kwargs, self.target)
 
 		if self.count is None:
 			self.loop = True
@@ -114,16 +116,20 @@ class LicornJobThread(LicornBasicThread):
 			'''count=%s, delay=%s, loop=%s)''' % (self.target, self.time,
 				self.count, self.delay, self.loop))
 
-		if (self.loop or self.count) and not self.delay:
+		if (self.loop or self.count) and self.delay is None:
 			raise exceptions.BadArgumentError(
 				'must provide a delay for looping.')
-	def sleep(self):
+	def sleep(self, delay=None):
 		""" sleep at most self.delay, but with smaller intervals, to allow
 			interruption without waiting to the end of self.delay, which can
 			be very long.
 		"""
+
+		if delay is None:
+			delay = self.delay
+
 		current_delay = 0.0
-		while current_delay < self.delay and not self._stop_event.isSet():
+		while current_delay < delay and not self._stop_event.isSet():
 			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
 			time.sleep(0.1)
 			current_delay += 0.1
@@ -131,7 +137,7 @@ class LicornJobThread(LicornBasicThread):
 		LicornBasicThread.run(self)
 		logging.progress('%s: thread started.' % self.name)
 
-		self.current_loop = 1
+		self.current_loop = 0
 
 		# first occurence: we need to wait until time if it is set.
 		if self.time:
@@ -139,7 +145,7 @@ class LicornJobThread(LicornBasicThread):
 			# the loop, to have the job done as soon as possible.
 			first_delay = self.time - time.time()
 			if first_delay > 0:
-				time.sleep(first_delay)
+				self.sleep(first_delay)
 		elif self.delay:
 			# we just have to wait a delay before starting (this is a
 			# simple timer thread).
@@ -148,7 +154,8 @@ class LicornJobThread(LicornBasicThread):
 		while not self._stop_event.isSet() and \
 			(self.loop or self.current_loop < self.count):
 
-			self.target(args=self.args, kwargs=self.kwargs)
+			#logging.progress('%s: calling %s(%s)' % (self.name, self.target, self.kwargs)
+			self.target(*self.args, **self.kwargs)
 
 			self.current_loop += 1
 			self.sleep()
