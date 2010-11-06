@@ -24,54 +24,58 @@ Licensed under the terms of the GNU GPL version 2.
 #
 
 trc={}
-trc['all']           = 0xffffffffffffffff
-trc['none']          = 0x0000000000000000
-trc['timings']       = 0x0100000000000000
+trc['all']           = 0xffffffffffffffffffff
+trc['none']          = 0x00000000000000000000
+trc['special']       = 0xf0000000000000000000
+trc['timings']       = 0x10000000000000000000
 
-trc['foundations']   = 0x00000000000000ff
-trc['logging']       = 0x0000000000000001
-trc['foundations']   = 0x0000000000000002
-trc['objects']       = 0x0000000000000004
-trc['options']       = 0x0000000000000008
-trc['readers']       = 0x0000000000000010
-trc['process']       = 0x0000000000000020
-trc['fsapi']         = 0x0000000000000040
+trc['foundations']   = 0x0000000000000000ffff
+trc['logging']       = 0x00000000000000000001
+trc['foundations']   = 0x00000000000000000002
+trc['objects']       = 0x00000000000000000004
+trc['options']       = 0x00000000000000000008
+trc['readers']       = 0x00000000000000000010
+trc['process']       = 0x00000000000000000020
+trc['fsapi']         = 0x00000000000000000040
+trc['network']       = 0x00000000000000000080
 
-trc['core']          = 0x000000000000ff00
-trc['configuration'] = 0x0000000000000100
-trc['users']         = 0x0000000000000200
-trc['groups']        = 0x0000000000000400
-trc['profiles']      = 0x0000000000000800
-trc['machines']      = 0x0000000000001000
-trc['internet']      = 0x0000000000002000
-trc['privileges']    = 0x0000000000004000
-trc['keywords']      = 0x0000000000008000
+trc['core']          = 0x000000000000ffff0000
+trc['configuration'] = 0x00000000000000010000
+trc['users']         = 0x00000000000000020000
+trc['groups']        = 0x00000000000000040000
+trc['profiles']      = 0x00000000000000080000
+trc['machines']      = 0x00000000000000100000
+trc['internet']      = 0x00000000000000200000
+trc['privileges']    = 0x00000000000000400000
+trc['keywords']      = 0x00000000000000800000
+trc['system']        = 0x00000000000001000000
 
-trc['backends']      = 0x0000000000ff0000
-trc['ldap']          = 0x0000000000010000
-trc['unix']          = 0x0000000000020000
+trc['backends']      = 0x00000000ffff00000000
+trc['ldap']          = 0x00000000000100000000
+trc['unix']          = 0x00000000000200000000
 
-trc['plugins']       = 0x00000000ff000000
-trc['dnsmasq']       = 0x0000000001000000
+trc['plugins']       = 0x00000000ff0000000000
+trc['dnsmasq']       = 0x00000000010000000000
 
-trc['daemon']        = 0x000000ff00000000
-trc['master']        = 0x0000000100000000
-trc['inotifier']     = 0x0000000200000000
-trc['aclchecker']    = 0x0000000400000000
-trc['cache']         = 0x0000000800000000
-trc['crawler']       = 0x0000001000000000
-trc['cmdlistener']   = 0x0000002000000000
-trc['thread']        = 0x0000004000000000
-trc['wmi']           = 0x0000008000000000
+trc['daemon']        = 0x0000ffff000000000000
+trc['master']        = 0x00000100000000000000
+trc['inotifier']     = 0x00000200000000000000
+trc['aclchecker']    = 0x00000400000000000000
+trc['cache']         = 0x00000800000000000000
+trc['crawler']       = 0x00001000000000000000
+trc['cmdlistener']   = 0x00002000000000000000
+# the next 2 are identical, this is meant to be, for syntaxic ease.s
+trc['thread']        = 0x00004000000000000000
+trc['threads']       = 0x00004000000000000000
+trc['wmi']           = 0x00008000000000000000
 
-trc['interfaces']    = 0x00ffff0000000000
-trc['cli']           = 0x0000ff0000000000
-trc['add']           = 0x0000010000000000
-trc['mod']           = 0x0000020000000000
-trc['del']           = 0x0000040000000000
-trc['chk']           = 0x0000080000000000
-trc['get']           = 0x0000100000000000
-
+trc['interfaces']    = 0x0fff0000000000000000
+trc['cli']           = 0x00ff0000000000000000
+trc['add']           = 0x00010000000000000000
+trc['mod']           = 0x00020000000000000000
+trc['del']           = 0x00040000000000000000
+trc['chk']           = 0x00080000000000000000
+trc['get']           = 0x00100000000000000000
 
 from os   import getenv
 from time import time, localtime, strftime
