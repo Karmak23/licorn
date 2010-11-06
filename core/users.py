@@ -42,7 +42,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		self.profiles = None # (ProfilesController)
 		self.groups = None # (GroupsController)
 
-		self.reload()
+		self.reload(full=False)
 
 		UsersController.init_ok = True
 		assert ltrace('users', '> UsersController.__init__(%s)' %
@@ -55,7 +55,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		return self.users.keys()
 	def has_key(self, key):
 		return self.users.has_key(key)
-	def reload(self):
+	def reload(self, full=True):
 		""" Load (or reload) the data structures from the system data. """
 
 		assert ltrace('users', '| reload()')
@@ -71,6 +71,10 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				u, c = self.backends[bkey].load_users()
 				self.users.update(u)
 				self.login_cache.update(c)
+
+		if full:
+			# needed when reload is trigerred by /etc/* change in the inotifier.
+			self.groups.reload()
 	def reload_backend(self, backend_name):
 		""" Reload only one backend data (called from inotifier). """
 
