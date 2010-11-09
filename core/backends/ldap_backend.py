@@ -614,8 +614,9 @@ class ldap_controller(UGMBackend, Singleton):
 					for member in members:
 						if self.users.login_cache.has_key(member):
 							cache_uid=l2u(member)
-							uids_to_sort.append(cache_uid)
-							u[cache_uid]['groups'].append(name)
+							if name not in u[cache_uid]['groups']:
+								u[cache_uid]['groups'].append(name)
+								uids_to_sort.append(cache_uid)
 					for cache_uid in uids_to_sort:
 						# sort the users, but one time only for each.
 						u[cache_uid]['groups'].sort()

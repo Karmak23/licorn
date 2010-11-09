@@ -192,8 +192,9 @@ class unix_controller(UGMBackend, Singleton):
 					for member in members:
 						if self.users.login_cache.has_key(member):
 							cache_uid=l2u(member)
-							uids_to_sort.append(cache_uid)
-							u[cache_uid]['groups'].append(entry[0])
+							if entry[0] not in u[cache_uid]['groups']:
+								u[cache_uid]['groups'].append(entry[0])
+								uids_to_sort.append(cache_uid)
 					for cache_uid in uids_to_sort:
 						# sort the users, but one time only for each.
 						u[cache_uid]['groups'].sort()
@@ -360,7 +361,7 @@ class unix_controller(UGMBackend, Singleton):
 		for gid in gids:
 			if groups[gid]['backend'] != self.name:
 				continue
-			# logging.debug2("Writing group %s (%s)." % (groups[gid]['name'],
+			# assert logging.debug2("Writing group %s (%s)." % (groups[gid]['name'],
 			#  groups[gid]))
 
 			members = [ x for x in groups[gid]['memberUid']]
