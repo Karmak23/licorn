@@ -336,7 +336,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				'' if self.is_system_gid(gid) \
 					else '		<groupSkel>%s</groupSkel>\n' % group['groupSkel'],
 				'		<memberUid>%s</memberUid>\n' % \
-					", ".join(group['memberUid']) if group['memberUid'] != [] \
+					','.join(group['memberUid']) if group['memberUid'] != [] \
 					else '',
 				"		<backend>%s</backend>\n" %  group['backend'] \
 					if long_output else ''
