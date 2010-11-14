@@ -47,16 +47,34 @@ def keep_true(x, y):
 
 	if x is True: return x
 	else:         return y
-def format_time_delta(delta_in_seconds, use_neg=False):
+def format_time_delta(delta_in_seconds, use_neg=False, long=True):
 
 	if use_neg:
 		if delta_in_seconds < 0:
-			time_delta_string = 'il y a '
+			time_delta_string_wrapper = _('%s ago')
 			delta_in_seconds = abs(delta_in_seconds)
 		else:
-			time_delta_string = 'dans '
+			time_delta_string_wrapper = _('in %s')
 	else:
-		time_delta_string = ''
+		time_delta_string_wrapper = '%s'
+
+	time_delta_string = ''
+
+	if long:
+		year_text   = _('%d year%s, ')
+		month_text  = _('%dm%s')
+		day_text    = _('%d day%s, ')
+		hour_text   = _('%d hour%s, ')
+		min_text    = _('%d min%s, ')
+		second_text = _('%d sec%s')
+
+	else:
+		year_text   = _('%dy%s')
+		month_text  = _('%dm%s')
+		day_text    = _('%dd%s ')
+		hour_text   ='%d%s:'
+		min_text    ='%d%s:'
+		second_text ='%d%s'
 
 	time_delta_sec  = int(delta_in_seconds)
 	time_delta_min  = 0
@@ -80,30 +98,30 @@ def format_time_delta(delta_in_seconds, use_neg=False):
 				if time_delta_day > 365:
 					time_delta_year = time_delta_day / 365
 					time_delta_day -= (time_delta_year * 365)
-					if time_delta_year > 1:
+					if time_delta_year > 1 and long:
 						s_year = 's'
 					if time_delta_year > 0:
-						time_delta_string += _('%d year%s, ') % (
+						time_delta_string += year_text % (
 							time_delta_year, s_year)
-				if time_delta_day > 1:
+				if time_delta_day > 1 and long:
 					s_day = 's'
 				if time_delta_day > 0:
-					time_delta_string += _('%d day%s, ') % (
+					time_delta_string += day_text % (
 						time_delta_day, s_day)
-			if time_delta_hour > 1:
+			if time_delta_hour > 1 and long:
 				s_hour = 's'
 			if time_delta_hour > 0:
-				time_delta_string += _('%d hour%s, ') % (
+				time_delta_string += hour_text % (
 					time_delta_hour, s_hour)
-		if time_delta_min > 1:
+		if time_delta_min > 1 and long:
 			s_min = 's'
 		if time_delta_min > 0:
-			time_delta_string += _('%d min%s, ') % (time_delta_min, s_min)
-	if time_delta_sec > 1:
+			time_delta_string += min_text % (time_delta_min, s_min)
+	if time_delta_sec > 1 and long:
 		s_sec = 's'
 	if time_delta_sec > 0:
-		time_delta_string += _('%d sec%s') % (time_delta_sec, s_sec)
-	return time_delta_string
+		time_delta_string += second_text % (time_delta_sec, s_sec)
+	return time_delta_string_wrapper % time_delta_string
 def check_file_against_dict(conf_file, defaults, configuration,
 	batch=False, auto_answer=None):
 	''' Check if a file has some configuration directives,
@@ -185,8 +203,8 @@ def add_or_dupe(confdict, name, value):
 	first velue of a list, and append the new value. if value is already a list,
 	just append at the end."""
 	if confdict.has_key(name):
-		if type(confdict[name]) == type([]):
-			if type(confdict[name][0]) in (type([]), type(masq_list('dummy'))):
+		if hasattr(confdict[name], '__iter__'):
+			if hasattr(confdict[name][0], '__iter__'):
 				confdict[name].append(value)
 			else:
 				confdict[name] = [ confdict[name], value ]
@@ -194,3 +212,29 @@ def add_or_dupe(confdict, name, value):
 			confdict[name] = [ confdict[name], value ]
 	else:
 		confdict[name] = value
+def add_or_dupe_obj(target, name, value):
+	""" add a new attribute to an object with a given value. If the attr already
+		exists, make it a list and append the new value."""
+	if hasattr(target, name):
+		if hasattr(getattr(target, name), '__iter__'):
+			if hasattr(getattr(target, name)[0], '__iter__'):
+				getattr(target, name).append(value)
+			else:
+				setattr(target, name, [ getattr(target, name), value ])
+		else:
+			setattr(target, name, [ getattr(target, name), value ])
+	else:
+		setattr(target, name, [ value ])
+def add_or_dupe_attr(target, value):
+	""" add a new attribute to an object with a given value. If the attr already
+		exists, make it a list and append the new value."""
+	if target is None:
+		target = [ value ]
+	else:
+		if hasattr(target, '__iter__'):
+			if hasattr(target[0], '__iter__'):
+				target.append(value)
+			else:
+				target = [ target, value ]
+		else:
+			target = [ target, value ]

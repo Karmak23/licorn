@@ -12,12 +12,12 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 
-from licorn.foundations           import logging, exceptions, styles
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import hlstr, fsapi
-from licorn.foundations.constants import filters
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-
-from licorn.interfaces.cli import cli_main, cli_select
+from licorn.foundations.constants import filters
+from licorn.interfaces.cli        import cli_main, cli_select
 
 _app = {
 	"name"        : "licorn-add",
@@ -209,7 +209,7 @@ def import_users(opts, args, configuration, users, groups, profiles, **kwargs):
 
 	if not opts.confirm_import:
 		import string
-		sys.stderr.write(styles.stylize(styles.ST_PATH,
+		sys.stderr.write(stylize(ST_PATH,
 			'''Fields order:\n%s%s%s%spassword''' % (
 			string.ljust("FIRSTname",configuration.users.login_maxlenght),
 			string.ljust("LASTname",configuration.users.login_maxlenght),
@@ -421,13 +421,13 @@ def add_user_in_groups(opts, args, users, groups):
 					users_to_add=uids_to_add, listener=opts.listener)
 			except exceptions.LicornRuntimeException, e:
 				logging.warning("Unable to add user(s) %s in group %s (was: %s)."
-					% (styles.stylize(styles.ST_LOGIN, opts.login),
-					styles.stylize(styles.ST_NAME, g), str(e)))
+					% (stylize(ST_LOGIN, opts.login),
+					stylize(ST_NAME, g), str(e)))
 			except exceptions.LicornException, e:
 				raise exceptions.LicornRuntimeError(
 					"Unable to add user(s) %s in group %s (was: %s)."
-					% (styles.stylize(styles.ST_LOGIN, opts.login),
-					styles.stylize(styles.ST_NAME, g), str(e)))
+					% (stylize(ST_LOGIN, opts.login),
+					stylize(ST_NAME, g), str(e)))
 
 	assert ltrace('add', '< add_user_in_group().')
 def dispatch_add_user(opts, args, users, groups, profiles, **kwargs):
@@ -523,6 +523,12 @@ def add_privilege(opts, args, privileges, **kwargs):
 		opts.privileges_to_add = args[1]
 
 	privileges.add(opts.privileges_to_add.split(','), listener=opts.listener)
+def add_machine(opts, args, machines, **kwargs):
+
+	if opts.discover:
+		machines.scan_network(network_to_scan=opts.discover,
+			listener=opts.listener)
+
 def add_main():
 	import argparser as agp
 
@@ -544,6 +550,10 @@ def add_main():
 		'tags':          (agp.add_keyword_parse_arguments, add_keyword),
 		'keyword':       (agp.add_keyword_parse_arguments, add_keyword),
 		'keywords':      (agp.add_keyword_parse_arguments, add_keyword),
+		'machine':		 (agp.add_machine_parse_arguments, add_machine),
+		'machines':		 (agp.add_machine_parse_arguments, add_machine),
+		'client':		 (agp.add_machine_parse_arguments, add_machine),
+		'clients':		 (agp.add_machine_parse_arguments, add_machine),
 	}
 
 	cli_main(functions, _app)

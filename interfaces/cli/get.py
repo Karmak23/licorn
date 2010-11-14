@@ -29,6 +29,10 @@ _app = {
 def get_users(opts, args, users, **kwargs):
 	""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
+	if opts.dump:
+		output(users.dump())
+		return
+
 	assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
 	users_to_get = users.Select(
@@ -58,6 +62,10 @@ def get_users(opts, args, users, **kwargs):
 	assert ltrace('get', '< get_users()')
 def get_groups(opts, args, groups, **kwargs):
 	""" Get the list of POSIX groups (can be LDAP). """
+
+	if opts.dump:
+		output(groups.dump())
+		return
 
 	assert ltrace('get', '> get_groups(%s,%s)' % (opts, args))
 
@@ -157,6 +165,10 @@ def get_privileges(opts, args, privileges, **kwargs):
 def get_machines(opts, args, machines, **kwargs):
 	""" Get the list of machines known from the server (attached or not). """
 
+	if opts.dump:
+		output(machines.dump())
+		return
+
 	assert ltrace('get', '> get_machines(%s,%s)' % (opts, args))
 
 	if opts.mid is not None:
@@ -190,6 +202,15 @@ def get_configuration(opts, args, configuration, **kwargs):
 		output(configuration.Export())
 
 	assert ltrace('get', '< get_configuration()')
+def get_daemon_status(opts, args, configuration, users, groups, machines,
+	system, **kwargs):
+
+	if opts.long:
+		output(users.dump())
+		output(groups.dump())
+		output(machines.dump())
+
+	output(system.get_daemon_status(opts.long, opts.precision))
 def get_webfilters(*args, **kwargs):
 	""" Get the list of webfilter databases and entries.
 		This function wraps SquidGuard configuration files.
@@ -275,6 +296,8 @@ def get_main():
 		'tags':          (agp.get_keywords_parse_arguments, get_keywords),
 		'keyword':       (agp.get_keywords_parse_arguments, get_keywords),
 		'keywords':      (agp.get_keywords_parse_arguments, get_keywords),
+		'status':        (agp.get_daemon_status_parse_arguments, get_daemon_status),
+		'daemon_status': (agp.get_daemon_status_parse_arguments, get_daemon_status),
 	}
 
 	cli_main(functions, _app, expected_min_args=2)

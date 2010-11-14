@@ -144,7 +144,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 		listener=listener):
 
 		all_went_ok = True
-		#logging.debug('checking %s' % styles.stylize(styles.ST_PATH, dir_info['path']))
+		#assert logging.debug('checking %s' % styles.stylize(styles.ST_PATH, dir_info['path']))
 
 		try:
 			if dir_info.has_key('user') and dir_info['user'] != '':
@@ -453,7 +453,7 @@ def check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1, batch=False,
 		# an ACL is present if it has a mask, else it is just standard posix
 		# perms expressed in the ACL grammar. No mask == Not an ACL.
 
-		#logging.debug2("pathacl = %s, perms = %s (%s)." % (str(pathacl), perms2str(perms, acl_form = True), str(pathacl).find("mask::")))
+		#assert logging.debug2("pathacl = %s, perms = %s (%s)." % (str(pathacl), perms2str(perms, acl_form = True), str(pathacl).find("mask::")))
 
 		warn_message = "An ACL is present on %s, but it should not." % styles.stylize(styles.ST_PATH, onpath)
 
@@ -485,7 +485,7 @@ def check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1, batch=False,
 	# now that we are sure that there isn't any ACLs on the file/dir, continue checking.
 	mode = pathstat.st_mode & 07777
 
-	#logging.debug2("Comparing desired %d and current %d on %s." % (perms, mode, onpath))
+	#assert logging.debug2("Comparing desired %d and current %d on %s." % (perms, mode, onpath))
 
 	if perms != mode:
 
@@ -569,7 +569,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text="",
 
 	if path_is_file:
 		execperms       = execbits2str(onpath)
-		#logging.debug2("Exec perms are %s before replacement." % execperms)
+		#assert logging.debug2("Exec perms are %s before replacement." % execperms)
 		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
 
 	logging.progress("Checking posix1e ACL of %s." %

@@ -11,15 +11,17 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct, stat, shutil
 import gzip, time
-
 from subprocess                import Popen, PIPE, STDOUT
+
 from licorn.foundations        import pyutils, logging, exceptions, process, fsapi
 from licorn.foundations.styles import *
+
+from licorn.core import LMC
 from licorn.tests import *
-from licorn.core.configuration import LicornConfiguration
 from optparse import OptionParser
 
-configuration = LicornConfiguration()
+LMC.connect()
+configuration = LMC.configuration
 
 if __debug__:
 	PYTHON = [ 'python' ]
@@ -344,11 +346,12 @@ def clean_system():
 			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
 			'''ARCHIVES-test,group_test,group_testsys,group_test2,''' \
 			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,'''
-			'''cp,gtest,gtest1,gtest2,gtest3,gtest4''',
+			'''cp,gtest,gtest1,gtest2,gtest3,gtest4,profil_test''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
 		execute(DEL + argument)
+		execute([ 'rm', '-rf', '/home/usertestdebian' ])
 	for directory in (
 		configuration.home_backup_dir,
 		configuration.home_archive_dir
@@ -1187,6 +1190,9 @@ def test_users(context):
 	# interactive command (for the password).
 	testsuite.add_scenario(ScenarioTest([
 		[ 'useradd', 'usertestdebian' ],
+		# we have to sleep, else the MOD comes up too fast and changes from
+		# debian tools are not yet integrated.
+		[ 'sleep', '2' ],
 		MOD + [ 'user', 'usertestdebian', '--add-groups=plugdev,adm', '-v' ],
 		GET + [ 'users', '-l' ],
 		GET + [ 'groups', 'plugdev,adm' ],
@@ -1818,6 +1824,22 @@ def test_exclusions():
 	],
 	descr='''test exclusions in different manners on groups'''
 	))
+def test_status_and_dump():
+	""" test all kind of daemon status and dump parameters. """
+
+	testsuite.add_scenario(ScenarioTest([
+		GET + [ 'status' ],
+		GET + [ 'daemon_status' ],
+		GET + [ 'status', '-l' ],
+		GET + [ 'status', '--long' ],
+		GET + [ 'status', '--full' ],
+		GET + [ 'users', '--dump' ],
+		GET + [ 'groups', '--dump' ],
+		GET + [ 'machines', '--dump' ],
+		],
+		descr='''test daemon status and core objects dumping'''
+	))
+
 def to_be_implemented():
 	""" TO BE DONE !
 		#
@@ -1857,6 +1879,7 @@ if __name__ == "__main__":
 	test_regexes()
 	test_short_syntax()
 	test_exclusions()
+	test_status_and_dump()
 	for ctx in ('unix', 'ldap'):
 		test_get(ctx)
 		test_groups(ctx)

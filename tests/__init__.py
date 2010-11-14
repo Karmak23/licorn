@@ -12,8 +12,12 @@ Licensed under the terms of the GNU GPL version 2.
 import os, curses, re, sys, shutil
 from licorn.foundations        import logging, process
 from licorn.foundations.styles import *
-from licorn.core.configuration import LicornConfiguration
-configuration = LicornConfiguration()
+
+from licorn.core import LMC
+
+LMC.connect()
+configuration = LMC.configuration
+
 class Testsuite:
 	verbose = False
 	def __init__(self, name, directory_scenarii,
@@ -26,7 +30,7 @@ class Testsuite:
 		self.cmd_display_func = cmd_display_func
 		self.state_file=state_file
 		# save the current context to restaure it at the end of the testsuite
-		self.user_context=str(configuration.backends['prefered'])
+		self.user_context=LMC.users._prefered_backend_name
 		self.current_context=self.user_context
 	def restore_user_context(self):
 		""" restore user active backend before testsuite runs """

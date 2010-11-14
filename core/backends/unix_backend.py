@@ -8,42 +8,43 @@ Licensed under the terms of the GNU GPL version 2.
 
 import crypt
 
-from licorn.foundations         import logging, exceptions, styles
+from licorn.foundations         import logging, exceptions
 from licorn.foundations         import readers, hlstr
+from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.objects import UGMBackend, Singleton, FileLock
+from licorn.foundations.base    import Singleton
+from licorn.foundations.objects import FileLock
 
+from objects     import LicornNSSBackend, UsersBackend, GroupsBackend
+from licorn.core import LMC
 
-class unix_controller(UGMBackend, Singleton):
+class unix_controller(Singleton, UsersBackend, GroupsBackend):
 	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
 
 	init_ok = False
 
-	def __init__(self, configuration, users=None, groups=None, warnings=True):
+	def __init__(self, warnings=True):
 
 		assert ltrace('unix', '> __init__(%s)' % unix_controller.init_ok)
 
 		if unix_controller.init_ok:
 			return
 
-		UGMBackend.__init__(self, configuration, users, groups)
-		self.name = "unix"
-		self.compat = ('compat', 'files')
-		self.priority = 1
+		LicornNSSBackend.__init__(self, name='unix',
+			nss_compat=('files', 'compat'), priority=1, warnings=warnings)
 
 		# the UNIX backend is always enabled on a Linux system.
 		# Any better and correctly configured backend should take
 		# preference over this one, though.
-		self.enabled  = True
-
-		self.warnings = warnings
+		self.available = True
+		self.enabled   = True
 
 		unix_controller.init_ok = True
 		assert ltrace('unix', '< __init__(%s)' % unix_controller.init_ok)
-	def load_users(self):
+	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
-		assert ltrace('unix', '> load_users()')
+		assert ltrace('unix', '> load_Users()')
 
 		users       = {}
 		login_cache = {}
@@ -128,10 +129,10 @@ class unix_controller(UGMBackend, Singleton):
 
 		assert ltrace('unix', '< load_users()')
 		return users, login_cache
-	def load_groups(self):
+	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace('unix', '> load_groups()')
+		assert ltrace('unix', '> load_Group()')
 
 		groups     = {}
 		name_cache = {}
@@ -147,7 +148,7 @@ class unix_controller(UGMBackend, Singleton):
 		is_allowed  = True
 		try:
 			extras = readers.ug_conf_load_list(
-				self.configuration.extendedgroup_data_file)
+				LMC.configuration.extendedgroup_data_file)
 		except IOError, e:
 			if e.errno != 2:
 				# other than no such file or directory
@@ -163,9 +164,8 @@ class unix_controller(UGMBackend, Singleton):
 				is_allowed = False
 			else: raise e
 
-		if self.users:
-			l2u = self.users.login_to_uid
-			u   = self.users.users
+		l2u = LMC.users.login_to_uid
+		u   = LMC.users
 
 		# TODO: move this to 'for(gname, gid, gpass, gmembers) in etc_group:'
 
@@ -187,18 +187,17 @@ class unix_controller(UGMBackend, Singleton):
 
 				# update the cache to avoid brute double loops when calling
 				# 'get users --long'.
-				if self.users:
-					uids_to_sort=[]
-					for member in members:
-						if self.users.login_cache.has_key(member):
-							cache_uid=l2u(member)
-							if entry[0] not in u[cache_uid]['groups']:
-								u[cache_uid]['groups'].append(entry[0])
-								uids_to_sort.append(cache_uid)
-					for cache_uid in uids_to_sort:
-						# sort the users, but one time only for each.
-						u[cache_uid]['groups'].sort()
-					del uids_to_sort
+				uids_to_sort=[]
+				for member in members:
+					if LMC.users.login_cache.has_key(member):
+						cache_uid=l2u(member)
+						if entry[0] not in u[cache_uid]['groups']:
+							u[cache_uid]['groups'].append(entry[0])
+							uids_to_sort.append(cache_uid)
+				for cache_uid in uids_to_sort:
+					# sort the users, but one time only for each.
+					u[cache_uid]['groups'].sort()
+				del uids_to_sort
 
 			groups[gid] = 	{
 				'name'         : entry[0],
@@ -217,7 +216,7 @@ class unix_controller(UGMBackend, Singleton):
 			name_cache[entry[0]] = gid
 
 			try:
-				groups[gid]['permissive'] = self.groups.is_permissive(
+				groups[gid]['permissive'] = LMC.groups.is_permissive(
 					gid=gid, name=entry[0])
 			except exceptions.InsufficientPermissionsError:
 				# don't bother the user with a warning, he/she probably already
@@ -228,7 +227,7 @@ class unix_controller(UGMBackend, Singleton):
 
 			# TODO: we could load the extras data in another structure before
 			# loading groups from /etc/group to avoid this for() loop and just
-			# get extras[self.groups[gid]['name']] directly. this could gain
+			# get extras[LMC.groups[gid]['name']] directly. this could gain
 			# some time on systems with many groups.
 
 			for extra_entry in extras:
@@ -238,7 +237,7 @@ class unix_controller(UGMBackend, Singleton):
 						groups[gid]['groupSkel']   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
-							self.configuration.extendedgroup_data_file, \
+							LMC.configuration.extendedgroup_data_file, \
 							'''for group "%s" (was: %s).''' % \
 							(extra_entry[0], str(e)))
 					break
@@ -261,8 +260,8 @@ class unix_controller(UGMBackend, Singleton):
 				# calls, or on first call of CLI tools on a Debian system.
 				logging.notice('added missing record for group %s in %s.'
 					% (
-						styles.stylize(styles.ST_NAME, groups[gid]['name']),
-						styles.stylize(styles.ST_PATH, '/etc/gshadow')
+						stylize(ST_NAME, groups[gid]['name']),
+						stylize(ST_PATH, '/etc/gshadow')
 					))
 				need_rewriting = True
 
@@ -275,17 +274,17 @@ class unix_controller(UGMBackend, Singleton):
 					" inconsistencies (was: %s)." % e)
 
 		return groups, name_cache
-	def save_users(self):
+	def save_Users(self):
 		""" Write /etc/passwd and /etc/shadow """
 
 		lock_etc_passwd = FileLock(
-			self.configuration, "/etc/passwd")
+			LMC.configuration, "/etc/passwd")
 		lock_etc_shadow = FileLock(
-			self.configuration, "/etc/shadow")
+			LMC.configuration, "/etc/shadow")
 
 		etcpasswd = []
 		etcshadow = []
-		users = self.users
+		users = LMC.users
 		uids = users.keys()
 		uids.sort()
 
@@ -328,11 +327,12 @@ class unix_controller(UGMBackend, Singleton):
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
-	def save_groups(self, groups=None):
+	def save_Groups(self):
 		""" Write the groups data in appropriate system files."""
 
-		if groups is None:
-			groups = self.groups
+		assert ltrace('unix', '> save_groups()')
+
+		groups = LMC.groups
 
 		#
 		# FIXME: this will generate a false positive if groups[0] comes from LDAP…
@@ -342,12 +342,12 @@ class unix_controller(UGMBackend, Singleton):
 				" or member of the shadow group," \
 				" can't write configuration data.")
 
-		lock_etc_group   = FileLock(self.configuration,
+		lock_etc_group   = FileLock(LMC.configuration,
 												"/etc/group")
-		lock_etc_gshadow = FileLock(self.configuration,
+		lock_etc_gshadow = FileLock(LMC.configuration,
 												"/etc/gshadow")
-		lock_ext_group   = FileLock(self.configuration,
-								self.configuration.extendedgroup_data_file)
+		lock_ext_group   = FileLock(LMC.configuration,
+								LMC.configuration.extendedgroup_data_file)
 
 		logging.progress("Writing groups configuration to disk…")
 
@@ -397,41 +397,15 @@ class unix_controller(UGMBackend, Singleton):
 		lock_etc_gshadow.Unlock()
 
 		lock_ext_group.Lock()
-		open(self.configuration.extendedgroup_data_file, "w").write(
+		open(LMC.configuration.extendedgroup_data_file, "w").write(
 			"\n".join(extgroup) + "\n")
 		lock_ext_group.Unlock()
 
-		logging.progress("Done writing groups configuration.")
-	def save_machines(self):
-		""" save the list of machines. """
-		pass
-	def save_user(self, uid):
-		""" Just a wrapper. Saving one user in Unix backend is not significantly
-		faster than saving all of them. """
-		self.save_users()
-	def save_group(self, gid):
-		""" Just a wrapper. Saving one group in Unix backend is not
-		significantly faster than saving all of them. """
-		self.save_groups()
-	def save_machine(self, mid):
-		""" Just a wrapper. Saving one machine in Unix backend is not
-		significantly faster than saving all of them. """
-		self.save_machines()
-	def delete_user(self, uid):
-		""" Just a wrapper. Deleting one user in Unix backend is not significantly
-		faster than saving all of them. """
-		self.save_users()
-	def delete_group(self, gid):
-		""" Just a wrapper. Deleting one group in Unix backend is not
-		significantly faster than saving all of them. """
-		self.save_groups()
-	def delete_machine(self, mid):
-		""" Just a wrapper. Deleting one group in Unix backend is not
-		significantly faster than saving all of them. """
-		self.save_machines()
+		assert ltrace('unix', '< save_groups()')
 	def compute_password(self, password, salt=None):
+		assert ltrace('unix', '| compute_password(%s, %s)' % (password, salt))
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
 
-
+unix = unix_controller()

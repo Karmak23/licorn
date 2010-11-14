@@ -77,7 +77,7 @@ class SearcherClient:
 
 				except socket.error, e:
 					if e[0] == 11:
-						logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
+						assert logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
 						time.sleep(0.01)
 					else:
 						raise exceptions.LicornHarvestError('Socket error %s.' % e)
@@ -123,7 +123,7 @@ class SearcherClient:
 						line += buf
 				except socket.error, e:
 					if e[0] == 11:
-						logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
+						assert logging.debug("%s: socket is slow, waiting a bit…" % self.__class__)
 						time.sleep(0.005)
 					else:
 						raise exceptions.LicornHarvestError('Socket error (%s).' % e)
@@ -319,11 +319,11 @@ class FileSearchRequestHandler(BaseRequestHandler):
 			#if self.cache.refreshing: msg = LCN_MSG_STATUS_PARTIAL
 			#else:                     msg = LCN_MSG_STATUS_OK
 
-			logging.debug("%s/HandleQueryRequest(): querying cache." % self.name)
+			assert logging.debug("%s/HandleQueryRequest(): querying cache." % self.name)
 
 			result = self.cache.query(req[1])
 
-			logging.debug("%s/HandleQueryRequest(): sending result to client." % self.name)
+			assert logging.debug("%s/HandleQueryRequest(): sending result to client." % self.name)
 
 			self.request.send("%s:%d:\n" % (msg, len(result)))
 			map(lambda x: self.request.send("%s\n" % x[0]), result)
@@ -335,7 +335,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 		""" Return som status information through the socket. """
 
 		try:
-			logging.debug("%s/HandleStatusRequest(): getting status from cache." % self.name)
+			assert logging.debug("%s/HandleStatusRequest(): getting status from cache." % self.name)
 
 			(knb, fnb) = self.cache.status()
 
@@ -345,7 +345,7 @@ class FileSearchRequestHandler(BaseRequestHandler):
 			logging.warning('%s/HandleStatusRequest(): Database error (%s).' % (self.name, e))
 			msg = '%s:load=%s:::\n' % (LCN_MSG_STATUS_PARTIAL, self.load)
 
-		logging.debug("%s/HandleStatusRequest(): sending cache status." % self.name)
+		assert logging.debug("%s/HandleStatusRequest(): sending cache status." % self.name)
 
 		self.request.send(msg)
 	def HandleRefreshRequest(self):

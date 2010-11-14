@@ -13,7 +13,10 @@ Licensed under the terms of the GNU GPL version 2.
 
 from optparse import OptionParser, OptionGroup
 
-from licorn.foundations         import styles, exceptions
+from licorn.foundations           import exceptions
+from licorn.foundations.styles    import *
+from licorn.foundations.base      import LicornConfigObject
+from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.argparser import build_version_string, \
 	common_behaviour_group
 
@@ -34,25 +37,25 @@ def common_filter_group(app, parser, tool, mode):
 		"""construct an %s of %s. %s The %s is """
 		"""substracted from the %s, and the result is used in the """
 		"""calling CLI tool to operate onto.""" % (
-			styles.stylize(styles.ST_LIST_L1, '(1)'),
-			styles.stylize(styles.ST_NOTICE, '--all'),
-			styles.stylize(styles.ST_DEFAULT, 'include_list'),
+			stylize(ST_LIST_L1, '(1)'),
+			stylize(ST_NOTICE, '--all'),
+			stylize(ST_DEFAULT, 'include_list'),
 			mode,
-			styles.stylize(styles.ST_LIST_L1, '(2)'),
-			styles.stylize(styles.ST_NOTICE, '--all'),
-			styles.stylize(styles.ST_DEFAULT, 'include_list'),
+			stylize(ST_LIST_L1, '(2)'),
+			stylize(ST_NOTICE, '--all'),
+			stylize(ST_DEFAULT, 'include_list'),
 			mode,
-			styles.stylize(styles.ST_LIST_L1, '(3)'),
-			styles.stylize(styles.ST_DEFAULT, 'exclude_list'),
+			stylize(ST_LIST_L1, '(3)'),
+			stylize(ST_DEFAULT, 'exclude_list'),
 			mode,
-			styles.stylize(styles.ST_LIST_L1, '(4)'),
-			styles.stylize(styles.ST_DEFAULT, 'exclude_list'),
-			styles.stylize(styles.ST_DEFAULT, 'include_list')
+			stylize(ST_LIST_L1, '(4)'),
+			stylize(ST_DEFAULT, 'exclude_list'),
+			stylize(ST_DEFAULT, 'include_list')
 			)
 		)
 
 	filtergroup = OptionGroup(parser,
-		styles.stylize(styles.ST_OPTION, "Filter options"),
+		stylize(ST_OPTION, "Filter options"),
 		"""Filter %s.%s""" % (mode,
 			big_help_string if mode != 'configuration' else '')
 		)
@@ -70,24 +73,30 @@ def common_filter_group(app, parser, tool, mode):
 					mode[:-1]))
 
 	if tool is 'get':
-		if mode in ('users', 'groups', 'machines'):
-			filtergroup.add_option('-l', '--long',
-				action="store_true", dest="long", default = False,
+		if mode in ('daemon_status', 'users', 'groups', 'machines'):
+			filtergroup.add_option('-l', '--long', '--full',
+				action="store_true", dest="long", default=False,
+				help='''long output (all info, attributes, etc). '''
+					'''NOT enabled by default.''')
+		if mode == 'daemon_status':
+			filtergroup.add_option('--detail', '--details',
+				'-p', '--precision', '--precisions', '--pinpoint',
+				action="store", dest="precision", default=None,
 				help='''long output (all info, attributes, etc). '''
 					'''NOT enabled by default.''')
 
 	if tool is 'chk':
 		if mode in ( 'users', 'groups', 'configuration', 'profiles'):
 			filtergroup.add_option('-a', '--all',
-				action="store_true", dest="all", default = False,
+				action="store_true", dest="all", default=False,
 				help="""%s"""
 					""" %s: this can be a very long operation"""
 					"""%s""" % (
 						"""Check *all* %s on the system.""" %
-							styles.stylize(styles.ST_MODE, mode) \
+							stylize(ST_MODE, mode) \
 							if mode != 'configuration' \
 							else 'Check every bit of the configuration.',
-						styles.stylize(styles.ST_IMPORTANT, "WARNING"),
+						stylize(ST_IMPORTANT, "WARNING"),
 						""", depending of the current number of %s.""" %
 							mode if mode != 'configuration' else ''))
 		if mode in ('users', 'groups', 'profiles'):
@@ -96,7 +105,6 @@ def common_filter_group(app, parser, tool, mode):
 				help='''exclude %s from the selection. Can be IDs or %s '''
 					'''names. Separated by commas without spaces.''' % (mode,
 					mode[:-1]))
-
 
 	if mode is 'users':
 		filtergroup.add_option('--login', '--logins', '--username',
@@ -178,7 +186,7 @@ def common_filter_group(app, parser, tool, mode):
 			help="""Specify profile by its common name (separated by commas """
 				"""without spaces, when possible. If name contains spaces, """
 				"""use --group instead). %s.""" %
-				styles.stylize(styles.ST_IMPORTANT,
+				stylize(ST_IMPORTANT,
 					"one of --name or --group is required"))
 		filtergroup.add_option('--group', '--groups', '--profile-group',
 			'--profile-groups',
@@ -224,10 +232,13 @@ def general_parse_arguments(app):
 	# FIXME: 20100914 review this function, its contents seems outdated.
 
 	usage_text = "\n\t%s [[%s] …] [[%s] …]\n\n\t%s is one of: " \
-		% (	styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "mode"),
-			styles.stylize(styles.ST_OPTION, "options"),
-			styles.stylize(styles.ST_MODE, "mode"))
+		% (	stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "mode"),
+			stylize(ST_OPTION, "options"),
+			stylize(ST_MODE, "mode"))
+
+	if app["name"] == "licorn-get":
+		usage_text +=  "[daemon_]status, "
 
 	if app["name"] in ( "licorn-get", "licorn-modify", "licorn-check" ):
 		usage_text +=  "conf[ig[uration]], "
@@ -252,7 +263,7 @@ def __get_output_group(app, parser, mode):
 	"""TODO"""
 
 	outputgroup = OptionGroup(parser,
-		styles.stylize(styles.ST_OPTION, "Output options "),
+		stylize(ST_OPTION, "Output options "),
 			"Modify how data is printed/exported.")
 
 	if mode is 'configuration':
@@ -262,7 +273,7 @@ def __get_output_group(app, parser, mode):
 			help='''Like previous option, but export the configuration '''
 				'''subset in the shortest form factor (only the values '''
 				'''when possible ; %s).''' %
-				styles.stylize(styles.ST_DEFAULT, "this is the default") )
+				stylize(ST_DEFAULT, "this is the default") )
 		outputgroup.add_option("-b", "--bourne-shell",
 			action="store_const", const = "bourne", dest="cli_format",
 			default="short",
@@ -270,7 +281,7 @@ def __get_output_group(app, parser, mode):
 				'''system configuration, export it in a useful way to be '''
 				'''used in a bourne shell environment (i.e. export '''
 				'''VAR=\"value\").''' %
-					styles.stylize(styles.ST_OPTION, "sub-category"))
+					stylize(ST_OPTION, "sub-category"))
 		outputgroup.add_option("-c", "--c-shell",
 			action="store_const", const = "cshell", dest="cli_format",
 			default="short",
@@ -288,8 +299,13 @@ def __get_output_group(app, parser, mode):
 			action="store_true", dest="xml", default=False,
 			help='''Output data as XML (no colors, no verbose). If not set, '''
 				'''%s (for human beiings, but not easily parsable format).''' %
-				styles.stylize(styles.ST_DEFAULT,
+				stylize(ST_DEFAULT,
 					"default is to output for CLI"))
+
+		outputgroup.add_option('-d', "--dump",
+			action="store_true", dest="dump", default=False,
+			help='''Dump nearly RAW data on stdout. Used for debugging '''
+				'''internal data structures.''')
 
 	return outputgroup
 def get_users_parse_arguments(app, configuration):
@@ -297,9 +313,9 @@ def get_users_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s [[%s] …]" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "users"),
-			styles.stylize(styles.ST_OPTION, "option")
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "users"),
+			stylize(ST_OPTION, "option")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -315,8 +331,8 @@ def get_privileges_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "priv[ilege][s]")
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "priv[ilege][s]")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -333,9 +349,9 @@ def get_groups_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s [[%s] …]" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "groups"),
-			styles.stylize(styles.ST_OPTION, "option")
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "groups"),
+			stylize(ST_OPTION, "option")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -351,9 +367,9 @@ def get_keywords_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s [[%s] …]" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "keywords"),
-			styles.stylize(styles.ST_OPTION, "option")
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "keywords"),
+			stylize(ST_OPTION, "option")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -368,9 +384,9 @@ def get_profiles_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s [[%s] …]" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE, "profiles"),
-			styles.stylize(styles.ST_OPTION, "option")
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "profiles"),
+			stylize(ST_OPTION, "option")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -386,10 +402,10 @@ def get_machines_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s %s [[%s] …]" \
 		% (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_MODE,
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE,
 				"client[s]|machine[s]|workstation[s]"),
-			styles.stylize(styles.ST_OPTION, "option")
+			stylize(ST_OPTION, "option")
 		)
 
 	parser = OptionParser(usage=usage_text,
@@ -404,29 +420,67 @@ def get_configuration_parse_arguments(app, configuration):
 	""" Integrated help and options / arguments for « get »."""
 
 	usage_text = "\n\t%s config [[%s] …]\n" % (
-		styles.stylize(styles.ST_APPNAME, "%prog"),
-		styles.stylize(styles.ST_OPTION, "option")) \
+		stylize(ST_APPNAME, "%prog"),
+		stylize(ST_OPTION, "option")) \
 		+ "\t%s config [[%s] …] %s [--short|--bourne-shell|--c-shell|--php-code] ]\n" % (
-		styles.stylize(styles.ST_APPNAME, "%prog"),
-		styles.stylize(styles.ST_OPTION, "option"),
-		styles.stylize(styles.ST_OPTION, "category")) \
+		stylize(ST_APPNAME, "%prog"),
+		stylize(ST_OPTION, "option"),
+		stylize(ST_OPTION, "category")) \
 		+ ('''%s is one of: app_name, names, shells, skels, '''
 			'''priv|privs|privileges, config_dir, '''
 			'''sysgroups|system_group|system-groups '''
 			'''main_config_file, extendedgroup_data_file.''' % \
-				styles.stylize(styles.ST_OPTION, "category"))
+				stylize(ST_OPTION, "category"))
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
-	# no filter for get config
-	#parser.add_option_group(
-	#	common_filter_group(app, parser, 'get', 'configuration'))
 	parser.add_option_group(__get_output_group(app, parser, 'configuration'))
 
 	return parser.parse_args()
+def parse_daemon_precision(precision):
+	""" split a precision string and build a precision bare pseudo object for
+		detailled daemon status. """
 
+	if precision is None:
+		return None
+
+	precision_obj = LicornConfigObject()
+	values = precision.split(',')
+
+	for value in values:
+		vtype, vident = value.split(':')
+		if vtype in ('g', 'grp', 'group'):
+			vtype = 'groups'
+		elif vtype in ('u', 'usr', 'user'):
+			vtype = 'users'
+		else:
+			# unknown vtype, skip
+			continue
+
+		add_or_dupe_obj(precision_obj, vtype, vident)
+
+	return precision_obj
+
+def get_daemon_status_parse_arguments(app, configuration):
+	""" Integrated help and options / arguments for « get »."""
+
+	usage_text = "\n\t%s daemon_status [--full|--long]\n" % (
+		stylize(ST_APPNAME, "%prog"))
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(
+		common_filter_group(app, parser, 'get', 'daemon_status'))
+	parser.add_option_group(__get_output_group(app, parser, 'daemon_status'))
+
+	opts, args = parser.parse_args()
+
+	opts.precision = parse_daemon_precision(opts.precision)
+
+	return opts, args
 ### Add arguments ###
 def add_user_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add user »."""
@@ -437,8 +491,8 @@ def add_user_parse_arguments(app, configuration):
 		[--system] [--password "<password>"]
 		[--gid=<primary_gid>] [--profile=<profile>] [--skel=<skel>]
 		[--gecos=<given name>] [--home=<home_dir>] […]""" % (
-			styles.stylize(styles.ST_APPNAME, "%prog"),
-			styles.stylize(styles.ST_APPNAME, "%prog"))
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_APPNAME, "%prog"))
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -447,12 +501,12 @@ def add_user_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_user'))
 
 	user = OptionGroup(parser,
-		styles.stylize(styles.ST_OPTION, "Add user options "))
+		stylize(ST_OPTION, "Add user options "))
 
 	user.add_option('-l', "--login", "--name",
 		action="store", type="string", dest="login", default = None,
-		help="""Specify user's login (%s).""" % styles.stylize(
-			styles.ST_IMPORTANT,
+		help="""Specify user's login (%s).""" % stylize(
+			ST_IMPORTANT,
 			"one of login or firstname+lastname arguments is required"))
 	user.add_option('-e', "--gecos",
 		action="store", type="string", dest="gecos", default = None,
@@ -495,8 +549,8 @@ def add_user_parse_arguments(app, configuration):
 			"""outside the range for a system account, else it will be """
 			"""rejected and the user account won't be created. Default: """
 			"""next free UID in the selected range.""" % (
-			styles.stylize(styles.ST_DEFAULT, configuration.users.uid_min),
-			styles.stylize(styles.ST_DEFAULT, configuration.users.uid_max)))
+			stylize(ST_DEFAULT, configuration.users.uid_min),
+			stylize(ST_DEFAULT, configuration.users.uid_max)))
 	user.add_option('-H', "--home",
 		action="store", type="string", dest="home", default = None,
 		help="""Specify the user's home directory. Only valid for a system """
@@ -537,7 +591,7 @@ def add_user_parse_arguments(app, configuration):
 def add_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add group »."""
 
-	usage_text = "\n\t%s group --name=<nom_groupe> [--permissive] [--gid=<gid>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s group --name=<nom_groupe> [--permissive] [--gid=<gid>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--skel=<nom_squelette>] [--description=<description>]\n" \
 		+ "\t\t[--system]"
 
@@ -548,29 +602,29 @@ def add_group_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_group'))
 
 	group = OptionGroup(parser,
-		styles.stylize(styles.ST_OPTION, "Add group options "))
+		stylize(ST_OPTION, 'Add group options '))
 
-	group.add_option("--name",
-		action="store", type="string", dest="name", default = None,
+	group.add_option('--name',
+		action='store', type='string', dest='name', default=None,
 		help="Specify group's name (%s)." %
-			styles.stylize(styles.ST_IMPORTANT, "required") )
-	group.add_option("--permissive",
-		action="store_true", dest="permissive", default = False,
+			stylize(ST_IMPORTANT, 'required') )
+	group.add_option('-p', '--permissive',
+		action="store_true", dest="permissive", default=False,
 		help="The shared group directory will be permissive (default is %s)." %
-			styles.stylize(styles.ST_DEFAULT, "not permissive"))
-	group.add_option("--gid",
+			stylize(ST_DEFAULT, "not permissive"))
+	group.add_option('-g', '--gid',
 		action="store", type="int", dest="gid", default=None,
 		help="Specify the GID (root / @admin members only).")
-	group.add_option("--description",
+	group.add_option('-d', '--description', '-c', '--comment',
 		action="store", type="string", dest="description", default=None,
 		help="Description of the group (free text).")
-	group.add_option("--skel",
-		action="store", type="string", dest="skel",
+	group.add_option('-S', '--skel', '--skeleton',
+		action='store', type='string', dest='skel',
 		default=configuration.users.default_skel,
 		help="skeleton directory for the group (default is %s)." %
-		styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
-	group.add_option("--system",
-		action="store_true", dest="system", default = False,
+		stylize(ST_DEFAULT, configuration.users.default_skel))
+	group.add_option('-s', '--system', '--system-group', '--sysgroup',
+		action='store_true', dest='system', default=False,
 		help="The group will be a system group (root / @admin members only).")
 
 	parser.add_option_group(group)
@@ -579,7 +633,7 @@ def add_group_parse_arguments(app, configuration):
 def add_profile_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add profile »."""
 
-	usage_text = "\n\t%s profile [--name=]<name> [-g|--group=<groupName>] [--description=<descr>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s profile [--name=]<name> [-g|--group=<groupName>] [--description=<descr>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--shell=<shell>] [--quota=<quota>] [--skel=<nom_squelette>]\n" \
 		+ "\t\t[-a|--[add-]groups=<groupe1>[[,groupe2][,…]] [--force-existing]"
 
@@ -589,32 +643,32 @@ def add_profile_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_profile'))
 
-	profile = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add profile options "))
+	profile = OptionGroup(parser, stylize(ST_OPTION, "Add profile options "))
 
 	profile.add_option("--name", '--profile-name', '--profile',
 		action="store", type="string", dest="name", default = None,
-		help="The profile's name (ie: «Administrator», «Power user», «Webmaster», «Guest»). It should be a singular word and %s." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+		help="The profile's name (ie: «Administrator», «Power user», «Webmaster», «Guest»). It should be a singular word and %s." % stylize(ST_IMPORTANT, "it is required"))
 	profile.add_option('-g', "--group", '--profile-group',
 		action="store", type="string", dest="group", default = None,
-		help="Group name identifying the profile on the system (ie: «administrators», «power-users», «webmasters», «guests»). It should be a plural world and will become a system group. %s." % styles.stylize(styles.ST_IMPORTANT, "It is required"))
+		help="Group name identifying the profile on the system (ie: «administrators», «power-users», «webmasters», «guests»). It should be a plural world and will become a system group. %s." % stylize(ST_IMPORTANT, "It is required"))
 	profile.add_option("--description",
 		action="store", type="string", dest="description", default = '',
 		help="Description of the profile (free text).")
 	profile.add_option("--shell",
 		action="store", type="string", dest="shell", default = configuration.users.default_shell,
-		help="Default shell for this profile (defaults to %s)." % styles.stylize(styles.ST_DEFAULT, configuration.users.default_shell))
+		help="Default shell for this profile (defaults to %s)." % stylize(ST_DEFAULT, configuration.users.default_shell))
 	profile.add_option("--quota",
 		action="store", type="int", dest="quota", default = 1024,
-		help="User data quota in Mb (soft quota, defaults to %s)." % styles.stylize(styles.ST_DEFAULT, "1024"))
+		help="User data quota in Mb (soft quota, defaults to %s)." % stylize(ST_DEFAULT, "1024"))
 	profile.add_option('-a', "--groups", "--add-groups",
 		action="store", type="string", dest="groups", default = [],
 		help="Groups users of this profile will become members of. Separated by commas without spaces.")
 	profile.add_option("--skel",
 		action="store", type="string", dest="skeldir", default = configuration.users.default_skel,
-		help="skeleton dir for this profile (must be an absolute path, defaults to %s)." % styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
+		help="skeleton dir for this profile (must be an absolute path, defaults to %s)." % stylize(ST_DEFAULT, configuration.users.default_skel))
 	profile.add_option("--force-existing", '--use-existing',
 		action="store_true", dest="force_existing", default = False,
-		help="Confirm the use of a previously created system group for the profile. %s, but in some cases (where the group is created by another package or script) this is OK." % styles.stylize(styles.ST_IMPORTANT, "This is risky"))
+		help="Confirm the use of a previously created system group for the profile. %s, but in some cases (where the group is created by another package or script) this is OK." % stylize(ST_IMPORTANT, "This is risky"))
 
 	parser.add_option_group(profile)
 
@@ -622,7 +676,7 @@ def add_profile_parse_arguments(app, configuration):
 def add_keyword_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add keyword »."""
 
-	usage_text = "\n\t%s kw|tag|keyword|keywords --name=<keyword> [--parent=<parent_keyword> --description=<description>]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s kw|tag|keyword|keywords --name=<keyword> [--parent=<parent_keyword> --description=<description>]\n" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -630,11 +684,11 @@ def add_keyword_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_keyword'))
 
-	keyword = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add keyword options "))
+	keyword = OptionGroup(parser, stylize(ST_OPTION, "Add keyword options "))
 
 	keyword.add_option("--name",
 		action="store", type="string", dest="name", default = None,
-		help="The keyword's name. It should be a singular word and %s." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+		help="The keyword's name. It should be a singular word and %s." % stylize(ST_IMPORTANT, "it is required"))
 	keyword.add_option("--parent",
 		action="store", type="string", dest="parent", default = "",
 		help="Keyword's parent name.")
@@ -648,7 +702,7 @@ def add_keyword_parse_arguments(app, configuration):
 def add_privilege_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add keyword »."""
 
-	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],…]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],…]\n" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -656,11 +710,11 @@ def add_privilege_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_privilege'))
 
-	priv = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Add privilege options "))
+	priv = OptionGroup(parser, stylize(ST_OPTION, "Add privilege options "))
 
 	priv.add_option("--name", "--names",
 		action="store", type="string", dest="privileges_to_add", default = None,
-		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % stylize(ST_IMPORTANT, "it is required"))
 
 	parser.add_option_group(priv)
 
@@ -668,7 +722,7 @@ def add_privilege_parse_arguments(app, configuration):
 def addimport_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « import users »."""
 
-	usage_text = "\n\t%s users --filename=<fichier> --profile=<profil>\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s users --filename=<fichier> --profile=<profil>\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--lastname-column=<COL>] [--firstname-column=<COL>]\n" \
 		+ "\t\t[--group-column=<COL>] [--login-column=<COL>] [--password-column=<COL>]\n" \
 		+ "\t\t[--separator=<SEP>] [--confirm-import] [--no-sync]"
@@ -679,37 +733,37 @@ def addimport_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_import'))
 
-	addimport = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Import users and groups options "))
+	addimport = OptionGroup(parser, stylize(ST_OPTION, "Import users and groups options "))
 
 	addimport.add_option("--filename",
 		action="store", type="string", dest="filename", default = None,
-		help="name of the file you want to import accounts from (must point to a valid CSV file and %s)." % styles.stylize(styles.ST_IMPORTANT, "is required"))
+		help="name of the file you want to import accounts from (must point to a valid CSV file and %s)." % stylize(ST_IMPORTANT, "is required"))
 	addimport.add_option("--profile",
 		action="store", type="string", dest="profile", default = None,
-		help="profile the accounts will be affected upon creation (%s)." % styles.stylize(styles.ST_IMPORTANT, "required"))
+		help="profile the accounts will be affected upon creation (%s)." % stylize(ST_IMPORTANT, "required"))
 	addimport.add_option("--lastname-column",
 		action="store", type="int", dest="lastname_col", default = 0,
-		help="lastname column number (default is %s)." % styles.stylize(styles.ST_DEFAULT, "0"))
+		help="lastname column number (default is %s)." % stylize(ST_DEFAULT, "0"))
 	addimport.add_option("--firstname-column",
 		action="store", type="int", dest="firstname_col", default = 1,
-		help="firstname column number (default is %s)." % styles.stylize(styles.ST_DEFAULT, "1"))
+		help="firstname column number (default is %s)." % stylize(ST_DEFAULT, "1"))
 	addimport.add_option("--group-column",
 		action="store", type="int", dest="group_col", default = 2,
-		help="%s column number (default is %s)." % (styles.stylize(styles.ST_SPECIAL, configuration.groups.names.plural), styles.stylize(styles.ST_DEFAULT, "2")))
+		help="%s column number (default is %s)." % (stylize(ST_SPECIAL, configuration.groups.names.plural), stylize(ST_DEFAULT, "2")))
 	addimport.add_option("--login-column",
 		action="store", type="int", dest="login_col", default = None,
 		help="%s column number (default is %s: login will be guessed from firstname and lastname)." \
-			% (styles.stylize(styles.ST_SPECIAL, "login"), styles.stylize(styles.ST_DEFAULT, "None")))
+			% (stylize(ST_SPECIAL, "login"), stylize(ST_DEFAULT, "None")))
 	addimport.add_option("--password-column",
 		action="store", type="int", dest="password_col", default = None,
 		help="%s column number (default is %s: password will be randomly generated and %d chars long)." \
-			% (styles.stylize(styles.ST_SPECIAL, "passwd"), styles.stylize(styles.ST_DEFAULT, "None"), configuration.users.min_passwd_size))
+			% (stylize(ST_SPECIAL, "passwd"), stylize(ST_DEFAULT, "None"), configuration.users.min_passwd_size))
 	addimport.add_option("--separator",
 		action="store", type="string", dest="separator", default = ";",
-		help="separator for the CSV fields (default is %s by sniffing in the file)." % styles.stylize(styles.ST_DEFAULT, "determined automatically"))
+		help="separator for the CSV fields (default is %s by sniffing in the file)." % stylize(ST_DEFAULT, "determined automatically"))
 	addimport.add_option("--confirm-import",
 		action="store_true", dest="confirm_import", default = False,
-		help="Really do the import. %s on the system, only give you an example of what will be done, which is useful to verify your file has been correctly parsed (fields order, separator…)." % styles.stylize(styles.ST_IMPORTANT, "Without this flag the program will do nothing"))
+		help="Really do the import. %s on the system, only give you an example of what will be done, which is useful to verify your file has been correctly parsed (fields order, separator…)." % stylize(ST_IMPORTANT, "Without this flag the program will do nothing"))
 	addimport.add_option("--no-sync",
 		action="store_true", dest="no_sync", default = False,
 		help="Commit changes only after all modifications.")
@@ -717,12 +771,50 @@ def addimport_parse_arguments(app, configuration):
 	parser.add_option_group(addimport)
 
 	return parser.parse_args()
+def add_machine_parse_arguments(app, configuration):
+	"""Integrated help and options / arguments for « add user »."""
 
+	usage_text = """
+	%s user [--login] <login>
+	%s user --firstname <firstname> --lastname <lastname>
+		[--system] [--password "<password>"]
+		[--gid=<primary_gid>] [--profile=<profile>] [--skel=<skel>]
+		[--gecos=<given name>] [--home=<home_dir>] […]""" % (
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_APPNAME, "%prog"))
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'add_machine'))
+
+	machine = OptionGroup(parser,
+		stylize(ST_OPTION, "Add machine options "))
+
+	machine.add_option("--discover", '--scan', '--scan-network',
+		action="store", dest="discover", default='local',
+		help="Scan a network for online hosts and attach them to the "
+			"system (with no other arguments: scan the local network). Syntax: "
+			"192.168.0.0/24 or 10.0.0.0/8 and the like.")
+
+	parser.add_option_group(machine)
+
+	opts,args = parser.parse_args()
+
+	"""
+	TODO: TO BE ACTIVATED
+	if opts.discover and opts.anything:
+		raise exceptions.BadArgumentError('discovering network is a '
+			'self-running task, no other options allowed, sorry.')
+	"""
+
+	return opts, args
 ### Delete arguments ###
 def del_user_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete user »."""
 
-	usage_text = "\n\t%s user < --login=<login> | --uid=UID > [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s user < --login=<login> | --uid=UID > [--no-archive]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -731,19 +823,19 @@ def del_user_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_user'))
 	parser.add_option_group(common_filter_group(app, parser, 'del', 'users'))
 
-	user = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete user options "))
+	user = OptionGroup(parser, stylize(ST_OPTION, "Delete user options "))
 
 	user.add_option("--no-archive",
 		action="store_true", dest="no_archive", default = False,
 		help="Don't make a backup of user's home directory in %s (default is %s)." % \
-			(styles.stylize(styles.ST_PATH, configuration.home_archive_dir), styles.stylize(styles.ST_DEFAULT, "to make a backup")))
+			(stylize(ST_PATH, configuration.home_archive_dir), stylize(ST_DEFAULT, "to make a backup")))
 
 	parser.add_option_group(user)
 	return check_opts_and_args(parser.parse_args())
 def del_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete group »."""
 
-	usage_text = "\n\t%s group < --name=<nom_groupe> | --uid=UID > [[--del-users] [--no-archive]]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s group < --name=<nom_groupe> | --uid=UID > [[--del-users] [--no-archive]]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -752,21 +844,21 @@ def del_group_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_group'))
 	parser.add_option_group(common_filter_group(app, parser, 'del', 'groups'))
 
-	group = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete group options "))
+	group = OptionGroup(parser, stylize(ST_OPTION, "Delete group options "))
 
 	group.add_option("--del-users",
 		action="store_true", dest="del_users", default = False,
-		help="Delete the group members (user accounts) too (default is to %s, they will become members of %s)." % (styles.stylize(styles.ST_DEFAULT, "not delete members"), styles.stylize(styles.ST_DEFAULT, "nogroup")))
+		help="Delete the group members (user accounts) too (default is to %s, they will become members of %s)." % (stylize(ST_DEFAULT, "not delete members"), stylize(ST_DEFAULT, "nogroup")))
 	group.add_option("--no-archive",
 		action="store_true", dest="no_archive", default = False,
-		help="Don't make a backup of users home directories in %s when deleting members (default is %s)" % (styles.stylize(styles.ST_PATH, configuration.home_archive_dir), styles.stylize(styles.ST_DEFAULT, "to make backups")))
+		help="Don't make a backup of users home directories in %s when deleting members (default is %s)" % (stylize(ST_PATH, configuration.home_archive_dir), stylize(ST_DEFAULT, "to make backups")))
 	parser.add_option_group(group)
 
 	return check_opts_and_args(parser.parse_args())
 def del_profile_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete profile »."""
 
-	usage_text = "\n\t%s profile --group=<nom> [[--del-users] [--no-archive] [--no-sync]]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s profile --group=<nom> [[--del-users] [--no-archive] [--no-sync]]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -776,7 +868,7 @@ def del_profile_parse_arguments(app, configuration):
 		common_behaviour_group(app, parser, 'del_profile'))
 	parser.add_option_group(common_filter_group(app, parser, 'del', 'profiles'))
 
-	profile = OptionGroup(parser, styles.stylize(styles.ST_OPTION,
+	profile = OptionGroup(parser, stylize(ST_OPTION,
 		"Delete profile options "))
 
 	profile.add_option("--del-users",
@@ -792,7 +884,7 @@ def del_profile_parse_arguments(app, configuration):
 def del_keyword_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « delete keyword »."""
 
-	usage_text = "\n\t%s keyword --name=<nom>" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s keyword --name=<nom>" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -800,7 +892,7 @@ def del_keyword_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_keyword'))
 
-	keyword = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete keyword options "))
+	keyword = OptionGroup(parser, stylize(ST_OPTION, "Delete keyword options "))
 
 	keyword.add_option("--name",
 		action="store", type="string", dest="name", default = None,
@@ -815,7 +907,7 @@ def del_keyword_parse_arguments(app, configuration):
 def del_privilege_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add keyword »."""
 
-	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],…]\n" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s priv|privs|privilege|privileges [--name|--names=]privilege1[[,privilege2],…]\n" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -825,18 +917,18 @@ def del_privilege_parse_arguments(app, configuration):
 	parser.add_option_group(common_filter_group(app, parser, 'del', 'privileges'))
 
 
-	priv = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Delete privilege options "))
+	priv = OptionGroup(parser, stylize(ST_OPTION, "Delete privilege options "))
 
 	priv.add_option("--name", "--names",
 		action="store", type="string", dest="privileges_to_remove", default = None,
-		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % styles.stylize(styles.ST_IMPORTANT, "it is required"))
+		help="The privilege's name(s). %s and can be a single word or multiple ones, separated by commas." % stylize(ST_IMPORTANT, "it is required"))
 
 	parser.add_option_group(priv)
 
 	return check_opts_and_args(parser.parse_args())
 def delimport_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s --filename=<fichier> [--no-archive]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s --filename=<fichier> [--no-archive]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -844,7 +936,7 @@ def delimport_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_import'))
 
-	delimport = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Un-import users and groups options "))
+	delimport = OptionGroup(parser, stylize(ST_OPTION, "Un-import users and groups options "))
 
 	delimport.add_option("--filename",
 		action="store", type="string", dest="filename", default = None,
@@ -860,10 +952,10 @@ def delimport_parse_arguments(app, configuration):
 ### Modify arguments ###
 def mod_user_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s user --login=<login> [--gecos=<new GECOS>] [--password=<new passwd> | --auto-password] [--password-size=<size>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s user --login=<login> [--gecos=<new GECOS>] [--password=<new passwd> | --auto-password] [--password-size=<size>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ '\t\t[--lock|--unlock] [--add-groups=<group1[[,group2][,…]]>] [--del-groups=<group1[[,group2][,…]]>]\n' \
 		+ '\t\t[--shell=<new shell>]\n'  \
-		"\t%s user --login=<login> --apply-skel=<squelette>" % styles.stylize(styles.ST_APPNAME, "%prog")
+		"\t%s user --login=<login> --apply-skel=<squelette>" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -872,7 +964,7 @@ def mod_user_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_user'))
 	parser.add_option_group(common_filter_group(app, parser, 'mod', 'users'))
 
-	user = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify user options "))
+	user = OptionGroup(parser, stylize(ST_OPTION, "Modify user options "))
 
 	user.add_option("--password", '-p',
 		dest="newpassword", default = None,
@@ -914,7 +1006,7 @@ def mod_user_parse_arguments(app, configuration):
 	return parser.parse_args()
 def mod_machine_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s machine[s] [--shutdown] [--warn-users] " % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s machine[s] [--shutdown] [--warn-users] " % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -923,7 +1015,7 @@ def mod_machine_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_machine'))
 	parser.add_option_group(common_filter_group(app, parser, 'mod', 'machines'))
 
-	user = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify machine(s) options "))
+	user = OptionGroup(parser, stylize(ST_OPTION, "Modify machine(s) options "))
 
 	user.add_option('--shutdown', '-s',
 		action='store_true', dest="shutdown", default=False,
@@ -938,7 +1030,7 @@ def mod_machine_parse_arguments(app, configuration):
 	return check_opts_and_args(parser.parse_args())
 def mod_group_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s group --name=<nom_actuel> [--rename=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s group --name=<nom_actuel> [--rename=<nouveau_nom>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--add-users=<user1[[,user2][,…]]>] [--del-users=<user1[[,user2][,…]]>]\n" \
 		+ "\t\t[--add-resps=<user1[[,user2][,…]]>] [--delete-resps=<user1[[,user2][,…]]>]\n" \
 		+ "\t\t[--add-guests=<user1[[,user2][,…]]>] [--delete-guests=<user1[[,user2][,…]]>]\n" \
@@ -951,7 +1043,7 @@ def mod_group_parse_arguments(app, configuration):
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_group'))
 	parser.add_option_group(common_filter_group(app, parser, 'mod', 'groups'))
 
-	group = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify group options"))
+	group = OptionGroup(parser, stylize(ST_OPTION, "Modify group options"))
 
 	group.add_option("--rename",
 		action="store", type="string", dest="newname", default = None,
@@ -998,10 +1090,10 @@ def mod_group_parse_arguments(app, configuration):
 	return check_opts_and_args(parser.parse_args())
 def mod_profile_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s profile --group=<nom> [--name=<nouveau_nom>] [--rename-group=<nouveau_nom>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s profile --group=<nom> [--name=<nouveau_nom>] [--rename-group=<nouveau_nom>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--comment=<nouveau_commentaire>] [--shell=<nouveau_shell>] [--skel=<nouveau_skel>]\n" \
 		+ "\t\t[--quota=<nouveau_quota>] [--add-groups=<groupes>] [--del-groups=<groupes>]\n" \
-		+ "\t%s profile <--apply-groups|--apply-skel|--apply-all> [--force]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+		+ "\t%s profile <--apply-groups|--apply-skel|--apply-all> [--force]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--to-users=<user1[[,user2][,…]]>] [--to-groups=<group1[[,group2][,…]]>]\n" \
 		+ "\t\t[--to-all] [--to-members] [--no-instant-apply] [--no-sync]"
 
@@ -1013,7 +1105,7 @@ def mod_profile_parse_arguments(app, configuration):
 		common_behaviour_group(app, parser, 'mod_profile'))
 	parser.add_option_group(common_filter_group(app, parser, 'mod', 'profiles'))
 
-	profile = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify profile options "))
+	profile = OptionGroup(parser, stylize(ST_OPTION, "Modify profile options "))
 
 	profile.add_option("--rename", '--new-name',
 		action="store", type="string", dest="newname", default = None,
@@ -1026,13 +1118,13 @@ def mod_profile_parse_arguments(app, configuration):
 		help="Change profile's description.")
 	profile.add_option("--shell",
 		action="store", type="string", dest="newshell", default = None,
-		help="Change profile shell (defaults to %s if you specify --shell without argument)" % styles.stylize(styles.ST_DEFAULT, configuration.users.default_shell))
+		help="Change profile shell (defaults to %s if you specify --shell without argument)" % stylize(ST_DEFAULT, configuration.users.default_shell))
 	profile.add_option("--quota",
 		action="store", type="int", dest="newquota", default = None,
-		help="Change profile's user quota (in Mb, defaults to %s if you specify --quota without argument)." % styles.stylize(styles.ST_DEFAULT, "1024"))
+		help="Change profile's user quota (in Mb, defaults to %s if you specify --quota without argument)." % stylize(ST_DEFAULT, "1024"))
 	profile.add_option("--skel",
 		action="store", type="string", dest="newskel", default = None,
-		help="Change profile skel (specify a skel dir as an absolute pathname, defaults to %s if you give --skel without argument)." % styles.stylize(styles.ST_DEFAULT, configuration.users.default_skel))
+		help="Change profile skel (specify a skel dir as an absolute pathname, defaults to %s if you give --skel without argument)." % stylize(ST_DEFAULT, configuration.users.default_skel))
 	profile.add_option("--add-groups",
 		action="store", type="string", dest="groups_to_add", default = None,
 		help="Add one or more group(s) to default memberships of profile (separate groups with commas without spaces).")
@@ -1062,7 +1154,7 @@ def mod_profile_parse_arguments(app, configuration):
 		help="Re-apply to all user accounts on the system (LENGHTY operation !).")
 	profile.add_option("--no-instant-apply",
 		action="store_false", dest="instant_apply", default = True,
-		help="Don't apply group addition/deletion instantly to all members of the modified profile (%s; use this only if you know what you're doing)." % styles.stylize(styles.ST_IMPORTANT, "this is not recommended"))
+		help="Don't apply group addition/deletion instantly to all members of the modified profile (%s; use this only if you know what you're doing)." % stylize(ST_IMPORTANT, "this is not recommended"))
 	profile.add_option("--no-sync",
 		action="store_true", dest="no_sync", default = False,
 		help="Commit changes only after all modifications.")
@@ -1078,7 +1170,7 @@ def mod_profile_parse_arguments(app, configuration):
 	return opts, args
 def mod_keyword_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s keyword --name=<nom> [--rename=<nouveau_nom>] [--parent=<nouveau_parent>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s keyword --name=<nom> [--rename=<nouveau_nom>] [--parent=<nouveau_parent>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--remove-parent] [--recursive]"
 
 	parser = OptionParser(usage=usage_text,
@@ -1087,11 +1179,11 @@ def mod_keyword_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_profile'))
 
-	keyword = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify keyword options "))
+	keyword = OptionGroup(parser, stylize(ST_OPTION, "Modify keyword options "))
 
 	keyword.add_option("--name",
 		action="store", type="string", dest="name", default = None,
-		help="specify keyword to modify (%s)." % styles.stylize(styles.ST_IMPORTANT, "required"))
+		help="specify keyword to modify (%s)." % stylize(ST_IMPORTANT, "required"))
 	keyword.add_option("--rename",
 		action="store", type="string", dest="newname", default = None,
 		help="Rename keyword")
@@ -1113,7 +1205,7 @@ def mod_keyword_parse_arguments(app, configuration):
 	return parser.parse_args()
 def mod_path_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s path [--path=]<fichier_ou_repertoire> [--add-keywords=<kw1[,kw1,…]>] [--del-keywords=<kw1[,kw1,…]>]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
+	usage_text = "\n\t%s path [--path=]<fichier_ou_repertoire> [--add-keywords=<kw1[,kw1,…]>] [--del-keywords=<kw1[,kw1,…]>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--clear-keywords] [--recursive]"
 
 	parser = OptionParser(usage=usage_text,
@@ -1122,12 +1214,12 @@ def mod_path_parse_arguments(app, configuration):
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_path'))
 
-	path = OptionGroup(parser, styles.stylize(styles.ST_OPTION, "Modify keyword options "))
+	path = OptionGroup(parser, stylize(ST_OPTION, "Modify keyword options "))
 
 	path.add_option("--path",
 		action="store", type="string", dest="path", default = None,
 		help="specify path of the file/directory to tag (%s)." %
-			styles.stylize(styles.ST_IMPORTANT, "required"))
+			stylize(ST_IMPORTANT, "required"))
 	path.add_option("--add-keywords",
 		action="store", type="string", dest="keywords_to_add", default = None,
 		help="Add keywords.")
@@ -1149,7 +1241,7 @@ def mod_path_parse_arguments(app, configuration):
 	return parser.parse_args()
 def mod_configuration_parse_arguments(app, configuration):
 
-	usage_text = "\n\t%s config[uration] [--hide-groups|--set-hidden-groups|--unhide-groups|-u|-U] [--set-hostname <new hostname>] [--restrictive] [--set-ip-address <NEW.ETH0.IP.ADDR>]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s config[uration] [--hide-groups|--set-hidden-groups|--unhide-groups|-u|-U] [--set-hostname <new hostname>] [--restrictive] [--set-ip-address <NEW.ETH0.IP.ADDR>]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1158,7 +1250,7 @@ def mod_configuration_parse_arguments(app, configuration):
 	# (for modify config ?).
 	parser.add_option_group(common_behaviour_group(app, parser, 'mod_config'))
 
-	configuration_group = OptionGroup(parser, styles.stylize(styles.ST_OPTION,
+	configuration_group = OptionGroup(parser, stylize(ST_OPTION,
 		"Modify configuration options "))
 
 	configuration_group.add_option("--setup-shared-dirs",
@@ -1176,14 +1268,14 @@ def mod_configuration_parse_arguments(app, configuration):
 	configuration_group.add_option("-u", "--hide-groups", "--set-groups-hidden",
 		action="store_true", dest="hidden_groups", default=None,
 		help="Set restrictive perms (710) on %s." %
-			styles.stylize(styles.ST_PATH,
+			stylize(ST_PATH,
 				"%s/%s" % (configuration.defaults.home_base_path,
 					configuration.groups.names.plural)))
 
 	configuration_group.add_option("-U", "--unhide-groups",
 		"--set-groups-visible",
 		action="store_false", dest="hidden_groups", default=None,
-		help="Set relaxed perms (750) on %s." % styles.stylize(styles.ST_PATH,
+		help="Set relaxed perms (750) on %s." % stylize(ST_PATH,
 		"%s/%s" % (configuration.defaults.home_base_path,
 			configuration.groups.names.plural)))
 
@@ -1191,14 +1283,14 @@ def mod_configuration_parse_arguments(app, configuration):
 		action="store", dest="enable_backends", default=None,
 		help='''enable given backend(s) on the current system (separated '''
 			'''by commas without spaces). List of available backends with '''
-			'''`%s`.''' % styles.stylize(styles.ST_MODE,
+			'''`%s`.''' % stylize(ST_MODE,
 				'get config backends'))
 
 	configuration_group.add_option('-B', "--disable-backends",
 		action="store", dest="disable_backends", default=None,
 		help='''disable given backend(s) on the current system (separated '''
 			'''by commas without spaces). List of available backends with '''
-			'''`%s`.''' % styles.stylize(styles.ST_MODE,
+			'''`%s`.''' % stylize(ST_MODE,
 				'get config backends'))
 
 	configuration_group.add_option("-e", "--set-hostname",
@@ -1227,8 +1319,8 @@ def mod_configuration_parse_arguments(app, configuration):
 def chk_user_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « check user(s) »."""
 
-	usage_text = "\n\t%s user[s] --login login1[[,login2][…]] [--minimal] [--yes|--no]\n" % styles.stylize(styles.ST_APPNAME, "%prog") \
-		+ "\t%s user[s] --uid uid1[[,uid2][…]] [--minimal] [--yes|--no]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s user[s] --login login1[[,login2][…]] [--minimal] [--yes|--no]\n" % stylize(ST_APPNAME, "%prog") \
+		+ "\t%s user[s] --uid uid1[[,uid2][…]] [--minimal] [--yes|--no]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1240,7 +1332,7 @@ def chk_user_parse_arguments(app, configuration):
 def chk_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
-	usage_text = "\n\t%s group[s] --name group1[[,group2][…]]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s group[s] --name group1[[,group2][…]]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1252,7 +1344,7 @@ def chk_group_parse_arguments(app, configuration):
 def chk_profile_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « check profile(s) »."""
 
-	usage_text = "\n\t%s profile[s] --name profile1[[,profile2][…]]" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s profile[s] --name profile1[[,profile2][…]]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1264,7 +1356,7 @@ def chk_profile_parse_arguments(app, configuration):
 def chk_configuration_parse_arguments(app, configuration):
 	"""TODO"""
 
-	usage_text = "\n\t%s config[uration] -a | (names|hostname)" % styles.stylize(styles.ST_APPNAME, "%prog")
+	usage_text = "\n\t%s config[uration] -a | (names|hostname)" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))

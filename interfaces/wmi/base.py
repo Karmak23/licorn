@@ -64,7 +64,7 @@ def system_info():
 	mem = {}
 
 	def compute_mem(line, x):
-		#logging.debug(line[0:-1] + " -> " + re.split('\W+', line)[1])
+		#assert logging.debug(line[0:-1] + " -> " + re.split('\W+', line)[1])
 
 		split = re.split('[\W\(\)]+', line)
 
@@ -96,7 +96,7 @@ Physical memory: <strong>%.2fGb</strong> total,<br />
 %.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
 %s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
 	mem['Cached'], mem['Buffers'], swap_message)
-def index(uri, http_user, users=None, **kwargs):
+def index(uri, http_user, LMC=None, *args, **kwargs):
 
 	start = time.time()
 
@@ -113,7 +113,7 @@ def index(uri, http_user, users=None, **kwargs):
 	</tr>
 	</table>
 	''' % (_('System information'), system_info(),
-		_('System status'), system_load(users))
+		_('System status'), system_load(LMC.users))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
 		data + w.page_body_end(w.total_time(start, time.time()))))

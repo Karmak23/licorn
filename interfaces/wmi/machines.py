@@ -732,9 +732,9 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 
 	def html_build_compact(index, accounts = accounts):
 		mid      = ordered[index]
-		hostname = m[mid]['hostname']
-		edit     = 'machine %s (IP %s)' % (hostname, m[mid]['ip'])
-		if m[mid]['managed']:
+		hostname = m[mid].hostname
+		edit     = 'machine %s (IP %s)' % (hostname, m[mid].ip)
+		if m[mid].managed:
 			totals[_('managed')] += 1
 		else:
 			totals[_('floating')] += 1
@@ -754,7 +754,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 				_('Shutdown the machine %s')),
 			}
 
-		status = m[mid]['status']
+		status = m[mid].status
 		if power_statuses[status][0]:
 
 			html_data = '''
@@ -801,14 +801,14 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 			''' % (
 				hostname, edit, hostname,
 					'''&nbsp;<img src='/images/16x16/alt.png' alt='%s' />''' % _('This machine is an ALT® client.') if machines.is_alt(mid) else '',
-				hostname, edit, m[mid]['ip'],
-				hostname, edit, m[mid]['ether'],
+				hostname, edit, m[mid].ip,
+				hostname, edit, m[mid].ether,
 				hostname, edit, format_time_delta(
-					float(m[mid]['expiry']) - time.time(), use_neg=True) \
-							if m[mid]['expiry'] else '-'
+					float(m[mid].expiry) - time.time(), use_neg=True) \
+							if m[mid].expiry else '-'
 				)
 
-		if m[mid]['managed']:
+		if m[mid].managed:
 			html_data += '''
 
 		<!-- MANAGED -->
@@ -833,20 +833,20 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 		return html_data
 
 	for mid in machines.keys():
-		machine  = m[mid]
-		hostname = machine['hostname']
+		#machine  = m[mid]
+		hostname = m[mid].hostname
 
 		# we add the hostname to gecosValue and lockedValue to be sure to obtain
 		# unique values. This prevents problems with empty or non-unique GECOS
 		# and when sorting on locked status (accounts would be overwritten and
 		# lost because sorting must be done on unique values).
 		accounts[mid] = {
-			'status'  : str(machine['status']) + hostname,
+			'status'  : str(m[mid].status) + hostname,
 			'hostname': hostname,
-			'ip'      : machine['ip'],
-			'ether'   : machine['ether'],
-			'expiry'  : machine['expiry'],
-			'managed' : str(machine['managed']) + hostname
+			'ip'      : m[mid].ip,
+			'ether'   : m[mid].ether,
+			'expiry'  : m[mid].expiry,
+			'managed' : str(m[mid].managed) + hostname
 		}
 
 		# index on the column choosen for sorting, and keep trace of the mid

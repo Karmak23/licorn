@@ -10,11 +10,11 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import hlstr, styles
-from licorn.foundations.constants import filters, host_status
+from licorn.foundations           import hlstr
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-
-from licorn.interfaces.cli import cli_main, cli_select
+from licorn.foundations.constants import filters, host_status
+from licorn.interfaces.cli        import cli_main, cli_select
 
 _app = {
 	"name"     		: "licorn-modify",
@@ -59,8 +59,8 @@ def mod_user(opts, args, users, groups, **kwargs):
 
 	for uid in uids_to_mod:
 		if opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Modify user %s ?''' % styles.stylize(
-			styles.ST_LOGIN,users.uid_to_login(uid)),
+			logging.ask_for_repair('''Modify user %s ?''' % stylize(
+			ST_LOGIN,users.uid_to_login(uid)),
 			auto_answer=opts.auto_answer):
 
 			if opts.newgecos is not None:
@@ -100,16 +100,16 @@ def mod_user(opts, args, users, groups, **kwargs):
 							logging.warning(
 								'''Unable to add user %s in group %s (was: '''
 								'''%s).''' % (
-									styles.stylize(styles.ST_LOGIN,
+									stylize(ST_LOGIN,
 										users.uid_to_login(uid)),
-									styles.stylize(styles.ST_NAME, g), str(e)))
+									stylize(ST_NAME, g), str(e)))
 						except exceptions.LicornException, e:
 							raise exceptions.LicornRuntimeError(
 								'''Unable to add user %s in group %s (was: '''
 								'''%s).'''
-									% (styles.stylize(styles.ST_LOGIN,
+									% (stylize(ST_LOGIN,
 										users.uid_to_login(uid)),
-										styles.stylize(styles.ST_NAME, g),
+										stylize(ST_NAME, g),
 										str(e)))
 
 			if opts.groups_to_del:
@@ -122,15 +122,15 @@ def mod_user(opts, args, users, groups, **kwargs):
 						except exceptions.LicornRuntimeException, e:
 							logging.warning('''Unable to remove user %s from '''
 								'''group %s (was: %s).''' % (
-									styles.stylize(styles.ST_LOGIN, opts.login),
-									styles.stylize(styles.ST_NAME, g),
+									stylize(ST_LOGIN, opts.login),
+									stylize(ST_NAME, g),
 									str(e)))
 						except exceptions.LicornException, e:
 							raise exceptions.LicornRuntimeError(
 								'''Unable to remove user %s from '''
 								'''group %s (was: %s).''' % (
-									styles.stylize(styles.ST_LOGIN, opts.login),
-									styles.stylize(styles.ST_NAME, g),
+									stylize(ST_LOGIN, opts.login),
+									stylize(ST_NAME, g),
 									str(e)))
 
 			if opts.apply_skel is not None:
@@ -176,11 +176,8 @@ def mod_group(opts, args, groups, configuration, **kwargs):
 
 	for gid in gids_to_mod:
 		if opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Modify group %s ?''' % styles.stylize(
-			styles.ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
-			if opts.permissive is not None:
-				groups.SetSharedDirPermissiveness(gid=gid,
-					permissive=opts.permissive)
+			logging.ask_for_repair('''Modify group %s ?''' % stylize(
+			ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
 
 			if opts.permissive is not None:
 				groups.SetSharedDirPermissiveness(gid=gid,
@@ -277,8 +274,8 @@ def mod_profile(opts, args, users, groups, profiles, **kwargs):
 
 	for group in profiles_to_mod:
 		if opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Modify profile %s ?''' % styles.stylize(
-			styles.ST_LOGIN,profiles.group_to_name(group)),
+			logging.ask_for_repair('''Modify profile %s ?''' % stylize(
+			ST_LOGIN,profiles.group_to_name(group)),
 			auto_answer=opts.auto_answer):
 
 			if opts.newname is not None:
@@ -433,7 +430,7 @@ def mod_path(opts, args):
 			keywords.DeleteKeywordsFromPath(opts.path, opts.keywords_to_del.split(','), opts.recursive)
 		if opts.keywords_to_add is not None:
 			keywords.AddKeywordsToPath(opts.path, opts.keywords_to_add.split(','), opts.recursive)
-def mod_configuration(opts, args, configuration, privileges, **kwargs):
+def mod_configuration(opts, args, configuration, privileges, backends, **kwargs):
 	""" Modify some aspects or abstract directives of the system configuration
 		(use with caution)."""
 
@@ -462,11 +459,11 @@ def mod_configuration(opts, args, configuration, privileges, **kwargs):
 
 	elif opts.disable_backends != None:
 		for backend in opts.disable_backends.split(','):
-			configuration.disable_backend(backend, listener=opts.listener)
+			backends.disable_backend(backend, listener=opts.listener)
 
 	elif opts.enable_backends != None:
 		for backend in opts.enable_backends.split(','):
-			configuration.enable_backend(backend, listener=opts.listener)
+			backends.enable_backend(backend, listener=opts.listener)
 
 	else:
 		raise exceptions.BadArgumentError(

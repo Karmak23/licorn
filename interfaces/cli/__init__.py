@@ -15,7 +15,8 @@ from licorn.foundations           import options, exceptions, logging
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
-from licorn.foundations.objects   import MessageProcessor
+
+from licorn.core.messaging import MessageProcessor
 
 pyroStarted=False
 pyroExit=0
@@ -62,7 +63,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			assert ltrace('cli', '  cli_main: connecting to core')
 			import licorn.core
 			configuration, users, groups, profiles, privileges, keywords, \
-				machines = licorn.core.connect()
+				machines, system, backends = licorn.core.connect()
 
 			(opts, args) = functions[mode][0](app=app_data,
 				configuration=configuration)
@@ -87,7 +88,8 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			del pyro_start_time
 
 			# not used yet, but kept for future use.
-			#server=Pyro.core.getAttrProxyForURI("PYROLOC://localhost:7766/msgproc")
+			#server=Pyro.core.getAttrProxyForURI("PYROLOC://localhost:%s/msgproc" %
+			#	configuration.licornd.pyro.port)
 
 			if giant_locked:
 				from licorn.foundations.objects import FileLock
@@ -95,13 +97,13 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 					functions[mode][1](opts=opts, args=args,
 					configuration=configuration, users=users, groups=groups,
 					profiles=profiles, privileges=privileges, keywords=keywords,
-					machines=machines)
+					machines=machines, system=system, backends=backends)
 			else :
 				cmd_start_time = time.time()
 				functions[mode][1](opts=opts, args=args,
 					configuration=configuration, users=users, groups=groups,
 					profiles=profiles, privileges=privileges, keywords=keywords,
-					machines=machines)
+					machines=machines, system=system, backends=backends)
 
 			assert ltrace('timings', '@cli_main_exec_time: %.4fs' % (
 				time.time() - cmd_start_time))
@@ -127,7 +129,8 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			str(e), stylize(ST_SPECIAL, str(e.__class__).replace(
 			"<class '",'').replace("'>", '')), e.errno), e.errno,
 			full=True if options.verbose > 2 else False,
-			tb=''.join(Pyro.util.getPyroTraceback(e)))
+			tb=''.join(Pyro.util.getPyroTraceback(e)
+				if options.verbose > 2 else ''))
 
 	except exceptions.LicornException, e:
 		logging.error('%s: %s (errno=%s).' % (

@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, termios
 
 from styles    import *
-from objects   import Singleton
+from base      import Singleton
 from constants import interactions
 from ltrace    import ltrace, mytime
 
@@ -65,7 +65,7 @@ def interactive_ask_for_repair(message, auto_answer=None):
 				old = termios.tcgetattr(fd)
 				new = termios.tcgetattr(fd)
 
-				# put the TTY is nearly raw mode to be able to get characters
+				# put the TTY in nearly raw mode to be able to get characters
 				# one by one (not to wait for newline to get one).
 
 				# lflags

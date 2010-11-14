@@ -12,17 +12,22 @@ import Pyro.core
 from time import time, strftime, gmtime
 from threading import RLock
 
-from licorn.foundations           import logging, exceptions, process, hlstr
-from licorn.foundations           import pyutils, styles, fsapi
-from licorn.foundations.objects   import Singleton
-from licorn.foundations.constants import filters
+from licorn.foundations           import logging, exceptions, hlstr
+from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.base      import Singleton
+from licorn.foundations.constants import filters
 
-class UsersController(Singleton, Pyro.core.ObjBase):
+from licorn.core         import LMC
+from licorn.core.objects import LicornCoreController
+
+class UsersController(Singleton, LicornCoreController):
 
 	init_ok = False
+	load_ok = False
 
-	def __init__(self, configuration):
+	def __init__(self):
 		""" Create the user accounts list from the underlying system. """
 
 		assert ltrace('users', '> UsersController.__init__(%s)' %
@@ -31,22 +36,18 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		if UsersController.init_ok:
 			return
 
-		Pyro.core.ObjBase.__init__(self)
-
-		self.lock = RLock()
-
-		# cross-references to other common objects
-		self.configuration = configuration
-		configuration.set_controller('users', self)
-		self.backends = self.configuration.backends
-		self.profiles = None # (ProfilesController)
-		self.groups = None # (GroupsController)
-
-		self.reload(full=False)
+		LicornCoreController.__init__(self, 'users')
 
 		UsersController.init_ok = True
-		assert ltrace('users', '> UsersController.__init__(%s)' %
+		assert ltrace('users', '< UsersController.__init__(%s)' %
 			UsersController.init_ok)
+	def load(self):
+		if UsersController.load_ok:
+			return
+		else:
+			assert ltrace('users', '| load()')
+			self.reload()
+			UsersController.load_ok = True
 	def __getitem__(self, item):
 		return self.users[item]
 	def __setitem__(self, item, value):
@@ -55,54 +56,46 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		return self.users.keys()
 	def has_key(self, key):
 		return self.users.has_key(key)
-	def reload(self, full=True):
+	def reload(self):
 		""" Load (or reload) the data structures from the system data. """
 
 		assert ltrace('users', '| reload()')
 
-		with self.lock:
+		with self.lock():
 			self.users       = {}
 			self.login_cache = {}
 
-			for bkey in self.backends.keys():
-				if bkey=='prefered':
-					continue
-				self.backends[bkey].set_users_controller(self)
-				u, c = self.backends[bkey].load_users()
+			for backend in self.backends():
+				u, c = backend.load_Users()
 				self.users.update(u)
 				self.login_cache.update(c)
-
-		if full:
-			# needed when reload is trigerred by /etc/* change in the inotifier.
-			self.groups.reload()
 	def reload_backend(self, backend_name):
 		""" Reload only one backend data (called from inotifier). """
 
 		assert ltrace('users', '| reload_backend(%s)' % backend_name)
 
-		with self.lock:
-			u, c = self.backends[backend_name].load_users()
+		with self.lock():
+			u, c = LMC.backends[backend_name].load_Users()
 			self.users.update(u)
 			self.login_cache.update(c)
-	def set_profiles_controller(self, profiles):
-		self.profiles = profiles
-	def set_groups_controller(self, groups):
-		self.groups = groups
+
+		# needed to reload the group cache.
+		logging.notice('reloading %s controller too.' %
+			stylize(ST_NAME, LMC.groups.name))
+		LMC.groups.reload_backend(backend_name)
 	def WriteConf(self, uid=None):
 		""" Write the user data in appropriate system files."""
 
 		assert ltrace('users', '| WriteConf()')
 
-		with self.lock:
+		with self.lock():
 			if uid:
-				self.backends[
+				LMC.backends[
 					self.users[uid]['backend']
-					].save_one_user(uid)
+					].save_User(uid)
 			else:
-				for bkey in self.backends.keys():
-					if bkey=='prefered':
-						continue
-					self.backends[bkey].save_users()
+				for backend in self.backends():
+					backend.save_Users()
 	def Select(self, filter_string):
 		""" Filter user accounts on different criteria.
 		Criteria are:
@@ -113,7 +106,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			- more to come…
 		"""
 
-		with self.lock:
+		with self.lock():
 			uids = self.users.keys()
 			uids.sort()
 
@@ -175,15 +168,15 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						'''Directory specified %s for system user %s '''
 						'''already exists. If you really want to use '''
 						'''it, please specify --force argument.''' % (
-						styles.stylize(styles.ST_PATH, home),
-						styles.stylize(styles.ST_NAME,login)))
+						stylize(ST_PATH, home),
+						stylize(ST_NAME,login)))
 
 				if not home.startswith(
-					self.configuration.defaults.home_base_path) \
+					LMC.configuration.defaults.home_base_path) \
 					and not home.startswith('/var') \
 					or home.startswith('%s/%s' %(
-						self.configuration.defaults.home_base_path,
-						self.configuration.groups.names.plural)) \
+						LMC.configuration.defaults.home_base_path,
+						LMC.configuration.groups.names.plural)) \
 					or home.find('/tmp') != -1:
 
 					raise exceptions.BadArgumentError(
@@ -192,11 +185,11 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						'''and a temporary directory (/var/tmp, /tmp). '''
 						'''This is unsupported, '''
 						'''sorry. Aborting.''' % (
-						styles.stylize(styles.ST_PATH, home),
-						styles.stylize(styles.ST_NAME,login),
-						self.configuration.defaults.home_base_path,
-						self.configuration.defaults.home_base_path,
-						self.configuration.groups.names.plural))
+						stylize(ST_PATH, home),
+						stylize(ST_NAME,login),
+						LMC.configuration.defaults.home_base_path,
+						LMC.configuration.defaults.home_base_path,
+						LMC.configuration.groups.names.plural))
 
 				if home in [ self.users[uid]['homeDirectory'] for uid in
 					self.users ]:
@@ -204,8 +197,8 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						'''Specified home directory %s for system user '''
 						'''%s is already owned by another user. It can't '''
 						'''be used, sorry.''' % (
-						styles.stylize(styles.ST_PATH, home),
-						styles.stylize(styles.ST_NAME,login)))
+						stylize(ST_PATH, home),
+						stylize(ST_NAME,login)))
 
 				return home
 		else: # not system
@@ -213,11 +206,11 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				logging.warning('''Specify an alternative home '''
 				'''directory is not allowed for standard users. Using '''
 				'''standard home path %s instead.''' % (
-				styles.stylize(styles.ST_PATH, '%s/%s' % (
-					self.configuration.users.base_path, login))),
+				stylize(ST_PATH, '%s/%s' % (
+					LMC.configuration.users.base_path, login))),
 				listener=listener)
 
-		return "%s/%s" % (self.configuration.users.base_path, login)
+		return "%s/%s" % (LMC.configuration.users.base_path, login)
 	def _validate_basic_fields(self, login, firstname, lastname, gecos, shell,
 		skel, listener=None):
 		# to create a user account, we must have a login. autogenerate it
@@ -259,16 +252,16 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			else:
 				raise exceptions.BadArgumentError(
 					logging.SYSU_MALFORMED_LOGIN % (
-						login, styles.stylize(styles.ST_REGEX,
+						login, stylize(ST_REGEX,
 						hlstr.regex['login'])))
 
 		if not login_autogenerated and \
-			len(login) > self.configuration.users.login_maxlenght:
+			len(login) > LMC.configuration.users.login_maxlenght:
 			raise exceptions.LicornRuntimeError(
 				"Login %s too long (currently %d characters," \
 				" but must be shorter or equal than %d)." % (
 					login, len(login),
-					self.configuration.users.login_maxlenght) )
+					LMC.configuration.users.login_maxlenght) )
 
 		# then, verify that other arguments match the system constraints.
 		if not hlstr.cregex['description'].match(gecos):
@@ -280,20 +273,20 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			else:
 				raise exceptions.BadArgumentError(
 					logging.SYSU_MALFORMED_GECOS % (
-						gecos, styles.stylize(styles.ST_REGEX,
+						gecos, stylize(ST_REGEX,
 						hlstr.regex['description'])))
 
-		if shell is not None and shell not in self.configuration.users.shells:
+		if shell is not None and shell not in LMC.configuration.users.shells:
 			raise exceptions.BadArgumentError(
 				"Invalid shell %s. Valid shells are: %s." % (shell,
-					self.configuration.users.shells))
+					LMC.configuration.users.shells))
 
 		if skel is not None \
-			and skel not in self.configuration.users.skels:
+			and skel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(
 				"The skel you specified doesn't exist on this system." \
 				" Valid skels are: %s." % \
-					self.configuration.users.skels)
+					LMC.configuration.users.skels)
 
 		return login, firstname, lastname, gecos, shell, skel
 	def _validate_important_fields(self, desired_uid, login, system, force,
@@ -307,8 +300,8 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.AlreadyExistsError('''The UID you want (%s) '''
 				'''is already taken by another user (%s). Please choose '''
 				'''another one.''' % (
-					styles.stylize(styles.ST_UGID, desired_uid),
-					styles.stylize(styles.ST_NAME,
+					stylize(ST_UGID, desired_uid),
+					stylize(ST_NAME,
 						self.users[desired_uid]['login'])))
 
 		# Verify prior existence of user account
@@ -321,7 +314,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				raise exceptions.AlreadyExistsError(
 					'''A user account %s already exists but has not the same '''
 					'''type. Please choose another login for your user.'''
-					% styles.stylize(styles.ST_NAME, login))
+					% stylize(ST_NAME, login))
 
 		# Due to a bug of adduser/deluser perl script, we must check that there
 		# is no group which the same name than the login. There should not
@@ -344,7 +337,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		#	(group toto is deleted but it shouldn't be ! And it is deleted
 		#	without *any* message !!)
 		#
-		if login in self.groups.name_cache and not force:
+		if login in LMC.groups.name_cache and not force:
 			raise exceptions.UpstreamBugException, \
 				"A group named `%s' exists on the system," \
 				" this could eventually conflict in Debian/Ubuntu system" \
@@ -356,16 +349,16 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		if desired_uid is None:
 			if system:
 				uid = pyutils.next_free(self.users.keys(),
-					self.configuration.users.system_uid_min,
-					self.configuration.users.system_uid_max)
+					LMC.configuration.users.system_uid_min,
+					LMC.configuration.users.system_uid_max)
 			else:
 				uid = pyutils.next_free(self.users.keys(),
-					self.configuration.users.uid_min,
-					self.configuration.users.uid_max)
+					LMC.configuration.users.uid_min,
+					LMC.configuration.users.uid_max)
 
 			logging.progress('Autogenerated UID for user %s: %s.' % (
-				styles.stylize(styles.ST_LOGIN, login),
-				styles.stylize(styles.ST_SECRET, uid)), listener=listener)
+				stylize(ST_LOGIN, login),
+				stylize(ST_SECRET, uid)), listener=listener)
 		else:
 			if (system and self.is_system_uid(desired_uid)) \
 				or (not system and self.is_standard_uid(
@@ -376,10 +369,10 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 					'''for the kind of user account you specified. System '''
 					'''UID must be between %d and %d, standard UID must be '''
 					'''between %d and %d.''' % (
-						self.configuration.users.system_uid_min,
-						self.configuration.users.system_uid_max,
-						self.configuration.users.uid_min,
-						self.configuration.users.uid_max)
+						LMC.configuration.users.system_uid_min,
+						LMC.configuration.users.system_uid_max,
+						LMC.configuration.users.uid_min,
+						LMC.configuration.users.uid_max)
 					)
 		return uid
 	def AddUser(self, login=None, system=False, password=None, gecos=None,
@@ -402,10 +395,10 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 		if primary_gid:
 			# this will raise a DoesntExistException if bad.
-			pg_gid = self.groups.guess_identifier(primary_gid)
+			pg_gid = LMC.groups.guess_identifier(primary_gid)
 
-		#self.lock_backends()
-		with self.lock:
+		#LMC.locks.users.giant_lock_backends()
+		with self.lock():
 
 			self._validate_important_fields(desired_uid, login, system, force,
 				listener=listener)
@@ -423,22 +416,22 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				# Apply the profile after having created the home dir.
 				try:
 					tmp_user_dict['loginShell'] = shell if shell else \
-						self.profiles.profiles[profile]['profileShell']
+						LMC.profiles[profile]['profileShell']
 					tmp_user_dict['gidNumber'] = \
-						self.groups.name_to_gid(
-							self.profiles.guess_identifier(profile))
+						LMC.groups.name_to_gid(
+							LMC.profiles.guess_identifier(profile))
 
 					tmp_user_dict['homeDirectory'] = self._validate_home_dir(
 						home, login, system, force, listener)
 
-					if self.profiles[profile]['memberGid'] != []:
+					if LMC.profiles[profile]['memberGid'] != []:
 						groups_to_add_user_to.extend([
-							self.groups.name_to_gid(x) for x in
-							self.profiles[profile]['memberGid']])
+							LMC.groups.name_to_gid(x) for x in
+							LMC.profiles[profile]['memberGid']])
 
 					if skel is None:
 						skel_to_apply = \
-							self.profiles.profiles[profile]['profileSkel']
+							LMC.profiles[profile]['profileSkel']
 				except KeyError, e:
 					# fix #292
 					raise exceptions.DoesntExistsError('''The profile %s '''
@@ -446,7 +439,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			elif primary_gid is not None:
 				tmp_user_dict['gidNumber']     = pg_gid
 				tmp_user_dict['loginShell']    = shell if shell else \
-					self.configuration.users.default_shell
+					LMC.configuration.users.default_shell
 
 				tmp_user_dict['homeDirectory'] = self._validate_home_dir(home,
 					login, system, force, listener)
@@ -454,14 +447,14 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				# FIXME: use is_valid_skel() ?
 				if skel is None and \
 					os.path.isdir(
-						self.groups.groups[pg_gid]['groupSkel']):
+						LMC.groups.groups[pg_gid]['groupSkel']):
 					skel_to_apply = \
-						self.groups.groups[pg_gid]['groupSkel']
+						LMC.groups.groups[pg_gid]['groupSkel']
 			else:
 				tmp_user_dict['gidNumber'] = \
-					self.configuration.users.default_gid
+					LMC.configuration.users.default_gid
 				tmp_user_dict['loginShell'] = shell if shell else \
-					self.configuration.users.default_shell
+					LMC.configuration.users.default_shell
 
 				tmp_user_dict['homeDirectory'] = self._validate_home_dir(home,
 					login, system, force, listener)
@@ -476,16 +469,16 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			if password is None:
 				# TODO: call cracklib2 to verify passwd strenght.
 				password = hlstr.generate_password(
-					self.configuration.users.min_passwd_size)
+					LMC.configuration.users.min_passwd_size)
 
 				logging.notice(logging.SYSU_AUTOGEN_PASSWD % (
-					styles.stylize(styles.ST_LOGIN, login),
-					styles.stylize(styles.ST_UGID, uid),
-					styles.stylize(styles.ST_SECRET, password)),
+					stylize(ST_LOGIN, login),
+					stylize(ST_UGID, uid),
+					stylize(ST_SECRET, password)),
 					listener=listener)
 
-			tmp_user_dict['userPassword'] = \
-				self.backends['prefered'].compute_password(password)
+			tmp_user_dict['userPassword'] = LMC.backends[
+					self._prefered_backend_name].compute_password(password)
 
 			tmp_user_dict['shadowLastChange'] = str(int(time()/86400))
 
@@ -495,7 +488,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			# create home directory and apply skel
 			if os.path.exists(tmp_user_dict['homeDirectory']):
 				logging.info('home dir %s already exists, not overwritting.' %
-					styles.stylize(styles.ST_PATH,
+					stylize(ST_PATH,
 						tmp_user_dict['homeDirectory']))
 			else:
 				import shutil
@@ -513,8 +506,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			tmp_user_dict['shadowMin']      = 0
 			tmp_user_dict['shadowMax']      = 99999
 			tmp_user_dict['shadowFlag']     = ''
-			tmp_user_dict['backend']        = \
-				self.backends['prefered'].name
+			tmp_user_dict['backend']        = self._prefered_backend_name
 
 			# Add user in internal list and in the cache
 			self.users[uid]         = tmp_user_dict
@@ -528,9 +520,9 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 			#
 			# DO NOT UNCOMMENT -- if not batch:
 			self.users[uid]['action'] = 'create'
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
-				].save_user(uid)
+				].save_User(uid)
 
 			# Samba: add Samba user account.
 			# TODO: put this into a module.
@@ -545,22 +537,22 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 		logging.info(logging.SYSU_CREATED_USER % (
 			'system ' if system else '',
-			styles.stylize(styles.ST_LOGIN, login),
-			styles.stylize(styles.ST_UGID, uid)),
+			stylize(ST_LOGIN, login),
+			stylize(ST_UGID, uid)),
 			listener=listener)
 
 		self.CheckUsers([ uid ], batch=True, listener=listener)
 
 		if groups_to_add_user_to != []:
 			for gid_to_add in groups_to_add_user_to:
-				self.groups.AddUsersInGroup(gid=gid_to_add,
+				LMC.groups.AddUsersInGroup(gid=gid_to_add,
 					users_to_add=[uid], listener=listener)
 
 		# Set quota
 		if profile is not None:
 			try:
 				pass
-				#os.popen2( [ 'quotatool', '-u', str(uid), '-b', self.configuration.defaults.quota_device, '-l' '%sMB' % self.profiles.profiles[profile]['quota'] ] )[1].read()
+				#os.popen2( [ 'quotatool', '-u', str(uid), '-b', LMC.configuration.defaults.quota_device, '-l' '%sMB' % LMC.profiles[profile]['quota'] ] )[1].read()
 				#logging.warning("quotas are disabled !")
 				# XXX: Quotatool can return 2 without apparent reason
 				# (the quota is etablished) !
@@ -585,7 +577,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		# '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
 		for group in self.users[uid]['groups'][:]:
-			self.groups.DeleteUsersFromGroup(name=group,
+			LMC.groups.DeleteUsersFromGroup(name=group,
 				users_to_del=[ uid ], batch=True)
 
 		try:
@@ -602,18 +594,17 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		# keep the backend, to notice the deletion
 		backend = self.users[uid]['backend']
 
-
-		with self.lock:
+		with self.lock():
 			# Delete user from users list
 			del(self.login_cache[login])
 			del(self.users[uid])
 		logging.info(logging.SYSU_DELETED_USER % \
-			styles.stylize(styles.ST_LOGIN, login), listener=listener)
+			stylize(ST_LOGIN, login), listener=listener)
 
 		# TODO: try/except and reload the user if unable to delete it
 		# delete the user in the backend after deleting it locally, else
 		# Unix backend will not know what to delete (this is quite a hack).
-		self.backends[backend].delete_user(login)
+		LMC.backends[backend].delete_User(login)
 
 		# user is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
@@ -624,32 +615,32 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				shutil.rmtree(homedir)
 			except OSError, e:
 				logging.warning("Problem deleting home dir %s (was: %s)" % (
-					styles.stylize(styles.ST_PATH, homedir), e),
+					stylize(ST_PATH, homedir), e),
 					listener=listener)
 
 		else:
 			# /home/archives must be OK befor moving
-			self.configuration.check_base_dirs(minimal=True,
+			LMC.configuration.check_base_dirs(minimal=True,
 				batch=True, listener=listener)
 
 			user_archive_dir = "%s/%s.deleted.%s" % (
-				self.configuration.home_archive_dir,
+				LMC.configuration.home_archive_dir,
 				login, strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(homedir, user_archive_dir)
 
 				logging.info(logging.SYSU_ARCHIVED_USER % (homedir,
-					styles.stylize(styles.ST_PATH, user_archive_dir)),
+					stylize(ST_PATH, user_archive_dir)),
 					listener=listener)
 
-				self.configuration.check_archive_dir(
+				LMC.configuration.check_archive_dir(
 					user_archive_dir, batch=True, listener=listener)
 
 			except OSError, e:
 				if e.errno == 2:
 					logging.warning(
 						"Home dir %s doesn't exist, thus not archived." % \
-							styles.stylize(styles.ST_PATH, homedir),
+							stylize(ST_PATH, homedir),
 							listener=listener)
 				else:
 					raise e
@@ -657,22 +648,22 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		display=False, listener=None):
 		""" Change the password of a user. """
 
-		with self.lock:
+		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
 
 			if password is None:
 				password = hlstr.generate_password(
-					self.configuration.users.min_passwd_size)
+					LMC.configuration.users.min_passwd_size)
 			elif password == "":
 				logging.warning(logging.SYSU_SET_EMPTY_PASSWD % \
-					styles.stylize(styles.ST_LOGIN, login), listener=listener)
+					stylize(ST_LOGIN, login), listener=listener)
 				#
 				# SECURITY concern: if password is empty, shouldn't we
 				# automatically remove user from remotessh ?
 				#
 
 			self.users[uid]['userPassword'] = \
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
 				].compute_password(password)
 
@@ -681,20 +672,20 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				int(time()/86400) )
 
 			self.users[uid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
-				].save_user(uid)
+				].save_User(uid)
 
 			if display:
 				logging.notice("Set password for user %s(%s) to %s." % (
-					styles.stylize(styles.ST_NAME, login),
-					styles.stylize(styles.ST_UGID, uid),
-					styles.stylize(styles.ST_IMPORTANT, password)),
+					stylize(ST_NAME, login),
+					stylize(ST_UGID, uid),
+					stylize(ST_IMPORTANT, password)),
 					listener=listener)
 			else:
 				logging.info('Changed password for user %s(%s).' % (
-					styles.stylize(styles.ST_NAME, login),
-					styles.stylize(styles.ST_UGID, uid)),
+					stylize(ST_NAME, login),
+					stylize(ST_UGID, uid)),
 					listener=listener)
 
 			try:
@@ -708,96 +699,96 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 	def ChangeUserGecos(self, login=None, uid=None, gecos="", listener=None):
 		""" Change the gecos of a user. """
 
-		with self.lock:
+		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
 
 			if not hlstr.cregex['description'].match(gecos):
 				raise exceptions.BadArgumentError(logging.SYSU_MALFORMED_GECOS % (
 					gecos,
-					styles.stylize(styles.ST_REGEX, hlstr.regex['description'])))
+					stylize(ST_REGEX, hlstr.regex['description'])))
 
 			self.users[uid]['gecos'] = gecos
 
 			self.users[uid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
-				].save_user(uid)
+				].save_User(uid)
 
 			logging.info('Changed GECOS for user %s(%s) to %s.' % (
-				styles.stylize(styles.ST_NAME, login),
-				styles.stylize(styles.ST_UGID, uid),
-				styles.stylize(styles.ST_COMMENT, gecos)),
+				stylize(ST_NAME, login),
+				stylize(ST_UGID, uid),
+				stylize(ST_COMMENT, gecos)),
 				listener=listener)
 	def ChangeUserShell(self, login=None, uid=None, shell=None, listener=None):
 		""" Change the shell of a user. """
 
-		with self.lock:
+		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
 
-			if shell is None or shell not in self.configuration.users.shells:
+			if shell is None or shell not in LMC.configuration.users.shells:
 				raise exceptions.BadArgumentError(
 					"Invalid shell %s. Valid shells are %s." % (
-						shell, self.configuration.users.shells)
+						shell, LMC.configuration.users.shells)
 					)
 
 			self.users[uid]['loginShell'] = shell
 
 			self.users[uid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
-				].save_user(uid)
+				].save_User(uid)
 
 			logging.info('Changed shell for user %s(%s) to %s.' % (
-				styles.stylize(styles.ST_NAME, login),
-				styles.stylize(styles.ST_UGID, uid),
-				styles.stylize(styles.ST_COMMENT, shell)),
+				stylize(ST_NAME, login),
+				stylize(ST_UGID, uid),
+				stylize(ST_COMMENT, shell)),
 				listener=listener)
 	def LockAccount(self, login=None, uid=None, lock=True, listener=None):
 		"""(Un)Lock a user account. """
 
-		with self.lock:
+		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
 
 			if lock:
 				if self.users[uid]['locked']:
 					logging.info('account %s already locked.' %
-						styles.stylize(styles.ST_NAME, login), listener=listener)
+						stylize(ST_NAME, login), listener=listener)
 				else:
 					self.users[uid]['userPassword'] = '!' + \
 						self.users[uid]['userPassword']
 					logging.info('Locked user account %s.' % \
-						styles.stylize(styles.ST_LOGIN, login), listener=listener)
+						stylize(ST_LOGIN, login), listener=listener)
 			else:
 				if self.users[uid]['locked']:
 					self.users[uid]['userPassword'] = \
 						self.users[uid]['userPassword'][1:]
 					logging.info('Unlocked user account %s.' % \
-						styles.stylize(styles.ST_LOGIN, login), listener=listener)
+						stylize(ST_LOGIN, login), listener=listener)
 				else:
 					logging.info('account %s already unlocked.' %
-						styles.stylize(styles.ST_NAME, login), listener=listener)
+						stylize(ST_NAME, login), listener=listener)
 
 			self.users[uid]['locked'] = lock
 
 			self.users[uid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.users[uid]['backend']
-				].save_user(uid)
+				].save_User(uid)
 	def ApplyUserSkel(self, login=None, uid=None, skel=None, listener=None):
 		""" Apply a skel on a user. """
 
 		# FIXME: 1 reimplement this cleanly, without shell subcommands
 		# FIXME: 2 use fine-grained file-locking to avoid applying skel onto
 		# another skel-apply process.
-		# FIXME:  3 use with self.lock to avoid user beiing deleted while skel
+		# FIXME:  3 use with self.lock() to avoid user beiing deleted while skel
 		# applies ?
 
 		uid, login = self.resolve_uid_or_login(uid, login)
 
-		if skel is None or skel not in self.configuration.defaults.skels:
+		if skel is None or skel not in LMC.configuration.defaults.skels:
 			raise exceptions.BadArgumentError(
 				"Invalid skel %s. Valid shells are %s." % (
-					skel, self.configuration.users.skels)
+					skel, LMC.configuration.users.skels)
 				)
 
 		# no force option with shutil.copytree(), thus use cp to force overwrite
@@ -813,10 +804,39 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 					self.users[uid]['homeDirectory'], fileordir) )
 			except Exception, e:
 				logging.warning(str(e), listener=listener)
+	def dump(self):
+		""" Dump the internal data structures (debug and development use). """
+
+		with self.lock():
+
+			assert ltrace('users', '| dump()')
+
+			uids = self.users.keys()
+			uids.sort()
+
+			logins = self.login_cache.keys()
+			logins.sort()
+
+			def dump_user(uid):
+				return 'users[%s] (%s) = %s ' % (
+					stylize(ST_UGID, uid),
+					stylize(ST_NAME, self.users[uid]['login']),
+					str(self.users[uid]).replace(
+					', ', '\n\t').replace('{', '{\n\t').replace('}','\n}'))
+
+			data = '%s:\n%s\n%s:\n%s\n' % (
+				stylize(ST_IMPORTANT, 'core.users'),
+				'\n'.join(map(dump_user, uids)),
+				stylize(ST_IMPORTANT, 'core.login_cache'),
+				'\n'.join(['\t%s: %s' % (key, self.login_cache[key]) \
+					for key in logins ])
+				)
+
+			return data
 	def ExportCLI(self, selected=None, long_output=False):
 		""" Export the user accounts list to human readable («passwd») form. """
 
-		with self.lock:
+		with self.lock():
 
 			if selected is None:
 				uids = self.users.keys()
@@ -837,13 +857,13 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				#		if users[uid].has_key('locked') else 'None'))
 				if users[uid].has_key('locked'):
 					if users[uid]['locked']:
-						user_login = "%s" % styles.stylize(styles.ST_BAD,
+						user_login = "%s" % stylize(ST_BAD,
 							users[uid]['login'])
 					else:
-						user_login = styles.stylize(styles.ST_OK,
+						user_login = stylize(ST_OK,
 							users[uid]['login'])
 				else:
-					user_login = styles.stylize(styles.ST_NAME,
+					user_login = stylize(ST_NAME,
 							users[uid]['login'])
 
 				account = [	user_login,
@@ -855,8 +875,8 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 							]
 				if long_output:
 					account.append(','.join(self.users[uid]['groups']))
-					account.append('[%s]' % styles.stylize(
-						styles.ST_LINK, users[uid]['backend']))
+					account.append('[%s]' % stylize(
+						ST_LINK, users[uid]['backend']))
 
 				return ':'.join(account)
 
@@ -866,7 +886,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 	def ExportCSV(self, selected=None, long_output=False):
 		""" Export the user accounts list to CSV. """
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				uids = self.users.keys()
 			else:
@@ -892,7 +912,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 	def ExportXML(self, selected=None, long_output=False):
 		""" Export the user accounts list to XML. """
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				uids = self.users.keys()
 			else:
@@ -941,7 +961,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		# during the check ? what happens ?
 
 		# dependancy: base dirs must be OK before checking users's homes.
-		self.configuration.check_base_dirs(minimal=minimal,
+		LMC.configuration.check_base_dirs(minimal=minimal,
 			batch=batch, auto_answer=auto_answer, listener=listener)
 
 		def check_uid(uid, minimal=minimal, batch=batch,
@@ -949,7 +969,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 			assert ltrace('users', '> CheckUsers.check_uid(uid=%s)' % uid)
 
-			with self.lock:
+			with self.lock():
 				login = self.uid_to_login(uid)
 				all_went_ok = True
 
@@ -966,13 +986,13 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				if self.is_unrestricted_system_uid(uid):
 
 					logging.progress("Checking system account %s..." % \
-						styles.stylize(styles.ST_NAME, login), listener=listener)
+						stylize(ST_NAME, login), listener=listener)
 
 					if os.path.exists(self.users[uid]['homeDirectory']):
 						home_dir_info = [ {
 							'path'       : self.users[uid]['homeDirectory'],
 							'user'       : login,
-							'group'      : self.groups.groups[
+							'group'      : LMC.groups[
 								self.users[uid]['gidNumber']]['name'],
 							'mode'       : 00700,
 							'content_mode': 00600
@@ -980,18 +1000,18 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 							home_dir_info, batch=batch, auto_answer=auto_answer,
-							allgroups=self.groups, allusers=self,
+							allgroups=LMC.groups, allusers=self,
 							listener=listener)
 				elif self.is_standard_uid(uid):
 					logging.progress("Checking standard account %s…" % \
-						styles.stylize(styles.ST_LOGIN, login), listener=listener)
+						stylize(ST_LOGIN, login), listener=listener)
 
 					gid       = self.users[uid]['gidNumber']
-					group     = self.groups.groups[gid]['name']
+					group     = LMC.groups[gid]['name']
 					user_home = self.users[uid]['homeDirectory']
 
 					logging.progress("Checking user account %s…" % \
-						styles.stylize(styles.ST_NAME, login), listener=listener)
+						stylize(ST_NAME, login), listener=listener)
 
 					acl_base                  = "u::rwx,g::---,o:---"
 					file_acl_base             = "u::rw@UE,g::---,o:---"
@@ -1031,15 +1051,15 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 							'group'     : 'acl',
 							'access_acl': "%s,g:%s:r-x,g:www-data:r-x,%s" % (
 								acl_base,
-								self.configuration.defaults.admin_group,
+								LMC.configuration.defaults.admin_group,
 								acl_restrictive_mask),
 							'default_acl': "%s,g:%s:rwx,g:www-data:r-x,%s" % (
 								acl_base,
-								self.configuration.defaults.admin_group,
+								LMC.configuration.defaults.admin_group,
 								acl_mask),
 							'content_acl': "%s,g:%s:rw-,g:www-data:r--,%s" % (
 								file_acl_base,
-								self.configuration.defaults.admin_group,
+								LMC.configuration.defaults.admin_group,
 								file_acl_mask),
 							} )
 
@@ -1047,12 +1067,12 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 					# check it. This is particularly important for ~/Maildir
 					# because courier-imap will hog CPU time if the Maildir doesn't
 					# exist prior to the daemon launch…
-					if self.configuration.users.mailbox_auto_create and \
-						self.configuration.users.mailbox_type == \
-						self.configuration.MAIL_TYPE_HOME_MAILDIR:
+					if LMC.configuration.users.mailbox_auto_create and \
+						LMC.configuration.users.mailbox_type == \
+						LMC.configuration.MAIL_TYPE_HOME_MAILDIR:
 
 						maildir_base = '%s/%s' % (user_home,
-							self.configuration.users.mailbox)
+							LMC.configuration.users.mailbox)
 
 						# WARNING: "configuration.users.mailbox" is assumed to have
 						# a trailing slash if it is a Maildir, because that's the
@@ -1063,7 +1083,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						# exclusion list.
 
 						home_exclude_list.append(
-							self.configuration.users.mailbox[:-1])
+							LMC.configuration.users.mailbox[:-1])
 
 						for dir in ( maildir_base, '%stmp' % maildir_base,
 							'%scur' % maildir_base,'%snew' % maildir_base ):
@@ -1083,7 +1103,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 							all_went_ok &= fsapi.check_posix_ugid_and_perms(
 								'%s/%s' % (user_home, file), uid, gid, 00600,
 									batch=batch, auto_answer=auto_answer,
-									allgroups=self.groups, allusers=self,
+									allgroups=LMC.groups, allusers=self,
 									listener=listener)
 
 					# Now that the exclusion list is complete, we can check the home
@@ -1095,37 +1115,37 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 						'group'     : 'acl',
 						'access_acl': "%s,g:%s:r-x,g:www-data:--x,%s" % (
 							acl_base,
-							self.configuration.defaults.admin_group,
+							LMC.configuration.defaults.admin_group,
 							acl_restrictive_mask),
 						'default_acl': "%s,g:%s:rwx,%s" % (acl_base,
-							self.configuration.defaults.admin_group,
+							LMC.configuration.defaults.admin_group,
 							acl_mask),
 						'content_acl': "%s,g:%s:rw@GE,%s" % (file_acl_base,
-							self.configuration.defaults.admin_group,
+							LMC.configuration.defaults.admin_group,
 							file_acl_mask),
 						'exclude'   : home_exclude_list
 						}
 
 					if not batch:
 						logging.progress("Checking user home dir %s contents,"
-							" this can take a while…" % styles.stylize(
-							styles.ST_PATH, user_home), listener=listener)
+							" this can take a while…" % stylize(
+							ST_PATH, user_home), listener=listener)
 
 					try:
 						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 							[ home_dir_info ], batch=batch, auto_answer=auto_answer,
-							allgroups=self.groups, allusers=self,
+							allgroups=LMC.groups, allusers=self,
 							listener=listener)
 					except exceptions.LicornCheckError:
 						logging.warning("User home dir %s is missing,"
-							" please repair this first." % styles.stylize(
-							styles.ST_PATH, user_home), listener=listener)
+							" please repair this first." % stylize(
+							ST_PATH, user_home), listener=listener)
 						return False
 
 					if special_dirs != []:
 						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 							special_dirs, batch=batch, auto_answer=auto_answer,
-							allgroups=self.groups, allusers=self,
+							allgroups=LMC.groups, allusers=self,
 							listener=listener)
 
 					if not minimal:
@@ -1134,8 +1154,8 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 							listener=listener)
 						# TODO:
 						#	logging.progress("Checking symlinks in user's home dir,
-						# this can take a while…" % styles.stylize(
-						# styles.ST_NAME, user))
+						# this can take a while…" % stylize(
+						# ST_NAME, user))
 						#	if not self.CleanUserHome(login, batch, auto_answer):
 						#		all_went_ok = False
 
@@ -1153,7 +1173,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 					# uid 300 or above uid 65000. Just don't do anything.
 					logging.info('''Skipped reserved system account %s '''
 						'''(we don't check them at all).''' %
-							styles.stylize(styles.ST_NAME, login),
+							stylize(ST_NAME, login),
 							listener=listener)
 				return all_went_ok
 
@@ -1222,7 +1242,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 	def check_password(self, login, password):
 		crypted_passwd1 = self.users[
 			self.login_cache[login]]['userPassword']
-		crypted_passwd2 = self.backends[
+		crypted_passwd2 = LMC.backends[
 			self.users[self.login_cache[login]
 				]['backend']].compute_password(password, crypted_passwd1)
 		assert ltrace('users', 'comparing 2 crypted passwords:\n%s\n%s' % (
@@ -1247,7 +1267,7 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 		""" Return true if uid is system, but outside the range of Licorn®
 			controlled UIDs."""
 		return uid < UsersController.configuration.users.system_uid_min \
-			and uid > self.configuration.users.uid_max
+			and uid > LMC.configuration.users.uid_max
 	def is_restricted_system_login(self, login):
 		""" return true if login is system, but outside the range of Licorn®
 			controlled UIDs. """
@@ -1260,8 +1280,8 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 	def is_unrestricted_system_uid(self, uid):
 		""" Return true if uid is system, but inside the range of Licorn®
 			controlled UIDs."""
-		return uid >= self.configuration.users.system_uid_min \
-			and uid <= self.configuration.users.system_uid_max
+		return uid >= LMC.configuration.users.system_uid_min \
+			and uid <= LMC.configuration.users.system_uid_max
 	def is_unrestricted_system_login(self, login):
 		""" return true if login is system, but inside the range of Licorn®
 			controlled UIDs. """
@@ -1273,12 +1293,12 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 				logging.SYSU_USER_DOESNT_EXIST % login)
 	def is_system_uid(self, uid):
 		""" Return true if uid is system."""
-		return uid < self.configuration.users.uid_min or \
-			uid > self.configuration.users.uid_max
+		return uid < LMC.configuration.users.uid_min or \
+			uid > LMC.configuration.users.uid_max
 	def is_standard_uid(self, uid):
 		""" Return true if gid is standard (not system). """
-		return uid >= self.configuration.users.uid_min \
-			and uid <= self.configuration.users.uid_max
+		return uid >= LMC.configuration.users.uid_min \
+			and uid <= LMC.configuration.users.uid_max
 	def is_system_login(self, login):
 		""" return true if login is system. """
 		try:
@@ -1300,11 +1320,11 @@ class UsersController(Singleton, Pyro.core.ObjBase):
 
 		if inputlogin == "":
 			login = hlstr.validate_name(str(firstname + '.' + lastname),
-				maxlenght = self.configuration.users.login_maxlenght)
+				maxlenght = LMC.configuration.users.login_maxlenght)
 		else:
 			# use provided login and verify it.
 			login = hlstr.validate_name(str(inputlogin),
-				maxlenght = self.configuration.users.login_maxlenght)
+				maxlenght = LMC.configuration.users.login_maxlenght)
 
 		if not hlstr.cregex['login'].match(login):
 			raise exceptions.BadArgumentError(

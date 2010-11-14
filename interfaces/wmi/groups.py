@@ -344,7 +344,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 
 			members_html += "\n".join(map(user_line, members)) + '</table>'
 		else:
-			members_html = "<h2>%s</h2>" % _('No members in this group.')
+			members_html = "<h2>%s</h2>" % _('No member in this group.')
 
 		if not groups.is_system_group(name):
 			resps = list(
@@ -374,7 +374,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 
 			else:
 				resps_html = "<h2>%s</h2>" % \
-					_('No responsibles for this group.')
+					_('No responsible for this group.')
 
 			guests = list(
 				groups.all_members(name=configuration.groups.guest_prefix+name))
@@ -401,7 +401,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 			"\n".join(map(user_line, guests))
 			)
 			else:
-				guests_html = "<h2>%s</h2>" % _('No guests in this group.')
+				guests_html = "<h2>%s</h2>" % _('No guest in this group.')
 
 		else:
 			resps_html = guests_html = ''

@@ -10,32 +10,36 @@ Licensed under the terms of the GNU GPL version 2
 import xattr, os.path, stat
 import Pyro.core
 
-from licorn.foundations         import exceptions, logging, hlstr, pyutils, styles
-from licorn.foundations         import fsapi, readers
-from licorn.foundations.objects import Singleton, FileLock
+from licorn.foundations         import exceptions, logging
+from licorn.foundations         import fsapi, readers, hlstr, pyutils
+from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
+from licorn.foundations.base    import Singleton
+from licorn.foundations.objects import FileLock
 
-class KeywordsController(Singleton, Pyro.core.ObjBase):
+from licorn.core         import LMC
+from licorn.core.objects import LicornCoreObject
 
-	keywords      = {}
-	init_ok       = False
-	changed       = False
-	configuration = None
-	licorn_xattr  = "user.Licorn.keywords"
-	work_path     = None
+class KeywordsController(Singleton, LicornCoreObject):
 
-	def __init__(self, configuration):
+	init_ok = False
+	load_ok = False
+
+	def __init__(self):
 
 		if KeywordsController.init_ok:
 			return
 
-		Pyro.core.ObjBase.__init__(self)
+		LicornCoreObject.__init__(self, 'keywords')
 
-		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
+		self.keywords      = {}
+		self.changed       = False
+		self.licorn_xattr  = "user.Licorn.keywords"
 
-		KeywordsController.configuration = configuration
-		KeywordsController.work_path     = os.getenv("LICORN_KEYWORDS_PATH", "%s/%s" % (
-			configuration.defaults.home_base_path, configuration.groups.names.plural))
+		self.work_path     = os.getenv(
+			"LICORN_KEYWORDS_PATH", "%s/%s" % (
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural))
 		#
 		# TODO: work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).
@@ -43,13 +47,18 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 		# TODO: implement work_path with more than one path (/home/groups:/home/olive:/data/special)
 		#
 
-		self.reload()
-
 		KeywordsController.init_ok = True
+	def load(self):
+		if KeywordsController.load_ok:
+			return
+		else:
+			assert ltrace('keywords', '| load()')
+			self.reload()
+			KeywordsController.load_ok = True
 	def __getitem__(self, item):
-		return KeywordsController.keywords[item]
+		return self.keywords[item]
 	def __setitem__(self, item, value):
-		KeywordsController.keywords[item]=value
+		self.keywords[item]=value
 	def reload(self):
 		""" reload data from system files / databases. """
 		assert ltrace('keywords', '| reload()')
@@ -67,7 +76,7 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 
 		try:
 			map(import_keywords, readers.ug_conf_load_list(
-				self.configuration.keywords_data_file))
+				LMC.configuration.keywords_data_file))
 		except IOError, e:
 			if e.errno == 2:
 				pass
@@ -75,9 +84,9 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 				raise e
 
 	def keys(self):
-		return KeywordsController.keywords.keys()
+		return self.keywords.keys()
 	def has_key(self, key):
-		return KeywordsController.keywords.has_key(key)
+		return self.keywords.has_key(key)
 	def WriteConf(self, listener=None):
 		""" Write the keywords data in appropriate system files."""
 
@@ -85,11 +94,11 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 			logging.progress('%s: saving data structures to disk.' % \
 				self.pretty_name, listener=listener)
 
-			lock_file = FileLock(self.configuration,
-				self.configuration.keywords_data_file)
+			lock_file = FileLock(LMC.configuration,
+				LMC.configuration.keywords_data_file)
 
 			lock_file.Lock()
-			open(self.configuration.keywords_data_file , "w").write(
+			open(LMC.configuration.keywords_data_file , "w").write(
 				self.__build_cli_output())
 			lock_file.Unlock()
 
@@ -138,11 +147,11 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 		if not hlstr.cregex['keyword'].match(name):
 			raise exceptions.BadArgumentError(
 				logging.SYSK_MALFORMED_KEYWORD % (name,
-					styles.stylize(styles.ST_REGEX, hlstr.regex['keyword'])))
+					stylize(ST_REGEX, hlstr.regex['keyword'])))
 
 		if not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_DESCR % (
-				description, styles.stylize(styles.ST_REGEX,
+				description, stylize(ST_REGEX,
 					hlstr.regex['description'])))
 
 		self.keywords[name] = {
@@ -301,16 +310,16 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 				attr = ','.join(self.__remove_bad_keywords(keywords_to_set))
 				xattr.setxattr(file_path, self.licorn_xattr, attr)
 				logging.info("Applyed %s xattr %s on %s." % (
-					styles.stylize(styles.ST_NAME, self.licorn_xattr),
-					styles.stylize(styles.ST_ACL, attr),
-					styles.stylize(styles.ST_PATH, file_path)),
+					stylize(ST_NAME, self.licorn_xattr),
+					stylize(ST_ACL, attr),
+					stylize(ST_PATH, file_path)),
 					listener=listener)
 			except IOError, e:
 				if e.errno is (1, 95): # Operation not permitted / not supported
 					logging.warning2(
 						"Unable to modify %s xattr of %s (was: %s)." % (
-						styles.stylize(styles.ST_NAME, self.licorn_xattr),
-						styles.stylize(styles.ST_PATH, file_path), e),
+						stylize(ST_NAME, self.licorn_xattr),
+						stylize(ST_PATH, file_path), e),
 						listener=listener)
 				else:
 					raise e
@@ -351,23 +360,23 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 				if keywords_to_set == []:
 					xattr.removexattr(file_path, self.licorn_xattr)
 					logging.info("Removed xattr %s from %s." % (
-						styles.stylize(styles.ST_NAME, self.licorn_xattr),
-						styles.stylize(styles.ST_PATH, file_path)),
+						stylize(ST_NAME, self.licorn_xattr),
+						stylize(ST_PATH, file_path)),
 						listener=listener)
 				else:
 					attr = ','.join(self.__remove_bad_keywords(keywords_to_set))
 					xattr.setxattr(file_path, self.licorn_xattr, attr)
 					logging.info("Applyed %s xattr %s on %s." % (
-						styles.stylize(styles.ST_NAME, self.licorn_xattr),
-							styles.stylize(styles.ST_ACL, attr),
-							styles.stylize(styles.ST_PATH, file_path)),
+						stylize(ST_NAME, self.licorn_xattr),
+							stylize(ST_ACL, attr),
+							stylize(ST_PATH, file_path)),
 							listener=listener)
 			except IOError, e:
 				if e.errno in (1, 95): # Operation not permitted / not supported
 					logging.warning(
 						"Unable to modify %s xattr of %s (was: %s)." % (
-							styles.stylize(styles.ST_NAME, self.licorn_xattr),
-							styles.stylize(styles.ST_PATH, file_path), e),
+							stylize(ST_NAME, self.licorn_xattr),
+							stylize(ST_PATH, file_path), e),
 							listener=listener)
 				else:
 					raise e
@@ -392,7 +401,7 @@ class KeywordsController(Singleton, Pyro.core.ObjBase):
 		# file case
 		if os.path.isfile(path):
 			logging.info("remove xattr from %s." %
-				styles.stylize(styles.ST_PATH, path), listener=listener)
+				stylize(ST_PATH, path), listener=listener)
 			xattr.setxattr(path, self.licorn_xattr, "")
 
 		# dir case

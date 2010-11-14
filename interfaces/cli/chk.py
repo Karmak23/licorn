@@ -10,10 +10,11 @@ Partial Copyright (C) 2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations.constants import filters
+from licorn.foundations           import logging
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations           import logging, styles
-from licorn.interfaces.cli import cli_main, cli_select
+from licorn.foundations.constants import filters
+from licorn.interfaces.cli        import cli_main, cli_select
 
 _app = {
 	"name"     		: "licorn-check",
@@ -61,7 +62,7 @@ def chk_user(opts, args, users, **kwargs):
 		else:
 			for uid in uids_to_chk:
 				if logging.ask_for_repair('''Check user %s ?''' %
-					styles.stylize(styles.ST_LOGIN, users.uid_to_login(uid)),
+					stylize(ST_LOGIN, users.uid_to_login(uid)),
 					auto_answer=opts.auto_answer):
 					users.CheckUsers([uid], minimal=opts.minimal,
 						auto_answer=opts.auto_answer, batch=opts.batch,
@@ -109,7 +110,7 @@ def chk_group(opts, args, groups, **kwargs):
 		else:
 			for gid in gids_to_chk:
 				if logging.ask_for_repair('''Check group %s ?''' %
-					styles.stylize(styles.ST_LOGIN, groups.gid_to_name(gid)),
+					stylize(ST_LOGIN, groups.gid_to_name(gid)),
 					auto_answer=opts.auto_answer):
 					groups.CheckGroups(gids_to_check=[gid],
 						minimal=opts.minimal, batch=opts.batch,
@@ -146,8 +147,8 @@ def chk_profile(opts, args, profiles, **kwargs):
 
 	for p in profiles_to_del:
 		if opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Delete profile %s ?''' % styles.stylize(
-			styles.ST_LOGIN,profiles.group_to_name(p)),
+			logging.ask_for_repair('''Delete profile %s ?''' % stylize(
+			ST_LOGIN,profiles.group_to_name(p)),
 			auto_answer=opts.auto_answer):
 			raise NotImplementedError("Sorry, not yet.")
 def chk_configuration(opts, args, configuration, **kwargs):

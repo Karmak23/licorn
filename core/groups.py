@@ -12,18 +12,23 @@ import Pyro.core
 from time import strftime, gmtime
 from threading import RLock
 
-from licorn.foundations           import logging, exceptions, hlstr, styles
-from licorn.foundations           import fsapi, pyutils
-from licorn.foundations.objects   import Singleton
-from licorn.foundations.constants import filters
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import fsapi, pyutils, hlstr
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.base      import Singleton
+from licorn.foundations.constants import filters
 
-class GroupsController(Singleton, Pyro.core.ObjBase):
+from licorn.core         import LMC
+from licorn.core.objects import LicornCoreController
+
+class GroupsController(Singleton, LicornCoreController):
 	""" Manages the groups and the associated shared data on a Linux system. """
 
-	init_ok      = False
+	init_ok = False
+	load_ok = False
 
-	def __init__ (self, configuration, users, warnings=True):
+	def __init__ (self, warnings=True):
 
 		assert ltrace('groups', '> GroupsController.__init__(%s)' %
 			GroupsController.init_ok)
@@ -31,31 +36,21 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if GroupsController.init_ok:
 			return
 
-		Pyro.core.ObjBase.__init__(self)
-
-		self.pretty_name = str(self.__class__).rsplit('.', 1)[1]
-
-		self.lock = RLock()
-		self.configuration = configuration
-		configuration.set_controller('groups', self)
-
-		self.profiles = None  # ProfilesController
-
-		self.users = users
-		users.set_groups_controller(self)
-
-		self.backends = configuration.backends
-		self.warnings = warnings
-
-		self.reload()
-
-		configuration.groups.hidden = self.GetHiddenState()
+		LicornCoreController.__init__(self, 'groups', warnings)
 
 		GroupsController.init_ok = True
 		assert ltrace('groups', '< GroupsController.__init__(%s)' %
 			GroupsController.init_ok)
-	def set_privileges_controller(self, privileges):
-		self.privileges = privileges
+	def load(self):
+		if GroupsController.load_ok:
+			return
+		else:
+			assert ltrace('groups', '| load()')
+			# be sure our depency is OK.
+			LMC.users.load()
+			self.reload()
+			LMC.configuration.groups.hidden = self.GetHiddenState()
+			GroupsController.load_ok = True
 	def __del__(self):
 		assert ltrace('groups', '| __del__()')
 	def __getitem__(self, item):
@@ -63,10 +58,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def __setitem__(self, item, value):
 		self.groups[item]=value
 	def keys(self):
-		with self.lock:
+		with self.lock():
 			return self.groups.keys()
 	def has_key(self, key):
-		with self.lock:
+		with self.lock():
 			return self.groups.has_key(key)
 	def reload(self):
 		""" load or reload internal data structures from files on disk. """
@@ -74,16 +69,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		assert ltrace('groups', '| reload()')
 
 		# lock users too, because we feed the members cache inside.
-		with self.lock:
-			with self.users.lock:
+		with self.lock():
+			with LMC.users.lock():
 				self.groups     = {}
 				self.name_cache = {}
 
-				for bkey in self.backends.keys():
-					if bkey == 'prefered':
-						continue
-					self.backends[bkey].set_groups_controller(self)
-					g, c = self.backends[bkey].load_groups()
+				for backend in self.backends():
+					g, c = backend.load_Groups()
 					self.groups.update(g)
 					self.name_cache.update(c)
 	def reload_backend(self, backend_name):
@@ -91,22 +83,32 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		assert ltrace('groups', '| reload_backend(%s)' % backend_name)
 
 		# lock users too, because we feed the members cache inside.
-		with self.lock:
-			with self.users.lock:
-				g, c = self.backends[backend_name].load_groups()
+		with self.lock():
+			with LMC.users.lock():
+				g, c = LMC.backends[backend_name].load_Groups()
 				self.groups.update(g)
 				self.name_cache.update(c)
 	def GetHiddenState(self):
 		""" See if /home/groups is readable or not. """
 
 		try:
-			for line in posix1e.ACL( file='%s/%s' % (
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural) ):
+			for line in posix1e.ACL(file='%s/%s' % (
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural)):
 				if line.tag_type & posix1e.ACL_GROUP:
-					# FIXME: do not hardcode "users".
-					if line.qualifier == self.name_to_gid('users'):
-						return not line.permset.read
+					try:
+						if line.qualifier == self.name_to_gid(
+							LMC.configuration.users.group):
+							return not line.permset.read
+					except AttributeError:
+						# we got AttributeError because name_to_gid() fails,
+						# because controller has not yet loaded any data. Get
+						# the needed information by another mean.
+						import grp
+						if line.qualifier == grp.getgrnam(
+							LMC.configuration.users.group).gr_gid:
+							return not line.permset.read
+
 		except exceptions.DoesntExistsException:
 			# the group "users" doesn't exist, or is not yet created.
 			return None
@@ -116,8 +118,6 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			elif e.errno != 2:
 				# 2 will be corrected in this function
 				raise e
-	def set_profiles_controller(self, profiles):
-		self.profiles = profiles
 	def set_inotifier(self, inotifier):
 		self.inotifier = inotifier
 	def WriteConf(self, gid=None):
@@ -125,17 +125,15 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		assert ltrace('groups', '> WriteConf(%s)' % gid)
 
-		with self.lock:
+		with self.lock():
 			if gid:
-				self.backends[
+				LMC.backends[
 					self.groups[gid]['backend']
-					].save_group(gid)
+					].save_Group(gid)
 
 			else:
-				for bkey in self.backends.keys():
-					if bkey=='prefered':
-						continue
-					self.backends[bkey].save_groups()
+				for backend in self.backends():
+					backend.save_Groups()
 
 		assert ltrace('groups', '< WriteConf()')
 	def Select(self, filter_string):
@@ -151,7 +149,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		assert ltrace('groups', '> Select(%s)' % filter_string)
 
-		with self.lock:
+		with self.lock():
 			if filters.NONE == filter_string:
 				filtered_groups = []
 
@@ -183,7 +181,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						filters.GST, filter_string))
 					for gid in self.groups.keys():
 						if self.groups[gid]['name'].startswith(
-							self.configuration.groups.guest_prefix):
+							LMC.configuration.groups.guest_prefix):
 							filtered_groups.append(gid)
 
 				elif filters.SYSTEM_RESTRICTED == filter_string:
@@ -206,14 +204,14 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 					for gid in self.groups.keys():
 						if self.groups[gid]['name'].startswith(
-							self.configuration.groups.resp_prefix):
+							LMC.configuration.groups.resp_prefix):
 							filtered_groups.append(gid)
 
 				elif filters.PRIVILEGED == filter_string:
 					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
 						filters.PRI, filter_string))
 
-					for name in self.privileges:
+					for name in LMC.privileges:
 						try:
 							filtered_groups.append(
 								self.name_to_gid(name))
@@ -235,10 +233,39 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		assert ltrace('groups', '< Select(%s)' % filtered_groups)
 		return filtered_groups
+	def dump(self):
+		""" Dump the internal data structures (debug and development use). """
+
+		with self.lock():
+
+			assert ltrace('groups', '| dump()')
+
+			gids = self.groups.keys()
+			gids.sort()
+
+			names = self.name_cache.keys()
+			names.sort()
+
+			def dump_group(gid):
+				return 'groups[%s] (%s) = %s ' % (
+					stylize(ST_UGID, gid),
+					stylize(ST_NAME, self.groups[gid]['name']),
+					str(self.groups[gid]).replace(
+					', ', '\n\t').replace('{', '{\n\t').replace('}','\n}'))
+
+			data = '%s:\n%s\n%s:\n%s\n' % (
+				stylize(ST_IMPORTANT, 'core.groups'),
+				'\n'.join(map(dump_group, gids)),
+				stylize(ST_IMPORTANT, 'core.name_cache'),
+				'\n'.join(['\t%s: %s' % (key, self.name_cache[key]) \
+					for key in names ])
+				)
+
+			return data
 	def ExportCLI(self, selected=None, long_output=False, no_colors=False):
 		""" Export the groups list to human readable (= « get group ») form. """
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				gids = self.groups.keys()
 			else:
@@ -251,13 +278,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				""" Export groups the way UNIX get does, separating with ":" """
 
 				if mygroups[gid]['permissive'] is None:
-					group_name = '%s' % styles.stylize(styles.ST_NAME,
+					group_name = '%s' % stylize(ST_NAME,
 						self.groups[gid]['name'])
 				elif mygroups[gid]['permissive']:
-					group_name = '%s' % styles.stylize(styles.ST_OK,
+					group_name = '%s' % stylize(ST_OK,
 						self.groups[gid]['name'])
 				else:
-					group_name = '%s' % styles.stylize(styles.ST_BAD,
+					group_name = '%s' % stylize(ST_BAD,
 						self.groups[gid]['name'])
 
 				accountdata = [
@@ -297,8 +324,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							accountdata.append("NOT permissive")
 
 				if long_output:
-					accountdata.append('[%s]' % styles.stylize(
-						styles.ST_LINK, mygroups[gid]['backend']))
+					accountdata.append('[%s]' % stylize(
+						ST_LINK, mygroups[gid]['backend']))
 
 				return ':'.join(accountdata)
 
@@ -309,7 +336,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		data = ('''<?xml version='1.0' encoding=\"UTF-8\"?>\n'''
 				'''<groups-list>\n''')
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				gids = self.groups.keys()
 			else:
@@ -353,12 +380,12 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if not hlstr.cregex['group_name'].match(name):
 			raise exceptions.BadArgumentError(
 				"Malformed group name '%s', must match /%s/i." % (name,
-				styles.stylize(styles.ST_REGEX, hlstr.regex['group_name'])))
+				stylize(ST_REGEX, hlstr.regex['group_name'])))
 
-		if len(name) > self.configuration.groups.name_maxlenght:
+		if len(name) > LMC.configuration.groups.name_maxlenght:
 			raise exceptions.LicornRuntimeError('''Group name must be '''
 				'''smaller than %d characters.''' % \
-					self.configuration.groups.name_maxlenght)
+					LMC.configuration.groups.name_maxlenght)
 
 		if description is None:
 			description = 'members of group “%s”' % name
@@ -366,17 +393,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError('''Malformed group description '''
 				''''%s', must match /%s/i.'''
-				% (description, styles.stylize(
-					styles.ST_REGEX, hlstr.regex['description'])))
+				% (description, stylize(
+					ST_REGEX, hlstr.regex['description'])))
 
 		if groupSkel is None:
 			logging.progress('Using default skel dir %s' %
-				self.configuration.users.default_skel, listener=listener)
-			groupSkel = self.configuration.users.default_skel
+				LMC.configuration.users.default_skel, listener=listener)
+			groupSkel = LMC.configuration.users.default_skel
 
-		elif groupSkel not in self.configuration.users.skels:
+		elif groupSkel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError('''Invalid skel. Valid skels '''
-				'''are: %s.''' % self.configuration.users.skels)
+				'''are: %s.''' % LMC.configuration.users.skels)
 
 		return name, description, groupSkel
 	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
@@ -389,13 +416,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			'''descr=%s, skel=%s, perm=%s)''' % (name, system, desired_gid,
 				description, groupSkel, permissive))
 
-		with self.lock:
+		with self.lock():
 			name, description, groupSkel = self._validate_fields(name,
 				description, groupSkel, listener=listener)
 
 			home = '%s/%s/%s' % (
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural,
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural,
 				name)
 
 			# TODO: permit to specify GID.
@@ -423,8 +450,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if system:
 			if not_already_exists:
 				logging.info('Created system group %s (gid=%s).' % (
-					styles.stylize(styles.ST_NAME, name),
-					styles.stylize(styles.ST_UGID, gid)), listener=listener)
+					stylize(ST_NAME, name),
+					stylize(ST_UGID, gid)), listener=listener)
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
@@ -438,9 +465,12 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				listener=listener)
 
 			if not_already_exists:
-				logging.info('Created group %s (gid=%s).' % (
-					styles.stylize(styles.ST_NAME, name),
-					styles.stylize(styles.ST_UGID, gid)), listener=listener)
+				logging.info('Created %s group %s (gid=%s).' % (
+					stylize(ST_OK, 'permissive')
+						if self.groups[gid]['permissive'] else
+							stylize(ST_BAD, 'not permissive'),
+					stylize(ST_NAME, name),
+					stylize(ST_UGID, gid)), listener=listener)
 
 		except exceptions.SystemCommandError, e:
 			logging.warning("ROLLBACK of group creation: " + str(e),
@@ -455,13 +485,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				pass
 			try:
 				self.__delete_group('%s%s' % (
-					self.configuration.groups.resp_prefix, name),
+					LMC.configuration.groups.resp_prefix, name),
 					listener=listener)
 			except:
 				pass
 			try:
 				self.__delete_group('%s%s' % (
-					self.configuration.groups.guest_prefix, name),
+					LMC.configuration.groups.guest_prefix, name),
 					listener=listener)
 			except:
 				pass
@@ -478,7 +508,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		""" Add a POSIX group, write the system data files.
 			Return the gid of the group created. """
 
-		# LOCKS: No need to use self.lock, already encapsulated in AddGroup().
+		# LOCKS: No need to use self.lock(), already encapsulated in AddGroup().
 
 		assert ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
 			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
@@ -490,8 +520,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.AlreadyExistsError('''The GID you want (%s) '''
 				'''is already taken by another group (%s). Please choose '''
 				'''another one.''' % (
-					styles.stylize(styles.ST_UGID, manual_gid),
-					styles.stylize(styles.ST_NAME,
+					stylize(ST_UGID, manual_gid),
+					stylize(ST_NAME,
 						self.groups[manual_gid]['name'])))
 
 		# Then verify if the name is not taken too.
@@ -505,12 +535,12 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					or not system and self.is_standard_gid(existing_gid):
 					raise exceptions.AlreadyExistsException(
 						"The group %s already exists." %
-						styles.stylize(styles.ST_NAME, name))
+						stylize(ST_NAME, name))
 				else:
 					raise exceptions.AlreadyExistsError(
 						'''The group %s already exists but has not the same '''
 						'''type. Please choose another name for your group.'''
-						% styles.stylize(styles.ST_NAME, name))
+						% stylize(ST_NAME, name))
 			else:
 				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
 
@@ -519,17 +549,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					if existing_gid == manual_gid:
 						raise exceptions.AlreadyExistsException(
 							"The group %s already exists." %
-							styles.stylize(styles.ST_NAME, name))
+							stylize(ST_NAME, name))
 					else:
 						raise exceptions.AlreadyExistsError(
 							'''The group %s already exists with a different '''
 							'''GID. Please check.''' %
-							styles.stylize(styles.ST_NAME, name))
+							stylize(ST_NAME, name))
 				else:
 					raise exceptions.AlreadyExistsError(
 						'''The group %s already exists but has not the same '''
 						'''type. Please choose another name for your group.'''
-						% styles.stylize(styles.ST_NAME, name))
+						% stylize(ST_NAME, name))
 		except KeyError:
 			# name doesn't exist, path is clear.
 			pass
@@ -537,28 +567,28 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		# Due to a bug of adduser perl script, we must check that there is
 		# no user which has 'name' as login. For details, see
 		# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
-		if self.users.login_cache.has_key(name) and not force:
+		if LMC.users.login_cache.has_key(name) and not force:
 			raise exceptions.UpstreamBugException('''A user account called '''
 				'''%s already exists, this could trigger a bug in the Ubuntu '''
 				'''adduser code when deleting the user. Please choose '''
 				'''another name for your group, or use --force argument if '''
 				'''you really want to add this group on the system.'''
-				% styles.stylize(styles.ST_NAME, name))
+				% stylize(ST_NAME, name))
 
 		# Find a new GID
 		if manual_gid is None:
 			if system:
 				gid = pyutils.next_free(self.groups.keys(),
-					self.configuration.groups.system_gid_min,
-					self.configuration.groups.system_gid_max)
+					LMC.configuration.groups.system_gid_min,
+					LMC.configuration.groups.system_gid_max)
 			else:
 				gid = pyutils.next_free(self.groups.keys(),
-					self.configuration.groups.gid_min,
-					self.configuration.groups.gid_max)
+					LMC.configuration.groups.gid_min,
+					LMC.configuration.groups.gid_max)
 
 			logging.progress('Autogenerated GID for group %s: %s.' % (
-				styles.stylize(styles.ST_LOGIN, name),
-				styles.stylize(styles.ST_UGID, gid)), listener=listener)
+				stylize(ST_LOGIN, name),
+				stylize(ST_UGID, gid)), listener=listener)
 		else:
 			if (system and self.is_system_gid(manual_gid)) \
 				or (not system and self.is_standard_gid(
@@ -569,10 +599,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					'''for the kind of group you specified. System GID '''
 					'''must be between %d and %d, standard GID must be '''
 					'''between %d and %d.''' % (
-						self.configuration.groups.system_gid_min,
-						self.configuration.groups.system_gid_max,
-						self.configuration.groups.gid_min,
-						self.configuration.groups.gid_max)
+						LMC.configuration.groups.system_gid_min,
+						LMC.configuration.groups.system_gid_max,
+						LMC.configuration.groups.gid_min,
+						LMC.configuration.groups.gid_max)
 					)
 
 		# Add group in groups dictionary
@@ -583,13 +613,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			'memberUid'   : [],
 			'description' : description,
 			'groupSkel'   : groupSkel,
-			'backend'     : self.backends['prefered'].name,
+			'backend'     : self._prefered_backend_name,
 			'action'      : 'create'
 			}
 
 		if system:
 			# we must fill the permissive status here, else WriteConf() will
-			# fail with a KeyError. if not system, this has already been filled.
+			# fail with a KeyError. If not system, this has already been filled.
 			temp_group_dict['permissive'] = False
 			# no skel for a system group
 			temp_group_dict['groupSkel'] = ''
@@ -605,9 +635,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		# system files (or backends).
 		# DO NOT UNCOMMENT: -- if not batch:
 		self.groups[gid]['action'] = 'create'
-		self.backends[
+		LMC.backends[
 			self.groups[gid]['backend']
-			].save_group(gid)
+			].save_Group(gid)
 
 		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
@@ -625,9 +655,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		assert ltrace('groups', '  DeleteGroup(%s,%s)' % (name, gid))
 
 		# lock everything we *eventually* need, to be sure there are no errors.
-		with self.lock:
-			with self.users.lock:
-				with self.privileges.lock:
+		with self.lock():
+			with LMC.users.lock():
+				with LMC.privileges.lock():
 					prim_memb = self.primary_members(gid=gid)
 
 					if prim_memb != [] and not del_users:
@@ -636,29 +666,29 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							'''automatic deletion with the --del-users option. WARNING: '''
 							'''this is a bad idea, use with caution.''')
 
-					if check_profiles and name in self.profiles.keys():
+					if check_profiles and name in LMC.profiles.keys():
 						raise exceptions.BadArgumentError('''can't delete group %s, '''
 						'''currently associated with profile %s. Please delete the '''
 						'''profile, and the group will be deleted too.''' % (
-							styles.stylize(styles.ST_NAME, name),
-							styles.stylize(styles.ST_NAME,
-								self.profiles.group_to_name(name))))
+							stylize(ST_NAME, name),
+							stylize(ST_NAME,
+								LMC.profiles.group_to_name(name))))
 
 					home = '%s/%s/%s' % (
-						self.configuration.defaults.home_base_path,
-						self.configuration.groups.names.plural,
+						LMC.configuration.defaults.home_base_path,
+						LMC.configuration.groups.names.plural,
 						name)
 
 					# Delete the group and its (primary) member(s) even if it is not empty
 					if del_users:
 						for login in prim_memb:
-							self.users.DeleteUser(login=login, no_archive=no_archive,
+							LMC.users.DeleteUser(login=login, no_archive=no_archive,
 								batch=batch, listener=listener)
 
 					if self.is_system_gid(gid):
 						# wipe the group from the privileges if present there.
-						if name in self.privileges:
-							self.privileges.delete([name], listener=listener)
+						if name in LMC.privileges:
+							LMC.privileges.delete([name], listener=listener)
 
 						# a system group has no data on disk (no shared directory), just
 						# delete its internal data and exit.
@@ -680,10 +710,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
 					# work.
 					self.__delete_group('%s%s' % (
-						self.configuration.groups.resp_prefix, name),
+						LMC.configuration.groups.resp_prefix, name),
 						listener=listener)
 					self.__delete_group('%s%s' % (
-						self.configuration.groups.guest_prefix, name),
+						LMC.configuration.groups.guest_prefix, name),
 						listener=listener)
 
 					self.CheckGroupSymlinks(gid=gid, name=name, delete=True,
@@ -705,37 +735,37 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			except (IOError, OSError), e:
 				if e.errno == 2:
 					logging.notice("Can't remove %s, it doesn't exist !" % \
-						styles.stylize(styles.ST_PATH, home), listener=listener)
+						stylize(ST_PATH, home), listener=listener)
 				else:
 					raise e
 		else:
 			# /home/archives must be OK befor moving
-			self.configuration.check_base_dirs(minimal=True,
+			LMC.configuration.check_base_dirs(minimal=True,
 				batch=True, listener=listener)
 
 			group_archive_dir = "%s/%s.deleted.%s" % (
-				self.configuration.home_archive_dir, name,
+				LMC.configuration.home_archive_dir, name,
 				strftime("%Y%m%d-%H%M%S", gmtime()))
 			try:
 				os.rename(home, group_archive_dir)
 
 				logging.info("Archived %s as %s." % (home,
-					styles.stylize(styles.ST_PATH, group_archive_dir)),
+					stylize(ST_PATH, group_archive_dir)),
 					listener=listener)
 
-				self.configuration.check_archive_dir(
+				LMC.configuration.check_archive_dir(
 					group_archive_dir, batch=True, listener=listener)
 			except OSError, e:
 				if e.errno == 2:
 					logging.notice("Can't archive %s, it doesn't exist !" % \
-						styles.stylize(styles.ST_PATH, home), listener=listener)
+						stylize(ST_PATH, home), listener=listener)
 				else:
 					raise e
 	def __delete_group(self, name, listener=None):
 		""" Delete a POSIX group."""
 
 		# LOCKS: this method is never called directly, and must always be
-		# encapsulated in another, which will acquire self.lock. This is the
+		# encapsulated in another, which will acquire self.lock(). This is the
 		# case in DeleteGroup().
 
 		assert ltrace('groups', '> __delete_group(%s)' % name)
@@ -743,40 +773,42 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		try:
 			gid = self.name_cache[name]
 		except KeyError, e:
-			logging.info('''Group %s doesn't exist.''' % styles.stylize(
-				styles.ST_NAME, name))
+			logging.info('''Group %s doesn't exist.''' % stylize(
+				ST_NAME, name))
 			return
 
 		backend = self.groups[gid]['backend']
 
 		# Remove the group in the groups list of profiles
-		self.profiles.delete_group_in_profiles(name=name,
+		LMC.profiles.delete_group_in_profiles(name=name,
 			listener=listener)
 
 		# clear the user cache.
 		for user in self.groups[gid]['memberUid']:
-			self.users.users[
-				self.users.login_cache[user]
-				]['groups'].remove(name)
-
+			try:
+				LMC.users[
+					LMC.users.login_cache[user]
+					]['groups'].remove(name)
+			except KeyError:
+				logging.warning('skipped non existing user %s' % user)
 		try:
 			del self.groups[gid]
 			del self.name_cache[name]
 
-			self.backends[backend].delete_group(name)
+			LMC.backends[backend].delete_Group(name)
 
 			logging.info(logging.SYSG_DELETED_GROUP % \
-				styles.stylize(styles.ST_NAME, name), listener=listener)
+				stylize(ST_NAME, name), listener=listener)
 		except KeyError:
 			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST %
-				styles.stylize(styles.ST_NAME, name), listener=listener)
+				stylize(ST_NAME, name), listener=listener)
 
 		assert ltrace('groups', '< __delete_group(%s)' % name)
 	def RenameGroup(self, name=None, gid=None, new_name=None, listener=None):
 		""" Modify the name of a group.
 
 		# FIXME: 1) listener=listener
-		# FIXME: 2) with self.lock
+		# FIXME: 2) with self.lock()
 		"""
 
 		raise NotImplementedError(
@@ -794,23 +826,23 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 			gid 		= self.name_to_gid(name)
 			home		= "%s/%s/%s" % (
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural,
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural,
 				self.groups[gid]['name'])
 			new_home	= "%s/%s/%s" % (
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural,
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural,
 				new_name)
 
 			self.groups[gid]['name'] = new_name
 
 			if not self.is_system_gid(gid):
-				tmpname = self.configuration.groups.resp_prefix + name
+				tmpname = LMC.configuration.groups.resp_prefix + name
 				resp_gid = self.name_to_gid(tmpname)
 				self.groups[resp_gid]['name'] = tmpname
 				self.name_cache[tmpname] = resp_gid
 
-				tmpname = self.configuration.groups.guest_prefix + name
+				tmpname = LMC.configuration.groups.guest_prefix + name
 				guest_gid = self.name_to_gid(tmpname)
 				self.groups[guest_gid]['name'] = tmpname
 				self.name_cache[tmpname] = guest_gid
@@ -826,22 +858,22 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				self.CheckGroupSymlinks(gid=gid, oldname=name, batch=True)
 
 			# The name has changed, we have to update profiles
-			profilelist.change_group_name_in_profiles(name, new_name)
+			LMC.profiles.change_group_name_in_profiles(name, new_name)
 
-			# update self.users.users[*]['groups']
-			for u in self.users.users:
+			# update LMC.users[*]['groups']
+			for u in LMC.users:
 				try:
-					i = self.users.users[u]['groups'].index(name)
+					i = LMC.users[u]['groups'].index(name)
 				except ValueError:
 					 # user u is not in the group which was renamed
 					pass
 				else:
-					self.users.users[u]['groups'][i] = new_name
+					LMC.users[u]['groups'][i] = new_name
 
 			self.groups[gid]['action'] = 'rename'
-			self.backends[
+			LMC.backends[
 				self.groups[gid]['backend']
-				].save_group(gid)
+				].save_Group(gid)
 
 		#
 		# TODO: parse members, and sed -ie ~/.recently_used and other user
@@ -853,7 +885,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.AlreadyExistsError(
 				'''the new name you have choosen, %s, is already taken by '''
 				'''another group !''' % \
-					styles.stylize(styles.ST_NAME, new_name))
+					stylize(ST_NAME, new_name))
 	def ChangeGroupDescription(self, name=None, gid=None, description=None,
 		listener=None):
 		""" Change the description of a group. #FIXME listener=listener """
@@ -861,19 +893,19 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if description is None:
 			raise exceptions.BadArgumentError, "You must specify a description"
 
-		with self.lock:
+		with self.lock():
 			gid, name = self.resolve_gid_or_name(gid, name)
 
 			self.groups[gid]['description'] = description
 
 			self.groups[gid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.groups[gid]['backend']
-				].save_group(gid)
+				].save_Group(gid)
 
 			logging.info('Changed group %s description to "%s".' % (
-				styles.stylize(styles.ST_NAME, name),
-				styles.stylize(styles.ST_COMMENT, description)
+				stylize(ST_NAME, name),
+				stylize(ST_COMMENT, description)
 				), listener=listener)
 	def ChangeGroupSkel(self, name=None, gid=None, groupSkel=None,
 		listener=None):
@@ -882,24 +914,24 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		if groupSkel is None:
 			raise exceptions.BadArgumentError, "You must specify a groupSkel"
 
-		if not groupSkel in self.configuration.users.skels:
+		if not groupSkel in LMC.configuration.users.skels:
 			raise exceptions.DoesntExistsError('''The skel you specified '''
 				'''doesn't exist on this system. Valid skels are: %s.''' % \
-					str(self.configuration.users.skels))
+					str(LMC.configuration.users.skels))
 
-		with self.lock:
+		with self.lock():
 			gid, name = self.resolve_gid_or_name(gid, name)
 
 			self.groups[gid]['groupSkel'] = groupSkel
 
 			self.groups[gid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.groups[gid]['backend']
-				].save_group(gid)
+				].save_Group(gid)
 
 			logging.info('Changed group %s skel to "%s".' % (
-				styles.stylize(styles.ST_NAME, name),
-				styles.stylize(styles.ST_COMMENT, groupSkel)
+				stylize(ST_NAME, name),
+				stylize(ST_COMMENT, groupSkel)
 				), listener=listener)
 	def AddGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):
@@ -909,44 +941,42 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		raise NotImplementedError('to be refreshed.')
 
-		# FIXME: with self.lock
+		# FIXME: with self.lock()
 		gid, name = self.resolve_gid_or_name(gid, name)
-
-		assert(self.profiles != None)
 
 		# The profiles exist ? Delete bad profiles
 		for p in profiles:
-			if p in self.profiles:
+			if p in LMC.profiles:
 				# Add the group in groups list of profiles
-				if name in self.profiles[p]['memberGid']:
+				if name in LMC.profiles[p]['memberGid']:
 					logging.progress(
 						"Group %s already in the list of profile %s." % (
-						styles.stylize(styles.ST_NAME, name),
-						styles.stylize(styles.ST_NAME, p)),
+						stylize(ST_NAME, name),
+						stylize(ST_NAME, p)),
 						listener=listener)
 				else:
-					profiles.AddGroupsInProfile([name], listener=listener)
+					controllers.profiles.AddGroupsInProfile([name], listener=listener)
 					logging.info(
 						"Added group %s in the groups list of profile %s." % (
-						styles.stylize(styles.ST_NAME, name),
-						styles.stylize(styles.ST_NAME, p)),
+						stylize(ST_NAME, name),
+						stylize(ST_NAME, p)),
 						listener=listener)
 					# Add all 'p''s users in the group 'name'
 					_users_to_add = self.__find_group_members(users,
-						self.profiles[p]['groupName'])
+						LMC.profiles[p]['groupName'])
 					self.AddUsersInGroup(name, _users_to_add, users,
 						listener=listener)
 			else:
 				logging.warning("Profile %s doesn't exist, ignored." %
-					styles.stylize(styles.ST_NAME, p),
+					stylize(ST_NAME, p),
 					listener=listener)
 
 		# FIXME: is it needed to save() here ? isn't it already done by the
 		# profile() and the AddUsersInGroup() calls ?
 		self.groups[gid]['action'] = 'update'
-		self.backends[
+		LMC.backends[
 			self.groups[gid]['backend']
-			].save_group(gid)
+			].save_Group(gid)
 	def DeleteGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):
 		""" Disallow the users of the profiles given
@@ -954,29 +984,27 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		raise NotImplementedError('to be refreshed.')
 
-		# FIXME: with self.lock
+		# FIXME: with self.lock()
 		gid, name = self.resolve_gid_or_name(gid, name)
-
-		assert(self.profiles != None)
 
 		# The profiles exist ?
 		for p in profiles:
 			# Delete the group from groups list of profiles
-			if name in profiles.profiles[p]['memberGid']:
+			if name in controllers.profiles[p]['memberGid']:
 				logging.notice("Deleting group '%s' from the profile '%s'." % (
-					styles.stylize(styles.ST_NAME, name),
-					styles.stylize(styles.ST_NAME, p)),
+					stylize(ST_NAME, name),
+					stylize(ST_NAME, p)),
 					listener=listener)
-				profiles.DeleteGroupsFromProfile([name], listener=listener)
+				controllers.profiles.DeleteGroupsFromProfile([name], listener=listener)
 				# Delete all 'p''s users from the group 'name'
 				_users_to_del = self.__find_group_members(users,
-					profiles[p]['groupName'])
+					controllers.profiles[p]['groupName'])
 				self.DeleteUsersFromGroup(name, _users_to_del, users,
 					listener=listener)
 			else:
 				logging.info('Group %s already absent from profile %s.' % (
-					styles.stylize(styles.ST_NAME, name),
-					styles.stylize(styles.ST_NAME, p)),
+					stylize(ST_NAME, name),
+					stylize(ST_NAME, p)),
 					listener=listener)
 
 		# FIXME: not already done ??
@@ -992,33 +1020,33 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.BadArgumentError("You must specify a users list")
 
 		# we need to lock users to be sure they don't dissapear during this phase.
-		with self.lock:
-			with self.users.lock:
+		with self.lock():
+			with LMC.users.lock():
 				gid, name = self.resolve_gid_or_name(gid, name)
 
-				uids_to_add = self.users.guess_identifiers(users_to_add,
+				uids_to_add = LMC.users.guess_identifiers(users_to_add,
 					listener=listener)
 
 				work_done = False
-				u2l = self.users.uid_to_login
+				u2l = LMC.users.uid_to_login
 
 				for uid in uids_to_add:
 					login = u2l(uid)
 					if login in self.groups[gid]['memberUid']:
 						logging.progress(
 							"User %s is already a member of %s, skipped." % (
-							styles.stylize(styles.ST_LOGIN, login),
-							styles.stylize(styles.ST_NAME, name)),
+							stylize(ST_LOGIN, login),
+							stylize(ST_NAME, name)),
 							listener=listener)
 					else:
 						self.groups[gid]['memberUid'].append(login)
 						self.groups[gid]['memberUid'].sort()
 						# update the users cache.
-						self.users.users[uid]['groups'].append(name)
+						LMC.users[uid]['groups'].append(name)
 						self.users.users[uid]['groups'].sort()
 						logging.info("Added user %s to members of %s." % (
-							styles.stylize(styles.ST_LOGIN, login),
-							styles.stylize(styles.ST_NAME, name)),
+							stylize(ST_LOGIN, login),
+							stylize(ST_NAME, name)),
 							listener=listener)
 
 						if batch:
@@ -1031,9 +1059,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							# reliability.
 							#
 							self.groups[gid]['action'] = 'update'
-							self.backends[
+							LMC.backends[
 								self.groups[gid]['backend']
-								].save_group(gid)
+								].save_Group(gid)
 
 							#self.reload_admins_group_in_validator(name)
 
@@ -1042,17 +1070,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							# in the user's home dir.
 							link_basename = self.groups[gid]['name']
 						elif name.startswith(
-							self.configuration.groups.resp_prefix):
+							LMC.configuration.groups.resp_prefix):
 							# fix #587: make symlinks for resps and guests too.
 							link_basename = \
 								self.groups[gid]['name'].replace(
-								self.configuration.groups.resp_prefix,
+								LMC.configuration.groups.resp_prefix,
 								"", 1)
 						elif name.startswith(
-							self.configuration.groups.guest_prefix):
+							LMC.configuration.groups.guest_prefix):
 							link_basename = \
 								self.groups[gid]['name'].replace(
-								self.configuration.groups.guest_prefix,
+								LMC.configuration.groups.guest_prefix,
 								"", 1)
 						else:
 							# this is a system group, don't make any symlink !
@@ -1063,11 +1091,11 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							batch=True, listener=listener)
 
 						link_src = os.path.join(
-							self.configuration.defaults.home_base_path,
-							self.configuration.groups.names.plural,
+							LMC.configuration.defaults.home_base_path,
+							LMC.configuration.groups.names.plural,
 							link_basename)
 						link_dst = os.path.join(
-							self.users.users[uid]['homeDirectory'],
+							LMC.users[uid]['homeDirectory'],
 							link_basename)
 						fsapi.make_symlink(link_src, link_dst, batch=batch,
 							listener=listener)
@@ -1076,9 +1104,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					# save the group after having added all users. This seems more fine
 					# than saving between each addition
 					self.groups[gid]['action'] = 'update'
-					self.backends[
+					LMC.backends[
 						self.groups[gid]['backend']
-						].save_group(gid)
+						].save_Group(gid)
 
 					#self.reload_admins_group_in_validator(name)
 
@@ -1107,16 +1135,16 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		uids_to_del = self.users.guess_identifiers(users_to_del,
+		uids_to_del = LMC.users.guess_identifiers(users_to_del,
 			listener=listener)
 
 		logging.progress("Going to remove users %s from group %s." % (
-			styles.stylize(styles.ST_NAME, str(uids_to_del)),
-			styles.stylize(styles.ST_NAME, name)),
+			stylize(ST_NAME, str(uids_to_del)),
+			stylize(ST_NAME, name)),
 			listener=listener)
 
 		work_done = False
-		u2l = self.users.uid_to_login
+		u2l = LMC.users.uid_to_login
 
 		for uid in uids_to_del:
 
@@ -1125,38 +1153,38 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				self.groups[gid]['memberUid'].remove(login)
 
 				# update the users cache
-				self.users.users[uid]['groups'].remove(name)
+				LMC.users[uid]['groups'].remove(name)
 
 				logging.info("Removed user %s from members of %s." % (
-					styles.stylize(styles.ST_LOGIN, login),
-					styles.stylize(styles.ST_NAME, name)),
+					stylize(ST_LOGIN, login),
+					stylize(ST_NAME, name)),
 					listener=listener)
 
 				if batch:
 					work_done = True
 				else:
 					self.groups[gid]['action'] = 'update'
-					self.backends[
+					LMC.backends[
 						self.groups[gid]['backend']
-						].save_group(gid)
+						].save_Group(gid)
 
 					#self.reload_admins_group_in_validator(name)
 
 				if not self.is_system_gid(gid):
 					# delete the shared group dir symlink in user's home.
 					link_src = os.path.join(
-						self.configuration.defaults.home_base_path,
-						self.configuration.groups.names.plural,
+						LMC.configuration.defaults.home_base_path,
+						LMC.configuration.groups.names.plural,
 						self.groups[gid]['name'])
 
 					for link in fsapi.minifind(
-						self.users[uid]['homeDirectory'],
+						LMC.users[uid]['homeDirectory'],
 						maxdepth=2, type=stat.S_IFLNK):
 						try:
 							if os.path.abspath(os.readlink(link)) == link_src:
 								os.unlink(link)
 								logging.info("Deleted symlink %s." %
-									styles.stylize(styles.ST_LINK, link),
+									stylize(ST_LINK, link),
 									listener=listener)
 						except (IOError, OSError), e:
 							if e.errno == 2:
@@ -1165,25 +1193,25 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							else:
 								raise exceptions.LicornRuntimeError(
 									"Unable to delete symlink %s (was: %s)." % (
-										styles.stylize(styles.ST_LINK, link),
+										stylize(ST_LINK, link),
 										str(e)))
 			else:
 				logging.info(
 					"User %s is already not a member of %s, skipped." % (
-						styles.stylize(styles.ST_LOGIN, login),
-						styles.stylize(styles.ST_NAME, name)),
+						stylize(ST_LOGIN, login),
+						stylize(ST_NAME, name)),
 						listener=listener)
 
 		if batch and work_done:
 			self.groups[gid]['action'] = 'update'
-			self.backends[
+			LMC.backends[
 				self.groups[gid]['backend']
-				].save_group(gid)
+				].save_Group(gid)
 
 			#self.reload_admins_group_in_validator(name)
 
 		assert ltrace('groups', '< DeleteUsersFromGroup()')
-	def BuildGroupACL(self, gid, path=""):
+	def BuildGroupACL(self, gid, path=''):
 		""" Return an ACL triolet (a dict) used later to check something
 			in the group shared dir.
 
@@ -1208,37 +1236,37 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			group_default_acl = "r-x"
 			group_file_acl    = "r-@GE"
 
-		acl_base      = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x,g:%s:rwx" \
-			% (self.configuration.defaults.admin_group,
-			self.configuration.groups.guest_prefix + group,
-			self.configuration.groups.resp_prefix + group)
+		acl_base      = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x,g:%s:rwx" % (
+			LMC.configuration.defaults.admin_group,
+			LMC.configuration.groups.guest_prefix + group,
+			LMC.configuration.groups.resp_prefix + group)
 		file_acl_base = \
-			"u::rw@UE,g::---,o:---,g:%s:rw@GE,g:%s:r-@GE,g:%s:rw@GE" \
-			% (self.configuration.defaults.admin_group,
-			self.configuration.groups.guest_prefix + group,
-			self.configuration.groups.resp_prefix + group)
+			"u::rw@UE,g::---,o:---,g:%s:rw@GE,g:%s:r-@GE,g:%s:rw@GE" % (
+			LMC.configuration.defaults.admin_group,
+			LMC.configuration.groups.guest_prefix + group,
+			LMC.configuration.groups.resp_prefix + group)
 		acl_mask      = "m:rwx"
 		file_acl_mask = "m:rw@GE"
 
-		if path.find("public_html") == 0:
+		if path.find('public_html') == 0:
 			return {
 					'group'     : 'acl',
-					'access_acl': "%s,g:%s:rwx,g:www-data:r-x,%s" % (
+					'access_acl': '%s,g:%s:rwx,g:www-data:r-x,%s' % (
 						acl_base, group, acl_mask),
-					'default_acl': "%s,g:%s:%s,g:www-data:r-x,%s" % (
+					'default_acl': '%s,g:%s:%s,g:www-data:r-x,%s' % (
 						acl_base, group, group_default_acl, acl_mask),
-					'content_acl': "%s,g:%s:%s,g:www-data:r--,%s" % (
+					'content_acl': '%s,g:%s:%s,g:www-data:r--,%s' % (
 						file_acl_base, group, group_file_acl, file_acl_mask),
 					'exclude'   : []
 				}
 		else:
 			return {
 					'group'     : 'acl',
-					'access_acl': "%s,g:%s:rwx,g:www-data:--x,%s" % (
+					'access_acl': '%s,g:%s:rwx,g:www-data:--x,%s' % (
 						acl_base, group, acl_mask),
-					'default_acl': "%s,g:%s:%s,%s" % (
+					'default_acl': '%s,g:%s:%s,%s' % (
 						acl_base, group, group_default_acl, acl_mask),
-					'content_acl': "%s,g:%s:%s,%s" % (
+					'content_acl': '%s,g:%s:%s,%s' % (
 						file_acl_base, group, group_file_acl, file_acl_mask),
 					'exclude'   : [ 'public_html' ]
 				}
@@ -1268,15 +1296,15 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		all_went_ok = True
 
-		with self.lock:
+		with self.lock():
 			for (prefix, title) in (
-				(self.configuration.groups.resp_prefix, "responsibles"),
-				(self.configuration.groups.guest_prefix, "guests")
+				(LMC.configuration.groups.resp_prefix, "responsibles"),
+				(LMC.configuration.groups.guest_prefix, "guests")
 				):
 
 				group_name = prefix + name
 				logging.progress("Checking system group %s…" %
-					styles.stylize(styles.ST_NAME, group_name),
+					stylize(ST_NAME, group_name),
 					listener=listener)
 
 				try:
@@ -1286,8 +1314,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 				except KeyError:
 					warn_message = logging.SYSG_SYSTEM_GROUP_REQUIRED % (
-						styles.stylize(styles.ST_NAME, group_name),
-						styles.stylize(styles.ST_NAME, name))
+						stylize(ST_NAME, group_name),
+						stylize(ST_NAME, name))
 
 					if batch or logging.ask_for_repair(warn_message,
 						auto_answer, listener=listener):
@@ -1300,8 +1328,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							del temp_gid
 
 							logging.info("Created system group %s(%s)." %
-								(styles.stylize(styles.ST_NAME, group_name),
-								styles.stylize(styles.ST_UGID, prefix_gid)),
+								(stylize(ST_NAME, group_name),
+								stylize(ST_UGID, prefix_gid)),
 								listener=listener)
 						except exceptions.AlreadyExistsException, e:
 							logging.notice(str(e), listener=listener)
@@ -1348,10 +1376,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		"""
 
 		assert ltrace('groups', '> __check_group(gid=%s,name=%s)' % (
-			styles.stylize(styles.ST_UGID, gid),
-			styles.stylize(styles.ST_NAME, name)))
+			stylize(ST_UGID, gid),
+			stylize(ST_NAME, name)))
 
-		with self.lock:
+		with self.lock():
 			gid, name = self.resolve_gid_or_name(gid, name)
 
 			all_went_ok = True
@@ -1360,7 +1388,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				return True
 
 			logging.progress("Checking group %s…" %
-				styles.stylize(styles.ST_NAME, name), listener=listener)
+				stylize(ST_NAME, name), listener=listener)
 
 			all_went_ok &= self.CheckAssociatedSystemGroups(
 				name=name, minimal=minimal, batch=batch,
@@ -1369,8 +1397,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			group_home_acl = self.BuildGroupACL(gid)
 
 		group_home = "%s/%s/%s" % (
-			self.configuration.defaults.home_base_path,
-			self.configuration.groups.names.plural, name)
+			LMC.configuration.defaults.home_base_path,
+			LMC.configuration.groups.names.plural, name)
 		group_home_acl['path'] = group_home
 
 		if os.path.exists("%s/public_html" % group_home):
@@ -1392,19 +1420,19 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		try:
 			logging.progress("Checking shared group dir %s…" %
-				styles.stylize(styles.ST_PATH, group_home), listener=listener)
+				stylize(ST_PATH, group_home), listener=listener)
 			group_home_only         = group_home_acl.copy()
 			group_home_only['path'] = group_home
 			group_home_only['user'] = 'root'
 			del group_home_only['content_acl']
 			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-				[ group_home_only ], batch, auto_answer, self, self.users,
+				[ group_home_only ], batch, auto_answer, self, LMC.users,
 				listener=listener)
 
 		except exceptions.LicornCheckError:
 			logging.warning(
 				"Shared group dir %s is missing, please repair this first." %
-				styles.stylize(styles.ST_PATH, group_home), listener=listener)
+				stylize(ST_PATH, group_home), listener=listener)
 			return False
 
 		# check the contents of the group home dir, without checking UID (fix
@@ -1416,7 +1444,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		logging.progress("Checking shared group dir contents…",
 			listener=listener)
 		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-			[ group_home_acl ], batch, auto_answer, self, self.users,
+			[ group_home_acl ], batch, auto_answer, self, LMC.users,
 			listener=listener)
 
 		if os.path.exists("%s/public_html" % group_home):
@@ -1426,7 +1454,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 			try:
 				logging.progress("Checking shared dir %s…" % \
-					styles.stylize(styles.ST_PATH, public_html),
+					stylize(ST_PATH, public_html),
 					listener=listener)
 				public_html_only         = public_html_acl.copy()
 				public_html_only['path'] = public_html
@@ -1434,25 +1462,25 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				del public_html_only['content_acl']
 				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 					[ public_html_only ],
-					batch, auto_answer, self, self.users, listener=listener)
+					batch, auto_answer, self, LMC.users, listener=listener)
 
 			except exceptions.LicornCheckError:
 				logging.warning(
 					"Shared dir %s is missing, please repair this first." \
-					% styles.stylize(styles.ST_PATH, public_html),
+					% stylize(ST_PATH, public_html),
 					listener=listener)
 				return False
 
 			# check only ~group/public_html and its contents, without checking
 			# the UID, too.
 			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-				[ public_html_acl ], batch, auto_answer, self, self.users,
+				[ public_html_acl ], batch, auto_answer, self, LMC.users,
 				listener=listener)
 
 		if not minimal:
 			logging.progress(
 				"Checking %s symlinks in members homes, this can be long…"  %
-					styles.stylize(styles.ST_NAME, name), listener=listener)
+					stylize(ST_NAME, name), listener=listener)
 			all_went_ok &= self.CheckGroupSymlinks(gid=gid, batch=batch,
 				auto_answer=auto_answer, listener=listener)
 
@@ -1482,24 +1510,24 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		assert ltrace('groups', '> check_nonexisting_users(batch=%s)' % batch)
 
-		with self.lock:
-			with self.users.lock:
+		with self.lock():
+			with LMC.users.lock():
 				for gid in self.groups:
 					to_remove = set()
 
 					logging.progress('''Checking for dangling references in group %s.'''
-						% styles.stylize(styles.ST_NAME,
+						% stylize(ST_NAME,
 							self.groups[gid]['name']),
 						listener=listener)
 
 					for member in self.groups[gid]['memberUid']:
-						if not self.users.login_cache.has_key(member):
+						if not LMC.users.login_cache.has_key(member):
 							if batch or logging.ask_for_repair('''User %s is '''
 								'''referenced in members of group %s but doesn't '''
 								'''really exist on the system. Remove this dangling '''
 								'''reference?''' % \
-									(styles.stylize(styles.ST_BAD, member),
-									styles.stylize(styles.ST_NAME,
+									(stylize(ST_BAD, member),
+									stylize(ST_NAME,
 										self.groups[gid]['name'])),
 								auto_answer=auto_answer, listener=listener):
 								# don't directly remove member from members,
@@ -1507,8 +1535,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 								# the reference to remove, to do it a bit later.
 								logging.info('''Removed dangling reference to '''
 									'''non-existing user %s in group %s.''' % (
-									styles.stylize(styles.ST_BAD, member),
-									styles.stylize(styles.ST_NAME,
+									stylize(ST_BAD, member),
+									stylize(ST_NAME,
 										self.groups[gid]['name'])),
 									listener=listener)
 								to_remove.add(member)
@@ -1547,7 +1575,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				listener=listener)
 
 		# dependancy: base dirs must be OK before checking groups shared dirs.
-		self.configuration.check_base_dirs(minimal=minimal, batch=batch,
+		LMC.configuration.check_base_dirs(minimal=minimal, batch=batch,
 			auto_answer=auto_answer, listener=listener)
 
 		def _chk(gid):
@@ -1580,10 +1608,10 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		for user in self.groups[gid]['memberUid']:
 
 			try:
-				uid = self.users.login_to_uid(user)
+				uid = LMC.users.login_to_uid(user)
 			except exceptions.DoesntExistsException:
 				logging.notice('Skipped non existing group member %s.' %
-					styles.stylize(styles.ST_NAME, user), listener=listener)
+					stylize(ST_NAME, user), listener=listener)
 				continue
 
 			link_not_found = True
@@ -1596,24 +1624,24 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						'', 1)
 
 			link_src = os.path.join(
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural,
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural,
 				link_basename)
 
 			link_dst = os.path.join(
-				self.users.users[uid]['homeDirectory'],
+				LMC.users[uid]['homeDirectory'],
 				link_basename)
 
 			if oldname:
 				link_src_old = os.path.join(
-					self.configuration.defaults.home_base_path,
-					self.configuration.groups.names.plural,
+					LMC.configuration.defaults.home_base_path,
+					LMC.configuration.groups.names.plural,
 					oldname)
 			else:
 				link_src_old = None
 
 			for link in fsapi.minifind(
-				self.users.users[uid]['homeDirectory'], maxdepth=2,
+				LMC.users[uid]['homeDirectory'], maxdepth=2,
 					type=stat.S_IFLNK):
 				try:
 					link_src_abs = os.path.abspath(os.readlink(link))
@@ -1622,13 +1650,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 							try:
 								os.unlink(link)
 								logging.info("Deleted symlink %s." %
-									styles.stylize(styles.ST_LINK, link),
+									stylize(ST_LINK, link),
 									listener=listener)
 							except (IOError, OSError), e:
 								if e.errno != 2:
 									raise exceptions.LicornRuntimeError(
 									"Unable to delete symlink %s (was: %s)." % (
-									styles.stylize(styles.ST_LINK, link),
+									stylize(ST_LINK, link),
 									str(e)))
 						else:
 							link_not_found = False
@@ -1642,7 +1670,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 						# delete links to old group name.
 						os.unlink(link)
 						logging.info("Deleted old symlink %s." %
-							styles.stylize(styles.ST_LINK, link),
+							stylize(ST_LINK, link),
 							listener=listener)
 					else:
 						# errno == 2 is a broken link, don't bother.
@@ -1652,8 +1680,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 			if link_not_found and not delete:
 				warn_message = logging.SYSG_USER_LACKS_SYMLINK % (
-					styles.stylize(styles.ST_LOGIN, user),
-					styles.stylize(styles.ST_NAME, link_basename))
+					stylize(ST_LOGIN, user),
+					stylize(ST_NAME, link_basename))
 
 				if batch or logging.ask_for_repair(warn_message, auto_answer,
 					listener=listener):
@@ -1676,19 +1704,20 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 		assert ltrace('groups', '''> SetSharedDirPermissivenes(gid=%s, name=%s, '''
 			'''permissive=%s)''' % (gid, name, permissive))
 
-		with self.lock:
+		with self.lock():
 			gid, name = self.resolve_gid_or_name(gid, name)
 
 			if permissive:
-				qualif = ""
+				qualif = ''
 			else:
-				qualif = " not"
+				qualif = 'not '
 
-			logging.progress('''trying to set permissive=%s for group %s, '''
-				'''original %s.''' % (styles.stylize(styles.ST_OK, permissive),
-				styles.stylize(styles.ST_NAME, name),
-				styles.stylize(styles.ST_BAD,
-				self.groups[gid]['permissive'])),
+			logging.progress('''Setting permissive=%s for group %s ('''
+				'''original is %s).''' % (
+				stylize(ST_OK if permissive else ST_BAD, permissive),
+				stylize(ST_NAME, name),
+				stylize(ST_OK if self.groups[gid]['permissive'] else ST_BAD,
+					self.groups[gid]['permissive'])),
 				listener=listener)
 
 			if self.groups[gid]['permissive'] != permissive:
@@ -1696,9 +1725,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 				# auto-apply the new permissiveness
 				self.CheckGroups([ gid ], batch=True, listener=listener)
+				logging.info('Changed group %s permissive state to %s.' % (
+					stylize(ST_NAME, name),
+					stylize(ST_OK if permissive else ST_BAD, permissive)
+				), listener=listener)
 			else:
-				logging.info("Group %s is already%s permissive." % (
-					styles.stylize(styles.ST_NAME, name), qualif),
+				logging.info('Group %s is already %spermissive.' % (
+					stylize(ST_NAME, name), qualif),
 					listener=listener)
 	def is_permissive(self, gid, name, listener=None):
 		""" Return True if the shared dir of the group is permissive.
@@ -1715,13 +1748,13 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			listener: the pyro client to send messages to.
 		"""
 
-		with self.lock:
+		with self.lock():
 			if self.is_system_gid(gid):
 				return None
 
 			home = '%s/%s/%s' % (
-				self.configuration.defaults.home_base_path,
-				self.configuration.groups.names.plural,
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural,
 				name)
 
 			try:
@@ -1738,8 +1771,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 					if self.warnings:
 						logging.warning('''Shared dir %s doesn't exist, please '''
 							'''run "licorn-check group --name %s" to fix.''' % (
-								styles.stylize(styles.ST_PATH, home),
-								styles.stylize(styles.ST_NAME, name)), once=True,
+								stylize(ST_PATH, home),
+								stylize(ST_NAME, name)), once=True,
 								listener=listener)
 				else:
 					raise exceptions.LicornIOError("IO error on %s (was: %s)." %
@@ -1804,7 +1837,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				valid_ids.add(self.guess_identifier(value))
 			except exceptions.DoesntExistsException:
 				logging.notice("Skipped non-existing group name or GID '%s'." %
-					styles.stylize(styles.ST_NAME,value), listener=listener)
+					stylize(ST_NAME,value), listener=listener)
 		return list(valid_ids)
 	def exists(self, name=None, gid=None):
 		"""Return true if the group or gid exists on the system. """
@@ -1825,9 +1858,9 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 
 		gid, name = self.resolve_gid_or_name(gid, name)
 
-		for u in self.users.users:
-			if self.users.users[u]['gidNumber'] == gid:
-				ru.append(self.users.users[u]['login'])
+		for u in LMC.users.keys():
+			if LMC.users[u]['gidNumber'] == gid:
+				ru.append(LMC.users[u]['login'])
 		return ru
 	def auxilliary_members(self, gid=None, name=None):
 		""" Return all members of a group, which are not members of this group
@@ -1857,8 +1890,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
 		try:
-			assert ltrace('groups', '| name_to_gid(%s) -> %s \nfrom: \n%s' % (
-				name, self.name_cache[name], str(self.name_cache).replace(', ', '\n')))
+			assert ltrace('groups', '| name_to_gid(%s) -> %s' % (
+				name, self.name_cache[name]))
 			# use the cache, Luke !
 			return self.name_cache[name]
 		except KeyError:
@@ -1866,12 +1899,12 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 				"Group %s doesn't exist" % name)
 	def is_system_gid(self, gid):
 		""" Return true if gid is system. """
-		return gid < self.configuration.groups.gid_min \
-			or gid > self.configuration.groups.gid_max
+		return gid < LMC.configuration.groups.gid_min \
+			or gid > LMC.configuration.groups.gid_max
 	def is_standard_gid(self, gid):
 		""" Return true if gid is standard (not system). """
-		return gid >= self.configuration.groups.gid_min \
-			and gid <= self.configuration.groups.gid_max
+		return gid >= LMC.configuration.groups.gid_min \
+			and gid <= LMC.configuration.groups.gid_max
 	def is_system_group(self, name):
 		""" Return true if group is system. """
 		try:
@@ -1893,17 +1926,17 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 			else False, or raise an error if called without any argument."""
 
 		if name:
-			return name in self.privileges
+			return name in LMC.privileges
 		if gid:
-			return self.groups[gid]['name'] in self.privileges
+			return self.groups[gid]['name'] in LMC.privileges
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or name to test as a privilege.")
 	def is_restricted_system_gid(self, gid):
 		""" Return true if gid is system, but outside the range of Licorn®
 			controlled GIDs."""
-		return gid < self.configuration.groups.system_gid_min \
-			and gid > self.configuration.groups.gid_max
+		return gid < LMC.configuration.groups.system_gid_min \
+			and gid > LMC.configuration.groups.gid_max
 	def is_restricted_system_name(self, group_name):
 		""" return true if login is system, but outside the range of Licorn®
 			controlled UIDs. """
@@ -1916,8 +1949,8 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def is_unrestricted_system_gid(self, gid):
 		""" Return true if gid is system, but outside the range of Licorn®
 			controlled GIDs."""
-		return gid > self.configuration.groups.system_gid_min \
-			and gid < self.configuration.groups.gid_max
+		return gid > LMC.configuration.groups.system_gid_min \
+			and gid < LMC.configuration.groups.gid_max
 	def is_unrestricted_system_name(self, group_name):
 		""" return true if login is system, but outside the range of Licorn®
 			controlled UIDs. """
@@ -1938,7 +1971,7 @@ class GroupsController(Singleton, Pyro.core.ObjBase):
 	def make_name(self, inputname=None):
 		""" Make a valid login from  user's firstname and lastname."""
 
-		maxlenght = self.configuration.groups.name_maxlenght
+		maxlenght = LMC.configuration.groups.name_maxlenght
 		groupname = inputname
 
 		groupname = hlstr.validate_name(groupname, maxlenght = maxlenght)

@@ -14,7 +14,7 @@ Licensed under the terms of the GNU GPL version 2.
 # try to keep this class as small as possible !
 #
 
-from objects   import Singleton
+from base      import Singleton
 from ltrace    import ltrace
 from constants import verbose
 
@@ -52,3 +52,9 @@ class LicornOptions(Singleton):
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)
 		# put future functions here…
+
+		for attr_name in dir(opts):
+			if attr_name[0] != '_' and not hasattr(self, attr_name):
+				setattr(self, attr_name, getattr(opts, attr_name))
+
+options = LicornOptions()

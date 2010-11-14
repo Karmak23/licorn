@@ -88,6 +88,15 @@ def set_name(name):
 		ctypes.cdll.LoadLibrary('libc.so.6').prctl(15, name + '\0', 0, 0, 0)
 	except exception, e:
 		logging.warning('''Can't set process name (was %s).''' % e)
+def get_process_cmdline(process_name):
+	""" do equivalent of ps aux and grep the given process, then return its
+		command line as a list."""
+
+	for pretendant in execute(['ps', '-U', 'root', '-u', 'root', '-o', 'args='])[0].split(
+			"\n")[:-1]:
+		#print pretendant
+		if pretendant.find(process_name) != -1:
+			return pretendant.split(' ')
 def already_running(pid_file):
 	""" WARNING: this only works for root user… """
 	return os.path.exists(pid_file) and \
@@ -202,7 +211,7 @@ def fork_licorn_daemon(pid_to_wake=None):
 	except (IOError, OSError), e:
 		logging.error("licornd fork failed: errno %d (%s)." % (e.errno,
 			e.strerror))
-def find_network_client_uid(orig_port, client_port):
+def find_network_client_uid(orig_port, client_port, local=True):
 	""" will only work on localhost, and on linux, from a root process...
 
 	As a general recommendation, use strace(1) to answer this kind of
@@ -276,8 +285,11 @@ def find_network_client_uid(orig_port, client_port):
 	"""
 	first_try = True
 
+	local_addr1 = '0100007F'
+	local_addr2 = '0101007F'
+
 	while True:
-		for line in open('/proc/net/tcp').readlines():
+		for line in open('/proc/net/tcp').readlines()[1:]:
 			values = line.split()
 			# values:
 			# conn_no, local_addr, remote_addr, conn_status, tx_rx_queues,
@@ -286,11 +298,17 @@ def find_network_client_uid(orig_port, client_port):
 			#print ('--> %s %s / %s %s' % (values[1], values[2],
 			#	('0100007F:%x' % client_port).upper(),
 			#	('0101007F:%x' % client_port).upper()))
+			laddr, lport = values[2].split(':')
+			raddr, rport = values[1].split(':')
 
-			if ('0100007F:%x' % client_port).upper() == values[2] \
-				or ('0101007F:%x' % client_port).upper() == values[2]:
-				#print '--> OK'
-				return int(values[7])
+			if local:
+				if ('%x' % client_port).upper() == lport \
+					and laddr in (local_addr1, local_addr2):
+					return int(values[7])
+			else:
+				if ('%x' % client_port).upper() == rport:
+					return int(values[7])
+
 		if first_try:
 			# #379: It *could* be we are too fast for the kernel to update
 			# /proc/net/tcp. Wait and try again one time before giving up.

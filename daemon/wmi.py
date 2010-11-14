@@ -14,14 +14,14 @@ TCPServer.allow_reuse_address = True
 
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
-from licorn.foundations         import logging, exceptions, styles, process
+from licorn.foundations         import options, logging, exceptions, process
+from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
-from licorn.daemon.core         import dname, wpid_path, wmi_port, wlog_path, \
-	wmi_group, buffer_size, setup_signals_handler
+from licorn.daemon              import dname, setup_signals_handler
 
-import licorn.core
+from licorn.core import LMC
 
-def fork_wmi(opts, start_wmi=True):
+def fork_wmi(start_wmi=True):
 	""" Start the Web Management Interface (fork it). """
 
 	# FIXME: implement start_wmi in argparser module.
@@ -31,10 +31,12 @@ def fork_wmi(opts, start_wmi=True):
 		if wmi_pid == 0:
 			# FIXME: drop_privileges() → become setuid('licorn:licorn')
 
-			process.write_pid_file(wpid_path)
+			process.write_pid_file(
+				LMC.configuration.licornd.wmi.pid_file)
 
-			if opts.daemon:
-				process.use_log_file(wlog_path)
+			if options.daemon:
+				process.use_log_file(
+					LMC.configuration.licornd.wmi.log_file)
 
 			pname = '%s/wmi' % dname
 			process.set_name(pname)
@@ -44,34 +46,30 @@ def fork_wmi(opts, start_wmi=True):
 
 			setup_signals_handler(pname)
 
-			# this will make sleep until it receives SIGUSR1 from the master,
-			# then continue.
+			# this will make us sleep until it receives SIGUSR1 from the master,
+			# from then we will continue setting it all up.
 			signal.pause()
 
-			configuration, \
-			users, groups, profiles, \
-			privileges, keywords, machines = \
-				licorn.core.connect()
+			# FIXME: LMC attributes (inherited from the master before forking)
+			# are overwritten by the Pyro proxies. Should't we implement a
+			# LMC.clear() and call it before connect ? This is a WMI-only case,
+			# because in CLI, LMC attributes are only instanciated via connect()
+			LMC.connect()
 
 			# connect the static resources of our request handler, to make them
 			# available to WMI functions.
-			WMIHTTPRequestHandler.configuration = configuration
-			WMIHTTPRequestHandler.users = users
-			WMIHTTPRequestHandler.groups = groups
-			WMIHTTPRequestHandler.profiles = profiles
-			WMIHTTPRequestHandler.privileges = privileges
-			WMIHTTPRequestHandler.machines = machines
-			WMIHTTPRequestHandler.keywords = keywords
+			WMIHTTPRequestHandler.LMC = LMC
 
-			if opts.wmi_listen_address:
+			if options.wmi_listen_address:
 				# the CLI launch argument has priority over the configuration
 				# directive, for testing purposes.
 
-				listen_address = opts.wmi_listen_address
+				listen_address = options.wmi_listen_address
 
-			elif configuration.licornd.wmi.listen_address:
+			elif LMC.configuration.licornd.wmi.listen_address:
 
-				listen_address = configuration.licornd.wmi.listen_address
+				listen_address = \
+					LMC.configuration.licornd.wmi.listen_address
 
 			else:
 				# the fallback is localhost
@@ -84,8 +82,8 @@ def fork_wmi(opts, start_wmi=True):
 				raise NotImplementedError(
 					'getting interface address is not yet implemented.')
 
-			assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (listen_address,
-				wmi_port))
+			assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (
+				listen_address,	LMC.configuration.licornd.wmi.port))
 
 			count = 0
 
@@ -96,7 +94,8 @@ def fork_wmi(opts, start_wmi=True):
 				#
 				# when creation succeeds, break the loop and serve requets.
 				try:
-					httpd = TCPServer((listen_address, wmi_port),
+					httpd = TCPServer((listen_address,
+						LMC.configuration.licornd.wmi.port),
 						WMIHTTPRequestHandler)
 					break
 				except socket.error, e:
@@ -111,8 +110,9 @@ def fork_wmi(opts, start_wmi=True):
 
 			logging.notice('''%s(%d): ready to answer requests at address %s.'''
 				% (pname, os.getpid(),
-				styles.stylize(styles.ST_ADDRESS, 'http://%s:%s/' % (
-					listen_address, wmi_port))))
+				stylize(ST_ADDRESS, 'http://%s:%s/' % (
+					listen_address,
+					LMC.configuration.licornd.wmi.port))))
 
 			httpd.serve_forever()
 		else:
@@ -126,27 +126,22 @@ def fork_wmi(opts, start_wmi=True):
 		raise SystemExit
 
 class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
-	configuration = None
-	users = None
-	groups = None
-	profiles = None
-	privileges = None
-	keywords = None
-	machines = None
+	LMC = None
 	def do_HEAD(self):
 		f = self.send_head()
 		if f:
 			f.close()
 	def do_GET(self):
+		LMC = WMIHTTPRequestHandler.LMC
 		f = self.send_head()
 		if f:
 			if type(f) in (type(""), type(u'')):
 				self.wfile.write(f)
 			else:
-				buf = f.read(buffer_size)
+				buf = f.read(LMC.configuration.licornd.buffer_size)
 				while buf:
 					self.wfile.write(buf)
-					buf = f.read(buffer_size)
+					buf = f.read(LMC.configuration.licornd.buffer_size)
 				f.close()
 	def do_POST(self):
 		""" Handle POST data and create a dict to be used later."""
@@ -213,6 +208,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	def user_authorized(self):
 		""" Return True if authorization exists AND user is authorized."""
 
+		LMC = WMIHTTPRequestHandler.LMC
+
 		authorization = self.headers.getheader("authorization")
 		if authorization:
 			authorization = authorization.split()
@@ -223,32 +220,32 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						authorization = base64.decodestring(authorization[1])
 					except binascii.Error:
 						pass
-					else:
-						authorization = authorization.split(':')
-						if len(authorization) == 2:
-							#
-							# TODO: make this a beautiful PAM authentication ?
-							#
-							try :
-								if WMIHTTPRequestHandler.users.exists(
-									login=authorization[0]) and \
-									WMIHTTPRequestHandler.users.check_password(
-										authorization[0], authorization[1]):
-									if WMIHTTPRequestHandler.groups.exists(
-										name=wmi_group):
-										if authorization[0] in \
-											WMIHTTPRequestHandler.groups.auxilliary_members(
-												name=wmi_group):
-											self.http_user = authorization[0]
-											return True
-									else:
+
+					authorization = authorization.split(':')
+					if len(authorization) == 2:
+						#
+						# TODO: make this a beautiful PAM authentication ?
+						#
+						try :
+							if LMC.users.exists(
+								login=authorization[0]) and \
+								LMC.users.check_password(
+									authorization[0], authorization[1]):
+								if LMC.groups.exists(
+									name=LMC.configuration.licornd.wmi.group):
+									if authorization[0] in \
+										LMC.groups.auxilliary_members(
+											name=LMC.configuration.licornd.wmi.group):
 										self.http_user = authorization[0]
 										return True
-							except exceptions.BadArgumentError:
-								logging.warning('''empty username or '''
-									'''password sent as authentification '''
-									'''string into WMI.''')
-								return False
+								else:
+									self.http_user = authorization[0]
+									return True
+						except exceptions.BadArgumentError:
+							logging.warning('''empty username or '''
+								'''password sent as authentification '''
+								'''string into WMI.''')
+							return False
 		return False
 	def format_post_args(self):
 		""" Prepare POST data for exec statement."""
@@ -270,6 +267,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		""" Serve dynamic URIs with our own code,
 		and create pages on the fly. """
 
+		LMC = WMIHTTPRequestHandler.LMC
+
 		retdata = None
 		rettype = None
 
@@ -278,14 +277,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		# GET / has special treatment :-)
 		if self.path == '/':
-			rettype, retdata = web.base.index(self.path, self.http_user,
-				configuration=WMIHTTPRequestHandler.configuration,
-				users=WMIHTTPRequestHandler.users,
-				groups=WMIHTTPRequestHandler.groups,
-				profiles=WMIHTTPRequestHandler.profiles,
-				privileges=WMIHTTPRequestHandler.privileges,
-				keywords=WMIHTTPRequestHandler.keywords,
-				machines=WMIHTTPRequestHandler.machines)
+			rettype, retdata = web.base.index(
+				self.path, self.http_user, LMC=LMC)
 
 		else:
 			# remove the last '/' (which is totally useless for us, even if it
@@ -307,32 +300,34 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				if hasattr(self, 'post_args'):
 					py_code = '''rettype, retdata = web.%s.%s("%s", "%s"''' \
 						'''%s %s, ''' \
-						'''configuration=WMIHTTPRequestHandler.configuration, ''' \
-						'''users=WMIHTTPRequestHandler.users,''' \
-						'''groups=WMIHTTPRequestHandler.groups, ''' \
-						'''profiles=WMIHTTPRequestHandler.profiles, ''' \
-						'''privileges=WMIHTTPRequestHandler.privileges, ''' \
-						'''keywords=WMIHTTPRequestHandler.keywords, ''' \
-						'''machines=WMIHTTPRequestHandler.machines)''' % (
+						'''configuration=LMC.configuration, ''' \
+						'''users=LMC.users,''' \
+						'''groups=LMC.groups, ''' \
+						'''profiles=LMC.profiles, ''' \
+						'''privileges=LMC.privileges, ''' \
+						'''keywords=LMC.keywords, ''' \
+						'''machines=LMC.machines)''' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
-						if len(args)>2 else ', ',
+							if len(args)>2 else ', ',
 						', '.join(self.format_post_args()),
 						)
 				else:
-					py_code = '''rettype, retdata = web.%s.%s("%s", "%s" %s ''' \
-						'''configuration=WMIHTTPRequestHandler.configuration, ''' \
-						'''users=WMIHTTPRequestHandler.users,''' \
-						'''groups=WMIHTTPRequestHandler.groups, ''' \
-						'''profiles=WMIHTTPRequestHandler.profiles, ''' \
-						'''privileges=WMIHTTPRequestHandler.privileges, ''' \
-						'''keywords=WMIHTTPRequestHandler.keywords, ''' \
-						'''machines=WMIHTTPRequestHandler.machines)''' % (
+					py_code = '''rettype, retdata = web.%s.%s("%s", "%s" %s '''\
+						'''configuration=LMC.configuration, ''' \
+						'''users=LMC.users,''' \
+						'''groups=LMC.groups, ''' \
+						'''profiles=LMC.profiles, ''' \
+						'''privileges=LMC.privileges, ''' \
+						'''keywords=LMC.keywords, ''' \
+						'''machines=LMC.machines)''' % (
 						args[0], args[1], self.path, self.http_user,
-						', "%s",' % '","'.join(args[2:]) if len(args)>2 else ', ')
+						', "%s",' % '","'.join(args[2:])
+							if len(args)>2 else ', ')
 
 				try:
-					assert ltrace('wmi', '''serve_virtual_uri:exec("%s")''' % py_code)
+					assert ltrace('wmi',
+						'serve_virtual_uri:exec("%s")' % py_code)
 					exec py_code
 
 				except (AttributeError, NameError), e:
@@ -395,7 +390,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 				self.send_response(302)
 				self.send_header("Location", 'http://%s:%s%s' % (
-					hostaddr, wmi_port, retdata))
+					hostaddr, LMC.configuration.licornd.wmi.port, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()
 
@@ -483,9 +478,11 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		path = posixpath.normpath(urllib.unquote(path))
 		words = path.split('/')
 		words = filter(None, words)
+		# FIXME: get rid of this variable.
 		if os.getenv('LICORN_DEVEL'):
 			path = os.getcwd()
 		else:
+			# FIXME: put this in LMC.configuration.licornd.wmi
 			path = '/usr/share/licorn/wmi'
 		for word in words:
 			drive, word = os.path.splitdrive(word)

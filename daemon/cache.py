@@ -155,14 +155,14 @@ class Cache(Thread, Singleton):
 			# then process every action
 			request, arguments, result = q.get()
 
-			logging.debug2('%s: executing %s %s.' % (self.getName(), request, arguments))
+			assert logging.debug2('%s: executing %s %s.' % (self.getName(), request, arguments))
 
 			if request != None:
 				c.execute(request, arguments)
 				if result:
 					for record in c:
 						result.put(record)
-					logging.debug('%s: terminating request result.' % self.getName())
+					assert logging.debug('%s: terminating request result.' % self.getName())
 					result.put(False)
 
 		Cache._db.close()

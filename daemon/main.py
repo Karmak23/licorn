@@ -17,7 +17,11 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
 Licensed under the terms of the GNU GPL version 2.
 """
 
-current_app = {
+# import this first, this will initialize start_time.
+# these objects are just containers which are empty yet.
+from licorn.daemon import dname, dthreads, dqueues, dchildren
+
+_app = {
 	"name"       : "licornd",
 	"description": '''Licorn® Daemon: posix1e ACL auto checker, Web ''' \
 		'''Management Interface server and file meta-data crawler''',
@@ -25,42 +29,51 @@ current_app = {
 	}
 
 import os, signal, time
+from Queue     import Queue
+from threading import Thread
 
-from licorn.foundations         import process, logging, options
-from licorn.foundations.objects import MessageProcessor
-from licorn.foundations.threads import LicornJobThread
+from licorn.foundations           import options, logging, exceptions
+from licorn.foundations           import process, network
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import licornd_roles
 
-from licorn.core.configuration    import LicornConfiguration
-from licorn.core.users            import UsersController
-from licorn.core.groups           import GroupsController
-from licorn.core.profiles         import ProfilesController
-from licorn.core.privileges       import PrivilegesWhiteList
-from licorn.core.keywords         import KeywordsController
-from licorn.core.machines         import MachinesController
+from licorn.core                  import LMC
 
-from licorn.daemon.core                  import dname, terminate_cleanly, \
-	exit_if_already_running, refork_if_not_running_root_or_die, \
-	eventually_daemonize, setup_signals_handler, licornd_parse_arguments
-
-from licorn.daemon.internals.wmi         import fork_wmi
-from licorn.daemon.internals.acl_checker import ACLChecker
-from licorn.daemon.internals.inotifier   import INotifier
-from licorn.daemon.internals.cmdlistener import CommandListener
-#from licorn.daemon.internals.scheduler   import BasicScheduler
-#from licorn.daemon.internals.cache       import Cache
-#from licorn.daemon.internals.searcher    import FileSearchServer
-#from licorn.daemon.internals.syncer       import ServerSyncer, ClientSyncer
+from licorn.daemon                import terminate, setup_signals_handler
+from licorn.daemon.core           import  exit_if_already_running, \
+										refork_if_not_running_root_or_die, \
+										eventually_daemonize, \
+										licornd_parse_arguments
+from licorn.daemon.wmi            import fork_wmi
+from licorn.daemon.threads        import LicornJobThread, \
+									LicornPoolJobThread, \
+									LicornInteractorThread, \
+									thread_periodic_cleaner
+from licorn.daemon.acl_checker    import ACLChecker
+from licorn.daemon.inotifier      import INotifier
+from licorn.daemon.cmdlistener    import CommandListener
+from licorn.daemon.network        import pool_job_pinger, \
+										pool_job_pyrofinder, \
+										pool_job_reverser, \
+										pool_job_arppinger, \
+										thread_network_links_builder, \
+										thread_periodic_scanner
+#from licorn.daemon.scheduler     import BasicScheduler
+#from licorn.daemon.cache         import Cache
+#from licorn.daemon.searcher      import FileSearchServer
+#from licorn.daemon.syncer        import ServerSyncer, ClientSyncer
 
 if __name__ == "__main__":
+
+	LMC.init_conf(batch=True)
 
 	exit_if_already_running()
 	refork_if_not_running_root_or_die()
 
-	configuration = LicornConfiguration(batch=True)
+	(opts, args) = licornd_parse_arguments(_app)
 
-	(opts, args) = licornd_parse_arguments(current_app, configuration)
-
-	# This is needed generally in the daemon, because it is per nature a
+	# BATCH is needed generally in the daemon, because it is per nature a
 	# non-interactive process. At first launch, it will have to tweak the system
 	# a little (in some conditions), and won't be able to as user / admin if
 	# forked in the background. It must have the ability to solve relatively
@@ -68,98 +81,133 @@ if __name__ == "__main__":
 	# stop, and there should not be any of these in its daemon's life.
 	opts.batch = True
 	options.SetFrom(opts)
+	del opts, args
 
-	# remember our children threads.
-	threads = []
+	pname = '%s/master@%s' % (dname,
+		licornd_roles[LMC.configuration.licornd.role].lower())
 
-	pname = '%s/master' % dname
 	process.set_name(pname)
-
-	eventually_daemonize(opts)
+	eventually_daemonize()
 
 	pids_to_wake = []
 
-	if opts.pid_to_wake:
-		pids_to_wake.append(opts.pid_to_wake)
+	if options.pid_to_wake:
+		pids_to_wake.append(options.pid_to_wake)
 
-	if configuration.licornd.wmi.enabled:
-		wmi_pid = fork_wmi(opts)
-		pids_to_wake.append(wmi_pid)
-	else:
-		wmi_pid = None
-		logging.info('''%s: not starting WMI, disabled by '''
-			'''configuration directive.''' % pname)
+	if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		# the WMI must be launched before the setup of signals.
+		if LMC.configuration.licornd.wmi.enabled and options.wmi_enabled:
+			dchildren.wmi_pid = fork_wmi()
+			pids_to_wake.append(dchildren.wmi_pid)
+		else:
+			logging.info('''%s: not starting WMI, disabled on command line '''
+				'''or by configuration directive.''' % pname)
 
 	# log things after having daemonized, else it doesn't show in the log,
 	# but on the terminal.
 	logging.notice("%s(%d): starting all threads." % (
 		pname, os.getpid()))
 
-	setup_signals_handler(pname, configuration, threads, opts, wmi_pid)
+	setup_signals_handler(pname)
 
-	if configuration.licornd.role == "client":
-		pass
-		#syncer = ClientSyncer(dname)
-		#threads.append(syncer)
+	LMC.init()
+
+	# FIXME: why do that ?
+	options.msgproc = LMC.msgproc
+
+	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
+
+		dthreads.cmdlistener = CommandListener(dname,
+			pids_to_wake=pids_to_wake)
+
+		#dthreads.syncer = ClientSyncer(dname)
 
 		# TODO: get the cache from the server, it has the
 		# one in sync with the NFS-served files.
 
-	else:
-		users = UsersController(configuration)
-		groups = GroupsController(configuration, users)
-		privileges = PrivilegesWhiteList(configuration,
-			configuration.privileges_whitelist_data_file)
-		privileges.set_groups_controller(groups)
+	else: # licornd_roles.SERVER
 
-		# Now that the daemon holds every core object, this check must be done
-		# prior to everything else, to ensure the system is in a good state
-		# before modifying it. Not a minimal check, to be sure every needed
-		# group is created.
-		configuration.check(minimal=False, batch=True)
+		#dthreads.syncer   = ServerSyncer(dname)
+		#dthreads.searcher = FileSearchServer(dname)
+		#dthreads.cache    = Cache(keywords, dname)
 
-		profiles = ProfilesController(configuration, groups, users)
-		machines = MachinesController(configuration)
-		keywords = KeywordsController(configuration)
+		if LMC.configuration.licornd.threads.pool_members == 0:
+			logging.warning('''Status gathering of unmanaged network '''
+					'''clients disabled by configuration rule.''')
+		else:
+			# launch a machine status update every 30 seconds. The first update
+			# will be run ASAP (in 1 second), else we don't have any info to display
+			# if opening the WMI immediately.
+			dthreads.network_builder = LicornJobThread(dname,
+				target=thread_network_links_builder,
+				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
+		#dthreads.periodic_scanner = LicornJobThread(dname,
+		#	target=LMC.machines.thread_periodic_scanner,
+		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
 
-		# here is the Message processor, used to communicate with clients, via Pyro.
-		msgproc = MessageProcessor()
-		options.msgproc = msgproc
+		dthreads.cleaner = LicornJobThread(dname,
+			target=thread_periodic_cleaner,
+			time=(time.time()+30.0),
+			delay=LMC.configuration.licornd.threads.wipe_time,
+			tname='PeriodicThreadsCleaner')
 
-		#syncer     = ServerSyncer(dname)
-		#searcher   = FileSearchServer(dname)
-		#cache      = Cache(keywords, dname)
+		dthreads.aclchecker = ACLChecker(None, dname)
 
-		# launch a machine status update every 30 seconds, but the first update
-		# will be in only 1.0 seconds, else we don't have any info when opening
-		# the WMI right now.
-		msu         = LicornJobThread(dname, machines.update_statuses,
-						time=(time.time()+1.0), delay=30.0,
-						tname='MachineStatusesUpdater')
-		aclchecker  = ACLChecker(None, dname)
-		inotifier    = INotifier(aclchecker, None, configuration, groups,
-			dname, opts.no_boot_check)
-		groups.set_inotifier(inotifier)
-		cmdlistener = CommandListener(dname,
-			pids_to_wake=pids_to_wake,
-			configuration=configuration,
-			users=users,
-			groups=groups,
-			profiles=profiles,
-			privileges=privileges,
-			keywords=keywords,
-			machines=machines,
-			msgproc=msgproc)
-		#threads.append(cache)
-		threads.append(aclchecker)
-		threads.append(inotifier)
-		threads.append(cmdlistener)
-		threads.append(msu)
-		#threads.append(syncer)
-		#threads.append(searcher)
+		dthreads.inotifier = INotifier(dthreads.aclchecker, None, dname,
+			options.no_boot_check)
 
-	for th in threads:
+		dthreads.cmdlistener = CommandListener(dname=dname,
+			pids_to_wake=pids_to_wake)
+
+		# machines to be pinged across the network, to see if up or not.
+		dqueues.pings = Queue()
+
+		# machines to be arp pinged across the network, to find ether address.
+		dqueues.arppings = Queue()
+
+		# IPs to be reverse resolved to hostnames.
+		dqueues.reverse_dns = Queue()
+
+		# machines to be scanned for pyro presence
+		dqueues.pyrosys = Queue()
+
+		for i in range(0, LMC.configuration.licornd.threads.pool_members):
+			tname = 'Pinger-%d' % i
+			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
+				tname=tname, in_queue=dqueues.pings,
+				target=pool_job_pinger, daemon=True))
+
+			tname = 'ArpPinger-%d' % i
+			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
+				tname=tname, in_queue=dqueues.arppings,
+				target=pool_job_arppinger, daemon=True))
+
+			# any socket.gethostbyaddr() can block or timeout on DNS call, make
+			# the thread daemonic to not block master daemon stop.
+			tname = 'Reverser-%d' % i
+			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
+				tname=tname, in_queue=dqueues.reverse_dns,
+				target=pool_job_reverser, daemon=True))
+
+			# Pyrofinder threads are daemons, because they can block a very long
+			# time on a host (TCP timeout on routers which drop packets), and
+			# during the time they block, the daemon cannot terminate and seems
+			# to hang. Setting these threads to daemon will permit the main
+			# thread to exit, even if some are still left and running.
+			tname = 'Pyrofinder-%d' % i
+			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
+				tname=tname, in_queue=dqueues.pyrosys,
+				target=pool_job_pyrofinder,	daemon=True))
+
+	if not options.daemon:
+		# set up the interaction with admin on stdin / stdout. Only if we do not
+		# fork into the background.
+		dthreads._interactor = LicornInteractorThread()
+		dthreads._interactor.start()
+
+	for (thname, th) in dthreads.iteritems():
+		assert ltrace('daemon', 'starting thread %s.' % thname)
 		th.start()
 
 	logging.notice('''%s(%s): all threads started, going to sleep waiting '''
@@ -168,4 +216,4 @@ if __name__ == "__main__":
 	while True:
 		signal.pause()
 
-	terminate_cleanly(None, None, threads)
+	terminate(None, None)

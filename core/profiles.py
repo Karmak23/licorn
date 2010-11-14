@@ -9,22 +9,26 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, re, shutil
-import Pyro.core
+import os, re, shutil, Pyro.core
 from threading import RLock
 
-from licorn.foundations           import fsapi, hlstr, logging
-from licorn.foundations           import exceptions, styles, readers, pyutils
-from licorn.foundations.objects   import Singleton
-from licorn.foundations.constants import filters
+from licorn.foundations           import exceptions, logging
+from licorn.foundations           import fsapi, hlstr, readers, pyutils
+from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.base      import Singleton
+from licorn.foundations.constants import filters
 
-class ProfilesController(Singleton, Pyro.core.ObjBase):
+from licorn.core         import LMC
+from licorn.core.objects import LicornCoreObject
+
+class ProfilesController(Singleton, LicornCoreObject):
 	""" representation of /etc/licorn/profiles.xml, compatible with
 		gnome-system-tools. """
 	init_ok = False
+	load_ok = False
 
-	def __init__(self, configuration, groups, users):
+	def __init__(self):
 		""" Load profiles from system configuration file. """
 
 		assert ltrace('profiles', '> ProfilesController.__init__(%s)' %
@@ -32,26 +36,24 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 
 		if ProfilesController.init_ok:
 			return
-		Pyro.core.ObjBase.__init__(self)
 
-		self.lock = RLock()
-
-		self.configuration = configuration
-		configuration.set_controller('profiles', self)
-
-		self.groups = groups
-		groups.set_profiles_controller(self)
-
-		self.users = users
-		users.set_profiles_controller(self)
-
-		self.reload()
-
-		self.checkDefaultProfile()
+		LicornCoreObject.__init__(self, 'profiles')
 
 		ProfilesController.init_ok = True
 		assert ltrace('profiles', '< ProfilesController.__init__(%s)' %
 			ProfilesController.init_ok)
+	def load(self):
+		if ProfilesController.load_ok:
+			return
+		else:
+			assert ltrace('profiles', '| load()')
+			# be sure our dependancies are OK.
+			LMC.groups.load()
+			self.reload()
+
+			#
+			self.check_default_profile()
+			ProfilesController.load_ok = True
 	def __getitem__(self, item):
 		return self.profiles[item]
 	def __setitem__(self, item, value):
@@ -61,23 +63,23 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	def has_key(self, key):
 		return self.profiles.has_key(key)
 	def reload(self):
-		with self.lock:
+		with self.lock():
 			self.profiles = readers.profiles_conf_dict(
-				self.configuration.profiles_config_file)
+				LMC.configuration.profiles_config_file)
 			self.name_cache = {}
 
 			# build the name cache a posteriori
 			for group in self.profiles:
 				self.name_cache[self.profiles[group]['name']] = group
-	def checkDefaultProfile(self, listener=None):
+	def check_default_profile(self, listener=None):
 		"""If no profile exists on the system, create a default one with system group "users"."""
 
 		try:
-			with self.lock:
+			with self.lock():
 				if self.profiles == {}:
 					logging.warning('''Adding a default %s profile on the system '''
 						'''(this is mandatory).''' %
-							styles.stylize(styles.ST_NAME, 'Users'),
+							stylize(ST_NAME, 'Users'),
 							listener=listener)
 					# Create a default profile with 'users' as default primary
 					# group, and use the Debian pre-existing group without
@@ -85,8 +87,8 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 					# TODO: translate/i18n these names ?
 					self.AddProfile('Users', 'users',
 						description='Standard desktop users',
-						profileShell=self.configuration.users.default_shell,
-						profileSkel=self.configuration.users.default_skel,
+						profileShell=LMC.configuration.users.default_shell,
+						profileSkel=LMC.configuration.users.default_skel,
 						force_existing=True, listener=listener)
 		except (OSError, IOError), e:
 			# if 'permission denied', likely to be that we are not root. pass.
@@ -99,7 +101,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		"""
 
 		if filename is None:
-			filename = self.configuration.profiles_config_file
+			filename = LMC.configuration.profiles_config_file
 
 		assert ltrace('profiles', '> WriteConf(%s)' % filename)
 
@@ -112,7 +114,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 
 		assert ltrace('profiles', '> Select(%s)' % filter_string)
 
-		with self.lock:
+		with self.lock():
 			profiles = self.profiles.keys()
 			profiles.sort()
 
@@ -142,7 +144,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		""" Export the user profiles list to human readable form. """
 		data = ""
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				profiles = self.profiles.keys()
 			else:
@@ -160,13 +162,13 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	Default shell: %s
 	Quota: %sMb%s
 ''' % (
-			styles.stylize(styles.ST_LIST_L1, '*'),
+			stylize(ST_LIST_L1, '*'),
 			self.profiles[profile]['name'],
 			self.profiles[profile]['groupName'],
-			self.groups.name_to_gid(
+			LMC.groups.name_to_gid(
 				self.profiles[profile]['groupName']),
 			self.profiles[profile]['description'],
-			self.configuration.users.base_path,
+			LMC.configuration.users.base_path,
 			self.profiles[profile]['profileSkel'],
 			self.profiles[profile]['profileShell'],
 			self.profiles[profile]['profileQuota'],
@@ -178,7 +180,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	def ExportXML(self, selected=None):
 		""" Export the user profiles list to XML. """
 
-		with self.lock:
+		with self.lock():
 			if selected is None:
 				profiles = self.profiles.keys()
 			else:
@@ -203,10 +205,10 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	</profile>\n''' % (
 				self.profiles[profile]['name'],
 				self.profiles[profile]['groupName'],
-				self.groups.name_to_gid(
+				LMC.groups.name_to_gid(
 					self.profiles[profile]['groupName']),
 				self.profiles[profile]['description'] ,
-				self.configuration.users.base_path,
+				LMC.configuration.users.base_path,
 				self.profiles[profile]['profileQuota'],
 				self.profiles[profile]['profileSkel'],
 				self.profiles[profile]['profileShell'],
@@ -229,15 +231,15 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if group is None:
 			group = name
 
-		if not profileShell in self.configuration.users.shells:
+		if not profileShell in LMC.configuration.users.shells:
 			raise exceptions.BadArgumentError('''The shell you specified '''
 				'''doesn't exist on this system. Valid shells are: %s.''' %
-				str(self.configuration.users.shells))
+				str(LMC.configuration.users.shells))
 
-		if not profileSkel in self.configuration.users.skels:
+		if not profileSkel in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError('''The skel you specified '''
 				'''doesn't exist on this system. Valid skels are: %s.''' %
-				str(self.configuration.users.skels))
+				str(LMC.configuration.users.skels))
 
 		if not hlstr.cregex['profile_name'].match(name):
 			raise exceptions.BadArgumentError(
@@ -258,20 +260,20 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	def AddProfile(self, name, group, profileQuota=1024, groups=[],
 		description=None, profileShell=None, profileSkel=None,
 		force_existing=False, listener=None):
-		""" Add a user profile (self.groups is an instance of GroupsController
+		""" Add a user profile (LMC.groups is an instance of GroupsController
 			and is needed to create the profile group). """
 
 		assert ltrace('profiles', '''> AddProfile(%s): '''
 			'''group=%s, profileQuota=%d, groups=%s, description=%s, '''
 			'''profileShell=%s, profileSkel=%s, force_existing=%s''' % (
-				styles.stylize(styles.ST_NAME, name), group, profileQuota,
+				stylize(ST_NAME, name), group, profileQuota,
 				groups, description, profileShell, profileSkel, force_existing))
 
 		name, group, description, profileShell, profileSkel = \
 			self._validate_fields(name, group, description, profileShell,
 				profileSkel, listener=listener)
 
-		with self.lock:
+		with self.lock():
 			if name in self.name_cache:
 				raise exceptions.AlreadyExistsException(
 				'''The profile '%s' already exists on the system''' % name)
@@ -284,8 +286,8 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 
 			create_group = True
 
-			with self.groups.lock:
-				if self.groups.exists(name=group):
+			with LMC.groups.lock():
+				if LMC.groups.exists(name=group):
 					if force_existing:
 						create_group = False
 					else:
@@ -298,28 +300,28 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 				# Verify groups
 				for g in groups:
 					try:
-						gid = self.groups.name_to_gid(g)
+						gid = LMC.groups.name_to_gid(g)
 					except exceptions.DoesntExistsException:
 						logging.notice("Skipped non-existing group '%s'." %
-							styles.stylize(styles.ST_NAME,g), listener=listener)
+							stylize(ST_NAME,g), listener=listener)
 						groups.remove(g)
 
 				# Add the system group
 				if create_group:
-					gid, group = self.groups.AddGroup(group,
+					gid, group = LMC.groups.AddGroup(group,
 						description=description, system=True,
 						groupSkel=profileSkel, listener=listener)
 				else:
-					if self.groups.is_standard_group(group):
+					if LMC.groups.is_standard_group(group):
 						raise exceptions.BadArgumentError(
 							'''The group %s(%s) is not a system group. It '''
 							'''cannot be added as primary group of a '''
 							'''profile.''' % (
-							styles.stylize(styles.ST_NAME, group),
-							styles.stylize(styles.ST_UGID,
-								self.groups.name_to_gid(group))))
+							stylize(ST_NAME, group),
+							stylize(ST_UGID,
+								LMC.groups.name_to_gid(group))))
 					else:
-						gid = self.groups.name_to_gid(group)
+						gid = LMC.groups.name_to_gid(group)
 
 				# Add the profile in the list
 				self.profiles[group] = {
@@ -337,25 +339,25 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 				self.WriteConf()
 
 		logging.info("Added profile %s (group=%s, gid=%s)." % (
-			styles.stylize(styles.ST_NAME, name),
-			styles.stylize(styles.ST_NAME, group),
-			styles.stylize(styles.ST_UGID, gid)), listener=listener)
+			stylize(ST_NAME, name),
+			stylize(ST_NAME, group),
+			stylize(ST_UGID, gid)), listener=listener)
 
 		assert ltrace('profiles', '< AddProfile(%s)' % self.profiles)
 	def DeleteProfile(self, name=None, group=None, gid=None, del_users=False,
 		no_archive=False, batch=False, listener=None):
-		""" Delete a user profile (self.groups is an instance of
+		""" Delete a user profile (LMC.groups is an instance of
 			GroupsController and is needed to delete the profile group). """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
 
 		assert ltrace('profiles', '> DeleteProfile(%s,%s,%s)' % (gid, group, name))
 
-		with self.lock:
-			with self.groups.lock:
+		with self.lock():
+			with LMC.groups.lock():
 
 				try:
-					self.groups.DeleteGroup(gid=gid, del_users=del_users,
+					LMC.groups.DeleteGroup(gid=gid, del_users=del_users,
 						no_archive=no_archive, batch=batch, check_profiles=False,
 						listener=listener)
 				except exceptions.DoesntExistsException:
@@ -368,7 +370,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 				self.WriteConf()
 
 		logging.info(logging.SYSP_DELETED_PROFILE %
-			styles.stylize(styles.ST_NAME, name), listener=listener)
+			stylize(ST_NAME, name), listener=listener)
 
 		assert ltrace('profiles', '< DeleteProfile()')
 	def ChangeProfileSkel(self, gid=None, group=None, name=None,
@@ -387,17 +389,17 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if profileSkel is None:
 			raise exceptions.BadArgumentError((logging.SYSP_SPECIFY_SKEL))
 
-		if profileSkel not in self.configuration.users.skels:
+		if profileSkel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(
 				'skel %s not in list of allowed skels (%s)' % (profileSkel,
-					self.configuration.users.skels))
+					LMC.configuration.users.skels))
 
-		with self.lock:
+		with self.lock():
 			self.profiles[group]['profileSkel'] = profileSkel
 			self.WriteConf()
 
 		logging.info('''Changed profile %s skel to '%s'.''' % (
-			styles.stylize(styles.ST_NAME, name), profileSkel),
+			stylize(ST_NAME, name), profileSkel),
 			listener=listener)
 
 		assert ltrace('profiles', '< ChangeProfileSkel()')
@@ -417,17 +419,17 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if profileShell is None:
 			raise exceptions.BadArgumentError(logging.SYSP_SPECIFY_SHELL)
 
-		if profileShell not in self.configuration.users.shells:
+		if profileShell not in LMC.configuration.users.shells:
 			raise exceptions.BadArgumentError(
 				'shell %s not in list of allowed shells (%s)' % (profileShell,
-					self.configuration.users.shells))
+					LMC.configuration.users.shells))
 
-		with self.lock:
+		with self.lock():
 			self.profiles[group]['profileShell'] = profileShell
 			self.WriteConf()
 
 		logging.info('''Changed profile %s shell to '%s'.''' % (
-			styles.stylize(styles.ST_NAME, name), profileShell),
+			stylize(ST_NAME, name), profileShell),
 			listener=listener)
 
 		assert ltrace('profiles', '< ChangeProfileShell()')
@@ -449,12 +451,12 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if profileQuota is None:
 			raise exceptions.BadArgumentError, "You must specify a profileQuota"
 
-		with self.lock:
+		with self.lock():
 			self.profiles[group]['profileQuota'] = profileQuota
 			self.WriteConf()
 
 		logging.info('''Changed profile %s quota to '%s'.''' % (
-			styles.stylize(styles.ST_NAME, name), profileQuota),
+			stylize(ST_NAME, name), profileQuota),
 			listener=listener)
 
 		assert ltrace('profiles', '< ChangeProfileQuota()')
@@ -475,12 +477,12 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 				'''description « %s », must match /%s/i.''' % (
 					description, hlstr.regex['description']))
 
-		with self.lock:
+		with self.lock():
 			self.profiles[group]['description'] = description
 			self.WriteConf()
 
 		logging.info('''Changed profile %s description to '%s'.''' % (
-			styles.stylize(styles.ST_NAME, name), description),
+			stylize(ST_NAME, name), description),
 			listener=listener)
 
 		assert ltrace('profiles', '< ChangeProfileDescription()')
@@ -496,15 +498,15 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if newname is None:
 			raise exceptions.BadArgumentError, "You must specify a new name"
 
-		with self.lock:
+		with self.lock():
 			self.profiles[group]['name'] = newname
 			del self.name_cache[name]
 			self.name_cache[newname] = group
 			self.WriteConf()
 
 		logging.info('''Changed profile %s's name to %s.''' % (
-			styles.stylize(styles.ST_NAME, name),
-			styles.stylize(styles.ST_NAME, newname)
+			stylize(ST_NAME, name),
+			stylize(ST_NAME, newname)
 			), listener=listener)
 
 		assert ltrace('profiles', '< ChangeProfileName()')
@@ -524,7 +526,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		if newgroup is None:
 			raise exceptions.BadArgumentError, "You must specify a new group"
 
-		self.groups.RenameGroup(self,
+		LMC.groups.RenameGroup(self,
 			self.profiles[group]['groupName'], newgroup)
 	def AddGroupsInProfile(self, gid=None, group=None, name=None,
 		groups_to_add=None, listener=None):
@@ -539,12 +541,12 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.BadArgumentError(
 				'''You must specify a list of groups''')
 
-		with self.lock:
-			with self.groups.lock:
+		with self.lock():
+			with LMC.groups.lock():
 
-				gids_to_add = self.groups.guess_identifiers(groups_to_add)
+				gids_to_add = LMC.groups.guess_identifiers(groups_to_add)
 				added_groups = []
-				g2n = self.groups.gid_to_name
+				g2n = LMC.groups.gid_to_name
 
 				for gid_to_add in gids_to_add:
 					name_to_add=g2n(gid_to_add)
@@ -552,8 +554,8 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 					if name_to_add in self.profiles[group]['memberGid']:
 						logging.info('''Group %s is already in groups of '''
 							'''profile %s, skipped.''' % (
-							styles.stylize(styles.ST_NAME, name_to_add),
-							styles.stylize(styles.ST_NAME, group)),
+							stylize(ST_NAME, name_to_add),
+							stylize(ST_NAME, group)),
 							listener=listener)
 					else:
 						if name_to_add != group:
@@ -561,14 +563,14 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 								name_to_add)
 							added_groups.append(name_to_add)
 							logging.info('''Added group %s to profile %s.''' % (
-								styles.stylize(styles.ST_NAME, name_to_add),
-								styles.stylize(styles.ST_NAME, group)),
+								stylize(ST_NAME, name_to_add),
+								stylize(ST_NAME, group)),
 								listener=listener)
 						else:
 							logging.warning('''Can't add group %s to its own '''
 								'''profile %s.''' % (
-								styles.stylize(styles.ST_NAME, name_to_add),
-								styles.stylize(styles.ST_NAME, group)),
+								stylize(ST_NAME, name_to_add),
+								stylize(ST_NAME, group)),
 								listener=listener)
 
 				self.WriteConf()
@@ -590,11 +592,11 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.BadArgumentError(
 				"You must specify a list of groups")
 
-		with self.lock:
-			with self.groups.lock:
-				gids_to_del = self.groups.guess_identifiers(groups_to_del)
+		with self.lock():
+			with LMC.groups.lock():
+				gids_to_del = LMC.groups.guess_identifiers(groups_to_del)
 				deleted_groups = []
-				g2n = self.groups.gid_to_name
+				g2n = LMC.groups.gid_to_name
 
 				for gid_to_del in gids_to_del:
 					name_to_del=g2n(gid_to_del)
@@ -604,14 +606,14 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 						deleted_groups.append(name_to_del)
 						logging.info(
 							"Deleted group %s from profile %s." % (
-							styles.stylize(styles.ST_NAME, name_to_del),
-							styles.stylize(styles.ST_NAME, group)),
+							stylize(ST_NAME, name_to_del),
+							stylize(ST_NAME, group)),
 							listener=listener)
 					else:
 						logging.notice(
 							'''Group %s is not in groups of profile %s, ignored.''' % (
-								styles.stylize(styles.ST_NAME, name_to_del),
-								styles.stylize(styles.ST_NAME, group)),
+								stylize(ST_NAME, name_to_del),
+								stylize(ST_NAME, group)),
 								listener=listener)
 
 				self.WriteConf()
@@ -640,15 +642,15 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 			raise exceptions.BadArgumentError(
 				"You must choose to apply the groups or/and the skel")
 
-		uids = self.users.guess_identifiers(users)
+		uids = LMC.users.guess_identifiers(users)
 
-		users = self.users
-		groups = self.groups
+		users = LMC.users
+		groups = LMC.groups
 		profiles = self.profiles
 
-		u2l = self.users.uid_to_login
-		n2g = self.groups.name_to_gid
-		g2n = self.groups.gid_to_name
+		u2l = LMC.users.uid_to_login
+		n2g = LMC.groups.name_to_gid
+		g2n = LMC.groups.gid_to_name
 
 		for uid in uids:
 			login = u2l(uid)
@@ -666,9 +668,9 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 						something_done = False
 
 						logging.progress('Applying skel %s to user %s.' % (
-							styles.stylize(styles.ST_PATH,
+							stylize(ST_PATH,
 							profiles[profile]['profileSkel']),
-							styles.stylize(styles.ST_NAME, login)),
+							stylize(ST_NAME, login)),
 							listener=listener)
 
 						def install_to_user_homedir(entry,
@@ -681,7 +683,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 							entry_name = os.path.basename(entry)
 
 							logging.progress('Installing skel part %s.' %
-								styles.stylize(styles.ST_PATH, entry),
+								stylize(ST_PATH, entry),
 								listener=listener)
 
 							def copy_profile_entry():
@@ -696,8 +698,8 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 									shutil.copy2(entry, user_home)
 
 								logging.info('Copied skel part %s to %s.' % (
-									styles.stylize(styles.ST_PATH, entry),
-									styles.stylize(styles.ST_PATH, user_home)),
+									stylize(ST_PATH, entry),
+									stylize(ST_PATH, user_home)),
 									listener=listener)
 
 							dst_entry = '%s/%s' % (user_home, entry_name)
@@ -707,9 +709,9 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 									'''exists in %s's home dir (%s), it should '''\
 									'''be overwritten to fully reapply the '''\
 									'''profile. Overwrite ?''' % (
-									styles.stylize(styles.ST_PATH, entry_name),
-									styles.stylize(styles.ST_NAME, login),
-									styles.stylize(styles.ST_PATH, user_home))
+									stylize(ST_PATH, entry_name),
+									stylize(ST_NAME, login),
+									stylize(ST_PATH, user_home))
 
 								if batch or logging.ask_for_repair(warn_message,
 									auto_answer, listener=listener):
@@ -725,9 +727,9 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 								else:
 									logging.notice(
 										"Skipped entry %s for user %s." % (
-										styles.stylize(styles.ST_PATH,
+										stylize(ST_PATH,
 											entry_name),
-										styles.stylize(styles.ST_NAME, login)),
+										stylize(ST_NAME, login)),
 										listener=listener)
 							else:
 								copy_profile_entry()
@@ -744,16 +746,16 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 
 						if something_done:
 							logging.info('Applyed skel %s to user %s.' % (
-								styles.stylize(styles.ST_PATH,
+								stylize(ST_PATH,
 								profiles[profile]['profileSkel']),
-								styles.stylize(styles.ST_NAME, login)),
+								stylize(ST_NAME, login)),
 								listener=listener)
 						else:
 							logging.info('''Skel %s already applied or '''
 								'''skipped for user %s.''' % (
-								styles.stylize(styles.ST_PATH,
+								stylize(ST_PATH,
 								profiles[profile]['profileSkel']),
-								styles.stylize(styles.ST_NAME, login)),
+								stylize(ST_NAME, login)),
 								listener=listener)
 
 						# After having applyed the profile skel, break the
@@ -766,7 +768,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 	def change_group_name_in_profiles(self, old_name, new_name, listener=None):
 		""" Change a group's name in the profiles groups list """
 
-		with self.lock:
+		with self.lock():
 			for profile in self.profiles:
 				for group in self.profiles[profile]['memberGid']:
 					if group == old_name:
@@ -780,14 +782,14 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 
 		found = False
 
-		with self.lock:
+		with self.lock():
 			for profile in self.profiles:
 				try:
 					self.profiles[profile]['memberGid'].remove(name)
 					found=True
 					logging.info("Deleted group %s from profile %s." % (
-						styles.stylize(styles.ST_NAME, name),
-						styles.stylize(styles.ST_NAME, profile)),
+						stylize(ST_NAME, name),
+						stylize(ST_NAME, profile)),
 						listener=listener)
 
 				except ValueError:
@@ -795,8 +797,8 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 					# primary group of a profile, this is superfluous.
 					if name not in self.profiles:
 						logging.info('Group %s already not present in profile %s.'
-							% (styles.stylize(styles.ST_NAME, name),
-							styles.stylize(styles.ST_NAME, profile)),
+							% (stylize(ST_NAME, name),
+							stylize(ST_NAME, profile)),
 							listener=listener)
 
 			if found:
@@ -810,20 +812,20 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		except KeyError:
 			try:
 				return self.profiles[
-					self.groups.gid_to_name(group)
+					LMC.groups.gid_to_name(group)
 					]['groupName']
 			except (KeyError, exceptions.DoesntExistsException):
 				raise exceptions.DoesntExistsException(
 					"group %s doesn't exist" % group)
 	def resolve_from_gid(self, gid):
-		group = self.groups.gid_to_name(gid)
+		group = LMC.groups.gid_to_name(gid)
 		return (group, self.group_to_name(group))
 	def resolve_from_group(self, group):
-		return (self.groups.name_to_gid(group),
+		return (LMC.groups.name_to_gid(group),
 			self.group_to_name(group))
 	def resolve_from_name(self, name):
 		group = self.name_to_group(name)
-		return (group, self.groups.name_to_gid(group))
+		return (group, LMC.groups.name_to_gid(group))
 	def resolve_gid_group_or_name(self, gid, group, name):
 		""" method used every where to get gid / group / name of a profile
 			object to do something onto. a non existing group / name will raise
@@ -851,7 +853,7 @@ class ProfilesController(Singleton, Pyro.core.ObjBase):
 		#assert ltrace('profiles', '| guess_identifier(%s)' % value)
 
 		try:
-			group =	self.groups.gid_to_name(int(value))
+			group =	LMC.groups.gid_to_name(int(value))
 		except ValueError, e:
 			try:
 				self.group_to_name(value)

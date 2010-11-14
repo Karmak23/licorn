@@ -82,6 +82,10 @@ ST_WARNING   = 34
 ST_ERROR     = 35
 ST_COMMENT   = 36
 ST_ADDRESS   = 37
+ST_ONLINE    = 38
+ST_ON        = ST_ONLINE
+ST_OFFLINE   = 39
+ST_OFF       = ST_OFFLINE
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -96,7 +100,7 @@ colors = {
 	ST_NAME     : __ascii[ST_CADET],
 	ST_APPNAME  : __ascii[ST_YELLOW],
 	ST_OPTION   : __ascii[ST_NAVY],
-	ST_DEBUG	 : __ascii[ST_BROWN],
+	ST_DEBUG	: __ascii[ST_BROWN],
 	ST_REGEX    : __ascii[ST_BROWN],
 	ST_MODE     : __ascii[ST_FOREST],
 	ST_ATTRVALUE: __ascii[ST_FOREST],
@@ -120,7 +124,11 @@ colors = {
 	ST_WARNING  : __ascii[ST_RED],
 	ST_ERROR    : __ascii[ST_RED],
 	ST_COMMENT  : __ascii[ST_BROWN],
-	ST_ADDRESS  : __ascii[ST_BLUE]
+	ST_ADDRESS  : __ascii[ST_BLUE],
+	ST_ONLINE   : __ascii[ST_WHITE],
+	ST_ON       : __ascii[ST_WHITE],
+	ST_OFFLINE  : __ascii[ST_GREY],
+	ST_OFF      : __ascii[ST_GREY],
 	}
 
 

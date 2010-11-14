@@ -12,13 +12,14 @@ import sys
 import Pyro.core
 
 import exceptions
+from _options  import options
 from styles    import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 from ltrace    import ltrace, mytime
-from objects   import Singleton, MessageProcessor, LicornMessage
+from base      import Singleton
+from objects   import LicornMessage
 
-from licorn.foundations import options
 # TODO: gettext this !
 #import gettext
 #from gettext           import gettext as _
@@ -80,10 +81,9 @@ def error(mesg, returncode=1, full=False, tb=None, listener=None):
 			traceback.print_tb( sys.exc_info()[2] )
 			sys.stderr.write("\n")
 
-	sys.stderr.write('%s %s %s\n' % (
-		stylize(ST_BAD, 'ERROR:'),
-		mytime(),
-		mesg))
+	sys.stderr.write('%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'),
+		mytime(), mesg))
+
 	raise SystemExit(returncode)
 def warning(mesg, once=False, listener=None):
 	"""Display a stylized warning message on stderr."""
@@ -99,8 +99,7 @@ def warning(mesg, once=False, listener=None):
 		stylize(ST_WARNING, '/!\\'), mytime(), mesg)
 
 	if listener:
-		listener.process(
-			LicornMessage(data=text_message),
+		listener.process(LicornMessage(data=text_message),
 			options.msgproc.getProxy())
 
 	sys.stderr.write(text_message)
@@ -117,63 +116,78 @@ def warning2(mesg, once=False, listener=None):
 
 	if listener and listener.verbose >= verbose.INFO:
 		listener.process(
-			LicornMessage(data="%s%s %s\n" % (
-			stylize(ST_WARNING, '/2\\'), mytime(), mesg)),
-			options.msgproc.getProxy())
+			LicornMessage(data="%s%s %s\n" % ( stylize(ST_WARNING, '/2\\'),
+				mytime(), mesg)), options.msgproc.getProxy())
 
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write("%s%s %s\n" % (
 			stylize(ST_WARNING, '/2\\'), mytime(), mesg))
 def notice(mesg, listener=None):
 	""" Display a non-stylized notice message on stderr."""
-	assert ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
-		options.verbose, listener.verbose if listener else '-'))
+
+	#assert ltrace('logging', '| notice(%s L%s/R%s)' % (verbose.NOTICE,
+	#	options.verbose, listener.verbose if listener else '-'))
+
 	if listener and listener.verbose >= verbose.NOTICE:
 		listener.process(LicornMessage(data=" %s %s %s\n" % (
-		stylize(ST_INFO, '*'), mytime(), mesg)),
-			options.msgproc.getProxy())
+		stylize(ST_INFO, '*'), mytime(), mesg)), options.msgproc.getProxy())
 
 	if options.verbose >= verbose.NOTICE:
 		sys.stderr.write(" %s %s %s\n" % (
-		stylize(ST_INFO, '*'), mytime(), mesg))
+			stylize(ST_INFO, '*'), mytime(), mesg))
 def info(mesg, listener=None):
 	""" Display a stylized information message on stderr."""
-	assert ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
-		options.verbose, listener.verbose if listener else '-'))
+
+	#assert ltrace('logging', '| info(%s L%s/R%s)' % (verbose.INFO,
+	#	options.verbose, listener.verbose if listener else '-'))
+
 	if listener and listener.verbose >= verbose.INFO:
-			listener.process(
-				LicornMessage(data=" * %s %s\n" % (mytime(), mesg)),
-				options.msgproc.getProxy())
+			listener.process(LicornMessage(data=" * %s %s\n" % (
+				mytime(), mesg)), options.msgproc.getProxy())
 
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write(" * %s %s\n" % (mytime(), mesg))
 def progress(mesg, listener=None):
 	""" Display a stylized progress message on stderr. """
-	assert ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
-		options.verbose, listener.verbose if listener else '-'))
+	#assert ltrace('logging', '| progress(%s L%s/R%s)' % (verbose.PROGRESS,
+	#	options.verbose, listener.verbose if listener else '-'))
+
 	if listener and listener.verbose >= verbose.PROGRESS:
-		listener.process(
-			LicornMessage(data=" > %s %s\n" % (mytime(), mesg)),
+		listener.process(LicornMessage(data=" > %s %s\n" % (mytime(), mesg)),
 			options.msgproc.getProxy())
 
 	if options.verbose >= verbose.PROGRESS:
 		sys.stderr.write(" > %s %s\n" % (mytime(), mesg))
 
-if __debug__:
-	# FIXME: add listener here, too.
-	def debug(mesg):
-		"""Display a stylized debug message on stderr."""
-		if options.verbose >= verbose.DEBUG:
-			sys.stderr.write( "%s: %s\n" % (
-				stylize(ST_DEBUG, 'DEBUG'), mesg) )
-	def debug2(mesg):
-		"""Display a stylized debug2 message on stderr."""
-		if options.verbose >= verbose.DEBUG2:
-			sys.stderr.write("%s: %s\n" % (
-				stylize(ST_DEBUG, 'DEBUG2'), mesg))
-else:
-	def debug(mesg): pass
-	def debug2(mesg): pass
+	# make logging.progress() be compatible with potential assert calls.
+	return True
+
+def debug(mesg, listener=None):
+	"""Display a stylized debug message on stderr."""
+
+	if listener and listener.verbose >= verbose.DEBUG2:
+		listener.process(LicornMessage('%s%s %s\n' % (stylize(ST_DEBUG, 'DBG'),
+			mytime(), mesg)), options.msgproc.getProxy())
+
+	if options.verbose >= verbose.DEBUG:
+		sys.stderr.write( "%s%s %s\n" % (
+			stylize(ST_DEBUG, 'DBG'), mytime(), mesg))
+
+	# be compatible with assert calls
+	return True
+def debug2(mesg, listener=None):
+	"""Display a stylized debug2 message on stderr."""
+
+	if listener and listener.verbose >= verbose.DEBUG2:
+		listener.process(LicornMessage('%s%s %s\n' % (stylize(ST_DEBUG, 'DBH'),
+			mytime(), mesg)), options.msgproc.getProxy())
+
+	if options.verbose >= verbose.DEBUG2:
+		sys.stderr.write('%s%s %s\n' % (
+			stylize(ST_DEBUG, 'DBH'), mytime(), mesg))
+
+	# be compatible with assert calls
+	return True
 
 def ask_for_repair(message, auto_answer=None, listener=None):
 	"""ask the user if he wants to repair, store answer for next question."""
@@ -181,12 +195,9 @@ def ask_for_repair(message, auto_answer=None, listener=None):
 	assert ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
 
 	if listener:
-		return listener.process(
-			LicornMessage(
-				data=message,
+		return listener.process(LicornMessage(data=message,
 				interaction=interactions.ASK_FOR_REPAIR,
-				auto_answer=auto_answer),
-			options.msgproc.getProxy())
+				auto_answer=auto_answer), options.msgproc.getProxy())
 
 	else:
 		return interactive_ask_for_repair(message, auto_answer)

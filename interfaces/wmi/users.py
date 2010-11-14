@@ -629,7 +629,7 @@ def record(uri, http_user, login, loginShell=None, password="",
 	if loginShell is None:
 		loginShell = configuration.users.default_shell
 
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, True)
 
 	command = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login",
 		login, "--shell", loginShell ]
@@ -676,176 +676,185 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 	#print globals()
 	#print locals()
 
-	u = users.users
-	g = groups.groups
-	p = profiles.profiles
+	users.acquire_lock()
+	groups.acquire_lock()
+	profiles.acquire_lock()
 
-	pri_grps = [ g[gid]['name'] for gid in groups.Select(filters.PRIVILEGED) ]
+	try:
+		u = users.users
+		g = groups.groups
+		p = profiles.profiles
 
-	rsp_grps = [ g[gid]['name'] for gid in groups.Select(filters.RESPONSIBLE) ]
+		pri_grps = [ g[gid]['name'] for gid in groups.Select(filters.PRIVILEGED) ]
 
-	gst_grps = [ g[gid]['name'] for gid in groups.Select(filters.GUEST) ]
+		rsp_grps = [ g[gid]['name'] for gid in groups.Select(filters.RESPONSIBLE) ]
 
-	std_grps = [ g[gid]['name'] for gid in groups.Select(filters.STANDARD) ]
+		gst_grps = [ g[gid]['name'] for gid in groups.Select(filters.GUEST) ]
 
-	accounts = {}
-	ordered  = {}
-	totals   = {}
-	prof     = {}
+		std_grps = [ g[gid]['name'] for gid in groups.Select(filters.STANDARD) ]
 
-	for profile in p:
-		prof[groups.name_to_gid(profile)] = p[profile]
-		totals[p[profile]['name']] = 0
-	totals[_('Standard account')] = 0
+		accounts = {}
+		ordered  = {}
+		totals   = {}
+		prof     = {}
 
-	title = _("User accounts")
-	data  = w.page_body_start(uri, http_user, ctxtnav, title)
+		for profile in p:
+			prof[groups.name_to_gid(profile)] = p[profile]
+			totals[p[profile]['name']] = 0
+		totals[_('Standard account')] = 0
 
-	if order == "asc": reverseorder = "desc"
-	else:              reverseorder = "asc"
+		title = _("User accounts")
+		data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	data += '<table>\n		<tr>\n'
+		if order == "asc": reverseorder = "desc"
+		else:              reverseorder = "asc"
 
-	for (sortcolumn, sortname) in ( ("gecos", _("Full name")),
-		("login", _("Identifier")), ("profile", _("Profile")),
-		("locked", _("Locked")) ):
-		if sortcolumn == sort:
-			data += '''			<th><img src="/images/sort_%s.gif"
-				alt="%s order image" />&#160;
-				<a href="/users/list/%s/%s" title="%s">%s</a>
-				</th>\n''' % (order, order, sortcolumn, reverseorder,
-					_("Click to sort in reverse order."), sortname)
-		else:
-			data += '''			<th><a href="/users/list/%s/asc"
-			title="%s">%s</a></th>\n''' % (sortcolumn,
-				_("Click to sort on this column."), sortname)
-	data += '		</tr>\n'
+		data += '<table>\n		<tr>\n'
 
-	def html_build_compact(index, accounts = accounts):
-		uid   = ordered[index]
-		login = u[uid]['login']
-		edit  = (_('''<em>Click to edit current user account parameters:</em>
-				<br />
-				UID: <strong>%d</strong><br />
-				GID: %d (primary group <strong>%s</strong>)<br /><br />
-				Groups:&#160;<strong>%s</strong><br /><br />
-				Privileges:&#160;<strong>%s</strong><br /><br />
-				Responsabilities:&#160;<strong>%s</strong><br /><br />
-				Invitations:&#160;<strong>%s</strong><br /><br />
-				''') % (
-				uid, u[uid]['gidNumber'], g[u[uid]['gidNumber']]['name'],
-				", ".join(filter(lambda x: x in std_grps, u[uid]['groups'])),
-				", ".join(filter(lambda x: x in pri_grps, u[uid]['groups'])),
-				", ".join(filter(lambda x: x in rsp_grps, u[uid]['groups'])),
-				", ".join(filter(
-				lambda x: x in gst_grps, u[uid]['groups'])))).replace(
-					'<','&lt;').replace('>','&gt;')
+		for (sortcolumn, sortname) in ( ("gecos", _("Full name")),
+			("login", _("Identifier")), ("profile", _("Profile")),
+			("locked", _("Locked")) ):
+			if sortcolumn == sort:
+				data += '''			<th><img src="/images/sort_%s.gif"
+					alt="%s order image" />&#160;
+					<a href="/users/list/%s/%s" title="%s">%s</a>
+					</th>\n''' % (order, order, sortcolumn, reverseorder,
+						_("Click to sort in reverse order."), sortname)
+			else:
+				data += '''			<th><a href="/users/list/%s/asc"
+				title="%s">%s</a></th>\n''' % (sortcolumn,
+					_("Click to sort on this column."), sortname)
+		data += '		</tr>\n'
 
-		html_data = '''
-	<tr class="userdata">
-		<td class="paddedleft">
-			<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
-		</td>
-		<td class="paddedright">
-			<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
-		</td>
-		<td style="text-align:center;">%s</td>
-			''' % (login, edit, u[uid]['gecos'],
-			login, edit, login,
-			accounts[uid]['profile_name'])
+		def html_build_compact(index, accounts = accounts):
+			uid   = ordered[index]
+			login = u[uid]['login']
+			edit  = (_('''<em>Click to edit current user account parameters:</em>
+					<br />
+					UID: <strong>%d</strong><br />
+					GID: %d (primary group <strong>%s</strong>)<br /><br />
+					Groups:&#160;<strong>%s</strong><br /><br />
+					Privileges:&#160;<strong>%s</strong><br /><br />
+					Responsabilities:&#160;<strong>%s</strong><br /><br />
+					Invitations:&#160;<strong>%s</strong><br /><br />
+					''') % (
+					uid, u[uid]['gidNumber'], g[u[uid]['gidNumber']]['name'],
+					", ".join(filter(lambda x: x in std_grps, u[uid]['groups'])),
+					", ".join(filter(lambda x: x in pri_grps, u[uid]['groups'])),
+					", ".join(filter(lambda x: x in rsp_grps, u[uid]['groups'])),
+					", ".join(filter(
+					lambda x: x in gst_grps, u[uid]['groups'])))).replace(
+						'<','&lt;').replace('>','&gt;')
 
-		if u[uid]['locked']:
+			html_data = '''
+		<tr class="userdata">
+			<td class="paddedleft">
+				<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
+			</td>
+			<td class="paddedright">
+				<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
+			</td>
+			<td style="text-align:center;">%s</td>
+				''' % (login, edit, u[uid]['gecos'],
+				login, edit, login,
+				accounts[uid]['profile_name'])
+
+			if u[uid]['locked']:
+				html_data += '''
+			<td class="user_action_center">
+				<a href="/users/unlock/%s" title="%s">
+				<img src="/images/16x16/locked.png" alt="%s"/></a>
+			</td>
+				''' % (login, _("Unlock password (re-grant access to machines)."),
+					_("Remove account."))
+			else:
+				html_data += '''
+			<td class="user_action_center">
+				<a href="/users/lock/%s" title="%s">
+				<img src="/images/16x16/unlocked.png" alt="%s"/></a>
+			</td>
+				''' % (login, _("Lock password (revoke access to machines)."),
+					_("Lock account."))
+
 			html_data += '''
-		<td class="user_action_center">
-			<a href="/users/unlock/%s" title="%s">
-			<img src="/images/16x16/locked.png" alt="%s"/></a>
-		</td>
-			''' % (login, _("Unlock password (re-grant access to machines)."),
-				_("Remove account."))
-		else:
-			html_data += '''
-		<td class="user_action_center">
-			<a href="/users/lock/%s" title="%s">
-			<img src="/images/16x16/unlocked.png" alt="%s"/></a>
-		</td>
-			''' % (login, _("Lock password (revoke access to machines)."),
-				_("Lock account."))
-
-		html_data += '''
-		<td class="user_action">
-			<a href="/users/skel/%s" title="%s" class="reapply-skel">
-			<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
-		</td>
-		<td class="user_action">
-			<a href="/users/delete/%s" title="%s" class="delete-entry">
-			<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
-		</td>
-	</tr>
-			''' % (login, _('''Reapply origin skel data in the personnal '''
-				'''directory of user. This is usefull'''
-				''' when user has lost icons, or modified too much his/her '''
-				'''desktop (menus, panels and so on).
-				This will get all his/her desktop back.'''), login,
-				_("Definitely remove account from the system."))
-		return html_data
+			<td class="user_action">
+				<a href="/users/skel/%s" title="%s" class="reapply-skel">
+				<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
+			</td>
+			<td class="user_action">
+				<a href="/users/delete/%s" title="%s" class="delete-entry">
+				<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
+			</td>
+		</tr>
+				''' % (login, _('''Reapply origin skel data in the personnal '''
+					'''directory of user. This is usefull'''
+					''' when user has lost icons, or modified too much his/her '''
+					'''desktop (menus, panels and so on).
+					This will get all his/her desktop back.'''), login,
+					_("Definitely remove account from the system."))
+			return html_data
 
 
-	for uid in users.Select(filters.STANDARD):
-		user  = u[uid]
-		login = user['login']
+		for uid in users.Select(filters.STANDARD):
+			user  = u[uid]
+			login = user['login']
 
-		# we add the login to gecosValue and lockedValue to be sure to obtain
-		# unique values. This prevents problems with empty or non-unique GECOS
-		# and when sorting on locked status (accounts would be overwritten and
-		# lost because sorting must be done on unique values).
-		accounts[uid] = {
-			'login'  : login,
-			'gecos'  : user['gecos'] + login ,
-			'locked' : str(user['locked']) + login
-			}
-		try:
-			p = prof[user['gidNumber']]['name']
-		except KeyError:
-			p = _("Standard account")
+			# we add the login to gecosValue and lockedValue to be sure to obtain
+			# unique values. This prevents problems with empty or non-unique GECOS
+			# and when sorting on locked status (accounts would be overwritten and
+			# lost because sorting must be done on unique values).
+			accounts[uid] = {
+				'login'  : login,
+				'gecos'  : user['gecos'] + login ,
+				'locked' : str(user['locked']) + login
+				}
+			try:
+				p = prof[user['gidNumber']]['name']
+			except KeyError:
+				p = _("Standard account")
 
-		accounts[uid]['profile']      = "%s %s" % ( p, login )
-		accounts[uid]['profile_name'] = p
-		totals[p] += 1
+			accounts[uid]['profile']      = "%s %s" % ( p, login )
+			accounts[uid]['profile_name'] = p
+			totals[p] += 1
 
-		# index on the column choosen for sorting, and keep trace of the uid
-		# to find account data back after ordering.
-		ordered[hlstr.validate_name(accounts[uid][sort])] = uid
+			# index on the column choosen for sorting, and keep trace of the uid
+			# to find account data back after ordering.
+			ordered[hlstr.validate_name(accounts[uid][sort])] = uid
 
-	memberkeys = ordered.keys()
-	memberkeys.sort()
-	if order == "desc": memberkeys.reverse()
+		memberkeys = ordered.keys()
+		memberkeys.sort()
+		if order == "desc": memberkeys.reverse()
 
-	data += ''.join(map(html_build_compact, memberkeys))
+		data += ''.join(map(html_build_compact, memberkeys))
 
-	def print_totals(totals):
-		output = ""
-		for total in totals:
-			if totals[total] != 0:
-				output += '''
-	<tr class="list_total">
-		<td colspan="3" class="total_left">%s</td>
-		<td colspan="3" class="total_right">%d</td>
-	</tr>
-		''' % (_("number of <strong>%s</strong>:") % total, totals[total])
-		return output
+		def print_totals(totals):
+			output = ""
+			for total in totals:
+				if totals[total] != 0:
+					output += '''
+		<tr class="list_total">
+			<td colspan="3" class="total_left">%s</td>
+			<td colspan="3" class="total_right">%d</td>
+		</tr>
+			''' % (_("number of <strong>%s</strong>:") % total, totals[total])
+			return output
 
-	data += '''
-	<tr>
-		<td colspan="6">&#160;</td></tr>
-	%s
-	<tr class="list_total">
-		<td colspan="3" class="total_left">%s</td>
-		<td colspan="3" class="total_right">%d</td>
-	</tr>
-</table>
-	''' % (print_totals(totals),
-		_("<strong>Total number of accounts:</strong>"),
-		reduce(lambda x, y: x+y, totals.values()))
+		data += '''
+		<tr>
+			<td colspan="6">&#160;</td></tr>
+		%s
+		<tr class="list_total">
+			<td colspan="3" class="total_left">%s</td>
+			<td colspan="3" class="total_right">%d</td>
+		</tr>
+	</table>
+		''' % (print_totals(totals),
+			_("<strong>Total number of accounts:</strong>"),
+			reduce(lambda x, y: x+y, totals.values()))
 
-	return (w.HTTP_TYPE_TEXT, w.page(title,
-		data + w.page_body_end(w.total_time(start, time.time()))))
+		return (w.HTTP_TYPE_TEXT, w.page(title,
+			data + w.page_body_end(w.total_time(start, time.time()))))
+	finally:
+		profiles.release_lock()
+		groups.release_lock()
+		users.release_lock()

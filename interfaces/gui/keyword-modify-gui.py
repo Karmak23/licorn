@@ -143,7 +143,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 				file_keywords = []
 				try:
 					file_keywords = self.kw.GetKeywordsFromPath(path)
-					logging.debug('file has keywords: %s.' % str(file_keywords))
+					assert logging.debug('file has keywords: %s.' % str(file_keywords))
 				except (OSError, IOError), e:
 					if e.errno != 61: raise e
 
@@ -175,7 +175,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 						elif self.keyword_usage[kw] != self.unchecked:
 							self.keyword_usage[kw] = self.inconsistent
 
-		logging.debug('kwusage after update: %s.' % str(self.keyword_usage))
+		assert logging.debug('kwusage after update: %s.' % str(self.keyword_usage))
 
 		self.window.set_sensitive(True)
 		self.StatusMessage("Done updating keywords notebook.")
@@ -237,7 +237,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		map( lambda x: count_keywords(x),
 			fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
 
-		logging.debug('Dir %s, %d files, kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
+		assert logging.debug('Dir %s, %d files, kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
 
 		# look if each keyword is on all file or on only some files
 		kuk = keyword_usage.keys()
@@ -250,7 +250,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 			else:
 				keyword_usage[kw] = self.unchecked
 
-		logging.debug('Dir %s, %d files, final kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
+		assert logging.debug('Dir %s, %d files, final kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
 
 		return keyword_usage
 	def receive_dnd (self, widget, context, x, y, selection, targetType, time):

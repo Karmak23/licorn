@@ -12,16 +12,22 @@ Licensed under the terms of the GNU GPL version 2
 import Pyro.core
 from threading import RLock
 
-from licorn.foundations         import logging, styles, readers, exceptions
-from licorn.foundations.objects import Singleton
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import readers
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
-from licorn.foundations.ltrace  import ltrace
 
-class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
+from licorn.core         import LMC
+from licorn.core.objects import LicornCoreObject
+
+class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 	""" Manage privileges whitelist. """
 
-	init_ok   = False
-	def __init__(self, configuration, conf_file):
+	init_ok = False
+	load_ok = False
+	def __init__(self, conf_file=None):
 		""" Read the configuration file and populate ourselves. """
 
 		assert ltrace('privileges', '> PrivilegesWhiteList.__init__(%s)' %
@@ -30,32 +36,36 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 		if PrivilegesWhiteList.init_ok:
 			return
 
-		Pyro.core.ObjBase.__init__(self)
+		LicornCoreObject.__init__(self, 'privileges')
 
-		self.lock = RLock()
+		if conf_file is None:
+			self.conf_file = LMC.configuration.privileges_whitelist_data_file
+		else:
+			self.conf_file = conf_file
 
-		self.configuration = configuration
-		configuration.set_controller('privileges', self)
-
-		self.conf_file = conf_file
-		self.groups    = None
-		self.changed   = False
-
-		self.reload()
+		self.changed = False
 
 		PrivilegesWhiteList.init_ok = True
 		assert ltrace('privileges', '< PrivilegesWhiteList.__init__(%s)' %
 			PrivilegesWhiteList.init_ok)
+	def load(self):
+		if PrivilegesWhiteList.load_ok:
+			return
+		else:
+			assert ltrace('privileges', '| load()')
+			# make sure our dependancies are OK.
+			LMC.groups.load()
+			self.reload()
+			PrivilegesWhiteList.load_ok = True
 	def __del__(self):
 		""" destructor. """
 		# just in case it wasn't done before (in batched operations, for example).
-		if self.changed :
+		if self.changed:
 			self.WriteConf()
-
 	def reload(self):
 		""" reload internal data  """
 
-		with self.lock:
+		with self.lock():
 			self[:] = []
 
 			try:
@@ -68,9 +78,6 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 			# TODO: si le fichier contient des doublons, faire plutot:
 			# map(lambda (x): self.append(x),
 			# readers.very_simple_conf_load_list(conf_file))
-	def set_groups_controller(self, groups):
-		self.groups = groups
-		groups.set_privileges_controller(self)
 	def add(self, privileges, listener=None):
 		""" One-time multi-add method (list as argument).
 			This method doesn't need locking, all sub-methods are already.
@@ -87,43 +94,43 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 		self.WriteConf()
 	def append(self, privilege, listener=None):
 		""" Set append like: no doubles."""
-		with self.lock:
+		with self.lock():
 			try:
 				self.index(privilege)
 			except ValueError:
-				if self.groups.is_system_group(privilege):
+				if LMC.groups.is_system_group(privilege):
 					list.append(self, privilege)
 					logging.info('Added privilege %s to whitelist.' %
-						styles.stylize(styles.ST_NAME, privilege),
+						stylize(ST_NAME, privilege),
 						listener=listener)
 				else:
 					logging.warning('''group %s can't be promoted as '''
 						'''privilege, it is not a system group.''' % \
-						styles.stylize(styles.ST_NAME, privilege),
+						stylize(ST_NAME, privilege),
 						listener=listener)
 			else:
 				logging.info("privilege %s already whitelisted, skipped." % \
-					styles.stylize(styles.ST_NAME, privilege), listener=listener)
+					stylize(ST_NAME, privilege), listener=listener)
 	def remove(self, privilege, listener=None):
 		""" Remove without throw of exception """
 
 		assert ltrace('privileges','| remove(%s)' % privilege)
 
-		with self.lock:
+		with self.lock():
 			try:
 				list.remove(self, privilege)
 				logging.info('Removed privilege %s from whitelist.' %
-					styles.stylize(styles.ST_NAME, privilege),
+					stylize(ST_NAME, privilege),
 					listener=listener)
 			except ValueError:
 				logging.info('''privilege %s is already not present in the '''
 					'''whitelist, skipped.''' % \
-						styles.stylize(styles.ST_NAME, privilege),
+						stylize(ST_NAME, privilege),
 						listener=listener)
 	def Select(self, filter_string):
 		""" filter self against various criteria and return a list of matching
 			privileges. """
-		with self.lock:
+		with self.lock():
 			privs = self[:]
 			filtered_privs = []
 			if filters.ALL == filter_string:
@@ -141,13 +148,13 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 			return priv
 	def ExportCLI(self):
 		""" present the privileges whitelist on command-line: one by line. """
-		with self.lock:
+		with self.lock():
 			return '%s%s' % (
 				'\n'.join(self),
 				'\n' if len(self)>0 else ''
 				)
 	def ExportXML(self):
-		with self.lock:
+		with self.lock():
 			return '''<?xml version='1.0' encoding=\"UTF-8\"?>
 <privileges-whitelist>\n%s%s</privileges-whitelist>\n''' % (
 				'\n'.join(['	<privilege>%s</privilege>' % x for x in self]),
@@ -155,6 +162,6 @@ class PrivilegesWhiteList(list, Singleton, Pyro.core.ObjBase):
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
 		assert ltrace('privileges', '| WriteConf()')
-		with self.lock:
+		with self.lock():
 			self.sort()
 			open(self.conf_file, 'w').write('%s\n' % '\n'.join(self))
