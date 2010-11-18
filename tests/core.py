@@ -966,6 +966,8 @@ def test_groups(context):
 		descr="test groups interactive commands"
 		))
 
+
+
 	# TODO: test other mod group arguments.
 
 	# TODO:
@@ -1792,6 +1794,17 @@ def test_exclusions():
 		GET + [ 'users', '-a', '--exclude-uid', '%s,0,1,proot' % uname ],
 		GET + [ 'users', '-a', '--exclude-uids', '%s,0,1,proot' % uname ],
 
+		# should succeed, test --sys and --not-sys options
+		GET + [ 'users', '--no-sys' ],
+		GET + [ 'users', '--not-sys' ],
+		GET + [ 'users', '--not-system' ],
+		GET + [ 'users', '--no-system' ],
+		GET + [ 'users', '--exclude-sys' ],
+		GET + [ 'users', '--exclude-system' ],
+		GET + [ 'users', '--sys' ],
+		GET + [ 'users', '--system' ],
+		GET + [ 'users', '--system-groups' ],
+
 		DEL + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
 		GET + [ 'users' ]
 		],
@@ -1823,6 +1836,39 @@ def test_exclusions():
 		GET + [ 'group', '--not-gids', '10000,10001' ],
 		GET + [ 'group', '--exclude-gid', '10000,10001' ],
 		GET + [ 'group', '--exclude-gids', '10000,10001' ],
+		GET + [ 'group', '--no-sys' ],
+		GET + [ 'group', '--not-sys' ],
+		GET + [ 'group', '--no-system' ],
+		GET + [ 'group', '--not-system' ],
+		GET + [ 'group', '--exclude-system' ],
+		GET + [ 'group', '--exclude-sys' ],
+		GET + [ 'group', '--no-priv' ],
+		GET + [ 'group', '--not-priv' ],
+		GET + [ 'group', '--no-privs' ],
+		GET + [ 'group', '--not-privs' ],
+		GET + [ 'group', '--no-privilege' ],
+		GET + [ 'group', '--not-privilege' ],
+		GET + [ 'group', '--no-privileges' ],
+		GET + [ 'group', '--not-privileges' ],
+		GET + [ 'group', '--exclude-privileges' ],
+		GET + [ 'group', '--exclude-privilege' ],
+		GET + [ 'group', '--exclude-privs' ],
+		GET + [ 'group', '--exclude-priv' ],
+		GET + [ 'group', '--no-rsp' ],
+		GET + [ 'group', '--not-rsp' ],
+		GET + [ 'group', '--no-resp' ],
+		GET + [ 'group', '--not-resp' ],
+		GET + [ 'group', '--no-responsible' ],
+		GET + [ 'group', '--not-responsible' ],
+		GET + [ 'group', '--exclude-responsible' ],
+		GET + [ 'group', '--exclude-resp' ],
+		GET + [ 'group', '--exclude-rsp' ],
+		GET + [ 'group', '--no-gst' ],
+		GET + [ 'group', '--not-gst' ],
+		GET + [ 'group', '--no-guest' ],
+		GET + [ 'group', '--not-guest' ],
+		GET + [ 'group', '--exclude-gst' ],
+		GET + [ 'group', '--exclude-guest' ],
 
 		DEL + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
 		GET + [ 'groups' ],

@@ -35,6 +35,13 @@ def get_users(opts, args, users, **kwargs):
 
 	assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
+	selection = filters.STANDARD
+
+	if opts.system:
+		selection = filters.SYSTEM
+	elif opts.not_system:
+		selection = filters.NOT_SYSTEM
+
 	users_to_get = users.Select(
 		cli_select(users, 'user',
 			args,
@@ -47,7 +54,7 @@ def get_users(opts, args, users, **kwargs):
 				(opts.exclude_login, users.login_to_uid),
 				(opts.exclude_uid, users.confirm_uid)
 			],
-			default_selection=filters.STANDARD,
+			default_selection=selection,
 			all=opts.all)
 		)
 
@@ -81,6 +88,14 @@ def get_groups(opts, args, groups, **kwargs):
 		selection = filters.SYSTEM
 	elif opts.empty:
 		selection = filters.EMPTY
+	elif opts.not_responsibles:
+		selection = filters.NOT_RESPONSIBLE
+	elif opts.not_guests:
+		selection = filters.NOT_GUEST
+	elif opts.not_system:
+		selection = filters.NOT_SYSTEM
+	elif opts.not_privileged:
+		selection = filters.NOT_PRIVILEGED
 	elif not opts.all:
 		# must be the last case !
 		selection = filters.STANDARD
@@ -100,7 +115,6 @@ def get_groups(opts, args, groups, **kwargs):
 			default_selection=selection,
 			all=opts.all)
 		)
-
 	if opts.xml:
 		data = groups.ExportXML(selected=groups_to_get, long_output=opts.long)
 	else:

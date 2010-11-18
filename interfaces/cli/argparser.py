@@ -118,6 +118,13 @@ def common_filter_group(app, parser, tool, mode):
 				"""without spaces).""")
 
 	if mode is 'users' or (tool is 'mod' and mode is 'profiles'):
+		filtergroup.add_option('--system', '--system-groups', '--sys',
+			action="store_true", dest="system", default = False,
+			help="Only select system user.")
+		filtergroup.add_option('--no-sys', '--not-sys', '--no-system',
+			'--not-system', '--exclude-sys','--exclude-system',
+			action="store_true", dest="not_system", default = False,
+			help="Only select non-system users.")
 		filtergroup.add_option('--not-user',
 			'--exclude-user', '--not-users',
 			'--exclude-users', '--not-login',
@@ -149,20 +156,39 @@ def common_filter_group(app, parser, tool, mode):
 			filtergroup.add_option('--system', '--system-groups', '--sys',
 				action="store_true", dest="system", default = False,
 				help="Only select system groups.")
+			filtergroup.add_option('--no-sys', '--not-sys', '--no-system',
+				'--not-system', '--exclude-sys','--exclude-system',
+				action="store_true", dest="not_system", default = False,
+				help="Only select non-system groups.")
 			filtergroup.add_option('--privileged', '--priv', '--privs', '--pri',
 				'--privileged-groups',
 				action="store_true", dest="privileged", default = False,
 				help="Only select privileged groups.")
+			filtergroup.add_option('--no-priv', '--not-priv', '--no-privs',
+				'--not-privs', '--no-privilege', '--not-privilege', '--no-privileges', '--not-privileges ', '--exclude-priv','--exclude-privs','--exclude-privilege','--exclude-privileges',
+				action="store_true", dest="not_privileged", default = False,
+				help="Only select non-privileged groups.")
 			filtergroup.add_option('--responsibles', '--rsp',
 				'--responsible-groups',
 				action="store_true", dest="responsibles", default = False,
 				help="Only select responsibles groups.")
+			filtergroup.add_option('--no-rsp', '--not-rsp', '--no-resp',
+				'--not-resp', '--not-responsible', '--no-responsible',
+				'--exclude-responsible', '--exclude-resp', '--exclude-rsp',
+				action="store_true", dest="not_responsibles", default = False,
+				help="Only select non-responsible groups.")
 			filtergroup.add_option('--guests', '--gst', '--guest-groups',
 				action="store_true", dest="guests", default = False,
 				help="Only select guests groups.")
+			filtergroup.add_option('--no-gst', '--not-gst', '--no-guest',
+				'--not-guest', '--exclude-gst','--exclude-guest',
+				action="store_true", dest="not_guests", default = False,
+				help="Only select non-guest groups.")
 			filtergroup.add_option('--empty', '--empty-groups',
 				action="store_true", dest="empty", default = False,
 				help="Only select empty groups.")
+
+
 
 	if mode is 'groups' or (tool is 'mod' and mode is 'profiles'):
 		filtergroup.add_option('--not-group',

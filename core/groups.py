@@ -183,6 +183,14 @@ class GroupsController(Singleton, CoreController):
 							LMC.configuration.groups.guest_prefix):
 							filtered_groups.append(gid)
 
+				if filters.NOT_GUEST == filter_string:
+					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+						filters.NOT_GST, filter_string))
+					for gid in self.groups.keys():
+						if not self.groups[gid]['name'].startswith(
+							LMC.configuration.groups.guest_prefix):
+							filtered_groups.append(gid)
+
 				elif filters.SYSTEM_RESTRICTED == filter_string:
 					ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
 						filters.SYSTEM_RESTRICTED, filter_string))
@@ -206,6 +214,15 @@ class GroupsController(Singleton, CoreController):
 							LMC.configuration.groups.resp_prefix):
 							filtered_groups.append(gid)
 
+				elif filters.NOT_RESPONSIBLE == filter_string:
+					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+						filters.NOT_RSP, filter_string))
+
+					for gid in self.groups.keys():
+						if not self.groups[gid]['name'].startswith(
+							LMC.configuration.groups.resp_prefix):
+							filtered_groups.append(gid)
+
 				elif filters.PRIVILEGED == filter_string:
 					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
 						filters.PRI, filter_string))
@@ -217,6 +234,20 @@ class GroupsController(Singleton, CoreController):
 						except exceptions.DoesntExistsException:
 							# this system group doesn't exist on the system
 							pass
+
+				elif filters.NOT_PRIVILEGED == filter_string:
+					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+						filters.NOT_PRI, filter_string))
+					for gid in self.groups.keys():
+						if self.groups[gid]['name'] not in LMC.privileges:
+							filtered_groups.append(gid)
+
+				elif filters.NOT_SYSTEM == filter_string:
+					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+						filters.NOT_NOT_SYS, filter_string))
+					for gid in self.groups.keys():
+						if not self.is_system_gid(gid):
+							filtered_groups.append(gid)
 				else:
 					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
 						filters.SYS, filter_string))

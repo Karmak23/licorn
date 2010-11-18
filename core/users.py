@@ -147,6 +147,13 @@ class UsersController(Singleton, CoreFSController):
 
 				map(keep_uid_if_system, uids)
 
+			elif filters.NOT_SYSTEM == filter_string:
+				def keep_uid_if_system(uid):
+					if not self.is_system_uid(uid):
+						filtered_users.append(uid)
+
+				map(keep_uid_if_system, uids)
+
 			elif filters.SYSTEM_RESTRICTED == filter_string:
 				def keep_uid_if_system_restricted(uid):
 					if self.is_restricted_system_uid(uid):
