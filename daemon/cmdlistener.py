@@ -54,7 +54,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return self.acceptUid(daemon, client_uid, client_addr,
 					client_socket)
 		else:
-			if daemon.cmdlistener.role == licornd_roles.SERVER:
+			if LMC.configuration.licornd.role == licornd_roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
 				# FIXME: this is far from perfect and secure, but quite
