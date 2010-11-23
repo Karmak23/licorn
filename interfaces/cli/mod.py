@@ -8,7 +8,6 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import hlstr
 from licorn.foundations.styles    import *
@@ -24,6 +23,9 @@ _app = {
 
 def mod_user(opts, args, users, groups, **kwargs):
 	""" Modify a POSIX user account (Samba / LDAP included). """
+
+	import getpass
+
 	include_id_lists=[
 		(opts.login, users.login_to_uid),
 		(opts.uid, users.confirm_uid)
@@ -51,92 +53,133 @@ def mod_user(opts, args, users, groups, **kwargs):
 
 	uids_to_mod = cli_select(users, 'user',	args=args,
 			include_id_lists=include_id_lists,
-			exclude_id_lists=exclude_id_lists)
+			exclude_id_lists=exclude_id_lists,
+			default_selection='uid=%s' % users.login_to_uid(getpass.getuser()))
 
 	assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
 	something_done = False
 
 	for uid in uids_to_mod:
-		if opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Modify user %s ?''' % stylize(
-			ST_LOGIN,users.uid_to_login(uid)),
-			auto_answer=opts.auto_answer):
+		try:
+			if opts.non_interactive or opts.batch or opts.force or \
+				logging.ask_for_repair('''Modify user %s ?''' % stylize(
+				ST_LOGIN,users.uid_to_login(uid)),
+				auto_answer=opts.auto_answer):
 
-			if opts.newgecos is not None:
-				something_done = True
-				users.ChangeUserGecos(uid=uid, gecos=unicode(opts.newgecos),
-				listener=opts.listener)
-
-			if opts.newshell is not None:
-				something_done = True
-				users.ChangeUserShell(uid=uid, shell=opts.newshell,
-				listener=opts.listener)
-
-			if opts.newpassword is not None:
-				something_done = True
-				users.ChangeUserPassword(uid=uid, password=opts.newpassword,
-				listener=opts.listener)
-
-			if opts.auto_passwd is not None:
-				something_done = True
-				users.ChangeUserPassword(uid=uid,
-					password=hlstr.generate_password(opts.passwd_size),
-					display=True, listener=opts.listener)
-
-			if opts.lock is not None:
-				something_done = True
-				users.LockAccount(uid=uid, lock=opts.lock,
+				if opts.newgecos is not None:
+					something_done = True
+					users.ChangeUserGecos(uid=uid, gecos=unicode(opts.newgecos),
 					listener=opts.listener)
 
-			if opts.groups_to_add:
-				something_done = True
-				for g in opts.groups_to_add.split(','):
-					if g != '':
-						try:
-							groups.AddUsersInGroup(name=g, users_to_add=[ uid ],
-								listener=opts.listener)
-						except exceptions.LicornRuntimeException, e:
-							logging.warning(
-								'''Unable to add user %s in group %s (was: '''
-								'''%s).''' % (
-									stylize(ST_LOGIN,
-										users.uid_to_login(uid)),
-									stylize(ST_NAME, g), str(e)))
-						except exceptions.LicornException, e:
-							raise exceptions.LicornRuntimeError(
-								'''Unable to add user %s in group %s (was: '''
-								'''%s).'''
-									% (stylize(ST_LOGIN,
-										users.uid_to_login(uid)),
+				if opts.newshell is not None:
+					something_done = True
+					users.ChangeUserShell(uid=uid, shell=opts.newshell,
+					listener=opts.listener)
+
+				if opts.newpassword is not None:
+					something_done = True
+					users.ChangeUserPassword(uid=uid, password=opts.newpassword,
+					listener=opts.listener)
+
+				if opts.interactive_password:
+					something_done = True
+
+					login = users.uid_to_login(uid)
+					message='Please enter new password for user %s: ' % \
+						stylize(ST_NAME, login)
+					confirm='Please confirm new password for user %s: ' % \
+						stylize(ST_NAME, login)
+
+					if getpass.getuser() != 'root':
+						if getpass.getuser() == login:
+							old_message = \
+								'Please enter your OLD (current) password: '
+							message='Please enter your new password: '
+							confirm='Please confirm your new password: '
+
+						else:
+							old_message = \
+								"Please enter %s's OLD (current) password: " % \
+								stylize(ST_LOGIN, login)
+
+						if not users.check_password(login,
+							getpass.getpass(old_message)):
+							raise exceptions.BadArgumentError(
+								'wrong password, aborting.')
+
+					password1 = getpass.getpass(message)
+					password2 = getpass.getpass(confirm)
+
+					if password1 == password2:
+						users.ChangeUserPassword(uid=uid, password=password1,
+							listener=opts.listener)
+					else:
+						raise exceptions.BadArgumentError(
+							'passwords do not match, sorry. Unchanged!')
+
+				if opts.auto_passwd:
+					something_done = True
+					users.ChangeUserPassword(uid=uid,
+						password=hlstr.generate_password(opts.passwd_size),
+						display=True, listener=opts.listener)
+
+				if opts.lock is not None:
+					something_done = True
+					users.LockAccount(uid=uid, lock=opts.lock,
+						listener=opts.listener)
+
+				if opts.groups_to_add:
+					something_done = True
+					for g in opts.groups_to_add.split(','):
+						if g != '':
+							try:
+								groups.AddUsersInGroup(name=g, users_to_add=[ uid ],
+									listener=opts.listener)
+							except exceptions.LicornRuntimeException, e:
+								logging.warning(
+									'''Unable to add user %s in group %s (was: '''
+									'''%s).''' % (
+										stylize(ST_LOGIN,
+											users.uid_to_login(uid)),
+										stylize(ST_NAME, g), str(e)))
+							except exceptions.LicornException, e:
+								raise exceptions.LicornRuntimeError(
+									'''Unable to add user %s in group %s (was: '''
+									'''%s).'''
+										% (stylize(ST_LOGIN,
+											users.uid_to_login(uid)),
+											stylize(ST_NAME, g),
+											str(e)))
+
+				if opts.groups_to_del:
+					something_done = True
+					for g in opts.groups_to_del.split(','):
+						if g != '':
+							try:
+								groups.DeleteUsersFromGroup(name=g,
+									users_to_del=[ uid ], listener=opts.listener)
+							except exceptions.LicornRuntimeException, e:
+								logging.warning('''Unable to remove user %s from '''
+									'''group %s (was: %s).''' % (
+										stylize(ST_LOGIN, opts.login),
+										stylize(ST_NAME, g),
+										str(e)))
+							except exceptions.LicornException, e:
+								raise exceptions.LicornRuntimeError(
+									'''Unable to remove user %s from '''
+									'''group %s (was: %s).''' % (
+										stylize(ST_LOGIN, opts.login),
 										stylize(ST_NAME, g),
 										str(e)))
 
-			if opts.groups_to_del:
-				something_done = True
-				for g in opts.groups_to_del.split(','):
-					if g != '':
-						try:
-							groups.DeleteUsersFromGroup(name=g,
-								users_to_del=[ uid ], listener=opts.listener)
-						except exceptions.LicornRuntimeException, e:
-							logging.warning('''Unable to remove user %s from '''
-								'''group %s (was: %s).''' % (
-									stylize(ST_LOGIN, opts.login),
-									stylize(ST_NAME, g),
-									str(e)))
-						except exceptions.LicornException, e:
-							raise exceptions.LicornRuntimeError(
-								'''Unable to remove user %s from '''
-								'''group %s (was: %s).''' % (
-									stylize(ST_LOGIN, opts.login),
-									stylize(ST_NAME, g),
-									str(e)))
+				if opts.apply_skel is not None:
+					something_done = True
+					users.ApplyUserSkel(opts.login, opts.apply_skel,
+						listener=opts.listener)
 
-			if opts.apply_skel is not None:
-				something_done = True
-				users.ApplyUserSkel(opts.login, opts.apply_skel,
-					listener=opts.listener)
+		except exceptions.BadArgumentError, e:
+			logging.warning(e)
 
 	if not something_done:
 		raise exceptions.BadArgumentError('''What do you want to modify '''

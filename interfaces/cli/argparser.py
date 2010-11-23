@@ -967,19 +967,25 @@ def mod_user_parse_arguments(app, configuration):
 
 	user.add_option("--password", '-p',
 		dest="newpassword", default=None,
-		help="specify user's new password.")
-	user.add_option("--auto-password", '-P',
-		action="store_true", dest="auto_passwd",
+		help="Specify user's new password on the command line (%s, it can be"
+			"written in system logs and your shell history file)." %
+				stylize(ST_IMPORTANT, 'insecure'))
+	user.add_option("--change-password", '-C', '--interactive-password',
+		action="store_true", dest="interactive_password", default=False,
+		help="Ask for a new password for the user. If changing your own "
+			"password, you will be asked for the old, too.")
+	user.add_option("--auto-password", '-P', '--random-password',
+		action="store_true", dest="auto_passwd", default=False,
 		help="let the system generate a random password for this user.")
 	user.add_option("--password-size", '-S',
 		type='int', dest="passwd_size",
 		default=configuration.users.min_passwd_size,
 		help="choose the new password length (default %s)." %
 			configuration.users.min_passwd_size)
-	user.add_option("--gecos",
+	user.add_option('-e', "--gecos",
 		dest="newgecos", default=None,
 		help="specify user's new GECOS string (generaly first and last names).")
-	user.add_option("--shell",
+	user.add_option('-s', "--shell",
 		dest="newshell", default=None,
 		help="specify user's shell (generaly /bin/something).")
 
@@ -1001,8 +1007,14 @@ def mod_user_parse_arguments(app, configuration):
 		help="re-apply the user's skel (use with caution, it will overwrite the dirs/files belonging to the skel in the user's home dir.")
 
 	parser.add_option_group(user)
+	try:
+		opts, args = parser.parse_args()
+	except Exception, e:
+		print e
+	if opts.newpassword is None and not opts.non_interactive:
+		pass
 
-	return parser.parse_args()
+	return opts, args
 def mod_machine_parse_arguments(app, configuration):
 
 	usage_text = "\n\t%s machine[s] [--shutdown] [--warn-users] " % stylize(ST_APPNAME, "%prog")
