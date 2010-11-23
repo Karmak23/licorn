@@ -274,6 +274,7 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 			'licornd.pid_file'             : '/var/run/licornd.pid',
 			'licornd.cache_file'           : '/var/cache/licorn/licornd.db',
 			'licornd.socket_path'          : '/var/run/licornd.sock',
+			'licornd.inotifier.enabled'    : True,
 			'licornd.wmi.enabled'          : True,
 			'licornd.wmi.group'            : 'licorn-wmi',
 			'licornd.wmi.listen_address'   : 'localhost',

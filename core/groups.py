@@ -37,6 +37,7 @@ class GroupsController(Singleton, LicornCoreController):
 			return
 
 		LicornCoreController.__init__(self, 'groups', warnings)
+		self.inotifier = None
 
 		GroupsController.init_ok = True
 		assert ltrace('groups', '< GroupsController.__init__(%s)' %
@@ -500,7 +501,7 @@ class GroupsController(Singleton, LicornCoreController):
 			raise e
 
 		assert ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
-		if not_already_exists:
+		if not_already_exists and self.inotifier:
 			self.inotifier.add_group_watch(gid)
 		return gid, name
 	def __add_group(self, name, system, manual_gid=None, description=None,
@@ -700,7 +701,8 @@ class GroupsController(Singleton, LicornCoreController):
 					# the call will fail, and before archiving group shared
 					# data, else it will leave ghost notifies in our gamin
 					# daemon, which doesn't need that.
-					self.inotifier.del_group_watch(gid)
+					if self.inotifier:
+						self.inotifier.del_group_watch(gid)
 
 					# For a standard group, there are a few steps more :
 					# 	- delete the responsible and guest groups,
