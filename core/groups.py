@@ -1043,7 +1043,7 @@ class GroupsController(Singleton, LicornCoreController):
 						self.groups[gid]['memberUid'].sort()
 						# update the users cache.
 						LMC.users[uid]['groups'].append(name)
-						self.users.users[uid]['groups'].sort()
+						LMC.users[uid]['groups'].sort()
 						logging.info("Added user %s to members of %s." % (
 							stylize(ST_LOGIN, login),
 							stylize(ST_NAME, name)),
