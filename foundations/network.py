@@ -6,13 +6,26 @@ Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import fcntl, struct, socket, platform, re
-from licorn.foundations import options, process, logging, exceptions
-from licorn.foundations.constants import distros
-from ltrace import ltrace
+import os, fcntl, struct, socket, platform, re
+
+# other foundations imports.
+from licorn.foundations import options
+import logging, exceptions
+import process
+from styles    import *
+from ltrace    import ltrace
+from constants import distros
 
 def find_server_linux(configuration):
 	""" return the hostname / IP of our DHCP server. """
+
+	env_server = os.getenv('LICORN_SERVER', None)
+
+	if env_server:
+		logging.notice('Using fixed value %s for server (please unset '
+			'LICORN_SERVER if you prefer automatic detection via DHCP)' %
+				stylize(ST_NAME, env_server))
+		return env_server
 
 	if configuration.distro in (distros.LICORN, distros.UBUNTU,
 		distros.DEBIAN):
