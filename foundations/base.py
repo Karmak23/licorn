@@ -7,6 +7,8 @@ objects - ultra basic objects, used as base classes.
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
+import copy
+
 import exceptions, logging
 from styles import *
 from ltrace import ltrace
@@ -21,10 +23,21 @@ class Singleton(object):
 		assert ltrace('objects', 'Singleton (py2.6+) created for %s' % cls)
 		return Singleton.__instances[cls]
 class Enumeration(object):
-	def __init__(self, name='<unset>'):
+	def __init__(self, name='<unset>', copy_from=None):
 		assert ltrace('objects', 'Enumeration.__init__()')
 		object.__init__(self)
 		self.name = name
+		if copy_from:
+			self.name = copy_from.name[:]
+			for attrname, attrvalue in copy_from.iteritems():
+				self.__setattr__(attrname, copy.copy(attrvalue))
+	def copy(self):
+		""" make a complete and dereferenced copy of ouselves. """
+		temp = Enumeration()
+		temp.name = self.name[:]
+		for attrname, attrvalue in self.iteritems():
+			setattr(temp, attrname, copy.copy(attrvalue))
+		return temp
 	def dump_status(self, long_output=False, precision=None):
 		assert ltrace('objects', '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
