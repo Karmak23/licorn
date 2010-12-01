@@ -459,6 +459,9 @@ span.offline {
 span.unknown {
 	background: url('/images/16x16/unknown.png') no-repeat top left;
 }
+span.online {
+	background: url('/images/16x16/active.png') no-repeat top left;
+}
 
 a.active, a.active:link, a.active:visited {
 	background: url('/images/16x16/active.png') no-repeat top left;
@@ -481,7 +484,6 @@ a.asleep:hover {
 	background: url('/images/16x16/shutdown.png') no-repeat top left;
 	text-decoration: none;
 }
-
 
 a.managed, a.managed:link, a.managed:visited {
 	background: url('/images/16x16/managed.png') no-repeat top left;

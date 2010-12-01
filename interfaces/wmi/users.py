@@ -676,9 +676,9 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 	#print globals()
 	#print locals()
 
-	users.acquire_lock()
-	groups.acquire_lock()
-	profiles.acquire_lock()
+	users.acquire()
+	groups.acquire()
+	profiles.acquire()
 
 	try:
 		u = users.users
@@ -855,6 +855,6 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.page_body_end(w.total_time(start, time.time()))))
 	finally:
-		profiles.release_lock()
-		groups.release_lock()
-		users.release_lock()
+		profiles.release()
+		groups.release()
+		users.release()
