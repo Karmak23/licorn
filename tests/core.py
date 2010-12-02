@@ -353,6 +353,10 @@ def clean_system():
 		):
 		execute(DEL + argument)
 		execute([ 'rm', '-rf', '/home/usertestdebian' ])
+
+		# remove scorias from sed on /etc/group
+		execute(CHK + [ 'groups', '-aevb' ])
+
 	for directory in (
 		configuration.home_backup_dir,
 		configuration.home_archive_dir
