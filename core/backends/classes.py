@@ -19,12 +19,12 @@ a backend should implement the following methods:
 
 from licorn.foundations.ltrace import ltrace
 from licorn.core               import LMC
-from licorn.core.objects       import LicornCoreObject
+from licorn.core.classes       import CoreUnitObject
 
-class LicornCoreBackend(LicornCoreObject):
+class CoreBackend(CoreUnitObject):
 	def __init__(self, name='core_backend', compat=[], warnings=True):
-		LicornCoreObject.__init__(self, name, warnings)
-		assert ltrace('backends', '| LicornCoreBackend.__init__(%s)' % compat)
+		CoreUnitObject.__init__(self, name=name, controller=LMC.backends)
+		assert ltrace('backends', '| CoreBackend.__init__(%s)' % compat)
 
 		# abstract defaults
 		self.available  = False
@@ -81,10 +81,9 @@ class LicornCoreBackend(LicornCoreObject):
 		Any configuration file containing these values, will be loaded
 		afterwards and will overwrite these attributes. """
 		pass
-
-class LicornNSSBackend(LicornCoreBackend):
+class NSSBackend(CoreBackend):
 	def __init__(self, name='nss', nss_compat=(), priority=0, warnings=True):
-		LicornCoreBackend.__init__(self, name, compat=['users', 'groups'],
+		CoreBackend.__init__(self, name, compat=['users', 'groups'],
 			warnings=warnings)
 		assert ltrace('backends', '| NSSBackend.__init__(%s, %s)' % (nss_compat,
 			priority))
@@ -96,11 +95,10 @@ class LicornNSSBackend(LicornCoreBackend):
 			if val in self.nss_compat:
 				return True
 		return False
-
 # The following classes are used in controllers to dertermine if a given backend
 # is compatible with the controller or not. It is up to the real backend to
 # implement necessary methods, these abstract backends contain nothing.
-class UsersBackend(LicornNSSBackend):
+class UsersBackend(NSSBackend):
 	""" Abstract user backend class allowing access to users data. """
 	def load_User(self, uid):
 		""" Load user accounts from /etc/{passwd,shadow} """
@@ -111,17 +109,15 @@ class UsersBackend(LicornNSSBackend):
 		# users, because we always read/write the entire files.
 
 		return self.load_Users()
-	def save_User(self, uid):
+	def save_User(self, uid, mode):
 		""" Write /etc/passwd and /etc/shadow """
 
 		assert ltrace('backends', '| abstract save_User(%s)' % uid)
-
 		return self.save_Users()
 	def delete_User(self, uid):
 		assert ltrace('backends', '| abstract delete_User(%s)' % uid)
 		return self.save_Users()
-
-class GroupsBackend(LicornNSSBackend):
+class GroupsBackend(NSSBackend):
 	"""	Abstract groups backend class allowing access to groups data. """
 	def load_Group(self, gid):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
@@ -129,7 +125,7 @@ class GroupsBackend(LicornNSSBackend):
 		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
 
 		return self.load_Groups()
-	def save_Group(self, gid):
+	def save_Group(self, gid, mode):
 		""" Write the groups data in appropriate system files."""
 
 		assert ltrace('backends', '| abstract save_Group(%s)' % gid)
@@ -138,21 +134,19 @@ class GroupsBackend(LicornNSSBackend):
 	def delete_Group(self, gid):
 		assert ltrace('backends', '| abstract delete_Group(%s)' % gid)
 		return self.save_Groups()
-
-class MachinesBackend(LicornCoreBackend):
+class MachinesBackend(CoreBackend):
 	""" Abstract machines backend class allowing access to machines data. """
 	def __init__(self, name='machines', warnings=True):
-		LicornCoreBackend.__init__(self, name=name, compat=['machines'],
+		CoreBackend.__init__(self, name=name, compat=['machines'],
 			warnings=warnings)
 		assert ltrace('objects', '| MachinesBackends.__init__()')
-
 	def load_Machine(self, mid):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
 		assert ltrace('backends', '| abstract load_Machine(%s)' % mid)
 
 		return self.load_Machines()
-	def save_Machine(self, mid):
+	def save_Machine(self, mid, mode):
 		""" Write the groups data in appropriate system files."""
 
 		assert ltrace('backends', '| abstract save_Machine(%s)' % mid)

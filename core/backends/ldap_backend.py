@@ -15,11 +15,12 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, process, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import backend_actions
 from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.ldaputils import addModlist, modifyModlist, \
 										LicornSmallLDIFParser
 
-from  objects    import LicornNSSBackend, UsersBackend, GroupsBackend
+from classes     import NSSBackend, UsersBackend, GroupsBackend
 from licorn.core import LMC
 
 class ldap_controller(Singleton, UsersBackend, GroupsBackend):
@@ -40,7 +41,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace('ldap', '> __init__()')
 
-		LicornNSSBackend.__init__(self, name='ldap', nss_compat=('ldap',),
+		NSSBackend.__init__(self, name='ldap', nss_compat=('ldap',),
 			priority=5, warnings=warnings)
 
 		self.files             = Enumeration()
@@ -508,7 +509,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					# a cache which will eventually be filled by
 					# groups.__init__() and others in this set().
 				'backend'      : self.name,
-				'action'       : None
 				}
 
 			def account_lock(value, tmp_entry=temp_user_dict):
@@ -598,12 +598,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			name = dn.split(',')[0][3:]   # rip out 'cn=' and self.base
 			gid  = int(entry['gidNumber'][0])
 
-			# unlike unix_backend, this flag is related to one group, because
-			# in ldap_backend, every change will be recorded one-by-one (no
-			# global rewriting, it costs too much and is useless when we can do
-			# only what really matters).
-			need_rewriting = False
-
 			if entry.has_key('memberUid'):
 				members = entry['memberUid']
 				members.sort() # catch users modifications outside Licorn
@@ -633,7 +627,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				'memberUid'  : members,
 				'permissive' : None,
 				'backend'    : self.name,
-				'action'     : 'update' if need_rewriting else None
 				}
 
 			for key, func in (
@@ -668,8 +661,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		users = LMC.users
 
 		for uid in users.keys():
-			if users[uid]['backend'] != self.name \
-				or users[uid]['action'] is None:
+			if users[uid]['backend'] != self.name:
 				continue
 
 			self.save_User(uid)
@@ -734,19 +726,14 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				# users can query the LDAP tree, without beiing bothered by a
 				# password-ask; they will get back only the data they have read
 				# access to, which seems quite fine.
-	def save_User(self, uid):
+	def save_User(self, uid, mode):
 		""" Save one user in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
 		user  = LMC.users[uid].copy()
 
-		action = user['action']
 		login  = user['login']
-
-		if action is None:
-			return
-
 
 		#
 		# see http://www.python-ldap.org/doc/html/ldap-modlist.html#module-ldap.modlist
@@ -754,7 +741,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		#
 		ignore_list = (
 			'login',    # duplicate of cn, used internaly
-			'action',   # API internal information
 			'backend',  # internal information
 			'locked',   # representation of userPassword, not stored
 			'groups'    # internal cache, not stored
@@ -767,7 +753,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		try:
 			self.bind()
 
-			if action == 'update':
+			if mode == backend_actions.UPDATE:
 
 				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_shadow,
 				pyldap.SCOPE_SUBTREE, '(uid=%s)' % login)[0]
@@ -789,7 +775,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				self.ldap_conn.modify_s(dn, modifyModlist(
 					old_entry, user, ignore_list, ignore_oldexistent=1))
 
-			elif action == 'create':
+			elif mode == backend_actions.CREATE:
 
 				# prepare the LDAP entry like the LDAP daemon assumes it will
 				# be : add or change necessary fields.
@@ -815,28 +801,21 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					'uid=%s,%s' % (login, self.nss_base_shadow),
 					addModlist(user, ignore_list))
 			else:
-				logging.warning('%s: unknown action %s for user %s(uid=%s).' %(
-					self.name, action, login, uid))
+				logging.warning('%s: unknown mode %s for user %s(uid=%s).' %(
+					self.name, mode, login, uid))
 		except (
 			pyldap.NO_SUCH_OBJECT,
 			pyldap.INVALID_CREDENTIALS,
 			pyldap.STRONG_AUTH_REQUIRED
 			), e:
 			logging.warning(e[0]['desc'])
-
-		# reset the action
-		LMC.users[uid]['action'] = None
-	def save_Group(self, gid):
+	def save_Group(self, gid, mode):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
 		# we have to duplicate the data, to avoid #206
 		group = LMC.groups[gid].copy()
-		action = group['action']
 		name   = group['name']
-
-		if action is None:
-			return
 
 		#
 		# see http://www.python-ldap.org/doc/html/ldap-modlist.html#module-ldap.modlist
@@ -844,7 +823,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		#
 		ignore_list = (
 			'name',       # duplicate of cn, used internaly
-			'action',     # API internal information
 			'backend',    # internal information
 			'permissive'  # representation of on-disk ACL, not stored
 			)
@@ -852,7 +830,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		try:
 			self.bind()
 
-			if action == 'update':
+			if mode == backend_actions.UPDATE:
 
 				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_group,
 				pyldap.SCOPE_SUBTREE, '(cn=%s)' % name)[0]
@@ -869,7 +847,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				"""
 				self.ldap_conn.modify_s(dn, modifyModlist(
 					old_entry, group, ignore_list, ignore_oldexistent=1))
-			elif action == 'create':
+			elif mode == backend_actions.CREATE:
 
 				assert ltrace('ldap','creating group %s.' % (
 					stylize(ST_LOGIN, name)))
@@ -886,8 +864,8 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					'cn=%s,%s' % (name, self.nss_base_group),
 					addModlist(group, ignore_list))
 			else:
-				logging.warning('%s: unknown action %s for group %s(gid=%s).' % (
-					self.name, action, name, gid))
+				logging.warning('%s: unknown mode %s for group %s(gid=%s).' % (
+					self.name, mode, name, gid))
 		except (
  			pyldap.NO_SUCH_OBJECT,
 			pyldap.INVALID_CREDENTIALS,
@@ -896,9 +874,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			# there is also e['info'] on ldap.STRONG_AUTH_REQUIRED, but
 			# it is just repeat.
 			logging.warning(e[0]['desc'])
-
-		# reset the action
-		LMC.groups[gid]['action'] = None
 	def delete_User(self, login):
 		""" Delete one user from the LDAP backend. """
 		assert ltrace('ldap', '| delete_User(%s)' % login)

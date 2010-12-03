@@ -12,13 +12,13 @@ import sys
 import Pyro.core
 
 import exceptions
-from _options  import options
+from licorn.foundations import options
 from styles    import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 from ltrace    import ltrace, mytime
 from base      import Singleton
-from objects   import LicornMessage
+from messaging import LicornMessage
 
 # TODO: gettext this !
 #import gettext

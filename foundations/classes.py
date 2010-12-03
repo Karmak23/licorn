@@ -19,22 +19,6 @@ from styles    import *
 from ltrace    import ltrace
 from constants import message_type, verbose, interactions
 
-class LicornMessage(Pyro.core.CallbackObjBase):
-	def __init__(self, my_type=message_type.EMIT, data='', interaction=None,
-		answer=None, auto_answer=None, channel=2):
-
-		Pyro.core.CallbackObjBase.__init__(self)
-
-		assert ltrace('objects', '''| LicornMessage(data=%s,type=%s,interaction=%s,'''
-			'''answer=%s,auto_answer=%s,channel=%s)''' % (data, my_type,
-			interaction, answer, auto_answer, channel))
-
-		self.data = data
-		self.type = my_type
-		self.interaction = interaction
-		self.answer = answer
-		self.auto_answer = auto_answer
-		self.channel = channel
 class FileLock:
 	"""
 		This FileLock class is a reimplementation of basic locks with files.

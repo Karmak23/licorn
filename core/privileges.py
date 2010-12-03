@@ -20,13 +20,17 @@ from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
+from licorn.core.classes import GiantLockProtectedObject
 
-class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
+class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 	""" Manage privileges whitelist. """
 
-	init_ok = False
-	load_ok = False
+	init_ok       = False
+	load_ok       = False
+	_licorn_protected_attrs = (
+			GiantLockProtectedObject._licorn_protected_attrs
+			+ ['changed', 'conf_file']
+		)
 	def __init__(self, conf_file=None):
 		""" Read the configuration file and populate ourselves. """
 
@@ -36,7 +40,7 @@ class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 		if PrivilegesWhiteList.init_ok:
 			return
 
-		LicornCoreObject.__init__(self, 'privileges')
+		GiantLockProtectedObject.__init__(self, 'privileges')
 
 		if conf_file is None:
 			self.conf_file = LMC.configuration.privileges_whitelist_data_file
@@ -66,10 +70,11 @@ class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 		""" reload internal data  """
 
 		with self.lock():
-			self[:] = []
+			self.clear()
 
 			try:
-				self.extend(readers.very_simple_conf_load_list(self.conf_file))
+				for privilege in readers.very_simple_conf_load_list(self.conf_file):
+					self[privilege] = privilege
 			except IOError, e:
 				if e.errno == 2:
 					pass
@@ -95,11 +100,9 @@ class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 	def append(self, privilege, listener=None):
 		""" Set append like: no doubles."""
 		with self.lock():
-			try:
-				self.index(privilege)
-			except ValueError:
+			if privilege not in self:
 				if LMC.groups.is_system_group(privilege):
-					list.append(self, privilege)
+					self[privilege] = privilege
 					logging.info('Added privilege %s to whitelist.' %
 						stylize(ST_NAME, privilege),
 						listener=listener)
@@ -117,12 +120,12 @@ class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 		assert ltrace('privileges','| remove(%s)' % privilege)
 
 		with self.lock():
-			try:
-				list.remove(self, privilege)
+			if privilege in self:
+				del self[privilege]
 				logging.info('Removed privilege %s from whitelist.' %
 					stylize(ST_NAME, privilege),
 					listener=listener)
-			except ValueError:
+			else:
 				logging.info('''privilege %s is already not present in the '''
 					'''whitelist, skipped.''' % \
 						stylize(ST_NAME, privilege),
@@ -150,18 +153,19 @@ class PrivilegesWhiteList(list, Singleton, LicornCoreObject):
 		""" present the privileges whitelist on command-line: one by line. """
 		with self.lock():
 			return '%s%s' % (
-				'\n'.join(self),
+				'\n'.join(sorted(self.keys())),
 				'\n' if len(self)>0 else ''
 				)
 	def ExportXML(self):
 		with self.lock():
 			return '''<?xml version='1.0' encoding=\"UTF-8\"?>
 <privileges-whitelist>\n%s%s</privileges-whitelist>\n''' % (
-				'\n'.join(['	<privilege>%s</privilege>' % x for x in self]),
+				'\n'.join(['	<privilege>%s</privilege>' % x for x in sorted(self.keys())]),
 				'\n' if len(self)>0 else '')
 	def WriteConf(self):
 		""" Serialize internal data structures into the configuration file. """
 		assert ltrace('privileges', '| WriteConf()')
 		with self.lock():
-			self.sort()
-			open(self.conf_file, 'w').write('%s\n' % '\n'.join(self))
+			privs = self.keys()
+			privs.sort()
+			open(self.conf_file, 'w').write('%s\n' % '\n'.join(privs))

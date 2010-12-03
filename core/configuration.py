@@ -19,12 +19,12 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import distros, servers, mailboxes, \
 											licornd_roles
 from licorn.foundations.base      import LicornConfigObject, Singleton
-from licorn.foundations.objects   import FileLock
+from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
+from licorn.core.classes import GiantLockProtectedObject
 
-class LicornConfiguration(Singleton, LicornCoreObject):
+class LicornConfiguration(Singleton, GiantLockProtectedObject):
 	""" Contains all the underlying system configuration as attributes.
 		Defines some methods for modifying the configuration.
 	"""
@@ -42,7 +42,7 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		assert ltrace('configuration', '> __init__(minimal=%s, batch=%s)' % (
 			minimal, batch))
 
-		LicornCoreObject.__init__(self, 'configuration')
+		GiantLockProtectedObject.__init__(self, name='configuration')
 
 		self.app_name = 'Licorn®'
 
@@ -770,8 +770,6 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		# TODO: move this into a plugin
 		self.defaults.admin_group = 'admins'
 
-		self.defaults.needed_groups = [ self.users.group, 'acl' ]
-
 		# TODO: autodetect this & see if it not autodetected elsewhere.
 		#self.defaults.quota_device = "/dev/hda1"
 	def SetUsersDefaults(self):
@@ -780,6 +778,9 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		self.users = LicornConfigObject()
 
 		self.users.group = 'users'
+
+		# FIXME: don't hardcode this (this will come from the apache extension)
+		self.users.apache_dir = 'public_html'
 
 		# see groupadd(8), coming from addgroup(8)
 		self.users.login_maxlenght = 31
@@ -795,6 +796,8 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		"""Create self.groups attributes and start feeding it."""
 
 		self.groups = LicornConfigObject()
+		self.groups.apache_dir = self.users.apache_dir
+
 		self.groups.guest_prefix = 'gst-'
 		self.groups.resp_prefix = 'rsp-'
 
@@ -815,6 +818,7 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		assert ltrace("configuration", '| set_acl_defaults()')
 
 		self.acls = LicornConfigObject()
+		self.acls.group = 'acl'
 		self.acls.groups_dir = "%s/%s" % (
 			self.defaults.home_base_path,
 			self.groups.names.plural)
@@ -1149,38 +1153,41 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 
 		data = "%s\n" % stylize(ST_APPNAME, "LicornConfiguration")
 
-		for attr in dir(self):
-			if callable(getattr(self, attr)) \
-				or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
-				or attr in ('name', 'tmp_dir', 'init_ok', 'del_ok',
-					'objectGUID', 'lastUsed', 'delegate', 'daemon'):
-				# skip methods, python internals, pyro internals and
-				# too-much-moving targets which bork the testsuite.
+		items = self.items()
+		items.sort()
+
+		for aname, attr in items:
+
+			if aname in ('tmp_dir'):
 				continue
 
-			data += u"\u21b3 %s: " % stylize(ST_ATTR, attr)
+			#if callable(getattr(self, attr)) \
+			#	or attr[0] in '_ABCDEFGHIJKLMNOPQRSTUVWXYZ' \
+			#	or attr in ('name', 'tmp_dir', 'init_ok', 'del_ok',
+			#		'objectGUID', 'lastUsed', 'delegate', 'daemon'):
+			# skip methods, python internals, pyro internals and
+			# too-much-moving targets which bork the testsuite.
+			#	continue
 
-			if attr is 'app_name':
-				data += "%s\n" % stylize(ST_ATTRVALUE,
-					str(self.__getattribute__(attr)))
-			elif attr is 'mta':
-				data += "%s\n" % stylize(ST_ATTRVALUE,
-					servers[self.__getattribute__(attr)])
-			elif attr is 'distro':
-				data += "%s\n" % stylize(ST_ATTRVALUE,
-					distros[self.__getattribute__(attr)])
+			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
+
+			if aname is 'app_name':
+				data += "%s\n" % stylize(ST_ATTRVALUE, attr)
+			elif aname is 'mta':
+				data += "%s\n" % stylize(ST_ATTRVALUE, servers[attr])
+			elif aname is 'distro':
+				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
-			elif attr.endswith('_dir') or attr.endswith('_file') \
-				or attr.endswith('_path') :
-				data += "%s\n" % stylize(ST_PATH,
-					str(getattr(self, attr)))
-			elif type(getattr(self, attr)) == type(LicornConfigObject()):
-				data += "\n%s" % str(getattr(self, attr))
-			elif type(getattr(self, attr)) in (
+			elif aname.endswith('_dir') or aname.endswith('_file') \
+				or aname.endswith('_path') :
+				data += "%s\n" % stylize(ST_PATH, attr)
+			elif type(attr) == type(LicornConfigObject()):
+				data += "\n%s" % str(attr)
+			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
-				data += "\n\t%s\n" % str(getattr(self, attr))
+				data += "\n\t%s\n" % str(attr)
 			else:
 				data += ('''%s, to be implemented in '''
 					'''licorn.core.configuration.Export()\n''') % \
@@ -1373,22 +1380,18 @@ class LicornConfiguration(Singleton, LicornCoreObject):
 		assert ltrace('configuration',
 			'> CheckSystemGroups(minimal=%s, batch=%s)' % (minimal, batch))
 
-		needed_groups = self.defaults.needed_groups + [
+		needed_groups = [ self.users.group, self.acls.group,
 			self.defaults.admin_group ]
 
-		if not minimal \
-			and LMC.privileges != []:
+		if not minimal:
+			needed_groups.extend([ group for group in LMC.privileges
+				if group not in needed_groups])
 			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
 			# operate properly.
 
-			for groupname in LMC.privileges:
-				if groupname not in needed_groups:
-					needed_groups.append(groupname)
-
 		for group in needed_groups:
-
 			logging.progress('Checking existence of group %s…' %
 				stylize(ST_NAME, group))
 

@@ -8,12 +8,11 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-from exceptions import LicornError
 from styles     import *
 from base       import EnumDict
 
 # verbose levels for options and logging.*
-verbose = EnumDict()
+verbose = EnumDict('verbose')
 verbose.QUIET    = 0
 verbose.NOTICE   = 1
 verbose.INFO     = 2
@@ -22,7 +21,7 @@ verbose.DEBUG    = 4
 verbose.DEBUG2   = 5
 
 #filters for users/groups/profiles and al.
-filters = EnumDict()
+filters = EnumDict('filters')
 filters.NONE        = 0x00000000
 filters.ALL         = 0xffffffff
 filters.STANDARD    = 0x000000ff
@@ -45,7 +44,7 @@ filters.RSP         = filters.RESPONSIBLE
 filters.EMPTY       = 0x00ff0000
 
 # enum machine stati, for core.machines
-host_status = EnumDict()
+host_status = EnumDict('host_status')
 host_status.UNKNOWN        = -0x0001
 host_status.OFFLINE        =  0x00ff
 host_status.GOING_TO_SLEEP =  0x0001
@@ -56,7 +55,7 @@ host_status.IDLE           =  0x0400
 host_status.ACTIVE         =  0x0800
 
 # FIXME: merge this with distros (don't duplicate)
-host_types = EnumDict()
+host_types = EnumDict('host_types')
 host_types.ALL        =  0xffffffffffffffff
 host_types.NONE       =  0x0000000000000000
 host_types.UNKNOWN    = -0x0000000000000001
@@ -85,22 +84,22 @@ host_types.APPLIANCE  =  0x0040000000000000
 host_types.NET_OTHER  =  0x0080000000000000
 
 # messages between client and server (inside Pyro)
-message_type = EnumDict()
+message_type = EnumDict('message_type')
 message_type.EMIT        = 0x0001
 message_type.TRANSMIT    = 0x0002
 message_type.ANSWER      = 0x0004
 message_type.PUSH_STATUS = 0x0008
 
-interactions = EnumDict()
+interactions = EnumDict('interactions')
 interactions.ASK_FOR_REPAIR = 0x01
 
-licornd_roles = EnumDict()
+licornd_roles = EnumDict('licornd_roles')
 licornd_roles.UNSET  = 1
 licornd_roles.SERVER = 2
 licornd_roles.CLIENT = 3
 
 # constants from core.configuration
-distros = EnumDict()
+distros = EnumDict('distros')
 distros.UBUNTU   = 1
 distros.LICORN   = distros.UBUNTU
 distros.DEBIAN   = 2
@@ -109,25 +108,31 @@ distros.NOVELL   = 4
 distros.REDHAT   = 5
 distros.MANDRIVA = 6
 
-mailboxes = EnumDict()
+mailboxes = EnumDict('mailboxes')
 mailboxes.VAR_MBOX     = 1
 mailboxes.VAR_MAILDIR  = 2
 mailboxes.HOME_MBOX    = 3
 mailboxes.HOME_MAILDIR = 4
 mailboxes.HOME_MH      = 5
 
-servers = EnumDict()
+servers = EnumDict('servers')
 servers.MTA_UNKNOWN    = 0
 servers.MTA_POSTFIX    = 1
 servers.MTA_NULLMAILER = 2
 servers.MTA_EXIM4      = 3
 servers.MTA_QMAIL      = 4
 servers.MTA_SENDMAIL   = 5
-servers.IMAP_COURIER = 1
-servers.IMAP_CYRUS   = 2
-servers.IMAP_UW      = 3
-servers.POP3_COURIER = 1
-servers.POP3_QPOPPER = 2
+servers.IMAP_COURIER = 10
+servers.IMAP_CYRUS   = 11
+servers.IMAP_UW      = 12
+servers.POP3_COURIER = 13
+servers.POP3_QPOPPER = 14
+
+backend_actions = EnumDict('backend_actions')
+backend_actions.CREATE = 1
+backend_actions.UPDATE = 2
+backend_actions.DELETE = 3
+backend_actions.RENAME = 4
 
 # this is a replica of python.gamin, to help displaying messages in a
 # human-readable form.

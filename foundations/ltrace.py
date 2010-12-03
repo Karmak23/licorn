@@ -31,13 +31,14 @@ trc['timings']       = 0x10000000000000000000
 
 trc['foundations']   = 0x0000000000000000ffff
 trc['logging']       = 0x00000000000000000001
-trc['foundations']   = 0x00000000000000000002
-trc['objects']       = 0x00000000000000000004
-trc['options']       = 0x00000000000000000008
+trc['base']          = 0x00000000000000000002
+trc['options']       = 0x00000000000000000004
+trc['objects']       = 0x00000000000000000008
 trc['readers']       = 0x00000000000000000010
 trc['process']       = 0x00000000000000000020
 trc['fsapi']         = 0x00000000000000000040
 trc['network']       = 0x00000000000000000080
+trc['dbus']          = 0x00000000000000000100
 
 trc['core']          = 0x000000000000ffff0000
 trc['configuration'] = 0x00000000000000010000
@@ -49,13 +50,12 @@ trc['internet']      = 0x00000000000000200000
 trc['privileges']    = 0x00000000000000400000
 trc['keywords']      = 0x00000000000000800000
 trc['system']        = 0x00000000000001000000
+trc['messaging']     = 0x00000000000002000000
 
 trc['backends']      = 0x00000000ffff00000000
 trc['ldap']          = 0x00000000000100000000
 trc['unix']          = 0x00000000000200000000
-
-trc['plugins']       = 0x00000000ff0000000000
-trc['dnsmasq']       = 0x00000000010000000000
+trc['dnsmasq']       = 0x00000000000400000000
 
 trc['daemon']        = 0x0000ffff000000000000
 trc['master']        = 0x00000100000000000000
@@ -64,11 +64,12 @@ trc['aclchecker']    = 0x00000400000000000000
 trc['cache']         = 0x00000800000000000000
 trc['crawler']       = 0x00001000000000000000
 trc['cmdlistener']   = 0x00002000000000000000
-# the next 2 are identical, this is meant to be, for syntaxic ease.s
+# the next 2 are identical, this is meant to be, for syntaxic eases
 trc['thread']        = 0x00004000000000000000
 trc['threads']       = 0x00004000000000000000
 trc['wmi']           = 0x00008000000000000000
 
+# no 0xffff here, the first 'f' is for timings and special cases
 trc['interfaces']    = 0x0fff0000000000000000
 trc['cli']           = 0x00ff0000000000000000
 trc['add']           = 0x00010000000000000000

@@ -15,8 +15,9 @@ from licorn.foundations           import options, exceptions, logging
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
+from licorn.foundations.messaging import MessageProcessor
 
-from licorn.core.messaging import MessageProcessor
+from licorn.core           import LMC
 
 pyroStarted=False
 pyroExit=0
@@ -63,7 +64,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			assert ltrace('cli', '  cli_main: connecting to core')
 			import licorn.core
 			configuration, users, groups, profiles, privileges, keywords, \
-				machines, system, backends = licorn.core.connect()
+				machines, system, backends = LMC.connect()
 
 			(opts, args) = functions[mode][0](app=app_data,
 				configuration=configuration)
@@ -92,7 +93,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			#	configuration.licornd.pyro.port)
 
 			if giant_locked:
-				from licorn.foundations.objects import FileLock
+				from licorn.foundations.classes import FileLock
 				with FileLock(configuration, app_data['name'], 10):
 					functions[mode][1](opts=opts, args=args,
 					configuration=configuration, users=users, groups=groups,
@@ -104,6 +105,8 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 					configuration=configuration, users=users, groups=groups,
 					profiles=profiles, privileges=privileges, keywords=keywords,
 					machines=machines, system=system, backends=backends)
+
+			LMC.release()
 
 			assert ltrace('timings', '@cli_main_exec_time: %.4fs' % (
 				time.time() - cmd_start_time))

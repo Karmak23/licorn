@@ -15,12 +15,12 @@ from licorn.foundations         import fsapi, readers, hlstr, pyutils
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.base    import Singleton
-from licorn.foundations.objects import FileLock
+from licorn.foundations.classes import FileLock
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
+from licorn.core.classes import GiantLockProtectedObject
 
-class KeywordsController(Singleton, LicornCoreObject):
+class KeywordsController(Singleton, GiantLockProtectedObject):
 
 	init_ok = False
 	load_ok = False
@@ -30,7 +30,7 @@ class KeywordsController(Singleton, LicornCoreObject):
 		if KeywordsController.init_ok:
 			return
 
-		LicornCoreObject.__init__(self, 'keywords')
+		GiantLockProtectedObject.__init__(self, 'keywords')
 
 		self.keywords      = {}
 		self.changed       = False

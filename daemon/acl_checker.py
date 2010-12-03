@@ -19,7 +19,7 @@ from licorn.daemon.threads      import LicornThread
 
 from licorn.core                import LMC
 
-class ACLChecker(LicornThread, Singleton):
+class ACLChecker(LicornThread):
 	""" A Thread which gets paths to check from a Queue, and checks them in time. """
 	def __init__(self, cache, pname = dname):
 		LicornThread.__init__(self, pname)

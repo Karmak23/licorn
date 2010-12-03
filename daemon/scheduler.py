@@ -10,7 +10,7 @@ from threading   import Thread, Event, Semaphore, Timer
 from collections import deque
 
 from licorn.foundations           import logging, styles
-from licorn.foundations.objects   import LicornThread
+from licorn.foundations.classes   import LicornThread
 from licorn.foundations.constants import filters
 
 from licorn.daemon.core           import dname

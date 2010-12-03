@@ -12,6 +12,3 @@ What is here ?
    * NLS (gettext)
    * fsAPI (ex swissknives)
    * CacheAPI (ex a part of harvester.py)
-   
-debug.py should go away.
-syscmd.py should go away.

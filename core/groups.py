@@ -17,12 +17,12 @@ from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, backend_actions
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreController
+from licorn.core.classes import CoreController
 
-class GroupsController(Singleton, LicornCoreController):
+class GroupsController(Singleton, CoreController):
 	""" Manages the groups and the associated shared data on a Linux system. """
 
 	init_ok = False
@@ -36,7 +36,7 @@ class GroupsController(Singleton, LicornCoreController):
 		if GroupsController.init_ok:
 			return
 
-		LicornCoreController.__init__(self, 'groups', warnings)
+		CoreController.__init__(self, 'groups', warnings)
 		self.inotifier = None
 
 		GroupsController.init_ok = True
@@ -130,7 +130,7 @@ class GroupsController(Singleton, LicornCoreController):
 			if gid:
 				LMC.backends[
 					self.groups[gid]['backend']
-					].save_Group(gid)
+					].save_Group(gid, backend_actions.UPDATE)
 
 			else:
 				for backend in self.backends():
@@ -615,7 +615,6 @@ class GroupsController(Singleton, LicornCoreController):
 			'description' : description,
 			'groupSkel'   : groupSkel,
 			'backend'     : self._prefered_backend_name,
-			'action'      : 'create'
 			}
 
 		if system:
@@ -635,10 +634,9 @@ class GroupsController(Singleton, LicornCoreController):
 		# result in unaplicable ACLs because of (yet) non-existing groups in the
 		# system files (or backends).
 		# DO NOT UNCOMMENT: -- if not batch:
-		self.groups[gid]['action'] = 'create'
 		LMC.backends[
 			self.groups[gid]['backend']
-			].save_Group(gid)
+			].save_Group(gid, backend_actions.CREATE)
 
 		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
@@ -872,10 +870,9 @@ class GroupsController(Singleton, LicornCoreController):
 				else:
 					LMC.users[u]['groups'][i] = new_name
 
-			self.groups[gid]['action'] = 'rename'
 			LMC.backends[
 				self.groups[gid]['backend']
-				].save_Group(gid)
+				].save_Group(gid, backend_actions.RENAME)
 
 		#
 		# TODO: parse members, and sed -ie ~/.recently_used and other user
@@ -900,10 +897,9 @@ class GroupsController(Singleton, LicornCoreController):
 
 			self.groups[gid]['description'] = description
 
-			self.groups[gid]['action'] = 'update'
 			LMC.backends[
 				self.groups[gid]['backend']
-				].save_Group(gid)
+				].save_Group(gid, backend_actions.UPDATE)
 
 			logging.info('Changed group %s description to "%s".' % (
 				stylize(ST_NAME, name),
@@ -926,10 +922,9 @@ class GroupsController(Singleton, LicornCoreController):
 
 			self.groups[gid]['groupSkel'] = groupSkel
 
-			self.groups[gid]['action'] = 'update'
 			LMC.backends[
 				self.groups[gid]['backend']
-				].save_Group(gid)
+				].save_Group(gid, backend_actions.UPDATE)
 
 			logging.info('Changed group %s skel to "%s".' % (
 				stylize(ST_NAME, name),
@@ -975,10 +970,9 @@ class GroupsController(Singleton, LicornCoreController):
 
 		# FIXME: is it needed to save() here ? isn't it already done by the
 		# profile() and the AddUsersInGroup() calls ?
-		self.groups[gid]['action'] = 'update'
 		LMC.backends[
 			self.groups[gid]['backend']
-			].save_Group(gid)
+			].save_Group(gid, backend_actions.UPDATE)
 	def DeleteGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None, listener=None):
 		""" Disallow the users of the profiles given
@@ -1060,10 +1054,9 @@ class GroupsController(Singleton, LicornCoreController):
 							# superflous, but you can make bets on security and
 							# reliability.
 							#
-							self.groups[gid]['action'] = 'update'
 							LMC.backends[
 								self.groups[gid]['backend']
-								].save_Group(gid)
+								].save_Group(gid, backend_actions.UPDATE)
 
 							#self.reload_admins_group_in_validator(name)
 
@@ -1105,10 +1098,9 @@ class GroupsController(Singleton, LicornCoreController):
 				if batch and work_done:
 					# save the group after having added all users. This seems more fine
 					# than saving between each addition
-					self.groups[gid]['action'] = 'update'
 					LMC.backends[
 						self.groups[gid]['backend']
-						].save_Group(gid)
+						].save_Group(gid, backend_actions.UPDATE)
 
 					#self.reload_admins_group_in_validator(name)
 
@@ -1165,10 +1157,9 @@ class GroupsController(Singleton, LicornCoreController):
 				if batch:
 					work_done = True
 				else:
-					self.groups[gid]['action'] = 'update'
 					LMC.backends[
 						self.groups[gid]['backend']
-						].save_Group(gid)
+						].save_Group(gid, backend_actions.UPDATE)
 
 					#self.reload_admins_group_in_validator(name)
 
@@ -1205,10 +1196,9 @@ class GroupsController(Singleton, LicornCoreController):
 						listener=listener)
 
 		if batch and work_done:
-			self.groups[gid]['action'] = 'update'
 			LMC.backends[
 				self.groups[gid]['backend']
-				].save_Group(gid)
+				].save_Group(gid, backend_actions.UPDATE)
 
 			#self.reload_admins_group_in_validator(name)
 
@@ -1329,7 +1319,7 @@ class GroupsController(Singleton, LicornCoreController):
 							prefix_gid = temp_gid
 							del temp_gid
 
-							logging.info("Created system group %s(%s)." %
+							logging.info("Created system group %s (gid=%s)." %
 								(stylize(ST_NAME, group_name),
 								stylize(ST_UGID, prefix_gid)),
 								listener=listener)

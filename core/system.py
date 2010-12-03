@@ -19,31 +19,31 @@ from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import host_status, filters, host_types
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
+from licorn.core.classes import GiantLockProtectedObject
 
-class SystemController(Singleton, LicornCoreObject):
+class SystemController(Singleton, GiantLockProtectedObject):
 	""" This class implement a local system controller. It is meant to be used
 		remotely, via Pyro calls, to act on the local machine, or transmit
 		informations (status, uptime, load, etc) to the caller. """
-	init_ok         = False
+	init_ok = False
 
 	def __init__(self):
-		""" INIT the local system object. no particular data inside, it is meant
-			to pilot other objects. """
+		""" INIT the local system object. It is meant
+			to pilot other objects and the local machine. """
 
 		if SystemController.init_ok:
 			return
 
-		LicornCoreObject.__init__(self, 'system')
+		GiantLockProtectedObject.__init__(self, 'system')
 
-		self.status        = host_status.ACTIVE
+		self.status = host_status.ACTIVE
 
 		SystemController.init_ok = True
 	def load(self):
 		pass
 	def noop(self):
-		""" No-op function, called when connecting pyro, to check if link
-		is OK betwwen the server and the client. """
+		""" No-op function, called when remotely connecting pyro, to check if
+			link is OK between the server and the client. """
 		assert ltrace('system', '| noop(True)')
 		return True
 	def get_status(self):

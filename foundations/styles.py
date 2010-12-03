@@ -28,21 +28,21 @@ ST_GREY   = 13
 ST_WHITE  = 14
 
 __ascii = {
-	ST_RED   : '\x1b[01;31m',
-	ST_BRICK : '\x1b[00;31m',
-	ST_FOREST: '\x1b[00;32m',
-	ST_GREEN : '\x1b[01;32m',
-	ST_BROWN : '\x1b[00;33m',
-	ST_YELLOW: '\x1b[01;33m',
-	ST_NAVY  : '\x1b[00;34m',
-	ST_BLUE  : '\x1b[01;34m',
-	ST_PURPLE: '\x1b[00;35m',
-	ST_MAGENTA: '\x1b[01;35m',
-	ST_CADET : '\x1b[00;36m',
-	ST_CYAN  : '\x1b[01;36m',
-	ST_GREY  : '\x1b[00;37m',
-	ST_WHITE : '\x1b[01;37m',
-	ST_NO    : '\x1b[0;0m'
+	ST_RED     : '\x1b[01;31m',
+	ST_BRICK   : '\x1b[00;31m',
+	ST_FOREST  : '\x1b[00;32m',
+	ST_GREEN   : '\x1b[01;32m',
+	ST_BROWN   : '\x1b[00;33m',
+	ST_YELLOW  : '\x1b[01;33m',
+	ST_NAVY    : '\x1b[00;34m',
+	ST_BLUE    : '\x1b[01;34m',
+	ST_PURPLE  : '\x1b[00;35m',
+	ST_MAGENTA : '\x1b[01;35m',
+	ST_CADET   : '\x1b[00;36m',
+	ST_CYAN    : '\x1b[01;36m',
+	ST_GREY    : '\x1b[00;37m',
+	ST_WHITE   : '\x1b[01;37m',
+	ST_NO      : '\x1b[0;0m'
 	}
 
 ST_OK        = 1

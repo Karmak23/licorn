@@ -49,7 +49,7 @@ def thread_network_links_builder():
 
 	logging.info('%s: starting initial network scan.' % caller)
 
-	with LMC.locks.machines.giant_lock:
+	with machines.lock():
 		mids = machines.keys()
 
 	for mid in mids:
@@ -58,7 +58,7 @@ def thread_network_links_builder():
 	queue_wait_for_pingers(caller)
 
 	for mid in mids:
-		with LMC.locks.machines[mid]:
+		with LMC.machines[mid].lock():
 			if machines[mid].status & host_status.ONLINE:
 				pyroqueue.put(mid)
 
@@ -78,7 +78,7 @@ def thread_periodic_scanner():
 
 	machines = LMC.machines
 
-	with LMC.locks.machines.giant_lock:
+	with machines.lock():
 		logging.progress('%s: periodic scan of non-managed network hosts.' %
 			caller)
 
@@ -102,7 +102,7 @@ def pool_job_reverser(mid, listener=None, *args, **kwargs):
 
 	assert ltrace('machines', '> %s: pool_job_reverser(%s)' % (caller, mid))
 
-	with LMC.locks.machines[mid]:
+	with LMC.machines[mid].lock():
 		old_hostname = machines[mid].hostname
 		try:
 			# get the first hostname from the list.
@@ -129,7 +129,7 @@ def pool_job_pinger(mid, listener=None, *args, **kwargs):
 
 	assert ltrace('machines', '> %s: pool_job_pinger(%s)' % (caller, mid))
 
-	with LMC.locks.machines[mid]:
+	with LMC.machines[mid].lock():
 		up_hosts, down_hosts = machines.run_nmap([ mid ])
 
 		if up_hosts != []:
@@ -169,7 +169,7 @@ def pool_job_pyrofinder(mid, listener=None, *args, **kwargs):
 
 	assert ltrace('machines', '| %s: pool_job_pyrofinder(%s)' % (caller, mid))
 
-	with LMC.locks.machines[mid]:
+	with LMC.machines[mid].lock():
 		try:
 			# we don't assign directly the pyro proxy into
 			# machines[mid]['system'] because it can be invalid

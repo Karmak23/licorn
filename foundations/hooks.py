@@ -43,7 +43,6 @@ def unregister_event(event):
 		del _hooks[event]
 	else:
 		raise exceptions.LicornHookEventException('''Event "%s" doesn't exist in the events table.''' % event)
-
 def register_hook(event, func_name, args = None, dict = None):
 	""" Add a function to be called when an event happens.
 		args and dict will be used as « func_name ( *args, **dict ) », like in the
@@ -65,7 +64,6 @@ def unregister_hook( event, func_name ):
 		counter+=1
 	if found:
 		del _hooks[event][found]
-
 def run_hooks(event):
 
 	assert event is not None

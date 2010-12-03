@@ -10,29 +10,53 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, os, time
 import Pyro.core, Pyro.util
 
-from licorn.foundations           import options, logging, exceptions
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import message_type, verbose, interactions
-from licorn.foundations.ttyutils  import interactive_ask_for_repair
+# WARNING: don't import logging here (circular loop).
+import exceptions
+from licorn.foundations import options
+from ltrace    import ltrace
+from base      import NamedObject, pyro_protected_attrs
+from constants import message_type, verbose, interactions
+from ttyutils  import interactive_ask_for_repair
 
-from licorn.core         import LMC
-from licorn.core.objects import LicornBaseObject
+class LicornMessage(Pyro.core.CallbackObjBase):
+	def __init__(self, my_type=message_type.EMIT, data='', interaction=None,
+		answer=None, auto_answer=None, channel=2):
 
-class MessageProcessor(LicornBaseObject, Pyro.core.CallbackObjBase):
+		Pyro.core.CallbackObjBase.__init__(self)
+
+		assert ltrace('objects', '''| LicornMessage(data=%s,type=%s,interaction=%s,'''
+			'''answer=%s,auto_answer=%s,channel=%s)''' % (data, my_type,
+			interaction, answer, auto_answer, channel))
+
+		self.data        = data
+		self.type        = my_type
+		self.interaction = interaction
+		self.answer      = answer
+		self.auto_answer = auto_answer
+		self.channel     = channel
+class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
+	""" MessageProcessor is not really a controller, thus it doesn't inherit
+		from CoreController. Used only for messaging between core objects,
+		daemon and other parts of Licorn®.
+
+		It stills belongs to core, though, because this is a central part of
+		Licorn® internals. """
 	channels = {
 		1:	sys.stdout,
 		2:	sys.stderr,
 		}
-
+	_licorn_protected_attrs = (
+			NamedObject._licorn_protected_attrs
+			+ pyro_protected_attrs
+		)
 	def __init__(self, verbose=verbose.NOTICE, ip_address=None):
+		NamedObject.__init__(self, name='msgproc')
 		Pyro.core.CallbackObjBase.__init__(self)
-		LicornBaseObject.__init__(self, 'msgproc')
+		assert ltrace('messaging', '| MessageProcessor.__init__(%s, %s)' % (
+			verbose, ip_address))
 
 		self.verbose = verbose
 		self.addr = ip_address
-		assert ltrace('objects', '| MessageProcessor(%s)' % self.verbose)
-	def set_controllers(self, controllers):
-		self.controllers = controllers
 	def process(self, message, callback):
 		""" process a message. """
 
@@ -43,7 +67,7 @@ class MessageProcessor(LicornBaseObject, Pyro.core.CallbackObjBase):
 			# and thus the next hop will be the client, which has the task
 			# to display it, and eventually get an interactive answer.
 
-			assert ltrace('objects', '  MessageProcessor.process(EMIT)')
+			assert ltrace('messaging', '  MessageProcessor.process(EMIT)')
 
 			if message.interaction:
 
@@ -52,7 +76,7 @@ class MessageProcessor(LicornBaseObject, Pyro.core.CallbackObjBase):
 					message.answer = interactive_ask_for_repair(message.data,
 						auto_answer=message.auto_answer)
 				else:
-					assert ltrace('objects',
+					assert ltrace('messaging',
 						'unsupported interaction type in message %s.' % message)
 					message.answer = None
 
@@ -67,13 +91,15 @@ class MessageProcessor(LicornBaseObject, Pyro.core.CallbackObjBase):
 			# ourquestion. Return it directly to the calling process. The
 			# message loop ends here.
 
-			assert ltrace('objects', '  MessageProcessor.process(ANSWER)')
+			assert ltrace('messaging', '  MessageProcessor.process(ANSWER)')
 
 			#message.channel.write(message.data)
 			return message.answer
 		elif message.type == message_type.PUSH_STATUS:
 
-			self.controllers.machines.update_status(mid=message.sender,
+			# FIXME: is this really needed ? will the status be really pushed by this way ?
+			from licorn.core         import LMC
+			LMC.machines.update_status(mid=message.sender,
 				status=message.status)
 
 		else:

@@ -65,7 +65,7 @@ def clean_before_terminating(pname):
 
 	logging.progress("%s: joining threads." % pname)
 
-	for (thname, th) in dthreads.iteritems():
+	for (thname, th) in dthreads.items():
 		# join threads in the reverse order they were started, and only the not
 		# daemonized ones, in case daemons are stuck on blocking socket or
 		# anything preventing a quick and gracefull stop.
@@ -80,9 +80,8 @@ def clean_before_terminating(pname):
 				th.stop()
 				time.sleep(0.01)
 			th.join()
-			#dthreads.remove(th)
 			del th
-			dthreads.remove(thname)
+			del dthreads[thname]
 
 	if hasattr(dthreads, '_interactor'):
 		assert ltrace('thread', 'joining interactor thread.')
@@ -129,11 +128,7 @@ def terminate(signum, frame, pname):
 	else:
 		# don't display the uptime in children, this is duplicate.
 		upt = ''
-		# release the Pyro objects to avoid harmless but polluting messages
-		# about ignored exceptions.
-		for controller in LMC:
-			controller._release()
-			del controller
+		LMC.release()
 
 	logging.notice("%s: exiting%s." % (pname, upt))
 	sys.exit(0)

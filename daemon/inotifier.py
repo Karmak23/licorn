@@ -20,7 +20,7 @@ from licorn.foundations.constants import filters, gamin_events
 from licorn.core        import LMC
 from licorn.daemon.core import dname
 
-class INotifier(Thread, Singleton):
+class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with them. """
 
 	def __init__(self, checker, cache, pname=dname,
@@ -161,7 +161,7 @@ class INotifier(Thread, Singleton):
 			"""
 			assert ltrace('inotifier',
 				'gam event %s on %s -> controller %s (index %s)' % (
-				gamin_events[event], path, controller, index))
+				gamin_events[event], path, controller.name, index))
 
 			if event == gamin.GAMCreated:
 				create_thread = False

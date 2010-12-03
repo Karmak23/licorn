@@ -14,20 +14,20 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import host_status
-from licorn.foundations.pyutils   import add_or_dupe_attr
+from licorn.foundations.pyutils   import add_or_dupe_attr, add_or_dupe_obj
 from licorn.foundations.hlstr     import cregex
 from licorn.foundations.network   import build_hostname_from_ip
 
-from objects             import MachinesBackend
-from licorn.core         import LMC
-from licorn.core.objects import Machine
+from classes              import MachinesBackend
+from licorn.core          import LMC
+from licorn.core.machines import Machine
 
 class dnsmasq_controller(Singleton, MachinesBackend):
 	""" A plugin to cope with dnsmasq files."""
 
 	def __init__(self, warnings=True):
-		assert ltrace('dnsmasq', '| __init__()')
 		MachinesBackend.__init__(self, name='dnsmasq', warnings=warnings)
+		assert ltrace('dnsmasq', '| __init__()')
 
 		self.files = Enumeration()
 		self.files.dnsmasq_conf   = '/etc/dnsmasq.conf'
@@ -47,10 +47,10 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		""" Called ONLY from self.load_machines().
 			see dnsmasq(8) -> "dhcp-host" for details. """
 
-		temp_host = Machine(managed=True)
-
 		assert ltrace('dnsmasq', '> load_dhcp_host(host_record=%s)'
 			% host_record)
+
+		temp_host = Enumeration()
 
 		for value in host_record:
 			if value == 'ignore' or value.startswith('id:') \
@@ -64,7 +64,7 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 			if cregex['ether_addr'].match(value):
 				# got a MAC address -> can have more than one for a
 				# given machine (e.g. wifi & ethernet)
-				add_or_dupe_attr(temp_host.ether, value)
+				add_or_dupe_obj(temp_host, 'ether', value)
 
 				if self.leases.has_key(value):
 					temp_host.expiry = self.leases[value]['expiry']
@@ -86,12 +86,12 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		# data is gathered, here come the checks. if one of them fail,
 		# the temp_host is bad, forget it.
 
-		if temp_host.ip is None:
+		if not hasattr(temp_host, 'ip'):
 			# presumably got a general configuration directive,
 			# not speaking about any particular host. SKIP.
 			assert ltrace('machines', '  host skipped because no IPv4 address.')
 			del temp_host
-			return
+			return None
 
 		if self.machines.has_key(temp_host.ip):
 			raise exceptions.AlreadyExistsException('''a machine '''
@@ -102,12 +102,19 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 
 		# be sure we have a unique hostname, else many things could
 		# fail.
-		if temp_host.hostname is None:
+		if not hasattr(temp_host, 'hostname'):
 			 temp_host.hostname = build_hostname_from_ip(temp_host.ip)
 
-		self.machines[temp_host.ip] = temp_host
-		self.locks[temp_host.ip] = RLock()
-		self.hostname_cache[temp_host.hostname] = temp_host.ip
+		# FIXME: re-order this ti be clean.
+		final_host = Machine(mid=temp_host.ip, hostname=temp_host.hostname,
+						managed=True, backend=self)
+
+		for key in ('ether', 'lease_time', 'expiry'):
+			if key in temp_host.keys():
+				setattr(final_host, key, getattr(temp_host, key))
+		del temp_host
+
+		return final_host
 	def load_Machines(self):
 		""" get the machines from static conf and leases, and create the pivot
 		data for our internal data structures. """
@@ -121,10 +128,6 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		else:
 			self.leases = {}
 
-		self.machines       = {}
-		self.hostname_cache = {}
-		self.locks          = {}
-
 		if dnsmasq_conf.has_key('dhcp-host'):
 			#print dnsmasq_conf['dhcp-host'][0]
 
@@ -132,36 +135,34 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 				# we got a list of hosts.
 
 				for host_record in dnsmasq_conf['dhcp-host']:
-					self.load_dhcp_host(host_record)
+					machine = self.load_dhcp_host(host_record)
+					if machine:
+						yield machine
+					else:
+						continue
 			else:
 				# we got a single host in the conf file.
-				self.load_dhcp_host(dnsmasq_conf['dhcp-host'])
+				machine = self.load_dhcp_host(dnsmasq_conf['dhcp-host'])
+				if machine:
+					yield machine
 
 				# TODO: check if the lease IP is the same as in the conf
 				# (why not ?). idem for the hostname.
 
 		for ether in self.leases:
-			self.machines[self.leases[ether]['ip']] = Machine(
-				ip=self.leases[ether]['ip'],
-				hostname='UNKNOWN-%s' % \
-					self.leases[ether]['ip'].replace('.', '-') \
+			 yield Machine(
+				mid=self.leases[ether]['ip'],
+				hostname=build_hostname_from_ip(self.leases[ether]['ip']) \
 					if not self.leases[ether].has_key('hostname') \
 					or self.leases[ether]['hostname'] == '*' \
 					else self.leases[ether]['hostname'],
 				ether=ether,
 				expiry=self.leases[ether]['expiry'] \
 					if self.leases[ether].has_key('expiry') else None,
+				backend=self
 				)
 
-			self.hostname_cache[
-				self.machines[
-					self.leases[ether]['ip']
-					]['hostname']
-				] = self.leases[ether]['ip']
-
 		assert ltrace('dnsmasq', '< load_machines(%s)' % self.machines)
-
-		return self.machines, self.locks, self.hostname_cache
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass

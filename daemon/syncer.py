@@ -9,7 +9,7 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations.objects import LicornThread
+from licorn.foundations.classes import LicornThread
 
 """
  TODO: publish our role with MDNS / Bonjour / Avahi

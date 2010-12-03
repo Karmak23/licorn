@@ -11,62 +11,62 @@ import os
 from licorn.foundations        import logging
 from licorn.foundations.styles import *
 from licorn.foundations.ltrace import ltrace
-from licorn.foundations.base   import Singleton, Enumeration
+from licorn.foundations.base   import Singleton, MixedDictObject
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
-from objects             import LicornCoreBackend
+from licorn.core.classes import GiantLockProtectedObject
+from classes             import CoreBackend
 
-class BackendController(Singleton, LicornCoreObject):
+class BackendController(Singleton, GiantLockProtectedObject):
+	_licorn_protected_attrs = (
+			GiantLockProtectedObject._licorn_protected_attrs
+			+ ['_available_backends']
+		)
 	def __init__(self):
-		LicornCoreObject.__init__(self, 'backends')
-		self._available_backends = Enumeration(
+		GiantLockProtectedObject.__init__(self, 'backends')
+		self._available_backends = MixedDictObject(
 			'BackendController._available_backends')
-	def _valuable(self, attr_name, attr_value=None):
-		if attr_value is None:
-			attr_value = getattr(self, attr_name)
-
-		return isinstance(attr_value, LicornCoreBackend)
+	#def _valuable(self, attr_name, attr_value=None):
+	#	if attr_value is None:
+	#		attr_value = getattr(self, attr_name)
+	#
+	#	return isinstance(attr_value, CoreBackend)
 	def load(self):
 		for entry in os.listdir(__path__[0]):
 			if entry[0] == '_':
 				continue
 			if entry[-11:] == '_backend.py':
-				modname = entry[:-3]		# minus '.py'
+				modname      = entry[:-3]	# minus '.py'
 				backend_name = entry[:-11]	# minus '_backend.py'
 				assert ltrace('backends', 'importing backend %s' %
 					stylize(ST_NAME, backend_name))
-				try:
-					pymod = __import__(modname, globals(), locals(),
-						backend_name)
-					backend = getattr(pymod, backend_name)
-				except Exception, e:
-					logging.warning(e)
-					raise e
-				else:
-					assert ltrace('backends', 'loading backend %s' %
-						stylize(ST_NAME, backend_name))
-					# instanciate the controller into a backend object.
-					#exec('backends.append(%s)' % backend_name)
 
-					backend.load()
+				pymod = __import__(modname, globals(), locals(),
+					backend_name)
+				backend = getattr(pymod, backend_name)
 
-					if backend.available:
-						if backend.enabled:
-							setattr(self, backend.name, backend)
-							assert ltrace('backends', 'loaded backend %s' %
-								stylize(ST_NAME, backend.name))
-						else:
-							setattr(self._available_backends,
-								backend.name, backend)
-							assert ltrace('backends',
-								'backend %s is only available' %
-									stylize(ST_NAME, backend.name))
+				assert ltrace('backends', 'loading backend %s' %
+					stylize(ST_NAME, backend_name))
+				# instanciate the controller into a backend object.
+				#exec('backends.append(%s)' % backend_name)
+
+				backend.load()
+
+				if backend.available:
+					if backend.enabled:
+						self[backend.name] = backend
+						assert ltrace('backends', 'loaded backend %s' %
+							stylize(ST_NAME, backend.dump_status(True)))
 					else:
+						self._available_backends[backend.name] = backend
 						assert ltrace('backends',
-							'backend %s NOT available' %
+							'backend %s is only available' %
 								stylize(ST_NAME, backend.name))
-
+				else:
+					assert ltrace('backends',
+						'backend %s NOT available' %
+							stylize(ST_NAME, backend.name))
+					pass
 	def enable_backend(self, backend, listener=None):
 		""" try to enable a given backend. what to do exactly is left to the
 		backend itself."""

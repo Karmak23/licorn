@@ -21,5 +21,6 @@ def _threads():
 	return ', '.join([ '%s%s' % (x.name,
 		stylize(ST_NOTICE, '&') if x.daemon else '') \
 			for x in enumerate() ])
+
 def _thcount():
 	return stylize(ST_UGID, active_count())

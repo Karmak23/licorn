@@ -128,7 +128,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				(stylize(ST_ADDRESS, '%s:%s' % (client_addr,
 					client_socket)), e)))
 			return 0, Pyro.constants.DENIED_UNSPECIFIED
-
 class CommandListener(LicornBasicThread):
 	""" A Thread which collect INotify events and does what
 		is appropriate with them. """

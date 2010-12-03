@@ -236,9 +236,14 @@ class LicornJobThread(LicornBasicThread):
 			self.current_loop += 1
 			self.sleep()
 		LicornBasicThread.finish(self)
-class StatusUpdaterThread(LicornJobThread):
+class StatusUpdaterThread(LicornBasicThread):
 	def __init__(self):
 		pass
+	def run(self):
+		""" connect to local dbus system bus and forward every status change to
+			our controlling server. """
+
+
 class LicornInteractorThread(LicornBasicThread):
 	def __init__(self):
 		from licorn.daemon.core import dname, dchildren, get_daemon_status
@@ -388,11 +393,11 @@ def thread_periodic_cleaner():
 
 	assert ltrace('system', '> %s:thread_cleaner()' % caller)
 
-	for (thread_name, thread) in dthreads.iteritems():
+	for (tname, thread) in dthreads.items():
 		if not thread.is_alive():
-			delattr(dthreads, thread_name)
+			del dthreads[tname]
 			del thread
 			logging.info('%s: wiped dead thread %s from memory.' % (
-				caller, stylize(ST_NAME, thread_name)))
+				caller, stylize(ST_NAME, tname)))
 
 	assert ltrace('system', '< %s:thread_cleaner()' % caller)

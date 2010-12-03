@@ -21,16 +21,59 @@ from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import host_status, filters, host_types
 
 from licorn.core           import LMC
-from licorn.core.objects   import LicornCoreController, Machine
+from licorn.core.classes   import CoreController, CoreStoredObject
 from licorn.daemon         import dqueues
 from licorn.daemon.network import queue_wait_for_pingers, \
 									queue_wait_for_pyroers, \
 									queue_wait_for_reversers
 
-class MachinesController(Singleton, LicornCoreController):
+class Machine(CoreStoredObject):
+	counter = 0
+	def __init__(self, mid=None, hostname=None, ether=None, expiry=None,
+		lease_time=None, status=host_status.UNKNOWN, managed=False,
+		system=None, system_type=host_types.UNKNOWN, backend=None, **kwargs):
+
+		CoreStoredObject.__init__(self, oid=mid, name=hostname,
+			controller=LMC.machines, backend=backend)
+		assert ltrace('objects', '| Machine.__init__(%s, %s)' % (mid, hostname))
+
+		# mid == IP address (unique on a given network)
+		self.mid         = self._oid
+		self.ip          = self.mid
+
+		# hostname will be DNS-reversed from IP, or constructed.
+		self.hostname    = self.name
+
+		self.ether       = ether
+		self.expiry      = expiry
+		self.lease_time  = lease_time
+
+		# will be updated as much as possible with the current host status.
+		self.status      = status
+
+		# True if the machine is recorded in local configuration files.
+		self.managed     = managed
+
+		# OS and OS level, arch, mixed in one integer.
+		self.system_type = system_type
+
+		# the Pyro proxy (if the machine has one) for contacting it across the
+		# network.
+		self.system      = system
+
+	def __str__(self):
+		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
+			self.__class__,
+			stylize(ST_UGID, self.mid),
+			stylize(ST_NAME, self.hostname),
+			'\n\t'.join([ '%s: %s' % (attr_name, getattr(self, attr_name))
+					for attr_name in dir(self) ])
+			)
+class MachinesController(Singleton, CoreController):
 
 	init_ok         = False
 	load_ok         = False
+	_licorn_protected_attrs = CoreController._licorn_protected_attrs
 
 	def __init__(self):
 		""" Create the machine accounts list from the underlying system.
@@ -39,10 +82,10 @@ class MachinesController(Singleton, LicornCoreController):
 		if MachinesController.init_ok:
 			return
 
-		LicornCoreController.__init__(self, 'machines')
+		CoreController.__init__(self, 'machines', reverse_mappings=['hostname'])
 
-		self.nmap_cmd_base = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG',	'-' ]
-		self.nmap_not_installed = False
+		self._nmap_cmd_base = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG',	'-' ]
+		self._nmap_not_installed = False
 
 		MachinesController.init_ok = True
 	def load(self):
@@ -52,30 +95,19 @@ class MachinesController(Singleton, LicornCoreController):
 			assert ltrace('machines', '| load()')
 			self.reload()
 			MachinesController.load_ok = True
-	def __getitem__(self, item):
-		return self.machines[item]
-	def __setitem__(self, item, value):
-		self.machines[item]=value
-	def keys(self):
-		return self.machines.keys()
-	def has_key(self, key):
-		return self.machines.has_key(key)
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
 		assert ltrace('machines', '> reload()')
 
 		with self.lock():
-			self.machines = {}
-			self.hostname_cache = {}
+			self.clear()
 
 			for backend in self.backends():
 				assert ltrace('machines', '  reload(%s)' % backend.name)
-				m, l, c = backend.load_Machines()
+				for machine in backend.load_Machines():
+					self.__setitem__(machine.ip, machine)
 
-				self.machines.update(m)
-				LMC.locks.machines.update(l)
-				self.hostname_cache.update(c)
 		assert ltrace('machines', '< reload()')
 	def scan_network(self, network_to_scan, wait_until_finish=False,
 		listener=None, *args, **kwargs):
@@ -92,7 +124,7 @@ class MachinesController(Singleton, LicornCoreController):
 		up_hosts, down_hosts = self.run_nmap([ network_to_scan ])
 
 		with self.lock():
-			current_mids = self.machines.keys()
+			current_mids = self.keys()
 
 		# we have to skip our own addresses, else pyro will die after having
 		# exhausted the max number of threads (trying connecting to ourself in
@@ -106,11 +138,18 @@ class MachinesController(Singleton, LicornCoreController):
 			with self.lock():
 				logging.info('found online machine with IP address %s' % hostip,
 					listener=listener)
+
+				# create a fake hostname for now, the IP will be reversed a
+				# little later to get the eventual real DNS name of host.
+				#
+				# Use null_backend because the discovered hostname is stored
+				# nowhere for now. Don't yet know how to handle it, the discover
+				# function is just a pure bonus for demos.
 				machine = Machine(mid=hostip,
-					hostname=build_hostname_from_ip(hostip))
-				self.machines[hostip] = machine
-				# lock should be already built by constructor
-				self.hostname_cache[machine.hostname] = machine.ip
+					hostname=build_hostname_from_ip(hostip),
+					backend=Enumeration('null_backend'),
+					status=host_status.ONLINE)
+				self[hostip] = machine
 
 			reverseq.put(hostip)
 			pyroq.put(hostip)
@@ -135,7 +174,7 @@ class MachinesController(Singleton, LicornCoreController):
 		"""
 
 		caller = current_thread().name
-		arping_cmd = self.arping_cmd_base[:]
+		arping_cmd = self._arping_cmd_base[:]
 		nmap_cmd.append(to_ping)
 
 		assert ltrace('machines', '> %s: run_arping(%s)' % (
@@ -143,12 +182,11 @@ class MachinesController(Singleton, LicornCoreController):
 
 		assert ltrace('machines', '< run_nmap(up=%s, down=%s)' % (
 			up_hosts, down_hosts))
-
 	def run_nmap(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts. """
 
 		caller = current_thread().name
-		nmap_cmd = self.nmap_cmd_base[:]
+		nmap_cmd = self._nmap_cmd_base[:]
 		nmap_cmd.extend(to_ping)
 
 		assert ltrace('machines', '> %s: run_nmap(%s)' % (
@@ -158,7 +196,7 @@ class MachinesController(Singleton, LicornCoreController):
 			nmap_status = process.execute(nmap_cmd)[0]
 		except (IOError, OSError), e:
 			if e.errno == 2:
-				self.nmap_not_installed = True
+				self._nmap_not_installed = True
 				raise exceptions.LicornRuntimeException('''nmap is not '''
 					'''installed on this system, can't use it!''', once=True)
 			else:
@@ -182,15 +220,15 @@ class MachinesController(Singleton, LicornCoreController):
 	def ping_all_machines(self, listener=None, *args, **kwargs):
 		""" run across all IPs and find which machines are up or down. """
 
-		if self.nmap_not_installed:
+		if self._nmap_not_installed:
 			# don't do anything, this is useless. UNKNOWN status has already
 			# been set on all machines by the backend load.
 			return
 
 		raise NotImplementedError('to be rewritten.')
 
-		nmap_cmd = self.nmap_cmd_base[:]
-		nmap_cmd.extend(self.machines.keys())
+		nmap_cmd = self._nmap_cmd_base[:]
+		nmap_cmd.extend(self.keys())
 
 		assert ltrace('machines', '> update_statuses(%s)' % ' '.join(nmap_cmd))
 
@@ -210,9 +248,9 @@ class MachinesController(Singleton, LicornCoreController):
 				assert ltrace('machines', '  update_statuses(%s) -> ' % (
 					mid, splitted[4]))
 				if splitted[4] == 'Up':
-						self.machines[splitted[1]]['status'] = host_status.ACTIVE
+						self[splitted[1]]['status'] = host_status.ACTIVE
 				elif splitted[4] == 'Down':
-						self.machines[splitted[1]]['status'] = host_status.OFFLINE
+						self[splitted[1]]['status'] = host_status.OFFLINE
 		assert ltrace('machines', '< update_statuses()')
 	def guess_host_type(self, mid):
 		""" On a network machine which don't have pyro installed, try to
@@ -223,12 +261,12 @@ class MachinesController(Singleton, LicornCoreController):
 		logging.notice('machines.guess_host_type() not implemented.')
 
 		return
-	def update_status(self, mid=None, hostname=None, status=None, listener=None,
+	def update_status(self, mid, status=None, listener=None,
 		*args, **kwargs):
 
-		mid, hostname = self.resolve_mid_or_hostname(mid, hostname)
-
 		assert ltrace('machines', '| update_status(%s)' % status)
+
+		hostname = self[mid].hostname
 
 		with LMC.locks.machines[mid]:
 			if status is None:
@@ -237,7 +275,7 @@ class MachinesController(Singleton, LicornCoreController):
 				logging.warning('machines.update_status() called with status=None '
 					'for machine %s(%s)' % (hostname, mid), listener=listener)
 			else:
-				self.machines[mid].status = status
+				self[mid].status = status
 	def WriteConf(self, mid=None):
 		""" Write the machine data in appropriate system files."""
 
@@ -246,7 +284,7 @@ class MachinesController(Singleton, LicornCoreController):
 		with self.lock():
 			if mid:
 				LMC.backends[
-					self.machines[mid]['backend']
+					self[mid]['backend']
 					].save_Machine(mid)
 			else:
 				for backend in self.backends():
@@ -259,13 +297,13 @@ class MachinesController(Singleton, LicornCoreController):
 		assert ltrace('machines', '> Select(%s)' % filter_string)
 
 		with self.lock():
-			mids = self.machines.keys()
+			mids = self.keys()
 			mids.sort()
 
 			def keep_mid_if_status(mid, status=None):
 				#print('mid: %s, status: %s, keep if %s' % (
-				#	mid, self.machines[mid]['status'], status))
-				if self.machines[mid].status == status:
+				#	mid, self[mid]['status'], status))
+				if self[mid].status == status:
 					filtered_machines.append(mid)
 
 			if None == filter_string:
@@ -298,48 +336,27 @@ class MachinesController(Singleton, LicornCoreController):
 
 			assert ltrace('machines', '< Select(%s)' % filtered_machines)
 			return filtered_machines
-	def dump(self):
-		""" Dump the internal data structures (debug and development use). """
-
-		with self.lock():
-			assert ltrace('machines', '| dump()')
-
-			mids = self.machines.keys()
-			mids.sort()
-
-			hostnames = self.hostname_cache.keys()
-			hostnames.sort()
-
-			data = '%s:\n%s\n%s:\n%s\n' % (
-				stylize(ST_IMPORTANT, 'core.machines'),
-				'\n'.join(map(str, self.machines.itervalues())),
-				stylize(ST_IMPORTANT, 'core.hostname_cache'),
-				'\n'.join(['\t%s: %s' % (key, self.hostname_cache[key]) \
-					for key in hostnames ])
-				)
-
-			return data
 	def ExportCLI(self, selected=None, long_output=False):
 		""" Export the machine accounts list to human readable («passwd») form.
 		"""
 		if selected is None:
-			mids = self.machines.keys()
+			mids = self.keys()
 		else:
 			mids = selected
 		mids.sort()
 
 		assert ltrace('machines', '| ExportCLI(%s)' % mids)
 
-		m = self.machines
+		m = self
 
 		def build_cli_output_machine_data(mid):
 
 			account = [	stylize(ST_NAME \
 							if m[mid].managed else ST_SPECIAL,
 							m[mid].hostname),
-						stylize(ST_OK, 'Online') \
-								if m[mid].status == host_status.ACTIVE \
-								else stylize(ST_BAD, 'Offline'),
+						stylize(ST_OK if m[mid].status & host_status.ONLINE
+							else ST_BAD,
+							host_status[m[mid].status].title()),
 						'managed' if m[mid].managed \
 								else 'floating',
 						str(mid),
@@ -358,14 +375,14 @@ class MachinesController(Singleton, LicornCoreController):
 		""" Export the machine accounts list to XML. """
 
 		if selected is None:
-			mids = self.machines.keys()
+			mids = self.keys()
 		else:
 			mids = selected
 		mids.sort()
 
 		assert ltrace('machines', '| ExportXML(%s)' % mids)
 
-		m = self.machines
+		m = self
 
 		def build_xml_output_machine_data(mid):
 			data = '''	<machine>
@@ -374,7 +391,7 @@ class MachinesController(Singleton, LicornCoreController):
 		<managed>%s</managed>
 		<ether>%s</ether>
 		<expiry>%s</expiry>\n''' % (
-					m[mid].hostname,
+					m[mid].g,
 					mid,
 					m[mid].managed,
 					m[mid].ether,
@@ -388,27 +405,27 @@ class MachinesController(Singleton, LicornCoreController):
 			+ "\n</machines-list>\n"
 
 		return data
-	def shutdown(self, mid=None, hostname=None, warn_users=True, listener=None):
+	def shutdown(self, mid, warn_users=True, listener=None):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
-		mid, hostname = self.resolve_mid_or_hostname(mid, hostname)
+		hostname = self[mid].hostname
 
-		if self.machines[mid].system:
-			self.machines[mid].system.shutdown()
-			self.machines[mid].status == host_status.SHUTTING_DOWN
+		if self[mid].system:
+			self[mid].system.shutdown()
+			self[mid].status == host_status.SHUTTING_DOWN
 			logging.info('Shut down machine %s.' % hostname, listener=listener)
 
 		else:
 			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
 				'''non remote-controlled machine!''')
-	def is_alt(self, mid=None, hostname=None):
+	def is_alt(self, mid):
 		""" Return True if the machine is an ALT client, else False. """
 
-		mid, hostname = self.resolve_mid_or_hostname(mid,hostname)
+		hostname = self[mid].hostname
 
 		try:
-			is_ALT = self.machines[mid].ether.lower().startswith(
+			is_ALT = self[mid].ether.lower().startswith(
 				'00:e0:f4:')
 		except (AttributeError, KeyError):
 			is_ALT = False
@@ -420,78 +437,10 @@ class MachinesController(Singleton, LicornCoreController):
 	def confirm_mid(self, mid):
 		""" verify a MID or raise DoesntExists. """
 		try:
-			return self.machines[mid].ip
+			return self[mid].ip
 		except KeyError:
 			raise exceptions.DoesntExistsException(
 				"MID %s doesn't exist" % mid)
-	def resolve_mid_or_hostname(self, mid=None, hostname=None):
-		""" method used every where to get mid / hostname of a group object to
-			do something onto. a non existing mid / hostname will raise an
-			exception from the other methods methods."""
-
-		if hostname is None and mid is None:
-			raise exceptions.BadArgumentError(
-				"You must specify a hotname or a MID to resolve from.")
-
-		assert ltrace('machines', '| resolve_mid_or_hostname(mid=%s, hostname=%s)' % (
-			mid, hostname))
-
-		# we cannot just test "if gid:" because with root(0) this doesn't work.
-		if mid is not None:
-			hostname = self.mid_to_hostname(mid)
-		else:
-			mid = self.hostname_to_mid(hostname)
-		return (mid, hostname)
-	def exists(self, mid=None, hostname=None):
-		if mid:
-			return self.machines.has_key(mid)
-		if hostname:
-			return self.hostname_cache.has_key(hostname)
-
-		raise exceptions.BadArgumentError(
-			"You must specify a MID or a hostname to test existence of.")
-	def hostname_to_mid(self, hostname):
-		""" Return the mid of the machine 'hostname'. """
-		try:
-			# use the cache, Luke !
-			return self.hostname_cache[hostname]
-		except KeyError:
-			try:
-				int(hostname)
-				logging.warning("You passed an mid to hostname_to_mid():"
-					" %d (guess its hostname is « %s » )." % (
-						hostname, self.machines[hostname].hostname))
-			except ValueError:
-				pass
-
-			raise exceptions.LicornRuntimeException(
-				_('''machine %s doesn't exist.''') % hostname)
-	def mid_to_hostname(self, mid):
-		""" Return the hostname for a given IP."""
-		try:
-			return self.machines[mid].hostname
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				"MID %s doesn't exist" % mid)
-	def guess_identifier(self, value):
-		""" Try to guess everything of a machine from a
-			single and unknown-typed info. """
-		try:
-			self.mid_to_hostname(value)
-			mid = value
-		except exceptions.DoesntExistsException, e:
-			mid = self.mid_to_hostname(value)
-		return mid
-	def guess_identifiers(self, value_list):
-
-		valid_ids=set()
-		for value in value_list:
-			try:
-				valid_ids.add(self.guess_identifier(value))
-			except exceptions.DoesntExistsException:
-				logging.notice("Skipped non-existing hostname or MID '%s'." %
-					stylize(ST_NAME, value))
-		return valid_ids
 	def make_hostname(self, inputhostname=None):
 		""" Make a valid hostname from what we're given. """
 
@@ -510,4 +459,3 @@ class MachinesController(Singleton, LicornCoreController):
 					inputhostname, hlstr.regex['hostname']))
 
 		return hostname
-

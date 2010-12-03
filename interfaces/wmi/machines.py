@@ -505,7 +505,7 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		machine = machines.machines[machines.hostname_to_mid(hostname)]
+		machine = machines[machines._by_hostname(hostname)]
 
 		try:
 			profile = \
@@ -622,7 +622,7 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 
 	except exceptions.LicornException, e:
 		data += w.error("Record %s does not exist (%s)!" % (
-			hostname, "machine = machines.machines[machines.hostname_to_mid(hostname)]", e))
+			hostname, "machine = machines[machines._by_hostname(hostname)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, hostname, loginShell=None,
@@ -690,7 +690,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 
 	start = time.time()
 
-	m = machines.machines
+	m = machines
 
 	accounts = {}
 	ordered  = {}

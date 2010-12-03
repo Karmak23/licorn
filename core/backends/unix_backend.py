@@ -13,9 +13,9 @@ from licorn.foundations         import readers, hlstr
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.base    import Singleton
-from licorn.foundations.objects import FileLock
+from licorn.foundations.classes import FileLock
 
-from objects     import LicornNSSBackend, UsersBackend, GroupsBackend
+from classes     import NSSBackend, UsersBackend, GroupsBackend
 from licorn.core import LMC
 
 class unix_controller(Singleton, UsersBackend, GroupsBackend):
@@ -30,7 +30,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 		if unix_controller.init_ok:
 			return
 
-		LicornNSSBackend.__init__(self, name='unix',
+		NSSBackend.__init__(self, name='unix',
 			nss_compat=('files', 'compat'), priority=1, warnings=warnings)
 
 		# the UNIX backend is always enabled on a Linux system.
@@ -267,7 +267,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 
 		if need_rewriting and is_allowed:
 			try:
-				self.save_groups(groups)
+				self.save_Groups()
 			except (OSError, IOError), e:
 				if self.warnings:
 					logging.warning("licorn.core.groups: can't correct" \
@@ -407,5 +407,4 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
-
 unix = unix_controller()

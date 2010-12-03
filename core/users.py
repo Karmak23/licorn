@@ -17,12 +17,29 @@ from licorn.foundations           import pyutils, fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, backend_actions
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreController
+from licorn.core.classes import CoreController, CoreUnitObject
 
-class UsersController(Singleton, LicornCoreController):
+class User(CoreUnitObject):
+	counter = 0
+	def __init__(self, uidNumber=None, login=None, cryptedPassword=None,
+		gidNumber=None, gecos=None, homeDirectory=None, loginShell=None,
+		groups=[], backend=None, **kwargs):
+
+		CoreUnitObject.__init__(self, oid=uidNumber, name=login,
+			controller=LMC.users, backend=backend)
+		assert ltrace('objects', '| User.__init__(%s, %s)' % uidNumber, login)
+
+		self.uidNumber     = uidNumber
+		self.gidNumber     = gidNumber
+		self.login         = self.name
+		self.gecos         = gecos
+		self.homeDirectory = homeDirectory
+		self.loginShell    = loginShell
+		self.groups        = groups
+class UsersController(Singleton, CoreController):
 
 	init_ok = False
 	load_ok = False
@@ -36,7 +53,7 @@ class UsersController(Singleton, LicornCoreController):
 		if UsersController.init_ok:
 			return
 
-		LicornCoreController.__init__(self, 'users')
+		CoreController.__init__(self, 'users')
 
 		UsersController.init_ok = True
 		assert ltrace('users', '< UsersController.__init__(%s)' %
@@ -92,7 +109,7 @@ class UsersController(Singleton, LicornCoreController):
 			if uid:
 				LMC.backends[
 					self.users[uid]['backend']
-					].save_User(uid)
+					].save_User(uid, backend_actions.UPDATE)
 			else:
 				for backend in self.backends():
 					backend.save_Users()
@@ -519,10 +536,9 @@ class UsersController(Singleton, LicornCoreController):
 			# if we are in batch / import users mode.
 			#
 			# DO NOT UNCOMMENT -- if not batch:
-			self.users[uid]['action'] = 'create'
 			LMC.backends[
 				self.users[uid]['backend']
-				].save_User(uid)
+				].save_User(uid, backend_actions.CREATE)
 
 			# Samba: add Samba user account.
 			# TODO: put this into a module.
@@ -671,19 +687,18 @@ class UsersController(Singleton, LicornCoreController):
 			self.users[uid]['shadowLastChange'] = str(
 				int(time()/86400) )
 
-			self.users[uid]['action'] = 'update'
 			LMC.backends[
 				self.users[uid]['backend']
-				].save_User(uid)
+				].save_User(uid, backend_actions.UPDATE)
 
 			if display:
-				logging.notice("Set password for user %s(%s) to %s." % (
+				logging.notice("Set password for user %s (uid=%s) to %s." % (
 					stylize(ST_NAME, login),
 					stylize(ST_UGID, uid),
 					stylize(ST_IMPORTANT, password)),
 					listener=listener)
 			else:
-				logging.info('Changed password for user %s(%s).' % (
+				logging.info('Changed password for user %s (uid=%s).' % (
 					stylize(ST_NAME, login),
 					stylize(ST_UGID, uid)),
 					listener=listener)
@@ -709,12 +724,11 @@ class UsersController(Singleton, LicornCoreController):
 
 			self.users[uid]['gecos'] = gecos
 
-			self.users[uid]['action'] = 'update'
 			LMC.backends[
 				self.users[uid]['backend']
-				].save_User(uid)
+				].save_User(uid, backend_actions.UPDATE)
 
-			logging.info('Changed GECOS for user %s(%s) to %s.' % (
+			logging.info('Changed GECOS for user %s (uid=%s) to %s.' % (
 				stylize(ST_NAME, login),
 				stylize(ST_UGID, uid),
 				stylize(ST_COMMENT, gecos)),
@@ -733,12 +747,11 @@ class UsersController(Singleton, LicornCoreController):
 
 			self.users[uid]['loginShell'] = shell
 
-			self.users[uid]['action'] = 'update'
 			LMC.backends[
 				self.users[uid]['backend']
-				].save_User(uid)
+				].save_User(uid, backend_actions.UPDATE)
 
-			logging.info('Changed shell for user %s(%s) to %s.' % (
+			logging.info('Changed shell for user %s (uid=%s) to %s.' % (
 				stylize(ST_NAME, login),
 				stylize(ST_UGID, uid),
 				stylize(ST_COMMENT, shell)),
@@ -770,10 +783,9 @@ class UsersController(Singleton, LicornCoreController):
 
 			self.users[uid]['locked'] = lock
 
-			self.users[uid]['action'] = 'update'
 			LMC.backends[
 				self.users[uid]['backend']
-				].save_User(uid)
+				].save_User(uid, backend_actions.UPDATE)
 	def ApplyUserSkel(self, login=None, uid=None, skel=None, listener=None):
 		""" Apply a skel on a user. """
 

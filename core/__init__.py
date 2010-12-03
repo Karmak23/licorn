@@ -18,7 +18,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Enumeration, Singleton
+from licorn.foundations.base      import MixedDictObject, Singleton
 from licorn.foundations.constants import licornd_roles
 
 def connect_error(dummy1, dummy2):
@@ -27,14 +27,16 @@ def connect_error(dummy1, dummy2):
 		''' system administrator (if it's not you, else you're in trouble).''',
 		200)
 
-class LicornMasterController(Enumeration, Singleton):
+class LicornMasterController(Singleton, MixedDictObject):
 	_init_conf_minimal = False
 	_init_conf_full    = False
+	_licorn_protected_attrs = MixedDictObject._licorn_protected_attrs
 	def __init__(self):
-		Enumeration.__init__(self)
+		MixedDictObject.__init__(self, 'LMC')
+		assert ltrace('core', '| %s.__init__(LMC)' % str(self.__class__))
 
-		# create the internal lock manager. LicornCoreObject class relies on it.
-		self.locks = Enumeration('locks')
+		# create the internal lock manager. GiantLockProtectedObject class relies on it.
+		self.locks = MixedDictObject('locks')
 
 	def init_conf(self, minimal=False, batch=False):
 		""" init the configuration object. 2 scenarii:
@@ -91,7 +93,9 @@ class LicornMasterController(Enumeration, Singleton):
 		self.groups.load()
 
 		# The Message processor is used to communicate with clients, via Pyro.
-		from messaging import MessageProcessor
+		# this is a special case coming from foundations, because other objects
+		# in foundations rely on it.
+		from licorn.foundations.messaging import MessageProcessor
 
 		self.msgproc = MessageProcessor(
 			ip_address=network.find_first_local_ip_address() \
@@ -110,7 +114,7 @@ class LicornMasterController(Enumeration, Singleton):
 
 		from privileges import PrivilegesWhiteList
 
-		self.locks.privileges = Enumeration()
+		self.locks.privileges = MixedDictObject()
 		self.locks.privileges.giant_lock = RLock()
 
 		self.privileges = PrivilegesWhiteList()
@@ -131,13 +135,13 @@ class LicornMasterController(Enumeration, Singleton):
 		from keywords import KeywordsController
 		from machines import MachinesController
 
-		self.locks.profiles = Enumeration()
+		self.locks.profiles = MixedDictObject()
 		self.locks.profiles.giant_lock = RLock()
 
-		self.locks.machines = Enumeration()
+		self.locks.machines = MixedDictObject()
 		self.locks.machines.giant_lock = RLock()
 
-		self.locks.keywords = Enumeration()
+		self.locks.keywords = MixedDictObject()
 		self.locks.keywords.giant_lock = RLock()
 
 		self.profiles = ProfilesController()
@@ -238,7 +242,7 @@ class LicornMasterController(Enumeration, Singleton):
 		self.system     = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
 		self.backends   = Pyro.core.getAttrProxyForURI("%s/backends" % pyroloc)
 
-		assert ltrace('timings', '@core.connect(): %.4fs' % (
+		assert ltrace('timings', '@LMC.connect(): %.4fs' % (
 			time.time() - start_time))
 		del start_time
 
@@ -247,10 +251,15 @@ class LicornMasterController(Enumeration, Singleton):
 		return (self.configuration, self.users, self.groups, self.profiles,
 			self.privileges, self.keywords, self.machines, self.system,
 			self.backends)
+	def release(self):
+		""" Release all Pyro proxys. """
+		assert ltrace('core', '| release()')
+		for controller in (self.configuration, self.users, self.groups, self.profiles,
+			self.privileges, self.keywords, self.machines, self.system,
+			self.backends):
+			controller._release()
 
 LMC = LicornMasterController()
-
-connect = LMC.connect
 
 if sys.getdefaultencoding() == "ascii":
 	reload(sys)

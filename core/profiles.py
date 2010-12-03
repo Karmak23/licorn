@@ -20,9 +20,9 @@ from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
 
 from licorn.core         import LMC
-from licorn.core.objects import LicornCoreObject
+from licorn.core.classes import GiantLockProtectedObject
 
-class ProfilesController(Singleton, LicornCoreObject):
+class ProfilesController(Singleton, GiantLockProtectedObject):
 	""" representation of /etc/licorn/profiles.xml, compatible with
 		gnome-system-tools. """
 	init_ok = False
@@ -37,7 +37,7 @@ class ProfilesController(Singleton, LicornCoreObject):
 		if ProfilesController.init_ok:
 			return
 
-		LicornCoreObject.__init__(self, 'profiles')
+		GiantLockProtectedObject.__init__(self, 'profiles')
 
 		ProfilesController.init_ok = True
 		assert ltrace('profiles', '< ProfilesController.__init__(%s)' %
@@ -155,7 +155,7 @@ class ProfilesController(Singleton, LicornCoreObject):
 
 			for profile in profiles:
 				data += ''' %s Profile %s:
-	Group: %s(%d)
+	Group: %s (gid=%d)
 	description: %s
 	Home: %s
 	Default skel: %s
@@ -314,7 +314,7 @@ class ProfilesController(Singleton, LicornCoreObject):
 				else:
 					if LMC.groups.is_standard_group(group):
 						raise exceptions.BadArgumentError(
-							'''The group %s(%s) is not a system group. It '''
+							'''The group %s (gid=%s) is not a system group. It '''
 							'''cannot be added as primary group of a '''
 							'''profile.''' % (
 							stylize(ST_NAME, group),
@@ -764,7 +764,6 @@ class ProfilesController(Singleton, LicornCoreObject):
 						break
 
 		assert ltrace('profiles', '''< ReapplyProfilesOfUsers()''')
-
 	def change_group_name_in_profiles(self, old_name, new_name, listener=None):
 		""" Change a group's name in the profiles groups list """
 
@@ -835,7 +834,7 @@ class ProfilesController(Singleton, LicornCoreObject):
 			raise exceptions.BadArgumentError(
 				"You must specify a GID, a name or a group to resolve from.")
 
-		#assert ltrace('profiles', '| resolve_gid_group_or_name(%s,%s,%s)' % (
+		#assert ltrace('profiles', '| resolve_gid_group_or_name(%s, %s, %s)' % (
 		#	gid, group, name))
 
 		if gid:
