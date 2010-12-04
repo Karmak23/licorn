@@ -6,7 +6,8 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time, pwd, grp, signal, os, select, termios, curses
+import os, sys, time, pwd, grp, signal, os, select
+import termios, curses, code, rlcompleter, readline
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
@@ -21,8 +22,11 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import filters, licornd_roles, message_type
 from licorn.foundations.thread    import _threads, _thcount
 
-from licorn.core   import LMC
+from licorn.core   import LMC, version
 from licorn.daemon import dthreads
+
+# everything below here is just a way to access everything in the interactor.
+from licorn.daemon import dqueues, dchildren, uptime
 
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
@@ -242,9 +246,24 @@ class StatusUpdaterThread(LicornBasicThread):
 	def run(self):
 		""" connect to local dbus system bus and forward every status change to
 			our controlling server. """
-
-
+		pass
 class LicornInteractorThread(LicornBasicThread):
+	class HistoryConsole(code.InteractiveConsole):
+		def __init__(self, locals=None, filename="<console>",
+			histfile=os.path.expanduser('~/.licorn/licornd_history')):
+			code.InteractiveConsole.__init__(self, locals, filename)
+			self.histfile = histfile
+
+		def init_history(self):
+			readline.parse_and_bind("tab: complete")
+			if hasattr(readline, "read_history_file"):
+				try:
+					readline.read_history_file(self.histfile)
+				except IOError:
+					pass
+		def save_history(self):
+			readline.write_history_file(self.histfile)
+
 	def __init__(self):
 		from licorn.daemon.core import dname, dchildren, get_daemon_status
 
@@ -365,6 +384,32 @@ class LicornInteractorThread(LicornBasicThread):
 							sys.stdout.flush()
 							sys.stderr.write(self.get_daemon_status(
 								long_output=self.long_output))
+						elif char in ('i', 'I'):
+							logging.notice('Entering interactive mode. '
+								'Welcome into licornd\'s arcanes…')
+
+							# FIXME: locals=globals() is probably a bit too much
+							# power. but we are debugging, an't we ?
+							interpreter = LicornInteractorThread.HistoryConsole(
+								locals=globals())
+
+							# put the TTY in standard mode (echo on).
+							termios.tcsetattr(self.fd,
+								termios.TCSADRAIN, self.old)
+							sys.ps1 = 'licornd> '
+							sys.ps2 = '...'
+							interpreter.init_history()
+							interpreter.interact(
+								banner="Licorn® %s, Python %s on %s" % (
+									version, sys.version.replace('\n', ''),
+									sys.platform))
+							interpreter.save_history()
+							logging.notice('Leaving interactive mode. '
+								'Welcome back to Real World™.')
+
+							# put the TTY back in echo off mode.
+							termios.tcsetattr(self.fd,
+								termios.TCSAFLUSH, self.new)
 
 						else:
 							logging.warning2(

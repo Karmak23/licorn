@@ -11,27 +11,27 @@ dstart_time = time.time()
 from licorn.foundations           import options, logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Enumeration, Singleton
+from licorn.foundations.base      import MixedDictObject, Singleton
 from licorn.foundations.thread    import _threads, _thcount
 from licorn.foundations.pyutils   import format_time_delta
 
 from licorn.core import LMC
 
-class LicornThreads(Enumeration, Singleton):
+class LicornThreads(MixedDictObject, Singleton):
 	pass
-class LicornQueues(Enumeration, Singleton):
+class LicornQueues(MixedDictObject, Singleton):
 	pass
-class ChildrenPIDs(Enumeration, Singleton):
+class ChildrenPIDs(MixedDictObject, Singleton):
 	pass
 
 # these objects will be global across the daemon and possibly the core,
 # usable everywhere.
-dthreads = LicornThreads()
-dqueues  = LicornQueues()
+dthreads = LicornThreads('daemon_threads')
+dqueues  = LicornQueues('daemon_queues')
 
 # following objects are used inside the daemon and the WMI process.
 dname            = 'licornd'
-dchildren         = ChildrenPIDs()
+dchildren         = ChildrenPIDs('daemon_children')
 dchildren.wmi_pid = None
 
 def clean_before_terminating(pname):
