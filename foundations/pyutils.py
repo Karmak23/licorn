@@ -8,7 +8,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import re
+import re, math
 from gettext import gettext as _
 
 from licorn.foundations import exceptions, logging, styles
@@ -47,7 +47,11 @@ def keep_true(x, y):
 
 	if x is True: return x
 	else:         return y
-def format_time_delta(delta_in_seconds, use_neg=False, long=True):
+def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
+	big_precision=False):
+	""" build a time-related human readable string from a time given in seconds.
+		How the delta is used is function of the arguments (it can be a time in
+		the past or in the future). """
 
 	if use_neg:
 		if delta_in_seconds < 0:
@@ -60,23 +64,29 @@ def format_time_delta(delta_in_seconds, use_neg=False, long=True):
 
 	time_delta_string = ''
 
-	if long:
-		year_text   = _('%d year%s, ')
-		month_text  = _('%dm%s')
-		day_text    = _('%d day%s, ')
-		hour_text   = _('%d hour%s, ')
-		min_text    = _('%d min%s, ')
-		second_text = _('%d sec%s')
+	if long_output:
+		sep1            = ', '
+		sep2            = ' '
+		year_text       = _('%d year%s')
+		month_text      = _('%dm%s')
+		day_text        = _('%d day%s')
+		hour_text       = _('%d hour%s')
+		min_text        = _('%d min%s')
+		second_text     = _('%d sec%s')
+		big_second_text = _('%.4f sec%s')
 
 	else:
-		year_text   = _('%dy%s')
-		month_text  = _('%dm%s')
-		day_text    = _('%dd%s ')
-		hour_text   ='%d%s:'
-		min_text    ='%d%s:'
-		second_text ='%d%s'
+		sep1            = ''
+		sep2            = ''
+		year_text       = _('%dy%s')
+		month_text      = _('%dm%s')
+		day_text        = _('%dd%s')
+		hour_text       ='%d%sh'
+		min_text        ='%d%sm'
+		second_text     ='%d%ss'
+		big_second_text ='%.4fs%s'
 
-	time_delta_sec  = int(delta_in_seconds)
+	time_delta_sec  = delta_in_seconds
 	time_delta_min  = 0
 	time_delta_hour = 0
 	time_delta_day  = 0
@@ -87,40 +97,57 @@ def format_time_delta(delta_in_seconds, use_neg=False, long=True):
 	s_sec  = ''
 	s_min  = ''
 	if time_delta_sec > 60:
-		time_delta_min = time_delta_sec / 60
+		time_delta_min = math.floor(time_delta_sec / 60)
 		time_delta_sec -= (time_delta_min * 60)
 		if time_delta_min > 60:
-			time_delta_hour = time_delta_min / 60
+			time_delta_hour = math.floor(time_delta_min / 60)
 			time_delta_min -= (time_delta_hour * 60)
 			if time_delta_hour > 24:
-				time_delta_day = time_delta_hour / 24
+				time_delta_day = math.floor(time_delta_hour / 24)
 				time_delta_hour -= (time_delta_day * 24)
 				if time_delta_day > 365:
-					time_delta_year = time_delta_day / 365
+					time_delta_year = math.floor(time_delta_day / 365)
 					time_delta_day -= (time_delta_year * 365)
-					if time_delta_year > 1 and long:
+					if time_delta_year > 1 and long_output:
 						s_year = 's'
 					if time_delta_year > 0:
 						time_delta_string += year_text % (
 							time_delta_year, s_year)
-				if time_delta_day > 1 and long:
+				if time_delta_day > 1 and long_output:
 					s_day = 's'
 				if time_delta_day > 0:
-					time_delta_string += day_text % (
-						time_delta_day, s_day)
-			if time_delta_hour > 1 and long:
+					time_delta_string += '%s%s' % (
+						sep1 if time_delta_string else '',
+						day_text % (time_delta_day, s_day)
+						)
+			if time_delta_hour > 1 and long_output:
 				s_hour = 's'
 			if time_delta_hour > 0:
-				time_delta_string += hour_text % (
-					time_delta_hour, s_hour)
-		if time_delta_min > 1 and long:
+				time_delta_string += '%s%s' % (
+					sep2 if time_delta_string else '',
+					hour_text % (time_delta_hour, s_hour)
+					)
+		if time_delta_min > 1 and long_output:
 			s_min = 's'
 		if time_delta_min > 0:
-			time_delta_string += min_text % (time_delta_min, s_min)
-	if time_delta_sec > 1 and long:
+			time_delta_string += '%s%s' % (
+					sep2 if time_delta_string else '',
+					min_text % (time_delta_min, s_min)
+					)
+	if time_delta_sec > 1 and long_output:
 		s_sec = 's'
 	if time_delta_sec > 0:
-		time_delta_string += second_text % (time_delta_sec, s_sec)
+		if big_precision:
+			time_delta_string += '%s%s' % (
+				sep2 if time_delta_string else '',
+				big_second_text % (time_delta_sec, s_sec)
+			)
+		else:
+			time_delta_string += '%s%s' % (
+				sep2 if time_delta_string else '',
+				second_text % (int(time_delta_sec), s_sec)
+				)
+
 	return time_delta_string_wrapper % time_delta_string
 def check_file_against_dict(conf_file, defaults, configuration,
 	batch=False, auto_answer=None):

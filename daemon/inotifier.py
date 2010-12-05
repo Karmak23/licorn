@@ -12,19 +12,20 @@ from threading   import Thread, Event, Semaphore, RLock, Timer
 from collections import deque
 
 from licorn.foundations           import logging
+from licorn.foundations.pyutils   import format_time_delta
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters, gamin_events
 
 from licorn.core        import LMC
-from licorn.daemon.core import dname
+from licorn.daemon.core import dname, dthreads, dstart_time
 
 class INotifier(Thread):
-	""" A Thread which collect INotify events and does what is appropriate with them. """
+	""" A Thread which collect INotify events and does what is appropriate with
+	 them. """
 
-	def __init__(self, checker, cache, pname=dname,
-		disable_boot_check=False):
+	def __init__(self, pname=dname, disable_boot_check=False):
 
 		Thread.__init__(self)
 
@@ -36,9 +37,8 @@ class INotifier(Thread):
 		self._to_add     = deque()
 		self._to_remove  = deque()
 
-		self.cache      = cache
-		self.aclchecker = checker
-		checker.set_inotifier(self)
+		self.call_counter = 0
+		self.last_call_time = None
 
 		# the next data structures are used to predict GAM behavior, to avoid
 		# doing things multiple times, and avoid missing events.
@@ -78,11 +78,16 @@ class INotifier(Thread):
 			% (self.name, long_output, precision))
 
 		def small_status():
-			return '%s(%s%s) %s %s' % (
+			return '%s(%s%s) %s (%s call%s%s) %s' % (
 				stylize(ST_NAME, self.name),
 				self.ident, stylize(ST_OK, '&') if self.daemon else '',
 				stylize(ST_OK, 'alive') \
 					if self.is_alive() else 'has terminated',
+				stylize(ST_COMMENT, self.call_counter),
+				's' if self.call_counter > 1 else '',
+				', last: %s' % format_time_delta(self.last_call_time - time.time(),
+					use_neg=True, long_output=False)
+						if self.last_call_time else '',
 				self.queues_status_str()
 				)
 
@@ -215,6 +220,9 @@ class INotifier(Thread):
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
+		self.call_counter += 1
+		self.last_call_time = time.time()
+
 		# with Gamin, sometimes it is an abspath, sometimes not.
 		# this happens on GAMChanged (observed the two), and
 		# GAMDeleted (observed only abspath).
@@ -272,7 +280,7 @@ class INotifier(Thread):
 					# path is a file, check it.
 					assert ltrace('inotifier', '''CHECK file %s.''' % (
 						stylize(ST_PATH, path)))
-					self.aclchecker.enqueue(path, gid)
+					dthreads.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -294,7 +302,7 @@ class INotifier(Thread):
 						# need it. Prepare ourselves to skip it.
 						self.expected[gamin.GAMChanged].append(path)
 
-				self.aclchecker.enqueue(path, gid)
+				dthreads.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -319,7 +327,7 @@ class INotifier(Thread):
 					stylize(ST_URL, 'GAMChanged'),
 					stylize(ST_PATH, path)))
 
-				self.aclchecker.enqueue(path, gid)
+				dthreads.aclchecker.enqueue(path, gid)
 
 		elif event == gamin.GAMMoved:
 
@@ -345,7 +353,7 @@ class INotifier(Thread):
 					self.expected[gamin.GAMDeleted].append(path + '/')
 
 			# TODO: remove recursively if DIR.
-			#self.cache.removeEntry(path)
+			#dthreads.cache.removeEntry(path)
 
 		elif event == gamin.GAMEndExist:
 			assert ltrace('inotifier', '%s Inotify on %s.' % (

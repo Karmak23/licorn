@@ -155,8 +155,7 @@ if __name__ == "__main__":
 		dthreads.aclchecker = ACLChecker(None, dname)
 
 		if LMC.configuration.licornd.inotifier.enabled:
-			dthreads.inotifier = INotifier(dthreads.aclchecker, None, dname,
-				options.no_boot_check)
+			dthreads.inotifier = INotifier(dname, options.no_boot_check)
 
 		dthreads.cmdlistener = CommandListener(dname=dname,
 			pids_to_wake=pids_to_wake)

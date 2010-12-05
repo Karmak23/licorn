@@ -41,7 +41,7 @@ def get_daemon_status(long_output=False, precision=None):
 
 	data = ('-- Licorn® daemon %sstatus: '
 		'up %s, %s threads, %s controllers, %s queues, %s locks\n'
-		'CPU: usr %ss, sys %ss MEM: res %.1fMb shr %.1fMb ush %.1fMb stk %.1fMb\n' % (
+		'CPU: usr %.3fs, sys %.3fs MEM: res %.2fMb shr %.2fMb ush %.2fMb stk %.2fMb\n' % (
 		stylize(ST_COMMENT, 'full ') if long_output else '',
 		stylize(ST_COMMENT, format_time_delta(time.time()-dstart_time)),
 		_thcount(), stylize(ST_UGID, len(LMC)),
@@ -58,17 +58,18 @@ def get_daemon_status(long_output=False, precision=None):
 			', '.join([ '%s(%s)' % (stylize(ST_NAME, qname),
 				queue.qsize()) for qname, queue in dqueues.iteritems()]))
 
-	for controller in LMC:
-		if hasattr(controller, 'dump_status'):
-			data += 'controller %s\n' % controller.dump_status(long_output,
-				precision)
-		else:
-			data += ('''controller %s%s doesn't implement '''
-				'''dump_status().\n''' % (
-				stylize(ST_NAME, controller.name),
-				'(%s)' % stylize(ST_IMPORTANT, 'locked') if controller.is_locked() else ''))
+	if long_output:
+		for controller in LMC:
+			if hasattr(controller, 'dump_status'):
+				data += 'controller %s\n' % controller.dump_status()
+			else:
+				data += ('''controller %s%s doesn't implement '''
+					'''dump_status().\n''' % (
+					stylize(ST_NAME, controller.name),
+					'(%s)' % stylize(ST_IMPORTANT, 'locked')
+						if controller.is_locked() else ''))
 
-	for thread in dthreads:
+	for thread in dthreads.values():
 		if thread.is_alive():
 			if long_output or ( not long_output
 				and not isinstance(thread, LicornPoolJobThread)):

@@ -128,6 +128,11 @@ class MixedDictObject(NamedObject, dict):
 	def __iter__(self):
 		assert ltrace('base', '| MixedDictObject.__iter__(%s)' % self.name)
 		return dict.itervalues(self)
+	def get(self, key, other=None):
+		assert ltrace('base', '| MixedDictObject.get(%s)' % key)
+		if key in self.keys():
+			return self.__getitem__(key)
+		return None
 	def __getattr__(self, attribute):
 		""" Called only when a normal call to "self.attribute" fails. """
 		assert ltrace('base', '| MixedDictObject.__getattr__(%s)' % attribute)
@@ -147,6 +152,12 @@ class MixedDictObject(NamedObject, dict):
 			dict.__setattr__(self, attribute, value)
 		else:
 			dict.__setitem__(self, attribute, value)
+	def __delattr__(self, key):
+		assert ltrace('base', '| MixedDictObject.__delattr__(%s)' % key)
+		if key[0] == '_' or key in self.__class__._licorn_protected_attrs:
+			dict.__delattr__(self, key)
+		else:
+			dict.__delitem__(self, key)
 	def dump_status(self, long_output=False, precision=None):
 		assert ltrace('base', '| %s.dump_status(%s, %s)' % (self.name,
 			long_output, precision))
