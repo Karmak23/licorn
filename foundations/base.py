@@ -142,9 +142,8 @@ class MixedDictObject(NamedObject, dict):
 		"""
 		assert ltrace('base', '| MixedDictObject.__setattr__(%s, %s)' % (
 			attribute, value))
-		if attribute[0] == '_' \
-			or attribute in self.__class__._licorn_protected_attrs \
-			or callable(attribute):
+		if attribute[0] == '_' or callable(value) \
+			or attribute in self.__class__._licorn_protected_attrs:
 			dict.__setattr__(self, attribute, value)
 		else:
 			dict.__setitem__(self, attribute, value)
@@ -223,6 +222,12 @@ class TreeNode(NamedObject):
 		""" used to avoid crashing at the end of programs. """
 		assert ltrace('base', '| Enumeration_v2._release(~FAKE~)')
 		pass
+class ReverseMappingDict(dict):
+	""" Small class to make a dict callable() by returning getitem() when
+		called. This avoids the need to create a function next to the dict
+		to implement reverse mappings, the simple way. """
+	def __call__(self, item):
+		return self.__getitem__(item)
 
 # old-style classes, or classes to be removed at next refactor run.
 class Enumeration(object):

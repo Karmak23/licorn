@@ -60,7 +60,19 @@ class Machine(CoreStoredObject):
 		# the Pyro proxy (if the machine has one) for contacting it across the
 		# network.
 		self.system      = system
+	def shutdown(self, warn_users=True, listener=None):
+		""" Shutdown a machine, after having warned the connected user(s) if
+			asked to."""
 
+		if self.system:
+			self.system.shutdown()
+			self.status == host_status.SHUTTING_DOWN
+			logging.info('Shut down machine %s.' % self.hostname,
+				listener=listener)
+
+		else:
+			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
+				'''non remote-controlled machine!''')
 	def __str__(self):
 		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
 			self.__class__,
@@ -409,16 +421,7 @@ class MachinesController(Singleton, CoreController):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
-		hostname = self[mid].hostname
-
-		if self[mid].system:
-			self[mid].system.shutdown()
-			self[mid].status == host_status.SHUTTING_DOWN
-			logging.info('Shut down machine %s.' % hostname, listener=listener)
-
-		else:
-			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
-				'''non remote-controlled machine!''')
+		self[mid].shutdown(warn_users=warn_users, listener=listener)
 	def is_alt(self, mid):
 		""" Return True if the machine is an ALT client, else False. """
 

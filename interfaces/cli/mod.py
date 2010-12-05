@@ -428,15 +428,14 @@ def mod_machine(opts, args, machines, **kwargs):
 	mids_to_mod = cli_select(machines, 'machine',
 			args,
 			[
-				(opts.hostname, machines.hostname_to_mid),
-				(opts.mid, machines.confirm_mid)
+				(opts.hostname, machines.by_hostname),
+				(opts.mid, machines.has_key)
 			],
 			default_selection=selection)
 
-	for machine_addr in mids_to_mod:
+	for machine in mids_to_mod:
 		if opts.shutdown:
-			machines.shutdown(machine_addr, warn_users=opts.warn_users,
-				listener=opts.listener)
+			machine.shutdown(warn_users=opts.warn_users, listener=opts.listener)
 def mod_keyword(opts, args, keywords, **kwargs):
 	""" Modify a keyword. """
 

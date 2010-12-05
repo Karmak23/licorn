@@ -6,6 +6,8 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
+import Pyro
+
 from threading                    import current_thread
 from licorn.foundations           import logging
 from licorn.foundations.styles    import *
@@ -180,11 +182,11 @@ def pool_job_pyrofinder(mid, listener=None, *args, **kwargs):
 						LMC.configuration.licornd.pyro.port))
 			remotesys._setTimeout(2)
 			remotesys.noop()
-		except:
+		except Exception, e:
 			assert ltrace('machines',
 				'  %s: find_pyrosys(): %s is not pyro enabled.' %(caller,
 				mid))
-
+			print e
 			machines.guess_host_type(mid)
 		else:
 			machines[mid].system_type = remotesys.get_host_type()

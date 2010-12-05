@@ -162,7 +162,7 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 				backend=self
 				)
 
-		assert ltrace('dnsmasq', '< load_machines(%s)' % self.machines)
+		assert ltrace('dnsmasq', '< load_machines()')
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass

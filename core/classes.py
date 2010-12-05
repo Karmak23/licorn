@@ -13,7 +13,9 @@ from threading import RLock, current_thread
 
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import NamedObject, MixedDictObject, pyro_protected_attrs
+from licorn.foundations.base      import NamedObject, MixedDictObject, \
+											ReverseMappingDict, \
+											pyro_protected_attrs
 from licorn.foundations.constants import host_status, host_types
 
 from licorn.core import LMC
@@ -74,12 +76,6 @@ class CoreController(GiantLockProtectedObject):
 			controller's backends.
 		- the reverse mapping via one or more protected dictionnary.
 	"""
-	class ReverseMappingDict(dict):
-		""" Small class to make a dict callable() by returning getitem() when
-			called. This avoids the need to create a function next to the dict
-			to implement reverse mappings, the simple way. """
-		def __call__(self, item):
-			return self.__getitem__(item)
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		GiantLockProtectedObject.__init__(self, name=name, warnings=warnings)
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
@@ -94,9 +90,9 @@ class CoreController(GiantLockProtectedObject):
 		# for machines...).
 		self._reverse_mappings = MixedDictObject(self.name + '_reverse_mappings')
 		for mapping_name in reverse_mappings:
-			mapping = CoreController.ReverseMappingDict()
-			self.__setattr__('_by_' + mapping_name, mapping)
-			setattr(self._reverse_mappings, mapping_name, mapping)
+			mapping = ReverseMappingDict()
+			self.__setattr__('by_' + mapping_name, mapping)
+			self._reverse_mappings[mapping_name] = mapping
 
 		# prefixed with '_', they are automatically protected and stored out
 		# of the dict() part of self, thanks to MixedDictObject.
@@ -106,9 +102,14 @@ class CoreController(GiantLockProtectedObject):
 		self.find_prefered_backend()
 	def __setitem__(self, key, value):
 		""" Add a new element inside us and update all reverse mappings. """
+		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
+			key, value))
 		with self.lock():
 			GiantLockProtectedObject.__setitem__(self, key, value)
 			for mapping_name, mapping_dict in self._reverse_mappings.items():
+				assert ltrace(self.name,
+					'| CoreController.__setitem__(reverse %s for %s)' % (
+						mapping_name, getattr(value, mapping_name)))
 				mapping_dict[getattr(value, mapping_name)] = value
 	def __delitem__(self, key):
 		""" Delete data inside us, but remove reverse mappings first. """
@@ -243,7 +244,8 @@ class CoreUnitObject(NamedObject):
 			'| CoreUnitObject.__init__(%s, %s, %s)' % (
 				name, oid, controller))
 
-		assert oid is not None and controller is not None
+		#assert oid is not None
+		assert controller is not None
 
 		if oid:
 			self._oid = oid
