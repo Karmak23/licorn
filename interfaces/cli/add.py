@@ -525,8 +525,9 @@ def add_privilege(opts, args, privileges, **kwargs):
 	privileges.add(opts.privileges_to_add.split(','), listener=opts.listener)
 def add_machine(opts, args, machines, **kwargs):
 
-	if opts.discover:
-		machines.scan_network(network_to_scan=opts.discover,
+	if opts.auto_scan or opts.discover:
+		machines.scan_network(
+			network_to_scan=None if opts.auto_scan else [ opts.discover ],
 			listener=opts.listener)
 
 def add_main():

@@ -6,7 +6,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time, signal, select, curses, termios, resource
+import os, sys, time, select, curses, termios, resource
 
 from optparse import OptionParser, OptionGroup
 

@@ -16,7 +16,7 @@ from collections import deque
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import filters, licornd_roles
+from licorn.foundations.constants import filters, licornd_roles, host_status
 
 from licorn.core                  import LMC
 from licorn.daemon.core           import dname, dthreads
@@ -25,10 +25,16 @@ from licorn.daemon.threads        import LicornBasicThread
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	valid_users = []
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
-	# the values will be overridden by daemon.configuration when thread starts.
-	# see configuration objects for details about port numbers.
+	# the values after this point will be overridden by daemon.configuration
+	# when thread starts. See configuration object for details about port
+	# numbers.
 	pyro_port = None
+	# the main server IP address
 	server = None
+	# a list of other server IP addresses, gathered from the
+	# daemon.client.thread_greeter (needed when our server has more than one
+	# interface, because connection can initiate from any of them).
+	server_addresses = []
 	def __init__(self):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
 	def acceptHost(self, daemon, connection):
@@ -74,29 +80,21 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
 				else:
 					return self.acceptUid(daemon, client_uid, client_addr,
-						client_socket)
-
-				if client_socket <= 1024 \
-					or client_socket == LicornPyroValidator.pyro_port:
-					# restricted port, only root can do that.
-					# connection is authorized.
-					return 1, 0
-				else:
-					logging.warning('connection tentative from %s:%s' % (
-						client_addr, client_socket))
-					return 0, Pyro.constants.DENIED_HOSTBLOCKED
+						client_socket, remote_system)
 			else:
 				# FIXME: we are on the client, just accept any connection
 				# coming from our server, else deny. This must be refined to be
 				# sure the connection is valid, but i've got no idea yet on how
 				# to do it properly.
-				if client_addr == LicornPyroValidator.server:
+				if client_addr == LicornPyroValidator.server \
+					or client_addr in LicornPyroValidator.server_addresses:
 					return 1, 0
 				else:
 					logging.warning('connection tentative from %s:%s' % (
 						client_addr, client_socket))
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
-	def acceptUid(self, daemon, client_uid, client_addr, client_socket):
+	def acceptUid(self, daemon, client_uid, client_addr, client_socket,
+		remote_pyro_system=None):
 		try:
 			# measured with LICORN_TRACE=timings, using pwd.getpwuid()
 			# is at best as quick as users.uid_to_login(), but generally
@@ -115,6 +113,15 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					''' %s:%s, user %s(%s).''' % (client_addr, client_socket,
 					stylize(ST_NAME, client_login),
 					stylize(ST_UGID, client_uid)))
+
+				# the client is connecting to us, it is thus implicitely online.
+				# TODO: put this ouside of the 'if client_uid...', to be able to
+				# note online any host trying to connect ? this could lead to
+				# DDoS or creation of ghost machines and must be investigated
+				# before implementation.
+				if client_addr not in LicornPyroValidator.local_interfaces:
+					LMC.machines.update_status(client_addr,
+						status=host_status.ONLINE, system=remote_pyro_system)
 
 				# connection is authorized.
 				return 1, 0
@@ -203,10 +210,10 @@ class CommandListener(LicornBasicThread):
 				)]['memberUid']
 		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port
 		LicornPyroValidator.local_interfaces.extend(
-			network.find_local_ip_addresses())
+			network.local_ip_addresses())
 
 		if LMC.configuration.licornd.role == licornd_roles.CLIENT:
-			LicornPyroValidator.server = LMC.configuration.server_address
+			LicornPyroValidator.server = LMC.configuration.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(LicornPyroValidator())
 		self.pyro_daemon.cmdlistener = self
@@ -234,6 +241,8 @@ class CommandListener(LicornBasicThread):
 				LMC.backends, 'backends')
 
 		# client and server get the SystemController
+		# FIXME: this is probably a bad security thing for the server. Check it
+		# is really needed and wipe it if strictly not.
 		self.uris['system'] = self.pyro_daemon.connect(
 			LMC.system, 'system')
 

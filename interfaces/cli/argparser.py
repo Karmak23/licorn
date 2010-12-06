@@ -792,10 +792,13 @@ def add_machine_parse_arguments(app, configuration):
 		stylize(ST_OPTION, "Add machine options "))
 
 	machine.add_option("--discover", '--scan', '--scan-network',
-		action="store", dest="discover", default='local',
+		action="store", dest="discover", default=None,
 		help="Scan a network for online hosts and attach them to the "
-			"system (with no other arguments: scan the local network). Syntax: "
-			"192.168.0.0/24 or 10.0.0.0/8 and the like.")
+			"system. Syntax: 192.168.0.0/24 or 10.0.0.0/8 and the like.")
+
+	machine.add_option('-a', '--auto-discover', '--auto-scan',
+		action='store_true', dest='auto_scan', default=False,
+		help="Scan the local area network(s), looking for unattached hosts.")
 
 	parser.add_option_group(machine)
 

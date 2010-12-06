@@ -115,10 +115,27 @@ if __name__ == "__main__":
 	# FIXME: why do that ?
 	options.msgproc = LMC.msgproc
 
+	# client and server mode get the benefits of periodic thread cleaner.
+	dthreads.cleaner = LicornJobThread(dname,
+		target=thread_periodic_cleaner,
+		time=(time.time()+30.0),
+		delay=LMC.configuration.licornd.threads.wipe_time,
+		tname='PeriodicThreadsCleaner')
+
 	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
 
 		dthreads.cmdlistener = CommandListener(dname,
 			pids_to_wake=pids_to_wake)
+
+		from licorn.daemon import client
+
+		# start the greeter 1 second later, because our Pyro part must be fully
+		# operational before the greeter starts to do anything.
+		dthreads.greeter = LicornJobThread(dname,
+				target=client.thread_greeter,
+				time=(time.time()+1.0), count=1, tname='ClientToServerGreeter')
+
+		# dthreads.status = PULL IN the dbus status pusher
 
 		#dthreads.syncer = ClientSyncer(dname)
 
@@ -145,12 +162,6 @@ if __name__ == "__main__":
 		#dthreads.periodic_scanner = LicornJobThread(dname,
 		#	target=LMC.machines.thread_periodic_scanner,
 		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
-
-		dthreads.cleaner = LicornJobThread(dname,
-			target=thread_periodic_cleaner,
-			time=(time.time()+30.0),
-			delay=LMC.configuration.licornd.threads.wipe_time,
-			tname='PeriodicThreadsCleaner')
 
 		dthreads.aclchecker = ACLChecker(None, dname)
 
@@ -201,8 +212,10 @@ if __name__ == "__main__":
 				target=pool_job_pyrofinder,	daemon=True))
 
 	if not options.daemon:
-		# set up the interaction with admin on stdin / stdout. Only if we do not
-		# fork into the background.
+		# set up the interaction with admin on TTY std*, only if we do not
+		# fork into the background. This is a special thread case, not handled
+		# by the global start / stop mechanism, to be able to start it before
+		# every other thread, and stop it after all other have been stopped.
 		dthreads._interactor = LicornInteractorThread()
 		dthreads._interactor.start()
 

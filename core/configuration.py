@@ -110,6 +110,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		self.LoadShells()
 		self.LoadSkels()
 		self.detect_services()
+		self.network_infos()
 	def load3(self, batch=False):
 		self.load_nsswitch()
 		# TODO: monitor configuration files from a thread !
@@ -353,7 +354,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 					)
 				)
 		elif self.licornd.role == licornd_roles.CLIENT:
-			self.server_address = network.find_server(self)
+			self.server_main_address = network.find_server(self)
 	def check_directive_daemon_threads(self):
 		""" check the pingers number for correctness. """
 		assert ltrace('configuration', '| check_directive_daemon_threads()')
@@ -1198,7 +1199,13 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		""" Export «self» (the system configuration) to XML. """
 		raise NotImplementedError(
 			'''LicornConfig::ExportXML() not yet implemented !''')
+	def network_infos(self):
+		self.network = LicornConfigObject()
 
+		# reference the method, to be sure to return always the current
+		# real interfaces of the machine.
+		self.network.interfaces = network.interfaces
+		self.network.local_ip_addresses = network.local_ip_addresses
 	### MODIFY ###
 	def ModifyHostname(self, new_hostname):
 		"""Change the hostname of the running system."""

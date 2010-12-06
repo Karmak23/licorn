@@ -83,9 +83,12 @@ def clean_before_terminating(pname):
 			del th
 			del dthreads[thname]
 
-	if hasattr(dthreads, '_interactor'):
+	try:
 		assert ltrace('thread', 'joining interactor thread.')
 		dthreads._interactor.stop()
+	except AttributeError:
+		pass
+	else:
 		dthreads._interactor.join()
 
 	# display the remaining active threads (presumably stuck hanging on

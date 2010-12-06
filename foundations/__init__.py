@@ -61,10 +61,10 @@ def check_python_modules_dependancies():
 	warn_file = '%s/.licorn_dont_warn_optmods' % os.getenv('HOME')
 
 	reqmods = (
-		('Pyro',    'pyro'),
-		('posix1e', 'python-pylibacl'),
-		('gamin',   'python-gamin'),
-		('dumbnet', 'python-dumbnet')
+		('posix1e',   'python-pylibacl'),
+		('gamin',     'python-gamin'),
+		('Pyro',      'pyro'),
+		('netifaces', 'python-netifaces')
 		)
 
 	reqmods_needed = []

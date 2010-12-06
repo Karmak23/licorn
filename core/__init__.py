@@ -27,13 +27,13 @@ def connect_error(dummy1, dummy2):
 		''' system administrator (if it's not you, else you're in trouble).''',
 		200)
 
-class LicornMasterController(Singleton, MixedDictObject):
+class LicornMasterController(MixedDictObject):
 	_init_conf_minimal = False
 	_init_conf_full    = False
 	_licorn_protected_attrs = MixedDictObject._licorn_protected_attrs
-	def __init__(self):
-		MixedDictObject.__init__(self, 'LMC')
-		assert ltrace('core', '| %s.__init__(LMC)' % str(self.__class__))
+	def __init__(self, name='LMC'):
+		MixedDictObject.__init__(self, name)
+		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__), name))
 
 		# create the internal lock manager. GiantLockProtectedObject class relies on it.
 		self.locks = MixedDictObject('locks')
@@ -167,11 +167,11 @@ class LicornMasterController(Singleton, MixedDictObject):
 		self._localconfig = LicornConfiguration(minimal=True)
 
 		if self._localconfig.licornd.role == licornd_roles.SERVER:
-			pyroloc = 'PYROLOC://localhost:%s' % (
+			pyroloc = 'PYROLOC://127.0.0.1:%s' % (
 				self._localconfig.licornd.pyro.port)
 		else:
 			pyroloc = 'PYROLOC://%s:%s' % (
-				self._localconfig.server_address,
+				self._localconfig.server_main_address,
 				self._localconfig.licornd.pyro.port)
 
 		# the opposite is already used to define licornd.pyro.port
@@ -196,15 +196,16 @@ class LicornMasterController(Singleton, MixedDictObject):
 			except Pyro.errors.ProtocolError, e:
 				if second_try:
 					if self._localconfig.licornd.role == licornd_roles.SERVER:
-						logging.error('''Can't connect to the daemon, but it has been'''
-							''' successfully launched. I suspect you're in trouble '''
-							'''(was: %s)''' % e, 199)
+						logging.error('''Can't connect to the daemon, but it '''
+							'''has been successfully launched. I suspect '''
+							'''you're in trouble (was: %s)''' % e, 199)
 					else:
-						logging.error('''Can't reach our daemon at %s, aborting. '''
-							'''Check your network connection, cable, DNS and '''
-							'''firewall.''' % stylize(ST_ADDRESS,
-								'%s:%s' % (self._localconfig.server_address,
-									_self.localconfig.licornd.pyro.port)))
+						logging.error('''Can't reach our daemon at %s, '''
+							'''aborting. Check your network connection, '''
+							'''cable, DNS and firewall.''' % stylize(ST_ADDRESS,
+								'%s:%s' % (
+									self._localconfig.server_main_address,
+									self._localconfig.licornd.pyro.port)))
 
 				if self._localconfig.licornd.role == licornd_roles.SERVER:
 					# the daemon will fork in the background and the call will return

@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, socket, Pyro.core
+import os, sys, socket, netifaces, Pyro.core
 
 from threading import RLock, current_thread
 from time      import time, strftime, gmtime, localtime
@@ -16,7 +16,7 @@ from licorn.foundations           import process, hlstr, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.network   import build_hostname_from_ip, \
-										find_local_ip_addresses
+										interfaces, local_ip_addresses
 from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import host_status, filters, host_types
 
@@ -73,6 +73,25 @@ class Machine(CoreStoredObject):
 		else:
 			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
 				'''non remote-controlled machine!''')
+	def update_status(self, status, listener=None):
+		""" update the current machine status, in a clever manner. """
+		with self.lock():
+			if status is None:
+				# this part is not going to happen, because this method is
+				# called (indirectly, via SystemController) from clients.
+				logging.warning('machines.update_status() called with '
+					'status=None for machine %s(%s)' % (hostname, mid),
+					listener=listener)
+			else:
+				# don't do anything if the status is already the same or finer.
+				# E.G. ACTIVE is finer than ONLINE, which doesn't known if the
+				# machine is idle or not.
+				if not self.status & status:
+					logging.progress("Updated machine %s's status to %s." % (
+						stylize(ST_NAME, self.hostname),
+						stylize(ST_COMMENT, host_status[status])
+						), listener=listener)
+					self.status = status
 	def __str__(self):
 		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
 			self.__class__,
@@ -133,7 +152,19 @@ class MachinesController(Singleton, CoreController):
 		assert ltrace('machines', '> %s: scan_network(%s)' % (
 			caller, network_to_scan))
 
-		up_hosts, down_hosts = self.run_nmap([ network_to_scan ])
+		if network_to_scan is None:
+			network_to_scan = []
+			for iface in interfaces():
+				iface_infos = netifaces.ifaddresses(iface)
+				if 2 in iface_infos:
+					logging.info('Programming scan of local area network %s/%s.' % (
+						iface_infos[2][0]['addr'], iface_infos[2][0]['netmask']),
+						listener=listener)
+					# FIXME: don't hard-code /24, but nmap doesn't understand
+					# 255.255.255.0 and al...
+					network_to_scan.append('%s/24' % iface_infos[2][0]['addr'])
+				# else: interface as no IPv4 address assigned, skip it.
+		up_hosts, down_hosts = self.run_nmap(network_to_scan)
 
 		with self.lock():
 			current_mids = self.keys()
@@ -141,7 +172,11 @@ class MachinesController(Singleton, CoreController):
 		# we have to skip our own addresses, else pyro will die after having
 		# exhausted the max number of threads (trying connecting to ourself in
 		# loop...).
-		#current_mids.extend(find_local_ip_addresses())
+		for iface in local_ip_addresses():
+			try:
+				up_hosts.remove(iface)
+			except:
+				pass
 
 		for hostip in up_hosts:
 			if hostip in current_mids:
@@ -273,21 +308,26 @@ class MachinesController(Singleton, CoreController):
 		logging.notice('machines.guess_host_type() not implemented.')
 
 		return
-	def update_status(self, mid, status=None, listener=None,
+	def update_status(self, mid, status=None, system=None, listener=None,
 		*args, **kwargs):
 
-		assert ltrace('machines', '| update_status(%s)' % status)
+		assert ltrace('machines', '| update_status(%s, %s)' % (mid, status))
 
-		hostname = self[mid].hostname
+		if mid in self.keys():
+			self[mid].update_status(status, listener)
 
-		with LMC.locks.machines[mid]:
-			if status is None:
-				# this part is not going to happen, because this method is called
-				# (indirectly, via SystemController) from clients.
-				logging.warning('machines.update_status() called with status=None '
-					'for machine %s(%s)' % (hostname, mid), listener=listener)
-			else:
-				self[mid].status = status
+		elif system:
+			# this is a self-declaring pyro-enabled host. create it.
+			self[mid] = Machine(mid=mid,
+				hostname=build_hostname_from_ip(mid),
+				backend=Enumeration('null_backend'),
+				system=system,
+				status=status)
+
+			# try to reverse the hostname, but don't wait
+			dqueues.reverse_dns.put(mid)
+		else:
+			logging.warning('update_status() called with invalid MID %s!' % mid)
 	def WriteConf(self, mid=None):
 		""" Write the machine data in appropriate system files."""
 
