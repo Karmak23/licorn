@@ -42,7 +42,7 @@ class ACLChecker(LicornThread):
 	def process_message(self, event):
 		""" Process Queue and apply ACL on the fly, then update the cache. """
 
-		#assert logging.debug('%s: got message %s.' % (self.name, event))
+		assert ltrace('aclchecker','| process_message(%s)' % str(event))
 		path, gid = event
 
 		if path is None: return
@@ -82,6 +82,6 @@ class ACLChecker(LicornThread):
 			#logging.warning("%s: thread is stopped, not enqueuing %s|%s." % (self.name, path, gid))
 			return
 
-		assert ltrace ('cache', '%s: enqueuing message %s.' % (
-			self.name, (path, gid)))
+		assert ltrace ('aclchecker', '| enqueue(%s, %s)' % (
+			path, gid))
 		LicornThread.dispatch_message(self, (path, gid))
