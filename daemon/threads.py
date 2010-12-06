@@ -6,9 +6,7 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time, pwd, grp, signal, os, select
-import termios, curses, code, readline
-from rlcompleter import Completer
+import os, sys, time
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
@@ -19,15 +17,12 @@ from collections import deque
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, dump, fulldump
+from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import filters, licornd_roles, message_type
 from licorn.foundations.thread    import _threads, _thcount
 
 from licorn.core   import LMC, version
 from licorn.daemon import dthreads
-
-# everything below here is just a way to access everything in the interactor.
-from licorn.daemon import dqueues, dchildren, uptime
 
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
@@ -248,203 +243,6 @@ class StatusUpdaterThread(LicornBasicThread):
 		""" connect to local dbus system bus and forward every status change to
 			our controlling server. """
 		pass
-class LicornInteractorThread(LicornBasicThread):
-	class HistoryConsole(code.InteractiveConsole):
-		def __init__(self, locals=None, filename="<licornd_console>",
-			histfile=os.path.expanduser('~/.licorn/licornd_history')):
-			code.InteractiveConsole.__init__(self, locals, filename)
-			self.histfile = histfile
-
-		def init_history(self):
-			readline.set_completer(Completer(namespace=self.locals).complete)
-			readline.parse_and_bind("tab: complete")
-			if hasattr(readline, "read_history_file"):
-				try:
-					readline.read_history_file(self.histfile)
-				except IOError:
-					pass
-		def save_history(self):
-			readline.write_history_file(self.histfile)
-
-	def __init__(self):
-		from licorn.daemon.core import dname, dchildren, get_daemon_status
-
-		LicornBasicThread.__init__(self, dname, tname='LicornInteractor')
-		self.get_daemon_status = get_daemon_status
-		self.wmi_pid = dchildren.wmi_pid
-		self.long_output = False
-		# make it daemon so that it doesn't block the master when stopping.
-		#self.daemon = True
-	def run(self):
-		""" prepare stdin for interaction and wait for chars. """
-		if sys.stdin.isatty():
-			assert ltrace('thread', '%s running' % self.name)
-
-			curses.setupterm()
-			clear = curses.tigetstr('clear')
-
-			# see tty and termios modules for implementation details.
-			self.fd = sys.stdin.fileno()
-			self.old = termios.tcgetattr(self.fd)
-			self.new = termios.tcgetattr(self.fd)
-
-			# put the TTY in nearly raw mode to be able to get characters
-			# one by one (not to wait for newline to get one).
-
-			# lflags
-			self.new[3] = \
-				self.new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
-			self.new[6][termios.VMIN] = 1
-			self.new[6][termios.VTIME] = 0
-
-			while not self._stop_event.isSet():
-				try:
-					try:
-						termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new)
-						readf, writef, errf = select.select(
-							[ self.fd ], [], [], 0.1)
-						if readf == []:
-							continue
-						else:
-							char = sys.stdin.read(1)
-					except KeyboardInterrupt:
-						sys.stderr.write("\n")
-						raise
-					else:
-						# control characters from
-						# http://www.unix-manuals.com/refs/misc/ascii-table.html
-						if char == '\n':
-							sys.stderr.write('\n')
-
-						elif char in ('m', 'M'):
-							"""
-							sys.stderr.write('\n'.join(['%s: %s' % (
-								x, type(getattr(LMC.machines.machines, x)))
-									for x in dir(LMC.machines.machines)
-									if str(type(getattr(LMC.machines.machines, x))) == "<type 'weakproxy'>"]) + '\n')
-							"""
-							sys.stderr.write('\n'.join(['%s: %s' % (
-								x, type(getattr(LMC.machines, x)))
-									for x in dir(LMC.machines)
-									]) + '\n')
-
-						elif char in ('u', 'U'):
-							sys.stderr.write('\n'.join(['%s: %s' % (
-								x, type(getattr(LMC.users, x)))
-									for x in dir(LMC.users)]) + '\n')
-
-						elif char in ('f', 'F', 'l', 'L'):
-
-							self.long_output = not self.long_output
-							logging.notice('switched long_output status to %s.'
-								% self.long_output)
-
-						elif char in ('t', 'T'):
-							sys.stderr.write('%s active threads: %s\n' % (
-								_thcount(), _threads()))
-
-						elif char == '\f': # ^L (form-feed, clear screen)
-							sys.stdout.write(clear)
-							sys.stdout.flush()
-
-						elif char == '': # ^R (refresh / reload)
-							#sys.stderr.write('\n')
-							os.kill(os.getpid(), signal.SIGUSR1)
-
-						elif char == '': # ^U kill -15
-							# no need to log anything, process will display
-							# 'signal received' messages.
-							#logging.warning('%s: killing ourselves softly.' %
-							#	self.name)
-
-							self.stop()
-							# no need to kill WMI, terminate() will do it clean.
-							os.kill(os.getpid(), signal.SIGTERM)
-
-						elif char == '\v': # ^K (Kill -9!!)
-							logging.warning('%s: killing ourselves badly.' %
-								self.name)
-
-							self.stop()
-
-							if self.wmi_pid:
-								try:
-									os.kill(self.wmi_pid, signal.SIGKILL)
-								except OSError, e:
-									if e.errno != 3:
-										# errno 3 is 'no such process', forget it.
-										raise e
-
-							os.kill(os.getpid(), signal.SIGKILL)
-
-						elif char == '':
-							sys.stderr.write(self.get_daemon_status(
-								long_output=self.long_output))
-
-						elif char in (' ', ''): # ^Y
-							sys.stdout.write(clear)
-							sys.stdout.flush()
-							sys.stderr.write(self.get_daemon_status(
-								long_output=self.long_output))
-						elif char in ('i', 'I'):
-							logging.notice('Entering interactive mode. '
-								'Welcome into licornd\'s arcanes…')
-
-							# FIXME: trap SIGINT to avoid shutting down the
-							# daemon by mistake. this won't work easily from
-							# here (only MainThread can use signal.signal()).
-							#def interruption(x,y):
-							#	raise KeyboardInterrupt
-							#signal.signal(signal.SIGINT, interruption)
-
-							# NOTE: we intentionnaly restrict the interpreter
-							# environment, else it
-							interpreter = LicornInteractorThread.HistoryConsole(
-								locals={
-									'LMC'      : LMC,
-									'dqueues'  : dqueues,
-									'dthreads' : dthreads,
-									'version'  : version,
-									'uptime'   : uptime,
-									'dump'     : dump,
-									'fulldump' : fulldump,
-									})
-
-							# put the TTY in standard mode (echo on).
-							termios.tcsetattr(self.fd,
-								termios.TCSADRAIN, self.old)
-							sys.ps1 = 'licornd> '
-							sys.ps2 = '...'
-							interpreter.init_history()
-							interpreter.interact(
-								banner="Licorn® %s, Python %s on %s" % (
-									version, sys.version.replace('\n', ''),
-									sys.platform))
-							interpreter.save_history()
-							logging.notice('Leaving interactive mode. '
-								'Welcome back to Real World™.')
-
-							# FIXME: restore SIGING trapping to default (method
-							# "terminate()").
-
-							# put the TTY back in echo off mode.
-							termios.tcsetattr(self.fd,
-								termios.TCSAFLUSH, self.new)
-
-						else:
-							logging.warning2(
-								"received unhandled char '%s', ignoring." % char)
-				finally:
-					# put it back in standard mode after input, whatever
-					# happened. The terminal has to be restored.
-					termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
-
-		# else:
-		# stdin is not a tty, we are in the daemon, don't do anything.
-		assert ltrace('thread', '%s ended' % self.name)
-	def stop(self):
-		LicornBasicThread.stop(self)
-		termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
 
 def thread_periodic_cleaner():
 	""" Ping all known machines. On online ones, try to connect to pyro and

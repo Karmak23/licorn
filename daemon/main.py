@@ -48,7 +48,6 @@ from licorn.daemon.core           import  exit_if_already_running, \
 from licorn.daemon.wmi            import fork_wmi
 from licorn.daemon.threads        import LicornJobThread, \
 									LicornPoolJobThread, \
-									LicornInteractorThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
@@ -211,22 +210,23 @@ if __name__ == "__main__":
 				tname=tname, in_queue=dqueues.pyrosys,
 				target=pool_job_pyrofinder,	daemon=True))
 
-	if not options.daemon:
-		# set up the interaction with admin on TTY std*, only if we do not
-		# fork into the background. This is a special thread case, not handled
-		# by the global start / stop mechanism, to be able to start it before
-		# every other thread, and stop it after all other have been stopped.
-		dthreads._interactor = LicornInteractorThread()
-		dthreads._interactor.start()
-
 	for (thname, th) in dthreads.iteritems():
 		assert ltrace('daemon', 'starting thread %s.' % thname)
 		th.start()
 
-	logging.notice('''%s(%s): all threads started, going to sleep waiting '''
-		'''for signals.''' % (pname, os.getpid()))
 
-	while True:
+	if options.daemon:
+		logging.notice('''%s(%s): all threads started, going to sleep waiting '''
+			'''for signals.''' % (pname, os.getpid()))
 		signal.pause()
+	else:
+		logging.notice('''%s(%s): all threads started, ready for '''
+			'''interaction.''' % (pname, os.getpid()))
+		# set up the interaction with admin on TTY std*, only if we do not
+		# fork into the background. This is a special thread case, not handled
+		# by the global start / stop mechanism, to be able to start it before
+		# every other thread, and stop it after all other have been stopped.
+		from licorn.daemon.core import LicornDaemonInteractor
+		LicornDaemonInteractor(pname).run()
 
 	terminate(None, None)
