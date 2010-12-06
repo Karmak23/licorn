@@ -8,7 +8,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, traceback, pwd, grp, re, time
+import os, sys, traceback, pwd, grp, time
 
 from licorn.foundations        import exceptions, logging
 from licorn.foundations.ltrace import ltrace
@@ -86,7 +86,7 @@ def set_name(name):
 	try:
 		import ctypes
 		ctypes.cdll.LoadLibrary('libc.so.6').prctl(15, name + '\0', 0, 0, 0)
-	except exception, e:
+	except Exception, e:
 		logging.warning('''Can't set process name (was %s).''' % e)
 def get_process_cmdline(process_name):
 	""" do equivalent of ps aux and grep the given process, then return its

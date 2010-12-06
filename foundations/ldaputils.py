@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, ldap
+import ldap
 import string
 from ldif import LDIFParser
 
@@ -104,12 +104,10 @@ def modifyModlist(old_entry, new_entry, ignore_attr_types=None,
 			if not replace_attr_value:
 				old_value_dict=list_dict(old_value)
 				new_value_dict=list_dict(new_value)
-				delete_values = []
 				for v in old_value:
 					if not new_value_dict.has_key(v):
 						replace_attr_value = 1
 						break
-				add_values = []
 				if not replace_attr_value:
 					for v in new_value:
 						if not old_value_dict.has_key(v):

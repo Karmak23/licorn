@@ -8,16 +8,12 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import sys, os, time, Pyro.core
-
-from Queue     import Queue
-from threading import Thread, Event
+import sys, os, time
 
 # PLEASE do not import "logging" here.
 import exceptions
 from styles    import *
 from ltrace    import ltrace
-from constants import message_type, verbose, interactions
 
 class FileLock:
 	"""

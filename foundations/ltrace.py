@@ -19,9 +19,11 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-#
-# WARNING: please do not import anything from licorn here.
-#
+from os   import getenv
+from time import time, localtime, strftime
+
+# WARNING: please do not import anything from licorn here, except styles.
+from styles import *
 
 trc={}
 trc['all']           = 0xffffffffffffffffffff
@@ -78,12 +80,6 @@ trc['del']           = 0x00040000000000000000
 trc['chk']           = 0x00080000000000000000
 trc['get']           = 0x00100000000000000000
 
-from os   import getenv
-from time import time, localtime, strftime
-
-import styles
-
-
 def dump_one(obj_to_dump, long_output=False):
 	try:
 		print obj_to_dump.dump_status(long_output=long_output)
@@ -122,7 +118,6 @@ def mytime():
 if getenv('LICORN_TRACE', None) != None:
 
 	import sys
-
 	ltrace_level = 0
 	for env_mod in getenv('LICORN_TRACE').split('|'):
 		substracts = env_mod.split('^')
@@ -130,11 +125,9 @@ if getenv('LICORN_TRACE', None) != None:
 		for sub_env_mod in substracts[1:]:
 			ltrace_level ^= trc[sub_env_mod]
 
-	def ltrace(module, message):
-		if  ltrace_level & trc[module]:
-			sys.stderr.write('%s %s: %s\n' % (
-				styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
-				module, message))
-		return True
-else:
-	def ltrace(module, message): return True
+def ltrace(module, message):
+	if  ltrace_level & trc[module]:
+		sys.stderr.write('%s %s: %s\n' % (
+			styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
+			module, message))
+	return True

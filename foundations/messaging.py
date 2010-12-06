@@ -7,12 +7,11 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, time
+import sys
 import Pyro.core, Pyro.util
 
 # WARNING: don't import logging here (circular loop).
 import exceptions
-from licorn.foundations import options
 from ltrace    import ltrace
 from base      import NamedObject, pyro_protected_attrs
 from constants import message_type, verbose, interactions

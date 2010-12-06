@@ -9,8 +9,7 @@ Licensed under the terms of the GNU GPL version 2
 import os, fcntl, struct, socket, platform, re, netifaces
 
 # other foundations imports.
-from licorn.foundations import options
-import logging, exceptions
+import logging
 import process
 from styles    import *
 from ltrace    import ltrace
@@ -53,7 +52,7 @@ def find_server_Linux(configuration):
 						'''|option dhcp-server-identifier ([^;]*))''',
 							open(argument).read()) ]:
 					try:
-						dummy_ip = socket.gethostbyname(try_host)
+						socket.gethostbyname(try_host)
 						return try_host
 					except socket.gaierror:
 						logging.warning2('''can't resolve host or IP %s.'''
@@ -122,11 +121,11 @@ def local_interfaces_Linux():
 
 	for interface in interfaces:
 		try:
-			addresses.append(interface_infos(interface))
+			up_ifaces.append(interface_infos(interface))
 		except:
 			continue
 
-	return addresses
+	return up_ifaces
 def interface_address_Linux(iface_name, iface_address=None):
 	""" Get an interface IPv4 adress and return it as a string.
 

@@ -35,7 +35,7 @@ def list2set(in_list):
 	out_set = []
 	for elem in in_list:
 		if elem in out_set: continue
-		out_set.append(e)
+		out_set.append(elem)
 	return out_set
 def keep_false(x, y):
 	""" function used in reduce(), keepping only False values in lists. """

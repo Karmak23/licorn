@@ -7,7 +7,7 @@ base - ultra basic objects, used as base classes.
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
-import sys, copy
+import copy
 
 import exceptions
 from styles import *

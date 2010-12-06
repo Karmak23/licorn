@@ -11,8 +11,7 @@ import sys, termios
 
 from styles    import *
 from base      import Singleton
-from constants import interactions
-from ltrace    import ltrace, mytime
+from ltrace    import mytime
 
 ### Messages ###
 MESG_FIX_PROBLEM_QUESTION = " [Ynas], or ? for help: "

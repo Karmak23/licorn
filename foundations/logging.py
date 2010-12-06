@@ -9,9 +9,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys
-import Pyro.core
 
-import exceptions
 from licorn.foundations import options
 from styles    import *
 from constants import verbose, interactions
@@ -88,12 +86,10 @@ def error(mesg, returncode=1, full=False, tb=None, listener=None):
 def warning(mesg, once=False, listener=None):
 	"""Display a stylized warning message on stderr."""
 
-	if once:
-		try:
-			already_displayed = __warningsdb[mesg]
-			return
-		except KeyError, e:
-			__warningsdb[mesg] = True
+	if once and mesg in __warningsdb:
+		return
+
+	__warningsdb[mesg] = True
 
 	text_message = "%s%s %s\n" % (
 		stylize(ST_WARNING, '/!\\'), mytime(), mesg)
@@ -107,12 +103,10 @@ def warning2(mesg, once=False, listener=None):
 	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
 
-	if once:
-		try:
-			already_displayed = __warningsdb[mesg]
-			return
-		except KeyError, e:
-			__warningsdb[mesg] = True
+	if once and mesg in __warningsdb:
+		return
+
+	__warningsdb[mesg] = True
 
 	if listener and listener.verbose >= verbose.INFO:
 		listener.process(
