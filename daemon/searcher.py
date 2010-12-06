@@ -8,7 +8,7 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, time
+import os, time, socket
 
 from threading          import Thread, Event
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler

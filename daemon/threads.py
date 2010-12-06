@@ -6,22 +6,15 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, sys, time
+import time
 
-import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
-
-from threading   import Thread, Event, Semaphore, Timer, current_thread
+from threading   import Thread, Event, current_thread
 from Queue       import Queue
-from collections import deque
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import filters, licornd_roles, message_type
-from licorn.foundations.thread    import _threads, _thcount
 
-from licorn.core   import LMC, version
 from licorn.daemon import dthreads
 
 class LicornBasicThread(Thread):

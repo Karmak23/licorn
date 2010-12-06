@@ -8,18 +8,17 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, time, gamin
 
-from threading   import Thread, Event, Semaphore, RLock, Timer
+from threading   import Thread, Event, RLock, Timer
 from collections import deque
 
 from licorn.foundations           import logging
 from licorn.foundations.pyutils   import format_time_delta
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters, gamin_events
 
 from licorn.core        import LMC
-from licorn.daemon.core import dname, dthreads, dstart_time
+from licorn.daemon.core import dname, dthreads
 
 class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with

@@ -12,9 +12,8 @@ from licorn.foundations         import fsapi, logging
 from licorn.foundations.pyutils import format_time_delta
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.thread  import _thcount, _threads
 
-from licorn.daemon.core         import dname, dthreads, dstart_time
+from licorn.daemon.core         import dname
 from licorn.daemon.threads      import LicornThread
 
 from licorn.core                import LMC

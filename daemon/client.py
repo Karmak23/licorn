@@ -5,22 +5,18 @@ Licorn Daemon client part.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, sys, time
-import Pyro.core
 
-from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, network
+from licorn.foundations           import logging
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, dump, fulldump
-from licorn.foundations.constants import host_status
-from licorn.foundations.thread    import _threads, _thcount
+from licorn.foundations.ltrace    import ltrace
 
 from licorn.core   import LicornMasterController, LMC
-from licorn.daemon import dthreads
 
 ServerLMC = LicornMasterController('ServerLMC')
 
 def thread_greeter():
+
+	assert ltrace('client', '| thread_greeter()')
 
 	ServerLMC.connect()
 

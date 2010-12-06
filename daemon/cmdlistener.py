@@ -6,20 +6,19 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import time, pwd, grp, signal, os
+import signal, os
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
-from threading   import Thread, Event, Semaphore, Timer
-from collections import deque
+from threading   import Thread, Timer
 
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import filters, licornd_roles, host_status
+from licorn.foundations.constants import licornd_roles, host_status
 
 from licorn.core                  import LMC
-from licorn.daemon.core           import dname, dthreads
+from licorn.daemon.core           import dname
 from licorn.daemon.threads        import LicornBasicThread
 
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):

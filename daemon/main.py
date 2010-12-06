@@ -30,10 +30,9 @@ _app = {
 
 import os, signal, time
 from Queue     import Queue
-from threading import Thread
 
-from licorn.foundations           import options, logging, exceptions
-from licorn.foundations           import process, network
+from licorn.foundations           import options, logging
+from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import licornd_roles
@@ -158,8 +157,9 @@ if __name__ == "__main__":
 				target=thread_network_links_builder,
 				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
+		# FIXME: verify this thread and reactivate it.
 		#dthreads.periodic_scanner = LicornJobThread(dname,
-		#	target=LMC.machines.thread_periodic_scanner,
+		#	target=thread_periodic_scanner,
 		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
 
 		dthreads.aclchecker = ACLChecker(None, dname)

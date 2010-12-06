@@ -8,12 +8,9 @@ Licensed under the terms of the GNU GPL version 2.
 
 import os, sys, time, signal, select, curses, termios, resource, code, readline
 from rlcompleter import Completer
+from optparse    import OptionParser
 
-from optparse import OptionParser, OptionGroup
-from threading import Event
-
-from licorn.foundations           import options, logging, styles, process, \
-	exceptions
+from licorn.foundations           import options, logging, process, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, dump, fulldump
 from licorn.foundations.pyutils   import format_time_delta
@@ -25,12 +22,10 @@ from licorn.foundations.argparser import build_version_string, \
 from licorn.core           import version, LMC
 from licorn.daemon         import dname, dthreads, dqueues, dchildren, \
 	dstart_time, uptime, terminate
-from licorn.daemon.threads import LicornBasicThread, LicornPoolJobThread
+from licorn.daemon.threads import LicornPoolJobThread
 
 def get_daemon_status(long_output=False, precision=None):
 	""" GET daemon status (all threads). """
-
-	system = LMC.system
 
 	assert ltrace('daemon', '| get_daemon_status(%s, %s)' % (
 		long_output, precision))

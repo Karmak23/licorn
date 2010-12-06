@@ -15,7 +15,6 @@ from Queue              import Queue
 from threading          import Thread, Event
 
 from licorn.foundations         import logging, exceptions, styles, fsapi
-from licorn.foundations.classes import Singleton
 from licorn.daemon.core         import dname, cache_path
 
 # FIXME: convert this to LicornThread.
