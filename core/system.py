@@ -6,17 +6,14 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys
+import os
 
-from time import time, strftime, gmtime, localtime
-from threading import RLock, current_thread
-
-from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, hlstr
+from licorn.foundations           import logging
+from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton, Enumeration
-from licorn.foundations.constants import host_status, filters, host_types
+from licorn.foundations.base      import Singleton
+from licorn.foundations.constants import host_status, host_types
 
 from licorn.core         import LMC
 from licorn.core.classes import GiantLockProtectedObject

@@ -16,7 +16,6 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import NamedObject, MixedDictObject, \
 											ReverseMappingDict, \
 											pyro_protected_attrs
-from licorn.foundations.constants import host_status, host_types
 
 from licorn.core import LMC
 

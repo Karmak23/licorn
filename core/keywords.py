@@ -8,7 +8,6 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import xattr, os.path, stat
-import Pyro.core
 
 from licorn.foundations         import exceptions, logging
 from licorn.foundations         import fsapi, readers, hlstr, pyutils
@@ -258,7 +257,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 		""" Remove parent of the keyword 'name' """
 		try:
 			self.keywords[name]["parent"] = ""
-		except KeyError, e:
+		except KeyError:
 			raise exceptions.BadArgumentError(
 				"The keyword you specified doesn't exist on this system.")
 		self.changed = True
@@ -266,7 +265,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 		""" Change the description of a keyword """
 		try:
 			self.keywords[name]["description"] = description
-		except KeyError, e:
+		except KeyError:
 			raise exceptions.BadArgumentError(
 				"The keyword you specified doesn't exist on this system.")
 		self.changed = True

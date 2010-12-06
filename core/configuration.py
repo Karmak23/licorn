@@ -316,16 +316,14 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			else:
 				try:
 					# validate the IP address
-					dummy_ip = socket.inet_aton(self.licornd.pyro.listen_address)
-					# keep the value and continue.
-				except socket.error, e1:
+					socket.inet_aton(self.licornd.pyro.listen_address)
+				except socket.error:
 					try:
-						dummy_ip = socket.gethostbyname(
-							self.licornd.pyro.listen_address)
+						socket.gethostbyname(self.licornd.pyro.listen_address)
 						# keep the hostname, it resolves.
-					except socket.gaierror, e2:
-						raise exceptions.BadConfigurationError('''Bad IP address '''
-							'''or hostname %s. Please check the syntax.''' %
+					except socket.gaierror:
+						raise exceptions.BadConfigurationError('Bad IP address '
+							'or hostname %s. Please check the syntax.' %
 							self.licornd.pyro.listen_address)
 			# TODO: check if the IP or the hostname is really on the local host.
 			# check if self.licornd.pyro.listen_address \
@@ -428,7 +426,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				os.makedirs(self.config_dir)
 				logging.info("Automatically created %s." % \
 					stylize(ST_PATH, self.config_dir))
-			except (IOError,OSError), e:
+			except (IOError,OSError):
 				# user is not root, forget it !
 				pass
 	def FindDistro(self):
@@ -490,8 +488,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		"""
 		self.ssh = LicornConfigObject()
 
-		piddir   = "/var/run"
-		spooldir = "/var/spool"
+		#piddir   = "/var/run"
+		#spooldir = "/var/spool"
 
 		#
 		# Finding Postfix
@@ -675,9 +673,6 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 
 		assert ltrace('configuration', '> LoadManagersConfiguration(batch=%s)' %
 			batch)
-
-		groups_dir = "%s/%s" % (self.defaults.home_base_path,
-			self.groups.names.plural)
 
 		# defaults to False, because this is mostly annoying. Administrator must
 		# have a good reason to hide groups.

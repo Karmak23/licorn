@@ -18,7 +18,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import MixedDictObject, Singleton
+from licorn.foundations.base      import MixedDictObject
 from licorn.foundations.constants import licornd_roles
 
 def connect_error(dummy1, dummy2):

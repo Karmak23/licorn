@@ -6,20 +6,17 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 import os
-from threading import RLock
 
-from licorn.foundations           import exceptions, logging
-from licorn.foundations           import readers, process
+from licorn.foundations           import exceptions
+from licorn.foundations           import readers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration
-from licorn.foundations.constants import host_status
-from licorn.foundations.pyutils   import add_or_dupe_attr, add_or_dupe_obj
+from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.hlstr     import cregex
 from licorn.foundations.network   import build_hostname_from_ip
 
 from classes              import MachinesBackend
-from licorn.core          import LMC
 from licorn.core.machines import Machine
 
 class dnsmasq_controller(Singleton, MachinesBackend):
@@ -57,7 +54,7 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 				or value.startswith('set:'):
 				assert ltrace('machines', '  entry skipped, not a regular host.')
 				del temp_host
-				return
+				return None
 
 			# gather as many data as we can about this host.
 

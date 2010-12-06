@@ -68,16 +68,16 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 		if LMC.configuration.licornd.role == 'client':
 			waited = 0.1
-			while LMC.configuration.server is None:
+			while LMC.configuration.server_main_address is None:
 				#
 				time.sleep(0.1)
-				wait += 0.1
-				if wait > 5:
+				waited += 0.1
+				if waited > 5:
 					# FIXME: this is not the best thing to do, but server
 					# detection needs a little more love and thinking.
 					raise exceptions.LicornRuntimeException(
 						'No server detected, bailing out…' )
-			server = LMC.configuration.server
+			server = LMC.configuration.server_main_address
 
 		else:
 			server = '127.0.0.1'
@@ -131,7 +131,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				'nss_base_shadow'):
 				value = getattr(self, attr)
 				try:
-					i = value.index(self.base)
+					value.index(self.base)
 				except ValueError:
 					setattr(self, attr, '%s,%s' % (value, self.base))
 
@@ -335,17 +335,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			(self.base, 'frontend')
 			)
 
-		to_load = []
-
 		for dn, schema in defaults:
-
 			if not dn in dn_already_present:
-				if batch or logging.ask_for_repair('''%s: %s lacks '''
-						'''mandatory schema %s.''' % (
-							self.name,
-							stylize(ST_PATH, 'slapd'),
-							schema),
-						auto_answer):
+				if batch or logging.ask_for_repair('%s: %s lacks mandatory '
+					'schema %s.' % (self.name, stylize(ST_PATH, 'slapd'),
+						schema), auto_answer):
 
 					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
 					if schema == 'backend.hdb':
@@ -371,8 +365,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 							self.ldap_conn.add_s(dn, addModlist(entry))
 						except pyldap.ALREADY_EXISTS:
-							logging.notice('skipping already present dn %s.' \
-								% dn)
+							logging.notice('skipping already present dn %s.' % dn)
 
 					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
 					if schema == 'backend.hdb':
@@ -573,8 +566,6 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		name_cache = {}
 
 		assert ltrace('ldap', '> load_groups() %s' % self.nss_base_group)
-
-		is_allowed  = True
 
 		l2u = LMC.users.login_to_uid
 		u   = LMC.users

@@ -6,19 +6,19 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, socket, netifaces, Pyro.core
+import netifaces
 
-from threading import RLock, current_thread
-from time      import time, strftime, gmtime, localtime
+from threading import current_thread
+from time      import strftime, localtime
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, hlstr, pyutils
+from licorn.foundations           import process, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.network   import build_hostname_from_ip, \
 										interfaces, local_ip_addresses
 from licorn.foundations.base      import Enumeration, Singleton
-from licorn.foundations.constants import host_status, filters, host_types
+from licorn.foundations.constants import host_status, host_types
 
 from licorn.core           import LMC
 from licorn.core.classes   import CoreController, CoreStoredObject

@@ -9,8 +9,7 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, re, shutil, Pyro.core
-from threading import RLock
+import os, re, shutil
 
 from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi, hlstr, readers, pyutils
@@ -650,7 +649,6 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 		u2l = LMC.users.uid_to_login
 		n2g = LMC.groups.name_to_gid
-		g2n = LMC.groups.gid_to_name
 
 		for uid in uids:
 			login = u2l(uid)
@@ -853,11 +851,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 		try:
 			group =	LMC.groups.gid_to_name(int(value))
-		except ValueError, e:
+		except ValueError:
 			try:
 				self.group_to_name(value)
 				group = value
-			except exceptions.DoesntExistsException, e:
+			except exceptions.DoesntExistsException:
 				group = self.name_to_group(value)
 		return group
 	def exists(self, group=None, name=None):

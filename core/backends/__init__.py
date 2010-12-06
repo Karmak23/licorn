@@ -15,7 +15,6 @@ from licorn.foundations.base   import Singleton, MixedDictObject
 
 from licorn.core         import LMC
 from licorn.core.classes import GiantLockProtectedObject
-from classes             import CoreBackend
 
 class BackendController(Singleton, GiantLockProtectedObject):
 	_licorn_protected_attrs = (

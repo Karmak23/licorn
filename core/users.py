@@ -8,9 +8,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import os, sys
-import Pyro.core
 from time import time, strftime, gmtime
-from threading import RLock
 
 from licorn.foundations           import logging, exceptions, hlstr
 from licorn.foundations           import pyutils, fsapi, process
@@ -1231,7 +1229,7 @@ class UsersController(Singleton, CoreController):
 		try:
 			uid = int(value)
 			self.uid_to_login(uid)
-		except ValueError, e:
+		except ValueError:
 			uid = self.login_to_uid(value)
 		return uid
 	def guess_identifiers(self, value_list, listener=None):

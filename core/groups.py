@@ -8,9 +8,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import os, stat, posix1e, re
-import Pyro.core
 from time import strftime, gmtime
-from threading import RLock
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
@@ -772,7 +770,7 @@ class GroupsController(Singleton, CoreController):
 
 		try:
 			gid = self.name_cache[name]
-		except KeyError, e:
+		except KeyError:
 			logging.info('''Group %s doesn't exist.''' % stylize(
 				ST_NAME, name))
 			return
@@ -1814,7 +1812,7 @@ class GroupsController(Singleton, CoreController):
 			self.gid_to_name(gid)
 			assert ltrace('groups', '| guess_identifier: int(%s) -> %s' % (
 				value, gid))
-		except ValueError, e:
+		except ValueError:
 			gid = self.name_to_gid(value)
 			assert ltrace('groups', '| guess_identifier: name_to_gid(%s) -> %s'
 				% (value, gid))

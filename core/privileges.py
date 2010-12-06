@@ -9,9 +9,6 @@ Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import Pyro.core
-from threading import RLock
-
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers
 from licorn.foundations.styles    import *
