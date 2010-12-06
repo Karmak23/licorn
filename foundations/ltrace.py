@@ -83,6 +83,36 @@ from time import time, localtime, strftime
 
 import styles
 
+
+def dump_one(obj_to_dump, long_output=False):
+	try:
+		print obj_to_dump.dump_status(long_output=long_output)
+	except AttributeError:
+		if long_output:
+			print '%s %s:\n%s' % (
+				str(obj_to_dump.__class__),
+				stylize(ST_NAME, obj_to_dump.__name__),
+				'\n'.join(['%s(%s): %s' % (
+					stylize(ST_ATTR, key),
+					type(getattr(obj_to_dump, key)),
+					getattr(obj_to_dump, key))
+						for key in dir(obj_to_dump)]))
+		else:
+			print '%s %s: %s' % (
+				str(obj_to_dump.__class__),
+				stylize(ST_NAME, obj_to_dump.__name__),
+				[ key for key \
+					in dir(obj_to_dump)])
+def dump(*args, **kwargs):
+	for arg in args:
+		dump_one(arg)
+	for key, value in kwargs:
+		dump_one(value)
+def fulldump(*args, **kwargs):
+	for arg in args:
+		dump_one(arg, True)
+	for key, value in kwargs:
+		dump_one(value, True)
 def mytime():
 	""" close http://dev.licorn.org/ticket/46 """
 	t = time()

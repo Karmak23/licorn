@@ -8,8 +8,8 @@ Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-# this @@VERSION@@ will be replaced by package maintainers, don't alter it here.
-version = '@@VERSION@@'
+# this @DEVEL@ will be replaced by package maintainers, don't alter it here.
+version = '@DEVEL@'
 
 import os, sys, time, signal, Pyro.core, Pyro.configuration
 from threading import RLock

@@ -7,7 +7,8 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import os, sys, time, pwd, grp, signal, os, select
-import termios, curses, code, rlcompleter, readline
+import termios, curses, code, readline
+from rlcompleter import Completer
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
@@ -18,7 +19,7 @@ from collections import deque
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import ltrace, dump, fulldump
 from licorn.foundations.constants import filters, licornd_roles, message_type
 from licorn.foundations.thread    import _threads, _thcount
 
@@ -249,12 +250,13 @@ class StatusUpdaterThread(LicornBasicThread):
 		pass
 class LicornInteractorThread(LicornBasicThread):
 	class HistoryConsole(code.InteractiveConsole):
-		def __init__(self, locals=None, filename="<console>",
+		def __init__(self, locals=None, filename="<licornd_console>",
 			histfile=os.path.expanduser('~/.licorn/licornd_history')):
 			code.InteractiveConsole.__init__(self, locals, filename)
 			self.histfile = histfile
 
 		def init_history(self):
+			readline.set_completer(Completer(namespace=self.locals).complete)
 			readline.parse_and_bind("tab: complete")
 			if hasattr(readline, "read_history_file"):
 				try:
@@ -388,10 +390,25 @@ class LicornInteractorThread(LicornBasicThread):
 							logging.notice('Entering interactive mode. '
 								'Welcome into licornd\'s arcanes…')
 
-							# FIXME: locals=globals() is probably a bit too much
-							# power. but we are debugging, an't we ?
+							# FIXME: trap SIGINT to avoid shutting down the
+							# daemon by mistake. this won't work easily from
+							# here (only MainThread can use signal.signal()).
+							#def interruption(x,y):
+							#	raise KeyboardInterrupt
+							#signal.signal(signal.SIGINT, interruption)
+
+							# NOTE: we intentionnaly restrict the interpreter
+							# environment, else it
 							interpreter = LicornInteractorThread.HistoryConsole(
-								locals=globals())
+								locals={
+									'LMC'      : LMC,
+									'dqueues'  : dqueues,
+									'dthreads' : dthreads,
+									'version'  : version,
+									'uptime'   : uptime,
+									'dump'     : dump,
+									'fulldump' : fulldump,
+									})
 
 							# put the TTY in standard mode (echo on).
 							termios.tcsetattr(self.fd,
@@ -406,6 +423,9 @@ class LicornInteractorThread(LicornBasicThread):
 							interpreter.save_history()
 							logging.notice('Leaving interactive mode. '
 								'Welcome back to Real World™.')
+
+							# FIXME: restore SIGING trapping to default (method
+							# "terminate()").
 
 							# put the TTY back in echo off mode.
 							termios.tcsetattr(self.fd,
