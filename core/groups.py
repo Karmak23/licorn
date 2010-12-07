@@ -183,7 +183,7 @@ class GroupsController(Singleton, CoreController):
 							LMC.configuration.groups.guest_prefix):
 							filtered_groups.append(gid)
 
-				if filters.NOT_GUEST == filter_string:
+				elif filters.NOT_GUEST == filter_string:
 					assert ltrace('groups', '> Select(GST:%s/%s)' % (
 						filters.NOT_GST, filter_string))
 					for gid in self.groups.keys():
@@ -241,18 +241,18 @@ class GroupsController(Singleton, CoreController):
 					for gid in self.groups.keys():
 						if self.groups[gid]['name'] not in LMC.privileges:
 							filtered_groups.append(gid)
-
-				elif filters.NOT_SYSTEM == filter_string:
-					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
-						filters.NOT_NOT_SYS, filter_string))
-					for gid in self.groups.keys():
-						if not self.is_system_gid(gid):
-							filtered_groups.append(gid)
 				else:
 					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
 						filters.SYS, filter_string))
 					filtered_groups.extend(filter(self.is_system_gid,
 						self.groups.keys()))
+
+			elif filters.NOT_SYSTEM == filter_string:
+				assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+					filters.NOT_NOT_SYS, filter_string))
+				for gid in self.groups.keys():
+					if not self.is_system_gid(gid):
+						filtered_groups.append(gid)
 
 			else:
 				gid_re    = re.compile("^gid=(?P<gid>\d+)")

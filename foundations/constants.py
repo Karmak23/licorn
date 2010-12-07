@@ -27,29 +27,29 @@ filters.ALL         = 0xffffffff
 filters.STANDARD    = 0x000000ff
 filters.STD         = filters.STANDARD
 
-filters.SYSTEM      = 0x0000ff00
-filters.SYS         = filters.SYSTEM
-filters.SYSTEM_RESTRICTED= 0x00001000
-filters.SYSRSTR     = filters.SYSTEM_RESTRICTED
-filters.SYSTEM_UNRESTRICTED= 0x00002000
-filters.SYSUNRSTR     = filters.SYSTEM_UNRESTRICTED
+filters.SYSTEM              = 0x0000ff00
+filters.SYS                 = filters.SYSTEM
+filters.SYSTEM_RESTRICTED   = 0x00001000
+filters.SYSRSTR             = filters.SYSTEM_RESTRICTED
+filters.SYSTEM_UNRESTRICTED = 0x00002000
+filters.SYSUNRSTR           = filters.SYSTEM_UNRESTRICTED
 
-filters.PRIVILEGED  = 0x00000100
-filters.PRI         = filters.PRIVILEGED
-filters.NOT_PRIVILEGED  = 0x00000101
-filters.NOT_PRI         = filters.NOT_PRIVILEGED
-filters.GUEST       = 0x00000200
-filters.GST         = filters.GUEST
-filters.NOT_GUEST       = 0x00000201
-filters.NOT_GST         = filters.NOT_GUEST
-filters.RESPONSIBLE = 0x00000400
-filters.RSP         = filters.RESPONSIBLE
-filters.NOT_RESPONSIBLE = 0x00000401
-filters.NOT_RSP         = filters.NOT_RESPONSIBLE
-filters.NOT_SYSTEM  = 0x00000301
-filters.NOT_SYS     = filters.NOT_SYSTEM
+filters.PRIVILEGED          = 0x00000100
+filters.PRI                 = filters.PRIVILEGED
+filters.NOT_PRIVILEGED      = filters.SYSTEM ^ filters.PRIVILEGED
+filters.NOT_PRI             = filters.NOT_PRIVILEGED
+filters.GUEST               = 0x00000200
+filters.GST                 = filters.GUEST
+filters.NOT_GUEST           = filters.SYSTEM ^ filters.GUEST
+filters.NOT_GST             = filters.NOT_GUEST
+filters.RESPONSIBLE         = 0x00000400
+filters.RSP                 = filters.RESPONSIBLE
+filters.NOT_RESPONSIBLE     = filters.SYSTEM ^ filters.RESPONSIBLE
+filters.NOT_RSP             = filters.NOT_RESPONSIBLE
+filters.NOT_SYSTEM          = filters.ALL ^ filters.SYSTEM
+filters.NOT_SYS             = filters.NOT_SYSTEM
 
-filters.EMPTY       = 0x00ff0000
+filters.EMPTY               = 0x00ff0000
 
 # enum machine stati, for core.machines
 host_status = EnumDict('host_status')
