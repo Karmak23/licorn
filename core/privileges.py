@@ -80,38 +80,36 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 			# TODO: si le fichier contient des doublons, faire plutot:
 			# map(lambda (x): self.append(x),
 			# readers.very_simple_conf_load_list(conf_file))
-	def add(self, privileges, listener=None):
+	def add(self, privileges):
 		""" One-time multi-add method (list as argument).
 			This method doesn't need locking, all sub-methods are already.
 		"""
 		for priv in privileges:
-			self.append(priv, listener=listener)
+			self.append(priv)
 		self.WriteConf()
-	def delete(self, privileges, listener=None):
+	def delete(self, privileges):
 		""" One-time multi-delete method (list as argument).
 			This method doesn't need locking, all sub-methods are already.
 		"""
 		for priv in privileges:
-			self.remove(priv, listener=listener)
+			self.remove(priv)
 		self.WriteConf()
-	def append(self, privilege, listener=None):
+	def append(self, privilege):
 		""" Set append like: no doubles."""
 		with self.lock():
 			if privilege not in self:
 				if LMC.groups.is_system_group(privilege):
 					self[privilege] = privilege
 					logging.info('Added privilege %s to whitelist.' %
-						stylize(ST_NAME, privilege),
-						listener=listener)
+						stylize(ST_NAME, privilege))
 				else:
 					logging.warning('''group %s can't be promoted as '''
 						'''privilege, it is not a system group.''' % \
-						stylize(ST_NAME, privilege),
-						listener=listener)
+						stylize(ST_NAME, privilege))
 			else:
 				logging.info("privilege %s already whitelisted, skipped." % \
-					stylize(ST_NAME, privilege), listener=listener)
-	def remove(self, privilege, listener=None):
+					stylize(ST_NAME, privilege))
+	def remove(self, privilege):
 		""" Remove without throw of exception """
 
 		assert ltrace('privileges','| remove(%s)' % privilege)
@@ -120,13 +118,11 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 			if privilege in self:
 				del self[privilege]
 				logging.info('Removed privilege %s from whitelist.' %
-					stylize(ST_NAME, privilege),
-					listener=listener)
+					stylize(ST_NAME, privilege))
 			else:
 				logging.info('''privilege %s is already not present in the '''
 					'''whitelist, skipped.''' % \
-						stylize(ST_NAME, privilege),
-						listener=listener)
+						stylize(ST_NAME, privilege))
 	def Select(self, filter_string):
 		""" filter self against various criteria and return a list of matching
 			privileges. """

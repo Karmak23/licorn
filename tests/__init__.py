@@ -30,7 +30,10 @@ class Testsuite:
 		self.cmd_display_func = cmd_display_func
 		self.state_file=state_file
 		# save the current context to restaure it at the end of the testsuite
-		self.user_context=LMC.users._prefered_backend_name
+		backends =  [ line for line in process.execute(['get', 'config',
+					'backends'])[1].split('\n') if 'U' in line ]
+		reduce(lambda x,y: x if y == '' else y, backends)
+		self.user_context = backends[0].split('(')[0]
 		self.current_context=self.user_context
 	def restore_user_context(self):
 		""" restore user active backend before testsuite runs """

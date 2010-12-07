@@ -60,28 +60,26 @@ class Machine(CoreStoredObject):
 		# the Pyro proxy (if the machine has one) for contacting it across the
 		# network.
 		self.system      = system
-	def shutdown(self, warn_users=True, listener=None):
+	def shutdown(self, warn_users=True):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
 		if self.system:
 			self.system.shutdown()
 			self.status == host_status.SHUTTING_DOWN
-			logging.info('Shut down machine %s.' % self.hostname,
-				listener=listener)
+			logging.info('Shut down machine %s.' % self.hostname)
 
 		else:
 			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
 				'''non remote-controlled machine!''')
-	def update_status(self, status, listener=None):
+	def update_status(self, status):
 		""" update the current machine status, in a clever manner. """
 		with self.lock():
 			if status is None:
 				# this part is not going to happen, because this method is
 				# called (indirectly, via SystemController) from clients.
 				logging.warning('machines.update_status() called with '
-					'status=None for machine %s(%s)' % (hostname, mid),
-					listener=listener)
+					'status=None for machine %s(%s)' % (hostname, mid))
 			else:
 				# don't do anything if the status is already the same or finer.
 				# E.G. ACTIVE is finer than ONLINE, which doesn't known if the
@@ -90,7 +88,7 @@ class Machine(CoreStoredObject):
 					logging.progress("Updated machine %s's status to %s." % (
 						stylize(ST_NAME, self.hostname),
 						stylize(ST_COMMENT, host_status[status])
-						), listener=listener)
+						))
 					self.status = status
 	def __str__(self):
 		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
@@ -113,7 +111,7 @@ class MachinesController(Singleton, CoreController):
 		if MachinesController.init_ok:
 			return
 
-		CoreController.__init__(self, 'machines', reverse_mappings=['hostname'])
+		CoreController.__init__(self, 'machines', reverse_mappings=['hostname', 'ether'])
 
 		self._nmap_cmd_base = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG',	'-' ]
 		self._nmap_not_installed = False
@@ -140,8 +138,7 @@ class MachinesController(Singleton, CoreController):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
-	def scan_network(self, network_to_scan, wait_until_finish=False,
-		listener=None, *args, **kwargs):
+	def scan_network(self, network_to_scan, wait_until_finish=False, *args, **kwargs):
 		""" use nmap to scan a whole network and add all discovered machines to
 		the local configuration. """
 
@@ -158,8 +155,7 @@ class MachinesController(Singleton, CoreController):
 				iface_infos = netifaces.ifaddresses(iface)
 				if 2 in iface_infos:
 					logging.info('Programming scan of local area network %s/%s.' % (
-						iface_infos[2][0]['addr'], iface_infos[2][0]['netmask']),
-						listener=listener)
+						iface_infos[2][0]['addr'], iface_infos[2][0]['netmask']))
 					# FIXME: don't hard-code /24, but nmap doesn't understand
 					# 255.255.255.0 and al...
 					network_to_scan.append('%s/24' % iface_infos[2][0]['addr'])
@@ -183,8 +179,7 @@ class MachinesController(Singleton, CoreController):
 				continue
 
 			with self.lock():
-				logging.info('found online machine with IP address %s' % hostip,
-					listener=listener)
+				logging.info('found online machine with IP address %s' % hostip)
 
 				# create a fake hostname for now, the IP will be reversed a
 				# little later to get the eventual real DNS name of host.
@@ -204,8 +199,8 @@ class MachinesController(Singleton, CoreController):
 		# don't wait, search will be handled by the daemon. Give back hand to
 		# the calling CLI process.
 		if wait_until_finish:
-			queue_wait_for_reversers(caller, listener=listener)
-			queue_wait_for_pyroers(caller, listener=listener)
+			queue_wait_for_reversers(caller)
+			queue_wait_for_pyroers(caller)
 	def run_arping(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts.
 
@@ -264,7 +259,7 @@ class MachinesController(Singleton, CoreController):
 		assert ltrace('machines', '< run_nmap(up=%s, down=%s)' % (
 			up_hosts, down_hosts))
 		return up_hosts, down_hosts
-	def ping_all_machines(self, listener=None, *args, **kwargs):
+	def ping_all_machines(self, *args, **kwargs):
 		""" run across all IPs and find which machines are up or down. """
 
 		if self._nmap_not_installed:
@@ -308,13 +303,13 @@ class MachinesController(Singleton, CoreController):
 		logging.notice('machines.guess_host_type() not implemented.')
 
 		return
-	def update_status(self, mid, status=None, system=None, listener=None,
+	def update_status(self, mid, status=None, system=None,
 		*args, **kwargs):
 
 		assert ltrace('machines', '| update_status(%s, %s)' % (mid, status))
 
 		if mid in self.keys():
-			self[mid].update_status(status, listener)
+			self[mid].update_status(status)
 
 		elif system:
 			# this is a self-declaring pyro-enabled host. create it.
@@ -457,11 +452,11 @@ class MachinesController(Singleton, CoreController):
 			+ "\n</machines-list>\n"
 
 		return data
-	def shutdown(self, mid, warn_users=True, listener=None):
+	def shutdown(self, mid, warn_users=True):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
-		self[mid].shutdown(warn_users=warn_users, listener=listener)
+		self[mid].shutdown(warn_users=warn_users)
 	def is_alt(self, mid):
 		""" Return True if the machine is an ALT client, else False. """
 

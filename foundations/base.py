@@ -129,6 +129,7 @@ class MixedDictObject(NamedObject, dict):
 		assert ltrace('base', '| MixedDictObject.__iter__(%s)' % self.name)
 		return dict.itervalues(self)
 	def get(self, key, other=None):
+		# FIXME: needed ?
 		assert ltrace('base', '| MixedDictObject.get(%s)' % key)
 		if key in self.keys():
 			return self.__getitem__(key)

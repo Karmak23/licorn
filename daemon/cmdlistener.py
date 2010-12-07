@@ -20,6 +20,7 @@ from licorn.foundations.constants import licornd_roles, host_status
 from licorn.core                  import LMC
 from licorn.daemon.core           import dname
 from licorn.daemon.threads        import LicornBasicThread
+from licorn.daemon.rwi            import RealWorldInterface
 
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	valid_users = []
@@ -224,26 +225,18 @@ class CommandListener(LicornBasicThread):
 					LMC.msgproc, 'msgproc')
 
 		if LMC.configuration.licornd.role == licornd_roles.SERVER:
-			self.uris['users'] = self.pyro_daemon.connect(
-				LMC.users, 'users')
-			self.uris['groups'] = self.pyro_daemon.connect(
-				LMC.groups, 'groups')
-			self.uris['profiles'] = self.pyro_daemon.connect(
-				LMC.profiles, 'profiles')
+			# export RWI for CLI and WMI interfaces.
+			self.uris['rwi'] = self.pyro_daemon.connect(
+				RealWorldInterface(), 'rwi')
+			# export machines for other daemons to talk to us and update their
+			# status directly.
 			self.uris['machines'] = self.pyro_daemon.connect(
 				LMC.machines, 'machines')
-			self.uris['privileges'] = self.pyro_daemon.connect(
-				LMC.privileges, 'privileges')
-			self.uris['keywords'] = self.pyro_daemon.connect(
-				LMC.keywords, 'keywords')
-			self.uris['backends'] = self.pyro_daemon.connect(
-				LMC.backends, 'backends')
-
-		# client and server get the SystemController
-		# FIXME: this is probably a bad security thing for the server. Check it
-		# is really needed and wipe it if strictly not.
-		self.uris['system'] = self.pyro_daemon.connect(
-			LMC.system, 'system')
+		else:
+			# client exports its SystemController to be remote-piloted by
+			# server.
+			self.uris['system'] = self.pyro_daemon.connect(
+				LMC.system, 'system')
 
 		logging.info("%s: %s Pyro daemon on interface %s." % (
 			self.name, stylize(ST_OK, "started"),

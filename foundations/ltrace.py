@@ -125,9 +125,12 @@ if getenv('LICORN_TRACE', None) != None:
 		for sub_env_mod in substracts[1:]:
 			ltrace_level ^= trc[sub_env_mod]
 
-def ltrace(module, message):
-	if  ltrace_level & trc[module]:
-		sys.stderr.write('%s %s: %s\n' % (
-			styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
-			module, message))
-	return True
+	def ltrace(module, message):
+		if  ltrace_level & trc[module]:
+			sys.stderr.write('%s %s: %s\n' % (
+				styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
+				module, message))
+		return True
+else:
+	def ltrace(a, b):
+		return True

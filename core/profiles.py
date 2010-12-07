@@ -70,7 +70,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 			# build the name cache a posteriori
 			for group in self.profiles:
 				self.name_cache[self.profiles[group]['name']] = group
-	def check_default_profile(self, listener=None):
+	def check_default_profile(self):
 		"""If no profile exists on the system, create a default one with system group "users"."""
 
 		try:
@@ -78,8 +78,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 				if self.profiles == {}:
 					logging.warning('''Adding a default %s profile on the system '''
 						'''(this is mandatory).''' %
-							stylize(ST_NAME, 'Users'),
-							listener=listener)
+							stylize(ST_NAME, 'Users'))
 					# Create a default profile with 'users' as default primary
 					# group, and use the Debian pre-existing group without
 					# complaining if it exists.
@@ -88,7 +87,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						description='Standard desktop users',
 						profileShell=LMC.configuration.users.default_shell,
 						profileSkel=LMC.configuration.users.default_skel,
-						force_existing=True, listener=listener)
+						force_existing=True)
 		except (OSError, IOError), e:
 			# if 'permission denied', likely to be that we are not root. pass.
 			if e.errno != 13:
@@ -222,7 +221,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 			return data
 	def _validate_fields(self, name, group, description, profileShell,
-		profileSkel, listener=None):
+		profileSkel):
 
 		if description in ('', None):
 			description = "The %s profile" % name
@@ -258,7 +257,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 		return name, group, description, profileShell, profileSkel
 	def AddProfile(self, name, group, profileQuota=1024, groups=[],
 		description=None, profileShell=None, profileSkel=None,
-		force_existing=False, listener=None):
+		force_existing=False):
 		""" Add a user profile (LMC.groups is an instance of GroupsController
 			and is needed to create the profile group). """
 
@@ -270,7 +269,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 		name, group, description, profileShell, profileSkel = \
 			self._validate_fields(name, group, description, profileShell,
-				profileSkel, listener=listener)
+				profileSkel)
 
 		with self.lock():
 			if name in self.name_cache:
@@ -302,14 +301,14 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						gid = LMC.groups.name_to_gid(g)
 					except exceptions.DoesntExistsException:
 						logging.notice("Skipped non-existing group '%s'." %
-							stylize(ST_NAME,g), listener=listener)
+							stylize(ST_NAME,g))
 						groups.remove(g)
 
 				# Add the system group
 				if create_group:
 					gid, group = LMC.groups.AddGroup(group,
 						description=description, system=True,
-						groupSkel=profileSkel, listener=listener)
+						groupSkel=profileSkel)
 				else:
 					if LMC.groups.is_standard_group(group):
 						raise exceptions.BadArgumentError(
@@ -340,11 +339,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 		logging.info("Added profile %s (group=%s, gid=%s)." % (
 			stylize(ST_NAME, name),
 			stylize(ST_NAME, group),
-			stylize(ST_UGID, gid)), listener=listener)
+			stylize(ST_UGID, gid)))
 
 		assert ltrace('profiles', '< AddProfile(%s)' % self.profiles)
 	def DeleteProfile(self, name=None, group=None, gid=None, del_users=False,
-		no_archive=False, batch=False, listener=None):
+		no_archive=False, batch=False):
 		""" Delete a user profile (LMC.groups is an instance of
 			GroupsController and is needed to delete the profile group). """
 
@@ -357,11 +356,9 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 				try:
 					LMC.groups.DeleteGroup(gid=gid, del_users=del_users,
-						no_archive=no_archive, batch=batch, check_profiles=False,
-						listener=listener)
+						no_archive=no_archive, batch=batch, check_profiles=False)
 				except exceptions.DoesntExistsException:
-					logging.info('Group %s already deleted, skipped.' % group,
-					listener=listener)
+					logging.info('Group %s already deleted, skipped.' % group)
 
 				# del from the profiles and the cache
 				del self.profiles[group]
@@ -369,11 +366,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 				self.WriteConf()
 
 		logging.info(logging.SYSP_DELETED_PROFILE %
-			stylize(ST_NAME, name), listener=listener)
+			stylize(ST_NAME, name))
 
 		assert ltrace('profiles', '< DeleteProfile()')
 	def ChangeProfileSkel(self, gid=None, group=None, name=None,
-		profileSkel=None, listener=None):
+		profileSkel=None):
 		""" Modify the profile's skel. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -398,12 +395,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 			self.WriteConf()
 
 		logging.info('''Changed profile %s skel to '%s'.''' % (
-			stylize(ST_NAME, name), profileSkel),
-			listener=listener)
+			stylize(ST_NAME, name), profileSkel))
 
 		assert ltrace('profiles', '< ChangeProfileSkel()')
 	def ChangeProfileShell(self, gid=None, group=None, name=None,
-		profileShell=None, listener=None):
+		profileShell=None):
 		""" Change the profile shell. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -428,12 +424,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 			self.WriteConf()
 
 		logging.info('''Changed profile %s shell to '%s'.''' % (
-			stylize(ST_NAME, name), profileShell),
-			listener=listener)
+			stylize(ST_NAME, name), profileShell))
 
 		assert ltrace('profiles', '< ChangeProfileShell()')
 	def ChangeProfileQuota(self, gid=None, group=None, name=None,
-		profileQuota=None, listener=None):
+		profileQuota=None):
 		""" Chnge the profile Quota. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -455,12 +450,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 			self.WriteConf()
 
 		logging.info('''Changed profile %s quota to '%s'.''' % (
-			stylize(ST_NAME, name), profileQuota),
-			listener=listener)
+			stylize(ST_NAME, name), profileQuota))
 
 		assert ltrace('profiles', '< ChangeProfileQuota()')
 	def ChangeProfileDescription(self, gid=None, group=None, name=None,
-		description=None, listener=None):
+		description=None):
 		""" Change profile's description. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -481,12 +475,10 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 			self.WriteConf()
 
 		logging.info('''Changed profile %s description to '%s'.''' % (
-			stylize(ST_NAME, name), description),
-			listener=listener)
+			stylize(ST_NAME, name), description))
 
 		assert ltrace('profiles', '< ChangeProfileDescription()')
-	def ChangeProfileName(self, gid=None, group=None, name=None, newname=None,
-		listener=None):
+	def ChangeProfileName(self, gid=None, group=None, name=None, newname=None):
 		""" Change the profile Display Name. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -506,11 +498,11 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 		logging.info('''Changed profile %s's name to %s.''' % (
 			stylize(ST_NAME, name),
 			stylize(ST_NAME, newname)
-			), listener=listener)
+			))
 
 		assert ltrace('profiles', '< ChangeProfileName()')
 	def ChangeProfileGroup(self, gid=None, group=None, name=None,
-		newgroup=None, listener=None):
+		newgroup=None):
 		""" Change and Rename the profile primary group. """
 
 		raise NotImplementedError('to be refreshed.')
@@ -528,7 +520,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 		LMC.groups.RenameGroup(self,
 			self.profiles[group]['groupName'], newgroup)
 	def AddGroupsInProfile(self, gid=None, group=None, name=None,
-		groups_to_add=None, listener=None):
+		groups_to_add=None):
 		""" Add groups in the groups list of the profile 'group'. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -554,8 +546,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						logging.info('''Group %s is already in groups of '''
 							'''profile %s, skipped.''' % (
 							stylize(ST_NAME, name_to_add),
-							stylize(ST_NAME, group)),
-							listener=listener)
+							stylize(ST_NAME, group)))
 					else:
 						if name_to_add != group:
 							self.profiles[group]['memberGid'].append(
@@ -563,14 +554,12 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 							added_groups.append(name_to_add)
 							logging.info('''Added group %s to profile %s.''' % (
 								stylize(ST_NAME, name_to_add),
-								stylize(ST_NAME, group)),
-								listener=listener)
+								stylize(ST_NAME, group)))
 						else:
 							logging.warning('''Can't add group %s to its own '''
 								'''profile %s.''' % (
 								stylize(ST_NAME, name_to_add),
-								stylize(ST_NAME, group)),
-								listener=listener)
+								stylize(ST_NAME, group)))
 
 				self.WriteConf()
 
@@ -579,7 +568,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 		return added_groups
 	def DeleteGroupsFromProfile(self, gid=None, group=None, name=None,
-		groups_to_del=None, listener=None):
+		groups_to_del=None):
 		""" Delete groups from the groups list of the profile 'group'. """
 
 		gid, group, name = self.resolve_gid_group_or_name(gid, group, name)
@@ -606,14 +595,12 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						logging.info(
 							"Deleted group %s from profile %s." % (
 							stylize(ST_NAME, name_to_del),
-							stylize(ST_NAME, group)),
-							listener=listener)
+							stylize(ST_NAME, group)))
 					else:
 						logging.notice(
 							'''Group %s is not in groups of profile %s, ignored.''' % (
 								stylize(ST_NAME, name_to_del),
-								stylize(ST_NAME, group)),
-								listener=listener)
+								stylize(ST_NAME, group)))
 
 				self.WriteConf()
 
@@ -622,7 +609,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 		return deleted_groups
 	def ReapplyProfileOfUsers(self, users=None, apply_groups=False,
-		apply_skel=False, batch=False, auto_answer=None, listener=None):
+		apply_skel=False, batch=False, auto_answer=None):
 		""" Reapply the profile of users.
 			If apply_groups is True, each user will be put in groups listed
 			in his profile. If apply_skel is True, the skel of each user will
@@ -668,8 +655,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						logging.progress('Applying skel %s to user %s.' % (
 							stylize(ST_PATH,
 							profiles[profile]['profileSkel']),
-							stylize(ST_NAME, login)),
-							listener=listener)
+							stylize(ST_NAME, login)))
 
 						def install_to_user_homedir(entry,
 							user_home=users[uid]['homeDirectory']):
@@ -681,8 +667,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 							entry_name = os.path.basename(entry)
 
 							logging.progress('Installing skel part %s.' %
-								stylize(ST_PATH, entry),
-								listener=listener)
+								stylize(ST_PATH, entry))
 
 							def copy_profile_entry():
 								if os.path.islink(entry):
@@ -697,8 +682,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 
 								logging.info('Copied skel part %s to %s.' % (
 									stylize(ST_PATH, entry),
-									stylize(ST_PATH, user_home)),
-									listener=listener)
+									stylize(ST_PATH, user_home)))
 
 							dst_entry = '%s/%s' % (user_home, entry_name)
 
@@ -712,7 +696,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 									stylize(ST_PATH, user_home))
 
 								if batch or logging.ask_for_repair(warn_message,
-									auto_answer, listener=listener):
+									auto_answer):
 									if os.path.islink(dst_entry):
 										os.unlink(dst_entry)
 									elif os.path.isdir(dst_entry):
@@ -727,8 +711,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 										"Skipped entry %s for user %s." % (
 										stylize(ST_PATH,
 											entry_name),
-										stylize(ST_NAME, login)),
-										listener=listener)
+										stylize(ST_NAME, login)))
 							else:
 								copy_profile_entry()
 								return True
@@ -740,21 +723,19 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 								mindepth=1, maxdepth=2)))
 
 						users.CheckUsers([ uid ], batch=batch,
-							auto_answer=auto_answer, listener=listener)
+							auto_answer=auto_answer)
 
 						if something_done:
 							logging.info('Applyed skel %s to user %s.' % (
 								stylize(ST_PATH,
 								profiles[profile]['profileSkel']),
-								stylize(ST_NAME, login)),
-								listener=listener)
+								stylize(ST_NAME, login)))
 						else:
 							logging.info('''Skel %s already applied or '''
 								'''skipped for user %s.''' % (
 								stylize(ST_PATH,
 								profiles[profile]['profileSkel']),
-								stylize(ST_NAME, login)),
-								listener=listener)
+								stylize(ST_NAME, login)))
 
 						# After having applyed the profile skel, break the
 						# profile / apply_skel loop, because a given user has
@@ -762,7 +743,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 						break
 
 		assert ltrace('profiles', '''< ReapplyProfilesOfUsers()''')
-	def change_group_name_in_profiles(self, old_name, new_name, listener=None):
+	def change_group_name_in_profiles(self, old_name, new_name):
 		""" Change a group's name in the profiles groups list """
 
 		with self.lock():
@@ -774,7 +755,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 				if name in self.profiles[profile]['groupName']:
 					self.profiles[profile]['groupName'] = new_name
 			self.WriteConf()
-	def delete_group_in_profiles(self, name, listener=None):
+	def delete_group_in_profiles(self, name):
 		""" Delete a group in the profiles groups list """
 
 		found = False
@@ -786,8 +767,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 					found=True
 					logging.info("Deleted group %s from profile %s." % (
 						stylize(ST_NAME, name),
-						stylize(ST_NAME, profile)),
-						listener=listener)
+						stylize(ST_NAME, profile)))
 
 				except ValueError:
 					# don't display this info if the group we want to delete is the
@@ -795,8 +775,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 					if name not in self.profiles:
 						logging.info('Group %s already not present in profile %s.'
 							% (stylize(ST_NAME, name),
-							stylize(ST_NAME, profile)),
-							listener=listener)
+							stylize(ST_NAME, profile)))
 
 			if found:
 				self.WriteConf()

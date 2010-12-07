@@ -86,12 +86,12 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 		return self.keywords.keys()
 	def has_key(self, key):
 		return self.keywords.has_key(key)
-	def WriteConf(self, listener=None):
+	def WriteConf(self):
 		""" Write the keywords data in appropriate system files."""
 
 		if self.changed :
 			logging.progress('%s: saving data structures to disk.' % \
-				self.pretty_name, listener=listener)
+				self.pretty_name)
 
 			lock_file = FileLock(LMC.configuration,
 				LMC.configuration.keywords_data_file)
@@ -102,7 +102,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 			lock_file.Unlock()
 
 			logging.progress('%s: data structures saved.' % \
-				self.pretty_name, listener=listener)
+				self.pretty_name)
 
 			self.changed = False
 	def __build_cli_output(self):
@@ -128,8 +128,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 	%s
 </keywords-list>
 """ % '\n'.join(map(build_output, self.keywords.keys()))
-	def AddKeyword(self, name = None, parent = "", description = "",
-		listener=None):
+	def AddKeyword(self, name = None, parent = "", description = ""):
 		""" Add a new keyword on the system, provided some checks are OK. """
 		if name is None:
 			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
@@ -159,11 +158,10 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 			'description': description
 			}
 
-		logging.info('Added keyword %s.' % name, listener=listener)
+		logging.info('Added keyword %s.' % name)
 		self.changed = True
 		self.WriteConf()
-	def DeleteKeyword(self, name=None, del_children=False, modify_file=True,
-		listener=None):
+	def DeleteKeyword(self, name=None, del_children=False, modify_file=True):
 		""" Delete a keyword
 		"""
 		if name is None:
@@ -181,14 +179,14 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 						'''children too, use option --del-children''')
 			del(self.keywords[name])
 
-			logging.info('Deleted keyword %s.' % name, listener=listener)
+			logging.info('Deleted keyword %s.' % name)
 			self.changed = True
 			self.WriteConf()
 
 			if modify_file:
 				# TODO: affine the path
 				self.DeleteKeywordsFromPath(self.work_path, [name],
-					recursive=True, listener=listener)
+					recursive=True)
 		except KeyError:
 			raise exceptions.BadArgumentError(
 				"The keyword you specified doesn't exist on this system.")
@@ -229,8 +227,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 					pass
 		try:
 			self.AddKeyword(newname,
-				description=self.keywords[name]['description'],
-				listener=listener)
+				description=self.keywords[name]['description'])
 			for child in self.Children(name):
 				self.keywords[child]["parent"] = newname
 
@@ -238,8 +235,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 			map(
 				lambda x: __rename_keyword_from_path(x),
 				 fsapi.minifind(self.work_path, type = stat.S_IFREG) )
-			self.DeleteKeyword(name, del_children=True, modify_file=False,
-				listener=listener)
+			self.DeleteKeyword(name, del_children=True, modify_file=False)
 			self.WriteConf()
 		except KeyError:
 			raise exceptions.BadArgumentError(
@@ -285,11 +281,10 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 			except: pass
 			good_keywords.append(k)
 		return good_keywords
-	def AddKeywordsToPath(self, path, keywords_to_add, recursive=False,
-		listener=None):
+	def AddKeywordsToPath(self, path, keywords_to_add, recursive=False):
 		""" Add keywords to a file or directory files
 		"""
-		def __add_keywords_to_file(file_path, listener=listener):
+		def __add_keywords_to_file(file_path):
 			actual_kw = []
 			try:
 				actual_kw = xattr.getxattr(file_path,
@@ -299,7 +294,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 					# No data available (ie self.licorn_xattr is not created) or
 					# attr not supported (FS not mounted with user_xattr option)
 					logging.warning2('''Can't get current keywords.''',
-					once=True, listener=listener)
+					once=True)
 				else:
 					raise e
 			keywords_to_add_tmp = list(keywords_to_add)
@@ -311,15 +306,13 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 				logging.info("Applyed %s xattr %s on %s." % (
 					stylize(ST_NAME, self.licorn_xattr),
 					stylize(ST_ACL, attr),
-					stylize(ST_PATH, file_path)),
-					listener=listener)
+					stylize(ST_PATH, file_path)))
 			except IOError, e:
 				if e.errno is (1, 95): # Operation not permitted / not supported
 					logging.warning2(
 						"Unable to modify %s xattr of %s (was: %s)." % (
 						stylize(ST_NAME, self.licorn_xattr),
-						stylize(ST_PATH, file_path), e),
-						listener=listener)
+						stylize(ST_PATH, file_path), e))
 				else:
 					raise e
 
@@ -333,11 +326,10 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 			else:         max = 1
 			map(lambda x: __add_keywords_to_file(x),
 				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
-	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False,
-		listener=None):
+	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False):
 		""" Delete keywords from a file or directory files
 		"""
-		def __delete_keywords_from_file(file_path, listener=listener):
+		def __delete_keywords_from_file(file_path):
 			actual_kw = []
 			try:
 				actual_kw = xattr.getxattr(file_path,
@@ -348,7 +340,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 					# or Operation not supported (partition is not mounted
 					# with user_xattr option).
 					logging.warning2('''Can't get current keywords.''',
-					once=True, listener=listener)
+					once=True)
 					pass
 				else: raise e
 			keywords_to_set = []
@@ -360,23 +352,20 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 					xattr.removexattr(file_path, self.licorn_xattr)
 					logging.info("Removed xattr %s from %s." % (
 						stylize(ST_NAME, self.licorn_xattr),
-						stylize(ST_PATH, file_path)),
-						listener=listener)
+						stylize(ST_PATH, file_path)))
 				else:
 					attr = ','.join(self.__remove_bad_keywords(keywords_to_set))
 					xattr.setxattr(file_path, self.licorn_xattr, attr)
 					logging.info("Applyed %s xattr %s on %s." % (
 						stylize(ST_NAME, self.licorn_xattr),
 							stylize(ST_ACL, attr),
-							stylize(ST_PATH, file_path)),
-							listener=listener)
+							stylize(ST_PATH, file_path)))
 			except IOError, e:
 				if e.errno in (1, 95): # Operation not permitted / not supported
 					logging.warning(
 						"Unable to modify %s xattr of %s (was: %s)." % (
 							stylize(ST_NAME, self.licorn_xattr),
-							stylize(ST_PATH, file_path), e),
-							listener=listener)
+							stylize(ST_PATH, file_path), e))
 				else:
 					raise e
 
@@ -394,13 +383,13 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 
 			map(lambda x: __delete_keywords_from_file(x),
 				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
-	def ClearKeywords(self, path, recursive=False, listener=None):
+	def ClearKeywords(self, path, recursive=False):
 		""" Delete all keywords from a file or directory files
 		"""
 		# file case
 		if os.path.isfile(path):
 			logging.info("remove xattr from %s." %
-				stylize(ST_PATH, path), listener=listener)
+				stylize(ST_PATH, path))
 			xattr.setxattr(path, self.licorn_xattr, "")
 
 		# dir case

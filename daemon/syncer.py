@@ -60,7 +60,7 @@ class MyListener(object):
 if __name__ == '__main__':
     server = Zeroconf.Zeroconf()
     listener = MyListener()
-    browser = Zeroconf.ServiceBrowser(server, "_durus._tcp.local.", listener)
+    browser = Zeroconf.ServiceBrowser(server, "_durus._tcp.local.")
 
 """
 

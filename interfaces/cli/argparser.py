@@ -10,6 +10,7 @@ Copyright (C) 2005,2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
 """
+import os
 
 from optparse import OptionParser, OptionGroup
 
@@ -762,10 +763,12 @@ def addimport_parse_arguments(app, configuration):
 
 	addimport.add_option("--filename",
 		action="store", type="string", dest="filename", default=None,
-		help="name of the file you want to import accounts from (must point to a valid CSV file and %s)." % stylize(ST_IMPORTANT, "is required"))
+		help="name of the file you want to import accounts from (must point to "
+			"a valid CSV file and %s)." % stylize(ST_IMPORTANT, "is required"))
 	addimport.add_option("--profile",
 		action="store", type="string", dest="profile", default=None,
-		help="profile the accounts will be affected upon creation (%s)." % stylize(ST_IMPORTANT, "required"))
+		help="profile the accounts will be affected upon creation (%s)." %
+			stylize(ST_IMPORTANT, "required"))
 	addimport.add_option("--lastname-column",
 		action="store", type="int", dest="lastname_col", default = 0,
 		help="lastname column number (default is %s)." % stylize(ST_DEFAULT, "0"))
@@ -774,7 +777,9 @@ def addimport_parse_arguments(app, configuration):
 		help="firstname column number (default is %s)." % stylize(ST_DEFAULT, "1"))
 	addimport.add_option("--group-column",
 		action="store", type="int", dest="group_col", default = 2,
-		help="%s column number (default is %s)." % (stylize(ST_SPECIAL, configuration.groups.names.plural), stylize(ST_DEFAULT, "2")))
+		help="%s column number (default is %s)." % (
+			stylize(ST_SPECIAL, configuration.groups.names.plural),
+			stylize(ST_DEFAULT, "2")))
 	addimport.add_option("--login-column",
 		action="store", type="int", dest="login_col", default=None,
 		help="%s column number (default is %s: login will be guessed from firstname and lastname)." \
@@ -795,7 +800,14 @@ def addimport_parse_arguments(app, configuration):
 
 	parser.add_option_group(addimport)
 
-	return parser.parse_args()
+	opts, args = parser.parse_args()
+
+	if opts.filename:
+		# resolve the complete filename, else the daemon won't find it because
+		# it doesn't have the same CWD as the calling user.
+		opts.filename = os.path.abspath(opts.filename)
+
+	return opts, args
 def add_machine_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add user »."""
 
@@ -975,7 +987,14 @@ def delimport_parse_arguments(app, configuration):
 
 	parser.add_option_group(delimport)
 
-	return parser.parse_args()
+	opts, args = parser.parse_args()
+
+	if opts.filename:
+		# resolve the complete filename, else the daemon won't find it because
+		# it doesn't have the same CWD as the calling user.
+		opts.filename = os.path.abspath(opts.filename)
+
+	return opts, args
 
 ### Modify arguments ###
 def mod_user_parse_arguments(app, configuration):

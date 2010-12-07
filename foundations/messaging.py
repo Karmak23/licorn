@@ -9,7 +9,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 import Pyro.core, Pyro.util
-
+from threading import current_thread
 # WARNING: don't import logging here (circular loop).
 import exceptions
 from ltrace    import ltrace
@@ -18,8 +18,8 @@ from constants import message_type, verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 
 class LicornMessage(Pyro.core.CallbackObjBase):
-	def __init__(self, my_type=message_type.EMIT, data='', interaction=None,
-		answer=None, auto_answer=None, channel=2):
+	def __init__(self, data='empty_message...', my_type=message_type.EMIT, 
+		interaction=None, answer=None, auto_answer=None, channel=2):
 
 		Pyro.core.CallbackObjBase.__init__(self)
 
@@ -33,6 +33,12 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 		self.answer      = answer
 		self.auto_answer = auto_answer
 		self.channel     = channel
+class ListenerObject(object):
+	""" note the listener Pyro proxy object in the current thread.
+		This is quite a hack but will permit to store it in a centralized manner
+		and not forward it everywhere in the code."""
+	def set_listener(self, listener):
+		current_thread().listener = listener
 class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 	""" MessageProcessor is not really a controller, thus it doesn't inherit
 		from CoreController. Used only for messaging between core objects,
@@ -60,7 +66,7 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 		""" process a message. """
 
 		if message.type == message_type.EMIT:
-			# We are in the server, the message has just been built.
+			 # We are in the server, the message has just been built.
 			# Forward it nearly "as is". Only the message type is changed,
 			# to make us know it has been processed one time since emission,
 			# and thus the next hop will be the client, which has the task

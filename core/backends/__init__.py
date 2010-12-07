@@ -66,7 +66,7 @@ class BackendController(Singleton, GiantLockProtectedObject):
 						'backend %s NOT available' %
 							stylize(ST_NAME, backend.name))
 					pass
-	def enable_backend(self, backend, listener=None):
+	def enable_backend(self, backend):
 		""" try to enable a given backend. what to do exactly is left to the
 		backend itself."""
 
@@ -74,8 +74,7 @@ class BackendController(Singleton, GiantLockProtectedObject):
 			str([x for x in self.keys()]), self._available_backends.keys()))
 
 		if backend in self.keys():
-			logging.notice('%s backend already enabled.' % backend,
-				listener=listener)
+			logging.notice('%s backend already enabled.' % backend)
 			return
 
 		if self._available_backends[backend].enable():
@@ -83,11 +82,10 @@ class BackendController(Singleton, GiantLockProtectedObject):
 			del self._available_backends[backend]
 			self[backend].initialize()
 
-			logging.notice('''successfully enabled %s backend.'''% backend,
-				listener=listener)
+			logging.notice('''successfully enabled %s backend.'''% backend)
 
-		LMC.reload_controllers_backends(listener=listener)
-	def disable_backend(self, backend, listener=None):
+		LMC.reload_controllers_backends()
+	def disable_backend(self, backend):
 		""" try to disable a given backend. what to do exactly is left to the
 		backend itself."""
 
@@ -95,18 +93,16 @@ class BackendController(Singleton, GiantLockProtectedObject):
 			self.keys(), self._available_backends.keys()))
 
 		if backend in self._available_backends.keys():
-			logging.notice('%s backend already disabled.' % backend,
-				listener=listener)
+			logging.notice('%s backend already disabled.' % backend)
 			return
 
 		if self[backend].disable():
 			self._available_backends[backend] = self[backend]
 			del self[backend]
-			logging.notice('''successfully disabled %s backend. ''' % backend,
-				listener=listener)
+			logging.notice('''successfully disabled %s backend. ''' % backend)
 
-		LMC.reload_controllers_backends(listener=listener)
-	def check(self, batch=False, auto_answer=None, listener=None):
+		LMC.reload_controllers_backends()
+	def check(self, batch=False, auto_answer=None):
 		""" check all enabled backends, except the 'prefered', which is one of
 		the enabled anyway.
 

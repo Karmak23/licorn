@@ -37,7 +37,6 @@ class LicornMasterController(MixedDictObject):
 
 		# create the internal lock manager. GiantLockProtectedObject class relies on it.
 		self.locks = MixedDictObject('locks')
-
 	def init_conf(self, minimal=False, batch=False):
 		""" init the configuration object. 2 scenarii:
 			- init in one pass from the outside (calling with minimal = False):
@@ -150,7 +149,7 @@ class LicornMasterController(MixedDictObject):
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
-	def reload_controllers_backends(self, listener=None):
+	def reload_controllers_backends(self):
 		""" run through all controllers and make them reload their backends. If
 			one of them finds a new prefered backend, we must reload. Raise the
 			appropriate exception. """
@@ -234,31 +233,22 @@ class LicornMasterController(MixedDictObject):
 
 		# connection is OK, let's get all other objects connected, and pull
 		# them back to the calling process.
-		self.users      = Pyro.core.getAttrProxyForURI("%s/users" % pyroloc)
-		self.groups     = Pyro.core.getAttrProxyForURI("%s/groups" % pyroloc)
-		self.profiles   = Pyro.core.getAttrProxyForURI("%s/profiles" % pyroloc)
-		self.privileges = Pyro.core.getAttrProxyForURI("%s/privileges" % pyroloc)
-		self.keywords   = Pyro.core.getAttrProxyForURI("%s/keywords" % pyroloc)
 		self.machines   = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
 		self.system     = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
-		self.backends   = Pyro.core.getAttrProxyForURI("%s/backends" % pyroloc)
+		self.rwi        = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
 
 		assert ltrace('timings', '@LMC.connect(): %.4fs' % (
 			time.time() - start_time))
 		del start_time
 
 		assert ltrace('core', '< connect()')
-
-		return (self.configuration, self.users, self.groups, self.profiles,
-			self.privileges, self.keywords, self.machines, self.system,
-			self.backends)
+		return self.rwi
 	def release(self):
 		""" Release all Pyro proxys. """
 		assert ltrace('core', '| release()')
-		for controller in (self.configuration, self.users, self.groups, self.profiles,
-			self.privileges, self.keywords, self.machines, self.system,
-			self.backends):
-			controller._release()
+		for controller in self.items():
+			if hasattr(controller, '_release'):
+				controller._release()
 
 LMC = LicornMasterController()
 

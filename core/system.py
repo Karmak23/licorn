@@ -65,7 +65,7 @@ class SystemController(Singleton, GiantLockProtectedObject):
 		assert ltrace('system', '| uid_connecting_from(%s) -> %s(%s)' % (
 			client_socket, LMC.users.uid_to_login(uid), uid))
 		return uid
-	def shutdown(self, delay=1, warn_users=True, listener=None):
+	def shutdown(self, delay=1, warn_users=True):
 		""" shutdown the local machine. """
 		assert ltrace('system', '| shutdown(warn=%s)' % warn_users)
 

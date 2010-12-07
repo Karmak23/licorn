@@ -410,7 +410,7 @@ class INotifier(Thread):
 				len(self.mon.objects),
 				len(self._to_add),
 				len(self._to_remove)
-				))
+				), to_listener=False)
 	def remove_watch(self, path):
 		"""Remove a dir and all its subdirs from our GAM WatchMonitor. """
 
@@ -454,7 +454,7 @@ class INotifier(Thread):
 					len(self.mon.objects),
 					len(self._to_add),
 					len(self._to_remove)
-					))
+					), to_listener=False)
 
 				#assert ltrace('inotifier', str(self.mon.objects).replace(', ', '\n'))
 			except KeyError, e:

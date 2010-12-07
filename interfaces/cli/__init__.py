@@ -18,6 +18,11 @@ from licorn.foundations.constants import filters
 from licorn.foundations.messaging import MessageProcessor
 
 from licorn.core           import LMC
+import argparser
+
+#: Proxy to `daemon.cmdlistener.rwi` used in all CLI tools to transmit commands
+#: to the Licorn® daemon.
+RWI=None
 
 pyroStarted=False
 pyroExit=0
@@ -30,6 +35,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 	global pyroStarted
 	global pyroExit
+	global RWI
 
 	assert ltrace('cli', '> cli_main(%s)' % sys.argv[0])
 
@@ -62,12 +68,10 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 				sys.argv.append("--help")
 
 			assert ltrace('cli', '  cli_main: connecting to core')
-			import licorn.core
-			configuration, users, groups, profiles, privileges, keywords, \
-				machines, system, backends = LMC.connect()
+			RWI = LMC.connect()
 
-			(opts, args) = functions[mode][0](app=app_data,
-				configuration=configuration)
+			(opts, args) = getattr(argparser, functions[mode][0])(app=app_data,
+				configuration=LMC.configuration)
 			options.SetFrom(opts)
 
 			assert ltrace('cli', '  cli_main: starting pyro')
@@ -79,9 +83,13 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			client_daemon = Pyro.core.Daemon()
 			listener = MessageProcessor(verbose=opts.verbose)
 			client_daemon.connect(listener)
-			opts.listener = listener.getAttrProxy()
 
-			msgth=Thread(target=PyroLoop, args=(client_daemon,))
+			# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
+			# daemon will check listener.verbose, which is not accessible
+			# through a simple Pyro Proxy.
+			RWI.set_listener(listener.getAttrProxy())
+
+			msgth = Thread(target=PyroLoop, args=(client_daemon,))
 			msgth.start()
 
 			assert ltrace('timings', '@pyro_start_delay: %.4fs' % (
@@ -95,16 +103,11 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			if giant_locked:
 				from licorn.foundations.classes import FileLock
 				with FileLock(configuration, app_data['name'], 10):
-					functions[mode][1](opts=opts, args=args,
-					configuration=configuration, users=users, groups=groups,
-					profiles=profiles, privileges=privileges, keywords=keywords,
-					machines=machines, system=system, backends=backends)
+					getattr(RWI, functions[mode][1])(opts=opts, args=args)
+
 			else :
 				cmd_start_time = time.time()
-				functions[mode][1](opts=opts, args=args,
-					configuration=configuration, users=users, groups=groups,
-					profiles=profiles, privileges=privileges, keywords=keywords,
-					machines=machines, system=system, backends=backends)
+				getattr(RWI, functions[mode][1])(opts=opts, args=args)
 
 			LMC.release()
 
@@ -159,80 +162,3 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 	del cli_main_start_time
 
 	assert ltrace('cli', '< cli_main(%s)' % sys.argv[0])
-def cli_select(controller, ctype, args, include_id_lists, exclude_id_lists=[],
-	default_selection=filters.NONE, all=False):
-
-	assert ltrace('cli', '''> cli_select(controller=%s, ctype=%s, args=%s, '''
-		'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
-		'''all=%s)''' % (controller, ctype, args, include_id_lists,
-			exclude_id_lists, default_selection, all))
-	# use a set() to avoid duplicates during selections. This will allow us,
-	# later in implementation to do more complex selections (unions,
-	# differences, intersections and al.
-	xids = set()
-	if all:
-		# if --all: manually included IDs (with --login, --group, --uid, --gid)
-		# will be totally discarded (--all gets precedence). But excluded items
-		# will still be excluded, to allow "--all --exclude-login toto"
-		# semi-complex selections.
-		ids = set(controller.keys())
-	else:
-		ids = set()
-
-		something_tried = False
-
-		if len(args) > 1:
-			for arg in args[1:]:
-				#assert ('cli', '  cli_select(add_arg=%s)' % arg)
-				include_id_lists.append((arg, controller.guess_identifier))
-
-		# select included IDs
-		for id_arg, resolver in include_id_lists:
-			if id_arg is None:
-				continue
-			for id in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
-				if id is '':
-					continue
-
-				try:
-					something_tried = True
-					ids.add(resolver(id))
-					assert ltrace('cli', '  cli_select %s(%s) -> %s' %
-						(resolver._RemoteMethod__name, id, resolver(id)))
-				except (KeyError, exceptions.DoesntExistsException):
-					logging.notice('''Skipped non existing or invalid %s or '''
-						'''%sID '%s'.''' % (ctype, ctype[0].upper(),
-						stylize(ST_NAME, id)))
-					continue
-
-	# select excluded IDs, to remove them from included ones
-	for id_arg, resolver in exclude_id_lists:
-		if id_arg is None:
-			continue
-		for id in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
-			if id is '':
-				continue
-			try:
-				xids.add(resolver(id))
-			except (KeyError, exceptions.DoesntExistsException):
-				logging.notice('''Skipped non existing or invalid %s or '''
-					'''%sID '%s'.''' % (ctype, ctype[0].upper(),
-					stylize(ST_NAME, id)))
-				continue
-
-	# now return included IDs, minux excluded IDs, in different conditions.
-	if ids != set():
-		selection = list(ids.difference(xids))
-	else:
-		if something_tried:
-			selection = []
-		else:
-			if default_selection is filters.NONE:
-				logging.warning('You must specify at least one %s!' % ctype)
-				selection = []
-			else:
-				selection = list(set(
-					controller.Select(default_selection)).difference(xids))
-
-	assert ltrace('cli', '< cli_select(return=%s)' % selection)
-	return selection

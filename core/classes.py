@@ -315,7 +315,7 @@ class CoreFSController(CoreController):
 						rule_text.split(
 						self.separator, 1)[0]), custom_keep='._')
 						).replace('.', '_')
-		def check_acl(self, acl, directory, listener=None):
+		def check_acl(self, acl, directory):
 			""" check if an acl is valid or not """
 			rebuilt_acl = []
 			if acl.upper() in ['NOACL', 'RESTRICTED', 'POSIXONLY', 'RESTRICT',
@@ -387,7 +387,7 @@ class CoreFSController(CoreController):
 				rebuilt_acl.append(':'.join(splitted_acl))
 
 			return ','.join(rebuilt_acl)
-		def check_dir(self, directory, listener=None):
+		def check_dir(self, directory):
 			""" check if the dir is ok """
 
 			# try to find insecure entries
@@ -416,18 +416,18 @@ class CoreFSController(CoreController):
 					stylize(ST_NAME, directory)))
 
 			return directory
-		def check(self, listener=None):
+		def check(self):
 			""" general check function """
 			line=self.rule_text.rstrip()
 			try:
 				dir, acl = line.split(self.separator)
 			except ValueError, e:
-				logging.warning("%s->%s" % (line,e), listener=listener)
+				logging.warning("%s->%s" % (line,e))
 			dir = dir.strip()
 			acl = acl.strip()
 
-			self.dir = self.check_dir(directory=dir, listener=listener)
-			self.acl = self.check_acl(acl=acl, directory=dir, listener=listener)
+			self.dir = self.check_dir(directory=dir)
+			self.acl = self.check_acl(acl=acl, directory=dir)
 
 			self.checked = True
 		def generate_dir_info(self, user_info=None, dir_info_base=None):
@@ -571,8 +571,7 @@ class CoreFSController(CoreController):
 					assert ltrace('core', '  ADD rule %s' % acl_rule.dump_status(True))
 					self.system_special_dirs_templates[acl_rule.name] = acl_rule
 
-	def parse_rules(self, rules_path, user_info=None, system_wide=True,
-		listener=None):
+	def parse_rules(self, rules_path, user_info=None, system_wide=True):
 		""" parse a rule from a line to a FsapiObject. """
 		assert ltrace('core', "> parse_rules(%s, %s, %s)" % (rules_path,
 			user_info, system_wide))
@@ -600,22 +599,21 @@ class CoreFSController(CoreController):
 						uid=user_info.uidNumber if not system_wide else None,
 						controller=self)
 				except exceptions.LicornRuntimeException, e:
-					logging.warning2(e, listener=listener)
+					logging.warning2(e)
 					continue
 
 				try:
-					rule.check(listener=listener)
+					rule.check()
 					if system_wide:
 						logging.progress('''%s template ACL rule: '%s' for '%s'.''' %
 							(stylize(ST_OK,"Added"),
 							stylize(ST_NAME, rule.acl),
-							stylize(ST_NAME, rule.dir)),
-							listener=listener)
+							stylize(ST_NAME, rule.dir)))
 				except exceptions.LicornSyntaxException, e:
-					logging.warning(e,listener=listener)
+					logging.warning(e)
 					continue
 				except exceptions.PathDoesntExistsException, e:
-					logging.warning2(e, listener=listener)
+					logging.warning2(e)
 					continue
 				else:
 					assert ltrace('core', '  parse_rules(add rule %s)' %
@@ -634,7 +632,7 @@ class CoreFSController(CoreController):
 					else:
 						dir_info = rule.generate_dir_info(user_info=user_info)
 				except exceptions.LicornSyntaxException, e:
-					logging.warning(e,listener=listener)
+					logging.warning(e)
 					continue
 				special_dirs.append(dir_info)
 

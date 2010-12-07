@@ -22,10 +22,10 @@ verbose.DEBUG2   = 5
 
 #filters for users/groups/profiles and al.
 filters = EnumDict('filters')
-filters.NONE        = 0x00000000
-filters.ALL         = 0xffffffff
-filters.STANDARD    = 0x000000ff
-filters.STD         = filters.STANDARD
+filters.NONE                = 0x00000000
+filters.ALL                 = 0xffffffff
+filters.STANDARD            = 0x000000ff
+filters.STD                 = filters.STANDARD
 
 filters.SYSTEM              = 0x0000ff00
 filters.SYS                 = filters.SYSTEM

@@ -126,7 +126,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 	def set_controller(self, name, controller):
 		#setattr(LMC, name, controller)
 		pass
-	def CleanUp(self, listener=None):
+	def CleanUp(self):
 		"""This is a sort of destructor. Clean-up before being deleted…"""
 
 		if LicornConfiguration.del_ok:
@@ -143,7 +143,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			if e.errno == 2:
 				logging.warning2('''Temporary directory %s has vanished '''
 					'''during run, or already been wiped by another process.'''
-					% self.tmp_dir, listener=listener)
+					% self.tmp_dir)
 			else:
 				raise e
 
@@ -671,8 +671,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 								"u+rw,g+r,o+r"), e))
 
 	### Users and Groups ###
-	def LoadManagersConfiguration(self, batch=False, auto_answer=None,
-		listener=None):
+	def LoadManagersConfiguration(self, batch=False, auto_answer=None):
 		""" Load Users and Groups managements configuration. """
 
 		assert ltrace('configuration', '> LoadManagersConfiguration(batch=%s)' %
@@ -683,7 +682,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		self.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf(batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			auto_answer=auto_answer)
 		self.users.min_passwd_size = 8
 		self.users.uid_min         = add_user_conf['FIRST_UID']
 		self.users.uid_max         = add_user_conf['LAST_UID']
@@ -752,10 +751,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 
 		# ensure /etc/login.defs  and /etc/defaults/useradd comply with
 		# /etc/adduser.conf tweaked for Licorn®.
-		self.CheckLoginDefs(batch=batch, auto_answer=auto_answer,
-			listener=listener)
-		self.CheckUserAdd(batch=batch, auto_answer=auto_answer,
-			listener=listener)
+		self.CheckLoginDefs(batch=batch, auto_answer=auto_answer)
+		self.CheckUserAdd(batch=batch, auto_answer=auto_answer)
 
 		assert ltrace('configuration', '< LoadManagersConfiguration()')
 	def SetDefaultNamesAndPaths(self):
@@ -841,8 +838,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		self.acls.file_acl_restrictive_mask = 'm:rw@GX'
 
 
-	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None,
-		listener=None):
+	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
 			Then load it in a way i can be used in LicornConfiguration.
@@ -885,8 +881,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 						logging.warning('''In %s, directive %s should be at '''
 							'''least %s, but it is %s.'''
 							% (stylize(ST_PATH, adduser_conf),
-								directive, value, adduser_dict[directive]),
-								listener=listener)
+								directive, value, adduser_dict[directive]))
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -896,8 +891,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 						logging.warning('''In %s, directive %s should be set '''
 							'''to %s, but it is %s.''' % (
 								stylize(ST_PATH, adduser_conf),
-								directive, value, adduser_dict[directive]),
-								listener=listener)
+								directive, value, adduser_dict[directive]))
 						adduser_dict[directive] = value
 						adduser_conf_alter      = True
 						adduser_data            = re.sub(r'%s=.*' % directive,
@@ -908,7 +902,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				logging.warning(
 					'''In %s, directive %s is missing. Setting it to %s.'''
 					% (stylize(ST_PATH, adduser_conf),
-						directive, value), listener=listener)
+						directive, value))
 				adduser_dict[directive] = value
 				adduser_conf_alter      = True
 				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)',
@@ -918,13 +912,12 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			if batch or logging.ask_for_repair(
 				'''%s lacks mandatory configuration directive(s).'''
 							% stylize(ST_PATH, adduser_conf),
-								auto_answer, listener=listener):
+								auto_answer):
 				try:
 					fsapi.backup_file(adduser_conf)
 					open(adduser_conf, 'w').write(adduser_data)
 					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
-						% stylize(ST_PATH, adduser_conf),
-						listener=listener)
+						% stylize(ST_PATH, adduser_conf))
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -941,7 +934,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			adduser_dict)
 
 		return adduser_dict
-	def CheckLoginDefs(self, batch=False, auto_answer=None, listener=None):
+	def CheckLoginDefs(self, batch=False, auto_answer=None):
 		""" Check /etc/login.defs for compatibility with Licorn.
 			Load data, alter it if needed and save the new file.
 		"""
@@ -963,8 +956,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				('CREATE_HOME', 'yes')
 			),
 			separator='	',
-			batch=batch, auto_answer=auto_answer, listener=listener)
-	def CheckUserAdd(self, batch=False, auto_answer=None, listener=None):
+			batch=batch, auto_answer=auto_answer)
+	def CheckUserAdd(self, batch=False, auto_answer=None):
 		""" Check /etc/defaults/useradd if it exists, for compatibility with
 			Licorn®.
 		"""
@@ -978,17 +971,16 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				('HOME', self.users.base_path)
 			),
 			separator='=', check_exists=True,
-			batch=batch, auto_answer=auto_answer, listener=listener)
+			batch=batch, auto_answer=auto_answer)
 	def check_system_file_generic(self, filename, reader, defaults, separator,
-		check_exists=False, batch=False, auto_answer=None, listener=None):
+		check_exists=False, batch=False, auto_answer=None):
 
 		assert ltrace('configuration', '''> check_system_file_generic('''
 			'''filename=%s, separator='%s', batch=%s)''' % (filename, separator,
 			batch))
 
 		if check_exists and not os.path.exists(filename):
-			logging.warning2('''%s doesn't exist on this system.''' % filename,
-				listener=listener)
+			logging.warning2('''%s doesn't exist on this system.''' % filename)
 			return
 
 		alter_file = False
@@ -1001,8 +993,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 					logging.warning('''In %s, directive %s should be %s,'''
 						''' but it is %s.''' % (
 							stylize(ST_PATH, filename),
-							directive, value, data_dict[directive]),
-							listener=listener)
+							directive, value, data_dict[directive]))
 					alter_file           = True
 					data_dict[directive] = value
 					file_data            = re.sub(r'%s.*' % directive,
@@ -1011,8 +1002,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				logging.warning('''In %s, directive %s isn't present but '''
 					'''should be, with value %s.''' % (
 						stylize(ST_PATH, filename),
-						directive, value),
-						listener=listener)
+						directive, value))
 				alter_file           = True
 				data_dict[directive] = value
 				file_data += '%s%s%s\n' % (directive, separator, value)
@@ -1020,14 +1010,12 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		if alter_file:
 			if batch or logging.ask_for_repair(
 				'''%s should be altered to be in sync with Licorn®. Fix it ?'''
-				% stylize(ST_PATH, filename), auto_answer,
-				listener=listener):
+				% stylize(ST_PATH, filename), auto_answer):
 				try:
 					fsapi.backup_file(filename)
 					open(filename, 'w').write(file_data)
 					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
-						% stylize(ST_PATH, filename),
-						listener=listener)
+						% stylize(ST_PATH, filename))
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -1242,22 +1230,21 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				'''clean:\n\t%s)''' % e)
 
 	### CHECKS ###
-	def check(self, minimal=True, batch=False, auto_answer=None, listener=None):
+	def check(self, minimal=True, batch=False, auto_answer=None):
 		""" Check all components of system configuration and repair
 		if asked for."""
 
 		assert ltrace('configuration', '> check()')
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			auto_answer=auto_answer)
 
 		self.check_OpenSSH(batch=batch, auto_answer=auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
 		assert ltrace('configuration', '< check()')
-	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None,
-		listener=None):
+	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
 
 		assert ltrace('configuration', '> check_base_dirs()')
@@ -1269,7 +1256,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				raise e
 
 		self.CheckSystemGroups(minimal=minimal, batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			auto_answer=auto_answer)
 
 		p = self.acls
 
@@ -1335,10 +1322,10 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			all_went_ok = True
 
 			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-				dirs_to_verify, batch=True,	listener=listener)
+				dirs_to_verify, batch=True)
 
 			all_went_ok &= self.check_archive_dir(batch=batch,
-				auto_answer=auto_answer, listener=listener)
+				auto_answer=auto_answer)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1373,16 +1360,15 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 
 		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
 			[ home_backup_dir_info ], batch=True,
-			allgroups=LMC.groups, allusers=LMC.users,
-			listener=listener)
+			allgroups=LMC.groups, allusers=LMC.users)
 
 		all_went_ok &= self.check_archive_dir(batch=batch,
-			auto_answer=auto_answer, listener=listener)"""
+			auto_answer=auto_answer)"""
 
 		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
-		auto_answer=None, listener=None):
+		auto_answer=None):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
@@ -1451,8 +1437,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
-						stylize(ST_PATH, self.home_archive_dir),
-						listener=listener)
+						stylize(ST_PATH, self.home_archive_dir))
 				subdir=False
 
 		"""elif not minimal:
@@ -1469,9 +1454,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
 		return fsapi.check_dirs_and_contents_perms_and_acls_new(dirs_to_verify,
-			batch=batch, auto_answer=auto_answer, listener=listener)
-	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None,
-		listener=None):
+			batch=batch, auto_answer=auto_answer)
+	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
@@ -1498,8 +1482,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			if not LMC.groups.exists(name=group):
 				if batch or logging.ask_for_repair(
 					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
-						stylize(ST_NAME, group), auto_answer,
-						listener=listener):
+						stylize(ST_NAME, group), auto_answer):
 					if group == self.users.group and self.distro in (
 						distros.UBUNTU, distros.DEBIAN):
 
@@ -1510,7 +1493,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 						gid = None
 
 					LMC.groups.AddGroup(group, system=True,
-						desired_gid=gid, listener=listener)
+						desired_gid=gid)
 					del gid
 				else:
 					raise exceptions.LicornRuntimeError(
@@ -1676,8 +1659,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		"""
 
 		pass
-	def SetHiddenGroups(self, hidden=True, listener=None):
+	def SetHiddenGroups(self, hidden=True):
 		""" Set (un-)restrictive mode on the groups base directory. """
 
 		self.groups.hidden = hidden
-		self.check_base_dirs(batch=True, listener=listener)
+		self.check_base_dirs(batch=True)

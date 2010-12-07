@@ -31,7 +31,7 @@ class RepairChoice(Singleton):
 
 repair_choice = RepairChoice()
 
-def question(mesg, listener=None):
+def question(mesg):
 	""" Display a stylized question message on stderr."""
 
 	sys.stderr.write(" %s %s %s" % (

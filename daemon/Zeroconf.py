@@ -949,7 +949,7 @@ class ServiceBrowser(threading.Thread):
 	removeService() methods called when this browser
 	discovers changes in the services availability."""
 
-	def __init__(self, zeroconf, type, listener):
+	def __init__(self, zeroconf, type):
 		"""Creates a browser for a specific type"""
 		threading.Thread.__init__(self)
 		self.zeroconf = zeroconf
@@ -1309,14 +1309,14 @@ class Zeroconf(object):
 			return info
 		return None
 
-	def addServiceListener(self, type, listener):
+	def addServiceListener(self, type):
 		"""Adds a listener for a particular service type.  This object
 		will then have its updateRecord method called when information
 		arrives for that type."""
 		self.removeServiceListener(listener)
-		self.browsers.append(ServiceBrowser(self, type, listener))
+		self.browsers.append(ServiceBrowser(self, type))
 
-	def removeServiceListener(self, listener):
+	def removeServiceListener(self):
 		"""Removes a listener from the set that is currently listening."""
 		for browser in self.browsers:
 			if browser.listener == listener:
@@ -1420,7 +1420,7 @@ class Zeroconf(object):
 			i += 1
 			nextTime += _CHECK_TIME
 
-	def addListener(self, listener, question):
+	def addListener(self, question):
 		"""Adds a listener for a given question.  The listener will have
 		its updateRecord method called when information is available to
 		answer the question."""
@@ -1432,7 +1432,7 @@ class Zeroconf(object):
 					listener.updateRecord(self, now, record)
 		self.notifyAll()
 
-	def removeListener(self, listener):
+	def removeListener(self):
 		"""Removes a listener."""
 		try:
 			self.listeners.remove(listener)

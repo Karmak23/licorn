@@ -50,7 +50,6 @@ from licorn.daemon.threads        import LicornJobThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
-from licorn.daemon.cmdlistener    import CommandListener
 from licorn.daemon.network        import pool_job_pinger, \
 										pool_job_pyrofinder, \
 										pool_job_reverser, \
@@ -119,6 +118,10 @@ if __name__ == "__main__":
 		time=(time.time()+30.0),
 		delay=LMC.configuration.licornd.threads.wipe_time,
 		tname='PeriodicThreadsCleaner')
+
+	# we need to import the CommandListener now because the LMC is not
+	# initialized before and cmdlistener needs it.
+	from licorn.daemon.cmdlistener    import CommandListener
 
 	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
 

@@ -17,23 +17,23 @@ from licorn.foundations.constants import host_status
 from licorn.core                  import LMC
 from licorn.daemon.core           import dqueues
 
-def queue_wait(queue, tprettyname, wait_message, caller, listener=None):
+def queue_wait(queue, tprettyname, wait_message, caller):
 	logging.progress('%s: waiting for %d %s to %s (qsize=%d).' % (
 			caller, LMC.configuration.licornd.threads.pool_members, tprettyname,
-			wait_message, queue.qsize()), listener=listener)
+			wait_message, queue.qsize()))
 	queue.join()
-def queue_wait_for_pingers(caller, listener=None):
+def queue_wait_for_pingers(caller):
 	queue_wait(dqueues.pings, 'pingers', 'ping network hosts',
-		caller, listener=listener)
-def queue_wait_for_arppingers(caller, listener=None):
+		caller)
+def queue_wait_for_arppingers(caller):
 	queue_wait(dqueues.arppings, 'arppingers', 'ARP ping network hosts',
-		caller, listener=listener)
-def queue_wait_for_pyroers(caller, listener=None):
+		caller)
+def queue_wait_for_pyroers(caller):
 	queue_wait(dqueues.pyrosys, 'pyroers',
-		'discover Pyro on online hosts', caller, listener=listener)
-def queue_wait_for_reversers(caller, listener=None):
+		'discover Pyro on online hosts', caller)
+def queue_wait_for_reversers(caller):
 	queue_wait(dqueues.reverse_dns, 'reversers',
-		'PTR resolve IP addresses', caller, listener=listener)
+		'PTR resolve IP addresses', caller)
 def thread_network_links_builder():
 	""" Ping all known machines. On online ones, try to connect to pyro and
 	get current detailled status of host. Notify the host that we are its
@@ -96,7 +96,7 @@ def thread_periodic_scanner():
 			pingqueue.put(mid)
 
 	queue_wait_for_pingers(caller)
-def pool_job_reverser(mid, listener=None, *args, **kwargs):
+def pool_job_reverser(mid, *args, **kwargs):
 	"""  Find the hostname for an IP, or build it (PoolJobThread target method). """
 
 	caller = current_thread().name
@@ -118,7 +118,7 @@ def pool_job_reverser(mid, listener=None, *args, **kwargs):
 
 	assert ltrace('machines', '< %s: pool_job_reverser(%s)' % (
 		caller, machines[mid].hostname))
-def pool_job_pinger(mid, listener=None, *args, **kwargs):
+def pool_job_pinger(mid, *args, **kwargs):
 	"""  Ping an IP (PoolJobThread target method). """
 
 	caller = current_thread().name
@@ -145,7 +145,7 @@ def pool_job_pinger(mid, listener=None, *args, **kwargs):
 
 	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (caller, retval))
 	return retval
-def pool_job_arppinger(mid, listener=None, *args, **kwargs):
+def pool_job_arppinger(mid, *args, **kwargs):
 	"""  Ping an IP (PoolJobThread target method). """
 
 	caller = current_thread().name
@@ -162,7 +162,7 @@ def pool_job_arppinger(mid, listener=None, *args, **kwargs):
 		machines[mid].ether = machines.run_arping(mid)
 
 	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (caller, retval))
-def pool_job_pyrofinder(mid, listener=None, *args, **kwargs):
+def pool_job_pyrofinder(mid, *args, **kwargs):
 	""" scan a network host and try to find if it is Pyro enabled.
 		This method is meant to be run from a LicornPoolJobThread. """
 

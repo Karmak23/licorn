@@ -42,13 +42,18 @@ def common_behaviour_group(app, parser, mode='any'):
 			'del_group','del_profile', 'del_privilege'):
 			behaviorgroup.add_option("-y", "--yes", "--auto-yes",
 				action="store_true", dest="auto_answer", default = None,
-				help="Automatically answer 'yes' to all repair questions (i.e. repair everything that can be) (default: %s, each question will be asked at one time)." % stylize(ST_DEFAULT, "no"))
+				help="Automatically answer 'yes' to all repair questions (i.e. "
+					"repair everything that can be) (default: %s, each question"
+					" will be asked at one time)." %
+						stylize(ST_DEFAULT, "None"))
 			behaviorgroup.add_option("--no", "--auto-no",
 				action="store_false", dest="auto_answer", default = None,
-				help="Automatically answer 'no' to all repair questions (i.e. don't repair anything, just print the warnings)." )
+				help="Automatically answer 'no' to all repair questions (i.e. "
+					"don't repair anything, just print the warnings)." )
 			behaviorgroup.add_option("--batch", "-b",
 				action="store_true", dest="batch", default = False,
-				help="batch all operations (don't ask questions, automate everything).")
+				help="batch all operations (don't ask questions, automate "
+					"everything).")
 		if mode in ('check', 'del_user', 'del_group', 'del_profile',
 			'del_privilege', 'mod_user', 'mod_group', 'mod_profile'):
 			behaviorgroup.add_option('-i', "--interactive",
@@ -66,7 +71,11 @@ def common_behaviour_group(app, parser, mode='any'):
 		help="be quiet, don't display anything except on warnings/errors." )
 	behaviorgroup.add_option("-v", "--verbose",
 		action="count", dest="verbose", default = 1,
-		help="be more verbose (in command-line mode) ; you can get more with -vv, -vvv, etc.%s, which is quite moderated. You will get information about auto-generated passwords and long-time actions, when you should expect to wait for them to complete."% stylize(ST_DEFAULT, "the default is INFO level of verbosity"))
+		help="be more verbose (in command-line mode) ; you can get more with "
+			"-vv, -vvv, etc.%s, which is quite moderated. You will get "
+			"information about auto-generated passwords and long-time actions, "
+			"when you should expect to wait for them to complete." %
+				stylize(ST_DEFAULT, "the default level of verbosity is NOTICE"))
 	behaviorgroup.add_option("--no-colors",
 		action="store_true", dest="no_colors", default = False,
 		help="no colors in any messages (CLI mode only).")
