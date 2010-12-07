@@ -37,6 +37,45 @@ class LicornConfigurationException(LicornException):
 	"""
 	errno = 3
 	pass
+class LicornSyntaxException(LicornConfigurationException):
+	""" Raised when a bad syntax is encountered in any file.
+	"""
+	errno = 31
+	def __init__(self, file_name=None, line_no=None, text=None, text_part=None,
+		desired_syntax=None, optional_exception=None):
+		self.file_name = file_name
+		self.line_no = line_no
+		self.text = text
+		self.text_part = text_part
+		self.desired_syntax = desired_syntax
+		self.opt = optional_exception
+	def __str__(self):
+		return '%s: invalid syntax at line %d: %s %s.' % (
+				self.file_name,
+				self.line_no,
+				self.text,
+				'must match %s' % self.desired_syntax \
+					if self.opt is None else '(was: %s)' % self.opt)
+class LicornACLSyntaxException(LicornSyntaxException):
+	""" Raised when a bad syntax is encountered in any file.
+	"""
+	errno = 311
+	#def __init__(self, file_name, line_no, text, text_part=None,
+	#	desired_syntax=None):
+	#	LicornSyntaxException.__init__(file_name, line_no, text, text_part=None,
+	#	desired_syntax=None)
+	def __str__(self):
+		return '''%s: invalid ACL %s at line %d ''' \
+			'''(part '%s' is faulty%s).''' % (
+			#stylize(ST_PATH, self.file_name),
+			#stylize(ST_COMMENT, splitted_acl),
+			#self.line_no,
+			#stylize(ST_BAD, splitted_acl[bad_part-1]))
+			self.file_name,
+			self.text,
+			self.line_no,
+			self.text_part,
+			'' if self.opt is None else ', %s' % self.opt)
 class LicornConfigurationError(LicornError):
 	""" Raised when a correctable configuration problem is encountered.
 
@@ -227,6 +266,12 @@ class DoesntExistsError(LicornRuntimeError):
 	errno = 103
 	pass
 
+class PathDoesntExistsException(DoesntExistsException):
+	""" Raised when a path doesn't exist,
+		but the situation can be recovered or ignored at some extend.
+	"""
+	errno = 1021
+	pass
 class NetworkError(LicornError):
 	"""Raised when a generic network error is encountered."""
 	errno = 201
@@ -249,3 +294,4 @@ class NoAvaibleIdentifierError(LicornRuntimeError):
 	""" Raised when there is no gid or uid avaible.
 	"""
 	pass
+

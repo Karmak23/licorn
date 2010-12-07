@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 
 import re, math
 from gettext import gettext as _
-
+from licorn.core         import LMC
 from licorn.foundations import exceptions, logging, styles
 
 def next_free(used_list, start, end):
@@ -265,3 +265,12 @@ def add_or_dupe_attr(target, value):
 				target = [ target, value ]
 		else:
 			target = [ target, value ]
+def expand_vars_and_tilde(text, uid=None):
+
+	user_home = LMC.users[uid]['homeDirectory'] if uid else ''
+
+	return text.replace(
+			'~', user_home).replace(
+			'$HOME', user_home).replace(
+			user_home, '')
+

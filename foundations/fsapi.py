@@ -16,6 +16,7 @@ import os, posix1e
 from stat import *
 from ltrace import ltrace
 from licorn.foundations import logging, exceptions, pyutils, styles, process
+from licorn.core           import LMC
 
 # WARNING: DON'T IMPORT licorn.core.configuration HERE.
 # just pass "configuration" as a parameter if you need it somewhere.
@@ -94,6 +95,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 						continue
 					else:
 						raise e
+
 def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 	auto_answer=None, allgroups=None, allusers=None, listener=None):
 	""" Check if a dir exists, else create it and apply ACLs on it eventually.
@@ -272,10 +274,367 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 	else:
 		raise exceptions.BadArgumentError(
 			"You must pass something through dirs_infos to check!")
+
+
+def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=None, auto_answer=None, listener=None):
+	""" general function to check file/dir """
+	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
+		listener=listener):
+		all_went_ok = True
+		# save desired user and group owner of the file/dir
+		try:
+			if dir_info.user:
+				uid = dir_info['user']
+			else:
+				uid = -1
+			if dir_info.group and dir_info.group != '':
+				gid = dir_info['group']
+			else:
+				gid = -1
+		except KeyError, e:
+			raise exceptions.LicornRuntimeError('''You just encountered a '''
+				'''programmer bug. Get in touch with robin@licorn.org (was: '''
+				'''%s).''' % e)
+		except exceptions.LicornRuntimeException, e:
+			raise exceptions.LicornRuntimeError('''The uid/gid you want to '''
+				'''check against does not exist on this system ! This '''
+				'''shouldn't happen and is probably a programmer/packager '''
+				'''bug. Get in touch with dev@licorn.org (was: %s).''' % e)
+
+		# Does the file/dir exist ?
+		try:
+			entry_stat = os.lstat(dir_info['path'])
+		except OSError, e:
+			if e.errno == 13:
+				raise exceptions.InsufficientPermissionsError(str(e))
+			elif e.errno == 2:
+				raise exceptions.DoesntExistsException(str(e))
+			else:
+				# FIXME: do more things to recover from more system errors…
+				raise e
+
+		# if it is a file
+		if ( entry_stat.st_mode & 0170000 ) == S_IFREG:
+			logging.progress("Checking file %s…" %
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				listener=listener)
+			if dir_info.files_perm and dir_info.user \
+				and dir_info.group:
+				check_perms(
+					file_type=S_IFREG,
+					dir_info=dir_info,
+					batch=batch,
+					listener=listener)
+
+		# if it is a dir
+		elif ( entry_stat.st_mode & 0170000 ) == S_IFDIR:
+			logging.progress("Checking dir %s…" %
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				listener=listener)
+			# if the directory ends with '/' that mean that we will only
+			# affect the content of the dir.
+			# the dir itself will receive default licorn ACL rights (those
+			# defined in the configuration)
+			if dir_info.path[-1] == '/':
+				dir_info_root = dir_info.copy()
+				dir_info_root.root_dir_acl = True
+				dir_info_root.root_dir_perm = "%s,g:%s:rwx,%s" % (
+					LMC.configuration.acls.acl_base,
+					LMC.configuration.defaults.admin_group,
+					LMC.configuration.acls.acl_mask)
+				dir_info_root.group = "acl"
+
+				# now that the "root dir" has its special treatment,
+				# prepare dir_info for the rest (its contents)
+				dir_info.path = dir_info.path[:-1]
+			else:
+				dir_info_root = dir_info
+
+			logging.progress("Checking %s's %s…" % (
+				styles.stylize(styles.ST_PATH, dir_info['path']),
+				"ACLs" if dir_info.root_dir_acl else "posix perms"),
+				listener=listener)
+			# deal with root dir
+			check_perms(
+				is_root_dir=True,
+				file_type=S_IFDIR,
+				dir_info=dir_info_root,
+				batch=batch,
+				listener=listener)
+
+			if dir_info.files_perm != None or dir_info.dirs_perm != None:
+				try:
+					exclude_list = dir_info.exclude
+				except AttributeError :
+					exclude_list = []
+
+			if dir_info.files_perm != None:
+				logging.progress("Checking %s's contents %s…" % (
+					styles.stylize(styles.ST_PATH, dir_info['path']),
+					'ACLs' if dir_info.content_acl else 'posix perms'),
+					listener=listener)
+				if dir_info.dirs_perm != None:
+					dir_path = dir_info['path']
+					for dir in minifind(dir_path, exclude=exclude_list, mindepth=1,
+						type=S_IFDIR):
+						dir_info.path=dir
+						check_perms(
+							file_type=S_IFDIR,
+							dir_info=dir_info,
+							batch=batch,
+							listener=listener)
+
+				# deal with files inside root dir
+				for file in minifind(dir_path, exclude=exclude_list, mindepth=1,
+					type=S_IFREG):
+						dir_info.path = file
+						check_perms(
+						file_type=S_IFREG,
+						dir_info=dir_info,
+						batch=batch,
+						listener=listener)
+
+		else:
+			logging.warning('''The type of %s is not recognised by the '''
+				'''check_user() function.''' % dir_info['path'])
+		return all_went_ok
+
+	if dirs_infos != None:
+		# first, check user_home
+		try:
+			check_one_dir_and_acl(dirs_infos._default)
+		except AttributeError:
+			pass
+		# check all specials_dirs
+		for dir_info in dirs_infos:
+			if check_one_dir_and_acl(dir_info) is False:
+				return False
+		else:
+			return True
+
+	else:
+		raise exceptions.BadArgumentError(
+			"You must pass something through dirs_infos to check!")
+def check_perms(dir_info, file_type=None, is_root_dir=False, batch=None, auto_answer=None,
+	listener=None):
+	""" general function to check is permissions are ok on file/dir """
+	if file_type is S_IFDIR:
+		if is_root_dir:
+			access_perm = dir_info.root_dir_perm
+			perm_acl = dir_info.root_dir_acl
+		else:
+			access_perm = dir_info.dirs_perm
+			perm_acl = dir_info.content_acl
+	else:
+		access_perm = dir_info.files_perm
+		perm_acl = dir_info.content_acl
+
+	if perm_acl:
+		# FIXME : allow @X only.
+		execperms = execbits2str(dir_info.path)
+		if '@GX' in access_perm or '@UX' in access_perm:
+			access_perm = str(access_perm).replace('@GX', execperms[1]).replace(
+				'@UX', execperms[0])
+		access_perm = posix1e.ACL(text='%s' % access_perm)
+
+	check_uid_and_gid(path=dir_info.path,
+		uid=LMC.users.guess_identifier(dir_info.user),
+		gid=LMC.groups.guess_identifier(dir_info.group if not perm_acl
+			else 'acl'), batch = batch,listener=listener)
+
+	logging.progress("Checking %s of %s." % (
+		"posix1e ACL" if perm_acl else "posix perms",
+		styles.stylize(styles.ST_PATH, dir_info.path)),
+		listener=listener)
+
+	if perm_acl:
+		# apply posix1e access perm on the file/dir
+		current_perm = posix1e.ACL(file=dir_info.path)
+
+		if current_perm != access_perm:
+
+			current_perm_text = str(current_perm).replace("\n", ",").replace(
+				"group:","g:").replace("user:","u:").replace(
+				"other::","o:").replace("mask::","m:")[:-1]
+			access_perm_text = str(access_perm).replace("\n", ",").replace(
+				"group:","g:").replace("user:","u:").replace(
+				"other::","o:").replace("mask::","m:")[:-1]
+
+			warn_message = logging.SWKN_INVALID_ACL % ("Access",
+				styles.stylize(styles.ST_PATH, dir_info.path),
+				styles.stylize(styles.ST_BAD, current_perm_text),
+				styles.stylize(styles.ST_ACL, access_perm_text))
+
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
+					# be sure to pass an str() to acl.applyto(), else it will
+					# raise a TypeError if onpath is an unicode string…
+					# (checked 2006 08 08 on Ubuntu Dapper)
+					posix1e.ACL(acl=access_perm).applyto(str(dir_info.path),
+						posix1e.ACL_TYPE_ACCESS)
+					logging.info("Applyed %s ACL %s on %s." % (
+						"Access",
+						styles.stylize(styles.ST_ACL, access_perm_text),
+						styles.stylize(styles.ST_PATH, dir_info.path)),
+						listener=listener)
+			else:
+				all_went_ok = False
+
+		# if it is a directory, apply default ACLs
+		if file_type is S_IFDIR:
+			current_default_perm = posix1e.ACL(filedef=dir_info.path)
+			if dir_info.dirs_perm != None and ':' in str(dir_info.dirs_perm):
+				default_perm = dir_info.dirs_perm
+			else:
+				default_perm = dir_info.root_dir_perm
+			default_perm = posix1e.ACL(text=default_perm)
+			if current_default_perm != default_perm:
+
+				current_perm_text = str(current_default_perm).replace("\n", ",").replace(
+					"group:","g:").replace("user:","u:").replace(
+					"other::","o:").replace("mask::","m:")[:-1]
+				access_perm_text = str(default_perm).replace("\n", ",").replace(
+					"group:","g:").replace("user:","u:").replace(
+					"other::","o:").replace("mask::","m:")[:-1]
+
+				warn_message = logging.SWKN_INVALID_ACL % ("Default",
+					styles.stylize(styles.ST_PATH, dir_info.path),
+					styles.stylize(styles.ST_BAD, current_perm_text),
+					styles.stylize(styles.ST_ACL, access_perm_text))
+
+				if batch or logging.ask_for_repair(warn_message, auto_answer,
+					listener=listener):
+					default_perm.applyto(str(dir_info.path), posix1e.ACL_TYPE_DEFAULT)
+					logging.info("Applyed %s ACL %s on %s." % (
+							"Default",
+							styles.stylize(styles.ST_ACL, access_perm_text),
+							styles.stylize(styles.ST_PATH, dir_info.path)),
+							listener=listener)
+				else:
+					all_went_ok = False
+
+
+
+	else:
+		# delete previus ACL perms in case of existance
+		if has_extended_acl(dir_info.path):
+			# if an ACL is present, this could be what is borking the Unix mode.
+			# an ACL is present if it has a mask, else it is just standard posix
+			# perms expressed in the ACL grammar. No mask == Not an ACL.
+
+			warn_message = "An ACL is present on %s, but it should not." % styles.stylize(styles.ST_PATH, dir_info.path)
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
+				# if it is a directory we need to delete DEFAULT ACLs too
+				if file_type is S_IFDIR:
+					posix1e.ACL(text="").applyto(str(dir_info.path),
+						posix1e.ACL_TYPE_DEFAULT)
+					logging.info("Deleted default ACL from %s." %
+						styles.stylize(styles.ST_PATH, dir_info.path),
+						listener=listener)
+				# delete ACCESS ACLs if it is a file or a directory
+				posix1e.ACL(text="").applyto(str(dir_info.path),
+					posix1e.ACL_TYPE_ACCESS)
+				logging.info("Deleted access ACL from %s." %
+					styles.stylize(styles.ST_PATH, dir_info.path),
+					listener=listener)
+			else:
+				all_went_ok = False
+		pathstat = os.lstat(dir_info.path)
+		current_perm = pathstat.st_mode & 07777
+		if current_perm != access_perm:
+			current_perm_txt     = perms2str(current_perm)
+			access_perms_txt    = perms2str(access_perm)
+			warn_message = logging.SWKN_INVALID_MODE % (
+				styles.stylize(styles.ST_PATH, dir_info.path),
+				styles.stylize(styles.ST_BAD, current_perm_txt),
+				styles.stylize(styles.ST_ACL, access_perms_txt))
+
+			if batch or logging.ask_for_repair(warn_message, auto_answer,
+				listener=listener):
+					os.chmod(dir_info.path, access_perm)
+					logging.info("Applyed perms %s on %s." % (
+						styles.stylize(styles.ST_ACL, access_perms_txt),
+						styles.stylize(styles.ST_PATH, dir_info.path)),
+						listener=listener)
+			else:
+				all_went_ok = False
+
+def check_uid_and_gid(path, uid=-1, gid=1, batch=None, auto_answer=None,
+	listener=None):
+	""" function that check the uid and gid of a fieml or a dir. """
+	logging.progress("Checking posix uid/gid/perms of %s." %
+		styles.stylize(styles.ST_PATH, path), listener=listener)
+	try:
+		pathstat = os.lstat(path)
+	except OSError, e:
+		if e.errno == 2:
+			# causes of this error:
+			#     - this is a race condition: the dir/file has been deleted between the minifind()
+			#       and the check_*() call. Don't blow out on this.
+			#     - when we explicitely want to check a path which does not exist because it has not
+			#       been created yet (eg: ~/.dmrc on a brand new user account).
+			return True
+		else:
+			raise e
+
+	# if one or both of the uid or gid are empty, don't check it, use the
+	# current one present in the file meta-data.
+	if uid == -1:
+		uid = pathstat.st_uid
+		try:
+			desired_login = LMC.users[uid]['login']
+		except KeyError:
+			desired_login = str(uid)
+	else:
+		desired_login = LMC.users.uid_to_login(uid)
+
+	if gid == -1:
+		gid = pathstat.st_gid
+		try:
+			desired_group = LMC.groups[gid]['name']
+		except KeyError:
+			desired_group = str(gid)
+	else:
+		desired_group = LMC.groups[gid]['name']
+
+	if pathstat.st_uid != uid or pathstat.st_gid != gid:
+
+		try:
+			current_login = LMC.users[pathstat.st_uid]['login']
+		except KeyError:
+			current_login = str(pathstat.st_uid)
+
+		try:
+			current_group = LMC.groups[pathstat.st_gid]['name']
+		except KeyError:
+			current_group = str(pathstat.st_gid)
+
+		warn_message = logging.SWKN_DIR_BAD_OWNERSHIP \
+				% (
+					styles.stylize(styles.ST_PATH, path),
+					styles.stylize(styles.ST_BAD, current_login),
+					styles.stylize(styles.ST_BAD, current_group),
+					styles.stylize(styles.ST_UGID, desired_login),
+					styles.stylize(styles.ST_UGID, desired_group),
+				)
+
+		if batch or logging.ask_for_repair(warn_message, auto_answer,
+			listener=listener):
+			os.chown(path, uid, gid)
+			logging.info("Changed owner of %s from %s:%s to %s:%s." % (
+				styles.stylize(styles.ST_PATH, path),
+				styles.stylize(styles.ST_UGID, current_login),
+				styles.stylize(styles.ST_UGID, current_group),
+				styles.stylize(styles.ST_UGID, desired_login),
+				styles.stylize(styles.ST_UGID, desired_group)),
+				listener=listener)
+		else:
+			all_went_ok = False
+
 def check_posix1e_dir_contents(dir_info, batch=False, auto_answer=None,
 	listener=None):
 	"""TODO."""
-
 	all_went_ok = True
 
 	try:
@@ -315,7 +674,7 @@ def check_posix1e_dir_contents(dir_info, batch=False, auto_answer=None,
 
 	return all_went_ok
 def check_posix_dir_contents(dir_info, uid, gid, batch=False, auto_answer=None,
-	allgroups=None, allusers=None, listener=None):
+	allgroups=None, allusers=None, mode='mode', listener=None):
 	"""TODO."""
 
 	all_went_ok = True
@@ -327,10 +686,9 @@ def check_posix_dir_contents(dir_info, uid, gid, batch=False, auto_answer=None,
 		exclude_list = dir_info['exclude']
 	else:
 		exclude_list = []
-
 	try:
 		if reduce(pyutils.keep_false, map(
-			lambda x: check_posix_ugid_and_perms(x, uid, gid, dir_info['mode'],
+			lambda x: check_posix_ugid_and_perms(x, uid, gid, dir_info[mode],
 				batch, auto_answer, allgroups, allusers, listener=listener),
 			 minifind(dir_info['path'], exclude=exclude_list, mindepth=1,
 				type=S_IFDIR))) is False:
@@ -340,7 +698,6 @@ def check_posix_dir_contents(dir_info, uid, gid, batch=False, auto_answer=None,
 		# happens when shared dir has no directory at all in it (except
 		# public_html which is excluded).
 		pass
-
 	try:
 		if reduce(pyutils.keep_false, map(
 			lambda x: check_posix_ugid_and_perms(x, uid, gid,
@@ -352,26 +709,21 @@ def check_posix_dir_contents(dir_info, uid, gid, batch=False, auto_answer=None,
 	except TypeError:
 		# same exception if there are no files…
 		pass
-
 	return all_went_ok
 def check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1, batch=False,
 	auto_answer=None, allgroups=None, allusers=None, listener=None):
 	"""Check if some path has some desired perms, repair if told to do so."""
-
 	if onpath in ("", None):
 		raise exceptions.BadArgumentError(
 			"The path you want to check perms on must not be empty !")
-
 	if allusers is None:
 		from licorn.core.configuration import LicornConfiguration
 		from licorn.core.users import UsersController
 		configuration = LicornConfiguration()
-		allusers = UsersController(configuration)
-
+		allusers = LMC.users(configuration)
 	if allgroups is None:
 		from licorn.core.groups import GroupsController
 		allgroups = GroupsController(allusers.configuration, allusers)
-
 	all_went_ok = True
 
 	logging.progress("Checking posix uid/gid/perms of %s." %
@@ -486,22 +838,20 @@ def check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1, batch=False,
 	mode = pathstat.st_mode & 07777
 
 	#assert logging.debug2("Comparing desired %d and current %d on %s." % (perms, mode, onpath))
-
 	if perms != mode:
+		mode_txt     = perms2str(mode)
+		perms_txt    = perms2str(perms)
+		warn_message = logging.SWKN_INVALID_MODE % (styles.stylize(styles.ST_PATH, onpath), styles.stylize(styles.ST_BAD, mode_txt), styles.stylize(styles.ST_ACL, perms_txt))
 
-			mode_txt     = perms2str(mode)
-			perms_txt    = perms2str(perms)
-			warn_message = logging.SWKN_INVALID_MODE % (styles.stylize(styles.ST_PATH, onpath), styles.stylize(styles.ST_BAD, mode_txt), styles.stylize(styles.ST_ACL, perms_txt))
-
-			if batch or logging.ask_for_repair(warn_message, auto_answer,
-				listener=listener):
-					os.chmod(onpath, perms)
-					logging.info("Applyed perms %s on %s." % (
-						styles.stylize(styles.ST_ACL, perms_txt),
-						styles.stylize(styles.ST_PATH, onpath)),
-						listener=listener)
-			else:
-				all_went_ok = False
+		if batch or logging.ask_for_repair(warn_message, auto_answer,
+			listener=listener):
+				os.chmod(onpath, perms)
+				logging.info("Applyed perms %s on %s." % (
+					styles.stylize(styles.ST_ACL, perms_txt),
+					styles.stylize(styles.ST_PATH, onpath)),
+					listener=listener)
+		else:
+			all_went_ok = False
 
 	return all_went_ok
 def auto_check_posix_ugid_and_perms(onpath, uid=-1, gid=-1, perms=-1,
@@ -570,7 +920,7 @@ def check_posix1e_acl(onpath, path_is_file, access_acl_text="",
 	if path_is_file:
 		execperms       = execbits2str(onpath)
 		#assert logging.debug2("Exec perms are %s before replacement." % execperms)
-		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
+		access_acl_text = access_acl_text.replace('@GX', execperms[1]).replace('@UX', execperms[0])
 
 	logging.progress("Checking posix1e ACL of %s." %
 		styles.stylize(styles.ST_PATH, onpath), listener=listener)
@@ -654,7 +1004,7 @@ def auto_check_posix1e_acl(onpath, path_is_file, access_acl_text="",
 
 	if path_is_file:
 		execperms       = execbits2str(onpath)
-		access_acl_text = access_acl_text.replace('@GE', execperms[1]).replace('@UE', execperms[0])
+		access_acl_text = access_acl_text.replace('@GX', execperms[1]).replace('@UX', execperms[0])
 
 	for (desired_acl_text, is_default, acl_type) in (
 		(access_acl_text, False, posix1e.ACL_TYPE_ACCESS),

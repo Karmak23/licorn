@@ -18,7 +18,8 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import distros, servers, mailboxes, \
 											licornd_roles
-from licorn.foundations.base      import LicornConfigObject, Singleton
+from licorn.foundations.base      import LicornConfigObject, Singleton, \
+											Enumeration, FsapiObject
 from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
@@ -154,6 +155,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		assert ltrace('configuration', '> SetBaseDirsAndFiles()')
 
 		self.config_dir              = "/etc/licorn"
+		self.check_config_dir        = self.config_dir + "/check.d"
 		self.main_config_file        = self.config_dir + "/licorn.conf"
 		self.backup_config_file      = self.config_dir + "/backup.conf"
 
@@ -570,6 +572,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		# a sane (but arbitrary) default.
 		# TODO: detect this from /etc/…
 		self.users.mailbox_auto_create = True
+		self.users.mailbox = None
+		self.users.mailbox_type = mailboxes.NONE
 
 		if self.mta == servers.MTA_POSTFIX:
 
@@ -758,9 +762,10 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
 
-		self.defaults =  LicornConfigObject()
+		self.defaults = Enumeration()
 
 		self.defaults.home_base_path = '/home'
+		self.defaults.check_homedir_filename = '00_default'
 
 		# WARNING: Don't translate this. This still has to be discussed.
 		# TODO: move this into a plugin
@@ -772,6 +777,10 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		"""Create self.users attributes and start feeding it."""
 
 		self.users = LicornConfigObject()
+
+		# config dir
+		self.users.config_dir = '.licorn'
+		self.users.check_config_file = self.users.config_dir + '/check.conf'
 
 		self.users.group = 'users'
 
@@ -826,6 +835,12 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			self.defaults.admin_group
 		self.acls.acl_users = '--x' \
 			if self.groups.hidden else 'r-x'
+		self.acls.file_acl_base = 'u::rw@UX,g::---,o:---'
+		self.acls.acl_restrictive_mask = 'm:r-x'
+		self.acls.file_acl_mask = 'm:rw@GX'
+		self.acls.file_acl_restrictive_mask = 'm:rw@GX'
+
+
 	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None,
 		listener=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
@@ -1258,7 +1273,53 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 
 		p = self.acls
 
-		dirs_to_verify = [ {
+		dirs_to_verify = []
+		dir_info = FsapiObject(name="groups_dir")
+		dir_info.path = p.groups_dir
+		dir_info.user = 'root'
+		dir_info.group = 'acl'
+		dir_info.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
+				p.acl_base, p.acl_admins_ro,
+				p.acl_users, p.acl_mask)
+		dir_info.root_dir_acl = True
+
+		dirs_to_verify.append(dir_info)
+
+		dir_info = FsapiObject(name="home_backup")
+		dir_info.path = self.home_backup_dir
+		dir_info.user = 'root'
+		dir_info.group = 'acl'
+		dir_info.root_dir_perm = "%s,%s,%s" % (p.acl_base,
+				p.acl_admins_ro, p.acl_mask),
+		dir_info.dirs_perm = "%s,%s,%s" % (p.acl_base,
+				p.acl_admins_ro, p.acl_mask)
+		if not minimal:
+			# check the contents of these dirs, too (fixes #95)
+			dir_info.files_perm = ("%s,%s,%s" % (
+				p.acl_base, p.acl_admins_ro, p.acl_mask)
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
+		dir_info.content_acl = True
+		dir_info.root_dir_acl = True
+
+		dirs_to_verify.append(dir_info)
+		"""home_backup_dir_info = {
+						'path'      : self.home_backup_dir,
+						'user'      : 'root',
+						'group'     : 'acl',
+						'access_acl': "%s,%s,%s" % (p.acl_base,
+							p.acl_admins_ro, p.acl_mask),
+						'default_acl': "%s,%s,%s" % (p.acl_base,
+							p.acl_admins_ro, p.acl_mask)
+						}
+						if not minimal:
+						# check the contents of these dirs, too (fixes #95)
+						home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (
+							p.acl_base, p.acl_admins_ro, p.acl_mask)
+							).replace('r-x', 'r--').replace('rwx', 'rw-')
+			"""
+
+
+		"""	dirs_to_verify = [ {
 			'path'      : p.groups_dir,
 			'user'      : 'root',
 			'group'     : 'acl',
@@ -1266,14 +1327,18 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				p.acl_base, p.acl_admins_ro,
 				p.acl_users, p.acl_mask),
 			'default_acl': ""
-			} ]
+			} ]"""
 
 		try:
 			# batch this because it *has* to be corrected
 			# for system to work properly.
-			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-				batch=batch, allgroups=LMC.groups,
-				allusers=LMC.users, listener=listener)
+			all_went_ok = True
+
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+				dirs_to_verify, batch=True,	listener=listener)
+
+			all_went_ok &= self.check_archive_dir(batch=batch,
+				auto_answer=auto_answer, listener=listener)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1285,9 +1350,10 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 					'''Filesystem must be mounted with 'acl' option:\n\t%s''' \
 						% e)
 			else:
+				logging.warning(e)
 				raise e
 
-		home_backup_dir_info = {
+		"""	home_backup_dir_info = {
 			'path'      : self.home_backup_dir,
 			'user'      : 'root',
 			'group'     : 'acl',
@@ -1311,7 +1377,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			listener=listener)
 
 		all_went_ok &= self.check_archive_dir(batch=batch,
-			auto_answer=auto_answer, listener=listener)
+			auto_answer=auto_answer, listener=listener)"""
 
 		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
@@ -1324,7 +1390,25 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 
 		p = self.acls
 
-		home_archive_dir_info = {
+		dirs_to_verify = []
+
+		dir_info = FsapiObject(name="home_archive")
+		dir_info.path = self.home_archive_dir
+		dir_info.user = 'root'
+		dir_info.group = 'acl'
+		dir_info.root_dir_acl = True
+		dir_info.content_acl = True
+		dir_info.root_dir_perm = "%s,%s,%s" % (
+			p.acl_base, p.acl_admins_rw, p.acl_mask)
+		dir_info.dirs_perm = "%s,%s,%s" % (
+			p.acl_base, p.acl_admins_rw, p.acl_mask)
+		if not minimal:
+			dir_info.files_perm = ("%s,%s,%s" % (
+				p.acl_base, p.acl_admins_rw, p.acl_mask)
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
+
+		dirs_to_verify.append(dir_info)
+		"""home_archive_dir_info = {
 			'path'       : self.home_archive_dir,
 			'user'       : 'root',
 			'group'      : 'acl',
@@ -1332,13 +1416,27 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				p.acl_base, p.acl_admins_rw, p.acl_mask),
 			'default_acl': "%s,%s,%s" % (
 				p.acl_base, p.acl_admins_rw, p.acl_mask),
-			}
+			}"""
 
-		if subdir:
+		if subdir is not None:
 
 			if os.path.dirname(subdir) == self.home_archive_dir:
 
-				subdir_info = {
+				subdir_info = FsapiObject(name="home_archive_subdir")
+				subdir_info.path = self.home_archive_dir
+				subdir_info.user = 'root'
+				subdir_info.group = 'acl'
+				subdir_info.root_dir_acl = True
+				subdir_info.content_acl = True
+				subdir_info.root_dir_perm = "%s,%s,%s" % (
+						p.acl_base, p.acl_admins_rw, p.acl_mask)
+				subdir_info.dirs_perm = "%s,%s,%s" % (
+						p.acl_base, p.acl_admins_rw, p.acl_mask)
+				subdir_info.files_perm = ("%s,%s,%s" % (
+					p.acl_base, p.acl_admins_rw, p.acl_mask)
+					).replace('r-x', 'r--').replace('rwx', 'rw-')
+
+				"""subdir_info = {
 					'path'       : self.home_archive_dir,
 					'user'       : 'root',
 					'group'      : 'acl',
@@ -1349,7 +1447,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 					'content_acl': ("%s,%s,%s" % (
 						p.acl_base, p.acl_admins_rw, p.acl_mask)
 							).replace('r-x', 'r--').replace('rwx', 'rw-')
-					}
+					}"""
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
@@ -1357,23 +1455,21 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 						listener=listener)
 				subdir=False
 
-		elif not minimal:
+		"""elif not minimal:
 			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (
 				p.acl_base, p.acl_admins_rw, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
+				).replace('r-x', 'r--').replace('rwx', 'rw-')"""
 
-		dirs_to_verify = [ home_archive_dir_info ]
+		#dirs_to_verify = [ home_archive_dir_info ]
 
-		if subdir:
+		if subdir is not None:
 			dirs_to_verify.append(subdir_info)
 
 		assert ltrace('configuration', ''''< check_archive_dir(return '''
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
-		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-			batch=batch, auto_answer=auto_answer,
-			allgroups=LMC.groups, allusers=LMC.users,
-			listener=listener)
+		return fsapi.check_dirs_and_contents_perms_and_acls_new(dirs_to_verify,
+			batch=batch, auto_answer=auto_answer, listener=listener)
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None,
 		listener=None):
 		"""Check if needed groups are present on the system, and repair

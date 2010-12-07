@@ -109,6 +109,7 @@ distros.REDHAT   = 5
 distros.MANDRIVA = 6
 
 mailboxes = EnumDict('mailboxes')
+mailboxes.NONE         = 0
 mailboxes.VAR_MBOX     = 1
 mailboxes.VAR_MAILDIR  = 2
 mailboxes.HOME_MBOX    = 3

@@ -257,6 +257,15 @@ class Enumeration(object):
 		for attrname, attrvalue in self.iteritems():
 			setattr(temp, attrname, copy.copy(attrvalue))
 		return temp
+	# make Enumeration pseudo-list compatible
+	def append(self, value):
+		self.__setattr__(value.name, value)
+	def remove(self, value):
+		try:
+			delattr(self, value.name)
+		except AttributeError:
+			delattr(self, value)
+	# make enumeration
 	def dump_status(self, long_output=False, precision=None):
 		assert ltrace('base', '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
@@ -265,7 +274,8 @@ class Enumeration(object):
 				str(self.__class__),
 				'\n'.join('%s(%s): %s' % (stylize(ST_ATTR, attrName),
 					type(getattr(self, attrName)),
-				getattr(self, attrName)) for attrName in dir(self)))
+				getattr(self, attrName)) for attrName in dir(self)
+					if attrName[:2] != '__' and not callable(getattr(self, attrName))))
 		else:
 			return '%s: %s attributes %s' % (stylize(ST_NAME, self.name),
 				len(self), self.keys())
@@ -280,6 +290,7 @@ class Enumeration(object):
 
 		if attr_value is None:
 			attr_value = getattr(self, attr_name)
+		#print "bla:%s:%s" % (attr_name, len(attr_name))
 
 		return attr_name[0] != '_' and not attr_name == 'name' \
 			and not callable(attr_value)
@@ -377,3 +388,19 @@ class LicornConfigObject():
 		for attribute_name in dir(self):
 			if attribute_name[0] != '_':
 				yield getattr(self, attribute_name)
+class FsapiObject(Enumeration):
+	def __init__(self, name=None, path=None, user=None, root_dir_perm=None,
+		dirs_perm=None, files_perm=None, group=None, exclude=[], rule=None,
+		copy_from=None ):
+		Enumeration.__init__(self, name, copy_from)
+		self.path = path
+		self.user = user
+		self.group = group
+		self.root_dir_perm = root_dir_perm
+		self.dirs_perm = dirs_perm
+		self.files_perm = files_perm
+		self.exclude = exclude
+		self.rule = rule
+		self.content_acl = False
+		self.root_dir_acl = False
+

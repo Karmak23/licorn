@@ -7,18 +7,20 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
+
 import os, sys
+
 from time import time, strftime, gmtime
 
 from licorn.foundations           import logging, exceptions, hlstr
 from licorn.foundations           import pyutils, fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton
+from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
 from licorn.foundations.constants import filters, backend_actions
 
 from licorn.core         import LMC
-from licorn.core.classes import CoreController, CoreUnitObject
+from licorn.core.classes import CoreFSController, CoreUnitObject
 
 class User(CoreUnitObject):
 	counter = 0
@@ -37,7 +39,7 @@ class User(CoreUnitObject):
 		self.homeDirectory = homeDirectory
 		self.loginShell    = loginShell
 		self.groups        = groups
-class UsersController(Singleton, CoreController):
+class UsersController(Singleton, CoreFSController):
 
 	init_ok = False
 	load_ok = False
@@ -51,7 +53,7 @@ class UsersController(Singleton, CoreController):
 		if UsersController.init_ok:
 			return
 
-		CoreController.__init__(self, 'users')
+		CoreFSController.__init__(self, 'users')
 
 		UsersController.init_ok = True
 		assert ltrace('users', '< UsersController.__init__(%s)' %
@@ -73,8 +75,9 @@ class UsersController(Singleton, CoreController):
 		return self.users.has_key(key)
 	def reload(self):
 		""" Load (or reload) the data structures from the system data. """
-
 		assert ltrace('users', '| reload()')
+
+		CoreFSController.reload(self)
 
 		with self.lock():
 			self.users       = {}
@@ -495,7 +498,7 @@ class UsersController(Singleton, CoreController):
 			tmp_user_dict['userPassword'] = LMC.backends[
 					self._prefered_backend_name].compute_password(password)
 
-			tmp_user_dict['shadowLastChange'] = str(int(time()/86400))
+			tmp_user_dict['shadowLastChange'] = str(int(time.time()/86400))
 
 			# start unlocked, now that we got a brand new password.
 			tmp_user_dict['locked'] = False
@@ -960,12 +963,13 @@ class UsersController(Singleton, CoreController):
 				+ "\n</users-list>\n"
 
 			return data
-	def CheckUsers(self, uids_to_check = [], minimal=True, batch=False,
+	def CheckUsers(self, uids_to_check=[], minimal=True, batch=False,
 		auto_answer=None, listener=None):
 		"""Check user accounts and account data consistency."""
 
-		assert ltrace('users', '> CheckUsers(uids_to_check=%s, minimal=%s, batch=%s)' %
-			(uids_to_check, minimal, batch))
+		assert ltrace('users', '''> CheckUsers(uids_to_check=%s, minimal=%s, '''
+			''' batch=%s, auto_answer=%s)''' % (uids_to_check, minimal, batch,
+			auto_answer))
 
 		# FIXME: should we crash if the user's home we are checking is removed
 		# during the check ? what happens ?
@@ -974,7 +978,9 @@ class UsersController(Singleton, CoreController):
 		LMC.configuration.check_base_dirs(minimal=minimal,
 			batch=batch, auto_answer=auto_answer, listener=listener)
 
-		def check_uid(uid, minimal=minimal, batch=batch,
+		special_dirs = [] # array of Enumeration objects
+
+		def my_check_uid(uid, minimal=minimal, batch=batch,
 			auto_answer=auto_answer, listener=listener):
 
 			assert ltrace('users', '> CheckUsers.check_uid(uid=%s)' % uid)
@@ -999,164 +1005,109 @@ class UsersController(Singleton, CoreController):
 						stylize(ST_NAME, login), listener=listener)
 
 					if os.path.exists(self.users[uid]['homeDirectory']):
-						home_dir_info = [ {
-							'path'       : self.users[uid]['homeDirectory'],
-							'user'       : login,
-							'group'      : LMC.groups[
-								self.users[uid]['gidNumber']]['name'],
-							'mode'       : 00700,
-							'content_mode': 00600
-							} ]
+						home_dir = Enumeration()
+						home_dir.path = self.users[uid]['homeDirectory']
+						home_dir.uidNumber = uid
+						home_dir.gidNumber = self.users[uid]['gidNumber']
+						home_dir.root_dir_acl = False
+						home_dir.content_acl = False
+						home_dir.root_dir_perm = 00700
+						home_dir.files_perm = 00600
+						home_dir.dirs_perm = 00700
 
-						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-							home_dir_info, batch=batch, auto_answer=auto_answer,
-							allgroups=LMC.groups, allusers=self,
+						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+							[ home_dir ], batch=batch, auto_answer=auto_answer,
 							listener=listener)
+
 				elif self.is_standard_uid(uid):
 					logging.progress("Checking standard account %s…" % \
 						stylize(ST_LOGIN, login), listener=listener)
 
-					gid       = self.users[uid]['gidNumber']
-					group     = LMC.groups[gid]['name']
-					user_home = self.users[uid]['homeDirectory']
+					user_info = Enumeration()
+					user_info.user_home = self.users[uid]['homeDirectory']
+					user_info.uidNumber = uid
+					user_info.gidNumber = self.users[uid]['gidNumber']
 
-					logging.progress("Checking user account %s…" % \
-						stylize(ST_NAME, login), listener=listener)
+					user_special_dirs = self.parse_rules(
+						user_info.user_home + '/' +
+						LMC.configuration.users.check_config_file,
+						user_info=user_info,system_wide=False,
+						listener=listener)
 
-					acl_base                  = "u::rwx,g::---,o:---"
-					file_acl_base             = "u::rw@UE,g::---,o:---"
-					acl_mask                  = "m:rwx"
-					acl_restrictive_mask      = "m:r-x"
-					file_acl_mask             = "m:rw@GE"
-					file_acl_restrictive_mask = "m:rw@GE"
+					system_special_dirs = Enumeration('system_special_dirs')
+					assert ltrace('users', '  system_special_dirs_templates %s '
+						% self.system_special_dirs_templates.dump_status(True))
 
-					#
-					# first build a list of dirs (located in ~/) to be excluded
-					# from the home dir check, because they must have restrictive
-					# permission (for confidentiality reasons) and don't need any
-					# ACLs. In the same time (for space optimization reasons),
-					# append them to special_dirs[] (which will be checked *after*
-					# home dir).
-					#
-					home_exclude_list = [ '.ssh', '.gnupg', '.gnome2_private',
-											'.gvfs', 'Dropbox' ]
-					special_dirs      = []
+					for dir_info in self.system_special_dirs_templates:
+						assert ltrace('users', '  using dir_info %s ' % dir_info.dump_status(True))
+						temp_dir_info = dir_info.copy()
+						temp_dir_info.path = temp_dir_info.path % user_info.user_home
+						if os.path.exists(temp_dir_info.path):
+							if '%s' in temp_dir_info.user:
+								temp_dir_info.user = temp_dir_info.user % user_info.uidNumber
+							if '%s' in temp_dir_info.group:
+								temp_dir_info.group = temp_dir_info.group % user_info.gidNumber
+							system_special_dirs.append(temp_dir_info)
 
-					special_dirs.extend([ {
-						'path'       : "%s/%s" % (user_home, dir),
-						'user'       : login,
-						'group'      : group,
-						'mode'       : 00700,
-						'content_mode': 00600
-						} for dir in home_exclude_list if \
-							os.path.exists('%s/%s' % (user_home, dir)) ])
+					default_exclusions = []
 
-					if os.path.exists('%s/public_html' % user_home):
-
-						home_exclude_list.append('public_html')
-
-						special_dirs.append ( {
-							'path'      : "%s/public_html" % user_home,
-							'user'      : login,
-							'group'     : 'acl',
-							'access_acl': "%s,g:%s:r-x,g:www-data:r-x,%s" % (
-								acl_base,
-								LMC.configuration.defaults.admin_group,
-								acl_restrictive_mask),
-							'default_acl': "%s,g:%s:rwx,g:www-data:r-x,%s" % (
-								acl_base,
-								LMC.configuration.defaults.admin_group,
-								acl_mask),
-							'content_acl': "%s,g:%s:rw-,g:www-data:r--,%s" % (
-								file_acl_base,
-								LMC.configuration.defaults.admin_group,
-								file_acl_mask),
-							} )
-
-					# if we are in charge of building the user's mailbox, do it and
-					# check it. This is particularly important for ~/Maildir
-					# because courier-imap will hog CPU time if the Maildir doesn't
-					# exist prior to the daemon launch…
-					if LMC.configuration.users.mailbox_auto_create and \
-						LMC.configuration.users.mailbox_type == \
-						LMC.configuration.MAIL_TYPE_HOME_MAILDIR:
-
-						maildir_base = '%s/%s' % (user_home,
-							LMC.configuration.users.mailbox)
-
-						# WARNING: "configuration.users.mailbox" is assumed to have
-						# a trailing slash if it is a Maildir, because that's the
-						# way it is in postfix/main.cf and other MTA configuration.
-						# Without the "/", the mailbox is assumed to be an mbox or
-						# an MH. So we use [:-1] to skip the trailing "/", else
-						# fsapi.minifind() won't match the dir name properly in the
-						# exclusion list.
-
-						home_exclude_list.append(
-							LMC.configuration.users.mailbox[:-1])
-
-						for dir in ( maildir_base, '%stmp' % maildir_base,
-							'%scur' % maildir_base,'%snew' % maildir_base ):
-							special_dirs.append ( {
-								'path'       : dir,
-								'user'       : login,
-								'group'      : group,
-								'mode'       : 00700,
-								'content_mode': 00600
-							} )
-
-					# this will be handled in another manner later in this function.
-					home_exclude_file_list = [ ".dmrc", ".procmailrc" ]
-					for file in home_exclude_file_list:
-						if os.path.exists('%s/%s' % (user_home, file)):
-							home_exclude_list.append(file)
-							all_went_ok &= fsapi.check_posix_ugid_and_perms(
-								'%s/%s' % (user_home, file), uid, gid, 00600,
-									batch=batch, auto_answer=auto_answer,
-									allgroups=LMC.groups, allusers=self,
+					for dir_info in system_special_dirs:
+						if dir_info.rule.default:
+							if "~" not in user_special_dirs.keys():
+								user_special_dirs._default=dir_info.copy()
+								logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
+									(stylize(ST_OK,"Added"), 'system' if \
+									dir_info.rule.system_wide else 'user',
+									stylize(ST_NAME, dir_info.rule.acl),
+									stylize(ST_NAME, dir_info.path)),
 									listener=listener)
+						else:
+							if dir_info.name in user_special_dirs.keys():
+								overriden_dir_info = user_special_dirs[dir_info.name]
+								logging.warning('%s user rule for path %s '
+									'(%s:%s), overriden by system rule (%s:%s).'
+									% ( stylize(ST_BAD, "Ignored"),
+									    stylize(ST_PATH, dir_info.path),
+										overriden_dir_info.rule.file_name,
+										overriden_dir_info.rule.line_no,
+										dir_info.rule.file_name,
+										dir_info.rule.line_no
+										), listener=listener)
+							else:
+								tmp = dir_info.copy()
+								if tmp.path.endswith('/'):
+									tmp.path = tmp.path[:len(tmp.path)-1]
+								tmp.path = tmp.path.replace('%s/' % user_info.user_home, '')
+								default_exclusions.append(tmp.path)
+								logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
+									(stylize(ST_OK,"Added"), 'system' if \
+									dir_info.rule.system_wide else 'user',
+									stylize(ST_NAME, dir_info.rule.acl),
+									stylize(ST_NAME, dir_info.path)),
+									listener=listener)
+							user_special_dirs[dir_info.name] = dir_info
 
-					# Now that the exclusion list is complete, we can check the home
-					# dir. For that we need a dir_info with the correct information.
+					for di in user_special_dirs:
+						if di.rule.default:
+							user_special_dirs._default = di.copy()
+							user_special_dirs.remove(di.name)
 
-					home_dir_info = {
-						'path'      : self.users[uid]['homeDirectory'],
-						'user'      : login,
-						'group'     : 'acl',
-						'access_acl': "%s,g:%s:r-x,g:www-data:--x,%s" % (
-							acl_base,
-							LMC.configuration.defaults.admin_group,
-							acl_restrictive_mask),
-						'default_acl': "%s,g:%s:rwx,%s" % (acl_base,
-							LMC.configuration.defaults.admin_group,
-							acl_mask),
-						'content_acl': "%s,g:%s:rw@GE,%s" % (file_acl_base,
-							LMC.configuration.defaults.admin_group,
-							file_acl_mask),
-						'exclude'   : home_exclude_list
-						}
+						else:
+							tmp = di.copy()
+							if tmp.path.endswith('/'):
+								tmp.path = tmp.path[:len(tmp.path)-1]
+							tmp.path = tmp.path.replace('%s/' % user_info.user_home, '')
+							default_exclusions.append(tmp.path)
 
-					if not batch:
-						logging.progress("Checking user home dir %s contents,"
-							" this can take a while…" % stylize(
-							ST_PATH, user_home), listener=listener)
+					user_special_dirs._default.exclude = default_exclusions
 
 					try:
-						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-							[ home_dir_info ], batch=batch, auto_answer=auto_answer,
-							allgroups=LMC.groups, allusers=self,
-							listener=listener)
-					except exceptions.LicornCheckError:
-						logging.warning("User home dir %s is missing,"
-							" please repair this first." % stylize(
-							ST_PATH, user_home), listener=listener)
-						return False
-
-					if special_dirs != []:
-						all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-							special_dirs, batch=batch, auto_answer=auto_answer,
-							allgroups=LMC.groups, allusers=self,
-							listener=listener)
+						if user_special_dirs != None:
+							all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+								user_special_dirs, batch=batch, auto_answer=auto_answer,
+								listener=listener)
+					except exceptions.DoesntExistsException, e:
+						logging.warning(e)
 
 					if not minimal:
 						logging.warning(
@@ -1187,7 +1138,8 @@ class UsersController(Singleton, CoreController):
 							listener=listener)
 				return all_went_ok
 
-		all_went_ok=reduce(pyutils.keep_false, map(check_uid, uids_to_check))
+		all_went_ok=reduce(pyutils.keep_false, map(my_check_uid, uids_to_check))
+
 		if all_went_ok is False:
 			# NOTICE: don't test just "if reduce():", the result could be None
 			# and everything is OK when None…

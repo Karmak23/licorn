@@ -405,6 +405,7 @@ class GroupsController(Singleton, CoreController):
 				'''are: %s.''' % LMC.configuration.users.skels)
 
 		return name, description, groupSkel
+
 	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
 		system=False, permissive=False, batch=False, force=False,
 		listener=None):
@@ -1205,7 +1206,7 @@ class GroupsController(Singleton, CoreController):
 		""" Return an ACL triolet (a dict) used later to check something
 			in the group shared dir.
 
-			NOTE: the "@GE" and "@UE" strings will be later replaced by individual
+			NOTE: the "@GX" and "@UX" strings will be later replaced by individual
 			execution bits of certain files which must be kept executable.
 
 			NOT locked, because called from methods which already lock.
@@ -1221,22 +1222,22 @@ class GroupsController(Singleton, CoreController):
 
 		if self.groups[gid]['permissive']:
 			group_default_acl = "rwx"
-			group_file_acl    = "rw@GE"
+			group_file_acl    = "rw@GX"
 		else:
 			group_default_acl = "r-x"
-			group_file_acl    = "r-@GE"
+			group_file_acl    = "r-@GX"
 
 		acl_base      = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x,g:%s:rwx" % (
 			LMC.configuration.defaults.admin_group,
 			LMC.configuration.groups.guest_prefix + group,
 			LMC.configuration.groups.resp_prefix + group)
 		file_acl_base = \
-			"u::rw@UE,g::---,o:---,g:%s:rw@GE,g:%s:r-@GE,g:%s:rw@GE" % (
+			"u::rw@UX,g::---,o:---,g:%s:rw@GX,g:%s:r-@GX,g:%s:rw@GX" % (
 			LMC.configuration.defaults.admin_group,
 			LMC.configuration.groups.guest_prefix + group,
 			LMC.configuration.groups.resp_prefix + group)
 		acl_mask      = "m:rwx"
-		file_acl_mask = "m:rw@GE"
+		file_acl_mask = "m:rw@GX"
 
 		if path.find('public_html') == 0:
 			return {
