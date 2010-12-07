@@ -762,7 +762,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
 
-		self.defaults = Enumeration()
+		self.defaults = LicornConfigObject()
 
 		self.defaults.home_base_path = '/home'
 		self.defaults.check_homedir_filename = '00_default'
