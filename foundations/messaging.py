@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Licorn foundations: messaging.
-classes used for Inter-thread and inter-machines communication through Pyro.
+	Licorn foundations: messaging
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
-Licensed under the terms of the GNU GPL version 2.
+	Classes used for Inter-thread and inter-machines communication through Pyro.
+
+	:copyright: (C) 2010 Olivier Cortès <oc@meta-it.fr>
+	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys
@@ -18,7 +20,10 @@ from constants import message_type, verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 
 class LicornMessage(Pyro.core.CallbackObjBase):
-	def __init__(self, data='empty_message...', my_type=message_type.EMIT, 
+	""" Small message object pushed back and forth between Pyro instances on one
+		or more physical machines.
+	"""
+	def __init__(self, data='empty_message...', my_type=message_type.EMIT,
 		interaction=None, answer=None, auto_answer=None, channel=2):
 
 		Pyro.core.CallbackObjBase.__init__(self)
@@ -27,11 +32,22 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 			'''answer=%s,auto_answer=%s,channel=%s)''' % (data, my_type,
 			interaction, answer, auto_answer, channel))
 
+		#: the message data as str()
 		self.data        = data
+
+		#: the message type as foundations.constants.messages_type
 		self.type        = my_type
+
+		#: the interaction type (if any), as foundations.constants.interactions_type
 		self.interaction = interaction
+
+		#: the answer to the original message, as str()
 		self.answer      = answer
+
+		#: an eventual auto answer, as bool()
 		self.auto_answer = auto_answer
+
+		#: the channel to push the message to, as sys.std{out,err}
 		self.channel     = channel
 class ListenerObject(object):
 	""" note the listener Pyro proxy object in the current thread.
@@ -61,12 +77,14 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 			verbose, ip_address))
 
 		self.verbose = verbose
+
+		#: IP address of initial message sender, if provided, as str('X.X.X.X')
 		self.addr = ip_address
 	def process(self, message, callback):
-		""" process a message. """
+		""" process a message and sends answer via callback if needed. """
 
 		if message.type == message_type.EMIT:
-			 # We are in the server, the message has just been built.
+			# We are in the server, the message has just been built.
 			# Forward it nearly "as is". Only the message type is changed,
 			# to make us know it has been processed one time since emission,
 			# and thus the next hop will be the client, which has the task

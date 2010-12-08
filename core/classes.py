@@ -71,10 +71,13 @@ class GiantLockProtectedObject(MixedDictObject, Pyro.core.ObjBase):
 		return True
 class CoreController(GiantLockProtectedObject):
 	""" The CoreController class implements multiple functionnalities:
-		- storage for UnitObjects, via the dict part of MixedDictObject
+
+		- storage for :class:`CoreUnitObject`, via the dict part of
+			:class:`MixedDictObject`
 		- backend resolution, with priorities if used by current
 			controller's backends.
 		- the reverse mapping via one or more protected dictionnary.
+
 	"""
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		GiantLockProtectedObject.__init__(self, name=name, warnings=warnings)

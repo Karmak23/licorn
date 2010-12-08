@@ -125,7 +125,8 @@ def warning2(mesg, once=False, to_listener=True):
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write(text_message)
 def notice(mesg, to_listener=True):
-	""" Display a non-stylized notice message on stderr."""
+	""" Display a stylized NOTICE message on stderr, and publish it to the
+		remote listener if not told otherwise. """
 
 	text_message = " %s %s %s\n" % (stylize(ST_INFO, '*'), mytime(), mesg)
 
@@ -135,7 +136,8 @@ def notice(mesg, to_listener=True):
 	if options.verbose >= verbose.NOTICE:
 		sys.stderr.write(text_message)
 def info(mesg, to_listener=True):
-	""" Display a stylized information message on stderr."""
+	""" Display a stylized INFO message on stderr, and publish it to the
+		remote listener if not told otherwise. """
 
 	text_message = " * %s %s\n" % (mytime(), mesg)
 
@@ -145,7 +147,8 @@ def info(mesg, to_listener=True):
 	if options.verbose >= verbose.INFO:
 		sys.stderr.write(text_message)
 def progress(mesg, to_listener=True):
-	""" Display a stylized progress message on stderr. """
+	""" Display a stylized PROGRESS message on stderr, and publish it to the
+		remote listener if not told otherwise. """
 
 	text_message = " > %s %s\n" % (mytime(), mesg)
 
@@ -158,7 +161,8 @@ def progress(mesg, to_listener=True):
 	# make logging.progress() be compatible with potential assert calls.
 	return True
 def debug(mesg, to_listener=True):
-	"""Display a stylized debug message on stderr."""
+	"""Display a stylized DEBUG (level1) message on stderr, and publish it to
+		the remote listener if not told otherwise. """
 
 	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB1'), mytime(), mesg)
 
@@ -171,7 +175,8 @@ def debug(mesg, to_listener=True):
 	# be compatible with assert calls
 	return True
 def debug2(mesg, to_listener=True):
-	"""Display a stylized debug2 message on stderr."""
+	"""Display a stylized DEBUG (level2) message on stderr, and publish it to
+		the remote listener if not told otherwise. """
 
 	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB2'), mytime(), mesg)
 
@@ -184,7 +189,15 @@ def debug2(mesg, to_listener=True):
 	# be compatible with assert calls
 	return True
 def ask_for_repair(message, auto_answer=None):
-	"""ask the user if he wants to repair, store answer for next question."""
+	""" Ask the user to answer Yes/No/Skip/All to a question. Return True/False
+		for Yes/No answers, and store the answer for next questions if Skip/All.
+
+		If there is a listener, forward the question to it (don't ask locally)
+		and get back the answer from it.
+
+		When asking the question locally, use :func:`interactive_ask_for_repair`
+		from the :mod:`ttyutils` module.
+	"""
 
 	assert ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
 

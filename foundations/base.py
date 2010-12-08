@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Licorn foundations - http://dev.licorn.org/documentation/foundations
+	Licorn foundations
+	~~~~~~~~~~~~~~~~~~
 
-base - ultra basic objects, used as base classes.
+	base - ultra basic objects, used as base classes.
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2
+	:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+	:license: Licensed under the terms of the GNU GPL version 2
 """
 import copy
 
@@ -13,11 +14,12 @@ import exceptions
 from styles import *
 from ltrace import ltrace
 
-# just a list of Pyro objects attributes, to be able to protect them, when
-# switching internal attributes and dict items in MixedDictObject and derivatives.
+#: just a list of Pyro objects attributes, to be able to protect them, when
+#: switching internal attributes and dict items in MixedDictObject and derivatives.
 pyro_protected_attrs = ['objectGUID', 'lastUsed', 'delegate', 'daemon']
 
 class ObjectSingleton(object):
+	""" Create a single instance of an object-derived class. """
 	__instances = {}
 	def __new__(cls, *args, **kargs):
 		if ObjectSingleton.__instances.get(cls) is None:
@@ -27,6 +29,7 @@ class ObjectSingleton(object):
 		assert ltrace('base', '| Singleton.__new__(%s)' % cls)
 		return ObjectSingleton.__instances[cls]
 class DictSingleton(dict):
+	""" Create a single instance of a dict-derived class. """
 	__instances = {}
 	def __new__(cls, *args, **kargs):
 		if DictSingleton.__instances.get(cls) is None:
@@ -40,8 +43,13 @@ Singleton = DictSingleton
 
 #new-style classes.
 class NamedObject(object):
-	# protected against multi-object aggressive __setattr__. It is strictly not
-	# used in the current class, but derivatives rely on it to exist.
+	""" A simple object-derived class with a :attr:`name` attribute, protected
+		against aggressive :meth:`__setattr__` by the class attribute
+		:attr:`_licorn_protected_attrs`. This protector is not used in the
+		current class, but derivative classes rely on it to exist, in order
+		to be able to protect the base :attr:`name` attribute will all or their
+		other protected attributes.
+	"""
 	_licorn_protected_attrs = ['name']
 	def __init__(self, name='<unset>', source=None):
 		assert ltrace('base', '| NamedObject.__init__(%s)' % name)
@@ -51,15 +59,21 @@ class NamedObject(object):
 		if source:
 			self.copy_from(source)
 	def copy(self):
+		""" Implements the copy method like any other base object. """
 		assert ltrace('base', '| NamedObject.copy(%s)' % self.name)
 		temp = self.__class__()
 		temp.copy_from(self)
 		return temp
 	def copy_from(self, source):
+		""" Copy attributes from another object of the same class. """
 		assert ltrace('base', '| NamedObject.copy_from(%s, %s)' % (
 			self.name, source.name))
 		self.__name__ = source.__name__
 	def dump_status(self, long_output=False, precision=None):
+		""" method called by :meth:`ltrace.dump` and :meth:`ltrace.fulldump`
+			to dig into complex derivated object at runtime (in the licornd
+			interactive shell).
+		"""
 		assert ltrace('base', '| %s.dump_status(%s, %s)' % (self.name,
 			long_output, precision))
 
@@ -90,17 +104,6 @@ class MixedDictObject(NamedObject, dict):
 		much more often than keys, and when iterating values - which are likely
 		to be licorn base objects - their names are still accessible via the
 		value.name attribute.
-
-		# already implemented by dict, not overloaded:
-		#def __getattribute__(self, attr):
-		#def __setattr__(self, attr):
-		#def __delattr__(self, attr):
-		#def __getattribute__(self, attr):
-		#def __len__(self):
-		#def __setitem__(self, key, value):
-		#def __delitem__(self, key):
-		#def __getitem__(self, key):
-		#def update(self, upddict):
 
 	"""
 	_licorn_protected_attrs = NamedObject._licorn_protected_attrs
@@ -311,6 +314,7 @@ class Enumeration(object):
 		except TypeError:
 			return 'NONE Object'
 	def update(self, upddict):
+		""" like a standard dict object, implement ``update()``. """
 		for (key, value) in upddict.iteritems():
 			setattr(self, key, value)
 	def remove(self, attr):

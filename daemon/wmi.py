@@ -268,6 +268,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				try:
 					assert ltrace('wmi',
 						'serve_virtual_uri:exec("%s")' % py_code)
+					#TODO: #431
+					#for i in postargs.iteritems() :
+					#	kwargs[i] = i
+					#getattr(getattr(web, niv1), niv2)(self.path, self.htt_user, **kwargs)
 					exec py_code
 
 				except (AttributeError, NameError), e:

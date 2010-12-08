@@ -34,16 +34,19 @@ class LicornMasterController(MixedDictObject):
 	_init_conf_full    = False
 	_licorn_protected_attrs = MixedDictObject._licorn_protected_attrs
 	def __init__(self, name='LMC'):
+		""" Default name is LMC because in 99.9% cases we've got only one LMC."""
 		MixedDictObject.__init__(self, name)
 		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__), name))
 
-		# create the internal lock manager. GiantLockProtectedObject class relies on it.
+		#: Create the internal lock manager. GiantLockProtectedObject class relies on it.
 		self.locks = MixedDictObject('locks')
 	def init_conf(self, minimal=False, batch=False):
-		""" init the configuration object. 2 scenarii:
-			- init in one pass from the outside (calling with minimal = False):
+		""" Init the configuration object. 2 scenarii:
+
+			- init in one pass from the outside (calling with ``minimal=False``):
 				internally we call 2 passes, to avoid problems with backends.
 			- init in 2 passes from the outside: the same as internally.
+
 		"""
 		if LicornMasterController._init_conf_full or (
 			minimal and LicornMasterController._init_conf_minimal):
