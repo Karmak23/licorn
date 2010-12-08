@@ -2,6 +2,8 @@
 
 from gettext import gettext as _
 
+from licorn.core import LMC
+
 from licorn.interfaces.wmi import utils as w
 
 def ctxtnav():
@@ -57,7 +59,7 @@ def reboot(uri, http_user, sure=False):
 			</tr>
 		</table>
 		''' % (
-		_('Sure you want to reboot the %s server?') % configuration.app_name,
+		_('Sure you want to reboot the %s server?') % LMC.configuration.app_name,
 		_('YES'),
 		_('NO')))))
 def halt(uri, http_user, sure=False):
@@ -95,6 +97,6 @@ def halt(uri, http_user, sure=False):
 				</td>
 			</tr>
 		</table>''' % (
-		_('Sure you want to shutdown the %s server?') % configuration.app_name,
+		_('Sure you want to shutdown the %s server?') % LMC.configuration.app_name,
 		_('YES'),
 		_('NO')))))

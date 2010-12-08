@@ -18,121 +18,80 @@ from licorn.foundations         import options, logging, exceptions, process
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
 from licorn.daemon              import dname, setup_signals_handler
+from licorn.daemon.threads      import LicornBasicThread
 
 from licorn.core import LMC
 
-def fork_wmi(start_wmi=True):
-	""" Start the Web Management Interface (fork it). """
+class WMIThread(LicornBasicThread):
+	def __init__(self, pname):
+		LicornBasicThread.__init__(self, pname=pname, tname='wmi')
+	def run(self):
 
-	# FIXME: implement start_wmi in argparser module.
+		#logging.notice('''%s(%d): started, waiting for master to become '''
+		#	'''ready.''' % (pname, os.getpid()))
 
-	try:
-		wmi_pid = os.fork()
-		if wmi_pid == 0:
-			# FIXME: drop_privileges() → become setuid('licorn:licorn')
+		if options.wmi_listen_address:
+			# the daemon CLI argument has priority over the configuration
+			# directive, for testing purposes.
+			listen_address = options.wmi_listen_address
 
-			process.write_pid_file(
-				LMC.configuration.licornd.wmi.pid_file)
+		elif LMC.configuration.licornd.wmi.listen_address:
+			listen_address = LMC.configuration.licornd.wmi.listen_address
 
-			if options.daemon:
-				process.use_log_file(
-					LMC.configuration.licornd.wmi.log_file)
-
-			pname = '%s/wmi' % dname
-			process.set_name(pname)
-
-			logging.notice('''%s(%d): started, waiting for master to become '''
-				'''ready.''' % (pname, os.getpid()))
-
-			setup_signals_handler(pname)
-
-			# this will make us sleep until it receives SIGUSR1 from the master,
-			# from then we will continue setting it all up.
-			signal.pause()
-
-			# FIXME: LMC attributes (inherited from the master before forking)
-			# are overwritten by the Pyro proxies. Should't we implement a
-			# LMC.clear() and call it before connect ? This is a WMI-only case,
-			# because in CLI, LMC attributes are only instanciated via connect()
-			LMC.connect()
-
-			# connect the static resources of our request handler, to make them
-			# available to WMI functions.
-			WMIHTTPRequestHandler.LMC = LMC
-
-			if options.wmi_listen_address:
-				# the CLI launch argument has priority over the configuration
-				# directive, for testing purposes.
-
-				listen_address = options.wmi_listen_address
-
-			elif LMC.configuration.licornd.wmi.listen_address:
-
-				listen_address = \
-					LMC.configuration.licornd.wmi.listen_address
-
-			else:
-				# the fallback is localhost
-				listen_address = 'localhost'
-
-			if listen_address.startswith('if:') \
-				or listen_address.startswith('iface:') \
-				or listen_address.startswith('interface:'):
-
-				raise NotImplementedError(
-					'getting interface address is not yet implemented.')
-
-			assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (
-				listen_address,	LMC.configuration.licornd.wmi.port))
-
-			count = 0
-
-			while True:
-				# try creating an http server.
-				# if it fails because of socket already in use, just retry
-				# forever, displaying a message every second.
-				#
-				# when creation succeeds, break the loop and serve requets.
-				try:
-					httpd = TCPServer((listen_address,
-						LMC.configuration.licornd.wmi.port),
-						WMIHTTPRequestHandler)
-					break
-				except socket.error, e:
-					if e[0] == 98:
-						logging.warning('''%s/wmi: socket already in use. '''
-							'''waiting (total: %ds).''' % (dname, count))
-						count += 1
-						time.sleep(1)
-					else:
-						logging.error("%s/wmi: socket error %s." % (dname, e))
-						return
-
-			logging.notice('''%s(%d): ready to answer requests at address %s.'''
-				% (pname, os.getpid(),
-				stylize(ST_ADDRESS, 'http://%s:%s/' % (
-					listen_address,
-					LMC.configuration.licornd.wmi.port))))
-
-			httpd.serve_forever()
 		else:
-			# master is waiting for the pid, to wake the WMI when it is ready.
-			return wmi_pid
-	except OSError, e:
-		logging.error("%s/wmi: fork failed: errno %d (%s)." % (
-			dname, e.errno, e.strerror))
-	except KeyboardInterrupt:
-		logging.warning('%s/wmi: terminating on interrupt signal.' % dname)
-		raise SystemExit
+			# the fallback is localhost
+			listen_address = 'localhost'
 
+		if listen_address.startswith('if:') \
+			or listen_address.startswith('iface:') \
+			or listen_address.startswith('interface:'):
+
+			raise NotImplementedError(
+				'getting interface address is not yet implemented.')
+
+		assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (
+			listen_address,	LMC.configuration.licornd.wmi.port))
+
+		count = 0
+
+		while not self._stop_event.is_set():
+			# try creating an http server.
+			# if it fails because of socket already in use, just retry
+			# forever, displaying a message every second.
+			#
+			# when creation succeeds, break the loop and serve requets.
+			try:
+				self.httpd = TCPServer((listen_address,
+								LMC.configuration.licornd.wmi.port),
+								WMIHTTPRequestHandler)
+				break
+			except socket.error, e:
+				if e[0] == 98:
+					logging.warning('''%s: socket already in use. '''
+						'''waiting (total: %ds).''' % (self.name, count))
+					count += 1
+					time.sleep(1)
+				else:
+					logging.error("%s: socket error %s." % (self.name, e))
+					self.httpd = None
+					self.stop()
+					return
+
+		logging.notice('%s: ready to answer requests at address %s.' % (
+			self.name, stylize(ST_ADDRESS, 'http://%s:%s/' % (
+				listen_address, LMC.configuration.licornd.wmi.port))))
+
+		self.httpd.serve_forever()
+	def stop(self):
+		LicornBasicThread.stop(self)
+		if self.httpd:
+			self.httpd.shutdown()
 class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
-	LMC = None
 	def do_HEAD(self):
 		f = self.send_head()
 		if f:
 			f.close()
 	def do_GET(self):
-		LMC = WMIHTTPRequestHandler.LMC
 		f = self.send_head()
 		if f:
 			if type(f) in (type(""), type(u'')):
@@ -208,8 +167,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	def user_authorized(self):
 		""" Return True if authorization exists AND user is authorized."""
 
-		LMC = WMIHTTPRequestHandler.LMC
-
 		authorization = self.headers.getheader("authorization")
 		if authorization:
 			authorization = authorization.split()
@@ -267,8 +224,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		""" Serve dynamic URIs with our own code,
 		and create pages on the fly. """
 
-		LMC = WMIHTTPRequestHandler.LMC
-
 		retdata = None
 		rettype = None
 
@@ -278,7 +233,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		# GET / has special treatment :-)
 		if self.path == '/':
 			rettype, retdata = web.base.index(
-				self.path, self.http_user, LMC=LMC)
+				self.path, self.http_user)
 
 		else:
 			# remove the last '/' (which is totally useless for us, even if it
@@ -298,29 +253,14 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = '''rettype, retdata = web.%s.%s("%s", "%s"''' \
-						'''%s %s, ''' \
-						'''configuration=LMC.configuration, ''' \
-						'''users=LMC.users,''' \
-						'''groups=LMC.groups, ''' \
-						'''profiles=LMC.profiles, ''' \
-						'''privileges=LMC.privileges, ''' \
-						'''keywords=LMC.keywords, ''' \
-						'''machines=LMC.machines)''' % (
+					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s %s)' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
 							if len(args)>2 else ', ',
 						', '.join(self.format_post_args()),
 						)
 				else:
-					py_code = '''rettype, retdata = web.%s.%s("%s", "%s" %s '''\
-						'''configuration=LMC.configuration, ''' \
-						'''users=LMC.users,''' \
-						'''groups=LMC.groups, ''' \
-						'''profiles=LMC.profiles, ''' \
-						'''privileges=LMC.privileges, ''' \
-						'''keywords=LMC.keywords, ''' \
-						'''machines=LMC.machines)''' % (
+					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s )' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:])
 							if len(args)>2 else ', ')

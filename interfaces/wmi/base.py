@@ -9,6 +9,8 @@ from licorn.foundations           import process
 from licorn.foundations.constants import filters
 from licorn.foundations.pyutils   import format_time_delta
 
+from licorn.core import LMC
+
 from licorn.interfaces.wmi import utils as w
 
 def ctxtnav():
@@ -29,9 +31,9 @@ def ctxtnav():
 		_('Shutdown server.'),
 		_('Shutdown server'))
 
-def system_load(users):
+def system_load():
 	loads = open('/proc/loadavg').read().split(" ")
-	nbusers = len(users.Select(filters.STANDARD))
+	nbusers = len(LMC.users.Select(filters.STANDARD))
 
 	cxusers = len(process.execute(['who'])[0].split('\n'))
 	if cxusers > 1:
@@ -113,7 +115,7 @@ def index(uri, http_user, LMC=None, *args, **kwargs):
 	</tr>
 	</table>
 	''' % (_('System information'), system_info(),
-		_('System status'), system_load(LMC.users))
+		_('System status'), system_load())
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
 		data + w.page_body_end(w.total_time(start, time.time()))))

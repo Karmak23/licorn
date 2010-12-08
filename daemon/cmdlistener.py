@@ -143,14 +143,8 @@ class CommandListener(LicornBasicThread):
 
 		LicornBasicThread.__init__(self, pname)
 
-		#self.name = "%s/%s" % (
-		#	pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
-
 		self.pids_to_wake = pids_to_wake
 		self.wake_threads = []
-
-		#for (cname, controller) in LMC.iteritems():
-		#	setattr(self, cname, controller)
 
 		for attr_name in kwargs:
 			setattr(self, attr_name, kwargs[attr_name])

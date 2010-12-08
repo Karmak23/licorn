@@ -44,7 +44,7 @@ from licorn.daemon.core           import  exit_if_already_running, \
 										refork_if_not_running_root_or_die, \
 										eventually_daemonize, \
 										licornd_parse_arguments
-from licorn.daemon.wmi            import fork_wmi
+from licorn.daemon.wmi            import WMIThread
 from licorn.daemon.threads        import LicornJobThread, \
 									LicornPoolJobThread, \
 									thread_periodic_cleaner
@@ -91,15 +91,6 @@ if __name__ == "__main__":
 	if options.pid_to_wake:
 		pids_to_wake.append(options.pid_to_wake)
 
-	if LMC.configuration.licornd.role == licornd_roles.SERVER:
-		# the WMI must be launched before the setup of signals.
-		if LMC.configuration.licornd.wmi.enabled and options.wmi_enabled:
-			dchildren.wmi_pid = fork_wmi()
-			pids_to_wake.append(dchildren.wmi_pid)
-		else:
-			logging.info('''%s: not starting WMI, disabled on command line '''
-				'''or by configuration directive.''' % pname)
-
 	# log things after having daemonized, else it doesn't show in the log,
 	# but on the terminal.
 	logging.notice("%s(%d): starting all threads." % (
@@ -121,7 +112,7 @@ if __name__ == "__main__":
 
 	# we need to import the CommandListener now because the LMC is not
 	# initialized before and cmdlistener needs it.
-	from licorn.daemon.cmdlistener    import CommandListener
+	from licorn.daemon.cmdlistener import CommandListener
 
 	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
 
@@ -149,29 +140,16 @@ if __name__ == "__main__":
 		#dthreads.searcher = FileSearchServer(dname)
 		#dthreads.cache    = Cache(keywords, dname)
 
-		if LMC.configuration.licornd.threads.pool_members == 0:
-			logging.warning('''Status gathering of unmanaged network '''
-					'''clients disabled by configuration rule.''')
-		else:
-			# launch a machine status update every 30 seconds. The first update
-			# will be run ASAP (in 1 second), else we don't have any info to display
-			# if opening the WMI immediately.
-			dthreads.network_builder = LicornJobThread(dname,
-				target=thread_network_links_builder,
-				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
-
-		# FIXME: verify this thread and reactivate it.
-		#dthreads.periodic_scanner = LicornJobThread(dname,
-		#	target=thread_periodic_scanner,
-		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
-
-		dthreads.aclchecker = ACLChecker(None, dname)
-
-		if LMC.configuration.licornd.inotifier.enabled:
-			dthreads.inotifier = INotifier(dname, options.no_boot_check)
-
+		# the CommandListener makes the daemon ready to be queryed / operated
+		# from CLI tools. This is the most vital part.
 		dthreads.cmdlistener = CommandListener(dname=dname,
 			pids_to_wake=pids_to_wake)
+
+		if LMC.configuration.licornd.wmi.enabled and options.wmi_enabled:
+			dthreads.wmi = WMIThread(pname)
+		else:
+			logging.info('''%s: not starting WMI, disabled on command line '''
+				'''or by configuration directive.''' % pname)
 
 		# machines to be pinged across the network, to see if up or not.
 		dqueues.pings = Queue()
@@ -184,6 +162,23 @@ if __name__ == "__main__":
 
 		# machines to be scanned for pyro presence
 		dqueues.pyrosys = Queue()
+
+		# FIXME: verify this thread and reactivate it.
+		#dthreads.periodic_scanner = LicornJobThread(dname,
+		#	target=thread_periodic_scanner,
+		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
+
+		# FIXME: this is not the right test here...
+		if LMC.configuration.licornd.threads.pool_members == 0:
+			logging.warning('''Status gathering of unmanaged network '''
+					'''clients disabled by configuration rule.''')
+		else:
+			# launch a machine status update every 30 seconds. The first update
+			# will be run ASAP (in 1 second), else we don't have any info to display
+			# if opening the WMI immediately.
+			dthreads.network_builder = LicornJobThread(dname,
+				target=thread_network_links_builder,
+				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
 		for i in range(0, LMC.configuration.licornd.threads.pool_members):
 			tname = 'Pinger-%d' % i
@@ -212,6 +207,11 @@ if __name__ == "__main__":
 			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
 				tname=tname, in_queue=dqueues.pyrosys,
 				target=pool_job_pyrofinder,	daemon=True))
+
+		dthreads.aclchecker = ACLChecker(None, dname)
+
+		if LMC.configuration.licornd.inotifier.enabled:
+			dthreads.inotifier = INotifier(dname, options.no_boot_check)
 
 	for (thname, th) in dthreads.iteritems():
 		assert ltrace('daemon', 'starting thread %s.' % thname)

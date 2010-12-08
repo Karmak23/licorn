@@ -4,6 +4,8 @@ Licorn core - http://dev.licorn.org/documentation/core
 
 The Core API of a Licorn system.
 
+([=\[(,\s])((users|groups|system|configuration|backends|privileges|profiles|machines)\.)
+
 Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>,
 Licensed under the terms of the GNU GPL version 2
 """

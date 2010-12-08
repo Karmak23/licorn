@@ -7,6 +7,8 @@ from licorn.foundations           import exceptions, hlstr, logging
 from licorn.foundations.pyutils   import format_time_delta
 from licorn.foundations.constants import host_status, filters
 
+from licorn.core import LMC
+
 from licorn.interfaces.wmi import utils as w
 
 rewind = _('''<br /><br />Go back with your browser,'''
@@ -196,12 +198,12 @@ def energyprefs(uri, http_user, configuration=None, machines=None, **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
-		machines.Select(machines.FILTER_STANDARD)
+		LMC.machines.Select(filters.STANDARD)
 
 		if type == "CSV":
-			data = machines.ExportCSV()
+			data = LMC.machines.ExportCSV()
 		else:
-			data = machines.ExportXML()
+			data = LMC.machines.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
 def export(uri, http_user, type = "", yes=None, configuration=None,
@@ -248,12 +250,12 @@ def export(uri, http_user, type = "", yes=None, configuration=None,
 		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
-		machines.Select(machines.FILTER_STANDARD)
+		LMC.machines.Select(filters.STANDARD)
 
 		if type == "CSV":
-			data = machines.ExportCSV()
+			data = LMC.machines.ExportCSV()
 		else:
-			data = machines.ExportXML()
+			data = LMC.machines.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
 def forget(uri, http_user, hostname, sure=False, yes=None, configuration=None,
@@ -281,8 +283,8 @@ def forget(uri, http_user, hostname, sure=False, yes=None, configuration=None,
 			''' and members of group <strong>%s</strong> will be able to '''
 			''' access it to operate an eventual recover.<br />However, you '''
 			'''can decide to permanently remove it.''') % (
-				configuration.home_archive_dir,
-				configuration.defaults.admin_group),
+				LMC.configuration.home_archive_dir,
+				LMC.configuration.defaults.admin_group),
 			yes_values   = \
 				[ _("Remove >>"), "/machines/delete/%s/sure" % hostname, _("R") ],
 			no_values    = \
@@ -333,14 +335,14 @@ def new(uri, http_user, configuration=None, machines=None, **kwargs):
 			""" % (_("Full name"), w.input('gecos', "", size = 30,
 					maxlength = 64, accesskey = 'N'))
 	def shell_input():
-		return w.select('loginShell', configuration.machines.shells,
-			current=configuration.users.default_shell, func=os.path.basename)
+		return w.select('loginShell', LMC.configuration.machines.shells,
+			current=LMC.configuration.users.default_shell, func=os.path.basename)
 
 	dbl_lists = {}
 	for filter, titles, id in groups_filters_lists_ids:
 
 		dest   = []
-		source = [ g[gid]['name'] for gid in groups.Select(filter) ]
+		source = [ g[gid]['name'] for gid in LMC.groups.Select(filter) ]
 		source.sort()
 		dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
 
@@ -401,8 +403,8 @@ def new(uri, http_user, configuration=None, machines=None, **kwargs):
 		gecos_input(),
 		_('''Password must be at least %d characters long. You can use all '''
 		'''alphabet characters, numbers, special characters and punctuation '''
-		'''signs, except '?!'.''') % configuration.users.min_passwd_size,
-		_("Password"), _("(%d chars. min.)") % configuration.users.min_passwd_size,
+		'''signs, except '?!'.''') % LMC.configuration.users.min_passwd_size,
+		_("Password"), _("(%d chars. min.)") % LMC.configuration.users.min_passwd_size,
 		w.input('password', "", size = 30, maxlength = 64, accesskey = _('P'),
 			password = True),
 		_("Password confirmation."), w.input('password_confirm', "", size = 30,
@@ -415,10 +417,10 @@ def new(uri, http_user, configuration=None, machines=None, **kwargs):
 			accesskey = _('I')),
 		_("<strong>Shell</strong><br />(Unix command line interpreter)"),
 		shell_input(),
-		_('Groups'), dbl_lists[groups.FILTER_STANDARD],
-		_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
-		_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
-		_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+		_('Groups'), dbl_lists[filters.STANDARD],
+		_('Privileges'), dbl_lists[filters.PRIVILEGED],
+		_('Responsibilities'), dbl_lists[filters.RESPONSIBLE],
+		_('Invitations'), dbl_lists[filters.GUEST],
 		w.button('&lt;&lt;&nbsp;' + _('Cancel'), "/machines/list"),
 		w.submit('create', _('Create') + '&nbsp;&gt;&gt;',
 			onClick = "selectAllMultiValues('%s');" % form_name)
@@ -445,10 +447,10 @@ def create(uri, http_user, loginShell, password, password_confirm,
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Passwords do not match!%s") % rewind)))
 
-	if len(password) < configuration.users.min_passwd_size:
+	if len(password) < LMC.configuration.users.min_passwd_size:
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Password must be at least %d characters long!%s")\
-				% (configuration.users.min_passwd_size, rewind))))
+				% (LMC.configuration.users.min_passwd_size, rewind))))
 
 	command = [ "sudo", "add", "machine", '--quiet', '--no-colors',
 		'--password', password ]
@@ -505,12 +507,12 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		machine = machines[machines._by_hostname(hostname)]
+		machine = LMC.machines[LMC.machines.by_hostname(hostname)]
 
 		try:
 			profile = \
-				profiles.profiles[
-					groups.groups[machine['gidNumber']]['name']
+				LMC.profiles.profiles[
+					LMC.groups.groups[machine['gidNumber']]['name']
 					]['name']
 		except KeyError:
 			profile = _("Standard account")
@@ -519,8 +521,8 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 		for filter, titles, id in groups_filters_lists_ids:
 
 			dest   = list(machine['groups'].copy())
-			source = [ groups.groups[gid]['name'] \
-				for gid in groups.Select(filter) ]
+			source = [ LMC.groups.groups[gid]['name'] \
+				for gid in LMC.groups.Select(filter) ]
 			for current in dest[:]:
 				try: source.remove(current)
 				except ValueError: dest.remove(current)
@@ -600,21 +602,21 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 			_('''Password must be at least %d characters long. You can use '''
 			'''all alphabet characters, numbers, special characters and '''
 			'''punctuation signs, except '?!'.''') % \
-				configuration.users.min_passwd_size,
+				LMC.configuration.users.min_passwd_size,
 			_("New password"), _("(%d chars. min.)") % \
-				configuration.users.min_passwd_size,
+				LMC.configuration.users.min_passwd_size,
 			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P',
 				password = True),
 			_("password confirmation."),
 			w.input('password_confirm', "", size = 30, maxlength = 64,
 				password = True),
 			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
-			w.select('loginShell',  configuration.users.shells,
+			w.select('loginShell',  LMC.configuration.users.shells,
 			machine['loginShell'], func = os.path.basename),
-			_('Groups'), dbl_lists[groups.FILTER_STANDARD],
-			_('Privileges'), dbl_lists[groups.FILTER_PRIVILEGED],
-			_('Responsibilities'), dbl_lists[groups.FILTER_RESPONSIBLE],
-			_('Invitations'), dbl_lists[groups.FILTER_GUEST],
+			_('Groups'), dbl_lists[filters.STANDARD],
+			_('Privileges'), dbl_lists[filters.PRIVILEGED],
+			_('Responsibilities'), dbl_lists[filters.RESPONSIBLE],
+			_('Invitations'), dbl_lists[filters.GUEST],
 			w.button('&lt;&lt;&nbsp;' + _('Cancel'), "/machines/list"),
 			w.submit('record', _('Record changes') + '&nbsp;&gt;&gt;',
 				onClick = "selectAllMultiValues('%s');" % form_name)
@@ -622,7 +624,7 @@ def edit(uri, http_user, hostname, configuration=None, machines=None, **kwargs):
 
 	except exceptions.LicornException, e:
 		data += w.error("Record %s does not exist (%s)!" % (
-			hostname, "machine = machines[machines._by_hostname(hostname)]", e))
+			hostname, "machine = machines[LMC.machines._by_hostname(hostname)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, hostname, loginShell=None,
@@ -654,10 +656,10 @@ def record(uri, http_user, hostname, loginShell=None,
 		if password != password_confirm:
 			return (w.HTTP_TYPE_TEXT, w.page(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
-		if len(password) < configuration.users.min_passwd_size:
+		if len(password) < LMC.configuration.users.min_passwd_size:
 			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
 				_("The password --%s-- must be at least %d characters long!%s")\
-				% (password, configuration.users.min_passwd_size, rewind))))
+				% (password, LMC.configuration.users.min_passwd_size, rewind))))
 
 		command.extend([ '--password', password ])
 
@@ -690,7 +692,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 
 	start = time.time()
 
-	m = machines
+	m = LMC.machines
 
 	accounts = {}
 	ordered  = {}
@@ -806,7 +808,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 		</td>
 			''' % (
 				hostname, edit, hostname,
-					'''&nbsp;<img src='/images/16x16/alt.png' alt='%s' />''' % _('This machine is an ALT® client.') if machines.is_alt(mid) else '',
+					'''&nbsp;<img src='/images/16x16/alt.png' alt='%s' />''' % _('This machine is an ALT® client.') if LMC.machines.is_alt(mid) else '',
 				hostname, edit, m[mid].ip,
 				hostname, edit, m[mid].ether,
 				hostname, edit, format_time_delta(
@@ -838,7 +840,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 
 		return html_data
 
-	for mid in machines.keys():
+	for mid in LMC.machines.keys():
 		#machine  = m[mid]
 		hostname = m[mid].hostname
 

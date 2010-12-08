@@ -13,6 +13,8 @@ Licensed under the terms of the GNU GPL version 2.
 from gettext import gettext as _
 from subprocess import Popen, PIPE
 
+from licorn.core import LMC
+
 from licorn.foundations import process
 from licorn.foundations.ltrace import ltrace
 
@@ -25,7 +27,7 @@ licence_text = _('''
  GPL version 2</a> license, without any kind of waranty. Copyleft &copy;
  2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,
   and all other libre software developers (Notably Ubuntu, Debian, Python…).
-''') % (configuration.app_name, configuration.app_name)
+''') % (LMC.configuration.app_name, LMC.configuration.app_name)
 
 acronyms = {
 	'SSH' : _('Secure SHell (Secure remote connexion and commands protocol)'),
@@ -344,14 +346,14 @@ def menu(uri):
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
 		classes['users'], _('Manage user accounts.'), _('Users'),
 		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
-		'<li%s><a href="/machines/" title="%s">%s</a></li>' % (classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines')) if configuration.experimental.enabled else '',
+		'<li%s><a href="/machines/" title="%s">%s</a></li>' % (classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines')) if LMC.configuration.experimental.enabled else '',
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
 		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation'),
 		classes['support'], _('Get product support / help'), _('Support')
 		)
 def page(title, data):
 	return head(title) + data + tail()
-def head(title=_("%s Management") % configuration.app_name):
+def head(title=_("%s Management") % LMC.configuration.app_name):
 	"""Build the HTML Page header.
 	Bubble Tooltips come from:	http://www.dustindiaz.com/sweet-titles
 	Rounded Divs comme from  : http://www.html.it/articoli/niftycube/index.html
@@ -381,7 +383,7 @@ def tail():
 	return """\n</body></html>"""
 
 # LightBox type windows
-def minihead(title = _("administration %s") % configuration.app_name):
+def minihead(title = _("administration %s") % LMC.configuration.app_name):
 	"""Build a mini-HTML page header, for lighbox type popups / windows.  """
 	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -394,7 +396,7 @@ def minihead(title = _("administration %s") % configuration.app_name):
 <script type="text/javascript" src="/js/addEvent.js"></script>
 </head>
 <body>
-""" % (configuration.app_name, title)
+""" % (LMC.configuration.app_name, title)
 def minitail():
 	return """</body></html>"""
 def minipage(data):

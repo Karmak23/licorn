@@ -6,6 +6,8 @@ from gettext import gettext as _
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 
+from licorn.core import LMC
+
 from licorn.interfaces.wmi import utils as w
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
@@ -40,9 +42,9 @@ def ctxtnav(active=True):
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
 def protected_group(name, groups, complete=True):
 	if complete:
-		return groups.is_system_group(name)
+		return LMC.groups.is_system_group(name)
 	else:
-		return groups.is_system_group(name) and not groups.is_privilege(name)
+		return LMC.groups.is_system_group(name) and not LMC.groups.is_privilege(name)
 
 # locking and unlocking.
 def unlock(uri, http_user, name, sure=False, groups=None, **kwargs):
@@ -140,8 +142,8 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None,
 			_('''Group shared data will be archived in directory %s,
 				and accessible to members of group %s for eventual
 				recovery. However, you can decideto remove them
-				permanently.''') % (configuration.home_archive_dir,
-				configuration.defaults.admin_group),
+				permanently.''') % (LMC.configuration.home_archive_dir,
+				LMC.configuration.defaults.admin_group),
 			yes_values   = [ _("Remove") + ' >>',
 				"/groups/delete/%s/sure" % name, _("R") ],
 			no_values    = [ '<< ' + _("Cancel"),
@@ -172,7 +174,7 @@ def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
 		return w.forgery_error(title)
 
 	if apply_skel is None:
-		apply_skel = configuration.users.default_skel
+		apply_skel = LMC.configuration.users.default_skel
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
@@ -182,17 +184,17 @@ def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
 			skel you choose. This will NOT alter any of the user personnal
 			data, nor the group shared data.''')
 
-		pri_group = groups.groups[allusers.users[
-			users.login_to_uid(login)]['gidNumber']]['name']
+		pri_group = LMC.groups.groups[allusers.users[
+			LMC.users.login_to_uid(login)]['gidNumber']]['name']
 
 		# liste des skels du profile en cours.
 		def filter_skels(pri_group, sk_list):
 			'''
 			TODO: to be converted to licorn model
-			if pri_group == configuration.mNames['RESPONSABLES_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
-			elif pri_group == configuration.mNames['USAGERS_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
+			if pri_group == LMC.configuration.mNames['RESPONSABLES_GROUP']:
+				return filter(lambda x: x.rfind("/%s/" % LMC.configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
+			elif pri_group == LMC.configuration.mNames['USAGERS_GROUP']:
+				return filter(lambda x: x.rfind("/%s/" % LMC.configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
 			else:
 			'''
 			return sk_list
@@ -200,7 +202,7 @@ def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
 		form_options = _('''Which skel do you wish to reapply to members of
 			this group? %s''') \
 			% w.select("apply_skel",
-			filter_skels(pri_group, configuration.users.skels),
+			filter_skels(pri_group, LMC.configuration.users.skels),
 			func=os.path.basename)
 
 		data += w.question( _('''Are you sure you want to reapply this skel to
@@ -262,8 +264,8 @@ def new(uri, http_user, configuration=None, **kwargs):
 		_('Group description'), _('(optional)'),
 		w.input('description', "", size=30, maxlength=256, accesskey=_('D')),
 		_('Skel of future group members'),
-		w.select('skel',  configuration.users.skels,
-		current = configuration.users.default_skel,
+		w.select('skel',  LMC.configuration.users.skels,
+		current = LMC.configuration.users.default_skel,
 		func = os.path.basename),
 		_('Permissive shared dir?'),
 		w.checkbox('permissive', "True", _("Yes"), accesskey=_('P')),
@@ -304,12 +306,12 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	u = users.users
-	g = groups.groups
+	u = LMC.users
+	g = LMC.groups
 
 	try:
-		group   = g[groups.name_to_gid(name)]
-		members = list(groups.all_members(name=name))
+		group   = g[LMC.groups.name_to_gid(name)]
+		members = list(LMC.groups.all_members(name=name))
 
 		if members != []:
 			members.sort()
@@ -331,7 +333,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 				_('UID')
 				)
 			def user_line(login):
-				uid = users.login_to_uid(login)
+				uid = LMC.users.login_to_uid(login)
 				return '''<tr>
 					<td>%s</td>
 					<td>%s</td>
@@ -346,9 +348,9 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 		else:
 			members_html = "<h2>%s</h2>" % _('No member in this group.')
 
-		if not groups.is_system_group(name):
+		if not LMC.groups.is_system_group(name):
 			resps = list(
-				groups.all_members(name=configuration.groups.resp_prefix+name))
+				LMC.groups.all_members(name=LMC.configuration.groups.resp_prefix+name))
 
 			if resps != []:
 				resps.sort()
@@ -377,7 +379,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 					_('No responsible for this group.')
 
 			guests = list(
-				groups.all_members(name=configuration.groups.guest_prefix+name))
+				LMC.groups.all_members(name=LMC.configuration.groups.guest_prefix+name))
 
 			if guests != []:
 				guests.sort()
@@ -439,15 +441,15 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 
 	except exceptions.LicornException, e:
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (
-			name, "group = g[groups.name_to_gid(name)]", e))
+			name, "group = g[LMC.groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 	**kwargs):
 	"""Edit a group."""
 
-	u = users.users
-	g = groups.groups
+	u = LMC.users
+	g = LMC.groups
 
 	title = _("Editing group %s") %  name
 
@@ -457,8 +459,8 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		group     = g[groups.name_to_gid(name)]
-		sys       = groups.is_system_group(name)
+		group     = g[LMC.groups.name_to_gid(name)]
+		sys       = LMC.groups.is_system_group(name)
 		dbl_lists = {}
 
 		if sys:
@@ -468,8 +470,8 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 				]
 
 			#	,
-			#	(configuration.groups.resp_prefix + name, None, '&#160;' ),
-			#	(configuration.groups.guest_prefix + name, None, '&#160;' )
+			#	(LMC.configuration.groups.resp_prefix + name, None, '&#160;' ),
+			#	(LMC.configuration.groups.guest_prefix + name, None, '&#160;' )
 		else:
 			groups_filters_lists_ids = (
 				(name,
@@ -477,12 +479,12 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 					_('Users not yet members'),
 					_('Current members')],
 					'members'),
-				(configuration.groups.resp_prefix + name,
+				(LMC.configuration.groups.resp_prefix + name,
 					[_('Manage responsibles'),
 					_('Users not yet responsibles'),
 					_('Current responsibles')],
 					'resps'),
-				(configuration.groups.guest_prefix + name,
+				(LMC.configuration.groups.guest_prefix + name,
 					[_('Manage guests'),
 					_('Users not yet guests'),
 					_('Current guests')],
@@ -493,9 +495,9 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 				dbl_lists[gname] = id
 			else:
 
-				dest   = groups[groups.name_to_gid(gname)]['memberUid'][:]
+				dest   = LMC.groups[LMC.groups.name_to_gid(gname)]['memberUid'][:]
 				source = [ u[uid]['login'] \
-					for uid in users.Select(filters.STANDARD) ]
+					for uid in LMC.users.Select(filters.STANDARD) ]
 				for current in dest[:]:
 					try:
 						source.remove(current)
@@ -516,7 +518,7 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 					<td class="right">%s</td>
 				</tr>
 				''' % (_('Skeleton'),
-					w.select('skel', configuration.users.skels,
+					w.select('skel', LMC.configuration.users.skels,
 					cur_skel, func = os.path.basename))
 		def permissive(perm, system):
 			return '' if system else \
@@ -542,9 +544,9 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 
 			''' % (
 			_('Group responsibles') ,
-			dbl_lists[configuration.groups.resp_prefix+name],
+			dbl_lists[LMC.configuration.groups.resp_prefix+name],
 			_('Group guests'),
-			dbl_lists[configuration.groups.guest_prefix+name]
+			dbl_lists[LMC.configuration.groups.guest_prefix+name]
 			)
 
 		data += '''<div id="edit_form">
@@ -606,7 +608,7 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 
 	except exceptions.LicornException, e:
 		data += w.error(_("Group %s doesn't exist (%s, %s)!") % (name,
-			"group = allgroups.groups[groups.name_to_gid(name)]", e))
+			"group = allgroups.groups[LMC.groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, name, skel=None, permissive=False, description=None,
@@ -669,9 +671,9 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 
 	start = time.time()
 
-	g = groups.groups
+	g = LMC.groups
 
-	users.Select(filters.STANDARD)
+	LMC.users.Select(filters.STANDARD)
 
 	tgroups  = {}
 	totals   = {}
@@ -719,8 +721,8 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 		ordered  = {}
 		totals[filter_name] = 0
 
-		for gid in groups.Select(filter):
-			group = groups.groups[gid]
+		for gid in LMC.groups.Select(filter):
+			group = LMC.groups.groups[gid]
 			name  = group['name']
 
 			tgroups[gid] = {
@@ -738,21 +740,21 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 
 			tgroups[gid]['memberUid'] = []
 			for member in group['memberUid']:
-				if not users.is_system_login(member):
+				if not LMC.users.is_system_login(member):
 					tgroups[gid]['memberUid'].append(
-						users.users[users.login_to_uid(member)])
+						LMC.users[LMC.users.login_to_uid(member)])
 
-			if not groups.is_system_gid(gid):
+			if not LMC.groups.is_system_gid(gid):
 				for prefix in (
-					configuration.groups.resp_prefix,
-					configuration.groups.guest_prefix):
+					LMC.configuration.groups.resp_prefix,
+					LMC.configuration.groups.guest_prefix):
 					tgroups[gid][prefix + 'memberUid'] = []
 					for member in \
-						groups.groups[groups.name_to_gid(
+						LMC.groups[LMC.groups.name_to_gid(
 							prefix + name)]['memberUid']:
-						if not users.is_system_login(member):
+						if not LMC.users.is_system_login(member):
 							tgroups[gid][prefix + 'memberUid'].append(
-								users.users[users.login_to_uid(member)])
+								LMC.users[LMC.users.login_to_uid(member)])
 
 		gkeys = ordered.keys()
 		gkeys.sort()
@@ -785,7 +787,7 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 				name, g[gid]['description'], g[gid]['description'],
 				name, g[gid]['groupSkel'])
 
-			if groups.is_system_gid(gid):
+			if LMC.groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
 			else:
 				if g[gid]['permissive']:
@@ -850,7 +852,7 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 				else:
 					html_data += '''<td>&#160;</td>\n'''
 
-			if groups.is_system_gid(gid):
+			if LMC.groups.is_system_gid(gid):
 				html_data += '<td colspan="1">&#160;</td></tr>\n'
 			else:
 				html_data += '''

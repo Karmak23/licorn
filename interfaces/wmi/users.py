@@ -6,6 +6,8 @@ from gettext import gettext as _
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 
+from licorn.core import LMC
+
 from licorn.interfaces.wmi import utils as w
 
 groups_filters_lists_ids = (
@@ -69,7 +71,7 @@ def ctxtnav(active=True):
 		_("Export accounts")
 		)
 def protected_user(login, users):
-	return users.is_system_login(login)
+	return LMC.users.is_system_login(login)
 def export(uri, http_user, type="", yes=None, users=None, **kwargs):
 	""" Export user accounts list."""
 
@@ -111,12 +113,12 @@ def export(uri, http_user, type="", yes=None, users=None, **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
-		users.Select(filters.STANDARD)
+		LMC.users.Select(filters.STANDARD)
 
 		if type == "CSV":
-			data = users.ExportCSV()
+			data = LMC.users.ExportCSV()
 		else:
-			data = users.ExportXML()
+			data = LMC.users.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
 def delete(uri, http_user, login, sure=False, no_archive=False, yes=None,
@@ -142,8 +144,8 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None,
 			''' and members of group <strong>%s</strong> will be able to '''
 			''' access it to operate an eventual recover.<br />However, you '''
 			'''can decide to permanently remove it.''') % (
-				configuration.home_archive_dir,
-				configuration.defaults.admin_group),
+				LMC.configuration.home_archive_dir,
+				LMC.configuration.defaults.admin_group),
 			yes_values   = \
 				[ _("Remove >>"), "/users/delete/%s/sure" % login, _("R") ],
 			no_values    = \
@@ -175,7 +177,7 @@ def unlock(uri, http_user, login, users=None, **kwargs):
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if users.is_system_login(login):
+	if LMC.users.is_system_login(login):
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			w.error(_("Failed to unlock account"),
 			[ _("alter system account.") ],
@@ -207,15 +209,15 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
 			'''clients (thin ones, and Windows&reg;, %s/Linux&reg; and '''
 			'''Macintosh&reg; ones).''') % w.acr('GNU')
 
-		if configuration.ssh.enabled :
-			if login in groups.all_members(configuration.ssh.group):
+		if LMC.configuration.ssh.enabled :
+			if login in LMC.groups.all_members(LMC.configuration.ssh.group):
 				description += _('''<br /><br />
 					But this will not block incoming %s network connections, '''
 					'''if the user uses %s %s or %s public/private keys. To '''
 					'''block ANY access to the system, <strong>remove him/her'''
 					''' from %s group</strong>.''') % (w.acr('SSH'),
 					w.acr('SSH'), w.acr('RSA'), w.acr('DSA'),
-					configuration.ssh.group)
+					LMC.configuration.ssh.group)
 				form_options = w.checkbox("remove_remotessh", "True",
 					_('''Remove user from group <code>remotessh</code> in '''
 					'''the same time.'''),
@@ -242,8 +244,8 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
 			login, "--lock" ]
 
-		if configuration.ssh.enabled and remove_remotessh:
-			command.extend(['--del-groups', configuration.ssh.group])
+		if LMC.configuration.ssh.enabled and remove_remotessh:
+			command.extend(['--del-groups', LMC.configuration.ssh.group])
 
 		data += w.page_body_end()
 
@@ -263,7 +265,7 @@ def skel(uri, http_user, login, sure=False, apply_skel=None, yes=None,
 		return w.forgery_error(title)
 
 	if apply_skel is None:
-		apply_skel = configuration.users.default_skel
+		apply_skel = LMC.configuration.users.default_skel
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
@@ -273,7 +275,7 @@ def skel(uri, http_user, login, sure=False, apply_skel=None, yes=None,
 		'''disconnected for the operation to be completely successfull.''')
 
 		form_options = _("Which skel do you want to apply? %s") % \
-			w.select("apply_skel", configuration.users.skels,
+			w.select("apply_skel", LMC.configuration.users.skels,
 			func=os.path.basename)
 
 		data += w.question(_('''Are you sure you want to apply this skel to'''
@@ -328,13 +330,13 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 			""" % (_("Full name"), w.input('gecos', "", size = 30,
 					maxlength = 64, accesskey = 'N'))
 	def shell_input():
-		return w.select('loginShell',  configuration.users.shells,
-			current=configuration.users.default_shell, func=os.path.basename)
+		return w.select('loginShell',  LMC.configuration.users.shells,
+			current=LMC.configuration.users.default_shell, func=os.path.basename)
 
 	dbl_lists = {}
 	for filter, titles, id in groups_filters_lists_ids:
 		dest   = []
-		source = [ g[gid]['name'] for gid in groups.Select(filter) ]
+		source = [ g[gid]['name'] for gid in LMC.groups.Select(filter) ]
 		source.sort()
 		dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
 
@@ -395,8 +397,8 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 		gecos_input(),
 		_('''Password must be at least %d characters long. You can use all '''
 		'''alphabet characters, numbers, special characters and punctuation '''
-		'''signs, except '?!'.''') % configuration.users.min_passwd_size,
-		_("Password"), _("(%d chars. min.)") % configuration.users.min_passwd_size,
+		'''signs, except '?!'.''') % LMC.configuration.users.min_passwd_size,
+		_("Password"), _("(%d chars. min.)") % LMC.configuration.users.min_passwd_size,
 		w.input('password', "", size = 30, maxlength = 64, accesskey = _('P'),
 			password = True),
 		_("Password confirmation."), w.input('password_confirm', "", size = 30,
@@ -437,13 +439,13 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Passwords do not match!%s") % rewind)))
 
-	if len(password) < configuration.users.min_passwd_size:
+	if len(password) < LMC.configuration.users.min_passwd_size:
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("Password must be at least %d characters long!%s")\
-				% (configuration.users.min_passwd_size, rewind))))
+				% (LMC.configuration.users.min_passwd_size, rewind))))
 
 	if loginShell == None:
-		loginShell = configuration.users.default_shell
+		loginShell = LMC.configuration.users.default_shell
 
 	command = [ "sudo", "add", "user", '--quiet', '--no-colors',
 		'--password', password ]
@@ -489,12 +491,12 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		user = users.users[users.login_to_uid(login)]
+		user = LMC.users.users[LMC.users.login_to_uid(login)]
 
 		try:
 			profile = \
-				profiles.profiles[
-					groups.groups[user['gidNumber']]['name']
+				LMC.profiles.profiles[
+					LMC.groups.groups[user['gidNumber']]['name']
 					]['name']
 		except KeyError:
 			profile = _("Standard account")
@@ -502,8 +504,8 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 		dbl_lists = {}
 		for filter, titles, id in groups_filters_lists_ids:
 			dest   = list(user['groups'][:])
-			source = [ groups.groups[gid]['name']
-				for gid in groups.Select(filter) ]
+			source = [ LMC.groups.groups[gid]['name']
+				for gid in LMC.groups.Select(filter) ]
 			for current in dest[:]:
 				try: source.remove(current)
 				except ValueError: dest.remove(current)
@@ -583,16 +585,16 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 			_('''Password must be at least %d characters long. You can use '''
 			'''all alphabet characters, numbers, special characters and '''
 			'''punctuation signs, except '?!'.''') % \
-				configuration.users.min_passwd_size,
+				LMC.configuration.users.min_passwd_size,
 			_("New password"), _("(%d chars. min.)") % \
-				configuration.users.min_passwd_size,
+				LMC.configuration.users.min_passwd_size,
 			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P',
 				password = True),
 			_("password confirmation."),
 			w.input('password_confirm', "", size = 30, maxlength = 64,
 				password = True),
 			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
-			w.select('loginShell',  configuration.users.shells,
+			w.select('loginShell',  LMC.configuration.users.shells,
 			user['loginShell'], func = os.path.basename),
 			_('Groups'), dbl_lists[filters.STANDARD],
 			_('Privileges'), dbl_lists[filters.PRIVILEGED],
@@ -605,7 +607,7 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 
 	except exceptions.LicornException, e:
 		data += w.error("Account %s does not exist (%s)!" % (
-			login, "user = users.users[users.login_to_uid(login)]", e))
+			login, "user = LMC.users.users[LMC.users.login_to_uid(login)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, login, loginShell=None, password="",
@@ -627,7 +629,7 @@ def record(uri, http_user, login, loginShell=None, password="",
 		return w.forgery_error(title)
 
 	if loginShell is None:
-		loginShell = configuration.users.default_shell
+		loginShell = LMC.configuration.users.default_shell
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, True)
 
@@ -638,10 +640,10 @@ def record(uri, http_user, login, loginShell=None, password="",
 		if password != password_confirm:
 			return (w.HTTP_TYPE_TEXT, w.page(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
-		if len(password) < configuration.users.min_passwd_size:
+		if len(password) < LMC.configuration.users.min_passwd_size:
 			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
 				_("The password --%s-- must be at least %d characters long!%s")\
-				% (password, configuration.users.min_passwd_size, rewind))))
+				% (password, LMC.configuration.users.min_passwd_size, rewind))))
 
 		command.extend([ '--password', password ])
 
@@ -676,30 +678,30 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 	#print globals()
 	#print locals()
 
-	users.acquire()
-	groups.acquire()
-	profiles.acquire()
+	LMC.users.acquire()
+	LMC.groups.acquire()
+	LMC.profiles.acquire()
 
 	try:
-		u = users.users
-		g = groups.groups
-		p = profiles.profiles
+		u = LMC.users
+		g = LMC.groups
+		p = LMC.profiles
 
-		pri_grps = [ g[gid]['name'] for gid in groups.Select(filters.PRIVILEGED) ]
+		pri_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.PRIVILEGED) ]
 
-		rsp_grps = [ g[gid]['name'] for gid in groups.Select(filters.RESPONSIBLE) ]
+		rsp_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.RESPONSIBLE) ]
 
-		gst_grps = [ g[gid]['name'] for gid in groups.Select(filters.GUEST) ]
+		gst_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.GUEST) ]
 
-		std_grps = [ g[gid]['name'] for gid in groups.Select(filters.STANDARD) ]
+		std_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.STANDARD) ]
 
 		accounts = {}
 		ordered  = {}
 		totals   = {}
 		prof     = {}
 
-		for profile in p:
-			prof[groups.name_to_gid(profile)] = p[profile]
+		for profile in p.keys():
+			prof[LMC.groups.name_to_gid(profile)] = p[profile]
 			totals[p[profile]['name']] = 0
 		totals[_('Standard account')] = 0
 
@@ -791,11 +793,11 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 					''' when user has lost icons, or modified too much his/her '''
 					'''desktop (menus, panels and so on).
 					This will get all his/her desktop back.'''), login,
-					_("Definitely remove account from the system."))
+					_("Definitely remove account from the LMC.system."))
 			return html_data
 
 
-		for uid in users.Select(filters.STANDARD):
+		for uid in LMC.users.Select(filters.STANDARD):
 			user  = u[uid]
 			login = user['login']
 
@@ -855,6 +857,6 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.page_body_end(w.total_time(start, time.time()))))
 	finally:
-		profiles.release()
-		groups.release()
-		users.release()
+		LMC.profiles.release()
+		LMC.groups.release()
+		LMC.users.release()

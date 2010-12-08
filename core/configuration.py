@@ -282,7 +282,6 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			'licornd.wmi.group'            : 'licorn-wmi',
 			'licornd.wmi.listen_address'   : 'localhost',
 			'licornd.wmi.port'             : 3356,
-			'licornd.wmi.pid_file'         : '/var/run/licornd-wmi.pid',
 			'licornd.wmi.log_file'         : '/var/log/licornd-wmi.log',
 			'experimental.enabled'         : False,
 			}
