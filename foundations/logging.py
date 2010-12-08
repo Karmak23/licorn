@@ -66,7 +66,6 @@ class LicornWarningsDB(Singleton):
 
 __warningsdb = LicornWarningsDB()
 
-__warningsdb = LicornWarningsDB()
 def send_to_listener(message, verbose_level=verbose.QUIET):
 	""" See if current thread has a listener (Remote Pyro object dedicated to
 		inter-process communication), and send the message to it. """
