@@ -509,11 +509,12 @@ class CoreFSController(CoreController):
 					LMC.configuration.defaults.admin_group,
 					acl,
 					LMC.configuration.acls.acl_mask)
-				dir_info.dirs_perm = "%s,g:%s:rw-,%s,%s" % \
+				dir_info.dirs_perm = ("%s,g:%s:rw-,%s,%s" % \
 					(LMC.configuration.acls.file_acl_base,
 					LMC.configuration.defaults.admin_group,
 					acl,
-					LMC.configuration.acls.file_acl_mask)
+					LMC.configuration.acls.file_acl_mask)).replace(
+						'@UX','x').replace('@GX','x')
 
 			try:
 				dir_info.content_acl = True if ':' in dir_info.files_perm else \
