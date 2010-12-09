@@ -103,47 +103,89 @@ def licornd_parse_arguments(app):
 
 	parser.add_option("-D", "--no-daemon",
 		action="store_false", dest="daemon", default=True,
-		help='''Don't fork as a daemon, stay on the current terminal instead.'''
-			''' Logs will be printed on standard output '''
-			'''instead of beiing written into the logfile.''')
+		help="Don't fork as a daemon, stay on the current terminal instead."
+			" Logs will be printed on standard output "
+			"instead of beiing written into the logfile.")
 
 	parser.add_option("-W", "--no-wmi",
 		action="store_false", dest="wmi_enabled", default=True,
-		help='''Don't fork the WMI. This flag overrides the setting in %s.''' %
+		help="Don't fork the WMI. This flag overrides the setting in %s." %
 			stylize(ST_PATH, LMC.configuration.main_config_file))
 
 	parser.add_option("-w", "--wmi-listen-address",
 		action="store", dest="wmi_listen_address", default=None,
-		help='''Specify an IP address or a hostname to bind to. Only %s can '''
-			'''be specified (the WMI cannot yet bind on multiple interfaces '''
-			'''at the same time). This option takes precedence over the '''
-			'''configuration directive, if present in %s.''' % (
+		help='Specify an IP address or a hostname to bind to. Only %s can '
+			'be specified (the WMI cannot yet bind on multiple interfaces '
+			'at the same time). This option takes precedence over the '
+			'configuration directive, if present in %s.' % (
 			stylize(ST_IMPORTANT, 'ONE address or hostname'),
 			stylize(ST_PATH, LMC.configuration.main_config_file)))
 
 	parser.add_option("-p", "--pid-to-wake",
 		action="store", type="int", dest="pid_to_wake", default=None,
-		help='''Specify a PID to send SIGUSR1 to, when daemon is ready. Used '''
-			'''internaly only when CLI tools start the daemon themselves.''')
+		help='Specify a PID to send SIGUSR1 to, when daemon is ready. Used '
+			'internaly only when CLI tools start the daemon themselves.')
+
+	parser.add_option("-r", "--replace",
+		action="store_true", dest="replace", default=False,
+		help='Replace an existing daemon instance. A comfort flag to avoid'
+			'killing an existing daemon before relaunching a new one.')
 
 	parser.add_option("-B", "--no-boot-check",
 		action="store_true", dest="no_boot_check", default=False,
-		help='''Don't run the initial check on all shared directories. This '''
-			'''makes daemon be ready faster to answer users legitimate '''
-			'''requests, at the cost of consistency of shared data. %s: don't'''
-			''' use this flag at server boot in init scripts. Only on daemon '''
-			'''relaunch, on an already running system, for testing or '''
-			'''debugging purposes.''' % stylize(ST_IMPORTANT,
+		help="Don't run the initial check on all shared directories. This "
+			"makes daemon be ready faster to answer users legitimate "
+			"requests, at the cost of consistency of shared data. %s: don't"
+			" use this flag at server boot in init scripts. Only on daemon "
+			"relaunch, on an already running system, for testing or "
+			"debugging purposes." % stylize(ST_IMPORTANT,
 			'EXTREME CAUTION'))
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 	return parser.parse_args()
-def exit_if_already_running():
-	if process.already_running(LMC.configuration.licornd.pid_file):
-		logging.notice("%s: already running (pid %s), not restarting." % (
-			dname, process.get_pid(LMC.configuration.licornd.pid_file)))
-		sys.exit(0)
+def exit_or_replace_if_already_running(pname, my_pid, replace=False):
+	""" See if another daemon process if already running. If it is and we're not
+		asked to replace it, exit. Else, try to kill it and start. It the
+		process won't die after a certain period of time (10 seconds), alert the
+		user and exit. """
+
+	pid_file = LMC.configuration.licornd.pid_file
+
+	try:
+		old_pid  = int(open(pid_file).read().strip())
+	except (IOError, OSError), e:
+		if e.errno != 2:
+			raise
+		else:
+			# PID file doesn't exist, no other daemon is running.
+			return
+
+	if process.already_running(pid_file):
+		if replace:
+			logging.notice('%s(%s): replacing existing instance @pid %s.' %
+				(pname, my_pid, old_pid))
+
+			# kill the existing instance, gently
+			os.kill(old_pid, signal.SIGTERM)
+
+			counter = 0
+
+			while os.path.exists(pid_file):
+				time.sleep(0.1)
+				if counter >= 100:
+
+					# exit now
+					logging.error("Existing instance won't terminate, we're"
+						" in trouble. I'll let you see what's going on.")
+				counter+=1
+
+			# wait a little more, else Pyro port will not be available.
+			time.sleep(0.2)
+		else:
+			logging.notice("%s: already running (pid %s), not restarting." % (
+				dname, process.get_pid(LMC.configuration.licornd.pid_file)))
+			sys.exit(0)
 def refork_if_not_running_root_or_die():
 	if os.getuid() != 0 or os.geteuid() != 0:
 		try:

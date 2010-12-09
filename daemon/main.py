@@ -40,7 +40,7 @@ from licorn.foundations.constants import licornd_roles
 from licorn.core                  import LMC
 
 from licorn.daemon                import terminate, setup_signals_handler
-from licorn.daemon.core           import  exit_if_already_running, \
+from licorn.daemon.core           import  exit_or_replace_if_already_running, \
 										refork_if_not_running_root_or_die, \
 										eventually_daemonize, \
 										licornd_parse_arguments
@@ -65,10 +65,16 @@ if __name__ == "__main__":
 
 	LMC.init_conf(batch=True)
 
-	exit_if_already_running()
+	(opts, args) = licornd_parse_arguments(_app)
+
 	refork_if_not_running_root_or_die()
 
-	(opts, args) = licornd_parse_arguments(_app)
+	pname = '%s/master@%s' % (dname,
+		licornd_roles[LMC.configuration.licornd.role].lower())
+
+	my_pid = os.getpid()
+
+	exit_or_replace_if_already_running(pname, my_pid, opts.replace)
 
 	# BATCH is needed generally in the daemon, because it is per nature a
 	# non-interactive process. At first launch, it will have to tweak the system
@@ -79,9 +85,6 @@ if __name__ == "__main__":
 	opts.batch = True
 	options.SetFrom(opts)
 	del opts, args
-
-	pname = '%s/master@%s' % (dname,
-		licornd_roles[LMC.configuration.licornd.role].lower())
 
 	process.set_name(pname)
 	eventually_daemonize()
