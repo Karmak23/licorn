@@ -1,25 +1,44 @@
+:orphan:
+
 .. Licorn® documentation master file, created by
    sphinx-quickstart on Tue Nov 23 22:29:46 2010.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Licorn®'s documentation
-=======================
 
-Welcome to Licorn® documentation site.
+.. image:: _static/licorn_logo_black_256px.png
+   :alt: Licorn®: efficient system management
+   :class: floatingflask
 
-**THIS SITE IS UNDERGOING CONSTRUCTION**. 
 
-More documentations exists in the source code, and is beiing imported here on a 2-to-3-updates-per-week basis.
+=====================
+Licorn® Documentation
+=====================
 
-Contents:
+Welcome to Licorn® documentation site. *It is undergoing construction*: a lot of documentation exists in the source code and is beiing imported here on a 2-to-3-updates-per-week basis.
+
+As a beggining, I suggest you read the :ref:`installation process <install>`, then you'll be ready to :ref:`dive into the quickstarter <quickstart>` and enjoy the mystic-horse-powers of our beloved creation. Fasten your keyboard.
+
+Using Licorn®
+=============
+
+.. toctree::
+	:maxdepth: 2
+	
+	features
+	install
+	userdoc
+
+	
+Developping with or for Licorn®
+===============================
 
 .. toctree::
 	:maxdepth: 2
 
-	install
-	userdoc
+	concepts
 	api
+
 	
 Indices and tables
 ==================

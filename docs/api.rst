@@ -7,6 +7,5 @@ Developping for Licorn® (the API)
 	:maxdepth: 2
 
 	core
-	daemon
 	foundations
-
+	daemondev

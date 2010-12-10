@@ -13,4 +13,5 @@ Main audience of Licorn® are system administrators.
 	wmi
 	cli
 	daemon
+	configuration
 

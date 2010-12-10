@@ -1,13 +1,14 @@
 .. _install:
 
-Installing Licorn®
-==================
+====================
+Installing the beast
+====================
 
 .. highlight:: bash
 
 
-Installation from packages
---------------------------
+From packages
+=============
 
 The stable version of Licorn has been packaged for `Ubuntu Lucid 10.04 LTS` and higher. Get the packages from the APT repository below::
 
@@ -17,19 +18,25 @@ Where `<codename>` should be "maverick" or "lucid" and so on.
 
 Here are a few package names:
 
-**licorn-ldap-server**
+.. glossary:
+
+licorn-ldap-server
 	The most common installation nowadays: pull in all the Licorn® server parts and the LDAP backend (plus its default configuration).
 
-**licorn-server**
+licorn-server
 	A not-so-intrusive option: it will install all the necessary parts for quickstarting a Licorn® server, with only the `shadow` backend configured. You can install the LDAP server package afterwards if you change your mind.
 
-**licorn-ldap-client** (or `licorn-client`, which goes next to `licorn-server`)
-	For satellite systems of an LDAP enabled server only. Technically this will install the same source code as other server packages, but will configure it to act as a network client (remote-drivable by your Licorn® server). You can change the configuration afterwards, but the Debian packages will not like much. `licorn-server*` and `licorn-client*` are mutually exclusive packages.
+licorn-ldap-client
+	 For satellite systems of an LDAP enabled server only. Technically this will install the same source code as other server packages, but will configure it to act as a network client (remote-drivable by your Licorn® server). You can change the configuration afterwards, but the Debian packages will not like much. `licorn-server*` and `licorn-client*` are mutually exclusive packages.
+
+licorn-client
+	the same, without LDAP support.
 
 All these packages will install some other depandencies (most notably `python-licorn`, `licorn-bin` and a few other `python-*` packages). For more details, see `the Debian package documentation <http://dev.licorn.org/wiki/UserDoc/DebianPackagesDependancies>`_ on the developper site.
 
-Installation from sources
--------------------------
+
+From sources
+============
 
 Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damage on your system at worst, and not work at all at least, if you miss something during this procedure.
 

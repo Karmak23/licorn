@@ -53,4 +53,7 @@ You just modified the `Users` profile, which is shipped by default on Licorn®::
 WMI Quickstarter
 ----------------
 
+The WMI offers high-level but limited-set of functionnality compared to CLI. It is aimed at non-professionnal users and occasionnal system administrators. It's fully internationnalized and localized.
+
 The WMI quickstarter is not yet ready, but using the WMI is pretty straightforward. `Just try it <http://localhost:3356/>`_ (login with your user account, if you're a member of group `licorn-wmi`; else you're out of luck!).
+
