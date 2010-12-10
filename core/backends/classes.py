@@ -38,6 +38,18 @@ class CoreBackend(CoreUnitObject):
 		assert ltrace(self.name, '| load()')
 		if self.initialize():
 			self.enabled = self.is_enabled()
+	def generate_exception(extype, *args, **kwargs):
+		""" generic mechanism for exception generation (every backend can
+		implement only the exceptions he handles). """
+
+		assert ltrace('backends', '| generate_exception(%s,%s,%s)' % (
+			extype, args, kwargs))
+
+		# it's up to the developper to implement the right methods, don't
+		# enclose the getattr() call in try .. except.
+		assert hasattr(self, 'genex_' % extype)
+
+		getattr(self, 'genex_' % extype)(*args, **kwargs)
 	def is_enabled(self):
 		""" in standard operations, this method checks if the backend can be
 			enabled (in particular conditions). but the abstract method of the

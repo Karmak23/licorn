@@ -17,6 +17,7 @@ from licorn.foundations.hlstr     import cregex
 from licorn.foundations.network   import build_hostname_from_ip
 
 from classes              import MachinesBackend
+from licorn.core          import LMC
 from licorn.core.machines import Machine
 
 class dnsmasq_controller(Singleton, MachinesBackend):
@@ -90,13 +91,6 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 			del temp_host
 			return None
 
-		if self.machines.has_key(temp_host.ip):
-			raise exceptions.AlreadyExistsException('''a machine '''
-				'''with the ip address %s already exists in the '''
-				'''database. Please check %s against duplicate '''
-				'''entries.''' % (temp_host.ip,
-					self.files.dnsmasq_conf))
-
 		# be sure we have a unique hostname, else many things could
 		# fail.
 		if not hasattr(temp_host, 'hostname'):
@@ -112,6 +106,14 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		del temp_host
 
 		return final_host
+	def genex_AlreadyExistsException(self, ip, *args, **kwargs):
+		""" Generate an appropriate exception about an already existing IP
+			address. This is most probably a duplicate entry in our
+			configuration file. """
+		return exceptions.AlreadyExistsException('''a machine '''
+			'''with the IP address %s already exists in the '''
+			'''system. Please check %s against duplicate '''
+			'''entries.''' % (ip, self.files.dnsmasq_conf))
 	def load_Machines(self):
 		""" get the machines from static conf and leases, and create the pivot
 		data for our internal data structures. """

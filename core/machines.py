@@ -135,6 +135,10 @@ class MachinesController(Singleton, CoreController):
 			for backend in self.backends():
 				assert ltrace('machines', '  reload(%s)' % backend.name)
 				for machine in backend.load_Machines():
+					if machine.ip in self.keys():
+						raise backend.generate_exception(
+							'AlreadyExistsException', machine.ip)
+
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
