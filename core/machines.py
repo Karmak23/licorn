@@ -138,7 +138,8 @@ class MachinesController(Singleton, CoreController):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
-	def scan_network(self, network_to_scan, wait_until_finish=False, *args, **kwargs):
+	def scan_network(self, network_to_scan=None, wait_until_finish=False,
+		*args, **kwargs):
 		""" use nmap to scan a whole network and add all discovered machines to
 		the local configuration. """
 

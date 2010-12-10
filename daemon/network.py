@@ -35,16 +35,13 @@ def queue_wait_for_reversers(caller):
 	queue_wait(dqueues.reverse_dns, 'reversers',
 		'PTR resolve IP addresses', caller)
 def thread_network_links_builder():
-	""" Ping all known machines. On online ones, try to connect to pyro and
-	get current detailled status of host. Notify the host that we are its
-	controlling server, and it should report future status change to us.
-
-	LOCKED to avoid corruption if a reload() occurs during operations.
+	""" Scan our known machines, then launch a discover operation on local
+	network(s). The scan & discover operations consist in pinging hosts, and
+	looking for Pyro enabled ones, while reversing IPs to find eventual DNS
+	names and Ethernet addresses if they are unknown.
 	"""
 
 	caller    = current_thread().name
-	pingqueue = dqueues.pings
-	pyroqueue = dqueues.pyrosys
 	machines  = LMC.machines
 
 	assert ltrace('machines', '> thread_network_links_builder()')
@@ -54,17 +51,28 @@ def thread_network_links_builder():
 	with machines.lock():
 		mids = machines.keys()
 
+	# scan our know machines, if any.
 	for mid in mids:
-		pingqueue.put(mid)
+		dqueues.pings.put(mid)
+		dqueues.reverse_dns.put(mid)
+		if machines[mid].ether in (None, []):
+			#dqueues.arpings.put(mid)
+			pass
 
 	queue_wait_for_pingers(caller)
 
 	for mid in mids:
 		with LMC.machines[mid].lock():
 			if machines[mid].status & host_status.ONLINE:
-				pyroqueue.put(mid)
+				dqueues.pyrosys.put(mid)
 
 	queue_wait_for_pyroers(caller)
+
+	queue_wait_for_reversers(caller)
+	#queue_wait_for_arpingers(caller)
+
+	# then discover everything around us...
+	machines.scan_network()
 
 	logging.info('%s: initial network scan finished.' % caller)
 
