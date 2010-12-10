@@ -84,21 +84,23 @@ class CoreController(GiantLockProtectedObject):
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
 
-		# Keeping the reverse mapping dicts in a container permits having
-		# more than one reverse mapping available for UnitObjects (kind of an
-		# internal index) and update them fast when an object is altered.
-		#
-		# The mapping construct permits having different mapping names instead
-		# of fixed ones (e.g. "login" for users, "name" for groups, "hostname"
-		# for machines...).
-		self._reverse_mappings = MixedDictObject(self.name + '_reverse_mappings')
+		#: Keeping the reverse mapping dicts in a container permits having
+		#: more than one reverse mapping available for UnitObjects (kind of an
+		#: internal index) and update them fast when an object is altered.
+		#:
+		#: The mapping construct permits having different mapping names instead
+		#: of fixed ones (e.g. "login" for users, "name" for groups, "hostname"
+		#: for machines...).
+		self._reverse_mappings = MixedDictObject(
+				self.name + '_reverse_mappings')
 		for mapping_name in reverse_mappings:
 			mapping = ReverseMappingDict()
 			self.__setattr__('by_' + mapping_name, mapping)
 			self._reverse_mappings[mapping_name] = mapping
 
-		# prefixed with '_', they are automatically protected and stored out
-		# of the dict() part of self, thanks to MixedDictObject.
+		#: prefixed with '_', prefered backend attributes are automatically
+		#: protected and stored out of the dict() part of self, thanks to
+		#: MixedDictObject.
 		self._prefered_backend_name = None
 		self._prefered_backend_prio = None
 

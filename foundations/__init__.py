@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2
 
 # this @@-tag will be replaced by the package release version.
 # this is left to the package maintainer, don't alter it here.
-__version__ = '@@VERSION@@'
+__version__ = '@DEVEL@'
 version     = __version__
 
 import os, sys
