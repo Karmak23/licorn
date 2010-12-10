@@ -17,6 +17,7 @@ configure:
 build: configure i18n
 	chmod a+x $(EXECUTABLES)
 	chmod a+x daemon/main.py
+	chmod a+x tests/core.py tests/wmi.py
 
 binary-install: build
 	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)"
