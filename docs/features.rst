@@ -65,14 +65,24 @@ To extend this feature list, you can read the :ref:`implementation` section.
 Technical details
 =================
 
-These software or services are used or supported as base of the system, or via extensions:
+These software or services are used or supported as base of the system, or via extensions (listed in no particular order):
 
-	- PAM (backend)
-	- OpenLDAP (backend)
-	- samba (extension)
-	- DNSmasq (backend)
-	- BIND9 / DHCPd3 (to come, as backend) 
-	- postfix (to come, as extension)
-	- apache2 (to come, as extension)
-	- caldavd (to come, as extension)
-	- `POSIX.1e` ACLs (native)
+- PAM (backend)
+- OpenLDAP (backend)
+- samba (extension)
+- DNSmasq (backend)
+- BIND9 / DHCPd3 (to come, as backend) 
+- postfix (to come, as extension)
+- apache2 (to come, as extension)
+- caldavd (to come, as extension)
+	
+Licorn® is built upon these technologies (listed in no particular order):
+
+* the beloved `Python` programming language,
+* the `Pyro` remote object distribution system,
+* `POSIX.1e` ACLs,
+* File-system eXtended ATTributes,
+* SQLite3,
+* GTK+ for graphical interfaces,
+* some (but not much) python external modules, like the multi-platform `netifaces` module.
+

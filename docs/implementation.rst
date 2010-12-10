@@ -72,7 +72,9 @@ General use threads
 
 .. glossary::
 
-	PeriodicThreadCleaner
-		Watches for dead or terminated threads and wipe them from memory.
-	
+	MainThread
+		Depending on :ref:`licornd's role <licornd.core>`, the `Mainthread` will set up and launch a different pack of threads. Some are common, though.
+
+	PeriodicThreadsCleaner
+		Watches for dead or terminated threads and wipe them from memory. The job is accomplished every :term:`licornd.threads.wipe_time` seconds, and 30 seconds after the daemon started. The start value is fixed and non-negociable, while the cycle period is customizable via the sus-named configuration directive.
 more to come...

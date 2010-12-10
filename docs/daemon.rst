@@ -38,7 +38,7 @@ Given there is already another daemon running and you want to replace it with an
 	# control over a daemon already forked in the background:
 	licornd -rvD
 	
-Note that using the `--replace` won't hurt if no daemon is running, the program will just continue as if you didn't provide the flag.
+Note that using the :option:`--replace` flag won't hurt if there's no daemon running: the program will just continue as if you didn't provided it.
 
 	
 Configuration

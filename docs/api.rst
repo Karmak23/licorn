@@ -8,4 +8,4 @@ Developping for Licorn® (the API)
 
 	core
 	foundations
-	daemondev
+	implementation
