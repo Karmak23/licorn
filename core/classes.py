@@ -113,7 +113,13 @@ class CoreController(GiantLockProtectedObject):
 				assert ltrace(self.name,
 					'| CoreController.__setitem__(reverse %s for %s)' % (
 						mapping_name, getattr(value, mapping_name)))
-				mapping_dict[getattr(value, mapping_name)] = value
+				try:
+					mapping_dict[getattr(value, mapping_name)] = value
+				except TypeError:
+					# probably 'unhashable type: 'list' TypeError'. Try to index
+					# every entry (and pray for them to be globally unique...).
+					for key in getattr(value, mapping_name):
+						mapping_dict[key] = value
 	def __delitem__(self, key):
 		""" Delete data inside us, but remove reverse mappings first. """
 		with self.lock():
