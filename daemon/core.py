@@ -163,8 +163,8 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 
 	if process.already_running(pid_file):
 		if replace:
-			logging.notice('%s(%s): replacing existing instance @pid %s.' %
-				(pname, my_pid, old_pid))
+			logging.notice('%s(%s): trying to replace existing instance '
+				'@pid %s.' % (pname, my_pid, old_pid))
 
 			# kill the existing instance, gently
 			os.kill(old_pid, signal.SIGTERM)
@@ -173,15 +173,57 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 
 			while os.path.exists(pid_file):
 				time.sleep(0.1)
-				if counter >= 100:
 
-					# exit now
+				if counter >= 50:
+					# Exit now, this is too much. process should have removed
+					# the pid file very earlier, this is the first thing the
+					# daemon does before cleaning and killing everything.
 					logging.error("Existing instance won't terminate, we're"
 						" in trouble. I'll let you see what's going on.")
 				counter+=1
 
-			# wait a little more, else Pyro port will not be available.
-			time.sleep(0.2)
+			# If the pid file is gone, old instance is really shutting down. For
+			# various this could take more time, and even not suceed if
+			# something very low-level is blocking. We have to verify it
+			# actually shuts down completely.
+			#
+			# Can't use os.waitpid(), this is not our child. We can only rely on
+			# /proc/$PID to tell if it is still there. Not optimal but correct.
+			proc_pid = '/proc/%s' % old_pid
+
+			counter = 0
+			killed  = False
+			while os.path.exists(proc_pid):
+				time.sleep(0.1)
+
+				# wait a little more,
+				# else Pyro & WMI ports will not be available.
+				if counter == 20:
+					logging.notice('%s(%s): waiting a little more for old '
+						'instance to terminate.' % (pname, my_pid))
+
+				elif counter == 60:
+					logging.notice("%s(%s): re-killing old instance softly with"
+						" TERM signal." % (pname, my_pid))
+
+					os.kill(old_pid, signal.SIGTERM)
+					time.sleep(0.2)
+					counter += 2
+
+				elif counter == 100:
+					logging.notice("%s(%s): old instance won't terminate after "
+						"10 seconds. Sending KILL signal." % (pname, my_pid))
+
+					killed = True
+					os.kill(old_pid, signal.SIGKILL)
+					time.sleep(0.2)
+					counter += 2
+
+				counter += 1
+
+			logging.notice("%s(%s): old instance %s terminated, we can "
+				"play now." % (pname, my_pid, 'nastily' if killed
+					else 'successfully'))
 		else:
 			logging.notice("%s: already running (pid %s), not restarting." % (
 				dname, process.get_pid(LMC.configuration.licornd.pid_file)))

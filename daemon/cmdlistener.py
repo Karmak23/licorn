@@ -6,7 +6,7 @@ Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import signal, os
+import signal, os, time
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
@@ -188,9 +188,19 @@ class CommandListener(LicornBasicThread):
 		#Pyro.config.PYRO_LOGFILE='pyro.log'
 		#Pyro.config.PYRO_USER_LOGFILE='pyro.user.log'
 
-		# by default Pyro listens on all interfaces, no need to refine.
-		self.pyro_daemon=Pyro.core.Daemon(norange=1,
-			port=LMC.configuration.licornd.pyro.port)
+		count = 0
+
+		while not self._stop_event.isSet():
+			try:
+				# by default Pyro listens on all interfaces, no need to refine.
+				self.pyro_daemon=Pyro.core.Daemon(norange=1,
+					port=LMC.configuration.licornd.pyro.port)
+				break
+			except Pyro.core.DaemonError, e:
+				logging.warning('''%s: socket already in use. '''
+					'''waiting (total: %ds).''' % (self.name, count))
+				count += 1
+				time.sleep(1)
 
 		# not strictly needed.
 		#self.pyro_daemon.setTimeout(5)
