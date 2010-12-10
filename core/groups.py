@@ -1806,10 +1806,10 @@ class GroupsController(Singleton, CoreController):
 		assert ltrace('groups', '|  exists(name=%s, gid=%s)' % (name, gid))
 
 		if name:
-			return self.name_cache.has_key(name)
+			return name in self.name_cache
 
 		if gid:
-			return self.groups.has_key(gid)
+			return gid in self.groups
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or a name to test existence of.")
