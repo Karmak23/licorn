@@ -60,16 +60,17 @@ trc['unix']          = 0x00000000000200000000
 trc['dnsmasq']       = 0x00000000000400000000
 
 trc['daemon']        = 0x0000ffff000000000000
-trc['master']        = 0x00000100000000000000
-trc['inotifier']     = 0x00000200000000000000
-trc['aclchecker']    = 0x00000400000000000000
-trc['cache']         = 0x00000800000000000000
-trc['crawler']       = 0x00001000000000000000
-trc['cmdlistener']   = 0x00002000000000000000
+trc['master']        = 0x00000001000000000000
+trc['inotifier']     = 0x00000002000000000000
+trc['aclchecker']    = 0x00000004000000000000
+trc['cache']         = 0x00000008000000000000
+trc['crawler']       = 0x00000010000000000000
+trc['cmdlistener']   = 0x00000020000000000000
 # the next 2 are identical, this is meant to be, for syntaxic eases
-trc['thread']        = 0x00004000000000000000
-trc['threads']       = 0x00004000000000000000
-trc['wmi']           = 0x00008000000000000000
+trc['thread']        = 0x00000040000000000000
+trc['threads']       = 0x00000040000000000000
+trc['wmi']           = 0x00000080000000000000
+trc['rwi']           = 0x00000100000000000000
 
 # no 0xffff here, the first 'f' is for timings and special cases
 trc['interfaces']    = 0x0fff0000000000000000
@@ -128,7 +129,7 @@ if getenv('LICORN_TRACE', None) != None:
 	def ltrace(module, message):
 		if  ltrace_level & trc[module]:
 			sys.stderr.write('%s %s: %s\n' % (
-				styles.stylize(styles.ST_COMMENT, 'TRACE%s' % mytime()),
+				stylize(ST_COMMENT, 'TRACE%s' % mytime()),
 				module, message))
 		return True
 else:
