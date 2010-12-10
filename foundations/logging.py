@@ -10,7 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 
-from threading import current_thread
+from threading import current_thread, RLock
 
 from licorn.foundations import options
 from styles    import *
@@ -66,6 +66,11 @@ class LicornWarningsDB(Singleton):
 
 __warningsdb = LicornWarningsDB()
 
+#: we've got to synchronize all threads for outputing anything, else in rare
+#: cases the display can be corrupted by two threads saying somthing at the
+#: exact same time. Seen on 20101210 with 2 PyroFinders.
+__output_lock = RLock()
+
 def send_to_listener(message, verbose_level=verbose.QUIET):
 	""" See if current thread has a listener (Remote Pyro object dedicated to
 		inter-process communication), and send the message to it. """
@@ -90,8 +95,9 @@ def error(mesg, returncode=1, full=False, tb=None):
 			traceback.print_tb( sys.exc_info()[2] )
 			sys.stderr.write("\n")
 
-	sys.stderr.write('%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'),
-		mytime(), mesg))
+	with __output_lock:
+		sys.stderr.write('%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'),
+			mytime(), mesg))
 
 	raise SystemExit(returncode)
 def warning(mesg, once=False, to_listener=True):
@@ -106,7 +112,9 @@ def warning(mesg, once=False, to_listener=True):
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message))
-	sys.stderr.write(text_message)
+
+	with __output_lock:
+		sys.stderr.write(text_message)
 def warning2(mesg, once=False, to_listener=True):
 	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
@@ -122,7 +130,8 @@ def warning2(mesg, once=False, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
 
 	if options.verbose >= verbose.INFO:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stderr.write(text_message)
 def notice(mesg, to_listener=True):
 	""" Display a stylized NOTICE message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -133,7 +142,8 @@ def notice(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
 
 	if options.verbose >= verbose.NOTICE:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stderr.write(text_message)
 def info(mesg, to_listener=True):
 	""" Display a stylized INFO message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -155,7 +165,8 @@ def progress(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.PROGRESS)
 
 	if options.verbose >= verbose.PROGRESS:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stderr.write(text_message)
 
 	# make logging.progress() be compatible with potential assert calls.
 	return True
@@ -169,7 +180,8 @@ def debug(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG)
 
 	if options.verbose >= verbose.DEBUG:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stderr.write(text_message)
 
 	# be compatible with assert calls
 	return True
@@ -183,7 +195,8 @@ def debug2(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG2)
 
 	if options.verbose >= verbose.DEBUG2:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stderr.write(text_message)
 
 	# be compatible with assert calls
 	return True
