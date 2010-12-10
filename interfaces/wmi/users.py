@@ -793,7 +793,7 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 					''' when user has lost icons, or modified too much his/her '''
 					'''desktop (menus, panels and so on).
 					This will get all his/her desktop back.'''), login,
-					_("Definitely remove account from the LMC.system."))
+					_("Definitely remove account from the system."))
 			return html_data
 
 
