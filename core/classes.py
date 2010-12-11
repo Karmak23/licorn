@@ -74,11 +74,16 @@ class CoreController(GiantLockProtectedObject):
 
 		- storage for :class:`CoreUnitObject`, via the dict part of
 			:class:`MixedDictObject`
-		- backend resolution, with priorities if used by current
-			controller's backends.
+		- backend and extensions resolution via the generic method
+			load_modules(). Backend priorities are handled, if existing
+			(some backend types do not use priorities, they are equals).
 		- the reverse mapping via one or more protected dictionnary.
 
 	"""
+	_licorn_protected_attrs = (
+			GiantLockProtectedObject._licorn_protected_attrs
+			+ [ 'backends', 'extensions' ]
+		)
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		GiantLockProtectedObject.__init__(self, name=name, warnings=warnings)
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
@@ -104,7 +109,12 @@ class CoreController(GiantLockProtectedObject):
 		self._prefered_backend_name = None
 		self._prefered_backend_prio = None
 
+		self.backends = LMC.backends.find_compatibles(self)
+		#print '>>> %s'  % self.backends
 		self.find_prefered_backend()
+
+		self.extensions = LMC.extensions.find_compatibles(self)
+
 	def __setitem__(self, key, value):
 		""" Add a new element inside us and update all reverse mappings. """
 		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
@@ -183,21 +193,16 @@ class CoreController(GiantLockProtectedObject):
 					)
 					for mapping_name, mapping_dict in dicts_to_dump
 				])
-	def backends(self):
-		""" return a list of compatible backends for the current core object."""
-		assert ltrace(self.name, 'LMC.backends=%s' % LMC.backends)
-		assert ltrace(self.name, '| backends(%s -> %s)' % (
-			str([ x.controllers_compat for x in LMC.backends ]),
-			str([ backend for backend in LMC.backends \
-				if self.name in backend.controllers_compat ])))
-		return [ backend for backend in LMC.backends \
-			if self.name in backend.controllers_compat ]
 	def find_prefered_backend(self):
 		""" iterate through active backends and find the prefered one.
 			We use a copy, in case there is no prefered yet: LMC.backends
-			will change and this would crash the for_loop. """
+			will change and this would crash the for_loop.
 
-		assert ltrace(self.name, '> find_prefered_backend(%s)' % self.backends())
+			TODO: move this method into the BackendManager() instead of the
+			controller.
+			"""
+
+		assert ltrace(self.name, '> find_prefered_backend(%s)' % self.backends)
 
 		changed = False
 
@@ -208,7 +213,7 @@ class CoreController(GiantLockProtectedObject):
 			self._prefered_backend_name = None
 			self._prefered_backend_prio = None
 
-		for backend in self.backends():
+		for backend in self.backends:
 			if self._prefered_backend_name is None:
 				assert ltrace(self.name, ' found first prefered_backend(%s)' %
 					backend.name)
@@ -288,7 +293,7 @@ class CoreFSController(CoreController):
 			base_dir=None, uid=None, system_wide=True, controller=None):
 			name = self.generate_name(file_name, rule_text, system_wide, controller)
 			Enumeration.__init__(self, name)
-			assert ltrace('objects', '| ACLRule.__init__(%s, %s)' % (
+			assert ltrace('checks', '| ACLRule.__init__(%s, %s)' % (
 				name, system_wide))
 			self.checked = False
 			self.file_name = file_name
@@ -558,32 +563,32 @@ class CoreFSController(CoreController):
 			return dir_info
 	def __init__(self, name):
 		CoreController.__init__(self, name)
-		assert ltrace('core', 'CoreFSController.__init__()')
+		assert ltrace('checks', 'CoreFSController.__init__()')
 		self.system_special_dirs_templates = Enumeration()
 	def reload(self):
 		""" reload the templates rules generated from systems rules. """
-		assert ltrace('core', '| LicornCoreFSController.reload(%s)' %
+		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
 
 		for filename in glob.glob(
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
 
 			rules = self.parse_rules(rules_path=filename)
-			assert ltrace('core', '  EVAL rule %s' % rules.dump_status(True))
+			assert ltrace('checks', '  EVAL rule %s' % rules.dump_status(True))
 
 			if '_default' in rules.name:
-				assert ltrace('core', '  ADD rule %s (%s)' % (
-					rules.dump_status(True), rules.default.dump_status(True)))
+				assert ltrace('checks', '  ADD rule %s (%s)' % (
+					rules.dump_status(True), rules['~'].dump_status(True)))
 				self.system_special_dirs_templates['~'] = rules['~']
 			else:
 				#print rules.dump_status(True)
 				for acl_rule in rules:
-					assert ltrace('core', '  ADD rule %s' % acl_rule.dump_status(True))
+					assert ltrace('checks', '  ADD rule %s' %
+						acl_rule.dump_status(True))
 					self.system_special_dirs_templates[acl_rule.name] = acl_rule
-
 	def parse_rules(self, rules_path, user_info=None, system_wide=True):
 		""" parse a rule from a line to a FsapiObject. """
-		assert ltrace('core', "> parse_rules(%s, %s, %s)" % (rules_path,
+		assert ltrace('checks', "> parse_rules(%s, %s, %s)" % (rules_path,
 			user_info, system_wide))
 		special_dirs = None
 		if os.path.exists(rules_path):
@@ -605,7 +610,8 @@ class CoreFSController(CoreController):
 				try:
 					rule = self.ACLRule(file_name=rules_path, rule_text=line,
 						line_no=line_no, system_wide=system_wide,
-						base_dir=user_info.user_home if not system_wide else None,
+						base_dir=user_info.user_home
+							if not system_wide else None,
 						uid=user_info.uidNumber if not system_wide else None,
 						controller=self)
 				except exceptions.LicornRuntimeException, e:
@@ -615,10 +621,12 @@ class CoreFSController(CoreController):
 				try:
 					rule.check()
 					if system_wide:
-						logging.progress('''%s template ACL rule: '%s' for '%s'.''' %
-							(stylize(ST_OK,"Added"),
-							stylize(ST_NAME, rule.acl),
-							stylize(ST_NAME, rule.dir)))
+						logging.progress("%s template ACL rule: '%s' for '%s'."
+							% (
+								stylize(ST_OK,"Added"),
+								stylize(ST_NAME, rule.acl),
+								stylize(ST_NAME, rule.dir))
+							)
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
@@ -626,7 +634,7 @@ class CoreFSController(CoreController):
 					logging.warning2(e)
 					continue
 				else:
-					assert ltrace('core', '  parse_rules(add rule %s)' %
+					assert ltrace('checks', '  parse_rules(add rule %s)' %
 						rule.dump_status(True))
 					rules.append(rule)
 
@@ -650,12 +658,151 @@ class CoreFSController(CoreController):
 						dir_info.dump_status(True))
 
 			handler.close()
-		assert ltrace('core', '< parse_rules(%s)' % special_dirs)
+		assert ltrace('checks', '< parse_rules(%s)' % special_dirs)
 
 		if special_dirs == None:
 			special_dirs = Enumeration()
 
 		return special_dirs
+class ModuleManager(GiantLockProtectedObject):
+	""" The basics of a module manager. Backends and extensions are just
+		particular cases of this class. """
+	_licorn_protected_attrs = (
+			GiantLockProtectedObject._licorn_protected_attrs
+			+ ['_available_modules', 'module_type', 'module_path',
+				'module_sym_path']
+		)
+	def __init__(self, name, module_type, module_path, module_sym_path):
+		""" TODO: implement module_sym_path auto detection. """
+		GiantLockProtectedObject.__init__(self, name)
+		self._available_modules = MixedDictObject('<no_type_yet>')
+		self.module_type = module_type
+		self.module_path = module_path
+		self.module_sym_path = module_sym_path
+	def load(self):
+		""" load our modules (can be different type but the principle is the
+			always the same). """
+
+		assert ltrace(self.name, '> load(type=%s, path=%s)' % (self.module_type,
+			self.module_path))
+
+		for entry in os.listdir(self.module_path):
+			if entry[0] == '_':
+				continue
+
+			# remove len('_') + len(mtype) + len('.py')
+			if entry[ -len(self.module_type) -4:] \
+						== '_' + self.module_type + '.py':
+
+				# remove '.py'
+				modname      = entry[:-3]
+				# remove '_backend.py' or '_extension.py'
+				module_name = entry[:-len(self.module_type) -4]
+
+				assert ltrace(self.name, 'importing %s %s' % (self.module_type,
+					stylize(ST_NAME, module_name)))
+
+				#mod_sym_path =
+
+				pymod = __import__(self.module_sym_path + '.' + modname,
+					globals(), locals(), module_name)
+				module = getattr(pymod, module_name)
+
+				assert ltrace(self.name, 'imported %s %s, now loading.' % (
+					self.module_type, stylize(ST_NAME, module_name)))
+
+				module.load()
+
+				if module.available:
+					if module.enabled:
+						self[module.name] = module
+						assert ltrace(self.name, 'loaded %s %s' % (
+							self.module_type,
+							stylize(ST_NAME, module.dump_status(True))))
+					else:
+						self._available_modules[module.name] = module
+						assert ltrace(self.name, '%s %s is only available' % (
+							self.module_type, stylize(ST_NAME, module.name)))
+				else:
+					assert ltrace(self.name, '%s %s NOT available' % (
+						self.module_type, stylize(ST_NAME, backend.name)))
+					pass
+
+		assert ltrace(self.name, '< load()')
+	def find_compatibles(self, controller):
+		""" Return a list of compatible modules with a given controller. """
+
+		assert ltrace(self.name, '| find_compatibles(%s => LMC.%s=%s' % (
+			controller.name, self.name, [x for x in self]))
+
+		assert ltrace(self.name, '| find_compatibles(%s -> %s)' % (
+			str([ x.controllers_compat for x in self ]),
+			str([ module.name for module in self \
+				if controller.name in module.controllers_compat ])))
+
+		return [ module for module in self \
+				if controller.name in module.controllers_compat ]
+	def enable_module(self, module_name):
+		""" try to enable a given module_name. what to do exactly is left to the
+		backend itself."""
+
+		assert ltrace(self.name, '| enable_module(%s, %s, %s)' % (module_name,
+			str([x for x in self.keys()]), self._available_modules.keys()))
+
+		if module_name in self.keys():
+			logging.notice('%s %s already enabled.' % (module_name,
+				self.module_type))
+			return
+
+		if self._available_modules[module_name].enable():
+			module = self._available_modules[module_name]
+			self[module_name] = module
+			del self._available_modules[module_name]
+			module.initialize()
+
+			logging.notice('''successfully enabled %s backend.'''% backend)
+
+		# only in the backends
+		# LMC.reload_controllers_backends()
+	def disable_module(self, module_name):
+		""" try to disable a given module. what to do exactly is left to the
+		module itself."""
+
+		assert ltrace(self.name, '| disable_module(%s, %s, %s)' % (module_name,
+			self.keys(), self._available_modules.keys()))
+
+		if module_name in self._available_modules.keys():
+			logging.notice('%s %s already disabled.' % (module_name,
+				self.module_type))
+			return
+
+		if self[module_name].disable():
+			self._available_modules[module_name] = self[module_name]
+			del self[module_name]
+			logging.notice('''successfully disabled %s %s. ''' % (
+				module_name, self.module_type))
+
+		# left to the backend
+		# LMC.reload_controllers_backends()
+	def check(self, batch=False, auto_answer=None):
+		""" Check all enabled modules, then all available modules. Checking them
+			will make them configure themselves, and configure the required
+			underlying system daemons, services or files.
+		"""
+
+		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
+
+		for module in self:
+			assert ltrace(self.name, '  check(%s)' % module.name)
+			module.check(batch=batch, auto_answer=auto_answer)
+
+		# check the available_backends too. It's the only way to make sure they
+		# can be fully usable before enabling them.
+		for module in self._available_modules:
+			assert ltrace(self.name, '  check(%s)' % module.name)
+			module.check(batch=batch, auto_answer=auto_answer)
+
+		assert ltrace(self.name, '< check()')
 class CoreUnitObject(NamedObject):
 	""" Common attributes for unit objects  and backends in Licorn® core. """
 
@@ -683,6 +830,81 @@ class CoreUnitObject(NamedObject):
 		# its name. This will annoy Pyro which cannot pickle weakproxy objects,
 		# but will be cleaner than lookup the object by its name...
 		self._controller = controller.name
+class CoreModule(CoreUnitObject):
+	_licorn_protected_attrs = CoreUnitObject._licorn_protected_attrs
+	def __init__(self, name='core_module', manager=None,
+		controllers_compat=[]):
+		CoreUnitObject.__init__(self, name=name, controller=manager)
+		assert ltrace(self.name, '| CoreModule.__init__(controllers_compat=%s)'
+			% controllers_compat)
+
+		# abstract defaults
+		self.available  = False
+		self.enabled    = False
+		self.controllers_compat = controllers_compat
+	def __str__(self):
+		return self.name
+	def __repr__(self):
+		return str(self.__class__)
+	def load(self):
+		assert ltrace(self.name, '| load()')
+		if self.initialize():
+			self.enabled = self.is_enabled()
+	def generate_exception(extype, *args, **kwargs):
+		""" generic mechanism for exception generation (every backend can
+		implement only the exceptions he handles). """
+
+		assert ltrace(self.name, '| CoreModule.generate_exception(%s,%s,%s)' % (
+			extype, args, kwargs))
+
+		# it's up to the developper to implement the right methods, don't
+		# enclose the getattr() call in try .. except.
+		assert hasattr(self, 'genex_' % extype)
+
+		getattr(self, 'genex_' % extype)(*args, **kwargs)
+	def is_enabled(self):
+		""" in standard operations, this method checks if the backend can be
+			enabled (in particular conditions). but the abstract method of the
+			base class just return self.enabled, for backends which don't make
+			a difference between available and enabled. """
+		assert ltrace(self.name, '| is_enabled(%s)' % self.available)
+		return self.available
+	def enable(self):
+		assert ltrace(self.name, '| enable(False)')
+		return False
+	def disable(self):
+		assert ltrace(self.name, '| disable(True)')
+		return True
+	def initialize(self):
+		"""
+		For an abstract backend, initialize() always return False.
+
+		"active" is filled by core.configuration and gives a hint about the
+		system configuration:
+			- active will be true if the underlying system is configured to
+				use the backend. That doesn't imply the backend CAN be used,
+				for exemple on a partially configured system.
+			- active will be false if the backend is deactivated in the system
+				configuration. The backend can be fully operationnal anyway. In
+				this case "active" means that the backend will be used (or not)
+				by Licorn.
+
+		"""
+
+		assert ltrace(self.name, '| initialize(%s)' % self.available)
+		return self.available
+	def check(self, batch=False, auto_answer=None):
+		""" default check method. """
+		assert ltrace(self.name, '| ckeck(%s)' % batch)
+		pass
+	def load_defaults(self):
+		""" A real backend will setup its own needed attributes with values
+		*strictly needed* to work. This is done in case these values are not
+		present in configuration files.
+
+		Any configuration file containing these values, will be loaded
+		afterwards and will overwrite these attributes. """
+		pass
 class CoreStoredObject(CoreUnitObject):
 	""" Common attributes for stored objects (users, groups...). Add individual
 		locking capability (better fine grained than global controller lock when

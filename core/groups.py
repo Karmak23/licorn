@@ -73,7 +73,7 @@ class GroupsController(Singleton, CoreController):
 				self.groups     = {}
 				self.name_cache = {}
 
-				for backend in self.backends():
+				for backend in self.backends:
 					g, c = backend.load_Groups()
 					self.groups.update(g)
 					self.name_cache.update(c)
@@ -131,7 +131,7 @@ class GroupsController(Singleton, CoreController):
 					].save_Group(gid, backend_actions.UPDATE)
 
 			else:
-				for backend in self.backends():
+				for backend in self.backends:
 					backend.save_Groups()
 
 		assert ltrace('groups', '< WriteConf()')

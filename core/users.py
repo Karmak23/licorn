@@ -83,7 +83,7 @@ class UsersController(Singleton, CoreFSController):
 			self.users       = {}
 			self.login_cache = {}
 
-			for backend in self.backends():
+			for backend in self.backends:
 				u, c = backend.load_Users()
 				self.users.update(u)
 				self.login_cache.update(c)
@@ -112,7 +112,7 @@ class UsersController(Singleton, CoreFSController):
 					self.users[uid]['backend']
 					].save_User(uid, backend_actions.UPDATE)
 			else:
-				for backend in self.backends():
+				for backend in self.backends:
 					backend.save_Users()
 	def Select(self, filter_string):
 		""" Filter user accounts on different criteria.

@@ -23,8 +23,8 @@ from licorn.core.machines import Machine
 class dnsmasq_controller(Singleton, MachinesBackend):
 	""" A plugin to cope with dnsmasq files."""
 
-	def __init__(self, warnings=True):
-		MachinesBackend.__init__(self, name='dnsmasq', warnings=warnings)
+	def __init__(self):
+		MachinesBackend.__init__(self, name='dnsmasq')
 		assert ltrace('dnsmasq', '| __init__()')
 
 		self.files = Enumeration()

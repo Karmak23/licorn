@@ -32,7 +32,10 @@ def connect_error(dummy1, dummy2):
 class LicornMasterController(MixedDictObject):
 	_init_conf_minimal = False
 	_init_conf_full    = False
-	_licorn_protected_attrs = MixedDictObject._licorn_protected_attrs
+	_licorn_protected_attrs = (
+			MixedDictObject._licorn_protected_attrs
+			+ ['backends', 'extensions', 'locks']
+		)
 	def __init__(self, name='LMC'):
 		""" Default name is LMC because in 99.9% cases we've got only one LMC."""
 		MixedDictObject.__init__(self, name)
@@ -82,9 +85,14 @@ class LicornMasterController(MixedDictObject):
 	def __init_common(self):
 
 		# init the backends prior to controllers, which will use them.
-		from backends import BackendController
-		self.backends = BackendController()
+		from backends import BackendManager
+		self.backends = BackendManager()
 		self.backends.load()
+
+		# init the backends prior to controllers, which will use them.
+		from licorn.extensions import ExtensionsManager
+		self.extensions = ExtensionsManager()
+		self.extensions.load()
 
 		# load common core objects.
 		from users  import UsersController

@@ -23,7 +23,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 
 	init_ok = False
 
-	def __init__(self, warnings=True):
+	def __init__(self):
 
 		assert ltrace('unix', '> __init__(%s)' % unix_controller.init_ok)
 
@@ -31,7 +31,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 			return
 
 		NSSBackend.__init__(self, name='unix',
-			nss_compat=('files', 'compat'), priority=1, warnings=warnings)
+			nss_compat=('files', 'compat'), priority=1)
 
 		# the UNIX backend is always enabled on a Linux system.
 		# Any better and correctly configured backend should take
@@ -269,8 +269,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 			try:
 				self.save_Groups()
 			except (OSError, IOError), e:
-				if self.warnings:
-					logging.warning("licorn.core.groups: can't correct" \
+				logging.warning("licorn.core.groups: can't correct" \
 					" inconsistencies (was: %s)." % e)
 
 		return groups, name_cache

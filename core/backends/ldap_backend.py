@@ -33,7 +33,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 	init_ok = False
 
-	def __init__(self, warnings=True):
+	def __init__(self):
 		""" Init the LDAP backend instance. """
 
 		if ldap_controller.init_ok:
@@ -41,8 +41,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace('ldap', '> __init__()')
 
-		NSSBackend.__init__(self, name='ldap', nss_compat=('ldap',),
-			priority=5, warnings=warnings)
+		NSSBackend.__init__(self, name='ldap', nss_compat=('ldap',), priority=5)
 
 		self.files             = Enumeration()
 		self.files.ldap_conf   = '/etc/ldap.conf'

@@ -111,7 +111,10 @@ class MachinesController(Singleton, CoreController):
 		if MachinesController.init_ok:
 			return
 
-		CoreController.__init__(self, 'machines', reverse_mappings=['hostname', 'ether'])
+		assert ltrace('machines', 'MachinesController.__init__()')
+
+		CoreController.__init__(self, name='machines',
+			reverse_mappings=['hostname', 'ether'])
 
 		self._nmap_cmd_base = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG',	'-' ]
 		self._nmap_not_installed = False
@@ -132,7 +135,7 @@ class MachinesController(Singleton, CoreController):
 		with self.lock():
 			self.clear()
 
-			for backend in self.backends():
+			for backend in self.backends:
 				assert ltrace('machines', '  reload(%s)' % backend.name)
 				for machine in backend.load_Machines():
 					if machine.ip in self.keys():
@@ -339,7 +342,7 @@ class MachinesController(Singleton, CoreController):
 					self[mid]['backend']
 					].save_Machine(mid)
 			else:
-				for backend in self.backends():
+				for backend in self.backends:
 					backend.save_Machines()
 	def Select(self, filter_string):
 		""" Filter machine accounts on different criteria. """
