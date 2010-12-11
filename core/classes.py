@@ -240,7 +240,6 @@ class CoreController(GiantLockProtectedObject):
 		assert ltrace(self.name, '< find_prefered_backend(%s, %s)' % (
 			self._prefered_backend_name, changed))
 		return changed
-
 class CoreFSController(CoreController):
 	class ACLRule(Enumeration):
 		""" Class representing a custom rule.
@@ -285,7 +284,6 @@ class CoreFSController(CoreController):
 				except ValueError:
 					acls.append(acl_tmp)
 			return ','.join(acls)
-
 		def __init__(self, file_name=None, rule_text=None, line_no=0,
 			base_dir=None, uid=None, system_wide=True, controller=None):
 			name = self.generate_name(file_name, rule_text, system_wide, controller)
@@ -658,7 +656,6 @@ class CoreFSController(CoreController):
 			special_dirs = Enumeration()
 
 		return special_dirs
-
 class CoreUnitObject(NamedObject):
 	""" Common attributes for unit objects  and backends in Licorn® core. """
 
@@ -686,7 +683,6 @@ class CoreUnitObject(NamedObject):
 		# its name. This will annoy Pyro which cannot pickle weakproxy objects,
 		# but will be cleaner than lookup the object by its name...
 		self._controller = controller.name
-
 class CoreStoredObject(CoreUnitObject):
 	""" Common attributes for stored objects (users, groups...). Add individual
 		locking capability (better fine grained than global controller lock when

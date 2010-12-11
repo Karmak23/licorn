@@ -5,6 +5,7 @@ PREFIX?=$(DESTDIR)
 PROJECT_LIB_DIR?=$(DESTDIR)/usr/share/pyshared/$(APP_NAME)
 EXEC_LINK_DIR?=../../usr/share/pyshared/$(APP_NAME)
 LOCALE_DIR?=$(DESTDIR)/usr/share/locale
+DOC_DIR?=$(DESTDIR)/usr/share/doc
 SHARE_DIR?=$(DESTDIR)/usr/share/$(APP_NAME)
 EXECUTABLES=interfaces/cli/add.py interfaces/cli/mod.py interfaces/cli/del.py interfaces/cli/get.py interfaces/cli/chk.py interfaces/gui/keyword-modify-gui.py interfaces/gui/keyword-query-gui.py
 
@@ -37,9 +38,12 @@ binary-install: build
 	ln -sf ../"$(EXEC_LINK_DIR)"/core/backends/schemas "$(SHARE_DIR)"/schemas
 
 doc: 
+	(cd docs; make html)
 
 installdoc: doc
-	
+	mkdir -p "$(DOC_DIR)"
+	cp -a docs/_build/html "$(DOC_DIR)"
+
 clean: cleandoc
 	find ./ -type f \( -name '*~' -o -name '.*.swp' \
 		-o -name '*.pyc' -o -name '*.pyo' \) -exec rm "{}" \;
