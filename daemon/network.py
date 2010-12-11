@@ -7,6 +7,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import Pyro
+import dumbnet
 
 from threading                    import current_thread
 from licorn.foundations           import logging
@@ -25,8 +26,8 @@ def queue_wait(queue, tprettyname, wait_message, caller):
 def queue_wait_for_pingers(caller):
 	queue_wait(dqueues.pings, 'pingers', 'ping network hosts',
 		caller)
-def queue_wait_for_arppingers(caller):
-	queue_wait(dqueues.arppings, 'arppingers', 'ARP ping network hosts',
+def queue_wait_for_arpingers(caller):
+	queue_wait(dqueues.arpings, 'arpingers', 'ARP ping network hosts',
 		caller)
 def queue_wait_for_pyroers(caller):
 	queue_wait(dqueues.pyrosys, 'pyroers',
@@ -55,8 +56,9 @@ def thread_network_links_builder():
 	for mid in mids:
 		dqueues.pings.put(mid)
 		dqueues.reverse_dns.put(mid)
+
 		if machines[mid].ether in (None, []):
-			#dqueues.arpings.put(mid)
+			dqueues.arpings.put(mid)
 			pass
 
 	queue_wait_for_pingers(caller)
@@ -69,7 +71,7 @@ def thread_network_links_builder():
 	queue_wait_for_pyroers(caller)
 
 	queue_wait_for_reversers(caller)
-	#queue_wait_for_arpingers(caller)
+	queue_wait_for_arpingers(caller)
 
 	# then discover everything around us...
 	machines.scan_network()
@@ -153,23 +155,23 @@ def pool_job_pinger(mid, *args, **kwargs):
 
 	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (caller, retval))
 	return retval
-def pool_job_arppinger(mid, *args, **kwargs):
+def pool_job_arpinger(mid, *args, **kwargs):
 	"""  Ping an IP (PoolJobThread target method). """
 
 	caller = current_thread().name
 	machines = LMC.machines
+	arp_table = dumbnet.arp()
 
-	if machines.nmap_not_installed:
-		# the status should already be unknown (from class constructor).
-		#machines[mid]status = host_status.UNKNOWN
-		return
-
-	assert ltrace('machines', '> %s: pool_job_pinger(%s)' % (caller, mid))
+	assert ltrace('machines', '> %s: pool_job_arpinger(%s)' % (caller, mid))
 
 	with LMC.locks.machines[mid]:
-		machines[mid].ether = machines.run_arping(mid)
+		try:
+			machines[mid].ether = arp_table.get(dumbnet.addr(mid))
 
-	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (caller, retval))
+		except Exception, e:
+			logging.warning2('%s: exception %s for host %s.' % (caller, e, mid))
+
+	assert ltrace('machines', '< %s: pool_job_arpinger(%s)' % (caller, retval))
 def pool_job_pyrofinder(mid, *args, **kwargs):
 	""" scan a network host and try to find if it is Pyro enabled.
 		This method is meant to be run from a LicornPoolJobThread. """
@@ -194,7 +196,8 @@ def pool_job_pyrofinder(mid, *args, **kwargs):
 			assert ltrace('machines',
 				'  %s: find_pyrosys(): %s is not pyro enabled.' %(caller,
 				mid))
-			print e
+			logging.warning2('%s: exception %s for host %s.' % (
+				caller, e, mid))
 			machines.guess_host_type(mid)
 		else:
 			machines[mid].system_type = remotesys.get_host_type()

@@ -99,7 +99,8 @@ class Machine(CoreStoredObject):
 					for attr_name in dir(self) ])
 			)
 class MachinesController(Singleton, CoreController):
-
+	""" Holds all machines objects (indexed on IP addresses, reverse mapped on
+		hostnames and ether addresses which should be unique). """
 	init_ok         = False
 	load_ok         = False
 	_licorn_protected_attrs = CoreController._licorn_protected_attrs
@@ -152,6 +153,7 @@ class MachinesController(Singleton, CoreController):
 
 		caller   = current_thread().name
 		pyroq    = dqueues.pyrosys
+		arpingq  = dqueues.arpings
 		reverseq = dqueues.reverse_dns
 
 		assert ltrace('machines', '> %s: scan_network(%s)' % (
@@ -201,6 +203,7 @@ class MachinesController(Singleton, CoreController):
 					status=host_status.ONLINE)
 				self[hostip] = machine
 
+			arpingq.put(hostip)
 			reverseq.put(hostip)
 			pyroq.put(hostip)
 
@@ -209,29 +212,6 @@ class MachinesController(Singleton, CoreController):
 		if wait_until_finish:
 			queue_wait_for_reversers(caller)
 			queue_wait_for_pyroers(caller)
-	def run_arping(self, to_ping):
-		""" run nmap on to_ping and return 2 lists of up and down hosts.
-
-			On Windows:
-			http://groups.google.com/group/comp.lang.python/msg/fd2e7437d72c1c21
-
-			sudo arping -f -c 5 -w 2 192.168.119.254 -I eth2
-			ARPING 192.168.119.254 from 192.168.119.200 eth2
-			Unicast reply from 192.168.119.254 [00:25:86:E3:AE:92]  0.646ms
-			Sent 1 probes (1 broadcast(s))
-			Received 1 response(s)
-
-		"""
-
-		caller = current_thread().name
-		arping_cmd = self._arping_cmd_base[:]
-		nmap_cmd.append(to_ping)
-
-		assert ltrace('machines', '> %s: run_arping(%s)' % (
-			caller, ' '.join(arping_cmd)))
-
-		assert ltrace('machines', '< run_nmap(up=%s, down=%s)' % (
-			up_hosts, down_hosts))
 	def run_nmap(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts. """
 

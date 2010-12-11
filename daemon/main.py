@@ -53,7 +53,7 @@ from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.network        import pool_job_pinger, \
 										pool_job_pyrofinder, \
 										pool_job_reverser, \
-										pool_job_arppinger, \
+										pool_job_arpinger, \
 										thread_network_links_builder, \
 										thread_periodic_scanner
 #from licorn.daemon.scheduler     import BasicScheduler
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 		dqueues.pings = Queue()
 
 		# machines to be arp pinged across the network, to find ether address.
-		dqueues.arppings = Queue()
+		dqueues.arpings = Queue()
 
 		# IPs to be reverse resolved to hostnames.
 		dqueues.reverse_dns = Queue()
@@ -189,10 +189,10 @@ if __name__ == "__main__":
 				tname=tname, in_queue=dqueues.pings,
 				target=pool_job_pinger, daemon=True))
 
-			tname = 'ArpPinger-%d' % i
+			tname = 'Arpinger-%d' % i
 			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.arppings,
-				target=pool_job_arppinger, daemon=True))
+				tname=tname, in_queue=dqueues.arpings,
+				target=pool_job_arpinger, daemon=True))
 
 			# any socket.gethostbyaddr() can block or timeout on DNS call, make
 			# the thread daemonic to not block master daemon stop.
