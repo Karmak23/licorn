@@ -831,6 +831,12 @@ class CoreUnitObject(NamedObject):
 		# but will be cleaner than lookup the object by its name...
 		self._controller = controller.name
 class CoreModule(CoreUnitObject):
+	""" CoreModule is the base class for backends and extensions. It provides
+		the :meth:`generate_exception` method, called by controllers when a
+		high-level problem occurs (for example, a conflict between
+		duplicate-data coming from different backends; this is the typical
+		problem a backend can't detect).
+	"""
 	_licorn_protected_attrs = CoreUnitObject._licorn_protected_attrs
 	def __init__(self, name='core_module', manager=None,
 		controllers_compat=[]):
