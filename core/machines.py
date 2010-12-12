@@ -8,8 +8,9 @@ Licensed under the terms of the GNU GPL version 2
 
 import netifaces
 
-from threading import current_thread
-from time      import strftime, localtime
+from threading  import current_thread
+from time       import strftime, localtime
+from subprocess import Popen, PIPE
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, hlstr
@@ -164,13 +165,13 @@ class MachinesController(Singleton, CoreController):
 			for iface in interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
 				if 2 in iface_infos:
-					logging.info('Programming scan of local area network %s/%s.' % (
-						iface_infos[2][0]['addr'], iface_infos[2][0]['netmask']))
+					logging.info('Programming scan of local area network %s/%s.'
+						% (iface_infos[2][0]['addr'],
+							iface_infos[2][0]['netmask']))
 					# FIXME: don't hard-code /24, but nmap doesn't understand
 					# 255.255.255.0 and al...
 					network_to_scan.append('%s/24' % iface_infos[2][0]['addr'])
 				# else: interface as no IPv4 address assigned, skip it.
-		up_hosts, down_hosts = self.run_nmap(network_to_scan)
 
 		with self.lock():
 			current_mids = self.keys()
@@ -184,7 +185,7 @@ class MachinesController(Singleton, CoreController):
 			except:
 				pass
 
-		for hostip in up_hosts:
+		for hostip in self.find_up_hosts(network_to_scan):
 			if hostip in current_mids:
 				continue
 
@@ -212,6 +213,36 @@ class MachinesController(Singleton, CoreController):
 		if wait_until_finish:
 			queue_wait_for_reversers(caller)
 			queue_wait_for_pyroers(caller)
+	def find_up_hosts(self, to_ping):
+		""" run nmap on to_ping and return 2 lists of up and down hosts. """
+
+		caller = current_thread().name
+		nmap_cmd = self._nmap_cmd_base[:]
+		nmap_cmd.extend(to_ping)
+
+		assert ltrace('machines', '> %s: find_up_hosts(%s)' % (
+			caller, ' '.join(nmap_cmd)))
+
+		try:
+			nmap_pipe = Popen(nmap_cmd, shell=False, stdout=PIPE, stderr=PIPE,
+			close_fds=True).stdout
+		except (IOError, OSError), e:
+			if e.errno == 2:
+				self._nmap_not_installed = True
+				raise exceptions.LicornRuntimeException('''nmap is not '''
+					'''installed on this system, can't use it!''', once=True)
+			else:
+				raise e
+
+		for status_line in nmap_pipe.readlines():
+			splitted = status_line.split()
+
+			if splitted[0] == '#':
+				continue
+			if splitted[4] == 'Up':
+					yield splitted[1]
+
+		assert ltrace('machines', '< find_up_hosts()')
 	def run_nmap(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts. """
 
