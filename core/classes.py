@@ -254,7 +254,7 @@ class CoreFSController(CoreController):
 			#	rule.system = True if system rule else False
 		"""
 		separator = '	'
-		invalid_dir_regex_text = r'^((\/|\*\/)|[^%s]*\/?\.\.\/)' % separator
+		invalid_dir_regex_text = r'^((~.\*|\$HOME.\*|\/|\*\/)|[^%s]*\/?\.\.\/)' % separator
 		invalid_dir_regex = re.compile(invalid_dir_regex_text)
 
 		@staticmethod
@@ -321,7 +321,7 @@ class CoreFSController(CoreController):
 						self.separator, 1)[0]), custom_keep='._')
 						).replace('.', '_')
 			else:
-				if rule_text[0] == '~' or rule_text[:5] == '$HOME':
+				if rule_text == '~' or rule_text == '$HOME':
 					return '~'
 				else:
 					return (hlstr.validate_name(
