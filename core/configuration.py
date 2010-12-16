@@ -369,15 +369,15 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			if pingers < 0:
 				pingers = abs(pingers)
 
-			if pingers > 25:
+			if pingers > 50:
 				raise_pinger_exception = True
 
 		if raise_pinger_exception:
 			raise exceptions.BadConfigurationError('''invalid value "%s" '''
 				'''for %s configuration directive: it must be an integer '''
-				'''between 0 and 25.''' (
+				'''between 0 and 50.''' (
 					stylize(ST_COMMENT, pingers),
-					stylize(ST_ , 'licornd.threads.pool_members')))
+					stylize(ST_COMMENT, 'licornd.threads.pool_members')))
 
 	def load_configuration_from_main_config_file(self):
 		"""Load main configuration file, and set mandatory defaults
