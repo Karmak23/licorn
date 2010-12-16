@@ -6,11 +6,10 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import Pyro
-import dumbnet
+import Pyro, dumbnet, socket, time
 
 from threading                    import current_thread
-from licorn.foundations           import logging
+from licorn.foundations           import logging, network, exceptions, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import host_status
@@ -23,6 +22,9 @@ def queue_wait(queue, tprettyname, wait_message, caller):
 			caller, LMC.configuration.licornd.threads.pool_members, tprettyname,
 			wait_message, queue.qsize()))
 	queue.join()
+def queue_wait_for_ipscanners(caller):
+	queue_wait(dqueues.ipscans, 'ipscanners', 'scan network hosts',
+		caller)
 def queue_wait_for_pingers(caller):
 	queue_wait(dqueues.pings, 'pingers', 'ping network hosts',
 		caller)
@@ -49,6 +51,8 @@ def thread_network_links_builder():
 
 	logging.info('%s: starting initial network scan.' % caller)
 
+	start_time = time.time()
+
 	with machines.lock():
 		mids = machines.keys()
 
@@ -69,14 +73,13 @@ def thread_network_links_builder():
 				dqueues.pyrosys.put(mid)
 
 	queue_wait_for_pyroers(caller)
-
 	queue_wait_for_reversers(caller)
 	queue_wait_for_arpingers(caller)
 
-	# then discover everything around us...
-	machines.scan_network()
+	machines.scan_network2(wait_until_finished=True)
 
-	logging.info('%s: initial network scan finished.' % caller)
+	logging.info('%s: initial network scan finished (took %s).' % (caller,
+		pyutils.format_time_delta(time.time() - start_time)))
 
 	assert ltrace('machines', '< thread_network_links_builder()')
 def thread_periodic_scanner():
@@ -117,44 +120,94 @@ def pool_job_reverser(mid, *args, **kwargs):
 	with LMC.machines[mid].lock():
 		old_hostname = machines[mid].hostname
 		try:
+			start_time = time.time()
 			# get the first hostname from the list.
 			machines[mid].hostname = socket.gethostbyaddr(mid)[0]
 		except:
-			logging.warning2("%s: couldn't reverse IP %s." % (caller, mid))
+			logging.warning2("%s: couldn't reverse IP %s (took %s)." % (caller,
+				mid, pyutils.format_time_delta(time.time() - start_time)))
 		else:
 			# update the hostname cache.
-			del machines.hostname_cache[old_hostname]
-			machines.hostname_cache[machines[mid].hostname] = mid
+			# FIXME: don't update the cache manually, delegate it to *something*.
+			del machines.by_hostname[old_hostname]
+			machines.by_hostname[machines[mid].hostname] = machines[mid]
 
 	assert ltrace('machines', '< %s: pool_job_reverser(%s)' % (
 		caller, machines[mid].hostname))
-def pool_job_pinger(mid, *args, **kwargs):
-	"""  Ping an IP (PoolJobThread target method). """
+def pool_job_ipscanner(mid, *args, **kwargs):
+	"""  Scan an IP and create a Machine() if IP is up
+		(PoolJobThread target method).
+	"""
 
 	caller = current_thread().name
 	machines = LMC.machines
 
-	if machines.nmap_not_installed:
-		# the status should already be unknown (from class constructor).
-		#machines[mid]status = host_status.UNKNOWN
+	assert ltrace('machines', '> %s: pool_job_ipscanner(%s)' % (caller, mid))
+
+	with LMC.machines.lock():
+		known_mids = LMC.machines.keys()
+
+		if mid in known_mids:
+			return
+
+	if mid in network.local_ip_addresses():
 		return
+
+	try:
+		# we can't use thread.ident, it is a long, and the packet struct expects
+		# a ushort. Use our thread name number (eg '4' from 'IPScanner-4'). This
+		# is way to current_thread().name.rsplit('-', 1)[0]
+		#self.ident = current_thread().ident
+
+		pinger = network.Pinger(mid, num=1, origid=int(caller.rsplit('-', 1)[1]))
+		pinger.ping()
+
+	except (exceptions.DoesntExistsException,
+			exceptions.TimeoutExceededException), e:
+		assert ltrace('machines', '%s: %s.' % (caller, e))
+		pass
+
+	else:
+		dmin, davg, dmax, sent, recv, loss = pinger.get_summary()
+
+		if recv:
+			logging.progress('%s: found online host %s.' % (caller, mid))
+
+			with LMC.machines.lock():
+				LMC.machines.add_machine(mid=mid, status=host_status.ONLINE)
+
+	assert ltrace('machines', '< %s: pool_job_ipscanner(%s)' % (
+		caller, LMC.machines[mid].status))
+def pool_job_pinger(mid, *args, **kwargs):
+	"""  Ping an IP (PoolJobThread target method).
+
+		clues:
+		http://pypi.python.org/pypi/pyip/
+		http://code.activestate.com/recipes/409689-icmplib-library-for-creating-and-reading-icmp-pack/
+	"""
+
+	caller = current_thread().name
+	machines = LMC.machines
 
 	assert ltrace('machines', '> %s: pool_job_pinger(%s)' % (caller, mid))
 
 	with LMC.machines[mid].lock():
-		up_hosts, down_hosts = machines.run_nmap([ mid ])
+		try:
+			pinger = Pinger(string.atoi(mid), num=1)
+			pinger.ping()
+		except Exception, e:
+			logging.warning2('%s: exception %s for host %s.' % (caller, e, mid))
 
-		if up_hosts != []:
-			machines[mid].status = host_status.ONLINE
-			retval = True
-		elif down_hosts != []:
-			machines[mid].status = host_status.OFFLINE
-			retval = False
 		else:
-			retval = None
+			dmin, davg, dmax, sent, recv, loss = pinger.get_summary()
 
-	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (caller, retval))
-	return retval
+			if recv:
+				LMC.machines[mid].status = host_status.ONLINE
+			else:
+				LMC.machines[mid].status = host_status.OFFLINE
+
+	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (
+		caller, LMC.machines[mid].status))
 def pool_job_arpinger(mid, *args, **kwargs):
 	"""  Ping an IP (PoolJobThread target method). """
 
@@ -167,7 +220,6 @@ def pool_job_arpinger(mid, *args, **kwargs):
 	with LMC.locks.machines[mid]:
 		try:
 			machines[mid].ether = arp_table.get(dumbnet.addr(mid))
-
 		except Exception, e:
 			logging.warning2('%s: exception %s for host %s.' % (caller, e, mid))
 
@@ -194,10 +246,10 @@ def pool_job_pyrofinder(mid, *args, **kwargs):
 			remotesys.noop()
 		except Exception, e:
 			assert ltrace('machines',
-				'  %s: find_pyrosys(): %s is not pyro enabled.' %(caller,
-				mid))
-			logging.warning2('%s: exception %s for host %s.' % (
-				caller, e, mid))
+				'  %s: find_pyrosys(): %s is not pyro enabled.' %(caller, mid))
+			if str(e) != 'connection failed':
+				logging.warning2('%s: exception %s for host %s.' % (
+					caller, e, mid))
 			machines.guess_host_type(mid)
 		else:
 			machines[mid].system_type = remotesys.get_host_type()

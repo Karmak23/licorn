@@ -7,6 +7,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import os, sys, time, signal
 dstart_time = time.time()
+from Queue import Empty
 
 from licorn.foundations           import options, logging
 from licorn.foundations.styles    import *
@@ -51,13 +52,30 @@ def clean_before_terminating(pname):
 
 	logging.progress("%s: stopping threads." % pname)
 
+	logging.progress("%s: joining queues." % pname)
+	for (qname, queue) in dqueues.iteritems():
+		assert ltrace('daemon', 'joining queue %s (%d items left).' % (qname,
+			queue.qsize()))
+
+		# manually empty the queue by munging all remaining items.
+		try:
+			obj = queue.get(False)
+			queue.task_done()
+			while obj:
+				obj = queue.get(False)
+				queue.task_done()
+			# be sure to reput a None object in the queue, to stop the last
+			# threads of the pool, waiting for the None we have munged here.
+			queue.put(None)
+		except Empty:
+			pass
+
 	for (thname, th) in dthreads.iteritems():
 		assert ltrace('thread', 'stopping thread %s.' % thname)
 		if th.is_alive():
 			th.stop()
 
 	logging.progress("%s: joining queues." % pname)
-
 	for (qname, queue) in dqueues.iteritems():
 		assert ltrace('daemon', 'joining queue %s (%d items left).' % (qname,
 			queue.qsize()))

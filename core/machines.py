@@ -6,18 +6,17 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
 Licensed under the terms of the GNU GPL version 2
 """
 
-import netifaces
+import netifaces, ipcalc
 
 from threading  import current_thread
 from time       import strftime, localtime
 from subprocess import Popen, PIPE
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, hlstr
+from licorn.foundations           import process, hlstr, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.network   import build_hostname_from_ip, \
-										interfaces, local_ip_addresses
+
 from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import host_status, host_types
 
@@ -26,7 +25,9 @@ from licorn.core.classes   import CoreController, CoreStoredObject
 from licorn.daemon         import dqueues
 from licorn.daemon.network import queue_wait_for_pingers, \
 									queue_wait_for_pyroers, \
-									queue_wait_for_reversers
+									queue_wait_for_reversers, \
+									queue_wait_for_arpingers, \
+									queue_wait_for_ipscanners
 
 class Machine(CoreStoredObject):
 	counter = 0
@@ -122,6 +123,22 @@ class MachinesController(Singleton, CoreController):
 		self._nmap_not_installed = False
 
 		MachinesController.init_ok = True
+	def add_machine(self, mid, hostname=None, ether=None, backend=None,
+		status=host_status.UNKNOWN):
+		assert ltrace('machines', '| add_machine(%s, %s, %s, %s)' % (mid,
+			hostname, backend, status))
+		self[mid] = Machine(mid=mid,
+			ether=ether,
+			hostname=hostname if hostname else
+				network.build_hostname_from_ip(mid),
+			backend=backend if backend else Enumeration('null_backend'),
+			status=status)
+
+		with self[mid].lock():
+			dqueues.arpings.put(mid)
+			dqueues.reverse_dns.put(mid)
+			dqueues.pyrosys.put(mid)
+
 	def load(self):
 		if MachinesController.load_ok:
 			return
@@ -147,6 +164,43 @@ class MachinesController(Singleton, CoreController):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
+	def scan_network2(self, wait_until_finish=False,
+		*args, **kwargs):
+		""" use nmap to scan a whole network and add all discovered machines to
+		the local configuration. """
+
+		caller   = current_thread().name
+		pyroq    = dqueues.pyrosys
+		arpingq  = dqueues.arpings
+		reverseq = dqueues.reverse_dns
+
+		assert ltrace('machines', '> %s: scan_network2(%s)' % (
+			caller, network_to_scan))
+
+		ips_to_scan = []
+		for iface in network.interfaces():
+			iface_infos = netifaces.ifaddresses(iface)
+			if 2 in iface_infos:
+				logging.info('Programming scan of local area network %s.0/%s.'
+					% (iface_infos[2][0]['addr'].rsplit('.', 1)[0],
+						network.netmask2prefix(iface_infos[2][0]['netmask'])))
+
+				for ipaddr in ipcalc.Network('%s.0/%s' % (
+						iface_infos[2][0]['addr'].rsplit('.', 1)[0],
+						network.netmask2prefix(
+							iface_infos[2][0]['netmask']))):
+					# need to convert because ipcalc returns IP() objects.
+					ipaddr = str(ipaddr)
+					if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
+						dqueues.ipscans.put(str(ipaddr))
+
+		queue_wait_for_ipscanners(caller)
+
+		queue_wait_for_arpingers(caller)
+		queue_wait_for_reversers(caller)
+		queue_wait_for_pyroers(caller)
+
+		assert ltrace('machines', '< %s: scan_network2()' % caller)
 	def scan_network(self, network_to_scan=None, wait_until_finish=False,
 		*args, **kwargs):
 		""" use nmap to scan a whole network and add all discovered machines to
@@ -162,7 +216,7 @@ class MachinesController(Singleton, CoreController):
 
 		if network_to_scan is None:
 			network_to_scan = []
-			for iface in interfaces():
+			for iface in network.interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
 				if 2 in iface_infos:
 					logging.info('Programming scan of local area network %s/%s.'
@@ -179,7 +233,7 @@ class MachinesController(Singleton, CoreController):
 		# we have to skip our own addresses, else pyro will die after having
 		# exhausted the max number of threads (trying connecting to ourself in
 		# loop...).
-		for iface in local_ip_addresses():
+		for iface in network.local_ip_addresses():
 			try:
 				up_hosts.remove(iface)
 			except:
@@ -199,7 +253,7 @@ class MachinesController(Singleton, CoreController):
 				# nowhere for now. Don't yet know how to handle it, the discover
 				# function is just a pure bonus for demos.
 				machine = Machine(mid=hostip,
-					hostname=build_hostname_from_ip(hostip),
+					hostname=network.build_hostname_from_ip(hostip),
 					backend=Enumeration('null_backend'),
 					status=host_status.ONLINE)
 				self[hostip] = machine
@@ -319,7 +373,7 @@ class MachinesController(Singleton, CoreController):
 			(for computers), to help admin know on which machines he/she can
 			install Licorn® client software. """
 
-		logging.notice('machines.guess_host_type() not implemented.')
+		logging.progress('machines.guess_host_type() not implemented.')
 
 		return
 	def update_status(self, mid, status=None, system=None,
@@ -333,7 +387,7 @@ class MachinesController(Singleton, CoreController):
 		elif system:
 			# this is a self-declaring pyro-enabled host. create it.
 			self[mid] = Machine(mid=mid,
-				hostname=build_hostname_from_ip(mid),
+				hostname=network.build_hostname_from_ip(mid),
 				backend=Enumeration('null_backend'),
 				system=system,
 				status=status)

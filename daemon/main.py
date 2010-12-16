@@ -28,7 +28,7 @@ _app = {
 	"author"     : "Olivier Cortès <olive@deep-ocean.net>"
 	}
 
-import os, signal, time
+import os, signal, time, socket
 from Queue     import Queue
 
 from licorn.foundations           import options, logging
@@ -51,6 +51,7 @@ from licorn.daemon.threads        import LicornJobThread, \
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.network        import pool_job_pinger, \
+										pool_job_ipscanner, \
 										pool_job_pyrofinder, \
 										pool_job_reverser, \
 										pool_job_arpinger, \
@@ -154,7 +155,11 @@ if __name__ == "__main__":
 			logging.info('''%s: not starting WMI, disabled on command line '''
 				'''or by configuration directive.''' % pname)
 
-		# machines to be pinged across the network, to see if up or not.
+		#: machines to be pinged across the network, to see if up or not. If up,
+		#: a Machine() will be created.
+		dqueues.ipscans = Queue()
+
+		# machines to be pinged across the network, to update "up" status.
 		dqueues.pings = Queue()
 
 		# machines to be arp pinged across the network, to find ether address.
@@ -184,6 +189,12 @@ if __name__ == "__main__":
 				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
 		for i in range(0, LMC.configuration.licornd.threads.pool_members):
+
+			tname = 'IPScanner-%d' % i
+			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
+				tname=tname, in_queue=dqueues.ipscans,
+				target=pool_job_ipscanner, daemon=True))
+
 			tname = 'Pinger-%d' % i
 			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
 				tname=tname, in_queue=dqueues.pings,

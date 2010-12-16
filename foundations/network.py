@@ -7,14 +7,22 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import os, fcntl, struct, socket, platform, re, netifaces
+import icmp, ip, time, select
+from ping import PingSocket
+
+from threading import current_thread
 
 # other foundations imports.
 import logging
 import process
-from styles    import *
-from ltrace    import ltrace
+import exceptions
+from styles	import *
+from ltrace	import ltrace
 from constants import distros
 
+def netmask2prefix(netmask):
+	return (reduce(lambda x,y: x+y,
+		[ bin(int(x)) for x in netmask.split('.')])).count('1')
 def interfaces(full=False):
 	""" Eventually filter the netifaces.interfaces() result, which contains
 		a bit too much results for our own use. """
@@ -220,7 +228,6 @@ def nameservers_Linux():
 		ns_matches = ns_re.match(line)
 		if  ns_matches:
 			yield ns_matches.group(1)
-
 def build_hostname_from_ip(ip):
 	return 'UNKNOWN-%s' % ip.replace('.', '-')
 
@@ -235,3 +242,131 @@ for key, value in locals().items():
 
 find_server = find_server_Linux
 find_first_local_ip_address = find_first_local_ip_address_Linux
+
+class Pinger:
+	""" This is a rewrite of pyip.Pinger, to:
+		- use smaller (and customizable) timeouts,
+		- don't use gethostbyaddr() because this makes the whole thing a lot
+		slower, and we don't use the hostname anyway in caller processes,
+		- make the class thread-safe (using the PID as packet id is not safe
+		at all in pool of pinger threads...
+		- handle Unreachable hosts (at least), vastly used while scanning
+		local networks.
+	"""
+	#: 0.4 sec is a sane maximum timeout for local network peers. If they don't
+	#: respond in this time, a TimeoutException will be raised. Remember, we are
+	#: on a LAN. Everything is speedy!
+	time_out = 0.4
+	def __init__(self, addr, num, origid):
+		self.num = num
+		self.last = 0
+		self.sent = 0
+		self.times = {}
+		self.deltas = []
+		self.sock = PingSocket(addr)
+		self.ident = origid
+		self.addr = addr
+	def send_packet(self):
+		pkt = icmp.Echo(id=self.ident, seq=self.sent, data='licorn pinger')
+		buf = icmp.assemble(pkt)
+		self.times[self.sent] = time.time()
+		self.sock.sendto(buf)
+		self.plen = len(buf)
+		self.sent = self.sent + 1
+	def recv_packet(self, pkt, when):
+		try:
+			sent = self.times[pkt.get_seq()]
+			del self.times[pkt.get_seq()]
+		except KeyError:
+			return
+		# limit to ms precision
+		delta = int((when - sent) * 1000.)
+		self.deltas.append(delta)
+		if pkt.get_seq() > self.last:
+			self.last = pkt.get_seq()
+	def ping(self):
+		# don't wait more than 2 seconds from now for first reply
+		self.last_arrival = time.time()
+		while 1:
+			if self.sent < self.num:
+				self.send_packet()
+			elif not self.times and self.last == self.num - 1:
+				break
+			else:
+				now = time.time()
+				if self.deltas:
+					# Wait no more than 10 times the longest delay so far
+					if (now - self.last_arrival) > max(self.deltas) / 1000.:
+						#break
+						raise exceptions.TimeoutExceededException(
+							'Max ping timeout exceeded for host %s' % self.addr)
+				else:
+					if (now - self.last_arrival) > Pinger.time_out:
+						#break
+						raise exceptions.TimeoutExceededException(
+							'Ping timeout exceeded for host %s' % self.addr)
+			self.wait()
+	def wait(self):
+		start = time.time()
+		timeout = 0.05
+		while 1:
+			rd, wt, er = select.select([self.sock.socket], [], [], timeout)
+			if rd:
+				# okay to use time here, because select has told us
+				# there is data and we don't care to measure the time
+				# it takes the system to give us the packet.
+				arrival = time.time()
+				try:
+					pkt, who = self.sock.recvfrom(4096)
+				except socket.error:
+					continue
+				# could also use the ip module to get the payload
+				repip = ip.disassemble(pkt)
+				try:
+					reply = icmp.disassemble(repip.data)
+				except ValueError:
+					continue
+				try:
+					if reply.get_id() == self.ident:
+						self.recv_packet(reply, arrival)
+						self.last_arrival = arrival
+				except AttributeError, e:
+					if reply.get_embedded_ip().dst == self.addr:
+						raise exceptions.DoesntExistsException('host %s '
+							'unreachable (%s)' % (self.addr, e))
+					# else we are receiving a hostunreach for another host,
+					# just ignore it and continue waiting.
+			timeout = (start + 0.05) - time.time()
+			if timeout < 0:
+				break
+	def get_summary(self):
+		dmin = min(self.deltas)
+		dmax = max(self.deltas)
+		davg = reduce(lambda x, y: x + y, self.deltas) / len(self.deltas)
+		sent = self.num
+		recv = sent - len(self.times.values())
+		loss = float(sent - recv) / float(sent)
+		return dmin, davg, dmax, sent, recv, loss
+
+# from http://stackoverflow.com/questions/819355/how-can-i-check-if-an-ip-is-in-a-network-in-python
+"""
+
+import socket,struct
+
+def makeMask(n):
+	"return a mask of n bits as a long integer"
+	return (2L<<n-1) - 1
+
+def dottedQuadToNum(ip):
+	"convert decimal dotted quad string to long integer"
+	return struct.unpack('L', socket.inet_aton(ip))[0]
+
+def networkMask(ip, bits):
+	"Convert a network address to a long integer"
+	return dottedQuadToNum(ip) & makeMask(bits)
+
+def addressInNetwork(ip, net):
+	"Is an address in a network"
+	return ip & net == net
+
+"""

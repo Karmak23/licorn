@@ -265,6 +265,16 @@ class DoesntExistsError(LicornRuntimeError):
 		completely unrecoverable. """
 	errno = 103
 	pass
+class TimeoutExceededException(LicornRuntimeException):
+	""" Raised when a timeout is reached, but the situation can be recovered at
+		some extend. """
+	errno = 104
+	pass
+class TimeoutExceededError(LicornRuntimeError):
+	""" Raised when a timeout is reached, and the situation is know to be
+		completely unrecoverable. """
+	errno = 105
+	pass
 
 class PathDoesntExistsException(DoesntExistsException):
 	""" Raised when a path doesn't exist,

@@ -64,7 +64,9 @@ def check_python_modules_dependancies():
 		('posix1e',   'python-pylibacl'),
 		('gamin',     'python-gamin'),
 		('Pyro',      'pyro'),
-		('netifaces', 'python-netifaces')
+		('netifaces', 'python-netifaces'),
+		('ping',      'python-pyip'),
+		('ipcalc',    'python-ipcalc')
 		)
 
 	reqmods_needed = []
