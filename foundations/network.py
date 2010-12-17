@@ -10,7 +10,7 @@ import os, fcntl, struct, socket, platform, re, netifaces
 import icmp, ip, time, select
 from ping import PingSocket
 
-from threading import current_thread
+from threading import current_thread, RLock
 
 # other foundations imports.
 import logging
@@ -242,7 +242,6 @@ for key, value in locals().items():
 
 find_server = find_server_Linux
 find_first_local_ip_address = find_first_local_ip_address_Linux
-
 class Pinger:
 	""" This is a rewrite of pyip.Pinger, to:
 		- use smaller (and customizable) timeouts,
@@ -257,17 +256,42 @@ class Pinger:
 	#: respond in this time, a TimeoutException will be raised. Remember, we are
 	#: on a LAN. Everything is speedy!
 	time_out = 0.4
-	def __init__(self, addr, num, origid):
+
+	#: automatically create a unique identifier for a new Pinger object. This
+	#: has to be different from os.getpid() for thread-safe purposes.
+	ident_counter = 0
+	ident_lock = RLock()
+	def __init__(self, addr=None, num=1):
+		Pinger.ident_lock.acquire()
+		self.ping_ident = Pinger.ident_counter
+		Pinger.ident_counter +=1
+		Pinger.ident_lock.release()
+
+		if addr:
+			self.switch_to(addr, num)
+	def reset(self, num):
+		""" reset all attributes to zero, to start a new ping session. """
 		self.num = num
 		self.last = 0
 		self.sent = 0
 		self.times = {}
 		self.deltas = []
+		self.sock = None
+
+	def switch_to(self, addr, num=1):
+		""" reset the current instance attributes and prepare it to ping the new
+			:param:`addr` (a hostname or an IPv4 address), :param:`num` times.
+		"""
+		self.reset(num)
+
+		if self.sock:
+			self.sock.socket.close()
+			del self.sock
+
 		self.sock = PingSocket(addr)
-		self.ident = origid
 		self.addr = addr
 	def send_packet(self):
-		pkt = icmp.Echo(id=self.ident, seq=self.sent, data='licorn pinger')
+		pkt = icmp.Echo(id=self.ping_ident, seq=self.sent, data='licorn pinger')
 		buf = icmp.assemble(pkt)
 		self.times[self.sent] = time.time()
 		self.sock.sendto(buf)
@@ -285,7 +309,6 @@ class Pinger:
 		if pkt.get_seq() > self.last:
 			self.last = pkt.get_seq()
 	def ping(self):
-		# don't wait more than 2 seconds from now for first reply
 		self.last_arrival = time.time()
 		while 1:
 			if self.sent < self.num:
@@ -327,7 +350,7 @@ class Pinger:
 				except ValueError:
 					continue
 				try:
-					if reply.get_id() == self.ident:
+					if reply.get_id() == self.ping_ident:
 						self.recv_packet(reply, arrival)
 						self.last_arrival = arrival
 				except AttributeError, e:

@@ -297,15 +297,18 @@ class LicornDaemonInteractor(NamedObject):
 				while True:
 					try:
 						self.prepare_terminal()
+
 						readf, writef, errf = select.select(
 							[ self.fd ], [], [], 0.1)
 						if readf == []:
 							continue
 						else:
 							char = sys.stdin.read(1)
+
 					except KeyboardInterrupt:
 						sys.stderr.write("\n")
 						raise
+
 					else:
 						# control characters from
 						# http://www.unix-manuals.com/refs/misc/ascii-table.html

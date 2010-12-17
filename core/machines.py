@@ -138,7 +138,6 @@ class MachinesController(Singleton, CoreController):
 			dqueues.arpings.put(mid)
 			dqueues.reverse_dns.put(mid)
 			dqueues.pyrosys.put(mid)
-
 	def load(self):
 		if MachinesController.load_ok:
 			return
@@ -174,8 +173,7 @@ class MachinesController(Singleton, CoreController):
 		arpingq  = dqueues.arpings
 		reverseq = dqueues.reverse_dns
 
-		assert ltrace('machines', '> %s: scan_network2(%s)' % (
-			caller, network_to_scan))
+		assert ltrace('machines', '> %s: scan_network2()' % caller)
 
 		ips_to_scan = []
 		for iface in network.interfaces():

@@ -16,6 +16,7 @@ from licorn.foundations.constants import host_status
 
 from licorn.core                  import LMC
 from licorn.daemon.core           import dqueues
+from licorn.daemon.threads        import QueueWorkerThread
 
 def queue_wait(queue, tprettyname, wait_message, caller):
 	logging.progress('%s: waiting for %d %s to %s (qsize=%d).' % (
@@ -109,149 +110,198 @@ def thread_periodic_scanner():
 			pingqueue.put(mid)
 
 	queue_wait_for_pingers(caller)
-def pool_job_reverser(mid, *args, **kwargs):
-	"""  Find the hostname for an IP, or build it (PoolJobThread target method). """
+class DNSReverserThread(QueueWorkerThread):
+	""" A thread who tries to find the DNS name of a given IP address, and keeps
+		it in the host record for later use.
 
-	caller = current_thread().name
-	machines = LMC.machines
+		Any socket.gethostbyaddr() can block or timeout on DNS call; this thread
+		is daemonic to not block master daemon when it stops.
+"""
+	#: see :class:`QueueWorkerThread` for details.
+	name='DNSReverser'
+	#: see :class:`QueueWorkerThread` for details.
+	number = 0
+	#: see :class:`QueueWorkerThread` for details.
+	count = 0
+	def __init__(self):
+		QueueWorkerThread.__init__(self, in_queue=dqueues.reverse_dns,
+			daemon=True)
+	def process(self, mid, *args, **kwargs):
+		"""  Find the hostname for an IP, or build it. """
 
-	assert ltrace('machines', '> %s: pool_job_reverser(%s)' % (caller, mid))
+		assert ltrace('machines', '> %s.process(%s)' % (self.name, mid))
 
-	with LMC.machines[mid].lock():
-		old_hostname = machines[mid].hostname
-		try:
-			start_time = time.time()
-			# get the first hostname from the list.
-			machines[mid].hostname = socket.gethostbyaddr(mid)[0]
-		except:
-			logging.warning2("%s: couldn't reverse IP %s (took %s)." % (caller,
-				mid, pyutils.format_time_delta(time.time() - start_time)))
-		else:
-			# update the hostname cache.
-			# FIXME: don't update the cache manually, delegate it to *something*.
-			del machines.by_hostname[old_hostname]
-			machines.by_hostname[machines[mid].hostname] = machines[mid]
+		with LMC.machines[mid].lock():
+			old_hostname = LMC.machines[mid].hostname
+			try:
+				start_time = time.time()
+				# get the first hostname from the list.
+				LMC.machines[mid].hostname = socket.gethostbyaddr(mid)[0]
+			except:
+				logging.warning2("%s: couldn't reverse IP %s (took %s)." % (
+					self.name, mid,
+					pyutils.format_time_delta(time.time() - start_time)))
+			else:
+				# update the hostname cache.
+				# FIXME: don't update the cache manually,
+				# delegate it to *something*.
+				del LMC.machines.by_hostname[old_hostname]
+				LMC.machines.by_hostname[
+					LMC.machines[mid].hostname] = LMC.machines[mid]
 
-	assert ltrace('machines', '< %s: pool_job_reverser(%s)' % (
-		caller, machines[mid].hostname))
-def pool_job_ipscanner(mid, *args, **kwargs):
-	"""  Scan an IP and create a Machine() if IP is up
-		(PoolJobThread target method).
+		assert ltrace('machines', '< %s.process(%s)' % (
+		self.name, LMC.machines[mid].hostname))
+class PingerThread(QueueWorkerThread, network.Pinger):
+	""" Just Ping a machine, and store its status (UP or DOWN), depending on
+		the pong status. """
+	#: see :class:`QueueWorkerThread` for details.
+	name='Pinger'
+	#: see :class:`QueueWorkerThread` for details.
+	number = 0
+	#: see :class:`QueueWorkerThread` for details.
+	count = 0
+	def __init__(self):
+		QueueWorkerThread.__init__(self, in_queue=dqueues.pings, daemon=False)
+		network.Pinger.__init__(self)
+	def process(self, mid, *args, **kwargs):
+		"""  Ping an IP (PoolJobThread target method) """
+
+		assert ltrace('machines', '> %s.process(%s)' % (self.name, mid))
+
+		with LMC.machines[mid].lock():
+			try:
+				self.switch_to(mid)
+				self.ping()
+
+			except (exceptions.DoesntExistsException,
+					exceptions.TimeoutExceededException), e:
+
+				LMC.machines[mid].status = host_status.OFFLINE
+
+			except Exception, e:
+				logging.warning2('%s: exception %s for host %s.' % (
+					self.name, e, mid))
+
+			else:
+				LMC.machines[mid].status = host_status.ONLINE
+
+		assert ltrace('machines', '< %s:process(%s)' % (
+		self.name, LMC.machines[mid].status))
+class ArpingerThread(QueueWorkerThread):
+	""" A thread who tries to find the ethernet address of an already recorded
+		host, and keeps this ethernet address in the host record for later use.
 	"""
+	#: see :class:`QueueWorkerThread` for details.
+	name='Arpinger'
+	#: see :class:`QueueWorkerThread` for details.
+	number = 0
+	#: see :class:`QueueWorkerThread` for details.
+	count = 0
+	def __init__(self):
+		QueueWorkerThread.__init__(self, in_queue=dqueues.arpings, daemon=False)
+		self.arp_table = dumbnet.arp()
+	def process(self, mid, *args, **kwargs):
+		""" scan a network host and try to find if it is Pyro enabled.
+			This method is meant to be run from a LicornPoolJobThread. """
 
-	caller = current_thread().name
-	machines = LMC.machines
+		assert ltrace('machines', '| %s.process(%s)' % (self.name, mid))
 
-	assert ltrace('machines', '> %s: pool_job_ipscanner(%s)' % (caller, mid))
+		with LMC.machines[mid].lock():
+			try:
+				LMC.machines[mid].ether = self.arp_table.get(dumbnet.addr(mid))
+			except Exception, e:
+				logging.warning2('%s: exception %s for host %s.' % (
+					self.name, e, mid))
+class PyroFinderThread(QueueWorkerThread):
+	""" A thread who tries to find if a given host is Pyro enabled or not. If it
+		is, record the address of the Pyro daemon (as a ProxyAttr) into the
+		scanned host attributes for later use.
 
-	with LMC.machines.lock():
-		known_mids = LMC.machines.keys()
+		Pyrofinder threads are daemons, because they can block a very long
+		time on a host (TCP timeout on routers which drop packets), and
+		during the time they block, the daemon cannot terminate and seems
+		to hang. Setting these threads to daemon will permit the main
+		thread to exit, even if some are still left and running.
+	"""
+	#: see :class:`QueueWorkerThread` for details.
+	name='PyroFinder'
+	#: see :class:`QueueWorkerThread` for details.
+	number = 0
+	#: see :class:`QueueWorkerThread` for details.
+	count = 0
+	def __init__(self):
+		QueueWorkerThread.__init__(self, in_queue=dqueues.pyrosys,
+			name='pyrofinder-%d' % PyroFinderThread.number, daemon=True)
+	def process(self, mid, *args, **kwargs):
+		""" scan a network host and try to find if it is Pyro enabled.
+			This method is meant to be run from a LicornPoolJobThread. """
 
-		if mid in known_mids:
+		assert ltrace('machines', '| %s.process(%s)' % (self.name, mid))
+
+		with LMC.machines[mid].lock():
+			try:
+				# we don't assign directly the pyro proxy into
+				# machines[mid]['system'] because it can be invalid
+				# until the noop() call succeeds and guarantees the
+				# remote system is really Pyro enabled.
+				remotesys = Pyro.core.getAttrProxyForURI(
+						"PYROLOC://%s:%s/system" % (mid,
+							LMC.configuration.licornd.pyro.port))
+				remotesys._setTimeout(2)
+				remotesys.noop()
+			except Exception, e:
+				assert ltrace('machines',
+					'  %s: find_pyrosys(): %s is not pyro enabled.' % (
+						self.name, mid))
+				if str(e) != 'connection failed':
+					logging.warning2('%s: exception %s for host %s.' % (
+						self.name, e, mid))
+				LMC.machines.guess_host_type(mid)
+			else:
+				LMC.machines[mid].system_type = remotesys.get_host_type()
+				LMC.machines[mid].status      = remotesys.get_status()
+				LMC.machines[mid].system      = remotesys
+class IPScannerThread(QueueWorkerThread, network.Pinger):
+	""" Evolution of the PingerThread, used to scan hosts on a local network.
+		Given an IP address, we will first ping it. If it pongs, we will create
+		a corresponding Machine() entry in the MachinesController, then try to
+		discover everything possible about the host, by feeding other helper
+		threads. """
+	#: see :class:`QueueWorkerThread` for details.
+	name='IPScanner'
+	#: see :class:`QueueWorkerThread` for details.
+	number = 0
+	#: see :class:`QueueWorkerThread` for details.
+	count = 0
+	def __init__(self):
+		QueueWorkerThread.__init__(self, in_queue=dqueues.ipscans,
+			name='ipscanner-%d' % IPScannerThread.number, daemon=True)
+		network.Pinger.__init__(self)
+	def process(self, mid, *args, **kwargs):
+		"""  Ping() an IP and create a Machine() if the IP Pong()s. """
+
+		assert ltrace('machines', '> %s: process(%s)' % (self.name, mid))
+
+		with LMC.machines.lock():
+			known_mids = LMC.machines.keys()
+
+		if mid in known_mids or mid in network.local_ip_addresses():
 			return
 
-	if mid in network.local_ip_addresses():
-		return
+		try:
+			self.switch_to(mid)
+			self.ping()
 
-	try:
-		# we can't use thread.ident, it is a long, and the packet struct expects
-		# a ushort. Use our thread name number (eg '4' from 'IPScanner-4'). This
-		# is way to current_thread().name.rsplit('-', 1)[0]
-		#self.ident = current_thread().ident
+		except (exceptions.DoesntExistsException,
+				exceptions.TimeoutExceededException), e:
 
-		pinger = network.Pinger(mid, num=1, origid=int(caller.rsplit('-', 1)[1]))
-		pinger.ping()
+			assert ltrace('machines', '%s: %s.' % (self.name, e))
+			pass
 
-	except (exceptions.DoesntExistsException,
-			exceptions.TimeoutExceededException), e:
-		assert ltrace('machines', '%s: %s.' % (caller, e))
-		pass
-
-	else:
-		dmin, davg, dmax, sent, recv, loss = pinger.get_summary()
-
-		if recv:
-			logging.progress('%s: found online host %s.' % (caller, mid))
+		else:
+			logging.progress('%s: found online host %s.' % (self.name, mid))
 
 			with LMC.machines.lock():
 				LMC.machines.add_machine(mid=mid, status=host_status.ONLINE)
 
-	assert ltrace('machines', '< %s: pool_job_ipscanner(%s)' % (
-		caller, LMC.machines[mid].status))
-def pool_job_pinger(mid, *args, **kwargs):
-	"""  Ping an IP (PoolJobThread target method).
-
-		clues:
-		http://pypi.python.org/pypi/pyip/
-		http://code.activestate.com/recipes/409689-icmplib-library-for-creating-and-reading-icmp-pack/
-	"""
-
-	caller = current_thread().name
-	machines = LMC.machines
-
-	assert ltrace('machines', '> %s: pool_job_pinger(%s)' % (caller, mid))
-
-	with LMC.machines[mid].lock():
-		try:
-			pinger = Pinger(string.atoi(mid), num=1)
-			pinger.ping()
-		except Exception, e:
-			logging.warning2('%s: exception %s for host %s.' % (caller, e, mid))
-
-		else:
-			dmin, davg, dmax, sent, recv, loss = pinger.get_summary()
-
-			if recv:
-				LMC.machines[mid].status = host_status.ONLINE
-			else:
-				LMC.machines[mid].status = host_status.OFFLINE
-
-	assert ltrace('machines', '< %s: pool_job_pinger(%s)' % (
-		caller, LMC.machines[mid].status))
-def pool_job_arpinger(mid, *args, **kwargs):
-	"""  Ping an IP (PoolJobThread target method). """
-
-	caller = current_thread().name
-	machines = LMC.machines
-	arp_table = dumbnet.arp()
-
-	assert ltrace('machines', '> %s: pool_job_arpinger(%s)' % (caller, mid))
-
-	with LMC.locks.machines[mid]:
-		try:
-			machines[mid].ether = arp_table.get(dumbnet.addr(mid))
-		except Exception, e:
-			logging.warning2('%s: exception %s for host %s.' % (caller, e, mid))
-
-	assert ltrace('machines', '< %s: pool_job_arpinger(%s)' % (caller, retval))
-def pool_job_pyrofinder(mid, *args, **kwargs):
-	""" scan a network host and try to find if it is Pyro enabled.
-		This method is meant to be run from a LicornPoolJobThread. """
-
-	caller = current_thread().name
-	machines = LMC.machines
-
-	assert ltrace('machines', '| %s: pool_job_pyrofinder(%s)' % (caller, mid))
-
-	with LMC.machines[mid].lock():
-		try:
-			# we don't assign directly the pyro proxy into
-			# machines[mid]['system'] because it can be invalid
-			# until the noop() call succeeds and guarantees the
-			# remote system is really Pyro enabled.
-			remotesys = Pyro.core.getAttrProxyForURI(
-					"PYROLOC://%s:%s/system" % (mid,
-						LMC.configuration.licornd.pyro.port))
-			remotesys._setTimeout(2)
-			remotesys.noop()
-		except Exception, e:
-			assert ltrace('machines',
-				'  %s: find_pyrosys(): %s is not pyro enabled.' %(caller, mid))
-			if str(e) != 'connection failed':
-				logging.warning2('%s: exception %s for host %s.' % (
-					caller, e, mid))
-			machines.guess_host_type(mid)
-		else:
-			machines[mid].system_type = remotesys.get_host_type()
-			machines[mid].status      = remotesys.get_status()
-			machines[mid].system      = remotesys
+		assert ltrace('machines', '< %s: process(%s)' % (self.name, mid))

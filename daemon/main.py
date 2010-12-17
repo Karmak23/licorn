@@ -50,12 +50,8 @@ from licorn.daemon.threads        import LicornJobThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
-from licorn.daemon.network        import pool_job_pinger, \
-										pool_job_ipscanner, \
-										pool_job_pyrofinder, \
-										pool_job_reverser, \
-										pool_job_arpinger, \
-										thread_network_links_builder, \
+import licorn.daemon.network as daemon_network
+from licorn.daemon.network        import thread_network_links_builder, \
 										thread_periodic_scanner
 #from licorn.daemon.scheduler     import BasicScheduler
 #from licorn.daemon.cache         import Cache
@@ -190,37 +186,20 @@ if __name__ == "__main__":
 
 		for i in range(0, LMC.configuration.licornd.threads.pool_members):
 
-			tname = 'IPScanner-%d' % i
-			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.ipscans,
-				target=pool_job_ipscanner, daemon=True))
+			t = daemon_network.IPScannerThread()
+			dthreads[t.name] = t
 
-			tname = 'Pinger-%d' % i
-			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.pings,
-				target=pool_job_pinger, daemon=True))
+			t = daemon_network.PingerThread()
+			dthreads[t.name] = t
 
-			tname = 'Arpinger-%d' % i
-			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.arpings,
-				target=pool_job_arpinger, daemon=True))
+			t = daemon_network.ArpingerThread()
+			dthreads[t.name] = t
 
-			# any socket.gethostbyaddr() can block or timeout on DNS call, make
-			# the thread daemonic to not block master daemon stop.
-			tname = 'Reverser-%d' % i
-			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.reverse_dns,
-				target=pool_job_reverser, daemon=True))
+			t = daemon_network.DNSReverserThread()
+			dthreads[t.name] = t
 
-			# Pyrofinder threads are daemons, because they can block a very long
-			# time on a host (TCP timeout on routers which drop packets), and
-			# during the time they block, the daemon cannot terminate and seems
-			# to hang. Setting these threads to daemon will permit the main
-			# thread to exit, even if some are still left and running.
-			tname = 'Pyrofinder-%d' % i
-			setattr(dthreads, tname.lower(), LicornPoolJobThread(pname=dname,
-				tname=tname, in_queue=dqueues.pyrosys,
-				target=pool_job_pyrofinder,	daemon=True))
+			t = daemon_network.PyroFinderThread()
+			dthreads[t.name] = t
 
 		dthreads.aclchecker = ACLChecker(None, dname)
 

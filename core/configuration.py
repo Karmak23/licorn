@@ -378,7 +378,6 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 				'''between 0 and 50.''' (
 					stylize(ST_COMMENT, pingers),
 					stylize(ST_COMMENT, 'licornd.threads.pool_members')))
-
 	def load_configuration_from_main_config_file(self):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""

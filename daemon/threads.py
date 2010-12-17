@@ -109,6 +109,100 @@ class LicornPoolJobThread(Thread):
 	def stop(self):
 		assert ltrace('thread', '%s stopping' % self.name)
 		self.input_queue.put_nowait(None)
+class QueueWorkerThread(Thread):
+	""" Finer implementation of LicornPoolJobThread. Let
+
+
+		new in version 1.2.3
+	"""
+	#: :attr:`number` is used to create the unique thread name. It is always
+	#: incremented, and thus helps keeping some sort of history.
+	number = 0
+
+	#: :attr:`count` is the current number of instances. It is incremented at
+	#: :meth:`__init__` and decremented at :meth:`__del__`.
+	count = 0
+	def __init__(self, in_queue, name='QueueWorkerThread',
+		target_args=(), target_kwargs={}, daemon=False):
+		Thread.__init__(self)
+
+		assert self.__class__.number is not None
+		assert self.__class__.count is not None
+
+		#: the threading.Thread attribute.
+		self.name  = '%s-%d' % (str(self.__class__.name), self.__class__.number)
+
+		#: our master queue, from which we get job to do (objects to process).
+		self.input_queue = in_queue
+
+		#: optional args for our :meth:`self.process`.
+		self.args = target_args
+
+		#: optional kwargs for our :meth:`self.process`.
+		self.kwargs = target_kwargs
+
+		#: the :attr:`daemon` coming from threading.Thread.
+		self.daemon = daemon
+
+		#: used in dump_status (as a display info only), to know which
+		#: object our target function is running onto.
+		self.current_target = None
+
+		assert ltrace('thread', '%s initialized.' % self.name)
+		self.__class__.number += 1
+		self.__class__.count += 1
+	def __del__(self):
+		self.__class__.count -= 1
+	def dump_status(self, long_output=False, precision=None):
+		""" get detailled thread status. """
+
+		if long_output:
+
+			target = str(self.target).replace('function ', '').replace(' at ', '|')
+
+			return '%s(%s%s) %s(%s) ‣ %s(%s, %s, %s)' % (
+					stylize(ST_NAME, self.name),
+					self.ident, stylize(ST_OK, '&') if self.daemon else '',
+					str(self.input_queue).replace(' instance at ', '|'),
+					stylize(ST_UGID, self.input_queue.qsize()),
+					'%s…' % str(target)[:29] \
+						if len(str(target)) >= 30 else str(target),
+					self.current_target_object, self.args, self.kwargs
+				)
+		else:
+			return '%s(%s%s) %s.' % (
+					stylize(ST_NAME, self.name),
+					self.ident, stylize(ST_OK, '&') if self.daemon else '',
+					'%s, [on‣%s]' % (stylize(ST_OK, 'alive'),
+						self.current_target_object) \
+						if self.is_alive() else 'has terminated')
+	def run(self):
+		assert ltrace('thread', '%s running' % self.name)
+		assert hasattr(self, 'process') and callable(self.process)
+
+		while True:
+			self.current_target = self.input_queue.get()
+
+			if self.current_target is None:
+				# None is a fake message to unblock the q.get(), when the
+				# main process terminates the current thread with stop(). We
+				# emit task_done(), else the main process will block forever
+				# on q.join().
+				self.input_queue.task_done()
+				break
+
+			else:
+				assert ltrace('thread', 'executing self.process(%s, %s, %s)' % (
+					self.current_target, self.args, self.kwargs))
+
+				self.process(self.current_target, *self.args, **self.kwargs)
+				self.current_target = None
+				self.input_queue.task_done()
+
+		assert ltrace('thread', '%s ended' % self.name)
+	def stop(self):
+		assert ltrace('thread', '%s stopping' % self.name)
+		self.input_queue.put_nowait(None)
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to
