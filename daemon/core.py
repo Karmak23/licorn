@@ -293,8 +293,8 @@ class LicornDaemonInteractor(NamedObject):
 			self.new[6][termios.VMIN] = 1
 			self.new[6][termios.VTIME] = 0
 
-			while True:
-				try:
+			try:
+				while True:
 					try:
 						self.prepare_terminal()
 						readf, writef, errf = select.select(
@@ -424,10 +424,10 @@ class LicornDaemonInteractor(NamedObject):
 						else:
 							logging.warning2(
 								"received unhandled char '%s', ignoring." % char)
-				finally:
-					# put it back in standard mode after input, whatever
-					# happened. The terminal has to be restored.
-					self.restore_terminal()
+			finally:
+				# put it back in standard mode after input, whatever
+				# happened. The terminal has to be restored.
+				self.restore_terminal()
 
 		# else:
 		# stdin is not a tty, we are in the daemon, don't do anything.

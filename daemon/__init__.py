@@ -50,9 +50,7 @@ def clean_before_terminating(pname):
 	# restart, the pid file will thus not block another daemon from starting.
 	unlink_pid_file(pname)
 
-	logging.progress("%s: stopping threads." % pname)
-
-	logging.progress("%s: joining queues." % pname)
+	logging.progress("%s: emptying queues." % pname)
 	for (qname, queue) in dqueues.iteritems():
 		assert ltrace('daemon', 'joining queue %s (%d items left).' % (qname,
 			queue.qsize()))
@@ -69,6 +67,8 @@ def clean_before_terminating(pname):
 			queue.put(None)
 		except Empty:
 			pass
+
+	logging.progress("%s: stopping threads." % pname)
 
 	for (thname, th) in dthreads.iteritems():
 		assert ltrace('thread', 'stopping thread %s.' % thname)
@@ -100,14 +100,6 @@ def clean_before_terminating(pname):
 			th.join()
 			del th
 			del dthreads[thname]
-
-	try:
-		assert ltrace('thread', 'joining interactor thread.')
-		dthreads._interactor.stop()
-	except AttributeError:
-		pass
-	else:
-		dthreads._interactor.join()
 
 	# display the remaining active threads (presumably stuck hanging on
 	# something very blocking).
