@@ -140,12 +140,6 @@ class LicornMasterController(MixedDictObject):
 			self.configuration = LicornConfiguration(
 				minimal=True, batch=batch)
 
-			# The daemon (in server mode) holds every core object. We *MUST* check
-			# the configuration prior to everything else, to ensure the system is
-			# in a good state before using or modifying it. minimal=False to be
-			# sure every needed system group gets created.
-			self.configuration.check(minimal=False, batch=True)
-
 		except exceptions.BadConfigurationError, e:
 			logging.error(e)
 
@@ -153,6 +147,7 @@ class LicornMasterController(MixedDictObject):
 			LicornMasterController._init_conf_minimal = True
 		else:
 			self.configuration.load(batch=batch)
+
 			LicornMasterController._init_conf_full = True
 	def init_server(self, batch=False):
 		""" The :meth:`init_server` method is meant to be called at the
@@ -278,6 +273,12 @@ class LicornMasterController(MixedDictObject):
 
 		self.privileges = PrivilegesWhiteList()
 		self.privileges.load()
+
+		# The daemon (in server mode) holds every core object. We *MUST* check
+		# the configuration prior to everything else, to ensure the system is
+		# in a good state before using or modifying it. minimal=False to be
+		# sure every needed system group gets created.
+		self.configuration.check(minimal=False, batch=True)
 
 		from profiles import ProfilesController
 		from keywords import KeywordsController
