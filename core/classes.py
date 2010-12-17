@@ -22,6 +22,19 @@ from licorn.foundations.base      import Enumeration, FsapiObject, \
 from licorn.core import LMC
 
 class GiantLockProtectedObject(MixedDictObject, Pyro.core.ObjBase):
+	""" Object thread protected by a global :class:`RLock`. This doesn't mean
+		its internal object are not locked or lockable, too. The
+		:meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
+		methods automatically aquire and release :attr:`lock`.
+
+		the :attr:`lock` attribute is really a method returning the
+		:class:`RLock` object, because it is not stored inside the current
+		instance: Pyro is not able to pickle a :class:`RLock` object, so it
+		must not lie here.
+
+		.. versionadded:: 1.3
+
+	"""
 	_licorn_protected_attrs = (
 			MixedDictObject._licorn_protected_attrs
 			+ pyro_protected_attrs
@@ -79,6 +92,8 @@ class CoreController(GiantLockProtectedObject):
 			load_modules(). Backend priorities are handled, if existing
 			(some backend types do not use priorities, they are equals).
 		- the reverse mapping via one or more protected dictionnary.
+
+		.. versionadded:: 1.3
 
 	"""
 	_licorn_protected_attrs = (
@@ -258,6 +273,11 @@ class CoreController(GiantLockProtectedObject):
 			self._prefered_backend_name, changed))
 		return changed
 class CoreFSController(CoreController):
+	""" FIXME: TO BE DOCUMENTED
+
+		.. versionadded:: 1.3
+
+	"""
 	class ACLRule(Enumeration):
 		""" Class representing a custom rule.
 			# rule : Enumeration object representing a rule
@@ -685,7 +705,11 @@ class CoreFSController(CoreController):
 		return special_dirs
 class ModuleManager(GiantLockProtectedObject):
 	""" The basics of a module manager. Backends and extensions are just
-		particular cases of this class. """
+		particular cases of this class.
+
+		.. versionadded:: 1.3
+
+	"""
 	_licorn_protected_attrs = (
 			GiantLockProtectedObject._licorn_protected_attrs
 			+ ['_available_modules', 'module_type', 'module_path',
@@ -839,7 +863,11 @@ class ModuleManager(GiantLockProtectedObject):
 
 		assert ltrace(self.name, '< check()')
 class CoreUnitObject(NamedObject):
-	""" Common attributes for unit objects  and backends in Licorn® core. """
+	""" Common attributes for unit objects  and backends in Licorn® core.
+
+		.. versionadded:: 1.3
+
+	"""
 
 	# no need to add our _* attributes, because we don't inherit from
 	# MixedDictObject. This Class attribute won't be used unless using
@@ -871,6 +899,9 @@ class CoreModule(CoreUnitObject):
 		high-level problem occurs (for example, a conflict between
 		duplicate-data coming from different backends; this is the typical
 		problem a backend can't detect).
+
+		.. versionadded:: 1.3
+
 	"""
 	_licorn_protected_attrs = CoreUnitObject._licorn_protected_attrs
 	def __init__(self, name='core_module', manager=None,

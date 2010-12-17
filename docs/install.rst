@@ -1,4 +1,3 @@
-.. _install:
 
 ====================
 Installing the beast
@@ -18,19 +17,19 @@ Where `<codename>` should be "maverick" or "lucid" and so on.
 
 Here are a few package names:
 
-.. glossary:
+.. glossary::
 
-licorn-ldap-server
-	The most common installation nowadays: pull in all the Licorn® server parts and the LDAP backend (plus its default configuration).
+	licorn-ldap-server
+		The most common installation nowadays: pull in all the Licorn® server parts and the LDAP backend (plus its default configuration).
 
-licorn-server
-	A not-so-intrusive option: it will install all the necessary parts for quickstarting a Licorn® server, with only the `shadow` backend configured. You can install the LDAP server package afterwards if you change your mind.
+	licorn-server
+		A not-so-intrusive option: it will install all the necessary parts for quickstarting a Licorn® server, with only the `shadow` backend configured. You can install the LDAP server package afterwards if you change your mind.
 
-licorn-ldap-client
-	 For satellite systems of an LDAP enabled server only. Technically this will install the same source code as other server packages, but will configure it to act as a network client (remote-drivable by your Licorn® server). You can change the configuration afterwards, but the Debian packages will not like much. `licorn-server*` and `licorn-client*` are mutually exclusive packages.
+	licorn-ldap-client
+		 For satellite systems of an LDAP enabled server only. Technically this will install the same source code as other server packages, but will configure it to act as a network client (remote-drivable by your Licorn® server). You can change the configuration afterwards, but the Debian packages will not like much. `licorn-server*` and `licorn-client*` are mutually exclusive packages.
 
-licorn-client
-	the same, without LDAP support.
+	licorn-client
+		the same, without LDAP support.
 
 All these packages will install some other depandencies (most notably `python-licorn`, `licorn-bin` and a few other `python-*` packages). For more details, see `the Debian package documentation <http://dev.licorn.org/wiki/UserDoc/DebianPackagesDependancies>`_ on the developper site.
 
@@ -43,13 +42,14 @@ Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damag
 #. Install darcs and required python-packages::
 
 	sudo apt-get -qy --force-yes install nullmailer darcs \
-			pyro python-gamin python-pylibacl python-ldap \ 
-			python-xattr python-netifaces python-dumbnet
+			pyro python-gamin python-pylibacl python-ldap \
+			python-xattr python-netifaces python-dumbnet \
+			python-pyip python-ipcalc
 
 #. About `python-pylibacl`: be sure to install at least version *0.3*.
 #. Get the source localy with darcs::
 
-	mkdir sources 
+	mkdir sources
 	cd sources
 	if [ -d licorn ]; then
 		(
@@ -64,14 +64,14 @@ Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damag
 
 	# export this variable to wherever your Licorn® source is.
 	export LCN_DEV_DIR=~/sources/licorn
-	 
+
 	for i in add mod del chk get
-	do 
+	do
 		sudo rm -f /usr/bin/${i}
 		sudo ln -sf "${LCN_DEV_DIR}/interfaces/cli/${i}.py" /usr/bin/${i}
 		sudo chmod a+x /usr/bin/${i}
 	done
-	 
+
 	sudo rm -f /usr/sbin/licornd
 	sudo ln -sf "${LCN_DEV_DIR}/daemon/main.py" /usr/sbin/licornd
 	sudo chmod a+x /usr/sbin/licornd
@@ -109,8 +109,8 @@ Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damag
 #. Define the bare minimum directives in your main configuration file (IRL they are positionned by the packages post-installation scripts) and amend `sudoers`::
 
 	echo 'licornd.role = SERVER' >> /etc/licorn/licorn.conf
-	cat >> /etc/sudoers <<EOF 
-	Defaults	env_keep = "DISPLAY LICORN_TRACE"
+	cat >> /etc/sudoers <<EOF
+	Defaults	env_keep = "DISPLAY LICORN_TRACE LICORN_SERVER"
 	EOF
 
 #. Start the Licorn® daemon, let it handle the last configuration bits, then stop it when you see the message "`ready for interaction`"::
@@ -120,7 +120,7 @@ Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damag
 	 * [2010/08/12 18:32:28.4740] licornd/master@server(29568): all threads started, ready for interaction.
 
 	[Control-C]
-	
+
 #. From here, you don't need to use `sudo` anymore. Members of group `admins` can control `licornd`
 #. if you want LDAP support:  (see wiki/LDAPBackend] for configuration defaults, which Licorn® expects)::
 

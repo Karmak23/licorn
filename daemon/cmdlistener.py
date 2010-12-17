@@ -38,9 +38,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
 
-	#: :attr:`pyro_port` will be overridden by :obj:`LMC.configuration` when
-	#: the thread starts. See :obj:`LMC.configuration` object for details about
-	#: port numbers.
+	#: :attr:`pyro_port` will be filled by :term:`licornd.pyro.port` value
+	#: before the thread starts. See :ref:`configuration` object for details
+	#: about port numbers.
 	pyro_port = None
 
 	#: The main server IP address. Can be overidden by the environment variable

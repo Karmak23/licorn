@@ -1,20 +1,23 @@
 #!/usr/bin/python -OO
 # -*- coding: utf-8 -*-
 """
-Licorn® daemon:
-  - monitor shared group dirs and other special paths, and reapply posix
-	perms and posix1e ACsL the Way They Should Be (TM) (as documented in posix1e
-	manuals).
-  - crawls against all shared group dirs, indexes metadata and provides a global
-    search engine for all users.
+Licorn® daemon - http://docs.licorn.org/daemon/core.html
+
+- monitor shared group dirs and other special paths, and reapply posix
+  perms and posix1e ACsL the Way They Should Be (TM) (as documented in posix1e
+  manuals).
+- crawls against all shared group dirs, indexes metadata and provides a global
+  search engine for all users.
 
 This daemon exists:
-  - to add user functionnality to Licorn® systems.
-  - because of bugs in external apps (which don't respect posix1e semantics and
-	can't or won't be easily fixed).
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
-Licensed under the terms of the GNU GPL version 2.
+- to add user functionnality to Licorn® systems.
+- because of bugs in external apps (which don't respect posix1e semantics and
+  can't or won't be easily fixed).
+
+:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
+:license: under the terms of the GNU GPL version 2.
+
 """
 
 # import this first, this will initialize start_time.

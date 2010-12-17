@@ -19,7 +19,13 @@ from licorn.daemon.threads      import LicornThread
 from licorn.core                import LMC
 
 class ACLChecker(LicornThread):
-	""" A Thread which gets paths to check from a Queue, and checks them in time. """
+	""" A Thread which gets paths to check from a Queue, and checks them in
+		time.
+
+		.. versionadded:: 1.0
+			this thread was added long before...
+
+	"""
 	def __init__(self, cache, pname = dname):
 		LicornThread.__init__(self, pname)
 		self.call_counter = 0
