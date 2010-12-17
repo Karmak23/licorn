@@ -167,14 +167,14 @@ class QueueWorkerThread(Thread):
 					stylize(ST_UGID, self.input_queue.qsize()),
 					'%s…' % str(target)[:29] \
 						if len(str(target)) >= 30 else str(target),
-					self.current_target_object, self.args, self.kwargs
+					self.current_target, self.args, self.kwargs
 				)
 		else:
 			return '%s(%s%s) %s.' % (
 					stylize(ST_NAME, self.name),
 					self.ident, stylize(ST_OK, '&') if self.daemon else '',
 					'%s, [on‣%s]' % (stylize(ST_OK, 'alive'),
-						self.current_target_object) \
+						self.current_target) \
 						if self.is_alive() else 'has terminated')
 	def run(self):
 		assert ltrace('thread', '%s running' % self.name)
