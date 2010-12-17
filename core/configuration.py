@@ -1087,7 +1087,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 						stylize(ST_INFO, 'M') \
 						if b.name == LMC.machines._prefered_backend_name else '',
 						)
-				for b in LMC.backends._available_backends:
+				for b in LMC.backends.available():
 					data += '%s\n' % b.name
 
 			elif args[0] in ("config_dir", "main_config_file",

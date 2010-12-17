@@ -679,6 +679,8 @@ class ModuleManager(GiantLockProtectedObject):
 		self.module_type = module_type
 		self.module_path = module_path
 		self.module_sym_path = module_sym_path
+	def available(self):
+		return self._available_modules
 	def load(self):
 		""" load our modules (can be different type but the principle is the
 			always the same). """
