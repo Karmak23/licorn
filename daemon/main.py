@@ -178,10 +178,10 @@ if __name__ == "__main__":
 					'''clients disabled by configuration rule.''')
 		else:
 			# launch a machine status update every 30 seconds. The first update
-			# will be run ASAP (in 1 second), else we don't have any info to display
-			# if opening the WMI immediately.
+			# will be run ASAP (in 1 second), else we don't have any info to
+			# display if opening the WMI immediately.
 			dthreads.network_builder = LicornJobThread(dname,
-				target=thread_network_links_builder,
+				target=thread_network_links_builder, daemon=True,
 				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
 		for i in range(0, LMC.configuration.licornd.threads.pool_members):

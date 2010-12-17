@@ -247,7 +247,7 @@ class LicornThread(Thread):
 		self._input_queue.put(None)
 class LicornJobThread(LicornBasicThread):
 	def __init__(self, name, target, time=None, count=None, delay=0.0,
-		tname=None,	target_args=(), target_kwargs={}):
+		tname=None,	target_args=(), target_kwargs={}, daemon=False):
 		""" Create a scheduled job thread.
 			time: is a time.time() object before first execution, or for
 				one-shot jobs ("AT" like)
@@ -272,6 +272,7 @@ class LicornJobThread(LicornBasicThread):
 		self.count = count
 		self.args = target_args
 		self.kwargs = target_kwargs
+		self.daemon = daemon
 
 		#print 'caller %s for target %s' % (self.kwargs, self.target)
 
