@@ -762,10 +762,8 @@ class ModuleManager(GiantLockProtectedObject):
 			del self._available_modules[module_name]
 			module.initialize()
 
-			logging.notice('''successfully enabled %s backend.'''% backend)
-
-		# only in the backends
-		# LMC.reload_controllers_backends()
+			logging.notice('''successfully enabled %s %s.'''% (
+				module_name, self.module_type))
 	def disable_module(self, module_name):
 		""" try to disable a given module. what to do exactly is left to the
 		module itself."""
@@ -783,9 +781,6 @@ class ModuleManager(GiantLockProtectedObject):
 			del self[module_name]
 			logging.notice('''successfully disabled %s %s. ''' % (
 				module_name, self.module_type))
-
-		# left to the backend
-		# LMC.reload_controllers_backends()
 	def check(self, batch=False, auto_answer=None):
 		""" Check all enabled modules, then all available modules. Checking them
 			will make them configure themselves, and configure the required

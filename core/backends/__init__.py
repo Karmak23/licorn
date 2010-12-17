@@ -27,12 +27,12 @@ class BackendManager(Singleton, ModuleManager):
 		backend itself."""
 
 		assert ltrace(self.name, '| enable_backend(%s)' % backend_name)
-		ModuleManager.enable_module(backend_name)
+		ModuleManager.enable_module(self, backend_name)
 		LMC.reload_controllers_backends()
 	def disable_backend(self, backend_name):
 		""" try to disable a given backend. what to do exactly is left to the
 		backend itself."""
 
 		assert ltrace(self.name, '| disable_backend(%s)' % backend_name)
-		ModuleManager.disable_module(backend_name)
+		ModuleManager.disable_module(self, backend_name)
 		LMC.reload_controllers_backends()
