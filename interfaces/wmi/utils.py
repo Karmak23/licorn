@@ -339,8 +339,8 @@ def menu(uri):
 </div>
 <div id="auxnav" class="nav">
 <ul>
-<li><a href="http://dev.licorn.org/wiki/UserDoc/WMI" title="%s">%s</a></li>
-<li%s><a href="mailto:support@meta-it.fr?subject=[support] " title="%s">%s</a></li>
+<li><a href="http://docs.licorn.org/userdoc.html" title="%s">%s</a></li>
+<li%s><a href="mailto:support@meta-it.fr?subject=[Support Licorn®] " title="%s">%s</a></li>
 </ul>
 </div>
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
@@ -348,7 +348,7 @@ def menu(uri):
 		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
 		'<li%s><a href="/machines/" title="%s">%s</a></li>' % (classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines')) if LMC.configuration.experimental.enabled else '',
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
-		_('Go to online documentation and community website (in new window or new tab).'), _('Documentation'),
+		_('Go to online documentation website.'), _('Documentation'),
 		classes['support'], _('Get product support / help'), _('Support')
 		)
 def page(title, data):

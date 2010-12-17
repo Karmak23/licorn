@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-12-10 11:17+0100\n"
+"POT-Creation-Date: 2010-12-18 00:05+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,8 +354,7 @@ msgid "Internet"
 msgstr ""
 
 #: interfaces/wmi/utils.py:351
-msgid ""
-"Go to online documentation and community website (in new window or new tab)."
+msgid "Go to online documentation website."
 msgstr ""
 
 #: interfaces/wmi/utils.py:351
@@ -1607,37 +1606,37 @@ msgstr ""
 msgid "<strong>Total number of machines:</strong>"
 msgstr ""
 
-#: core/configuration.py:517
+#: core/configuration.py:518
 #, python-format
 msgid ""
 "SSH detection not supported yet on your system.Please get in touch with %s."
 msgstr ""
 
-#: core/configuration.py:532
+#: core/configuration.py:533
 msgid "Users allowed to connect via SSHd"
 msgstr ""
 
-#: core/configuration.py:794
+#: core/configuration.py:795
 msgid "user"
 msgstr ""
 
-#: core/configuration.py:795
+#: core/configuration.py:796
 msgid "users"
 msgstr ""
 
-#: core/configuration.py:814
+#: core/configuration.py:815
 msgid "group"
 msgstr ""
 
-#: core/configuration.py:815
+#: core/configuration.py:816
 msgid "groups"
 msgstr ""
 
-#: core/machines.py:491
+#: core/machines.py:560
 msgid "You must pass a hostname to verify!"
 msgstr ""
 
-#: core/machines.py:499
+#: core/machines.py:568
 #, python-format
 msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
 msgstr ""
