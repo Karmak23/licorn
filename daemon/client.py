@@ -18,8 +18,6 @@ def thread_greeter():
 
 	assert ltrace('client', '| thread_greeter()')
 
-	ServerLMC.connect()
-
 	import licorn.daemon.cmdlistener
 	licorn.daemon.cmdlistener.LicornPyroValidator.server_addresses = \
 		ServerLMC.configuration.network.local_ip_addresses()

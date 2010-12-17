@@ -13,6 +13,7 @@ from threading import RLock, current_thread
 from licorn.foundations           import hlstr, exceptions, logging, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import licornd_roles
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 											NamedObject, MixedDictObject, \
 											ReverseMappingDict, \
@@ -113,8 +114,19 @@ class CoreController(GiantLockProtectedObject):
 		#print '>>> %s'  % self.backends
 		self.find_prefered_backend()
 
-		self.extensions = LMC.extensions.find_compatibles(self)
+		# on client first pass, extensions are not yet loaded.
+		if 'extensions' in LMC.keys():
+			self.extensions = LMC.extensions.find_compatibles(self)
+		else:
+			self.extensions = None
+	def reload(self):
+		""" load extensions if possible (not forcibly, if we still are in
+			client first pass). """
 
+		assert ltrace(self.name, '| CoreController.reload()')
+
+		if self.extensions is None and 'extensions' in LMC.keys():
+			self.extensions = LMC.extensions.find_compatibles(self)
 	def __setitem__(self, key, value):
 		""" Add a new element inside us and update all reverse mappings. """
 		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
@@ -261,7 +273,7 @@ class CoreFSController(CoreController):
 		def substitute_configuration_defaults(acl):
 			""" return an acl (string) where parameters @acls or @default
 				were used. """
-
+			#logging.notice(acl)
 			splitted_acls = acl.split(',')
 			acls=[]
 			for acl_tmp in splitted_acls:
@@ -546,15 +558,19 @@ class CoreFSController(CoreController):
 				# we replace the @*X to be able to posix1e.ACL.check() correctly
 				# this forces us to put a false value in the ACL, so we copy it
 				# [:] to keep the original in place.
-				if posix1e.ACL(text=dir_info.root_dir_perm[:].replace(
-					'@GX','x').replace('@UX','x')).check():
+				bla = dir_info.root_dir_perm[:].replace(
+					'@GX','x').replace('@UX','x').replace('rsp-',
+					'remotessh').replace('gst-', 'acl')
+				logging.notice("bla = %s" % bla)
+				if posix1e.ACL(text=bla).check():
 					raise exceptions.LicornSyntaxException(
 						self.file_name, self.line_no,
 						text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-						'''.check() fail''' % dir_info.root_dir_perm)
+						'''.check() fail''' % bla)
 			if dir_info.content_acl:
 				if posix1e.ACL(text=dir_info.dirs_perm[:].replace(
-					'@GX','x').replace('@UX','x')).check():
+					'@GX','x').replace('@UX','x').replace('rsp-',
+					'remotessh').replace('gst-', 'acl')).check():
 					raise exceptions.LicornSyntaxException(
 						self.file_name, self.line_no,
 						text=acl, optional_exception='''posix1e.ACL(text=%s)'''
@@ -570,12 +586,13 @@ class CoreFSController(CoreController):
 		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
 
+		CoreController.reload(self)
+
 		for filename in glob.glob(
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
 
 			rules = self.parse_rules(rules_path=filename)
 			assert ltrace('checks', '  EVAL rule %s' % rules.dump_status(True))
-
 			if '_default' in rules.name:
 				assert ltrace('checks', '  ADD rule %s (%s)' % (
 					rules.dump_status(True), rules['~'].dump_status(True)))
@@ -614,6 +631,7 @@ class CoreFSController(CoreController):
 							if not system_wide else None,
 						uid=user_info.uidNumber if not system_wide else None,
 						controller=self)
+					#logging.notice("rule = %s" % rule.dump_status(True))
 				except exceptions.LicornRuntimeException, e:
 					logging.warning2(e)
 					continue
@@ -621,12 +639,11 @@ class CoreFSController(CoreController):
 				try:
 					rule.check()
 					if system_wide:
-						logging.progress("%s template ACL rule: '%s' for '%s'."
-							% (
-								stylize(ST_OK,"Added"),
-								stylize(ST_NAME, rule.acl),
-								stylize(ST_NAME, rule.dir))
-							)
+						logging.progress('''%s %s template ACL rule: '%s' for '%s'.''' %
+							(stylize(ST_OK,"Added"),
+							self.name,
+							stylize(ST_NAME, rule.acl),
+							stylize(ST_NAME, rule.dir)))
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
@@ -652,6 +669,7 @@ class CoreFSController(CoreController):
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
+				#logging.notice("dir_info = %s" % dir_info.dump_status(True))
 				special_dirs.append(dir_info)
 
 				assert ltrace('fsapi', '  parse_rules(add dir_info %s)' %
@@ -663,6 +681,7 @@ class CoreFSController(CoreController):
 		if special_dirs == None:
 			special_dirs = Enumeration()
 
+		#logging.notice("special_dirs = %s" % special_dirs.dump_status(True))
 		return special_dirs
 class ModuleManager(GiantLockProtectedObject):
 	""" The basics of a module manager. Backends and extensions are just
@@ -681,9 +700,14 @@ class ModuleManager(GiantLockProtectedObject):
 		self.module_sym_path = module_sym_path
 	def available(self):
 		return self._available_modules
-	def load(self):
+	def load(self, client=False, server_side_modules=[]):
 		""" load our modules (can be different type but the principle is the
-			always the same). """
+			always the same).
+
+			If we are on the server, activate every module we can.
+			If we are on a client, activate module only if module is enable
+			on the server.
+		"""
 
 		assert ltrace(self.name, '> load(type=%s, path=%s)' % (self.module_type,
 			self.module_path))
@@ -697,17 +721,19 @@ class ModuleManager(GiantLockProtectedObject):
 						== '_' + self.module_type + '.py':
 
 				# remove '.py'
-				modname      = entry[:-3]
+				modname = entry[:-3]
 				# remove '_backend.py' or '_extension.py'
 				module_name = entry[:-len(self.module_type) -4]
+				if LMC.configuration.licornd.role == licornd_roles.CLIENT:
+					if client and module_name not in server_side_modules:
+						# TODO: del module and reload controllers ?
+						break
 
 				assert ltrace(self.name, 'importing %s %s' % (self.module_type,
 					stylize(ST_NAME, module_name)))
 
-				#mod_sym_path =
-
 				pymod = __import__(self.module_sym_path + '.' + modname,
-					globals(), locals(), module_name)
+							globals(), locals(), module_name)
 				module = getattr(pymod, module_name)
 
 				assert ltrace(self.name, 'imported %s %s, now loading.' % (
@@ -722,13 +748,25 @@ class ModuleManager(GiantLockProtectedObject):
 							self.module_type,
 							stylize(ST_NAME, module.dump_status(True))))
 					else:
-						self._available_modules[module.name] = module
-						assert ltrace(self.name, '%s %s is only available' % (
-							self.module_type, stylize(ST_NAME, module.name)))
+						if client and module_name in server_side_modules:
+							# the module is enabled on the server, we must
+							# enable it locally on the client, too.
+							module.enable()
+							self[module.name] = module
+						else:
+							self._available_modules[module.name] = module
+							assert ltrace(self.name, '%s %s is only available' %
+								(self.module_type, stylize(ST_NAME, module.name)
+								))
 				else:
 					assert ltrace(self.name, '%s %s NOT available' % (
-						self.module_type, stylize(ST_NAME, backend.name)))
-					pass
+						self.module_type, stylize(ST_NAME, module.name)))
+
+					if client and module_name in server_side_modules:
+						raise exceptions.LicornRuntimeError('%s %s is enabled '
+							'on the server side but not available locally, '
+							'there is probably an installation problem.' % (
+								self.module_type, module_name))
 
 		assert ltrace(self.name, '< load()')
 	def find_compatibles(self, controller):
@@ -842,9 +880,19 @@ class CoreModule(CoreUnitObject):
 			% controllers_compat)
 
 		# abstract defaults
+
+		#: FIXME: better comment
 		self.available  = False
+
+		#: FIXME: better comment
 		self.enabled    = False
+
+		#: FIXME: better comment
 		self.controllers_compat = controllers_compat
+
+		#: indicates that this module is meant to be used on server only (not
+		#: replicated / configured on CLIENTS).
+		self.server_only = False
 	def __str__(self):
 		return self.name
 	def __repr__(self):

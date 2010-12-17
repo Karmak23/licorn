@@ -23,53 +23,75 @@ from licorn.daemon.threads        import LicornBasicThread
 from licorn.daemon.rwi            import RealWorldInterface
 
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
+	""" Validator class for Pyro connections, for both client and server
+		licornd. Modes of operations:
+		* the client only authorize connexions from localhost and its server.
+		* the server authorize connexions from localhost and any local client,
+		provided the client has a Pyro daemon running on a restricted port, and
+		the originating socket comes from a process launched by an authorized
+		user (member of group 'admins').
+	"""
+	#: A list of users authorized to connect to the current server.
 	valid_users = []
+
+	#: A list of local (loopback) interfaces. 127.0.1.1 is here because included
+	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
-	# the values after this point will be overridden by daemon.configuration
-	# when thread starts. See configuration object for details about port
-	# numbers.
+
+	#: :attr:`pyro_port` will be overridden by :obj:`LMC.configuration` when
+	#: the thread starts. See :obj:`LMC.configuration` object for details about
+	#: port numbers.
 	pyro_port = None
-	# the main server IP address
+
+	#: The main server IP address. Can be overidden by the environment variable
+	#: :envvar:`LICORN_SERVER` to help debugging the daemon.
 	server = None
-	# a list of other server IP addresses, gathered from the
-	# daemon.client.thread_greeter (needed when our server has more than one
-	# interface, because connection can initiate from any of them).
+
+	#: A list of other server IP addresses, gathered from the client thread
+	#: :func:`thread_greeter`. The auxilliary IP addresses are needed when our
+	#: server has more than one interface, because connection can initiate from
+	#: any of them.
 	server_addresses = []
-	def __init__(self):
+
+	def __init__(self, role):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
+
+		#: A local copy of :ref:`licornd.role`, to avoid importing LMC here.
+		self.role = role
 	def acceptHost(self, daemon, connection):
-		""" Very basic check for the connection. """
+		""" Basic check of the connection. See :class:`LicornPyroValidator` for
+			details. """
 		client_addr, client_socket = connection.addr
 
 		assert ltrace('cmdlistener', 'connection from %s:%s' % (
 			client_addr, client_socket))
 
 		if client_addr in LicornPyroValidator.local_interfaces:
-			# TODO inspect the socket number, launch netstat -atnp, find the
-			# process and get the user to see if member of group admins
-			# or == root.
 			try:
 				client_uid = process.find_network_client_uid(
 					LicornPyroValidator.pyro_port, client_socket,
 					local=True if client_addr[:3] == '127' else False)
 			except Exception, e:
-				logging.warning('''error finding network connection from '''
-					'''localhost:%s (was %s).''' % (client_socket, e))
+				logging.warning('error finding network connection from '
+					'localhost:%s (was %s).' % (client_socket, e))
+
 				return 0, Pyro.constants.DENIED_UNSPECIFIED
 			else:
 				return self.acceptUid(daemon, client_uid, client_addr,
 					client_socket)
 		else:
-			if LMC.configuration.licornd.role == licornd_roles.SERVER:
+			if self.role == licornd_roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
+				#
 				# FIXME: this is far from perfect and secure, but quite
 				# sufficient for testing and deploying. Better security will
 				# come when everything works.
 
 				remote_system = Pyro.core.getAttrProxyForURI(
 					"PYROLOC://%s:%s/system" % (client_addr,
-					LicornPyroValidator.pyro_port))
+						LicornPyroValidator.pyro_port))
+
 				try:
 					client_uid = remote_system.uid_connecting_from(
 						client_socket)
@@ -77,7 +99,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					logging.warning('''error finding uid initiation '''
 						'''connection from %s:%s (was %s).''' % (client_addr,
 							client_socket, e))
+
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
+
 				else:
 					return self.acceptUid(daemon, client_uid, client_addr,
 						client_socket, remote_system)
@@ -88,27 +112,31 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				# to do it properly.
 				if client_addr == LicornPyroValidator.server \
 					or client_addr in LicornPyroValidator.server_addresses:
+
+					# ACCEPT
 					return 1, 0
 				else:
-					logging.warning('connection tentative from %s:%s' % (
-						client_addr, client_socket))
+					logging.warning('Denied connection tentative from %s:%s.'
+						% (client_addr, client_socket))
+
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
 	def acceptUid(self, daemon, client_uid, client_addr, client_socket,
 		remote_pyro_system=None):
 		try:
-			# measured with LICORN_TRACE=timings, using pwd.getpwuid()
-			# is at best as quick as users.uid_to_login(), but generally
+			# NOTE: measured with LICORN_TRACE=timings, using pwd.getpwuid()
+			# is **at best** as quick as users.uid_to_login(), but generally
 			# slower. Thus we use our internals.
+			#
 			#client_login = pwd.getpwuid(client_uid).pw_name
 			client_login = LMC.users.uid_to_login(
 				client_uid)
 
-			assert ltrace('cmdlistener',
-				'currently auhorized users: %s' %
+			assert ltrace('cmdlistener', 'currently auhorized users: %s' %
 					LicornPyroValidator.valid_users)
 
 			if client_uid == 0 \
 				or client_login in LicornPyroValidator.valid_users:
+
 				logging.progress('''Authorized client connection from'''
 					''' %s:%s, user %s(%s).''' % (client_addr, client_socket,
 					stylize(ST_NAME, client_login),
@@ -120,24 +148,27 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				# DDoS or creation of ghost machines and must be investigated
 				# before implementation.
 				if client_addr not in LicornPyroValidator.local_interfaces:
+
 					LMC.machines.update_status(client_addr,
 						status=host_status.ONLINE, system=remote_pyro_system)
 
-				# connection is authorized.
+				# ACCEPT
 				return 1, 0
 			else:
 				logging.warning('connection tentative from %s:%s, user %s(%s).'
 					% (client_addr, client_socket, client_login, client_uid))
+
 				return 0, Pyro.constants.DENIED_SECURITY
+
 		except Exception, e:
 			logging.warning(
 				'something went wrong from %s (was %s).' % (
 				(stylize(ST_ADDRESS, '%s:%s' % (client_addr,
 					client_socket)), e)))
+
 			return 0, Pyro.constants.DENIED_UNSPECIFIED
 class CommandListener(LicornBasicThread):
-	""" A Thread which collect INotify events and does what
-		is appropriate with them. """
+	""" A Thread which answer to Pyro remote commands. """
 
 	def __init__(self, pname=dname, pids_to_wake=[], **kwargs):
 
@@ -212,35 +243,45 @@ class CommandListener(LicornBasicThread):
 			LMC.groups.name_to_gid(
 				LMC.configuration.defaults.admin_group
 				)]['memberUid']
+
+		# get the port number from current configuration.
 		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port
+
+		# dynamicly gather local interfaces IP addresses
 		LicornPyroValidator.local_interfaces.extend(
 			network.local_ip_addresses())
 
 		if LMC.configuration.licornd.role == licornd_roles.CLIENT:
 			LicornPyroValidator.server = LMC.configuration.server_main_address
 
-		self.pyro_daemon.setNewConnectionValidator(LicornPyroValidator())
+		self.pyro_daemon.setNewConnectionValidator(
+			LicornPyroValidator(LMC.configuration.licornd.role))
 		self.pyro_daemon.cmdlistener = self
 		self.uris = {}
 
-		self.uris['configuration'] = self.pyro_daemon.connect(
-			LMC.configuration, 'configuration')
-		self.uris['msgproc'] = self.pyro_daemon.connect(
-					LMC.msgproc, 'msgproc')
-
 		if LMC.configuration.licornd.role == licornd_roles.SERVER:
-			# export RWI for CLI and WMI interfaces.
+
+			# for clients: centralized configuration.
+			self.uris['configuration'] = self.pyro_daemon.connect(
+				LMC.configuration, 'configuration')
+
+			# Used by CLI.
 			self.uris['rwi'] = self.pyro_daemon.connect(
 				RealWorldInterface(), 'rwi')
-			# export machines for other daemons to talk to us and update their
-			# status directly.
+
+			# for other daemons (cluster ?)
 			self.uris['machines'] = self.pyro_daemon.connect(
 				LMC.machines, 'machines')
-		else:
-			# client exports its SystemController to be remote-piloted by
-			# server.
-			self.uris['system'] = self.pyro_daemon.connect(
-				LMC.system, 'system')
+
+		# CLIENT and SERVER export their system and msgproc to communicate
+		# with each other.
+		#
+		# FIXME: server exporting system is not very secure...
+		self.uris['system'] = self.pyro_daemon.connect(
+			LMC.system, 'system')
+
+		self.uris['msgproc'] = self.pyro_daemon.connect(
+					LMC.msgproc, 'msgproc')
 
 		logging.info("%s: %s Pyro daemon on interface %s." % (
 			self.name, stylize(ST_OK, "started"),

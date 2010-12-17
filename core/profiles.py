@@ -19,9 +19,9 @@ from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
 
 from licorn.core         import LMC
-from licorn.core.classes import GiantLockProtectedObject
+from licorn.core.classes import CoreController
 
-class ProfilesController(Singleton, GiantLockProtectedObject):
+class ProfilesController(Singleton, CoreController):
 	""" representation of /etc/licorn/profiles.xml, compatible with
 		gnome-system-tools. """
 	init_ok = False
@@ -36,7 +36,7 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 		if ProfilesController.init_ok:
 			return
 
-		GiantLockProtectedObject.__init__(self, 'profiles')
+		CoreController.__init__(self, 'profiles')
 
 		ProfilesController.init_ok = True
 		assert ltrace('profiles', '< ProfilesController.__init__(%s)' %
@@ -62,6 +62,9 @@ class ProfilesController(Singleton, GiantLockProtectedObject):
 	def has_key(self, key):
 		return self.profiles.has_key(key)
 	def reload(self):
+
+		CoreController.reload(self)
+
 		with self.lock():
 			self.profiles = readers.profiles_conf_dict(
 				LMC.configuration.profiles_config_file)

@@ -150,6 +150,8 @@ class MachinesController(Singleton, CoreController):
 
 		assert ltrace('machines', '> reload()')
 
+		CoreController.reload(self)
+
 		with self.lock():
 			self.clear()
 

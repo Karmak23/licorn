@@ -11,7 +11,7 @@ Licorn® daemon:
 This daemon exists:
   - to add user functionnality to Licorn® systems.
   - because of bugs in external apps (which don't respect posix1e semantics and
-	can't or won't be fixed easily).
+	can't or won't be easily fixed).
 
 Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
 Licensed under the terms of the GNU GPL version 2.
@@ -29,7 +29,7 @@ _app = {
 	}
 
 import os, signal, time, socket
-from Queue     import Queue
+from Queue import Queue
 
 from licorn.foundations           import options, logging
 from licorn.foundations           import process
@@ -50,13 +50,12 @@ from licorn.daemon.threads        import LicornJobThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
-import licorn.daemon.network as daemon_network
-from licorn.daemon.network        import thread_network_links_builder, \
-										thread_periodic_scanner
 #from licorn.daemon.scheduler     import BasicScheduler
 #from licorn.daemon.cache         import Cache
 #from licorn.daemon.searcher      import FileSearchServer
 #from licorn.daemon.syncer        import ServerSyncer, ClientSyncer
+
+import licorn.daemon.network as daemon_network
 
 if __name__ == "__main__":
 
@@ -73,12 +72,13 @@ if __name__ == "__main__":
 
 	exit_or_replace_if_already_running(pname, my_pid, opts.replace)
 
-	# BATCH is needed generally in the daemon, because it is per nature a
-	# non-interactive process. At first launch, it will have to tweak the system
-	# a little (in some conditions), and won't be able to as user / admin if
-	# forked in the background. It must have the ability to solve relatively
-	# simple problems on its own. Only --force related questions will make it
-	# stop, and there should not be any of these in its daemon's life.
+	# NOTE: :arg:`--batch` is needed generally in the daemon, because it is
+	# per nature a non-interactive process. At first launch, it will have to
+	# tweak the system a little (in some conditions), and won't be able to ask
+	# the user / admin if it is forked into the background. It must have the
+	# ability to solve relatively simple problems on its own. Only
+	# :arg:`--force` related questions will make it stop, and there should not
+	# be any of these in its daemon's life.
 	opts.batch = True
 	options.SetFrom(opts)
 	del opts, args
@@ -91,14 +91,35 @@ if __name__ == "__main__":
 	if options.pid_to_wake:
 		pids_to_wake.append(options.pid_to_wake)
 
-	# log things after having daemonized, else it doesn't show in the log,
-	# but on the terminal.
-	logging.notice("%s(%d): starting all threads." % (
-		pname, os.getpid()))
+	# this first message has to come after having daemonized, else it doesn't
+	# show in the log, but on the terminal the daemon was launched.
+	logging.notice("%s(%d): starting all threads." % (pname, os.getpid()))
 
 	setup_signals_handler(pname)
 
-	LMC.init()
+	# NOTE: the CommandListener must be launched prior to anything, to ensure
+	# connection validation is feasible as early as possible.
+	from licorn.daemon.cmdlistener import CommandListener
+
+	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
+
+		# the CommandListener needs the objects :obj:`LMC.groups`,
+		# :obj:`LMC.system` and :obj:`LMC.msgproc` to be OK to run, that's
+		# why there's a first pass.
+		LMC.init_client_first_pass()
+
+		dthreads.cmdlistener = CommandListener(dname, pids_to_wake=pids_to_wake)
+		dthreads.cmdlistener.start()
+
+		from licorn.daemon import client
+		client.ServerLMC.connect()
+		LMC.init_client_second_pass(client.ServerLMC)
+
+	else:
+		LMC.init_server()
+		dthreads.cmdlistener = CommandListener(dname,
+			pids_to_wake=pids_to_wake)
+		dthreads.cmdlistener.start()
 
 	# FIXME: why do that ?
 	options.msgproc = LMC.msgproc
@@ -110,16 +131,7 @@ if __name__ == "__main__":
 		delay=LMC.configuration.licornd.threads.wipe_time,
 		tname='PeriodicThreadsCleaner')
 
-	# we need to import the CommandListener now because the LMC is not
-	# initialized before and cmdlistener needs it.
-	from licorn.daemon.cmdlistener import CommandListener
-
 	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
-
-		dthreads.cmdlistener = CommandListener(dname,
-			pids_to_wake=pids_to_wake)
-
-		from licorn.daemon import client
 
 		# start the greeter 1 second later, because our Pyro part must be fully
 		# operational before the greeter starts to do anything.
@@ -139,11 +151,6 @@ if __name__ == "__main__":
 		#dthreads.syncer   = ServerSyncer(dname)
 		#dthreads.searcher = FileSearchServer(dname)
 		#dthreads.cache    = Cache(keywords, dname)
-
-		# the CommandListener makes the daemon ready to be queryed / operated
-		# from CLI tools. This is the most vital part.
-		dthreads.cmdlistener = CommandListener(dname=dname,
-			pids_to_wake=pids_to_wake)
 
 		if LMC.configuration.licornd.wmi.enabled and options.wmi_enabled:
 			dthreads.wmi = WMIThread(pname)
@@ -169,7 +176,7 @@ if __name__ == "__main__":
 
 		# FIXME: verify this thread and reactivate it.
 		#dthreads.periodic_scanner = LicornJobThread(dname,
-		#	target=thread_periodic_scanner,
+		#	target=daemon_network.thread_periodic_scanner,
 		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
 
 		# FIXME: this is not the right test here...
@@ -181,7 +188,7 @@ if __name__ == "__main__":
 			# will be run ASAP (in 1 second), else we don't have any info to
 			# display if opening the WMI immediately.
 			dthreads.network_builder = LicornJobThread(dname,
-				target=thread_network_links_builder, daemon=True,
+				target=daemon_network.thread_network_links_builder, daemon=True,
 				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
 		for i in range(0, LMC.configuration.licornd.threads.pool_members):
@@ -207,9 +214,9 @@ if __name__ == "__main__":
 			dthreads.inotifier = INotifier(dname, options.no_boot_check)
 
 	for (thname, th) in dthreads.iteritems():
-		assert ltrace('daemon', 'starting thread %s.' % thname)
-		th.start()
-
+		if not th.is_alive():
+			assert ltrace('daemon', 'starting thread %s.' % thname)
+			th.start()
 
 	if options.daemon:
 		logging.notice('''%s(%s): all threads started, going to sleep waiting '''

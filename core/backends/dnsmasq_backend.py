@@ -30,6 +30,9 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		self.files = Enumeration()
 		self.files.dnsmasq_conf   = '/etc/dnsmasq.conf'
 		self.files.dnsmasq_leases = '/var/lib/misc/dnsmasq.leases'
+
+		# no client counterparts for dnsmasq backend.
+		self.server_only = True
 	def initialize(self):
 		assert ltrace('dnsmasq', '> initialize()')
 
