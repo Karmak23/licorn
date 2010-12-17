@@ -153,7 +153,11 @@ class DNSReverserThread(QueueWorkerThread):
 		self.name, LMC.machines[mid].hostname))
 class PingerThread(QueueWorkerThread, network.Pinger):
 	""" Just Ping a machine, and store its status (UP or DOWN), depending on
-		the pong status. """
+		the pong status.
+
+		FIXME: make this thread not daemon when we understand why they don't
+		shutdown correctly.
+	"""
 	#: see :class:`QueueWorkerThread` for details.
 	name='Pinger'
 	#: see :class:`QueueWorkerThread` for details.
@@ -161,7 +165,7 @@ class PingerThread(QueueWorkerThread, network.Pinger):
 	#: see :class:`QueueWorkerThread` for details.
 	count = 0
 	def __init__(self):
-		QueueWorkerThread.__init__(self, in_queue=dqueues.pings, daemon=False)
+		QueueWorkerThread.__init__(self, in_queue=dqueues.pings, daemon=True)
 		network.Pinger.__init__(self)
 	def process(self, mid, *args, **kwargs):
 		"""  Ping an IP (PoolJobThread target method) """
@@ -190,6 +194,9 @@ class PingerThread(QueueWorkerThread, network.Pinger):
 class ArpingerThread(QueueWorkerThread):
 	""" A thread who tries to find the ethernet address of an already recorded
 		host, and keeps this ethernet address in the host record for later use.
+
+		FIXME: make this thread not daemon when we understand why they don't
+		shutdown correctly.
 	"""
 	#: see :class:`QueueWorkerThread` for details.
 	name='Arpinger'
@@ -198,7 +205,7 @@ class ArpingerThread(QueueWorkerThread):
 	#: see :class:`QueueWorkerThread` for details.
 	count = 0
 	def __init__(self):
-		QueueWorkerThread.__init__(self, in_queue=dqueues.arpings, daemon=False)
+		QueueWorkerThread.__init__(self, in_queue=dqueues.arpings, daemon=True)
 		self.arp_table = dumbnet.arp()
 	def process(self, mid, *args, **kwargs):
 		""" scan a network host and try to find if it is Pyro enabled.
