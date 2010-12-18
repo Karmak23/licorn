@@ -124,7 +124,7 @@ class CoreController(GiantLockProtectedObject):
 		#: protected and stored out of the dict() part of self, thanks to
 		#: MixedDictObject.
 		self._prefered_backend_name = None
-		self._prefered_backend_prio = None
+		self._prefered_backend_prio = -1
 
 		self.backends = LMC.backends.find_compatibles(self)
 		#print '>>> %s'  % self.backends
@@ -240,7 +240,7 @@ class CoreController(GiantLockProtectedObject):
 		# remaining ones.
 		if self._prefered_backend_name not in LMC.backends.keys():
 			self._prefered_backend_name = None
-			self._prefered_backend_prio = None
+			self._prefered_backend_prio = -1
 
 		for backend in self.backends:
 			if self._prefered_backend_name is None:
