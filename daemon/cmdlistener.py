@@ -228,8 +228,8 @@ class CommandListener(LicornBasicThread):
 					port=LMC.configuration.licornd.pyro.port)
 				break
 			except Pyro.core.DaemonError, e:
-				logging.warning('''%s: socket already in use. '''
-					'''waiting (total: %ds).''' % (self.name, count))
+				logging.warning('''%s: %s. '''
+					'''waiting (total: %ds).''' % (self.name, e, count))
 				count += 1
 				time.sleep(1)
 
@@ -327,9 +327,14 @@ class CommandListener(LicornBasicThread):
 								self.name, self._pyro_loop))
 						check_wakers = False
 
+		self.pyro_daemon.shutdown(True)
+
+		# be sure the pyro_daemon's __del__ method is called, it will
+		# close the server socket properly.
+		del self.pyro_daemon
+
 		logging.info('%s: %s Pyro daemon.' % (self.name,
 			stylize(ST_BAD, 'stopped')))
-		self.pyro_daemon.shutdown(True)
 
 		# NOTE: this is just in case we stop ourselves *before* waker_threads
 		# finish. Happens if Control-C at the beginning of the daemon. Unlikely
