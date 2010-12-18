@@ -8,9 +8,7 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 
-import os, sys
-
-from time import time, strftime, gmtime
+import os, sys, time
 
 from licorn.foundations           import logging, exceptions, hlstr
 from licorn.foundations           import pyutils, fsapi, process
@@ -500,7 +498,7 @@ class UsersController(Singleton, CoreFSController):
 			tmp_user_dict['userPassword'] = LMC.backends[
 					self._prefered_backend_name].compute_password(password)
 
-			tmp_user_dict['shadowLastChange'] = str(int(time()/86400))
+			tmp_user_dict['shadowLastChange'] = str(int(time.time()/86400))
 
 			# start unlocked, now that we got a brand new password.
 			tmp_user_dict['locked'] = False
@@ -570,7 +568,9 @@ class UsersController(Singleton, CoreFSController):
 		if profile is not None:
 			try:
 				pass
-				#os.popen2( [ 'quotatool', '-u', str(uid), '-b', LMC.configuration.defaults.quota_device, '-l' '%sMB' % LMC.profiles[profile]['quota'] ] )[1].read()
+				#os.popen2( [ 'quotatool', '-u', str(uid), '-b',
+				#	LMC.configuration.defaults.quota_device, '-l' '%sMB'
+				#	% LMC.profiles[profile]['quota'] ] )[1].read()
 				#logging.warning("quotas are disabled !")
 				# XXX: Quotatool can return 2 without apparent reason
 				# (the quota is etablished) !
@@ -640,7 +640,7 @@ class UsersController(Singleton, CoreFSController):
 
 			user_archive_dir = "%s/%s.deleted.%s" % (
 				LMC.configuration.home_archive_dir,
-				login, strftime("%Y%m%d-%H%M%S", gmtime()))
+				login, time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 			try:
 				os.rename(homedir, user_archive_dir)
 
@@ -681,8 +681,7 @@ class UsersController(Singleton, CoreFSController):
 				].compute_password(password)
 
 			# 3600*24 to have the number of days since epoch (fixes #57).
-			self.users[uid]['shadowLastChange'] = str(
-				int(time()/86400) )
+			self.users[uid]['shadowLastChange'] = str(int(time.time()/86400))
 
 			LMC.backends[
 				self.users[uid]['backend']
