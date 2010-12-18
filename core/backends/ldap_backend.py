@@ -740,6 +740,17 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		user['userPassword'] = \
 			'{SHA}' + encodestring(user['userPassword']).strip()
 
+		# beware of #410, OpenLDAP behaves differently than shadow backend
+		# on rarely or un used shadow* attributes.
+		if user['shadowExpire'] == '':
+			user['shadowExpire'] = 9999999
+
+		if user['shadowFlag'] == '':
+			del user['shadowFlag']
+
+		if user['shadowInactive'] == '':
+			del user['shadowInactive']
+
 		try:
 			self.bind()
 
