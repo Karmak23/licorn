@@ -192,14 +192,14 @@ class GroupsController(Singleton, CoreController):
 							filtered_groups.append(gid)
 
 				elif filters.SYSTEM_RESTRICTED == filter_string:
-					ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
+					assert ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
 						filters.SYSTEM_RESTRICTED, filter_string))
 
 					filtered_groups.extend(filter(self.is_restricted_system_gid,
 						self.groups.keys()))
 
 				elif filters.SYSTEM_UNRESTRICTED == filter_string:
-					ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
+					assert ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
 						filters.SYSTEM_UNRESTRICTED, filter_string))
 
 					filtered_groups.extend(filter(
