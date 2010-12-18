@@ -861,7 +861,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.privileges_to_add is None and len(args) == 2:
 			opts.privileges_to_add = args[1]
 
-		LMC.privileges.add(opts.privileges_to_add.split(','))
+		include_priv_lists=[
+			(opts.privileges_to_add, LMC.groups.guess_identifier),
+		]
+
+		privs_to_add = self.select(LMC.privileges, 'privilege', args=args,
+				include_id_lists=include_priv_lists)
+
+		LMC.privileges.add(privs_to_add)
 	def add_machine(self, opts, args):
 
 		if opts.auto_scan or opts.discover:

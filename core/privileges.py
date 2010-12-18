@@ -85,7 +85,7 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 			This method doesn't need locking, all sub-methods are already.
 		"""
 		for priv in privileges:
-			self.append(priv)
+			self.append(LMC.groups.gid_to_name(priv))
 		self.WriteConf()
 	def delete(self, privileges):
 		""" One-time multi-delete method (list as argument).
