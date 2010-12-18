@@ -107,7 +107,7 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 						'''privilege, it is not a system group.''' % \
 						stylize(ST_NAME, privilege))
 			else:
-				logging.info("privilege %s already whitelisted, skipped." % \
+				logging.info("Skipped privilege %s, already whitelisted." % \
 					stylize(ST_NAME, privilege))
 	def remove(self, privilege):
 		""" Remove without throw of exception """
@@ -120,8 +120,8 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 				logging.info('Removed privilege %s from whitelist.' %
 					stylize(ST_NAME, privilege))
 			else:
-				logging.info('''privilege %s is already not present in the '''
-					'''whitelist, skipped.''' % \
+				logging.info('Skipped privilege %s, already not present in the '
+					'whitelist.' % \
 						stylize(ST_NAME, privilege))
 	def Select(self, filter_string):
 		""" filter self against various criteria and return a list of matching
