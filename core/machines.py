@@ -181,8 +181,8 @@ class MachinesController(Singleton, CoreController):
 		for iface in network.interfaces():
 			iface_infos = netifaces.ifaddresses(iface)
 			if 2 in iface_infos:
-				logging.info('Programming scan of local area network %s.0/%s.'
-					% (iface_infos[2][0]['addr'].rsplit('.', 1)[0],
+				logging.info('%s: Planning scan of local area network %s.0/%s.'
+					% (caller, iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 						network.netmask2prefix(iface_infos[2][0]['netmask'])))
 
 				for ipaddr in ipcalc.Network('%s.0/%s' % (

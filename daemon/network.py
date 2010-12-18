@@ -50,7 +50,8 @@ def thread_network_links_builder():
 
 	assert ltrace('machines', '> thread_network_links_builder()')
 
-	logging.info('%s: starting initial network scan.' % caller)
+	logging.info('%s: %s initial network scan.' % (caller,
+		stylize(ST_RUNNING, 'started')))
 
 	start_time = time.time()
 
@@ -79,7 +80,8 @@ def thread_network_links_builder():
 
 	machines.scan_network2(wait_until_finished=True)
 
-	logging.info('%s: initial network scan finished (took %s).' % (caller,
+	logging.info('%s: %s initial network scan (took %s).' % (caller,
+		stylize(ST_STOPPED, 'finished'),
 		pyutils.format_time_delta(time.time() - start_time)))
 
 	assert ltrace('machines', '< thread_network_links_builder()')

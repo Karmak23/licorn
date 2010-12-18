@@ -288,9 +288,9 @@ class CommandListener(LicornBasicThread):
 		self.uris['msgproc'] = self.pyro_daemon.connect(
 					LMC.msgproc, 'msgproc')
 
-		logging.info("%s: %s Pyro daemon on interface %s." % (
-			self.name, stylize(ST_OK, "started"),
-			stylize(ST_URL, '*:%s' % self.pyro_daemon.port)))
+		logging.info("%s: %s to answer requests at address %s." % (
+			self.name, stylize(ST_OK, "ready"),
+			stylize(ST_URL, 'pyro://*:%s' % self.pyro_daemon.port)))
 
 		for pid in self.pids_to_wake:
 			th = Timer(0.25, lambda x: os.kill(x, signal.SIGUSR1), (pid,))
@@ -333,7 +333,7 @@ class CommandListener(LicornBasicThread):
 		# close the server socket properly.
 		del self.pyro_daemon
 
-		logging.info('%s: %s Pyro daemon.' % (self.name,
+		logging.progress('%s: %s Pyro daemon.' % (self.name,
 			stylize(ST_BAD, 'stopped')))
 
 		# NOTE: this is just in case we stop ourselves *before* waker_threads

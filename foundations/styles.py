@@ -86,6 +86,8 @@ ST_ONLINE    = 38
 ST_ON        = ST_ONLINE
 ST_OFFLINE   = 39
 ST_OFF       = ST_OFFLINE
+ST_RUNNING   = 40
+ST_STOPPED   = 41
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -129,6 +131,8 @@ colors = {
 	ST_ON       : __ascii[ST_WHITE],
 	ST_OFFLINE  : __ascii[ST_GREY],
 	ST_OFF      : __ascii[ST_GREY],
+	ST_RUNNING  : __ascii[ST_FOREST],
+	ST_STOPPED  : __ascii[ST_BRICK]
 	}
 
 

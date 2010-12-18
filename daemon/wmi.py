@@ -77,8 +77,8 @@ class WMIThread(LicornBasicThread):
 					self.stop()
 					return
 
-		logging.notice('%s: ready to answer requests at address %s.' % (
-			self.name, stylize(ST_ADDRESS, 'http://%s:%s/' % (
+		logging.notice('%s: %s to answer requests at address %s.' % (
+			self.name, stylize(ST_OK, 'ready'), stylize(ST_ADDRESS, 'http://%s:%s/' % (
 				listen_address, LMC.configuration.licornd.wmi.port))))
 
 		self.httpd.serve_forever()

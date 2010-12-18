@@ -156,7 +156,7 @@ if __name__ == "__main__":
 		#dthreads.cache    = Cache(keywords, dname)
 
 		if LMC.configuration.licornd.wmi.enabled and options.wmi_enabled:
-			dthreads.wmi = WMIThread(pname)
+			dthreads.wmi = WMIThread(dname)
 		else:
 			logging.info('''%s: not starting WMI, disabled on command line '''
 				'''or by configuration directive.''' % pname)
@@ -222,12 +222,12 @@ if __name__ == "__main__":
 			th.start()
 
 	if options.daemon:
-		logging.notice('''%s(%s): all threads started, going to sleep waiting '''
-			'''for signals.''' % (pname, os.getpid()))
+		logging.notice('%s(%s): all threads started, going to sleep waiting '
+			'for signals.' % (pname, os.getpid()))
 		signal.pause()
 	else:
-		logging.notice('''%s(%s): all threads started, ready for '''
-			'''interaction.''' % (pname, os.getpid()))
+		logging.notice('%s(%s): all threads started, ready for TTY '
+			'interaction.' % (pname, os.getpid()))
 		# set up the interaction with admin on TTY std*, only if we do not
 		# fork into the background. This is a special thread case, not handled
 		# by the global start / stop mechanism, to be able to start it before

@@ -30,11 +30,12 @@ class LicornBasicThread(Thread):
 		self._stop_event  = Event()
 		assert ltrace('thread', '%s initialized.' % self.name)
 	def dump_status(self, long_output=False, precision=None):
-		return '%s(%s%s) %s.' % (
-				stylize(ST_NAME, self.name),
-				self.ident, stylize(ST_OK, '&') if self.daemon else '',
-				stylize(ST_OK, 'alive') \
-					if self.is_alive() else 'has terminated')
+		return '%s%s (stop=%s)' % (
+				stylize(ST_RUNNING
+					if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				self._stop_event.is_set()
+			)
 	def run(self):
 		# don't call Thread.run(self), just override it.
 		assert ltrace('thread', '%s running' % self.name)
@@ -61,31 +62,18 @@ class LicornPoolJobThread(Thread):
 
 		#: used in dump_status (as a display info only), to know which
 		#: object our target function is running onto.
-		self.current_target_object = None
+		self.current_target = None
 		assert ltrace('thread', '%s initialized.' % self.name)
 	def dump_status(self, long_output=False, precision=None):
 		""" get detailled thread status. """
 
-		if long_output:
-
-			target = str(self.target).replace('function ', '').replace(' at ', '|')
-
-			return '%s(%s%s) %s(%s) ‣ %s(%s, %s, %s)' % (
-					stylize(ST_NAME, self.name),
-					self.ident, stylize(ST_OK, '&') if self.daemon else '',
-					str(self.input_queue).replace(' instance at ', '|'),
-					stylize(ST_UGID, self.input_queue.qsize()),
-					'%s…' % str(target)[:29] \
-						if len(str(target)) >= 30 else str(target),
-					self.current_target_object, self.args, self.kwargs
-				)
-		else:
-			return '%s(%s%s) %s.' % (
-					stylize(ST_NAME, self.name),
-					self.ident, stylize(ST_OK, '&') if self.daemon else '',
-					'%s, [on‣%s]' % (stylize(ST_OK, 'alive'),
-						self.current_target_object) \
-						if self.is_alive() else 'has terminated')
+		return '%s%s [%s].' % (
+				stylize(ST_RUNNING
+					if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				'on‣%s' % self.current_target
+					if self.current_target else 'idle'
+			)
 	def run(self):
 		assert ltrace('thread', '%s running' % self.name)
 		while True:
@@ -100,9 +88,9 @@ class LicornPoolJobThread(Thread):
 			else:
 				assert ltrace('thread', 'executing %s(%s, %s)' % (self.target,
 					self.args, self.kwargs))
-				self.current_target_object = msg
+				self.current_target = msg
 				self.target(msg, *self.args, **self.kwargs)
-				self.current_target_object = None
+				self.current_target = None
 				self.input_queue.task_done()
 
 		assert ltrace('thread', '%s ended' % self.name)
@@ -156,26 +144,13 @@ class QueueWorkerThread(Thread):
 	def dump_status(self, long_output=False, precision=None):
 		""" get detailled thread status. """
 
-		if long_output:
-
-			target = str(self.target).replace('function ', '').replace(' at ', '|')
-
-			return '%s(%s%s) %s(%s) ‣ %s(%s, %s, %s)' % (
-					stylize(ST_NAME, self.name),
-					self.ident, stylize(ST_OK, '&') if self.daemon else '',
-					str(self.input_queue).replace(' instance at ', '|'),
-					stylize(ST_UGID, self.input_queue.qsize()),
-					'%s…' % str(target)[:29] \
-						if len(str(target)) >= 30 else str(target),
-					self.current_target, self.args, self.kwargs
-				)
-		else:
-			return '%s(%s%s) %s.' % (
-					stylize(ST_NAME, self.name),
-					self.ident, stylize(ST_OK, '&') if self.daemon else '',
-					'%s, [on‣%s]' % (stylize(ST_OK, 'alive'),
-						self.current_target) \
-						if self.is_alive() else 'has terminated')
+		return '%s%s [%s]' % (
+				stylize(ST_RUNNING
+					if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				'on‣%s' % self.current_target
+					if self.current_target else 'idle'
+			)
 	def run(self):
 		assert ltrace('thread', '%s running' % self.name)
 		assert hasattr(self, 'process') and callable(self.process)
