@@ -203,9 +203,22 @@ def fork_licorn_daemon(pid_to_wake=None):
 	try:
 		logging.progress('forking licornd.')
 		if os.fork() == 0:
-			args = ['licornd']
+			# NOTE: we need to force a replace, in case the existing daemon is
+			# in a bad posture, eg. stuck in a restart procedure: it's not
+			# responding to the calling CLI process, but in the wait for a
+			# restart. This the current starting daemon will fail, then the
+			# waiting CLI will not be awaken and will timeout and show the
+			# "connect timeout, something is bad" message to the administrator,
+			# which will be a totally false-negative situation because
+			# meanwhile the restarting daemon will be ready in a perfect
+			# state.
+			# All of this is a timing problem, and I hope the soft
+			# :arg:`--replace` flag will solve this corner-case situation.
+			args = ['licornd', '--replace']
+
 			if pid_to_wake:
 				args.extend(['--pid-to-wake', str(pid_to_wake)])
+
 			os.execvp('licornd', args)
 
 	except (IOError, OSError), e:

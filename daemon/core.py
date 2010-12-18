@@ -174,21 +174,22 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 			while os.path.exists(pid_file):
 				time.sleep(0.1)
 
-				if counter >= 50:
+				if counter >= 30:
 					# Exit now, this is too much. process should have removed
 					# the pid file very earlier, this is the first thing the
 					# daemon does before cleaning and killing everything.
-					logging.error("Existing instance won't terminate, we're"
-						" in trouble. I'll let you see what's going on.")
+					logging.notice("Existing instance still running, "
+						"we're going to be a little more incisive in a few "
+						"seconds.")
+					break
 				counter+=1
 
-			# If the pid file is gone, old instance is really shutting down. For
-			# various this could take more time, and even not suceed if
-			# something very low-level is blocking. We have to verify it
-			# actually shuts down completely.
+			# Pid file gone or not, old instance can take a bunch of time
+			# shutting down, and even not suceed if something very low-level
+			# is blocking. We have to verify it actually shuts down completely.
 			#
 			# Can't use os.waitpid(), this is not our child. We can only rely on
-			# /proc/$PID to tell if it is still there. Not optimal but correct.
+			# /proc/$PID to tell if it is still there. Not optimal but accurate.
 			proc_pid = '/proc/%s' % old_pid
 
 			counter = 0

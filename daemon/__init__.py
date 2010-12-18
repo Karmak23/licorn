@@ -46,10 +46,6 @@ def clean_before_terminating(pname):
 			# it later, which will fail if the old pid is kept.
 			child = None
 
-	# we are stopping, unlink the pid file. In case anything goes wrong, or a
-	# restart, the pid file will thus not block another daemon from starting.
-	unlink_pid_file(pname)
-
 	logging.progress("%s: emptying queues." % pname)
 	for (qname, queue) in dqueues.iteritems():
 		if queue.qsize() > 0:
@@ -109,6 +105,8 @@ def clean_before_terminating(pname):
 
 	if LMC.configuration:
 		LMC.configuration.CleanUp()
+
+	unlink_pid_file(pname)
 def unlink_pid_file(pname):
 	""" remove the pid file and bork if any error. """
 
@@ -167,6 +165,8 @@ def restart(signum, frame, pname):
 		cmd.extend(['-w', options.wmi_listen_address])
 	if not options.wmi_enabled:
 		cmd.append('-W')
+	if options.replace:
+		cmd.append('--replace')
 	if not options.daemon:
 		cmd.append('-D')
 

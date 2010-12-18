@@ -62,6 +62,8 @@ import licorn.daemon.network as daemon_network
 
 if __name__ == "__main__":
 
+	# this is the first thing to do, because argparser needs default
+	# configuration values.
 	LMC.init_conf(batch=True)
 
 	(opts, args) = licornd_parse_arguments(_app)
