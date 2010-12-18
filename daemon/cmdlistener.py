@@ -233,6 +233,11 @@ class CommandListener(LicornBasicThread):
 				count += 1
 				time.sleep(1)
 
+		if self._stop_event.is_set():
+			# happens with a Control-C during the previous while and pyro daemon
+			# didn't start (we are stopping and didn't acheive to really start).
+			return
+
 		# not strictly needed.
 		#self.pyro_daemon.setTimeout(5)
 		#self.pyro_daemon.setTransientsCleanupAge(5)
