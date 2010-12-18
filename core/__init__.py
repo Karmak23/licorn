@@ -304,8 +304,17 @@ class LicornMasterController(MixedDictObject):
 			one of them finds a new prefered backend, we must reload. Raise the
 			appropriate exception.
 		"""
+		assert ltrace('core', '| reload_controllers_backends()')
+
 		for controller in self:
 			if hasattr(controller, 'find_prefered_backend'):
+
+				# first, reload the list of compatible backends. If this method
+				# is called, there is at least one more or one less.
+				controller.backends = self.backends.find_compatibles(controller)
+
+				# then, tell the controller to find its new prefered in its
+				# refreshed backends list.
 				if controller.find_prefered_backend():
 					raise exceptions.NeedRestartException('backends changed.')
 	def connect(self):
