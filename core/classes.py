@@ -578,15 +578,14 @@ class CoreFSController(CoreController):
 				# we replace the @*X to be able to posix1e.ACL.check() correctly
 				# this forces us to put a false value in the ACL, so we copy it
 				# [:] to keep the original in place.
-				bla = dir_info.root_dir_perm[:].replace(
+				di_text = dir_info.root_dir_perm[:].replace(
 					'@GX','x').replace('@UX','x').replace('rsp-',
 					'remotessh').replace('gst-', 'acl')
-				logging.notice("bla = %s" % bla)
-				if posix1e.ACL(text=bla).check():
+				if posix1e.ACL(text=di_text).check():
 					raise exceptions.LicornSyntaxException(
 						self.file_name, self.line_no,
 						text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-						'''.check() fail''' % bla)
+						'''.check() fail''' % di_text)
 			if dir_info.content_acl:
 				if posix1e.ACL(text=dir_info.dirs_perm[:].replace(
 					'@GX','x').replace('@UX','x').replace('rsp-',
