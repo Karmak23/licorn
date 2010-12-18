@@ -300,8 +300,8 @@ class LicornMasterController(MixedDictObject):
 		self.keywords = KeywordsController()
 		self.keywords.load()
 	def reload_controllers_backends(self):
-		""" Run through all controllers and make them reload their backends. If
-			one of them finds a new prefered backend, we must reload. Raise the
+		""" Walk through all controllers and make them reload their backends. If
+			one of them finds a new prefered backend, we must reload: raise the
 			appropriate exception.
 		"""
 		assert ltrace('core', '| reload_controllers_backends()')
@@ -319,9 +319,9 @@ class LicornMasterController(MixedDictObject):
 					raise exceptions.NeedRestartException('backends changed.')
 	def connect(self):
 		""" Create remote connections to all Licorn® core objects. Returns the
-		Pyro proxy to the RWI (this is just a shortcut, because RWI is always
-		accessible via LMC.rwi; but this makes easier to write the following
-		code in CLI tools::
+			Pyro proxy to the RWI (this is just a shortcut, because RWI is
+			always accessible via :obj:`LMC.rwi`; but this makes easier to
+			write the following code in CLI tools::
 
 			RWI = LMC.connect()
 

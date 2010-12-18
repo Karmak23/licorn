@@ -102,6 +102,7 @@ class CoreController(GiantLockProtectedObject):
 		)
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		GiantLockProtectedObject.__init__(self, name=name, warnings=warnings)
+
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
 
@@ -229,7 +230,8 @@ class CoreController(GiantLockProtectedObject):
 			controller.
 			"""
 
-		assert ltrace(self.name, '> find_prefered_backend(%s)' % self.backends)
+		assert ltrace(self.name, '> find_prefered_backend(%s)' %
+			self.backends)
 
 		changed = False
 
@@ -249,7 +251,8 @@ class CoreController(GiantLockProtectedObject):
 				if hasattr(backend, 'priority'):
 					self._prefered_backend_prio = backend.priority
 				else:
-					# my backends don't handle priory, I will deal with the first.
+					# my backends don't handle priory, I stop when I found
+					# the first.
 					break
 			else:
 				if hasattr(backend, 'priority'):
@@ -795,8 +798,8 @@ class ModuleManager(GiantLockProtectedObject):
 	def find_compatibles(self, controller):
 		""" Return a list of compatible modules with a given controller. """
 
-		assert ltrace(self.name, '| find_compatibles(%s => LMC.%s=%s' % (
-			controller.name, self.name, [x for x in self]))
+		assert ltrace(self.name, '| find_compatibles(for: %s, from LMC.%s=%s'
+			% (controller.name, self.name, str([x.name for x in self])))
 
 		assert ltrace(self.name, '| find_compatibles(%s -> %s)' % (
 			str([ x.controllers_compat for x in self ]),
@@ -809,8 +812,8 @@ class ModuleManager(GiantLockProtectedObject):
 		""" try to enable a given module_name. what to do exactly is left to the
 		backend itself."""
 
-		assert ltrace(self.name, '| enable_module(%s, %s, %s)' % (module_name,
-			str([x for x in self.keys()]), self._available_modules.keys()))
+		assert ltrace(self.name, '| enable_module(%s, active=%s, available=%s)'
+			% (module_name, self.keys(), self._available_modules.keys()))
 
 		if module_name in self.keys():
 			logging.notice('%s %s already enabled.' % (module_name,
@@ -829,8 +832,8 @@ class ModuleManager(GiantLockProtectedObject):
 		""" try to disable a given module. what to do exactly is left to the
 		module itself."""
 
-		assert ltrace(self.name, '| disable_module(%s, %s, %s)' % (module_name,
-			self.keys(), self._available_modules.keys()))
+		assert ltrace(self.name, '| disable_module(%s, active=%s, available=%s)'
+			% (module_name, self.keys(), self._available_modules.keys()))
 
 		if module_name in self._available_modules.keys():
 			logging.notice('%s %s already disabled.' % (module_name,
