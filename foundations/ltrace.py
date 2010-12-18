@@ -90,6 +90,7 @@ trc['mod']           = 0x000200000000000000000000
 trc['del']           = 0x000400000000000000000000
 trc['chk']           = 0x000800000000000000000000
 trc['get']           = 0x001000000000000000000000
+trc['argparser']     = 0x002000000000000000000000
 
 def dump_one(obj_to_dump, long_output=False):
 	try:

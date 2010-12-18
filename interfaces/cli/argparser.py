@@ -16,6 +16,7 @@ from optparse import OptionParser, OptionGroup
 
 from licorn.foundations           import exceptions
 from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import LicornConfigObject
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.argparser import build_version_string, \
@@ -512,6 +513,8 @@ def get_daemon_status_parse_arguments(app, configuration):
 def add_user_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add user »."""
 
+	assert ltrace('argparser', '> add_user_parse_arguments()')
+
 	usage_text = """
 	%s user [--login] <login>
 	%s user [-s|--system] [-p|--password "<password>"]
@@ -613,9 +616,13 @@ def add_user_parse_arguments(app, configuration):
 
 	parser.add_option_group(user)
 
+	assert ltrace('argparser', '< add_user_parse_arguments()')
+
 	return parser.parse_args()
 def add_group_parse_arguments(app, configuration):
 	"""Integrated help and options / arguments for « add group »."""
+
+	assert ltrace('argparser', '> add_group_parse_arguments()')
 
 	usage_text = "\n\t%s group --name=<nom_groupe> [--permissive] [--gid=<gid>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--skel=<nom_squelette>] [--description=<description>]\n" \
@@ -654,6 +661,8 @@ def add_group_parse_arguments(app, configuration):
 		help="The group will be a system group (root / @admin members only).")
 
 	parser.add_option_group(group)
+
+	assert ltrace('argparser', '< add_group_parse_arguments()')
 
 	return parser.parse_args()
 def add_profile_parse_arguments(app, configuration):
