@@ -306,7 +306,7 @@ class LicornDaemonInteractor(NamedObject):
 							char = sys.stdin.read(1)
 
 					except KeyboardInterrupt:
-						sys.stderr.write("\n")
+						sys.stderr.write("^C\n")
 						raise
 
 					else:
@@ -348,6 +348,7 @@ class LicornDaemonInteractor(NamedObject):
 
 						elif char == '': # ^R (refresh / reload)
 							#sys.stderr.write('\n')
+							self.restore_terminal()
 							os.kill(os.getpid(), signal.SIGUSR1)
 
 						elif char == '': # ^U kill -15
@@ -357,20 +358,14 @@ class LicornDaemonInteractor(NamedObject):
 							#	self.pname)
 
 							# no need to kill WMI, terminate() will do it clean.
+							self.restore_terminal()
 							os.kill(os.getpid(), signal.SIGTERM)
 
 						elif char == '\v': # ^K (Kill -9!!)
 							logging.warning('%s: killing ourselves badly.' %
 								self.pname)
 
-							if dchildren.wmi_pid:
-								try:
-									os.kill(dchildren.wmi_pid, signal.SIGKILL)
-								except OSError, e:
-									if e.errno != 3:
-										# errno 3 is 'no such process', forget it.
-										raise e
-
+							self.restore_terminal()
 							os.kill(os.getpid(), signal.SIGKILL)
 
 						elif char == '':
