@@ -179,7 +179,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				selection = filters.NOT_PRIVILEGED
 
 		elif not opts.all:
-			# must be the last case !
+			# must be the last case!
 			selection = filters.STANDARD
 
 		groups_to_get = LMC.groups.Select(
@@ -415,8 +415,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		encoding = fsapi.get_file_encoding(import_filename)
 		if encoding is None:
-			# what to choose ? ascii or ~sys.getsystemencoding() ?
-			logging.warning("can't automatically detect the file encoding, assuming iso-8859-15 !")
+			# what to choose? ascii or ~sys.getsystemencoding()?
+			logging.warning("can't automatically detect the file encoding, assuming iso-8859-15!")
 			encoding = 'iso-8859-15'
 
 		import csv
@@ -499,7 +499,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			if not (i % 100):
 				self.output(".")
-				# FIXME: how do we force a flush on the client side ?
+				# FIXME: how do we force a flush on the client side?
 				#sys.stderr.flush()
 			i += 1
 			user['linenumber'] = i
@@ -539,11 +539,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(str(e))
 					progression += delta
 				except exceptions.LicornException, e:
-					# FIXME: flush the listener ??
+					# FIXME: flush the listener??
 					#sys.stdout.flush()
 					raise e
 				data_to_export_to_html[g]= {}
-				# FIXME: flush the listener ??
+				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
 		if not opts.confirm_import:
@@ -575,7 +575,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					# like this, the user accounts will be sorted in their group.
 					data_to_export_to_html[ u['group'] ][ u['lastname'] + u['firstname'] ] = [ u['firstname'], u['lastname'], login, password ]
 				else:
-					# why make_login() for examples and not prepare the logins whenloading CSV file ?
+					# why make_login() for examples and not prepare the logins when loading CSV file?
 					# this is a pure arbitrary choice. It just feels more consistent for me.
 					if opts.login_col:
 						login = u['login']
@@ -603,7 +603,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# FIXME: if user already exists, don't put it in the data / HTML report.
 				continue
 			except exceptions.LicornException, e:
-				# FIXME: flush the listener ??
+				# FIXME: flush the listener.?
 				#sys.stdout.flush()
 				pass
 
@@ -801,6 +801,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
+			del args[1]
 
 		if opts.description:
 			opts.description = unicode(opts.description)
@@ -826,6 +827,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
+			del args[1]
 
 		if opts.groups != []:
 			opts.groups = opts.groups.split(',')
@@ -853,6 +855,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
+			del args[1]
 
 		LMC.keywords.AddKeyword(unicode(opts.name), unicode(opts.parent),
 			unicode(opts.description))
@@ -860,6 +863,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.privileges_to_add is None and len(args) == 2:
 			opts.privileges_to_add = args[1]
+			del args[1]
 
 		include_priv_lists=[
 			(opts.privileges_to_add, LMC.groups.guess_identifier),
@@ -912,7 +916,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					i, length_groups, progression))
 				LMC.groups.DeleteGroup(name=g, del_users=True, no_archive=True)
 				progression += delta
-				# FIXME: fush the listener ??
+				# FIXME: fush the listener??
 				#sys.stdout.flush()
 			except exceptions.LicornException, e:
 				logging.warning(str(e))
@@ -937,11 +941,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all users ?',
+					'Are you sure you want to delete all users?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)):
 				include_id_lists.extend([
-					(LMC.users.Select(filters.STD), LMC.users.confirm_uid),
-					(LMC.users.Select(filters.SYSUNRSTR), LMC.users.confirm_uid)
+					(LMC.users.Select(filters.STD), lambda x: x),
+					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
 					])
 		uids_to_del = self.select(LMC.users, 'user', args=args,
 				include_id_lists=include_id_lists,
@@ -949,7 +953,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for uid in uids_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete user %s ?''' % stylize(
+				logging.ask_for_repair('''Delete user %s?''' % stylize(
 				ST_LOGIN,LMC.users.uid_to_login(uid)),
 				auto_answer=opts.auto_answer):
 				LMC.users.DeleteUser(uid=uid, no_archive=opts.no_archive)
@@ -1015,11 +1019,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all groups ?',
+					'Are you sure you want to delete all groups?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)):
 				include_id_lists.extend([
-					(LMC.groups.Select(filters.STD), LMC.groups.confirm_gid),
-					(LMC.groups.Select(filters.SYSUNRSTR), LMC.groups.confirm_gid)
+					(LMC.groups.Select(filters.STD), lambda x: x),
+					(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
 					])
 		gids_to_del = self.select(LMC.groups, 'group',
 					args,
@@ -1028,7 +1032,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					default_selection=selection)
 		for gid in gids_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete group %s ?''' % stylize(
+				logging.ask_for_repair('''Delete group %s?''' % stylize(
 				ST_LOGIN,LMC.groups.gid_to_name(gid)),
 				auto_answer=opts.auto_answer):
 				LMC.groups.DeleteGroup(gid=gid, del_users=opts.del_users,
@@ -1050,12 +1054,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all profiles ?',
+					'Are you sure you want to delete all profiles?',
 					opts.auto_answer) \
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-						(LMC.profiles.Select(filters.ALL), LMC.profiles.guess_identifier)
+						(LMC.profiles.Select(filters.ALL), lambda x: x)
 					])
 
 		profiles_to_del = self.select(LMC.profiles, 'profile', args,
@@ -1064,7 +1068,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for p in profiles_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete profile %s ?''' %
+				logging.ask_for_repair('''Delete profile %s?''' %
 					stylize(ST_LOGIN, LMC.profiles.group_to_name(p)),
 					auto_answer=opts.auto_answer):
 				LMC.profiles.DeleteProfile(group=p, del_users=opts.del_users,
@@ -1075,11 +1079,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
+			del args[1]
 
 		LMC.keywords.DeleteKeyword(opts.name, opts.del_children)
 	def del_privilege(self, opts, args):
 		if opts.privileges_to_remove is None and len(args) == 2:
 			opts.privileges_to_remove = args[1]
+			del args[1]
+
 		include_priv_lists=[
 			(opts.privileges_to_remove, LMC.privileges.confirm_privilege),
 		]
@@ -1093,10 +1100,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all users ?',
+					'Are you sure you want to delete all privileges?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)):
 				include_priv_lists.extend([
-					(LMC.privileges.Select(filters.ALL), LMC.privileges.confirm_privilege),
+					(LMC.privileges.Select(filters.ALL), lambda x: x),
 					])
 		privs_to_del = self.select(LMC.privileges, 'privilege',args=args,
 				include_id_lists=include_priv_lists,
@@ -1105,7 +1112,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		for priv_name in privs_to_del:
 			if priv_name is not None and (
 			opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Delete privilege %s ?''' %
+			logging.ask_for_repair('''Delete privilege %s?''' %
 				stylize(ST_LOGIN, priv_name),
 				auto_answer=opts.auto_answer)):
 				LMC.privileges.delete(
@@ -1132,7 +1139,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all users ?',
+					'Are you sure you want to modify all users?',
 					auto_answer=opts.auto_answer) \
 				or not opts.non_interactive)
 			):
@@ -1153,7 +1160,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		for uid in uids_to_mod:
 			try:
 				if opts.non_interactive or opts.batch or opts.force or \
-					logging.ask_for_repair('''Modify user %s ?''' % stylize(
+					logging.ask_for_repair('''Modify user %s?''' % stylize(
 					ST_LOGIN,LMC.users.uid_to_login(uid)),
 					auto_answer=opts.auto_answer):
 
@@ -1266,7 +1273,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if not something_done:
 			raise exceptions.BadArgumentError('''What do you want to modify '''
-				'''about user(s) ? Use --help to know !''')
+				'''about user(s)? Use --help to know!''')
 	def mod_group(self, opts, args):
 		""" Modify a group. """
 		include_id_lists=[
@@ -1285,12 +1292,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all groups ?',
+					'Are you sure you want to modify all groups?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 					include_id_lists.extend([
-						(LMC.groups.Select(filters.STD), LMC.groups.confirm_gid),
-						(LMC.groups.Select(filters.SYSUNRSTR), LMC.groups.confirm_gid)
+						(LMC.groups.Select(filters.STD), lambda x: x),
+						(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
 					])
 		gids_to_mod = self.select(LMC.groups, 'group', args,
 				include_id_lists=include_id_lists,
@@ -1302,7 +1309,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for gid in gids_to_mod:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Modify group %s ?''' % stylize(
+				logging.ask_for_repair('''Modify group %s?''' % stylize(
 				ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
 
 				if opts.permissive is not None:
@@ -1372,12 +1379,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all profiles ?',
+					'Are you sure you want to modify all profiles?',
 					opts.auto_answer) \
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.profiles.Select(filters.ALL), LMC.profiles.guess_identifier)
+					(LMC.profiles.Select(filters.ALL), lambda x: x)
 				]),
 		profiles_to_mod = self.select(LMC.profiles, 'profile', args,
 				include_id_lists=include_id_lists,
@@ -1389,7 +1396,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for group in profiles_to_mod:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Modify profile %s ?''' % stylize(
+				logging.ask_for_repair('''Modify profile %s?''' % stylize(
 				ST_LOGIN, LMC.profiles.group_to_name(group)),
 				auto_answer=opts.auto_answer):
 
@@ -1506,6 +1513,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if len(args) == 2:
 			opts.name = args[1]
+			del args[1]
 
 		if opts.newname is not None:
 			LMC.keywords.RenameKeyword(opts.name, opts.newname)
@@ -1522,6 +1530,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if len(args) == 2:
 			opts.path = args[1]
+			del args[1]
 
 		# this should go directly into system.keywords.
 		from licorn.harvester import HarvestClient
@@ -1569,7 +1578,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		else:
 			raise exceptions.BadArgumentError(
-				"what do you want to modify ? use --help to know !")
+				"what do you want to modify? use --help to know!")
 	### CHK
 	def chk_user(self, opts, args):
 		""" Check one or more user account(s). """
@@ -1589,12 +1598,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 					opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to check all users ?',
+					'Are you sure you want to check all users?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.users.Select(filters.STD), LMC.users.confirm_uid),
-					(LMC.users.Select(filters.SYSUNRSTR), LMC.users.confirm_uid)
+					(LMC.users.Select(filters.STD), lambda x: x),
+					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
 					])
 		uids_to_chk = self.select(LMC.users, 'user', args,
 			include_id_lists=include_id_lists,
@@ -1608,7 +1617,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					auto_answer=opts.auto_answer, batch=opts.batch)
 			else:
 				for uid in uids_to_chk:
-					if logging.ask_for_repair('''Check user %s ?''' %
+					if logging.ask_for_repair('''Check user %s?''' %
 						stylize(ST_LOGIN, LMC.users.uid_to_login(uid)),
 						auto_answer=opts.auto_answer):
 						LMC.users.CheckUsers([uid], minimal=opts.minimal,
@@ -1632,12 +1641,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 					opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to check all groups ?',
+					'Are you sure you want to check all groups?',
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.groups.Select(filters.STD), LMC.groups.confirm_gid),
-					(LMC.groups.Select(filters.SYSUNRSTR), LMC.groups.confirm_gid)
+					(LMC.groups.Select(filters.STD), lambda x: x),
+					(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
 					])
 		gids_to_chk = self.select(LMC.groups, 'group', args,
 			include_id_lists=include_id_lists,
@@ -1654,7 +1663,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					auto_answer=opts.auto_answer, force=opts.force)
 			else:
 				for gid in gids_to_chk:
-					if logging.ask_for_repair('''Check group %s ?''' %
+					if logging.ask_for_repair('''Check group %s?''' %
 						stylize(ST_LOGIN, LMC.groups.gid_to_name(gid)),
 						auto_answer=opts.auto_answer):
 						LMC.groups.CheckGroups(gids_to_check=[gid],
@@ -1677,12 +1686,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# english to undestand them and why the order is important.
 				opts.non_interactive and opts.force) or opts.batch \
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all profiles ?',
+					'Are you sure you want to delete all profiles?',
 					opts.auto_answer) \
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-						(LMC.profiles.Select(filters.ALL), LMC.profiles.guess_identifier)
+						(LMC.profiles.Select(filters.ALL), lambda x: x)
 					])
 
 		profiles_to_del = self.select(LMC.profiles, 'profile', args,
@@ -1691,7 +1700,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for p in profiles_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete profile %s ?''' % stylize(
+				logging.ask_for_repair('''Delete profile %s?''' % stylize(
 				ST_LOGIN,LMC.profiles.group_to_name(p)),
 				auto_answer=opts.auto_answer):
 				raise NotImplementedError("Sorry, not yet.")
