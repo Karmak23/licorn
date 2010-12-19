@@ -8,6 +8,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal
+from threading import current_thread
 
 from SocketServer       import TCPServer
 TCPServer.allow_reuse_address = True
@@ -88,20 +89,30 @@ class WMIThread(LicornBasicThread):
 			self.httpd.shutdown()
 class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	def do_HEAD(self):
-		f = self.send_head()
-		if f:
-			f.close()
-	def do_GET(self):
-		f = self.send_head()
-		if f:
-			if type(f) in (type(""), type(u'')):
-				self.wfile.write(f)
-			else:
-				buf = f.read(LMC.configuration.licornd.buffer_size)
-				while buf:
-					self.wfile.write(buf)
-					buf = f.read(LMC.configuration.licornd.buffer_size)
+		try:
+			f = self.send_head()
+			if f:
 				f.close()
+		except socket.error, e:
+			logging.warning('%s: harmless exception in do_HEAD(): %s. '
+				'Full traceback follows:' % (
+				current_thread().name, str(e).splitlines()[0]))
+	def do_GET(self):
+		try:
+			f = self.send_head()
+			if f:
+				if type(f) in (type(""), type(u'')):
+					self.wfile.write(f)
+				else:
+					buf = f.read(LMC.configuration.licornd.buffer_size)
+					while buf:
+						self.wfile.write(buf)
+						buf = f.read(LMC.configuration.licornd.buffer_size)
+					f.close()
+		except socket.error, e:
+			logging.warning('%s: harmless exception in do_GET(): %s. '
+				'Full traceback follows:' % (
+				current_thread().name, str(e).splitlines()[0]))
 	def do_POST(self):
 		""" Handle POST data and create a dict to be used later."""
 
