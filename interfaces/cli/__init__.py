@@ -8,7 +8,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-import os, signal, sys, time, Pyro.core
+import os, signal, sys, time, Pyro.core, Pyro.configuration
 from threading import Thread
 
 from licorn.foundations           import options, exceptions, logging
@@ -77,6 +77,13 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			assert ltrace('cli', '  cli_main: starting pyro')
 			pyroStarted=True
 			pyro_start_time = time.time()
+
+			# this is important for Pyro to be able to create temp files
+			# in a self-writable directory, else it will lamentably fail
+			# because default value for PYRO_STORAGE is '.', and the user
+			# is not always positionned in a welcomed place.
+			Pyro.config.PYRO_STORAGE=os.getenv('HOME', os.path.expanduser('~'))
+
 			Pyro.core.initServer()
 			Pyro.core.initClient()
 
