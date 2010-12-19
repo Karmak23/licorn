@@ -194,11 +194,11 @@ class MachinesController(Singleton, CoreController):
 					if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
 						dqueues.ipscans.put(str(ipaddr))
 
-		queue_wait_for_ipscanners(caller)
-
-		queue_wait_for_arpingers(caller)
-		queue_wait_for_reversers(caller)
-		queue_wait_for_pyroers(caller)
+		if wait_until_finish:
+			queue_wait_for_ipscanners(caller)
+			queue_wait_for_arpingers(caller)
+			queue_wait_for_reversers(caller)
+			queue_wait_for_pyroers(caller)
 
 		assert ltrace('machines', '< %s: scan_network2()' % caller)
 	def scan_network(self, network_to_scan=None, wait_until_finish=False,

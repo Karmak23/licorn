@@ -179,39 +179,50 @@ if __name__ == "__main__":
 		# machines to be scanned for pyro presence
 		dqueues.pyrosys = Queue()
 
-		# FIXME: verify this thread and reactivate it.
-		#dthreads.periodic_scanner = LicornJobThread(dname,
-		#	target=daemon_network.thread_periodic_scanner,
-		#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
+		if LMC.configuration.licornd.network.enabled:
 
-		# FIXME: this is not the right test here...
-		if LMC.configuration.licornd.threads.pool_members == 0:
-			logging.warning('''Status gathering of unmanaged network '''
-					'''clients disabled by configuration rule.''')
+			# FIXME: verify this thread and reactivate it.
+			#dthreads.periodic_scanner = LicornJobThread(dname,
+			#	target=daemon_network.thread_periodic_scanner,
+			#	time=(time.time()+10.0), delay=30.0, tname='PeriodicNetworkScanner')
+
+			# FIXME: this is not the right test here...
+			if LMC.configuration.licornd.threads.pool_members == 0:
+				logging.warning('''Status gathering of unmanaged network '''
+						'''clients disabled by configuration rule.''')
+			else:
+				# launch a machine status update every 30 seconds. The first update
+				# will be run ASAP (in 1 second), else we don't have any info to
+				# display if opening the WMI immediately.
+				dthreads.network_builder = LicornJobThread(dname,
+					target=daemon_network.thread_network_links_builder, daemon=True,
+					time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
+
+			for i in range(0, LMC.configuration.licornd.threads.pool_members):
+
+				t = daemon_network.IPScannerThread()
+				dthreads[t.name] = t
+
+				t = daemon_network.PingerThread()
+				dthreads[t.name] = t
+
+				t = daemon_network.ArpingerThread()
+				dthreads[t.name] = t
+
+				t = daemon_network.DNSReverserThread()
+				dthreads[t.name] = t
+
+				t = daemon_network.PyroFinderThread()
+				dthreads[t.name] = t
+
 		else:
-			# launch a machine status update every 30 seconds. The first update
-			# will be run ASAP (in 1 second), else we don't have any info to
-			# display if opening the WMI immediately.
-			dthreads.network_builder = LicornJobThread(dname,
-				target=daemon_network.thread_network_links_builder, daemon=True,
-				time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
-
-		for i in range(0, LMC.configuration.licornd.threads.pool_members):
-
-			t = daemon_network.IPScannerThread()
-			dthreads[t.name] = t
-
-			t = daemon_network.PingerThread()
-			dthreads[t.name] = t
-
-			t = daemon_network.ArpingerThread()
-			dthreads[t.name] = t
-
-			t = daemon_network.DNSReverserThread()
-			dthreads[t.name] = t
-
-			t = daemon_network.PyroFinderThread()
-			dthreads[t.name] = t
+			# start a fake thread to avoid consuming forever memory with our
+			# Queues, but don't do anything real with the data.
+			dthreads.queues_emptyer = LicornJobThread(dname,
+				target=daemon_network.thread_queues_emptyer, daemon=True,
+				time=(time.time()+30.0),
+				delay=LMC.configuration.licornd.threads.wipe_time,
+				tname='QueuesEmptyer')
 
 		dthreads.aclchecker = ACLChecker(None, dname)
 

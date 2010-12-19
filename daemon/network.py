@@ -7,6 +7,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import Pyro, dumbnet, socket, time
+from Queue import Empty
 
 from threading                    import current_thread
 from licorn.foundations           import logging, network, exceptions, pyutils
@@ -38,6 +39,20 @@ def queue_wait_for_pyroers(caller):
 def queue_wait_for_reversers(caller):
 	queue_wait(dqueues.reverse_dns, 'reversers',
 		'PTR resolve IP addresses', caller)
+def thread_queues_emptyer():
+	""" Walk though all daemon queues, and empty them to avoid consuming
+		system resources, when :term:`licornd.network <licornd.network.enabled>`
+		is disabled.
+	"""
+
+	for qname, queue in dqueues.items():
+		try:
+			item = queue.get_nowait()
+			while item:
+				item = queue.get_nowait()
+		except Empty:
+			logging.progress('%s: queue %s successfully emptyed.' % (
+					current_thread().name, qname))
 def thread_network_links_builder():
 	""" Scan our known machines, then launch a discover operation on local
 	network(s). The scan & discover operations consist in pinging hosts, and
@@ -67,6 +82,7 @@ def thread_network_links_builder():
 			dqueues.arpings.put(mid)
 			pass
 
+	# we need to wait for all machines to be discovered "UP" to continue.
 	queue_wait_for_pingers(caller)
 
 	for mid in mids:
@@ -74,11 +90,13 @@ def thread_network_links_builder():
 			if machines[mid].status & host_status.ONLINE:
 				dqueues.pyrosys.put(mid)
 
-	queue_wait_for_pyroers(caller)
-	queue_wait_for_reversers(caller)
-	queue_wait_for_arpingers(caller)
+	# don't wait for threads, some take forever to timeout and
+	# block everything else...
+	# queue_wait_for_reversers(caller)
+	# queue_wait_for_pyroers(caller)
+	# queue_wait_for_arpingers(caller)
 
-	machines.scan_network2(wait_until_finished=True)
+	machines.scan_network2(wait_until_finished=False)
 
 	logging.info('%s: %s initial network scan (took %s).' % (caller,
 		stylize(ST_STOPPED, 'finished'),
@@ -152,7 +170,7 @@ class DNSReverserThread(QueueWorkerThread):
 					LMC.machines[mid].hostname] = LMC.machines[mid]
 
 		assert ltrace('machines', '< %s.process(%s)' % (
-		self.name, LMC.machines[mid].hostname))
+				self.name, LMC.machines[mid].hostname))
 class PingerThread(QueueWorkerThread, network.Pinger):
 	""" Just Ping a machine, and store its status (UP or DOWN), depending on
 		the pong status.

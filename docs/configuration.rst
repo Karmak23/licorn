@@ -34,8 +34,10 @@ General directives
 		How many resolver threads to start in pools. This value is common to all threads pools (Pingers, Arpingers, Reversers, PyroFinders, etc). Default: **5 threads** will be started. There is no configuration for min and max yet.
 
 	licornd.threads.wipe_time
-		The cycle delay of :term:`PeriodicThreadsCleaner`. How long will it wait between each interation of its cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect its first run, which is always 30 seconds after daemon start.
+		The cycle delay of :term:`PeriodicThreadsCleaner` and :term:`QueuesEmptyer` threads. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
 
+	licornd.network.enabled
+		Enable or disable the network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and server-based status update. Note that networked connections to the :ref:`CommandListener <cmdlistener>` are still possible, and thus client based status push continues to work, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
 WMI related
 -----------
