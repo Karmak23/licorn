@@ -88,9 +88,14 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 			current_thread().name, self.name, self.lock()))
 		self.lock().release()
 	def is_locked(self):
-		""" WARNING: calling this method costs. """
-		if self.lock().acquire(blocking=False):
-			self.lock().release()
+		""" Return True if current controller lock is acquired, else False.
+
+			.. warning:: calling this :meth:`is_locked` method costs a few CPU
+				cycles, because of the object lookup (see note above). Try to
+				avoid using it as much as possible. """
+		the_lock = self.lock()
+		if the_lock.acquire(blocking=False):
+			the_lock.release()
 			return False
 		return True
 class CoreController(LockedController):
