@@ -17,9 +17,9 @@ from licorn.foundations.base    import Singleton
 from licorn.foundations.classes import FileLock
 
 from licorn.core         import LMC
-from licorn.core.classes import GiantLockProtectedObject
+from licorn.core.classes import LockedController
 
-class KeywordsController(Singleton, GiantLockProtectedObject):
+class KeywordsController(Singleton, LockedController):
 
 	init_ok = False
 	load_ok = False
@@ -29,7 +29,7 @@ class KeywordsController(Singleton, GiantLockProtectedObject):
 		if KeywordsController.init_ok:
 			return
 
-		GiantLockProtectedObject.__init__(self, 'keywords')
+		LockedController.__init__(self, 'keywords')
 
 		self.keywords      = {}
 		self.changed       = False

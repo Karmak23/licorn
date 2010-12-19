@@ -16,9 +16,9 @@ from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import host_status, host_types
 
 from licorn.core         import LMC
-from licorn.core.classes import GiantLockProtectedObject
+from licorn.core.classes import LockedController
 
-class SystemController(Singleton, GiantLockProtectedObject):
+class SystemController(Singleton, LockedController):
 	""" This class implement a local system controller. It is meant to be used
 		remotely, via Pyro calls, to act on the local machine, or transmit
 		informations (status, uptime, load, etc) to the caller. """
@@ -31,7 +31,7 @@ class SystemController(Singleton, GiantLockProtectedObject):
 		if SystemController.init_ok:
 			return
 
-		GiantLockProtectedObject.__init__(self, 'system')
+		LockedController.__init__(self, 'system')
 
 		self.status = host_status.ACTIVE
 

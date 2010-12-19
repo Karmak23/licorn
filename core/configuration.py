@@ -23,9 +23,9 @@ from licorn.foundations.base      import LicornConfigObject, Singleton, \
 from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
-from licorn.core.classes import GiantLockProtectedObject
+from licorn.core.classes import LockedController
 
-class LicornConfiguration(Singleton, GiantLockProtectedObject):
+class LicornConfiguration(Singleton, LockedController):
 	""" Contains all the underlying system configuration as attributes.
 		Defines some methods for modifying the configuration.
 	"""
@@ -43,7 +43,7 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 		assert ltrace('configuration', '> __init__(minimal=%s, batch=%s)' % (
 			minimal, batch))
 
-		GiantLockProtectedObject.__init__(self, name='configuration')
+		LockedController.__init__(self, name='configuration')
 
 		self.app_name = 'Licorn®'
 

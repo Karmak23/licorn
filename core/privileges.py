@@ -17,15 +17,15 @@ from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
 
 from licorn.core         import LMC
-from licorn.core.classes import GiantLockProtectedObject
+from licorn.core.classes import LockedController
 
-class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
+class PrivilegesWhiteList(Singleton, LockedController):
 	""" Manage privileges whitelist. """
 
 	init_ok       = False
 	load_ok       = False
 	_licorn_protected_attrs = (
-			GiantLockProtectedObject._licorn_protected_attrs
+			LockedController._licorn_protected_attrs
 			+ ['changed', 'conf_file']
 		)
 	def __init__(self, conf_file=None):
@@ -37,7 +37,7 @@ class PrivilegesWhiteList(Singleton, GiantLockProtectedObject):
 		if PrivilegesWhiteList.init_ok:
 			return
 
-		GiantLockProtectedObject.__init__(self, 'privileges')
+		LockedController.__init__(self, 'privileges')
 
 		if conf_file is None:
 			self.conf_file = LMC.configuration.privileges_whitelist_data_file

@@ -21,7 +21,7 @@ from licorn.foundations.base      import Enumeration, FsapiObject, \
 
 from licorn.core import LMC
 
-class GiantLockProtectedObject(MixedDictObject, Pyro.core.ObjBase):
+class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	""" Object thread protected by a global :class:`RLock`. This doesn't mean
 		its internal object are not locked or lockable, too. The
 		:meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
@@ -43,12 +43,12 @@ class GiantLockProtectedObject(MixedDictObject, Pyro.core.ObjBase):
 	def __init__(self, name, warnings=True):
 		MixedDictObject.__init__(self, name)
 		Pyro.core.ObjBase.__init__(self)
-		assert ltrace('objects', '| GiantLockProtectedObject.__init__(%s, %s)' % (
+		assert ltrace('objects', '| LockedController.__init__(%s, %s)' % (
 			name, warnings))
 
 		self.warnings = warnings
 
-		# Create lock holder objects for the current GiantLockProtectedObject
+		# Create lock holder objects for the current LockedController
 		# and all CoreUnitObjects stored inside us. The giant_lock is hidden,
 		# in case we iter*() the master lock object, for it to return only the
 		# UnitObject locks.
@@ -83,7 +83,7 @@ class GiantLockProtectedObject(MixedDictObject, Pyro.core.ObjBase):
 			self.lock().release()
 			return False
 		return True
-class CoreController(GiantLockProtectedObject):
+class CoreController(LockedController):
 	""" The CoreController class implements multiple functionnalities:
 
 		- storage for :class:`CoreUnitObject`, via the dict part of
@@ -97,11 +97,11 @@ class CoreController(GiantLockProtectedObject):
 
 	"""
 	_licorn_protected_attrs = (
-			GiantLockProtectedObject._licorn_protected_attrs
+			LockedController._licorn_protected_attrs
 			+ [ 'backends', 'extensions' ]
 		)
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
-		GiantLockProtectedObject.__init__(self, name=name, warnings=warnings)
+		LockedController.__init__(self, name=name, warnings=warnings)
 
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
@@ -148,7 +148,7 @@ class CoreController(GiantLockProtectedObject):
 		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
 			key, value))
 		with self.lock():
-			GiantLockProtectedObject.__setitem__(self, key, value)
+			LockedController.__setitem__(self, key, value)
 			for mapping_name, mapping_dict in self._reverse_mappings.items():
 				assert ltrace(self.name,
 					'| CoreController.__setitem__(reverse %s for %s)' % (
@@ -165,7 +165,7 @@ class CoreController(GiantLockProtectedObject):
 		with self.lock():
 			for mapping_name, mapping_dict in self._reverse_mappings.items():
 				del mapping_dict[getattr(self[key], mapping_name)]
-			GiantLockProtectedObject.__delitem__(self, key)
+			LockedController.__delitem__(self, key)
 	def exists(self, oid=None, **kwargs):
 		if oid:
 			return oid in self
@@ -705,7 +705,7 @@ class CoreFSController(CoreController):
 
 		#logging.notice("special_dirs = %s" % special_dirs.dump_status(True))
 		return special_dirs
-class ModuleManager(GiantLockProtectedObject):
+class ModuleManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
 
@@ -713,13 +713,13 @@ class ModuleManager(GiantLockProtectedObject):
 
 	"""
 	_licorn_protected_attrs = (
-			GiantLockProtectedObject._licorn_protected_attrs
+			LockedController._licorn_protected_attrs
 			+ ['_available_modules', 'module_type', 'module_path',
 				'module_sym_path']
 		)
 	def __init__(self, name, module_type, module_path, module_sym_path):
 		""" TODO: implement module_sym_path auto detection. """
-		GiantLockProtectedObject.__init__(self, name)
+		LockedController.__init__(self, name)
 		self._available_modules = MixedDictObject('<no_type_yet>')
 		self.module_type = module_type
 		self.module_path = module_path
