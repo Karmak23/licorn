@@ -217,7 +217,10 @@ class ArpingerThread(QueueWorkerThread):
 
 		with LMC.machines[mid].lock():
 			try:
-				LMC.machines[mid].ether = self.arp_table.get(dumbnet.addr(mid))
+				# str() is needed to convert from dumbnet.addr() type.
+				LMC.machines[mid].ether = str(
+						self.arp_table.get(dumbnet.addr(mid)))
+
 			except Exception, e:
 				logging.warning2('%s: exception %s for host %s.' % (
 					self.name, e, mid))

@@ -852,7 +852,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 			'status'  : str(m[mid].status) + hostname,
 			'hostname': hostname,
 			'ip'      : m[mid].ip,
-			'ether'   : m[mid].ether,
+			'ether'   : m[mid].ether if m[mid].ether else _('<unknown>') + hostname,
 			'expiry'  : m[mid].expiry,
 			'managed' : str(m[mid].managed) + hostname
 		}
