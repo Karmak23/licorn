@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Licorn foundations - http://dev.licorn.org/documentation/foundations
+Licorn core: Groups - http://docs.licorn.org/core/groups.html
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
-Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
-Licensed under the terms of the GNU GPL version 2
+:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>, partial (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>, partial (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+:license: under the terms of the GNU GPL version 2
 """
 
 import os, stat, posix1e, re
@@ -21,7 +20,8 @@ from licorn.core         import LMC
 from licorn.core.classes import CoreController
 
 class GroupsController(Singleton, CoreController):
-	""" Manages the groups and the associated shared data on a Linux system. """
+	""" Manages the groups and the associated shared data on a Linux system.
+	"""
 
 	init_ok = False
 	load_ok = False
@@ -136,12 +136,7 @@ class GroupsController(Singleton, CoreController):
 
 		assert ltrace('groups', '< WriteConf()')
 	def Select(self, filter_string):
-		""" Filter group accounts on different criteria:
-			- 'system groups': show only «system» groups (root, bin, daemon,
-				apache…),	not normal group account.
-			- 'normal groups': keep only «normal» groups, which includes
-				Licorn administrators
-			The criteria values are defined in /etc/{login.defs,adduser.conf}
+		""" Filter group accounts on different criteria.
 		"""
 
 		filtered_groups = []
@@ -1273,16 +1268,18 @@ class GroupsController(Singleton, CoreController):
 
 			NOT locked because called from already locked methods.
 
-			name/gid: the standard group to verify depended upon system groups.
-			minimal: if True, only the system groups are checked. Else, symlinks
-				in the homes of standard group members and responsibles are also
-				checked (can be long, depending on the number of members).
-			batch: correct all errors without prompting.
-			auto_answer: an eventual pre-typed answer to a preceding question
-				asked outside of this method, forwarded to apply same answer to
-				all questions.
-			force: not used directly in this method, but forwarded to called
-				methods which can use it.
+			:param name:
+			:param gid: the standard group to verify depended upon system groups.
+			:param minimal: if True, only the system groups are checked. Else,
+							symlinks in the homes of standard group members and
+							responsibles are also checked (can be long,
+							depending on the number of members).
+			:param batch: correct all errors without prompting.
+			:param auto_answer: an eventual pre-typed answer to a preceding
+								question asked outside of this method, forwarded
+								to apply same answer to all questions.
+			:param force: not used directly in this method, but forwarded to
+							called methods which can use it.
 		"""
 
 		gid, name = self.resolve_gid_or_name(gid, name)
@@ -1532,15 +1529,16 @@ class GroupsController(Singleton, CoreController):
 
 			NOT locked because subparts are, where needed.
 
-			gids_to_check: a list of GIDs to check. If you don't have GIDs but
-				group names, use name_to_gid() before.
-			minimal: don't check group symlinks in member's homes if True.
-			batch: correct all errors without prompting.
-			auto_answer: an eventual pre-typed answer to a preceding question
-				asked outside of this method, forwarded to apply same answer to
-				all questions.
-			force: not used directly in this method, but forwarded to called
-				methods which can use it.
+			:param gids_to_check: a list of GIDs to check. If you don't have
+									GIDs but group names, use name_to_gid()
+									before.
+			:param minimal: don't check group symlinks in member's homes if True.
+			:param batch: correct all errors without prompting.
+			:param auto_answer: an eventual pre-typed answer to a preceding
+								question asked outside of this method, forwarded
+								to apply same answer to all questions.
+			:param force: not used directly in this method, but forwarded to
+							called methods which can use it.
 		"""
 
 		assert ltrace('groups', '''> CheckGroups(gids_to_check=%s, minimal=%s, '''

@@ -22,15 +22,16 @@ from licorn.foundations.base      import Enumeration, FsapiObject, \
 from licorn.core import LMC
 
 class LockedController(MixedDictObject, Pyro.core.ObjBase):
-	""" Object thread protected by a global :class:`RLock`. This doesn't mean
-		its internal object are not locked or lockable, too. The
-		:meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
-		methods automatically aquire and release :attr:`lock`.
+	""" Thread-safe object, protected by a global :class:`~threading.RLock`. This
+		doesn't mean its internal unit-object are not locked or lockable.
+		The :meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
+		methods automatically aquire and release the global  :attr:`lock`.
 
-		the :attr:`lock` attribute is really a method returning the
-		:class:`RLock` object, because it is not stored inside the current
-		instance: Pyro is not able to pickle a :class:`RLock` object, so it
-		must not lie here.
+		.. note:: the :attr:`lock` attribute is really a method returning the
+			:class:`~threading.RLock` object, because the lock object itself is not stored
+			inside the instance: as Pyro can't pickle a :class:`~threading.RLock` object,
+			it must be stored in the :class:`LockManager` and looked up
+			everytime, until we found a better solution.
 
 		.. versionadded:: 1.3
 
@@ -56,11 +57,14 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 		lock_manager._giant_lock = RLock()
 		setattr(LMC.locks, self.name, lock_manager)
 	def __getitem__(self, key):
-		""" return the value, but protect us against concurrent accesses. """
+		""" From :class:`LockedController`: this is a classic
+			:meth:`__getitem__` method, made thread-safe by encapsulating it
+			with the Controller's global :class:`~threading.RLock`. """
 		with self.lock():
 			return MixedDictObject.__getitem__(self, key)
 	def __setitem__(self, key, value):
-		""" Add a new element inside us protected with our lock. """
+		""" the classic :meth:`__setitem__` method, encapsulated withn the
+			controller's global :class:`~threading.RLock` to be thread-safe. """
 		with self.lock():
 			MixedDictObject.__setitem__(self, key, value)
 	def __delitem__(self, key):
@@ -68,12 +72,18 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 		with self.lock():
 			MixedDictObject.__delitem__(self, key)
 	def acquire(self):
+		""" acquire the controller global lock. """
 		assert ltrace('thread', '%s: acquiring %s %s.' % (
 			current_thread().name, self.name, self.lock()))
 		self.lock().acquire()
 	def lock(self):
+		""" Return the controller global :class:`~threading.RLock`. This is a method,
+			not an attribute because the lock must be looked up: it is not
+			stored inside the controller but in the :class:`LockManager`.
+		"""
 		return getattr(getattr(LMC.locks, self.name), '_giant_lock')
 	def release(self):
+		""" release the controller global lock. """
 		assert ltrace('thread', '%s: releasing %s %s.' % (
 			current_thread().name, self.name, self.lock()))
 		self.lock().release()
@@ -84,14 +94,21 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 			return False
 		return True
 class CoreController(LockedController):
-	""" The CoreController class implements multiple functionnalities:
+	""" The :class:`CoreController` class implements multiple functionnalities:
 
-		- storage for :class:`CoreUnitObject`, via the dict part of
-			:class:`MixedDictObject`
-		- backend and extensions resolution via the generic method
-			load_modules(). Backend priorities are handled, if existing
-			(some backend types do not use priorities, they are equals).
-		- the reverse mapping via one or more protected dictionnary.
+		- storage for :class:`CoreUnitObject` s, via the dict part of
+		  :class:`~licorn.foundations.base.MixedDictObject`.
+		- backends and extensions resolution via the generic method
+		  :meth:`load_modules`. Backend priorities are handled if supported by
+		  the backends themselves (some do, and some don't).
+		- reverse mappings via one or more protected dictionnary, created and
+		  updated on the fly.
+
+		.. warning:: updating :class:`CoreUnitObject` s attributes directly
+			doesn't update the reverse mappings yet. This may be implemented in
+			a future release. The reverse mapping functionnality may thus be
+			considered incomplete, because a part of the update process must be
+			done manually. Sorry for that, folks.
 
 		.. versionadded:: 1.3
 
@@ -136,8 +153,11 @@ class CoreController(LockedController):
 		else:
 			self.extensions = None
 	def reload(self):
-		""" load extensions if possible (not forcibly, if we still are in
-			client first pass). """
+		""" load extensions if possible. This could not be possible if the
+			controller is :meth:`reload` ing during the CLIENT-daemon first
+			launch of its method
+			:meth:`~licorn.core.LicornMasterController.init_client_first_pass`.
+		"""
 
 		assert ltrace(self.name, '| CoreController.reload()')
 
@@ -167,6 +187,24 @@ class CoreController(LockedController):
 				del mapping_dict[getattr(self[key], mapping_name)]
 			LockedController.__delitem__(self, key)
 	def exists(self, oid=None, **kwargs):
+		""" Return True if a given :obj:`oid` exists as a primary key of a
+			stored :class:`CoreUnitObject`, or if one of the :obj:`kwarg`
+			keys exists as one of our reverse mappings keys pointing to an
+			existing object.
+
+			:param oid: an :class:`integer` (Object ID)
+			:param kwargs: any positional argument refering to an existing
+							reverse mapping in the current controller. For
+							example, in
+							:class:`~licorn.core.users.UsersController`, we can
+							call :meth:`exists` with argument ``login='olive'``
+							to find if a :class:`~licorn.core.users.User` whose
+							`login` is `olive` exists or not.
+			:returns: boolean ``True`` or ``False``
+			:raise exceptions.BadArgumentError: if both :obj:`oid` and
+												:obj:`kwargs` are empty,
+												``None`` or ``False``.
+		"""
 		if oid:
 			return oid in self
 		if kwargs:
@@ -177,8 +215,11 @@ class CoreController(LockedController):
 		raise exceptions.BadArgumentError(
 			"You must specify an ID or a name to test existence of.")
 	def guess_identifier(self, value):
-		""" Try to guess the real ID of one of our internal objects from a
-			single and unknown-typed info given as argument. """
+		""" Try to guess a real ID of one of our :class:`CoreUnitObject`, from
+			an unknown-typed information given as argument.
+
+			:param value: can be an ID, a name, whatever reverse mapping key.
+			"""
 		if value in self:
 			return value
 		for mapping in self._reverse_mappings:
@@ -226,8 +267,9 @@ class CoreController(LockedController):
 			We use a copy, in case there is no prefered yet: LMC.backends
 			will change and this would crash the for_loop.
 
-			TODO: move this method into the BackendsManager() instead of the
-			controller.
+			.. note:: TODO: this method may soon move into the
+				:class:`~licorn.core.backends.BackendsManager` instead of the
+				controller.
 			"""
 
 		assert ltrace(self.name, '> find_prefered_backend(%s)' %

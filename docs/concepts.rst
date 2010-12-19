@@ -8,6 +8,5 @@ Understanding Licorn®
 
 	design
 	models
-	specs
 	implementation
 

@@ -6,6 +6,6 @@ Developping for Licorn® (the API)
 .. toctree::
 	:maxdepth: 2
 
-	core
+	core/index
 	foundations
 	implementation

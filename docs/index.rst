@@ -1,5 +1,15 @@
 :orphan:
 
+.. comment for special characters …
+   ← ↑ → ↓ ↖ ↗ ↘ ↙ ↝ ↣ ↤ ↥ ↧ ↩ ↪ ↫ ↬
+   ↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷
+   ↹ ↺ ↻ ⇄ ⇅ ⇵ ⇆ ⇇ ⇈ ⇉ ⇊
+   ⇐ ⇑ ⇒ ⇓ ⇔ ⇕ ⇖ ⇗ ⇘ ⇙ ⇠ ⇡ ⇢ ⇣ ⇤ ⇥
+   ⇱ ⇲ ∃ ∄ ∀ ∈ ∉ ∋ ∌ ∊ ∍
+   ∝ ∞ … † ‰ ‱ ℡ ™ ℻ ⍺ ⎗ ⎘ ⎙ ⎚ ⟲ ⟳
+   ⌨ ⌫ ⌘ ⌃ ⌤ ⌥ ⏏ ⏎ ⎆ ⎇ ⇪ ⇧
+   ㎐㎑㎒㎓㎔㎅㎆㎇
+
 .. Licorn® documentation master file, created by
    sphinx-quickstart on Tue Nov 23 22:29:46 2010.
    You can adapt this file completely to your liking, but it should at least
@@ -17,7 +27,7 @@ Licorn® Documentation
 
 Welcome to Licorn® documentation site. *It is undergoing construction*: a lot of documentation exists in the source code and is beiing imported here on a 2-to-3-updates-per-week basis.
 
-As a beggining, I suggest you read the :ref:`installation process <install>`, then you'll be ready to :ref:`dive into the quickstarter <quickstart>` and enjoy the mystic-horse-powers of our beloved creation. Fasten your keyboard.
+As a beginning, I suggest you read the :ref:`installation process <install>`, then you'll be ready to :ref:`dive into the quickstarter <quickstart>` and enjoy the mystic-horse-powers of our beloved creation. Fasten your keyboard.
 
 Using Licorn®
 =============
@@ -27,7 +37,7 @@ Using Licorn®
 
 	features
 	install
-	userdoc
+	userdoc/index
 
 
 Developping with or for Licorn®

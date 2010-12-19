@@ -15,8 +15,8 @@ Backend specific configuration can be reached here::
 
 	get config backends
 	#more to come...
-	
-	
+
+
 Main Configuration file
 =======================
 
@@ -52,10 +52,10 @@ WMI related
 
 	licornd.wmi.port
 		**Port `3356`** by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
-	
+
 	licornd.wmi.group
-		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is **`licorn-wmi`** . Any value referencing a non existing group will trigger a group creation at next daemon start. It is a good idea (or not, depending on your users) to *register this group as a privilege*. 
-	
+		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is **`licorn-wmi`** . Any value referencing a non existing group will trigger a group creation at next daemon start. It is a good idea (or not, depending on your users) to *register this group as a privilege*.
+
 	licornd.wmi.log_file
 		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
 
@@ -89,7 +89,7 @@ Other directives
 
 	experimental.enabled
 		turn on experimental features, depending on wich version of Licorn® you have installed. For example, in version 1.2.3, the experimental directive enables the `Machines` tab in the WMI (the wires are already enabled but non-sysadmins don't get the feature).
-	
+
 
 Check configuration files
 =========================
@@ -102,7 +102,7 @@ In the system directory :file:`/etc/licorn/check.d/`, `licornd` will look for fi
 
 	users.specific.conf
 	users.special_dirs.conf
-	
+
 	# you can even put special punctuation in filenames...
 	users.dir_a and dir-B.conf
 
@@ -110,7 +110,7 @@ But **these names are not**::
 
 	# lacks the 's' at the end of 'user'
 	user.dirs.conf
-	
+
 	# suffix suggests it's disabled: it is!
 	users.specific.conf.disabled
 
@@ -138,20 +138,20 @@ Check files syntax
 
 * where:
 
-	* `<relative_path>` is relative from your home directory, or from the group shared dir. For exemple, protecting your :file:`.gnome` directory, just start the line with `.gnome`. 
+	* `<relative_path>` is relative from your home directory, or from the group shared dir. For exemple, protecting your :file:`.gnome` directory, just start the line with `.gnome`.
 	* `<relative_path>` can be nearly anything you want (UTF-8, spaces, etc accepted). **But NO TAB please**, because `TAB` is the separator.
-	* the `<TAB>` is mandatory (see above). 
+	* the `<TAB>` is mandatory (see above).
 
 * And <permission_definition> is one of: :term:`NOACL`, `POSIXONLY`, :term:`RESTRICT[ED]`, `PRIVATE` or a :term:`Complex ACL definition`:
 
 .. glossary::
-	
+
 	NOACL
 		(`POSIXONLY` is a synonym) defines that the dir or file named `<relative_path>` and all its contents will have **NO POSIX.1e ACLs** on it, only standard unix perms. When checking this directory or file, Licorn® will apply standard permssions (`0777` for directories, `0666` for files) and'ed with the current *umask* (from the calling CLI process, not the user's one).
 
 	RESTRICT[ED]
 		(we mean `RESTRICT` or `RESTRICTED`, and `PRIVATE` which are all synonyms) Only posix permissions on this dir, and very restrictive (`0700` for directories, `0600` for regular files), regardless of the umask.
-	
+
 	Complex ACL definition
 		You can define any POSIX.1e ACL here (e.g. `user:Tom:r-x,group:Friends:r-x,group:Trusted:rwx`). This ACL which will be checked for correctness and validity before beiing applyed. **You define ACLs for files only**: ACLs for dirs will be guessed from them. You've got some Licorn® specific :ref:`acls_configuration_shortcuts` for these (see below).
 
@@ -167,7 +167,7 @@ To build you system-wide or user-customized ACLs rules, some special values are 
 
 	@acls.*
 		Refer to factory default values for ACLs, pre-computed in Licorn® (e.g. `@acls.acl_base` refers to the value of `LMC.configuration.acls.acl_base`). More doc to come on this subject later, but command :command:`get config | grep acls` can be a little help for getting all the possible values.
-	
+
 	@defaults.*
 		Refer to factory defaults for system group names or other special cases (see :command:`get config` too, for a complete listing).
 
@@ -176,9 +176,9 @@ To build you system-wide or user-customized ACLs rules, some special values are 
 
 	@groups.*
 		You get the idea (you really know what I want tu put in these parents, don't you?).
-	
+
 	@UX and @GX
-		These are special magic to indicate that the executable bit of files (User eXecutable and Group eXecutable, respectively) should be maintained as it is. This means that prior to the applying of ACLs, Licorn® will note the status of the executable bit and replace these magic flags by the real value of the bit. If you want to force a particular executable bit value, just specify `-` or `x` and the exec bit will be forced off or on, respectively). Note that `@UX` and `@GX` are always translated to `x` for directories, to avoid traversal problems. 
+		These are special magic to indicate that the executable bit of files (User eXecutable and Group eXecutable, respectively) should be maintained as it is. This means that prior to the applying of ACLs, Licorn® will note the status of the executable bit and replace these magic flags by the real value of the bit. If you want to force a particular executable bit value, just specify `-` or `x` and the exec bit will be forced off or on, respectively). Note that `@UX` and `@GX` are always translated to `x` for directories, to avoid traversal problems.
 
 
 You can always find detailled examples in the system configuration files shipped in your Licorn® package.

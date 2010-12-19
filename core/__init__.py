@@ -6,8 +6,8 @@ The Core API of a Licorn system.
 
 ([=\[(,\s])((users|groups|system|configuration|backends|privileges|profiles|machines)\.)
 
-Copyright (C) 2005-2010 Olivier Cortès <oc@meta-it.fr>,
-Licensed under the terms of the GNU GPL version 2
+:copyright: 2005-2010 Olivier Cortès <oc@meta-it.fr>
+:license: GNU GPL version 2
 """
 
 # this @DEVEL@ will be replaced by package maintainers, don't alter it here.
@@ -42,43 +42,10 @@ class LicornMasterController(MixedDictObject):
 		The LMC is not thread-safe per-se, because it doesn't need to. Its
 		methods are only used at daemon boot, when no other object and no
 		thread exist.
-
-		There are 2 ways of calling the LMC:
-
-		* locally (from inside the daemon), the LMC connects the real system
-		  objects, making them accessible for everyone.
-
-			* **SERVER** daemon::
-
-				LMC.init_conf(...)
-				...
-				LMC.init()
-				...
-
-			* **CLIENT** daemon::
-
-				LMC.init_conf(...)
-				...
-				LMC.init_client_first_pass()
-				...
-				(load CommandListener thread here)
-				...
-				LMC.init_client_second_pass()
-				...
-
-		* remotely (from outside the daemon, with no role pre-defined), for use
-		  in CLI tools mainly::
-
-			RWI = LMC.connect()
-			...
-			(put whatever code here)
-			...
-			LMC.release()
-
-		.. versionadded:: 1.3
-			the :class:`LicornMasterController` was created during 1.2 -> 1.3
-			development cycle.
 	"""
+
+	# these class attributes are used internally to be sure the initialization
+	# is done in a good order. Don't touch them.
 	_init_conf_minimal = False
 	_init_conf_full    = False
 	_init_first_pass   = False
@@ -102,13 +69,8 @@ class LicornMasterController(MixedDictObject):
 		MixedDictObject.__init__(self, name)
 		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__), name))
 
-		#: Create the internal lock manager. All the instances of class
-		#: :class:`GiantLockProtectedObject` rely on it, they create
-		#: :class:`RLock` in this container.
 		self.locks = MixedDictObject('locks')
 
-		#: used for client initialization only, assigned on
-		#: :meth:`init_client_first_pass`.
 		self._ServerLMC = None
 	def init_conf(self, minimal=False, batch=False):
 		""" Init only the configuration object (prior to full LMC
@@ -150,10 +112,9 @@ class LicornMasterController(MixedDictObject):
 
 			LicornMasterController._init_conf_full = True
 	def init_server(self, batch=False):
-		""" The :meth:`init_server` method is meant to be called at the
-			beginning of SERVER initialization. It is a one pass method, but
-			calls 3 methods internally: :meth:`__init_first_pass`,
-			:meth:`__init_common` and :meth:`__init_server_final`.
+		""" Meant to be called at the beginning of SERVER-daemon
+			initialization. It is a one pass method. After having
+			called it, the SERVER-daemon's `LMC` is ready to operate.
 		"""
 
 		assert LicornMasterController._init_conf_full
@@ -162,21 +123,38 @@ class LicornMasterController(MixedDictObject):
 		self.__init_common()
 		self.__init_server_final()
 	def init_client_first_pass(self):
-		""" Load [minimal set of] backends, users and groups. """
+		""" Loads backends, users and groups only. There is a small difference
+			between 2 calls of this method, on the client:
+
+			* at the very first launch of the CLIENT-daemon (eg. after package
+			  installation, it will load a **minimal** set of backends, and
+			  load the according users and groups (presumably there will be
+			  less than on the server).
+			* at subsequent launches of the CLIENT-daemon, all backends are
+			  the same as on the server (this has been taken care in
+			  :meth:`init_client_second_pass`), and thus users and groups
+			  contains the data from the server, merged with local (server's
+			  data has precedence). """
 		self.__init_first_pass()
 	def init_client_second_pass(self, ServerLMC):
-		""" Reload [maximum set of] backends, users and groups.
+		""" Reload the backends, users and groups, to correspond to server data.
 
 			* at very first launch of CLIENT daemon, this method will load all
-			  missing backends (those not loaded on first pass), configuring
-			  them to point to the server designed by :obj:`ServerLMC`, and
-			  restart the daemon if needed.
-			* at subsequent launches, will do nothing more because optional
-			  backends are already configured since *previous* second pass of
-			  first launch. Even if doing nothing note, This two-pass init
-			  mechanism is necessary for the CLIENT daemon
-			  first-launch-auto-configuration-magic to work.
+			  missing backends (those not loaded by
+			  :meth:`init_client_first_pass`), configuring them to point to the
+			  server designed by :obj:`ServerLMC`, and restart the local daemon
+			  if needed.
+			* at subsequent launches, this method will do exactly nothing more
+			  than the :meth:`init_client_first_pass`, because optional
+			  backends are already configured since end of CLIENT-daemon first
+			  launch.
 
+			Even if doing nothing new, This two-pass init mechanism is necessary
+			for the CLIENT daemon first-launch-auto-configuration-magic to work.
+
+			:param ServerLMC: a reference to the SERVER-daemon LMC to inspect,
+								in order to synchronize loaded backends and
+								extensions. Stored as `self._ServerLMC`.
 		"""
 
 		assert not LicornMasterController._init_client
@@ -232,12 +210,6 @@ class LicornMasterController(MixedDictObject):
 		# groups will load users as a dependancy.
 		self.groups.load()
 
-		# The :class:`MessageProcessor` is used to communicate with clients
-		# and between servers, via Pyro. This object is a special case, coming
-		# from :module:`licorn.foundations` instead of :module:`licorn.core`,
-		# because other low-level objects in :module:`licorn.foundations` rely
-		# on it.
-		#
 		# We create it in first pass, because :class:`CommandListener` needs it.
 		from licorn.foundations.messaging import MessageProcessor
 		self.msgproc = MessageProcessor(
@@ -301,8 +273,9 @@ class LicornMasterController(MixedDictObject):
 		self.keywords.load()
 	def reload_controllers_backends(self):
 		""" Walk through all controllers and make them reload their backends. If
-			one of them finds a new prefered backend, we must reload: raise the
-			appropriate exception.
+			one of them finds a new prefered backend, we must restart the
+			daemon: raise the appropriate exception to be catched in
+			:term:`MainThread` and handle the stop/start operations.
 		"""
 		assert ltrace('core', '| reload_controllers_backends()')
 
@@ -317,13 +290,21 @@ class LicornMasterController(MixedDictObject):
 				# refreshed backends list.
 				if controller.find_prefered_backend():
 					raise exceptions.NeedRestartException('backends changed.')
-	def connect(self):
-		""" Create remote connections to all Licorn® core objects. Returns the
-			Pyro proxy to the RWI (this is just a shortcut, because RWI is
-			always accessible via :obj:`LMC.rwi`; but this makes easier to
-			write the following code in CLI tools::
 
-			RWI = LMC.connect()
+					# TODO: restart all the CLIENT-daemons too, to (un-) load
+					# the new backend(s), synchronized with the server.
+	def connect(self):
+		""" Create remote connections to all Licorn® core objects. This method
+			excludes calling all other `init*()` methods, because LMC can't be
+			used both locally and remotely.
+
+			Returns the Pyro proxy for the RWI (this is just a shortcut, because
+			the RWI proxy is always accessible via :obj:`LMC.rwi`; but this
+			makes easier to write the following code in CLI tools::
+
+				LMC = LicornMasterController()
+				RWI = LMC.connect()
+				...
 
 		"""
 

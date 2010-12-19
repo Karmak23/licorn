@@ -2,11 +2,9 @@
 """
 Licorn foundations - http://dev.licorn.org/documentation/foundations
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
-Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
-Licensed under the terms of the GNU GPL version 2
+:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>, partial (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>, partial (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+:license: under the terms of the GNU GPL version 2
 """
-
 
 import os, sys, time
 
@@ -21,6 +19,7 @@ from licorn.core         import LMC
 from licorn.core.classes import CoreFSController, CoreUnitObject
 
 class User(CoreUnitObject):
+	""" The User unit-object. """
 	counter = 0
 	def __init__(self, uidNumber=None, login=None, cryptedPassword=None,
 		gidNumber=None, gecos=None, homeDirectory=None, loginShell=None,
@@ -38,7 +37,9 @@ class User(CoreUnitObject):
 		self.loginShell    = loginShell
 		self.groups        = groups
 class UsersController(Singleton, CoreFSController):
-
+	""" Handle global operations on unit User objects,
+		from a system-wide perspective.
+	"""
 	init_ok = False
 	load_ok = False
 

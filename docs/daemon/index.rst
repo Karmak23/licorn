@@ -15,10 +15,10 @@ File & perms related threads
 .. glossary::
 
 	INotifier
-		Receives events on files / dirs from `gamin` and forwards them to the `ACLChecker`.
+		Receives events on files / dirs from `gamin` and forwards them to the :term:`ACLChecker`.
 
 	ACLChecker
-		Receives check requests from `INotifier`. Automatically applies ACLs and standard posix perms when needed. See :ref:`aclchecker` for details.
+		Receives check requests from `INotifier`. Automatically applies ACLs and standard posix perms when needed. For more technical details, head to the :ref:`ACLChecker dedicated documentation <aclchecker>`.
 
 
 Network related threads
@@ -51,6 +51,9 @@ System management related threads
 
 	WMIThread
 		Implements a limited webserver, serving pure virtual semantic URIs and static files (images, CSS, JS...). Implemented as a forked process in the past (doing CLI calls), the WMI has reintegrated the daemon to avoid data duplication and resource waste (forks, sockets, argument and data reparsing...) between the daemon and an external process.
+
+	CommandListener
+		Dedicated to RPC for inter-process (currently :ref:`CLI` only) and inter-machine communications (via the `Pyro <http://www.xs4all.nl/~irmen/pyro3/>`_ exported objects :term:`SystemController` and :term:`MessageProcessor`). for more technical details, see :ref:`cmdlistener` development documentation.
 
 General use threads
 -------------------
