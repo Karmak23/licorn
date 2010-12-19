@@ -697,8 +697,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
 
-		if opts.profile and opts.profile not in LMC.profiles:
-			opts.profile = LMC.profiles.name_to_group(opts.profile)
+		if opts.profile:
+			opts.profile = LMC.profiles.guess_identifier(opts.profile)
 
 		if opts.firstname is None:
 			firstname = None
