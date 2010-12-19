@@ -16,7 +16,7 @@ from licorn.foundations.base   import Singleton, MixedDictObject
 from licorn.core         import LMC
 from licorn.core.classes import ModuleManager
 
-class BackendManager(Singleton, ModuleManager):
+class BackendsManager(Singleton, ModuleManager):
 	_licorn_protected_attrs = ModuleManager._licorn_protected_attrs
 	def __init__(self):
 		assert ltrace('backends', '__init__()')

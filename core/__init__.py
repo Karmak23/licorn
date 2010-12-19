@@ -212,8 +212,8 @@ class LicornMasterController(MixedDictObject):
 
 		# Initialize backends prior to controllers, because
 		# controllers need backends to populate themselves.
-		from backends import BackendManager
-		self.backends = BackendManager()
+		from backends import BackendsManager
+		self.backends = BackendsManager()
 		self.backends.load()
 
 		# users and groups must be OK before everything. For this, backends

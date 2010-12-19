@@ -269,6 +269,8 @@ class LicornConfiguration(Singleton, GiantLockProtectedObject):
 			# don't set in case there is no eth0 on the system.
 			#'licornd.pyro.listen_address': 'if:eth0'
 			'licornd.threads.pool_members' : 10,
+			'licornd.threads.network.min'  : 10,
+			'licornd.threads.network.max'  : 150,
 			'licornd.threads.wipe_time'    : 600,   # 10 minutes
 			'licornd.syncer.port'          : 3344,
 			'licornd.searcher.port'        : 3355,

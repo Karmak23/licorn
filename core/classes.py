@@ -226,7 +226,7 @@ class CoreController(GiantLockProtectedObject):
 			We use a copy, in case there is no prefered yet: LMC.backends
 			will change and this would crash the for_loop.
 
-			TODO: move this method into the BackendManager() instead of the
+			TODO: move this method into the BackendsManager() instead of the
 			controller.
 			"""
 
