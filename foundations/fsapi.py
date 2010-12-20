@@ -98,7 +98,6 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 						continue
 					else:
 						raise e
-
 def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 	auto_answer=None, allgroups=None, allusers=None):
 	""" Check if a dir exists, else create it and apply ACLs on it eventually.
@@ -268,7 +267,7 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 	else:
 		raise exceptions.BadArgumentError(
 			"You must pass something through dirs_infos to check!")
-def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=None,
+def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	auto_answer=None):
 	""" general function to check file/dir """
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer):
