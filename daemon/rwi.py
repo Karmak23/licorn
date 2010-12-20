@@ -1221,6 +1221,34 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						something_done = True
 						LMC.users.LockAccount(uid=uid, lock=opts.lock)
 
+					# NOTE: it is important to do the "del" operation before the
+					# "add" one. In the other direction, there is a bad
+					# side-effect if you add a user to resp-G and delete it from
+					# G after that: the symlink to G is gone for the new resp-G
+					# and this is not wanted (we would need to check --extended
+					# to correct the problem, which would waste CPU cycles and
+					# I/O, to fix a thing that should not have existed).
+					if opts.groups_to_del:
+						something_done = True
+						for g in opts.groups_to_del.split(','):
+							if g != '':
+								try:
+									LMC.groups.DeleteUsersFromGroup(name=g,
+										users_to_del=[ uid ])
+								except exceptions.LicornRuntimeException, e:
+									logging.warning('''Unable to remove user %s from '''
+										'''group %s (was: %s).''' % (
+											stylize(ST_LOGIN, opts.login),
+											stylize(ST_NAME, g),
+											str(e)))
+								except exceptions.LicornException, e:
+									raise exceptions.LicornRuntimeError(
+										'''Unable to remove user %s from '''
+										'''group %s (was: %s).''' % (
+											stylize(ST_LOGIN, opts.login),
+											stylize(ST_NAME, g),
+											str(e)))
+
 					if opts.groups_to_add:
 						something_done = True
 						for g in opts.groups_to_add.split(','):
@@ -1242,27 +1270,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 												LMC.users.uid_to_login(uid)),
 												stylize(ST_NAME, g),
 												str(e)))
-
-					if opts.groups_to_del:
-						something_done = True
-						for g in opts.groups_to_del.split(','):
-							if g != '':
-								try:
-									LMC.groups.DeleteUsersFromGroup(name=g,
-										users_to_del=[ uid ])
-								except exceptions.LicornRuntimeException, e:
-									logging.warning('''Unable to remove user %s from '''
-										'''group %s (was: %s).''' % (
-											stylize(ST_LOGIN, opts.login),
-											stylize(ST_NAME, g),
-											str(e)))
-								except exceptions.LicornException, e:
-									raise exceptions.LicornRuntimeError(
-										'''Unable to remove user %s from '''
-										'''group %s (was: %s).''' % (
-											stylize(ST_LOGIN, opts.login),
-											stylize(ST_NAME, g),
-											str(e)))
 
 					if opts.apply_skel is not None:
 						something_done = True
