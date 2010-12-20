@@ -23,7 +23,7 @@ build: configure i18n
 binary-install: build
 	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)"
 	cp -a interfaces/gui/*.glade "$(SHARE_DIR)"
-	cp -a interfaces daemon core foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
+	cp -a interfaces daemon core extensions foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
 	( \
 		for executable in $(EXECUTABLES); do \
 		ln -sf "$(EXEC_LINK_DIR)"/$$executable \
@@ -37,7 +37,7 @@ binary-install: build
 	ln -sf ../"$(EXEC_LINK_DIR)"/interfaces/wmi "$(SHARE_DIR)"/wmi
 	ln -sf ../"$(EXEC_LINK_DIR)"/core/backends/schemas "$(SHARE_DIR)"/schemas
 
-doc: 
+doc:
 	(cd docs; make html)
 
 installdoc: doc
