@@ -10,6 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 
 import Pyro.core, re, glob, os,posix1e
 from threading import RLock, current_thread
+
 from licorn.foundations           import hlstr, exceptions, logging, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
@@ -752,7 +753,7 @@ class CoreFSController(CoreController):
 
 		#logging.notice("special_dirs = %s" % special_dirs.dump_status(True))
 		return special_dirs
-class ModuleManager(LockedController):
+class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
 
@@ -786,60 +787,61 @@ class ModuleManager(LockedController):
 			self.module_path))
 
 		for entry in os.listdir(self.module_path):
-			if entry[0] == '_':
+
+			if entry[0] == '_' or entry[-3:] != '.py' \
+					or os.path.isdir(self.module_path + '/' + entry):
 				continue
 
-			# remove len('_') + len(mtype) + len('.py')
-			if entry[ -len(self.module_type) -4:] \
-						== '_' + self.module_type + '.py':
+			# remove '.py'
+			module_name = entry[:-3]
 
-				# remove '.py'
-				modname = entry[:-3]
-				# remove '_backend.py' or '_extension.py'
-				module_name = entry[:-len(self.module_type) -4]
-				if LMC.configuration.licornd.role == licornd_roles.CLIENT:
-					if client and module_name not in server_side_modules:
-						# TODO: del module and reload controllers ?
-						break
+			if LMC.configuration.licornd.role == licornd_roles.CLIENT:
+				if client and module_name not in server_side_modules:
+					# TODO: del module and reload controllers ?
+					break
 
-				assert ltrace(self.name, 'importing %s %s' % (self.module_type,
-					stylize(ST_NAME, module_name)))
+			assert ltrace(self.name, 'importing %s %s' % (self.module_type,
+				stylize(ST_NAME, module_name)))
 
-				pymod = __import__(self.module_sym_path + '.' + modname,
-							globals(), locals(), module_name)
-				module = getattr(pymod, module_name)
+			classname = module_name.title() + self.module_type.title()
+			pymod     = __import__(self.module_sym_path + '.' + module_name,
+						globals(), locals(), classname)
+			modclass  = getattr(pymod, classname)
 
-				assert ltrace(self.name, 'imported %s %s, now loading.' % (
-					self.module_type, stylize(ST_NAME, module_name)))
+			# the module instance, at last!
+			module    = modclass()
 
-				module.load()
+			assert ltrace(self.name, 'imported %s %s, now loading.' % (
+				self.module_type, stylize(ST_NAME, module_name)))
 
-				if module.available:
-					if module.enabled:
-						self[module.name] = module
-						assert ltrace(self.name, 'loaded %s %s' % (
-							self.module_type,
-							stylize(ST_NAME, module.dump_status(True))))
-					else:
-						if client and module_name in server_side_modules:
-							# the module is enabled on the server, we must
-							# enable it locally on the client, too.
-							module.enable()
-							self[module.name] = module
-						else:
-							self._available_modules[module.name] = module
-							assert ltrace(self.name, '%s %s is only available' %
-								(self.module_type, stylize(ST_NAME, module.name)
-								))
+			module.load()
+
+			if module.available:
+				if module.enabled:
+					self[module.name] = module
+					assert ltrace(self.name, 'loaded %s %s' % (
+						self.module_type,
+						stylize(ST_NAME, module.dump_status(True))))
 				else:
-					assert ltrace(self.name, '%s %s NOT available' % (
-						self.module_type, stylize(ST_NAME, module.name)))
-
 					if client and module_name in server_side_modules:
-						raise exceptions.LicornRuntimeError('%s %s is enabled '
-							'on the server side but not available locally, '
-							'there is probably an installation problem.' % (
-								self.module_type, module_name))
+						# the module is enabled on the server, we must
+						# enable it locally on the client, too.
+						module.enable()
+						self[module.name] = module
+					else:
+						self._available_modules[module.name] = module
+						assert ltrace(self.name, '%s %s is only available' %
+							(self.module_type, stylize(ST_NAME, module.name)
+							))
+			else:
+				assert ltrace(self.name, '%s %s NOT available' % (
+					self.module_type, stylize(ST_NAME, module.name)))
+
+				if client and module_name in server_side_modules:
+					raise exceptions.LicornRuntimeError('%s %s is enabled '
+						'on the server side but not available locally, '
+						'there is probably an installation problem.' % (
+							self.module_type, module_name))
 
 		assert ltrace(self.name, '< load()')
 	def find_compatibles(self, controller):

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Core LDAP backend - http://docs.licorn.org/
+Licorn OpenLDAP backend - http://docs.licorn.org/core/backends/openldap.html
 
 :copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
 :license: GNU GPL version 2
@@ -17,24 +17,22 @@ import hashlib
 from base64 import encodestring, decodestring
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import readers, process, pyutils
+from licorn.foundations           import readers, process, pyutils, ldaputils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import backend_actions
 from licorn.foundations.base      import Enumeration, Singleton
-from licorn.foundations.ldaputils import addModlist, modifyModlist, \
-										LicornSmallLDIFParser
+from licorn.foundations.constants import backend_actions
 
-from classes     import NSSBackend, UsersBackend, GroupsBackend
-from licorn.core import LMC
+from licorn.core                  import LMC
+from licorn.core.backends         import NSSBackend, UsersBackend, GroupsBackend
 
-class openldap_controller(Singleton, UsersBackend, GroupsBackend):
+class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 	""" OpenLDAP Backend for users and groups.
 
 		.. versionadded:: 1.3
-			This backend was previously known as `ldap`, but has been renamed to
-			`openldap` during the 1.2 ⇢ 1.3 development cycle, to match a little
-			more reality of the underlying system and avoid name conflicts.
+			This backend was previously known as **ldap**, but has been
+			renamed **openldap** during the 1.2 ⇢ 1.3 development cycle, to
+			better match reality and avoid potential name conflicts.
 	"""
 
 	init_ok = False
@@ -42,7 +40,7 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 	def __init__(self):
 		""" Init the LDAP backend instance. """
 
-		if openldap_controller.init_ok:
+		if OpenldapBackend.init_ok:
 			return
 
 		assert ltrace('openldap', '> __init__()')
@@ -53,8 +51,8 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 		self.files.openldap_conf   = '/etc/ldap.conf'
 		self.files.openldap_secret = '/etc/ldap.secret'
 
-		openldap_controller.init_ok = True
-		assert ltrace('openldap', '< __init__(%s)' % openldap_controller.init_ok)
+		OpenldapBackend.init_ok = True
+		assert ltrace('openldap', '< __init__(%s)' % OpenldapBackend.init_ok)
 	def __del__(self):
 		try:
 			self.openldap_conn.unbind_s()
@@ -363,12 +361,13 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 					logging.info('%s: loading schema %s into slapd.' % (
 						self.name, schema))
 
-					for (dn, entry) in LicornSmallLDIFParser(schema).get():
+					for (dn, entry) in \
+							ldaputils.LicornSmallLDIFParser(schema).get():
 						try:
 							logging.progress('''adding %s -> %s into '''
 								'''schema %s.''' % (dn, entry, schema))
 
-							self.openldap_conn.add_s(dn, addModlist(entry))
+							self.openldap_conn.add_s(dn, ldaputils.addModlist(entry))
 						except pyldap.ALREADY_EXISTS:
 							logging.notice('skipping already present dn %s.' % dn)
 
@@ -776,10 +775,10 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 				assert ltrace('openldap', 'update user %s: %s\n%s' % (
 					stylize(ST_LOGIN, login),
 					old_entry,
-					modifyModlist(old_entry, user,
+					ldaputils.modifyModlist(old_entry, user,
 						ignore_list, ignore_oldexistent=1)))
 
-				self.openldap_conn.modify_s(dn, modifyModlist(
+				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(
 					old_entry, user, ignore_list, ignore_oldexistent=1))
 
 			elif mode == backend_actions.CREATE:
@@ -802,11 +801,11 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 				assert ltrace('openldap', 'add user %s: %s' % (
 					stylize(ST_LOGIN, login),
-					addModlist(user, ignore_list)))
+					ldaputils.addModlist(user, ignore_list)))
 
 				self.openldap_conn.add_s(
 					'uid=%s,%s' % (login, self.nss_base_shadow),
-					addModlist(user, ignore_list))
+					ldaputils.addModlist(user, ignore_list))
 			else:
 				logging.warning('%s: unknown mode %s for user %s(uid=%s).' %(
 					self.name, mode, login, uid))
@@ -849,10 +848,10 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 					stylize(ST_LOGIN, name),
 					groups[gid],
 					old_entry,
-					modifyModlist(
+					ldaputils.modifyModlist(
 					old_entry, groups[gid], ignore_list, ignore_oldexistent=1)))
 				"""
-				self.openldap_conn.modify_s(dn, modifyModlist(
+				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(
 					old_entry, group, ignore_list, ignore_oldexistent=1))
 			elif mode == backend_actions.CREATE:
 
@@ -869,7 +868,7 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 				self.openldap_conn.add_s(
 					'cn=%s,%s' % (name, self.nss_base_group),
-					addModlist(group, ignore_list))
+					ldaputils.addModlist(group, ignore_list))
 			else:
 				logging.warning('%s: unknown mode %s for group %s(gid=%s).' % (
 					self.name, mode, name, gid))
@@ -908,5 +907,3 @@ class openldap_controller(Singleton, UsersBackend, GroupsBackend):
 	def compute_password(self, password, salt=None):
 		assert ltrace('openldap', '| compute_password(%s, %s)' % (password, salt))
 		return hashlib.sha1(password).digest()
-
-openldap = openldap_controller()

@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-Licorn DNSmasq plugin for machines handling.
+Licorn DNSmasq backend - http://docs.licorn.org/core/backends/shadow.html
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2
+
 """
 import os
 
 from licorn.foundations           import exceptions
-from licorn.foundations           import readers
+from licorn.foundations           import readers, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.hlstr     import cregex
-from licorn.foundations.network   import build_hostname_from_ip
 
-from classes              import MachinesBackend
-from licorn.core          import LMC
-from licorn.core.machines import Machine
+from licorn.core                  import LMC
+from licorn.core.machines         import Machine
+from licorn.core.backends         import MachinesBackend
 
-class dnsmasq_controller(Singleton, MachinesBackend):
+class DnsmasqBackend(Singleton, MachinesBackend):
 	""" A plugin to cope with dnsmasq files."""
 
 	def __init__(self):
@@ -97,7 +97,7 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		# be sure we have a unique hostname, else many things could
 		# fail.
 		if not hasattr(temp_host, 'hostname'):
-			 temp_host.hostname = build_hostname_from_ip(temp_host.ip)
+			 temp_host.hostname = network.build_hostname_from_ip(temp_host.ip)
 
 		# FIXME: re-order this ti be clean.
 		final_host = Machine(mid=temp_host.ip, hostname=temp_host.hostname,
@@ -154,7 +154,7 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 		for ether in self.leases:
 			 yield Machine(
 				mid=self.leases[ether]['ip'],
-				hostname=build_hostname_from_ip(self.leases[ether]['ip']) \
+				hostname=network.build_hostname_from_ip(self.leases[ether]['ip']) \
 					if not self.leases[ether].has_key('hostname') \
 					or self.leases[ether]['hostname'] == '*' \
 					else self.leases[ether]['hostname'],
@@ -168,5 +168,3 @@ class dnsmasq_controller(Singleton, MachinesBackend):
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass
-
-dnsmasq = dnsmasq_controller()

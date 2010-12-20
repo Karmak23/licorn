@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Core UNIX backend -
+Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
@@ -15,16 +15,16 @@ from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.base    import Singleton
 from licorn.foundations.classes import FileLock
 
-from classes     import NSSBackend, UsersBackend, GroupsBackend
-from licorn.core import LMC
+from licorn.core                import LMC
+from licorn.core.backends       import NSSBackend, UsersBackend, GroupsBackend
 
-class shadow_controller(Singleton, UsersBackend, GroupsBackend):
+class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
 
 		.. versionadded:: 1.3
-			This backend was previously known as `unix`, but has been renamed to
-			`shadow` during the 1.2 ⇢ 1.3 development cycle, to match a little
-			more reality of the underlying system and avoid name conflicts.
+			This backend was previously known as **unix**, but has been
+			renamed **shadow** during the 1.2 ⇢ 1.3 development cycle, to
+			better match reality and avoid potential name conflicts.
 
 	"""
 
@@ -32,9 +32,9 @@ class shadow_controller(Singleton, UsersBackend, GroupsBackend):
 
 	def __init__(self):
 
-		assert ltrace('shadow', '> __init__(%s)' % shadow_controller.init_ok)
+		assert ltrace('shadow', '> __init__(%s)' % ShadowBackend.init_ok)
 
-		if shadow_controller.init_ok:
+		if ShadowBackend.init_ok:
 			return
 
 		NSSBackend.__init__(self, name='shadow',
@@ -46,8 +46,8 @@ class shadow_controller(Singleton, UsersBackend, GroupsBackend):
 		self.available = True
 		self.enabled   = True
 
-		shadow_controller.init_ok = True
-		assert ltrace('shadow', '< __init__(%s)' % shadow_controller.init_ok)
+		ShadowBackend.init_ok = True
+		assert ltrace('shadow', '< __init__(%s)' % ShadowBackend.init_ok)
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
@@ -413,4 +413,3 @@ class shadow_controller(Singleton, UsersBackend, GroupsBackend):
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
-shadow = shadow_controller()
