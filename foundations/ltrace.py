@@ -9,9 +9,9 @@ ltrace - light procedural trace (debug only)
 	pipes:
 		export LICORN_TRACE=all
 		export LICORN_TRACE=configuration
-		export LICORN_TRACE="configuration|ldap"
+		export LICORN_TRACE="configuration|openldap"
 		export LICORN_TRACE="users|backends|plugins"
-		export LICORN_TRACE="groups|ldap"
+		export LICORN_TRACE="groups|openldap"
 		export LICORN_TRACE="machines|dnsmasq"
 		(and so on…)
 
@@ -58,8 +58,8 @@ trc['check']         = 0x000000000000000002000000
 trc['checks']        = 0x000000000000000002000000
 
 trc['backends']      = 0x000000000000ffff00000000
-trc['ldap']          = 0x000000000000000100000000
-trc['unix']          = 0x000000000000000200000000
+trc['openldap']      = 0x000000000000000100000000
+trc['shadow']        = 0x000000000000000200000000
 trc['dnsmasq']       = 0x000000000000000400000000
 
 trc['extensions']    = 0x00000000ffff000000000000

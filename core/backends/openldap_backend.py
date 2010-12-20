@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Core LDAP backend.
+Licorn Core LDAP backend - http://docs.licorn.org/
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2
+
+.. TODO: implement auto-setup part: if backends.openldap.available is forced to
+   True in licorn.conf, we should auto-install packages, setup dirs, LDAP
+   dn, etc.
+
 """
 
 import os
@@ -23,12 +28,13 @@ from licorn.foundations.ldaputils import addModlist, modifyModlist, \
 from classes     import NSSBackend, UsersBackend, GroupsBackend
 from licorn.core import LMC
 
-class ldap_controller(Singleton, UsersBackend, GroupsBackend):
-	""" LDAP Backend for users and groups.
+class openldap_controller(Singleton, UsersBackend, GroupsBackend):
+	""" OpenLDAP Backend for users and groups.
 
-		TODO: implement auto-setup part: if backends.ldap.available is forced to
-		True in licorn.conf, we should auto-install packages, setup dirs, LDAP
-		dn, etc.
+		.. versionadded:: 1.3
+			This backend was previously known as `ldap`, but has been renamed to
+			`openldap` during the 1.2 ⇢ 1.3 development cycle, to match a little
+			more reality of the underlying system and avoid name conflicts.
 	"""
 
 	init_ok = False
@@ -36,22 +42,22 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 	def __init__(self):
 		""" Init the LDAP backend instance. """
 
-		if ldap_controller.init_ok:
+		if openldap_controller.init_ok:
 			return
 
-		assert ltrace('ldap', '> __init__()')
+		assert ltrace('openldap', '> __init__()')
 
-		NSSBackend.__init__(self, name='ldap', nss_compat=('ldap',), priority=5)
+		NSSBackend.__init__(self, name='openldap', nss_compat=('ldap',), priority=5)
 
 		self.files             = Enumeration()
-		self.files.ldap_conf   = '/etc/ldap.conf'
-		self.files.ldap_secret = '/etc/ldap.secret'
+		self.files.openldap_conf   = '/etc/ldap.conf'
+		self.files.openldap_secret = '/etc/ldap.secret'
 
-		ldap_controller.init_ok = True
-		assert ltrace('ldap', '< __init__(%s)' % ldap_controller.init_ok)
+		openldap_controller.init_ok = True
+		assert ltrace('openldap', '< __init__(%s)' % openldap_controller.init_ok)
 	def __del__(self):
 		try:
-			self.ldap_conn.unbind_s()
+			self.openldap_conn.unbind_s()
 		except:
 			pass
 	def load_defaults(self):
@@ -63,7 +69,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		twice.
 		"""
 
-		assert ltrace('ldap', '| load_defaults().')
+		assert ltrace('openldap', '| load_defaults().')
 
 		if LMC.configuration.licornd.role == 'client':
 			waited = 0.1
@@ -99,18 +105,18 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		setup the backend, by gathering LDAP related configuration in system
 		files. """
 
-		assert ltrace('ldap', '> initialize()')
+		assert ltrace('openldap', '> initialize()')
 
 		self.load_defaults()
 
 		try:
 			for (key, value) in readers.simple_conf_load_dict(
-					self.files.ldap_conf).iteritems():
+					self.files.openldap_conf).iteritems():
 				setattr(self, key, value)
 
 		except (IOError, OSError), e:
 			if e.errno != 2:
-				if os.path.exists(self.files.ldap_conf):
+				if os.path.exists(self.files.openldap_conf):
 					logging.warning('''Problem initializing the LDAP backend.'''
 					''' LDAP seems installed but not configured or unusable. '''
 					'''Please run 'sudo chk config -evb' to correct. '''
@@ -140,7 +146,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			try:
 				# if we have access to /etc/ldap.secret, we are root.
 
-				self.secret = open(self.files.ldap_secret).read().strip()
+				self.secret = open(self.files.openldap_secret).read().strip()
 				self.bind_dn = self.rootbinddn
 				self.bind_as_admin = True
 
@@ -171,9 +177,9 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					logging.notice('''seting up default password in %s. You '''
 						'''can change it later if you want by running '''
 						'''FIXME_COMMAND_HERE.''' % (
-						stylize(ST_PATH, self.files.ldap_secret)))
+						stylize(ST_PATH, self.files.openldap_secret)))
 
-					open(self.files.ldap_secret, 'w').write(self.secret)
+					open(self.files.openldap_secret, 'w').write(self.secret)
 					self.bind_dn = self.rootbinddn
 					self.bind_as_admin = True
 
@@ -182,16 +188,16 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 			self.check_defaults()
 
-			self.ldap_conn = pyldap.initialize(self.uri)
+			self.openldap_conn = pyldap.initialize(self.uri)
 
 			self.available = True
 
-		assert ltrace('ldap', '< initialize(%s)' % self.available)
+		assert ltrace('openldap', '< initialize(%s)' % self.available)
 		return self.available
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
-		assert ltrace('ldap', '| check_defaults()')
+		assert ltrace('openldap', '| check_defaults()')
 
 		defaults = (
 			('nss_base_passwd', 'ou=People'),
@@ -218,7 +224,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		point).
 		"""
 
-		assert ltrace('ldap', '| enable_backend()')
+		assert ltrace('openldap', '| enable_backend()')
 
 		if not ('ldap' in LMC.configuration.nsswitch['passwd'] and \
 			'ldap' in LMC.configuration.nsswitch['shadow'] and \
@@ -251,7 +257,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		system administrator to clean them up if wanted.
 		"""
 
-		assert ltrace('ldap', '| disable_backend()')
+		assert ltrace('openldap', '| disable_backend()')
 
 		for key in ('passwd', 'shadow', 'group'):
 			try:
@@ -268,7 +274,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		if not self.available:
 			return
 
-		assert ltrace('ldap', '> check(%s)' % (batch))
+		assert ltrace('openldap', '> check(%s)' % (batch))
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
 			logging.warning('''%s: you must be root or have cn=admin access'''
@@ -281,27 +287,27 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			# load all config objects from the daemon.
 			# there may be none, eg on a fresh install.
 			#
-			ldap_result = self.ldap_conn.search_s(
+			openldap_result = self.openldap_conn.search_s(
 				'cn=config',
 				pyldap.SCOPE_SUBTREE,
 				'(objectClass=*)',
 				['dn', 'cn'])
 
 			# they will be checked later, extract them and keep them hot.
-			dn_already_present = [ x for x,y in ldap_result ]
+			dn_already_present = [ x for x,y in openldap_result ]
 
 		except pyldap.NO_SUCH_OBJECT:
 			dn_already_present = []
 
 		try:
 			# search for the frontend, which is not in cn=config
-			ldap_result = self.ldap_conn.search_s(
+			openldap_result = self.openldap_conn.search_s(
 				self.base,
 				pyldap.SCOPE_SUBTREE,
 				'(objectClass=*)',
 				['dn', 'cn'])
 
-			dn_already_present.extend([ x for x,y in ldap_result ])
+			dn_already_present.extend([ x for x,y in openldap_result ])
 		except pyldap.NO_SUCH_OBJECT:
 			# just forget this error, the schema will be automatically added
 			# if not found.
@@ -310,11 +316,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		# DEVEL DEBUG
 		#
 		#print dn_already_present
-		#for dn, entry in ldap_result:
-		#	ltrace('ldap', '%s -> %s' % (dn, entry))
+		#for dn, entry in openldap_result:
+		#	ltrace('openldap', '%s -> %s' % (dn, entry))
 
 		# Here follows a list of which DN to check for presence, associated to
-		# which ldap_schema to load if the corresponding DN is not present in
+		# which openldap_schema to load if the corresponding DN is not present in
 		# slapd configuration.
 		defaults = (
 			# SKIP dn: cn=config (should be already there at fresh install)
@@ -362,7 +368,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 							logging.progress('''adding %s -> %s into '''
 								'''schema %s.''' % (dn, entry, schema))
 
-							self.ldap_conn.add_s(dn, addModlist(entry))
+							self.openldap_conn.add_s(dn, addModlist(entry))
 						except pyldap.ALREADY_EXISTS:
 							logging.notice('skipping already present dn %s.' % dn)
 
@@ -381,13 +387,13 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 						'''Can't continue without altering slapd '''
 						'''configuration.''')
 
-		assert ltrace('ldap', '< check()')
+		assert ltrace('openldap', '< check()')
 	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
-		assert ltrace('ldap', '> check_system_files()')
+		assert ltrace('openldap', '> check_system_files()')
 
-		if pyutils.check_file_against_dict(self.files.ldap_conf,
+		if pyutils.check_file_against_dict(self.files.openldap_conf,
 				(
 					('base',         None),
 					('uri',          None),
@@ -399,7 +405,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 			# keep the values inside ourselves, to use afterwards.
 			for (key, value) in readers.simple_conf_load_dict(
-				self.files.ldap_conf).iteritems():
+				self.files.openldap_conf).iteritems():
 				setattr(self, key, value)
 
 			#
@@ -407,11 +413,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			#
 
 		try:
-			if not os.path.exists(self.files.ldap_secret) or \
-				open(self.files.ldap_secret).read().strip() == '':
+			if not os.path.exists(self.files.openldap_secret) or \
+				open(self.files.openldap_secret).read().strip() == '':
 				if batch or logging.ask_for_repair(
 					'''%s is empty, but should not.''' \
-					% stylize(ST_SECRET, self.files.ldap_secret)):
+					% stylize(ST_SECRET, self.files.openldap_secret)):
 
 					try:
 						from licorn.foundations import hlstr
@@ -422,7 +428,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 							stylize(ST_LOGIN, 'manager'),
 							stylize(ST_SECRET, genpass)))
 
-						open(self.files.ldap_secret, 'w').write(genpass + '\n')
+						open(self.files.openldap_secret, 'w').write(genpass + '\n')
 
 						#
 						# TODO: update the LDAP database… Without this point, the
@@ -439,17 +445,17 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					raise exceptions.LicornRuntimeError(
 					'''%s is mandatory for %s to work '''
 					'''properly. Can't continue without this, sorry!''' % (
-					self.files.ldap_secret, LMC.configuration.app_name))
+					self.files.openldap_secret, LMC.configuration.app_name))
 		except (OSError, IOError), e :
 			if e.errno != 13:
 				raise e
 
 		#
-		# TODO: check ldap_ldap_conf contents, or verify by researcu that it is
+		# TODO: check openldap_conf contents, or verify by researcu that it is
 		# useless nowadays.
 		#
 
-		assert ltrace('ldap', '< check_system() %s.' % stylize(
+		assert ltrace('openldap', '< check_system() %s.' % stylize(
 			ST_OK, 'True'))
 		return True
 	def is_available(self):
@@ -458,7 +464,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		they are, else this would cost too much. There are dedicated functions
 		to check and alter the configuration. """
 
-		if os.path.exists(self.files.ldap_conf) \
+		if os.path.exists(self.files.openldap_conf) \
 			and os.path.exists("/etc/ldap/slapd.d"):
 			# if all of these exist, libpam-ldap and slapd are installed. It
 			# is fine to assume that we can use them to handle the backend data.
@@ -471,22 +477,22 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		users       = {}
 		login_cache = {}
 
-		assert ltrace('ldap', '> load_users() %s' % self.nss_base_shadow)
+		assert ltrace('openldap', '> load_users() %s' % self.nss_base_shadow)
 
 		if process.whoami() == 'root':
 			self.bind(False)
 
 		try:
-			ldap_result = self.ldap_conn.search_s(
+			openldap_result = self.openldap_conn.search_s(
 				self.nss_base_shadow,
 				pyldap.SCOPE_SUBTREE,
 				'(objectClass=shadowAccount)')
 		except pyldap.NO_SUCH_OBJECT:
 			return users, login_cache
 
-		for dn, entry in ldap_result:
+		for dn, entry in openldap_result:
 
-			assert ltrace('ldap', '  load_user(%s)' % entry)
+			assert ltrace('openldap', '  load_user(%s)' % entry)
 
 			temp_user_dict	= {
 				# Get the cn from the dn here, else we could end in a situation
@@ -548,7 +554,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				if entry.has_key(key):
 					temp_user_dict[key] = func(entry[key][0])
 
-			#ltrace('ldap', 'userPassword: %s' % temp_user_dict['userPassword'])
+			#ltrace('openldap', 'userPassword: %s' % temp_user_dict['userPassword'])
 
 			# implicitly index accounts on « int(uidNumber) »
 			users[ temp_user_dict['uidNumber'] ] = temp_user_dict
@@ -556,7 +562,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			# this will be used as a cache for login_to_uid()
 			login_cache[ temp_user_dict['login'] ] = temp_user_dict['uidNumber']
 
-		assert ltrace('ldap', '< load_users()')
+		assert ltrace('openldap', '< load_users()')
 		return users, login_cache
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
@@ -564,22 +570,22 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		groups     = {}
 		name_cache = {}
 
-		assert ltrace('ldap', '> load_groups() %s' % self.nss_base_group)
+		assert ltrace('openldap', '> load_groups() %s' % self.nss_base_group)
 
 		l2u = LMC.users.login_to_uid
 		u   = LMC.users
 
 		try:
-			ldap_result = self.ldap_conn.search_s(
+			openldap_result = self.openldap_conn.search_s(
 				self.nss_base_group,
 				pyldap.SCOPE_SUBTREE,
 				'(objectClass=posixGroup)')
 		except pyldap.NO_SUCH_OBJECT:
 			return groups, name_cache
 
-		for dn, entry in ldap_result:
+		for dn, entry in openldap_result:
 
-			assert ltrace('ldap', '  load_group(%s).' % entry)
+			assert ltrace('openldap', '  load_group(%s).' % entry)
 
 			# Get the cn from the dn here, else we could end in a situation
 			# where the group could not be deleted if it was created manually
@@ -592,7 +598,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				members = entry['memberUid']
 				members.sort() # catch users modifications outside Licorn
 
-				#ltrace('ldap', 'members of %s are:\n%s\n%s' % (
+				#ltrace('openldap', 'members of %s are:\n%s\n%s' % (
 				#	name, members, entry['memberUid']))
 				# Here we populate the cache in users, to speed up future
 				# lookups in 'get users --long'.
@@ -643,7 +649,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				#	"display permissive states.", once = True)
 				pass
 
-		assert ltrace('ldap', '< load_groups()')
+		assert ltrace('openldap', '< load_groups()')
 		return groups, name_cache
 	def save_Users(self):
 		""" save users into LDAP, but only those who need it. """
@@ -676,19 +682,19 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		by the way, fix #133.
 		"""
 
-		assert ltrace('ldap', 'binding as root in SASL/external mode.')
+		assert ltrace('openldap', 'binding as root in SASL/external mode.')
 
 		import ldap.sasl as pyldapsasl
 		auth=pyldapsasl.external()
-		self.ldap_conn.sasl_interactive_bind_s('', auth)
+		self.openldap_conn.sasl_interactive_bind_s('', auth)
 	def bind(self, need_write_access=True):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
-		assert ltrace('ldap','binding as %s.' % (
+		assert ltrace('openldap','binding as %s.' % (
 			stylize(ST_LOGIN, self.bind_dn)))
 
 		if self.bind_as_admin:
 			try:
-				self.ldap_conn.bind_s(self.bind_dn, self.secret, pyldap.AUTH_SIMPLE)
+				self.openldap_conn.bind_s(self.bind_dn, self.secret, pyldap.AUTH_SIMPLE)
 			except pyldap.INVALID_CREDENTIALS:
 				# in rare cases, the error could raise because the LDAP DB is
 				# totally empty.
@@ -707,7 +713,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					# self.initialize() for details.
 					#
 					import getpass
-					self.ldap_conn.bind_s(self.bind_dn,
+					self.openldap_conn.bind_s(self.bind_dn,
 						getpass.getpass('Please enter your LDAP password: '),
 						pyldap.AUTH_SIMPLE)
 				#else:
@@ -756,7 +762,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 			if mode == backend_actions.UPDATE:
 
-				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_shadow,
+				(dn, old_entry) = self.openldap_conn.search_s(self.nss_base_shadow,
 				pyldap.SCOPE_SUBTREE, '(uid=%s)' % login)[0]
 
 				# update these fields to match the eventual new value.
@@ -767,13 +773,13 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				# reencode this field, for slapd not to whym.
 				user['gecos'] = encodestring(user['gecos']).strip()
 
-				assert ltrace('ldap', 'update user %s: %s\n%s' % (
+				assert ltrace('openldap', 'update user %s: %s\n%s' % (
 					stylize(ST_LOGIN, login),
 					old_entry,
 					modifyModlist(old_entry, user,
 						ignore_list, ignore_oldexistent=1)))
 
-				self.ldap_conn.modify_s(dn, modifyModlist(
+				self.openldap_conn.modify_s(dn, modifyModlist(
 					old_entry, user, ignore_list, ignore_oldexistent=1))
 
 			elif mode == backend_actions.CREATE:
@@ -794,11 +800,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				# usefull here] purposes only
 				user['gecos'] = encodestring(user['gecos']).strip()
 
-				assert ltrace('ldap', 'add user %s: %s' % (
+				assert ltrace('openldap', 'add user %s: %s' % (
 					stylize(ST_LOGIN, login),
 					addModlist(user, ignore_list)))
 
-				self.ldap_conn.add_s(
+				self.openldap_conn.add_s(
 					'uid=%s,%s' % (login, self.nss_base_shadow),
 					addModlist(user, ignore_list))
 			else:
@@ -833,10 +839,10 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 
 			if mode == backend_actions.UPDATE:
 
-				(dn, old_entry) = self.ldap_conn.search_s(self.nss_base_group,
+				(dn, old_entry) = self.openldap_conn.search_s(self.nss_base_group,
 				pyldap.SCOPE_SUBTREE, '(cn=%s)' % name)[0]
 
-				assert ltrace('ldap','updating group %s.' % \
+				assert ltrace('openldap','updating group %s.' % \
 					stylize(ST_LOGIN, name))
 
 				""": \n%s\n%s\n%s.' % (
@@ -846,11 +852,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 					modifyModlist(
 					old_entry, groups[gid], ignore_list, ignore_oldexistent=1)))
 				"""
-				self.ldap_conn.modify_s(dn, modifyModlist(
+				self.openldap_conn.modify_s(dn, modifyModlist(
 					old_entry, group, ignore_list, ignore_oldexistent=1))
 			elif mode == backend_actions.CREATE:
 
-				assert ltrace('ldap','creating group %s.' % (
+				assert ltrace('openldap','creating group %s.' % (
 					stylize(ST_LOGIN, name)))
 
 				#
@@ -861,7 +867,7 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 				group['objectClass'] = [
 					'posixGroup', 'licornGroup']
 
-				self.ldap_conn.add_s(
+				self.openldap_conn.add_s(
 					'cn=%s,%s' % (name, self.nss_base_group),
 					addModlist(group, ignore_list))
 			else:
@@ -877,11 +883,11 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 			logging.warning(e[0]['desc'])
 	def delete_User(self, login):
 		""" Delete one user from the LDAP backend. """
-		assert ltrace('ldap', '| delete_User(%s)' % login)
+		assert ltrace('openldap', '| delete_User(%s)' % login)
 
 		try:
 			self.bind()
-			self.ldap_conn.delete_s('uid=%s,%s' % (login, self.nss_base_shadow))
+			self.openldap_conn.delete_s('uid=%s,%s' % (login, self.nss_base_shadow))
 
 		except pyldap.NO_SUCH_OBJECT:
 			pass
@@ -889,18 +895,18 @@ class ldap_controller(Singleton, UsersBackend, GroupsBackend):
 		#	pass
 	def delete_Group(self, name):
 		""" Delete one group from the LDAP backend. """
-		assert ltrace('ldap', '| delete_Group(%s)' % name)
+		assert ltrace('openldap', '| delete_Group(%s)' % name)
 
 		try:
 			self.bind()
-			self.ldap_conn.delete_s('cn=%s,%s' % (name, self.nss_base_group))
+			self.openldap_conn.delete_s('cn=%s,%s' % (name, self.nss_base_group))
 
 		except pyldap.NO_SUCH_OBJECT:
 			pass
 		# except BAD_BIND:
 		#	pass
 	def compute_password(self, password, salt=None):
-		assert ltrace('ldap', '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace('openldap', '| compute_password(%s, %s)' % (password, salt))
 		return hashlib.sha1(password).digest()
 
-ldap = ldap_controller()
+openldap = openldap_controller()

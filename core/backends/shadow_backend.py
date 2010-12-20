@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Core UNIX backend.
+Licorn Core UNIX backend -
 
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
@@ -18,19 +18,26 @@ from licorn.foundations.classes import FileLock
 from classes     import NSSBackend, UsersBackend, GroupsBackend
 from licorn.core import LMC
 
-class unix_controller(Singleton, UsersBackend, GroupsBackend):
-	""" A backend to cope with /etc/`UNIX traditionnal files (shadow system)."""
+class shadow_controller(Singleton, UsersBackend, GroupsBackend):
+	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
+
+		.. versionadded:: 1.3
+			This backend was previously known as `unix`, but has been renamed to
+			`shadow` during the 1.2 ⇢ 1.3 development cycle, to match a little
+			more reality of the underlying system and avoid name conflicts.
+
+	"""
 
 	init_ok = False
 
 	def __init__(self):
 
-		assert ltrace('unix', '> __init__(%s)' % unix_controller.init_ok)
+		assert ltrace('shadow', '> __init__(%s)' % shadow_controller.init_ok)
 
-		if unix_controller.init_ok:
+		if shadow_controller.init_ok:
 			return
 
-		NSSBackend.__init__(self, name='unix',
+		NSSBackend.__init__(self, name='shadow',
 			nss_compat=('files', 'compat'), priority=1)
 
 		# the UNIX backend is always enabled on a Linux system.
@@ -39,12 +46,12 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 		self.available = True
 		self.enabled   = True
 
-		unix_controller.init_ok = True
-		assert ltrace('unix', '< __init__(%s)' % unix_controller.init_ok)
+		shadow_controller.init_ok = True
+		assert ltrace('shadow', '< __init__(%s)' % shadow_controller.init_ok)
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
-		assert ltrace('unix', '> load_Users()')
+		assert ltrace('shadow', '> load_Users()')
 
 		users       = {}
 		login_cache = {}
@@ -69,7 +76,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 			# this will be used as a cache for login_to_uid()
 			login_cache[ entry[0] ] = temp_user_dict['uidNumber']
 
-			assert ltrace('unix', 'loaded user %s' %
+			assert ltrace('shadow', 'loaded user %s' %
 				users[temp_user_dict['uidNumber']])
 
 		try:
@@ -122,17 +129,17 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 				# is harmless if we are loading data for get, and any other
 				# operation (add/mod/del) will fail anyway if we are not root
 				# or group @admins/@shadow.
-				assert ltrace('unix', '''can't load /etc/shadow (perhaps you are '''
+				assert ltrace('shadow', '''can't load /etc/shadow (perhaps you are '''
 					'''not root or a member of group shadow.''')
 			else:
 				raise e
 
-		assert ltrace('unix', '< load_users()')
+		assert ltrace('shadow', '< load_users()')
 		return users, login_cache
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace('unix', '> load_Group()')
+		assert ltrace('shadow', '> load_Group()')
 
 		groups     = {}
 		name_cache = {}
@@ -140,7 +147,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 
 		# if some inconsistency is detected during load and it can be corrected
 		# automatically, do it now ! This flag is global for all groups, because
-		# unix-backend always rewrite everything (no need for more granularity).
+		# shadow-backend always rewrite everything (no need for more granularity).
 		need_rewriting = False
 
 		extras      = []
@@ -210,7 +217,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 				'backend'      : self.name
 				}
 
-			assert ltrace('unix', 'loaded group %s' % groups[gid])
+			assert ltrace('shadow', 'loaded group %s' % groups[gid])
 
 			# this will be used as a cache by name_to_gid()
 			name_cache[entry[0]] = gid
@@ -329,7 +336,7 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 	def save_Groups(self):
 		""" Write the groups data in appropriate system files."""
 
-		assert ltrace('unix', '> save_groups()')
+		assert ltrace('shadow', '> save_groups()')
 
 		groups = LMC.groups
 
@@ -400,10 +407,10 @@ class unix_controller(Singleton, UsersBackend, GroupsBackend):
 			"\n".join(extgroup) + "\n")
 		lock_ext_group.Unlock()
 
-		assert ltrace('unix', '< save_groups()')
+		assert ltrace('shadow', '< save_groups()')
 	def compute_password(self, password, salt=None):
-		assert ltrace('unix', '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace('shadow', '| compute_password(%s, %s)' % (password, salt))
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
-unix = unix_controller()
+shadow = shadow_controller()

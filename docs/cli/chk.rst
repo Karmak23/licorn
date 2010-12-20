@@ -35,7 +35,7 @@ Check the base system, create required groups, check base directories ACLs (but 
 	chk configuration --verbose --batch
 	chk config -vb
 	
-Check the same, with add base directories contents, backends configuration (e.g. load missing schemata in ldap backend)::
+Check the same, with add base directories contents, backends configuration (e.g. load missing schemata in openldap backend)::
 	# check and repair backends too.
 	chk configuration --extended --verbose --batch
 	chk config -evb

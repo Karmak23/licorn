@@ -154,7 +154,7 @@ class INotifier(Thread):
 				'reloading %s controller.' %
 					(self.name, stylize(ST_PATH, path),
 					stylize(ST_NAME, controller.name)))
-			controller.reload_backend('unix')
+			controller.reload_backend('shadow')
 
 		def event_on_config_file(path, event, controller, index):
 			""" We only watch GAMCreated events, because when

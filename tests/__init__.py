@@ -37,10 +37,10 @@ class Testsuite:
 		self.current_context=self.user_context
 	def restore_user_context(self):
 		""" restore user active backend before testsuite runs """
-		if self.user_context == 'unix' and self.current_context != 'unix':
-			process.execute([ 'mod', 'config', '-B', 'ldap'])
-		if self.user_context == 'ldap' and self.current_context != 'ldap':
-			process.execute([ 'mod', 'config', '-b', 'ldap'])
+		if self.user_context == 'shadow' and self.current_context != 'shadow':
+			process.execute([ 'mod', 'config', '-B', 'openldap'])
+		if self.user_context == 'openldap' and self.current_context != 'openldap':
+			process.execute([ 'mod', 'config', '-b', 'openldap'])
 		test_message("Restored initial backend to %s." % self.user_context)
 	def add_scenario(self,scenario):
 		""" add a scenario to the testsuite and set a number for it """

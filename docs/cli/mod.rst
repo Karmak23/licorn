@@ -33,9 +33,9 @@ Backends
 Enabling or disabling a backend is as simple as that::
 
 	# enable the LDAP backend
-	mod config -b ldap
+	mod config -b openldap
 	
 	# disable the LDAP backend
-	mod config -B ldap
+	mod config -B openldap
 	
 	

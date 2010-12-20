@@ -25,9 +25,6 @@ Here are a few package names:
 	licorn-server
 		A not-so-intrusive option: it will install all the necessary parts for quickstarting a Licorn® server, with only the `shadow` backend configured. You can install the LDAP server package afterwards if you change your mind.
 
-	licorn-ldap-client
-		 For satellite systems of an LDAP enabled server only. Technically this will install the same source code as other server packages, but will configure it to act as a network client (remote-drivable by your Licorn® server). You can change the configuration afterwards, but the Debian packages will not like much. `licorn-server*` and `licorn-client*` are mutually exclusive packages.
-
 	licorn-client
 		the same, without LDAP support.
 
@@ -125,7 +122,7 @@ Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damag
 #. if you want LDAP support:  (see wiki/LDAPBackend] for configuration defaults, which Licorn® expects)::
 
 	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
-	sudo mod config -b ldap
+	sudo mod config -b openldap
 
 #. optional: launch the daemon with `licornd -vD` (`-v`is optionnal, this is the verbose flag). Without `-D` it will fork into the background. With it, you will see what the daemon does. This step is optional because every Licorn® tool will get the daemon automatically started if they need it.
 #. enjoy Licorn® on your Linux system.

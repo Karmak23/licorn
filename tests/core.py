@@ -168,15 +168,15 @@ class ScenarioTest:
 	def check_for_context(self):
 		""" check if the scenario's context is the same than the user. """
 		changed = False
-		if self.context == 'unix' and str(testsuite.current_context) != 'unix':
-			execute([ 'mod', 'config', '-B', 'ldap'])
+		if self.context == 'shadow' and str(testsuite.current_context) != 'shadow':
+			execute([ 'mod', 'config', '-B', 'openldap'])
 			test_message("Backend changed to UNIX")
-			testsuite.current_context = 'unix'
+			testsuite.current_context = 'shadow'
 			changed = True
-		if self.context == 'ldap' and str(testsuite.current_context) != 'ldap':
-			execute([ 'mod', 'config', '-b', 'ldap'])
+		if self.context == 'openldap' and str(testsuite.current_context) != 'openldap':
+			execute([ 'mod', 'config', '-b', 'openldap'])
 			test_message("Backend changed to LDAP")
-			testsuite.current_context = 'ldap'
+			testsuite.current_context = 'openldap'
 			changed = True
 		if changed:
 			time.sleep(2.5)
@@ -390,13 +390,13 @@ def make_backups(mode):
 	# because of this.
 	execute([ 'chk', 'config', '-avvb'])
 
-	if mode == 'unix':
+	if mode == 'shadow':
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
 				execute([ 'cp', '-f', '/etc/%s' % file,
 					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
 
-	elif mode == 'ldap':
+	elif mode == 'openldap':
 		execute([ 'slapcat', '-l', '/tmp/backup.1.ldif' ])
 
 	else:
@@ -408,7 +408,7 @@ def compare_delete_backups(mode):
 	""" """
 	test_message('''comparing backups of system files after tests for side-effects alterations.''')
 
-	if mode == 'unix':
+	if mode == 'shadow':
 		for file in system_files:
 			if os.path.exists('/etc/%s' % file):
 				log_and_exec([ '/usr/bin/diff', '/etc/%s' % file,
@@ -416,7 +416,7 @@ def compare_delete_backups(mode):
 				comment="should not display any diff (system has been cleaned).",
 				verb = True)
 				execute([ 'rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
-	elif mode == 'ldap':
+	elif mode == 'openldap':
 		execute([ 'slapcat', '-l', '/tmp/backup.2.ldif'])
 		log_and_exec([ '/usr/bin/diff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
 			False,
@@ -832,7 +832,7 @@ def test_groups(context):
 	# don't test this one on other context than Unix. The related code is
 	# generic (doesn't lie in backends) and the conditions to reproduce it are
 	# quite difficult with LDAP. The result will be the same anyway.
-	if context == 'unix' :
+	if context == 'shadow' :
 
 		uname = 'utest_267'
 		gname = 'gtest_267'
@@ -1931,7 +1931,7 @@ if __name__ == "__main__":
 	test_short_syntax()
 	test_exclusions()
 	test_status_and_dump()
-	for ctx in ('unix', 'ldap'):
+	for ctx in ('shadow', 'openldap'):
 		test_get(ctx)
 		test_groups(ctx)
 		test_users(ctx)
@@ -1972,11 +1972,11 @@ if __name__ == "__main__":
 			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
 	if options.start_from or options.execute or options.all:
 		try :
-			for ctx in ('unix', 'ldap'):
+			for ctx in ('shadow', 'openldap'):
 				make_backups(ctx)
 			testsuite.run()
 			# compare delete backups
-			for ctx in ('unix','ldap'):
+			for ctx in ('shadow','openldap'):
 				compare_delete_backups(ctx)
 			# TODO: test_concurrent_accesses()
 			testsuite.clean_state_file()

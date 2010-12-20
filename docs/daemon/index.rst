@@ -29,6 +29,8 @@ Network related threads
 	NetworkLinksBuilder
 		Started at daemon boot, to scan the network and ping all known machines. Terminates after the first scan
 
+All threads after this point are grouped in pools. You can :term:`adjust the number of *poolers* in the configuration <licornd.threads.pool_members>`.
+
 	Reverser-*
 		A pool of threads to handle reverse DNS requests.
 
