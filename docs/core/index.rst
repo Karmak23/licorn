@@ -88,7 +88,6 @@ Server-role methods
 .. class:: LicornMasterController
 
 	.. automethod:: init_server
-
 	.. automethod:: reload_controllers_backends
 
 
@@ -110,32 +109,6 @@ Remote-side (no-role) methods
 	.. automethod:: release
 
 
-Core Controllers abstract classes
-=================================
-
-.. module:: licorn.core.classes
-
-.. autoclass:: LockedController
-	:exclude-members: GUID, getAttrProxy, getDaemon, getLocalStorage, delegateTo, getProxy, Pyro_dyncall, remote_retrieve_code, remote_supply_code, setCodeValidator, setPyroDaemon, setGUID
-	:members:
-
-.. autoclass:: CoreController
-	:members:
-
-.. autoclass:: CoreFSController
-	:exclude-members: ACLRule
-	:members:
-
-
-Core Objects abstract classes
-=============================
-
-.. autoclass:: CoreUnitObject
-	:members:
-
-.. autoclass:: CoreStoredObject
-	:members:
-
 Core controllers and objects
 ============================
 
@@ -149,3 +122,42 @@ Core controllers and objects
 	privileges
 	machines
 	system
+
+
+Core Controllers abstract classes
+=================================
+
+.. module:: licorn.core.classes
+
+.. autoclass:: LockedController
+	:exclude-members: GUID, getAttrProxy, getDaemon, getLocalStorage, delegateTo, getProxy, Pyro_dyncall, remote_retrieve_code, remote_supply_code, setCodeValidator, setPyroDaemon, setGUID
+	:members:
+	:undoc-members:
+
+.. autoclass:: CoreController
+	:members:
+	:undoc-members:
+
+.. autoclass:: CoreFSController
+	:exclude-members: ACLRule
+	:members:
+	:undoc-members:
+
+
+Core Objects abstract classes
+=============================
+
+.. autoclass:: CoreUnitObject
+	:members:
+	:undoc-members:
+
+.. autoclass:: CoreStoredObject
+	:members:
+	:undoc-members:
+
+Modules abstract classes
+========================
+
+.. autoclass:: ModulesManager
+	:members:
+	:undoc-members:

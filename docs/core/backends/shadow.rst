@@ -4,8 +4,8 @@
 Shadow backend
 ==============
 
-.. module:: licorn.core.backends
+.. module:: licorn.core.backends.shadow
 
-.. autoclass:: shadow
+.. autoclass:: ShadowBackend
 	:members:
 	:undoc-members:

@@ -1,8 +1,8 @@
 .. _core.privileges:
 
-==========
-Privileges
-==========
+===============
+Core.Privileges
+===============
 
 .. automodule:: licorn.core.privileges
 	:members:

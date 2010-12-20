@@ -37,7 +37,9 @@ General directives
 		The cycle delay of :term:`PeriodicThreadsCleaner` and :term:`QueuesEmptyer` threads. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
 
 	licornd.network.enabled
-		Enable or disable the network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and server-based status update. Note that networked connections to the :ref:`CommandListener <cmdlistener>` are still possible, and thus client based status push continues to work, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
+		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
+
+		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon` are still authorized: **client-initiated connections (daemon synchronization, status push…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
 WMI related
 -----------

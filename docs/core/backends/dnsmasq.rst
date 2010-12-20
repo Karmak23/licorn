@@ -1,9 +1,11 @@
 .. _core.backends.dnsmasq:
 
-=====================
-Core.backends.dnsmasq
-=====================
+===============
+DNSmasq backend
+===============
 
-.. automodule:: licorn.core.backends.dnsmasq
+.. module:: licorn.core.backends.dnsmasq
+
+.. autoclass:: DnsmasqBackend
 	:members:
 	:undoc-members:

@@ -1,9 +1,11 @@
 .. _core.backends.openldap:
 
-======================
-Core.backends.openldap
-======================
+================
+OpenLDAP backend
+================
 
-.. automodule:: licorn.core.backends.openldap
+.. module:: licorn.core.backends.openldap
+
+.. autoclass:: OpenldapBackend
 	:members:
 	:undoc-members:
