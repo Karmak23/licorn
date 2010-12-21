@@ -1890,7 +1890,43 @@ def test_status_and_dump():
 		],
 		descr='''test daemon status and core objects dumping'''
 	))
-
+def test_system():
+	testsuite.add_scenario(ScenarioTest([
+		[ 'killall', '-r', '-9', 'licornd' ],
+		# make backups
+		[ 'mv', '%s/%s' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural),
+		  '%s/%s.bak' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural)],
+		[ 'mv', '%s' % configuration.users.base_path,
+		  '%s.bak' % configuration.users.base_path],
+		# be sure there is no groups and user dir
+		[ 'rm', '-rf', '%s/%s' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural)],
+		[ 'rm', '-rf', '%s' % configuration.users.base_path],
+		# launch any command to start the daemon
+		GET + [ 'users' ],
+		[ 'ls', '-al', '%s' %
+			configuration.defaults.home_base_path],
+		[ 'rm', '-rf', '%s/%s' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural)],
+		[ 'rm', '-rf', '%s' % configuration.users.base_path],
+		[ 'mv', '%s/%s.bak' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural),
+		  '%s/%s' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural)],
+		[ 'mv', '%s.bak' % configuration.users.base_path,
+		  '%s' % configuration.users.base_path],
+		],
+		descr='test if /home/groups and /home/users are created during startup '
+			'of deamon if they don\'t exist.'
+	))
 def to_be_implemented():
 	""" TO BE DONE !
 		#
@@ -1931,6 +1967,7 @@ if __name__ == "__main__":
 	test_short_syntax()
 	test_exclusions()
 	test_status_and_dump()
+	test_system()
 	for ctx in ('shadow', 'openldap'):
 		test_get(ctx)
 		test_groups(ctx)

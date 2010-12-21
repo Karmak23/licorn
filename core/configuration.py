@@ -1258,53 +1258,7 @@ class LicornConfiguration(Singleton, LockedController):
 
 		p = self.acls
 
-		dirs_to_verify = []
-		dir_info = FsapiObject(name="groups_dir")
-		dir_info.path = p.groups_dir
-		dir_info.user = 'root'
-		dir_info.group = 'acl'
-		dir_info.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
-				p.acl_base, p.acl_admins_ro,
-				p.acl_users, p.acl_mask)
-		dir_info.root_dir_acl = True
-
-		dirs_to_verify.append(dir_info)
-
-		dir_info = FsapiObject(name="home_backup")
-		dir_info.path = self.home_backup_dir
-		dir_info.user = 'root'
-		dir_info.group = 'acl'
-		dir_info.root_dir_perm = "%s,%s,%s" % (p.acl_base,
-				p.acl_admins_ro, p.acl_mask),
-		dir_info.dirs_perm = "%s,%s,%s" % (p.acl_base,
-				p.acl_admins_ro, p.acl_mask)
-		if not minimal:
-			# check the contents of these dirs, too (fixes #95)
-			dir_info.files_perm = ("%s,%s,%s" % (
-				p.acl_base, p.acl_admins_ro, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
-		dir_info.content_acl = True
-		dir_info.root_dir_acl = True
-
-		dirs_to_verify.append(dir_info)
-		"""home_backup_dir_info = {
-						'path'      : self.home_backup_dir,
-						'user'      : 'root',
-						'group'     : 'acl',
-						'access_acl': "%s,%s,%s" % (p.acl_base,
-							p.acl_admins_ro, p.acl_mask),
-						'default_acl': "%s,%s,%s" % (p.acl_base,
-							p.acl_admins_ro, p.acl_mask)
-						}
-						if not minimal:
-						# check the contents of these dirs, too (fixes #95)
-						home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (
-							p.acl_base, p.acl_admins_ro, p.acl_mask)
-							).replace('r-x', 'r--').replace('rwx', 'rw-')
-			"""
-
-
-		"""	dirs_to_verify = [ {
+		dirs_to_verify = [ {
 			'path'      : p.groups_dir,
 			'user'      : 'root',
 			'group'     : 'acl',
@@ -1312,18 +1266,14 @@ class LicornConfiguration(Singleton, LockedController):
 				p.acl_base, p.acl_admins_ro,
 				p.acl_users, p.acl_mask),
 			'default_acl': ""
-			} ]"""
+			} ]
 
 		try:
 			# batch this because it *has* to be corrected
 			# for system to work properly.
-			all_went_ok = True
-
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-				dirs_to_verify, batch=True)
-
-			all_went_ok &= self.check_archive_dir(batch=batch,
-				auto_answer=auto_answer)
+			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
+				batch=batch, allgroups=LMC.groups,
+				allusers=LMC.users)
 
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1338,7 +1288,7 @@ class LicornConfiguration(Singleton, LockedController):
 				logging.warning(e)
 				raise e
 
-		"""	home_backup_dir_info = {
+		home_backup_dir_info = {
 			'path'      : self.home_backup_dir,
 			'user'      : 'root',
 			'group'     : 'acl',
@@ -1361,7 +1311,7 @@ class LicornConfiguration(Singleton, LockedController):
 			allgroups=LMC.groups, allusers=LMC.users)
 
 		all_went_ok &= self.check_archive_dir(batch=batch,
-			auto_answer=auto_answer)"""
+			auto_answer=auto_answer)
 
 		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
@@ -1374,25 +1324,7 @@ class LicornConfiguration(Singleton, LockedController):
 
 		p = self.acls
 
-		dirs_to_verify = []
-
-		dir_info = FsapiObject(name="home_archive")
-		dir_info.path = self.home_archive_dir
-		dir_info.user = 'root'
-		dir_info.group = 'acl'
-		dir_info.root_dir_acl = True
-		dir_info.content_acl = True
-		dir_info.root_dir_perm = "%s,%s,%s" % (
-			p.acl_base, p.acl_admins_rw, p.acl_mask)
-		dir_info.dirs_perm = "%s,%s,%s" % (
-			p.acl_base, p.acl_admins_rw, p.acl_mask)
-		if not minimal:
-			dir_info.files_perm = ("%s,%s,%s" % (
-				p.acl_base, p.acl_admins_rw, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
-
-		dirs_to_verify.append(dir_info)
-		"""home_archive_dir_info = {
+		home_archive_dir_info = {
 			'path'       : self.home_archive_dir,
 			'user'       : 'root',
 			'group'      : 'acl',
@@ -1400,27 +1332,13 @@ class LicornConfiguration(Singleton, LockedController):
 				p.acl_base, p.acl_admins_rw, p.acl_mask),
 			'default_acl': "%s,%s,%s" % (
 				p.acl_base, p.acl_admins_rw, p.acl_mask),
-			}"""
+			}
 
-		if subdir is not None:
+		if subdir:
 
 			if os.path.dirname(subdir) == self.home_archive_dir:
 
-				subdir_info = FsapiObject(name="home_archive_subdir")
-				subdir_info.path = self.home_archive_dir
-				subdir_info.user = 'root'
-				subdir_info.group = 'acl'
-				subdir_info.root_dir_acl = True
-				subdir_info.content_acl = True
-				subdir_info.root_dir_perm = "%s,%s,%s" % (
-						p.acl_base, p.acl_admins_rw, p.acl_mask)
-				subdir_info.dirs_perm = "%s,%s,%s" % (
-						p.acl_base, p.acl_admins_rw, p.acl_mask)
-				subdir_info.files_perm = ("%s,%s,%s" % (
-					p.acl_base, p.acl_admins_rw, p.acl_mask)
-					).replace('r-x', 'r--').replace('rwx', 'rw-')
-
-				"""subdir_info = {
+				subdir_info = {
 					'path'       : self.home_archive_dir,
 					'user'       : 'root',
 					'group'      : 'acl',
@@ -1431,28 +1349,29 @@ class LicornConfiguration(Singleton, LockedController):
 					'content_acl': ("%s,%s,%s" % (
 						p.acl_base, p.acl_admins_rw, p.acl_mask)
 							).replace('r-x', 'r--').replace('rwx', 'rw-')
-					}"""
+					}
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
-						stylize(ST_PATH, self.home_archive_dir))
+						styles.stylize(styles.ST_PATH, self.home_archive_dir))
 				subdir=False
 
-		"""elif not minimal:
+		elif not minimal:
 			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (
 				p.acl_base, p.acl_admins_rw, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')"""
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
 
-		#dirs_to_verify = [ home_archive_dir_info ]
+		dirs_to_verify = [ home_archive_dir_info ]
 
-		if subdir is not None:
+		if subdir:
 			dirs_to_verify.append(subdir_info)
 
 		assert ltrace('configuration', ''''< check_archive_dir(return '''
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
-		return fsapi.check_dirs_and_contents_perms_and_acls_new(dirs_to_verify,
-			batch=batch, auto_answer=auto_answer)
+		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
+			batch=batch, auto_answer=auto_answer,
+			allgroups=LMC.groups, allusers=LMC.users)
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""

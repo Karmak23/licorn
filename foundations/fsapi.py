@@ -133,7 +133,9 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 		TODO: 'default_acl' should be checked against files inside 'path', modulo the mask change from
 		'rwx' to 'rw-', which will should automagically imply "effective" ACLs computed on the fly.
 		"""
-
+	assert ltrace('fsapi', '> check_dirs_and_contents_perms_and_acls('
+		'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
+			dirs_infos, batch, auto_answer))
 	if allusers is None:
 		from licorn.core.configuration import LicornConfiguration
 		from licorn.core.users import UsersController
@@ -267,9 +269,16 @@ def check_dirs_and_contents_perms_and_acls(dirs_infos, batch=False,
 	else:
 		raise exceptions.BadArgumentError(
 			"You must pass something through dirs_infos to check!")
+
+	assert ltrace('fsapi', '< check_dirs_and_contents_perms_and_acls()')
 def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	auto_answer=None):
 	""" general function to check file/dir """
+
+	assert ltrace('fsapi', '> check_dirs_and_contents_perms_and_acls_new('
+		'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
+			dirs_infos, batch, auto_answer))
+
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer):
 		all_went_ok = True
 		# save desired user and group owner of the file/dir
@@ -299,7 +308,22 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			if e.errno == 13:
 				raise exceptions.InsufficientPermissionsError(str(e))
 			elif e.errno == 2:
-				raise exceptions.DoesntExistsException(str(e))
+				warn_message = ("Directory %s does not exist." %
+					styles.stylize(styles.ST_PATH, dir_info['path']))
+
+				if batch or logging.ask_for_repair(warn_message, auto_answer,
+					listener=listener):
+					os.mkdir(dir_info['path'])
+					dirstat = os.lstat(dir_info['path'])
+					batch = True
+					logging.info("Created directory %s." %
+						styles.stylize(styles.ST_PATH, dir_info['path']),
+						listener=listener)
+				else:
+					# we cannot continue if dir does not exist.
+					raise exceptions.LicornCheckError(
+						"Can't continue checks for directory %s (was: %s)." % (
+							dir_info['path'], e) )
 			else:
 				# FIXME: do more things to recover from more system errors…
 				raise e
@@ -358,6 +382,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				logging.progress("Checking %s's contents %s…" % (
 					stylize(ST_PATH, dir_info['path']),
 					'ACLs' if dir_info.content_acl else 'posix perms'))
+
 				if dir_info.dirs_perm != None:
 					dir_path = dir_info['path']
 					for dir in minifind(dir_path, exclude=exclude_list, mindepth=1,
@@ -398,9 +423,14 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	else:
 		raise exceptions.BadArgumentError(
 			"You must pass something through dirs_infos to check!")
+
+	assert ltrace('fsapi', '< check_dirs_and_contents_perms_and_acls_new()')
 def check_perms(dir_info, file_type=None, is_root_dir=False, batch=None,
 	auto_answer=None):
 	""" general function to check is permissions are ok on file/dir """
+	assert ltrace('fsapi', '> check_perms(dir_info=%s, file_type=%s, '
+		'is_root_dir=%s, batch=%s, auto_answer=%s' % (
+			dir_info, file_type, is_root_dir, batch, auto_answer))
 	if file_type is S_IFDIR:
 		if is_root_dir:
 			access_perm = dir_info.root_dir_perm
@@ -535,6 +565,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False, batch=None,
 			else:
 				all_went_ok = False
 
+	assert ltrace('fsapi', '< check_perms()')
 def check_uid_and_gid(path, uid=-1, gid=1, batch=None, auto_answer=None):
 	""" function that check the uid and gid of a fieml or a dir. """
 	logging.progress("Checking posix uid/gid/perms of %s." %
