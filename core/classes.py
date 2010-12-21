@@ -972,6 +972,9 @@ class CoreModule(CoreUnitObject):
 		#: FIXME: better comment
 		self.controllers_compat = controllers_compat
 
+		#: a list of compatible modules. See :ref:`modules` for details
+		self.peer_compat = []
+
 		#: indicates that this module is meant to be used on server only (not
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
@@ -1010,7 +1013,7 @@ class CoreModule(CoreUnitObject):
 		return True
 	def initialize(self):
 		"""
-		For an abstract backend, initialize() always return False.
+		For an abstract module, initialize() always return False.
 
 		"active" is filled by core.configuration and gives a hint about the
 		system configuration:
