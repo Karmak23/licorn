@@ -1123,7 +1123,7 @@ class LicornConfiguration(Singleton, LockedController):
 			elif args[0] in ('sysgroups', 'system_groups', 'system-groups'):
 
 				for group in [ self.acls.group, self.defaults.admin_group ]:
-					data += "%s\n" % stylize(ST_SECRET, group)
+					data += "%s\n" % group
 
 				for priv in LMC.privileges:
 					data += "%s\n" % priv
