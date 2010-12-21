@@ -34,7 +34,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace('rwi', '| RWIController.__init__()')
 	def output(self, text_message):
 		return current_thread().listener.process(
-			LicornMessage(data=text_message),
+			LicornMessage(data=text_message, channel=1),
 			options.msgproc.getProxy())
 	def select(self, controller, ctype, args, include_id_lists,
 		exclude_id_lists=[], default_selection=filters.NONE, all=False):
