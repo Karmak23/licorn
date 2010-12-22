@@ -660,6 +660,10 @@ def add_group_parse_arguments(app):
 		action='store_true', dest='system', default=False,
 		help="The group will be a system group (root / @admin members only).")
 
+	group.add_option('-u', '--users', '--add-users', '--members',
+		action='store', dest='users_to_add', default=None,
+		help="Users to make members of this group just after creation.")
+
 	backends = LMC.rwi.groups_backends()
 	if len(backends) > 1:
 		group.add_option('-B', '--backend', '--in-backend',

@@ -832,7 +832,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					LMC.groups.AddGroup(name, description=opts.description,
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
-						backend=opts.in_backend, force=opts.force)
+						backend=opts.in_backend,
+						users_to_add=opts.users_to_add.split(',') \
+							if opts.users_to_add else [],
+						force=opts.force)
 				except exceptions.AlreadyExistsException, e:
 					logging.warning(str(e))
 

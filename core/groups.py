@@ -438,7 +438,8 @@ class GroupsController(Singleton, CoreController):
 		return name, description, groupSkel
 
 	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
-		system=False, permissive=False, backend=None, batch=False, force=False):
+		system=False, permissive=False, backend=None, users_to_add=[],
+		batch=False, force=False):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
@@ -524,6 +525,9 @@ class GroupsController(Singleton, CoreController):
 
 			# re-raise, for the calling process to know what happened…
 			raise e
+
+		else:
+			self.AddUsersInGroup(gid=gid, users_to_add=users_to_add)
 
 		assert ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
 		if not_already_exists and self.inotifier:
