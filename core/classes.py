@@ -873,14 +873,18 @@ class ModulesManager(LockedController):
 				self.module_type))
 			return
 
-		if self._available_modules[module_name].enable():
-			module = self._available_modules[module_name]
-			self[module_name] = module
-			del self._available_modules[module_name]
-			module.initialize()
+		try:
+			if self._available_modules[module_name].enable():
+				module = self._available_modules[module_name]
+				self[module_name] = module
+				del self._available_modules[module_name]
+				module.initialize()
 
-			logging.notice('''successfully enabled %s %s.'''% (
-				module_name, self.module_type))
+				logging.notice('''successfully enabled %s %s.'''% (
+					module_name, self.module_type))
+		except KeyError:
+			raise exceptions.DoesntExistsException('No %s by that name "%s", '
+				'sorry.' % (self.module_type, module_name))
 	def disable_module(self, module_name):
 		""" try to disable a given module. what to do exactly is left to the
 		module itself."""
@@ -893,11 +897,15 @@ class ModulesManager(LockedController):
 				self.module_type))
 			return
 
-		if self[module_name].disable():
-			self._available_modules[module_name] = self[module_name]
-			del self[module_name]
-			logging.notice('''successfully disabled %s %s. ''' % (
-				module_name, self.module_type))
+		try:
+			if self[module_name].disable():
+				self._available_modules[module_name] = self[module_name]
+				del self[module_name]
+				logging.notice('''successfully disabled %s %s. ''' % (
+					module_name, self.module_type))
+		except KeyError:
+			raise exceptions.DoesntExistsException('No %s by that name "%s", '
+				'sorry.' % (self.module_type, module_name))
 	def check(self, batch=False, auto_answer=None):
 		""" Check all enabled modules, then all available modules. Checking them
 			will make them configure themselves, and configure the required

@@ -1626,11 +1626,19 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		elif opts.disable_backends != None:
 			for backend in opts.disable_backends.split(','):
-				LMC.backends.disable_backend(backend)
+				try:
+					LMC.backends.disable_backend(backend)
+				except exceptions.DoesntExistsException, e:
+					logging.warning("Skipped non-existing backend %s." %
+						stylize(ST_NAME, backend))
 
 		elif opts.enable_backends != None:
 			for backend in opts.enable_backends.split(','):
-				LMC.backends.enable_backend(backend)
+				try:
+					LMC.backends.enable_backend(backend)
+				except exceptions.DoesntExistsException, e:
+					logging.warning("Skipped non-existing backend %s." %
+						stylize(ST_NAME, backend))
 
 		else:
 			raise exceptions.BadArgumentError(
