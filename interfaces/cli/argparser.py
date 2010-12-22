@@ -247,7 +247,12 @@ def common_filter_group(app, parser, tool, mode):
 
 	return filtergroup
 def check_opts_and_args(parse_args):
-	(opts, args) = parse_args
+	opts, args = parse_args
+
+	if len(LMC.rwi.groups_backends()) <= 1:
+		opts.in_backend = None
+		opts.move_to_backend = None
+
 	if opts.force and opts.batch:
 		raise exceptions.BadArgumentError('''options --force and '''
 		'''--batch are mutually exclusive''')
@@ -678,7 +683,7 @@ def add_group_parse_arguments(app):
 
 	assert ltrace('argparser', '< add_group_parse_arguments()')
 
-	return parser.parse_args()
+	return check_opts_and_args(parser.parse_args())
 def add_profile_parse_arguments(app):
 	"""Integrated help and options / arguments for « add profile »."""
 
@@ -1167,11 +1172,13 @@ def mod_group_parse_arguments(app):
 		action="store", type="string", dest="granted_profiles_to_del", default=None,
 		help="Delete the profiles which the users can access to the group's shared directory. The profiles are separated by commas without spaces.")
 
-	group.add_option('--move-to-backend', '--change-backend', '--move-backend',
-		action="store", type="string", dest="move_to_backend", default=None,
-		help="move the group from its current backend to another, where it will"
-			" definitely stored (specify new backend name as argument, from "
-			"%s)." % LMC.rwi.backends())
+	backends = LMC.rwi.groups_backends()
+	if len(backends) > 1:
+		group.add_option('--move-to-backend', '--change-backend', '--move-backend',
+			action="store", type="string", dest="move_to_backend", default=None,
+			help="move the group from its current backend to another, where it will"
+				" definitely stored (specify new backend name as argument, from "
+				"%s)." % LMC.rwi.backends())
 
 	parser.add_option_group(group)
 
