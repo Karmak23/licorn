@@ -2036,13 +2036,14 @@ if __name__ == "__main__":
 		directory_scenarii='data/scenarii',
 		clean_func=clean_system, cmd_display_func=small_cmd_cli)
 
+	# Unit Tests.
+	test_find_new_indentifier()
 	# add scenario to the testsuite
 	test_integrated_help()
 	test_regexes()
 	test_short_syntax()
 	test_exclusions()
 	test_status_and_dump()
-	test_system()
 	for ctx in ('shadow', 'openldap'):
 		test_get(ctx)
 		test_groups(ctx)
@@ -2051,8 +2052,8 @@ if __name__ == "__main__":
 		test_privileges(ctx)
 		test_imports(ctx)
 
-	# Unit Tests.
-	test_find_new_indentifier()
+	# do this last, this will kill the daemon
+	test_system()
 
 	# deals with options
 	parser = testsuite_parse_args()
