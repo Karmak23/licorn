@@ -1,12 +1,16 @@
 	# -*- coding: utf-8 -*-
 """
-Licorn core - http://dev.licorn.org/documentation/core
+Licorn core: configuration - http://docs.licorn.org/core/configuration.html
 
-configuration - Unified Configuration API for an entire linux server system
+Unified Configuration API for an entire linux server system
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
-Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+	* partial 2005 Régis Cobrun <reg53fr@yahoo.fr>
+
+:license: GNU GPL version 2
+
 """
 
 import sys, os, re, socket

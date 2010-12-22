@@ -4,8 +4,12 @@ Licorn core objects
 
 Basic objects used in all core controllers, backends, plugins.
 
-Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>,
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2010 Olivier Cortès <oc@meta-it.fr>
+	* partial 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+
+:license: GNU GPL version 2
+
 """
 
 import Pyro.core, re, glob, os,posix1e

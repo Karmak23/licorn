@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core - http://dev.licorn.org/documentation/core
+Licorn core: machines - http://docs.licorn.org/core/machines.html
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
-Licensed under the terms of the GNU GPL version 2
+:copyright: 2010 Olivier Cortès <oc@meta-it.fr>
+
+:license: GNU GPL version 2
 """
 
 import netifaces, ipcalc

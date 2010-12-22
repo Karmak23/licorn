@@ -39,7 +39,7 @@ General directives
 	licornd.network.enabled
 		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
 
-		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon` are still authorized: **client-initiated connections (daemon synchronization, status push…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
+		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
 WMI related
 -----------

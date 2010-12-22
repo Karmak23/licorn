@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core.backends - http://docs.licorn.org/core/backends.html
+Licorn core: backends - http://docs.licorn.org/core/backends.html
 
 :copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
 :license: GNU GPL version 2
@@ -104,22 +104,64 @@ class UsersBackend(NSSBackend):
 class GroupsBackend(NSSBackend):
 	"""	Abstract groups backend class allowing access to groups data. """
 	def load_Group(self, gid):
-		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
+		""" Load an individual group. Default action is to call
+			:meth:`load_Groups`. This is not what you want if your backend
+			is able to load groups individually, you must then overload this
+			method.
+		"""
 
 		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
 
 		return self.load_Groups()
 	def save_Group(self, gid, mode):
-		""" Write the groups data in appropriate system files."""
+		""" Save a group in system data. Default action is to call
+			:meth:`save_Groups()`. This is perfect for backends which
+			always rewrite all the data (typically
+			:class:`~licorn.core.backends.shadow.ShadowBackend`), but
+			it is much a waste or system resources for backends which have
+			the ability to save an individual entry without the need to
+			write them all (typically
+			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
+			must therefore overload this methodto implement a more appropriate
+			behaviour.
+
+			:param gid: the GID of the group to save (ignored in this default
+				version of the method.
+			:param mode: a value coming from
+				:obj:`~licorn.foundations.constants.backends_actions` to
+				specify if the save operation is an update or a creation.
+		"""
 
 		assert ltrace('backends', '| abstract save_Group(%s)' % gid)
 
 		return self.save_Groups()
 	def delete_Group(self, gid):
+		""" Delete an individual group. Default action (coming from abstract
+			:class:`~licorn.core.backends.GroupsBackend`) is to call
+			:meth:`save_Groups` to save all groups, assuming the group
+			you want to delete has already been wiped out the
+			:class:`~licorn.core.groups.GroupsController`.
+
+			This behaviour works well for backends which rewrite all
+			data everytime (typically
+			:class:`~licorn.core.backends.shadow.ShadowBackend`), but won't
+			work as expected for backends which must loop through all entries
+			to save them individually (typically
+			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
+			must therefore overload this method to implement a more appropriate
+			behaviour.
+
+			:param gid: the GID of teh group to delete (ignored in this default
+				version of the method).
+		"""
 		assert ltrace('backends', '| abstract delete_Group(%s)' % gid)
 		return self.save_Groups()
 class MachinesBackend(CoreBackend):
-	""" Abstract machines backend class allowing access to machines data. """
+	""" Abstract machines backend class allowing access to machines data.
+
+		.. versionadded:: 1.3
+
+"""
 	def __init__(self, name='machines'):
 		CoreBackend.__init__(self, name=name, controllers_compat=['machines'])
 		assert ltrace('objects', '| MachinesBackends.__init__()')

@@ -2,8 +2,8 @@
 """
 Licorn Daemon inotifier thread.
 
-Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2007-2009 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2
 """
 
 import os, time, gamin

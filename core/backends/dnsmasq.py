@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Licorn DNSmasq backend - http://docs.licorn.org/core/backends/shadow.html
+Licorn DNSmasq backend - http://docs.licorn.org/core/backends/dnsmasq.html
 
 :copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
+
 :license: GNU GPL version 2
+
+.. versionadded:: 1.3
+	This backend was implemented during the 1.2 ⇢ 1.3 development cycle.
 
 """
 import os

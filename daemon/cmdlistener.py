@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects).
+Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 
-Copyright (C) 2007-2009 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2007-2010 Olivier Cortès <olive@deep-ocean.net>
+
+:license: GNU GPL version 2.
 """
 
 import signal, os, time

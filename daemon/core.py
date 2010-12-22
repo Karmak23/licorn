@@ -2,8 +2,10 @@
 """
 Licorn Daemon core - http://docs.licorn.org/daemon/core.html
 
-Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2007-2010 Olivier Cortès <olive@deep-ocean.net>
+
+:license: GNU GPL version 2
+
 """
 
 import os, sys, time, signal, select, curses, termios, resource, code, readline

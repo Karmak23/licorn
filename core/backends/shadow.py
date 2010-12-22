@@ -2,8 +2,13 @@
 """
 Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2.
+
+.. versionadded:: 1.3
+	This backend was previously known as **unix**, but has been
+	renamed **shadow** during the 1.2 ⇢ 1.3 development cycle, to
+	better match reality and avoid potential name conflicts.
 """
 
 import crypt
@@ -20,11 +25,6 @@ from licorn.core.backends       import NSSBackend, UsersBackend, GroupsBackend
 
 class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
-
-		.. versionadded:: 1.3
-			This backend was previously known as **unix**, but has been
-			renamed **shadow** during the 1.2 ⇢ 1.3 development cycle, to
-			better match reality and avoid potential name conflicts.
 
 	"""
 

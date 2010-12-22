@@ -1,9 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core: Groups - http://docs.licorn.org/core/groups.html
+Licorn core: groups - http://docs.licorn.org/core/groups.html
 
-:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>, partial (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>, partial (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
-:license: under the terms of the GNU GPL version 2
+:copyright:
+	* 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+	* partial 2006 Régis Cobrun <reg53fr@yahoo.fr>
+
+:license: GNU GPL version 2
+
 """
 
 import os, stat, posix1e, re

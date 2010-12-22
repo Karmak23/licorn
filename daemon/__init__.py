@@ -2,8 +2,10 @@
 """
 Licorn Daemon - http://docs.licorn.org/daemon/index.html
 
-Copyright (C) 2009-2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2.
+:copyright: 2009-2010 Olivier Cortès <olive@deep-ocean.net>
+
+:license: GNU GPL version 2
+
 """
 import os, sys, time, signal
 dstart_time = time.time()

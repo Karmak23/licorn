@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Licorn foundations - http://dev.licorn.org/documentation/foundations
+Licorn core: profiles - http://docs.licorn.org/core/profiles.html
 
-profiles - compatible with gnome-system-tools profiles
+Barely compatible with gnome-system-tools profiles
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
-Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2010 Robin Lucbernet <robinlocbernet@gmail.com>
+	* partial 2006 Régis Cobrun <reg53fr@yahoo.fr>
+:license: GNU GPL version 2
 """
 
 import os, re, shutil

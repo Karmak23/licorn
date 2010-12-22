@@ -5,6 +5,11 @@ Licorn OpenLDAP backend - http://docs.licorn.org/core/backends/openldap.html
 :copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
 :license: GNU GPL version 2
 
+.. versionadded:: 1.3
+	This backend was previously known as **ldap**, but has been
+	renamed **openldap** during the 1.2 ⇢ 1.3 development cycle, to
+	better match reality and avoid potential name conflicts.
+
 .. TODO: implement auto-setup part: if backends.openldap.available is forced to
    True in licorn.conf, we should auto-install packages, setup dirs, LDAP
    dn, etc.
@@ -29,10 +34,6 @@ from licorn.core.backends         import NSSBackend, UsersBackend, GroupsBackend
 class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 	""" OpenLDAP Backend for users and groups.
 
-		.. versionadded:: 1.3
-			This backend was previously known as **ldap**, but has been
-			renamed **openldap** during the 1.2 ⇢ 1.3 development cycle, to
-			better match reality and avoid potential name conflicts.
 	"""
 
 	init_ok = False

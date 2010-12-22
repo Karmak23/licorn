@@ -15,8 +15,8 @@ This daemon exists:
 - because of bugs in external apps (which don't respect posix1e semantics and
   can't or won't be easily fixed).
 
-:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>.
-:license: under the terms of the GNU GPL version 2.
+:copyright: 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2
 
 """
 

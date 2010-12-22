@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core - http://dev.licorn.org/documentation/core
+Licorn core: privileges - http://docs.licorn.org/core/privileges.html
 
 privileges - everything internal to system privileges management
 
-Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>,
-Partial Copyright (C) 2005 Régis Cobrun <reg53fr@yahoo.fr>
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2005-2010 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2005 Régis Cobrun <reg53fr@yahoo.fr>
+
+:license: GNU GPL version 2
+
 """
 
 from licorn.foundations           import logging, exceptions

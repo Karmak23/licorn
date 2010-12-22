@@ -12,8 +12,8 @@ Main audience of Licorn® are system administrators.
 	quickstart
 	../wmi/index
 	../cli/index
-	../daemon
 	../configuration
+	../daemon
 
 «Lights on…»
 ============

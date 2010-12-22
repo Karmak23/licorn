@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core - http://dev.licorn.org/documentation/core
+Licorn core: system - http://docs.licorn.org/core/system.html
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>,
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2010 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2010 Robin Lucbernet <robinlucbernet@gmail.com>
+
+:license: GNU GPL version 2
+
+.. versionadded:: 1.3
+	This backend was implemented during the 1.2 ⇢ 1.3 development cycle.
+
 """
 
 import os
