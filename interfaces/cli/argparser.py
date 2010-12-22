@@ -1153,6 +1153,12 @@ def mod_group_parse_arguments(app):
 		action="store", type="string", dest="granted_profiles_to_del", default=None,
 		help="Delete the profiles which the users can access to the group's shared directory. The profiles are separated by commas without spaces.")
 
+	group.add_option('--move-to-backend', '--change-backend', '--move-backend',
+		action="store", type="string", dest="move_to_backend", default=None,
+		help="move the group from its current backend to another, where it will"
+			" definitely stored (specify new backend name as argument, from "
+			"%s)." % LMC.configuration.backends())
+
 	parser.add_option_group(group)
 
 	return check_opts_and_args(parser.parse_args())

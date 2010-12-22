@@ -390,8 +390,12 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 							)
 			extgroup.append(':'.join((
 										groups[gid]['name'],
-										groups[gid]['description'],
-										groups[gid]['groupSkel']
+										groups[gid]['description'] \
+											if 'description' in groups[gid] \
+												else '',
+										groups[gid]['groupSkel'] \
+											if 'groupSkel' in groups[gid] \
+												else ''
 									))
 							)
 

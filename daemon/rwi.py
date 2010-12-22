@@ -1319,6 +1319,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				logging.ask_for_repair('''Modify group %s?''' % stylize(
 				ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
 
+				if opts.move_to_backend:
+					try:
+						LMC.groups.move_to_backend(gid, opts.move_to_backend,
+								opts.force)
+					except exceptions.DoesntExistsException, e:
+						logging.info('Skipped group move %s to unexisting or '
+							'disabled backend %s: group left unchanged.' % (
+							g2n(gid), opts.move_to_backend))
+
 				if opts.permissive is not None:
 					LMC.groups.SetSharedDirPermissiveness(gid=gid,
 						permissive=opts.permissive)

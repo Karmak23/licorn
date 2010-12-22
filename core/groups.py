@@ -1695,6 +1695,101 @@ class GroupsController(Singleton, CoreController):
 			else:
 				logging.info('Group %s is already %spermissive.' % (
 					stylize(ST_NAME, name), qualif))
+	def move_to_backend(self, gid, new_backend, force=False,
+			internal_operation=False):
+		""" Move a group from a backend to another, with extreme care. Any
+			occurring exception will cancel the operation.
+
+			Moving a standard group will begin by moving
+
+			Moving a restricted system group will fail if argument ``force``
+			is ``False``. This is not recommended anyway, groups <= 300 are
+			handled by distros maintainer, you'd better not touch them.
+
+		"""
+		if new_backend not in LMC.backends.keys():
+			raise exceptions.DoesntExistsException("Backend %s doesn't exist "
+				"or in not enabled." % new_backend)
+
+		group_name = self.groups[gid]['name']
+		old_backend = self.groups[gid]['backend']
+
+		if old_backend == new_backend:
+			logging.info('Skipped move of group %s, already stored in backend '
+				'%s.' % (stylize(ST_NAME, group_name),
+					stylize(ST_NAME, new_backend)))
+			return True
+
+		if self.is_restricted_system_gid(gid) and not force:
+			logging.warning("Skipped move of restricted system group %s "
+				"(please use --force if you really want to do this, "
+				"but I don't recommend it at all, you will shoot yourself "
+				"in the foot)." % group_name)
+			return
+
+		if (group_name.startswith(LMC.configuration.groups.resp_prefix) or
+			group_name.startswith(LMC.configuration.groups.guest_prefix)) \
+			and not internal_operation:
+				raise exceptions.BadArgumentError("Can't move an associated "
+					"system group without moving its standard group too. "
+					"Please move the standard group instead, if this is "
+					"what you meant.")
+
+		if self.is_standard_gid(gid):
+
+			if not self.move_to_backend(
+				self.name_to_gid(LMC.configuration.groups.resp_prefix
+					+ group_name), new_backend, internal_operation=True):
+
+				logging.warning('Skipped move of group %s to backend %s '
+					'because move of associated responsible system group '
+						'failed.' % (group_name, new_backend))
+				return
+
+			if not self.move_to_backend(
+				self.name_to_gid(LMC.configuration.groups.guest_prefix
+					+ group_name), new_backend, internal_operation=True):
+
+				# pray this works, else we're in big trouble, a shoot in a
+				# foot and a golden shoe on the other.
+				self.move_to_backend(
+					self.name_to_gid(LMC.configuration.groups.resp_prefix
+						+ group_name), old_backend)
+
+				logging.warning('Skipped move of group %s to backend %s '
+					'because move of associated system guest group '
+						'failed.' % (group_name, new_backend))
+				return
+
+		try:
+			# we must change the backend, else iterating backends (like Shadow)
+			# will not save the new group.
+			self.groups[gid]['backend'] = new_backend
+			LMC.backends[new_backend].save_Group(gid, backend_actions.CREATE)
+
+		except KeyboardInterrupt, e:
+			logging.warning("Exception %s happened while trying to move group "
+				"%s from %s to %s, aborting (group left unchanged)." % (e,
+				group_name, old_backend, new_backend))
+
+			try:
+				# restore old situation.
+				self.groups[gid]['backend'] = old_backend
+				LMC.backends[new_backend].delete_Group(group_name)
+			except:
+				pass
+
+			return False
+		else:
+			# the copy operation is successfull, make it a real move.
+			LMC.backends[old_backend].delete_Group(group_name)
+
+			logging.info('Moved group %s from backend %s to %s.' % (
+				stylize(ST_NAME, group_name),
+				stylize(ST_NAME, old_backend),
+				stylize(ST_NAME, new_backend)
+				))
+			return True
 	def is_permissive(self, gid, name):
 		""" Return True if the shared dir of the group is permissive.
 
