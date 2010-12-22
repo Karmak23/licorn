@@ -748,13 +748,13 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		# beware of #410, OpenLDAP behaves differently than shadow backend
 		# on rarely or un used shadow* attributes.
-		if user['shadowExpire'] == '':
+		if 'shadowExpire' in user and user['shadowExpire'] == '':
 			user['shadowExpire'] = 9999999
 
-		if user['shadowFlag'] == '':
+		if 'shadowFlag' in user and user['shadowFlag'] == '':
 			del user['shadowFlag']
 
-		if user['shadowInactive'] == '':
+		if 'shadowInactive' in user and user['shadowInactive'] == '':
 			del user['shadowInactive']
 
 		try:
