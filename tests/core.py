@@ -131,8 +131,8 @@ def strip_moving_data(output):
 				'Set\spassword\sfor\suser\s.*\sto)\s.*', r'\1 [Password]',
 			re.sub(r'report: /home/archives/import_profil_test-.*.html',
 				'report: /home/archives/import_profil_test-[D/T].html',
-			re.sub(r'<(function|method) ([\w_.]+) at 0x[0-9a-f]+>',
-				r'<\1 \2 at [hex_address]>',
+			re.sub(r'<(Thread|function|bound method)[^>]+>',
+				r'<\1 at [hex_address]>',
 				output
 			))))))
 class ScenarioTest:
