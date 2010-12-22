@@ -70,8 +70,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			assert ltrace('cli', '  cli_main: connecting to core')
 			RWI = LMC.connect()
 
-			(opts, args) = getattr(argparser, functions[mode][0])(app=app_data,
-				configuration=LMC.configuration)
+			(opts, args) = getattr(argparser, functions[mode][0])(app=app_data)
 			options.SetFrom(opts)
 
 			assert ltrace('cli', '  cli_main: starting pyro')
