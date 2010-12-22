@@ -9,15 +9,14 @@
 	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys
+import sys, getpass
 import Pyro.core, Pyro.util
 from threading import current_thread
 # WARNING: don't import logging here (circular loop).
-import exceptions
+import exceptions, ttyutils
 from ltrace    import ltrace
 from base      import NamedObject, pyro_protected_attrs
 from constants import message_type, verbose, interactions
-from ttyutils  import interactive_ask_for_repair
 
 class LicornMessage(Pyro.core.CallbackObjBase):
 	""" Small message object pushed back and forth between Pyro instances on one
@@ -96,8 +95,13 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 
 				if message.interaction == interactions.ASK_FOR_REPAIR:
 
-					message.answer = interactive_ask_for_repair(message.data,
+					message.answer = ttyutils.interactive_ask_for_repair(message.data,
 						auto_answer=message.auto_answer)
+
+				elif  message.interaction == interactions.GET_PASSWORD:
+
+					message.answer = getpass.getpass(message.data)
+
 				else:
 					assert ltrace('messaging',
 						'unsupported interaction type in message %s.' % message)

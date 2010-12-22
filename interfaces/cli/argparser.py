@@ -10,7 +10,7 @@ Copyright (C) 2005,2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
 """
-import os
+import os, getpass
 
 from optparse import OptionParser, OptionGroup
 
@@ -167,7 +167,9 @@ def common_filter_group(app, parser, tool, mode):
 				action="store_true", dest="privileged", default = False,
 				help="Only select privileged groups.")
 			filtergroup.add_option('--no-priv', '--not-priv', '--no-privs',
-				'--not-privs', '--no-privilege', '--not-privilege', '--no-privileges', '--not-privileges ', '--exclude-priv','--exclude-privs','--exclude-privilege','--exclude-privileges',
+				'--not-privs', '--no-privilege', '--not-privilege',
+				'--no-privileges', '--not-privileges ', '--exclude-priv',
+				'--exclude-privs','--exclude-privilege','--exclude-privileges',
 				action="store_true", dest="not_privileged", default = False,
 				help="Only select non-privileged groups.")
 			filtergroup.add_option('--responsibles', '--rsp',
@@ -1067,7 +1069,8 @@ def mod_user_parse_arguments(app):
 
 	user.add_option('-l', "--lock",
 		action="store_true", dest="lock", default=None,
-		help="lock the account (user wn't be able to login under Linux and Windows/MAC until unlocked).")
+		help="lock the account (user wn't be able to login under Linux "
+			"and Windows/MAC until unlocked).")
 	user.add_option('-L', "--unlock",
 		action="store_false", dest="lock", default=None,
 		help="unlock the user account and restore login ability.")
@@ -1080,7 +1083,8 @@ def mod_user_parse_arguments(app):
 		help="remove user from these groups.")
 	user.add_option("--apply-skel",
 		action="store", type="string", dest="apply_skel", default=None,
-		help="re-apply the user's skel (use with caution, it will overwrite the dirs/files belonging to the skel in the user's home dir.")
+		help="re-apply the user's skel (use with caution, it will overwrite "
+			"the dirs/files belonging to the skel in the user's home dir.")
 
 	parser.add_option_group(user)
 	try:
@@ -1089,6 +1093,9 @@ def mod_user_parse_arguments(app):
 		print e
 	if opts.newpassword is None and not opts.non_interactive:
 		pass
+
+	# note the current user for diverses mod_user operations
+	opts.current_user = getpass.getuser()
 
 	return opts, args
 def mod_machine_parse_arguments(app):

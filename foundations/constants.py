@@ -100,6 +100,7 @@ message_type.PUSH_STATUS = 0x0008
 
 interactions = EnumDict('interactions')
 interactions.ASK_FOR_REPAIR = 0x01
+interactions.GET_PASSWORD   = 0x02
 
 licornd_roles = EnumDict('licornd_roles')
 licornd_roles.UNSET  = 1

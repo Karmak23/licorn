@@ -16,7 +16,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, interactions
 
 from licorn.core import LMC
 
@@ -37,6 +37,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			reference is stored in :obj:`current_thread().listener`. """
 		return current_thread().listener.process(
 			LicornMessage(data=text_message, channel=1),
+			options.msgproc.getProxy())
+	def interact(self, text_message, interaction):
+		""" Send a bi-directionnal message remotely, in CLI caller process,
+			whose reference is stored in :obj:`current_thread().listener`.
+		"""
+		return current_thread().listener.process(
+			LicornMessage(data=text_message, interaction=interaction),
 			options.msgproc.getProxy())
 	def prefered_groups_backend(self):
 		""" comfort method, to forward prefered groups backend, used in CLI
@@ -1141,8 +1148,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_user(self, opts, args):
 		""" Modify a POSIX user account (Samba / LDAP included). """
 
-		import getpass
-
 		include_id_lists=[
 			(opts.login, LMC.users.login_to_uid),
 			(opts.uid, LMC.users.confirm_uid)
@@ -1171,7 +1176,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		uids_to_mod = self.select(LMC.users, 'user',	args=args,
 				include_id_lists=include_id_lists,
 				exclude_id_lists=exclude_id_lists,
-				default_selection='uid=%s' % LMC.users.login_to_uid(getpass.getuser()))
+				default_selection='uid=%s' % LMC.users.login_to_uid(opts.current_user))
 
 		assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
@@ -1186,7 +1191,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					if opts.newgecos is not None:
 						something_done = True
-						LMC.users.ChangeUserGecos(uid=uid, gecos=unicode(opts.newgecos))
+						LMC.users.ChangeUserGecos(uid=uid,
+								gecos=unicode(opts.newgecos))
 
 					if opts.newshell is not None:
 						something_done = True
@@ -1194,7 +1200,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					if opts.newpassword is not None:
 						something_done = True
-						LMC.users.ChangeUserPassword(uid=uid, password=opts.newpassword)
+						LMC.users.ChangeUserPassword(uid=uid,
+								password=opts.newpassword)
 
 					if opts.interactive_password:
 						something_done = True
@@ -1205,8 +1212,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						confirm='Please confirm new password for user %s: ' % \
 							stylize(ST_NAME, login)
 
-						if getpass.getuser() != 'root':
-							if getpass.getuser() == login:
+						if opts.current_user != 'root':
+							if opts.current_user == login:
 								old_message = \
 									'Please enter your OLD (current) password: '
 								message='Please enter your new password: '
@@ -1218,12 +1225,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 									stylize(ST_LOGIN, login)
 
 							if not LMC.users.check_password(login,
-								getpass.getpass(old_message)):
+								self.interact(old_message,
+									interaction=interactions.GET_PASSWORD)):
 								raise exceptions.BadArgumentError(
 									'wrong password, aborting.')
 
-						password1 = getpass.getpass(message)
-						password2 = getpass.getpass(confirm)
+						password1 = self.interact(message,
+							interaction=interactions.GET_PASSWORD)
+						password2 = self.interact(confirm,
+							interaction=interactions.GET_PASSWORD)
 
 						if password1 == password2:
 							LMC.users.ChangeUserPassword(uid=uid, password=password1)
