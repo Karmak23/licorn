@@ -438,7 +438,7 @@ class GroupsController(Singleton, CoreController):
 		return name, description, groupSkel
 
 	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
-		system=False, permissive=False, batch=False, force=False):
+		system=False, permissive=False, backend=None, batch=False, force=False):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
@@ -461,7 +461,7 @@ class GroupsController(Singleton, CoreController):
 			try:
 				not_already_exists = True
 				gid = self.__add_group(name, system, desired_gid, description,
-					groupSkel, batch=batch, force=force)
+					groupSkel, backend=backend, batch=batch, force=force)
 
 			except exceptions.AlreadyExistsException, e:
 				# don't bork if the group already exists, just continue.
@@ -530,7 +530,7 @@ class GroupsController(Singleton, CoreController):
 			self.inotifier.add_group_watch(gid)
 		return gid, name
 	def __add_group(self, name, system, manual_gid=None, description=None,
-		groupSkel = "", batch=False, force=False):
+		groupSkel = "", backend=None, batch=False, force=False):
 		""" Add a POSIX group, write the system data files.
 			Return the gid of the group created. """
 
@@ -540,6 +540,11 @@ class GroupsController(Singleton, CoreController):
 			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
 				groupSkel)
 			)
+
+		if backend and backend not in LMC.backends.keys():
+			raise exceptions.BadArgumentError('wrong backend %s, must be in %s.'
+				% (stylize(ST_BAD, backend),
+				stylize(ST_OK, ', '.join([x.name for x in self.backends]))))
 
 		# first verify if GID is not already taken.
 		if self.groups.has_key(manual_gid):
@@ -639,7 +644,7 @@ class GroupsController(Singleton, CoreController):
 			'memberUid'   : [],
 			'description' : description,
 			'groupSkel'   : groupSkel,
-			'backend'     : self._prefered_backend_name,
+			'backend'     : backend if backend else self._prefered_backend_name,
 			}
 
 		if system:
@@ -1317,7 +1322,9 @@ class GroupsController(Singleton, CoreController):
 							temp_gid = self.__add_group(group_name,
 								system=True, manual_gid=None,
 								description="%s of group “%s”" % (title, name),
-								groupSkel="", batch=batch, force=force)
+								groupSkel="",
+								backend=self.groups[gid]['backend'],
+								batch=batch, force=force)
 							prefix_gid = temp_gid
 							del temp_gid
 

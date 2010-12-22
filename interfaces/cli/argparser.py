@@ -660,6 +660,16 @@ def add_group_parse_arguments(app):
 		action='store_true', dest='system', default=False,
 		help="The group will be a system group (root / @admin members only).")
 
+	backends = LMC.rwi.groups_backends()
+	if len(backends) > 1:
+		group.add_option('-B', '--backend', '--in-backend',
+			action='store', dest='in_backend',
+			default=LMC.rwi.prefered_groups_backend(),
+			help="specify backend in which to save the group (default:"
+				" %s; possible choices: %s." % (
+				stylize(ST_DEFAULT, LMC.rwi.prefered_groups_backend()),
+					', '.join(backends)))
+
 	parser.add_option_group(group)
 
 	assert ltrace('argparser', '< add_group_parse_arguments()')
@@ -1157,7 +1167,7 @@ def mod_group_parse_arguments(app):
 		action="store", type="string", dest="move_to_backend", default=None,
 		help="move the group from its current backend to another, where it will"
 			" definitely stored (specify new backend name as argument, from "
-			"%s)." % LMC.configuration.backends())
+			"%s)." % LMC.rwi.backends())
 
 	parser.add_option_group(group)
 

@@ -33,9 +33,26 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		assert ltrace('rwi', '| RWIController.__init__()')
 	def output(self, text_message):
+		""" Output a text message remotely, in CLI caller process, whose
+			reference is stored in :obj:`current_thread().listener`. """
 		return current_thread().listener.process(
 			LicornMessage(data=text_message, channel=1),
 			options.msgproc.getProxy())
+	def prefered_groups_backend(self):
+		""" comfort method, to forward prefered groups backend, used in CLI
+			argparser.
+		"""
+		return LMC.groups._prefered_backend_name
+	def groups_backends(self):
+		""" comfort method to get only the names of current enabled backends,
+			used in CLI argparser.
+		"""
+		return [x.name for x in LMC.groups.backends]
+	def backends(self):
+		""" comfort method to get only the names of current enabled backends,
+			used in CLI argparser.
+		"""
+		return LMC.backends.keys()
 	def select(self, controller, ctype, args, include_id_lists,
 		exclude_id_lists=[], default_selection=filters.NONE, all=False):
 
@@ -815,7 +832,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					LMC.groups.AddGroup(name, description=opts.description,
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
-						force=opts.force)
+						backend=opts.in_backend, force=opts.force)
 				except exceptions.AlreadyExistsException, e:
 					logging.warning(str(e))
 
@@ -1320,13 +1337,23 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
 
 				if opts.move_to_backend:
-					try:
-						LMC.groups.move_to_backend(gid, opts.move_to_backend,
-								opts.force)
-					except exceptions.DoesntExistsException, e:
-						logging.info('Skipped group move %s to unexisting or '
-							'disabled backend %s: group left unchanged.' % (
-							g2n(gid), opts.move_to_backend))
+					gname = g2n(gid)
+					if gname.startswith(
+							LMC.configuration.groups.resp_prefix) \
+							or gname.startswith(
+							LMC.configuration.groups.guest_prefix):
+						logging.info('Skipped associated system group %s, '
+							'handled automatically by standard group move.' %
+								stylize(ST_NAME,gname))
+					else:
+						try:
+
+							LMC.groups.move_to_backend(gid, opts.move_to_backend,
+									opts.force)
+						except exceptions.DoesntExistsException, e:
+							logging.info('Skipped group move %s to unexisting or '
+								'disabled backend %s: group left unchanged.' % (
+								g2n(gid), opts.move_to_backend))
 
 				if opts.permissive is not None:
 					LMC.groups.SetSharedDirPermissiveness(gid=gid,
