@@ -333,6 +333,9 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		lock_etc_shadow.Lock()
 		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
 		lock_etc_shadow.Unlock()
+
+		logging.progress("Saved shadow users data to disk.")
+
 	def save_Groups(self):
 		""" Write the groups data in appropriate system files."""
 
@@ -354,8 +357,6 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 												"/etc/gshadow")
 		lock_ext_group   = FileLock(LMC.configuration,
 								LMC.configuration.extendedgroup_data_file)
-
-		logging.progress("Writing groups configuration to disk…")
 
 		etcgroup   = []
 		etcgshadow = []
@@ -406,6 +407,8 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		open(LMC.configuration.extendedgroup_data_file, "w").write(
 			"\n".join(extgroup) + "\n")
 		lock_ext_group.Unlock()
+
+		logging.progress("Saved shadow groups data to disk.")
 
 		assert ltrace('shadow', '< save_groups()')
 	def compute_password(self, password, salt=None):
