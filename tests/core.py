@@ -335,22 +335,23 @@ def clean_system():
 	# delete them first in case of a previous failed testsuite run.
 	# don't check exit codes or such, this will be done later.
 	for argument in (
-		['user', '''toto,tutu,tata,titi,test,utilisager.normal,''' \
-			'''test.responsibilly,utilicateur.accentue,user_test,''' \
-			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,''' \
-			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,''' \
-			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,''' \
-			'''tenrebcul2,utest,utest1,utest2,utest3,utest4,ingroups_test1,''' \
+		['user', '''toto,tutu,tata,titi,test,utilisager.normal,'''
+			'''test.responsibilly,utilicateur.accentue,user_test,'''
+			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,'''
+			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,'''
+			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,'''
+			'''tenrebcul2,utest,utest1,utest2,utest3,utest4,ingroups_test1,'''
 			'''ingroups_test2,ingroups_test3,ingroups_test4''',
 			 '--no-archive', '-v' ],
 		['profile', '''utilisagers,responsibilisateurs,'''
 			'''profil_test''',
 			'--del-users', '--no-archive', '-v' ],
-		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,''' \
-			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,''' \
-			'''ARCHIVES-test,group_test,group_testsys,group_test2,''' \
+		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,'''
+			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,'''
+			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
 			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,'''
-			'''cp,gtest,gtest1,gtest2,gtest3,gtest4,profil_test''',
+			'''cp,gtest,gtest1,gtest2,gtest3,gtest4,profil_test,'''
+			'''sysgroup_test,sys2group_test''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
@@ -969,6 +970,77 @@ def test_groups(context):
 		descr="test groups interactive commands"
 		))
 
+	if context == 'openldap':
+		# there must be more than one backend for this to work.
+		testsuite.add_scenario(ScenarioTest([
+			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ],
+			GET + [ 'groups', '-l' ],
+			ADD + [ 'group', '--name=%s' % gname, '-v',
+				'--in-backend', 'shadow' ],
+			GET + [ 'groups', '-l' ],
+			# this should fail saying that it will be done with std group
+			MOD + [ 'group', LMC.configuration.groups.resp_prefix + gname, '-v',
+				'--move-to-backend', context ],
+			# this will succeed
+			MOD + [ 'group', gname, '-v', '--move-to-backend', context ],
+			GET + [ 'groups', '-l', gname ],
+
+			# these 3 should succeed
+			ADD + ['group', '--system', 'sys' + gname, '-v',
+				'--backend', 'shadow' ],
+			MOD + [ 'group', 'sys' + gname, '-v',
+				'--move-to-backend', context ],
+			GET + [ 'groups', '-l', 'sys' + gname ],
+
+			ADD + ['group', '--system', 'sys2' + gname, '-v',
+				'--backend', 'shadow',
+				'--gid', str(LMC.configuration.groups.system_gid_min - 1) ],
+			# this will fail because lacks --force
+			MOD + [ 'group', 'sys2' + gname, '-v',
+				'--move-to-backend', context ],
+			# this will succeed
+			MOD + [ 'group', 'sys2' + gname, '-v', '--move-to-backend', context,
+				'--force'],
+			GET + [ 'groups', '-l', 'sys2' + gname ],
+
+			DEL + [ 'group', gname + ',sys' + gname + ',sys2' + gname]
+			],
+			context=context,
+			descr='test add group in manually specified backend and group'
+				'backend move.'
+			))
+	else:
+		testsuite.add_scenario(ScenarioTest([
+			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ],
+			GET + [ 'groups', '-l' ],
+			DEL + [ 'group', gname]
+			],
+			context=context,
+			descr='test add group in manually specified backend (should fail).'
+			))
+
+	# this test will fail if there is only one backend, but will succeed if more.
+	testsuite.add_scenario(ScenarioTest([
+		ADD + [ 'group', '--name=%s' % gname, '-v',
+			'--users', 'root,toto,proot' ],
+		GET + [ 'groups', '-l' ],
+		DEL + [ 'group', gname],
+		ADD + [ 'group', '--name=%s' % gname, '-v',
+			'-u', 'proot,toto,bin' ],
+		GET + [ 'groups', '-l' ],
+		DEL + [ 'group', gname],
+		ADD + [ 'group', '--name=%s' % gname, '-v',
+			'--members', 'root,bar' ],
+		GET + [ 'groups', '-l' ],
+		DEL + [ 'group', gname],
+		ADD + [ 'group', '--name=%s' % gname, '-v',
+			'--add-users', 'root,toto,proot' ],
+		GET + [ 'groups', '-l' ],
+		DEL + [ 'group', gname]
+		],
+		context=context,
+		descr='''test add group --users flag.'''
+		))
 
 
 	# TODO: test other mod group arguments.
