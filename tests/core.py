@@ -1022,18 +1022,18 @@ def test_groups(context):
 	# this test will fail if there is only one backend, but will succeed if more.
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v',
-			'--users', 'root,toto,proot' ],
+			'--users', 'toto,proot' ],
 		GET + [ 'groups', '-l' ],
 		DEL + [ 'group', gname],
-		ADD + [ 'group', '--name=%s' % gname, '-v',
+		ADD + [ 'group', '--system', '--name=%s' % gname, '-v',
 			'-u', 'proot,toto,bin' ],
 		GET + [ 'groups', '-l' ],
 		DEL + [ 'group', gname],
 		ADD + [ 'group', '--name=%s' % gname, '-v',
-			'--members', 'root,bar' ],
+			'--members', 'foo,bar' ],
 		GET + [ 'groups', '-l' ],
 		DEL + [ 'group', gname],
-		ADD + [ 'group', '--name=%s' % gname, '-v',
+		ADD + [ 'group', '--system', '--name=%s' % gname, '-v',
 			'--add-users', 'root,toto,proot' ],
 		GET + [ 'groups', '-l' ],
 		DEL + [ 'group', gname]
