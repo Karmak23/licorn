@@ -973,10 +973,10 @@ def test_groups(context):
 	if context == 'openldap':
 		# there must be more than one backend for this to work.
 		testsuite.add_scenario(ScenarioTest([
-			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ],
-			GET + [ 'groups', '-l' ],
 			ADD + [ 'group', '--name=%s' % gname, '-v',
 				'--in-backend', 'shadow' ],
+			GET + [ 'groups', '-l' ],
+			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ],
 			GET + [ 'groups', '-l' ],
 			# this should fail saying that it will be done with std group
 			MOD + [ 'group', LMC.configuration.groups.resp_prefix + gname, '-v',
@@ -1011,9 +1011,7 @@ def test_groups(context):
 			))
 	else:
 		testsuite.add_scenario(ScenarioTest([
-			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ],
-			GET + [ 'groups', '-l' ],
-			DEL + [ 'group', gname]
+			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ]
 			],
 			context=context,
 			descr='test add group in manually specified backend (should fail).'
