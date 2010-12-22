@@ -406,7 +406,7 @@ def make_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message('''backups of system config files made for context %s.''' %
+	test_message('''Backed up system files for context %s.''' %
 		mode)
 def compare_delete_backups(mode):
 	""" """
