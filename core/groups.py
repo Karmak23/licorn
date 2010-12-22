@@ -2007,7 +2007,7 @@ class GroupsController(Singleton, CoreController):
 		""" Return true if gid is system, but outside the range of Licorn®
 			controlled GIDs."""
 		return gid < LMC.configuration.groups.system_gid_min \
-			and gid > LMC.configuration.groups.gid_max
+			or gid > LMC.configuration.groups.gid_max
 	def is_restricted_system_name(self, group_name):
 		""" return true if login is system, but outside the range of Licorn®
 			controlled UIDs. """
