@@ -1738,9 +1738,10 @@ class GroupsController(Singleton, CoreController):
 
 		if self.is_restricted_system_gid(gid) and not force:
 			logging.warning("Skipped move of restricted system group %s "
-				"(please use --force if you really want to do this, "
-				"but I don't recommend it at all, you will shoot yourself "
-				"in the foot)." % group_name)
+				"(please use %s if you really want to do this, "
+				"but it is strongly not recommended)." % (
+					stylize(ST_NAME, group_name),
+					stylize(ST_DEFAULT, '--force')))
 			return
 
 		if (group_name.startswith(LMC.configuration.groups.resp_prefix) or
