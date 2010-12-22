@@ -1145,6 +1145,11 @@ class LicornConfiguration(Singleton, LockedController):
 			return data
 		else:
 			sys.stdout.write(data + "\n")
+	def backends(self):
+		""" compatibility method, to get only the names of current backends
+			(used in CLI argparser).
+		"""
+		return LMC.backends.keys()
 	def _export_all(self):
 		"""Export all configuration data in a visual way."""
 
