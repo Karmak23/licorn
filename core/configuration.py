@@ -27,7 +27,7 @@ from licorn.foundations.base      import LicornConfigObject, Singleton, \
 from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
-from licorn.core.classes import LockedController
+from licorn.core.classes import LockedController, CoreModule
 
 class LicornConfiguration(Singleton, LockedController):
 	""" Contains all the underlying system configuration as attributes.
@@ -52,7 +52,6 @@ class LicornConfiguration(Singleton, LockedController):
 		self.app_name = 'Licorn®'
 
 		self.mta = None
-		self.ssh = None
 
 		# THIS install_path is used in keywords / keywords gui, not elsewhere.
 		# it is a hack to be able to test guis when Licorn is not installed.
@@ -482,61 +481,8 @@ class LicornConfiguration(Singleton, LockedController):
 	def detect_services(self):
 		""" Concentrates all calls for service detection on the current system
 		"""
-		self.detect_OpenSSH()
-
 		self.FindMTA()
 		self.FindMailboxType()
-	def detect_OpenSSH(self):
-		""" OpenSSH related code.
-			 - search for OpenSSHd configuration.
-			 - if found, verify remotessh group exists.
-			 - TODO: implement sshd_config modifications to include
-				'AllowGroups remotessh'
-		"""
-		self.ssh = LicornConfigObject()
-
-		#piddir   = "/var/run"
-		#spooldir = "/var/spool"
-
-		#
-		# Finding Postfix
-		#
-
-		if self.distro in (
-			distros.LICORN,
-			distros.UBUNTU,
-			distros.DEBIAN,
-			distros.REDHAT,
-			distros.GENTOO,
-			distros.MANDRIVA,
-			distros.NOVELL
-			):
-
-			if os.path.exists("/etc/ssh/sshd_config"):
-				self.ssh.enabled = True
-				self.ssh.group = 'remotessh'
-
-			else:
-				self.ssh.enabled = False
-
-		else:
-			logging.progress(_("SSH detection not supported yet on your system."
-				"Please get in touch with %s." % \
-				LicornConfiguration.developers_address))
-
-		return self.ssh.enabled
-	def check_OpenSSH(self, batch=False, auto_answer=None):
-		""" Verify mandatory defaults for OpenSSHd. """
-		if not self.ssh.enabled:
-			return
-
-		logging.progress('Checking existence of group %s…' %
-			stylize(ST_NAME, self.ssh.group))
-
-		if not LMC.groups.exists(name=self.ssh.group):
-			LMC.groups.AddGroup(name=self.ssh.group,
-				description=_('Users allowed to connect via SSHd'),
-				system=True, batch=True)
 	def FindMTA(self):
 		"""detect which is the underlying MTA."""
 
@@ -1154,7 +1100,13 @@ class LicornConfiguration(Singleton, LockedController):
 
 		data = "%s\n" % stylize(ST_APPNAME, "LicornConfiguration")
 
-		items = self.items()
+		items = self.items() + [
+					(backend.name, backend)
+					for backend in LMC.backends
+				] + [
+					(extension.name, extension)
+					for extension in LMC.extensions
+				]
 		items.sort()
 
 		for aname, attr in items:
@@ -1189,6 +1141,8 @@ class LicornConfiguration(Singleton, LockedController):
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
+			elif issubclass(attr.__class__, CoreModule):
+				data += "\n%s" % str(attr)
 			else:
 				data += ('''%s, to be implemented in '''
 					'''licorn.core.configuration.Export()\n''') % \
@@ -1240,8 +1194,6 @@ class LicornConfiguration(Singleton, LockedController):
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
 			auto_answer=auto_answer)
-
-		self.check_OpenSSH(batch=batch, auto_answer=auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
@@ -1388,8 +1340,9 @@ class LicornConfiguration(Singleton, LockedController):
 
 		if not minimal:
 			needed_groups.extend([ group for group in LMC.privileges
-				if group not in needed_groups])
-			# 'skels', 'remotessh', 'webmestres' [and so on] are not here
+				if group not in needed_groups
+					and group not in LMC.groups.name_cache])
+			# 'skels', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
 			# operate properly.

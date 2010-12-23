@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Licorn core - http://docs.licorn.org/core.html
+Licorn extensions - http://docs.licorn.org/extensions.html
 
 :copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
 
@@ -28,6 +28,6 @@ class ExtensionsManager(Singleton, ModulesManager):
 			module_path=__path__[0], module_sym_path='licorn.extensions')
 class LicornExtension(CoreModule):
 	def __init__(self, name='extension', controllers_compat=[]):
-		CoreModule.__init__(self, name=name, controller=LMC.extensions,
+		CoreModule.__init__(self, name=name, manager=LMC.extensions,
 			controllers_compat=controllers_compat)
 		assert ltrace('extensions', '| LicornExtension.__init__(%s)' % compat)

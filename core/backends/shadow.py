@@ -335,7 +335,6 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		lock_etc_shadow.Unlock()
 
 		logging.progress("Saved shadow users data to disk.")
-
 	def save_Groups(self):
 		""" Write the groups data in appropriate system files."""
 

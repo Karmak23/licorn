@@ -22,7 +22,8 @@ from licorn.foundations.constants import licornd_roles
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 											NamedObject, MixedDictObject, \
 											ReverseMappingDict, \
-											pyro_protected_attrs
+											pyro_protected_attrs, \
+											LicornConfigObject
 
 from licorn.core import LMC
 
@@ -158,7 +159,7 @@ class CoreController(LockedController):
 		self.find_prefered_backend()
 
 		# on client first pass, extensions are not yet loaded.
-		if 'extensions' in LMC.keys():
+		if hasattr(LMC, 'extensions'):
 			self.extensions = LMC.extensions.find_compatibles(self)
 		else:
 			self.extensions = None
@@ -963,6 +964,17 @@ class CoreModule(CoreUnitObject):
 		duplicate-data coming from different backends; this is the typical
 		problem a backend can't detect).
 
+		A module defines these attributes:
+
+		* modules_pre_depends
+		* modules_conflicts
+		* controllers_compat
+
+
+		If controllers_compat = system:
+
+		* system_load()
+
 		.. versionadded:: 1.3
 
 	"""
@@ -984,6 +996,10 @@ class CoreModule(CoreUnitObject):
 		#: FIXME: better comment
 		self.controllers_compat = controllers_compat
 
+		#: FIXME: better comment
+		self.configuration = LicornConfigObject()
+		self.paths         = LicornConfigObject()
+
 		#: a list of compatible modules. See :ref:`modules` for details
 		self.peer_compat = []
 
@@ -991,10 +1007,20 @@ class CoreModule(CoreUnitObject):
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
 	def __str__(self):
-		return self.name
-	def __repr__(self):
-		return str(self.__class__)
-	def load(self):
+		data = ''
+		for i in sorted(self.__dict__):
+			if i[0:2] == '__' or i in ('enabled', 'available'):
+				continue
+			if isinstance(getattr(self, i), LicornConfigObject):
+				data += u'%s\u21b3 %s:\n%s%s' % (
+						'\t' * getattr(self, i)._level,
+						i,
+						'\t' * getattr(self, i)._level,
+						str(getattr(self, i)))
+			else:
+				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
+		return data
+	def load(self, batch=False, auto_answer=None):
 		assert ltrace(self.name, '| load()')
 		if self.initialize():
 			self.enabled = self.is_enabled()
@@ -1011,10 +1037,14 @@ class CoreModule(CoreUnitObject):
 
 		getattr(self, 'genex_' % extype)(*args, **kwargs)
 	def is_enabled(self):
-		""" in standard operations, this method checks if the backend can be
+		""" in standard operations, this method checks if the module can be
 			enabled (in particular conditions). but the abstract method of the
-			base class just return self.enabled, for backends which don't make
-			a difference between available and enabled. """
+			base class just return :attr:`self.available`:
+			* for modules which don't make a difference between available
+			  and enabled, this is perfect.
+			* for module which can enable/disable a system service, they must
+			  overload this method and provide the good implementation.
+		"""
 		assert ltrace(self.name, '| is_enabled(%s)' % self.available)
 		return self.available
 	def enable(self):

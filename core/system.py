@@ -28,7 +28,15 @@ from licorn.core.classes import LockedController
 class SystemController(Singleton, LockedController):
 	""" This class implement a local system controller. It is meant to be used
 		remotely, via Pyro calls, to act on the local machine, or transmit
-		informations (status, uptime, load, etc) to the caller. """
+		informations (status, uptime, load, etc) to the caller.
+
+		.. note:: all extensions attached to this controller must implement
+			a :meth:`system_load` method, which will be called by the
+			:meth:`reload` method. This is to make extensions load their
+			**data**, which is different than loading their *configuration*,
+			which must have been done at
+			:meth:`~licorn.core.classes.CoreModule.initialize` time.
+		"""
 	init_ok = False
 
 	def __init__(self):
@@ -45,11 +53,57 @@ class SystemController(Singleton, LockedController):
 		SystemController.init_ok = True
 	def load(self):
 		pass
+	def reload(self):
+		""" load all our extensions. """
+		#print '>> reload sys'
+		if hasattr(self, 'extensions'):
+			self.load_system_extensions()
+		else:
+			if hasattr(LMC, 'extensions'):
+				#print '>> findcompat'
+				self.extensions = LMC.extensions.find_compatibles(self)
+				self.load_system_extensions()
+			else:
+				#print '>> sysextnone'
+				self.extensions = None
+	def load_system_extensions(self):
+		""" special case for SystemController. """
+		assert ltrace('system', '| load_system_extension()')
+		for ext in self.extensions:
+			ext.system_load()
 	def noop(self):
 		""" No-op function, called when remotely connecting pyro, to check if
 			link is OK between the server and the client. """
 		assert ltrace('system', '| noop(True)')
 		return True
+	def start_service(self, service_name):
+		""" start a service at the system level (currently upstart
+		compatible only). """
+		# TODO: use SystemserviceExtension...
+		ret = process.execute(['start', service_name])[1].strip()
+		logging.info('Started service %s (%s).' % (
+				stylize(ST_NAME, service_name), ret))
+	def stop_service(self, service_name):
+		""" stop a service at the system level (currently upstart
+		compatible only). """
+		# TODO: use SystemserviceExtension...
+		ret = process.execute(['stop', service_name])[1].strip()
+		logging.info('Stopped service %s (%s).' % (
+				stylize(ST_NAME, service_name), ret))
+	def reload_service(self, service_name):
+		""" reload a service at the system level (currently upstart
+		compatible only). """
+		# TODO: use SystemserviceExtension...
+		ret = process.execute(['reload', service_name])[1].strip()
+		logging.info('Reloaded service %s (%s).' % (
+				stylize(ST_NAME, service_name), ret))
+	def restart_service(self, service_name):
+		""" restart a service at the system level (currently upstart
+		compatible only). """
+		# TODO: use SystemserviceExtension...
+		ret = process.execute(['restart', service_name])[1].strip()
+		logging.info('Restarted service %s (%s).' % (
+				stylize(ST_NAME, service_name), ret))
 	def get_status(self):
 		""" Get local host current status. """
 		with self.lock():
@@ -104,7 +158,7 @@ class SystemController(Singleton, LockedController):
 			with self.lock():
 				self.status = host_status.SHUTTING_DOWN
 				return True
-	def extensions(self, client_only=False):
+	def get_extensions(self, client_only=False):
 		if client_only:
 			return [ key for key in LMC.extensions.keys()
 						if not LMC.extensions[key].server_only ]

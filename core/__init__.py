@@ -231,8 +231,15 @@ class LicornMasterController(MixedDictObject):
 		from licorn.extensions import ExtensionsManager
 		self.extensions = ExtensionsManager()
 		self.extensions.load(
-			self._ServerLMC.system.extensions(client_only=True) \
+			self._ServerLMC.system.get_extensions(client_only=True) \
 				if self._ServerLMC else None)
+
+		# extensions must have a clean configuration before continuing.
+		self.extensions.check(batch=True)
+
+		# we've got to reload system, else it can't see its own extensions
+		# (chicken and egg problem).
+		self.system.reload()
 	def __init_server_final(self):
 		""" Final phase of SERVER initialization. Load system controllers
 			and objects that doesn't need anything but are required to work.
