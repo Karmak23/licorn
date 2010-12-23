@@ -58,6 +58,15 @@ class NamedObject(object):
 		self.name     = self.__name__
 		if source:
 			self.copy_from(source)
+	def __str__(self):
+		data = ''
+		for i in sorted(self.__dict__):
+			if i[0] == '_': continue
+			if type(getattr(self, i)) == type(self):
+				data += u'%s\u21b3 %s:\n%s' % ('\t', i, str(getattr(self, i)))
+			else:
+				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
+		return data
 	def copy(self):
 		""" Implements the copy method like any other base object. """
 		assert ltrace('base', '| NamedObject.copy(%s)' % self.name)
