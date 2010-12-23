@@ -1025,7 +1025,7 @@ def test_groups(context):
 		DEL + [ 'group', gname],
 		ADD + [ 'group', '--system', '--name=%s' % gname, '-v',
 			'-u', 'proot,toto,bin' ],
-		GET + [ 'groups', '-l' ],
+		GET + [ 'groups', '-l', gname ],
 		DEL + [ 'group', gname],
 		ADD + [ 'group', '--name=%s' % gname, '-v',
 			'--members', 'foo,bar' ],
@@ -1033,7 +1033,7 @@ def test_groups(context):
 		DEL + [ 'group', gname],
 		ADD + [ 'group', '--system', '--name=%s' % gname, '-v',
 			'--add-users', 'root,toto,proot' ],
-		GET + [ 'groups', '-l' ],
+		GET + [ 'groups', '-l', gname ],
 		DEL + [ 'group', gname]
 		],
 		context=context,

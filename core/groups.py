@@ -484,6 +484,9 @@ class GroupsController(Singleton, CoreController):
 					stylize(ST_NAME, name),
 					stylize(ST_UGID, gid)))
 
+			# last operation before returning.
+			self.AddUsersInGroup(gid=gid, users_to_add=users_to_add)
+
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
 			assert ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (name, gid))
