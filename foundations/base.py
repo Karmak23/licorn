@@ -380,7 +380,7 @@ class LicornConfigObject():
 		self._level = level
 	def __str__(self):
 		data = ""
-		for i in self.__dict__:
+		for i in sorted(self.__dict__):
 			if i[0] == '_': continue
 			if type(getattr(self, i)) == type(self):
 				data += u'%s\u21b3 %s:\n%s' % ('\t'*self._level, i, str(getattr(self, i)))
@@ -390,7 +390,7 @@ class LicornConfigObject():
 	def __iter__(self):
 		""" make this object sequence-compatible, for use in
 			LicornConfiguration(). """
-		for attribute_name in dir(self):
+		for attribute_name in sorted(dir(self)):
 			if attribute_name[0] != '_':
 				yield getattr(self, attribute_name)
 class FsapiObject(Enumeration):

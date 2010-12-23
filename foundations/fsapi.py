@@ -1273,3 +1273,10 @@ def perms2str(perms, acl_form = False):
 		string += "\n"
 
 	return string
+def touch(fname, times=None):
+	""" this touch reimplementation comes from
+	`http://stackoverflow.com/questions/1158076/implement-touch-using-python`_
+	and I find it great.
+	"""
+	with file(fname, 'a'):
+		os.utime(fname, times)
