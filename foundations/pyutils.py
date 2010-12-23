@@ -229,7 +229,7 @@ def add_or_dupe(confdict, name, value):
 	doesn't exist. If it is already present, make the current value become the
 	first velue of a list, and append the new value. if value is already a list,
 	just append at the end."""
-	if confdict.has_key(name):
+	if name in confdict.keys():
 		if hasattr(confdict[name], '__iter__'):
 			if hasattr(confdict[name][0], '__iter__'):
 				confdict[name].append(value)
