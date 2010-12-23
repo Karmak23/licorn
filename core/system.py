@@ -76,34 +76,6 @@ class SystemController(Singleton, LockedController):
 			link is OK between the server and the client. """
 		assert ltrace('system', '| noop(True)')
 		return True
-	def start_service(self, service_name):
-		""" start a service at the system level (currently upstart
-		compatible only). """
-		# TODO: use SystemserviceExtension...
-		ret = process.execute(['start', service_name])[1].strip()
-		logging.info('Started service %s (%s).' % (
-				stylize(ST_NAME, service_name), ret))
-	def stop_service(self, service_name):
-		""" stop a service at the system level (currently upstart
-		compatible only). """
-		# TODO: use SystemserviceExtension...
-		ret = process.execute(['stop', service_name])[1].strip()
-		logging.info('Stopped service %s (%s).' % (
-				stylize(ST_NAME, service_name), ret))
-	def reload_service(self, service_name):
-		""" reload a service at the system level (currently upstart
-		compatible only). """
-		# TODO: use SystemserviceExtension...
-		ret = process.execute(['reload', service_name])[1].strip()
-		logging.info('Reloaded service %s (%s).' % (
-				stylize(ST_NAME, service_name), ret))
-	def restart_service(self, service_name):
-		""" restart a service at the system level (currently upstart
-		compatible only). """
-		# TODO: use SystemserviceExtension...
-		ret = process.execute(['restart', service_name])[1].strip()
-		logging.info('Restarted service %s (%s).' % (
-				stylize(ST_NAME, service_name), ret))
 	def get_status(self):
 		""" Get local host current status. """
 		with self.lock():

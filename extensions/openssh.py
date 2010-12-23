@@ -10,27 +10,30 @@ Licorn extensions: OpenSSH - http://docs.licorn.org/extensions/openssh.html
 
 import os
 
-from licorn.foundations         import exceptions, logging, fsapi, readers
-from licorn.foundations.styles  import *
-from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.base    import Singleton, MixedDictObject
-from licorn.foundations.classes import ConfigFile
+from licorn.foundations           import exceptions, logging
+from licorn.foundations           import fsapi, readers
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.base      import Singleton, MixedDictObject
+from licorn.foundations.classes   import ConfigFile
+from licorn.foundations.constants import services, svccmds
 
 from licorn.core               import LMC
-from licorn.extensions         import LicornExtension
+from licorn.extensions         import ServiceExtension
 
-class OpensshExtension(Singleton, LicornExtension):
-	""" Handle OpenSSH configuration and options. """
+class OpensshExtension(Singleton, ServiceExtension):
+	""" Handle [our interesting subset of] OpenSSH configuration and options.
+	"""
 	def __init__(self):
 		assert ltrace('extensions', '| __init__()')
-		LicornExtension.__init__(self, name='openssh')
+		ServiceExtension.__init__(self,
+			name='openssh',
+			service_name='ssh',
+			service_type=services.UPSTART
+		)
 
-		# no particular controller for this extension, it is a
-		# standalone one (no data, just configuration).
-		self.controllers_compat = []
-
-		# TODO: parameter this from the distro
-		# 		if self.distro in (
+		# TODO: parameter service_* from the distro
+		# 		if LMC.configuration.distro in (
 		#	distros.LICORN,
 		#	distros.UBUNTU,
 		#	distros.DEBIAN,
@@ -40,19 +43,20 @@ class OpensshExtension(Singleton, LicornExtension):
 		#	distros.NOVELL
 		#	):
 
-		self.service_name      = 'ssh'
 		self.paths.sshd_config = '/etc/ssh/sshd_config'
 		self.paths.sshd_binary = '/usr/sbin/sshd'
 		self.paths.pid_file    = '/var/run/sshd.pid'
 		self.paths.disabler    = '/etc/ssh/sshd_not_to_be_run'
-		self.group             = 'remotessh'
+
+		self.group = 'remotessh'
+
 		self.defaults = {
 				'UsePAM'                 : 'yes',
 				'StrictMode'             : 'yes',
 				'AllowGroups'            : '%s %s' % (
-							LMC.configuration.defaults.admin_group,
-							self.group
-						),
+						LMC.configuration.defaults.admin_group,
+						self.group
+					),
 				'PermitRootLogin'        : 'no',
 				'PasswordAuthentication' : 'no',
 			}
@@ -66,6 +70,10 @@ class OpensshExtension(Singleton, LicornExtension):
 
 			self.configuration = ConfigFile(self.paths.sshd_config,
 					readers.simple_conf_load_dict)
+		else:
+			logging.warning2('%s: not available because %s or %s do not exist '
+				'on the system.' % (stylize(ST_PATH, self.paths.sshd_binary),
+					stylize(ST_PATH, self.paths.sshd_config)))
 
 		return self.available
 	def is_enabled(self):
@@ -77,7 +85,7 @@ class OpensshExtension(Singleton, LicornExtension):
 			# upstart will not start the service twice. thanks, it just
 			# works well...
 			#and not process.already_running(self.paths.pid_file):
-			LMC.system.start_service(self.service_name)
+			self.service(svccmds.START)
 
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
@@ -123,11 +131,26 @@ class OpensshExtension(Singleton, LicornExtension):
 							self.paths.sshd_config)
 
 		if need_reload or need_rewrite:
-			LMC.system.reload_service(self.service_name)
+			self.service(svccmds.RELOAD)
 	def enable(self, batch=False, auto_answer=None):
-		os.unlink(self.path.disabler)
+		""" Start ``SSHd``, after having carefully checked all our needed
+			parameters and unlinked the service disabler file.
+		"""
+
 		self.check(batch=batch, auto_answer=auto_answer)
-		LMC.system.start_service(self.service_name)
+
+		# this has to be done as late as possible, thus after the check, to
+		# avoid potential races (starting the service from outside Licorn®
+		# while we are writing the config file in self.check(), for example).
+		os.unlink(self.path.disabler)
+		self.service(svccmds.START)
 	def disable(self):
-		LMC.system.stop_service(self.service_name)
+		""" Stop the running SSHd and touch the disabler file to make sure
+			it is not restarted outside of Licorn®.
+
+			.. note:: TODO: we've got to check this operation is atomic.
+				Shouldn't we create the disabler file before stopping the
+				service, to be sure no one else can race-start it ?
+			"""
+		self.service(svccmds.STOP)
 		fsapi.touch(self.paths.disabler)

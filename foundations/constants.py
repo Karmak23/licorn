@@ -144,6 +144,25 @@ backend_actions.UPDATE = 2
 backend_actions.DELETE = 3
 backend_actions.RENAME = 4
 
+services = EnumDict('services')
+services.UNKNOWN = 0
+services.UPSTART = 1
+services.SYSV    = 2
+services.BSD     = 3
+
+svccmds = EnumDict('svccmds')
+# a special case to specify where the service name should be inserted in the
+# command list. Not ideally placed here, but acceptable anyway IMHO.
+svccmds.POSITION = -1
+# standard service command types. UNKNOWN is reserved for detections purposes,
+# please use it only if you know what you are doing.
+svccmds.UNKNOWN = 0
+svccmds.START   = 1
+svccmds.STOP    = 2
+svccmds.RESTART = 3
+svccmds.RELOAD  = 4
+
+
 # this is a replica of python.gamin, to help displaying messages in a
 # human-readable form.
 gamin_events = {
