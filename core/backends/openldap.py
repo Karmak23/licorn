@@ -458,20 +458,6 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		assert ltrace('openldap', '< check_system() %s.' % stylize(
 			ST_OK, 'True'))
 		return True
-	def is_available(self):
-		""" Check if pam-ldap and slapd are installed.
-		This function fo not check if they are *configured*. We must assume
-		they are, else this would cost too much. There are dedicated functions
-		to check and alter the configuration. """
-
-		if os.path.exists(self.files.openldap_conf) \
-			and os.path.exists("/etc/ldap/slapd.d"):
-			# if all of these exist, libpam-ldap and slapd are installed. It
-			# is fine to assume that we can use them to handle the backend data.
-			# Else, just forget about it.
-			return True
-
-		return False
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 		users       = {}
