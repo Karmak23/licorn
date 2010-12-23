@@ -147,20 +147,29 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
+		selection = filters.STANDARD
+
+		if opts.system:
+			selection = filters.SYSTEM
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
 		users_to_get = LMC.users.Select(
-			self.select(LMC.users, 'user',
-				args,
-				include_id_lists=[
-					(opts.login, LMC.users.login_to_uid),
-					(opts.uid, LMC.users.confirm_uid)
-				],
-				exclude_id_lists=[
-					(opts.exclude, LMC.users.guess_identifier),
-					(opts.exclude_login, LMC.users.login_to_uid),
-					(opts.exclude_uid, LMC.users.confirm_uid)
-				],
-				default_selection=filters.STANDARD,
-				all=opts.all)
+				self.select(
+					LMC.users, 'user',
+					args,
+					include_id_lists = [
+						(opts.login, LMC.users.login_to_uid),
+						(opts.uid, LMC.users.confirm_uid)
+					],
+					exclude_id_lists = [
+						(opts.exclude, LMC.users.guess_identifier),
+						(opts.exclude_login, LMC.users.login_to_uid),
+						(opts.exclude_uid, LMC.users.confirm_uid)
+					],
+					default_selection = selection,
+					all=opts.all
+				)
 			)
 
 		if opts.xml:
@@ -194,13 +203,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		elif opts.empty:
 			selection = filters.EMPTY
 		elif opts.not_responsibles:
-				selection = filters.NOT_RESPONSIBLE
+			selection = filters.NOT_RESPONSIBLE
 		elif opts.not_guests:
-				selection = filters.NOT_GUEST
+			selection = filters.NOT_GUEST
 		elif opts.not_system:
-				selection = filters.NOT_SYSTEM
+			selection = filters.NOT_SYSTEM
 		elif opts.not_privileged:
-				selection = filters.NOT_PRIVILEGED
+			selection = filters.NOT_PRIVILEGED
 
 		elif not opts.all:
 			# must be the last case!
@@ -950,33 +959,53 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		LMC.profiles.WriteConf(LMC.configuration.profiles_config_file)
 		print "\nFinished"
 	def del_user(self, opts, args):
-		""" delete a user account. """
-		include_id_lists=[
+		""" delete one or more user account(s). """
+
+		include_id_lists = [
 			(opts.login, LMC.users.login_to_uid),
 			(opts.uid, LMC.users.confirm_uid)
 		]
-		exclude_id_lists=[
+
+		exclude_id_lists = [
 			(opts.exclude, LMC.users.guess_identifier),
 			(opts.exclude_login, LMC.users.login_to_uid),
 			(opts.exclude_uid, LMC.users.confirm_uid),
-			([os.getuid()], LMC.users.confirm_uid)
+			([os.getuid()], lambda x: x)
 		]
+
 		if opts.all and (
-			(
-				# NOTE TO THE READER: don't event try to simplify these conditions,
-				# or the order the tests: they just MATTER. Read the tests in pure
-				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
-				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all users?',
-					auto_answer=opts.auto_answer) or not opts.non_interactive)):
-				include_id_lists.extend([
+					(
+						# NOTE TO THE READER: don't event try to simplify these conditions,
+						# or the order the tests: they just MATTER. Read the tests in pure
+						# english to undestand them and why the order is important.
+						opts.non_interactive and opts.force
+					)
+					or opts.batch
+					or (
+						opts.non_interactive and logging.ask_for_repair(
+							'Are you sure you want to delete all users?',
+							auto_answer=opts.auto_answer)
+						or not opts.non_interactive
+					)
+				):
+			include_id_lists.extend([
 					(LMC.users.Select(filters.STD), lambda x: x),
 					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
-					])
-		uids_to_del = self.select(LMC.users, 'user', args=args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists)
+				])
+
+		selection = filters.NONE
+
+		if opts.system:
+			selection = filters.SYSTEM
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
+		uids_to_del = self.select(
+						LMC.users, 'user', args=args,
+						include_id_lists = include_id_lists,
+						exclude_id_lists = exclude_id_lists,
+						default_selection = selection
+					)
 
 		for uid in uids_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
@@ -1028,35 +1057,63 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_group(self, opts, args):
 		""" delete an Licorn group. """
 		selection = filters.NONE
-		if opts.empty:
+
+		if opts.privileged:
+			selection = filters.PRIVILEGED
+		elif opts.responsibles:
+			selection = filters.RESPONSIBLE
+		elif opts.guests:
+			selection = filters.GUEST
+		elif opts.system:
+			selection = filters.SYSTEM
+		elif opts.empty:
 			selection = filters.EMPTY
+		elif opts.not_responsibles:
+			selection = filters.NOT_RESPONSIBLE
+		elif opts.not_guests:
+			selection = filters.NOT_GUEST
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+		elif opts.not_privileged:
+			selection = filters.NOT_PRIVILEGED
+
 		include_id_lists=[
 			(opts.name, LMC.groups.name_to_gid),
 			(opts.gid, LMC.groups.confirm_gid),
 		]
+
 		exclude_id_lists = [
 			(opts.exclude, LMC.groups.guess_identifier),
 			(opts.exclude_group, LMC.groups.name_to_gid),
 			(opts.exclude_gid, LMC.groups.confirm_gid)
 		]
+
 		if opts.all and (
-			(
-				# NOTE TO THE READER: don't event try to simplify these conditions,
-				# or the order the tests: they just MATTER. Read the tests in pure
-				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
-				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all groups?',
-					auto_answer=opts.auto_answer) or not opts.non_interactive)):
+				(
+					# NOTE TO THE READER: don't event try to simplify these conditions,
+					# or the order the tests: they just MATTER. Read the tests in pure
+					# english to undestand them and why the order is important.
+					opts.non_interactive and opts.force
+				)
+				or opts.batch
+				or (
+					opts.non_interactive and logging.ask_for_repair(
+						'Are you sure you want to delete all groups?',
+						auto_answer=opts.auto_answer)
+					or not opts.non_interactive
+				)
+			):
 				include_id_lists.extend([
 					(LMC.groups.Select(filters.STD), lambda x: x),
 					(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
 					])
+
 		gids_to_del = self.select(LMC.groups, 'group',
 					args,
-					include_id_lists=include_id_lists,
+					include_id_lists = include_id_lists,
 					exclude_id_lists = exclude_id_lists,
 					default_selection=selection)
+
 		for gid in gids_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
 				logging.ask_for_repair('''Delete group %s?''' % stylize(

@@ -17,7 +17,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
 from licorn.foundations.messaging import MessageProcessor
 
-from licorn.core           import LMC
+from licorn.core import LMC
 import argparser
 
 #: Proxy to `daemon.cmdlistener.rwi` used in all CLI tools to transmit commands
@@ -103,8 +103,9 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			del pyro_start_time
 
 			# not used yet, but kept for future use.
-			#server=Pyro.core.getAttrProxyForURI("PYROLOC://localhost:%s/msgproc" %
-			#	configuration.licornd.pyro.port)
+			#server=Pyro.core.getAttrProxyForURI(
+			#	"PYROLOC://localhost:%s/msgproc" %
+			#		configuration.licornd.pyro.port)
 
 			if giant_locked:
 				from licorn.foundations.classes import FileLock
@@ -114,6 +115,9 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			else :
 				cmd_start_time = time.time()
 				getattr(RWI, functions[mode][1])(opts=opts, args=args)
+
+			### FIXME
+			#signal.pause()
 
 			LMC.release()
 
