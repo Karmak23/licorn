@@ -61,7 +61,21 @@ class OpensshExtension(Singleton, ServiceExtension):
 				'PasswordAuthentication' : 'no',
 			}
 	def initialize(self):
-		""" Return True if :program:`sshd` is installed on the local system.
+		""" Return True if :program:`sshd` is installed on the system and if
+			the file :file:`sshd_config` exists where it should be.
+
+			.. note:: it's up to the ``openssh-server`` package maintainer
+				to ensure the configuration file is created after package
+				installation: it's not our role to create it, because we don't
+				have enough default directives for that.
+
+				If the configuration file or the executable don't exist, a
+				:func:`~licorn.foundations.logging.warning2` will be issued to
+				be sure the administrator can know what's going with relative
+				ease (e.g. launch :program:`licornd -rvD`). We don't use
+				:func:`~licorn.foundations.logging.warning` to not a pollute
+				standard messages in normal/wanted situations (when OpenSSH is
+				simply not installed).
 		"""
 
 		if os.path.exists(self.paths.sshd_binary) \
@@ -77,7 +91,19 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		return self.available
 	def is_enabled(self):
-		""" OpenSSH server is enabled when this file does not exist. """
+		""" OpenSSH server is enabled when the service-disabler
+			does not exist. If we should run, verify the ``SSHd``
+			process is currently running, else start it.
+
+			..note:: Starting the ``SSHd`` process here is just a matter of
+				consistency: :attr:`self.enabled` implies the service runs, so
+				this must be carefully enforced.
+
+				After that point, if the configuration changes because of our
+				needs, the process will be reloaded as needed, but this is a
+				distinct operation. For extension consistency, the two must be
+				done.
+		"""
 
 		must_be_running = not os.path.exists(self.paths.disabler)
 
@@ -89,7 +115,19 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
-		""" check OpenSSH needed things. """
+		""" check our OpenSSH needed things (the ``remotessh`` group and our
+			predefined configuration directives and values), and
+			:meth:`reload <~licorn.extensions.ServiceExtension.service>` the
+			service on any change.
+
+		.. note:: TODO: i'm not sure if creating the group really implies
+			``SSHd`` to be reloaded. If it resolves the GID on start for
+			performance consideration, we should. But if the ``AllowGroups``
+			check is purely dynamic (which I think, because members could
+			easily change during an ``SSHd`` run), the reload on group creation
+			is useless. Go into sshd sources and see for ourselves... One day,
+			When I've got time. As of now, stay as much careful as we can.
+		"""
 
 		logging.progress('Checking existence of group %s…' %
 				stylize(ST_NAME, self.group))

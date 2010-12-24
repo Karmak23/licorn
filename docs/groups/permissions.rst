@@ -1,5 +1,7 @@
 .. _groupspermissions:
 
+.. _permissiveness:
+
 ==================
 Groups permissions
 ==================

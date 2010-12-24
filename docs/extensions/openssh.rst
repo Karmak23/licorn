@@ -9,9 +9,9 @@ The `OpenSSH` extension affects primarily the server.
 Server side
 ===========
 
-* checks ``sshd`` running status
-* Adds ``AllowGroups`` directive to restrict system access.
+* Adds ``AllowGroups`` directive to restrict system access to groups ``admins`` (Licorn® administrator group) and ``remotessh`` (for standard or system users; not administrators).
 * Denies ``PermitRootLogin`` by default.
+* Checks ``sshd`` running status.
 * start/stop/restart/reload ``ssh`` service when needed.
 
 Client side

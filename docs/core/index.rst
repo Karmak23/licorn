@@ -19,6 +19,7 @@ Core controllers and objects
 .. toctree::
 	:maxdepth: 2
 
+	lmc
 	backends
 	users
 	groups
@@ -26,6 +27,7 @@ Core controllers and objects
 	privileges
 	machines
 	system
+	../extensions/index
 
 Abstract classes & concepts
 ===========================

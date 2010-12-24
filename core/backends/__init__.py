@@ -43,7 +43,8 @@ class BackendsManager(Singleton, ModulesManager):
 			module_path=__path__[0], module_sym_path='licorn.core.backends')
 	def enable_backend(self, backend_name):
 		""" Enable a given backend, then call
-			:meth:`~LMC.reload_controllers_backends`. Enabling the backend
+			:meth:`~licorn.core.LicornMasterController.reload_controllers_backends`.
+			Enabling the backend
 			will probably modify system files or services, but whatever is done
 			is different from a backend to another."""
 
@@ -52,7 +53,8 @@ class BackendsManager(Singleton, ModulesManager):
 		LMC.reload_controllers_backends()
 	def disable_backend(self, backend_name):
 		""" Disable a given backend,  then call
-			:meth:`~LMC.reload_controllers_backends`. What is effectively
+			:meth:`~licorn.core.LicornMasterController.reload_controllers_backends`.
+			What is effectively
 			done by the backend disabling itself is different from a
 			backend to another."""
 

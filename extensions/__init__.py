@@ -6,6 +6,10 @@ Licorn extensions - http://docs.licorn.org/extensions.html
 
 :license: GNU GPL version 2
 
+Extensions can "extend" :ref:`CoreController`s
+		(ex. configuration) or :ref:`CoreObject`s (ex. :class:`User` or
+		:class:`Group`).
+
 """
 
 import os
@@ -21,9 +25,16 @@ from licorn.core               import LMC
 from licorn.core.classes       import ModulesManager, CoreModule
 
 class ExtensionsManager(Singleton, ModulesManager):
-	""" Handle licorn extensions. Extensions can "extend" :ref:`CoreController`s
-		(ex. configuration) or :ref:`CoreObject`s (ex. :class:`User` or
-		:class:`Group`). """
+	""" Store and manage all Licorn® extensions instances. For now, this
+		manager does nothing more than the
+		:class:`~licorn.core.classes.ModulesManager`.
+
+		It just has a fixed name ``extensions`` (to match the
+		:obj:`LMC.extensions` attribute where it's stored) and a fixed
+		module path (where the current source file is stored).
+
+		.. versionadded:: 1.3
+	"""
 	def __init__(self):
 		assert ltrace('extensions', '| __init__()')
 		ModulesManager.__init__(self,
@@ -33,6 +44,14 @@ class ExtensionsManager(Singleton, ModulesManager):
 				module_sym_path='licorn.extensions'
 			)
 class LicornExtension(CoreModule):
+	""" The bare minimum attributes and methods for an extension.
+
+		Currently, it just sets the manager argument to the fixed
+		:obj:`LMC.extensions` value (the
+		:class:`~licorn.extensions.ExtensionsManager` global instance).
+
+		.. versionadded:: 1.3
+	"""
 	def __init__(self, name='extension', controllers_compat=[]):
 		CoreModule.__init__(self,
 				name=name,

@@ -43,3 +43,7 @@ Extensions abstract classes
 .. autoclass:: licorn.extensions.LicornExtension
 	:members:
 	:undoc-members:
+
+.. autoclass:: licorn.extensions.ServiceExtension
+	:members:
+	:undoc-members:

@@ -762,22 +762,44 @@ class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
 
+		.. note:: TODO: implement module_sym_path auto-detection, for the day
+			we will use it. For now we don't care about it.
+
 		.. versionadded:: 1.3
 
 	"""
+	#: In this class we've got some reserved attributes to hide from dict-like
+	#: methods.
 	_licorn_protected_attrs = (
 			LockedController._licorn_protected_attrs
 			+ ['_available_modules', 'module_type', 'module_path',
 				'module_sym_path']
 		)
 	def __init__(self, name, module_type, module_path, module_sym_path):
-		""" TODO: implement module_sym_path auto detection. """
 		LockedController.__init__(self, name)
 		self._available_modules = MixedDictObject('<no_type_yet>')
 		self.module_type = module_type
 		self.module_path = module_path
 		self.module_sym_path = module_sym_path
 	def available(self):
+		""" just a shortcut to get :attr:`self._available_modules`. When I
+			type::
+
+				LMC.extensions.available()
+				# or
+				LMC.backends.available()
+
+			It just feels natural to me to get an interator over available
+			modules. :attr:`self._available_modules` is currently a
+			:class:`~licorn.foundations.base.MixedDictObject` and writing::
+
+				for ext in LMC.extensions.available():
+					# ext name is always accessible via ext.name
+					...
+
+			Just does what you expect it to do.
+
+		"""
 		return self._available_modules
 	def load(self, client=False, server_side_modules=[]):
 		""" load our modules (can be different type but the principle is the
@@ -786,6 +808,10 @@ class ModulesManager(LockedController):
 			If we are on the server, activate every module we can.
 			If we are on a client, activate module only if module is enable
 			on the server.
+
+			.. note:: TODO: implement module dependancies resolution. this is
+				needed for the upcoming rdiff-backup/volumes extensions
+				couple (at least).
 		"""
 
 		assert ltrace(self.name, '> load(type=%s, path=%s)' % (self.module_type,
@@ -850,7 +876,14 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '< load()')
 	def find_compatibles(self, controller):
-		""" Return a list of compatible modules with a given controller. """
+		""" Return a list of modules (real instances, not just
+			names) compatible with a given controller.
+
+			:param controller: the controller for which we want to lookup
+				compatible extensions, passed as intance reference (not just
+				the name, please).
+
+		"""
 
 		assert ltrace(self.name, '| find_compatibles(for: %s, from LMC.%s=%s'
 			% (controller.name, self.name, str([x.name for x in self])))
@@ -863,8 +896,11 @@ class ModulesManager(LockedController):
 		return [ module for module in self \
 				if controller.name in module.controllers_compat ]
 	def enable_module(self, module_name):
-		""" try to enable a given module_name. what to do exactly is left to the
-		backend itself."""
+		""" Try to **enable** a given module_name. What is exactly done is left
+			to the module itself, because the current method will just call the
+			:meth:`~licorn.core.classes.CoreModule.enable` method of the module.
+
+		"""
 
 		assert ltrace(self.name, '| enable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
@@ -887,8 +923,11 @@ class ModulesManager(LockedController):
 			raise exceptions.DoesntExistsException('No %s by that name "%s", '
 				'sorry.' % (self.module_type, module_name))
 	def disable_module(self, module_name):
-		""" try to disable a given module. what to do exactly is left to the
-		module itself."""
+		""" Try to **disable** a given module. What is exactly done is left
+			to the module itself, because the current method will just call the
+			:meth:`~licorn.core.classes.CoreModule.disable` method of the module.
+
+		"""
 
 		assert ltrace(self.name, '| disable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
@@ -908,9 +947,15 @@ class ModulesManager(LockedController):
 			raise exceptions.DoesntExistsException('No %s by that name "%s", '
 				'sorry.' % (self.module_type, module_name))
 	def check(self, batch=False, auto_answer=None):
-		""" Check all enabled modules, then all available modules. Checking them
-			will make them configure themselves, and configure the required
-			underlying system daemons, services or files.
+		""" Check all **enabled** modules, then all **available** modules.
+			Checking them will make them configure themselves, configure the
+			required underlying system daemons, services or files, and
+			eventually start services (depending of which type of module it
+			is).
+
+			For more details, refer to the
+			:meth:`~licorn.core.classes.CoreModule.check` method of the desired
+			module.
 		"""
 
 		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
@@ -927,17 +972,40 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '< check()')
 class CoreUnitObject(NamedObject):
-	""" Common attributes for unit objects  and backends in Licorn® core.
+	""" Common attributes for unit objects and
+		:class:`modules <~licorn.core.classes.CoreModule>` in Licorn® core.
+
+		This class defines the following attributes:
+
+		.. attribute:: oid
+			this attribute is the Licorn® object internal unique number (it's
+			unique among all instances of a given class). If not given in
+			:meth:`__init__`, it will be determined from next free
+			oid stored in the :attr:`CoreUnitObject.counter` class attribute.
+
+		.. attribute:: _controller
+			a reference to the object's container (manager or controller). Must
+			be passed as :meth:`__init__` argument, else the object won't be
+			able to easily find it's parent when it needs it.
+
+		.. warning:: every derivative class of this one should overload the
+			:attr:`counter` class attribute with its own, to avoid oid
+			confusion between classes.
 
 		.. versionadded:: 1.3
 
 	"""
 
-	# no need to add our _* attributes, because we don't inherit from
-	# MixedDictObject. This Class attribute won't be used unless using
-	# MixedDictObject or one of its inherited classes.
+	#: no need to add our _* attributes, because we don't inherit from
+	#: :class:`~licorn.foundations.base.MixedDictObject`. This class attribute
+	#: won't be used unless using
+	#: :class:`~licorn.foundations.base.MixedDictObject` or one of its
+	#: inherited classes.
 	_licorn_protected_attrs = NamedObject._licorn_protected_attrs
+
+	#: the static oid generation counter.
 	counter = 0
+
 	def __init__(self, name=None, oid=None, controller=None):
 		NamedObject.__init__(self, name)
 		assert ltrace('objects',
@@ -966,14 +1034,22 @@ class CoreModule(CoreUnitObject):
 
 		A module defines these attributes:
 
-		* modules_pre_depends
-		* modules_conflicts
-		* controllers_compat
+		* modules_pre_depends TODO
+		* modules_conflicts TODO
+		* controllers_compat TODO
 
 
-		If controllers_compat = system:
+		.. note:: if :attr:`self.controllers_compat` contains ``system`` (name
+			of :class:`~licorn.core.system.SystemController` global instance),
+			the current class must implement the special :meth:`system_load`
+			method. This method will be called *after* module load and *after*
+			:class:`~licorn.core.system.SystemController` instanciation, to
+			reconnect the module data to its controller.
 
-		* system_load()
+			This is mainly because extensions are loaded after the
+			:class:`~licorn.core.system.SystemController` instanciation in
+			``LMC``, and we currently can't do it differently, ``system`` needs
+			to be up very early in the inter-daemon connection process.
 
 		.. versionadded:: 1.3
 
@@ -1025,8 +1101,24 @@ class CoreModule(CoreUnitObject):
 		if self.initialize():
 			self.enabled = self.is_enabled()
 	def generate_exception(extype, *args, **kwargs):
-		""" generic mechanism for exception generation (every backend can
-		implement only the exceptions he handles). """
+		""" Generic mechanism for :class:`Exception` dynamic generation.
+
+			Every module (backend or extension) can implement only the
+			exceptions it handles, by defining special methods whose names
+			start with ``genex_``.
+
+			:param extype: the type of the extension (most generally an
+				Exception class name, passed as a string). This parameter will
+				be used to resolve the wanted ``genex_extype()`` method, with
+				Python's builtin function :func:`getattr` on :obj:`self`.
+
+				The existence of the wanted ``genex_*`` method is checked only
+				at debbuging time with :func:`assert`. At normal runtime, a non
+				existing method will make the program crash. You're warned.
+			:param *args:
+			:param **kwargs: arguments that will be blindly passed to the
+				``genex_*`` methods.
+		"""
 
 		assert ltrace(self.name, '| CoreModule.generate_exception(%s,%s,%s)' % (
 			extype, args, kwargs))
@@ -1037,35 +1129,58 @@ class CoreModule(CoreUnitObject):
 
 		getattr(self, 'genex_' % extype)(*args, **kwargs)
 	def is_enabled(self):
-		""" in standard operations, this method checks if the module can be
+		""" In standard operations, this method checks if the module can be
 			enabled (in particular conditions). but the abstract method of the
 			base class just return :attr:`self.available`:
+
 			* for modules which don't make a difference between available
 			  and enabled, this is perfect.
-			* for module which can enable/disable a system service, they must
-			  overload this method and provide the good implementation.
+			* for module which can enable/disable a system service (thus
+			  inherit from :class:`~licorn.extensions.ServiceExtension`, they
+			  must overload this method and provide the good implementation.
+
 		"""
 		assert ltrace(self.name, '| is_enabled(%s)' % self.available)
 		return self.available
 	def enable(self):
+		""" In this abstract method, just return ``False`` (an abstract module
+			can't be enabled in any way).
+
+			It's up to derivatives to overload this method to implement
+			whatever they need.
+		"""
 		assert ltrace(self.name, '| enable(False)')
 		return False
 	def disable(self):
+		""" In this abstract method, just return ``True`` (an abstract module
+			is always disabled).
+
+			It's up to derivatives to overload this method to implement
+			whatever they need.
+		"""
 		assert ltrace(self.name, '| disable(True)')
 		return True
 	def initialize(self):
-		"""
-		For an abstract module, initialize() always return False.
+		""" For an abstract module, this method always return ``False``.
+			For a standard module, it must return the attribute
+			:attr:`self.available`, after having determined if the module
+			**is** available or not.
 
-		"active" is filled by core.configuration and gives a hint about the
-		system configuration:
-			- active will be true if the underlying system is configured to
-				use the backend. That doesn't imply the backend CAN be used,
-				for exemple on a partially configured system.
-			- active will be false if the backend is deactivated in the system
-				configuration. The backend can be fully operationnal anyway. In
-				this case "active" means that the backend will be used (or not)
-				by Licorn.
+			Conditions of availability vary from a module to another. Generally
+			speaking, a service-helper module should gather its service main
+			configuration file and main binary, to check if they are installed.
+
+			* if not installed, just return :attr:`self.available` (it's
+			  assigned ``False`` in :meth:`self.__init__` and if you didn't
+			  change it, it's ready.
+			* if installed, change :attr:`self.available` value to ``True`` and
+			  return it, too.
+
+			.. note:: For more specific details, see classes
+				:class:`~licorn.extensions.LicornExtension` and derivatives, and
+				:class:`~licorn.core.backends.CoreBackend` and derivatives,
+				because there are other things to take in consideration when
+				implementing *end-of-road* modules.
 
 		"""
 

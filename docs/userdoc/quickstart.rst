@@ -2,24 +2,31 @@
 
 .. highlight:: bash
 
-Licorn® quickstarter: what can you do in less than one minute ?
-===============================================================
+Quickstarter: Licorn® in 3 minutes
+==================================
 
-One minute is quite a big time spent on Licorn®, you will usually not do it as much. You can quickstart with the CLI (wich has full cow-power) or the WMI, which has less functionnalities but is a nice piece of web interface.
+Licorn® is easy to use, you will usually not spend much time on it. This is what I expect from good software: **efficiency** (and sex appeal, but it's software, huh?). Licorn® is all about efficiency for the system manager.
+
+You can quickstart with the :abbr:`CLI Command Line Interface`, which is my prefered interface for its conciseness and good level of auto-guess-what-human-want-without-bothering.
+
+The :abbr:`WMI Web Management Interface` is perfect for normal persons: it has less functionnalities and is totally fool-proof (no root acces). Some say it's a nice piece of modern web interface.
 
 CLI Quickstarter
 ----------------
 
-Creating 3 users, putting them together in a work group::
+Creating 3 users and putting them together in a work group just created::
 
-	add group WorkGroup
-	add user john --gecos "John Doe" --ingroups WorkGroup
-	add user betty --gecos "Betty Boop" -G WorkGroup
-	add user patty --gecos "Patty Smith" -G WorkGroup
+	add user john --gecos "John Doe"
+	add user betty --gecos "Betty Boop"
+	add user patty --gecos "Patty Smith"
+	add group WorkGroup --members john,betty,patty
 
 After that, putting already existing user ''Ben Gates'' in the group::
 
+	# the short way
 	add user ben WorkGroup
+	# the long way:
+	mod user ben --add-to-group WorkGroup
 
 Betty lost her password::
 
@@ -28,10 +35,10 @@ Betty lost her password::
 
 	# interactively change it; root doesn't need to know the old one.
 	sudo mod user betty -C
-	# same command, human-readable:
+	# the same, human-readable:
 	sudo mod user betty --change-password
 
-The group will be not permissive by default, meaning that when a member shares a file with others, they can read it but not modify it. It you want to be able to, just make the group permissive::
+The group Workgroup is be not permissive by default, meaning that when a member shares a file with others, they can read it but not modify it (:ref:`more details on permissiveness <permissiveness>`?). It you want to be able to, just make the group permissive::
 
 	mod group WorkGroup -p
 	# same thing, human-readable:
@@ -40,15 +47,27 @@ The group will be not permissive by default, meaning that when a member shares a
 Creating another permissive group, and making already-existing and future users automatically members of this group::
 
 	add group Public_Shared -p --descr 'common shared files for every one'
+
 	# this is applyed live for existing users:
 	mod profile users --add-groups Public_Shared
 
 You just modified the `Users` profile, which is shipped by default on Licorn®::
 
 	get profiles
+		...
 	# -l stands for "--long", you get more informations
 	get groups -l
+		...
 	get users
+		...
+
+Clean everything just done in this quickstarter::
+
+	# if you don't specify --no-archive, everything is moved and timestamped in /home/archives
+	del user --not-system --no-archive
+	del group --not-system --no-archive
+
+Now you can :ref:`discover more about the CLI <cli>`.
 
 WMI Quickstarter
 ----------------

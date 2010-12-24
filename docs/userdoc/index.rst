@@ -10,8 +10,8 @@ Main audience of Licorn® are system administrators.
 	:maxdepth: 2
 
 	quickstart
-	../wmi/index
 	../cli/index
+	../wmi/index
 	../configuration
 	../daemon
 	../extensions
