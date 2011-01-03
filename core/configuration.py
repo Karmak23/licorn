@@ -35,8 +35,8 @@ class LicornConfiguration(Singleton, LockedController):
 	"""
 
 	# bypass multiple init and del calls (we are a singleton)
-	init_ok     = False
-	del_ok      = False
+	init_ok = False
+	del_ok  = False
 
 	def __init__(self, minimal=False, batch=False):
 		""" Gather underlying system configuration and load it for licorn.* """
@@ -1110,7 +1110,6 @@ class LicornConfiguration(Singleton, LockedController):
 		items.sort()
 
 		for aname, attr in items:
-
 			if aname in ('tmp_dir'):
 				continue
 

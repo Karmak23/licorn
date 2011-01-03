@@ -48,6 +48,27 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		ShadowBackend.init_ok = True
 		assert ltrace('shadow', '< __init__(%s)' % ShadowBackend.init_ok)
+	def initialize(self):
+		""" We have to be sure a human error didn't put
+			``backends.shadow.enabled = False`` in the configuration, else this
+			would lead to I-don't-want-to-know-about problems.
+
+			This initialize method only checks that, because the shadow backend
+			must be always enabled.
+		"""
+
+		try:
+			del LMC.configuration.backends.shadow
+			logging.warning("%s shadow backend (this is important, "
+				"please don't try to set %s in %s!" % (
+						stylize(ST_IMPORTANT, 'RE-enabled'),
+						stylize(ST_COMMENT, 'backends.shadow.enabled=False'),
+						stylize(ST_PATH, LMC.configuration.main_config_file)
+					)
+				)
+		except AttributeError:
+			pass
+		return self.available
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 

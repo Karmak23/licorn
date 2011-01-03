@@ -848,22 +848,36 @@ class ModulesManager(LockedController):
 			module.load()
 
 			if module.available:
-				if module.enabled:
-					self[module.name] = module
-					assert ltrace(self.name, 'loaded %s %s' % (
-						self.module_type,
-						stylize(ST_NAME, module.dump_status(True))))
-				else:
-					if client and module_name in server_side_modules:
-						# the module is enabled on the server, we must
-						# enable it locally on the client, too.
-						module.enable()
+				if self.not_manually_disabled(module.name):
+					if module.enabled:
 						self[module.name] = module
+						assert ltrace(self.name, 'loaded %s %s' % (
+							self.module_type,
+							stylize(ST_NAME, module.dump_status(True))))
 					else:
-						self._available_modules[module.name] = module
-						assert ltrace(self.name, '%s %s is only available' %
-							(self.module_type, stylize(ST_NAME, module.name)
-							))
+						if client and module_name in server_side_modules:
+							# the module is enabled on the server, we must
+							# enable it locally on the client, too.
+							module.enable()
+							self[module.name] = module
+						else:
+							self._available_modules[module.name] = module
+							assert ltrace(self.name, '%s %s is only available' %
+									(
+										self.module_type,
+										stylize(ST_NAME, module.name)
+									)
+								)
+				else:
+					logging.info('%s manually disabled %s %s in %s.' %
+									(
+										stylize(ST_DISABLED, 'Skipped'),
+										self.module_type,
+										stylize(ST_NAME, module.name),
+										stylize(ST_PATH,
+											LMC.configuration.main_config_file)
+									)
+								)
 			else:
 				assert ltrace(self.name, '%s %s NOT available' % (
 					self.module_type, stylize(ST_NAME, module.name)))
@@ -875,6 +889,30 @@ class ModulesManager(LockedController):
 							self.module_type, module_name))
 
 		assert ltrace(self.name, '< load()')
+	def not_manually_disabled(self, module_name):
+		""" see if module has been manually disabled in main configuration file.
+		"""
+
+		assert ltrace(self.name, '| not_manually_disabled(%s)' % module_name)
+
+		#print '>> ', dir(LMC.configuration), ' ', self.name
+
+		if hasattr(LMC.configuration, self.name):
+			conf = getattr(LMC.configuration, self.name)
+			#print '>> ', conf
+			if hasattr(conf, module_name):
+				module_conf = getattr(conf, module_name)
+				#print '>> ', module_conf
+				if hasattr(module_conf, 'enabled'):
+					assert ltrace(self.name, 'manual %s state %s found in '
+						'configuration' % (self.module_type, 'enabled'
+							if getattr(module_conf, 'enabled') else 'disabled')
+						)
+					return getattr(module_conf, 'enabled')
+
+		# if no configuration directive is found, the module is considered
+		# enabled by default.
+		return True
 	def find_compatibles(self, controller):
 		""" Return a list of modules (real instances, not just
 			names) compatible with a given controller.
