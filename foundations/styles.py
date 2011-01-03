@@ -87,7 +87,12 @@ ST_ON        = ST_ONLINE
 ST_OFFLINE   = 39
 ST_OFF       = ST_OFFLINE
 ST_RUNNING   = 40
+ST_ENABLED   = ST_RUNNING
+ST_UNLOCKED  = ST_RUNNING
 ST_STOPPED   = 41
+ST_DISABLED  = ST_STOPPED
+ST_LOCKED    = ST_STOPPED
+ST_DEVICE    = 42
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -128,11 +133,10 @@ colors = {
 	ST_COMMENT  : __ascii[ST_BROWN],
 	ST_ADDRESS  : __ascii[ST_BLUE],
 	ST_ONLINE   : __ascii[ST_WHITE],
-	ST_ON       : __ascii[ST_WHITE],
 	ST_OFFLINE  : __ascii[ST_GREY],
-	ST_OFF      : __ascii[ST_GREY],
 	ST_RUNNING  : __ascii[ST_FOREST],
-	ST_STOPPED  : __ascii[ST_BRICK]
+	ST_STOPPED  : __ascii[ST_BRICK],
+	ST_DEVICE   : __ascii[ST_BROWN],
 	}
 
 
