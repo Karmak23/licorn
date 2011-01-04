@@ -1129,11 +1129,11 @@ if hasattr(posix1e, 'HAS_EXTENDED_CHECK'):
 def backup_file(filename):
 	""" make a backup of a given file. """
 	bckp_ext='.licorn.bak'
-	open('%s%s' % (filename, bckp_ext), 'w').write(open(filename).read())
-	logging.notice('Backed up %s as %s.' % (
-		stylize(ST_PATH, filename),
-		stylize(ST_COMMENT, '%s%s' % (filename, bckp_ext)))
-		)
+	backup_name = filename + bckp_ext
+	open(backup_name, 'w').write(open(filename).read())
+	os.chmod(backup_name, os.lstat(filename).st_mode)
+	logging.progress('Backed up %s as %s.' % (
+			stylize(ST_PATH, filename), stylize(ST_COMMENT, backup_name)))
 def is_backup_file(filename):
 	"""Return true if file is a backup file (~,.bak,…)."""
 	if filename[-1] == '~':
