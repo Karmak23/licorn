@@ -100,8 +100,17 @@ class ServiceExtension(LicornExtension):
 		svccmds.RELOAD   : 'Reloaded service %s (%s).'
 	}
 
+	#: same, for too long services (user must be informed)
+	messages_long = {
+		# TODO: implement exec_type.SUCCESS, .FAILURE, etc.
+		svccmds.START    : 'Starting service %s. Please wait, this can take a while.',
+		svccmds.STOP     : 'Stopping service %s. Please wait, this can take a while.',
+		svccmds.RESTART  : 'Restarting service %s. Please wait, this can take a while.',
+		svccmds.RELOAD   : 'Reloading service %s. Please wait, this can take a while.'
+	}
+
 	def __init__(self, name='service_extension', controllers_compat=[],
-			service_name=None, service_type=None):
+			service_name=None, service_type=None, service_long=False):
 		LicornExtension.__init__(self,
 				name=name,
 				controllers_compat=controllers_compat
@@ -111,6 +120,9 @@ class ServiceExtension(LicornExtension):
 
 		self.service_name = service_name
 		self.service_type = service_type
+		self.service_long = service_long
+	def running(self, pid_file):
+		return process.already_running(pid_file)
 	def service(self, command_type, no_wait=False):
 		""" Manage our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command` with the
@@ -125,7 +137,8 @@ class ServiceExtension(LicornExtension):
 				of preciseness.
 		 """
 		return ServiceExtension.service_command(
-			command_type, self.service_name, self.service_type)
+			command_type, self.service_name, self.service_type,
+			self.service_long)
 	def start(self, no_wait=False):
 		""" Shortcut method to start our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -136,7 +149,8 @@ class ServiceExtension(LicornExtension):
 				of preciseness.
 		 """
 		return ServiceExtension.service_command(
-			svccmds.START, self.service_name, self.service_type)
+			svccmds.START, self.service_name, self.service_type,
+			self.service_long)
 	def reload(self, no_wait=False):
 		""" Shortcut method to reload our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -147,7 +161,8 @@ class ServiceExtension(LicornExtension):
 				of preciseness.
 		 """
 		return ServiceExtension.service_command(
-			svccmds.RELOAD, self.service_name, self.service_type)
+			svccmds.RELOAD, self.service_name, self.service_type,
+			self.service_long)
 	def stop(self, no_wait=False):
 		""" Shortcut method to stop our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -158,7 +173,8 @@ class ServiceExtension(LicornExtension):
 				of preciseness.
 		 """
 		return ServiceExtension.service_command(
-			svccmds.STOP, self.service_name, self.service_type)
+			svccmds.STOP, self.service_name, self.service_type,
+			self.service_long)
 	def restart(self, no_wait=False):
 		""" Shortcut method to restart our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -169,9 +185,10 @@ class ServiceExtension(LicornExtension):
 				of preciseness.
 		 """
 		return ServiceExtension.service_command(
-			svccmds.RESTART, self.service_name, self.service_type)
+			svccmds.RESTART, self.service_name, self.service_type,
+			self.service_long)
 	@staticmethod
-	def service_command(command_type, service_name, service_type):
+	def service_command(command_type, service_name, service_type, service_long):
 		""" Execute a command on a given service at the system level and
 			display an :func:`~licorn.foundations.logging.info` message.
 		"""
@@ -180,8 +197,12 @@ class ServiceExtension(LicornExtension):
 		command.insert(ServiceExtension.commands[service_type][
 							svccmds.POSITION], service_name)
 
+		if service_long:
+			logging.info(ServiceExtension.messages_long[command_type] %
+					stylize(ST_NAME, service_name))
+
 		# TODO: better format for ret, strip multiple spaces, tabs...
 		ret = process.execute(command)[1].strip().replace('\n', '')
 
-		logging.info(ServiceExtension.messages[command_type] % (
+		logging.notice(ServiceExtension.messages[command_type] % (
 				stylize(ST_NAME, service_name), ret))
