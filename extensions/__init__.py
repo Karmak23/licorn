@@ -43,6 +43,10 @@ class ExtensionsManager(Singleton, ModulesManager):
 				module_path=__path__[0],
 				module_sym_path='licorn.extensions'
 			)
+	def enable_extension(self, name):
+		return ModulesManager.enable_module(self, name)
+	def disable_extension(self, name):
+		return ModulesManager.disable_module(self, name)
 class LicornExtension(CoreModule):
 	""" The bare minimum attributes and methods for an extension.
 
