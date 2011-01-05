@@ -1,0 +1,29 @@
+# This sample file should go to /etc/licorn/licorn.conf
+# see http://docs.licorn.org/configuration.html for details.
+
+# Role (default: unset, licornd doesn't start).
+licornd.role = server
+
+# Experimental features (default: disabled)
+experimental.enabled = True
+
+# adjust number of threads in pools (default: see online documentation)
+licornd.threads.pool_members = 5
+
+# Disable some of licornd features if you want (default: all enabled).
+#
+#licorn.network.enabled = False
+#licornd.wmi.enabled = False
+
+# Disable extensions at will.
+#
+# default: extension activation is determined by the real presence of
+# services on your system (and enabled status in /etc/default/* or
+# distro equivalent).
+#
+#extensions.openssh.enabled = False
+#extensions.volumes.enabled = False
+#extensions.caldavd.enabled = False
+
+# just for testing. This should not work.
+#backends.shadow.enabled = False
