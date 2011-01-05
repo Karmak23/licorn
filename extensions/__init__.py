@@ -13,8 +13,9 @@ Extensions can "extend" :ref:`CoreController`s
 """
 
 import os
+from threading import RLock, Timer
 
-from licorn.foundations           import logging
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
@@ -54,7 +55,7 @@ class LicornExtension(CoreModule):
 		:obj:`LMC.extensions` value (the
 		:class:`~licorn.extensions.ExtensionsManager` global instance).
 
-		.. versionadded:: 1.3
+		.. versionadded:: 1.2.4
 	"""
 	def __init__(self, name='extension', controllers_compat=[]):
 		CoreModule.__init__(self,
@@ -62,6 +63,9 @@ class LicornExtension(CoreModule):
 				manager=LMC.extensions,
 				controllers_compat=controllers_compat
 			)
+
+		#: add a locking capability for multi-thread safety.
+		self.lock = RLock()
 		assert ltrace('extensions', '| LicornExtension.__init__(%s)' % name)
 class ServiceExtension(LicornExtension):
 	""" ServiceExtension implements service-related comfort-methods and
@@ -69,6 +73,7 @@ class ServiceExtension(LicornExtension):
 		:class:`~licorn.core.system.SystemController` instance service-related
 		methods with current extension's arguments pre-set.
 
+		.. versionadded:: 1.2.4
 	"""
 	#: static dict for service-related commands
 	commands = {
@@ -120,8 +125,29 @@ class ServiceExtension(LicornExtension):
 
 		self.service_name = service_name
 		self.service_type = service_type
+
+		#: just a bool to display a supplemental "please wait" messages for
+		#: know long services to acheive operations.
 		self.service_long = service_long
+
+		#: to avoid running multiple service calls, and delayed run to
+		#: interfere with a newly created one.
+		self.command_lock = RLock()
+
+		#: the current delayed command, stored to raise an exception if another
+		#: in ran while this one has not yet completed.
+		self.planned_operation = None
+
+		#: the reference to the :class:`~threading.Timer` thread, to be able to
+		#: wipe old ones to reclaim system resources.
+		self.command_thread = None
+
+		#: the delay the timer will wait before trigerring the service command.
+		#: any repetition of the same command within this delay will reset it.
+		self.delay = 0.5
 	def running(self, pid_file):
+		""" A convenience wrapper for the :func:`~process.already_running`
+			function. """
 		return process.already_running(pid_file)
 	def service(self, command_type, no_wait=False):
 		""" Manage our service by calling
@@ -136,9 +162,7 @@ class ServiceExtension(LicornExtension):
 				only upstart understands it and we don't implement that level
 				of preciseness.
 		 """
-		return ServiceExtension.service_command(
-			command_type, self.service_name, self.service_type,
-			self.service_long)
+		return self.service_command(command_type)
 	def start(self, no_wait=False):
 		""" Shortcut method to start our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -148,9 +172,7 @@ class ServiceExtension(LicornExtension):
 				only upstart understands it and we don't implement that level
 				of preciseness.
 		 """
-		return ServiceExtension.service_command(
-			svccmds.START, self.service_name, self.service_type,
-			self.service_long)
+		return self.service_command(svccmds.START)
 	def reload(self, no_wait=False):
 		""" Shortcut method to reload our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -160,9 +182,7 @@ class ServiceExtension(LicornExtension):
 				only upstart understands it and we don't implement that level
 				of preciseness.
 		 """
-		return ServiceExtension.service_command(
-			svccmds.RELOAD, self.service_name, self.service_type,
-			self.service_long)
+		return self.service_command(svccmds.RELOAD)
 	def stop(self, no_wait=False):
 		""" Shortcut method to stop our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -172,9 +192,7 @@ class ServiceExtension(LicornExtension):
 				only upstart understands it and we don't implement that level
 				of preciseness.
 		 """
-		return ServiceExtension.service_command(
-			svccmds.STOP, self.service_name, self.service_type,
-			self.service_long)
+		return self.service_command(svccmds.STOP)
 	def restart(self, no_wait=False):
 		""" Shortcut method to restart our service by calling
 			:meth:`~licorn.extensions.ServiceExtension.service_command`.
@@ -184,25 +202,102 @@ class ServiceExtension(LicornExtension):
 				only upstart understands it and we don't implement that level
 				of preciseness.
 		 """
-		return ServiceExtension.service_command(
-			svccmds.RESTART, self.service_name, self.service_type,
-			self.service_long)
-	@staticmethod
-	def service_command(command_type, service_name, service_type, service_long):
-		""" Execute a command on a given service at the system level and
-			display an :func:`~licorn.foundations.logging.info` message.
+		return self.service_command(svccmds.RESTART)
+	def service_command(self, command_type):
+		""" Run a service operation at the system level. This method will
+			create a :class:`~threading.Timer` thread with a small delay, to
+			optimize batched operations: the service command will not be issued
+			if another command (same type) comes while the timer is running.
+
+			This methods
 		"""
 
-		command = ServiceExtension.commands[service_type][command_type][:]
-		command.insert(ServiceExtension.commands[service_type][
-							svccmds.POSITION], service_name)
+		assert ltrace(self.name, '| service_command(%s)' % command_type)
 
-		if service_long:
-			logging.info(ServiceExtension.messages_long[command_type] %
-					stylize(ST_NAME, service_name))
+		command = ServiceExtension.commands[self.service_type][command_type][:]
+		command.insert(ServiceExtension.commands[self.service_type][
+							svccmds.POSITION], self.service_name)
 
-		# TODO: better format for ret, strip multiple spaces, tabs...
-		ret = process.execute(command)[1].strip().replace('\n', '')
+		if self.service_long:
+			pre_message = ServiceExtension.messages_long[command_type] % (
+							stylize(ST_NAME, self.service_name))
+		else:
+			pre_message = None
 
-		logging.notice(ServiceExtension.messages[command_type] % (
-				stylize(ST_NAME, service_name), ret))
+		post_message = ServiceExtension.messages[command_type] % (
+						stylize(ST_NAME, self.service_name), '%s')
+
+		thread_kwargs = {
+				'command'      : command,
+				'pre_message'  : pre_message,
+				'post_message' : post_message,
+				'svcext'       : self
+			}
+
+		if self.planned_operation:
+			if self.planned_operation != command_type:
+
+				raise exceptions.BadArgumentError('%s: command %s '
+					'already in the queue, cannot plan a different '
+					'one. Please try again later.' % (self.name,
+						svccmds[self.planned_operation]))
+			else:
+				with self.command_lock:
+					# reset the timer.
+					self.command_thread.cancel()
+					del self.command_thread
+
+					self.command_thread = Timer(self.delay,
+								run_service_command, kwargs=thread_kwargs)
+					self.command_thread.start()
+		else:
+			with self.command_lock:
+				self.planned_operation = command_type
+
+				assert ltrace(self.name, '| service_command: delaying '
+					'operation in case there are others coming after this one.')
+
+				if self.command_thread:
+					# wipe any traces of older job to reclaim resources.
+					del self.command_thread
+
+				self.command_thread = Timer(self.delay,
+								run_service_command, kwargs=thread_kwargs)
+				self.command_thread.start()
+def run_service_command(command, pre_message=None, post_message=None,
+		svcext=None):
+	""" This is the "real" function ran by the :class:`~threading.Timer`
+		thread, managed by the :meth:`~ServiceExtension.service_command`
+		method.
+
+		It is in charge of displaying messages if given, and run the real
+		system-level command to execute the service operation.
+
+		.. note:: this function will acquire/release the
+			:attr:`ServiceExtension.command_lock` lock, to avoid
+			interferences during the service operation (which can be long,
+			depending on the service).
+
+		.. versionadded:: 1.2.4
+	"""
+
+	assert ltrace('process', '| run_service_command(%s)' % command)
+
+	if svcext is not None:
+		svcext.command_lock.acquire()
+
+	if pre_message:
+		logging.notice(pre_message)
+
+	# TODO: better format for ret, strip multiple spaces, tabs...
+	ret = process.execute(command)[1].strip().replace('\n', '')
+
+	if post_message:
+		if ret == '':
+			ret = 'OK'
+
+		logging.info(post_message % ret)
+
+	if svcext is not None:
+		svcext.planned_operation = None
+		svcext.command_lock.release()
