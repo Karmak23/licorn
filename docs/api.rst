@@ -7,6 +7,7 @@ Developping for Licorn® (the API)
 	:maxdepth: 2
 
 	core/index
+	core/backends
 	extensions/index
 	foundations
 	implementation

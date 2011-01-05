@@ -67,16 +67,18 @@ These software or services are used or supported as base of the system, or via e
 
 Currently supported:
 
-- Shadow (backend)
-- OpenLDAP (backend)
-- DNSmasq (backend)
-- SaMBa (basic integration)
-- :ref:`squid (extension) <squidextension>`
+- :ref:`Shadow (backend) <core.backends.shadow>`
+- :ref:`OpenLDAP (backend) <core.backends.openldap>`
+- :ref:`DNSmasq (backend) <core.backends.dnsmasq>`
+- SaMBa (direct basic integration in the controllers)
+- :ref:`caldavd (extension) <extensions.caldavd>`
 
 Under development or planned:
 
-- samba (extension or backend)
-- caldavd (extension)
+- :ref:`squid (extension) <extensions.squid>`
+- :ref:`basic volumes management (extension) <extensions.volumes>`
+- :ref:`Rdiff Backup (extension) <extensions.rdiffbackup>`
+- samba (extension)
 - postfix (extension)
 - apache2 (extension)
 - BIND9 / DHCPd3 (backend)

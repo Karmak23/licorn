@@ -1,4 +1,4 @@
-.. _sambaextension:
+.. _extensions.samba:
 
 ===============
 Samba extension

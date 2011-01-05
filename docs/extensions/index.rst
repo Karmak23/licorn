@@ -10,10 +10,13 @@ User & Administrator documentation
 Extensions share a lot with :ref:`backends <core.backends>`, because they inherit from the generalistic :ref:`modules`.
 
 .. toctree::
-	:maxdepth: 2
+	:maxdepth: 1
 
 	openssh
+	caldavd
 	squid
+	volumes
+	rdiffbackup
 	samba
 	postfix
 	nullmailer

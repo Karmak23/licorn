@@ -1,4 +1,4 @@
-.. _postfixextension:
+.. _extensions.postfix:
 
 ===============
 Postfix extension

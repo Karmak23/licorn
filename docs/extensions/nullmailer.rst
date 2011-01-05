@@ -1,4 +1,4 @@
-.. _nullmailerextension:
+.. _extensions.nullmailer:
 
 ====================
 Nullmailer extension

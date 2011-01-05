@@ -1,4 +1,4 @@
-.. _squidextension:
+.. _extensions.squid:
 
 ===============
 Squid extension

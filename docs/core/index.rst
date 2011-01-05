@@ -20,14 +20,22 @@ Core controllers and objects
 	:maxdepth: 2
 
 	lmc
-	backends
 	users
 	groups
 	profiles
 	privileges
 	machines
 	system
+
+Modules: backends and extensions
+================================
+
+.. toctree::
+	:maxdepth: 2
+
+	backends
 	../extensions/index
+
 
 Abstract classes & concepts
 ===========================

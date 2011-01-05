@@ -1,4 +1,4 @@
-.. _opensshextension:
+.. _extensions.openssh:
 
 =================
 OpenSSH extension
