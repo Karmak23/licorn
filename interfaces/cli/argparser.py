@@ -1385,17 +1385,27 @@ def mod_configuration_parse_arguments(app):
 		action="store", dest="enable_backends", default=None,
 		help='''enable given backend(s) on the current system (separated '''
 			'''by commas without spaces). List of available backends with '''
-			'''`%s`.''' % stylize(ST_MODE,
-				'get config backends'))
+			'''`%s`.''' % stylize(ST_MODE, 'get config backends'))
 
 	configuration_group.add_option('-B', "--disable-backends",
 		action="store", dest="disable_backends", default=None,
 		help='''disable given backend(s) on the current system (separated '''
 			'''by commas without spaces). List of available backends with '''
-			'''`%s`.''' % stylize(ST_MODE,
-				'get config backends'))
+			'''`%s`.''' % stylize(ST_MODE, 'get config backends'))
 
-	configuration_group.add_option("-e", "--set-hostname",
+	configuration_group.add_option('-e', "--enable-extensions",
+		action="store", dest="enable_extensions", default=None,
+		help='''enable given extension(s) on the current system (separated '''
+			'''by commas without spaces). List of available extensions with '''
+			'''`%s`.''' % stylize(ST_MODE, 'get config extensions'))
+
+	configuration_group.add_option('-E', "--disable-extensions",
+		action="store", dest="disable_extensions", default=None,
+		help='''disable given extension(s) on the current system (separated '''
+			'''by commas without spaces). List of available extensions with '''
+			'''`%s`.''' % stylize(ST_MODE, 'get config extensions'))
+
+	configuration_group.add_option( "--set-hostname",
 		action="store", type="string", dest="set_hostname", default=None,
 		help="change machine hostname.")
 

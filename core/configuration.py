@@ -1043,6 +1043,12 @@ class LicornConfiguration(Singleton, LockedController):
 				for b in LMC.backends.available():
 					data += '%s\n' % b.name
 
+			elif args[0] == 'extensions':
+				for e in LMC.extensions:
+					data += '%s\n' % stylize(ST_ENABLED, e.name)
+				for e in LMC.extensions.available():
+					data += '%s\n' % stylize(ST_DISABLED, e.name)
+
 			elif args[0] in ("config_dir", "main_config_file",
 				"backup_config_file", "extendedgroup_data_file", "app_name"):
 

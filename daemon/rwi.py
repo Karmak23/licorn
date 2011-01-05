@@ -1681,6 +1681,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		elif opts.hidden_groups != None:
 			LMC.configuration.SetHiddenGroups(opts.hidden_groups)
 
+		#FIXME: refactor the next 4 blocks
+
 		elif opts.disable_backends != None:
 			for backend in opts.disable_backends.split(','):
 				try:
@@ -1695,6 +1697,22 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					LMC.backends.enable_backend(backend)
 				except exceptions.DoesntExistsException, e:
 					logging.warning("Skipped non-existing backend %s." %
+						stylize(ST_NAME, backend))
+
+		elif opts.disable_extensions != None:
+			for extension in opts.disable_extensions.split(','):
+				try:
+					LMC.extensions.disable_extension(extension)
+				except exceptions.DoesntExistsException, e:
+					logging.warning("Skipped non-existing extension %s." %
+						stylize(ST_NAME, backend))
+
+		elif opts.enable_extensions != None:
+			for extension in opts.enable_extensions.split(','):
+				try:
+					LMC.extensions.enable_extension(extension)
+				except exceptions.DoesntExistsException, e:
+					logging.warning("Skipped non-existing extension %s." %
 						stylize(ST_NAME, backend))
 
 		else:

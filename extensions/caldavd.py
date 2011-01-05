@@ -81,7 +81,8 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			contain user passwords in clear-text). """
 
 		for filename in self.paths:
-			os.chmod(filename, 0640)
+			if os.path.exists(filename):
+				os.chmod(filename, 0640)
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
 
