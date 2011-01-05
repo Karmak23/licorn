@@ -107,10 +107,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		must_be_running = not os.path.exists(self.paths.disabler)
 
-		if must_be_running:
-			# upstart will not start the service twice. thanks, it just
-			# works well...
-			#and not process.already_running(self.paths.pid_file):
+		if must_be_running and not self.running(self.paths.pid_file):
 			self.service(svccmds.START)
 
 		return must_be_running

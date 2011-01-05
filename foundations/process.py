@@ -98,14 +98,11 @@ def get_process_cmdline(process_name):
 		if pretendant.find(process_name) != -1:
 			return pretendant.split(' ')
 def already_running(pid_file):
-	""" WARNING: this only works for root user… """
+	""" Returns ``True`` if the given pid file exists and the PID recorded in it
+		exists in /proc. Else returns ``False``.
+	"""
 	return os.path.exists(pid_file) and \
-		 get_pid(pid_file) in \
-			execute(['ps', '-U', 'root', '-u', 'root', '-o', 'pid='])[0].split(
-				"\n")[:-1]
-def get_pid(pid_file):
-	'''return the PID included in the pidfile. '''
-	return open(pid_file, 'r').readline()[:-1]
+		os.path.exists('/proc/' + open(pid_file, 'r').read().strip())
 #
 # System() / Popen*() convenience wrappers.
 #
