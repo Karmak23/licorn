@@ -6,7 +6,8 @@
 	base - ultra basic objects, used as base classes.
 
 	:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
-	:license: Licensed under the terms of the GNU GPL version 2
+	:license: GNU GPL version 2
+
 """
 import copy
 

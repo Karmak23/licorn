@@ -110,7 +110,7 @@ class FileLock:
 
 	"""
 
-	def __init__(self, configuration, filename = None, waitmax = 10, verbose = True):
+	def __init__(self, configuration, filename, waitmax=10, verbose=True):
 
 		# TODO: don't blow up if user_dir isn't set (which is the case for daemon user)
 
@@ -119,12 +119,8 @@ class FileLock:
 		if filename is None :
 			raise exceptions.LicornRuntimeError("please specify a file to lock")
 
-		if filename[0] == '/':
-			self.filename = filename + '.lock'
-			self.lockname = filename.rsplit('/', 1)[1]
-		else:
-			self.filename = "%s/%s.lock" % (configuration.user_dir, filename)
-			self.lockname = filename
+		self.filename = filename + '.lock'
+		self.lockname = filename.rsplit('/', 1)[1]
 
 		assert ltrace('objects', '%s: new instance with %s.' % (self.pretty_name,
 			stylize(ST_PATH, self.filename)))

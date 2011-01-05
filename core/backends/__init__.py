@@ -87,8 +87,6 @@ class NSSBackend(CoreBackend):
 class UsersBackend(NSSBackend):
 	""" Abstract user backend class allowing access to users data. """
 	def load_User(self, uid):
-		""" Load user accounts from /etc/{passwd,shadow} """
-
 		assert ltrace('backends', '| abstract load_User(%s)' % uid)
 
 		# NOTE: which is totally ignored in this backend, we always load ALL
@@ -96,8 +94,6 @@ class UsersBackend(NSSBackend):
 
 		return self.load_Users()
 	def save_User(self, uid, mode):
-		""" Write /etc/passwd and /etc/shadow """
-
 		assert ltrace('backends', '| abstract save_User(%s)' % uid)
 		return self.save_Users()
 	def delete_User(self, uid):
@@ -106,17 +102,23 @@ class UsersBackend(NSSBackend):
 class GroupsBackend(NSSBackend):
 	"""	Abstract groups backend class allowing access to groups data. """
 	def load_Group(self, gid):
-		""" Load an individual group. Default action is to call
-			:meth:`load_Groups`. This is not what you want if your backend
-			is able to load groups individually, you must then overload this
-			method.
+		""" Load an individual group.
+
+			Default action is to call :meth:`load_Groups`. This is not what
+			you want if your backend is able to load groups individually:
+			you have to overload this method.
+
+			:param gid: an integer, GID of the group to load (ignored in the
+				default implementation which calls :meth:`load_Groups`).
 		"""
 
 		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
 
 		return self.load_Groups()
 	def save_Group(self, gid, mode):
-		""" Save a group in system data. Default action is to call
+		""" Save a group in system data.
+
+			Default action is to call
 			:meth:`save_Groups()`. This is perfect for backends which
 			always rewrite all the data (typically
 			:class:`~licorn.core.backends.shadow.ShadowBackend`), but

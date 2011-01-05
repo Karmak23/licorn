@@ -66,15 +66,19 @@ def check_python_modules_dependancies():
 		('Pyro',      'pyro'),
 		('netifaces', 'python-netifaces'),
 		('ping',      'python-pyip'),
-		('ipcalc',    'python-ipcalc')
+		('ipcalc',    'python-ipcalc'),
 		)
 
 	reqmods_needed = []
 	reqpkgs_needed = []
 
 	optmods = (
-		('xattr',   'python-xattr'),
-		('ldap',    'python-ldap')
+		('xattr',    'python-xattr'),
+		('ldap',     'python-ldap')
+		# plistlib doesn't need to be checked,
+		# it's part of python dist-packages.
+		#
+		# idem uuid
 		)
 
 	optmods_needed = []

@@ -237,9 +237,11 @@ class LicornMasterController(MixedDictObject):
 		# extensions must have a clean configuration before continuing.
 		self.extensions.check(batch=True)
 
-		# we've got to reload system, else it can't see its own extensions
-		# (chicken and egg problem).
-		self.system.reload()
+		# we've got to reload users, groups and system, else they can't see
+		# their own extensions (chicken and egg problem).
+		self.users.reload_extensions()
+		self.groups.reload_extensions()
+		self.system.reload_extensions()
 	def __init_server_final(self):
 		""" Final phase of SERVER initialization. Load system controllers
 			and objects that doesn't need anything but are required to work.

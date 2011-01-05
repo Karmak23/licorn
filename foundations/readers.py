@@ -14,10 +14,14 @@ Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, re
+import os, re, plistlib
+
 from xml.dom                    import minidom
 from xml                        import dom as xmldom
 from xml.parsers                import expat
+
+import xml.etree.ElementTree as ET
+
 from licorn.foundations         import exceptions
 
 def to_type_semi(value):
@@ -333,3 +337,7 @@ def timeconstraints_conf_dict(filename):
 		if mo_a is not None:
 			acl_found = mo_a.groupdict()["timespace"]
 	return confdict
+def xml_load_tree(filename):
+	return ET.parse(filename)
+def plist_load_dict(filename):
+	return plistlib.readPlist(filename)

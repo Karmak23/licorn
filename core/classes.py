@@ -155,7 +155,6 @@ class CoreController(LockedController):
 		self._prefered_backend_prio = -1
 
 		self.backends = LMC.backends.find_compatibles(self)
-		#print '>>> %s'  % self.backends
 		self.find_prefered_backend()
 
 		# on client first pass, extensions are not yet loaded.
@@ -172,8 +171,23 @@ class CoreController(LockedController):
 
 		assert ltrace(self.name, '| CoreController.reload()')
 
-		if self.extensions is None and 'extensions' in LMC.keys():
-			self.extensions = LMC.extensions.find_compatibles(self)
+		self.reload_extensions()
+	def reload_extensions(self):
+		""" load all our extensions. """
+
+		if hasattr(self, 'extensions') and self.extensions:
+			self.load_extensions()
+		else:
+			if hasattr(LMC, 'extensions'):
+				self.extensions = LMC.extensions.find_compatibles(self)
+				self.load_extensions()
+			else:
+				self.extensions = None
+	def load_extensions(self):
+		""" special case for SystemController. """
+		assert ltrace(self.name, '| load_extensions()')
+		for ext in self.extensions:
+			getattr(ext, self.name + '_load')()
 	def __setitem__(self, key, value):
 		""" Add a new element inside us and update all reverse mappings. """
 		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
@@ -328,6 +342,21 @@ class CoreController(LockedController):
 		assert ltrace(self.name, '< find_prefered_backend(%s, %s)' % (
 			self._prefered_backend_name, changed))
 		return changed
+	def run_hooks(self, hook, **kwargs):
+		""" Transitionnal method to run callbacks at some extend. As of now, we
+			iterate extensions and run the specified callbacks.
+
+			.. warning:: In the near future, this method will not stay here and
+				will not do exactly the same. Don't rely on it, the `hooks` API
+				hasn't settled.
+
+		"""
+
+		meth_name = hook + '_callback'
+
+		for ext in self.extensions:
+			if hasattr(ext, meth_name):
+				getattr(ext, meth_name)(**kwargs)
 class CoreFSController(CoreController):
 	""" FIXME: TO BE DOCUMENTED
 
@@ -673,7 +702,6 @@ class CoreFSController(CoreController):
 					rules.dump_status(True), rules['~'].dump_status(True)))
 				self.system_special_dirs_templates['~'] = rules['~']
 			else:
-				#print rules.dump_status(True)
 				for acl_rule in rules:
 					assert ltrace('checks', '  ADD rule %s' %
 						acl_rule.dump_status(True))
@@ -853,7 +881,7 @@ class ModulesManager(LockedController):
 						self[module.name] = module
 						assert ltrace(self.name, 'loaded %s %s' % (
 							self.module_type,
-							stylize(ST_NAME, module.dump_status(True))))
+							stylize(ST_NAME, module.name)))
 					else:
 						if client and module_name in server_side_modules:
 							# the module is enabled on the server, we must
@@ -895,14 +923,10 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '| not_manually_disabled(%s)' % module_name)
 
-		#print '>> ', dir(LMC.configuration), ' ', self.name
-
 		if hasattr(LMC.configuration, self.name):
 			conf = getattr(LMC.configuration, self.name)
-			#print '>> ', conf
 			if hasattr(conf, module_name):
 				module_conf = getattr(conf, module_name)
-				#print '>> ', module_conf
 				if hasattr(module_conf, 'enabled'):
 					assert ltrace(self.name, 'manual %s state %s found in '
 						'configuration' % (self.module_type, 'enabled'
@@ -943,23 +967,25 @@ class ModulesManager(LockedController):
 		assert ltrace(self.name, '| enable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
-		if module_name in self.keys():
-			logging.notice('%s %s already enabled.' % (module_name,
-				self.module_type))
-			return
+		with self.lock():
+			if module_name in self.keys():
+				logging.notice('%s %s already enabled.' % (module_name,
+					self.module_type))
+				return
 
-		try:
-			if self._available_modules[module_name].enable():
-				module = self._available_modules[module_name]
-				self[module_name] = module
-				del self._available_modules[module_name]
-				module.initialize()
+			try:
+				if self._available_modules[module_name].enable():
+					module = self._available_modules[module_name]
+					self[module_name] = module
+					del self._available_modules[module_name]
 
-				logging.notice('''successfully enabled %s %s.'''% (
-					module_name, self.module_type))
-		except KeyError:
-			raise exceptions.DoesntExistsException('No %s by that name "%s", '
-				'sorry.' % (self.module_type, module_name))
+					module.initialize()
+
+					logging.notice('''successfully enabled %s %s.'''% (
+						module_name, self.module_type))
+			except KeyError:
+				raise exceptions.DoesntExistsException('No %s by that name "%s", '
+					'sorry.' % (self.module_type, module_name))
 	def disable_module(self, module_name):
 		""" Try to **disable** a given module. What is exactly done is left
 			to the module itself, because the current method will just call the
@@ -970,20 +996,22 @@ class ModulesManager(LockedController):
 		assert ltrace(self.name, '| disable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
-		if module_name in self._available_modules.keys():
-			logging.notice('%s %s already disabled.' % (module_name,
-				self.module_type))
-			return
+		with self.lock():
+			if module_name in self._available_modules.keys():
+				logging.notice('%s %s already disabled.' % (module_name,
+					self.module_type))
+				return
 
-		try:
-			if self[module_name].disable():
-				self._available_modules[module_name] = self[module_name]
-				del self[module_name]
-				logging.notice('''successfully disabled %s %s. ''' % (
-					module_name, self.module_type))
-		except KeyError:
-			raise exceptions.DoesntExistsException('No %s by that name "%s", '
-				'sorry.' % (self.module_type, module_name))
+			try:
+				if self[module_name].disable():
+					self._available_modules[module_name] = self[module_name]
+					del self[module_name]
+
+					logging.notice('''successfully disabled %s %s. ''' % (
+						module_name, self.module_type))
+			except KeyError:
+				raise exceptions.DoesntExistsException('No %s by that name "%s", '
+					'sorry.' % (self.module_type, module_name))
 	def check(self, batch=False, auto_answer=None):
 		""" Check all **enabled** modules, then all **available** modules.
 			Checking them will make them configure themselves, configure the
@@ -998,15 +1026,16 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
 
-		for module in self:
-			assert ltrace(self.name, '  check(%s)' % module.name)
-			module.check(batch=batch, auto_answer=auto_answer)
+		with self.lock():
+			for module in self:
+				assert ltrace(self.name, '  check(%s)' % module.name)
+				module.check(batch=batch, auto_answer=auto_answer)
 
-		# check the available_backends too. It's the only way to make sure they
-		# can be fully usable before enabling them.
-		for module in self._available_modules:
-			assert ltrace(self.name, '  check(%s)' % module.name)
-			module.check(batch=batch, auto_answer=auto_answer)
+			# check the available_backends too. It's the only way to make sure they
+			# can be fully usable before enabling them.
+			for module in self._available_modules:
+				assert ltrace(self.name, '  check(%s)' % module.name)
+				module.check(batch=batch, auto_answer=auto_answer)
 
 		assert ltrace(self.name, '< check()')
 class CoreUnitObject(NamedObject):
@@ -1016,12 +1045,14 @@ class CoreUnitObject(NamedObject):
 		This class defines the following attributes:
 
 		.. attribute:: oid
+
 			this attribute is the Licorn® object internal unique number (it's
 			unique among all instances of a given class). If not given in
 			:meth:`__init__`, it will be determined from next free
 			oid stored in the :attr:`CoreUnitObject.counter` class attribute.
 
 		.. attribute:: _controller
+
 			a reference to the object's container (manager or controller). Must
 			be passed as :meth:`__init__` argument, else the object won't be
 			able to easily find it's parent when it needs it.
@@ -1153,8 +1184,8 @@ class CoreModule(CoreUnitObject):
 				The existence of the wanted ``genex_*`` method is checked only
 				at debbuging time with :func:`assert`. At normal runtime, a non
 				existing method will make the program crash. You're warned.
-			:param *args:
-			:param **kwargs: arguments that will be blindly passed to the
+			:param args:
+			:param kwargs: arguments that will be blindly passed to the
 				``genex_*`` methods.
 		"""
 
@@ -1186,6 +1217,9 @@ class CoreModule(CoreUnitObject):
 
 			It's up to derivatives to overload this method to implement
 			whatever they need.
+
+			.. note:: your own module's :meth:`enable` method has to return
+				``True`` if the enable process succeeds, otherwise ``False``.
 		"""
 		assert ltrace(self.name, '| enable(False)')
 		return False
@@ -1195,6 +1229,9 @@ class CoreModule(CoreUnitObject):
 
 			It's up to derivatives to overload this method to implement
 			whatever they need.
+
+			.. note:: your own module's :meth:`disable` method has to return
+				``True`` if the disable process succeeds, otherwise ``False``.
 		"""
 		assert ltrace(self.name, '| disable(True)')
 		return True

@@ -430,6 +430,9 @@ class UsersController(Singleton, CoreFSController):
 
 			uid = self._generate_uid(login, desired_uid, system)
 
+			self.run_hooks('user_pre_add', uid=uid, login=login,
+								password=password)
+
 			skel_to_apply = "/etc/skel"
 			groups_to_add_user_to = in_groups
 
@@ -557,6 +560,9 @@ class UsersController(Singleton, CoreFSController):
 				if e.errno not in (2, 32):
 					raise e
 
+			self.run_hooks('user_post_add', uid=uid, login=login,
+					gecos=gecos, password=password)
+
 		logging.info(logging.SYSU_CREATED_USER % (
 			'system ' if system else '',
 			stylize(ST_LOGIN, login),
@@ -601,6 +607,8 @@ class UsersController(Singleton, CoreFSController):
 			LMC.groups.DeleteUsersFromGroup(name=group,
 				users_to_del=[ uid ], batch=True)
 
+		self.run_hooks('user_pre_del', uid=uid, login=login)
+
 		try:
 			# samba stuff
 			# TODO: forward output to listener…
@@ -629,6 +637,9 @@ class UsersController(Singleton, CoreFSController):
 
 		# user is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
+
+		self.run_hooks('user_post_del', uid=uid, login=login,
+							no_archive=no_archive)
 
 		if no_archive:
 			import shutil
@@ -669,6 +680,8 @@ class UsersController(Singleton, CoreFSController):
 		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
 
+			self.run_hooks('user_pre_change_password', uid=uid, login=login)
+
 			if password is None:
 				password = hlstr.generate_password(
 					LMC.configuration.users.min_passwd_size)
@@ -691,6 +704,9 @@ class UsersController(Singleton, CoreFSController):
 			LMC.backends[
 				self.users[uid]['backend']
 				].save_User(uid, backend_actions.UPDATE)
+
+			self.run_hooks('user_post_change_password', uid=uid, login=login,
+								password=password)
 
 			if display:
 				logging.notice("Set password for user %s (uid=%s) to %s." % (

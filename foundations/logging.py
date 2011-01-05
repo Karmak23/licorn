@@ -9,7 +9,6 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import sys
-
 from threading import current_thread, RLock
 
 from licorn.foundations import options
