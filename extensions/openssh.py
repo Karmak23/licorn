@@ -52,7 +52,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		self.defaults = {
 				'UsePAM'                 : 'yes',
-				'StrictMode'             : 'yes',
+				'StrictModes'            : 'yes',
 				'AllowGroups'            : '%s %s' % (
 						LMC.configuration.defaults.admin_group,
 						self.group
