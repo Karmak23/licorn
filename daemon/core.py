@@ -146,6 +146,41 @@ def licornd_parse_arguments(app):
 	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 	return parser.parse_args()
+def check_aborted_daemon(pname, my_pid):
+	""" In some rare cases, there could still be a dead daemon, occupying the
+		pyro port, without a PID file (bad crash or aborted termination).
+	"""
+
+	source = ('00000000:%s' %
+		hex(LMC.configuration.licornd.pyro.port).split('x')[1].zfill(4)).upper()
+
+	inodes = []
+	for line in open('/proc/net/tcp'):
+		values = line.split()
+		if values[1] == source:
+			inodes.append(values[9])
+
+	if inodes != []:
+		for inode in inodes:
+			found = False
+
+			for entry in os.listdir('/proc'):
+				if entry.isdigit():
+					os.chdir('/proc/' + entry + '/fd')
+					for fdnum in os.listdir('.'):
+						realfd = os.path.realpath('./' + fdnum).rsplit('/', 1)[1]
+
+						if len(realfd) > 8 and realfd[:7] == 'socket:' \
+								and realfd[8:-1] == inode:
+							logging.notice(
+								"%s(%s): killing aborted instance @%s." % (
+									pname, my_pid, entry))
+							os.kill(int(entry), signal.SIGKILL)
+							time.sleep(0.2)
+							found = True
+							break
+					if found:
+						break
 def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 	""" See if another daemon process if already running. If it is and we're not
 		asked to replace it, exit. Else, try to kill it and start. It the
@@ -154,16 +189,10 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 
 	pid_file = LMC.configuration.licornd.pid_file
 
-	try:
-		old_pid  = int(open(pid_file).read().strip())
-	except (IOError, OSError), e:
-		if e.errno != 2:
-			raise
-		else:
-			# PID file doesn't exist, no other daemon is running.
-			return
-
 	if process.already_running(pid_file):
+
+		old_pid = int(open(pid_file).read().strip())
+
 		if replace:
 			logging.notice('%s(%s): trying to replace existing instance '
 				'@pid %s.' % (pname, my_pid, old_pid))
@@ -227,10 +256,14 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 			logging.notice("%s(%s): old instance %s terminated, we can "
 				"play now." % (pname, my_pid, 'nastily' if killed
 					else 'successfully'))
+
+			check_aborted_daemon(pname, my_pid)
 		else:
 			logging.notice("%s: already running (pid %s), not restarting." % (
 				dname, process.get_pid(LMC.configuration.licornd.pid_file)))
 			sys.exit(0)
+	else:
+		check_aborted_daemon(pname, my_pid)
 def refork_if_not_running_root_or_die():
 	if os.getuid() != 0 or os.geteuid() != 0:
 		try:
