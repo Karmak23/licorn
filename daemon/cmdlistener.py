@@ -11,7 +11,7 @@ import signal, os, time
 
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
-from threading   import Thread, Timer
+from threading   import Thread, Timer, RLock
 
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
@@ -54,6 +54,16 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	#: any of them.
 	server_addresses = []
 
+	#: a list of address undergoing bi-directionnal checking (server-to-server),
+	#: kept as references to avoid more-than-once checking (this can exhaust
+	#: system resources and lead to issue #452.
+	current_checks = []
+
+	#: this RLock is needed because of pyro multi-threaded nature. We don't
+	#: want to check a remote system twice because of a miss on
+	#: self.current_check.
+	check_lock = RLock()
+
 	def __init__(self, role):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
 
@@ -88,6 +98,15 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				# FIXME: this is far from perfect and secure, but quite
 				# sufficient for testing and deploying. Better security will
 				# come when everything works.
+
+				with LicornPyroValidator.check_lock:
+					if client_addr in LicornPyroValidator.current_checks:
+						# ACCEPT the connection, don't start a check-loop.
+						LicornPyroValidator.current_checks.remove(client_addr)
+						return 1, 0
+
+					else:
+						LicornPyroValidator.current_checks.append(client_addr)
 
 				remote_system = Pyro.core.getAttrProxyForURI(
 					"PYROLOC://%s:%s/system" % (client_addr,
