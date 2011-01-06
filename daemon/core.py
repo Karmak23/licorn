@@ -146,41 +146,27 @@ def licornd_parse_arguments(app):
 	parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 	return parser.parse_args()
-def check_aborted_daemon(pname, my_pid):
-	""" In some rare cases, there could still be a dead daemon, occupying the
-		pyro port, without a PID file (bad crash or aborted termination).
+def check_aborted_daemon(pname, my_pid, exclude):
+	""" In some cases (unhandled internal crash, failed termination, stopped
+		job, whatever), one or more dead daemons could still exist, occupying
+		(or not) the pyro port, without a valid PID file.
+
+		Find'em and kill'em all, callaghan.
 	"""
 
-	source = ('00000000:%s' %
-		hex(LMC.configuration.licornd.pyro.port).split('x')[1].zfill(4)).upper()
+	exclude.append(my_pid)
+	my_process_name = sys.argv[0]
 
-	inodes = []
-	for line in open('/proc/net/tcp'):
-		values = line.split()
-		if values[1] == source:
-			inodes.append(values[9])
+	for entry in os.listdir('/proc'):
+		if entry.isdigit():
+			if int(entry) in exclude:
+				continue
 
-	if inodes != []:
-		for inode in inodes:
-			found = False
-
-			for entry in os.listdir('/proc'):
-				if entry.isdigit():
-					os.chdir('/proc/' + entry + '/fd')
-					for fdnum in os.listdir('.'):
-						realfd = os.path.realpath('./' + fdnum).rsplit('/', 1)[1]
-
-						if len(realfd) > 8 and realfd[:7] == 'socket:' \
-								and realfd[8:-1] == inode:
-							logging.notice(
-								"%s(%s): killing aborted instance @%s." % (
+			if my_process_name in open('/proc/%s/cmdline' % entry).read():
+				os.kill(int(entry), signal.SIGKILL)
+				time.sleep(0.2)
+				logging.notice("%s(%s): killed aborted instance @pid %s." % (
 									pname, my_pid, entry))
-							os.kill(int(entry), signal.SIGKILL)
-							time.sleep(0.2)
-							found = True
-							break
-					if found:
-						break
 def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 	""" See if another daemon process if already running. If it is and we're not
 		asked to replace it, exit. Else, try to kill it and start. It the
@@ -189,10 +175,15 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 
 	pid_file = LMC.configuration.licornd.pid_file
 
-	if process.already_running(pid_file):
+	exclude = []
 
+	if os.path.exists(pid_file):
 		old_pid = int(open(pid_file).read().strip())
+		exclude.append(old_pid)
 
+	check_aborted_daemon(pname, my_pid, exclude)
+
+	if process.already_running(pid_file):
 		if replace:
 			logging.notice('%s(%s): trying to replace existing instance '
 				'@pid %s.' % (pname, my_pid, old_pid))
@@ -205,12 +196,9 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 			while os.path.exists(pid_file):
 				time.sleep(0.1)
 
-				if counter >= 30:
-					# Exit now, this is too much. process should have removed
-					# the pid file very earlier, this is the first thing the
-					# daemon does before cleaning and killing everything.
+				if counter >= 25:
 					logging.notice("Existing instance still running, "
-						"we're going to be a little more incisive in a few "
+						"we're going to be more incisive in a few "
 						"seconds.")
 					break
 				counter+=1
@@ -224,46 +212,40 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 			proc_pid = '/proc/%s' % old_pid
 
 			counter = 0
+			not_yet_displayed_one = True
+			not_yet_displayed_two = True
 			killed  = False
 			while os.path.exists(proc_pid):
 				time.sleep(0.1)
 
-				# wait a little more,
-				# else Pyro & WMI ports will not be available.
-				if counter == 20:
-					logging.notice('%s(%s): waiting a little more for old '
-						'instance to terminate.' % (pname, my_pid))
-
-				elif counter == 60:
+				if counter >= 25 and not_yet_displayed_one:
 					logging.notice("%s(%s): re-killing old instance softly with"
-						" TERM signal." % (pname, my_pid))
+						" TERM signal and waiting a little more." % (pname, my_pid))
 
 					os.kill(old_pid, signal.SIGTERM)
 					time.sleep(0.2)
 					counter += 2
+					not_yet_displayed_one = False
 
-				elif counter == 100:
+				elif counter >= 50 and not_yet_displayed_two:
 					logging.notice("%s(%s): old instance won't terminate after "
-						"10 seconds. Sending KILL signal." % (pname, my_pid))
+						"8 seconds. Sending KILL signal." % (pname, my_pid))
 
 					killed = True
 					os.kill(old_pid, signal.SIGKILL)
 					time.sleep(0.2)
 					counter += 2
+					not_yet_displayed_two = False
 
 				counter += 1
 
 			logging.notice("%s(%s): old instance %s terminated, we can "
 				"play now." % (pname, my_pid, 'nastily' if killed
 					else 'successfully'))
-
-			check_aborted_daemon(pname, my_pid)
 		else:
 			logging.notice("%s: already running (pid %s), not restarting." % (
-				dname, process.get_pid(LMC.configuration.licornd.pid_file)))
+				dname, old_pid))
 			sys.exit(0)
-	else:
-		check_aborted_daemon(pname, my_pid)
 def refork_if_not_running_root_or_die():
 	if os.getuid() != 0 or os.geteuid() != 0:
 		try:
