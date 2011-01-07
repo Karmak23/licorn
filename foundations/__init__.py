@@ -67,6 +67,8 @@ def check_python_modules_dependancies():
 		('netifaces', 'python-netifaces'),
 		('ping',      'python-pyip'),
 		('ipcalc',    'python-ipcalc'),
+		('dumbnet',    'python-dumbnet'),
+		('dbus',       'python-dbus')
 		)
 
 	reqmods_needed = []
