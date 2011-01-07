@@ -10,6 +10,8 @@ Licorn extensions: OpenSSH - http://docs.licorn.org/extensions/openssh.html
 
 import os
 
+from gettext import gettext as _
+
 from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi, readers
 from licorn.foundations.styles    import *
@@ -83,7 +85,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 			self.available = True
 
 			self.configuration = ConfigFile(self.paths.sshd_config,
-					readers.simple_conf_load_dict)
+					separator=' ')
 		else:
 			logging.warning2('%s: not available because %s or %s do not exist '
 				'on the system.' % (stylize(ST_PATH, self.paths.sshd_binary),
