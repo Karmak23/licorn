@@ -19,6 +19,8 @@ import os, re, plistlib
 from xml.dom                    import minidom
 from xml                        import dom as xmldom
 from xml.parsers                import expat
+from licorn.foundations.pyutils import add_or_dupe_enumeration
+from licorn.foundations.base import Enumeration
 
 import xml.etree.ElementTree as ET
 
@@ -46,6 +48,36 @@ to_type = {
 	'semi':	to_type_semi,
 	'full': to_type_full
 	}
+def	generic_reader(filename, separator=None, skip_line=('', ' ', '	'),
+	skip_start_with=('#', '//')):
+	""" Read a file into a dict
+		Each line of the file has to have the syntax :
+			key separator value
+	"""
+
+	data = open(filename , "r").read()
+
+
+	confdict = Enumeration()
+	for line in data.split('\n'):
+		try:
+			if len(line) > 1 and (line[0] in skip_start_with or \
+				line in skip_line):
+				continue
+
+			if separator is None:
+				name = line.strip()
+				value = None
+			else:
+				name = line[:line.index(separator)]
+				value = line[line.index(separator)+1:]
+
+			add_or_dupe_enumeration(confdict, name, value)
+
+		except ValueError, e:
+			pass
+
+	return confdict
 
 def very_simple_conf_load_list(filename):
 	""" Read a very simple file (one value per line)

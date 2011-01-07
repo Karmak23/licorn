@@ -239,6 +239,18 @@ def add_or_dupe(confdict, name, value):
 			confdict[name] = [ confdict[name], value ]
 	else:
 		confdict[name] = value
+def add_or_dupe_enumeration(enumeration, name, value):
+	""" when adding a new entry into an enumeration, verify if an already
+	existing entry doesn't exist. If it is already present, make the current
+	value become the first value of a list, and append the new value. if value
+	is already a list, just append at the end."""
+	if name in enumeration.keys():
+		if hasattr(enumeration[name], '__iter__'):
+			enumeration[name].append(value)
+		else:
+			enumeration[name] = [ enumeration[name], value ]
+	else:
+		enumeration[name] = value
 def add_or_dupe_obj(target, name, value):
 	""" add a new attribute to an object with a given value. If the attr already
 		exists, make it a list and append the new value."""

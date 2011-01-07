@@ -23,3 +23,10 @@ Client side
 * handles :file:`/etc/environment` to configure :envvar:`http_proxy` to point to the server.
 * idem for gconf/gnome (mandatory setting).
 * idem for KDE.
+
+Class documentation
+===================
+
+.. automodule:: licorn.extensions.squid
+	:members:
+	:undoc-members:

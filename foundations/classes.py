@@ -17,6 +17,8 @@ import exceptions, pyutils, fsapi
 from styles    import *
 from ltrace    import ltrace
 from base      import Enumeration
+from licorn.foundations.pyutils import add_or_dupe_enumeration
+from licorn.foundations import readers
 
 class ConfigFile(Enumeration):
 	""" A Configuration file class which handles adds/removes cleverly and loads
@@ -26,13 +28,18 @@ class ConfigFile(Enumeration):
 			this class was created by Robin in the 1.3 development cycle.
 	"""
 
-	def __init__(self, filename, reader, name=None):
+	def __init__(self, filename, name=None, reader=readers.generic_reader,
+		separator=None):
 		assert ltrace('objects', '| ConfigFile.__init__(filename=%s, name=%s)' %
 			(filename, name))
 		Enumeration.__init__(self, name=name if name else filename)
 
 		self._filename = filename
-		self._reader   = reader
+		if not os.path.exists(filename):
+			fsapi.touch(filename)
+
+		self._separator = separator
+		self._reader = reader
 
 		self.reload()
 	def __str__(self):
@@ -41,9 +48,14 @@ class ConfigFile(Enumeration):
 		for key, value in self.iteritems():
 			if hasattr(value, '__iter__'):
 				for v in value:
-					data += '%s %s\n' % (key, v)
+					data += '%s%s%s\n' % (key, self._separator if
+						self._separator is not None else '',
+						v if v is not None else '')
 			else:
-				data += '%s %s\n' % (key, value)
+				data += '%s%s%s\n' % (key, self._separator  if
+						self._separator is not None else '',
+						value if value is not None else '')
+
 		return data
 	def reload(self, filename=None):
 		""" load or reload the data, eventually from another configuration
@@ -53,8 +65,17 @@ class ConfigFile(Enumeration):
 			filename = self._filename
 
 		with FileLock(self, filename):
-			for key, value in self._reader(filename).iteritems():
-				self[key] = value
+			if self._separator is None:
+				func = self._reader(filename)
+			else:
+				func = self._reader(filename, self._separator)
+
+			for key, value in func.iteritems():
+				if hasattr(value, '__iter__'):
+					for v in value:
+						add_or_dupe_enumeration(self, key, v)
+				else:
+					self[key] = value
 	def backup(self):
 		return fsapi.backup_file(self._filename)
 	def save(self, filename=None):
@@ -87,7 +108,7 @@ class ConfigFile(Enumeration):
 			assert ltrace('objects', "%s: overwritten '%s %s'" % (
 				self.name, key, value))
 		elif dont_check or not self.has(key, value):
-			pyutils.add_or_dupe(self, key, value)
+			pyutils.add_or_dupe_enumeration(self, key, value)
 			assert ltrace('objects', "%s: added '%s %s'" % (
 					self.name, key, value))
 	def remove(self, key, value=None, dont_check=False):

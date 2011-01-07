@@ -873,7 +873,7 @@ class ModulesManager(LockedController):
 			assert ltrace(self.name, 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
 
-			module.load()
+			module.load(server_modules=server_side_modules)
 
 			if module.available:
 				if self.not_manually_disabled(module.name):
@@ -978,9 +978,6 @@ class ModulesManager(LockedController):
 					module = self._available_modules[module_name]
 					self[module_name] = module
 					del self._available_modules[module_name]
-
-					module.initialize()
-
 					logging.notice('''successfully enabled %s %s.'''% (
 						module_name, self.module_type))
 			except KeyError:
@@ -1165,10 +1162,22 @@ class CoreModule(CoreUnitObject):
 			else:
 				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
 		return data
-	def load(self, batch=False, auto_answer=None):
+	def load(self, server_modules, batch=False, auto_answer=None):
+		""" TODO.
+
+			.. warning:: **do not overload this method**.
+		"""
+
 		assert ltrace(self.name, '| load()')
-		if self.initialize():
-			self.enabled = self.is_enabled()
+
+		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+			if self.initialize():
+				self.enabled = self.is_enabled()
+		else:
+			# TODO: (better comment)
+			# on client, enabled status is dependant on the server extension.
+			if self.initialize():
+				self.enabled = self.name in server_modules
 	def generate_exception(extype, *args, **kwargs):
 		""" Generic mechanism for :class:`Exception` dynamic generation.
 
