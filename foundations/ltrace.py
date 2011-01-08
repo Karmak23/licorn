@@ -136,6 +136,12 @@ if getenv('LICORN_TRACE', None) != None:
 
 	import sys
 	ltrace_level = 0
+	maxwidth = 0
+
+	for key in trc.keys():
+		if len(key) > maxwidth:
+			maxwidth = len(key)
+
 	for env_mod in getenv('LICORN_TRACE').split('|'):
 		substracts = env_mod.split('^')
 		ltrace_level |= trc[substracts[0]]
@@ -145,8 +151,8 @@ if getenv('LICORN_TRACE', None) != None:
 	def ltrace(module, message):
 		if  ltrace_level & trc[module]:
 			sys.stderr.write('%s %s: %s\n' % (
-				stylize(ST_COMMENT, 'TRACE%s' % mytime()),
-				module, message))
+				stylize(ST_COMMENT, '   %s' % mytime()),
+				stylize(ST_DEBUG, 'TRACE  ' + module.rjust(maxwidth)), message))
 		return True
 else:
 	def ltrace(a, b):
