@@ -37,7 +37,7 @@ class ExtensionsManager(Singleton, ModulesManager):
 		.. versionadded:: 1.3
 	"""
 	def __init__(self):
-		assert ltrace('extensions', '| __init__()')
+		assert ltrace('extensions', '| ExtensionsManager.__init__()')
 		ModulesManager.__init__(self,
 				name='extensions',
 				module_type='extension',
@@ -45,8 +45,12 @@ class ExtensionsManager(Singleton, ModulesManager):
 				module_sym_path='licorn.extensions'
 			)
 	def enable_extension(self, name):
+		assert ltrace('extensions',
+			'| ExtensionsManager.enable_extension(%s)' % name)
 		return ModulesManager.enable_module(self, name)
 	def disable_extension(self, name):
+		assert ltrace('extensions',
+			'| ExtensionsManager.disable_extension(%s)' % name)
 		return ModulesManager.disable_module(self, name)
 class LicornExtension(CoreModule):
 	""" The bare minimum attributes and methods for an extension.
@@ -58,6 +62,7 @@ class LicornExtension(CoreModule):
 		.. versionadded:: 1.2.4
 	"""
 	def __init__(self, name='extension', controllers_compat=[]):
+		assert ltrace(name, '| LicornExtension.__init__()')
 		CoreModule.__init__(self,
 				name=name,
 				manager=LMC.extensions,
@@ -66,7 +71,6 @@ class LicornExtension(CoreModule):
 
 		#: add a locking capability for multi-thread safety.
 		self.lock = RLock()
-		assert ltrace('extensions', '| LicornExtension.__init__(%s)' % name)
 class ServiceExtension(LicornExtension):
 	""" ServiceExtension implements service-related comfort-methods and
 		automates calling the :obj:`LMC.system`
@@ -116,12 +120,14 @@ class ServiceExtension(LicornExtension):
 
 	def __init__(self, name='service_extension', controllers_compat=[],
 			service_name=None, service_type=None, service_long=False):
+
+		assert ltrace(name, '| ServiceExtension.__init__(%s, %s)' % (
+			service_name, services[service_type]))
+
 		LicornExtension.__init__(self,
 				name=name,
 				controllers_compat=controllers_compat
 			)
-		assert ltrace('extensions', '| ServiceExtension.__init__(%s, %s, %s)' % (
-			name, service_name, services[service_type]))
 
 		self.service_name = service_name
 		self.service_type = service_type
@@ -148,6 +154,7 @@ class ServiceExtension(LicornExtension):
 	def running(self, pid_file):
 		""" A convenience wrapper for the :func:`~process.already_running`
 			function. """
+		assert ltrace(self.name, '| ServiceExtension.running()')
 		return process.already_running(pid_file)
 	def service(self, command_type, no_wait=False):
 		""" Manage our service by calling

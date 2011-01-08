@@ -31,7 +31,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 
 	"""
 	def __init__(self):
-		assert ltrace('extensions', '| __init__()')
+		assert ltrace('extensions', '| CaldavdExtension.__init__()')
 		ServiceExtension.__init__(self, name='caldavd',
 			service_name='calendarserver',
 			service_type=services.SYSV,
@@ -118,12 +118,13 @@ class CaldavdExtension(Singleton, ServiceExtension):
 				# ensure the service is running, if it should be.
 				if not self.running(self.paths.pid_file):
 					self.service(svccmds.START)
-
+				assert ltrace(self.name, '| is_enabled() → True')
 				return True
 		except KeyError:
 			self.data.service_defaults['start_calendarserver'] = 'no'
 			self.__write_defaults()
 			self.__strip_examples()
+			assert ltrace(self.name, '| is_enabled() → False')
 			return False
 	def enable(self):
 		""" Set the directive ``start_calendarserver`` to ``yes`` in the

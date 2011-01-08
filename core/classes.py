@@ -921,21 +921,26 @@ class ModulesManager(LockedController):
 		""" see if module has been manually disabled in main configuration file.
 		"""
 
-		assert ltrace(self.name, '| not_manually_disabled(%s)' % module_name)
-
 		if hasattr(LMC.configuration, self.name):
 			conf = getattr(LMC.configuration, self.name)
 			if hasattr(conf, module_name):
 				module_conf = getattr(conf, module_name)
 				if hasattr(module_conf, 'enabled'):
-					assert ltrace(self.name, 'manual %s state %s found in '
-						'configuration' % (self.module_type, 'enabled'
-							if getattr(module_conf, 'enabled') else 'disabled')
-						)
+
+					#assert ltrace(self.name, 'manual %s state %s found in '
+					#	'configuration' % (self.module_type, 'enabled'
+					#		if getattr(module_conf, 'enabled') else 'disabled')
+					#	)
+
+					assert ltrace(self.name, '| not_manually_disabled(%s) → %s '
+						% (module_name, getattr(module_conf, 'enabled')))
+
 					return getattr(module_conf, 'enabled')
 
 		# if no configuration directive is found, the module is considered
 		# enabled by default.
+		assert ltrace(self.name, '| not_manually_disabled(%s) → %s '
+			% (module_name, True))
 		return True
 	def find_compatibles(self, controller):
 		""" Return a list of modules (real instances, not just

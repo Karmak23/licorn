@@ -27,7 +27,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 	""" Handle [our interesting subset of] OpenSSH configuration and options.
 	"""
 	def __init__(self):
-		assert ltrace('extensions', '| __init__()')
+		assert ltrace('openssh', '| OpensshExtension.__init__()')
+
 		ServiceExtension.__init__(self,
 			name='openssh',
 			service_name='ssh',
@@ -80,6 +81,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 				simply not installed).
 		"""
 
+		assert ltrace(self.name, '> initialize()')
+
 		if os.path.exists(self.paths.sshd_binary) \
 				and os.path.exists(self.paths.sshd_config):
 			self.available = True
@@ -91,6 +94,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 				'on the system.' % (stylize(ST_PATH, self.paths.sshd_binary),
 					stylize(ST_PATH, self.paths.sshd_config)))
 
+
+		assert ltrace(self.name, '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" OpenSSH server is enabled when the service-disabler
@@ -112,6 +117,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 		if must_be_running and not self.running(self.paths.pid_file):
 			self.service(svccmds.START)
 
+		assert ltrace(self.name, '| is_enabled() → %s' % must_be_running)
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
 		""" check our OpenSSH needed things (the ``remotessh`` group and our
@@ -127,6 +133,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 			is useless. Go into sshd sources and see for ourselves... One day,
 			When I've got time. As of now, stay as much careful as we can.
 		"""
+
+		assert ltrace(self.name, '> check()')
 
 		logging.progress('Checking existence of group %s…' %
 				stylize(ST_NAME, self.group))
@@ -169,6 +177,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		if need_reload or need_rewrite:
 			self.service(svccmds.RELOAD)
+
+		assert ltrace(self.name, '< check()')
 	def enable(self, batch=False, auto_answer=None):
 		""" Start ``SSHd``, after having carefully checked all our needed
 			parameters and unlinked the service disabler file.
