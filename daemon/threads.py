@@ -8,6 +8,9 @@ Licensed under the terms of the GNU GPL version 2.
 
 import time
 
+import gobject
+import dbus.mainloop.glib
+
 from threading   import Thread, Event, current_thread
 from Queue       import Queue
 
@@ -17,6 +20,26 @@ from licorn.foundations.ltrace    import ltrace
 
 from licorn.daemon import dthreads
 
+class DbusThread(Thread):
+	""" Run the d-bus main loop (from gobject) in a separate thread, because
+		we've got many other things to do besides it ;-)
+	"""
+	def __init__(self, pname='<unknown>', tname=None):
+		# Setup the DBus main loop
+		Thread.__init__(self)
+
+		self.name  = "%s/%s" % (
+			pname, tname if tname else
+				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+
+		gobject.threads_init()
+		dbus.mainloop.glib.threads_init()
+		dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+		self.mainloop = gobject.MainLoop()
+	def run(self):
+		self.mainloop.run()
+	def stop(self):
+		self.mainloop.quit()
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
 

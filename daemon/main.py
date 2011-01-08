@@ -48,7 +48,7 @@ from licorn.daemon.core           import  exit_or_replace_if_already_running, \
 										eventually_daemonize, \
 										licornd_parse_arguments
 from licorn.daemon.wmi            import WMIThread
-from licorn.daemon.threads        import LicornJobThread, \
+from licorn.daemon.threads        import DbusThread, LicornJobThread, \
 									LicornPoolJobThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
@@ -101,6 +101,9 @@ if __name__ == "__main__":
 	logging.notice("%s(%d): starting all threads." % (pname, os.getpid()))
 
 	setup_signals_handler(pname)
+
+	dthreads.dbus = DbusThread(dname)
+	dthreads.dbus.start()
 
 	# NOTE: the CommandListener must be launched prior to anything, to ensure
 	# connection validation is feasible as early as possible.
