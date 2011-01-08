@@ -21,13 +21,13 @@ Here are a few package names:
 .. glossary::
 
 	licorn-ldap-server
-		The most common installation nowadays: pull in all the Licorn® server parts and the LDAP backend (plus its default configuration).
+		The most common installation nowadays on servers: it pulls in all the Licorn® server parts and the LDAP backend (and its default configuration). After installing this package, Licorn® is **ready-to-be-used**.
 
 	licorn-server
 		A not-so-intrusive option: it will install all the necessary parts for quickstarting a Licorn® server, with only the `shadow` backend configured. You can install the LDAP server package afterwards if you change your mind.
 
 	licorn-client
-		the same, without LDAP support.
+		Install this package on the client machines on your network, this will make them remote-drivable from the server for many system management tasks. Technically, this pulls in exactly the same code as in the server packages: only the configuration is different.
 
 All these packages will install some other depandencies (most notably `python-licorn`, `licorn-bin` and a few other `python-*` packages). For more details, see `the Debian package documentation <http://dev.licorn.org/wiki/UserDoc/DebianPackagesDependancies>`_ on the developper site.
 
@@ -35,7 +35,7 @@ All these packages will install some other depandencies (most notably `python-li
 From sources
 ============
 
-Warning: this installation is intended *FOR DEVELOPERS ONLY*. It can cause damage on your system at worst, and not work at all at least, if you miss something during this procedure.
+.. warning:: This installation is intended **FOR DEVELOPERS ONLY**. It can cause damage on your system or don't work at all if you miss something during this procedure.
 
 #. Install darcs and required python-packages::
 
