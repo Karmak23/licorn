@@ -198,22 +198,18 @@ if __name__ == "__main__":
 					target=daemon_network.thread_network_links_builder, daemon=True,
 					time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
 
-			for i in range(0, LMC.configuration.licornd.threads.pool_members):
+			for thread_class in (
+					daemon_network.IPScannerThread,
+					daemon_network.PingerThread,
+					daemon_network.ArpingerThread,
+					daemon_network.DNSReverserThread,
+					daemon_network.PyroFinderThread
+				):
 
-				t = daemon_network.IPScannerThread()
-				dthreads[t.name] = t
-
-				t = daemon_network.PingerThread()
-				dthreads[t.name] = t
-
-				t = daemon_network.ArpingerThread()
-				dthreads[t.name] = t
-
-				t = daemon_network.DNSReverserThread()
-				dthreads[t.name] = t
-
-				t = daemon_network.PyroFinderThread()
-				dthreads[t.name] = t
+				for i in range(0,
+						LMC.configuration.licornd.threads.pool_members):
+					t = thread_class()
+					dthreads[t.name] = t
 
 		else:
 			# start a fake thread to avoid consuming forever memory with our
