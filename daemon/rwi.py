@@ -138,6 +138,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace('cli', '< select(return=%s)' % selection)
 		return selection
 	### GET
+	def get_volumes(self, opts, args):
+		self.output(LMC.extensions.volumes.get_CLI(opts, args))
 	def get_users(self, opts, args):
 		""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
@@ -1718,6 +1720,28 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			raise exceptions.BadArgumentError(
 				"what do you want to modify? use --help to know!")
+	def mod_volume(self, opts, args):
+		""" Modify volumes. """
+
+		# TODO: move that code into the extension.
+
+		nothing_done = True
+
+		if opts.rescan:
+			nothing_done = False
+			LMC.extensions.volumes.rescan()
+
+		if opts.del_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.del_volumes(opts.del_volumes.split(','))
+
+		if opts.add_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.add_volumes(opts.add_volumes.split(','))
+
+		if nothing_done:
+			raise exceptions.BadArgumentError(
+				"What do you want to modify on volumes? use --help to know!")
 	### CHK
 	def chk_user(self, opts, args):
 		""" Check one or more user account(s). """

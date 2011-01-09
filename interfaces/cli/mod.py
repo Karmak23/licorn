@@ -44,6 +44,8 @@ def mod_main():
 		'machines':      ('mod_machine_parse_arguments', 'mod_machine'),
 		'client':        ('mod_machine_parse_arguments', 'mod_machine'),
 		'clients':       ('mod_machine_parse_arguments', 'mod_machine'),
+		'volume':         ('mod_volume_parse_arguments', 'mod_volume'),
+		'volumes':        ('mod_volume_parse_arguments', 'mod_volume'),
 		'kw':            ('mod_keyword_parse_arguments', 'mod_keyword'),
 		'tag':           ('mod_keyword_parse_arguments', 'mod_keyword'),
 		'tags':          ('mod_keyword_parse_arguments', 'mod_keyword'),
