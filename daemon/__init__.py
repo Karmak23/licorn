@@ -69,7 +69,9 @@ def clean_before_terminating(pname):
 
 	logging.progress("%s: stopping threads." % pname)
 
-	for (thname, th) in dthreads.iteritems():
+	# don't use iteritems() in case we stop during start and not all threads
+	# have been added yet.
+	for (thname, th) in dthreads.items():
 		assert ltrace('thread', 'stopping thread %s.' % thname)
 		if th.is_alive():
 			th.stop()
