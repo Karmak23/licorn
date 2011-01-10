@@ -62,13 +62,13 @@ import licorn.daemon.network as daemon_network
 
 if __name__ == "__main__":
 
+	refork_if_not_running_root_or_die()
+
 	# this is the first thing to do, because argparser needs default
 	# configuration values.
 	LMC.init_conf(batch=True)
 
 	(opts, args) = licornd_parse_arguments(_app)
-
-	refork_if_not_running_root_or_die()
 
 	pname = '%s/master@%s' % (dname,
 		licornd_roles[LMC.configuration.licornd.role].lower())
