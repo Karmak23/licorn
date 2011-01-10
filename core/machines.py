@@ -469,25 +469,38 @@ class MachinesController(Singleton, CoreController):
 		assert ltrace('machines', '| ExportCLI(%s)' % mids)
 
 		m = self
+		justw=10
 
 		def build_cli_output_machine_data(mid):
 
 			account = [	stylize(ST_NAME \
 							if m[mid].managed else ST_SPECIAL,
 							m[mid].hostname),
-						stylize(ST_OK if m[mid].status & host_status.ONLINE
-							else ST_BAD,
-							host_status[m[mid].status].title()),
-						'managed' if m[mid].managed \
-								else 'floating',
-						str(mid),
-						str(m[mid].ether),
-						stylize(ST_ATTR,
-							strftime('%Y-%d-%m %H:%M:%S',
-							localtime(float(m[mid].expiry)))) \
-							if m[mid].expiry else '',
+						'%s: %s%s' % (
+								'status'.rjust(justw),
+								stylize(ST_ON
+										if m[mid].status & host_status.ONLINE
+											else ST_OFF,
+										host_status[m[mid].status].title()),
+								'' if m[mid].system is None
+										else ' (remote control enabled)'
+							),
+						'%s: %s (%s%s)' % (
+								'address'.rjust(justw),
+								str(mid),
+								'expires: %s, ' % stylize(ST_ATTR,
+									strftime('%Y-%d-%m %H:%M:%S',
+									localtime(float(m[mid].expiry))))
+										if m[mid].expiry else '',
+									'managed' if m[mid].managed
+													else 'floating',
+							),
+						'%s: %s' % (
+								'ethernet'.rjust(justw),
+								str(m[mid].ether)
+							)
 						]
-			return '/'.join(account)
+			return '\n'.join(account)
 
 		data = '\n'.join(map(build_cli_output_machine_data, mids)) + '\n'
 
