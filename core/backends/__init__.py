@@ -67,6 +67,10 @@ class CoreBackend(CoreModule):
 			controllers_compat=controllers_compat, manager=LMC.backends)
 		assert ltrace('backends', '| CoreBackend.__init__(%s)' %
 			controllers_compat)
+	def load(self, server_modules, batch=False, auto_answer=None):
+		""" TODO. """
+		if self.initialize():
+			self.enabled = self.is_enabled()
 class NSSBackend(CoreBackend):
 	def __init__(self, name='nss', nss_compat=(), priority=0):
 		CoreBackend.__init__(self, name=name,

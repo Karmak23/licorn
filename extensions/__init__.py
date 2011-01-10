@@ -20,7 +20,7 @@ from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject
-from licorn.foundations.constants import services, svccmds
+from licorn.foundations.constants import services, svccmds, licornd_roles
 
 from licorn.core               import LMC
 from licorn.core.classes       import ModulesManager, CoreModule
@@ -71,6 +71,22 @@ class LicornExtension(CoreModule):
 
 		#: add a locking capability for multi-thread safety.
 		self.lock = RLock()
+	def load(self, server_modules, batch=False, auto_answer=None):
+		""" TODO.
+
+			.. warning:: **do not overload this method**.
+		"""
+
+		assert ltrace(self.name, '| load()')
+
+		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+			if self.initialize():
+				self.enabled = self.is_enabled()
+		else:
+			# TODO: (better comment)
+			# on client, enabled status is dependant on the server extension.
+			if self.initialize():
+				self.enabled = self.name in server_modules
 class ServiceExtension(LicornExtension):
 	""" ServiceExtension implements service-related comfort-methods and
 		automates calling the :obj:`LMC.system`

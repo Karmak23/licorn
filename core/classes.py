@@ -1174,22 +1174,6 @@ class CoreModule(CoreUnitObject):
 			else:
 				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
 		return data
-	def load(self, server_modules, batch=False, auto_answer=None):
-		""" TODO.
-
-			.. warning:: **do not overload this method**.
-		"""
-
-		assert ltrace(self.name, '| load()')
-
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
-			if self.initialize():
-				self.enabled = self.is_enabled()
-		else:
-			# TODO: (better comment)
-			# on client, enabled status is dependant on the server extension.
-			if self.initialize():
-				self.enabled = self.name in server_modules
 	def generate_exception(extype, *args, **kwargs):
 		""" Generic mechanism for :class:`Exception` dynamic generation.
 

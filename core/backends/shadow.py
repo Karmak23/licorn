@@ -58,7 +58,13 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		"""
 
 		try:
-			del LMC.configuration.backends.shadow
+			if self.name in LMC.configuration.backends.ignore:
+				LMC.configuration.backends.ignore.remove(self.name)
+
+			del LMC.configuration.backends.shadow.ignore
+		except AttributeError:
+			pass
+		else:
 			logging.warning("%s shadow backend (this is important, "
 				"please don't try to set %s in %s!" % (
 						stylize(ST_IMPORTANT, 'RE-enabled'),
@@ -66,8 +72,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 						stylize(ST_PATH, LMC.configuration.main_config_file)
 					)
 				)
-		except AttributeError:
-			pass
+
 		return self.available
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
