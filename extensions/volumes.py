@@ -416,14 +416,27 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.proc_mounts[splitted[0]] = splitted[1].replace('\\040', '\040')
 
 		self.blkid = {}
-		for line in open('/etc/blkid.tab').readlines():
-			data = BLKID_re.match(line)
-			if data:
-				datadict = data.groupdict()
-				self.blkid[datadict['device']] = {
-						'fstype' : datadict['type'],
-						'uuid'   : datadict['uuid']
-					}
+
+		if os.path.exists('/etc/blkid.tab'):
+			for line in open('/etc/blkid.tab').readlines():
+				data = BLKID_re.match(line)
+				if data:
+					datadict = data.groupdict()
+					self.blkid[datadict['device']] = {
+							'fstype' : datadict['type'],
+							'uuid'   : datadict['uuid']
+						}
+		else:
+			#~ sudo blkid
+			#~ /dev/sda1: UUID="c8af2c11-3863-4cb3-8756-adf83fa6c4ee" TYPE="ext4"
+			#~ /dev/sda5: UUID="ef8c8f56-9f80-4e3e-91bf-92032c2057d1" TYPE="swap"
+
+			for line in process.execute(['blkid'])[0].split('\n'):
+				splitted = line.split()
+				self.blkid[splitted[0][:-1]] = {
+							'fstype' : splitted[2][6:-1],
+							'uuid'   : splitted[1][6:-1]
+						}
 	def __system_partition(self, device):
 		""" Return ``True`` if the given device or UUID is mounted on one of
 			our protected partitions."""
