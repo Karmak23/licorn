@@ -892,6 +892,22 @@ def add_machine_parse_arguments(app):
 	"""
 
 	return opts, args
+def add_volume_parse_arguments(app):
+
+	usage_text = ("\n\t%s volume[s] <vol1[,vol2[,…]]>" %
+		stylize(ST_APPNAME, "%prog"))
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'add_volume'))
+
+	#volume = OptionGroup(parser, stylize(ST_OPTION, "Add volume(s) options "))
+	#parser.add_option_group(volume)
+
+	return check_opts_and_args(parser.parse_args())
+
 ### Delete arguments ###
 def del_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « delete user »."""
@@ -1037,6 +1053,21 @@ def delimport_parse_arguments(app):
 		opts.filename = os.path.abspath(opts.filename)
 
 	return opts, args
+def del_volume_parse_arguments(app):
+
+	usage_text = ("\n\t%s volume[s] [--force] <vol1[,vol2[,…]]>" %
+		stylize(ST_APPNAME, "%prog"))
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'del_volume'))
+
+	#volume = OptionGroup(parser, stylize(ST_OPTION, "Delete volume(s) options "))
+	#parser.add_option_group(volume)
+
+	return check_opts_and_args(parser.parse_args())
 
 ### Modify arguments ###
 def mod_user_parse_arguments(app):
@@ -1148,20 +1179,34 @@ def mod_volume_parse_arguments(app):
 
 	volume = OptionGroup(parser, stylize(ST_OPTION, "Modify volume(s) options "))
 
-	volume.add_option('--enable', '-e',
-		action='store', dest="add_volumes", default=None,
+	volume.add_option('-e', '--enable', '--enable-volume',  '--enable-volumes',
+		action='store', dest="enable_volumes", default=None,
 		help="specify one or more volume(s) to enable (mark as available and "
-			"reserved for Licorn® internal use), either by giving its "
-			"device path or mount point.")
-	volume.add_option('--disable', '-d',
-		action="store", dest="del_volumes", default=None,
-		help="specify one or more volume(s) to disable(mark as available and "
-			"reserved for Licorn® internal use), either by giving its "
-			"device path or mount point.")
+			"reserved for %s internal use), either by giving its "
+			"device path or mount point." % LMC.configuration.app_name)
 
-	# rescan /proc/mounts for new mounted or removed filesystems, to maintain an
-	# up-to-date list of volumes. This is meant to be called by udev only, thus
-	# we suppress help.
+	volume.add_option('-E', '-d', '--disable', '--disable-volume',
+		'--disable-volumes', action="store", dest="disable_volumes",
+		default=None, help="specify one or more volume(s) to disable (unmark "
+			"as available for %s), either by giving its device path or mount "
+			" point." % LMC.configuration.app_name)
+
+	volume.add_option('-m', '--mount', '--mount-volume',  '--mount-volumes',
+		action='store', dest="mount_volumes", default=None,
+		help="specify one or more volume(s) to (re-)mount.")
+
+	volume.add_option('-u', '-M', '--umount', '--unmount', '--umount-volume',
+		'--unmount-volume', '--umount-volumes', '--unmount-volumes',
+		action="store", dest="unmount_volumes", default=None,
+		help="specify one or more volume(s) to unmount.")
+
+	# manually add, remove or rescan the system for added or removed devices,
+	# to maintain an up-to-date list of volumes. This is meant to be called
+	# by udev and scripts only, thus we suppress help.
+	volume.add_option('--add', '--add-volume', '--add-volumes', action="store",
+		dest="add_volumes", default=None, help=SUPPRESS_HELP)
+	volume.add_option('--del', '--del-volume', '--del-volumes', action="store",
+		dest="del_volumes", default=None, help=SUPPRESS_HELP)
 	volume.add_option('--rescan', '-r', action="store_true", dest="rescan",
 		default=False, help=SUPPRESS_HELP)
 

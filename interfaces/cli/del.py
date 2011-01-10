@@ -48,6 +48,8 @@ def del_main():
 		'tags':          ('del_keyword_parse_arguments', 'del_keyword'),
 		'keyword':       ('del_keyword_parse_arguments', 'del_keyword'),
 		'keywords':      ('del_keyword_parse_arguments', 'del_keyword'),
+		'volume':        ('del_volume_parse_arguments', 'del_volume'),
+		'volumes':       ('del_volume_parse_arguments', 'del_volume'),
 	}
 
 	cli_main(functions, _app)

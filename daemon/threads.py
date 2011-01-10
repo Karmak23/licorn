@@ -23,6 +23,13 @@ from licorn.daemon import dthreads
 class DbusThread(Thread):
 	""" Run the d-bus main loop (from gobject) in a separate thread, because
 		we've got many other things to do besides it ;-)
+
+		Please don't forget to read:
+
+		* http://dbus.freedesktop.org/doc/dbus-python/api/dbus.mainloop.glib-module.html
+		* http://jameswestby.net/weblog/tech/14-caution-python-multiprocessing-and-glib-dont-mix.html
+		* http://zachgoldberg.com/2009/10/17/porting-glib-applications-to-python/
+
 	"""
 	def __init__(self, pname='<unknown>', tname=None):
 		# Setup the DBus main loop
@@ -62,6 +69,12 @@ class LicornBasicThread(Thread):
 	def run(self):
 		# don't call Thread.run(self), just override it.
 		assert ltrace('thread', '%s running' % self.name)
+
+		assert hasattr(self, 'run_func')
+
+		while not self._stop_event.is_set():
+			self.run_func()
+		self.finish()
 	def finish(self):
 		assert ltrace('thread', '%s ended' % self.name)
 	def stop(self):
@@ -304,8 +317,7 @@ class LicornJobThread(LicornBasicThread):
 			time.sleep(0.005)
 			current_delay += 0.005
 	def run(self):
-		LicornBasicThread.run(self)
-
+		""" TODO. """
 		self.current_loop = 0
 
 		# first occurence: we need to wait until time if it is set.
@@ -336,7 +348,6 @@ class StatusUpdaterThread(LicornBasicThread):
 		""" connect to local dbus system bus and forward every status change to
 			our controlling server. """
 		pass
-
 def thread_periodic_cleaner():
 	""" Ping all known machines. On online ones, try to connect to pyro and
 	get current detailled status of host. Notify the host that we are its

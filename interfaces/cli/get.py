@@ -69,6 +69,7 @@ def get_main():
 			'get_daemon_status'),
 		'daemon_status': ('get_daemon_status_parse_arguments',
 			'get_daemon_status'),
+		'volume':        ('get_volumes_parse_arguments', 'get_volumes'),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),
 	}
 

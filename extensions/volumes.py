@@ -8,11 +8,10 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, gamin, dbus
-from dbus.mainloop.glib import DBusGMainLoop
-DBusGMainLoop(set_as_default=True)
+import os, gamin, dbus, pyudev, select, parted, re
+from traceback import print_exc
 
-from licorn.foundations           import logging, pyutils
+from licorn.foundations           import logging, pyutils, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
@@ -20,65 +19,215 @@ from licorn.foundations.constants import gamin_events
 
 from licorn.core               import LMC
 from licorn.extensions         import LicornExtension
+from licorn.daemon             import dthreads, dname
+from licorn.daemon.threads     import LicornBasicThread
 
-# static dbus helper methods.
-def udisks_device_attributes(udisks_device_path):
-	""" Get and return the :class:`~dbus.Interface` and
-		:class:`~dbus.Properties` for a given Device Udisks Path.
-	"""
+BLKID_re = re.compile(r'<.+UUID="(?P<uuid>[^"]+)" TYPE="(?P<type>[^"]+)">(?P<device>[^<]+)</device>')
 
-	device_object = dbus.SystemBus().get_object("org.freedesktop.UDisks",
-												udisks_device_path)
-	device_iface = dbus.Interface(device_object,
-									'org.freedesktop.UDisks.Device')
-	device_props = dbus.Interface(device_object, dbus.PROPERTIES_IFACE)
-	properties = lambda x: device_props.Get('org.freedesktop.UDisks.Device', x)
+class UdevMonitorThread(LicornBasicThread):
+	""" """
+	def __init__(self):
+		""" TODO. """
 
-	return device_iface, properties
-# Licorn Volumes related things.
+		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
+
+		LicornBasicThread.__init__(self, pname=dname)
+
+		self.udev_monitor = pyudev.Monitor.from_netlink(pyudev.Context())
+		self.udev_monitor.filter_by(subsystem='block')
+		self.udev_monitor.enable_receiving()
+		self.udev_fileno = self.udev_monitor.fileno()
+	def run_func(self):
+		""" This method is meant to be called in the while loop of the default
+			:meth:`~licorn.daemon.threads.LicornBasicThread.run` method of
+			the :class:`~licorn.daemon.threads.LicornBasicThread`.
+
+			Udev information:
+
+			* for a device (not handled yet)::
+
+				looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb':
+				KERNEL=="sdb"
+				SUBSYSTEM=="block"
+				DRIVER==""
+				ATTR{range}=="16"
+				ATTR{ext_range}=="256"
+				ATTR{removable}=="1"
+				ATTR{ro}=="0"
+				ATTR{size}=="246016"
+				ATTR{alignment_offset}=="0"
+				ATTR{discard_alignment}=="0"
+				ATTR{capability}=="51"
+				ATTR{stat}=="      53      168      417      156        0        0        0        0        0      156      156"
+				ATTR{inflight}=="       0        0"
+
+			* for a partition::
+
+				looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb/sdb1':
+				KERNEL=="sdb1"
+				SUBSYSTEM=="block"
+				DRIVER==""
+				ATTR{partition}=="1"
+				ATTR{start}=="95"
+				ATTR{size}=="245921"
+				ATTR{alignment_offset}=="0"
+				ATTR{discard_alignment}=="4294918656"
+				ATTR{stat}=="      43      168      337      124        0        0        0        0        0      124      124"
+				ATTR{inflight}=="       0        0"
+
+
+		"""
+
+		# this should be a level2 ltrace...
+		#assert ltrace('volumes', '| UdevMonitorThread.run_func()')
+
+		readf, writef, errf = select.select([self.udev_fileno], [], [], 1.0)
+
+		if readf:
+			action, device = self.udev_monitor.receive_device()
+
+			if action == 'add':
+				if 'partition' in device.attributes:
+					LMC.extensions.volumes.add_volume_from_device(device)
+			elif action == 'change':
+				if 'partition' in device.attributes:
+					# TODO: implement a real change method...
+					LMC.extensions.volumes.unmount_volumes([device.device_node])
+					LMC.extensions.volumes.del_volume_from_device(device)
+					LMC.extensions.volumes.add_volume_from_device(device)
+			elif action == 'remove':
+				LMC.extensions.volumes.del_volume_from_device(device)
+			else:
+				logging.progress('%s: %s %s' % (self.name, action, device))
 class Volume:
-	""" TODO. """
-	def __init__(self, udisks_device, mount_point, kernel_device, volume_extension):
-		self.name = udisks_device
-		self.device = kernel_device
+	""" Handle a single volume.
+
+		.. note:: This class is not individually locked because the
+			:class:`VolumeExtension` is, and any CLI command or udev action
+			will already be thread-safe.
+	"""
+	mount_base_path = '/media/'
+	enabler_file    = '/.org.licorn.reserved_volume'
+	def __init__(self, kernel_device, fstype, guid, label, mount_point=None):
+		self.name        = kernel_device
+		self.device      = self.name
+		self.label       = label
+		self.fstype      = fstype
+		self.guid        = guid
 		self.mount_point = mount_point
-		self.enabled = os.path.exists(
-					mount_point + '/' + volume_extension.paths.enabler)
-		self.volume_extension = volume_extension
-		assert ltrace('volumes', '| Volume.__init__(%s, %s, %s, enabled=%s)' % (
-			self.name, self.device, self.mount_point, self.enabled))
-	def enable(self):
-		if os.path.exists(self.mount_point + '/' +
-					self.volume_extension.paths.enabler):
 
-			logging.info('Licorn® usage of volume %s already enabled.' %
+		if mount_point:
+			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
+		else:
+			self.enabled = None
+		assert ltrace('volumes', '| Volume.__init__(%s, %s, enabled=%s)' % (
+			self.name, self.mount_point, self.enabled))
+	def compute_mount_point(self):
+		if self.label:
+			self.mount_point = Volume.mount_base_path + self.label
+		else:
+			self.mount_point = Volume.mount_base_path + self.guid
+	def enable(self, **kwargs):
+		""" Reserve a volume for Licorn® usage by placing a special hidden
+			file at the root of it. """
+		if os.path.exists(self.mount_point + Volume.enabler_file):
+
+			logging.info('volumes: Licorn® usage on %s already enabled.' %
 					stylize(ST_PATH, self.mount_point))
 		else:
-			open(self.mount_point + '/' +
-				self.volume_extension.paths.enabler, 'w').write('\n')
+			open(self.mount_point + Volume.enabler_file, 'w').write('\n')
 			self.enabled = True
-			logging.info('Enabled Licorn® usage of volume %s.' %
+			logging.notice('volumes: enabled Licorn® usage on %s.' %
 				stylize(ST_PATH, self.mount_point))
-	def disable(self):
-		if os.path.exists(self.mount_point + '/' +
-					self.volume_extension.paths.enabler):
-
-			os.unlink(self.mount_point + '/' +
-				self.volume_extension.paths.enabler)
+	def disable(self, **kwargs):
+		""" Remove the special file at the root of the volume and thus unmark
+			it reserved for Licorn® used. """
+		if os.path.exists(self.mount_point + Volume.enabler_file):
+			os.unlink(self.mount_point + Volume.enabler_file)
 			self.enabled = False
-			logging.info('Disabled Licorn® usage of volume %s.' %
+			logging.notice('volumes: disabled Licorn® usage on %s.' %
 					stylize(ST_PATH, self.mount_point))
 		else:
-			logging.info('Licorn® usage of volume %s already disabled.' %
+			logging.info('volumes: Licorn® usage on %s already disabled.' %
 					stylize(ST_PATH, self.mount_point))
+	def mount(self, **kwargs):
+		""" Mount a given volume, after having created its mount point
+			directory if needed. This method simply calls the :prog:`mount`
+			program via the :func:`~licorn.foundations.process.execute`
+			function. """
+
+		assert ltrace('volumes', '| Volume.mount(%s, %s)' % (
+											self.device, self.mount_point))
+
+		if not self.mount_point:
+
+			self.compute_mount_point()
+
+			if not os.path.exists(self.mount_point):
+				os.makedirs(self.mount_point)
+				logging.progress('volumes: created mount point directory %s.' %
+											stylize(ST_PATH, self.mount_point))
+
+			mount_cmd = [ 'mount', '-t', self.fstype, '-o',
+				'acl,user_xattr,noatime,errors=remount-ro,nodev,suid,exec',
+				self.device, self.mount_point ]
+
+			output = process.execute(mount_cmd)[1].strip()
+
+			if output:
+				logging.warning('volumes: ' + output)
+			else:
+				logging.notice('volumes: mounted device %s at %s.' % (
+								stylize(ST_DEVICE, self.device),
+								stylize(ST_PATH, self.mount_point)))
+
+		self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
+	def unmount(self, force=False):
+		""" Unmount a volume and remove its mount point directory. """
+
+		assert ltrace('volumes', '| Volume.unmount(%s, %s)' % (
+											self.device, self.mount_point))
+
+		if self.mount_point:
+			umount_cmd = [ 'umount', self.device ]
+
+			if force:
+				umount_cmd.insert(1, '-f')
+
+			output = process.execute(umount_cmd)[1].strip()
+
+			if output:
+				logging.warning('volumes: ' + output)
+			else:
+				logging.notice('volumes: unmounted device %s from %s.' % (
+								stylize(ST_DEVICE, self.device),
+								stylize(ST_PATH, self.mount_point)))
+
+			os.rmdir(self.mount_point)
+			self.mount_point = None
+			logging.progress('volumes: removed directory %s.' %
+										stylize(ST_PATH, self.mount_point))
 class VolumesExtension(Singleton, LicornExtension):
-	""" Handles backup volumes.
+	""" Handles volumes via uDEV.
+
+		Eventually, if udisks is available, we inhibit it to avoid double work
+		and user interaction.
 
 		Nice reads along the way:
 
+		* http://packages.python.org/pyudev/index.html
 		* http://freedesktop.org/wiki/Software/udisks
+		* http://hal.freedesktop.org/docs/udisks/
 		* http://mdzlog.alcor.net/2010/06/27/navigating-the-policykit-maze/
 		* http://askubuntu.com/questions/16730/default-mount-options-on-auto-mounted-ntfs-partitions-how-to-add-noexec-and-f
+		* http://stackoverflow.com/questions/4142690/cant-connect-to-org-freedesktop-udisks-via-dbus-python
+		* http://dbus.freedesktop.org/doc/dbus-python/doc/tutorial.html
+
+		Not used but evaluated:
+
+		* http://stackoverflow.com/questions/1138383/python-get-mount-point-on-windows-or-linux
+		* http://www.kernel.org/pub/linux/utils/kernel/hotplug/gudev/index.html
+		* http://stackoverflow.com/questions/2861098/how-do-i-use-udev-to-find-info-about-inserted-video-media-e-g-dvds
 
 	"""
 	def __init__(self):
@@ -89,64 +238,91 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		self.server_only = True
 
-		self.paths.enabler = '.org.licorn.reserved_volume'
-
 		# don't handle these mount points, this is left to the distro.
 		# FIXME: why don't just 'include' /mnt/* and /media/*, this could be
 		# more secure, instead of the risk of forgetting some special mount
 		# points.
+		#
+		# all "none" device do not need to be protected, they can't be matched
+		# anyway by a real device name.
+		#
+		#~ none on /proc type proc (rw,noexec,nosuid,nodev)
+		#~ none on /sys type sysfs (rw,noexec,nosuid,nodev)
+		#~ fusectl on /sys/fs/fuse/connections type fusectl (rw)
+		#~ none on /sys/kernel/debug type debugfs (rw)
+		#~ none on /sys/kernel/security type securityfs (rw)
+		#~ none on /dev type devtmpfs (rw,mode=0755)
+		#~ none on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=0620)
+		#~ none on /dev/shm type tmpfs (rw,nosuid,nodev)
+		#~ none on /var/run type tmpfs (rw,nosuid,mode=0755)
+		#~ none on /var/lock type tmpfs (rw,noexec,nosuid,nodev)
+		#~ none on /var/lib/ureadahead/debugfs type debugfs (rw,relatime)
+		#~ binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,noexec,nosuid,nodev)
+		#~ .host:/ on /mnt/hgfs type vmhgfs (rw,ttl=1)
+		#~ none on /proc/fs/vmblock/mountPoint
 		self.excluded_mounts = ('/', '/boot', '/home', '/var', '/tmp',
-			'/var/tmp')
+								'/var/tmp')
 
 		# accepted FS must implement posix1e ACLs and user_xattr.
 		# 'vfat' doesn't, 'fuseblk' can be too much things.
 		self.accepted_fs = ('ext2', 'ext3', 'ext4', 'btrfs', 'xfs', 'jfs',
 			'reiserfs')
 
-		# 0xaf = hfs
-		# 0x0b = vfat
-		self.accepted_partitions = [ '0x83' ]
-
 		self.volumes = MixedDictObject('volumes')
 
 		# TODO: add our volumes to notifications, to change the status when
 		# administrator touches or unlinks special files in volume's root.
 		self.inotifications = []
-	def initialize(self):
-		""" Make the extension available if python module ``python-parted`` is
-			installed locally.
-		"""
+	def __del__(self):
+		""" Put the eventual udisks daemon in a normal state before giving
+			back hand."""
 
-		# http://stackoverflow.com/questions/4142690/cant-connect-to-org-freedesktop-udisks-via-dbus-python
+		# the monitor thread will be stopped as part of the daemon global stop
+		# process. Don't stop it here.
+		#self.__stop_udev_monitor()
+		self.__uninhibit_udisks()
+	def initialize(self):
+		""" The extension is available if udev is OK and we can get a list of
+			already connected devices.
+
+			Eventually, if udisks is present and enabled, we inhibit it.
+		"""
 
 		assert ltrace(self.name, '> initialize()')
 
 		try:
 			self.system_bus = dbus.SystemBus()
-
 			self.udisks_object = self.system_bus.get_object(
 									"org.freedesktop.UDisks",
 									"/org/freedesktop/UDisks")
+		except:
+			self.udisks_object = None
+		else:
 			self.udisks_interface = dbus.Interface(self.udisks_object,
 										'org.freedesktop.UDisks')
 			self.udisks_properties = dbus.Interface(self.udisks_object,
 										dbus.PROPERTIES_IFACE)
 			self.udisks_props = lambda x: self.udisks_properties.Get(
-											'org.freedesktop.UDisks', x)
+										'org.freedesktop.UDisks', x)
 
+			self.__inhibit_udisks()
+
+		try:
+			logging.info('%s: started %s extension with udev v%s, pyudev v%s.'
+				% (self.name, stylize(ST_SPECIAL, LMC.configuration.app_name),
+					pyudev.udev_version(), pyudev.__version__))
 
 			# get the list of currently connected devices.
-			self.rescan()
+			self.rescan_volumes()
 
-			# WARNING: don't connect dbus signals HERE, this is too early
-			# and it will block.
+			# after that, start a monitor to watch adds/dels.
+			self.__start_udev_monitor()
 
-			#print '>> ', self.udisks_props('KnownFilesystems')
-
-			# udisks is here, we are available.
+			# we are always available, because only relying on udev.
 			self.available = True
 
 		except Exception, e:
+			print_exc(e)
 			logging.warning2("%s: not available because %s." % (self.name, e))
 			self.available = False
 
@@ -154,165 +330,212 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		return self.available
 	def is_enabled(self):
-		""" volumes extension is enabled if udisks daemon is not inhibited. """
-		assert ltrace(self.name, '| is_enabled() → %s' %
-						(not self.udisks_props('DaemonIsInhibited')))
-		return not self.udisks_props('DaemonIsInhibited')
+		""" Volumes extension is always enabled if available, return always
+			True. """
+		assert ltrace(self.name, '| is_enabled() → True')
+		return True
 	def enable(self):
-		""" Inhibit the udisks daemon to get full access to licornd. This will
-			not affect clients because this extension is server-side only.
+		""" We have nothing to do here. Udisks daemon is already inhibited if we
+			are available, and there's nothing more to enable on the system
+			(udev is always here, we hope).
 		"""
 
-		self.udisks_interface.UnInhibit(self.udisks_cookie)
 		return True
 	def disable(self):
 		""" Un-inhibit the udisks daemon to restore full access to other users.
 		"""
 
-		self.udisks_cookie = self.udisks_interface.Inhibit()
 		#self.rescan()
 		return True
 	def system_load(self):
-		""" Connect udisks signals now. """
+		""" Nothing particular to do here. TODO: check if calling
+			rescan_volumes() twice is really usefull. """
 
 		assert ltrace(self.name, '| system_load()')
+		pass
+	def __start_udev_monitor(self):
+		self.udev_monitor_thread = UdevMonitorThread()
+		self.udev_monitor_thread.start()
+		dthreads[self.udev_monitor_thread.name] = self.udev_monitor_thread
+	def __stop_udev_monitor(self):
+		self.udev_monitor_thread.stop()
+	def __inhibit_udisks(self):
+		""" TODO """
 
-		# stay up-to-date.
-		self.udisks_object.connect_to_signal('DeviceAdded',
-				self.udisks_device_added_callback)
-		self.udisks_object.connect_to_signal('DeviceRemoved',
-				self.udisks_device_removed_callback)
-	def rescan(self):
-		""" Ask the udisks-daemon for currently connected devices. Wipe out old
-			references remaining in self. """
+		assert ltrace(self.name, '| __inhibit_udisks(%s)' % (
+				self.udisks_object is not None))
 
-		assert ltrace(self.name, '| rescan()')
+		if self.udisks_object is not None \
+				and not self.udisks_props('DaemonIsInhibited'):
 
-		with self.lock:
-			for device_path in self.udisks_interface.EnumerateDevices():
-				self.udisks_device_added_callback(device_path)
-	def udisks_device_added_callback(self, device):
-		""" Add a new device to the local system. """
+			self.udisks_cookie = self.udisks_interface.Inhibit()
+	def __uninhibit_udisks(self):
+		""" TODO """
 
-		assert ltrace('volumes', '| udisks_device_added_callback(%s)' % device)
+		assert ltrace(self.name, '| __uninhibit_udisks(%s)' % (
+						self.udisks_object is not None))
 
-		diface, dprop = udisks_device_attributes(device)
+		if self.udisks_object is not None \
+				and self.udisks_props('DaemonIsInhibited'):
 
-		if device in self.volumes.keys():
-			logging.info('Skipped volume %s (%s), already known.' % (
-				stylize(ST_DEVICE, device),
-				stylize(ST_PATH, self[device].mount_point)
-				)
-			)
-			return
+			self.udisks_interface.UnInhibit(self.udisks_cookie)
+	def rescan_volumes(self):
+		""" get a list of connected block devices from udev, and mount them if
+			needed. """
 
-		if dprop('DeviceIsPartition') \
-				and not dprop('DeviceIsSystemInternal') \
-				and dprop('PartitionType') in self.accepted_partitions:
+		udev_context = pyudev.Context()
 
-			self.add_volume(device)
-	def udisks_device_removed_callback(self, device):
-		""" Remove a disk from the local system. """
-		assert ltrace('volumes', '| udisks_device_removed_callback(%s)' % device)
-
-		diface, dprop = udisks_device_attributes(device)
-
-		if device in self.volumes.keys():
-			self.remove_volume(device)
-	def add_volume(self, device):
-		""" add a volume from OS data if it doesn't already exist. """
-
-		assert ltrace(self.name, '| add_volume(%s)' % device)
-
-		# NOTE: if parsing /proc/mounts (which is not the case, but this is
-		# a note), we've got to replace these nasty \\040 by the real ascii
-		# code. This is because space is the field separator in
-		# /proc/mounts, and thus in paths it is protected in the \040 octal
-		# form.
-		# This is not needed when using udisks.
-		#
-		# mount_point.replace('\\040', '\040')
-
-		diface, dprop = udisks_device_attributes(device)
-
-		if dprop('DeviceIsMounted'):
-			mount_point = dprop('DeviceMountPaths')[0]
-		else:
-			mount_point = self.mount(device)
-
-		kernel_device = dprop('DeviceFilePresentation')
-
-		self.volumes[device] = Volume(device,
-				mount_point, kernel_device, self)
-
-		logging.progress('Added device %s (%s) to volumes.' % (
-					stylize(ST_DEVICE, kernel_device),
-					stylize(ST_PATH, mount_point)
-				)
-			)
-	def remove_volume(self, device):
-		""" Remove a volume. """
-
-		assert ltrace(self.name, '| remove_volume(%s)' % device)
-
-		mount_point = self.volumes[device].mount_point
-		kernel_device = self.volumes[device].device
-
-		del self.volumes[device]
-
-		logging.progress('Removed device %s (%s) from volumes.' % (
-					stylize(ST_DEVICE, kernel_device),
-					stylize(ST_PATH, mount_point)
-				)
-			)
-	def scan_one_volume(self, volume):
-		""" Gather information about a particular volume and create internal
-			object for it, if it doesn't already exist.
-		"""
-
-		assert ltrace(self.name, '| scan_one_volume()')
+		kernel_devices = []
 
 		with self.lock:
-			for mount in open('/proc/mounts'):
-				device, mount_point, fs_type, mount_opts, \
-					fsck_1, fsck_2 = mount.split(' ')
+			self_devices = self.volumes.keys()
 
-				if device == volume:
-					self.add_volume(device, mount_point)
-	def mount(self, device):
+			for device in udev_context.list_devices(subsystem='block',
+														DEVTYPE='partition'):
+
+				kernel_devices.append(device.device_node)
+				self.add_volume_from_device(device)
+
+			# remove old devices, wipped away during the time.
+			for device in self_devices:
+				if device not in kernel_devices:
+					self.del_volume_from_device(device)
+
+		del udev_context
+	def __update_cache_informations(self):
+		""" Read :file:`/proc/mounts` and :file:`/etc/blkid.tab` and keep
+			useful informations inside us for future use. """
+
+		self.proc_mounts = {}
+		for line in open('/proc/mounts').readlines():
+			splitted = line.split(' ')
+			# NOTE: when parsing /proc/mounts, we've got to replace these
+			# nasty \\040 by the real ascii code. This is because space is
+			# the separator in /proc/mounts, and thus in paths it is protected
+			# in its \040 octal form.
+			self.proc_mounts[splitted[0]] = splitted[1].replace('\\040', '\040')
+
+		self.blkid = {}
+		for line in open('/etc/blkid.tab').readlines():
+			data = BLKID_re.match(line)
+			if data:
+				datadict = data.groupdict()
+				self.blkid[datadict['device']] = {
+						'fstype' : datadict['type'],
+						'uuid'   : datadict['uuid']
+					}
+	def __system_partition(self, device):
+		""" Return ``True`` if the given device or UUID is mounted on one of
+			our protected partitions."""
+
+		mounted = self.proc_mounts.keys()
+
+		if device in mounted:
+			return self.proc_mounts[device] in self.excluded_mounts
+
+		by_uuid = '/dev/disk/by-uuid/' + self.blkid[device]['uuid']
+
+		if by_uuid in mounted:
+			return self.proc_mounts[by_uuid] in self.excluded_mounts
+
+		return False
+	def __partition_label(self, device):
 		""" TODO. """
 
-		with self.lock:
-			diface, dprop = udisks_device_attributes(device)
+		if self.blkid[device]['fstype'] in ('ext2', 'ext3', 'ext4'):
+			return process.execute(['e2label', device])[0].strip()
+		else:
+			logging.warning('>>> implement volumes.__partition_label()' %
+												self.blkid[device]['fstype'])
+			return ''
+	def add_volume_from_device(self, device=None, by_string=None):
+		""" add a volume from OS data if it doesn't already exist. """
 
-			# TODO: check the FS if needed, before mounting.
-			# TODO: report the check in the Volume object, for the user to know
-			#		what's going on.
+		assert ltrace(self.name, '| add_volume_from_device(%s)' % device)
 
-
-			#, 'acl', 'user_xattr'
-
-			return diface.FilesystemMount(dprop('IdType'),
-					['noatime', 'exec'])
-	def unmount(self, device):
-		""" Un-mount a device, provided it is not a system internal one. """
-
-		diface, dprop = udisks_device_attributes(device)
+		if by_string and device is None:
+			print '>> implement getting a udev device from a string'
 
 		with self.lock:
+			kernel_device = device.device_node
 
-			if device in self.keys():
+			if kernel_device in self.volumes.keys():
+				logging.progress('%s: skipped already known volume %s (%s).' % (
+					self.name,
+					stylize(ST_DEVICE, kernel_device),
+					stylize(ST_PATH, self[kernel_device].mount_point)
+					))
+				# see if we got to remount this one now.
+				self.volumes[kernel_device].mount()
+				return
 
-				# TODO: catch any failure and use the "force" option.
+			self.__update_cache_informations()
 
-				diface.FilesystemUnmount()
+			if kernel_device not in self.blkid.keys():
+				# this happens for extended partitions, they don't get listed
+				# there. Skip them.
+				return
 
-				if os.path.exists(mount_point):
-					os.unlink(mount_point)
-			else:
-				raise exceptions.BadArgumentError('%s: unmount: not a '
-					'valid device %s.' % (self.name, device))
-	def volumes_call(self, volumes, method_name):
+			if self.__system_partition(kernel_device):
+				logging.progress('%s: skipped system partition %s.' %(
+						self.name, stylize(ST_DEVICE, kernel_device)))
+				return
+
+			if self.blkid[kernel_device]['fstype'] \
+											not in self.accepted_fs:
+				logging.progress('%s: skipped partition %s (excluded %s '
+					'filesystem).' % (self.name,
+						stylize(ST_DEVICE, kernel_device),
+						stylize(ST_ATTR, self.blkid[kernel_device]['fstype'])))
+				return
+
+			label = self.__partition_label(kernel_device)
+
+			mount_point = (self.proc_mounts[kernel_device]
+					if kernel_device in self.proc_mounts else None)
+
+			vol = Volume(kernel_device,
+						self.blkid[kernel_device]['fstype'],
+						self.blkid[kernel_device]['uuid'],
+						label,
+						mount_point)
+
+			self.volumes[kernel_device] = vol
+
+		vol.mount()
+
+		logging.info('%s: added device %s (%s).' % ( self.name,
+					stylize(ST_DEVICE, kernel_device),
+					stylize(ST_PATH, vol.mount_point)
+				)
+			)
+	def del_volume_from_device(self, device=None, by_string=None):
+		""" Remove a volume. """
+
+		assert ltrace(self.name, '| del_volume_from_device(%s)' % device)
+
+		if by_string and device is None:
+			print '>> implement getting a udev device from a string'
+
+		with self.lock:
+
+			kernel_device = device.device_node
+
+			if kernel_device in self.volumes.keys():
+				mount_point = self.volumes[kernel_device].mount_point
+
+				# we don't unmount, this should have already been done, because
+				# the device disappeared from the kernel/udev list: it's
+				# already gone from the system...
+
+				del self.volumes[kernel_device]
+
+				logging.info('%s: removed device %s (%s).' % (self.name,
+							stylize(ST_DEVICE, kernel_device),
+							stylize(ST_PATH, mount_point)
+						)
+					)
+	def volumes_call(self, volumes, method_name, **kwargs):
 		""" generic method for enable/disable calling on volumes. """
 
 		# TODO: implement partial matching, e.g. "sdb1" will match "/dev/sdb1"
@@ -324,43 +547,67 @@ class VolumesExtension(Singleton, LicornExtension):
 		assert ltrace(self.name, '| volume_call(%s, %s)' % (volumes, method_name))
 
 		with self.lock:
-			devices     = self.keys()
-			by_mntpnt   = dict([ (vol.mount_point, vol) for vol in self.values() ])
-			by_kernel   = dict([ (vol.device, vol) for vol in self.values() ])
-			mount_points = by_mntpnt.keys()
+			devices        = self.keys()
+			by_mntpnt      = dict([ (vol.mount_point, vol) for vol in self.values() ])
+			by_kernel      = dict([ (vol.device, vol) for vol in self.values() ])
+			mount_points   = by_mntpnt.keys()
 			kernel_devices = by_kernel.keys()
 
 			for volume in volumes:
 				if volume in kernel_devices:
-					getattr(by_kernel[volume], method_name)()
+					getattr(by_kernel[volume], method_name)(**kwargs)
 
 				elif volume in devices:
-					getattr(self[volume], method_name)()
+					getattr(self[volume], method_name)(**kwargs)
 
 				elif volume in mount_points:
-					getattr(by_mntpnt[volume], method_name)()
+					getattr(by_mntpnt[volume], method_name)(**kwargs)
 
 				else:
-					logging.warning2('Skipped non existing device or '
-						'mount_point %s.' % volume)
-	def add_volumes(self, volumes):
+					logging.warning2('%s: skipped non existing device or '
+						'mount_point %s.' % (self.name, volume))
+	def enable_volumes(self, volumes):
 		""" try to enable the given volumes.
 
 			:param volumes: a list of devices or mount points, given as strings,
 				to enable.
 		"""
 		return self.volumes_call(volumes, 'enable')
-	def del_volumes(self, volumes):
+	def disable_volumes(self, volumes):
 		""" try to disable the given volumes.
 
 			:param volumes: a list of devices or mount points, given as strings,
 				to disable.
 		"""
 		return self.volumes_call(volumes, 'disable')
+	def unmount_volumes(self, volumes, force=False):
+		""" Unmount and then eject devices. """
+
+		# TODO: splitting volume_list has nothing to do here, it should be
+		# done in cli*. This is because of del not having the same syntax as
+		# mod.
+
+		final_volume_list = []
+
+		for volume_list in volumes:
+			final_volume_list.extend(volume_list.split(','))
+
+		self.volumes_call(final_volume_list, 'unmount', force=force)
+	def mount_volumes(self, volumes):
+		""" (re-)Mount devices (they must be connected). """
+
+		# TODO: splitting volume_list has nothing to do here, it should be
+		# done in cli*. This is because of add not having the same syntax as
+		# mod.
+
+		final_volume_list = []
+
+		for volume_list in volumes:
+			final_volume_list.extend(volume_list.split(','))
+
+		self.volumes_call(final_volume_list, 'mount')
 	def get_CLI(self, opts, args):
 		""" TODO """
-
-		#print '>> ', self.volumes.keys()
 
 		def stat_fs_to_str(path):
 			""" See http://docs.python.org/library/os.html#os.statvfs for
@@ -379,7 +626,7 @@ class VolumesExtension(Singleton, LicornExtension):
 				else ST_DISABLED, volume.device),
 			' on %s%s' % (stylize(ST_PATH, volume.mount_point),
 				stat_fs_to_str(volume.mount_point))
-					if hasattr(volume, 'mount_point') else ' not mounted',
+					if volume.mount_point else ' not mounted',
 			) for volkey, volume in sorted(self.volumes.items()) ]) + \
 				'\n' if len(self.volumes) > 0 else ''
 	def keys(self):

@@ -67,8 +67,8 @@ def check_python_modules_dependancies():
 		('netifaces', 'python-netifaces'),
 		('ping',      'python-pyip'),
 		('ipcalc',    'python-ipcalc'),
-		('dumbnet',    'python-dumbnet'),
-		('dbus',       'python-dbus')
+		('dumbnet',   'python-dumbnet'),
+		('dbus',      'python-dbus'),
 		)
 
 	reqmods_needed = []
@@ -76,11 +76,10 @@ def check_python_modules_dependancies():
 
 	optmods = (
 		('xattr',    'python-xattr'),
-		('ldap',     'python-ldap')
-		# plistlib doesn't need to be checked,
-		# it's part of python dist-packages.
-		#
-		# idem uuid
+		('ldap',     'python-ldap'),
+		('pyudev',   'python-udev'),
+		# plistlib, uuid don't need to be checked, they're part of standard
+		# python dist-packages.
 		)
 
 	optmods_needed = []

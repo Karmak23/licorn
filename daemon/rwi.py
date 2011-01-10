@@ -916,6 +916,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
+	def add_volume(self, opts, args):
+		""" Modify volumes. """
+
+		# TODO: move that code into the extension.
+		LMC.extensions.volumes.mount_volumes(volumes=args[1:])
+
 	### DEL
 	def desimport_groups(self, opts, args):
 		""" Delete the groups (and theyr members) present in a import file.	"""
@@ -1203,6 +1209,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				auto_answer=opts.auto_answer)):
 				LMC.privileges.delete(
 					[priv_name])
+	def del_volume(self, opts, args):
+		""" Modify volumes. """
+
+		# TODO: move that code into the extension.
+		LMC.extensions.volumes.unmount_volumes(volumes=args[1:],
+															force=opts.force)
 	### MOD
 	def mod_user(self, opts, args):
 		""" Modify a POSIX user account (Samba / LDAP included). """
@@ -1729,15 +1741,34 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.rescan:
 			nothing_done = False
-			LMC.extensions.volumes.rescan()
+			LMC.extensions.volumes.rescan_volumes()
+
+		if opts.unmount_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.unmount_volumes(
+										opts.unmount_volumes.split(','))
+
+		if opts.mount_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.mount_volumes(opts.mount_volumes.split(','))
 
 		if opts.del_volumes:
 			nothing_done = False
-			LMC.extensions.volumes.del_volumes(opts.del_volumes.split(','))
+			for volume in opts.del_volumes.split(','):
+				LMC.extensions.volumes.del_volume(by_string=volume)
 
 		if opts.add_volumes:
 			nothing_done = False
-			LMC.extensions.volumes.add_volumes(opts.add_volumes.split(','))
+			for volume in opts.add_volumes.split(','):
+				LMC.extensions.volumes.add_volume(by_string=volume)
+
+		if opts.disable_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.disable_volumes(opts.disable_volumes.split(','))
+
+		if opts.enable_volumes:
+			nothing_done = False
+			LMC.extensions.volumes.enable_volumes(opts.enable_volumes.split(','))
 
 		if nothing_done:
 			raise exceptions.BadArgumentError(

@@ -41,6 +41,8 @@ def chk_main():
 			'chk_configuration'),
 		'configuration': ('chk_configuration_parse_arguments',
 			'chk_configuration'),
+		'volume':        ('chk_volume_parse_arguments', 'chk_volume'),
+		'volumes':       ('chk_volume_parse_arguments', 'chk_volume'),
 	}
 
 	cli_main(functions, _app)

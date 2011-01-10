@@ -51,6 +51,8 @@ def add_main():
 		'machines':		 ('add_machine_parse_arguments', 'add_machine'),
 		'client':		 ('add_machine_parse_arguments', 'add_machine'),
 		'clients':		 ('add_machine_parse_arguments', 'add_machine'),
+		'volume':        ('add_volume_parse_arguments', 'add_volume'),
+		'volumes':       ('add_volume_parse_arguments', 'add_volume'),
 	}
 
 	cli_main(functions, _app)
