@@ -223,10 +223,11 @@ class Volume:
 									stylize(ST_DEVICE, self.device),
 									stylize(ST_PATH, self.mount_point)))
 
-				os.rmdir(self.mount_point)
+				old_mount_point = self.mount_point
+				os.rmdir(old_mount_point)
 				self.mount_point = None
 				logging.progress('volumes: removed directory %s.' %
-											stylize(ST_PATH, self.mount_point))
+											stylize(ST_PATH, old_mount_point))
 class VolumesExtension(Singleton, LicornExtension):
 	""" Handles volumes via uDEV.
 
