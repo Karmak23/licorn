@@ -86,6 +86,7 @@ trc['thread']        = 0x000000400000000000000000
 trc['threads']       = 0x000000400000000000000000
 trc['wmi']           = 0x000000800000000000000000
 trc['rwi']           = 0x000001000000000000000000
+trc['client']        = 0x000002000000000000000000
 
 # no 0xffff here, the first 'f' is for timings and special cases
 trc['interfaces']    = 0x0fff00000000000000000000

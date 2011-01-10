@@ -277,7 +277,7 @@ class PyroFinderThread(QueueWorkerThread):
 				remotesys = Pyro.core.getAttrProxyForURI(
 						"PYROLOC://%s:%s/system" % (mid,
 							LMC.configuration.licornd.pyro.port))
-				remotesys._setTimeout(2)
+				remotesys._setTimeout(5)
 				remotesys.noop()
 			except Exception, e:
 				assert ltrace('machines',

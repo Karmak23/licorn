@@ -136,7 +136,7 @@ class SystemController(Singleton, CoreController):
 						if not LMC.extensions[key].server_only ]
 		else:
 			return LMC.extensions.keys()
-	def backends(self, client_only=False):
+	def get_backends(self, client_only=False):
 		if client_only:
 			return [ key for key in LMC.backends.keys()
 						if not LMC.backends[key].server_only ]

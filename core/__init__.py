@@ -160,10 +160,10 @@ class LicornMasterController(MixedDictObject):
 		assert not LicornMasterController._init_client
 		assert LicornMasterController._init_first_pass
 
-		# TODO: if self.backends.keys() != ServerLMC.system.backends():
+		# TODO: if self.backends.keys() != ServerLMC.system.get_backends():
 
 		self.backends.load(client=True,
-			server_side_modules=ServerLMC.system.backends(client_only=True))
+			server_side_modules=ServerLMC.system.get_backends(client_only=True))
 
 		self._ServerLMC = ServerLMC
 
@@ -326,7 +326,8 @@ class LicornMasterController(MixedDictObject):
 			pyroloc = 'PYROLOC://127.0.0.1:%s' % (
 				self._localconfig.licornd.pyro.port)
 		else:
-			logging.notice("trying %s" % self._localconfig.server_main_address)
+			logging.progress("trying to connect to server %s." %
+									 self._localconfig.server_main_address)
 			pyroloc = 'PYROLOC://%s:%s' % (
 				self._localconfig.server_main_address,
 				self._localconfig.licornd.pyro.port)
@@ -347,6 +348,7 @@ class LicornMasterController(MixedDictObject):
 			try:
 				self.configuration = Pyro.core.getAttrProxyForURI(
 					"%s/configuration" % pyroloc)
+				self.configuration._setTimeout(5)
 				self.configuration.noop()
 				assert ltrace('core',
 					'  connect(): main configuration object connected.')
