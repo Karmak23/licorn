@@ -62,12 +62,19 @@ def common_filter_group(app, parser, tool, mode):
 			big_help_string if mode != 'configuration' else '')
 		)
 
-	if tool in ('get', 'mod', 'del') :
-		if mode in ( 'users', 'groups', 'profiles', 'privileges', 'machines'):
+	if tool == 'add' and mode == 'volumes':
+		filtergroup.add_option('-a', '--all',
+			action="store_true", dest="all", default=False,
+			help="""Also select system data. I.e. """
+				"""output system %s too.""" % mode)
+
+	if tool in ('get', 'mod', 'del'):
+		if mode in ('volumes', 'users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default=False,
 				help="""Also select system data. I.e. """
 					"""output system %s too.""" % mode)
+		if mode in ('users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
 				help='''exclude %s from the selection. Can be IDs or %s '''
@@ -902,9 +909,13 @@ def add_volume_parse_arguments(app):
 
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'add_volume'))
+	parser.add_option_group(common_filter_group(app, parser, 'add', 'volumes'))
 
-	#volume = OptionGroup(parser, stylize(ST_OPTION, "Add volume(s) options "))
-	#parser.add_option_group(volume)
+	volume = OptionGroup(parser, stylize(ST_OPTION, "Add volume(s) options "))
+	parser.add_option_group(volume)
+
+	volume.add_option('--rescan', '-r', action="store_true", dest="rescan",
+		default=False, help=SUPPRESS_HELP)
 
 	return check_opts_and_args(parser.parse_args())
 
@@ -1063,6 +1074,7 @@ def del_volume_parse_arguments(app):
 
 	# common behaviour group
 	parser.add_option_group(common_behaviour_group(app, parser, 'del_volume'))
+	parser.add_option_group(common_filter_group(app, parser, 'del', 'volumes'))
 
 	#volume = OptionGroup(parser, stylize(ST_OPTION, "Delete volume(s) options "))
 	#parser.add_option_group(volume)

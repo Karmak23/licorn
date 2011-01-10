@@ -919,8 +919,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
+		if opts.rescan:
+			LMC.extensions.volumes.rescan_volumes()
+			return
+
+		elif opts.all:
+			volumes = LMC.extensions.volumes.keys()
+		else:
+			volumes = args[1:]
+
 		# TODO: move that code into the extension.
-		LMC.extensions.volumes.mount_volumes(volumes=args[1:])
+		LMC.extensions.volumes.mount_volumes(volumes=volumes)
 
 	### DEL
 	def desimport_groups(self, opts, args):
@@ -1212,8 +1221,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_volume(self, opts, args):
 		""" Modify volumes. """
 
+		if opts.all:
+			volumes = LMC.extensions.volumes.keys()
+		else:
+			volumes = args[1:]
+
 		# TODO: move that code into the extension.
-		LMC.extensions.volumes.unmount_volumes(volumes=args[1:],
+		LMC.extensions.volumes.unmount_volumes(volumes=volumes,
 															force=opts.force)
 	### MOD
 	def mod_user(self, opts, args):
