@@ -10,6 +10,7 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 import os, gamin, dbus, pyudev, select, re
 from traceback import print_exc
+from threading import RLock
 
 from licorn.foundations           import logging, pyutils, process
 from licorn.foundations.styles    import *
@@ -22,7 +23,7 @@ from licorn.extensions         import LicornExtension
 from licorn.daemon             import dthreads, dname
 from licorn.daemon.threads     import LicornBasicThread
 
-BLKID_re = re.compile(r'<.+UUID="(?P<uuid>[^"]+)" TYPE="(?P<type>[^"]+)">(?P<device>[^<]+)</device>')
+BLKID_re = re.compile(r'([^ =]+)="([^"]+)"')
 
 class UdevMonitorThread(LicornBasicThread):
 	""" """
@@ -102,9 +103,10 @@ class UdevMonitorThread(LicornBasicThread):
 class Volume:
 	""" Handle a single volume.
 
-		.. note:: This class is not individually locked because the
-			:class:`VolumeExtension` is, and any CLI command or udev action
-			will already be thread-safe.
+		.. note:: This class is individually locked because :class:`Volume`
+			can be accessed through multiple extensions (most notably
+			:class:`rdiff-backup <RdiffBackupExtension>` which can take ages to
+			complete).
 	"""
 	mount_base_path = '/media/'
 	enabler_file    = '/.org.licorn.reserved_volume'
@@ -115,6 +117,7 @@ class Volume:
 		self.fstype      = fstype
 		self.guid        = guid
 		self.mount_point = mount_point
+		self.lock        = RLock()
 
 		if mount_point:
 			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
@@ -122,34 +125,49 @@ class Volume:
 			self.enabled = None
 		assert ltrace('volumes', '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
-	def compute_mount_point(self):
+	def __str__(self):
+		return 'volume %s (%s)' % (
+					stylize(ST_DEVICE, kernel_device),
+					stylize(ST_PATH, vol.mount_point))
+	def __compute_mount_point(self):
 		if self.label:
 			self.mount_point = Volume.mount_base_path + self.label
+
+			# avoid overmounting another volume with the same label.
+			mount_point_base = self.mount_point
+			counter = 1
+			while os.path.exists(self.mount_point):
+				self.mount_point = '%s %s' % (mount_point_base, counter)
+
 		else:
+			# overmounting is very unlikely to happen with guid...
 			self.mount_point = Volume.mount_base_path + self.guid
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
 			file at the root of it. """
-		if os.path.exists(self.mount_point + Volume.enabler_file):
 
-			logging.info('volumes: Licorn® usage on %s already enabled.' %
+		with self.lock:
+			if os.path.exists(self.mount_point + Volume.enabler_file):
+
+				logging.info('volumes: Licorn® usage on %s already enabled.' %
+						stylize(ST_PATH, self.mount_point))
+			else:
+				open(self.mount_point + Volume.enabler_file, 'w').write('\n')
+				self.enabled = True
+				logging.notice('volumes: enabled Licorn® usage on %s.' %
 					stylize(ST_PATH, self.mount_point))
-		else:
-			open(self.mount_point + Volume.enabler_file, 'w').write('\n')
-			self.enabled = True
-			logging.notice('volumes: enabled Licorn® usage on %s.' %
-				stylize(ST_PATH, self.mount_point))
 	def disable(self, **kwargs):
 		""" Remove the special file at the root of the volume and thus unmark
 			it reserved for Licorn® used. """
-		if os.path.exists(self.mount_point + Volume.enabler_file):
-			os.unlink(self.mount_point + Volume.enabler_file)
-			self.enabled = False
-			logging.notice('volumes: disabled Licorn® usage on %s.' %
-					stylize(ST_PATH, self.mount_point))
-		else:
-			logging.info('volumes: Licorn® usage on %s already disabled.' %
-					stylize(ST_PATH, self.mount_point))
+		with self.lock:
+			if os.path.exists(self.mount_point + Volume.enabler_file):
+				os.unlink(self.mount_point + Volume.enabler_file)
+				self.enabled = False
+				logging.notice('volumes: disabled Licorn® usage on %s.' %
+						stylize(ST_PATH, self.mount_point))
+			else:
+				logging.info('volumes: Licorn® usage on %s already disabled.' %
+						stylize(ST_PATH, self.mount_point))
 	def mount(self, **kwargs):
 		""" Mount a given volume, after having created its mount point
 			directory if needed. This method simply calls the :prog:`mount`
@@ -158,55 +176,56 @@ class Volume:
 
 		assert ltrace('volumes', '| Volume.mount(%s, %s)' % (
 											self.device, self.mount_point))
+		with self.lock:
+			if not self.mount_point:
 
-		if not self.mount_point:
+				self.__compute_mount_point()
 
-			self.compute_mount_point()
+				if not os.path.exists(self.mount_point):
+					os.makedirs(self.mount_point)
+					logging.progress('volumes: created mount point directory %s.' %
+												stylize(ST_PATH, self.mount_point))
 
-			if not os.path.exists(self.mount_point):
-				os.makedirs(self.mount_point)
-				logging.progress('volumes: created mount point directory %s.' %
-											stylize(ST_PATH, self.mount_point))
+				mount_cmd = [ 'mount', '-t', self.fstype, '-o',
+					'acl,user_xattr,noatime,errors=remount-ro,nodev,suid,exec',
+					self.device, self.mount_point ]
 
-			mount_cmd = [ 'mount', '-t', self.fstype, '-o',
-				'acl,user_xattr,noatime,errors=remount-ro,nodev,suid,exec',
-				self.device, self.mount_point ]
+				output = process.execute(mount_cmd)[1].strip()
 
-			output = process.execute(mount_cmd)[1].strip()
+				if output:
+					logging.warning('volumes: ' + output)
+				else:
+					logging.notice('volumes: mounted device %s at %s.' % (
+									stylize(ST_DEVICE, self.device),
+									stylize(ST_PATH, self.mount_point)))
 
-			if output:
-				logging.warning('volumes: ' + output)
-			else:
-				logging.notice('volumes: mounted device %s at %s.' % (
-								stylize(ST_DEVICE, self.device),
-								stylize(ST_PATH, self.mount_point)))
-
-		self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
+			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 	def unmount(self, force=False):
 		""" Unmount a volume and remove its mount point directory. """
 
 		assert ltrace('volumes', '| Volume.unmount(%s, %s)' % (
 											self.device, self.mount_point))
 
-		if self.mount_point:
-			umount_cmd = [ 'umount', self.device ]
+		with self.lock:
+			if self.mount_point:
+				umount_cmd = [ 'umount', self.device ]
 
-			if force:
-				umount_cmd.insert(1, '-f')
+				if force:
+					umount_cmd.insert(1, '-f')
 
-			output = process.execute(umount_cmd)[1].strip()
+				output = process.execute(umount_cmd)[1].strip()
 
-			if output:
-				logging.warning('volumes: ' + output)
-			else:
-				logging.notice('volumes: unmounted device %s from %s.' % (
-								stylize(ST_DEVICE, self.device),
-								stylize(ST_PATH, self.mount_point)))
+				if output:
+					logging.warning('volumes: ' + output)
+				else:
+					logging.notice('volumes: unmounted device %s from %s.' % (
+									stylize(ST_DEVICE, self.device),
+									stylize(ST_PATH, self.mount_point)))
 
-			os.rmdir(self.mount_point)
-			self.mount_point = None
-			logging.progress('volumes: removed directory %s.' %
-										stylize(ST_PATH, self.mount_point))
+				os.rmdir(self.mount_point)
+				self.mount_point = None
+				logging.progress('volumes: removed directory %s.' %
+											stylize(ST_PATH, self.mount_point))
 class VolumesExtension(Singleton, LicornExtension):
 	""" Handles volumes via uDEV.
 
@@ -383,6 +402,8 @@ class VolumesExtension(Singleton, LicornExtension):
 		""" get a list of connected block devices from udev, and mount them if
 			needed. """
 
+		assert ltrace(self.name, '| rescan_volumes()')
+
 		udev_context = pyudev.Context()
 
 		kernel_devices = []
@@ -406,6 +427,8 @@ class VolumesExtension(Singleton, LicornExtension):
 		""" Read :file:`/proc/mounts` and :file:`/etc/blkid.tab` and keep
 			useful informations inside us for future use. """
 
+		assert ltrace(self.name, '| __update_cache_informations()')
+
 		self.proc_mounts = {}
 		for line in open('/proc/mounts').readlines():
 			splitted = line.split(' ')
@@ -417,26 +440,35 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		self.blkid = {}
 
-		if os.path.exists('/etc/blkid.tab'):
-			for line in open('/etc/blkid.tab').readlines():
-				data = BLKID_re.match(line)
-				if data:
-					datadict = data.groupdict()
-					self.blkid[datadict['device']] = {
-							'fstype' : datadict['type'],
-							'uuid'   : datadict['uuid']
-						}
-		else:
-			#~ sudo blkid
-			#~ /dev/sda1: UUID="c8af2c11-3863-4cb3-8756-adf83fa6c4ee" TYPE="ext4"
-			#~ /dev/sda5: UUID="ef8c8f56-9f80-4e3e-91bf-92032c2057d1" TYPE="swap"
 
-			for line in process.execute(['blkid'])[0].split('\n'):
-				splitted = line.split()
-				self.blkid[splitted[0][:-1]] = {
-							'fstype' : splitted[2][6:-1],
-							'uuid'   : splitted[1][6:-1]
-						}
+		# We can't assume the cache file is up-to-date, i've seen a number of
+		# cases on my VM where it was not updated.
+		#if os.path.exists('/etc/blkid.tab'):
+		#	for line in open('/etc/blkid.tab').readlines():
+		#		data = BLKID_re.match(line)
+		#		if data:
+		#			datadict = data.groupdict()
+		#			self.blkid[datadict['device']] = {
+		#					'fstype' : datadict['type'],
+		#					'uuid'   : datadict['uuid']
+		#				}
+		#else:
+		#~ sudo blkid
+		#~ /dev/sda1: UUID="c142d7c1-d7a3-4f61-838a-97b95fb3af46" TYPE="ext4"
+		#~ /dev/sda5: UUID="1c7a588d-9c47-4c42-8013-0613bd4681d7" TYPE="swap"
+		#~ /dev/sdb1: UUID="8b984ebd-5505-47e2-adb6-3cb21bcb6089" TYPE="ext4" LABEL="SAVE_LICORN"
+		#~ /dev/sdb2: LABEL="Untitled" TYPE="hfs"
+		#~ /dev/sdb3: LABEL="SAVE 2" UUID="6A7B-1DE6" TYPE="vfat"
+		#~ /dev/sdc1: LABEL="LICORN_SAVE" UUID="ba55069a-f48a-424f-b6ce-752209559938" TYPE="ext4"
+
+		for line in process.execute(['blkid'])[0].split('\n'):
+			if line == '':
+				continue
+			device, data = line.split(':', 1)
+			fields = BLKID_re.findall(data)
+			self.blkid[device] = {}
+			for key, value in fields:
+					self.blkid[device][key.lower()] = value
 	def __system_partition(self, device):
 		""" Return ``True`` if the given device or UUID is mounted on one of
 			our protected partitions."""
@@ -444,23 +476,19 @@ class VolumesExtension(Singleton, LicornExtension):
 		mounted = self.proc_mounts.keys()
 
 		if device in mounted:
+			assert ltrace(self.name, '|  __system_partition(device) → %s' % (
+							self.proc_mounts[device] in self.excluded_mounts))
 			return self.proc_mounts[device] in self.excluded_mounts
 
 		by_uuid = '/dev/disk/by-uuid/' + self.blkid[device]['uuid']
 
 		if by_uuid in mounted:
+			assert ltrace(self.name, '|  __system_partition(device) → %s' % (
+							self.proc_mounts[by_uuid] in self.excluded_mounts))
 			return self.proc_mounts[by_uuid] in self.excluded_mounts
 
+		assert ltrace(self.name, '|  __system_partition(device) → False')
 		return False
-	def __partition_label(self, device):
-		""" TODO. """
-
-		if self.blkid[device]['fstype'] in ('ext2', 'ext3', 'ext4'):
-			return process.execute(['e2label', device])[0].strip()
-		else:
-			logging.warning('>>> implement volumes.__partition_label()' %
-												self.blkid[device]['fstype'])
-			return ''
 	def add_volume_from_device(self, device=None, by_string=None):
 		""" add a volume from OS data if it doesn't already exist. """
 
@@ -489,26 +517,32 @@ class VolumesExtension(Singleton, LicornExtension):
 				# there. Skip them.
 				return
 
+			if 'uuid' not in self.blkid[kernel_device]:
+				logging.progress('%s: skipped unformatted partition %s.' %(
+						self.name, stylize(ST_DEVICE, kernel_device)))
+				return
+
 			if self.__system_partition(kernel_device):
 				logging.progress('%s: skipped system partition %s.' %(
 						self.name, stylize(ST_DEVICE, kernel_device)))
 				return
 
-			if self.blkid[kernel_device]['fstype'] \
+			if self.blkid[kernel_device]['type'] \
 											not in self.accepted_fs:
 				logging.progress('%s: skipped partition %s (excluded %s '
 					'filesystem).' % (self.name,
 						stylize(ST_DEVICE, kernel_device),
-						stylize(ST_ATTR, self.blkid[kernel_device]['fstype'])))
+						stylize(ST_ATTR, self.blkid[kernel_device]['type'])))
 				return
 
-			label = self.__partition_label(kernel_device)
+			label = (self.blkid[kernel_device]['label']
+							if 'label' in self.blkid[kernel_device] else '')
 
 			mount_point = (self.proc_mounts[kernel_device]
 					if kernel_device in self.proc_mounts else None)
 
 			vol = Volume(kernel_device,
-						self.blkid[kernel_device]['fstype'],
+						self.blkid[kernel_device]['type'],
 						self.blkid[kernel_device]['uuid'],
 						label,
 						mount_point)
