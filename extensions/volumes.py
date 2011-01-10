@@ -126,9 +126,10 @@ class Volume:
 		assert ltrace('volumes', '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
 	def __str__(self):
-		return 'volume %s (%s)' % (
-					stylize(ST_DEVICE, kernel_device),
-					stylize(ST_PATH, vol.mount_point))
+		return 'volume %s%s' % (
+					stylize(ST_DEVICE, self.device),
+					' (%s)' % stylize(ST_PATH, self.mount_point)
+						if self.mount_point else '')
 	def __compute_mount_point(self):
 		if self.label:
 			self.mount_point = Volume.mount_base_path + self.label
@@ -501,11 +502,8 @@ class VolumesExtension(Singleton, LicornExtension):
 			kernel_device = device.device_node
 
 			if kernel_device in self.volumes.keys():
-				logging.progress('%s: skipped already known volume %s (%s).' % (
-					self.name,
-					stylize(ST_DEVICE, kernel_device),
-					stylize(ST_PATH, self[kernel_device].mount_point)
-					))
+				logging.progress('%s: skipped already known volume %s.' % (
+					self.name, self.volumes[kernel_device]))
 				# see if we got to remount this one now.
 				self.volumes[kernel_device].mount()
 				return
@@ -551,11 +549,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		vol.mount()
 
-		logging.info('%s: added device %s (%s).' % ( self.name,
-					stylize(ST_DEVICE, kernel_device),
-					stylize(ST_PATH, vol.mount_point)
-				)
-			)
+		logging.info('%s: added %s.' % ( self.name, vol))
 	def del_volume_from_device(self, device=None, by_string=None):
 		""" Remove a volume. """
 
@@ -575,13 +569,11 @@ class VolumesExtension(Singleton, LicornExtension):
 				# the device disappeared from the kernel/udev list: it's
 				# already gone from the system...
 
+				volstr = str(self.volumes[kernel_device])
+
 				del self.volumes[kernel_device]
 
-				logging.info('%s: removed device %s (%s).' % (self.name,
-							stylize(ST_DEVICE, kernel_device),
-							stylize(ST_PATH, mount_point)
-						)
-					)
+				logging.info('%s: removed %s.' % (self.name, volstr))
 	def volumes_call(self, volumes, method_name, **kwargs):
 		""" generic method for enable/disable calling on volumes. """
 
