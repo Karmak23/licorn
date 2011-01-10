@@ -60,14 +60,23 @@ class LicornMasterController(MixedDictObject):
 			MixedDictObject._licorn_protected_attrs
 			+ ['backends', 'extensions', 'locks']
 		)
-	def __init__(self, name='LMC'):
+	def __init__(self, master=True):
 		""" Default name of :class:`LicornMasterController` is "LMC" because it
 			is meant to be only one LMC.
 
-			:param name: a string to name the instance created.
+			:param master: set to ``True`` when creating the first LMC instance,
+				else ``False``. This will permit reusing already loaded
+				controllers in helper LMCs (only used in CLIENT mode as of now).
 		"""
-		MixedDictObject.__init__(self, name)
-		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__), name))
+		if master:
+			MixedDictObject.__init__(self, 'LMC')
+		else:
+			MixedDictObject.__init__(self, 'HelperLMC')
+
+		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__),
+																	self.name))
+
+		self.master = master
 
 		self.locks = MixedDictObject('locks')
 
@@ -96,21 +105,23 @@ class LicornMasterController(MixedDictObject):
 			minimal and LicornMasterController._init_conf_minimal):
 			return
 
-		try:
-			from configuration import LicornConfiguration
+		if self.master:
 
-			self.configuration = LicornConfiguration(
-				minimal=True, batch=batch)
+			try:
+				from configuration import LicornConfiguration
+				self.configuration = LicornConfiguration(minimal=True, batch=batch)
 
-		except exceptions.BadConfigurationError, e:
-			logging.error(e)
+			except exceptions.BadConfigurationError, e:
+				logging.error(e)
 
-		if minimal:
-			LicornMasterController._init_conf_minimal = True
+			if minimal:
+				LicornMasterController._init_conf_minimal = True
+			else:
+				self.configuration.load(batch=batch)
+
+				LicornMasterController._init_conf_full = True
 		else:
-			self.configuration.load(batch=batch)
-
-			LicornMasterController._init_conf_full = True
+			self.configuration = LMC.configuration
 	def init_server(self, batch=False):
 		""" Meant to be called at the beginning of SERVER-daemon
 			initialization. It is a one pass method. After having
@@ -160,15 +171,17 @@ class LicornMasterController(MixedDictObject):
 		assert not LicornMasterController._init_client
 		assert LicornMasterController._init_first_pass
 
-		# TODO: if self.backends.keys() != ServerLMC.system.get_backends():
-
-		self.backends.load(client=True,
-			server_side_modules=ServerLMC.system.get_backends(client_only=True))
 
 		self._ServerLMC = ServerLMC
 
-		self.users.reload()
-		self.groups.reload()
+		print '>> server backends:', ServerLMC.system.get_backends(
+															client_only=True)
+
+		if self.backends.load(
+				server_side_modules=ServerLMC.system.get_backends(
+															client_only=True)):
+			self.users.reload()
+			self.groups.reload()
 
 		self.__init_common()
 		LicornMasterController._init_client = True
@@ -188,38 +201,47 @@ class LicornMasterController(MixedDictObject):
 
 		assert LicornMasterController._init_conf_full
 
-		# Initialize backends prior to controllers, because
-		# controllers need backends to populate themselves.
-		from backends import BackendsManager
-		self.backends = BackendsManager()
-		self.backends.load()
+		if self.master:
 
-		# users and groups must be OK before everything. For this, backends
-		# must be ready and configured, so we need to check them to be sure
-		# their config is loaded and complete (eg. schemas in LDAP and that
-		# sort of things).
-		self.backends.check(batch=True)
+			# Initialize backends prior to controllers, because
+			# controllers need backends to populate themselves.
+			from backends import BackendsManager
+			self.backends = BackendsManager()
+			self.backends.load()
 
-		# load common core objects.
-		from users  import UsersController
-		from groups import GroupsController
+			# users and groups must be OK before everything. For this, backends
+			# must be ready and configured, so we need to check them to be sure
+			# their config is loaded and complete (eg. schemas in LDAP and that
+			# sort of things).
+			self.backends.check(batch=True)
 
-		self.users  = UsersController()
-		self.groups = GroupsController()
+			# load common core objects.
+			from users  import UsersController
+			from groups import GroupsController
 
-		# groups will load users as a dependancy.
-		self.groups.load()
+			self.users  = UsersController()
+			self.groups = GroupsController()
 
-		# We create it in first pass, because :class:`CommandListener` needs it.
-		from licorn.foundations.messaging import MessageProcessor
-		self.msgproc = MessageProcessor(
-			ip_address=network.find_first_local_ip_address() \
-				if self.configuration.licornd.role == licornd_roles.CLIENT \
-				else None)
+			# groups will load users as a dependancy.
+			self.groups.load()
 
-		from system import SystemController
-		self.system = SystemController()
-		self.system.load()
+			# We create it in first pass, because :class:`CommandListener` needs it.
+			from licorn.foundations.messaging import MessageProcessor
+			self.msgproc = MessageProcessor(
+				ip_address=network.find_first_local_ip_address() \
+					if self.configuration.licornd.role == licornd_roles.CLIENT \
+					else None)
+
+			from system import SystemController
+			self.system = SystemController()
+			self.system.load()
+
+		else:
+			self.backends = LMC.backends
+			self.users    = LMC.users
+			self.groups   = LMC.groups
+			self.msgproc  = LMC.msgproc
+			self.system   = LMC.system
 
 		LicornMasterController._init_first_pass = True
 	def __init_common(self):
@@ -319,7 +341,7 @@ class LicornMasterController(MixedDictObject):
 
 		assert ltrace('core', '> connect()')
 
-		from configuration import LicornConfiguration
+		from licorn.core.configuration import LicornConfiguration
 		self._localconfig = LicornConfiguration(minimal=True)
 
 		if self._localconfig.licornd.role == licornd_roles.SERVER:

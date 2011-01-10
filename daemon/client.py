@@ -12,7 +12,7 @@ from licorn.foundations.ltrace    import ltrace
 
 from licorn.core   import LicornMasterController, LMC
 
-ServerLMC = LicornMasterController('ServerLMC')
+ServerLMC = LicornMasterController(master=False)
 
 def thread_greeter():
 

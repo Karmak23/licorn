@@ -829,7 +829,7 @@ class ModulesManager(LockedController):
 
 		"""
 		return self._available_modules
-	def load(self, client=False, server_side_modules=[]):
+	def load(self, server_side_modules=None):
 		""" load our modules (can be different type but the principle is the
 			always the same).
 
@@ -842,8 +842,23 @@ class ModulesManager(LockedController):
 				couple (at least).
 		"""
 
-		assert ltrace(self.name, '> load(type=%s, path=%s)' % (self.module_type,
-			self.module_path))
+		assert ltrace(self.name, '> load(type=%s, path=%s, server=%s)' % (
+			self.module_type, self.module_path, server_side_modules))
+
+		# We've got to check the server_side_modules argument too, because at
+		# first load of client LMC (first pass), server modules are not known:
+		# we must first start, then connect, then reload with server_modules
+		# known.
+		# Thus, if server_side_modules is None, we simulate a SERVER mode to
+		# load everything possible. Superfluous modules will be disabled on
+		# subsequent passes.
+		if LMC.configuration.licornd.role == licornd_roles.CLIENT \
+				and server_side_modules != None:
+			is_client = True
+		else:
+			is_client = False
+
+		changed = False
 
 		for entry in os.listdir(self.module_path):
 
@@ -854,10 +869,25 @@ class ModulesManager(LockedController):
 			# remove '.py'
 			module_name = entry[:-3]
 
-			if LMC.configuration.licornd.role == licornd_roles.CLIENT:
-				if client and module_name not in server_side_modules:
-					# TODO: del module and reload controllers ?
-					break
+			# Is module already loaded ?
+
+			if module_name in self.keys():
+				# module already loaded locally. Enventually sync with the
+				# server, else just jump to next module.
+				if is_client and module_name not in server_side_modules:
+					self.disable_func(module_name)
+					changed = True
+				continue
+
+			if module_name in self._available_modules.keys():
+				# module already loaded locally, but only available. Eventually
+				# sync if enabled on the server, else just jump to next module.
+				if is_client and module_name in server_side_modules:
+					self.enable_func(module_name)
+					changed = True
+				continue
+
+			# module is not already loaded. Load and sync client/server
 
 			assert ltrace(self.name, 'importing %s %s' % (self.module_type,
 				stylize(ST_NAME, module_name)))
@@ -868,7 +898,7 @@ class ModulesManager(LockedController):
 			modclass  = getattr(pymod, classname)
 
 			# the module instance, at last!
-			module    = modclass()
+			module = modclass()
 
 			assert ltrace(self.name, 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
@@ -882,41 +912,48 @@ class ModulesManager(LockedController):
 						assert ltrace(self.name, 'loaded %s %s' % (
 							self.module_type,
 							stylize(ST_NAME, module.name)))
+
+						if is_client and module_name not in server_side_modules:
+							self.disable_func(module_name)
+							changed = True
+
 					else:
-						if client and module_name in server_side_modules:
-							# the module is enabled on the server, we must
-							# enable it locally on the client, too.
-							module.enable()
-							self[module.name] = module
-						else:
-							self._available_modules[module.name] = module
-							assert ltrace(self.name, '%s %s is only available' %
-									(
-										self.module_type,
-										stylize(ST_NAME, module.name)
-									)
-								)
+						self._available_modules[module.name] = module
+						assert ltrace(self.name, '%s %s is only available'
+							% (self.module_type,
+								stylize(ST_NAME, module.name)))
+
+						if is_client and module_name in server_side_modules:
+							self.enable_func(module_name)
+							changed = True
 				else:
 					assert ltrace(self.name, '%s %s NOT available' % (
 						self.module_type, stylize(ST_NAME, module.name)))
 
-					if client and module_name in server_side_modules:
+					if is_client and module_name in server_side_modules:
 						raise exceptions.LicornRuntimeError('%s %s is enabled '
 							'on the server side but not available locally, '
 							'there is probably an installation problem.' % (
 								self.module_type, module_name))
 			else:
-				logging.info('%s %s %s, manually ignored in %s.' %
-								(
-									stylize(ST_DISABLED, 'Skipped'),
+				if is_client:
+					if module_name in server_side_modules:
+						raise exceptions.LicornRuntimeError('%s %s is enabled '
+							'on the server side but manually ignored locally '
+							'in %s, please fix the problem before continuing.'
+								% (self.module_type, module_name,
+									stylize(ST_PATH,
+										LMC.configuration.main_config_file)))
+				else:
+					logging.info('%s %s %s, manually ignored in %s.' %
+								(stylize(ST_DISABLED, 'Skipped'),
 									self.module_type,
 									stylize(ST_NAME, module.name),
 									stylize(ST_PATH,
-										LMC.configuration.main_config_file)
-								)
-							)
+										LMC.configuration.main_config_file)))
 
-		assert ltrace(self.name, '< load()')
+		assert ltrace(self.name, '< load(%s)' % changed)
+		return changed
 	def __not_manually_ignored(self, module_name):
 		""" See if module has been manually ignored in the main configuration
 			file, and return the result as expected from the name of the method.
@@ -995,6 +1032,8 @@ class ModulesManager(LockedController):
 			except KeyError:
 				raise exceptions.DoesntExistsException('No %s by that name "%s", '
 					'sorry.' % (self.module_type, module_name))
+	# this will eventually be overwritten in subclasses.
+	enable_func = enable_module
 	def disable_module(self, module_name):
 		""" Try to **disable** a given module. What is exactly done is left
 			to the module itself, because the current method will just call the
@@ -1021,6 +1060,8 @@ class ModulesManager(LockedController):
 			except KeyError:
 				raise exceptions.DoesntExistsException('No %s by that name "%s", '
 					'sorry.' % (self.module_type, module_name))
+	# this will eventually be overwritten in subclasses.
+	disable_func = disable_module
 	def check(self, batch=False, auto_answer=None):
 		""" Check all **enabled** modules, then all **available** modules.
 			Checking them will make them configure themselves, configure the

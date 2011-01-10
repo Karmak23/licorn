@@ -51,6 +51,7 @@ class BackendsManager(Singleton, ModulesManager):
 		assert ltrace(self.name, '| enable_backend(%s)' % backend_name)
 		ModulesManager.enable_module(self, backend_name)
 		LMC.reload_controllers_backends()
+	enable_func = enable_backend
 	def disable_backend(self, backend_name):
 		""" Disable a given backend,  then call
 			:meth:`~licorn.core.LicornMasterController.reload_controllers_backends`.
@@ -61,6 +62,7 @@ class BackendsManager(Singleton, ModulesManager):
 		assert ltrace(self.name, '| disable_backend(%s)' % backend_name)
 		ModulesManager.disable_module(self, backend_name)
 		LMC.reload_controllers_backends()
+	disable_func = disable_backend
 class CoreBackend(CoreModule):
 	def __init__(self, name='core_backend', controllers_compat=[]):
 		CoreModule.__init__(self, name=name,

@@ -15,7 +15,7 @@ from threading   import Thread, Timer, RLock
 
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import ltrace, mytime
 from licorn.foundations.constants import licornd_roles, host_status
 
 from licorn.core                  import LMC
@@ -91,6 +91,8 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return self.acceptUid(daemon, client_uid, client_addr,
 					client_socket)
 		else:
+			#print '>>', mytime(), 'checking non local', client_addr
+
 			if self.role == licornd_roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
@@ -101,11 +103,13 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 				with LicornPyroValidator.check_lock:
 					if client_addr in LicornPyroValidator.current_checks:
+						#print '>>', mytime(), ' SERVER accepting already checked', client_addr
 						# ACCEPT the connection, don't start a check-loop.
 						LicornPyroValidator.current_checks.remove(client_addr)
 						return 1, 0
 
 					else:
+						#print '>>', mytime(), 'SERVER noting', client_addr, 'beiing checked'
 						LicornPyroValidator.current_checks.append(client_addr)
 
 				remote_system = Pyro.core.getAttrProxyForURI(
@@ -113,6 +117,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 						LicornPyroValidator.pyro_port))
 
 				try:
+					#print '>>', mytime(), 'SERVER executing remote uid_connecting_from(', client_socket, ')'
 					client_uid = remote_system.uid_connecting_from(
 						client_socket)
 				except Exception, e:
@@ -123,6 +128,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
 
 				else:
+					#print '>>', mytime(), 'SERVER finishing local acceptUid(', client_uid, client_addr, ')'
 					return self.acceptUid(daemon, client_uid, client_addr,
 						client_socket, remote_system)
 			else:
@@ -162,15 +168,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					stylize(ST_NAME, client_login),
 					stylize(ST_UGID, client_uid)))
 
-				# the client is connecting to us, it is thus implicitely online.
-				# TODO: put this ouside of the 'if client_uid...', to be able to
-				# note online any host trying to connect ? this could lead to
-				# DDoS or creation of ghost machines and must be investigated
-				# before implementation.
-				if client_addr not in LicornPyroValidator.local_interfaces:
-
-					LMC.machines.update_status(client_addr,
-						status=host_status.ONLINE, system=remote_pyro_system)
+				# NOTE: don't call update_status() here, it will deadlock.
 
 				# ACCEPT
 				return 1, 0
@@ -324,8 +322,8 @@ class CommandListener(LicornBasicThread):
 		while not self._stop_event.isSet():
 			try:
 				self.pyro_daemon.handleRequests(0.1)
-				assert ltrace('cmdlistener', "pyro daemon %d's loop: %s" % (
-					self._pyro_loop, self.pyro_daemon.connections))
+				#assert ltrace('cmdlistener', "pyro daemon %d's loop: %s" % (
+				#	self._pyro_loop, self.pyro_daemon.connections))
 			except Exception, e:
 				logging.warning(e)
 			self._pyro_loop +=1
