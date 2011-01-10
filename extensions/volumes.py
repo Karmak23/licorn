@@ -8,7 +8,7 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, gamin, dbus, pyudev, select, parted, re
+import os, gamin, dbus, pyudev, select, re
 from traceback import print_exc
 
 from licorn.foundations           import logging, pyutils, process
