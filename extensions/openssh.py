@@ -61,7 +61,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 						self.group
 					),
 				'PermitRootLogin'        : 'no',
-				'PasswordAuthentication' : 'no',
+				'PasswordAuthentication' : 'yes',
 			}
 	def initialize(self):
 		""" Return True if :program:`sshd` is installed on the system and if
