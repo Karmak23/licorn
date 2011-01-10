@@ -64,9 +64,9 @@ class NamedObject(object):
 		for i in sorted(self.__dict__):
 			if i[0] == '_': continue
 			if type(getattr(self, i)) == type(self):
-				data += u'%s\u21b3 %s:\n%s' % ('\t', i, str(getattr(self, i)))
+				data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
 			else:
-				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
+				data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
 		return data
 	def copy(self):
 		""" Implements the copy method like any other base object. """
@@ -356,7 +356,7 @@ class EnumDict(Enumeration, dict):
 		dict.__init__(self)
 		Enumeration.__init__(self, name)
 	def __setattr__(self, key, value):
-		assert ltrace('base', '| EnumDict.__setattr__(%s->%s)' % (key, value))
+		assert ltrace('base', '| EnumDict.__setattr__(%s → %s)' % (key, value))
 		Enumeration.__setattr__(self, key, value)
 		if dict.has_key(self, value):
 			assert ltrace('base', '%s: duplicate key %s in our dict.' % (
@@ -372,7 +372,7 @@ class EnumDict(Enumeration, dict):
 		except KeyError:
 			return Enumeration.__getitem__(self, key)
 	def __setitem__(self, key, value):
-		assert ltrace('base', '| EnumDict.__setitem__(%s->%s)' % (key, value))
+		assert ltrace('base', '| EnumDict.__setitem__(%s → %s)' % (key, value))
 		if dict.has_key(self, key):
 			raise exceptions.AlreadyExistsError('%s already present in %s!' % (
 				key, self))
@@ -393,9 +393,9 @@ class LicornConfigObject():
 		for i in sorted(self.__dict__):
 			if i[0] == '_': continue
 			if type(getattr(self, i)) == type(self):
-				data += u'%s\u21b3 %s:\n%s' % ('\t'*self._level, i, str(getattr(self, i)))
+				data += '%s↳ %s:\n%s' % ('\t'*self._level, i, str(getattr(self, i)))
 			else:
-				data += u"%s\u21b3 %s = %s\n" % ('\t'*self._level, str(i), str(getattr(self, i)))
+				data += '%s↳ %s = %s\n' % ('\t'*self._level, str(i), str(getattr(self, i)))
 		return data
 	def __iter__(self):
 		""" make this object sequence-compatible, for use in
