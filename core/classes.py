@@ -873,10 +873,10 @@ class ModulesManager(LockedController):
 			assert ltrace(self.name, 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
 
-			module.load(server_modules=server_side_modules)
+			if self.__not_manually_ignored(module.name):
+				module.load(server_modules=server_side_modules)
 
-			if module.available:
-				if self.not_manually_disabled(module.name):
+				if module.available:
 					if module.enabled:
 						self[module.name] = module
 						assert ltrace(self.name, 'loaded %s %s' % (
@@ -897,49 +897,57 @@ class ModulesManager(LockedController):
 									)
 								)
 				else:
-					logging.info('%s manually disabled %s %s in %s.' %
-									(
-										stylize(ST_DISABLED, 'Skipped'),
-										self.module_type,
-										stylize(ST_NAME, module.name),
-										stylize(ST_PATH,
-											LMC.configuration.main_config_file)
-									)
-								)
-			else:
-				assert ltrace(self.name, '%s %s NOT available' % (
-					self.module_type, stylize(ST_NAME, module.name)))
+					assert ltrace(self.name, '%s %s NOT available' % (
+						self.module_type, stylize(ST_NAME, module.name)))
 
-				if client and module_name in server_side_modules:
-					raise exceptions.LicornRuntimeError('%s %s is enabled '
-						'on the server side but not available locally, '
-						'there is probably an installation problem.' % (
-							self.module_type, module_name))
+					if client and module_name in server_side_modules:
+						raise exceptions.LicornRuntimeError('%s %s is enabled '
+							'on the server side but not available locally, '
+							'there is probably an installation problem.' % (
+								self.module_type, module_name))
+			else:
+				logging.info('%s %s %s, manually ignored in %s.' %
+								(
+									stylize(ST_DISABLED, 'Skipped'),
+									self.module_type,
+									stylize(ST_NAME, module.name),
+									stylize(ST_PATH,
+										LMC.configuration.main_config_file)
+								)
+							)
 
 		assert ltrace(self.name, '< load()')
-	def not_manually_disabled(self, module_name):
-		""" see if module has been manually disabled in main configuration file.
+	def __not_manually_ignored(self, module_name):
+		""" See if module has been manually ignored in the main configuration
+			file, and return the result as expected from the name of the method.
 		"""
 
+		# find the "extension" or "backend" node of LMC.configuration.
 		if hasattr(LMC.configuration, self.name):
 			conf = getattr(LMC.configuration, self.name)
+
+			# Try the global ignore directive.
+			if hasattr(conf, 'ignore'):
+				assert ltrace(self.name, '| not_manually_ignored(%s) → %s '
+					'(global)' % (module_name, (module_name
+										not in getattr(conf, 'ignore'))))
+
+				return module_name not in getattr(conf, 'ignore')
+
+			# Else try the individual module ignore directive.
 			if hasattr(conf, module_name):
 				module_conf = getattr(conf, module_name)
-				if hasattr(module_conf, 'enabled'):
 
-					#assert ltrace(self.name, 'manual %s state %s found in '
-					#	'configuration' % (self.module_type, 'enabled'
-					#		if getattr(module_conf, 'enabled') else 'disabled')
-					#	)
+				if hasattr(module_conf, 'ignore'):
+					assert ltrace(self.name, '| not_manually_ignored(%s) → %s '
+						'(individually)' % (module_name,
+										getattr(module_conf, 'enabled')))
 
-					assert ltrace(self.name, '| not_manually_disabled(%s) → %s '
-						% (module_name, getattr(module_conf, 'enabled')))
-
-					return getattr(module_conf, 'enabled')
+					return getattr(module_conf, 'ignore')
 
 		# if no configuration directive is found, the module is considered
-		# enabled by default.
-		assert ltrace(self.name, '| not_manually_disabled(%s) → %s '
+		# not ignored by default, it will be loaded.
+		assert ltrace(self.name, '| not_manually_ignored(%s) → %s (no match)'
 			% (module_name, True))
 		return True
 	def find_compatibles(self, controller):
@@ -949,16 +957,15 @@ class ModulesManager(LockedController):
 			:param controller: the controller for which we want to lookup
 				compatible extensions, passed as intance reference (not just
 				the name, please).
-
 		"""
 
-		assert ltrace(self.name, '| find_compatibles(for: %s, from LMC.%s=%s'
-			% (controller.name, self.name, str([x.name for x in self])))
-
-		assert ltrace(self.name, '| find_compatibles(%s -> %s)' % (
-			str([ x.controllers_compat for x in self ]),
-			str([ module.name for module in self \
-				if controller.name in module.controllers_compat ])))
+		assert ltrace(self.name, '| find_compatibles() %s for %s from %s → %s'
+			% (stylize(ST_COMMENT, self.name),
+				stylize(ST_NAME, controller.name),
+					', '.join([x.name for x in self]),
+					stylize(ST_ENABLED, ', '.join([module.name for module
+						in self if controller.name in module.controllers_compat]
+			))))
 
 		return [ module for module in self \
 				if controller.name in module.controllers_compat ]

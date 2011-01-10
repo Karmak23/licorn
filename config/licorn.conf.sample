@@ -15,15 +15,20 @@ licornd.threads.pool_members = 5
 #licorn.network.enabled = False
 #licornd.wmi.enabled = False
 
-# Disable extensions at will.
+# Completely disable extensions at will (2 ways).
 #
-# default: extension activation is determined by the real presence of
-# services on your system (and enabled status in /etc/default/* or
-# distro equivalent).
+# In normal conditions, extension availability and activation are determined
+# by the real presence of services on your system (and enabled status in
+# /etc/default/* or distro equivalent). But you could want to force one or more
+# extension not to load (eg. extensions for which available == enabled).
 #
-#extensions.openssh.enabled = False
-#extensions.volumes.enabled = False
-#extensions.caldavd.enabled = False
+# The global directive (a python list):
+#extensions.ignore = [ 'squid', 'rdiffbackup' ]
+#
+# or individual settings:
+#extensions.openssh.ignore = True
+#extensions.volumes.ignore = True
+#extensions.caldavd.ignore = True
 
 # just for testing. This should not work.
 #backends.shadow.enabled = False
