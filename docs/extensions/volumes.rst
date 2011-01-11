@@ -1,19 +1,28 @@
 .. _extensions.volumes:
 
+
+.. highlight:: bash
+
+
 =================
 Volumes extension
 =================
 
-**this is a work in progress.**
+Description
+===========
 
 The `Volumes` extension takes care of external mass storage devices.
 
-It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`rdiffbackup` and possibly others).
+It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`extensions.rdiffbackup` and possibly others).
 
 .. _extensions.volumes.usage:
 
 Usage
 =====
+
+
+Which devices are supported?
+----------------------------
 
 Any device you want to use with Licorn must be formatted with one of these file-systems:
 
@@ -27,12 +36,12 @@ Any device you want to use with Licorn must be formatted with one of these file-
 
 Connecting a volume just requires your human energy to plug the device in one of the server's USB, eSATA or FireWire ports (it will be detected automatically ; if it doesn't after having waited 10 to 20 seconds, your server has probably serious problem; please contact support@licorn.org).
 
-Once the device is connected, it will be automatically mounted in file:`/media`. If the partition has a label, the mount-point will be :file:`/media/partition_label`, else it will be something more complicated (the partition UUID, something like ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, which identifies this partition in a unique way), and the mount-point will be accordingly complicated, like :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`.
+**Once the device is connected, it will be automatically mounted** in file:`/media`. If the partition has a label, the mount-point will be :file:`/media/partition_label`, else it will be something more complicated (the partition UUID, something like ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, which identifies this partition in a unique way), and the mount-point will be accordingly complicated, like :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`.
 
 General usage
 -------------
 
-Some CLI commands related to volumes (remember that you can use either the device name (:file:`/dev/...`) or the mount_point (:file:`/media/...`)to act on a given volume)::
+Keep in mind that you can use either the device name (:file:`/dev/...`) or the mount_point (:file:`/media/...`) to act on a given volume::
 
 	# get a list of connected / supported volumes, with free space displayed:
 	get volumes
@@ -87,7 +96,8 @@ Server side
 -----------
 
 * Checks pluged-in volumes via ``udev``.
-* Waits for partitions to come up, and automount them in :file:`/media`.
+* inhibits the ``udisks`` daemon while operating, to avoid conflicts.
+* Waits for **partitions** to come up, and automount them in :file:`/media`. This implies that `volumes` doesn't care about raw disks, and doesn't offer anything for them (but this could change in the near future).
 * offers CLI commands to manipulate volumes (see above).
 
 Client side

@@ -129,7 +129,16 @@ if __name__ == "__main__":
 			pids_to_wake=pids_to_wake)
 		dthreads.cmdlistener.start()
 
-	# FIXME: why do that ?
+	# Start extensions and backend threads, and record them in our threads
+	# to stop them when shutting down.
+	for module_manager in (LMC.backends, LMC.extensions):
+		for module in module_manager:
+			for thread in module.threads:
+				dthreads[thread.name] = thread
+				if not thread.is_alive():
+					thread.start()
+
+	# FIXME: why do that ? here ???
 	options.msgproc = LMC.msgproc
 
 	# client and server mode get the benefits of periodic thread cleaner.

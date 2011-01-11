@@ -15,7 +15,7 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 
 	Users management
 		* LDAP or Unix shadow account
-			* :ref:`chk` enforces permissions and ACLs inside the home dir
+			* :term:`chk` enforces permissions and ACLs inside the home dir
 		* Optional users attributes via :ref:`extensions`
 			* individual calendar & delegations
 			* mail addresses, aliases

@@ -1,3 +1,4 @@
+
 .. _daemon:
 
 .. highlight:: bash
@@ -22,25 +23,25 @@ Provided that you are an administrator of the current machine (member of group `
 If for any reason you need to start it by hand, just do it the simple way::
 
 	licornd
-	
+
 If you want it to stay on your terminal and display nice information messages::
 
 	licornd --verbose --no-daemon
-	
+
 	# the short way:
 	licornd -vD
-	
+
 Given there is already another daemon running and you want to replace it with another one::
 
 	licornd --replace
-	
-	# the command i use often during debug phases to retake 
+
+	# the command i use often during debug phases to retake
 	# control over a daemon already forked in the background:
 	licornd -rvD
-	
+
 Note that using the :option:`--replace` flag won't hurt if there's no daemon running: the program will just continue as if you didn't provided it.
 
-	
+
 Configuration
 -------------
 
@@ -57,7 +58,7 @@ For some reason, you will need to interact directly with the daemon (Actually, t
 	# or:
 	licornd -vD
 	# and so on with -vvD and -vvvD
-	
+
 
 Daemon's arguments
 ------------------
@@ -65,5 +66,5 @@ Daemon's arguments
 Please refer to integrated help for an exhaustive listing of the daemon's CLI arguments, they are documented online::
 
 	licornd --help
-	
-	
+
+

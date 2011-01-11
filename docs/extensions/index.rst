@@ -7,7 +7,7 @@ Extensions
 User & Administrator documentation
 ==================================
 
-Extensions share a lot with :ref:`backends <core.backends>`, because they inherit from the generalistic :ref:`modules`.
+Extensions share a lot with :ref:`backends <core.backends>`, because they inherit from the generalistic :ref:`core.modules`.
 
 .. toctree::
 	:maxdepth: 1

@@ -12,7 +12,7 @@ import os, gamin, dbus, pyudev, select, re
 from traceback import print_exc
 from threading import RLock
 
-from licorn.foundations           import logging, pyutils, process
+from licorn.foundations           import logging, pyutils, process, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
@@ -20,19 +20,20 @@ from licorn.foundations.constants import gamin_events
 
 from licorn.core               import LMC
 from licorn.extensions         import LicornExtension
-from licorn.daemon             import dthreads, dname
 from licorn.daemon.threads     import LicornBasicThread
 
 BLKID_re = re.compile(r'([^ =]+)="([^"]+)"')
 
 class UdevMonitorThread(LicornBasicThread):
-	""" """
+	"""
+		.. versionadded:: 1.2.4
+	"""
 	def __init__(self):
 		""" TODO. """
 
 		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
 
-		LicornBasicThread.__init__(self, pname=dname)
+		LicornBasicThread.__init__(self, pname='extensions', tname='UdevMonitor')
 
 		self.udev_monitor = pyudev.Monitor.from_netlink(pyudev.Context())
 		self.udev_monitor.filter_by(subsystem='block')
@@ -100,6 +101,11 @@ class UdevMonitorThread(LicornBasicThread):
 				LMC.extensions.volumes.del_volume_from_device(device)
 			else:
 				logging.progress('%s: %s %s' % (self.name, action, device))
+class VolumeException(exceptions.LicornRuntimeException):
+	"""
+		.. versionadded:: 1.2.4
+	"""
+	pass
 class Volume:
 	""" Handle a single volume.
 
@@ -107,6 +113,8 @@ class Volume:
 			can be accessed through multiple extensions (most notably
 			:class:`rdiff-backup <RdiffBackupExtension>` which can take ages to
 			complete).
+
+		.. versionadded:: 1.2.4
 	"""
 	mount_base_path = '/media/'
 	enabler_file    = '/.org.licorn.reserved_volume'
@@ -118,7 +126,9 @@ class Volume:
 		self.guid        = guid
 		self.mount_point = mount_point
 		self.lock        = RLock()
-
+		#: __unmount is used to remember the mount status between __enter__ and
+		#: __exit__ calls.
+		self.__unmount   = False
 		if mount_point:
 			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 		else:
@@ -130,6 +140,18 @@ class Volume:
 					stylize(ST_DEVICE, self.device),
 					' (%s)' % stylize(ST_PATH, self.mount_point)
 						if self.mount_point else '')
+	def __enter__(self):
+		if self.lock.acquire(False):
+			if self.mount_point is None:
+				self.__unmount = True
+				self.mount()
+		else:
+			raise VolumeException('volume %s already locked.' % str(self))
+	def __exit__(self, type, value, traceback):
+		""" TODO: use arguments... """
+		if self.__unmount:
+			self.unmount()
+		self.lock.release()
 	def __compute_mount_point(self):
 		if self.label:
 			self.mount_point = Volume.mount_base_path + self.label
@@ -250,6 +272,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		* http://www.kernel.org/pub/linux/utils/kernel/hotplug/gudev/index.html
 		* http://stackoverflow.com/questions/2861098/how-do-i-use-udev-to-find-info-about-inserted-video-media-e-g-dvds
 
+		.. versionadded:: 1.2.4
 	"""
 	def __init__(self):
 		assert ltrace('volumes', '| VolumesExtension.__init__()')
@@ -296,11 +319,12 @@ class VolumesExtension(Singleton, LicornExtension):
 		self.inotifications = []
 	def __del__(self):
 		""" Put the eventual udisks daemon in a normal state before giving
-			back hand."""
+			back hand.
 
-		# the monitor thread will be stopped as part of the daemon global stop
-		# process. Don't stop it here.
-		#self.__stop_udev_monitor()
+			.. note:: the :class:`UdevMonitorThread` instance will be stopped
+				as part of the daemon global stop process. Don't stop it here.
+		"""
+
 		self.__uninhibit_udisks()
 	def initialize(self):
 		""" The extension is available if udev is OK and we can get a list of
@@ -375,11 +399,16 @@ class VolumesExtension(Singleton, LicornExtension):
 		assert ltrace(self.name, '| system_load()')
 		pass
 	def __start_udev_monitor(self):
+		""" Create and start the :class:`UdevMonitorThread`. We start it now,
+			just after the device listing, to be sure not to miss any device
+			change. This won't hurt the daemon anyway which will test if the
+			thread is alive or not.
+
+		"""
 		self.udev_monitor_thread = UdevMonitorThread()
 		self.udev_monitor_thread.start()
-		dthreads[self.udev_monitor_thread.name] = self.udev_monitor_thread
-	def __stop_udev_monitor(self):
-		self.udev_monitor_thread.stop()
+
+		self.threads.append(self.udev_monitor_thread)
 	def __inhibit_udisks(self):
 		""" TODO """
 
