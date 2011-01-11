@@ -858,7 +858,7 @@ class ModulesManager(LockedController):
 		else:
 			is_client = False
 
-		changed = False
+		module_classes_list = []
 
 		for entry in os.listdir(self.module_path):
 
@@ -868,6 +868,25 @@ class ModulesManager(LockedController):
 
 			# remove '.py'
 			module_name = entry[:-3]
+
+			class_name    = module_name.title() + self.module_type.title()
+			python_module = __import__(self.module_sym_path + '.' + module_name,
+											globals(), locals(), class_name)
+			module_class  = getattr(python_module, class_name)
+
+			# VERY VERY basic dependancies resolver.
+			# FIXME: please, stop joking and implement a real deps-resolver.
+			if hasattr(module_class, 'module_depends'):
+				module_classes_list.append((module_name, module_class))
+			else:
+				module_classes_list.insert(0, (module_name, module_class))
+
+		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
+				', '.join([ str(klass) for klass in module_classes_list]))
+
+		# dependancies are resolved, now instanciate in the good order:
+		changed = False
+		for (module_name, module_class) in module_classes_list:
 
 			# Is module already loaded ?
 
@@ -892,13 +911,8 @@ class ModulesManager(LockedController):
 			assert ltrace(self.name, 'importing %s %s' % (self.module_type,
 				stylize(ST_NAME, module_name)))
 
-			classname = module_name.title() + self.module_type.title()
-			pymod     = __import__(self.module_sym_path + '.' + module_name,
-						globals(), locals(), classname)
-			modclass  = getattr(pymod, classname)
-
 			# the module instance, at last!
-			module = modclass()
+			module = module_class()
 
 			assert ltrace(self.name, 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
@@ -1151,14 +1165,20 @@ class CoreModule(CoreUnitObject):
 		duplicate-data coming from different backends; this is the typical
 		problem a backend can't detect).
 
-		A module defines these attributes:
+		A module class defines these class attributes:
 
-		* modules_pre_depends TODO
-		* modules_conflicts TODO
-		* controllers_compat TODO
+		* modules_depends: a list of modules **instance names** (not class)
+		  which must be available before the current one gets enabled.
+		* modules_conflicts: other modules **instance names** which conflict
+		  with the current one.
 
+		It must also define these instance attributes:
 
-		.. note:: if :attr:`self.controllers_compat` contains ``system`` (name
+		* controllers_compat: a list of controller names which will get data
+		  (methods or contents) from the current module.
+
+		.. note:: [**work in progress**] if :attr:`self.controllers_compat`
+			contains ``system`` (name
 			of :class:`~licorn.core.system.SystemController` global instance),
 			the current class must implement the special :meth:`system_load`
 			method. This method will be called *after* module load and *after*
@@ -1183,19 +1203,25 @@ class CoreModule(CoreUnitObject):
 		# abstract defaults
 
 		#: FIXME: better comment
-		self.available  = False
+		self.available = False
 
 		#: FIXME: better comment
-		self.enabled    = False
+		self.enabled = False
 
 		#: FIXME: better comment
 		self.controllers_compat = controllers_compat
 
-		#: FIXME: better comment
-		self.configuration = LicornConfigObject()
+		#: Filenames of useful files, stored as strings.
 		self.paths         = LicornConfigObject()
 
-		#: a list of compatible modules. See :ref:`modules` for details
+		#: Internal configuration and data, loaded as objects.
+		self.configuration = LicornConfigObject()
+		self.data          = LicornConfigObject()
+
+		#: Threads that will be collected by daemon to be started/stopped.
+		self.threads       = []
+
+		#: A list of compatible modules. See :ref:`modules` for details
 		self.peer_compat = []
 
 		#: indicates that this module is meant to be used on server only (not
