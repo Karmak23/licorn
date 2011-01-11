@@ -84,6 +84,15 @@ Users and groups related
 		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :term:`users.config_dir`, or with full path: :file:`~/.licorn/check.conf`.
 
 
+Backup related
+--------------
+
+.. glossary::
+
+	backup.interval
+		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions <extensions/index>`, but some can have dedicated parameters.
+
+
 Other directives
 ----------------
 

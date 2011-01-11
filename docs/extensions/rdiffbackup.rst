@@ -11,12 +11,18 @@ The `Rdiff-backup` extension takes care of backups on external volumes.
 Server side
 ===========
 
-* lists backups on connected volumes.
-* implement incremental backups (day / week / month / year).
-* offers the semantics for restoring files / dirs.
-* idem for auto-cleaning of backups.
+* Offers interval-configurable incremental backups. Backups are completely automatic, provided you plugin any external mass storage device, formated in
+* [TODO] idem for auto-cleaning of backups.
+* [TODO] lists backups on connected volumes.
+* [TODO] offers the semantics for restoring files / dirs.
 * idem for manual cleaning, compressing.
 
+Supported backup devices
+------------------------
+
+* any external mass storage device.
+* must be formated for GNU/Linux with an ACL-compatible file-system (see :ref:`volumes usage <extensions.volumes.usage>`)
+* must be reserved for Licorn® use (see :ref:`volumes usage <extensions.volumes.usage>`)
 
 Client side
 ===========
