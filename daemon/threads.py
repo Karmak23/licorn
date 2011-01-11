@@ -11,10 +11,10 @@ import time
 import gobject
 import dbus.mainloop.glib
 
-from threading   import Thread, Event, current_thread
+from threading   import Thread, Event, RLock, current_thread
 from Queue       import Queue
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 
@@ -284,6 +284,16 @@ class LicornJobThread(LicornBasicThread):
 		self.kwargs = target_kwargs
 		self.daemon = daemon
 
+		# lock used when accessing self.time_elapsed and self.sleep_delay
+		self.time_lock = RLock()
+
+		# these 2 variable are internal to the sleep() method, but can be used
+		# R/O in remaining_time().
+		self.__time_elapsed = 0.0
+		self.__sleep_delay  = None
+
+		# used when we want to reset the timer.
+		self._reset_event = Event()
 		# a parallel thread that will run the real job, to be able to continue
 		# to countdown the delay while job is running.
 		self.job_runner = None
@@ -310,16 +320,39 @@ class LicornJobThread(LicornBasicThread):
 			be very long.
 		"""
 
-		if delay is None:
-			delay = self.delay
+		if delay:
+			self.__sleep_delay = delay
+		else:
+			self.__sleep_delay = self.delay
+
 
 		assert ltrace('thread', '| %s.sleep(%s)' % (self.name, delay))
 
-		current_delay = 0.005
-		while current_delay < delay and not self._stop_event.is_set():
+		with self.time_lock:
+			self.__time_elapsed = 0.000
+
+		while self.__time_elapsed < self.__sleep_delay and not self._stop_event.is_set():
 			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
 			time.sleep(0.005)
-			current_delay += 0.005
+			with self.time_lock:
+				self.__time_elapsed += 0.005
+			if self._reset_event.is_set():
+				logging.progress('%s: timer reset after %s elapsed.' % (self.name,
+						pyutils.format_time_delta(self.__time_elapsed)))
+				with self.time_lock:
+					self.__time_elapsed = 0.000
+				self._reset_event.clear()
+	def reset_timer(self):
+		self._reset_event.set()
+	reset = reset_timer
+	def remaining_time(self):
+		""" Return the remaining time until next target execution, in seconds.
+		"""
+		with self.time_lock:
+			if self.__sleep_delay is None:
+				raise exceptions.LicornRuntimeException(
+										'%s: not yet started.' % self.name)
+			return self.__sleep_delay - self.__time_elapsed
 	def run(self):
 		""" TODO. """
 
