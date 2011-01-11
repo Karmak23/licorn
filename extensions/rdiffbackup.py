@@ -192,8 +192,8 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes.volumes
 
-			self.threads.append(RdiffbackupThread(target=self.backup,
-					delay=LMC.configuration.backup.interval))
+			self.threads.autobackup = RdiffbackupThread(target=self.backup,
+					delay=LMC.configuration.backup.interval)
 			return True
 
 		return False

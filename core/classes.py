@@ -1219,7 +1219,7 @@ class CoreModule(CoreUnitObject):
 		self.data          = LicornConfigObject()
 
 		#: Threads that will be collected by daemon to be started/stopped.
-		self.threads       = []
+		self.threads = MixedDictObject('module_threads')
 
 		#: A list of compatible modules. See :ref:`modules` for details
 		self.peer_compat = []

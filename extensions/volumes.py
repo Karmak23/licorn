@@ -33,7 +33,7 @@ class UdevMonitorThread(LicornBasicThread):
 
 		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
 
-		LicornBasicThread.__init__(self, pname='extensions', tname='UdevMonitor')
+		LicornBasicThread.__init__(self, pname='extensions', tname='Volumes.UdevMonitor')
 
 		self.udev_monitor = pyudev.Monitor.from_netlink(pyudev.Context())
 		self.udev_monitor.filter_by(subsystem='block')
@@ -405,10 +405,8 @@ class VolumesExtension(Singleton, LicornExtension):
 			thread is alive or not.
 
 		"""
-		self.udev_monitor_thread = UdevMonitorThread()
-		self.udev_monitor_thread.start()
-
-		self.threads.append(self.udev_monitor_thread)
+		self.threads.udevmonitor = UdevMonitorThread()
+		self.threads.udevmonitor.start()
 	def __inhibit_udisks(self):
 		""" TODO """
 
