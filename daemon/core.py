@@ -69,7 +69,7 @@ def get_daemon_status(long_output=False, precision=None):
 					'(%s)' % stylize(ST_IMPORTANT, 'locked')
 						if controller.is_locked() else ''))
 
-	for thread in dthreads.values():
+	for thread in dthreads.itervalues():
 		if thread.is_alive():
 			if long_output or ( not long_output
 				and not isinstance(thread, LicornPoolJobThread)):

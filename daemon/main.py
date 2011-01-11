@@ -133,19 +133,22 @@ if __name__ == "__main__":
 	options.msgproc = LMC.msgproc
 
 	# client and server mode get the benefits of periodic thread cleaner.
-	dthreads.cleaner = LicornJobThread(dname,
-		target=thread_periodic_cleaner,
-		time=(time.time()+30.0),
-		delay=LMC.configuration.licornd.threads.wipe_time,
-		tname='PeriodicThreadsCleaner')
+	dthreads.cleaner = LicornJobThread(
+			tname='PeriodicThreadsCleaner',
+			target=thread_periodic_cleaner,
+			time=(time.time()+30.0),
+			delay=LMC.configuration.licornd.threads.wipe_time
+		)
 
 	if LMC.configuration.licornd.role == licornd_roles.CLIENT:
 
 		# start the greeter 1 second later, because our Pyro part must be fully
 		# operational before the greeter starts to do anything.
-		dthreads.greeter = LicornJobThread(dname,
+		dthreads.greeter = LicornJobThread(
+				tname='ClientToServerGreeter',
 				target=client.thread_greeter,
-				time=(time.time()+1.0), count=1, tname='ClientToServerGreeter')
+				time=(time.time()+1.0), count=1
+			)
 
 		# dthreads.status = PULL IN the dbus status pusher
 
@@ -197,9 +200,13 @@ if __name__ == "__main__":
 				# launch a machine status update every 30 seconds. The first update
 				# will be run ASAP (in 1 second), else we don't have any info to
 				# display if opening the WMI immediately.
-				dthreads.network_builder = LicornJobThread(dname,
-					target=daemon_network.thread_network_links_builder, daemon=True,
-					time=(time.time()+1.0), count=1, tname='NetworkLinksBuilder')
+				dthreads.network_builder = LicornJobThread(
+						tname='NetworkLinksBuilder',
+						target=daemon_network.thread_network_links_builder,
+						daemon=True,
+						time=(time.time()+1.0),
+						count=1
+					)
 
 			for thread_class in (
 					daemon_network.IPScannerThread,
@@ -217,12 +224,15 @@ if __name__ == "__main__":
 		else:
 			# start a fake thread to avoid consuming forever memory with our
 			# Queues, but don't do anything real with the data.
-			dthreads.queues_emptyer = LicornJobThread(dname,
-				target=daemon_network.thread_queues_emptyer, daemon=True,
-				time=(time.time()+30.0),
-				delay=LMC.configuration.licornd.threads.wipe_time,
-				tname='QueuesEmptyer')
+			dthreads.queues_emptyer = LicornJobThread(
+					tname='QueuesEmptyer',
+					target=daemon_network.thread_queues_emptyer,
+					daemon=True,
+					time=(time.time()+30.0),
+					delay=LMC.configuration.licornd.threads.wipe_time,
+				)
 
+		# FIXME: pull back dname directly in the threads declaration.
 		dthreads.aclchecker = ACLChecker(None, dname)
 
 		if LMC.configuration.licornd.inotifier.enabled:

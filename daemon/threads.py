@@ -18,7 +18,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 
-from licorn.daemon import dthreads
+from licorn.daemon import dthreads, dname
 
 class DbusThread(Thread):
 	""" Run the d-bus main loop (from gobject) in a separate thread, because
@@ -50,11 +50,10 @@ class DbusThread(Thread):
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
 
-	def __init__(self, pname='<unknown>', tname=None):
+	def __init__(self, pname=dname, tname=None):
 		Thread.__init__(self)
 
-		self.name  = "%s/%s" % (
-			pname, tname if tname else
+		self.name = "%s/%s" % (pname, tname if (pname and tname) else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
 		self._stop_event  = Event()
@@ -257,8 +256,8 @@ class LicornThread(Thread):
 		self._stop_event.set()
 		self._input_queue.put(None)
 class LicornJobThread(LicornBasicThread):
-	def __init__(self, name, target, time=None, count=None, delay=0.0,
-		tname=None,	target_args=(), target_kwargs={}, daemon=False):
+	def __init__(self, target, pname=dname, tname=None, time=None, count=None,
+		delay=0.0, target_args=(), target_kwargs={}, daemon=False):
 		""" Create a scheduled job thread.
 			time: is a time.time() object before first execution, or for
 				one-shot jobs ("AT" like)
@@ -275,7 +274,7 @@ class LicornJobThread(LicornBasicThread):
 			launch more than one JobThread.
 		"""
 
-		LicornBasicThread.__init__(self, name, tname)
+		LicornBasicThread.__init__(self, pname=pname, tname=tname)
 
 		self.target = target
 		self.time = time
@@ -285,6 +284,9 @@ class LicornJobThread(LicornBasicThread):
 		self.kwargs = target_kwargs
 		self.daemon = daemon
 
+		# a parallel thread that will run the real job, to be able to continue
+		# to countdown the delay while job is running.
+		self.job_runner = None
 		#print 'caller %s for target %s' % (self.kwargs, self.target)
 
 		if self.count is None:
@@ -311,13 +313,16 @@ class LicornJobThread(LicornBasicThread):
 		if delay is None:
 			delay = self.delay
 
+		assert ltrace('thread', '| %s.sleep(%s)' % (self.name, delay))
+
 		current_delay = 0.005
-		while current_delay < delay and not self._stop_event.isSet():
+		while current_delay < delay and not self._stop_event.is_set():
 			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
 			time.sleep(0.005)
 			current_delay += 0.005
 	def run(self):
 		""" TODO. """
+
 		self.current_loop = 0
 
 		# first occurence: we need to wait until time if it is set.
@@ -332,11 +337,22 @@ class LicornJobThread(LicornBasicThread):
 			# simple timer thread).
 			self.sleep()
 
-		while not self._stop_event.isSet() and \
-			(self.loop or self.current_loop < self.count):
+		while not self._stop_event.is_set() and	(
+				self.loop or self.current_loop < self.count):
+
+			create = False
+			if (not self.job_runner) or (not self.job_runner.is_alive()):
+				self.job_runner = Thread(
+						target=self.target,
+						name=self.name + '.JobRunner',
+						args=self.args,
+						kwargs=self.kwargs
+					)
+				self.job_runner.daemon = True
+				self.job_runner.start()
 
 			#logging.progress('%s: calling %s(%s)' % (self.name, self.target, self.kwargs)
-			self.target(*self.args, **self.kwargs)
+			#self.target(*self.args, **self.kwargs)
 
 			self.current_loop += 1
 			self.sleep()
