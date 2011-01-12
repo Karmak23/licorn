@@ -143,7 +143,15 @@ def mytime():
 
 # the new LTRACE env variable takes precedence, then we try the old one
 # LICORN_TRACE.
-if getenv('LTRACE', getenv('LICORN_TRACE', None)) != None:
+new_trace = getenv('LTRACE', None)
+old_trace = getenv('LICORN_TRACE', None)
+
+if new_trace != None or old_trace != None:
+
+	if new_trace:
+		env_trace = new_trace
+	else:
+		env_trace = old_trace
 
 	import sys
 	ltrace_level = 0
@@ -153,7 +161,7 @@ if getenv('LTRACE', getenv('LICORN_TRACE', None)) != None:
 		if len(key) > maxwidth:
 			maxwidth = len(key)
 
-	for env_mod in getenv('LTRACE', getenv('LICORN_TRACE')).split('|'):
+	for env_mod in env_trace.split('|'):
 		substracts = env_mod.split('^')
 		ltrace_level |= trc[substracts[0]]
 		for sub_env_mod in substracts[1:]:
