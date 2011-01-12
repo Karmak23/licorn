@@ -992,7 +992,7 @@ class ModulesManager(LockedController):
 				if hasattr(module_conf, 'ignore'):
 					assert ltrace(self.name, '| not_manually_ignored(%s) → %s '
 						'(individually)' % (module_name,
-										getattr(module_conf, 'enabled')))
+										getattr(module_conf, 'ignore')))
 
 					return getattr(module_conf, 'ignore')
 
