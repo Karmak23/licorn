@@ -183,18 +183,56 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 								+ '/' + 'rdiff-backup-globs.conf')
 
 		return filename
+	def _find_binary(self, binary):
+		""" Return the path of a binary on the local system, or ``None`` if
+			not found in the :envvar:`PATH`. """
+
+		default_path = '/bin:/usr/bin:/usr/local/bin:/opt/bin:/opt/local/bin'
+
+		binary = '/' + binary
+
+		for syspath in os.getenv('PATH', default_path).split(':'):
+			if os.path.exists(syspath + binary):
+
+				assert ltrace(self.name, '| _find_binary(%s) → %s' % (
+						binary[1:], syspath + binary))
+
+				return syspath + binary
+
+		assert ltrace(self.name, '| _find_binary(%s) → None' % binary[1:])
+		return None
 	def initialize(self):
 		""" Return True if :command:`rdiff-backup` is installed on the local
 			system.
 		"""
 
-		for syspath in os.getenv('PATH',
-				'/usr/bin:/usr/local/bin:/opt/bin:/opt/local/bin').split(':'):
-			if os.path.exists(syspath + '/rdiff-backup'):
-				self.available    = True
-				self.paths.binary = syspath + '/rdiff-backup'
-				break
+		assert ltrace(self.name, '> initialize()')
 
+		# these ones will be filled later.
+		self.paths.binary           = self._find_binary('rdiff-backup')
+		self.paths.nice_bin         = self._find_binary('nice')
+		self.paths.ionice_bin       = self._find_binary('ionice')
+
+		if self.paths.binary:
+			self.available = True
+
+			self.commands = LicornConfigObject()
+
+			if self.paths.nice_bin:
+				self.commands.nice = [ self.paths.nice_bin, '-n', '19' ]
+			else:
+				self.commands.nice = []
+
+			if self.paths.ionice_bin:
+				self.commands.ionice = [ self.paths.ionice_bin, '-c', '3' ]
+			else:
+				self.commands.ionice = []
+
+		else:
+			logging.warning2('%s: not available because rdiff-binary not '
+				'found in $PATH.' % self.name)
+
+		assert ltrace(self.name, '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" the :class:`RdiffbackupExtension` is enabled when the
@@ -421,15 +459,20 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 
 				self._compute_needed_space(volume, clean=True)
 
-				command = [ self.paths.binary, '/', self._backup_dir(volume) ]
+				command = self.commands.ionice[:]
+				command.extend(self.commands.nice[:])
+
+				rdiff_command = [ self.paths.binary, '/', self._backup_dir(volume) ]
 
 				if os.path.exists(self.paths.globbing_file):
-					command.insert(1, self.paths.globbing_file)
-					command.insert(1, '--include-globbing-filelist')
+					rdiff_command.insert(1, self.paths.globbing_file)
+					rdiff_command.insert(1, '--include-globbing-filelist')
 				else:
 					logging.warning2("%s: Rdiff-backup configuration file %s "
 						"doesn't exist." % (self.name,
 							stylize(ST_PATH, self.paths.globbing_file)))
+
+				command.extend(rdiff_command)
 
 				self._write_last_backup_file(volume)
 
