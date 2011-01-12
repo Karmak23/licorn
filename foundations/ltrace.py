@@ -26,6 +26,7 @@ from time import time, localtime, strftime
 from styles import *
 
 trc={}
+
 trc['all']           = 0xffffffffffffffffffffffff
 trc['none']          = 0x000000000000000000000000
 trc['special']       = 0xf00000000000000000000000
@@ -42,6 +43,10 @@ trc['fsapi']         = 0x000000000000000000000040
 trc['network']       = 0x000000000000000000000080
 trc['dbus']          = 0x000000000000000000000100
 trc['messaging']     = 0x000000000000000000000200
+# the following two are the same, for syntax comfort
+trc['check']         = 0x000000000000000000000400
+trc['checks']        = 0x000000000000000000000400
+
 
 trc['core']          = 0x0000000000000000ffff0000
 trc['configuration'] = 0x000000000000000000010000
@@ -53,9 +58,6 @@ trc['internet']      = 0x000000000000000000200000
 trc['privileges']    = 0x000000000000000000400000
 trc['keywords']      = 0x000000000000000000800000
 trc['system']        = 0x000000000000000001000000
-# the following two are the same, for syntax comfort
-trc['check']         = 0x000000000000000002000000
-trc['checks']        = 0x000000000000000002000000
 
 trc['backends']      = 0x000000000000ffff00000000
 trc['openldap']      = 0x000000000000000100000000
@@ -87,6 +89,7 @@ trc['threads']       = 0x000000400000000000000000
 trc['wmi']           = 0x000000800000000000000000
 trc['rwi']           = 0x000001000000000000000000
 trc['client']        = 0x000002000000000000000000
+trc['interactor']    = 0x000004000000000000000000
 
 # no 0xffff here, the first 'f' is for timings and special cases
 trc['interfaces']    = 0x0fff00000000000000000000
@@ -97,6 +100,11 @@ trc['del']           = 0x000400000000000000000000
 trc['chk']           = 0x000800000000000000000000
 trc['get']           = 0x001000000000000000000000
 trc['argparser']     = 0x002000000000000000000000
+
+trc['highlevel']     = trc['all'] ^ trc['foundations']
+trc['high']          = trc['highlevel']
+trc['standard']      = trc['highlevel']
+trc['std']           = trc['highlevel']
 
 def dump_one(obj_to_dump, long_output=False):
 	try:
@@ -133,7 +141,9 @@ def mytime():
 	return '[%s%s]' % (
 		strftime('%Y/%d/%m %H:%M:%S', localtime(t)), ('%.4f' % (t%1))[1:])
 
-if getenv('LICORN_TRACE', None) != None:
+# the new LTRACE env variable takes precedence, then we try the old one
+# LICORN_TRACE.
+if getenv('LTRACE', getenv('LICORN_TRACE', None)) != None:
 
 	import sys
 	ltrace_level = 0

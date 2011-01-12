@@ -265,10 +265,12 @@ class LicornDaemonInteractor(NamedObject):
 	class HistoryConsole(code.InteractiveConsole):
 		def __init__(self, locals=None, filename="<licornd_console>",
 			histfile=os.path.expanduser('~/.licorn/licornd_history')):
+			assert ltrace('interactor', '| HistoryConsole.__init__()')
 			code.InteractiveConsole.__init__(self, locals, filename)
 			self.histfile = histfile
 
 		def init_history(self):
+			assert ltrace('interactor', '| HistoryConsole.init_history()')
 			readline.set_completer(Completer(namespace=self.locals).complete)
 			readline.parse_and_bind("tab: complete")
 			if hasattr(readline, "read_history_file"):
@@ -277,22 +279,26 @@ class LicornDaemonInteractor(NamedObject):
 				except IOError:
 					pass
 		def save_history(self):
+			assert ltrace('interactor', '| HistoryConsole.save_history()')
 			readline.write_history_file(self.histfile)
 
 	def __init__(self, pname):
+		assert ltrace('interactor', '| LicornDaemonInteractor.__init__()')
 		NamedObject.__init__(self, 'interactor')
 		self.long_output = False
 		self.pname       = pname
 		# make it daemon so that it doesn't block the master when stopping.
 		#self.daemon = True
 	def prepare_terminal(self):
+		assert ltrace(self.name, '| prepare_terminal()')
 		termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new)
 	def restore_terminal(self):
+		assert ltrace(self.name, '| restore_terminal()')
 		termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
 	def run(self):
 		""" prepare stdin for interaction and wait for chars. """
 		if sys.stdin.isatty():
-			assert ltrace('daemon', '> %s.run()' % self.name)
+			assert ltrace(self.name, '> run()')
 
 			curses.setupterm()
 			clear = curses.tigetstr('clear')
@@ -447,4 +453,4 @@ class LicornDaemonInteractor(NamedObject):
 
 		# else:
 		# stdin is not a tty, we are in the daemon, don't do anything.
-		assert ltrace('thread', '%s ended' % self.pname)
+		assert ltrace(self.name, '< run()')
