@@ -318,10 +318,10 @@ class LicornDaemonInteractor(NamedObject):
 			self.new[6][termios.VTIME] = 0
 
 			try:
+				self.prepare_terminal()
+
 				while True:
 					try:
-						self.prepare_terminal()
-
 						readf, writef, errf = select.select(
 							[ self.fd ], [], [], 0.1)
 						if readf == []:
@@ -441,6 +441,8 @@ class LicornDaemonInteractor(NamedObject):
 							# restore signal and terminal handling
 							signal.signal(signal.SIGINT,
 								lambda x,y: terminate(x,y, self.pname))
+
+							# take the TTY back into command mode.
 							self.prepare_terminal()
 
 						else:
