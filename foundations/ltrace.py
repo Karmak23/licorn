@@ -153,7 +153,7 @@ if getenv('LTRACE', getenv('LICORN_TRACE', None)) != None:
 		if len(key) > maxwidth:
 			maxwidth = len(key)
 
-	for env_mod in getenv('LICORN_TRACE').split('|'):
+	for env_mod in getenv('LTRACE', getenv('LICORN_TRACE')).split('|'):
 		substracts = env_mod.split('^')
 		ltrace_level |= trc[substracts[0]]
 		for sub_env_mod in substracts[1:]:
