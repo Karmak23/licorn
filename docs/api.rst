@@ -1,5 +1,6 @@
 .. _api:
 
+=================================
 Developping for Licorn® (the API)
 =================================
 
@@ -10,4 +11,5 @@ Developping for Licorn® (the API)
 	core/backends
 	extensions/index
 	foundations
+	ltrace
 	implementation

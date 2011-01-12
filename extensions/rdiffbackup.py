@@ -23,8 +23,20 @@ from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
+	""" A type of exception to deal with rdiff-backup specific problems.
+
+		.. versionadded:: 1.2.4
+	"""
 	pass
 class RdiffbackupThread(LicornJobThread):
+	""" The thread dedicated to automatic backups.
+
+		Internally runs the :meth:`RdiffbackupExtension.backup` method, with
+		`batch` argument set to ``True``, to avoid any interactions or any
+		middle-of-run stops.
+
+		.. versionadded:: 1.2.4
+	"""
 	def __init__(self, target, delay):
 		LicornJobThread.__init__(self,
 		pname='extensions',
@@ -39,94 +51,119 @@ class RdiffbackupThread(LicornJobThread):
 class RdiffbackupExtension(Singleton, LicornExtension):
 	""" Handle Incremental backups via rdiff-backup.
 
-		http://www.nongnu.org/rdiff-backup/
+		Web site: http://www.nongnu.org/rdiff-backup/
 
-		(verbosity settings go from 0 to 9, with 3 as the default), and the
-		--print-statistics switch so some statistics will be displayed at the
-		end (even without this switch, the statistics will still be saved in
-		the rdiff-backup-data directory)
+		:command:`rdiff-backup` verbosity settings go from 0 to 9, with 3 as
+		the default), and the :option:`--print-statistics` switch so some
+		statistics will be displayed at the end (even without this switch, the
+		statistics will still be saved in the :file:`rdiff-backup-data`
+		directory.
 
 		Restoring:
 
-		--restore-as-of now
-						10D
-						5m4s
-						2010-01-23
+			--restore-as-of now
+							10D
+							5m4s
+							2010-01-23
 
-		restore from increment:
-				rdiff-backup backup/rdiff-backup-data/increments/file.2003-03-05T12:21:41-07:00.diff.gz local-dir/file
+		Restore from increment::
 
-		cleaning:
+			rdiff-backup backup/rdiff-backup-data/increments/file.2003-03-05T12:21:41-07:00.diff.gz local-dir/file
+
+
+		Cleaning::
+
 			rdiff-backup --remove-older-than 	2W host.net::/remote-dir
 												20B		(20 backups)
 
-		Globing filelist
+
+		Globing filelist::
+
 			rdiff-backup --include-globbing-filelist include-list / /backup
 
-		list different versions of the file:
+
+		List different versions of a given file::
+
 			rdiff-backup --list-increments out-dir/file
 
-		fichiers changés les 5 derniers jours:
+
+		Files changed the last 5 days::
+
 			rdiff-backup --list-changed-since 5D out-dir/subdir
 
-		état des lieux il y a 5 jours:
+
+		5 days back system state::
+
 			rdiff-backup --list-at-time 5D out-dir/subdir
 
-		statistiques moyennes:
+
+		Average statistics::
+
 			rdiff-backup --calculate-average \
-					out-dir/rdiff-backup-data/session_statistics*
+			out-dir/rdiff-backup-data/session_statistics*
 
- --create-full-path
-              Normally only the final directory of the destination  path  will
-              be  created  if it does not exist. With this option, all missing
-              directories on the destination path will be  created.  Use  this
-              option  with  care:  if  there is a typo in the remote path, the
-              remote filesystem could fill up  very  quickly  (by  creating  a
-              duplicate backup tree). For this reason this option is primarily
-              aimed at scripts which automate backups.
 
---exclude-special-files
-              Exclude all device files, fifo files, socket files, and symbolic
-              links.
+		--create-full-path
+			Normally only the final directory of the destination  path  will
+			be  created  if it does not exist. With this option, all missing
+			directories on the destination path will be  created.  Use  this
+			option  with  care:  if  there is a typo in the remote path, the
+			remote filesystem could fill up  very  quickly  (by  creating  a
+			duplicate backup tree). For this reason this option is primarily
+			aimed at scripts which automate backups.
 
--l, --list-increments
-              List  the  number  and  date of partial incremental backups con-
-              tained in the specified destination  directory.   No  backup  or
-              restore will take place if this option is given.
 
-       --list-increment-sizes
-              List  the  total  size  of all the increment and mirror files by
-              time.  This may be helpful in deciding how  many  increments  to
-              keep,  and  when to --remove-older-than.  Specifying a subdirec-
-              tory is allowable; then only the sizes of the mirror and  incre-
-              ments pertaining to that subdirectory will be listed.
+		--exclude-special-files
+			Exclude all device files, fifo files, socket files, and symbolic
+			links.
 
---parsable-output
-              If set, rdiff-backup's output will be tailored for easy  parsing
-              by computers, instead of convenience for humans.  Currently this
-              only applies when listing increments using  the  -l  or  --list-
-              increments  switches,  where  the  time will be given in seconds
-              since the epoch.
 
---preserve-numerical-ids
-              If  set,  rdiff-backup will preserve uids/gids instead of trying
-              to preserve unames and gnames.  See the USERS AND GROUPS section
-              for more information.
+		-l, --list-increments
+			List  the  number  and  date of partial incremental backups con-
+			tained in the specified destination  directory.   No  backup  or
+			restore will take place if this option is given.
 
-       --print-statistics
-              If  set,  summary  statistics will be printed after a successful
-              backup.  If not set, this information will  still  be  available
-              from  the  session  statistics file.  See the STATISTICS section
-              for more information.
 
-       -r, --restore-as-of restore_time
-              Restore the specified directory as it was  as  of  restore_time.
-              See  the TIME FORMATS section for more information on the format
-              of restore_time, and see the RESTORING section for more informa-
-              tion on restoring.
+		--list-increment-sizes
+			List  the  total  size  of all the increment and mirror files by
+			time.  This may be helpful in deciding how  many  increments  to
+			keep,  and  when to --remove-older-than.  Specifying a subdirec-
+			tory is allowable; then only the sizes of the mirror and  incre-
+			ments pertaining to that subdirectory will be listed.
 
-		TODO: snapshot backups http://wiki.rdiff-backup.org/wiki/index.php/UnattendedRdiff
 
+		--parsable-output
+			If set, rdiff-backup's output will be tailored for easy  parsing
+			by computers, instead of convenience for humans.  Currently this
+			only applies when listing increments using  the  -l  or  --list-
+			increments  switches,  where  the  time will be given in seconds
+			since the epoch.
+
+
+		--preserve-numerical-ids
+			If  set,  rdiff-backup will preserve uids/gids instead of trying
+			to preserve unames and gnames.  See the USERS AND GROUPS section
+			for more information.
+
+
+		--print-statistics
+			If  set,  summary  statistics will be printed after a successful
+			backup.  If not set, this information will  still  be  available
+			from  the  session  statistics file.  See the STATISTICS section
+			for more information.
+
+
+		-r, --restore-as-of restore_time
+			Restore the specified directory as it was  as  of  restore_time.
+			See  the TIME FORMATS section for more information on the format
+			of restore_time, and see the RESTORING section for more informa-
+			tion on restoring.
+
+
+		.. note:: TODO: snapshot backups http://wiki.rdiff-backup.org/wiki/index.php/UnattendedRdiff
+
+
+		.. versionadded:: 1.2.4
 	"""
 	#: the environment variable used to override rdiff-backup configuration
 	#: during tests or real-life l33Tz runs.
@@ -166,7 +203,7 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 
 		return filename
 	def initialize(self):
-		""" Return True if :program:`rdiff-backup` is installed on the local
+		""" Return True if :command:`rdiff-backup` is installed on the local
 			system.
 		"""
 
@@ -254,7 +291,26 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		print '>> please implement volumes._remove_old_backups(self, ...)'
 		pass
 	def manual_backup(self, volume=None, force=False, batch=False):
-		""" Do a backup and reset the backup thread timer. """
+		""" Do a backup and reset the backup thread timer.
+
+			Provided your Licorn® daemon is attached to your terminal, you can
+			launch a manual backup in the daemon's interactive shell, like
+			this::
+
+				[…]
+				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
+				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
+				licornd> LMC.extensions.rdiffbackup.manual_backup(force=True)
+				 * [2011/11/01 20:19:23.9644] rdiffbackup: backing up on first available volume /dev/sdb1 (/media/SAVE_LICORN).
+				 > [2011/11/01 20:19:23.9665] extensions/Rdiffbackup.AutoBackup: timer reset @5.9350 secs!
+				 > [2011/11/01 20:19:23.9670] rdiffbackup: updated last backup file /media/SAVE_LICORN/.licorn.backup.last_time.
+				 * [2011/11/01 20:20:14.1196] rdiffbackup: computing statistics on volume /dev/sdb1 (/media/SAVE_LICORN), please wait.
+				 * [2011/11/01 20:20:32.9167] rdiffbackup: next automatic backup will occur in 59 mins 5 secs.
+				licornd> [Control-D]
+				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
+				[…]
+
+		"""
 
 		self.threads.autobackup.reset()
 		self.backup(volume=volume, force=force, batch=batch)
@@ -262,6 +318,19 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 				self.name, self.time_before_next_backup()))
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
+
+			You can call this method from the daemon's interactive shell, if
+			you find it of any use::
+
+				[…]
+				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
+				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
+				licornd> LMC.extensions.rdiffbackup.time_before_next_automatic_backup()
+				'44 mins 3 secs'
+				licornd> [Control-D]
+				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
+				[…]
+
 		"""
 		if as_string:
 			return pyutils.format_time_delta(
@@ -278,17 +347,43 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			* computing the space needed for the backup, and eventually
 			  cleaning the backup volume before proceeding, if needed.
 			* updating the last backup time: it's the time of the backup
-			  **start**, not the end, to be sure one backup per hour is
-			  executed, not one backup per hour+backup_duration, which could
-			  greatly delay backup if they take a long time.
+			  **start**, not the end, to be sure one backup per
+			  :term:`backup.interval` is
+			  executed, not one backup per :term:`backup.interval` +
+			  backup_duration, which could
+			  greatly delay future backups if they take a long time.
 			* doing the rdiff-backup.
+			* updating the average statistics for the backup volume (this
+			  permits finer accuracy when computing needed space).
 
+			:param volume: a :class:`~licorn.extensions.volumes.Volume`
+				instance on which you want to make a backup of the system onto,
+				or ``None`` if you want the method to search for the first
+				available volume.
 
-			.. note:: If a backup takes more than one hour to complete, next
-				planned backup will not occur. If a volume is left is a locked
-				state, this is currently a problem because not future backup
-				will happen until the lock is released.
-				TODO: we should probably make this case more error-proof.
+			:param force: a boolean, used to force a backup, even if the last
+				backup has been done in less than the configured
+				:term:`backup interval <backup.interval>`.
+
+			:param batch: a boolean to indicate that the current operation is
+				happening is headless and noninteractive mode, and thus no
+				exceptions should be raised because no-one could handle them.
+
+				When no exceptions are raised inside this method, a warning is
+				displayed in the daemon's log and the method simply returns
+				(this mechanism is used for automatic backup, when no backup
+				volume is available; is this situation, in standard CLI
+				conditions, an exception would be raised to be catched by the
+				calling CLI process).
+
+			.. note:: If a backup takes more than the configured
+				:term:`backup interval <backup.interval>` to complete, next
+				planned backup will not occur.
+
+			.. warning: If a volume is left is a locked state for any reason,
+				this is currently a problem because not future backup
+				will happen until the lock is released. **TODO:** we should
+				probably make this case more error-proof.
 		"""
 
 		first_found = False
@@ -308,7 +403,8 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		try:
 			with volume:
 				if not force and (
-						time.time() - self._last_backup_time(volume) < 3600):
+						time.time() - self._last_backup_time(volume) <
+											LMC.configuration.backup.interval):
 					logging.info('%s: not backing up on %s, last backup is '
 						'less that one hour.' % (self.name, volume))
 					return

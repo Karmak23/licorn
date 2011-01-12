@@ -39,7 +39,7 @@ General directives
 	licornd.network.enabled
 		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
 
-		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
+		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon <daemondoc>` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
 WMI related
 -----------
@@ -50,13 +50,15 @@ WMI related
 		Self explanatory: should the WMI be started or not? If you don't use it, don't activate it. You will save some system resources.
 
 	licornd.wmi.listen_address
-		Customize the interface the WMI listens on. Set it as an IP address (not a hostname yet).
+		Customize the interface the WMI listens on. Set it to an IP address (not a hostname yet). If unset, the WMI only listens on ``localhost`` (IP address ``127.0.0.1``).
 
 	licornd.wmi.port
-		**Port `3356`** by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
+		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
 
 	licornd.wmi.group
-		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is **`licorn-wmi`** . Any value referencing a non existing group will trigger a group creation at next daemon start. It is a good idea (or not, depending on your users) to *register this group as a privilege*.
+		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is ``licorn-wmi`` . Any reference to a non existing group will trigger the group creation at next daemon start, so this groups always exists.
+
+		.. note:: It is a good idea (or not, depending on your users) to *register this group as a privilege*, to allow web-only administrators to grant WMI access to other users.
 
 	licornd.wmi.log_file
 		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
@@ -68,9 +70,11 @@ CommandListener (Pyro) related
 .. glossary::
 
 	licornd.pyro.port
-		**Port `299`** by default. Set it as an integer, for example `licorn.pyro.port = 888`. **Be sure to put it under 1024** (the system will work if it >1024, but there's a bad security implication; ports <1024 can only be bound by root and this is little but certain protection). Be careful not to take an already taken port on your system.
+		Port ``299`` by default. Set it as an integer, for example ``licorn.pyro.port = 888``.
 
-Note: If you dont set this configuration directive, the Pyro environment variable :envvar:`PYRO_PORT` takes precedence over the Licorn® factory default. See `the Pyro documentation <http://www.xs4all.nl/~irmen/pyro3/manual/3-install.html>`_ for details.
+		.. warning:: **Be sure to set this port to a value under 1024**. The system will work if it >1024, but there's a bad security implication: ports <1024 can only be bound by root and this is little but more than nothing protection. Be careful not to take an already taken port on your system: ports < 1024 are standardized and their use is restricted, but some belongs to services dead for many years.
+
+		.. note:: If you don't set this directive in the main configuration file, the Pyro environment variable :envvar:`PYRO_PORT` takes precedence over the Licorn® factory default. See `the Pyro documentation <http://www.xs4all.nl/~irmen/pyro3/manual/3-install.html>`_ for details.
 
 Users and groups related
 ------------------------
@@ -90,7 +94,7 @@ Backup related
 .. glossary::
 
 	backup.interval
-		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions <extensions/index>`, but some can have dedicated parameters.
+		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions`, but some can have dedicated parameters.
 
 
 Other directives
@@ -125,10 +129,11 @@ But **these names are not**::
 	# suffix suggests it's disabled: it is!
 	users.specific.conf.disabled
 
-Important notes:
+.. warning::
+	* the files :file:`users.00_default.conf` and :file:`groups.00_default.conf` are very special. **Never rename them**.
+	* the `*00_default*` files named above MUST contain **at least ONE line and at most TWO lines**, comments excluded (you can put as many as you want).
 
-* the files :file:`users.00_default.conf` and :file:`groups.00_default.conf` are very special. **never rename them**.
-* the `*00_default*` files named above MUST contain **at least ONE line and at most TWO lines**, comments excluded (you can put as many as you want). If you don't follow this rule, a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault). You're warned.
+	If you don't follow these recommendations, a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault), or checks will not work at all, or the licorn daemon will just crash. You're warned.
 
 
 

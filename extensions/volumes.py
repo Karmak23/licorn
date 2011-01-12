@@ -25,12 +25,45 @@ from licorn.daemon.threads     import LicornBasicThread
 BLKID_re = re.compile(r'([^ =]+)="([^"]+)"')
 
 class UdevMonitorThread(LicornBasicThread):
-	"""
+	""" Handles the :command:`udev` connection and events.
+
+		Useful information (`udev` dumps):
+
+		* for a device (not handled yet)::
+
+			looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb':
+			KERNEL=="sdb"
+			SUBSYSTEM=="block"
+			DRIVER==""
+			ATTR{range}=="16"
+			ATTR{ext_range}=="256"
+			ATTR{removable}=="1"
+			ATTR{ro}=="0"
+			ATTR{size}=="246016"
+			ATTR{alignment_offset}=="0"
+			ATTR{discard_alignment}=="0"
+			ATTR{capability}=="51"
+			ATTR{stat}=="      53      168      417      156        0        0        0        0        0      156      156"
+			ATTR{inflight}=="       0        0"
+
+		* for a partition::
+
+			looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb/sdb1':
+			KERNEL=="sdb1"
+			SUBSYSTEM=="block"
+			DRIVER==""
+			ATTR{partition}=="1"
+			ATTR{start}=="95"
+			ATTR{size}=="245921"
+			ATTR{alignment_offset}=="0"
+			ATTR{discard_alignment}=="4294918656"
+			ATTR{stat}=="      43      168      337      124        0        0        0        0        0      124      124"
+			ATTR{inflight}=="       0        0"
+
+
 		.. versionadded:: 1.2.4
 	"""
 	def __init__(self):
-		""" TODO. """
-
 		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
 
 		LicornBasicThread.__init__(self, pname='extensions', tname='Volumes.UdevMonitor')
@@ -43,41 +76,6 @@ class UdevMonitorThread(LicornBasicThread):
 		""" This method is meant to be called in the while loop of the default
 			:meth:`~licorn.daemon.threads.LicornBasicThread.run` method of
 			the :class:`~licorn.daemon.threads.LicornBasicThread`.
-
-			Udev information:
-
-			* for a device (not handled yet)::
-
-				looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb':
-				KERNEL=="sdb"
-				SUBSYSTEM=="block"
-				DRIVER==""
-				ATTR{range}=="16"
-				ATTR{ext_range}=="256"
-				ATTR{removable}=="1"
-				ATTR{ro}=="0"
-				ATTR{size}=="246016"
-				ATTR{alignment_offset}=="0"
-				ATTR{discard_alignment}=="0"
-				ATTR{capability}=="51"
-				ATTR{stat}=="      53      168      417      156        0        0        0        0        0      156      156"
-				ATTR{inflight}=="       0        0"
-
-			* for a partition::
-
-				looking at device '/devices/pci0000:00/0000:00:11.0/0000:02:03.0/usb1/1-1/1-1:1.0/host15/target15:0:0/15:0:0:0/block/sdb/sdb1':
-				KERNEL=="sdb1"
-				SUBSYSTEM=="block"
-				DRIVER==""
-				ATTR{partition}=="1"
-				ATTR{start}=="95"
-				ATTR{size}=="245921"
-				ATTR{alignment_offset}=="0"
-				ATTR{discard_alignment}=="4294918656"
-				ATTR{stat}=="      43      168      337      124        0        0        0        0        0      124      124"
-				ATTR{inflight}=="       0        0"
-
-
 		"""
 
 		# this should be a level2 ltrace...
@@ -102,21 +100,29 @@ class UdevMonitorThread(LicornBasicThread):
 			else:
 				logging.progress('%s: %s %s' % (self.name, action, device))
 class VolumeException(exceptions.LicornRuntimeException):
-	"""
+	""" Just an exception about Volumes specific problems.
+
 		.. versionadded:: 1.2.4
 	"""
 	pass
 class Volume:
-	""" Handle a single volume.
+	""" A single volume object.
 
 		.. note:: This class is individually locked because :class:`Volume`
 			can be accessed through multiple extensions (most notably
-			:class:`rdiff-backup <RdiffBackupExtension>` which can take ages to
-			complete).
+			:class:`rdiff-backup <licorn.extensions.rdiffbackup.RdiffbackupExtension>`
+			which can take ages to complete).
 
 		.. versionadded:: 1.2.4
 	"""
+
+	#: Fixed path where removable volumes should be mounted. Currently set to
+	#: ``/media/`` (with the final '/' to speed up strings concatenations).
 	mount_base_path = '/media/'
+
+	#: The name of the special file which indicates the volume is reserved.
+	#: Currently ``/.org.licorn.reserved_volume`` (with the leading '/' to
+	#: speed up strings concatenations).
 	enabler_file    = '/.org.licorn.reserved_volume'
 	def __init__(self, kernel_device, fstype, guid, label, mount_point=None):
 		self.name        = kernel_device
@@ -139,7 +145,7 @@ class Volume:
 		return 'volume %s%s' % (
 					stylize(ST_DEVICE, self.device),
 					' (%s)' % stylize(ST_PATH, self.mount_point)
-						if self.mount_point else '')
+						if self.mount_point else '(currently not mounted)')
 	def __enter__(self):
 		if self.lock.acquire(False):
 			if self.mount_point is None:
@@ -167,12 +173,17 @@ class Volume:
 			self.mount_point = Volume.mount_base_path + self.guid
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
-			file at the root of it. """
+			file at the root of it.
+
+			:param kwargs: **not used**, but present because this method is
+				meant to be called via :meth:`VolumesExtension.volumes_call`,
+				which can use any number of arguments.
+		"""
 
 		with self.lock:
 			if os.path.exists(self.mount_point + Volume.enabler_file):
 
-				logging.info('volumes: Licorn® usage on %s already enabled.' %
+				logging.info('volumes: Licorn® usage already enabled on %s.' %
 						stylize(ST_PATH, self.mount_point))
 			else:
 				open(self.mount_point + Volume.enabler_file, 'w').write('\n')
@@ -181,7 +192,12 @@ class Volume:
 					stylize(ST_PATH, self.mount_point))
 	def disable(self, **kwargs):
 		""" Remove the special file at the root of the volume and thus unmark
-			it reserved for Licorn® used. """
+			it reserved for Licorn® usage.
+
+			:param kwargs: **not used**, but present because this method is
+				meant to be called via :meth:`VolumesExtension.volumes_call`,
+				which can use any number of arguments.
+		"""
 		with self.lock:
 			if os.path.exists(self.mount_point + Volume.enabler_file):
 				os.unlink(self.mount_point + Volume.enabler_file)
@@ -189,13 +205,27 @@ class Volume:
 				logging.notice('volumes: disabled Licorn® usage on %s.' %
 						stylize(ST_PATH, self.mount_point))
 			else:
-				logging.info('volumes: Licorn® usage on %s already disabled.' %
+				logging.info('volumes: Licorn® usage already disabled on %s.' %
 						stylize(ST_PATH, self.mount_point))
 	def mount(self, **kwargs):
 		""" Mount a given volume, after having created its mount point
-			directory if needed. This method simply calls the :prog:`mount`
+			directory if needed. This method simply calls the :command:`mount`
 			program via the :func:`~licorn.foundations.process.execute`
-			function. """
+			function. After the mount, update the :attr:`~Volume.enabled`
+			attribute according to the presence of the
+			:attr:`~Volume.enabler_file`.
+
+			Volume is mounted with file-system options
+			:option:`acl`, :option:`user_xattr`, :option:`noatime`,
+			:option:`errors=remount-ro`, :option:`nodev`, :option:`suid`,
+			:option:`exec` (this is a fixed parameter and can't currently be
+			modified; this could change in the near future).
+
+			.. note:: The mount point creation heuristics take care of already
+				existing mount points, and will find a unique and not currently
+				taken mount point directory name in any case.
+
+			"""
 
 		assert ltrace('volumes', '| Volume.mount(%s, %s)' % (
 											self.device, self.mount_point))
@@ -251,10 +281,10 @@ class Volume:
 				logging.progress('volumes: removed directory %s.' %
 											stylize(ST_PATH, old_mount_point))
 class VolumesExtension(Singleton, LicornExtension):
-	""" Handles volumes via uDEV.
+	""" Handles volumes via :command:`udev`. Do the auto-mount work.
 
-		Eventually, if udisks is available, we inhibit it to avoid double work
-		and user interaction.
+		Eventually, if :command:`udisks` is available, it will be inhibited
+		to avoid double work and interaction conflicts.
 
 		Nice reads along the way:
 
@@ -393,16 +423,20 @@ class VolumesExtension(Singleton, LicornExtension):
 		#self.rescan()
 		return True
 	def system_load(self):
-		""" Nothing particular to do here. TODO: check if calling
-			rescan_volumes() twice is really usefull. """
+		""" Nothing particular to do here. This method exists because this
+			extension is attached to the :class:`SystemController` (for pure
+			logical purpose, because it doesn't load any data into it). """
 
 		assert ltrace(self.name, '| system_load()')
 		pass
 	def __start_udev_monitor(self):
-		""" Create and start the :class:`UdevMonitorThread`. We start it now,
-			just after the device listing, to be sure not to miss any device
-			change. This won't hurt the daemon anyway which will test if the
-			thread is alive or not.
+		""" Create and start the :class:`UdevMonitorThread` and start it
+			straight ahead.
+
+			We start it **now**, just after the device listing, to be sure not
+			to miss any device change. This won't hurt the daemon anyway, which
+			tests if the extensions threads are alive or not before starting
+			them.
 
 		"""
 		self.threads.udevmonitor = UdevMonitorThread()
@@ -428,8 +462,9 @@ class VolumesExtension(Singleton, LicornExtension):
 
 			self.udisks_interface.UnInhibit(self.udisks_cookie)
 	def rescan_volumes(self):
-		""" get a list of connected block devices from udev, and mount them if
-			needed. """
+		""" Get a list of connected block devices from :command:`udev`, record
+			them inside us (creating the corresponding :class:`Volume` objects,
+			and mount them if not already mounted. """
 
 		assert ltrace(self.name, '| rescan_volumes()')
 
@@ -453,8 +488,10 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		del udev_context
 	def __update_cache_informations(self):
-		""" Read :file:`/proc/mounts` and :file:`/etc/blkid.tab` and keep
-			useful informations inside us for future use. """
+		""" Read :file:`/proc/mounts` and run :command:`blkid` (the cache file
+			:file:`/etc/blkid.tab` has been found to be unreliably updated when
+			volumes are pluged in/out) and keep useful informations inside us
+			for future use. """
 
 		assert ltrace(self.name, '| __update_cache_informations()')
 
@@ -468,7 +505,6 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.proc_mounts[splitted[0]] = splitted[1].replace('\\040', '\040')
 
 		self.blkid = {}
-
 
 		# We can't assume the cache file is up-to-date, i've seen a number of
 		# cases on my VM where it was not updated.
@@ -500,7 +536,7 @@ class VolumesExtension(Singleton, LicornExtension):
 					self.blkid[device][key.lower()] = value
 	def __system_partition(self, device):
 		""" Return ``True`` if the given device or UUID is mounted on one of
-			our protected partitions."""
+			our protected partitions. """
 
 		mounted = self.proc_mounts.keys()
 
@@ -519,12 +555,18 @@ class VolumesExtension(Singleton, LicornExtension):
 		assert ltrace(self.name, '|  __system_partition(device) → False')
 		return False
 	def add_volume_from_device(self, device=None, by_string=None):
-		""" add a volume from OS data if it doesn't already exist. """
+		""" Add a volume from udev data if it doesn't already exist.
+
+			:param device: a :class:`~pyudev.Device` instance.
+			:param by_string: a kernel device, passed a string string (eg.
+				``/dev/sda1``). **Currently ignored**.
+		"""
 
 		assert ltrace(self.name, '| add_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
+			return
 
 		with self.lock:
 			kernel_device = device.device_node
@@ -579,12 +621,19 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		logging.info('%s: added %s.' % ( self.name, vol))
 	def del_volume_from_device(self, device=None, by_string=None):
-		""" Remove a volume. """
+		""" Remove a volume if it exists.
+
+			:param device: the :class:`~pyudev.Device` instance which has
+				vanished, that we must now remove.
+			:param by_string: a kernel device, passed a string string (eg.
+				``/dev/sda1``). **Currently ignored**.
+		"""
 
 		assert ltrace(self.name, '| del_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
+			return
 
 		with self.lock:
 
@@ -603,7 +652,15 @@ class VolumesExtension(Singleton, LicornExtension):
 
 				logging.info('%s: removed %s.' % (self.name, volstr))
 	def volumes_call(self, volumes, method_name, **kwargs):
-		""" generic method for enable/disable calling on volumes. """
+		""" Generic method for action on volumes.
+
+			:param volumes: a list of strings designating volumes, either by
+				their kernel device names (eg. ``/dev/sdb2``) or their mount
+				point (eg. ``/media/Save_Licorn``).
+			:param method_name: the method to call on the volumes objects,
+				passed as a string.
+			:param kwargs: the arguments for the called method.
+		"""
 
 		# TODO: implement partial matching, e.g. "sdb1" will match "/dev/sdb1"
 		# and produce the same result as if "/dev/sdb1" has been given.
@@ -648,7 +705,17 @@ class VolumesExtension(Singleton, LicornExtension):
 		"""
 		return self.volumes_call(volumes, 'disable')
 	def unmount_volumes(self, volumes, force=False):
-		""" Unmount and then eject devices. """
+		""" Unmount and then eject devices.
+
+			This method internally calls the
+			:meth:`~VolumesExtension.volumes_call` method with  argument
+			`method_name` set to ``unmount`` and simply forwards the `force`
+			argument.
+
+			:param volumes: see method :meth:`~VolumesExtension.volumes_call`.
+			:param force: a boolean, specifying if volumes should be unmounted
+				even if still in use (can be dangerous, use with caution).
+		"""
 
 		# TODO: splitting volume_list has nothing to do here, it should be
 		# done in cli*. This is because of del not having the same syntax as
@@ -661,7 +728,15 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		self.volumes_call(final_volume_list, 'unmount', force=force)
 	def mount_volumes(self, volumes):
-		""" (re-)Mount devices (they must be connected). """
+		""" (re-)Mount devices (they must prior be connected).
+
+			This method internally calls the
+			:meth:`~VolumesExtension.volumes_call` method with argument
+			`method_name` set to ``mount``, without any other argument.
+
+			:param volumes: see method :meth:`~VolumesExtension.volumes_call`.
+
+		"""
 
 		# TODO: splitting volume_list has nothing to do here, it should be
 		# done in cli*. This is because of add not having the same syntax as
@@ -674,7 +749,11 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		self.volumes_call(final_volume_list, 'mount')
 	def get_CLI(self, opts, args):
-		""" TODO """
+		""" This method builds the output of the :command:`get volumes` command.
+
+			:param opts: the CLI options generated by the ``argparser``.
+			:param args: the CLI arguments generated by the ``argparser``.
+		"""
 
 		def stat_fs_to_str(path):
 			""" See http://docs.python.org/library/os.html#os.statvfs for
