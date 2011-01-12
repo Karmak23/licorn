@@ -9,7 +9,7 @@ Developping for Licorn® (the API)
 
 	core/index
 	core/backends
-	extensions/index
+	extensions/index.dev
 	foundations
 	ltrace
 	implementation

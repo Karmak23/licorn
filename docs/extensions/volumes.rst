@@ -15,16 +15,10 @@ The `Volumes` extension takes care of external mass storage devices.
 
 It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`extensions.rdiffbackup` and possibly others).
 
-.. _extensions.volumes.usage:
-
-Usage
-=====
-
-
 Which devices are supported?
 ----------------------------
 
-Any device you want to use with Licorn must be formatted with one of these file-systems:
+Any device you want to use with Licorn **must be already partitioned and formatted** with one of these file-systems (``posix.1e`` ACLs and ``eXtended ATTRibutes`` capable):
 
 * ext2 / ext3 / ext4
 * btrfs
@@ -32,11 +26,19 @@ Any device you want to use with Licorn must be formatted with one of these file-
 * jfs
 * reiserfs
 
-.. note:: any non-formatted or other-formatted device will not be used by Licorn®; it will thus not be automatically mounted.
+Connecting a new volume just requires your human energy to plug the device in one of the server's USB, eSATA or FireWire ports (it will be detected automatically, this can take up to 20 seconds).
 
-Connecting a volume just requires your human energy to plug the device in one of the server's USB, eSATA or FireWire ports (it will be detected automatically ; if it doesn't after having waited 10 to 20 seconds, your server has probably serious problem; please contact support@licorn.org).
+**Once the device is connected, it will be automatically mounted** in :file:`/media`.
 
-**Once the device is connected, it will be automatically mounted** in file:`/media`. If the partition has a label, the mount-point will be :file:`/media/partition_label`, else it will be something more complicated (the partition UUID, something like ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, which identifies this partition in a unique way), and the mount-point will be accordingly complicated, like :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`.
+.. note::
+	*Any non-formatted or other-than-supported-FS formatted device will not be used by Licorn®; **it will thus not be automatically mounted**.
+	* If the partition has a label, the mount-point will be :file:`/media/partition_label`, else it will be something more complicated (the partition UUID, something like ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, which identifies this partition in a unique way), and the mount-point will be accordingly complicated, like :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`.
+
+.. _extensions.volumes.usage:
+
+Usage
+=====
+
 
 General usage
 -------------
@@ -69,7 +71,6 @@ Keep in mind that you can use either the device name (:file:`/dev/...`) or the m
 	mod volume --disable /dev/xxx
 
 
-
 Reserving a volume for Licorn® sole usage
 -----------------------------------------
 
@@ -89,25 +90,26 @@ To reserve a volume, just plug the device in, wait a little, and type::
 
 Once done, this volume will automatically be used by any part of Licorn® requiring a volume to do its job. You don't have to reload or rescan anything.
 
-Detailled functionnalities
-==========================
+Troubleshooting
+===============
 
-Server side
------------
+* the device doesn't show up in :command:`get volumes` once connected:
 
-* Checks pluged-in volumes via ``udev``.
-* inhibits the ``udisks`` daemon while operating, to avoid conflicts.
-* Waits for **partitions** to come up, and automount them in :file:`/media`. This implies that `volumes` doesn't care about raw disks, and doesn't offer anything for them (but this could change in the near future).
-* offers CLI commands to manipulate volumes (see above).
+	* first, be sure to have waited 10 to 20 seconds,
+	* be sure your volume is already partitionned
+	* be sure the partition you want to use is formatted with a supported FS (see above).
+	* check if your device shows up in the kernel log (command :command:`sudo dmesg | tail -n 10`). If it doesn't:
 
-Client side
------------
+		* be sure the device is turned on.
+		* check your connection cable, try with another one.
+		* your server or the external drive could have a hardware problem. Please contact your dedicated support.
 
-* **nothing yet**, but we could imagine forwarding connected volumes names and paths to thick-clients to allow them to backup their data on the server. This doesn't concern /home, which is remotely mounted and already backed up by the server.
+How-to partition and format a volume?
+-------------------------------------
 
-Class documentation
-===================
+You can do this using tools like :command:`gparted`. Search for additionnal information on your community's support website.
 
-.. automodule:: licorn.extensions.volumes
-	:members:
-	:undoc-members:
+See also
+========
+
+The :ref:`volumes dedicated developer documentation <extensions.volumes.dev>` can give you additionnal information, if you fit in its audience.
