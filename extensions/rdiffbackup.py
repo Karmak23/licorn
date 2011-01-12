@@ -10,7 +10,7 @@ Licorn extensions: rdiff-backup - http://docs.licorn.org/extensions/rdiff_backup
 
 import os, sys, time
 
-from threading import RLock
+from threading import RLock, Event
 
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *
@@ -18,7 +18,7 @@ from licorn.foundations.ltrace import ltrace
 from licorn.foundations.base   import Singleton, MixedDictObject, LicornConfigObject
 
 from licorn.core               import LMC
-from licorn.daemon.threads     import LicornJobThread
+from licorn.daemon.threads     import TriggerTimerThread, TriggerWorkerThread
 from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 
@@ -28,26 +28,6 @@ class RdiffbackupException(exceptions.LicornRuntimeException):
 		.. versionadded:: 1.2.4
 	"""
 	pass
-class RdiffbackupThread(LicornJobThread):
-	""" The thread dedicated to automatic backups.
-
-		Internally runs the :meth:`RdiffbackupExtension.backup` method, with
-		`batch` argument set to ``True``, to avoid any interactions or any
-		middle-of-run stops.
-
-		.. versionadded:: 1.2.4
-	"""
-	def __init__(self, target, delay):
-		LicornJobThread.__init__(self,
-		pname='extensions',
-		tname='Rdiffbackup.AutoBackup',
-		target=target,
-		target_kwargs={'batch': True},
-		time=(time.time()+600.0),	# first backup starts 10 minutes later.
-		delay=delay
-		)
-		logging.info('%s: backup thread started; next backup in 10 minutes.' %
-																	self.name)
 class RdiffbackupExtension(Singleton, LicornExtension):
 	""" Handle Incremental backups via rdiff-backup.
 
@@ -171,7 +151,7 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 	module_depends = [ 'volumes' ]
 
 	def __init__(self):
-		assert ltrace('extensions', '| __init__()')
+		assert ltrace('rdiffbackup', '| RdiffbackupExtension.__init__()')
 		LicornExtension.__init__(self, name='rdiffbackup')
 
 		self.controllers_compat = [ 'system' ]
@@ -184,6 +164,7 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		self.paths.statistics_file  = '.licorn.backup.statistics'
 		self.paths.last_backup_file = '.licorn.backup.last_time'
 		self.paths.globbing_file    = self._find_globbing_filelist()
+
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -229,8 +210,25 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes.volumes
 
-			self.threads.autobackup = RdiffbackupThread(target=self.backup,
-					delay=LMC.configuration.backup.interval)
+			self.events.start_backup = Event()
+
+			self.threads.auto_backup_timer = TriggerTimerThread(
+							trigger_event=self.events.start_backup,
+							delay=LMC.configuration.backup.interval,
+							pname='extensions',
+							tname='Rdiffbackup.AutoBackupTimer',
+							# first backup starts 10 minutes later.
+							time=(time.time()+600.0)
+							)
+			self.threads.auto_backup_worker = TriggerWorkerThread(
+							trigger_event=self.events.start_backup,
+							target=self.backup,
+							pname='extensions',
+							tname='Rdiffbackup.AutoBackupWorker'
+							)
+
+			self.threads.auto_backup_worker.start()
+			self.threads.auto_backup_timer.start()
 			return True
 
 		return False
@@ -312,10 +310,11 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 
 		"""
 
-		self.threads.autobackup.reset()
-		self.backup(volume=volume, force=force, batch=batch)
-		logging.notice('%s: next automatic backup will occur in %s.' % (
+		logging.notice('%s: triggering a manual backup in the background (next automatic in %s).' % (
 				self.name, self.time_before_next_automatic_backup()))
+		self.threads.auto_backup_timer.reset()
+		self.threads.auto_backup_worker.trigger(volume=volume, force=force,
+			batch=batch)
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
 
@@ -334,9 +333,9 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		"""
 		if as_string:
 			return pyutils.format_time_delta(
-					self.threads.autobackup.remaining_time())
+					self.threads.auto_backup_timer.remaining_time())
 		else:
-			return self.threads.autobackup.remaining_time()
+			return self.threads.auto_backup_timer.remaining_time()
 	def backup(self, volume=None, force=False, batch=False):
 		""" Do a complete backup procedure, which includes:
 

@@ -72,7 +72,7 @@ class UdevMonitorThread(LicornBasicThread):
 		self.udev_monitor.filter_by(subsystem='block')
 		self.udev_monitor.enable_receiving()
 		self.udev_fileno = self.udev_monitor.fileno()
-	def run_func(self):
+	def run_action_method(self):
 		""" This method is meant to be called in the while loop of the default
 			:meth:`~licorn.daemon.threads.LicornBasicThread.run` method of
 			the :class:`~licorn.daemon.threads.LicornBasicThread`.
@@ -347,15 +347,6 @@ class VolumesExtension(Singleton, LicornExtension):
 		# TODO: add our volumes to notifications, to change the status when
 		# administrator touches or unlinks special files in volume's root.
 		self.inotifications = []
-	def __del__(self):
-		""" Put the eventual udisks daemon in a normal state before giving
-			back hand.
-
-			.. note:: the :class:`UdevMonitorThread` instance will be stopped
-				as part of the daemon global stop process. Don't stop it here.
-		"""
-
-		self.__uninhibit_udisks()
 	def initialize(self):
 		""" The extension is available if udev is OK and we can get a list of
 			already connected devices.
@@ -364,6 +355,10 @@ class VolumesExtension(Singleton, LicornExtension):
 		"""
 
 		assert ltrace(self.name, '> initialize()')
+
+		# we need the thread to be created to eventually add udisks-related
+		# methods a little later.
+		self.threads.udevmonitor = UdevMonitorThread()
 
 		try:
 			self.system_bus = dbus.SystemBus()
@@ -380,8 +375,8 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.udisks_props = lambda x: self.udisks_properties.Get(
 										'org.freedesktop.UDisks', x)
 
-			self.__inhibit_udisks()
-
+			self.threads.udevmonitor.pre_run_method = self.__inhibit_udisks
+			self.threads.udevmonitor.post_run_method = self.__uninhibit_udisks
 		try:
 			logging.info('%s: started %s extension with udev v%s, pyudev v%s.'
 				% (self.name, stylize(ST_SPECIAL, LMC.configuration.app_name),
@@ -391,7 +386,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.rescan_volumes()
 
 			# after that, start a monitor to watch adds/dels.
-			self.__start_udev_monitor()
+			self.threads.udevmonitor.start()
 
 			# we are always available, because only relying on udev.
 			self.available = True
@@ -429,18 +424,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		assert ltrace(self.name, '| system_load()')
 		pass
-	def __start_udev_monitor(self):
-		""" Create and start the :class:`UdevMonitorThread` and start it
-			straight ahead.
 
-			We start it **now**, just after the device listing, to be sure not
-			to miss any device change. This won't hurt the daemon anyway, which
-			tests if the extensions threads are alive or not before starting
-			them.
-
-		"""
-		self.threads.udevmonitor = UdevMonitorThread()
-		self.threads.udevmonitor.start()
 	def __inhibit_udisks(self):
 		""" TODO """
 
@@ -460,7 +444,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		if self.udisks_object is not None \
 				and self.udisks_props('DaemonIsInhibited'):
 
-			self.udisks_interface.UnInhibit(self.udisks_cookie)
+			self.udisks_interface.Uninhibit(self.udisks_cookie)
 	def rescan_volumes(self):
 		""" Get a list of connected block devices from :command:`udev`, record
 			them inside us (creating the corresponding :class:`Volume` objects,

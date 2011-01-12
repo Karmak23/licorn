@@ -47,6 +47,48 @@ class DbusThread(Thread):
 		self.mainloop.run()
 	def stop(self):
 		self.mainloop.quit()
+class LicornThread(Thread):
+	"""
+		A simple thread with an Event() used to stop it properly, and a Queue() to
+		get events from other threads asynchronically.
+
+		Every subclass must implement a process_message() method, which will be called
+		by the main loop until the thread stops.
+	"""
+
+	def __init__(self, pname='<unknown>', tname=None):
+		Thread.__init__(self)
+
+		self.name  = "%s/%s" % (
+			pname, tname if tname else
+				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+
+		self._stop_event  = Event()
+		self._input_queue = Queue()
+		assert ltrace('thread', '%s initialized' % self.name)
+	def dispatch_message(self, msg):
+		""" get an incoming message in a generic way. """
+		self._input_queue.put(msg)
+	def run(self):
+		""" Process incoming messages until stop Event() is set. """
+		# don't call Thread.run(self), just override it.
+		assert ltrace('thread', '%s running' % self.name)
+
+		while not self._stop_event.isSet():
+			data = self._input_queue.get()
+			if data is None:
+				break
+			self.process_message(data)
+			self._input_queue.task_done()
+
+		assert ltrace('thread', '%s ended' % self.name)
+	def stop(self):
+		""" Stop current Thread
+		and put a special None entry in the queue, to be
+		sure that self.run() method exits properly. """
+		assert ltrace('thread', '%s stopping' % self.name)
+		self._stop_event.set()
+		self._input_queue.put(None)
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
 
@@ -66,13 +108,31 @@ class LicornBasicThread(Thread):
 				self._stop_event.is_set()
 			)
 	def run(self):
+		""" default run method, which calls:
+
+			* pre_run_method one time without arguments, if it exists.
+			* run_action_method multiple times during a while loop until stopped.
+			* post_run_method one time without arguments, if it exists.
+
+			.. versionadded:: 1.2.4
+				In previous versions, this run method didn't exist at all
+				(this call was purely abstract).
+		"""
+
 		# don't call Thread.run(self), just override it.
 		assert ltrace('thread', '%s running' % self.name)
 
-		assert hasattr(self, 'run_func')
+		assert hasattr(self, 'run_action_method')
+
+		if hasattr(self, 'pre_run_method'):
+			getattr(self, 'pre_run_method')()
 
 		while not self._stop_event.is_set():
-			self.run_func()
+			self.run_action_method()
+
+		if hasattr(self, 'post_run_method'):
+			getattr(self, 'post_run_method')()
+
 		self.finish()
 	def finish(self):
 		assert ltrace('thread', '%s ended' % self.name)
@@ -213,57 +273,120 @@ class QueueWorkerThread(Thread):
 	def stop(self):
 		assert ltrace('thread', '%s stopping' % self.name)
 		self.input_queue.put_nowait(None)
-class LicornThread(Thread):
-	"""
-		A simple thread with an Event() used to stop it properly, and a Queue() to
-		get events from other threads asynchronically.
+class TriggerWorkerThread(LicornBasicThread):
+	def __init__(self, target, trigger_event, args=(), kwargs={},
+												pname=dname, tname=None):
+		assert ltrace('thread', '| TriggerWorkerThread.__init__()')
+		LicornBasicThread.__init__(self, pname, tname)
+		self._disable_event = Event()
+		self._trigger_event = trigger_event
+		self.target = target
+		self.args = args
+		self.kwargs = kwargs
 
-		Every subclass must implement a process_message() method, which will be called
-		by the main loop until the thread stops.
-	"""
+		# used on manual triggering only.
+		self.one_time_args   = None
+		self.one_time_kwargs = None
+	def active(self):
+		""" Returns ``True`` if the internal worker is running, else ``False``
+			(the thread can be considered idle). """
 
-	def __init__(self, pname='<unknown>', tname=None):
-		Thread.__init__(self)
-
-		self.name  = "%s/%s" % (
-			pname, tname if tname else
-				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
-
-		self._stop_event  = Event()
-		self._input_queue = Queue()
-		assert ltrace('thread', '%s initialized' % self.name)
-	def dispatch_message(self, msg):
-		""" get an incoming message in a generic way. """
-		self._input_queue.put(msg)
+		return self._trigger_event.is_set()
+	#: an alias from :meth:`running` to :meth:`active`.
+	running = active
+	def idle(self):
+		""" Exact inverse of :meth:`active` method. """
+		return not self._trigger_event.is_set()
+	def enabled(self):
+		""" Returns ``True`` if not currently disabled. """
+		return not self._disable_event.is_set()
+	def disabled(self):
+		"""Exact inverse of :meth:`enabled` method. """
+		return self._disable_event.is_set()
 	def run(self):
-		""" Process incoming messages until stop Event() is set. """
 		# don't call Thread.run(self), just override it.
 		assert ltrace('thread', '%s running' % self.name)
 
-		while not self._stop_event.isSet():
-			data = self._input_queue.get()
-			if data is None:
-				break
-			self.process_message(data)
-			self._input_queue.task_done()
+		while True:
+			self._trigger_event.wait()
 
-		assert ltrace('thread', '%s ended' % self.name)
+			if self._disable_event.is_set():
+				assert ltrace('thread', '%s: triggered, but currently '
+					'disabled: not doing anything.' % self.name)
+				continue
+
+			if self._stop_event.is_set():
+				assert ltrace('thread', '%s: breaking our loop now.' % self.name)
+				break
+
+			# use one_time arguments if we have been manually trigerred.
+			if self.one_time_args is not None:
+				args = self.one_time_args
+				self.one_time_args = None
+			else:
+				args = self.args
+
+			if self.one_time_kwargs is not None:
+				kwargs = self.one_time_kwargs
+				self.one_time_kwargs = None
+			else:
+				kwargs = self.kwargs
+
+			assert ltrace('thread', '%s: triggered, running target %s(%s, %s)'
+				% (self.name, self.target, ', '.join(args), ', '.join(kwargs)))
+
+			self.target(*args, **kwargs)
+
+			# be sure to wait at next loop.
+			self._trigger_event.clear()
+
+		self.finish()
+	def trigger(self, *args, **kwargs):
+		""" Trigger a worker run if we are not currently stopping. """
+		assert ltrace('thread', '| TriggerWorkerThread.trigger()')
+		self.one_time_args = args
+		self.one_time_kwargs = kwargs
+		if not self._stop_event.is_set():
+			return self._trigger_event.set()
+	#: An alias from :meth:`manual_trigger` to :meth:`trigger` for purists.
+	manual_trigger = trigger
+	def disable(self):
+		""" Disable next runs (until re-enabled), but only if we are not
+			currently stopping. """
+		assert ltrace('thread', '| TriggerWorkerThread.disable()')
+		if not self._stop_event.is_set():
+			return self._disable_event.set()
+	def enable(self):
+		assert ltrace('thread', '| TriggerWorkerThread.enable()')
+		return self._disable_event.clear()
 	def stop(self):
-		""" Stop current Thread
-		and put a special None entry in the queue, to be
-		sure that self.run() method exits properly. """
-		assert ltrace('thread', '%s stopping' % self.name)
-		self._stop_event.set()
-		self._input_queue.put(None)
-class LicornJobThread(LicornBasicThread):
-	def __init__(self, target, pname=dname, tname=None, time=None, count=None,
-		delay=0.0, target_args=(), target_kwargs={}, daemon=False):
-		""" Create a scheduled job thread.
-			time: is a time.time() object before first execution, or for
+		""" Stop the thread properly (things must be done in a certain order,
+			internally). """
+
+		# Stop the base things. At this moment, the thread is either waiting
+		# on the trigger, or running.
+		LicornBasicThread.stop(self)
+
+		# In either case, clear anything that could make us loop again.
+		self._disable_event.clear()
+
+		# Then be sure to release the wait() on the trigger,
+		# else we will never quit...
+		self._trigger_event.set()
+class AbstractTimerThread(LicornBasicThread):
+	""" Base (abstract) class for any advanced timer thread:
+
+		* the thread can loop any number of time (0 to infinite). 0 means it is
+		  a one shot timer, 1 or more means it is like a scheduled job (but no
+		  date handling yet).
+		* it can wait a specific time before starting to loop.
+		* the timer can be reset at any moment.
+
+		:param time: is a time.time() object before first execution, or for
 				one-shot jobs ("AT" like)
-			count: eventually the number of time you want the job to repeat (>0)
+		:param count: eventually the number of time you want the job to repeat (>0)
 				default: None => infinite loop
-			delay: a float in seconds to wait between each call when looping.
+		:param delay: a float in seconds to wait between each call when looping.
 				Only used in loop.
 
 			If looping (infinite or not), delay must be set.
@@ -272,16 +395,24 @@ class LicornJobThread(LicornBasicThread):
 
 			tname is an optionnal thread name, to differentiate each, if you
 			launch more than one JobThread.
+
+		.. versionadded:: 1.2.4
+
+		.. warning:: This class is an abstract one, it does nothing besides
+			sleeping. All inheriting classes must implement a
+			``run_action_method``, else they will fail.
+
+	"""
+	def __init__(self, pname=dname, tname=None, time=None, count=None,
+		delay=0.0, daemon=False):
+		"""
 		"""
 
 		LicornBasicThread.__init__(self, pname=pname, tname=tname)
 
-		self.target = target
 		self.time = time
 		self.delay = delay
 		self.count = count
-		self.args = target_args
-		self.kwargs = target_kwargs
 		self.daemon = daemon
 
 		# lock used when accessing self.time_elapsed and self.sleep_delay
@@ -296,8 +427,6 @@ class LicornJobThread(LicornBasicThread):
 		self._reset_event = Event()
 		# a parallel thread that will run the real job, to be able to continue
 		# to countdown the delay while job is running.
-		self.job_runner = None
-		#print 'caller %s for target %s' % (self.kwargs, self.target)
 
 		if self.count is None:
 			self.loop = True
@@ -307,9 +436,9 @@ class LicornJobThread(LicornBasicThread):
 			elif self.count >= 1:
 				self.loop = False
 
-		assert ltrace('thread', '''| LicornJobThread.__init__(target=%s, '''
-			'''time=%s, count=%s, delay=%s, loop=%s)''' % (self.target,
-				self.time, self.count, self.delay, self.loop))
+		assert ltrace('thread', '| AbstractTimerThread.__init__(time=%s, '
+			'count=%s, delay=%s, loop=%s)' % (self.time,
+				self.count, self.delay, self.loop))
 
 		if (self.loop or self.count) and self.delay is None:
 			raise exceptions.BadArgumentError(
@@ -329,24 +458,25 @@ class LicornJobThread(LicornBasicThread):
 		assert ltrace('thread', '| %s.sleep(%s)' % (self.name, delay))
 
 		with self.time_lock:
-			self.__time_elapsed = 0.000
+			self.__time_elapsed = 0.0
 
 		while self.__time_elapsed < self.__sleep_delay and not self._stop_event.is_set():
 			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
-			time.sleep(0.005)
+			time.sleep(0.01)
 			with self.time_lock:
-				self.__time_elapsed += 0.005
+				self.__time_elapsed += 0.01
 			if self._reset_event.is_set():
 				logging.progress('%s: timer reset after %s elapsed.' % (self.name,
 						pyutils.format_time_delta(self.__time_elapsed)))
 				with self.time_lock:
-					self.__time_elapsed = 0.000
+					self.__time_elapsed = 0.0
 				self._reset_event.clear()
 	def reset_timer(self):
 		self._reset_event.set()
+	#: :meth:`reset` is an alias to :meth:`reset_timer`
 	reset = reset_timer
 	def remaining_time(self):
-		""" Return the remaining time until next target execution, in seconds.
+		""" Returns the remaining time until next target execution, in seconds.
 		"""
 		with self.time_lock:
 			if self.__sleep_delay is None:
@@ -373,30 +503,58 @@ class LicornJobThread(LicornBasicThread):
 		while not self._stop_event.is_set() and	(
 				self.loop or self.current_loop < self.count):
 
-			create = False
-			if (not self.job_runner) or (not self.job_runner.is_alive()):
-				self.job_runner = Thread(
-						target=self.target,
-						name=self.name + '.JobRunner',
-						args=self.args,
-						kwargs=self.kwargs
-					)
-				self.job_runner.daemon = True
-				self.job_runner.start()
-
-			#logging.progress('%s: calling %s(%s)' % (self.name, self.target, self.kwargs)
-			#self.target(*self.args, **self.kwargs)
+			self.run_action_method()
 
 			self.current_loop += 1
 			self.sleep()
 		LicornBasicThread.finish(self)
-class StatusUpdaterThread(LicornBasicThread):
-	def __init__(self):
-		pass
-	def run(self):
-		""" connect to local dbus system bus and forward every status change to
-			our controlling server. """
-		pass
+class TriggerTimerThread(AbstractTimerThread):
+	""" A Timer Thread whose sole action is to trigger an
+		:class:`~threading.Event`. It is used in conjunction of the
+		:class:`TriggerWorkerThread` (which waits on the
+		:class:`~threading.Event`).
+
+		.. versionadded:: 1.2.4
+	"""
+	def __init__(self, trigger_event, pname=dname, tname=None, time=None, count=None,
+		delay=0.0, daemon=False):
+		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
+			daemon=daemon, pname=pname, tname=tname)
+
+		self._trigger_event = trigger_event
+	def run_action_method(self):
+		return self._trigger_event.set()
+class LicornJobThread(AbstractTimerThread):
+	def __init__(self, target, pname=dname, tname=None, time=None, count=None,
+		delay=0.0, target_args=(), target_kwargs={}, daemon=False):
+		""" TODO: this class is meant to be removed in version 1.3+, replaced
+			by the couple
+			:class:`TriggerWorkerThread` / :class:`TriggerTimerThread`.
+		"""
+
+		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
+			daemon=daemon, pname=pname, tname=tname)
+
+		self.target = target
+		self.args = target_args
+		self.kwargs = target_kwargs
+
+		# a parallel thread that will run the real job, to be able to continue
+		# to countdown the delay while job is running.
+		self.job_runner = None
+	def run_action_method(self):
+		""" A method that will wrap self.target into a JobRunner simple
+			:class:`~threading.Thread`. """
+
+		if (not self.job_runner) or (not self.job_runner.is_alive()):
+			self.job_runner = Thread(
+					target=self.target,
+					name=self.name + '.JobRunner',
+					args=self.args,
+					kwargs=self.kwargs
+				)
+			self.job_runner.daemon = True
+			self.job_runner.start()
 def thread_periodic_cleaner():
 	""" Ping all known machines. On online ones, try to connect to pyro and
 	get current detailled status of host. Notify the host that we are its

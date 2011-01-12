@@ -1221,6 +1221,10 @@ class CoreModule(CoreUnitObject):
 		#: Threads that will be collected by daemon to be started/stopped.
 		self.threads = MixedDictObject('module_threads')
 
+		#: A collection of :class:`Event` used to synchronize my threads.
+		self.events = MixedDictObject('module_events')
+
+
 		#: A list of compatible modules. See :ref:`modules` for details
 		self.peer_compat = []
 
