@@ -315,7 +315,7 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		self.threads.autobackup.reset()
 		self.backup(volume=volume, force=force, batch=batch)
 		logging.notice('%s: next automatic backup will occur in %s.' % (
-				self.name, self.time_before_next_backup()))
+				self.name, self.time_before_next_automatic_backup()))
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
 
