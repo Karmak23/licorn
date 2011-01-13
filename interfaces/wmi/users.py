@@ -303,8 +303,8 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 	profiles=None, **kwargs):
 	"""Generate a form to create a new user on the system."""
 
-	g = groups
-	p = profiles
+	g = LMC.groups
+	p = LMC.profiles
 
 	title = _("New user account")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
