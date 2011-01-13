@@ -278,25 +278,38 @@ class TriggerWorkerThread(LicornBasicThread):
 												pname=dname, tname=None):
 		assert ltrace('thread', '| TriggerWorkerThread.__init__()')
 		LicornBasicThread.__init__(self, pname, tname)
-		self._disable_event = Event()
-		self._trigger_event = trigger_event
+		self._disable_event     = Event()
+		self._currently_running = Event()
+		self._trigger_event     = trigger_event
+
 		self.target = target
-		self.args = args
+		self.args   = args
 		self.kwargs = kwargs
 
 		# used on manual triggering only.
 		self.one_time_args   = None
 		self.one_time_kwargs = None
+	def dump_status(self, long_output=False, precision=None):
+		return '%s%s (%s)' % (
+			stylize(ST_RUNNING if self.is_alive() else ST_STOPPED, self.name),
+			'&' if self.daemon else '',
+			stylize(ST_OFF, 'disabled') if self._disable_event.is_set()
+					else '%s, %s' % (
+							stylize(ST_ON, 'enabled'),
+							stylize(ST_BUSY, 'active') if
+								self._currently_running.is_set() else 'idle'
+						)
+			)
 	def active(self):
 		""" Returns ``True`` if the internal worker is running, else ``False``
 			(the thread can be considered idle). """
 
-		return self._trigger_event.is_set()
+		return self._currently_running.is_set()
 	#: an alias from :meth:`running` to :meth:`active`.
 	running = active
 	def idle(self):
 		""" Exact inverse of :meth:`active` method. """
-		return not self._trigger_event.is_set()
+		return not self._currently_running.is_set()
 	def enabled(self):
 		""" Returns ``True`` if not currently disabled. """
 		return not self._disable_event.is_set()
@@ -310,14 +323,17 @@ class TriggerWorkerThread(LicornBasicThread):
 		while True:
 			self._trigger_event.wait()
 
-			if self._disable_event.is_set():
-				assert ltrace('thread', '%s: triggered, but currently '
-					'disabled: not doing anything.' % self.name)
-				continue
+			# be sure to wait at next loop.
+			self._trigger_event.clear()
 
 			if self._stop_event.is_set():
 				assert ltrace('thread', '%s: breaking our loop now.' % self.name)
 				break
+
+			if self._disable_event.is_set():
+				assert ltrace('thread', '%s: triggered, but currently '
+					'disabled: not doing anything.' % self.name)
+				continue
 
 			# use one_time arguments if we have been manually trigerred.
 			if self.one_time_args is not None:
@@ -335,10 +351,9 @@ class TriggerWorkerThread(LicornBasicThread):
 			assert ltrace('thread', '%s: triggered, running target %s(%s, %s)'
 				% (self.name, self.target, ', '.join(args), ', '.join(kwargs)))
 
+			self._currently_running.set()
 			self.target(*args, **kwargs)
-
-			# be sure to wait at next loop.
-			self._trigger_event.clear()
+			self._currently_running.clear()
 
 		self.finish()
 	def trigger(self, *args, **kwargs):
@@ -366,9 +381,6 @@ class TriggerWorkerThread(LicornBasicThread):
 		# Stop the base things. At this moment, the thread is either waiting
 		# on the trigger, or running.
 		LicornBasicThread.stop(self)
-
-		# In either case, clear anything that could make us loop again.
-		self._disable_event.clear()
 
 		# Then be sure to release the wait() on the trigger,
 		# else we will never quit...
