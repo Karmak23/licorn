@@ -1107,7 +1107,15 @@ class UsersController(Singleton, CoreFSController):
 							tmp.path = tmp.path.replace('%s/' % user_info.user_home, '')
 							default_exclusions.append(tmp.path)
 
-					user_special_dirs._default.exclude = default_exclusions
+					try:
+						user_special_dirs._default.exclude = default_exclusions
+					except AttributeError, e:
+						raise exceptions.LicornCheckError("There is no default "
+						"user check rules (%s not found in %s), this is "
+						"mandatory." % (
+								stylize(ST_NAME, "users.%s.conf" %
+									LMC.configuration.defaults.check_homedir_filename),
+								stylize(ST_PATH, LMC.configuration.check_config_dir)))
 
 					try:
 						if user_special_dirs != None:
