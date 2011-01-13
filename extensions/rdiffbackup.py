@@ -160,11 +160,12 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		#: story. This will eventually come later.
 		self.server_only = True
 
-		self.paths.backup_directory = 'licorn.backups'
-		self.paths.statistics_file  = '.licorn.backup.statistics'
-		self.paths.last_backup_file = '.licorn.backup.last_time'
-		self.paths.globbing_file    = self._find_globbing_filelist()
-
+		self.paths.backup_directory     = 'licorn.backups'
+		self.paths.statistics_file      = '.licorn.backup.statistics'
+		self.paths.increments_file      = '.licorn.backup.increments'
+		self.paths.increment_sizes_file = '.licorn.backup.increments.sizes'
+		self.paths.last_backup_file     = '.licorn.backup.last_time'
+		self.paths.globbing_file        = self._find_globbing_filelist()
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -289,10 +290,32 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			logging.info('%s: computing statistics on %s, '
 				'please wait.' % (self.name, volume))
 
-			stats = process.execute([ 'rdiff-backup-statistics', '--quiet',
-												self._backup_dir(volume) ])[0]
-			open(volume.mount_point + '/' +
-								self.paths.statistics_file, 'w').write(stats)
+			for command_line, output_file in (
+					([ 'rdiff-backup-statistics', '--quiet',
+												self._backup_dir(volume) ],
+								self.paths.statistics_file),
+					([ 'rdiff-backup', '--list-increments',
+												self._backup_dir(volume) ],
+								self.paths.increments_file),
+					([ 'rdiff-backup', '--list-increment-sizes',
+												self._backup_dir(volume) ],
+								self.paths.increment_sizes_file)
+				):
+
+				command = self.commands.nice[:]
+				command.extend(command_line)
+
+				assert ltrace(self.name, 'executing %s, please wait.' % command)
+
+				start_time = time.time()
+				output, errors = process.execute(command)
+
+				assert ltrace('timings', '%s duration on '
+					'%s: %s.' % (' '.join(command_line[:2]), volume,
+						pyutils.format_time_delta(time.time() - start_time)))
+
+				open(volume.mount_point + '/' + output_file, 'w').write(output)
+
 			return True
 	def _backup_dir(self, volume):
 		return volume.mount_point + '/' + self.paths.backup_directory
@@ -333,26 +356,24 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			launch a manual backup in the daemon's interactive shell, like
 			this::
 
-				[…]
+				[…] [i on keyboard]
 				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
 				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
 				licornd> LMC.extensions.rdiffbackup.manual_backup(force=True)
-				 * [2011/11/01 20:19:23.9644] rdiffbackup: backing up on first available volume /dev/sdb1 (/media/SAVE_LICORN).
-				 > [2011/11/01 20:19:23.9665] extensions/Rdiffbackup.AutoBackup: timer reset @5.9350 secs!
-				 > [2011/11/01 20:19:23.9670] rdiffbackup: updated last backup file /media/SAVE_LICORN/.licorn.backup.last_time.
-				 * [2011/11/01 20:20:14.1196] rdiffbackup: computing statistics on volume /dev/sdb1 (/media/SAVE_LICORN), please wait.
-				 * [2011/11/01 20:20:32.9167] rdiffbackup: next automatic backup will occur in 59 mins 5 secs.
+				[…]
 				licornd> [Control-D]
 				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
 				[…]
 
 		"""
 
-		logging.notice('%s: triggering a manual backup in the background (next automatic in %s).' % (
-				self.name, self.time_before_next_automatic_backup()))
 		self.threads.auto_backup_timer.reset()
+		# wait for the timer to acknoledge the reset action()
+		time.sleep(0.2)
 		self.threads.auto_backup_worker.trigger(volume=volume, force=force,
 			batch=batch)
+		logging.notice('%s: triggered a manual backup in the background (next automatic in %s).' % (
+				self.name, self.time_before_next_automatic_backup()))
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
 
@@ -476,14 +497,18 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 
 				self._write_last_backup_file(volume)
 
-				assert ltrace(self.name, 'executing %s, please wait.' %
+				assert ltrace(self.name, '  executing %s, please wait.' %
 															' '.join(command))
 				backup_start = time.time()
-				output = process.execute(command)[0]
+
+				output, error = process.execute(command)
+
 				assert ltrace('timings', 'rdiff-backup duration on %s: %s.'
 									% (volume, pyutils.format_time_delta(
 												time.time() - backup_start)))
-				sys.stderr.write(output)
+
+				# FIXME: do this a better way
+				sys.stderr.write(error)
 
 				self._remove_old_backups(volume)
 				self._rdiff_statistics(volume)
