@@ -1164,7 +1164,7 @@ class CoreUnitObject(NamedObject):
 		# FIXME: find a way to store the reference to the controller, not only
 		# its name. This will annoy Pyro which cannot pickle weakproxy objects,
 		# but will be cleaner than lookup the object by its name...
-		self._controller = controller.name
+		self._controller = controller
 class CoreModule(CoreUnitObject):
 	""" CoreModule is the base class for backends and extensions. It provides
 		the :meth:`generate_exception` method, called by controllers when a
@@ -1238,6 +1238,20 @@ class CoreModule(CoreUnitObject):
 		#: indicates that this module is meant to be used on server only (not
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
+	def _cli_get_configuration(self):
+		""" Return the configuration subset of us, ready to be displayed in CLI.
+		"""
+		paths = '\n'.join('%s: %s' % (key.rjust(16), value)
+							for key, value in self.paths.iteritems()),
+
+
+		return u'↳ %s (%s %s):%s' % (
+						stylize(ST_ENABLED if self.enabled else ST_DISABLED,
+														self.name),
+						'server only' if self.server_only else 'client/server',
+						self._controller.module_type,
+						'\n%s\n' % paths if paths != '' else ''
+					)
 	def __str__(self):
 		data = ''
 		for i in sorted(self.__dict__):
@@ -1374,7 +1388,7 @@ class CoreStoredObject(CoreUnitObject):
 		self._backend  = backend.name
 
 		# store the lock outside of us, else Pyro can't pickle us.
-		LMC.locks[self._controller][self._oid] = RLock()
+		LMC.locks[self._controller.name][self._oid] = RLock()
 	def lock(self):
 		""" return our unit RLock(). """
-		return LMC.locks[self._controller][self._oid]
+		return LMC.locks[self._controller.name][self._oid]

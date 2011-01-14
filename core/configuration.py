@@ -1128,6 +1128,10 @@ class LicornConfiguration(Singleton, LockedController):
 			# too-much-moving targets which bork the testsuite.
 			#	continue
 
+			if isinstance(attr, CoreModule):
+				data += getattr(attr, '_cli_get_configuration')()
+				continue
+
 			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
 
 			if aname is 'app_name':

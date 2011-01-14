@@ -397,12 +397,16 @@ class LicornConfigObject():
 			else:
 				data += '%s↳ %s = %s\n' % ('\t'*self._level, str(i), str(getattr(self, i)))
 		return data
+	def iteritems(self):
+		for key, value in sorted(self.__dict__.iteritems()):
+			if key[0] != '_':
+				yield key, value
 	def __iter__(self):
 		""" make this object sequence-compatible, for use in
 			LicornConfiguration(). """
-		for attribute_name in sorted(dir(self)):
-			if attribute_name[0] != '_':
-				yield getattr(self, attribute_name)
+		for key, value in sorted(self.__dict__.iteritems()):
+			if key[0] != '_' and not callable(value):
+				yield value
 class FsapiObject(Enumeration):
 	def __init__(self, name=None, path=None, user=None, root_dir_perm=None,
 		dirs_perm=None, files_perm=None, group=None, exclude=[], rule=None,
