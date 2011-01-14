@@ -106,7 +106,68 @@ class WMIObject():
 					ctx[4],
 					ctx[0]
 				) for ctx in self.wmi.context_menu_data ])
+	def _countdown(self, name, countdown_seconds, uri=None):
+		""" Always increment the
+			countdown with 3 seconds, else the webpage could refresh too early
+			and display a new 2 seconds countdown, due to rounding errors.
 
+		http://www.plus2net.com/javascript_tutorial/countdown.php """
+		return '''
+<script type="text/javascript">
+function display_{name}(start){{
+	window.start_{name} = parseFloat(start);
+	 // change this to stop the counter at a higher value
+	var end = 0;
+	// Refresh rate in milli seconds
+	var refresh = 1000;
+	if(window.start_{name} >= end ) {{
+		mytime=setTimeout('display_countdown_{name}()', refresh)
+	}} else {{
+		document.location = "{refresh_uri}";
+	}}
+}}
+
+function display_countdown_{name}() {{
+	// Calculate the number of days left
+	var days = Math.floor(window.start_{name} / 86400);
+
+	// After deducting the days calculate the number of hours left
+	var hours = Math.floor((window.start_{name} - (days *86400))/3600)
+
+	// After days and hours , how many minutes are left
+	var minutes = Math.floor((window.start_{name} - (days*86400) - (hours *3600))/60)
+
+	// Finally how many seconds left after removing days, hours and minutes.
+	var secs = Math.floor((window.start_{name} - (days*86400) - (hours*3600) - (minutes*60)))
+
+	var x = "";
+
+	if (days > 0)
+		x = x + days + " {days}, ";
+
+	if (hours > 0)
+		x = x + hours + " {hours}, ";
+
+	if (minutes > 0)
+		x = x + minutes + " {minutes}, ";
+
+	x = x + secs + " {seconds}";
+
+	document.getElementById('countdown_{name}').innerHTML = x;
+
+	tt=display_{name}(window.start_{name} - 1);
+}}
+display_{name}({countdown_seconds});
+</script>
+<span id='countdown_{name}' class="countdown"></span>'''.format(
+	name=name,
+	countdown_seconds=countdown_seconds + 3.0,
+	days=_('day(s)'),
+	hours=_('hour(s)'),
+	minutes=_('minute(s)'),
+	seconds=_('second(s)'),
+	refresh_uri="/" + self.wmi.uri
+)
 
 def init():
 	""" Initialize the WMI module by importing all WMI objects and making them

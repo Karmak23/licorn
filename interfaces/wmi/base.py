@@ -166,15 +166,15 @@ def index(uri, http_user, **kwargs):
 
 	def load_background(load):
 		if load <= 0.5:
-			return '4DA74D'
+			return 'load_avg_level1'
 		elif load <= 1.0:
-			return 'C0D800'
+			return 'load_avg_level2'
 		elif load <= 1.5:
-			return 'EEC73E'
+			return 'load_avg_level3'
 		elif load <= 2.0:
-			return 'FB8B00'
+			return 'load_avg_level4'
 		elif load <= 3.0:
-			return 'cb4b4b'
+			return 'load_avg_level5'
 
 	data += '''
 	<table>
@@ -207,9 +207,9 @@ def index(uri, http_user, **kwargs):
 				'Users: <strong>{accounts}</strong> accounts, '
 				'<strong>{connected} open sessions</strong>.<br /><br />'
 				'1, 5, and 15 last minutes load average: '
-				'<span class="load_avg" style="background-color: #{load_back1};">{load1}</span> '
-				'<span class="load_avg" style="background-color: #{load_back5};">{load5}</span> '
-				'<span class="load_avg" style="background-color: #{load_back15};">{load15}</span>').format(
+				'<span class="small_indicator {load_back1}">{load1}</span> '
+				'<span class="small_indicator {load_back5}">{load5}</span> '
+				'<span class="small_indicator {load_back15}">{load15}</span>').format(
 				uptime=uptime_string, accounts=nbusers, connected=cxusers,
 				load1=loads[0], load5=loads[1], load15=loads[2],
 				load_back1=load_background(float(loads[0])),

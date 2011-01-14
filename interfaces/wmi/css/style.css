@@ -604,12 +604,42 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	font-weight: bold;
 }
 
-.load_avg {
-	padding: 4px;
+.countdown {
+	padding: 2px;
 	display: inline;
 	font-weight: bolder;
 	border-radius:5px;
 }
+
+.small_indicator {
+	padding: 7px;
+	display: inline;
+	font-weight: bolder;
+	border-radius:5px;
+}
+.possible {
+	background-color: #8BC18B;
+}
+.impossible {
+	background-color: #CB4B4B;
+}
+
+.load_avg_level1 {
+	background-color: #8BC18B;
+}
+.load_avg_level2 {
+	background-color: #C0D800;
+}
+.load_avg_level3 {
+	background-color: #EEC73E;
+}
+.load_avg_level4 {
+	background-color: #FB8B00;
+}
+.load_avg_level5 {
+	background-color: #CB4B4B;
+}
+
 
 .lined {
 	border-bottom: 3px solid #ccc;
