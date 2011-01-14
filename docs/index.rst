@@ -44,10 +44,6 @@ Using Licorn®
 
 	features
 	install
-
-.. toctree::
-	:maxdepth: 3
-
 	userdoc/index
 
 
@@ -55,14 +51,10 @@ Developping with or for Licorn®
 ===============================
 
 .. toctree::
-	:maxdepth: 3
+	:maxdepth: 2
 
 	concepts
 	api
-
-.. toctree::
-	:maxdepth: 2
-
 	specs/index
 
 Indices and tables

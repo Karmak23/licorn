@@ -41,11 +41,14 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 		* remote upgrades (can be interactive with GNU/Linux clients)
 		* remote generic settings apply (env / gconf / KDE / win32)
 
+	Backups
+		* handles automatically :ref:`external mass storage <extensions.volumes>` devices and :ref:`runs automatic backup <extensions.rdiffbackup>` at :term:`configured intervals <backup.interval>`.
+
 	Printers
 		* to be documented (CUPS support)
 
 	Configuration and System
-		* centralize and alter system-wide parameters and other daemons configuration (:program:`apache`, :program:`postfix`, :program:`dnsmasq`...)
+		* centralize and alter system-wide parameters and other daemons configuration (:program:`apache`, :program:`postfix`, :program:`dnsmasq`…)
 		* enable or disable backends and extensions at runtime
 		* remote execution and configuration
 
@@ -72,24 +75,26 @@ Currently supported:
 - :ref:`DNSmasq (backend) <core.backends.dnsmasq>`
 - SaMBa (direct basic integration in the controllers)
 - :ref:`caldavd (extension) <extensions.caldavd>`
-
-Under development or planned:
-
 - :ref:`squid (extension) <extensions.squid>`
 - :ref:`basic volumes management (extension) <extensions.volumes>`
 - :ref:`Rdiff Backup (extension) <extensions.rdiffbackup>`
-- samba (extension)
-- postfix (extension)
-- apache2 (extension)
-- BIND9 / DHCPd3 (backend)
+
+Under development or planned:
+
+- samba (as extension)
+- postfix (as extension)
+- apache2 (as extension)
+- BIND9 / DHCPd3 (as backend)
 
 Licorn® is built upon these technologies (listed in no particular order):
 
 * the beloved `Python <http://python.org/>`_ programming language,
 * the `Pyro <http://www.xs4all.nl/~irmen/pyro3/>`_ remote object distribution system,
-* `POSIX.1e` ACLs,
-* File-system eXtended ATTributes,
+* `POSIX.1e ACLs <http://en.wikipedia.org/wiki/Access_control_list>`_,
+* File-system `user eXtended ATTributes <http://en.wikipedia.org/wiki/Extended_file_attributes>`_,
 * SQLite3,
+* `udev <http://en.wikipedia.org/wiki/Udev>`_ (`fr <http://fr.wikipedia.org/wiki/Udev>`_), `udisks <http://freedesktop.org/wiki/Software/udisks>`_,
+* `rdiff-backup <http://www.nongnu.org/rdiff-backup/index.html>`_
 * GTK+ for graphical interfaces,
 * some (but not much) python external modules, like the multi-platform `netifaces` module, the `dumbnet` module and others.
 

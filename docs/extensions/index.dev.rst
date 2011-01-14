@@ -1,6 +1,7 @@
 
 .. _extensions.dev:
 
+===================================
 Extensions Developper documentation
 ===================================
 
