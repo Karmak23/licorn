@@ -155,7 +155,8 @@ class SquidExtension(Singleton, ServiceExtension):
 				- deal with gconf to set proxy for gnome apps.
 				- params in apt configuration
 		"""
-		assert ltrace(self.name, '> update_client()' )
+		assert ltrace(self.name, '> update_client(batch=%s, auto_answer=%s)' %
+			(batch, auto_answer))
 
 		env_file = ConfigFile(self.defaults_conf.client_file,
 			separator='=')
@@ -274,7 +275,8 @@ class SquidExtension(Singleton, ServiceExtension):
 						server.
 					- http_access deny all : disable access to others.
 		"""
-		assert ltrace(self.name, '> check()' )
+		assert ltrace(self.name, '> check(batch=%s, auto_answer=%s)' %
+			(batch, auto_answer))
 		if LMC.configuration.licornd.role == licornd_roles.SERVER:
 
 
@@ -310,7 +312,7 @@ class SquidExtension(Singleton, ServiceExtension):
 				self.service(svccmds.RELOAD)
 
 		# finally, update system to deal or not with the extension.
-		self.update_client()
+		self.update_client(batch=batch, auto_answer=auto_answer)
 
 		assert ltrace(self.name, '< check()' )
 		return True
