@@ -62,7 +62,7 @@ class NamedObject(object):
 	def __str__(self):
 		data = ''
 		for i in sorted(self.__dict__):
-			if i[0] == '_': continue
+			if i[0] == '_' or i == 'parent': continue
 			if type(getattr(self, i)) == type(self):
 				data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
 			else:
