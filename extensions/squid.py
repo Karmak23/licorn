@@ -65,20 +65,70 @@ class SquidExtension(Singleton, ServiceExtension):
 		self.paths.squid_pid = '/var/run/squid.pid'
 
 		self.defaults_conf = self.get_defaults_conf()
+		self.unwanted_default_conf = [
+			('acl', 'localnet src 10.0.0.0/8	# RFC1918 possible internal network'),
+			('acl', 'localnet src 172.16.0.0/12	# RFC1918 possible internal network'),
+			('acl', 'localnet src 192.168.0.0/16	# RFC1918 possible internal network'),
+			('icp_access', 'allow localnet'),
+		] 
+		
+		self.wanted_default_conf = [
+			('access_log', '/var/log/squid/access.log squid'),
+			('acl', 'all src all'),
+			('acl', 'manager proto cache_object'),
+			('acl', 'localhost src 127.0.0.0/8'),
+			('acl', 'to_localhost dst 127.0.0.0/8 0.0.0.0/32'),
+			('acl', 'SSL_ports port 443'),
+			('acl', 'SSL_ports port 563'),
+			('acl', 'SSL_ports port 873'),
+			('acl', 'Safe_ports port 80'),
+			('acl', 'Safe_ports port 21'),
+			('acl', 'Safe_ports port 443'),
+			('acl', 'Safe_ports port 70'),
+			('acl', 'Safe_ports port 210'),
+			('acl', 'Safe_ports port 1025-65535'),
+			('acl', 'Safe_ports port 280'),
+			('acl', 'Safe_ports port 488'),
+			('acl', 'Safe_ports port 591'),
+			('acl', 'Safe_ports port 777'),
+			('acl', 'Safe_ports port 631'),
+			('acl', 'Safe_ports port 873'),
+			('acl', 'Safe_ports port 901'),
+			('acl', 'purge method PURGE'),
+			('acl', 'CONNECT method CONNECT'),
+			('acl', 'shoutcast rep_header X-HTTP09-First-Line ^ICY.[0-9]'),
+			('acl', 'apache rep_header Server ^Apache'),
+			('broken_vary_encoding', 'allow apache'),
+			('coredump_dir', '/var/spool/squid'),
+			('extension_methods', 'REPORT MERGE MKACTIVITY CHECKOUT'),
+			('hierarchy_stoplist', 'cgi-bin ?'),
+			('hosts_file', '/etc/hosts'),
+			('http_access', 'allow manager localhost'),
+			('http_access', 'deny manager'),
+			('http_access', 'allow purge localhost'),
+			('http_access', 'deny purge'),
+			('http_access', 'deny !Safe_ports'),
+			('http_access', 'deny CONNECT !SSL_ports'),
+			('http_access', 'deny all'),
+			('http_access', 'allow localhost'),
+			('http_access', 'allow localnetwork'),
+			('http_access', 'deny all'),
+			('http_port', self.defaults_conf.port),
+			('icp_access', 'allow localnetwork'),
+			('icp_access', 'deny all'),
+			('refresh_pattern', '^ftp:           1440    20%     10080'),
+			('refresh_pattern', '^gopher:        1440    0%      1440'),
+			('refresh_pattern', "-i (/cgi-bin/|\?) 0     0%      0")
+		]
 
 		if LMC.configuration.licornd.role == licornd_roles.SERVER:
 			self.defaults = Enumeration()
-			for key, value in (
-				('http_port',self.defaults_conf.port),
-				('acl', 'server src %s' % '127.0.0.1'),
-				('acl', 'all src all'),
-				('http_access', 'allow localnetwork'),
-				('http_access', 'allow server'),
-				('http_access', 'deny all')):
-				add_or_dupe_enumeration(self.defaults, key, value)
 			for network in self.defaults_conf.subnet:
 				add_or_dupe_enumeration(self.defaults, 'acl',
 					'localnetwork src %s' % network),
+			for key, value in self.wanted_default_conf:
+				add_or_dupe_enumeration(self.defaults, key, value)
+			
 	def get_defaults_conf(self):
 		""" TODO """
 
@@ -142,7 +192,7 @@ class SquidExtension(Singleton, ServiceExtension):
 				self.available = True
 
 				self.configuration = ConfigFile(self.paths.squid_conf,
-							separator=' ')
+					name='squid', separator=' ')
 			else:
 				logging.warning2('%s: not available because %s or %s do not '
 					'exist on the system.' % (
@@ -297,7 +347,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.squid_conf))
 
 			need_rewrite = False
-
+			
 			for key, value in self.defaults.iteritems():
 				if hasattr(value, '__iter__'):
 					for v in value:
@@ -308,6 +358,11 @@ class SquidExtension(Singleton, ServiceExtension):
 					if not self.configuration.has(key, value):
 						need_rewrite = True
 						self.configuration.add(key, value)
+						
+			# remove unwanted conf
+			for key, value in self.unwanted_default_conf:
+				if self.configuration.has(key, value=value):
+					self.configuration.remove(key, value=value)
 
 			if need_rewrite:
 				if batch or logging.ask_for_repair('%s must be modified' %

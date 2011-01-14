@@ -18,7 +18,8 @@ from styles    import *
 from ltrace    import ltrace
 from base      import Enumeration
 from licorn.foundations.pyutils import add_or_dupe_enumeration
-from licorn.foundations import readers
+from licorn.foundations import readers, logging
+from licorn.foundations.styles    import *
 
 class ConfigFile(Enumeration):
 	""" A Configuration file class which handles adds/removes cleverly and loads
@@ -105,10 +106,16 @@ class ConfigFile(Enumeration):
 		""" TODO. """
 		if replace:
 			self[key] = value
+			logging.progress('%s: %s configuration key %s with value %s' % (
+				stylize(ST_PATH, self.name), stylize(ST_OK, "modified"), 
+				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: overwritten '%s %s'" % (
 				self.name, key, value))
 		elif dont_check or not self.has(key, value):
 			pyutils.add_or_dupe_enumeration(self, key, value)
+			logging.progress('%s: %s configuration key %s with value %s' % (
+				stylize(ST_PATH, self.name), stylize(ST_OK, "added"), 
+				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: added '%s %s'" % (
 					self.name, key, value))
 	def remove(self, key, value=None, dont_check=False):
@@ -121,6 +128,9 @@ class ConfigFile(Enumeration):
 					del self[key]
 			else:
 				del self[key]
+			logging.progress('%s: %s configuration key %s with value %s' % (
+				stylize(ST_PATH, self.name), stylize(ST_BAD, "removed"), 
+				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: removed '%s%s'" % (
 				self.name, key, ' ' + value if value else ''))
 class FileLock:
