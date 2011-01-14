@@ -451,6 +451,8 @@ class GroupsController(Singleton, CoreController):
 			name, description, groupSkel = self._validate_fields(name,
 				description, groupSkel)
 
+			self.run_hooks('group_pre_add', name=name, description=description)
+
 			home = '%s/%s/%s' % (
 				LMC.configuration.defaults.home_base_path,
 				LMC.configuration.groups.names.plural,
@@ -472,6 +474,8 @@ class GroupsController(Singleton, CoreController):
 				logging.notice(str(e))
 				gid = self.name_to_gid(name)
 				not_already_exists = False
+
+			self.run_hooks('group_post_add', name=name, description=description)
 
 		# LOCKS: can be released, because everything after now is FS operations,
 		# not needing the internal data structures. It can fail if someone
@@ -687,6 +691,8 @@ class GroupsController(Singleton, CoreController):
 			gid, name, del_users, no_archive, batch, check_profiles))
 
 		gid, name = self.resolve_gid_or_name(gid, name)
+		
+		self.run_hooks('group_pre_del', name=name)
 
 		assert ltrace('groups', '  DeleteGroup(%s,%s)' % (name, gid))
 
@@ -1113,6 +1119,9 @@ class GroupsController(Singleton, CoreController):
 							LMC.users[uid]['homeDirectory'],
 							link_basename)
 						fsapi.make_symlink(link_src, link_dst, batch=batch)
+						
+						self.run_hooks('group_post_add_user',
+							login=login, name=name)
 
 				if batch and work_done:
 					# save the group after having added all users. This seems more fine
@@ -1160,6 +1169,9 @@ class GroupsController(Singleton, CoreController):
 		for uid in uids_to_del:
 
 			login = u2l(uid)
+
+			self.run_hooks('group_pre_del_user', login=login, name=name)
+
 			if login in self.groups[gid]['memberUid']:
 				self.groups[gid]['memberUid'].remove(login)
 

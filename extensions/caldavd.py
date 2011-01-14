@@ -81,7 +81,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			contain user passwords in clear-text). """
 
 		for filename in self.paths:
-			if os.path.exists(filename):
+			if (os.path.exists(filename) and filename != self.paths.main_dir):
 				os.chmod(filename, 0640)
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
@@ -240,7 +240,19 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		xmlpwd.tail = '\n'
 
 		assert ltrace('caldavd', '< add_user(%s)' % uid)
-	def add_resource(self, uid, guid, name, **kwargs):
+	def add_group(self, uid, guid, name, **kwargs):
+		""" Create a caldav group account. """
+
+		assert ltrace('caldavd', '> add_group(%s)' % uid)
+
+		group = self.__create_account('group', uid, guid, name)
+
+		xmlmembers = ET.SubElement(group, 'members')
+		xmlmembers.text = '\n	'
+		xmlmembers.tail = '\n'
+
+		assert ltrace('caldavd', '< add_group(%s)' % uid)
+	def add_resource(self, uid, guid, name, type, **kwargs):
 		""" Create a caldav resource account. """
 
 		assert ltrace('caldavd', '> add_resource(%s)' % uid)
@@ -252,11 +264,26 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		xmlproxies.tail = '\n'
 
 		xmlmember = ET.SubElement(xmlproxies, 'member')
-		xmlmember.set('type', 'users')
+		xmlmember.set('type', type)
 		xmlmember.text = uid
 		xmlmember.tail = '\n	'
 
 		assert ltrace('caldavd', '< add_resource(%s)' % uid)
+	def add_member(self, login, name, **kwargs):
+		""" Create a new entry in the members element of a group. """
+		
+		assert ltrace('caldavd', '> add_member(%s, %s)' % (login, name))
+		
+		for xmldata in self.data.accounts.findall('group'):
+			if xmldata.find('uid').text == name:
+				xmlmember_list = xmldata.find('members')
+				
+				xmlmember = ET.SubElement(xmlmember_list, 'member')
+				xmlmember.set('type', 'users')
+				xmlmember.text = login
+				xmlmember.tail = '\n		'
+		
+		assert ltrace('caldavd', '< add_member(%s, %s)' % (login, name))
 	def mod_account(self, acttype, uid, attrname, value):
 		""" Alter a caldav account: find a given attribute, then modify its
 			value, then write the configuration to disk and reload the service.
@@ -283,6 +310,21 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		logging.warning2('%s: unable to delete %s %s, not found in %s.' %
 			(self.name, acttype, uid, self.paths.accounts))
 		return False
+	def del_member(self, login, name):
+		""" delete the user from the members of the group
+			in the accounts file. """
+
+		for xmldata in self.data.accounts.findall('group'):
+			if xmldata.find('uid').text == name:
+				for xmlmember in xmldata.findall('members/member'):
+					logging.warning2('boucle for : membre %s' % xmlmember.text )
+					if xmlmember.text == login:
+						xmldata.find('members').remove(xmlmember)
+						return True
+
+		logging.warning2('%s: unable to delete user %s from %s, not found in %s.' %
+			(self.name, login, name, self.paths.accounts))
+		return False
 	def user_pre_add_callback(self, **kwargs):
 		""" Lock the accounts file in prevision of a change. """
 		#return self.locks.accounts.acquire()
@@ -297,7 +339,8 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		try:
 			self.add_user(uid=login, guid=str(uuid.uuid1()),
 							password=password, name=gecos)
-			self.add_resource(uid=login, guid=str(uuid.uuid1()), name=gecos)
+			self.add_resource(uid=login, guid=str(uuid.uuid1()), 
+							name=gecos, type='users')
 			self.__write_accounts_and_reload()
 			return True
 		except Exception, e:
@@ -344,6 +387,90 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			logging.warning('%s: %s' % (self.name, e))
 			print_exc()
 			return False
+	def group_pre_add_callback(self, **kwargs):
+		""" Lock the accounts file in prevision of a change. """
+		#return self.locks.accounts.acquire()
+		pass
+	def group_post_add_callback(self, name, description, **kwargs):
+		""" Create a caldavd group account and the associated calendar resource,
+			then write the configuration and release the associated lock.
+		"""
+
+		assert ltrace('caldavd', '| group_post_add_callback(%s)' % name)
+
+		try:
+			self.add_group(uid=name, guid=str(uuid.uuid1()),
+							name=description)
+			self.add_resource(uid=name, guid=str(uuid.uuid1()),
+							name=description, type='groups')
+			self.__write_accounts_and_reload()
+			return True
+		except Exception, e:
+			logging.warning('%s: %s' % (self.name, e))
+			print_exc()
+			return False
+	def group_pre_del_callback(self, name, **kwargs):
+		""" delete a group and its resource in the caldavd accounts file, then
+			reload the service. """
+
+		assert ltrace('caldavd', '| group_pre_del_callback(%s)' % name)
+
+		try:
+			#TODO: self.locks.accounts.acquire()
+			self.del_account(acttype='resource', uid=name)
+			self.del_account(acttype='group', uid=name)
+			self.__write_accounts_and_reload()
+			logging.progress('%s: deleted group and resource in %s.' % (
+				self.name, self.paths.accounts))
+			return True
+		except Exception, e:
+			logging.warning('%s: %s' % (self.name, e))
+			print_exc()
+			return False
+	def group_pre_add_user_callback(self, **kwargs):
+		""" Lock the accounts file in prevision of a change. """
+		#return self.locks.accounts.acquire()
+		pass
+	def group_post_add_user_callback(self, login, name, **kwargs):
+		""" add a user to the member element of a group in the caldavd
+			accounts file, then reload the service. """
+
+		assert ltrace('caldavd', '| group_post_add_user_callback(%s in %s)'
+			% (login, name))
+
+		try:
+			#TODO: self.locks.accounts.acquire()
+			self.add_member(login, name)
+			self.__write_accounts_and_reload()
+			logging.progress('%s: added user %s in group %s in %s.' % (
+				self.name, login, name, self.paths.accounts))
+			return True
+		except Exception, e:
+			logging.warning('%s: %s' % (self.name, e))
+			print_exc()
+			return False		
+	def group_pre_del_user_callback(self, login, name, **kwargs):
+		""" delete a user from the members element of a group in the caldavd
+			accounts file, then reload the service. """
+
+		assert ltrace('caldavd', '| group_pre_del_user_callback(%s from %s)'
+			% (login, name))
+
+		try:
+			#TODO: self.locks.accounts.acquire()
+			self.del_member(login, name)
+			self.__write_accounts_and_reload()
+			logging.progress('%s: removed user %s from group %s in %s.' % (
+				self.name, login, name, self.paths.accounts))
+			return True
+		except Exception, e:
+			logging.warning('%s: %s' % (self.name, e))
+			print_exc()
+			return False		
+	def group_post_del_user_callback(self, **kwargs):
+		""" Lock the accounts file in prevision of a change. """
+		#return self.locks.accounts.acquire()
+		pass
 	def add_delegate(self):
 		""" TODO. """
 		pass
