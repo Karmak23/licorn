@@ -154,11 +154,16 @@ def check_aborted_daemon(pname, my_pid, exclude):
 			if int(entry) in exclude:
 				continue
 
-			if my_process_name in open('/proc/%s/cmdline' % entry).read():
-				os.kill(int(entry), signal.SIGKILL)
-				time.sleep(0.2)
-				logging.notice("%s(%s): killed aborted instance @pid %s." % (
-									pname, my_pid, entry))
+			try:
+				if my_process_name in open('/proc/%s/cmdline' % entry).read():
+					os.kill(int(entry), signal.SIGKILL)
+					time.sleep(0.2)
+					logging.notice("%s(%s): killed aborted instance @pid %s." % (
+										pname, my_pid, entry))
+			except (IOError, OSError), e:
+				# in rare cases, the process vanishes during the clean-up
+				if e.errno != 2:
+					raise e
 def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 	""" See if another daemon process if already running. If it is and we're not
 		asked to replace it, exit. Else, try to kill it and start. It the
