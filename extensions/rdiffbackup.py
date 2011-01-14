@@ -310,7 +310,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		assert ltrace(self.name, '| _rdiff_statistics(%s)' % volume)
 
 		with volume:
-			logging.info('%s: computing statistics on %s, '
+			logging.notice('%s: computing statistics on %s, '
 				'please wait.' % (self.name, volume))
 
 			start_time = time.time()
@@ -390,12 +390,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				self._rdiff_statistics(volume)
 	def _compute_needed_space(self, volume, clean=False):
 
-		print '>> please implement volumes._compute_needed_space(self, ...)'
-		pass
+		logging.progress('>> please implement volumes._compute_needed_space(self, ...)')
 	def _remove_old_backups(self, volume, size=None, number=None,
 															older_than=None):
-		print '>> please implement volumes._remove_old_backups(self, ...)'
-		pass
+		logging.progress('>> please implement volumes._remove_old_backups(self, ...)')
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
 
@@ -503,7 +501,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					'less that one hour.' % (self.name, volume))
 				return
 
-			logging.info('%s: backing up on%s %s.' % (
+			logging.notice('%s: starting backup on%s %s.' % (
 				self.name, ' first available'
 					if first_found else '', volume))
 
@@ -550,6 +548,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self._remove_old_backups(volume)
 			self._rdiff_statistics(volume)
+			logging.notice('%s: terminated backup procedure on %s.' % volume)
 	def _write_last_backup_file(self, volume):
 		""" Put :func:`time.time` in the last backup file. This file is here
 			to avoid doing more than one backup per hour.
