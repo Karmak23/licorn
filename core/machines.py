@@ -166,7 +166,7 @@ class MachinesController(Singleton, CoreController):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
-	def scan_network2(self, wait_until_finish=False,
+	def scan_network(self, wait_until_finish=False,
 		*args, **kwargs):
 		""" use nmap to scan a whole network and add all discovered machines to
 		the local configuration. """
@@ -202,72 +202,6 @@ class MachinesController(Singleton, CoreController):
 			queue_wait_for_pyroers(caller)
 
 		assert ltrace('machines', '< %s: scan_network2()' % caller)
-	def scan_network(self, network_to_scan=None, wait_until_finish=False,
-		*args, **kwargs):
-		""" use nmap to scan a whole network and add all discovered machines to
-		the local configuration. """
-
-		caller   = current_thread().name
-		pyroq    = dqueues.pyrosys
-		arpingq  = dqueues.arpings
-		reverseq = dqueues.reverse_dns
-
-		assert ltrace('machines', '> %s: scan_network(%s)' % (
-			caller, network_to_scan))
-
-		if network_to_scan is None:
-			network_to_scan = []
-			for iface in network.interfaces():
-				iface_infos = netifaces.ifaddresses(iface)
-				if 2 in iface_infos:
-					logging.info('Programming scan of local area network %s/%s.'
-						% (iface_infos[2][0]['addr'],
-							iface_infos[2][0]['netmask']))
-					# FIXME: don't hard-code /24, but nmap doesn't understand
-					# 255.255.255.0 and al...
-					network_to_scan.append('%s/24' % iface_infos[2][0]['addr'])
-				# else: interface as no IPv4 address assigned, skip it.
-
-		with self.lock():
-			current_mids = self.keys()
-
-		# we have to skip our own addresses, else pyro will die after having
-		# exhausted the max number of threads (trying connecting to ourself in
-		# loop...).
-		for iface in network.local_ip_addresses():
-			try:
-				up_hosts.remove(iface)
-			except:
-				pass
-
-		for hostip in self.find_up_hosts(network_to_scan):
-			if hostip in current_mids:
-				continue
-
-			with self.lock():
-				logging.info('found online machine with IP address %s' % hostip)
-
-				# create a fake hostname for now, the IP will be reversed a
-				# little later to get the eventual real DNS name of host.
-				#
-				# Use null_backend because the discovered hostname is stored
-				# nowhere for now. Don't yet know how to handle it, the discover
-				# function is just a pure bonus for demos.
-				machine = Machine(mid=hostip,
-					hostname=network.build_hostname_from_ip(hostip),
-					backend=Enumeration('null_backend'),
-					status=host_status.ONLINE)
-				self[hostip] = machine
-
-			arpingq.put(hostip)
-			reverseq.put(hostip)
-			pyroq.put(hostip)
-
-		# don't wait, search will be handled by the daemon. Give back hand to
-		# the calling CLI process.
-		if wait_until_finish:
-			queue_wait_for_reversers(caller)
-			queue_wait_for_pyroers(caller)
 	def find_up_hosts(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts. """
 

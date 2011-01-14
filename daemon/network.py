@@ -96,7 +96,7 @@ def thread_network_links_builder():
 	# queue_wait_for_pyroers(caller)
 	# queue_wait_for_arpingers(caller)
 
-	machines.scan_network2(wait_until_finished=False)
+	machines.scan_network(wait_until_finished=False)
 
 	logging.info('%s: %s initial network scan (took %s).' % (caller,
 		stylize(ST_STOPPED, 'finished'),
