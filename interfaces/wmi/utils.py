@@ -352,7 +352,7 @@ def menu(uri):
 </div>
 <div id="auxnav" class="nav">
 <ul>
-<li><a href="http://docs.licorn.org/userdoc.html" title="%s">%s</a></li>
+<li><a href="http://docs.licorn.org/userdoc/index.html" title="%s">%s</a></li>
 <li%s><a href="mailto:support@meta-it.fr?subject=[Support Licorn®] " title="%s">%s</a></li>
 </ul>
 </div>
