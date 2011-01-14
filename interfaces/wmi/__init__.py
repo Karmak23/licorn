@@ -108,7 +108,7 @@ class WMIObject():
 				) for ctx in self.wmi.context_menu_data ])
 	def _countdown(self, name, countdown_seconds, uri=None):
 		""" Always increment the
-			countdown with 3 seconds, else the webpage could refresh too early
+			countdown with 1 seconds, else the webpage could refresh too early
 			and display a new 2 seconds countdown, due to rounding errors.
 
 		http://www.plus2net.com/javascript_tutorial/countdown.php """
@@ -143,15 +143,19 @@ function display_countdown_{name}() {{
 	var x = "";
 
 	if (days > 0)
-		x = x + days + " {days}, ";
+		x += days + " {days}, ";
 
 	if (hours > 0)
-		x = x + hours + " {hours}, ";
+		x += hours + " {hours}, ";
 
 	if (minutes > 0)
-		x = x + minutes + " {minutes}, ";
+		x += minutes + " {minutes}";
 
-	x = x + secs + " {seconds}";
+	if (minutes > 0 && secs > 0)
+		x += ", ";
+
+	if (secs > 0)
+		x += secs + " {seconds}";
 
 	document.getElementById('countdown_{name}').innerHTML = x;
 
@@ -161,7 +165,7 @@ display_{name}({countdown_seconds});
 </script>
 <span id='countdown_{name}' class="countdown"></span>'''.format(
 	name=name,
-	countdown_seconds=countdown_seconds + 3.0,
+	countdown_seconds=countdown_seconds + 1.0,
 	days=_('day(s)'),
 	hours=_('hour(s)'),
 	minutes=_('minute(s)'),
