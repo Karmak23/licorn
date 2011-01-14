@@ -14,7 +14,7 @@ Basic objects used in all core controllers, backends, plugins.
 
 import Pyro.core, re, glob, os,posix1e
 from threading import RLock, current_thread
-
+from traceback import print_exc
 from licorn.foundations           import hlstr, exceptions, logging, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
@@ -870,9 +870,16 @@ class ModulesManager(LockedController):
 			module_name = entry[:-3]
 
 			class_name    = module_name.title() + self.module_type.title()
-			python_module = __import__(self.module_sym_path + '.' + module_name,
-											globals(), locals(), class_name)
-			module_class  = getattr(python_module, class_name)
+			try:
+				python_module = __import__(self.module_sym_path + '.' + module_name,
+												globals(), locals(), class_name)
+				module_class  = getattr(python_module, class_name)
+			except ImportError, e:
+				logging.warning('{0} unusable {1} {2}: {3}. Traceback follows:'.format(
+					stylize(ST_BAD, 'Skipped'), self.module_type,
+					stylize(ST_NAME, module_name), stylize(ST_COMMENT, e)))
+				print_exc()
+				continue
 
 			# VERY VERY basic dependancies resolver.
 			# FIXME: please, stop joking and implement a real deps-resolver.
