@@ -12,7 +12,7 @@ Extensions can "extend" :ref:`CoreController`s
 
 """
 
-import os
+import os, time
 from threading import RLock, Timer
 
 from licorn.foundations           import logging, exceptions
@@ -261,20 +261,39 @@ class ServiceExtension(LicornExtension):
 
 		if self.planned_operation:
 			if self.planned_operation != command_type:
+				logging.notice('%s: waiting for %s command to complete '
+					'before queuing %s.' % (self.name,
+					svccmds[self.planned_operation], svccmds[command_type]))
 
-				raise exceptions.BadArgumentError('%s: command %s '
-					'already in the queue, cannot plan a different '
-					'one. Please try again later.' % (self.name,
-						svccmds[self.planned_operation]))
-			else:
-				with self.command_lock:
-					# reset the timer.
-					self.command_thread.cancel()
-					del self.command_thread
+				waited = 0.0
+				raise_exc = False
+				while self.planned_operation:
+					if waited > 5.0:
+						if self.service_long:
+							logging.notice('%s: waiting 5 seconds more.')
+							if waited >= 10.0:
+								raise_exc = True
+						else:
+							raise_exc = True
 
-					self.command_thread = Timer(self.delay,
-								run_service_command, kwargs=thread_kwargs)
-					self.command_thread.start()
+					if raise_exc:
+						raise exceptions.LicornRuntimeException("%s: "
+							"command %s didn't complete in %s seconds, "
+							"cannot exectute a different one. Please try "
+							" again later." % (self.name,
+								svccmds[self.planned_operation], waited))
+
+					time.sleep(0.1)
+					waited += 0.1
+
+			with self.command_lock:
+				# reset the timer.
+				self.command_thread.cancel()
+				del self.command_thread
+
+				self.command_thread = Timer(self.delay,
+							run_service_command, kwargs=thread_kwargs)
+				self.command_thread.start()
 		else:
 			with self.command_lock:
 				self.planned_operation = command_type
