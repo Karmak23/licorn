@@ -140,9 +140,6 @@ class Volume:
 		#: who locked me ?
 		self.locker      = None
 
-		#: __unmount is used to remember the mount status between __enter__ and
-		#: __exit__ calls.
-		self.__unmount   = False
 		if mount_point:
 			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 		else:
@@ -158,7 +155,6 @@ class Volume:
 		#print '>> Volume.__enter__', current_thread().name
 		self.lock.acquire()
 		if self.mount_point is None:
-			self.__unmount = True
 			self.mount()
 		self.locker = current_thread()
 	def locked(self):
@@ -171,8 +167,6 @@ class Volume:
 	def __exit__(self, type, value, traceback):
 		""" TODO: use arguments... """
 		#print '>> Volume.__exit__', current_thread().name
-		if self.__unmount:
-			self.unmount()
 		self.locker = None
 		self.lock.release()
 	def __compute_mount_point(self):
