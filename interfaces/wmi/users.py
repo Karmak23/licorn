@@ -8,6 +8,8 @@ from licorn.foundations.constants import filters
 
 from licorn.core import LMC
 
+# warning: this import will fail if nobody has previously called wmi.init()
+# (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
 groups_filters_lists_ids = (
@@ -29,20 +31,12 @@ rewind = _('''<br /><br />Go back with your browser,'''
 successfull_redirect = '/users/list'
 
 # private functions.
-def __merge_multi_select(*lists):
-	final = []
-	for list in lists:
-		if list == []: continue
-		if type(list) == type(""):
-			final.append(list)
-		else:
-			final.extend(list)
-	return final
+
 def ctxtnav(active=True):
 
 	if active:
 		disabled = '';
-		onClick = '';
+		onClick  = '';
 	else:
 		disabled = 'un-clickable';
 		onClick  = 'onClick="javascript: return(false);"'
@@ -79,15 +73,7 @@ def export(uri, http_user, type="", yes=None, users=None, **kwargs):
 	del yes
 
 	title = _("Export user accounts list")
-	data  = '''<div id="banner">
-		%s
-		%s</div>
-		%s
-		<div id="main">
-		%s
-		<div id="content">
-		<h1>%s</h1>''' % (
-		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title)
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if type == "":
 		description = _('''CSV file-format is used by spreadsheets and most '''
@@ -457,7 +443,7 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 		if value is not None and value != '':
 			command.extend([ argument, value ])
 
-	add_groups = ','.join(__merge_multi_select(
+	add_groups = ','.join(w.merge_multi_select(
 							standard_groups_dest,
 							privileged_groups_dest,
 							responsible_groups_dest,
@@ -649,12 +635,12 @@ def record(uri, http_user, login, loginShell=None, password="",
 
 	command.extend( [ "--gecos", gecos ] )
 
-	add_groups = ','.join(__merge_multi_select(
+	add_groups = ','.join(w.merge_multi_select(
 								standard_groups_dest,
 								privileged_groups_dest,
 								responsible_groups_dest,
 								guest_groups_dest))
-	del_groups = ','.join(__merge_multi_select(
+	del_groups = ','.join(w.merge_multi_select(
 								standard_groups_source,
 								privileged_groups_source,
 								responsible_groups_source,
@@ -674,9 +660,6 @@ def main(uri, http_user, sort="login", order="asc", configuration=None,
 	users=None, groups=None, profiles=None, **kwargs):
 	""" display all users in a nice HTML page. """
 	start = time.time()
-
-	#print globals()
-	#print locals()
 
 	LMC.users.acquire()
 	LMC.groups.acquire()

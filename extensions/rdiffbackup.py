@@ -12,6 +12,10 @@ import os, sys, time
 
 from threading import RLock, Event
 
+import gettext
+_ = gettext.gettext
+gettext.textdomain('licorn')
+
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *
 from licorn.foundations.ltrace import ltrace
@@ -21,6 +25,7 @@ from licorn.core               import LMC
 from licorn.daemon.threads     import TriggerTimerThread, TriggerWorkerThread
 from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
+from licorn.interfaces.wmi     import WMIObject
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -28,7 +33,7 @@ class RdiffbackupException(exceptions.LicornRuntimeException):
 		.. versionadded:: 1.2.4
 	"""
 	pass
-class RdiffbackupExtension(Singleton, LicornExtension):
+class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 	""" Handle Incremental backups via rdiff-backup.
 
 		Web site: http://www.nongnu.org/rdiff-backup/
@@ -166,6 +171,22 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 		self.paths.increment_sizes_file = '.licorn.backup.increments.sizes'
 		self.paths.last_backup_file     = '.licorn.backup.last_time'
 		self.paths.globbing_file        = self._find_globbing_filelist()
+
+		self.create_wmi_object(uri='/backups', name=_('Backups'),
+				alt_string=_('Manage backups and restore files'),
+				context_menu_data=(
+					(_('Run backup'), '/backups/run',
+						_('Run a system incremental backup now'),
+						'ctxt-icon', 'icon-add'),
+					(_('Explore backups'), '/backups/search',
+						_('Search in backup history for files or '
+							'directories to restore'),
+						'ctxt-icon', 'icon-export'),
+					(_('Settings'), '/backups/settings',
+						_('Manage system backup settings'),
+						'ctxt-icon', 'icon-energyprefs'),
+				)
+			)
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -261,7 +282,7 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 							)
 			self.threads.auto_backup_worker = TriggerWorkerThread(
 							trigger_event=self.events.start_backup,
-							target=self.backup,
+							target=self.__backup_procedure,
 							pname='extensions',
 							tname='Rdiffbackup.AutoBackupWorker'
 							)
@@ -320,9 +341,23 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 	def _backup_dir(self, volume):
 		return volume.mount_point + '/' + self.paths.backup_directory
 	def _backup_enabled(self, volume):
-		with volume:
-			return os.path.exists(
-						)
+		""" Test if a volume is backup-enabled or not (the backup directory is
+			present on it.
+
+			.. note:: This method won't automatically mount connected but
+				unmounted volumes, to avoid confusing the user, displaying
+				an information as if the volumes was mounted, whereas it
+				is not (remember locking a volume will automatically mount
+				it, and unmount it right after the operation; in queries
+				it will appear mounted, even if the situation has changed
+				just after).
+
+		"""
+		if volume.mount_point:
+			backup_dir = self._backup_dir(volume)
+			return os.path.exists(backup_dir) and os.path.isdir(backup_dir)
+
+		return False
 	def _backup_enabled_volumes(self):
 		return [ volume for volume in self.volumes
 						if self._backup_enabled(volume) ]
@@ -349,31 +384,6 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 															older_than=None):
 		print '>> please implement volumes._remove_old_backups(self, ...)'
 		pass
-	def manual_backup(self, volume=None, force=False, batch=False):
-		""" Do a backup and reset the backup thread timer.
-
-			Provided your Licorn® daemon is attached to your terminal, you can
-			launch a manual backup in the daemon's interactive shell, like
-			this::
-
-				[…] [i on keyboard]
-				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
-				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
-				licornd> LMC.extensions.rdiffbackup.manual_backup(force=True)
-				[…]
-				licornd> [Control-D]
-				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
-				[…]
-
-		"""
-
-		self.threads.auto_backup_timer.reset()
-		# wait for the timer to acknoledge the reset action()
-		time.sleep(0.2)
-		self.threads.auto_backup_worker.trigger(volume=volume, force=force,
-			batch=batch)
-		logging.notice('%s: triggered a manual backup in the background (next automatic in %s).' % (
-				self.name, self.time_before_next_automatic_backup()))
 	def time_before_next_automatic_backup(self, as_string=True):
 		""" Display a notice about time remaining before next automatic backup.
 
@@ -395,7 +405,28 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 					self.threads.auto_backup_timer.remaining_time())
 		else:
 			return self.threads.auto_backup_timer.remaining_time()
-	def backup(self, volume=None, force=False, batch=False):
+	def backup(self, volume=None, force=False):
+		""" Do a backup and reset the backup thread timer.
+
+			Provided your Licorn® daemon is attached to your terminal, you can
+			launch a manual backup in the daemon's interactive shell, like
+			this::
+
+				[…] [i on keyboard]
+				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
+				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
+				licornd> LMC.extensions.rdiffbackup.manual_backup(force=True)
+				[…]
+				licornd> [Control-D]
+				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
+				[…]
+		"""
+
+		self.threads.auto_backup_timer.reset()
+		self.threads.auto_backup_worker.trigger(volume=volume, force=force)
+		logging.notice('%s: started backup in the background; next in %s.' % (
+						self.name, self.time_before_next_automatic_backup()))
+	def __backup_procedure(self, volume=None, force=False):
 		""" Do a complete backup procedure, which includes:
 
 			* finding a backup volume. If none is given, the first available
@@ -423,98 +454,88 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 				backup has been done in less than the configured
 				:term:`backup interval <backup.interval>`.
 
-			:param batch: a boolean to indicate that the current operation is
-				happening is headless and noninteractive mode, and thus no
-				exceptions should be raised because no-one could handle them.
-
-				When no exceptions are raised inside this method, a warning is
-				displayed in the daemon's log and the method simply returns
-				(this mechanism is used for automatic backup, when no backup
-				volume is available; is this situation, in standard CLI
-				conditions, an exception would be raised to be catched by the
-				calling CLI process).
-
 			.. note:: If a backup takes more than the configured
 				:term:`backup interval <backup.interval>` to complete, next
 				planned backup will not occur.
 
-			.. warning: If a volume is left is a locked state for any reason,
-				this is currently a problem because not future backup
-				will happen until the lock is released. **TODO:** we should
-				probably make this case more error-proof.
+			.. warning::
+				* **DO NOT CALL THIS METHOD DIRECTLY**. Instead, run
+				* If a volume is left is a locked state for any reason,
+				  this is currently a problem because not future backup
+				  will happen until the lock is released. **TODO:** we should
+				  probably make this case more error-proof.
 		"""
 
 		first_found = False
 
 		if volume is None:
-			first_found = True
 			try:
 				volume = self._enabled_volumes()[0]
+				first_found = True
+
 			except IndexError:
-				if batch:
-					logging.warning2('%s: no volumes to backup onto.' %
-																	self.name)
-					return
-				else:
-					raise RdiffBackupException('no volumes to backup onto!')
+				logging.warning2('%s: no volumes to backup onto, '
+					'aborting.' % self.name)
+				return
 
-		try:
-			with volume:
-				if not force and (
-						time.time() - self._last_backup_time(volume) <
-											LMC.configuration.backup.interval):
-					logging.info('%s: not backing up on %s, last backup is '
-						'less that one hour.' % (self.name, volume))
-					return
+		#if volume.locked():
+		#	logging.warning('%s: %s already locked, aborting backup' % (
+		#		self.name, volume))
+		#	return
 
-				logging.info('%s: backing up on%s %s.' % (
-					self.name, ' first available'
-						if first_found else '', volume))
+		with volume:
+			if not force and (
+					time.time() - self._last_backup_time(volume) <
+										LMC.configuration.backup.interval):
+				logging.info('%s: not backing up on %s, last backup is '
+					'less that one hour.' % (self.name, volume))
+				return
 
-				backup_directory = self._backup_dir(volume)
+			logging.info('%s: backing up on%s %s.' % (
+				self.name, ' first available'
+					if first_found else '', volume))
 
-				if not os.path.exists(backup_directory):
-					os.mkdir(backup_directory)
-					logging.progress('%s: created directory %s.'
-										% stylize(ST_PATH, backup_directory))
+			backup_directory = self._backup_dir(volume)
 
-				self._compute_needed_space(volume, clean=True)
+			if not os.path.exists(backup_directory):
+				os.mkdir(backup_directory)
+				logging.progress('%s: created directory %s.'
+									% stylize(ST_PATH, backup_directory))
 
-				command = self.commands.ionice[:]
-				command.extend(self.commands.nice[:])
+			self._compute_needed_space(volume, clean=True)
 
-				rdiff_command = [ self.paths.binary, '/', self._backup_dir(volume) ]
+			command = self.commands.ionice[:]
+			command.extend(self.commands.nice[:])
 
-				if os.path.exists(self.paths.globbing_file):
-					rdiff_command.insert(1, self.paths.globbing_file)
-					rdiff_command.insert(1, '--include-globbing-filelist')
-				else:
-					logging.warning2("%s: Rdiff-backup configuration file %s "
-						"doesn't exist." % (self.name,
-							stylize(ST_PATH, self.paths.globbing_file)))
+			rdiff_command = [ self.paths.binary, '/', self._backup_dir(volume) ]
 
-				command.extend(rdiff_command)
+			if os.path.exists(self.paths.globbing_file):
+				rdiff_command.insert(1, self.paths.globbing_file)
+				rdiff_command.insert(1, '--include-globbing-filelist')
+			else:
+				logging.warning2("%s: Rdiff-backup configuration file %s "
+					"doesn't exist." % (self.name,
+						stylize(ST_PATH, self.paths.globbing_file)))
 
-				self._write_last_backup_file(volume)
+			command.extend(rdiff_command)
 
-				assert ltrace(self.name, '  executing %s, please wait.' %
-															' '.join(command))
-				backup_start = time.time()
+			self._write_last_backup_file(volume)
 
-				output, error = process.execute(command)
+			assert ltrace(self.name, '  executing %s, please wait.' %
+														' '.join(command))
+			backup_start = time.time()
 
-				assert ltrace('timings', 'rdiff-backup duration on %s: %s.'
-									% (volume, pyutils.format_time_delta(
-												time.time() - backup_start)))
+			output, error = process.execute(command)
 
-				# FIXME: do this a better way
-				sys.stderr.write(error)
+			assert ltrace('timings', 'rdiff-backup duration on %s: %s.'
+								% (volume, pyutils.format_time_delta(
+											time.time() - backup_start)))
 
-				self._remove_old_backups(volume)
-				self._rdiff_statistics(volume)
-		except VolumeException, e:
-			logging.warning("%s: can't backup on %s, it's not available "
-				"(was: %s)." % (self.name, volume, e))
+			# FIXME: do this a better way
+			sys.stderr.write(error)
+
+			self._remove_old_backups(volume)
+			self._rdiff_statistics(volume)
 	def _write_last_backup_file(self, volume):
 		""" Put :func:`time.time` in the last backup file. This file is here
 			to avoid doing more than one backup per hour.
@@ -547,3 +568,181 @@ class RdiffbackupExtension(Singleton, LicornExtension):
 			except (IOError, OSError), e:
 				if e.errno == 2:
 					return 0.0
+	def _wmi__status(self):
+		""" Method called from wmi:/, to integrate backup informations on the
+			status page. """
+
+		return '<strong>NOTHING YET</strong>'
+	def _backup_informations(self, volume, as_string=False):
+		""" Return a string"""
+		if as_string:
+			return '{last_backup}<br />{next_backup}'.format(
+					last_backup=_('Last backup on this volume '
+						'occured {0}.').format(pyutils.format_time_delta(
+						(self._last_backup_time(volume) - time.time()),
+							use_neg=True)),
+					next_backup=_("Next backup will occur in {0}.").format(
+						self.time_before_next_automatic_backup()))
+		else:
+			return (self._last_backup_time(volume) - time.time(),
+				self.time_before_next_automatic_backup())
+	def _wmi_run(self, uri, http_user, volume=None, force=False, **kwargs):
+		""" Run a backup from the WMI. Propose the user to force the
+			operation if the last backup is less than one hour. """
+
+		w = self.utils
+		title = _('Run a manual backup')
+
+		auto_select = ''
+		if volume is None:
+			try:
+				volume = self._enabled_volumes()[0]
+				auto_select = ('<div style="text-align: center:">%s</div>'
+					% _('Note: auto-selected volume {volume} for next '
+						'backup.').format(volume=volume.mount_point))
+			except IndexError:
+				return (w.HTTP_TYPE_TEXT, w.page(title,
+					w.error(_("No volume to backup onto. "
+						"Please plug one before starting this procedure."))))
+		else:
+			volume=self.volumes['/dev/'+volume]
+
+		last_backup_time = time.time() - self._last_backup_time(volume)
+
+		if last_backup_time < LMC.configuration.backup.interval and not force:
+
+			title = _('Run a manual backup on volume {0}').format(
+															volume.mount_point)
+			data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
+
+			data += w.question(
+				_('Recent backup detected'),
+				_('{auto_select}<br /><br />The last backup has been run '
+					'recently ({last_backup_time}), in less than the '
+					'system configured interval ({interval}). Are you '
+					'sure you want to force a manual backup now?').format(
+						auto_select=auto_select,
+						last_backup_time=pyutils.format_time_delta(
+								-last_backup_time, use_neg=True),
+						interval=pyutils.format_time_delta(
+							LMC.configuration.backup.interval)),
+				yes_values   = \
+					[ _("Run >>"), "/backups/run/%s/force" %
+							volume.device.rsplit('/', 1)[1], _("R") ],
+				no_values    = \
+					[ _("<< Cancel"),   "/backups",      _("C") ])
+
+			return (w.HTTP_TYPE_TEXT,
+				w.page(title, data + w.page_body_end()))
+
+		else:
+			# we've got to translate the 'force' boolean because WMI doesn't
+			# forward them as real boolean (it sends force='force' or None).
+			self.backup(volume=volume, force=True if force else False)
+			return (self.utils.HTTP_TYPE_REDIRECT,
+							self.wmi.successfull_redirect)
+	def _wmi_eject(self, uri, http_user, device, **kwargs):
+		""" Eject a device, from the WMI. """
+
+		device = '/dev/' + device
+		volume = self.volumes[device]
+		title  = _("Eject volume {device}").format(device=device)
+
+		if volume.locked():
+			backup_info = (_(' (a backup is underway)')
+				if self.threads.auto_backup_worker.running()
+					and volume.locker is self else
+						' (locked by {locker})'.format(
+							locker=volume.locker.name))
+
+
+			return (w.HTTP_TYPE_TEXT, w.page(title,
+				w.error(_("Volume is in use{backup_info}, "
+					"can't eject it!{rewind}").format(
+						backup_info=backup_info,rewind=self.wmi.rewind))))
+
+		self.volumes[device].unmount()
+		return (self.utils.HTTP_TYPE_REDIRECT, self.wmi.successfull_redirect)
+	def _wmi_main(self, uri, http_user, sort="date", order="asc", **kwargs):
+		""" Main backup list (integrates volumes). """
+		start = time.time()
+
+		w = self.utils
+
+		title = _("System backups")
+		data  = w.page_body_start(uri, http_user, self._ctxtnav, '')
+
+		backup_volumes = self._backup_enabled_volumes()
+
+		if backup_volumes == []:
+
+			base_div = ('<div style="font-size:120%; '
+				'text-align: justify; margin-left:33%; '
+				'margin-right: 33%;">{message}</div>')
+
+			if self.volumes == []:
+
+				data += base_div.format(message=_('No backup volume found. '
+					'Please connect your backup volume to your server, for '
+					'backup to automatically start.'))
+
+			else:
+
+				data += base_div.format(message=_('No backup found, or all '
+					'backup volumes currently unmounted. Next '
+					'automatic backup will occur in {countdown}. '
+					'Please wait until then, or <a href="{uri}">run a manual '
+					'backup now</a>.').format(
+						countdown=self.time_before_next_automatic_backup(),
+						uri='/backups/run')
+					)
+
+			return (w.HTTP_TYPE_TEXT, w.page(title,
+				data + w.page_body_end(w.total_time(start, time.time()))))
+
+		#
+		# display backup data for each connected volume.
+		#
+
+		if self.threads.auto_backup_worker.active():
+			backup_status = '<div class="important">{0}</div>'.format(
+				_("A backup is currently in progress, "
+				"please don't disconnect <strong>{volume}</strong>.").format(
+					volume=''.join([ str(vol) for vol in self.volumes
+														if vol.locked()])))
+		else:
+			backup_status = None
+
+		for volume in backup_volumes:
+			base_div = ('<h2>{h2title}</h2><p>{backup_info}</p>\n'
+				'<pre style="margin-left:15%; '
+				'margin-right: 15%;">{rdiff_output}</pre>')
+
+			data += base_div.format(
+					backup_info=(self._backup_informations(volume,
+															as_string=True)
+									if backup_status is None else ''),
+					h2title=_('Backups on {mount_point} '
+						'({eject_status}):').format(
+						mount_point=volume.mount_point,
+						eject_status=(
+							_("Can't eject, backup in progress")
+							if volume.locked()
+							else '<a href="{eject_uri}">'
+							'{eject_message}</a>'.format(
+								eject_message=_('eject the volume'),
+								eject_uri=('/backups/eject/'
+									+ volume.device.rsplit('/', 1)[1]),
+								eject_img=(
+								'<img src="/images/48x48/media-eject.png" alt="'
+								+ _('Eject device icon') + '" />'
+									)
+								)
+							)
+						),
+					rdiff_output=open(volume.mount_point
+						+ '/' + self.paths.increment_sizes_file).read().strip()
+				)
+
+		return (w.HTTP_TYPE_TEXT, w.page(title,
+			data + w.page_body_end(w.total_time(start, time.time()))))

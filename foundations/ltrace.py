@@ -86,7 +86,7 @@ trc['cmdlistener']   = 0x000000200000000000000000
 # the next 2 are identical, this is meant to be, for syntaxic eases
 trc['thread']        = 0x000000400000000000000000
 trc['threads']       = 0x000000400000000000000000
-trc['wmi']           = 0x000000800000000000000000
+trc['http']          = 0x000000800000000000000000
 trc['rwi']           = 0x000001000000000000000000
 trc['client']        = 0x000002000000000000000000
 trc['interactor']    = 0x000004000000000000000000
@@ -100,6 +100,8 @@ trc['del']           = 0x000400000000000000000000
 trc['chk']           = 0x000800000000000000000000
 trc['get']           = 0x001000000000000000000000
 trc['argparser']     = 0x002000000000000000000000
+trc['wmi']           = 0x004000000000000000000000
+
 
 trc['highlevel']     = trc['all'] ^ trc['foundations']
 trc['high']          = trc['highlevel']

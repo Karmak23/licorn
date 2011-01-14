@@ -10,7 +10,7 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 import os, gamin, dbus, pyudev, select, re
 from traceback import print_exc
-from threading import RLock
+from threading import RLock, current_thread
 
 from licorn.foundations           import logging, pyutils, process, exceptions
 from licorn.foundations.styles    import *
@@ -66,8 +66,12 @@ class UdevMonitorThread(LicornBasicThread):
 	def __init__(self):
 		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
 
-		LicornBasicThread.__init__(self, pname='extensions', tname='Volumes.UdevMonitor')
+		LicornBasicThread.__init__(self, pname='extensions',
+			tname='Volumes.UdevMonitor')
 
+		# set daemon in case we take too much time unihibiting udisks
+		# while daemon is stopping.
+		self.daemon = True
 		self.udev_monitor = pyudev.Monitor.from_netlink(pyudev.Context())
 		self.udev_monitor.filter_by(subsystem='block')
 		self.udev_monitor.enable_receiving()
@@ -132,6 +136,10 @@ class Volume:
 		self.guid        = guid
 		self.mount_point = mount_point
 		self.lock        = RLock()
+
+		#: who locked me ?
+		self.locker      = None
+
 		#: __unmount is used to remember the mount status between __enter__ and
 		#: __exit__ calls.
 		self.__unmount   = False
@@ -145,18 +153,27 @@ class Volume:
 		return 'volume %s%s' % (
 					stylize(ST_DEVICE, self.device),
 					' (%s)' % stylize(ST_PATH, self.mount_point)
-						if self.mount_point else '(currently not mounted)')
+						if self.mount_point else ' (currently not mounted)')
 	def __enter__(self):
-		if self.lock.acquire(False):
-			if self.mount_point is None:
-				self.__unmount = True
-				self.mount()
-		else:
-			raise VolumeException('volume %s already locked.' % str(self))
+		#print '>> Volume.__enter__', current_thread().name
+		self.lock.acquire()
+		if self.mount_point is None:
+			self.__unmount = True
+			self.mount()
+		self.locker = current_thread()
+	def locked(self):
+		""" Return ``True`` if instance is currently locked, else ``False``. """
+		if self.lock.acquire(blocking=False):
+			self.lock.release()
+			return False
+		#print '>> locked by', self.locker
+		return True
 	def __exit__(self, type, value, traceback):
 		""" TODO: use arguments... """
+		#print '>> Volume.__exit__', current_thread().name
 		if self.__unmount:
 			self.unmount()
+		self.locker = None
 		self.lock.release()
 	def __compute_mount_point(self):
 		if self.label:

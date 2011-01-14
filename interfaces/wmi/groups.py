@@ -8,21 +8,13 @@ from licorn.foundations.constants import filters
 
 from licorn.core import LMC
 
+# warning: this import will fail if nobody has previously called wmi.init()
+# (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'
 
-# private functions.
-def __merge_multi_select(*lists):
-	final = []
-	for list in lists:
-		if list == []: continue
-		if type(list) == type(""):
-			final.append(list)
-		else:
-			final.extend(list)
-	return final
 def ctxtnav(active=True):
 
 	if active:
@@ -642,14 +634,14 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	else:
 		command.extend([ '--not-permissive' ])
 
-	add_members = ','.join(__merge_multi_select(members_dest))
-	del_members = ','.join(__merge_multi_select(members_source))
+	add_members = ','.join(w.merge_multi_select(members_dest))
+	del_members = ','.join(w.merge_multi_select(members_source))
 
-	add_resps = ','.join(__merge_multi_select(resps_dest))
-	del_resps = ','.join(__merge_multi_select(resps_source))
+	add_resps = ','.join(w.merge_multi_select(resps_dest))
+	del_resps = ','.join(w.merge_multi_select(resps_source))
 
-	add_guests = ','.join(__merge_multi_select(guests_dest))
-	del_guests = ','.join(__merge_multi_select(guests_source))
+	add_guests = ','.join(w.merge_multi_select(guests_dest))
+	del_guests = ','.join(w.merge_multi_select(guests_source))
 
 	for (var, cmd) in (
 		(add_members, "--add-users"),

@@ -25,11 +25,18 @@ from licorn.core import LMC
 
 class WMIThread(LicornBasicThread):
 	def __init__(self, pname):
+		assert ltrace('http', 'WMIThread.__init__(%s)' % pname)
 		LicornBasicThread.__init__(self, pname=pname, tname='wmi')
 	def run(self):
 
-		#logging.notice('''%s(%d): started, waiting for master to become '''
+		assert ltrace('http', 'WMIThread.run()')
+		#logging.progress('''%s(%d): started, waiting for master to become '''
 		#	'''ready.''' % (pname, os.getpid()))
+
+		# We do this here, to avoid
+		import licorn.interfaces.wmi as wmi
+		WMIHTTPRequestHandler.wmi = wmi
+		WMIHTTPRequestHandler.wmi.init()
 
 		if options.wmi_listen_address:
 			# the daemon CLI argument has priority over the configuration
@@ -50,11 +57,7 @@ class WMIThread(LicornBasicThread):
 			raise NotImplementedError(
 				'getting interface address is not yet implemented.')
 
-		assert ltrace('wmi', '  fork_wmi(addr=%s, port=%s)' % (
-			listen_address,	LMC.configuration.licornd.wmi.port))
-
 		count = 0
-
 		while not self._stop_event.is_set():
 			# try creating an http server.
 			# if it fails because of socket already in use, just retry
@@ -79,15 +82,23 @@ class WMIThread(LicornBasicThread):
 					return
 
 		logging.notice('%s: %s to answer requests at address %s.' % (
-			self.name, stylize(ST_OK, 'ready'), stylize(ST_ADDRESS, 'http://%s:%s/' % (
+			self.name, stylize(ST_OK, 'ready'),
+			stylize(ST_ADDRESS, 'http://%s:%s/' % (
 				listen_address, LMC.configuration.licornd.wmi.port))))
 
 		self.httpd.serve_forever()
 	def stop(self):
+		assert ltrace('http', 'WMIThread.stop()')
 		LicornBasicThread.stop(self)
 		if self.httpd:
 			self.httpd.shutdown()
+
 class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
+	""" TODO. """
+	#: this is a reference to the licorn.interfaces.wmi module.
+	#: it will be filled on thread load, to avoid us re-charging it at
+	#: each HTTP request.
+	wmi = None
 	def do_HEAD(self):
 		try:
 			f = self.send_head()
@@ -238,12 +249,9 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		retdata = None
 		rettype = None
 
-		import licorn.interfaces.wmi as web
-		w = web.utils
-
 		# GET / has special treatment :-)
 		if self.path == '/':
-			rettype, retdata = web.base.index(
+			rettype, retdata = self.wmi.base.index(
 				self.path, self.http_user)
 
 		else:
@@ -259,30 +267,30 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			elif args[1] == 'list':
 				args[1] = 'main'
 
-			if args[0] in dir(web):
+			if args[0] in dir(self.wmi):
 				logging.progress("Serving %s %s for http_user %s." % (
 					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s %s)' % (
+					py_code = 'rettype, retdata = self.wmi.%s.%s("%s", "%s" %s %s)' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
 							if len(args)>2 else ', ',
 						', '.join(self.format_post_args()),
 						)
 				else:
-					py_code = 'rettype, retdata = web.%s.%s("%s", "%s" %s )' % (
+					py_code = 'rettype, retdata = self.wmi.%s.%s("%s", "%s" %s )' % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:])
 							if len(args)>2 else ', ')
 
 				try:
-					assert ltrace('wmi',
+					assert ltrace('http',
 						'serve_virtual_uri:exec("%s")' % py_code)
 					#TODO: #431
 					#for i in postargs.iteritems() :
 					#	kwargs[i] = i
-					#getattr(getattr(web, niv1), niv2)(self.path, self.htt_user, **kwargs)
+					#getattr(getattr(wmi, niv1), niv2)(self.path, self.htt_user, **kwargs)
 					exec py_code
 
 				except (AttributeError, NameError), e:
@@ -293,18 +301,19 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					logging.warning("exec(%s): %s." % (py_code, e))
 					self.send_error(500,
 						"Internal server error or bad request.\n\n%s" %
-							w.get_traceback(e))
+							self.wmi.utils.get_traceback(e))
 
 				except TypeError, e:
 					logging.warning('Bad_Request/TypeError: %s.' % e)
-					rettype, retdata = 	w.bad_arg_error(w.get_traceback(e))
+					rettype, retdata = 	self.wmi.utils.bad_arg_error(
+											self.wmi.utils.get_traceback(e))
 
 				except exceptions.LicornRuntimeException, e:
 					logging.warning('Bad_Request/LicornRuntimeException: %s.'
 						% e)
-					rettype, retdata = w.forgery_error()
+					rettype, retdata = self.wmi.utils.forgery_error()
 			else:
-				# not a web.* module
+				# not a self.wmi.* module
 				raise exceptions.LicornWebException(
 					'Bad base request (probably a regular file request).')
 
@@ -313,11 +322,11 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		if retdata:
 
-			if rettype in ('img', w.HTTP_TYPE_IMG):
+			if rettype in ('img', self.wmi.utils.HTTP_TYPE_IMG):
 				self.send_response(200)
 				self.send_header("Content-type", 'image/png')
 
-			elif rettype == w.HTTP_TYPE_DOWNLOAD:
+			elif rettype == self.wmi.utils.HTTP_TYPE_DOWNLOAD:
 				# fix #104
 				self.send_response(200)
 				self.send_header('Content-type',
@@ -332,7 +341,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				# make retdata suitable for next operation.
 				retdata = retdata[1]
 
-			elif rettype == w.HTTP_TYPE_REDIRECT:
+			elif rettype == self.wmi.utils.HTTP_TYPE_REDIRECT:
 				# special entry, which should not return any data, else
 				# the redirect won't work.
 
@@ -351,7 +360,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 				return ''
 
-			else: # w.HTTP_TYPE_TEXT
+			else: # self.wmi.utils.HTTP_TYPE_TEXT
 				self.send_response(200)
 				self.send_header("Content-type", 'text/html; charset=utf-8')
 				self.send_header("Pragma", "no-cache")
@@ -366,7 +375,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		path = self.translate_path(self.path)
 
-		assert ltrace('wmi', 'serving file: %s.' % path)
+		assert ltrace('http', 'serving file: %s.' % path)
 
 		if os.path.exists(path):
 

@@ -4,6 +4,8 @@ from gettext import gettext as _
 
 from licorn.core import LMC
 
+# warning: this import will fail if nobody has previously called wmi.init()
+# (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
 def ctxtnav():

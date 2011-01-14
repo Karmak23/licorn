@@ -11,9 +11,11 @@ from licorn.foundations.pyutils   import format_time_delta
 
 from licorn.core import LMC
 
+# warning: this import will fail if nobody has previously called wmi.init()
+# (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
-def ctxtnav():
+def ctxtnav(active=True):
 	return '''
 	<div id="ctxtnav" class="nav">
         <h2>Context Navigation</h2>
@@ -30,9 +32,87 @@ def ctxtnav():
 		_('Restart server'),
 		_('Shutdown server.'),
 		_('Shutdown server'))
+def _flotr_pie_ram(progs, cache, buff, free):
 
-def system_load():
-	loads = open('/proc/loadavg').read().split(" ")
+	return '''<div id="flotr_memory" style="width:450px;height:300px;"></div>
+	<script type="text/javascript">
+	document.observe('dom:loaded', function(){
+// Fill series.
+var d1 = [[0, "%.2f"]];
+var d2 = [[0, "%.2f"]];
+var d3 = [[0, "%.2f"]];
+var d4 = [[0, "%.2f"]];
+
+//Draw the graph.
+var f = Flotr.draw($('flotr_memory'), [
+	{data:d1, label: '%s'},
+	{data:d2, label: '%s'},
+	{data:d3, label: '%s'},
+	{data:d4, label: '%s', pie: {explode: 20}}
+], {
+colors: ['#FB8B00', '#EEC73E', '#C0D800', '#4DA74D' ],
+title: "%s",
+HtmlText: true,
+grid: {
+verticalLines: false,
+horizontalLines: false,
+outlineWidth: 0
+},
+xaxis: {showLabels: false},
+yaxis: {showLabels: false},
+pie: {show: true},
+legend:{
+position: 'ne',
+backgroundColor: '#FFFFFF'
+}
+});
+});
+</script>
+''' % (progs, cache, buff, free,
+	_('Programs'), _('Cache'), _('Buffers'), _('Free'),
+	_('Memory occupation')
+	)
+def _flotr_pie_swap(used, free):
+
+	return '''<div id="flotr_swap" style="width:450px;height:300px;"></div>
+	<script type="text/javascript">
+	document.observe('dom:loaded', function(){
+// Fill series.
+var d1 = [[0, "%.2f"]];
+var d2 = [[0, "%.2f"]];
+
+//Draw the graph.
+var f = Flotr.draw($('flotr_swap'), [
+	{data:d1, label: '%s'},
+	{data:d2, label: '%s'}
+], {
+colors: ['#cb4b4b', '#4da74d' ],
+title: "%s",
+HtmlText: true,
+grid: {
+verticalLines: false,
+horizontalLines: false,
+outlineWidth: 0
+},
+xaxis: {showLabels: false},
+yaxis: {showLabels: false},
+pie: {show: true},
+legend:{
+position: 'ne',
+backgroundColor: '#FFFFFF'
+}
+});
+});
+</script>
+''' % (used, free, _('Used'), _('Free'), _('Swap occupation'))
+def index(uri, http_user, **kwargs):
+
+	start = time.time()
+
+	title = _("Server status")
+	data  = w.page_body_start(uri, http_user, ctxtnav, '')
+
+	loads   = open('/proc/loadavg').read().split(" ")
 	nbusers = len(LMC.users.Select(filters.STANDARD))
 
 	cxusers = len(process.execute(['who'])[0].split('\n'))
@@ -44,13 +124,6 @@ def system_load():
 	uptime_string = format_time_delta(
 		int(float(open('/proc/uptime').read().split(" ")[0])))
 
-	return _('''Up and running since <strong>%s</strong>.<br /><br />
-Users: <strong>%d</strong> total, <strong>%d currently connected</strong>.
-<br /><br />
-1, 5, and 15 last minutes load average: <strong>%s</strong>, %s, %s''') % (
-	uptime_string, nbusers, cxusers, loads[0], loads[1], loads[2])
-def system_info():
-
 	cpus  = 0
 	model = ''
 
@@ -59,9 +132,9 @@ def system_info():
 		if line[0:10] == 'model name': model = line.split(': ')[1]
 
 	if cpus > 1:
-		s = 's'
+		s_cpu = 's'
 	else:
-		s = ''
+		s_cpu = ''
 
 	mem = {}
 
@@ -72,7 +145,7 @@ def system_info():
 
 		if split[0] == x:
 			try:
-				return { x: float(split[1]) / 1048576.0 }
+				return { x: float(split[1]) / 1000.0 }
 			except:
 				# skip "Active(xxx)" and other mixed entries from /proc/meminfo.
 				return {}
@@ -88,34 +161,80 @@ def system_info():
 		# no swap on this system. Weird, but possible. fixes #40
 		swap_message = _("no virtual memory installed.")
 	else:
-		swap_message = \
-			_("Virtual memory: %.2f Gb total, <strong>%.0f%% free<strong>.") % \
-				(mem['SwapTotal'], (mem['SwapFree'] * 100.0 / mem['SwapTotal']))
+		swap_message = (_("virtual memory: <strong>%.2f</strong> Mb total.")
+															% mem['SwapTotal'])
 
-	return  _('''
-Processor%s: %d x <strong>%s</strong><br /><br />
-Physical memory: <strong>%.2fGb</strong> total,<br />
-%.2f Gb for programs, %.2f Gb for cache, %.2f Gb for buffers.<br /><br />
-%s''') % (s, cpus, model, mem['MemTotal'], (mem['Inactive'] + mem['Active']),
-	mem['Cached'], mem['Buffers'], swap_message)
-def index(uri, http_user, LMC=None, *args, **kwargs):
-
-	start = time.time()
-
-	title = _("Server status")
-	data  = '''<div id="banner">\n%s\n%s\n%s\n</div><!-- banner -->
-		<div id="main">\n%s\n<div id="content">''' % (
-			w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav())
+	def load_background(load):
+		if load <= 0.5:
+			return '4DA74D'
+		elif load <= 1.0:
+			return 'C0D800'
+		elif load <= 1.5:
+			return 'EEC73E'
+		elif load <= 2.0:
+			return 'FB8B00'
+		elif load <= 3.0:
+			return 'cb4b4b'
 
 	data += '''
 	<table>
 	<tr>
-		<td><h1>%s</h1><br />%s</td>
-		<td><h1>%s</h1>%s</td>
+		<td style="vertical-align: top; padding-bottom:50px;">
+			<h1>%s</h1>
+			<p>%s<br /><br /></p>
+		</td>
+		<td style="vertical-align: top; padding-bottom:50px;">
+			<h1>%s</h1>
+			<p>%s</p>
+		</td>
+	</tr>
+	<tr>
+		<td style="vertical-align: top;">
+
+				%s
+
+		</td>
+		<td style="vertical-align: top;">
+
+				%s
+
+		</td>
 	</tr>
 	</table>
-	''' % (_('System information'), system_info(),
-		_('System status'), system_load())
+	''' % (
+			_('System status'),
+			_('Up and running since <strong>{uptime}</strong>.<br /><br />'
+				'Users: <strong>{accounts}</strong> accounts, '
+				'<strong>{connected} open sessions</strong>.<br /><br />'
+				'1, 5, and 15 last minutes load average: '
+				'<span class="load_avg" style="background-color: #{load_back1};">{load1}</span> '
+				'<span class="load_avg" style="background-color: #{load_back5};">{load5}</span> '
+				'<span class="load_avg" style="background-color: #{load_back15};">{load15}</span>').format(
+				uptime=uptime_string, accounts=nbusers, connected=cxusers,
+				load1=loads[0], load5=loads[1], load15=loads[2],
+				load_back1=load_background(float(loads[0])),
+				load_back5=load_background(float(loads[1])),
+				load_back15=load_background(float(loads[2]))),
+
+			_('System information'),
+			_('Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong>'
+				'<br /><br />'
+				'Physical memory: <strong>{ram:.2f}Mb</strong> total;<br />'
+				'{swap_total}').format(
+					s_cpu=s_cpu, nb_cpu=cpus, cpu_model=model,
+					ram=mem['MemTotal'],
+					swap_total=swap_message),
+
+			_flotr_pie_ram(
+				mem['Inactive'] + mem['Active'],
+				mem['Cached'],
+				mem['Buffers'],
+				mem['MemFree']
+			),
+
+			_flotr_pie_swap(mem['SwapTotal']-mem['SwapFree'], mem['SwapFree'])
+				if swap_message != '' else ''
+		)
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
 		data + w.page_body_end(w.total_time(start, time.time()))))

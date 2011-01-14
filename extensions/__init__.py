@@ -25,6 +25,8 @@ from licorn.foundations.constants import services, svccmds, licornd_roles
 from licorn.core               import LMC
 from licorn.core.classes       import ModulesManager, CoreModule
 
+from licorn.interfaces.wmi import utils as _wmi_utils
+
 class ExtensionsManager(Singleton, ModulesManager):
 	""" Store and manage all Licorn® extensions instances. For now, this
 		manager does nothing more than the

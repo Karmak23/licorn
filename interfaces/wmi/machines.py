@@ -9,23 +9,15 @@ from licorn.foundations.constants import host_status, filters
 
 from licorn.core import LMC
 
+# warning: this import will fail if nobody has previously called wmi.init()
+# (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
 rewind = _('''<br /><br />Go back with your browser,'''
 	''' double-check data and validate the web-form.''')
 successfull_redirect = '/machines/list'
 
-# private functions.
-def __merge_multi_select(*lists):
-	final = []
-	for list in lists:
-		if list == []: continue
-		if type(list) == type(""):
-			final.append(list)
-		else:
-			final.extend(list)
-	return final
-def ctxtnav(active = True):
+def ctxtnav(active=True):
 
 	if active:
 		disabled = '';
@@ -216,15 +208,7 @@ def export(uri, http_user, type = "", yes=None, configuration=None,
 	return (w.HTTP_TYPE_TEXT, "not implemented yet.")
 
 	title = _("Export machines list")
-	data  = '''<div id="banner">
-		%s
-		%s</div>
-		%s
-		<div id="main">
-		%s
-		<div id="content">
-		<h1>%s</h1>''' % (
-		w.backto(), w.metanav(http_user), w.menu(uri), ctxtnav(), title)
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	if type == "":
 		description = _('''CSV file-format is used by spreadsheets and most '''
@@ -481,7 +465,7 @@ def create(uri, http_user, loginShell, password, password_confirm,
 
 	command    = [ "sudo", "mod", "machine", '--quiet', "--no-colors",
 		"--hostname", hostname, "--shell", loginShell ]
-	add_groups = ','.join(__merge_multi_select(
+	add_groups = ','.join(w.merge_multi_select(
 							standard_groups_dest,
 							privileged_groups_dest,
 							responsible_groups_dest,
@@ -665,12 +649,12 @@ def record(uri, http_user, hostname, loginShell=None,
 
 	command.extend( [ "--gecos", gecos ] )
 
-	add_groups = ','.join(__merge_multi_select(
+	add_groups = ','.join(w.merge_multi_select(
 								standard_groups_dest,
 								privileged_groups_dest,
 								responsible_groups_dest,
 								guest_groups_dest))
-	del_groups = ','.join(__merge_multi_select(
+	del_groups = ','.join(w.merge_multi_select(
 								standard_groups_source,
 								privileged_groups_source,
 								responsible_groups_source,

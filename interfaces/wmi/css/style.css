@@ -604,6 +604,13 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	font-weight: bold;
 }
 
+.load_avg {
+	padding: 4px;
+	display: inline;
+	font-weight: bolder;
+	border-radius:5px;
+}
+
 .lined {
 	border-bottom: 3px solid #ccc;
 	margin: 0 3em;

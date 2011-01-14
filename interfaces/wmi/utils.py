@@ -49,6 +49,16 @@ acronyms = {
 	'WMI' : _('Licorn® Web Management Interface')
 	}
 
+def merge_multi_select(*lists):
+	final = []
+	for list in lists:
+		if list == []: continue
+		if type(list) == type(""):
+			final.append(list)
+		else:
+			final.extend(list)
+	return final
+
 # EXEC / SYSTEM functions.
 def run(command, successfull_redirect, page_data, error_message):
 	"""Execute a command passed as a list or tuple"""
@@ -229,7 +239,7 @@ def metanav(http_user):
 	"""
 	return '<div id="metanav" class="nav"><ul><li>%s</li></ul></div>' \
 	% (_('Logged in as %s') % http_user)
-def page_body_start(uri, http_user, ctxtnav, title, active=True):
+def page_body_start(uri, http_user, ctxtnav_func, title, active=True):
 	return '''<div id="banner">
 	%s
 	%s
@@ -240,7 +250,7 @@ def page_body_start(uri, http_user, ctxtnav, title, active=True):
 <div id="content">
 	<h1>%s</h1>
 	''' % (
-		backto(), metanav(http_user), menu(uri), ctxtnav(active), title)
+		backto(), metanav(http_user), menu(uri), ctxtnav_func(active), title)
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def bad_arg_error(message=None):
@@ -310,6 +320,8 @@ def acr(word):
 		return word
 def menu(uri):
 
+	import licorn.interfaces.wmi as wmi
+
 	class defdict(dict):
 		def __init__(self, default=''):
 			dict.__init__(self)
@@ -334,6 +346,7 @@ def menu(uri):
 <li%s><a href="/users/" title="%s">%s</a></li>
 <li%s><a href="/groups/" title="%s">%s</a></li>
 %s
+%s
 <!--<li%s><a href="/internet/" title="%s">%s</a></li>-->
 </ul>
 </div>
@@ -346,7 +359,18 @@ def menu(uri):
 ''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
 		classes['users'], _('Manage user accounts.'), _('Users'),
 		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
-		'<li%s><a href="/machines/" title="%s">%s</a></li>' % (classes['machines'], _('Manage network clients: computers, printers, switches and other network enabled active systems.'), _('Machines')) if LMC.configuration.experimental.enabled else '',
+		'<li%s><a href="/machines/" title="%s">%s</a></li>' % (
+				classes['machines'],
+				_('Manage network clients: computers, printers, switches '
+					'and other network enabled active systems.'), _('Machines')
+			) if LMC.configuration.experimental.enabled else '',
+		'\n'.join([ '<li%s><a href="/%s/" title="%s">%s</a></li>' % (
+										classes[ext.uri],
+										ext.uri,
+										ext.alt_string,
+										ext.name
+									) for ext in wmi.__dict__.values() if hasattr(ext, 'uri') ]
+		),
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
 		_('Go to online documentation website.'), _('Documentation'),
 		classes['support'], _('Get product support / help'), _('Support')
@@ -372,10 +396,14 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 <script type="text/javascript" src="/js/niftyCube.js"></script>
 <script type="text/javascript" src="/js/sweetTitles.js"></script>
 <script type="text/javascript" src="/js/addEvent.js"></script>
-<script type="text/javascript" src="/js/prototype.js"></script>
+<script language="javascript" type="text/javascript" src="/js/prototype-1.6.0.2.js"></script>
+<!-- <script type="text/javascript" src="/js/prototype.js"></script> -->
 <script type="text/javascript" src="/js/effects.js"></script>
 <script type="text/javascript" src="/js/lightwindow.js"></script>
 <script type="text/javascript" src="/js/accordion.js"></script>
+<!-- Flotr -->
+<!--[if IE]><script language="javascript" type="text/javascript" src="/js/excanvas.js"></script><![endif]-->
+<script language="javascript" type="text/javascript" src="/js/flotr-0.2.0-alpha.js"></script>
 </head>
 <body>
 """ % (_("%s WMI:") %configuration.app_name, title)
