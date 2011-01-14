@@ -229,7 +229,7 @@ class ArpingerThread(QueueWorkerThread):
 		self.arp_table = dumbnet.arp()
 	def process(self, mid, *args, **kwargs):
 		""" scan a network host and try to find if it is Pyro enabled.
-			This method is meant to be run from a LicornPoolJobThread. """
+			This method is meant to be run from a QueueWorkerThread. """
 
 		assert ltrace('machines', '| %s.process(%s)' % (self.name, mid))
 
@@ -264,7 +264,7 @@ class PyroFinderThread(QueueWorkerThread):
 			name='pyrofinder-%d' % PyroFinderThread.number, daemon=True)
 	def process(self, mid, *args, **kwargs):
 		""" scan a network host and try to find if it is Pyro enabled.
-			This method is meant to be run from a LicornPoolJobThread. """
+			This method is meant to be run from a QueueWorkerThread. """
 
 		assert ltrace('machines', '| %s.process(%s)' % (self.name, mid))
 
@@ -277,7 +277,7 @@ class PyroFinderThread(QueueWorkerThread):
 				remotesys = Pyro.core.getAttrProxyForURI(
 						"PYROLOC://%s:%s/system" % (mid,
 							LMC.configuration.licornd.pyro.port))
-				remotesys._setTimeout(5)
+				remotesys._setTimeout(5.0)
 				remotesys.noop()
 			except Exception, e:
 				assert ltrace('machines',

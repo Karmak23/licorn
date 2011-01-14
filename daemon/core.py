@@ -24,7 +24,7 @@ from licorn.foundations.argparser import build_version_string, \
 from licorn.core           import version, LMC
 from licorn.daemon         import dname, dthreads, dqueues, dchildren, \
 	dstart_time, uptime, terminate
-from licorn.daemon.threads import LicornPoolJobThread
+from licorn.daemon.threads import QueueWorkerThread
 
 def get_daemon_status(long_output=False, precision=None):
 	""" GET daemon status (all threads). """
@@ -62,26 +62,18 @@ def get_daemon_status(long_output=False, precision=None):
 		for controller in LMC:
 			if hasattr(controller, 'dump_status'):
 				data += 'controller %s\n' % controller.dump_status()
-			else:
-				data += ('''controller %s%s doesn't implement '''
-					'''dump_status().\n''' % (
-					stylize(ST_NAME, controller.name),
-					'(%s)' % stylize(ST_IMPORTANT, 'locked')
-						if controller.is_locked() else ''))
 
 	for thread in dthreads.itervalues():
 		if thread.is_alive():
-			if long_output or ( not long_output
-				and not isinstance(thread, LicornPoolJobThread)):
-				if hasattr(thread, 'dump_status'):
-					data += 'thread %s\n' % thread.dump_status(long_output,
-						precision)
-				else:
-					data += ('''thread %s%s(%s) doesn't implement '''
-						'''dump_status().\n''' % (
-							stylize(ST_NAME, thread.name),
-							stylize(ST_OK, '&') if thread.daemon else '',
-							thread.ident))
+			if hasattr(thread, 'dump_status'):
+				data += 'thread %s\n' % thread.dump_status(long_output,
+					precision)
+			else:
+				data += ('''thread %s%s(%s) doesn't implement '''
+					'''dump_status().\n''' % (
+						stylize(ST_NAME, thread.name),
+						stylize(ST_OK, '&') if thread.daemon else '',
+						thread.ident))
 		else:
 			data += 'thread %s%s(%d) has terminated.\n' % (
 				stylize(ST_NAME, thread.name),

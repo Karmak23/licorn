@@ -140,60 +140,8 @@ class LicornBasicThread(Thread):
 		""" Stop current Thread. """
 		assert ltrace('thread', '%s stopping' % self.name)
 		self._stop_event.set()
-class LicornPoolJobThread(Thread):
-	def __init__(self, in_queue, target, pname='<unknown>', tname='PoolJobber',
-		target_args=(), target_kwargs={}, daemon=False):
-		Thread.__init__(self)
-
-		self.name  = "%s/%s" % (
-			pname, tname if tname else
-				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
-
-		self.input_queue = in_queue
-		self.target = target
-		self.args = target_args
-		self.kwargs = target_kwargs
-		self.daemon = daemon
-
-		#: used in dump_status (as a display info only), to know which
-		#: object our target function is running onto.
-		self.current_target = None
-		assert ltrace('thread', '%s initialized.' % self.name)
-	def dump_status(self, long_output=False, precision=None):
-		""" get detailled thread status. """
-
-		return '%s%s [%s].' % (
-				stylize(ST_RUNNING
-					if self.is_alive() else ST_STOPPED, self.name),
-				'&' if self.daemon else '',
-				'on‣%s' % self.current_target
-					if self.current_target else 'idle'
-			)
-	def run(self):
-		assert ltrace('thread', '%s running' % self.name)
-		while True:
-			msg = self.input_queue.get()
-			if msg is None:
-				# None is a fake message to unblock the q.get(), when the
-				# main process terminates the current thread with stop(). We
-				# emit task_done(), else the main process will block forever
-				# on q.join().
-				self.input_queue.task_done()
-				break
-			else:
-				assert ltrace('thread', 'executing %s(%s, %s)' % (self.target,
-					self.args, self.kwargs))
-				self.current_target = msg
-				self.target(msg, *self.args, **self.kwargs)
-				self.current_target = None
-				self.input_queue.task_done()
-
-		assert ltrace('thread', '%s ended' % self.name)
-	def stop(self):
-		assert ltrace('thread', '%s stopping' % self.name)
-		self.input_queue.put_nowait(None)
 class QueueWorkerThread(Thread):
-	""" Finer implementation of LicornPoolJobThread. Let
+	""" Finer implementation of old LicornPoolJobThread (removed).
 
 
 		new in version 1.2.3
@@ -230,6 +178,7 @@ class QueueWorkerThread(Thread):
 		#: used in dump_status (as a display info only), to know which
 		#: object our target function is running onto.
 		self.current_target = None
+		self.job_start_time = None
 
 		assert ltrace('thread', '%s initialized.' % self.name)
 		self.__class__.number += 1
@@ -243,7 +192,10 @@ class QueueWorkerThread(Thread):
 				stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
 				'&' if self.daemon else '',
-				'on‣%s' % self.current_target
+				'on %s for %s' % (stylize(ST_ON, self.current_target),
+					pyutils.format_time_delta(
+							time.time() - self.job_start_time,
+							big_precision=True))
 					if self.current_target else 'idle'
 			)
 	def run(self):
@@ -262,11 +214,13 @@ class QueueWorkerThread(Thread):
 				break
 
 			else:
+				self.job_start_time = time.time()
 				assert ltrace('thread', 'executing self.process(%s, %s, %s)' % (
 					self.current_target, self.args, self.kwargs))
 
 				self.process(self.current_target, *self.args, **self.kwargs)
 				self.current_target = None
+				self.job_start_time = None
 				self.input_queue.task_done()
 
 		assert ltrace('thread', '%s ended' % self.name)
@@ -296,7 +250,7 @@ class TriggerWorkerThread(LicornBasicThread):
 			stylize(ST_OFF, 'disabled') if self._disable_event.is_set()
 					else '%s, %s' % (
 							stylize(ST_ON, 'enabled'),
-							stylize(ST_BUSY, 'active') if
+							stylize(ST_ON, 'active') if
 								self._currently_running.is_set() else 'idle'
 						)
 			)

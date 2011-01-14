@@ -49,7 +49,7 @@ from licorn.daemon.core           import  exit_or_replace_if_already_running, \
 										licornd_parse_arguments
 from licorn.daemon.wmi            import WMIThread
 from licorn.daemon.threads        import DbusThread, LicornJobThread, \
-									LicornPoolJobThread, \
+									QueueWorkerThread, \
 									thread_periodic_cleaner
 from licorn.daemon.aclchecker     import ACLChecker
 from licorn.daemon.inotifier      import INotifier
