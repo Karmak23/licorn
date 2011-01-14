@@ -21,6 +21,9 @@ from licorn.foundations.constants import licornd_roles, services, svccmds
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
 
+from licorn.foundations import network
+import netifaces
+
 class SquidExtension(Singleton, ServiceExtension):
 	""" A proxy extension using squid.
 
@@ -67,14 +70,15 @@ class SquidExtension(Singleton, ServiceExtension):
 			self.defaults = Enumeration()
 			for key, value in (
 				('http_port',self.defaults_conf.port),
-				('acl', 'localnetwork src %s' % self.defaults_conf.subnet),
 				('acl', 'server src %s' % '127.0.0.1'),
 				('acl', 'all src all'),
 				('http_access', 'allow localnetwork'),
 				('http_access', 'allow server'),
 				('http_access', 'deny all')):
 				add_or_dupe_enumeration(self.defaults, key, value)
-
+			for network in self.defaults_conf.subnet:
+				add_or_dupe_enumeration(self.defaults, 'acl',
+					'localnetwork src %s' % network),
 	def get_defaults_conf(self):
 		""" TODO """
 
@@ -87,7 +91,16 @@ class SquidExtension(Singleton, ServiceExtension):
 		dict['client_cmd_ftp'] = 'ftp_proxy'
 
 		if LMC.configuration.licornd.role == licornd_roles.SERVER:
-			dict['subnet'] = '192.168.0.0/24'
+			dict['subnet'] = []
+			for iface in network.interfaces():
+				iface_infos = netifaces.ifaddresses(iface)
+				if 2 in iface_infos:
+					subnet = '%s.0/%s' % (
+						iface_infos[2][0]['addr'].rsplit('.', 1)[0],
+						network.netmask2prefix(
+							iface_infos[2][0]['netmask']))
+					dict['subnet'].append(subnet)
+					
 			dict['config_file'] = '/etc/squid/squid.conf'
 			dict['host'] = '127.0.0.1'
 		else:
