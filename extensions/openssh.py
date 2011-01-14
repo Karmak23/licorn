@@ -91,7 +91,8 @@ class OpensshExtension(Singleton, ServiceExtension):
 					separator=' ')
 		else:
 			logging.warning2('%s: not available because %s or %s do not exist '
-				'on the system.' % (stylize(ST_PATH, self.paths.sshd_binary),
+				'on the system.' % (self.name,
+					stylize(ST_PATH, self.paths.sshd_binary),
 					stylize(ST_PATH, self.paths.sshd_config)))
 
 
