@@ -115,7 +115,7 @@ def licornd_parse_arguments(app):
 			stylize(ST_IMPORTANT, 'ONE address or hostname'),
 			stylize(ST_PATH, LMC.configuration.main_config_file)))
 
-	parser.add_option("-p", "--pid-to-wake",
+	parser.add_option("-p", "--wake-pid", "--pid-to-wake",
 		action="store", type="int", dest="pid_to_wake", default=None,
 		help='Specify a PID to send SIGUSR1 to, when daemon is ready. Used '
 			'internaly only when CLI tools start the daemon themselves.')
