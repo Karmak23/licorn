@@ -58,7 +58,7 @@ class LicornOptions(ObjectSingleton):
 def check_python_modules_dependancies():
 	""" verify all required python modules are present on the system. """
 
-	warn_file = '%s/.licorn_dont_warn_optmods' % os.getenv('HOME')
+	warn_file = '%s/.licorn_dont_warn_optmods' % os.getenv('HOME', '/root')
 
 	reqmods = (
 		('posix1e',   'python-pylibacl'),
