@@ -451,15 +451,15 @@ class GroupsController(Singleton, CoreController):
 			name, description, groupSkel = self._validate_fields(name,
 				description, groupSkel)
 
-			self.run_hooks('group_pre_add', name=name, description=description)
+			# FIXME: the GID could be taken, this could introduce
+			# inconsistencies between the controller and extensions data.
+			self.run_hooks('group_pre_add', gid=desired_gid,
+											name=name, description=description)
 
 			home = '%s/%s/%s' % (
 				LMC.configuration.defaults.home_base_path,
 				LMC.configuration.groups.names.plural,
 				name)
-
-			# TODO: permit to specify GID.
-			# Currently this doesn't seem to be done yet.
 
 			try:
 				not_already_exists = True
@@ -474,8 +474,11 @@ class GroupsController(Singleton, CoreController):
 				logging.notice(str(e))
 				gid = self.name_to_gid(name)
 				not_already_exists = False
-
-			self.run_hooks('group_post_add', name=name, description=description)
+			else:
+				# run this only if the group doesn't already exist, else
+				# it gets written twice in extensions data.
+				self.run_hooks('group_post_add', gid=gid, name=name,
+								description=description, system=system)
 
 		# LOCKS: can be released, because everything after now is FS operations,
 		# not needing the internal data structures. It can fail if someone
@@ -691,8 +694,9 @@ class GroupsController(Singleton, CoreController):
 			gid, name, del_users, no_archive, batch, check_profiles))
 
 		gid, name = self.resolve_gid_or_name(gid, name)
-		
-		self.run_hooks('group_pre_del', name=name)
+
+		self.run_hooks('group_pre_del', gid=gid, name=name,
+											system=self.is_system_gid(gid))
 
 		assert ltrace('groups', '  DeleteGroup(%s,%s)' % (name, gid))
 
@@ -1049,6 +1053,9 @@ class GroupsController(Singleton, CoreController):
 			with LMC.users.lock():
 				gid, name = self.resolve_gid_or_name(gid, name)
 
+				# this attribute will be passed to hooks callbacks to ease deals.
+				system = self.is_system_gid(gid)
+
 				uids_to_add = LMC.users.guess_identifiers(users_to_add)
 
 				work_done = False
@@ -1119,9 +1126,10 @@ class GroupsController(Singleton, CoreController):
 							LMC.users[uid]['homeDirectory'],
 							link_basename)
 						fsapi.make_symlink(link_src, link_dst, batch=batch)
-						
+
 						self.run_hooks('group_post_add_user',
-							login=login, name=name)
+							gid=gid, name=name, system=system,
+							uid=uid, login=login)
 
 				if batch and work_done:
 					# save the group after having added all users. This seems more fine
@@ -1155,71 +1163,85 @@ class GroupsController(Singleton, CoreController):
 		if users_to_del is None:
 			raise exceptions.BadArgumentError("You must specify a users list")
 
-		gid, name = self.resolve_gid_or_name(gid, name)
+		# we need to lock users to be sure they don't dissapear during this phase.
+		with self.lock():
+			with LMC.users.lock():
+				gid, name = self.resolve_gid_or_name(gid, name)
 
-		uids_to_del = LMC.users.guess_identifiers(users_to_del)
+				# this attribute will be passed to hooks callbacks to ease deals.
+				system = self.is_system_gid(gid)
 
-		logging.progress("Going to remove users %s from group %s." % (
-			stylize(ST_NAME, str(uids_to_del)),
-			stylize(ST_NAME, name)))
+				uids_to_del = LMC.users.guess_identifiers(users_to_del)
 
-		work_done = False
-		u2l = LMC.users.uid_to_login
-
-		for uid in uids_to_del:
-
-			login = u2l(uid)
-
-			self.run_hooks('group_pre_del_user', login=login, name=name)
-
-			if login in self.groups[gid]['memberUid']:
-				self.groups[gid]['memberUid'].remove(login)
-
-				# update the users cache
-				LMC.users[uid]['groups'].remove(name)
-
-				logging.info("Removed user %s from members of %s." % (
-					stylize(ST_LOGIN, login),
+				logging.progress("Going to remove users %s from group %s." % (
+					stylize(ST_NAME, str(uids_to_del)),
 					stylize(ST_NAME, name)))
 
-				if batch:
-					work_done = True
-				else:
-					LMC.backends[
-						self.groups[gid]['backend']
-						].save_Group(gid, backend_actions.UPDATE)
+				work_done = False
+				u2l = LMC.users.uid_to_login
 
-					#self.reload_admins_group_in_validator(name)
+				for uid in uids_to_del:
 
-				if not self.is_system_gid(gid):
-					# delete the shared group dir symlink in user's home.
-					link_src = os.path.join(
-						LMC.configuration.defaults.home_base_path,
-						LMC.configuration.groups.names.plural,
-						self.groups[gid]['name'])
+					login = u2l(uid)
 
-					for link in fsapi.minifind(
-						LMC.users[uid]['homeDirectory'],
-						maxdepth=2, type=stat.S_IFLNK):
-						try:
-							if os.path.abspath(os.readlink(link)) == link_src:
-								os.unlink(link)
-								logging.info("Deleted symlink %s." %
-									stylize(ST_LINK, link))
-						except (IOError, OSError), e:
-							if e.errno == 2:
-								# this is a broken link, readlink failed…
-								pass
-							else:
-								raise exceptions.LicornRuntimeError(
-									"Unable to delete symlink %s (was: %s)." % (
-										stylize(ST_LINK, link),
-										str(e)))
-			else:
-				logging.info(
-					"User %s is already not a member of %s, skipped." % (
-						stylize(ST_LOGIN, login),
-						stylize(ST_NAME, name)))
+					self.run_hooks('group_pre_del_user', gid=gid, name=name,
+							system=system, uid=uid, login=login)
+
+					if login in self.groups[gid]['memberUid']:
+						self.groups[gid]['memberUid'].remove(login)
+
+						# update the users cache
+						LMC.users[uid]['groups'].remove(name)
+
+						logging.info("Removed user %s from members of %s." % (
+							stylize(ST_LOGIN, login),
+							stylize(ST_NAME, name)))
+
+						if batch:
+							work_done = True
+						else:
+							LMC.backends[
+								self.groups[gid]['backend']
+								].save_Group(gid, backend_actions.UPDATE)
+
+							# NOTE: this is not needed, the validator holds
+							# a direct reference to this group members.
+							#self.reload_admins_group_in_validator(name)
+
+						if not self.is_system_gid(gid):
+							# delete the shared group dir
+							#symlink in user's home.
+							link_src = os.path.join(
+								LMC.configuration.defaults.home_base_path,
+								LMC.configuration.groups.names.plural,
+								self.groups[gid]['name'])
+
+							for link in fsapi.minifind(
+								LMC.users[uid]['homeDirectory'],
+								maxdepth=2, type=stat.S_IFLNK):
+								try:
+									if os.path.abspath(
+											os.readlink(link)) == link_src:
+										os.unlink(link)
+										logging.info("Deleted symlink %s." %
+											stylize(ST_LINK, link))
+								except (IOError, OSError), e:
+									if e.errno == 2:
+										# this is a broken link,
+										# readlink failed…
+										pass
+									else:
+										raise exceptions.LicornRuntimeError(
+											"Unable to delete symlink "
+											"%s (was: %s)." % (
+												stylize(ST_LINK, link),
+												str(e)))
+					else:
+						logging.info(
+							"User %s is already not a member of %s, "
+							"skipped." % (
+								stylize(ST_LOGIN, login),
+								stylize(ST_NAME, name)))
 
 		if batch and work_done:
 			LMC.backends[

@@ -561,7 +561,7 @@ class UsersController(Singleton, CoreFSController):
 					raise e
 
 			self.run_hooks('user_post_add', uid=uid, login=login,
-					gecos=gecos, password=password)
+					gecos=gecos, password=password, system=system)
 
 		logging.info(logging.SYSU_CREATED_USER % (
 			'system ' if system else '',
@@ -607,8 +607,8 @@ class UsersController(Singleton, CoreFSController):
 			LMC.groups.DeleteUsersFromGroup(name=group,
 				users_to_del=[ uid ], batch=True)
 
-		self.run_hooks('user_pre_del', uid=uid, login=login)
-
+		self.run_hooks('user_pre_del', uid=uid, login=login,
+											system=self.is_system_uid(uid))
 		try:
 			# samba stuff
 			# TODO: forward output to listener…
