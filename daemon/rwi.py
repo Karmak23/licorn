@@ -99,7 +99,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						something_tried = True
 						ids.add(resolver(id))
 						assert ltrace('cli', '  select %s(%s) -> %s' %
-							(resolver._RemoteMethod__name, id, resolver(id)))
+							(str(resolver), id, resolver(id)))
 					except (KeyError, exceptions.DoesntExistsException):
 						logging.notice('''Skipped non existing or invalid %s or '''
 							'''%sID '%s'.''' % (ctype, ctype[0].upper(),
