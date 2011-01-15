@@ -329,6 +329,9 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 	form_name = "user_edit"
 
 	data += '''
+	<script type="text/javascript" src="/js/jquery.js"></script>
+	<script type="text/javascript" src="/js/accordeon.js"></script>
+	
 	<div id="edit_form">
 	<form name="%s" id="%s" action="/users/create" method="post">
 		<table>
@@ -362,14 +365,6 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 					<div class="accordion_content">%s</div>
 					<h2 class="accordion_toggle">≫&nbsp;%s</h2>
 					<div class="accordion_content">%s</div>
-
-					<script type="text/javascript">
-						Event.observe(window, 'load', loadAccordions, false);
-						function loadAccordions() {
-							var prout = new accordion("my-accordion");
-					//prout.activate($$("#my-accordion .accordion_toggle")[0]);
-						}
-					</script>
 				</td>
 			</tr>
 			<tr>
@@ -501,7 +496,11 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 
 		form_name = "user_edit_form"
 
-		data += '''<div id="edit_form">
+		data += '''
+		<script type="text/javascript" src="/js/jquery.js"></script>
+		<script type="text/javascript" src="/js/accordeon.js"></script>
+		
+		<div id="edit_form">
 <form name="%s" id="%s" action="/users/record/%s" method="post">
 	<table id="user_account">
 		<tr>
@@ -543,14 +542,6 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 				<div class="accordion_content">%s</div>
 				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
 				<div class="accordion_content">%s</div>
-
-				<script type="text/javascript">
-					Event.observe(window, 'load', loadAccordions, false);
-					function loadAccordions() {
-						var prout = new accordion("my-accordion");
-					//prout.activate($$("#my-accordion .accordion_toggle")[0]);
-					}
-				</script>
 			</td>
 		</tr>
 		<tr>

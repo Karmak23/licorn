@@ -541,7 +541,11 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 			dbl_lists[LMC.configuration.groups.guest_prefix+name]
 			)
 
-		data += '''<div id="edit_form">
+		data += '''
+		<script type="text/javascript" src="/js/jquery.js"></script>
+		<script type="text/javascript" src="/js/accordeon.js"></script>
+		
+		<div id="edit_form">
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
 	<table id="user_account">
 		<tr>
@@ -563,15 +567,6 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 				<h2 class="accordion_toggle">≫&nbsp;%s</h2>
 				<div class="accordion_content">%s</div>
 				%s
-
-				<script type="text/javascript">
-					Event.observe(window, 'load', loadAccordions, false);
-					function loadAccordions() {
-						var prout = new accordion("my-accordion");
-					//prout.activate($$("#my-accordion .accordion_toggle")[0]);
-					}
-				</script>
-
 			</td>
 		<tr>
 			<td>%s</td>
