@@ -1001,7 +1001,7 @@ class ModulesManager(LockedController):
 						'(individually)' % (module_name,
 										getattr(module_conf, 'ignore')))
 
-					return getattr(module_conf, 'ignore')
+					return not getattr(module_conf, 'ignore')
 
 		# if no configuration directive is found, the module is considered
 		# not ignored by default, it will be loaded.

@@ -168,7 +168,7 @@ class ServiceExtension(LicornExtension):
 
 		#: the delay the timer will wait before trigerring the service command.
 		#: any repetition of the same command within this delay will reset it.
-		self.delay = 0.5
+		self.delay = 2.0
 	def running(self, pid_file):
 		""" A convenience wrapper for the :func:`~process.already_running`
 			function. """

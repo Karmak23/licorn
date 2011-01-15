@@ -679,8 +679,10 @@ class UsersController(Singleton, CoreFSController):
 
 		with self.lock():
 			uid, login = self.resolve_uid_or_login(uid, login)
+			system = self.is_system_uid(uid)
 
-			self.run_hooks('user_pre_change_password', uid=uid, login=login)
+			self.run_hooks('user_pre_change_password', uid=uid, login=login,
+														system=system)
 
 			if password is None:
 				password = hlstr.generate_password(
@@ -706,7 +708,7 @@ class UsersController(Singleton, CoreFSController):
 				].save_User(uid, backend_actions.UPDATE)
 
 			self.run_hooks('user_post_change_password', uid=uid, login=login,
-								password=password)
+								system=system, password=password)
 
 			if display:
 				logging.notice("Set password for user %s (uid=%s) to %s." % (

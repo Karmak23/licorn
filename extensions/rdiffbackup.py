@@ -180,6 +180,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					(_('Run backup'), '/backups/run',
 						_('Run a system incremental backup now'),
 						'ctxt-icon', 'icon-add'),
+				)
+			)
+		"""
+				# disabled, to come:
 					(_('Explore backups'), '/backups/search',
 						_('Search in backup history for files or '
 							'directories to restore'),
@@ -187,8 +191,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					(_('Settings'), '/backups/settings',
 						_('Manage system backup settings'),
 						'ctxt-icon', 'icon-energyprefs'),
-				)
-			)
+		"""
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -548,7 +551,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self._remove_old_backups(volume)
 			self._rdiff_statistics(volume)
-			logging.notice('%s: terminated backup procedure on %s.' % volume)
+			logging.notice('%s: terminated backup procedure on %s.' % (
+											self.name,volume))
 	def _write_last_backup_file(self, volume):
 		""" Put :func:`time.time` in the last backup file. This file is here
 			to avoid doing more than one backup per hour.
@@ -593,7 +597,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					last_backup=_('Last backup on this volume '
 						'occured {0}.').format(
 							time.strftime(_("on %A %d %B %Y %H:%M"),
-							time.localtime(self._last_backup_time(volume)))),
+							time.localtime(self._last_backup_time(volume))))
+								if self._last_backup_time(volume) > 0
+								else _('No backup has occured yet.'),
 					next_backup=_("Next backup attempt will occur in {0} "
 						"(this page will automatically reload).").format(
 						self._countdown('next_backup', 3.0 +
@@ -619,8 +625,15 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						'backup.').format(volume=volume.mount_point))
 			except IndexError:
 				return (w.HTTP_TYPE_TEXT, w.page(title,
-					w.error(_("No volume to backup onto. "
-						"Please plug one before starting this procedure."))))
+					w.error(_('No volume to backup onto. '
+						'Please plug a {app_name} enabled volume into '
+						'your server before starting this procedure.'
+						'<br /><br/>See <href="{backup_doc_uri}">'
+						'Backup-related documentation</a> for '
+						'details on enabling backup volumes.').format(
+						app_name=LMC.configuration.app_name,
+						backup_doc_uri='http://docs.licorn.org/extensions/rdiffbackup.html'
+						))))
 		else:
 			volume=self.volumes['/dev/'+volume]
 
@@ -706,10 +719,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			else:
 
 				data += base_div.format(message=_('No backup found, or all '
-					'backup volumes currently unmounted. Next '
-					'automatic backup will occur in {countdown}. '
-					'Please wait until then, or <a href="{uri}">run a manual '
-					'backup now</a>.').format(
+					'backup volumes are currently unmounted (you can safely '
+					'disconnect them from your server).<br /><br />Next '
+					'automatic backup will occur in {countdown}, and will '
+					' automatically remount any backup volume still connected '
+					'at this moment. Please wait until then, or '
+					'<a href="{uri}">run a manual backup now</a> to force '
+					'a remount.').format(
 						countdown=self._countdown('next_backup', 3.0 +
 							self.time_before_next_automatic_backup(
 								as_string=False)),
@@ -762,6 +778,16 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 								)
 							)
 
+			try:
+				rdiff_stats_output = open(volume.mount_point
+						+ '/' + self.paths.increment_sizes_file).read().strip()
+			except (IOError, OSError), e:
+				if e.errno == 2:
+					# not ready yet (first backup rinnung)
+					rdiff_stats_output = _('No historical data yet. Please wait for the first backup to finish.')
+				else:
+					raise e
+
 			data += base_div.format(
 					backup_info=(
 						self._backup_informations(volume, as_string=True)
@@ -769,8 +795,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					h2title=_('Backups on {mount_point}').format(
 						mount_point=volume.mount_point),
 					eject_status=eject_status,
-					rdiff_output=open(volume.mount_point
-						+ '/' + self.paths.increment_sizes_file).read().strip()
+					rdiff_output=rdiff_stats_output
 				)
 
 		return (w.HTTP_TYPE_TEXT, w.page(title,

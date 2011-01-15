@@ -197,7 +197,7 @@ def init():
 	# do they satisfy the WMIObject criteria ?
 
 	for ext in LMC.extensions:
-		if isinstance(ext, WMIObject):
+		if isinstance(ext, WMIObject) and ext.enabled:
 			assert ltrace('wmi', '  collecting WMIObject %s' %
 													stylize(ST_NAME, ext.name))
 			my_globals[ext.wmi.uri] = ext.wmi

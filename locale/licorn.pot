@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-14 16:17+0100\n"
+"POT-Creation-Date: 2011-01-15 19:48+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -37,134 +37,131 @@ msgstr ""
 msgid "Run a system incremental backup now"
 msgstr ""
 
-#: extensions/rdiffbackup.py:183
-msgid "Explore backups"
-msgstr ""
-
-#: extensions/rdiffbackup.py:184
-msgid "Search in backup history for files or directories to restore"
-msgstr ""
-
-#: extensions/rdiffbackup.py:187
-msgid "Settings"
-msgstr ""
-
-#: extensions/rdiffbackup.py:188
-msgid "Manage system backup settings"
-msgstr ""
-
-#: extensions/rdiffbackup.py:594
+#: extensions/rdiffbackup.py:597
 msgid "Last backup on this volume occured {0}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:596
+#: extensions/rdiffbackup.py:599
 msgid "on %A %d %B %Y %H:%M"
 msgstr ""
 
-#: extensions/rdiffbackup.py:598
+#: extensions/rdiffbackup.py:602
+msgid "No backup has occured yet."
+msgstr ""
+
+#: extensions/rdiffbackup.py:603
 msgid ""
 "Next backup attempt will occur in {0} (this page will automatically reload)."
 msgstr ""
 
-#: extensions/rdiffbackup.py:611
+#: extensions/rdiffbackup.py:616
 msgid "Run a manual backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:619
+#: extensions/rdiffbackup.py:624
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 
-#: extensions/rdiffbackup.py:623
+#: extensions/rdiffbackup.py:628
 msgid ""
-"No volume to backup onto. Please plug one before starting this procedure."
+"No volume to backup onto. Please plug a {app_name} enabled volume into your "
+"server before starting this procedure.<br /><br/>See <href="
+"\"{backup_doc_uri}\">Backup-related documentation</a> for details on "
+"enabling backup volumes."
 msgstr ""
 
-#: extensions/rdiffbackup.py:632
+#: extensions/rdiffbackup.py:644
 msgid "Run a manual backup on volume {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:637
+#: extensions/rdiffbackup.py:649
 msgid "Recent backup detected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:638
+#: extensions/rdiffbackup.py:650
 msgid ""
 "{auto_select}<br /><br />The last backup has been run recently "
 "({last_backup_time}), in less than the system configured interval "
 "({interval}). Are you sure you want to force a manual backup now?"
 msgstr ""
 
-#: extensions/rdiffbackup.py:648
+#: extensions/rdiffbackup.py:660
 msgid "Run >>"
 msgstr ""
 
-#: extensions/rdiffbackup.py:649 interfaces/wmi/groups.py:140
-#: interfaces/wmi/groups.py:598 interfaces/wmi/users.py:136
+#: extensions/rdiffbackup.py:661 interfaces/wmi/groups.py:140
+#: interfaces/wmi/groups.py:593 interfaces/wmi/users.py:136
 #: interfaces/wmi/users.py:210 interfaces/wmi/machines.py:273
 msgid "R"
 msgstr ""
 
-#: extensions/rdiffbackup.py:651 interfaces/wmi/groups.py:264
+#: extensions/rdiffbackup.py:663 interfaces/wmi/groups.py:264
 #: interfaces/wmi/users.py:94 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:223 interfaces/wmi/machines.py:185
 #: interfaces/wmi/machines.py:229 interfaces/wmi/machines.py:275
 msgid "<< Cancel"
 msgstr ""
 
-#: extensions/rdiffbackup.py:651 interfaces/wmi/users.py:138
+#: extensions/rdiffbackup.py:663 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:223 interfaces/wmi/users.py:273
 #: interfaces/wmi/machines.py:275
 msgid "C"
 msgstr ""
 
-#: extensions/rdiffbackup.py:667
+#: extensions/rdiffbackup.py:679
 msgid "Eject volume {device}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:670
+#: extensions/rdiffbackup.py:682
 msgid " (a backup is underway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:678
+#: extensions/rdiffbackup.py:690
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:690
+#: extensions/rdiffbackup.py:702
 msgid "System backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:703
+#: extensions/rdiffbackup.py:715
 msgid ""
 "No backup volume found. Please connect your backup volume to your server, "
 "for backup to automatically start."
 msgstr ""
 
-#: extensions/rdiffbackup.py:709
+#: extensions/rdiffbackup.py:721
 msgid ""
-"No backup found, or all backup volumes currently unmounted. Next automatic "
-"backup will occur in {countdown}. Please wait until then, or <a href="
-"\"{uri}\">run a manual backup now</a>."
+"No backup found, or all backup volumes are currently unmounted (you can "
+"safely disconnect them from your server).<br /><br />Next automatic backup "
+"will occur in {countdown}, and will  automatically remount any backup volume "
+"still connected at this moment. Please wait until then, or <a href="
+"\"{uri}\">run a manual backup now</a> to force a remount."
 msgstr ""
 
-#: extensions/rdiffbackup.py:727
+#: extensions/rdiffbackup.py:744
 msgid ""
 "A backup is currently in progress, please don't disconnect <strong>{volume}</"
 "strong>."
 msgstr ""
 
-#: extensions/rdiffbackup.py:747
+#: extensions/rdiffbackup.py:764
 msgid "Can't eject, backup in progress"
 msgstr ""
 
-#: extensions/rdiffbackup.py:753
+#: extensions/rdiffbackup.py:770
 msgid "Eject the volume"
 msgstr ""
 
-#: extensions/rdiffbackup.py:759
+#: extensions/rdiffbackup.py:776
 msgid "Eject device icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:768
+#: extensions/rdiffbackup.py:787
+msgid "No historical data yet. Please wait for the first backup to finish."
+msgstr ""
+
+#: extensions/rdiffbackup.py:795
 msgid "Backups on {mount_point}"
 msgstr ""
 
@@ -347,19 +344,19 @@ msgid ""
 "web-form."
 msgstr ""
 
-#: interfaces/wmi/__init__.py:165
+#: interfaces/wmi/__init__.py:169
 msgid "day(s)"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:166
+#: interfaces/wmi/__init__.py:170
 msgid "hour(s)"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:167
+#: interfaces/wmi/__init__.py:171
 msgid "minute(s)"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:168
+#: interfaces/wmi/__init__.py:172
 msgid "second(s)"
 msgstr ""
 
@@ -487,98 +484,98 @@ msgstr ""
 msgid "Logged in as %s"
 msgstr ""
 
-#: interfaces/wmi/utils.py:257 interfaces/wmi/utils.py:258
+#: interfaces/wmi/utils.py:262 interfaces/wmi/utils.py:263
 msgid "Bad request or argument"
 msgstr ""
 
-#: interfaces/wmi/utils.py:260
+#: interfaces/wmi/utils.py:265
 msgid "There was a problem in the request you sent to the WMI."
 msgstr ""
 
-#: interfaces/wmi/utils.py:264 interfaces/wmi/utils.py:266
+#: interfaces/wmi/utils.py:269 interfaces/wmi/utils.py:271
 msgid "Impossible action"
 msgstr ""
 
-#: interfaces/wmi/utils.py:267
+#: interfaces/wmi/utils.py:272
 msgid ""
 "Some parts of the system cannot be modified, for your own safety and the "
 "world to rest in peace."
 msgstr ""
 
-#: interfaces/wmi/utils.py:359
+#: interfaces/wmi/utils.py:364
 msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 
-#: interfaces/wmi/utils.py:359 interfaces/wmi/machines.py:697
+#: interfaces/wmi/utils.py:364 interfaces/wmi/machines.py:697
 msgid "Status"
 msgstr ""
 
-#: interfaces/wmi/utils.py:360
+#: interfaces/wmi/utils.py:365
 msgid "Manage user accounts."
 msgstr ""
 
-#: interfaces/wmi/utils.py:360
+#: interfaces/wmi/utils.py:365
 msgid "Users"
 msgstr ""
 
-#: interfaces/wmi/utils.py:361
+#: interfaces/wmi/utils.py:366
 msgid "Manage groups and shared data."
 msgstr ""
 
-#: interfaces/wmi/utils.py:361 interfaces/wmi/groups.py:673
-#: interfaces/wmi/groups.py:709 interfaces/wmi/users.py:400
-#: interfaces/wmi/users.py:585 interfaces/wmi/machines.py:404
+#: interfaces/wmi/utils.py:366 interfaces/wmi/groups.py:668
+#: interfaces/wmi/groups.py:704 interfaces/wmi/users.py:395
+#: interfaces/wmi/users.py:576 interfaces/wmi/machines.py:404
 #: interfaces/wmi/machines.py:600
 msgid "Groups"
 msgstr ""
 
-#: interfaces/wmi/utils.py:364
+#: interfaces/wmi/utils.py:369
 msgid ""
 "Manage network clients: computers, printers, switches and other network "
 "enabled active systems."
 msgstr ""
 
-#: interfaces/wmi/utils.py:365 interfaces/wmi/machines.py:688
+#: interfaces/wmi/utils.py:370 interfaces/wmi/machines.py:688
 msgid "Machines"
 msgstr ""
 
-#: interfaces/wmi/utils.py:374
+#: interfaces/wmi/utils.py:379
 msgid ""
 "Manage Internet connexion and parameters, firewall protection, URL filter "
 "and e-mail parameters."
 msgstr ""
 
-#: interfaces/wmi/utils.py:374
+#: interfaces/wmi/utils.py:379
 msgid "Internet"
 msgstr ""
 
-#: interfaces/wmi/utils.py:375
+#: interfaces/wmi/utils.py:380
 msgid "Go to online documentation website."
 msgstr ""
 
-#: interfaces/wmi/utils.py:375
+#: interfaces/wmi/utils.py:380
 msgid "Documentation"
 msgstr ""
 
-#: interfaces/wmi/utils.py:376
+#: interfaces/wmi/utils.py:381
 msgid "Get product support / help"
 msgstr ""
 
-#: interfaces/wmi/utils.py:376
+#: interfaces/wmi/utils.py:381
 msgid "Support"
 msgstr ""
 
-#: interfaces/wmi/utils.py:380
+#: interfaces/wmi/utils.py:385
 #, python-format
 msgid "%s Management"
 msgstr ""
 
-#: interfaces/wmi/utils.py:409
+#: interfaces/wmi/utils.py:413
 #, python-format
 msgid "%s WMI:"
 msgstr ""
 
-#: interfaces/wmi/utils.py:414
+#: interfaces/wmi/utils.py:418
 #, python-format
 msgid "administration %s"
 msgstr ""
@@ -626,8 +623,8 @@ msgstr ""
 
 #: interfaces/wmi/groups.py:67 interfaces/wmi/groups.py:105
 #: interfaces/wmi/groups.py:141 interfaces/wmi/groups.py:205
-#: interfaces/wmi/groups.py:595 interfaces/wmi/users.py:272
-#: interfaces/wmi/users.py:404 interfaces/wmi/users.py:589
+#: interfaces/wmi/groups.py:590 interfaces/wmi/users.py:272
+#: interfaces/wmi/users.py:399 interfaces/wmi/users.py:580
 #: interfaces/wmi/machines.py:79 interfaces/wmi/machines.py:136
 #: interfaces/wmi/machines.py:408 interfaces/wmi/machines.py:604
 msgid "Cancel"
@@ -635,7 +632,7 @@ msgstr ""
 
 #: interfaces/wmi/groups.py:67 interfaces/wmi/groups.py:105
 #: interfaces/wmi/groups.py:142 interfaces/wmi/groups.py:206
-#: interfaces/wmi/groups.py:264 interfaces/wmi/groups.py:595
+#: interfaces/wmi/groups.py:264 interfaces/wmi/groups.py:590
 msgid "N"
 msgstr ""
 
@@ -755,11 +752,11 @@ msgstr ""
 msgid "Creating a new group"
 msgstr ""
 
-#: interfaces/wmi/groups.py:254 interfaces/wmi/groups.py:586
+#: interfaces/wmi/groups.py:254 interfaces/wmi/groups.py:581
 msgid "Group name"
 msgstr ""
 
-#: interfaces/wmi/groups.py:256 interfaces/wmi/groups.py:589
+#: interfaces/wmi/groups.py:256 interfaces/wmi/groups.py:584
 msgid "Group description"
 msgstr ""
 
@@ -780,11 +777,11 @@ msgid "Yes"
 msgstr ""
 
 #: interfaces/wmi/groups.py:263 interfaces/wmi/groups.py:431
-#: interfaces/wmi/users.py:388 interfaces/wmi/machines.py:392
+#: interfaces/wmi/users.py:383 interfaces/wmi/machines.py:392
 msgid "P"
 msgstr ""
 
-#: interfaces/wmi/groups.py:265 interfaces/wmi/users.py:405
+#: interfaces/wmi/groups.py:265 interfaces/wmi/users.py:400
 #: interfaces/wmi/machines.py:409
 msgid "Create"
 msgstr ""
@@ -808,7 +805,7 @@ msgstr ""
 msgid "Details of group %s"
 msgstr ""
 
-#: interfaces/wmi/groups.py:321 interfaces/wmi/groups.py:687
+#: interfaces/wmi/groups.py:321 interfaces/wmi/groups.py:682
 msgid "Members"
 msgstr ""
 
@@ -818,19 +815,19 @@ msgid "(ordered by login)"
 msgstr ""
 
 #: interfaces/wmi/groups.py:323 interfaces/wmi/groups.py:363
-#: interfaces/wmi/groups.py:392 interfaces/wmi/groups.py:824
+#: interfaces/wmi/groups.py:392 interfaces/wmi/groups.py:819
 msgid "Full Name"
 msgstr ""
 
 #: interfaces/wmi/groups.py:324 interfaces/wmi/groups.py:364
-#: interfaces/wmi/groups.py:393 interfaces/wmi/groups.py:825
-#: interfaces/wmi/users.py:396 interfaces/wmi/users.py:700
+#: interfaces/wmi/groups.py:393 interfaces/wmi/groups.py:820
+#: interfaces/wmi/users.py:391 interfaces/wmi/users.py:691
 #: interfaces/wmi/machines.py:400
 msgid "Identifier"
 msgstr ""
 
 #: interfaces/wmi/groups.py:325 interfaces/wmi/groups.py:365
-#: interfaces/wmi/groups.py:394 interfaces/wmi/groups.py:825
+#: interfaces/wmi/groups.py:394 interfaces/wmi/groups.py:820
 msgid "UID"
 msgstr ""
 
@@ -838,7 +835,7 @@ msgstr ""
 msgid "No member in this group."
 msgstr ""
 
-#: interfaces/wmi/groups.py:361 interfaces/wmi/groups.py:688
+#: interfaces/wmi/groups.py:361 interfaces/wmi/groups.py:683
 msgid "Responsibles"
 msgstr ""
 
@@ -846,7 +843,7 @@ msgstr ""
 msgid "No responsible for this group."
 msgstr ""
 
-#: interfaces/wmi/groups.py:390 interfaces/wmi/groups.py:689
+#: interfaces/wmi/groups.py:390 interfaces/wmi/groups.py:684
 msgid "Guests"
 msgstr ""
 
@@ -854,7 +851,7 @@ msgstr ""
 msgid "No guest in this group."
 msgstr ""
 
-#: interfaces/wmi/groups.py:423 interfaces/wmi/groups.py:584
+#: interfaces/wmi/groups.py:423 interfaces/wmi/groups.py:579
 msgid "GID"
 msgstr ""
 
@@ -862,7 +859,7 @@ msgstr ""
 msgid "immutable"
 msgstr ""
 
-#: interfaces/wmi/groups.py:424 interfaces/wmi/groups.py:683
+#: interfaces/wmi/groups.py:424 interfaces/wmi/groups.py:678
 msgid "Name"
 msgstr ""
 
@@ -878,7 +875,7 @@ msgstr ""
 msgid "Print"
 msgstr ""
 
-#: interfaces/wmi/groups.py:435 interfaces/wmi/groups.py:602
+#: interfaces/wmi/groups.py:435 interfaces/wmi/groups.py:597
 #, python-format
 msgid "Group %s doesn't exist (%s, %s)!"
 msgstr ""
@@ -897,7 +894,7 @@ msgid "Users not yet members"
 msgstr ""
 
 #: interfaces/wmi/groups.py:461 interfaces/wmi/groups.py:472
-#: interfaces/wmi/groups.py:805
+#: interfaces/wmi/groups.py:800
 msgid "Current members"
 msgstr ""
 
@@ -909,7 +906,7 @@ msgstr ""
 msgid "Users not yet responsibles"
 msgstr ""
 
-#: interfaces/wmi/groups.py:477 interfaces/wmi/groups.py:806
+#: interfaces/wmi/groups.py:477 interfaces/wmi/groups.py:801
 msgid "Current responsibles"
 msgstr ""
 
@@ -921,11 +918,11 @@ msgstr ""
 msgid "Users not yet guests"
 msgstr ""
 
-#: interfaces/wmi/groups.py:482 interfaces/wmi/groups.py:807
+#: interfaces/wmi/groups.py:482 interfaces/wmi/groups.py:802
 msgid "Current guests"
 msgstr ""
 
-#: interfaces/wmi/groups.py:512 interfaces/wmi/groups.py:685
+#: interfaces/wmi/groups.py:512 interfaces/wmi/groups.py:680
 msgid "Skeleton"
 msgstr ""
 
@@ -937,95 +934,95 @@ msgstr ""
 msgid "Group guests"
 msgstr ""
 
-#: interfaces/wmi/groups.py:584 interfaces/wmi/groups.py:586
+#: interfaces/wmi/groups.py:579 interfaces/wmi/groups.py:581
 msgid "(immutable)"
 msgstr ""
 
-#: interfaces/wmi/groups.py:592
+#: interfaces/wmi/groups.py:587
 msgid "Group members"
 msgstr ""
 
-#: interfaces/wmi/groups.py:596
+#: interfaces/wmi/groups.py:591
 msgid "Record"
 msgstr ""
 
-#: interfaces/wmi/groups.py:616
+#: interfaces/wmi/groups.py:611
 #, python-format
 msgid "Modifying group %s"
 msgstr ""
 
-#: interfaces/wmi/groups.py:658
+#: interfaces/wmi/groups.py:653
 #, python-format
 msgid "Failed to modify one or more parameter of group %s!"
 msgstr ""
 
-#: interfaces/wmi/groups.py:684
+#: interfaces/wmi/groups.py:679
 msgid "Description"
 msgstr ""
 
-#: interfaces/wmi/groups.py:686
+#: interfaces/wmi/groups.py:681
 msgid "Perm."
 msgstr ""
 
-#: interfaces/wmi/groups.py:697
+#: interfaces/wmi/groups.py:692
 #, python-format
 msgid "%s order"
 msgstr ""
 
-#: interfaces/wmi/groups.py:698 interfaces/wmi/users.py:707
+#: interfaces/wmi/groups.py:693 interfaces/wmi/users.py:698
 #: interfaces/wmi/machines.py:710
 msgid "Click to sort in reverse order."
 msgstr ""
 
-#: interfaces/wmi/groups.py:702 interfaces/wmi/users.py:711
+#: interfaces/wmi/groups.py:697 interfaces/wmi/users.py:702
 #: interfaces/wmi/machines.py:716
 msgid "Click to sort on this column."
 msgstr ""
 
-#: interfaces/wmi/groups.py:710 interfaces/wmi/users.py:401
-#: interfaces/wmi/users.py:586 interfaces/wmi/machines.py:405
+#: interfaces/wmi/groups.py:705 interfaces/wmi/users.py:396
+#: interfaces/wmi/users.py:577 interfaces/wmi/machines.py:405
 #: interfaces/wmi/machines.py:601
 msgid "Privileges"
 msgstr ""
 
-#: interfaces/wmi/groups.py:775
+#: interfaces/wmi/groups.py:770
 msgid ""
 "View the group details, its parameters,\n"
 "\t\t\t\t\tmembers, responsibles and guests.\n"
 "\t\t\t\t\tFrom there you can print all group-related informations."
 msgstr ""
 
-#: interfaces/wmi/groups.py:791
+#: interfaces/wmi/groups.py:786
 msgid ""
 "Shared group directory is currently <strong>permissive</strong>. Click to "
 "deactivate permissiveness."
 msgstr ""
 
-#: interfaces/wmi/groups.py:793
+#: interfaces/wmi/groups.py:788
 msgid "Group is currently permissive."
 msgstr ""
 
-#: interfaces/wmi/groups.py:800
+#: interfaces/wmi/groups.py:795
 msgid ""
 "Shared group directory is currently\n"
 "\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
 "\t\t\t\t\tpermissiveness."
 msgstr ""
 
-#: interfaces/wmi/groups.py:802
+#: interfaces/wmi/groups.py:797
 msgid "Group is NOT permissive."
 msgstr ""
 
-#: interfaces/wmi/groups.py:836
+#: interfaces/wmi/groups.py:831
 msgid "none"
 msgstr ""
 
-#: interfaces/wmi/groups.py:843
+#: interfaces/wmi/groups.py:838
 #, python-format
 msgid "See %s of group %s."
 msgstr ""
 
-#: interfaces/wmi/groups.py:865
+#: interfaces/wmi/groups.py:860
 msgid ""
 "This will rebuild his/her desktop\n"
 "\t\t\t\t\t\tfrom scratch, with defaults icons and so on.\n"
@@ -1033,16 +1030,16 @@ msgid ""
 "\t\t\t\t\t\toperation to be completely successfull."
 msgstr ""
 
-#: interfaces/wmi/groups.py:870
+#: interfaces/wmi/groups.py:865
 msgid "Definitely remove this group from system."
 msgstr ""
 
-#: interfaces/wmi/groups.py:885 interfaces/wmi/users.py:824
+#: interfaces/wmi/groups.py:880 interfaces/wmi/users.py:815
 #, python-format
 msgid "number of <strong>%s</strong>:"
 msgstr ""
 
-#: interfaces/wmi/groups.py:897
+#: interfaces/wmi/groups.py:892
 msgid "Total number of groups:"
 msgstr ""
 
@@ -1317,12 +1314,12 @@ msgstr ""
 msgid "This user is a"
 msgstr ""
 
-#: interfaces/wmi/users.py:316 interfaces/wmi/users.py:699
+#: interfaces/wmi/users.py:316 interfaces/wmi/users.py:690
 #: interfaces/wmi/machines.py:319
 msgid "Full name"
 msgstr ""
 
-#: interfaces/wmi/users.py:384 interfaces/wmi/users.py:571
+#: interfaces/wmi/users.py:379 interfaces/wmi/users.py:562
 #: interfaces/wmi/machines.py:388 interfaces/wmi/machines.py:586
 #, python-format
 msgid ""
@@ -1330,140 +1327,140 @@ msgid ""
 "characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr ""
 
-#: interfaces/wmi/users.py:387 interfaces/wmi/machines.py:391
+#: interfaces/wmi/users.py:382 interfaces/wmi/machines.py:391
 msgid "Password"
 msgstr ""
 
-#: interfaces/wmi/users.py:387 interfaces/wmi/users.py:575
+#: interfaces/wmi/users.py:382 interfaces/wmi/users.py:566
 #: interfaces/wmi/machines.py:391 interfaces/wmi/machines.py:590
 #, python-format
 msgid "(%d chars. min.)"
 msgstr ""
 
-#: interfaces/wmi/users.py:390 interfaces/wmi/machines.py:394
+#: interfaces/wmi/users.py:385 interfaces/wmi/machines.py:394
 msgid "Password confirmation."
 msgstr ""
 
-#: interfaces/wmi/users.py:392 interfaces/wmi/machines.py:396
+#: interfaces/wmi/users.py:387 interfaces/wmi/machines.py:396
 msgid ""
 "Identifier must be lowercase, without accents or special characters (you can "
 "use dots and carets).<br /><br />If you let this field empty, identifier "
 "will be automaticaly guessed from first name and last name."
 msgstr ""
 
-#: interfaces/wmi/users.py:397 interfaces/wmi/machines.py:401
+#: interfaces/wmi/users.py:392 interfaces/wmi/machines.py:401
 msgid "I"
 msgstr ""
 
-#: interfaces/wmi/users.py:398 interfaces/wmi/users.py:582
+#: interfaces/wmi/users.py:393 interfaces/wmi/users.py:573
 #: interfaces/wmi/machines.py:402 interfaces/wmi/machines.py:597
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr ""
 
-#: interfaces/wmi/users.py:402 interfaces/wmi/users.py:587
+#: interfaces/wmi/users.py:397 interfaces/wmi/users.py:578
 #: interfaces/wmi/machines.py:406 interfaces/wmi/machines.py:602
 msgid "Responsibilities"
 msgstr ""
 
-#: interfaces/wmi/users.py:403 interfaces/wmi/users.py:588
+#: interfaces/wmi/users.py:398 interfaces/wmi/users.py:579
 #: interfaces/wmi/machines.py:407 interfaces/wmi/machines.py:603
 msgid "Invitations"
 msgstr ""
 
-#: interfaces/wmi/users.py:421
+#: interfaces/wmi/users.py:416
 #, python-format
 msgid "New user account %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:426 interfaces/wmi/users.py:628
+#: interfaces/wmi/users.py:421 interfaces/wmi/users.py:619
 #: interfaces/wmi/machines.py:432 interfaces/wmi/machines.py:642
 #, python-format
 msgid "Passwords do not match!%s"
 msgstr ""
 
-#: interfaces/wmi/users.py:430 interfaces/wmi/machines.py:436
+#: interfaces/wmi/users.py:425 interfaces/wmi/machines.py:436
 #, python-format
 msgid "Password must be at least %d characters long!%s"
 msgstr ""
 
-#: interfaces/wmi/users.py:462
+#: interfaces/wmi/users.py:457
 #, python-format
 msgid "GECOS and login can't be both empty!%s"
 msgstr ""
 
-#: interfaces/wmi/users.py:467
+#: interfaces/wmi/users.py:462
 #, python-format
 msgid "Failed to create account <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/wmi/users.py:472
+#: interfaces/wmi/users.py:467
 #, python-format
 msgid "Edit account %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:488 interfaces/wmi/users.py:689
-#: interfaces/wmi/users.py:799 interfaces/wmi/machines.py:502
+#: interfaces/wmi/users.py:483 interfaces/wmi/users.py:680
+#: interfaces/wmi/users.py:790 interfaces/wmi/machines.py:502
 msgid "Standard account"
 msgstr ""
 
-#: interfaces/wmi/users.py:565
+#: interfaces/wmi/users.py:556
 msgid "<strong>UID</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:566 interfaces/wmi/machines.py:581
+#: interfaces/wmi/users.py:557 interfaces/wmi/machines.py:581
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:567 interfaces/wmi/machines.py:582
+#: interfaces/wmi/users.py:558 interfaces/wmi/machines.py:582
 msgid "<strong>Profile</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:568 interfaces/wmi/machines.py:583
+#: interfaces/wmi/users.py:559 interfaces/wmi/machines.py:583
 msgid "<strong>Full name</strong>"
 msgstr ""
 
-#: interfaces/wmi/users.py:575 interfaces/wmi/machines.py:590
+#: interfaces/wmi/users.py:566 interfaces/wmi/machines.py:590
 msgid "New password"
 msgstr ""
 
-#: interfaces/wmi/users.py:579 interfaces/wmi/machines.py:594
+#: interfaces/wmi/users.py:570 interfaces/wmi/machines.py:594
 msgid "password confirmation."
 msgstr ""
 
-#: interfaces/wmi/users.py:590 interfaces/wmi/machines.py:605
+#: interfaces/wmi/users.py:581 interfaces/wmi/machines.py:605
 msgid "Record changes"
 msgstr ""
 
-#: interfaces/wmi/users.py:612
+#: interfaces/wmi/users.py:603
 #, python-format
 msgid "Modification of account %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:631 interfaces/wmi/machines.py:645
+#: interfaces/wmi/users.py:622 interfaces/wmi/machines.py:645
 #, python-format
 msgid "The password --%s-- must be at least %d characters long!%s"
 msgstr ""
 
-#: interfaces/wmi/users.py:657
+#: interfaces/wmi/users.py:648
 #, python-format
 msgid ""
 "Failed to modify one or more parameters of account\n"
 "\t\t <strong>%s</strong>!"
 msgstr ""
 
-#: interfaces/wmi/users.py:691
+#: interfaces/wmi/users.py:682
 msgid "User accounts"
 msgstr ""
 
-#: interfaces/wmi/users.py:700
+#: interfaces/wmi/users.py:691
 msgid "Profile"
 msgstr ""
 
-#: interfaces/wmi/users.py:701
+#: interfaces/wmi/users.py:692
 msgid "Locked"
 msgstr ""
 
-#: interfaces/wmi/users.py:717
+#: interfaces/wmi/users.py:708
 #, python-format
 msgid ""
 "<em>Click to edit current user account parameters:</em>\n"
@@ -1477,23 +1474,23 @@ msgid ""
 "\t\t\t\t\t"
 msgstr ""
 
-#: interfaces/wmi/users.py:753
+#: interfaces/wmi/users.py:744
 msgid "Unlock password (re-grant access to machines)."
 msgstr ""
 
-#: interfaces/wmi/users.py:754
+#: interfaces/wmi/users.py:745
 msgid "Remove account."
 msgstr ""
 
-#: interfaces/wmi/users.py:761
+#: interfaces/wmi/users.py:752
 msgid "Lock password (revoke access to machines)."
 msgstr ""
 
-#: interfaces/wmi/users.py:762
+#: interfaces/wmi/users.py:753
 msgid "Lock account."
 msgstr ""
 
-#: interfaces/wmi/users.py:774
+#: interfaces/wmi/users.py:765
 msgid ""
 "Reapply origin skel data in the personnal directory of user. This is usefull "
 "when user has lost icons, or modified too much his/her desktop (menus, "
@@ -1501,11 +1498,11 @@ msgid ""
 "\t\t\t\t\tThis will get all his/her desktop back."
 msgstr ""
 
-#: interfaces/wmi/users.py:779
+#: interfaces/wmi/users.py:770
 msgid "Definitely remove account from the system."
 msgstr ""
 
-#: interfaces/wmi/users.py:837
+#: interfaces/wmi/users.py:828
 msgid "<strong>Total number of accounts:</strong>"
 msgstr ""
 

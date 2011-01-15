@@ -330,7 +330,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		for xmldata in self.data.accounts.findall('group'):
 			if xmldata.find('uid').text == name:
 				for xmlmember in xmldata.findall('members/member'):
-					logging.warning2('boucle for : membre %s' % xmlmember.text )
+					#logging.warning2('boucle for : membre %s' % xmlmember.text )
 					if xmlmember.text == login:
 						xmldata.find('members').remove(xmlmember)
 						return True

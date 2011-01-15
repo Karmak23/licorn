@@ -241,16 +241,21 @@ def metanav(http_user):
 	% (_('Logged in as %s') % http_user)
 def page_body_start(uri, http_user, ctxtnav_func, title, active=True):
 	return '''<div id="banner">
-	%s
-	%s
-	%s
+	{back_to_home}
+	{meta_nav}
+	{menu}
 </div><!-- banner -->
-<div id="main">
-%s
-<div id="content">
-	<h1>%s</h1>
-	''' % (
-		backto(), metanav(http_user), menu(uri), ctxtnav_func(active), title)
+<div id="main" class="main_{uri_class}">
+{context_navigation}
+<div id="content" class="content_{uri_class}">
+	<h1 class="h1_{uri_class} title title_{uri_class}">{title}</h1>
+	'''.format(
+		back_to_home=backto(),
+		meta_nav=metanav(http_user),
+		menu=menu(uri),
+		context_navigation=ctxtnav_func(active),
+		title=title,
+		uri_class=uri[1:])
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def bad_arg_error(message=None):
