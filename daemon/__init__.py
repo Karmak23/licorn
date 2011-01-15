@@ -13,7 +13,7 @@ from Queue import Empty
 
 from licorn.foundations           import options, logging
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import ltrace, insert_ltrace
 from licorn.foundations.base      import MixedDictObject, Singleton
 from licorn.foundations.thread    import _threads, _thcount
 from licorn.foundations.pyutils   import format_time_delta
@@ -158,23 +158,34 @@ def restart(signum, frame, pname):
 	# else it's done too late and on restart the port can't be rebinded on.
 	os.closerange(3, 32)
 
-	cmd = [ 'licornd' ]
+	# even after having reforked (see main.py and foundations.process) with
+	# LTRACE arguments on, the first initial sys.argv hasn't bee modified,
+	# we have to redo all the work here.
+	cmd = ['licorn-daemon']
+	cmd.extend(insert_ltrace())
 
-	# we need to rebuild all command line options, else the new process will
-	# not behave exactly like the old. This could lead it to fork into the
-	# background, start the WMI on another socket, or such strange things.
-	if options.verbose > 0:
-		cmd.append('-%s' % ('v' * (options.verbose-1)))
-	if options.wmi_listen_address:
-		cmd.extend(['-w', options.wmi_listen_address])
-	if not options.wmi_enabled:
-		cmd.append('-W')
-	if options.replace:
-		cmd.append('--replace')
-	if not options.daemon:
-		cmd.append('-D')
+	found = False
+	for arg in ('-p', '--wake-pid', '--pid-to-wake'):
+		try:
+			wake_index = sys.argv.index(arg)
+		except:
+			continue
 
-	os.execvp('licornd', cmd)
+		found = True
+		cmd.extend(sys.argv[0:wake_index])
+		cmd.extend(sys.argv[wake_index+2:])
+		# pray there is only one --wake_pid argument. As this is an internally
+		# used flag only, it should be. Else we will forget to remove all other
+		# and will send signals to dead processes.
+		break
+
+	if not found:
+		cmd.extend(sys.argv[:])
+
+	#print '>> daemon.restart %s' % cmd
+
+	# XXX: awful tricking for execvp but i'm tired of this.
+	os.execvp(cmd[1], [cmd[0]] + cmd[2:])
 def setup_signals_handler(pname):
 	""" redirect termination signals to a the function which will clean everything. """
 

@@ -246,7 +246,7 @@ def exit_or_replace_if_already_running(pname, my_pid, replace=False):
 def refork_if_not_running_root_or_die():
 	if os.getuid() != 0 or os.geteuid() != 0:
 		try:
-			process.refork_as_root_or_die(process_title='licorn-daemon')
+			process.refork_as_root_or_die('licorn-daemon')
 		except exceptions.LicornRuntimeException, e:
 			logging.error("%s: must be run as %s (was: %s)." % (dname,
 				stylize(ST_NAME, 'root'), e))

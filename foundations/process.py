@@ -11,7 +11,7 @@ Licensed under the terms of the GNU GPL version 2
 import os, sys, traceback, pwd, grp, time
 
 from licorn.foundations        import exceptions, logging
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltrace import ltrace, insert_ltrace
 #
 # daemon and process functions
 #
@@ -178,7 +178,9 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 
 	if pwd.getpwuid(os.getuid()).pw_name in gmembers:
 
-		cmd=[ process_title ]
+		cmd = [process_title]
+		cmd.extend(insert_ltrace())
+
 		cmd.extend(sys.argv)
 
 		if prefunc != None:
@@ -187,6 +189,7 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 		logging.progress('''Exec'ing ourselves with sudo to gain root '''
 			'''privileges (execvp(%s)).''' % cmd)
 
+		#print '>> process.refork_as_root_or_die %s' % cmd
 		os.execvp('sudo', cmd)
 
 	else:

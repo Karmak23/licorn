@@ -18,7 +18,7 @@ ltrace - light procedural trace (debug only)
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
-
+from sys  import stderr
 from os   import getenv
 from time import time, localtime, strftime
 
@@ -103,7 +103,8 @@ trc['argparser']     = 0x002000000000000000000000
 trc['wmi']           = 0x004000000000000000000000
 
 
-trc['highlevel']     = trc['all'] ^ trc['foundations']
+trc['highlevel']     = (trc['all'] ^ trc['foundations']
+						^ trc['thread'] ^ trc['machines'] ^ trc['inotifier'])
 trc['high']          = trc['highlevel']
 trc['standard']      = trc['highlevel']
 trc['std']           = trc['highlevel']
@@ -171,10 +172,25 @@ if new_trace != None or old_trace != None:
 
 	def ltrace(module, message):
 		if  ltrace_level & trc[module]:
-			sys.stderr.write('%s %s: %s\n' % (
+			stderr.write('%s %s: %s\n' % (
 				stylize(ST_COMMENT, '   %s' % mytime()),
 				stylize(ST_DEBUG, 'TRACE  ' + module.rjust(maxwidth)), message))
 		return True
+
+	def insert_ltrace():
+		# in trace mode, use python interpreter directly to avoid the -OO
+		# inserted in all our executables.
+		# NOTE: don't use assert ltrace here, this will fail to display the
+		# message on first launch, where -OO is active.
+		stderr.write('Licorn®: %s for %s\n' % (
+					stylize(ST_IMPORTANT, 'LTRACE enabled'),
+					stylize(ST_COMMENT, env_trace)
+				)
+			)
+
+		return ['python']
 else:
 	def ltrace(a, b):
 		return True
+	def insert_ltrace():
+		return []
