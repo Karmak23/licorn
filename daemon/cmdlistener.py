@@ -310,8 +310,16 @@ class CommandListener(LicornBasicThread):
 			self.name, stylize(ST_OK, "ready"),
 			stylize(ST_URL, 'pyro://*:%s' % self.pyro_daemon.port)))
 
+		def wake_pid(pid):
+			try:
+				os.kill(pid, signal.SIGUSR1)
+			except OSError, e:
+				# no such process, not a real problem.
+				if e.errno != 3:
+					raise e
+
 		for pid in self.pids_to_wake:
-			th = Timer(0.25, lambda x: os.kill(x, signal.SIGUSR1), (pid,))
+			th = Timer(0.25, wake_pid, (pid,))
 			self.wake_threads.append(th)
 			assert ltrace('thread', '%s starting wake up thread %s.' % (
 				self.name, th.name))
