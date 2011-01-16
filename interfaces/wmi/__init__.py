@@ -105,23 +105,22 @@ class WMIObject():
 					disabled,
 					ctx[4],
 					ctx[0]
-				) for ctx in self.wmi.context_menu_data ])
-	def _countdown(self, name, countdown_seconds, uri=None):
+				) for ctx in self.wmi.context_menu_data if len(ctx) == 5 or ctx[5]() ])
+	def _countdown(self, name, countdown_seconds, uri=None, limit=0):
 		""" Always increment the
-			countdown with 1 seconds, else the webpage could refresh too early
-			and display a new 2 seconds countdown, due to rounding errors.
+			countdown with 2 seconds, else the webpage could refresh too early
+			and display a new 1 second countdown, due to rounding errors.
 
 		http://www.plus2net.com/javascript_tutorial/countdown.php """
 		return '''
 <script type="text/javascript">
 function display_{name}(start){{
 	window.start_{name} = parseFloat(start);
-	 // change this to stop the counter at a higher value
-	var end = 0;
-	// Refresh rate in milli seconds
-	var refresh = 1000;
-	if(window.start_{name} >= end ) {{
-		mytime=setTimeout('display_countdown_{name}()', refresh)
+	// change this to stop the counter at a higher value
+	var end_{name} = {limit};
+	if(window.start_{name} {counter_test} end_{name}) {{
+		// Refresh rate in milli seconds
+		mytime=setTimeout('display_countdown_{name}()', 1000)
 	}} else {{
 		document.location = "{refresh_uri}";
 	}}
@@ -142,35 +141,58 @@ function display_countdown_{name}() {{
 
 	var x = "";
 
-	if (days > 0)
-		x += days + " {days}, ";
 
-	if (hours > 0)
-		x += hours + " {hours}, ";
+	if (days > 1)
+		x += days + " {days}";
 
-	if (minutes > 0)
+	else if (days > 0)
+		x += days + " {day}";
+
+	if (days > 0 && (hours > 0 || minutes > 0 || secs > 0))
+		x += ", ";
+
+	if (hours > 1)
+		x += hours + " {hours}";
+
+	else if (hours > 0)
+		x += hours + " {hour}";
+
+	if (hours > 0 && (minutes > 0 || secs > 0))
+		x += ", ";
+
+	if (minutes > 1)
 		x += minutes + " {minutes}";
+
+	else if (minutes > 0)
+		x += minutes + " {minute}";
 
 	if (minutes > 0 && secs > 0)
 		x += ", ";
 
-	if (secs > 0)
+	if (secs > 1)
 		x += secs + " {seconds}";
+
+	else if (secs > 0)
+		x += secs + " {second}";
 
 	document.getElementById('countdown_{name}').innerHTML = x;
 
-	tt=display_{name}(window.start_{name} - 1);
+	// change the operation to make the counter go upwards or downwards
+	tt=display_{name}(window.start_{name} {operation} 1);
 }}
 display_{name}({countdown_seconds});
 </script>
 <span id='countdown_{name}' class="countdown"></span>'''.format(
 	name=name,
-	countdown_seconds=countdown_seconds + 1.0,
-	days=_('day(s)'),
-	hours=_('hour(s)'),
-	minutes=_('minute(s)'),
-	seconds=_('second(s)'),
-	refresh_uri="/" + self.wmi.uri
+	countdown_seconds=countdown_seconds + 2.0,
+	day=_('day'), 	days=_('days'),
+	hour=_('hour'), hours=_('hours'),
+	minute=_('minute'), minutes=_('minutes'),
+	second=_('second'), seconds=_('seconds'),
+	refresh_uri="/" + self.wmi.uri,
+	limit=limit,
+	operation='+' if limit else '-',
+	counter_test='<=' if limit else '>='
 )
 
 def init():

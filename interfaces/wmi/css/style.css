@@ -605,10 +605,8 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 }
 
 .countdown {
-	padding: 2px;
 	display: inline;
 	font-weight: bolder;
-	border-radius:5px;
 }
 
 .small_indicator {
@@ -639,6 +637,19 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 .load_avg_level5 {
 	background-color: #CB4B4B;
 }
+
+.backups_important {
+	text-align: center;
+	margin: 10px 25%;
+	padding: 7px 7px 7px 62px;
+	font-weight: bolder;
+	border-radius:5px;
+	background-color: #CB4B4B;
+	background-image: url('/images/48x48/dialog-warning.png');
+	background-repeat:no-repeat;
+	background-position: 12px center;
+}
+
 
 
 .lined {

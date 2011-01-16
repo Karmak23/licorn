@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-15 19:48+0100\n"
+"POT-Creation-Date: 2011-01-16 09:28+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,147 +21,154 @@ msgstr ""
 msgid "Users allowed to connect via SSHd"
 msgstr ""
 
-#: extensions/rdiffbackup.py:177
+#: extensions/rdiffbackup.py:279
 msgid "Backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:178
+#: extensions/rdiffbackup.py:280
 msgid "Manage backups and restore files"
 msgstr ""
 
-#: extensions/rdiffbackup.py:180
+#: extensions/rdiffbackup.py:282
 msgid "Run backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:181
+#: extensions/rdiffbackup.py:283
 msgid "Run a system incremental backup now"
 msgstr ""
 
-#: extensions/rdiffbackup.py:597
-msgid "Last backup on this volume occured {0}."
+#: extensions/rdiffbackup.py:287
+msgid "Rescan volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:599
-msgid "on %A %d %B %Y %H:%M"
+#: extensions/rdiffbackup.py:288
+msgid "Force the system to rescan and remount connected volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:602
+#: extensions/rdiffbackup.py:605
+msgid "Last backup on this volume occured {0} ago."
+msgstr ""
+
+#: extensions/rdiffbackup.py:611
 msgid "No backup has occured yet."
 msgstr ""
 
-#: extensions/rdiffbackup.py:603
-msgid ""
-"Next backup attempt will occur in {0} (this page will automatically reload)."
+#: extensions/rdiffbackup.py:612
+msgid "Next backup attempt will occur in {0}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:616
+#: extensions/rdiffbackup.py:625
 msgid "Run a manual backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:624
+#: extensions/rdiffbackup.py:633
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 
-#: extensions/rdiffbackup.py:628
+#: extensions/rdiffbackup.py:637
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
-"server before starting this procedure.<br /><br/>See <href="
-"\"{backup_doc_uri}\">Backup-related documentation</a> for details on "
-"enabling backup volumes."
+"server before starting this procedure.<br /><br />See <a href=\"http://docs."
+"licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> "
+"for details on enabling backup volumes."
 msgstr ""
 
-#: extensions/rdiffbackup.py:644
+#: extensions/rdiffbackup.py:652
 msgid "Run a manual backup on volume {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:649
+#: extensions/rdiffbackup.py:657
 msgid "Recent backup detected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:650
+#: extensions/rdiffbackup.py:658
 msgid ""
-"{auto_select}<br /><br />The last backup has been run recently "
-"({last_backup_time}), in less than the system configured interval "
-"({interval}). Are you sure you want to force a manual backup now?"
+"{auto_select}<br /><br />The last backup has been run {last_backup_time} "
+"ago, which is less than the system configured interval ({interval}). Are you "
+"sure you want to force a manual backup now?<br /><br />(if you do not answer "
+"withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:660
+#: extensions/rdiffbackup.py:674
 msgid "Run >>"
 msgstr ""
 
-#: extensions/rdiffbackup.py:661 interfaces/wmi/groups.py:140
+#: extensions/rdiffbackup.py:675 interfaces/wmi/groups.py:140
 #: interfaces/wmi/groups.py:593 interfaces/wmi/users.py:136
 #: interfaces/wmi/users.py:210 interfaces/wmi/machines.py:273
 msgid "R"
 msgstr ""
 
-#: extensions/rdiffbackup.py:663 interfaces/wmi/groups.py:264
+#: extensions/rdiffbackup.py:677 interfaces/wmi/groups.py:264
 #: interfaces/wmi/users.py:94 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:223 interfaces/wmi/machines.py:185
 #: interfaces/wmi/machines.py:229 interfaces/wmi/machines.py:275
 msgid "<< Cancel"
 msgstr ""
 
-#: extensions/rdiffbackup.py:663 interfaces/wmi/users.py:138
+#: extensions/rdiffbackup.py:677 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:223 interfaces/wmi/users.py:273
 #: interfaces/wmi/machines.py:275
 msgid "C"
 msgstr ""
 
-#: extensions/rdiffbackup.py:679
+#: extensions/rdiffbackup.py:693
 msgid "Eject volume {device}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:682
+#: extensions/rdiffbackup.py:696
 msgid " (a backup is underway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:690
+#: extensions/rdiffbackup.py:701
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:702
+#: extensions/rdiffbackup.py:718
 msgid "System backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:715
+#: extensions/rdiffbackup.py:735
 msgid ""
-"No backup volume found. Please connect your backup volume to your server, "
-"for backup to automatically start."
+"No backup volume found. Please connect a backup volume to your server, and "
+"backups will automatically start (next try in {countdown})."
 msgstr ""
 
-#: extensions/rdiffbackup.py:721
+#: extensions/rdiffbackup.py:743
 msgid ""
 "No backup found, or all backup volumes are currently unmounted (you can "
 "safely disconnect them from your server).<br /><br />Next automatic backup "
 "will occur in {countdown}, and will  automatically remount any backup volume "
-"still connected at this moment. Please wait until then, or <a href="
-"\"{uri}\">run a manual backup now</a> to force a remount."
+"still connected at this moment."
 msgstr ""
 
-#: extensions/rdiffbackup.py:744
+#: extensions/rdiffbackup.py:761
 msgid ""
-"A backup is currently in progress, please don't disconnect <strong>{volume}</"
-"strong>."
+"A backup is currently in progress, please do not disconnect <strong>{volume}"
+"</strong>.<br /><br /> (update in {countdown}…)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:764
+#: extensions/rdiffbackup.py:786
 msgid "Can't eject, backup in progress"
 msgstr ""
 
-#: extensions/rdiffbackup.py:770
+#: extensions/rdiffbackup.py:790
+msgid "Backup in progress icon"
+msgstr ""
+
+#: extensions/rdiffbackup.py:800
 msgid "Eject the volume"
 msgstr ""
 
-#: extensions/rdiffbackup.py:776
+#: extensions/rdiffbackup.py:806
 msgid "Eject device icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:787
+#: extensions/rdiffbackup.py:817
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr ""
 
-#: extensions/rdiffbackup.py:795
+#: extensions/rdiffbackup.py:822
 msgid "Backups on {mount_point}"
 msgstr ""
 
@@ -344,20 +351,36 @@ msgid ""
 "web-form."
 msgstr ""
 
-#: interfaces/wmi/__init__.py:169
-msgid "day(s)"
+#: interfaces/wmi/__init__.py:182
+msgid "day"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:170
-msgid "hour(s)"
+#: interfaces/wmi/__init__.py:182
+msgid "days"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:171
-msgid "minute(s)"
+#: interfaces/wmi/__init__.py:183
+msgid "hour"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:172
-msgid "second(s)"
+#: interfaces/wmi/__init__.py:183
+msgid "hours"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:184
+msgid "minute"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:184
+msgid "minutes"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:185
+msgid "second"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:185
+msgid "seconds"
 msgstr ""
 
 #: interfaces/wmi/utils.py:25

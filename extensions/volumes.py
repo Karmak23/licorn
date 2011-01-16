@@ -137,9 +137,6 @@ class Volume:
 		self.mount_point = mount_point
 		self.lock        = RLock()
 
-		#: who locked me ?
-		self.locker      = None
-
 		if mount_point:
 			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 		else:
@@ -156,7 +153,6 @@ class Volume:
 		self.lock.acquire()
 		if self.mount_point is None:
 			self.mount()
-		self.locker = current_thread()
 	def locked(self):
 		""" Return ``True`` if instance is currently locked, else ``False``. """
 		if self.lock.acquire(blocking=False):
@@ -167,7 +163,6 @@ class Volume:
 	def __exit__(self, type, value, traceback):
 		""" TODO: use arguments... """
 		#print '>> Volume.__exit__', current_thread().name
-		self.locker = None
 		self.lock.release()
 	def __compute_mount_point(self):
 		if self.label:
