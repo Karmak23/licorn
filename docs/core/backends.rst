@@ -29,6 +29,7 @@ These are the real backends implementation. They all inherit from one or more of
 	backends/openldap
 	backends/dnsmasq
 
+.. _core.backends.abstract:
 
 Backends abstract classes
 =========================
