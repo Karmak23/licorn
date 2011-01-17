@@ -2094,3 +2094,8 @@ class GroupsController(Singleton, CoreController):
 		# TODO: verify if the group doesn't already exist.
 		#while potential in UsersController.users:
 		return groupname
+	def _wmi_protected_group(self, name, complete=True):
+		if complete:
+			return self.is_system_group(name)
+		else:
+			return self.is_system_group(name) and not self.is_privilege(name)

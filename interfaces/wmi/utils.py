@@ -272,6 +272,10 @@ def forgery_error(title=_("Impossible action")):
 			description = _('''Some parts of the system cannot be modified, '''
 				'''for your own safety and the world to rest in peace.''')
 		)))
+def fool_proof_protection_error(message, title=_("Impossible action")):
+	return (HTTP_TYPE_TEXT, page(title,
+		error(_("Impossible action"),
+			description = message )))
 def get_traceback(excep):
 	""" Reformat the traceback for web display. """
 	return '<p>Traceback:</p><pre style="font-size: 80%%;">%s\n%s</pre>' % (

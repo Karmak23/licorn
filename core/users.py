@@ -1320,3 +1320,5 @@ class UsersController(Singleton, CoreFSController):
 
 		raise exceptions.BadArgumentError(
 			"You must specify an UID or a login to get primary_gid of.")
+	def _wmi_protected_user(self, login):
+		return self.is_system_login(login)

@@ -15,6 +15,9 @@ from licorn.interfaces.wmi import utils as w
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'
 
+protected_user  = LMC.users._wmi_protected_user
+protected_group = LMC.groups._wmi_protected_group
+
 def ctxtnav(active=True):
 
 	if active:
@@ -32,19 +35,14 @@ def ctxtnav(active=True):
 		</ul>
 	</div>
 	''' % (_('Add a new group on the system.'), onClick, disabled, disabled, _('Add a group'))
-def protected_group(name, groups, complete=True):
-	if complete:
-		return LMC.groups.is_system_group(name)
-	else:
-		return LMC.groups.is_system_group(name) and not LMC.groups.is_privilege(name)
 
 # locking and unlocking.
-def unlock(uri, http_user, name, sure=False, groups=None, **kwargs):
+def unlock(uri, http_user, name, sure=False, **kwargs):
 	""" Make a shared group dir permissive. """
 
 	title = _("Make group %s permissive") % name
 
-	if protected_group(name, groups):
+	if protected_group(name):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -77,12 +75,12 @@ def unlock(uri, http_user, name, sure=False, groups=None, **kwargs):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to activate permissivenes on group
 			<strong>%s</strong>!''') % name)
-def lock(uri, http_user, name, sure=False, groups=None, **kwargs):
+def lock(uri, http_user, name, sure=False, **kwargs):
 	""" Make a group not permissive. """
 
 	title = _("Make group %s not permissive") % name
 
-	if protected_group(name, groups):
+	if protected_group(name):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -114,16 +112,12 @@ def lock(uri, http_user, name, sure=False, groups=None, **kwargs):
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove permissiveness from group
 				<strong>%s</strong>!''') % name)
-def delete(uri, http_user, name, sure=False, no_archive=False, yes=None,
-	configuration=None, groups=None, **kwargs):
+def delete(uri, http_user, name, sure=False, no_archive=False, **kwargs):
 	""" Remove group and archive (or not) group shared dir. """
-
-	# submit button, forget it.
-	del yes
 
 	title = _("Remove group %s") % name
 
-	if protected_group(name, groups):
+	if protected_group(name):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -156,13 +150,12 @@ def delete(uri, http_user, name, sure=False, no_archive=False, yes=None,
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove group <strong>%s</strong>!''') % name)
-def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
-	groups=None, **kwargs):
+def skel(req, name, sure=False, apply_skel=None, **kwargs):
 	""" TO BE IMPLEMENTED ! reapply a group's users' skel with confirmation."""
 
 	title = _("Skeleton reapplying for group %s") % name
 
-	if protected_group(name, groups):
+	if protected_group(name):
 		return w.forgery_error(title)
 
 	if apply_skel is None:
@@ -217,7 +210,7 @@ def skel(req, name, sure=False, apply_skel=None, configuration=None, users=None,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to apply skel %s to members of group %s.''') % (
 				os.path.basename(apply_skel), login))
-def new(uri, http_user, configuration=None, **kwargs):
+def new(uri, http_user, **kwargs):
 	"""Generate a form to create a new group on the system."""
 
 	title = _("Creating a new group")
@@ -267,13 +260,10 @@ def new(uri, http_user, configuration=None, **kwargs):
 		)
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def create(uri, http_user, name, description=None, skel="", permissive=False,
-	create=None, **kwargs):
+	**kwargs):
 
 	title = _("Creating group %s") % name
 	data = '%s<h1>%s</h1><br />' % (w.backto(), title)
-
-	# web button (submit)
-	del create
 
 	command = [ 'sudo', 'add', 'group', '--quiet', '--no-colors',
 		'--name', name, '--skel', skel ]
@@ -287,13 +277,12 @@ def create(uri, http_user, name, description=None, skel="", permissive=False,
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to create group %s!''') % name)
-def view(uri, http_user, name, configuration=None, users=None, groups=None,
-	**kwargs):
+def view(uri, http_user, name,**kwargs):
 	"""Prepare a group view to be printed."""
 
 	title = _("Details of group %s") % name
 
-	if protected_group(name, groups, complete=False):
+	if protected_group(name, complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -436,8 +425,7 @@ def view(uri, http_user, name, configuration=None, users=None, groups=None,
 			name, "group = g[LMC.groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-def edit(uri, http_user, name, configuration=None, users=None, groups=None,
-	**kwargs):
+def edit(uri, http_user, name, **kwargs):
 	"""Edit a group."""
 
 	u = LMC.users
@@ -445,7 +433,7 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 
 	title = _("Editing group %s") %  name
 
-	if protected_group(name, groups, complete=False):
+	if protected_group(name, complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -602,16 +590,32 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	members_source    = [], members_dest = [],
 	resps_source      = [], resps_dest   = [],
 	guests_source     = [], guests_dest  = [],
-	record=None, configuration=None, users=None, groups=None, **kwargs):
+	**kwargs):
 	""" Record group modification changes."""
-
-	# web submit -> forget it
-	del record
 
 	title   = _("Modifying group %s") % name
 
-	if protected_group(name, groups, complete=False):
+	if protected_group(name, complete=False):
 		return w.forgery_error(title)
+
+	# protect against URL forgery
+	for user_list in (members_source, members_dest, resps_source, resps_dest,
+			guests_source, guests_dest):
+		if hasattr(user_list, '__iter__'):
+			for user in user_list:
+				if protected_user(user):
+					return w.forgery_error(title)
+		else:
+			if protected_user(user_list):
+				return w.forgery_error(title)
+
+	if (http_user in members_source
+		or http_user in resps_source
+		or http_user in guests_source):
+		return w.fool_proof_protection_error(_("The system won't let you "
+			"remove your own account from the {wmi_group} group, "
+			"sorry.").format(
+				wmi_group=LMC.configuration.licornd.wmi.group), title)
 
 	data    = '%s<h1>%s</h1>' % (w.backto(), title)
 	command = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
@@ -651,8 +655,7 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to modify one or more parameter of group %s!''') % name)
-def main(uri, http_user, sort="name", order="asc", configuration=None,
-	users=None, groups=None, **kwargs):
+def main(uri, http_user, sort="name", order="asc", **kwargs):
 	"""List all groups and provileges on the system, displaying them
 	in a nice HTML page. """
 

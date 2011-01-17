@@ -32,6 +32,9 @@ successfull_redirect = '/users/list'
 
 # private functions.
 
+protected_user  = LMC.users._wmi_protected_user
+protected_group = LMC.groups._wmi_protected_group
+
 def ctxtnav(active=True):
 
 	if active:
@@ -64,13 +67,8 @@ def ctxtnav(active=True):
 			onClick, disabled, disabled,
 		_("Export accounts")
 		)
-def protected_user(login, users):
-	return LMC.users.is_system_login(login)
-def export(uri, http_user, type="", yes=None, users=None, **kwargs):
+def export(uri, http_user, type="", **kwargs):
 	""" Export user accounts list."""
-
-	# submit button; forget it.
-	del yes
 
 	title = _("Export user accounts list")
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -107,17 +105,19 @@ def export(uri, http_user, type="", yes=None, users=None, **kwargs):
 			data = LMC.users.ExportXML()
 
 		return w.HTTP_TYPE_DOWNLOAD, (type, data)
-def delete(uri, http_user, login, sure=False, no_archive=False, yes=None,
-	configuration=None, users=None, **kwargs):
+def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 	"""remove user account."""
-
-	# form submit button, forget it.
-	del yes
 
 	title = _("Remove user account %s") % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
+
+	if login == http_user or login in \
+			LMC.groups.all_members(name=LMC.configuration.defaults.admin_group):
+		return w.fool_proof_protection_error( _('Did you <em>really</em> think '
+			'the system could have allowed you to delete your own account or '
+			'an admin account? I don\'t.'), title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
@@ -153,12 +153,12 @@ def delete(uri, http_user, login, sure=False, no_archive=False, yes=None,
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_('''Failed to remove account <strong>%s</strong>!''') % login)
-def unlock(uri, http_user, login, users=None, **kwargs):
+def unlock(uri, http_user, login, **kwargs):
 	"""unlock a user account password."""
 
 	title = _("Unlock account %s") % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -176,17 +176,20 @@ def unlock(uri, http_user, login, users=None, **kwargs):
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_("Failed to unlock account <strong>%s</strong>!") % login)
-def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
-	users=None, configuration=None, groups=None, **kwargs):
+def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 	"""lock a user account password."""
-
-	# submit button: forget it.
-	del yes
 
 	title = _("Lock account %s") % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
+
+	if login == http_user or login in \
+			LMC.groups.all_members(name=LMC.configuration.defaults.admin_group):
+		return w.fool_proof_protection_error( _("I don't think you really "
+			"want to lock you own account or any admin account, pal. And I "
+			"won't let you do it." ),
+			title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
@@ -195,7 +198,8 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
 			'''clients (thin ones, and Windows&reg;, %s/Linux&reg; and '''
 			'''Macintosh&reg; ones).''') % w.acr('GNU')
 
-		if LMC.configuration.ssh.enabled :
+		# TODO: move this in the extension
+		if 'openssh' in LMC.extensions.keys() :
 			if login in LMC.groups.all_members(LMC.configuration.ssh.group):
 				description += _('''<br /><br />
 					But this will not block incoming %s network connections, '''
@@ -238,16 +242,12 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, yes=None,
 		return w.run(command, successfull_redirect,
 			w.page(title, data + '%s' + w.page_body_end()),
 			_("Failed to lock account <strong>%s</strong>!") % login)
-def skel(uri, http_user, login, sure=False, apply_skel=None, yes=None,
-	configuration=None, users=None, **kwargs):
+def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
-
-	# submit button; forget it.
-	del yes
 
 	title = _("Reapply skel to user account %s") % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
 
 	if apply_skel is None:
@@ -285,8 +285,7 @@ def skel(uri, http_user, login, sure=False, apply_skel=None, yes=None,
 			_('''Failed to apply skel <strong>%s</strong> on user
 			account <strong>%s</strong>!''') % (os.path.basename(apply_skel),
 				login))
-def new(uri, http_user, configuration=None, users=None, groups=None,
-	profiles=None, **kwargs):
+def new(uri, http_user, **kwargs):
 	"""Generate a form to create a new user on the system."""
 
 	g = LMC.groups
@@ -331,7 +330,7 @@ def new(uri, http_user, configuration=None, users=None, groups=None,
 	data += '''
 	<script type="text/javascript" src="/js/jquery.js"></script>
 	<script type="text/javascript" src="/js/accordeon.js"></script>
-	
+
 	<div id="edit_form">
 	<form name="%s" id="%s" action="/users/create" method="post">
 		<table>
@@ -407,11 +406,7 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 	privileged_groups_dest=[], responsible_groups_dest=[],
 	guest_groups_dest=[], standard_groups_source=[],
 	privileged_groups_source=[], responsible_groups_source=[],
-	guest_groups_source=[],	create=None, configuration=None, users=None,
-	profiles=None, **kwargs):
-
-	# forget it; useless
-	del create
+	guest_groups_source=[],	**kwargs):
 
 	title = _("New user account %s") % login
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -460,13 +455,12 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 	return w.run(command, successfull_redirect,
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to create account <strong>%s</strong>!''') % login)
-def edit(uri, http_user, login, configuration=None, users=None, groups=None,
-	profiles=None, **kwargs):
+def edit(uri, http_user, login, **kwargs):
 	"""Edit an user account, based on login."""
 
 	title = _('Edit account %s') % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -499,7 +493,7 @@ def edit(uri, http_user, login, configuration=None, users=None, groups=None,
 		data += '''
 		<script type="text/javascript" src="/js/jquery.js"></script>
 		<script type="text/javascript" src="/js/accordeon.js"></script>
-		
+
 		<div id="edit_form">
 <form name="%s" id="%s" action="/users/record/%s" method="post">
 	<table id="user_account">
@@ -593,17 +587,42 @@ def record(uri, http_user, login, loginShell=None, password="",
 	privileged_groups_source  = [],  privileged_groups_dest = [],
 	responsible_groups_source = [], responsible_groups_dest = [],
 	guest_groups_source       = [],       guest_groups_dest = [],
-	record=None, configuration=None, users=None, groups=None, profiles=None,
 	**kwargs):
 	"""Record user account changes."""
 
-	# submit button. forget it.
-	del record
-
 	title = _("Modification of account %s") % login
 
-	if protected_user(login, users):
+	if protected_user(login):
 		return w.forgery_error(title)
+
+	# protect against URL forgery
+	for group_list in (privileged_groups_source, privileged_groups_dest,
+			standard_groups_source, standard_groups_dest,
+			responsible_groups_source, responsible_groups_dest,
+			guest_groups_source, guest_groups_dest):
+		if hasattr(group_list, '__iter__'):
+			for group in group_list:
+				if protected_group(group, complete=False):
+					return w.forgery_error(title)
+		else:
+			if protected_group(group_list, complete=False):
+				return w.forgery_error(title)
+
+	wmi_group = LMC.configuration.licornd.wmi.group
+
+	# protect against fool errors AND URL forgery.
+	if login == http_user and (
+			wmi_group in privileged_groups_source
+			or wmi_group in standard_groups_source
+			or wmi_group in responsible_groups_source
+			or wmi_group in guest_groups_source
+		):
+		return w.fool_proof_protection_error(_('You cannot remove yourself '
+			'from the {wmi_group} group, this would be like shooting '
+			'yourself in the foot a with Perl-crafted bullet from a C# '
+			'compiled handgun: non-sense (this is a geek private-joke). '
+			'I won\'t allow you to do that.').format(
+				wmi_group=LMC.configuration.licorn.wmi.group), title)
 
 	if loginShell is None:
 		loginShell = LMC.configuration.users.default_shell
@@ -647,8 +666,7 @@ def record(uri, http_user, login, loginShell=None, password="",
 		w.page(title, data + '%s' + w.page_body_end()),
 		_('''Failed to modify one or more parameters of account
 		 <strong>%s</strong>!''') % login)
-def main(uri, http_user, sort="login", order="asc", configuration=None,
-	users=None, groups=None, profiles=None, **kwargs):
+def main(uri, http_user, sort="login", order="asc", **kwargs):
 	""" display all users in a nice HTML page. """
 	start = time.time()
 
