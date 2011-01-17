@@ -544,7 +544,7 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 		data += '''
 		<script type="text/javascript" src="/js/jquery.js"></script>
 		<script type="text/javascript" src="/js/accordeon.js"></script>
-		
+
 		<div id="edit_form">
 <form name="%s" id="%s" action="/groups/record/%s" method="post">
 	<table id="user_account">
@@ -583,7 +583,7 @@ def edit(uri, http_user, name, configuration=None, users=None, groups=None,
 			permissive(group['permissive'], sys),
 			_('Group description'),
 			descr(group['description'], sys),
-			skel(group['groupSkel'], sys),
+			skel(group['groupSkel'] if 'groupSkel' in group else '', sys),
 			_('Group members'),
 				dbl_lists[name],
 			data_rsp_gst,
@@ -772,7 +772,7 @@ def main(uri, http_user, sort="name", order="asc", configuration=None,
 					From there you can print all group-related informations.'''),
 				name, g[gid]['description'], name,
 				name, g[gid]['description'], g[gid]['description'],
-				name, g[gid]['groupSkel'])
+				name, g[gid]['groupSkel']) if 'groupSkel' in g[gid] else 'aucun'
 
 			if LMC.groups.is_system_gid(gid):
 				html_data += '<td>&#160;</td>'
