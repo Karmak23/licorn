@@ -1237,6 +1237,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			(opts.login, LMC.users.login_to_uid),
 			(opts.uid, LMC.users.confirm_uid)
 			]
+
 		exclude_id_lists=[
 			(opts.exclude, LMC.users.guess_identifier),
 			(opts.exclude_login, LMC.users.login_to_uid),
@@ -1254,14 +1255,25 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.users.Select(filters.STD), LMC.users.confirm_uid),
-					(LMC.users.Select(filters.SYSUNRSTR), LMC.users.confirm_uid)
+					(LMC.users.Select(filters.STD), lambda x: x),
+					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
 					])
+
+		# by default if nothing is specified, we modify the current user.
+		# this is a special comfort-shortcut behavior.
+		#selection = filters.NONE
+		selection = 'uid=%s' % LMC.users.login_to_uid(opts.current_user)
+
+		if opts.system:
+			selection = filters.SYSTEM
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
 
 		uids_to_mod = self.select(LMC.users, 'user',	args=args,
 				include_id_lists=include_id_lists,
 				exclude_id_lists=exclude_id_lists,
-				default_selection='uid=%s' % LMC.users.login_to_uid(opts.current_user))
+				default_selection=selection)
 
 		assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
 
