@@ -8,7 +8,7 @@ Licorn extensions: squid - http://docs.licorn.org/extensions/squid.html
 
 """
 
-import os, gconf
+import os
 
 from licorn.foundations.pyutils   import add_or_dupe_enumeration
 from licorn.foundations           import logging, exceptions, readers, process
@@ -70,8 +70,8 @@ class SquidExtension(Singleton, ServiceExtension):
 			('acl', 'localnet src 172.16.0.0/12	# RFC1918 possible internal network'),
 			('acl', 'localnet src 192.168.0.0/16	# RFC1918 possible internal network'),
 			('icp_access', 'allow localnet'),
-		] 
-		
+		]
+
 		self.wanted_default_conf = [
 			('access_log', '/var/log/squid/access.log squid'),
 			('acl', 'all src all'),
@@ -128,7 +128,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					'localnetwork src %s' % network),
 			for key, value in self.wanted_default_conf:
 				add_or_dupe_enumeration(self.defaults, key, value)
-			
+
 	def get_defaults_conf(self):
 		""" TODO """
 
@@ -150,7 +150,7 @@ class SquidExtension(Singleton, ServiceExtension):
 						network.netmask2prefix(
 							iface_infos[2][0]['netmask']))
 					dict['subnet'].append(subnet)
-					
+
 			dict['config_file'] = '/etc/squid/squid.conf'
 			dict['host'] = '127.0.0.1'
 		else:
@@ -347,7 +347,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.squid_conf))
 
 			need_rewrite = False
-			
+
 			for key, value in self.defaults.iteritems():
 				if hasattr(value, '__iter__'):
 					for v in value:
@@ -358,7 +358,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					if not self.configuration.has(key, value):
 						need_rewrite = True
 						self.configuration.add(key, value)
-						
+
 			# remove unwanted conf
 			for key, value in self.unwanted_default_conf:
 				if self.configuration.has(key, value=value):
