@@ -2096,6 +2096,11 @@ class GroupsController(Singleton, CoreController):
 		return groupname
 	def _wmi_protected_group(self, name, complete=True):
 		if complete:
-			return self.is_system_group(name)
+			return self.is_system_group(name) and not (
+				name.startswith(LMC.configuration.groups.resp_prefix)
+				or name.startswith(LMC.configuration.groups.guest_prefix))
 		else:
-			return self.is_system_group(name) and not self.is_privilege(name)
+			return self.is_system_group(name) and not (
+				name.startswith(LMC.configuration.groups.resp_prefix)
+				or name.startswith(LMC.configuration.groups.guest_prefix)
+				) and not self.is_privilege(name)
