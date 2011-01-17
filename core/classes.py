@@ -162,6 +162,12 @@ class CoreController(LockedController):
 			self.extensions = LMC.extensions.find_compatibles(self)
 		else:
 			self.extensions = None
+	def __str__(self):
+		""" TODO: enhance this method. """
+		return 'CoreController %s (%s objects)' % (self.name, len(self))
+	def __repr__(self):
+		""" TODO: enhance this method. """
+		return 'CoreController %s (%s objects)' % (self.name, len(self))
 	def reload(self):
 		""" load extensions if possible. This could not be possible if the
 			controller is :meth:`reload` ing during the CLIENT-daemon first

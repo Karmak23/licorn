@@ -65,7 +65,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('cli', '''> select(controller=%s, ctype=%s, args=%s, '''
 			'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
-			'''all=%s)''' % (controller, ctype, args, include_id_lists,
+			'''all=%s)''' % (controller.name, ctype, args, include_id_lists,
 				exclude_id_lists, default_selection, all))
 		# use a set() to avoid duplicates during selections. This will allow us,
 		# later in implementation to do more complex selections (unions,
