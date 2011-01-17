@@ -47,8 +47,8 @@ class WMIThread(LicornBasicThread):
 			listen_address = LMC.configuration.licornd.wmi.listen_address
 
 		else:
-			# the fallback is localhost
-			listen_address = 'localhost'
+			# the fallback is * (listen on all interfaces)
+			listen_address = ''
 
 		if listen_address.startswith('if:') \
 			or listen_address.startswith('iface:') \
