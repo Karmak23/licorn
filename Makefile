@@ -75,5 +75,6 @@ update-po: update-pot
 	#	done ;
 
 cleandoc:
+	(cd docs && make clean)
 
 .PHONY: all clean install build configure binary-install doc installdoc cleandoc
