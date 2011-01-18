@@ -1,6 +1,4 @@
 
-.. _extensions.fr:
-
 ============================
 Documentation des extensions
 ============================

@@ -1,4 +1,3 @@
-.. _install.fr:
 
 =======================
 Installation de la bête
@@ -17,8 +16,6 @@ La version stable de Licorn® est empaquetée pour `Ubuntu Lucid 10.04 LTS` et s
 Où `<codename>` devrait être "maverick" ou "lucid", etc.
 
 Quelques noms de paquetages:
-
-.. glossary::
 
 .. _licorn-ldap-server.fr:
 
@@ -43,15 +40,15 @@ Depuis les sources
 
 .. warning:: Cette installation depuis les sources s'adresse **à des développeurs** seulement. Ça peut endommager votre système au pire, ou ne pas marcher du tout au mieux, si vous manquez un truc de cette procédure.
 
-#. Install darcs and required python-packages::
+#. Installez :program:`darcs` and les paquetages Python requis::
 
 	sudo apt-get -qy --force-yes install nullmailer darcs \
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
-			python-pyip python-ipcalc
+			python-pyip python-ipcalc python-dbus python-udev
 
-#. About `python-pylibacl`: be sure to install at least version *0.3*.
-#. Get the source localy with darcs::
+#. à propos de ``python-pylibacl`` : vérifiez que c'est au moins la version *0.3* (à partir de ``Hardy`` c'est bon).
+#. Récupérez les sources avec :program:`darcs`::
 
 	mkdir sources
 	cd sources
@@ -64,9 +61,10 @@ Depuis les sources
 		darcs get dev.licorn.org:/home/groups/darcs-Licorn licorn
 	fi
 
-#. Make symlinks onto you Debian/Ubuntu-like Linux distribution::
+#. Créez tous les liens nécessaires sur votre système (les chemins sont spécifiques à Debian/Ubuntu)::
 
-	# export this variable to wherever your Licorn® source is.
+	# initialisez cette variable avec le répertoire
+	# qui contient vos sources Licorn®.
 	export LCN_DEV_DIR=~/sources/licorn
 
 	for i in add mod del chk get
@@ -90,43 +88,52 @@ Depuis les sources
 	sudo ln -sf "${LCN_DEV_DIR}/locale/fr.mo" \
 		/usr/share/locale/fr/LC_MESSAGES/licorn.mo
 
-#. Some version dependant links:
+#. Quelques liens qui dépendent de la version de votre système:
 
-  * Under debian / Ubuntu <= Karmic (Python 2.5)::
-
-	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.5/site-packages/licorn
-
-  * Under debian / Ubuntu *>= Lucid* (Python 2.6)::
+  * Pour Debian / Ubuntu *>= Lucid* (Python 2.6)::
 
 	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.6/dist-packages/licorn
 
-#. optional : to get `licornd` started at boot, get the init-script, and configure it::
+  * Pour Debian / Ubuntu <= Karmic (Python 2.5)::
+
+	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.5/site-packages/licorn
+
+#. *Optionnel* : pour que le :ref:`démon <daemon.fr>` `licornd` démarre avec la machine, téléchargez l'init-script, et configurez le service:
+
+	* pour Debian / Ubuntu équipé d':program:`upstart`:: le script n'est pas encore écrit, le fonctionnement avec upstart n'est pas encore clairifié. Pour l'instant prennez le script suivant.
+	* pour Debian / Ubuntu équipé de SYSV::
 
 	sudo wget http://dev.licorn.org/files/init.d-script \
 		-O /etc/init.d/licornd
 	sudo update-rc.d licornd defaults 98
 
-#. *before anything* : remount your `/home` partition with `acl` and `user_xattr` options. Insert these options in your `/etc/fstab` for permanent use::
+#. **Avant toute autre chose** : remontez votre partition :file:`/home` avec les options ``acl`` et ``user_xattr``, et modifiez votre fichier :file:`/etc/fstab` pour que le changement soit permanent::
 
 	sudo mount -o remount,acl,user_xattr /home
 
-#. Define the bare minimum directives in your main configuration file (IRL they are positionned by the packages post-installation scripts) and amend `sudoers`::
+	# si /home n'est pas une partition séparée chez vous,
+	# remontez / avec les mêmes options et modifiez la fstab en conséquence.
+	sudo mount -o remount,acl,user_xattr /
 
+#. Définissez les directives minimum dans votre :ref:`fichier de configuration principal <configuration.fr>` et amendez :file:`/etc/sudoers`  (IRL les fichiers sont pré-configurés par les scripts de post-installation des paquetages Licorn®)::
+
+	sudo -s
 	echo 'licornd.role = SERVER' >> /etc/licorn/licorn.conf
 	cat >> /etc/sudoers <<EOF
-	Defaults	env_keep = "DISPLAY LICORN_TRACE LICORN_SERVER"
+	Defaults	env_keep = "DISPLAY LTRACE LICORN_SERVER"
 	EOF
+	exit
 
-#. Start the Licorn® daemon, let it handle the last configuration bits, then stop it when you see the message "`ready for interaction`"::
+#. Démarrez le démon Licorn®, laissez-lui modifier votre configuration système pour rendre le tout homogène, et attendez le message "ready for TTY interaction". Lorsque vous le voyez, tout est prêt à être utilisé (vous pouvez le stopper si vous voulez, ou le laisser tourner pour voir l'évolution du système)::
 
-	sudo licornd -vD
+	sudo licornd -rvD
 	[...]
-	 * [2010/08/12 18:32:28.4740] licornd/master@server(29568): all threads started, ready for interaction.
+	 * [2010/08/12 18:32:28.4740] licornd/master@server(29568): all threads started, ready for TTY interaction.
 
 	[Control-C]
 
-#. From here, you don't need to use `sudo` anymore. Members of group `admins` can control `licornd`
-#. if you want LDAP support:  (see wiki/LDAPBackend] for configuration defaults, which Licorn® expects)::
+#. À partir de maintenant, `sudo` n'est plus nécessaire. Les membres du groupe ``admins`` peuvent controller :program:`licornd` directement (ce groupe a été créé par le démon à son premier lancement).
+#. Si vous désirez activer le support LDAP::
 
 	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
 	sudo mod config -b openldap

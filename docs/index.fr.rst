@@ -16,11 +16,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-
 .. image:: _static/licorn_logo_black_256px.png
    :alt: Licorn®: Administration système efficace
    :class: floatingflask
-
 
 =====================
 Documentation Licorn®
@@ -32,7 +30,7 @@ N'avez-vous jamais rencontré cette situation: «Arrête de m'embetter, sale pro
 
 Licorn® est conçu par des administrateurs GNU/Linux et \*BSD de longue date. Il est implémenté selon des méthodes agiles en `Python <http://www.python.org/>`_, avec comme maître-mots la flexibilité et l'extensibilité.
 
-Pour commencer, je vous suggère de lire la :ref:`procédure d'installation <install.fr>`, et vous serez prêt à :ref:`plonger dans le «Démarrage rapide» <quickstart.fr>` et apprécier les pouvoirs de l'animal mystique que nous avons créé. Attachez votre clavier.
+Pour commencer, je vous suggère de lire la :ref:`procédure d'installation <install.fr>`, et vous serez prêt à :ref:`plonger dans le «Démarrage rapide» <userdoc/quickstart.fr>` et apprécier les pouvoirs de l'animal mystique que nous avons créé. Attachez votre clavier.
 
 Et tant que nous y sommes, n'hésitez pas à `nous contacter <mailto:dev@licorn.org>`_ pour nous faire un retour ou nous poser des questions, on adore ça (surtout Robin !).
 
