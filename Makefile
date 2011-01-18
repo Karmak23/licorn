@@ -1,7 +1,7 @@
 PROJECT_NAME=Licorn
 APP_NAME=licorn
 DESTDIR?=/opt
-CONFDIR?=/etc/$(APP_NAME)
+CONFDIR?=$(DESTDIR)/etc/$(APP_NAME)
 PREFIX?=$(DESTDIR)
 PROJECT_LIB_DIR?=$(DESTDIR)/usr/share/pyshared/$(APP_NAME)
 EXEC_LINK_DIR?=../../usr/share/pyshared/$(APP_NAME)
@@ -46,17 +46,24 @@ installdoc: doc
 	mkdir -p "$(DOC_DIR)"
 	cp -a docs/_build/html "$(DOC_DIR)"
 
-clean: cleandoc
+clean: cleandoc cleanlang
 	find ./ -type f \( -name '*~' -o -name '.*.swp' \
 		-o -name '*.pyc' -o -name '*.pyo' \) -exec rm "{}" \;
 	[ -d src/po/fr ] && rm -r src/po/fr || true
+
+cleanlang:
+	rm -f locale/*.mo
+	for lang in fr ; \
+			do \
+				rm -rf locale/$${lang}; \
+			done
 
 lang: i18n
 
 i18n: update-po
 	for lang in fr ; \
 		do \
-			rm -rf locale/$${lang}; mkdir -p locale/$${lang}/LC_MESSAGES; ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			mkdir -p locale/$${lang}/LC_MESSAGES; ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo >/dev/null 2>&1; \
 		done ;
 
