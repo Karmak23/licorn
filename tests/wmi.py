@@ -805,5 +805,11 @@ if __name__ == "__main__":
 		else:
 			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
 	if options.execute or options.start_from or options.all:
-		testsuite.run()
-		test_message("Testsuite terminated successfully.")
+		process.execute(['add', 'user', 'wmitest', '-p', 'wmitest', '-G', 
+			LMC.configuration.licornd.wmi.group, '-S', '/bin/false'])
+		try:
+			testsuite.run()
+			test_message("Testsuite terminated successfully.")
+		finally:
+			# delete the user
+			process.execute(['del', 'user', 'wmitest', '--no-archive'])
