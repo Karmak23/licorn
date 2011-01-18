@@ -11,10 +11,12 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 """
 
 import os, uuid
+from gettext import gettext as _
 from traceback import print_exc
 import xml.etree.ElementTree as ET
 
-from licorn.foundations           import logging, pyutils, readers, writers, fsapi
+from licorn.foundations           import logging, pyutils, fsapi, network
+from licorn.foundations           import readers, writers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
@@ -260,11 +262,11 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		xmlmembers.text = '\n	'
 		xmlmembers.tail = '\n'
 		return True
-	def add_resource(self, uid, guid, name, type, **kwargs):
+	def add_resource(self, uid, guid, name, type, gst_uid, **kwargs):
 		""" Create a caldav resource account. """
 
-		assert ltrace(self.name, '| add_resource(%s, %s, %s, %s)' % (
-			uid, guid, name, type))
+		assert ltrace(self.name, '| add_resource(%s, %s, %s, %s, %s)' % (
+			uid, guid, name, type, gst_uid))
 
 		resource = self.__create_account('resource', uid, guid, name)
 
@@ -276,6 +278,16 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		xmlmember.set('type', type)
 		xmlmember.text = uid
 		xmlmember.tail = '\n	'
+
+		xmlroproxies = ET.SubElement(resource, 'read-only-proxies')
+		xmlroproxies.text = '\n		'
+		xmlroproxies.tail = '\n'
+
+		xmlromember = ET.SubElement(xmlroproxies, 'member')
+		xmlromember.set('type', type)
+		xmlromember.text = gst_uid
+		xmlromember.tail = '\n	'
+
 		return True
 	def add_member(self, name, login, **kwargs):
 		""" Create a new entry in the members element of a group. """
@@ -355,12 +367,18 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			return True
 
 		try:
+			# create an internal guest group to hold R/O proxies
+			gst_uid = LMC.configuration.groups.guest_prefix + login
+
 			if (
 					self.add_user(uid=login, guid=str(uuid.uuid1()),
 									password=password, name=gecos)
 				and
+					self.add_group(uid=gst_uid, guid=str(uuid.uuid1()),
+										name="R/O holder for user %s" % login)
+				and
 					self.add_resource(uid=login, guid=str(uuid.uuid1()),
-									name=gecos, type='users')
+									name=gecos, type='users', gst_uid=gst_uid)
 					):
 				self.__write_accounts_and_reload()
 			return True
@@ -395,7 +413,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			logging.warning('%s: %s' % (self.name, e))
 			print_exc()
 			return False
-	def user_pre_del_callback(self, uid, login, system, **kwargs):
+	def user_pre_del_callback(self, login, system, **kwargs):
 		""" delete a user and its resource in the caldavd accounts file, then
 			reload the service. """
 
@@ -432,16 +450,28 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		assert ltrace(self.name, '| group_post_add_callback(%s)' % name)
 
 		# we don't deal with system groups, they don't get calendar for free.
-		if system:
+		group, rw_access = self.usable_group(name, system)
+
+		if group is None:
 			return True
 
+		# we do not create direct entries for gst-* and rsp-*
+		if not rw_access or (rw_access and name != group):
+			return
+
 		try:
+			# create an internal guest group to hold R/O proxies
+			gst_uid = LMC.configuration.groups.guest_prefix + name
+
 			if (
 					self.add_group(uid=name, guid=str(uuid.uuid1()),
 								name=description)
 				and
+					self.add_group(uid=gst_uid, guid=str(uuid.uuid1()),
+							name="R/O holder for group %s" % name)
+				and
 					self.add_resource(uid=name, guid=str(uuid.uuid1()),
-								name=description, type='groups')
+							name=description, type='groups', gst_uid=gst_uid)
 					):
 				self.__write_accounts_and_reload()
 				#logging.progress('%s: added group and resource in %s.' % (
@@ -467,6 +497,10 @@ class CaldavdExtension(Singleton, ServiceExtension):
 					self.del_account(acttype='resource', uid=name)
 				and
 					self.del_account(acttype='group', uid=name)
+				and
+				# remove the hidden group that holds R/O proxies
+					self.del_group(acttype='group',
+						uid=LMC.configuration.groups.guest_prefix + name)
 					):
 				self.__write_accounts_and_reload()
 				#logging.progress('%s: deleted group and resource in %s.' % (
@@ -487,17 +521,20 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		assert ltrace(self.name, '| group_post_add_user_callback(%s in %s)'
 			% (login, name))
 
-		# we don't deal with system groups, they don't get calendar for free.
-		if system:
-			return True
-
-		# we still don't deal with system accounts, don't bother us with that.
+		# we don't deal with system accounts, don't bother us with that.
 		if LMC.users.is_system_uid(uid):
 			return True
 
+		# we don't deal with system groups, they don't get calendar for free.
+		group, rw_access = self.usable_group(name, system)
+
+		if group is None:
+			return True
+
 		try:
+
 			#TODO: self.locks.accounts.acquire()
-			if self.add_member(name=name, login=login):
+			if self.add_member(name=group if rw_access else name, login=login):
 				self.__write_accounts_and_reload()
 				#logging.progress('%s: added user %s in group %s in %s.' % (
 				#	self.name, login, name, self.paths.accounts))
@@ -513,17 +550,19 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		assert ltrace(self.name, '| group_pre_del_user_callback(%s from %s)'
 			% (login, name))
 
-		# we don't deal with system groups, they don't get calendar for free.
-		if system:
+		# we don't deal with system accounts, don't bother us with that.
+		if LMC.users.is_system_uid(uid):
 			return True
 
-		# we still don't deal with system accounts, don't bother us with that.
-		if LMC.users.is_system_uid(uid):
+		# we don't deal with system groups, they don't get calendar for free.
+		group, rw_access = self.usable_group(name, system)
+
+		if group is None:
 			return True
 
 		try:
 			#TODO: self.locks.accounts.acquire()
-			if self.del_member(name=name, login=login):
+			if self.del_member(name=group if rw_access else name, login=login):
 				self.__write_accounts_and_reload()
 				#logging.progress('%s: removed user %s from group %s in %s.' % (
 				#	self.name, login, name, self.paths.accounts))
@@ -549,3 +588,50 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		""" return get compatible args. """
 
 		pass
+	def usable_group(self, name, system):
+
+		if system:
+			for prefix, rw_access in (
+					(LMC.configuration.groups.resp_prefix, True),
+					(LMC.configuration.groups.guest_prefix, False)
+				):
+				if name.startswith(prefix):
+					return name[len(prefix):], rw_access
+		else:
+			return name, True
+
+		return None, None
+	def _wmi_user_data(self, login, system, **kwargs):
+		""" return the calendar for a given user. """
+
+		if system:
+			return (None, None)
+
+		hostname = network.get_local_hostname()
+		port     = self.data.configuration['HTTPPort']
+
+		return (_('Personnal calendar URI'),
+			'<a href="CalDAV://%s:%s/calendars/resources/%s/calendar">'
+			'CalDAV://%s:%s/calendars/resources/%s/calendar</a>' % (
+					hostname, port, login,
+					hostname, port, login
+				)
+		)
+	def _wmi_group_data(self, name, system, templates, **kwargs):
+		""" return the calendar for a given user. """
+
+		group, rw_access = self.usable_group(name, system)
+
+		if group is None:
+			return templates[1]
+
+		hostname = network.get_local_hostname()
+		port     = self.data.configuration['HTTPPort']
+
+		return templates[0] % (_('Group calendar URI'),
+			'<a href="CalDAV://%s:%s/calendars/resources/%s/calendar">'
+			'CalDAV://%s:%s/calendars/resources/%s/calendar</a>' % (
+					hostname, port, group,
+					hostname, port, group
+				)
+			)
