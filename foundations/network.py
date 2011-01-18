@@ -84,7 +84,7 @@ def find_first_local_ip_address_Linux():
 
 	for interface in interfaces:
 		try:
-			return interface_address(interface)
+			return netifaces.ifaddresses(interface)[2][0]['addr']
 		except:
 			continue
 
@@ -164,7 +164,7 @@ def interface_address_Linux(iface_name, iface_address=None):
 	else:
 		raise NotImplementedError("iface address setting is not implemented yet.")
 def interface_infos_Linux(iface_name):
-	""" Get an interface IPv4 adress and return it as a string.
+	""" Get an interface IPv4 adsress and return it as a string.
 
 		We dig in /usr/include/linux to find all the values !
 			bits/socket.h
@@ -242,6 +242,17 @@ for key, value in locals().items():
 
 find_server = find_server_Linux
 find_first_local_ip_address = find_first_local_ip_address_Linux
+def get_local_hostname_Linux():
+	""" Try to find the hostname of the localmachine from the first IP
+		interface, else return only the IP address if the hostname cannot be
+		determined.
+	"""
+	try:
+		ip_addr = find_first_local_ip_address_Linux()
+		return socket.gethostbyaddr(ip_addr)[0]
+	except socket.herror:
+		return ip_addr
+get_local_hostname = get_local_hostname_Linux
 class Pinger:
 	""" This is a rewrite of pyip.Pinger, to:
 		- use smaller (and customizable) timeouts,
