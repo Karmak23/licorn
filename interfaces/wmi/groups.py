@@ -675,7 +675,7 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 	if order == "asc": reverseorder = "desc"
 	else:              reverseorder = "asc"
 
-	data += '<table>\n		<tr>\n'
+	data += '<table id="groups_list">\n		<tr class="groups_list_header">\n'
 
 	sortcols = (
 		('', '', False),

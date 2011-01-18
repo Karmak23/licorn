@@ -330,6 +330,10 @@ div#main {
 
 #content table.group_members th,
 #content table.group_members td,
+#content table#groups_list th,
+#content table#groups_list td,
+#content table#machines_list th,
+#content table#machines_list td,
 #content table#users_list th,
 #content table#users_list td {
 	padding: 5px 20px;

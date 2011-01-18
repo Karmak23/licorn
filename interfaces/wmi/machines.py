@@ -691,7 +691,7 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 	if order == "asc": reverseorder = "desc"
 	else:              reverseorder = "asc"
 
-	data += '<table>\n		<tr>'
+	data += '<table id="machines_list">\n		<tr class="machines_list_header">'
 
 	for (sortcolumn, sortname) in (
 			("status", _("Status")),
