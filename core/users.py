@@ -80,8 +80,6 @@ class UsersController(Singleton, CoreFSController):
 		""" Load (or reload) the data structures from the system data. """
 		assert ltrace('users', '| reload()')
 
-		CoreFSController.reload(self)
-
 		with self.lock():
 			self.users       = {}
 			self.login_cache = {}
@@ -90,6 +88,9 @@ class UsersController(Singleton, CoreFSController):
 				u, c = backend.load_Users()
 				self.users.update(u)
 				self.login_cache.update(c)
+
+		# CoreFSController must be initialized *after* users and groups are loaded.
+		CoreFSController.reload(self)
 	def reload_backend(self, backend_name):
 		""" Reload only one backend data (called from inotifier). """
 
@@ -984,6 +985,8 @@ class UsersController(Singleton, CoreFSController):
 		assert ltrace('users', '''> CheckUsers(uids_to_check=%s, minimal=%s, '''
 			''' batch=%s, auto_answer=%s)''' % (uids_to_check, minimal, batch,
 			auto_answer))
+
+		self.load_rules()
 
 		# FIXME: should we crash if the user's home we are checking is removed
 		# during the check ? what happens ?

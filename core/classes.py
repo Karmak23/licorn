@@ -360,6 +360,9 @@ class CoreController(LockedController):
 
 		meth_name = hook + '_callback'
 
+		if not self.extensions:
+			return
+
 		for ext in self.extensions:
 			if hasattr(ext, meth_name):
 				getattr(ext, meth_name)(**kwargs)
@@ -690,13 +693,20 @@ class CoreFSController(CoreController):
 	def __init__(self, name):
 		CoreController.__init__(self, name)
 		assert ltrace('checks', 'CoreFSController.__init__()')
-		self.system_special_dirs_templates = Enumeration()
+		self.system_special_dirs_templates = None
 	def reload(self):
 		""" reload the templates rules generated from systems rules. """
 		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
 
 		CoreController.reload(self)
+	def load_rules(self):
+		""" """
+
+		if self.system_special_dirs_templates is None:
+			self.system_special_dirs_templates = Enumeration()
+		else:
+			return
 
 		for filename in glob.glob(
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
