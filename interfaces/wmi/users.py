@@ -2,7 +2,7 @@
 
 import os, time
 from gettext import gettext as _
-
+from traceback import print_exc
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 
@@ -200,14 +200,14 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 
 		# TODO: move this in the extension
 		if 'openssh' in LMC.extensions.keys() :
-			if login in LMC.groups.all_members(LMC.configuration.ssh.group):
+			if login in LMC.groups.all_members(name=LMC.extensions.openssh.group):
 				description += _('''<br /><br />
 					But this will not block incoming %s network connections, '''
 					'''if the user uses %s %s or %s public/private keys. To '''
 					'''block ANY access to the system, <strong>remove him/her'''
 					''' from %s group</strong>.''') % (w.acr('SSH'),
 					w.acr('SSH'), w.acr('RSA'), w.acr('DSA'),
-					LMC.configuration.ssh.group)
+					LMC.extensions.openssh.group)
 				form_options = w.checkbox("remove_remotessh", "True",
 					_('''Remove user from group <code>remotessh</code> in '''
 					'''the same time.'''),
@@ -234,8 +234,8 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
 			login, "--lock" ]
 
-		if LMC.configuration.ssh.enabled and remove_remotessh:
-			command.extend(['--del-groups', LMC.configuration.ssh.group])
+		if 'openssh' in LMC.extensions.keys() and remove_remotessh:
+			command.extend(['--del-groups', LMC.extensions.openssh.group])
 
 		data += w.page_body_end()
 
@@ -581,6 +581,165 @@ def edit(uri, http_user, login, **kwargs):
 			login, "user = LMC.users.users[LMC.users.login_to_uid(login)]", e))
 
 	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
+def view(uri, http_user, login, **kwargs):
+	""" View a user account parameters, based on login."""
+
+	title = _('View account %s') % login
+
+	if protected_user(login):
+		return w.forgery_error(title)
+
+	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+
+	try:
+		user = LMC.users.users[LMC.users.login_to_uid(login)]
+
+		try:
+			profile = LMC.profiles.profiles[
+					LMC.groups.groups[user['gidNumber']]['name']
+					]['name']
+		except KeyError:
+			profile = _("Standard account")
+
+		resps     = []
+		guests    = []
+		stdgroups = []
+		privs     = []
+		sysgroups = []
+
+		for group in user['groups']:
+			if group.startswith(LMC.configuration.groups.resp_prefix):
+				resps.append(group)
+			elif group.startswith(LMC.configuration.groups.guest_prefix):
+				guests.append(group)
+			elif LMC.groups.is_standard_group(group):
+				stdgroups.append(group)
+			elif LMC.groups.is_privilege(group):
+				privs.append(group)
+			else:
+				sysgroups.append(group)
+
+		exts_wmi_group_meths = [ ext._wmi_group_data
+									for ext in LMC.extensions
+									if 'groups' in ext.controllers_compat
+									and hasattr(ext, '_wmi_group_data')
+								]
+
+		def html_build_group(group):
+			g   = LMC.groups[LMC.groups.name_to_gid(group)]
+			gid = g['gidNumber']
+			return '''<tr>
+	<td>
+		<a href="/groups/view/%s">%s&nbsp;(%s)</a>
+		<br />
+		%s
+	</td>
+	<td>%s</td>
+	</tr>''' % (
+				group, group, gid, g['description'],
+				 '\n'.join([ wmi_meth(gid=gid,
+									name=group,
+								system=LMC.groups.is_system_gid(g['gidNumber']),
+								templates=(
+									'%s<br/>%s', '&nbsp;'))
+							for wmi_meth in exts_wmi_group_meths ]))
+
+		colspan = 1 + len(exts_wmi_group_meths)
+
+		form_name = "group_print_form"
+		data += '''
+		<div id="details">
+			<form name="{form_name}" id="{form_name}"
+					action="/users/view/{login}" method="post">
+				<table id="user_account">
+					<tr>
+						<td><strong>{uid_label}</strong><br />
+						{immutable_label}</td>
+						<td class="not_modifiable">{user[uidNumber]}</td>
+					</tr>
+					<tr>
+						<td><strong>{login_label}</strong><br />
+						{immutable_label}</td>
+						<td class="not_modifiable">{login}</td>
+					</tr>
+					<tr>
+						<td><strong>{gecos_label}</strong></td>
+						<td class="not_modifiable">{user[gecos]}</td>
+					</tr>
+					{extensions_data}
+					<tr class="group_listing">
+						<td colspan="{colspan}" ><strong>{resp_label}</strong></td>
+					</tr>
+					{resp_group_data}
+					<tr class="group_listing">
+						<td colspan="{colspan}" ><strong>{std_label}</strong></td>
+					</tr>
+					{std_group_data}
+					<tr class="group_listing">
+						<td colspan="{colspan}" ><strong>{guest_label}</strong></td>
+					</tr>
+					{guest_group_data}
+					<tr class="group_listing">
+						<td colspan="{colspan}" ><strong>{priv_label}</strong></td>
+					</tr>
+					{priv_group_data}
+					<tr class="group_listing">
+						<td colspan="{colspan}" ><strong>{sys_label}</strong></td>
+					</tr>
+					{sys_group_data}
+					<tr>
+						<td>{back_button}</td>
+						<td class="right">{print_button}</td>
+					</tr>
+				</table>
+			</form>
+		</div>
+			'''.format(
+				form_name=form_name,
+				colspan=colspan,
+				uid_label=_('UID'),
+				login_label=_('Login'),
+				immutable_label=_('immutable'),
+				gecos_label=_('Gecos'),
+				resp_label=_('Responsibilities'),
+				std_label=_('Standard memberships'),
+				guest_label=_('Invitations'),
+				priv_label=_('Privileges'),
+				sys_label=_('Other system memberships'),
+
+				user=user, login=login,
+
+				extensions_data='\n'.join(['<tr><td><strong>%s</strong></td>'
+					'<td class="not_modifiable">%s</td></tr>\n'
+						% ext._wmi_user_data(uid=user['uidNumber'], login=login,
+							system=LMC.users.is_system_uid(user['uidNumber']))
+							for ext in LMC.extensions
+								if 'users' in ext.controllers_compat
+									and hasattr(ext, '_wmi_user_data')]),
+
+				resp_group_data='\n'.join([html_build_group(group)
+														for group in resps]),
+				std_group_data='\n'.join([html_build_group(group)
+													for group in stdgroups]),
+				guest_group_data='\n'.join([html_build_group(group)
+														for group in guests]),
+				priv_group_data='\n'.join([html_build_group(group)
+														for group in privs]),
+				sys_group_data='\n'.join([html_build_group(group)
+													for group in sysgroups]),
+
+				back_button=w.button(_('<< Go back'), "/users/list",
+														accesskey=_('B')),
+				print_button=w.submit('print', _('Print') + ' >>',
+							onClick="javascript:window.print(); return false;",
+							accesskey=_('P'))
+				)
+
+	except exceptions.LicornException, e:
+		data += w.error("Account %s does not exist (%s)!" % (
+			login, "user = LMC.users.users[LMC.users.login_to_uid(login)]", e))
+
+	return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 def record(uri, http_user, login, loginShell=None, password="",
 	password_confirm="", gecos="",
 	standard_groups_source    = [],    standard_groups_dest = [],
@@ -600,6 +759,7 @@ def record(uri, http_user, login, loginShell=None, password="",
 			standard_groups_source, standard_groups_dest,
 			responsible_groups_source, responsible_groups_dest,
 			guest_groups_source, guest_groups_dest):
+		print '>>', group_list
 		if hasattr(group_list, '__iter__'):
 			for group in group_list:
 				if protected_group(group, complete=False):
@@ -703,10 +863,12 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 		if order == "asc": reverseorder = "desc"
 		else:              reverseorder = "asc"
 
-		data += '<table>\n		<tr>\n'
+		data += '<table id="users_list">\n		<tr class="users_list_header">\n'
 
-		for (sortcolumn, sortname) in ( ("gecos", _("Full name")),
-			("login", _("Identifier")), ("profile", _("Profile")),
+		for (sortcolumn, sortname) in ( ('', ''),
+			("gecos", _("Full name")),
+			("login", _("Identifier")),
+			("profile", _("Profile")),
 			("locked", _("Locked")) ):
 			if sortcolumn == sort:
 				data += '''			<th><img src="/images/sort_%s.gif"
@@ -720,7 +882,7 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 					_("Click to sort on this column."), sortname)
 		data += '		</tr>\n'
 
-		def html_build_compact(index, accounts = accounts):
+		def html_build_compact(index, accounts=accounts):
 			uid   = ordered[index]
 			login = u[uid]['login']
 			edit  = (_('''<em>Click to edit current user account parameters:</em>
@@ -741,7 +903,12 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 						'<','&lt;').replace('>','&gt;')
 
 			html_data = '''
-		<tr class="userdata">
+		<tr class="userdata users_list_row">
+			<td class="nopadding">
+				<a href="/users/view/%s" title="%s" class="view-entry">
+				<span class="view-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+				</a>
+			</td>
 			<td class="paddedleft">
 				<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
 			</td>
@@ -749,7 +916,11 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 				<a href="/users/edit/%s" title="%s" class="edit-entry">%s</a>
 			</td>
 			<td style="text-align:center;">%s</td>
-				''' % (login, edit, u[uid]['gecos'],
+				''' % (login,
+					_('''View the user account details, its parameters,
+					memberships, responsibilities and invitations.
+					From there you can print all user-related informations.'''),
+				login, edit, u[uid]['gecos'],
 				login, edit, login,
 				accounts[uid]['profile_name'])
 

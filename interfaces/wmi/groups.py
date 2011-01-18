@@ -316,12 +316,12 @@ def view(uri, http_user, name,**kwargs):
 			def user_line(login):
 				uid = LMC.users.login_to_uid(login)
 				return '''<tr>
-					<td>%s</td>
-					<td>%s</td>
+					<td><a href="/users/view/%s">%s</a></td>
+					<td><a href="/users/view/%s">%s</a></td>
 					<td>%s</td>
 					</tr>''' % (
-					u[uid]['gecos'],
-					login,
+					login, u[uid]['gecos'],
+					login, login,
 					uid
 					)
 

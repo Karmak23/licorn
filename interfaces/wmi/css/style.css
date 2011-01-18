@@ -302,7 +302,7 @@ div#main {
 }
 
 #content table {
-	width: 100%;
+	/*width: 100%;*/
 	border-collapse: collapse;
 }
 
@@ -327,11 +327,32 @@ div#main {
 #content tr.userdata:hover {
 	background-color: #ffc821;
 }
+
+#content table.group_members th,
+#content table.group_members td,
+#content table#users_list th,
+#content table#users_list td {
+	padding: 5px 20px;
+}
+
+#content table#user_account {
+	margin: 0 15%;
+}
+
 #content td.group_class {
 	padding-top: 1em;
 	font-size: 1.3em;
 	border-bottom: 1px dotted #369;
 }
+
+#content tr.group_listing {
+	border-bottom: 1px dotted #369;
+}
+
+#content tr.group_listing td {
+	padding: 20px 0 5px;
+}
+
 
 #content td.nopadding {
 	padding-left: 0.1em;
@@ -354,6 +375,8 @@ div#main {
 #content td.faded {
 	color: #AAA;
 }
+
+
 
 #command_error {
 	border-radius: 30px;
@@ -389,6 +412,7 @@ div#main {
 	font-size: 1.3em;
 	font-weight: bolder;
 	vertical-align: middle;
+	width: 200px;
 }
 
 #edit_form .multi-group-select {
