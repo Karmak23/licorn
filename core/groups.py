@@ -249,7 +249,7 @@ class GroupsController(Singleton, CoreController):
 
 			elif filters.NOT_SYSTEM == filter_string:
 				assert ltrace('groups', '> Select(PRI:%s/%s)' % (
-					filters.NOT_NOT_SYS, filter_string))
+					filters.NOT_SYS, filter_string))
 				for gid in self.groups.keys():
 					if not self.is_system_gid(gid):
 						filtered_groups.append(gid)
