@@ -1,6 +1,7 @@
 PROJECT_NAME=Licorn
 APP_NAME=licorn
 DESTDIR?=/opt
+CONFDIR?=/etc/$(APP_NAME)
 PREFIX?=$(DESTDIR)
 PROJECT_LIB_DIR?=$(DESTDIR)/usr/share/pyshared/$(APP_NAME)
 EXEC_LINK_DIR?=../../usr/share/pyshared/$(APP_NAME)
@@ -21,7 +22,8 @@ build: configure i18n
 	chmod a+x tests/core.py tests/wmi.py
 
 binary-install: build
-	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)"
+	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)"
+	cp -a config/* "$(CONFDIR)"
 	cp -a interfaces/gui/*.glade "$(SHARE_DIR)"
 	cp -a interfaces daemon core extensions foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
 	( \
