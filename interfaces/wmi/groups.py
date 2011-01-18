@@ -609,7 +609,8 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 			if protected_user(user_list):
 				return w.forgery_error(title)
 
-	if (http_user in members_source
+	if name == LMC.configuration.licornd.wmi.group and (
+		http_user in members_source
 		or http_user in resps_source
 		or http_user in guests_source):
 		return w.fool_proof_protection_error(_("The system won't let you "
