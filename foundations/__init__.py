@@ -64,11 +64,13 @@ def check_python_modules_dependancies():
 		('posix1e',   'python-pylibacl'),
 		('gamin',     'python-gamin'),
 		('Pyro',      'pyro'),
+		('dbus',      'python-dbus'),
+		('gobject',   'python-gobject'),
 		('netifaces', 'python-netifaces'),
 		('ping',      'python-pyip'),
 		('ipcalc',    'python-ipcalc'),
 		('dumbnet',   'python-dumbnet'),
-		('dbus',      'python-dbus'),
+		('pyudev',    'python-udev')
 		)
 
 	reqmods_needed = []
@@ -76,8 +78,7 @@ def check_python_modules_dependancies():
 
 	optmods = (
 		('xattr',    'python-xattr'),
-		('ldap',     'python-ldap'),
-		('pyudev',   'python-udev'),
+		('ldap',     'python-ldap')
 		# plistlib, uuid don't need to be checked, they're part of standard
 		# python dist-packages.
 		)

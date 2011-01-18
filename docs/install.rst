@@ -42,7 +42,8 @@ From sources
 	sudo apt-get -qy --force-yes install nullmailer darcs \
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
-			python-pyip python-ipcalc
+			python-pyip python-ipcalc python-udev python-dbus \
+			python-gobject
 
 #. About `python-pylibacl`: be sure to install at least version *0.3*.
 #. Get the source localy with darcs::
