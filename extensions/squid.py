@@ -266,28 +266,30 @@ class SquidExtension(Singleton, ServiceExtension):
 						'configuration file %s must be altered to continue.' %
 							self.defaults_conf.client_file)
 
-			# set mandatory proxy params for gnome.
-			gconf_values = (
-				['string', '--set', '/system/http_proxy/host',
-					self.defaults_conf.host ],
-				[ 'string', '--set', '/system/proxy/ftp_host',
-					self.defaults_conf.host ],
-				[ 'string', '--set', '/system/proxy/mode', 'manual' ],
-				[ 'bool', '--set', '/system/http_proxy/use_http_proxy', 'true'],
-				[ 'int', '--set', '/system/http_proxy/port',
-					str(self.defaults_conf.port) ],
-				[ 'int', '--set', '/system/proxy/ftp_port',
-					str(self.defaults_conf.port) ] )
-				# TODO : addresses in ignore_host.
-				#[ 'list', '--set', '/system/http_proxy/ignore_hosts', '[]',
-				#'--list-type',  'string'])
-			base_command = [ 'gconftool-2', '--direct', '--config-source',
-				'xml:readwrite:/etc/gconf/gconf.xml.mandatory', '--type' ]
-			for gconf_value in gconf_values:
-				command = base_command[:]
-				command.extend(gconf_value)
+			if os.path.exists('/usr/bin/gconftool-2'):
 
-				process.execute(command)
+				# set mandatory proxy params for gnome.
+				gconf_values = (
+					['string', '--set', '/system/http_proxy/host',
+						self.defaults_conf.host ],
+					[ 'string', '--set', '/system/proxy/ftp_host',
+						self.defaults_conf.host ],
+					[ 'string', '--set', '/system/proxy/mode', 'manual' ],
+					[ 'bool', '--set', '/system/http_proxy/use_http_proxy', 'true'],
+					[ 'int', '--set', '/system/http_proxy/port',
+						str(self.defaults_conf.port) ],
+					[ 'int', '--set', '/system/proxy/ftp_port',
+						str(self.defaults_conf.port) ] )
+					# TODO : addresses in ignore_host.
+					#[ 'list', '--set', '/system/http_proxy/ignore_hosts', '[]',
+					#'--list-type',  'string'])
+				base_command = [ 'gconftool-2', '--direct', '--config-source',
+					'xml:readwrite:/etc/gconf/gconf.xml.mandatory', '--type' ]
+				for gconf_value in gconf_values:
+					command = base_command[:]
+					command.extend(gconf_value)
+
+					process.execute(command)
 
 			# set params in apt conf
 			apt_file = ConfigFile(self.defaults_conf.apt_conf,
@@ -402,13 +404,14 @@ class SquidExtension(Singleton, ServiceExtension):
 				env_file.remove(key=cmd)
 				env_need_rewrite = True
 
-		# unset gnome proxy configuration
-		for file in ('xml:readwrite:/etc/gconf/gconf.xml.mandatory',
-			'xml:readwrite:/etc/gconf/gconf.xml.defaults'):
-			process.execute(['gconftool-2', '--direct', '--config-source',
-				file, '--recursive-unset', '/system/http_proxy'])
-			process.execute(['gconftool-2', '--direct', '--config-source',
-				file, '--recursive-unset', '/system/proxy'])
+		if os.path.exists('/usr/bin/gconftool-2'):
+			# unset gnome proxy configuration
+			for file in ('xml:readwrite:/etc/gconf/gconf.xml.mandatory',
+				'xml:readwrite:/etc/gconf/gconf.xml.defaults'):
+				process.execute(['gconftool-2', '--direct', '--config-source',
+					file, '--recursive-unset', '/system/http_proxy'])
+				process.execute(['gconftool-2', '--direct', '--config-source',
+					file, '--recursive-unset', '/system/proxy'])
 
 		# unset apt conf params
 		if os.path.exists(self.defaults_conf.apt_conf):
