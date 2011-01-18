@@ -72,6 +72,14 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			except ImportError, e:
 				logging.warning2(
 					'Caldavd extension not available because %s.' % e)
+			except (IOError, OSError), e:
+				if e.errno == 2:
+					logging.warning2(
+						'Caldavd extension not yet available because %s '
+						'(calendarserver is probably installing, try again'
+						'later).' % e)
+				else:
+					raise e
 		else:
 			logging.warning2('Caldavd extension not available because caldavd '
 				'not installed.')
@@ -94,7 +102,6 @@ class CaldavdExtension(Singleton, ServiceExtension):
 		#self.locks.accounts = FileLock(self.paths.accounts)
 		#self.locks.configuration = FileLock(self.paths.configuration)
 		#self.locks.sudoers = FileLock(self.paths.sudoers)
-
 		self.data.service_defaults = readers.shell_conf_load_dict(
 					self.paths.service_defaults)
 
