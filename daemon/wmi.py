@@ -84,7 +84,8 @@ class WMIThread(LicornBasicThread):
 		logging.notice('%s: %s to answer requests at address %s.' % (
 			self.name, stylize(ST_OK, 'ready'),
 			stylize(ST_ADDRESS, 'http://%s:%s/' % (
-				listen_address, LMC.configuration.licornd.wmi.port))))
+				listen_address if listen_address else '*',
+					LMC.configuration.licornd.wmi.port))))
 
 		self.httpd.serve_forever()
 	def stop(self):

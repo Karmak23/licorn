@@ -286,7 +286,8 @@ class LicornConfiguration(Singleton, LockedController):
 			'licornd.network.enabled'      : True,
 			'licornd.wmi.enabled'          : True,
 			'licornd.wmi.group'            : 'licorn-wmi',
-			'licornd.wmi.listen_address'   : 'localhost',
+			# WMI listens on all interfaces by default ('' = *)
+			'licornd.wmi.listen_address'   : '',
 			'licornd.wmi.port'             : 3356,
 			'licornd.wmi.log_file'         : '/var/log/licornd-wmi.log',
 			'backup.interval'              : 3600,   # one hour between backups.
