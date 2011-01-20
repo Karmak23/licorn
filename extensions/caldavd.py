@@ -506,7 +506,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 					self.del_account(acttype='group', uid=name)
 				and
 				# remove the hidden group that holds R/O proxies
-					self.del_group(acttype='group',
+					self.del_account(acttype='group',
 						uid=LMC.configuration.groups.guest_prefix + name)
 					):
 				self.__write_accounts_and_reload()
