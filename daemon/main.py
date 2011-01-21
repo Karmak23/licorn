@@ -61,8 +61,6 @@ from licorn.daemon.cmdlistener    import CommandListener
 #from licorn.daemon.searcher      import FileSearchServer
 #from licorn.daemon.syncer        import ServerSyncer, ClientSyncer
 
-import licorn.daemon.network as daemon_network
-
 class LicornDaemon(Singleton):
 	""" The big-balled daemon. """
 	#: dname is used by daemon threads to set a part of their name. It's a
