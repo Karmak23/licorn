@@ -25,9 +25,9 @@ These are the real backends implementation. They all inherit from one or more of
 .. toctree::
 	:maxdepth: 2
 
-	backends/shadow
-	backends/openldap
-	backends/dnsmasq
+	backends/shadow.en
+	backends/openldap.en
+	backends/dnsmasq.en
 
 .. _core.backends.abstract:
 

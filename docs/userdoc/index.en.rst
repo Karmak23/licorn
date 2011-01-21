@@ -9,12 +9,12 @@ Main audience of Licorn® are system administrators.
 .. toctree::
 	:maxdepth: 2
 
-	quickstart
-	../cli/index
-	../wmi/index
-	../configuration
-	../daemon
-	../extensions/index
+	quickstart.en
+	../cli/index.en
+	../wmi/index.en
+	../configuration.en
+	../daemon.en
+	../extensions/index.en
 
 «Lights on…»
 ============
@@ -22,4 +22,4 @@ Main audience of Licorn® are system administrators.
 .. toctree::
 	:maxdepth: 2
 
-	../groups/index
+	../groups/index.en

@@ -35,7 +35,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'index.en'
 
 # General information about the project.
 project = u'Licorn®'
@@ -134,13 +134,12 @@ html_static_path = ['_static']
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
 html_sidebars = {
-'index':    ['sidebarintro.html', 'searchbox.html', 'sourcelink.html'],
+'index.en': ['sidebarintro.en.html', 'searchbox.en.html', 'sourcelink.en.html'],
 'index.fr': ['sidebarintro.fr.html', 'searchbox.fr.html', 'sourcelink.fr.html'],
-'**.fr':    ['sidebarlogo.fr.html', 'localtoc.fr.html', 'relations.html',
-			 'sourcelink.html', 'searchbox.html'],
-'**':       ['sidebarlogo.html', 'localtoc.html', 'relations.html',
-			 'sourcelink.html', 'searchbox.html']
+'**':    ['sidebarlogo.html']
 }
+#'**.en':    ['sidebarlogo.html']
+
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -181,7 +180,7 @@ htmlhelp_basename = 'Licorndoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Licorn.tex', u'Licorn® Documentation',
+  ('index.en', 'Licorn.tex', u'Licorn® Documentation',
    u'Olivier Cortès', 'manual'),
 ]
 

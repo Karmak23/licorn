@@ -12,16 +12,8 @@
 {# http://sphinx.pocoo.org/templating.html?highlight=extensions#working-with-the-builtin-templates for details #}
 <div id="translations">{{ _('Other versions:') }}
 <ul>
-{% if pagename[-3] == '.' %}
-{# this page is a translation, display a link to the original english version (not looped because no extension #}
-	<li>
-		<a href="{{ pathto(pagename[:-3]) }}">
-			<img src="{{ pathto('_static/flags/gb.png', 1) }}" alt="English version"/>
-		</a>
-	</li>
-{% endif %}
 {# now loop other trahslations #}
-{% for ext, lang in [('.fr', 'french' ), ('.de', 'german' ), ('.es', 'spanish' )] %}
+{% for ext, lang in [('.en', 'english' ), ('.fr', 'french' ), ('.de', 'german' ), ('.es', 'spanish' )] %}
 	{% if pagename[-3] == '.' %}
 		{# this page is a translation, display the flag only if not the same language and a translation exists #}
 		{% if pagename[-3:] != ext and hasdoc(pagename[:-3] ~ ext) %}

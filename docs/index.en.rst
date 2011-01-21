@@ -42,9 +42,9 @@ Using Licorn®
 .. toctree::
 	:maxdepth: 2
 
-	features
-	install
-	userdoc/index
+	features.en
+	install.en
+	userdoc/index.en
 
 
 Developping with or for Licorn®
@@ -53,9 +53,9 @@ Developping with or for Licorn®
 .. toctree::
 	:maxdepth: 2
 
-	concepts
-	api
-	specs/index
+	concepts.en
+	api.en
+	specs/index.en
 
 Indices and tables
 ==================

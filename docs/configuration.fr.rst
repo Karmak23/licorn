@@ -9,7 +9,7 @@ Vous pouvez à tout moment consulter la configuration actuelle avec la commande 
 
 	get config
 
-La liste des :ref:`backends <core.backends.fr>` et des :ref:`extensions <extensions.fr>` n'est pas loin::
+La liste des `backends <core/backends.fr>`_ et des `extensions <extensions/index.fr>`_ n'est pas loin::
 
 	get config backends
 	get config extensions
@@ -42,7 +42,7 @@ Daemon Licornd
 	**licornd.network.enabled**
 		Active ou désactive les fonctionnalités réseau *automagiques*, qui incluent la découverte des machines sur le :abbr:`LAN Local Area Network (=réseau local)`, la résolution DNS inverse des adresses IP des hôtes réseaux, la résolution ARP des adresses IP, et les notifications d'état récupérées par les serveurs Licorn® (fonctionnalité *server-based status polling*).
 
-		.. note:: même avec cette directive positionnée à ``licornd.network.enabled=False``, les connexions réseau au :ref:`daemon <daemondoc>` sont toujours possibles, et autorisées. **Les connexions des clients Licorn® vers les serveurs** (synchronisation inter-serveurs, notifications d'état poussées depuis les clients, etc) **continuent donc de fonctionner**, quelquesoit la valeur de cette directive (en fait les clients ALT® ont besoin du serveur pour fonctionner, donc les connexions réseau doivent rester possibles).
+		.. note:: même avec cette directive positionnée à ``licornd.network.enabled=False``, les connexions réseau au `daemon <daemon/index.fr>`_ sont toujours possibles, et autorisées. **Les connexions des clients Licorn® vers les serveurs** (synchronisation inter-serveurs, notifications d'état poussées depuis les clients, etc) **continuent donc de fonctionner**, quelquesoit la valeur de cette directive (en fait les clients ALT® ont besoin du serveur pour fonctionner, donc les connexions réseau doivent rester possibles).
 
 
 
@@ -72,18 +72,18 @@ CommandListener (Pyro)
 .. _licornd.threads.service_min.fr:
 
 	**licornd.threads.service_min**
-		Le nombre minimal de processus légers de services, lancés dès le démarrage du daemon (lorsqu'ils sont inactifs, ils deviennent «threads de réserve» et attendent l'arrivée de nouvelles tâches («spare threads» dans le texte). Valeur d'usine: **10 threads** sont démarrés. Voyez
+		Le nombre minimal de processus légers de services, lancés dès le démarrage du daemon. Lorsqu'ils sont inactifs, ils deviennent «threads de réserve» et attendent l'arrivée de nouvelles tâches («spare threads» dans le texte). Valeur d'usine: **10 threads** sont démarrés. Plus de renseignements sur le :ref:`mécanisme de service <daemon.services.fr>` ?
 
 
 .. _licornd.threads.service_max.en:
 
-	licornd.threads.service_max
-		The maximum number of concurrent service threads. Default: **150 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`licornd.threads.service_min <licornd.threads.service_min.en>` are automatically terminated.
+	**licornd.threads.service_max**
+		Le nombre maximum de threads de service concurrents. Valeur d'usine: **150 threads** tourneront pendant les périodes de plus forte charge du daemon. Dès que le nombre de tâches décroit, les threads de service supplémentaires (au delà de :ref:`licornd.threads.service_min <licornd.threads.service_min.fr>`) se terminent au fûr et à mesure, automatiquement.
 
 .. 	_licornd.threads.wipe_time.fr:
 
 	**licornd.threads.wipe_time**
-		Le délai d'attente entre deux nettoyages de threads terminés. Cette directive est utilisée par :class:`PeriodicThreadsCleaner`. Valeur d'usine: **600 seconds** = 10 minutes).
+		Le délai d'attente entre deux nettoyages de threads terminés. Cette directive est utilisée par :class:`PeriodicThreadsCleaner`. Valeur d'usine: **600 seconds** (= 10 minutes).
 
 	.. note::
 		* Cette directive n'affecte pas le premier cycle de nettoyage de chacun des nettoyeurs, qui a toujours lieu 30 secondes après le démarrage du démon.

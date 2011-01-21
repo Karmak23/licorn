@@ -19,13 +19,13 @@ Core controllers and objects
 .. toctree::
 	:maxdepth: 2
 
-	lmc
-	users
-	groups
-	profiles
-	privileges
-	machines
-	system
+	lmc.en
+	users.en
+	groups.en
+	profiles.en
+	privileges.en
+	machines.en
+	system.en
 
 Modules: backends and extensions
 ================================
@@ -33,8 +33,8 @@ Modules: backends and extensions
 .. toctree::
 	:maxdepth: 2
 
-	backends
-	../extensions/index
+	backends.en
+	../extensions/index.en
 
 
 Abstract classes & concepts
@@ -42,4 +42,4 @@ Abstract classes & concepts
 
 .. toctree::
 
-	abstract
+	abstract.en

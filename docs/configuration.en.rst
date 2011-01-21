@@ -9,7 +9,7 @@ You can always access your current configuration by issuing the following comman
 
 	get config
 
-:ref:`Backends <core.backends.en>` and :ref:`extensions <extensions.fr>` list and current status can be reached here::
+`Backends <core/backends.en>`_ and `extensions <extensions/index.en>`_ list and current status can be reached here::
 
 	get config backends
 	get config extensions

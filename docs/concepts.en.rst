@@ -6,7 +6,7 @@ Understanding Licorn®
 .. toctree::
 	:maxdepth: 2
 
-	design
-	models
-	implementation
+	design.en
+	models.en
+	implementation.en
 
