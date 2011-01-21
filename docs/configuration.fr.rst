@@ -14,35 +14,28 @@ La liste des :ref:`backends <core.backends.fr>` et des :ref:`extensions <extensi
 	get config backends
 	get config extensions
 
+
 Fichier de configuration principal
 ==================================
 
 Situé à l'emplacement :file:`/etc/licorn/licorn.conf`, le fichier de configuration principal inclut un grand nombre de directives, qui ont toutes une valeur d'usine de repli (ce qui explique que le fichier est pratiquement vide à sa création), excepté une (:ref:`licornd.role <licornd.role.fr>`):
 
-Directives généralistes
------------------------
+.. note:: les directives sont listées dans l'ordre alphabétique, pas dans l'ordre d'importance.
 
-.. _licord.role.fr:
+Système de sauvegardes
+----------------------
 
-	**licornd.role**
-		Le rôle de votre installation Licorn® locale. Cette directive **doit** être fixée à l'une des valeurs *CLIENT* ou *SERVER*, avant de lancer le :ref:`daemon <daemon.fr>`. Si ce n'est pas fait, le daemon vous le rappellera.
+.. _backup.interval.fr:
 
-.. _licord.threads.pool_members.fr:
+	**backup.interval**
+		Définit l'intervale entre deux sauvegardes du système, en secondes (valeur d'usine: ``3600``, c'est à dire une heure).  Cette directive définit la valeur pour tous les modules de sauvegarde, mais certains peuvent avoir des paramètres dédiés plus spécifiques.
 
-	**licornd.threads.pool_members**
-		Fixe le nombre de processus légers (threads) dans les groupes de threads du démon Licorn®. Cette directive affecte tous les groupes de threads (:class:`~licorn.daemon.network.IPScannerThread`, :class:`~licorn.daemon.network.PingerThread`, :class:`~licorn.daemon.network.ArpingerThread`, :class:`~licorn.daemon.network.DNSReverserThread`, :class:`~licorn.daemon.network.PyroFinderThread`, etc). Valeur d'usine: **5 threads** seront démarrés par groupe. Il n'y a pas pour l'instant de configuration minimale / maximale, mais ça devrait venir.
 
-.. 	_licornd.threads.wipe_time.fr:
 
-	**licornd.threads.wipe_time**
-		Le délai d'attente entre deux nettoyages de threads. Cette directive est utilisée par :
 
-		* :class:`PeriodicThreadsCleaner`, le nettoyeur de threads terminés,
-		* :ref:`daemon.queuesemptyer.fr`, le videur de files d'attentes.
+Daemon Licornd
+--------------
 
-		Valeur d'usine: **600 seconds** = 10 minutes).
-
-	.. note:: Cette directive n'affecte pas le premier cycle de nettoyage de chacun des nettoyeurs, qui a toujours lieu 30 après le démarrage du démon.
 
 .. 	_licornd.network.enabled.fr:
 
@@ -51,35 +44,6 @@ Directives généralistes
 
 		.. note:: même avec cette directive positionnée à ``licornd.network.enabled=False``, les connexions réseau au :ref:`daemon <daemondoc>` sont toujours possibles, et autorisées. **Les connexions des clients Licorn® vers les serveurs** (synchronisation inter-serveurs, notifications d'état poussées depuis les clients, etc) **continuent donc de fonctionner**, quelquesoit la valeur de cette directive (en fait les clients ALT® ont besoin du serveur pour fonctionner, donc les connexions réseau doivent rester possibles).
 
-Directives liées à la WMI
--------------------------
-
-.. _licornd.wmi.enabled.fr:
-
-	**licornd.wmi.enabled**
-		Self explanatory: should the WMI be started or not? If you don't use it, don't activate it. You will save some system resources.
-
-.. _licornd.wmi.listen_address.fr:
-
-	**licornd.wmi.listen_address**
-		Customize the interface the WMI listens on. Set it to an IP address (not a hostname yet). If unset, the WMI only listens on ``localhost`` (IP address ``127.0.0.1``).
-
-.. _licornd.wmi.port:
-
-	**licornd.wmi.port**
-		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
-
-.. _licornd.wmi.group:
-
-	**licornd.wmi.group**
-		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is ``licorn-wmi`` . Any reference to a non existing group will trigger the group creation at next daemon start, so this groups always exists.
-
-		.. note:: It is a good idea (or not, depending on your users) to *register this group as a privilege*, to allow web-only administrators to grant WMI access to other users.
-
-.. _licornd.wmi.log_file:
-
-	**licornd.wmi.log_file**
-		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
 
 
 CommandListener (Pyro)
@@ -88,11 +52,79 @@ CommandListener (Pyro)
 .. _licornd.pyro.port:
 
 	**licornd.pyro.port**
-		Port ``299`` by default. Set it as an integer, for example ``licorn.pyro.port = 888``.
+		Le port d'écoute pour les commandes à distance du daemon (les commandes à distances incluent la CLI et les autres daemons présents sur le réseau local). Cette valeur doit être un nombre entier compris entre 128 et 1024, par exemple ``licorn.pyro.port = 888``. Valeur d'usine : contenu de :envvar:`PYRO_PORT`, ou ``299`` si la variable d'environnement n'est pas définie.
 
-		.. warning:: **Be sure to set this port to a value under 1024**. The system will work if it >1024, but there's a bad security implication: ports <1024 can only be bound by root and this is little but more than nothing protection. Be careful not to take an already taken port on your system: ports < 1024 are standardized and their use is restricted, but some belongs to services dead for many years.
+		.. warning::
+			* Si vous avez plusieurs machines Licorn®, il faut modifier cette valeur dans le fichier de configuration de chacune, et le faire pour chaque nouvelle machine arrivant sur le réseau.
+			* **Vérifiez bien que vous utilisez une valeur inférieure à 1024**. Le système fonctionnera sans problème si la valeur est supérieure, mais il y a une consquence important en termes de sécurité: les ports <1024 ne peuvent être utilisés que par root, et c'est déjà un début de sécurité pour la communcation inter-daemons.
+			* Par ailleurs, vérifiez que le port que vous choisissez n'est pas déjà occupé: les ports < 1024 sont standardisés et leur utilisation est restreinte. Certains (comme le ``299``) n'ont pas été utilisés depuis tellement d'années qu'il n'y a aucun risque à l'utiliser mais ce n'est pas le cas de tous.
 
-		.. note:: If you don't set this directive in the main configuration file, the Pyro environment variable :envvar:`PYRO_PORT` takes precedence over the Licorn® factory default. See `the Pyro documentation <http://www.xs4all.nl/~irmen/pyro3/manual/3-install.html>`_ for details.
+		.. seealso:: `La documentation de Pyro <http://www.xs4all.nl/~irmen/pyro3/manual/3-install.html>`_ pour plus de détails.
+
+.. _licornd.role.fr:
+
+	**licornd.role**
+		Le rôle de votre installation Licorn® locale. Valeur d'usine: dépendante de votre mode d'installation: ``UNSET`` pour une installation depuis les sources, ``CLIENT`` ou ``SERVER`` pour une installation depuis les paquetages.
+
+	.. warning:: Cette directive **doit** être fixée à l'une des valeurs *CLIENT* ou *SERVER*, avant de lancer le :ref:`daemon <daemon.fr>`. Si ce n'est pas fait, le daemon vous le rappellera.
+
+
+.. _licornd.threads.service_min.fr:
+
+	**licornd.threads.service_min**
+		Le nombre minimal de processus légers de services, lancés dès le démarrage du daemon (lorsqu'ils sont inactifs, ils deviennent «threads de réserve» et attendent l'arrivée de nouvelles tâches («spare threads» dans le texte). Valeur d'usine: **10 threads** sont démarrés. Voyez
+
+
+.. _licornd.threads.service_max.en:
+
+	licornd.threads.service_max
+		The maximum number of concurrent service threads. Default: **150 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`licornd.threads.service_min <licornd.threads.service_min.en>` are automatically terminated.
+
+.. 	_licornd.threads.wipe_time.fr:
+
+	**licornd.threads.wipe_time**
+		Le délai d'attente entre deux nettoyages de threads terminés. Cette directive est utilisée par :class:`PeriodicThreadsCleaner`. Valeur d'usine: **600 seconds** = 10 minutes).
+
+	.. note::
+		* Cette directive n'affecte pas le premier cycle de nettoyage de chacun des nettoyeurs, qui a toujours lieu 30 secondes après le démarrage du démon.
+		* Les nettoyeurs sont susceptibles d'être déclenchés en dehors de cet intervale, dans des conditions très précises (notamment à la suite d'une période de forte charge).
+
+
+Directives liées à la WMI
+-------------------------
+
+
+.. _licornd.wmi.enabled.fr:
+
+	**licornd.wmi.enabled**
+		Définit si la WMI doit être démarrée ou pas. Si vous ne vous en servez pas, vous économiserez des ressources système en ne la lançant pas.
+
+
+.. _licornd.wmi.group.fr:
+
+	**licornd.wmi.group**
+		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is ``licorn-wmi`` . Any reference to a non existing group will trigger the group creation at next daemon start, so this groups always exists.
+
+		.. note:: It is a good idea (or not, depending on your users) to *register this group as a privilege*, to allow web-only administrators to grant WMI access to other users.
+
+
+.. _licornd.wmi.listen_address.fr:
+
+	**licornd.wmi.listen_address**
+		Customize the interface the WMI listens on. Set it to an IP address (not a hostname yet). If unset, the WMI only listens on ``localhost`` (IP address ``127.0.0.1``).
+
+
+.. _licornd.wmi.log_file.fr:
+
+	**licornd.wmi.log_file**
+		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
+
+
+.. _licornd.wmi.port.fr:
+
+	**licornd.wmi.port**
+		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
+
 
 
 Utilisateurs et aux groupes
@@ -108,14 +140,6 @@ Utilisateurs et aux groupes
 	**users.check_config_file**
 		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :term:`users.config_dir`, or with full path: :file:`~/.licorn/check.conf`.
 
-
-Système de sauvegardes
-----------------------
-
-.. _backup.interval.fr:
-
-	**backup.interval**
-		Définit l'intervale entre deux sauvegardes du système, en secondes (valeur d'usine: ``3600``, c'est à dire une heure).  Cette directive définit la valeur pour tous les modules de sauvegarde, mais certains peuvent avoir des paramètres dédiés plus spécifiques.
 
 
 Other directives

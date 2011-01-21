@@ -15,10 +15,17 @@ from licorn.foundations.ltrace import ltrace, insert_ltrace
 #
 # daemon and process functions
 #
-def daemonize(log_file=None, pid_file=None):
+def daemonize(log_file=None):
 	""" UNIX double-fork magic to create a daemon.
 		See Stevens' "Advanced Programming in the UNIX Environment"
-		for details (ISBN 0201563177)."""
+		for details (ISBN 0201563177).
+
+
+		.. versionadded:: 1.2.5
+			this function doesn't write the pid file anymore. its up to the
+			calling process to do it. This makes things much logical in the
+			daemon.
+	"""
 
 	assert ltrace('process', '> daemonize(%s)' % os.getpid())
 
@@ -49,7 +56,6 @@ def daemonize(log_file=None, pid_file=None):
 	assert ltrace('process', '< daemonize(%s)' % os.getpid())
 
 	use_log_file(log_file)
-	write_pid_file(pid_file)
 def write_pid_file(pid_file):
 	""" write PID into the pidfile. """
 	if pid_file:

@@ -277,23 +277,25 @@ class Pinger:
 		self.ping_ident = Pinger.ident_counter
 		Pinger.ident_counter +=1
 		Pinger.ident_lock.release()
+		self.sock = None
 
 		if addr:
 			self.switch_to(addr, num)
-	def reset(self, num):
+	def reset(self, num=0):
 		""" reset all attributes to zero, to start a new ping session. """
 		self.num = num
 		self.last = 0
 		self.sent = 0
 		self.times = {}
 		self.deltas = []
-		self.sock = None
-
+		if self.sock:
+			self.sock.socket.close()
+			self.sock = None
 	def switch_to(self, addr, num=1):
 		""" reset the current instance attributes and prepare it to ping the new
 			:param:`addr` (a hostname or an IPv4 address), :param:`num` times.
 		"""
-		self.reset(num)
+		self.reset()
 
 		if self.sock:
 			self.sock.socket.close()

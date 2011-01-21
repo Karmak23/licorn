@@ -18,18 +18,18 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import filters, gamin_events
 
 from licorn.core        import LMC
-from licorn.daemon.core import dname, dthreads
 
 class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with
 	 them. """
 
-	def __init__(self, pname=dname, disable_boot_check=False):
+	def __init__(self, daemon, disable_boot_check=False):
 
 		Thread.__init__(self)
 
-		self.name = "%s/%s" % (
-			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+		self.name = "%s/%s" % (daemon.dname, 'inotifier')
+
+		self.daemon      = daemon
 
 		self.lock        = RLock()
 		self._stop_event = Event()
@@ -279,7 +279,7 @@ class INotifier(Thread):
 					# path is a file, check it.
 					assert ltrace('inotifier', '''CHECK file %s.''' % (
 						stylize(ST_PATH, path)))
-					dthreads.aclchecker.enqueue(path, gid)
+					self.daemon.threads.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -301,7 +301,7 @@ class INotifier(Thread):
 						# need it. Prepare ourselves to skip it.
 						self.expected[gamin.GAMChanged].append(path)
 
-				dthreads.aclchecker.enqueue(path, gid)
+				self.daemon.threads.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -326,7 +326,7 @@ class INotifier(Thread):
 					stylize(ST_URL, 'GAMChanged'),
 					stylize(ST_PATH, path)))
 
-				dthreads.aclchecker.enqueue(path, gid)
+				self.daemon.threads.aclchecker.enqueue(path, gid)
 
 		elif event == gamin.GAMMoved:
 
@@ -352,7 +352,7 @@ class INotifier(Thread):
 					self.expected[gamin.GAMDeleted].append(path + '/')
 
 			# TODO: remove recursively if DIR.
-			#dthreads.cache.removeEntry(path)
+			#self.daemon.threads.cache.removeEntry(path)
 
 		elif event == gamin.GAMEndExist:
 			assert ltrace('inotifier', '%s Inotify on %s.' % (

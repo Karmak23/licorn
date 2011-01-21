@@ -6,8 +6,9 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 
 :license: GNU GPL version 2
 """
+from traceback import print_exc
 
-import netifaces, ipcalc
+import netifaces, ipcalc, dumbnet, Pyro
 
 from threading  import current_thread
 from time       import strftime, localtime
@@ -23,21 +24,18 @@ from licorn.foundations.constants import host_status, host_types
 
 from licorn.core           import LMC
 from licorn.core.classes   import CoreController, CoreStoredObject
-from licorn.daemon         import dqueues
-from licorn.daemon.network import queue_wait_for_pingers, \
-									queue_wait_for_pyroers, \
-									queue_wait_for_reversers, \
-									queue_wait_for_arpingers, \
-									queue_wait_for_ipscanners
+from licorn.daemon         import service, priorities
 
 class Machine(CoreStoredObject):
 	counter = 0
-	def __init__(self, mid=None, hostname=None, ether=None, expiry=None,
+	arp_table = None
+	def __init__(self, mid, hostname=None, ether=None, expiry=None,
 		lease_time=None, status=host_status.UNKNOWN, managed=False,
 		system=None, system_type=host_types.UNKNOWN, backend=None, **kwargs):
 
 		CoreStoredObject.__init__(self, oid=mid, name=hostname,
 			controller=LMC.machines, backend=backend)
+
 		assert ltrace('objects', '| Machine.__init__(%s, %s)' % (mid, hostname))
 
 		# mid == IP address (unique on a given network)
@@ -63,6 +61,119 @@ class Machine(CoreStoredObject):
 		# the Pyro proxy (if the machine has one) for contacting it across the
 		# network.
 		self.system      = system
+	def ping(self, and_more=False):
+		""" PING. """
+		caller = current_thread().name
+		assert ltrace('machines', '> %s: ping(%s)' % (caller, self.mid))
+
+		with self.lock():
+			try:
+				pinger = network.Pinger(self.mid)
+				pinger.ping()
+
+			except (exceptions.DoesntExistsException,
+					exceptions.TimeoutExceededException), e:
+
+				self.status = host_status.OFFLINE
+
+			except Exception, e:
+				logging.warning2('%s: exception %s for host %s in ping().' % (
+					caller, e, self.mid))
+
+			else:
+				self.status = host_status.ONLINE
+
+				if and_more:
+					service(priorities.HIGH, self.pyroize)
+					service(priorities.LOW, self.arping)
+
+			# close the socket (no more needed), else we could get
+			# "too many open files" errors (254 open sockets for .
+			pinger.reset(self)
+			del pinger
+
+		assert ltrace('machines', '< %s: ping(%s)' % (caller, self.status))
+	def resolve(self):
+		""" Resolve IP to hostname, if possible. """
+		caller = current_thread().name
+
+		assert ltrace('machines', '> %s: resolve(%s)' % (caller, self.mid))
+
+		with self.lock():
+			old_hostname = self.hostname
+			try:
+				self.hostname = socket.gethostbyaddr(mid)[0]
+			except:
+				logging.warning2("%s: couldn't reverse IP %s." % (
+					caller, self.mid))
+			else:
+				# update the hostname cache.
+				# FIXME: don't update the cache manually,
+				# delegate it to *something*.
+				del LMC.machines.by_hostname[old_hostname]
+				LMC.machines.by_hostname[self.hostname] = self
+
+		assert ltrace('machines', '< %s resolve(%s)' % (caller, self.hostname))
+	def arping(self):
+		""" find the ether address. """
+
+		if Machine.arp_table is None:
+			Machine.arp_table = dumbnet.arp()
+
+		caller    = current_thread().name
+
+		assert ltrace('machines', '> %s: arping(%s)' % (caller, self.mid))
+
+		with self.lock():
+			try:
+				# str() is needed to convert from dumbnet.addr() type.
+				self.ether = str(Machine.arp_table.get(dumbnet.addr(self.mid)))
+
+			except Exception, e:
+				logging.warning2('%s: exception %s for host %s in resolve().'
+													% (caller, e, self.mid))
+		assert ltrace('machines', '< %s: arping(%s)' % (caller, self.ether))
+	def pyroize(self):
+		""" find if the machine is Pyro enabled or not. """
+		caller = current_thread().name
+
+		assert ltrace('machines', '> %s: pyroize(%s)' % (caller, self.mid))
+
+		with self.lock():
+			try:
+				# we don't assign directly the pyro proxy into
+				# machines[mid]['system'] because it can be invalid
+				# until the noop() call succeeds and guarantees the
+				# remote system is really Pyro enabled.
+				remotesys = Pyro.core.getAttrProxyForURI(
+						"PYROLOC://%s:%s/system" % (self.mid,
+							LMC.configuration.licornd.pyro.port))
+				remotesys._setTimeout(5.0)
+				remotesys.noop()
+			except Exception, e:
+				remotesys.release()
+				del remotesys
+				assert ltrace('machines',
+					'  %s: pyroize(): %s is not pyro enabled.' % (
+						caller, self.mid))
+				if str(e) != 'connection failed':
+					logging.warning2('%s: exception %s for host %s '
+						'in pyroize().' % (caller, e, self.mid))
+				self.guess_host_type()
+			else:
+				self.system_type = remotesys.get_host_type()
+				self.status      = remotesys.get_status()
+				self.system      = remotesys
+		assert ltrace('machines', '< %s: pyroize(%s)' % (caller, self.system))
+	def guess_host_type(self):
+		""" On a network machine which don't have pyro installed, try to
+			determine type of machine (router, PC, Mac, Printer, etc) and OS
+			(for computers), to help admin know on which machines he/she can
+			install Licorn® client software. """
+
+		logging.progress('machines.guess_host_type() not implemented.')
+
+		return
 	def shutdown(self, warn_users=True):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
@@ -82,17 +193,17 @@ class Machine(CoreStoredObject):
 				# this part is not going to happen, because this method is
 				# called (indirectly, via SystemController) from clients.
 				logging.warning('machines.update_status() called with '
-					'status=None for machine %s(%s)' % (hostname, mid))
+					'status=None for machine %s(%s)' % (self.hostname, self.mid))
 			else:
 				# don't do anything if the status is already the same or finer.
 				# E.G. ACTIVE is finer than ONLINE, which doesn't known if the
 				# machine is idle or not.
 				if not self.status & status:
+					self.status = status
 					logging.progress("Updated machine %s's status to %s." % (
 						stylize(ST_NAME, self.hostname),
 						stylize(ST_COMMENT, host_status[status])
 						))
-					self.status = status
 	def __str__(self):
 		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
 			self.__class__,
@@ -101,6 +212,11 @@ class Machine(CoreStoredObject):
 			'\n\t'.join([ '%s: %s' % (attr_name, getattr(self, attr_name))
 					for attr_name in dir(self) ])
 			)
+	def __repr__(self):
+		return '%s(%s‣%s)' % (
+			self.__class__,
+			stylize(ST_UGID, self.mid),
+			stylize(ST_NAME, self.hostname))
 class MachinesController(Singleton, CoreController):
 	""" Holds all machines objects (indexed on IP addresses, reverse mapped on
 		hostnames and ether addresses which should be unique). """
@@ -135,10 +251,8 @@ class MachinesController(Singleton, CoreController):
 			backend=backend if backend else Enumeration('null_backend'),
 			status=status)
 
-		with self[mid].lock():
-			dqueues.arpings.put(mid)
-			dqueues.reverse_dns.put(mid)
-			dqueues.pyrosys.put(mid)
+		service(priorities.LOW, lambda: self[mid].ping(and_more=True))
+		service(priorities.LOW, self[mid].resolve)
 	def load(self):
 		if MachinesController.load_ok:
 			return
@@ -166,23 +280,45 @@ class MachinesController(Singleton, CoreController):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
-	def scan_network(self, wait_until_finish=False,
-		*args, **kwargs):
-		""" use nmap to scan a whole network and add all discovered machines to
+	def initial_scan(self):
+		caller    = current_thread().name
+
+		assert ltrace('machines', '> %s: initial_scan()' % caller)
+
+		logging.info('%s: %s initial network scan.' % (caller,
+			stylize(ST_RUNNING, 'started')))
+
+		with self.lock():
+
+			# FIRST, scan our know machines, if any.
+			for machine in self:
+				service(priorities.LOW, lambda: machine.ping(and_more=True))
+				service(priorities.LOW, machine.resolve)
+
+				if machines[mid].ether in (None, []):
+					service(priorities.LOW, machine.arping)
+
+		# THEN, scan the whole LAN to add more.
+		service(priorities.LOW, self.scan_network)
+
+		assert ltrace('machines', '< %s: initial_scan()' % caller)
+	def scan_network(self):
+		""" Scan a whole network and add all discovered machines to
 		the local configuration. """
 
 		caller   = current_thread().name
-		pyroq    = dqueues.pyrosys
-		arpingq  = dqueues.arpings
-		reverseq = dqueues.reverse_dns
 
-		assert ltrace('machines', '> %s: scan_network2()' % caller)
+		#logging.info('%s: %s LAN scan.' % (caller,
+		#									stylize(ST_RUNNING, 'started')))
 
+		assert ltrace('machines', '> %s: scan_network()' % caller)
+
+		known_ips   = self.keys()
 		ips_to_scan = []
 		for iface in network.interfaces():
 			iface_infos = netifaces.ifaddresses(iface)
 			if 2 in iface_infos:
-				logging.info('%s: Planning scan of local area network %s.0/%s.'
+				logging.info('%s: programming scan of LAN %s.0/%s.'
 					% (caller, iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 						network.netmask2prefix(iface_infos[2][0]['netmask'])))
 
@@ -193,15 +329,12 @@ class MachinesController(Singleton, CoreController):
 					# need to convert because ipcalc returns IP() objects.
 					ipaddr = str(ipaddr)
 					if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
-						dqueues.ipscans.put(str(ipaddr))
+						if ipaddr in known_ips:
+							service(priorities.LOW, self[str(ipaddr)].ping)
+						else:
+							self.add_machine(str(ipaddr))
 
-		if wait_until_finish:
-			queue_wait_for_ipscanners(caller)
-			queue_wait_for_arpingers(caller)
-			queue_wait_for_reversers(caller)
-			queue_wait_for_pyroers(caller)
-
-		assert ltrace('machines', '< %s: scan_network2()' % caller)
+		assert ltrace('machines', '< %s: scan_network()' % caller)
 	def find_up_hosts(self, to_ping):
 		""" run nmap on to_ping and return 2 lists of up and down hosts. """
 
@@ -302,17 +435,10 @@ class MachinesController(Singleton, CoreController):
 				elif splitted[4] == 'Down':
 						self[splitted[1]]['status'] = host_status.OFFLINE
 		assert ltrace('machines', '< update_statuses()')
-	def guess_host_type(self, mid):
-		""" On a network machine which don't have pyro installed, try to
-			determine type of machine (router, PC, Mac, Printer, etc) and OS
-			(for computers), to help admin know on which machines he/she can
-			install Licorn® client software. """
-
-		logging.progress('machines.guess_host_type() not implemented.')
-
-		return
 	def update_status(self, mid, status=None, system=None,
 		*args, **kwargs):
+
+		raise NotImplementedError('to be removed')
 
 		assert ltrace('machines', '| update_status(%s, %s)' % (mid, status))
 
@@ -328,7 +454,7 @@ class MachinesController(Singleton, CoreController):
 				status=status)
 
 			# try to reverse the hostname, but don't wait
-			dqueues.reverse_dns.put(mid)
+			#dqueues.reverse_dns.put(mid)
 		else:
 			logging.warning('update_status() called with invalid MID %s!' % mid)
 	def WriteConf(self, mid=None):

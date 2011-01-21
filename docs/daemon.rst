@@ -128,4 +128,6 @@ Please refer to integrated help for an exhaustive listing of the daemon's CLI ar
 
 	licornd --help
 
-
+.. seealso::
+	:ref:`The daemon developer documentation <daemon/index.en>`.
+	:ref:`The service facility <daemon/service.en>`.

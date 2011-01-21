@@ -15,7 +15,7 @@ from Queue              import Queue
 from threading          import Thread, Event
 
 from licorn.foundations         import logging, exceptions, styles, fsapi
-from licorn.daemon.core         import dname, cache_path
+from licorn.daemon              import cache_path
 
 # FIXME: convert this to LicornThread.
 class Cache(Thread):
@@ -28,13 +28,15 @@ class Cache(Thread):
 	_cursor       = None
 	_queue        = Queue()
 
-	def __init__(self, allkeywords = None, pname = dname, dbfname = cache_path):
+	def __init__(self, daemon, allkeywords=None, dbfname=cache_path):
+		assert ltrace('cache', '| Cache.__init__()')
 
 		Thread.__init__(self)
 
 		self.name = "%s/%s" % (
-			pname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+			daemon.dname, str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
+		self.daemon = daemon
 
 		if Cache.allkeywords is None:
 			if allkeywords is None:

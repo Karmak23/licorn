@@ -14,7 +14,7 @@ from threading          import Thread, Event
 from SocketServer       import ThreadingTCPServer, BaseRequestHandler
 
 from licorn.foundations import logging, exceptions, styles
-from licorn.daemon.core import dname, socket_path, searcher_port
+from licorn.daemon.core import socket_path, searcher_port
 
 class SearcherClient:
 	""" Abstraction class to talk to the Licorn searcher through a socket.  """
@@ -199,7 +199,7 @@ class SearcherClient:
 # FIXME: convert this to LicornThread.
 class FileSearchServer(Thread):
 	""" Thread which answers to file/tag queries sent through unix socket. """
-	def __init__(self, pname = dname):
+	def __init__(self, pname='SET_ME_PLEASE'):
 
 		Thread.__init__(self)
 

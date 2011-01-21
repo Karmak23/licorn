@@ -13,10 +13,8 @@ from licorn.foundations.pyutils import format_time_delta
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
 
-from licorn.daemon.core         import dname
-from licorn.daemon.threads      import LicornThread
-
 from licorn.core                import LMC
+from licorn.daemon.threads      import LicornThread
 
 class ACLChecker(LicornThread):
 	""" A Thread which gets paths to check from a Queue, and checks them in
@@ -26,8 +24,10 @@ class ACLChecker(LicornThread):
 			this thread was added long before...
 
 	"""
-	def __init__(self, cache, pname = dname):
-		LicornThread.__init__(self, pname)
+	def __init__(self, daemon, cache):
+		assert ltrace('aclchecker', '| ACLChecker.__init__()')
+		LicornThread.__init__(self, daemon.dname, 'aclchecker')
+		self.daemon = daemon
 		self.call_counter = 0
 		self.last_call_time = None
 	def dump_status(self, long_output=False, precision=None):
@@ -61,17 +61,17 @@ class ACLChecker(LicornThread):
 			if os.path.isdir(path):
 				fsapi.auto_check_posix_ugid_and_perms(path, -1,
 					LMC.groups.name_to_gid('acl') , -1)
-				#dthreads.inotifier.gam_changed_expected.append(path)
+				#self.daemon.threads.inotifier.gam_changed_expected.append(path)
 				fsapi.auto_check_posix1e_acl(path, False,
 					acl['default_acl'], acl['default_acl'])
-				#dthreads.inotifier.gam_changed_expected.append(path)
-				#dthreads.inotifier.prevent_double_check(path)
+				#self.daemon.threads.inotifier.gam_changed_expected.append(path)
+				#self.daemon.threads.inotifier.prevent_double_check(path)
 			else:
 				fsapi.auto_check_posix_ugid_and_perms(path, -1,
 					LMC.groups.name_to_gid('acl'))
-				#dthreads.inotifier.prevent_double_check(path)
+				#self.daemon.threads.inotifier.prevent_double_check(path)
 				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
-				#dthreads.inotifier.prevent_double_check(path)
+				#self.daemon.threads.inotifier.prevent_double_check(path)
 
 		except (OSError, IOError), e:
 			if e.errno != 2:
@@ -80,7 +80,7 @@ class ACLChecker(LicornThread):
 						self.name, path, e, event))
 
 		# FIXME: to be re-added when cache is ok.
-		#dthreads.cache.cache(path)
+		#self.daemon.threads.cache.cache(path)
 	def enqueue(self, path, gid):
 		""" Put an event into our queue, to be processed later. """
 		if self._stop_event.isSet():

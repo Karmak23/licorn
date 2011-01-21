@@ -16,10 +16,10 @@ from threading   import Thread, Timer, RLock
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, mytime
-from licorn.foundations.constants import licornd_roles, host_status
+from licorn.foundations.constants import host_status
 
 from licorn.core                  import LMC
-from licorn.daemon.core           import dname
+from licorn.daemon                import roles
 from licorn.daemon.threads        import LicornBasicThread
 from licorn.daemon.rwi            import RealWorldInterface
 
@@ -93,7 +93,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 		else:
 			#print '>>', mytime(), 'checking non local', client_addr
 
-			if self.role == licornd_roles.SERVER:
+			if self.role == roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
 				# originates from a valid user.
 				#
@@ -188,10 +188,12 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 class CommandListener(LicornBasicThread):
 	""" A Thread which answer to Pyro remote commands. """
 
-	def __init__(self, pname=dname, pids_to_wake=[], **kwargs):
+	def __init__(self, daemon, pids_to_wake=[], **kwargs):
+		assert ltrace('cmdlistener', '| CommandListener.__init__()')
 
-		LicornBasicThread.__init__(self, pname)
+		LicornBasicThread.__init__(self, daemon.dname, 'cmdlistener')
 
+		self.daemon       = daemon
 		self.pids_to_wake = pids_to_wake
 		self.wake_threads = []
 
@@ -274,7 +276,7 @@ class CommandListener(LicornBasicThread):
 		LicornPyroValidator.local_interfaces.extend(
 			network.local_ip_addresses())
 
-		if LMC.configuration.licornd.role == licornd_roles.CLIENT:
+		if LMC.configuration.licornd.role == roles.CLIENT:
 			LicornPyroValidator.server = LMC.configuration.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
@@ -282,7 +284,7 @@ class CommandListener(LicornBasicThread):
 		self.pyro_daemon.cmdlistener = self
 		self.uris = {}
 
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 
 			# for clients: centralized configuration.
 			self.uris['configuration'] = self.pyro_daemon.connect(

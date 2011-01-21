@@ -20,10 +20,11 @@ from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject
-from licorn.foundations.constants import services, svccmds, licornd_roles
+from licorn.foundations.constants import services, svccmds
 
-from licorn.core               import LMC
-from licorn.core.classes       import ModulesManager, CoreModule
+from licorn.core                  import LMC
+from licorn.core.classes          import ModulesManager, CoreModule
+from licorn.daemon                import roles
 
 from licorn.interfaces.wmi import utils as _wmi_utils
 
@@ -81,7 +82,7 @@ class LicornExtension(CoreModule):
 
 		assert ltrace(self.name, '| load()')
 
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 			if self.initialize():
 				self.enabled = self.is_enabled()
 		else:

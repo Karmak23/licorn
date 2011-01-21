@@ -102,11 +102,6 @@ interactions = EnumDict('interactions')
 interactions.ASK_FOR_REPAIR = 0x01
 interactions.GET_PASSWORD   = 0x02
 
-licornd_roles = EnumDict('licornd_roles')
-licornd_roles.UNSET  = 1
-licornd_roles.SERVER = 2
-licornd_roles.CLIENT = 3
-
 # constants from core.configuration
 distros = EnumDict('distros')
 distros.UBUNTU   = 1

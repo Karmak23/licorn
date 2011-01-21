@@ -8,21 +8,20 @@ Licorn extensions: squid - http://docs.licorn.org/extensions/squid.html
 
 """
 
-import os
+import os, netifaces
 
 from licorn.foundations.pyutils   import add_or_dupe_enumeration
-from licorn.foundations           import logging, exceptions, readers, process
+from licorn.foundations           import logging, exceptions, readers, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import licornd_roles, services, svccmds
+from licorn.foundations.constants import services, svccmds
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
+from licorn.daemon                import roles
 
-from licorn.foundations import network
-import netifaces
 
 class SquidExtension(Singleton, ServiceExtension):
 	""" A proxy extension using squid.
@@ -121,7 +120,7 @@ class SquidExtension(Singleton, ServiceExtension):
 			('refresh_pattern', "-i (/cgi-bin/|\?) 0     0%      0")
 		]
 
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 			self.defaults = Enumeration()
 			for network in self.defaults_conf.subnet:
 				add_or_dupe_enumeration(self.defaults, 'acl',
@@ -140,7 +139,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		dict['client_cmd_http'] = 'http_proxy'
 		dict['client_cmd_ftp'] = 'ftp_proxy'
 
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 			dict['subnet'] = []
 			for iface in network.interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
@@ -185,7 +184,7 @@ class SquidExtension(Singleton, ServiceExtension):
 	def initialize(self):
 		""" TODO """
 		assert ltrace(self.name, '> initialize()')
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 
 			if os.path.exists(self.paths.squid_bin) \
 				and os.path.exists(self.paths.squid_conf):
@@ -342,7 +341,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		"""
 		assert ltrace(self.name, '> check(batch=%s, auto_answer=%s)' %
 			(batch, auto_answer))
-		if LMC.configuration.licornd.role == licornd_roles.SERVER:
+		if LMC.configuration.licornd.role == roles.SERVER:
 
 
 			logging.progress('Checking good default values in %s…' %

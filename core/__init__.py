@@ -16,12 +16,12 @@ version = '@DEVEL@'
 import os, sys, time, signal, Pyro.core, Pyro.configuration
 from threading import RLock
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, options
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import MixedDictObject
-from licorn.foundations.constants import licornd_roles
+from licorn.daemon                import roles
 
 def connect_error(dummy1, dummy2):
 	""" Method called on SIGALARM when the LMC fails to launch a daemon, or
@@ -229,8 +229,15 @@ class LicornMasterController(MixedDictObject):
 			from licorn.foundations.messaging import MessageProcessor
 			self.msgproc = MessageProcessor(
 				ip_address=network.find_first_local_ip_address() \
-					if self.configuration.licornd.role == licornd_roles.CLIENT \
+					if self.configuration.licornd.role == roles.CLIENT \
 					else None)
+
+			# NOTE: the msgproc must be connected to foundations.options,
+			# in order for callbacks between pyro clients and server to work.
+			# With this, the CLI knows how to call the MessageProcessor of
+			# the daemon (which is how things work: the CLI always sends the
+			# first message to the daemon, via an RPC).
+			options.msgproc = LMC.msgproc
 
 			from system import SystemController
 			self.system = SystemController()
@@ -344,7 +351,7 @@ class LicornMasterController(MixedDictObject):
 		from licorn.core.configuration import LicornConfiguration
 		self._localconfig = LicornConfiguration(minimal=True)
 
-		if self._localconfig.licornd.role == licornd_roles.SERVER:
+		if self._localconfig.licornd.role == roles.SERVER:
 			pyroloc = 'PYROLOC://127.0.0.1:%s' % (
 				self._localconfig.licornd.pyro.port)
 		else:
@@ -377,7 +384,7 @@ class LicornMasterController(MixedDictObject):
 				break
 			except Pyro.errors.ProtocolError, e:
 				if second_try:
-					if self._localconfig.licornd.role == licornd_roles.SERVER:
+					if self._localconfig.licornd.role == roles.SERVER:
 						logging.error('''Can't connect to the daemon, but it '''
 							'''has been successfully launched. I suspect '''
 							'''you're in trouble (was: %s)''' % e, 199)
@@ -389,7 +396,7 @@ class LicornMasterController(MixedDictObject):
 									self._localconfig.server_main_address,
 									self._localconfig.licornd.pyro.port)))
 
-				if self._localconfig.licornd.role == licornd_roles.SERVER:
+				if self._localconfig.licornd.role == roles.SERVER:
 					# the daemon will fork in the background and the call will
 					# return nearly immediately.
 					process.fork_licorn_daemon(pid_to_wake=os.getpid())

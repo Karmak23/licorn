@@ -10,23 +10,25 @@ Licensed under the terms of the GNU GPL version 2.
 import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal
 from threading import current_thread
 
-from SocketServer       import TCPServer
+from SocketServer       import TCPServer, ThreadingMixIn
 TCPServer.allow_reuse_address = True
 
+class ThreadedTCPServer(ThreadingMixIn, TCPServer):
+    pass
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations         import options, logging, exceptions, process
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
-from licorn.daemon              import dname, setup_signals_handler
 from licorn.daemon.threads      import LicornBasicThread
 
 from licorn.core import LMC
 
 class WMIThread(LicornBasicThread):
-	def __init__(self, pname):
-		assert ltrace('http', 'WMIThread.__init__(%s)' % pname)
-		LicornBasicThread.__init__(self, pname=pname, tname='wmi')
+	def __init__(self, daemon):
+		assert ltrace('http', '| WMIThread.__init__()')
+		LicornBasicThread.__init__(self, daemon.dname, tname='wmi')
+		self.daemon = daemon
 	def run(self):
 
 		assert ltrace('http', 'WMIThread.run()')
@@ -65,7 +67,7 @@ class WMIThread(LicornBasicThread):
 			#
 			# when creation succeeds, break the loop and serve requets.
 			try:
-				self.httpd = TCPServer((listen_address,
+				self.httpd = ThreadedTCPServer((listen_address,
 								LMC.configuration.licornd.wmi.port),
 								WMIHTTPRequestHandler)
 				break

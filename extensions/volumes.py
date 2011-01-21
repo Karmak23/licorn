@@ -85,7 +85,7 @@ class UdevMonitorThread(LicornBasicThread):
 		# this should be a level2 ltrace...
 		#assert ltrace('volumes', '| UdevMonitorThread.run_func()')
 
-		readf, writef, errf = select.select([self.udev_fileno], [], [], 1.0)
+		readf, writef, errf = select.select([self.udev_fileno], [], [])
 
 		if readf:
 			action, device = self.udev_monitor.receive_device()

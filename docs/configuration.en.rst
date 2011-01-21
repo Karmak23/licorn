@@ -1,20 +1,18 @@
-.. _configuration:
 
 .. highlight:: bash
-
 
 =============
 Configuration
 =============
 
-You can always access your current configuration by issuing the command::
+You can always access your current configuration by issuing the following command::
 
 	get config
 
-Backend specific configuration can be reached here::
+:ref:`Backends <core.backends.en>` and :ref:`extensions <extensions.fr>` list and current status can be reached here::
 
 	get config backends
-	#more to come...
+	get config extensions
 
 
 Main Configuration file
@@ -22,52 +20,41 @@ Main Configuration file
 
 Generally located at :file:`/etc/licorn/licorn.conf` the main configuration files holds a big number of directives, which all have factory defaults (explaining why the file is nearly empty just after installation), except one (:term:`licornd.role`):
 
-General directives
-------------------
+.. note:: directives are listed in alphabetical order, not order of importance.
 
-.. glossary::
 
-	licornd.role
-		Role of your current Licorn® installation. This directive **must** be set to either *CLIENT* or *SERVER*, before daemon launch. If it is unset, the daemon will remind you.
+Backup
+------
 
-	licornd.threads.pool_members
-		How many resolver threads to start in pools. This value is common to all threads pools (Pingers, Arpingers, Reversers, PyroFinders, etc). Default: **5 threads** will be started. There is no configuration for min and max yet.
+.. _backup.interval.en:
 
-	licornd.threads.wipe_time
-		The cycle delay of :term:`PeriodicThreadsCleaner` and :term:`QueuesEmptyer` threads. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
+	**backup.interval**
+		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions`, but some can have dedicated parameters.
 
-	licornd.network.enabled
+
+Experimental functionnalities
+-----------------------------
+
+.. _experimental.enabled.en:
+
+	experimental.enabled
+		turn on experimental features, depending on wich version of Licorn® you have installed. For example, in version 1.2.3, the experimental directive enables the `Machines` tab in the WMI (the wires are already enabled but non-sysadmins don't get the feature).
+
+
+Licornd
+-------
+
+
+.. _licornd.network.auto_scan.en:
+
+	**licornd.network.auto_scan**
 		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
 
 		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon <daemondoc>` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).
 
-WMI related
------------
-
-.. glossary::
-
-	licornd.wmi.enabled
-		Self explanatory: should the WMI be started or not? If you don't use it, don't activate it. You will save some system resources.
-
-	licornd.wmi.listen_address
-		Customize the interface the WMI listens on. Set it to an IP address (not a hostname yet). If unset, the WMI only listens on ``localhost`` (IP address ``127.0.0.1``).
-
-	licornd.wmi.port
-		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
-
-	licornd.wmi.group
-		Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is ``licorn-wmi`` . Any reference to a non existing group will trigger the group creation at next daemon start, so this groups always exists.
-
-		.. note:: It is a good idea (or not, depending on your users) to *register this group as a privilege*, to allow web-only administrators to grant WMI access to other users.
-
-	licornd.wmi.log_file
-		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
 
 
-CommandListener (Pyro) related
-------------------------------
-
-.. glossary::
+.. _licornd.pyro.port.en:
 
 	licornd.pyro.port
 		Port ``299`` by default. Set it as an integer, for example ``licorn.pyro.port = 888``.
@@ -76,34 +63,81 @@ CommandListener (Pyro) related
 
 		.. note:: If you don't set this directive in the main configuration file, the Pyro environment variable :envvar:`PYRO_PORT` takes precedence over the Licorn® factory default. See `the Pyro documentation <http://www.xs4all.nl/~irmen/pyro3/manual/3-install.html>`_ for details.
 
+
+
+.. _licornd.role.en:
+
+	**licornd.role**
+		Role of your current Licorn® installation. This directive **must** be set to either *CLIENT* or *SERVER*, before daemon launch. If it is unset, the daemon will remind you.
+
+
+
+.. _licornd.threads.service_min.en:
+
+	licornd.threads.service_min
+		The minimal number of launched service threads (they become spare threads if not running, waiting for jobs). Default: **10 threads** will be started.
+
+
+.. _licornd.threads.service_max.en:
+
+	licornd.threads.service_max
+		The maximum number of concurrent service threads. Default: **150 threads** will be running at most busy periods of the daemon's life. Once the jobs to do start to decrease, service threads > :ref:`licornd.threads.service_min <licornd.threads.service_min.en>` are automatically terminated.
+
+
+.. _licornd.threads.wipe_time.en:
+
+	**licornd.threads.wipe_time**
+		The cycle delay of :term:`PeriodicThreadsCleaner` and :term:`QueuesEmptyer` threads. How long will they wait between each iteration of their cleaning loop. (Default: **600 seconds**, = 10 minutes). This doesn't affect their first run, which is always 30 seconds after daemon start.
+
+
+
+.. _licornd.wmi.enabled.en:
+
+	**licornd.wmi.enabled**
+		Self explanatory: should the WMI be started or not? If you don't use it, don't activate it. You will save some system resources.
+
+
+
+.. _licornd.wmi.group.en:
+
+	**licornd.wmi.group**
+		* Users members of this group will be able to access the WMI and administer some [quite limited] parts of the system. Default value is ``licorn-wmi`` .
+		* Any reference to a non existing group will trigger the group creation at next daemon start, so this groups always exists.
+
+		.. note:: It is a good idea (or not, depending on your users) to *register this group as a privilege*, to allow web-only administrators to grant WMI access to other users.
+
+
+
+.. _licornd.wmi.listen_address.en:
+
+	**licornd.wmi.listen_address**
+		Customize the interface the WMI listens on. Set it to an IP address (not a hostname yet). If unset, the WMI only listens on ``localhost`` (IP address ``127.0.0.1``).
+
+
+
+.. _licornd.wmi.log_file.en:
+
+	**licornd.wmi.log_file**
+		Path to the WMI `access_log` (default: :file:`/var/log/licornd-wmi.log`). The log format is Apache compatible, it is a `CustomLog`.
+
+
+
+.. _licornd.wmi.port.en:
+
+	licornd.wmi.port
+		Port ``3356`` by default. Set it as an integer, for example `licornd.wmi.port = 8282`. There is no particular restriction, except that this port must be different from the Pyro one (see :term:`licornd.pyro.port`).
+
 Users and groups related
 ------------------------
 
 .. glossary::
 
-	users.config_dir
+	**users.config_dir**
 		Where Licorn® will put its configuration, preferences and customization files for a given user. Default is :file:`~/.licorn`.
 
-	users.check_config_file
+	**users.check_config_file**
 		Defines the path where the user customization file for checks will be looked for. Default is `check.conf` in :term:`users.config_dir`, or with full path: :file:`~/.licorn/check.conf`.
 
-
-Backup related
---------------
-
-.. glossary::
-
-	backup.interval
-		Defines the interval of system backups, in seconds (default: ``3600`` = one hour). Backups are incremental and don't take much space. This directive defines the default interval for all backup :ref:`extensions`, but some can have dedicated parameters.
-
-
-Other directives
-----------------
-
-.. glossary::
-
-	experimental.enabled
-		turn on experimental features, depending on wich version of Licorn® you have installed. For example, in version 1.2.3, the experimental directive enables the `Machines` tab in the WMI (the wires are already enabled but non-sysadmins don't get the feature).
 
 
 Check configuration files

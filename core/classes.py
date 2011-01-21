@@ -18,14 +18,14 @@ from traceback import print_exc
 from licorn.foundations           import hlstr, exceptions, logging, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import licornd_roles
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 											NamedObject, MixedDictObject, \
 											ReverseMappingDict, \
 											pyro_protected_attrs, \
 											LicornConfigObject
 
-from licorn.core import LMC
+from licorn.core   import LMC
+from licorn.daemon import roles
 
 class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	""" Thread-safe object, protected by a global :class:`~threading.RLock`. This
@@ -868,7 +868,7 @@ class ModulesManager(LockedController):
 		# Thus, if server_side_modules is None, we simulate a SERVER mode to
 		# load everything possible. Superfluous modules will be disabled on
 		# subsequent passes.
-		if LMC.configuration.licornd.role == licornd_roles.CLIENT \
+		if LMC.configuration.licornd.role == roles.CLIENT \
 				and server_side_modules != None:
 			is_client = True
 		else:

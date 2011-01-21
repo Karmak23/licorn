@@ -68,6 +68,15 @@ class NamedObject(object):
 			else:
 				data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
 		return data
+	def __repr__(self):
+		data = ''
+		for i in sorted(self.__dict__):
+			if i[0] == '_' or i == 'parent': continue
+			if type(getattr(self, i)) == type(self):
+				data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
+			else:
+				data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
+		return data
 	def copy(self):
 		""" Implements the copy method like any other base object. """
 		assert ltrace('base', '| NamedObject.copy(%s)' % self.name)
@@ -154,6 +163,13 @@ class MixedDictObject(NamedObject, dict):
 			return dict.__getitem__(self, attribute)
 		except KeyError:
 			raise AttributeError("'%s'" % attribute)
+	def append(self, thing):
+		dict.__setitem__(self, thing.name, thing)
+	def remove(self, thing):
+		for key, value in dict.iteritems():
+			if value == thing:
+				dict.__delitem__(self, key)
+				break
 	def __setattr__(self, attribute, value):
 		""" any attribute other than {semi-hidden, protected or callable}
 			attributes will go into the dict part, to be able to retrieve
@@ -351,10 +367,13 @@ class Enumeration(object):
 		assert ltrace('base', '| Enumeration._release(FAKE!!)')
 		pass
 class EnumDict(Enumeration, dict):
-	def __init__(self, name='<unset>'):
+	def __init__(self, name='<unset>', from_dict=None):
 		assert ltrace('base', '| EnumDict.__init__(%s)' % name)
 		dict.__init__(self)
 		Enumeration.__init__(self, name)
+		if from_dict:
+			for key, value in from_dict.iteritems():
+				self.__setattr__(key, value)
 	def __setattr__(self, key, value):
 		assert ltrace('base', '| EnumDict.__setattr__(%s → %s)' % (key, value))
 		Enumeration.__setattr__(self, key, value)

@@ -20,14 +20,14 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, fsapi, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import distros, servers, mailboxes, \
-											licornd_roles
+from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
 											Enumeration, FsapiObject
 from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
 from licorn.core.classes import LockedController, CoreModule
+from licorn.daemon       import roles
 
 class LicornConfiguration(Singleton, LockedController):
 	""" Contains all the underlying system configuration as attributes.
@@ -267,13 +267,13 @@ class LicornConfiguration(Singleton, LockedController):
 		assert ltrace('configuration', '| load_missing_directives_from_factory_defaults()')
 
 		mandatory_dict = {
-			'licornd.role'                 : licornd_roles.UNSET,
+			'licornd.role'                 : roles.UNSET,
 			'licornd.pyro.port'            : os.getenv('PYRO_PORT', 299),
 			# don't set in case there is no eth0 on the system.
 			#'licornd.pyro.listen_address': 'if:eth0'
 			'licornd.threads.pool_members' : 10,
-			'licornd.threads.network.min'  : 10,
-			'licornd.threads.network.max'  : 150,
+			'licornd.threads.service_min'  : 10,
+			'licornd.threads.service_max'  : 150,
 			'licornd.threads.wipe_time'    : 600,   # 10 minutes
 			'licornd.syncer.port'          : 3344,
 			'licornd.searcher.port'        : 3355,
@@ -283,7 +283,7 @@ class LicornConfiguration(Singleton, LockedController):
 			'licornd.cache_file'           : '/var/cache/licorn/licornd.db',
 			'licornd.socket_path'          : '/var/run/licornd.sock',
 			'licornd.inotifier.enabled'    : True,
-			'licornd.network.enabled'      : True,
+			'licornd.network.lan_scan'     : True,
 			'licornd.wmi.enabled'          : True,
 			'licornd.wmi.group'            : 'licorn-wmi',
 			# WMI listens on all interfaces by default ('' = *)
@@ -301,11 +301,13 @@ class LicornConfiguration(Singleton, LockedController):
 
 		assert ltrace('configuration', '| convert_configuration_values()')
 
-		if self.licornd.role not in licornd_roles:
+		from licorn.daemon import roles
+
+		if self.licornd.role not in roles:
 			# use upper() to avoid bothering user if he has typed "server"
 			# instead of "SERVER". Just be cool when possible.
-			if hasattr(licornd_roles, self.licornd.role.upper()):
-				self.licornd.role = getattr(licornd_roles,
+			if hasattr(roles, self.licornd.role.upper()):
+				self.licornd.role = getattr(roles,
 					self.licornd.role.upper())
 
 		if hasattr(self.licornd.pyro, 'listen_address'):
@@ -349,8 +351,8 @@ class LicornConfiguration(Singleton, LockedController):
 
 		assert ltrace('configuration', '| check_directive_daemon_role()')
 
-		if self.licornd.role == licornd_roles.UNSET or \
-			self.licornd.role not in licornd_roles:
+		if self.licornd.role == roles.UNSET or \
+			self.licornd.role not in roles:
 			raise exceptions.BadConfigurationError('''%s is currently '''
 				'''unset or invalid in %s. Please set it to either %s or '''
 				'''%s and retry.''' % (
@@ -360,7 +362,7 @@ class LicornConfiguration(Singleton, LockedController):
 					stylize(ST_COMMENT, 'CLIENT')
 					)
 				)
-		elif self.licornd.role == licornd_roles.CLIENT:
+		elif self.licornd.role == roles.CLIENT:
 			self.server_main_address = network.find_server(self)
 	def check_directive_daemon_threads(self):
 		""" check the pingers number for correctness. """

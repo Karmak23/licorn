@@ -7,202 +7,235 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 :license: GNU GPL version 2
 
 """
-import os, sys, time, signal
-dstart_time = time.time()
-from Queue import Empty
 
-from licorn.foundations           import options, logging
+import sys, os, select, code, readline, curses
+import signal, termios
+
+from rlcompleter import Completer
+from licorn.foundations           import options, logging, exceptions
+from licorn.foundations           import process, pyutils
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, insert_ltrace
-from licorn.foundations.base      import MixedDictObject, Singleton
+from licorn.foundations.ltrace    import ltrace, insert_ltrace, dump, fulldump
+from licorn.foundations.base      import NamedObject, MixedDictObject, EnumDict, Singleton
 from licorn.foundations.thread    import _threads, _thcount
-from licorn.foundations.pyutils   import format_time_delta
-
-from licorn.core import LMC
 
 class LicornThreads(MixedDictObject, Singleton):
 	pass
 class LicornQueues(MixedDictObject, Singleton):
 	pass
-class ChildrenPIDs(MixedDictObject, Singleton):
-	pass
 
-# these objects will be global across the daemon and possibly the core,
-# usable everywhere.
-dthreads = LicornThreads('daemon_threads')
-dqueues  = LicornQueues('daemon_queues')
+roles = EnumDict('licornd_roles', from_dict={
+		'UNSET':  1,
+		'SERVER': 2,
+		'CLIENT': 3
+	})
 
-# following objects are used inside the daemon and the WMI process.
-dname            = 'licornd'
-dchildren         = ChildrenPIDs('daemon_children')
-dchildren.wmi_pid = None
+priorities = EnumDict('service_priorities', from_dict={
+		'LOW':  20,
+		'NORMAL': 10,
+		'HIGH': 0
+	})
 
-def clean_before_terminating(pname):
-	""" stop threads and clear pid files. """
+def daemon_thread(klass, target, args=(), kwargs={}):
+	""" TODO: turn this into a decorator, I think it makes a good candidate. """
+	from licorn.daemon.main import daemon
+	thread = klass(target, args, kwargs)
+	daemon.threads[thread.name] = thread
+	return thread
 
-	for child in dchildren:
-		if child:
-			os.kill(child, signal.SIGTERM)
-			os.waitpid(child, 0)
-			# wipe the PID in case we got Interactor thread trying to kill
-			# it later, which will fail if the old pid is kept.
-			child = None
+def service(prio, func):
+	from licorn.daemon.main import daemon
+	daemon.queues.serviceQ.put((prio, func))
 
-	logging.progress("%s: emptying queues." % pname)
-	for (qname, queue) in dqueues.iteritems():
-		if queue.qsize() > 0:
-			assert ltrace('daemon', 'emptying queue %s (%d items left).' % (qname,
-				queue.qsize()))
+# LicornDaemonInteractor is an object dedicated to user interaction when the
+# daemon is started in the foreground.
+class LicornDaemonInteractor(NamedObject):
+	class HistoryConsole(code.InteractiveConsole):
+		def __init__(self, locals=None, filename="<licornd_console>",
+			histfile=os.path.expanduser('~/.licorn/licornd_history')):
+			assert ltrace('interactor', '| HistoryConsole.__init__()')
+			code.InteractiveConsole.__init__(self, locals, filename)
+			self.histfile = histfile
 
-			# manually empty the queue by munging all remaining items.
+		def init_history(self):
+			assert ltrace('interactor', '| HistoryConsole.init_history()')
+			readline.set_completer(Completer(namespace=self.locals).complete)
+			readline.parse_and_bind("tab: complete")
+			if hasattr(readline, "read_history_file"):
+				try:
+					readline.read_history_file(self.histfile)
+				except IOError:
+					pass
+		def save_history(self):
+			assert ltrace('interactor', '| HistoryConsole.save_history()')
+			readline.write_history_file(self.histfile)
+
+	def __init__(self, daemon):
+		assert ltrace('interactor', '| LicornDaemonInteractor.__init__()')
+		NamedObject.__init__(self, 'interactor')
+		self.long_output = False
+		self.daemon      = daemon
+		self.pname       = daemon.name
+		# make it daemon so that it doesn't block the master when stopping.
+		#self.daemon = True
+	def prepare_terminal(self):
+		assert ltrace(self.name, '| prepare_terminal()')
+		termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new)
+	def restore_terminal(self):
+		assert ltrace(self.name, '| restore_terminal()')
+		termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
+	def run(self):
+		""" prepare stdin for interaction and wait for chars. """
+		if sys.stdin.isatty():
+			assert ltrace(self.name, '> run()')
+
+			curses.setupterm()
+			clear = curses.tigetstr('clear')
+
+			# see tty and termios modules for implementation details.
+			self.fd = sys.stdin.fileno()
+			self.old = termios.tcgetattr(self.fd)
+			self.new = termios.tcgetattr(self.fd)
+
+			# put the TTY in nearly raw mode to be able to get characters
+			# one by one (not to wait for newline to get one).
+
+			# lflags
+			self.new[3] = \
+				self.new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
+			self.new[6][termios.VMIN] = 1
+			self.new[6][termios.VTIME] = 0
+
 			try:
-				obj = queue.get(False)
-				queue.task_done()
-				while obj:
-					obj = queue.get(False)
-					queue.task_done()
-				# be sure to reput a None object in the queue, to stop the last
-				# threads of the pool, waiting for the None we have munged here.
-				queue.put(None)
-			except Empty:
-				pass
+				self.prepare_terminal()
 
-	logging.progress("%s: stopping threads." % pname)
+				while True:
+					try:
+						readf, writef, errf = select.select([self.fd], [], [])
+						if readf == []:
+							continue
+						else:
+							char = sys.stdin.read(1)
 
-	# don't use iteritems() in case we stop during start and not all threads
-	# have been added yet.
-	for (thname, th) in dthreads.items():
-		assert ltrace('thread', 'stopping thread %s.' % thname)
-		if th.is_alive():
-			th.stop()
+					except select.error, e:
+						if e.errno == 4:
+							sys.stderr.write("^C\n")
+							raise KeyboardInterrupt
+						else:
+							raise
 
-	logging.progress("%s: joining queues." % pname)
-	for (qname, queue) in dqueues.iteritems():
-		assert ltrace('daemon', 'joining queue %s (%d items left).' % (qname,
-			queue.qsize()))
-		queue.join()
+					except KeyboardInterrupt:
+						sys.stderr.write("^C\n")
+						raise
 
-	logging.progress("%s: joining threads." % pname)
+					else:
+						# control characters from
+						# http://www.unix-manuals.com/refs/misc/ascii-table.html
+						if char == '\n':
+							sys.stderr.write('\n')
 
-	for (thname, th) in dthreads.items():
-		# join threads in the reverse order they were started, and only the not
-		# daemonized ones, in case daemons are stuck on blocking socket or
-		# anything preventing a quick and gracefull stop.
-		if th.daemon:
-			assert ltrace('thread', 'skipping daemon thread %s.' % thname)
-			pass
-		else:
-			assert ltrace('thread', 'joining %s.' % thname)
-			if th.is_alive():
-				assert ltrace('thread',
-					"re-stopping thread %s (shouldn't happen)." % thname)
-				th.stop()
-				time.sleep(0.01)
-			th.join()
-			del th
-			del dthreads[thname]
+						elif char in ('f', 'F', 'l', 'L'):
 
-	# display the remaining active threads (presumably stuck hanging on
-	# something very blocking).
-	assert ltrace('thread', 'after joining all, %s remaining: %s' % (
-		_thcount(), _threads()))
+							self.long_output = not self.long_output
+							logging.notice('%s: switched long_output status '
+								'to %s.' % (self.name, self.long_output))
 
-	if LMC.configuration:
-		LMC.configuration.CleanUp()
+						elif char in ('t', 'T'):
+							sys.stderr.write('%s active threads: %s\n' % (
+								_thcount(), _threads()))
 
-	unlink_pid_file(pname)
-def unlink_pid_file(pname):
-	""" remove the pid file and bork if any error. """
+						elif char == '\f': # ^L (form-feed, clear screen)
+							sys.stdout.write(clear)
+							sys.stdout.flush()
 
-	if pname[8:11] == 'wmi':
-		pid_file = LMC.configuration.licornd.wmi.pid_file
-	else:
-		pid_file = LMC.configuration.licornd.pid_file
+						elif char == '': # ^R (refresh / reload)
+							#sys.stderr.write('\n')
+							self.restore_terminal()
+							os.kill(os.getpid(), signal.SIGUSR1)
 
-	try:
-		if os.path.exists(pid_file):
-			os.unlink(pid_file)
-	except (OSError, IOError), e:
-		logging.warning("%s: can't remove %s (was: %s)." % (pname,
-			stylize(ST_PATH, pid_file), e))
-def uptime():
-	return ' (up %s)' % stylize(ST_COMMENT,
-			format_time_delta(time.time() - dstart_time))
-def terminate(signum, frame, pname):
-	""" Close threads, wipe pid files, clean everything before closing. """
+						elif char == '': # ^U kill -15
+							# no need to log anything, process will display
+							# 'signal received' messages.
+							#logging.warning('%s: killing ourselves softly.' %
+							#	self.pname)
 
-	if signum is None:
-		logging.progress("%s: cleaning up and stopping threads…" % \
-			pname)
-	else:
-		logging.notice('%s: signal %s received, shutting down…' % (
-			pname, signum))
+							# no need to kill WMI, terminate() will do it clean.
+							self.restore_terminal()
+							os.kill(os.getpid(), signal.SIGTERM)
 
-	if pname[8:14] == 'master':
-		clean_before_terminating(pname)
-		upt = uptime()
-	else:
-		# don't display the uptime in children, this is duplicate.
-		upt = ''
-		LMC.release()
+						elif char == '\v': # ^K (Kill -9!!)
+							logging.warning('%s: killing ourselves badly.' %
+								self.name)
 
-	logging.notice("%s: exiting%s." % (pname, upt))
-	sys.exit(0)
-def restart(signum, frame, pname):
-	logging.notice('%s: SIGUSR1 received, restarting%s.' % (pname, uptime()))
+							self.restore_terminal()
+							os.kill(os.getpid(), signal.SIGKILL)
 
-	clean_before_terminating(pname)
+						elif char == '':
+							sys.stderr.write(self.daemon.dump_status(
+								long_output=self.long_output))
 
-	# close every file descriptor (except stdin/out/err, used for logging and
-	# on the console). This is needed for Pyro thread to release its socket,
-	# else it's done too late and on restart the port can't be rebinded on.
-	os.closerange(3, 32)
+						elif char in (' ', ''): # ^Y
+							sys.stdout.write(clear)
+							sys.stdout.flush()
+							sys.stderr.write(self.daemon.dump_status(
+								long_output=self.long_output))
+						elif char in ('i', 'I'):
+							logging.notice('%s: ntering interactive mode. '
+								'Welcome into licornd\'s arcanes…' % self.name)
 
-	# even after having reforked (see main.py and foundations.process) with
-	# LTRACE arguments on, the first initial sys.argv hasn't bee modified,
-	# we have to redo all the work here.
-	cmd = ['licorn-daemon']
-	cmd.extend(insert_ltrace())
+							# trap SIGINT to avoid shutting down the daemon by
+							# mistake. Now Control-C is used to reset the
+							# current line in the interactor.
+							def interruption(x,y):
+								raise KeyboardInterrupt
+							signal.signal(signal.SIGINT, interruption)
 
-	found = False
-	for arg in ('-p', '--wake-pid', '--pid-to-wake'):
-		try:
-			wake_index = sys.argv.index(arg)
-		except:
-			continue
+							from licorn.core import version, LMC
 
-		found = True
-		cmd.extend(sys.argv[0:wake_index])
-		cmd.extend(sys.argv[wake_index+2:])
-		# pray there is only one --wake_pid argument. As this is an internally
-		# used flag only, it should be. Else we will forget to remove all other
-		# and will send signals to dead processes.
-		break
+							# NOTE: we intentionnaly restrict the interpreter
+							# environment, else it
+							interpreter = self.__class__.HistoryConsole(
+								locals={
+									'version'       : version,
+									'daemon'        : self.daemon,
+									'queues'        : self.daemon.queues,
+									'threads'       : self.daemon.threads,
+									'uptime'        : self.daemon.uptime,
+									'LMC'           : LMC,
+									'dump'          : dump,
+									'fulldump'      : fulldump,
+									})
 
-	if not found:
-		cmd.extend(sys.argv[:])
+							# put the TTY in standard mode (echo on).
+							self.restore_terminal()
+							sys.ps1 = 'licornd> '
+							sys.ps2 = '...'
+							interpreter.init_history()
+							interpreter.interact(
+								banner="Licorn® %s, Python %s on %s" % (
+									version, sys.version.replace('\n', ''),
+									sys.platform))
+							interpreter.save_history()
+							logging.notice('%s: leaving interactive mode. '
+								'Welcome back to Real World™.' % self.name)
 
-	#print '>> daemon.restart %s' % cmd
+							# restore signal and terminal handling
+							signal.signal(signal.SIGINT,
+								lambda x,y: self.daemon.terminate)
 
-	# XXX: awful tricking for execvp but i'm tired of this.
-	os.execvp(cmd[1], [cmd[0]] + cmd[2:])
-def setup_signals_handler(pname):
-	""" redirect termination signals to a the function which will clean everything. """
+							# take the TTY back into command mode.
+							self.prepare_terminal()
 
-	signal.signal(signal.SIGTERM, lambda x,y: terminate(x, y, pname))
-	signal.signal(signal.SIGHUP, lambda x,y: terminate(x, y, pname))
+						else:
+							logging.warning2(
+								"%s: received unhandled char '%s', ignoring."
+								% (self.name, char))
+			finally:
+				# put it back in standard mode after input, whatever
+				# happened. The terminal has to be restored.
+				self.restore_terminal()
 
-	if pname[8:11] == 'wmi':
-		# wmi will receive this signal from master when all threads are started,
-		# this will wake it from its signal.pause(). Just ignore it.
-		signal.signal(signal.SIGINT, signal.SIG_IGN)
-		signal.signal(signal.SIGUSR1, lambda x,y: True)
+		# else:
+		# stdin is not a tty, we are in the daemon, don't do anything.
+		assert ltrace(self.name, '< run()')
 
-		# don't ignore the SIGINT, else the WMI doesn't get killed when the
-		# master dies.
-		#signal.signal(signal.SIGINT, signal.SIG_IGN)
-	else:
-		signal.signal(signal.SIGINT, lambda x,y: terminate(x, y, pname))
-		signal.signal(signal.SIGUSR1, lambda x,y: restart(x, y, pname))
-
-	#signal.signal(signal.SIGCHLD, signal.SIG_IGN)
