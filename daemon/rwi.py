@@ -341,7 +341,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.output(LMC.groups.dump())
 			self.output(LMC.machines.dump())
 
-		self.output(LMC.system.get_daemon_status(opts.long, opts.precision))
+		from licorn.daemon.main import daemon
+		self.output(daemon.dump_status(opts.long, opts.precision))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.

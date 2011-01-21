@@ -81,9 +81,6 @@ class SystemController(Singleton, CoreController):
 		with self.lock():
 			assert ltrace('system', '| get_status(%s)' % self.status)
 			return self.status
-	def get_daemon_status(self, long_output, precision):
-		from licorn.daemon.core import get_daemon_status
-		return get_daemon_status(long_output, precision)
 	def get_host_type(self):
 		""" Return local host type. """
 		assert ltrace('system', '| get_host_type(%s)' % host_types.UBUNTU)
