@@ -664,7 +664,7 @@ class GroupsController(Singleton, CoreController):
 		if system:
 			# we must fill the permissive status here, else WriteConf() will
 			# fail with a KeyError. If not system, this has already been filled.
-			temp_group_dict['permissive'] = False
+			temp_group_dict['permissive'] = None
 			# no skel for a system group
 			temp_group_dict['groupSkel'] = ''
 
