@@ -271,14 +271,13 @@ class LicornConfiguration(Singleton, LockedController):
 			'licornd.pyro.port'            : os.getenv('PYRO_PORT', 299),
 			# don't set in case there is no eth0 on the system.
 			#'licornd.pyro.listen_address': 'if:eth0'
-			'licornd.threads.pool_members' : 10,
 			# ACLChecker will ruin I/O performance if we create too much.
 			'licornd.threads.aclcheck.min' : 1,
-			'licornd.threads.aclcheck.max' : 5,
+			'licornd.threads.aclcheck.max' : 10,
 			# ServiceWorker is a generic thread, we could need much of them.
-			'licornd.threads.service.min'  : 5,
-			'licornd.threads.service.max'  : 30,
-			# NetWorkWorker is a consuming service, we need a lot.
+			'licornd.threads.service.min'  : 1,
+			'licornd.threads.service.max'  : 50,
+			# NetWorkWorker is a consuming service, for short operations, we need a lot.
 			'licornd.threads.network.min'  : 1,
 			'licornd.threads.network.max'  : 100,
 			'licornd.threads.wipe_time'    : 600,   # 10 minutes
@@ -353,6 +352,7 @@ class LicornConfiguration(Singleton, LockedController):
 
 		self.check_directive_daemon_role()
 		self.check_directive_daemon_threads()
+		self.check_directive_backup()
 	def check_directive_daemon_role(self):
 		""" check the licornd.role directive for correctness. """
 
@@ -375,26 +375,41 @@ class LicornConfiguration(Singleton, LockedController):
 		""" check the pingers number for correctness. """
 		assert ltrace('configuration', '| check_directive_daemon_threads()')
 
-		raise_pinger_exception = False
-		pingers = self.licornd.threads.pool_members
-		try:
-			# be sure this is an int().
-			pingers = int(pingers)
-		except ValueError:
-			raise_pinger_exception = True
-		else:
-			if pingers < 0:
-				pingers = abs(pingers)
+		err_message = ''
 
-			if pingers > 50:
-				raise_pinger_exception = True
+		for directive, vmin, vmax, directive_name in (
+				(self.licornd.threads.aclcheck.min, 1,   10,
+									'licornd.threads.aclcheck.min'),
+				(self.licornd.threads.aclcheck.max, 10,  50,
+									'licornd.threads.aclcheck.max'),
+				(self.licornd.threads.service.min,  1,   25,
+									'licornd.threads.service.min'),
+				(self.licornd.threads.service.max,  25,  100,
+									'licornd.threads.service.max'),
+				(self.licornd.threads.network.min,  1,   50,
+									'licornd.threads.network.min'),
+				(self.licornd.threads.network.max,  50,  200,
+									'licornd.threads.network.max')
+				):
+			if directive < vmin or directive > vmax:
+				err_message += ('\n\tinvalid value %s for configuration '
+					'directive %s: must be an integer between '
+					'%s and %s.' % (stylize(ST_BAD, directive),
+						stylize(ST_COMMENT, directive_name),
+						stylize(ST_COMMENT, vmin), stylize(ST_COMMENT, vmax)))
 
-		if raise_pinger_exception:
-			raise exceptions.BadConfigurationError('''invalid value "%s" '''
-				'''for %s configuration directive: it must be an integer '''
-				'''between 0 and 50.''' (
-					stylize(ST_COMMENT, pingers),
-					stylize(ST_COMMENT, 'licornd.threads.pool_members')))
+		if err_message:
+			raise exceptions.BadConfigurationError(err_message)
+	def check_directive_backup(self):
+		""" TODO. """
+		if self.backup.interval < 3600 or self.backup.interval > 604800:
+			raise exceptions.BadConfigurationError(
+				'\n\tinvalid value %s for configuration '
+				'directive %s: must be an integer between '
+				'%s (one hour) and %s (one week).' % (
+					stylize(ST_BAD, self.backup.interval),
+					stylize(ST_COMMENT, 'backup.interval'),
+					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))
 	def load_configuration_from_main_config_file(self):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
