@@ -11,6 +11,7 @@ import os, time, gamin
 from threading   import Thread, Event, RLock, Timer
 from collections import deque
 
+
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.styles    import *
@@ -431,9 +432,6 @@ class INotifier(Thread):
 			func: method called when a GAMIN event is received on path.
 		"""
 
-		assert ltrace('inotifier', '| add_watch(path=%s, func=%s, is_dir=%s)' % (
-			path, func, is_dir))
-
 		with self.lock:
 			if is_dir:
 				self.mon.watch_directory(path, func)
@@ -443,20 +441,20 @@ class INotifier(Thread):
 				self.mon.watch_file(path, func)
 				attribute = 'file'
 
-			logging.info('''%s: %s inotify watch for %s %s [total: %d] '''
-				'''[to_add: %d] [to_rem: %d].''' % (
-				self.name,
-				stylize(ST_OK, 'added'),
-				attribute,
-				stylize(ST_PATH, path),
-				len(self.mon.objects),
-				len(self._to_add),
-				len(self._to_remove)
-				), to_listener=False)
+			assert ltrace('inotifier', '| add_watch(%s %s → %s) '
+					'[total: %d, to_add: %d, to_rem: %d]' % (
+						attribute,
+						stylize(ST_PATH, path),
+						func,
+						len(self.mon.objects),
+						len(self._to_add),
+						len(self._to_remove)
+					)
+				)
 	def remove_watch(self, path):
 		"""Remove a dir and all its subdirs from our GAM WatchMonitor. """
 
-		assert ltrace('inotifier', '> remove_watch(%s)' % path)
+		#assert ltrace('inotifier', '> remove_watch(%s)' % path)
 
 		with self.lock:
 			try:
@@ -472,13 +470,10 @@ class INotifier(Thread):
 						self.remove_one_watch(watch)
 
 			except gamin.GaminException, e:
-				logging.warning('''%s.remove_watch(): exception %s.''' % e)
-
-		assert ltrace('inotifier', '< remove_watch(%s)' % path)
+				logging.warning('%s: remove_watch(%s): exception %s.' % (
+					self.name, path, e))
 	def remove_one_watch(self, path):
 		""" Remove a single watch from the GAM WatchMonitor."""
-
-		assert ltrace('inotifier', '> remove_one_watch(%s)' % path)
 
 		with self.lock:
 			try:
@@ -488,21 +483,19 @@ class INotifier(Thread):
 				if self.mon.objects[path] == []:
 					del self.mon.objects[path]
 
-				logging.info('''%s: %s inotify watch for %s [total: %d] '''
-					'''[to_add: %d] [to_rem: %d].''' % (
-					self.name,
-					stylize(ST_BAD, 'removed'),
-					stylize(ST_PATH, path),
-					len(self.mon.objects),
-					len(self._to_add),
-					len(self._to_remove)
-					), to_listener=False)
+				assert ltrace('inotifier', '| remove_one_watch(%s) [total: %d, '
+						'to_add: %d, to_rem: %d].' % (
+							stylize(ST_PATH, path),
+							len(self.mon.objects),
+							len(self._to_add),
+							len(self._to_remove)
+						)
+					)
 
 				#assert ltrace('inotifier', str(self.mon.objects).replace(', ', '\n'))
 			except KeyError, e:
 
 				logging.warning(e)
-		assert ltrace('inotifier', '< remove_one_watch(%s)' % path)
 	def queues_status_str(self):
 		""" Compute and show internal queues statuses. """
 
