@@ -825,6 +825,10 @@ def main(uri, http_user, sort="hostname", order="asc", configuration=None,
 		return html_data
 
 	for mid in LMC.machines.keys():
+		# don't display offline machines
+		if LMC.machines[mid].status & host_status.OFFLINE:
+			continue
+
 		#machine  = m[mid]
 		hostname = m[mid].hostname
 
