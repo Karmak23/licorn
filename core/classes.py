@@ -197,7 +197,7 @@ class CoreController(LockedController):
 	def __setitem__(self, key, value):
 		""" Add a new element inside us and update all reverse mappings. """
 		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
-			key, value))
+			key, repr(value)))
 		with self.lock():
 			LockedController.__setitem__(self, key, value)
 			for mapping_name, mapping_dict in self._reverse_mappings.items():
