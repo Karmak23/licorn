@@ -272,8 +272,15 @@ class LicornConfiguration(Singleton, LockedController):
 			# don't set in case there is no eth0 on the system.
 			#'licornd.pyro.listen_address': 'if:eth0'
 			'licornd.threads.pool_members' : 10,
-			'licornd.threads.service_min'  : 10,
-			'licornd.threads.service_max'  : 150,
+			# ACLChecker will ruin I/O performance if we create too much.
+			'licornd.threads.aclcheck.min' : 1,
+			'licornd.threads.aclcheck.max' : 5,
+			# ServiceWorker is a generic thread, we could need much of them.
+			'licornd.threads.service.min'  : 5,
+			'licornd.threads.service.max'  : 30,
+			# NetWorkWorker is a consuming service, we need a lot.
+			'licornd.threads.network.min'  : 1,
+			'licornd.threads.network.max'  : 100,
 			'licornd.threads.wipe_time'    : 600,   # 10 minutes
 			'licornd.syncer.port'          : 3344,
 			'licornd.searcher.port'        : 3355,

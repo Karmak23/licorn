@@ -24,7 +24,7 @@ from licorn.foundations.constants import host_status, host_types
 
 from licorn.core           import LMC
 from licorn.core.classes   import CoreController, CoreStoredObject
-from licorn.daemon         import service, priorities
+from licorn.daemon         import network_service, priorities
 
 class Machine(CoreStoredObject):
 	counter = 0
@@ -84,8 +84,8 @@ class Machine(CoreStoredObject):
 				self.status = host_status.ONLINE
 
 				if and_more:
-					service(priorities.HIGH, self.pyroize)
-					service(priorities.LOW, self.arping)
+					network_service(priorities.NORMAL, self.pyroize)
+					network_service(priorities.LOW, self.arping)
 
 			# close the socket (no more needed), else we could get
 			# "too many open files" errors (254 open sockets for .
@@ -251,8 +251,8 @@ class MachinesController(Singleton, CoreController):
 			backend=backend if backend else Enumeration('null_backend'),
 			status=status)
 
-		service(priorities.LOW, lambda: self[mid].ping(and_more=True))
-		service(priorities.LOW, self[mid].resolve)
+		network_service(priorities.LOW, self[mid].ping, and_more=True)
+		network_service(priorities.LOW, self[mid].resolve)
 	def load(self):
 		if MachinesController.load_ok:
 			return
@@ -292,14 +292,14 @@ class MachinesController(Singleton, CoreController):
 
 			# FIRST, scan our know machines, if any.
 			for machine in self:
-				service(priorities.LOW, lambda: machine.ping(and_more=True))
-				service(priorities.LOW, machine.resolve)
+				network_service(priorities.LOW, machine.ping, and_more=True)
+				network_service(priorities.LOW, machine.resolve)
 
 				if machines[mid].ether in (None, []):
-					service(priorities.LOW, machine.arping)
+					network_service(priorities.LOW, machine.arping)
 
 		# THEN, scan the whole LAN to add more.
-		service(priorities.LOW, self.scan_network)
+		network_service(priorities.LOW, self.scan_network)
 
 		assert ltrace('machines', '< %s: initial_scan()' % caller)
 	def scan_network(self):
@@ -330,7 +330,7 @@ class MachinesController(Singleton, CoreController):
 					ipaddr = str(ipaddr)
 					if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
 						if ipaddr in known_ips:
-							service(priorities.LOW, self[str(ipaddr)].ping)
+							network_service(priorities.LOW, self[str(ipaddr)].ping)
 						else:
 							self.add_machine(str(ipaddr))
 

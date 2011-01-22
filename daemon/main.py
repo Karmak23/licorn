@@ -49,11 +49,12 @@ from licorn.core                  import version, LMC
 
 from licorn.daemon                import LicornDaemonInteractor, \
 											LicornThreads, LicornQueues, \
-											roles, priorities
+											roles, priorities, service
 from licorn.daemon.wmi            import WMIThread
 from licorn.daemon.threads        import DbusThread, LicornJobThread, \
-											ServiceWorkerThread
-from licorn.daemon.aclchecker     import ACLChecker
+											ServiceWorkerThread, \
+											ACLCkeckerThread, \
+											NetworkWorkerThread
 from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.cmdlistener    import CommandListener
 
@@ -108,7 +109,23 @@ class LicornDaemon(Singleton):
 		# the new service facility: just start one thread, it will handle
 		# thread pool size automatically when needed.
 		self.queues.serviceQ = PriorityQueue()
-		self.threads.append(ServiceWorkerThread(self.queues.serviceQ, self))
+		self.threads.append(ServiceWorkerThread(
+							in_queue=self.queues.serviceQ,
+							peers_min=self.configuration.threads.service.min,
+							peers_max=self.configuration.threads.service.max,
+							licornd=self))
+		self.queues.aclcheckQ = PriorityQueue()
+		self.threads.append(ACLCkeckerThread(
+							in_queue=self.queues.aclcheckQ,
+							peers_min=self.configuration.threads.aclcheck.min,
+							peers_max=self.configuration.threads.aclcheck.max,
+							licornd=self))
+		self.queues.networkQ = PriorityQueue()
+		self.threads.append(NetworkWorkerThread(
+							in_queue=self.queues.networkQ,
+							peers_min=self.configuration.threads.network.min,
+							peers_max=self.configuration.threads.network.max,
+							licornd=self))
 	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
@@ -161,11 +178,7 @@ class LicornDaemon(Singleton):
 						self.name,self.pid))
 
 			if self.configuration.network.lan_scan:
-				self.queues.serviceQ.put(
-								(priorities.NORMAL, LMC.machines.initial_scan))
-
-			# TODO: move the aclchecker to the service-facility interface.
-			self.threads.aclchecker = ACLChecker(self, None)
+				service(priorities.NORMAL, LMC.machines.initial_scan)
 
 			if self.configuration.inotifier.enabled:
 				self.threads.inotifier = INotifier(self,
@@ -194,7 +207,6 @@ class LicornDaemon(Singleton):
 			assert ltrace('thread', 'stopping thread %s.' % thname)
 			if th.is_alive():
 				th.stop()
-
 	def _job_periodic_cleaner(self):
 		""" Ping all known machines. On online ones, try to connect to pyro and
 		get current detailled status of host. Notify the host that we are its
@@ -380,21 +392,37 @@ class LicornDaemon(Singleton):
 		rusage   = resource.getrusage(resource.RUSAGE_SELF)
 		pagesize = resource.getpagesize()
 
-		data = ('-- Licorn® daemon %sstatus: '
-			'up %s, %s threads, %s controllers, %s queues, %s locks, %d service threads (%d started so far)\n'
-			'CPU: usr %.3fs, sys %.3fs MEM: res %.2fMb shr %.2fMb ush %.2fMb stk %.2fMb\n' % (
-			stylize(ST_COMMENT, 'full ') if long_output else '',
-			stylize(ST_COMMENT,
-			pyutils.format_time_delta(time.time() - dstart_time)),
-			_thcount(), stylize(ST_UGID, len(LMC)),
-			stylize(ST_UGID, len(self.queues)), stylize(ST_UGID, len(LMC.locks)),
-			ServiceWorkerThread.instances, ServiceWorkerThread.number,
-			rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),
-			rusage.ru_stime, #format_time_delta(int(rusage.ru_stime), long=False),
-			float(rusage.ru_maxrss * pagesize) / (1024.0*1024.0),
-			float(rusage.ru_ixrss * pagesize) / (1024.0*1024.0),
-			float(rusage.ru_idrss * pagesize) / (1024.0*1024.0),
-			float(rusage.ru_isrss * pagesize) / (1024.0*1024.0)
+		data = ('-- Licorn® daemon {full}status: '
+			'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
+			'{nb_queues} queues, {nb_locks} locks\n'
+			'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
+			'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
+				'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n'
+			'Threads: {scv_i}/{svc_max} service ({svc_c} so far), '
+			'{acl_i}/{acl_max} aclchecker ({acl_c} so far), '
+			'{net_i}/{net_max} network ({net_c} so far)\n'.format(
+			full=stylize(ST_COMMENT, 'full ') if long_output else '',
+			uptime=stylize(ST_COMMENT,
+				pyutils.format_time_delta(time.time() - dstart_time)),
+			nb_threads=_thcount(),
+			nb_controllers=stylize(ST_UGID, len(LMC)),
+			nb_queues= stylize(ST_UGID, len(self.queues)),
+			nb_locks=stylize(ST_UGID, len(LMC.locks)),
+			scv_i=ServiceWorkerThread.instances,
+			svc_c=ServiceWorkerThread.counter,
+			svc_max=self.configuration.threads.service.max,
+			acl_i=ACLCkeckerThread.instances,
+			acl_c=ACLCkeckerThread.counter,
+			acl_max=self.configuration.threads.aclcheck.max,
+			net_i=NetworkWorkerThread.instances,
+			net_c=NetworkWorkerThread.counter,
+			net_max=self.configuration.threads.network.max,
+			ru_utime=rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),
+			ru_stime=rusage.ru_stime, #format_time_delta(int(rusage.ru_stime), long=False),
+			mem_res=float(rusage.ru_maxrss * pagesize) / (1024.0*1024.0),
+			mem_shr=float(rusage.ru_ixrss * pagesize) / (1024.0*1024.0),
+			mem_ush=float(rusage.ru_idrss * pagesize) / (1024.0*1024.0),
+			mem_stk=float(rusage.ru_isrss * pagesize) / (1024.0*1024.0)
 			))
 
 		data += ('Queues: %s.\n' %
@@ -406,7 +434,8 @@ class LicornDaemon(Singleton):
 				if hasattr(controller, 'dump_status'):
 					data += 'controller %s\n' % controller.dump_status()
 
-		for thread in self.threads.itervalues():
+		# don't use itervalues(), threads are moving target now.
+		for thread in self.threads.values():
 			if thread.is_alive():
 				if hasattr(thread, 'dump_status'):
 					data += 'thread %s\n' % thread.dump_status(long_output,

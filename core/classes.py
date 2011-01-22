@@ -1282,6 +1282,8 @@ class CoreModule(CoreUnitObject):
 			else:
 				data += u"%s\u21b3 %s = %s\n" % ('\t', str(i), str(getattr(self, i)))
 		return data
+	def __repr__(self):
+		return str(self.__class__).rsplit('.', 1)[1][:-2]
 	def generate_exception(extype, *args, **kwargs):
 		""" Generic mechanism for :class:`Exception` dynamic generation.
 

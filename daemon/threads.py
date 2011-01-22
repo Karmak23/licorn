@@ -136,55 +136,53 @@ class LicornBasicThread(Thread):
 		""" Stop current Thread. """
 		assert ltrace('thread', '%s stopping' % self.name)
 		self._stop_event.set()
-class ServiceWorkerThread(Thread):
-	""" A thread which get random things to do from a priority queue, and
-		auto-sizes a bounded peer-threads pool to help get work done.
-
-		.. note:: This class isn't meant to be derived in any way.
-
-		.. versionadded:: 1.2.5
-
+class GenericQueueWorkerThread(Thread):
 	"""
-	#: just a friendly name
-	base_name = 'ServiceWorker'
+		.. versionadded:: 1.2.5
+	"""
 
-	#: :attr:`number` is used to create the unique thread name. It is always
-	#: incremented, and thus helps keeping some sort of history.
-	number = 0
-
-	#: :attr:`count` is the current number of instances. It is incremented at
-	#: :meth:`__init__` and decremented at :meth:`__del__`.
-	instances = 0
-
-	class_lock = RLock()
-	def __init__(self, in_queue, licornd, daemon=True):
-		assert ltrace('thread', '| ServiceWorkerThread.__init__(%s)' % ServiceWorkerThread.number)
+	def __init__(self, licornd, in_queue=None,
+				peers_min=None, peers_max=None, daemon=True):
 		Thread.__init__(self)
-
-		#: the threading.Thread attribute.
-		self.name = '%s-%d' % (ServiceWorkerThread.base_name, ServiceWorkerThread.number)
-
-		#: a reference to the Licorn, daemon to get the configuration,
-		#: pass to peer threads, and manage threads list.
-		self.licornd = licornd
-
-		self.threads_max = self.licornd.configuration.threads.service_max
-		self.threads_min = self.licornd.configuration.threads.service_min
-
-		#: our master queue, from which we get job to do (objects to process).
-		self.input_queue = in_queue
 
 		#: the :attr:`daemon` coming from threading.Thread.
 		self.daemon = daemon
 
+		#: a reference to the Licorn daemon, to record myself in threads list.
+		self.licornd = licornd
+
+		if in_queue:
+			# the very first instance of the class has to setup everything
+			# for its future peers.
+			self.__class__.base_name   = str(self.__class__).rsplit(
+																'.', 1)[1][:-8]
+			self.__class__.counter      = 0
+			self.__class__.instances    = 0
+			self.__class__.input_queue  = in_queue
+			self.__class__.lock         = RLock()
+			self.__class__.peers_min    = peers_min
+			self.__class__.peers_max    = peers_max
+			self.__class__.last_warning = 0
+
+		#: the threading.Thread attribute.
+		self.name = '%s-%d' % (self.__class__.base_name, self.__class__.counter)
+
+		assert ltrace('thread', '| %s.__init__()' % self.name)
+
+		#: our master queue, from which we get job to do (objects to process).
+		self.input_queue = self.__class__.input_queue
+
 		#: used in dump_status (as a display info only), to know which
 		#: object our target function is running onto.
 		self.job = None
+		self.job_args = None
+		self.job_kwargs = None
 		self.job_start_time = None
 
-		with self.class_lock:
-			ServiceWorkerThread.number += 1
-			ServiceWorkerThread.instances += 1
+		with self.__class__.lock:
+			#print '>> lock %s +' % self.name, self.__class__.counter, self.__class__.instances
+			self.__class__.counter   += 1
+			self.__class__.instances += 1
 	def dump_status(self, long_output=False, precision=None):
 		""" get detailled thread status. """
 
@@ -192,7 +190,14 @@ class ServiceWorkerThread(Thread):
 				stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
 				'&' if self.daemon else '',
-				'on %s for %s' % (stylize(ST_ON, self.job),
+				'on %s since %s' % (stylize(ST_ON, '%s(%s%s%s)' % (
+						self.job,
+						', '.join(self.job_args)
+							if self.job_args else '',
+						', ' if self.job_args and self.job_kwargs else '',
+						', '.join(['%s=%s' % (key,value) for key,value
+									in self.jobs_kwargs])
+							if self.job_kwargs else '')),
 					pyutils.format_time_delta(
 							time.time() - self.job_start_time,
 							big_precision=True))
@@ -201,13 +206,11 @@ class ServiceWorkerThread(Thread):
 	def run(self):
 		assert ltrace('thread', '> %s.run()' % self.name)
 
-		#print '>> instances', self.instances
-
 		self.throttle()
 
 		while True:
-			priority, self.job = self.input_queue.get()
-
+			priority, self.job, self.job_args, self.jobs_kwargs = \
+														self.input_queue.get()
 			if self.job is None:
 				# None is a fake message to unblock the q.get(), when the
 				# main process terminates the current thread with stop(). We
@@ -217,18 +220,22 @@ class ServiceWorkerThread(Thread):
 				break
 
 			else:
-				self.job_start_time = time.time()
 				assert ltrace('thread', '%s: running job %s' % (
 														self.name, self.job))
-				self.job()
-				self.job = None
-				self.job_start_time = None
+				self.job_start_time = time.time()
+				self.job(*self.job_args, **self.jobs_kwargs)
 				self.input_queue.task_done()
+
+				self.job = None
+				self.job_args = None
+				self.job_kwargs = None
+				self.job_start_time = None
 
 			self.throttle()
 
-		with self.class_lock:
-			ServiceWorkerThread.instances -= 1
+		with self.__class__.lock:
+			self.__class__.instances -= 1
+			#print '>> lock -', self.__class__.instances
 
 		assert ltrace('thread', '< %s.run()' % self.name)
 	def throttle(self):
@@ -236,18 +243,26 @@ class ServiceWorkerThread(Thread):
 		# still a lot of job to do, spawn another peer to get the
 		# job done, until the configured thread limit is reached.
 
-		if ServiceWorkerThread.instances < self.threads_min or (
-				self.input_queue.qsize() > 2 * ServiceWorkerThread.instances
-				and ServiceWorkerThread.instances < self.threads_max
-			):
-			#~ assert ltrace('thread', '  %s: spawing a new peer to help (%d < %d or %d > %d and %d < %d).'
-																#~ % (self.name,
-																#~ ServiceWorkerThread.instances, self.threads_min,
-																#~ self.input_queue.qsize(), 2 * ServiceWorkerThread.instances,
-																#~ ServiceWorkerThread.instances, self.threads_max))
-			peer = self.__class__(self.input_queue, self.licornd, self.daemon)
-			self.licornd.threads.append(peer)
-			peer.start()
+		if self.__class__.instances < self.__class__.peers_min or \
+				self.input_queue.qsize() > 2 * self.__class__.instances:
+			if self.__class__.instances < self.__class__.peers_max:
+				assert ltrace('thread', '  %s: spawing a new peer to help '
+					'(%d < %d or %d > %d and %d < %d).' % (self.name,
+						self.__class__.instances, self.__class__.peers_min,
+						self.input_queue.qsize(), self.__class__.instances * 2,
+						self.__class__.instances, self.__class__.peers_max))
+				peer = self.__class__(licornd=self.licornd, daemon=self.daemon)
+				self.licornd.threads.append(peer)
+				peer.start()
+			else:
+				# alert the user that we can't spawn a new thread because
+				# upper limit it already reached, but not too much (one alert
+				# per second seems not too much).
+				if time.time() - self.__class__.last_warning > 1.0:
+					self.__class__.last_warning = time.time()
+					logging.warning2('%s: maximum peers already running, '
+						'queue size is %s.' % (self.name,
+							self.input_queue.qsize()))
 
 		# SECOND: see if jobs have been worked out during the time
 		# we spent joing our job. If things have settled, signify to
@@ -255,24 +270,32 @@ class ServiceWorkerThread(Thread):
 		# but only if there are still more peers than the configured
 		# lower limit.
 
-		elif self.input_queue.qsize() <= ServiceWorkerThread.instances/2 \
-						and ServiceWorkerThread.instances > self.threads_min:
+		elif self.input_queue.qsize() <= self.__class__.instances / 2 \
+						and self.__class__.instances > self.__class__.peers_min:
 			assert ltrace('thread', '  %s: terminating because running out '
-				'of jobs (%d <= %d and %d > %d).' % (self.name, self.input_queue.qsize(),
-				ServiceWorkerThread.instances/2, ServiceWorkerThread.instances, self.threads_min))
+				'of jobs (%d <= %d and %d > %d).' % (self.name,
+				self.input_queue.qsize(), self.__class__.instances / 2,
+				self.__class__.instances, self.__class__.peers_min))
 			self.stop()
-
 	def stop(self):
 		assert ltrace('thread', '| %s.stop()' % self.name)
-		self.input_queue.put_nowait((-1, None))
+		self.input_queue.put_nowait((-1, None, None, None))
 
 		# if we are in the process of settling down, tell the
-		# master thread cleaner to search for terminated threads to wipe.
-		try:
-			self.licornd.threads.cleaner.trigger(0.1)
-		except AttributeError:
-			# if daemon is stopping, cleaner could be already wiped out.
-			pass
+		# master thread cleaner to search for terminated threads to wipe,
+		# but not everytime.
+		if self.__class__.instances % 10 == 0:
+			try:
+				self.licornd.threads.cleaner.trigger(0.1)
+			except AttributeError:
+				# if daemon is stopping, cleaner could be already wiped out.
+				pass
+class ServiceWorkerThread(GenericQueueWorkerThread):
+	pass
+class ACLCkeckerThread(GenericQueueWorkerThread):
+	pass
+class NetworkWorkerThread(GenericQueueWorkerThread):
+	pass
 class AbstractTimerThread(LicornBasicThread):
 	""" Base (abstract) class for any advanced timer thread:
 
@@ -574,12 +597,14 @@ class LicornJobThread(AbstractTimerThread):
 					self.target_args if self.target_args else '',
 					', ' if (self.target_args and self.target_kwargs) else '',
 					self.target_kwargs if self.target_kwargs else '')
-				if self.job_runner else 'sleeping'
+				if self.job_runner else 'sleeping, wake up in %s'
+					% pyutils.format_time_delta(self.remaining_time())
 			)
 	def run_action_method(self):
 		""" A method that will wrap self.target into a JobRunner simple
 			:class:`~threading.Thread`. """
 
+		'''
 		if (not self.job_runner) or (not self.job_runner.is_alive()):
 			self.job_runner = Thread(
 					target=self.target,
@@ -589,3 +614,5 @@ class LicornJobThread(AbstractTimerThread):
 				)
 			self.job_runner.daemon = True
 			self.job_runner.start()
+		'''
+		self.target(*self.target_args, **self.target_kwargs)

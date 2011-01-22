@@ -11,13 +11,13 @@ import os, time, gamin
 from threading   import Thread, Event, RLock, Timer
 from collections import deque
 
-from licorn.foundations           import logging
-from licorn.foundations.pyutils   import format_time_delta
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import filters, gamin_events
-
-from licorn.core        import LMC
+from licorn.core                  import LMC
+from licorn.daemon                import priorities, aclcheck
 
 class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with
@@ -84,7 +84,8 @@ class INotifier(Thread):
 					if self.is_alive() else 'has terminated',
 				stylize(ST_COMMENT, self.call_counter),
 				's' if self.call_counter > 1 else '',
-				', last: %s' % format_time_delta(self.last_call_time - time.time(),
+				', last: %s' % pyutils.format_time_delta(
+					self.last_call_time - time.time(),
 					use_neg=True, long_output=False)
 						if self.last_call_time else '',
 				self.queues_status_str()
@@ -216,6 +217,38 @@ class INotifier(Thread):
 			return self.process_event(path, event, gid, dirname)
 
 		self.add_watch(group_home, myfunc)
+	def aclcheck(self, path, gid, is_dir):
+		if path is None: return
+
+		self.call_counter += 1
+		self.last_call_time = time.time()
+
+		acl = LMC.groups.BuildGroupACL(gid, path)
+
+		try:
+			if is_dir:
+				fsapi.auto_check_posix_ugid_and_perms(path, -1,
+					LMC.groups.name_to_gid('acl') , -1)
+				#self.gam_changed_expected.append(path)
+				fsapi.auto_check_posix1e_acl(path, False,
+					acl['default_acl'], acl['default_acl'])
+				#self.gam_changed_expected.append(path)
+				#self.prevent_double_check(path)
+			else:
+				fsapi.auto_check_posix_ugid_and_perms(path, -1,
+					LMC.groups.name_to_gid('acl'))
+				#self.prevent_double_check(path)
+				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
+				#self.prevent_double_check(path)
+
+		except (OSError, IOError), e:
+			if e.errno != 2:
+				logging.warning(
+					"%s: error on %s (was: %s)." % (self.name, path, e))
+
+		# FIXME: to be re-added when cache is ok.
+		#self.daemon.threads.cache.cache(path)
+
 	def process_event(self, basename, event, gid, dirname):
 		""" Process Gamin events and apply ACLs on the fly. """
 
@@ -279,7 +312,9 @@ class INotifier(Thread):
 					# path is a file, check it.
 					assert ltrace('inotifier', '''CHECK file %s.''' % (
 						stylize(ST_PATH, path)))
-					self.daemon.threads.aclchecker.enqueue(path, gid)
+					#self.daemon.threads.aclchecker.enqueue(path, gid)
+					aclcheck(priorities.NORMAL, self.aclcheck,
+								path=path, gid=gid, is_dir=False)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -300,8 +335,13 @@ class INotifier(Thread):
 						#self.expected[gamin.GAMCreated].append(path + '/')
 						# need it. Prepare ourselves to skip it.
 						self.expected[gamin.GAMChanged].append(path)
+					aclcheck(priorities.NORMAL, self.aclcheck,
+								path=path, gid=gid, is_dir=True)
+				else:
+					aclcheck(priorities.NORMAL, self.aclcheck,
+								path=path, gid=gid, is_dir=False)
 
-				self.daemon.threads.aclchecker.enqueue(path, gid)
+				#self.daemon.threads.aclchecker.enqueue(path, gid)
 
 			except (OSError, IOError), e:
 				if e.errno != 2:
@@ -326,7 +366,9 @@ class INotifier(Thread):
 					stylize(ST_URL, 'GAMChanged'),
 					stylize(ST_PATH, path)))
 
-				self.daemon.threads.aclchecker.enqueue(path, gid)
+				#self.daemon.threads.aclchecker.enqueue(path, gid)
+				aclcheck(priorities.NORMAL, self.aclcheck,
+							path=path, gid=gid, is_dir=os.path.isdir(path))
 
 		elif event == gamin.GAMMoved:
 

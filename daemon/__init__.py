@@ -43,9 +43,21 @@ def daemon_thread(klass, target, args=(), kwargs={}):
 	daemon.threads[thread.name] = thread
 	return thread
 
-def service(prio, func):
+def service(prio, func, *args, **kwargs):
 	from licorn.daemon.main import daemon
-	daemon.queues.serviceQ.put((prio, func))
+	#print '>> put', prio, func, args, kwargs
+	daemon.queues.serviceQ.put((prio, func, args, kwargs))
+
+def network_service(prio, func, *args, **kwargs):
+	from licorn.daemon.main import daemon
+	#print '>> put', prio, func, args, kwargs
+	daemon.queues.networkQ.put((prio, func, args, kwargs))
+
+def aclcheck(prio, func, *args, **kwargs):
+	from licorn.daemon.main import daemon
+	#print '>> put', prio, func, args, kwargs
+	daemon.queues.aclcheckQ.put((prio, func, args, kwargs))
+
 
 # LicornDaemonInteractor is an object dedicated to user interaction when the
 # daemon is started in the foreground.
@@ -118,15 +130,12 @@ class LicornDaemonInteractor(NamedObject):
 							char = sys.stdin.read(1)
 
 					except select.error, e:
-						if e.errno == 4:
+						if e.args[0] == 4:
 							sys.stderr.write("^C\n")
-							raise KeyboardInterrupt
+							self.restore_terminal()
+							self.daemon.terminate(2)
 						else:
-							raise
-
-					except KeyboardInterrupt:
-						sys.stderr.write("^C\n")
-						raise
+							raise e
 
 					else:
 						# control characters from

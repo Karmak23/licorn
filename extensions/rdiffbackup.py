@@ -22,10 +22,12 @@ from licorn.foundations.ltrace import ltrace
 from licorn.foundations.base   import Singleton, MixedDictObject, LicornConfigObject
 
 from licorn.core               import LMC
-from licorn.daemon.threads     import TriggerTimerThread, TriggerWorkerThread
+from licorn.daemon.threads     import LicornJobThread
 from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 from licorn.interfaces.wmi     import WMIObject
+
+from licorn.daemon             import priorities, service
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -173,6 +175,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		self.paths.increment_sizes_file     = '.org.licorn.backups.increments.sizes'
 		self.paths.last_backup_file         = '.org.licorn.backups.last_time'
 		self.paths.globbing_file            = self._find_globbing_filelist()
+
+		# will be True if a backup is running.
+		self.running = False
+
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -258,22 +264,14 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self.events.start_backup = Event()
 
-			self.threads.auto_backup_timer = TriggerTimerThread(
-							trigger_event=self.events.start_backup,
+			self.threads.auto_backup_timer = LicornJobThread(
+							target=self.backup,
 							delay=LMC.configuration.backup.interval,
 							pname='extensions',
 							tname='Rdiffbackup.AutoBackupTimer',
 							# first backup starts 1 minutes later.
 							time=(time.time()+15.0)
 							)
-			self.threads.auto_backup_worker = TriggerWorkerThread(
-							trigger_event=self.events.start_backup,
-							target=self.__backup_procedure,
-							pname='extensions',
-							tname='Rdiffbackup.AutoBackupWorker'
-							)
-
-			self.threads.auto_backup_worker.start()
 			self.threads.auto_backup_timer.start()
 
 			self.create_wmi_object(uri='/backups', name=_('Backups'),
@@ -359,7 +357,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		""" TODO. """
 
 		pass
-
 	def _backup_dir(self, volume):
 		return volume.mount_point + '/' + self.paths.backup_directory
 	def _backup_enabled(self, volume):
@@ -426,7 +423,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		else:
 			return self.threads.auto_backup_timer.remaining_time()
 	def backup(self, volume=None, force=False):
-		""" Do a backup and reset the backup thread timer.
+		""" Start a backup and reset the backup timer, if no other backup is
+			currently running.
 
 			Provided your Licorn® daemon is attached to your terminal, you can
 			launch a manual backup in the daemon's interactive shell, like
@@ -435,17 +433,21 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				[…] [i on keyboard]
 				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
 				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
-				licornd> LMC.extensions.rdiffbackup.manual_backup(force=True)
+				licornd> LMC.extensions.rdiffbackup.backup(force=True)
 				[…]
 				licornd> [Control-D]
 				 * [2011/11/01 20:28:16.2913] Leaving interactive mode. Welcome back to Real World™.
 				[…]
 		"""
 
+		if self.running:
+			logging.notice('%s: a backup is already running.' % self.name)
+			return
+
 		self.threads.auto_backup_timer.reset()
-		self.threads.auto_backup_worker.trigger(volume=volume, force=force)
-		logging.notice('%s: started backup in the background; next in %s.' % (
-						self.name, self.time_before_next_automatic_backup()))
+
+		service(priorities.NORMAL, self.__backup_procedure,
+										volume=volume, force=force)
 	def __backup_procedure(self, volume=None, force=False):
 		""" Do a complete backup procedure, which includes:
 
@@ -486,6 +488,12 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				  probably make this case more error-proof.
 		"""
 
+
+		if self.running:
+			logging.progress('%s: a backup is already running, nothing done.' %
+				self.name)
+			return
+
 		first_found = False
 
 		if volume is None:
@@ -507,9 +515,11 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			if not force and (
 					time.time() - self._last_backup_time(volume) <
 										LMC.configuration.backup.interval):
-				logging.info('%s: not backing up on %s, last backup is '
+				logging.notice('%s: not backing up on %s, last backup is '
 					'less that one hour.' % (self.name, volume))
 				return
+
+			self.running = True
 
 			logging.notice('%s: starting backup on%s %s.' % (
 				self.name, ' first available'
@@ -559,6 +569,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self._remove_old_backups(volume)
 			self._rdiff_statistics(volume)
+
+			self.running = False
+
 			logging.notice('%s: terminated backup procedure on %s.' % (
 											self.name,volume))
 	def _write_last_backup_file(self, volume):
