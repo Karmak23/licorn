@@ -210,6 +210,7 @@ class LicornDaemon(Singleton):
 			assert ltrace('thread', 'stopping thread %s.' % thname)
 			if th.is_alive():
 				th.stop()
+				time.sleep(0.01)
 	def _job_periodic_cleaner(self):
 		""" Ping all known machines. On online ones, try to connect to pyro and
 		get current detailled status of host. Notify the host that we are its
@@ -580,34 +581,11 @@ class LicornDaemon(Singleton):
 	def clean_before_terminating(self):
 		""" stop threads and clear pid files. """
 
-		#~ logging.progress("%s(%s): emptying queues." % (self.name, self.pid))
-		#~ for (qname, queue) in self.queues.iteritems():
-			#~ if queue.qsize() > 0:
-				#~ assert ltrace('daemon', 'emptying queue %s (%d items left).' % (qname,
-					#~ queue.qsize()))
-#~
-				#~ # manually empty the queue by munging all remaining items.
-				#~ try:
-					#~ obj = queue.get(False)
-					#~ queue.task_done()
-					#~ while obj:
-						#~ obj = queue.get(False)
-						#~ queue.task_done()
-					#~ # be sure to reput a None object in the queue, to stop the last
-					#~ # threads of the pool, waiting for the None we have munged here.
-					#~ queue.put(None)
-				#~ except Empty:
-					#~ pass
-
 		self.__stop_threads()
 
-		logging.progress("%s(%s): joining queues." % (self.name, self.pid))
-		for (qname, queue) in self.queues.iteritems():
-			assert ltrace('daemon', 'joining queue %s (%d items left).' % (qname,
-				queue.qsize()))
-			queue.join()
-
 		logging.progress("%s(%s): joining threads." % (self.name, self.pid))
+
+		threads_pass2 = []
 
 		for (thname, th) in self.threads.items():
 			# join threads in the reverse order they were started, and only the not
@@ -619,20 +597,42 @@ class LicornDaemon(Singleton):
 			else:
 				assert ltrace('thread', 'joining %s.' % thname)
 				if th.is_alive():
-					assert ltrace('thread',
-						"re-stopping thread %s (shouldn't happen)." % thname)
-					logging.warning2('%s(%s): thread %s still alive.' % (
-												self.name, self.pid, th.name))
+					logging.warning('%s(%s): %s for thread %s to '
+						'finish%s.' % (self.name, self.pid,
+							stylize(ST_ACTIVE, 'waiting'),
+							stylize(ST_NAME, thname),
+							' (currently working on %s)'
+									% stylize(ST_NAME, th.job)
+								if isinstance(th,
+									ServiceWorkerThread) else ''))
+					threads_pass2.append((th.name, th))
 					th.stop()
 					time.sleep(0.05)
-				th.join()
-				del th
-				del self.threads[thname]
+				else:
+					th.join()
+
+		for thname, th in threads_pass2:
+			th.join()
+
+		# we must join queues after threads, else we don't know why queues
+		# are still full of jobs.
+		#logging.progress("%s(%s): joining queues." % (self.name, self.pid))
+		#for (qname, queue) in self.queues.iteritems():
+		#	assert ltrace('daemon', 'joining queue %s (%d items left).' % (
+		#			qname, queue.qsize()))
+		#	queue.join()
 
 		# display the remaining active threads (presumably stuck hanging on
 		# something very blocking).
-		assert ltrace('thread', 'after joining all, %s remaining: %s' % (
+		assert ltrace('thread', 'after joining threads, %s remaining: %s' % (
 			_thcount(), _threads()))
+
+		for (qname, queue) in self.queues.iteritems():
+			size = queue.qsize()
+			if size > 0:
+				assert ltrace('daemon', 'queue %s has %d items left: %s' % (
+						qname, size, [
+							str(item) for item in queue.get_nowait() ]))
 
 		if LMC.configuration:
 			LMC.configuration.CleanUp()
