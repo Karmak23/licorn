@@ -217,7 +217,7 @@ class LicornDaemon(Singleton):
 
 		caller = current_thread().name
 
-		assert ltrace('daemon', '> %s:_job_periodic_cleaner()' % caller)
+		assert ltrace('daemon', '| %s:_job_periodic_cleaner()' % caller)
 
 		for (tname, thread) in self.threads.items():
 			if not thread.is_alive():
@@ -225,8 +225,6 @@ class LicornDaemon(Singleton):
 				del thread
 				logging.progress('%s: wiped dead thread %s from memory.' % (
 					caller, stylize(ST_NAME, tname)))
-
-		assert ltrace('daemon', '< %s:_job_periodic_cleaner()' % caller)
 	def _cli_parse_arguments(self):
 		""" Integrated help and options / arguments for licornd. """
 
