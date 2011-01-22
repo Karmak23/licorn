@@ -113,7 +113,10 @@ class LicornDaemon(Singleton):
 							in_queue=self.queues.serviceQ,
 							peers_min=self.configuration.threads.service.min,
 							peers_max=self.configuration.threads.service.max,
-							licornd=self))
+							licornd=self,
+							# Service threads are not daemon, they must
+							# terminate before we quit.
+							daemon=False))
 		self.queues.aclcheckQ = PriorityQueue()
 		self.threads.append(ACLCkeckerThread(
 							in_queue=self.queues.aclcheckQ,
