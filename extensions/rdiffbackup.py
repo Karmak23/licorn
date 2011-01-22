@@ -516,7 +516,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					time.time() - self._last_backup_time(volume) <
 										LMC.configuration.backup.interval):
 				logging.notice('%s: not backing up on %s, last backup is '
-					'less that one hour.' % (self.name, volume))
+					'less than %s.' % (self.name, volume,
+						pyutils.format_time_delta(
+							LMC.configuration.backup.interval)))
 				return
 
 			self.running = True

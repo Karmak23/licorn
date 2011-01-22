@@ -147,7 +147,7 @@ class Volume:
 		return 'volume %s%s' % (
 					stylize(ST_DEVICE, self.device),
 					' (%s)' % stylize(ST_PATH, self.mount_point)
-						if self.mount_point else ' (currently not mounted)')
+						if self.mount_point else ' (not mounted)')
 	def __enter__(self):
 		#print '>> Volume.__enter__', current_thread().name
 		self.lock.acquire()
