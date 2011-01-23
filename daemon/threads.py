@@ -256,7 +256,7 @@ class GenericQueueWorkerThread(Thread):
 		# if we are in the process of settling down, tell the
 		# master thread cleaner to search for terminated threads to wipe,
 		# but not everytime.
-		if self.__class__.instances % 10 == 0:
+		if self.__class__.instances % 10 == 0 or self.__class__.instances <= 2:
 			try:
 				self.licornd.threads.cleaner.trigger(0.1)
 			except AttributeError:
