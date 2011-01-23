@@ -54,13 +54,17 @@ filters.EMPTY               = 0x00ff0000
 # enum machine stati, for core.machines
 host_status = EnumDict('host_status')
 host_status.UNKNOWN        = -0x0001
+host_status.NONE           =  0x0000
+host_status.ALL            =  0xffff
 host_status.OFFLINE        =  0x00ff
 host_status.GOING_TO_SLEEP =  0x0001
 host_status.ASLEEP         =  0x0002
 host_status.SHUTTING_DOWN  =  0x0004
 host_status.ONLINE         =  0xff00
-host_status.IDLE           =  0x0400
-host_status.ACTIVE         =  0x0800
+host_status.BOOTING        =  0x0100
+host_status.IDLE           =  0x0200
+host_status.ACTIVE         =  0x0400
+host_status.LOADED         =  0x0800
 
 # FIXME: merge this with distros (don't duplicate)
 host_types = EnumDict('host_types')
@@ -72,6 +76,7 @@ host_types.ALT_CLIENT =  0x0000000000000001
 host_types.ALT        =  host_types.ALT_CLIENT
 host_types.UBUNTU     =  0x0000000000000002
 host_types.DEBIAN     =  0x0000000000000004
+host_types.META_SRV   =  0x0000000000000008
 host_types.WINDOWS    =  0x00000000ffff0000
 host_types.WIN_NT     =  0x0000000000010000
 host_types.WIN_7      =  0x0000000000020000
@@ -80,7 +85,13 @@ host_types.APPLE      =  0x0000ffff00000000
 host_types.IMAC       =  0x0000000100000000
 host_types.MACBOOK    =  0x0000000200000000
 host_types.IPHONE     =  0x0000000400000000
-host_types.IPAD       =  0x0000000800000000
+host_types.IPOD       =  0x0000000800000000
+host_types.IPAD       =  0x0000001000000000
+host_types.MACPRO     =  0x0000002000000000
+host_types.XSERVE     =  0x0000004000000000
+host_types.MACMINI    =  0x0000008000000000
+host_types.TIMECAPS   =  0x0000010000000000
+host_types.AIRPORT    =  0x0000020000000000
 host_types.DEVICES    =  0xffff000000000000
 host_types.ROUTER     =  0x0001000000000000
 host_types.FIREWALL   =  0x0002000000000000
@@ -89,7 +100,9 @@ host_types.PRINTER    =  0x0008000000000000
 host_types.SCANNER    =  0x0010000000000000
 host_types.MULTIFUNC  =  0x0020000000000000
 host_types.APPLIANCE  =  0x0040000000000000
-host_types.NET_OTHER  =  0x0080000000000000
+host_types.NAS        =  0x0080000000000000
+host_types.APPLIANCE  =  0x0100000000000000
+host_types.NET_OTHER  =  0x8000000000000000
 
 # messages between client and server (inside Pyro)
 message_type = EnumDict('message_type')
