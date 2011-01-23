@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-18 12:03+0100\n"
-"PO-Revision-Date: 2011-01-18 12:04+0100\n"
+"POT-Creation-Date: 2011-01-23 09:14+0100\n"
+"PO-Revision-Date: 2011-01-23 09:14+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -24,79 +24,79 @@ msgstr ""
 msgid "Users allowed to connect via SSHd"
 msgstr "Utilisateurs autorisés à se connecter à distance via SSHd."
 
-#: extensions/caldavd.py:613
+#: extensions/caldavd.py:620
 msgid "Personnal calendar URI"
 msgstr "URI de calendrier personnel"
 
-#: extensions/caldavd.py:631
+#: extensions/caldavd.py:638
 msgid "Group calendar URI"
 msgstr "URI de calendrier partagé"
 
-#: extensions/rdiffbackup.py:279
+#: extensions/rdiffbackup.py:277
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: extensions/rdiffbackup.py:280
+#: extensions/rdiffbackup.py:278
 msgid "Manage backups and restore files"
 msgstr "Gérer les sauvegardes et restaurer des données"
 
-#: extensions/rdiffbackup.py:282
+#: extensions/rdiffbackup.py:280
 msgid "Run backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:283
+#: extensions/rdiffbackup.py:281
 msgid "Run a system incremental backup now"
 msgstr "Exécuter une sauvegarde incrémentale maintenant"
 
-#: extensions/rdiffbackup.py:287
+#: extensions/rdiffbackup.py:285
 msgid "Rescan volumes"
 msgstr "Scanner les volumes"
 
-#: extensions/rdiffbackup.py:288
+#: extensions/rdiffbackup.py:286
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:605
+#: extensions/rdiffbackup.py:620
 msgid "Last backup on this volume occured {0} ago."
 msgstr "La dernière sauvegarde sur ce volume a eu lieu il y a {0}."
 
-#: extensions/rdiffbackup.py:611
+#: extensions/rdiffbackup.py:626
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 
-#: extensions/rdiffbackup.py:612
+#: extensions/rdiffbackup.py:627
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:625
+#: extensions/rdiffbackup.py:640
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:633
+#: extensions/rdiffbackup.py:648
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine sauvegarde."
 
-#: extensions/rdiffbackup.py:637
+#: extensions/rdiffbackup.py:652
 msgid "No volume to backup onto. Please plug a {app_name} enabled volume into your server before starting this procedure.<br /><br />See <a href=\"http://docs.licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> for details on enabling backup volumes."
 msgstr "Aucun volume de sauvegarde trouvé. Merci de connecter un volume dédié aux sauvegardes {app_name} sur votre serveur avant de lancer cette procédure.<br /><br />Lisez <href=\"http://docs.licorn.org/extensions/rdiffbackup.fr.html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:652
+#: extensions/rdiffbackup.py:667
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:657
+#: extensions/rdiffbackup.py:672
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:658
+#: extensions/rdiffbackup.py:673
 msgid "{auto_select}<br /><br />The last backup has been run {last_backup_time} ago, which is less than the system configured interval ({interval}). Are you sure you want to force a manual backup now?<br /><br />(if you do not answer withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr "{auto_select}<br /><br />La dernière sauvegarde date d'il y a  {last_backup_time}, c'est à dire moins que l'intervalle configuré dans le système ({interval}). Êtes-vous sûr(e) de vouloir forcer le lancement d'une sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les {next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:674
+#: extensions/rdiffbackup.py:689
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:675
+#: extensions/rdiffbackup.py:690
 #: interfaces/wmi/groups.py:134
 #: interfaces/wmi/groups.py:581
 #: interfaces/wmi/users.py:136
@@ -105,7 +105,7 @@ msgstr "Lancer >>"
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:677
+#: extensions/rdiffbackup.py:692
 #: interfaces/wmi/groups.py:257
 #: interfaces/wmi/users.py:92
 #: interfaces/wmi/users.py:138
@@ -116,7 +116,7 @@ msgstr "S"
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:677
+#: extensions/rdiffbackup.py:692
 #: interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227
 #: interfaces/wmi/users.py:273
@@ -124,110 +124,110 @@ msgstr "<< Annuler"
 msgid "C"
 msgstr "N"
 
-#: extensions/rdiffbackup.py:693
+#: extensions/rdiffbackup.py:708
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:696
+#: extensions/rdiffbackup.py:711
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:701
+#: extensions/rdiffbackup.py:716
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr "Ce volume est utilisé{backup_info}, impossible de l'éjecter&nbsp;!{rewind}"
 
-#: extensions/rdiffbackup.py:718
+#: extensions/rdiffbackup.py:733
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:735
+#: extensions/rdiffbackup.py:750
 msgid "No backup volume found. Please connect a backup volume to your server, and backups will automatically start (next try in {countdown})."
 msgstr "Aucun volume de sauvegarde n'a été trouvé. Merci d'en connecter un à votre serveur, et les sauvegardes démarreront automatiquement (prochaine tentative dans {countdown})."
 
-#: extensions/rdiffbackup.py:743
+#: extensions/rdiffbackup.py:758
 msgid "No backup found, or all backup volumes are currently unmounted (you can safely disconnect them from your server).<br /><br />Next automatic backup will occur in {countdown}, and will  automatically remount any backup volume still connected at this moment."
 msgstr "Aucune sauvegarde n'a été trouvée, ou bien tous les volumes de sauvegardes sont actuellement démontés (vous pouvez les déconnecter sans risque de votre serveur).<br /><br />La prochaine sauvegarde automatique sera tentée dans {countdown}, et remontera tout volume encore physiquement connecté à ce moment là."
 
-#: extensions/rdiffbackup.py:761
+#: extensions/rdiffbackup.py:776
 msgid "A backup is currently in progress, please do not disconnect <strong>{volume}</strong>.<br /><br /> (update in {countdown}…)"
 msgstr "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:786
+#: extensions/rdiffbackup.py:801
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:790
+#: extensions/rdiffbackup.py:805
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:800
+#: extensions/rdiffbackup.py:815
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:806
+#: extensions/rdiffbackup.py:821
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:817
+#: extensions/rdiffbackup.py:832
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr "Aucune donnée d'historique. Merci d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:822
+#: extensions/rdiffbackup.py:837
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
-#: foundations/pyutils.py:58
+#: foundations/pyutils.py:60
 #, python-format
 msgid "%s ago"
 msgstr "il y a %s"
 
-#: foundations/pyutils.py:61
+#: foundations/pyutils.py:63
 #, python-format
 msgid "in %s"
 msgstr "dans %s"
 
-#: foundations/pyutils.py:70
+#: foundations/pyutils.py:72
 #, python-format
 msgid "%d year%s"
 msgstr "%d année%s"
 
-#: foundations/pyutils.py:71
-#: foundations/pyutils.py:82
+#: foundations/pyutils.py:73
+#: foundations/pyutils.py:84
 #, python-format
 msgid "%dm%s"
 msgstr "%dm%s"
 
-#: foundations/pyutils.py:72
+#: foundations/pyutils.py:74
 #, python-format
 msgid "%d day%s"
 msgstr "%d jour%s"
 
-#: foundations/pyutils.py:73
+#: foundations/pyutils.py:75
 #, python-format
 msgid "%d hour%s"
 msgstr "%d heure%s"
 
-#: foundations/pyutils.py:74
+#: foundations/pyutils.py:76
 #, python-format
 msgid "%d min%s"
 msgstr "%d min%s"
 
-#: foundations/pyutils.py:75
+#: foundations/pyutils.py:77
 #, python-format
 msgid "%d sec%s"
 msgstr "%d sec%s"
 
-#: foundations/pyutils.py:76
+#: foundations/pyutils.py:78
 #, python-format
 msgid "%.4f sec%s"
 msgstr "%.4f sec%s"
 
-#: foundations/pyutils.py:81
+#: foundations/pyutils.py:83
 #, python-format
 msgid "%dy%s"
 msgstr "%da%s "
 
-#: foundations/pyutils.py:83
+#: foundations/pyutils.py:85
 #, python-format
 msgid "%dd%s"
 msgstr "%dj%s"
@@ -337,14 +337,30 @@ msgid "System status"
 msgstr "État du système"
 
 #: interfaces/wmi/base.py:206
-msgid "Up and running since <strong>{uptime}</strong>.<br /><br />Users: <strong>{accounts}</strong> accounts, <strong>{connected} open sessions</strong>.<br /><br />1, 5, and 15 last minutes load average: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
-msgstr "En marche depuis <strong>{uptime}</strong>.<br /><br />Utilisateurs&nbsp;: <strong>{accounts}</strong> comptes, <strong>{connected} session(s) ouverte(s)</strong>.<br /><br />Charge système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
+msgid "Up and running since <strong>{uptime}</strong>.<br /><br />Users: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />1, 5, and 15 last minutes load average: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
+msgstr "En marche depuis <strong>{uptime}</strong>.<br /><br />Utilisateurs&nbsp;: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />Charge système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
 
-#: interfaces/wmi/base.py:219
+#: interfaces/wmi/base.py:214
+msgid "user accounts"
+msgstr "comptes utilisateurs"
+
+#: interfaces/wmi/base.py:215
+msgid "user account"
+msgstr "compte utilisateur"
+
+#: interfaces/wmi/base.py:216
+msgid "open sessions"
+msgstr "sessions ouvertes"
+
+#: interfaces/wmi/base.py:217
+msgid "open session"
+msgstr "session ouverte"
+
+#: interfaces/wmi/base.py:223
 msgid "System information"
 msgstr "Informations système"
 
-#: interfaces/wmi/base.py:220
+#: interfaces/wmi/base.py:224
 msgid "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Physical memory: <strong>{ram:.2f}Mb</strong> total;<br />{swap_total}"
 msgstr "Processeur{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s);<br /> {swap_total}"
 
@@ -1926,40 +1942,40 @@ msgstr "Détacher la machine (ne plus la gérer, c'est à dire supprimer sa conf
 msgid "Manage machine (fix its IP address and configure various aspects of the client)."
 msgstr "Accrocher la machine (fixer son adresse IP et configurer divers aspects de la machine, en stockant cette configuration sur le serveur)."
 
-#: interfaces/wmi/machines.py:839
+#: interfaces/wmi/machines.py:843
 msgid "<unknown>"
 msgstr "<inconnu>"
 
-#: interfaces/wmi/machines.py:863
+#: interfaces/wmi/machines.py:867
 #, python-format
 msgid "number of <strong>%s</strong> machines:"
 msgstr "nombre de machines <strong>%s</strong>&#160;:"
 
-#: interfaces/wmi/machines.py:876
+#: interfaces/wmi/machines.py:880
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
-#: core/configuration.py:747
+#: core/configuration.py:772
 msgid "user"
 msgstr "utilisateur"
 
-#: core/configuration.py:748
+#: core/configuration.py:773
 msgid "users"
 msgstr "utilisateurs"
 
-#: core/configuration.py:767
+#: core/configuration.py:792
 msgid "group"
 msgstr "groupe"
 
-#: core/configuration.py:768
+#: core/configuration.py:793
 msgid "groups"
 msgstr "groupes"
 
-#: core/machines.py:508
+#: core/machines.py:521
 msgid "You must pass a hostname to verify!"
 msgstr "Vous devez passer un nom de machine à vérifier !"
 
-#: core/machines.py:516
+#: core/machines.py:529
 #, python-format
 msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
 msgstr "Impossible de construire un nom de machine valide (depuis %s, qui ne vérifie pas %s)"
