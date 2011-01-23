@@ -8,9 +8,6 @@ Licensed under the terms of the GNU GPL version 2.
 
 import time
 
-import gobject
-import dbus.mainloop.glib
-
 from threading   import Thread, Event, RLock, current_thread
 from Queue       import Queue
 
@@ -18,31 +15,6 @@ from licorn.foundations           import logging, exceptions, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 
-class DbusThread(Thread):
-	""" Run the d-bus main loop (from gobject) in a separate thread, because
-		we've got many other things to do besides it ;-)
-
-		Please don't forget to read:
-
-		* http://dbus.freedesktop.org/doc/dbus-python/api/dbus.mainloop.glib-module.html
-		* http://jameswestby.net/weblog/tech/14-caution-python-multiprocessing-and-glib-dont-mix.html
-		* http://zachgoldberg.com/2009/10/17/porting-glib-applications-to-python/
-
-	"""
-	def __init__(self, daemon):
-		# Setup the DBus main loop
-		assert ltrace('dbus', '| DbusThread.__init__()')
-		Thread.__init__(self)
-		self.name  = "%s/%s" % (daemon.dname, dbus)
-
-		gobject.threads_init()
-		dbus.mainloop.glib.threads_init()
-		dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
-		self.mainloop = gobject.MainLoop()
-	def run(self):
-		self.mainloop.run()
-	def stop(self):
-		self.mainloop.quit()
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to

@@ -51,7 +51,7 @@ from licorn.daemon                import LicornDaemonInteractor, \
 											LicornThreads, LicornQueues, \
 											roles, priorities, service
 from licorn.daemon.wmi            import WMIThread
-from licorn.daemon.threads        import DbusThread, LicornJobThread, \
+from licorn.daemon.threads        import LicornJobThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
 											NetworkWorkerThread
@@ -353,11 +353,6 @@ class LicornDaemon(Singleton):
 			self.pids_to_wake.append(options.pid_to_wake)
 
 		self.setup_signals_handler()
-
-		# FIXME: migrate this outside of the daemon core (setup daemons modules
-		# or whatever can be more clever that hardcoding it here).
-		self.threads.dbus = DbusThread(self)
-		self.threads.dbus.start()
 
 		self.__init_daemon_phase_1()
 		self.__collect_modules_threads()
