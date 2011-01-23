@@ -8,7 +8,7 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 """
 from traceback import print_exc
 
-import netifaces, ipcalc, dumbnet, Pyro
+import netifaces, ipcalc, dumbnet, Pyro, socket
 
 from threading  import current_thread
 from time       import strftime, localtime
@@ -64,7 +64,7 @@ class Machine(CoreStoredObject):
 	def ping(self, and_more=False):
 		""" PING. """
 		caller = current_thread().name
-		assert ltrace('machines', '> %s: ping(%s)' % (caller, self.mid))
+		#assert ltrace('machines', '> %s: ping(%s)' % (caller, self.mid))
 
 		with self.lock():
 			try:
@@ -77,8 +77,9 @@ class Machine(CoreStoredObject):
 				self.status = host_status.OFFLINE
 
 			except Exception, e:
-				logging.warning2('%s: exception %s for host %s in ping().' % (
-					caller, e, self.mid))
+				assert ltrace('machines', '  %s: cannot ping %s (was: %s).' % (
+					caller, self.mid, e))
+				pass
 
 			else:
 				self.status = host_status.ONLINE
@@ -92,7 +93,8 @@ class Machine(CoreStoredObject):
 			pinger.reset(self)
 			del pinger
 
-		assert ltrace('machines', '< %s: ping(%s)' % (caller, self.status))
+		assert ltrace('machines', '< %s: ping(%s) → %s' % (caller, self.mid,
+												host_status[self.status]))
 	def resolve(self):
 		""" Resolve IP to hostname, if possible. """
 		caller = current_thread().name
@@ -102,10 +104,11 @@ class Machine(CoreStoredObject):
 		with self.lock():
 			old_hostname = self.hostname
 			try:
-				self.hostname = socket.gethostbyaddr(mid)[0]
-			except:
-				logging.warning2("%s: couldn't reverse IP %s." % (
-					caller, self.mid))
+				self.hostname = socket.gethostbyaddr(self.mid)[0]
+			except Exception, e:
+				assert ltrace('machines', '  %s: cannot resolve %s (was: %s).'
+					% (caller, self.mid, e))
+				pass
 			else:
 				# update the hostname cache.
 				# FIXME: don't update the cache manually,
@@ -130,9 +133,10 @@ class Machine(CoreStoredObject):
 				self.ether = str(Machine.arp_table.get(dumbnet.addr(self.mid)))
 
 			except Exception, e:
-				logging.warning2('%s: exception %s for host %s in resolve().'
-													% (caller, e, self.mid))
-		assert ltrace('machines', '< %s: arping(%s)' % (caller, self.ether))
+				assert ltrace('machines', '  %s: cannot arping %s (was: %s).'
+						% (caller, self.mid, e))
+		assert ltrace('machines', '< %s: arping(%s) → %s'
+						% (caller, self.mid, self.ether))
 	def pyroize(self):
 		""" find if the machine is Pyro enabled or not. """
 		caller = current_thread().name
@@ -151,20 +155,24 @@ class Machine(CoreStoredObject):
 				remotesys._setTimeout(5.0)
 				remotesys.noop()
 			except Exception, e:
-				remotesys.release()
-				del remotesys
-				assert ltrace('machines',
-					'  %s: pyroize(): %s is not pyro enabled.' % (
-						caller, self.mid))
-				if str(e) != 'connection failed':
-					logging.warning2('%s: exception %s for host %s '
-						'in pyroize().' % (caller, e, self.mid))
+				if __debug__:
+					if str(e) == 'connection failed':
+						assert ltrace('machines', '  %s: no pyro on %s.' % (
+								caller, self.mid))
+						pass
+					else:
+						remotesys.release()
+						del remotesys
+						assert ltrace('machines', '  %s: cannot pyroize %s '
+							'(was: %s)' % (caller, self.mid, e))
+						pass
 				self.guess_host_type()
 			else:
 				self.system_type = remotesys.get_host_type()
 				self.status      = remotesys.get_status()
 				self.system      = remotesys
-		assert ltrace('machines', '< %s: pyroize(%s)' % (caller, self.system))
+		assert ltrace('machines', '< %s: pyroize(%s) → %s'
+				% (caller, self.mid, self.system))
 	def guess_host_type(self):
 		""" On a network machine which don't have pyro installed, try to
 			determine type of machine (router, PC, Mac, Printer, etc) and OS
@@ -172,7 +180,6 @@ class Machine(CoreStoredObject):
 			install Licorn® client software. """
 
 		logging.progress('machines.guess_host_type() not implemented.')
-
 		return
 	def shutdown(self, warn_users=True):
 		""" Shutdown a machine, after having warned the connected user(s) if
@@ -335,128 +342,6 @@ class MachinesController(Singleton, CoreController):
 							self.add_machine(str(ipaddr))
 
 		assert ltrace('machines', '< %s: scan_network()' % caller)
-	def find_up_hosts(self, to_ping):
-		""" run nmap on to_ping and return 2 lists of up and down hosts. """
-
-		caller = current_thread().name
-		nmap_cmd = self._nmap_cmd_base[:]
-		nmap_cmd.extend(to_ping)
-
-		assert ltrace('machines', '> %s: find_up_hosts(%s)' % (
-			caller, ' '.join(nmap_cmd)))
-
-		try:
-			nmap_pipe = Popen(nmap_cmd, shell=False, stdout=PIPE, stderr=PIPE,
-			close_fds=True).stdout
-		except (IOError, OSError), e:
-			if e.errno == 2:
-				self._nmap_not_installed = True
-				raise exceptions.LicornRuntimeException('''nmap is not '''
-					'''installed on this system, can't use it!''', once=True)
-			else:
-				raise e
-
-		for status_line in nmap_pipe.readlines():
-			splitted = status_line.split()
-
-			if splitted[0] == '#':
-				continue
-			if splitted[4] == 'Up':
-					yield splitted[1]
-
-		assert ltrace('machines', '< find_up_hosts()')
-	def run_nmap(self, to_ping):
-		""" run nmap on to_ping and return 2 lists of up and down hosts. """
-
-		caller = current_thread().name
-		nmap_cmd = self._nmap_cmd_base[:]
-		nmap_cmd.extend(to_ping)
-
-		assert ltrace('machines', '> %s: run_nmap(%s)' % (
-			caller, ' '.join(nmap_cmd)))
-
-		try:
-			nmap_status = process.execute(nmap_cmd)[0]
-		except (IOError, OSError), e:
-			if e.errno == 2:
-				self._nmap_not_installed = True
-				raise exceptions.LicornRuntimeException('''nmap is not '''
-					'''installed on this system, can't use it!''', once=True)
-			else:
-				raise e
-		up_hosts   = []
-		down_hosts = []
-
-		for status_line in nmap_status.splitlines():
-			splitted = status_line.split()
-			#print splitted
-			if splitted[0] == '#':
-				continue
-			if splitted[4] == 'Up':
-					up_hosts.append(splitted[1])
-			elif splitted[4] == 'Down':
-					down_hosts.append(splitted[1])
-
-		assert ltrace('machines', '< run_nmap(up=%s, down=%s)' % (
-			up_hosts, down_hosts))
-		return up_hosts, down_hosts
-	def ping_all_machines(self, *args, **kwargs):
-		""" run across all IPs and find which machines are up or down. """
-
-		if self._nmap_not_installed:
-			# don't do anything, this is useless. UNKNOWN status has already
-			# been set on all machines by the backend load.
-			return
-
-		raise NotImplementedError('to be rewritten.')
-
-		nmap_cmd = self._nmap_cmd_base[:]
-		nmap_cmd.extend(self.keys())
-
-		assert ltrace('machines', '> update_statuses(%s)' % ' '.join(nmap_cmd))
-
-		try:
-			nmap_status = process.execute(nmap_cmd)[0]
-		except (IOError, OSError), e:
-			if e.errno == 2:
-				logging.warning2('''nmap is not installed on this system, '''
-					'''can't ping machines''', once=True)
-			else:
-				raise e
-		else:
-			for status_line in nmap_status.splitlines():
-				splitted = status_line.split()
-				if splitted[0] == '#':
-					continue
-				assert ltrace('machines', '  update_statuses(%s) -> ' % (
-					mid, splitted[4]))
-				if splitted[4] == 'Up':
-						self[splitted[1]]['status'] = host_status.ACTIVE
-				elif splitted[4] == 'Down':
-						self[splitted[1]]['status'] = host_status.OFFLINE
-		assert ltrace('machines', '< update_statuses()')
-	def update_status(self, mid, status=None, system=None,
-		*args, **kwargs):
-
-		raise NotImplementedError('to be removed')
-
-		assert ltrace('machines', '| update_status(%s, %s)' % (mid, status))
-
-		if mid in self.keys():
-			self[mid].update_status(status)
-
-		elif system:
-			# this is a self-declaring pyro-enabled host. create it.
-			self[mid] = Machine(mid=mid,
-				hostname=network.build_hostname_from_ip(mid),
-				backend=Enumeration('null_backend'),
-				system=system,
-				status=status)
-
-			# try to reverse the hostname, but don't wait
-			#dqueues.reverse_dns.put(mid)
-		else:
-			logging.warning('update_status() called with invalid MID %s!' % mid)
 	def WriteConf(self, mid=None):
 		""" Write the machine data in appropriate system files."""
 
@@ -470,7 +355,7 @@ class MachinesController(Singleton, CoreController):
 			else:
 				for backend in self.backends:
 					backend.save_Machines()
-	def Select(self, filter_string):
+	def Select(self, filter_string, filter_type=host_status):
 		""" Filter machine accounts on different criteria. """
 
 		filtered_machines = []
@@ -481,31 +366,33 @@ class MachinesController(Singleton, CoreController):
 			mids = self.keys()
 			mids.sort()
 
-			def keep_mid_if_status(mid, status=None):
-				#print('mid: %s, status: %s, keep if %s' % (
-				#	mid, self[mid]['status'], status))
-				if self[mid].status == status:
-					filtered_machines.append(mid)
+			if filter_type == host_status:
 
-			if None == filter_string:
-				filtered_machines = []
+				def keep_mid_if_status(mid, status=None):
+					#print('mid: %s, status: %s, keep if %s' % (
+					#	mid, self[mid]['status'], status))
+					if self[mid].status == status:
+						filtered_machines.append(mid)
 
-			elif host_status.ONLINE & filter_string:
+				if None == filter_string:
+					filtered_machines = []
 
-				if host_status.ACTIVE & filter_string:
-					def keep_mid_if_active(mid):
-						return keep_mid_if_status(mid, status=host_status.ACTIVE)
-					map(keep_mid_if_active, mids)
+				elif host_status.ONLINE & filter_string:
 
-				if host_status.IDLE & filter_string:
-					def keep_mid_if_idle(mid):
-						return keep_mid_if_status(mid, status=host_status.IDLE)
-					map(keep_mid_if_idle, mids)
+					if host_status.ACTIVE & filter_string:
+						def keep_mid_if_active(mid):
+							return keep_mid_if_status(mid, status=host_status.ACTIVE)
+						map(keep_mid_if_active, mids)
 
-				if host_status.ASLEEP & filter_string:
-					def keep_mid_if_asleep(mid):
-						return keep_mid_if_status(mid, status=host_status.ASLEEP)
-					map(keep_mid_if_asleep, mids)
+					if host_status.IDLE & filter_string:
+						def keep_mid_if_idle(mid):
+							return keep_mid_if_status(mid, status=host_status.IDLE)
+						map(keep_mid_if_idle, mids)
+
+					if host_status.ASLEEP & filter_string:
+						def keep_mid_if_asleep(mid):
+							return keep_mid_if_status(mid, status=host_status.ASLEEP)
+						map(keep_mid_if_asleep, mids)
 
 			else:
 				import re
