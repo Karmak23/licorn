@@ -204,13 +204,17 @@ def index(uri, http_user, **kwargs):
 	''' % (
 			_('System status'),
 			_('Up and running since <strong>{uptime}</strong>.<br /><br />'
-				'Users: <strong>{accounts}</strong> accounts, '
-				'<strong>{connected} open sessions</strong>.<br /><br />'
+				'Users: <strong>{accounts}</strong> {account_word}, '
+				'<strong>{connected} {open_session_words}</strong>.<br /><br />'
 				'1, 5, and 15 last minutes load average: '
 				'<span class="small_indicator {load_back1}">{load1}</span> '
 				'<span class="small_indicator {load_back5}">{load5}</span> '
 				'<span class="small_indicator {load_back15}">{load15}</span>').format(
 				uptime=uptime_string, accounts=nbusers, connected=cxusers,
+				account_word=_('user accounts')
+					if nbusers > 1 else _('user account'),
+				open_session_words=_('open sessions')
+					if cxusers > 1 else _('open session'),
 				load1=loads[0], load5=loads[1], load15=loads[2],
 				load_back1=load_background(float(loads[0])),
 				load_back5=load_background(float(loads[1])),
