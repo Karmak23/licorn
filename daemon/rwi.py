@@ -16,7 +16,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject
-from licorn.foundations.constants import filters, interactions
+from licorn.foundations.constants import filters, interactions, host_status
 
 from licorn.core import LMC
 
