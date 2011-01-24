@@ -12,9 +12,7 @@ import os, sys, time
 
 from threading import RLock, Event
 
-import gettext
-_ = gettext.gettext
-gettext.textdomain('licorn')
+from gettext import gettext as _
 
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *
