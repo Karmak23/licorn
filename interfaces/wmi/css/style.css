@@ -39,6 +39,10 @@ div#banner {
 	top: 0px;
 }
 
+.title_machines, .title_users, .title_groups {
+	display: none;
+	}
+
 div#header {
 	padding: 10px 20px 10px 20px;
 }
@@ -299,6 +303,7 @@ div#main {
 	bottom: 0px;
 	top: 0px;
 	padding: 10px;
+	padding-top: 2em;
 }
 
 #content table {
@@ -325,7 +330,7 @@ div#main {
 }
 
 #content tr.userdata:hover {
-	background-color: #ffc821;
+	background-color: #ffe8a3;
 }
 
 #content table.group_members th,
