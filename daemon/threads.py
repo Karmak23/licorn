@@ -152,6 +152,9 @@ class GenericQueueWorkerThread(Thread):
 		self.job_kwargs = None
 		self.job_start_time = None
 
+		# necessary to get job status without crashing in corner cases.
+		self.jobbing = Event()
+
 		with self.__class__.lock:
 			#print '>> lock %s +' % self.name, self.__class__.counter, self.__class__.instances
 			self.__class__.counter   += 1
@@ -174,7 +177,7 @@ class GenericQueueWorkerThread(Thread):
 					pyutils.format_time_delta(
 							time.time() - self.job_start_time,
 							big_precision=True))
-					if self.job else 'idle'
+					if self.jobbing.is_set() else 'idle'
 			)
 	def run(self):
 		assert ltrace('thread', '> %s.run()' % self.name)
@@ -199,6 +202,7 @@ class GenericQueueWorkerThread(Thread):
 
 				assert ltrace('thread', '%s: running job %s' % (
 														self.name, self.job))
+				self.jobbing.set()
 				self.job_start_time = time.time()
 
 				try:
@@ -211,6 +215,7 @@ class GenericQueueWorkerThread(Thread):
 					if options.verbose >= verbose.INFO:
 						print_exc()
 
+				self.jobbing.clear()
 				self.input_queue.task_done()
 
 				self.job = None
