@@ -255,7 +255,7 @@ def page_body_start(uri, http_user, ctxtnav_func, title, active=True):
 		menu=menu(uri),
 		context_navigation=ctxtnav_func(active),
 		title=title,
-		uri_class=uri[1:])
+		uri_class=uri[1:].replace('/main', '').replace('/list', ''))
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def bad_arg_error(message=None):
