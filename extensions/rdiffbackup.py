@@ -177,7 +177,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		self.paths.globbing_file            = self._find_globbing_filelist()
 
 		# will be True if a backup is running.
-		self.running = False
+		self.events.running = Event()
 
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
@@ -262,8 +262,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes.volumes
 
-			self.events.start_backup = Event()
-
 			self.threads.auto_backup_timer = LicornJobThread(
 							target=self.backup,
 							delay=LMC.configuration.backup.interval,
@@ -281,7 +279,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						_('Run a system incremental backup now'),
 						'ctxt-icon', 'icon-add',
 						lambda: self._enabled_volumes() != []
-							and self.threads.auto_backup_worker.idle()),
+							and not self.running()),
 					(_('Rescan volumes'), '/backups/rescan',
 						_('Force the system to rescan and remount connected '
 						'volumes'),
@@ -302,6 +300,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			return True
 
 		return False
+	def running(self):
+		return self.events.running.is_set()
 	def system_load(self):
 		""" TODO. """
 
@@ -440,7 +440,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				[…]
 		"""
 
-		if self.running:
+		if self.running():
 			logging.notice('%s: a backup is already running.' % self.name)
 			return
 
@@ -489,7 +489,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 
 
-		if self.running:
+		if self.running():
 			logging.progress('%s: a backup is already running, nothing done.' %
 				self.name)
 			return
@@ -521,7 +521,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 							LMC.configuration.backup.interval)))
 				return
 
-			self.running = True
+			self.events.running.set()
 
 			logging.notice('%s: starting backup on%s %s.' % (
 				self.name, ' first available'
@@ -572,7 +572,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self._remove_old_backups(volume)
 			self._rdiff_statistics(volume)
 
-			self.running = False
+			self.events.running.clear()
 
 			logging.notice('%s: terminated backup procedure on %s.' % (
 											self.name,volume))
@@ -709,8 +709,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		if volume.locked():
 			backup_info = (_(' (a backup is underway)')
-				if self.threads.auto_backup_worker.running()
-				else '')
+				if self.running() else '')
 
 			return (w.HTTP_TYPE_TEXT, w.page(title,
 				w.error(_("Volume is in use{backup_info}, "
@@ -770,7 +769,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		# display backup data for each connected volume.
 		#
 
-		if self.threads.auto_backup_worker.active():
+		if self.running():
 			backup_status = ('<div class="backups important '
 				'backups_important">{0}</div>'.format(
 					_('A backup is currently in progress, '
