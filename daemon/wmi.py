@@ -410,14 +410,25 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			self.send_error(404, "Not found.")
 
 		if retdata:
+			# use cache-control (HTTP/1.1)
+			# TODO: use Expires (HTTP/1.0) if asked for.
+			# http://performance.survol.fr/2008/10/expires-et-cache-control-une-date-limite-de-consommation-pour-vos-contenus/
 			self.send_response(200)
 			self.send_header("Content-type", ctype)
+
+			# NOTE: i felt th need to define a developer mode, which would
+			# have completely disabled the cache control. But I think any good
+			# modern browser has a way to reload everything, bypassing the
+			# cache-control directive, so i won't put anything fancy here.
+			#
+			# default cache expiration: One Year, as recommended by chromium
+			# web audit helper.
+			self.send_header('Cache-Control', 'public;max-age=31536000')
 
 			fs = os.fstat(retdata.fileno())
 			self.send_header("Content-Length", str(fs[6]))
 			self.send_header("Last-Modified",
-				self.date_time_string(fs.st_mtime))
-
+										self.date_time_string(fs.st_mtime))
 		return retdata
 	def guess_type(self, path):
 		"""Guess the type of a file.
