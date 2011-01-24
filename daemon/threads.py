@@ -7,13 +7,14 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import time
-
+from traceback   import print_exc
 from threading   import Thread, Event, RLock, current_thread
 from Queue       import Queue
 
-from licorn.foundations           import logging, exceptions, pyutils
+from licorn.foundations           import logging, exceptions, options, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import verbose
 
 class LicornThread(Thread):
 	"""
@@ -192,10 +193,24 @@ class GenericQueueWorkerThread(Thread):
 				break
 
 			else:
+				if 'job_delay' in self.jobs_kwargs:
+					time.sleep(self.jobs_kwargs['job_delay'])
+					del self.jobs_kwargs['job_delay']
+
 				assert ltrace('thread', '%s: running job %s' % (
 														self.name, self.job))
 				self.job_start_time = time.time()
-				self.job(*self.job_args, **self.jobs_kwargs)
+
+				try:
+					self.job(*self.job_args, **self.jobs_kwargs)
+				except exceptions.LicornError, e:
+					logging.warning('%s: LicornError encountered:' % self.name)
+					print_exc()
+				except (exceptions.LicornException, Exception), e:
+					logging.warning2('%s: Exception encountered:' % self.name)
+					if options.verbose >= verbose.INFO:
+						print_exc()
+
 				self.input_queue.task_done()
 
 				self.job = None
