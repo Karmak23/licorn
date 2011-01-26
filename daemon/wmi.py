@@ -39,6 +39,8 @@ class WMIThread(LicornBasicThread):
 		import licorn.interfaces.wmi as wmi
 		WMIHTTPRequestHandler.wmi = wmi
 		WMIHTTPRequestHandler.wmi.init()
+		WMIHTTPRequestHandler.ip_addresses = (['127.0.0.1']
+				+ LMC.configuration.network.local_ip_addresses())
 
 		if options.wmi_listen_address:
 			# the daemon CLI argument has priority over the configuration
@@ -102,6 +104,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	#: it will be filled on thread load, to avoid us re-charging it at
 	#: each HTTP request.
 	wmi = None
+	ip_addresses = []
 	def do_HEAD(self):
 		try:
 			f = self.send_head()
@@ -348,12 +351,17 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				# special entry, which should not return any data, else
 				# the redirect won't work.
 
-				try:
-					# fix #239
-					hostaddr = socket.gethostbyaddr(
-						self.server.server_address[0])[0]
-				except socket.herror:
-					hostaddr = self.server.server_address[0]
+				client_address_base = self.client_address[0].rsplit('.', 1)[0]
+
+				for ip in WMIHTTPRequestHandler.ip_addresses:
+					if ip.startswith(client_address_base):
+						try:
+							# try to return the "short" hostname
+							hostaddr = LMC.machines[ip].hostname
+						except KeyError:
+							# if it doesn't resolve,  return the IP address
+							hostaddr = ip
+						break
 
 				self.send_response(302)
 				self.send_header("Location", 'http://%s:%s%s' % (
