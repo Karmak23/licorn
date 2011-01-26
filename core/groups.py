@@ -1039,7 +1039,7 @@ class GroupsController(Singleton, CoreController):
 		# FIXME: not already done ??
 		self.WriteConf()
 	def AddUsersInGroup(self, name=None, gid=None, users_to_add=None,
-		batch=False):
+		force=False, batch=False):
 		""" Add a user list in the group 'name'. """
 
 		assert ltrace('groups', '''> AddUsersInGroup(gid=%s, name=%s, '''
@@ -1048,6 +1048,9 @@ class GroupsController(Singleton, CoreController):
 		if users_to_add is None:
 			raise exceptions.BadArgumentError("You must specify a users list")
 
+		resp_prefix  = LMC.configuration.groups.resp_prefix
+		guest_prefix = LMC.configuration.groups.guest_prefix
+
 		# we need to lock users to be sure they don't dissapear during this phase.
 		with self.lock():
 			with LMC.users.lock():
@@ -1055,7 +1058,6 @@ class GroupsController(Singleton, CoreController):
 
 				# this attribute will be passed to hooks callbacks to ease deals.
 				system = self.is_system_gid(gid)
-
 				uids_to_add = LMC.users.guess_identifiers(users_to_add)
 
 				work_done = False
@@ -1069,6 +1071,124 @@ class GroupsController(Singleton, CoreController):
 							stylize(ST_LOGIN, login),
 							stylize(ST_NAME, name)))
 					else:
+						if system:
+							if name.startswith(resp_prefix):
+								# current group is a rsp-*
+
+								if login in self.groups[
+										self.name_to_gid(
+												name[len(resp_prefix):])
+											]['memberUid']:
+									# we are promoting a standard member to
+									# responsible, no need to --force. Simply
+									# delete from standard group first, to
+									# avoid ACLs conflicts.
+									self.DeleteUsersFromGroup(name=
+										name[len(resp_prefix):],
+										users_to_del=[uid])
+
+								elif login in self.groups[
+										self.name_to_gid(guest_prefix +
+												name[len(resp_prefix):])
+											]['memberUid']:
+									# Trying to promote a guest to responsible,
+									# just delete him/her from guest group
+									# to avoid ACLs conflicts.
+
+									self.DeleteUsersFromGroup(name=
+											guest_prefix
+											+ name[len(resp_prefix):],
+											users_to_del=[uid])
+
+							elif name.startswith(guest_prefix):
+								# current group is a gst-*
+
+								if login in self.groups[
+										self.name_to_gid(
+												name[len(guest_prefix):])
+											]['memberUid']:
+									# user is standard member, we need to demote
+									# him/her, thus need the --force flag.
+
+									if force:
+										# demote user from std to gst
+										self.DeleteUsersFromGroup(name=
+												name[len(resp_prefix):],
+												users_to_del=[uid])
+									else:
+										raise exceptions.BadArgumentError(
+											'cannot demote user %s from '
+											'standard membership to guest '
+											'without --force flag.' %
+											stylize(ST_LOGIN, login))
+
+								elif login in self.groups[
+										self.name_to_gid(resp_prefix +
+												name[len(guest_prefix):])
+											]['memberUid']:
+									# user is currently responsible. Demoting
+									# to guest is an unusual situation, we need
+									# to --force.
+
+									if force:
+										# demote user from rsp to gst
+										self.DeleteUsersFromGroup(name=
+												resp_prefix
+												+ name[len(guest_prefix):],
+												users_to_del=[uid])
+									else:
+										raise exceptions.BadArgumentError(
+											'cannot demote user %s from '
+											'responsible to guest '
+											'without --force flag.' %
+											stylize(ST_LOGIN, login))
+							#else:
+							# this is a system group, but not affialiated to
+							# any standard group, thus no particular condition
+							# applies: nothing to do.
+
+						else:
+							# standard group, check rsp & gst memberships
+
+							if login in self.groups[
+									self.name_to_gid(guest_prefix + name)
+										]['memberUid']:
+								# we are promoting a guest to standard
+								# membership, no need to --force. Simply
+								# delete from guest group first, to
+								# avoid ACLs conflicts.
+								self.DeleteUsersFromGroup(
+									name=guest_prefix + name,
+									users_to_del=[uid])
+
+							elif login in self.groups[
+									self.name_to_gid(resp_prefix + name)
+										]['memberUid']:
+								# we are trying to demote a responsible to
+								# standard membership, we need to --force.
+
+								if force:
+									# --force is given: demote user!
+									# Delete the user from standard group to
+									# avoid ACLs conflicts.
+
+									self.DeleteUsersFromGroup(name=
+										resp_prefix + name,
+										users_to_del=[uid])
+								else:
+									raise exceptions.BadArgumentError(
+										'cannot demote user %s from '
+										'responsible to standard membership '
+										'without --force flag.'%
+										stylize(ST_LOGIN, login))
+							#else:
+							#
+							# user is not a guest or responsible of the group,
+							# just a brand new member. Nothing to check.
+
+						# #440 conditions are now verified and enforced, we
+						# can make the user member of the desired group.
+
 						self.groups[gid]['memberUid'].append(login)
 						self.groups[gid]['memberUid'].sort()
 						# update the users cache.

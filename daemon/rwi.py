@@ -599,8 +599,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(uid, login, password) = LMC.users.AddUser(lastname=u['lastname'],
 					firstname=u['firstname'], login=u['login'],
 					password=u['password'], profile=profile, batch=opts.no_sync)
-					LMC.groups.AddUsersInGroup(name=u['group'], users_to_add=[ login ],
-						batch=opts.no_sync)
+					LMC.groups.AddUsersInGroup(name=u['group'],
+					users_to_add=[ login ], force=opts.force, batch=opts.no_sync)
 
 					logging.progress('''\rAdded user « %s %s » [login=%s, uid=%d,'''
 					''' passwd=%s] (user %d/%d), progress: %d%%'''
@@ -793,7 +793,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if g != '':
 				try:
 					LMC.groups.AddUsersInGroup(name=g,
-						users_to_add=uids_to_add)
+						users_to_add=uids_to_add, force=opts.force)
 				except exceptions.LicornRuntimeException, e:
 					logging.warning("Unable to add user(s) %s in group %s (was: %s)."
 						% (stylize(ST_LOGIN, opts.login),
@@ -1382,7 +1382,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						for g in opts.groups_to_add.split(','):
 							if g != '':
 								try:
-									LMC.groups.AddUsersInGroup(name=g, users_to_add=[ uid ])
+									LMC.groups.AddUsersInGroup(name=g,
+										users_to_add=[ uid ], force=opts.force)
 								except exceptions.LicornRuntimeException, e:
 									logging.warning(
 										'''Unable to add user %s in group %s (was: '''
@@ -1482,7 +1483,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 				if opts.users_to_add != []:
 					LMC.groups.AddUsersInGroup(gid=gid,
-						users_to_add=opts.users_to_add.split(','))
+						users_to_add=opts.users_to_add.split(','),
+						force=opts.force)
 
 				if opts.users_to_del != []:
 					LMC.groups.DeleteUsersFromGroup(gid=gid,
@@ -1491,7 +1493,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				if opts.resps_to_add != []:
 					LMC.groups.AddUsersInGroup(
 						name=LMC.configuration.groups.resp_prefix + g2n(gid),
-						users_to_add=opts.resps_to_add.split(','))
+						users_to_add=opts.resps_to_add.split(','),
+						force=opts.force)
 
 				if opts.resps_to_del != []:
 					LMC.groups.DeleteUsersFromGroup(
@@ -1501,7 +1504,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				if opts.guests_to_add != []:
 					LMC.groups.AddUsersInGroup(
 						name=LMC.configuration.groups.guest_prefix + g2n(gid),
-						users_to_add=opts.guests_to_add.split(','))
+						users_to_add=opts.guests_to_add.split(','),
+						force=opts.force)
 
 				if opts.guests_to_del != []:
 					LMC.groups.DeleteUsersFromGroup(
@@ -1584,7 +1588,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						prim_memb = LMC.groups.primary_members(name=group)
 						for added_group in added_groups:
 							LMC.groups.AddUsersInGroup(name=added_group,
-								users_to_add=prim_memb,	batch=opts.no_sync)
+								users_to_add=prim_memb, force=opts.force,
+								batch=opts.no_sync)
 
 				if opts.groups_to_del is not None:
 					deleted_groups = LMC.profiles.DeleteGroupsFromProfile(group=group,

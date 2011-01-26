@@ -341,7 +341,7 @@ def clean_system():
 			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,'''
 			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,'''
 			'''tenrebcul2,utest,utest1,utest2,utest3,utest4,ingroups_test1,'''
-			'''ingroups_test2,ingroups_test3,ingroups_test4''',
+			'''ingroups_test2,ingroups_test3,ingroups_test4,u440''',
 			 '--no-archive', '-v' ],
 		['profile', '''utilisagers,responsibilisateurs,'''
 			'''profil_test''',
@@ -351,7 +351,7 @@ def clean_system():
 			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
 			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,'''
 			'''cp,gtest,gtest1,gtest2,gtest3,gtest4,profil_test,'''
-			'''sysgroup_test,sys2group_test''',
+			'''sysgroup_test,sys2group_test,g440''',
 			'--no-archive', '-v' ],
 		['privilege', '--name=group_test', '-v' ]
 		):
@@ -568,6 +568,9 @@ def test_regexes():
 	# TODO: profiles ?
 def test_groups(context):
 	"""Test ADD/MOD/DEL on groups in various ways."""
+
+	resp_prefix  = LMC.configuration.groups.resp_prefix
+	guest_prefix = LMC.configuration.groups.guest_prefix
 
 	gname = 'groupeA'
 
@@ -1038,6 +1041,35 @@ def test_groups(context):
 		],
 		context=context,
 		descr='''test add group --users flag.'''
+		))
+
+	gname = 'g440'
+	uname = 'u440'
+
+	testsuite.add_scenario(ScenarioTest([
+		ADD + [ 'user', uname, '-v' ],
+		ADD + [ 'group', gname, '-v' ],
+		ADD + [ 'user', uname,  guest_prefix+gname, '-v' ],
+		ADD + [ 'user', uname,  gname, '-v' ],
+		ADD + [ 'user', uname,  resp_prefix+gname, '-v' ],
+
+		ADD + [ 'user', uname,  gname, '-v' ],
+		ADD + [ 'user', uname,  gname, '-v' , '--force'],
+
+		ADD + [ 'user', uname,  guest_prefix+gname, '-v' ],
+		ADD + [ 'user', uname,  guest_prefix+gname, '-v', '--force'],
+
+		ADD + [ 'user', uname,  resp_prefix+gname, '-v' ],
+
+		ADD + [ 'user', uname,  guest_prefix+gname, '-v' ],
+		ADD + [ 'user', uname,  guest_prefix+gname, '-v', '--force'],
+
+		DEL + [ 'group', gname, '--no-archive'],
+		DEL + [ 'user',  uname, '--no-archive']
+		],
+		context=context,
+		descr='enforce #440 checks (mutual-exclusions for rsp-std-gst '
+			'group memberships)'
 		))
 
 
