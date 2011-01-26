@@ -310,6 +310,8 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		.. versionadded:: 1.2.4
 	"""
+	module_depends = [ 'gloop' ]
+
 	def __init__(self):
 		assert ltrace('volumes', '| VolumesExtension.__init__()')
 		LicornExtension.__init__(self,

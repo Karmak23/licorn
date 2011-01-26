@@ -691,7 +691,7 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 		if can_sort:
 			if column == sort:
 					data += '''
-		<th><img src="/images/sort_%s.gif" alt="%s" />&#160;
+		<th><img src="/images/sort_%s.png" alt="%s" />&#160;
 			<a href="/groups/list/%s/%s" title="%s">%s</a>
 		</th>\n''' % (order, _('%s order') % order, column, reverseorder,
 			_('Click to sort in reverse order.'), name)

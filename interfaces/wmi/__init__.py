@@ -11,6 +11,7 @@ from licorn.foundations.base import NamedObject
 class WMIObject():
 	""" Adds WMI-related attributes and method to an extension. """
 
+	_licorn_protected_attrs = [ 'wmi' ]
 	import utils
 	def create_wmi_object(self,uri, name, alt_string,
 								context_menu_data,
@@ -183,17 +184,17 @@ function display_countdown_{name}() {{
 display_{name}({countdown_seconds});
 </script>
 <span id='countdown_{name}' class="countdown"></span>'''.format(
-	name=name,
-	countdown_seconds=countdown_seconds + 2.0,
-	day=_('day'), 	days=_('days'),
-	hour=_('hour'), hours=_('hours'),
-	minute=_('minute'), minutes=_('minutes'),
-	second=_('second'), seconds=_('seconds'),
-	refresh_uri="/" + self.wmi.uri,
-	limit=limit,
-	operation='+' if limit else '-',
-	counter_test='<=' if limit else '>='
-)
+		name=name,
+		countdown_seconds=countdown_seconds + 2.0,
+		day=_('day'), 	days=_('days'),
+		hour=_('hour'), hours=_('hours'),
+		minute=_('minute'), minutes=_('minutes'),
+		second=_('second'), seconds=_('seconds'),
+		refresh_uri="/" + self.wmi.uri,
+		limit=limit,
+		operation='+' if limit else '-',
+		counter_test='<=' if limit else '>='
+	)
 
 def init():
 	""" Initialize the WMI module by importing all WMI objects and making them
@@ -202,7 +203,7 @@ def init():
 	assert ltrace('wmi', '> init()')
 
 	# import pre v1.2.4 WMI objects
-	import users, groups, base, utils, server, machines
+	import users, groups, base, utils, server
 
 
 	# import 1.2.4+ WMI Objects.

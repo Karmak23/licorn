@@ -10,6 +10,7 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 
 import sys, os, select, code, readline, curses
 import signal, termios
+from threading import current_thread
 
 from rlcompleter import Completer
 from licorn.foundations           import options, logging, exceptions
@@ -43,20 +44,45 @@ def daemon_thread(klass, target, args=(), kwargs={}):
 	daemon.threads[thread.name] = thread
 	return thread
 
-def service(prio, func, *args, **kwargs):
+def service_enqueue(prio, func, *args, **kwargs):
 	from licorn.daemon.main import daemon
 	#print '>> put', prio, func, args, kwargs
 	daemon.queues.serviceQ.put((prio, func, args, kwargs))
 
-def network_service(prio, func, *args, **kwargs):
+def service_wait():
+	from licorn.daemon.threads import ServiceWorkerThread
+	if isinstance(current_thread(), ServiceWorkerThread):
+		raise RuntimeError('cannot join the serviceQ from '
+			'a ServiceWorkerThread instance, this would deadblock!')
+	from licorn.daemon.main import daemon
+	#print ">> waiting for", daemon.queues.serviceQ.qsize(), 'jobs to finish'
+	daemon.queues.serviceQ.join()
+
+def network_enqueue(prio, func, *args, **kwargs):
 	from licorn.daemon.main import daemon
 	#print '>> put', prio, func, args, kwargs
 	daemon.queues.networkQ.put((prio, func, args, kwargs))
 
-def aclcheck(prio, func, *args, **kwargs):
+def network_wait():
+	from licorn.daemon.threads import NetworkWorkerThread
+	if isinstance(current_thread(), NetworkWorkerThread):
+		raise RuntimeError('cannot join the networkQ from '
+			'a NetworkWorkerThread instance, this would deadblock!')
+	from licorn.daemon.main import daemon
+	daemon.queues.networkQ.join()
+
+def aclcheck_enqueue(prio, func, *args, **kwargs):
 	from licorn.daemon.main import daemon
 	#print '>> put', prio, func, args, kwargs
 	daemon.queues.aclcheckQ.put((prio, func, args, kwargs))
+
+def aclcheck_wait():
+	from licorn.daemon.threads import ACLCkeckerThread
+	if isinstance(current_thread(), ACLCkeckerThread):
+		raise RuntimeError('cannot join the ackcheckerQ from '
+			'a ACLCkeckerThread instance, this would deadblock!')
+	from licorn.daemon.main import daemon
+	daemon.queues.aclcheckQ.join()
 
 
 # LicornDaemonInteractor is an object dedicated to user interaction when the

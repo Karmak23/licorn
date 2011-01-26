@@ -887,11 +887,13 @@ class ModulesManager(LockedController):
 
 			class_name    = module_name.title() + self.module_type.title()
 			try:
-				python_module = __import__(self.module_sym_path + '.' + module_name,
-												globals(), locals(), class_name)
+				python_module = __import__(self.module_sym_path
+											+ '.' + module_name,
+											globals(), locals(), class_name)
 				module_class  = getattr(python_module, class_name)
 			except ImportError, e:
-				logging.warning('{0} unusable {1} {2}: {3}. Traceback follows:'.format(
+				logging.warning('{0} unusable {1} {2}: {3}. '
+					'Traceback follows:'.format(
 					stylize(ST_BAD, 'Skipped'), self.module_type,
 					stylize(ST_NAME, module_name), stylize(ST_COMMENT, e)))
 				print_exc()
@@ -951,9 +953,13 @@ class ModulesManager(LockedController):
 							stylize(ST_NAME, module.name)))
 
 						if is_client and module_name not in server_side_modules:
-							self.disable_func(module_name)
-							changed = True
-
+							try:
+								self.disable_func(module_name)
+								changed = True
+							except exceptions.DoesntExistsException, e:
+								logging.warning2('cannot disable '
+									'non-existing %s %s.' % (self.module_type,
+									stylize(ST_NAME, module.name)))
 					else:
 						self._available_modules[module.name] = module
 						assert ltrace(self.name, '%s %s is only available'

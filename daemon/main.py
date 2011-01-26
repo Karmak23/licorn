@@ -49,7 +49,9 @@ from licorn.core                  import version, LMC
 
 from licorn.daemon                import LicornDaemonInteractor, \
 											LicornThreads, LicornQueues, \
-											roles, priorities, service
+											priorities, roles, \
+											service_enqueue, service_wait, \
+											client
 from licorn.daemon.wmi            import WMIThread
 from licorn.daemon.threads        import LicornJobThread, \
 											ServiceWorkerThread, \
@@ -151,15 +153,10 @@ class LicornDaemon(Singleton):
 				delay=LMC.configuration.licornd.threads.wipe_time
 			)
 
-		if LMC.configuration.licornd.role == roles.CLIENT:
+		if self.configuration.role == roles.CLIENT:
 
-			# start the greeter 1 second later, because our Pyro part must be fully
-			# operational before the greeter starts to do anything.
-			self.threads.greeter = LicornJobThread(
-					tname='ClientToServerGreeter',
-					target=client.thread_greeter,
-					time=(time.time()+1.0), count=1
-				)
+			service_enqueue(priorities.NORMAL,
+						client.client_hello, job_delay=1.0)
 
 			# self.threads.status = PULL IN the dbus status pusher
 			#self.threads.syncer = ClientSyncer(self)
@@ -180,8 +177,7 @@ class LicornDaemon(Singleton):
 					'line or by configuration directive.' % (
 						self.name,self.pid))
 
-			if self.configuration.network.lan_scan:
-				service(priorities.NORMAL, LMC.machines.initial_scan)
+			service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 
 			if self.configuration.inotifier.enabled:
 				self.threads.inotifier = INotifier(self,
@@ -573,8 +569,23 @@ class LicornDaemon(Singleton):
 			except exceptions.LicornRuntimeException, e:
 				logging.error("%s(%s): must be run as %s (was: %s)." % (
 					self.name, self.pid, stylize(ST_NAME, 'root'), e))
-	def clean_before_terminating(self):
+	def __daemon_shutdown(self):
 		""" stop threads and clear pid files. """
+
+		# before stopping threads (notably cmdlistener), we've got to announce
+		# out shutdown to peers, for them not to look for us in the future.
+		LMC.system.announce_shutdown()
+
+		# we now have to wait, else we would terminate while we are announcing
+		# shutdown and this will imply some timeouts and (false negative)
+		# connection denied errors.
+		#
+		# NOTE: this could deadblock for other reasons (serviceQ very busy)
+		# but for now I hope not, else we would have to find a very
+		# complicated system, or make announce_shutdown() completely
+		# synchronous, which is not a problem per se but would remove
+		# parallelism from it and make announcing last sightly longer.
+		service_wait()
 
 		self.__stop_threads()
 
@@ -632,6 +643,8 @@ class LicornDaemon(Singleton):
 		if LMC.configuration:
 			LMC.configuration.CleanUp()
 
+		LMC.terminate()
+
 		self.unlink_pid_file()
 	def unlink_pid_file(self):
 		""" remove the pid file and bork if any error. """
@@ -655,7 +668,7 @@ class LicornDaemon(Singleton):
 			logging.notice('%s(%s): signal %s received, shutting down…' % (
 				self.name, self.pid, signum))
 
-		self.clean_before_terminating()
+		self.__daemon_shutdown()
 
 		logging.notice("%s(%s): exiting%s." % (
 										self.name, self.pid, self.uptime()))
@@ -665,7 +678,7 @@ class LicornDaemon(Singleton):
 		logging.notice('%s(%s): SIGUSR1 received, restarting%s.' % (
 										self.name, self.pid, self.uptime()))
 
-		self.clean_before_terminating()
+		self.__daemon_shutdown()
 
 		# close every file descriptor (except stdin/out/err, used for logging and
 		# on the console). This is needed for Pyro thread to release its socket,

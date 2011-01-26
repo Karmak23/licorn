@@ -16,10 +16,11 @@ from threading   import Thread, Timer, RLock
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, mytime
-from licorn.foundations.constants import host_status
+from licorn.foundations.constants import host_status, host_types
 
 from licorn.core                  import LMC
-from licorn.daemon                import roles
+from licorn.daemon                import priorities, roles, \
+											service_enqueue, service_wait
 from licorn.daemon.threads        import LicornBasicThread
 from licorn.daemon.rwi            import RealWorldInterface
 
@@ -78,6 +79,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			client_addr, client_socket))
 
 		if client_addr in LicornPyroValidator.local_interfaces:
+
 			try:
 				client_uid = process.find_network_client_uid(
 					LicornPyroValidator.pyro_port, client_socket,
@@ -101,25 +103,28 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				# sufficient for testing and deploying. Better security will
 				# come when everything works.
 
+				remote_system = Pyro.core.getAttrProxyForURI(
+					"PYROLOC://%s:%s/system" % (client_addr,
+						LicornPyroValidator.pyro_port))
+				remote_system._setTimeout(3.0)
+
 				with LicornPyroValidator.check_lock:
 					if client_addr in LicornPyroValidator.current_checks:
 						#print '>>', mytime(), ' SERVER accepting already checked', client_addr
 						# ACCEPT the connection, don't start a check-loop.
 						LicornPyroValidator.current_checks.remove(client_addr)
+
 						return 1, 0
 
 					else:
 						#print '>>', mytime(), 'SERVER noting', client_addr, 'beiing checked'
 						LicornPyroValidator.current_checks.append(client_addr)
 
-				remote_system = Pyro.core.getAttrProxyForURI(
-					"PYROLOC://%s:%s/system" % (client_addr,
-						LicornPyroValidator.pyro_port))
-
 				try:
 					#print '>>', mytime(), 'SERVER executing remote uid_connecting_from(', client_socket, ')'
 					client_uid = remote_system.uid_connecting_from(
 						client_socket)
+
 				except Exception, e:
 					logging.warning('''error finding uid initiation '''
 						'''connection from %s:%s (was %s).''' % (client_addr,
@@ -130,7 +135,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				else:
 					#print '>>', mytime(), 'SERVER finishing local acceptUid(', client_uid, client_addr, ')'
 					return self.acceptUid(daemon, client_uid, client_addr,
-						client_socket, remote_system)
+						client_socket)
 			else:
 				# FIXME: we are on the client, just accept any connection
 				# coming from our server, else deny. This must be refined to be
@@ -142,12 +147,13 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					# ACCEPT
 					return 1, 0
 				else:
-					logging.warning('Denied connection tentative from %s:%s.'
-						% (client_addr, client_socket))
+					logging.warning('Denied connection tentative from %s:%s '
+						'(allowed are %s and %s).' % (client_addr,
+							client_socket, LicornPyroValidator.server,
+							', '.join(LicornPyroValidator.server_addresses)))
 
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
-	def acceptUid(self, daemon, client_uid, client_addr, client_socket,
-		remote_pyro_system=None):
+	def acceptUid(self, daemon, client_uid, client_addr, client_socket):
 		try:
 			# NOTE: measured with LICORN_TRACE=timings, using pwd.getpwuid()
 			# is **at best** as quick as users.uid_to_login(), but generally
@@ -167,8 +173,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					''' %s:%s, user %s(%s).''' % (client_addr, client_socket,
 					stylize(ST_NAME, client_login),
 					stylize(ST_UGID, client_uid)))
-
-				# NOTE: don't call update_status() here, it will deadlock.
 
 				# ACCEPT
 				return 1, 0

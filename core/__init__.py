@@ -106,10 +106,10 @@ class LicornMasterController(MixedDictObject):
 			return
 
 		if self.master:
-
 			try:
 				from configuration import LicornConfiguration
-				self.configuration = LicornConfiguration(minimal=True, batch=batch)
+				self.configuration = LicornConfiguration(
+													minimal=True, batch=batch)
 
 			except exceptions.BadConfigurationError, e:
 				logging.error(e)
@@ -171,11 +171,10 @@ class LicornMasterController(MixedDictObject):
 		assert not LicornMasterController._init_client
 		assert LicornMasterController._init_first_pass
 
-
 		self._ServerLMC = ServerLMC
 
-		print '>> server backends:', ServerLMC.system.get_backends(
-															client_only=True)
+		#print '>> server backends:', ServerLMC.system.get_backends(
+		#													client_only=True)
 
 		if self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
@@ -309,6 +308,10 @@ class LicornMasterController(MixedDictObject):
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
+	def terminate(self):
+
+		if self._ServerLMC:
+			del LMC._ServerLMC
 	def reload_controllers_backends(self):
 		""" Walk through all controllers and make them reload their backends. If
 			one of them finds a new prefered backend, we must restart the
@@ -361,6 +364,16 @@ class LicornMasterController(MixedDictObject):
 				self._localconfig.server_main_address,
 				self._localconfig.licornd.pyro.port)
 
+			if not self.master:
+				# remove current values of controllers, they are pointing to LMC.
+				self.configuration = None
+				self.backends = None
+				self.extension = None
+				self.users = None
+				self.groups = None
+				self.system = None
+				self.msgproc = None
+
 		# the opposite is already used to define licornd.pyro.port
 		#Pyro.config.PYRO_PORT=_localconfig.licornd.pyro.port
 
@@ -389,12 +402,15 @@ class LicornMasterController(MixedDictObject):
 							'''has been successfully launched. I suspect '''
 							'''you're in trouble (was: %s)''' % e, 199)
 					else:
-						logging.error('''Can't reach our daemon at %s, '''
-							'''aborting. Check your network connection, '''
-							'''cable, DNS and firewall.''' % stylize(ST_ADDRESS,
-								'%s:%s' % (
+						logging.warning('Cannot reach our daemon at %s, '
+							'retrying in 5 seconds. Check your network '
+							'connection, cable, DNS and firewall. Perhaps the '
+							'Licorn® server is simply down.' %
+								stylize(ST_ADDRESS, 'pyro://%s:%s' % (
 									self._localconfig.server_main_address,
 									self._localconfig.licornd.pyro.port)))
+						time.sleep(5.0)
+						continue
 
 				if self._localconfig.licornd.role == roles.SERVER:
 					# the daemon will fork in the background and the call will

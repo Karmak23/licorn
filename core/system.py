@@ -20,10 +20,11 @@ from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton
-from licorn.foundations.constants import host_status, host_types
+from licorn.foundations.constants import host_status, host_types, distros
 
 from licorn.core         import LMC
 from licorn.core.classes import CoreController
+from licorn.daemon       import roles, client, priorities, service_enqueue
 
 class SystemController(Singleton, CoreController):
 	""" This class implement a local system controller. It is meant to be used
@@ -76,15 +77,77 @@ class SystemController(Singleton, CoreController):
 			link is OK between the server and the client. """
 		assert ltrace('system', '| noop(True)')
 		return True
+	def local_ip_addresses(self):
+		return LMC.configuration.network.local_ip_addresses()
 	def get_status(self):
 		""" Get local host current status. """
 		with self.lock():
 			assert ltrace('system', '| get_status(%s)' % self.status)
 			return self.status
+	def announce_shutdown(self):
+		""" mark us as shutting down and announce this to everyone connected."""
+		self.status = host_status.PYRO_SHUTDOWN
+
+		if LMC.configuration.licornd.role == roles.SERVER:
+			LMC.machines.announce_shutdown()
+		else:
+			client.client_goodbye()
+	def goodbye_from(self, remote_interfaces):
+		""" a remote Licorn® server is shutting down: receive the shutdown
+			announce and forward it to the
+			:class:`~licorn.core.machines.MachinesController`, it knows what
+			to do with it. """
+
+		assert ltrace('system', '| goodbye_from(%s)' % ', '.join(remote_interfaces))
+
+		if LMC.configuration.licornd.role == roles.SERVER:
+			LMC.machines.goodbye_from(remote_interfaces)
+		else:
+			service_enqueue(priorities.HIGH, client.server_shutdown, remote_interfaces)
+	def hello_from(self, remote_interfaces):
+		""" a remote Licorn® server is warming up: receive the hello
+			announce and forward it to the
+			:class:`~licorn.core.machines.MachinesController`, it knows what
+			to do with it. """
+
+		assert ltrace('system', '| hello_from(%s)' % ', '.join(remote_interfaces))
+
+		if LMC.configuration.licornd.role == roles.SERVER:
+			LMC.machines.hello_from(remote_interfaces)
+		else:
+			service_enqueue(priorities.HIGH, client.server_reconnect, remote_interfaces)
 	def get_host_type(self):
 		""" Return local host type. """
-		assert ltrace('system', '| get_host_type(%s)' % host_types.UBUNTU)
-		return host_types.UBUNTU
+
+		# this one is obliged, we are running Licorn® via this code.
+		systype = host_types.LICORN
+
+		if LMC.configuration.licornd.role == roles.SERVER:
+			systype |= host_types.META_SRV
+
+		if LMC.configuration.distro == distros.UBUNTU:
+			systype |= host_types.UBUNTU
+			systype ^= host_types.LNX_GEN
+
+		elif LMC.configuration.distro == distros.DEBIAN:
+			systype |= host_types.DEBIAN
+			systype ^= host_types.LNX_GEN
+
+		elif LMC.configuration.distro == distros.GENTOO:
+			systype |= host_types.GENTOO
+			systype ^= host_types.LNX_GEN
+
+		elif LMC.configuration.distro == distros.REDHAT:
+			systype |= host_types.REDHAT
+			systype ^= host_types.LNX_GEN
+
+		elif LMC.configuration.distro == distros.MANDRIVA:
+			systype |= host_types.MANDRIVA
+			systype ^= host_types.LNX_GEN
+
+		assert ltrace('system', '| get_host_type(%s)' % systype)
+
+		return systype
 	def uptime_and_load(self):
 		assert ltrace('system', '| uptime_and_load()')
 		return open('/proc/loadavg').read().split(' ')

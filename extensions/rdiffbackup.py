@@ -25,7 +25,8 @@ from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 from licorn.interfaces.wmi     import WMIObject
 
-from licorn.daemon             import priorities, service
+from licorn.daemon             import priorities, roles, \
+											service_enqueue, service_wait
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -444,7 +445,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		self.threads.auto_backup_timer.reset()
 
-		service(priorities.NORMAL, self.__backup_procedure,
+		service_enqueue(priorities.NORMAL, self.__backup_procedure,
 										volume=volume, force=force)
 	def __backup_procedure(self, volume=None, force=False):
 		""" Do a complete backup procedure, which includes:

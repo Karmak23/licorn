@@ -15,6 +15,7 @@ from licorn.foundations           import logging, exceptions, options, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import verbose
+from licorn.daemon                import priorities
 
 class LicornThread(Thread):
 	"""
@@ -131,6 +132,7 @@ class GenericQueueWorkerThread(Thread):
 																'.', 1)[1][:-8]
 			self.__class__.counter      = 0
 			self.__class__.instances    = 0
+			self.__class__.busy         = 0
 			self.__class__.input_queue  = in_queue
 			self.__class__.lock         = RLock()
 			self.__class__.peers_min    = peers_min
@@ -148,6 +150,7 @@ class GenericQueueWorkerThread(Thread):
 		#: used in dump_status (as a display info only), to know which
 		#: object our target function is running onto.
 		self.job = None
+		self.priority = None
 		self.job_args = None
 		self.job_kwargs = None
 		self.job_start_time = None
@@ -185,7 +188,7 @@ class GenericQueueWorkerThread(Thread):
 		self.throttle()
 
 		while True:
-			priority, self.job, self.job_args, self.jobs_kwargs = \
+			self.priority, self.job, self.job_args, self.jobs_kwargs = \
 														self.input_queue.get()
 			if self.job is None:
 				# None is a fake message to unblock the q.get(), when the
@@ -196,12 +199,36 @@ class GenericQueueWorkerThread(Thread):
 				break
 
 			else:
+
+				with self.__class__.lock:
+					if self.priority != priorities.HIGH \
+						and self.__class__.busy == self.__class__.instances:
+						# make some room for HIGH priority jobs. They could still
+						# be queued if everyone is busy, but this is less likely
+						# now, because HIGH priority jobs are advised to be very
+						# short (else they should be converted to NORMAL or LOW,
+						# or splitted in smaller tasks).
+
+						self.input_queue.task_done()
+
+						self.input_queue.put((self.priority, self.job,
+											self.job_args, self.jobs_kwargs))
+
+						self.job = None
+						self.priority = None
+						self.job_args = None
+						self.job_kwargs = None
+						continue
+
 				if 'job_delay' in self.jobs_kwargs:
 					time.sleep(self.jobs_kwargs['job_delay'])
 					del self.jobs_kwargs['job_delay']
 
 				assert ltrace('thread', '%s: running job %s' % (
 														self.name, self.job))
+				with self.__class__.lock:
+					self.__class__.busy += 1
+
 				self.jobbing.set()
 				self.job_start_time = time.time()
 
@@ -211,19 +238,28 @@ class GenericQueueWorkerThread(Thread):
 					logging.warning('%s: LicornError encountered:' % self.name)
 					print_exc()
 				except (exceptions.LicornException, Exception), e:
-					logging.warning2('%s: Exception encountered:' % self.name)
+					logging.warning('%s: Exception encountered:' % self.name)
 					if options.verbose >= verbose.INFO:
 						print_exc()
 
-				self.jobbing.clear()
 				self.input_queue.task_done()
 
+				self.jobbing.clear()
+
+				with self.__class__.lock:
+					self.__class__.busy -= 1
+
 				self.job = None
+				self.priority = None
 				self.job_args = None
 				self.job_kwargs = None
 				self.job_start_time = None
 
 			self.throttle()
+
+			if self.input_queue.qsize() == 0:
+				logging.progress('%s: queue is now empty, going '
+					'asleep waiting for jobs.' % self.name)
 
 		with self.__class__.lock:
 			self.__class__.instances -= 1

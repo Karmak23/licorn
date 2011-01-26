@@ -45,9 +45,9 @@ Licornd
 -------
 
 
-.. _licornd.network.auto_scan.en:
+.. _licornd.network.lan_scan.en:
 
-	**licornd.network.auto_scan**
+	**licornd.network.lan_scan**
 		Enable or disable the *automagic* network features. This includes network discovery (LAN and further), Reverse DNS resolution, ARP resolution and *server-based* status updates (polling from server to clients).
 
 		.. note:: even with ``licornd.network.enabled=False``, LAN connections to the :ref:`daemon <daemondoc>` are still authorized: **client-initiated connections (inter-daemon synchronization, client status updates, and so on…) continue to work**, regardless of this directive (this is because ALT® clients strictly need the daemon to work).

@@ -223,7 +223,7 @@ def index(uri, http_user, **kwargs):
 			_('System information'),
 			_('Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong>'
 				'<br /><br />'
-				'Physical memory: <strong>{ram:.2f}Mb</strong> total;<br />'
+				'Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />'
 				'{swap_total}').format(
 					s_cpu=s_cpu, nb_cpu=cpus, cpu_model=model,
 					ram=mem['MemTotal'],

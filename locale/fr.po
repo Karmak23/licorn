@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-23 09:14+0100\n"
-"PO-Revision-Date: 2011-01-23 09:14+0100\n"
+"POT-Creation-Date: 2011-01-26 20:46+0100\n"
+"PO-Revision-Date: 2011-01-26 20:47+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -32,147 +32,144 @@ msgstr "URI de calendrier personnel"
 msgid "Group calendar URI"
 msgstr "URI de calendrier partagé"
 
-#: extensions/rdiffbackup.py:277
+#: extensions/rdiffbackup.py:274
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: extensions/rdiffbackup.py:278
+#: extensions/rdiffbackup.py:275
 msgid "Manage backups and restore files"
 msgstr "Gérer les sauvegardes et restaurer des données"
 
-#: extensions/rdiffbackup.py:280
+#: extensions/rdiffbackup.py:277
 msgid "Run backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:281
+#: extensions/rdiffbackup.py:278
 msgid "Run a system incremental backup now"
 msgstr "Exécuter une sauvegarde incrémentale maintenant"
 
-#: extensions/rdiffbackup.py:285
+#: extensions/rdiffbackup.py:282
 msgid "Rescan volumes"
 msgstr "Scanner les volumes"
 
-#: extensions/rdiffbackup.py:286
+#: extensions/rdiffbackup.py:283
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:620
+#: extensions/rdiffbackup.py:619
 msgid "Last backup on this volume occured {0} ago."
 msgstr "La dernière sauvegarde sur ce volume a eu lieu il y a {0}."
 
-#: extensions/rdiffbackup.py:626
+#: extensions/rdiffbackup.py:625
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 
-#: extensions/rdiffbackup.py:627
+#: extensions/rdiffbackup.py:626
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:640
+#: extensions/rdiffbackup.py:639
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:648
+#: extensions/rdiffbackup.py:647
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine sauvegarde."
 
-#: extensions/rdiffbackup.py:652
+#: extensions/rdiffbackup.py:651
 msgid "No volume to backup onto. Please plug a {app_name} enabled volume into your server before starting this procedure.<br /><br />See <a href=\"http://docs.licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> for details on enabling backup volumes."
 msgstr "Aucun volume de sauvegarde trouvé. Merci de connecter un volume dédié aux sauvegardes {app_name} sur votre serveur avant de lancer cette procédure.<br /><br />Lisez <href=\"http://docs.licorn.org/extensions/rdiffbackup.fr.html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:667
+#: extensions/rdiffbackup.py:666
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:672
+#: extensions/rdiffbackup.py:671
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:673
+#: extensions/rdiffbackup.py:672
 msgid "{auto_select}<br /><br />The last backup has been run {last_backup_time} ago, which is less than the system configured interval ({interval}). Are you sure you want to force a manual backup now?<br /><br />(if you do not answer withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr "{auto_select}<br /><br />La dernière sauvegarde date d'il y a  {last_backup_time}, c'est à dire moins que l'intervalle configuré dans le système ({interval}). Êtes-vous sûr(e) de vouloir forcer le lancement d'une sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les {next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:689
+#: extensions/rdiffbackup.py:688
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:690
+#: extensions/rdiffbackup.py:689
 #: interfaces/wmi/groups.py:134
 #: interfaces/wmi/groups.py:581
 #: interfaces/wmi/users.py:136
 #: interfaces/wmi/users.py:214
-#: interfaces/wmi/machines.py:273
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:692
+#: extensions/rdiffbackup.py:691
 #: interfaces/wmi/groups.py:257
 #: interfaces/wmi/users.py:92
 #: interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227
-#: interfaces/wmi/machines.py:185
-#: interfaces/wmi/machines.py:229
-#: interfaces/wmi/machines.py:275
+#: core/machines.py:1129
+#: core/machines.py:1172
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:692
+#: extensions/rdiffbackup.py:691
 #: interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227
 #: interfaces/wmi/users.py:273
-#: interfaces/wmi/machines.py:275
 msgid "C"
 msgstr "N"
 
-#: extensions/rdiffbackup.py:708
+#: extensions/rdiffbackup.py:707
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:711
+#: extensions/rdiffbackup.py:710
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:716
+#: extensions/rdiffbackup.py:714
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr "Ce volume est utilisé{backup_info}, impossible de l'éjecter&nbsp;!{rewind}"
 
-#: extensions/rdiffbackup.py:733
+#: extensions/rdiffbackup.py:731
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:750
+#: extensions/rdiffbackup.py:748
 msgid "No backup volume found. Please connect a backup volume to your server, and backups will automatically start (next try in {countdown})."
 msgstr "Aucun volume de sauvegarde n'a été trouvé. Merci d'en connecter un à votre serveur, et les sauvegardes démarreront automatiquement (prochaine tentative dans {countdown})."
 
-#: extensions/rdiffbackup.py:758
+#: extensions/rdiffbackup.py:756
 msgid "No backup found, or all backup volumes are currently unmounted (you can safely disconnect them from your server).<br /><br />Next automatic backup will occur in {countdown}, and will  automatically remount any backup volume still connected at this moment."
 msgstr "Aucune sauvegarde n'a été trouvée, ou bien tous les volumes de sauvegardes sont actuellement démontés (vous pouvez les déconnecter sans risque de votre serveur).<br /><br />La prochaine sauvegarde automatique sera tentée dans {countdown}, et remontera tout volume encore physiquement connecté à ce moment là."
 
-#: extensions/rdiffbackup.py:776
+#: extensions/rdiffbackup.py:774
 msgid "A backup is currently in progress, please do not disconnect <strong>{volume}</strong>.<br /><br /> (update in {countdown}…)"
 msgstr "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:801
+#: extensions/rdiffbackup.py:799
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:805
+#: extensions/rdiffbackup.py:803
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:815
+#: extensions/rdiffbackup.py:813
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:821
+#: extensions/rdiffbackup.py:819
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:832
+#: extensions/rdiffbackup.py:830
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr "Aucune donnée d'historique. Merci d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:837
+#: extensions/rdiffbackup.py:835
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
@@ -361,45 +358,44 @@ msgid "System information"
 msgstr "Informations système"
 
 #: interfaces/wmi/base.py:224
-msgid "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Physical memory: <strong>{ram:.2f}Mb</strong> total;<br />{swap_total}"
-msgstr "Processeur{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s);<br /> {swap_total}"
+msgid "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />{swap_total}"
+msgstr "Processeur{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s).<br /> {swap_total}"
 
-#: interfaces/wmi/__init__.py:65
+#: interfaces/wmi/__init__.py:66
 #: interfaces/wmi/groups.py:15
 #: interfaces/wmi/users.py:29
-#: interfaces/wmi/machines.py:16
 msgid "<br /><br />Go back with your browser, double-check data and validate the web-form."
 msgstr "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données saisies et re-validez le formulaire."
 
-#: interfaces/wmi/__init__.py:188
+#: interfaces/wmi/__init__.py:189
 msgid "day"
 msgstr "jour"
 
-#: interfaces/wmi/__init__.py:188
+#: interfaces/wmi/__init__.py:189
 msgid "days"
 msgstr "jours"
 
-#: interfaces/wmi/__init__.py:189
+#: interfaces/wmi/__init__.py:190
 msgid "hour"
 msgstr "heure"
 
-#: interfaces/wmi/__init__.py:189
+#: interfaces/wmi/__init__.py:190
 msgid "hours"
 msgstr "heures"
 
-#: interfaces/wmi/__init__.py:190
+#: interfaces/wmi/__init__.py:191
 msgid "minute"
 msgstr "minute"
 
-#: interfaces/wmi/__init__.py:190
+#: interfaces/wmi/__init__.py:191
 msgid "minutes"
 msgstr "minutes"
 
-#: interfaces/wmi/__init__.py:191
+#: interfaces/wmi/__init__.py:192
 msgid "second"
 msgstr "seconde"
 
-#: interfaces/wmi/__init__.py:191
+#: interfaces/wmi/__init__.py:192
 msgid "seconds"
 msgstr "secondes"
 
@@ -548,81 +544,70 @@ msgstr "Action impossible"
 msgid "Some parts of the system cannot be modified, for your own safety and the world to rest in peace."
 msgstr "Certaines parties du système ne peuvent pas être modifiées, pour votre sécurité et pour que le monde reste en paix."
 
-#: interfaces/wmi/utils.py:368
+#: interfaces/wmi/utils.py:367
 msgid "Server, UPS and hardware sub-systems status."
 msgstr "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/wmi/utils.py:368
-#: interfaces/wmi/machines.py:697
+#: interfaces/wmi/utils.py:367
+#: core/machines.py:1213
 msgid "Status"
 msgstr "État"
 
-#: interfaces/wmi/utils.py:369
+#: interfaces/wmi/utils.py:368
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/wmi/utils.py:369
+#: interfaces/wmi/utils.py:368
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: interfaces/wmi/utils.py:370
+#: interfaces/wmi/utils.py:369
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/wmi/utils.py:370
+#: interfaces/wmi/utils.py:369
 #: interfaces/wmi/groups.py:672
 #: interfaces/wmi/groups.py:708
 #: interfaces/wmi/users.py:394
 #: interfaces/wmi/users.py:570
-#: interfaces/wmi/machines.py:404
-#: interfaces/wmi/machines.py:600
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/wmi/utils.py:373
-msgid "Manage network clients: computers, printers, switches and other network enabled active systems."
-msgstr "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs et tous les autres matériels actifs."
-
-#: interfaces/wmi/utils.py:374
-#: interfaces/wmi/machines.py:688
-msgid "Machines"
-msgstr "Machines"
-
-#: interfaces/wmi/utils.py:383
+#: interfaces/wmi/utils.py:377
 msgid "Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters."
 msgstr "Gérer la connexion internet et ses paramètres, les protections par pare-feu et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/wmi/utils.py:383
+#: interfaces/wmi/utils.py:377
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/wmi/utils.py:384
+#: interfaces/wmi/utils.py:378
 msgid "Go to online documentation website."
 msgstr "Accéder à l'aide en ligne."
 
-#: interfaces/wmi/utils.py:384
+#: interfaces/wmi/utils.py:378
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/wmi/utils.py:385
+#: interfaces/wmi/utils.py:379
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/wmi/utils.py:385
+#: interfaces/wmi/utils.py:379
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/wmi/utils.py:389
+#: interfaces/wmi/utils.py:383
 #, python-format
 msgid "%s Management"
 msgstr "Administration %s"
 
-#: interfaces/wmi/utils.py:417
+#: interfaces/wmi/utils.py:411
 #, python-format
 msgid "%s WMI:"
 msgstr "IGW %s&nbsp;:"
 
-#: interfaces/wmi/utils.py:422
+#: interfaces/wmi/utils.py:416
 #, python-format
 msgid "administration %s"
 msgstr "Administration %s"
@@ -686,10 +671,8 @@ msgstr "A"
 #: interfaces/wmi/users.py:272
 #: interfaces/wmi/users.py:398
 #: interfaces/wmi/users.py:574
-#: interfaces/wmi/machines.py:79
-#: interfaces/wmi/machines.py:136
-#: interfaces/wmi/machines.py:408
-#: interfaces/wmi/machines.py:604
+#: core/machines.py:1023
+#: core/machines.py:1078
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -866,13 +849,11 @@ msgstr "Oui"
 #: interfaces/wmi/groups.py:420
 #: interfaces/wmi/users.py:382
 #: interfaces/wmi/users.py:735
-#: interfaces/wmi/machines.py:392
 msgid "P"
 msgstr "P"
 
 #: interfaces/wmi/groups.py:258
 #: interfaces/wmi/users.py:399
-#: interfaces/wmi/machines.py:409
 msgid "Create"
 msgstr "Créer"
 
@@ -919,7 +900,6 @@ msgstr "Nom complet"
 #: interfaces/wmi/groups.py:824
 #: interfaces/wmi/users.py:390
 #: interfaces/wmi/users.py:870
-#: interfaces/wmi/machines.py:400
 msgid "Identifier"
 msgstr "Identifiant"
 
@@ -1092,13 +1072,13 @@ msgstr "ordre %s"
 
 #: interfaces/wmi/groups.py:697
 #: interfaces/wmi/users.py:878
-#: interfaces/wmi/machines.py:710
+#: core/machines.py:1226
 msgid "Click to sort in reverse order."
 msgstr "Cliquer pour classer dans l'ordre inverse."
 
 #: interfaces/wmi/groups.py:701
 #: interfaces/wmi/users.py:882
-#: interfaces/wmi/machines.py:716
+#: core/machines.py:1232
 msgid "Click to sort on this column."
 msgstr "Cliquer pour classer sur cette colonne."
 
@@ -1106,8 +1086,6 @@ msgstr "Cliquer pour classer sur cette colonne."
 #: interfaces/wmi/users.py:395
 #: interfaces/wmi/users.py:571
 #: interfaces/wmi/users.py:707
-#: interfaces/wmi/machines.py:405
-#: interfaces/wmi/machines.py:601
 msgid "Privileges"
 msgstr "Privilèges"
 
@@ -1281,8 +1259,8 @@ msgid "Export user accounts list"
 msgstr "Exporter les comptes utilisateurs"
 
 #: interfaces/wmi/users.py:77
-#: interfaces/wmi/machines.py:170
-#: interfaces/wmi/machines.py:214
+#: core/machines.py:1114
+#: core/machines.py:1157
 msgid "CSV file-format is used by spreadsheets and most systems which offer import functionnalities. XML file-format is a modern exchange format, used in soma applications which respect interoperability constraints.<br /><br />When you submit this form, your web browser will automatically offer you to download and save the export-file (it won't be displayed). When you're done, please click the “back” button of your browser."
 msgstr "Le format CSV est utilisé par les tableurs et la plupart des systèmes qui offrent des possibilités d'import. Le format XML est un format d'échanges de données moderne utilisé par des applications qui respectent certaines normes ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez sur \"Exporter\", votre navigateur vous proposera automatiquement d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
 
@@ -1292,14 +1270,14 @@ msgid "Which file format do you want accounts to be exported to? %s"
 msgstr "Dans quel format de sortie voulez-vous exporter les comptes&#160;? %s"
 
 #: interfaces/wmi/users.py:89
-#: interfaces/wmi/machines.py:182
-#: interfaces/wmi/machines.py:226
+#: core/machines.py:1126
+#: core/machines.py:1169
 msgid "Please choose file format for export list"
 msgstr "Choisissez le format de fichier d'export"
 
 #: interfaces/wmi/users.py:91
-#: interfaces/wmi/machines.py:184
-#: interfaces/wmi/machines.py:228
+#: core/machines.py:1128
+#: core/machines.py:1171
 msgid "Export >>"
 msgstr "Exporter >>"
 
@@ -1318,13 +1296,11 @@ msgid "Are you sure you want to remove account <strong>%s</strong>?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;!"
 
 #: interfaces/wmi/users.py:128
-#: interfaces/wmi/machines.py:265
 #, python-format
 msgid "User's <strong>personnal data</strong> (his/her HOME dir) will be <strong>archived</strong> in directory <code>%s</code> and members of group <strong>%s</strong> will be able to  access it to operate an eventual recover.<br />However, you can decide to permanently remove it."
 msgstr "<strong>Les données personnelles</strong> de l'utilisateur (son home dir) <strong>seront archivées</strong>\t\t\t\tdans le répertoire <code>%s</code> et accessibles aux membres du groupe\t\t\t\t<strong>%s</strong> pour une récupération éventuelle.<br />\t\t\t\tVous pouvez cependant décider de les effacer définitivement."
 
 #: interfaces/wmi/users.py:136
-#: interfaces/wmi/machines.py:273
 msgid "Remove >>"
 msgstr "Supprimer >>"
 
@@ -1438,68 +1414,53 @@ msgstr "Cet utilisateur est un(e)"
 
 #: interfaces/wmi/users.py:315
 #: interfaces/wmi/users.py:869
-#: interfaces/wmi/machines.py:319
 msgid "Full name"
 msgstr "Nom complet"
 
 #: interfaces/wmi/users.py:378
 #: interfaces/wmi/users.py:556
-#: interfaces/wmi/machines.py:388
-#: interfaces/wmi/machines.py:586
 #, python-format
 msgid "Password must be at least %d characters long. You can use all alphabet characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr "Le mot de passe doit comporter au moins %d caractères. Vous pouvez utiliser toutes les lettre de l'alphabet, les chiffres, les caractères spéciaux et les signes de ponctuation sauf '?!'."
 
 #: interfaces/wmi/users.py:381
-#: interfaces/wmi/machines.py:391
 msgid "Password"
 msgstr "Mot de passe"
 
 #: interfaces/wmi/users.py:381
 #: interfaces/wmi/users.py:560
-#: interfaces/wmi/machines.py:391
-#: interfaces/wmi/machines.py:590
 #, python-format
 msgid "(%d chars. min.)"
 msgstr "(%d car. min.)"
 
 #: interfaces/wmi/users.py:384
-#: interfaces/wmi/machines.py:394
 msgid "Password confirmation."
 msgstr "Confirmation du mot de passe."
 
 #: interfaces/wmi/users.py:386
-#: interfaces/wmi/machines.py:396
 msgid "Identifier must be lowercase, without accents or special characters (you can use dots and carets).<br /><br />If you let this field empty, identifier will be automaticaly guessed from first name and last name."
 msgstr ""
 "L'identifiant doit être en lettres minuscules, sans accents ni caractères spéciaux (vous pouvez utiliser seulement les points et les tirets).<br /><br />\n"
 "Si vous laissez le champ vide, l'identifiant sera automatiquement déterminé à partir du nom et du prénom."
 
 #: interfaces/wmi/users.py:391
-#: interfaces/wmi/machines.py:401
 msgid "I"
 msgstr "I"
 
 #: interfaces/wmi/users.py:392
 #: interfaces/wmi/users.py:567
-#: interfaces/wmi/machines.py:402
-#: interfaces/wmi/machines.py:597
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
 #: interfaces/wmi/users.py:396
 #: interfaces/wmi/users.py:572
 #: interfaces/wmi/users.py:704
-#: interfaces/wmi/machines.py:406
-#: interfaces/wmi/machines.py:602
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
 #: interfaces/wmi/users.py:397
 #: interfaces/wmi/users.py:573
 #: interfaces/wmi/users.py:706
-#: interfaces/wmi/machines.py:407
-#: interfaces/wmi/machines.py:603
 msgid "Invitations"
 msgstr "Invitations"
 
@@ -1510,14 +1471,11 @@ msgstr "Nouveau compte %s"
 
 #: interfaces/wmi/users.py:416
 #: interfaces/wmi/users.py:798
-#: interfaces/wmi/machines.py:432
-#: interfaces/wmi/machines.py:642
 #, python-format
 msgid "Passwords do not match!%s"
 msgstr "Les mots de passe ne correspondent pas&#160;!%s"
 
 #: interfaces/wmi/users.py:420
-#: interfaces/wmi/machines.py:436
 #, python-format
 msgid "Password must be at least %d characters long!%s"
 msgstr "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
@@ -1541,7 +1499,6 @@ msgstr "Édition du compte %s"
 #: interfaces/wmi/users.py:602
 #: interfaces/wmi/users.py:858
 #: interfaces/wmi/users.py:979
-#: interfaces/wmi/machines.py:502
 msgid "Standard account"
 msgstr "Compte standard"
 
@@ -1550,32 +1507,26 @@ msgid "<strong>UID</strong> (fixed)"
 msgstr "<strong>UID</strong><br />(non-modifiable)"
 
 #: interfaces/wmi/users.py:551
-#: interfaces/wmi/machines.py:581
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr "<strong>Identifiant</strong><br />(non-modifiable)"
 
 #: interfaces/wmi/users.py:552
-#: interfaces/wmi/machines.py:582
 msgid "<strong>Profile</strong> (fixed)"
 msgstr "<strong>Profil</strong><br />(non-modifiable)"
 
 #: interfaces/wmi/users.py:553
-#: interfaces/wmi/machines.py:583
 msgid "<strong>Full name</strong>"
 msgstr "<strong>Nom complet</strong>"
 
 #: interfaces/wmi/users.py:560
-#: interfaces/wmi/machines.py:590
 msgid "New password"
 msgstr "Nouveau mot de passe"
 
 #: interfaces/wmi/users.py:564
-#: interfaces/wmi/machines.py:594
 msgid "password confirmation."
 msgstr "confirmation du mot de passe."
 
 #: interfaces/wmi/users.py:575
-#: interfaces/wmi/machines.py:605
 msgid "Record changes"
 msgstr "Enregistrer les changements"
 
@@ -1610,7 +1561,6 @@ msgid "You cannot remove yourself from the {wmi_group} group, this would be like
 msgstr "Vous ne pouvez pas supprimer votre compte du groupe {wmi_group}, ça serait à peu près comme vous tirer dans le pied un balle écrite en Perl avec une pétoire compilée en C#: un non-sens (ceci est une blague de geek). Je ne vous laisserai pas faire ça."
 
 #: interfaces/wmi/users.py:801
-#: interfaces/wmi/machines.py:645
 #, python-format
 msgid "The password --%s-- must be at least %d characters long!%s"
 msgstr "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
@@ -1693,268 +1643,6 @@ msgstr "Supprime définitivement le compte du système."
 msgid "<strong>Total number of accounts:</strong>"
 msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
 
-#: interfaces/wmi/machines.py:44
-msgid "Create a configuration record for a machine which is not yet on the network."
-msgstr "Créer un enregistrement de configuration pour une machine qui n'est pas encore sur le réseau."
-
-#: interfaces/wmi/machines.py:47
-msgid "Add a machine"
-msgstr "Ajouter une machine"
-
-#: interfaces/wmi/machines.py:48
-msgid "Shutdown machines on the network."
-msgstr "Éteindre des machines sur le réseau."
-
-#: interfaces/wmi/machines.py:50
-msgid "Shutdown machines"
-msgstr "Éteindre des machines"
-
-#: interfaces/wmi/machines.py:51
-msgid "Edit Energy &amp; power saving policies."
-msgstr "Éditer les directives d'économie d'énergie."
-
-#: interfaces/wmi/machines.py:53
-msgid "Energy policies"
-msgstr "Politiques énergétiques"
-
-#: interfaces/wmi/machines.py:54
-msgid "Export current machines list to a CSV or XML file."
-msgstr "Exporter les machines actuelles vers un fichier CSV ou XML."
-
-#: interfaces/wmi/machines.py:56
-msgid "Export this list"
-msgstr "Exporter cette liste"
-
-#: interfaces/wmi/machines.py:66
-#, python-format
-msgid "Shutdown machine %s"
-msgstr "Éteindre la machine %s"
-
-#: interfaces/wmi/machines.py:70
-#, python-format
-msgid "Are you sure you want to remotely shutdown machine %s?"
-msgstr "Êtes-vous sûr(e) de vouloir éteindre la machine <strong>%s</strong>&#160;?"
-
-#: interfaces/wmi/machines.py:74
-msgid "Warn connected user(s) before shuting system down."
-msgstr "Avertir l(es) utilisateur(s) connecté(e)(s) que leur machine va s'éteindre."
-
-#: interfaces/wmi/machines.py:76
-msgid "Please confirm operation"
-msgstr "SVP, confirmez l'opération"
-
-#: interfaces/wmi/machines.py:78
-#: interfaces/wmi/machines.py:135
-msgid "Shutdown"
-msgstr "Éteindre"
-
-#: interfaces/wmi/machines.py:99
-#, python-format
-msgid "Failed to shutdown machine %s!"
-msgstr "Impossible d'éteindre la machines %s&#160;!"
-
-#: interfaces/wmi/machines.py:108
-msgid "Massive shutdown"
-msgstr "Extinctions en masse"
-
-#: interfaces/wmi/machines.py:112
-msgid "You can shutdown all currently running and/or idle machines. This is a quite dangerous operation, because users will be disconnected, and there is a potential to loose unsaved work on idle machines (users are not in front of them, they won't notice the system is shuting down.<br /><br />Systems will be shut down <strong>ONE minute</strong> after validation."
-msgstr "Vous pouvez éteindre toutes les machines actuellement actives et/ou inutilisées. C'est une opération relativement dangereuse car les utilisateurs vont être déconnectés, et il y a un risque qu'ils perdent leur travail non sauvegardé (surtout sur les machines inactives, où les utilisateurs ne sont pas en face de l'écran: ils ne verront pas le système s'éteindre).<br /><br />Les machines seront éteintes <strong>UNE minute</strong> après que vous en ayez donné l'ordre."
-
-#: interfaces/wmi/machines.py:122
-msgid "Shutdown <strong>active</strong> machines"
-msgstr "Éteindre les machines actuellement <strong>utilisées</strong>"
-
-#: interfaces/wmi/machines.py:124
-msgid "Shutdown <strong>idle</strong> machines"
-msgstr "Éteindre les machines actuellement <strong>inutilisées</strong>"
-
-#: interfaces/wmi/machines.py:126
-msgid "Shutdown <strong>asleep</strong> machines"
-msgstr "Éteindre toutes les machines actuellement <strong>en veille</strong>"
-
-#: interfaces/wmi/machines.py:128
-msgid "Shutdown the <strong>administrator</strong> machine too<br/>(the one currently connected to the WMI)."
-msgstr "Éteindre la machine de l'<strong>administrateur</strong> aussi<br /> (celle avec laquelle vous êtes actuellement connecté(e) à l'interface de gestion)."
-
-#: interfaces/wmi/machines.py:130
-msgid "Warn connected users before shuting systems down."
-msgstr "Avertir les utilisateurs connectés que leur machine va s'éteindre."
-
-#: interfaces/wmi/machines.py:133
-msgid "Choose machines to shutdown"
-msgstr "Choisissez les machines à éteindre"
-
-#: interfaces/wmi/machines.py:160
-msgid "Failed to shutdown one or more machines!"
-msgstr "Impossible d'éteindre une ou plusieurs machines&#160;!"
-
-#: interfaces/wmi/machines.py:167
-msgid "Energy saving policies"
-msgstr "Politiques d'économie d'énergie"
-
-#: interfaces/wmi/machines.py:179
-#: interfaces/wmi/machines.py:223
-#, python-format
-msgid "Which file format do you want the machines list to be exported to? %s"
-msgstr "Dans quel format de sortie voulez-vous exporter la liste des machines&#160;? %s"
-
-#: interfaces/wmi/machines.py:210
-msgid "Export machines list"
-msgstr "Exporter la liste des machines"
-
-#: interfaces/wmi/machines.py:254
-#, python-format
-msgid "Remove machine %s's record"
-msgstr "Supprimer l'enregistrement de la machine %s"
-
-#: interfaces/wmi/machines.py:263
-#, python-format
-msgid "Are you sure you want to remove record for machine <strong>%s</strong>?"
-msgstr "Êtes-vous sûr(e) de vouloir supprimer l'enregistrement de la machine <strong>%s</strong>&#160;!"
-
-#: interfaces/wmi/machines.py:277
-msgid "Definitely remove record data (no archiving)."
-msgstr "Supprimer définitivement toutes les données liées à cet enregistrement (pas d'archivage)."
-
-#: interfaces/wmi/machines.py:292
-#, python-format
-msgid "Failed to remove record <strong>%s</strong>!"
-msgstr "Impossible de supprimer l'enregistrement <strong>%s</strong>&#160;!"
-
-#: interfaces/wmi/machines.py:298
-msgid "New machine record"
-msgstr "Nouvel enregistrement de machine"
-
-#: interfaces/wmi/machines.py:311
-msgid "This machine is a"
-msgstr "Cette machine est un(e)"
-
-#: interfaces/wmi/machines.py:427
-#, python-format
-msgid "New machine record %s"
-msgstr "Nouvel enregistrement de machine %s"
-
-#: interfaces/wmi/machines.py:460
-#, python-format
-msgid "Failed to create record <strong>%s</strong>!"
-msgstr "Impossible de créer l'enregistrement <strong>%s</strong>&#160;!"
-
-#: interfaces/wmi/machines.py:479
-#, python-format
-msgid ""
-"Failed to add machine <strong>%s</strong> to requested\n"
-"\t\tgroups/privileges/responsibilities/invitations!"
-msgstr "Impossible d'ajouter la machine <strong>%s</strong> aux groupes/privilèges/invitations/responsabilités&#160;!"
-
-#: interfaces/wmi/machines.py:486
-#, python-format
-msgid "Edit %s's record"
-msgstr "Éditer l'enregistrement de %s"
-
-#: interfaces/wmi/machines.py:580
-msgid "<strong>mid</strong> (fixed)"
-msgstr "<strong>Adresse IP</strong>"
-
-#: interfaces/wmi/machines.py:629
-#, python-format
-msgid "Modification of %s's record"
-msgstr "Modification de l'enregistrement %s"
-
-#: interfaces/wmi/machines.py:671
-#, python-format
-msgid ""
-"Failed to modify one or more parameters of record\n"
-"\t\t <strong>%s</strong>!"
-msgstr "Impossible de modifier un ou plusieurs paramètres de l'enregistrement <strong>%s</strong>&#160;!"
-
-#: interfaces/wmi/machines.py:684
-#: interfaces/wmi/machines.py:724
-msgid "managed"
-msgstr "accrochées"
-
-#: interfaces/wmi/machines.py:685
-#: interfaces/wmi/machines.py:726
-msgid "floating"
-msgstr "flottantes"
-
-#: interfaces/wmi/machines.py:698
-msgid "Host name"
-msgstr "Nom de machine"
-
-#: interfaces/wmi/machines.py:699
-msgid "IP address"
-msgstr "Adresse IP"
-
-#: interfaces/wmi/machines.py:700
-msgid "Hardware address"
-msgstr "Adresse Ethernet"
-
-#: interfaces/wmi/machines.py:701
-msgid "Expiry"
-msgstr "Délai d'expiration"
-
-#: interfaces/wmi/machines.py:702
-msgid "Managed"
-msgstr "Accrochée"
-
-#: interfaces/wmi/machines.py:730
-#, python-format
-msgid "Host %s is in an unknown state. Nothing is possible. Please wait for a reconnection."
-msgstr "La machine %s est dans un état inconnu, aucune action à distance n'est possible. Merci d'attendre sa reconnexion."
-
-#: interfaces/wmi/machines.py:733
-#, python-format
-msgid "Host %s is offline, and cannot be powered on from here,Only from the machine itself."
-msgstr "La machine %s est éteinte. Elle ne peut pas être rallumée depuis l'interface."
-
-#: interfaces/wmi/machines.py:736
-#, python-format
-msgid "Host %s is going to sleep, it will be unavailable in a small period of time."
-msgstr "La machine %s est en train passer en veille, elle sera complètement indisponible d'ici peu."
-
-#: interfaces/wmi/machines.py:738
-#: interfaces/wmi/machines.py:744
-#: interfaces/wmi/machines.py:746
-#, python-format
-msgid "Shutdown the machine %s"
-msgstr "Éteindre la machine %s"
-
-#: interfaces/wmi/machines.py:740
-#, python-format
-msgid "Host %s is shutting down, it will be unavailable in a small period of time."
-msgstr "La machine %s est en train de s'éteindre, elle sera complètement indisponible d'ici peu."
-
-#: interfaces/wmi/machines.py:742
-#, python-format
-msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
-msgstr "La machine %s est allumé, sans contrôle à distance possible (Licorn© n'est pas installé dessus, ou pas lancé, ou injoignable)."
-
-#: interfaces/wmi/machines.py:795
-msgid "This machine is an ALT® client."
-msgstr "Cette machine est un client ALT® original."
-
-#: interfaces/wmi/machines.py:811
-msgid "Unmanage machine (remove it from configuration, in order to allow it to be managed by another server."
-msgstr "Détacher la machine (ne plus la gérer, c'est à dire supprimer sa configuration sur le serveur actuel, et la rendre disponible pour être accrochée à un autre serveur)."
-
-#: interfaces/wmi/machines.py:822
-msgid "Manage machine (fix its IP address and configure various aspects of the client)."
-msgstr "Accrocher la machine (fixer son adresse IP et configurer divers aspects de la machine, en stockant cette configuration sur le serveur)."
-
-#: interfaces/wmi/machines.py:843
-msgid "<unknown>"
-msgstr "<inconnu>"
-
-#: interfaces/wmi/machines.py:867
-#, python-format
-msgid "number of <strong>%s</strong> machines:"
-msgstr "nombre de machines <strong>%s</strong>&#160;:"
-
-#: interfaces/wmi/machines.py:880
-msgid "<strong>Total number of machines:</strong>"
-msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
-
 #: core/configuration.py:772
 msgid "user"
 msgstr "utilisateur"
@@ -1971,15 +1659,317 @@ msgstr "groupe"
 msgid "groups"
 msgstr "groupes"
 
-#: core/machines.py:521
+#: core/machines.py:623
+#: core/machines.py:1204
+msgid "Machines"
+msgstr "Machines"
+
+#: core/machines.py:624
+msgid "Manage network clients (computers, printers, etc) and energy preferences"
+msgstr "Gérer les clients en réseau (ordinateurs, imprimantes, etc) et les préférences d'économie d'énergie"
+
+#: core/machines.py:628
+msgid "Shutdown machines"
+msgstr "Éteindre des machines"
+
+#: core/machines.py:629
+msgid "Shutdown machines on the network."
+msgstr "Éteindre des machines sur le réseau."
+
+#: core/machines.py:634
+msgid "Energy policies"
+msgstr "Politiques énergétiques"
+
+#: core/machines.py:635
+msgid "Manage network-wide Energy &amp; power saving policies."
+msgstr "Gérer les directives d'économie d'énergie globales."
+
+#: core/machines.py:988
 msgid "You must pass a hostname to verify!"
 msgstr "Vous devez passer un nom de machine à vérifier !"
 
-#: core/machines.py:529
+#: core/machines.py:996
 #, python-format
 msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
 msgstr "Impossible de construire un nom de machine valide (depuis %s, qui ne vérifie pas %s)"
 
+#: core/machines.py:1008
+#, python-format
+msgid "Shutdown machine %s"
+msgstr "Éteindre la machine %s"
+
+#: core/machines.py:1012
+#, python-format
+msgid "Are you sure you want to remotely shutdown machine %s?"
+msgstr "Êtes-vous sûr(e) de vouloir éteindre la machine <strong>%s</strong>&#160;?"
+
+#: core/machines.py:1016
+msgid "Warn connected user(s) before shuting system down."
+msgstr "Avertir l(es) utilisateur(s) connecté(e)(s) que leur machine va s'éteindre."
+
+#: core/machines.py:1019
+msgid "Please confirm operation"
+msgstr "SVP, confirmez l'opération"
+
+#: core/machines.py:1021
+#: core/machines.py:1076
+msgid "Shutdown"
+msgstr "Éteindre"
+
+#: core/machines.py:1046
+msgid "Massive shutdown"
+msgstr "Extinctions en masse"
+
+#: core/machines.py:1050
+msgid "You can shutdown all currently running and/or idle machines. This is a quite dangerous operation, because users will be disconnected, and there is a potential to loose unsaved work on idle machines (users are not in front of them, they will not notice the system is shuting down.<br /><br />Systems will be shut down <strong>ONE minute</strong> after validation."
+msgstr "Vous pouvez éteindre toutes les machines actuellement actives et/ou inutilisées. C'est une opération relativement dangereuse car les utilisateurs vont être déconnectés, et il y a un risque qu'ils perdent leur travail non sauvegardé (surtout sur les machines inactives, où les utilisateurs ne sont pas en face de l'écran: ils ne verront pas le système s'éteindre).<br /><br />Les machines seront éteintes <strong>UNE minute</strong> après que vous en ayez donné l'ordre."
+
+#: core/machines.py:1060
+msgid "Shutdown <strong>active</strong> machines"
+msgstr "Éteindre les machines actuellement <strong>utilisées</strong>"
+
+#: core/machines.py:1062
+msgid "Shutdown <strong>idle</strong> machines"
+msgstr "Éteindre les machines actuellement <strong>inutilisées</strong>"
+
+#: core/machines.py:1064
+msgid "Shutdown <strong>asleep</strong> machines"
+msgstr "Éteindre toutes les machines actuellement <strong>en veille</strong>"
+
+#: core/machines.py:1066
+msgid "Shutdown the <strong>administrator</strong> machine too<br/>(the one currently connected to the WMI)."
+msgstr "Éteindre la machine de l'<strong>administrateur</strong> aussi<br /> (celle avec laquelle vous êtes actuellement connecté(e) à l'interface de gestion)."
+
+#: core/machines.py:1070
+msgid "Warn connected users before shuting systems down."
+msgstr "Avertir les utilisateurs connectés que leur machine va s'éteindre."
+
+#: core/machines.py:1074
+msgid "Choose machines to shutdown"
+msgstr "Choisissez les machines à éteindre"
+
+#: core/machines.py:1111
+msgid "Energy saving policies"
+msgstr "Politiques d'économie d'énergie"
+
+#: core/machines.py:1123
+#: core/machines.py:1166
+#, python-format
+msgid "Which file format do you want the machines list to be exported to? %s"
+msgstr "Dans quel format de sortie voulez-vous exporter la liste des machines&#160;? %s"
+
+#: core/machines.py:1153
+msgid "Export machines list"
+msgstr "Exporter la liste des machines"
+
+#: core/machines.py:1200
+#: core/machines.py:1239
+msgid "managed"
+msgstr "accrochées"
+
+#: core/machines.py:1201
+#: core/machines.py:1241
+msgid "floating"
+msgstr "flottantes"
+
+#: core/machines.py:1214
+msgid "Host name"
+msgstr "Nom de machine"
+
+#: core/machines.py:1215
+msgid "IP address"
+msgstr "Adresse IP"
+
+#: core/machines.py:1216
+msgid "Hardware address"
+msgstr "Adresse Ethernet"
+
+#: core/machines.py:1217
+msgid "Expiry"
+msgstr "Délai d'expiration"
+
+#: core/machines.py:1218
+msgid "Managed"
+msgstr "Accrochée"
+
+#: core/machines.py:1245
+#, python-format
+msgid "Host %s is in an unknown state. Nothing is possible. Please wait for a reconnection."
+msgstr "La machine %s est dans un état inconnu, aucune action à distance n'est possible. Merci d'attendre sa reconnexion."
+
+#: core/machines.py:1248
+#, python-format
+msgid "Host %s is offline, and cannot be powered on from here,Only from the machine itself."
+msgstr "La machine %s est éteinte. Elle ne peut pas être rallumée depuis l'interface."
+
+#: core/machines.py:1251
+#, python-format
+msgid "Host %s is going to sleep, it will be unavailable in a small period of time."
+msgstr "La machine %s est en train passer en veille, elle sera complètement indisponible d'ici peu."
+
+#: core/machines.py:1253
+#: core/machines.py:1259
+#: core/machines.py:1261
+#, python-format
+msgid "Shutdown the machine %s"
+msgstr "Éteindre la machine %s"
+
+#: core/machines.py:1255
+#, python-format
+msgid "Host %s is shutting down, it will be unavailable in a small period of time."
+msgstr "La machine %s est en train de s'éteindre, elle sera complètement indisponible d'ici peu."
+
+#: core/machines.py:1257
+#, python-format
+msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
+msgstr "La machine %s est allumé, sans contrôle à distance possible (Licorn© n'est pas installé dessus, ou pas lancé, ou injoignable)."
+
+#: core/machines.py:1314
+msgid "This machine has multiple network interfaces."
+msgstr "Cette machine a plusieurs interfaces réseaux et ses différentes adresses IP ont été regroupées."
+
+#: core/machines.py:1318
+msgid "This machine is a virtual computer."
+msgstr "Cette machine est un hôte virtuel de type VMWare®."
+
+#: core/machines.py:1322
+msgid "This machine runs an undetermined version of Linux®."
+msgstr "Cette machine tourne avec une version indéterminée de Linux®."
+
+#: core/machines.py:1327
+msgid "This machine is a META IT/Licorn® server."
+msgstr "Cette machine est un serveur META IT/Licorn® original."
+
+#: core/machines.py:1331
+msgid "This machine has Licorn® installed."
+msgstr "Cette machine est pourvue de Licorn®."
+
+#: core/machines.py:1335
+msgid "This machine is an ALT® client."
+msgstr "Cette machine est un client ALT® original."
+
+#: core/machines.py:1339
+msgid "This machine Debian installed."
+msgstr "Cette machine est installée sous Debian GNU/Linux."
+
+#: core/machines.py:1343
+msgid "This machine is Ubuntu installed."
+msgstr "Cette machine est installée sous Ubuntu."
+
+#: core/machines.py:1347
+msgid "This machine is manufactured by Apple® Computer Inc."
+msgstr "Cette machine est un produit Apple® Computer Inc."
+
+#: core/machines.py:1351
+msgid "This machine is a Freebox appliance."
+msgstr "Cette machine est une Freebox."
+
+#: core/machines.py:1355
+msgid "This machine is a network printer."
+msgstr "Cette machine est une imprimante réseau."
+
+#: core/machines.py:1359
+msgid "This machine is a network scanner."
+msgstr "Cette machine est un scanner en réseau."
+
+#: core/machines.py:1377
+msgid "Unmanage machine (remove it from configuration, in order to allow it to be managed by another server."
+msgstr "Détacher la machine (ne plus la gérer, c'est à dire supprimer sa configuration sur le serveur actuel, et la rendre disponible pour être accrochée à un autre serveur)."
+
+#: core/machines.py:1388
+msgid "Manage machine (fix its IP address and configure various aspects of the client)."
+msgstr "Accrocher la machine (fixer son adresse IP et configurer divers aspects de la machine, en stockant cette configuration sur le serveur)."
+
+#: core/machines.py:1410
+msgid "<unknown>"
+msgstr "<inconnu>"
+
+#: core/machines.py:1435
+#, python-format
+msgid "number of <strong>%s</strong> machines:"
+msgstr "nombre de machines <strong>%s</strong>&#160;:"
+
+#: core/machines.py:1448
+msgid "<strong>Total number of machines:</strong>"
+msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
+
+#~ msgid ""
+#~ "Manage network clients: computers, printers, switches and other network "
+#~ "enabled active systems."
+#~ msgstr ""
+#~ "Gérer les clients en réseau&#160;: ordinateurs, imprimantes, commutateurs "
+#~ "et tous les autres matériels actifs."
+#~ msgid ""
+#~ "Create a configuration record for a machine which is not yet on the "
+#~ "network."
+#~ msgstr ""
+#~ "Créer un enregistrement de configuration pour une machine qui n'est pas "
+#~ "encore sur le réseau."
+#~ msgid "Add a machine"
+#~ msgstr "Ajouter une machine"
+#~ msgid "Edit Energy &amp; power saving policies."
+#~ msgstr "Éditer les directives d'économie d'énergie."
+#~ msgid "Export current machines list to a CSV or XML file."
+#~ msgstr "Exporter les machines actuelles vers un fichier CSV ou XML."
+#~ msgid "Export this list"
+#~ msgstr "Exporter cette liste"
+#~ msgid "Failed to shutdown machine %s!"
+#~ msgstr "Impossible d'éteindre la machines %s&#160;!"
+#~ msgid ""
+#~ "You can shutdown all currently running and/or idle machines. This is a "
+#~ "quite dangerous operation, because users will be disconnected, and there "
+#~ "is a potential to loose unsaved work on idle machines (users are not in "
+#~ "front of them, they won't notice the system is shuting down.<br /><br /"
+#~ ">Systems will be shut down <strong>ONE minute</strong> after validation."
+#~ msgstr ""
+#~ "Vous pouvez éteindre toutes les machines actuellement actives et/ou "
+#~ "inutilisées. C'est une opération relativement dangereuse car les "
+#~ "utilisateurs vont être déconnectés, et il y a un risque qu'ils perdent "
+#~ "leur travail non sauvegardé (surtout sur les machines inactives, où les "
+#~ "utilisateurs ne sont pas en face de l'écran: ils ne verront pas le "
+#~ "système s'éteindre).<br /><br />Les machines seront éteintes <strong>UNE "
+#~ "minute</strong> après que vous en ayez donné l'ordre."
+#~ msgid "Failed to shutdown one or more machines!"
+#~ msgstr "Impossible d'éteindre une ou plusieurs machines&#160;!"
+#~ msgid "Remove machine %s's record"
+#~ msgstr "Supprimer l'enregistrement de la machine %s"
+#~ msgid ""
+#~ "Are you sure you want to remove record for machine <strong>%s</strong>?"
+#~ msgstr ""
+#~ "Êtes-vous sûr(e) de vouloir supprimer l'enregistrement de la machine "
+#~ "<strong>%s</strong>&#160;!"
+#~ msgid "Definitely remove record data (no archiving)."
+#~ msgstr ""
+#~ "Supprimer définitivement toutes les données liées à cet enregistrement "
+#~ "(pas d'archivage)."
+#~ msgid "Failed to remove record <strong>%s</strong>!"
+#~ msgstr "Impossible de supprimer l'enregistrement <strong>%s</strong>&#160;!"
+#~ msgid "New machine record"
+#~ msgstr "Nouvel enregistrement de machine"
+#~ msgid "This machine is a"
+#~ msgstr "Cette machine est un(e)"
+#~ msgid "New machine record %s"
+#~ msgstr "Nouvel enregistrement de machine %s"
+#~ msgid "Failed to create record <strong>%s</strong>!"
+#~ msgstr "Impossible de créer l'enregistrement <strong>%s</strong>&#160;!"
+#~ msgid ""
+#~ "Failed to add machine <strong>%s</strong> to requested\n"
+#~ "\t\tgroups/privileges/responsibilities/invitations!"
+#~ msgstr ""
+#~ "Impossible d'ajouter la machine <strong>%s</strong> aux groupes/"
+#~ "privilèges/invitations/responsabilités&#160;!"
+#~ msgid "Edit %s's record"
+#~ msgstr "Éditer l'enregistrement de %s"
+#~ msgid "<strong>mid</strong> (fixed)"
+#~ msgstr "<strong>Adresse IP</strong>"
+#~ msgid "Modification of %s's record"
+#~ msgstr "Modification de l'enregistrement %s"
+#~ msgid ""
+#~ "Failed to modify one or more parameters of record\n"
+#~ "\t\t <strong>%s</strong>!"
+#~ msgstr ""
+#~ "Impossible de modifier un ou plusieurs paramètres de l'enregistrement "
+#~ "<strong>%s</strong>&#160;!"
 #~ msgid "on %A %d %B %Y %H:%M"
 #~ msgstr "le %A %d %B %Y à %H:%M"
 #~ msgid ""

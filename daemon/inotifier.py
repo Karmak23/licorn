@@ -18,7 +18,8 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import filters, gamin_events
 from licorn.core                  import LMC
-from licorn.daemon                import priorities, aclcheck
+from licorn.daemon                import priorities, \
+											aclcheck_enqueue, aclcheck_wait
 
 class INotifier(Thread):
 	""" A Thread which collect INotify events and does what is appropriate with
@@ -314,7 +315,7 @@ class INotifier(Thread):
 					assert ltrace('inotifier', '''CHECK file %s.''' % (
 						stylize(ST_PATH, path)))
 					#self.daemon.threads.aclchecker.enqueue(path, gid)
-					aclcheck(priorities.NORMAL, self.aclcheck,
+					aclcheck_enqueue(priorities.NORMAL, self.aclcheck,
 								path=path, gid=gid, is_dir=False)
 
 			except (OSError, IOError), e:
@@ -336,10 +337,10 @@ class INotifier(Thread):
 						#self.expected[gamin.GAMCreated].append(path + '/')
 						# need it. Prepare ourselves to skip it.
 						self.expected[gamin.GAMChanged].append(path)
-					aclcheck(priorities.NORMAL, self.aclcheck,
+					aclcheck_enqueue(priorities.NORMAL, self.aclcheck,
 								path=path, gid=gid, is_dir=True)
 				else:
-					aclcheck(priorities.NORMAL, self.aclcheck,
+					aclcheck_enqueue(priorities.NORMAL, self.aclcheck,
 								path=path, gid=gid, is_dir=False)
 
 				#self.daemon.threads.aclchecker.enqueue(path, gid)
@@ -368,7 +369,7 @@ class INotifier(Thread):
 					stylize(ST_PATH, path)))
 
 				#self.daemon.threads.aclchecker.enqueue(path, gid)
-				aclcheck(priorities.NORMAL, self.aclcheck,
+				aclcheck_enqueue(priorities.NORMAL, self.aclcheck,
 							path=path, gid=gid, is_dir=os.path.isdir(path))
 
 		elif event == gamin.GAMMoved:

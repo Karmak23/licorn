@@ -871,7 +871,7 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 			("profile", _("Profile")),
 			("locked", _("Locked")) ):
 			if sortcolumn == sort:
-				data += '''			<th><img src="/images/sort_%s.gif"
+				data += '''			<th><img src="/images/sort_%s.png"
 					alt="%s order image" />&#160;
 					<a href="/users/list/%s/%s" title="%s">%s</a>
 					</th>\n''' % (order, order, sortcolumn, reverseorder,

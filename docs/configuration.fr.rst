@@ -37,9 +37,9 @@ Daemon Licornd
 --------------
 
 
-.. 	_licornd.network.enabled.fr:
+.. 	_licornd.network.lan_scan.fr:
 
-	**licornd.network.enabled**
+	**licornd.network.lan_scan**
 		Active ou désactive les fonctionnalités réseau *automagiques*, qui incluent la découverte des machines sur le :abbr:`LAN Local Area Network (=réseau local)`, la résolution DNS inverse des adresses IP des hôtes réseaux, la résolution ARP des adresses IP, et les notifications d'état récupérées par les serveurs Licorn® (fonctionnalité *server-based status polling*).
 
 		.. note:: même avec cette directive positionnée à ``licornd.network.enabled=False``, les connexions réseau au `daemon <daemon/index.fr>`_ sont toujours possibles, et autorisées. **Les connexions des clients Licorn® vers les serveurs** (synchronisation inter-serveurs, notifications d'état poussées depuis les clients, etc) **continuent donc de fonctionner**, quelquesoit la valeur de cette directive (en fait les clients ALT® ont besoin du serveur pour fonctionner, donc les connexions réseau doivent rester possibles).
