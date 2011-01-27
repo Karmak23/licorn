@@ -91,6 +91,10 @@ class WMIThread(LicornBasicThread):
 				listen_address if listen_address else '*',
 					LMC.configuration.licornd.wmi.port))))
 
+		host, port = self.httpd.socket.getsockname()[:2]
+		WMIHTTPRequestHandler.server_name = socket.getfqdn(host)
+		WMIHTTPRequestHandler.server_port = port
+
 		self.httpd.serve_forever()
 	def stop(self):
 		assert ltrace('http', 'WMIThread.stop()')
@@ -105,6 +109,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	#: each HTTP request.
 	wmi = None
 	ip_addresses = []
+	server_name = None
+	server_port = None
 	def do_HEAD(self):
 		try:
 			f = self.send_head()
@@ -353,6 +359,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 				client_address_base = self.client_address[0].rsplit('.', 1)[0]
 
+				# we default to server_name.
+				hostaddr = WMIHTTPRequestHandler.server_name
+
+				# if we can find something more precise, use it.
 				for ip in WMIHTTPRequestHandler.ip_addresses:
 					if ip.startswith(client_address_base):
 						try:
