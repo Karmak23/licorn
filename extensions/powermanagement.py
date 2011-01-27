@@ -27,13 +27,13 @@ from licorn.interfaces.wmi     import WMIObject
 
 from licorn.daemon             import priorities, service_enqueue
 
-class PowerManagementException(exceptions.LicornRuntimeException):
+class PowermanagementException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
 
 		.. versionadded:: 1.2.4
 	"""
 	pass
-class PowerManagementExtension(Singleton, LicornExtension, WMIObject):
+class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 	""" Handle energy and power-saving features on the local host, via multiple
 		methods.
 
