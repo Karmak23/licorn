@@ -571,21 +571,28 @@ class LicornDaemon(Singleton):
 					self.name, self.pid, stylize(ST_NAME, 'root'), e))
 	def __daemon_shutdown(self):
 		""" stop threads and clear pid files. """
+		try:
+			# before stopping threads (notably cmdlistener), we've got to announce
+			# out shutdown to peers, for them not to look for us in the future.
+			LMC.system.announce_shutdown()
 
-		# before stopping threads (notably cmdlistener), we've got to announce
-		# out shutdown to peers, for them not to look for us in the future.
-		LMC.system.announce_shutdown()
-
-		# we now have to wait, else we would terminate while we are announcing
-		# shutdown and this will imply some timeouts and (false negative)
-		# connection denied errors.
-		#
-		# NOTE: this could deadblock for other reasons (serviceQ very busy)
-		# but for now I hope not, else we would have to find a very
-		# complicated system, or make announce_shutdown() completely
-		# synchronous, which is not a problem per se but would remove
-		# parallelism from it and make announcing last sightly longer.
-		service_wait()
+			# we now have to wait, else we would terminate while we are announcing
+			# shutdown and this will imply some timeouts and (false negative)
+			# connection denied errors.
+			#
+			# NOTE: this could deadblock for other reasons (serviceQ very busy)
+			# but for now I hope not, else we would have to find a very
+			# complicated system, or make announce_shutdown() completely
+			# synchronous, which is not a problem per se but would remove
+			# parallelism from it and make announcing last sightly longer.
+			service_wait()
+		except AttributeError, e:
+			# this error arises when daemons kill each other. When I want to
+			# take over a TS backgrounded daemon with -rvD and my attached
+			# daemon gets rekilled immediately by another, launched by the TS.
+			# This is harmless, but annoying.
+			logging.warning('%s(%s): cannot announce shutdown '
+				'to remote hosts (was: %s)' % (self.name, self.pid, e))
 
 		self.__stop_threads()
 

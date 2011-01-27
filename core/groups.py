@@ -1661,7 +1661,7 @@ class GroupsController(Singleton, CoreController):
 
 		with self.lock():
 			with LMC.users.lock():
-				for gid in self.groups:
+				for gid in sorted(self.groups):
 					to_remove = set()
 
 					logging.progress('''Checking for dangling references in group %s.'''
