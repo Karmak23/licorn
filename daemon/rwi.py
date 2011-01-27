@@ -28,9 +28,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			NamedObject._licorn_protected_attrs
 			+ pyro_protected_attrs
 		)
-	def __init__(self):
+	def __init__(self, licornd):
 		NamedObject.__init__(self, name='rwi')
 		Pyro.core.ObjBase.__init__(self)
+		self.licornd = licornd
 		assert ltrace('rwi', '| RWIController.__init__()')
 	def output(self, text_message):
 		""" Output a text message remotely, in CLI caller process, whose
@@ -341,8 +342,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.output(LMC.groups.dump())
 			self.output(LMC.machines.dump())
 
-		from licorn.daemon.main import daemon
-		self.output(daemon.dump_status(opts.long, opts.precision))
+
+		self.output(self.licornd.dump_status(opts.long, opts.precision))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.

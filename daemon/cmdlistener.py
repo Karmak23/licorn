@@ -192,12 +192,17 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 class CommandListener(LicornBasicThread):
 	""" A Thread which answer to Pyro remote commands. """
 
-	def __init__(self, daemon, pids_to_wake=[], **kwargs):
+	def __init__(self, licornd, pids_to_wake=[], daemon=False, **kwargs):
 		assert ltrace('cmdlistener', '| CommandListener.__init__()')
 
-		LicornBasicThread.__init__(self, daemon.dname, 'cmdlistener')
+		LicornBasicThread.__init__(self, licornd.dname, 'cmdlistener')
 
+		# the thread attribute
 		self.daemon       = daemon
+
+		# my Licorn® daemon
+		self.licornd      = licornd
+
 		self.pids_to_wake = pids_to_wake
 		self.wake_threads = []
 
@@ -296,7 +301,7 @@ class CommandListener(LicornBasicThread):
 
 			# Used by CLI.
 			self.uris['rwi'] = self.pyro_daemon.connect(
-				RealWorldInterface(), 'rwi')
+				RealWorldInterface(self.licornd), 'rwi')
 
 			# for other daemons (cluster ?)
 			self.uris['machines'] = self.pyro_daemon.connect(

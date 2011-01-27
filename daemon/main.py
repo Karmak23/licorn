@@ -94,7 +94,7 @@ class LicornDaemon(Singleton):
 			# why there's a first pass.
 			LMC.init_client_first_pass()
 
-			self.threads.cmdlistener = CommandListener(self,
+			self.threads.cmdlistener = CommandListener(licornd=self,
 												pids_to_wake=self.pids_to_wake)
 			self.threads.cmdlistener.start()
 
@@ -104,7 +104,7 @@ class LicornDaemon(Singleton):
 
 		else:
 			LMC.init_server()
-			self.threads.cmdlistener = CommandListener(self,
+			self.threads.cmdlistener = CommandListener(licornd=self,
 												pids_to_wake=self.pids_to_wake)
 			self.threads.cmdlistener.start()
 
