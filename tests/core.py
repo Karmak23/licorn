@@ -9,16 +9,19 @@ Copyright (C) 2010 Robin Lucbernet <rl@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, curses, re, hashlib, tempfile, termios, fcntl, struct, stat, shutil
-import gzip, time
+import sys, os, curses, re, hashlib, tempfile, termios
+import gzip, time, fcntl, struct, stat, shutil
+
+from gettext                   import gettext as _
+from optparse                  import OptionParser
 from subprocess                import Popen, PIPE, STDOUT
+from traceback                 import print_exc
 
-from licorn.foundations        import pyutils, logging, exceptions, process, fsapi
+from licorn.foundations        import pyutils, logging, exceptions
+from licorn.foundations        import process, fsapi
 from licorn.foundations.styles import *
-
-from licorn.core import LMC
-from licorn.tests import *
-from optparse import OptionParser
+from licorn.core               import LMC
+from licorn.tests              import *
 
 LMC.connect()
 configuration = LMC.configuration
@@ -110,14 +113,14 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 
 	if verb:
 		sys.stderr.write(output)
-def execute(cmd, verbose=verbose):
-	if verbose:
+def execute(cmd, verbose=verbose, interactive=False):
+	if verbose and interactive:
 		logging.notice('running %s.' % ' '.join(cmd))
 	p4 = Popen(cmd, shell=False,
 		  stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
 	output = p4.stdout.read()
 	retcode = p4.wait()
-	if verbose:
+	if verbose and interactive:
 		sys.stderr.write(output)
 	return output, retcode
 def strip_moving_data(output):
@@ -137,12 +140,24 @@ def strip_moving_data(output):
 			))))))
 class ScenarioTest:
 	counter = 0
-	def __init__(self, cmds, context='std', descr=None):
+	def __init__(self, cmds, context='std', descr=None, clean_num=0):
 
 		self.context = context
 		self.counter=None
 		self.sce_number = ScenarioTest.counter
 		self.descr = descr
+
+		# the number of commands, starting from the end of the scenario,
+		# that must be run to consider the scenario data has been cleaned
+		# from the system.
+		self.clean_num = clean_num
+
+		self.status     = sce_status.NOT_STARTED
+		self.failed_cmd = -1
+
+		# used from the outside to know the current sce status
+		self.current_cmd = 0
+
 		# we have to give a unique number to commands in case they are repeated.
 		# this is quite common, to test commands twice (the second call should
 		# fail in that case).
@@ -163,27 +178,100 @@ class ScenarioTest:
 			self.cmds[self.cmd_counter] = cmd
 			self.cmd_counter += 1
 
+		# used from the inside and the outside to display the current status.
+		self.total_cmds = len(self.cmds)
+
 		string_to_hash = "%s%s" % (self.context, str(cmds))
 		self.hash = hashlib.sha1(string_to_hash).hexdigest()
 		self.base_path = 'data/scenarii/%s' % self.hash
 	def set_number(self, num):
 		self.counter = num
+	def check_failed_command(self):
+		""" Check failed command interactively.
+
+			Uses:
+
+			* self.failed_cmd (int)
+			* self.current_output (str)
+			* self.current_retcode (int)
+
+		"""
+		#clear_term()
+
+		try:
+			ref_output, ref_code, gz_file = self.load_output(self.failed_cmd)
+		except exceptions.DoesntExistsException:
+
+			logging.notice(_('no reference output for {sce_name}, '
+				'cmd #{cmd_num}/{total_cmds}:'
+				'\n\n{highlight_cmds}\n\n{run_output}').format(
+					sce_name=self.name,
+					cmd_num=stylize(ST_OK, self.failed_cmd+1),
+					total_cmds=stylize(ST_OK, self.total_cmds),
+					highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
+					run_output=self.current_output)
+				)
+
+			if logging.ask_for_repair(_('is this output good to keep as '
+				'reference for future runs?')):
+				# Save the output AND the return code for future
+				# references and comparisons
+				self.SaveOutput(self.failed_cmd,
+									self.current_output, self.current_retcode)
+				return True
+			else:
+				return False
+		else:
+			# we must diff the failed command with its previous output.
+			handle, tmpfilename = tempfile.mkstemp(
+				prefix=clean_path_name(self.cmds[self.failed_cmd]))
+			if gz_file:
+				handle2, tmpfilename2 = tempfile.mkstemp(
+					prefix=clean_path_name(self.cmds[self.failed_cmd]))
+				open(tmpfilename2, 'w').write(ref_output)
+			open(tmpfilename, 'w').write(self.current_output)
+			diff_output = process.execute(['diff', '-u',
+				tmpfilename2 if gz_file else
+					'%s/%s/out.txt' % (self.base_path, self.failed_cmd),
+				tmpfilename])[0]
+
+			logging.warning(_('command #{cmd_num}/{total_cmds} failed '
+				'(sce#{sce_num}, ctx {context}). '
+				'Retcode {ret_code} (ref {ref_code}).'
+				'\n\n{highlight_cmds}\n\n{diff_output}').format(
+				cmd_num=stylize(ST_OK, self.failed_cmd+1),
+				total_cmds=stylize(ST_OK, self.total_cmds),
+				sce_num=stylize(ST_OK, self.sce_number+1),
+				context=stylize(ST_OK, self.context),
+				ret_code=stylize(ST_BAD, self.current_retcode),
+				ref_code=stylize(ST_OK, ref_code),
+				highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
+				diff_output=diff_output))
+			if logging.ask_for_repair(_('Should I keep the new return code '
+							'and trace as reference for future runs?')):
+				self.SaveOutput(self.failed_cmd,
+								self.current_output, self.current_retcode)
+				return True
+			else:
+				return False
 	def check_for_context(self):
 		""" check if the scenario's context is the same than the user. """
 		changed = False
 		if self.context == 'shadow' and str(testsuite.current_context) != 'shadow':
 			execute([ 'mod', 'config', '-B', 'openldap'])
-			test_message("Backend changed to UNIX")
+			if self.interactive:
+				test_message(_("Backend changed to shadow"))
 			testsuite.current_context = 'shadow'
 			changed = True
 		if self.context == 'openldap' and str(testsuite.current_context) != 'openldap':
 			execute([ 'mod', 'config', '-b', 'openldap'])
-			test_message("Backend changed to LDAP")
+			if self.interactive:
+				test_message(_("Backend changed to OpenLDAP"))
 			testsuite.current_context = 'openldap'
 			changed = True
+
 		if changed:
 			time.sleep(2.5)
-
 	def SaveOutput(self, cmdnum, output, code):
 		try:
 			os.makedirs('%s/%s' % (self.base_path, cmdnum))
@@ -239,143 +327,137 @@ class ScenarioTest:
 				break
 
 		return data
-	def RunCommand(self, cmdnum, batch=False):
-
-		if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
-			if os.path.exists('%s/%s/out.txt.gz' % (self.base_path, cmdnum)):
-				ref_output = gzip.open('%s/%s/out.txt.gz' %
-					(self.base_path, cmdnum), 'r').read()
-				gz_file = True
-			else:
-				ref_output = open('%s/%s/out.txt' %
-					(self.base_path, cmdnum)).read()
-				gz_file = False
-
-			ref_code = int(
-				open('%s/%s/code.txt' % (self.base_path, cmdnum)).read()
-				)
-			output, retcode = execute(self.cmds[cmdnum])
-			output = strip_moving_data(output)
-
-			if retcode != ref_code or ref_output != output:
-
-				clear_term()
-
-				handle, tmpfilename = tempfile.mkstemp(
-					prefix=clean_path_name(self.cmds[cmdnum]))
-				if gz_file:
-					handle2, tmpfilename2 = tempfile.mkstemp(
-						prefix=clean_path_name(self.cmds[cmdnum]))
-					open(tmpfilename2, 'w').write(ref_output)
-				open(tmpfilename, 'w').write(output)
-				diff_output = process.execute(['diff', '-u',
-					tmpfilename2 if gz_file else
-						'%s/%s/out.txt' % (self.base_path, cmdnum),
-					tmpfilename])[0]
-
-				logging.warning(
-					'''command #%s/%s failed (sce#%s, ctx %s). Retcode %s '''
-					'''(ref %s).
-
-%s
-
-%s''' % (
-					stylize(ST_OK, cmdnum+1), stylize(ST_OK, len(self.cmds)),
-					stylize(ST_OK, self.sce_number+1),
-					stylize(ST_OK, self.context),
-					stylize(ST_BAD, retcode),
-					stylize(ST_OK, ref_code),
-					self.show_commands(highlight_num=cmdnum),
-					diff_output))
-				if batch or logging.ask_for_repair('''Should I keep the new '''
-					'''return code and trace as reference for future runs?'''):
-					self.SaveOutput(cmdnum, output, retcode)
+	def load_output(self, cmdnum):
+		try:
+			if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
+				if os.path.exists('%s/%s/out.txt.gz' % (self.base_path, cmdnum)):
+					ref_output = gzip.open('%s/%s/out.txt.gz' %
+						(self.base_path, cmdnum), 'r').read()
+					gz_file = True
 				else:
-					raise exceptions.LicornRuntimeException(
-						'command "%s" failed.\nPath: %s.' % (
-							testsuite.cmdfmt(self.cmds[cmdnum]), '%s/%s/*' % (
-								self.base_path, cmdnum)))
-			else:
-				logging.notice('command #%d "%s" completed successfully.' % (
-				cmdnum+1, testsuite.cmdfmt(self.cmds[cmdnum])))
+					ref_output = open('%s/%s/out.txt' %
+						(self.base_path, cmdnum)).read()
+					gz_file = False
+
+				ref_code = int(
+					open('%s/%s/code.txt' % (self.base_path, cmdnum)).read()
+					)
+				return ref_output, ref_code, gz_file
+		except Exception, e:
+			logging.warning(_('Exception {exc} while loading output of '
+				'cmd {cmd}, sce {sce}. Traceback follows, '
+				'raising DoesntExistException').format(
+				exc=e, cmd=cmdnum, sce=self.name
+				)
+			)
+			print_exc()
+		raise exceptions.DoesntExistsException(
+								'problem loading data of command %s' % cmdnum)
+
+		raise exceptions.DoesntExistsException(
+								'no data yet for command %s' % cmdnum)
+	def RunCommand(self, cmdnum):
+		try:
+			ref_output, ref_code, gz_file = self.load_output(cmdnum)
+		except exceptions.DoesntExistsException:
+			output, self.current_retcode = execute(self.cmds[cmdnum],
+													interactive=self.interactive)
+			self.current_output = strip_moving_data(output)
+			return False
+
 		else:
-			clear_term()
+			output, self.current_retcode = execute(self.cmds[cmdnum],
+													interactive=self.interactive)
+			self.current_output = strip_moving_data(output)
 
-			output, retcode = execute(self.cmds[cmdnum])
-
-			logging.notice('''no reference output for %s, cmd #%s/%s:'''
-				'''\n\n%s\n\n%s'''
-				% (
-					self.name,
-					stylize(ST_OK, cmdnum+1), stylize(ST_OK, len(self.cmds)),
-					self.show_commands(highlight_num=cmdnum),
-					strip_moving_data(output)))
-
-			if logging.ask_for_repair('''is this output good to keep as '''
-				'''reference for future runs?'''):
-				# Save the output AND the return code for future
-				# references and comparisons
-				self.SaveOutput(cmdnum, output, retcode)
-				# return them for current test, strip_dates to avoid an
-				# immediate false negative.
-				#return (strip_moving_data(output), retcode)
+			if self.current_retcode == ref_code \
+									and  self.current_output == ref_output:
+				return True
 			else:
-				logging.error('''you MUST have a reference output; please '''
-					'''fix code or rerun this test.''')
-	def Run(self, options=[], batch=False, inverse_test=False):
+				return False
+	def Run(self, options=[], interactive=False):
 		""" run each command of the scenario, in turn. """
-		logging.notice('Running %s' % stylize(ST_NAME, self.name))
+
+		self.interactive = interactive
+
+		if self.interactive:
+			logging.notice(_('Running %s in interactive mode.') %
+					stylize(ST_NAME, self.name))
+
 		self.check_for_context()
+
+		#print '>> entering with ', sce_status[self.status], self.name
+
+		if self.status == sce_status.NOT_STARTED:
+			self.clean()
+			start = 0
+
+		elif self.status == sce_status.FAILED:
+			if self.clean_num:
+				# the scenario has been cleaned by necessity, we must restart.
+				self.check_failed_command()
+				self.status = sce_status.NOT_STARTED
+				#print '>> not started', self.name
+				return
+
+			else:
+				# the scenario has no clean command, its just integrity or
+				# unit test, we can continue from the failed cmd. if it
+				# succeeds, continue from next; if it fails, rerun until
+				# success.
+				if self.check_failed_command():
+					start = self.failed_cmd + 1
+				else:
+					start = self.failed_cmd
+
+		elif self.status == sce_status.PASSED:
+			if self.interactive:
+				logging.warning(_('Already passed scenario %s') % self.name)
+			#print '>> passed', self.name
+			return
+
+		#print '>> running', self.name
+
+		self.status = sce_status.RUNNING
+
 		for cmdnum in self.cmds:
-			self.RunCommand(cmdnum)
-		logging.notice('End run %s' % stylize(ST_NAME, self.name))
-def clean_system():
-	""" Remove all stuff to make the system clean, testsuite-wise."""
-	test_message('''cleaning system from previous runs.''')
-	# delete them first in case of a previous failed testsuite run.
-	# don't check exit codes or such, this will be done later.
-	for argument in (
-		['user', '''toto,tutu,tata,titi,test,utilisager.normal,'''
-			'''test.responsibilly,utilicateur.accentue,user_test,'''
-			'''grp-acl-user,utest_267,user_test2,user_test3,user_testsys,'''
-			'''user_testsys2,user_testsys3,user_test_DEBIAN,usertestdebian,'''
-			'''robin.lucbernet,nibor,nibor2,nibor.tenrebcul,tenrebcul,'''
-			'''tenrebcul2,utest,utest1,utest2,utest3,utest4,ingroups_test1,'''
-			'''ingroups_test2,ingroups_test3,ingroups_test4,u440''',
-			 '--no-archive', '-v' ],
-		['profile', '''utilisagers,responsibilisateurs,'''
-			'''profil_test''',
-			'--del-users', '--no-archive', '-v' ],
-		['group', '''test_users_A,test_users_B,groupeA,B-Group_Test,'''
-			'''groupe_a_skel,ACL_tests,MOD_tests,SYSTEM-test,SKEL-tests,'''
-			'''ARCHIVES-test,group_test,group_testsys,group_test2,'''
-			'''group_test3,GRP-ACL-test,gtest_267,group_test4,ce1,ce2,cm2,'''
-			'''cp,gtest,gtest1,gtest2,gtest3,gtest4,profil_test,'''
-			'''sysgroup_test,sys2group_test,g440''',
-			'--no-archive', '-v' ],
-		['privilege', '--name=group_test', '-v' ]
-		):
-		execute(DEL + argument)
-		execute([ 'rm', '-rf', '/home/usertestdebian' ])
 
-	# remove scorias from sed on /etc/group
-	execute(CHK + [ 'groups', '-aevb' ])
+			# just for the display, we need to start from 1, not 0
+			self.current_cmd = cmdnum+1
 
-	for directory in (
-		configuration.home_backup_dir,
-		configuration.home_archive_dir
-		):
-		clean_dir_contents(directory)
-	execute(ADD + ['group', '--system', 'acl,admins,remotessh,licorn-wmi'])
-	test_message('''system cleaned from previous testsuite runs.''')
+			if not self.RunCommand(cmdnum):
+				self.status      = sce_status.FAILED
+				self.failed_cmd  = cmdnum
+				self.current_cmd = None
+				if self.interactive:
+					logging.notice(_('Checking FAILED cmd %s of scenario %s') % (
+						stylize(ST_NAME, self.name), cmdnum))
+				self.clean()
+				#print '>> failed', self.name
+				return
+
+		# no need to clean() now, clean commands are part of the scenario,
+		# they have already been run if everything went fine.
+		#self.clean()
+		#print '>> passed end', self.name
+		self.status = sce_status.PASSED
+		if self.interactive:
+			logging.notice('End run %s' % stylize(ST_NAME, self.name))
+	def clean(self):
+		""" execute clean commands without bothering on their output. """
+		for cmdnum in sorted(self.cmds.keys())[-self.clean_num:]:
+			#  don't call RunCommand(), it would overwrite the self.current_*
+			# of the last failed command, if any.
+			execute(self.cmds[cmdnum], interactive=False)
+		return True
 def clean_dir_contents(directory):
 	""" Totally empty the contents of a given directory, the licorn way. """
 	if verbose:
-		test_message('Cleaning directory %s.' % directory)
+		test_message(_('Cleaning directory %s.') % directory)
 
 	def delete_entry(entry):
 		if verbose:
-			logging.notice('Deleting %s.' % entry)
+			logging.notice(_('Deleting %s.') % entry)
 
 		if os.path.isdir(entry):
 			shutil.rmtree(entry)
@@ -385,7 +467,7 @@ def clean_dir_contents(directory):
 	map(delete_entry, fsapi.minifind(directory, mindepth=1, maxdepth=2))
 
 	if verbose:
-		test_message('Cleaned directory %s.' % directory)
+		test_message(_('Cleaned directory %s.') % directory)
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
@@ -406,11 +488,11 @@ def make_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message('''Backed up system files for context %s.''' %
-		mode)
+	test_message(_('Backed up system files for context %s.') % mode)
 def compare_delete_backups(mode):
 	""" """
-	test_message('''comparing backups of system files after tests for side-effects alterations.''')
+	test_message(_('Comparing backups of system files after tests '
+		'for side-effects alterations.'))
 
 	if mode == 'shadow':
 		for file in system_files:
@@ -430,7 +512,7 @@ def compare_delete_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message('''system config files backup comparison finished successfully.''')
+	test_message(_('System config files backup comparison finished successfully.'))
 def test_integrated_help():
 	"""Test extensively argmarser contents and intergated help."""
 
@@ -593,8 +675,7 @@ def test_groups(context):
 		descr='''create group, verify ACL, '''
 			'''try to create again in short mode, '''
 			'''remove various components then check, '''
-			'''then delete group and try to re-delete.'''
-		))
+			'''then delete group and try to re-delete.''', clean_num=2))
 
 	gname = 'ACL_tests'
 
@@ -657,7 +738,7 @@ def test_groups(context):
 				],
 				descr='''Various ACLs tests on groups, '''
 					'''with various and combined options''',
-				context=context))
+				context=context, clean_num=1))
 
 	gname = 'MOD_tests'
 
@@ -673,9 +754,9 @@ def test_groups(context):
 		],
 		descr='''modify with a non-existing profile, re-make not-permissive, '''
 			'''make permissive.''',
-		context=context))
+		context=context, clean_num=1))
 
-	gname = 'SYSTEM-test'
+	gname = 'SYSTEM-test1'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', "--name=%s" % gname, "--system" ],
@@ -686,12 +767,14 @@ def test_groups(context):
 		CHK + [ "group", "-v", "--name=%s" % gname ]
 		],
 		descr='''add --system, check, delete and recheck.''',
-		context=context))
+		context=context, clean_num=3))
+
+	gname = 'SYSTEM-test2'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '--gid=1520' ],
 		GET + [ 'groups', '-la' ],
-		DEL + ["group", gname ],
+		DEL + ["group", gname, '--no-archive' ],
 		GET + [ 'groups', '-la' ],
 		ADD + [ 'group', gname, '--gid=15200', '--system' ],
 		GET + [ 'groups', '-la' ],
@@ -703,7 +786,8 @@ def test_groups(context):
 		GET + [ 'groups', '-la' ]
 		],
 		context=context,
-		descr='''ADD and DEL groups with fixed GIDs (ONE should fail).'''))
+		descr='''ADD and DEL groups with fixed GIDs (TWO should fail).''',
+		clean_num=2))
 
 	gname = 'SKEL-tests'
 
@@ -715,7 +799,7 @@ def test_groups(context):
 		GET + [ 'groups', '-la' ]
 		],
 		descr='''ADD group with specified skel and descr''',
-		context=context))
+		context=context, clean_num=2))
 
 	gname = 'ARCHIVES-test'
 
@@ -737,18 +821,15 @@ def test_groups(context):
 			gname) ],
 		CHK + [ "group", "-vb", gname ],
 		DEL + [ 'group', gname ],
-		[ 'find', configuration.home_archive_dir ],
-		[ 'getfacl', '-R', configuration.home_archive_dir ]
 		],
 		context=context,
 		descr='''verify the --archive option of DEL group and check on '''
-				'''shared dir contents, ensure #256 if off.'''
-		))
+				'''shared dir contents, ensure #256 if off.''', clean_num=1))
 
 	clean_dir_contents(configuration.home_archive_dir)
 
-	uname = 'user_test'
-	gname = 'group_test'
+	uname = 'user_test1'
+	gname = 'group_test1'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--login=%s' % uname ],
@@ -758,13 +839,16 @@ def test_groups(context):
 		GET + [ 'users', '--long' ],
 		DEL + [ 'group', '--name=%s' % gname ],
 		GET + [ 'groups' ],
-		GET + [ 'users', '--long' ],
-		DEL + [ 'user', '--login=%s' % uname ]
+		DEL + [ 'user', '--login=%s' % uname ],
+		GET + [ 'users', '--long' ]
 		],
 		context=context,
 		descr='''check if a user is assigned to a specified group and if'''
-				''' the user list is up to date when the group is deleted.'''
-		))
+				''' the user list is up to date when the group is deleted.''',
+		clean_num=4))
+
+	uname = 'u259'
+	gname = 'g259'
 
 	#fix #259
 	testsuite.add_scenario(ScenarioTest([
@@ -776,9 +860,11 @@ def test_groups(context):
 		DEL + [ 'group', '--name=%s' % gname ],
 		],
 		context=context,
-		descr='''check the message when a group (wich group dir has been '''
-			'''deleted) is deleted (avoids #259).'''
-		))
+		descr='check the message when a group (wich group dir has been '
+			'deleted) is deleted (avoids #259).', clean_num=1))
+
+	uname = 'u262'
+	gname = 'g262'
 
 	testsuite.add_scenario(ScenarioTest([
 		# should fail because gid 50 is "staff" on debian systems.
@@ -805,8 +891,8 @@ def test_groups(context):
 		DEL + [ 'group', '%s2,%s3' % (gname, gname), '--no-archive' ],
 		],
 		context=context,
-		descr='''check if add 2 groups with same GID produce an error (avoid #262)'''
-		))
+		descr='''check if add 2 groups with same GID produce an '''
+			'''error (avoid #262)''', clean_num=2))
 
 	uname = 'grp-acl-user'
 	gname = 'GRP-ACL-test'
@@ -832,9 +918,7 @@ def test_groups(context):
 		DEL + [ 'group', gname ],
 		DEL + [ 'user', uname ]
 		],
-		context=context,
-		descr='''avoid #268'''
-		))
+		context=context, descr='''avoid #268''', clean_num=2))
 
 	# don't test this one on other context than Unix. The related code is
 	# generic (doesn't lie in backends) and the conditions to reproduce it are
@@ -871,27 +955,25 @@ def test_groups(context):
 			DEL + [ 'user', uname ],
 			DEL + [ 'group', gname ]
 			],
-			context=context,
-			descr='''avoid #267'''
-			))
+			context=context, descr='''avoid #267''', clean_num=2))
 
 	#fix #297
-	gname = 'group_test'
+	gname = 'g297'
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '--system', '-v' ],
 		[ 'get', 'group', gname ],
 		ADD + [ 'privileges', '--name=%s' % gname, '-v'],
 		GET + [ 'privileges' ],
 		DEL + [ 'group', '--name=%s' % gname, '-v' ],
-		[ 'get', 'groups', gname ],
+		GET + [ 'groups', gname ],
 		GET + [ 'privileges' ]
 		],
 		context=context,
 		descr='''Check if privilege list is up to date after group deletion '''
-			'''(fix #297).'''
-		))
+			'''(fix #297).''', clean_num=3))
 
 	#fix #293
+	gname = 'g293'
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '--gid=15200', '-v' ],
 		# should fail (gid already in use)
@@ -906,10 +988,11 @@ def test_groups(context):
 		DEL + [ 'group', '--name=%ssys' % gname, '-v' ],
 		],
 		context=context,
-		descr='''tests of groups commands with --gid option (fix #293)'''
-		))
+		descr='''tests of groups commands with --gid option (fix #293)''',
+		clean_num=2))
 
 	# fix #286
+	gname = 'g286'
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
 		GET + [ 'groups' ],
@@ -929,11 +1012,13 @@ def test_groups(context):
 		GET + [ 'group', '0', '-l' ],
 		GET + [ 'group', '1' ],
 		GET + [ 'group', '1', '-l' ],
-		GET + [ 'groups' ]
+		GET + [ 'groups' ],
+		DEL + [ 'group', gname, '--no-archive' ],
 		],
 		context=context,
-		descr='''test command get group <gid|group> (fix #286)'''
-		))
+		descr='''test command get group <gid|group> (fix #286)''', clean_num=1))
+
+	gname = 'ginteractive'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-v' ],
@@ -970,10 +1055,12 @@ def test_groups(context):
 		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv', '--batch' ],
 		],
 		context=context,
-		descr="test groups interactive commands"
-		))
+		descr="test groups interactive commands", clean_num=3))
+
+	gname = 'gmultibackend'
 
 	if context == 'openldap':
+
 		# there must be more than one backend for this to work.
 		testsuite.add_scenario(ScenarioTest([
 			ADD + [ 'group', '--name=%s' % gname, '-v',
@@ -1010,8 +1097,7 @@ def test_groups(context):
 			],
 			context=context,
 			descr='test add group in manually specified backend and group'
-				'backend move.'
-			))
+				'backend move.', clean_num=1))
 	else:
 		testsuite.add_scenario(ScenarioTest([
 			ADD + [ 'group', '--name=%s' % gname, '-v', '--backend', context ]
@@ -1020,7 +1106,8 @@ def test_groups(context):
 			descr='test add group in manually specified backend (should fail).'
 			))
 
-	# this test will fail if there is only one backend, but will succeed if more.
+	gname = 'gmultibackend2'
+
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v',
 			'--users', 'toto,proot' ],
@@ -1040,8 +1127,7 @@ def test_groups(context):
 		DEL + [ 'group', gname]
 		],
 		context=context,
-		descr='''test add group --users flag.'''
-		))
+		descr='''test add group --users flag.''', clean_num=1))
 
 	gname = 'g440'
 	uname = 'u440'
@@ -1069,9 +1155,7 @@ def test_groups(context):
 		],
 		context=context,
 		descr='enforce #440 checks (mutual-exclusions for rsp-std-gst '
-			'group memberships)'
-		))
-
+			'group memberships)', clean_num=2))
 
 	# TODO: test other mod group arguments.
 
@@ -1095,8 +1179,9 @@ def test_users(context):
 	def chk_acls_cmds(dir):
 		return [ 'getfacl', '-R', dir ]
 
-	uname = 'user_test'
-	gname = 'group_test'
+	uname = 'ushell1'
+	gname = 'gshell1'
+	pname = 'pshell1'
 
 	"""Test ADD/MOD/DEL on user accounts in various ways."""
 
@@ -1112,8 +1197,11 @@ def test_users(context):
 		],
 		context=context,
 		descr='''check if a user can be modified with an incorrect shell and '''
-			'''with a correct shell'''
-		))
+			'''with a correct shell''', clean_num=1))
+
+	uname = 'u273275'
+	gname = 'g273275'
+	pname = 'p273275'
 
 	# fix #275
 	testsuite.add_scenario(ScenarioTest([
@@ -1131,12 +1219,15 @@ def test_users(context):
 		# should fail (already taken)
 		ADD + [ 'user', '--login=%ssys3' % uname, '--system', '--uid=1' ],
 		GET + [ 'users', '-a' ],
-		DEL + [ 'user', '--login=%s' % uname ],
-		DEL + [ 'user', '--login=%ssys' % uname ],
+		DEL + [ 'user', '%s,%s2,%s3,%ssys,%ssys2,%ssys3' % (
+			uname,uname,uname,uname,uname,uname), '--no-archive' ],
 		],
 		context=context,
-		descr='''User tests with --uid option (avoid #273)'''
-		))
+		descr='''User tests with --uid option (avoid #273)''', clean_num=1))
+
+	uname = 'u286'
+	gname = 'g286'
+	pname = 'p286'
 
 	# fix #286
 	testsuite.add_scenario(ScenarioTest([
@@ -1159,10 +1250,14 @@ def test_users(context):
 		GET + [ 'user', '1' ],
 		GET + [ 'user', '1', '-l' ],
 		GET + [ 'users' ],
+		DEL + [ 'user', uname, '--no-archive' ]
 		],
 		context=context,
-		descr='''test command get user <uid|user> (fix #286)'''
-		))
+		descr='test command get user <uid|user> (fix #286)', clean_num=1))
+
+	uname = 'u284'
+	gname = 'g284'
+	pname = 'p284'
 
 	#fix #284
 	testsuite.add_scenario(ScenarioTest([
@@ -1176,8 +1271,11 @@ def test_users(context):
 		],
 		context=context,
 		descr='''test add user with --firstname and --lastname options '''
-			'''(fix #284)'''
-		))
+			'''(fix #284)''', clean_num=2))
+
+	uname = 'u182181197'
+	gname = 'g182181197'
+	pname = 'p182181197'
 
 	#fix #182
 	testsuite.add_scenario(ScenarioTest([
@@ -1195,14 +1293,17 @@ def test_users(context):
 		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname,
 			'--del-groups=%s2,%s3' % (gname, gname) ],
 		GET + [ 'user', uname, '--long' ],
-		DEL + [ 'group', '--name=%s' % gname, '-v' ],
-		DEL + [ 'group', '--name=%s2' % gname, '-v' ],
-		DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname, gname, gname), '-v',
+															'--no-archive' ],
 		DEL + [ 'user', '--login=%s' % uname, '-v' ],
 		],
 		context=context,
-		descr='''modify one or more parameters of a user (avoid #181 #197)'''
-		))
+		descr='''modify one or more parameters of a user (avoid #181 #197)''',
+		clean_num=2))
+
+	uname = 'u248'
+	gname = 'g248'
+	pname = 'p248'
 
 	#fix #248
 	testsuite.add_scenario(ScenarioTest([
@@ -1215,12 +1316,15 @@ def test_users(context):
 			'--home=/home/folder_test', '-v' ],
 		chk_acls_cmds('/home/folder_test'),
 		GET + [ 'users', '-a', '%ssys' %uname, '--long' ],
-		DEL + [ 'user', uname ],
-		DEL + [ 'user', '%ssys' %uname ],
+		DEL + [ 'user', '%s,%ssys' % (uname, uname) ],
 		],
 		context=context,
-		descr='''check option --home of user command (fix #248)'''
-		))
+		descr='''check option --home of user command (fix #248)''',
+		clean_num=1))
+
+	uname = 'u309'
+	gname = 'g209'
+	pname = 'p209'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--login=%s' % uname ],
@@ -1237,22 +1341,23 @@ def test_users(context):
 		],
 		context=context,
 		descr='''check messages of --lock and --unlock on mod user command '''
-			'''and answer of get user --long (avoid #309)'''
-		))
+			'''and answer of get user --long (avoid #309)''', clean_num=1))
 
-	pname = 'profil_test'
+	uname = 'u277'
+	gname = 'g277'
+	pname = 'p277'
+
 	testsuite.add_scenario(ScenarioTest([
-		ADD + [ 'profile', '--name', 'Profil-Test-Name', '--group=profil_test',
+		ADD + [ 'profile', '--name', pname, '--group=%s' % gname,
 			'-v' ],
 		GET + [ 'profiles' ],
 		ADD + [ 'user', '--login=%s' % uname, '--profile=%s' % pname, '-v' ],
 		GET + [ 'users', uname, '--long' ],
-		DEL + [ 'profile', '--group=%s' % pname, '--del-users', '-v' ],
+		DEL + [ 'profile', '--group=%s' % gname, '--del-users', '-v' ],
 		],
 		context=context,
 		descr='''Add a profil and check if it has been affected to a new '''
-			'''user (avoid #277)'''
-		))
+			'''user (avoid #277)''', clean_num=1))
 
 	fname = 'nibor'
 	lname = 'tenrebcul'
@@ -1270,16 +1375,16 @@ def test_users(context):
 		ADD + [ 'user', '--firstname=%s2' % fname, '--lastname=', '-v' ],
 		ADD + [ 'user', '--firstname=', '--lastname=%s2' % lname, '-v' ],
 		ADD + [ 'user', '--firstname=', '--lastname=%s2' % lname, '-v' ],
-		DEL + [ 'user', '--login=%s.%s' % (fname, lname), '-v' ],
-		DEL + [ 'user', '--login=%s' % fname, '-v' ],
-		DEL + [ 'user', '--login=%s' % lname, '-v' ],
-		DEL + [ 'user', '--login=%s2' % lname, '-v' ],
-		DEL + [ 'user', '--login=%s2' % fname, '-v' ],
+		DEL + [ 'user', '%s.%s,%s,%s,%s2,%s2' % (
+			fname, lname, fname, lname, fname, lname), '-v', '--no-archive'],
 		],
 		context=context,
 		descr='''check add user with --firstname and --lastname (avoid #303 '''
-			'''#305)'''
-		))
+			'''#305)''', clean_num=1))
+
+	uname = 'u184'
+	gname = 'g184'
+	pname = 'p184'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', uname, '--password=toto', '-v' ],
@@ -1290,13 +1395,11 @@ def test_users(context):
 		GET + [ 'users' ],
 		MOD + [ 'user', uname, '-P', '-S 128', '-v' ],
 		MOD + [ 'user', uname, '-p totototo', '-v' ],
-		DEL + [ 'user', uname, '-v' ],
-		DEL + [ 'user', '%s2' % uname, '-v' ],
-		DEL + [ 'user', '%s3' % uname, '-v' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname, uname, uname), '-v',
+														'--no-archive' ],
 		],
 		context=context,
-		descr='''various password change tests (avoid #184)'''
-		))
+		descr='''various password change tests (avoid #184)''', clean_num=1))
 
 	# scenario not tested with the debian command adduser because it is an
 	# interactive command (for the password).
@@ -1312,9 +1415,11 @@ def test_users(context):
 		GET + [ 'groups', 'plugdev,adm' ],
 		GET + [ 'users', '-l' ],
 		],
-		context=context,
-		descr='''avoid #169'''
-		))
+		context=context, descr='''avoid #169''', clean_num=3))
+
+	uname = 'u_not169'
+	gname = 'g_not169'
+	pname = 'p_not169'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s,%s2,%s3' % (uname,uname,uname) ],
@@ -1358,10 +1463,16 @@ def test_users(context):
 		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv',
 			'--auto-yes' ],
 		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '-iv', '--batch' ],
+		# just for the clean, to be sure.
+		DEL + [ 'group', '%s,%s2' % (gname,gname), '--no-archive' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '--no-archive'],
 		],
 		context=context,
-		descr="test user interactive commands"
-		))
+		descr="test user interactive commands", clean_num=2))
+
+	uname = 'u_not169_2'
+	gname = 'g_not169_2'
+	pname = 'p_not169_2'
 
 	testsuite.add_scenario(ScenarioTest([
 		# should fail
@@ -1386,21 +1497,21 @@ def test_users(context):
 		ADD + [ 'user', uname ],
 		ADD + [ 'user', '%s2' % uname, '--home=/home/user/%s' % uname,
 			'--force', '-v' ],
-		DEL + [ 'user', uname, '-v' ],
-		DEL + [ 'user', '%s2' % uname, '-v' ],
+		DEL + [ 'user', '%s,%s2' % (uname, uname), '-v', '--no-archive' ],
 		# should fail
 		ADD + [ 'user', uname, '--system' ],
 		ADD + [ 'user', '%s2' % uname, '--home=/home/users/%s' % uname,
 			'--system', '-v' ],
 		ADD + [ 'user', '%s2' % uname, '--home=/home/users/%s' % uname,
 			'--system', '--force', '-v' ],
-		DEL + [ 'user', uname, '-v' ],
+		DEL + [ 'user', '%s,%s2' % (uname, uname), '-v', '--no-archive' ],
 		],
 		context=context,
-		descr="test adding user with specified --home option"
-		))
+		descr="test adding user with specified --home option", clean_num=1))
 
-	uname = 'ingroups_test'
+	uname = 'u383384'
+	gname = 'g383384'
+	pname = 'p383384'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s1' % uname, '--in-groups', 'audio,video', '-v' ],
@@ -1411,13 +1522,17 @@ def test_users(context):
 			'audio,video,puis,plus,rien!', '-v' ],
 		GET + [ 'users' , '%s1,%s2,%s3,%s4' % (uname, uname, uname, uname),
 			'-l' ],
-		DEL + [ 'users', '%s1,%s2,%s3,%s4' % (uname, uname, uname, uname), '-v' ],
+		DEL + [ 'users', '%s1,%s2,%s3,%s4' % (uname, uname, uname, uname), '-v',
+														'--no-archive'],
 		],
 		context=context,
-		descr='''verify #383 implementation (fixes #384).'''
-		))
+		descr='''verify #383 implementation (fixes #384).''', clean_num=1))
 def test_imports(context):
-	pname = 'profil_test'
+
+	uname = 'uprofile1'
+	gname = 'gprofile1'
+	pname = 'pprofile1'
+
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', pname, '-v' ],
 		ADD + [ 'users', '--filename=data/tests_users.csv',
@@ -1432,8 +1547,11 @@ def test_imports(context):
 		DEL + [ 'group', '--empty', '--no-archive', '-v' ],
 		],
 		context=context,
-		descr='''test user import from csv file'''
-		))
+		descr='''test user import from csv file''', clean_num=4))
+
+	uname = 'uprofile2'
+	gname = 'gprofile2'
+	pname = 'pprofile2'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', pname, '-v' ],
@@ -1445,22 +1563,23 @@ def test_imports(context):
 			'--firstname-column=0', '--group-column=2',
 			'--password-column=3', '--confirm-import', '-v' ],
 		GET + [ 'users' ],
-		DEL + [ 'profiles', pname, '--del-users', '--no-archive', '-v' ],
-		DEL + [ 'group', 'cp,ce1,ce2,cm2', '--no-archive', '-v' ],
+		DEL + [ 'profile', pname, '--del-users', '--no-archive', '-v' ],
+		DEL + [ 'group', '%s,%s,cp,ce1,ce2,cm2' % (gname, pname),
+												'--no-archive', '-v' ],
 		],
 		context=context,
-		descr='''various test on user import'''
-		))
+		descr='''various test on user import''', clean_num=2))
 def test_profiles(context):
 	"""Test the applying feature of profiles."""
-
-	pname = 'profil_test'
-	gname = 'group_test'
 
 	def chk_acls_cmd(user):
 		return [ 'getfacl', '-R', '%s/%s' % (
 		configuration.users.base_path,
 		user) ]
+
+	uname = 'u271219'
+	gname = 'g271219'
+	pname = 'p271219'
 
 	#fix #271 & #219
 	testsuite.add_scenario(ScenarioTest([
@@ -1486,16 +1605,18 @@ def test_profiles(context):
 		MOD + [ 'profile', '--name=%s' % pname, '--del-groups=%s2,%s3' %
 			(gname, gname), '-v' ],
 		GET + [ 'profiles' ],
-		DEL + [ 'group', '--name=%s2' % gname, '-v' ],
-		DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname, gname, gname), '-v' ],
 		# don't work with --name option
 		DEL + [ 'profile', '--group=%s' % pname, '-v' ],
 		DEL + [ 'privilege', '--name=%s' % gname, '-v' ],
 		],
 		context=context,
 		descr='''scenario for ticket #271 - test some commands of mod profile'''
-			''' --add-group and --del-groups & fix #219'''
-		))
+			''' --add-group and --del-groups & fix #219''', clean_num=3))
+
+	uname = 'u271219_2'
+	gname = 'g271219_2'
+	pname = 'p271219_2'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
@@ -1508,8 +1629,11 @@ def test_profiles(context):
 		],
 		context=context,
 		descr='''check if a error occurs when a non-existing group is added '''
-			'''to a profile'''
-		))
+			'''to a profile''', clean_num=1))
+
+	uname = 'u300320'
+	gname = 'g300320'
+	pname = 'p300320'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname, '-v' ],
@@ -1531,8 +1655,11 @@ def test_profiles(context):
 		],
 		context=context,
 		descr='''Check if it is possible to force a profil group to a non '''
-			'''system group (avoid #300 #320)'''
-		))
+			'''system group (avoid #300 #320)''', clean_num=2))
+
+	uname = 'u302'
+	gname = 'g302'
+	pname = 'p302'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '--name=%s' % pname, '-v' ],
@@ -1545,8 +1672,11 @@ def test_profiles(context):
 		],
 		context=context,
 		descr='''when a profile group is deleted, an error message has to be '''
-			'''presented (avoid #302)'''
-		))
+			'''presented (avoid #302)''', clean_num=2))
+
+	uname = 'u292'
+	gname = 'g292'
+	pname = 'p292'
 
 	exclude_uid = open(state_files['owner']).read().split(',')[0]
 	testsuite.add_scenario(ScenarioTest([
@@ -1605,8 +1735,11 @@ def test_profiles(context):
 		DEL + [ 'group', gname ]
 		],
 		context=context,
-		descr='''various tests on profiles (fix #292)'''
-		))
+		descr='''various tests on profiles (fix #292)''', clean_num=3))
+
+	uname = 'u292_2'
+	gname = 'g292_2'
+	pname = 'p292_2'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-v' ],
@@ -1648,13 +1781,17 @@ def test_profiles(context):
 			'--batch' ],
 		],
 		context=context,
-		descr="test profile interactive commands"
-		))
+		descr="test profile interactive commands", clean_num=1))
 def test_privileges(context):
 	# test features of privileges
 
-	gname = 'group_test'
+
 	for cmd in [ 'priv', 'privs', 'privilege', 'privileges' ]:
+
+		uname = 'u204174' + cmd
+		gname = 'g204174' + cmd
+		pname = 'p204174' + cmd
+
 		testsuite.add_scenario(ScenarioTest([
 			GET + [ cmd ],
 			ADD + [ 'group', '--name=%s' % gname, '-v' ],
@@ -1672,14 +1809,17 @@ def test_privileges(context):
 			GET + [ cmd ],
 			DEL + [ cmd, '--name=%s2,%s3' % (gname, gname), '-v' ],
 			GET + [ cmd ],
-			DEL + [ 'group', '--name=%s' % gname, '-v' ],
-			DEL + [ 'group', '--name=%s2' % gname, '-v' ],
-			DEL + [ 'group', '--name=%s3' % gname, '-v' ],
+			# combined del commands at the end, to be able to clean.
+			DEL + [ cmd, '%s,%s2,%s3' % (gname, gname, gname), '-v' ],
+			DEL + [ 'group', '%s,%s2,%s3' % (gname, gname, gname), '-v' ],
 			],
 			context=context,
 			descr='''test new privileges commands (using argument %s) '''
-				'''(avoid #204 #174)''' % cmd
-			))
+				'''(avoid #204 #174)''' % cmd, clean_num=2))
+
+	uname = 'u204174_priv'
+	gname = 'g204174_priv'
+	pname = 'p204174_priv'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '--system', '-v' ],
@@ -1695,13 +1835,12 @@ def test_privileges(context):
 		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname) ]
 		],
 		context=context,
-		descr="test privilege interactive commands"
-		))
+		descr="test privilege interactive commands", clean_num=1))
 
 def test_short_syntax():
-	uname = 'user_test'
-	gname = 'group_test'
-	pname = 'profil_test'
+	uname = 'ushort_ug'
+	gname = 'gshort_ug'
+	pname = 'pshort_ug'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', uname, '-v' ],
@@ -1741,9 +1880,15 @@ def test_short_syntax():
 		DEL + [ 'group', ',%s4' %  gname, '-v'],
 		DEL + [ 'group', '%s4,' %  gname, '-v'],
 		DEL + [ 'group', '%s4' %  gname, '-v'],
+		# to be able to clean in 2 commands.
+		DEL + [ 'group', '%s,%s2,%s3,%s4' %  (gname, gname, gname, gname), '-v'],
+		DEL + [ 'user', '%s,%s2,%s3,%s4' %  (uname, uname, uname, uname), '-v'],
 		],
-		descr='''test short users/groups commands'''
-		))
+		descr='''test short users/groups commands''', clean_num=2))
+
+	uname = 'ushort_priv'
+	gname = 'gshort_priv'
+	pname = 'pshort_priv'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
@@ -1758,8 +1903,11 @@ def test_short_syntax():
 		DEL + [ 'group', gname ],
 		DEL + [ 'group', '%ssys' % gname ],
 		],
-		descr='''test short privileges commands'''
-		))
+		descr='''test short privileges commands''', clean_num=2))
+
+	uname = 'ushort_prof'
+	gname = 'gshort_prof'
+	pname = 'pshort_prof'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '--system', '-v' ],
@@ -1776,12 +1924,14 @@ def test_short_syntax():
 		MOD + [ 'profile', pname, '--del-groups=%s2,%s3' % (gname,gname) ],
 		GET + [ 'profiles' ],
 		DEL + [ 'profile', pname ],
-		DEL + [ 'group', '%s2' % gname, '-v' ],
-		DEL + [ 'group', '%s3' % gname, '-v' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname, gname, gname), '-v' ],
 		GET + [ 'profiles' ],
 		],
-		descr='''test short profiles commands'''
-		))
+		descr='''test short profiles commands''', clean_num=3))
+
+	uname = 'ushort_chk'
+	gname = 'gshort_chk'
+	pname = 'pshort_chk'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
@@ -1800,10 +1950,11 @@ def test_short_syntax():
 		CHK + [ 'user', uname, '--auto-no', '-v' ],
 		CHK + [ 'user', uname, '--auto-yes', '-v' ],
 		CHK + [ 'user', uname, '-vb' ],
+		# clean
+		DEL + [ 'group', '%s,%s2' % (gname,gname), '-v' ],
 		DEL + [ 'user', uname, '-v' ],
 		],
-		descr='''test short chk commands'''
-		))
+		descr='''test short chk commands''', clean_num=2))
 
 	"""
 	# extended check on user not implemented yet
@@ -1823,8 +1974,7 @@ def test_short_syntax():
 	"""
 def test_exclusions():
 	""" test all kind of exclusion parameters. """
-	uname = 'utest'
-	gname = 'gtest'
+	uname = 'uexcl'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
@@ -1913,8 +2063,9 @@ def test_exclusions():
 		DEL + [ 'user', '%s,%s1,%s2,%s3' % (uname, uname, uname, uname) ],
 		GET + [ 'users' ]
 		],
-		descr='''test exclusions in different manners on users'''
-	))
+		descr='''test exclusions in different manners on users''', clean_num=2))
+
+	gname = 'gexcl'
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
@@ -1978,8 +2129,7 @@ def test_exclusions():
 		DEL + [ 'group', '%s,%s1,%s2,%s3' % (gname, gname, gname, gname) ],
 		GET + [ 'groups' ],
 	],
-	descr='''test exclusions in different manners on groups'''
-	))
+	descr='''test exclusions in different manners on groups''', clean_num=2))
 def test_status_and_dump():
 	""" test all kind of daemon status and dump parameters. """
 
@@ -1994,7 +2144,7 @@ def test_status_and_dump():
 		GET + [ 'machines', '--dump' ],
 		],
 		descr='''test daemon status and core objects dumping'''
-	))
+		))
 def test_system():
 	testsuite.add_scenario(ScenarioTest([
 		[ 'killall', '-r', '-9', 'licornd' ],
@@ -2064,7 +2214,7 @@ if __name__ == "__main__":
 	# init the TS.
 	testsuite = Testsuite(name="CLI", state_file=state_files,
 		directory_scenarii='data/scenarii',
-		clean_func=clean_system, cmd_display_func=small_cmd_cli)
+		clean_func=lambda: True, cmd_display_func=small_cmd_cli)
 
 	# Unit Tests.
 	test_find_new_indentifier()
@@ -2073,7 +2223,11 @@ if __name__ == "__main__":
 	test_regexes()
 	test_short_syntax()
 	test_exclusions()
-	test_status_and_dump()
+
+	# can't be tested any more in background mode, it fails everytime (which
+	# is normal because it contains too much moving data).
+	#test_status_and_dump()
+
 	for ctx in ('shadow', 'openldap'):
 		test_get(ctx)
 		test_groups(ctx)
@@ -2083,36 +2237,60 @@ if __name__ == "__main__":
 		test_imports(ctx)
 
 	# do this last, this will kill the daemon
-	test_system()
+	#test_system()
 
 	# deals with options
 	parser = testsuite_parse_args()
 	(options, args) = parser.parse_args()
+
 	Testsuite.verbose = options.verbose
+
 	if not options.all and not options.list and not options.execute and \
 		not options.start_from and not options.start_from and \
 		not options.clean and not options.delete_trace and not options.stats:
 			sys.argv.append('-a')
 			(options, args) = parser.parse_args()
+
 	if options.reload:
 		testsuite.clean_state_file()
+
 	if options.list:
 		testsuite.get_scenarii()
+
 	if options.execute:
 		testsuite.select(options.execute-1)
+
 	if options.start_from:
 		testsuite.select(options.start_from, mode='start')
+
 	if options.clean:
 		testsuite.clean_scenarii_directory()
+
 	if options.delete_trace:
 		testsuite.clean_scenarii_directory(scenario_number=options.delete_trace)
+
 	if options.stats:
 		testsuite.get_stats()
+
 	if options.all:
 		if testsuite.get_state() == None:
 			testsuite.select(all=True)
 		else:
-			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
+			testsuite.select(scenario_number=testsuite.get_state(), mode='start')
+
+	def terminate():
+		# clean the system
+		testsuite.clean_system()
+		# restore initial user backend
+		testsuite.restore_user_context()
+		# give back all the scenarii tree to calling user.
+		uid, gid = [ int(x) for x in \
+			open(state_files['owner']).read().strip().split(',') ]
+		test_message(_('giving back all scenarii data to %s:%s.') % (
+			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
+		for entry in fsapi.minifind('data', followlinks=True):
+			os.chown(entry, uid, gid)
+
 	if options.start_from or options.execute or options.all:
 		try :
 			for ctx in ('shadow', 'openldap'):
@@ -2123,18 +2301,12 @@ if __name__ == "__main__":
 				compare_delete_backups(ctx)
 			# TODO: test_concurrent_accesses()
 			testsuite.clean_state_file()
-			test_message("Testsuite terminated successfully.")
-			test_message('''Don't forget to test massive del/mod/chk with -a '''
-				''' argument (not tested because too dangerous)''')
-		finally:
-			# clean the system
-			testsuite.clean_system()
-			# restore initial user backend
-			testsuite.restore_user_context()
-			# give back all the scenarii tree to calling user.
-			uid, gid = [ int(x) for x in \
-				open(state_files['owner']).read().strip().split(',') ]
-			test_message('giving back all scenarii data to %s:%s.' % (
-				stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
-			for entry in fsapi.minifind('data', followlinks=True):
-				os.chown(entry, uid, gid)
+			test_message(_("Testsuite terminated successfully."))
+			test_message(_("Don't forget to test massive del/mod/chk with -a "
+				"argument (not tested because too dangerous)"))
+			terminate()
+		except KeyboardInterrupt:
+			test_message(_("Keyboard Interrupt received, cleaning testsuite context, please wait…"))
+			terminate()
+		#finally:
+		#	terminate()
