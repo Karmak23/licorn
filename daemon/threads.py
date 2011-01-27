@@ -116,11 +116,12 @@ class GenericQueueWorkerThread(Thread):
 	"""
 
 	def __init__(self, licornd, in_queue=None,
-				peers_min=None, peers_max=None, daemon=True):
+				peers_min=None, peers_max=None, high_bypass=True, daemon=True):
 		Thread.__init__(self)
 
 		#: the :attr:`daemon` coming from threading.Thread.
-		self.daemon = daemon
+		self.daemon      = daemon
+		self.high_bypass = high_bypass
 
 		#: a reference to the Licorn daemon, to record myself in threads list.
 		self.licornd = licornd
@@ -171,10 +172,10 @@ class GenericQueueWorkerThread(Thread):
 				'&' if self.daemon else '',
 				'on %s since %s' % (stylize(ST_ON, '%s(%s%s%s)' % (
 						self.job,
-						', '.join(self.job_args)
+						', '.join([str(j) for j in self.job_args])
 							if self.job_args else '',
 						', ' if self.job_args and self.job_kwargs else '',
-						', '.join(['%s=%s' % (key,value) for key,value
+						', '.join(['%s=%s' % (key, value) for key, value
 									in self.jobs_kwargs])
 							if self.job_kwargs else '')),
 					pyutils.format_time_delta(
@@ -201,7 +202,7 @@ class GenericQueueWorkerThread(Thread):
 			else:
 
 				with self.__class__.lock:
-					if self.priority != priorities.HIGH \
+					if self.high_bypass and self.priority != priorities.HIGH \
 						and self.__class__.busy == self.__class__.instances:
 						# make some room for HIGH priority jobs. They could still
 						# be queued if everyone is busy, but this is less likely
@@ -288,7 +289,7 @@ class GenericQueueWorkerThread(Thread):
 				# per second seems not too much).
 				if time.time() - self.__class__.last_warning > 1.0:
 					self.__class__.last_warning = time.time()
-					logging.warning2('%s: maximum peers already running, '
+					logging.progress('%s: maximum peers already running, '
 						'queue size is %s.' % (self.name,
 							self.input_queue.qsize()))
 
