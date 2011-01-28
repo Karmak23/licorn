@@ -449,8 +449,10 @@ class ScenarioTest:
 				else:
 					self.current_cmd = None
 					if self.interactive:
-						logging.notice(_(u'Checking FAILED cmd %s of scenario %s') % (
-							stylize(ST_NAME, self.name), cmdnum))
+						logging.notice(_(u'Checking FAILED cmd {cmd}/{total} '
+							'of scenario {sce}').format(
+							sce=stylize(ST_NAME, self.name), cmd=cmdnum,
+							total=self.total_cmds))
 					self.clean()
 					#print '>> failed', self.name
 					return

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-28 10:36+0100\n"
+"POT-Creation-Date: 2011-01-28 11:12+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,55 +74,54 @@ msgid ""
 msgstr ""
 
 #: tests/core.py:452
-#, python-format
-msgid "Checking FAILED cmd %s of scenario %s"
+msgid "Checking FAILED cmd {cmd}/{total} of scenario {sce}"
 msgstr ""
 
-#: tests/core.py:475
+#: tests/core.py:477
 #, python-format
 msgid "Cleaning directory %s."
 msgstr ""
 
-#: tests/core.py:479
+#: tests/core.py:481
 #, python-format
 msgid "Deleting %s."
 msgstr ""
 
-#: tests/core.py:489
+#: tests/core.py:491
 #, python-format
 msgid "Cleaned directory %s."
 msgstr ""
 
-#: tests/core.py:510
+#: tests/core.py:512
 #, python-format
 msgid "Backed up system files for context %s."
 msgstr ""
 
-#: tests/core.py:513
+#: tests/core.py:515
 msgid ""
 "Comparing backups of system files after tests for side-effects alterations."
 msgstr ""
 
-#: tests/core.py:534
+#: tests/core.py:536
 msgid "System config files backup comparison finished successfully."
 msgstr ""
 
-#: tests/core.py:2311
+#: tests/core.py:2313
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr ""
 
-#: tests/core.py:2329
+#: tests/core.py:2331
 msgid "Testsuite terminated successfully."
 msgstr ""
 
-#: tests/core.py:2330
+#: tests/core.py:2332
 msgid ""
 "Don't forget to test massive del/mod/chk with -a argument (not tested "
 "because too dangerous)"
 msgstr ""
 
-#: tests/core.py:2334
+#: tests/core.py:2336
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr ""
 

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-28 10:35+0100\n"
-"PO-Revision-Date: 2011-01-28 10:36+0100\n"
+"POT-Creation-Date: 2011-01-28 11:12+0100\n"
+"PO-Revision-Date: 2011-01-28 11:13+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -82,52 +82,51 @@ msgid "Automatically saved new output for scenario #{sce} command #{cmd}/{total}
 msgstr "Résultat automatiquement sauvegardé pour la commande n°{cmd}/{total} du scénario n°{sce} "
 
 #: tests/core.py:452
-#, python-format
-msgid "Checking FAILED cmd %s of scenario %s"
-msgstr "Vérification de la commande ÉCHOUÉE %s (du scénario %s)"
+msgid "Checking FAILED cmd {cmd}/{total} of scenario {sce}"
+msgstr "Vérification manuelle de la commande ÉCHOUÉE {cmd}/{total} (du scénario {sce})"
 
-#: tests/core.py:475
+#: tests/core.py:477
 #, python-format
 msgid "Cleaning directory %s."
 msgstr "Nettoya ge du répertoire %s."
 
-#: tests/core.py:479
+#: tests/core.py:481
 #, python-format
 msgid "Deleting %s."
 msgstr "Suppression de %s."
 
-#: tests/core.py:489
+#: tests/core.py:491
 #, python-format
 msgid "Cleaned directory %s."
 msgstr "Le répertoire %s a été nettoyé."
 
-#: tests/core.py:510
+#: tests/core.py:512
 #, python-format
 msgid "Backed up system files for context %s."
 msgstr "Sauvegardes des fichiers systèmes effectuée pour le contexte %s."
 
-#: tests/core.py:513
+#: tests/core.py:515
 msgid "Comparing backups of system files after tests for side-effects alterations."
 msgstr "Comparaison des fichiers systèmes avec les sauvegardes pour détecter les altérations et les effets de bords."
 
-#: tests/core.py:534
+#: tests/core.py:536
 msgid "System config files backup comparison finished successfully."
 msgstr "Comparaison des fichiers systèmes effectuée avec succès."
 
-#: tests/core.py:2311
+#: tests/core.py:2313
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr "Changement du propriétaire des données de scénarios vers %s:%s."
 
-#: tests/core.py:2329
+#: tests/core.py:2331
 msgid "Testsuite terminated successfully."
 msgstr "Suite de tests terminée avec succès."
 
-#: tests/core.py:2330
+#: tests/core.py:2332
 msgid "Don't forget to test massive del/mod/chk with -a argument (not tested because too dangerous)"
 msgstr "N'oubliez pas de tester les commandes del/mod/chk avec l'argument -a (opérations massives), qui ne sont pas testées automatiquement car trop dangereuses."
 
-#: tests/core.py:2334
+#: tests/core.py:2336
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr "Interruption clavier reçue. Nettoyage du contexte de la suite de tests, merci de patienter…"
 
