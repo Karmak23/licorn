@@ -584,8 +584,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			command = self.commands.ionice[:]
 			command.extend(self.commands.nice[:])
 
-			rdiff_command = [ self.paths.binary, '--verbosity', '2',
-											'--never-drop-acls',
+			rdiff_command = [ self.paths.binary, '--verbosity', '1',
 											'/', self._backup_dir(volume) ]
 
 			if os.path.exists(self.paths.globbing_file):
@@ -617,6 +616,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self._rdiff_statistics(volume)
 
 			self.events.running.clear()
+			self.current_backup_volume = None
 
 			logging.notice('%s: terminated backup procedure on %s.' % (
 											self.name,volume))
@@ -656,7 +656,32 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		""" Method called from wmi:/, to integrate backup informations on the
 			status page. """
 
-		return '<strong>NOTHING YET</strong>'
+		messages = []
+
+		if self.running():
+			messages.append((priorities.HIGH,
+				'<p class="light_indicator backup_in_progress '
+				'high_priority">%s</p>' % (
+					_(u'Backup in progress on volume {volume}…').format(
+						volume=self.current_backup_volume.mount_point))))
+
+		else :
+			volumes = self._backup_enabled_volumes()
+
+			if volumes == []:
+				messages.append((priorities.NORMAL,
+					'<p class="light_indicator normal_priority">%s</p>' % (
+					_(u'No backup volume connected'))))
+			else:
+				messages.append((priorities.NORMAL,
+					'<p class="light_indicator normal_priority">%s</p>' % (
+					_(u'Next backup in {0}').format(
+						self._countdown('next_backup',
+						self.threads.auto_backup_timer.remaining_time(),
+						uri='/')
+					))))
+
+		return messages
 	def _backup_informations(self, volume, as_string=False):
 		""" Return an HTML string for backup information. """
 		if as_string:
@@ -675,7 +700,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 								as_string=False))))
 		else:
 			return (time.time() - self._last_backup_time(volume),
-				self.time_before_next_automatic_backup())
+				self.time_before_next_automatic_backup(as_string=False))
 	def _wmi_run(self, uri, http_user, volume=None, force=False, **kwargs):
 		""" Run a backup from the WMI. Propose the user to force the
 			operation if the last backup is less than one hour. """

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-28 21:26+0100\n"
-"PO-Revision-Date: 2011-01-28 21:26+0100\n"
+"POT-Creation-Date: 2011-01-29 00:06+0100\n"
+"PO-Revision-Date: 2011-01-29 00:06+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -143,95 +143,100 @@ msgstr "Le backend initial %s a été restauré."
 msgid "Started background tests, waiting for any failed scenario…"
 msgstr "Les tests ont démarré à l'arrière-plan ; en attente de travaux échoués…"
 
-#: tests/__init__.py:154
+#: tests/__init__.py:155
 msgid "Re-put scenario in the run queue for further execution."
 msgstr "Le scénario a été remis en file d'attente d'exécution pour validation complète."
 
-#: tests/__init__.py:163
+#: tests/__init__.py:164
 msgid "Stopping the run queue worker and cleaning, please wait…"
 msgstr "Arrêt du processus de travail et nettoyage, merci de patienter…"
 
-#: tests/__init__.py:178
+#: tests/__init__.py:179
 msgid "no more jobs, ending testsuite."
 msgstr "Plus aucun travail, la suite de tests se termine."
 
-#: tests/__init__.py:203
+#: tests/__init__.py:204
 #, python-format
 msgid "Saved best state #%s (not inclusive)."
 msgstr "La progression a été sauvegardée jusqu'au scénario n°%s (non inclus)."
 
-#: tests/__init__.py:268
+#: tests/__init__.py:269
 msgid "TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) {passed_content}- {failed} failed ({percent_failed:.2}%) - best score until now: #{best}"
 msgstr "État courant TS: travail sur n°{current}, {ran}/{total} réussis ({percent_done:.2}%) {passed_content}- {failed} échoués ({percent_failed:.2}%) - progression maximum : n°{best}"
 
-#: tests/__init__.py:284
+#: tests/__init__.py:285
 msgid "context setup"
 msgstr "préparation"
 
-#: tests/__init__.py:294
+#: tests/__init__.py:295
 msgid "last: {passed}{passed_more} "
 msgstr "derniers: {passed}{passed_more} "
 
-#: tests/__init__.py:297
+#: tests/__init__.py:298
 msgid "…"
 msgstr "…"
 
-#: tests/__init__.py:342
+#: tests/__init__.py:343
 #, python-format
 msgid "The %s testsuite has %s scenarii (%s commands)."
 msgstr "La suite de tests %s contient %s scénarios (%s commandes)."
 
-#: tests/__init__.py:359
-#: tests/__init__.py:366
+#: tests/__init__.py:360
+#: tests/__init__.py:371
 msgid "No scenario selected"
 msgstr "Aucun scénario sélectionné"
 
-#: tests/__init__.py:384
+#: tests/__init__.py:368
+#, python-format
+msgid "Cannot select a higher scenario than the current best_state (%s)"
+msgstr "Vous ne pouvez pas démarrer à un numéro de scénario plus haut que le meilleur actuel (%s)"
+
+#: tests/__init__.py:389
 #, python-format
 msgid "Scenario number '%s' is not valid."
 msgstr "Le numéro de scénario '%s' n'est pas valide."
 
-#: tests/__init__.py:415
+#: tests/__init__.py:420
 msgid "State file deleted, start from beginning."
 msgstr "Fichier d'état supprimé, on recommence depuis le début…"
 
-#: tests/__init__.py:466
+#: tests/__init__.py:471
 msgid "reload testsuite. Start from beginning"
 msgstr "Suite de test rechargée, on recommence depuis le début…"
 
-#: tests/__init__.py:468
+#: tests/__init__.py:473
 msgid "execute a specific scenario of the testsuite."
 msgstr "Exécuter un scénario spécifique de la suite de tests."
 
-#: tests/__init__.py:470
+#: tests/__init__.py:475
 msgid "list all scenarii of the testsuite."
 msgstr "liste tous les scénarii contenus dans la suite de tests."
 
-#: tests/__init__.py:472
+#: tests/__init__.py:477
 msgid "select all scenarii"
 msgstr "Sélectionner tous les scénarii."
 
-#: tests/__init__.py:474
+#: tests/__init__.py:479
 msgid "start from the scenario N."
 msgstr "Démarrer à partir du scénario N."
 
-#: tests/__init__.py:476
+#: tests/__init__.py:481
 msgid "display messages during command execution."
 msgstr "Afficher les messages de debbogage et les sorties pendant l'exécution (attention, c'est carrément illisible)."
 
-#: tests/__init__.py:478
+#: tests/__init__.py:483
 msgid "clean scenarii directory."
 msgstr "Nettoyer le répertoire des scénarios (supprimer les sorties obsolètes)."
 
-#: tests/__init__.py:480
+#: tests/__init__.py:485
 msgid "delete trace of a scenario"
 msgstr "Supprimer les sorties d'un scénario particulier, en vue de sa ré-exécution depuis le début."
 
-#: tests/__init__.py:482
+#: tests/__init__.py:487
 msgid "display statistics of the testsuite."
 msgstr "Afficher les statistiques de la suite de tests."
 
-#: tests/__init__.py:485
+#: tests/__init__.py:490
 msgid "don't halt the scenario on fail, just accept the result of the failed command and continue. WARNING: this flag is meant to be used only when you don't have any scenario data in your repository, to build a new one from scratch. Use this flag onlyon a clean source tree, else your TS results will not be reliable."
 msgstr "Ne pas interrompre un scénario dont une commande a échoué, mais accepter simplement le nouveau résultat comme référence et continuer les tests. ATTENTION : cette option est conçue pour être utilisée uniquement si vous n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources propres (aucunes modifications locales). Sans ça, vos résultats de TS risquent fort de ne pas être fiables. "
 
@@ -271,51 +276,59 @@ msgstr "Scanner les volumes"
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:667
+#: extensions/rdiffbackup.py:665
+msgid "Backup in progress on volume {volume}…"
+msgstr "Sauvegarde en cours sur le volume {volume}…"
+
+#: extensions/rdiffbackup.py:677
 msgid "No backup volume connected"
 msgstr "Aucun volume de sauvegarde connecté"
 
-#: extensions/rdiffbackup.py:675
+#: extensions/rdiffbackup.py:681
+msgid "Next backup in {0}"
+msgstr "Prochaine sauvegarde dans {0}"
+
+#: extensions/rdiffbackup.py:692
 msgid "Last backup on this volume occured {0} ago."
 msgstr "La dernière sauvegarde sur ce volume a eu lieu il y a {0}."
 
-#: extensions/rdiffbackup.py:681
+#: extensions/rdiffbackup.py:698
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 
-#: extensions/rdiffbackup.py:682
+#: extensions/rdiffbackup.py:699
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:695
+#: extensions/rdiffbackup.py:712
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:703
+#: extensions/rdiffbackup.py:720
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine sauvegarde."
 
-#: extensions/rdiffbackup.py:707
+#: extensions/rdiffbackup.py:724
 msgid "No volume to backup onto. Please plug a {app_name} enabled volume into your server before starting this procedure.<br /><br />See <a href=\"http://docs.licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> for details on enabling backup volumes."
 msgstr "Aucun volume de sauvegarde trouvé. Merci de connecter un volume dédié aux sauvegardes {app_name} sur votre serveur avant de lancer cette procédure.<br /><br />Lisez <href=\"http://docs.licorn.org/extensions/rdiffbackup.fr.html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:722
+#: extensions/rdiffbackup.py:739
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:727
+#: extensions/rdiffbackup.py:744
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:728
+#: extensions/rdiffbackup.py:745
 msgid "{auto_select}<br /><br />The last backup has been run {last_backup_time} ago, which is less than the system configured interval ({interval}). Are you sure you want to force a manual backup now?<br /><br />(if you do not answer withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr "{auto_select}<br /><br />La dernière sauvegarde date d'il y a  {last_backup_time}, c'est à dire moins que l'intervalle configuré dans le système ({interval}). Êtes-vous sûr(e) de vouloir forcer le lancement d'une sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les {next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:744
+#: extensions/rdiffbackup.py:761
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:745
+#: extensions/rdiffbackup.py:762
 #: interfaces/wmi/groups.py:134
 #: interfaces/wmi/groups.py:581
 #: interfaces/wmi/users.py:136
@@ -323,7 +336,7 @@ msgstr "Lancer >>"
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:747
+#: extensions/rdiffbackup.py:764
 #: interfaces/wmi/groups.py:257
 #: interfaces/wmi/users.py:92
 #: interfaces/wmi/users.py:138
@@ -333,62 +346,62 @@ msgstr "S"
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:747
+#: extensions/rdiffbackup.py:764
 #: interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227
 #: interfaces/wmi/users.py:273
 msgid "C"
 msgstr "N"
 
-#: extensions/rdiffbackup.py:763
+#: extensions/rdiffbackup.py:780
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:766
+#: extensions/rdiffbackup.py:783
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:770
+#: extensions/rdiffbackup.py:787
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr "Ce volume est utilisé{backup_info}, impossible de l'éjecter&nbsp;!{rewind}"
 
-#: extensions/rdiffbackup.py:787
+#: extensions/rdiffbackup.py:804
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:804
+#: extensions/rdiffbackup.py:821
 msgid "No backup volume found. Please connect a backup volume to your server, and backups will automatically start (next try in {countdown})."
 msgstr "Aucun volume de sauvegarde n'a été trouvé. Merci d'en connecter un à votre serveur, et les sauvegardes démarreront automatiquement (prochaine tentative dans {countdown})."
 
-#: extensions/rdiffbackup.py:812
+#: extensions/rdiffbackup.py:829
 msgid "No backup found, or all backup volumes are currently unmounted (you can safely disconnect them from your server).<br /><br />Next automatic backup will occur in {countdown}, and will automatically remount any backup volume still connected at this moment."
 msgstr "Aucune sauvegarde n'a été trouvée, ou bien tous les volumes de sauvegardes sont actuellement démontés (vous pouvez les déconnecter sans risque de votre serveur).<br /><br />La prochaine sauvegarde automatique sera tentée dans {countdown}, et remontera tout volume encore physiquement connecté à ce moment là."
 
-#: extensions/rdiffbackup.py:830
+#: extensions/rdiffbackup.py:847
 msgid "A backup is currently in progress, please do not disconnect <strong>{volume}</strong>.<br /><br /> (update in {countdown}…)"
 msgstr "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:855
+#: extensions/rdiffbackup.py:872
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:859
+#: extensions/rdiffbackup.py:876
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:869
+#: extensions/rdiffbackup.py:886
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:875
+#: extensions/rdiffbackup.py:892
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:886
+#: extensions/rdiffbackup.py:903
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr "Aucune donnée d'historique. Merci d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:892
+#: extensions/rdiffbackup.py:909
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
@@ -486,97 +499,102 @@ msgstr "Recherche par mot-clef — Licorn®"
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn®</spam>"
 
-#: interfaces/wmi/base.py:31
+#: interfaces/wmi/base.py:32
 #: interfaces/wmi/server.py:24
 msgid "Restart server."
 msgstr "Redémarrer le serveur."
 
-#: interfaces/wmi/base.py:32
+#: interfaces/wmi/base.py:33
 #: interfaces/wmi/server.py:25
 msgid "Restart server"
 msgstr "Redémarrer le serveur"
 
-#: interfaces/wmi/base.py:33
+#: interfaces/wmi/base.py:34
 #: interfaces/wmi/server.py:26
 msgid "Shutdown server."
 msgstr "Éteindre le serveur."
 
-#: interfaces/wmi/base.py:34
+#: interfaces/wmi/base.py:35
 #: interfaces/wmi/server.py:27
 msgid "Shutdown server"
 msgstr "Éteindre le serveur"
 
-#: interfaces/wmi/base.py:72
+#: interfaces/wmi/base.py:73
 msgid "Programs"
 msgstr "Applications"
 
-#: interfaces/wmi/base.py:72
+#: interfaces/wmi/base.py:73
 msgid "Cache"
 msgstr "Anté-mémoire"
 
-#: interfaces/wmi/base.py:72
+#: interfaces/wmi/base.py:73
 msgid "Buffers"
 msgstr "Tampons"
 
-#: interfaces/wmi/base.py:72
-#: interfaces/wmi/base.py:107
+#: interfaces/wmi/base.py:73
+#: interfaces/wmi/base.py:108
 msgid "Free"
 msgstr "Libre"
 
-#: interfaces/wmi/base.py:73
+#: interfaces/wmi/base.py:74
 msgid "Memory occupation"
 msgstr "Répartition de l'occupation mémoire"
 
-#: interfaces/wmi/base.py:107
+#: interfaces/wmi/base.py:108
 msgid "Used"
 msgstr "Utilisé"
 
-#: interfaces/wmi/base.py:107
+#: interfaces/wmi/base.py:108
 msgid "Swap occupation"
 msgstr "Occupation du fichier d'échange"
 
-#: interfaces/wmi/base.py:112
+#: interfaces/wmi/base.py:116
 msgid "Server status"
 msgstr "État du serveur"
 
-#: interfaces/wmi/base.py:162
+#: interfaces/wmi/base.py:167
 msgid "no virtual memory installed."
 msgstr "pas de mémoire virtuelle installée."
 
-#: interfaces/wmi/base.py:164
+#: interfaces/wmi/base.py:169
 #, python-format
 msgid "virtual memory: <strong>%.2f</strong> Mb total."
 msgstr "Mémoire Virtuelle&nbsp;: <strong>%.2f</strong> Mo configuré(s)."
 
-#: interfaces/wmi/base.py:205
+#: interfaces/wmi/base.py:194
+#, python-format
+msgid "automatic update of this page in %s."
+msgstr "rechargement de cette page dans %s."
+
+#: interfaces/wmi/base.py:241
 msgid "System status"
 msgstr "État du système"
 
-#: interfaces/wmi/base.py:206
+#: interfaces/wmi/base.py:242
 msgid "Up and running since <strong>{uptime}</strong>.<br /><br />Users: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />1, 5, and 15 last minutes load average: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
 msgstr "En marche depuis <strong>{uptime}</strong>.<br /><br />Utilisateurs&nbsp;: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />Charge système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
 
-#: interfaces/wmi/base.py:214
+#: interfaces/wmi/base.py:250
 msgid "user accounts"
 msgstr "comptes utilisateurs"
 
-#: interfaces/wmi/base.py:215
+#: interfaces/wmi/base.py:251
 msgid "user account"
 msgstr "compte utilisateur"
 
-#: interfaces/wmi/base.py:216
+#: interfaces/wmi/base.py:252
 msgid "open sessions"
 msgstr "sessions ouvertes"
 
-#: interfaces/wmi/base.py:217
+#: interfaces/wmi/base.py:253
 msgid "open session"
 msgstr "session ouverte"
 
-#: interfaces/wmi/base.py:223
+#: interfaces/wmi/base.py:259
 msgid "System information"
 msgstr "Informations système"
 
-#: interfaces/wmi/base.py:224
+#: interfaces/wmi/base.py:260
 msgid "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />{swap_total}"
 msgstr "Processeur{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s).<br /> {swap_total}"
 
@@ -587,34 +605,42 @@ msgid "<br /><br />Go back with your browser, double-check data and validate the
 msgstr "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données saisies et re-validez le formulaire."
 
 #: interfaces/wmi/__init__.py:192
+#: interfaces/wmi/__init__.py:281
 msgid "day"
 msgstr "jour"
 
 #: interfaces/wmi/__init__.py:192
+#: interfaces/wmi/__init__.py:281
 msgid "days"
 msgstr "jours"
 
 #: interfaces/wmi/__init__.py:193
+#: interfaces/wmi/__init__.py:282
 msgid "hour"
 msgstr "heure"
 
 #: interfaces/wmi/__init__.py:193
+#: interfaces/wmi/__init__.py:282
 msgid "hours"
 msgstr "heures"
 
 #: interfaces/wmi/__init__.py:194
+#: interfaces/wmi/__init__.py:283
 msgid "minute"
 msgstr "minute"
 
 #: interfaces/wmi/__init__.py:194
+#: interfaces/wmi/__init__.py:283
 msgid "minutes"
 msgstr "minutes"
 
 #: interfaces/wmi/__init__.py:195
+#: interfaces/wmi/__init__.py:284
 msgid "second"
 msgstr "seconde"
 
 #: interfaces/wmi/__init__.py:195
+#: interfaces/wmi/__init__.py:284
 msgid "seconds"
 msgstr "secondes"
 
@@ -2293,6 +2319,9 @@ msgstr "nombre de machines <strong>%s</strong>&#160;:"
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
+#~ msgid "Last backup on volume {0}:<br /> {1} ago,<br />next starting in {2}"
+#~ msgstr ""
+#~ "Dernière sauvegarde sur {0}:<br /> il y a {1},<br /> prochaine dans {2}"
 #~ msgid "Running %s in interactive mode."
 #~ msgstr "Exécution du scénario %s en mode intéractif."
 #~ msgid "Waiting again for any failed scenario…"

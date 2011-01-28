@@ -39,7 +39,7 @@ div#banner {
 	top: 0px;
 }
 
-.title_machines, .title_users, .title_groups {
+.title_, .title_machines, .title_users, .title_groups {
 	display: none;
 	}
 
@@ -639,7 +639,7 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 
 .countdown {
 	display: inline;
-	font-weight: bolder;
+	font-weight: bold;
 }
 
 .small_indicator {
@@ -648,6 +648,30 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	font-weight: bolder;
 	border-radius:5px;
 }
+
+.light_indicator {
+	text-align: center;
+	padding: 3px 7px;
+	border-radius:5px;
+	margin-bottom: 5px;
+}
+
+.high_priority {
+	background-color: #FB8B00;
+	padding: 7px;
+}
+
+.normal_priority {
+	background-color: #eee;
+	font-size: 90%;
+}
+
+.low_priority {
+	background-color: #eee;
+	color: #999;
+	font-size: 80%;
+}
+
 .possible {
 	background-color: #8BC18B;
 }

@@ -193,7 +193,96 @@ display_{name}({countdown_seconds});
 		hour=_('hour'), hours=_('hours'),
 		minute=_('minute'), minutes=_('minutes'),
 		second=_('second'), seconds=_('seconds'),
-		refresh_uri="/" + self.wmi.uri,
+		refresh_uri=uri if uri else ("/" + self.wmi.uri),
+		limit=limit,
+		operation='+' if limit else '-',
+		counter_test='<=' if limit else '>='
+	)
+	@staticmethod
+	def countdown(name, countdown_seconds, uri, limit=0):
+		""" Always increment the
+			countdown with 2 seconds, else the webpage could refresh too early
+			and display a new 1 second countdown, due to rounding errors.
+
+		http://www.plus2net.com/javascript_tutorial/countdown.php """
+		return '''
+<script type="text/javascript">
+function display_{name}(start){{
+	window.start_{name} = parseFloat(start);
+	// change this to stop the counter at a higher value
+	var end_{name} = {limit};
+	if(window.start_{name} {counter_test} end_{name}) {{
+		// Refresh rate in milli seconds
+		mytime=setTimeout('display_countdown_{name}()', 1000)
+	}} else {{
+		document.location = "{refresh_uri}";
+	}}
+}}
+
+function display_countdown_{name}() {{
+	// Calculate the number of days left
+	var days = Math.floor(window.start_{name} / 86400);
+
+	// After deducting the days calculate the number of hours left
+	var hours = Math.floor((window.start_{name} - (days *86400))/3600)
+
+	// After days and hours , how many minutes are left
+	var minutes = Math.floor((window.start_{name} - (days*86400) - (hours *3600))/60)
+
+	// Finally how many seconds left after removing days, hours and minutes.
+	var secs = Math.floor((window.start_{name} - (days*86400) - (hours*3600) - (minutes*60)))
+
+	var x = "";
+
+
+	if (days > 1)
+		x += days + " {days}";
+
+	else if (days > 0)
+		x += days + " {day}";
+
+	if (days > 0 && (hours > 0 || minutes > 0 || secs > 0))
+		x += ", ";
+
+	if (hours > 1)
+		x += hours + " {hours}";
+
+	else if (hours > 0)
+		x += hours + " {hour}";
+
+	if (hours > 0 && (minutes > 0 || secs > 0))
+		x += ", ";
+
+	if (minutes > 1)
+		x += minutes + " {minutes}";
+
+	else if (minutes > 0)
+		x += minutes + " {minute}";
+
+	if (minutes > 0 && secs > 0)
+		x += ", ";
+
+	if (secs > 1)
+		x += secs + " {seconds}";
+
+	else if (secs > 0)
+		x += secs + " {second}";
+
+	document.getElementById('countdown_{name}').innerHTML = x;
+
+	// change the operation to make the counter go upwards or downwards
+	tt=display_{name}(window.start_{name} {operation} 1);
+}}
+display_{name}({countdown_seconds});
+</script>
+<span id='countdown_{name}' class="countdown"></span>'''.format(
+		name=name,
+		countdown_seconds=countdown_seconds + 2.0,
+		day=_('day'), 	days=_('days'),
+		hour=_('hour'), hours=_('hours'),
+		minute=_('minute'), minutes=_('minutes'),
+		second=_('second'), seconds=_('seconds'),
+		refresh_uri=uri,
 		limit=limit,
 		operation='+' if limit else '-',
 		counter_test='<=' if limit else '>='

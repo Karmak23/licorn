@@ -6,6 +6,7 @@ from gettext import gettext as _
 from subprocess            import Popen, PIPE
 
 from licorn.foundations           import process
+from licorn.foundations.base      import NamedObject
 from licorn.foundations.constants import filters
 from licorn.foundations.pyutils   import format_time_delta
 
@@ -107,10 +108,13 @@ backgroundColor: '#FFFFFF'
 ''' % (used, free, _('Used'), _('Free'), _('Swap occupation'))
 def index(uri, http_user, **kwargs):
 
+	import licorn.interfaces.wmi as wmi
+	from licorn.daemon import priorities
+
 	start = time.time()
 
 	title = _("Server status")
-	data  = w.page_body_start(uri, http_user, ctxtnav, '')
+	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
 	loads   = open('/proc/loadavg').read().split(" ")
 	nbusers = len(LMC.users.Select(filters.STANDARD))
@@ -121,8 +125,9 @@ def index(uri, http_user, **kwargs):
 	else:
 		s_users = ''
 
-	uptime_string = format_time_delta(
-		int(float(open('/proc/uptime').read().split(" ")[0])))
+	uptime_string = wmi.WMIObject.countdown('uptime',
+		float(open('/proc/uptime').read().split(" ")[0]),
+		uri='/', limit=99999999.0)
 
 	cpus  = 0
 	model = ''
@@ -176,34 +181,65 @@ def index(uri, http_user, **kwargs):
 		elif load <= 3.0:
 			return 'load_avg_level5'
 
+
+	status_messages = {
+		priorities.LOW: '',
+		priorities.NORMAL: '',
+		priorities.HIGH: ''
+		}
+
+	info_messages = {
+		priorities.LOW:
+				'<p class="light_indicator low_priority">%s</p>' % (
+					_(u'automatic update of this page in %s.') %
+					wmi.WMIObject.countdown('update', 28, uri='/')),
+		priorities.NORMAL: '',
+		priorities.HIGH: ''
+		}
+
+	for obj in wmi.__dict__.itervalues():
+		if isinstance(obj, NamedObject):
+			if hasattr(obj, '_status'):
+				for msgtuple in getattr(obj, '_status')():
+					status_messages[msgtuple[0]] += msgtuple[1] + '\n'
+			if hasattr(obj, '_info'):
+				for msgtuple in getattr(obj, '_info')():
+					info_messages[msgtuple[0]] += msgtuple[1] + '\n'
+
 	data += '''
-	<table>
+	<table style="margin-top: -40px">
 	<tr>
-		<td style="vertical-align: top; padding-bottom:50px;">
-			<h1>%s</h1>
-			<p>%s<br /><br /></p>
+		<td style="vertical-align: top; padding-bottom:20px;">
+			<h1>{system_status_title}</h1>
+			{status_messages[0]}
+			<p>{system_status}<br /><br /></p>
+			{status_messages[10]}
 		</td>
-		<td style="vertical-align: top; padding-bottom:50px;">
-			<h1>%s</h1>
-			<p>%s</p>
+		<td style="vertical-align: top; padding-bottom:20px;">
+			<h1>{system_info_title}</h1>
+			{info_messages[0]}
+			<p>{system_info}</p>
+			{info_messages[10]}
 		</td>
 	</tr>
 	<tr>
 		<td style="vertical-align: top;">
 
-				%s
-
+				{mem_pie}
+			<br />
+			{status_messages[20]}
 		</td>
 		<td style="vertical-align: top;">
 
-				%s
-
+				{swap_pie}
+			<br />
+			{info_messages[20]}
 		</td>
 	</tr>
 	</table>
-	''' % (
-			_('System status'),
-			_('Up and running since <strong>{uptime}</strong>.<br /><br />'
+	'''.format(
+			system_status_title=_('System status'),
+			system_status=_('Up and running since <strong>{uptime}</strong>.<br /><br />'
 				'Users: <strong>{accounts}</strong> {account_word}, '
 				'<strong>{connected} {open_session_words}</strong>.<br /><br />'
 				'1, 5, and 15 last minutes load average: '
@@ -220,8 +256,8 @@ def index(uri, http_user, **kwargs):
 				load_back5=load_background(float(loads[1])),
 				load_back15=load_background(float(loads[2]))),
 
-			_('System information'),
-			_('Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong>'
+			system_info_title=_('System information'),
+			system_info=_('Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong>'
 				'<br /><br />'
 				'Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />'
 				'{swap_total}').format(
@@ -229,15 +265,18 @@ def index(uri, http_user, **kwargs):
 					ram=mem['MemTotal'],
 					swap_total=swap_message),
 
-			_flotr_pie_ram(
+			mem_pie=_flotr_pie_ram(
 				mem['Inactive'] + mem['Active'],
 				mem['Cached'],
 				mem['Buffers'],
 				mem['MemFree']
 			),
 
-			_flotr_pie_swap(mem['SwapTotal']-mem['SwapFree'], mem['SwapFree'])
-				if swap_message != '' else ''
+			swap_pie=_flotr_pie_swap(mem['SwapTotal']-mem['SwapFree'], mem['SwapFree'])
+				if swap_message != '' else '',
+
+			status_messages=status_messages,
+			info_messages=info_messages
 		)
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
