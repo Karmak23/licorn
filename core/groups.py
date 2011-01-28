@@ -11,8 +11,8 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import os, stat, posix1e, re
-from time import strftime, gmtime
+import os, stat, posix1e, re, time
+from gettext import gettext as _
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
@@ -418,7 +418,7 @@ class GroupsController(Singleton, CoreController):
 					LMC.configuration.groups.name_maxlenght)
 
 		if description is None:
-			description = 'members of group “%s”' % name
+			description = _(u'Members of group “%s”') % name
 
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError('''Malformed group description '''
@@ -471,7 +471,7 @@ class GroupsController(Singleton, CoreController):
 				# some things could be missing (resp- , guest- , shared dir or
 				# ACLs), it is a good idea to verify everything is really OK by
 				# continuing the creation procedure.
-				logging.notice(str(e))
+				logging.info(str(e))
 				gid = self.name_to_gid(name)
 				not_already_exists = False
 			else:
@@ -487,8 +487,8 @@ class GroupsController(Singleton, CoreController):
 
 		if system:
 			if not_already_exists:
-				logging.info('Created system group %s (gid=%s).' % (
-					stylize(ST_NAME, name),
+				logging.notice(_(u'Created system group {0} '
+					'(gid={1}).').format(stylize(ST_NAME, name),
 					stylize(ST_UGID, gid)))
 
 			# last operation before returning.
@@ -505,10 +505,10 @@ class GroupsController(Singleton, CoreController):
 			self.CheckGroups([ gid ], minimal=True, batch=True, force=force)
 
 			if not_already_exists:
-				logging.info('Created %s group %s (gid=%s).' % (
-					stylize(ST_OK, 'permissive')
+				logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
+					stylize(ST_OK, _(u'permissive'))
 						if self.groups[gid]['permissive'] else
-							stylize(ST_BAD, 'not permissive'),
+							stylize(ST_BAD, _(u'not permissive')),
 					stylize(ST_NAME, name),
 					stylize(ST_UGID, gid)))
 
@@ -779,7 +779,7 @@ class GroupsController(Singleton, CoreController):
 				shutil.rmtree(home)
 			except (IOError, OSError), e:
 				if e.errno == 2:
-					logging.notice("Can't remove %s, it doesn't exist !" % \
+					logging.info(_(u'Cannot remove %s, it does not exist!') %
 						stylize(ST_PATH, home))
 				else:
 					raise e
@@ -790,18 +790,18 @@ class GroupsController(Singleton, CoreController):
 
 			group_archive_dir = "%s/%s.deleted.%s" % (
 				LMC.configuration.home_archive_dir, name,
-				strftime("%Y%m%d-%H%M%S", gmtime()))
+				time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 			try:
 				os.rename(home, group_archive_dir)
 
-				logging.info("Archived %s as %s." % (home,
+				logging.info(_(u"Archived {0} as {1}.").format(home,
 					stylize(ST_PATH, group_archive_dir)))
 
 				LMC.configuration.check_archive_dir(
 					group_archive_dir, batch=True)
 			except OSError, e:
 				if e.errno == 2:
-					logging.notice("Can't archive %s, it doesn't exist !" % \
+					logging.info(_(u'Cannot archive %s, it does not exist!') %
 						stylize(ST_PATH, home))
 				else:
 					raise e
@@ -817,11 +817,13 @@ class GroupsController(Singleton, CoreController):
 		try:
 			gid = self.name_cache[name]
 		except KeyError:
-			logging.info('''Group %s doesn't exist.''' % stylize(
+			logging.info(_(u'Group %s does not exist.') % stylize(
 				ST_NAME, name))
 			return
 
 		backend = self.groups[gid]['backend']
+
+		system = self.is_system_gid(gid)
 
 		# Remove the group in the groups list of profiles
 		LMC.profiles.delete_group_in_profiles(name=name)
@@ -840,10 +842,10 @@ class GroupsController(Singleton, CoreController):
 
 			LMC.backends[backend].delete_Group(name)
 
-			logging.info(logging.SYSG_DELETED_GROUP % \
-				stylize(ST_NAME, name))
+			logging.notice(_(u'Deleted {0}group {1}.').format(
+				_(u'system ') if system else '', stylize(ST_NAME, name)))
 		except KeyError:
-			logging.warning(logging.SYSG_GROUP_DOESNT_EXIST %
+			logging.warning(_(u'The group %s does not exist.') %
 				stylize(ST_NAME, name))
 
 		assert ltrace('groups', '< __delete_group(%s)' % name)
@@ -942,7 +944,7 @@ class GroupsController(Singleton, CoreController):
 				self.groups[gid]['backend']
 				].save_Group(gid, backend_actions.UPDATE)
 
-			logging.info('Changed group %s description to "%s".' % (
+			logging.notice('Changed group %s description to "%s".' % (
 				stylize(ST_NAME, name),
 				stylize(ST_COMMENT, description)
 				))
@@ -966,7 +968,7 @@ class GroupsController(Singleton, CoreController):
 				self.groups[gid]['backend']
 				].save_Group(gid, backend_actions.UPDATE)
 
-			logging.info('Changed group %s skel to "%s".' % (
+			logging.notice('Changed group %s skel to "%s".' % (
 				stylize(ST_NAME, name),
 				stylize(ST_COMMENT, groupSkel)
 				))
@@ -986,13 +988,12 @@ class GroupsController(Singleton, CoreController):
 			if p in LMC.profiles:
 				# Add the group in groups list of profiles
 				if name in LMC.profiles[p]['memberGid']:
-					logging.progress(
-						"Group %s already in the list of profile %s." % (
-						stylize(ST_NAME, name),
+					logging.info(_(u'Group {0} already in the list '
+						'of profile {1}.').format(stylize(ST_NAME, name),
 						stylize(ST_NAME, p)))
 				else:
 					controllers.profiles.AddGroupsInProfile([name])
-					logging.info(
+					logging.notice(
 						"Added group %s in the groups list of profile %s." % (
 						stylize(ST_NAME, name),
 						stylize(ST_NAME, p)))
@@ -1023,16 +1024,16 @@ class GroupsController(Singleton, CoreController):
 		for p in profiles:
 			# Delete the group from groups list of profiles
 			if name in controllers.profiles[p]['memberGid']:
-				logging.notice("Deleting group '%s' from the profile '%s'." % (
-					stylize(ST_NAME, name),
-					stylize(ST_NAME, p)))
+				logging.progress(_(u'Deleting group %s from the profile %s.') %
+					( stylize(ST_NAME, name), stylize(ST_NAME, p)))
 				controllers.profiles.DeleteGroupsFromProfile([name])
 				# Delete all 'p''s users from the group 'name'
 				_users_to_del = self.__find_group_members(users,
 					controllers.profiles[p]['groupName'])
 				self.DeleteUsersFromGroup(name, _users_to_del, users)
 			else:
-				logging.info('Group %s already absent from profile %s.' % (
+				logging.info(_(u'Group {0} already absent from '
+					'profile {1}.').format(
 					stylize(ST_NAME, name),
 					stylize(ST_NAME, p)))
 
@@ -1066,8 +1067,8 @@ class GroupsController(Singleton, CoreController):
 				for uid in uids_to_add:
 					login = u2l(uid)
 					if login in self.groups[gid]['memberUid']:
-						logging.progress(
-							"User %s is already a member of %s, skipped." % (
+						logging.info(_(u'User {0} is already a member '
+							'of {1}, skipped.').format(
 							stylize(ST_LOGIN, login),
 							stylize(ST_NAME, name)))
 					else:
@@ -1194,8 +1195,8 @@ class GroupsController(Singleton, CoreController):
 						# update the users cache.
 						LMC.users[uid]['groups'].append(name)
 						LMC.users[uid]['groups'].sort()
-						logging.info("Added user %s to members of %s." % (
-							stylize(ST_LOGIN, login),
+						logging.notice(_(u'Added user {0} to members '
+							'of group {1}.').format(stylize(ST_LOGIN, login),
 							stylize(ST_NAME, name)))
 
 						if batch:
@@ -1262,18 +1263,6 @@ class GroupsController(Singleton, CoreController):
 					#self.reload_admins_group_in_validator(name)
 
 		assert ltrace('groups', '< AddUsersInGroup()')
-	def reload_admins_group_in_validator(self, name):
-		""" Reload a LicornPyroValidator class attribute in the CommandListener
-			thread, to be sure the foreign list of members of group "admins" is
-			up-to-date. This is needed because there are so many calls to the
-			validator that """
-		# FIXME: this doesn't belong here, but it is the only way to start
-		# that I found.
-		if name == 'admins':
-			# update the list of admins group member in the connection
-			# validator of the daemon.
-			from licorn.daemon.internals.cmdlistener import LicornPyroValidator
-			LicornPyroValidator.reload()
 	def DeleteUsersFromGroup(self, name=None, gid=None, users_to_del=None,
 		batch=False):
 		""" Delete a users list in the group 'name'. """
@@ -1314,8 +1303,8 @@ class GroupsController(Singleton, CoreController):
 						# update the users cache
 						LMC.users[uid]['groups'].remove(name)
 
-						logging.info("Removed user %s from members of %s." % (
-							stylize(ST_LOGIN, login),
+						logging.notice(_(u'Removed user {0} from members '
+							'of group {1}.').format(stylize(ST_LOGIN, login),
 							stylize(ST_NAME, name)))
 
 						if batch:
@@ -1362,7 +1351,7 @@ class GroupsController(Singleton, CoreController):
 								if os.path.abspath(
 										os.readlink(link)) == link_src:
 									os.unlink(link)
-									logging.info("Deleted symlink %s." %
+									logging.info(_(u'Deleted symlink %s.') %
 										stylize(ST_LINK, link))
 							except (IOError, OSError), e:
 								if e.errno == 2:
@@ -1376,9 +1365,8 @@ class GroupsController(Singleton, CoreController):
 											stylize(ST_LINK, link),
 											str(e)))
 					else:
-						logging.info(
-							"User %s is already not a member of %s, "
-							"skipped." % (
+						logging.info(_(u'Skipped user {0}, already not '
+							'a member of group {1}').format(
 								stylize(ST_LOGIN, login),
 								stylize(ST_NAME, name)))
 
@@ -1478,8 +1466,8 @@ class GroupsController(Singleton, CoreController):
 
 		with self.lock():
 			for (prefix, title) in (
-				(LMC.configuration.groups.resp_prefix, "responsibles"),
-				(LMC.configuration.groups.guest_prefix, "guests")
+				(LMC.configuration.groups.resp_prefix, _(u"responsibles")),
+				(LMC.configuration.groups.guest_prefix, _(u"guests"))
 				):
 
 				group_name = prefix + name
@@ -1492,7 +1480,8 @@ class GroupsController(Singleton, CoreController):
 					prefix_gid = self.name_cache[group_name]
 
 				except KeyError:
-					warn_message = logging.SYSG_SYSTEM_GROUP_REQUIRED % (
+					warn_message = _(u'The system group {0} is required '
+						'for the group {1} to be fully operationnal.').format(
 						stylize(ST_NAME, group_name),
 						stylize(ST_NAME, name))
 
@@ -1501,18 +1490,20 @@ class GroupsController(Singleton, CoreController):
 						try:
 							temp_gid = self.__add_group(group_name,
 								system=True, manual_gid=None,
-								description="%s of group “%s”" % (title, name),
-								groupSkel="",
+								description=_(u'{0} of group “{1}”').format(
+											title, name),
+								groupSkel='',
 								backend=self.groups[gid]['backend'],
 								batch=batch, force=force)
 							prefix_gid = temp_gid
 							del temp_gid
 
-							logging.info("Created system group %s (gid=%s)." %
-								(stylize(ST_NAME, group_name),
-								stylize(ST_UGID, prefix_gid)))
+							logging.notice(_(u'Created system group {0}'
+								'(gid={1}).').format(
+									stylize(ST_NAME, group_name),
+									stylize(ST_UGID, prefix_gid)))
 						except exceptions.AlreadyExistsException, e:
-							logging.notice(str(e))
+							logging.info(str(e))
 							pass
 					else:
 						logging.warning(warn_message)
@@ -1533,6 +1524,58 @@ class GroupsController(Singleton, CoreController):
 					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
 
 		return all_went_ok
+	def __check_system_group(self, gid=None, name=None, minimal=True,
+							batch=False, auto_answer=None):
+		""" Check superflous and mandatory attributes of a system group. """
+
+		gid, name = self.resolve_gid_or_name(gid, name)
+
+		assert ltrace(self.name, '| __check_system_group(%s, %s)' % (gid, name))
+
+		group = self.groups[gid]
+
+		logging.progress(_(u'Checking system specific attributes '
+				'for group {0}…').format(stylize(ST_NAME, name))
+			)
+
+		update = False
+
+		# any system group should not have a skel, this is particularly useless.
+		if 'groupSkel' in group and group['groupSkel'] != '':
+			update = True
+			del group['groupSkel']
+
+			logging.info(_(u'Removed superfluous attribute {0} '
+				'of system group {1}').format(
+					stylize(ST_ATTR, 'groupSkel'),
+					stylize(ST_NAME, name))
+				)
+		# Licorn® system groups should have at least a default description.
+		# restricted system groups are not enforced on that point.
+		if not self.is_restricted_system_gid(gid):
+			if 'description' not in group:
+				update = True
+				group['description'] = _(u'Members of group “%s”') % name
+
+				logging.info(_(u'Added missing {0} attribute with a '
+					'default value for system group {1}.').format(
+						stylize(ST_ATTR, 'description'),
+						stylize(ST_NAME, name))
+					)
+
+		if update:
+			if (batch or logging.ask_for_repair(_('Do you want to commit '
+				'these changes to the system (highly recommended)?'),
+				auto_answer=auto_answer)):
+
+				LMC.backends[group['backend']].save_Group(gid,
+														backend_actions.UPDATE)
+				return True
+			else:
+				logging.warning(_(u'Corrections of system group '
+					'{0} not commited').format(name))
+				return False
+		return True
 	def __check_group(self, gid=None, name=None, minimal=True, batch=False,
 		auto_answer=None, force=False):
 		""" Check a group (the real implementation, private: don't call directly
@@ -1563,10 +1606,12 @@ class GroupsController(Singleton, CoreController):
 			all_went_ok = True
 
 			if self.is_system_gid(gid):
-				return True
+				return self.__check_system_group(gid, minimal=minimal,
+					batch=batch, auto_answer=auto_answer)
 
-			logging.progress("Checking group %s…" %
-				stylize(ST_NAME, name))
+			logging.progress(_(u"Checking group {0}…").format(
+					stylize(ST_NAME, name))
+				)
 
 			all_went_ok &= self.CheckAssociatedSystemGroups(
 				name=name, minimal=minimal, batch=batch,
@@ -1683,29 +1728,31 @@ class GroupsController(Singleton, CoreController):
 				for gid in sorted(self.groups):
 					to_remove = set()
 
-					logging.progress('''Checking for dangling references in group %s.'''
-						% stylize(ST_NAME,
+					logging.progress('Checking for dangling references '
+						'in group %s.' % stylize(ST_NAME,
 							self.groups[gid]['name']))
 
 					for member in self.groups[gid]['memberUid']:
 						if not LMC.users.login_cache.has_key(member):
 							if batch or logging.ask_for_repair('''User %s is '''
-								'''referenced in members of group %s but doesn't '''
+								'''referenced in _members of group %s but doesn't '''
 								'''really exist on the system. Remove this dangling '''
 								'''reference?''' % \
 									(stylize(ST_BAD, member),
 									stylize(ST_NAME,
 										self.groups[gid]['name'])),
-								auto_answer=auto_answer):
+									auto_answer=auto_answer):
 								# don't directly remove member from members,
 								# it will immediately stop the for_loop. Instead, note
 								# the reference to remove, to do it a bit later.
-								logging.info('''Removed dangling reference to '''
-									'''non-existing user %s in group %s.''' % (
+								to_remove.add(member)
+
+								logging.info(_(u'Removed dangling reference '
+									'to non-existing user {0} in '
+									'group {1}.').format(
 									stylize(ST_BAD, member),
 									stylize(ST_NAME,
 										self.groups[gid]['name'])))
-								to_remove.add(member)
 
 					if to_remove != set():
 						for member in to_remove:
@@ -1809,7 +1856,7 @@ class GroupsController(Singleton, CoreController):
 						if delete:
 							try:
 								os.unlink(link)
-								logging.info("Deleted symlink %s." %
+								logging.info(_(u'Deleted symlink %s.') %
 									stylize(ST_LINK, link))
 							except (IOError, OSError), e:
 								if e.errno != 2:
@@ -1828,7 +1875,7 @@ class GroupsController(Singleton, CoreController):
 						and link_src_old == os.readlink(link):
 						# delete links to old group name.
 						os.unlink(link)
-						logging.info("Deleted old symlink %s." %
+						logging.info(_(u'Deleted old symlink %s.') %
 							stylize(ST_LINK, link))
 					else:
 						# errno == 2 is a broken link, don't bother.
@@ -1837,7 +1884,8 @@ class GroupsController(Singleton, CoreController):
 								link, str(e)))
 
 			if link_not_found and not delete:
-				warn_message = logging.SYSG_USER_LACKS_SYMLINK % (
+				warn_message = _(u'User {0} lacks the symlink to '
+					'group {1} shared dir. Create it?').format(
 					stylize(ST_LOGIN, user),
 					stylize(ST_NAME, link_basename))
 
@@ -1864,9 +1912,9 @@ class GroupsController(Singleton, CoreController):
 			gid, name = self.resolve_gid_or_name(gid, name)
 
 			if permissive:
-				qualif = ''
+				qualif = _(u'')
 			else:
-				qualif = 'not '
+				qualif = _(u'not ')
 
 			logging.progress('''Setting permissive=%s for group %s ('''
 				'''original is %s).''' % (
@@ -1880,12 +1928,14 @@ class GroupsController(Singleton, CoreController):
 
 				# auto-apply the new permissiveness
 				self.CheckGroups([ gid ], batch=True)
-				logging.info('Changed group %s permissive state to %s.' % (
-					stylize(ST_NAME, name),
-					stylize(ST_OK if permissive else ST_BAD, permissive)
-				))
+				logging.info(_(u'Switched group {0} permissive '
+					'state to {1}.').format(stylize(ST_NAME, name),
+					stylize(ST_OK if permissive else ST_BAD, _(u'True')
+						if permissive else _(u'False'))
+					)
+				)
 			else:
-				logging.info('Group %s is already %spermissive.' % (
+				logging.info(_(u'Group {0} is already {1}permissive.').format(
 					stylize(ST_NAME, name), qualif))
 	def move_to_backend(self, gid, new_backend, force=False,
 			internal_operation=False):
@@ -1907,8 +1957,9 @@ class GroupsController(Singleton, CoreController):
 		old_backend = self.groups[gid]['backend']
 
 		if old_backend == new_backend:
-			logging.info('Skipped move of group %s, already stored in backend '
-				'%s.' % (stylize(ST_NAME, group_name),
+			logging.info(_(u'Skipped move of group {0}, '
+				'already stored in backend {1}.').format(
+					stylize(ST_NAME, group_name),
 					stylize(ST_NAME, new_backend)))
 			return True
 
@@ -1977,11 +2028,9 @@ class GroupsController(Singleton, CoreController):
 			# the copy operation is successfull, make it a real move.
 			LMC.backends[old_backend].delete_Group(group_name)
 
-			logging.info('Moved group %s from backend %s to %s.' % (
-				stylize(ST_NAME, group_name),
-				stylize(ST_NAME, old_backend),
-				stylize(ST_NAME, new_backend)
-				))
+			logging.info(_(u'Moved group {0} from backend {1} to {2}.').format(
+				stylize(ST_NAME, group_name), stylize(ST_NAME, old_backend),
+				stylize(ST_NAME, new_backend)))
 			return True
 	def is_permissive(self, gid, name):
 		""" Return True if the shared dir of the group is permissive.
@@ -2083,7 +2132,7 @@ class GroupsController(Singleton, CoreController):
 			try:
 				valid_ids.add(self.guess_identifier(value))
 			except exceptions.DoesntExistsException:
-				logging.notice("Skipped non-existing group name or GID '%s'." %
+				logging.info(_(u'Skipped non-existing group name or GID %s.') %
 					stylize(ST_NAME,value))
 		return list(valid_ids)
 	def exists(self, name=None, gid=None):
@@ -2192,7 +2241,7 @@ class GroupsController(Singleton, CoreController):
 				self.name_cache[group_name])
 		except KeyError:
 			raise exceptions.DoesntExistsException(
-				logging.SYSG_GROUP_DOESNT_EXIST % group_name)
+				_(u'Group %s does not exist.') % stylize(ST_NAME, name))
 	def is_unrestricted_system_gid(self, gid):
 		""" Return true if gid is system, but outside the range of Licorn®
 			controlled GIDs."""
@@ -2206,7 +2255,7 @@ class GroupsController(Singleton, CoreController):
 				self.name_cache[group_name])
 		except KeyError:
 			raise exceptions.DoesntExistsException(
-				logging.SYSG_GROUP_DOESNT_EXIST % group_name)
+				_(u'Group %s does not exist.') % stylize(ST_NAME, name))
 	def is_empty_gid(self, gid):
 		""" return True if GID is empty (has no members) """
 		return self.is_standard_gid(gid) \

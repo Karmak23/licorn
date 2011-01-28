@@ -258,14 +258,6 @@ SYSU_SPECIFY_LGN_OR_UID  = "You must specify a login or a UID (use --help to kno
 SYSU_SPECIFY_LGN_FST_LST = "You must specify a login, or firstname *and* lastname (login will be automatically built from them)."
 SYSU_SPECIFY_LF_OR_GECOS = "You must specify a lastname and a firstname *or* a GECOS. If you specify the GECOS, don't specify first/last and vice-versa."
 
-### system.groups: SYSG_* ###
-SYSG_CREATED_GROUP         = "Created group %s."
-SYSG_DELETED_GROUP         = "Deleted group %s."
-SYSG_GROUP_DOESNT_EXIST    = "The group %s doesn't exist"
-SYSG_SYSTEM_GROUP_REQUIRED = "The system group %s is required for the group %s to be fully operationnal."
-SYSG_USER_LACKS_SYMLINK    = "User %s lacks the symlink to group %s shared dir. Create it?"
-
-
 ### system.profiles: SYSP_* ###
 SYSP_DELETED_PROFILE = "Deleted profile %s."
 
