@@ -64,7 +64,7 @@ class Testsuite:
 
 		# used to modify the best state behaviour when running one one test
 		# or the whole TS.
-		self.best_state_only_one = False
+		self.best_state_only_one = 0
 
 		# used to build initial testsuite data
 		self.batch_run = False
@@ -126,7 +126,8 @@ class Testsuite:
 				#print '>> get_block'
 				prio, sce = self.failed.get(True, 1.0)
 
-				if sce.counter > self.best_state:
+				if not self.best_state_only_one \
+									and sce.counter > self.best_state:
 					# we delay the checks for failed jobs which are not
 					# the next to check. This permits the user to check
 					# scenario to the end, before checking a new one, at
@@ -354,7 +355,7 @@ class Testsuite:
 				self.selected_scenario.append(
 						self.list_scenario[scenario_number])
 				self.best_state = self.get_state() or 1
-				self.best_state_only_one = True
+				self.best_state_only_one = scenario_number
 			except IndexError, e:
 				test_message(_(u"No scenario selected"))
 		elif scenario_number != None and mode == 'start':
@@ -362,6 +363,10 @@ class Testsuite:
 			for scenario in self.list_scenario[scenario_number-1:]:
 				self.selected_scenario.append(scenario)
 				self.best_state = self.get_state() or 1
+
+				if self.best_state < scenario_number:
+					raise RuntimeError(_('Cannot select a higher scenario '
+						'than the current best_state (%s)' % self.best_state))
 			if self.selected_scenario == []:
 				test_message(_(u"No scenario selected"))
 	def clean_scenarii_directory(self,scenario_number=None):
