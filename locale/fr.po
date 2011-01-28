@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-28 11:12+0100\n"
-"PO-Revision-Date: 2011-01-28 11:13+0100\n"
+"POT-Creation-Date: 2011-01-28 11:33+0100\n"
+"PO-Revision-Date: 2011-01-28 11:33+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -380,7 +380,7 @@ msgstr "Icone d'éjection de périphérique"
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr "Aucune donnée d'historique. Merci d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:835
+#: extensions/rdiffbackup.py:836
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
