@@ -831,7 +831,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			else:
 				for backend in self.backends:
 					backend.save_Machines()
-	def Select(self, filter_string, filter_type=host_status):
+	def Select(self, filter_string, filter_type=host_status, return_ids=False):
 		""" Filter machine accounts on different criteria. """
 
 		filtered_machines = []
@@ -849,18 +849,41 @@ class MachinesController(Singleton, CoreController, WMIObject):
 				if None == filter_string:
 					filtered_machines = []
 
-				elif host_status.ONLINE & filter_string:
-					if host_status.ACTIVE & filter_string:
-						map(lambda x: keep_status(x, host_status.ACTIVE),
-							self.itervalues())
+				else:
 
-					if host_status.IDLE & filter_string:
-						map(lambda x: keep_status(x, host_status.IDLE),
-							self.itervalues())
+					if host_status.OFFLINE & filter_string:
 
-					if host_status.ASLEEP & filter_string:
-						map(lambda x: keep_status(x, host_status.ASLEEP),
-							self.itervalues())
+						map(lambda x: keep_status(x, host_status.OFFLINE),
+								self.itervalues())
+
+						if host_status.ASLEEP & filter_string:
+							map(lambda x: keep_status(x, host_status.ASLEEP),
+								self.itervalues())
+
+						if host_status.PYRO_SHUTDOWN & filter_string:
+							map(lambda x: keep_status(x, host_status.PYRO_SHUTDOWN),
+								self.itervalues())
+
+					if host_status.ONLINE & filter_string:
+
+						map(lambda x: keep_status(x, host_status.ONLINE),
+								self.itervalues())
+
+						if host_status.ACTIVE & filter_string:
+							map(lambda x: keep_status(x, host_status.ACTIVE),
+								self.itervalues())
+
+						if host_status.IDLE & filter_string:
+							map(lambda x: keep_status(x, host_status.IDLE),
+								self.itervalues())
+
+						if host_status.LOADED & filter_string:
+							map(lambda x: keep_status(x, host_status.LOADED),
+								self.itervalues())
+
+						if host_status.BOOTING & filter_string:
+							map(lambda x: keep_status(x, host_status.BOOTING),
+								self.itervalues())
 
 			else:
 				import re
@@ -871,7 +894,10 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					filtered_machines.append(self[mid])
 
 			assert ltrace('machines', '< Select(%s)' % filtered_machines)
-			return filtered_machines
+			if return_ids:
+				return [ m.mid for m in filtered_machines ]
+			else:
+				return filtered_machines
 	def ExportCLI(self, selected=None, long_output=False):
 		""" Export the machine accounts list to human readable («passwd») form.
 		"""
@@ -883,21 +909,23 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		assert ltrace('machines', '| ExportCLI(%s)' % mids)
 
-		m = self
 		justw=10
 
 		def build_cli_output_machine_data(mid):
 
+			m = self[mid]
+
 			account = [	stylize(ST_NAME \
-							if m[mid].managed else ST_SPECIAL,
-							m[mid].hostname),
+							if m.managed else ST_SPECIAL,
+							m.hostname) + (_(u' (this machine)')
+								if m.myself else ''),
 						'%s: %s%s' % (
 								'status'.rjust(justw),
 								stylize(ST_ON
-										if m[mid].status & host_status.ONLINE
+										if m.status & host_status.ONLINE
 											else ST_OFF,
-										host_status[m[mid].status].title()),
-								'' if m[mid].system is None
+										host_status[m.status].title()),
+								'' if m.system is None
 										else ' (remote control enabled)'
 							),
 						'%s: %s (%s%s)' % (
@@ -905,14 +933,14 @@ class MachinesController(Singleton, CoreController, WMIObject):
 								str(mid),
 								'expires: %s, ' % stylize(ST_ATTR,
 									strftime('%Y-%d-%m %H:%M:%S',
-									localtime(float(m[mid].expiry))))
-										if m[mid].expiry else '',
-									'managed' if m[mid].managed
+									localtime(float(m.expiry))))
+										if m.expiry else '',
+									'managed' if m.managed
 													else 'floating',
 							),
 						'%s: %s' % (
 								'ethernet'.rjust(justw),
-								str(m[mid].ether)
+								str(m.ether)
 							)
 						]
 			return '\n'.join(account)

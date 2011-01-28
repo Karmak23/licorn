@@ -243,16 +243,40 @@ def common_filter_group(app, parser, tool, mode):
 			help="""Specify machine(s) by their IP address (separated by """
 				"""commas without spaces).""")
 
-		if tool in ('get', 'mod', 'del', 'chk'):
+		if tool in ('get', 'mod', 'chk'):
+			filtergroup.add_option('-u', '--unknown', '--unknown-machines',
+				action="store_true", dest="unknown", default = False,
+				help="Only select machines whose status is totally unknown.")
+			filtergroup.add_option('--offline', '--offline-machines',
+				action="store_true", dest="offline", default = False,
+				help="Only select offline machines (this includes shutdown,"
+					"going to sleep, asleep, shutting down and pyro shutdown "
+					"machine).")
+			filtergroup.add_option('--going-to-sleep',
+				'--going-to-sleep-machines',
+				action="store_true", dest="going_to_sleep", default = False,
+				help="Only select going to sleep machines.")
 			filtergroup.add_option('--asleep', '--asleep-machines',
 				action="store_true", dest="asleep", default = False,
 				help="Only select asleep machines.")
+
+			filtergroup.add_option('--online', '--online-machines',
+				action="store_true", dest="online", default = False,
+				help="Only select online machines (%s, and includes "
+					"booting, idle, active and loaded machines)." %
+					stylize(ST_DEFAULT, "this is the default behaviour"))
+			filtergroup.add_option('--booting', '--booting-machines',
+				action="store_true", dest="booting", default = False,
+				help="Only select booting machines.")
 			filtergroup.add_option('--idle', '--idle-machines',
 				action="store_true", dest="idle", default = False,
 				help="Only select idle machines.")
 			filtergroup.add_option('--active', '--active-machines',
 				action="store_true", dest="active", default = False,
 				help="Only select active machines.")
+			filtergroup.add_option('--loaded', '--loaded-machines',
+				action="store_true", dest="loaded", default = False,
+				help="Only select loaded machines.")
 
 	return filtergroup
 def check_opts_and_args(parse_args):
