@@ -1261,12 +1261,12 @@ def test_users(context):
 
 	#fix #284
 	testsuite.add_scenario(ScenarioTest([
-		ADD + [ 'user', '--firstname=Robin', '--lastname=Lucbernet', '-v' ],
-		ADD + [ 'user', '--firstname=Robin',
+		ADD + [ 'user', '--firstname=RobinNibor', '--lastname=Lucbernet', '-v' ],
+		ADD + [ 'user', '--firstname=RobinNibor',
 			'--lastname=LucbernetLucbernetLucbernetLucbernetLucbernetLucbernet',
 			'-v' ],
 		GET + [ 'users' ],
-		DEL + [ 'user', '--login=robin.lucbernet' ],
+		DEL + [ 'user', '--login=robinnibor.lucbernet' ],
 		GET + [ 'users' ],
 		],
 		context=context,
@@ -1288,7 +1288,7 @@ def test_users(context):
 		GET + [ 'user' , uname, '--long' ],
 		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s2,%s3' %
 			(gname, gname), '--del-groups=%s' % gname,
-			'--gecos=Robin Lucbernet', '--shell=/bin/sh'  ],
+			'--gecos=RobinNibor Lucbernet', '--shell=/bin/sh'  ],
 		GET + [ 'user', uname, '--long' ],
 		MOD + [ 'user', '--login=%s' % uname, '--add-groups=%s' % gname,
 			'--del-groups=%s2,%s3' % (gname, gname) ],
@@ -1359,7 +1359,7 @@ def test_users(context):
 		descr='''Add a profil and check if it has been affected to a new '''
 			'''user (avoid #277)''', clean_num=1))
 
-	fname = 'nibor'
+	fname = 'niborrobin'
 	lname = 'tenrebcul'
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'user', '--firstname=%s' % fname, '--lastname=%s' % lname, '-v' ],
