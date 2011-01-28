@@ -156,7 +156,7 @@ class ScenarioTest:
 		self.failed_cmd = -1
 
 		# used from the outside to know the current sce status
-		self.current_cmd = 0
+		self.current_cmd = None
 
 		# we have to give a unique number to commands in case they are repeated.
 		# this is quite common, to test commands twice (the second call should
@@ -271,7 +271,7 @@ class ScenarioTest:
 			changed = True
 
 		if changed:
-			time.sleep(2.5)
+			time.sleep(4.0)
 	def SaveOutput(self, cmdnum, output, code):
 		try:
 			os.makedirs('%s/%s' % (self.base_path, cmdnum))
@@ -381,8 +381,8 @@ class ScenarioTest:
 		self.interactive = interactive
 
 		if self.interactive:
-			logging.notice(_('Running %s in interactive mode.') %
-					stylize(ST_NAME, self.name))
+			# display a blank line to separate from TS status display.
+			sys.stderr.write('\n')
 
 		self.check_for_context()
 
@@ -423,7 +423,7 @@ class ScenarioTest:
 		for cmdnum in self.cmds:
 
 			# just for the display, we need to start from 1, not 0
-			self.current_cmd = cmdnum+1
+			self.current_cmd = cmdnum + 1
 
 			if not self.RunCommand(cmdnum):
 				self.status      = sce_status.FAILED
@@ -2300,7 +2300,10 @@ if __name__ == "__main__":
 			for ctx in ('shadow','openldap'):
 				compare_delete_backups(ctx)
 			# TODO: test_concurrent_accesses()
-			testsuite.clean_state_file()
+
+			# no need to do this now, the TS will act smart about it.
+			#testsuite.clean_state_file()
+
 			test_message(_("Testsuite terminated successfully."))
 			test_message(_("Don't forget to test massive del/mod/chk with -a "
 				"argument (not tested because too dangerous)"))

@@ -107,6 +107,10 @@ class Testsuite:
 		# wait for the first job to be run, else counter displays '-1'.
 		time.sleep(2.0)
 
+		# we will start display 'context setup' if this is the case.
+		self.last_setup_display = -1
+		self.last_status_display = 0
+
 		while True:
 			try:
 				self.display_status()
@@ -145,7 +149,7 @@ class Testsuite:
 					# wait a short while, to avoid displaying next status
 					# working on the end of the last failed scenario, which
 					# is a false-positive.
-					time.sleep(1.0)
+					#time.sleep(1.0)
 			except KeyboardInterrupt:
 				#best state is already saved.
 
@@ -159,10 +163,12 @@ class Testsuite:
 
 			except Empty:
 				#print '>> empty'
-				if self.to_run.qsize() == 0 and self.failed.qsize() \
-											and not self.jobbing.is_set():
+				if self.to_run.qsize() == 0 and self.failed.qsize() == 0 \
+											and not self.working.is_set():
+
 					self.threads[0].stop()
-					logging.notice(_('no more failed jobs, ending testsuite.'))
+					self.save_best_state()
+					logging.notice(_('no more jobs, ending testsuite.'))
 					break
 
 		self.threads[0].join()
@@ -178,6 +184,9 @@ class Testsuite:
 			elif elem == self.best_state:
 				self.passed.remove(elem)
 				self.best_state = elem + 1
+			elif elem == self.best_state + 1:
+				self.passed.remove(elem)
+				self.best_state = elem
 			else:
 				break
 
@@ -187,8 +196,9 @@ class Testsuite:
 			test_message(_('Saved best state #%s.') % self.best_state)
 	def run_scenario(self, scenario):
 
-		self.working.set()
 		self.current_sce = scenario
+
+		self.working.set()
 
 		scenario.Run()
 
@@ -211,41 +221,83 @@ class Testsuite:
 		self.current_sce = None
 		self.working.clear()
 	def display_status(self):
+		""" display the current status of the TS, in the following conditions:
+
+			* if not working on anything, don't display any status (this
+			  happens in some rare cases when jobs are migrated from one
+			  queue to another (which is blocking, or while cleanings occur).
+			* if no command is running, display the fact that the scenario
+			  is setting up its context.
+			  This can take time because we need to wait for the daemon to
+			  restart. In this case, the status will be displayed only ONCE
+			  for a given scenario.
+			  It may not be displayed at all, if context is fast enough to
+			  check and setup (or not set up at all when not needed).
+			* while running scenario commands, always display the status.
+
+		"""
 		#clear_term()
 		# "1" counts for the job currently under test: it is not yet done.
-		ran_sce    = self.total_sce - (
-			1 + self.to_run.qsize() + self.failed.qsize())
-		failed_sce = self.failed.qsize()
-		logging.notice(_('TS global status: on #{current}, '
-			'{ran}/{total} passed '
-			'({percent_done:.2}%) {passed_content}- '
-			'{failed} failed '
-			'({percent_failed:.2}%) - '
-			'best score until now: #{best}').format(
-				current=stylize(ST_BUSY, '%s (%s/%s %.1f%%)' % (
-					self.current_sce.counter,
-					self.current_sce.current_cmd,
-					self.current_sce.total_cmds,
-					100.0
-						* self.current_sce.current_cmd
-						/ self.current_sce.total_cmds,
+
+		if self.working.is_set():
+
+			if time.time() - self.last_status_display < 1.0:
+				# don't display the status more than once per second,
+				# in any case.
+				return
+
+			self.last_status_display = time.time()
+
+			if self.current_sce.current_cmd != None \
+				or self.last_setup_display != self.current_sce.counter:
+
+				ran_sce = self.total_sce - (
+							(1 if self.working.is_set() else 0)
+							+ self.to_run.qsize()
+							+ self.failed.qsize())
+				failed_sce = self.failed.qsize()
+				logging.notice(_('TS global status: on #{current}, '
+					'{ran}/{total} passed '
+					'({percent_done:.2}%) {passed_content}- '
+					'{failed} failed '
+					'({percent_failed:.2}%) - '
+					'best score until now: #{best}').format(
+						current=stylize(ST_BUSY, '%s (%s)' % (
+							self.current_sce.counter,
+							'%s/%s %.1f%%' % (
+								self.current_sce.current_cmd,
+								self.current_sce.total_cmds,
+								100.0
+									* self.current_sce.current_cmd
+									/ self.current_sce.total_cmds,
+								)
+								if self.current_sce.current_cmd
+								else _('context setup')
+							)
+							if self.current_sce
+							else '-'),
+						ran=ran_sce,
+						total=self.total_sce,
+						percent_done=100.0*ran_sce/self.total_sce,
+						failed=failed_sce,
+						percent_failed=100.0*failed_sce/self.total_sce,
+						best=self.best_state,
+						passed_content=_('last: {passed}{passed_more} ').format(
+							passed=','.join([ str(i)
+								for i in sorted(self.passed)[:5] ]),
+							passed_more='…'
+								if len(self.passed) > 5 else '')
+							if len(self.passed) > 0 else ''
 					)
-					if self.current_sce and self.current_sce.current_cmd
-					else '-'),
-				ran=ran_sce,
-				total=self.total_sce,
-				percent_done=100.0*ran_sce/self.total_sce,
-				failed=failed_sce,
-				percent_failed=100.0*failed_sce/self.total_sce,
-				best=self.best_state,
-				passed_content=_('last: {passed}{passed_more} ').format(
-					passed=','.join([ str(i)
-						for i in sorted(self.passed)[:5] ]),
-					passed_more='…'
-						if len(self.passed) > 5 else '')
-					if len(self.passed) > 0 else ''
-			)
-		)
+				)
+
+			# always mark the context setup displayed if we reach here.
+			# either we displayed it, or we jumped directly to a command
+			# display, which implies the context setup is already done.
+			#
+			# taking in account the second reason avoids displaying
+			# 'context setup' while the scenario is cleaning after a fail.
+			self.last_setup_display = self.current_sce.counter
 	def get_scenarii(self):
 		""" display the list of scenarii in the TS """
 		# display stats
@@ -292,14 +344,14 @@ class Testsuite:
 				# select only one scenario
 				self.selected_scenario.append(
 						self.list_scenario[scenario_number])
-				self.best_state = scenario_number
+				self.best_state = self.get_state() or 0
 			except IndexError, e:
 				test_message(_("No scenario selected"))
 		elif scenario_number != None and mode == 'start':
 			# start selection from a scenario to the end of the list
 			for scenario in self.list_scenario[scenario_number-1:]:
 				self.selected_scenario.append(scenario)
-				self.best_state = scenario_number
+				self.best_state = self.get_state() or 0
 			if self.selected_scenario == []:
 				test_message(_("No scenario selected"))
 	def clean_scenarii_directory(self,scenario_number=None):
