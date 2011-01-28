@@ -4,9 +4,10 @@ import gettext
 _ = gettext.gettext
 gettext.textdomain('licorn')
 
+from licorn.foundations        import options, logging
 from licorn.foundations.ltrace import ltrace
 from licorn.foundations.styles import *
-from licorn.foundations.base import NamedObject
+from licorn.foundations.base   import NamedObject
 
 class WMIObject():
 	""" Adds WMI-related attributes and method to an extension. """
@@ -214,7 +215,11 @@ def init():
 		if isinstance(controller, WMIObject):
 			assert ltrace('wmi', '  collecting WMIObject %s' %
 											stylize(ST_NAME, controller.name))
-			my_globals[controller.wmi.uri] = controller.wmi
+			try:
+				my_globals[controller.wmi.uri] = controller.wmi
+			except AttributeError:
+				logging.warning2('unitialized WMIObject '
+					'instance %s (harmless).' % controller.name)
 
 	# FIXME: should we do the same for backends or other objects ?
 	# do they satisfy the WMIObject criteria ?

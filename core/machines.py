@@ -616,10 +616,12 @@ class MachinesController(Singleton, CoreController, WMIObject):
 	def load(self):
 		if MachinesController.load_ok:
 			return
-		else:
-			assert ltrace('machines', '| load()')
-			self.reload()
 
+		assert ltrace('machines', '| load()')
+		self.reload()
+
+
+		if LMC.configuration.experimental.enabled:
 			self.create_wmi_object(uri='/machines', name=_('Machines'),
 				alt_string=_('Manage network clients (computers, printers, '
 					'etc) and energy preferences'),
@@ -647,7 +649,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 				_("Export this list")
 			"""
 
-			MachinesController.load_ok = True
+		MachinesController.load_ok = True
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
