@@ -59,7 +59,7 @@ class Testsuite:
 		self.to_run = PriorityQueue()
 		self.failed = PriorityQueue()
 		self.passed = []
-		self.best_state = None
+		self.best_state = 1
 		self.working = Event()
 
 		# used to modify the best state behaviour when running one one test
@@ -347,13 +347,13 @@ class Testsuite:
 		if all:
 			# select all scenarii
 			self.selected_scenario = self.list_scenario[:]
-			self.best_state = 0
+			self.best_state = 1
 		elif scenario_number != None and mode == None:
 			try:
 				# select only one scenario
 				self.selected_scenario.append(
 						self.list_scenario[scenario_number])
-				self.best_state = self.get_state() or 0
+				self.best_state = self.get_state() or 1
 				self.best_state_only_one = True
 			except IndexError, e:
 				test_message(_(u"No scenario selected"))
@@ -361,7 +361,7 @@ class Testsuite:
 			# start selection from a scenario to the end of the list
 			for scenario in self.list_scenario[scenario_number-1:]:
 				self.selected_scenario.append(scenario)
-				self.best_state = self.get_state() or 0
+				self.best_state = self.get_state() or 1
 			if self.selected_scenario == []:
 				test_message(_(u"No scenario selected"))
 	def clean_scenarii_directory(self,scenario_number=None):
