@@ -1245,6 +1245,7 @@ class GroupsController(Singleton, CoreController):
 						link_dst = os.path.join(
 							LMC.users[uid]['homeDirectory'],
 							link_basename)
+
 						fsapi.make_symlink(link_src, link_dst, batch=batch)
 
 						self.run_hooks('group_post_add_user',
@@ -1328,34 +1329,52 @@ class GroupsController(Singleton, CoreController):
 							# a direct reference to this group members.
 							#self.reload_admins_group_in_validator(name)
 
-						if not self.is_system_gid(gid):
-							# delete the shared group dir
-							#symlink in user's home.
-							link_src = os.path.join(
-								LMC.configuration.defaults.home_base_path,
-								LMC.configuration.groups.names.plural,
-								self.groups[gid]['name'])
+						if self.is_standard_gid(gid):
+							# create the symlink to the shared group dir
+							# in the user's home dir.
+							link_basename = self.groups[gid]['name']
+						elif name.startswith(
+							LMC.configuration.groups.resp_prefix):
+							link_basename = \
+								self.groups[gid]['name'].replace(
+								LMC.configuration.groups.resp_prefix,
+								"", 1)
+						elif name.startswith(
+							LMC.configuration.groups.guest_prefix):
+							link_basename = \
+								self.groups[gid]['name'].replace(
+								LMC.configuration.groups.guest_prefix,
+								"", 1)
+						else:
+							# this is a normal system group, don't try to
+							# remove any symlink !
+							continue
 
-							for link in fsapi.minifind(
-								LMC.users[uid]['homeDirectory'],
-								maxdepth=2, type=stat.S_IFLNK):
-								try:
-									if os.path.abspath(
-											os.readlink(link)) == link_src:
-										os.unlink(link)
-										logging.info("Deleted symlink %s." %
-											stylize(ST_LINK, link))
-								except (IOError, OSError), e:
-									if e.errno == 2:
-										# this is a broken link,
-										# readlink failed…
-										pass
-									else:
-										raise exceptions.LicornRuntimeError(
-											"Unable to delete symlink "
-											"%s (was: %s)." % (
-												stylize(ST_LINK, link),
-												str(e)))
+						link_src = os.path.join(
+							LMC.configuration.defaults.home_base_path,
+							LMC.configuration.groups.names.plural,
+							link_basename)
+
+						for link in fsapi.minifind(
+							LMC.users[uid]['homeDirectory'],
+							maxdepth=2, type=stat.S_IFLNK):
+							try:
+								if os.path.abspath(
+										os.readlink(link)) == link_src:
+									os.unlink(link)
+									logging.info("Deleted symlink %s." %
+										stylize(ST_LINK, link))
+							except (IOError, OSError), e:
+								if e.errno == 2:
+									# this is a broken link,
+									# readlink failed…
+									pass
+								else:
+									raise exceptions.LicornRuntimeError(
+										"Unable to delete symlink "
+										"%s (was: %s)." % (
+											stylize(ST_LINK, link),
+											str(e)))
 					else:
 						logging.info(
 							"User %s is already not a member of %s, "
