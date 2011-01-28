@@ -82,8 +82,8 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
-	sys.stderr.write("%s>>> " + _(u'running ') + "%s%s%s\n" % (colors[ST_LOG],
-		colors[ST_PATH], ' '.join(command), colors[ST_NO]))
+	sys.stderr.write(("%s>>> " + _(u'running ') + "%s%s%s\n") % (
+		colors[ST_LOG], colors[ST_PATH], ' '.join(command), colors[ST_NO]))
 
 	output, retcode = execute(command)
 	must_exit = False
@@ -1808,11 +1808,12 @@ def test_profiles(context):
 			'--auto-no' ],
 		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
 			'--auto-yes' ],
-		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '-iv',
-			'--batch' ],
+		DEL + [ 'group', '%s,%s2' % (gname,gname), '--no-archive' ],
+		DEL + [ 'profile', '%s,%s2,%s3' % (pname,pname,pname), '--batch',
+															'--no-archive'],
 		],
 		context=context,
-		descr="test profile interactive commands", clean_num=1))
+		descr="test profile interactive commands", clean_num=2))
 def test_privileges(context):
 	# test features of privileges
 
@@ -2314,6 +2315,8 @@ if __name__ == "__main__":
 
 	def terminate():
 		# clean the system
+		clean_dir_contents(configuration.home_archive_dir)
+
 		testsuite.clean_system()
 		# restore initial user backend
 		testsuite.restore_user_context()
@@ -2329,6 +2332,9 @@ if __name__ == "__main__":
 		try :
 			for ctx in ('shadow', 'openldap'):
 				make_backups(ctx)
+
+			clean_dir_contents(configuration.home_archive_dir)
+
 			testsuite.run()
 			# compare delete backups
 			for ctx in ('shadow','openldap'):
