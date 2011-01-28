@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-27 17:06+0100\n"
-"PO-Revision-Date: 2011-01-27 20:36+0100\n"
+"POT-Creation-Date: 2011-01-28 10:35+0100\n"
+"PO-Revision-Date: 2011-01-28 10:36+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -20,7 +20,11 @@ msgstr ""
 "X-Poedit-Language: French\n"
 "X-Poedit-Country: FRANCE\n"
 
-#: tests/core.py:199
+#: tests/core.py:111
+msgid "The last command failed to execute, or returned an unexpected result!"
+msgstr "La dernière commande n'a pas réussi à s'exécuter, ou a retouné un résultat inatendu !"
+
+#: tests/core.py:209
 msgid ""
 "no reference output for {sce_name}, cmd #{cmd_num}/{total_cmds}:\n"
 "\n"
@@ -34,11 +38,11 @@ msgstr ""
 "\n"
 "{run_output}"
 
-#: tests/core.py:209
+#: tests/core.py:220
 msgid "is this output good to keep as reference for future runs?"
 msgstr "Est-ce que cette sortie est bonne pour garder en tant que référence des exécutions futures ?"
 
-#: tests/core.py:232
+#: tests/core.py:244
 msgid ""
 "command #{cmd_num}/{total_cmds} failed (sce#{sce_num}, ctx {context}). Retcode {ret_code} (ref {ref_code}).\n"
 "\n"
@@ -52,170 +56,181 @@ msgstr ""
 "\n"
 "{diff_output}"
 
-#: tests/core.py:244
+#: tests/core.py:258
 msgid "Should I keep the new return code and trace as reference for future runs?"
 msgstr "Dois-je garder le nouveau code de retour comme valeur de référence pour les exécutions futures ?"
 
-#: tests/core.py:257
+#: tests/core.py:271
 msgid "Backend changed to shadow"
 msgstr "Backend basculé vers shadow."
 
-#: tests/core.py:263
+#: tests/core.py:277
 msgid "Backend changed to OpenLDAP"
 msgstr "Backend basculé vers OpenLDAP."
 
-#: tests/core.py:341
+#: tests/core.py:355
 msgid "Exception {exc} while loading output of cmd {cmd}, sce {sce}. Traceback follows, raising DoesntExistException"
 msgstr "L'exception {exc} a été rencontrée pendant le chargement des données de la commande {cmd} du scénario {sce}. La pile d'appel est affichée ci-après, mais l'exception DoesntExist est levée de toute manière."
 
-#: tests/core.py:378
-#, python-format
-msgid "Running %s in interactive mode."
-msgstr "Exécution du scénario %s en mode intéractif."
-
-#: tests/core.py:403
+#: tests/core.py:423
 #, python-format
 msgid "Already passed scenario %s"
 msgstr "Le scénario %s a déjà réussi."
 
-#: tests/core.py:412
+#: tests/core.py:442
+msgid "Automatically saved new output for scenario #{sce} command #{cmd}/{total}"
+msgstr "Résultat automatiquement sauvegardé pour la commande n°{cmd}/{total} du scénario n°{sce} "
+
+#: tests/core.py:452
 #, python-format
 msgid "Checking FAILED cmd %s of scenario %s"
 msgstr "Vérification de la commande ÉCHOUÉE %s (du scénario %s)"
 
-#: tests/core.py:433
+#: tests/core.py:475
 #, python-format
 msgid "Cleaning directory %s."
 msgstr "Nettoya ge du répertoire %s."
 
-#: tests/core.py:437
+#: tests/core.py:479
 #, python-format
 msgid "Deleting %s."
 msgstr "Suppression de %s."
 
-#: tests/core.py:447
+#: tests/core.py:489
 #, python-format
 msgid "Cleaned directory %s."
 msgstr "Le répertoire %s a été nettoyé."
 
-#: tests/core.py:468
+#: tests/core.py:510
 #, python-format
 msgid "Backed up system files for context %s."
 msgstr "Sauvegardes des fichiers systèmes effectuée pour le contexte %s."
 
-#: tests/core.py:471
+#: tests/core.py:513
 msgid "Comparing backups of system files after tests for side-effects alterations."
 msgstr "Comparaison des fichiers systèmes avec les sauvegardes pour détecter les altérations et les effets de bords."
 
-#: tests/core.py:492
+#: tests/core.py:534
 msgid "System config files backup comparison finished successfully."
 msgstr "Comparaison des fichiers systèmes effectuée avec succès."
 
-#: tests/core.py:2265
+#: tests/core.py:2311
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr "Changement du propriétaire des données de scénarios vers %s:%s."
 
-#: tests/core.py:2280
+#: tests/core.py:2329
 msgid "Testsuite terminated successfully."
 msgstr "Suite de tests terminée avec succès."
 
-#: tests/core.py:2281
+#: tests/core.py:2330
 msgid "Don't forget to test massive del/mod/chk with -a argument (not tested because too dangerous)"
 msgstr "N'oubliez pas de tester les commandes del/mod/chk avec l'argument -a (opérations massives), qui ne sont pas testées automatiquement car trop dangereuses."
 
-#: tests/core.py:2285
+#: tests/core.py:2334
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr "Interruption clavier reçue. Nettoyage du contexte de la suite de tests, merci de patienter…"
 
-#: tests/__init__.py:70
+#: tests/__init__.py:78
 #, python-format
 msgid "Restored initial backend to %s."
 msgstr "Le backend initial %s a été restauré."
 
-#: tests/__init__.py:103
+#: tests/__init__.py:111
 msgid "Started background tests, waiting for any failed scenario…"
 msgstr "Les tests ont démarré à l'arrière-plan ; en attente de travaux échoués…"
 
-#: tests/__init__.py:114
-msgid "TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) {passed_content}- {failed} failed ({percent_failed:.2}%) - best score until now: #{best}"
-msgstr "État courant TS: travail sur n°{current}, {ran}/{total} réussis ({percent_done:.2}%) {passed_content}- {failed} échoués ({percent_failed:.2}%) - progression maximum : n°{best}"
-
-#: tests/__init__.py:126
-msgid "last: {passed}{passed_more} "
-msgstr "derniers: {passed}{passed_more} "
-
-#: tests/__init__.py:163
+#: tests/__init__.py:154
 msgid "Re-put scenario in the run queue for further execution."
 msgstr "Le scénario a été remis en file d'attente d'exécution pour validation complète."
 
-#: tests/__init__.py:166
+#: tests/__init__.py:163
 msgid "Stopping the run queue worker and cleaning, please wait…"
 msgstr "Arrêt du processus de travail et nettoyage, merci de patienter…"
 
-#: tests/__init__.py:177
-msgid "no more failed jobs, ending testsuite."
-msgstr "Plus aucun travail échoué, la suite de tests se termine."
+#: tests/__init__.py:178
+msgid "no more jobs, ending testsuite."
+msgstr "Plus aucun travail, la suite de tests se termine."
 
-#: tests/__init__.py:199
+#: tests/__init__.py:203
 #, python-format
-msgid "Saved best state #%s."
-msgstr "La progression est sans échec jusqu'au scénario n°%s (état sauvegardé)."
+msgid "Saved best state #%s (not inclusive)."
+msgstr "La progression a été sauvegardée jusqu'au scénario n°%s (non inclus)."
 
-#: tests/__init__.py:247
+#: tests/__init__.py:268
+msgid "TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) {passed_content}- {failed} failed ({percent_failed:.2}%) - best score until now: #{best}"
+msgstr "État courant TS: travail sur n°{current}, {ran}/{total} réussis ({percent_done:.2}%) {passed_content}- {failed} échoués ({percent_failed:.2}%) - progression maximum : n°{best}"
+
+#: tests/__init__.py:284
+msgid "context setup"
+msgstr "préparation"
+
+#: tests/__init__.py:294
+msgid "last: {passed}{passed_more} "
+msgstr "derniers: {passed}{passed_more} "
+
+#: tests/__init__.py:297
+msgid "…"
+msgstr "…"
+
+#: tests/__init__.py:342
 #, python-format
 msgid "The %s testsuite has %s scenarii (%s commands)."
 msgstr "La suite de tests %s contient %s scénarios (%s commandes)."
 
-#: tests/__init__.py:262
-#: tests/__init__.py:269
+#: tests/__init__.py:359
+#: tests/__init__.py:366
 msgid "No scenario selected"
 msgstr "Aucun scénario sélectionné"
 
-#: tests/__init__.py:287
+#: tests/__init__.py:384
 #, python-format
 msgid "Scenario number '%s' is not valid."
 msgstr "Le numéro de scénario '%s' n'est pas valide."
 
-#: tests/__init__.py:318
+#: tests/__init__.py:415
 msgid "State file deleted, start from beginning."
 msgstr "Fichier d'état supprimé, on recommence depuis le début…"
 
-#: tests/__init__.py:368
+#: tests/__init__.py:466
 msgid "reload testsuite. Start from beginning"
 msgstr "Suite de test rechargée, on recommence depuis le début…"
 
-#: tests/__init__.py:370
+#: tests/__init__.py:468
 msgid "execute a specific scenario of the testsuite."
 msgstr "Exécuter un scénario spécifique de la suite de tests."
 
-#: tests/__init__.py:372
+#: tests/__init__.py:470
 msgid "list all scenarii of the testsuite."
 msgstr "liste tous les scénarii contenus dans la suite de tests."
 
-#: tests/__init__.py:374
+#: tests/__init__.py:472
 msgid "select all scenarii"
 msgstr "Sélectionner tous les scénarii."
 
-#: tests/__init__.py:376
+#: tests/__init__.py:474
 msgid "start from the scenario N."
 msgstr "Démarrer à partir du scénario N."
 
-#: tests/__init__.py:378
+#: tests/__init__.py:476
 msgid "display messages during command execution."
 msgstr "Afficher les messages de debbogage et les sorties pendant l'exécution (attention, c'est carrément illisible)."
 
-#: tests/__init__.py:380
+#: tests/__init__.py:478
 msgid "clean scenarii directory."
 msgstr "Nettoyer le répertoire des scénarios (supprimer les sorties obsolètes)."
 
-#: tests/__init__.py:382
+#: tests/__init__.py:480
 msgid "delete trace of a scenario"
 msgstr "Supprimer les sorties d'un scénario particulier, en vue de sa ré-exécution depuis le début."
 
-#: tests/__init__.py:384
+#: tests/__init__.py:482
 msgid "display statistics of the testsuite."
 msgstr "Afficher les statistiques de la suite de tests."
+
+#: tests/__init__.py:485
+msgid "don't halt the scenario on fail, just accept the result of the failed command and continue. WARNING: this flag is meant to be used only when you don't have any scenario data in your repository, to build a new one from scratch. Use this flag onlyon a clean source tree, else your TS results will not be reliable."
+msgstr "Ne pas interrompre un scénario dont une commande a échoué, mais accepter simplement le nouveau résultat comme référence et continuer les tests. ATTENTION : cette option est conçue pour être utilisée uniquement si vous n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources propres (aucunes modifications locales). Sans ça, vos résultats de TS risquent fort de ne pas être fiables. "
 
 #: extensions/openssh.py:151
 msgid "Users allowed to connect via SSHd"
@@ -2090,6 +2105,8 @@ msgstr "nombre de machines <strong>%s</strong>&#160;:"
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
+#~ msgid "Running %s in interactive mode."
+#~ msgstr "Exécution du scénario %s en mode intéractif."
 #~ msgid "Waiting again for any failed scenario…"
 #~ msgstr "De nouveau en attente de travaux échoués…"
 #~ msgid ""

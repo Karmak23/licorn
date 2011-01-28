@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-27 20:36+0100\n"
+"POT-Creation-Date: 2011-01-28 10:36+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: tests/core.py:205
+#: tests/core.py:111
+msgid "The last command failed to execute, or returned an unexpected result!"
+msgstr ""
+
+#: tests/core.py:209
 msgid ""
 "no reference output for {sce_name}, cmd #{cmd_num}/{total_cmds}:\n"
 "\n"
@@ -26,11 +30,11 @@ msgid ""
 "{run_output}"
 msgstr ""
 
-#: tests/core.py:215
+#: tests/core.py:220
 msgid "is this output good to keep as reference for future runs?"
 msgstr ""
 
-#: tests/core.py:238
+#: tests/core.py:244
 msgid ""
 "command #{cmd_num}/{total_cmds} failed (sce#{sce_num}, ctx {context}). "
 "Retcode {ret_code} (ref {ref_code}).\n"
@@ -40,177 +44,194 @@ msgid ""
 "{diff_output}"
 msgstr ""
 
-#: tests/core.py:250
+#: tests/core.py:258
 msgid ""
 "Should I keep the new return code and trace as reference for future runs?"
 msgstr ""
 
-#: tests/core.py:263
+#: tests/core.py:271
 msgid "Backend changed to shadow"
 msgstr ""
 
-#: tests/core.py:269
+#: tests/core.py:277
 msgid "Backend changed to OpenLDAP"
 msgstr ""
 
-#: tests/core.py:347
+#: tests/core.py:355
 msgid ""
 "Exception {exc} while loading output of cmd {cmd}, sce {sce}. Traceback "
 "follows, raising DoesntExistException"
 msgstr ""
 
-#: tests/core.py:384
-#, python-format
-msgid "Running %s in interactive mode."
-msgstr ""
-
-#: tests/core.py:415
+#: tests/core.py:423
 #, python-format
 msgid "Already passed scenario %s"
 msgstr ""
 
-#: tests/core.py:433
+#: tests/core.py:442
+msgid ""
+"Automatically saved new output for scenario #{sce} command #{cmd}/{total}"
+msgstr ""
+
+#: tests/core.py:452
 #, python-format
 msgid "Checking FAILED cmd %s of scenario %s"
 msgstr ""
 
-#: tests/core.py:456
+#: tests/core.py:475
 #, python-format
 msgid "Cleaning directory %s."
 msgstr ""
 
-#: tests/core.py:460
+#: tests/core.py:479
 #, python-format
 msgid "Deleting %s."
 msgstr ""
 
-#: tests/core.py:470
+#: tests/core.py:489
 #, python-format
 msgid "Cleaned directory %s."
 msgstr ""
 
-#: tests/core.py:491
+#: tests/core.py:510
 #, python-format
 msgid "Backed up system files for context %s."
 msgstr ""
 
-#: tests/core.py:494
+#: tests/core.py:513
 msgid ""
 "Comparing backups of system files after tests for side-effects alterations."
 msgstr ""
 
-#: tests/core.py:515
+#: tests/core.py:534
 msgid "System config files backup comparison finished successfully."
 msgstr ""
 
-#: tests/core.py:2289
+#: tests/core.py:2311
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr ""
 
-#: tests/core.py:2304
+#: tests/core.py:2329
 msgid "Testsuite terminated successfully."
 msgstr ""
 
-#: tests/core.py:2305
+#: tests/core.py:2330
 msgid ""
 "Don't forget to test massive del/mod/chk with -a argument (not tested "
 "because too dangerous)"
 msgstr ""
 
-#: tests/core.py:2309
+#: tests/core.py:2334
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr ""
 
-#: tests/__init__.py:71
+#: tests/__init__.py:78
 #, python-format
 msgid "Restored initial backend to %s."
 msgstr ""
 
-#: tests/__init__.py:104
+#: tests/__init__.py:111
 msgid "Started background tests, waiting for any failed scenario…"
 msgstr ""
 
-#: tests/__init__.py:144
+#: tests/__init__.py:154
 msgid "Re-put scenario in the run queue for further execution."
 msgstr ""
 
-#: tests/__init__.py:153
+#: tests/__init__.py:163
 msgid "Stopping the run queue worker and cleaning, please wait…"
 msgstr ""
 
-#: tests/__init__.py:166
-msgid "no more failed jobs, ending testsuite."
+#: tests/__init__.py:178
+msgid "no more jobs, ending testsuite."
 msgstr ""
 
-#: tests/__init__.py:188
+#: tests/__init__.py:203
 #, python-format
-msgid "Saved best state #%s."
+msgid "Saved best state #%s (not inclusive)."
 msgstr ""
 
-#: tests/__init__.py:220
+#: tests/__init__.py:268
 msgid ""
 "TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) "
 "{passed_content}- {failed} failed ({percent_failed:.2}%) - best score until "
 "now: #{best}"
 msgstr ""
 
-#: tests/__init__.py:241
+#: tests/__init__.py:284
+msgid "context setup"
+msgstr ""
+
+#: tests/__init__.py:294
 msgid "last: {passed}{passed_more} "
 msgstr ""
 
-#: tests/__init__.py:281
+#: tests/__init__.py:297
+msgid "…"
+msgstr ""
+
+#: tests/__init__.py:342
 #, python-format
 msgid "The %s testsuite has %s scenarii (%s commands)."
 msgstr ""
 
-#: tests/__init__.py:297 tests/__init__.py:304
+#: tests/__init__.py:359 tests/__init__.py:366
 msgid "No scenario selected"
 msgstr ""
 
-#: tests/__init__.py:322
+#: tests/__init__.py:384
 #, python-format
 msgid "Scenario number '%s' is not valid."
 msgstr ""
 
-#: tests/__init__.py:353
+#: tests/__init__.py:415
 msgid "State file deleted, start from beginning."
 msgstr ""
 
-#: tests/__init__.py:404
+#: tests/__init__.py:466
 msgid "reload testsuite. Start from beginning"
 msgstr ""
 
-#: tests/__init__.py:406
+#: tests/__init__.py:468
 msgid "execute a specific scenario of the testsuite."
 msgstr ""
 
-#: tests/__init__.py:408
+#: tests/__init__.py:470
 msgid "list all scenarii of the testsuite."
 msgstr ""
 
-#: tests/__init__.py:410
+#: tests/__init__.py:472
 msgid "select all scenarii"
 msgstr ""
 
-#: tests/__init__.py:412
+#: tests/__init__.py:474
 msgid "start from the scenario N."
 msgstr ""
 
-#: tests/__init__.py:414
+#: tests/__init__.py:476
 msgid "display messages during command execution."
 msgstr ""
 
-#: tests/__init__.py:416
+#: tests/__init__.py:478
 msgid "clean scenarii directory."
 msgstr ""
 
-#: tests/__init__.py:418
+#: tests/__init__.py:480
 msgid "delete trace of a scenario"
 msgstr ""
 
-#: tests/__init__.py:420
+#: tests/__init__.py:482
 msgid "display statistics of the testsuite."
+msgstr ""
+
+#: tests/__init__.py:485
+msgid ""
+"don't halt the scenario on fail, just accept the result of the failed "
+"command and continue. WARNING: this flag is meant to be used only when you "
+"don't have any scenario data in your repository, to build a new one from "
+"scratch. Use this flag onlyon a clean source tree, else your TS results will "
+"not be reliable."
 msgstr ""
 
 #: extensions/openssh.py:151

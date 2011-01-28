@@ -107,8 +107,9 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 				retcode, colors[ST_LOG], result_code,
 				colors[ST_NO], test) )
 		sys.stderr.write(output)
-		sys.stderr.write(
-			"The last command failed to execute, or return something wrong !\n")
+		test_message(
+			_(u'The last command failed to execute, '
+				'or returned an unexpected result!'))
 		raise SystemExit(retcode)
 
 	if verb:
@@ -181,6 +182,8 @@ class ScenarioTest:
 		# used from the inside and the outside to display the current status.
 		self.total_cmds = len(self.cmds)
 
+		self.batch_run = False
+
 		string_to_hash = "%s%s" % (self.context, str(cmds))
 		self.hash = hashlib.sha1(string_to_hash).hexdigest()
 		self.base_path = 'data/scenarii/%s' % self.hash
@@ -202,18 +205,20 @@ class ScenarioTest:
 			ref_output, ref_code, gz_file = self.load_output(self.failed_cmd)
 		except exceptions.DoesntExistsException:
 
-			logging.notice(_('no reference output for {sce_name}, '
-				'cmd #{cmd_num}/{total_cmds}:'
-				'\n\n{highlight_cmds}\n\n{run_output}').format(
-					sce_name=self.name,
-					cmd_num=stylize(ST_OK, self.failed_cmd+1),
-					total_cmds=stylize(ST_OK, self.total_cmds),
-					highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
-					run_output=self.current_output)
-				)
+			if self.interactive:
+				logging.notice(_(u'no reference output for {sce_name}, '
+					'cmd #{cmd_num}/{total_cmds}:'
+					'\n\n{highlight_cmds}\n\n{run_output}').format(
+						sce_name=self.name,
+						cmd_num=stylize(ST_OK, self.failed_cmd+1),
+						total_cmds=stylize(ST_OK, self.total_cmds),
+						highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
+						run_output=self.current_output)
+					)
 
-			if logging.ask_for_repair(_('is this output good to keep as '
-				'reference for future runs?')):
+			if self.batch_run or logging.ask_for_repair(
+					_(u'is this output good to keep as '
+					'reference for future runs?')):
 				# Save the output AND the return code for future
 				# references and comparisons
 				self.SaveOutput(self.failed_cmd,
@@ -235,20 +240,23 @@ class ScenarioTest:
 					'%s/%s/out.txt' % (self.base_path, self.failed_cmd),
 				tmpfilename])[0]
 
-			logging.warning(_('command #{cmd_num}/{total_cmds} failed '
-				'(sce#{sce_num}, ctx {context}). '
-				'Retcode {ret_code} (ref {ref_code}).'
-				'\n\n{highlight_cmds}\n\n{diff_output}').format(
-				cmd_num=stylize(ST_OK, self.failed_cmd+1),
-				total_cmds=stylize(ST_OK, self.total_cmds),
-				sce_num=stylize(ST_OK, self.sce_number+1),
-				context=stylize(ST_OK, self.context),
-				ret_code=stylize(ST_BAD, self.current_retcode),
-				ref_code=stylize(ST_OK, ref_code),
-				highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
-				diff_output=diff_output))
-			if logging.ask_for_repair(_('Should I keep the new return code '
-							'and trace as reference for future runs?')):
+			if self.interactive:
+				logging.warning(_(u'command #{cmd_num}/{total_cmds} failed '
+					'(sce#{sce_num}, ctx {context}). '
+					'Retcode {ret_code} (ref {ref_code}).'
+					'\n\n{highlight_cmds}\n\n{diff_output}').format(
+					cmd_num=stylize(ST_OK, self.failed_cmd+1),
+					total_cmds=stylize(ST_OK, self.total_cmds),
+					sce_num=stylize(ST_OK, self.sce_number+1),
+					context=stylize(ST_OK, self.context),
+					ret_code=stylize(ST_BAD, self.current_retcode),
+					ref_code=stylize(ST_OK, ref_code),
+					highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
+					diff_output=diff_output))
+
+			if self.batch_run or logging.ask_for_repair(
+						_(u'Should I keep the new return code '
+						'and trace as reference for future runs?')):
 				self.SaveOutput(self.failed_cmd,
 								self.current_output, self.current_retcode)
 				return True
@@ -260,13 +268,13 @@ class ScenarioTest:
 		if self.context == 'shadow' and str(testsuite.current_context) != 'shadow':
 			execute([ 'mod', 'config', '-B', 'openldap'])
 			if self.interactive:
-				test_message(_("Backend changed to shadow"))
+				test_message(_(u"Backend changed to shadow"))
 			testsuite.current_context = 'shadow'
 			changed = True
 		if self.context == 'openldap' and str(testsuite.current_context) != 'openldap':
 			execute([ 'mod', 'config', '-b', 'openldap'])
 			if self.interactive:
-				test_message(_("Backend changed to OpenLDAP"))
+				test_message(_(u"Backend changed to OpenLDAP"))
 			testsuite.current_context = 'openldap'
 			changed = True
 
@@ -302,7 +310,7 @@ class ScenarioTest:
 				if e.errno != 2:
 					raise e
 			file = open(filename_txt, 'w')
-		file.write(strip_moving_data(output))
+		file.write(output)
 		file.close()
 	def show_commands(self, highlight_num):
 		""" output all commands, to get an history of the current scenario,
@@ -344,7 +352,7 @@ class ScenarioTest:
 					)
 				return ref_output, ref_code, gz_file
 		except Exception, e:
-			logging.warning(_('Exception {exc} while loading output of '
+			logging.warning(_(u'Exception {exc} while loading output of '
 				'cmd {cmd}, sce {sce}. Traceback follows, '
 				'raising DoesntExistException').format(
 				exc=e, cmd=cmdnum, sce=self.name
@@ -412,7 +420,7 @@ class ScenarioTest:
 
 		elif self.status == sce_status.PASSED:
 			if self.interactive:
-				logging.warning(_('Already passed scenario %s') % self.name)
+				logging.warning(_(u'Already passed scenario %s') % self.name)
 			#print '>> passed', self.name
 			return
 
@@ -428,13 +436,24 @@ class ScenarioTest:
 			if not self.RunCommand(cmdnum):
 				self.status      = sce_status.FAILED
 				self.failed_cmd  = cmdnum
-				self.current_cmd = None
-				if self.interactive:
-					logging.notice(_('Checking FAILED cmd %s of scenario %s') % (
-						stylize(ST_NAME, self.name), cmdnum))
-				self.clean()
-				#print '>> failed', self.name
-				return
+
+				if self.batch_run:
+					if verbose:
+						logging.notice(_(u'Automatically saved new output for '
+							'scenario #{sce} command #{cmd}/{total}').format(
+								sce=self.counter, cmd=self.current_cmd,
+								total=self.total_cmds))
+
+					self.check_failed_command()
+					self.failed_cmd = None
+				else:
+					self.current_cmd = None
+					if self.interactive:
+						logging.notice(_(u'Checking FAILED cmd %s of scenario %s') % (
+							stylize(ST_NAME, self.name), cmdnum))
+					self.clean()
+					#print '>> failed', self.name
+					return
 
 		# no need to clean() now, clean commands are part of the scenario,
 		# they have already been run if everything went fine.
@@ -453,11 +472,11 @@ class ScenarioTest:
 def clean_dir_contents(directory):
 	""" Totally empty the contents of a given directory, the licorn way. """
 	if verbose:
-		test_message(_('Cleaning directory %s.') % directory)
+		test_message(_(u'Cleaning directory %s.') % directory)
 
 	def delete_entry(entry):
 		if verbose:
-			logging.notice(_('Deleting %s.') % entry)
+			logging.notice(_(u'Deleting %s.') % entry)
 
 		if os.path.isdir(entry):
 			shutil.rmtree(entry)
@@ -467,7 +486,7 @@ def clean_dir_contents(directory):
 	map(delete_entry, fsapi.minifind(directory, mindepth=1, maxdepth=2))
 
 	if verbose:
-		test_message(_('Cleaned directory %s.') % directory)
+		test_message(_(u'Cleaned directory %s.') % directory)
 def make_backups(mode):
 	"""Make backup of important system files before messing them up ;-) """
 
@@ -488,10 +507,10 @@ def make_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message(_('Backed up system files for context %s.') % mode)
+	test_message(_(u'Backed up system files for context %s.') % mode)
 def compare_delete_backups(mode):
 	""" """
-	test_message(_('Comparing backups of system files after tests '
+	test_message(_(u'Comparing backups of system files after tests '
 		'for side-effects alterations.'))
 
 	if mode == 'shadow':
@@ -512,7 +531,7 @@ def compare_delete_backups(mode):
 	else:
 		logging.error('backup mode not understood.')
 
-	test_message(_('System config files backup comparison finished successfully.'))
+	test_message(_(u'System config files backup comparison finished successfully.'))
 def test_integrated_help():
 	"""Test extensively argmarser contents and intergated help."""
 
@@ -2272,6 +2291,9 @@ if __name__ == "__main__":
 	if options.stats:
 		testsuite.get_stats()
 
+	if options.batch_run:
+		testsuite.batch_run = True
+
 	if options.all:
 		if testsuite.get_state() == None:
 			testsuite.select(all=True)
@@ -2286,7 +2308,7 @@ if __name__ == "__main__":
 		# give back all the scenarii tree to calling user.
 		uid, gid = [ int(x) for x in \
 			open(state_files['owner']).read().strip().split(',') ]
-		test_message(_('giving back all scenarii data to %s:%s.') % (
+		test_message(_(u'giving back all scenarii data to %s:%s.') % (
 			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
 		for entry in fsapi.minifind('data', followlinks=True):
 			os.chown(entry, uid, gid)
@@ -2304,12 +2326,12 @@ if __name__ == "__main__":
 			# no need to do this now, the TS will act smart about it.
 			#testsuite.clean_state_file()
 
-			test_message(_("Testsuite terminated successfully."))
-			test_message(_("Don't forget to test massive del/mod/chk with -a "
+			test_message(_(u"Testsuite terminated successfully."))
+			test_message(_(u"Don't forget to test massive del/mod/chk with -a "
 				"argument (not tested because too dangerous)"))
 			terminate()
 		except KeyboardInterrupt:
-			test_message(_("Keyboard Interrupt received, cleaning testsuite context, please wait…"))
+			test_message(_(u"Keyboard Interrupt received, cleaning testsuite context, please wait…"))
 			terminate()
 		#finally:
 		#	terminate()

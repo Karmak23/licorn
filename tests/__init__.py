@@ -61,6 +61,13 @@ class Testsuite:
 		self.passed = []
 		self.best_state = None
 		self.working = Event()
+
+		# used to modify the best state behaviour when running one one test
+		# or the whole TS.
+		self.best_state_only_one = False
+
+		# used to build initial testsuite data
+		self.batch_run = False
 	def restore_user_context(self):
 		""" restore user active backend before testsuite runs """
 		if self.user_context == 'shadow' and self.current_context != 'shadow':
@@ -68,7 +75,7 @@ class Testsuite:
 		if self.user_context == 'openldap' \
 										and self.current_context != 'openldap':
 			process.execute([ 'mod', 'config', '-b', 'openldap'])
-		test_message(_('Restored initial backend to %s.') % self.user_context)
+		test_message(_(u'Restored initial backend to %s.') % self.user_context)
 	def add_scenario(self,scenario):
 		""" add a scenario to the testsuite and set a number for it """
 		scenario.set_number(len(self.list_scenario)+1)
@@ -101,7 +108,7 @@ class Testsuite:
 			# reset selection
 			self.selected_scenario = []
 
-		test_message(_('Started background tests, '
+		test_message(_(u'Started background tests, '
 			'waiting for any failed scenario…'))
 
 		# wait for the first job to be run, else counter displays '-1'.
@@ -144,7 +151,7 @@ class Testsuite:
 
 					self.to_run.put(
 						(sce.counter, self.run_scenario, (sce,), {}))
-					test_message(_('Re-put scenario in the run queue '
+					test_message(_(u'Re-put scenario in the run queue '
 						'for further execution.'))
 					# wait a short while, to avoid displaying next status
 					# working on the end of the last failed scenario, which
@@ -153,7 +160,7 @@ class Testsuite:
 			except KeyboardInterrupt:
 				#best state is already saved.
 
-				test_message(_('Stopping the run queue worker '
+				test_message(_(u'Stopping the run queue worker '
 					'and cleaning, please wait…'))
 
 				self.threads[0].stop()
@@ -168,7 +175,7 @@ class Testsuite:
 
 					self.threads[0].stop()
 					self.save_best_state()
-					logging.notice(_('no more jobs, ending testsuite.'))
+					logging.notice(_(u'no more jobs, ending testsuite.'))
 					break
 
 		self.threads[0].join()
@@ -184,7 +191,7 @@ class Testsuite:
 			elif elem == self.best_state:
 				self.passed.remove(elem)
 				self.best_state = elem + 1
-			elif elem == self.best_state + 1:
+			elif self.best_state_only_one and elem == self.best_state + 1:
 				self.passed.remove(elem)
 				self.best_state = elem
 			else:
@@ -193,13 +200,15 @@ class Testsuite:
 		if self.best_state != old_best:
 			# note we got at least until there, save it.
 			self.save_state(self.best_state)
-			test_message(_('Saved best state #%s.') % self.best_state)
+			test_message(_(u'Saved best state #%s (not inclusive).') %
+				self.best_state)
 	def run_scenario(self, scenario):
 
 		self.current_sce = scenario
 
 		self.working.set()
 
+		scenario.batch_run = self.batch_run
 		scenario.Run()
 
 		if scenario.status == sce_status.PASSED:
@@ -256,7 +265,7 @@ class Testsuite:
 							+ self.to_run.qsize()
 							+ self.failed.qsize())
 				failed_sce = self.failed.qsize()
-				logging.notice(_('TS global status: on #{current}, '
+				logging.notice(_(u'TS global status: on #{current}, '
 					'{ran}/{total} passed '
 					'({percent_done:.2}%) {passed_content}- '
 					'{failed} failed '
@@ -272,7 +281,7 @@ class Testsuite:
 									/ self.current_sce.total_cmds,
 								)
 								if self.current_sce.current_cmd
-								else _('context setup')
+								else _(u'context setup')
 							)
 							if self.current_sce
 							else '-'),
@@ -282,10 +291,10 @@ class Testsuite:
 						failed=failed_sce,
 						percent_failed=100.0*failed_sce/self.total_sce,
 						best=self.best_state,
-						passed_content=_('last: {passed}{passed_more} ').format(
+						passed_content=_(u'last: {passed}{passed_more} ').format(
 							passed=','.join([ str(i)
 								for i in sorted(self.passed)[:5] ]),
-							passed_more='…'
+							passed_more=_(u'…')
 								if len(self.passed) > 5 else '')
 							if len(self.passed) > 0 else ''
 					)
@@ -330,7 +339,7 @@ class Testsuite:
 		num_cmd=0
 		for scenario in self.list_scenario:
 			num_cmd+=len(scenario.cmds)
-		logging.notice(_('The %s testsuite has %s scenarii (%s commands).') % (
+		logging.notice(_(u'The %s testsuite has %s scenarii (%s commands).') % (
 			self.name,
 			stylize(ST_OK,len(self.list_scenario)),stylize(ST_OK,num_cmd)))
 	def select(self, scenario_number=None, all=False, mode=None):
@@ -345,15 +354,16 @@ class Testsuite:
 				self.selected_scenario.append(
 						self.list_scenario[scenario_number])
 				self.best_state = self.get_state() or 0
+				self.best_state_only_one = True
 			except IndexError, e:
-				test_message(_("No scenario selected"))
+				test_message(_(u"No scenario selected"))
 		elif scenario_number != None and mode == 'start':
 			# start selection from a scenario to the end of the list
 			for scenario in self.list_scenario[scenario_number-1:]:
 				self.selected_scenario.append(scenario)
 				self.best_state = self.get_state() or 0
 			if self.selected_scenario == []:
-				test_message(_("No scenario selected"))
+				test_message(_(u"No scenario selected"))
 	def clean_scenarii_directory(self,scenario_number=None):
 		""" clean the scenarii directory (remove old scenario directory) """
 		""" if scenario_number is provided, the scenario directory will be
@@ -371,7 +381,7 @@ class Testsuite:
 						number+=1
 				except IndexError, e:
 					# if the scenario_number is not valid
-					test_message(_("Scenario number '%s' is not valid.") %
+					test_message(_(u"Scenario number '%s' is not valid.") %
 						scenario_number)
 					break
 			else:
@@ -402,7 +412,7 @@ class Testsuite:
 			except (IOError, OSError), e:
 					if e.errno != 2:
 						raise e
-		test_message(_('State file deleted, start from beginning.'))
+		test_message(_(u'State file deleted, start from beginning.'))
 	def cmdfmt(self, cmd, prefix=''):
 		'''convert a sequence to a colorized string.'''
 		return '%s%s' % (prefix, stylize(ST_NAME, self.cmd_display_func(cmd)))
@@ -453,22 +463,30 @@ def testsuite_parse_args():
 	from optparse import OptionParser
 	parser = OptionParser()
 	parser.add_option("-r", "--reload", action="store_true", dest="reload",
-	help=_("reload testsuite. Start from beginning"))
+	help=_(u"reload testsuite. Start from beginning"))
 	parser.add_option("-e", "--execute", dest="execute", type="int",
-		default=False, help=_("execute a specific scenario of the testsuite."))
+		default=False, help=_(u"execute a specific scenario of the testsuite."))
 	parser.add_option("-l", "--list", action="store_true", dest="list",
-		default=False, help=_("list all scenarii of the testsuite."))
+		default=False, help=_(u"list all scenarii of the testsuite."))
 	parser.add_option("-a", "--all", action="store_true", dest="all",
-		default=False, help=_("select all scenarii"))
+		default=False, help=_(u"select all scenarii"))
 	parser.add_option("-s", "--start-from", dest="start_from", type="int",
-		default=False, help=_("start from the scenario N."))
+		default=False, help=_(u"start from the scenario N."))
 	parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
-		default=False, help=_("display messages during command execution."))
+		default=False, help=_(u"display messages during command execution."))
 	parser.add_option("-c", "--clean", action="store_true", dest="clean",
-		default=False, help=_("clean scenarii directory."))
+		default=False, help=_(u"clean scenarii directory."))
 	parser.add_option("-d", "--delete-trace", dest="delete_trace", type="int",
-		default=False, help=_("delete trace of a scenario"))
+		default=False, help=_(u"delete trace of a scenario"))
 	parser.add_option("--stats", action="store_true", dest="stats",
-		default=False, help=_("display statistics of the testsuite."))
+		default=False, help=_(u"display statistics of the testsuite."))
+	parser.add_option("-b", "--batch-run", "--build-initial-data",
+		dest="batch_run", action="store_true", default=False,
+		help=_(u"don't halt the scenario on fail, just accept the result of "
+			"the failed command and continue. WARNING: this flag is meant to "
+			"be used only when you don't have any scenario data in your "
+			"repository, to build a new one from scratch. Use this flag only"
+			"on a clean source tree, else your TS results will not be "
+			"reliable."))
 	return parser
 
