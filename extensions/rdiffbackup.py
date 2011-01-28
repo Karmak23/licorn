@@ -23,7 +23,7 @@ from licorn.core               import LMC
 from licorn.daemon.threads     import LicornJobThread
 from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
-from licorn.interfaces.wmi     import WMIObject
+from licorn.interfaces.wmi     import WMIObject, wmi_register, wmi_unregister
 
 from licorn.daemon             import priorities, roles, \
 											service_enqueue, service_wait
@@ -309,6 +309,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 
 		self.enabled = self.is_enabled()
+
+		wmi_register(self)
+
 		return self.enabled
 	def disable(self):
 		""" disable the Timer thread. TODO: disable the WMI object. """
@@ -324,6 +327,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		self.threads.auto_backup_timer.stop()
 
 		del self.threads.auto_backup_timer
+
+		wmi_unregister(self)
+		del self.wmi
 
 		# clean the thread reference in the daemon.
 		daemon._job_periodic_cleaner()

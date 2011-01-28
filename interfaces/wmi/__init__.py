@@ -4,6 +4,8 @@ import gettext
 _ = gettext.gettext
 gettext.textdomain('licorn')
 
+from threading import current_thread
+
 from licorn.foundations        import options, logging
 from licorn.foundations.ltrace import ltrace
 from licorn.foundations.styles import *
@@ -234,3 +236,36 @@ def init():
 
 	#assert ltrace('wmi', '< init(%s)'
 	#							% ', '.join(globals()))
+
+def wmi_register(wmiobj):
+	""" meant to be run from any core object or extension, if they occur to
+		create their WMI part after the collect process.
+
+	"""
+
+	my_globals = globals()
+
+	if wmiobj.wmi.uri in my_globals.keys():
+		logging.warning('WMI: overwriting %s object '
+			'with new instance.' % wmiobj.name)
+
+	my_globals[wmiobj.wmi.uri] = wmiobj.wmi
+	assert ltrace('wmi', '  %s: successfully registered object %s.' %(
+		current_thread().name, wmiobj.name))
+
+def wmi_unregister(wmiobj):
+	""" meant to be run from any core object or extension, if they need to
+		unregister themselves from the WMI (eg. a dynamically disabled
+		extension).
+	"""
+	my_globals = globals()
+
+	if wmiobj.wmi.uri in my_globals.keys():
+		del my_globals[wmiobj.wmi.uri]
+		assert ltrace('wmi', '  %s: successfully unregistered object %s.' %(
+			current_thread().name, wmiobj.name))
+
+	else:
+		logging.warning('WMI: unknown object %s, cannot unregister'
+		 % wmiobj.name)
+
