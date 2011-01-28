@@ -27,6 +27,7 @@ from licorn.interfaces.wmi     import WMIObject
 
 from licorn.daemon             import priorities, roles, \
 											service_enqueue, service_wait
+from licorn.daemon.main        import daemon
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -175,9 +176,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		self.paths.last_backup_file         = '.org.licorn.backups.last_time'
 		self.paths.globbing_file            = self._find_globbing_filelist()
 
-		# will be True if a backup is running.
-		self.events.running = Event()
-
 	def _find_globbing_filelist(self):
 		""" See if environment variable exists and use it, or return the
 			default path for the rdiff-backup configuration.
@@ -257,6 +255,12 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 		if 'volumes' in LMC.extensions:
 
+			# will be True if a backup is running.
+			self.events.running = Event()
+
+			# this will be set to the volume we're backing up on
+			self.current_backup_volume = None
+
 			# hold a reference inside us too. It doesn't hurt, all volumes
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes.volumes
@@ -299,6 +303,39 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			return True
 
 		return False
+	def enable(self):
+		""" This method will call :meth=:`is_enabled`, because it does exactly
+			what we need.
+		"""
+
+		self.enabled = self.is_enabled()
+		return self.enabled
+	def disable(self):
+		""" disable the Timer thread. TODO: disable the WMI object. """
+
+		if self.running():
+			logging.warning('%s: cannot disable now, a backup is in progress. '
+				'Please wait until the end and retry.')
+			return False
+
+		# avoid a race with a backup
+		self.events.running.set()
+
+		self.threads.auto_backup_timer.stop()
+
+		del self.threads.auto_backup_timer
+
+		# clean the thread reference in the daemon.
+		daemon._job_periodic_cleaner()
+
+		del self.volumes
+
+		self.events.running.clear()
+		del self.events.running
+
+		self.enabled = False
+
+		return True
 	def running(self):
 		return self.events.running.is_set()
 	def system_load(self):
@@ -521,6 +558,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				return
 
 			self.events.running.set()
+
+			self.current_backup_volume = volume
 
 			logging.notice('%s: starting backup on%s %s.' % (
 				self.name, ' first available'
@@ -757,7 +796,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					'backup volumes are currently unmounted (you can safely '
 					'disconnect them from your server).<br /><br />Next '
 					'automatic backup will occur in {countdown}, and will '
-					' automatically remount any backup volume still connected '
+					'automatically remount any backup volume still connected '
 					'at this moment.').format(
 						countdown=countdown_until_next_backup))
 
