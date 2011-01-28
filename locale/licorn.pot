@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-28 11:33+0100\n"
+"POT-Creation-Date: 2011-01-28 13:06+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: tests/core.py:111
+#: tests/core.py:85
+msgid "running "
+msgstr ""
+
+#: tests/core.py:121
 msgid "The last command failed to execute, or returned an unexpected result!"
 msgstr ""
 
-#: tests/core.py:209
+#: tests/core.py:219
 msgid ""
 "no reference output for {sce_name}, cmd #{cmd_num}/{total_cmds}:\n"
 "\n"
@@ -30,11 +34,11 @@ msgid ""
 "{run_output}"
 msgstr ""
 
-#: tests/core.py:220
+#: tests/core.py:230
 msgid "is this output good to keep as reference for future runs?"
 msgstr ""
 
-#: tests/core.py:244
+#: tests/core.py:254
 msgid ""
 "command #{cmd_num}/{total_cmds} failed (sce#{sce_num}, ctx {context}). "
 "Retcode {ret_code} (ref {ref_code}).\n"
@@ -44,84 +48,84 @@ msgid ""
 "{diff_output}"
 msgstr ""
 
-#: tests/core.py:258
+#: tests/core.py:268
 msgid ""
 "Should I keep the new return code and trace as reference for future runs?"
 msgstr ""
 
-#: tests/core.py:271
+#: tests/core.py:281
 msgid "Backend changed to shadow"
 msgstr ""
 
-#: tests/core.py:277
+#: tests/core.py:287
 msgid "Backend changed to OpenLDAP"
 msgstr ""
 
-#: tests/core.py:355
+#: tests/core.py:365
 msgid ""
 "Exception {exc} while loading output of cmd {cmd}, sce {sce}. Traceback "
 "follows, raising DoesntExistException"
 msgstr ""
 
-#: tests/core.py:423
+#: tests/core.py:433
 #, python-format
 msgid "Already passed scenario %s"
 msgstr ""
 
-#: tests/core.py:442
+#: tests/core.py:452
 msgid ""
 "Automatically saved new output for scenario #{sce} command #{cmd}/{total}"
 msgstr ""
 
-#: tests/core.py:452
+#: tests/core.py:462
 msgid "Checking FAILED cmd {cmd}/{total} of scenario {sce}"
 msgstr ""
 
-#: tests/core.py:477
+#: tests/core.py:487
 #, python-format
 msgid "Cleaning directory %s."
 msgstr ""
 
-#: tests/core.py:481
+#: tests/core.py:491
 #, python-format
 msgid "Deleting %s."
 msgstr ""
 
-#: tests/core.py:491
+#: tests/core.py:501
 #, python-format
 msgid "Cleaned directory %s."
 msgstr ""
 
-#: tests/core.py:512
+#: tests/core.py:522
 #, python-format
 msgid "Backed up system files for context %s."
 msgstr ""
 
-#: tests/core.py:515
+#: tests/core.py:525
 msgid ""
 "Comparing backups of system files after tests for side-effects alterations."
 msgstr ""
 
-#: tests/core.py:536
+#: tests/core.py:546
 msgid "System config files backup comparison finished successfully."
 msgstr ""
 
-#: tests/core.py:2313
+#: tests/core.py:2323
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr ""
 
-#: tests/core.py:2331
+#: tests/core.py:2341
 msgid "Testsuite terminated successfully."
 msgstr ""
 
-#: tests/core.py:2332
+#: tests/core.py:2342
 msgid ""
 "Don't forget to test massive del/mod/chk with -a argument (not tested "
 "because too dangerous)"
 msgstr ""
 
-#: tests/core.py:2336
+#: tests/core.py:2346
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr ""
 
@@ -245,51 +249,55 @@ msgstr ""
 msgid "Group calendar URI"
 msgstr ""
 
-#: extensions/rdiffbackup.py:274
+#: extensions/rdiffbackup.py:276
 msgid "Backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:275
+#: extensions/rdiffbackup.py:277
 msgid "Manage backups and restore files"
 msgstr ""
 
-#: extensions/rdiffbackup.py:277
+#: extensions/rdiffbackup.py:279
 msgid "Run backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:278
+#: extensions/rdiffbackup.py:280
 msgid "Run a system incremental backup now"
 msgstr ""
 
-#: extensions/rdiffbackup.py:282
+#: extensions/rdiffbackup.py:284
 msgid "Rescan volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:283
+#: extensions/rdiffbackup.py:285
 msgid "Force the system to rescan and remount connected volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:619
+#: extensions/rdiffbackup.py:626
+msgid "No backup volume connected"
+msgstr ""
+
+#: extensions/rdiffbackup.py:634
 msgid "Last backup on this volume occured {0} ago."
 msgstr ""
 
-#: extensions/rdiffbackup.py:625
+#: extensions/rdiffbackup.py:640
 msgid "No backup has occured yet."
 msgstr ""
 
-#: extensions/rdiffbackup.py:626
+#: extensions/rdiffbackup.py:641
 msgid "Next backup attempt will occur in {0}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:639
+#: extensions/rdiffbackup.py:654
 msgid "Run a manual backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:647
+#: extensions/rdiffbackup.py:662
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 
-#: extensions/rdiffbackup.py:651
+#: extensions/rdiffbackup.py:666
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
 "server before starting this procedure.<br /><br />See <a href=\"http://docs."
@@ -297,15 +305,15 @@ msgid ""
 "for details on enabling backup volumes."
 msgstr ""
 
-#: extensions/rdiffbackup.py:666
+#: extensions/rdiffbackup.py:681
 msgid "Run a manual backup on volume {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:671
+#: extensions/rdiffbackup.py:686
 msgid "Recent backup detected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:672
+#: extensions/rdiffbackup.py:687
 msgid ""
 "{auto_select}<br /><br />The last backup has been run {last_backup_time} "
 "ago, which is less than the system configured interval ({interval}). Are you "
@@ -313,50 +321,50 @@ msgid ""
 "withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:688
+#: extensions/rdiffbackup.py:703
 msgid "Run >>"
 msgstr ""
 
-#: extensions/rdiffbackup.py:689 interfaces/wmi/groups.py:134
+#: extensions/rdiffbackup.py:704 interfaces/wmi/groups.py:134
 #: interfaces/wmi/groups.py:581 interfaces/wmi/users.py:136
 #: interfaces/wmi/users.py:214
 msgid "R"
 msgstr ""
 
-#: extensions/rdiffbackup.py:691 interfaces/wmi/groups.py:257
+#: extensions/rdiffbackup.py:706 interfaces/wmi/groups.py:257
 #: interfaces/wmi/users.py:92 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227 core/machines.py:1129 core/machines.py:1172
 msgid "<< Cancel"
 msgstr ""
 
-#: extensions/rdiffbackup.py:691 interfaces/wmi/users.py:138
+#: extensions/rdiffbackup.py:706 interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227 interfaces/wmi/users.py:273
 msgid "C"
 msgstr ""
 
-#: extensions/rdiffbackup.py:707
+#: extensions/rdiffbackup.py:722
 msgid "Eject volume {device}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:710
+#: extensions/rdiffbackup.py:725
 msgid " (a backup is underway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:714
+#: extensions/rdiffbackup.py:729
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:731
+#: extensions/rdiffbackup.py:746
 msgid "System backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:748
+#: extensions/rdiffbackup.py:763
 msgid ""
 "No backup volume found. Please connect a backup volume to your server, and "
 "backups will automatically start (next try in {countdown})."
 msgstr ""
 
-#: extensions/rdiffbackup.py:756
+#: extensions/rdiffbackup.py:771
 msgid ""
 "No backup found, or all backup volumes are currently unmounted (you can "
 "safely disconnect them from your server).<br /><br />Next automatic backup "
@@ -364,33 +372,33 @@ msgid ""
 "still connected at this moment."
 msgstr ""
 
-#: extensions/rdiffbackup.py:774
+#: extensions/rdiffbackup.py:789
 msgid ""
 "A backup is currently in progress, please do not disconnect <strong>{volume}"
 "</strong>.<br /><br /> (update in {countdown}…)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:799
+#: extensions/rdiffbackup.py:814
 msgid "Can't eject, backup in progress"
 msgstr ""
 
-#: extensions/rdiffbackup.py:803
+#: extensions/rdiffbackup.py:818
 msgid "Backup in progress icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:813
+#: extensions/rdiffbackup.py:828
 msgid "Eject the volume"
 msgstr ""
 
-#: extensions/rdiffbackup.py:819
+#: extensions/rdiffbackup.py:834
 msgid "Eject device icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:830
+#: extensions/rdiffbackup.py:845
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr ""
 
-#: extensions/rdiffbackup.py:836
+#: extensions/rdiffbackup.py:851
 msgid "Backups on {mount_point}"
 msgstr ""
 

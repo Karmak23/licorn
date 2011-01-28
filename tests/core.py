@@ -23,6 +23,16 @@ from licorn.foundations.styles import *
 from licorn.core               import LMC
 from licorn.tests              import *
 
+
+# see http://docs.python.org/library/os.html#os.environ for details.
+# we must unset them, else all argparser-related methods fail if there are
+# any terminal movements between 2 runs.
+for var_name in ('COLS', 'COLUMNS', 'LINES'):
+	try:
+		del os.environ[var_name]
+	except KeyError:
+		pass
+
 LMC.connect()
 configuration = LMC.configuration
 
@@ -72,7 +82,7 @@ def log_and_exec(command, inverse_test=False, result_code=0, comment="",
 	verb=verbose):
 	"""Display a command, execute it, and exit if soemthing went wrong."""
 
-	sys.stderr.write("%s>>> running %s%s%s\n" % (colors[ST_LOG],
+	sys.stderr.write("%s>>> " + _(u'running ') + "%s%s%s\n" % (colors[ST_LOG],
 		colors[ST_PATH], ' '.join(command), colors[ST_NO]))
 
 	output, retcode = execute(command)
