@@ -366,25 +366,35 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 				client_address_base = self.client_address[0].rsplit('.', 1)[0]
 
-				# we default to server_name.
-				hostaddr = WMIHTTPRequestHandler.server_name
+				if referer:
+					# get the host and the port from where the client first
+					# connected to us. This is the easiest way.
+					hostaddr, hostport = referer.split('/', 3)[2].split(':')
 
-				# if we can find something more precise, use it.
-				for ip in WMIHTTPRequestHandler.ip_addresses:
-					if ip.startswith(client_address_base):
-						try:
-							# try to return the "short" hostname
-							hostaddr = LMC.machines[ip].hostname
-						except KeyError:
-							# if it doesn't resolve,  return the IP address
-							hostaddr = ip
-						break
+				else:
+					# try to guess everything, this will lead to errors in
+					# many cases (ssh tunnels, NAT, port forwarding, etc).
+					# we default to server_name and try to find something more
+					# precise.
+					hostaddr = WMIHTTPRequestHandler.server_name
+					hostport = LMC.configuration.licornd.wmi.port
+
+					# if we can find something more precise, use it.
+					for ip in WMIHTTPRequestHandler.ip_addresses:
+						if ip.startswith(client_address_base):
+							try:
+								# try to return the "short" hostname
+								hostaddr = LMC.machines[ip].hostname
+							except KeyError:
+								# if it doesn't resolve,  return the IP address
+								hostaddr = ip
+							break
 
 				self.send_response(302)
 				self.send_header("Location", retdata
 					if retdata.startswith('http://')
 					else 'http://%s:%s%s' % (
-					hostaddr, LMC.configuration.licornd.wmi.port, retdata))
+					hostaddr, hostport, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()
 
