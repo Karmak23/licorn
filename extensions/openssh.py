@@ -148,7 +148,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 			if batch or logging.ask_for_repair('group %s must be created' %
 					stylize(ST_NAME, self.group), auto_answer=auto_answer):
 				LMC.groups.AddGroup(name=self.group,
-					description=_('Users allowed to connect via SSHd'),
+					description=_(u'Users allowed to connect via SSHd').decode('utf-8'),
 					system=True, batch=True)
 			else:
 				raise exceptions.LicornCheckError(
