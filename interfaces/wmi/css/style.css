@@ -649,6 +649,13 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	border-radius:5px;
 }
 
+.micro_indicator {
+	padding: 2px 1px 4px;
+	display: inline;
+	border-radius:5px;
+	background-color: #eee;
+}
+
 .light_indicator {
 	text-align: center;
 	padding: 3px 7px;

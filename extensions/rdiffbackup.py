@@ -255,8 +255,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 		if 'volumes' in LMC.extensions:
 
-			# will be True if a backup is running.
+			# will be True if a backup (or stats) is running.
 			self.events.running = Event()
+			# will be True while the real backup is running, False for stats.
+			self.events.backup = Event()
 
 			# this will be set to the volume we're backing up on
 			self.current_backup_volume = None
@@ -338,6 +340,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		self.events.running.clear()
 		del self.events.running
+		del self.events.backup
 
 		self.enabled = False
 
@@ -437,6 +440,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		for volume in volumes:
 			with volume:
 				self._rdiff_statistics(volume)
+	# a comfort alias
+	statistics = recompute_statistics
 	def _compute_needed_space(self, volume, clean=False):
 
 		logging.progress('>> please implement volumes._compute_needed_space(self, ...)')
@@ -564,6 +569,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				return
 
 			self.events.running.set()
+			self.events.backup.set()
 
 			self.current_backup_volume = volume
 
@@ -613,6 +619,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			sys.stderr.write(error)
 
 			self._remove_old_backups(volume)
+
+			self.events.backup.clear()
+
 			self._rdiff_statistics(volume)
 
 			self.events.running.clear()
@@ -652,36 +661,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			except (IOError, OSError), e:
 				if e.errno == 2:
 					return 0.0
-	def _wmi__status(self):
-		""" Method called from wmi:/, to integrate backup informations on the
-			status page. """
-
-		messages = []
-
-		if self.running():
-			messages.append((priorities.HIGH,
-				'<p class="light_indicator backup_in_progress '
-				'high_priority">%s</p>' % (
-					_(u'Backup in progress on volume {volume}…').format(
-						volume=self.current_backup_volume.mount_point))))
-
-		else :
-			volumes = self._backup_enabled_volumes()
-
-			if volumes == []:
-				messages.append((priorities.NORMAL,
-					'<p class="light_indicator normal_priority">%s</p>' % (
-					_(u'No backup volume connected'))))
-			else:
-				messages.append((priorities.NORMAL,
-					'<p class="light_indicator normal_priority">%s</p>' % (
-					_(u'Next backup in {0}').format(
-						self._countdown('next_backup',
-						self.threads.auto_backup_timer.remaining_time(),
-						uri='/')
-					))))
-
-		return messages
 	def _backup_informations(self, volume, as_string=False):
 		""" Return an HTML string for backup information. """
 		if as_string:
@@ -701,6 +680,132 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		else:
 			return (time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup(as_string=False))
+	def _html_eject_status(self, volume, small=False):
+		if volume.locked():
+			if small:
+				return ('<span class="micro_indicator micro_{eject_css}">'
+								'{eject_img}</span>'.format(
+									eject_css='impossible',
+									eject_img=(
+										'<img src="/images/22x22/'
+										'media-record.png" alt="'
+										+ _(u'Backup in progress icon') + '" '
+										'style="margin-top: -3px;"/>'
+										)
+									)
+								)
+			else:
+				return ('<span class="small_indicator {eject_css}">'
+								'{eject_img}&nbsp;{eject_message}</span>'.format(
+									eject_css='impossible',
+									eject_message=
+										_(u"Can't eject, backup in progress"),
+									eject_img=(
+										'<img src="/images/22x22/'
+										'media-record.png" alt="'
+										+ _(u'Backup in progress icon') + '" '
+										'style="margin-top: -3px;"/>'
+										)
+									)
+								)
+		else:
+			if small:
+				return ('<span class="micro_indicator micro_{eject_css}">'
+								'<a href="{eject_uri}">{eject_img}'
+								'</a></span>'.format(
+									eject_css='possible',
+									eject_uri=('/backups/eject/'
+										+ volume.device.rsplit('/', 1)[1]),
+									eject_img=(
+										'<img src="/images/22x22/'
+										'eject.png" alt="'
+										+ _(u'Eject device icon') + '" />'
+									)
+								)
+							)
+			else:
+				return ('<span class="small_indicator {eject_css}">'
+								'<a href="{eject_uri}">{eject_img}&nbsp;'
+								'{eject_message}</a></span>'.format(
+									eject_css='possible',
+									eject_message=_(u'Eject the volume'),
+									eject_uri=('/backups/eject/'
+										+ volume.device.rsplit('/', 1)[1]),
+									eject_img=(
+										'<img src="/images/22x22/'
+										'eject.png" alt="'
+										+ _(u'Eject device icon') + '" />'
+									)
+								)
+							)
+	def _wmi__status(self):
+		""" Method called from wmi:/, to integrate backup informations on the
+			status page. """
+
+		messages = []
+
+		if self.running():
+			if self.events.backup.is_set():
+				messages.append((priorities.HIGH,
+					'<p class="light_indicator backup_in_progress '
+					'high_priority">%s</p>' % (
+						_(u'Backup in progress on volume {volume}…').format(
+							volume=self.current_backup_volume.mount_point))))
+			else:
+				messages.append((priorities.NORMAL,
+					'<p class="light_indicator backup_stats_in_progress '
+					'normal_priority">%s</p>' % (
+						_(u'Backup statistics computation '
+							'in progress on volume {volume}…').format(
+							volume=self.current_backup_volume.mount_point))))
+
+		else :
+			volumes = self._backup_enabled_volumes()
+
+			if volumes == []:
+				messages.append((priorities.NORMAL,
+					'<p class="light_indicator normal_priority">'
+					'<img src="/images/16x16/emblem-important.png" '
+					'alt="Important emblem" width="16" height="16" '
+					'style="margin-top: -5px" />'
+					'&nbsp;%s</p>' % (_(u'No backup volume connected'))))
+			else:
+				messages.append((priorities.NORMAL,
+					'<p class="light_indicator normal_priority">%s</p>' % (
+					_(u'Next backup in {0}').format(
+						self._countdown('next_backup',
+						self.threads.auto_backup_timer.remaining_time(),
+						uri='/')
+					))))
+
+		return messages
+	def _wmi__info(self):
+		""" Method called from wmi:/, to integrate backup informations on the
+			status page. """
+
+		messages = []
+		vprogress = ''
+
+		volumes = self._backup_enabled_volumes()
+
+		if volumes != []:
+			for volume in volumes:
+				if volume.mount_point:
+					free, total = volume.stats()
+					vprogress += ('<p>{eject_icon}&nbsp;&nbsp;'
+						'{mount_point}&nbsp;&nbsp;&nbsp;{progress_bar}'
+						'{used}</p>\n').format(
+						eject_icon=self._html_eject_status(volume, small=True),
+						mount_point=volume.mount_point,
+						progress_bar=self._progress_bar(
+							volume.device.rsplit('/', 1)[1],
+							(total - free) / total * 100.0),
+						used=_(u'used')
+						)
+
+			messages.append((priorities.NORMAL, vprogress))
+
+		return messages
 	def _wmi_run(self, uri, http_user, volume=None, force=False, **kwargs):
 		""" Run a backup from the WMI. Propose the user to force the
 			operation if the last backup is less than one hour. """
@@ -769,7 +874,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self.backup(volume=volume, force=True if force else False)
 			return (self.utils.HTTP_TYPE_REDIRECT,
 							self.wmi.successfull_redirect)
-	def _wmi_eject(self, uri, http_user, device, **kwargs):
+	def _wmi_eject(self, uri, http_user, device, referer=None, **kwargs):
 		""" Eject a device, from the WMI. """
 
 		device = '/dev/' + device
@@ -786,7 +891,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						backup_info=backup_info,rewind=self.wmi.rewind))))
 
 		self.volumes[device].unmount()
-		return (self.utils.HTTP_TYPE_REDIRECT, self.wmi.successfull_redirect)
+
+		return (self.utils.HTTP_TYPE_REDIRECT, referer
+					if referer else self.wmi.successfull_redirect)
 	def _wmi_rescan(self, uri, http_user, **kwargs):
 		""" rescan volumes and reload page. """
 		LMC.extensions.volumes.rescan_volumes()
@@ -861,35 +968,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						'margin-right: 15%;">'
 						'{rdiff_output}</pre>')
 
-			if volume.locked():
-				eject_status = ('<span class="small_indicator {eject_css}">'
-								'{eject_img}&nbsp;{eject_message}</span>'.format(
-									eject_css='impossible',
-									eject_message=
-										_(u"Can't eject, backup in progress"),
-									eject_img=(
-										'<img src="/images/22x22/'
-										'media-record.png" alt="'
-										+ _(u'Backup in progress icon') + '" '
-										'style="margin-top: -3px;"/>'
-										)
-									)
-								)
-			else:
-				eject_status = ('<span class="small_indicator {eject_css}">'
-								'<a href="{eject_uri}">{eject_img}&nbsp;'
-								'{eject_message}</a></span>'.format(
-									eject_css='possible',
-									eject_message=_(u'Eject the volume'),
-									eject_uri=('/backups/eject/'
-										+ volume.device.rsplit('/', 1)[1]),
-									eject_img=(
-										'<img src="/images/22x22/'
-										'eject.png" alt="'
-										+ _(u'Eject device icon') + '" />'
-									)
-								)
-							)
+			eject_status = self._html_eject_status(volume)
 
 			try:
 				rdiff_stats_output = open(volume.mount_point

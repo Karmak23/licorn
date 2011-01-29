@@ -287,7 +287,10 @@ display_{name}({countdown_seconds});
 		operation='+' if limit else '-',
 		counter_test='<=' if limit else '>='
 	)
-
+	def _progress_bar(self, name, value):
+		return ('<span class="progressBar" '
+			'id="{name}">{value}%</span>\n'.format(
+			name=name, value=value))
 def init():
 	""" Initialize the WMI module by importing all WMI objects and making them
 		available to the outside world (they must not be used directly). """

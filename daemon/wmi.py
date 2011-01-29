@@ -261,10 +261,13 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		retdata = None
 		rettype = None
 
+		# from http://www.java2s.com/Open-Source/Python/Web-Server/Snakelets/Snakelets-1.50/snakeserver/server.py.htm
+		referer = self.headers.getheader('referer') or None
+
 		# GET / has special treatment :-)
 		if self.path == '/':
 			rettype, retdata = self.wmi.base.index(
-				self.path, self.http_user)
+				self.path, self.http_user, referer=referer)
 
 		else:
 			# remove the last '/' (which is totally useless for us, even if it
@@ -284,21 +287,25 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
-					py_code = 'rettype, retdata = self.wmi.%s.%s("%s", "%s" %s %s)' % (
+					py_code = ('rettype, retdata = self.wmi.%s.%s('
+						'"%s", "%s" %s %s, referer=%s)') % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
 							if len(args)>2 else ', ',
 						', '.join(self.format_post_args()),
-						)
+						'"%s"' % referer if referer else 'None')
 				else:
-					py_code = 'rettype, retdata = self.wmi.%s.%s("%s", "%s" %s )' % (
+					py_code = ('rettype, retdata = self.wmi.%s.%s('
+						'"%s", "%s" %s referer=%s)') % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:])
-							if len(args)>2 else ', ')
+							if len(args)>2 else ', ',
+						'"%s"' % referer if referer else 'None')
 
 				try:
 					assert ltrace('http',
 						'serve_virtual_uri:exec("%s")' % py_code)
+
 					#TODO: #431
 					#for i in postargs.iteritems() :
 					#	kwargs[i] = i
@@ -374,7 +381,9 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						break
 
 				self.send_response(302)
-				self.send_header("Location", 'http://%s:%s%s' % (
+				self.send_header("Location", retdata
+					if retdata.startswith('http://')
+					else 'http://%s:%s%s' % (
 					hostaddr, LMC.configuration.licornd.wmi.port, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()

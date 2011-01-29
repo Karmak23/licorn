@@ -395,14 +395,14 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/sweetTitles.css" />
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/lightwindow.css" />
 <link rel="stylesheet" type="text/css" media="screen,projection" href="/css/accordion.css" />
-<script type="text/javascript" src="/js/tools.js"></script>
-<script type="text/javascript" src="/js/niftyCube.js"></script>
-<script type="text/javascript" src="/js/sweetTitles.js"></script>
-<script type="text/javascript" src="/js/addEvent.js"></script>
+<script language="javascript" type="text/javascript" src="/js/tools.js"></script>
+<script language="javascript" type="text/javascript" src="/js/niftyCube.js"></script>
+<script language="javascript" type="text/javascript" src="/js/sweetTitles.js"></script>
+<script language="javascript" type="text/javascript" src="/js/addEvent.js"></script>
 <script language="javascript" type="text/javascript" src="/js/prototype-1.6.0.2.js"></script>
-<!-- <script type="text/javascript" src="/js/prototype.js"></script> -->
-<script type="text/javascript" src="/js/effects.js"></script>
-<script type="text/javascript" src="/js/lightwindow.js"></script>
+<script language="javascript" type="text/javascript" src="/js/effects.js"></script>
+<script language="javascript" type="text/javascript" src="/js/lightwindow.js"></script>
+<script language="javascript" type="text/javascript" src="/js/progressbar.js"></script>
 <!-- Flotr -->
 <!--[if IE]><script language="javascript" type="text/javascript" src="/js/excanvas.js"></script><![endif]-->
 <script language="javascript" type="text/javascript" src="/js/flotr-0.2.0-alpha.js"></script>
