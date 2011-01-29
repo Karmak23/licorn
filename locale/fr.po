@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-29 08:12+0100\n"
-"PO-Revision-Date: 2011-01-29 08:12+0100\n"
+"POT-Creation-Date: 2011-01-29 13:13+0100\n"
+"PO-Revision-Date: 2011-01-29 13:24+0100\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: French\n"
 "Language: \n"
@@ -117,20 +117,20 @@ msgstr "Comparaison des fichiers systèmes avec les sauvegardes pour détecter l
 msgid "System config files backup comparison finished successfully."
 msgstr "Comparaison des fichiers systèmes effectuée avec succès."
 
-#: tests/core.py:2326
+#: tests/core.py:2324
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr "Changement du propriétaire des données de scénarios vers %s:%s."
 
-#: tests/core.py:2347
+#: tests/core.py:2345
 msgid "Testsuite terminated successfully."
 msgstr "Suite de tests terminée avec succès."
 
-#: tests/core.py:2348
+#: tests/core.py:2346
 msgid "Don't forget to test massive del/mod/chk with -a argument (not tested because too dangerous)"
 msgstr "N'oubliez pas de tester les commandes del/mod/chk avec l'argument -a (opérations massives), qui ne sont pas testées automatiquement car trop dangereuses."
 
-#: tests/core.py:2352
+#: tests/core.py:2350
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr "Interruption clavier reçue. Nettoyage du contexte de la suite de tests, merci de patienter…"
 
@@ -252,105 +252,109 @@ msgstr "URI de calendrier personnel"
 msgid "Group calendar URI"
 msgstr "URI de calendrier partagé"
 
-#: extensions/rdiffbackup.py:278
+#: extensions/rdiffbackup.py:280
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: extensions/rdiffbackup.py:279
+#: extensions/rdiffbackup.py:281
 msgid "Manage backups and restore files"
 msgstr "Gérer les sauvegardes et restaurer des données"
 
-#: extensions/rdiffbackup.py:281
+#: extensions/rdiffbackup.py:283
 msgid "Run backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:282
+#: extensions/rdiffbackup.py:284
 msgid "Run a system incremental backup now"
 msgstr "Exécuter une sauvegarde incrémentale maintenant"
 
-#: extensions/rdiffbackup.py:286
+#: extensions/rdiffbackup.py:288
 msgid "Rescan volumes"
 msgstr "Scanner les volumes"
 
-#: extensions/rdiffbackup.py:287
+#: extensions/rdiffbackup.py:289
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:661
+#: extensions/rdiffbackup.py:668
 msgid "Last backup on this volume occured {0} ago."
 msgstr "La dernière sauvegarde sur ce volume a eu lieu il y a {0}."
 
-#: extensions/rdiffbackup.py:667
+#: extensions/rdiffbackup.py:674
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 
-#: extensions/rdiffbackup.py:668
+#: extensions/rdiffbackup.py:675
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:685
-#: extensions/rdiffbackup.py:699
+#: extensions/rdiffbackup.py:692
+#: extensions/rdiffbackup.py:706
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:695
+#: extensions/rdiffbackup.py:702
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:715
-#: extensions/rdiffbackup.py:730
+#: extensions/rdiffbackup.py:722
+#: extensions/rdiffbackup.py:737
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:724
+#: extensions/rdiffbackup.py:731
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:744
+#: extensions/rdiffbackup.py:752
 msgid "Backup in progress on volume {volume}…"
 msgstr "Sauvegarde en cours sur le volume {volume}…"
 
-#: extensions/rdiffbackup.py:753
+#: extensions/rdiffbackup.py:758
+msgid "Backup statistics computation in progress on volume {volume}…"
+msgstr "Calcul des statistiques de sauvegardes sur le volume {volume}…"
+
+#: extensions/rdiffbackup.py:771
 msgid "No backup volume connected"
 msgstr "Aucun volume de sauvegarde connecté"
 
-#: extensions/rdiffbackup.py:757
+#: extensions/rdiffbackup.py:775
 msgid "Next backup in {0}"
 msgstr "Prochaine sauvegarde dans {0}"
 
-#: extensions/rdiffbackup.py:785
+#: extensions/rdiffbackup.py:803
 msgid "used"
 msgstr "occupé"
 
-#: extensions/rdiffbackup.py:796
+#: extensions/rdiffbackup.py:814
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:804
+#: extensions/rdiffbackup.py:822
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine sauvegarde."
 
-#: extensions/rdiffbackup.py:808
+#: extensions/rdiffbackup.py:826
 msgid "No volume to backup onto. Please plug a {app_name} enabled volume into your server before starting this procedure.<br /><br />See <a href=\"http://docs.licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> for details on enabling backup volumes."
 msgstr "Aucun volume de sauvegarde trouvé. Merci de connecter un volume dédié aux sauvegardes {app_name} sur votre serveur avant de lancer cette procédure.<br /><br />Lisez <href=\"http://docs.licorn.org/extensions/rdiffbackup.fr.html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:823
+#: extensions/rdiffbackup.py:841
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:828
+#: extensions/rdiffbackup.py:846
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:829
+#: extensions/rdiffbackup.py:847
 msgid "{auto_select}<br /><br />The last backup has been run {last_backup_time} ago, which is less than the system configured interval ({interval}). Are you sure you want to force a manual backup now?<br /><br />(if you do not answer withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr "{auto_select}<br /><br />La dernière sauvegarde date d'il y a  {last_backup_time}, c'est à dire moins que l'intervalle configuré dans le système ({interval}). Êtes-vous sûr(e) de vouloir forcer le lancement d'une sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les {next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:845
+#: extensions/rdiffbackup.py:863
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:846
+#: extensions/rdiffbackup.py:864
 #: interfaces/wmi/groups.py:134
 #: interfaces/wmi/groups.py:581
 #: interfaces/wmi/users.py:136
@@ -358,7 +362,7 @@ msgstr "Lancer >>"
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:848
+#: extensions/rdiffbackup.py:866
 #: interfaces/wmi/groups.py:257
 #: interfaces/wmi/users.py:92
 #: interfaces/wmi/users.py:138
@@ -368,46 +372,46 @@ msgstr "S"
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:848
+#: extensions/rdiffbackup.py:866
 #: interfaces/wmi/users.py:138
 #: interfaces/wmi/users.py:227
 #: interfaces/wmi/users.py:273
 msgid "C"
 msgstr "N"
 
-#: extensions/rdiffbackup.py:864
+#: extensions/rdiffbackup.py:882
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:867
+#: extensions/rdiffbackup.py:885
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:871
+#: extensions/rdiffbackup.py:889
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr "Ce volume est utilisé{backup_info}, impossible de l'éjecter&nbsp;!{rewind}"
 
-#: extensions/rdiffbackup.py:888
+#: extensions/rdiffbackup.py:908
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:905
+#: extensions/rdiffbackup.py:925
 msgid "No backup volume found. Please connect a backup volume to your server, and backups will automatically start (next try in {countdown})."
 msgstr "Aucun volume de sauvegarde n'a été trouvé. Merci d'en connecter un à votre serveur, et les sauvegardes démarreront automatiquement (prochaine tentative dans {countdown})."
 
-#: extensions/rdiffbackup.py:913
+#: extensions/rdiffbackup.py:933
 msgid "No backup found, or all backup volumes are currently unmounted (you can safely disconnect them from your server).<br /><br />Next automatic backup will occur in {countdown}, and will automatically remount any backup volume still connected at this moment."
 msgstr "Aucune sauvegarde n'a été trouvée, ou bien tous les volumes de sauvegardes sont actuellement démontés (vous pouvez les déconnecter sans risque de votre serveur).<br /><br />La prochaine sauvegarde automatique sera tentée dans {countdown}, et remontera tout volume encore physiquement connecté à ce moment là."
 
-#: extensions/rdiffbackup.py:931
+#: extensions/rdiffbackup.py:951
 msgid "A backup is currently in progress, please do not disconnect <strong>{volume}</strong>.<br /><br /> (update in {countdown}…)"
 msgstr "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:959
+#: extensions/rdiffbackup.py:979
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr "Aucune donnée d'historique. Merci d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:965
+#: extensions/rdiffbackup.py:985
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
@@ -568,39 +572,51 @@ msgid "virtual memory: <strong>%.2f</strong> Mb total."
 msgstr "Mémoire Virtuelle&nbsp;: <strong>%.2f</strong> Mo configuré(s)."
 
 #: interfaces/wmi/base.py:194
+msgid "“<strong>{hostname}</strong>” "
+msgstr "« <strong>{hostname}</strong> » "
+
+#: interfaces/wmi/base.py:205
 #, python-format
 msgid "automatic update of this page in %s."
 msgstr "rechargement de cette page dans %s."
 
-#: interfaces/wmi/base.py:241
+#: interfaces/wmi/base.py:252
 msgid "System status"
 msgstr "État du système"
 
-#: interfaces/wmi/base.py:242
-msgid "Up and running since <strong>{uptime}</strong>.<br /><br />Users: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />1, 5, and 15 last minutes load average: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
-msgstr "En marche depuis <strong>{uptime}</strong>.<br /><br />Utilisateurs&nbsp;: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />Charge système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
+#: interfaces/wmi/base.py:253
+msgid "{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br />Users: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />1, 5, and 15 last minutes load average: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
+msgstr "{hostname}{up_and_running} depuis <strong>{uptime}</strong>.<br /><br />Utilisateurs&nbsp;: <strong>{accounts}</strong> {account_word}, <strong>{connected} {open_session_words}</strong>.<br /><br />Charge système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class=\"small_indicator {load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
 
-#: interfaces/wmi/base.py:250
+#: interfaces/wmi/base.py:260
+msgid "up and running"
+msgstr "en marche"
+
+#: interfaces/wmi/base.py:261
+msgid "Up and running"
+msgstr "En marche"
+
+#: interfaces/wmi/base.py:263
 msgid "user accounts"
 msgstr "comptes utilisateurs"
 
-#: interfaces/wmi/base.py:251
+#: interfaces/wmi/base.py:264
 msgid "user account"
 msgstr "compte utilisateur"
 
-#: interfaces/wmi/base.py:252
+#: interfaces/wmi/base.py:265
 msgid "open sessions"
 msgstr "sessions ouvertes"
 
-#: interfaces/wmi/base.py:253
+#: interfaces/wmi/base.py:266
 msgid "open session"
 msgstr "session ouverte"
 
-#: interfaces/wmi/base.py:259
+#: interfaces/wmi/base.py:272
 msgid "System information"
 msgstr "Informations système"
 
-#: interfaces/wmi/base.py:260
+#: interfaces/wmi/base.py:273
 msgid "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />{swap_total}"
 msgstr "Processeur{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br />Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s).<br /> {swap_total}"
 
@@ -2329,6 +2345,8 @@ msgstr "nombre de machines <strong>%s</strong>&#160;:"
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
+#~ msgid "“{hostname}”, "
+#~ msgstr "« {hostname} », "
 #~ msgid "Last backup on volume {0}:<br /> {1} ago,<br />next starting in {2}"
 #~ msgstr ""
 #~ "Dernière sauvegarde sur {0}:<br /> il y a {1},<br /> prochaine dans {2}"

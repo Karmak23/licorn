@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import time, re
+import time, re, socket
 from gettext import gettext as _
 
 from subprocess            import Popen, PIPE
@@ -181,6 +181,17 @@ def index(uri, http_user, **kwargs):
 		elif load <= 3.0:
 			return 'load_avg_level5'
 
+	try:
+		hostname = socket.gethostname()
+	except Exception, e:
+		logging.warning('WMI: cannot get hostname (was: %s)' % e)
+		hostname = ''
+
+	if hostname in ('', 'localhost', 'localhost6', 'localhost.localdomain',
+					'localhost6.localdomain6'):
+		hostname = ''
+	else:
+		hostname = _(u'“<strong>{hostname}</strong>” ').format(hostname=hostname)
 
 	status_messages = {
 		priorities.LOW: '',
@@ -239,13 +250,15 @@ def index(uri, http_user, **kwargs):
 	</table>
 	'''.format(
 			system_status_title=_('System status'),
-			system_status=_('Up and running since <strong>{uptime}</strong>.<br /><br />'
+			system_status=_('{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br />'
 				'Users: <strong>{accounts}</strong> {account_word}, '
 				'<strong>{connected} {open_session_words}</strong>.<br /><br />'
 				'1, 5, and 15 last minutes load average: '
 				'<span class="small_indicator {load_back1}">{load1}</span> '
 				'<span class="small_indicator {load_back5}">{load5}</span> '
-				'<span class="small_indicator {load_back15}">{load15}</span>').format(
+				'<span class="small_indicator {load_back15}">{load15}</span>'
+				).format(hostname=hostname, up_and_running=_(u'up and running')
+					if hostname else _(u'Up and running'),
 				uptime=uptime_string, accounts=nbusers, connected=cxusers,
 				account_word=_('user accounts')
 					if nbusers > 1 else _('user account'),
