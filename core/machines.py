@@ -594,7 +594,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		caller = current_thread().name
 
 		assert ltrace('machines', '| %s: add_machine(%s, %s, %s, %s, %s, %s, '
-			'%s, %s, %s)' % (caller, mid, hostname, ether, backend,
+			'%s, %s)' % (caller, mid, hostname, ether, backend,
 				system_type, system, status, myself))
 
 		self[mid] = Machine(mid=mid,
@@ -739,9 +739,6 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		the local configuration. """
 
 		caller = current_thread().name
-
-		#logging.info('%s: %s LAN scan.' % (caller,
-		#									stylize(ST_RUNNING, 'started')))
 
 		assert ltrace('machines', '> %s: scan_network()' % caller)
 
