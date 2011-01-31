@@ -18,7 +18,7 @@ from time       import strftime, localtime
 from subprocess import Popen, PIPE
 
 from licorn.foundations           import logging, exceptions
-from licorn.foundations           import process, hlstr, network
+from licorn.foundations           import process, hlstr, network, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Enumeration, Singleton
@@ -1391,7 +1391,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 						)),
 					hostname, edit, machine.ip,
 					hostname, edit, machine.ether,
-					hostname, edit, format_time_delta(
+					hostname, edit, pyutils.format_time_delta(
 						float(machine.expiry) - time.time(), use_neg=True) \
 								if machine.expiry else '-'
 					)
