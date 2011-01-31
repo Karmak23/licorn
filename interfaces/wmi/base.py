@@ -162,12 +162,36 @@ def index(uri, http_user, **kwargs):
 			'Cached', 'SwapTotal', 'SwapFree' ):
 			mem.update(compute_mem(line, x))
 
+	status_messages = {
+		priorities.LOW: '',
+		priorities.NORMAL: '',
+		priorities.HIGH: ''
+		}
+
+	info_messages = {
+		priorities.LOW:
+				'<p class="light_indicator low_priority">%s</p>' % (
+					_(u'automatic update of this page in %s.') %
+					wmi.WMIObject.countdown('update', 28, uri='/')),
+		priorities.NORMAL: '',
+		priorities.HIGH: ''
+		}
+
 	if mem['SwapTotal'] == 0:
 		# no swap on this system. Weird, but possible. fixes #40
-		swap_message = _("no virtual memory installed.")
+		swap_message = '&nbsp;'
+		swap_pie = '&nbsp;'
+		info_messages[priorities.HIGH] += (
+					'<p class="light_indicator high_priority">'
+					'<img src="/images/16x16/emblem-important.png" '
+					'alt="Important emblem" width="16" height="16" '
+					'style="margin-top: -5px" />'
+					'&nbsp;%s</p>' % _(u"No virtual memory configured!"))
 	else:
 		swap_message = (_("virtual memory: <strong>%.2f</strong> Mb total.")
 															% mem['SwapTotal'])
+		swap_pie = _flotr_pie_swap(mem['SwapTotal'] - mem['SwapFree'],
+									mem['SwapFree'])
 
 	def load_background(load):
 		if load <= 0.5:
@@ -192,21 +216,6 @@ def index(uri, http_user, **kwargs):
 		hostname = ''
 	else:
 		hostname = _(u'“<strong>{hostname}</strong>” ').format(hostname=hostname)
-
-	status_messages = {
-		priorities.LOW: '',
-		priorities.NORMAL: '',
-		priorities.HIGH: ''
-		}
-
-	info_messages = {
-		priorities.LOW:
-				'<p class="light_indicator low_priority">%s</p>' % (
-					_(u'automatic update of this page in %s.') %
-					wmi.WMIObject.countdown('update', 28, uri='/')),
-		priorities.NORMAL: '',
-		priorities.HIGH: ''
-		}
 
 	for obj in wmi.__dict__.itervalues():
 		if isinstance(obj, NamedObject):
@@ -285,8 +294,7 @@ def index(uri, http_user, **kwargs):
 				mem['MemFree']
 			),
 
-			swap_pie=_flotr_pie_swap(mem['SwapTotal']-mem['SwapFree'], mem['SwapFree'])
-				if swap_message != '' else '',
+			swap_pie=swap_pie,
 
 			status_messages=status_messages,
 			info_messages=info_messages

@@ -9,11 +9,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-01-29 13:24+0100\n"
+"POT-Creation-Date: 2011-01-31 10:11+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -111,22 +110,22 @@ msgstr ""
 msgid "System config files backup comparison finished successfully."
 msgstr ""
 
-#: tests/core.py:2324
+#: tests/core.py:2326
 #, python-format
 msgid "giving back all scenarii data to %s:%s."
 msgstr ""
 
-#: tests/core.py:2345
+#: tests/core.py:2347
 msgid "Testsuite terminated successfully."
 msgstr ""
 
-#: tests/core.py:2346
+#: tests/core.py:2348
 msgid ""
 "Don't forget to test massive del/mod/chk with -a argument (not tested "
 "because too dangerous)"
 msgstr ""
 
-#: tests/core.py:2350
+#: tests/core.py:2352
 msgid "Keyboard Interrupt received, cleaning testsuite context, please wait…"
 msgstr ""
 
@@ -243,187 +242,6 @@ msgid ""
 "not be reliable."
 msgstr ""
 
-#: extensions/openssh.py:151
-msgid "Users allowed to connect via SSHd"
-msgstr ""
-
-#: extensions/caldavd.py:620
-msgid "Personnal calendar URI"
-msgstr ""
-
-#: extensions/caldavd.py:638
-msgid "Group calendar URI"
-msgstr ""
-
-#: extensions/rdiffbackup.py:280
-msgid "Backups"
-msgstr ""
-
-#: extensions/rdiffbackup.py:281
-msgid "Manage backups and restore files"
-msgstr ""
-
-#: extensions/rdiffbackup.py:283
-msgid "Run backup"
-msgstr ""
-
-#: extensions/rdiffbackup.py:284
-msgid "Run a system incremental backup now"
-msgstr ""
-
-#: extensions/rdiffbackup.py:288
-msgid "Rescan volumes"
-msgstr ""
-
-#: extensions/rdiffbackup.py:289
-msgid "Force the system to rescan and remount connected volumes"
-msgstr ""
-
-#: extensions/rdiffbackup.py:668
-msgid "Last backup on this volume occured {0} ago."
-msgstr ""
-
-#: extensions/rdiffbackup.py:674
-msgid "No backup has occured yet."
-msgstr ""
-
-#: extensions/rdiffbackup.py:675
-msgid "Next backup attempt will occur in {0}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:692 extensions/rdiffbackup.py:706
-msgid "Backup in progress icon"
-msgstr ""
-
-#: extensions/rdiffbackup.py:702
-msgid "Can't eject, backup in progress"
-msgstr ""
-
-#: extensions/rdiffbackup.py:722 extensions/rdiffbackup.py:737
-msgid "Eject device icon"
-msgstr ""
-
-#: extensions/rdiffbackup.py:731
-msgid "Eject the volume"
-msgstr ""
-
-#: extensions/rdiffbackup.py:752
-msgid "Backup in progress on volume {volume}…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:758
-msgid "Backup statistics computation in progress on volume {volume}…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:771
-msgid "No backup volume connected"
-msgstr ""
-
-#: extensions/rdiffbackup.py:775
-msgid "Next backup in {0}"
-msgstr ""
-
-#: extensions/rdiffbackup.py:803
-msgid "used"
-msgstr ""
-
-#: extensions/rdiffbackup.py:814
-msgid "Run a manual backup"
-msgstr ""
-
-#: extensions/rdiffbackup.py:822
-msgid "Note: auto-selected volume {volume} for next backup."
-msgstr ""
-
-#: extensions/rdiffbackup.py:826
-msgid ""
-"No volume to backup onto. Please plug a {app_name} enabled volume into your "
-"server before starting this procedure.<br /><br />See <a href=\"http://docs."
-"licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> "
-"for details on enabling backup volumes."
-msgstr ""
-
-#: extensions/rdiffbackup.py:841
-msgid "Run a manual backup on volume {0}"
-msgstr ""
-
-#: extensions/rdiffbackup.py:846
-msgid "Recent backup detected"
-msgstr ""
-
-#: extensions/rdiffbackup.py:847
-msgid ""
-"{auto_select}<br /><br />The last backup has been run {last_backup_time} "
-"ago, which is less than the system configured interval ({interval}). Are you "
-"sure you want to force a manual backup now?<br /><br />(if you do not answer "
-"withing {next_backup_time}, an automatic backup will occur anyway)"
-msgstr ""
-
-#: extensions/rdiffbackup.py:863
-msgid "Run >>"
-msgstr ""
-
-#: extensions/rdiffbackup.py:864 interfaces/wmi/groups.py:134
-#: interfaces/wmi/groups.py:581 interfaces/wmi/users.py:136
-#: interfaces/wmi/users.py:214
-msgid "R"
-msgstr ""
-
-#: extensions/rdiffbackup.py:866 interfaces/wmi/groups.py:257
-#: interfaces/wmi/users.py:92 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:227 core/machines.py:1159 core/machines.py:1202
-msgid "<< Cancel"
-msgstr ""
-
-#: extensions/rdiffbackup.py:866 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:227 interfaces/wmi/users.py:273
-msgid "C"
-msgstr ""
-
-#: extensions/rdiffbackup.py:882
-msgid "Eject volume {device}"
-msgstr ""
-
-#: extensions/rdiffbackup.py:885
-msgid " (a backup is underway)"
-msgstr ""
-
-#: extensions/rdiffbackup.py:889
-msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
-msgstr ""
-
-#: extensions/rdiffbackup.py:908
-msgid "System backups"
-msgstr ""
-
-#: extensions/rdiffbackup.py:925
-msgid ""
-"No backup volume found. Please connect a backup volume to your server, and "
-"backups will automatically start (next try in {countdown})."
-msgstr ""
-
-#: extensions/rdiffbackup.py:933
-msgid ""
-"No backup found, or all backup volumes are currently unmounted (you can "
-"safely disconnect them from your server).<br /><br />Next automatic backup "
-"will occur in {countdown}, and will automatically remount any backup volume "
-"still connected at this moment."
-msgstr ""
-
-#: extensions/rdiffbackup.py:951
-msgid ""
-"A backup is currently in progress, please do not disconnect <strong>{volume}"
-"</strong>.<br /><br /> (update in {countdown}…)"
-msgstr ""
-
-#: extensions/rdiffbackup.py:979
-msgid "No historical data yet. Please wait for the first backup to finish."
-msgstr ""
-
-#: extensions/rdiffbackup.py:985
-msgid "Backups on {mount_point}"
-msgstr ""
-
 #: foundations/pyutils.py:60
 #, python-format
 msgid "%s ago"
@@ -477,6 +295,495 @@ msgstr ""
 #: foundations/pyutils.py:85
 #, python-format
 msgid "%dd%s"
+msgstr ""
+
+#: core/configuration.py:772
+msgid "user"
+msgstr ""
+
+#: core/configuration.py:773
+msgid "users"
+msgstr ""
+
+#: core/configuration.py:792
+msgid "group"
+msgstr ""
+
+#: core/configuration.py:793
+msgid "groups"
+msgstr ""
+
+#: core/machines.py:625 core/machines.py:1234
+msgid "Machines"
+msgstr ""
+
+#: core/machines.py:626
+msgid ""
+"Manage network clients (computers, printers, etc) and energy preferences"
+msgstr ""
+
+#: core/machines.py:630
+msgid "Shutdown machines"
+msgstr ""
+
+#: core/machines.py:631
+msgid "Shutdown machines on the network."
+msgstr ""
+
+#: core/machines.py:636
+msgid "Energy policies"
+msgstr ""
+
+#: core/machines.py:637
+msgid "Manage network-wide Energy &amp; power saving policies."
+msgstr ""
+
+#: core/machines.py:920
+msgid " (this machine)"
+msgstr ""
+
+#: core/machines.py:1018
+msgid "You must pass a hostname to verify!"
+msgstr ""
+
+#: core/machines.py:1026
+#, python-format
+msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
+msgstr ""
+
+#: core/machines.py:1038
+#, python-format
+msgid "Shutdown machine %s"
+msgstr ""
+
+#: core/machines.py:1042
+#, python-format
+msgid "Are you sure you want to remotely shutdown machine %s?"
+msgstr ""
+
+#: core/machines.py:1046
+msgid "Warn connected user(s) before shuting system down."
+msgstr ""
+
+#: core/machines.py:1049
+msgid "Please confirm operation"
+msgstr ""
+
+#: core/machines.py:1051 core/machines.py:1106
+msgid "Shutdown"
+msgstr ""
+
+#: core/machines.py:1053 core/machines.py:1108 interfaces/wmi/groups.py:65
+#: interfaces/wmi/groups.py:103 interfaces/wmi/groups.py:135
+#: interfaces/wmi/groups.py:198 interfaces/wmi/groups.py:578
+#: interfaces/wmi/users.py:272 interfaces/wmi/users.py:398
+#: interfaces/wmi/users.py:574
+msgid "Cancel"
+msgstr ""
+
+#: core/machines.py:1076
+msgid "Massive shutdown"
+msgstr ""
+
+#: core/machines.py:1080
+msgid ""
+"You can shutdown all currently running and/or idle machines. This is a quite "
+"dangerous operation, because users will be disconnected, and there is a "
+"potential to loose unsaved work on idle machines (users are not in front of "
+"them, they will not notice the system is shuting down.<br /><br />Systems "
+"will be shut down <strong>ONE minute</strong> after validation."
+msgstr ""
+
+#: core/machines.py:1090
+msgid "Shutdown <strong>active</strong> machines"
+msgstr ""
+
+#: core/machines.py:1092
+msgid "Shutdown <strong>idle</strong> machines"
+msgstr ""
+
+#: core/machines.py:1094
+msgid "Shutdown <strong>asleep</strong> machines"
+msgstr ""
+
+#: core/machines.py:1096
+msgid ""
+"Shutdown the <strong>administrator</strong> machine too<br/>(the one "
+"currently connected to the WMI)."
+msgstr ""
+
+#: core/machines.py:1100
+msgid "Warn connected users before shuting systems down."
+msgstr ""
+
+#: core/machines.py:1104
+msgid "Choose machines to shutdown"
+msgstr ""
+
+#: core/machines.py:1141
+msgid "Energy saving policies"
+msgstr ""
+
+#: core/machines.py:1144 core/machines.py:1187 interfaces/wmi/users.py:77
+msgid ""
+"CSV file-format is used by spreadsheets and most systems which offer import "
+"functionnalities. XML file-format is a modern exchange format, used in soma "
+"applications which respect interoperability constraints.<br /><br />When you "
+"submit this form, your web browser will automatically offer you to download "
+"and save the export-file (it won't be displayed). When you're done, please "
+"click the “back” button of your browser."
+msgstr ""
+
+#: core/machines.py:1153 core/machines.py:1196
+#, python-format
+msgid "Which file format do you want the machines list to be exported to? %s"
+msgstr ""
+
+#: core/machines.py:1156 core/machines.py:1199 interfaces/wmi/users.py:89
+msgid "Please choose file format for export list"
+msgstr ""
+
+#: core/machines.py:1158 core/machines.py:1201 interfaces/wmi/users.py:91
+msgid "Export >>"
+msgstr ""
+
+#: core/machines.py:1159 core/machines.py:1202 interfaces/wmi/groups.py:257
+#: interfaces/wmi/users.py:92 interfaces/wmi/users.py:138
+#: interfaces/wmi/users.py:227 extensions/rdiffbackup.py:866
+msgid "<< Cancel"
+msgstr ""
+
+#: core/machines.py:1183
+msgid "Export machines list"
+msgstr ""
+
+#: core/machines.py:1230 core/machines.py:1269
+msgid "managed"
+msgstr ""
+
+#: core/machines.py:1231 core/machines.py:1271
+msgid "floating"
+msgstr ""
+
+#: core/machines.py:1243 interfaces/wmi/utils.py:367
+msgid "Status"
+msgstr ""
+
+#: core/machines.py:1244
+msgid "Host name"
+msgstr ""
+
+#: core/machines.py:1245
+msgid "IP address"
+msgstr ""
+
+#: core/machines.py:1246
+msgid "Hardware address"
+msgstr ""
+
+#: core/machines.py:1247
+msgid "Expiry"
+msgstr ""
+
+#: core/machines.py:1248
+msgid "Managed"
+msgstr ""
+
+#: core/machines.py:1256 interfaces/wmi/groups.py:697
+#: interfaces/wmi/users.py:878
+msgid "Click to sort in reverse order."
+msgstr ""
+
+#: core/machines.py:1262 interfaces/wmi/groups.py:701
+#: interfaces/wmi/users.py:882
+msgid "Click to sort on this column."
+msgstr ""
+
+#: core/machines.py:1275
+#, python-format
+msgid ""
+"Host %s is in an unknown state. Nothing is possible. Please wait for a "
+"reconnection."
+msgstr ""
+
+#: core/machines.py:1278
+#, python-format
+msgid ""
+"Host %s is offline, and cannot be powered on from here,Only from the machine "
+"itself."
+msgstr ""
+
+#: core/machines.py:1281
+#, python-format
+msgid ""
+"Host %s is going to sleep, it will be unavailable in a small period of time."
+msgstr ""
+
+#: core/machines.py:1283 core/machines.py:1289 core/machines.py:1291
+#, python-format
+msgid "Shutdown the machine %s"
+msgstr ""
+
+#: core/machines.py:1285
+#, python-format
+msgid ""
+"Host %s is shutting down, it will be unavailable in a small period of time."
+msgstr ""
+
+#: core/machines.py:1287
+#, python-format
+msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
+msgstr ""
+
+#: core/machines.py:1344
+msgid "This machine has multiple network interfaces."
+msgstr ""
+
+#: core/machines.py:1348
+msgid "This machine is a virtual computer."
+msgstr ""
+
+#: core/machines.py:1352
+msgid "This machine runs an undetermined version of Linux®."
+msgstr ""
+
+#: core/machines.py:1357
+msgid "This machine is a META IT/Licorn® server."
+msgstr ""
+
+#: core/machines.py:1361
+msgid "This machine has Licorn® installed."
+msgstr ""
+
+#: core/machines.py:1365
+msgid "This machine is an ALT® client."
+msgstr ""
+
+#: core/machines.py:1369
+msgid "This machine Debian installed."
+msgstr ""
+
+#: core/machines.py:1373
+msgid "This machine is Ubuntu installed."
+msgstr ""
+
+#: core/machines.py:1377
+msgid "This machine is manufactured by Apple® Computer Inc."
+msgstr ""
+
+#: core/machines.py:1381
+msgid "This machine is a Freebox appliance."
+msgstr ""
+
+#: core/machines.py:1385
+msgid "This machine is a network printer."
+msgstr ""
+
+#: core/machines.py:1389
+msgid "This machine is a network scanner."
+msgstr ""
+
+#: core/machines.py:1407
+msgid ""
+"Unmanage machine (remove it from configuration, in order to allow it to be "
+"managed by another server."
+msgstr ""
+
+#: core/machines.py:1418
+msgid ""
+"Manage machine (fix its IP address and configure various aspects of the "
+"client)."
+msgstr ""
+
+#: core/machines.py:1440
+msgid "<unknown>"
+msgstr ""
+
+#: core/machines.py:1465
+#, python-format
+msgid "number of <strong>%s</strong> machines:"
+msgstr ""
+
+#: core/machines.py:1478
+msgid "<strong>Total number of machines:</strong>"
+msgstr ""
+
+#: core/groups.py:421 core/groups.py:1558
+#, python-format
+msgid "Members of group “%s”"
+msgstr ""
+
+#: core/groups.py:490
+msgid "Created system group {0} (gid={1})."
+msgstr ""
+
+#: core/groups.py:508
+msgid "Created {0} group {1} (gid={2})."
+msgstr ""
+
+#: core/groups.py:509
+msgid "permissive"
+msgstr ""
+
+#: core/groups.py:511
+msgid "not permissive"
+msgstr ""
+
+#: core/groups.py:782
+#, python-format
+msgid "Cannot remove %s, it does not exist!"
+msgstr ""
+
+#: core/groups.py:797
+msgid "Archived {0} as {1}."
+msgstr ""
+
+#: core/groups.py:804
+#, python-format
+msgid "Cannot archive %s, it does not exist!"
+msgstr ""
+
+#: core/groups.py:820 core/groups.py:2244 core/groups.py:2258
+#, python-format
+msgid "Group %s does not exist."
+msgstr ""
+
+#: core/groups.py:845
+msgid "Deleted {0}group {1}."
+msgstr ""
+
+#: core/groups.py:846
+msgid "system "
+msgstr ""
+
+#: core/groups.py:848
+#, python-format
+msgid "The group %s does not exist."
+msgstr ""
+
+#: core/groups.py:991
+msgid "Group {0} already in the list of profile {1}."
+msgstr ""
+
+#: core/groups.py:1027
+#, python-format
+msgid "Deleting group %s from the profile %s."
+msgstr ""
+
+#: core/groups.py:1035
+msgid "Group {0} already absent from profile {1}."
+msgstr ""
+
+#: core/groups.py:1070
+msgid "User {0} is already a member of {1}, skipped."
+msgstr ""
+
+#: core/groups.py:1198
+msgid "Added user {0} to members of group {1}."
+msgstr ""
+
+#: core/groups.py:1306
+msgid "Removed user {0} from members of group {1}."
+msgstr ""
+
+#: core/groups.py:1354 core/groups.py:1859
+#, python-format
+msgid "Deleted symlink %s."
+msgstr ""
+
+#: core/groups.py:1368
+msgid "Skipped user {0}, already not a member of group {1}"
+msgstr ""
+
+#: core/groups.py:1469
+msgid "responsibles"
+msgstr ""
+
+#: core/groups.py:1470
+msgid "guests"
+msgstr ""
+
+#: core/groups.py:1483
+msgid ""
+"The system group {0} is required for the group {1} to be fully operationnal."
+msgstr ""
+
+#: core/groups.py:1493
+msgid "{0} of group “{1}”"
+msgstr ""
+
+#: core/groups.py:1501
+msgid "Created system group {0}(gid={1})."
+msgstr ""
+
+#: core/groups.py:1537
+msgid "Checking system specific attributes for group {0}…"
+msgstr ""
+
+#: core/groups.py:1548
+msgid "Removed superfluous attribute {0} of system group {1}"
+msgstr ""
+
+#: core/groups.py:1560
+msgid "Added missing {0} attribute with a default value for system group {1}."
+msgstr ""
+
+#: core/groups.py:1567
+msgid "Do you want to commit these changes to the system (highly recommended)?"
+msgstr ""
+
+#: core/groups.py:1575
+msgid "Corrections of system group {0} not commited"
+msgstr ""
+
+#: core/groups.py:1612
+msgid "Checking group {0}…"
+msgstr ""
+
+#: core/groups.py:1750
+msgid "Removed dangling reference to non-existing user {0} in group {1}."
+msgstr ""
+
+#: core/groups.py:1878
+#, python-format
+msgid "Deleted old symlink %s."
+msgstr ""
+
+#: core/groups.py:1887
+msgid "User {0} lacks the symlink to group {1} shared dir. Create it?"
+msgstr ""
+
+#: core/groups.py:1917
+msgid "not "
+msgstr ""
+
+#: core/groups.py:1931
+msgid "Switched group {0} permissive state to {1}."
+msgstr ""
+
+#: core/groups.py:1933
+msgid "True"
+msgstr ""
+
+#: core/groups.py:1934
+msgid "False"
+msgstr ""
+
+#: core/groups.py:1938
+msgid "Group {0} is already {1}permissive."
+msgstr ""
+
+#: core/groups.py:1960
+msgid "Skipped move of group {0}, already stored in backend {1}."
+msgstr ""
+
+#: core/groups.py:2031
+msgid "Moved group {0} from backend {1} to {2}."
+msgstr ""
+
+#: core/groups.py:2135
+#, python-format
+msgid "Skipped non-existing group name or GID %s."
 msgstr ""
 
 #: interfaces/gui/hkew.glade:7
@@ -563,29 +870,29 @@ msgstr ""
 msgid "Server status"
 msgstr ""
 
-#: interfaces/wmi/base.py:167
-msgid "no virtual memory installed."
-msgstr ""
-
-#: interfaces/wmi/base.py:169
-#, python-format
-msgid "virtual memory: <strong>%.2f</strong> Mb total."
-msgstr ""
-
-#: interfaces/wmi/base.py:194
-msgid "“<strong>{hostname}</strong>” "
-msgstr ""
-
-#: interfaces/wmi/base.py:205
+#: interfaces/wmi/base.py:174
 #, python-format
 msgid "automatic update of this page in %s."
 msgstr ""
 
-#: interfaces/wmi/base.py:252
+#: interfaces/wmi/base.py:189
+msgid "No virtual memory configured!"
+msgstr ""
+
+#: interfaces/wmi/base.py:191
+#, python-format
+msgid "virtual memory: <strong>%.2f</strong> Mb total."
+msgstr ""
+
+#: interfaces/wmi/base.py:218
+msgid "“<strong>{hostname}</strong>” "
+msgstr ""
+
+#: interfaces/wmi/base.py:261
 msgid "System status"
 msgstr ""
 
-#: interfaces/wmi/base.py:253
+#: interfaces/wmi/base.py:262
 msgid ""
 "{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br /"
 ">Users: <strong>{accounts}</strong> {account_word}, <strong>{connected} "
@@ -595,287 +902,79 @@ msgid ""
 "\"small_indicator {load_back15}\">{load15}</span>"
 msgstr ""
 
-#: interfaces/wmi/base.py:260
+#: interfaces/wmi/base.py:269
 msgid "up and running"
 msgstr ""
 
-#: interfaces/wmi/base.py:261
+#: interfaces/wmi/base.py:270
 msgid "Up and running"
 msgstr ""
 
-#: interfaces/wmi/base.py:263
+#: interfaces/wmi/base.py:272
 msgid "user accounts"
 msgstr ""
 
-#: interfaces/wmi/base.py:264
+#: interfaces/wmi/base.py:273
 msgid "user account"
 msgstr ""
 
-#: interfaces/wmi/base.py:265
+#: interfaces/wmi/base.py:274
 msgid "open sessions"
 msgstr ""
 
-#: interfaces/wmi/base.py:266
+#: interfaces/wmi/base.py:275
 msgid "open session"
 msgstr ""
 
-#: interfaces/wmi/base.py:272
+#: interfaces/wmi/base.py:281
 msgid "System information"
 msgstr ""
 
-#: interfaces/wmi/base.py:273
+#: interfaces/wmi/base.py:282
 msgid ""
 "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br /"
 ">Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />{swap_total}"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:69 interfaces/wmi/groups.py:15
-#: interfaces/wmi/users.py:29
+#: interfaces/wmi/server.py:35
+msgid "Can't reboot the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:38
+msgid "Rebooting…"
+msgstr ""
+
+#: interfaces/wmi/server.py:64
+#, python-format
+msgid "Sure you want to reboot the %s server?"
+msgstr ""
+
+#: interfaces/wmi/server.py:65 interfaces/wmi/server.py:103
+msgid "YES"
+msgstr ""
+
+#: interfaces/wmi/server.py:66 interfaces/wmi/server.py:104
+msgid "NO"
+msgstr ""
+
+#: interfaces/wmi/server.py:73
+msgid "Can't shutdown the system."
+msgstr ""
+
+#: interfaces/wmi/server.py:76
+msgid "Shutting down…"
+msgstr ""
+
+#: interfaces/wmi/server.py:102
+#, python-format
+msgid "Sure you want to shutdown the %s server?"
+msgstr ""
+
+#: interfaces/wmi/groups.py:15 interfaces/wmi/users.py:29
+#: interfaces/wmi/__init__.py:69
 msgid ""
 "<br /><br />Go back with your browser, double-check data and validate the "
 "web-form."
-msgstr ""
-
-#: interfaces/wmi/__init__.py:192 interfaces/wmi/__init__.py:281
-msgid "day"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:192 interfaces/wmi/__init__.py:281
-msgid "days"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
-msgid "hour"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
-msgid "hours"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
-msgid "minute"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
-msgid "minutes"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
-msgid "second"
-msgstr ""
-
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
-msgid "seconds"
-msgstr ""
-
-#: interfaces/wmi/utils.py:25
-#, python-format
-msgid ""
-"\n"
-"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
-"\">GNU\n"
-" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
-" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project "
-"%s,\n"
-"  and all other libre software developers (Notably Ubuntu, Debian, "
-"Python…).\n"
-msgstr ""
-
-#: interfaces/wmi/utils.py:33
-msgid "Secure SHell (Secure remote connexion and commands protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:34
-msgid "File Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:35
-msgid "HyperText Transfert Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:36
-msgid "Internet Message Access Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:37
-msgid "Virtual Network Computing (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:38
-msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:39
-msgid "Post-Office Protocol (Simple mail fetching protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:40
-msgid "Simple Mail Transfer Protocol"
-msgstr ""
-
-#: interfaces/wmi/utils.py:41
-msgid "Rivest Shamir Adleman (cryptography protocol)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:42
-msgid "Digital Signature Algorithm"
-msgstr ""
-
-#: interfaces/wmi/utils.py:43
-msgid ""
-"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
-"\t\tcomposing a libre operating system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:45
-msgid ""
-"LiCorN system tools (tools for IT managers,\n"
-"\t\tsee http://dev.licorn.org/)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:47
-msgid ""
-"Licorn Admin Tools (High-level management tools for\n"
-"\t\ta GNU/Linux system)"
-msgstr ""
-
-#: interfaces/wmi/utils.py:49
-msgid "Licorn® Web Management Interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:70
-msgid "Command must be a list or tuple!"
-msgstr ""
-
-#: interfaces/wmi/utils.py:96
-#, python-format
-msgid "%d&nbsp;hours,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:100
-#, python-format
-msgid " %d&nbsp;minutes,"
-msgstr ""
-
-#: interfaces/wmi/utils.py:102
-#, python-format
-msgid " %.3f&nbsp;seconds."
-msgstr ""
-
-#: interfaces/wmi/utils.py:103
-#, python-format
-msgid "Core execution time: %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:173
-msgid "Add"
-msgstr ""
-
-#: interfaces/wmi/utils.py:175 interfaces/wmi/groups.py:133
-msgid "Remove"
-msgstr ""
-
-#: interfaces/wmi/utils.py:227
-msgid "Executed command:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:230
-msgid "Error reported by system:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:234 interfaces/wmi/utils.py:235
-msgid "Back to root of management interface"
-msgstr ""
-
-#: interfaces/wmi/utils.py:241
-#, python-format
-msgid "Logged in as %s"
-msgstr ""
-
-#: interfaces/wmi/utils.py:262 interfaces/wmi/utils.py:263
-msgid "Bad request or argument"
-msgstr ""
-
-#: interfaces/wmi/utils.py:265
-msgid "There was a problem in the request you sent to the WMI."
-msgstr ""
-
-#: interfaces/wmi/utils.py:269 interfaces/wmi/utils.py:271
-#: interfaces/wmi/utils.py:275 interfaces/wmi/utils.py:277
-msgid "Impossible action"
-msgstr ""
-
-#: interfaces/wmi/utils.py:272
-msgid ""
-"Some parts of the system cannot be modified, for your own safety and the "
-"world to rest in peace."
-msgstr ""
-
-#: interfaces/wmi/utils.py:367
-msgid "Server, UPS and hardware sub-systems status."
-msgstr ""
-
-#: interfaces/wmi/utils.py:367 core/machines.py:1243
-msgid "Status"
-msgstr ""
-
-#: interfaces/wmi/utils.py:368
-msgid "Manage user accounts."
-msgstr ""
-
-#: interfaces/wmi/utils.py:368
-msgid "Users"
-msgstr ""
-
-#: interfaces/wmi/utils.py:369
-msgid "Manage groups and shared data."
-msgstr ""
-
-#: interfaces/wmi/utils.py:369 interfaces/wmi/groups.py:672
-#: interfaces/wmi/groups.py:708 interfaces/wmi/users.py:394
-#: interfaces/wmi/users.py:570
-msgid "Groups"
-msgstr ""
-
-#: interfaces/wmi/utils.py:377
-msgid ""
-"Manage Internet connexion and parameters, firewall protection, URL filter "
-"and e-mail parameters."
-msgstr ""
-
-#: interfaces/wmi/utils.py:377
-msgid "Internet"
-msgstr ""
-
-#: interfaces/wmi/utils.py:378
-msgid "Go to online documentation website."
-msgstr ""
-
-#: interfaces/wmi/utils.py:378
-msgid "Documentation"
-msgstr ""
-
-#: interfaces/wmi/utils.py:379
-msgid "Get product support / help"
-msgstr ""
-
-#: interfaces/wmi/utils.py:379
-msgid "Support"
-msgstr ""
-
-#: interfaces/wmi/utils.py:383
-#, python-format
-msgid "%s Management"
-msgstr ""
-
-#: interfaces/wmi/utils.py:411
-#, python-format
-msgid "%s WMI:"
-msgstr ""
-
-#: interfaces/wmi/utils.py:416
-#, python-format
-msgid "administration %s"
 msgstr ""
 
 #: interfaces/wmi/groups.py:37
@@ -917,14 +1016,6 @@ msgstr ""
 #: interfaces/wmi/groups.py:64 interfaces/wmi/groups.py:197
 #: interfaces/wmi/groups.py:248 interfaces/wmi/users.py:271
 msgid "A"
-msgstr ""
-
-#: interfaces/wmi/groups.py:65 interfaces/wmi/groups.py:103
-#: interfaces/wmi/groups.py:135 interfaces/wmi/groups.py:198
-#: interfaces/wmi/groups.py:578 interfaces/wmi/users.py:272
-#: interfaces/wmi/users.py:398 interfaces/wmi/users.py:574
-#: core/machines.py:1053 core/machines.py:1108
-msgid "Cancel"
 msgstr ""
 
 #: interfaces/wmi/groups.py:65 interfaces/wmi/groups.py:103
@@ -998,6 +1089,16 @@ msgid ""
 "\t\t\t\tand accessible to members of group %s for eventual\n"
 "\t\t\t\trecovery. However, you can decideto remove them\n"
 "\t\t\t\tpermanently."
+msgstr ""
+
+#: interfaces/wmi/groups.py:133 interfaces/wmi/utils.py:175
+msgid "Remove"
+msgstr ""
+
+#: interfaces/wmi/groups.py:134 interfaces/wmi/groups.py:581
+#: interfaces/wmi/users.py:136 interfaces/wmi/users.py:214
+#: extensions/rdiffbackup.py:864
+msgid "R"
 msgstr ""
 
 #: interfaces/wmi/groups.py:138
@@ -1259,6 +1360,12 @@ msgstr ""
 msgid "Failed to modify one or more parameter of group %s!"
 msgstr ""
 
+#: interfaces/wmi/groups.py:672 interfaces/wmi/groups.py:708
+#: interfaces/wmi/users.py:394 interfaces/wmi/users.py:570
+#: interfaces/wmi/utils.py:369
+msgid "Groups"
+msgstr ""
+
 #: interfaces/wmi/groups.py:683
 msgid "Description"
 msgstr ""
@@ -1270,16 +1377,6 @@ msgstr ""
 #: interfaces/wmi/groups.py:696
 #, python-format
 msgid "%s order"
-msgstr ""
-
-#: interfaces/wmi/groups.py:697 interfaces/wmi/users.py:878
-#: core/machines.py:1256
-msgid "Click to sort in reverse order."
-msgstr ""
-
-#: interfaces/wmi/groups.py:701 interfaces/wmi/users.py:882
-#: core/machines.py:1262
-msgid "Click to sort on this column."
 msgstr ""
 
 #: interfaces/wmi/groups.py:709 interfaces/wmi/users.py:395
@@ -1343,40 +1440,6 @@ msgstr ""
 
 #: interfaces/wmi/groups.py:896
 msgid "Total number of groups:"
-msgstr ""
-
-#: interfaces/wmi/server.py:35
-msgid "Can't reboot the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:38
-msgid "Rebooting…"
-msgstr ""
-
-#: interfaces/wmi/server.py:64
-#, python-format
-msgid "Sure you want to reboot the %s server?"
-msgstr ""
-
-#: interfaces/wmi/server.py:65 interfaces/wmi/server.py:103
-msgid "YES"
-msgstr ""
-
-#: interfaces/wmi/server.py:66 interfaces/wmi/server.py:104
-msgid "NO"
-msgstr ""
-
-#: interfaces/wmi/server.py:73
-msgid "Can't shutdown the system."
-msgstr ""
-
-#: interfaces/wmi/server.py:76
-msgid "Shutting down…"
-msgstr ""
-
-#: interfaces/wmi/server.py:102
-#, python-format
-msgid "Sure you want to shutdown the %s server?"
 msgstr ""
 
 #: interfaces/wmi/users.py:16
@@ -1455,27 +1518,9 @@ msgstr ""
 msgid "Export user accounts list"
 msgstr ""
 
-#: interfaces/wmi/users.py:77 core/machines.py:1144 core/machines.py:1187
-msgid ""
-"CSV file-format is used by spreadsheets and most systems which offer import "
-"functionnalities. XML file-format is a modern exchange format, used in soma "
-"applications which respect interoperability constraints.<br /><br />When you "
-"submit this form, your web browser will automatically offer you to download "
-"and save the export-file (it won't be displayed). When you're done, please "
-"click the “back” button of your browser."
-msgstr ""
-
 #: interfaces/wmi/users.py:86
 #, python-format
 msgid "Which file format do you want accounts to be exported to? %s"
-msgstr ""
-
-#: interfaces/wmi/users.py:89 core/machines.py:1156 core/machines.py:1199
-msgid "Please choose file format for export list"
-msgstr ""
-
-#: interfaces/wmi/users.py:91 core/machines.py:1158 core/machines.py:1201
-msgid "Export >>"
 msgstr ""
 
 #: interfaces/wmi/users.py:111
@@ -1505,6 +1550,11 @@ msgstr ""
 
 #: interfaces/wmi/users.py:136
 msgid "Remove >>"
+msgstr ""
+
+#: interfaces/wmi/users.py:138 interfaces/wmi/users.py:227
+#: interfaces/wmi/users.py:273 extensions/rdiffbackup.py:866
+msgid "C"
 msgstr ""
 
 #: interfaces/wmi/users.py:140
@@ -1848,445 +1898,394 @@ msgstr ""
 msgid "<strong>Total number of accounts:</strong>"
 msgstr ""
 
-#: core/configuration.py:772
-msgid "user"
-msgstr ""
-
-#: core/configuration.py:773
-msgid "users"
-msgstr ""
-
-#: core/configuration.py:792
-msgid "group"
-msgstr ""
-
-#: core/configuration.py:793
-msgid "groups"
-msgstr ""
-
-#: core/groups.py:421 core/groups.py:1558
-#, python-format
-msgid "Members of group “%s”"
-msgstr ""
-
-#: core/groups.py:490
-msgid "Created system group {0} (gid={1})."
-msgstr ""
-
-#: core/groups.py:508
-msgid "Created {0} group {1} (gid={2})."
-msgstr ""
-
-#: core/groups.py:509
-msgid "permissive"
-msgstr ""
-
-#: core/groups.py:511
-msgid "not permissive"
-msgstr ""
-
-#: core/groups.py:782
-#, python-format
-msgid "Cannot remove %s, it does not exist!"
-msgstr ""
-
-#: core/groups.py:797
-msgid "Archived {0} as {1}."
-msgstr ""
-
-#: core/groups.py:804
-#, python-format
-msgid "Cannot archive %s, it does not exist!"
-msgstr ""
-
-#: core/groups.py:820 core/groups.py:2244 core/groups.py:2258
-#, python-format
-msgid "Group %s does not exist."
-msgstr ""
-
-#: core/groups.py:845
-msgid "Deleted {0}group {1}."
-msgstr ""
-
-#: core/groups.py:846
-msgid "system "
-msgstr ""
-
-#: core/groups.py:848
-#, python-format
-msgid "The group %s does not exist."
-msgstr ""
-
-#: core/groups.py:991
-msgid "Group {0} already in the list of profile {1}."
-msgstr ""
-
-#: core/groups.py:1027
-#, python-format
-msgid "Deleting group %s from the profile %s."
-msgstr ""
-
-#: core/groups.py:1035
-msgid "Group {0} already absent from profile {1}."
-msgstr ""
-
-#: core/groups.py:1070
-msgid "User {0} is already a member of {1}, skipped."
-msgstr ""
-
-#: core/groups.py:1198
-msgid "Added user {0} to members of group {1}."
-msgstr ""
-
-#: core/groups.py:1306
-msgid "Removed user {0} from members of group {1}."
-msgstr ""
-
-#: core/groups.py:1354 core/groups.py:1859
-#, python-format
-msgid "Deleted symlink %s."
-msgstr ""
-
-#: core/groups.py:1368
-msgid "Skipped user {0}, already not a member of group {1}"
-msgstr ""
-
-#: core/groups.py:1469
-msgid "responsibles"
-msgstr ""
-
-#: core/groups.py:1470
-msgid "guests"
-msgstr ""
-
-#: core/groups.py:1483
-msgid ""
-"The system group {0} is required for the group {1} to be fully operationnal."
-msgstr ""
-
-#: core/groups.py:1493
-msgid "{0} of group “{1}”"
-msgstr ""
-
-#: core/groups.py:1501
-msgid "Created system group {0}(gid={1})."
-msgstr ""
-
-#: core/groups.py:1537
-msgid "Checking system specific attributes for group {0}…"
-msgstr ""
-
-#: core/groups.py:1548
-msgid "Removed superfluous attribute {0} of system group {1}"
-msgstr ""
-
-#: core/groups.py:1560
-msgid "Added missing {0} attribute with a default value for system group {1}."
-msgstr ""
-
-#: core/groups.py:1567
-msgid "Do you want to commit these changes to the system (highly recommended)?"
-msgstr ""
-
-#: core/groups.py:1575
-msgid "Corrections of system group {0} not commited"
-msgstr ""
-
-#: core/groups.py:1612
-msgid "Checking group {0}…"
-msgstr ""
-
-#: core/groups.py:1750
-msgid "Removed dangling reference to non-existing user {0} in group {1}."
-msgstr ""
-
-#: core/groups.py:1878
-#, python-format
-msgid "Deleted old symlink %s."
-msgstr ""
-
-#: core/groups.py:1887
-msgid "User {0} lacks the symlink to group {1} shared dir. Create it?"
-msgstr ""
-
-#: core/groups.py:1917
-msgid "not "
-msgstr ""
-
-#: core/groups.py:1931
-msgid "Switched group {0} permissive state to {1}."
-msgstr ""
-
-#: core/groups.py:1933
-msgid "True"
-msgstr ""
-
-#: core/groups.py:1934
-msgid "False"
-msgstr ""
-
-#: core/groups.py:1938
-msgid "Group {0} is already {1}permissive."
-msgstr ""
-
-#: core/groups.py:1960
-msgid "Skipped move of group {0}, already stored in backend {1}."
-msgstr ""
-
-#: core/groups.py:2031
-msgid "Moved group {0} from backend {1} to {2}."
-msgstr ""
-
-#: core/groups.py:2135
-#, python-format
-msgid "Skipped non-existing group name or GID %s."
-msgstr ""
-
-#: core/machines.py:625 core/machines.py:1234
-msgid "Machines"
-msgstr ""
-
-#: core/machines.py:626
-msgid ""
-"Manage network clients (computers, printers, etc) and energy preferences"
-msgstr ""
-
-#: core/machines.py:630
-msgid "Shutdown machines"
-msgstr ""
-
-#: core/machines.py:631
-msgid "Shutdown machines on the network."
-msgstr ""
-
-#: core/machines.py:636
-msgid "Energy policies"
-msgstr ""
-
-#: core/machines.py:637
-msgid "Manage network-wide Energy &amp; power saving policies."
-msgstr ""
-
-#: core/machines.py:920
-msgid " (this machine)"
-msgstr ""
-
-#: core/machines.py:1018
-msgid "You must pass a hostname to verify!"
-msgstr ""
-
-#: core/machines.py:1026
-#, python-format
-msgid "Can't build a valid hostname (got %s, which doesn't verify %s)"
-msgstr ""
-
-#: core/machines.py:1038
-#, python-format
-msgid "Shutdown machine %s"
-msgstr ""
-
-#: core/machines.py:1042
-#, python-format
-msgid "Are you sure you want to remotely shutdown machine %s?"
-msgstr ""
-
-#: core/machines.py:1046
-msgid "Warn connected user(s) before shuting system down."
-msgstr ""
-
-#: core/machines.py:1049
-msgid "Please confirm operation"
-msgstr ""
-
-#: core/machines.py:1051 core/machines.py:1106
-msgid "Shutdown"
-msgstr ""
-
-#: core/machines.py:1076
-msgid "Massive shutdown"
-msgstr ""
-
-#: core/machines.py:1080
-msgid ""
-"You can shutdown all currently running and/or idle machines. This is a quite "
-"dangerous operation, because users will be disconnected, and there is a "
-"potential to loose unsaved work on idle machines (users are not in front of "
-"them, they will not notice the system is shuting down.<br /><br />Systems "
-"will be shut down <strong>ONE minute</strong> after validation."
-msgstr ""
-
-#: core/machines.py:1090
-msgid "Shutdown <strong>active</strong> machines"
-msgstr ""
-
-#: core/machines.py:1092
-msgid "Shutdown <strong>idle</strong> machines"
-msgstr ""
-
-#: core/machines.py:1094
-msgid "Shutdown <strong>asleep</strong> machines"
-msgstr ""
-
-#: core/machines.py:1096
-msgid ""
-"Shutdown the <strong>administrator</strong> machine too<br/>(the one "
-"currently connected to the WMI)."
-msgstr ""
-
-#: core/machines.py:1100
-msgid "Warn connected users before shuting systems down."
-msgstr ""
-
-#: core/machines.py:1104
-msgid "Choose machines to shutdown"
-msgstr ""
-
-#: core/machines.py:1141
-msgid "Energy saving policies"
-msgstr ""
-
-#: core/machines.py:1153 core/machines.py:1196
-#, python-format
-msgid "Which file format do you want the machines list to be exported to? %s"
-msgstr ""
-
-#: core/machines.py:1183
-msgid "Export machines list"
-msgstr ""
-
-#: core/machines.py:1230 core/machines.py:1269
-msgid "managed"
-msgstr ""
-
-#: core/machines.py:1231 core/machines.py:1271
-msgid "floating"
-msgstr ""
-
-#: core/machines.py:1244
-msgid "Host name"
-msgstr ""
-
-#: core/machines.py:1245
-msgid "IP address"
-msgstr ""
-
-#: core/machines.py:1246
-msgid "Hardware address"
-msgstr ""
-
-#: core/machines.py:1247
-msgid "Expiry"
-msgstr ""
-
-#: core/machines.py:1248
-msgid "Managed"
-msgstr ""
-
-#: core/machines.py:1275
+#: interfaces/wmi/utils.py:25
 #, python-format
 msgid ""
-"Host %s is in an unknown state. Nothing is possible. Please wait for a "
-"reconnection."
+"\n"
+"%s is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
+"\">GNU\n"
+" GPL version 2</a> license, without any kind of waranty. Copyleft &copy;\n"
+" 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %"
+"s,\n"
+"  and all other libre software developers (Notably Ubuntu, Debian, "
+"Python…).\n"
 msgstr ""
 
-#: core/machines.py:1278
-#, python-format
+#: interfaces/wmi/utils.py:33
+msgid "Secure SHell (Secure remote connexion and commands protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:34
+msgid "File Transfer Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:35
+msgid "HyperText Transfert Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:36
+msgid "Internet Message Access Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:37
+msgid "Virtual Network Computing (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:38
+msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:39
+msgid "Post-Office Protocol (Simple mail fetching protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:40
+msgid "Simple Mail Transfer Protocol"
+msgstr ""
+
+#: interfaces/wmi/utils.py:41
+msgid "Rivest Shamir Adleman (cryptography protocol)"
+msgstr ""
+
+#: interfaces/wmi/utils.py:42
+msgid "Digital Signature Algorithm"
+msgstr ""
+
+#: interfaces/wmi/utils.py:43
 msgid ""
-"Host %s is offline, and cannot be powered on from here,Only from the machine "
-"itself."
+"GNU is Not Unix (recursive acronym ; a set of libre sofware\n"
+"\t\tcomposing a libre operating system)"
 msgstr ""
 
-#: core/machines.py:1281
-#, python-format
+#: interfaces/wmi/utils.py:45
 msgid ""
-"Host %s is going to sleep, it will be unavailable in a small period of time."
+"LiCorN system tools (tools for IT managers,\n"
+"\t\tsee http://dev.licorn.org/)"
 msgstr ""
 
-#: core/machines.py:1283 core/machines.py:1289 core/machines.py:1291
-#, python-format
-msgid "Shutdown the machine %s"
-msgstr ""
-
-#: core/machines.py:1285
-#, python-format
+#: interfaces/wmi/utils.py:47
 msgid ""
-"Host %s is shutting down, it will be unavailable in a small period of time."
+"Licorn Admin Tools (High-level management tools for\n"
+"\t\ta GNU/Linux system)"
 msgstr ""
 
-#: core/machines.py:1287
+#: interfaces/wmi/utils.py:49
+msgid "Licorn® Web Management Interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:70
+msgid "Command must be a list or tuple!"
+msgstr ""
+
+#: interfaces/wmi/utils.py:96
 #, python-format
-msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
+msgid "%d&nbsp;hours,"
 msgstr ""
 
-#: core/machines.py:1344
-msgid "This machine has multiple network interfaces."
-msgstr ""
-
-#: core/machines.py:1348
-msgid "This machine is a virtual computer."
-msgstr ""
-
-#: core/machines.py:1352
-msgid "This machine runs an undetermined version of Linux®."
-msgstr ""
-
-#: core/machines.py:1357
-msgid "This machine is a META IT/Licorn® server."
-msgstr ""
-
-#: core/machines.py:1361
-msgid "This machine has Licorn® installed."
-msgstr ""
-
-#: core/machines.py:1365
-msgid "This machine is an ALT® client."
-msgstr ""
-
-#: core/machines.py:1369
-msgid "This machine Debian installed."
-msgstr ""
-
-#: core/machines.py:1373
-msgid "This machine is Ubuntu installed."
-msgstr ""
-
-#: core/machines.py:1377
-msgid "This machine is manufactured by Apple® Computer Inc."
-msgstr ""
-
-#: core/machines.py:1381
-msgid "This machine is a Freebox appliance."
-msgstr ""
-
-#: core/machines.py:1385
-msgid "This machine is a network printer."
-msgstr ""
-
-#: core/machines.py:1389
-msgid "This machine is a network scanner."
-msgstr ""
-
-#: core/machines.py:1407
-msgid ""
-"Unmanage machine (remove it from configuration, in order to allow it to be "
-"managed by another server."
-msgstr ""
-
-#: core/machines.py:1418
-msgid ""
-"Manage machine (fix its IP address and configure various aspects of the "
-"client)."
-msgstr ""
-
-#: core/machines.py:1440
-msgid "<unknown>"
-msgstr ""
-
-#: core/machines.py:1465
+#: interfaces/wmi/utils.py:100
 #, python-format
-msgid "number of <strong>%s</strong> machines:"
+msgid " %d&nbsp;minutes,"
 msgstr ""
 
-#: core/machines.py:1478
-msgid "<strong>Total number of machines:</strong>"
+#: interfaces/wmi/utils.py:102
+#, python-format
+msgid " %.3f&nbsp;seconds."
+msgstr ""
+
+#: interfaces/wmi/utils.py:103
+#, python-format
+msgid "Core execution time: %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:173
+msgid "Add"
+msgstr ""
+
+#: interfaces/wmi/utils.py:227
+msgid "Executed command:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:230
+msgid "Error reported by system:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:234 interfaces/wmi/utils.py:235
+msgid "Back to root of management interface"
+msgstr ""
+
+#: interfaces/wmi/utils.py:241
+#, python-format
+msgid "Logged in as %s"
+msgstr ""
+
+#: interfaces/wmi/utils.py:262 interfaces/wmi/utils.py:263
+msgid "Bad request or argument"
+msgstr ""
+
+#: interfaces/wmi/utils.py:265
+msgid "There was a problem in the request you sent to the WMI."
+msgstr ""
+
+#: interfaces/wmi/utils.py:269 interfaces/wmi/utils.py:271
+#: interfaces/wmi/utils.py:275 interfaces/wmi/utils.py:277
+msgid "Impossible action"
+msgstr ""
+
+#: interfaces/wmi/utils.py:272
+msgid ""
+"Some parts of the system cannot be modified, for your own safety and the "
+"world to rest in peace."
+msgstr ""
+
+#: interfaces/wmi/utils.py:367
+msgid "Server, UPS and hardware sub-systems status."
+msgstr ""
+
+#: interfaces/wmi/utils.py:368
+msgid "Manage user accounts."
+msgstr ""
+
+#: interfaces/wmi/utils.py:368
+msgid "Users"
+msgstr ""
+
+#: interfaces/wmi/utils.py:369
+msgid "Manage groups and shared data."
+msgstr ""
+
+#: interfaces/wmi/utils.py:377
+msgid ""
+"Manage Internet connexion and parameters, firewall protection, URL filter "
+"and e-mail parameters."
+msgstr ""
+
+#: interfaces/wmi/utils.py:377
+msgid "Internet"
+msgstr ""
+
+#: interfaces/wmi/utils.py:378
+msgid "Go to online documentation website."
+msgstr ""
+
+#: interfaces/wmi/utils.py:378
+msgid "Documentation"
+msgstr ""
+
+#: interfaces/wmi/utils.py:379
+msgid "Get product support / help"
+msgstr ""
+
+#: interfaces/wmi/utils.py:379
+msgid "Support"
+msgstr ""
+
+#: interfaces/wmi/utils.py:383
+#, python-format
+msgid "%s Management"
+msgstr ""
+
+#: interfaces/wmi/utils.py:411
+#, python-format
+msgid "%s WMI:"
+msgstr ""
+
+#: interfaces/wmi/utils.py:416
+#, python-format
+msgid "administration %s"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:192 interfaces/wmi/__init__.py:281
+msgid "day"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:192 interfaces/wmi/__init__.py:281
+msgid "days"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
+msgid "hour"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
+msgid "hours"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
+msgid "minute"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
+msgid "minutes"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+msgid "second"
+msgstr ""
+
+#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+msgid "seconds"
+msgstr ""
+
+#: extensions/caldavd.py:620
+msgid "Personnal calendar URI"
+msgstr ""
+
+#: extensions/caldavd.py:638
+msgid "Group calendar URI"
+msgstr ""
+
+#: extensions/openssh.py:151
+msgid "Users allowed to connect via SSHd"
+msgstr ""
+
+#: extensions/rdiffbackup.py:280
+msgid "Backups"
+msgstr ""
+
+#: extensions/rdiffbackup.py:281
+msgid "Manage backups and restore files"
+msgstr ""
+
+#: extensions/rdiffbackup.py:283
+msgid "Run backup"
+msgstr ""
+
+#: extensions/rdiffbackup.py:284
+msgid "Run a system incremental backup now"
+msgstr ""
+
+#: extensions/rdiffbackup.py:288
+msgid "Rescan volumes"
+msgstr ""
+
+#: extensions/rdiffbackup.py:289
+msgid "Force the system to rescan and remount connected volumes"
+msgstr ""
+
+#: extensions/rdiffbackup.py:668
+msgid "Last backup on this volume occured {0} ago."
+msgstr ""
+
+#: extensions/rdiffbackup.py:674
+msgid "No backup has occured yet."
+msgstr ""
+
+#: extensions/rdiffbackup.py:675
+msgid "Next backup attempt will occur in {0}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:692 extensions/rdiffbackup.py:706
+msgid "Backup in progress icon"
+msgstr ""
+
+#: extensions/rdiffbackup.py:702
+msgid "Can't eject, backup in progress"
+msgstr ""
+
+#: extensions/rdiffbackup.py:722 extensions/rdiffbackup.py:737
+msgid "Eject device icon"
+msgstr ""
+
+#: extensions/rdiffbackup.py:731
+msgid "Eject the volume"
+msgstr ""
+
+#: extensions/rdiffbackup.py:752
+msgid "Backup in progress on volume {volume}…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:758
+msgid "Backup statistics computation in progress on volume {volume}…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:771
+msgid "No backup volume connected"
+msgstr ""
+
+#: extensions/rdiffbackup.py:775
+msgid "Next backup in {0}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:803
+msgid "used"
+msgstr ""
+
+#: extensions/rdiffbackup.py:814
+msgid "Run a manual backup"
+msgstr ""
+
+#: extensions/rdiffbackup.py:822
+msgid "Note: auto-selected volume {volume} for next backup."
+msgstr ""
+
+#: extensions/rdiffbackup.py:826
+msgid ""
+"No volume to backup onto. Please plug a {app_name} enabled volume into your "
+"server before starting this procedure.<br /><br />See <a href=\"http://docs."
+"licorn.org/extensions/rdiffbackup.html\">Backup-related documentation</a> "
+"for details on enabling backup volumes."
+msgstr ""
+
+#: extensions/rdiffbackup.py:841
+msgid "Run a manual backup on volume {0}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:846
+msgid "Recent backup detected"
+msgstr ""
+
+#: extensions/rdiffbackup.py:847
+msgid ""
+"{auto_select}<br /><br />The last backup has been run {last_backup_time} "
+"ago, which is less than the system configured interval ({interval}). Are you "
+"sure you want to force a manual backup now?<br /><br />(if you do not answer "
+"withing {next_backup_time}, an automatic backup will occur anyway)"
+msgstr ""
+
+#: extensions/rdiffbackup.py:863
+msgid "Run >>"
+msgstr ""
+
+#: extensions/rdiffbackup.py:882
+msgid "Eject volume {device}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:885
+msgid " (a backup is underway)"
+msgstr ""
+
+#: extensions/rdiffbackup.py:889
+msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:908
+msgid "System backups"
+msgstr ""
+
+#: extensions/rdiffbackup.py:925
+msgid ""
+"No backup volume found. Please connect a backup volume to your server, and "
+"backups will automatically start (next try in {countdown})."
+msgstr ""
+
+#: extensions/rdiffbackup.py:933
+msgid ""
+"No backup found, or all backup volumes are currently unmounted (you can "
+"safely disconnect them from your server).<br /><br />Next automatic backup "
+"will occur in {countdown}, and will automatically remount any backup volume "
+"still connected at this moment."
+msgstr ""
+
+#: extensions/rdiffbackup.py:951
+msgid ""
+"A backup is currently in progress, please do not disconnect <strong>{volume}"
+"</strong>.<br /><br /> (update in {countdown}…)"
+msgstr ""
+
+#: extensions/rdiffbackup.py:979
+msgid "No historical data yet. Please wait for the first backup to finish."
+msgstr ""
+
+#: extensions/rdiffbackup.py:985
+msgid "Backups on {mount_point}"
 msgstr ""
