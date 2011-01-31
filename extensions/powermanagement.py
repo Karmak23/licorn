@@ -44,7 +44,7 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 	module_depends = [ 'gloop' ]
 
 	def __init__(self):
-		assert ltrace('energy', '| PowerManagementExtension.__init__()')
+		assert ltrace('powermgmt', '| PowerManagementExtension.__init__()')
 		LicornExtension.__init__(self, name='powermgmt')
 
 		self.controllers_compat = [ 'system' ]
