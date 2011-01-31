@@ -272,14 +272,19 @@ class ReverseMappingDict(dict):
 
 # old-style classes, or classes to be removed at next refactor run.
 class Enumeration(object):
-	def __init__(self, name='<unset>', copy_from=None):
+	def __init__(self, name='<unset>', copy_from=None, **kwargs):
 		assert ltrace('base', '| Enumeration.__init__()')
 		object.__init__(self)
 		self.name = name
+
 		if copy_from:
 			self.name = copy_from.name[:]
 			for attrname, attrvalue in copy_from.iteritems():
 				self.__setattr__(attrname, copy.copy(attrvalue))
+
+		if kwargs != {}:
+			for key, value in kwargs.iteritems():
+				self.__setattr__(key, value)
 	def copy(self):
 		""" make a complete and dereferenced copy of ouselves. """
 		temp = Enumeration()
