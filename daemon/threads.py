@@ -236,10 +236,12 @@ class GenericQueueWorkerThread(Thread):
 				try:
 					self.job(*self.job_args, **self.jobs_kwargs)
 				except exceptions.LicornError, e:
-					logging.warning('%s: LicornError encountered:' % self.name)
+					logging.warning('%s: LicornError encountered: %s' % (
+																self.name, e))
 					print_exc()
 				except (exceptions.LicornException, Exception), e:
-					logging.warning('%s: Exception encountered:' % self.name)
+					logging.warning('%s: Exception encountered: %s' % (
+																self.name, e))
 					if options.verbose >= verbose.INFO:
 						print_exc()
 
