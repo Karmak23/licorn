@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2011-01-31 10:10+0100\n"
-"PO-Revision-Date: 2011-01-31 10:11+0100\n"
+"PO-Revision-Date: 2011-01-31 10:47+0100\n"
 "Last-Translator: Olivier Cortès <olivier.cortes@meta-it.fr>\n"
 "Language-Team: French\n"
 "MIME-Version: 1.0\n"
@@ -887,7 +887,7 @@ msgstr "rechargement de cette page dans %s."
 
 #: interfaces/wmi/base.py:189
 msgid "No virtual memory configured!"
-msgstr "Pas de mémoire virtuelle installée&nbsp;!"
+msgstr "Pas de mémoire virtuelle configurée&nbsp;!"
 
 #: interfaces/wmi/base.py:191
 #, python-format
