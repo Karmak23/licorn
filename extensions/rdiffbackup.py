@@ -317,7 +317,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		if self.running():
 			logging.warning('%s: cannot disable now, a backup is in progress. '
-				'Please wait until the end and retry.')
+				'Please wait until the end and retry.' % self.name)
 			return False
 
 		# avoid a race with a backup
