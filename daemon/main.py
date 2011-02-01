@@ -29,6 +29,13 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 :license: GNU GPL version 2
 
 """
+
+#: import gettext for all licorn code, and setup utf-8 codeset.
+#: this is particularly needed to avoid #531 and all other kind
+#: of equivalent problems.
+import gettext
+gettext.install('licorn', unicode=True)
+
 import time
 dstart_time = time.time()
 

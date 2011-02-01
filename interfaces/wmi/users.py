@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os, time
-from gettext import gettext as _
 from traceback import print_exc
+
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
 

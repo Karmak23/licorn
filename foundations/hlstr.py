@@ -13,37 +13,35 @@ from licorn.foundations import exceptions
 
 # common regexs used in various places of licorn.core.*
 regex = {}
-regex['uri']          = u'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
-regex['profile_name'] = u'''^[\w]([-_\w ]*[\w])?$'''
+regex['uri']          = r'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
+regex['profile_name'] = r'''^[\w]([-_\w ]*[\w])?$'''
 # REGEX discussion: shouldn't we disallow #$*!~& in description regexes ?
 # these characters could lead to potential crash/vulnerabilities. But refering
 # to passwd(5), there are no restrictions concerning the description field.
 # Thus we just disallow “:” to avoid a new field to be accidentally created.
-regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
-regex['group_name']   = u'''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
-regex['login']        = u'''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
-regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
-regex['conf_comment'] = u'''^(#.*|\s*)$'''
-regex['ipv4']         = u'''^\d+\.\d+\.\d+\.\d+$'''
-regex['ether_addr']   = u'''^([\da-f]+:){5}[\da-f]+$'''
-regex['duration']     = u'''^(infinite|\d+[dhms])$'''
+regex['description']  = '''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
+regex['group_name']   = '''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
+regex['login']        = '''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
+regex['keyword']      = '''^[a-z][- _./\w]*[a-z0-9]$'''
+regex['conf_comment'] = '''^(#.*|\s*)$'''
+regex['ipv4']         = '''^\d+\.\d+\.\d+\.\d+$'''
+regex['ether_addr']   = '''^([\da-f]+:){5}[\da-f]+$'''
+regex['duration']     = '''^(infinite|\d+[dhms])$'''
 
-
-# precompile all these to gain some time (in the licorn daemon).
+# precompile all these to gain some time in the licorn daemon.
 cregex = {}
 cregex['uri']          = re.compile(regex['uri'],          re.IGNORECASE)
 cregex['profile_name'] = re.compile(regex['profile_name'], re.IGNORECASE | re.UNICODE)
 cregex['description']  = re.compile(regex['description'],  re.IGNORECASE | re.UNICODE)
-cregex['group_name']   = re.compile(regex['group_name'],   re.IGNORECASE | re.UNICODE)
-cregex['login']        = re.compile(regex['login'],                        re.UNICODE)
+cregex['group_name']   = re.compile(regex['group_name'],   re.IGNORECASE)
+cregex['login']        = re.compile(regex['login'],        re.IGNORECASE)
 cregex['keyword']      = re.compile(regex['keyword'],      re.IGNORECASE | re.UNICODE)
 cregex['conf_comment'] = re.compile(regex['conf_comment'], re.IGNORECASE | re.UNICODE)
-cregex['ipv4']         = re.compile(regex['ipv4'],         re.IGNORECASE | re.UNICODE)
-cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE | re.UNICODE)
-cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE | re.UNICODE)
+cregex['ipv4']         = re.compile(regex['ipv4'],         re.IGNORECASE)
+cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE)
+cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE)
 
-
-def validate_name(s, aggressive = False, maxlenght = 128, custom_keep = '-.'):
+def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 	""" make a valid login or group name from a random string.
 		Replace accentuated letters with non-accentuated ones, replace spaces, lower the name, etc.
 	"""

@@ -9,7 +9,6 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import re, math
-from gettext import gettext as _
 
 # WARNING: don't import anything from the core here.
 

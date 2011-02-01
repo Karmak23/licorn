@@ -10,8 +10,6 @@ Licorn extensions: OpenSSH - http://docs.licorn.org/extensions/openssh.html
 
 import os
 
-from gettext import gettext as _
-
 from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi, readers
 from licorn.foundations.styles    import *
@@ -148,7 +146,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 			if batch or logging.ask_for_repair('group %s must be created' %
 					stylize(ST_NAME, self.group), auto_answer=auto_answer):
 				LMC.groups.AddGroup(name=self.group,
-					description=_(u'Users allowed to connect via SSHd').decode('utf-8'),
+					description=_(u'Users allowed to connect via SSHd'),
 					system=True, batch=True)
 			else:
 				raise exceptions.LicornCheckError(

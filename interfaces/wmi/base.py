@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import time, re, socket
-from gettext import gettext as _
 
 from subprocess            import Popen, PIPE
 

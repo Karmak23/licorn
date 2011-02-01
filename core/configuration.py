@@ -14,7 +14,6 @@ Unified Configuration API for an entire linux server system
 """
 
 import sys, os, re, socket
-from gettext import gettext as _
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, fsapi, network

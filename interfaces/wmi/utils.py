@@ -10,12 +10,10 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-from gettext import gettext as _
 from subprocess import Popen, PIPE
 
-from licorn.core import LMC
-
-from licorn.foundations import process
+from licorn.core               import LMC
+from licorn.foundations        import process
 from licorn.foundations.ltrace import ltrace
 
 # used for static data only

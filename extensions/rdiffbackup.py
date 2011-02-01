@@ -9,10 +9,7 @@ Licorn extensions: rdiff-backup - http://docs.licorn.org/extensions/rdiff_backup
 """
 
 import os, sys, time
-
 from threading import RLock, Event
-
-from gettext import gettext as _
 
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *

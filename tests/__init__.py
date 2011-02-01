@@ -11,10 +11,6 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import os, curses, re, sys, shutil, time
 
-import gettext
-_ = gettext.gettext
-gettext.textdomain('licorn')
-
 from threading import Event
 from Queue     import PriorityQueue, Empty
 

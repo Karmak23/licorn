@@ -12,7 +12,6 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, os, curses, re, hashlib, tempfile, termios
 import gzip, time, fcntl, struct, stat, shutil
 
-from gettext                   import gettext as _
 from optparse                  import OptionParser
 from subprocess                import Popen, PIPE, STDOUT
 from traceback                 import print_exc

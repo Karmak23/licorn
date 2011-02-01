@@ -19,24 +19,6 @@ from ltrace    import ltrace, mytime
 from base      import Singleton
 from messaging import LicornMessage
 
-# TODO: gettext this !
-#import gettext
-#from gettext           import gettext as _
-
-#
-# for now we use an unique gettext domain.
-
-# drawback: performance when program grows (now it is not noticeable i think).
-# advantage: don't need to pass a parameter or to call any function outside of
-# this licorn.logging. All programs just need to use _(), period.
-#
-
-#_APP="licorn-tools"
-#_DIR="/usr/share/locale"
-
-#gettext.bindtextdomain(_APP, _DIR)
-#gettext.textdomain(_APP)
-
 #
 # FIXME: define a policy explaining where we can call logging.error() (which
 # implies exit()), where we can't, where we must raise an exception or an error.

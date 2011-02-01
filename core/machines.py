@@ -9,8 +9,6 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 import os, time
 from traceback import print_exc
 
-from gettext import gettext as _
-
 import netifaces, ipcalc, dumbnet, Pyro, socket
 
 from threading  import current_thread

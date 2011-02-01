@@ -8,6 +8,9 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
+import gettext
+gettext.install('licorn', unicode=True)
+
 import os, signal, sys, time, Pyro.core, Pyro.configuration
 from threading import Thread
 

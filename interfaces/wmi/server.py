@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from gettext import gettext as _
-
 from licorn.core import LMC
 
 # warning: this import will fail if nobody has previously called wmi.init()

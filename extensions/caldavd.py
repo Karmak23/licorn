@@ -11,7 +11,6 @@ Licorn extensions: caldavd - http://docs.licorn.org/extensions/caldavd.html
 """
 
 import os, uuid
-from gettext import gettext as _
 from traceback import print_exc
 import xml.etree.ElementTree as ET
 

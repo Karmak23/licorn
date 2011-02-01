@@ -12,7 +12,6 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 """
 
 import os, stat, posix1e, re, time
-from gettext import gettext as _
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr

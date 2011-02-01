@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import gettext
-_ = gettext.gettext
-gettext.textdomain('licorn')
-
 from threading import current_thread
 
 from licorn.foundations        import options, logging
