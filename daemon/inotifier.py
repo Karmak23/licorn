@@ -227,26 +227,7 @@ class INotifier(Thread):
 
 		acl = LMC.groups.BuildGroupACL(gid, path)
 
-		try:
-			if is_dir:
-				fsapi.auto_check_posix_ugid_and_perms(path, -1,
-					LMC.groups.name_to_gid('acl') , -1)
-				#self.gam_changed_expected.append(path)
-				fsapi.auto_check_posix1e_acl(path, False,
-					acl['default_acl'], acl['default_acl'])
-				#self.gam_changed_expected.append(path)
-				#self.prevent_double_check(path)
-			else:
-				fsapi.auto_check_posix_ugid_and_perms(path, -1,
-					LMC.groups.name_to_gid('acl'))
-				#self.prevent_double_check(path)
-				fsapi.auto_check_posix1e_acl(path, True, acl['content_acl'], '')
-				#self.prevent_double_check(path)
-
-		except (OSError, IOError), e:
-			if e.errno != 2:
-				logging.warning(
-					"%s: error on %s (was: %s)." % (self.name, path, e))
+		LMC.groups._fast_check_group(gid, path)
 
 		# FIXME: to be re-added when cache is ok.
 		#self.daemon.threads.cache.cache(path)

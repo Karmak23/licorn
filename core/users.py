@@ -986,8 +986,6 @@ class UsersController(Singleton, CoreFSController):
 			''' batch=%s, auto_answer=%s)''' % (uids_to_check, minimal, batch,
 			auto_answer))
 
-		self.load_rules()
-
 		# FIXME: should we crash if the user's home we are checking is removed
 		# during the check ? what happens ?
 
@@ -1024,8 +1022,8 @@ class UsersController(Singleton, CoreFSController):
 					if os.path.exists(self.users[uid]['homeDirectory']):
 						home_dir = Enumeration()
 						home_dir.path = self.users[uid]['homeDirectory']
-						home_dir.uidNumber = uid
-						home_dir.gidNumber = self.users[uid]['gidNumber']
+						home_dir.uid = uid
+						home_dir.gid = self.users[uid]['gidNumber']
 						home_dir.root_dir_acl = False
 						home_dir.content_acl = False
 						home_dir.root_dir_perm = 00700
@@ -1040,92 +1038,23 @@ class UsersController(Singleton, CoreFSController):
 						stylize(ST_LOGIN, login))
 
 					user_info = Enumeration()
-					user_info.user_home = self.users[uid]['homeDirectory']
-					user_info.uidNumber = uid
-					user_info.gidNumber = self.users[uid]['gidNumber']
+					user_info.home = self[uid]['homeDirectory']
+					user_info.user_uid = uid
+					user_info.user_gid = self[uid]['gidNumber']
 
-					user_special_dirs = self.parse_rules(
-						user_info.user_home + '/' +
+					# load rules defined by user and merge them with templates
+					# rules
+					self.load_rules(
+						user_info.home + '/' +
 						LMC.configuration.users.check_config_file,
-						user_info=user_info,system_wide=False)
+						object_info=user_info, identifier=uid)
 
-					system_special_dirs = Enumeration('system_special_dirs')
-					assert ltrace('users', '  system_special_dirs_templates %s '
-						% self.system_special_dirs_templates.dump_status(True))
-
-					for dir_info in self.system_special_dirs_templates:
-						assert ltrace('users', '  using dir_info %s ' % dir_info.dump_status(True))
-						temp_dir_info = dir_info.copy()
-						temp_dir_info.path = temp_dir_info.path % user_info.user_home
-						if os.path.exists(temp_dir_info.path):
-							if '%s' in temp_dir_info.user:
-								temp_dir_info.user = temp_dir_info.user % user_info.uidNumber
-							if '%s' in temp_dir_info.group:
-								temp_dir_info.group = temp_dir_info.group % user_info.gidNumber
-							system_special_dirs.append(temp_dir_info)
-
-					default_exclusions = []
-
-					for dir_info in system_special_dirs:
-						if dir_info.rule.default:
-							if "~" not in user_special_dirs.keys():
-								user_special_dirs._default=dir_info.copy()
-								logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
-									(stylize(ST_OK,"Added"), 'system' if \
-									dir_info.rule.system_wide else 'user',
-									stylize(ST_NAME, dir_info.rule.acl),
-									stylize(ST_NAME, dir_info.path)))
-						else:
-							if dir_info.name in user_special_dirs.keys():
-								overriden_dir_info = user_special_dirs[dir_info.name]
-								logging.warning('%s user rule for path %s '
-									'(%s:%s), overriden by system rule (%s:%s).'
-									% ( stylize(ST_BAD, "Ignored"),
-									    stylize(ST_PATH, dir_info.path),
-										overriden_dir_info.rule.file_name,
-										overriden_dir_info.rule.line_no,
-										dir_info.rule.file_name,
-										dir_info.rule.line_no
-										))
-							else:
-								tmp = dir_info.copy()
-								if tmp.path.endswith('/'):
-									tmp.path = tmp.path[:len(tmp.path)-1]
-								tmp.path = tmp.path.replace('%s/' % user_info.user_home, '')
-								default_exclusions.append(tmp.path)
-								logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
-									(stylize(ST_OK,"Added"), 'system' if \
-									dir_info.rule.system_wide else 'user',
-									stylize(ST_NAME, dir_info.rule.acl),
-									stylize(ST_NAME, dir_info.path)))
-							user_special_dirs[dir_info.name] = dir_info
-
-					for di in user_special_dirs:
-						if di.rule.default:
-							user_special_dirs._default = di.copy()
-							user_special_dirs.remove(di.name)
-
-						else:
-							tmp = di.copy()
-							if tmp.path.endswith('/'):
-								tmp.path = tmp.path[:len(tmp.path)-1]
-							tmp.path = tmp.path.replace('%s/' % user_info.user_home, '')
-							default_exclusions.append(tmp.path)
-
+					# run the check
 					try:
-						user_special_dirs._default.exclude = default_exclusions
-					except AttributeError, e:
-						raise exceptions.LicornCheckError("There is no default "
-						"user check rules (%s not found in %s), this is "
-						"mandatory." % (
-								stylize(ST_NAME, "users.%s.conf" %
-									LMC.configuration.defaults.check_homedir_filename),
-								stylize(ST_PATH, LMC.configuration.check_config_dir)))
-
-					try:
-						if user_special_dirs != None:
+						if self[uid]['special_rules'] != None:
 							all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-								user_special_dirs, batch=batch, auto_answer=auto_answer)
+								self[uid]['special_rules'], batch=batch,
+								auto_answer=auto_answer)
 					except exceptions.DoesntExistsException, e:
 						logging.warning(e)
 

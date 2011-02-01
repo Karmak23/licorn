@@ -17,13 +17,13 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton
+from licorn.foundations.base      import Singleton,Enumeration
 from licorn.foundations.constants import filters, backend_actions
 
 from licorn.core         import LMC
-from licorn.core.classes import CoreController
+from licorn.core.classes import CoreFSController
 
-class GroupsController(Singleton, CoreController):
+class GroupsController(Singleton, CoreFSController):
 	""" Manages the groups and the associated shared data on a Linux system.
 	"""
 
@@ -37,9 +37,9 @@ class GroupsController(Singleton, CoreController):
 
 		if GroupsController.init_ok:
 			return
-
-		CoreController.__init__(self, 'groups', warnings)
+		CoreFSController.__init__(self, 'groups')
 		self.inotifier = None
+
 
 		GroupsController.init_ok = True
 		assert ltrace('groups', '< GroupsController.__init__(%s)' %
@@ -417,7 +417,7 @@ class GroupsController(Singleton, CoreController):
 					LMC.configuration.groups.name_maxlenght)
 
 		if description is None:
-			description = _(u'Members of group “%s”') % name
+			description = _('Members of group “%s”') % name
 
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError('''Malformed group description '''
@@ -1585,13 +1585,13 @@ class GroupsController(Singleton, CoreController):
 			PARTIALLY locked, because very long to run (depending on the shared
 			group dir size). Harmless if the unlocked part fails.
 
-			gid/name: the group to check.
-			minimal: don't check member's symlinks to shared group dir if True
-			batch: correct all errors without prompting.
-			auto_answer: an eventual pre-typed answer to a preceding question
+			:param gid/name: the group to check.
+			:param minimal: don't check member's symlinks to shared group dir if True
+			:param batch: correct all errors without prompting.
+			:param auto_answer: an eventual pre-typed answer to a preceding question
 				asked outside of this method, forwarded to apply same answer to
 				all questions.
-			force: not used directly in this method, but forwarded to called
+			:param force: not used directly in this method, but forwarded to called
 				methods which can use it.
 		"""
 
@@ -1616,15 +1616,9 @@ class GroupsController(Singleton, CoreController):
 				name=name, minimal=minimal, batch=batch,
 				auto_answer=auto_answer, force=force)
 
-			group_home_acl = self.BuildGroupACL(gid)
-
 		group_home = "%s/%s/%s" % (
 			LMC.configuration.defaults.home_base_path,
 			LMC.configuration.groups.names.plural, name)
-		group_home_acl['path'] = group_home
-
-		if os.path.exists("%s/public_html" % group_home):
-			group_home_acl['exclude'] = [ 'public_html' ]
 
 		# follow the symlink for the group home, only if link destination is a
 		# dir. This allows administrator to put big group dirs on different
@@ -1633,63 +1627,46 @@ class GroupsController(Singleton, CoreController):
 			if os.path.exists(group_home) \
 				and os.path.isdir(os.path.realpath(group_home)):
 				group_home = os.path.realpath(group_home)
-				group_home_acl['path']  = group_home
 
-		# check only the group home dir (not its contents), its uid/gid and its
-		# (default) ACL. To check a dir without its content, just delete the
-		# content_acl or content_mode dictionnary key.
-		logging.progress("Checking shared group dir %s…" %
-			stylize(ST_PATH, group_home))
-		group_home_only         = group_home_acl.copy()
-		group_home_only['path'] = group_home
-		group_home_only['user'] = 'root'
-		del group_home_only['content_acl']
+		# FIXME : We shouldn't check if the dir exists here, it is done
+		# in fsapi.check_one_dir_and_acl() but we need to do it because
+		# we set uid and gid to -1 so we need to access to path stats
+		# in ACLRule.check_dir().
+		# check if home group exists before doing anything.
+		if not os.path.exists(group_home):
+			if batch or logging.ask_for_repair("Directory %s doesn't exists on "
+				"the system, this is mandatory create it?" %
+					stylize(ST_PATH, group_home), auto_answer=auto_answer):
+				os.mkdir(group_home)
+				logging.info("Created directory %s." %
+						stylize(ST_PATH, group_home))
+			else:
+				raise exceptions.LicornCheckError("Directory %s doesn't exists "
+					"on the system, this is mandatory. The check procedure has "
+					"been %s" % (
+						stylize(ST_PATH, group_home),
+						stylize(ST_BAD, "stopped")))
 
+		# load the rules defined by user and merge them with templates rules.
+		rules = self.load_rules(group_home + '/' +
+			LMC.configuration.users.check_config_file,
+			# user_uid et user_gid are set to -1 to don't touch to current uid and
+			# gid owners of the group.
+			object_info=Enumeration(home=group_home, user_uid=-1, user_gid=-1),
+			identifier=gid,
+			vars_to_replace=(
+					('@GROUP', name),
+					('@GW', 'w' if self.groups[gid]['permissive'] else '-')
+				)
+			)
+
+		# run the check
 		try:
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-				[ group_home_only ], batch, auto_answer, self, LMC.users)
-
-		except exceptions.LicornCheckError, e:
-			logging.warning("Shared group dir %s is missing, please repair "
-				"this first." % stylize(ST_PATH, group_home))
-			return False
-
-		# check the contents of the group home dir, without checking UID (fix
-		# old #520. This is necessary for non-permissive groups to be
-		# functionnal). this will recheck the home dir, but this 2nd check does
-		# less than the previous. The previous is necessary, and this one is
-		# unavoidable due to fsapi.check_dirs_and_contents_perms_and_acls()
-		# conception.
-		logging.progress("Checking shared group dir contents…")
-		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-			[ group_home_acl ], batch, auto_answer, self, LMC.users)
-
-		if os.path.exists("%s/public_html" % group_home):
-			public_html             = "%s/public_html" % group_home
-			public_html_acl         = self.BuildGroupACL(gid, 'public_html')
-			public_html_acl['path'] =  public_html
-
-			try:
-				logging.progress("Checking shared dir %s…" % \
-					stylize(ST_PATH, public_html))
-				public_html_only         = public_html_acl.copy()
-				public_html_only['path'] = public_html
-				public_html_only['user'] = 'root'
-				del public_html_only['content_acl']
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-					[ public_html_only ],
-					batch, auto_answer, self, LMC.users)
-
-			except exceptions.LicornCheckError:
-				logging.warning(
-					"Shared dir %s is missing, please repair this first." \
-					% stylize(ST_PATH, public_html))
-				return False
-
-			# check only ~group/public_html and its contents, without checking
-			# the UID, too.
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-				[ public_html_acl ], batch, auto_answer, self, LMC.users)
+			if rules != None:
+				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+					rules, batch=batch, auto_answer=auto_answer)
+		except exceptions.DoesntExistsException, e:
+			logging.warning(e)
 
 		if not minimal:
 			logging.progress(
@@ -1759,6 +1736,105 @@ class GroupsController(Singleton, CoreController):
 							self.WriteConf(gid)
 
 		assert ltrace('groups', '< check_nonexisting_users()')
+	def _fast_check_group(self, gid, path):
+		""" check a file in a group and apply its perm without any confirmation
+
+			:param gid: id of the group where the file is located
+			:param path: path of the modified file/dir
+		"""
+		assert ltrace('groups', "> _fast_check_group(gid=%s, path=%s)" %
+			(gid, path))
+
+		group = self[gid]
+
+		try:
+			group_home = group['group_home']
+		except KeyError:
+			group_home = group['group_home'] = "%s/%s/%s" % (
+				LMC.configuration.defaults.home_base_path,
+				LMC.configuration.groups.names.plural, self[gid]['name'])
+
+		try:
+			rules = group['special_rules']
+
+		except KeyError:
+			rules = self.load_rules(group_home + '/' +
+				LMC.configuration.users.check_config_file,
+				object_info=Enumeration(home=group_home,
+										user_uid=-1, user_gid=-1),
+				identifier=gid,
+				vars_to_replace=(
+						('@GROUP', self.gid_to_name(gid)),
+						('@GW', 'w' if self.groups[gid]['permissive'] else '-')
+					)
+				)
+		else:
+			assert ltrace('groups', "Skipped: rules from %s were already "
+			"loaded, we do not reload them in the fast check procedure." %
+				group_home + '/' + 	LMC.configuration.users.check_config_file)
+
+		rule_name  = path[len(group_home)+1:].split('/')[0]
+
+		try:
+			entry_stat = os.lstat(path)
+		except (IOError, OSError), e:
+			if e.errno == 2:
+				# bail out if path has disappeared since we were called.
+				return
+			else:
+				raise
+
+		# find the special rule applicable on the path.
+		is_root_dir = False
+		# if the path has a special rule, load it
+		if rule_name in rules:
+			dir_info = rules[rule_name].copy()
+		# else take the default one
+		else:
+			dir_info = rules._default.copy()
+			if rule_name is '':
+				is_root_dir = True
+
+		# the dir_info.path has to be the path of the checked file
+		dir_info.path = path
+
+		if path[-1] == '/':
+			path = path[:-1]
+
+		# deal with owners
+		# uid owner of the path is:
+		#	- 'root' = 0 if path is group home
+		#	- unchanged if it is not the group home
+		# gid owner of the path is:
+		#	- 'acl' if an acl will be set to the path.
+		#	- the primary group of the user owner of the path, if uid will not
+		#		be changed.
+		#	- 'acl' if we don't keep the same uid.
+		if path == group_home:
+			dir_info.uid = 0
+		else:
+			dir_info.uid = -1
+
+		if ':' in dir_info.root_dir_perm or ',' in dir_info.root_dir_perm:
+			dir_info.gid = LMC.groups.name_to_gid(LMC.configuration.acls.group)
+		else:
+			if dir_info.uid == -1:
+				dir_info.gid = LMC.users[entry_stat.st_uid]['gidNumber']
+			else:
+				dir_info.gid = LMC.groups.name_to_gid(
+											LMC.configuration.acls.group)
+
+		# get the type of the path (file or dir)
+		if ( entry_stat.st_mode & 0170000 ) == stat.S_IFREG:
+			file_type = stat.S_IFREG
+		else:
+			file_type = stat.S_IFDIR
+
+		# run the check
+		fsapi.check_perms(dir_info, batch=True,	file_type=file_type,
+			is_root_dir=is_root_dir, full_display=False)
+
+		assert ltrace('groups', '< _fast_check_group')
 	def CheckGroups(self, gids_to_check, minimal=True, batch=False,
 		auto_answer=None, force=False):
 		""" Check groups, groups dependancies and groups-related caches. If a

@@ -252,10 +252,3 @@ SYSP_SPECIFY_SHELL   = "You must specify a valid skel dir for the profile (use -
 SYSK_SPECIFY_KEYWORD   = "You must specify a keyword name."
 SYSK_MALFORMED_KEYWORD = "Malformed keyword name `%s', must match /%s/i."
 SYSK_MALFORMED_DESCR   = "Malformed keyword description `%s', must match /%s/i."
-
-### Swissknives ###
-SWKN_DIR_IS_NOT_A_DIR  = "The directory %s is *not* a directory !"
-SWKN_DIR_BAD_OWNERSHIP = "Invalid ownership for %s (it is %s:%s but should be %s:%s)."
-SWKN_INVALID_ACL       = "Invalid %s ACL for %s (it is %s but should be %s)."
-SWKN_INVALID_MODE      = "Invalid Unix mode for %s (it is %s but should be %s)."
-

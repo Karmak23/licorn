@@ -432,18 +432,23 @@ class LicornConfigObject():
 			if key[0] != '_' and not callable(value):
 				yield value
 class FsapiObject(Enumeration):
-	def __init__(self, name=None, path=None, user=None, root_dir_perm=None,
-		dirs_perm=None, files_perm=None, group=None, exclude=[], rule=None,
-		copy_from=None ):
+	""" TODO. """
+	def __init__(self, name=None, path=None, uid=-1, root_dir_perm=None,
+		dirs_perm=None, files_perm=None, gid=-1, system=False, exclude=[],
+		rule=None, copy_from=None):
 		Enumeration.__init__(self, name, copy_from)
+
 		self.path = path
-		self.user = user
-		self.group = group
+		self.uid = uid
+		self.root_gid = gid
+		self.content_gid = None
 		self.root_dir_perm = root_dir_perm
 		self.dirs_perm = dirs_perm
 		self.files_perm = files_perm
 		self.exclude = exclude
 		self.rule = rule
+		self.system = system
 		self.content_acl = False
 		self.root_dir_acl = False
+		self.already_loaded = False
 

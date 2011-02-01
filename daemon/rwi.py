@@ -686,8 +686,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			groups.sort()
 
 			import time
-			date_time = time.strftime("%d %m %Y à %H:%M:%S", time.gmtime())
-			html_file = open("%s/import_%s-%s.html" % (LMC.configuration.home_archive_dir, profile, hlstr.validate_name(date_time)), "w")
+			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
+			html_file = open("%s/import_%s-%s.html" % (
+								LMC.configuration.home_archive_dir,
+								profile,
+								hlstr.validate_name(date_time)), "w")
 			html_file.write('''<html>
 				<head>
 					<meta http-equiv="content-type" content="text/html; charset=utf-8" />

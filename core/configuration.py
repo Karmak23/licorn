@@ -812,6 +812,17 @@ class LicornConfiguration(Singleton, LockedController):
 		self.acls.acl_restrictive_mask = 'm:r-x'
 		self.acls.file_acl_mask = 'm:rw@GX'
 		self.acls.file_acl_restrictive_mask = 'm:rw@GX'
+		self.acls.group_acl_base = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x," \
+			"g:%s:rwx,g:@GROUP:rwx" % (
+			LMC.configuration.defaults.admin_group,
+			LMC.configuration.groups.guest_prefix + "@GROUP",
+			LMC.configuration.groups.resp_prefix + "@GROUP")
+		self.acls.group_file_acl_base = \
+			"u::rw@UX,g::---,o:---,g:%s:rw@GX,g:%s:r-@GX,g:%s:rw@GX," \
+			"g:@GROUP:r@GW@GX" % (
+			LMC.configuration.defaults.admin_group,
+			LMC.configuration.groups.guest_prefix + "@GROUP",
+			LMC.configuration.groups.resp_prefix + "@GROUP")
 
 
 	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
@@ -1245,26 +1256,41 @@ class LicornConfiguration(Singleton, LockedController):
 
 		self.CheckSystemGroups(minimal=minimal, batch=batch,
 			auto_answer=auto_answer)
-
-		p = self.acls
-
-		dirs_to_verify = [ {
-			'path'      : p.groups_dir,
-			'user'      : 'root',
-			'group'     : 'acl',
-			'access_acl': "%s,%s,g:www-data:--x,g:users:%s,%s" % (
-				p.acl_base, p.acl_admins_ro,
-				p.acl_users, p.acl_mask),
-			'default_acl': ""
-			} ]
-
+		
+		acls_conf = self.acls
+		all_went_ok = True
+		
+		home_groups = FsapiObject(name='home_groups')
+		home_groups.path = acls_conf.groups_dir
+		home_groups.group = LMC.groups.name_to_gid('acl')
+		home_groups.user = 0
+		home_groups.root_dir_acl = True
+		home_groups.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
+			acls_conf.acl_base, acls_conf.acl_admins_ro,
+			acls_conf.acl_users, acls_conf.acl_mask)
+			
+		home_backups = FsapiObject(name='home_backups')
+		home_backups.path = self.home_backup_dir
+		home_backups.group = LMC.groups.name_to_gid('acl')
+		home_backups.user = 0
+		home_backups.root_dir_acl = True
+		home_backups.root_dir_perm = "%s,%s,%s" % (acls_conf.acl_base,
+			acls_conf.acl_admins_ro, acls_conf.acl_mask)
+		home_backups.content_acl = True
+		home_backups.dirs_perm = "%s,%s,%s" % (acls_conf.acl_base,
+			acls_conf.acl_admins_ro, acls_conf.acl_mask)
+		if not minimal:
+			home_backups.files_perm = ("%s,%s,%s" % (
+				acls_conf.acl_base,acls_conf.acl_admins_ro, acls_conf.acl_mask)
+				).replace('r-x', 'r--').replace('rwx', 'rw-')
+				
+		dirs_to_verify = []
+		dirs_to_verify.append(home_groups)
+		dirs_to_verify.append(home_backups)
+		
 		try:
-			# batch this because it *has* to be corrected
-			# for system to work properly.
-			fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-				batch=batch, allgroups=LMC.groups,
-				allusers=LMC.users)
-
+			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+				dirs_to_verify, batch = True) 
 		except (IOError, OSError), e:
 			if e.errno == 95:
 				# this is the *first* "not supported" error encountered (on
@@ -1277,32 +1303,10 @@ class LicornConfiguration(Singleton, LockedController):
 			else:
 				logging.warning(e)
 				raise e
-
-		home_backup_dir_info = {
-			'path'      : self.home_backup_dir,
-			'user'      : 'root',
-			'group'     : 'acl',
-			'access_acl': "%s,%s,%s" % (p.acl_base,
-				p.acl_admins_ro, p.acl_mask),
-			'default_acl': "%s,%s,%s" % (p.acl_base,
-				p.acl_admins_ro, p.acl_mask)
-			}
-
-		if not minimal:
-			# check the contents of these dirs, too (fixes #95)
-			home_backup_dir_info['content_acl'] = ("%s,%s,%s" % (
-				p.acl_base, p.acl_admins_ro, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
-
-		all_went_ok = True
-
-		all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls(
-			[ home_backup_dir_info ], batch=True,
-			allgroups=LMC.groups, allusers=LMC.users)
-
+				
 		all_went_ok &= self.check_archive_dir(batch=batch,
 			auto_answer=auto_answer)
-
+		
 		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
@@ -1312,56 +1316,37 @@ class LicornConfiguration(Singleton, LockedController):
 
 		assert ltrace('configuration', '> check_archive_dir(%s)' % subdir)
 
-		p = self.acls
-
-		home_archive_dir_info = {
-			'path'       : self.home_archive_dir,
-			'user'       : 'root',
-			'group'      : 'acl',
-			'access_acl' : "%s,%s,%s" % (
-				p.acl_base, p.acl_admins_rw, p.acl_mask),
-			'default_acl': "%s,%s,%s" % (
-				p.acl_base, p.acl_admins_rw, p.acl_mask),
-			}
-
+		acls_conf = self.acls
+		
+		home_archive = FsapiObject(name='home_archive')
+		home_archive.path = self.home_archive_dir
+		home_archive.group = LMC.groups.name_to_gid('acl')
+		home_archive.user = 0
+		home_archive.root_dir_acl = True
+		home_archive.root_dir_perm = "%s,%s,%s" % (
+			acls_conf.acl_base, acls_conf.acl_admins_rw, acls_conf.acl_mask)
+			
 		if subdir:
-
 			if os.path.dirname(subdir) == self.home_archive_dir:
-
-				subdir_info = {
-					'path'       : self.home_archive_dir,
-					'user'       : 'root',
-					'group'      : 'acl',
-					'access_acl' : "%s,%s,%s" % (
-						p.acl_base, p.acl_admins_rw, p.acl_mask),
-					'default_acl': "%s,%s,%s" % (
-						p.acl_base, p.acl_admins_rw, p.acl_mask),
-					'content_acl': ("%s,%s,%s" % (
-						p.acl_base, p.acl_admins_rw, p.acl_mask)
-							).replace('r-x', 'r--').replace('rwx', 'rw-')
-					}
+				home_archive.content_acl = True
+				home_archive.dirs_perm = "%s,%s,%s" % (
+					acls_conf.acl_base, acls_conf.acl_admins_rw, 
+					acls_conf.acl_mask)
+				home_archive.files_perm = ("%s,%s,%s" % (
+					acls_conf.acl_base, acls_conf.acl_admins_rw,
+					acls_conf.acl_mask)
+						).replace('r-x', 'r--').replace('rwx', 'rw-')
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
 						styles.stylize(styles.ST_PATH, self.home_archive_dir))
 				subdir=False
 
-		elif not minimal:
-			home_archive_dir_info['content_acl'] = ("%s,%s,%s" % (
-				p.acl_base, p.acl_admins_rw, p.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
-
-		dirs_to_verify = [ home_archive_dir_info ]
-
-		if subdir:
-			dirs_to_verify.append(subdir_info)
-
 		assert ltrace('configuration', ''''< check_archive_dir(return '''
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
-		return fsapi.check_dirs_and_contents_perms_and_acls(dirs_to_verify,
-			batch=batch, auto_answer=auto_answer,
-			allgroups=LMC.groups, allusers=LMC.users)
+		return fsapi.check_dirs_and_contents_perms_and_acls_new([home_archive],
+			batch=batch, auto_answer=auto_answer)
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""

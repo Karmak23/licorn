@@ -372,12 +372,25 @@ class CoreFSController(CoreController):
 		.. versionadded:: 1.3
 
 	"""
+	_licorn_protected_attrs = (
+		CoreController._licorn_protected_attrs
+		+ [  'system_special_dirs_templates', 'system_rules_not_loaded' ]
+	)
 	class ACLRule(Enumeration):
 		""" Class representing a custom rule.
-			# rule : Enumeration object representing a rule
-			# 	rule.dir
-			#	rule.acl
-			#	rule.system = True if system rule else False
+
+			:param checked: boolean to indicate if the rule has already been
+				checked.
+			:param file_name: path of the file describing the rule.
+			:param line_no: line number of the rule in the file.
+			:param rule_text: string representing the rule.
+			:param system_wide: boolean to know if it is a system rule or
+				an user rule.
+			:param base_dir: string representing the home dir of the object
+				we are checking. Example: if we are checking
+				/home/users/robin/file1, base_dir is /home/users/robin.
+			:param uid: id of the owner of the dir/file that we are checking.
+
 		"""
 		separator = '	'
 		invalid_dir_regex_text = r'^((~.\*|\$HOME.\*|\/|\*\/)|[^%s]*\/?\.\.\/)' % separator
@@ -386,7 +399,9 @@ class CoreFSController(CoreController):
 		@staticmethod
 		def substitute_configuration_defaults(acl):
 			""" return an acl (string) where parameters @acls or @default
-				were used. """
+				were used.
+
+				:param acl: string to decode """
 			#logging.notice(acl)
 			splitted_acls = acl.split(',')
 			acls=[]
@@ -415,9 +430,9 @@ class CoreFSController(CoreController):
 				except ValueError:
 					acls.append(acl_tmp)
 			return ','.join(acls)
-		def __init__(self, file_name=None, rule_text=None, line_no=0,
-			base_dir=None, uid=None, system_wide=True, controller=None):
-			name = self.generate_name(file_name, rule_text, system_wide, controller)
+		def __init__(self, controller_name, file_name=None, rule_text=None, line_no=0,
+			base_dir=None, object_id=None, system_wide=True):
+			name = self.generate_name(file_name, rule_text, system_wide,controller_name)
 			Enumeration.__init__(self, name)
 			assert ltrace('checks', '| ACLRule.__init__(%s, %s)' % (
 				name, system_wide))
@@ -427,42 +442,52 @@ class CoreFSController(CoreController):
 			self.rule_text = rule_text
 			self.system_wide = system_wide
 			self.base_dir = base_dir
-			self.uid = uid
-		def generate_name(self, file_name, rule_text, system_wide, controller):
-			""" for a system configuration file named
-				/etc/licorn/check.d/users.dropbox.conf, return "dropbox"
+			self.uid = object_id
+			self.controller_name = controller_name
+		def generate_name(self, file_name, rule_text, system_wide, name):
+			""" function that generate a name for a rule.
+				Rule name is a keyword used to list rule into lists
 
-				for a user config file named
-				/home/users/guillaume/.licorn/check.conf, return "user_defined"
+				examples:
+
+					- for default rules, return ~
+					- for other rules following the synthax : DIR	ACL, return
+						DIR
+
+				:param filename: path of the file describing the rule
+				:param rule_text: string representing the rule
+				:param system_wide: boolean to know if it is a system rule or
+					an user rule
 			"""
+			assert ltrace('checks', '''| generate_name(file_name=%s, '''
+				'''rule_text=%s, system_wide=%s)''' % (
+					file_name, rule_text, system_wide))
+
 			if system_wide:
 				if file_name.rsplit('/', 1)[1] == '%s.%s.conf' % (
-					controller.name,
+					name,
 					LMC.configuration.defaults.check_homedir_filename):
 					return '~'
-				else:
-					return (hlstr.validate_name(
-						self.substitute_configuration_defaults(
-						rule_text.split(
-						self.separator, 1)[0]), custom_keep='._')
-						).replace('.', '_')
-			else:
-				if rule_text == '~' or rule_text == '$HOME':
-					return '~'
-				else:
-					return (hlstr.validate_name(
-						self.substitute_configuration_defaults(
-						rule_text.split(
-						self.separator, 1)[0]), custom_keep='._')
-						).replace('.', '_')
-		def check_acl(self, acl, directory):
-			""" check if an acl is valid or not """
+			elif rule_text[0] in ('~', '$HOME'):
+				return '~'
+
+
+			return (hlstr.validate_name(
+				self.substitute_configuration_defaults(
+				rule_text.split(
+				self.separator, 1)[0]), custom_keep='._')
+				).replace('.', '_')
+		def check_acl(self, acl):
+			""" check if an acl is valid or not
+
+				:param acl: string of the acl
+			"""
 			rebuilt_acl = []
 			if acl.upper() in ['NOACL', 'RESTRICTED', 'POSIXONLY', 'RESTRICT',
 				'PRIVATE']:
 				return acl.upper()
 
-			elif acl.find(':') == -1:
+			elif acl.find(':') == -1 and acl.find(',') == -1:
 				raise exceptions.LicornSyntaxException(self.file_name,
 					self.line_no, acl,
 					desired_syntax='NOACL, RESTRICTED, POSIXONLY, RESTRICT'
@@ -528,7 +553,10 @@ class CoreFSController(CoreController):
 
 			return ','.join(rebuilt_acl)
 		def check_dir(self, directory):
-			""" check if the dir is ok """
+			""" check if the dir is ok
+
+				:param directory: string of the directory we are checking
+			"""
 
 			# try to find insecure entries
 			if self.invalid_dir_regex.search(directory):
@@ -539,8 +567,10 @@ class CoreFSController(CoreController):
 			if self.system_wide:
 				uid = None
 			else:
+				if self.uid is -1:
+					self.uid = os.lstat(self.base_dir + '/' + directory).st_uid
 				uid = self.uid
-			directory = pyutils.expand_vars_and_tilde(directory, uid=uid)
+			directory = self.expand_tilde(directory, uid)
 
 			if directory in ('', '/') or directory == self.base_dir:
 				self.default = True
@@ -562,19 +592,34 @@ class CoreFSController(CoreController):
 			try:
 				dir, acl = line.split(self.separator)
 			except ValueError, e:
-				logging.warning("%s->%s" % (line,e))
+				raise exceptions.LicornSyntaxException(self.file_name,
+					self.line_no, text=line,
+					desired_syntax='<dir><separator><acl>')
 			dir = dir.strip()
 			acl = acl.strip()
 
 			self.dir = self.check_dir(directory=dir)
-			self.acl = self.check_acl(acl=acl, directory=dir)
+			self.acl = self.check_acl(acl=acl)
 
 			self.checked = True
-		def generate_dir_info(self, user_info=None, dir_info_base=None):
+		def generate_dir_info(self, object_info, dir_info_base=None,
+			system_wide=False, vars_to_replace=None):
 			""" generate a FsapiObject from the rule. This object will be
-				understandable by fsapi """
+				understandable by fsapi.check*()
+
+				:param object_info: enumeration object containing home,
+					uid and gid of the current file/dir checked
+				:param dir_info_base: if specified, the dir_info_base will be
+					modified, it may overwrite information of the dir_info_base.
+				:param system_wide: boolean to know if it is a system rule or
+					an user rule.
+				:vars_to_replace: list of tuple to be replaced in the dir_info.
+				"""
+
 			acl=self.acl
 
+			# if we are using a dir_info_base, we must be sure that permissions
+			# will be ok.
 			if dir_info_base is not None:
 				if dir_info_base.rule.acl in ('NOACL', 'POSIXONLY'):
 					# it is a NOACL perm on root_dir, the content could be
@@ -596,63 +641,81 @@ class CoreFSController(CoreController):
 								desired_syntax=" impossible to apply this perm")
 			if self.system_wide:
 				dir_path = '%%s%s' % "/" + self.dir if self.dir != '' else '%s'
-				uidNumber = '%s'
-				gidNumber = '%s'
+				uid = '%s'
+				gid = '%s'
+
 			else:
 				if self.dir in ("", "/"):
-					dir_path = '%s%s' % (user_info.user_home, self.dir)
+					dir_path = '%s%s' % (object_info.home, self.dir)
 				else:
-					dir_path = '%s/%s' % (user_info.user_home, self.dir)
-				uidNumber = user_info.uidNumber
-				gidNumber = user_info.gidNumber
+					dir_path = '%s/%s' % (object_info.home, self.dir)
+				uid = object_info.user_uid
+				gid = object_info.user_gid
 
 			if dir_info_base is None:
-				dir_info = FsapiObject(name=self.name)
-				dir_info.system = self.system_wide
-				dir_info.path = '%s' % dir_path
-				dir_info.user = uidNumber
-				dir_info.group = gidNumber
-				dir_info.rule = self
+				dir_info = FsapiObject(name=self.name, system=self.system_wide,
+										path=dir_path, uid=uid, gid=gid,
+										rule=self)
 			else:
-				dir_info = dir_info_base.copy()
+				# do not create a new dir_info, just modify the dir_info_base
+				dir_info = dir_info_base
+				dir_info.content_gid = gid
+				dir_info.already_loaded = True
 
 			if acl.upper() in ('NOACL', 'POSIXONLY'):
 				if dir_info_base is None:
 					dir_info.root_dir_perm = 00755
 				dir_info.files_perm = 00644
 				dir_info.dirs_perm = 00755
+
 			elif acl.upper() in ('PRIVATE','RESTRICT','RESTRICTED'):
 				if dir_info_base is None:
 					dir_info.root_dir_perm = 00700
 				dir_info.files_perm = 00600
 				dir_info.dirs_perm = 00700
+
 			elif self.system_wide and ':' in acl:
 				if dir_info_base is None:
-					dir_info.group = LMC.configuration.acls.group
+					dir_info.root_gid = LMC.groups.name_to_gid(
+						LMC.configuration.acls.group)
 					dir_info.root_dir_perm = acl
+				else:
+					dir_info.content_gid = LMC.groups.name_to_gid(
+						LMC.configuration.acls.group)
 				dir_info.files_perm = acl
 				dir_info.dirs_perm = acl.replace('@UX','x').replace('@GX','x')
+
 			elif not self.system_wide:
 				# 3rd case: user sets a custom ACL on dir / file.
 				# merge this custom ACL to the standard one (the
 				# user cannot restrict ACLs, just add).
 
-				dir_info.group = LMC.configuration.acls.group
-				if dir_info_base is None:
-					dir_info.root_dir_perm = "%s,g:%s:r-x,%s,%s" % \
-						(LMC.configuration.acls.acl_base,
+				if self.controller_name is "users":
+					acl_base = "%s,g:%s:rw-" % (
+						LMC.configuration.acls.acl_base,
 						LMC.configuration.defaults.admin_group,
-						acl,
-						LMC.configuration.acls.acl_mask)
-				dir_info.files_perm = "%s,g:%s:rwx,%s,%s" % \
-					(LMC.configuration.acls.acl_base,
-					LMC.configuration.defaults.admin_group,
-					acl,
-					LMC.configuration.acls.acl_mask)
-				dir_info.dirs_perm = ("%s,g:%s:rw-,%s,%s" % \
-					(LMC.configuration.acls.file_acl_base,
-					LMC.configuration.defaults.admin_group,
-					acl,
+						)
+					file_acl_base = "%s,g:%s:rw-" % (
+						LMC.configuration.acls.file_acl_base,
+						LMC.configuration.defaults.admin_group)
+
+				elif self.controller_name is "groups":
+					acl_base = LMC.configuration.acls.group_acl_base
+					file_acl_base = LMC.configuration.acls.group_file_acl_base
+
+
+				if dir_info_base is None:
+					dir_info.root_dir_perm = "%s,%s,%s" % \
+						(acl_base, acl,	LMC.configuration.acls.acl_mask)
+					dir_info.root_gid = LMC.groups.name_to_gid(
+						LMC.configuration.acls.group)
+				else:
+					dir_info.content_gid = LMC.groups.name_to_gid(
+						LMC.configuration.acls.group)
+				dir_info.files_perm = "%s,%s,%s" % \
+					(acl_base, acl, LMC.configuration.acls.acl_mask)
+				dir_info.dirs_perm = ("%s,%s,%s" % \
+					(file_acl_base,	acl,
 					LMC.configuration.acls.file_acl_mask)).replace(
 						'@UX','x').replace('@GX','x')
 
@@ -668,101 +731,287 @@ class CoreFSController(CoreController):
 				dir_info.root_dir_acl = False
 
 			# check the acl with the posix1e module.
-			if dir_info.root_dir_acl:
-				# we replace the @*X to be able to posix1e.ACL.check() correctly
-				# this forces us to put a false value in the ACL, so we copy it
-				# [:] to keep the original in place.
-				di_text = dir_info.root_dir_perm[:].replace(
-					'@GX','x').replace('@UX','x').replace('rsp-',
-					'remotessh').replace('gst-', 'acl')
-				if posix1e.ACL(text=di_text).check():
-					raise exceptions.LicornSyntaxException(
-						self.file_name, self.line_no,
-						text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-						'''.check() fail''' % di_text)
-			if dir_info.content_acl:
-				if posix1e.ACL(text=dir_info.dirs_perm[:].replace(
-					'@GX','x').replace('@UX','x').replace('rsp-',
-					'remotessh').replace('gst-', 'acl')).check():
-					raise exceptions.LicornSyntaxException(
-						self.file_name, self.line_no,
-						text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-						'''.check() fail''' % dir_info.root_dir_perm)
+			if not system_wide:
+				if vars_to_replace is not None:
+					for var, value in vars_to_replace:
+						if dir_info.root_dir_acl:
+							if var in dir_info.root_dir_perm:
+								dir_info.root_dir_perm = \
+									dir_info.root_dir_perm.replace(var, value)
+						if dir_info.content_acl:
+							if var in dir_info.dirs_perm:
+								dir_info.dirs_perm = \
+									dir_info.dirs_perm.replace(var, value)
+							if var in dir_info.files_perm:
+								dir_info.files_perm = \
+									dir_info.files_perm.replace(var, value)
+				if dir_info.root_dir_acl:
+					# we replace the @*X to be able to posix1e.ACL.check() correctly
+					# this forces us to put a false value in the ACL, so we copy it
+					# [:] to keep the original in place.
+					di_text = dir_info.root_dir_perm[:].replace(
+						'@GX','x').replace('@UX','x')
+					if posix1e.ACL(text=di_text).check():
+						raise exceptions.LicornSyntaxException(
+							self.file_name, self.line_no,
+							text=acl, optional_exception='''posix1e.ACL(text=%s)'''
+							'''.check() fail''' % di_text)
+				if dir_info.content_acl:
+					di_text = dir_info.dirs_perm[:].replace(
+						'@GX','x').replace('@UX','x')
+					#print di_text
+					if posix1e.ACL(text=di_text).check():
+						raise exceptions.LicornSyntaxException(
+							self.file_name, self.line_no,
+							text=acl, optional_exception='''posix1e.ACL(text=%s)'''
+							'''.check() fail''' % dir_info.root_dir_perm)
 
 			return dir_info
+		def expand_tilde(self, text, object_id):
+			""" replace '~' or '$HOME' by the path pointing to the object_id
+
+				:param text: string to be modified
+				:param object_id: id of the object we are checking (uid or gid)
+			"""
+			if object_id is None:
+				home = ''
+			else:
+				if self.controller_name is 'groups':
+					home =  "%s/%s/%s" % ( LMC.configuration.defaults.home_base_path,
+					LMC.configuration.groups.names.plural, LMC.groups[object_id]['name'])
+				elif self.controller_name is 'users':
+					home = LMC.users[object_id]['homeDirectory']
+
+			return text.replace(
+					'~', home).replace(
+					'$HOME', home).replace(
+					home, '')
 	def __init__(self, name):
 		CoreController.__init__(self, name)
 		assert ltrace('checks', 'CoreFSController.__init__()')
+
 		self.system_special_dirs_templates = None
+		self.system_rules_not_loaded = True
 	def reload(self):
 		""" reload the templates rules generated from systems rules. """
 		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
 			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
 
 		CoreController.reload(self)
-	def load_rules(self):
-		""" """
+	def load_system_rules(self, vars_to_replace):
+		""" load system rules """
 
-		if self.system_special_dirs_templates is None:
+		# if system rules have already been loaded, do not reload them
+		if self.system_rules_not_loaded:
+			assert ltrace('checks', '| load_system_rules(%s)' %
+				LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
+
 			self.system_special_dirs_templates = Enumeration()
+
+			for filename in glob.glob(
+				LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
+				system_info = Enumeration(home='%%s', user_uid=-1, user_gid=-1)
+				rules = self.parse_rules(rules_path=filename,
+					vars_to_replace=vars_to_replace, object_info=system_info)
+				assert ltrace('checks', 'system rules loaded : %s' % rules.dump_status(True))
+				if '_default' in rules.name:
+					assert ltrace('checks', '  ADD rule %s (%s)' % (
+						rules.dump_status(True), rules['~'].dump_status(True)))
+					self.system_special_dirs_templates['~'] = rules['~']
+				else:
+					for acl_rule in rules:
+						assert ltrace('checks', '  ADD rule %s' %
+							acl_rule.dump_status(True))
+						self.system_special_dirs_templates[acl_rule.name] = acl_rule
+
+			self.system_rules_not_loaded = False
 		else:
-			return
+			assert ltrace('checks', 'Skipped: system %s rules were already '
+				'loaded.' %	self.name)
+	def load_rules(self, rules_path, object_info, identifier,
+		vars_to_replace=None):
+		""" load special rules (rules defined by user) and merge system rules
+			with them.
+			Only the system default rule can be overwriten by the user default
+			rule. If any other user rule is in conflict with a system rule, the
+			system one will be used.
 
-		for filename in glob.glob(
-			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
+			This function return only applicable rules """
+		assert ltrace('checks', '> load_rules(rules_path=%s, object_info=%s, '
+			'identifier=%s, vars_to_replace=%s)' % (rules_path, object_info,
+			identifier, vars_to_replace))
+		# load system rules.
+		self.load_system_rules(vars_to_replace=vars_to_replace)
 
-			rules = self.parse_rules(rules_path=filename)
-			assert ltrace('checks', '  EVAL rule %s' % rules.dump_status(True))
-			if '_default' in rules.name:
-				assert ltrace('checks', '  ADD rule %s (%s)' % (
-					rules.dump_status(True), rules['~'].dump_status(True)))
-				self.system_special_dirs_templates['~'] = rules['~']
+		# load user rules.
+		self[identifier]['special_rules'] = self.parse_rules(
+											rules_path,
+											object_info=object_info,
+											system_wide=False,
+											vars_to_replace=vars_to_replace)
+
+		rules = self[identifier]['special_rules']
+
+		# check system rules, if the directory/file they are managing exists add
+		# them the the *valid* system rules enumeration.
+		system_special_dirs = Enumeration('system_special_dirs')
+		assert ltrace(self.name, '  system_special_dirs_templates %s '
+			% self.system_special_dirs_templates.dump_status(True))
+
+		for dir_info in self.system_special_dirs_templates:
+			assert ltrace(self.name, '  using dir_info %s ' % dir_info.dump_status(True))
+			temp_dir_info = dir_info.copy()
+			temp_dir_info.path = temp_dir_info.path % object_info.home
+
+			if os.path.exists(temp_dir_info.path):
+				if temp_dir_info.uid == '%s':
+					temp_dir_info.uid = object_info.user_uid
+				if temp_dir_info.root_gid == '%s':
+					temp_dir_info.root_gid = object_info.user_gid
+				if temp_dir_info.content_gid == '%s':
+					temp_dir_info.content_gid = object_info.user_gid
+				system_special_dirs.append(temp_dir_info)
+
+		default_exclusions = []
+
+		# we need to know if there is a user default rule.
+		user_default = False
+		for dir_info in rules:
+			if dir_info.rule.default:
+				user_default = True
+
+		# If user rules contains a default rule, we keep the user one.
+		# Else, a system rule has priority on user rules
+		for dir_info in system_special_dirs:
+
+			# if it is a system default rule, and if there is a user default
+			# rule, skip the system one.
+			if dir_info.rule.default and user_default:
+				logging.progress("%s: System default rule has been overwriten "
+					"by user rule." % stylize(ST_BAD,"Skipped"))
+				continue
+
+			# if there are variables to replace, do it
+			if vars_to_replace is not None:
+				for var, value in vars_to_replace:
+					if type(dir_info.dirs_perm) is not int and var in dir_info.dirs_perm:
+						dir_info.dirs_perm = dir_info.dirs_perm.replace(var, value)
+					if type(dir_info.files_perm) is not int and var in dir_info.files_perm:
+						dir_info.files_perm = dir_info.files_perm.replace(var, value)
+					if type(dir_info.root_dir_perm) is not int and var in dir_info.root_dir_perm:
+						dir_info.root_dir_perm = dir_info.root_dir_perm.replace(var, value)
+					if var in dir_info.rule.acl:
+						dir_info.rule.acl = dir_info.rule.acl.replace(var, value)
+
+			# if the system rule name is already present in the user rules, keep
+			# the system one.
+			if dir_info.name in rules.keys():
+				overriden_dir_info = rules[dir_info.name]
+				logging.warning('%s group rule for path %s '
+					'(%s:%s), overriden by system rule (%s:%s).'
+					% ( stylize(ST_BAD, "Ignored"),
+						stylize(ST_PATH, dir_info.path),
+						overriden_dir_info.rule.file_name,
+						overriden_dir_info.rule.line_no,
+						dir_info.rule.file_name,
+						dir_info.rule.line_no
+						))
+			# if the system rule is not in the user rules, add it.
 			else:
-				for acl_rule in rules:
-					assert ltrace('checks', '  ADD rule %s' %
-						acl_rule.dump_status(True))
-					self.system_special_dirs_templates[acl_rule.name] = acl_rule
-	def parse_rules(self, rules_path, user_info=None, system_wide=True):
+				tmp = dir_info.copy()
+				if tmp.path.endswith('/'):
+					tmp.path = tmp.path[:len(tmp.path)-1]
+				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
+				default_exclusions.append(tmp.path)
+				logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
+					(stylize(ST_OK,"Added"), 'system' if \
+					dir_info.rule.system_wide else self.name,
+					stylize(ST_NAME, dir_info.rule.acl),
+					stylize(ST_NAME, dir_info.path)))
+
+
+			rules[dir_info.name] = dir_info
+
+		# a last loop to prepare the rules.
+		for di in rules:
+			if di.rule.default:
+				rules._default = di.copy()
+				rules.remove(di.name)
+			else:
+				tmp = di.copy()
+				if tmp.path.endswith('/'):
+					tmp.path = tmp.path[:len(tmp.path)-1]
+				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
+				default_exclusions.append(tmp.path)
+
+		# add dirs/files exclusions to the default rule.
+		try:
+			rules._default.exclude = default_exclusions
+		except AttributeError, e:
+			raise exceptions.LicornCheckError("There is no default "
+			"rule. Check %s." %
+					stylize(ST_BAD, "aborted"))
+
+		assert ltrace('checks', '< load_rules()')
+		return rules
+	def parse_rules(self, rules_path, vars_to_replace, object_info,
+		system_wide=True):
 		""" parse a rule from a line to a FsapiObject. """
 		assert ltrace('checks', "> parse_rules(%s, %s, %s)" % (rules_path,
-			user_info, system_wide))
+			object_info, system_wide))
 		special_dirs = None
+
 		if os.path.exists(rules_path):
 			handler=open(rules_path,'r')
 			rules = []
 			special_dirs = Enumeration(name=rules_path)
 			line_no = 0
 			list_line = []
+
 			for line in handler.readlines():
 				line_no+=1
 				list_line.append((line, line_no))
 
 			list_line.sort()
 
+			# read each line
 			for line, line_no in list_line:
+
+				# if line is a comment, skip it
 				if line[0] == '#':
 					continue
 
 				try:
+					# generate rule
 					rule = self.ACLRule(file_name=rules_path, rule_text=line,
 						line_no=line_no, system_wide=system_wide,
-						base_dir=user_info.user_home
+						base_dir=object_info.home
 							if not system_wide else None,
-						uid=user_info.uidNumber if not system_wide else None,
-						controller=self)
+						object_id=object_info.user_uid if not system_wide else None,
+						controller_name=self.name)
 					#logging.notice("rule = %s" % rule.dump_status(True))
 				except exceptions.LicornRuntimeException, e:
 					logging.warning2(e)
 					continue
 
 				try:
+					# check the rule
 					rule.check()
-					if system_wide:
-						logging.progress('''%s %s template ACL rule: '%s' for '%s'.''' %
-							(stylize(ST_OK,"Added"),
-							self.name,
-							stylize(ST_NAME, rule.acl),
-							stylize(ST_NAME, rule.dir)))
+
+					# create a readable directory
+					directory = rule.dir
+					if directory == '':
+						directory = rule.name
+					elif directory == '/':
+						directory = rule.name + '/'
+
+					logging.progress('''%s %s ACL rule %s: '%s' for '%s'.''' %
+						(stylize(ST_OK,"Added"),
+						self.name,
+						"template" if system_wide else '',
+						stylize(ST_NAME, rule.acl),
+						stylize(ST_NAME, directory)))
+
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
@@ -781,18 +1030,26 @@ class CoreFSController(CoreController):
 					if rule.name in special_dirs.keys():
 						if rule.dir.endswith('/'):
 							dir_info = rule.generate_dir_info(
-								user_info=user_info,
-								dir_info_base=dir_info)
+								object_info=object_info,
+								dir_info_base=dir_info,
+								system_wide=system_wide,
+								vars_to_replace=vars_to_replace)
 					else:
-						dir_info = rule.generate_dir_info(user_info=user_info)
+						dir_info = rule.generate_dir_info(
+							object_info=object_info,
+							system_wide=system_wide,
+							vars_to_replace=vars_to_replace)
+						"""if dir_info.name is '':
+							dir_info.name = ''"""
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
-				#logging.notice("dir_info = %s" % dir_info.dump_status(True))
-				special_dirs.append(dir_info)
 
-				assert ltrace('fsapi', '  parse_rules(add dir_info %s)' %
-						dir_info.dump_status(True))
+				if dir_info.name not in special_dirs.keys():
+					special_dirs.append(dir_info)
+				assert ltrace('fsapi', '  parse_rules(%s dir_info %s)' %
+						('add' if not dir_info.already_loaded else 'modify',
+						dir_info.dump_status(True) ))
 
 			handler.close()
 		assert ltrace('checks', '< parse_rules(%s)' % special_dirs)
@@ -800,7 +1057,6 @@ class CoreFSController(CoreController):
 		if special_dirs == None:
 			special_dirs = Enumeration()
 
-		#logging.notice("special_dirs = %s" % special_dirs.dump_status(True))
 		return special_dirs
 class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
@@ -1416,3 +1672,4 @@ class CoreStoredObject(CoreUnitObject):
 	def lock(self):
 		""" return our unit RLock(). """
 		return LMC.locks[self._controller.name][self._oid]
+
