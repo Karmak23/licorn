@@ -29,7 +29,7 @@ class INotifier(Thread):
 
 		Thread.__init__(self)
 
-		self.name = "%s/%s" % (daemon.dname, 'inotifier')
+		self.name = "%s/%s" % (daemon.dname, 'INotifier')
 
 		self.daemon      = daemon
 

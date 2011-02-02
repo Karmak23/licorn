@@ -26,11 +26,10 @@ class LicornThread(Thread):
 		by the main loop until the thread stops.
 	"""
 
-	def __init__(self, pname='<unknown>', tname=None):
+	def __init__(self, tname=None):
 		Thread.__init__(self)
 
-		self.name  = "%s/%s" % (
-			pname, tname if tname else
+		self.name  = (tname if tname else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
 		self._stop_event  = Event()
@@ -62,10 +61,10 @@ class LicornThread(Thread):
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
 
-	def __init__(self, pname='<UNSET>', tname=None):
+	def __init__(self, tname=None):
 		Thread.__init__(self)
 
-		self.name = "%s/%s" % (pname, tname if tname else
+		self.name = (tname if tname else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
 		self._stop_event  = Event()
@@ -141,9 +140,9 @@ class GenericQueueWorkerThread(Thread):
 			self.__class__.last_warning = 0
 
 		#: the threading.Thread attribute.
-		self.name = '%s-%d' % (self.__class__.base_name, self.__class__.counter)
+		self.name = '%s-%03d' % (self.__class__.base_name, self.__class__.counter)
 
-		assert ltrace('thread', '| %s.__init__()' % self.name)
+		#assert ltrace('thread', '| %s.__init__()' % self.name)
 
 		#: our master queue, from which we get job to do (objects to process).
 		self.input_queue = self.__class__.input_queue
@@ -156,6 +155,9 @@ class GenericQueueWorkerThread(Thread):
 		self.job_kwargs = None
 		self.job_start_time = None
 
+		#: used to sync and not crash between run() and dump_status().
+		self.lock = RLock()
+
 		# necessary to get job status without crashing in corner cases.
 		self.jobbing = Event()
 
@@ -165,30 +167,29 @@ class GenericQueueWorkerThread(Thread):
 			self.__class__.instances += 1
 	def dump_status(self, long_output=False, precision=None):
 		""" get detailled thread status. """
-
-		return '%s%s [%s]' % (
-				stylize(ST_RUNNING
-					if self.is_alive() else ST_STOPPED, self.name),
-				'&' if self.daemon else '',
-				'on %s since %s' % (stylize(ST_ON, '%s(%s%s%s)' % (
-						self.job,
-						', '.join([str(j) for j in self.job_args])
-							if self.job_args else '',
-						', ' if self.job_args and self.job_kwargs else '',
-						', '.join(['%s=%s' % (key, value) for key, value
-									in self.jobs_kwargs])
-							if self.job_kwargs else '')),
-					pyutils.format_time_delta(
-							time.time() - self.job_start_time,
-							big_precision=True))
-					if self.jobbing.is_set() else 'idle'
-			)
+		with self.lock:
+			return '%s%s [%s]' % (
+					stylize(ST_RUNNING
+						if self.is_alive() else ST_STOPPED, self.name),
+					'&' if self.daemon else '',
+					'on %s since %s' % (stylize(ST_ON, '%s(%s%s%s)' % (
+							self.job,
+							', '.join([str(j) for j in self.job_args])
+								if self.job_args else '',
+							', ' if self.job_args and self.job_kwargs else '',
+							', '.join(['%s=%s' % (key, value) for key, value
+										in self.jobs_kwargs])
+								if self.job_kwargs else '')),
+						pyutils.format_time_delta(
+								time.time() - self.job_start_time,
+								big_precision=True))
+						if self.jobbing.is_set() else 'idle'
+				)
 	def run(self):
-		assert ltrace('thread', '> %s.run()' % self.name)
-
-		self.throttle()
+		#assert ltrace('thread', '> %s.run()' % self.name)
 
 		while True:
+
 			self.priority, self.job, self.job_args, self.jobs_kwargs = \
 														self.input_queue.get()
 			if self.job is None:
@@ -202,6 +203,10 @@ class GenericQueueWorkerThread(Thread):
 			else:
 
 				with self.__class__.lock:
+					self.__class__.busy += 1
+
+					self.throttle_up()
+
 					if self.high_bypass and self.priority != priorities.HIGH \
 						and self.__class__.busy == self.__class__.instances:
 						# make some room for HIGH priority jobs. They could still
@@ -209,32 +214,49 @@ class GenericQueueWorkerThread(Thread):
 						# now, because HIGH priority jobs are advised to be very
 						# short (else they should be converted to NORMAL or LOW,
 						# or splitted in smaller tasks).
+						#
+						# If we can spawn aa new peer, it will wait for new
+						# jobs while we run, else we must not handle the
+						# current job
 
-						self.input_queue.task_done()
+						if self.__class__.instances < self.__class__.peers_max:
 
-						self.input_queue.put((self.priority, self.job,
+							assert ltrace('thread', '  %s: spawing new peer '
+								'to always handle HIGH jobs.' % self.name)
+							self.spawn_peer()
+
+						else:
+							assert ltrace('thread', '  %s: delaying job to be '
+								'able to always handle HIGH jobs' % self.name)
+
+							# mark the job as done, because we already got() it.
+							self.input_queue.task_done()
+
+							# reput it at the end of the queue, as if a new job
+							# had been created.
+							self.input_queue.put((self.priority, self.job,
 											self.job_args, self.jobs_kwargs))
 
-						self.job = None
-						self.priority = None
-						self.job_args = None
-						self.job_kwargs = None
-						continue
+							self.job = None
+							self.priority = None
+							self.job_args = None
+							self.job_kwargs = None
+							continue
+
+				with self.lock:
+					self.jobbing.set()
+					self.job_start_time = time.time()
 
 				if 'job_delay' in self.jobs_kwargs:
 					time.sleep(self.jobs_kwargs['job_delay'])
 					del self.jobs_kwargs['job_delay']
 
-				assert ltrace('thread', '%s: running job %s' % (
-														self.name, self.job))
-				with self.__class__.lock:
-					self.__class__.busy += 1
-
-				self.jobbing.set()
-				self.job_start_time = time.time()
+				#assert ltrace('thread', '%s: running job %s' % (
+				#										self.name, self.job))
 
 				try:
 					self.job(*self.job_args, **self.jobs_kwargs)
+
 				except exceptions.LicornError, e:
 					logging.warning('%s: LicornError encountered: %s' % (
 																self.name, e))
@@ -247,7 +269,8 @@ class GenericQueueWorkerThread(Thread):
 
 				self.input_queue.task_done()
 
-				self.jobbing.clear()
+				with self.lock:
+					self.jobbing.clear()
 
 				with self.__class__.lock:
 					self.__class__.busy -= 1
@@ -258,7 +281,7 @@ class GenericQueueWorkerThread(Thread):
 				self.job_kwargs = None
 				self.job_start_time = None
 
-			self.throttle()
+			self.throttle_down()
 
 			if self.input_queue.qsize() == 0:
 				logging.progress('%s: queue is now empty, going '
@@ -268,48 +291,79 @@ class GenericQueueWorkerThread(Thread):
 			self.__class__.instances -= 1
 			#print '>> lock -', self.__class__.instances
 
-		assert ltrace('thread', '< %s.run()' % self.name)
-	def throttle(self):
-		# FIRST, see if peers are in need of help: if there are
-		# still a lot of job to do, spawn another peer to get the
-		# job done, until the configured thread limit is reached.
+		#assert ltrace('thread', '< %s.run()' % self.name)
+	def throttle_up(self):
+		""" See if there are too many or missing peers to handle queued jobs,
+			and spawn a friend if needed, or terminate myself if no more useful.
+		"""
 
-		if self.__class__.instances < self.__class__.peers_min or \
-				self.input_queue.qsize() > 2 * self.__class__.instances:
-			if self.__class__.instances < self.__class__.peers_max:
-				assert ltrace('thread', '  %s: spawing a new peer to help '
-					'(%d < %d or %d > %d and %d < %d).' % (self.name,
-						self.__class__.instances, self.__class__.peers_min,
-						self.input_queue.qsize(), self.__class__.instances * 2,
-						self.__class__.instances, self.__class__.peers_max))
-				peer = self.__class__(licornd=self.licornd, daemon=self.daemon)
-				self.licornd.threads.append(peer)
-				peer.start()
-			else:
-				# alert the user that we can't spawn a new thread because
-				# upper limit it already reached, but not too much (one alert
-				# per second seems not too much).
-				if time.time() - self.__class__.last_warning > 1.0:
-					self.__class__.last_warning = time.time()
-					logging.progress('%s: maximum peers already running, '
-						'queue size is %s.' % (self.name,
-							self.input_queue.qsize()))
+		# we need to get the class lock, else peers could stop() while we are
+		# stopping too, and the daemon could be left without any thread for a
+		# given class of them.
 
-		# SECOND: see if jobs have been worked out during the time
-		# we spent joing our job. If things have settled, signify to
-		# one of the peers to terminate (this could be me, or not),
-		# but only if there are still more peers than the configured
-		# lower limit.
+		with self.__class__.lock:
+			# FIRST, see if peers are in need of help: if there are
+			# still a lot of job to do, spawn another peer to get the
+			# job done, until the configured thread limit is reached.
 
-		elif self.input_queue.qsize() <= self.__class__.instances / 2 \
-						and self.__class__.instances > self.__class__.peers_min:
-			assert ltrace('thread', '  %s: terminating because running out '
-				'of jobs (%d <= %d and %d > %d).' % (self.name,
-				self.input_queue.qsize(), self.__class__.instances / 2,
-				self.__class__.instances, self.__class__.peers_min))
-			self.stop()
+			if (self.input_queue.qsize() > self.__class__.instances
+				and self.__class__.instances == self.__class__.busy) \
+				or self.__class__.instances < self.__class__.peers_min:
+
+				if self.__class__.instances < self.__class__.peers_max:
+
+					assert ltrace('thread', '  %s: spawing a new peer because '
+						'%d instances < %d peers_min or (%d jobs > %d instances '
+						'and all instances busy); '
+						'(BTW %d instances < %d peers_max).' % (self.name,
+							self.__class__.instances, self.__class__.peers_min,
+							self.input_queue.qsize(), self.__class__.instances,
+							self.__class__.instances, self.__class__.peers_max))
+
+					self.spawn_peer()
+				else:
+					# alert the user that we can't spawn a new thread because
+					# upper limit it already reached, but not too much (one alert
+					# per second seems not too much).
+					if time.time() - self.__class__.last_warning > 1.0:
+						self.__class__.last_warning = time.time()
+						logging.progress('%s: maximum peers already running, '
+							'queue size is %s.' % (self.name,
+								self.input_queue.qsize()))
+	def throttle_down(self):
+		""" See if there are too many peers to handle queued jobs, and then
+			send terminate signal (put a ``None`` job in the queue), so that
+			one of the peers will terminate.
+		"""
+
+		# we need to get the class lock, else peers could stop() while we are
+		# stopping too, and the daemon could be left without any thread for a
+		# given class of them.
+
+		with self.__class__.lock:
+			# See if jobs have been worked out during the time
+			# we spent joing our job. If things have settled, signify to
+			# one of the peers to terminate (this could be me, or not),
+			# but only if there are still more peers than the configured
+			# lower limit.
+
+			if self.input_queue.qsize() <= self.__class__.instances \
+					and self.__class__.instances > self.__class__.peers_min:
+
+				assert ltrace('thread', '  %s: terminating because running out '
+					'of jobs (%d jobs <= %d instances '
+					'and %d instances > %d peers_min).' % (
+					self.name,
+					self.input_queue.qsize(), self.__class__.instances,
+					self.__class__.instances, self.__class__.peers_min))
+
+				self.stop()
+	def spawn_peer(self):
+		peer = self.__class__(licornd=self.licornd, daemon=self.daemon)
+		self.licornd.threads.append(peer)
+		peer.start()
 	def stop(self):
-		assert ltrace('thread', '| %s.stop()' % self.name)
+		#assert ltrace('thread', '| %s.stop()' % self.name)
 		self.input_queue.put_nowait((-1, None, None, None))
 
 		# if we are in the process of settling down, tell the
@@ -357,10 +411,10 @@ class AbstractTimerThread(LicornBasicThread):
 			``run_action_method``, else they will fail.
 
 	"""
-	def __init__(self, pname='<UNSET>', tname=None, time=None, count=None,
+	def __init__(self, tname=None, time=None, count=None,
 		delay=0.0, daemon=False):
 
-		LicornBasicThread.__init__(self, pname=pname, tname=tname)
+		LicornBasicThread.__init__(self, tname=tname)
 
 		self.time   = time
 		self.delay  = delay
@@ -489,19 +543,18 @@ class TriggerTimerThread(AbstractTimerThread):
 
 		.. versionadded:: 1.2.4
 	"""
-	def __init__(self, trigger_event, pname='<UNSET>', tname=None, time=None, count=None,
+	def __init__(self, trigger_event, tname=None, time=None, count=None,
 		delay=0.0, daemon=False):
 		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
-			daemon=daemon, pname=pname, tname=tname)
+			daemon=daemon, tname=tname)
 
 		self._trigger_event = trigger_event
 	def run_action_method(self):
 		return self._trigger_event.set()
 class TriggerWorkerThread(LicornBasicThread):
-	def __init__(self, target, trigger_event, args=(), kwargs={},
-												pname='<UNSET>', tname=None):
+	def __init__(self, target, trigger_event, args=(), kwargs={}, tname=None):
 		assert ltrace('thread', '| TriggerWorkerThread.__init__()')
-		LicornBasicThread.__init__(self, pname, tname)
+		LicornBasicThread.__init__(self, tname)
 		self._disable_event     = Event()
 		self._currently_running = Event()
 		self._trigger_event     = trigger_event
@@ -610,7 +663,7 @@ class TriggerWorkerThread(LicornBasicThread):
 		# else we will never quit...
 		self._trigger_event.set()
 class LicornJobThread(AbstractTimerThread):
-	def __init__(self, target, pname='<UNSET>', tname=None, time=None, count=None,
+	def __init__(self, target, tname=None, time=None, count=None,
 		delay=0.0, target_args=(), target_kwargs={}, daemon=False):
 		""" TODO: this class is meant to be removed in version 1.3+, replaced
 			by the couple
@@ -618,7 +671,7 @@ class LicornJobThread(AbstractTimerThread):
 		"""
 
 		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
-			daemon=daemon, pname=pname, tname=tname)
+			daemon=daemon, tname=tname)
 
 		self.target        = target
 		self.target_args   = target_args

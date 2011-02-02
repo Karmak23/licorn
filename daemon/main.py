@@ -101,9 +101,9 @@ class LicornDaemon(Singleton):
 			# why there's a first pass.
 			LMC.init_client_first_pass()
 
-			self.threads.cmdlistener = CommandListener(licornd=self,
-												pids_to_wake=self.pids_to_wake)
-			self.threads.cmdlistener.start()
+			self.threads.CommandListener = CommandListener(licornd=self,
+											pids_to_wake=self.pids_to_wake)
+			self.threads.CommandListener.start()
 
 			from licorn.daemon import client
 			client.ServerLMC.connect()
@@ -111,9 +111,10 @@ class LicornDaemon(Singleton):
 
 		else:
 			LMC.init_server()
-			self.threads.cmdlistener = CommandListener(licornd=self,
-												pids_to_wake=self.pids_to_wake)
-			self.threads.cmdlistener.start()
+
+			self.threads.CommandListener = CommandListener(licornd=self,
+											pids_to_wake=self.pids_to_wake)
+			self.threads.CommandListener.start()
 
 		# the new service facility: just start one thread, it will handle
 		# thread pool size automatically when needed.
@@ -131,7 +132,8 @@ class LicornDaemon(Singleton):
 							in_queue=self.queues.aclcheckQ,
 							peers_min=self.configuration.threads.aclcheck.min,
 							peers_max=self.configuration.threads.aclcheck.max,
-							licornd=self))
+							licornd=self,
+							daemon=False))
 		self.queues.networkQ = PriorityQueue()
 		self.threads.append(NetworkWorkerThread(
 							in_queue=self.queues.networkQ,
@@ -152,13 +154,12 @@ class LicornDaemon(Singleton):
 		""" TODO. """
 
 		# client and server mode get the benefits of periodic thread cleaner.
-		self.threads.cleaner = LicornJobThread(
-				pname=self.dname,
-				tname='cleaner',
+		self.threads.append(LicornJobThread(
+				tname='DeadThreadCleaner',
 				target=self._job_periodic_cleaner,
 				time=(time.time()+30.0),
 				delay=LMC.configuration.licornd.threads.wipe_time
-			)
+			))
 
 		if self.configuration.role == roles.CLIENT:
 
@@ -187,8 +188,8 @@ class LicornDaemon(Singleton):
 			service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 
 			if self.configuration.inotifier.enabled:
-				self.threads.inotifier = INotifier(self,
-												self.options.no_boot_check)
+				i = INotifier(self, self.options.no_boot_check)
+				self.threads.append(i)
 	def __start_threads(self):
 		""" Iterate :attr:`self.threads` and start
 			all not already started threads. """
@@ -397,10 +398,7 @@ class LicornDaemon(Singleton):
 			'{nb_queues} queues, {nb_locks} locks\n'
 			'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
 			'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
-				'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n'
-			'Threads: {scv_i}/{svc_max} service ({svc_c} so far), '
-			'{acl_i}/{acl_max} aclchecker ({acl_c} so far), '
-			'{net_i}/{net_max} network ({net_c} so far)\n'.format(
+				'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n'.format(
 			full=stylize(ST_COMMENT, 'full ') if long_output else '',
 			uptime=stylize(ST_COMMENT,
 				pyutils.format_time_delta(time.time() - dstart_time)),
@@ -408,15 +406,6 @@ class LicornDaemon(Singleton):
 			nb_controllers=stylize(ST_UGID, len(LMC)),
 			nb_queues= stylize(ST_UGID, len(self.queues)),
 			nb_locks=stylize(ST_UGID, len(LMC.locks)),
-			scv_i=ServiceWorkerThread.instances,
-			svc_c=ServiceWorkerThread.counter,
-			svc_max=self.configuration.threads.service.max,
-			acl_i=ACLCkeckerThread.instances,
-			acl_c=ACLCkeckerThread.counter,
-			acl_max=self.configuration.threads.aclcheck.max,
-			net_i=NetworkWorkerThread.instances,
-			net_c=NetworkWorkerThread.counter,
-			net_max=self.configuration.threads.network.max,
 			ru_utime=rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),
 			ru_stime=rusage.ru_stime, #format_time_delta(int(rusage.ru_stime), long=False),
 			mem_res=float(rusage.ru_maxrss * pagesize) / (1024.0*1024.0),
@@ -425,9 +414,31 @@ class LicornDaemon(Singleton):
 			mem_stk=float(rusage.ru_isrss * pagesize) / (1024.0*1024.0)
 			))
 
-		data += ('Queues: %s.\n' %
-				', '.join([ '%s(%s)' % (stylize(ST_NAME, qname),
-					queue.qsize()) for qname, queue in self.queues.iteritems()]))
+		data += ('Threads: %s\n' %
+				'	'.join([ ('%s/%s %s' % (tcur, tmax, ttype)).center(20)
+						for tcur, tmax, ttype in (
+							(
+								ServiceWorkerThread.instances,
+								ServiceWorkerThread.peers_max,
+								'servicers'
+							),
+							(
+								ACLCkeckerThread.instances,
+								ACLCkeckerThread.peers_max,
+								'aclcheckers'
+							),
+							(
+								NetworkWorkerThread.instances,
+								NetworkWorkerThread.peers_max,
+								'networkers'
+							)
+						)
+					])
+				)
+
+		data += ('Queues:  %s\n' %
+				''.join([ ('%s: %s' % (qname, queue.qsize())).center(20)
+					for qname, queue in self.queues.iteritems()]))
 
 		if long_output:
 			for controller in LMC:
@@ -435,22 +446,25 @@ class LicornDaemon(Singleton):
 					data += 'controller %s\n' % controller.dump_status()
 
 		# don't use itervalues(), threads are moving target now.
-		for thread in self.threads.values():
+		tdata = []
+		for tname, thread in self.threads.items():
 			if thread.is_alive():
 				if hasattr(thread, 'dump_status'):
-					data += 'thread %s\n' % thread.dump_status(long_output,
-						precision)
+					tdata.append((tname, 'thread %s\n' %
+									thread.dump_status(long_output, precision)))
 				else:
-					data += ('''thread %s%s(%s) doesn't implement '''
+					tdata.append((tname, '''thread %s%s(%s) doesn't implement '''
 						'''dump_status().\n''' % (
 							stylize(ST_NAME, thread.name),
 							stylize(ST_OK, '&') if thread.daemon else '',
-							thread.ident))
+							thread.ident)))
 			else:
-				data += 'thread %s%s(%d) has terminated.\n' % (
+				tdata.append((tname, 'thread %s%s(%d) has terminated.\n' % (
 					stylize(ST_NAME, thread.name),
 					stylize(ST_OK, '&') if thread.daemon else '',
-					thread.ident)
+					thread.ident)))
+
+		data += ''.join([ value for key, value in sorted(tdata)])
 		return data
 	def setup_signals_handler(self):
 		""" redirect termination signals to a the function which will clean everything. """

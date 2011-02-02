@@ -267,8 +267,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self.threads.auto_backup_timer = LicornJobThread(
 							target=self.backup,
 							delay=LMC.configuration.backup.interval,
-							pname='extensions',
-							tname='Rdiffbackup.AutoBackupTimer',
+							tname='extensions.rdiffbackup.AutoBackupTimer',
 							# first backup starts 1 minutes later.
 							time=(time.time()+15.0)
 							)

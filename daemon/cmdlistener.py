@@ -195,13 +195,13 @@ class CommandListener(LicornBasicThread):
 	def __init__(self, licornd, pids_to_wake=[], daemon=False, **kwargs):
 		assert ltrace('cmdlistener', '| CommandListener.__init__()')
 
-		LicornBasicThread.__init__(self, licornd.dname, 'cmdlistener')
+		LicornBasicThread.__init__(self, tname='CommandListener')
 
-		# the thread attribute
-		self.daemon       = daemon
+		#: the thread attribute
+		self.daemon = daemon
 
-		# my Licorn® daemon
-		self.licornd      = licornd
+		#: my Licorn® daemon
+		self.licornd = licornd
 
 		self.pids_to_wake = pids_to_wake
 		self.wake_threads = []

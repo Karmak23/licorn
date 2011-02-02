@@ -27,7 +27,7 @@ from licorn.core import LMC
 class WMIThread(LicornBasicThread):
 	def __init__(self, daemon):
 		assert ltrace('http', '| WMIThread.__init__()')
-		LicornBasicThread.__init__(self, daemon.dname, tname='wmi')
+		LicornBasicThread.__init__(self, tname='WMIHTTPServer')
 		self.daemon = daemon
 	def run(self):
 
