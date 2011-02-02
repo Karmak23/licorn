@@ -127,23 +127,23 @@ class SystemController(Singleton, CoreController):
 
 		if LMC.configuration.distro == distros.UBUNTU:
 			systype |= host_types.UBUNTU
-			systype ^= host_types.LNX_GEN
+			systype -= host_types.LNX_GEN
 
 		elif LMC.configuration.distro == distros.DEBIAN:
 			systype |= host_types.DEBIAN
-			systype ^= host_types.LNX_GEN
+			systype -= host_types.LNX_GEN
 
 		elif LMC.configuration.distro == distros.GENTOO:
 			systype |= host_types.GENTOO
-			systype ^= host_types.LNX_GEN
+			systype -= host_types.LNX_GEN
 
 		elif LMC.configuration.distro == distros.REDHAT:
 			systype |= host_types.REDHAT
-			systype ^= host_types.LNX_GEN
+			systype -= host_types.LNX_GEN
 
 		elif LMC.configuration.distro == distros.MANDRIVA:
 			systype |= host_types.MANDRIVA
-			systype ^= host_types.LNX_GEN
+			systype -= host_types.LNX_GEN
 
 		assert ltrace('system', '| get_host_type(%s)' % systype)
 
