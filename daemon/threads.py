@@ -414,17 +414,19 @@ class AbstractTimerThread(LicornBasicThread):
 		with self._time_lock:
 			self.__time_elapsed = 0.0
 
-		while self.__time_elapsed < self.__sleep_delay and not self._stop_event.is_set():
+		while self.__time_elapsed < self.__sleep_delay:
 			#print "waiting %.1f < %.1f" % (current_delay, self.delay)
-			time.sleep(0.01)
-			with self._time_lock:
-				self.__time_elapsed += 0.01
+
+			if self._stop_event.is_set():
+				break
+
 			if self._reset_event.is_set():
 				logging.progress('%s: timer reset after %s elapsed.' % (self.name,
 						pyutils.format_time_delta(self.__time_elapsed)))
 				with self._time_lock:
 					self.__time_elapsed = 0.0
 				self._reset_event.clear()
+
 			if self._trigger_event.is_set():
 				with self._time_lock:
 					if self.__trigger_delay is None:
@@ -432,6 +434,10 @@ class AbstractTimerThread(LicornBasicThread):
 					else:
 						self.__time_elapsed = self.__sleep_delay - self.__trigger_delay
 				self._trigger_event.clear()
+
+			time.sleep(0.01)
+			with self._time_lock:
+				self.__time_elapsed += 0.01
 	def trigger_event(self, delay=None):
 		self.__trigger_delay = delay
 		self._trigger_event.set()
@@ -465,8 +471,10 @@ class AbstractTimerThread(LicornBasicThread):
 			# simple timer thread).
 			self.sleep()
 
-		while not self._stop_event.is_set() and	(
-				self.loop or self.current_loop < self.count):
+		while self.loop or self.current_loop < self.count:
+
+			if self._stop_event.is_set():
+				break
 
 			self.run_action_method()
 
