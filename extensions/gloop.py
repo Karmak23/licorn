@@ -43,7 +43,7 @@ class DbusThread(Thread):
 		# Setup the DBus main loop
 		assert ltrace('dbus', '| DbusThread.__init__()')
 		Thread.__init__(self)
-		self.name = 'extensions/Dbus.GobjectLoop'
+		self.name = 'extensions/Gllop.GobjectMainLooper'
 		self.daemon = True
 
 		gobject.threads_init()
