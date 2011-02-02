@@ -1572,12 +1572,10 @@ def test_imports(context):
 		GET + [ 'users', '-l' ],
 		GET + [ 'profiles' ],
 		DEL + [ 'profiles', pname, '--del-users', '--no-archive' ],
-		GET + [ 'users', '-l' ],
-		GET + [ 'profiles' ],
 		DEL + [ 'group', '--empty', '--no-archive', '-v' ],
 		],
 		context=context,
-		descr='''test user import from csv file''', clean_num=4))
+		descr='''test user import from csv file''', clean_num=2))
 
 	uname = 'uprofile2'
 	gname = 'gprofile2'
