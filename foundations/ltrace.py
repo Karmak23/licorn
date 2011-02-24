@@ -75,6 +75,7 @@ trc['volumes']       = 0x000000000040000000000000
 trc['rdiffbackup']   = 0x000000000080000000000000
 trc['squid']         = 0x000000000100000000000000
 trc['powermgmt']     = 0x000000000200000000000000
+trc['gloop']         = 0x000000000400000000000000
 
 
 trc['daemon']        = 0x0000ffff0000000000000000
@@ -117,7 +118,7 @@ def dump_one(obj_to_dump, long_output=False):
 		if long_output:
 			print '%s %s:\n%s' % (
 				str(obj_to_dump.__class__),
-				stylize(ST_NAME, obj_to_dump.__name__),
+				stylize(ST_NAME, obj_to_dump.name),
 				'\n'.join(['%s(%s): %s' % (
 					stylize(ST_ATTR, key),
 					type(getattr(obj_to_dump, key)),
@@ -126,9 +127,8 @@ def dump_one(obj_to_dump, long_output=False):
 		else:
 			print '%s %s: %s' % (
 				str(obj_to_dump.__class__),
-				stylize(ST_NAME, obj_to_dump.__name__),
-				[ key for key \
-					in dir(obj_to_dump)])
+				stylize(ST_NAME, obj_to_dump.name),
+				[ key for key in dir(obj_to_dump)])
 def dump(*args, **kwargs):
 	for arg in args:
 		dump_one(arg)

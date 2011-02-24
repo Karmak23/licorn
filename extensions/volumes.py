@@ -185,7 +185,7 @@ class Volume:
 			stat = os.statvfs(self.mount_point)
 			return (stat.f_bfree * stat.f_bsize / (1024.0*1024.0*768.0),
 					stat.f_blocks * stat.f_bsize / (1024.0*1024.0*768.0))
-		raise VolumeException('not mounted')
+		raise VolumeException(_('%s not mounted') % self.device)
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
 			file at the root of it.
@@ -198,13 +198,13 @@ class Volume:
 		with self.lock:
 			if os.path.exists(self.mount_point + Volume.enabler_file):
 
-				logging.info('volumes: Licorn® usage already enabled on %s.' %
-						stylize(ST_PATH, self.mount_point))
+				logging.info(_('{0}: Licorn® usage already enabled on {1}.').format(
+					stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
 			else:
 				open(self.mount_point + Volume.enabler_file, 'w').write('\n')
 				self.enabled = True
-				logging.notice('volumes: enabled Licorn® usage on %s.' %
-					stylize(ST_PATH, self.mount_point))
+				logging.notice(_('{0}: enabled Licorn® usage on {1}.').format(
+				stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
 	def disable(self, **kwargs):
 		""" Remove the special file at the root of the volume and thus unmark
 			it reserved for Licorn® usage.
@@ -217,11 +217,11 @@ class Volume:
 			if os.path.exists(self.mount_point + Volume.enabler_file):
 				os.unlink(self.mount_point + Volume.enabler_file)
 				self.enabled = False
-				logging.notice('volumes: disabled Licorn® usage on %s.' %
-						stylize(ST_PATH, self.mount_point))
+				logging.notice(_('{0}: disabled Licorn® usage on {1}.').format(
+					stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
 			else:
-				logging.info('volumes: Licorn® usage already disabled on %s.' %
-						stylize(ST_PATH, self.mount_point))
+				logging.info(_(u'{0}: Licorn® usage already disabled on {1}.').format(
+				stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
 	def mount(self, **kwargs):
 		""" Mount a given volume, after having created its mount point
 			directory if needed. This method simply calls the :command:`mount`
@@ -251,8 +251,9 @@ class Volume:
 
 				if not os.path.exists(self.mount_point):
 					os.makedirs(self.mount_point)
-					logging.progress('volumes: created mount point directory %s.' %
-												stylize(ST_PATH, self.mount_point))
+					logging.info(_(u'{0}: created mount point {1}.').format(
+						stylize(ST_NAME, 'volumes'),
+						stylize(ST_PATH, self.mount_point)))
 
 				mount_cmd = [ 'mount', '-t', self.fstype, '-o',
 					'acl,user_xattr,noatime,errors=remount-ro,nodev,suid,exec',
@@ -261,9 +262,11 @@ class Volume:
 				output = process.execute(mount_cmd)[1].strip()
 
 				if output:
-					logging.warning('volumes: ' + output)
+					logging.warning(_(u'{0}: {1}').format(
+									stylize(ST_NAME, 'volumes'), output))
 				else:
-					logging.notice('volumes: mounted device %s at %s.' % (
+					logging.notice(_(u'{0}: mounted device {1} at {2}.').format(
+									stylize(ST_NAME, 'volumes'),
 									stylize(ST_DEVICE, self.device),
 									stylize(ST_PATH, self.mount_point)))
 
@@ -284,17 +287,20 @@ class Volume:
 				output = process.execute(umount_cmd)[1].strip()
 
 				if output:
-					logging.warning('volumes: ' + output)
+					logging.warning(_(u'{0}: {1}').format(
+									stylize(ST_NAME, 'volumes'), output))
 				else:
-					logging.notice('volumes: unmounted device %s from %s.' % (
+					logging.notice(_(u'{0}: unmounted device {1} from {2}.').format(
+									stylize(ST_NAME, 'volumes'),
 									stylize(ST_DEVICE, self.device),
 									stylize(ST_PATH, self.mount_point)))
 
 				old_mount_point = self.mount_point
 				os.rmdir(old_mount_point)
 				self.mount_point = None
-				logging.progress('volumes: removed directory %s.' %
-											stylize(ST_PATH, old_mount_point))
+				logging.info(_(u'{0}: removed directory {1}.').format(
+					stylize(ST_NAME, 'volumes'),
+					stylize(ST_PATH, old_mount_point)))
 class VolumesExtension(Singleton, LicornExtension):
 	""" Handles volumes via :command:`udev`. Do the auto-mount work.
 
@@ -395,10 +401,6 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.threads.udevmonitor.pre_run_method = self.__inhibit_udisks
 			self.threads.udevmonitor.post_run_method = self.__uninhibit_udisks
 		try:
-			logging.info('%s: started %s extension with udev v%s, pyudev v%s.'
-				% (self.name, stylize(ST_SPECIAL, LMC.configuration.app_name),
-					pyudev.udev_version(), pyudev.__version__))
-
 			# get the list of currently connected devices.
 			self.rescan_volumes()
 
@@ -410,7 +412,8 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		except Exception, e:
 			print_exc(e)
-			logging.warning2("%s: not available because %s." % (self.name, e))
+			logging.warning2(_(u'{0}: not available because {1}.').format(
+				stylize(ST_NAME, self.name), e))
 			self.available = False
 
 		assert ltrace(self.name, '< initialize(%s)' % self.available)
@@ -420,6 +423,12 @@ class VolumesExtension(Singleton, LicornExtension):
 		""" Volumes extension is always enabled if available, return always
 			True. """
 		assert ltrace(self.name, '| is_enabled() → True')
+
+		logging.info(_(u'{0}: started extension with pyudev v{2} '
+			'on top of udev v{1}.').format(stylize(ST_NAME, self.name),
+				stylize(ST_UGID, pyudev.udev_version()),
+				stylize(ST_UGID, pyudev.__version__)))
+
 		return True
 	def enable(self):
 		""" We have nothing to do here. Udisks daemon is already inhibited if we
@@ -573,8 +582,9 @@ class VolumesExtension(Singleton, LicornExtension):
 			kernel_device = device.device_node
 
 			if kernel_device in self.volumes.keys():
-				logging.progress('%s: skipped already known volume %s.' % (
-					self.name, self.volumes[kernel_device]))
+				logging.progress(_(u'{0}: skipped already known '
+					'volume {1}.').format(stylize(ST_NAME, self.name),
+						self.volumes[kernel_device]))
 				# see if we got to remount this one now.
 				self.volumes[kernel_device].mount()
 				return
@@ -587,19 +597,20 @@ class VolumesExtension(Singleton, LicornExtension):
 				return
 
 			if 'uuid' not in self.blkid[kernel_device]:
-				logging.progress('%s: skipped unformatted partition %s.' %(
-						self.name, stylize(ST_DEVICE, kernel_device)))
+				logging.progress(_(u'{0}: skipped unformatted '
+					'partition {1}.').format(stylize(ST_NAME, self.name),
+						stylize(ST_DEVICE, kernel_device)))
 				return
 
 			if self.__system_partition(kernel_device):
-				logging.progress('%s: skipped system partition %s.' %(
-						self.name, stylize(ST_DEVICE, kernel_device)))
+				logging.progress(_(u'{0}: skipped system partition '
+					'{1}.').format(stylize(ST_NAME, self.name),
+						stylize(ST_DEVICE, kernel_device)))
 				return
 
-			if self.blkid[kernel_device]['type'] \
-											not in self.accepted_fs:
-				logging.progress('%s: skipped partition %s (excluded %s '
-					'filesystem).' % (self.name,
+			if self.blkid[kernel_device]['type'] not in self.accepted_fs:
+				logging.progress(_(u'{0}: skipped partition {1} (excluded {2} '
+					'filesystem).').format(stylize(ST_NAME, self.name),
 						stylize(ST_DEVICE, kernel_device),
 						stylize(ST_ATTR, self.blkid[kernel_device]['type'])))
 				return
@@ -620,7 +631,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		vol.mount()
 
-		logging.info('%s: added %s.' % ( self.name, vol))
+		logging.info(_(u'{0}: added {1}.').format(stylize(ST_NAME, self.name), vol))
 	def del_volume_from_device(self, device=None, by_string=None):
 		""" Remove a volume if it exists.
 
@@ -651,7 +662,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 				del self.volumes[kernel_device]
 
-				logging.info('%s: removed %s.' % (self.name, volstr))
+				logging.info(_(u'{0}: removed {1}.').format(stylize(ST_NAME, self.name), volstr))
 	def volumes_call(self, volumes, method_name, **kwargs):
 		""" Generic method for action on volumes.
 
@@ -689,8 +700,9 @@ class VolumesExtension(Singleton, LicornExtension):
 					getattr(by_mntpnt[volume], method_name)(**kwargs)
 
 				else:
-					logging.warning2('%s: skipped non existing device or '
-						'mount_point %s.' % (self.name, volume))
+					logging.warning2(_(u'{0}: skipped non existing device or '
+						'mount_point {1}.').format(stylize(ST_NAME, self.name),
+							volume))
 	def enable_volumes(self, volumes):
 		""" try to enable the given volumes.
 
@@ -759,15 +771,16 @@ class VolumesExtension(Singleton, LicornExtension):
 		def stat_fs_to_str(volume):
 			free, total = volume.stats()
 			#print '>> path', path, 'stat', stat, 'free', free, 'total', total
-			return ', %.2fGb/%.2fGb free (%.2f%%)' % (
-				free, total, (free / total) * 100.0
-			)
+			return _(u', {0:.2}Gb/{1:.2}Gb free ({2:.2}%)').format(
+				free, total, (free / total) * 100.0)
+
 		return '\n'.join([ '%s%s' % (
 			stylize(ST_ENABLED if self.volumes[volkey].enabled
 				else ST_DISABLED, volume.device),
-			' on %s%s' % (stylize(ST_PATH, volume.mount_point),
+			_(u' on {0}{1}').format(
+				stylize(ST_PATH, volume.mount_point),
 				stat_fs_to_str(volume))
-					if volume.mount_point else ' not mounted',
+					if volume.mount_point else _(u' not mounted'),
 			) for volkey, volume in sorted(self.volumes.items()) ]) + \
 				'\n' if len(self.volumes) > 0 else ''
 	def keys(self):

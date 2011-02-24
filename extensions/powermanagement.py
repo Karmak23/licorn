@@ -22,7 +22,7 @@ from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 from licorn.interfaces.wmi     import WMIObject
 
-from licorn.daemon             import priorities, service_enqueue
+from licorn.daemon             import priorities
 
 class PowermanagementException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -56,7 +56,7 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 			self.available = True
 
 		else:
-			logging.warning2('%s: not available because yet to be written.' % self.name)
+			logging.warning2(_(u'%s: extension not available because yet to be written.') % stylize(ST_NAME, self.name))
 
 		assert ltrace(self.name, '< initialize(%s)' % self.available)
 		return self.available

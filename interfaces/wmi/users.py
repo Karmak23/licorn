@@ -2,6 +2,7 @@
 
 import os, time
 from traceback import print_exc
+from operator  import attrgetter
 
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
@@ -29,11 +30,6 @@ groups_filters_lists_ids = (
 rewind = _('''<br /><br />Go back with your browser,'''
 	''' double-check data and validate the web-form.''')
 successfull_redirect = '/users/list'
-
-# private functions.
-
-protected_user  = LMC.users._wmi_protected_user
-protected_group = LMC.groups._wmi_protected_group
 
 def ctxtnav(active=True):
 
@@ -97,7 +93,7 @@ def export(uri, http_user, type="", **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 	else:
-		LMC.users.Select(filters.STANDARD)
+		LMC.users.select(filters.STANDARD)
 
 		if type == "CSV":
 			data = LMC.users.ExportCSV()
@@ -110,11 +106,14 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 
 	title = _("Remove user account %s") % login
 
-	if protected_user(login):
+	user = LMC.users.by_login(login)
+
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	if login == http_user or login in \
-			LMC.groups.all_members(name=LMC.configuration.defaults.admin_group):
+			LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members:
 		return w.fool_proof_protection_error( _('Did you <em>really</em> think '
 			'the system could have allowed you to delete your own account or '
 			'an admin account? I don\'t.'), title)
@@ -123,7 +122,7 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 
 	if not sure:
 		data += w.question(
-			_("Are you sure you want to remove account <strong>%s</strong>?") \
+			_("Are you sure you want to remove account <strong>%s</strong>?")
 			% login,
 			_('''User's <strong>personnal data</strong> (his/her HOME dir) '''
 			'''will be <strong>archived</strong> in directory <code>%s</code>'''
@@ -132,9 +131,9 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 			'''can decide to permanently remove it.''') % (
 				LMC.configuration.home_archive_dir,
 				LMC.configuration.defaults.admin_group),
-			yes_values   = \
+			yes_values   =
 				[ _("Remove >>"), "/users/delete/%s/sure" % login, _("R") ],
-			no_values    = \
+			no_values    =
 				[ _("<< Cancel"),   "/users/list",                 _("C") ],
 			form_options = w.checkbox("no_archive", "True",
 				_("Definitely remove account data (no archiving)."),
@@ -143,49 +142,46 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-		# we are sure, do it !
-		command = [ 'sudo', 'del', 'user', '--quiet', '--no-colors',
-			'--login', login ]
 
-		if no_archive:
-			command.extend(['--no-archive'])
+		try:
+			LMC.users.del_User(user, no_archive=True if no_archive else False)
 
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to remove account <strong>%s</strong>!''') % login)
+		finally:
+			return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def unlock(uri, http_user, login, **kwargs):
 	"""unlock a user account password."""
 
+	user  = LMC.users.by_login(login)
 	title = _("Unlock account %s") % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	if LMC.users.is_system_login(login):
+	if user.is_system:
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			w.error(_("Failed to unlock account"),
 			[ _("alter system account.") ],
 			_("insufficient permission to perform operation.")) \
 			+ w.page_body_end()))
 
-	command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
-		login, "--unlock" ]
-
-	return w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_("Failed to unlock account <strong>%s</strong>!") % login)
+	try:
+		user.locked = False
+	finally:
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 	"""lock a user account password."""
 
+	user  = LMC.users.by_login(login)
 	title = _("Lock account %s") % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	if login == http_user or login in \
-			LMC.groups.all_members(name=LMC.configuration.defaults.admin_group):
+			LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members:
 		return w.fool_proof_protection_error( _("I don't think you really "
 			"want to lock you own account or any admin account, pal. And I "
 			"won't let you do it." ),
@@ -200,7 +196,7 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 
 		# TODO: move this in the extension
 		if 'openssh' in LMC.extensions.keys() :
-			if login in LMC.groups.all_members(name=LMC.extensions.openssh.group):
+			if login in LMC.groups.by_name(LMC.extensions.openssh.group).all_members:
 				description += _('''<br /><br />
 					But this will not block incoming %s network connections, '''
 					'''if the user uses %s %s or %s public/private keys. To '''
@@ -218,36 +214,37 @@ def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 			form_options = None
 
 		data += w.question(
-			_("Are you sure you want to lock account <strong>%s</strong>?") % \
+			_("Are you sure you want to lock account <strong>%s</strong>?") %
 			login,
 			description,
-			yes_values   = \
+			yes_values   =
 				[ _("Lock >>"), "/users/lock/%s/sure" % login, _("L") ],
-			no_values    = \
+			no_values    =
 				[ _("<< Cancel"),     "/users/list",           _("C") ],
 			form_options = form_options)
 
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
-			login, "--lock" ]
 
-		if 'openssh' in LMC.extensions.keys() and remove_remotessh:
-			command.extend(['--del-groups', LMC.extensions.openssh.group])
+		try:
+			user.locked = True
 
-		data += w.page_body_end()
+			if 'openssh' in LMC.extensions.keys() and remove_remotessh:
+				LMC.groups.by_name('remotessh').del_Users([user])
 
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_("Failed to lock account <strong>%s</strong>!") % login)
+		except Exception, e:
+			print_exc()
+
+		finally:
+			return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
 
+	user  = LMC.users.by_login(login)
 	title = _("Reapply skel to user account %s") % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	if apply_skel is None:
@@ -276,15 +273,10 @@ def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors", "--login",
-			login, '--apply-skel', apply_skel ]
-
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to apply skel <strong>%s</strong> on user
-			account <strong>%s</strong>!''') % (os.path.basename(apply_skel),
-				login))
+		try:
+			user.apply_skel(apply_skel)
+		finally:
+			return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def new(uri, http_user, **kwargs):
 	"""Generate a form to create a new user on the system."""
 
@@ -304,26 +296,28 @@ def new(uri, http_user, **kwargs):
 %s
 				</td>
 			</tr>
-			""" % (_("This user is a"), w.select('profile',  p.keys(),
-				func = lambda x: p[x]['name']))
+			""" % (_("This user is a"), w.select('profile',  p.names))
 	def gecos_input():
 		return """
 			<tr>
 				<td><strong>%s</strong></td>
 				<td class="right">%s</td>
 			</tr>
-			""" % (_("Full name"), w.input('gecos', "", size = 30,
-					maxlength = 64, accesskey = 'N'))
+			""" % (_('Full name'), w.input('gecos', '', size=30,
+					maxlength=64, accesskey='N'))
 	def shell_input():
-		return w.select('loginShell',  LMC.configuration.users.shells,
-			current=LMC.configuration.users.default_shell, func=os.path.basename)
+		return w.select('loginShell',
+						LMC.configuration.users.shells,
+						current=LMC.configuration.users.default_shell,
+						func=os.path.basename)
 
 	dbl_lists = {}
-	for filter, titles, id in groups_filters_lists_ids:
+	for tfilter, titles, tid in groups_filters_lists_ids:
 		dest   = []
-		source = [ g[gid]['name'] for gid in LMC.groups.Select(filter) ]
-		source.sort()
-		dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
+		dbl_lists[tfilter] = w.doubleListBox(titles, tid,
+									sorted(g.name
+										for g in LMC.groups.select(tfilter)),
+									dest)
 
 	form_name = "user_edit"
 
@@ -420,73 +414,59 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 			data + w.error(_("Password must be at least %d characters long!%s")\
 				% (LMC.configuration.users.min_passwd_size, rewind))))
 
-	if loginShell == None:
-		loginShell = LMC.configuration.users.default_shell
-
-	command = [ "sudo", "add", "user", '--quiet', '--no-colors',
-		'--password', password ]
-
-	for value, argument in (
-		(loginShell, '--shell'),
-		(profile, '--profile'),
-		(gecos, '--gecos')):
-		if value is not None and value != '':
-			command.extend([ argument, value ])
-
-	add_groups = ','.join(w.merge_multi_select(
-							standard_groups_dest,
-							privileged_groups_dest,
-							responsible_groups_dest,
-							guest_groups_dest))
-
-	if add_groups != '':
-		command.extend([ '--add-to-groups', add_groups ])
-
-	if login != '':
-		command.extend(['--login', login])
-	elif gecos != '':
-		command.extend([ '--login',
-			hlstr.validate_name(gecos).replace('_', '.').rstrip('.') ])
-	else:
+	if gecos == '' and login == '':
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.error(_("GECOS and login can't be both empty!%s") %
 				rewind)))
 
-	return w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to create account <strong>%s</strong>!''') % login)
+	add_groups = w.merge_multi_select(
+							standard_groups_dest,
+							privileged_groups_dest,
+							responsible_groups_dest,
+							guest_groups_dest)
+	try:
+		LMC.users.add_User(
+						login=login if login != '' else None,
+						gecos=gecos if gecos != '' else None,
+						password=password,
+						in_groups=[LMC.groups.by_name(g)
+											for g in add_groups],
+						shell=LMC.configuration.users.default_shell
+										if loginShell is None else loginShell,
+						profile=LMC.profiles.by_name(profile))
+	except Exception, e:
+		print_exc()
+	finally:
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def edit(uri, http_user, login, **kwargs):
 	"""Edit an user account, based on login."""
 
+	user  = LMC.users.by_login(login)
 	title = _('Edit account %s') % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		user = LMC.users.users[LMC.users.login_to_uid(login)]
-
-		try:
-			profile = \
-				LMC.profiles.profiles[
-					LMC.groups.groups[user['gidNumber']]['name']
-					]['name']
-		except KeyError:
-			profile = _("Standard account")
+		profile = _("Standard account") \
+						if user.primaryGroup.profile is None \
+						else user.primaryGroup.profile.name
 
 		dbl_lists = {}
-		for filter, titles, id in groups_filters_lists_ids:
-			dest   = list(user['groups'][:])
-			source = [ LMC.groups.groups[gid]['name']
-				for gid in LMC.groups.Select(filter) ]
-			for current in dest[:]:
-				try: source.remove(current)
-				except ValueError: dest.remove(current)
-			dest.sort()
-			source.sort()
-			dbl_lists[filter] = w.doubleListBox(titles, id, source, dest)
+
+		for gfilter, titles, fid in groups_filters_lists_ids:
+			dest   = [g.name for g in user.groups]
+			source = [g.name for g in LMC.groups.select(gfilter)]
+
+			# get a copy of dest, else the loop will fail in the middle
+			# if we are changing the list "live".
+			for a_group in dest[:]:
+				try: source.remove(a_group)
+				except ValueError: dest.remove(a_group)
+
+			dbl_lists[gfilter] = w.doubleListBox(titles, fid, sorted(source), sorted(dest))
 
 		form_name = "user_edit_form"
 
@@ -547,26 +527,25 @@ def edit(uri, http_user, login, **kwargs):
 </div>
 		''' % (
 			form_name, form_name, login,
-			_("<strong>UID</strong> (fixed)"), user['uidNumber'],
+			_("<strong>UID</strong> (fixed)"), user.uidNumber,
 			_("<strong>Identifier</strong> (fixed)"), login,
 			_("<strong>Profile</strong> (fixed)"), profile,
 			_("<strong>Full name</strong>"),
-			w.input('gecos', user['gecos'], size = 30, maxlength = 64,
-				accesskey = 'N'),
+			w.input('gecos', user.gecos, size=30, maxlength=64, accesskey='N'),
 			_('''Password must be at least %d characters long. You can use '''
 			'''all alphabet characters, numbers, special characters and '''
-			'''punctuation signs, except '?!'.''') % \
+			'''punctuation signs, except '?!'.''') %
 				LMC.configuration.users.min_passwd_size,
-			_("New password"), _("(%d chars. min.)") % \
+			_("New password"), _("(%d chars. min.)") %
 				LMC.configuration.users.min_passwd_size,
-			w.input('password', "", size = 30, maxlength = 64, accesskey = 'P',
-				password = True),
+			w.input('password', '', size=30, maxlength=64, accesskey='P',
+				password=True),
 			_("password confirmation."),
-			w.input('password_confirm', "", size = 30, maxlength = 64,
-				password = True),
+			w.input('password_confirm', '', size=30, maxlength=64,
+				password=True),
 			_("<strong>Shell</strong><br />(Unix command line interpreter)"),
 			w.select('loginShell',  LMC.configuration.users.shells,
-			user['loginShell'], func = os.path.basename),
+			user.loginShell, func = os.path.basename),
 			_('Groups'), dbl_lists[filters.STANDARD],
 			_('Privileges'), dbl_lists[filters.PRIVILEGED],
 			_('Responsibilities'), dbl_lists[filters.RESPONSIBLE],
@@ -584,22 +563,18 @@ def edit(uri, http_user, login, **kwargs):
 def view(uri, http_user, login, **kwargs):
 	""" View a user account parameters, based on login."""
 
+	user  = LMC.users.by_login(login)
 	title = _('View account %s') % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		user = LMC.users.users[LMC.users.login_to_uid(login)]
-
-		try:
-			profile = LMC.profiles.profiles[
-					LMC.groups.groups[user['gidNumber']]['name']
-					]['name']
-		except KeyError:
-			profile = _("Standard account")
+		profile = _("Standard account") \
+						if user.primaryGroup.profile is None \
+						else user.primaryGroup.profile.name
 
 		resps     = []
 		guests    = []
@@ -607,14 +582,14 @@ def view(uri, http_user, login, **kwargs):
 		privs     = []
 		sysgroups = []
 
-		for group in user['groups']:
-			if group.startswith(LMC.configuration.groups.resp_prefix):
+		for group in user.groups:
+			if group.is_responsible:
 				resps.append(group)
-			elif group.startswith(LMC.configuration.groups.guest_prefix):
+			elif group.is_guest:
 				guests.append(group)
-			elif LMC.groups.is_standard_group(group):
+			elif group.is_standard:
 				stdgroups.append(group)
-			elif LMC.groups.is_privilege(group):
+			elif group.is_privilege:
 				privs.append(group)
 			else:
 				sysgroups.append(group)
@@ -626,23 +601,19 @@ def view(uri, http_user, login, **kwargs):
 								]
 
 		def html_build_group(group):
-			g   = LMC.groups[LMC.groups.name_to_gid(group)]
-			gid = g['gidNumber']
 			return '''<tr>
 	<td>
-		<a href="/groups/view/%s">%s&nbsp;(%s)</a>
+		<a href="/groups/view/{0}">{0}&nbsp;({1})</a>
 		<br />
-		%s
+		{2}
 	</td>
-	<td>%s</td>
-	</tr>''' % (
-				group, group, gid, g['description'],
-				 '\n'.join([ wmi_meth(gid=gid,
-									name=group,
-								system=LMC.groups.is_system_gid(g['gidNumber']),
-								templates=(
-									'%s<br/>%s', '&nbsp;'))
-							for wmi_meth in exts_wmi_group_meths ]))
+	<td>{3}</td>
+	</tr>'''.format(
+				group.name,
+				group.gidNumber,
+				group.description,
+				 '\n'.join(wmi_meth(group, templates=('%s<br/>%s', '&nbsp;'))
+							for wmi_meth in exts_wmi_group_meths))
 
 		colspan = 1 + len(exts_wmi_group_meths)
 
@@ -655,7 +626,7 @@ def view(uri, http_user, login, **kwargs):
 					<tr>
 						<td><strong>{uid_label}</strong><br />
 						{immutable_label}</td>
-						<td class="not_modifiable">{user[uidNumber]}</td>
+						<td class="not_modifiable">{user.uidNumber}</td>
 					</tr>
 					<tr>
 						<td><strong>{login_label}</strong><br />
@@ -664,7 +635,7 @@ def view(uri, http_user, login, **kwargs):
 					</tr>
 					<tr>
 						<td><strong>{gecos_label}</strong></td>
-						<td class="not_modifiable">{user[gecos]}</td>
+						<td class="not_modifiable">{user.gecos}</td>
 					</tr>
 					{extensions_data}
 					<tr class="group_listing">
@@ -709,24 +680,23 @@ def view(uri, http_user, login, **kwargs):
 
 				user=user, login=login,
 
-				extensions_data='\n'.join(['<tr><td><strong>%s</strong></td>'
+				extensions_data='\n'.join('<tr><td><strong>%s</strong></td>'
 					'<td class="not_modifiable">%s</td></tr>\n'
-						% ext._wmi_user_data(uid=user['uidNumber'], login=login,
-							system=LMC.users.is_system_uid(user['uidNumber']))
+						% ext._wmi_user_data(user)
 							for ext in LMC.extensions
 								if 'users' in ext.controllers_compat
-									and hasattr(ext, '_wmi_user_data')]),
+									and hasattr(ext, '_wmi_user_data')),
 
-				resp_group_data='\n'.join([html_build_group(group)
-														for group in resps]),
-				std_group_data='\n'.join([html_build_group(group)
-													for group in stdgroups]),
-				guest_group_data='\n'.join([html_build_group(group)
-														for group in guests]),
-				priv_group_data='\n'.join([html_build_group(group)
-														for group in privs]),
-				sys_group_data='\n'.join([html_build_group(group)
-													for group in sysgroups]),
+				resp_group_data='\n'.join(html_build_group(group)
+														for group in resps),
+				std_group_data='\n'.join(html_build_group(group)
+													for group in stdgroups),
+				guest_group_data='\n'.join(html_build_group(group)
+														for group in guests),
+				priv_group_data='\n'.join(html_build_group(group)
+														for group in privs),
+				sys_group_data='\n'.join(html_build_group(group)
+													for group in sysgroups),
 
 				back_button=w.button(_('<< Go back'), "/users/list",
 														accesskey=_('B')),
@@ -749,9 +719,10 @@ def record(uri, http_user, login, loginShell=None, password="",
 	**kwargs):
 	"""Record user account changes."""
 
+	user  = LMC.users.by_login(login)
 	title = _("Modification of account %s") % login
 
-	if protected_user(login):
+	if user._wmi_protected():
 		return w.forgery_error(title)
 
 	# protect against URL forgery
@@ -759,13 +730,13 @@ def record(uri, http_user, login, loginShell=None, password="",
 			standard_groups_source, standard_groups_dest,
 			responsible_groups_source, responsible_groups_dest,
 			guest_groups_source, guest_groups_dest):
-		print '>>', group_list
+
 		if hasattr(group_list, '__iter__'):
 			for group in group_list:
-				if protected_group(group, complete=False):
+				if LMC.groups.by_name(group)._wmi_protected(complete=False):
 					return w.forgery_error(title)
 		else:
-			if protected_group(group_list, complete=False):
+			if LMC.groups.by_name(group_list)._wmi_protected(complete=False):
 				return w.forgery_error(title)
 
 	wmi_group = LMC.configuration.licornd.wmi.group
@@ -784,48 +755,52 @@ def record(uri, http_user, login, loginShell=None, password="",
 			'I won\'t allow you to do that.').format(
 				wmi_group=LMC.configuration.licorn.wmi.group), title)
 
-	if loginShell is None:
-		loginShell = LMC.configuration.users.default_shell
-
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, True)
-
-	command = [ "sudo", "mod", "user", '--quiet', "--no-colors", "--login",
-		login, "--shell", loginShell ]
-
-	if password != "":
+	if password != '':
 		if password != password_confirm:
 			return (w.HTTP_TYPE_TEXT, w.page(title,
 				data + w.error(_("Passwords do not match!%s") % rewind)))
+
 		if len(password) < LMC.configuration.users.min_passwd_size:
 			return (w.HTTP_TYPE_TEXT, w.page(title, data + w.error(
-				_("The password --%s-- must be at least %d characters long!%s")\
+				_("The password --%s-- must be at least %d characters long!%s")
 				% (password, LMC.configuration.users.min_passwd_size, rewind))))
 
-		command.extend([ '--password', password ])
+		user.userPassword = password
 
-	command.extend( [ "--gecos", gecos ] )
-
-	add_groups = ','.join(w.merge_multi_select(
+	add_groups = sorted(w.merge_multi_select(
 								standard_groups_dest,
 								privileged_groups_dest,
 								responsible_groups_dest,
 								guest_groups_dest))
-	del_groups = ','.join(w.merge_multi_select(
+
+	del_groups = sorted(w.merge_multi_select(
 								standard_groups_source,
 								privileged_groups_source,
 								responsible_groups_source,
 								guest_groups_source))
 
-	if add_groups != "":
-		command.extend([ '--add-groups', add_groups ])
+	current_groups = sorted(g.name for g in user.groups)
 
-	if del_groups != "":
-		command.extend(['--del-groups', del_groups ])
+	try:
+		if loginShell not in (None, '') and loginShell != user.loginShell:
+			user.loginShell = loginShell
 
-	return w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to modify one or more parameters of account
-		 <strong>%s</strong>!''') % login)
+		if gecos not in (None, '') and gecos != user.gecos:
+			user.gecos = unicode(gecos)
+
+		# we need to make the deletion before the additions, else symlinks
+		# are not created as expected.
+
+		for group_name in del_groups:
+			if group_name in current_groups:
+				LMC.groups.by_name(group_name).del_Users([ user ], batch=True)
+
+		for group_name in add_groups:
+			if group_name not in current_groups:
+				LMC.groups.by_name(group_name).add_Users([ user ], batch=True)
+
+	finally:
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def main(uri, http_user, sort="login", order="asc", **kwargs):
 	""" display all users in a nice HTML page. """
 	start = time.time()
@@ -835,26 +810,24 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 	LMC.profiles.acquire()
 
 	try:
-		u = LMC.users
-		g = LMC.groups
-		p = LMC.profiles
+		users    = LMC.users
+		groups   = LMC.groups
+		profiles = LMC.profiles
 
-		pri_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.PRIVILEGED) ]
-
-		rsp_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.RESPONSIBLE) ]
-
-		gst_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.GUEST) ]
-
-		std_grps = [ g[gid]['name'] for gid in LMC.groups.Select(filters.STANDARD) ]
+		pri_grps = [ g.name for g in groups.select(filters.PRIVILEGED) ]
+		rsp_grps = [ g.name for g in groups.select(filters.RESPONSIBLE) ]
+		gst_grps = [ g.name for g in groups.select(filters.GUEST) ]
+		std_grps = [ g.name for g in groups.select(filters.STANDARD) ]
 
 		accounts = {}
 		ordered  = {}
 		totals   = {}
 		prof     = {}
 
-		for profile in p.keys():
-			prof[LMC.groups.name_to_gid(profile)] = p[profile]
-			totals[p[profile]['name']] = 0
+		for profile in profiles:
+			prof[profile.gidNumber] = profile
+			totals[profile.name] = 0
+
 		totals[_('Standard account')] = 0
 
 		title = _("User accounts")
@@ -882,9 +855,10 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 					_("Click to sort on this column."), sortname)
 		data += '		</tr>\n'
 
-		def html_build_compact(index, accounts=accounts):
-			uid   = ordered[index]
-			login = u[uid]['login']
+		def html_build_compact(user):
+			uid   = user.uidNumber
+			login = user.login
+
 			edit  = (_('''<em>Click to edit current user account parameters:</em>
 					<br />
 					UID: <strong>%d</strong><br />
@@ -894,12 +868,12 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 					Responsabilities:&#160;<strong>%s</strong><br /><br />
 					Invitations:&#160;<strong>%s</strong><br /><br />
 					''') % (
-					uid, u[uid]['gidNumber'], g[u[uid]['gidNumber']]['name'],
-					", ".join(filter(lambda x: x in std_grps, u[uid]['groups'])),
-					", ".join(filter(lambda x: x in pri_grps, u[uid]['groups'])),
-					", ".join(filter(lambda x: x in rsp_grps, u[uid]['groups'])),
+					uid, user.gidNumber, user.primaryGroup.name,
+					", ".join(filter(lambda x: x in std_grps, user.groups)),
+					", ".join(filter(lambda x: x in pri_grps, user.groups)),
+					", ".join(filter(lambda x: x in rsp_grps, user.groups)),
 					", ".join(filter(
-					lambda x: x in gst_grps, u[uid]['groups'])))).replace(
+					lambda x: x in gst_grps, user.groups)))).replace(
 						'<','&lt;').replace('>','&gt;')
 
 			html_data = '''
@@ -920,11 +894,11 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 					_('''View the user account details, its parameters,
 					memberships, responsibilities and invitations.
 					From there you can print all user-related informations.'''),
-				login, edit, u[uid]['gecos'],
+				login, edit, user.gecos,
 				login, edit, login,
 				accounts[uid]['profile_name'])
 
-			if u[uid]['locked']:
+			if user.locked:
 				html_data += '''
 			<td class="user_action_center">
 				<a href="/users/unlock/%s" title="%s">
@@ -960,9 +934,9 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 			return html_data
 
 
-		for uid in LMC.users.Select(filters.STANDARD):
-			user  = u[uid]
-			login = user['login']
+		for user in users.select(filters.STANDARD):
+			login = user.login
+			uid   = user.uid
 
 			# we add the login to gecosValue and lockedValue to be sure to obtain
 			# unique values. This prevents problems with empty or non-unique GECOS
@@ -970,27 +944,28 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 			# lost because sorting must be done on unique values).
 			accounts[uid] = {
 				'login'  : login,
-				'gecos'  : user['gecos'] + login ,
-				'locked' : str(user['locked']) + login
+				'gecos'  : user.gecos + login,
+				'locked' : str(user.locked) + login
 				}
-			try:
-				p = prof[user['gidNumber']]['name']
-			except KeyError:
-				p = _("Standard account")
 
-			accounts[uid]['profile']      = "%s %s" % ( p, login )
+			p = _("Standard account") if user.primaryGroup.profile is None \
+											else user.primaryGroup.profile.name
+
+			accounts[uid]['profile']      = '%s%s' % (p, login)
 			accounts[uid]['profile_name'] = p
 			totals[p] += 1
 
 			# index on the column choosen for sorting, and keep trace of the uid
 			# to find account data back after ordering.
-			ordered[hlstr.validate_name(accounts[uid][sort])] = uid
+			ordered[hlstr.validate_name(accounts[uid][sort])] = user
 
 		memberkeys = ordered.keys()
 		memberkeys.sort()
-		if order == "desc": memberkeys.reverse()
 
-		data += ''.join(map(html_build_compact, memberkeys))
+		if order == "desc":
+			memberkeys.reverse()
+
+		data += ''.join(html_build_compact(ordered[key]) for key in memberkeys)
 
 		def print_totals(totals):
 			output = ""
@@ -1019,6 +994,7 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 
 		return (w.HTTP_TYPE_TEXT, w.page(title,
 			data + w.page_body_end(w.total_time(start, time.time()))))
+
 	finally:
 		LMC.profiles.release()
 		LMC.groups.release()

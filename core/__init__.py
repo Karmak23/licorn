@@ -58,9 +58,19 @@ class LicornMasterController(MixedDictObject):
 	#: :class:`LicornMasterController` instance.
 	_licorn_protected_attrs = (
 			MixedDictObject._licorn_protected_attrs
-			+ ['backends', 'extensions', 'locks']
+			+ [ 'locks', 'licornd' ]
 		)
-	def __init__(self, master=True):
+	@property
+	def licornd(self):
+		return self.__licornd
+	@licornd.setter
+	def licornd(self, licornd):
+
+		#if not isinstance(licornd, LicornDaemon):
+		#	raise exceptions.LicornRuntimeError(_(u'Cannot anything other than '
+		#		'the daemon here!'))
+		self.__licornd = licornd
+	def __init__(self, licornd=None, master=True):
 		""" Default name of :class:`LicornMasterController` is "LMC" because it
 			is meant to be only one LMC.
 
@@ -70,14 +80,17 @@ class LicornMasterController(MixedDictObject):
 		"""
 		if master:
 			MixedDictObject.__init__(self, 'LMC')
+			self.__licornd = licornd
 		else:
 			MixedDictObject.__init__(self, 'HelperLMC')
 
 		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__),
 																	self.name))
 
-		self.master = master
+		self._master = master
 
+		# FIXME: get rid of these locks, they are useless now that everything
+		# is on the daemon.
 		self.locks = MixedDictObject('locks')
 
 		self._ServerLMC = None
@@ -105,7 +118,8 @@ class LicornMasterController(MixedDictObject):
 			minimal and LicornMasterController._init_conf_minimal):
 			return
 
-		if self.master:
+		if self._master:
+
 			try:
 				from configuration import LicornConfiguration
 				self.configuration = LicornConfiguration(
@@ -200,7 +214,7 @@ class LicornMasterController(MixedDictObject):
 
 		assert LicornMasterController._init_conf_full
 
-		if self.master:
+		if self._master:
 
 			# Initialize backends prior to controllers, because
 			# controllers need backends to populate themselves.
@@ -277,9 +291,6 @@ class LicornMasterController(MixedDictObject):
 
 		from privileges import PrivilegesWhiteList
 
-		self.locks.privileges = MixedDictObject()
-		self.locks.privileges.giant_lock = RLock()
-
 		self.privileges = PrivilegesWhiteList()
 		self.privileges.load()
 
@@ -292,15 +303,6 @@ class LicornMasterController(MixedDictObject):
 		from profiles import ProfilesController
 		from keywords import KeywordsController
 		from machines import MachinesController
-
-		self.locks.profiles = MixedDictObject()
-		self.locks.profiles.giant_lock = RLock()
-
-		self.locks.machines = MixedDictObject()
-		self.locks.machines.giant_lock = RLock()
-
-		self.locks.keywords = MixedDictObject()
-		self.locks.keywords.giant_lock = RLock()
 
 		self.profiles = ProfilesController()
 		self.profiles.load()
@@ -364,7 +366,7 @@ class LicornMasterController(MixedDictObject):
 				self._localconfig.server_main_address,
 				self._localconfig.licornd.pyro.port)
 
-			if not self.master:
+			if not self._master:
 				# remove current values of controllers, they are pointing to LMC.
 				self.configuration = None
 				self.backends = None
@@ -439,7 +441,7 @@ class LicornMasterController(MixedDictObject):
 
 		# connection is OK, let's get all other objects connected, and pull
 		# them back to the calling process.
-		self.machines = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
+		#self.machines = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
 		self.system   = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
 		self.rwi      = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
 

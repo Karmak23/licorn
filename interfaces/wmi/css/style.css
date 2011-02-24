@@ -701,6 +701,13 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 .load_avg_level5 {
 	background-color: #CB4B4B;
 }
+.load_avg_level6 {
+	background-color: #ff4b4b;
+}
+.load_avg_level7 {
+	background-color: #ff0000;
+}
+
 
 .backups_important {
 	text-align: center;

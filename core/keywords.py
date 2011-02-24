@@ -133,7 +133,8 @@ class KeywordsController(Singleton, LockedController):
 	def AddKeyword(self, name = None, parent = "", description = ""):
 		""" Add a new keyword on the system, provided some checks are OK. """
 		if name is None:
-			raise exceptions.BadArgumentError(logging.SYSK_SPECIFY_KEYWORD)
+			raise exceptions.BadArgumentError(
+						_(u'You must specify a keyword name.'))
 
 		if name in self.keywords.keys():
 			raise exceptions.AlreadyExistsException(
@@ -146,13 +147,15 @@ class KeywordsController(Singleton, LockedController):
 
 		if not hlstr.cregex['keyword'].match(name):
 			raise exceptions.BadArgumentError(
-				logging.SYSK_MALFORMED_KEYWORD % (name,
+				_(u'Malformed keyword name "%s", must match /%s/i.').format(
+					stylize(ST_NAME, name),
 					stylize(ST_REGEX, hlstr.regex['keyword'])))
 
 		if not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError(logging.SYSK_MALFORMED_DESCR % (
-				description, stylize(ST_REGEX,
-					hlstr.regex['description'])))
+			raise exceptions.BadArgumentError(_(u'Malformed keyword '
+				'description "%s", must match /%s/i.').format(
+				stylize(ST_COMMENT, description),
+				stylize(ST_REGEX, hlstr.regex['description'])))
 
 		self.keywords[name] = {
 			'name': name,

@@ -37,47 +37,74 @@ class TestsuiteRunnerThread(GenericQueueWorkerThread):
 class Testsuite:
 	verbose = False
 	def __init__(self, name, directory_scenarii,
-		clean_func, state_file, cmd_display_func):
-		self.name=name
-		self.list_scenario = []
-		self.selected_scenario = []
-		self.directory_scenarii=directory_scenarii
-		self.clean_system=clean_func
-		self.cmd_display_func = cmd_display_func
-		self.state_file=state_file
+			clean_func, state_file, cmd_display_func):
+		self.name               = name
+		self.list_scenario      = []
+		self.selected_scenario  = []
+		self.directory_scenarii = directory_scenarii
+		self.clean_system       = clean_func
+		self.cmd_display_func   = cmd_display_func
+		self.state_file         = state_file
 		# save the current context to restaure it at the end of the testsuite
-		backends =  [ line for line in process.execute(['get', 'config',
+		backends = [ line for line in process.execute(['get', 'config',
 					'backends'])[0].split('\n') if 'U' in line ]
 		reduce(lambda x,y: x if y == '' else y, backends)
-		self.user_context = backends[0].split('(')[0]
-		self.current_context=self.user_context
+		self.user_context    = backends[0].split('(')[0]
+		self.current_context = self.user_context
 
-		self.to_run = PriorityQueue()
-		self.failed = PriorityQueue()
-		self.passed = []
+		self.to_run     = PriorityQueue()
+		self.failed     = PriorityQueue()
+		self.passed     = []
 		self.best_state = 1
-		self.working = Event()
+		self.working    = Event()
 
 		# used to modify the best state behaviour when running one one test
 		# or the whole TS.
 		self.best_state_only_one = 0
 
 		# used to build initial testsuite data
-		self.batch_run = False
+		self.batch_run   = False
+		self.interactive = False
 	def restore_user_context(self):
-		""" restore user active backend before testsuite runs """
+		""" Restore user active backend before testsuite runs. """
+
 		if self.user_context == 'shadow' and self.current_context != 'shadow':
 			process.execute([ 'mod', 'config', '-B', 'openldap'])
+
 		if self.user_context == 'openldap' \
 										and self.current_context != 'openldap':
 			process.execute([ 'mod', 'config', '-b', 'openldap'])
+
 		test_message(_(u'Restored initial backend to %s.') % self.user_context)
 	def add_scenario(self,scenario):
 		""" add a scenario to the testsuite and set a number for it """
-		scenario.set_number(len(self.list_scenario)+1)
+		scenario.set_number(len(self.list_scenario) + 1)
 		self.list_scenario.append(scenario)
 	def run(self):
-		""" run selected scenarii """
+		""" Run selected scenarii. """
+
+		self.total_sce = len(self.selected_scenario)
+
+		# we will start display 'context setup' if this is the case.
+		self.last_setup_display  = -1
+		self.last_status_display = 0
+
+		if self.interactive:
+			self.run_interactive()
+		else:
+			self.run_threaded()
+	def run_interactive(self):
+
+		for sce in self.selected_scenario:
+
+			sce.full_interactive = True
+
+			while sce.status in (sce_status.FAILED, sce_status.NOT_STARTED):
+				sce.Run(interactive=True)
+
+			self.passed.append(sce.counter)
+			self.save_best_state()
+	def run_threaded(self):
 
 		self.threads = []
 		self.threads.append(
@@ -91,11 +118,11 @@ class Testsuite:
 				)
 			)
 		self.threads[0].start()
-		self.total_sce = len(self.selected_scenario)
 
 		if self.selected_scenario != []:
 			# clean the system from previus run
 			self.clean_system()
+
 			for scenario in self.selected_scenario:
 				# save the state of the testsuite (number of current scenario)
 				# in order to be abble to restart from here if the TS stopped.
@@ -105,21 +132,16 @@ class Testsuite:
 			self.selected_scenario = []
 
 		test_message(_(u'Started background tests, '
-			'waiting for any failed scenario…'))
+						'waiting for any failed scenario…'))
 
 		# wait for the first job to be run, else counter displays '-1'.
 		time.sleep(2.0)
-
-		# we will start display 'context setup' if this is the case.
-		self.last_setup_display = -1
-		self.last_status_display = 0
 
 		while True:
 			try:
 				self.display_status()
 				#time.sleep(1.0)
 
-				#print '>> get_block'
 				prio, sce = self.failed.get(True, 1.0)
 
 				if not self.best_state_only_one \
@@ -481,6 +503,13 @@ def testsuite_parse_args():
 		default=False, help=_(u"delete trace of a scenario"))
 	parser.add_option("--stats", action="store_true", dest="stats",
 		default=False, help=_(u"display statistics of the testsuite."))
+	parser.add_option("-i", "--interactive",
+		dest="interactive", action="store_true", default=False,
+		help=_(u"run the testsuite in standard interactive mode (one scenario "
+			"at a time. Use this when you have modified a mega bunch of code, "
+			"and you know it will be better to check everything manually "
+			"before doing anything else, and the batch run is not what you "
+			"want because your code is still in alpha stage."))
 	parser.add_option("-b", "--batch-run", "--build-initial-data",
 		dest="batch_run", action="store_true", default=False,
 		help=_(u"don't halt the scenario on fail, just accept the result of "

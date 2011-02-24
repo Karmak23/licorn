@@ -8,8 +8,14 @@ Copyright (C) 2010 Robin Lucbernet <rl@meta-it.fr>
 
 Licensed under the terms of the GNU GPL version 2.
 """
-import urllib2, urllib, webbrowser, httplib, hashlib, os, sys, curses, re, gzip
+
+import gettext
+gettext.install('licorn', unicode=True)
+
+import os, sys, curses, re, gzip,
+import urllib2, urllib, webbrowser, httplib, hashlib
 import tempfile, base64, shutil
+
 from licorn.foundations        import logging, exceptions, process
 from licorn.foundations.styles import *
 from subprocess                import Popen, PIPE, STDOUT
@@ -805,7 +811,7 @@ if __name__ == "__main__":
 		else:
 			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
 	if options.execute or options.start_from or options.all:
-		process.execute(['add', 'user', 'wmitest', '-p', 'wmitest', '-G', 
+		process.execute(['add', 'user', 'wmitest', '-p', 'wmitest', '-G',
 			LMC.configuration.licornd.wmi.group, '-S', '/bin/false'])
 		try:
 			testsuite.run()

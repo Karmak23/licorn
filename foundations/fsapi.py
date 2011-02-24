@@ -12,7 +12,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, posix1e
+import os, posix1e, time, shutil
 from stat import *
 
 from licorn.foundations.ltrace import ltrace
@@ -98,79 +98,88 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 						continue
 					else:
 						raise e
-def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False, auto_answer=None):
-	""" general function to check file/dir """
+def check_dirs_and_contents_perms_and_acls_new(dirs_infos,
+											batch=False, auto_answer=None):
+	""" General function to check file/directory. """
 
 	assert ltrace('fsapi', '> check_dirs_and_contents_perms_and_acls_new('
 		'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
 			dirs_infos, batch, auto_answer))
 
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer):
+
 		all_went_ok = True
+
+		path = dir_info['path']
 
 		# Does the file/dir exist ?
 		try:
-			entry_stat = os.lstat(dir_info['path'])
-		except OSError, e:
+			entry_stat = os.lstat(path)
+
+		except (IOError, OSError), e:
 			if e.errno == 13:
 				raise exceptions.InsufficientPermissionsError(str(e))
 			elif e.errno == 2:
-				warn_message = ("Directory %s does not exist." %
-					stylize(ST_PATH, dir_info['path']))
 
-				if batch or logging.ask_for_repair(warn_message, auto_answer,
-					to_listener=True):
-					os.mkdir(dir_info['path'])
-					entry_stat = os.lstat(dir_info['path'])
-					logging.info("Created directory %s." %
-						stylize(ST_PATH, dir_info['path']),
-						to_listener=True)
+				if batch or logging.ask_for_repair(_(u'Directory %s does not '
+					'exist. Create it?') % stylize(ST_PATH, path),
+					auto_answer=auto_answer):
+
+					os.mkdir(path)
+					# we need to re-stat because we use the stat result after
+					# this point.
+					entry_stat = os.lstat(path)
+
+					logging.info(_(u'Created directory {0}.').format(
+													stylize(ST_PATH, path)))
 				else:
 					# we cannot continue if dir does not exist.
-					raise exceptions.LicornCheckError(
-						"Can't continue checks for directory %s (was: %s)." % (
-							dir_info['path'], e) )
+					raise exceptions.LicornCheckError(_(u'Cannot continue '
+						'checks for directory {0} (was: {1}).').format(
+							path, e))
 			else:
 				# FIXME: do more things to recover from more system errors…
 				raise e
 
 		# if it is a file
-		if ( entry_stat.st_mode & 0170000 ) == S_IFREG:
-			logging.progress("Checking file %s…" %
-				stylize(ST_PATH, dir_info['path']))
-			if dir_info.files_perm and dir_info.user \
-				and dir_info.group:
+		if (entry_stat.st_mode & 0170000) == S_IFREG:
+			logging.progress(_(u'Checking file %s…') % stylize(ST_PATH, path))
+
+			if dir_info.files_perm and dir_info.user and dir_info.group:
 				check_perms(
 					file_type=S_IFREG,
 					dir_info=dir_info,
 					batch=batch, auto_answer=auto_answer)
 
 		# if it is a dir
-		elif ( entry_stat.st_mode & 0170000 ) == S_IFDIR:
-			logging.progress("Checking dir %s…" %
-				stylize(ST_PATH, dir_info['path']))
+		elif (entry_stat.st_mode & 0170000) == S_IFDIR:
+			logging.progress(_(u'Checking directory %s…') %
+									stylize(ST_PATH, path))
 			# if the directory ends with '/' that mean that we will only
 			# affect the content of the dir.
 			# the dir itself will receive default licorn ACL rights (those
 			# defined in the configuration)
+
 			if dir_info.path[-1] == '/':
 				dir_info_root = dir_info.copy()
-				dir_info_root.root_dir_acl = True
+				dir_info_root.root_dir_acl  = True
 				dir_info_root.root_dir_perm = "%s,g:%s:rwx,%s" % (
 					LMC.configuration.acls.acl_base,
 					LMC.configuration.defaults.admin_group,
 					LMC.configuration.acls.acl_mask)
-				dir_info_root.group = "acl"
+				dir_info_root.group = LMC.configuration.acls.group
 
 				# now that the "root dir" has its special treatment,
 				# prepare dir_info for the rest (its contents)
 				dir_info.path = dir_info.path[:-1]
+
 			else:
 				dir_info_root = dir_info
 
-			logging.progress("Checking %s's %s…" % (
-				stylize(ST_PATH, dir_info['path']),
-				"ACLs" if dir_info.root_dir_acl else "posix perms"))
+			logging.progress(_(u'Checking {1} on {0}…').format(
+					stylize(ST_PATH, path), _(u'ACLs')
+						if dir_info.root_dir_acl else _(u'posix perms')))
+
 			# deal with root dir
 			check_perms(
 				is_root_dir=True,
@@ -185,33 +194,32 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False, auto_ans
 					exclude_list = []
 
 			if dir_info.files_perm != None:
-				logging.progress("Checking %s's contents %s…" % (
-					stylize(ST_PATH, dir_info['path']),
-					'ACLs' if dir_info.content_acl else 'posix perms'))
-
-				dir_path = dir_info['path']
+				logging.progress(_(u'Checking {1} on {0} contents…').format(
+						stylize(ST_PATH, path), _(u'ACLs')
+							if dir_info.content_acl else _(u'posix perms')))
 
 				if dir_info.dirs_perm != None:
-					for dir in minifind(dir_path, exclude=exclude_list, mindepth=1,
-						type=S_IFDIR):
-						dir_info.path=dir
+					for directory in minifind(path, type=S_IFDIR,
+										exclude=exclude_list, mindepth=1):
+
+						dir_info.path=directory
 						check_perms(
 							file_type=S_IFDIR,
 							dir_info=dir_info,
 							batch=batch, auto_answer=auto_answer)
 
-				# deal with files inside root dir
-				for file in minifind(dir_path, exclude=exclude_list, mindepth=1,
-					type=S_IFREG):
-						dir_info.path = file
+				for filename in minifind(path, type=S_IFREG,
+									exclude=exclude_list, mindepth=1):
+
+						dir_info.path=filename
 						check_perms(
-						file_type=S_IFREG,
-						dir_info=dir_info,
-						batch=batch, auto_answer=auto_answer)
+							file_type=S_IFREG,
+							dir_info=dir_info,
+							batch=batch, auto_answer=auto_answer)
 
 		else:
-			logging.warning('''The type of %s is not recognised by the '''
-				'''check_user() function.''' % dir_info['path'])
+			logging.warning2(_(u'Not touching %s, it is not a file nor a '
+				'directory.') % path)
 		return all_went_ok
 
 	if dirs_infos != None:
@@ -244,13 +252,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	if file_type is S_IFDIR:
 		if is_root_dir:
 			access_perm = dir_info.root_dir_perm
-			perm_acl = dir_info.root_dir_acl
+			perm_acl    = dir_info.root_dir_acl
 		else:
 			access_perm = dir_info.dirs_perm
-			perm_acl = dir_info.content_acl
+			perm_acl    = dir_info.content_acl
 	else:
 		access_perm = dir_info.files_perm
-		perm_acl = dir_info.content_acl
+		perm_acl    = dir_info.content_acl
 
 	# if we are going to set POSIX1E acls, check '@GX' or '@UX' vars
 	if perm_acl:
@@ -273,8 +281,10 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 	uid=dir_info.uid
 
-	check_uid_and_gid(path=dir_info.path, uid=uid, gid=gid,
-		batch=batch, full_display=full_display)
+	check_uid_and_gid(path=dir_info.path,
+						uid=uid, gid=gid,
+						batch=batch,
+						full_display=full_display)
 
 	if full_display:
 		logging.progress(_(u'Checking {perm_type} of {path}.').format(
@@ -285,6 +295,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	if perm_acl:
 		# apply posix1e access perm on the file/dir
 		current_perm = posix1e.ACL(file=dir_info.path)
+
 		if current_perm != access_perm:
 
 			if batch or logging.ask_for_repair(
@@ -307,25 +318,27 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 							),
 							auto_answer=auto_answer):
 
-					# be sure to pass an str() to acl.applyto(), else it will
-					# raise a TypeError if onpath is an unicode string…
-					# (checked 2006 08 08 on Ubuntu Dapper)
-					# TODO: recheck this, as we don't use any unicode strings
-					# anywhere (or we are before the move to using them
-					# everywhere).
-					posix1e.ACL(acl=access_perm).applyto(str(dir_info.path),
-													posix1e.ACL_TYPE_ACCESS)
-
-					logging.info(
-						_(u'Applyed access ACL '
-						'{access_acl} on {path}.').format(
-							access_acl=stylize(ST_ACL,
-											access_perm.to_any_text(
-												separator=',',
-												options=posix1e.TEXT_ABBREVIATE
-												| posix1e.TEXT_SOME_EFFECTIVE)),
-							path=stylize(ST_PATH, dir_info.path))
-						)
+					try:
+						# be sure to pass an str() to acl.applyto(), else it will
+						# raise a TypeError if onpath is an unicode string…
+						# (checked 2006 08 08 on Ubuntu Dapper)
+						# TODO: recheck this, as we don't use any unicode strings
+						# anywhere (or we are before the move to using them
+						# everywhere).
+						posix1e.ACL(acl=access_perm).applyto(str(dir_info.path),
+														posix1e.ACL_TYPE_ACCESS)
+						logging.info(
+							_(u'Applyed access ACL '
+							'{access_acl} on {path}.').format(
+								access_acl=stylize(ST_ACL,
+												access_perm.to_any_text(
+													separator=',',
+													options=posix1e.TEXT_ABBREVIATE
+													| posix1e.TEXT_SOME_EFFECTIVE)),
+								path=stylize(ST_PATH, dir_info.path)))
+					except (IOError, OSError), e:
+						if e.errno == 2: return
+						else: raise e
 			else:
 				all_went_ok = False
 
@@ -363,23 +376,25 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 							),
 							auto_answer=auto_answer):
 
-					# Don't remove str() (see above).
-					default_perm.applyto(str(dir_info.path),
-											posix1e.ACL_TYPE_DEFAULT)
+					try:
+						# Don't remove str() (see above).
+						default_perm.applyto(str(dir_info.path),
+												posix1e.ACL_TYPE_DEFAULT)
 
-					logging.info(
-							_(u'Applyed access ACL {access_acl} '
-							'on {path}.').format(
-								path=stylize(ST_PATH, dir_info.path),
+						logging.info(
+								_(u'Applyed access ACL {access_acl} '
+								'on {path}.').format(
+									path=stylize(ST_PATH, dir_info.path),
 
-								access_acl=stylize(ST_ACL,
-										default_perm.to_any_text(
-												separator=',',
-												options=posix1e.TEXT_ABBREVIATE
-												| posix1e.TEXT_SOME_EFFECTIVE)
-								)
-							)
-						)
+									access_acl=stylize(ST_ACL,
+											default_perm.to_any_text(
+													separator=',',
+													options=posix1e.TEXT_ABBREVIATE
+													| posix1e.TEXT_SOME_EFFECTIVE)
+									)))
+					except (IOError, OSError), e:
+						if e.errno == 2: return
+						else: raise e
 				else:
 					all_went_ok = False
 	else:
@@ -395,24 +410,34 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 								path=stylize(ST_PATH, dir_info.path)),
 							auto_answer=auto_answer):
 
-				# if it is a directory we need to delete DEFAULT ACLs too
-				if file_type is S_IFDIR:
+				try:
+					# if it is a directory we need to delete DEFAULT ACLs too
+					if file_type is S_IFDIR:
+						posix1e.ACL(text='').applyto(str(dir_info.path),
+												posix1e.ACL_TYPE_DEFAULT)
+
+						logging.info(_(u'Deleted default ACL from {path}.').format(
+										path=stylize(ST_PATH, dir_info.path)))
+
+					# delete ACCESS ACLs if it is a file or a directory
 					posix1e.ACL(text='').applyto(str(dir_info.path),
-											posix1e.ACL_TYPE_DEFAULT)
+						posix1e.ACL_TYPE_ACCESS)
 
-					logging.info(_(u'Deleted default ACL from {path}.').format(
-									path=stylize(ST_PATH, dir_info.path)))
+					logging.info(_(u'Deleted access ACL from {path}.').format(
+								path=stylize(ST_PATH, dir_info.path)))
 
-				# delete ACCESS ACLs if it is a file or a directory
-				posix1e.ACL(text='').applyto(str(dir_info.path),
-					posix1e.ACL_TYPE_ACCESS)
-				logging.info(_(u'Deleted access ACL from {path}.').format(
-							path=stylize(ST_PATH, dir_info.path)))
+				except (IOError, OSError), e:
+					if e.errno == 2: return
+					else: raise e
 			else:
 				all_went_ok = False
 
-		pathstat = os.lstat(dir_info.path)
-		current_perm = pathstat.st_mode & 07777
+		try:
+			pathstat     = os.lstat(dir_info.path)
+			current_perm = pathstat.st_mode & 07777
+		except (IOError, OSError), e:
+			if e.errno == 2: return
+			else: raise e
 
 		if current_perm != access_perm:
 
@@ -426,13 +451,16 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 								wanted_mode=stylize(ST_ACL,
 									perms2str(access_perm))),
 							auto_answer=auto_answer):
+					try:
+						os.chmod(dir_info.path, access_perm)
 
-					os.chmod(dir_info.path, access_perm)
-
-					logging.info(_(u'Applyed perms {wanted_mode} '
-						'on {path}.').format(
-							wanted_mode=stylize(ST_ACL, perms2str(access_perm)),
-							path=stylize(ST_PATH, dir_info.path)))
+						logging.info(_(u'Applyed perms {wanted_mode} '
+							'on {path}.').format(
+								wanted_mode=stylize(ST_ACL, perms2str(access_perm)),
+								path=stylize(ST_PATH, dir_info.path)))
+					except (IOError, OSError), e:
+						if e.errno == 2: return
+						else: raise e
 			else:
 				all_went_ok = False
 
@@ -440,18 +468,24 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 def check_uid_and_gid(path, uid=-1, gid=1, batch=None, auto_answer=None,
 	full_display=True):
 	""" function that check the uid and gid of a file or a dir. """
+
+	users = LMC.users
+	groups = LMC.groups
+
 	if full_display:
 		logging.progress(_(u'Checking posix uid/gid/perms of %s.') %
 								stylize(ST_PATH, path))
 	try:
 		pathstat = os.lstat(path)
-	except OSError, e:
+	except (IOError, OSError), e:
 		if e.errno == 2:
 			# causes of this error:
-			#     - this is a race condition: the dir/file has been deleted between the minifind()
-			#       and the check_*() call. Don't blow out on this.
-			#     - when we explicitely want to check a path which does not exist because it has not
-			#       been created yet (eg: ~/.dmrc on a brand new user account).
+			#     - this is a race condition: the dir/file has been deleted
+			#		between the minifind() and the check_*() call.
+			#		Don't blow out on this.
+			#     - when we explicitely want to check a path which does not
+			#		exist because it has not been created yet (eg: ~/.dmrc
+			#		on a brand new user account).
 			return True
 		else:
 			raise e
@@ -461,61 +495,72 @@ def check_uid_and_gid(path, uid=-1, gid=1, batch=None, auto_answer=None,
 	if uid == -1:
 		uid = pathstat.st_uid
 		try:
-			desired_login = LMC.users[uid]['login']
+			desired_login = users[uid].login
 		except KeyError:
 			desired_login = 'root'
-			uid = 0
+			uid           = 0
 	else:
 		try:
-			desired_login = LMC.users.uid_to_login(uid)
-		except exceptions.DoesntExistsException:
+			desired_login = users.uid_to_login(uid)
+
+		except exceptions.DoesntExistException:
 			desired_login = 'root'
-			uid = 0
+			uid           = 0
 
 	if gid == -1:
 		gid = pathstat.st_gid
 		try:
-			desired_group = LMC.groups[gid]['name']
+			desired_group = groups[gid].name
 		except KeyError:
 			desired_group = gid
 	else:
-		desired_group = LMC.groups.gid_to_name(gid)
+		desired_group = groups.gid_to_name(gid)
 
 	if pathstat.st_uid != uid or pathstat.st_gid != gid:
 
-		try:
-			current_login = LMC.users[pathstat.st_uid]['login']
-		except KeyError:
-			current_login = pathstat.st_uid
-
-		try:
-			current_group = LMC.groups[pathstat.st_gid]['name']
-		except KeyError:
-			current_group = pathstat.st_gid
-
-		if batch or logging.ask_for_repair(_(u'Invalid ownership for {path} '
-						'(it is {current_user}:{current_group} '
-						'but should be {wanted_user}:{wanted_group}).').format(
-							path=stylize(ST_PATH, path),
-							current_user=stylize(ST_BAD, current_login),
-							current_group=stylize(ST_BAD, current_group),
-							wanted_user=stylize(ST_UGID, desired_login),
-							wanted_group=stylize(ST_UGID, desired_group)),
+		if batch or logging.ask_for_repair(_(u'Invalid owership for {0}: '
+						'currently {1}:{2} but should be {3}:{4}. '
+						'Correct it?').format(
+							stylize(ST_PATH, path),
+							stylize(ST_BAD, users[pathstat.st_uid].login
+								if pathstat.st_uid in users.iterkeys()
+								else str(pathstat.st_uid)),
+							stylize(ST_BAD, groups[pathstat.st_gid].name
+								if pathstat.st_uid in groups.iterkeys()
+								else str(pathstat.st_gid)),
+							stylize(ST_UGID, desired_login),
+							stylize(ST_UGID, desired_group),
+						),
 						auto_answer=auto_answer):
 
-			os.chown(path, uid, gid)
+			try:
+				os.chown(path, uid, gid)
 
-			logging.info(_(u'Changed owner of {path} from '
-				'{current_user}:{current_group} '
-				'to {wanted_user}:{wanted_group}').format(
-					path=stylize(ST_PATH, path),
-					current_user=stylize(ST_BAD, current_login),
-					current_group=stylize(ST_BAD, current_group),
-					wanted_user=stylize(ST_UGID, desired_login),
-					wanted_group=stylize(ST_UGID, desired_group)
-				))
+				logging.info(_(u'Changed owner of {0} '
+					'to {1}:{2}').format(
+						stylize(ST_PATH, path),
+						stylize(ST_UGID, desired_login),
+						stylize(ST_UGID, desired_group)
+					))
+			except (IOError, OSError), e:
+				if e.errno == 2: return True
+				else: raise e
+
+			return True
 		else:
-			all_went_ok = False
+			logging.warning2(_(u'Invalid owership for {0}: '
+						'currently {1}:{2} but should be {3}:{4}.').format(
+					stylize(ST_PATH, path),
+					stylize(ST_BAD, LMC.users[pathstat.st_uid].login
+						if pathstat.st_uid in LMC.users.iterkeys()
+						else str(pathstat.st_uid)),
+					stylize(ST_BAD, LMC.groups[pathstat.st_gid].name
+						if pathstat.st_uid in LMC.groups.iterkeys()
+						else str(pathstat.st_gid)),
+					stylize(ST_UGID, desired_login),
+					stylize(ST_UGID, desired_group),
+				))
+			return False
 def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 	"""Try to make a symlink cleverly."""
 	try:
@@ -618,6 +663,54 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 						'symlink to {dest}, the destination {link} '
 						'already exists and is not a link.').format(
 							dest=link_src, link=link_dst))
+def remove_directory(path):
+	""" Remove a directory hierarchy. But first, rename it to something
+		quite convoluted, in case the system (or administrator) wants to
+		reuse the exact same name in the same place.
+
+		.. warning:: TODO: the renaming part is left to be implemented.
+
+		.. versionadded:: 1.3
+	"""
+
+	try:
+		shutil.rmtree(path)
+	except (IOError, OSError), e:
+		if e.errno == 2:
+			logging.info(_(u'Cannot remove %s, it does not exist!') %
+				stylize(ST_PATH, path))
+		else:
+			raise e
+def archive_directory(path, orig_name='unknown'):
+	"""
+		Archive a directory and all its contents in :file:`/home/archives`.
+
+		.. warning:: this function needs `LMC.configuration` to be initialized
+			before beiing called. This is a special case and will probably
+			change in the near future.
+
+		.. versionadded:: 1.3
+	"""
+
+	# /home/archives must be OK before moving
+	LMC.configuration.check_base_dirs(minimal=True,	batch=True)
+
+	group_archive_dir = "%s/%s.deleted.%s" % (
+		LMC.configuration.home_archive_dir, orig_name,
+		time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
+	try:
+		os.rename(path, group_archive_dir)
+
+		logging.info(_(u"Archived {0} as {1}.").format(path,
+			stylize(ST_PATH, group_archive_dir)))
+
+		LMC.configuration.check_archive_dir(group_archive_dir, batch=True)
+	except OSError, e:
+		if e.errno == 2:
+			logging.info(_(u'Cannot archive %s, it does not exist!') %
+				stylize(ST_PATH, path))
+		else:
+			raise e
 
 # various unordered functions, which still need to find a more elegant home.
 

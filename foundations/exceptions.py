@@ -254,13 +254,13 @@ class AlreadyExistsError(LicornRuntimeError):
 		must be done manually to correct the problem.  """
 	errno = 101
 	pass
-class DoesntExistsException(LicornRuntimeException):
+class DoesntExistException(LicornRuntimeException):
 	""" Raised when an object (user, group, profile) [strictly] doesn't exist,
 		but the situation can be recovered at some extend.
 	"""
 	errno = 102
 	pass
-class DoesntExistsError(LicornRuntimeError):
+class DoesntExistError(LicornRuntimeError):
 	""" Raised when an object doesn't exists and the situation is know to be
 		completely unrecoverable. """
 	errno = 103
@@ -276,7 +276,7 @@ class TimeoutExceededError(LicornRuntimeError):
 	errno = 105
 	pass
 
-class PathDoesntExistsException(DoesntExistsException):
+class PathDoesntExistException(DoesntExistException):
 	""" Raised when a path doesn't exist,
 		but the situation can be recovered or ignored at some extend.
 	"""
@@ -305,3 +305,10 @@ class NoAvaibleIdentifierError(LicornRuntimeError):
 	"""
 	pass
 
+
+class NeedHelpException(LicornRuntimeException):
+	""" Raised when user don't specify any argument, in CLI,
+		and he/she should have. This exception permits to rerun the argparser
+		with help appended, after the first run. """
+	errno = 999
+	pass

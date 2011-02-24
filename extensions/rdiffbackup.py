@@ -22,9 +22,7 @@ from licorn.extensions         import LicornExtension
 from licorn.extensions.volumes import VolumeException
 from licorn.interfaces.wmi     import WMIObject, wmi_register, wmi_unregister
 
-from licorn.daemon             import priorities, roles, \
-											service_enqueue, service_wait
-from licorn.daemon.main        import daemon
+from licorn.daemon             import priorities, roles
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -273,34 +271,15 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 							)
 			self.threads.auto_backup_timer.start()
 
-			self.create_wmi_object(uri='/backups', name=_(u'Backups'),
-				alt_string=_(u'Manage backups and restore files'),
-				context_menu_data=(
-					(_(u'Run backup'), '/backups/run',
-						_(u'Run a system incremental backup now'),
-						'ctxt-icon', 'icon-add',
-						lambda: self._enabled_volumes() != []
-							and not self.running()),
-					(_(u'Rescan volumes'), '/backups/rescan',
-						_(u'Force the system to rescan and remount connected '
-						'volumes'),
-						'ctxt-icon', 'icon-energyprefs',
-						lambda: self._backup_enabled_volumes() == [])
-				)
-			)
-			"""
-					# disabled, to come:
-						(_(u'Explore backups'), '/backups/search',
-							_(u'Search in backup history for files or '
-								'directories to restore'),
-							'ctxt-icon', 'icon-export'),
-						(_(u'Settings'), '/backups/settings',
-							_(u'Manage system backup settings'),
-							'ctxt-icon', 'icon-energyprefs'),
-			"""
+			self.create_wmi_object('/backups')
+
+			logging.info(_(u'{0}: started extension and auto-backup '
+				'timer.').format(stylize(ST_NAME, self.name)))
+
 			return True
 
 		return False
+
 	def enable(self):
 		""" This method will call :meth=:`is_enabled`, because it does exactly
 			what we need.
@@ -315,8 +294,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		""" disable the Timer thread. TODO: disable the WMI object. """
 
 		if self.running():
-			logging.warning('%s: cannot disable now, a backup is in progress. '
-				'Please wait until the end and retry.' % self.name)
+			logging.warning(_('{0}: cannot disable now, a backup is in '
+				'progress. Please wait until the end and retry.').format(
+					stylize(ST_NAME, self.name)))
 			return False
 
 		# avoid a race with a backup
@@ -330,7 +310,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		del self.wmi
 
 		# clean the thread reference in the daemon.
-		daemon._job_periodic_cleaner()
+		self.licornd.clean_objects()
 
 		del self.volumes
 
@@ -359,8 +339,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		assert ltrace(self.name, '| _rdiff_statistics(%s)' % volume)
 
 		with volume:
-			logging.notice('%s: computing statistics on %s, '
-				'please wait.' % (self.name, volume))
+			logging.notice(_(u'{0}: computing statistics on {1}, '
+				'please wait.').format(stylize(ST_NAME, self.name), volume))
 
 			start_time = time.time()
 			for command_line, output_file in (
@@ -399,7 +379,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		pass
 	def _backup_dir(self, volume):
-		return volume.mount_point + '/' + self.paths.backup_directory
+		return '%s/%s' % (volume.mount_point, self.paths.backup_directory)
 	def _backup_enabled(self, volume):
 		""" Test if a volume is backup-enabled or not (the backup directory is
 			present on it.
@@ -431,7 +411,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				with volume:
 					if not volume.enabled:
 						volumes.remove(volume)
-						logging.info('Skipped disabled %s.' % volume)
+						logging.info(_(u'Skipped disabled %s.') % volume)
 
 		for volume in volumes:
 			with volume:
@@ -484,12 +464,14 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 
 		if self.running():
-			logging.notice('%s: a backup is already running.' % self.name)
+			logging.notice(_(u'{0}: a backup is already running.').format(
+												stylize(ST_NAME, self.name)))
 			return
 
 		self.threads.auto_backup_timer.reset()
 
-		service_enqueue(priorities.NORMAL, self.__backup_procedure,
+		self.licornd.service_enqueue(priorities.NORMAL,
+										self.__backup_procedure,
 										volume=volume, force=force)
 	def __backup_procedure(self, volume=None, force=False):
 		""" Do a complete backup procedure, which includes:
@@ -533,8 +515,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 
 		if self.running():
-			logging.progress('%s: a backup is already running, nothing done.' %
-				self.name)
+			logging.progress(_(u'{0}: a backup is already running, '
+				'nothing done.').format(stylize(ST_NAME, self.name)))
 			return
 
 		first_found = False
@@ -545,8 +527,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				first_found = True
 
 			except IndexError:
-				logging.warning2('%s: no volumes to backup onto, '
-					'aborting.' % self.name)
+				logging.warning2(_(u'{0}: no volumes to backup onto, '
+					'aborting.').format(stylize(ST_NAME, self.name)))
 				return
 
 		#if volume.locked():
@@ -558,8 +540,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			if not force and (
 					time.time() - self._last_backup_time(volume) <
 										LMC.configuration.backup.interval):
-				logging.notice('%s: not backing up on %s, last backup is '
-					'less than %s.' % (self.name, volume,
+
+				logging.notice(_(u'{0}: not backing up on {1}, last backup is '
+					'less than {2}.').format(stylize(ST_NAME, self.name),
+						volume,
 						pyutils.format_time_delta(
 							LMC.configuration.backup.interval)))
 				return
@@ -569,16 +553,16 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self.current_backup_volume = volume
 
-			logging.notice('%s: starting backup on%s %s.' % (
-				self.name, ' first available'
+			logging.notice(_(u'{0}: starting backup on{1} {2}.').format(
+				stylize(ST_NAME, self.name), _(u' first available')
 					if first_found else '', volume))
 
 			backup_directory = self._backup_dir(volume)
 
 			if not os.path.exists(backup_directory):
 				os.mkdir(backup_directory)
-				logging.progress('%s: created directory %s.'
-									% (self.name,
+				logging.progress(_(u'{0}: created directory {1}.').format(
+					stylize(ST_NAME, self.name),
 									stylize(ST_PATH, backup_directory)))
 
 			self._compute_needed_space(volume, clean=True)
@@ -593,8 +577,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				rdiff_command.insert(1, self.paths.globbing_file)
 				rdiff_command.insert(1, '--include-globbing-filelist')
 			else:
-				logging.warning2("%s: Rdiff-backup configuration file %s "
-					"doesn't exist." % (self.name,
+				logging.warning2(_(u'{0}: Rdiff-backup configuration file {1} '
+					'does not exist.').format(stylize(ST_NAME, self.name),
 						stylize(ST_PATH, self.paths.globbing_file)))
 
 			command.extend(rdiff_command)
@@ -623,8 +607,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self.events.running.clear()
 			self.current_backup_volume = None
 
-			logging.notice('%s: terminated backup procedure on %s.' % (
-											self.name,volume))
+			logging.notice(_(u'{0}: terminated backup procedure on {1}.').format(
+										stylize(ST_NAME, self.name), volume))
 	def _write_last_backup_file(self, volume):
 		""" Put :func:`time.time` in the last backup file. This file is here
 			to avoid doing more than one backup per hour.
@@ -637,8 +621,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			last_backup_file = (volume.mount_point
 										+ '/' + self.paths.last_backup_file)
 			open(last_backup_file, 'w').write(str(time.time()))
-			logging.progress('%s: updated last backup file %s.'
-							% (self.name, stylize(ST_PATH, last_backup_file)))
+			logging.progress(_(u'{0}: updated last backup file {1}.').format(
+				stylize(ST_NAME, self.name), stylize(ST_PATH, last_backup_file)))
 	def _last_backup_time(self, volume):
 		""" Return the contents of the "last backup file" of a given volume as
 			a float, for delta-between-backup computations.
@@ -734,6 +718,43 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 									)
 								)
 							)
+	# these 3 will be mapped into R/O properties by the WMIObject creation
+	# process method. They will be deleted from here after the mapping is done.
+	def _wmi_name(self):
+		return _(u'Backups')
+	def _wmi_alt_string(self):
+		return _(u'Manage backups and restore files')
+	def _wmi_context_menu(self):
+		"""
+					# disabled, to come:
+						(_(u'Explore backups'), '/backups/search',
+							_(u'Search in backup history for files or '
+								'directories to restore'),
+							'ctxt-icon', 'icon-export'),
+						(_(u'Settings'), '/backups/settings',
+							_(u'Manage system backup settings'),
+							'ctxt-icon', 'icon-energyprefs'),
+			"""
+		return (
+					(
+						_(u'Run backup'),
+						'/backups/run',
+						_(u'Run a system incremental backup now'),
+						'ctxt-icon',
+						'icon-add',
+						lambda: self._enabled_volumes() != []
+							and not self.running()
+					),
+					(
+						_(u'Rescan volumes'),
+						'/backups/rescan',
+						_(u'Force the system to rescan and remount connected '
+							'volumes'),
+						'ctxt-icon',
+						'icon-energyprefs',
+						lambda: self._backup_enabled_volumes() == []
+					)
+				)
 	def _wmi__status(self):
 		""" Method called from wmi:/, to integrate backup informations on the
 			status page. """

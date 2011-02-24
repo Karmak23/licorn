@@ -15,16 +15,13 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import os, re, plistlib
-
-from xml.dom                    import minidom
-from xml                        import dom as xmldom
-from xml.parsers                import expat
-from licorn.foundations.pyutils import add_or_dupe_enumeration
-from licorn.foundations.base import Enumeration
-
 import xml.etree.ElementTree as ET
 
 from licorn.foundations         import exceptions
+from licorn.foundations.pyutils import add_or_dupe_enumeration
+from licorn.foundations.base    import Enumeration
+
+
 
 def to_type_semi(value):
 	"""Find the right type of value and convert it, but not for all types. """
@@ -253,83 +250,6 @@ def	dnsmasq_read_leases(filename=None, data=None, convert='semi'):
 	map(parse_fields, data.split('\n'))
 
 	return confdict
-def profiles_conf_dict(filename):
-	""" Read a user profiles file (XML format) and return a dictionary
-		of profilename -> (dictionary of param -> value)
-	"""
-	try:
-		if os.lstat(filename).st_size == 0:
-			return {}
-
-		dom = minidom.parse(filename)
-		confdict = {}
-
-		def parse_profile(profile):
-			name = getProfileData(profile, "name").pop()
-			comment = getProfileData(profile, "description").pop()
-			skel_dir = getProfileData(profile, "profileSkel").pop()
-			shell = getProfileData(profile, "profileShell").pop()
-			primarygroup = getProfileData(profile, "groupName").pop()
-			# «groups» XML tag, contains nothing except «group» children
-			try:
-				groupselement = profile.getElementsByTagName("memberGid").pop()
-				# many groups, keep a list, don't pop()
-				groups = getProfileData(groupselement, "groupName")
-			except IndexError:
-				# this profile has no default groups to set users in.
-				# this is awesome, but this could be normal.
-				groups = []
-
-			quota = getProfileData(profile, "profileQuota").pop()
-
-			groups.sort()
-
-			confdict[primarygroup] = {
-				'name': name,
-				'description': comment,
-				'profileSkel': skel_dir,
-				'groupName': primarygroup,
-				'memberGid': groups,
-				'profileQuota': quota,
-				'profileShell': shell
-				}
-
-		map(parse_profile, dom.getElementsByTagName("profile"))
-
-		return confdict
-	except exceptions.CorruptFileError, e:
-		e.SetFilename(filename)
-		raise e
-	except xmldom.DOMException, e:
-		raise exceptions.CorruptFileError(filename, str(e))
-	except expat.ExpatError, e:
-		raise exceptions.CorruptFileError(filename, str(e))
-	except (OSError, IOError):
-		# FIXME: do something when there is no profiles on the system…
-		return {}
-def getProfileData(rootelement, leaftag, isoptional=False):
-	""" Return a list of content of a leaftag (tag which has no child)
-		which has rootelement as parent.
-	"""
-	empty_allowed_tags = [ 'description' ]
-	data = []
-	tags = rootelement.getElementsByTagName(leaftag)
-
-	if tags == [] and rootelement.nodeName != "memberGid":
-		raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> was not found.")
-
-	for e in tags:
-		for node in e.childNodes:
-			if node.parentNode.parentNode == rootelement: # needed to ignore the other levels
-				data.append(unicode(node.data))
-
-	if data == []:
-		if leaftag not in empty_allowed_tags and rootelement.nodeName != "memberGid":
-			raise exceptions.CorruptFileError(reason="The tag <" + leaftag + "> must not have an empty value.")
-		else:
-			data = ['']
-
-	return data
 def timeconstraints_conf_dict(filename):
 	""" Read the squiGuard configuration file and return a dictionary of timespacename -> (dictionnary of param -> value)
 	"""

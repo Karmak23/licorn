@@ -13,7 +13,7 @@ Extensions can "extend" :ref:`CoreController`s
 """
 
 import os, time
-from threading import RLock, Timer
+from threading import RLock, Timer, current_thread
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process
@@ -122,19 +122,19 @@ class ServiceExtension(LicornExtension):
 	#: static messages displayed on service command execution.
 	messages = {
 		# TODO: implement exec_type.SUCCESS, .FAILURE, etc.
-		svccmds.START    : 'Started service %s (%s).',
-		svccmds.STOP     : 'Stopped service %s (%s).',
-		svccmds.RESTART  : 'Restarted service %s (%s).',
-		svccmds.RELOAD   : 'Reloaded service %s (%s).'
+		svccmds.START    : _(u'Started service {0} ({1}).'),
+		svccmds.STOP     : _(u'Stopped service {0} ({1}).'),
+		svccmds.RESTART  : _(u'Restarted service {0} ({1}).'),
+		svccmds.RELOAD   : _(u'Reloaded service {0} ({1}).')
 	}
 
 	#: same, for too long services (user must be informed)
 	messages_long = {
 		# TODO: implement exec_type.SUCCESS, .FAILURE, etc.
-		svccmds.START    : 'Starting service %s. Please wait, this can take a while.',
-		svccmds.STOP     : 'Stopping service %s. Please wait, this can take a while.',
-		svccmds.RESTART  : 'Restarting service %s. Please wait, this can take a while.',
-		svccmds.RELOAD   : 'Reloading service %s. Please wait, this can take a while.'
+		svccmds.START    : _(u'Starting service %s. Please wait, this can take a while.'),
+		svccmds.STOP     : _(u'Stopping service %s. Please wait, this can take a while.'),
+		svccmds.RESTART  : _(u'Restarting service %s. Please wait, this can take a while.'),
+		svccmds.RELOAD   : _(u'Reloading service %s. Please wait, this can take a while.')
 	}
 
 	def __init__(self, name='service_extension', controllers_compat=[],
@@ -250,7 +250,7 @@ class ServiceExtension(LicornExtension):
 		else:
 			pre_message = None
 
-		post_message = ServiceExtension.messages[command_type] % (
+		post_message = ServiceExtension.messages[command_type].format(
 						stylize(ST_NAME, self.service_name), '%s')
 
 		thread_kwargs = {
@@ -262,8 +262,8 @@ class ServiceExtension(LicornExtension):
 
 		if self.planned_operation:
 			if self.planned_operation != command_type:
-				logging.notice('%s: waiting for %s command to complete '
-					'before queuing %s.' % (self.name,
+				logging.notice(_(u'{0}: waiting for {1} command to complete '
+					'before queuing {2}.').format(stylize(ST_NAME, self.name),
 					svccmds[self.planned_operation], svccmds[command_type]))
 
 				waited = 0.0
@@ -271,17 +271,18 @@ class ServiceExtension(LicornExtension):
 				while self.planned_operation:
 					if waited > 5.0:
 						if self.service_long:
-							logging.notice('%s: waiting 5 seconds more.')
+							logging.notice(_(u'%s: waiting 5 seconds more.') %
+											stylize(ST_NAME, self.name))
 							if waited >= 10.0:
 								raise_exc = True
 						else:
 							raise_exc = True
 
 					if raise_exc:
-						raise exceptions.LicornRuntimeException("%s: "
-							"command %s didn't complete in %s seconds, "
-							"cannot exectute a different one. Please try "
-							" again later." % (self.name,
+						raise exceptions.LicornRuntimeException(_(u'{0}: '
+							'command {1} did not complete in {2} seconds, '
+							'cannot exectute a different one. Please try '
+							' again later.').format(stylize(ST_NAME, self.name),
 								svccmds[self.planned_operation], waited))
 
 					time.sleep(0.1)
@@ -295,6 +296,7 @@ class ServiceExtension(LicornExtension):
 				self.command_thread = Timer(self.delay,
 							run_service_command, kwargs=thread_kwargs)
 				self.command_thread.start()
+
 		else:
 			with self.command_lock:
 				self.planned_operation = command_type
@@ -341,7 +343,7 @@ def run_service_command(command, pre_message=None, post_message=None,
 		if ret == '':
 			ret = 'OK'
 
-		logging.info(post_message % ret)
+		logging.notice(post_message % ret)
 
 	if svcext is not None:
 		svcext.planned_operation = None

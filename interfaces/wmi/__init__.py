@@ -7,14 +7,13 @@ from licorn.foundations.ltrace import ltrace
 from licorn.foundations.styles import *
 from licorn.foundations.base   import NamedObject
 
-class WMIObject():
+class WMIObject(object):
 	""" Adds WMI-related attributes and method to an extension. """
 
 	_licorn_protected_attrs = [ 'wmi' ]
 	import utils
-	def create_wmi_object(self,uri, name, alt_string,
-								context_menu_data,
-								successfull_redirect=None):
+
+	def create_wmi_object(self,	uri, successfull_redirect=None):
 		"""
 			WMI extension pseudo-constructor. Must be called at the end of your
 			standard extension constructor (``__init__``).
@@ -22,17 +21,20 @@ class WMIObject():
 			You must pass to this method:
 
 			* uri: http://localhost/uri/
-			* name: pretty name
-			* alt_string: alternative text / description
-			* context_menu_data: list of context_links, consisting of elements
-			  of the form::
-
-				[ pretty_name, uri, title, css_class, icon_css_class ]
 
 			May pass to constructor (optional):
 
 			* successfull_redirect (string; URI for redirects when successfull
 			  action occurs; constructed from uri if not given)
+
+			Must define these methods, that will be wrapped into R/O properties:
+
+			* __wmi_name: pretty name
+			* __wmi_alt_string: alternative text / description
+			* __wmi_context_menu: list of context_links, consisting of elements
+			  of the form::
+
+				[ pretty_name, uri, title, css_class, icon_css_class ]
 
 			May define any method with this prototype:
 
@@ -53,12 +55,15 @@ class WMIObject():
 
 			.. versionadded:: 1.2.4
 		"""
-		assert ltrace('wmi', '| WMIObject.create_wmi_object(%s, %s)' % (name, uri))
-		self.wmi                      = NamedObject(name=uri)
-		self.wmi.uri                  = uri[1:] if uri[0] == '/' else uri
-		self.wmi.name                 = name
-		self.wmi.alt_string           = alt_string
-		self.wmi.context_menu_data    = context_menu_data
+		assert ltrace('wmi', '| WMIObject.create_wmi_object(%s, %s)' % (self._wmi_name, uri))
+		self.wmi              = NamedObject(name=uri)
+		self.wmi.uri          = uri[1:] if uri[0] == '/' else uri
+		self.wmi.name         = self._wmi_name
+		self.wmi.alt_string   = self._wmi_alt_string
+		self.wmi.context_menu = self._wmi_context_menu
+
+		#del self._wmi_name, self._wmi_alt_string, self._wmi_context_menu
+
 		self.wmi.successfull_redirect = (uri + '/main'
 											if successfull_redirect is None
 											else successfull_redirect)
@@ -76,7 +81,7 @@ class WMIObject():
 		assert ltrace('wmi', '| %s.setup_methods()' % self.name)
 
 		for key in dir(self):
-			if key.startswith('_wmi_'):
+			if key.startswith('_wmi_') and key not in ('_wmi_name', '_wmi_alt_string', '_wmi_context_menu'):
 				value = getattr(self, key)
 				if callable(value):
 					setattr(self.wmi, key[5:], value)
@@ -105,7 +110,7 @@ class WMIObject():
 					disabled,
 					ctx[4],
 					ctx[0]
-				) for ctx in self.wmi.context_menu_data if len(ctx) == 5 or ctx[5]() ])
+				) for ctx in self.wmi.context_menu() if len(ctx) == 5 or ctx[5]() ])
 	def _countdown(self, name, countdown_seconds, uri=None, limit=0):
 		""" Always increment the
 			countdown with 2 seconds, else the webpage could refresh too early
@@ -334,11 +339,12 @@ def wmi_register(wmiobj):
 	my_globals = globals()
 
 	if wmiobj.wmi.uri in my_globals.keys():
-		logging.warning('WMI: overwriting %s object '
-			'with new instance.' % wmiobj.name)
+		logging.warning(_(u'{0}: WMI overwriting {1} object '
+			'with new instance.').format(current_thread().name, wmiobj.name))
 
 	my_globals[wmiobj.wmi.uri] = wmiobj.wmi
-	assert ltrace('wmi', '  %s: successfully registered object %s.' %(
+
+	assert ltrace('wmi', '  %s: successfully registered object %s.' % (
 		current_thread().name, wmiobj.name))
 
 def wmi_unregister(wmiobj):
@@ -350,10 +356,11 @@ def wmi_unregister(wmiobj):
 
 	if wmiobj.wmi.uri in my_globals.keys():
 		del my_globals[wmiobj.wmi.uri]
-		assert ltrace('wmi', '  %s: successfully unregistered object %s.' %(
+
+		assert ltrace('wmi', '  %s: successfully unregistered object %s.' % (
 			current_thread().name, wmiobj.name))
 
 	else:
-		logging.warning('WMI: unknown object %s, cannot unregister'
-		 % wmiobj.name)
+		logging.warning(_(u'{0}: unknown object {1}, '
+			'cannot unregister.').format(current_thread().name, wmiobj.name))
 

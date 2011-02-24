@@ -11,17 +11,20 @@ Licensed under the terms of the GNU GPL version 2.
 import gettext
 gettext.install('licorn', unicode=True)
 
-import os, signal, sys, time, Pyro.core, Pyro.configuration
+import os, signal, sys, time, operator
+import Pyro.core, Pyro.util, Pyro.configuration
+
 from threading import Thread
 
 from licorn.foundations           import options, exceptions, logging
+from licorn.foundations           import pyutils, hlstr
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
 from licorn.foundations.messaging import MessageProcessor
 
-from licorn.core import LMC
-import argparser
+from licorn.core           import LMC
+from licorn.interfaces.cli import argparser
 
 #: Proxy to `daemon.cmdlistener.rwi` used in all CLI tools to transmit commands
 #: to the Licorn® daemon.
@@ -60,20 +63,38 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 		if "--no-colors" in sys.argv:
 			options.SetNoColors(True)
 
-		import argparser, Pyro.util
+		try:
+			# we need to copy the keys because they will be modified by the
+			# function.
+			mode = hlstr.word_match(sys.argv[1].lower(), sorted(functions.keys()))
 
-		mode = sys.argv[1]
+		except IndexError:
+			mode = None
 
-		if mode in functions.keys():
+		if mode is None:
 
 			if len(sys.argv) < expected_min_args:
 				# auto-display usage when called with no arguments or just one.
 				sys.argv.append("--help")
 
+			if len(sys.argv) > 1 and sys.argv[1] not in (
+												'-h', '--help', '--version'):
+				logging.warning(_(u'Unknow mode %s!') % sys.argv[1])
+
+			argparser.general_parse_arguments(app_data, sorted(functions.iterkeys()))
+
+		else:
+
 			assert ltrace('cli', '  cli_main: connecting to core')
 			RWI = LMC.connect()
 
-			(opts, args) = getattr(argparser, functions[mode][0])(app=app_data)
+			try:
+				(opts, args) = getattr(argparser, functions[mode][0])(app=app_data)
+
+			except IndexError, e:
+				sys.argv.append("--help")
+				argparser.general_parse_arguments(app_data)
+
 			options.SetFrom(opts)
 
 			assert ltrace('cli', '  cli_main: starting pyro')
@@ -90,7 +111,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			Pyro.core.initClient()
 
 			client_daemon = Pyro.core.Daemon()
-			listener = MessageProcessor(verbose=opts.verbose)
+			listener      = MessageProcessor(verbose=opts.verbose)
 			client_daemon.connect(listener)
 
 			# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
@@ -119,28 +140,22 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 				cmd_start_time = time.time()
 				getattr(RWI, functions[mode][1])(opts=opts, args=args)
 
-			### FIXME
-			#signal.pause()
-
 			LMC.release()
 
 			assert ltrace('timings', '@cli_main_exec_time: %.4fs' % (
 				time.time() - cmd_start_time))
 			del cmd_start_time
-		else:
-			if mode not in ('-h', '--help', '--version'):
-				logging.warning(logging.GENERAL_UNKNOWN_MODE % mode)
-			argparser.general_parse_arguments(app_data)
 
-	except IndexError, e:
+	except exceptions.NeedHelpException, e:
+		logging.warning(e)
 		sys.argv.append("--help")
-		argparser.general_parse_arguments(app_data)
+		getattr(argparser, functions[mode][0])(app=app_data)
 
 	except KeyboardInterrupt, e:
-		logging.warning(logging.GENERAL_INTERRUPTED)
+		logging.warning(_(u'Interrupted, cleaning up!'))
 
 	except exceptions.NeedRestartException, e:
-		logging.notice('daemon needs a restart, sending USR1.')
+		logging.notice(_(u'daemon needs a restart, sending USR1 signal.'))
 		os.kill(e.pid, signal.SIGUSR1)
 
 	except exceptions.LicornError, e:

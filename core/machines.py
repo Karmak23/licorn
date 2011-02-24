@@ -23,14 +23,15 @@ from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import host_status, host_types, filters
 from licorn.core                  import LMC
 from licorn.core.classes          import CoreController, CoreStoredObject
-from licorn.daemon                import priorities, roles, \
-											service_enqueue, service_wait, \
-											network_enqueue, network_wait
+from licorn.daemon                import priorities, roles
 from licorn.interfaces.wmi        import WMIObject
 
 class Machine(CoreStoredObject):
-	counter = 0
-	arp_table = None
+
+	by_hostname = {}
+	by_ether    = {}
+	arp_table   = None
+
 	_nmap_cmd_base      = [ 'nmap', '-v', '-n', '-T5', '-sP', '-oG', '-' ]
 	_nmap_cmd_gos_base  = [ 'nmap', '-n', '-O' ]
 	_nmap_installed     = os.path.exists('/usr/bin/nmap')
@@ -111,18 +112,16 @@ class Machine(CoreStoredObject):
 		linked_machines=None, linked_users=None, linked_groups=None,
 		backend=None, myself=False, **kwargs):
 
-		CoreStoredObject.__init__(self, oid=mid, name=hostname,
-			controller=LMC.machines, backend=backend)
+		CoreStoredObject.__init__(self, LMC.machines, backend)
 
 		assert ltrace('objects', '| Machine.__init__(%s, %s)' % (mid, hostname))
 
 		# mid == IP address (unique on a given network)
-		self.mid         = self._oid
-		self.ip          = self.mid
+		self.__mid = mid
 
 		# hostname will be DNS-reversed from IP, or constructed.
-		self.hostname    = self.name
-
+		# it gets a __ because it is a property.
+		self.__hostname  = hostname
 		self.ether       = ether
 		self.expiry      = expiry
 		self.lease_time  = lease_time
@@ -152,6 +151,32 @@ class Machine(CoreStoredObject):
 
 		self.linked_users  = linked_users  if linked_users  else []
 		self.linked_groups = linked_groups if linked_groups else []
+
+	@property
+	def mid(self):
+		""" The IP address of the host. """
+		return self.__mid
+
+	# Comfort alias ("mid" is not a common name,
+	# only for me and Licorn® internals)
+	ip = mid
+
+	@property
+	def hostname(self):
+		""" The host name (indexed in a reverse mapping dict). """
+		return self.__hostname
+
+	@hostname.setter
+	def hostname(self, hostname):
+		""" Update the reverse mapping dict. """
+		try:
+			del Machine.by_hostname[self.__hostname]
+		except:
+			pass
+
+		self.__hostname = hostname
+		LMC.machines.by_hostname[hostname] = self
+
 	def add_link(self, licorn_object):
 		""" TODO. """
 
@@ -217,14 +242,14 @@ class Machine(CoreStoredObject):
 		caller = current_thread().name
 		#assert ltrace('machines', '> %s: ping(%s)' % (caller, self.mid))
 
-		with self.lock():
+		with self.lock:
 
 			if self.myself:
 				self.status = host_status.ACTIVE
 				if and_more:
-					network_enqueue(priorities.NORMAL, self.pyroize)
-					network_enqueue(priorities.LOW, self.arping)
-					network_enqueue(priorities.LOW, self.resolve)
+					self.licornd.network_enqueue(priorities.NORMAL, self.pyroize)
+					self.licornd.network_enqueue(priorities.LOW, self.arping)
+					self.licornd.network_enqueue(priorities.LOW, self.resolve)
 				assert ltrace('machines', '| %s: ping(%s) → %s' % (
 									caller, self.mid, host_status[self.status]))
 				return
@@ -233,7 +258,7 @@ class Machine(CoreStoredObject):
 				pinger = network.Pinger(self.mid)
 				pinger.ping()
 
-			except (exceptions.DoesntExistsException,
+			except (exceptions.DoesntExistException,
 					exceptions.TimeoutExceededException), e:
 
 				self.status = host_status.OFFLINE
@@ -247,9 +272,9 @@ class Machine(CoreStoredObject):
 				self.status = host_status.ONLINE
 
 				if and_more:
-					network_enqueue(priorities.NORMAL, self.pyroize)
-					network_enqueue(priorities.LOW, self.arping)
-					network_enqueue(priorities.LOW, self.resolve)
+					self.licornd.network_enqueue(priorities.NORMAL, self.pyroize)
+					self.licornd.network_enqueue(priorities.LOW, self.arping)
+					self.licornd.network_enqueue(priorities.LOW, self.resolve)
 
 			# close the socket (no more needed), else we could get
 			# "too many open files" errors (254 open sockets for .
@@ -264,7 +289,7 @@ class Machine(CoreStoredObject):
 
 		#assert ltrace('machines', '> %s: resolve(%s)' % (caller, self.mid))
 
-		with self.lock():
+		with self.lock:
 			old_hostname = self.hostname
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
@@ -276,8 +301,10 @@ class Machine(CoreStoredObject):
 				# update the hostname cache.
 				# FIXME: don't update the cache manually,
 				# delegate it to *something*.
-				del LMC.machines.by_hostname[old_hostname]
-				LMC.machines.by_hostname[self.hostname] = self
+
+				print '>> implement machines.Machine.resolve()'
+				#del LMC.machines.by_hostname[old_hostname]
+				#LMC.machines.by_hostname[self.hostname] = self
 
 		assert ltrace('machines', '| %s: resolve(%s) → %s' % (
 											caller, self.mid, self.hostname))
@@ -287,7 +314,7 @@ class Machine(CoreStoredObject):
 
 		#assert ltrace('machines', '> %s: pyroize(%s)' % (caller, self.mid))
 
-		with self.lock():
+		with self.lock:
 
 			if self.myself:
 				self.system=None
@@ -311,14 +338,14 @@ class Machine(CoreStoredObject):
 				remotesys.noop()
 
 			except Pyro.errors.ProtocolError, e:
-				network_enqueue(priorities.LOW, self.guess_os)
+				self.licornd.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace('machines', '  %s: cannot pyroize %s '
 								'(was: %s)' % (caller, self.mid, e))
 
 			except Pyro.errors.PyroError, e:
 				remotesys.release()
 				del remotesys
-				network_enqueue(priorities.LOW, self.guess_os)
+				self.licornd.network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace('machines', '%s: pyro error %s on %s.' % (
 						caller, e, self.mid))
 
@@ -335,7 +362,7 @@ class Machine(CoreStoredObject):
 
 		caller = current_thread().name
 
-		with self.lock():
+		with self.lock:
 			# merge remote hosts, particularly if they are connected
 			# to me with more than one interface.
 			remote_ifaces = self.system.local_ip_addresses()
@@ -358,7 +385,7 @@ class Machine(CoreStoredObject):
 						# when the second machine will have been created,
 						# the pyroize() phase will reconcile master/slave
 						# again. Next service loop.
-						service_enqueue(priorities.HIGH,
+						self.licornd.service_enqueue(priorities.HIGH,
 									self._controller.add_machine, mid=iface)
 	def pyro_shutdown(self):
 		""" WIPE the system attribute and mark the machine as shutting down.
@@ -410,7 +437,7 @@ class Machine(CoreStoredObject):
 
 		#assert ltrace('machines', '> %s: arping(%s)' % (caller, self.mid))
 
-		with self.lock():
+		with self.lock:
 			try:
 				# str() is needed to convert from dumbnet.addr() type.
 				self.ether = str(Machine.arp_table.get(dumbnet.addr(self.mid)))
@@ -436,7 +463,7 @@ class Machine(CoreStoredObject):
 
 		caller = current_thread().name
 
-		with self.lock():
+		with self.lock:
 			if self.myself:
 				if merge:
 					self.system_type |= LMC.system.get_host_type()
@@ -487,7 +514,7 @@ class Machine(CoreStoredObject):
 							if is_server else 'client')),
 						stylize(ST_ADDRESS, self.mid)))
 
-					service_enqueue(priorities.HIGH, self.system.hello_from,
+					self.licornd.service_enqueue(priorities.HIGH, self.system.hello_from,
 						LMC.system.local_ip_addresses())
 
 			except Pyro.errors.PyroError, e:
@@ -530,7 +557,7 @@ class Machine(CoreStoredObject):
 				'''non remote-controlled machine!''')
 	def update_status(self, status):
 		""" update the current machine status, in a clever manner. """
-		with self.lock():
+		with self.lock:
 			if status is None:
 				# this part is not going to happen, because this method is
 				# called (indirectly, via SystemController) from clients.
@@ -564,10 +591,20 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		hostnames and ether addresses which should be unique). """
 	init_ok         = False
 	load_ok         = False
+
 	_licorn_protected_attrs = (
 			CoreController._licorn_protected_attrs
 			+ WMIObject._licorn_protected_attrs
 		)
+
+	#: used in RWI.
+	def object_type_str(self):
+		return _(u'machine')
+	def object_id_str(self):
+		return _(u'MID')
+	@property
+	def sort_key(self):
+		return 'name'
 
 	def __init__(self):
 		""" Create the machine accounts list from the underlying system.
@@ -578,8 +615,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		assert ltrace('machines', 'MachinesController.__init__()')
 
-		CoreController.__init__(self, name='machines',
-			reverse_mappings=['hostname', 'ether'])
+		CoreController.__init__(self, 'machines')
 
 		MachinesController.init_ok = True
 	def add_machine(self, mid, hostname=None, ether=None, backend=None,
@@ -608,7 +644,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 						myself=myself
 					)
 
-		network_enqueue(priorities.LOW, self[mid].ping, and_more=True)
+		self.licornd.network_enqueue(priorities.LOW, self[mid].ping, and_more=True)
 
 		return self[mid]
 	def load(self):
@@ -620,32 +656,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 
 		if LMC.configuration.experimental.enabled:
-			self.create_wmi_object(uri='/machines', name=_('Machines'),
-				alt_string=_('Manage network clients (computers, printers, '
-					'etc) and energy preferences'),
-				context_menu_data=(
-					(
-						_('Shutdown machines'), '/machines/massshutdown',
-						_('Shutdown machines on the network.'),
-						'ctxt-icon', 'icon-massshutdown',
-						lambda: self.keys() != []
-					),
-					(
-						_('Energy policies'), '/machines/preferences',
-						_('Manage network-wide Energy &amp; '
-							'power saving policies.'),
-						'ctxt-icon', 'icon-energyprefs'
-					)
-				)
-			)
-			"""
-			NOT YET:
-				_("Add a machine"),
-				_("Create a configuration record for a machine which is not yet on "
-					"the network."),
-				_("Export current machines list to a CSV or XML file."),
-				_("Export this list")
-			"""
+			self.create_wmi_object('/machines')
 
 		MachinesController.load_ok = True
 	def reload(self):
@@ -655,7 +666,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		CoreController.reload(self)
 
-		with self.lock():
+		with self.lock:
 			self.clear()
 
 			for backend in self.backends:
@@ -670,7 +681,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		assert ltrace('machines', '< reload()')
 	def build_myself(self):
 		""" create internal instance(s) for the current Licorn® daemon. """
-		with self.lock():
+		with self.lock:
 			first_machine_found = None
 
 			for iface in network.interfaces():
@@ -713,7 +724,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		logging.info('%s: %s initial network scan.' % (caller,
 			stylize(ST_RUNNING, 'started')))
 
-		with self.lock():
+		with self.lock:
 
 			# FIRST, add myself to known machines, and link all my IP
 			# addresses to the same machine, to avoid displaying more than one
@@ -723,13 +734,13 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			# SECOND update our know machines statuses, if any.
 			for machine in self:
 				if machine.status & host_status.UNKNOWN:
-					network_enqueue(priorities.LOW, machine.ping, and_more=True)
+					self.licornd.network_enqueue(priorities.LOW, machine.ping, and_more=True)
 
 				if machine.hostname.startswith('UNKNOWN'):
-					network_enqueue(priorities.LOW, machine.resolve)
+					self.licornd.network_enqueue(priorities.LOW, machine.resolve)
 
 			# THEN scan the whole LAN to discover more machines.
-			network_enqueue(priorities.LOW, self.scan_network)
+			self.licornd.network_enqueue(priorities.LOW, self.scan_network)
 
 		assert ltrace('machines', '< %s: initial_scan()' % caller)
 	def scan_network(self):
@@ -751,7 +762,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 							network.netmask2prefix(
 												iface_infos[2][0]['netmask'])))
 
-					with self.lock():
+					with self.lock:
 						for ipaddr in ipcalc.Network('%s.0/%s' % (
 								iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 								network.netmask2prefix(
@@ -760,7 +771,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 							ipaddr = str(ipaddr)
 							if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
 								if ipaddr in known_ips:
-									network_enqueue(priorities.LOW,
+									self.licornd.network_enqueue(priorities.LOW,
 															self[str(ipaddr)].ping)
 								else:
 									self.add_machine(mid=str(ipaddr))
@@ -776,7 +787,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		for ip in remote_ips:
 			if ip in current_ips:
-				service_enqueue(priorities.HIGH, self[ip].pyro_shutdown)
+				self.licornd.service_enqueue(priorities.HIGH, self[ip].pyro_shutdown)
 	def hello_from(self, remote_ips):
 		""" this method is called on the remote side, when the local side calls
 			:meth:`announce_shutdown`.
@@ -785,10 +796,10 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		for ip in remote_ips:
 			if ip in current_ips:
-				service_enqueue(priorities.HIGH, self[ip].update_informations)
+				self.licornd.service_enqueue(priorities.HIGH, self[ip].update_informations)
 			else:
 				self.add_machine(mid=ip)
-				service_enqueue(priorities.HIGH, self[ip].update_informations)
+				self.licornd.service_enqueue(priorities.HIGH, self[ip].update_informations)
 	def announce_shutdown(self):
 		""" announce our shutdown to all connected machines. """
 
@@ -802,7 +813,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 									'| annouce_shutdown() to %s' % machine.ip)
 				try:
 					#print '>> announce shutdown to', machine.ip
-					service_enqueue(priorities.HIGH,
+					self.licornd.service_enqueue(priorities.HIGH,
 									machine._pyro_forward_goodbye_from,
 										local_ifaces)
 				except Pyro.errors.PyroError, e:
@@ -818,7 +829,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		assert ltrace('machines', 'saving data structures to disk.')
 
-		with self.lock():
+		with self.lock:
 			if mid:
 				LMC.backends[
 					self[mid]['backend']
@@ -826,14 +837,14 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			else:
 				for backend in self.backends:
 					backend.save_Machines()
-	def Select(self, filter_string, filter_type=host_status, return_ids=False):
+	def select(self, filter_string, filter_type=host_status, return_ids=False):
 		""" Filter machine accounts on different criteria. """
 
 		filtered_machines = []
 
-		assert ltrace('machines', '> Select(%s)' % filter_string)
+		assert ltrace('machines', '> select(%s)' % filter_string)
 
-		with self.lock():
+		with self.lock:
 			if filter_type == host_status:
 
 				def keep_status(machine, status=None):
@@ -888,7 +899,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					mid = int(mid.group('mid'))
 					filtered_machines.append(self[mid])
 
-			assert ltrace('machines', '< Select(%s)' % filtered_machines)
+			assert ltrace('machines', '< select(%s)' % filtered_machines)
 			if return_ids:
 				return [ m.mid for m in filtered_machines ]
 			else:
@@ -999,11 +1010,11 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		return is_ALT
 	def confirm_mid(self, mid):
-		""" verify a MID or raise DoesntExists. """
+		""" verify a MID or raise DoesntExist. """
 		try:
 			return self[mid].ip
 		except KeyError:
-			raise exceptions.DoesntExistsException(
+			raise exceptions.DoesntExistException(
 				"MID %s doesn't exist" % mid)
 	def make_hostname(self, inputhostname=None):
 		""" Make a valid hostname from what we're given. """
@@ -1024,6 +1035,41 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		return hostname
 
+	# these 3 will be mapped into R/O properties by the WMIObject creation
+	# process method. They will be deleted from here after the mapping is done.
+	def _wmi_name(self):
+		return _('Machines')
+	def _wmi_alt_string(self):
+		return _('Manage network clients (computers, printers, '
+					'etc) and energy preferences')
+	def _wmi_context_menu(self):
+		"""
+			NOT YET:
+				_("Add a machine"),
+				_("Create a configuration record for a machine which is not yet on "
+					"the network."),
+				_("Export current machines list to a CSV or XML file."),
+				_("Export this list")
+			"""
+
+		return (
+			(
+				_('Shutdown machines'),
+				'/machines/massshutdown',
+				_('Shutdown machines on the network.'),
+				'ctxt-icon',
+				'icon-massshutdown',
+				lambda: len(self) > 0
+			),
+			(
+				_('Energy policies'),
+				'/machines/preferences',
+				_('Manage network-wide Energy &amp; '
+					'power saving policies.'),
+				'ctxt-icon',
+				'icon-energyprefs'
+			)
+		)
 	def _wmi_shutdown(self, uri, http_user, hostname=None, sure=False,
 		warn_users=True, **kwargs):
 		""" Shutdown a machine. """
@@ -1056,7 +1102,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 			# TODO: find a way to callback the result to the WMI...
 
-			service_enqueue(priorities.LOW,
+			self.licornd.service_enqueue(priorities.LOW,
 				self.by_hostname(hostname).shutdown, warn_users=warn_users)
 
 			return (self.utils.HTTP_TYPE_REDIRECT,
@@ -1123,8 +1169,8 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			if active:
 				selection |= host_status.ACTIVE
 
-			for machine in self.Select(filter_string=selection):
-				service_enqueue(priorities.LOW,	machine.shutdown, warn_users=warn_users)
+			for machine in self.select(filter_string=selection):
+				self.licornd.service_enqueue(priorities.LOW,	machine.shutdown, warn_users=warn_users)
 
 			return (self.utils.HTTP_TYPE_REDIRECT,
 							self.wmi.successfull_redirect)
@@ -1159,7 +1205,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 		else:
-			LMC.machines.Select(filters.STANDARD)
+			LMC.machines.select(filters.STANDARD)
 
 			if type == "CSV":
 				data = LMC.machines.ExportCSV()
@@ -1202,7 +1248,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			return (w.HTTP_TYPE_TEXT, w.page(title, data))
 
 		else:
-			LMC.machines.Select(filters.STANDARD)
+			LMC.machines.select(filters.STANDARD)
 
 			if type == "CSV":
 				data = LMC.machines.ExportCSV()

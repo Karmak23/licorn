@@ -7,7 +7,7 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal
+import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal, gettext
 from threading import current_thread
 
 from SocketServer       import TCPServer, ThreadingMixIn
@@ -25,22 +25,23 @@ from licorn.daemon.threads      import LicornBasicThread
 from licorn.core import LMC
 
 class WMIThread(LicornBasicThread):
-	def __init__(self, daemon):
+	def __init__(self, licornd):
 		assert ltrace('http', '| WMIThread.__init__()')
-		LicornBasicThread.__init__(self, tname='WMIHTTPServer')
-		self.daemon = daemon
+
+		LicornBasicThread.__init__(self, tname='WMIHTTPServer', licornd=licornd)
 	def run(self):
 
 		assert ltrace('http', 'WMIThread.run()')
 		#logging.progress('''%s(%d): started, waiting for master to become '''
 		#	'''ready.''' % (pname, os.getpid()))
 
-		# We do this here, to avoid
 		import licorn.interfaces.wmi as wmi
 		WMIHTTPRequestHandler.wmi = wmi
 		WMIHTTPRequestHandler.wmi.init()
 		WMIHTTPRequestHandler.ip_addresses = (['127.0.0.1']
 				+ LMC.configuration.network.local_ip_addresses())
+
+		WMIHTTPRequestHandler.langs = self.licornd.langs
 
 		if options.wmi_listen_address:
 			# the daemon CLI argument has priority over the configuration
@@ -107,8 +108,11 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	#: this is a reference to the licorn.interfaces.wmi module.
 	#: it will be filled on thread load, to avoid us re-charging it at
 	#: each HTTP request.
-	wmi = None
+	wmi   = None
+	langs = None
+
 	ip_addresses = []
+
 	server_name = None
 	server_port = None
 	def do_HEAD(self):
@@ -124,7 +128,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		try:
 			f = self.send_head()
 			if f:
-				if type(f) in (type(""), type(u'')):
+				if type(f) in (type(''), type(u'')):
 					self.wfile.write(f)
 				else:
 					buf = f.read(LMC.configuration.licornd.buffer_size)
@@ -186,6 +190,8 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		if self.user_authorized():
 			try:
+				self.switch_lang()
+
 				retdata = self.serve_virtual_uri()
 			except exceptions.LicornWebException:
 				retdata = self.serve_local_file()
@@ -198,7 +204,29 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		self.end_headers()
 		return retdata
+	def switch_lang(self):
+		""" Try to find a gettext translation suitable to the current visitor. """
+
+		# this will get 'fr-FR,fr;q=0.8,en-US;q=0.6,en;q=0.4' for example
+		langblocks = self.headers.getheader("accept-language").split(';')
+
+		for langblock in langblocks:
+			for lang in langblock.split(','):
+				if lang in WMIHTTPRequestHandler.langs:
+					# install the '_' only into the current thread. The builtin
+					# one will redirect to it as needed, to make only the
+					# current thread work in the language.
+					current_thread()._ = WMIHTTPRequestHandler.langs[lang].ugettext
+
+					logging.progress(_('{0}: switched to language {1} '
+						'for http_user {2}.').format(
+							stylize(ST_NAME, current_thread().name),
+							stylize(ST_COMMENT, lang),
+							stylize(ST_LOGIN, self.http_user)))
+					break
+
 	def user_authorized(self):
+
 		""" Return True if authorization exists AND user is authorized."""
 
 		authorization = self.headers.getheader("authorization")
@@ -218,20 +246,22 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 						# TODO: make this a beautiful PAM authentication ?
 						#
 						try :
-							if LMC.users.exists(
-								login=authorization[0]) and \
-								LMC.users.check_password(
-									authorization[0], authorization[1]):
-								if LMC.groups.exists(
-									name=LMC.configuration.licornd.wmi.group):
-									if authorization[0] in \
-										LMC.groups.auxilliary_members(
-											name=LMC.configuration.licornd.wmi.group):
-										self.http_user = authorization[0]
-										return True
-								else:
+
+							user = LMC.users.by_login(authorization[0])
+
+							if user.check_password(authorization[1]):
+
+								try:
+									group = LMC.groups.by_name(
+											LMC.configuration.licornd.wmi.group)
+								except exceptions.DoesntExistException:
 									self.http_user = authorization[0]
 									return True
+
+								if group in user.groups:
+									self.http_user = authorization[0]
+									return True
+
 						except exceptions.BadArgumentError:
 							logging.warning('''empty username or '''
 								'''password sent as authentification '''

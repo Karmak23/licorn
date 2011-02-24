@@ -15,25 +15,43 @@ configuration files:
 
 """
 
-import plistlib
+import os, plistlib, tempfile
 import xml.etree.ElementTree as ET
 
-def	shell_conf_write_from_dict(data, filename):
+from licorn.foundations import fsapi
+
+def	shell_conf_write_from_dict(data, filename, mode=0644, uid=0, gid=0):
 	""" Read a shell configuration file with variables (VAR=value on each line)
 		return a dictionary of param->value filled with the variables.
 
 		Typical use case: /etc/licorn/names.conf, /etc/adduser.conf, /etc/licorn/licorn.conf
 	"""
 
-	with open(filename , 'w') as filehandle:
-		filehandle.write('\n'.join(
-			[ '%s=%s' % (key, value)
-				for key, value in data.items()
-			]) + '\n'
-		)
+	fsapi.backup_file(filename)
 
-def xml_write_from_tree(tree, filename):
-	return tree.write(filename)
+	ftemp, fpath = tempfile.mkstemp(dir=os.path.dirname(filename))
+
+	os.write(ftemp, '%s\n' % '\n'.join('%s=%s' % (key, value)
+									for key, value in data.iteritems()))
+
+	os.fchmod(ftemp, mode)
+	os.fchown(ftemp, uid, gid)
+	os.close(ftemp)
+
+	os.rename(fpath, filename)
+
+def xml_write_from_tree(tree, filename, mode=0644, uid=0, gid=0):
+
+	fsapi.backup_file(filename)
+
+	ftemp, fpath = tempfile.mkstemp(dir=os.path.dirname(filename))
+
+	os.write(ftemp, ET.tostring(tree.getroot(), encoding='utf-8'))
+	os.fchmod(ftemp, mode)
+	os.fchown(ftemp, uid, gid)
+	os.close(ftemp)
+
+	os.rename(fpath, filename)
 
 def plist_write_from_dict(data, filename):
 	return plistlib.writePlist(data, filename)

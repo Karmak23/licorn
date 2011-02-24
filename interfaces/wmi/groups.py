@@ -14,9 +14,6 @@ from licorn.interfaces.wmi import utils as w
 rewind = _("<br /><br />Go back with your browser, double-check data and validate the web-form.")
 successfull_redirect = '/groups/list'
 
-protected_user  = LMC.users._wmi_protected_user
-protected_group = LMC.groups._wmi_protected_group
-
 def ctxtnav(active=True):
 
 	if active:
@@ -39,176 +36,117 @@ def ctxtnav(active=True):
 def unlock(uri, http_user, name, sure=False, **kwargs):
 	""" Make a shared group dir permissive. """
 
+	group = LMC.groups.by_name(name)
 	title = _("Make group %s permissive") % name
 
-	if protected_group(name):
+	if group._wmi_protected():
 		return w.forgery_error(title)
 
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+	if sure:
+		try:
+			group.permissive = True
 
-	if not sure:
-		description = _('''This will permit large access to files and folders
-			in the group shared dir, and will allow any member of the group to
-			modify / delete any document, even if he/she is not owner of the
-			document. This option can be dangerous, but if group members are
-			accustomed to work together, there is no problem. Generally speaking
-			you will use this feature on small working groups. <br /> Warning:
-			<strong> The operation may be lengthy because the system will change
-			permissions of all current data </ strong> (duration is therefore
-			depending on the volume of data, about 1 second for 100Mio).''')
+		except Exception, e:
+			print_exc()
 
-		data += w.question(_('''Are you sure you want to active '''
-			'''permissiveness on group <strong>%s</strong>?''') % name,
-			description, yes_values = [ _("Activate") + ' >>',
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
+	else:
+		description = _('This will permit global access to files and folders '
+			'in the group shared dir, by allow <strong>any member</strong> of '
+			'the group to modify / delete any document (even if he/she is not '
+			'owner of the document). Enabling this option depends on how '
+			'members are used to work together. Generally speaking, you will '
+			'enable this feature on small-sized working groups. <br />Note: '
+			'<strong> The system will propagate new permissions on share data '
+			'in the background</strong>, after you toggle this feature, and '
+			'this can take some time, depending of the volume of shared data '
+			'(about 15 seconds per Gib).')
+
+		data = (w.page_body_start(uri, http_user, ctxtnav, title, False) +
+			w.question(_('Are you sure you want to enable '
+			'permissiveness on group <strong>%s</strong>?') % name,
+			description, yes_values = [ _("Enable") + ' >>',
 			"/groups/unlock/%s/sure" % name, _("A") ],
-			no_values = [ '<< ' + _("Cancel"), "/groups/list", _("N") ])
+			no_values = [ '<< ' + _("Cancel"), "/groups/list", _("N") ]))
 
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
-	else:		# we are sure, do it !
-
-		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
-			"--name", name, "--set-permissive" ]
-
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to activate permissivenes on group
-			<strong>%s</strong>!''') % name)
 def lock(uri, http_user, name, sure=False, **kwargs):
 	""" Make a group not permissive. """
 
+	group = LMC.groups.by_name(name)
 	title = _("Make group %s not permissive") % name
 
-	if protected_group(name):
+	if group._wmi_protected():
 		return w.forgery_error(title)
 
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
+	if sure:
+		try:
+			group.permissive = False
 
-	if not sure:
-		description = _('''This will ensure finer write access to files and
-		folders in the group shared dir. Only the owner / creator of a document
-		will be able to modify it; other group members will only be able to read
-		such a document (unless the owner manually assign other permissions,
-		which are not guaranteed to be maintained by the system). <br />
-		Warning: <strong> The operation may be lengthy because the system will
-		switch permissions of all current group shared data</strong> (duration
-		is therefore depending on the volume of data, about 1 sec. for 100Mio).
-		''')
+		except Exception, e:
+			print_exc()
 
-		data += w.question(_('''Are you sure you want to make group '''
-			'''<strong>%s</strong> not permissive?''') % name,
-			description, yes_values   = [ _("Deactivate") + ' >>',
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
+	else:
+		description = _('This will ensure finer write access to files and '
+			'folders in the group shared dir. Only the owner / creator of a '
+			'document will be able to modify it; other group members will only '
+			'be able to read such a document (unless the owner manually assign '
+			'other permissions, which will not be maintained by the system).'
+			 '<br />Note: '
+			'<strong> The system will propagate new permissions on share data '
+			'in the background</strong>, after you toggle this feature, and '
+			'this can take some time, depending of the volume of shared data '
+			'(about 15 seconds per Gib).')
+
+		data += (w.page_body_start(uri, http_user, ctxtnav, title, False)
+			+ w.question(_('Are you sure you want to disable permissiveness '
+			'on group <strong>%s</strong>?') % name,
+			description, yes_values   = [ _("Disable") + ' >>',
 				"/groups/lock/%s/sure" % name, _("D") ],
-			no_values    = [ '<< ' + _("Cancel"), "/groups/list", _("N") ])
+			no_values    = [ '<< ' + _("Cancel"), "/groups/list", _("N") ]))
 
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
-	else:		# we are sure, do it.
-		command = [ "sudo", "mod", "group", "--quiet", "--no-colors",
-			"--name", name, "--set-not-permissive" ]
-
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to remove permissiveness from group
-				<strong>%s</strong>!''') % name)
 def delete(uri, http_user, name, sure=False, no_archive=False, **kwargs):
 	""" Remove group and archive (or not) group shared dir. """
 
+	group = LMC.groups.by_name(name)
 	title = _("Remove group %s") % name
 
-	if protected_group(name):
+	if group._wmi_protected():
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	if not sure:
-		data += w.question(_('''Are you sure you want to remove group
-			<strong>%s</strong>?''') % name,
-			_('''Group shared data will be archived in directory %s,
-				and accessible to members of group %s for eventual
-				recovery. However, you can decideto remove them
-				permanently.''') % (LMC.configuration.home_archive_dir,
-				LMC.configuration.defaults.admin_group),
-			yes_values   = [ _("Remove") + ' >>',
+		data += w.question(_('Are you sure you want to delete group '
+			'<strong>%s</strong>?') % name,
+			_('Shared data will be archived in directory {0}, '
+				'and accessible to members of group {1} for eventual '
+				'recovery. However, you can decide to remove them '
+				'permanently.').format(
+					LMC.configuration.home_archive_dir,
+					LMC.configuration.defaults.admin_group),
+			yes_values   = [ _("Delete") + ' >>',
 				"/groups/delete/%s/sure" % name, _("R") ],
 			no_values    = [ '<< ' + _("Cancel"),
 				"/groups/list", _("N") ],
 			form_options = w.checkbox("no_archive", "True",
-				_("Definitely remove group shared data."),
+				_('Definitely remove group shared data.'),
 				checked = False) )
-
-		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
-
-	else:		# we are sure, do it !
-		command = [ 'sudo', 'del', 'group', '--quiet', '--no-colors',
-			'--name', name ]
-
-		if no_archive:
-			command.extend(['--no-archive'])
-
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to remove group <strong>%s</strong>!''') % name)
-def skel(req, name, sure=False, apply_skel=None, **kwargs):
-	""" TO BE IMPLEMENTED ! reapply a group's users' skel with confirmation."""
-
-	title = _("Skeleton reapplying for group %s") % name
-
-	if protected_group(name):
-		return w.forgery_error(title)
-
-	if apply_skel is None:
-		apply_skel = LMC.configuration.users.default_skel
-
-	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
-
-	if not sure:
-		description = _('''This will reset the desktops, icons and menus
-			of all members of the group, according to the content of the
-			skel you choose. This will NOT alter any of the user personnal
-			data, nor the group shared data.''')
-
-		pri_group = LMC.groups.groups[allusers.users[
-			LMC.users.login_to_uid(login)]['gidNumber']]['name']
-
-		# liste des skels du profile en cours.
-		def filter_skels(pri_group, sk_list):
-			'''
-			TODO: to be converted to licorn model
-			if pri_group == LMC.configuration.mNames['RESPONSABLES_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % LMC.configuration.mNames['RESPONSABLES_GROUP']) != -1, sk_list)
-			elif pri_group == LMC.configuration.mNames['USAGERS_GROUP']:
-				return filter(lambda x: x.rfind("/%s/" % LMC.configuration.mNames['USAGERS_GROUP']) != -1, sk_list)
-			else:
-			'''
-			return sk_list
-
-		form_options = _('''Which skel do you wish to reapply to members of
-			this group? %s''') \
-			% w.select("apply_skel",
-			filter_skels(pri_group, LMC.configuration.users.skels),
-			func=os.path.basename)
-
-		data += w.question( _('''Are you sure you want to reapply this skel to
-			all of the members of %s?''') % login,
-			description,
-			yes_values   = [ _("Apply") + ' >>',
-				"/users/skel/%s/sure" % login, _("A") ],
-			no_values    = [ '<< ' + _("Cancel"),
-				"/groups/list", _("N") ],
-			form_options = form_options)
 
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
 		# we are sure, do it !
-		command = [ "sudo", "mod", "user", "--quiet", "--no-colors",
-			"--login", login, '--apply-skel', skel ]
 
-		return w.run(command, successfull_redirect,
-			w.page(title, data + '%s' + w.page_body_end()),
-			_('''Failed to apply skel %s to members of group %s.''') % (
-				os.path.basename(apply_skel), login))
+		try:
+			LMC.groups.del_Group(group, no_archive=True if no_archive else False)
+
+		except Exception, e:
+			print_exc()
+
+		return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def new(uri, http_user, **kwargs):
 	"""Generate a form to create a new group on the system."""
 
@@ -261,127 +199,108 @@ def new(uri, http_user, **kwargs):
 def create(uri, http_user, name, description=None, skel="", permissive=False,
 	**kwargs):
 
-	title = _("Creating group %s") % name
-	data = '%s<h1>%s</h1><br />' % (w.backto(), title)
+	try:
+		LMC.groups.add_Group(name,
+					description=description or None,
+					permissive=True if permissive else False,
+					groupSkel=skel,
+					async=False)
 
-	command = [ 'sudo', 'add', 'group', '--quiet', '--no-colors',
-		'--name', name, '--skel', skel ]
+	except Exception, e:
+		print_exc()
 
-	if description:
-		command.extend([ '--description', description ])
-
-	if permissive:
-		command.append('--permissive')
-
-	return w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to create group %s!''') % name)
+	return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def view(uri, http_user, name,**kwargs):
 	"""Prepare a group view to be printed."""
 
+	group = LMC.groups.by_name(name)
 	title = _("Details of group %s") % name
 
-	if protected_group(name, complete=False):
+	if group._wmi_protected(complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-	u = LMC.users
-	g = LMC.groups
-
 	try:
-		group   = g[LMC.groups.name_to_gid(name)]
-		members = list(LMC.groups.all_members(name=name))
+		def user_line(user):
+			return '''<tr>
+				<td><a href="/users/view/{0}">{1}</a></td>
+				<td><a href="/users/view/{0}">%s</a></td>
+				<td>2</td>
+				</tr>''' % (user.login, user.gecos, user.uidNumber)
+
+		members = sorted(group.auxilliary_members)
 
 		if members != []:
-			members.sort()
 
 			members_html = '''
-			<h2>%s</h2>
-			<div style="text-align:left;">%s</div>
+			<h2>{0}</h2>
+			<div style="text-align:left;">{1}</div>
 			<table class="group_members">
 			<tr>
-				<th><strong>%s</strong></th>
-				<th><strong>%s</strong></th>
-				<th><strong>%s</strong></th>
+				<th><strong>{2}</strong></th>
+				<th><strong>{3}</strong></th>
+				<th><strong>{4}</strong></th>
 			</tr>
-			''' % (
-				_('Members'),
+			{5}
+			</table>
+			'''.format(_('Members'),
+					_('(ordered by login)'),
+					_('Full Name'),
+					_('Identifier'),
+					_('UID'),
+					'\n'.join(user_line(m) for m in members))
+		else:
+			members_html = '<h2>%s</h2>' % _('No member in this group.')
+
+		if group.is_standard:
+			resps = sorted(group.responsible_group.auxilliary_members)
+
+			if resps != []:
+				resps_html = '''
+				<h2>%s</h2>
+				<div style="text-align:left;">%s</div>
+				<table class="group_members">
+				<tr>
+					<th><strong>%s</strong></th>
+					<th><strong>%s</strong></th>
+					<th><strong>%s</strong></th>
+				</tr>
+				%s
+				</table>
+				''' % (
+				_('Responsibles'),
 				_('(ordered by login)'),
 				_('Full Name'),
 				_('Identifier'),
-				_('UID')
-				)
-			def user_line(login):
-				uid = LMC.users.login_to_uid(login)
-				return '''<tr>
-					<td><a href="/users/view/%s">%s</a></td>
-					<td><a href="/users/view/%s">%s</a></td>
-					<td>%s</td>
-					</tr>''' % (
-					login, u[uid]['gecos'],
-					login, login,
-					uid
-					)
-
-			members_html += "\n".join(map(user_line, members)) + '</table>'
-		else:
-			members_html = "<h2>%s</h2>" % _('No member in this group.')
-
-		if not LMC.groups.is_system_group(name):
-			resps = list(
-				LMC.groups.all_members(name=LMC.configuration.groups.resp_prefix+name))
-
-			if resps != []:
-				resps.sort()
-				resps_html = '''
-		<h2>%s</h2>
-		<div style="text-align:left;">%s</div>
-		<table class="group_members">
-		<tr>
-			<th><strong>%s</strong></th>
-			<th><strong>%s</strong></th>
-			<th><strong>%s</strong></th>
-		</tr>
-		%s
-		</table>
-			''' % (
-			_('Responsibles'),
-			_('(ordered by login)'),
-			_('Full Name'),
-			_('Identifier'),
-			_('UID'),
-			"\n".join(map(user_line, resps))
-			)
+				_('UID'),
+				"\n".join(user_line(r) for r in resps))
 
 			else:
-				resps_html = "<h2>%s</h2>" % \
-					_('No responsible for this group.')
+				resps_html = "<h2>%s</h2>" % _('No responsible for this group.')
 
-			guests = list(
-				LMC.groups.all_members(name=LMC.configuration.groups.guest_prefix+name))
+			guests = sorted(group.guest_group.auxilliary_members)
 
 			if guests != []:
-				guests.sort()
 				guests_html = '''
-		<h2>%s</h2>
-		<div style="text-align:left;">%s</div>
-		<table class="group_members">
-		<tr>
-			<th><strong>%s</strong></th>
-			<th><strong>%s</strong></th>
-			<th><strong>%s</strong></th>
-		</tr>
-		%s
-		</table>
-			''' % (
-			_('Guests'),
-			_('(ordered by login)'),
-			_('Full Name'),
-			_('Identifier'),
-			_('UID'),
-			"\n".join(map(user_line, guests))
-			)
+				<h2>%s</h2>
+				<div style="text-align:left;">%s</div>
+				<table class="group_members">
+				<tr>
+					<th><strong>%s</strong></th>
+					<th><strong>%s</strong></th>
+					<th><strong>%s</strong></th>
+				</tr>
+				%s
+				</table>
+				''' % (
+				_('Guests'),
+				_('(ordered by login)'),
+				_('Full Name'),
+				_('Identifier'),
+				_('UID'),
+				'\n'.join(user_line(g) for g in guests))
+
 			else:
 				guests_html = "<h2>%s</h2>" % _('No guest in this group.')
 
@@ -427,64 +346,61 @@ def view(uri, http_user, name,**kwargs):
 def edit(uri, http_user, name, **kwargs):
 	"""Edit a group."""
 
-	u = LMC.users
-	g = LMC.groups
-
+	group = LMC.groups.by_name(name)
 	title = _("Editing group %s") %  name
 
-	if protected_group(name, complete=False):
+	if group._wmi_protected(complete=False):
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		group     = g[LMC.groups.name_to_gid(name)]
-		sys       = LMC.groups.is_system_group(name)
 		dbl_lists = {}
 
-		if sys:
-			groups_filters_lists_ids = [
-				(name, [ _('Manage members'), _('Users not yet members'),
-				_('Current members') ], 'members' )
-				]
+		if group.is_system:
+			groups_filters_lists_ids = (
+				(group, [ _('Manage members'), _('Users not yet members'),
+				_('Current members') ], 'members' ),
+				)
 
 			#	,
 			#	(LMC.configuration.groups.resp_prefix + name, None, '&#160;' ),
 			#	(LMC.configuration.groups.guest_prefix + name, None, '&#160;' )
 		else:
 			groups_filters_lists_ids = (
-				(name,
+				(group,
 					[_('Manage members'),
 					_('Users not yet members'),
 					_('Current members')],
 					'members'),
-				(LMC.configuration.groups.resp_prefix + name,
+				(group.responsible_group,
 					[_('Manage responsibles'),
 					_('Users not yet responsibles'),
 					_('Current responsibles')],
 					'resps'),
-				(LMC.configuration.groups.guest_prefix + name,
+				(group.guest_group,
 					[_('Manage guests'),
 					_('Users not yet guests'),
 					_('Current guests')],
 					'guests') )
 
-		for (gname, titles, id) in groups_filters_lists_ids:
+		for (g, titles, tid) in groups_filters_lists_ids:
 			if titles is None:
-				dbl_lists[gname] = id
-			else:
+				dbl_lists[gname] = tid
 
-				dest   = LMC.groups[LMC.groups.name_to_gid(gname)]['memberUid'][:]
-				source = [ u[uid]['login'] \
-					for uid in LMC.users.Select(filters.STANDARD) ]
-				for current in dest[:]:
+			else:
+				dest   = list(g.memberUid)
+				source = [ u.login for u in LMC.users.select(filters.STANDARD)]
+
+				# make a live copy, else RuntimeError because we modify the
+				# original list.
+				for a_user in dest[:]:
 					try:
-						source.remove(current)
+						source.remove(a_user)
 					except ValueError:
-						dest.remove(current)
-				dest.sort()
-				source.sort()
-				dbl_lists[gname] = w.doubleListBox(titles, id, source, dest)
+						dest.remove(a_user)
+
+				dbl_lists[g.name] = w.doubleListBox(titles, tid, sorted(source), sorted(dest))
 
 		def descr(desc, system):
 			return w.input('description', desc, size=30, maxlength=256,
@@ -508,11 +424,11 @@ def edit(uri, http_user, name, **kwargs):
 				</tr>
 				''' % (_('Permissive shared dir?'),
 					w.checkbox('permissive',
-					"True", "Oui", checked = perm ))
+					"True", _(u"Yes"), checked = perm ))
 
 		form_name = "group_edit_form"
 
-		if sys:
+		if group.is_system:
 			data_rsp_gst =''
 		else :
 			data_rsp_gst = '''
@@ -523,9 +439,9 @@ def edit(uri, http_user, name, **kwargs):
 
 			''' % (
 			_('Group responsibles') ,
-			dbl_lists[LMC.configuration.groups.resp_prefix+name],
+			dbl_lists[group.responsible_group.name],
 			_('Group guests'),
-			dbl_lists[LMC.configuration.groups.guest_prefix+name]
+			dbl_lists[group.guest_group.name]
 			)
 
 		data += '''
@@ -564,15 +480,15 @@ def edit(uri, http_user, name, **kwargs):
 </div>
 		''' % ( form_name, form_name, name,
 			_('GID'), _('(immutable)'),
-			group['gidNumber'],
+			group.gidNumber,
 			_('Group name'), _('(immutable)'),
-			group['name'],
-			permissive(group['permissive'], sys),
+			group.name,
+			permissive(group.permissive, group.is_system),
 			_('Group description'),
-			descr(group['description'], sys),
-			skel(group['groupSkel'] if 'groupSkel' in group else '', sys),
+			descr(group.description, group.is_system),
+			skel(group.groupSkel, group.is_system),
 			_('Group members'),
-				dbl_lists[name],
+				dbl_lists[group.name],
 			data_rsp_gst,
 			w.button('<< ' + _('Cancel'), "/groups/list", accesskey=_('N')),
 			w.submit('record', _('Record') + ' >>',
@@ -592,9 +508,10 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	**kwargs):
 	""" Record group modification changes."""
 
-	title   = _("Modifying group %s") % name
+	group = LMC.groups.by_name(name)
+	title = _("Modifying group %s") % name
 
-	if protected_group(name, complete=False):
+	if group._wmi_protected(complete=False):
 		return w.forgery_error(title)
 
 	# protect against URL forgery
@@ -602,10 +519,10 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 			guests_source, guests_dest):
 		if hasattr(user_list, '__iter__'):
 			for user in user_list:
-				if protected_user(user):
+				if LMC.users.by_login(user)._wmi_protected():
 					return w.forgery_error(title)
 		else:
-			if protected_user(user_list):
+			if LMC.users.by_login(user_list)._wmi_protected():
 				return w.forgery_error(title)
 
 	if name == LMC.configuration.licornd.wmi.group and (
@@ -618,52 +535,90 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 				wmi_group=LMC.configuration.licornd.wmi.group), title)
 
 	data    = '%s<h1>%s</h1>' % (w.backto(), title)
-	command = [ 'sudo', 'mod', 'group', '--quiet', '--no-colors',
-		'--name', name ]
 
-	if description:
-		command.extend(["--description", description])
+	if description != group.description:
+		group.description = unicode(description)
 
-	if skel:
-		command.extend(["--skel", skel])
+	if skel and skel != group.groupSkel:
+		group.groupSkel = skel
 
-	# fix #194
-	if permissive:
-		command.extend([ '--permissive' ])
-	else:
-		command.extend([ '--not-permissive' ])
+	group.permissive = True if permissive else False
 
-	add_members = ','.join(w.merge_multi_select(members_dest))
-	del_members = ','.join(w.merge_multi_select(members_source))
+	add_members = sorted(w.merge_multi_select(members_dest))
+	del_members = sorted(w.merge_multi_select(members_source))
+	cur_members = group.memberUid
 
-	add_resps = ','.join(w.merge_multi_select(resps_dest))
-	del_resps = ','.join(w.merge_multi_select(resps_source))
+	group_pack_del = [
+				(del_members, cur_members, group.del_Users)
+			]
 
-	add_guests = ','.join(w.merge_multi_select(guests_dest))
-	del_guests = ','.join(w.merge_multi_select(guests_source))
+	group_pack_add = [
+				(add_members, cur_members, group.add_Users)
+			]
 
-	for (var, cmd) in (
-		(add_members, "--add-users"),
-		(del_members, "--del-users"),
-		(add_resps,   "--add-resps"),
-		(del_resps,   '--del-resps'),
-		(add_guests,  "--add-guests"),
-		(del_guests,  '--del-guests') ):
-		if var != "":
-			command.extend([ cmd, var ])
+	if group.is_standard:
+		add_resps = sorted(w.merge_multi_select(resps_dest))
+		del_resps = sorted(w.merge_multi_select(resps_source))
+		cur_resps = group.responsible_group.memberUid
 
-	return w.run(command, successfull_redirect,
-		w.page(title, data + '%s' + w.page_body_end()),
-		_('''Failed to modify one or more parameter of group %s!''') % name)
+		add_guests = sorted(w.merge_multi_select(guests_dest))
+		del_guests = sorted(w.merge_multi_select(guests_source))
+		cur_guests = group.guest_group.memberUid
+
+		group_pack_del.insert(0, (del_guests, cur_guests, group.guest_group.del_Users))
+		group_pack_add.insert(0, (add_guests, cur_guests, group.guest_group.add_Users))
+
+		group_pack_del.append((del_resps, cur_resps, group.responsible_group.del_Users))
+		group_pack_add.append((add_resps, cur_resps, group.responsible_group.add_Users))
+
+	# shortcut in loops
+	byl = LMC.users.by_login
+
+	# NOTE: the order is important: we delete, then add. We demote, then promote.
+	# this avoids conflicts and symlinks overwrite.
+	for (var, cur, func) in group_pack_del:
+		to_del = []
+
+		for one in var:
+			if one in cur:
+				try:
+					to_del.append(byl(one))
+				except:
+					print_exc()
+
+		if to_del != []:
+			try:
+				func(to_del, batch=True)
+			except:
+				print_exc()
+
+	for (var, cur, func) in group_pack_add:
+		to_add = []
+
+		for one in var:
+			if one not in cur:
+				try:
+					to_add.append(byl(one))
+				except:
+					print_exc()
+
+		if to_add != []:
+			try:
+				func(to_add, batch=True)
+			except:
+				print_exc()
+
+
+	return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def main(uri, http_user, sort="name", order="asc", **kwargs):
 	"""List all groups and provileges on the system, displaying them
 	in a nice HTML page. """
 
 	start = time.time()
 
-	g = LMC.groups
+	groups = LMC.groups
 
-	LMC.users.Select(filters.STANDARD)
+	std_users = LMC.users.select(filters.STANDARD)
 
 	tgroups  = {}
 	totals   = {}
@@ -711,48 +666,42 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 		ordered  = {}
 		totals[filter_name] = 0
 
-		for gid in LMC.groups.Select(filter):
-			group = LMC.groups.groups[gid]
-			name  = group['name']
+		for group in LMC.groups.select(filter):
+			gid = group.gidNumber
+			name  = group.name
 
 			tgroups[gid] = {
 				'name'        : name,
-				'description' : group['description'] + name,
-				'skel'        : group['groupSkel'] + name if 'groupSkel' in group else name,
-				'permissive'  : str(group['permissive']) + name
+				'description' : group.description + name,
+				'skel'        : (_(u'none') if group.groupSkel
+											else group.groupSkel) + name,
+				'permissive'  : str(group.permissive) + name
 				}
 			totals[filter_name] += 1
 
 			# index on the column choosen for sorting, and keep trace of the uid
 			# to find account data back after ordering.
 
-			ordered[hlstr.validate_name(tgroups[gid][sort])] = gid
+			ordered[hlstr.validate_name(tgroups[gid][sort])] = group
 
-			tgroups[gid]['memberUid'] = []
-			for member in group['memberUid']:
-				if not LMC.users.is_system_login(member):
-					tgroups[gid]['memberUid'].append(
-						LMC.users[LMC.users.login_to_uid(member)])
+			tgroups[gid]['members'] = []
+			for member in group.members:
+				if not member.is_system:
+					tgroups[gid]['members'].append(member)
 
-			if not LMC.groups.is_system_gid(gid):
-				for prefix in (
-					LMC.configuration.groups.resp_prefix,
-					LMC.configuration.groups.guest_prefix):
-					tgroups[gid][prefix + 'memberUid'] = []
-					for member in \
-						LMC.groups[LMC.groups.name_to_gid(
-							prefix + name)]['memberUid']:
-						if not LMC.users.is_system_login(member):
-							tgroups[gid][prefix + 'memberUid'].append(
-								LMC.users[LMC.users.login_to_uid(member)])
+			if not group.is_system:
+				for g2 in group.responsible_group, group.guest_group:
+					tgroups[gid][g2.name + 'members'] = []
+					for member in g2.members:
+						if not member.is_system:
+							tgroups[gid][g2.name + 'members'].append(member)
 
-		gkeys = ordered.keys()
-		gkeys.sort()
+		gkeys = sorted(ordered.iterkeys())
 		if order == "desc": gkeys.reverse()
 
-		def html_build_group(index, tgroups = tgroups ):
-			gid   = ordered[index]
-			name  = g[gid]['name']
+		def html_build_group(group):
+			gid   = group.gidNumber
+			name  = group.name
 			html_data = '''
 		<tr class="userdata">
 			<td class="nopadding">
@@ -773,14 +722,14 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 				name, _('''View the group details, its parameters,
 					members, responsibles and guests.
 					From there you can print all group-related informations.'''),
-				name, g[gid]['description'], name,
-				name, g[gid]['description'], g[gid]['description'],
-				name, g[gid]['groupSkel']) if 'groupSkel' in g[gid] else 'aucun'
+				name, group.description, name,
+				name, group.description, group.description,
+				name, group.groupSkel or _(u'none'))
 
-			if LMC.groups.is_system_gid(gid):
+			if group.is_system:
 				html_data += '<td>&#160;</td>'
 			else:
-				if g[gid]['permissive']:
+				if group.permissive:
 					html_data += '''
 				<td class="user_action_center">
 					<a href="/groups/lock/%s" title="%s">
@@ -799,28 +748,34 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 					<strong>NOT</strong> permissive. Click ti activate
 					permissiveness.'''), _('Group is NOT permissive.'))
 
-			for (keyname, text) in (
-				('memberUid', _('Current members')),
-				('rsp-memberUid', _('Current responsibles')),
-				('gst-memberUid', _('Current guests')) ):
-				if tgroups[gid].has_key(keyname):
+			if group.is_system:
+				group_pack = (('members', _('Current members')), )
+			else:
+				group_pack = (
+				('members', _('Current members')),
+				(group.responsible_group.name + 'members', _('Current responsibles')),
+				(group.guest_group.name + 'members', _('Current guests')))
+
+			for (keyname, text) in group_pack:
+				if keyname in tgroups[gid]:
 					accounts = {}
 					uordered = {}
 					for member in tgroups[gid][keyname]:
-						uid = member['uidNumber']
+						uid = member.uidNumber
 						accounts[uid] = {
-							'login': member['login'],
-							'gecos': member['gecos'],
-							'gecos_sort': member['gecos'] + member['login']
+							'login': member.login,
+							'gecos': member.gecos,
+							'gecos_sort': member.gecos + member.login
 							}
 						uordered[hlstr.validate_name(
 							accounts[uid]['gecos_sort'], aggressive=True)] = uid
 
-					memberkeys = uordered.keys()
-					memberkeys.sort()
+					memberkeys = sorted(uordered.iterkeys())
+
 					mbdata = '''<table><tr><th>%s</th><th>%s</th>
 					<th>%s</th></tr>\n''' % (_('Full Name'),
 							_('Identifier'), _('UID'))
+
 					for member in memberkeys:
 						uid = uordered[member]
 						mbdata += '''<tr><td>%s</td><td>%s</td>
@@ -842,34 +797,22 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 				else:
 					html_data += '''<td>&#160;</td>\n'''
 
-			if LMC.groups.is_system_gid(gid):
+			if group.is_system:
 				html_data += '<td colspan="1">&#160;</td></tr>\n'
 			else:
 				html_data += '''
-					<!-- TODO: implement skel reapplying for all users of
-					curent group
-					<td class="user_action">
-					<a href="/users/skel/%s" title="%s" class="reapply-skel">
-					<span class="reapply-skel">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-					</a>
-					</td>
-					-->
 					<td class="user_action">
 					<a href="/groups/delete/%s" title="%s" class="delete-entry">
 					<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span>
 					</a>
 					</td>
 				</tr>
-						''' % (name, _('''This will rebuild his/her desktop
-						from scratch, with defaults icons and so on.
-						<br /><br />The user must be disconnected for the
-						operation to be completely successfull.'''),
-						name,
+						''' % (name,
 						_('''Definitely remove this group from system.'''))
 			return html_data
 
-		data += '<tr><td class="group_class" colspan="8">%s</td></tr>\n%s' % (
-			filter_name, ''.join(map(html_build_group, gkeys)))
+		data += '<tr><td class="group_class" colspan="7">%s</td></tr>\n%s' % (
+			filter_name, '\n'.join(html_build_group(ordered[key]) for key in gkeys))
 
 	def print_totals(totals):
 		output = ""

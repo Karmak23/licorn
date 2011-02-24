@@ -38,8 +38,11 @@ def common_behaviour_group(app, parser, mode='any'):
 				'''bare minimum checks for the system to operate properly).''' %
 				stylize(ST_DEFAULT, "not the default") )
 
-		if mode in ('check', 'mod_user', 'mod_group','mod_profile', 'del_user',
-			'del_group','del_profile', 'del_privilege'):
+		if mode in ('check',
+			'add_user', 'mod_user', 'del_user',
+			'mod_group', 'del_group',
+			'mod_profile', 'del_profile',
+			'del_privilege'):
 			behaviorgroup.add_option("-y", "--yes", "--auto-yes",
 				action="store_true", dest="auto_answer", default = None,
 				help="Automatically answer 'yes' to all repair questions (i.e. "

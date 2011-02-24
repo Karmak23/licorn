@@ -19,6 +19,40 @@ from ltrace import ltrace
 #: switching internal attributes and dict items in MixedDictObject and derivatives.
 pyro_protected_attrs = ['objectGUID', 'lastUsed', 'delegate', 'daemon']
 
+class BasicCounter(object):
+	def __init__(self, init=0):
+		object.__init__(self)
+		self.value = init
+	def __str__(self):
+		return str(self.value)
+	def __repr__(self):
+		return 'BasicCounter(%d)' % self.value
+	def __call__(self):
+		return self.value
+
+	def set(self, val):
+		assert int(val)
+		self.value = val
+
+	def __add__(self, val):
+		self.value += val
+	def __iadd__(self, val):
+		#print '>> iadd', val
+		self.value += val
+		return self
+
+	def __sub__(self, val):
+		self.value -= val
+	def __isub__(self, val):
+		#print '>> isub', val
+		self.value -= val
+		return self
+
+	def __le__(self, val):
+		return self.value <= val
+	def __nonzero__(self):
+		return self.value != 0
+
 class ObjectSingleton(object):
 	""" Create a single instance of an object-derived class. """
 	__instances = {}
@@ -51,12 +85,19 @@ class NamedObject(object):
 		to be able to protect the base :attr:`name` attribute will all or their
 		other protected attributes.
 	"""
-	_licorn_protected_attrs = ['name']
+	_licorn_protected_attrs = [ 'name' ]
+
+	@property
+	def name(self):
+		return self.__name
+	@name.setter
+	def name(self, name):
+		self.__name = name
+
 	def __init__(self, name='<unset>', source=None):
 		assert ltrace('base', '| NamedObject.__init__(%s)' % name)
 
-		self.__name__ = name
-		self.name     = self.__name__
+		self.__name = name
 		if source:
 			self.copy_from(source)
 	def __str__(self):
@@ -87,7 +128,7 @@ class NamedObject(object):
 		""" Copy attributes from another object of the same class. """
 		assert ltrace('base', '| NamedObject.copy_from(%s, %s)' % (
 			self.name, source.name))
-		self.__name__ = source.__name__
+		self.__name = source.name
 	def dump_status(self, long_output=False, precision=None):
 		""" method called by :meth:`ltrace.dump` and :meth:`ltrace.fulldump`
 			to dig into complex derivated object at runtime (in the licornd
@@ -145,24 +186,30 @@ class MixedDictObject(NamedObject, dict):
 		NamedObject.copy_from(self, source)
 		dict.update(self, dict.copy(source))
 	def iter(self):
+		#print '>> iter', self.name
 		assert ltrace('base', '| MixedDictObject.iter(%s)' % self.name)
 		return dict.itervalues(self)
 	def __iter__(self):
+		#print '>> __iter__', self.name
 		assert ltrace('base', '| MixedDictObject.__iter__(%s)' % self.name)
 		return dict.itervalues(self)
-	def get(self, key, other=None):
-		# FIXME: needed ?
-		assert ltrace('base', '| MixedDictObject.get(%s)' % key)
-		if key in self.keys():
-			return self.__getitem__(key)
-		return None
 	def __getattr__(self, attribute):
 		""" Called only when a normal call to "self.attribute" fails. """
 		assert ltrace('base', '| MixedDictObject.__getattr__(%s)' % attribute)
 		try:
 			return dict.__getitem__(self, attribute)
 		except KeyError:
-			raise AttributeError("'%s'" % attribute)
+			raise AttributeError("'%s' %s%s" % (stylize(ST_BAD, attribute),
+					'' if attribute in self.__class__._licorn_protected_attrs
+						else ('\n\t- it is currently missing from %s '
+							'(currently=%s)' % ('%s.%s' % (
+								stylize(ST_NAME, self.name),
+								stylize(ST_ATTR,'_licorn_protected_attrs')),
+						', '.join(stylize(ST_COMMENT, value)
+							for value in self.__class__._licorn_protected_attrs))),
+					'\n\t- perhaps you tried to %s a %s?' % (
+						stylize(ST_ATTR, 'getattr()'),
+						stylize(ST_COMMENT, 'property()'))))
 	def append(self, thing):
 		dict.__setitem__(self, thing.name, thing)
 	def remove(self, thing):
@@ -263,12 +310,6 @@ class TreeNode(NamedObject):
 		""" used to avoid crashing at the end of programs. """
 		assert ltrace('base', '| Enumeration_v2._release(~FAKE~)')
 		pass
-class ReverseMappingDict(dict):
-	""" Small class to make a dict callable() by returning getitem() when
-		called. This avoids the need to create a function next to the dict
-		to implement reverse mappings, the simple way. """
-	def __call__(self, item):
-		return self.__getitem__(item)
 
 # old-style classes, or classes to be removed at next refactor run.
 class Enumeration(object):
@@ -433,22 +474,37 @@ class LicornConfigObject():
 				yield value
 class FsapiObject(Enumeration):
 	""" TODO. """
-	def __init__(self, name=None, path=None, uid=-1, root_dir_perm=None,
-		dirs_perm=None, files_perm=None, gid=-1, system=False, exclude=[],
-		rule=None, copy_from=None):
+	def __init__(self, name=None, path=None, uid=-1, gid=-1,
+		root_dir_perm=None, dirs_perm=None, files_perm=None, exclude=None,
+		rule=None, system=False, content_acl=False, root_dir_acl=False,
+		home=None, user_uid=-1, user_gid=-1,
+		copy_from=None):
+
 		Enumeration.__init__(self, name, copy_from)
 
-		self.path = path
-		self.uid = uid
-		self.root_gid = gid
-		self.content_gid = None
-		self.root_dir_perm = root_dir_perm
-		self.dirs_perm = dirs_perm
-		self.files_perm = files_perm
-		self.exclude = exclude
-		self.rule = rule
-		self.system = system
-		self.content_acl = False
-		self.root_dir_acl = False
+		# This one is used only in core.classes.CoreFSController methods
+		if home:
+			self.home     = home
+			self.user_uid = user_uid
+			self.user_gid = user_gid
+		# else:
+		# do not define self.{home,user_uid,user_gid}
+
+		# These other are used in fsapi.check*
+		self.path           = path
+		self.uid            = uid
+		self.root_gid       = gid
+		self.content_gid    = None
+		self.root_dir_perm  = root_dir_perm
+		self.dirs_perm      = dirs_perm
+		self.files_perm     = files_perm
+		self.rule           = rule
+		self.system         = system
+		self.content_acl    = content_acl
+		self.root_dir_acl   = root_dir_acl
 		self.already_loaded = False
 
+		if exclude is None:
+			self.exclude    = []
+		else:
+			self.exclude    = exclude

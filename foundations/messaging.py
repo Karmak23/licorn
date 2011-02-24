@@ -9,7 +9,7 @@
 	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, getpass
+import sys, os, getpass
 import Pyro.core, Pyro.util
 from threading import current_thread
 # WARNING: don't import logging here (circular loop).
@@ -76,6 +76,7 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 			verbose, ip_address))
 
 		self.verbose = verbose
+		self.lang    = os.getenv('LANG', None)
 
 		#: IP address of initial message sender, if provided, as str('X.X.X.X')
 		self.addr = ip_address

@@ -135,24 +135,29 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		assert ltrace(self.name, '> check()')
 
-		logging.progress('Checking existence of group %s…' %
-				stylize(ST_NAME, self.group))
+		logging.progress(_('{0}: checking existence of group {1}…').format(
+							stylize(ST_NAME, self.name),
+							stylize(ST_NAME, self.group)))
 
 		need_reload = False
 
 		# TODO if not self.group in LMC.groups.by_name:
 		if not LMC.groups.exists(name=self.group):
 			need_reload = True
-			if batch or logging.ask_for_repair('group %s must be created' %
-					stylize(ST_NAME, self.group), auto_answer=auto_answer):
-				LMC.groups.AddGroup(name=self.group,
+			if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
+								'created. Do it?').format(
+								stylize(ST_NAME, self.name),
+								stylize(ST_NAME, self.group)),
+							auto_answer=auto_answer):
+				LMC.groups.add_Group(name=self.group,
 					description=_(u'Users allowed to connect via SSHd'),
 					system=True, batch=True)
 			else:
 				raise exceptions.LicornCheckError(
-						'group %s must exist before continuing.' % self.group)
+						_(u'{0}: group {1} must exist before continuing.').format(
+						stylize(ST_NAME, self.name), stylize(ST_NAME, self.group)))
 
-		logging.progress('Checking good default values in %s…' %
+		logging.progress(_('Checking good default values in %s…') %
 				stylize(ST_PATH, self.paths.sshd_config))
 
 		need_rewrite = False
@@ -162,17 +167,20 @@ class OpensshExtension(Singleton, ServiceExtension):
 				self.configuration.add(key, value, replace=True)
 
 		if need_rewrite:
-			if batch or logging.ask_for_repair('%s must be modified' %
-					stylize(ST_PATH, self.paths.sshd_config),
-					auto_answer=auto_answer):
+			if batch or logging.ask_for_repair(_(u'{0}: {1} must be modified. '
+							'Do it?').format(stylize(ST_NAME, self.name),
+								stylize(ST_PATH, self.paths.sshd_config)),
+							auto_answer=auto_answer):
 				self.configuration.backup()
 				self.configuration.save()
-				logging.info('Written configuration file %s.' %
-					stylize(ST_PATH, self.paths.sshd_config))
+				logging.info(_(u'{0}: written configuration file {1}.').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_PATH, self.paths.sshd_config)))
 			else:
-				raise exceptions.LicornCheckError(
-						'configuration file %s must be altered to continue.' %
-							self.paths.sshd_config)
+				raise exceptions.LicornCheckError(_(u'{0}: configuration file '
+					'{1} must be altered to continue.').format(
+						stylize(ST_NAME, self.name),
+						stylize(ST_PATH, self.paths.sshd_config)))
 
 		if need_reload or need_rewrite:
 			self.service(svccmds.RELOAD)

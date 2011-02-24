@@ -43,7 +43,7 @@ class DbusThread(Thread):
 		# Setup the DBus main loop
 		assert ltrace('dbus', '| DbusThread.__init__()')
 		Thread.__init__(self)
-		self.name = 'extensions/Gllop.GobjectMainLooper'
+		self.name = 'extensions/Gloop.GobjectMainLooper'
 		self.daemon = True
 
 		gobject.threads_init()
@@ -64,7 +64,7 @@ class GloopExtension(Singleton, ServiceExtension):
 		assert ltrace('openssh', '| OpensshExtension.__init__()')
 
 		ServiceExtension.__init__(self,
-			name='dbus',
+			name='gloop',
 			service_name='dbus',
 			service_type=services.UPSTART
 		)
@@ -99,8 +99,9 @@ class GloopExtension(Singleton, ServiceExtension):
 
 			# WE do not use the config file yet.
 		else:
-			logging.warning2('%s: not available because %s or %s do not exist '
-				'on the system.' % (self.name,
+			logging.warning2(_(u'{0}: extension not available because '
+				'{1} or {2} do not exist on the system.').format(
+					stylize(ST_NAME, self.name),
 					stylize(ST_PATH, self.paths.dbus_binary),
 					stylize(ST_PATH, self.paths.dbus_config)))
 
@@ -123,6 +124,9 @@ class GloopExtension(Singleton, ServiceExtension):
 
 		self.threads.dbus = DbusThread()
 		self.threads.dbus.start()
+
+		logging.info(_(u'{0}: started extension and gobject mainloop '
+			'thread.').format(stylize(ST_NAME, self.name)))
 
 		assert ltrace(self.name, '| is_enabled() → True')
 		return True

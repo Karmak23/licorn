@@ -24,7 +24,7 @@ from licorn.foundations.constants import host_status, host_types, distros
 
 from licorn.core         import LMC
 from licorn.core.classes import CoreController
-from licorn.daemon       import roles, client, priorities, service_enqueue
+from licorn.daemon       import roles, client, priorities
 
 class SystemController(Singleton, CoreController):
 	""" This class implement a local system controller. It is meant to be used
@@ -81,7 +81,7 @@ class SystemController(Singleton, CoreController):
 		return LMC.configuration.network.local_ip_addresses()
 	def get_status(self):
 		""" Get local host current status. """
-		with self.lock():
+		with self.lock:
 			assert ltrace('system', '| get_status(%s)' % self.status)
 			return self.status
 	def announce_shutdown(self):
@@ -103,7 +103,7 @@ class SystemController(Singleton, CoreController):
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.goodbye_from(remote_interfaces)
 		else:
-			service_enqueue(priorities.HIGH, client.server_shutdown, remote_interfaces)
+			self.licornd.service_enqueue(priorities.HIGH, client.server_shutdown, remote_interfaces)
 	def hello_from(self, remote_interfaces):
 		""" a remote Licorn® server is warming up: receive the hello
 			announce and forward it to the
@@ -115,7 +115,7 @@ class SystemController(Singleton, CoreController):
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.hello_from(remote_interfaces)
 		else:
-			service_enqueue(priorities.HIGH, client.server_reconnect, remote_interfaces)
+			self.licornd.service_enqueue(priorities.HIGH, client.server_reconnect, remote_interfaces)
 	def get_host_type(self):
 		""" Return local host type. """
 
@@ -162,7 +162,7 @@ class SystemController(Singleton, CoreController):
 		""" shutdown the local machine. """
 		assert ltrace('system', '| shutdown(warn=%s)' % warn_users)
 
-		with self.lock():
+		with self.lock:
 			if self.status == host_status.SHUTTING_DOWN:
 				logging.warning('already shutting down!')
 				return True
@@ -187,7 +187,7 @@ class SystemController(Singleton, CoreController):
 			command = [ 'shutdown', '-h', '+1' ]
 			os.execvp('shutdown', command)
 		else:
-			with self.lock():
+			with self.lock:
 				self.status = host_status.SHUTTING_DOWN
 				return True
 	def get_extensions(self, client_only=False):

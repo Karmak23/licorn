@@ -6,8 +6,9 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, Pyro.core
+import os, Pyro.core, gc, __builtin__
 
+from operator  import attrgetter
 from threading import current_thread
 
 from licorn.foundations           import options, exceptions, logging
@@ -31,8 +32,25 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def __init__(self, licornd):
 		NamedObject.__init__(self, name='rwi')
 		Pyro.core.ObjBase.__init__(self)
-		self.licornd = licornd
+		self.__licornd = licornd
 		assert ltrace('rwi', '| RWIController.__init__()')
+	@property
+	def licornd(self):
+		return self.__licornd
+	def __setup_gettext(self):
+		th = current_thread()
+
+		#print '>> gettext setup', th.listener, th.listener.lang
+
+		try:
+			th._ = self.__licornd.langs[th.listener.lang].ugettext
+			#print '>> switched to', th.listener.lang
+		except KeyError:
+			# the daemon doesn't have the client lang installed. Not a problem.
+			# Still, make a shortcut to the daemon's default translator to
+			# avoid trigerring an exception at every call of our translator
+			# wrapper.
+			th._ = __builtin__.__dict__['_orig__']
 	def output(self, text_message):
 		""" Output a text message remotely, in CLI caller process, whose
 			reference is stored in :obj:`current_thread().listener`. """
@@ -46,38 +64,51 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		return current_thread().listener.process(
 			LicornMessage(data=text_message, interaction=interaction),
 			options.msgproc.getProxy())
-	def prefered_groups_backend(self):
+	def prefered_groups_backend_name(self):
 		""" comfort method, to forward prefered groups backend, used in CLI
 			argparser.
 		"""
-		return LMC.groups._prefered_backend_name
-	def groups_backends(self):
+		return LMC.groups._prefered_backend.name
+	def groups_backends_names(self):
 		""" comfort method to get only the names of current enabled backends,
 			used in CLI argparser.
 		"""
-		return [x.name for x in LMC.groups.backends]
-	def backends(self):
-		""" comfort method to get only the names of current enabled backends,
-			used in CLI argparser.
-		"""
-		return LMC.backends.keys()
-	def select(self, controller, ctype, args, include_id_lists,
-		exclude_id_lists=[], default_selection=filters.NONE, all=False):
 
-		assert ltrace('cli', '''> select(controller=%s, ctype=%s, args=%s, '''
+		# NOTE: don't try to turn this into a generator with (), it is meant
+		# to be used via Pyro and thus must be pickled: it stays a LIST.
+		return [ x.name for x in LMC.groups.backends ]
+	def backends_names(self):
+		""" comfort method to get only the names of current enabled backends,
+			used in CLI argparser.
+		"""
+		# NOTE: no (generator) for pyro methods...
+		return [ x.name for x in LMC.backends ]
+	def select(self, controller, args=None, include_id_lists=None,
+		exclude_id_lists=None, default_selection=filters.NONE, all=False):
+
+		assert ltrace('cli', '''> select(controller=%s, args=%s, '''
 			'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
-			'''all=%s)''' % (controller.name, ctype, args, include_id_lists,
+			'''all=%s)''' % (controller.name, args, include_id_lists,
 				exclude_id_lists, default_selection, all))
+
 		# use a set() to avoid duplicates during selections. This will allow us,
 		# later in implementation to do more complex selections (unions,
 		# differences, intersections and al.
+
+		if include_id_lists is None:
+			include_id_lists = ()
+		if exclude_id_lists is None:
+			exclude_id_lists = ()
+		if args is None:
+			args = ()
+
 		xids = set()
 		if all:
 			# if --all: manually included IDs (with --login, --group, --uid, --gid)
 			# will be totally discarded (--all gets precedence). But excluded items
 			# will still be excluded, to allow "--all --exclude-login toto"
 			# semi-complex selections.
-			ids = set(controller.keys())
+			ids = set(controller)
 		else:
 			ids = set()
 
@@ -85,41 +116,48 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			if len(args) > 1:
 				for arg in args[1:]:
-					#assert ('cli', '  select(add_arg=%s)' % arg)
-					include_id_lists.append((arg, controller.guess_identifier))
+					if arg == '':
+						continue
+
+					include_id_lists.append((arg, controller.guess_one))
 
 			# select included IDs
 			for id_arg, resolver in include_id_lists:
 				if id_arg is None:
 					continue
-				for id in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
-					if id is '':
+				for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
+					if oid is '':
 						continue
 
 					try:
 						something_tried = True
-						ids.add(resolver(id))
-						assert ltrace('cli', '  select %s(%s) -> %s' %
-							(str(resolver), id, resolver(id)))
-					except (KeyError, exceptions.DoesntExistsException):
-						logging.notice('''Skipped non existing or invalid %s or '''
-							'''%sID '%s'.''' % (ctype, ctype[0].upper(),
-							stylize(ST_NAME, id)))
+						ids.add(resolver(oid))
+						#assert ltrace('cli', '  select %s(%s) -> %s' %
+						#	(str(resolver), oid, resolver(oid)))
+
+					except (KeyError, ValueError, exceptions.DoesntExistException):
+						logging.notice(_(u'Skipped non existing or invalid '
+							'{0} or {1} "{2}".').format(
+								controller.object_type_str,
+								controller.object_id_str,
+								stylize(ST_NAME, oid)), to_local=False)
 						continue
 
 		# select excluded IDs, to remove them from included ones
 		for id_arg, resolver in exclude_id_lists:
 			if id_arg is None:
 				continue
-			for id in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
-				if id is '':
+			for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
+				if oid is '':
 					continue
 				try:
-					xids.add(resolver(id))
-				except (KeyError, exceptions.DoesntExistsException):
-					logging.notice('''Skipped non existing or invalid %s or '''
-						'''%sID '%s'.''' % (ctype, ctype[0].upper(),
-						stylize(ST_NAME, id)))
+					xids.add(resolver(oid))
+				except (KeyError, ValueError, exceptions.DoesntExistException):
+					logging.notice(_(u'Skipped non existing or invalid {0} or '
+						'{1} "{2}".').format(
+							controller.object_type_str,
+							controller.object_id_str,
+							stylize(ST_NAME, oid)), to_local=False)
 					continue
 
 		# now return included IDs, minux excluded IDs, in different conditions.
@@ -130,19 +168,26 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				selection = []
 			else:
 				if default_selection is filters.NONE:
-					logging.warning('You must specify at least one %s!' % ctype)
+					logging.warning(_(u'You must specify at least one %s!')
+												% controller.object_type_str,
+									to_local=False)
 					selection = []
 				else:
 					selection = list(set(
-						controller.Select(default_selection)).difference(xids))
+						controller.select(default_selection)).difference(xids))
 
 		assert ltrace('cli', '< select(return=%s)' % selection)
-		return selection
+		return sorted(selection, key=attrgetter(controller.sort_key))
 	### GET
 	def get_volumes(self, opts, args):
+
+		self.__setup_gettext()
+
 		self.output(LMC.extensions.volumes.get_CLI(opts, args))
 	def get_users(self, opts, args):
 		""" Get the list of POSIX user accounts (Samba / LDAP included). """
+
+		self.__setup_gettext()
 
 		if opts.dump:
 			self.output(LMC.users.dump())
@@ -150,35 +195,33 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
 
-		selection = filters.STANDARD
+		selection = filters.SYSUNRSTR | filters.STANDARD
 
 		if opts.system:
 			selection = filters.SYSTEM
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
 
-		users_to_get = LMC.users.Select(
-				self.select(
-					LMC.users, 'user',
-					args,
+		elif opts.not_system:
+			selection = filters.STANDARD
+
+		users_to_get = self.select(LMC.users, args,
 					include_id_lists = [
-						(opts.login, LMC.users.login_to_uid),
-						(opts.uid, LMC.users.confirm_uid)
+						(opts.login, LMC.users.by_login),
+						(opts.uid, LMC.users.by_uid)
 					],
 					exclude_id_lists = [
-						(opts.exclude, LMC.users.guess_identifier),
-						(opts.exclude_login, LMC.users.login_to_uid),
-						(opts.exclude_uid, LMC.users.confirm_uid)
+						(opts.exclude, LMC.users.guess_one),
+						(opts.exclude_login, LMC.users.by_login),
+						(opts.exclude_uid, LMC.users.by_uid)
 					],
 					default_selection = selection,
-					all=opts.all
-				)
-			)
+					all=opts.all)
 
 		if opts.xml:
-			data = LMC.users.ExportXML(selected=users_to_get, long_output=opts.long)
+			data = LMC.users.to_XML(selected=users_to_get,
+										long_output=opts.long)
 		else:
-			data = LMC.users.ExportCLI(selected=users_to_get, long_output=opts.long)
+			data = LMC.users._cli_get(selected=users_to_get,
+										long_output=opts.long)
 
 		if data and data != '\n':
 			self.output(data)
@@ -186,6 +229,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace('get', '< get_users()')
 	def get_groups(self, opts, args):
 		""" Get the list of POSIX LMC.groups (can be LDAP). """
+
+		self.__setup_gettext()
 
 		if opts.dump:
 			self.output(LMC.groups.dump())
@@ -218,25 +263,26 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# must be the last case!
 			selection = filters.STANDARD
 
-		groups_to_get = self.select(LMC.groups, 'group',
-				args,
-				[
-					(opts.name, LMC.groups.name_to_gid),
-					(opts.gid, LMC.groups.confirm_gid)
+		groups_to_get = self.select(LMC.groups,	args,
+				include_id_lists = [
+					(opts.name, LMC.groups.by_name),
+					(opts.gid, LMC.groups.by_gid)
 				],
 				exclude_id_lists = [
-					(opts.exclude, LMC.groups.guess_identifier),
-					(opts.exclude_group, LMC.groups.name_to_gid),
-					(opts.exclude_gid, LMC.groups.confirm_gid)
+					(opts.exclude, LMC.groups.guess_one),
+					(opts.exclude_group, LMC.groups.by_name),
+					(opts.exclude_gid, LMC.groups.by_gid)
 				],
 				default_selection=selection,
 				all=opts.all)
 
 		if opts.xml:
-			data = LMC.groups.ExportXML(selected=groups_to_get, long_output=opts.long)
+			data = LMC.groups.to_XML(selected=groups_to_get,
+										long_output=opts.long)
 		else:
-			data = LMC.groups.ExportCLI(selected=groups_to_get, long_output=opts.long,
-				no_colors=opts.no_colors)
+			data = LMC.groups._cli_get(selected=groups_to_get,
+										long_output=opts.long,
+										no_colors=opts.no_colors)
 
 		if data and data != '\n':
 			self.output(data)
@@ -245,22 +291,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def get_profiles(self, opts, args):
 		""" Get the list of user profiles. """
 
+		self.__setup_gettext()
+
 		assert ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
 
-		profiles_to_get = LMC.profiles.Select(
-			self.select(LMC.profiles, 'profile',
-				args,
-				include_id_lists=[
-					(opts.name, LMC.profiles.name_to_group),
-					(opts.group, LMC.profiles.confirm_group)
+		profiles_to_get = self.select(LMC.profiles, args,
+				include_id_lists = [
+					(opts.name, LMC.profiles.by_name),
+					(opts.group, LMC.profiles.by_group)
 				],
 				default_selection=filters.ALL)
-			)
 
 		if opts.xml:
-			data = LMC.profiles.ExportXML(profiles_to_get)
+			data = LMC.profiles.to_XML(profiles_to_get)
 		else:
-			data = LMC.profiles.ExportCLI(profiles_to_get)
+			data = LMC.profiles._cli_get(profiles_to_get)
 
 		if data and data != '\n':
 			self.output(data)
@@ -268,6 +313,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace('get', '< get_profiles()')
 	def get_keywords(self, opts, args):
 		""" Get the list of keywords. """
+
+		self.__setup_gettext()
 
 		assert ltrace('get', '> get_keywords(%s,%s)' % (opts, args))
 
@@ -283,6 +330,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def get_privileges(self, opts, args):
 		""" Return the current privileges whitelist, one priv by line. """
 
+		self.__setup_gettext()
+
 		assert ltrace('get', '> get_privileges(%s,%s)' % (opts, args))
 
 		if opts.xml:
@@ -295,6 +344,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace('get', '< get_privileges()')
 	def get_machines(self, opts, args):
 		""" Get the list of machines known from the server (attached or not). """
+
+		self.__setup_gettext()
 
 		if opts.dump:
 			self.output(LMC.machines.dump())
@@ -334,21 +385,23 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if opts.loaded:
 				selection |= host_status.LOADED
 
+		# FIXME: implement inclusions / exclusions (#375)
+
 		if opts.mid is not None:
 			try:
-				machines_to_get = LMC.machines.Select("mid=" + unicode(opts.mid))
+				machines_to_get = LMC.machines.select("mid=" + unicode(opts.mid))
 			except KeyError:
-				logging.error("No matching machine found.")
+				logging.error("No matching machine found.", to_local=False)
 				return
 		else:
-			machines_to_get = LMC.machines.Select(selection, return_ids=True)
+			machines_to_get = LMC.machines.select(selection, return_ids=True)
 
 		if opts.xml:
 			data = LMC.machines.ExportXML(selected=machines_to_get,
-				long_output=opts.long)
+											long_output=opts.long)
 		else:
 			data = LMC.machines.ExportCLI(selected=machines_to_get,
-				long_output=opts.long)
+											long_output=opts.long)
 
 		if data and data != '\n':
 			self.output(data)
@@ -357,27 +410,33 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
+		self.__setup_gettext()
+
 		assert ltrace('get', '> get_configuration(%s,%s)' % (opts, args))
 
 		if len(args) > 1:
-			self.output(LMC.configuration.Export(args=args[1:], cli_format=opts.cli_format))
+			self.output(LMC.configuration.Export(args=args[1:],
+						cli_format=opts.cli_format))
 		else:
 			self.output(LMC.configuration.Export())
 
 		assert ltrace('get', '< get_configuration()')
 	def get_daemon_status(self, opts, args):
 
+		self.__setup_gettext()
+
 		if opts.long:
 			self.output(LMC.users.dump())
 			self.output(LMC.groups.dump())
 			self.output(LMC.machines.dump())
-
 
 		self.output(self.licornd.dump_status(opts.long, opts.precision))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.
 		"""
+
+		self.__setup_gettext()
 
 		if args is None:
 			pass # Tout afficher
@@ -431,47 +490,57 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def import_users(self, opts, args):
 		""" Massively import user accounts from a CSV file."""
 
+		# already done in dispatch_*
+		#self.__setup_gettext()
+
 		assert ltrace('add', '> import_user(%s,%s)' % (opts, args))
 
 		def clean_csv_field(field):
-			return field.replace("'","").replace('"','')
+			return field.replace("'", "").replace('"', '')
 
 		if opts.filename is None:
-			raise exceptions.BadArgumentError, "You must specify a file name."
+			raise exceptions.BadArgumentError(
+									_(u'You must specify an import filename.'))
 		else:
 			import_filename = opts.filename
 
 		if opts.profile is None:
-			raise exceptions.BadArgumentError, "You must specify a profile."
+			raise exceptions.BadArgumentError(_(u'You must specify a profile.'))
 		else:
 			profile = opts.profile
 
 		if opts.firstname_col is None:
-			raise  exceptions.BadArgumentError("You must specify a firstname column number.")
+			raise exceptions.BadArgumentError(
+							_(u'You must specify a firstname column number.'))
 		else:
 			firstname_col = opts.firstname_col
 
 		if opts.lastname_col is None:
-			raise  exceptions.BadArgumentError("You must specify a lastname column number.")
+			raise exceptions.BadArgumentError(
+							_(u'You must specify a lastname column number.'))
 		else:
 			lastname_col = opts.lastname_col
 
 		if opts.group_col is None:
-			raise  exceptions.BadArgumentError("You must specify a group column number.")
+			raise exceptions.BadArgumentError(
+								_(u'You must specify a group column number.'))
 		else:
 			group_col = opts.group_col
 
-		if (firstname_col == lastname_col) or (firstname_col == group_col) or (lastname_col == group_col):
-			raise exceptions.BadArgumentError("two columns have the same number (lastname = %d, firstname = %d, group = %d)" %
-				(lastname_col, firstname_col, group_col) )
+		if (firstname_col == lastname_col
+			or firstname_col == group_col
+			or lastname_col == group_col):
+			raise exceptions.BadArgumentError(_(u'Two columns have the same '
+				'number (lastname={0}, firstname={1}, group={2})').format(
+				lastname_col, firstname_col, group_col))
 
 		maxval = 0
-		import math
 		for number in (lastname_col, firstname_col, group_col):
 			maxval = max(maxval, number)
 
 		if maxval > 127:
-			raise exceptions.BadArgumentError("Sorry, CSV file must have no more than 128 columns.")
+			raise exceptions.BadArgumentError(_(u'Sorry, CSV file must have '
+				'no more than 128 columns."'))
 
 		# WARNING:
 		# we can't do any checks on login_col and password_col, because
@@ -483,32 +552,40 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		encoding = fsapi.get_file_encoding(import_filename)
 		if encoding is None:
 			# what to choose? ascii or ~sys.getsystemencoding()?
-			logging.warning("can't automatically detect the file encoding, assuming iso-8859-15!")
+			logging.warning(_(u'Cannot automatically detect the file '
+				'encoding, assuming iso-8859-15 (latin-1)!'), to_local=False)
 			encoding = 'iso-8859-15'
 
-		import csv
-
 		try:
-			if LMC.profiles[profile]: pass
+			profile = self.select(LMC.profiles,
+				include_id_lists=[ (profile, LMC.profiles.guess_one) ])[0]
 		except KeyError:
-			raise exceptions.LicornRuntimeException, "The profile '%s' doesn't exist." % profile
+			raise exceptions.LicornRuntimeException(_(u'The profile "%s" does '
+				'not exist.') % stylize(ST_NAME, profile))
 
-		firstline    = open(import_filename).readline()
-		lcndialect   = csv.Sniffer().sniff(firstline)
+		import math, csv
+		from licorn.core.users  import User
+		from licorn.core.groups import Group
+
+
+		firstline  = open(import_filename).readline()
+		lcndialect = csv.Sniffer().sniff(firstline)
+
 		if lcndialect.delimiter != opts.separator:
 			separator = lcndialect.delimiter
 		else:
-			separator =  opts.separator
+			separator = opts.separator
 
 		try:
-			import_fd   = open(import_filename,"rb")
+			import_fd = open(import_filename, 'rb')
 		except (OSError, IOError), e:
-			raise exceptions.LicornRuntimeError("can't load CSV file (was: %s)" % str(e))
+			raise exceptions.LicornRuntimeError(_(u'Cannot load CSV file '
+				'(was: %s).') % str(e))
 
 		groups_to_add = []
 		users_to_add  = []
 
-		self.output("Reading input file: ")
+		self.output(_(u'Reading input file: '))
 
 		i = 0
 		for fdline in import_fd:
@@ -517,46 +594,67 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			#print(str(line))
 
 			user = {}
-			for (column, number) in ( ("firstname", firstname_col), ("lastname", lastname_col), ("group", group_col), ("login", opts.login_col), ("password", opts.password_col) ):
+			for (column, number) in (
+					('firstname', firstname_col),
+					('lastname', lastname_col),
+					('group', group_col),
+					('login', opts.login_col),
+					('password', opts.password_col)
+				):
 
 				try:
 					if number is None:
 						user[column] = None
 					else:
-						if column == "password" and number in (lastname_col, firstname_col):
+						if column == 'password' and number in (
+												lastname_col, firstname_col):
 							# FIXME: decide wether to kill this code or not:
-							# for small children, make the password as simple as the login to type.
-							# tell validate_name() to be aggressive to achieve this.
-							user[column] = hlstr.validate_name(unicode(line[number], encoding), True)
+							# for small children, make the password as simple
+							# as the login to type. tell validate_name() to be
+							# aggressive to achieve this.
+							user[column] = hlstr.validate_name(
+										unicode(line[number], encoding), True)
 						else:
-							user[column] = unicode(clean_csv_field(line[number]), encoding)
+							user[column] = unicode(
+									clean_csv_field(line[number]), encoding)
 
 				except IndexError, e:
-					raise exceptions.LicornRuntimeError("\nImport error on line %d: no %s specified or bad %s data (was: %s)." % (i+1, column, column, e))
+					raise exceptions.LicornRuntimeError('\n'+_(u'Import error '
+						'on line {0}: no {1} specified or bad {2} data '
+						'(was: {3}).').format(i + 1, column, translation, e))
 
 				except UnicodeEncodeError, e:
-					raise exceptions.LicornRuntimeError("Encoding not supported for input filename (was: %s)." % str(e))
-
+					raise exceptions.LicornRuntimeError('\n'+_(u'Encoding not '
+						'supported for input filename (was: %s).') % str(e))
 			try:
-				if opts.login_col is not None:
-					user['login'] =	LMC.users.make_login(inputlogin = user['login'])
+				if opts.login_col is None:
+					user['login'] = User.make_login(
+										firstname=user['firstname'],
+										lastname=user['lastname'])
 				else:
-					user['login'] = LMC.users.make_login(firstname = user['firstname'], lastname = user['lastname'])
-
+					user['login'] =	User.make_login(
+										inputlogin=user['login'])
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError("\nImport error on line %d: no group specified or bad group data (was: %s)." % (i+1, e))
+				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+					'on line {0}: no group specified or bad {2} data '
+					'(was: {1}).').format(i+1, e, (_(u'firstname or lastname')
+						if opts.login_col is None else _(u'login'))))
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError("\nImport error on line %d (was: %s)." % (i+1, e))
+				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e))
 
 			try:
-				user['group'] =	LMC.groups.make_name(user['group'])
+				user['group'] =	Group.make_name(user['group'])
 
 			except IndexError, e:
-				raise exceptions.LicornRuntimeError("\nImport error on line %d: no group specified or bad group data (was: %s)." % (i+1, e))
+				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+					'on line {0}: no group specified or bad {2} data '
+					'(was: {1}).').format(i+1, e, _(u'group')))
 
 			except exceptions.LicornRuntimeError, e:
-				raise exceptions.LicornRuntimeError("\nImport error on line %d (was: %s)." % (i+1, e))
+				raise exceptions.LicornRuntimeError('\n' + _(u'Import error '
+					'on line {0} (was: {1}).').format(i+1, e))
 
 			if user['group'] not in groups_to_add:
 				groups_to_add.append(user['group'])
@@ -565,17 +663,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add.append(user)
 
 			if not (i % 100):
-				self.output(".")
+				self.output('.')
 				# FIXME: how do we force a flush on the client side?
 				#sys.stderr.flush()
 			i += 1
 			user['linenumber'] = i
 
-		assert ltrace('add', '  import_users: users_to_add=%s,\ngroups_to_add=%s' % (
+		assert ltrace('add',
+			'  import_users: users_to_add=%s,\ngroups_to_add=%s' % (
 			users_to_add, groups_to_add))
 
 		import_fd.close()
-		self.output(" done.\n")
+		self.output(_(u' done.') + '\n')
 
 		# this will be used to recursive build an HTML page of all groups / users
 		# with theyr respective passwords to be printed / distributed to all users.
@@ -586,88 +685,115 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# Add groups and users
 		length_groups = len(groups_to_add)
 		length_users  = len(users_to_add)
+		quantity      = length_groups + length_users
 
-		quantity = length_groups + length_users
 		if quantity <= 0:
 			quantity = 1
-		delta = 100.0 / float(quantity) # increment for progress indicator
+
+		delta       = 100.0 / float(quantity) # increment for progress indicator
 		progression = 0.0
+		col_width   = LMC.configuration.users.login_maxlenght
 
 		if opts.confirm_import:
-			i = 0 # to print i/length
+			# store a ref to the groups locally to avoid selecting them again
+			# and again when creating users, later.
+			groups = {}
+
+			# to print i/length progression
+			i = 0
+
 			for g in groups_to_add:
 				try:
 					i += 1
-					LMC.groups.AddGroup(name=g, batch=opts.no_sync)
-					logging.progress("\rAdded group « %s » (group %d/%d), progress: %d%%" %
-						( g, i, length_groups, math.ceil(progression)) )
+					groups[g] = LMC.groups.add_Group(name=g, batch=opts.no_sync)
+
+					logging.progress('\r' + _(u'Added group {0} ({1}/{2}); '
+						'progress: {3}%').format( g, i, length_groups,
+							math.ceil(progression)), to_local=False)
+
 					progression += delta
+
 				except exceptions.AlreadyExistsException, e:
-					logging.warning(str(e))
+					logging.warning(str(e), to_local=False)
 					progression += delta
+
 				except exceptions.LicornException, e:
 					# FIXME: flush the listener??
 					#sys.stdout.flush()
 					raise e
+
 				data_to_export_to_html[g]= {}
 				# FIXME: flush the listener??
 				#sys.stdout.flush()
 
-		if not opts.confirm_import:
+		else:
 			import string
-			self.output(stylize(ST_PATH,
-				'''Fields order:\n%s%s%s%spassword''' % (
-				string.ljust("FIRSTname", LMC.configuration.users.login_maxlenght),
-				string.ljust("LASTname", LMC.configuration.users.login_maxlenght),
-				string.ljust("login", LMC.configuration.users.login_maxlenght),
-				string.ljust("group", LMC.configuration.groups.name_maxlenght))
-				) + "\n")
+			self.output('\n%s\n%s%s%s%s%s\n' % (
+				_(u'Fields order:'),
+				stylize(ST_PATH, string.ljust(_('FIRSTname'), col_width)),
+				stylize(ST_PATH, string.ljust(_('LASTname'), col_width)),
+				stylize(ST_PATH, string.ljust(_('login'), col_width)),
+				stylize(ST_PATH, string.ljust(_('group'), col_width)),
+				stylize(ST_PATH, _(u'password'))))
+
 		i = 0
 		for u in users_to_add:
 			try:
 				i += 1
 				if opts.confirm_import:
-					(uid, login, password) = LMC.users.AddUser(lastname=u['lastname'],
-					firstname=u['firstname'], login=u['login'],
-					password=u['password'], profile=profile, batch=opts.no_sync)
-					LMC.groups.AddUsersInGroup(name=u['group'],
-					users_to_add=[ login ], force=opts.force, batch=opts.no_sync)
+					user, password = LMC.users.add_User(lastname=u['lastname'],
+											firstname=u['firstname'],
+											login=u['login'],
+											password=u['password'],
+											profile=profile,
+											in_groups=[ groups[u['group']] ],
+											batch=opts.no_sync)
 
-					logging.progress('''\rAdded user « %s %s » [login=%s, uid=%d,'''
-					''' passwd=%s] (user %d/%d), progress: %d%%'''
-						% ( u['firstname'], u['lastname'], login, uid, password, i,
-						length_users, math.ceil(progression)) )
+					logging.progress('\r' + _(u'Added user {0} {1} '
+						'[login={2}, uid={3}, passwd={4}] ({5}/{6}); '
+						'progress: {7}%').format(u['firstname'], u['lastname'],
+						user.login, user.uidNumber, u['password'], i,
+						length_users, math.ceil(progression)), to_local=False)
 
 					# the dictionnary key is forged to have something that is sortable.
 					# like this, the user accounts will be sorted in their group.
-					data_to_export_to_html[ u['group'] ][ u['lastname'] + u['firstname'] ] = [ u['firstname'], u['lastname'], login, password ]
+					data_to_export_to_html[ u['group'] ][
+							'%s%s' % (u['lastname'], u['firstname'])
+						] = [ u['firstname'], u['lastname'],
+								user.login, password ]
 				else:
-					# why make_login() for examples and not prepare the logins when loading CSV file?
-					# this is a pure arbitrary choice. It just feels more consistent for me.
+					# Why make_login() for examples and not prepare the logins
+					# when loading CSV file? this is a pure arbitrary choice.
+					# It just feels more consistent for me.
 					if opts.login_col:
 						login = u['login']
 					else:
 						try:
-							login = LMC.users.make_login(u['lastname'], u['firstname'])
+							login = User.make_login(u['lastname'], u['firstname'])
 						except exceptions.LicornRuntimeError, e:
-							raise exceptions.LicornRuntimeError("Import error on line %d.\n%s" % (u['linenumber'], e))
+							raise exceptions.LicornRuntimeError(_(u'Import '
+								'error on line {0}.\n{1}').format(
+									u['linenumber'], e))
 
 					self.output("%s%s%s%s%s\n" % (
-						string.ljust(u['firstname'], LMC.configuration.users.login_maxlenght),
-						string.ljust(u['lastname'], LMC.configuration.users.login_maxlenght),
-						string.ljust(login, LMC.configuration.users.login_maxlenght),
-						string.ljust(u['group'], LMC.configuration.groups.name_maxlenght),
-						u['password'] if u['password'] else '(autogenerated upon creation)'))
+						string.ljust(u['firstname'], col_width),
+						string.ljust(u['lastname'], col_width),
+						string.ljust(login, col_width),
+						string.ljust(u['group'], col_width),
+						u['password']
+							if u['password']
+							else _(u'(autogenerated upon creation)')))
 
 					if i > 10:
-						# 10 examples should be sufficient for admin to see if his options
-						# are correct or not.
+						# 10 examples should be sufficient for admin
+						# to see if his options are correct or not.
 						break
 				progression += delta
 			except exceptions.AlreadyExistsException, e:
-				logging.warning(str(e))
+				logging.warning(str(e), to_local=False)
 				progression += delta
-				# FIXME: if user already exists, don't put it in the data / HTML report.
+				# FIXME: if user already exists,
+				# don't put it in the data / HTML report.
 				continue
 			except exceptions.LicornException, e:
 				# FIXME: flush the listener.?
@@ -680,22 +806,40 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.confirm_import:
 
-			self.output("Finished importing, creating summary HTML file: ")
+			self.output(_(u'Finished importing, creating summary HTML file: '))
 
 			groups = data_to_export_to_html.keys()
 			groups.sort()
 
 			import time
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
-			html_file = open("%s/import_%s-%s.html" % (
+			html_file = open('%s/import_%s-%s.html' % (
 								LMC.configuration.home_archive_dir,
-								profile,
-								hlstr.validate_name(date_time)), "w")
+								# don't take the name, it could have spaces in it.
+								profile.groupName,
+								hlstr.validate_name(date_time)), 'w')
 			html_file.write('''<html>
 				<head>
 					<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 					<style type=\"text/css\">
-					<!--
+					<!-- {css} -->
+					</style>
+				</head>
+				<body>
+					<h1>{title}</h1>
+					<h2>{import_on_date}</h2>
+					<div class="secflaw">{security_flaw}</div>
+					<div>{direct_access}'''.format(
+					title=_(u'{0} accounts and passwords').format(profile.name),
+					import_on_date=_(u'Import made on {0}.').format(date_time),
+					security_flaw=_(u'Keeping passwords in any written form '
+						'is a major security flaw for you information system.'
+						'<br />Please be sure obliterate this file and any '
+						'printed version after having transmitted their '
+						'password to your users.'),
+					direct_access=_(u'Direct access to {0}:').format(
+						LMC.configuration.groups.names.plural),
+					css='''
 						body { font-size:14pt; }
 						h1,h2,h3 { text-align:center; }
 						p,div { text-align:center; }
@@ -705,20 +849,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						td,th { text-align: center; padding: 0.7em; }
 						.even { background-color: #eef; }
 						.odd { background-color: #efe; }
-						div.secflaw {color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-					-->
-					</style>
-				</head>
-				<body>
-					<h1>Comptes %s et mots de passes</h1>
-					<h2>Import réalisé le %s</h2>
-					<div class="secflaw">
-					La conservation de mots de passe sous toute forme écrite est une vulnérabilité pour votre système.
-					<br />
-					Merci de supprimer ce fichier et ses versions imprimées une fois les mots de passe distribués.
-					</div>
-					<div>Accès direct aux %s&nbsp;:''' % (profile, date_time,
-						LMC.configuration.groups.names.plural))
+						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
+						'''))
 
 			for group in groups:
 				html_file.write("&nbsp; <a href=\"#%s\">%s</a> &nbsp;" % (group, group))
@@ -726,19 +858,27 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			for group in groups:
 				html_file.write(
-					'''<a id="%s"></a>
-					<h1>%s «&nbsp;%s&nbsp;»</h1>
+					'''<a id="{group}"></a>
+					<h1>{singular} «&nbsp;{group}&nbsp;»</h1>
 					<table>
 					<tr>
-					<th>Nom</th><th>Prénom</th><th>identifiant</th><th>mot de passe</th>
-					</tr>\n''' % (group,LMC.configuration.groups.names.singular, group))
+					<th>{lastname}</th><th>{firstname}</th><th>{login}</th><th>password</th>
+					</tr>\n'''.format(
+					group=group,
+					singular=LMC.configuration.groups.names.singular,
+					lastname=_(u'Lastname'),
+					firstname=_(u'Firstname'),
+					login=_(u'Login'),
+					password=_(u'Password')
+					))
+
 				self.output('.')
 
 				groupdata = data_to_export_to_html[group]
 				users = groupdata.keys()
 				users.sort()
 				i        = 0
-				tr_style = [ "even", "odd" ]
+				tr_style = [ 'even', 'odd' ]
 				for user in users:
 					html_file.write(
 					'''<tr class=%s>
@@ -752,23 +892,29 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					i += 1
 					if not (i % 10):
 						self.output('.')
-				html_file.write("</table>\n")
+				html_file.write('</table>\n')
 
-			html_file.write("</body>\n</html>\n")
+			html_file.write('</body>\n</html>\n')
 			html_file.close()
-			self.output(" done.\nreport: %s\n" % html_file.name )
+			self.output(' %s\n%s %s\n' %(_(u'done.'), _(u'report:'),
+				html_file.name))
 
 		if opts.no_sync:
-			LMC.groups.WriteConf()
-			LMC.users.WriteConf()
-			LMC.profiles.WriteConf(LMC.configuration.profiles_config_file)
+			LMC.groups.serialize()
+			LMC.users.serialize()
+			LMC.profiles.serialize()
+
+		gc.collect()
 	def add_user(self, opts, args):
 		""" Add a user account on the system. """
+
+		# already done in dispatch_*
+		#self.__setup_gettext()
 
 		assert ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
 
 		if opts.profile:
-			opts.profile = LMC.profiles.guess_identifier(opts.profile)
+			opts.profile = LMC.profiles.guess_one(opts.profile)
 
 		if opts.firstname is None:
 			firstname = None
@@ -791,53 +937,67 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			password = unicode(opts.password)
 
 		if opts.primary_gid:
-			# if the opts.primary_gid is not an existing GID, try to guess if it is
-			# an existing group name, and then convert it to a GID.
-			if not LMC.groups.has_key(opts.primary_gid):
-				opts.primary_gid = LMC.groups.name_to_gid(opts.primary_gid)
+			opts.primary_gid = LMC.groups.guess_one(opts.primary_gid)
 
-		# the else [ None ] is important for the unique case when called with only
-		# --firstname and --lastname (login will be autogenerated).
-		for login in opts.login.split(',') if opts.login != None else [ None ]:
+		if opts.in_backend:
+			opts.in_backend = LMC.backends.guess_one(opts.in_backend)
+
+		if opts.in_groups:
+			opts.in_groups = LMC.groups.guess_list(opts.in_groups.split(','))
+		else:
+			opts.in_groups = []
+
+		# NOTE: the "else [ None ]" is important for the unique case when CLI
+		# add is called with only --firstname and --lastname: in this particular
+		#case, login will be autogenerated, and this loop must be called at
+		# least once for this to work as expected.
+		for login in sorted(opts.login.split(',')) if opts.login != None else [ None ]:
 			if login != '':
 				try:
-					LMC.users.AddUser(lastname=lastname, firstname=firstname,
-						password=password, primary_gid=opts.primary_gid,
-						desired_uid=opts.uid, profile=opts.profile, skel=opts.skel,
-						login=login, gecos=gecos, system=opts.system,
-						home=opts.home,	batch=False, force=opts.force,
-						shell=opts.shell, in_groups=LMC.groups.guess_identifiers(
-							opts.in_groups.split(',')) if opts.in_groups else [])
-				except exceptions.AlreadyExistsException, e:
-					logging.warning(str(e))
+					LMC.users.add_User(login=login, gecos=gecos,
+						system=opts.system, password=password,
+						desired_uid=opts.uid, home=opts.home,
+						primary_group=opts.primary_gid,
+						profile=opts.profile,
+						backend=opts.in_backend,
+						skel=opts.skel, batch=opts.batch, force=opts.force,
+						shell=opts.shell, lastname=lastname, firstname=firstname,
+						in_groups=opts.in_groups)
+				except (exceptions.AlreadyExistsException,
+						exceptions.BadArgumentError), e:
+					logging.warning(str(e), to_local=False)
+
+		gc.collect()
 		assert ltrace('add', '< add_user()')
 	def add_user_in_groups(self, opts, args):
 
+		# already done in dispatch_*
+		#self.__setup_gettext()
+
 		assert ltrace('add', '> add_user_in_group().')
 
-		uids_to_add = self.select(LMC.users, 'user',
-				args,
-				[
-					(opts.login, LMC.users.login_to_uid),
-					(opts.uid, LMC.users.confirm_uid)
-				],
-				default_selection=filters.NONE)
+		users_to_add = self.select(LMC.users, args,
+				include_id_lists = [
+					(opts.login, LMC.users.by_login),
+					(opts.uid, LMC.users.by_uid)
+				])
+
+		guess = LMC.groups.guess_one
 
 		for g in opts.groups_to_add.split(','):
 			if g != '':
 				try:
-					LMC.groups.AddUsersInGroup(name=g,
-						users_to_add=uids_to_add, force=opts.force)
-				except exceptions.LicornRuntimeException, e:
-					logging.warning("Unable to add user(s) %s in group %s (was: %s)."
-						% (stylize(ST_LOGIN, opts.login),
-						stylize(ST_NAME, g), str(e)))
-				except exceptions.LicornException, e:
-					raise exceptions.LicornRuntimeError(
-						"Unable to add user(s) %s in group %s (was: %s)."
-						% (stylize(ST_LOGIN, opts.login),
-						stylize(ST_NAME, g), str(e)))
+					g = guess(g)
+					g.add_Users(users_to_add, force=opts.force)
 
+				except exceptions.LicornException, e:
+					logging.warning(_(u'Unable to add user(s) {0} '
+						'in group {1} (was: {2}).').format(
+						', '.join((stylize(ST_LOGIN, user.login)
+							for user in users_to_add)),
+						stylize(ST_NAME, g.name), str(e)), to_local=False)
+
+		gc.collect()
 		assert ltrace('add', '< add_user_in_group().')
 	def dispatch_add_user(self, opts, args):
 		""" guess how we were called:
@@ -845,27 +1005,38 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			- add a user into one or more group(s)
 		"""
 
+		self.__setup_gettext()
+
 		assert ltrace('add', '> dispatch_add_user(%s, %s)' % (opts, args))
 
-		if opts.login is None:
-			if len(args) == 2:
-				opts.login = args[1]
-				args[1] = ''
-				self.add_user(opts, args)
-			elif len(args) == 3:
-				opts.login = args[1]
-				opts.groups_to_add = args[2]
-				args[1] = ''
-				args[2] = ''
-				self.add_user_in_groups(opts, args)
+		if opts.filename:
+			self.import_users(opts, args)
+
+		else:
+			if opts.login is None:
+
+				if len(args) == 2:
+					opts.login = args[1]
+					args[1] = ''
+					self.add_user(opts, args)
+
+				elif len(args) == 3:
+					opts.login = args[1]
+					opts.groups_to_add = args[2]
+					args[1] = ''
+					args[2] = ''
+					self.add_user_in_groups(opts, args)
+
+				else:
+					self.add_user(opts, args)
 			else:
 				self.add_user(opts, args)
-		else:
-			self.add_user(opts, args)
 
 		assert ltrace('add', '< dispatch_add_user()')
 	def add_group(self, opts, args):
 		""" Add a POSIX group. """
+
+		self.__setup_gettext()
 
 		assert ltrace('add', '> add_group().')
 
@@ -876,25 +1047,36 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.description:
 			opts.description = unicode(opts.description)
 
+		if opts.in_backend:
+			opts.in_backend = LMC.backends.guess_one(opts.in_backend)
+
 		assert ltrace('add', 'group(s) to add: %s.' % opts.name)
 
-		for name in opts.name.split(',')if opts.name != None else []:
+		for name in sorted(opts.name.split(',')) if opts.name != None else []:
 			if name != '':
 				try:
 					assert ltrace('add', 'adding group %s.' % name)
-					LMC.groups.AddGroup(name, description=opts.description,
+
+					LMC.groups.add_Group(name, description=opts.description,
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
 						backend=opts.in_backend,
-						users_to_add=opts.users_to_add.split(',') \
-							if opts.users_to_add else [],
+						users_to_add=self.select(LMC.users,
+										include_id_lists=
+											[ (opts.users_to_add,
+												LMC.users.guess_one) ])
+									if opts.users_to_add else [],
 						force=opts.force)
-				except exceptions.AlreadyExistsException, e:
-					logging.warning(str(e))
 
+				except exceptions.AlreadyExistsException, e:
+					logging.warning(str(e), to_local=False)
+
+		gc.collect()
 		assert ltrace('add', '< add_group().')
 	def add_profile(self, opts, args):
 		""" Add a system wide User profile. """
+
+		self.__setup_gettext()
 
 		assert ltrace('add', '> add_profile().')
 
@@ -902,29 +1084,42 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			opts.name = args[1]
 			del args[1]
 
-		if opts.groups != []:
-			opts.groups = opts.groups.split(',')
-
 		if opts.name:
 			opts.name = unicode(opts.name)
 
 		if opts.description:
 			opts.description = unicode(opts.description)
 
-		for name in opts.name.split(',') if opts.name != None else []:
+		guess_one_group = LMC.groups.guess_one
+
+		# NOTE: don't do this, in case we need to create a new group. It must
+		# be validated inside the add_Profile / add_Group controller methods.
+		# It will be resolved inside them if we don't need to create it.
+		#
+		#if opts.group:
+		#	opts.group = guess_one_group(opts.group)
+
+		for name in sorted(opts.name.split(',')) if opts.name != None else []:
 			if name == '':
 				continue
 			try:
-				LMC.profiles.AddProfile(name, group=opts.group, profileQuota=opts.quota,
-					groups=opts.groups, description=opts.description,
+				LMC.profiles.add_Profile(name, group=opts.group,
+					profileQuota=opts.quota,
+					groups=self.select(LMC.groups,
+						include_id_lists=[(opts.groups, LMC.groups.guess_one)])
+							if opts.groups else [],
+					description=opts.description,
 					profileShell=opts.shell, profileSkel=opts.skeldir,
 					force_existing=opts.force_existing)
 			except exceptions.AlreadyExistsException, e:
-				logging.warning(str(e))
+				logging.warning(str(e), to_local=False)
 
+		gc.collect()
 		assert ltrace('add', '< add_profile().')
 	def add_keyword(self, opts, args):
 		""" Add a keyword on the system. """
+
+		self.__setup_gettext()
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -934,25 +1129,31 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			unicode(opts.description))
 	def add_privilege(self, opts, args):
 
+		self.__setup_gettext()
+
 		if opts.privileges_to_add is None and len(args) == 2:
 			opts.privileges_to_add = args[1]
 			del args[1]
 
-		include_priv_lists=[
-			(opts.privileges_to_add, LMC.groups.guess_identifier),
+		include_priv_lists = [
+			(opts.privileges_to_add, LMC.groups.guess_one),
 		]
 
-		privs_to_add = self.select(LMC.privileges, 'privilege', args=args,
+		privs_to_add = self.select(LMC.privileges, args=args,
 				include_id_lists=include_priv_lists)
 
 		LMC.privileges.add(privs_to_add)
 	def add_machine(self, opts, args):
+
+		self.__setup_gettext()
 
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
+
+		self.__setup_gettext()
 
 		if opts.rescan:
 			LMC.extensions.volumes.rescan_volumes()
@@ -967,11 +1168,131 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		LMC.extensions.volumes.mount_volumes(volumes=volumes)
 
 	### DEL
+	def del_user(self, opts, args):
+		""" delete one or more user account(s). """
+
+		# already done in dispatch_*
+		#self.__setup_gettext()
+
+		# be carefull. default selection is NONE for a DEL operation.
+		selection = filters.NONE
+
+		if opts.system:
+			selection = filters.SYSTEM
+
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
+		include_id_lists = [
+			(opts.login, LMC.users.by_login),
+			(opts.uid, LMC.users.by_uid)
+		]
+
+		exclude_id_lists = [
+			(opts.exclude, LMC.users.guess_one),
+			(opts.exclude_login, LMC.users.by_login),
+			(opts.exclude_uid, LMC.users.by_uid),
+			([os.getuid()], lambda x: x)
+		]
+
+		if opts.all and (
+					(
+						# NOTE TO THE READER: don't event try to simplify these conditions,
+						# or the order the tests: they just MATTER. Read the tests in pure
+						# english to undestand them and why the order is important.
+						opts.non_interactive and opts.force
+					)
+					or opts.batch
+					or (
+						opts.non_interactive and logging.ask_for_repair(
+							_(u'Are you sure you want to delete all users?'),
+							auto_answer=opts.auto_answer)
+						or not opts.non_interactive
+					)
+				):
+			include_id_lists.extend([
+					(LMC.users.select(filters.STD), lambda x: x),
+					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
+				])
+
+		users_to_del = self.select(LMC.users, args,
+						include_id_lists = include_id_lists,
+						exclude_id_lists = exclude_id_lists,
+						default_selection = selection
+					)
+
+		for user in users_to_del:
+			if opts.non_interactive or opts.batch or opts.force or \
+				logging.ask_for_repair(_(u'Delete user %s?') %
+						stylize(ST_LOGIN, user.login),
+					auto_answer=opts.auto_answer):
+				LMC.users.del_User(user, no_archive=opts.no_archive,
+									force=opts.force, batch=opts.batch)
+
+		gc.collect()
+	def del_user_from_groups(self, opts, args):
+
+		# already done in dispatch_*
+		#self.__setup_gettext()
+
+		assert ltrace('del', '> del_users_from_group(%s, %s)' % (opts, args))
+
+		users_to_del = self.select(LMC.users, args,
+				include_id_lists = [
+					(opts.login, LMC.users.by_login),
+					(opts.uid, LMC.users.by_uid)
+				])
+
+		by_name = LMC.groups.by_name
+
+		for g in sorted(opts.groups_to_del.split(',')):
+			if g != '':
+				try:
+					g = by_name(g)
+					g.del_Users(users_to_del, batch=opts.batch)
+				except exceptions.DoesntExistException, e:
+					logging.warning(_(u'Unable to remove user(s) {0} '
+						'from group {1} (was: {2}).').format(
+						', '.join((stylize(ST_LOGIN, u.login)
+							for u in users_to_del)),
+						stylize(ST_NAME, g), str(e)), to_local=False)
+
+		gc.collect()
+		assert ltrace('del', '< del_users_from_group()')
+	def dispatch_del_user(self, opts, args):
+
+		self.__setup_gettext()
+
+		if opts.login is None:
+			if len(args) == 3:
+				opts.login = args[1]
+				opts.groups_to_del = args[2]
+				args[1] = ''
+				args[2] = ''
+				self.del_user_from_groups(opts, args)
+			else:
+				self.del_user(opts, args)
+		else:
+			self.del_user(opts, args)
+	def dispatch_del_group(self, opts, args):
+
+		self.__setup_gettext()
+
+		if opts.filename:
+			self.desimport_groups(opts, args)
+		else:
+			self.del_group(opts, args)
 	def desimport_groups(self, opts, args):
 		""" Delete the groups (and theyr members) present in a import file.	"""
 
+		# already done in dispatch_*
+		#self.__setup_gettext()
+
+		raise NotImplementedError('this method must be refreshed before use.')
+
 		if opts.filename is None:
-			raise exceptions.BadArgumentError, "You must specify a file name"
+			raise exceptions.BadArgumentError(
+										_(u'You must specify a file name'))
 
 		delete_file = file(opts.filename, 'r')
 
@@ -999,116 +1320,25 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		for g in groups_to_del:
 			try:
+				group = LMC.groups.guess_one(g)
 				i += 1
-				self.output("\rDeleting groups (%d/%d), progression: %.2f%%" % (
-					i, length_groups, progression))
-				LMC.groups.DeleteGroup(name=g, del_users=True, no_archive=True)
+				self.output('\r' + _(u'Deleting groups (%d/%d), '
+					'progression: %.2f%%') % (i, length_groups, progression))
+
+				LMC.groups.del_Group(group, del_users=True, no_archive=True)
 				progression += delta
 				# FIXME: fush the listener??
 				#sys.stdout.flush()
 			except exceptions.LicornException, e:
-				logging.warning(str(e))
+				logging.warning(str(e),	to_local=False)
 		LMC.profiles.WriteConf(LMC.configuration.profiles_config_file)
 		print "\nFinished"
-	def del_user(self, opts, args):
-		""" delete one or more user account(s). """
-
-		# be carefull. default selection is NONE for a DEL operation.
-		selection = filters.NONE
-
-		if opts.system:
-			selection = filters.SYSTEM
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-
-		include_id_lists = [
-			(opts.login, LMC.users.login_to_uid),
-			(opts.uid, LMC.users.confirm_uid)
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.users.guess_identifier),
-			(opts.exclude_login, LMC.users.login_to_uid),
-			(opts.exclude_uid, LMC.users.confirm_uid),
-			([os.getuid()], lambda x: x)
-		]
-
-		if opts.all and (
-					(
-						# NOTE TO THE READER: don't event try to simplify these conditions,
-						# or the order the tests: they just MATTER. Read the tests in pure
-						# english to undestand them and why the order is important.
-						opts.non_interactive and opts.force
-					)
-					or opts.batch
-					or (
-						opts.non_interactive and logging.ask_for_repair(
-							'Are you sure you want to delete all users?',
-							auto_answer=opts.auto_answer)
-						or not opts.non_interactive
-					)
-				):
-			include_id_lists.extend([
-					(LMC.users.Select(filters.STD), lambda x: x),
-					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
-				])
-
-		uids_to_del = self.select(
-						LMC.users, 'user', args=args,
-						include_id_lists = include_id_lists,
-						exclude_id_lists = exclude_id_lists,
-						default_selection = selection
-					)
-
-		for uid in uids_to_del:
-			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete user %s?''' % stylize(
-				ST_LOGIN,LMC.users.uid_to_login(uid)),
-				auto_answer=opts.auto_answer):
-				LMC.users.DeleteUser(uid=uid, no_archive=opts.no_archive)
-				#logging.notice("Deleting user : %s" % LMC.users.uid_to_login(uid))
-	def del_user_from_groups(self, opts, args):
-
-		uids_to_del = self.select(LMC.users, 'user',
-				args,
-				include_id_lists=[
-					(opts.login, LMC.users.login_to_uid),
-					(opts.uid, LMC.users.confirm_uid)
-				])
-
-		for g in opts.groups_to_del.split(','):
-			if g != "":
-				try:
-					LMC.groups.DeleteUsersFromGroup(name=g, users_to_del=uids_to_del,
-						batch=opts.batch)
-				except exceptions.DoesntExistsException, e:
-					logging.warning(
-						"Unable to remove user(s) %s from group %s (was: %s)."
-						% (stylize(ST_LOGIN, opts.login),
-						stylize(ST_NAME, g), str(e)))
-				except exceptions.LicornException, e:
-					raise exceptions.LicornRuntimeError(
-						"Unable to remove user(s) %s from group %s (was: %s)."
-						% (stylize(ST_LOGIN, opts.login),
-						stylize(ST_NAME, g), str(e)))
-	def dispatch_del_user(self, opts, args):
-		if opts.login is None:
-			if len(args) == 2:
-				opts.login = args[1]
-				args[1] = ''
-				self.del_user(opts, args)
-			elif len(args) == 3:
-				opts.login = args[1]
-				opts.groups_to_del = args[2]
-				args[1] = ''
-				args[2] = ''
-				self.del_user_from_groups(opts, args)
-			else:
-				self.del_user(opts, args)
-		else:
-			self.del_user(opts, args)
+		gc.collect()
 	def del_group(self, opts, args):
 		""" delete an Licorn group. """
+
+		# already done in dispatch_*
+		#self.__setup_gettext()
 
 		selection = filters.NONE
 
@@ -1133,15 +1363,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		# no else: clause. default selection for DEL is NONE (be careful)
 
-		include_id_lists=[
-			(opts.name, LMC.groups.name_to_gid),
-			(opts.gid, LMC.groups.confirm_gid),
+		include_id_lists = [
+			(opts.name, LMC.groups.by_name),
+			(opts.gid, LMC.groups.by_gid),
 		]
 
 		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_identifier),
-			(opts.exclude_group, LMC.groups.name_to_gid),
-			(opts.exclude_gid, LMC.groups.confirm_gid)
+			(opts.exclude, LMC.groups.guess_one),
+			(opts.exclude_group, LMC.groups.by_name),
+			(opts.exclude_gid, LMC.groups.by_gid)
 		]
 
 		if opts.all and (
@@ -1154,68 +1384,101 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				or opts.batch
 				or (
 					opts.non_interactive and logging.ask_for_repair(
-						'Are you sure you want to delete all groups?',
+						_(u'Are you sure you want to delete all groups?'),
 						auto_answer=opts.auto_answer)
 					or not opts.non_interactive
 				)
 			):
 				include_id_lists.extend([
-					(LMC.groups.Select(filters.STD), lambda x: x),
-					(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
+					(LMC.groups.select(filters.STD), lambda x: x),
+					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		gids_to_del = self.select(LMC.groups, 'group',
-						args,
+		groups_to_del = self.select(LMC.groups, args,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
 						default_selection=selection)
 
-		for gid in gids_to_del:
+		#gc.set_debug(gc.DEBUG_LEAK)
+
+		for group in groups_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete group %s?''' % stylize(
-				ST_LOGIN,LMC.groups.gid_to_name(gid)),
-				auto_answer=opts.auto_answer):
-				LMC.groups.DeleteGroup(gid=gid, del_users=opts.del_users,
-					no_archive=opts.no_archive)
-				#logging.notice("Deleting group : %s" % LMC.groups.gid_to_name(gid))
+					logging.ask_for_repair(_(u'Delete group %s?') % stylize(
+					ST_NAME, group.name), auto_answer=opts.auto_answer):
+
+				try:
+					LMC.groups.del_Group(group, del_users=opts.del_users,
+						no_archive=opts.no_archive, force=opts.force)
+
+				except exceptions.BadArgumentError, e:
+					logging.warning(e, to_local=False)
+
+		# NOTE on 2011 02 17: I can't seem to find why (perhaps it has
+		# something to do with pyro threads not beeiing terminated immediately),
+		# but the gc.collect() call is mandatory for this to work as expected:
+		#
+		#	add profile test
+		#	del group test 		(fails because profile groups are protected)
+		#	del profile test
+		#	get group test		(fails because inexistant group)
+		#	add profile test
+		#
+		# Without the collection, group test is still present in memory after
+		# the profile deletion (and get group shows it, but del group crashes).
+		#
+		# I thus add this gc.collect() call at the end of all RWI methods.
+		gc.collect()
+
+		# this one has no effect at all. Only the gc.collect() has.
+		#del groups_to_del
+
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
-		include_id_lists=[
-			(opts.name, LMC.profiles.name_to_group),
-			(opts.group, LMC.profiles.confirm_group)
+
+		self.__setup_gettext()
+
+		include_id_lists = [
+			(opts.name, LMC.profiles.by_name),
+			(opts.group, LMC.profiles.by_group)
 		]
-		exclude_id_lists=[
-			(opts.exclude, LMC.profiles.guess_identifier)
+
+		exclude_id_lists = [
+			(opts.exclude, LMC.profiles.guess_one)
 		]
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all profiles?',
-					opts.auto_answer) \
+					_(u'Are you sure you want to delete all profiles?'),
+					opts.auto_answer)
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-						(LMC.profiles.Select(filters.ALL), lambda x: x)
+						(LMC.profiles.select(filters.ALL), lambda x: x)
 					])
 
-		profiles_to_del = self.select(LMC.profiles, 'profile', args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists)
+		profiles_to_del = self.select(LMC.profiles, args,
+				include_id_lists = include_id_lists,
+				exclude_id_lists = exclude_id_lists)
 
 		for p in profiles_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete profile %s?''' %
-					stylize(ST_LOGIN, LMC.profiles.group_to_name(p)),
+				logging.ask_for_repair(_(u'Delete profile %s?') %
+					stylize(ST_LOGIN, p.name),
 					auto_answer=opts.auto_answer):
-				LMC.profiles.DeleteProfile(group=p, del_users=opts.del_users,
+
+				LMC.profiles.del_Profile(p,
+					del_users=opts.del_users,
 					no_archive=opts.no_archive)
-				#logging.notice("Deleting profile : %s" % LMC.profiles.group_to_name(p))
+
+		gc.collect()
 	def del_keyword(self, opts, args):
-		""" delete a system wide User profile. """
+		""" Delete a system wide User profile. """
+
+		self.__setup_gettext()
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -1223,42 +1486,49 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		LMC.keywords.DeleteKeyword(opts.name, opts.del_children)
 	def del_privilege(self, opts, args):
+
+		self.__setup_gettext()
+
 		if opts.privileges_to_remove is None and len(args) == 2:
 			opts.privileges_to_remove = args[1]
 			del args[1]
 
-		include_priv_lists=[
-			(opts.privileges_to_remove, LMC.privileges.confirm_privilege),
+		include_priv_lists = [
+			(opts.privileges_to_remove, LMC.groups.guess_one),
 		]
-		exclude_priv_lists=[
-			(opts.exclude, LMC.privileges.confirm_privilege),
+		exclude_priv_lists = [
+			(opts.exclude, LMC.privileges.guess_one),
 		]
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all privileges?',
+					_(u'Are you sure you want to delete all privileges?'),
 					auto_answer=opts.auto_answer) or not opts.non_interactive)):
-				include_priv_lists.extend([
-					(LMC.privileges.Select(filters.ALL), lambda x: x),
-					])
-		privs_to_del = self.select(LMC.privileges, 'privilege',args=args,
-				include_id_lists=include_priv_lists,
-				exclude_id_lists=exclude_priv_lists)
 
-		for priv_name in privs_to_del:
-			if priv_name is not None and (
-			opts.non_interactive or opts.batch or opts.force or \
-			logging.ask_for_repair('''Delete privilege %s?''' %
-				stylize(ST_LOGIN, priv_name),
-				auto_answer=opts.auto_answer)):
-				LMC.privileges.delete(
-					[priv_name])
+				include_priv_lists.extend([
+					(LMC.privileges.select(filters.ALL), lambda x: x),
+					])
+
+		privs_to_del = self.select(LMC.privileges, args,
+				include_id_lists = include_priv_lists,
+				exclude_id_lists = exclude_priv_lists)
+
+		for priv in privs_to_del:
+			if priv is not None and (
+				opts.non_interactive or opts.batch or opts.force or \
+				logging.ask_for_repair(_(u'Delete privilege %s?') %
+					stylize(ST_LOGIN, priv.name),
+					auto_answer=opts.auto_answer)):
+
+				LMC.privileges.delete((priv,))
 	def del_volume(self, opts, args):
 		""" Modify volumes. """
+
+		self.__setup_gettext()
 
 		if opts.all:
 			volumes = LMC.extensions.volumes.keys()
@@ -1272,98 +1542,98 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_user(self, opts, args):
 		""" Modify a POSIX user account (Samba / LDAP included). """
 
+		self.__setup_gettext()
+
 		# by default if nothing is specified, we modify the current user.
 		# this is a special comfort-shortcut behavior.
 		#selection = filters.NONE
-		selection = 'uid=%s' % LMC.users.login_to_uid(opts.current_user)
+		selection = [ LMC.users.by_login(opts.current_user) ]
 
 		if opts.system:
 			selection = filters.SYSTEM
+
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
 
-		include_id_lists=[
-			(opts.login, LMC.users.login_to_uid),
-			(opts.uid, LMC.users.confirm_uid)
+		include_id_lists = [
+			(opts.login, LMC.users.by_login),
+			(opts.uid, LMC.users.by_uid)
 			]
 
-		exclude_id_lists=[
-			(opts.exclude, LMC.users.guess_identifier),
-			(opts.exclude_login, LMC.users.login_to_uid),
-			(opts.exclude_uid, LMC.users.confirm_uid)
+		exclude_id_lists = [
+			(opts.exclude, LMC.users.guess_one),
+			(opts.exclude_login, LMC.users.by_login),
+			(opts.exclude_uid, LMC.users.by_uid)
 			]
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all users?',
-					auto_answer=opts.auto_answer) \
+					_(u'Are you sure you want to modify all users?'),
+					auto_answer=opts.auto_answer)
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.users.Select(filters.STD), lambda x: x),
-					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
+					(LMC.users.select(filters.STD), lambda x: x),
+					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		uids_to_mod = self.select(LMC.users, 'user',	args=args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists,
-				default_selection=selection)
+		users_to_mod = self.select(LMC.users, args,
+				include_id_lists = include_id_lists,
+				exclude_id_lists = exclude_id_lists,
+				default_selection = selection)
 
-		assert ltrace('mod', '> mod_user(%s)' % uids_to_mod)
+		assert ltrace('mod', '> mod_user(%s)' % ', '.join(user.login for user in users_to_mod))
 
 		something_done = False
 
-		for uid in uids_to_mod:
+		for user in users_to_mod:
 			try:
 				if opts.non_interactive or opts.batch or opts.force or \
-					logging.ask_for_repair('''Modify user %s?''' % stylize(
-					ST_LOGIN,LMC.users.uid_to_login(uid)),
+					logging.ask_for_repair(_(u'Modify user %s?') % stylize(
+						ST_LOGIN, user.login),
 					auto_answer=opts.auto_answer):
 
 					if opts.newgecos is not None:
 						something_done = True
-						LMC.users.ChangeUserGecos(uid=uid,
-								gecos=unicode(opts.newgecos))
+						user.gecos = unicode(opts.newgecos)
 
 					if opts.newshell is not None:
 						something_done = True
-						LMC.users.ChangeUserShell(uid=uid, shell=opts.newshell)
+						user.loginShell = opts.newshell
 
 					if opts.newpassword is not None:
 						something_done = True
-						LMC.users.ChangeUserPassword(uid=uid,
-								password=opts.newpassword)
+						user.password = opts.newpassword
 
 					if opts.interactive_password:
 						something_done = True
 
-						login = LMC.users.uid_to_login(uid)
-						message='Please enter new password for user %s: ' % \
+						login = user.login
+						message=_(u'Please enter new password for user %s: ') % \
 							stylize(ST_NAME, login)
-						confirm='Please confirm new password for user %s: ' % \
+						confirm=_(u'Please confirm new password for user %s: ') % \
 							stylize(ST_NAME, login)
 
 						if opts.current_user != 'root':
 							if opts.current_user == login:
-								old_message = \
-									'Please enter your OLD (current) password: '
-								message='Please enter your new password: '
-								confirm='Please confirm your new password: '
+								old_message = _(u'Please enter your OLD '
+										'(current) password: ')
+								message=_(u'Please enter your new password: ')
+								confirm=_(u'Please confirm your new password: ')
 
 							else:
-								old_message = \
-									"Please enter %s's OLD (current) password: " % \
-									stylize(ST_LOGIN, login)
+								old_message = _(u"Please enter %s's OLD "
+									"(current) password: ") % stylize(ST_LOGIN, login)
 
-							if not LMC.users.check_password(login,
-								self.interact(old_message,
+							if not user.check_password(
+									self.interact(old_message,
 									interaction=interactions.GET_PASSWORD)):
 								raise exceptions.BadArgumentError(
-									'wrong password, aborting.')
+									_('Wrong password, procedure aborted.'))
 
 						password1 = self.interact(message,
 							interaction=interactions.GET_PASSWORD)
@@ -1371,20 +1641,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							interaction=interactions.GET_PASSWORD)
 
 						if password1 == password2:
-							LMC.users.ChangeUserPassword(uid=uid, password=password1)
+							user.password = password1
 						else:
-							raise exceptions.BadArgumentError(
-								'passwords do not match, sorry. Unchanged!')
+							raise exceptions.BadArgumentError(_(u'Passwords '
+								'do not match, leaving the old one in place.'))
 
 					if opts.auto_passwd:
 						something_done = True
-						LMC.users.ChangeUserPassword(uid=uid,
-							password=hlstr.generate_password(opts.passwd_size),
-							display=True)
+						user.password = None
 
 					if opts.lock is not None:
 						something_done = True
-						LMC.users.LockAccount(uid=uid, lock=opts.lock)
+						user.locked = opts.lock
 
 					# NOTE: it is important to do the "del" operation before the
 					# "add" one. In the other direction, there is a bad
@@ -1395,60 +1663,63 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					# I/O, to fix a thing that should not have existed).
 					if opts.groups_to_del:
 						something_done = True
-						for g in opts.groups_to_del.split(','):
+						for g in sorted(opts.groups_to_del.split(',')):
 							if g != '':
 								try:
-									LMC.groups.DeleteUsersFromGroup(name=g,
-										users_to_del=[ uid ])
+									group = LMC.groups.guess_one(g)
+									group.del_Users([ user ])
 								except exceptions.LicornRuntimeException, e:
-									logging.warning('''Unable to remove user %s from '''
-										'''group %s (was: %s).''' % (
-											stylize(ST_LOGIN, opts.login),
-											stylize(ST_NAME, g),
-											str(e)))
+									logging.warning(_(u'Unable to remove '
+										'user {0} from group {1} '
+										'(was: {2}).').format(
+											stylize(ST_LOGIN, user.login),
+											stylize(ST_NAME, group.name),
+											str(e)), to_local=False)
 								except exceptions.LicornException, e:
 									raise exceptions.LicornRuntimeError(
-										'''Unable to remove user %s from '''
-										'''group %s (was: %s).''' % (
-											stylize(ST_LOGIN, opts.login),
-											stylize(ST_NAME, g),
+										_(u'Unable to remove '
+										'user {0} from group {1} '
+										'(was: {2}).').format(
+											stylize(ST_LOGIN, user.login),
+											stylize(ST_NAME, group.name),
 											str(e)))
 
 					if opts.groups_to_add:
 						something_done = True
-						for g in opts.groups_to_add.split(','):
+						for g in sorted(opts.groups_to_add.split(',')):
 							if g != '':
 								try:
-									LMC.groups.AddUsersInGroup(name=g,
-										users_to_add=[ uid ], force=opts.force)
+									group = LMC.groups.guess_one(g)
+									group.add_Users([ user ], force=opts.force)
 								except exceptions.LicornRuntimeException, e:
-									logging.warning(
-										'''Unable to add user %s in group %s (was: '''
-										'''%s).''' % (
-											stylize(ST_LOGIN,
-												LMC.users.uid_to_login(uid)),
-											stylize(ST_NAME, g), str(e)), )
+									logging.warning(_(u'Unable to add user '
+										'{0} in group {1} (was: {2}).').format(
+											stylize(ST_LOGIN, user.login),
+											stylize(ST_NAME, group.name),
+											str(e)), to_local=False)
 								except exceptions.LicornException, e:
 									raise exceptions.LicornRuntimeError(
-										'''Unable to add user %s in group %s (was: '''
-										'''%s).'''
-											% (stylize(ST_LOGIN,
-												LMC.users.uid_to_login(uid)),
-												stylize(ST_NAME, g),
-												str(e)))
+										_(u'Unable to add user '
+										'{0} in group {1} (was: {2}).').format(
+											stylize(ST_LOGIN, user.login),
+											stylize(ST_NAME, group.name),
+											str(e)))
 
 					if opts.apply_skel is not None:
 						something_done = True
-						LMC.users.ApplyUserSkel(opts.login, opts.apply_skel)
+						user.apply_skel(opts.apply_skel)
 
 			except exceptions.BadArgumentError, e:
-				logging.warning(e)
+				logging.warning(e, to_local=False)
 
 		if not something_done:
-			raise exceptions.BadArgumentError('''What do you want to modify '''
-				'''about user(s)? Use --help to know!''')
+			raise exceptions.NeedHelpException(_(u'What do you want to modify '
+				'about user(s) %s ?') % ', '.join(stylize(ST_LOGIN, user.login)
+					for user in users_to_mod))
 	def mod_group(self, opts, args):
 		""" Modify a group. """
+
+		self.__setup_gettext()
 
 		selection = filters.NONE
 
@@ -1475,15 +1746,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# must be the last case!
 			selection = filters.STANDARD
 
-		include_id_lists=[
-			(opts.name, LMC.groups.name_to_gid),
-			(opts.gid, LMC.groups.confirm_gid)
+		include_id_lists = [
+			(opts.name, LMC.groups.by_name),
+			(opts.gid, LMC.groups.by_gid)
 		]
 
 		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_identifier),
-			(opts.exclude_group, LMC.groups.name_to_gid),
-			(opts.exclude_gid, LMC.groups.confirm_gid)
+			(opts.exclude, LMC.groups.guess_one),
+			(opts.exclude_group, LMC.groups.by_name),
+			(opts.exclude_gid, LMC.groups.by_gid)
 		]
 
 		if opts.all and (
@@ -1491,223 +1762,256 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all groups?',
+					_(u'Are you sure you want to modify all groups?'),
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 					include_id_lists.extend([
-						(LMC.groups.Select(filters.STD), lambda x: x),
-						(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
+						(LMC.groups.select(filters.STD), lambda x: x),
+						(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		gids_to_mod = self.select(LMC.groups, 'group', args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists,
-				default_selection=selection)
+		groups_to_mod = self.select(LMC.groups, args,
+					include_id_lists = include_id_lists,
+					exclude_id_lists = exclude_id_lists,
+					default_selection = selection)
 
-		assert ltrace('mod', '> mod_group(%s)' % gids_to_mod)
+		guess_one_user   = LMC.users.guess_one
+		guess_users_list = LMC.users.guess_list
 
-		g2n = LMC.groups.gid_to_name
+		if opts.move_to_backend:
+			# resolve the backend object from the name
+			opts.move_to_backend = LMC.backends.guess_one(opts.move_to_backend)
 
-		for gid in gids_to_mod:
+		assert ltrace('mod', '> mod_group(%s)' % groups_to_mod)
+
+		something_done = False
+
+		for group in groups_to_mod:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Modify group %s?''' % stylize(
-				ST_LOGIN,g2n(gid)),auto_answer=opts.auto_answer):
+				logging.ask_for_repair(_(u'Modify group %s?') % stylize(
+				ST_NAME, group.name),auto_answer=opts.auto_answer):
 
 				if opts.move_to_backend:
-					gname = g2n(gid)
-					if gname.startswith(
-							LMC.configuration.groups.resp_prefix) \
-							or gname.startswith(
-							LMC.configuration.groups.guest_prefix):
-						logging.info('Skipped associated system group %s, '
-							'handled automatically by standard group move.' %
-								stylize(ST_NAME,gname))
+					gname = group.name
+					if group.is_helper:
+						logging.info(_(u'Skipped associated system group %s, '
+							'handled automatically by standard group move.') %
+								stylize(ST_NAME, gname), to_local=False)
 					else:
-						try:
-
-							LMC.groups.move_to_backend(gid, opts.move_to_backend,
-									opts.force)
-						except exceptions.DoesntExistsException, e:
-							logging.info('Skipped group move %s to unexisting or '
-								'disabled backend %s: group left unchanged.' % (
-								g2n(gid), opts.move_to_backend))
+						something_done = True
+						group.move_to_backend(opts.move_to_backend,	opts.force)
 
 				if opts.permissive is not None:
-					LMC.groups.SetSharedDirPermissiveness(gid=gid,
-						permissive=opts.permissive)
+					something_done = True
+					group.permissive = opts.permissive
 
 				if opts.newname is not None:
+					something_done = True
 					LMC.groups.RenameGroup(gid=gid, newname=opts.newname)
 
 				if opts.newskel is not None:
-					LMC.groups.ChangeGroupSkel(gid=gid, groupSkel=opts.newskel)
+					something_done = True
+					group.groupSkel = opts.newskel
 
 				if opts.newdescription is not None:
-					LMC.groups.ChangeGroupDescription(gid=gid,
-						description=unicode(opts.newdescription))
+					something_done = True
+					group.description = unicode(opts.newdescription)
 
-				if opts.users_to_add != []:
-					LMC.groups.AddUsersInGroup(gid=gid,
-						users_to_add=opts.users_to_add.split(','),
+				if opts.users_to_add:
+					something_done = True
+					group.add_Users(
+						guess_users_list(sorted(opts.users_to_add.split(','))),
 						force=opts.force)
 
-				if opts.users_to_del != []:
-					LMC.groups.DeleteUsersFromGroup(gid=gid,
-						users_to_del=opts.users_to_del.split(','))
+				if opts.users_to_del:
+					something_done = True
+					group.del_Users(
+						guess_users_list(sorted(opts.users_to_del.split(','))))
 
-				if opts.resps_to_add != []:
-					LMC.groups.AddUsersInGroup(
-						name=LMC.configuration.groups.resp_prefix + g2n(gid),
-						users_to_add=opts.resps_to_add.split(','),
-						force=opts.force)
+				if opts.resps_to_add:
+					if group.is_standard:
+						something_done = True
+						group.responsible_group.add_Users(
+							guess_users_list(sorted(opts.resps_to_add.split(','))),
+							force=opts.force)
+					else:
+						logging.warning(_(u'Skipped responsible(s) {0} addition '
+							'on non-standard group {1}.').format(resps_to_add,
+								group.name), to_local=False)
 
-				if opts.resps_to_del != []:
-					LMC.groups.DeleteUsersFromGroup(
-						name=LMC.configuration.groups.resp_prefix + g2n(gid),
-						users_to_del=opts.resps_to_del.split(','))
+				if opts.resps_to_del:
+					if group.is_standard:
+						something_done = True
+						group.responsible_group.del_Users(
+							guess_users_list(sorted(opts.resps_to_del.split(','))),
+							force=opts.force)
+					else:
+						logging.warning(_(u'Skipped responsible(s) {0} deletion '
+							'on non-standard group {1}.').format(resps_to_del,
+								group.name), to_local=False)
 
-				if opts.guests_to_add != []:
-					LMC.groups.AddUsersInGroup(
-						name=LMC.configuration.groups.guest_prefix + g2n(gid),
-						users_to_add=opts.guests_to_add.split(','),
-						force=opts.force)
+				if opts.guests_to_add:
+					if group.is_standard:
+						something_done = True
+						group.guest_group.add_Users(
+							guess_users_list(sorted(opts.guests_to_add.split(','))),
+							force=opts.force)
+					else:
+						logging.warning(_(u'Skipped guest(s) {0} addition '
+							'on non-standard group {1}.').format(guests_to_add,
+								group.name), to_local=False)
 
-				if opts.guests_to_del != []:
-					LMC.groups.DeleteUsersFromGroup(
-						name=LMC.configuration.groups.guest_prefix + g2n(gid),
-						users_to_del=opts.guests_to_del.split(','))
-
-				# FIXME: do the same for guests,  or make resp-guest simply
-				# --add-groups resp-…,group1,group2,guest-…
+				if opts.guests_to_del:
+					if group.is_standard:
+						something_done = True
+						group.guest_group.del_Users(
+							guess_users_list(sorted(opts.guests_to_del.split(','))),
+							force=opts.force)
+					else:
+						logging.warning(_(u'Skipped guest(s) {0} deletion '
+							'on non-standard group {1}.').format(guests_to_del,
+								group.name), to_local=False)
 
 				if opts.granted_profiles_to_add is not None:
+					something_done = True
 					LMC.groups.AddGrantedProfiles(gid=gid,
-						profiles=opts.granted_profiles_to_add.split(','))
+						profiles=sorted(opts.granted_profiles_to_add.split(',')))
+
 				if opts.granted_profiles_to_del is not None:
+					something_done = True
 					LMC.groups.DeleteGrantedProfiles(gid=gid,
-						profiles=opts.granted_profiles_to_del.split(','))
+						profiles=sorted(opts.granted_profiles_to_del.split(',')))
+
+		if not something_done:
+			raise exceptions.NeedHelpException(_(u'What do you want to modify '
+				'about group(s) %s?') % ', '.join(stylize(ST_NAME, group.name)
+					for group in groups_to_mod))
 	def mod_profile(self, opts, args):
 		""" Modify a system wide User profile. """
-		include_id_lists=[
-			(opts.name, LMC.profiles.name_to_group),
-			(opts.group, LMC.profiles.confirm_group)
+
+		self.__setup_gettext()
+
+		include_id_lists = [
+			(opts.name, LMC.profiles.by_name),
+			(opts.group, LMC.profiles.by_group)
 		]
-		exclude_id_lists=[
-			(opts.exclude, LMC.profiles.guess_identifier),
+		exclude_id_lists = [
+			(opts.exclude, LMC.profiles.guess_one),
 		]
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to modify all profiles?',
-					opts.auto_answer) \
+					_(u'Are you sure you want to modify all profiles?'),
+					opts.auto_answer)
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.profiles.Select(filters.ALL), lambda x: x)
-				]),
-		profiles_to_mod = self.select(LMC.profiles, 'profile', args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists)
+					(LMC.profiles.select(filters.ALL), lambda x: x)
+				])
+
+		profiles_to_mod = self.select(LMC.profiles, args,
+				include_id_lists = include_id_lists,
+				exclude_id_lists = exclude_id_lists)
 
 		assert ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
 
-		ggi = LMC.groups.guess_identifiers
+		ggi = LMC.groups.guess_list
 
-		for group in profiles_to_mod:
+		something_done = False
+
+		for profile in profiles_to_mod:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Modify profile %s?''' % stylize(
-				ST_LOGIN, LMC.profiles.group_to_name(group)),
+				logging.ask_for_repair(_(u'Modify profile %s?') % stylize(
+				ST_LOGIN, profile.name),
 				auto_answer=opts.auto_answer):
 
 				if opts.newname is not None:
-					LMC.profiles.ChangeProfileName(group=group,
-						newname=unicode(opts.newname))
+					something_done = True
+					profile.name(unicode(opts.newname))
 
 				if opts.newgroup is not None:
-					LMC.profiles.ChangeProfileGroup(group=group, newgroup=opts.newgroup)
+					something_done = True
+					LMC.profiles.ChangeProfileGroup(group=group,
+												newgroup=opts.newgroup)
 
 				if opts.description is not None:
-					LMC.profiles.ChangeProfileDescription(group=group,
-						description=unicode(opts.description))
+					something_done = True
+					profile.description = unicode(opts.description)
 
 				if opts.newshell is not None:
-					LMC.profiles.ChangeProfileShell(group=group,
-						profileShell=opts.newshell)
+					something_done = True
+					profile.profileShell = opts.newshell
 
 				if opts.newskel is not None:
-					LMC.profiles.ChangeProfileSkel(group=group,
-					profileSkel=opts.newskel)
+					something_done = True
+					profile.profileSkel = opts.newskel
 
 				if opts.newquota is not None:
-					LMC.profiles.ChangeProfileQuota(group=group,
-					profileQuota=opts.newquota)
-
-				if opts.groups_to_add is not None:
-					added_groups = LMC.profiles.AddGroupsInProfile(group=group,
-						groups_to_add=opts.groups_to_add.split(','))
-					if opts.instant_apply:
-						prim_memb = LMC.groups.primary_members(name=group)
-						for added_group in added_groups:
-							LMC.groups.AddUsersInGroup(name=added_group,
-								users_to_add=prim_memb, force=opts.force,
-								batch=opts.no_sync)
+					something_done = True
+					profile.profileQuota = opts.newquota
 
 				if opts.groups_to_del is not None:
-					deleted_groups = LMC.profiles.DeleteGroupsFromProfile(group=group,
-						groups_to_del=opts.groups_to_del.split(','))
-					if opts.instant_apply:
-						prim_memb = LMC.groups.primary_members(name=group)
-						for deleted_group in deleted_groups:
-							LMC.groups.DeleteUsersFromGroup(name=deleted_group,
-								users_to_del=prim_memb,	batch=opts.no_sync)
+					something_done = True
+					profile.del_Groups(ggi(sorted(opts.groups_to_del.split(','))),
+										instant_apply=opts.instant_apply)
 
-				if opts.no_sync:
-					LMC.groups.WriteConf()
+				if opts.groups_to_add is not None:
+					something_done = True
+					profile.add_Groups(ggi(sorted(opts.groups_to_add.split(','))),
+										instant_apply=opts.instant_apply)
 
 				include_id_lists = []
 
 				if opts.apply_to_members:
-					include_id_lists.append(
-						(LMC.groups.primary_members(name=group), LMC.users.login_to_uid))
+					something_done = True
+					include_id_lists.append((profile.group.gidMembers, lambda x: x))
+
 				if opts.apply_to_users is not None:
 					include_id_lists.append(
-						(opts.apply_to_users.split(','), LMC.users.guess_identifier))
+						(opts.apply_to_users.split(','), LMC.users.guess_one))
+
 				if opts.apply_to_groups is not None:
-					for gid in ggi(opts.apply_to_groups.split(',')):
+					for group in LMC.groups.guess_list(
+											sorted(opts.apply_to_groups.split(','))):
 						include_id_lists.append(
-							(LMC.groups.primary_members(gid=gid), LMC.users.login_to_uid))
+							(group.all_members, lambda x: x))
 
 				if opts.apply_all_attributes or opts.apply_skel or opts.apply_groups:
 
-					_users = LMC.users.Select(
-						self.select(LMC.users, 'user',
-							args,
-							include_id_lists=include_id_lists,
-							exclude_id_lists=[
-								(opts.exclude, LMC.users.guess_identifier),
-								(opts.exclude_login, LMC.users.login_to_uid),
-								(opts.exclude_uid, LMC.users.confirm_uid)
+					_users = self.select(LMC.users, (),
+							include_id_lists = include_id_lists,
+							exclude_id_lists = [
+								(opts.exclude, LMC.users.guess_one),
+								(opts.exclude_login, LMC.users.by_login),
+								(opts.exclude_uid, LMC.users.by_uid)
 							],
-							default_selection=filters.NONE,
+							default_selection = filters.NONE,
 							all=opts.apply_to_all_accounts)
-						)
 
 					assert ltrace('mod',"  mod_profile(on_users=%s)" % _users)
 
 					if _users != []:
-						LMC.profiles.ReapplyProfileOfUsers(_users,
+						something_done = True
+						LMC.profiles.reapply_Profile(_users,
 							apply_groups=opts.apply_groups,
 							apply_skel=opts.apply_skel,
 							batch=opts.batch, auto_answer=opts.auto_answer)
+
+		if not something_done:
+			raise exceptions.NeedHelpException(_(u'What do you want to modify '
+				'about profile(s) %s?') % ', '.join(stylize(ST_NAME, p.name)
+											for p in profiles_to_mod))
 		assert ltrace('mod', '< mod_profile()')
 	def mod_machine(self, opts, args):
 		""" Modify a machine. """
+
+		self.__setup_gettext()
 
 		if opts.all:
 			selection = host_status.ALL
@@ -1723,9 +2027,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if opts.active:
 				selection |= host_status.ACTIVE
 
-		mids_to_mod = self.select(LMC.machines, 'machine',
-				args,
-				[
+		mids_to_mod = self.select(LMC.machines, args,
+				include_id_lists = [
 					(opts.hostname, LMC.machines.by_hostname),
 					(opts.mid, LMC.machines.has_key)
 				],
@@ -1736,6 +2039,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				machine.shutdown(warn_users=opts.warn_users)
 	def mod_keyword(self, opts, args):
 		""" Modify a keyword. """
+
+		self.__setup_gettext()
+
+		raise NotImplementedError(_(u'not yet anymore.'))
 
 		if len(args) == 2:
 			opts.name = args[1]
@@ -1752,7 +2059,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_path(self, opts, args):
 		""" Manage keywords of a file or directory. """
 
-		raise NotImplementedError('not yet anymore.')
+		self.__setup_gettext()
+
+		raise NotImplementedError(_(u'not yet anymore.'))
 
 		if len(args) == 2:
 			opts.path = args[1]
@@ -1768,12 +2077,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			LMC.keywords.ClearKeywords(opts.path, opts.recursive)
 		else:
 			if opts.keywords_to_del is not None:
-				LMC.keywords.DeleteKeywordsFromPath(opts.path, opts.keywords_to_del.split(','), opts.recursive)
+				LMC.keywords.DeleteKeywordsFromPath(opts.path,
+					sorted(opts.keywords_to_del.split(',')), opts.recursive)
 			if opts.keywords_to_add is not None:
-				LMC.keywords.AddKeywordsToPath(opts.path, opts.keywords_to_add.split(','), opts.recursive)
+				LMC.keywords.AddKeywordsToPath(opts.path,
+					sorted(opts.keywords_to_add.split(',')), opts.recursive)
 	def mod_configuration(self, opts, args):
 		""" Modify some aspects or abstract directives of the system configuration
 			(use with caution)."""
+
+		self.__setup_gettext()
 
 		if opts.setup_shared_dirs:
 			LMC.configuration.check_base_dirs(minimal=False, batch=True)
@@ -1786,53 +2099,56 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				"changing server IP address is not yet implemented.")
 
 		elif opts.privileges_to_add:
-			LMC.privileges.add(opts.privileges_to_add.split(','))
+			LMC.privileges.add(sorted(opts.privileges_to_add.split(',')))
 
 		elif opts.privileges_to_remove:
-			LMC.privileges.delete(opts.privileges_to_remove.split(','))
+			LMC.privileges.delete(sorted(opts.privileges_to_remove.split(',')))
 
 		elif opts.hidden_groups != None:
 			LMC.configuration.SetHiddenGroups(opts.hidden_groups)
 
 		#FIXME: refactor the next 4 blocks
+		# don't sort the backends, the order is probably important.
 
 		elif opts.disable_backends != None:
 			for backend in opts.disable_backends.split(','):
 				try:
 					LMC.backends.disable_backend(backend)
-				except exceptions.DoesntExistsException, e:
-					logging.warning("Skipped non-existing backend %s." %
-						stylize(ST_NAME, backend))
+				except exceptions.DoesntExistException, e:
+					logging.warning(_(u'Skipped non-existing backend %s.') %
+						stylize(ST_NAME, backend), to_local=False)
 
 		elif opts.enable_backends != None:
 			for backend in opts.enable_backends.split(','):
 				try:
 					LMC.backends.enable_backend(backend)
-				except exceptions.DoesntExistsException, e:
-					logging.warning("Skipped non-existing backend %s." %
-						stylize(ST_NAME, backend))
+				except exceptions.DoesntExistException, e:
+					logging.warning(_(u'Skipped non-existing backend %s.') %
+						stylize(ST_NAME, backend), to_local=False)
 
 		elif opts.disable_extensions != None:
 			for extension in opts.disable_extensions.split(','):
 				try:
 					LMC.extensions.disable_extension(extension)
-				except exceptions.DoesntExistsException, e:
-					logging.warning("Skipped non-existing extension %s." %
-						stylize(ST_NAME, backend))
+				except exceptions.DoesntExistException, e:
+					logging.warning(_(u'Skipped non-existing extension %s.') %
+						stylize(ST_NAME, backend), to_local=False)
 
 		elif opts.enable_extensions != None:
 			for extension in opts.enable_extensions.split(','):
 				try:
 					LMC.extensions.enable_extension(extension)
-				except exceptions.DoesntExistsException, e:
-					logging.warning("Skipped non-existing extension %s." %
-						stylize(ST_NAME, backend))
+				except exceptions.DoesntExistException, e:
+					logging.warning(_(u'Skipped non-existing extension %s.') %
+						stylize(ST_NAME, backend), to_local=False)
 
 		else:
-			raise exceptions.BadArgumentError(
-				"what do you want to modify? use --help to know!")
+			raise exceptions.NeedHelpException(_(u'What do you want to '
+				'modify? use --help to know!'))
 	def mod_volume(self, opts, args):
 		""" Modify volumes. """
+
+		self.__setup_gettext()
 
 		# TODO: move that code into the extension.
 
@@ -1870,28 +2186,31 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			LMC.extensions.volumes.enable_volumes(opts.enable_volumes.split(','))
 
 		if nothing_done:
-			raise exceptions.BadArgumentError(
-				"What do you want to modify on volumes? use --help to know!")
+			raise exceptions.NeedHelpException(_(u'What do you want to modify '
+				'on volumes? use --help to know!'))
 	### CHK
 	def chk_user(self, opts, args):
 		""" Check one or more user account(s). """
+
+		self.__setup_gettext()
 
 		selection = filters.STANDARD
 
 		if opts.system:
 			selection = filters.SYSTEM
+
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
 
-		include_id_lists=[
-			(opts.login, LMC.users.login_to_uid),
-			(opts.uid, LMC.users.confirm_uid)
+		include_id_lists = [
+			(opts.login, LMC.users.by_login),
+			(opts.uid, LMC.users.by_uid)
 		]
 
-		exclude_id_lists=[
-			(opts.exclude, LMC.users.guess_identifier),
-			(opts.exclude_login, LMC.users.login_to_uid),
-			(opts.exclude_uid, LMC.users.confirm_uid)
+		exclude_id_lists = [
+			(opts.exclude, LMC.users.guess_one),
+			(opts.exclude_login, LMC.users.by_login),
+			(opts.exclude_uid, LMC.users.by_uid)
 		]
 
 		if opts.all and (
@@ -1899,36 +2218,40 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-					opts.non_interactive and opts.force) or opts.batch \
+					opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to check all users?',
+					_(u'Are you sure you want to check all users?'),
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.users.Select(filters.STD), lambda x: x),
-					(LMC.users.Select(filters.SYSUNRSTR), lambda x: x)
+					(LMC.users.select(filters.STD), lambda x: x),
+					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		uids_to_chk = self.select(LMC.users, 'user', args,
-			include_id_lists=include_id_lists,
-			exclude_id_lists=exclude_id_lists)
+		users_to_chk = self.select(LMC.users, args,
+			include_id_lists = include_id_lists,
+			exclude_id_lists = exclude_id_lists)
 
-		assert ltrace('chk', '> chk_user(%s)' % uids_to_chk)
+		assert ltrace('chk', '> chk_user(%s)' % users_to_chk)
 
-		if uids_to_chk != []:
+		if users_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:
-				LMC.users.CheckUsers(uids_to_chk, minimal=opts.minimal,
+				LMC.users.chk_Users(users_to_chk, minimal=opts.minimal,
 					auto_answer=opts.auto_answer, batch=opts.batch)
 			else:
-				for uid in uids_to_chk:
-					if logging.ask_for_repair('''Check user %s?''' %
-						stylize(ST_LOGIN, LMC.users.uid_to_login(uid)),
+				for user in users_to_chk:
+					if logging.ask_for_repair(_(u'Check account %s?') %
+							stylize(ST_LOGIN, user.login),
 						auto_answer=opts.auto_answer):
-						LMC.users.CheckUsers([uid], minimal=opts.minimal,
-							auto_answer=opts.auto_answer, batch=opts.batch)
+
+						user.check(minimal=opts.minimal, batch=opts.batch,
+							auto_answer=opts.auto_answer)
+
 		assert ltrace('chk', '< chk_user()')
 	def chk_group(self, opts, args):
 		""" Check one or more group(s). """
+
+		self.__setup_gettext()
 
 		selection = filters.NONE
 
@@ -1955,15 +2278,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# must be the last case!
 			selection = filters.STANDARD
 
-		include_id_lists=[
-			(opts.name, LMC.groups.name_to_gid),
-			(opts.gid, LMC.groups.confirm_gid)
+		include_id_lists = [
+			(opts.name, LMC.groups.by_name),
+			(opts.gid, LMC.groups.by_gid)
 		]
 
 		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_identifier),
-			(opts.exclude_group, LMC.groups.name_to_gid),
-			(opts.exclude_gid, LMC.groups.confirm_gid)
+			(opts.exclude, LMC.groups.guess_one),
+			(opts.exclude_group, LMC.groups.by_name),
+			(opts.exclude_gid, LMC.groups.by_gid)
 		]
 
 		if opts.all and (
@@ -1971,74 +2294,81 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-					opts.non_interactive and opts.force) or opts.batch \
+					opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to check all groups?',
+					_(u'Are you sure you want to check all groups?'),
 					auto_answer=opts.auto_answer) or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-					(LMC.groups.Select(filters.STD), lambda x: x),
-					(LMC.groups.Select(filters.SYSUNRSTR), lambda x: x)
+					(LMC.groups.select(filters.STD), lambda x: x),
+					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		gids_to_chk = self.select(LMC.groups, 'group', args,
-			include_id_lists=include_id_lists,
-			exclude_id_lists=exclude_id_lists,
-			default_selection=selection,
+		groups_to_chk = self.select(LMC.groups, args,
+			include_id_lists = include_id_lists,
+			exclude_id_lists = exclude_id_lists,
+			default_selection = selection,
 			all=opts.all)
 
 		assert ltrace('chk', '> chk_group(%s)' % gids_to_chk)
 
-		if gids_to_chk != []:
+		if groups_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:
-				LMC.groups.CheckGroups(gids_to_check=gids_to_chk,
+				LMC.groups.check_groups(groups_to_chk,
 					minimal=opts.minimal, batch=opts.batch,
 					auto_answer=opts.auto_answer, force=opts.force)
 			else:
-				for gid in gids_to_chk:
-					if logging.ask_for_repair('''Check group %s?''' %
-						stylize(ST_LOGIN, LMC.groups.gid_to_name(gid)),
+				for group in groups_to_chk:
+					if logging.ask_for_repair(_(u'Check group %s?') %
+							stylize(ST_NAME, group.name),
 						auto_answer=opts.auto_answer):
-						LMC.groups.CheckGroups(gids_to_check=[gid],
-							minimal=opts.minimal, batch=opts.batch,
+
+						group.check(minimal=opts.minimal, batch=opts.batch,
 							auto_answer=opts.auto_answer, force=opts.force)
+
 		assert ltrace('chk', '< chk_group()')
 	def chk_profile(self, opts, args):
 		""" TODO: to be implemented. """
-		include_id_lists=[
-			(opts.name, LMC.profiles.name_to_group),
-			(opts.group, LMC.profiles.confirm_group)
+
+		self.__setup_gettext()
+
+		include_id_lists = [
+			(opts.name, LMC.profiles.by_name),
+			(opts.group, LMC.profiles.by_group)
 		]
-		exclude_id_lists=[
-			(opts.exclude, LMC.profiles.guess_identifier)
+		exclude_id_lists = [
+			(opts.exclude, LMC.profiles.guess_one)
 		]
+
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
 				# or the order the tests: they just MATTER. Read the tests in pure
 				# english to undestand them and why the order is important.
-				opts.non_interactive and opts.force) or opts.batch \
+				opts.non_interactive and opts.force) or opts.batch
 				or (opts.non_interactive and logging.ask_for_repair(
-					'Are you sure you want to delete all profiles?',
-					opts.auto_answer) \
+					_(u'Are you sure you want to check all profiles?'),
+					opts.auto_answer)
 				or not opts.non_interactive)
 			):
 				include_id_lists.extend([
-						(LMC.profiles.Select(filters.ALL), lambda x: x)
+						(LMC.profiles.select(filters.ALL), lambda x: x)
 					])
 
-		profiles_to_del = self.select(LMC.profiles, 'profile', args,
-				include_id_lists=include_id_lists,
-				exclude_id_lists=exclude_id_lists)
+		profiles_to_del = self.select(LMC.profiles, args,
+				include_id_lists = include_id_lists,
+				exclude_id_lists = exclude_id_lists)
 
 		for p in profiles_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair('''Delete profile %s?''' % stylize(
-				ST_LOGIN,LMC.profiles.group_to_name(p)),
+				logging.ask_for_repair(_(u'Check profile %s?') %
+					stylize(ST_NAME, p.name),
 				auto_answer=opts.auto_answer):
-				raise NotImplementedError("Sorry, not yet.")
+				raise NotImplementedError(_(u'Sorry, not yet.'))
 	def chk_configuration(self, opts, args):
 		""" TODO: to be implemented. """
+
+		self.__setup_gettext()
 
 		LMC.configuration.check(opts.minimal, batch=opts.batch,
 			auto_answer=opts.auto_answer)

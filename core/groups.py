@@ -11,966 +11,1004 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import os, stat, posix1e, re, time
+import os, sys, stat, posix1e, re, time, pyinotify, weakref
+
+from traceback  import print_exc
+from threading  import current_thread, Event
+from contextlib import nested
+from operator   import attrgetter
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton,Enumeration
-from licorn.foundations.constants import filters, backend_actions
+from licorn.foundations.base      import Singleton, Enumeration
+from licorn.foundations.constants import filters, backend_actions, distros
 
 from licorn.core         import LMC
-from licorn.core.classes import CoreFSController
+from licorn.core.classes import CoreFSController, CoreStoredObject
+from licorn.daemon       import priorities, roles
 
-class GroupsController(Singleton, CoreFSController):
-	""" Manages the groups and the associated shared data on a Linux system.
+
+class Group(CoreStoredObject):
+	""" a Licorn® group object.
+
+		.. versionadded:: 1.2.5
 	"""
+	_permissive_colors = {
+			None: ST_NAME,
+			True: ST_RUNNING,
+			False: ST_STOPPED
+		}
 
-	init_ok = False
-	load_ok = False
+	#: cli width helpers to build beautiful CLI outputs.
+	_cw_name = 10
 
-	def __init__ (self, warnings=True):
+	# reverse mapping on group names
+	by_name = {}
 
-		assert ltrace('groups', '> GroupsController.__init__(%s)' %
-			GroupsController.init_ok)
+	@staticmethod
+	def _cli_invalidate_all():
+		for group_ref in Group.by_name.itervalues():
+			group_ref()._cli_invalidate()
+	@staticmethod
+	def _cli_compute_label_width(avoid=None):
 
-		if GroupsController.init_ok:
-			return
-		CoreFSController.__init__(self, 'groups')
-		self.inotifier = None
+		_cw_name = 10
 
+		for name in Group.by_name:
+			lenght = len(name) + 2
 
-		GroupsController.init_ok = True
-		assert ltrace('groups', '< GroupsController.__init__(%s)' %
-			GroupsController.init_ok)
-	def load(self):
-		if GroupsController.load_ok:
-			return
+			if lenght > _cw_name:
+				_cw_name = lenght
+
+		if Group._cw_name != _cw_name:
+			Group._cw_name = _cw_name
+			Group._cli_invalidate_all()
+	@staticmethod
+	def is_system_gid(gid):
+		""" Return true if gid is system. """
+		return gid < LMC.configuration.groups.gid_min \
+			or gid > LMC.configuration.groups.gid_max
+	@staticmethod
+	def is_standard_gid(gid):
+		""" Return true if gid is standard (not system). """
+		return gid >= LMC.configuration.groups.gid_min \
+			and gid <= LMC.configuration.groups.gid_max
+	@staticmethod
+	def is_restricted_system_gid(gid):
+		""" Return True if gid is outside of
+			Licorn® controlled system gids boundaries. """
+		return gid < LMC.configuration.groups.system_gid_min \
+					or gid > LMC.configuration.groups.gid_max
+	@staticmethod
+	def make_name(inputname=None):
+		""" Make a valid login from  user's firstname and lastname."""
+
+		#TODO: make this a static meth of :class:`Group` ?
+
+		groupname = hlstr.validate_name(inputname,
+						maxlenght=LMC.configuration.groups.name_maxlenght,
+						custom_keep='-._')
+
+		if not hlstr.cregex['group_name'].match(groupname):
+			raise exceptions.BadArgumentError(_(u'Cannot build '
+				'a valid UNIX group name (got {0}, which does '
+				'not verify {1}) with the string you provided '
+				'"{2}".').format(groupname,
+					hlstr.regex['group_name'], inputname))
+
+		# TODO: verify if the group doesn't already exist.
+		#while potential in UsersController.users:
+		return groupname
+	@staticmethod
+	def special_sort(groups):
+		""" Sort a list of group to display them in alphabetical order. *But*,
+			if there are guest or responsible groups in there, sort on the
+			corresponding standard group name, because it's always the standard
+			group name that gets displayed in :program:`get` outputs.
+		"""
+
+		# Thus, a special cpm() method.
+		#groups.sort(cmp=lambda x,y: cmp(
+		#				x.standard_group.name
+		#					if x.is_responsible or x.is_guest else x.name,
+		#				y.standard_group.name
+		#					if y.is_responsible or y.is_guest else y.name))
+
+		# Thus, a special key func.
+		groups.sort(key=lambda x: x.standard_group.name
+									if x.is_helper else x.name)
+
+	def __init__(self, gidNumber, name, memberUid=None,
+		homeDirectory=None, permissive=None, description=None,
+		groupSkel=None, userPassword=None, backend=None):
+
+		CoreStoredObject.__init__(self,	LMC.groups, backend)
+
+		assert ltrace('objects', '| Group.__init__(%s, %s)' % (gidNumber, name))
+
+		# use private attributes, made public via the property behaviour
+		self.__gidNumber    = gidNumber
+		self.__name         = name
+		self.__description  = description
+		self.__groupSkel    = groupSkel
+		self.__userPassword = userPassword
+
+		# The weakref is used to link me to other core objects. My Controller
+		# will get a real reference anyway.
+
+		if memberUid:
+			# Transient variable that will be wiped by _setup_initial_links()
+			# after use. it contains logins, that will be expanded to real user
+			# objects.
+			self.__memberUid = memberUid
+
+		# These two will be filled by _setup_initial_links(), trigerred by
+		# the controller, after all backends have loaded.
+		self.__gidMembers = []
+		self.__members    = []
+
+		# These will be initialy filled when ProfilesController loads,
+		# and updated by [un]link_Profile() and the profile property after that.
+		# Only enforced thing, as of 20110215:
+		#					__profile not in __profiles
+
+		# the profile corresponding to this group (if any)
+		self.__profile = None
+
+		# the list of profiles the group is in.
+		self.__profiles = []
+
+		# Reverse map the current object from its name (it is indexed on GID
+		# in the Groups Controller), but only with a weak ref, to be sure the
+		# object gets deleted from the controller.
+		Group.by_name[name] = self.weakref
+
+		# useful booleans, must exist before __resolve* methods are called.
+		self.__is_system   = Group.is_system_gid(gidNumber)
+		self.__is_standard = not self.__is_system
+
+		if self.__is_system:
+			self.__is_system_restricted   = Group.is_restricted_system_gid(gidNumber)
+			self.__is_system_unrestricted = not self.__is_system_restricted
 		else:
-			assert ltrace('groups', '| load()')
-			# be sure our depency is OK.
-			LMC.users.load()
-			self.reload()
-			LMC.configuration.groups.hidden = self.GetHiddenState()
-			GroupsController.load_ok = True
+			self.__is_system_restricted   = False
+			self.__is_system_unrestricted = False
+
+		# is_privilege will be set by PrivilegesWhiteList on load.
+		# for now, we need to set it to whatever value. I choose "False".
+		self.__is_privilege = False
+
+		# self.__is_system must already be set (to whatever value) for this
+		# to work, because system group don't have homedirs.
+		self.__homeDirectory = self.__resolve_home_directory(homeDirectory)
+
+		#: this must be done *after* the home dire resolution, else it
+		# will fail (this is enforced anyway in the method).
+		self.__permissive = self.__resolve_permissive_state(permissive)
+
+		self.__is_responsible = self.__is_system and self.__name.startswith(
+										LMC.configuration.groups.resp_prefix)
+
+		self.__is_guest = self.__is_system and self.__name.startswith(
+										LMC.configuration.groups.guest_prefix)
+
+		self.__is_helper = self.__is_responsible or self.__is_guest
+
+		# these will be filled later by the controller,
+		# which has the global view.
+		self.__standard_group    = None
+		self.__responsible_group = None
+		self.__guest_group       = None
+
+		# CHECK related things.
+		# The Event will avoid checking or fast_checking multiple times
+		# over and over. We display messages to be sure there is no problem,
+		# but no more often that every 5 seconds.
+		self.__checking_event = Event()
+		self.__last_msg_time  = time.time()
+		self.__check_file     = '%s%s' % (self.__homeDirectory,
+							LMC.configuration.groups.check_config_file_suffix)
+
+		# don't set it, this will be handled by _fast*() or check().
+		#self.__check_rules    = None
+
+		# CLI output pre-calculations.
+		if len(name) + 2 > Group._cw_name:
+			Group._cw_name = len(name) + 2
+			Group._cli_invalidate_all()
 	def __del__(self):
-		assert ltrace('groups', '| __del__()')
-	def __getitem__(self, item):
-		return self.groups[item]
-	def __setitem__(self, item, value):
-		self.groups[item]=value
-	def keys(self):
-		with self.lock():
-			return self.groups.keys()
-	def has_key(self, key):
-		with self.lock():
-			return self.groups.has_key(key)
-	def reload(self):
-		""" load or reload internal data structures from files on disk. """
 
-		assert ltrace('groups', '| reload()')
+		assert ltrace('groups', '| Group %s.__del__()' % self.__name)
 
-		# lock users too, because we feed the members cache inside.
-		with self.lock():
-			with LMC.users.lock():
-				self.groups     = {}
-				self.name_cache = {}
+		del self.__profile
 
-				for backend in self.backends:
-					g, c = backend.load_Groups()
-					self.groups.update(g)
-					self.name_cache.update(c)
-	def reload_backend(self, backend_name):
-		""" reload only one backend contents (used from inotifier). """
-		assert ltrace('groups', '| reload_backend(%s)' % backend_name)
+		del self.__profiles
 
-		# lock users too, because we feed the members cache inside.
-		with self.lock():
-			with LMC.users.lock():
-				g, c = LMC.backends[backend_name].load_Groups()
-				self.groups.update(g)
-				self.name_cache.update(c)
-	def GetHiddenState(self):
-		""" See if /home/groups is readable or not. """
+		for user in self.__members:
+			user().unlink_Group(self)
 
-		try:
-			for line in posix1e.ACL(file='%s/%s' % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural)):
-				if line.tag_type & posix1e.ACL_GROUP:
-					try:
-						if line.qualifier == self.name_to_gid(
-							LMC.configuration.users.group):
-							return not line.permset.read
-					except AttributeError:
-						# we got AttributeError because name_to_gid() fails,
-						# because controller has not yet loaded any data. Get
-						# the needed information by another mean.
-						import grp
-						if line.qualifier == grp.getgrnam(
-							LMC.configuration.users.group).gr_gid:
-							return not line.permset.read
+		del self.__members
 
-		except exceptions.DoesntExistsException:
-			# the group "users" doesn't exist, or is not yet created.
-			return None
-		except (IOError, OSError), e:
-			if e.errno == 13:
-				LicornConfiguration.groups.hidden = None
-			elif e.errno != 2:
-				# 2 will be corrected in this function
-				raise e
-	def set_inotifier(self, inotifier):
-		self.inotifier = inotifier
-	def WriteConf(self, gid=None):
-		""" Save Configuration (internal data structure to disk). """
+		del Group.by_name[self.__name]
 
-		assert ltrace('groups', '> WriteConf(%s)' % gid)
-
-		with self.lock():
-			if gid:
-				LMC.backends[
-					self.groups[gid]['backend']
-					].save_Group(gid, backend_actions.UPDATE)
-
-			else:
-				for backend in self.backends:
-					backend.save_Groups()
-
-		assert ltrace('groups', '< WriteConf()')
-	def Select(self, filter_string):
-		""" Filter group accounts on different criteria.
-		"""
-
-		filtered_groups = []
-
-		assert ltrace('groups', '> Select(%s)' % filter_string)
-
-		with self.lock():
-			if filters.NONE == filter_string:
-				filtered_groups = []
-
-			elif type(filter_string) == type([]):
-				filtered_groups = filter_string
-
-			elif filters.ALL == filter_string:
-				assert ltrace('groups', '> Select(ALL:%s/%s)' % (
-					filters.ALL, filter_string))
-
-			elif filters.STANDARD == filter_string:
-				assert ltrace('groups', '> Select(STD:%s/%s)' % (
-					filters.STD, filter_string))
-
-				filtered_groups.extend(filter(self.is_standard_gid,
-					self.groups.keys()))
-
-			elif filters.EMPTY == filter_string:
-				assert ltrace('groups', '> Select(EMPTY:%s/%s)' % (
-					filters.EMPTY, filter_string))
-
-				filtered_groups.extend(filter(self.is_empty_gid,
-					self.groups.keys()))
-
-			elif filters.SYSTEM & filter_string:
-
-				if filters.GUEST == filter_string:
-					assert ltrace('groups', '> Select(GST:%s/%s)' % (
-						filters.GST, filter_string))
-					for gid in self.groups.keys():
-						if self.groups[gid]['name'].startswith(
-							LMC.configuration.groups.guest_prefix):
-							filtered_groups.append(gid)
-
-				elif filters.NOT_GUEST == filter_string:
-					assert ltrace('groups', '> Select(GST:%s/%s)' % (
-						filters.NOT_GST, filter_string))
-					for gid in self.groups.keys():
-						if not self.groups[gid]['name'].startswith(
-							LMC.configuration.groups.guest_prefix):
-							filtered_groups.append(gid)
-
-				elif filters.SYSTEM_RESTRICTED == filter_string:
-					assert ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
-						filters.SYSTEM_RESTRICTED, filter_string))
-
-					filtered_groups.extend(filter(self.is_restricted_system_gid,
-						self.groups.keys()))
-
-				elif filters.SYSTEM_UNRESTRICTED == filter_string:
-					assert ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
-						filters.SYSTEM_UNRESTRICTED, filter_string))
-
-					filtered_groups.extend(filter(
-						self.is_unrestricted_system_gid, self.groups.keys()))
-
-				elif filters.RESPONSIBLE == filter_string:
-					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
-						filters.RSP, filter_string))
-
-					for gid in self.groups.keys():
-						if self.groups[gid]['name'].startswith(
-							LMC.configuration.groups.resp_prefix):
-							filtered_groups.append(gid)
-
-				elif filters.NOT_RESPONSIBLE == filter_string:
-					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
-						filters.NOT_RSP, filter_string))
-
-					for gid in self.groups.keys():
-						if not self.groups[gid]['name'].startswith(
-							LMC.configuration.groups.resp_prefix):
-							filtered_groups.append(gid)
-
-				elif filters.PRIVILEGED == filter_string:
-					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
-						filters.PRI, filter_string))
-
-					for name in LMC.privileges:
-						try:
-							filtered_groups.append(
-								self.name_to_gid(name))
-						except exceptions.DoesntExistsException:
-							# this system group doesn't exist on the system
-							pass
-
-				elif filters.NOT_PRIVILEGED == filter_string:
-					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
-						filters.NOT_PRI, filter_string))
-					for gid in self.groups.keys():
-						if self.groups[gid]['name'] not in LMC.privileges:
-							filtered_groups.append(gid)
-				else:
-					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
-						filters.SYS, filter_string))
-					filtered_groups.extend(filter(self.is_system_gid,
-						self.groups.keys()))
-
-			elif filters.NOT_SYSTEM == filter_string:
-				assert ltrace('groups', '> Select(PRI:%s/%s)' % (
-					filters.NOT_SYS, filter_string))
-				for gid in self.groups.keys():
-					if not self.is_system_gid(gid):
-						filtered_groups.append(gid)
-
-			else:
-				gid_re    = re.compile("^gid=(?P<gid>\d+)")
-				gid_match = gid_re.match(filter_string)
-				if gid_match is not None:
-					gid = int(gid_match.group('gid'))
-					filtered_groups.append(gid)
-
-		assert ltrace('groups', '< Select(%s)' % filtered_groups)
-		return filtered_groups
-	def dump(self):
-		""" Dump the internal data structures (debug and development use). """
-
-		with self.lock():
-
-			assert ltrace('groups', '| dump()')
-
-			gids = self.groups.keys()
-			gids.sort()
-
-			names = self.name_cache.keys()
-			names.sort()
-
-			def dump_group(gid):
-				return 'groups[%s] (%s) = %s ' % (
-					stylize(ST_UGID, gid),
-					stylize(ST_NAME, self.groups[gid]['name']),
-					str(self.groups[gid]).replace(
-					', ', '\n\t').replace('{', '{\n\t').replace('}','\n}'))
-
-			data = '%s:\n%s\n%s:\n%s\n' % (
-				stylize(ST_IMPORTANT, 'core.groups'),
-				'\n'.join(map(dump_group, gids)),
-				stylize(ST_IMPORTANT, 'core.name_cache'),
-				'\n'.join(['\t%s: %s' % (key, self.name_cache[key]) \
-					for key in names ])
-				)
-
-			return data
-	def ExportCLI(self, selected=None, long_output=False, no_colors=False):
-		""" Export the groups list to human readable (= « get group ») form. """
-
-		with self.lock():
-			if selected is None:
-				gids = self.groups.keys()
-			else:
-				gids = selected
-			gids.sort()
-
-			assert ltrace('groups', '| ExportCLI(%s)' % gids)
-
-			def ExportOneGroupFromGid(gid, mygroups=self.groups):
-				""" Export groups the way UNIX get does, separating with ":" """
-
-				if mygroups[gid]['permissive'] is None:
-					group_name = '%s' % stylize(ST_NAME,
-						self.groups[gid]['name'])
-				elif mygroups[gid]['permissive']:
-					group_name = '%s' % stylize(ST_OK,
-						self.groups[gid]['name'])
-				else:
-					group_name = '%s' % stylize(ST_BAD,
-						self.groups[gid]['name'])
-
-				accountdata = [
-					group_name,
-					mygroups[gid]['userPassword'] \
-						if mygroups[gid].has_key('userPassword') else '',
-					str(gid) ]
-
-				if self.is_system_gid(gid):
-					accountdata.extend(
-						[
-							"",
-							",".join(mygroups[gid]['memberUid']),
-							mygroups[gid]['description'] \
-								if mygroups[gid].has_key('description') else ''
-						] )
-				else:
-					accountdata.extend(
-						[
-							mygroups[gid]['groupSkel'] \
-								if mygroups[gid].has_key('groupSkel') else '',
-							",".join(mygroups[gid]['memberUid']),
-							mygroups[gid]['description'] \
-								if mygroups[gid].has_key('description') else ''
-						] )
-
-					if no_colors:
-						# if --no-colors is set, we have to display if the group
-						# is permissive or not in real words, else user don't get
-						# the information because normally it is encoded simply with
-						# colors..
-						if mygroups[gid]['permissive'] is None:
-							accountdata.append("UNKNOWN")
-						elif mygroups[gid]['permissive']:
-							accountdata.append("permissive")
-						else:
-							accountdata.append("NOT permissive")
-
-				if long_output:
-					accountdata.append('[%s]' % stylize(
-						ST_LINK, mygroups[gid]['backend']))
-
-				return ':'.join(accountdata)
-
-			return "\n".join(map(ExportOneGroupFromGid, gids)) + "\n"
-	def ExportXML(self, selected=None, long_output=False):
-		""" Export the groups list to XML. """
-
-		data = ('''<?xml version='1.0' encoding=\"UTF-8\"?>\n'''
-				'''<groups-list>\n''')
-
-		with self.lock():
-			if selected is None:
-				gids = self.groups.keys()
-			else:
-				gids = selected
-			gids.sort()
-
-			assert ltrace('groups', '| ExportXML(%s)' % gids)
-
-			for gid in gids:
-				# TODO: put this into formatted strings.
-				group = self.groups[gid]
-				data += '''	<group>
-			<name>%s</name>
-			<gid>%s</gid>%s%s
-			<permissive>%s</permissive>\n%s%s%s</group>\n''' % (
-				group['name'],
-				str(gid),
-				'\n		<userPassword>%s</userPassword>' % group['userPassword'] \
-					if group.has_key('userPassword') else '',
-				'\n		<description>%s</description>' % group['description'] \
-					if group.has_key('description') else '',
-				'unknown' if group['permissive'] is None \
-					else str(group['permissive']),
-				'' if self.is_system_gid(gid) \
-					else '		<groupSkel>%s</groupSkel>\n' % group['groupSkel'],
-				'		<memberUid>%s</memberUid>\n' % \
-					','.join(group['memberUid']) if group['memberUid'] != [] \
-					else '',
-				"		<backend>%s</backend>\n" %  group['backend'] \
-					if long_output else ''
-				)
-
-			data += "</groups-list>\n"
-
-			return data
-	def _validate_fields(self, name, description, groupSkel):
-		""" apply sane tests on AddGroup needed arguments. """
-		if name is None:
-			raise exceptions.BadArgumentError("You must specify a group name.")
-
-		if not hlstr.cregex['group_name'].match(name):
-			raise exceptions.BadArgumentError(
-				"Malformed group name '%s', must match /%s/i." % (name,
-				stylize(ST_REGEX, hlstr.regex['group_name'])))
-
-		if len(name) > LMC.configuration.groups.name_maxlenght:
-			raise exceptions.LicornRuntimeError('''Group name must be '''
-				'''smaller than %d characters.''' % \
-					LMC.configuration.groups.name_maxlenght)
-
-		if description is None:
-			description = _('Members of group “%s”') % name
-
-		elif not hlstr.cregex['description'].match(description):
-			raise exceptions.BadArgumentError('''Malformed group description '''
-				''''%s', must match /%s/i.'''
-				% (description, stylize(
-					ST_REGEX, hlstr.regex['description'])))
-
-		if groupSkel is None:
-			logging.progress('Using default skel dir %s' %
-				LMC.configuration.users.default_skel)
-			groupSkel = LMC.configuration.users.default_skel
-
-		elif groupSkel not in LMC.configuration.users.skels:
-			raise exceptions.BadArgumentError('''Invalid skel. Valid skels '''
-				'''are: %s.''' % LMC.configuration.users.skels)
-
-		return name, description, groupSkel
-
-	def AddGroup(self, name, desired_gid=None, description=None, groupSkel=None,
-		system=False, permissive=False, backend=None, users_to_add=[],
-		batch=False, force=False):
-		""" Add a Licorn group (the group + the guest/responsible group +
-			the shared dir + permissions (ACL)). """
-
-		assert ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, '''
-			'''descr=%s, skel=%s, perm=%s)''' % (name, system, desired_gid,
-				description, groupSkel, permissive))
-
-		with self.lock():
-			name, description, groupSkel = self._validate_fields(name,
-				description, groupSkel)
-
-			# FIXME: the GID could be taken, this could introduce
-			# inconsistencies between the controller and extensions data.
-			self.run_hooks('group_pre_add', gid=desired_gid,
-											name=name, description=description)
-
-			home = '%s/%s/%s' % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural,
-				name)
-
-			try:
-				not_already_exists = True
-				gid = self.__add_group(name, system, desired_gid, description,
-					groupSkel, backend=backend, batch=batch, force=force)
-
-			except exceptions.AlreadyExistsException, e:
-				# don't bork if the group already exists, just continue.
-				# some things could be missing (resp- , guest- , shared dir or
-				# ACLs), it is a good idea to verify everything is really OK by
-				# continuing the creation procedure.
-				logging.info(str(e))
-				gid = self.name_to_gid(name)
-				not_already_exists = False
-			else:
-				# run this only if the group doesn't already exist, else
-				# it gets written twice in extensions data.
-				self.run_hooks('group_post_add', gid=gid, name=name,
-								description=description, system=system)
-
-		# LOCKS: can be released, because everything after now is FS operations,
-		# not needing the internal data structures. It can fail if someone
-		# delete a group during the CheckGroups() phase (a little later in this
-		# method), but this will be harmless.
-
-		if system:
-			if not_already_exists:
-				logging.notice(_(u'Created system group {0} '
-					'(gid={1}).').format(stylize(ST_NAME, name),
-					stylize(ST_UGID, gid)))
-
-			# last operation before returning.
-			self.AddUsersInGroup(gid=gid, users_to_add=users_to_add)
-
-			# system groups don't have shared group dir nor resp-
-			# nor guest- nor special ACLs. We stop here.
-			assert ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (name, gid))
-			return gid, name
-
-		self.groups[gid]['permissive'] = permissive
-
-		try:
-			self.CheckGroups([ gid ], minimal=True, batch=True, force=force)
-
-			if not_already_exists:
-				logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
-					stylize(ST_OK, _(u'permissive'))
-						if self.groups[gid]['permissive'] else
-							stylize(ST_BAD, _(u'not permissive')),
-					stylize(ST_NAME, name),
-					stylize(ST_UGID, gid)))
-
-		except exceptions.SystemCommandError, e:
-			logging.warning("ROLLBACK of group creation: " + str(e))
-
-			import shutil
-			shutil.rmtree(home)
-
-			try:
-				self.__delete_group(name)
-			except:
-				pass
-			try:
-				self.__delete_group('%s%s' % (
-					LMC.configuration.groups.resp_prefix, name))
-			except:
-				pass
-			try:
-				self.__delete_group('%s%s' % (
-					LMC.configuration.groups.guest_prefix, name))
-			except:
-				pass
-
-			# re-raise, for the calling process to know what happened…
-			raise e
-
-		else:
-			self.AddUsersInGroup(gid=gid, users_to_add=users_to_add)
-
-		assert ltrace('groups', '< AddGroup(%s): gid %d' % (name, gid))
-		if not_already_exists and self.inotifier:
-			self.inotifier.add_group_watch(gid)
-		return gid, name
-	def __add_group(self, name, system, manual_gid=None, description=None,
-		groupSkel = "", backend=None, batch=False, force=False):
-		""" Add a POSIX group, write the system data files.
-			Return the gid of the group created. """
-
-		# LOCKS: No need to use self.lock(), already encapsulated in AddGroup().
-
-		assert ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
-			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
-				groupSkel)
+		if len(self.__name) + 2 == Group._cw_name:
+			Group._cli_compute_label_width()
+	def __str__(self):
+		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
+			self.__class__,
+			stylize(ST_UGID, self.__gidNumber),
+			stylize(ST_NAME, self.__name),
+			'\n\t'.join('%s: %s' % (attr_name, getattr(self, attr_name))
+					for attr_name in dir(self)
+						if attr_name not in ('__profile', 'profile'))
 			)
+	def __repr__(self):
+		return '%s(%s‣%s)' % (
+			self.__class__,
+			stylize(ST_UGID, self.__gidNumber),
+			stylize(ST_NAME, self.__name))
 
-		if backend and backend not in LMC.backends.keys():
-			raise exceptions.BadArgumentError('wrong backend %s, must be in %s.'
-				% (stylize(ST_BAD, backend),
-				stylize(ST_OK, ', '.join([x.name for x in self.backends]))))
-
-		# first verify if GID is not already taken.
-		if self.groups.has_key(manual_gid):
-			raise exceptions.AlreadyExistsError('''The GID you want (%s) '''
-				'''is already taken by another group (%s). Please choose '''
-				'''another one.''' % (
-					stylize(ST_UGID, manual_gid),
-					stylize(ST_NAME,
-						self.groups[manual_gid]['name'])))
-
-		# Then verify if the name is not taken too.
-		# don't use name_to_gid() else the exception is not KeyError.
+	@property
+	def sortName(self):
 		try:
-			existing_gid = self.name_cache[name]
+			return self.__sortname
+		except AttributeError:
+			self.__sortname = self.__standard_group().name \
+								if self.__is_helper else self.__name
+			return self.__sortname
+	@property
+	def standard_group(self):
+		""" turn the weakref into an object before returning it for use. """
+		return self.__standard_group() if self.__standard_group else None
+	@standard_group.setter
+	def standard_group(self, group):
+		self.__standard_group = group.weakref
+	@property
+	def responsible_group(self):
+		""" turn the weakref into an object before returning it for use. """
+		return self.__responsible_group() if self.__responsible_group else None
+	@responsible_group.setter
+	def responsible_group(self, group):
+		self.__responsible_group = group.weakref
+	@property
+	def guest_group(self):
+		""" turn the weakref into an object before returning it for use. """
+		return self.__guest_group() if self.__guest_group else None
+	@guest_group.setter
+	def guest_group(self, group):
+		self.__guest_group = group.weakref
+	@property
+	def memberUid(self):
+		""" R/O member UIDs (which are really logins, not UIDs). This property
+			returns a generator of the current group's members. It is a
+			compatibility property, used in backends at save time. """
+		return (user().login for user in self.__members)
+	@property
+	def checking(self):
+		return self.__checking_event.is_set()
+	@property
+	def gidNumber(self):
+		""" Read-only GID attribute. """
+		return self.__gidNumber
+	@property
+	def name(self):
+		""" the group name (indexed in a reverse mapping dict). There is no
+			setter, because the name of a given group never changes. """
+		return self.__name
+	@property
+	def profile(self):
+		""" Return the profile linked to this group. Only system group used
+			as primary profile group return something useful. All others return
+			``None``. """
 
-			if manual_gid is None:
-				# automatic GID selection upon creation.
-				if system and self.is_system_gid(existing_gid) \
-					or not system and self.is_standard_gid(existing_gid):
-					raise exceptions.AlreadyExistsException(
-						"The group %s already exists." %
-						stylize(ST_NAME, name))
-				else:
-					raise exceptions.AlreadyExistsError(
-						'''The group %s already exists but has not the same '''
-						'''type. Please choose another name for your group.'''
-						% stylize(ST_NAME, name))
-			else:
-				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
-
-				# user has manually specified a GID to affect upon creation.
-				if system and self.is_system_gid(existing_gid):
-					if existing_gid == manual_gid:
-						raise exceptions.AlreadyExistsException(
-							"The group %s already exists." %
-							stylize(ST_NAME, name))
-					else:
-						raise exceptions.AlreadyExistsError(
-							'''The group %s already exists with a different '''
-							'''GID. Please check.''' %
-							stylize(ST_NAME, name))
-				else:
-					raise exceptions.AlreadyExistsError(
-						'''The group %s already exists but has not the same '''
-						'''type. Please choose another name for your group.'''
-						% stylize(ST_NAME, name))
-		except KeyError:
-			# name doesn't exist, path is clear.
-			pass
-
-		# Due to a bug of adduser perl script, we must check that there is
-		# no user which has 'name' as login. For details, see
-		# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
-		if LMC.users.login_cache.has_key(name) and not force:
-			raise exceptions.UpstreamBugException('''A user account called '''
-				'''%s already exists, this could trigger a bug in the Ubuntu '''
-				'''adduser code when deleting the user. Please choose '''
-				'''another name for your group, or use --force argument if '''
-				'''you really want to add this group on the system.'''
-				% stylize(ST_NAME, name))
-
-		# Find a new GID
-		if manual_gid is None:
-			if system:
-				gid = pyutils.next_free(self.groups.keys(),
-					LMC.configuration.groups.system_gid_min,
-					LMC.configuration.groups.system_gid_max)
-			else:
-				gid = pyutils.next_free(self.groups.keys(),
-					LMC.configuration.groups.gid_min,
-					LMC.configuration.groups.gid_max)
-
-			logging.progress('Autogenerated GID for group %s: %s.' % (
-				stylize(ST_LOGIN, name),
-				stylize(ST_UGID, gid)))
+		# call() the __profile to turn the weakref into an object before
+		# returning it to caller.
+		return self.__profile() if self.__profile else None
+	@profile.setter
+	def profile(self, profile):
+		if profile.gidNumber == self.__gidNumber:
+			self.__profile = profile.weakref
 		else:
-			if (system and self.is_system_gid(manual_gid)) \
-				or (not system and self.is_standard_gid(
-					manual_gid)):
-					gid = manual_gid
-			else:
-				raise exceptions.BadArgumentError('''GID out of range '''
-					'''for the kind of group you specified. System GID '''
-					'''must be between %d and %d, standard GID must be '''
-					'''between %d and %d.''' % (
-						LMC.configuration.groups.system_gid_min,
-						LMC.configuration.groups.system_gid_max,
-						LMC.configuration.groups.gid_min,
-						LMC.configuration.groups.gid_max)
-					)
+			raise exceptions.LicornRuntimeError(_(u'group {0}: Cannot set a '
+				'profile ({1}) which has not the same GID as me '
+				'({2} != {3})!').format(stylize(ST_NAME, self.__name),
+					profile.name,
+					self.__gidNumber, profile.gidNumber))
+	@property
+	def permissive(self):
+		""" Permissive state of the group shared directory.
+		See http://docs.licorn.org/groups/permissions.en.html
+		For more details and meanings explanation.
 
-		# Add group in groups dictionary
-		temp_group_dict = {
-			'name'        : name,
-			'gidNumber'   : gid,
-			'userPassword': 'x',
-			'memberUid'   : [],
-			'description' : description,
-			'groupSkel'   : groupSkel,
-			'backend'     : backend if backend else self._prefered_backend_name,
-			}
+		LOCKED during setter because we don't want a group to
+		be deleted / modified during this operation, which is
+		very quick.
 
-		if system:
-			# we must fill the permissive status here, else WriteConf() will
-			# fail with a KeyError. If not system, this has already been filled.
-			temp_group_dict['permissive'] = None
-			# no skel for a system group
-			temp_group_dict['groupSkel'] = ''
+		"""
+		return self.__permissive
+	@permissive.setter
+	def permissive(self, permissive):
 
-		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
-			gid, name))
-		self.groups[gid]      = temp_group_dict
-		self.name_cache[name] = gid
-
-		# do not skip the write/save part, else future actions could fail. E.g.
-		# when creating a group, skipping save() on rsp/gst group creation will
-		# result in unaplicable ACLs because of (yet) non-existing groups in the
-		# system files (or backends).
-		# DO NOT UNCOMMENT: -- if not batch:
-		LMC.backends[
-			self.groups[gid]['backend']
-			].save_Group(gid, backend_actions.CREATE)
-
-		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
-
-		return gid
-	def DeleteGroup(self, name=None, gid=None, del_users=False,
-		no_archive=False, batch=False, check_profiles=True):
-		""" Delete an Licorn® group. """
-
-		assert ltrace('groups', '''> DeleteGroup(gid=%s, name=%s, '''
-			'''del_users=%s, no_archive=%s, batch=%s, check_profiles=%s)''' % (
-			gid, name, del_users, no_archive, batch, check_profiles))
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		self.run_hooks('group_pre_del', gid=gid, name=name,
-											system=self.is_system_gid(gid))
-
-		assert ltrace('groups', '  DeleteGroup(%s,%s)' % (name, gid))
-
-		# lock everything we *eventually* need, to be sure there are no errors.
-		with self.lock():
-			with LMC.users.lock():
-				with LMC.privileges.lock():
-					prim_memb = self.primary_members(gid=gid)
-
-					if prim_memb != [] and not del_users:
-						raise exceptions.BadArgumentError('''The group still has '''
-							'''members. You must delete them first, or force their '''
-							'''automatic deletion with the --del-users option. WARNING: '''
-							'''this is a bad idea, use with caution.''')
-
-					if check_profiles and name in LMC.profiles.keys():
-						raise exceptions.BadArgumentError('''can't delete group %s, '''
-						'''currently associated with profile %s. Please delete the '''
-						'''profile, and the group will be deleted too.''' % (
-							stylize(ST_NAME, name),
-							stylize(ST_NAME,
-								LMC.profiles.group_to_name(name))))
-
-					home = '%s/%s/%s' % (
-						LMC.configuration.defaults.home_base_path,
-						LMC.configuration.groups.names.plural,
-						name)
-
-					# Delete the group and its (primary) member(s) even if it is not empty
-					if del_users:
-						for login in prim_memb:
-							LMC.users.DeleteUser(login=login, no_archive=no_archive,
-								batch=batch)
-
-					if self.is_system_gid(gid):
-						# wipe the group from the privileges if present there.
-						if name in LMC.privileges:
-							LMC.privileges.delete([name])
-
-						# a system group has no data on disk (no shared directory), just
-						# delete its internal data and exit.
-						self.__delete_group(name)
-
-						return
-
-					# remove the inotifier watch before deleting the group, else
-					# the call will fail, and before archiving group shared
-					# data, else it will leave ghost notifies in our gamin
-					# daemon, which doesn't need that.
-					if self.inotifier:
-						self.inotifier.del_group_watch(gid)
-
-					# For a standard group, there are a few steps more :
-					# 	- delete the responsible and guest groups,
-					#	- then delete the symlinks and the group,
-					#	- then the shared data.
-					# For responsible and guests symlinks, don't do anything : all symlinks
-					# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
-					# work.
-					self.__delete_group('%s%s' % (
-						LMC.configuration.groups.resp_prefix, name))
-					self.__delete_group('%s%s' % (
-						LMC.configuration.groups.guest_prefix, name))
-
-					self.CheckGroupSymlinks(gid=gid, name=name, delete=True,
-						batch=True)
-					self.__delete_group(name)
-
-		# LOCKS: from here, everything is deleted in internal structures, we
-		# don't need the locks anymore. The inotifier and the archiving parts
-		# can be very long, releasing the locks is good idea.
-
-		# the group information has been wiped out, remove or archive the shared
-		# directory. If anything fails now, this is not a real problem, because
-		# the system configuration data is safe. At worst, there is an orphaned
-		# directory remaining in the arbo, which is harmless.
-		if no_archive:
-			import shutil
-			try:
-				shutil.rmtree(home)
-			except (IOError, OSError), e:
-				if e.errno == 2:
-					logging.info(_(u'Cannot remove %s, it does not exist!') %
-						stylize(ST_PATH, home))
-				else:
-					raise e
-		else:
-			# /home/archives must be OK befor moving
-			LMC.configuration.check_base_dirs(minimal=True,
-				batch=True)
-
-			group_archive_dir = "%s/%s.deleted.%s" % (
-				LMC.configuration.home_archive_dir, name,
-				time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
-			try:
-				os.rename(home, group_archive_dir)
-
-				logging.info(_(u"Archived {0} as {1}.").format(home,
-					stylize(ST_PATH, group_archive_dir)))
-
-				LMC.configuration.check_archive_dir(
-					group_archive_dir, batch=True)
-			except OSError, e:
-				if e.errno == 2:
-					logging.info(_(u'Cannot archive %s, it does not exist!') %
-						stylize(ST_PATH, home))
-				else:
-					raise e
-	def __delete_group(self, name):
-		""" Delete a POSIX group."""
-
-		# LOCKS: this method is never called directly, and must always be
-		# encapsulated in another, which will acquire self.lock(). This is the
-		# case in DeleteGroup().
-
-		assert ltrace('groups', '> __delete_group(%s)' % name)
-
-		try:
-			gid = self.name_cache[name]
-		except KeyError:
-			logging.info(_(u'Group %s does not exist.') % stylize(
-				ST_NAME, name))
+		if self.__is_system:
 			return
 
-		backend = self.groups[gid]['backend']
+		assert isbool(permissive)
 
-		system = self.is_system_gid(gid)
+		if self.__permissive == permissive:
+			logging.notice(_(u'Permissive state {0} '
+				'for group {1}.').format(
+					stylize(ST_COMMENT, _(u'unchanged')),
+					stylize(ST_NAME, self.name)))
+			return
 
-		# Remove the group in the groups list of profiles
-		LMC.profiles.delete_group_in_profiles(name=name)
+		with self.lock:
 
-		# clear the user cache.
-		for user in self.groups[gid]['memberUid']:
-			try:
-				LMC.users[
-					LMC.users.login_cache[user]
-					]['groups'].remove(name)
-			except KeyError:
-				logging.warning('skipped non existing user %s' % user)
-		try:
-			del self.groups[gid]
-			del self.name_cache[name]
+			if permissive:
+				qualif = _(u'')
+				value  = _(u'activated')
+				color  = ST_OK
+			else:
+				qualif = _(u'not ')
+				value  = _(u'deactivated')
+				color  = ST_BAD
 
-			LMC.backends[backend].delete_Group(name)
+			self.__permissive = permissive
 
-			logging.notice(_(u'Deleted {0}group {1}.').format(
-				_(u'system ') if system else '', stylize(ST_NAME, name)))
-		except KeyError:
-			logging.warning(_(u'The group %s does not exist.') %
-				stylize(ST_NAME, name))
+			# auto-apply the new permissiveness
+			self.licornd.service_enqueue(priorities.HIGH, self.check, batch=True)
 
-		assert ltrace('groups', '< __delete_group(%s)' % name)
-	def RenameGroup(self, name=None, gid=None, new_name=None):
-		""" Modify the name of a group.
-
-		# TODO: with self.lock()
-		"""
-
-		raise NotImplementedError(
-			"This function is disabled, it is not yet complete.")
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		if new_name is None:
-			raise exceptions.BadArgumentError, "You must specify a new name."
-		try:
-			self.name_to_gid(new_name)
-
-		except exceptions.LicornRuntimeException:
-			# new_name is not an existing group
-
-			gid 		= self.name_to_gid(name)
-			home		= "%s/%s/%s" % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural,
-				self.groups[gid]['name'])
-			new_home	= "%s/%s/%s" % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural,
-				new_name)
-
-			self.groups[gid]['name'] = new_name
-
-			if not self.is_system_gid(gid):
-				tmpname = LMC.configuration.groups.resp_prefix + name
-				resp_gid = self.name_to_gid(tmpname)
-				self.groups[resp_gid]['name'] = tmpname
-				self.name_cache[tmpname] = resp_gid
-
-				tmpname = LMC.configuration.groups.guest_prefix + name
-				guest_gid = self.name_to_gid(tmpname)
-				self.groups[guest_gid]['name'] = tmpname
-				self.name_cache[tmpname] = guest_gid
-
-				del tmpname
-
-				os.rename(home, new_home) # Rename shared dir
-
-				# reapply new ACLs on shared group dir.
-				self.CheckGroups( [ gid ], batch=True)
-
-				# delete symlinks to the old name… and create new ones.
-				self.CheckGroupSymlinks(gid=gid, oldname=name, batch=True)
-
-			# The name has changed, we have to update profiles
-			LMC.profiles.change_group_name_in_profiles(name, new_name)
-
-			# update LMC.users[*]['groups']
-			for u in LMC.users:
-				try:
-					i = LMC.users[u]['groups'].index(name)
-				except ValueError:
-					 # user u is not in the group which was renamed
-					pass
-				else:
-					LMC.users[u]['groups'][i] = new_name
-
-			LMC.backends[
-				self.groups[gid]['backend']
-				].save_Group(gid, backend_actions.RENAME)
-
-		#
-		# TODO: parse members, and sed -ie ~/.recently_used and other user
-		# files… This will not work for OOo files with links to images files
-		# (not included in documents), etc.
-		#
-
-		else:
-			raise exceptions.AlreadyExistsError(
-				'''the new name you have choosen, %s, is already taken by '''
-				'''another group !''' % \
-					stylize(ST_NAME, new_name))
-	def ChangeGroupDescription(self, name=None, gid=None, description=None):
+			logging.notice(_(u'Switched group {0} permissive '
+				'state to {1} (Shared content permissions are '
+				'beiing checked in the background, this can '
+				'take a while…)').format(
+					stylize(ST_NAME, self.name),
+					stylize(color, value)))
+	@property
+	def userPassword(self):
+		""" Change the password of a group. """
+		return self.__userPassword
+	@property
+	def description(self):
 		""" Change the description of a group. """
+		return self.__description
+	@description.setter
+	def description(self, description=None):
 
 		if description is None:
-			raise exceptions.BadArgumentError, "You must specify a description"
+			raise exceptions.BadArgumentError(
+				_(u'You must specify a description'))
 
-		with self.lock():
-			gid, name = self.resolve_gid_or_name(gid, name)
+		with self.lock:
+			if not hlstr.cregex['description'].match(description):
+				raise exceptions.BadArgumentError(_(u'Malformed description '
+					'"{0}", must match /{1}/i.').format(
+					stylize(ST_COMMENT, description),
+					stylize(ST_REGEX, hlstr.regex['description'])))
 
-			self.groups[gid]['description'] = description
+			self.__description = description
+			self.serialize()
+			self._cli_invalidate()
 
-			LMC.backends[
-				self.groups[gid]['backend']
-				].save_Group(gid, backend_actions.UPDATE)
-
-			logging.notice('Changed group %s description to "%s".' % (
-				stylize(ST_NAME, name),
-				stylize(ST_COMMENT, description)
-				))
-	def ChangeGroupSkel(self, name=None, gid=None, groupSkel=None):
+			logging.notice(_(u'Changed group {0} description '
+				'to "{1}".').format(stylize(ST_NAME, self.__name),
+				stylize(ST_COMMENT, description)))
+	@property
+	def groupSkel(self):
 		""" Change the description of a group. """
+		return self.__groupSkel
+	@groupSkel.setter
+	def groupSkel(self, groupSkel=None):
 
 		if groupSkel is None:
-			raise exceptions.BadArgumentError, "You must specify a groupSkel"
+			raise exceptions.BadArgumentError(
+				_(u'You must specify a groupSkel'))
 
-		if not groupSkel in LMC.configuration.users.skels:
-			raise exceptions.DoesntExistsError('''The skel you specified '''
-				'''doesn't exist on this system. Valid skels are: %s.''' % \
-					str(LMC.configuration.users.skels))
+		if groupSkel not in LMC.configuration.users.skels:
+			raise exceptions.DoesntExistError(_(u'Invalid skel {0}. '
+				'Valid skels are: {1}.').format(
+					groupSkel, ', '.join(LMC.configuration.users.skels)))
 
-		with self.lock():
-			gid, name = self.resolve_gid_or_name(gid, name)
+		with self.lock:
+			self.__groupSkel = groupSkel
+			self.serialize()
 
-			self.groups[gid]['groupSkel'] = groupSkel
+			logging.notice(_(u'Changed group {0} skel to {1}.').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_COMMENT, groupSkel)))
+	@property
+	def homeDirectory(self):
+		""" Read-only attribute, the path to the home directory of a standard
+			group (which holds shared content). Only standard group have home
+			directories.
+		"""
+		return self.__homeDirectory
+	@property
+	def is_system(self):
+		""" Read-only boolean indicating if the current group is system or not. """
+		return self.__is_system
+	@property
+	def is_system_restricted(self):
+		""" Read-only boolean indicating if the current group is a restricted
+			system one. Restricted group are not touched by Licorn® (they are
+			usually managed by the distro maintainers). """
+		return self.__is_system_restricted
+	@property
+	def is_system_unrestricted(self):
+		""" Read-only boolean indicating if the current group is an
+			unrestricted system one. Unrestricted system groups are handled
+			by Licorn®. """
+		return self.__is_system_unrestricted
+	@property
+	def is_standard(self):
+		""" Read-only boolean, exact inverse of :attr:`is_system`. """
+		return self.__is_standard
+	@property
+	def is_helper(self):
+		""" True if responsible or guest. """
+		return self.__is_helper
+	@property
+	def is_responsible(self):
+		""" Read-only boolean indicating if the current object is a responsible
+			group (= a Licorn® system group, associated with a standard group).
+		"""
+		return self.__is_responsible
+	@property
+	def is_guest(self):
+		""" Read-only boolean indicating if the current object is a guest group
+			(= a Licorn® system group, associated with a standard group). """
+		return self.__is_guest
+	@property
+	def is_empty(self):
+		""" Return emptyness (no members), for **standard groups** (if you are
+		looking for an universal `empty` property, just test if
+		:meth:`all_members` returns ``[]``. """
+		return self.is_standard and self.__members == []
+	@property
+	def is_privilege(self):
+		return self.__is_privilege
+	@is_privilege.setter
+	def is_privilege(self, is_privilege):
+		self.__is_privilege = is_privilege
+		# wipe the cache to force recomputation
+		try: del self.__cg_precalc_small
+		except: pass
+	@property
+	def gidMembers(self):
+		# turn the weakrefs into real objects before returning them.
+		return [ m() for m in self.__gidMembers ]
+	@property
+	def members(self):
+		""" Return all members (as objects) of a group, which are not
+			members of this group in their primary group. """
 
-			LMC.backends[
-				self.groups[gid]['backend']
-				].save_Group(gid, backend_actions.UPDATE)
+		# TODO: really verify, for each user, that their member ship is not
+		# duplicated between primary and auxilliary groups.
 
-			logging.notice('Changed group %s skel to "%s".' % (
-				stylize(ST_NAME, name),
-				stylize(ST_COMMENT, groupSkel)
-				))
+		return [ m() for m in self.__members ]
+	@property
+	def all_members(self):
+		""" Return all members of a given group name (primary and auxilliary).
+
+			.. note:: This method will **never** return duplicates, because
+				a user cannot be added to auxilliary members if it is already
+				a primary member.
+		"""
+
+		return self.gidMembers + self.members
+	@property
+	def profiles(self):
+		""" the profiles the group is recorded in. Stored internally as
+			weakrefs, returned as objects. """
+		return [ profile() for profile in self.__profiles ]
+
+	# properties comfort aliases
+	gid                = gidNumber
+	is_permissive      = permissive
+	privilege          = is_privilege
+	is_checking        = checking
+	primaryMembers     = gidMembers
+	primary_members    = gidMembers
+	auxilliary_members = members
+
+	def _cli_invalidate(self):
+		# invalidate the CLI view
+		try:
+			del self.__cg_precalc_full
+		except:
+			pass
+		try:
+			del self.__cg_precalc_small
+		except:
+			pass
+	def _setup_initial_links(self):
+		""" Transient and self-destructing method that will link users to
+			to the current group.
+
+			This method exists to be called by the controller after *all*
+			backends have loaded. If we run the contents of this method too
+			early, a group referencing users or groups located in another
+			backend won't see them, and falsely consider them as non-existing.
+
+			If an attribute :attr:`__memberUid` exists, it will be deleted.
+			This method will self-destruct too after first use, because in
+			normal conditions links are setup dynamically and maintained by
+			other methods.
+
+			The method returns a list of users, whose groups must be sorted.
+			The controller will merge all lists into a set() at the end of
+			the setup of all groups, and sort users groups only once.
+
+		"""
+
+		# collect our primary members.
+
+		for user in LMC.users:
+			if user.gidNumber == self.__gidNumber:
+
+				# link the other side to us.
+				user.primaryGroup = self
+
+		# now collect our auxilliary members, if any.
+
+		try:
+			memberUid = self.__memberUid
+			del self.__memberUid
+		except AttributeError:
+			return []
+
+		# reconcile manual changes eventually made outside of licorn.
+		# this will avoid sorting them after the collection, with a more
+		# CPU intensive approach.
+		memberUid.sort()
+
+		for member in memberUid:
+
+			rewrite = False
+
+			try:
+				user = LMC.users.by_login(member)
+			except KeyError:
+				logging.warning(_(u'group {0}: removed relationship for '
+					'non-existing user {1}.').format(
+						stylize(ST_NAME, self.__name),
+						stylize(ST_LOGIN, member)))
+
+				rewrite = True
+			else:
+				if user.weakref in self.__members:
+					logging.warning(_(u'group {0}: removed duplicate '
+						'relationship for member {1}.').format(
+							stylize(ST_NAME, self.__name),
+							stylize(ST_LOGIN, member)))
+					rewrite = True
+
+				elif user.weakref in self.__gidMembers:
+					logging.warning(_(u'group {0}: removed primary member {1} '
+						'from auxilliary members list.').format(
+							stylize(ST_NAME, self.__name),
+							stylize(ST_LOGIN, member)))
+					rewrite = True
+
+				else:
+					# this is an automated load procedure, not an administrative
+					# command. Don't display any notice nor information.
+
+					# don't sort the groups, this will be done one time for all
+					# in the controller method.
+					user.link_Group(self)
+			if rewrite:
+				self.serialize()
+	def serialize(self, backend_action=backend_actions.UPDATE):
+		""" Save group data to originating backend. """
+
+		assert ltrace('groups', '| %s.serialize(%s → %s)' % (
+											stylize(ST_NAME, self.name),
+											self.backend.name,
+											backend_actions[backend_action]))
+
+		self.backend.save_Group(self, backend_action)
+
+	def add_Users(self, users_to_add=None, force=False, batch=False):
+		""" Add a user list in the group 'name'. """
+
+		caller = current_thread().name
+
+		assert ltrace('groups', '| %s: %s.add_Users(%s)' % (
+								caller, self.__name,
+								', '.join(user.login for user in users_to_add)))
+
+		if users_to_add is None:
+			raise exceptions.BadArgumentError(
+						_(u'You must specify a users list'))
+
+		# we need to lock users to be sure they don't dissapear during this phase.
+		with nested(LMC.groups.lock, LMC.users.lock):
+
+			work_done = False
+
+			for user in users_to_add:
+				if user.weakref in self.__members \
+									or user.gidNumber == self.__gidNumber:
+
+					if self.__name != LMC.configuration.users.group:
+						log = logging.info
+
+					else:
+						# Adding the user to 'users' is mandatory, but will
+						# occur automatically when we add it to any std or
+						# helper group. Don't annoy the user with a useless
+						# and polluting message.
+						log = logging.progress
+
+						log(_(u'User {0} is already a member '
+							'of {1} (primary or not), skipped.').format(
+								stylize(ST_LOGIN, user.login),
+								stylize(ST_NAME, self.__name)))
+				else:
+
+					self.__check_mutual_exclusions(user, force)
+
+					if self.__is_standard or self.__is_helper:
+						# Adding the user to group 'users' is mandatory for
+						# any user to be able to walk /home/groups without
+						# errors, at least on Debian and derivatives.
+						# Do this in the background, though.
+						#
+						#if LMC.LMC.configuration.users.group not in user.groups:
+						Group.by_name[
+							LMC.configuration.users.group]().add_Users(
+								[ user ], batch=True)
+
+					self.controller.run_hooks('group_pre_add_user', self, user)
+
+					self.__members.append(user.weakref)
+					user._cli_invalidate()
+
+					# update the user reverse link.
+					# the user will call link_User() in response,
+					# with its weakref, so as we don't hold a strong ref to it.
+					user.link_Group(self)
+
+					if self.__is_helper:
+						self.standard_group._cli_invalidate()
+					else:
+						self._cli_invalidate()
+
+					logging.notice(_(u'Added user {0} to members '
+						'of group {1}.').format(
+							stylize(ST_LOGIN, user.login),
+							stylize(ST_NAME, self.__name)))
+
+					if batch:
+						work_done = True
+					else:
+						self.serialize()
+
+					self.controller.run_hooks('group_post_add_user', self, user)
+
+					# THINKING: shouldn't we turn this into an extension?
+					self.licornd.service_enqueue(priorities.LOW,
+								self.__add_group_symlink, user, batch=True)
+
+			if batch and work_done:
+				# save the group after having added all users.
+				# This seems finer than saving between each addition.
+				self.serialize()
+
+				# FIXME: what to do if extensions *need* the group to
+				# be written to disk and batch was True ?
+
+		assert ltrace('groups', '< %s.add_Users()' % self.__name)
+	def del_Users(self, users_to_del=None, batch=False):
+		""" Delete a users list from the current group. """
+
+		caller = current_thread().name
+
+		assert ltrace('groups', '> %s: %s.del_Users(%s)' % (
+								caller, self.__name,
+								', '.join(user.login for user in users_to_del)))
+
+		if users_to_del is None:
+			raise exceptions.BadArgumentError(
+						_(u'You must specify a users list'))
+
+		# we need to lock users to be sure they don't dissapear during this phase.
+		with nested(LMC.groups.lock, LMC.users.lock):
+
+			work_done = False
+
+			for user in users_to_del:
+
+				self.controller.run_hooks('group_pre_del_user', self, user)
+
+				if user.weakref in self.__members:
+					self.__members.remove(user.weakref)
+
+					# Update the user's reverse link.
+					user.unlink_Group(self)
+
+					if self.__is_helper:
+						self.__standard_group()._cli_invalidate()
+					else:
+						self._cli_invalidate()
+
+					logging.notice(_(u'Removed user {0} from members '
+						'of group {1}.').format(
+							stylize(ST_LOGIN, user.login),
+							stylize(ST_NAME, self.name)))
+
+					if batch:
+						work_done = True
+					else:
+						self.serialize()
+
+					self.controller.run_hooks('group_post_del_user', self, user)
+
+					# THINKING: shouldn't we turn this into an extension?
+					self.licornd.service_enqueue(priorities.LOW,
+									self.__del_group_symlink, user, batch=True)
+				else:
+					logging.info(_(u'Skipped user {0}, already not '
+						'a member of group {1}').format(
+							stylize(ST_LOGIN, user.login),
+							stylize(ST_NAME, self.name)))
+
+			if batch and work_done:
+				self.serialize()
+
+		assert ltrace('groups', '< %s.del_Users()' % self.name)
+	def link_User(self, user):
+		""" This method is some sort of callback, called by the
+			:class:`~licorn.core.users.User` instance when we first call its
+			:meth:`~licorn.core.users.User.link_Group` method (the "add user in
+			group" process always originates from the
+			:class:`~licorn.core.groups.Group`. There is no ``unlink_User`
+			method, because the group always know how to unlink a user from
+			itself in the "del user from group" process. """
+		if user.weakref not in self.__members:
+			self.__members.append(user.weakref)
+	def link_gidMember(self, user):
+		if user.weakref not in self.__gidMembers:
+			self.__gidMembers.append(user.weakref)
+	def unlink_gidMember(self, user):
+		self.__gidMembers.remove(user.weakref)
+	def link_Profile(self, profile):
+		if profile.weakref not in self.__profiles:
+			self.__profiles.append(profile.weakref)
+	def unlink_Profile(self, profile):
+		self.__profiles.remove(profile.weakref)
+
+	def move_to_backend(self, new_backend, force=False,
+												internal_operation=False):
+		""" Move a group from a backend to another, with extreme care. Any
+			occurring exception will cancel the operation.
+
+			Moving a standard group will begin by moving
+
+			Moving a restricted system group will fail if argument ``force``
+			is ``False``. This is not recommended anyway, groups <= 300 are
+			handled by distros maintainer, you'd better not touch them.
+
+		"""
+		if new_backend.name not in LMC.backends.keys():
+			raise exceptions.DoesntExistException(_(u'Backend %s does not '
+				'exist or is not enabled.') % new_backend.name)
+
+		old_backend = self.backend
+
+		if old_backend.name == new_backend.name:
+			logging.info(_(u'Skipped move of group {0}, '
+				'already stored in backend {1}.').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_NAME, new_backend)))
+			return True
+
+		if self.__is_system_restricted and not force:
+			logging.warning(_(u'Skipped move of restricted system group {0} '
+				'(please use {1} if you really want to do this, '
+				'but it is strongly not recommended).').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_DEFAULT, '--force')))
+			return
+
+		if self.__is_helper and not internal_operation:
+			raise exceptions.BadArgumentError(_(u'Cannot move an '
+				'associated system group without moving its standard '
+				' group too. Please move the standard group instead, '
+				'if this is what you meant.'))
+
+		if self.__is_standard:
+
+			if not self.responsible_group.move_to_backend(new_backend,
+													internal_operation=True):
+				logging.warning(_(u'Skipped move of group {0} to backend {1} '
+					'because move of associated responsible system group '
+						'failed.').format(self.name, new_backend))
+				return
+
+			if not self.guest_group.move_to_backend(new_backend,
+													internal_operation=True):
+
+				# pray this works, else we're in big trouble, a shoot in a
+				# foot and a golden shoe on the other.
+				self.responsible_group.move_to_backend(old_backend,
+													internal_operation=True)
+
+				logging.warning(_(u'Skipped move of group {0} to backend {1} '
+					'because move of associated system guest group '
+						'failed.').format(self.name, new_backend))
+				return
+
+		try:
+			self.backend = new_backend
+			self.serialize(backend_actions.CREATE)
+
+		except KeyboardInterrupt, e:
+			logging.warning(_(u'Exception {0} happened while trying to '
+				'move group {1} from {2} to {3}, aborting (group left '
+				'unchanged).').format(e, group_name, old_backend, new_backend))
+			print_exc()
+
+			try:
+				# try to restore old situation as much as possible.
+				self.backend = old_backend
+
+				# Delete the group in the new backend. It is still in the old,
+				# we must avoid duplicates, because better priorized backends
+				# overwrite others.
+				new_backend.delete_Group(self)
+
+				# restore associated groups in the same backend as the
+				# standard group. They must stay together.
+				self.responsible_group.move_to_backend(old_backend,
+													internal_operation=True)
+				self.guest_group.move_to_backend(old_backend,
+													internal_operation=True)
+
+			except Exception, e:
+				logging.warning(_(u'Exception {0} happened while trying to '
+					'restore a stable situation during group {1} move, we '
+					'could be in big trouble.').format(e, self.name))
+				print_exc()
+
+			return False
+		else:
+			# the copy operation is successfull, make it a real move.
+			old_backend.delete_Group(self.name)
+
+			logging.notice(_(u'Moved group {0} from backend '
+				'{1} to {2}.').format(stylize(ST_NAME, self.name),
+					stylize(ST_NAME, old_backend),
+					stylize(ST_NAME, new_backend)))
+			return True
+	def check(self, minimal=True, force=False, batch=False, auto_answer=None):
+		""" Check a group.
+			Will verify the various needed
+			conditions for a Licorn® group to be valid, and then check all
+			entries in the shared group directory.
+
+			PARTIALLY locked, because very long to run (depending on the shared
+			group dir size). Harmless if the unlocked part fails.
+
+			:param minimal: don't check member's symlinks to shared group dir if True
+			:param force: not used directly in this method, but forwarded to called
+				methods which can use it.
+			:param batch: correct all errors without prompting.
+			:param auto_answer: an eventual pre-typed answer to a preceding question
+				asked outside of this method, forwarded to apply same answer to
+				all questions.
+		"""
+
+		assert ltrace('groups', '> %s.check()' % stylize(ST_NAME, self.name))
+
+		with self.lock:
+			if self.is_system:
+				return self.__check_system_group(minimal, force,
+													batch, auto_answer)
+			else:
+				return self.__check_standard_group(minimal, force,
+													batch, auto_answer)
+	def check_symlinks(self, oldname=None, delete=False,
+											batch=False, auto_answer=None):
+		""" For each member of a group, verify member has a symlink to the
+			shared group dir inside his home (or under level 2 directory). If
+			not, create the link. Eventually delete links pointing to an old
+			group name (if it is set).
+
+			NOT locked because can be long, and harmless if fails.
+		"""
+
+		all_went_ok = True
+
+		for user in self.__members:
+
+			user = user()
+
+			link_not_found = True
+
+			if self.is_standard:
+				link_basename = self.name
+
+			elif self.__is_helper:
+				link_basename = self.standard_group.name
+
+			else:
+				# symlinks at all for other type of system groups
+				return
+
+			link_src = os.path.join(LMC.configuration.defaults.home_base_path,
+									LMC.configuration.groups.names.plural,
+									link_basename)
+
+			if oldname:
+				link_src_old = os.path.join(
+								LMC.configuration.defaults.home_base_path,
+								LMC.configuration.groups.names.plural,
+								oldname)
+			else:
+				link_src_old = None
+
+			for link in fsapi.minifind(user.homeDirectory, maxdepth=2,
+										type=stat.S_IFLNK):
+				try:
+					link_src_abs = os.path.abspath(os.readlink(link))
+
+					if link_src_abs == link_src:
+						if delete:
+							try:
+								os.unlink(link)
+
+								logging.info(_(u'Deleted symlink %s.') %
+												stylize(ST_LINK, link))
+							except (IOError, OSError), e:
+								if e.errno != 2:
+									raise exceptions.LicornRuntimeError(
+									_(u'Unable to delete symlink %s '
+									'(was: %s).') % (
+										stylize(ST_LINK, link), e))
+						else:
+							link_not_found = False
+
+				except (IOError, OSError), e:
+					# TODO: verify there's no bug in this logic ? pida (my IDE)
+					# signaled an error I didn't previously notice.
+					if e.errno == 2 and link_src_old \
+						and link_src_old == os.readlink(link):
+						# delete links to old group name.
+						os.unlink(link)
+						logging.info(_(u'Deleted old symlink %s.') %
+							stylize(ST_LINK, link))
+					else:
+						# errno == 2 is a broken link, don't bother.
+						raise exceptions.LicornRuntimeError(_(u'Unable to '
+							'read symlink %s (error was: %s).') % (
+								link, str(e)))
+
+			if link_not_found and not delete:
+
+				link_dst = os.path.join(user.homeDirectory, link_basename)
+
+				if batch or logging.ask_for_repair(_(u'User {0} lacks the '
+								'symlink to group shared dir {1}. '
+								'Create it?').format(
+									stylize(ST_LOGIN, user.login),
+									stylize(ST_NAME, link_basename)),
+								auto_answer):
+
+					fsapi.make_symlink(link_src, link_dst, batch=batch,
+												auto_answer=auto_answer)
+				else:
+					logging.warning(_(u'User {0} lacks the '
+								'symlink to group shared dir {1}.').format(
+									stylize(ST_LOGIN, user.login),
+									stylize(ST_NAME, link_basename)))
+					all_went_ok = False
+
+		return all_went_ok
+
+	# TODO: to be refreshed
 	def AddGrantedProfiles(self, name=None, gid=None, users=None,
 		profiles=None):
 		""" Allow the users of the profiles given to access to the shared dir
@@ -979,7 +1017,7 @@ class GroupsController(Singleton, CoreFSController):
 
 		raise NotImplementedError('to be refreshed.')
 
-		# FIXME: with self.lock()
+		# FIXME: with self.lock
 		gid, name = self.resolve_gid_or_name(gid, name)
 
 		# The profiles exist ? Delete bad profiles
@@ -1016,7 +1054,7 @@ class GroupsController(Singleton, CoreFSController):
 
 		raise NotImplementedError('to be refreshed.')
 
-		# FIXME: with self.lock()
+		# FIXME: with self.lock
 		gid, name = self.resolve_gid_or_name(gid, name)
 
 		# The profiles exist ?
@@ -1037,408 +1075,203 @@ class GroupsController(Singleton, CoreFSController):
 					stylize(ST_NAME, p)))
 
 		# FIXME: not already done ??
-		self.WriteConf()
-	def AddUsersInGroup(self, name=None, gid=None, users_to_add=None,
-		force=False, batch=False):
-		""" Add a user list in the group 'name'. """
+		self.serialize()
 
-		assert ltrace('groups', '''> AddUsersInGroup(gid=%s, name=%s, '''
-			'''users_to_add=%s, batch=%s)''' % (gid, name, users_to_add, batch))
+	# private methods.
+	def __resolve_home_directory(self, directory=None):
+		""" construct the standard value for a group home directory, and
+			try to find if it a symlink. If yes, resolve the symlink and
+			remember the result as the real home dir.
 
-		if users_to_add is None:
-			raise exceptions.BadArgumentError("You must specify a users list")
+			Whatever the home is, return it. The return result of this
+			method is meant to be stored as self.homeDirectory.
 
-		resp_prefix  = LMC.configuration.groups.resp_prefix
-		guest_prefix = LMC.configuration.groups.guest_prefix
+			If the home directory doesn't exist, don't raise any error:
 
-		# we need to lock users to be sure they don't dissapear during this phase.
-		with self.lock():
-			with LMC.users.lock():
-				gid, name = self.resolve_gid_or_name(gid, name)
-
-				# this attribute will be passed to hooks callbacks to ease deals.
-				system = self.is_system_gid(gid)
-				uids_to_add = LMC.users.guess_identifiers(users_to_add)
-
-				work_done = False
-				u2l = LMC.users.uid_to_login
-
-				for uid in uids_to_add:
-					login = u2l(uid)
-					if login in self.groups[gid]['memberUid']:
-						logging.info(_(u'User {0} is already a member '
-							'of {1}, skipped.').format(
-							stylize(ST_LOGIN, login),
-							stylize(ST_NAME, name)))
-					else:
-						if system:
-							if name.startswith(resp_prefix):
-								# current group is a rsp-*
-
-								if login in self.groups[
-										self.name_to_gid(
-												name[len(resp_prefix):])
-											]['memberUid']:
-									# we are promoting a standard member to
-									# responsible, no need to --force. Simply
-									# delete from standard group first, to
-									# avoid ACLs conflicts.
-									self.DeleteUsersFromGroup(name=
-										name[len(resp_prefix):],
-										users_to_del=[uid])
-
-								elif login in self.groups[
-										self.name_to_gid(guest_prefix +
-												name[len(resp_prefix):])
-											]['memberUid']:
-									# Trying to promote a guest to responsible,
-									# just delete him/her from guest group
-									# to avoid ACLs conflicts.
-
-									self.DeleteUsersFromGroup(name=
-											guest_prefix
-											+ name[len(resp_prefix):],
-											users_to_del=[uid])
-
-							elif name.startswith(guest_prefix):
-								# current group is a gst-*
-
-								if login in self.groups[
-										self.name_to_gid(
-												name[len(guest_prefix):])
-											]['memberUid']:
-									# user is standard member, we need to demote
-									# him/her, thus need the --force flag.
-
-									if force:
-										# demote user from std to gst
-										self.DeleteUsersFromGroup(name=
-												name[len(resp_prefix):],
-												users_to_del=[uid])
-									else:
-										raise exceptions.BadArgumentError(
-											'cannot demote user %s from '
-											'standard membership to guest '
-											'without --force flag.' %
-											stylize(ST_LOGIN, login))
-
-								elif login in self.groups[
-										self.name_to_gid(resp_prefix +
-												name[len(guest_prefix):])
-											]['memberUid']:
-									# user is currently responsible. Demoting
-									# to guest is an unusual situation, we need
-									# to --force.
-
-									if force:
-										# demote user from rsp to gst
-										self.DeleteUsersFromGroup(name=
-												resp_prefix
-												+ name[len(guest_prefix):],
-												users_to_del=[uid])
-									else:
-										raise exceptions.BadArgumentError(
-											'cannot demote user %s from '
-											'responsible to guest '
-											'without --force flag.' %
-											stylize(ST_LOGIN, login))
-							#else:
-							# this is a system group, but not affialiated to
-							# any standard group, thus no particular condition
-							# applies: nothing to do.
-
-						else:
-							# standard group, check rsp & gst memberships
-
-							if login in self.groups[
-									self.name_to_gid(guest_prefix + name)
-										]['memberUid']:
-								# we are promoting a guest to standard
-								# membership, no need to --force. Simply
-								# delete from guest group first, to
-								# avoid ACLs conflicts.
-								self.DeleteUsersFromGroup(
-									name=guest_prefix + name,
-									users_to_del=[uid])
-
-							elif login in self.groups[
-									self.name_to_gid(resp_prefix + name)
-										]['memberUid']:
-								# we are trying to demote a responsible to
-								# standard membership, we need to --force.
-
-								if force:
-									# --force is given: demote user!
-									# Delete the user from standard group to
-									# avoid ACLs conflicts.
-
-									self.DeleteUsersFromGroup(name=
-										resp_prefix + name,
-										users_to_del=[uid])
-								else:
-									raise exceptions.BadArgumentError(
-										'cannot demote user %s from '
-										'responsible to standard membership '
-										'without --force flag.'%
-										stylize(ST_LOGIN, login))
-							#else:
-							#
-							# user is not a guest or responsible of the group,
-							# just a brand new member. Nothing to check.
-
-						# #440 conditions are now verified and enforced, we
-						# can make the user member of the desired group.
-
-						self.groups[gid]['memberUid'].append(login)
-						self.groups[gid]['memberUid'].sort()
-						# update the users cache.
-						LMC.users[uid]['groups'].append(name)
-						LMC.users[uid]['groups'].sort()
-						logging.notice(_(u'Added user {0} to members '
-							'of group {1}.').format(stylize(ST_LOGIN, login),
-							stylize(ST_NAME, name)))
-
-						if batch:
-							work_done = True
-						else:
-							#
-							# save the group after each user addition.
-							# this is a quite expansive operation, it seems to me quite
-							# superflous, but you can make bets on security and
-							# reliability.
-							#
-							LMC.backends[
-								self.groups[gid]['backend']
-								].save_Group(gid, backend_actions.UPDATE)
-
-							#self.reload_admins_group_in_validator(name)
-
-						if self.is_standard_gid(gid):
-							# create the symlink to the shared group dir
-							# in the user's home dir.
-							link_basename = self.groups[gid]['name']
-						elif name.startswith(
-							LMC.configuration.groups.resp_prefix):
-							# fix #587: make symlinks for resps and guests too.
-							link_basename = \
-								self.groups[gid]['name'].replace(
-								LMC.configuration.groups.resp_prefix,
-								"", 1)
-						elif name.startswith(
-							LMC.configuration.groups.guest_prefix):
-							link_basename = \
-								self.groups[gid]['name'].replace(
-								LMC.configuration.groups.guest_prefix,
-								"", 1)
-						else:
-							# this is a system group, don't make any symlink !
-							continue
-
-						# brutal fix for #43, batched for convenience.
-						self.AddUsersInGroup(name='users', users_to_add=[ uid ],
-							batch=True)
-
-						link_src = os.path.join(
-							LMC.configuration.defaults.home_base_path,
-							LMC.configuration.groups.names.plural,
-							link_basename)
-						link_dst = os.path.join(
-							LMC.users[uid]['homeDirectory'],
-							link_basename)
-
-						fsapi.make_symlink(link_src, link_dst, batch=batch)
-
-						self.run_hooks('group_post_add_user',
-							gid=gid, name=name, system=system,
-							uid=uid, login=login)
-
-				if batch and work_done:
-					# save the group after having added all users. This seems more fine
-					# than saving between each addition
-					LMC.backends[
-						self.groups[gid]['backend']
-						].save_Group(gid, backend_actions.UPDATE)
-
-					#self.reload_admins_group_in_validator(name)
-
-		assert ltrace('groups', '< AddUsersInGroup()')
-	def DeleteUsersFromGroup(self, name=None, gid=None, users_to_del=None,
-		batch=False):
-		""" Delete a users list in the group 'name'. """
-
-		assert ltrace('groups', '''> DeleteUsersFromGroup(gid=%s, name=%s,
-			users_to_del=%s, batch=%s)''' % (gid, name, users_to_del, batch))
-
-		if users_to_del is None:
-			raise exceptions.BadArgumentError("You must specify a users list")
-
-		# we need to lock users to be sure they don't dissapear during this phase.
-		with self.lock():
-			with LMC.users.lock():
-				gid, name = self.resolve_gid_or_name(gid, name)
-
-				# this attribute will be passed to hooks callbacks to ease deals.
-				system = self.is_system_gid(gid)
-
-				uids_to_del = LMC.users.guess_identifiers(users_to_del)
-
-				logging.progress("Going to remove users %s from group %s." % (
-					stylize(ST_NAME, str(uids_to_del)),
-					stylize(ST_NAME, name)))
-
-				work_done = False
-				u2l = LMC.users.uid_to_login
-
-				for uid in uids_to_del:
-
-					login = u2l(uid)
-
-					self.run_hooks('group_pre_del_user', gid=gid, name=name,
-							system=system, uid=uid, login=login)
-
-					if login in self.groups[gid]['memberUid']:
-						self.groups[gid]['memberUid'].remove(login)
-
-						# update the users cache
-						LMC.users[uid]['groups'].remove(name)
-
-						logging.notice(_(u'Removed user {0} from members '
-							'of group {1}.').format(stylize(ST_LOGIN, login),
-							stylize(ST_NAME, name)))
-
-						if batch:
-							work_done = True
-						else:
-							LMC.backends[
-								self.groups[gid]['backend']
-								].save_Group(gid, backend_actions.UPDATE)
-
-							# NOTE: this is not needed, the validator holds
-							# a direct reference to this group members.
-							#self.reload_admins_group_in_validator(name)
-
-						if self.is_standard_gid(gid):
-							# create the symlink to the shared group dir
-							# in the user's home dir.
-							link_basename = self.groups[gid]['name']
-						elif name.startswith(
-							LMC.configuration.groups.resp_prefix):
-							link_basename = \
-								self.groups[gid]['name'].replace(
-								LMC.configuration.groups.resp_prefix,
-								"", 1)
-						elif name.startswith(
-							LMC.configuration.groups.guest_prefix):
-							link_basename = \
-								self.groups[gid]['name'].replace(
-								LMC.configuration.groups.guest_prefix,
-								"", 1)
-						else:
-							# this is a normal system group, don't try to
-							# remove any symlink !
-							continue
-
-						link_src = os.path.join(
-							LMC.configuration.defaults.home_base_path,
-							LMC.configuration.groups.names.plural,
-							link_basename)
-
-						for link in fsapi.minifind(
-							LMC.users[uid]['homeDirectory'],
-							maxdepth=2, type=stat.S_IFLNK):
-							try:
-								if os.path.abspath(
-										os.readlink(link)) == link_src:
-									os.unlink(link)
-									logging.info(_(u'Deleted symlink %s.') %
-										stylize(ST_LINK, link))
-							except (IOError, OSError), e:
-								if e.errno == 2:
-									# this is a broken link,
-									# readlink failed…
-									pass
-								else:
-									raise exceptions.LicornRuntimeError(
-										"Unable to delete symlink "
-										"%s (was: %s)." % (
-											stylize(ST_LINK, link),
-											str(e)))
-					else:
-						logging.info(_(u'Skipped user {0}, already not '
-							'a member of group {1}').format(
-								stylize(ST_LOGIN, login),
-								stylize(ST_NAME, name)))
-
-		if batch and work_done:
-			LMC.backends[
-				self.groups[gid]['backend']
-				].save_Group(gid, backend_actions.UPDATE)
-
-			#self.reload_admins_group_in_validator(name)
-
-		assert ltrace('groups', '< DeleteUsersFromGroup()')
-	def BuildGroupACL(self, gid, path=''):
-		""" Return an ACL triolet (a dict) used later to check something
-			in the group shared dir.
-
-			NOTE: the "@GX" and "@UX" strings will be later replaced by individual
-			execution bits of certain files which must be kept executable.
-
-			NOT locked, because called from methods which already lock.
-
-			gid: the GID for which we are building the ACL.
-			path: a unicode string, the name of a file/dir (or subdir) relative
-				from group_home (this will help affining the ACL).
-				EG: path can be 'toto.odt', 'somedir',
-				'public_html/images/logo.img'.
+			- if we are in group creation phase, this is completely normal.
+			- if in any other phase, the problem will be corrected by the
+			  check mechanism, and will be pointed by the [internal]
+			  permissive resolver method.
 		"""
 
-		group = self.groups[gid]['name']
+		if self.__is_system:
+			return None
 
-		if self.groups[gid]['permissive']:
-			group_default_acl = "rwx"
-			group_file_acl    = "rw@GX"
+		if directory in (None, ''):
+			home = '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
+									LMC.configuration.groups.names.plural,
+									self.__name)
 		else:
-			group_default_acl = "r-x"
-			group_file_acl    = "r-@GX"
+			home = directory
 
-		acl_base      = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x,g:%s:rwx" % (
-			LMC.configuration.defaults.admin_group,
-			LMC.configuration.groups.guest_prefix + group,
-			LMC.configuration.groups.resp_prefix + group)
-		file_acl_base = \
-			"u::rw@UX,g::---,o:---,g:%s:rw@GX,g:%s:r-@GX,g:%s:rw@GX" % (
-			LMC.configuration.defaults.admin_group,
-			LMC.configuration.groups.guest_prefix + group,
-			LMC.configuration.groups.resp_prefix + group)
-		acl_mask      = "m:rwx"
-		file_acl_mask = "m:rw@GX"
+		# follow the symlink for the group home, only if link destination
+		# is a directory. This allows administrator to put big group dirs
+		# on different volumes.
+		if os.path.islink(home):
+			if os.path.exists(home) \
+				and os.path.isdir(os.path.realpath(home)):
+				home = os.path.realpath(home)
 
-		if path.find('public_html') == 0:
-			return {
-					'group'     : 'acl',
-					'access_acl': '%s,g:%s:rwx,g:www-data:r-x,%s' % (
-						acl_base, group, acl_mask),
-					'default_acl': '%s,g:%s:%s,g:www-data:r-x,%s' % (
-						acl_base, group, group_default_acl, acl_mask),
-					'content_acl': '%s,g:%s:%s,g:www-data:r--,%s' % (
-						file_acl_base, group, group_file_acl, file_acl_mask),
-					'exclude'   : []
-				}
+		return home
+	def __resolve_permissive_state(self, permissive=None):
+		""" If the shared group directory exists, return its current
+			permissive state.
+
+			It if doesn't, the result depends on the ``permissive``
+			argument value:
+
+			- if it's ``None`` (default value), we assume that the caller
+			  really wanted to know the current permissive state of the
+			  directory. There is thus a problem because the directory is
+			  not here any more.
+
+			- if it's anything other, return the argument: we are in creation
+			  mode, and the abscence of the directory is normal, it is not
+			  yet created. The argument will be used on creation to set the
+			  initial permissive state.
+
+			:param permissive: a boolean, which can be ``None`` (see above).
+		"""
+
+		with self.lock:
+
+			if self.__is_system:
+				# system groups don't handle the permisse attribute.
+				return None
+
+			try:
+				# only check the default ACLs, where the permissiveness
+				# is stored, as rwx (True) or r-x (False) for the group
+				# standard members.
+				for line in posix1e.ACL(filedef=self.__homeDirectory):
+					if line.tag_type & posix1e.ACL_GROUP:
+						if line.qualifier == self.__gidNumber:
+							return line.permset.write
+
+			except IOError, e:
+				if e.errno == 13:
+					raise exceptions.InsufficientPermissionsError(str(e))
+
+				elif e.errno == 2:
+					if permissive is None:
+						# if permissive is None, we assume that the caller
+						# wanted to know the permissive state, thus there
+						# is a problem.
+						logging.warning(_(u'Shared dir {0} does not exist, '
+							'please run "chk group {1}" to fix.').format(
+								stylize(ST_PATH, self.__homeDirectory),
+								stylize(ST_NAME, self.__name)))
+					else:
+						# if given an argument, we assume the caller was
+						# in group creation context, thus the non existing
+						# directory is normal: it will be created shortly
+						# after. Return the given argument, which must be
+						# stored in group attributes: it will be used during
+						# the directory creation to assign the wanted
+						# permissive state.
+						return permissive
+				else:
+					raise e
+	def __check_mutual_exclusions(self, user, force):
+		""" Verify a given user is not a member of two or more groups, from
+			the tuple (group, resp_group, guest_group).
+
+			In some cases, this is not a problem and user will be promoted
+			from one group to another automatically.
+
+			In other cases, the demotion can't be done without the
+			:option:`--force` argument.
+		"""
+
+		if self.__is_system:
+			if self.__is_responsible:
+
+				if user in self.__standard_group().members:
+					# we are promoting a standard member to
+					# responsible, no need to --force. Simply
+					# delete from standard group first, to
+					# avoid ACLs conflicts.
+					self.standard_group.del_Users([ user ])
+
+				elif user in self.__guest_group().members:
+					# Trying to promote a guest to responsible,
+					# just delete him/her from guest group
+					# to avoid ACLs conflicts.
+
+					self.__guest_group().del_Users([ user ])
+
+			elif self.__is_guest:
+
+				if user in self.__standard_group().members:
+					# user is standard member, we need to demote
+					# him/her, thus need the --force flag.
+
+					if force:
+						# demote user from std to gst
+						self.__standard_group().del_Users([ user ])
+					else:
+						raise exceptions.BadArgumentError(
+								'cannot demote user %s from '
+								'standard membership to guest '
+								'without --force flag.' %
+									stylize(ST_LOGIN, user.login))
+
+				elif user in self.__responsible_group().members:
+					# user is currently responsible. Demoting
+					# to guest is an unusual situation, we need
+					# to --force.
+
+					if force:
+						# demote user from rsp to gst
+						self.__responsible_group().del_Users([ user ])
+					else:
+						raise exceptions.BadArgumentError(
+								'cannot demote user %s from '
+								'responsible to guest '
+								'without --force flag.' %
+									stylize(ST_LOGIN, user.login))
+
+			#else:
+			# this is a system group, but not affialiated to
+			# any standard group, thus no particular condition
+			# applies: nothing to do.
+
 		else:
-			return {
-					'group'     : 'acl',
-					'access_acl': '%s,g:%s:rwx,g:www-data:--x,%s' % (
-						acl_base, group, acl_mask),
-					'default_acl': '%s,g:%s:%s,%s' % (
-						acl_base, group, group_default_acl, acl_mask),
-					'content_acl': '%s,g:%s:%s,%s' % (
-						file_acl_base, group, group_file_acl, file_acl_mask),
-					'exclude'   : [ 'public_html' ]
-				}
-	def CheckAssociatedSystemGroups(self, name=None, gid=None, minimal=True,
-		batch=False, auto_answer=None, force=False):
-		"""Check the system groups that a standard group needs to be valid.	For
+			# standard group, check rsp & gst memberships
+
+			if user in self.__guest_group().members:
+				# we are promoting a guest to standard
+				# membership, no need to --force. Simply
+				# delete from guest group first, to
+				# avoid ACLs conflicts.
+				self.__guest_group().del_Users([ user ])
+
+			elif user in self.__responsible_group().members:
+				# we are trying to demote a responsible to
+				# standard membership, we need to --force.
+
+				if force:
+					# --force is given: demote user!
+					# Delete the user from standard group to
+					# avoid ACLs conflicts.
+
+					self.__responsible_group().del_Users([ user ])
+				else:
+					raise exceptions.BadArgumentError(
+							'cannot demote user %s from '
+							'responsible to standard membership '
+							'without --force flag.'%
+								stylize(ST_LOGIN, user.login))
+			#else:
+			#
+			# user is not a guest or responsible of the group,
+			# just a brand new member. Nothing to check.
+		assert ltrace('groups', ' | %s.__check_mutual_exclusions() → %s' % (
+				self.name, stylize(ST_OK, 'OK')))
+	def check_associated_groups(self, minimal=True, force=False,
+											batch=False, auto_answer=None):
+		"""	Check the system groups that a standard group needs to be valid.
+			For
 			example, a group "MountainBoard" needs 2 system groups,
 			rsp-MountainBoard and gst-MountainBoard for its ACLs on the group
 			shared dir.
@@ -1459,221 +1292,193 @@ class GroupsController(Singleton, CoreFSController):
 							called methods which can use it.
 		"""
 
-		gid, name = self.resolve_gid_or_name(gid, name)
+		all_went_ok = True
+
+		if not self.__is_standard:
+			return
+
+		with self.lock:
+
+			for (group_ref, attrname, prefix, title) in (
+				(self.__responsible_group, 'responsible_group',
+					LMC.configuration.groups.resp_prefix,
+					_(u'responsibles')),
+				(self.__guest_group, 'guest_group',
+					LMC.configuration.groups.guest_prefix,
+					_(u'guests'))
+				):
+
+				group_name = prefix + self.__name
+
+				logging.progress(_(u'Checking system group %s…') %
+					stylize(ST_NAME, group_name))
+
+				if group_ref is None:
+					if batch or logging.ask_for_repair(_(u'The system group '
+									'{0} is required for the group {1} to be '
+									'fully operationnal. Create it?').format(
+										stylize(ST_NAME, group_name),
+										stylize(ST_NAME, self.__name)),
+									auto_answer):
+
+						try:
+							# create the missing group
+							group = self.controller.add_Group(
+											name=group_name,
+											system=True,
+											description=unicode(
+												_(u'{0} of group “{1}”').format(
+													title.title(), self.name)),
+											backend=self.backend,
+											batch=batch,
+											force=force)
+
+							# connect it one way, the low-level way.
+							setattr(self, attrname, group)
+
+							# connect it the other way.
+							group.standard_group = self
+
+							# if the home dir or helper groups get corrected,
+							# we need to update the CLI view.
+							self._cli_invalidate()
+
+							#logging.notice(_(u'Created system group {0}'
+							#	'(gid={1}).').format(
+							#		stylize(ST_NAME, group.name),
+							#		stylize(ST_UGID, group.gid)))
+
+						except exceptions.AlreadyExistsException, e:
+							logging.warning(e)
+							print_exc()
+					else:
+						logging.warning(_(u'The system group '
+									'{0} is required for the group {1} to be '
+									'fully operationnal.').format(
+										stylize(ST_NAME, group_name),
+										stylize(ST_NAME, self.__name)))
+						all_went_ok &= False
+				else:
+					if not minimal:
+						all_went_ok &= group_ref().check_symlinks(
+															batch, auto_answer)
+			# cross-link everyone.
+			self.__responsible_group().guest_group = self.__guest_group()
+			self.__guest_group().responsible_group = self.__responsible_group()
+
+		return all_went_ok
+	def __check_system_group(self, minimal=True, force=False,
+											batch=False, auto_answer=None):
+		""" Check superflous and mandatory attributes of a system group. """
+
+		assert ltrace(self.name, '| %s.__check_system_group()' % self.name)
 
 		all_went_ok = True
 
-		with self.lock():
-			for (prefix, title) in (
-				(LMC.configuration.groups.resp_prefix, _(u"responsibles")),
-				(LMC.configuration.groups.guest_prefix, _(u"guests"))
-				):
-
-				group_name = prefix + name
-				logging.progress("Checking system group %s…" %
-					stylize(ST_NAME, group_name))
-
-				try:
-					# FIXME: (convert this into an LicornKeyError ?) and use
-					# name_to_gid() inside of direct cache access.
-					prefix_gid = self.name_cache[group_name]
-
-				except KeyError:
-					warn_message = _(u'The system group {0} is required '
-						'for the group {1} to be fully operationnal.').format(
-						stylize(ST_NAME, group_name),
-						stylize(ST_NAME, name))
-
-					if batch or logging.ask_for_repair(warn_message,
-						auto_answer):
-						try:
-							temp_gid = self.__add_group(group_name,
-								system=True, manual_gid=None,
-								description=_(u'{0} of group “{1}”').format(
-											title, name),
-								groupSkel='',
-								backend=self.groups[gid]['backend'],
-								batch=batch, force=force)
-							prefix_gid = temp_gid
-							del temp_gid
-
-							logging.notice(_(u'Created system group {0}'
-								'(gid={1}).').format(
-									stylize(ST_NAME, group_name),
-									stylize(ST_UGID, prefix_gid)))
-						except exceptions.AlreadyExistsException, e:
-							logging.info(str(e))
-							pass
-					else:
-						logging.warning(warn_message)
-						all_went_ok &= False
-
-			# WARNING: don't even try to remove() group_name from the list of
-			# groups_to_check. This will not behave as expected because
-			# groups_to_check is used with map() and not a standard for() loop.
-			# This will skip some groups, which will not be checked !! BAD !
-
-
-			# LOCKS: the following part can be very long and blocking for the
-			# rest of the world. we do it ouside locks, and damn'it it it fails,
-			# I consider it harmless.
-
-			if not minimal:
-				all_went_ok &= self.CheckGroupSymlinks(gid=prefix_gid,
-					strip_prefix=prefix, batch=batch, auto_answer=auto_answer)
-
-		return all_went_ok
-	def __check_system_group(self, gid=None, name=None, minimal=True,
-							batch=False, auto_answer=None):
-		""" Check superflous and mandatory attributes of a system group. """
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		assert ltrace(self.name, '| __check_system_group(%s, %s)' % (gid, name))
-
-		group = self.groups[gid]
-
 		logging.progress(_(u'Checking system specific attributes '
-				'for group {0}…').format(stylize(ST_NAME, name))
+				'for group {0}…').format(stylize(ST_NAME, self.name))
 			)
 
 		update = False
 
 		# any system group should not have a skel, this is particularly useless.
-		if 'groupSkel' in group and group['groupSkel'] != '':
+		if hasattr(self, '__groupSkel') and self.__groupSkel != '':
 			update = True
-			del group['groupSkel']
+			del self.__groupSkel
 
 			logging.info(_(u'Removed superfluous attribute {0} '
 				'of system group {1}').format(
 					stylize(ST_ATTR, 'groupSkel'),
-					stylize(ST_NAME, name))
+					stylize(ST_NAME, self.name))
 				)
 		# Licorn® system groups should have at least a default description.
 		# restricted system groups are not enforced on that point.
-		if not self.is_restricted_system_gid(gid):
-			if 'description' not in group:
+		if not self.__is_system_restricted:
+			if not hasattr(self, 'description') or self.description == '':
 				update = True
-				group['description'] = _(u'Members of group “%s”') % name
+				self.description = _(u'Members of group “%s”') % self.name
 
 				logging.info(_(u'Added missing {0} attribute with a '
 					'default value for system group {1}.').format(
 						stylize(ST_ATTR, 'description'),
-						stylize(ST_NAME, name))
+						stylize(ST_NAME, self.name))
 					)
 
 		if update:
-			if (batch or logging.ask_for_repair(_('Do you want to commit '
+			if batch or logging.ask_for_repair(_('Do you want to commit '
 				'these changes to the system (highly recommended)?'),
-				auto_answer=auto_answer)):
+				auto_answer=auto_answer):
 
-				LMC.backends[group['backend']].save_Group(gid,
-														backend_actions.UPDATE)
+				self.serialize()
+				self._cli_invalidate()
+
 				return True
 			else:
 				logging.warning(_(u'Corrections of system group '
-					'{0} not commited').format(name))
+					'{0} not commited').format(self.name))
 				return False
 		return True
-	def __check_group(self, gid=None, name=None, minimal=True, batch=False,
-		auto_answer=None, force=False):
-		""" Check a group (the real implementation, private: don't call directly
-			but use CheckGroups() instead). Will verify the various needed
-			conditions for a Licorn® group to be valid, and then check all
-			entries in the shared group directory.
+	def __check_standard_group(self, minimal=True, force=False,
+											batch=False, auto_answer=None):
+		""" TODO. """
 
-			PARTIALLY locked, because very long to run (depending on the shared
-			group dir size). Harmless if the unlocked part fails.
+		all_went_ok = True
 
-			:param gid/name: the group to check.
-			:param minimal: don't check member's symlinks to shared group dir if True
-			:param batch: correct all errors without prompting.
-			:param auto_answer: an eventual pre-typed answer to a preceding question
-				asked outside of this method, forwarded to apply same answer to
-				all questions.
-			:param force: not used directly in this method, but forwarded to called
-				methods which can use it.
-		"""
+		logging.progress(_(u'Checking group {0}…').format(
+				stylize(ST_NAME, self.name)))
 
-		assert ltrace('groups', '> __check_group(gid=%s,name=%s)' % (
-			stylize(ST_UGID, gid),
-			stylize(ST_NAME, name)))
+		all_went_ok &= self.check_associated_groups(
+								minimal, force, batch, auto_answer)
 
-		with self.lock():
-			gid, name = self.resolve_gid_or_name(gid, name)
+		# NOTE: in theory we shouldn't check if the dir exists here, it
+		# is done in fsapi.check_one_dir_and_acl(). but we *must* do it
+		# because we set uid and gid to -1, and this implies the need to
+		# access to the path lstat() in ACLRule.check_dir().
+		if not os.path.exists(self.homeDirectory):
+			if batch or logging.ask_for_repair(_(u'Directory %s does not '
+							'exist but it is mandatory. Create it?') %
+								stylize(ST_PATH, self.homeDirectory),
+							auto_answer=auto_answer):
+				os.mkdir(self.homeDirectory)
 
-			all_went_ok = True
+				logging.info(_(u'Created directory {0}.').format(
+						stylize(ST_PATH, self.__homeDirectory)))
 
-			if self.is_system_gid(gid):
-				return self.__check_system_group(gid, minimal=minimal,
-					batch=batch, auto_answer=auto_answer)
-
-			logging.progress(_(u"Checking group {0}…").format(
-					stylize(ST_NAME, name))
-				)
-
-			all_went_ok &= self.CheckAssociatedSystemGroups(
-				name=name, minimal=minimal, batch=batch,
-				auto_answer=auto_answer, force=force)
-
-		group_home = "%s/%s/%s" % (
-			LMC.configuration.defaults.home_base_path,
-			LMC.configuration.groups.names.plural, name)
-
-		# follow the symlink for the group home, only if link destination is a
-		# dir. This allows administrator to put big group dirs on different
-		# volumes (fixes #66).
-		if os.path.islink(group_home):
-			if os.path.exists(group_home) \
-				and os.path.isdir(os.path.realpath(group_home)):
-				group_home = os.path.realpath(group_home)
-
-		# FIXME : We shouldn't check if the dir exists here, it is done
-		# in fsapi.check_one_dir_and_acl() but we need to do it because
-		# we set uid and gid to -1 so we need to access to path stats
-		# in ACLRule.check_dir().
-		# check if home group exists before doing anything.
-		if not os.path.exists(group_home):
-			if batch or logging.ask_for_repair("Directory %s doesn't exists on "
-				"the system, this is mandatory create it?" %
-					stylize(ST_PATH, group_home), auto_answer=auto_answer):
-				os.mkdir(group_home)
-				logging.info("Created directory %s." %
-						stylize(ST_PATH, group_home))
+				# FIXME: reinstall the inotifier ?
 			else:
-				raise exceptions.LicornCheckError("Directory %s doesn't exists "
-					"on the system, this is mandatory. The check procedure has "
-					"been %s" % (
-						stylize(ST_PATH, group_home),
-						stylize(ST_BAD, "stopped")))
+				raise exceptions.LicornCheckError(_(u'Directory %s does not '
+					'exist but is mandatory. Check aborted.') %
+						stylize(ST_PATH, self.homeDirectory))
 
 		# load the rules defined by user and merge them with templates rules.
-		rules = self.load_rules(group_home + '/' +
-			LMC.configuration.users.check_config_file,
-			# user_uid et user_gid are set to -1 to don't touch to current uid and
-			# gid owners of the group.
-			object_info=Enumeration(home=group_home, user_uid=-1, user_gid=-1),
-			identifier=gid,
-			vars_to_replace=(
-					('@GROUP', name),
-					('@GW', 'w' if self.groups[gid]['permissive'] else '-')
-				)
-			)
+		rules = self.__load_check_rules()
 
-		# run the check
-		try:
-			if rules != None:
-				all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-					rules, batch=batch, auto_answer=auto_answer)
-		except exceptions.DoesntExistsException, e:
-			logging.warning(e)
+		if rules is not None:
+			if self.__checking_event.is_set():
+				logging.warning(_(u'group %s: somebody is already checking this '
+					'group; check aborted.') % stylize(ST_NAME, self.__name))
+
+			else:
+
+				self.__checking_event.set()
+
+				try:
+					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
+						rules, batch=batch, auto_answer=auto_answer)
+
+				except exceptions.DoesntExistException, e:
+					logging.warning(e)
+
+				self.__checking_event.clear()
+
+			# if the home dir or helper groups get corrected,
+			# we need to update the CLI view.
+			self._cli_invalidate()
 
 		if not minimal:
-			logging.progress(
-				"Checking %s symlinks in members homes, this can be long…"  %
-					stylize(ST_NAME, name))
-			all_went_ok &= self.CheckGroupSymlinks(gid=gid, batch=batch,
-				auto_answer=auto_answer)
+			logging.progress(_(u'Checking %s symlinks in members homes, '
+				'this can be long…')  % stylize(ST_NAME, self.name))
+			all_went_ok &= self.check_symlinks(batch, auto_answer)
 
 			# TODO: if extended / not minimal: all group members' homes are OK
 			# (recursive CheckUsers recursif)
@@ -1682,118 +1487,130 @@ class GroupsController(Singleton, CoreFSController):
 			# CheckGroups()… use minimal=True as argument here, don't forward
 			# the current "minimal" value.
 
-		assert ltrace('groups', '< __check_group(%s)' % all_went_ok)
-
 		return all_went_ok
-	def check_nonexisting_users(self, batch=False, auto_answer=None):
-		""" Go through all groups, find members which are referenced but
-			don't really exist on the system, and wipe them.
+	def __add_group_symlink(self, user, batch=False, auto_answer=None):
+		""" Create a symlink to the group shared dir in the user's home. """
 
-			LOCKED to be thread-safe for groups and users.
+		if self.is_standard:
+			link_basename = self.__name
 
-			batch: correct all errors without prompting.
-			auto_answer: an eventual pre-typed answer to a preceding question
-				asked outside of this method, forwarded to apply same answer to
-				all questions.
-		"""
+		elif self.__is_helper:
+			link_basename = self.standard_group.name
 
-		assert ltrace('groups', '> check_nonexisting_users(batch=%s)' % batch)
+		else:
+			return
 
-		with self.lock():
-			with LMC.users.lock():
-				for gid in sorted(self.groups):
-					to_remove = set()
+		assert ltrace('groups',
+					'| %s.__add_group_symlink(%s)' % (self.name, user.login))
 
-					logging.progress('Checking for dangling references '
-						'in group %s.' % stylize(ST_NAME,
-							self.groups[gid]['name']))
+		link_src = os.path.join(LMC.configuration.defaults.home_base_path,
+								LMC.configuration.groups.names.plural,
+								link_basename)
 
-					for member in self.groups[gid]['memberUid']:
-						if not LMC.users.login_cache.has_key(member):
-							if batch or logging.ask_for_repair('''User %s is '''
-								'''referenced in _members of group %s but doesn't '''
-								'''really exist on the system. Remove this dangling '''
-								'''reference?''' % \
-									(stylize(ST_BAD, member),
-									stylize(ST_NAME,
-										self.groups[gid]['name'])),
-									auto_answer=auto_answer):
-								# don't directly remove member from members,
-								# it will immediately stop the for_loop. Instead, note
-								# the reference to remove, to do it a bit later.
-								to_remove.add(member)
+		link_dst = os.path.join(user.homeDirectory, link_basename)
 
-								logging.info(_(u'Removed dangling reference '
-									'to non-existing user {0} in '
-									'group {1}.').format(
-									stylize(ST_BAD, member),
-									stylize(ST_NAME,
-										self.groups[gid]['name'])))
+		try:
+			fsapi.make_symlink(link_src, link_dst, batch=batch)
+		except Exception, e:
+			raise exceptions.LicornRuntimeError(
+						"Unable to create symlink %s (was: %s)." % (
+							stylize(ST_LINK, link_dst), e))
+	def __del_group_symlink(self, user, batch=False, auto_answer=None):
+		""" Remove the group symlink from the user's home. Exactly, from
+			anywhere in the user's home (with maxdepth=2 limitation). """
 
-					if to_remove != set():
-						for member in to_remove:
-							self.groups[gid]['memberUid'].remove(member)
-							self.WriteConf(gid)
+		if self.is_standard:
+			# delete the symlink to the shared group dir
+			# in the user's home dir.
+			link_basename = self.__name
 
-		assert ltrace('groups', '< check_nonexisting_users()')
-	def _fast_check_group(self, gid, path):
-		""" check a file in a group and apply its perm without any confirmation
+		elif self.__is_helper:
+			link_basename = self.standard_group.name
 
-			:param gid: id of the group where the file is located
+		else:
+			return
+
+		assert ltrace('groups',
+					'| %s.__del_group_symlink(%s)' % (self.name, user.login))
+
+		link_src = os.path.join(LMC.configuration.defaults.home_base_path,
+								LMC.configuration.groups.names.plural,
+								link_basename)
+
+		for link in fsapi.minifind(user.homeDirectory,
+									maxdepth=2, type=stat.S_IFLNK):
+			try:
+				if os.path.abspath(os.readlink(link)) == link_src:
+					os.unlink(link)
+
+					logging.info(_(u'Deleted symlink %s.') %
+													stylize(ST_LINK, link))
+			except (IOError, OSError), e:
+				if e.errno != 2:
+					raise exceptions.LicornRuntimeError(
+						"Unable to delete symlink %s (was: %s)." % (
+							stylize(ST_LINK, link), e))
+	def __inotify_event_dispatcher(self, event):
+		""" The inotifier callback. Just a shortcut. """
+
+		d = self.daemon
+
+		if event.dir:
+			if event.mask & pyinotify.IN_CREATE:
+				d.inotifier_add()
+
+
+		if self.__checking_event.is_set():
+			if time.time() - self.__last_msg_time >= 5.0:
+				logging.progress(_(u'group %s: manual check already in progress, '
+					'skipping _fast_check.') % stylize(ST_NAME, self.__name))
+				self.__last_msg_time = time.time()
+			return
+
+		self.licornd.aclcheck_enqueue(priorities.LOW,
+							self.__fast_aclcheck, event.pathname)
+	def __watch_directory(self, path):
+		return self.licornd.inotifier_add(
+			path=directory,
+			rec=False, auto_add=False,
+			mask=	#pyinotify.ALL_EVENTS,
+					pyinotify.IN_CREATE
+					| pyinotify.IN_ATTRIB
+					| pyinotify.IN_CLOSE_WRITE
+					| pyinotify.IN_MOVED_TO,
+			#proc_fun=pyinotify.PrintAllEvents())
+			proc_fun=self.__inotify_event_dispatcher)
+
+	def __fast_aclcheck(self, path):
+		""" check a file in a shared group directory and apply its perm
+			without any confirmation.
+
 			:param path: path of the modified file/dir
 		"""
-		assert ltrace('groups', "> _fast_check_group(gid=%s, path=%s)" %
-			(gid, path))
 
-		group = self[gid]
+		assert ltrace('groups', "> _fast_aclcheck( path=%s)" % (self.gid, path))
 
-		try:
-			group_home = group['group_home']
-		except KeyError:
-			group_home = group['group_home'] = "%s/%s/%s" % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural, self[gid]['name'])
-
-		try:
-			rules = group['special_rules']
-
-		except KeyError:
-			rules = self.load_rules(group_home + '/' +
-				LMC.configuration.users.check_config_file,
-				object_info=Enumeration(home=group_home,
-										user_uid=-1, user_gid=-1),
-				identifier=gid,
-				vars_to_replace=(
-						('@GROUP', self.gid_to_name(gid)),
-						('@GW', 'w' if self.groups[gid]['permissive'] else '-')
-					)
-				)
-		else:
-			assert ltrace('groups', "Skipped: rules from %s were already "
-			"loaded, we do not reload them in the fast check procedure." %
-				group_home + '/' + 	LMC.configuration.users.check_config_file)
-
-		rule_name  = path[len(group_home)+1:].split('/')[0]
+		group_home = self.__homeDirectory
 
 		try:
 			entry_stat = os.lstat(path)
 		except (IOError, OSError), e:
-			if e.errno == 2:
+			if e.errno == 2 and path != group_home:
 				# bail out if path has disappeared since we were called.
 				return
 			else:
-				raise
+				raise e
 
-		# find the special rule applicable on the path.
-		is_root_dir = False
+		rule_name   = path[len(group_home)+1:].split('/')[0]
+		is_root_dir = (rule_name is '')
+
 		# if the path has a special rule, load it
-		if rule_name in rules:
-			dir_info = rules[rule_name].copy()
+		if rule_name in self.__check_rules:
+			dir_info = self.__check_rules[rule_name].copy()
+
 		# else take the default one
 		else:
-			dir_info = rules._default.copy()
-			if rule_name is '':
-				is_root_dir = True
+			dir_info = self.__check_rules._default.copy()
 
 		# the dir_info.path has to be the path of the checked file
 		dir_info.path = path
@@ -1815,555 +1632,1133 @@ class GroupsController(Singleton, CoreFSController):
 		else:
 			dir_info.uid = -1
 
+		try:
+			# cache the 'acl' GID
+			acl_reserved_gid = Group._acl_gid
+		except AttributeError:
+			acl_reserved_gid = Group._acl_gid = Group.by_name[
+									LMC.configuration.acls.group]().gidNumber
+
 		if ':' in dir_info.root_dir_perm or ',' in dir_info.root_dir_perm:
-			dir_info.gid = LMC.groups.name_to_gid(LMC.configuration.acls.group)
+				dir_info.gid = acl_reserved_gid
 		else:
 			if dir_info.uid == -1:
-				dir_info.gid = LMC.users[entry_stat.st_uid]['gidNumber']
+				# FIXME: shouldn't we force the current group ??
+				dir_info.gid = LMC.users[entry_stat.st_uid].gidNumber
 			else:
-				dir_info.gid = LMC.groups.name_to_gid(
-											LMC.configuration.acls.group)
-
-		# get the type of the path (file or dir)
-		if ( entry_stat.st_mode & 0170000 ) == stat.S_IFREG:
-			file_type = stat.S_IFREG
-		else:
-			file_type = stat.S_IFDIR
+				dir_info.gid = acl_reserved_gid
 
 		# run the check
-		fsapi.check_perms(dir_info, batch=True,	file_type=file_type,
+		fsapi.check_perms(dir_info, batch=True,
+			file_type=(entry_stat.st_mode & 0170000),
 			is_root_dir=is_root_dir, full_display=False)
 
 		assert ltrace('groups', '< _fast_check_group')
-	def CheckGroups(self, gids_to_check, minimal=True, batch=False,
-		auto_answer=None, force=False):
-		""" Check groups, groups dependancies and groups-related caches. If a
-			given group is not system, check it's shared dir, the depended upon
-			system groups, and eventually the members symlinks.
+	def _inotifier_del_watch(self, inotifier=None):
+		""" delete a group watch. Not directly used by inotifier, but prefixed
+			with it because used in the context. """
 
-			NOT locked because subparts are, where needed.
+		print '>> please implement Group._inotifier_del_watch()'
+		return
 
-			:param gids_to_check: a list of GIDs to check. If you don't have
-									GIDs but group names, use name_to_gid()
-									before.
-			:param minimal: don't check group symlinks in member's homes if True.
-			:param batch: correct all errors without prompting.
-			:param auto_answer: an eventual pre-typed answer to a preceding
-								question asked outside of this method, forwarded
-								to apply same answer to all questions.
-			:param force: not used directly in this method, but forwarded to
-							called methods which can use it.
-		"""
+		#TODO: make this recursive
+		inotifier.remove_watches_recursive(self.__homeDirectory)
+	def __load_check_rules(self, event=None):
+		"""  exist to catch anything coming from the
+			inotifier and that we wnt to ignore anyway. The return allows us
+			to use the rules immediately, when we load them in the standard
+			check() method. """
 
-		assert ltrace('groups', '''> CheckGroups(gids_to_check=%s, minimal=%s, '''
-			'''batch=%s, force=%s)''' %	(gids_to_check, minimal, batch, force))
-
-		if not minimal:
-			self.check_nonexisting_users(batch=batch, auto_answer=auto_answer)
-
-		def _chk(gid):
-			assert ltrace('groups', '| CheckGroups._chk(%s)' % gid)
-			return self.__check_group(gid=gid, minimal=minimal, batch=batch,
-				auto_answer=auto_answer, force=force)
-
-		if reduce(pyutils.keep_false, map(_chk, gids_to_check)) is False:
-			# don't test just "if reduce(…):", the result could be None and
-			# everything is OK when None
-			raise exceptions.LicornCheckError(
-				"Some group(s) check(s) didn't pass, or weren't corrected.")
-
-		assert ltrace('groups', '< CheckGroups()')
-	def CheckGroupSymlinks(self, name=None, gid=None, oldname=None,
-		delete=False, strip_prefix=None, batch=False, auto_answer=None):
-		""" For each member of a group, verify member has a symlink to the
-			shared group dir inside his home (or under level 2 directory). If
-			not, create the link. Eventually delete links pointing to the old
-			group name if it is set.
-
-			NOT locked because can be long, and harmless if fails.
-		"""
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		all_went_ok = True
-
-		for user in self.groups[gid]['memberUid']:
-
+		if event is None:
 			try:
-				uid = LMC.users.login_to_uid(user)
-			except exceptions.DoesntExistsException:
-				logging.notice('Skipped non existing group member %s.' %
-					stylize(ST_NAME, user))
-				continue
-
-			link_not_found = True
-
-			if strip_prefix is None:
-				link_basename = name
-			else:
-				link_basename = \
-					name.replace(strip_prefix,
-						'', 1)
-
-			link_src = os.path.join(
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural,
-				link_basename)
-
-			link_dst = os.path.join(
-				LMC.users[uid]['homeDirectory'],
-				link_basename)
-
-			if oldname:
-				link_src_old = os.path.join(
-					LMC.configuration.defaults.home_base_path,
-					LMC.configuration.groups.names.plural,
-					oldname)
-			else:
-				link_src_old = None
-
-			for link in fsapi.minifind(
-				LMC.users[uid]['homeDirectory'], maxdepth=2,
-					type=stat.S_IFLNK):
-				try:
-					link_src_abs = os.path.abspath(os.readlink(link))
-					if link_src_abs == link_src:
-						if delete:
-							try:
-								os.unlink(link)
-								logging.info(_(u'Deleted symlink %s.') %
-									stylize(ST_LINK, link))
-							except (IOError, OSError), e:
-								if e.errno != 2:
-									raise exceptions.LicornRuntimeError(
-									"Unable to delete symlink %s (was: %s)." % (
-									stylize(ST_LINK, link),
-									str(e)))
-						else:
-							link_not_found = False
-				except (IOError, OSError), e:
-					# TODO: verify there's no bug in this logic ? pida
-					# signaled an error I didn't previously notice.
-					# if e.errno == 2 and link_src_old and \
-					# link_dst_old == os.readlink(link):
-					if e.errno == 2 and link_src_old \
-						and link_src_old == os.readlink(link):
-						# delete links to old group name.
-						os.unlink(link)
-						logging.info(_(u'Deleted old symlink %s.') %
-							stylize(ST_LINK, link))
-					else:
-						# errno == 2 is a broken link, don't bother.
-						raise exceptions.LicornRuntimeError(
-							"Unable to read symlink %s (error was: %s)." % (
-								link, str(e)))
-
-			if link_not_found and not delete:
-				warn_message = _(u'User {0} lacks the symlink to '
-					'group {1} shared dir. Create it?').format(
-					stylize(ST_LOGIN, user),
-					stylize(ST_NAME, link_basename))
-
-				if batch or logging.ask_for_repair(warn_message, auto_answer):
-					fsapi.make_symlink(link_src, link_dst, batch=batch,
-						auto_answer=auto_answer)
-				else:
-					logging.warning(warn_message)
-					all_went_ok = False
-
-		return all_went_ok
-	def SetSharedDirPermissiveness(self, gid=None, name=None, permissive=True):
-		""" Set permissive or not permissive the shared directory of
-			the group 'name'.
-
-			LOCKED because we assume we don't want a group to be deleted /
-			modified during this operation, which is very quick.
-		"""
-
-		assert ltrace('groups', '''> SetSharedDirPermissivenes(gid=%s, name=%s, '''
-			'''permissive=%s)''' % (gid, name, permissive))
-
-		with self.lock():
-			gid, name = self.resolve_gid_or_name(gid, name)
-
-			if permissive:
-				qualif = _(u'')
-			else:
-				qualif = _(u'not ')
-
-			logging.progress('''Setting permissive=%s for group %s ('''
-				'''original is %s).''' % (
-				stylize(ST_OK if permissive else ST_BAD, permissive),
-				stylize(ST_NAME, name),
-				stylize(ST_OK if self.groups[gid]['permissive'] else ST_BAD,
-					self.groups[gid]['permissive'])))
-
-			if self.groups[gid]['permissive'] != permissive:
-				self.groups[gid]['permissive'] = permissive
-
-				# auto-apply the new permissiveness
-				self.CheckGroups([ gid ], batch=True)
-				logging.info(_(u'Switched group {0} permissive '
-					'state to {1}.').format(stylize(ST_NAME, name),
-					stylize(ST_OK if permissive else ST_BAD, _(u'True')
-						if permissive else _(u'False'))
-					)
-				)
-			else:
-				logging.info(_(u'Group {0} is already {1}permissive.').format(
-					stylize(ST_NAME, name), qualif))
-	def move_to_backend(self, gid, new_backend, force=False,
-			internal_operation=False):
-		""" Move a group from a backend to another, with extreme care. Any
-			occurring exception will cancel the operation.
-
-			Moving a standard group will begin by moving
-
-			Moving a restricted system group will fail if argument ``force``
-			is ``False``. This is not recommended anyway, groups <= 300 are
-			handled by distros maintainer, you'd better not touch them.
-
-		"""
-		if new_backend not in LMC.backends.keys():
-			raise exceptions.DoesntExistsException("Backend %s doesn't exist "
-				"or in not enabled." % new_backend)
-
-		group_name = self.groups[gid]['name']
-		old_backend = self.groups[gid]['backend']
-
-		if old_backend == new_backend:
-			logging.info(_(u'Skipped move of group {0}, '
-				'already stored in backend {1}.').format(
-					stylize(ST_NAME, group_name),
-					stylize(ST_NAME, new_backend)))
-			return True
-
-		if self.is_restricted_system_gid(gid) and not force:
-			logging.warning("Skipped move of restricted system group %s "
-				"(please use %s if you really want to do this, "
-				"but it is strongly not recommended)." % (
-					stylize(ST_NAME, group_name),
-					stylize(ST_DEFAULT, '--force')))
-			return
-
-		if (group_name.startswith(LMC.configuration.groups.resp_prefix) or
-			group_name.startswith(LMC.configuration.groups.guest_prefix)) \
-			and not internal_operation:
-				raise exceptions.BadArgumentError("Can't move an associated "
-					"system group without moving its standard group too. "
-					"Please move the standard group instead, if this is "
-					"what you meant.")
-
-		if self.is_standard_gid(gid):
-
-			if not self.move_to_backend(
-				self.name_to_gid(LMC.configuration.groups.resp_prefix
-					+ group_name), new_backend, internal_operation=True):
-
-				logging.warning('Skipped move of group %s to backend %s '
-					'because move of associated responsible system group '
-						'failed.' % (group_name, new_backend))
-				return
-
-			if not self.move_to_backend(
-				self.name_to_gid(LMC.configuration.groups.guest_prefix
-					+ group_name), new_backend, internal_operation=True):
-
-				# pray this works, else we're in big trouble, a shoot in a
-				# foot and a golden shoe on the other.
-				self.move_to_backend(
-					self.name_to_gid(LMC.configuration.groups.resp_prefix
-						+ group_name), old_backend)
-
-				logging.warning('Skipped move of group %s to backend %s '
-					'because move of associated system guest group '
-						'failed.' % (group_name, new_backend))
-				return
-
-		try:
-			# we must change the backend, else iterating backends (like Shadow)
-			# will not save the new group.
-			self.groups[gid]['backend'] = new_backend
-			LMC.backends[new_backend].save_Group(gid, backend_actions.CREATE)
-
-		except KeyboardInterrupt, e:
-			logging.warning("Exception %s happened while trying to move group "
-				"%s from %s to %s, aborting (group left unchanged)." % (e,
-				group_name, old_backend, new_backend))
-
-			try:
-				# restore old situation.
-				self.groups[gid]['backend'] = old_backend
-				LMC.backends[new_backend].delete_Group(group_name)
+				return self.__check_rules
 			except:
+				# don't crash: just don't return and the rules will be loaded
+				# as if there were no problem at all.
 				pass
 
-			return False
+		with self.lock:
+			self.__check_rules = self.controller.load_rules(
+					core_obj=self,
+					rules_path=self.__check_file,
+					object_info=Enumeration(
+						home=self.__homeDirectory,
+						# FIXME: see http://dev.licorn.org/ticket/534
+						user_uid=-1, user_gid=-1),
+					vars_to_replace=(
+						('@GROUP', self.__name),
+						('@GW', 'w'
+							if self.__permissive else '-'))
+				)
+			return self.__check_rules
+	def _inotifier_add_watch(self, inotifier):
+		""" add a group watch. not used directly by inotifier, but prefixed
+			with it because used in the context. """
+
+		# this hint is not needed, we don't modify the check configuration file
+		# from inside here, nor the controller.
+		#self.check_file_hint =
+
+		self.__load_check_rules()
+
+		inotifier.watch_conf(self.__check_file, self, self.__load_check_rules)
+
+		for directory in fsapi.minifind(self.__homeDirectory):
+			self.__watch_dir(directory)
+
+	def _cli_get(self, long_output=False, no_colors=False):
+
+		try:
+			return self.__cg_precalc_full
+		except AttributeError:
+
+			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
+			label_width    = Group._cw_name
+			gid_label_rest = 5 - len(str(self.__gidNumber))
+
+			accountdata = [ '{group_name}: ✎{gid} {backend}	'
+								'{descr}'.format(
+								group_name=stylize(
+									Group._permissive_colors[self.__permissive]
+										if self.is_standard
+										else (ST_COMMENT
+											if self.__is_privilege
+											else ST_NAME),
+									self.__name.rjust(label_width)),
+								#id_type=_(u'gid='),
+								gid='%s%s' % (
+									stylize(ST_UGID, self.__gidNumber),
+									' ' * gid_label_rest),
+								backend=stylize(ST_BACKEND, self.backend.name),
+								descr= stylize(ST_COMMENT, self.__description)
+									if self.__description != '' else '') ]
+
+			if long_output:
+				if hasattr(self, '__userPassword'):
+					accountdata.append(_(u'password:').rjust(label_width)
+								+ ' ' + self.__userPassword)
+
+				if self.is_standard:
+					accountdata.append(stylize(ST_EMPTY, _(u'skel:').rjust(label_width))
+							+ ' ' + self.__groupSkel)
+
+					if no_colors:
+						# if --no-colors is set, we have to display if the group
+						# is permissive or not in real words, else user don't get
+						# the information because normally it is encoded simply with
+						# colors..
+						if self.__is_permissive is None:
+							accountdata.append("UNKNOWN")
+						elif self.__is_permissive:
+							accountdata.append("permissive")
+						else:
+							accountdata.append("NOT permissive")
+
+				if len(self.__members) > 0:
+					accountdata.append('%s%s' % (
+						' ' * (label_width + 2),
+						', '.join((user()._cli_get_small()
+							for user in self.__members))))
+				else:
+					accountdata.append('%s%s' % (
+						' ' * (label_width + 2),
+						stylize(ST_EMPTY, _(u'— no member —'))))
+			else:
+				if self.__is_standard:
+
+					members = []
+					try:
+						members.extend([ (user.login, '%s%s' % (
+									stylize(ST_COMMENT, '✍'),
+									user._cli_get_small()))
+									for user in self.__responsible_group().members ])
+					except Exception, e:
+						logging.warning(_(u'Cannot collect responsibles '
+							'for group {0} (was: {1}).').format(self.name, e))
+
+					try:
+						members.extend([ (user.login, '%s%s' % (
+									stylize(ST_BAD, '×'),
+									user._cli_get_small()))
+									for user in self.__guest_group().members ])
+					except Exception, e:
+						logging.warning(_(u'Cannot collect guests '
+							'for group {0} (was: {1}).').format(self.name, e))
+
+					members.extend([ (user.login, user._cli_get_small())
+								for user in self.members if user ])
+
+					if len(members) > 0:
+						accountdata.append('%s%s' % (
+							' ' * (label_width + 2),
+							', '.join(user for login, user in sorted(members))))
+					else:
+						accountdata.append('%s%s' % (
+							' ' * (label_width + 2),
+							stylize(ST_EMPTY, _(u'— no member —'))))
+
+				elif self.__is_helper:
+					# resps and guest are combined with the std group, don't
+					# display them at all.
+					return ''
+				else:
+					if len(self.__members) > 0:
+						accountdata.append('%s%s' % (
+							' ' * (label_width + 2),
+							', '.join((user._cli_get_small()
+								for user in sorted(self.members,
+									key=attrgetter('login'))))))
+					else:
+						accountdata.append('%s%s' % (
+							' ' * (label_width + 2),
+							stylize(ST_EMPTY, _(u'— no member —'))))
+
+			self.__cg_precalc_full = '\n'.join(accountdata)
+			return self.__cg_precalc_full
+	def _cli_get_small(self):
+
+		try:
+			return self.__cg_precalc_small
+		except AttributeError:
+
+			is_priv = self.is_privilege
+
+			if self.__is_helper:
+				self.__cg_precalc_small = '%s%s(%s)' % (
+					stylize(ST_COMMENT, '✍') if self.is_responsible
+						else stylize(ST_BAD, '×'),
+					stylize(
+						Group._permissive_colors[self.standard_group.is_permissive],
+						self.standard_group.name),
+					stylize(ST_UGID, self.standard_group.gid))
+			else:
+				self.__cg_precalc_small = '%s(%s)' % (
+					stylize(Group._permissive_colors[self.__permissive]
+						if self.is_standard
+						else (ST_COMMENT if is_priv else ST_NAME)
+						, '%s%s' % ('⚑' if is_priv else '', self.__name)),
+					stylize(ST_UGID, self.__gidNumber))
+			return self.__cg_precalc_small
+	def to_XML(self, selected=None, long_output=False):
+		""" Export the groups list to XML. """
+
+		with self.lock:
+			return '''		<group>
+			<name>%s</name>
+			<gidNumber>%s</gidNumber>
+			<userPassword>%s</userPassword>
+			<description>%s</description>
+			<permissive>%s</permissive>
+			%s
+			<memberUid>%s</memberUid>
+			<backend>%s</backend>
+		</group>''' % (
+				self.__name,
+				self.__gidNumber,
+				self.__userPassword,
+				self.__description,
+				self.__permissive,
+				'' if self.__is_system
+					else '		<groupSkel>%s</groupSkel>\n' % self.__groupSkel,
+				','.join(x().login for x in self.__members),
+				self.backend.name
+				)
+	def _wmi_protected(self, complete=True):
+		""" return true if the current group must not be used/modified in WMI. """
+
+		# FIXME: isn't this meant to be exactly the opposite?
+		if complete:
+			return self.__is_system and not self.__is_helper
 		else:
-			# the copy operation is successfull, make it a real move.
-			LMC.backends[old_backend].delete_Group(group_name)
+			return self.__is_system and not self.__is_helper and not self.__is_privilege
 
-			logging.info(_(u'Moved group {0} from backend {1} to {2}.').format(
-				stylize(ST_NAME, group_name), stylize(ST_NAME, old_backend),
-				stylize(ST_NAME, new_backend)))
-			return True
-	def is_permissive(self, gid, name):
-		""" Return True if the shared dir of the group is permissive.
+class GroupsController(Singleton, CoreFSController):
+	""" Manages the groups and the associated shared data on a Linux system.
+	"""
 
-			This method MUST be called with the 2 arguments GID and name.
+	init_ok = False
+	load_ok = False
 
-			WARNING: don't use self.resolve_gid_or_name() here. This method is
-			used very early, from the GroupsController.__init__(), when groups
-			are in the process of beiing loaded. The resolve*() calls will fail.
+	#: used in RWI.
+	@property
+	def object_type_str(self):
+		return _(u'group')
+	@property
+	def object_id_str(self):
+		return _(u'GID')
+	@property
+	def sort_key(self):
+		""" The key (attribute or property) used to sort
+			User objects from RWI.select(). """
+		return 'name'
 
-			LOCKED because very important.
+	def __init__ (self, warnings=True):
 
-			gid and name are mandatory, this function won't resolve them.
+		assert ltrace('groups', '> GroupsController.__init__(%s)' %
+			GroupsController.init_ok)
+
+		if GroupsController.init_ok:
+			return
+
+		CoreFSController.__init__(self, 'groups')
+
+		GroupsController.init_ok = True
+		assert ltrace('groups', '< GroupsController.__init__(%s)' %
+			GroupsController.init_ok)
+	def by_name(self, name):
+		return Group.by_name[name]()
+	@property
+	def names(self):
+		return (name for name in Group.by_name)
+	def by_gid(self, gid):
+		# we need to be sure we get an int(), because the 'gid' comes from RWI
+		# and is often a string.
+		return self[int(gid)]
+	def load(self):
+		if GroupsController.load_ok:
+			return
+
+		assert ltrace('groups', '| load()')
+
+		# be sure our depency is OK.
+		LMC.users.load()
+
+		self.reload()
+
+		LMC.configuration.groups.hidden = self.get_hidden_state()
+		GroupsController.load_ok = True
+	def reload(self):
+		""" load or reload internal data structures from backends data. """
+
+		assert ltrace('groups', '| reload()')
+
+		# lock users too, because we feed the members cache inside.
+		with nested(self.lock, LMC.users.lock):
+			for backend in self.backends:
+				for gid, group in backend.load_Groups():
+					self[gid] = group
+
+			#print self.keys()
+			#print Group.by_name.keys()
+			#print self.values()
+			#print str(self[300])
+			#print Group.by_name['acl']
+			#print str(self.by_name('acl'))
+
+			self.__connect_groups()
+			self.__connect_users()
+	def reload_backend(self, backend):
+		""" reload only one backend contents (used from inotifier). """
+
+		assert ltrace('groups', '| reload_backend(%s)' % backend)
+
+		# lock users too, because we feed the members cache inside.
+		with nested(self.lock, LMC.users.lock):
+			self.update(backend.load_Groups())
+			self.__connect_groups()
+			self.__connect_users()
+	def get_hidden_state(self):
+		""" See if /home/groups is readable or not. """
+
+		try:
+			users_gid = self.name_to_gid(LMC.configuration.users.group)
+		except (AttributeError, KeyError):
+			# we got AttributeError because by_name() fails,
+			# because controller has not yet loaded any data. Get
+			# the needed information by another mean.
+			#
+			# FIXME: verify this is still needed.
+			import grp
+			users_gid = grp.getgrnam(
+						LMC.configuration.users.group).gr_gid
+		try:
+			for line in posix1e.ACL(file='%s/%s' % (
+								LMC.configuration.defaults.home_base_path,
+								LMC.configuration.groups.names.plural)):
+				if line.tag_type & posix1e.ACL_GROUP:
+						if line.qualifier == users_gid:
+							return not line.permset.read
+
+		except exceptions.DoesntExistException:
+			# the group "users" doesn't exist, or is not yet created.
+			return None
+		except (IOError, OSError), e:
+			if e.errno == 13:
+				LicornConfiguration.groups.hidden = None
+			elif e.errno != 2:
+				# 2 will be corrected in this function
+				raise e
+	def serialize(self, group=None):
+		""" Save internal data structure to backends. """
+
+		assert ltrace('groups', '> serialize(%s)' % group)
+
+		with self.lock:
+			if group:
+				group.serialize()
+
+			else:
+				for backend in self.backends:
+					backend.save_Groups(self)
+
+		assert ltrace('groups', '< serialize()')
+	def select(self, filter_string):
+		""" Filter group accounts on different criteria.
 		"""
 
-		with self.lock():
-			if self.is_system_gid(gid):
-				return None
+		filtered_groups = []
 
-			home = '%s/%s/%s' % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural,
-				name)
+		assert ltrace('groups', '> Select(%s)' % filter_string)
 
-			try:
-				# only check default ACLs, which is what we need for
-				# testing permissiveness.
-				for line in posix1e.ACL(filedef=home):
-					if line.tag_type & posix1e.ACL_GROUP:
-						if line.qualifier == gid:
-							return line.permset.write
-			except IOError, e:
-				if e.errno == 13:
-					raise exceptions.InsufficientPermissionsError(str(e))
-				elif e.errno == 2:
-					if self.warnings:
-						logging.warning('''Shared dir %s doesn't exist, please '''
-							'''run "licorn-check group --name %s" to fix.''' % (
-								stylize(ST_PATH, home),
-								stylize(ST_NAME, name)), once=True)
+		with self.lock:
+			if filters.NONE == filter_string:
+				filtered_groups = []
+
+			elif type(filter_string) == type([]):
+				filtered_groups = filter_string
+
+			elif filters.ALL == filter_string:
+				assert ltrace('groups', '> Select(ALL:%s/%s)' % (
+					filters.ALL, filter_string))
+
+				filtered_groups = self.values()
+
+			elif filters.STANDARD == filter_string:
+				assert ltrace('groups', '> Select(STD:%s/%s)' % (
+					filters.STD, filter_string))
+
+				filtered_groups.extend(group for group in self
+														if group.is_standard)
+
+			elif filters.EMPTY == filter_string:
+				assert ltrace('groups', '> Select(EMPTY:%s/%s)' % (
+					filters.EMPTY, filter_string))
+
+				filtered_groups.extend(group for group in self
+															if group.is_empty)
+
+			elif filters.SYSTEM & filter_string:
+
+				if filters.GUEST == filter_string:
+					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+						filters.GST, filter_string))
+
+					filtered_groups.extend(group for group in self
+															if group.is_guest)
+
+				elif filters.NOT_GUEST == filter_string:
+					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+						filters.NOT_GST, filter_string))
+
+					filtered_groups.extend(group for group in self
+													if not group.is_guest)
+
+				elif filters.SYSTEM_RESTRICTED == filter_string:
+					assert ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
+						filters.SYSTEM_RESTRICTED, filter_string))
+
+					filtered_groups.extend(group for group in self
+												if group.is_system_restricted)
+
+				elif filters.SYSTEM_UNRESTRICTED == filter_string:
+					assert ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
+						filters.SYSTEM_UNRESTRICTED, filter_string))
+
+					filtered_groups.extend(group for group in self
+										if group.is_system_unrestricted)
+
+				elif filters.RESPONSIBLE == filter_string:
+					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+						filters.RSP, filter_string))
+
+					filtered_groups.extend(group for group in self
+												if group.is_responsible)
+
+				elif filters.NOT_RESPONSIBLE == filter_string:
+					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+						filters.NOT_RSP, filter_string))
+
+					filtered_groups.extend(group for group in self
+												if not group.is_responsible)
+
+				elif filters.PRIVILEGED == filter_string:
+					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+						filters.PRI, filter_string))
+
+					filtered_groups.extend([ group for group in self
+													if group.is_privilege ])
+
+				elif filters.NOT_PRIVILEGED == filter_string:
+					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+						filters.NOT_PRI, filter_string))
+
+					filtered_groups.extend([ group for group in self
+												if not group.is_privilege ])
+
 				else:
-					raise exceptions.LicornIOError("IO error on %s (was: %s)." %
-						(home, e))
-			except ImportError, e:
-				logging.warning(logging.MODULE_POSIX1E_IMPORT_ERROR % e, once=True)
-				return None
+					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
+						filters.SYS, filter_string))
 
-	# LOCKS: subsequent methods are not locked because vey fast and read-only.
-	# We assume that calling methods already lock the data structures, to avoid
-	# many acquire()/release() cycles which could slow down the operations.
-	def confirm_gid(self, gid):
-		""" verify a GID or raise DoesntExists. """
-		try:
-			return self.groups[gid]['gidNumber']
-		except KeyError:
+					filtered_groups.extend([ group for group in self
+														if group.is_system ])
+
+			elif filters.NOT_SYSTEM == filter_string:
+				assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+					filters.NOT_SYS, filter_string))
+				filtered_groups.extend(group for group in self if group.is_standard)
+
+			else:
+				gid_re    = re.compile("^gid=(?P<gid>\d+)")
+				gid_match = gid_re.match(filter_string)
+				if gid_match is not None:
+					gid = int(gid_match.group('gid'))
+					if gid in self.iterkeys():
+						filtered_groups.append(gid)
+					else:
+						raise exceptions.DoesntExistException(_('GID %s does '
+							'not exist on the system.') % gid)
+
+		assert ltrace('groups', '< Select(%s)' % filtered_groups)
+		return filtered_groups
+	def dump(self):
+		""" Dump the internal data structures (debug and development use). """
+
+		with self.lock:
+
+			assert ltrace('groups', '| dump()')
+
+			data = ''
+
+			for group in sorted(self):
+				data += str(group)
+
+			return data
+	def to_XML(self, selected=None, long_output=False):
+		""" Export the groups list to XML. """
+
+		with self.lock:
+			if selected is None:
+				groups = self
+			else:
+				groups = selected
+
+			assert ltrace('groups', '| to_XML(%s)' % ','.join(
+											group.name for group in groups))
+
+		return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+				'<groups-list>\n'
+				'%s\n'
+				'</groups-list>\n') % '\n'.join(
+						group.to_XML() for group in groups)
+	def _validate_fields(self, name, description, groupSkel):
+		""" apply sane tests on AddGroup needed arguments. """
+		if name is None:
+			raise exceptions.BadArgumentError("You must specify a group name.")
+
+		if not hlstr.cregex['group_name'].match(name):
+			raise exceptions.BadArgumentError(_(u'Malformed group name "{0}", '
+				'must match /{1}/i.').format(stylize(ST_NAME, name),
+				stylize(ST_REGEX, hlstr.regex['group_name'])))
+
+		if len(name) > LMC.configuration.groups.name_maxlenght:
+			raise exceptions.LicornRuntimeError(_(u'Group name must be '
+				'smaller than {0} characters ("{1}" is {2} chars '
+				'long).').format(
+					stylize(ST_ATTR, LMC.configuration.groups.name_maxlenght),
+					stylize(ST_NAME, name), stylize(ST_BAD, len(name))))
+
+		if description is None:
+			description = _('Members of group “%s”') % name
+
+		elif not hlstr.cregex['description'].match(description):
+			raise exceptions.BadArgumentError(_(u'Malformed group description '
+				'"{0}", must match /{1}/i.').format(
+					stylize(ST_COMMENT, description),
+					stylize(ST_REGEX, hlstr.regex['description'])))
+
+		if groupSkel is None:
+			groupSkel = LMC.configuration.users.default_skel
+
+		elif groupSkel not in LMC.configuration.users.skels:
+			raise exceptions.BadArgumentError(_(u'Invalid skel {0}. Valid '
+				'skels are: {1}.').format(stylize(ST_BAD, skel),
+					', '.join(stylize(ST_PATH, x)
+						for x in LMC.configuration.users.skels)))
+
+		return name, description, groupSkel
+	def add_Group(self, name, desired_gid=None, system=False, permissive=False,
+											description=None, groupSkel=None,
+											backend=None, users_to_add=None,
+											batch=False, force=False,
+											async=True):
+		""" Add a Licorn group (the group + the guest/responsible group +
+			the shared dir + permissions (ACL)). """
+
+		assert ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, '''
+			'''descr=%s, skel=%s, perm=%s)''' % (name, system, desired_gid,
+				description, groupSkel, permissive))
+
+		with self.lock:
+			name, description, groupSkel = self._validate_fields(name,
+													description, groupSkel)
 			try:
-				# try to int(), in case this is a call from cli_select(), which
-				# gets only strings.
-				return self.groups[int(gid)]['gidNumber']
-			except ValueError:
-				raise exceptions.DoesntExistsException(
-					"GID %s doesn't exist" % gid)
-	def resolve_gid_or_name(self, gid, name):
-		""" method used every where to get gid / name of a group object to
-			do something onto. a non existing gid / name will raise an
-			exception from the gid_to_name() / name_to_gid() methods."""
+				not_already_exists = True
 
-		if name is None and gid is None:
-			raise exceptions.BadArgumentError(
-				"You must specify a name or GID to resolve from.")
+				group = self.__add_group(name,
+					manual_gid=desired_gid,
+					system=system,
+					description=description,
+					groupSkel=groupSkel,
+					permissive=permissive,
+					backend=backend, batch=batch, force=force)
 
-		assert ltrace('groups', '| resolve_gid_or_name(gid=%s, name=%s)' % (gid, name))
+			except exceptions.AlreadyExistsException, e:
+				# don't bork if the group already exists, just continue.
+				# some things could be missing (resp- , guest- , shared dir or
+				# ACLs), it is a good idea to verify everything is really OK by
+				# continuing the creation procedure.
+				logging.notice(str(e))
+				group = self.by_name(name)
+				not_already_exists = False
 
-		# we cannot just test "if gid:" because with root(0) this doesn't work.
-		if gid is not None:
-			name = self.gid_to_name(gid)
+		# LOCKS: can be released, because everything after now is FS operations,
+		# not needing the internal data structures. It can fail if someone
+		# delete a group during the CheckGroups() phase (a little later in this
+		# method), but this will be harmless.
+
+		if system:
+			if not_already_exists:
+
+				if group.is_helper:
+					log = logging.info
+				else:
+					log = logging.notice
+
+				log(_(u'Created system group {0} '
+					'(gid={1}).').format(stylize(ST_NAME, name),
+						stylize(ST_UGID, group.gid)))
+
+			if users_to_add:
+				group.add_Users(users_to_add)
+
+			# system groups don't have shared group dir nor resp-
+			# nor guest- nor special ACLs. We stop here.
+			assert ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (
+							group.name, group.gid))
+			return group
+
+		if async:
+			# do the check in the background.
+			self.licornd.service_enqueue(priorities.NORMAL, group.check, minimal=True,
+														batch=True, force=force)
 		else:
-			gid = self.name_to_gid(name)
-		return (gid, name)
-	def guess_identifier(self, value):
+			# do it now (used in WMI, to avoid crashing on the list if
+			# helper groups are not yet created; you know how fast the WMI is...)
+			group.check(minimal=True, batch=True, force=force)
+
+		if not_already_exists:
+
+			group._inotifier_add_watch(self.licornd)
+
+			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
+								stylize(ST_OK, _(u'permissive'))
+								if permissive else
+								stylize(ST_BAD, _(u'not permissive')),
+								stylize(ST_NAME, group.name),
+								stylize(ST_UGID, group.gid)))
+
+		if users_to_add:
+			group.add_Users(users_to_add)
+
+		assert ltrace('groups', '< AddGroup(%s): gid %d' % (
+									group.name, group.gid))
+
+		#TODO: remove / betterify this
+		#if not_already_exists:
+		#	self._inotifier_add_group_watch(gid)
+		return group
+	def __add_group(self, name, manual_gid=None, system=False, description=None,
+						groupSkel=None, permissive=None, backend=None,
+						batch=False, force=False):
+		""" Add a POSIX group, write the system data files.
+			Return the gid of the group created. """
+
+		# LOCKS: No need to use self.lock, already encapsulated in AddGroup().
+
+		assert ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
+			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
+				groupSkel)
+			)
+
+		# first verify if GID is not already taken.
+		if manual_gid in self.iterkeys():
+			raise exceptions.AlreadyExistsError(_(u'GID {0} is already taken '
+				'by group {1}. Please choose another one.').format(
+					stylize(ST_UGID, manual_gid),
+					stylize(ST_NAME, self[manual_gid].name)))
+
+		# Then verify if the name is not taken too.
+		try:
+			existing_group = self.by_name(name)
+
+			if manual_gid is None:
+				# automatic GID selection upon creation.
+				if system and existing_group.is_system \
+					or not system and existing_group.is_standard:
+					raise exceptions.AlreadyExistsException(_(u'The group %s '
+						'already exists.') % stylize(ST_NAME, name))
+				else:
+					raise exceptions.AlreadyExistsError(_(u'The group %s '
+						'already exists but has not the same type. Please '
+						'choose another name for your group.') %
+							stylize(ST_NAME, name))
+			else:
+				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
+
+				# user has manually specified a GID to affect upon creation.
+				if system and existing_group.is_system:
+					if existing_group.gid == manual_gid:
+						raise exceptions.AlreadyExistsException(_(u'The group '
+							'%s already exists.') % stylize(ST_NAME, name))
+					else:
+						raise exceptions.AlreadyExistsError(_(u'The group %s '
+							'already exists with a different GID. Please '
+							'check this is what you want, and take a decision.')
+							% stylize(ST_NAME, name))
+				else:
+					raise exceptions.AlreadyExistsError(_(u'The group {0} '
+						'already exists but has not the same type. Please '
+						'choose another name for your group.').format(
+							stylize(ST_NAME, name)))
+		except KeyError:
+			# name doesn't exist, path is clear.
+			pass
+
+		if (LMC.configuration.distro in (distros.UBUNTU, distros.LICORN)
+			and LMC.configuration.distro_version < 9.04) or (
+			LMC.configuration.distro == distros.DEBIAN and
+			LMC.configuration.distro_version < 4.0):
+			# Due to a bug of adduser perl script, we must check that there is
+			# no user which has 'name' as login. For details, see
+			# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
+			if LMC.users.login_cache.has_key(name) and not force:
+				raise exceptions.UpstreamBugException(_(u'A user account called '
+					'%s already exists, this could trigger a bug in the '
+					'Debian/Ubuntu adduser code when deleting the user. '
+					'Please choose another name for your group, or use the '
+					'--force argument if you really want to add this group '
+					'on the system.') % stylize(ST_NAME, name))
+
+		# Find a new GID
+		if manual_gid is None:
+			if system:
+				gid = pyutils.next_free(self.keys(),
+					LMC.configuration.groups.system_gid_min,
+					LMC.configuration.groups.system_gid_max)
+			else:
+				gid = pyutils.next_free(self.keys(),
+					LMC.configuration.groups.gid_min,
+					LMC.configuration.groups.gid_max)
+
+			logging.progress(_(u'Autogenerated GID for group {0}: {1}.').format(
+				stylize(ST_LOGIN, name), stylize(ST_UGID, gid)))
+		else:
+			if (system and Group.is_system_gid(manual_gid)) or (
+						not system and Group.is_standard_gid(manual_gid)):
+				gid = manual_gid
+			else:
+				raise exceptions.BadArgumentError(_(u'GID out of range '
+					'for the kind of group you specified. System GIDs '
+					'must be between {0} and {1}, standard GIDs must be '
+					'between {2} and {3}.').format(
+						LMC.configuration.groups.system_gid_min,
+						LMC.configuration.groups.system_gid_max,
+						LMC.configuration.groups.gid_min,
+						LMC.configuration.groups.gid_max)
+					)
+
+		self.run_hooks('group_pre_add', gid=manual_gid,
+										name=name,
+										system=system,
+										description=description)
+
+		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
+			gid, name))
+
+		group = self[gid] = Group(gid, name,
+						description=description,
+						groupSkel=None
+							if system else groupSkel,
+						permissive=permissive,
+						userPassword='x',
+						backend=self._prefered_backend
+							if backend is None else backend)
+
+		# calling this *before* backend serialization ensures that:
+		#	- helper groups will be created and serialized *before*
+		#	- and thus, internal double-links are OK before we call the
+		#		extensions post-add hooks.
+		group.check_associated_groups(batch=True)
+
+		# do not skip the write/save part, else future actions could fail. E.g.
+		# when creating a group, skipping save() on rsp/gst group creation will
+		# result in unaplicable ACLs because of (yet) non-existing groups in the
+		# system files (or backends).
+		# DO NOT UNCOMMENT: -- if not batch:
+		group.serialize(backend_actions.CREATE)
+
+		self.run_hooks('group_post_add', group)
+
+		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
+
+		return group
+	def del_Group(self, group, del_users=False, no_archive=False, force=False,
+										check_profiles=True, batch=False):
+		""" Delete a Licorn® group. """
+
+		assert ltrace('groups', '| del_Group(%s,%s)' % (group.name, group.gid))
+
+		# lock everything we *eventually* need, to be sure there are no errors.
+		with nested(self.lock, LMC.users.lock, LMC.privileges.lock):
+
+			if check_profiles and group.gid in LMC.profiles.iterkeys():
+				raise exceptions.BadArgumentError(_(u'Cannot delete '
+					'group {0}, currently primary group of profile '
+					'{1}. Please delete the profile instead, and the '
+					'group will be deleted at the same time.').format(
+					stylize(ST_NAME, group.name),
+					stylize(ST_NAME, LMC.profiles.group_to_name(group.name))
+					))
+
+			prim_memb = group.primary_members
+
+			if prim_memb != [] and not del_users:
+				raise exceptions.BadArgumentError(_(u'The group still '
+					'has members. You must delete them first, or use '
+					' the --del-users argument. WARNING: this is '
+					'usually a bad idea; use with caution.'))
+
+			if del_users:
+				for user in prim_memb:
+					LMC.users.del_User(user, no_archive, batch)
+
+			if group.is_system:
+
+				if group.is_helper and group.standard_group is not None:
+					raise exceptions.BadArgumentError(_(u'Cannot delete a '
+						'helper group. Please delete the standard associated '
+						'group %s instead, and this group will be deleted in '
+						'the same time.') % stylize(ST_NAME,
+						group.standard_group.name))
+
+				elif group.is_system_restricted and not force:
+					raise exceptions.BadArgumentError(_(u'Cannot delete '
+						'restricted system group %s without the --force '
+						'argument, this is too dangerous.') %
+							stylize(ST_NAME, group.name))
+
+				# wipe the group from the privileges if present there.
+				if group.is_privilege:
+					LMC.privileges.delete((group, ))
+
+				# wipe cross-references to profiles where the group is recorded.
+				for profile in group.profiles:
+					# the profile.del_Groups() will call self.unlink_Profile()
+					profile.del_Groups([ group ])
+
+				# NOTE: no need to wipe cross-references in auxilliary members,
+				# this is done in the Group.__del__ method.
+
+				# a system group has no data on disk (no shared directory), just
+				# delete its internal data and exit.
+				self.__delete_group(group)
+
+				return
+
+			# remove the inotifier watch before deleting the group, else
+			# the call will fail, and before archiving group shared
+			# data, else it will leave ghost notifies in our gamin
+			# daemon, which doesn't need that.
+			group._inotifier_del_watch(self.licornd)
+
+			# For a standard group, there are a few steps more :
+			# 	- delete the responsible and guest groups (if exists),
+			#	- then delete the symlinks and the group (if exists),
+			#	- then the shared data.
+			# For responsible and guests symlinks, don't do anything : all symlinks
+			# point to <group_name>, not rsp-* / gst-*. No need to duplicate the
+			# work.
+			if group.responsible_group is not None:
+				self.__delete_group(group.responsible_group)
+			if group.guest_group is not None:
+				self.__delete_group(group.guest_group)
+
+			# delete all symlinks in other members homes.
+			group.check_symlinks(delete=True, batch=True)
+
+			# keep the home and name for later archiving or deletion
+			home = group.homeDirectory
+			name = group.name
+
+			# finally, delete the group.
+			self.__delete_group(group)
+
+		# LOCKS: from here, everything is deleted in internal structures, we
+		# don't need the locks anymore. The inotifier and the archiving parts
+		# can be very long, releasing the locks is good idea.
+
+		# the group information has been wiped out, remove or archive the shared
+		# directory. If anything fails now, this is not a real problem, because
+		# the system configuration data is safe. At worst, there is an orphaned
+		# directory remaining in the arbo, which is harmless.
+		if no_archive:
+			self.licornd.service_enqueue(priorities.LOW, fsapi.remove_directory, home)
+		else:
+			self.licornd.service_enqueue(priorities.LOW, fsapi.archive_directory, home, name)
+	def __delete_group(self, group):
+		""" Delete a POSIX group."""
+
+		# LOCKS: this method is never called directly, and must always be
+		# encapsulated in another, which will acquire self.lock. This is the
+		# case in DeleteGroup().
+
+		assert ltrace('groups', '> __delete_group(%s)' % group.name)
+
+		# keep informations for post-deletion hook
+		backend = group.backend
+		system  = group.is_system
+		gid     = group.gidNumber
+		name    = group.name
+
+		self.run_hooks('group_pre_del', group)
+
+		del self[gid]
+
+		# FIXME: this is not very smart.
+		# NOTE: this must be done *after* having deleted the data from self,
+		# else mono-maniac backends (like shadow) don't see the change and
+		# save everything, including the group we want to delete.
+		group.backend.delete_Group(group)
+
+		if group.is_helper:
+			log = logging.info
+		else:
+			log = logging.notice
+
+		# http://www.friday.com/bbum/2007/08/24/python-di/
+		# http://mindtrove.info/python-weak-references/
+
+		del group
+
+		self.run_hooks('group_post_del', gid, name, system)
+
+		log(_(u'Deleted {0}group {1}.').format(
+			_(u'system ') if system else '', stylize(ST_NAME, name)))
+
+		assert ltrace('groups', '< __delete_group(%s)' % name)
+	def check_groups(self, groups_to_check=None, minimal=True, force=False,
+											batch=False, auto_answer=None):
+		""" Check a list of groups. All other parameters are forwarded to
+			:meth:`Group.check` without any modification and are not used here.
+
+			:param groups_to_check: a list of :class:`Group` objects.
+		"""
+
+		assert ltrace('groups', '| check_groups(%s, minimal=%s, force=%s,'
+			'batch=%s, )' %	(', '.join(groups_to_check), minimal, force, batch))
+
+		if groups_to_check is None:
+			# we have to duplicate the values, in case the check adds/remove
+			# groups. Else, this will raise a RuntimeError.
+			groups_to_check = self.values()
+
+		with self.lock:
+			for group in groups_to_check:
+				group.check(minimal, force, batch, auto_answer)
+
+			del groups_to_check
+			self.licornd.clean_objects()
+	def __connect_groups(self):
+		""" Iterate all groups and connect standard/guest/responsible if they
+			all exists, else print warnings about checks needing to be made.
+		"""
+
+		# we get a copy of groups list, whose size will decrease
+		# while we connect them.
+		stds    = self.select(filters.STD)
+		resps   = self.select(filters.RESPONSIBLE)
+		guests  = self.select(filters.GUEST)
+
+		connected = 0
+
+		for group in stds:
+			connected1 = False
+			connected2 = False
+
+			gfound=None
+			for guest in guests:
+					if guest.name.endswith(group.name):
+						guest.standard_group = group
+						group.guest_group = guest
+						connected1 = True
+						gfound = guest
+						break
+
+			if gfound != None:
+				guests.remove(guest)
+
+			rfound=None
+			for resp in resps:
+					if resp.name.endswith(group.name):
+						resp.standard_group = group
+						group.responsible_group = resp
+						connected2 = True
+						rfound = resp
+
+						# make the triangle complete; guests are
+						# already connected, this should not fail;
+						# except for missing guests.
+						if group.guest_group:
+							group.guest_group.responsible_group = resp
+							resp.guest_group = group.guest_group
+
+						break
+
+			if rfound != None:
+				resps.remove(resp)
+
+			if connected1 and connected2:
+				connected += 1
+
+		if connected != len(stds):
+			logging.warning(_(u'%s: inconsistency detected. '
+				'Automatic check requested in the background.') %
+					stylize(ST_NAME, self.name))
+			self.licornd.service_enqueue(priorities.HIGH,
+						self.check_groups, batch=True, job_delay=5.0)
+
+		if resps != [] or guests != []:
+			logging.warning(_(u'%s: dangling helper group(s) detected. '
+				'Automatic removal requested in the background.') %
+					stylize(ST_NAME, self.name))
+
+			def remove_superfluous_groups(groups):
+				""" Remove superflous guests and resps groups. """
+				for group in groups:
+					self.del_Group(group, force=True, batch=True)
+
+			self.licornd.service_enqueue(priorities.LOW,
+											remove_superfluous_groups,
+											resps + guests, job_delay=3.0)
+
+		del stds, resps, guests
+	def __connect_users(self):
+		""" Iterate all users and connect their primary group to them, to speed
+			up future lookups.
+		"""
+
+		# update the reverse mapping users -> groups to avoid brute
+		# loops when searching by users instead of groups.
+		for group in self:
+			group._setup_initial_links()
+
+		missing_gids = [ user for user in LMC.users
+							if user.primaryGroup is None ]
+
+		if len(missing_gids) > 0:
+			logging.warning(_(u'{0}: primary group is missing for '
+				'user(s) {1}. This is harmless, but should be '
+				'corrected manually by re-creating groups with '
+				'fixed GIDs, or changing these users GIDs to other '
+				'values.').format(self.name, ', '.join(
+					( _(u'{0}(gid={1})').format(
+						stylize(ST_LOGIN, user.login),
+						stylize(ST_UGID, user.gid))
+					for user in missing_gids))))
+
+		del missing_gids
+	def guess_one(self, value):
 		""" Try to guess everything of a group from a
 			single and unknonw-typed info. """
 		try:
-			gid = int(value)
-			self.gid_to_name(gid)
-			assert ltrace('groups', '| guess_identifier: int(%s) -> %s' % (
-				value, gid))
-		except ValueError:
-			gid = self.name_to_gid(value)
-			assert ltrace('groups', '| guess_identifier: name_to_gid(%s) -> %s'
-				% (value, gid))
+			group = self.by_gid(int(value))
 
-		return gid
-	def guess_identifiers(self, value_list):
-		""" return a list of valid and existing GIDs, given a list of 'things'
+		except (TypeError, ValueError):
+				group = self.by_name(value)
+
+		return group
+	def guess_list(self, value_list):
+		""" yield valid groups, given a list of 'things'
 		 to validate existence of (can be GIDs or names). """
-		valid_ids=set()
+		groups = set()
+
 		for value in value_list:
 			try:
-				valid_ids.add(self.guess_identifier(value))
-			except exceptions.DoesntExistsException:
+				group = self.guess_one(value)
+
+			except (KeyError, exceptions.DoesntExistException):
 				logging.info(_(u'Skipped non-existing group name or GID %s.') %
 					stylize(ST_NAME,value))
-		return list(valid_ids)
-	def exists(self, name=None, gid=None):
+			else:
+				if group not in groups:
+					yield group
+					groups.add(group)
+
+		del groups
+	def exists(self, gid=None, name=None):
 		"""Return true if the group or gid exists on the system. """
 
 		assert ltrace('groups', '|  exists(name=%s, gid=%s)' % (name, gid))
 
 		if name:
-			return name in self.name_cache
+			#print name in Group.by_name
+			return name in Group.by_name
 
 		if gid:
-			return gid in self.groups
+			return gid in self.iterkeys()
 
 		raise exceptions.BadArgumentError(
 			"You must specify a GID or a name to test existence of.")
-	def primary_members(self, gid=None, name=None):
-		"""Get the list of users which are in group 'name'."""
-		ru = []
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		for u in LMC.users.keys():
-			if LMC.users[u]['gidNumber'] == gid:
-				ru.append(LMC.users[u]['login'])
-		return ru
-	def auxilliary_members(self, gid=None, name=None):
-		""" Return all members of a group, which are not members of this group
-			in their primary group."""
-
-		# TODO: really verify, for each user, that their member ship is not
-		# duplicated between primary and auxilliary groups.
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		return self.groups[gid]['memberUid']
-	def all_members(self, gid=None, name=None):
-		"""Return all members of a given group name."""
-
-		gid, name = self.resolve_gid_or_name(gid, name)
-
-		member_list = self.primary_members(gid=gid)
-		member_list.extend(self.auxilliary_members(gid=gid))
-		return member_list
 	def gid_to_name(self, gid):
 		""" Return the group name for a given GID."""
 		try:
-			return self.groups[gid]['name']
+			return self[gid].name
 		except KeyError:
-			raise exceptions.DoesntExistsException(
+			raise exceptions.DoesntExistException(
 				"GID %s doesn't exist" % gid)
 	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
 		try:
 			assert ltrace('groups', '| name_to_gid(%s) -> %s' % (
-				name, self.name_cache[name]))
+				name, self.by_name(name).gidNumber))
 			# use the cache, Luke !
-			return self.name_cache[name]
+			return self.by_name(name).gidNumber
 		except KeyError:
-			raise exceptions.DoesntExistsException(
+			raise exceptions.DoesntExistException(
 				"Group %s doesn't exist" % name)
-	def is_system_gid(self, gid):
-		""" Return true if gid is system. """
-		return gid < LMC.configuration.groups.gid_min \
-			or gid > LMC.configuration.groups.gid_max
-	def is_standard_gid(self, gid):
-		""" Return true if gid is standard (not system). """
-		return gid >= LMC.configuration.groups.gid_min \
-			and gid <= LMC.configuration.groups.gid_max
-	def is_system_group(self, name):
-		""" Return true if group is system. """
-		try:
-			return self.is_system_gid(
-				self.name_to_gid(name))
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				"The group '%s' doesn't exist." % name)
-	def is_standard_group(self, name):
-		""" Return true if group is standard (not system). """
-		try:
-			return self.is_standard_gid(
-				self.name_to_gid(name))
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				"The group '%s' doesn't exist." % name)
-	def is_privilege(self, name=None, gid=None):
-		""" return True if a given GID or group name is recorded as a privilege,
-			else False, or raise an error if called without any argument."""
 
-		if name:
-			return name in LMC.privileges
-		if gid:
-			return self.groups[gid]['name'] in LMC.privileges
+	def _cli_get(self, selected=None, long_output=False, no_colors=False):
+		""" Export the groups list to human readable (= « get group ») form. """
 
-		raise exceptions.BadArgumentError(
-			"You must specify a GID or name to test as a privilege.")
-	def is_restricted_system_gid(self, gid):
-		""" Return true if gid is system, but outside the range of Licorn®
-			controlled GIDs."""
-		return gid < LMC.configuration.groups.system_gid_min \
-			or gid > LMC.configuration.groups.gid_max
-	def is_restricted_system_name(self, group_name):
-		""" return true if login is system, but outside the range of Licorn®
-			controlled UIDs. """
-		try:
-			return self.is_restricted_system_gid(
-				self.name_cache[group_name])
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				_(u'Group %s does not exist.') % stylize(ST_NAME, name))
-	def is_unrestricted_system_gid(self, gid):
-		""" Return true if gid is system, but outside the range of Licorn®
-			controlled GIDs."""
-		return gid > LMC.configuration.groups.system_gid_min \
-			and gid < LMC.configuration.groups.gid_max
-	def is_unrestricted_system_name(self, group_name):
-		""" return true if login is system, but outside the range of Licorn®
-			controlled UIDs. """
-		try:
-			return self.is_unrestricted_system_gid(
-				self.name_cache[group_name])
-		except KeyError:
-			raise exceptions.DoesntExistsException(
-				_(u'Group %s does not exist.') % stylize(ST_NAME, name))
-	def is_empty_gid(self, gid):
-		""" return True if GID is empty (has no members) """
-		return self.is_standard_gid(gid) \
-			and self.groups[gid]['memberUid'] == []
-	def is_empty_group(self, name):
-		""" return True if group is empty (has no members) """
-		return self.is_empty_gid(
-			self.name_to_gid(name))
-	def make_name(self, inputname=None):
-		""" Make a valid login from  user's firstname and lastname."""
+		with self.lock:
+			if selected is None:
+				groups = self.values()
+			else:
+				groups = selected
 
-		maxlenght = LMC.configuration.groups.name_maxlenght
-		groupname = inputname
+			# FIXME: forward long_output to _cli_get(), or remove it
+			if long_output:
+				return '%s\n' % '\n'.join((group._cli_get()
+								for group in sorted(groups, key=attrgetter('gid'))))
+			else:
+				return '%s\n' % '\n'.join((group._cli_get()
+								for group in sorted(groups, key=attrgetter('gid'))
+									if not group.is_helper))
 
-		groupname = hlstr.validate_name(groupname, maxlenght = maxlenght)
+	def _inotifier_install_watches(self, inotifier):
+		""" Install all initial inotifier watches, for all existing standard
+			groups. This method is meant to be called directly by the inotifier
+			thread, and rely on its methods. """
 
-		if not hlstr.cregex['group_name'].match(groupname):
-			raise exceptions.BadArgumentError(
-				'''Can't build a valid UNIX group name (got %s, '''
-				'''which doesn't verify %s) with the string you '''
-				'''provided "%s".''' % (
-					groupname, hlstr.regex['group_name'], inputname) )
-
-		# TODO: verify if the group doesn't already exist.
-		#while potential in UsersController.users:
-		return groupname
-	def _wmi_protected_group(self, name, complete=True):
-		if complete:
-			return self.is_system_group(name) and not (
-				name.startswith(LMC.configuration.groups.resp_prefix)
-				or name.startswith(LMC.configuration.groups.guest_prefix))
-		else:
-			return self.is_system_group(name) and not (
-				name.startswith(LMC.configuration.groups.resp_prefix)
-				or name.startswith(LMC.configuration.groups.guest_prefix)
-				) and not self.is_privilege(name)
+		for group in self.select(filters.STD):
+			group._inotifier_add_watch(inotifier)

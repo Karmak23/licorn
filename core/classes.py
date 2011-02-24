@@ -12,24 +12,26 @@ Basic objects used in all core controllers, backends, plugins.
 
 """
 
-import Pyro.core, re, glob, os,posix1e
+import Pyro.core, re, glob, os, posix1e, weakref
+
 from threading import RLock, current_thread
 from traceback import print_exc
+
 from licorn.foundations           import hlstr, exceptions, logging, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Enumeration, FsapiObject, \
-											NamedObject, MixedDictObject, \
-											ReverseMappingDict, \
-											pyro_protected_attrs, \
-											LicornConfigObject
-
+										NamedObject, MixedDictObject, \
+										pyro_protected_attrs, \
+										LicornConfigObject
 from licorn.core   import LMC
 from licorn.daemon import roles
 
 class LockedController(MixedDictObject, Pyro.core.ObjBase):
-	""" Thread-safe object, protected by a global :class:`~threading.RLock`. This
-		doesn't mean its internal unit-object are not locked or lockable.
+	""" Thread-safe object, protected by a global :class:`~threading.RLock`,
+		with a :attr:`licornd` property giving access to the Licorn® daemon
+		(to benefit from the service* facility).
+
 		The :meth:`__getitem__`, :meth:`__setitem__`, and :meth:`__delitem__`
 		methods automatically aquire and release the global  :attr:`lock`.
 
@@ -45,61 +47,58 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	_licorn_protected_attrs = (
 			MixedDictObject._licorn_protected_attrs
 			+ pyro_protected_attrs
-			+ ['warnings']
+			+ ['lock']
 		)
+
+	@property
+	def licornd(self):
+		return self.__licornd
+
 	def __init__(self, name, warnings=True):
 		MixedDictObject.__init__(self, name)
 		Pyro.core.ObjBase.__init__(self)
 		assert ltrace('objects', '| LockedController.__init__(%s, %s)' % (
-			name, warnings))
-
-		self.warnings = warnings
+															name, warnings))
+		self.__warnings = warnings
+		self.__licornd  = LMC.licornd
 
 		# Create lock holder objects for the current LockedController
 		# and all CoreUnitObjects stored inside us. The giant_lock is hidden,
 		# in case we iter*() the master lock object, for it to return only the
 		# UnitObject locks.
-		lock_manager = MixedDictObject(name + '_lock')
-		lock_manager._giant_lock = RLock()
-		setattr(LMC.locks, self.name, lock_manager)
+		self.lock = RLock()
 	def __getitem__(self, key):
 		""" From :class:`LockedController`: this is a classic
 			:meth:`__getitem__` method, made thread-safe by encapsulating it
 			with the Controller's global :class:`~threading.RLock`. """
-		with self.lock():
+		with self.lock:
 			return MixedDictObject.__getitem__(self, key)
 	def __setitem__(self, key, value):
 		""" the classic :meth:`__setitem__` method, encapsulated withn the
 			controller's global :class:`~threading.RLock` to be thread-safe. """
-		with self.lock():
+		with self.lock:
 			MixedDictObject.__setitem__(self, key, value)
 	def __delitem__(self, key):
 		""" Delete data inside us, protected with our lock. """
-		with self.lock():
+		with self.lock:
 			MixedDictObject.__delitem__(self, key)
 	def acquire(self):
 		""" acquire the controller global lock. """
 		assert ltrace('thread', '%s: acquiring %s %s.' % (
-			current_thread().name, self.name, self.lock()))
-		self.lock().acquire()
-	def lock(self):
-		""" Return the controller global :class:`~threading.RLock`. This is a method,
-			not an attribute because the lock must be looked up: it is not
-			stored inside the controller but in the :class:`LockManager`.
-		"""
-		return getattr(getattr(LMC.locks, self.name), '_giant_lock')
+			current_thread().name, self.name, self.lock))
+		return self.lock.acquire()
 	def release(self):
 		""" release the controller global lock. """
 		assert ltrace('thread', '%s: releasing %s %s.' % (
-			current_thread().name, self.name, self.lock()))
-		self.lock().release()
+			current_thread().name, self.name, self.lock))
+		return self.lock.release()
 	def is_locked(self):
 		""" Return True if current controller lock is acquired, else False.
 
 			.. warning:: calling this :meth:`is_locked` method costs a few CPU
 				cycles, because of the object lookup (see note above). Try to
 				avoid using it as much as possible. """
-		the_lock = self.lock()
+		the_lock = self.lock
 		if the_lock.acquire(blocking=False):
 			the_lock.release()
 			return False
@@ -129,7 +128,7 @@ class CoreController(LockedController):
 			+ [ 'backends', 'extensions' ]
 		)
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
-		LockedController.__init__(self, name=name, warnings=warnings)
+		LockedController.__init__(self, name, warnings=warnings)
 
 		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
@@ -141,20 +140,20 @@ class CoreController(LockedController):
 		#: The mapping construct permits having different mapping names instead
 		#: of fixed ones (e.g. "login" for users, "name" for groups, "hostname"
 		#: for machines...).
-		self._reverse_mappings = MixedDictObject(
-				self.name + '_reverse_mappings')
-		for mapping_name in reverse_mappings:
-			mapping = ReverseMappingDict()
-			self.__setattr__('by_' + mapping_name, mapping)
-			self._reverse_mappings[mapping_name] = mapping
+		#self._reverse_mappings = MixedDictObject(
+		#		self.name + '_reverse_mappings')
+		#for mapping_name in reverse_mappings:
+		#	mapping = {}
+		#	self.__setattr__('by_' + mapping_name, mapping)
+		#	self._reverse_mappings[mapping_name] = mapping
 
 		#: prefixed with '_', prefered backend attributes are automatically
 		#: protected and stored out of the dict() part of self, thanks to
 		#: MixedDictObject.
-		self._prefered_backend_name = None
-		self._prefered_backend_prio = -1
+		self._prefered_backend = None
 
 		self.backends = LMC.backends.find_compatibles(self)
+
 		self.find_prefered_backend()
 
 		# on client first pass, extensions are not yet loaded.
@@ -194,94 +193,18 @@ class CoreController(LockedController):
 		assert ltrace(self.name, '| load_extensions()')
 		for ext in self.extensions:
 			getattr(ext, self.name + '_load')()
-	def __setitem__(self, key, value):
-		""" Add a new element inside us and update all reverse mappings. """
-		assert ltrace(self.name, '| CoreController.__setitem__(%s, %s)' % (
-			key, repr(value)))
-		with self.lock():
-			LockedController.__setitem__(self, key, value)
-			for mapping_name, mapping_dict in self._reverse_mappings.items():
-				assert ltrace(self.name,
-					'| CoreController.__setitem__(reverse %s for %s)' % (
-						mapping_name, getattr(value, mapping_name)))
-				try:
-					mapping_dict[getattr(value, mapping_name)] = value
-				except TypeError:
-					# probably 'unhashable type: 'list' TypeError'. Try to index
-					# every entry (and pray for them to be globally unique...).
-					for key in getattr(value, mapping_name):
-						mapping_dict[key] = value
-	def __delitem__(self, key):
-		""" Delete data inside us, but remove reverse mappings first. """
-		with self.lock():
-			for mapping_name, mapping_dict in self._reverse_mappings.items():
-				del mapping_dict[getattr(self[key], mapping_name)]
-			LockedController.__delitem__(self, key)
-	def exists(self, oid=None, **kwargs):
-		""" Return True if a given :obj:`oid` exists as a primary key of a
-			stored :class:`CoreUnitObject`, or if one of the :obj:`kwarg`
-			keys exists as one of our reverse mappings keys pointing to an
-			existing object.
-
-			:param oid: an :class:`integer` (Object ID)
-			:param kwargs: any positional argument refering to an existing
-							reverse mapping in the current controller. For
-							example, in
-							:class:`~licorn.core.users.UsersController`, we can
-							call :meth:`exists` with argument ``login='olive'``
-							to find if a :class:`~licorn.core.users.User` whose
-							`login` is `olive` exists or not.
-			:returns: boolean ``True`` or ``False``
-			:raise exceptions.BadArgumentError: if both :obj:`oid` and
-												:obj:`kwargs` are empty,
-												``None`` or ``False``.
-		"""
-		if oid:
-			return oid in self
-		if kwargs:
-			for mapping_name, value in kwargs.items():
-				if value in self._reverse_mappings[mapping_name]:
-					return True
-			return False
-		raise exceptions.BadArgumentError(
-			"You must specify an ID or a name to test existence of.")
-	def guess_identifier(self, value):
-		""" Try to guess a real ID of one of our :class:`CoreUnitObject`, from
-			an unknown-typed information given as argument.
-
-			:param value: can be an ID, a name, whatever reverse mapping key.
-			"""
-		if value in self:
-			return value
-		for mapping in self._reverse_mappings:
-			try:
-				return mapping[value]._oid
-			except KeyError:
-				continue
-		raise exceptions.DoesntExistsException
-	def guess_identifiers(self, value_list):
-		""" Try to guess the type of any identifier given, find it in our
-			objects IDs or reverse mappings, and return the ID (numeric) of the
-			object found. """
-		valid_ids=set()
-		for value in value_list:
-			try:
-				valid_ids.add(self.guess_identifier(value))
-			except exceptions.DoesntExistsException:
-				logging.notice("Skipped non-existing object / ID '%s'." %
-					stylize(ST_NAME, value))
-		return valid_ids
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 
 		assert ltrace(self.name, '| dump()')
 
-		with self.lock():
+		with self.lock:
 
-			dicts_to_dump = [ (self.name, self) ] + [
-				(mapping_name, mapping)
-					for mapping_name, mapping
-						in self._reverse_mappings.items() ]
+			dicts_to_dump = [ (self.name, self) ]
+				#+ [
+				#(mapping_name, mapping)
+				#	for mapping_name, mapping
+				#		in self._reverse_mappings.items() ]
 
 			return '\n'.join([
 				'%s:\n%s' % (
@@ -303,37 +226,48 @@ class CoreController(LockedController):
 				controller.
 			"""
 
-		assert ltrace(self.name, '> find_prefered_backend(%s)' %
-			self.backends)
+		assert ltrace(self.name, '> find_prefered_backend(current=%s, mine=%s, enabled=%s, available=%s, mine_is_ok:by_key=%s,by_value=%s)' % (
+				self._prefered_backend.name if self._prefered_backend != None else 'none',
+				', '.join(backend.name for backend in self.backends),
+				', '.join(backend.name for backend in LMC.backends.itervalues()),
+				', '.join(backend.name for backend in LMC.backends._available_modules),
+				(self._prefered_backend.name if self._prefered_backend != None else None) in LMC.backends.iterkeys(),
+				self._prefered_backend in LMC.backends.itervalues()))
+
+		if self.backends == []:
+			assert ltrace(self.name, '  no backends for %s, aborting prefered search.' % self.name)
+			return
 
 		changed = False
 
 		# remove an old backend name if the corresponding just got disabled.
 		# else we don't change if the old had a better priority than the
 		# remaining ones.
-		if self._prefered_backend_name not in LMC.backends.keys():
-			self._prefered_backend_name = None
-			self._prefered_backend_prio = -1
+		#
+		# NOTE: we can't use "and self._prefered_backend not in LMC.backends.itervalues()",
+		# for an obscure reason, it doesn't work as expected, even if the backend
+		# seems not to be in the current values.
+		if self._prefered_backend != None \
+			and self._prefered_backend.name not in LMC.backends.iterkeys():
+			#print '>> remove old backend', self._prefered_backend.name if self._prefered_backend != None else 'None'
+			self._prefered_backend = None
+
+		# start with nothing to be sure
+		#self._prefered_backend = None
 
 		for backend in self.backends:
-			if self._prefered_backend_name is None:
+			if self._prefered_backend is None:
 				assert ltrace(self.name, ' found first prefered_backend(%s)' %
 					backend.name)
-				self._prefered_backend_name = backend.name
+				self._prefered_backend = backend
 				changed = True
-				if hasattr(backend, 'priority'):
-					self._prefered_backend_prio = backend.priority
-				else:
-					# my backends don't handle priory, I stop when I found
-					# the first.
-					break
+
 			else:
 				if hasattr(backend, 'priority'):
-					if backend.priority > self._prefered_backend_prio:
+					if backend.priority > self._prefered_backend.priority:
 						assert ltrace(self.name,
 							' found better prefered_backend(%s)' % backend.name)
-						self._prefered_backend_name = backend.name
-						self._prefered_backend_prio = backend.priority
+						self._prefered_backend = backend
 						changed = True
 					else:
 						assert ltrace(self.name,
@@ -346,9 +280,9 @@ class CoreController(LockedController):
 							backend.name)
 
 		assert ltrace(self.name, '< find_prefered_backend(%s, %s)' % (
-			self._prefered_backend_name, changed))
+			self._prefered_backend.name, changed))
 		return changed
-	def run_hooks(self, hook, **kwargs):
+	def run_hooks(self, hook, *args, **kwargs):
 		""" Transitionnal method to run callbacks at some extend. As of now, we
 			iterate extensions and run the specified callbacks.
 
@@ -365,7 +299,7 @@ class CoreController(LockedController):
 
 		for ext in self.extensions:
 			if hasattr(ext, meth_name):
-				getattr(ext, meth_name)(**kwargs)
+				getattr(ext, meth_name)(*args, **kwargs)
 class CoreFSController(CoreController):
 	""" FIXME: TO BE DOCUMENTED
 
@@ -374,7 +308,7 @@ class CoreFSController(CoreController):
 	"""
 	_licorn_protected_attrs = (
 		CoreController._licorn_protected_attrs
-		+ [  'system_special_dirs_templates', 'system_rules_not_loaded' ]
+		+ [  'check_templates' ]
 	)
 	class ACLRule(Enumeration):
 		""" Class representing a custom rule.
@@ -430,9 +364,9 @@ class CoreFSController(CoreController):
 				except ValueError:
 					acls.append(acl_tmp)
 			return ','.join(acls)
-		def __init__(self, controller_name, file_name=None, rule_text=None, line_no=0,
+		def __init__(self, controller, file_name=None, rule_text=None, line_no=0,
 			base_dir=None, object_id=None, system_wide=True):
-			name = self.generate_name(file_name, rule_text, system_wide,controller_name)
+			name = self.generate_name(file_name, rule_text, system_wide, controller.name)
 			Enumeration.__init__(self, name)
 			assert ltrace('checks', '| ACLRule.__init__(%s, %s)' % (
 				name, system_wide))
@@ -443,7 +377,7 @@ class CoreFSController(CoreController):
 			self.system_wide = system_wide
 			self.base_dir = base_dir
 			self.uid = object_id
-			self.controller_name = controller_name
+			self.controller = controller
 		def generate_name(self, file_name, rule_text, system_wide, name):
 			""" function that generate a name for a rule.
 				Rule name is a keyword used to list rule into lists
@@ -523,7 +457,7 @@ class CoreFSController(CoreController):
 							if must_resolve:
 								try:
 									id = resolve_method(splitted_acl[1])
-								except exceptions.DoesntExistsException, e:
+								except exceptions.DoesntExistException, e:
 									raise exceptions.LicornACLSyntaxException(
 										self.file_name,	self.line_no,
 										text=':'.join(splitted_acl),
@@ -581,7 +515,7 @@ class CoreFSController(CoreController):
 
 			# if the directory exists in the user directory
 			if not os.path.exists('%s/%s' % (self.base_dir, directory)):
-				raise exceptions.PathDoesntExistsException('''%s unexisting '''
+				raise exceptions.PathDoesntExistException('''%s unexisting '''
 					'''entry '%s' ''' %	(stylize(ST_BAD,"Ignoring"),
 					stylize(ST_NAME, directory)))
 
@@ -616,39 +550,46 @@ class CoreFSController(CoreController):
 				:vars_to_replace: list of tuple to be replaced in the dir_info.
 				"""
 
-			acl=self.acl
+			acl = self.acl
 
 			# if we are using a dir_info_base, we must be sure that permissions
 			# will be ok.
 			if dir_info_base is not None:
 				if dir_info_base.rule.acl in ('NOACL', 'POSIXONLY'):
 					# it is a NOACL perm on root_dir, the content could be
-					# either RESTRICT or NOACL or a POSIX1E perm, everything is possible
+					# either RESTRICT or NOACL or a POSIX1E perm,
+					# everything is possible.
 					pass
 				else:
 					if ':' in dir_info_base.rule.acl:
 						# if the root_dir is POSIX1E, either POSIX1E or RESTRICT
 						# are allowed for the content.
 						if acl in ('NOACL', 'POSIXONLY'):
-							raise exceptions.LicornSyntaxException(self.file_name,
+							raise exceptions.LicornSyntaxException(
+								self.file_name,
 								self.line_no, text=acl,
-								desired_syntax=" impossible to apply this perm")
-					elif dir_info_base.rule.acl in ('PRIVATE','RESTRICT','RESTRICTED'):
+								desired_syntax=_(u'Impossible to apply this '
+									'perm or ACL.'))
+					elif dir_info_base.rule.acl in (
+										'PRIVATE', 'RESTRICT', 'RESTRICTED'):
 						# if root_dir is RESTRICT, only RESTRICT could be set
 						if ':' in acl or acl in ('NOACL', 'POSIXONLY'):
-							raise exceptions.LicornSyntaxException(self.file_name,
+							raise exceptions.LicornSyntaxException(
+								self.file_name,
 								self.line_no, text=acl,
-								desired_syntax=" impossible to apply this perm")
+								desired_syntax=_(u'Impossible to apply this '
+									'perm or ACL.'))
 			if self.system_wide:
-				dir_path = '%%s%s' % "/" + self.dir if self.dir != '' else '%s'
-				uid = '%s'
-				gid = '%s'
+				dir_path = '%%s/%s' % self.dir if self.dir != '' else '%s'
+				uid      = '%s'
+				gid      = '%s'
 
 			else:
-				if self.dir in ("", "/"):
+				if self.dir in ('', '/'):
 					dir_path = '%s%s' % (object_info.home, self.dir)
 				else:
 					dir_path = '%s/%s' % (object_info.home, self.dir)
+
 				uid = object_info.user_uid
 				gid = object_info.user_gid
 
@@ -658,75 +599,86 @@ class CoreFSController(CoreController):
 										rule=self)
 			else:
 				# do not create a new dir_info, just modify the dir_info_base
-				dir_info = dir_info_base
-				dir_info.content_gid = gid
+				dir_info                = dir_info_base
+				dir_info.content_gid    = gid
 				dir_info.already_loaded = True
 
 			if acl.upper() in ('NOACL', 'POSIXONLY'):
+
 				if dir_info_base is None:
 					dir_info.root_dir_perm = 00755
+
 				dir_info.files_perm = 00644
 				dir_info.dirs_perm = 00755
 
 			elif acl.upper() in ('PRIVATE','RESTRICT','RESTRICTED'):
+
 				if dir_info_base is None:
 					dir_info.root_dir_perm = 00700
+
 				dir_info.files_perm = 00600
 				dir_info.dirs_perm = 00700
 
 			elif self.system_wide and ':' in acl:
+
 				if dir_info_base is None:
-					dir_info.root_gid = LMC.groups.name_to_gid(
-						LMC.configuration.acls.group)
+					dir_info.root_gid = LMC.groups.by_name(
+										LMC.configuration.acls.group).gidNumber
 					dir_info.root_dir_perm = acl
+
 				else:
-					dir_info.content_gid = LMC.groups.name_to_gid(
-						LMC.configuration.acls.group)
+					dir_info.content_gid = LMC.groups.by_name(
+											LMC.configuration.acls.group).gidNumber
 				dir_info.files_perm = acl
-				dir_info.dirs_perm = acl.replace('@UX','x').replace('@GX','x')
+				dir_info.dirs_perm  = acl.replace('@UX','x').replace('@GX','x')
 
 			elif not self.system_wide:
 				# 3rd case: user sets a custom ACL on dir / file.
 				# merge this custom ACL to the standard one (the
 				# user cannot restrict ACLs, just add).
 
-				if self.controller_name is "users":
+				if self.controller is LMC.users:
 					acl_base = "%s,g:%s:rw-" % (
-						LMC.configuration.acls.acl_base,
-						LMC.configuration.defaults.admin_group,
-						)
+								LMC.configuration.acls.acl_base,
+								LMC.configuration.defaults.admin_group,
+								)
 					file_acl_base = "%s,g:%s:rw-" % (
-						LMC.configuration.acls.file_acl_base,
-						LMC.configuration.defaults.admin_group)
+								LMC.configuration.acls.file_acl_base,
+								LMC.configuration.defaults.admin_group
+								)
 
-				elif self.controller_name is "groups":
-					acl_base = LMC.configuration.acls.group_acl_base
+				elif self.controller is LMC.groups:
+					acl_base      = LMC.configuration.acls.group_acl_base
 					file_acl_base = LMC.configuration.acls.group_file_acl_base
 
 
 				if dir_info_base is None:
-					dir_info.root_dir_perm = "%s,%s,%s" % \
-						(acl_base, acl,	LMC.configuration.acls.acl_mask)
-					dir_info.root_gid = LMC.groups.name_to_gid(
-						LMC.configuration.acls.group)
+					dir_info.root_dir_perm = '%s,%s,%s' % (
+											acl_base, acl,
+											LMC.configuration.acls.acl_mask)
+					dir_info.root_gid = LMC.groups.by_name(
+						LMC.configuration.acls.group).gidNumber
 				else:
-					dir_info.content_gid = LMC.groups.name_to_gid(
-						LMC.configuration.acls.group)
-				dir_info.files_perm = "%s,%s,%s" % \
-					(acl_base, acl, LMC.configuration.acls.acl_mask)
-				dir_info.dirs_perm = ("%s,%s,%s" % \
-					(file_acl_base,	acl,
-					LMC.configuration.acls.file_acl_mask)).replace(
-						'@UX','x').replace('@GX','x')
+					dir_info.content_gid = LMC.groups.by_name(
+											LMC.configuration.acls.group).gidNumber
+
+				dir_info.files_perm = '%s,%s,%s' % (
+										acl_base, acl,
+										LMC.configuration.acls.acl_mask)
+				dir_info.dirs_perm = ('%s,%s,%s' % (
+										file_acl_base,	acl,
+										LMC.configuration.acls.file_acl_mask)
+									).replace('@UX','x').replace('@GX','x')
 
 			try:
-				dir_info.content_acl = True if ':' in dir_info.files_perm else \
-					False
+				dir_info.content_acl = ':' in dir_info.files_perm
+
 			except TypeError:
 				dir_info.content_acl = False
+
 			try:
-				dir_info.root_dir_acl = True if ':' in dir_info.root_dir_perm \
-					else False
+				dir_info.root_dir_acl = ':' in dir_info.root_dir_perm
+
 			except TypeError:
 				dir_info.root_dir_acl = False
 
@@ -745,6 +697,7 @@ class CoreFSController(CoreController):
 							if var in dir_info.files_perm:
 								dir_info.files_perm = \
 									dir_info.files_perm.replace(var, value)
+
 				if dir_info.root_dir_acl:
 					# we replace the @*X to be able to posix1e.ACL.check() correctly
 					# this forces us to put a false value in the ACL, so we copy it
@@ -754,17 +707,21 @@ class CoreFSController(CoreController):
 					if posix1e.ACL(text=di_text).check():
 						raise exceptions.LicornSyntaxException(
 							self.file_name, self.line_no,
-							text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-							'''.check() fail''' % di_text)
+							text=acl,
+							optional_exception=_(u'posix1e.ACL(text=%s)'
+								'.check() fail') % di_text)
+
 				if dir_info.content_acl:
 					di_text = dir_info.dirs_perm[:].replace(
-						'@GX','x').replace('@UX','x')
+													'@GX','x').replace(
+													'@UX','x')
 					#print di_text
 					if posix1e.ACL(text=di_text).check():
 						raise exceptions.LicornSyntaxException(
 							self.file_name, self.line_no,
-							text=acl, optional_exception='''posix1e.ACL(text=%s)'''
-							'''.check() fail''' % dir_info.root_dir_perm)
+							text=acl,
+							optional_exception=_(u'posix1e.ACL(text=%s)'
+								'.check() fail') % dir_info.root_dir_perm)
 
 			return dir_info
 		def expand_tilde(self, text, object_id):
@@ -776,60 +733,63 @@ class CoreFSController(CoreController):
 			if object_id is None:
 				home = ''
 			else:
-				if self.controller_name is 'groups':
-					home =  "%s/%s/%s" % ( LMC.configuration.defaults.home_base_path,
-					LMC.configuration.groups.names.plural, LMC.groups[object_id]['name'])
-				elif self.controller_name is 'users':
-					home = LMC.users[object_id]['homeDirectory']
+				if self.controller is LMC.groups:
+					home =  LMC.groups.by_gid(object_id).homeDirectory
 
+				elif self.controller is LMC.users:
+					home = LMC.users.by_uid(object_id).homeDirectory
+
+				else:
+					raise exceptions.LicornRuntimeError(_('Do not know how '
+						'to expand tildes for %s objects!')
+							% self.controller._object_type)
 			return text.replace(
 					'~', home).replace(
 					'$HOME', home).replace(
 					home, '')
-	def __init__(self, name):
-		CoreController.__init__(self, name)
+	def __init__(self, name, reverse_mappings=[]):
+
+		CoreController.__init__(self, name, reverse_mappings=reverse_mappings)
+
 		assert ltrace('checks', 'CoreFSController.__init__()')
 
-		self.system_special_dirs_templates = None
-		self.system_rules_not_loaded = True
+		self._rules_base_conf = '%s/%s.*.conf' % (
+						LMC.configuration.check_config_dir,
+						self.name)
 	def reload(self):
 		""" reload the templates rules generated from systems rules. """
+
+
 		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
-			LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
+														self._rules_base_conf)
 
 		CoreController.reload(self)
 	def load_system_rules(self, vars_to_replace):
 		""" load system rules """
+		# if system rules have already been loaded, do not reload them.
+		try:
+			self.check_templates
 
-		# if system rules have already been loaded, do not reload them
-		if self.system_rules_not_loaded:
+		except AttributeError:
 			assert ltrace('checks', '| load_system_rules(%s)' %
-				LMC.configuration.check_config_dir + '/' + self.name + '.*.conf')
+														self._rules_base_conf)
 
-			self.system_special_dirs_templates = Enumeration()
+			self.check_templates = Enumeration()
 
-			for filename in glob.glob(
-				LMC.configuration.check_config_dir + '/' + self.name + '.*.conf'):
-				system_info = Enumeration(home='%%s', user_uid=-1, user_gid=-1)
+			# a default enumeration that will serve as base for all rules.
+			enum_base = Enumeration(home='%%s', user_uid=-1, user_gid=-1)
+
+			for filename in glob.glob(self._rules_base_conf):
 				rules = self.parse_rules(rules_path=filename,
-					vars_to_replace=vars_to_replace, object_info=system_info)
-				assert ltrace('checks', 'system rules loaded : %s' % rules.dump_status(True))
-				if '_default' in rules.name:
-					assert ltrace('checks', '  ADD rule %s (%s)' % (
-						rules.dump_status(True), rules['~'].dump_status(True)))
-					self.system_special_dirs_templates['~'] = rules['~']
-				else:
-					for acl_rule in rules:
-						assert ltrace('checks', '  ADD rule %s' %
-							acl_rule.dump_status(True))
-						self.system_special_dirs_templates[acl_rule.name] = acl_rule
+											object_info=enum_base,
+											vars_to_replace=vars_to_replace)
 
-			self.system_rules_not_loaded = False
-		else:
-			assert ltrace('checks', 'Skipped: system %s rules were already '
-				'loaded.' %	self.name)
-	def load_rules(self, rules_path, object_info, identifier,
-		vars_to_replace=None):
+				if '_default' in rules.name:
+					self.check_templates['~'] = rules['~']
+				else:
+					for rule in rules:
+						self.check_templates[rule.name] = rule
+	def load_rules(self, core_obj, rules_path, object_info, vars_to_replace=None):
 		""" load special rules (rules defined by user) and merge system rules
 			with them.
 			Only the system default rule can be overwriten by the user default
@@ -837,29 +797,29 @@ class CoreFSController(CoreController):
 			system one will be used.
 
 			This function return only applicable rules """
+
 		assert ltrace('checks', '> load_rules(rules_path=%s, object_info=%s, '
-			'identifier=%s, vars_to_replace=%s)' % (rules_path, object_info,
-			identifier, vars_to_replace))
+			'core_obj=%s, vars_to_replace=%s)' % (rules_path, object_info,
+			core_obj.name, vars_to_replace))
+
 		# load system rules.
 		self.load_system_rules(vars_to_replace=vars_to_replace)
 
 		# load user rules.
-		self[identifier]['special_rules'] = self.parse_rules(
+		rules = core_obj.check_rules = self.parse_rules(
 											rules_path,
 											object_info=object_info,
 											system_wide=False,
 											vars_to_replace=vars_to_replace)
 
-		rules = self[identifier]['special_rules']
-
 		# check system rules, if the directory/file they are managing exists add
 		# them the the *valid* system rules enumeration.
 		system_special_dirs = Enumeration('system_special_dirs')
-		assert ltrace(self.name, '  system_special_dirs_templates %s '
-			% self.system_special_dirs_templates.dump_status(True))
+		#assert ltrace(self.name, '  check_templates %s '
+		#	% self.check_templates.dump_status(True))
 
-		for dir_info in self.system_special_dirs_templates:
-			assert ltrace(self.name, '  using dir_info %s ' % dir_info.dump_status(True))
+		for dir_info in self.check_templates:
+			#assert ltrace(self.name, '  using dir_info %s ' % dir_info.dump_status(True))
 			temp_dir_info = dir_info.copy()
 			temp_dir_info.path = temp_dir_info.path % object_info.home
 
@@ -887,8 +847,9 @@ class CoreFSController(CoreController):
 			# if it is a system default rule, and if there is a user default
 			# rule, skip the system one.
 			if dir_info.rule.default and user_default:
-				logging.progress("%s: System default rule has been overwriten "
-					"by user rule." % stylize(ST_BAD,"Skipped"))
+				logging.progress(_(u'%s: System default rule has been '
+					'overwriten by user rule.') %
+						stylize(ST_BAD, _(u'Skipped')))
 				continue
 
 			# if there are variables to replace, do it
@@ -907,9 +868,9 @@ class CoreFSController(CoreController):
 			# the system one.
 			if dir_info.name in rules.keys():
 				overriden_dir_info = rules[dir_info.name]
-				logging.warning('%s group rule for path %s '
-					'(%s:%s), overriden by system rule (%s:%s).'
-					% ( stylize(ST_BAD, "Ignored"),
+				logging.warning(_(u'{0} group rule for path {1} '
+					'({2}:{3}), overriden by system rule ({4}:{5}).').format(
+						stylize(ST_BAD, _(u'Ignored')),
 						stylize(ST_PATH, dir_info.path),
 						overriden_dir_info.rule.file_name,
 						overriden_dir_info.rule.line_no,
@@ -923,12 +884,14 @@ class CoreFSController(CoreController):
 					tmp.path = tmp.path[:len(tmp.path)-1]
 				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
 				default_exclusions.append(tmp.path)
-				logging.progress('''%s %s ACL rule: '%s' for '%s'.''' %
-					(stylize(ST_OK,"Added"), 'system' if \
-					dir_info.rule.system_wide else self.name,
+				logging.progress(_(u'{0} {1} ACL rule: '
+					'"{2}" for "{3}".').format(
+					stylize(ST_OK, _(u'Added')),
+					_(u'system')
+						if dir_info.rule.system_wide
+						else self.name,
 					stylize(ST_NAME, dir_info.rule.acl),
 					stylize(ST_NAME, dir_info.path)))
-
 
 			rules[dir_info.name] = dir_info
 
@@ -956,7 +919,9 @@ class CoreFSController(CoreController):
 		return rules
 	def parse_rules(self, rules_path, vars_to_replace, object_info,
 		system_wide=True):
-		""" parse a rule from a line to a FsapiObject. """
+		""" parse a rule from a line to a FsapiObject. Returns
+			a single :class:`~licorn.foundations.base.Enumeration`, containing
+			either ONE '~' rule, or a bunch of rules. """
 		assert ltrace('checks', "> parse_rules(%s, %s, %s)" % (rules_path,
 			object_info, system_wide))
 		special_dirs = None
@@ -988,7 +953,7 @@ class CoreFSController(CoreController):
 						base_dir=object_info.home
 							if not system_wide else None,
 						object_id=object_info.user_uid if not system_wide else None,
-						controller_name=self.name)
+						controller=self)
 					#logging.notice("rule = %s" % rule.dump_status(True))
 				except exceptions.LicornRuntimeException, e:
 					logging.warning2(e)
@@ -1015,12 +980,12 @@ class CoreFSController(CoreController):
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
-				except exceptions.PathDoesntExistsException, e:
+				except exceptions.PathDoesntExistException, e:
 					logging.warning2(e)
 					continue
 				else:
-					assert ltrace('checks', '  parse_rules(add rule %s)' %
-						rule.dump_status(True))
+					#assert ltrace('checks', '  parse_rules(add rule %s)' %
+					#	rule.dump_status(True))
 					rules.append(rule)
 
 			del line_no
@@ -1141,12 +1106,13 @@ class ModulesManager(LockedController):
 			# remove '.py'
 			module_name = entry[:-3]
 
-			class_name    = module_name.title() + self.module_type.title()
+			class_name = module_name.title() + self.module_type.title()
 			try:
 				python_module = __import__(self.module_sym_path
 											+ '.' + module_name,
 											globals(), locals(), class_name)
 				module_class  = getattr(python_module, class_name)
+
 			except ImportError, e:
 				logging.warning('{0} unusable {1} {2}: {3}. '
 					'Traceback follows:'.format(
@@ -1163,7 +1129,7 @@ class ModulesManager(LockedController):
 				module_classes_list.insert(0, (module_name, module_class))
 
 		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
-				', '.join([ str(klass) for klass in module_classes_list]))
+				', '.join(str(klass) for name, klass in module_classes_list))
 
 		# dependancies are resolved, now instanciate in the good order:
 		changed = False
@@ -1212,7 +1178,7 @@ class ModulesManager(LockedController):
 							try:
 								self.disable_func(module_name)
 								changed = True
-							except exceptions.DoesntExistsException, e:
+							except exceptions.DoesntExistException, e:
 								logging.warning2('cannot disable '
 									'non-existing %s %s.' % (self.module_type,
 									stylize(ST_NAME, module.name)))
@@ -1315,22 +1281,26 @@ class ModulesManager(LockedController):
 		assert ltrace(self.name, '| enable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
-		with self.lock():
+		with self.lock:
 			if module_name in self.keys():
-				logging.notice('%s %s already enabled.' % (module_name,
+				logging.notice(_(u'{0} {1} already enabled.').format(module_name,
 					self.module_type))
-				return
+				return False
 
 			try:
 				if self._available_modules[module_name].enable():
 					module = self._available_modules[module_name]
 					self[module_name] = module
+					self._available_modules[module_name] = None
 					del self._available_modules[module_name]
-					logging.notice('''successfully enabled %s %s.'''% (
+
+					logging.notice(_(u'successfully enabled {0} {1}.').format(
 						module_name, self.module_type))
 			except KeyError:
-				raise exceptions.DoesntExistsException('No %s by that name "%s", '
-					'sorry.' % (self.module_type, module_name))
+				raise exceptions.DoesntExistException(_(u'No {0} by that '
+					'name "{1}".').format(self.module_type, module_name))
+
+			return True
 	# this will eventually be overwritten in subclasses.
 	enable_func = enable_module
 	def disable_module(self, module_name):
@@ -1343,22 +1313,25 @@ class ModulesManager(LockedController):
 		assert ltrace(self.name, '| disable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
-		with self.lock():
+		with self.lock:
 			if module_name in self._available_modules.keys():
-				logging.notice('%s %s already disabled.' % (module_name,
+				logging.notice(_(u'{0} {1} already disabled.').format(module_name,
 					self.module_type))
-				return
+				return False
 
 			try:
 				if self[module_name].disable():
 					self._available_modules[module_name] = self[module_name]
+					self[module_name] = None
 					del self[module_name]
 
-					logging.notice('''successfully disabled %s %s. ''' % (
+					logging.notice(_(u'successfully disabled {0} {1}.').format(
 						module_name, self.module_type))
 			except KeyError:
-				raise exceptions.DoesntExistsException('No %s by that name "%s", '
-					'sorry.' % (self.module_type, module_name))
+				raise exceptions.DoesntExistException(_(u'No {0} by that '
+					'name "{1}".').format(self.module_type, module_name))
+
+			return True
 	# this will eventually be overwritten in subclasses.
 	disable_func = disable_module
 	def check(self, batch=False, auto_answer=None):
@@ -1375,7 +1348,7 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
 
-		with self.lock():
+		with self.lock:
 			for module in self:
 				assert ltrace(self.name, '  check(%s)' % module.name)
 				module.check(batch=batch, auto_answer=auto_answer)
@@ -1387,7 +1360,29 @@ class ModulesManager(LockedController):
 				module.check(batch=batch, auto_answer=auto_answer)
 
 		assert ltrace(self.name, '< check()')
-class CoreUnitObject(NamedObject):
+	def guess_one(self, module_name):
+		try:
+			return self[module_name]
+		except KeyError:
+			raise exceptions.DoesntExistException(_('{module_type} '
+				'{module_name} does not exist or is not enabled.').format(
+					module_type=self.module_type, module_name=module_name))
+
+	def _inotifier_install_watches(self, inotifier):
+		""" forward the inotifier call to our enabled modules, and to
+			our available modules, too: a change in a configuration file
+			could trigger a module auto-enable or auto-disable (this seems
+			dangerous, but so sexy that i'll try). """
+
+		for module in self:
+			if hasattr(module, '_inotifier_install_watches'):
+				getattr(module, '_inotifier_install_watches')(inotifier)
+
+		for module in self._available_modules:
+			if hasattr(module, '_inotifier_install_watches'):
+				getattr(module, '_inotifier_install_watches')(inotifier)
+
+class CoreUnitObject(object):
 	""" Common attributes for unit objects and
 		:class:`modules <~licorn.core.classes.CoreModule>` in Licorn® core.
 
@@ -1400,50 +1395,41 @@ class CoreUnitObject(NamedObject):
 			:meth:`__init__`, it will be determined from next free
 			oid stored in the :attr:`CoreUnitObject.counter` class attribute.
 
-		.. attribute:: _controller
+		.. attribute:: controller
 
 			a reference to the object's container (manager or controller). Must
 			be passed as :meth:`__init__` argument, else the object won't be
 			able to easily find it's parent when it needs it.
 
-		.. warning:: every derivative class of this one should overload the
-			:attr:`counter` class attribute with its own, to avoid oid
-			confusion between classes.
+		.. warning:: This class must derive from object, else properties  and
+			some other python nifty features don't work at all...
 
 		.. versionadded:: 1.3
 
 	"""
 
-	#: no need to add our _* attributes, because we don't inherit from
-	#: :class:`~licorn.foundations.base.MixedDictObject`. This class attribute
-	#: won't be used unless using
-	#: :class:`~licorn.foundations.base.MixedDictObject` or one of its
-	#: inherited classes.
-	_licorn_protected_attrs = NamedObject._licorn_protected_attrs
+	def __init__(self, controller=None):
 
-	#: the static oid generation counter.
-	counter = 0
+		object.__init__(self)
 
-	def __init__(self, name=None, oid=None, controller=None):
-		NamedObject.__init__(self, name)
 		assert ltrace('objects',
-			'| CoreUnitObject.__init__(%s, %s, %s)' % (
-				name, oid, controller))
+			'| CoreUnitObject.__init__(%s)' % controller)
 
-		#assert oid is not None
 		assert controller is not None
-
-		if oid:
-			self._oid = oid
-		else:
-			self._oid = self.__class__.counter
-			self.__class__.counter +=1
 
 		# FIXME: find a way to store the reference to the controller, not only
 		# its name. This will annoy Pyro which cannot pickle weakproxy objects,
 		# but will be cleaner than lookup the object by its name...
-		self._controller = controller
-class CoreModule(CoreUnitObject):
+		self.__controller = controller
+		self.__licornd    = LMC.licornd
+	@property
+	def controller(self):
+		return self.__controller
+	@property
+	def licornd(self):
+		return self.__licornd
+
+class CoreModule(CoreUnitObject, NamedObject):
 	""" CoreModule is the base class for backends and extensions. It provides
 		the :meth:`generate_exception` method, called by controllers when a
 		high-level problem occurs (for example, a conflict between
@@ -1475,13 +1461,17 @@ class CoreModule(CoreUnitObject):
 			``LMC``, and we currently can't do it differently, ``system`` needs
 			to be up very early in the inter-daemon connection process.
 
-		.. versionadded:: 1.3
+		.. versionadded:: 1.2
 
 	"""
-	_licorn_protected_attrs = CoreUnitObject._licorn_protected_attrs
+
 	def __init__(self, name='core_module', manager=None,
 		controllers_compat=[]):
-		CoreUnitObject.__init__(self, name=name, controller=manager)
+
+		NamedObject.__init__(self, name)
+
+		CoreUnitObject.__init__(self, manager)
+
 		assert ltrace(self.name, '| CoreModule.__init__(controllers_compat=%s)'
 			% controllers_compat)
 
@@ -1527,7 +1517,7 @@ class CoreModule(CoreUnitObject):
 						stylize(ST_ENABLED if self.enabled else ST_DISABLED,
 														self.name),
 						'server only' if self.server_only else 'client/server',
-						self._controller.module_type,
+						self.controller.module_type,
 						'\n%s\n' % paths if paths != '' else ''
 					)
 	def __str__(self):
@@ -1653,23 +1643,37 @@ class CoreModule(CoreUnitObject):
 class CoreStoredObject(CoreUnitObject):
 	""" Common attributes for stored objects (users, groups...). Add individual
 		locking capability (better fine grained than global controller lock when
-		possible), and the backend name of the current object storage. """
+		possible), and the backend name of the current object storage.
 
-	# no need to add our _* attributes, because we don't inherit from
-	# MixedDictObject. This Class attribute won't be used unless using
-	# MixedDictObject or one of its inherited classes.
-	_licorn_protected_attrs = CoreUnitObject._licorn_protected_attrs
-	def __init__(self, name=None, oid=None, controller=None, backend=None):
-		CoreUnitObject.__init__(self, name=name, oid=oid, controller=controller)
+		.. versionadded:: 1.2
+	"""
+
+	def __init__(self, controller=None, backend=None):
+
+		CoreUnitObject.__init__(self, controller)
+
 		assert ltrace('objects',
-			'| CoreStoredObject.__init__(%s, %s, %s, %s)' % (
-				name, oid, controller.name, backend.name))
+			'| CoreStoredObject.__init__(%s, %s)' % (
+				controller.name, backend.name))
 
-		self._backend  = backend.name
+		self.__backend = backend
+		self.__myref   = weakref.ref(self)
+		self.__lock    = RLock()
 
-		# store the lock outside of us, else Pyro can't pickle us.
-		LMC.locks[self._controller.name][self._oid] = RLock()
+	@property
+	def weakref(self):
+		return self.__myref
+	@property
+	def backend(self):
+		return self.__backend
+	@backend.setter
+	def backend(self, backend):
+		if hasattr(self, 'move_to_backend'):
+			self.__backend == backend
+		else:
+			raise exceptions.LicornRuntimeError('cannot set a backend without '
+				'a "move_to_backend" method in the current class.')
+
+	@property
 	def lock(self):
-		""" return our unit RLock(). """
-		return LMC.locks[self._controller.name][self._oid]
-
+		return self.__lock

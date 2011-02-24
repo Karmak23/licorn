@@ -167,7 +167,31 @@ class SquidExtension(Singleton, ServiceExtension):
 			dict['host'], dict['port'])
 
 		return dict
+	def initialize(self):
+		""" TODO """
+		assert ltrace(self.name, '> initialize()')
 
+		if LMC.configuration.licornd.role == roles.SERVER:
+
+			if os.path.exists(self.paths.squid_bin) \
+				and os.path.exists(self.paths.squid_conf):
+				self.available = True
+
+				self.configuration = ConfigFile(self.paths.squid_conf,
+					name='squid', separator=' ')
+
+			else:
+				logging.warning2(_(u'{0}: not available because {1} or {2} '
+					'do not exist on the system.').format(
+						self.name, stylize(ST_PATH, self.paths.squid_bin),
+						stylize(ST_PATH, self.paths.squid_conf)))
+				self.remove_configuration()
+
+		else:
+			# squid extension is always available on clients.
+			self.available = True
+		assert ltrace(self.name, '< initialize()')
+		return self.available
 	def is_enabled(self):
 		""" Squid extension is enabled when squid's pid file exists and the
 			process runs.
@@ -178,33 +202,18 @@ class SquidExtension(Singleton, ServiceExtension):
 		if self.available:
 			if not self.running(self.paths.squid_pid):
 				self.service(svccmds.START)
+
+			logging.info(_(u'{0}: started extension, managing {1} service '
+				'({2}).').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_NAME, self.service_name),
+					(_(u'pid=%s') % stylize(ST_UGID,
+						open(self.paths.squid_pid).read().strip()))
+							if os.path.exists(self.paths.squid_pid)
+							else stylize(ST_COMMENT, _('Starting up'))))
 			return True
 		else:
 			return False
-	def initialize(self):
-		""" TODO """
-		assert ltrace(self.name, '> initialize()')
-		if LMC.configuration.licornd.role == roles.SERVER:
-
-			if os.path.exists(self.paths.squid_bin) \
-				and os.path.exists(self.paths.squid_conf):
-				self.available = True
-
-				self.configuration = ConfigFile(self.paths.squid_conf,
-					name='squid', separator=' ')
-			else:
-				logging.warning2('%s: not available because %s or %s do not '
-					'exist on the system.' % (
-						self.name, stylize(ST_PATH,
-						self.paths.squid_bin),
-						stylize(ST_PATH, self.paths.squid_conf)))
-				self.remove_configuration()
-
-		else:
-			# squid extension is always available on clients.
-			self.available = True
-		assert ltrace(self.name, '< initialize()')
-		return self.available
 	def update_client(self, batch=None, auto_answer=None):
 		""" update the client, make the client connecting through the proxy if
 		the extension is enabled.

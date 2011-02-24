@@ -365,7 +365,7 @@ class Pinger:
 						self.last_arrival = arrival
 				except AttributeError, e:
 					if reply.get_embedded_ip().dst == self.addr:
-						raise exceptions.DoesntExistsException('host %s '
+						raise exceptions.DoesntExistException('host %s '
 							'unreachable (%s)' % (self.addr, e))
 					# else we are receiving a hostunreach for another host,
 					# just ignore it and continue waiting.

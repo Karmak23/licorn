@@ -8,10 +8,10 @@ Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 """
 
 import signal, os, time
-
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
-from threading   import Thread, Timer, RLock
+from threading import Thread, Timer, RLock
+from traceback import print_exc
 
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
@@ -19,8 +19,7 @@ from licorn.foundations.ltrace    import ltrace, mytime
 from licorn.foundations.constants import host_status, host_types
 
 from licorn.core                  import LMC
-from licorn.daemon                import priorities, roles, \
-											service_enqueue, service_wait
+from licorn.daemon                import priorities, roles
 from licorn.daemon.threads        import LicornBasicThread
 from licorn.daemon.rwi            import RealWorldInterface
 
@@ -187,6 +186,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				'something went wrong from %s (was %s).' % (
 				(stylize(ST_ADDRESS, '%s:%s' % (client_addr,
 					client_socket)), e)))
+			print_exc()
 
 			return 0, Pyro.constants.DENIED_UNSPECIFIED
 class CommandListener(LicornBasicThread):
@@ -195,13 +195,10 @@ class CommandListener(LicornBasicThread):
 	def __init__(self, licornd, pids_to_wake=[], daemon=False, **kwargs):
 		assert ltrace('cmdlistener', '| CommandListener.__init__()')
 
-		LicornBasicThread.__init__(self, tname='CommandListener')
+		LicornBasicThread.__init__(self, 'CommandListener', licornd)
 
 		#: the thread attribute
 		self.daemon = daemon
-
-		#: my Licorn® daemon
-		self.licornd = licornd
 
 		self.pids_to_wake = pids_to_wake
 		self.wake_threads = []
@@ -273,10 +270,9 @@ class CommandListener(LicornBasicThread):
 
 		# get a direct reference to the members of group authorized to connect,
 		# this avoids any needs to reload it after a change.
-		LicornPyroValidator.valid_users = LMC.groups[
-			LMC.groups.name_to_gid(
+		LicornPyroValidator.valid_users = LMC.groups.by_name(
 				LMC.configuration.defaults.admin_group
-				)]['memberUid']
+				).memberUid
 
 		# get the port number from current configuration.
 		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port

@@ -10,6 +10,7 @@ Licensed under the terms of the GNU GPL version 2
 
 # bright is to be added to dark colors (00;XXm) to obtain the brighter colors.
 #   "bright": '\x1b[0;01m',
+# http://ascii-table.com/ansi-escape-sequences.php
 
 ST_NO     = 0
 ST_RED    = 1
@@ -26,8 +27,12 @@ ST_CADET  = 11
 ST_CYAN   = 12
 ST_GREY   = 13
 ST_WHITE  = 14
+ST_BLACK  = 15
+ST_BBLACK = 16
 
 __ascii = {
+	ST_BLACK   : '\x1b[01;30m',
+	ST_BBLACK  : '\x1b[01;30m',
 	ST_RED     : '\x1b[01;31m',
 	ST_BRICK   : '\x1b[00;31m',
 	ST_FOREST  : '\x1b[00;32m',
@@ -97,6 +102,8 @@ ST_LOCKED    = ST_STOPPED
 ST_IDLE      = ST_STOPPED
 ST_INACTIVE  = ST_STOPPED
 ST_DEVICE    = 42
+ST_EMPTY     = 43
+ST_BACKEND   = 44
 
 colors = {
 	ST_NO       : __ascii[ST_NO],
@@ -121,6 +128,7 @@ colors = {
 	ST_LINK     : __ascii[ST_CYAN],
 	ST_UGID     : __ascii[ST_BLUE],
 	ST_ACL      : __ascii[ST_FOREST],
+	ST_BACKEND  : __ascii[ST_FOREST],
 	ST_LOG      : __ascii[ST_YELLOW],
 	ST_LIST_L1  : __ascii[ST_BLUE],
 	ST_LIST_L2  : __ascii[ST_BLUE],
@@ -141,6 +149,7 @@ colors = {
 	ST_RUNNING  : __ascii[ST_FOREST],
 	ST_STOPPED  : __ascii[ST_BRICK],
 	ST_DEVICE   : __ascii[ST_BROWN],
+	ST_EMPTY    : __ascii[ST_BLACK],
 	}
 
 

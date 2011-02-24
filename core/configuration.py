@@ -13,7 +13,7 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, socket
+import sys, os, re, socket, Pyro.core, pyinotify
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, fsapi, network
@@ -21,14 +21,15 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
-											Enumeration, FsapiObject
+											Enumeration, FsapiObject, \
+											MixedDictObject, pyro_protected_attrs
 from licorn.foundations.classes   import FileLock
 
 from licorn.core         import LMC
 from licorn.core.classes import LockedController, CoreModule
 from licorn.daemon       import roles
 
-class LicornConfiguration(Singleton, LockedController):
+class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
 		Defines some methods for modifying the configuration.
 	"""
@@ -36,6 +37,8 @@ class LicornConfiguration(Singleton, LockedController):
 	# bypass multiple init and del calls (we are a singleton)
 	init_ok = False
 	del_ok  = False
+
+	_licorn_protected_attrs = MixedDictObject._licorn_protected_attrs + pyro_protected_attrs
 
 	def __init__(self, minimal=False, batch=False):
 		""" Gather underlying system configuration and load it for licorn.* """
@@ -46,7 +49,8 @@ class LicornConfiguration(Singleton, LockedController):
 		assert ltrace('configuration', '> __init__(minimal=%s, batch=%s)' % (
 			minimal, batch))
 
-		LockedController.__init__(self, name='configuration')
+		Pyro.core.ObjBase.__init__(self)
+		MixedDictObject.__init__(self, name='configuration')
 
 		self.app_name = 'Licorn®'
 
@@ -117,7 +121,6 @@ class LicornConfiguration(Singleton, LockedController):
 	def load3(self, batch=False):
 		self.load_nsswitch()
 		# TODO: monitor configuration files from a thread !
-
 	#
 	# make LicornConfiguration object be usable as a context manager.
 	#
@@ -156,16 +159,17 @@ class LicornConfiguration(Singleton, LockedController):
 
 		assert ltrace('configuration', '> SetBaseDirsAndFiles()')
 
-		self.config_dir              = "/etc/licorn"
-		self.check_config_dir        = self.config_dir + "/check.d"
-		self.main_config_file        = self.config_dir + "/licorn.conf"
-		self.backup_config_file      = self.config_dir + "/backup.conf"
+		self.config_dir           = "/etc/licorn"
+		self.check_config_dir     = self.config_dir + "/check.d"
+		self.main_config_file     = self.config_dir + "/licorn.conf"
+		self.backup_config_file   = self.config_dir + "/backup.conf"
 
 		# system profiles, compatible with gnome-system-tools
-		self.profiles_config_file    = self.config_dir + "/profiles.xml"
+		self.profiles_config_file = self.config_dir + "/profiles.xml"
 
 		self.privileges_whitelist_data_file = (
 			self.config_dir + "/privileges-whitelist.conf")
+
 		self.keywords_data_file = self.config_dir + "/keywords.conf"
 
 		# extensions to /etc/group
@@ -479,6 +483,8 @@ class LicornConfiguration(Singleton, LockedController):
 						raise exceptions.LicornRuntimeError(
 							'''This Ubuntu version is not '''
 							'''supported, sorry !''')
+				self.distro_version = float(lsb_release['DISTRIB_RELEASE'])
+
 			else:
 				# OLD / non-lsb compatible system or BSD
 				if  os.path.exists( '/etc/gentoo-release' ):
@@ -776,6 +782,8 @@ class LicornConfiguration(Singleton, LockedController):
 		self.groups = LicornConfigObject()
 		self.groups.apache_dir = self.users.apache_dir
 
+		self.groups.check_config_file_suffix = '.check.conf'
+
 		self.groups.guest_prefix = 'gst-'
 		self.groups.resp_prefix = 'rsp-'
 
@@ -797,33 +805,28 @@ class LicornConfiguration(Singleton, LockedController):
 
 		self.acls = LicornConfigObject()
 		self.acls.group = 'acl'
-		self.acls.groups_dir = "%s/%s" % (
+		self.acls.groups_dir = '%s/%s' % (
 			self.defaults.home_base_path,
 			self.groups.names.plural)
 		self.acls.acl_base = 'u::rwx,g::---,o:---'
 		self.acls.acl_mask = 'm:rwx'
-		self.acls.acl_admins_ro = 'g:%s:r-x' % \
-			self.defaults.admin_group
-		self.acls.acl_admins_rw = 'g:%s:rwx' % \
-			self.defaults.admin_group
-		self.acls.acl_users = '--x' \
-			if self.groups.hidden else 'r-x'
+		self.acls.acl_admins_ro = 'g:%s:r-x' % self.defaults.admin_group
+		self.acls.acl_admins_rw = 'g:%s:rwx' % self.defaults.admin_group
+		self.acls.acl_users = '--x' if self.groups.hidden else 'r-x'
 		self.acls.file_acl_base = 'u::rw@UX,g::---,o:---'
 		self.acls.acl_restrictive_mask = 'm:r-x'
 		self.acls.file_acl_mask = 'm:rw@GX'
 		self.acls.file_acl_restrictive_mask = 'm:rw@GX'
-		self.acls.group_acl_base = "u::rwx,g::---,o:---,g:%s:rwx,g:%s:r-x," \
-			"g:%s:rwx,g:@GROUP:rwx" % (
-			LMC.configuration.defaults.admin_group,
-			LMC.configuration.groups.guest_prefix + "@GROUP",
-			LMC.configuration.groups.resp_prefix + "@GROUP")
-		self.acls.group_file_acl_base = \
-			"u::rw@UX,g::---,o:---,g:%s:rw@GX,g:%s:r-@GX,g:%s:rw@GX," \
-			"g:@GROUP:r@GW@GX" % (
-			LMC.configuration.defaults.admin_group,
-			LMC.configuration.groups.guest_prefix + "@GROUP",
-			LMC.configuration.groups.resp_prefix + "@GROUP")
-
+		self.acls.group_acl_base = ('u::rwx,g::---,o:---,g:%s:rwx,'
+						'g:%s@GROUP:r-x,g:%s@GROUP:rwx,g:@GROUP:rwx') % (
+							LMC.configuration.defaults.admin_group,
+							LMC.configuration.groups.guest_prefix,
+							LMC.configuration.groups.resp_prefix)
+		self.acls.group_file_acl_base = ('u::rw@UX,g::---,o:---,g:%s:rw@GX,'
+						'g:%s@GROUP:r-@GX,g:%s@GROUP:rw@GX,g:@GROUP:r@GW@GX')%(
+							LMC.configuration.defaults.admin_group,
+							LMC.configuration.groups.guest_prefix,
+							LMC.configuration.groups.resp_prefix)
 
 	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
@@ -1070,11 +1073,11 @@ class LicornConfiguration(Singleton, LockedController):
 				for b in LMC.backends:
 					data += '%s(%s%s%s)\n' % (b.name,
 						stylize(ST_INFO, 'U') \
-						if b.name == LMC.users._prefered_backend_name else '',
+						if b.name == LMC.users._prefered_backend.name else '',
 						stylize(ST_INFO, 'G') \
-						if b.name == LMC.groups._prefered_backend_name else '',
+						if b.name == LMC.groups._prefered_backend.name else '',
 						stylize(ST_INFO, 'M') \
-						if b.name == LMC.machines._prefered_backend_name else '',
+						if b.name == LMC.machines._prefered_backend.name else '',
 						)
 				for b in LMC.backends.available():
 					data += '%s\n' % b.name
@@ -1169,7 +1172,7 @@ class LicornConfiguration(Singleton, LockedController):
 
 			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
 
-			if aname is 'app_name':
+			if aname in ('app_name', 'distro_version'):
 				data += "%s\n" % stylize(ST_ATTRVALUE, attr)
 			elif aname is 'mta':
 				data += "%s\n" % stylize(ST_ATTRVALUE, servers[attr])
@@ -1256,22 +1259,24 @@ class LicornConfiguration(Singleton, LockedController):
 
 		self.CheckSystemGroups(minimal=minimal, batch=batch,
 			auto_answer=auto_answer)
-		
+
 		acls_conf = self.acls
 		all_went_ok = True
-		
+
 		home_groups = FsapiObject(name='home_groups')
 		home_groups.path = acls_conf.groups_dir
-		home_groups.group = LMC.groups.name_to_gid('acl')
+		# FIXME: don't hardcode 'acl' here.
+		home_groups.group = LMC.groups.by_name('acl').gidNumber
 		home_groups.user = 0
 		home_groups.root_dir_acl = True
 		home_groups.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
 			acls_conf.acl_base, acls_conf.acl_admins_ro,
 			acls_conf.acl_users, acls_conf.acl_mask)
-			
+
 		home_backups = FsapiObject(name='home_backups')
 		home_backups.path = self.home_backup_dir
-		home_backups.group = LMC.groups.name_to_gid('acl')
+		# FIXME: don't hardcode 'acl' here.
+		home_backups.group = LMC.groups.by_name('acl').gidNumber
 		home_backups.user = 0
 		home_backups.root_dir_acl = True
 		home_backups.root_dir_perm = "%s,%s,%s" % (acls_conf.acl_base,
@@ -1283,14 +1288,14 @@ class LicornConfiguration(Singleton, LockedController):
 			home_backups.files_perm = ("%s,%s,%s" % (
 				acls_conf.acl_base,acls_conf.acl_admins_ro, acls_conf.acl_mask)
 				).replace('r-x', 'r--').replace('rwx', 'rw-')
-				
+
 		dirs_to_verify = []
 		dirs_to_verify.append(home_groups)
 		dirs_to_verify.append(home_backups)
-		
+
 		try:
 			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-				dirs_to_verify, batch = True) 
+				dirs_to_verify, batch = True)
 		except (IOError, OSError), e:
 			if e.errno == 95:
 				# this is the *first* "not supported" error encountered (on
@@ -1303,10 +1308,10 @@ class LicornConfiguration(Singleton, LockedController):
 			else:
 				logging.warning(e)
 				raise e
-				
+
 		all_went_ok &= self.check_archive_dir(batch=batch,
 			auto_answer=auto_answer)
-		
+
 		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
 		return all_went_ok
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
@@ -1317,20 +1322,21 @@ class LicornConfiguration(Singleton, LockedController):
 		assert ltrace('configuration', '> check_archive_dir(%s)' % subdir)
 
 		acls_conf = self.acls
-		
+
 		home_archive = FsapiObject(name='home_archive')
 		home_archive.path = self.home_archive_dir
-		home_archive.group = LMC.groups.name_to_gid('acl')
+		# FIXME: don't hardcode 'acl' here.
+		home_archive.group = LMC.groups.by_name('acl').gidNumber
 		home_archive.user = 0
 		home_archive.root_dir_acl = True
 		home_archive.root_dir_perm = "%s,%s,%s" % (
 			acls_conf.acl_base, acls_conf.acl_admins_rw, acls_conf.acl_mask)
-			
+
 		if subdir:
 			if os.path.dirname(subdir) == self.home_archive_dir:
 				home_archive.content_acl = True
 				home_archive.dirs_perm = "%s,%s,%s" % (
-					acls_conf.acl_base, acls_conf.acl_admins_rw, 
+					acls_conf.acl_base, acls_conf.acl_admins_rw,
 					acls_conf.acl_mask)
 				home_archive.files_perm = ("%s,%s,%s" % (
 					acls_conf.acl_base, acls_conf.acl_admins_rw,
@@ -1358,9 +1364,9 @@ class LicornConfiguration(Singleton, LockedController):
 			self.defaults.admin_group ]
 
 		if not minimal:
-			needed_groups.extend([ group for group in LMC.privileges
+			needed_groups.extend([ group for group in LMC.privileges.iterkeys()
 				if group not in needed_groups
-					and group not in LMC.groups.name_cache])
+					and group not in LMC.groups.names])
 			# 'skels', 'webmestres' [and so on] are not here
 			# because they will be added by their respective packages
 			# (plugins ?), and they are not strictly needed for Licorn to
@@ -1373,9 +1379,9 @@ class LicornConfiguration(Singleton, LockedController):
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
 			if not LMC.groups.exists(name=group):
-				if batch or logging.ask_for_repair(
-					logging.CONFIG_SYSTEM_GROUP_REQUIRED % \
-						stylize(ST_NAME, group), auto_answer):
+				if batch or logging.ask_for_repair(_(u'The system group %s is '
+					'mandatory for the system to work properly, but it does '
+					'not exist yet.') % stylize(ST_NAME, group), auto_answer):
 					if group == self.users.group and self.distro in (
 						distros.UBUNTU, distros.DEBIAN):
 

@@ -172,3 +172,5 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass
+	def _inotifier_install_watches(self, inotifier):
+		print '>> implement dnsmasq install watches'

@@ -17,8 +17,8 @@ from licorn.foundations        import process
 from licorn.foundations.ltrace import ltrace
 
 # used for static data only
-from licorn.core.configuration import LicornConfiguration
-configuration = LicornConfiguration(minimal=True)
+from licorn.core import LMC
+configuration = LMC.configuration
 
 licence_text = _('''
 %s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU
@@ -49,12 +49,18 @@ acronyms = {
 
 def merge_multi_select(*lists):
 	final = []
-	for list in lists:
-		if list == []: continue
-		if type(list) == type(""):
-			final.append(list)
+
+	for alist in lists:
+		#print '>> got list', alist
+		if alist == []:
+			continue
+
+		if type(alist) == type(''):
+			final.append(alist)
 		else:
-			final.extend(list)
+			final.extend(alist)
+
+	#print '>> return', final
 	return final
 
 # EXEC / SYSTEM functions.
@@ -293,7 +299,7 @@ def submit(name, value = "", onClick = "", accesskey = None):
 	return '''<input type="submit" name="%s" value="%s" %s %s />''' % (name, value, onClickValue, access_key(accesskey))
 def button(label, value, accesskey = None):
 	return '''<a href="%s"><button type="button" %s>%s</button></a>''' % (value, access_key(accesskey), label)
-def select(name, values, current = "", dont_display = (), func = str, accesskey = None):
+def select(name, values, current = '', dont_display=(), func=str, accesskey=None):
 	data = '<select name="%s" %s>\n' % (name, access_key(accesskey))
 	for value in values:
 		if value in dont_display: continue
@@ -368,8 +374,8 @@ def menu(uri):
 		'\n'.join([ '<li%s><a href="/%s/" title="%s">%s</a></li>' % (
 										classes[ext.uri],
 										ext.uri,
-										ext.alt_string,
-										ext.name
+										ext.alt_string(),
+										ext.name()
 									) for ext in wmi.__dict__.values() if hasattr(ext, 'uri') ]
 		),
 		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),

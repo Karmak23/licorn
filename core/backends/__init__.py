@@ -49,8 +49,8 @@ class BackendsManager(Singleton, ModulesManager):
 			is different from a backend to another."""
 
 		assert ltrace(self.name, '| enable_backend(%s)' % backend_name)
-		ModulesManager.enable_module(self, backend_name)
-		LMC.reload_controllers_backends()
+		if ModulesManager.enable_module(self, backend_name):
+			LMC.reload_controllers_backends()
 	enable_func = enable_backend
 	def disable_backend(self, backend_name):
 		""" Disable a given backend,  then call
@@ -60,8 +60,8 @@ class BackendsManager(Singleton, ModulesManager):
 			backend to another."""
 
 		assert ltrace(self.name, '| disable_backend(%s)' % backend_name)
-		ModulesManager.disable_module(self, backend_name)
-		LMC.reload_controllers_backends()
+		if ModulesManager.disable_module(self, backend_name):
+			LMC.reload_controllers_backends()
 	disable_func = disable_backend
 class CoreBackend(CoreModule):
 	def __init__(self, name='core_backend', controllers_compat=[]):
@@ -69,6 +69,8 @@ class CoreBackend(CoreModule):
 			controllers_compat=controllers_compat, manager=LMC.backends)
 		assert ltrace('backends', '| CoreBackend.__init__(%s)' %
 			controllers_compat)
+	def __str__(self):
+		return stylize(ST_NAME, self.name)
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO. """
 		if self.initialize():
@@ -91,81 +93,31 @@ class NSSBackend(CoreBackend):
 # is compatible with the controller or not. It is up to the real backend to
 # implement necessary methods, these abstract backends contain nothing.
 class UsersBackend(NSSBackend):
-	""" Abstract user backend class allowing access to users data. """
-	def load_User(self, uid):
-		assert ltrace('backends', '| abstract load_User(%s)' % uid)
+	""" Abstract user backend class allowing access to users data.
 
-		# NOTE: which is totally ignored in this backend, we always load ALL
-		# users, because we always read/write the entire files.
+		A user backend should implement those methods:
 
-		return self.load_Users()
-	def save_User(self, uid, mode):
-		assert ltrace('backends', '| abstract save_User(%s)' % uid)
-		return self.save_Users()
-	def delete_User(self, uid):
-		assert ltrace('backends', '| abstract delete_User(%s)' % uid)
-		return self.save_Users()
+		* `load_User(uid)`
+		* `save_User(user, mode)`
+		* `delete_User(user)`
+		* `load_Users()`
+		* `save_Users(users)`
+
+	"""
+	pass
 class GroupsBackend(NSSBackend):
-	"""	Abstract groups backend class allowing access to groups data. """
-	def load_Group(self, gid):
-		""" Load an individual group.
+	"""	Abstract groups backend class allowing access to groups data.
 
-			Default action is to call :meth:`load_Groups`. This is not what
-			you want if your backend is able to load groups individually:
-			you have to overload this method.
+		A group backend should implement those methods:
 
-			:param gid: an integer, GID of the group to load (ignored in the
-				default implementation which calls :meth:`load_Groups`).
-		"""
+		* `load_Group(gid)`
+		* `save_Group(group, mode)`
+		* `delete_Group(group)`
+		* `load_Groups()`
+		* `save_Groups(groups)`
 
-		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
-
-		return self.load_Groups()
-	def save_Group(self, gid, mode):
-		""" Save a group in system data.
-
-			Default action is to call
-			:meth:`save_Groups()`. This is perfect for backends which
-			always rewrite all the data (typically
-			:class:`~licorn.core.backends.shadow.ShadowBackend`), but
-			it is much a waste or system resources for backends which have
-			the ability to save an individual entry without the need to
-			write them all (typically
-			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
-			must therefore overload this methodto implement a more appropriate
-			behaviour.
-
-			:param gid: the GID of the group to save (ignored in this default
-				version of the method.
-			:param mode: a value coming from
-				:obj:`~licorn.foundations.constants.backends_actions` to
-				specify if the save operation is an update or a creation.
-		"""
-
-		assert ltrace('backends', '| abstract save_Group(%s)' % gid)
-
-		return self.save_Groups()
-	def delete_Group(self, gid):
-		""" Delete an individual group. Default action (coming from abstract
-			:class:`~licorn.core.backends.GroupsBackend`) is to call
-			:meth:`save_Groups` to save all groups, assuming the group
-			you want to delete has already been wiped out the
-			:class:`~licorn.core.groups.GroupsController`.
-
-			This behaviour works well for backends which rewrite all
-			data everytime (typically
-			:class:`~licorn.core.backends.shadow.ShadowBackend`), but won't
-			work as expected for backends which must loop through all entries
-			to save them individually (typically
-			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
-			must therefore overload this method to implement a more appropriate
-			behaviour.
-
-			:param gid: the GID of teh group to delete (ignored in this default
-				version of the method).
-		"""
-		assert ltrace('backends', '| abstract delete_Group(%s)' % gid)
-		return self.save_Groups()
+	"""
+	pass
 class MachinesBackend(CoreBackend):
 	""" Abstract machines backend class allowing access to machines data.
 

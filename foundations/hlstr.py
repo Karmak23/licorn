@@ -9,21 +9,22 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import re
-from licorn.foundations import exceptions
+from licorn.foundations        import exceptions
+from licorn.foundations.styles import *
 
 # common regexs used in various places of licorn.core.*
 regex = {}
 regex['uri']          = r'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
-regex['profile_name'] = r'''^[\w]([-_\w ]*[\w])?$'''
+regex['profile_name'] = ur'''^[\w]([-_\w ]*[\w])?$'''
 # REGEX discussion: shouldn't we disallow #$*!~& in description regexes ?
 # these characters could lead to potential crash/vulnerabilities. But refering
 # to passwd(5), there are no restrictions concerning the description field.
 # Thus we just disallow “:” to avoid a new field to be accidentally created.
-regex['description']  = '''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
+regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.¿?‘’€⋅]*$'''
 regex['group_name']   = '''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = '''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
-regex['keyword']      = '''^[a-z][- _./\w]*[a-z0-9]$'''
-regex['conf_comment'] = '''^(#.*|\s*)$'''
+regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
+regex['conf_comment'] = u'''^(#.*|\s*)$'''
 regex['ipv4']         = '''^\d+\.\d+\.\d+\.\d+$'''
 regex['ether_addr']   = '''^([\da-f]+:){5}[\da-f]+$'''
 regex['duration']     = '''^(infinite|\d+[dhms])$'''
@@ -176,6 +177,79 @@ def generate_password(maxlen = 12, use_all_chars = False):
 				password += special_chars[number]
 
 	return password
+def word_fuzzy_match(part, word):
+	""" This is a basic but kind of exact fuzzy match. ``part`` matches ``word``
+		if every char of part is present in word, and in the same order.
+
+		For more information on real fuzzy matching (which was not what I was
+		looking for, thus I wrote this function), see:
+
+		* http://stackoverflow.com/questions/682367/good-python-modules-for-fuzzy-string-comparison (best)
+		* http://code.activestate.com/recipes/475148-fuzzy-matching-dictionary/ (a derivative real example)
+		* http://stackoverflow.com/questions/2923420/fuzzy-string-matching-algorithm-in-python
+		* http://ginstrom.com/scribbles/2007/12/01/fuzzy-substring-matching-with-levenshtein-distance-in-python/
+
+		"""
+	last = 0
+
+	for char in part:
+		current = word[last:].find(char)
+
+		if current == -1:
+			#print '>> fuzzy match', word, 'NONE'
+			return None
+
+		last = current
+
+	# if we got out of the for loop without returning None, the part
+	# matched, this is a success. Announce it.
+
+	#print '>> fuzzy match', word, ' OK'
+	return word
+def word_match(word, valid_words):
+	""" try to find what the user specified on command line. """
+
+	#print '>> match', word, 'in', valid_words, '(', remove, ' removed).'
+
+	for a_try in valid_words:
+		if word == a_try:
+			# we won't get anything better than this
+			return a_try
+
+	first_match = None
+
+	for a_try in valid_words:
+		if a_try.startswith(word):
+			if first_match is None:
+				#print '>> partial match', a_try, 'continuing for disambiguity.'
+				first_match = a_try
+
+			else:
+				raise exceptions.BadArgumentError(_('Ambiguous mode {0} '
+					'(matches at least {1} and {2}).').format(
+						stylize(ST_BAD, word),
+						stylize(ST_COMMENT, first_match),
+						stylize(ST_COMMENT, a_try)))
+
+	# return an intermediate partial best_result, if it exists, else
+	# continue for partial matches.
+	if first_match:
+		return first_match
+
+	for a_try in valid_words:
+		if word_fuzzy_match(word, a_try):
+			if first_match is None:
+				#print '>> fuzzy match', a_try, 'continuing for disambiguity.'
+				first_match = a_try
+
+			else:
+				raise exceptions.BadArgumentError(_('Ambiguous mode {0} '
+					'(matches at least {1} and {2}).').format(
+						stylize(ST_BAD, word),
+						stylize(ST_COMMENT, first_match),
+						stylize(ST_COMMENT, a_try)))
+
+	return first_match
 def statsize2human(size):
 	""" Convert an integer size (coming from a stat object) to a Human readable string.
 

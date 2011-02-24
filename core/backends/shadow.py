@@ -11,17 +11,23 @@ Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import crypt
+import os, crypt, tempfile, grp
+from traceback  import print_exc
+from contextlib import nested
 
 from licorn.foundations         import logging, exceptions
-from licorn.foundations         import readers, hlstr
+from licorn.foundations         import readers, hlstr, fsapi
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.base    import Singleton
 from licorn.foundations.classes import FileLock
 
 from licorn.core                import LMC
+from licorn.core.users          import User
+from licorn.core.groups         import Group
 from licorn.core.backends       import NSSBackend, UsersBackend, GroupsBackend
+
+from licorn.daemon              import priorities
 
 class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
@@ -73,103 +79,167 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					)
 				)
 
+		self.pslock = FileLock(LMC.configuration, "/etc/passwd")
+		self.shlock = FileLock(LMC.configuration, "/etc/shadow")
+		self.grlock = FileLock(LMC.configuration,	'/etc/group')
+		self.gslock = FileLock(LMC.configuration, '/etc/gshadow')
+		self.gelock = FileLock(LMC.configuration,
+								LMC.configuration.extendedgroup_data_file)
+
 		return self.available
+	def load_User(self, user):
+		assert ltrace('backends', '| abstract load_User(%s)' % uid)
+
+		# NOTE: which is totally ignored in this backend, we always load ALL
+		# users, because we always read/write the entire files.
+
+		return self.load_Users()
+	def save_User(self, user, mode):
+		assert ltrace('backends', '| abstract save_User(%s)' % user.uid)
+		return self.save_Users(LMC.users)
+	def delete_User(self, user):
+		assert ltrace('backends', '| abstract delete_User(%s)' % user.uid)
+		return self.save_Users(LMC.users)
+	def load_Group(self, group):
+		""" Load an individual group.
+
+			Default action is to call :meth:`load_Groups`. This is not what
+			you want if your backend is able to load groups individually:
+			you have to overload this method.
+
+			:param gid: an integer, GID of the group to load (ignored in the
+				default implementation which calls :meth:`load_Groups`).
+		"""
+
+		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
+
+		return self.load_Groups()
+	def save_Group(self, group, mode):
+		""" Save a group in system data.
+
+			Default action is to call
+			:meth:`save_Groups()`. This is perfect for backends which
+			always rewrite all the data (typically
+			:class:`~licorn.core.backends.shadow.ShadowBackend`), but
+			it is much a waste or system resources for backends which have
+			the ability to save an individual entry without the need to
+			write them all (typically
+			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
+			must therefore overload this methodto implement a more appropriate
+			behaviour.
+
+			:param gid: the GID of the group to save (ignored in this default
+				version of the method.
+			:param mode: a value coming from
+				:obj:`~licorn.foundations.constants.backends_actions` to
+				specify if the save operation is an update or a creation.
+		"""
+
+		assert ltrace('backends', '| abstract save_Group(%s)' % group.gid)
+
+		return self.save_Groups(LMC.groups)
+	def delete_Group(self, group):
+		""" Delete an individual group. Default action (coming from abstract
+			:class:`~licorn.core.backends.GroupsBackend`) is to call
+			:meth:`save_Groups` to save all groups, assuming the group
+			you want to delete has already been wiped out the
+			:class:`~licorn.core.groups.GroupsController`.
+
+			This behaviour works well for backends which rewrite all
+			data everytime (typically
+			:class:`~licorn.core.backends.shadow.ShadowBackend`), but won't
+			work as expected for backends which must loop through all entries
+			to save them individually (typically
+			:class:`~licorn.core.backends.openldap.OpenldapBackend`). The later
+			must therefore overload this method to implement a more appropriate
+			behaviour.
+
+			:param gid: the GID of teh group to delete (ignored in this default
+				version of the method).
+		"""
+		assert ltrace('backends', '| abstract delete_Group(%s)' % group.gid)
+		return self.save_Groups(LMC.groups)
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
-		assert ltrace('shadow', '> load_Users()')
+		assert ltrace(self.name, '> load_Users()')
 
-		users       = {}
-		login_cache = {}
+		is_allowed = True
+		need_rewriting = False
 
-		for entry in readers.ug_conf_load_list("/etc/passwd"):
-			temp_user_dict	= {
-				'login'        : entry[0],
-				'uidNumber'    : int(entry[2]) ,
-				'gidNumber'    : int(entry[3]) ,
-				'gecos'        : entry[4],
-				'homeDirectory': entry[5],
-				'loginShell'   : entry[6],
-				'groups'       : [],		# a cache which will
-											# eventually be filled by
-											# load_groups().
-				'backend'      : self.name
-				}
-
-			# implicitly index accounts on « int(uidNumber) »
-			users[ temp_user_dict['uidNumber'] ] = temp_user_dict
-
-			# this will be used as a cache for login_to_uid()
-			login_cache[ entry[0] ] = temp_user_dict['uidNumber']
-
-			assert ltrace('shadow', 'loaded user %s' %
-				users[temp_user_dict['uidNumber']])
-
-		try:
-			for entry in readers.ug_conf_load_list("/etc/shadow"):
-				if login_cache.has_key(entry[0]):
-					uid = login_cache[entry[0]]
-					users[uid]['userPassword'] = entry[1]
-					if entry[1] != "":
-						if entry[1][0] == '!':
-							users[uid]['locked'] = True
-							# the shell could be /bin/bash (or else), this is valid
-							# for system accounts, and for a standard account this
-							# means it is not strictly locked because SSHd will
-							# bypass password check if using keypairs…
-							# don't bork with a warning, this doesn't concern us
-							# (Licorn work 99% of time on standard accounts).
-						else:
-							users[uid]['locked'] = False
-
-					users[uid]['shadowLastChange']  = int(entry[2]) \
-						if entry[2] != '' else 0
-
-					users[uid]['shadowMin'] = int(entry[3]) \
-						if entry[3] != '' else 0
-
-					users[uid]['shadowMax'] = int(entry[4]) \
-						if entry[4] != '' else 99999
-
-					users[uid]['shadowWarning']  = int(entry[5]) \
-						if entry[5] != '' else 7
-
-					users[uid]['shadowInactive'] = int(entry[6]) \
-						if entry[6] != '' else ''
-
-					users[uid]['shadowExpire'] = int(entry[7]) \
-						if entry[7] != '' else ''
-
-					# reserved field, not used yet
-					users[uid]['shadowFlag'] = int(entry[8]) \
-						if entry[8] != '' else ''
-
+		with self.shlock:
+			try:
+				shadow = readers.ug_conf_load_list("/etc/shadow")
+			except (OSError, IOError), e:
+				if e.errno == 13:
+					is_allowed = False
 				else:
-					logging.warning(
-					"non-existing user '%s' referenced in /etc/shadow." % \
-						entry[0])
+					raise e
 
-		except (OSError, IOError), e:
-			if e.errno == 13:
-				# don't display a warning on error 13 (permission denied), this
-				# is harmless if we are loading data for get, and any other
-				# operation (add/mod/del) will fail anyway if we are not root
-				# or group @admins/@shadow.
-				assert ltrace('shadow', '''can't load /etc/shadow (perhaps you are '''
-					'''not root or a member of group shadow.''')
-			else:
-				raise e
+		with self.pslock:
+			passwd_data = readers.ug_conf_load_list("/etc/passwd")
 
-		assert ltrace('shadow', '< load_users()')
-		return users, login_cache
+		for entry in passwd_data:
+
+			login = entry[0]
+			uid   = int(entry[2])
+
+			not_found=True
+
+			for sentry in shadow:
+				if sentry[0] == login:
+					# "sentry" will remain, to be used in the main loop.
+					not_found=False
+					break
+
+			if not_found:
+				# create a fake shadow entry for the load() to work.
+				# this will eventually allow the file to be automatically
+				# corrected on next forced write.
+				sentry = [ login, '', '0', '0', '99999', '7', '', '', '' ]
+
+				logging.warning(_(u'{0}: added missing entry for user {1} '
+					'in {2}.').format(str(self), stylize(ST_LOGIN, login),
+						stylize(ST_PATH, '/etc/shadow')))
+
+				need_rewriting = True
+
+			yield uid, User(
+					uidNumber=uid,
+					login=login,
+					gidNumber=int(entry[3]),
+					gecos=entry[4],
+					homeDirectory=entry[5],
+					loginShell=entry[6],
+					userPassword=sentry[1],
+					shadowLastChange=int(sentry[2]) if sentry[2] != '' else 0,
+					shadowMin=int(sentry[3]) if sentry[3] != '' else 0,
+					shadowMax=int(sentry[4]) if sentry[4] != '' else 99999,
+					shadowWarning=int(sentry[5]) if sentry[5] != '' else 7,
+					shadowInactive=int(sentry[6]) if sentry[6] != '' else 0,
+					shadowExpire=int(sentry[7]) if sentry[7] != '' else 0,
+					shadowFlag=int(sentry[8]) if sentry[8] != '' else '',
+					backend=self
+				)
+
+			assert ltrace(self.name, 'loaded user %s' % entry[0])
+
+		if need_rewriting and is_allowed:
+			logging.notice(_(u'{0}: cleaned users data rewrite '
+				'requested in the background.').format(str(self)))
+
+			self.licornd.service_enqueue(priorities.NORMAL,
+											self.save_Users, LMC.users,
+											job_delay=4.0)
+
+		assert ltrace(self.name, '< load_users()')
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace('shadow', '> load_Group()')
+		assert ltrace(self.name, '> load_Group()')
 
-		groups     = {}
-		name_cache = {}
-		etc_group = readers.ug_conf_load_list("/etc/group")
+		with self.grlock:
+			etc_group = readers.ug_conf_load_list("/etc/group")
 
 		# if some inconsistency is detected during load and it can be corrected
 		# automatically, do it now ! This flag is global for all groups, because
@@ -179,269 +249,311 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		extras      = []
 		etc_gshadow = []
 		is_allowed  = True
-		try:
-			extras = readers.ug_conf_load_list(
-				LMC.configuration.extendedgroup_data_file)
-		except IOError, e:
-			if e.errno != 2:
-				# other than no such file or directory
-				raise e
-		try:
-			etc_gshadow = readers.ug_conf_load_list("/etc/gshadow")
-		except IOError, e:
-			if e.errno == 13:
-				# don't raise an exception or display a warning, this is
-				# harmless if we are loading data for get, and any other
-				# operation (add/mod/del) will fail anyway if we are not root
-				# or group @admin.
-				is_allowed = False
-			else: raise e
 
-		l2u = LMC.users.login_to_uid
-		u   = LMC.users
+		with self.gelock:
+			try:
+				extras = readers.ug_conf_load_list(
+								LMC.configuration.extendedgroup_data_file)
+			except IOError, e:
+				if e.errno != 2:
+					# other than no such file or directory
+					raise e
 
-		# TODO: move this to 'for(gname, gid, gpass, gmembers) in etc_group:'
+		with self.gslock:
+			try:
+				etc_gshadow = readers.ug_conf_load_list("/etc/gshadow")
+			except IOError, e:
+				if e.errno == 13:
+					# don't raise an exception or display a warning, this is
+					# harmless if we are loading data for get, and any other
+					# operation (add/mod/del) will fail anyway if we are not root
+					# or group @admin.
+					is_allowed = False
+				else:
+					raise e
 
 		for entry in etc_group:
 			if len(entry) != 4:
 				# FIXME: should we really continue ?
 				# why not raise CorruptFileError ??
+				logging.warning(_(u'{0}: skipped line "{1}" from {2}, '
+					'it seems corrupt.').format(self.name,
+					stylize(ST_COMMENT, ':'.join(entry)),
+					stylize(ST_PATH, '/etc/group')))
 				continue
 
-			# implicitly index accounts on « int(gid) »
-			gid = int(entry[2])
+			name = entry[0]
+			gid  = int(entry[2])
 
 			if entry[3] == '':
-				# this happends when the group has no members.
+				# the group has currently no members.
 				members = []
 			else:
-				members   = entry[3].split(',')
-				members.sort() # catch users modifications outside Licorn
-
-				# update the cache to avoid brute double loops when calling
-				# 'get users --long'.
-				uids_to_sort=[]
-				for member in members:
-					if LMC.users.login_cache.has_key(member):
-						cache_uid=l2u(member)
-						if entry[0] not in u[cache_uid]['groups']:
-							u[cache_uid]['groups'].append(entry[0])
-							uids_to_sort.append(cache_uid)
-				for cache_uid in uids_to_sort:
-					# sort the users, but one time only for each.
-					u[cache_uid]['groups'].sort()
-				del uids_to_sort
-
-			groups[gid] = 	{
-				'name'         : entry[0],
-				'userPassword' : entry[1],
-				'gidNumber'    : gid,
-				'memberUid'    : members,
-				'description'  : "",
-				'groupSkel'    : "",
-				'permissive'   : None,
-				'backend'      : self.name
-				}
-
-			assert ltrace('shadow', 'loaded group %s' % groups[gid])
-
-			# this will be used as a cache by name_to_gid()
-			name_cache[entry[0]] = gid
-
-			try:
-				groups[gid]['permissive'] = LMC.groups.is_permissive(
-					gid=gid, name=entry[0])
-			except exceptions.InsufficientPermissionsError:
-				# don't bother the user with a warning, he/she probably already
-				# knows that :
-				# logging.warning("You don't have enough permissions to " \
-				#	"display permissive states.", once = True)
-				pass
+				members = entry[3].split(',')
 
 			# TODO: we could load the extras data in another structure before
 			# loading groups from /etc/group to avoid this for() loop and just
 			# get extras[LMC.groups[gid]['name']] directly. this could gain
 			# some time on systems with many groups.
-
+			description = ''
+			groupSkel   = ''
 			for extra_entry in extras:
-				if groups[gid]['name'] ==  extra_entry[0]:
+				if name == extra_entry[0]:
 					try:
-						groups[gid]['description'] = extra_entry[1]
-						groups[gid]['groupSkel']   = extra_entry[2]
+						description = extra_entry[1]
+						groupSkel   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
-							LMC.configuration.extendedgroup_data_file, \
-							'''for group "%s" (was: %s).''' % \
-							(extra_entry[0], str(e)))
+							LMC.configuration.extendedgroup_data_file,
+							'for group "%s" (was: %s).' %
+								(extra_entry[0], str(e)))
 					break
 
-			gshadow_found = False
+			# load data from /etc/gshadow
+			not_found = True
 			for gshadow_entry in etc_gshadow:
-				if groups[gid]['name'] ==  gshadow_entry[0]:
+				if name ==  gshadow_entry[0]:
 					try:
-						groups[gid]['userPassword'] = gshadow_entry[1]
+						userPassword = gshadow_entry[1]
 					except IndexError, e:
+						# TODO: set need_rewriting = True, construct a good
+						# default entry and continue.
 						raise exceptions.CorruptFileError("/etc/gshadow",
-						'''for group "%s" (was: %s).''' % \
-						(gshadow_entry[0], str(e)))
-					gshadow_found = True
+						'for group "%s" (was: %s).' %
+							(gshadow_entry[0], str(e)))
+					not_found = False
 					break
 
-			if not gshadow_found and is_allowed:
+			if not_found and is_allowed:
 				# do some auto-correction stuff if we are able too.
 				# this happens if debian tools were used between 2 Licorn CLI
 				# calls, or on first call of CLI tools on a Debian system.
-				logging.notice('added missing record for group %s in %s.'
-					% (
-						stylize(ST_NAME, groups[gid]['name']),
-						stylize(ST_PATH, '/etc/gshadow')
-					))
+				logging.notice(_(u'{0}: added missing record '
+					'for group {1} in {2}.').format(str(self),
+						stylize(ST_NAME, name),
+						stylize(ST_PATH, '/etc/gshadow')))
 				need_rewriting = True
 
-		if need_rewriting and is_allowed:
-			try:
-				self.save_Groups()
-			except (OSError, IOError), e:
-				logging.warning("licorn.core.groups: can't correct" \
-					" inconsistencies (was: %s)." % e)
+			yield gid, Group(
+					gidNumber=gid,
+					name=name,
+					userPassword=userPassword,
+					memberUid=members,
+					description=description,
+					groupSkel=groupSkel,
+					backend=self)
 
-		return groups, name_cache
-	def save_Users(self):
+			assert ltrace(self.name, 'loaded group %s' % name)
+
+		if need_rewriting and is_allowed:
+			logging.notice(_(u'{0}: cleaned groups data rewrite '
+				'requested in the background.').format(str(self)))
+
+			self.licornd.service_enqueue(priorities.NORMAL,
+										self.save_Groups, LMC.groups,
+										job_delay=4.5)
+
+		# used at saving time...
+		self.__shadow_gid = LMC.groups.by_name('shadow').gidNumber
+	def save_Users(self, users):
 		""" Write /etc/passwd and /etc/shadow """
 
-		lock_etc_passwd = FileLock(
-			LMC.configuration, "/etc/passwd")
-		lock_etc_shadow = FileLock(
-			LMC.configuration, "/etc/shadow")
+		# NOTE: users should already be sorted by UID.
 
 		etcpasswd = []
 		etcshadow = []
-		users = LMC.users
-		uids = users.keys()
-		uids.sort()
 
-		if not users[0].has_key('userPassword'):
-			logging.warning('Insufficient permissions to write config files.')
-			return
+		# Ensure there are no parallel modifications of users during this
+		# phase, take the lock (parallel alterations can occur at least during
+		# daemon loading phase, where services are planned with same timers;
+		# but there are probably other cases).
+		with LMC.users.lock:
+			for user in users:
+				if user.backend.name != self.name:
+					continue
 
-		for uid in uids:
-			if users[uid]['backend'] != self.name:
-				continue
+				etcpasswd.append(":".join((
+											user.login,
+											'x',
+											str(user.uidNumber),
+											str(user.gidNumber),
+											user.gecos,
+											user.homeDirectory,
+											user.loginShell
+										))
+								)
 
-			etcpasswd.append(":".join((
-										users[uid]['login'],
-										"x",
-										str(uid),
-										str(users[uid]['gidNumber']),
-										users[uid]['gecos'],
-										users[uid]['homeDirectory'],
-										users[uid]['loginShell']
-									))
-							)
+				etcshadow.append(":".join((
+											user.login,
+											user.userPassword,
+											str(user.shadowLastChange),
+											str(user.shadowMin),
+											str(user.shadowMax),
+											str(user.shadowWarning),
+											'' if user.shadowInactive == 0
+												else str(user.shadowInactive),
+											'' if user.shadowExpire == 0
+												else str(user.shadowExpire),
+											str(user.shadowFlag)
+										))
+								)
 
-			etcshadow.append(":".join((
-										users[uid]['login'],
-										users[uid]['userPassword'],
-										str(users[uid]['shadowLastChange']),
-										str(users[uid]['shadowMin']),
-										str(users[uid]['shadowMax']),
-										str(users[uid]['shadowWarning']),
-										str(users[uid]['shadowInactive']),
-										str(users[uid]['shadowExpire']),
-										str(users[uid]['shadowFlag'])
-									))
-							)
+		with nested(self.pslock, self.shlock):
 
-		lock_etc_passwd.Lock()
-		open("/etc/passwd" , "w").write("%s\n" % "\n".join(etcpasswd))
-		lock_etc_passwd.Unlock()
+			fsapi.backup_file('/etc/passwd')
+			fsapi.backup_file('/etc/shadow')
 
-		lock_etc_shadow.Lock()
-		open("/etc/shadow" , "w").write("%s\n" % "\n".join(etcshadow))
-		lock_etc_shadow.Unlock()
+			# for /etc/passwd
+			ftempp, fpathp = tempfile.mkstemp(dir='/etc')
+			os.write(ftempp, '%s\n' % '\n'.join(etcpasswd))
+			os.fchmod(ftempp, 0644)
+			os.fchown(ftempp, 0, 0)
+			os.close(ftempp)
+			os.rename(fpathp, '/etc/passwd')
 
-		logging.progress("Saved shadow users data to disk.")
-	def save_Groups(self):
+			# for /etc/shadow
+			ftemps, fpaths = tempfile.mkstemp(dir='/etc')
+			os.write(ftemps, '%s\n' % '\n'.join(etcshadow))
+			os.fchmod(ftemps, 0640)
+			os.fchown(ftemps, 0, self.__shadow_gid)
+			os.close(ftemps)
+			os.rename(fpaths, '/etc/shadow')
+
+		logging.progress(_("{0}: saved users data to disk.").format(str(self)))
+	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
-		assert ltrace('shadow', '> save_groups()')
+		assert ltrace(self.name, '> save_groups()')
 
-		groups = LMC.groups
-
-		#
-		# FIXME: this will generate a false positive if groups[0] comes from LDAP…
-		#
-		if not groups[0].has_key('userPassword'):
-			raise exceptions.InsufficientPermissionsError("You are not root" \
-				" or member of the shadow group," \
-				" can't write configuration data.")
-
-		lock_etc_group   = FileLock(LMC.configuration,
-												"/etc/group")
-		lock_etc_gshadow = FileLock(LMC.configuration,
-												"/etc/gshadow")
-		lock_ext_group   = FileLock(LMC.configuration,
-								LMC.configuration.extendedgroup_data_file)
+		# NOTE: groups should already be sorted on GIDs.
 
 		etcgroup   = []
 		etcgshadow = []
 		extgroup   = []
 
-		gids = groups.keys()
-		gids.sort()
+		# See :meth:`self.save_Users` to know why we take this lock.
+		with LMC.groups.lock:
+			for group in groups:
+				# don't know why 'group.backend != self' don't work as expected.
+				# gotta find it some day.
+				if group.backend.name != self.name:
+					continue
 
-		for gid in gids:
-			if groups[gid]['backend'] != self.name:
-				continue
-			# assert logging.debug2("Writing group %s (%s)." % (groups[gid]['name'],
-			#  groups[gid]))
+				#print '>>', group.name, group.memberUid, group.backend.name
 
-			members = [ x for x in groups[gid]['memberUid']]
-			members.sort()
-
-			etcgroup.append(":".join((
-										groups[gid]['name'],
-										groups[gid]['userPassword'],
-										str(gid),
-										','.join(members)
-									))
-							)
-			etcgshadow.append(":".join((
-										groups[gid]['name'],
-										groups[gid]['userPassword'],
-										"",
-										','.join(members)
-									))
-							)
-			extgroup.append(':'.join((
-										groups[gid]['name'],
-										groups[gid]['description'] \
-											if 'description' in groups[gid] \
-												else '',
-										groups[gid]['groupSkel'] \
-											if 'groupSkel' in groups[gid] \
+				etcgroup.append(":".join((
+											group.name,
+											group.userPassword,
+											str(group.gid),
+											','.join(group.memberUid)
+										))
+								)
+				etcgshadow.append(":".join((
+											group.name,
+											group.userPassword,
+											'',
+											','.join(group.memberUid)
+										))
+								)
+				extgroup.append(':'.join((
+											group.name,
+											group.description,
+											group.groupSkel
+												if group.is_standard
 												else ''
-									))
-							)
+										))
+								)
 
-		lock_etc_group.Lock()
-		open("/etc/group", "w").write("\n".join(etcgroup) + "\n")
-		lock_etc_group.Unlock()
+		with nested(self.grlock, self.gslock, self.gelock):
 
-		lock_etc_gshadow.Lock()
-		open("/etc/gshadow", "w").write("\n".join(etcgshadow) + "\n")
-		lock_etc_gshadow.Unlock()
+			ftempg, fpathg = tempfile.mkstemp(dir='/etc')
+			os.write(ftempg, '%s\n' % '\n'.join(etcgroup))
+			os.fchmod(ftempg, 0644)
+			os.fchown(ftempg, 0, 0)
+			os.close(ftempg)
+			os.rename(fpathg, '/etc/group')
 
-		lock_ext_group.Lock()
-		open(LMC.configuration.extendedgroup_data_file, "w").write(
-			"\n".join(extgroup) + "\n")
-		lock_ext_group.Unlock()
+			ftemps, fpaths = tempfile.mkstemp(dir='/etc')
+			os.write(ftemps, '%s\n' % '\n'.join(etcgshadow))
+			os.fchmod(ftemps, 0640)
+			os.fchown(ftemps, 0, self.__shadow_gid)
+			os.close(ftemps)
+			os.rename(fpaths, '/etc/gshadow')
 
-		logging.progress("Saved shadow groups data to disk.")
+			ftempe, fpathe = tempfile.mkstemp(dir='/etc')
+			os.write(ftempe, '%s\n' % '\n'.join(extgroup))
+			os.fchmod(ftempe, 0644)
+			os.fchown(ftempe, 0, 0)
+			os.close(ftempe)
+			os.rename(fpathe, LMC.configuration.extendedgroup_data_file)
 
-		assert ltrace('shadow', '< save_groups()')
+		logging.progress(_("{0}: saved groups data to disk.").format(str(self)))
+
+		assert ltrace(self.name, '< save_groups()')
 	def compute_password(self, password, salt=None):
-		assert ltrace('shadow', '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace(self.name, '| compute_password(%s, %s)' % (password, salt))
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
+
+	def _inotifier_install_watches(self, inotifier):
+		print '>> implement shadow install watches'
+
+	def watch_configuration_files(self):
+		""" monitor important configuration files, to know when another program
+			touch them, and apply appropriate actions on change. """
+
+		assert ltrace('inotifier', '| %s.watch_configuration_files()' %
+			self.name)
+
+		def reload_controller_unix(self, path, controller, *args, **kwargs):
+			""" Timer() callback for watch threads.
+			*args and **kwargs are not used. """
+			logging.notice(_(u'{0}: configuration file {1} changed, '
+				'reloading {2} controller.').format(str(self),
+					stylize(ST_PATH, path),
+					stylize(ST_NAME, controller.name)))
+			controller.reload_backend(self)
+
+		def event_on_config_file(path, event, controller, index):
+			""" We only watch GAMCreated events, because when
+				{user,group}{add,mod,del} change their files, they create it
+				from another, everytime (for atomic reasons). We, in licorn
+				overwrite them, and this will generate a GAMChanged event,
+				which permits us to distringuish between the different uses.
+			"""
+			assert ltrace('inotifier',
+				'gam event %s on %s -> controller %s (index %s)' % (
+				gamin_events[event], path, controller.name, index))
+
+			if event == gamin.GAMCreated:
+				create_thread = False
+				try:
+					if self.conffiles_threads[index].is_alive():
+						self.conffiles_threads[index].cancel()
+
+					self.conffiles_threads[index].join()
+					del self.conffiles_threads[index]
+					create_thread = True
+				except (KeyError, AttributeError):
+					create_thread = True
+
+				if create_thread:
+					self.conffiles_threads[index] = Timer(0.25,
+						reload_controller_unix, [ path, controller ])
+					self.conffiles_threads[index].start()
+
+		self.conffiles_threads = {}
+
+		def event_on_passwd(path, event):
+			return event_on_config_file(path, event, LMC.users, 1)
+		def event_on_group(path, event):
+			return event_on_config_file(path, event, LMC.groups, 2)
+
+		for watched_file, callback_func in (
+				('/etc/passwd', event_on_passwd),
+				('/etc/shadow', event_on_passwd),
+				('/etc/group', event_on_group),
+				('/etc/gshadow', event_on_group)
+			):
+			self.add_watch(watched_file, callback_func,	is_dir=False)

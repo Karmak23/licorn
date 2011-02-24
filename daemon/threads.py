@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Daemon small threads.
+Licorn Daemon threads classes.
+
+Worth reads (among many others):
+
+* http://code.google.com/p/python-safethread/w/list
+* http://www.python.org/dev/peps/pep-0020/
 
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import time
+import time, __builtin__
 from traceback   import print_exc
 from threading   import Thread, Event, RLock, current_thread
 from Queue       import Queue
@@ -31,6 +36,10 @@ class LicornThread(Thread):
 
 		self.name  = (tname if tname else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
+
+		# trap the original gettext translator, to avoid the builtin '_'
+		# trigerring an exception everytime we need to translate a string.
+		self._ = __builtin__.__dict__['_orig__']
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
@@ -61,14 +70,23 @@ class LicornThread(Thread):
 class LicornBasicThread(Thread):
 	""" A simple thread with an Event() used to stop it properly. """
 
-	def __init__(self, tname=None):
+	def __init__(self, tname=None, licornd=None):
 		Thread.__init__(self)
 
 		self.name = (tname if tname else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
 
+		self.__licornd = licornd
+
+		# trap the original gettext translator, to avoid the builtin '_'
+		# trigerring an exception everytime we need to translate a string.
+		self._ = __builtin__.__dict__['_orig__']
+
 		self._stop_event  = Event()
 		assert ltrace('thread', '%s initialized.' % self.name)
+	@property
+	def licornd(self):
+		return self.__licornd
 	def dump_status(self, long_output=False, precision=None):
 		return '%s%s (stop=%s)' % (
 				stylize(ST_RUNNING
@@ -119,11 +137,11 @@ class GenericQueueWorkerThread(Thread):
 		Thread.__init__(self)
 
 		#: the :attr:`daemon` coming from threading.Thread.
-		self.daemon      = daemon
-		self.high_bypass = high_bypass
+		self.daemon        = daemon
+		self.__high_bypass = high_bypass
 
 		#: a reference to the Licorn daemon, to record myself in threads list.
-		self.licornd = licornd
+		self.__licornd = licornd
 
 		if in_queue:
 			# the very first instance of the class has to setup everything
@@ -138,6 +156,15 @@ class GenericQueueWorkerThread(Thread):
 			self.__class__.peers_min    = peers_min
 			self.__class__.peers_max    = peers_max
 			self.__class__.last_warning = 0
+
+		# trap the original gettext translator, to avoid the builtin '_'
+		# trigerring an exception everytime we need to translate a string.
+		# the try/except block is for the testsuite, which uses this thread
+		# as base class, but doesn't handle on-the-fly multilingual switch.
+		try:
+			self._ = __builtin__.__dict__['_orig__']
+		except KeyError:
+			self._ = __builtin__.__dict__['_']
 
 		#: the threading.Thread attribute.
 		self.name = '%s-%03d' % (self.__class__.base_name, self.__class__.counter)
@@ -200,86 +227,84 @@ class GenericQueueWorkerThread(Thread):
 				self.input_queue.task_done()
 				break
 
-			else:
+			with self.__class__.lock:
+				self.__class__.busy += 1
 
-				with self.__class__.lock:
-					self.__class__.busy += 1
+				self.throttle_up()
 
-					self.throttle_up()
+				if self.__high_bypass and self.priority != priorities.HIGH \
+					and self.__class__.busy == self.__class__.instances:
+					# make some room for HIGH priority jobs. They could still
+					# be queued if everyone is busy, but this is less likely
+					# now, because HIGH priority jobs are advised to be very
+					# short (else they should be converted to NORMAL or LOW,
+					# or splitted in smaller tasks).
+					#
+					# If we can spawn aa new peer, it will wait for new
+					# jobs while we run, else we must not handle the
+					# current job
 
-					if self.high_bypass and self.priority != priorities.HIGH \
-						and self.__class__.busy == self.__class__.instances:
-						# make some room for HIGH priority jobs. They could still
-						# be queued if everyone is busy, but this is less likely
-						# now, because HIGH priority jobs are advised to be very
-						# short (else they should be converted to NORMAL or LOW,
-						# or splitted in smaller tasks).
-						#
-						# If we can spawn aa new peer, it will wait for new
-						# jobs while we run, else we must not handle the
-						# current job
+					if self.__class__.instances < self.__class__.peers_max:
 
-						if self.__class__.instances < self.__class__.peers_max:
+						assert ltrace('thread', '  %s: spawing new peer '
+							'to always handle HIGH jobs.' % self.name)
+						self.spawn_peer()
 
-							assert ltrace('thread', '  %s: spawing new peer '
-								'to always handle HIGH jobs.' % self.name)
-							self.spawn_peer()
+					else:
+						assert ltrace('thread', '  %s: delaying job to be '
+							'able to always handle HIGH jobs' % self.name)
 
-						else:
-							assert ltrace('thread', '  %s: delaying job to be '
-								'able to always handle HIGH jobs' % self.name)
+						# mark the job as done, because we already got() it.
+						self.input_queue.task_done()
 
-							# mark the job as done, because we already got() it.
-							self.input_queue.task_done()
+						# reput it at the end of the queue, as if a new job
+						# had been created.
+						self.input_queue.put((self.priority, self.job,
+										self.job_args, self.jobs_kwargs))
 
-							# reput it at the end of the queue, as if a new job
-							# had been created.
-							self.input_queue.put((self.priority, self.job,
-											self.job_args, self.jobs_kwargs))
+						self.job = None
+						self.priority = None
+						self.job_args = None
+						self.job_kwargs = None
+						continue
 
-							self.job = None
-							self.priority = None
-							self.job_args = None
-							self.job_kwargs = None
-							continue
+			with self.lock:
+				self.jobbing.set()
+				self.job_start_time = time.time()
 
-				with self.lock:
-					self.jobbing.set()
-					self.job_start_time = time.time()
+			if 'job_delay' in self.jobs_kwargs:
+				time.sleep(self.jobs_kwargs['job_delay'])
+				del self.jobs_kwargs['job_delay']
 
-				if 'job_delay' in self.jobs_kwargs:
-					time.sleep(self.jobs_kwargs['job_delay'])
-					del self.jobs_kwargs['job_delay']
+			#assert ltrace('thread', '%s: running job %s' % (
+			#										self.name, self.job))
 
-				#assert ltrace('thread', '%s: running job %s' % (
-				#										self.name, self.job))
+			try:
+				self.job(*self.job_args, **self.jobs_kwargs)
 
-				try:
-					self.job(*self.job_args, **self.jobs_kwargs)
-
-				except exceptions.LicornError, e:
-					logging.warning('%s: LicornError encountered: %s' % (
-																self.name, e))
+			except exceptions.LicornError, e:
+				logging.warning('%s: LicornError encountered: %s' % (
+															self.name, e))
+				print_exc()
+			except (exceptions.LicornException, Exception), e:
+				logging.warning('%s: Exception encountered: %s' % (
+															self.name, e))
+				if options.verbose >= verbose.INFO:
 					print_exc()
-				except (exceptions.LicornException, Exception), e:
-					logging.warning('%s: Exception encountered: %s' % (
-																self.name, e))
-					if options.verbose >= verbose.INFO:
-						print_exc()
 
-				self.input_queue.task_done()
+			self.input_queue.task_done()
 
-				with self.lock:
-					self.jobbing.clear()
+			with self.lock:
+				self.jobbing.clear()
 
-				with self.__class__.lock:
-					self.__class__.busy -= 1
+			with self.__class__.lock:
+				self.__class__.busy -= 1
 
-				self.job = None
-				self.priority = None
-				self.job_args = None
-				self.job_kwargs = None
-				self.job_start_time = None
+			self.job = None
+			self.priority = None
+			self.job_args = None
+			self.job_kwargs = None
+			self.job_start_time = None
 
 			self.throttle_down()
 
@@ -359,9 +384,8 @@ class GenericQueueWorkerThread(Thread):
 
 				self.stop()
 	def spawn_peer(self):
-		peer = self.__class__(licornd=self.licornd, daemon=self.daemon)
-		self.licornd.threads.append(peer)
-		peer.start()
+		self.__licornd.append_thread(
+				self.__class__(licornd=self.__licornd, daemon=self.daemon))
 	def stop(self):
 		#assert ltrace('thread', '| %s.stop()' % self.name)
 		self.input_queue.put_nowait((-1, None, None, None))
@@ -371,7 +395,7 @@ class GenericQueueWorkerThread(Thread):
 		# but not everytime.
 		if self.__class__.instances % 10 == 0 or self.__class__.instances <= 2:
 			try:
-				self.licornd.threads.cleaner.trigger(0.1)
+				self.__licornd.clean_objects(0.1)
 			except AttributeError:
 				# if daemon is stopping, cleaner could be already wiped out.
 				pass

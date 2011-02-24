@@ -37,54 +37,6 @@ priorities = EnumDict('service_priorities', from_dict={
 		'HIGH': 0
 	})
 
-def daemon_thread(klass, target, args=(), kwargs={}):
-	""" TODO: turn this into a decorator, I think it makes a good candidate. """
-	from licorn.daemon.main import daemon
-	thread = klass(target, args, kwargs)
-	daemon.threads[thread.name] = thread
-	return thread
-
-def service_enqueue(prio, func, *args, **kwargs):
-	from licorn.daemon.main import daemon
-	#print '>> put', prio, func, args, kwargs
-	daemon.queues.serviceQ.put((prio, func, args, kwargs))
-
-def service_wait():
-	from licorn.daemon.threads import ServiceWorkerThread
-	if isinstance(current_thread(), ServiceWorkerThread):
-		raise RuntimeError('cannot join the serviceQ from '
-			'a ServiceWorkerThread instance, this would deadblock!')
-	from licorn.daemon.main import daemon
-	#print ">> waiting for", daemon.queues.serviceQ.qsize(), 'jobs to finish'
-	daemon.queues.serviceQ.join()
-
-def network_enqueue(prio, func, *args, **kwargs):
-	from licorn.daemon.main import daemon
-	#print '>> put', prio, func, args, kwargs
-	daemon.queues.networkQ.put((prio, func, args, kwargs))
-
-def network_wait():
-	from licorn.daemon.threads import NetworkWorkerThread
-	if isinstance(current_thread(), NetworkWorkerThread):
-		raise RuntimeError('cannot join the networkQ from '
-			'a NetworkWorkerThread instance, this would deadblock!')
-	from licorn.daemon.main import daemon
-	daemon.queues.networkQ.join()
-
-def aclcheck_enqueue(prio, func, *args, **kwargs):
-	from licorn.daemon.main import daemon
-	#print '>> put', prio, func, args, kwargs
-	daemon.queues.aclcheckQ.put((prio, func, args, kwargs))
-
-def aclcheck_wait():
-	from licorn.daemon.threads import ACLCkeckerThread
-	if isinstance(current_thread(), ACLCkeckerThread):
-		raise RuntimeError('cannot join the ackcheckerQ from '
-			'a ACLCkeckerThread instance, this would deadblock!')
-	from licorn.daemon.main import daemon
-	daemon.queues.aclcheckQ.join()
-
-
 # LicornDaemonInteractor is an object dedicated to user interaction when the
 # daemon is started in the foreground.
 class LicornDaemonInteractor(NamedObject):
@@ -172,12 +124,27 @@ class LicornDaemonInteractor(NamedObject):
 						elif char in ('f', 'F', 'l', 'L'):
 
 							self.long_output = not self.long_output
-							logging.notice('%s: switched long_output status '
-								'to %s.' % (self.name, self.long_output))
+
+							logging.notice(_(u'{0}: switched long_output status '
+								'to {1}.').format(self.name, _(u'enabled')
+									if self.long_output else _(u'disabled')))
+
+						elif char in ('c', 'C'):
+							sys.stderr.write(_('Console-initiated garbage '
+								'collection and dead thread cleaning.') + '\n')
+
+							self.daemon._job_periodic_cleaner()
+
+						elif char in ('w', 'W'):
+							w = self.daemon.threads.INotifier._wm.watches
+
+							sys.stderr.write('\n'.join(repr(watch)
+								for key, watch in w)
+								+ 'total: %d watches\n' % len(w))
 
 						elif char in ('t', 'T'):
-							sys.stderr.write('%s active threads: %s\n' % (
-								_thcount(), _threads()))
+							sys.stderr.write(_(u'{0} active threads: {1}').format(
+								_thcount(), _threads()) + '\n')
 
 						elif char == '\f': # ^L (form-feed, clear screen)
 							sys.stdout.write(clear)
@@ -199,7 +166,7 @@ class LicornDaemonInteractor(NamedObject):
 							os.kill(os.getpid(), signal.SIGTERM)
 
 						elif char == '\v': # ^K (Kill -9!!)
-							logging.warning('%s: killing ourselves badly.' %
+							logging.warning(_(u'%s: killing ourselves badly.') %
 								self.name)
 
 							self.restore_terminal()
@@ -215,8 +182,8 @@ class LicornDaemonInteractor(NamedObject):
 							sys.stderr.write(self.daemon.dump_status(
 								long_output=self.long_output))
 						elif char in ('i', 'I'):
-							logging.notice('%s: ntering interactive mode. '
-								'Welcome into licornd\'s arcanes…' % self.name)
+							logging.notice(_('%s: Entering interactive mode. '
+								'Welcome into licornd\'s arcanes…') % self.name)
 
 							# trap SIGINT to avoid shutting down the daemon by
 							# mistake. Now Control-C is used to reset the
@@ -247,12 +214,12 @@ class LicornDaemonInteractor(NamedObject):
 							sys.ps2 = '...'
 							interpreter.init_history()
 							interpreter.interact(
-								banner="Licorn® %s, Python %s on %s" % (
+								banner=_(u'Licorn® {0}, Python {1} on {2}').format(
 									version, sys.version.replace('\n', ''),
 									sys.platform))
 							interpreter.save_history()
-							logging.notice('%s: leaving interactive mode. '
-								'Welcome back to Real World™.' % self.name)
+							logging.notice(_('%s: leaving interactive mode. '
+								'Welcome back to Real World™.') % self.name)
 
 							# restore signal and terminal handling
 							signal.signal(signal.SIGINT,
@@ -262,9 +229,8 @@ class LicornDaemonInteractor(NamedObject):
 							self.prepare_terminal()
 
 						else:
-							logging.warning2(
-								"%s: received unhandled char '%s', ignoring."
-								% (self.name, char))
+							logging.warning2(_(u'{0}: received unhandled '
+								'char "{1}", ignoring.').format(self.name, char))
 			finally:
 				# put it back in standard mode after input, whatever
 				# happened. The terminal has to be restored.
