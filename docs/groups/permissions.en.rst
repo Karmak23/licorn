@@ -17,7 +17,5 @@ In a few words, Licorn® groups (which are pure unix groups, in fact) can have 3
 
 In real-life terms, this means that users members of a permissive group **can work on the same files in a collaborative manner**, provided the application that handles the file can play nice with this feature, which is completely application-dependant (e.g. MS Office and OpenOffice.org handle this cases, standard text editors do not)	.
 
-.. warning::
-	A given user can be only guest **or** responsible **or** standard member for a given group (=member statuses are mutually exclusive).
-
-	Currently, the system will not enforce this. Thus, if you give him/her more than one membership, the one with the most restrictive permissions will be applyed by the system (i.e. a *guest & responsible* will be only *guest*, a *responsible & member* will only be *member*).
+.. Note::
+	A given user can be only guest **or** standard member **or** responsible, for a given group (member statuses are mutually exclusive). The system will enforce this rule. Promoting a user is immediate, Demoting him/her will require a confirmation.
