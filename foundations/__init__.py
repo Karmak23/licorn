@@ -62,6 +62,7 @@ def check_python_modules_dependancies():
 
 	reqmods = (
 		('posix1e',   'python-pylibacl'),
+		('xattr',     'python-xattr'),
 		('gamin',     'python-gamin'),
 		('Pyro',      'pyro'),
 		('dbus',      'python-dbus'),
