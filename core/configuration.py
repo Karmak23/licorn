@@ -381,9 +381,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		err_message = ''
 
 		for directive, vmin, vmax, directive_name in (
-				(self.licornd.threads.aclcheck.min, 1,   10,
+				(self.licornd.threads.aclcheck.min, 1,   5,
 									'licornd.threads.aclcheck.min'),
-				(self.licornd.threads.aclcheck.max, 10,  50,
+				(self.licornd.threads.aclcheck.max, 1,   10,
 									'licornd.threads.aclcheck.max'),
 				(self.licornd.threads.service.min,  1,   25,
 									'licornd.threads.service.min'),
@@ -746,6 +746,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.defaults.home_base_path = '/home'
 		self.defaults.check_homedir_filename = '00_default'
 
+		# default expiration time (float, in seconds) for various things
+		# (see core.classes.CoreFSController._expire_events()).
+		self.defaults.global_expire_time = 10.0
+
 		# WARNING: Don't translate this. This still has to be discussed.
 		# TODO: move this into a plugin
 		self.defaults.admin_group = 'admins'
@@ -805,6 +809,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.acls = LicornConfigObject()
 		self.acls.group = 'acl'
+
+		# this one will be filled later, when GroupsController is instanciated.
+		self.acls.gid   = 0
+
 		self.acls.groups_dir = '%s/%s' % (
 			self.defaults.home_base_path,
 			self.groups.names.plural)
@@ -1261,7 +1269,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			auto_answer=auto_answer)
 
 		acls_conf = self.acls
-		all_went_ok = True
 
 		home_groups = FsapiObject(name='home_groups')
 		home_groups.path = acls_conf.groups_dir
@@ -1294,8 +1301,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		dirs_to_verify.append(home_backups)
 
 		try:
-			all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-				dirs_to_verify, batch = True)
+			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new(
+												dirs_to_verify, batch=True):
+				pass
 		except (IOError, OSError), e:
 			if e.errno == 95:
 				# this is the *first* "not supported" error encountered (on
@@ -1308,14 +1316,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			else:
 				logging.warning(e)
 				raise e
+		except TypeError:
+			# nothing to check (fsapi.... returned None and yielded nothing).
+			pass
 
-		all_went_ok &= self.check_archive_dir(batch=batch,
-			auto_answer=auto_answer)
+		self.check_archive_dir(batch=batch,	auto_answer=auto_answer)
 
-		assert ltrace('configuration', '< check_base_dirs(%s)' % all_went_ok)
-		return all_went_ok
+		assert ltrace('configuration', '< check_base_dirs()')
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
-		auto_answer=None):
+		auto_answer=None, full_display=True):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
@@ -1351,8 +1360,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		assert ltrace('configuration', ''''< check_archive_dir(return '''
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
-		return fsapi.check_dirs_and_contents_perms_and_acls_new([home_archive],
-			batch=batch, auto_answer=auto_answer)
+		try:
+			for ignored_event in fsapi.check_dirs_and_contents_perms_and_acls_new(
+							[home_archive], batch=batch, auto_answer=auto_answer,
+							full_display=full_display):
+				pass
+		except TypeError:
+			# nothing to check (fsapi.... returned None and yielded nothing).
+			pass
 	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""

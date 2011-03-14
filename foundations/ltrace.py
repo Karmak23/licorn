@@ -31,6 +31,11 @@ trc['all']           = 0xffffffffffffffffffffffff
 trc['none']          = 0x000000000000000000000000
 trc['special']       = 0xf00000000000000000000000
 trc['timings']       = 0x100000000000000000000000
+trc['gc']            = 0x200000000000000000000000
+# the next 2 are identical, this is meant to be, for syntaxic eases
+trc['lock']          = 0x400000000000000000000000
+trc['locks']         = 0x400000000000000000000000
+
 
 trc['foundations']   = 0x00000000000000000000ffff
 trc['logging']       = 0x000000000000000000000001
@@ -59,10 +64,12 @@ trc['privileges']    = 0x000000000000000000400000
 trc['keywords']      = 0x000000000000000000800000
 trc['system']        = 0x000000000000000001000000
 
+
 trc['backends']      = 0x000000000000ffff00000000
 trc['openldap']      = 0x000000000000000100000000
 trc['shadow']        = 0x000000000000000200000000
 trc['dnsmasq']       = 0x000000000000000400000000
+
 
 trc['extensions']    = 0x00000000ffff000000000000
 trc['postfix']       = 0x000000000001000000000000
@@ -93,6 +100,7 @@ trc['rwi']           = 0x000001000000000000000000
 trc['client']        = 0x000002000000000000000000
 trc['interactor']    = 0x000004000000000000000000
 
+
 # no 0xffff here, the first 'f' is for timings and special cases
 trc['interfaces']    = 0x0fff00000000000000000000
 trc['cli']           = 0x00ff00000000000000000000
@@ -105,8 +113,11 @@ trc['argparser']     = 0x002000000000000000000000
 trc['wmi']           = 0x004000000000000000000000
 
 
-trc['highlevel']     = (trc['all'] ^ trc['foundations']
-						^ trc['thread'] ^ trc['machines'] ^ trc['inotifier'])
+trc['highlevel']     = (trc['all']
+						- trc['foundations']
+						- trc['thread']
+						- trc['machines']
+						- trc['inotifier'])
 trc['high']          = trc['highlevel']
 trc['standard']      = trc['highlevel']
 trc['std']           = trc['highlevel']
@@ -169,7 +180,7 @@ if new_trace != None or old_trace != None:
 		substracts = env_mod.split('^')
 		ltrace_level |= trc[substracts[0]]
 		for sub_env_mod in substracts[1:]:
-			ltrace_level ^= trc[sub_env_mod]
+			ltrace_level -= trc[sub_env_mod]
 
 	def ltrace(module, message):
 		if  ltrace_level & trc[module]:

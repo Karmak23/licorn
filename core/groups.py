@@ -11,7 +11,7 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import os, sys, stat, posix1e, re, time, pyinotify, weakref
+import sys, os, stat, posix1e, re, time, weakref, gc
 
 from traceback  import print_exc
 from threading  import current_thread, Event
@@ -26,11 +26,11 @@ from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, distros
 
 from licorn.core         import LMC
-from licorn.core.classes import CoreFSController, CoreStoredObject
+from licorn.core.classes import CoreFSController, CoreStoredObject, CoreFSUnitObject
 from licorn.daemon       import priorities, roles
 
 
-class Group(CoreStoredObject):
+class Group(CoreStoredObject, CoreFSUnitObject):
 	""" a Licorn® group object.
 
 		.. versionadded:: 1.2.5
@@ -182,7 +182,7 @@ class Group(CoreStoredObject):
 
 		# self.__is_system must already be set (to whatever value) for this
 		# to work, because system group don't have homedirs.
-		self.__homeDirectory = self.__resolve_home_directory(homeDirectory)
+		self.__homeDirectory = self._resolve_home_directory(homeDirectory)
 
 		#: this must be done *after* the home dire resolution, else it
 		# will fail (this is enforced anyway in the method).
@@ -202,17 +202,15 @@ class Group(CoreStoredObject):
 		self.__responsible_group = None
 		self.__guest_group       = None
 
-		# CHECK related things.
-		# The Event will avoid checking or fast_checking multiple times
-		# over and over. We display messages to be sure there is no problem,
-		# but no more often that every 5 seconds.
-		self.__checking_event = Event()
-		self.__last_msg_time  = time.time()
-		self.__check_file     = '%s%s' % (self.__homeDirectory,
-							LMC.configuration.groups.check_config_file_suffix)
-
-		# don't set it, this will be handled by _fast*() or check().
-		#self.__check_rules    = None
+		CoreFSUnitObject.__init__(self, '%s%s' % (self.__homeDirectory,
+							LMC.configuration.groups.check_config_file_suffix),
+							Enumeration(
+									home=self.homeDirectory,
+									user_uid=-1,
+									# we force the GID to be 'acl'.
+									user_gid=LMC.configuration.acls.gid),
+							(('@GROUP', self.__name),
+								('@GW', 'w' if self.__permissive else '-')))
 
 		# CLI output pre-calculations.
 		if len(name) + 2 > Group._cw_name:
@@ -220,18 +218,35 @@ class Group(CoreStoredObject):
 			Group._cli_invalidate_all()
 	def __del__(self):
 
-		assert ltrace('groups', '| Group %s.__del__()' % self.__name)
+		assert ltrace('gc', '| Group %s.__del__()' % self.__name)
 
 		del self.__profile
 
 		del self.__profiles
 
 		for user in self.__members:
-			user().unlink_Group(self)
+			try:
+				user().unlink_Group(self)
+			except (ValueError, AttributeError):
+				# "ValueError('list.remove(x): x not in list',)" happens on
+				# backends reload, when an "old" Group tries to remove itself
+				# from it's members __groups cache, but the GroupsController
+				# already called `user.clear_Groups()` and the user doesn't
+				# hold the reference to the current group anymore.
+				#
+				# The AttributeError happens when Users are backends-reloaded
+				# before groups: the old Users are GC'ed, and the user() weakref
+				# call returns None, which can't do 'unlink_Group()'.
+				#
+				# In either case, the problem is totally harmless.
+				pass
 
 		del self.__members
 
-		del Group.by_name[self.__name]
+		# avoid removing a reference to a new instance: clean it only if it
+		# points to us.
+		if Group.by_name[self.__name] == self.weakref:
+			del Group.by_name[self.__name]
 
 		if len(self.__name) + 2 == Group._cw_name:
 			Group._cli_compute_label_width()
@@ -285,9 +300,6 @@ class Group(CoreStoredObject):
 			returns a generator of the current group's members. It is a
 			compatibility property, used in backends at save time. """
 		return (user().login for user in self.__members)
-	@property
-	def checking(self):
-		return self.__checking_event.is_set()
 	@property
 	def gidNumber(self):
 		""" Read-only GID attribute. """
@@ -356,6 +368,9 @@ class Group(CoreStoredObject):
 
 			self.__permissive = permissive
 
+			self.reload_check_rules((('@GROUP', self.__name),
+								('@GW', 'w' if self.__permissive else '-')))
+
 			# auto-apply the new permissiveness
 			self.licornd.service_enqueue(priorities.HIGH, self.check, batch=True)
 
@@ -419,11 +434,18 @@ class Group(CoreStoredObject):
 					stylize(ST_COMMENT, groupSkel)))
 	@property
 	def homeDirectory(self):
-		""" Read-only attribute, the path to the home directory of a standard
+		""" Read-write attribute, the path to the home directory of a standard
 			group (which holds shared content). Only standard group have home
 			directories.
+
+			Note that when setting it, the value given is totally ignored: the
+			'set' mechanism only triggers the :meth:`_resolve_home_directory`
+			method, which will construct and find the dire itself.
 		"""
 		return self.__homeDirectory
+	@homeDirectory.setter
+	def homeDirectory(self, ignored_value):
+		self.__homeDirectory = self._resolve_home_directory()
 	@property
 	def is_system(self):
 		""" Read-only boolean indicating if the current group is system or not. """
@@ -507,10 +529,14 @@ class Group(CoreStoredObject):
 	gid                = gidNumber
 	is_permissive      = permissive
 	privilege          = is_privilege
-	is_checking        = checking
 	primaryMembers     = gidMembers
 	primary_members    = gidMembers
 	auxilliary_members = members
+
+	@property
+	def watches(self):
+		""" R/O property, containing the current group inotifier watches,
+			in the form of a dictionnary of path -> WD. """
 
 	def _cli_invalidate(self):
 		# invalidate the CLI view
@@ -556,40 +582,40 @@ class Group(CoreStoredObject):
 			memberUid = self.__memberUid
 			del self.__memberUid
 		except AttributeError:
-			return []
+			return
 
 		# reconcile manual changes eventually made outside of licorn.
 		# this will avoid sorting them after the collection, with a more
 		# CPU intensive approach.
 		memberUid.sort()
 
-		for member in memberUid:
+		rewrite = False
 
-			rewrite = False
+		for member in memberUid:
 
 			try:
 				user = LMC.users.by_login(member)
 			except KeyError:
+				rewrite = True
 				logging.warning(_(u'group {0}: removed relationship for '
 					'non-existing user {1}.').format(
 						stylize(ST_NAME, self.__name),
 						stylize(ST_LOGIN, member)))
 
-				rewrite = True
 			else:
 				if user.weakref in self.__members:
+					rewrite = True
 					logging.warning(_(u'group {0}: removed duplicate '
 						'relationship for member {1}.').format(
 							stylize(ST_NAME, self.__name),
 							stylize(ST_LOGIN, member)))
-					rewrite = True
 
 				elif user.weakref in self.__gidMembers:
+					rewrite = True
 					logging.warning(_(u'group {0}: removed primary member {1} '
 						'from auxilliary members list.').format(
 							stylize(ST_NAME, self.__name),
 							stylize(ST_LOGIN, member)))
-					rewrite = True
 
 				else:
 					# this is an automated load procedure, not an administrative
@@ -598,8 +624,9 @@ class Group(CoreStoredObject):
 					# don't sort the groups, this will be done one time for all
 					# in the controller method.
 					user.link_Group(self)
-			if rewrite:
-				self.serialize()
+
+		if rewrite:
+			yield self
 	def serialize(self, backend_action=backend_actions.UPDATE):
 		""" Save group data to originating backend. """
 
@@ -609,13 +636,12 @@ class Group(CoreStoredObject):
 											backend_actions[backend_action]))
 
 		self.backend.save_Group(self, backend_action)
-
 	def add_Users(self, users_to_add=None, force=False, batch=False):
 		""" Add a user list in the group 'name'. """
 
 		caller = current_thread().name
 
-		assert ltrace('groups', '| %s: %s.add_Users(%s)' % (
+		assert ltrace('groups', '> %s: %s.add_Users(%s)' % (
 								caller, self.__name,
 								', '.join(user.login for user in users_to_add)))
 
@@ -623,12 +649,15 @@ class Group(CoreStoredObject):
 			raise exceptions.BadArgumentError(
 						_(u'You must specify a users list'))
 
+		assert ltrace('locks', '  %s %s' % (LMC.groups.lock, LMC.users.lock))
+
 		# we need to lock users to be sure they don't dissapear during this phase.
 		with nested(LMC.groups.lock, LMC.users.lock):
 
 			work_done = False
 
 			for user in users_to_add:
+
 				if user.weakref in self.__members \
 									or user.gidNumber == self.__gidNumber:
 
@@ -647,7 +676,6 @@ class Group(CoreStoredObject):
 								stylize(ST_LOGIN, user.login),
 								stylize(ST_NAME, self.__name)))
 				else:
-
 					self.__check_mutual_exclusions(user, force)
 
 					if self.__is_standard or self.__is_helper:
@@ -663,6 +691,8 @@ class Group(CoreStoredObject):
 
 					self.controller.run_hooks('group_pre_add_user', self, user)
 
+
+					# the ADD operation, per se.
 					self.__members.append(user.weakref)
 					user._cli_invalidate()
 
@@ -700,6 +730,8 @@ class Group(CoreStoredObject):
 				# FIXME: what to do if extensions *need* the group to
 				# be written to disk and batch was True ?
 
+		assert ltrace('locks', '  %s %s' % (LMC.groups.lock, LMC.users.lock))
+
 		assert ltrace('groups', '< %s.add_Users()' % self.__name)
 	def del_Users(self, users_to_del=None, batch=False):
 		""" Delete a users list from the current group. """
@@ -721,9 +753,10 @@ class Group(CoreStoredObject):
 
 			for user in users_to_del:
 
-				self.controller.run_hooks('group_pre_del_user', self, user)
-
 				if user.weakref in self.__members:
+
+					self.controller.run_hooks('group_pre_del_user', self, user)
+
 					self.__members.remove(user.weakref)
 
 					# Update the user's reverse link.
@@ -883,7 +916,7 @@ class Group(CoreStoredObject):
 					stylize(ST_NAME, old_backend),
 					stylize(ST_NAME, new_backend)))
 			return True
-	def check(self, minimal=True, force=False, batch=False, auto_answer=None):
+	def check(self, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
 		""" Check a group.
 			Will verify the various needed
 			conditions for a Licorn® group to be valid, and then check all
@@ -903,15 +936,16 @@ class Group(CoreStoredObject):
 
 		assert ltrace('groups', '> %s.check()' % stylize(ST_NAME, self.name))
 
-		with self.lock:
-			if self.is_system:
-				return self.__check_system_group(minimal, force,
-													batch, auto_answer)
-			else:
-				return self.__check_standard_group(minimal, force,
-													batch, auto_answer)
+		#NOTE: don't self.lock here, it would block the inotifier event dispatcher.
+
+		if self.is_system:
+			return self.__check_system_group(minimal, force,
+											batch, auto_answer, full_display)
+		else:
+			return self.__check_standard_group(minimal, force,
+											batch, auto_answer, full_display)
 	def check_symlinks(self, oldname=None, delete=False,
-											batch=False, auto_answer=None):
+						batch=False, auto_answer=None, *args, **kwargs):
 		""" For each member of a group, verify member has a symlink to the
 			shared group dir inside his home (or under level 2 directory). If
 			not, create the link. Eventually delete links pointing to an old
@@ -919,6 +953,9 @@ class Group(CoreStoredObject):
 
 			NOT locked because can be long, and harmless if fails.
 		"""
+
+		logging.progress(_(u'Checking %s symlinks in members homes, '
+			'this can be long…')  % stylize(ST_NAME, self.name))
 
 		all_went_ok = True
 
@@ -942,13 +979,13 @@ class Group(CoreStoredObject):
 									LMC.configuration.groups.names.plural,
 									link_basename)
 
-			if oldname:
+			if oldname is None:
+				link_src_old = None
+			else:
 				link_src_old = os.path.join(
 								LMC.configuration.defaults.home_base_path,
 								LMC.configuration.groups.names.plural,
 								oldname)
-			else:
-				link_src_old = None
 
 			for link in fsapi.minifind(user.homeDirectory, maxdepth=2,
 										type=stat.S_IFLNK):
@@ -1077,42 +1114,13 @@ class Group(CoreStoredObject):
 		# FIXME: not already done ??
 		self.serialize()
 
-	# private methods.
-	def __resolve_home_directory(self, directory=None):
-		""" construct the standard value for a group home directory, and
-			try to find if it a symlink. If yes, resolve the symlink and
-			remember the result as the real home dir.
-
-			Whatever the home is, return it. The return result of this
-			method is meant to be stored as self.homeDirectory.
-
-			If the home directory doesn't exist, don't raise any error:
-
-			- if we are in group creation phase, this is completely normal.
-			- if in any other phase, the problem will be corrected by the
-			  check mechanism, and will be pointed by the [internal]
-			  permissive resolver method.
-		"""
-
-		if self.__is_system:
-			return None
-
-		if directory in (None, ''):
-			home = '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
-									LMC.configuration.groups.names.plural,
-									self.__name)
-		else:
-			home = directory
-
-		# follow the symlink for the group home, only if link destination
-		# is a directory. This allows administrator to put big group dirs
-		# on different volumes.
-		if os.path.islink(home):
-			if os.path.exists(home) \
-				and os.path.isdir(os.path.realpath(home)):
-				home = os.path.realpath(home)
-
-		return home
+	def _build_standard_home(self):
+		return '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
+							LMC.configuration.groups.names.plural,
+							self.__name)
+	def _build_system_home(self, ignored_value):
+		""" A system group doesn't have a home. """
+		return None
 	def __resolve_permissive_state(self, permissive=None):
 		""" If the shared group directory exists, return its current
 			permissive state.
@@ -1269,7 +1277,7 @@ class Group(CoreStoredObject):
 		assert ltrace('groups', ' | %s.__check_mutual_exclusions() → %s' % (
 				self.name, stylize(ST_OK, 'OK')))
 	def check_associated_groups(self, minimal=True, force=False,
-											batch=False, auto_answer=None):
+							batch=False, auto_answer=None, full_display=True):
 		"""	Check the system groups that a standard group needs to be valid.
 			For
 			example, a group "MountainBoard" needs 2 system groups,
@@ -1310,8 +1318,9 @@ class Group(CoreStoredObject):
 
 				group_name = prefix + self.__name
 
-				logging.progress(_(u'Checking system group %s…') %
-					stylize(ST_NAME, group_name))
+				if full_display:
+					logging.progress(_(u'Checking system group %s…') %
+												stylize(ST_NAME, group_name))
 
 				if group_ref is None:
 					if batch or logging.ask_for_repair(_(u'The system group '
@@ -1326,9 +1335,9 @@ class Group(CoreStoredObject):
 							group = self.controller.add_Group(
 											name=group_name,
 											system=True,
-											description=unicode(
-												_(u'{0} of group “{1}”').format(
-													title.title(), self.name)),
+											description=_(u'{0} of group '
+												'“{1}”').format(
+													title.title(), self.name),
 											backend=self.backend,
 											batch=batch,
 											force=force)
@@ -1361,14 +1370,15 @@ class Group(CoreStoredObject):
 				else:
 					if not minimal:
 						all_went_ok &= group_ref().check_symlinks(
-															batch, auto_answer)
+														batch=batch,
+														auto_answer=auto_answer)
 			# cross-link everyone.
 			self.__responsible_group().guest_group = self.__guest_group()
 			self.__guest_group().responsible_group = self.__responsible_group()
 
 		return all_went_ok
 	def __check_system_group(self, minimal=True, force=False,
-											batch=False, auto_answer=None):
+							batch=False, auto_answer=None, full_display=True):
 		""" Check superflous and mandatory attributes of a system group. """
 
 		assert ltrace(self.name, '| %s.__check_system_group()' % self.name)
@@ -1418,76 +1428,12 @@ class Group(CoreStoredObject):
 					'{0} not commited').format(self.name))
 				return False
 		return True
-	def __check_standard_group(self, minimal=True, force=False,
-											batch=False, auto_answer=None):
-		""" TODO. """
 
-		all_went_ok = True
+	# alias CoreFSUnitObject methods to us
+	__check_standard_group          = CoreFSUnitObject._standard_check
+	_pre_standard_check_method      = check_associated_groups
+	_extended_standard_check_method = check_symlinks
 
-		logging.progress(_(u'Checking group {0}…').format(
-				stylize(ST_NAME, self.name)))
-
-		all_went_ok &= self.check_associated_groups(
-								minimal, force, batch, auto_answer)
-
-		# NOTE: in theory we shouldn't check if the dir exists here, it
-		# is done in fsapi.check_one_dir_and_acl(). but we *must* do it
-		# because we set uid and gid to -1, and this implies the need to
-		# access to the path lstat() in ACLRule.check_dir().
-		if not os.path.exists(self.homeDirectory):
-			if batch or logging.ask_for_repair(_(u'Directory %s does not '
-							'exist but it is mandatory. Create it?') %
-								stylize(ST_PATH, self.homeDirectory),
-							auto_answer=auto_answer):
-				os.mkdir(self.homeDirectory)
-
-				logging.info(_(u'Created directory {0}.').format(
-						stylize(ST_PATH, self.__homeDirectory)))
-
-				# FIXME: reinstall the inotifier ?
-			else:
-				raise exceptions.LicornCheckError(_(u'Directory %s does not '
-					'exist but is mandatory. Check aborted.') %
-						stylize(ST_PATH, self.homeDirectory))
-
-		# load the rules defined by user and merge them with templates rules.
-		rules = self.__load_check_rules()
-
-		if rules is not None:
-			if self.__checking_event.is_set():
-				logging.warning(_(u'group %s: somebody is already checking this '
-					'group; check aborted.') % stylize(ST_NAME, self.__name))
-
-			else:
-
-				self.__checking_event.set()
-
-				try:
-					all_went_ok &= fsapi.check_dirs_and_contents_perms_and_acls_new(
-						rules, batch=batch, auto_answer=auto_answer)
-
-				except exceptions.DoesntExistException, e:
-					logging.warning(e)
-
-				self.__checking_event.clear()
-
-			# if the home dir or helper groups get corrected,
-			# we need to update the CLI view.
-			self._cli_invalidate()
-
-		if not minimal:
-			logging.progress(_(u'Checking %s symlinks in members homes, '
-				'this can be long…')  % stylize(ST_NAME, self.name))
-			all_went_ok &= self.check_symlinks(batch, auto_answer)
-
-			# TODO: if extended / not minimal: all group members' homes are OK
-			# (recursive CheckUsers recursif)
-			# WARNING: be carefull of recursive multicalls, when calling
-			# CheckGroups, which calls CheckUsers, which could call
-			# CheckGroups()… use minimal=True as argument here, don't forward
-			# the current "minimal" value.
-
-		return all_went_ok
 	def __add_group_symlink(self, user, batch=False, auto_answer=None):
 		""" Create a symlink to the group shared dir in the user's home. """
 
@@ -1511,6 +1457,7 @@ class Group(CoreStoredObject):
 
 		try:
 			fsapi.make_symlink(link_src, link_dst, batch=batch)
+
 		except Exception, e:
 			raise exceptions.LicornRuntimeError(
 						"Unable to create symlink %s (was: %s)." % (
@@ -1550,170 +1497,16 @@ class Group(CoreStoredObject):
 					raise exceptions.LicornRuntimeError(
 						"Unable to delete symlink %s (was: %s)." % (
 							stylize(ST_LINK, link), e))
-	def __inotify_event_dispatcher(self, event):
-		""" The inotifier callback. Just a shortcut. """
-
-		d = self.daemon
-
-		if event.dir:
-			if event.mask & pyinotify.IN_CREATE:
-				d.inotifier_add()
-
-
-		if self.__checking_event.is_set():
-			if time.time() - self.__last_msg_time >= 5.0:
-				logging.progress(_(u'group %s: manual check already in progress, '
-					'skipping _fast_check.') % stylize(ST_NAME, self.__name))
-				self.__last_msg_time = time.time()
-			return
-
-		self.licornd.aclcheck_enqueue(priorities.LOW,
-							self.__fast_aclcheck, event.pathname)
-	def __watch_directory(self, path):
-		return self.licornd.inotifier_add(
-			path=directory,
-			rec=False, auto_add=False,
-			mask=	#pyinotify.ALL_EVENTS,
-					pyinotify.IN_CREATE
-					| pyinotify.IN_ATTRIB
-					| pyinotify.IN_CLOSE_WRITE
-					| pyinotify.IN_MOVED_TO,
-			#proc_fun=pyinotify.PrintAllEvents())
-			proc_fun=self.__inotify_event_dispatcher)
-
-	def __fast_aclcheck(self, path):
-		""" check a file in a shared group directory and apply its perm
-			without any confirmation.
-
-			:param path: path of the modified file/dir
-		"""
-
-		assert ltrace('groups', "> _fast_aclcheck( path=%s)" % (self.gid, path))
-
-		group_home = self.__homeDirectory
-
-		try:
-			entry_stat = os.lstat(path)
-		except (IOError, OSError), e:
-			if e.errno == 2 and path != group_home:
-				# bail out if path has disappeared since we were called.
-				return
-			else:
-				raise e
-
-		rule_name   = path[len(group_home)+1:].split('/')[0]
-		is_root_dir = (rule_name is '')
-
-		# if the path has a special rule, load it
-		if rule_name in self.__check_rules:
-			dir_info = self.__check_rules[rule_name].copy()
-
-		# else take the default one
-		else:
-			dir_info = self.__check_rules._default.copy()
-
-		# the dir_info.path has to be the path of the checked file
-		dir_info.path = path
-
-		if path[-1] == '/':
-			path = path[:-1]
-
-		# deal with owners
-		# uid owner of the path is:
-		#	- 'root' = 0 if path is group home
-		#	- unchanged if it is not the group home
-		# gid owner of the path is:
-		#	- 'acl' if an acl will be set to the path.
-		#	- the primary group of the user owner of the path, if uid will not
-		#		be changed.
-		#	- 'acl' if we don't keep the same uid.
-		if path == group_home:
-			dir_info.uid = 0
-		else:
-			dir_info.uid = -1
-
-		try:
-			# cache the 'acl' GID
-			acl_reserved_gid = Group._acl_gid
-		except AttributeError:
-			acl_reserved_gid = Group._acl_gid = Group.by_name[
-									LMC.configuration.acls.group]().gidNumber
-
-		if ':' in dir_info.root_dir_perm or ',' in dir_info.root_dir_perm:
-				dir_info.gid = acl_reserved_gid
-		else:
-			if dir_info.uid == -1:
-				# FIXME: shouldn't we force the current group ??
-				dir_info.gid = LMC.users[entry_stat.st_uid].gidNumber
-			else:
-				dir_info.gid = acl_reserved_gid
-
-		# run the check
-		fsapi.check_perms(dir_info, batch=True,
-			file_type=(entry_stat.st_mode & 0170000),
-			is_root_dir=is_root_dir, full_display=False)
-
-		assert ltrace('groups', '< _fast_check_group')
-	def _inotifier_del_watch(self, inotifier=None):
-		""" delete a group watch. Not directly used by inotifier, but prefixed
-			with it because used in the context. """
-
-		print '>> please implement Group._inotifier_del_watch()'
-		return
-
-		#TODO: make this recursive
-		inotifier.remove_watches_recursive(self.__homeDirectory)
-	def __load_check_rules(self, event=None):
-		"""  exist to catch anything coming from the
-			inotifier and that we wnt to ignore anyway. The return allows us
-			to use the rules immediately, when we load them in the standard
-			check() method. """
-
-		if event is None:
-			try:
-				return self.__check_rules
-			except:
-				# don't crash: just don't return and the rules will be loaded
-				# as if there were no problem at all.
-				pass
-
-		with self.lock:
-			self.__check_rules = self.controller.load_rules(
-					core_obj=self,
-					rules_path=self.__check_file,
-					object_info=Enumeration(
-						home=self.__homeDirectory,
-						# FIXME: see http://dev.licorn.org/ticket/534
-						user_uid=-1, user_gid=-1),
-					vars_to_replace=(
-						('@GROUP', self.__name),
-						('@GW', 'w'
-							if self.__permissive else '-'))
-				)
-			return self.__check_rules
-	def _inotifier_add_watch(self, inotifier):
-		""" add a group watch. not used directly by inotifier, but prefixed
-			with it because used in the context. """
-
-		# this hint is not needed, we don't modify the check configuration file
-		# from inside here, nor the controller.
-		#self.check_file_hint =
-
-		self.__load_check_rules()
-
-		inotifier.watch_conf(self.__check_file, self, self.__load_check_rules)
-
-		for directory in fsapi.minifind(self.__homeDirectory):
-			self.__watch_dir(directory)
 
 	def _cli_get(self, long_output=False, no_colors=False):
-
+		""" FIXME: make long_output a dedicated precalc variable... """
 		try:
 			return self.__cg_precalc_full
 		except AttributeError:
 
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
 			label_width    = Group._cw_name
+			align_space    = ' ' * (label_width + 2)
 			gid_label_rest = 5 - len(str(self.__gidNumber))
 
 			accountdata = [ '{group_name}: ✎{gid} {backend}	'
@@ -1756,12 +1549,12 @@ class Group(CoreStoredObject):
 
 				if len(self.__members) > 0:
 					accountdata.append('%s%s' % (
-						' ' * (label_width + 2),
+						align_space,
 						', '.join((user()._cli_get_small()
 							for user in self.__members))))
 				else:
 					accountdata.append('%s%s' % (
-						' ' * (label_width + 2),
+						align_space,
 						stylize(ST_EMPTY, _(u'— no member —'))))
 			else:
 				if self.__is_standard:
@@ -1790,11 +1583,11 @@ class Group(CoreStoredObject):
 
 					if len(members) > 0:
 						accountdata.append('%s%s' % (
-							' ' * (label_width + 2),
+							align_space,
 							', '.join(user for login, user in sorted(members))))
 					else:
 						accountdata.append('%s%s' % (
-							' ' * (label_width + 2),
+							align_space,
 							stylize(ST_EMPTY, _(u'— no member —'))))
 
 				elif self.__is_helper:
@@ -1804,13 +1597,13 @@ class Group(CoreStoredObject):
 				else:
 					if len(self.__members) > 0:
 						accountdata.append('%s%s' % (
-							' ' * (label_width + 2),
+							align_space,
 							', '.join((user._cli_get_small()
 								for user in sorted(self.members,
 									key=attrgetter('login'))))))
 					else:
 						accountdata.append('%s%s' % (
-							' ' * (label_width + 2),
+							align_space,
 							stylize(ST_EMPTY, _(u'— no member —'))))
 
 			self.__cg_precalc_full = '\n'.join(accountdata)
@@ -1926,6 +1719,9 @@ class GroupsController(Singleton, CoreFSController):
 		self.reload()
 
 		LMC.configuration.groups.hidden = self.get_hidden_state()
+		LMC.configuration.acls.gid      = self.by_name(
+									LMC.configuration.acls.group).gidNumber
+		#print '>> ACL GID', LMC.configuration.acls.gid
 		GroupsController.load_ok = True
 	def reload(self):
 		""" load or reload internal data structures from backends data. """
@@ -1950,13 +1746,48 @@ class GroupsController(Singleton, CoreFSController):
 	def reload_backend(self, backend):
 		""" reload only one backend contents (used from inotifier). """
 
-		assert ltrace('groups', '| reload_backend(%s)' % backend)
+		assert ltrace('groups', '| reload_backend(%s)' % backend.name)
+		assert ltrace('locks', '| locks %s %s' % (self.lock, LMC.users.lock))
 
 		# lock users too, because we feed the members cache inside.
 		with nested(self.lock, LMC.users.lock):
-			self.update(backend.load_Groups())
+
+			#for gid, group in self.items():
+			#	if group.backend.name == backend.name:
+			#		del self[gid]
+			#		del group
+
+			loaded = []
+
+			for gid, group in backend.load_Groups():
+				if gid in self:
+					logging.progress(_(u'{0}.reload: Overwritten gid {1}.').format(
+							stylize(ST_NAME, self.name), gid))
+
+				#print '>> save', gid, group.name
+				self[gid] = group
+				loaded.append(gid)
+
+			for gid, group in self.items():
+				if group.backend.name == backend.name:
+					if gid in loaded:
+						loaded.remove(gid)
+
+					else:
+						logging.progress(_(u'{0}: removing disapeared group '
+							'{1}.').format(stylize(ST_NAME, self.name),
+								stylize(ST_NAME, group.name)))
+
+						self.del_Group(group, batch=True, force=True)
+
 			self.__connect_groups()
-			self.__connect_users()
+			self.__connect_users(clear_first=True)
+
+		assert ltrace('locks', '| locks %s %s' % (self.lock, LMC.users.lock))
+
+		# we need to reload them, as they connect groups to them.
+		LMC.privileges.reload()
+		LMC.profiles.reload()
 	def get_hidden_state(self):
 		""" See if /home/groups is readable or not. """
 
@@ -1983,10 +1814,12 @@ class GroupsController(Singleton, CoreFSController):
 			# the group "users" doesn't exist, or is not yet created.
 			return None
 		except (IOError, OSError), e:
-			if e.errno == 13:
-				LicornConfiguration.groups.hidden = None
-			elif e.errno != 2:
-				# 2 will be corrected in this function
+			if e.errno == 95:
+				raise exceptions.LicornRuntimeError(_(u'File-system {0} must '
+					'be mounted with {1} option to continue!').format(
+						stylize(ST_PATH, LMC.configuration.home_base_path),
+						stylize(ST_ATTR, 'acl')))
+			else:
 				raise e
 	def serialize(self, group=None):
 		""" Save internal data structure to backends. """
@@ -2247,17 +2080,10 @@ class GroupsController(Singleton, CoreFSController):
 							group.name, group.gid))
 			return group
 
-		if async:
-			# do the check in the background.
-			self.licornd.service_enqueue(priorities.NORMAL, group.check, minimal=True,
-														batch=True, force=force)
-		else:
-			# do it now (used in WMI, to avoid crashing on the list if
-			# helper groups are not yet created; you know how fast the WMI is...)
-			group.check(minimal=True, batch=True, force=force)
+		# create group home dir and helper system groups.
+		group.check(minimal=True, batch=True, force=force)
 
 		if not_already_exists:
-
 			group._inotifier_add_watch(self.licornd)
 
 			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
@@ -2273,9 +2099,6 @@ class GroupsController(Singleton, CoreFSController):
 		assert ltrace('groups', '< AddGroup(%s): gid %d' % (
 									group.name, group.gid))
 
-		#TODO: remove / betterify this
-		#if not_already_exists:
-		#	self._inotifier_add_group_watch(gid)
 		return group
 	def __add_group(self, name, manual_gid=None, system=False, description=None,
 						groupSkel=None, permissive=None, backend=None,
@@ -2374,8 +2197,7 @@ class GroupsController(Singleton, CoreFSController):
 						LMC.configuration.groups.system_gid_min,
 						LMC.configuration.groups.system_gid_max,
 						LMC.configuration.groups.gid_min,
-						LMC.configuration.groups.gid_max)
-					)
+						LMC.configuration.groups.gid_max))
 
 		self.run_hooks('group_pre_add', gid=manual_gid,
 										name=name,
@@ -2383,7 +2205,7 @@ class GroupsController(Singleton, CoreFSController):
 										description=description)
 
 		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
-			gid, name))
+																	gid, name))
 
 		group = self[gid] = Group(gid, name,
 						description=description,
@@ -2417,9 +2239,10 @@ class GroupsController(Singleton, CoreFSController):
 		""" Delete a Licorn® group. """
 
 		assert ltrace('groups', '| del_Group(%s,%s)' % (group.name, group.gid))
+		assert ltrace('locks',  '> del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
 
 		# lock everything we *eventually* need, to be sure there are no errors.
-		with nested(self.lock, LMC.users.lock, LMC.privileges.lock):
+		with nested(self.lock, LMC.privileges.lock, LMC.users.lock):
 
 			if check_profiles and group.gid in LMC.profiles.iterkeys():
 				raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -2473,6 +2296,11 @@ class GroupsController(Singleton, CoreFSController):
 				# delete its internal data and exit.
 				self.__delete_group(group)
 
+				# checkpoint, needed for multi-delete (users-groups-profile) operation,
+				# to avoid collecting the deleted users at the end of the run, making
+				# throw false-negative operation about non-existing groups.
+				gc.collect()
+
 				return
 
 			# remove the inotifier watch before deleting the group, else
@@ -2503,6 +2331,13 @@ class GroupsController(Singleton, CoreFSController):
 			# finally, delete the group.
 			self.__delete_group(group)
 
+		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# to avoid collecting the deleted users at the end of the run, making
+		# throw false-negative operation about non-existing groups.
+		gc.collect()
+
+		assert ltrace('locks', '< del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
+
 		# LOCKS: from here, everything is deleted in internal structures, we
 		# don't need the locks anymore. The inotifier and the archiving parts
 		# can be very long, releasing the locks is good idea.
@@ -2532,7 +2367,12 @@ class GroupsController(Singleton, CoreFSController):
 
 		self.run_hooks('group_pre_del', group)
 
-		del self[gid]
+		if gid in self:
+			del self[gid]
+		else:
+			logging.warning2(_(u'{0}: group {1} already not referenced in '
+				'controller!').format(stylize(ST_NAME, self.name),
+					stylize(ST_NAME, name)))
 
 		# FIXME: this is not very smart.
 		# NOTE: this must be done *after* having deleted the data from self,
@@ -2547,6 +2387,9 @@ class GroupsController(Singleton, CoreFSController):
 
 		# http://www.friday.com/bbum/2007/08/24/python-di/
 		# http://mindtrove.info/python-weak-references/
+
+		assert ltrace('gc', '  group ref count before del: %d %s' % (
+				sys.getrefcount(group), gc.get_referrers(group)))
 
 		del group
 
@@ -2565,19 +2408,20 @@ class GroupsController(Singleton, CoreFSController):
 		"""
 
 		assert ltrace('groups', '| check_groups(%s, minimal=%s, force=%s,'
-			'batch=%s, )' %	(', '.join(groups_to_check), minimal, force, batch))
+			'batch=%s, )' %	('None' if groups_to_check is None
+				else ', '.join(g.name for g in groups_to_check),
+				minimal, force, batch))
 
 		if groups_to_check is None:
 			# we have to duplicate the values, in case the check adds/remove
 			# groups. Else, this will raise a RuntimeError.
 			groups_to_check = self.values()
 
-		with self.lock:
-			for group in groups_to_check:
-				group.check(minimal, force, batch, auto_answer)
+		for group in groups_to_check:
+			group.check(minimal, force, batch, auto_answer)
 
-			del groups_to_check
-			self.licornd.clean_objects()
+		del groups_to_check
+		self.licornd.clean_objects()
 	def __connect_groups(self):
 		""" Iterate all groups and connect standard/guest/responsible if they
 			all exists, else print warnings about checks needing to be made.
@@ -2652,15 +2496,33 @@ class GroupsController(Singleton, CoreFSController):
 											resps + guests, job_delay=3.0)
 
 		del stds, resps, guests
-	def __connect_users(self):
+	def __connect_users(self, clear_first=False):
 		""" Iterate all users and connect their primary group to them, to speed
 			up future lookups.
+
+			:param clear_first: set to ``True`` only on a backend reload, else
+				not used.
 		"""
+
+		if clear_first:
+			for user in LMC.users:
+				user.clear_Groups()
 
 		# update the reverse mapping users -> groups to avoid brute
 		# loops when searching by users instead of groups.
+		#
+		# WARNING: the following 2 things must be done in multiple passes
+		# (collect groups to rewrite, then serialize them), because doing it
+		# in one pass will make us lose some data for groups which have not
+		# yet setup their initial links, if they are stored in backends which
+		#  don't serialize groups one by one (typically shadow).
+		to_rewrite = []
+
 		for group in self:
-			group._setup_initial_links()
+			to_rewrite.extend(g for g in group._setup_initial_links())
+
+		for group in to_rewrite:
+			group.serialize()
 
 		missing_gids = [ user for user in LMC.users
 							if user.primaryGroup is None ]
@@ -2672,9 +2534,9 @@ class GroupsController(Singleton, CoreFSController):
 				'fixed GIDs, or changing these users GIDs to other '
 				'values.').format(self.name, ', '.join(
 					( _(u'{0}(gid={1})').format(
-						stylize(ST_LOGIN, user.login),
-						stylize(ST_UGID, user.gid))
-					for user in missing_gids))))
+							stylize(ST_LOGIN, user.login),
+							stylize(ST_UGID, user.gid))
+								for user in missing_gids))))
 
 		del missing_gids
 	def guess_one(self, value):
@@ -2690,7 +2552,7 @@ class GroupsController(Singleton, CoreFSController):
 	def guess_list(self, value_list):
 		""" yield valid groups, given a list of 'things'
 		 to validate existence of (can be GIDs or names). """
-		groups = set()
+		groups = []
 
 		for value in value_list:
 			try:
@@ -2700,11 +2562,12 @@ class GroupsController(Singleton, CoreFSController):
 				logging.info(_(u'Skipped non-existing group name or GID %s.') %
 					stylize(ST_NAME,value))
 			else:
-				if group not in groups:
-					yield group
-					groups.add(group)
+				if group in groups:
+					pass
+				else:
+					groups.append(group)
 
-		del groups
+		return groups
 	def exists(self, gid=None, name=None):
 		"""Return true if the group or gid exists on the system. """
 
@@ -2754,11 +2617,3 @@ class GroupsController(Singleton, CoreFSController):
 				return '%s\n' % '\n'.join((group._cli_get()
 								for group in sorted(groups, key=attrgetter('gid'))
 									if not group.is_helper))
-
-	def _inotifier_install_watches(self, inotifier):
-		""" Install all initial inotifier watches, for all existing standard
-			groups. This method is meant to be called directly by the inotifier
-			thread, and rely on its methods. """
-
-		for group in self.select(filters.STD):
-			group._inotifier_add_watch(inotifier)

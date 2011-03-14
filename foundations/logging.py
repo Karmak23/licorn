@@ -29,6 +29,18 @@ from messaging import LicornMessage
 #		- in the calling programs, we MUST catch the exceptions/errors raised
 #			and call logging.error() when appropriate.
 #
+def warn_exception(func):
+	""" Catch any exception and display a warning about it, but don't fail.
+		Meant to be used as a decorator in various places. """
+	def internal_func(*args, **kwargs):
+		try:
+			func(*args, **kwargs)
+		except Exception, e:
+			warning(_(u'Exception occured in {0}: {1}.').format(func, e),
+				# this is propably an obscure and harmless internal error,
+				# don't forward it to the CLI user.
+				to_listener=False)
+	return internal_func
 
 class LicornWarningsDB(Singleton):
 	""" a singleton dict, to hold all warnings already displayed. """

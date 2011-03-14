@@ -12,7 +12,7 @@ Licorn DNSmasq backend - http://docs.licorn.org/core/backends/dnsmasq.html
 """
 import os
 
-from licorn.foundations           import exceptions
+from licorn.foundations           import exceptions, logging
 from licorn.foundations           import readers, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
@@ -172,5 +172,12 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass
+	def __reload_controller_machines(self, pathname):
+		logging.notice(_(u'{0}: configuration file {1} changed, '
+			'reloading {2} controller.').format(str(self),
+				stylize(ST_PATH, pathname),
+				stylize(ST_NAME, 'machines')))
+
+		LMC.machines.reload_backend(self)
 	def _inotifier_install_watches(self, inotifier):
-		print '>> implement dnsmasq install watches'
+		inotifier.watch_conf(self.files.dnsmasq_leases, LMC.machines, self.__reload_controller_machines)

@@ -232,7 +232,11 @@ def	dnsmasq_read_leases(filename=None, data=None, convert='semi'):
 			# skip empty lines & comments
 			return
 
-		expiry, mac, ipaddr, hostname, clientid = line.split(' ')
+		try:
+			expiry, mac, ipaddr, hostname, clientid = line.split(' ')
+		except ValueError, e:
+			print 'corrupt line "%s" in ...' % line
+			return
 
 		if (not confdict.has_key(mac)) or expiry > confdict[mac]['expiry']:
 				confdict[mac] = {

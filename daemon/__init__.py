@@ -188,8 +188,9 @@ class LicornDaemonInteractor(NamedObject):
 							# trap SIGINT to avoid shutting down the daemon by
 							# mistake. Now Control-C is used to reset the
 							# current line in the interactor.
-							def interruption(x,y):
+							def interruption(x, y):
 								raise KeyboardInterrupt
+
 							signal.signal(signal.SIGINT, interruption)
 
 							from licorn.core import version, LMC
@@ -214,23 +215,26 @@ class LicornDaemonInteractor(NamedObject):
 							sys.ps2 = '...'
 							interpreter.init_history()
 							interpreter.interact(
-								banner=_(u'Licorn® {0}, Python {1} on {2}').format(
-									version, sys.version.replace('\n', ''),
+								banner=_(u'Licorn® {0}, Python {1} '
+									'on {2}').format(version,
+									sys.version.replace('\n', ''),
 									sys.platform))
 							interpreter.save_history()
+
 							logging.notice(_('%s: leaving interactive mode. '
 								'Welcome back to Real World™.') % self.name)
 
 							# restore signal and terminal handling
 							signal.signal(signal.SIGINT,
-								lambda x,y: self.daemon.terminate)
+								lambda x, y: self.daemon.terminate)
 
 							# take the TTY back into command mode.
 							self.prepare_terminal()
 
 						else:
 							logging.warning2(_(u'{0}: received unhandled '
-								'char "{1}", ignoring.').format(self.name, char))
+								'char "{1}", ignoring.').format(
+									self.name, char))
 			finally:
 				# put it back in standard mode after input, whatever
 				# happened. The terminal has to be restored.

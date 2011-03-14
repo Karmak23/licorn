@@ -95,7 +95,8 @@ class CaldavdExtension(Singleton, ServiceExtension):
 				os.chmod(filename, 0640)
 
 		# and don't forget to remove (or at least warn about) superfluous entries.
-		print '>> please implement caldavd extension check for pre-existing users and groups.'
+		logging.info(_(u'**Please implement caldavd extension check for '
+			'pre-existing users and groups.**'))
 	def __parse_files(self):
 		""" Create locks and load all caldavd data files. """
 

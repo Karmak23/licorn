@@ -10,7 +10,7 @@ Licorn core: users - http://docs.licorn.org/core/users.html
 :license: GNU GPL version 2
 """
 
-import os, sys, time, re, weakref
+import os, sys, time, re, weakref, gc
 
 from threading  import current_thread, Event
 from operator   import attrgetter
@@ -24,10 +24,10 @@ from licorn.foundations.constants import filters, backend_actions
 
 from licorn.core         import LMC
 from licorn.core.groups  import Group
-from licorn.core.classes import CoreFSController, CoreStoredObject
+from licorn.core.classes import CoreFSController, CoreStoredObject, CoreFSUnitObject
 from licorn.daemon       import priorities, roles
 
-class User(CoreStoredObject):
+class User(CoreStoredObject, CoreFSUnitObject):
 	""" The User unit-object. """
 
 	_locked_colors = {
@@ -182,16 +182,18 @@ class User(CoreStoredObject):
 			self.__is_system_restricted   = False
 			self.__is_system_unrestricted = False
 
-		self.__homeDirectory = self.__resolve_home_directory(homeDirectory)
+		self.__homeDirectory = self._resolve_home_directory(homeDirectory)
 
 		# Internal links to real Licorn® groups, to be able to find them
 		# quickly when we need. It will be filled when GroupsController loads.
 		self.__groups = []
 
-		# used to avoid checking or reapplying skel over another check or
-		# another skel apply at the same time.
-		self.checking_shared_content = Event()
-
+		CoreFSUnitObject.__init__(self, '%s/%s' % (self.__homeDirectory,
+									LMC.configuration.users.check_config_file),
+						Enumeration(
+								home=self.__homeDirectory,
+								user_uid=self.__uidNumber,
+								user_gid=self.__gidNumber))
 		# CLI output pre-calculations.
 		if len(login) + 2 > User._cw_login:
 			User._cw_login = len(login) + 2
@@ -211,7 +213,7 @@ class User(CoreStoredObject):
 			stylize(ST_NAME, self.__login))
 	def __del__(self):
 
-		assert ltrace('users', '| User %s.__del__()' % self.__login)
+		assert ltrace('gc', '| User %s.__del__()' % self.__login)
 
 		self.__primaryGroup().unlink_gidMember(self)
 
@@ -222,7 +224,10 @@ class User(CoreStoredObject):
 
 		del self.__groups
 
-		del User.by_login[self.__login]
+		# avoid deleting a reference to another user with the same login (which
+		# will exist on backend reloads).
+		if User.by_login[self.__login] == self.weakref:
+			del User.by_login[self.__login]
 
 		if len(self.__login) + 2 == User._cw_login:
 			User._cli_compute_label_width()
@@ -251,13 +256,14 @@ class User(CoreStoredObject):
 			of GroupsController load, by the property setter. It will check
 			that the gidNumber of the assigned group is equal to the current
 			user read-only value gidNumber. """
-		#print '>> primaryGroup getter', self.__login, self.__primaryGroup
 
-		# convert the weakref into a real before returning it to caller.
-		return self.__primaryGroup()
+		try:
+			# convert the weakref into a real before returning it to caller.
+			return self.__primaryGroup()
+		except TypeError:
+			return None
 	@primaryGroup.setter
 	def primaryGroup(self, group):
-		#print '>> primaryGroup setter', self.__login, self.__primaryGroup
 
 		if self.__gidNumber == group.gidNumber:
 			self.__primaryGroup = group.weakref
@@ -510,11 +516,18 @@ class User(CoreStoredObject):
 			self.serialize()
 	@property
 	def homeDirectory(self):
-		""" Read-only attribute, the path to the home directory of a standard
-			group (which holds shared content). Only standard group have home
+		""" Read-write attribute, the path to the home directory of a standard
+			user (which holds shared content). Only standard users have home
 			directories.
+
+			Note that when setting it, the value given is totally ignored: the
+			'set' mechanism only triggers the :meth:`_resolve_home_directory`
+			method, which will construct and find the dire itself.
 		"""
 		return self.__homeDirectory
+	@homeDirectory.setter
+	def homeDirectory(self, ignored_value):
+		self.__homeDirectory = self._resolve_home_directory()
 	@property
 	def is_system(self):
 		""" Read-only boolean indicating if the current user is a system one. """
@@ -702,9 +715,8 @@ class User(CoreStoredObject):
 					', '.join(stylize(ST_COMMENT, skel)
 						for skel in LMC.configuration.users.skels)))
 
-
 		with self.lock:
-			self.checking_shared_content.set()
+			self._checking.set()
 
 			# no force option with shutil.copytree(),
 			# thus we use cp to force overwrite.
@@ -718,10 +730,18 @@ class User(CoreStoredObject):
 					# FIXME: do this with minifind(), os.chmod()… and map() it.
 					process.syscmd("chown -R %s: %s/%s" % (
 						self.__login, self.__homeDirectory, fileordir))
+
 				except Exception, e:
 					logging.warning(str(e))
 
-			self.checking_shared_content.clear()
+			try:
+				os.mkdir('%s/%s' % (self.__homeDirectory, LMC.configuration.users.config_dir))
+			except (IOError, OSError), e:
+				if e.errno != 17:
+					# don't bork if already exists, else bork.
+					raise
+
+			self._checking.clear()
 	def link_Group(self, group, sort=True):
 		""" add a group in my double-link cache, and invalidate my CLI view.
 			This is costy because we sort the group after the append(). """
@@ -736,33 +756,19 @@ class User(CoreStoredObject):
 		""" remove a group from my double-link cache, and invalidate my CLI view. """
 		self.__groups.remove(group.weakref)
 		self._cli_invalidate()
-	def __resolve_home_directory(self, directory=None):
-		""" Construct the standard value for a user home directory.
+	def clear_Groups(self):
+		""" Empty the user's groups weakrefs. Used when GroupsController reloads
+			one or more backend. If we don't clear the groups first, the user
+			gets groups referenced twice (or more). """
 
-			If the home directory doesn't exist, don't raise any error:
-
-			- if we are in user creation phase, this is completely normal.
-			- if in any other phase, the problem will be corrected by the
-			  check mechanism, and will be pointed by the [internal]
-			  permissive resolver method.
-		"""
-
-		# a system account can have a directory, but we don't make any checks
-		# on it; it can be too weird (/dev/null, /nonexistent, etc). In user
-		# load phase, directory will be set to the value stored in the backend,
-		# thus there is no problem at all: it is left untouched.
-		if self.__is_system:
-			home = directory
-
-		else:
-			if directory in (None, ''):
-				home = '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
-										LMC.configuration.users.names.plural,
-										self.__login)
-			else:
-				home = directory
-
-		return home
+		self.__groups[:] = []
+	def _build_standard_home(self):
+		return '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
+							LMC.configuration.users.names.plural,
+							self.__login)
+	def _build_system_home(self, directory):
+		""" A system user has a home, which can be anywhere. """
+		return directory
 	def __resolve_locked_state(self):
 		""" see if a given user accound is initially locked or not. """
 		if self.__userPassword not in (None, '') \
@@ -771,7 +777,8 @@ class User(CoreStoredObject):
 
 		return False
 
-	def check(self, minimal=True, batch=False, auto_answer=None):
+	def check(self, minimal=True, batch=False, auto_answer=None,
+														full_display=True):
 		"""Check current user account data consistency."""
 
 		assert ltrace('users', '> %s.check()' % self.__login)
@@ -788,11 +795,12 @@ class User(CoreStoredObject):
 			# uids > 65000, like nobody. Just stick to adduser or licorn created
 			# system uids.
 			if self.is_system_unrestricted:
-				return self.__check_system_user(batch, auto_answer)
+				return self.__check_system_user(batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
 			elif self.is_standard:
-				return self.__check_standard_user(batch, auto_answer)
-
+				return self.__check_standard_user(minimal=minimal, batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 			else:
 				# not system account between 300 < 999, not standard account.
 				# the account is thus a special (reserved) system account, below
@@ -801,200 +809,50 @@ class User(CoreStoredObject):
 					'(we do not check them at all).') %
 						stylize(ST_NAME, self.__login))
 				return True
-	def __check_standard_user(self, batch=False, auto_answer=None):
-		""" Check the standard account home directory and its contents. """
 
-		logging.progress(_(u'Checking standard account %s…') %
-											stylize(ST_LOGIN, self.__login))
+	# aliases to CoreFSUnitObject methods
+	__check_standard_user = CoreFSUnitObject._standard_check
 
-
-		# load rules defined by user and merge them with templates
-		# rules
-		self.controller.load_rules(rules_path='%s/%s' % (self.__homeDirectory,
-							LMC.configuration.users.check_config_file),
-						object_info=Enumeration(
-								home=self.__homeDirectory,
-								user_uid=self.__uidNumber,
-								user_gid=self.__gidNumber),
-						core_obj=self)
-
-		# run the check
-		try:
-			if self.check_rules != None:
-				return fsapi.check_dirs_and_contents_perms_and_acls_new(
-					self.check_rules, batch=batch,
-					auto_answer=auto_answer)
-		except exceptions.DoesntExistException, e:
-			logging.warning(e)
-			return False
-
-		if not minimal:
-			logging.warning(_(u'Extended checks are not yet implemented '
-				'for users.'))
-			# TODO:
-			#	logging.progress("Checking symlinks in user's home dir,
-			# this can take a while…" % stylize(
-			# ST_NAME, user))
-			#	if not self.CleanUserHome(login, batch, auto_answer):
-			#		all_went_ok = False
-
-			# TODO: tous les groupes de cet utilisateur existent et
-			# sont OK (CheckGroups recursif) WARNING: Forcer
-			# minimal = True pour éviter les checks récursifs avec
-			# CheckGroups().
-
-	def __check_system_user(self, batch=False, auto_answer=None):
+	def __check_system_user(self, minimal=True, batch=False, auto_answer=None,
+														full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
 			be created. """
 		logging.progress(_(u'Checking system account %s…') %
 											stylize(ST_NAME, self.__login))
 
-		if os.path.exists(self.__homeDirectory):
-			return fsapi.check_dirs_and_contents_perms_and_acls_new(
-				[ FsapiObject(name='%s_home' % self.__login,
-								path = self.__homeDirectory,
-								uid = self.__uidNumber,
-								gid = self.__gidNumber,
-								# these ones are already False by default.
-								#root_dir_acl = False
-								#content_acl = False
-								root_dir_perm = 00700,
-								files_perm = 00600,
-								dirs_perm = 00700)
-				], batch=batch, auto_answer=auto_answer)
-		else:
-			return True
-	def _fast_aclcheck(self, path):
-		""" check a file in a shared group directory and apply its perm
-			without any confirmation.
-
-			:param path: path of the modified file/dir
-		"""
-
-		if self.check_locked():
+		if self._checking.is_set():
+			logging.warning(_(u'account {0} already beiing ckecked, '
+				'aborting.').format(stylize(ST_LOGIN, self.__login)))
 			return
 
-		#assert ltrace('groups', "> _fast_aclcheck( path=%s)" % (gid, path))
+		with self.lock:
 
-		try:
-			group_home = self.homeDirectory
-		except AttributeError:
-			group_home = self.homeDirectory = "%s/%s/%s" % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural, self[gid]['name'])
+			self._checking.set()
 
-		if self.check_rules is None:
-			self.check_rules = self.controller.load_rules(
-				self.homeDirectory + '.' +
-				LMC.configuration.users.check_config_file,
-				object_info=Enumeration(home=self.homeDirectory,
-										user_uid=-1, user_gid=-1),
-				core_obj=self,
-				vars_to_replace=(
-						('@GROUP', self.name),
-						('@GW', 'w' if self.permissive else '-')
-					)
-				)
-		else:
-			assert ltrace('users', "Skipped: rules from %s were already "
-			"loaded, we do not reload them in the fast check procedure." %
-				group_home + '/' + 	LMC.configuration.users.check_config_file)
+			if os.path.exists(self.__homeDirectory):
 
-		rule_name  = path[len(group_home)+1:].split('/')[0]
+				checked = set()
 
-		try:
-			entry_stat = os.lstat(path)
-		except (IOError, OSError), e:
-			if e.errno == 2:
-				# bail out if path has disappeared since we were called.
-				return
-			else:
-				raise
+				for event in fsapi.check_dirs_and_contents_perms_and_acls_new(
+						[ FsapiObject(name='%s_home' % self.__login,
+									path = self.__homeDirectory,
+									uid = self.__uidNumber,
+									gid = self.__gidNumber,
+									# these ones are already False by default.
+									#root_dir_acl = False
+									#content_acl = False
+									root_dir_perm = 00700,
+									files_perm = 00600,
+									dirs_perm = 00700)
+						],
+						batch=batch, auto_answer=auto_answer,
+						full_display=full_display):
+					checked.add(event)
 
-		# find the special rule applicable on the path.
-		is_root_dir = False
-		# if the path has a special rule, load it
-		if rule_name in self.check_rules:
-			dir_info = self.check_rules[rule_name].copy()
-		# else take the default one
-		else:
-			dir_info = self.check_rules._default.copy()
-			if rule_name is '':
-				is_root_dir = True
+				del checked
 
-		# the dir_info.path has to be the path of the checked file
-		dir_info.path = path
-
-		if path[-1] == '/':
-			path = path[:-1]
-
-		# deal with owners
-		# uid owner of the path is:
-		#	- 'root' = 0 if path is group home
-		#	- unchanged if it is not the group home
-		# gid owner of the path is:
-		#	- 'acl' if an acl will be set to the path.
-		#	- the primary group of the user owner of the path, if uid will not
-		#		be changed.
-		#	- 'acl' if we don't keep the same uid.
-		if path == group_home:
-			dir_info.uid = 0
-		else:
-			dir_info.uid = -1
-
-		if ':' in dir_info.root_dir_perm or ',' in dir_info.root_dir_perm:
-			dir_info.gid = Group.by_name[LMC.configuration.acls.group].gidNumber
-		else:
-			if dir_info.uid == -1:
-				dir_info.gid = LMC.users[entry_stat.st_uid].gidNumber
-			else:
-				dir_info.gid = Group.by_name[LMC.configuration.acls.group].gidNumber
-
-		# get the type of the path (file or dir)
-		if ( entry_stat.st_mode & 0170000 ) == stat.S_IFREG:
-			file_type = stat.S_IFREG
-		else:
-			file_type = stat.S_IFDIR
-
-		# run the check
-		fsapi.check_perms(dir_info, batch=True,	file_type=file_type,
-			is_root_dir=is_root_dir, full_display=False)
-
-		assert ltrace('groups', '< _fast_check_group')
-	def _inotifier_del_watch(self):
-		""" delete a group watch. Not directly used by inotifier, but prefixed
-			with it because used in the context. """
-		#TODO: make this recursive
-		if self.__is_system:
-			return
-
-		print '>> please implement User.__inotifier_del_watch().'
-		self.licornd.inotifier.remove_watches_recursive(self.__homeDirectory)
-	def _inotifier_add_watch(self, inotifier):
-		""" add a group watch. not used directly by inotifier, but prefixed
-			with it because used in the context. """
-
-		if self.__is_system:
-			return
-
-		print '>> please implement User.__inotifier_add_watch().'
-
-		inotifier.add_watch(
-			path=self.__homeDirectory,
-			rec=True, auto_add=True,
-
-			mask=pyinotify.IN_CREATE
-					| pyinotify.IN_ATTRIB
-					| pyinotify.IN_CLOSE_WRITE
-					| pyinotify.IN_MOVE_TO,
-
-			proc_fun=lambda path, event: self.licornd.aclcheck_enqueue(
-				(priorities.NORMAL, self._fast_aclcheck(path))),
-
-			# TODO: exclude the .check.conf to apply special treatment to it.
-			exclude_filter=None)
-
+			self._checking.clear()
 	def _cli_get(self, long_output=False, no_colors=False):
 		""" return a beautifull view for the current User object. """
 		try:
@@ -1140,16 +998,39 @@ class UsersController(Singleton, CoreFSController):
 	def reload_backend(self, backend):
 		""" Reload only one backend data (called from inotifier). """
 
-		assert ltrace('users', '| reload_backend(%s)' % backend_name)
+		assert ltrace('users', '| reload_backend(%s)' % backend.name)
+
+		loaded = []
+
+		assert ltrace('locks', '| users.reload_backend enter %s' % self.lock)
 
 		with self.lock:
-			self.update(backend.load_Users())
+			for uid, user in backend.load_Users():
+				if uid in self:
+					logging.warning2(_(u'{0}.reload: Overwritten uid {1}.').format(
+						stylize(ST_NAME, self.name), uid))
+				self[uid] = user
+				loaded.append(uid)
 
-		# needed to reload the group cache.
-		logging.notice('reloading %s controller too.' %
-			stylize(ST_NAME, LMC.groups.name))
+			for uid, user in self.items():
+				if user.backend.name == backend.name:
+					if uid in loaded:
+						loaded.remove(uid)
 
-		LMC.groups.reload_backend(backend)
+					else:
+						logging.progress(_(u'{0}: removing disapeared user '
+							'{1}.').format(stylize(ST_NAME, self.name),
+								stylize(ST_LOGIN, user.login)))
+
+						self.del_User(user, batch=True, force=True)
+
+			# needed to reload the group cache.
+			logging.notice('reloading %s controller too.' %
+				stylize(ST_NAME, LMC.groups.name))
+
+			LMC.groups.reload_backend(backend)
+
+		assert ltrace('locks', '| users.reload_backend exit %s' % self.lock)
 	def serialize(self, user=None):
 		""" Write the user data in appropriate system files."""
 
@@ -1460,7 +1341,8 @@ class UsersController(Singleton, CoreFSController):
 				groups_to_add_user_to.extend(LMC.groups.by_name(g)
 												for g in profile.memberGid)
 			else:
-				print '>> UsersController.add_User: skel for standard group ? system group ?'
+				logging.warning2('>> FIXME: UsersController.add_User: skel for '
+					'standard group ? system group ?', to_listener=False, to_local=True)
 
 				loginShell = LMC.configuration.users.default_shell
 
@@ -1513,7 +1395,7 @@ class UsersController(Singleton, CoreFSController):
 									if backend is None else backend,
 								initialyLocked=False)
 
-			# we can't skip the serialization, because this would break Samba
+			# we can't delay the serialization, because this would break Samba
 			# (and possibly others) stuff, and the add_user_in_group stuff too:
 			# they need the data to be already written to disk to operate.
 			#
@@ -1523,6 +1405,12 @@ class UsersController(Singleton, CoreFSController):
 			self.run_hooks('user_post_add', user, password=password)
 
 			user.apply_skel(skel_to_apply)
+
+			# this will implicitely load the check_rules for the user.
+			user.check(minimal=True, batch=True)
+
+			if user.is_standard:
+				user._inotifier_add_watch(self.licornd)
 
 			# Samba: add Samba user account.
 			# TODO: put this into a module.
@@ -1564,16 +1452,13 @@ class UsersController(Singleton, CoreFSController):
 			# XXX: Quotatool can return 2 without apparent reason
 			# (the quota is etablished) !
 
-		# Check the user's home (to give every dir/file from root to him/her).
-		self.licornd.service_enqueue(priorities.HIGH, user.check, batch=True)
-
 		assert ltrace('users', '< add_User(%r)' % user)
 
 		# We *need* to return the password, in case it was autogenerated.
 		# This is the only way we can know it, in massive imports.
 		return user, password
 	def del_User(self, user, no_archive=False, force=False, batch=False):
-		""" Delete a user """
+		""" Delete a user. """
 
 		assert ltrace('users', "| del_User(%r)" % user)
 
@@ -1606,17 +1491,30 @@ class UsersController(Singleton, CoreFSController):
 		uid     = user.uidNumber
 
 		with self.lock:
-			del self[uid]
+			if uid in self:
+				del self[uid]
+			else:
+				logging.warning2(_(u'{0}: account {1} already not referenced in '
+					'controller!').format(stylize(ST_NAME, self.name),
+						stylize(ST_LOGIN, login)))
+
+			if user.is_standard:
+				user._inotifier_del_watch(self.licornd)
 
 			# NOTE: this must be done *after* having deleted the data from self,
 			# else mono-maniac backends (like shadow) don't see the change and
 			# save everything, including the user we want to delete.
 			user.backend.delete_User(user)
 
-			#import gc
-			#print '>> user refs', sys.getrefcount(user), gc.get_referrers(user)
+			assert ltrace('gc', '  user ref count before del: %d %s' % (
+					sys.getrefcount(user), gc.get_referrers(user)))
 
 			del user
+
+		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# to avoid collecting the deleted users at the end of the run, making
+		# throw false-negative operation about non-existing groups.
+		gc.collect()
 
 		logging.notice(_(u'Deleted user account {0}.').format(
 			stylize(ST_LOGIN, login)))
@@ -1737,20 +1635,22 @@ class UsersController(Singleton, CoreFSController):
 				user = self.by_login(value)
 		return user
 	def guess_list(self, value_list):
-		users = set()
+		users = []
 
 		for value in value_list:
 			try:
 				user = self.guess_one(value)
+
 			except (KeyError, exceptions.DoesntExistException):
 				logging.notice(_(u'Skipped non-existing login or UID %s.')
 																	% value)
 			else:
-				if user not in users:
-					yield user
-					users.add(user)
+				if user in users:
+					pass
+				else:
+					users.append(user)
 
-		del users
+		return users
 	def exists(self, uid=None, login=None):
 		if uid:
 			return uid in self.iterkeys()
@@ -1791,14 +1691,3 @@ class UsersController(Singleton, CoreFSController):
 			# FIXME: forward long_output, or remove it.
 			return '%s\n' % '\n'.join((user._cli_get()
 							for user in sorted(users, key=attrgetter('uid'))))
-
-	def _inotifier_install_watches(self, inotifier):
-		""" Install all initial inotifier watches, for all existing standard
-			groups. This method is meant to be called directly by the inotifier
-			thread, and rely on its methods. """
-
-		print '>> please implement UsersController._inotifier_install_watches().'
-		return
-
-		for user in self.select(filters.STD):
-			user._inotifier_add_watch(inotifier)

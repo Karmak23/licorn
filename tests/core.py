@@ -778,33 +778,60 @@ def test_groups(context):
 		]
 
 	bad_chown_group_cmds = [ 'chown', 'bin:daemon', '--changes',
+		'%s/%s/%s' % (
+			configuration.defaults.home_base_path,
+			configuration.groups.names.plural,
+			gname)
+		]
+
+	bad_chown_group_html_cmds = [ 'chown', 'bin:daemon', '--changes',
 		'%s/%s/%s/public_html' % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names.plural,
 			gname)
 		]
 
-	for break_acl_pre_cmd, chk_acl_cmd in (
-		(remove_group_cmds, chk_acls_cmds(gname)),
-		(remove_group_html_cmds, chk_acls_cmds(gname, 'public_html')),
-		(remove_group_acls_cmds, chk_acls_cmds(gname)),
-		(remove_group_html_acls_cmds, chk_acls_cmds(gname, 'public_html')),
-		(bad_chown_group_cmds, chk_acls_cmds(gname))):
+	# not yet anymore now that we don't support apache.
+	#		(remove_group_html_cmds, chk_acls_cmds(gname, 'public_html')),
+	#		(remove_group_html_acls_cmds, chk_acls_cmds(gname, 'public_html')),
 
-		for subopt_l1 in ('--auto-no', '--auto-yes', '-b'):
-			for subopt_l2 in ('-v', '-ve', '-vv', '-vve'):
+	for break_acl_pre_cmd, chk_acl_cmd in (
+				(remove_group_acls_cmds, chk_acls_cmds(gname)),
+				(bad_chown_group_cmds, chk_acls_cmds(gname))):
+		for subopt in ('--auto-no', '--auto-yes', '-vb'):
 
 				testsuite.add_scenario(ScenarioTest([
 					ADD + [ 'group', gname, '-v' ],
 					break_acl_pre_cmd,
-					[ 'sleep', '1' ],
-					CHK + [ 'group', gname, subopt_l1, subopt_l2 ],
+					# not needed anymore, the inotifier is damn fast.
+					# [ 'sleep', '1' ],
+					CHK + [ 'group', gname, subopt ],
 					chk_acl_cmd,
 					DEL + [ 'group', gname, '-v', '--no-archive' ]
 				],
-				descr='''Various ACLs tests on groups, '''
-					'''with various and combined options''',
+				descr='Various ACLs alteration tests on groups, which should '
+					'be automatically corrected by inotifier (chk should do '
+					'nothing).', context=context, clean_num=1))
+
+	for break_acl_pre_cmd, chk_acl_cmd in (
+		(remove_group_cmds, chk_acls_cmds(gname)), ):
+		for subopt in ('--auto-no', '--auto-yes', '-vbe'):
+
+				testsuite.add_scenario(ScenarioTest([
+					ADD + [ 'group', gname, '-v' ],
+					break_acl_pre_cmd,
+					# not needed anymore, the inotifier is damn fast.
+					# [ 'sleep', '1' ],
+					CHK + [ 'group', gname, subopt ],
+					chk_acl_cmd,
+					DEL + [ 'group', gname, '-v', '--no-archive' ]
+				],
+				descr='Removing the group home should be corrected by chk, '
+					'with either --auto-yes or -vb. It should restore the '
+					'INotifier watch, too.',
 				context=context, clean_num=1))
+
+
 
 	gname = 'MOD_tests'
 
@@ -812,8 +839,11 @@ def test_groups(context):
 		ADD + [ 'group', gname, '-v' ],
 		MOD + [ "group", "--name=%s" % gname, "--skel=/etc/doesntexist" ],
 		MOD + [ "group", '--name=%s' % gname, '--not-permissive' ],
+		# no need to wait here, groups are not permissive by default.
 		chk_acls_cmds(gname),
 		MOD + [ "group", "--name=%s" % gname, "--permissive" ],
+		# we need to wait a short while for new permissions to be applyed in BG.
+		['sleep', '1'],
 		chk_acls_cmds(gname),
 		MOD + [ "group", "--name=%s" % gname, "--permissive" ],
 		DEL + [ 'group', gname, '-v' ]
@@ -887,6 +917,8 @@ def test_groups(context):
 			configuration.defaults.home_base_path,
 			configuration.groups.names.plural,
 			gname) ],
+		# wait for the inotifier to complete ACLs application.
+		['sleep', '1'],
 		CHK + [ "group", "-vb", gname ],
 		DEL + [ 'group', gname ],
 		],
@@ -969,17 +1001,25 @@ def test_groups(context):
 		ADD + [ 'user', uname, '-v' ],
 		ADD + [ 'group', gname, '-v' ],
 		chk_acls_cmds(gname),
+
 		[ 'chown', '-R', '-c', uname, "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names.plural,
 			gname)],
+		# wait for the inotifier to complete ACLs application.
+		['sleep', '1'],
+
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
+
 		[ 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
 			configuration.defaults.home_base_path,
 			configuration.groups.names.plural,
 			gname)],
+		# wait for the inotifier to complete ACLs application.
+		['sleep', '1'],
+
 		chk_acls_cmds(gname),
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
@@ -1009,6 +1049,10 @@ def test_groups(context):
 				'-e', r's/^\(audio:.*\)$/\1,foobar,%s/' % uname,
 				'-e', r's/^\(%s:.*\)$/\1foobar,%s/' % (gname, uname),
 				'-e', r's/^\(adm:.*\)$/\1,perenoel,%s,schproudleboy/' % uname ],
+			# wait for the inotifier to complete the reload (it is immediate in
+			# 99% of cases, but we need to be sure, to avoid false-negatives).
+			['sleep', '1'],
+
 			# should display the dangling users
 			GET + [ 'users', '-l' ],
 			GET + [ 'groups' ],
@@ -1086,6 +1130,7 @@ def test_groups(context):
 		context=context,
 		descr='''test command get group <gid|group> (fix #286)''', clean_num=1))
 
+	uname = 'uinteractive'
 	gname = 'ginteractive'
 
 	testsuite.add_scenario(ScenarioTest([
@@ -1120,10 +1165,11 @@ def test_groups(context):
 			'--auto-no' ],
 		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv',
 			'--auto-yes' ],
-		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '-iv', '--batch' ],
+		DEL + [ 'user', '%s,%s2,%s3' % (uname,uname,uname), '--no-archive' ],
+		DEL + [ 'group', '%s,%s2,%s3' % (gname,gname,gname), '--no-archive'],
 		],
 		context=context,
-		descr="test groups interactive commands", clean_num=3))
+		descr="test groups interactive commands", clean_num=2))
 
 	gname = 'gmultibackend'
 

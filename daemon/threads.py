@@ -230,8 +230,12 @@ class GenericQueueWorkerThread(Thread):
 			with self.__class__.lock:
 				self.__class__.busy += 1
 
-				self.throttle_up()
+			# Do the throttle_up() out of the lock to release it,
+			# for peers to notice the newcomer.
+			# The method re-acquires it anyway.
+			self.throttle_up()
 
+			with self.lock:
 				if self.__high_bypass and self.priority != priorities.HIGH \
 					and self.__class__.busy == self.__class__.instances:
 					# make some room for HIGH priority jobs. They could still
@@ -332,8 +336,8 @@ class GenericQueueWorkerThread(Thread):
 			# job done, until the configured thread limit is reached.
 
 			if (self.input_queue.qsize() > self.__class__.instances
-				and self.__class__.instances == self.__class__.busy) \
-				or self.__class__.instances < self.__class__.peers_min:
+					and self.__class__.instances == self.__class__.busy) \
+					or self.__class__.instances < self.__class__.peers_min:
 
 				if self.__class__.instances < self.__class__.peers_max:
 
@@ -355,6 +359,14 @@ class GenericQueueWorkerThread(Thread):
 						logging.progress('%s: maximum peers already running, '
 							'queue size is %s.' % (self.name,
 								self.input_queue.qsize()))
+			else:
+				assert ltrace('thread', '  %s: NOT spawing a new peer because '
+					'NOT %d instances < %d peers_min or (%d jobs > %d instances '
+					'and all instances busy); '
+					'(BTW %d instances < %d peers_max).' % (self.name,
+						self.__class__.instances, self.__class__.peers_min,
+						self.input_queue.qsize(), self.__class__.instances,
+						self.__class__.instances, self.__class__.peers_max))
 	def throttle_down(self):
 		""" See if there are too many peers to handle queued jobs, and then
 			send terminate signal (put a ``None`` job in the queue), so that
@@ -372,17 +384,19 @@ class GenericQueueWorkerThread(Thread):
 			# but only if there are still more peers than the configured
 			# lower limit.
 
-			if self.input_queue.qsize() <= self.__class__.instances \
-					and self.__class__.instances > self.__class__.peers_min:
+			if (self.input_queue.qsize() <= self.__class__.instances
+					and self.__class__.instances > self.__class__.busy):
 
-				assert ltrace('thread', '  %s: terminating because running out '
-					'of jobs (%d jobs <= %d instances '
-					'and %d instances > %d peers_min).' % (
-					self.name,
-					self.input_queue.qsize(), self.__class__.instances,
-					self.__class__.instances, self.__class__.peers_min))
+				if self.__class__.instances > self.__class__.peers_min:
 
-				self.stop()
+					assert ltrace('thread', '  %s: terminating because running out '
+						'of jobs (%d jobs <= %d instances '
+						'and %d instances > %d peers_min).' % (
+						self.name,
+						self.input_queue.qsize(), self.__class__.instances,
+						self.__class__.instances, self.__class__.peers_min))
+
+					self.stop()
 	def spawn_peer(self):
 		self.__licornd.append_thread(
 				self.__class__(licornd=self.__licornd, daemon=self.daemon))

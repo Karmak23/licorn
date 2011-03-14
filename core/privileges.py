@@ -27,7 +27,12 @@ from licorn.core.groups  import Group
 from licorn.core.classes import LockedController
 
 class PrivilegesWhiteList(Singleton, LockedController):
-	""" Manage privileges whitelist. """
+	""" Manage privileges whitelist.
+
+		.. note:: this Controller can serve as example for configuration file
+			watching, using the inotifier and the watch hint (which avoids a
+			configuration reload when we rewrite our own file.
+	"""
 
 	init_ok       = False
 	load_ok       = False

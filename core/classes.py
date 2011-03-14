@@ -12,20 +12,23 @@ Basic objects used in all core controllers, backends, plugins.
 
 """
 
-import Pyro.core, re, glob, os, posix1e, weakref
+import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
 
-from threading import RLock, current_thread
+from threading import RLock, Event, current_thread
 from traceback import print_exc
 
-from licorn.foundations           import hlstr, exceptions, logging, pyutils
+from licorn.foundations           import exceptions, logging
+from licorn.foundations           import hlstr, pyutils, fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import filters
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 										NamedObject, MixedDictObject, \
 										pyro_protected_attrs, \
 										LicornConfigObject
-from licorn.core   import LMC
-from licorn.daemon import roles
+
+from licorn.core        import LMC
+from licorn.daemon      import priorities, roles
 
 class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	""" Thread-safe object, protected by a global :class:`~threading.RLock`,
@@ -249,7 +252,6 @@ class CoreController(LockedController):
 		# seems not to be in the current values.
 		if self._prefered_backend != None \
 			and self._prefered_backend.name not in LMC.backends.iterkeys():
-			#print '>> remove old backend', self._prefered_backend.name if self._prefered_backend != None else 'None'
 			self._prefered_backend = None
 
 		# start with nothing to be sure
@@ -502,22 +504,34 @@ class CoreFSController(CoreController):
 				uid = None
 			else:
 				if self.uid is -1:
-					self.uid = os.lstat(self.base_dir + '/' + directory).st_uid
+					try:
+						self.uid = os.lstat('%s/%s' % (
+								self.base_dir, directory)).st_uid
+					except (OSError, IOError), e:
+						if e.errno == 2:
+							raise exceptions.PathDoesntExistException(
+								_(u'Ignoring unexisting entry "%s".') %
+								stylize(ST_PATH, directory))
+						else:
+							raise e
+
 				uid = self.uid
+
 			directory = self.expand_tilde(directory, uid)
 
 			if directory in ('', '/') or directory == self.base_dir:
 				self.default = True
 			else:
 				self.default = False
+
 			if self.system_wide:
 				return self.substitute_configuration_defaults(directory)
 
 			# if the directory exists in the user directory
 			if not os.path.exists('%s/%s' % (self.base_dir, directory)):
-				raise exceptions.PathDoesntExistException('''%s unexisting '''
-					'''entry '%s' ''' %	(stylize(ST_BAD,"Ignoring"),
-					stylize(ST_NAME, directory)))
+				raise exceptions.PathDoesntExistException(
+					_(u'Ignoring unexisting entry "%s".') %
+						stylize(ST_PATH, directory))
 
 			return directory
 		def check(self):
@@ -622,13 +636,12 @@ class CoreFSController(CoreController):
 			elif self.system_wide and ':' in acl:
 
 				if dir_info_base is None:
-					dir_info.root_gid = LMC.groups.by_name(
-										LMC.configuration.acls.group).gidNumber
+					dir_info.root_gid      = LMC.configuration.acls.gid
 					dir_info.root_dir_perm = acl
 
 				else:
-					dir_info.content_gid = LMC.groups.by_name(
-											LMC.configuration.acls.group).gidNumber
+					dir_info.content_gid = LMC.configuration.acls.gid
+
 				dir_info.files_perm = acl
 				dir_info.dirs_perm  = acl.replace('@UX','x').replace('@GX','x')
 
@@ -656,15 +669,15 @@ class CoreFSController(CoreController):
 					dir_info.root_dir_perm = '%s,%s,%s' % (
 											acl_base, acl,
 											LMC.configuration.acls.acl_mask)
-					dir_info.root_gid = LMC.groups.by_name(
-						LMC.configuration.acls.group).gidNumber
+					dir_info.root_gid = LMC.configuration.acls.gid
+
 				else:
-					dir_info.content_gid = LMC.groups.by_name(
-											LMC.configuration.acls.group).gidNumber
+					dir_info.content_gid = LMC.configuration.acls.gid
 
 				dir_info.files_perm = '%s,%s,%s' % (
 										acl_base, acl,
 										LMC.configuration.acls.acl_mask)
+
 				dir_info.dirs_perm = ('%s,%s,%s' % (
 										file_acl_base,	acl,
 										LMC.configuration.acls.file_acl_mask)
@@ -715,7 +728,7 @@ class CoreFSController(CoreController):
 					di_text = dir_info.dirs_perm[:].replace(
 													'@GX','x').replace(
 													'@UX','x')
-					#print di_text
+
 					if posix1e.ACL(text=di_text).check():
 						raise exceptions.LicornSyntaxException(
 							self.file_name, self.line_no,
@@ -756,6 +769,8 @@ class CoreFSController(CoreController):
 		self._rules_base_conf = '%s/%s.*.conf' % (
 						LMC.configuration.check_config_dir,
 						self.name)
+
+		self.__last_expire_time = 0.0
 	def reload(self):
 		""" reload the templates rules generated from systems rules. """
 
@@ -806,11 +821,11 @@ class CoreFSController(CoreController):
 		self.load_system_rules(vars_to_replace=vars_to_replace)
 
 		# load user rules.
-		rules = core_obj.check_rules = self.parse_rules(
-											rules_path,
-											object_info=object_info,
-											system_wide=False,
-											vars_to_replace=vars_to_replace)
+		rules = self.parse_rules(
+								rules_path,
+								object_info=object_info,
+								system_wide=False,
+								vars_to_replace=vars_to_replace)
 
 		# check system rules, if the directory/file they are managing exists add
 		# them the the *valid* system rules enumeration.
@@ -912,8 +927,7 @@ class CoreFSController(CoreController):
 			rules._default.exclude = default_exclusions
 		except AttributeError, e:
 			raise exceptions.LicornCheckError("There is no default "
-			"rule. Check %s." %
-					stylize(ST_BAD, "aborted"))
+			"rule. Check %s." %	stylize(ST_BAD, "aborted"))
 
 		assert ltrace('checks', '< load_rules()')
 		return rules
@@ -978,10 +992,10 @@ class CoreFSController(CoreController):
 						stylize(ST_NAME, directory)))
 
 				except exceptions.LicornSyntaxException, e:
-					logging.warning(e)
+					logging.warning('%s.parse_rules: %s' % (self.name, e))
 					continue
 				except exceptions.PathDoesntExistException, e:
-					logging.warning2(e)
+					logging.warning2('%s.parse_rules: %s' % (self.name, e))
 					continue
 				else:
 					#assert ltrace('checks', '  parse_rules(add rule %s)' %
@@ -1023,6 +1037,37 @@ class CoreFSController(CoreController):
 			special_dirs = Enumeration()
 
 		return special_dirs
+	def _inotifier_install_watches(self, inotifier):
+		""" Install all initial inotifier watches, for all existing standard
+			objects (users, groups, whatever). This method is meant to be
+			called directly by the inotifier thread. """
+
+		for obj in self.select(filters.STD):
+			try:
+				obj._inotifier_add_watch(inotifier)
+			except Exception, e:
+				logging.warning(_(u'{0}: error on setting inotifier watches '
+					'for {1} {2} (was: {3}).').format(
+						stylize(ST_NAME, self.name), self.object_type_str,
+						stylize(ST_NAME, obj.name), e))
+	def _expire_events(self):
+		""" iterate all our unit objects and make them verify they expired data. """
+
+		# we need to lock in case this method is trigerred during a massive
+		# unit object deletion (I encountered the 'dictionnary size changed'
+		# error during tests of TS#62 (massive imports/deletes).
+
+		assert ltrace('locks', '> %s._expire_events: %s' % (self.name, self.lock))
+
+		with self.lock:
+			if (time.time() - self.__last_expire_time) >= LMC.configuration.defaults.global_expire_time:
+
+				self.__last_expire_time = time.time()
+
+				for object in self:
+					object._expire_events()
+
+		assert ltrace('locks', '< %s._expire_events: %s' % (self.name, self.lock))
 class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
@@ -1349,13 +1394,10 @@ class ModulesManager(LockedController):
 		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
 
 		with self.lock:
-			for module in self:
-				assert ltrace(self.name, '  check(%s)' % module.name)
-				module.check(batch=batch, auto_answer=auto_answer)
-
-			# check the available_backends too. It's the only way to make sure they
-			# can be fully usable before enabling them.
-			for module in self._available_modules:
+			# check our modules, AND available (not enabled) modules too. It's
+			# the only way to make sure they can be fully usable before
+			# enabling them.
+			for module in itertools.chain(self, self._available_modules):
 				assert ltrace(self.name, '  check(%s)' % module.name)
 				module.check(batch=batch, auto_answer=auto_answer)
 
@@ -1374,14 +1416,18 @@ class ModulesManager(LockedController):
 			could trigger a module auto-enable or auto-disable (this seems
 			dangerous, but so sexy that i'll try). """
 
-		for module in self:
+		for module in itertools.chain(self, self._available_modules):
 			if hasattr(module, '_inotifier_install_watches'):
-				getattr(module, '_inotifier_install_watches')(inotifier)
+				try:
+					module._inotifier_install_watches(inotifier)
 
-		for module in self._available_modules:
-			if hasattr(module, '_inotifier_install_watches'):
-				getattr(module, '_inotifier_install_watches')(inotifier)
-
+				except Exception, e:
+					logging.warning(_(u'{name}: problem '
+						'while installing inotifier watches for {type} '
+						'{module} (was: {exc}).').format(
+							name=stylize(ST_NAME, self.name),
+							type=self.module_type,
+							module=module.name, exc=e))
 class CoreUnitObject(object):
 	""" Common attributes for unit objects and
 		:class:`modules <~licorn.core.classes.CoreModule>` in Licorn® core.
@@ -1677,3 +1723,646 @@ class CoreStoredObject(CoreUnitObject):
 	@property
 	def lock(self):
 		return self.__lock
+class CoreFSUnitObject:
+	def __init__(self, check_file, object_info, vars_to_replace=None):
+
+		# The Event will avoid checking or fast_checking multiple times
+		# over and over.
+		self._checking = Event()
+
+		# We display messages to be sure there is no problem,
+		# but no more often that every 5 seconds (see later).
+		self.__last_msg_time = time.time()
+
+		# expiry system for internal fast checks, to avoid doing them over and
+		# over, when massive changes occur in the shared dirs.
+		self.__last_fast_check = {}
+		self.__expire_time     = 10.0
+		self.__expiry_lock     = RLock()
+
+		# __load_rules() parameters.
+		self.__check_file      = check_file
+		self.__object_info     = object_info
+		self.__vars_to_replace = vars_to_replace
+
+		# don't set it, this will be handled by _fast*() or check().
+		#self.__check_rules    = None
+
+		# this one will be filled by inotifier-related things.
+		self.__watches = {}
+
+		self.__watches_installed = False
+	@property
+	def check_rules(self):
+		try:
+			return self.__check_rules
+		except AttributeError:
+			return self.__load_check_rules()
+	@property
+	def watches(self):
+		return self.__watches
+	def __inotify_event_dispatcher(self, event):
+		""" The inotifier callback. Just a shortcut. """
+
+		mask = event.mask
+
+		if mask & pyinotify.IN_IGNORED:
+			#assert ltrace('inotifier', '| %s: ignored %s' % (self.name, event))
+			return
+
+		# treat deletes and outboud moves first.
+		if event.dir and (mask & pyinotify.IN_DELETE_SELF
+							or mask & pyinotify.IN_MOVED_FROM):
+			#assert ltrace('inotifier', '| %s: self-delete/move %s' % (self.name, event))
+
+			# if it is a DELETE_SELF, only the dir watch will be removed;
+			# if it is a MOVED, all sub-watches must be removed.
+			self.__unwatch_directory(event.pathname,
+									deleted=(mask & pyinotify.IN_DELETE_SELF))
+			return
+
+		# don't handle anything if the CoreFSUnitObject is currently beiing
+		# checked. This is suboptimal as we will probably miss newly created
+		# files and dirs, but trying to do more clever things will result
+		# in pretty convoluted code.
+		if self._checking.is_set():
+			if time.time() - self.__last_msg_time >= 1.0:
+				logging.progress(_(u'{0}: manual check already in '
+					'progress, skipping event {1}.').format(
+						stylize(ST_NAME, self.name), event))
+				self.__last_msg_time = time.time()
+
+			assert ltrace('inotifier', '| %s: skipped %s' % (self.name, event))
+			return
+
+		# if we can find an expected event for a given path, we should just
+		# discard the check, because the event is self-generated by an
+		# already-ran previous check.
+		if mask & pyinotify.IN_ATTRIB:
+			try:
+				with self.lock:
+					self.__check_expected.remove(event.pathname)
+
+				#assert ltrace('inotifier', '| %s: expected %s' % (self.name, event))
+				return
+			except:
+				pass
+
+		if event.dir:
+			if mask & pyinotify.IN_CREATE or mask & pyinotify.IN_MOVED_TO:
+				# we need to walk the directory, to be sure we didn't miss any
+				# inside path. When massive directory creation occur (e.g. when a
+				# user tar -xzf a kernel or such kind of big archive), the
+				# inotifier will miss entries created while a given sub-directory
+				# is not yet watched. We need to "rewalk" the directory to be sure
+				# we got everything. This is a kind of double-job, but it's
+				# required...
+				#self.licornd.aclcheck_enqueue(priorities.HIGH,
+				#					self.__rewalk_directory, event.pathname)
+
+				# no need to lock for this, INotifier events / calls are
+				# perfectly sequential.
+				assert ltrace('inotifier', '| %s: rewalk dir %s' % (self.name, event))
+
+				if event.pathname in self.__watches:
+					pass
+				else:
+					#assert ltrace('inotifier', '  %s: watch-new dir %s' % (self.name, event.pathname))
+					self.__watch_directory(event.pathname)
+
+				# wait a small little while, for things to settle.
+				#self.licornd.aclcheck_enqueue(priorities.HIGH,
+				#		self.__rewalk_directory, event.pathname, walk_delay=0.01)
+				self.__rewalk_directory(event.pathname)
+
+			elif mask & pyinotify.IN_ATTRIB:
+				#assert ltrace('inotifier', '| %s: fast-chk dir %s' % (self.name, event))
+				self._fast_aclcheck(event.pathname)
+
+			else:
+				assert ltrace('inotifier', '| %s: useless dir %s' % (self.name, event))
+
+		else:
+			if mask & pyinotify.IN_ATTRIB \
+					or mask & pyinotify.IN_CREATE \
+					or mask & pyinotify.IN_MOVED_TO:
+				#assert ltrace('inotifier', '| %s: fast-chk file %s' % (self.name, event))
+				self._fast_aclcheck(event.pathname)
+			else:
+				assert ltrace('inotifier', '| %s: useless file %s' % (self.name, event))
+	def __rewalk_directory(self, directory, walk_delay=None):
+		""" TODO. """
+
+		if walk_delay:
+			time.sleep(walk_delay)
+
+		for path, dirs, files in os.walk(directory):
+			# "path" is used at the end of the loop.
+
+			for adir in dirs[:]:
+				full_path_dir = '%s/%s' % (path, adir)
+
+				# don't recurse.
+				#dirs.remove(adir)
+
+				if full_path_dir in self.__recently_deleted:
+					# for some obscure (and perhaps kernel caching reasons),
+					# some things are not catched/seen if I untar exactly the
+					# same archive in the same shared dir. we need to wait a
+					# little and rewalk the directory manually. This will occur
+					# a small set of supplemental _fast_aclcheck(), but it's
+					# really needed to catch everything.
+					assert ltrace('inotifier', '  %s: rewalk deleted %s' % (
+													self.name, full_path_dir))
+					self.__recently_deleted.discard(full_path_dir)
+
+					# wait a little before rewalking, there is a delay when
+					# we untar the same archive over-and-over.
+					self.licornd.aclcheck_enqueue(priorities.LOW,
+						self.__rewalk_directory, full_path_dir, walk_delay=0.1)
+
+				if full_path_dir in self.__watches:
+					assert ltrace('inotifier', '  %s: already watched %s' % (
+													self.name, full_path_dir))
+					continue
+
+				assert ltrace('inotifier', '  %s: watch/fast-chk-miss '
+							'dir %s [from %s]' % (self.name,
+								full_path_dir, directory))
+
+				self.__watch_directory(full_path_dir)
+
+				self.licornd.aclcheck_enqueue(priorities.NORMAL,
+						self._fast_aclcheck, full_path_dir, expiry_check=True)
+
+			for afile in files:
+				full_path_file = '%s/%s' % (path, afile)
+
+				if full_path_file in self.__check_expected:
+					assert ltrace('inotifier', '  %s: expected file %s' % (
+													self.name, full_path_file))
+					continue
+
+				assert ltrace('inotifier', '  %s: fast-chk missed file %s [from %s]'
+										% (self.name, full_path_file, directory))
+
+				self.licornd.aclcheck_enqueue(priorities.NORMAL,
+						self._fast_aclcheck, full_path_file, expiry_check=True)
+
+			# we had to wait a little before checking the main dir, thus we
+			# do it at the end of the loop, this should imply a small but
+			#  sufficient kind of delay. This should have given enough time
+			# to the process which created the dir to handle its own work
+			# before we try to set a new ACL on it.
+			assert ltrace('inotifier', '  %s: fast-chk-miss dir %s' % (self.name, path))
+
+			self.licornd.aclcheck_enqueue(priorities.NORMAL,
+								self._fast_aclcheck, path, expiry_check=True)
+	def __watch_directory(self, directory, initial=False):
+		""" initial is set to False only when the group is instanciated, to
+			walk across all shared group data in one call. """
+
+		with self.lock:
+			for key, value in self.licornd.inotifier_add(
+									path=directory,
+									rec=initial, auto_add=False,
+									mask=	#pyinotify.ALL_EVENTS,
+											pyinotify.IN_CREATE
+											| pyinotify.IN_ATTRIB
+											| pyinotify.IN_MOVED_TO
+											| pyinotify.IN_MOVED_FROM
+											| pyinotify.IN_DELETE_SELF,
+									#proc_fun=pyinotify.PrintAllEvents())
+									proc_fun=self.__inotify_event_dispatcher).iteritems():
+				if key in self.__watches:
+					logging.warning2(_(u'{0}: overwriting watch {1}!').format(
+						stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
+
+				if self.name == 'toto':
+					assert ltrace('inotifier', '  %s: add-watch %s %s' % (self.name, key, value))
+				self.__watches[key] = value
+	@logging.warn_exception
+	def __unwatch_directory(self, directory, deleted=False):
+
+		with self.lock:
+			if directory == self.homeDirectory:
+
+				# rm_watch / inotifier_del wants a list of WDs as argument.
+				self.__recently_deleted.update(self.licornd.inotifier_del(
+							self.__watches.values(), quiet=False).iterkeys())
+				self.__watches.clear()
+
+			else:
+
+				if deleted:
+					try:
+
+						assert ltrace('inotifier', '| %s: self-del unwatch %s' % (
+								self.name, directory))
+
+						del self.__watches[directory]
+						self.__recently_deleted.add(directory)
+
+					except KeyError, e:
+						logging.warning2('%s.__unwatch_directory in %s: %s not '
+							'found in watched dirs.' % (self.name,
+								self.homeDirectory, e))
+
+				else:
+					try:
+						assert ltrace('inotifier', '| %s: remove recursive %s' % (
+								self.name, directory))
+
+						self.__recently_deleted.update(self.licornd.inotifier_del(
+								self.__watches[directory], rec=True).iterkeys())
+
+					except KeyError, e:
+						logging.warning2('%s.__unwatch_directory in %s: %s not '
+							'found in watched dirs.' % (self.name,
+								self.homeDirectory, e))
+					else:
+						for watch in self.__watches.keys():
+							if watch.startswith(directory):
+								assert ltrace('inotifier',
+									'| %s: remove internal %s)' % (
+										self.name, watch))
+								del self.__watches[watch]
+								self.__recently_deleted.add(watch)
+	def __load_check_rules(self, event=None):
+		""" Exist to catch anything coming from the
+			inotifier and that we want to ignore anyway.
+
+			The return at the end allows us to use the rules immediately,
+			when we load them in the standard check() method. """
+
+		assert ltrace('checks', '| %s.__load_check_rules(%s)' % (self.name, event))
+
+		if event is None:
+			try:
+				return self.__check_rules
+			except AttributeError:
+				# don't crash: just don't return, the rules will be loaded
+				# as if there were no problem at all.
+				pass
+
+		with self.lock:
+			self.__check_rules = self.controller.load_rules(
+									core_obj=self,
+									rules_path=self.__check_file,
+									object_info=self.__object_info,
+									vars_to_replace=self.__vars_to_replace)
+
+			return self.__check_rules
+	def reload_check_rules(self, vars_to_replace):
+		""" called from a group, when permissiveness is changed. """
+		with self.lock:
+			self.__vars_to_replace = vars_to_replace
+
+			self.__check_rules = self.controller.load_rules(
+									core_obj=self,
+									rules_path=self.__check_file,
+									object_info=self.__object_info,
+									vars_to_replace=self.__vars_to_replace)
+	def _inotifier_del_watch(self, inotifier=None, full=False):
+		""" delete a user/group watch. Called by Controller before deleting.
+			CoreStoredObject. """
+
+		# be sure to del all these, else we still got cross references to self
+		# in the inotifier which holds references to our methods, preventing
+		# the clean CoreObject deletion.
+
+		if os.path.exists(os.path.dirname(self.__check_file)):
+			self.licornd.inotifier_del_conf_watch(self.__check_file)
+
+		self.__unwatch_directory(self.homeDirectory)
+
+		try:
+			del self.__check_rules
+
+		except AttributeError, e:
+			# this happens when a CoreObject is deleted but has not been
+			# checked since daemon stats. Rare, but happens.
+			logging.warning2('del %s: %s' % (self.name, e))
+
+		self.__watches_installed = False
+	def _inotifier_add_watch(self, inotifier, force_reload=False):
+		""" add a group watch. not used directly by inotifier, but prefixed
+			with it because used in the context. """
+
+		assert ltrace('inotifier', '| %s %s._inotifier_add_watch()' % (self.__class__, self.name))
+
+		if self.__watches_installed and not force_reload:
+			return
+
+		if force_reload:
+			# set the property to whatever, it will find the directory for itself.
+			self.homeDirectory = 'wasted string'
+
+		self.__check_expected   = set()
+		self.__recently_deleted = set()
+
+		self.__load_check_rules()
+
+		# this hint is not needed, we don't modify the check configuration file
+		# from inside here, nor the controller.
+		#self.check_file_hint =
+		if os.path.exists(os.path.dirname(self.__check_file)):
+			inotifier.inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
+
+		#for directory in fsapi.minifind(self.homeDirectory):
+		#	self.__watch_directory(directory)
+
+		# put this in the queue, to avoid taking too much time at daemon start.
+		self.licornd.service_enqueue(priorities.HIGH,
+					self.__watch_directory, self.homeDirectory, initial=True)
+
+		self.__watches_installed = True
+	def _standard_check(self, minimal=True, force=False,
+						batch=False, auto_answer=None, full_display=True):
+		""" Check a standard CoreFSUnitObject. This works for users and groups,
+			and generally speaking, any object which has a home directory.
+
+			Specific things are left to the CoreObject itself (helper groups,
+			symlinks, etc).
+		"""
+
+		assert ltrace('checks', '| %s._standard_check()' % self.name)
+
+		if self._checking.is_set():
+			logging.warning(_(u'{0} {1}: somebody is already checking; '
+				'operation aborted.').format(
+					self.controller.object_type_str,
+					stylize(ST_NAME, self.name)))
+			return
+
+		with self.lock:
+			try:
+				self._checking.set()
+
+				logging.progress(_(u'Checking group {0}…').format(
+						stylize(ST_NAME, self.name)))
+
+				if hasattr(self, '_pre_standard_check_method'):
+					self._pre_standard_check_method(minimal, force, batch,
+														auto_answer, full_display)
+
+				# NOTE: in theory we shouldn't check if the dir exists here, it
+				# is done in fsapi.check_one_dir_and_acl(). but we *must* do it
+				# because we set uid and gid to -1, and this implies the need to
+				# access to the path lstat() in ACLRule.check_dir().
+				if not os.path.exists(self.homeDirectory):
+					if batch or logging.ask_for_repair(_(u'Directory %s does not '
+									'exist but it is mandatory. Create it?') %
+										stylize(ST_PATH, self.homeDirectory),
+									auto_answer=auto_answer):
+						os.mkdir(self.homeDirectory)
+
+						if full_display:
+							logging.info(_(u'Created directory {0}.').format(
+								stylize(ST_PATH, self.homeDirectory)))
+
+						# if home directory was missing, inotify watch is probably
+						# missing. re-set it up.
+						self._inotifier_add_watch(self.licornd)
+					else:
+						raise exceptions.LicornCheckError(_(u'Directory %s does not '
+							'exist but is mandatory. Check aborted.') %
+								stylize(ST_PATH, self.homeDirectory))
+
+				if self.check_rules is not None:
+
+					try:
+						checked    = set()
+
+						if __debug__:
+							length     = 0
+							old_length = 0
+
+						for checked_path in fsapi.check_dirs_and_contents_perms_and_acls_new(
+							self.check_rules, batch=batch, auto_answer=auto_answer,
+								full_display=full_display):
+
+							checked.add(checked_path)
+
+							if __debug__:
+								length = len(checked)
+
+								if length != old_length:
+									old_length = length
+									logging.progress(_('{0} {1}: meta-data changed on '
+										'path {1}.').format(
+											self.controller.object_type_str,
+											stylize(ST_NAME, self.name),
+											stylize(ST_PATH, checked_path)))
+
+							# give CPU to other threads.
+							time.sleep(0)
+
+						if full_display:
+							# FIXME: pluralize
+							logging.progress(_('{0} {1}: meta-data changed on {2} '
+								'path(s).').format(
+									self.controller.object_type_str,
+									stylize(ST_NAME, self.name),
+									stylize(ST_PATH, len(checked))))
+
+					except TypeError:
+						# nothing to check (fsapi.*() returned None and yielded nothing).
+						if full_display:
+							logging.info(_('{0} {1}: no shared data to check.').format(
+								self.controller.object_type_str,
+								stylize(ST_NAME, self.name)))
+
+					except exceptions.DoesntExistException, e:
+						logging.warning('%s %s: %s' % (
+							self.controller.object_type_str,
+							stylize(ST_NAME, self.name), e))
+
+				# if the home dir or helper groups get corrected,
+				# we need to update the CLI view.
+
+			finally:
+				self._cli_invalidate()
+				self._checking.clear()
+
+		if not minimal and hasattr(self, '_extended_standard_check_method'):
+			# TODO: if extended / not minimal: all group members' homes are OK
+			# (recursive CheckUsers recursif)
+			# WARNING: be carefull of recursive multicalls, when calling
+			# CheckGroups, which calls CheckUsers, which could call
+			# CheckGroups()… use minimal=True as argument here, don't forward
+			# the current "minimal" value.
+			self._extended_standard_check_method(
+				batch=batch, auto_answer=auto_answer, full_display=full_display)
+
+	# private methods.
+	def _resolve_home_directory(self, directory=None):
+		""" construct the standard value for a user/group home directory, and
+			try to find if it a symlink. If yes, resolve the symlink and
+			remember the result as the real home dir for the current session.
+
+			Whatever the home is, return it. The return result of this
+			method is meant to be stored as self.homeDirectory.
+
+			If the home directory doesn't exist, don't raise any error:
+
+			- if we are in user/group creation phase, this is completely normal.
+			- if in any other phase, the problem will be corrected by the
+			  check mechanism, and will be pointed by the [internal]
+			  permissive resolver method (for groups).
+		"""
+
+		if self.is_system:
+			return self._build_system_home(directory)
+
+		if directory in (None, ''):
+			home = self._build_standard_home()
+		else:
+			home = directory
+
+		# follow the symlink for the group home, only if link destination
+		# is a directory. This allows administrator to put big group dirs
+		# on different volumes.
+		if os.path.islink(home):
+			if os.path.exists(home) \
+				and os.path.isdir(os.path.realpath(home)):
+				home = os.path.realpath(home)
+
+		return home
+
+	def _fast_aclcheck(self, path, expiry_check=False):
+		""" check a file in a shared group directory and apply its perm
+			without any confirmation.
+
+			:param path: path of the modified file/dir
+		"""
+
+		assert ltrace('checks', '| %s._fast_aclcheck(%s, exp_chk=%s)' % (
+												self.name, path, expiry_check))
+
+		if expiry_check:
+			with self.__expiry_lock:
+				expiry = self.__last_fast_check.get(path, None)
+
+				if expiry:
+					# don't check a previously checked file, if previous check was less
+					# than 5 seconds.
+					if time.time() - expiry < self.__expire_time:
+						assert ltrace('checks', '  %s._fast_aclcheck: not expired %s' % (self.name, path))
+						return
+					else:
+						del self.__last_fast_check[path]
+
+		# already done
+		#assert ltrace('checks', "> %s._fast_aclcheck(path=%s)" % (self.name, path))
+
+		home = self.homeDirectory
+
+		try:
+			entry_stat = os.lstat(path)
+
+		except (IOError, OSError), e:
+			if e.errno == 2:
+				if path != home:
+					# bail out if path has disappeared since we were called.
+					return
+				else:
+					# this is bad, our home directory disappeared... Should we
+					# rebuild it ? NO => the admin could be just moving it to
+					# another volume. Just display a warning and give an hint
+					# on what to do after the move.
+					#
+					# NOT self.licornd.aclcheck_enqueue(self.check, batch=True)
+					logging.warning(_(u'{0}: home directory {1} disappeared. '
+						'If this is intentional, do not forget to run "{2}" '
+						'afterwards, to restore the inotifier watch.').format(
+							stylize(ST_NAME, self.name), stylize(ST_PATH, home),
+							stylize(ST_IMPORTANT, 'mod %s %s -w' % (
+								self.controller.object_type_str, self.name))))
+
+					self._inotifier_del_watch(self.licornd)
+			else:
+				raise e
+
+		rule_name = path[len(home)+1:].split('/')[0]
+
+		try:
+			# if the path has a special rule, load it
+			dir_info = self.__check_rules[rule_name].copy()
+
+		except (AttributeError, KeyError):
+			# else take the default one
+			dir_info = self.__check_rules._default.copy()
+
+		if path[-1] == '/':
+			path = path[:-1]
+
+		# the dir_info.path has to be the path of the checked file
+		dir_info.path = path
+
+		# determine good UID owner for the path:
+		try:
+			# this will fail for a group, and succeed for a user.
+			# any home/sub-dir/sub-file get the current user as owner.
+			dir_info.uid = self.uidNumber
+			is_user      = True
+
+		except:
+			# a group home gets "root" as owner, any subdir/sub-file keeps its
+			# current owner.
+			is_user = False
+			if path == home:
+					dir_info.uid = 0
+			else:
+				dir_info.uid = -1
+
+
+		# determine good GID owner for the path:
+		#	- 'acl' if an acl will be set to the path.
+		#	- the primary group of the user owner of the path, if uid will not
+		#		be changed.
+		#	- 'acl' if we don't keep the same uid.
+		try:
+			if dir_info.root_dir_acl and (	':' in dir_info.root_dir_perm
+											or ',' in dir_info.root_dir_perm):
+					dir_info.gid = LMC.configuration.acls.gid
+
+			else:
+				if dir_info.uid == -1:
+					# FIXME: shouldn't we force the current group ??
+					dir_info.gid = LMC.users[entry_stat.st_uid].gidNumber
+
+				else:
+					if is_user:
+						# in a user's home, every file should belong to the user's GID.
+						dir_info.gid = self.gidNumber
+					else:
+						# in a group shared dir, there are always ACLs
+						# (NOACL or RESTRICT are non-sense, the dir is *shared*).
+						dir_info.gid = LMC.configuration.acls.gid
+
+		except Exception, e:
+			logging.warning(_(u'{0}: problem checking {1}, aborting '
+				'(traceback and dir_info follow)').format(self.name, path))
+			print_exc()
+			print dir_info.dump_status(True)
+			return
+
+		# run the check, and catch expected events on the way: check_perms
+		# yields touched paths along the way.
+		with self.lock:
+
+			self.__check_expected.update(fsapi.check_perms(dir_info, batch=True,
+					file_type=(entry_stat.st_mode & 0170000),
+					is_root_dir=(rule_name is ''), full_display=__debug__))
+
+		with self.__expiry_lock:
+			self.__last_fast_check[path] = time.time()
+	def _expire_events(self):
+		""" remove all expired events. """
+
+		with self.__expiry_lock:
+			for key, value in self.__last_fast_check.items():
+				if time.time() - value >= self.__expire_time:
+					assert ltrace('checks', '  %s: expired %s' % (self.name, key))
+					del self.__last_fast_check[key]

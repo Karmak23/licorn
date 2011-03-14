@@ -27,25 +27,26 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 	adapted to be licornish (most notably get licornd as argument, and format
 	the thread name conforming to Licorn other thread names.
 	"""
-	def __init__(self, licornd, read_freq=0, threshold=0, timeout=None):
+	def __init__(self, licornd, no_boot_check=False):
 
 		LicornBasicThread.__init__(self, 'INotifier', licornd)
+		pyinotify.Notifier.__init__(self, pyinotify.WatchManager())
 
-		# considering the number of direct watches we're going to have,
-		# a little increase is welcome.
-		pyinotify.max_user_watches.value = 65535
+		# Create a new pipe used for thread termination
+		self._pipe = os.pipe()
+		self._pollobj.register(self._pipe[0], select.POLLIN)
 
-		print '>> sysctl', pyinotify.max_user_instances.value, \
-							pyinotify.max_user_watches.value, \
-							pyinotify.max_queued_events.value
+		#print '>> sysctl', pyinotify.max_user_instances.value, \
+		#					pyinotify.max_user_watches.value, \
+		#					pyinotify.max_queued_events.value
 
-		self.default_mask = pyinotify.IN_CLOSE_WRITE \
-							| pyinotify.IN_CREATE \
-							| pyinotify.IN_MOVED_TO \
-							| pyinotify.IN_MOVED_FROM \
-							| pyinotify.IN_DELETE
+		#self.default_mask = pyinotify.IN_CLOSE_WRITE \
+		#					| pyinotify.IN_CREATE \
+		#					| pyinotify.IN_MOVED_TO \
+		#					| pyinotify.IN_MOVED_FROM \
+		#					| pyinotify.IN_DELETE
 
-		self._wm = pyinotify.WatchManager()
+		self._wm = self._watch_manager
 
 		# core objects watched configuration files, and the associated data.
 		self._watched_conf_files = {}
@@ -56,39 +57,60 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		# be reliable).
 		self.__watched_conf_dirs = {}
 
-		self.inotifier_add = self._wm.add_watch
-		self.inotifier_del = self._wm.rm_watch
+		# comfort aliases to internal methods, to mirror the methods exported
+		# from the daemon object.
+		self.inotifier_add            = self._wm.add_watch
+		self.inotifier_del            = self._wm.rm_watch
+		self.inotifier_watch_conf     = self.watch_conf
+		self.inotifier_del_conf_watch = self.del_conf_watch
+	def dump_status(self, long_output=False, precision=None):
 
-		pyinotify.Notifier.__init__(self, self._wm,
-							# FIXME: we set a default func to print and discover
-							# all events while developing, but this should go
-							# away when phase 1 dev is finished.
-							default_proc_fun=pyinotify.PrintAllEvents(),
-							read_freq=0, threshold=0, timeout=None)
-
-		# Create a new pipe used for thread termination
-		self._pipe = os.pipe()
-		self._pollobj.register(self._pipe[0], select.POLLIN)
+		if long_output:
+			return '%s%s (%d watched dirs)\n\t%s\n' % (
+				stylize(ST_RUNNING
+					if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				len(self._wm.watches.keys()),
+				'\n\t'.join(sorted(w.path
+					for w in self._wm.watches.itervalues()))
+			)
+		else:
+			return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
+				'{4} queued events)').format(stylize(ST_RUNNING
+					if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				stylize(ST_RUNNING,   str(len(self._watch_manager.watches))),
+				stylize(ST_RUNNING,   str(len(self._watched_conf_files))),
+				stylize(ST_IMPORTANT, str(len(self._eventq)))
+				))
 	def stop(self):
 		""" Stop notifier's loop. Stop notification. Join the thread. """
 
-		for watch in self.__watched_conf_dirs:
-			self._wm.rm_watch(watch)
+		# remove some references to existing objects, to allow them to be GC'ed.
+		self.__watched_conf_dirs.clear()
+		self._watched_conf_files.clear()
+
+		w = len(self._wm.watches)
+
+		if w > 5000:
+			logging.notice(_(u'{0}: closing {1} watches, please wait…').format(
+				stylize(ST_NAME, self.name), stylize(ST_ATTR, w)))
+
+		try:
+			self._wm.rm_watch(self._wm.watches.keys(), quiet=False)
+
+		except Exception, e:
+			logging.warning(e)
 
 		LicornBasicThread.stop(self)
 
-		os.write(self._pipe[1], 'stop')
+		try:
+			os.write(self._pipe[1], 'stop')
 
-		LicornBasicThread.join(self)
-
-		pyinotify.Notifier.stop(self)
-
-		self._pollobj.unregister(self._pipe[0])
-		os.close(self._pipe[0])
-		os.close(self._pipe[1])
+		except (OSError, IOError), e:
+			logging.warning(e)
 	def run(self):
 
-		# then listen for events.
 		while not self._stop_event.isSet():
 
 			self.process_events()
@@ -96,7 +118,29 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 
 			if self.check_events():
 				self._sleep(ref_time)
-				self.read_events()
+				try:
+					self.read_events()
+				except pyinotify.NotifierError, e:
+					logging.warning(_('{0}: error on read_events: {1}').format(
+						stylize(ST_NAME, self.name), e))
+
+
+		pyinotify.Notifier.stop(self)
+
+		try:
+			self._pollobj.unregister(self._pipe[0])
+			os.close(self._pipe[0])
+			os.close(self._pipe[1])
+
+		except (OSError, IOError), e:
+			logging.warning(e)
+
+		del self._wm
+	def del_conf_watch(self, conf_file):
+		try:
+			del self._watched_conf_files[conf_file]
+		except Exception, e:
+			logging.warning2(_(u'inotifier: error deleting {0} (was: {1} {2})').format(conf_file, type(e), e))
 	def watch_conf(self, conf_file, core_obj, reload_method=None, reload_hint=None):
 		""" Helper / Wrapper method for core objects. This will setup a watcher
 			on dirname(conf_file), if not already setup. returns a reload hint
@@ -122,7 +166,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		# rare case where 2 config files with the same name could exist at more
 		# than one place on the system. This permits this mechanism to have a
 		# wider audience than just only config files.
-
 
 		hint = (BasicCounter(1)
 					if reload_hint is None
@@ -189,6 +232,8 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 			#print '>> nothing found for', event.pathname
 			return
 
+		assert ltrace('locks', '| inotifier conf_enter %s' % lock)
+
 		with lock:
 
 			assert ltrace('inotifier',
@@ -234,15 +279,45 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 
 			if hint <= 0:
 				logging.info(_(u'{0}: configuration file {1} changed, '
-					'reloading.').format(stylize(ST_NAME, name),
+					'trigerring upstream reload.').format(
+						stylize(ST_NAME, name),
 						stylize(ST_PATH, event.name)))
 
 				# reset the hint to normal state before reloading(), to avoid
 				# missing another eventual future event.
 				hint.set(1)
 				reload_method(event.pathname)
+
+		assert ltrace('locks', '| inotifier conf_exit %s' % lock)
 	def collect(self):
+
+		# 1 million watches per user and per group should be a sufficient base
+		# to start with.
+
+		number_of_things = (
+			len([user for user in LMC.users if user.is_standard])
+			+ len([group for group in LMC.groups if group.is_standard])
+			)
+
+		max_user_watches  = 1048576 * number_of_things
+		max_queued_events = 16384 * number_of_things
+
+		if int(open('/proc/sys/fs/inotify/max_user_watches').read().strip()) < max_user_watches:
+			open('/proc/sys/fs/inotify/max_user_watches', 'w').write(str(max_user_watches))
+			logging.info(_(u'{0}: increased inotify {1} to {2}.').format(
+				stylize(ST_NAME, self.name), stylize(ST_ATTR, 'max_user_watches'),
+				stylize(ST_ATTR, max_user_watches)))
+
+		if int(open('/proc/sys/fs/inotify/max_queued_events').read().strip()) < max_queued_events:
+			open('/proc/sys/fs/inotify/max_queued_events', 'w').write(str(max_queued_events))
+			logging.info(_(u'{0}: increased inotify {1} to {2}.').format(
+				stylize(ST_NAME, self.name), stylize(ST_ATTR, 'max_queued_events'),
+				stylize(ST_ATTR, max_queued_events)))
+
 		# setup controllers notifies.
 		for controller in LMC:
 			if hasattr(controller, '_inotifier_install_watches'):
-				getattr(controller, '_inotifier_install_watches')(self)
+				try:
+					getattr(controller, '_inotifier_install_watches')(self)
+				except Exception, e:
+					logging.warning(e)

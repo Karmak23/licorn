@@ -177,6 +177,7 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 
 	try:
 		gmembers = grp.getgrnam(group).gr_mem
+
 	except KeyError:
 		logging.error('''group %s doesn't exist and we are not root, '''
 			'''aborting. Please manually relaunch this program with root '''

@@ -11,7 +11,7 @@ Barely compatible with gnome-system-tools profiles
 :license: GNU GPL version 2
 """
 
-import os, re, shutil, weakref
+import sys, gc, os, re, shutil, weakref
 
 from contextlib  import nested
 from operator    import attrgetter
@@ -135,17 +135,25 @@ class Profile(CoreStoredObject):
 			stylize(ST_NAME, self.__name))
 	def __del__(self):
 
-		assert ltrace('profiles', '| Profile %s.__del__()' % self.__name)
+		assert ltrace('gc', '| Profile %s.__del__()' % self.__name)
 
 		del self.__group
 
 		for group in self.__groups:
-			group().unlink_Profile(self)
+			try:
+				group().unlink_Profile(self)
+			except AttributeError:
+				pass
 
 		del self.__groups
 
-		del Profile.by_name[self.__name]
-		del Profile.by_group[self.__groupName]
+		# avoid deleting references to other instances with the same name
+		# (created on backend reloads).
+		if Profile.by_name[self.__name] == self.weakref:
+			del Profile.by_name[self.__name]
+
+		if Profile.by_group[self.__groupName] == self.weakref:
+			del Profile.by_group[self.__groupName]
 
 	@property
 	def name(self):
@@ -805,7 +813,8 @@ class ProfilesController(Singleton, CoreController):
 		assert ltrace('profiles', '''> AddProfile(%s): '''
 			'''group=%s, profileQuota=%d, groups=%s, description=%s, '''
 			'''profileShell=%s, profileSkel=%s, force_existing=%s''' % (
-				stylize(ST_NAME, name), group, profileQuota,
+				stylize(ST_NAME, name), group,
+				0 if profileQuota is None else profileQuota,
 				groups, description, profileShell, profileSkel, force_existing))
 
 		name, group, description, profileShell, profileSkel, profileQuota = \
@@ -882,7 +891,11 @@ class ProfilesController(Singleton, CoreController):
 
 		assert ltrace('profiles', '> del_Profile(%s)' % (profile.name))
 
-		with nested(self.lock, LMC.groups.lock):
+		# we need to hold the users lock, in case we need to delete users.
+
+		assert ltrace('locks', '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
+
+		with nested(self.lock, LMC.groups.lock, LMC.users.lock):
 
 			# delete the reference in the controller.
 			del self[profile.gid]
@@ -905,11 +918,20 @@ class ProfilesController(Singleton, CoreController):
 
 			name = profile.name
 
+			assert ltrace('gc', '  profile ref count before del: %d %s' % (
+				sys.getrefcount(profile), gc.get_referrers(profile)))
 			# delete the hopefully last reference to the object. This will
 			# delete it from the reverse mapping caches too.
 			del profile
 
+		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# to avoid collecting the deleted users at the end of the run, making
+		# throw false-negative operation about non-existing groups.
+		gc.collect()
+
 		logging.notice(_(u'Deleted profile %s.') % stylize(ST_NAME, name))
+
+		assert ltrace('locks', '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
 	def reapply_Profile(self, users_to_mod=None, apply_groups=False,
 		apply_skel=False, batch=False, auto_answer=None):
 		""" Reapply the profile of users.

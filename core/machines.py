@@ -679,6 +679,33 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					self.__setitem__(machine.ip, machine)
 
 		assert ltrace('machines', '< reload()')
+	def reload_backend(self, backend):
+		assert ltrace('users', '| reload_backend(%s)' % backend.name)
+
+		loaded = []
+
+		assert ltrace('locks', '| machines.reload_backend enter %s' % self.lock)
+
+		with self.lock:
+			for mid, machine in backend.load_Machines():
+				if mid in self:
+					logging.warning2(_(u'Overwritten mid %s') % mid)
+				self[mid] = machine
+				loaded.append(mid)
+
+			#for mid, machines in self.items():
+			#	if user.backend.name == backend.name:
+			#		if uid in loaded:
+			#			loaded.remove(uid)
+
+			#		else:
+			#			logging.progress(_(u'{0}: removing disapeared user '
+			#				'{1}.').format(stylize(ST_NAME, self.name),
+			#					stylize(ST_LOGIN, user.login)))
+			#
+			#			self.del_User(user, batch=True, force=True)
+
+		assert ltrace('locks', '| users.reload_backend exit %s' % self.lock)
 	def build_myself(self):
 		""" create internal instance(s) for the current Licorn® daemon. """
 		with self.lock:

@@ -162,8 +162,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			client_login = LMC.users.uid_to_login(
 				client_uid)
 
-			assert ltrace('cmdlistener', 'currently auhorized users: %s' %
-					LicornPyroValidator.valid_users)
+			assert ltrace('cmdlistener', 'currently authorized users: %s.' %
+					', '.join(stylize(ST_LOGIN, l)
+						for l in LicornPyroValidator.valid_users))
 
 			if client_uid == 0 \
 				or client_login in LicornPyroValidator.valid_users:
@@ -270,9 +271,9 @@ class CommandListener(LicornBasicThread):
 
 		# get a direct reference to the members of group authorized to connect,
 		# this avoids any needs to reload it after a change.
-		LicornPyroValidator.valid_users = LMC.groups.by_name(
+		LicornPyroValidator.valid_users.extend(LMC.groups.by_name(
 				LMC.configuration.defaults.admin_group
-				).memberUid
+				).memberUid)
 
 		# get the port number from current configuration.
 		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port

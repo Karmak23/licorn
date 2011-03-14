@@ -1307,6 +1307,11 @@ def mod_user_parse_arguments(app):
 			"overwrite the dirs/files provided by the skel in the "
 			"user's home dir."))
 
+	user.add_option('-w', '--watch', '--restore-watch',
+		action='store_true', dest='restore_watch', default=False,
+		help=_(u"Restore the INotifier watch for this account home directory. "
+			"This is particularly useful after a directory move."))
+
 	parser.add_option_group(user)
 	try:
 		opts, args = parser.parse_args()
@@ -1434,6 +1439,11 @@ def mod_group_parse_arguments(app):
 	group.add_option("-P", "--not-permissive", "--set-not-permissive",
 		action="store_false", dest="permissive", default=None,
 		help=_(u"Set the shared directory of the group not permissive."))
+
+	group.add_option('-w', '--watch', '--restore-watch',
+		action='store_true', dest='restore_watch', default=False,
+		help=_(u"Restore the INotifier watch for the group home directory. "
+			"This is particularly useful after a directory move."))
 
 	group.add_option("--add-users",
 		action="store", type="string", dest="users_to_add", default=None,

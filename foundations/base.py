@@ -254,7 +254,7 @@ class MixedDictObject(NamedObject, dict):
 				str(self.__class__),
 				stylize(ST_NAME, self.name),
 				[ key for key, value \
-					in self.__dict__.items() + self.items() \
+					in self.__dict__.items() + dict.items(self) \
 						if key[:2] != '__' \
 						and not callable(value) \
 						and key not in self.__class__._licorn_protected_attrs])

@@ -425,11 +425,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		if opts.long:
-			self.output(LMC.users.dump())
-			self.output(LMC.groups.dump())
-			self.output(LMC.machines.dump())
-
 		self.output(self.licornd.dump_status(opts.long, opts.precision))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
@@ -1597,6 +1592,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						ST_LOGIN, user.login),
 					auto_answer=opts.auto_answer):
 
+					if opts.restore_watch:
+						something_done = True
+						user._inotifier_add_watch(self.licornd, force_reload=True)
+
 					if opts.newgecos is not None:
 						something_done = True
 						user.gecos = unicode(opts.newgecos)
@@ -1793,7 +1792,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				logging.ask_for_repair(_(u'Modify group %s?') % stylize(
 				ST_NAME, group.name),auto_answer=opts.auto_answer):
 
-				if opts.move_to_backend:
+				if opts.move_to_backend is not None:
 					gname = group.name
 					if group.is_helper:
 						logging.info(_(u'Skipped associated system group %s, '
@@ -1806,6 +1805,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				if opts.permissive is not None:
 					something_done = True
 					group.permissive = opts.permissive
+
+				if opts.restore_watch:
+					something_done = True
+					group._inotifier_add_watch(self.licornd, force_reload=True)
 
 				if opts.newname is not None:
 					something_done = True
@@ -2310,7 +2313,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			default_selection = selection,
 			all=opts.all)
 
-		assert ltrace('chk', '> chk_group(%s)' % gids_to_chk)
+		assert ltrace('chk', '> chk_group(%s)' % groups_to_chk)
 
 		if groups_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:

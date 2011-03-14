@@ -11,7 +11,9 @@ Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import os, crypt, tempfile, grp
+import os, crypt, tempfile, grp, pyinotify
+
+from threading  import Timer
 from traceback  import print_exc
 from contextlib import nested
 
@@ -19,7 +21,7 @@ from licorn.foundations         import logging, exceptions
 from licorn.foundations         import readers, hlstr, fsapi
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.base    import Singleton
+from licorn.foundations.base    import Singleton, BasicCounter
 from licorn.foundations.classes import FileLock
 
 from licorn.core                import LMC
@@ -85,6 +87,12 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		self.gslock = FileLock(LMC.configuration, '/etc/gshadow')
 		self.gelock = FileLock(LMC.configuration,
 								LMC.configuration.extendedgroup_data_file)
+
+		# the inotifier hints, to avoid reloading when we write our own files.
+		self.__hint_pwd = BasicCounter(1)
+		self.__hint_shw = BasicCounter(1)
+		self.__hint_grp = BasicCounter(1)
+		self.__hint_gsh = BasicCounter(1)
 
 		return self.available
 	def load_User(self, user):
@@ -409,6 +417,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.fchmod(ftempp, 0644)
 			os.fchown(ftempp, 0, 0)
 			os.close(ftempp)
+			self.__hint_pwd += 1
 			os.rename(fpathp, '/etc/passwd')
 
 			# for /etc/shadow
@@ -417,6 +426,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.fchmod(ftemps, 0640)
 			os.fchown(ftemps, 0, self.__shadow_gid)
 			os.close(ftemps)
+			self.__hint_shw += 1
 			os.rename(fpaths, '/etc/shadow')
 
 		logging.progress(_("{0}: saved users data to disk.").format(str(self)))
@@ -471,6 +481,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.fchmod(ftempg, 0644)
 			os.fchown(ftempg, 0, 0)
 			os.close(ftempg)
+			self.__hint_grp += 1
 			os.rename(fpathg, '/etc/group')
 
 			ftemps, fpaths = tempfile.mkstemp(dir='/etc')
@@ -478,6 +489,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.fchmod(ftemps, 0640)
 			os.fchown(ftemps, 0, self.__shadow_gid)
 			os.close(ftemps)
+			self.__hint_gsh += 1
 			os.rename(fpaths, '/etc/gshadow')
 
 			ftempe, fpathe = tempfile.mkstemp(dir='/etc')
@@ -497,63 +509,53 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		#return '$6$' + hashlib.sha512(password).hexdigest()
 
 	def _inotifier_install_watches(self, inotifier):
-		print '>> implement shadow install watches'
 
-	def watch_configuration_files(self):
-		""" monitor important configuration files, to know when another program
-			touch them, and apply appropriate actions on change. """
+		self.__conffiles_threads = {}
 
-		assert ltrace('inotifier', '| %s.watch_configuration_files()' %
-			self.name)
-
-		def reload_controller_unix(self, path, controller, *args, **kwargs):
-			""" Timer() callback for watch threads.
-			*args and **kwargs are not used. """
-			logging.notice(_(u'{0}: configuration file {1} changed, '
-				'reloading {2} controller.').format(str(self),
-					stylize(ST_PATH, path),
-					stylize(ST_NAME, controller.name)))
-			controller.reload_backend(self)
-
-		def event_on_config_file(path, event, controller, index):
-			""" We only watch GAMCreated events, because when
-				{user,group}{add,mod,del} change their files, they create it
-				from another, everytime (for atomic reasons). We, in licorn
-				overwrite them, and this will generate a GAMChanged event,
-				which permits us to distringuish between the different uses.
-			"""
-			assert ltrace('inotifier',
-				'gam event %s on %s -> controller %s (index %s)' % (
-				gamin_events[event], path, controller.name, index))
-
-			if event == gamin.GAMCreated:
-				create_thread = False
-				try:
-					if self.conffiles_threads[index].is_alive():
-						self.conffiles_threads[index].cancel()
-
-					self.conffiles_threads[index].join()
-					del self.conffiles_threads[index]
-					create_thread = True
-				except (KeyError, AttributeError):
-					create_thread = True
-
-				if create_thread:
-					self.conffiles_threads[index] = Timer(0.25,
-						reload_controller_unix, [ path, controller ])
-					self.conffiles_threads[index].start()
-
-		self.conffiles_threads = {}
-
-		def event_on_passwd(path, event):
-			return event_on_config_file(path, event, LMC.users, 1)
-		def event_on_group(path, event):
-			return event_on_config_file(path, event, LMC.groups, 2)
-
-		for watched_file, callback_func in (
-				('/etc/passwd', event_on_passwd),
-				('/etc/shadow', event_on_passwd),
-				('/etc/group', event_on_group),
-				('/etc/gshadow', event_on_group)
+		for watched_file, controller, hint, callback_func in (
+				('/etc/passwd', LMC.users,   self.__hint_pwd, self.__event_on_passwd),
+				('/etc/shadow', LMC.users,   self.__hint_shw, self.__event_on_passwd),
+				('/etc/group', LMC.groups,   self.__hint_grp, self.__event_on_group),
+				('/etc/gshadow', LMC.groups, self.__hint_gsh, self.__event_on_group)
 			):
-			self.add_watch(watched_file, callback_func,	is_dir=False)
+			inotifier.watch_conf(watched_file, controller, callback_func, hint)
+	def __reload_controller_unix(self, path, controller, *args, **kwargs):
+		""" Timer() callback for watch threads.
+		*args and **kwargs are not used. """
+		logging.notice(_(u'{0}: configuration file {1} changed, '
+			'reloading {2} controller.').format(str(self),
+				stylize(ST_PATH, path),
+				stylize(ST_NAME, controller.name)))
+
+		controller.reload_backend(self)
+	def __event_on_config_file(self, pathname, controller, index):
+		""" We only watch GAMCreated events, because when
+			{user,group}{add,mod,del} change their files, they create it
+			from another, everytime (for atomic reasons). We, in licorn
+			overwrite them, and this will generate a GAMChanged event,
+			which permits us to distringuish between the different uses.
+		"""
+		assert ltrace('inotifier',
+			'conf_file %s change -> reload controller %s (index %s)' % (
+				pathname, controller.name, index))
+
+		create_thread = False
+		try:
+			if self.__conffiles_threads[index].is_alive():
+				self.__conffiles_threads[index].cancel()
+
+			self.__conffiles_threads[index].join()
+			del self.__conffiles_threads[index]
+			create_thread = True
+
+		except (KeyError, AttributeError):
+			create_thread = True
+
+		if create_thread:
+			self.__conffiles_threads[index] = Timer(0.25,
+				self.__reload_controller_unix, [ pathname, controller ])
+			self.__conffiles_threads[index].start()
+	def __event_on_passwd(self, pathname):
+		return self.__event_on_config_file(pathname, LMC.users, 1)
+	def __event_on_group(self, pathname):
+		return self.__event_on_config_file(pathname, LMC.groups, 2)

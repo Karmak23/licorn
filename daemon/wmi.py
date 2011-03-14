@@ -10,11 +10,9 @@ Licensed under the terms of the GNU GPL version 2.
 import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal, gettext
 from threading import current_thread
 
-from SocketServer       import TCPServer, ThreadingMixIn
+from SocketServer       import TCPServer, ThreadingTCPServer
 TCPServer.allow_reuse_address = True
 
-class ThreadedTCPServer(ThreadingMixIn, TCPServer):
-    pass
 from BaseHTTPServer	    import BaseHTTPRequestHandler
 
 from licorn.foundations         import options, logging, exceptions, process
@@ -70,24 +68,26 @@ class WMIThread(LicornBasicThread):
 			#
 			# when creation succeeds, break the loop and serve requets.
 			try:
-				self.httpd = ThreadedTCPServer((listen_address,
+				self.httpd = ThreadingTCPServer((listen_address,
 								LMC.configuration.licornd.wmi.port),
 								WMIHTTPRequestHandler)
 				break
 			except socket.error, e:
 				if e[0] == 98:
-					logging.warning('''%s: socket already in use. '''
-						'''waiting (total: %ds).''' % (self.name, count))
+					logging.warning(_(u'{0}: socket already in use. '
+						'waiting (total: %ds).').format(
+							stylize(ST_NAME, self.name), count))
 					count += 1
 					time.sleep(1)
 				else:
-					logging.error("%s: socket error %s." % (self.name, e))
+					logging.error(_(u'{0}: socket error %s.').format(
+						stylize(ST_NAME, self.name), e))
 					self.httpd = None
 					self.stop()
 					return
 
-		logging.notice('%s: %s to answer requests at address %s.' % (
-			self.name, stylize(ST_OK, 'ready'),
+		logging.notice(_(u'{0}: {1} to answer requests at address {2}.').format(
+			stylize(ST_NAME, self.name), stylize(ST_OK, _(u'ready')),
 			stylize(ST_ADDRESS, 'http://%s:%s/' % (
 				listen_address if listen_address else '*',
 					LMC.configuration.licornd.wmi.port))))
@@ -96,7 +96,7 @@ class WMIThread(LicornBasicThread):
 		WMIHTTPRequestHandler.server_name = socket.getfqdn(host)
 		WMIHTTPRequestHandler.server_port = port
 
-		self.httpd.serve_forever()
+		self.httpd.serve_forever(5.0)
 	def stop(self):
 		assert ltrace('http', 'WMIThread.stop()')
 		LicornBasicThread.stop(self)
@@ -263,9 +263,9 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 									return True
 
 						except exceptions.BadArgumentError:
-							logging.warning('''empty username or '''
-								'''password sent as authentification '''
-								'''string into WMI.''')
+							logging.warning(_(u'%s: empty username or '
+								'password sent as authentification string.') %
+									stylize(ST_NAME, self.name))
 							return False
 		return False
 	def format_post_args(self):
@@ -313,8 +313,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				args[1] = 'main'
 
 			if args[0] in dir(self.wmi):
-				logging.progress("Serving %s %s for http_user %s." % (
-					self.path, args, self.http_user))
 
 				if hasattr(self, 'post_args'):
 					py_code = ('rettype, retdata = self.wmi.%s.%s('

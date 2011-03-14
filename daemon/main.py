@@ -140,14 +140,30 @@ class LicornDaemon(Singleton):
 		# create the INotifier thread, and map its WatchManager methods to
 		# us, they will be used by controllers, extensions and every single
 		# core object.
-		self.__threads.append(INotifier(self))
-		self.__threads.INotifier.start()
+		if self.configuration.inotifier.enabled:
+			self.__threads._inotifier = INotifier(self)
 
-		# proxy methods to the INotifier (generally speaking, core objects
-		# should cal them via the daemon, only.
-		self.inotifier_add        = self.__threads.INotifier._wm.add_watch
-		self.inotifier_del        = self.__threads.INotifier._wm.rm_watch
-		self.inotifier_watch_conf = self.__threads.INotifier.watch_conf
+			ino = self.__threads._inotifier
+			ino.start()
+
+			# proxy methods to the INotifier (generally speaking, core objects
+			# should cal them via the daemon, only.
+			self.inotifier_add            = ino._wm.add_watch
+			self.inotifier_del            = ino._wm.rm_watch
+			self.inotifier_watches        = ino._wm.watches
+			self.inotifier_watch_conf     = ino.inotifier_watch_conf
+			self.inotifier_del_conf_watch = ino.inotifier_del_conf_watch
+
+			del ino
+		else:
+			def inotifier_disabled(*args, **kwargs):
+				pass
+
+			self.inotifier_add            = inotifier_disabled
+			self.inotifier_del            = inotifier_disabled
+			self.inotifier_watches        = inotifier_disabled
+			self.inotifier_watch_conf     = inotifier_disabled
+			self.inotifier_del_conf_watch = inotifier_disabled
 
 		# NOTE: the CommandListener must be launched prior to anything, to
 		# ensure connection validation form clients and other servers are
@@ -174,7 +190,7 @@ class LicornDaemon(Singleton):
 											pids_to_wake=self.pids_to_wake)
 			self.__threads.CommandListener.start()
 
-			self.__threads.INotifier.collect()
+			self.__threads._inotifier.collect()
 	def __init_daemon_phase_2(self):
 		""" TODO. """
 
@@ -210,10 +226,6 @@ class LicornDaemon(Singleton):
 					'line or by configuration directive.' % str(self))
 
 			self.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
-
-			if self.configuration.inotifier.enabled:
-				i = INotifier(self, self.options.no_boot_check)
-				self.__threads.append(i)
 	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
@@ -249,6 +261,13 @@ class LicornDaemon(Singleton):
 			if th.is_alive():
 				th.stop()
 				time.sleep(0.01)
+
+		assert ltrace('thread', 'stopping thread INotifier.')
+		if self.__threads._inotifier.is_alive():
+			self.__threads._inotifier.stop()
+			# we need to wait a little more for INotifier, it can take ages
+			# to remove all directory watches.
+			time.sleep(0.3)
 
 	def run(self):
 		self.refork_if_not_root_or_die()
@@ -384,13 +403,15 @@ class LicornDaemon(Singleton):
 				''.join([ ('%s: %s' % (qname, queue.qsize())).center(20)
 					for qname, queue in self.__queues.iteritems()]))
 
-		if long_output:
-			for controller in LMC:
-				if hasattr(controller, 'dump_status'):
-					data += 'controller %s\n' % controller.dump_status()
+		#if long_output:
+		#	for controller in LMC:
+		#		if hasattr(controller, 'dump_status'):
+		#			data += 'controller %s\n' % controller.dump_status(long_output)
 
 		# don't use itervalues(), threads are moving target now.
-		tdata = []
+		tdata = [ ((self.__threads._inotifier.name, 'thread %s\n' %
+			self.__threads._inotifier.dump_status(long_output, precision))) ]
+
 		for tname, thread in self.__threads.items():
 			if thread.is_alive():
 				if hasattr(thread, 'dump_status'):
@@ -406,7 +427,7 @@ class LicornDaemon(Singleton):
 				tdata.append((tname, 'thread %s%s(%d) has terminated.\n' % (
 					stylize(ST_NAME, thread.name),
 					stylize(ST_OK, '&') if thread.daemon else '',
-					thread.ident)))
+					0 if thread.ident is None else thread.ident)))
 
 		data += ''.join([ value for key, value in sorted(tdata)])
 		return data
@@ -499,7 +520,13 @@ class LicornDaemon(Singleton):
 							'softly with TERM signal and waiting a little '
 							'more.') % str(self))
 
-						os.kill(old_pid, signal.SIGTERM)
+						try:
+							os.kill(old_pid, signal.SIGTERM)
+						except (OSError, IOError), e:
+							if e.errno != 3:
+								# errno 3 is "no such process": it died in the
+								# meantime. Don't crash for this.
+								raise
 						time.sleep(0.2)
 						counter += 2
 						not_yet_displayed_one = False
@@ -510,7 +537,13 @@ class LicornDaemon(Singleton):
 							'KILL signal.' % str(self))
 
 						killed = True
-						os.kill(old_pid, signal.SIGKILL)
+						try:
+							os.kill(old_pid, signal.SIGKILL)
+						except (OSError, IOError), e:
+							if e.errno != 3:
+								# errno 3 is "no such process": it died in the
+								# meantime. Don't crash for this.
+								raise
 						time.sleep(0.2)
 						counter += 2
 						not_yet_displayed_two = False
@@ -668,8 +701,8 @@ class LicornDaemon(Singleton):
 		logging.notice(_(u'{0}: exiting{1}.').format(str(self), self.uptime()))
 		sys.exit(0)
 	def restart(self, signum=None, frame=None):
-		logging.notice(_(u'{0}: SIGUSR1 received, restarting{1}.').format(
-						str(self), self.uptime()))
+		logging.notice(_(u'{0}: SIGUSR1 received, preparing restart.').format(
+						str(self)))
 
 		self.__daemon_shutdown()
 
@@ -703,6 +736,8 @@ class LicornDaemon(Singleton):
 			cmd.extend(sys.argv[:])
 
 		#print '>> daemon.restart %s' % cmd
+
+		logging.notice(_(u'{0}: restarting{1}.').format(str(self), self.uptime()))
 
 		# XXX: awful tricking for execvp but i'm tired of this.
 		os.execvp(cmd[1], [cmd[0]] + cmd[2:])
@@ -775,6 +810,12 @@ class LicornDaemon(Singleton):
 			'garbage collection on {1}.').format(caller,
 				', '.join(str(x) for x in gc.garbage)))
 		del gc.garbage[:]
+
+		for controller in LMC:
+			try:
+				controller._expire_events()
+			except AttributeError:
+				pass
 	def _cli_parse_arguments(self):
 		""" Integrated help and options / arguments for licornd. """
 
