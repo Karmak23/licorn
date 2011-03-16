@@ -6,10 +6,7 @@ Licorn Daemon inotifier thread.
 :license: GNU GPL version 2
 """
 
-import os, time, gamin, pyinotify, select
-
-from threading   import Thread, Event, RLock, Timer
-from collections import deque
+import os, time, pyinotify, select
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils
