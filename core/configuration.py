@@ -162,7 +162,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.config_dir           = "/etc/licorn"
 		self.check_config_dir     = self.config_dir + "/check.d"
 		self.main_config_file     = self.config_dir + "/licorn.conf"
-		self.backup_config_file   = self.config_dir + "/backup.conf"
 
 		# system profiles, compatible with gnome-system-tools
 		self.profiles_config_file = self.config_dir + "/profiles.xml"
@@ -1097,7 +1096,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					data += '%s\n' % stylize(ST_DISABLED, e.name)
 
 			elif args[0] in ("config_dir", "main_config_file",
-				"backup_config_file", "extendedgroup_data_file", "app_name"):
+				"extendedgroup_data_file", "app_name"):
 
 				varname = args[0].upper()
 
@@ -1105,8 +1104,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					varval = self.config_dir
 				elif args[0] == "main_config_file":
 					varval = self.main_config_file
-				elif args[0] == "backup_config_file":
-					varval = self.backup_config_file
 				elif args[0] == "extendedgroup_data_file":
 					varval = self.extendedgroup_data_file
 
