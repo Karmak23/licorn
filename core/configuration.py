@@ -471,7 +471,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		if os.name is "posix":
 			if os.path.exists( '/etc/lsb-release' ):
-				lsb_release = readers.shell_conf_load_dict('/etc/lsb-release')
+				lsb_release = readers.shell_conf_load_dict('/etc/lsb-release', convert='none')
 
 				if lsb_release['DISTRIB_ID'] == 'Licorn':
 					self.distro = distros.UBUNTU
@@ -483,7 +483,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						raise exceptions.LicornRuntimeError(
 							'''This Ubuntu version is not '''
 							'''supported, sorry !''')
-				self.distro_version = float(lsb_release['DISTRIB_RELEASE'])
+				self.distro_version = lsb_release['DISTRIB_RELEASE']
 
 			else:
 				# OLD / non-lsb compatible system or BSD

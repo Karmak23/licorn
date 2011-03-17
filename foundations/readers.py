@@ -23,13 +23,15 @@ from licorn.foundations.base    import Enumeration
 
 
 
+def to_type_none(value):
+	""" Return a value without any conversion. """
+	return value
 def to_type_semi(value):
 	"""Find the right type of value and convert it, but not for all types. """
 	if value.isdigit():
 		return int(value)
 	else:
 		return value
-
 def to_type_full(value):
 	"""Find the right type of value and convert it. """
 	if value.isdigit():
@@ -42,6 +44,7 @@ def to_type_full(value):
 		return value
 
 to_type = {
+	'none': to_type_none,
 	'semi':	to_type_semi,
 	'full': to_type_full
 	}
