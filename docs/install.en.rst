@@ -43,7 +43,7 @@ From sources
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
 			python-pyip python-ipcalc python-udev python-dbus \
-			python-gobject
+			python-gobject gettext
 
 #. About `python-pylibacl`: be sure to install at least version *0.3*.
 #. Get the source localy with darcs::

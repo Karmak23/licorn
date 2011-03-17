@@ -361,12 +361,14 @@ class Testsuite:
 	def get_stats(self):
 		""" display some statistique of the TS (number of scenario, number
 		of commands) """
-		num_cmd=0
-		for scenario in self.list_scenario:
-			num_cmd+=len(scenario.cmds)
-		logging.notice(_(u'The %s testsuite has %s scenarii (%s commands).') % (
-			self.name,
-			stylize(ST_OK,len(self.list_scenario)),stylize(ST_OK,num_cmd)))
+
+		sce_ = len(self.list_scenario)
+		cmd_ = sum(len(sce.cmds) for sce in self.list_scenario)
+
+		logging.notice(_(u'The {0} testsuite holds {1} scenarii, counting {2} '
+			'commands (avg of {3} cmds per scenario).').format(
+			stylize(ST_NAME, self.name), stylize(ST_OK, sce_),
+			stylize(ST_OK, cmd_), stylize(ST_UGID, '%.1f' % (cmd_*1.0/sce_))))
 	def select(self, scenario_number=None, all=False, mode=None):
 		""" select some scenarii to be executed """
 		if all:

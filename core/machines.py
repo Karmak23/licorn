@@ -1056,8 +1056,8 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		if not hlstr.cregex['hostname'].match(hostname):
 			raise exceptions.LicornRuntimeError(
-				_('''Can't build a valid hostname (got %s, which doesn't'''
-				''' verify %s)''') % (
+				_(u'Cannot build a valid hostname (got {0}, which does not '
+				'verify {1}).').format(
 					inputhostname, hlstr.regex['hostname']))
 
 		return hostname

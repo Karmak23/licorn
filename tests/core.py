@@ -2408,7 +2408,7 @@ if __name__ == "__main__":
 		# give back all the scenarii tree to calling user.
 		uid, gid = [ int(x) for x in \
 			open(state_files['owner']).read().strip().split(',') ]
-		test_message(_(u'giving back all scenarii data to %s:%s.') % (
+		test_message(_(u'giving back all scenarii data to {0}:{1}.').format(
 			stylize(ST_UGID, uid), stylize(ST_UGID, gid)))
 		for entry in fsapi.minifind('data', followlinks=True):
 			os.chown(entry, uid, gid)

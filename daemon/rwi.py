@@ -1317,8 +1317,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				group = LMC.groups.guess_one(g)
 				i += 1
-				self.output('\r' + _(u'Deleting groups (%d/%d), '
-					'progression: %.2f%%') % (i, length_groups, progression))
+				self.output('\r' + _(u'Deleting groups ({0}/{1}), '
+					'progression: {3:.2f}%').format(i, length_groups, progression))
 
 				LMC.groups.del_Group(group, del_users=True, no_archive=True)
 				progression += delta

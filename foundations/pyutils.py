@@ -68,24 +68,24 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 	if long_output:
 		sep1            = ', '
 		sep2            = ' '
-		year_text       = _('%d year%s')
-		month_text      = _('%dm%s')
-		day_text        = _('%d day%s')
-		hour_text       = _('%d hour%s')
-		min_text        = _('%d min%s')
-		second_text     = _('%d sec%s')
-		big_second_text = _('%.4f sec%s')
+		year_text       = _('{0} year{1}')
+		month_text      = _('{0}m{1}')
+		day_text        = _('{0} day{1}')
+		hour_text       = _('{0} hour{1}')
+		min_text        = _('{0} min{1}')
+		second_text     = _('{0} sec{1}')
+		big_second_text = _('{0:.4f} sec{1}')
 
 	else:
 		sep1            = ''
 		sep2            = ''
-		year_text       = _('%dy%s')
-		month_text      = _('%dm%s')
-		day_text        = _('%dd%s')
-		hour_text       ='%d%sh'
-		min_text        ='%d%sm'
-		second_text     ='%d%ss'
-		big_second_text ='%.4fs%s'
+		year_text       = _('{0}y{1}')
+		month_text      = _('{0}m{1}')
+		day_text        = _('{0}d{1}')
+		hour_text       ='{0}{1}h'
+		min_text        ='{0}{1}m'
+		second_text     ='{0}{1}s'
+		big_second_text ='{0:.4f}s{1}'
 
 	time_delta_sec  = delta_in_seconds
 	time_delta_min  = 0
@@ -112,28 +112,28 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 					if time_delta_year > 1 and long_output:
 						s_year = 's'
 					if time_delta_year > 0:
-						time_delta_string += year_text % (
+						time_delta_string += year_text.format(
 							time_delta_year, s_year)
 				if time_delta_day > 1 and long_output:
 					s_day = 's'
 				if time_delta_day > 0:
 					time_delta_string += '%s%s' % (
 						sep1 if time_delta_string else '',
-						day_text % (time_delta_day, s_day)
+						day_text.format(time_delta_day, s_day)
 						)
 			if time_delta_hour > 1 and long_output:
 				s_hour = 's'
 			if time_delta_hour > 0:
 				time_delta_string += '%s%s' % (
 					sep2 if time_delta_string else '',
-					hour_text % (time_delta_hour, s_hour)
+					hour_text.format(time_delta_hour, s_hour)
 					)
 		if time_delta_min > 1 and long_output:
 			s_min = 's'
 		if time_delta_min > 0:
 			time_delta_string += '%s%s' % (
 					sep2 if time_delta_string else '',
-					min_text % (time_delta_min, s_min)
+					min_text.format(time_delta_min, s_min)
 					)
 	if time_delta_sec > 1 and long_output:
 		s_sec = 's'
@@ -141,12 +141,12 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 		if big_precision:
 			time_delta_string += '%s%s' % (
 				sep2 if time_delta_string else '',
-				big_second_text % (time_delta_sec, s_sec)
+				big_second_text.format(time_delta_sec, s_sec)
 			)
 		else:
 			time_delta_string += '%s%s' % (
 				sep2 if time_delta_string else '',
-				second_text % (int(time_delta_sec), s_sec)
+				second_text.format(int(time_delta_sec), s_sec)
 				)
 
 	return time_delta_string_wrapper % time_delta_string

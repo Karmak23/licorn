@@ -358,7 +358,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		with self.lock:
 
 			if permissive:
-				qualif = _(u'')
+				qualif = ''
 				value  = _(u'activated')
 				color  = ST_OK
 			else:
@@ -1002,8 +1002,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							except (IOError, OSError), e:
 								if e.errno != 2:
 									raise exceptions.LicornRuntimeError(
-									_(u'Unable to delete symlink %s '
-									'(was: %s).') % (
+									_(u'Unable to delete symlink {0} '
+									'(was: {1}).').format(
 										stylize(ST_LINK, link), e))
 						else:
 							link_not_found = False
@@ -1020,7 +1020,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						# errno == 2 is a broken link, don't bother.
 						raise exceptions.LicornRuntimeError(_(u'Unable to '
-							'read symlink %s (error was: %s).') % (
+							'read symlink {0} (was: {1}).').format(
 								link, str(e)))
 
 			if link_not_found and not delete:
@@ -1098,12 +1098,14 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		for p in profiles:
 			# Delete the group from groups list of profiles
 			if name in controllers.profiles[p]['memberGid']:
-				logging.progress(_(u'Deleting group %s from the profile %s.') %
-					( stylize(ST_NAME, name), stylize(ST_NAME, p)))
-				controllers.profiles.DeleteGroupsFromProfile([name])
+				logging.progress(_(u'Deleting group {0} from '
+					'profile {1}.').format(stylize(ST_NAME, name),
+						stylize(ST_NAME, p)))
+
+				LMC.profiles.DeleteGroupsFromProfile([name])
 				# Delete all 'p''s users from the group 'name'
 				_users_to_del = self.__find_group_members(users,
-					controllers.profiles[p]['groupName'])
+					LMC.profiles[p]['groupName'])
 				self.DeleteUsersFromGroup(name, _users_to_del, users)
 			else:
 				logging.info(_(u'Group {0} already absent from '
@@ -1218,10 +1220,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						# demote user from std to gst
 						self.__standard_group().del_Users([ user ])
 					else:
-						raise exceptions.BadArgumentError(
-								'cannot demote user %s from '
-								'standard membership to guest '
-								'without --force flag.' %
+						raise exceptions.BadArgumentError(_(u'Cannot demote '
+								'user %s from standard membership to guest '
+								'without --force flag.') %
 									stylize(ST_LOGIN, user.login))
 
 				elif user in self.__responsible_group().members:
@@ -1233,10 +1234,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						# demote user from rsp to gst
 						self.__responsible_group().del_Users([ user ])
 					else:
-						raise exceptions.BadArgumentError(
-								'cannot demote user %s from '
-								'responsible to guest '
-								'without --force flag.' %
+						raise exceptions.BadArgumentError(_(u'Cannot demote '
+							'user %s from responsible to guest without '
+							'--force flag.') %
 									stylize(ST_LOGIN, user.login))
 
 			#else:
@@ -1265,10 +1265,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 					self.__responsible_group().del_Users([ user ])
 				else:
-					raise exceptions.BadArgumentError(
-							'cannot demote user %s from '
-							'responsible to standard membership '
-							'without --force flag.'%
+					raise exceptions.BadArgumentError(_(u'Cannot demote user '
+						'%s from responsible to standard membership without '
+						'--force flag.') %
 								stylize(ST_LOGIN, user.login))
 			#else:
 			#
@@ -1406,7 +1405,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		if not self.__is_system_restricted:
 			if not hasattr(self, 'description') or self.description == '':
 				update = True
-				self.description = _(u'Members of group “%s”') % self.name
+				self.description = _('Members of group “%s”') % self.name
 
 				logging.info(_(u'Added missing {0} attribute with a '
 					'default value for system group {1}.').format(
@@ -1459,8 +1458,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			fsapi.make_symlink(link_src, link_dst, batch=batch)
 
 		except Exception, e:
-			raise exceptions.LicornRuntimeError(
-						"Unable to create symlink %s (was: %s)." % (
+			raise exceptions.LicornRuntimeError(_(u'Unable to create symlink '
+				'{0} (was: {1}).').format(
 							stylize(ST_LINK, link_dst), e))
 	def __del_group_symlink(self, user, batch=False, auto_answer=None):
 		""" Remove the group symlink from the user's home. Exactly, from
@@ -1494,8 +1493,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 													stylize(ST_LINK, link))
 			except (IOError, OSError), e:
 				if e.errno != 2:
-					raise exceptions.LicornRuntimeError(
-						"Unable to delete symlink %s (was: %s)." % (
+					raise exceptions.LicornRuntimeError(_(u'Unable to delete '
+						'symlink {0} (was: {1}).').format(
 							stylize(ST_LINK, link), e))
 
 	def _cli_get(self, long_output=False, no_colors=False):

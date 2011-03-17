@@ -69,7 +69,7 @@ i18n: update-po
 
 update-pot:
 	rm locale/$(APP_NAME).pot ; cp locale/$(APP_NAME).template.pot locale/$(APP_NAME).pot
-	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' | xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot >/dev/null 2>&1
+	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' | xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot 
 
 update-po: update-pot
 	#

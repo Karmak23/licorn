@@ -147,13 +147,13 @@ class KeywordsController(Singleton, LockedController):
 
 		if not hlstr.cregex['keyword'].match(name):
 			raise exceptions.BadArgumentError(
-				_(u'Malformed keyword name "%s", must match /%s/i.').format(
+				_(u'Malformed keyword name "{0}", must match /{1}/i.').format(
 					stylize(ST_NAME, name),
 					stylize(ST_REGEX, hlstr.regex['keyword'])))
 
 		if not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError(_(u'Malformed keyword '
-				'description "%s", must match /%s/i.').format(
+				'description "{0}", must match /{1}/i.').format(
 				stylize(ST_COMMENT, description),
 				stylize(ST_REGEX, hlstr.regex['description'])))
 

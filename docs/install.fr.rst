@@ -46,7 +46,7 @@ Depuis les sources
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
 			python-pyip python-ipcalc python-udev python-dbus \
-			python-gobject
+			python-gobject gettext
 
 #. à propos de ``python-pylibacl`` : vérifiez que c'est au moins la version *0.3* (à partir de ``Hardy`` c'est bon).
 #. Récupérez les sources avec :program:`darcs`::

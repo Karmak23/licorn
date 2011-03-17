@@ -20,31 +20,31 @@ from licorn.foundations.ltrace import ltrace
 from licorn.core import LMC
 configuration = LMC.configuration
 
-licence_text = _('''
-%s is distributed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU
- GPL version 2</a> license, without any kind of waranty. Copyleft &copy;
- 2007-2008 Olivier Cortès, Guillaume Masson &amp; Régis Cobrun for project %s,
-  and all other libre software developers (Notably Ubuntu, Debian, Python…).
-''') % (LMC.configuration.app_name, LMC.configuration.app_name)
+licence_text = _(u'{0} is distributed under the <a href="http://www.gnu.org/'
+	'licenses/gpl.html">GNU GPL version 2</a> license, without any kind of '
+	'waranty. Copyleft &copy; 2007-2011 Olivier Cortès, Guillaume Masson '
+	'&amp; Régis Cobrun for project {0}, and all other libre software '
+	'developers (Notably Ubuntu, Debian, Python…).').format(
+		LMC.configuration.app_name)
 
 acronyms = {
-	'SSH' : _('Secure SHell (Secure remote connexion and commands protocol)'),
-	'FTP' : _('File Transfer Protocol'),
-	'HTTP': _('HyperText Transfert Protocol'),
-	'IMAP': _('Internet Message Access Protocol'),
-	'VNC' : _('Virtual Network Computing (Desktop remote connexion protocol)'),
-	'RDP' : _('Remote Desktop Protocol (Desktop remote connexion protocol)'),
-	'POP' : _('Post-Office Protocol (Simple mail fetching protocol)'),
-	'SMTP': _('Simple Mail Transfer Protocol'),
-	'RSA' : _('Rivest Shamir Adleman (cryptography protocol)'),
-	'DSA' : _('Digital Signature Algorithm'),
-	'GNU' : _('''GNU is Not Unix (recursive acronym ; a set of libre sofware
-		composing a libre operating system)'''),
-	'LCN' : _('''LiCorN system tools (tools for IT managers,
-		see http://dev.licorn.org/)'''),
-	'LAT' : _('''Licorn Admin Tools (High-level management tools for
-		a GNU/Linux system)'''),
-	'WMI' : _('Licorn® Web Management Interface')
+	'SSH' : _(u'Secure SHell (Secure remote connexion and commands protocol)'),
+	'FTP' : _(u'File Transfer Protocol'),
+	'HTTP': _(u'HyperText Transfert Protocol'),
+	'IMAP': _(u'Internet Message Access Protocol'),
+	'VNC' : _(u'Virtual Network Computing (Desktop remote connexion protocol)'),
+	'RDP' : _(u'Remote Desktop Protocol (Desktop remote connexion protocol)'),
+	'POP' : _(u'Post-Office Protocol (Simple mail fetching protocol)'),
+	'SMTP': _(u'Simple Mail Transfer Protocol'),
+	'RSA' : _(u'Rivest Shamir Adleman (cryptography protocol)'),
+	'DSA' : _(u'Digital Signature Algorithm'),
+	'GNU' : _(u'GNU is Not Unix (recursive acronym ; a set of libre sofware '
+				'composing a libre operating system)'),
+	'LCN' : _(u'LiCorN system tools (tools for IT managers, '
+				'see http://docs.licorn.org/)'),
+	'LAT' : _(u'Licorn Admin Tools (High-level management tools for '
+				'a GNU/Linux system)'),
+	'WMI' : _('%s Web Management Interface') % LMC.configuration.app_name
 	}
 
 def merge_multi_select(*lists):
