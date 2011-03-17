@@ -100,7 +100,13 @@ class Testsuite:
 			sce.full_interactive = True
 
 			while sce.status in (sce_status.FAILED, sce_status.NOT_STARTED):
-				sce.Run(interactive=True)
+				try:
+					sce.Run(interactive=True)
+
+				except KeyboardInterrupt:
+					test_message(_(u"Keyboard Interrupt received; cleaning scenario, please wait…"))
+					sce.clean()
+					raise
 
 			self.passed.append(sce.counter)
 			self.save_best_state()

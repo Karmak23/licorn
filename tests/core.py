@@ -433,7 +433,7 @@ class ScenarioTest:
 
 		self.check_for_context()
 
-		#print '>> entering with ', sce_status[self.status], self.name
+		#print '>> entering with', sce_status[self.status], self.name
 
 		if self.status == sce_status.NOT_STARTED:
 			self.clean()
@@ -1657,9 +1657,10 @@ def test_imports(context):
 		GET + [ 'profiles' ],
 		DEL + [ 'profiles', pname, '--del-users', '--no-archive' ],
 		DEL + [ 'group', '--empty', '--no-archive', '-v' ],
+		DEL + [ 'group', pname, '--no-archive', '--del-users', '--force', '-v' ],
 		],
 		context=context,
-		descr='''test user import from csv file''', clean_num=2))
+		descr='''test user import from csv file''', clean_num=3))
 
 	uname = 'uprofile2'
 	gname = 'gprofile2'
@@ -1677,7 +1678,8 @@ def test_imports(context):
 		GET + [ 'users' ],
 		DEL + [ 'profile', pname, '--del-users', '--no-archive', '-v' ],
 		DEL + [ 'group', '%s,%s,cp,ce1,ce2,cm2' % (gname, pname),
-												'--no-archive', '-v' ],
+												'--no-archive', '--del-users',
+												'--force', '-v' ],
 		],
 		context=context,
 		descr='''various test on user import''', clean_num=2))
@@ -2432,7 +2434,7 @@ if __name__ == "__main__":
 				"argument (not tested because too dangerous)"))
 			terminate()
 		except KeyboardInterrupt:
-			test_message(_(u"Keyboard Interrupt received, cleaning testsuite context, please wait…"))
+			test_message(_(u"Cleaning testsuite context, please wait…"))
 			terminate()
 		#finally:
 		#	terminate()
