@@ -230,9 +230,8 @@ class GenericQueueWorkerThread(Thread):
 			with self.__class__.lock:
 				self.__class__.busy += 1
 
-			# Do the throttle_up() out of the lock to release it,
-			# for peers to notice the newcomer.
-			# The method re-acquires it anyway.
+			# Do the throttle_up() out of the lock to release it, for
+			# peers to notice the newcomer. The method re-acquires it anyway.
 			self.throttle_up()
 
 			with self.lock:

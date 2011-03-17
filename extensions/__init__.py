@@ -74,6 +74,10 @@ class LicornExtension(CoreModule):
 
 		#: add a locking capability for multi-thread safety.
 		self.lock = RLock()
+	def __str__(self):
+		return 'extension %s' % stylize(ST_NAME, self.name)
+	def __repr__(self):
+		return 'extension %s' % stylize(ST_NAME, self.name)
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO.
 

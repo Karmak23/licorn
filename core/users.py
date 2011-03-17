@@ -22,10 +22,10 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
 from licorn.foundations.constants import filters, backend_actions
 
-from licorn.core         import LMC
-from licorn.core.groups  import Group
-from licorn.core.classes import CoreFSController, CoreStoredObject, CoreFSUnitObject
-from licorn.daemon       import priorities, roles
+from licorn.core                import LMC
+from licorn.core.groups         import Group
+from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
+from licorn.daemon              import priorities, roles, InternalEvent
 
 class User(CoreStoredObject, CoreFSUnitObject):
 	""" The User unit-object. """
@@ -375,8 +375,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		with self.lock:
 			if self.__already_created:
-				self.controller.run_hooks(
-								'user_pre_change_password', self, password)
+				L_event_run(InternalEvent('user_pre_change_password', self, password))
 
 			prefix = '!' if self.__locked else ''
 
@@ -391,8 +390,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if self.__already_created:
 				self.serialize()
-				self.controller.run_hooks(
-								'user_post_change_password', self, password)
+				L_event_run(InternalEvent('user_post_change_password', self, password))
 
 			if display:
 				logging.notice(_(u'Set password for user {0} to {1}.').format(
@@ -485,11 +483,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 					logging.info(_(u'Account {0} already locked.').format(
 											stylize(ST_NAME, self.__login)))
 				else:
-					self.controller.run_hooks('user_pre_lock', self)
+					L_event_run(InternalEvent('user_pre_lock', self))
 
 					self.__userPassword = '!' + self.__userPassword
 
-					self.controller.run_hooks('user_post_lock', self)
+					L_event_run(InternalEvent('user_post_lock', self))
 
 					logging.notice(_(u'Locked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -498,11 +496,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			else:
 				if self.__locked:
 
-					self.controller.run_hooks('user_pre_unlock', self)
+					L_event_run(InternalEvent('user_pre_unlock', self))
 
 					self.__userPassword = self.__userPassword[1:]
 
-					self.controller.run_hooks('user_post_unlock', self)
+					L_event_run(InternalEvent('user_post_unlock', self))
 
 					logging.notice(_(u'Unlocked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -1325,8 +1323,8 @@ class UsersController(Singleton, CoreFSController):
 
 			uid = self._generate_uid(login, desired_uid, system)
 
-			self.run_hooks('user_pre_add', uid=uid, login=login,
-								system=system, password=password)
+			L_event_run(InternalEvent('user_pre_add', uid=uid, login=login,
+								system=system, password=password))
 
 			groups_to_add_user_to = in_groups
 
@@ -1402,7 +1400,7 @@ class UsersController(Singleton, CoreFSController):
 			# thus, DO NOT UNCOMMENT -- if not batch:
 			user.serialize(backend_actions.CREATE)
 
-			self.run_hooks('user_post_add', user, password=password)
+			L_event_run(InternalEvent('user_post_add', user, password))
 
 			user.apply_skel(skel_to_apply)
 
@@ -1474,7 +1472,7 @@ class UsersController(Singleton, CoreFSController):
 		for group in user.groups[:]:
 			group.del_Users([ user ], batch=True)
 
-		self.run_hooks('user_pre_del', user)
+		L_event_run(InternalEvent('user_pre_del', user))
 
 		try:
 			# samba stuff
@@ -1519,15 +1517,15 @@ class UsersController(Singleton, CoreFSController):
 		logging.notice(_(u'Deleted user account {0}.').format(
 			stylize(ST_LOGIN, login)))
 
-		self.run_hooks('user_post_del', uid=uid, login=login,
-														no_archive=no_archive)
+		L_event_run(InternalEvent('user_post_del', uid=uid, login=login,
+														no_archive=no_archive))
 
 		# user is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
 		if no_archive:
-			self.licornd.service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
+			L_service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
 		else:
-			self.licornd.service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
+			L_service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 

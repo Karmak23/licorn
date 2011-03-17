@@ -42,7 +42,6 @@ def to_type_full(value):
 		return True
 	else:
 		return value
-
 to_type = {
 	'none': to_type_none,
 	'semi':	to_type_semi,

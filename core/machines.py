@@ -247,9 +247,9 @@ class Machine(CoreStoredObject):
 			if self.myself:
 				self.status = host_status.ACTIVE
 				if and_more:
-					self.licornd.network_enqueue(priorities.NORMAL, self.pyroize)
-					self.licornd.network_enqueue(priorities.LOW, self.arping)
-					self.licornd.network_enqueue(priorities.LOW, self.resolve)
+					L_network_enqueue(priorities.NORMAL, self.pyroize)
+					L_network_enqueue(priorities.LOW, self.arping)
+					L_network_enqueue(priorities.LOW, self.resolve)
 				assert ltrace('machines', '| %s: ping(%s) → %s' % (
 									caller, self.mid, host_status[self.status]))
 				return
@@ -272,9 +272,9 @@ class Machine(CoreStoredObject):
 				self.status = host_status.ONLINE
 
 				if and_more:
-					self.licornd.network_enqueue(priorities.NORMAL, self.pyroize)
-					self.licornd.network_enqueue(priorities.LOW, self.arping)
-					self.licornd.network_enqueue(priorities.LOW, self.resolve)
+					L_network_enqueue(priorities.NORMAL, self.pyroize)
+					L_network_enqueue(priorities.LOW, self.arping)
+					L_network_enqueue(priorities.LOW, self.resolve)
 
 			# close the socket (no more needed), else we could get
 			# "too many open files" errors (254 open sockets for .
@@ -338,14 +338,14 @@ class Machine(CoreStoredObject):
 				remotesys.noop()
 
 			except Pyro.errors.ProtocolError, e:
-				self.licornd.network_enqueue(priorities.LOW, self.guess_os)
+				L_network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace('machines', '  %s: cannot pyroize %s '
 								'(was: %s)' % (caller, self.mid, e))
 
 			except Pyro.errors.PyroError, e:
 				remotesys.release()
 				del remotesys
-				self.licornd.network_enqueue(priorities.LOW, self.guess_os)
+				L_network_enqueue(priorities.LOW, self.guess_os)
 				assert ltrace('machines', '%s: pyro error %s on %s.' % (
 						caller, e, self.mid))
 
@@ -385,7 +385,7 @@ class Machine(CoreStoredObject):
 						# when the second machine will have been created,
 						# the pyroize() phase will reconcile master/slave
 						# again. Next service loop.
-						self.licornd.service_enqueue(priorities.HIGH,
+						L_service_enqueue(priorities.HIGH,
 									self._controller.add_machine, mid=iface)
 	def pyro_shutdown(self):
 		""" WIPE the system attribute and mark the machine as shutting down.
@@ -514,7 +514,7 @@ class Machine(CoreStoredObject):
 							if is_server else 'client')),
 						stylize(ST_ADDRESS, self.mid)))
 
-					self.licornd.service_enqueue(priorities.HIGH, self.system.hello_from,
+					L_service_enqueue(priorities.HIGH, self.system.hello_from,
 						LMC.system.local_ip_addresses())
 
 			except Pyro.errors.PyroError, e:
@@ -644,7 +644,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 						myself=myself
 					)
 
-		self.licornd.network_enqueue(priorities.LOW, self[mid].ping, and_more=True)
+		L_network_enqueue(priorities.LOW, self[mid].ping, and_more=True)
 
 		return self[mid]
 	def load(self):
@@ -761,13 +761,13 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			# SECOND update our know machines statuses, if any.
 			for machine in self:
 				if machine.status & host_status.UNKNOWN:
-					self.licornd.network_enqueue(priorities.LOW, machine.ping, and_more=True)
+					L_network_enqueue(priorities.LOW, machine.ping, and_more=True)
 
 				if machine.hostname.startswith('UNKNOWN'):
-					self.licornd.network_enqueue(priorities.LOW, machine.resolve)
+					L_network_enqueue(priorities.LOW, machine.resolve)
 
 			# THEN scan the whole LAN to discover more machines.
-			self.licornd.network_enqueue(priorities.LOW, self.scan_network)
+			L_network_enqueue(priorities.LOW, self.scan_network)
 
 		assert ltrace('machines', '< %s: initial_scan()' % caller)
 	def scan_network(self):
@@ -798,7 +798,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 							ipaddr = str(ipaddr)
 							if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
 								if ipaddr in known_ips:
-									self.licornd.network_enqueue(priorities.LOW,
+									L_network_enqueue(priorities.LOW,
 															self[str(ipaddr)].ping)
 								else:
 									self.add_machine(mid=str(ipaddr))
@@ -814,7 +814,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		for ip in remote_ips:
 			if ip in current_ips:
-				self.licornd.service_enqueue(priorities.HIGH, self[ip].pyro_shutdown)
+				L_service_enqueue(priorities.HIGH, self[ip].pyro_shutdown)
 	def hello_from(self, remote_ips):
 		""" this method is called on the remote side, when the local side calls
 			:meth:`announce_shutdown`.
@@ -823,10 +823,10 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		for ip in remote_ips:
 			if ip in current_ips:
-				self.licornd.service_enqueue(priorities.HIGH, self[ip].update_informations)
+				L_service_enqueue(priorities.HIGH, self[ip].update_informations)
 			else:
 				self.add_machine(mid=ip)
-				self.licornd.service_enqueue(priorities.HIGH, self[ip].update_informations)
+				L_service_enqueue(priorities.HIGH, self[ip].update_informations)
 	def announce_shutdown(self):
 		""" announce our shutdown to all connected machines. """
 
@@ -840,7 +840,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 									'| annouce_shutdown() to %s' % machine.ip)
 				try:
 					#print '>> announce shutdown to', machine.ip
-					self.licornd.service_enqueue(priorities.HIGH,
+					L_service_enqueue(priorities.HIGH,
 									machine._pyro_forward_goodbye_from,
 										local_ifaces)
 				except Pyro.errors.PyroError, e:
@@ -1129,7 +1129,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 			# TODO: find a way to callback the result to the WMI...
 
-			self.licornd.service_enqueue(priorities.LOW,
+			L_service_enqueue(priorities.LOW,
 				self.by_hostname(hostname).shutdown, warn_users=warn_users)
 
 			return (self.utils.HTTP_TYPE_REDIRECT,
@@ -1197,7 +1197,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 				selection |= host_status.ACTIVE
 
 			for machine in self.select(filter_string=selection):
-				self.licornd.service_enqueue(priorities.LOW,	machine.shutdown, warn_users=warn_users)
+				L_service_enqueue(priorities.LOW,	machine.shutdown, warn_users=warn_users)
 
 			return (self.utils.HTTP_TYPE_REDIRECT,
 							self.wmi.successfull_redirect)

@@ -13,7 +13,8 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, socket, Pyro.core, pyinotify
+import sys, os, re, socket, Pyro.core
+from threading import RLock
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, fsapi, network
@@ -25,9 +26,9 @@ from licorn.foundations.base      import LicornConfigObject, Singleton, \
 											MixedDictObject, pyro_protected_attrs
 from licorn.foundations.classes   import FileLock
 
-from licorn.core         import LMC
-from licorn.core.classes import LockedController, CoreModule
-from licorn.daemon       import roles
+from licorn.core                import LMC
+from licorn.core.classes        import LockedController, CoreModule
+from licorn.daemon              import roles, priorities, InternalEvent
 
 class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
@@ -53,6 +54,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		MixedDictObject.__init__(self, name='configuration')
 
 		self.app_name = 'Licorn®'
+
+		# this lock is used only by inotifier for now.
+		self.lock = RLock()
 
 		self.mta = None
 
@@ -87,15 +91,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if not minimal:
 				self.load2(batch=batch)
 
-			# this has to be done LAST, in order to eventually override any
-			# other configuration directive (eventually coming from
-			# Ubuntu/Debian, too).
-			self.load_configuration_from_main_config_file()
-			self.load_missing_directives_from_factory_defaults()
-
-			self.convert_configuration_values()
-			self.check_configuration_directives()
-
+			self.load_configuration_complete()
 			if not minimal:
 				self.load3(batch=batch)
 
@@ -120,7 +116,25 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.network_infos()
 	def load3(self, batch=False):
 		self.load_nsswitch()
-		# TODO: monitor configuration files from a thread !
+	def load_configuration_complete(self):
+		# this has to be done LAST, in order to eventually override any
+		# other configuration directive (eventually coming from
+		# Ubuntu/Debian, too).
+		self.load_factory_defaults()
+
+		self.load_configuration_from_main_config_file()
+
+		self.convert_configuration_values()
+		self.check_configuration_directives()
+	def _inotifier_install_watches(self, inotifier=None):
+		self.__configuration_hint = L_inotifier_watch_conf(self.main_config_file,
+									self, self.__configuration_file_changed)
+	def __configuration_file_changed(self, pathname):
+
+		self.load_configuration_complete()
+
+		L_event_dispatch(priorities.NORMAL,
+					InternalEvent('main_configuration_file_changed'))
 	#
 	# make LicornConfiguration object be usable as a context manager.
 	#
@@ -245,17 +259,31 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					#down one level.
 					curobj = getattr(curobj, subkey)
 					level += 1
-				if not hasattr(curobj, subkeys[-1]):
+
+				if hasattr(curobj, subkeys[-1]):
+					if getattr(curobj, subkeys[-1]) != conf[key]:
+						assert ltrace('configuration', 'main config file: subkey %s '
+							'changed from %s to %s' % (key, getattr(curobj, subkeys[-1]),
+								conf[key]))
+						setattr(curobj, subkeys[-1], conf[key])
+
+				else:
 					setattr(curobj, subkeys[-1], conf[key])
 			else:
-				if not hasattr(self, key):
-					setattr(self, key,conf[key])
+				if hasattr(self, key):
+					if getattr(self, key) != conf[key]:
+						assert ltrace('configuration', 'main config file: %s '
+							'changed from %s to %s' % (key, getattr(self, key),
+								conf[key]))
+						setattr(self, key, conf[key])
+				else:
+					setattr(self, key, conf[key])
 	def noop(self):
 		""" No-op function, called when connecting pyro, to check if link
 		is OK betwwen the server and the client. """
 		assert ltrace('configuration', '| noop(True)')
 		return True
-	def load_missing_directives_from_factory_defaults(self):
+	def load_factory_defaults(self):
 		""" The defaults set here are expected to exist
 			by other parts of the programs.
 
@@ -266,7 +294,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			privileges or crash our daemons to bind the port and spoof our
 			protocol). """
 
-		assert ltrace('configuration', '| load_missing_directives_from_factory_defaults()')
+		assert ltrace('configuration', '| load_factory_defaults()')
 
 		mandatory_dict = {
 			'licornd.role'                 : roles.UNSET,
@@ -1160,7 +1188,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		items.sort()
 
 		for aname, attr in items:
-			if aname in ('tmp_dir'):
+			if aname in ('tmp_dir', 'lock'):
 				continue
 
 			#if callable(getattr(self, attr)) \

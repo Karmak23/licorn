@@ -39,7 +39,8 @@ gettext.install('licorn', unicode=True)
 import time
 dstart_time = time.time()
 
-import os, sys, signal, resource, gc
+import os, sys, signal, resource, gc, __builtin__
+
 
 from threading   import current_thread
 from Queue       import Empty, Queue, PriorityQueue
@@ -64,6 +65,7 @@ from licorn.daemon.threads        import LicornJobThread, \
 											ACLCkeckerThread, \
 											NetworkWorkerThread
 from licorn.daemon.inotifier      import INotifier
+from licorn.daemon.eventmanager   import EventManager
 from licorn.daemon.cmdlistener    import CommandListener
 
 #from licorn.daemon.cache         import Cache
@@ -137,33 +139,51 @@ class LicornDaemon(Singleton):
 							peers_max=self.configuration.threads.network.max,
 							licornd=self))
 
+		# make them accessible everywhere.
+		__builtin__.__dict__['L_service_enqueue']  = self.__service_enqueue
+		__builtin__.__dict__['L_service_wait']     = self.__service_wait
+		__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
+		__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
+		__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
+		__builtin__.__dict__['L_network_wait']     = self.__network_wait
+
+
+		# create the Event Manager, and map its methods to us.
+		evt = self.__threads._eventmanager = EventManager(self)
+
+		evt.start()
+
+		__builtin__.__dict__['L_event_run']        = evt.run_event
+		__builtin__.__dict__['L_event_dispatch']   = evt.dispatch
+		__builtin__.__dict__['L_event_register']   = evt.event_register
+		__builtin__.__dict__['L_event_unregister'] = evt.event_unregister
+		__builtin__.__dict__['L_event_collect']    = evt.collect
+
 		# create the INotifier thread, and map its WatchManager methods to
 		# us, they will be used by controllers, extensions and every single
 		# core object.
 		if self.configuration.inotifier.enabled:
-			self.__threads._inotifier = INotifier(self)
+			ino = self.__threads._inotifier = INotifier(self)
 
-			ino = self.__threads._inotifier
 			ino.start()
 
 			# proxy methods to the INotifier (generally speaking, core objects
 			# should cal them via the daemon, only.
-			self.inotifier_add            = ino._wm.add_watch
-			self.inotifier_del            = ino._wm.rm_watch
-			self.inotifier_watches        = ino._wm.watches
-			self.inotifier_watch_conf     = ino.inotifier_watch_conf
-			self.inotifier_del_conf_watch = ino.inotifier_del_conf_watch
+			__builtin__.__dict__['L_inotifier_add']            = ino._wm.add_watch
+			__builtin__.__dict__['L_inotifier_del']            = ino._wm.rm_watch
+			__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
+			__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
+			__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
 
-			del ino
 		else:
 			def inotifier_disabled(*args, **kwargs):
 				pass
 
-			self.inotifier_add            = inotifier_disabled
-			self.inotifier_del            = inotifier_disabled
-			self.inotifier_watches        = inotifier_disabled
-			self.inotifier_watch_conf     = inotifier_disabled
-			self.inotifier_del_conf_watch = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_add']            = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_del']            = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_watches']        = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
 
 		# NOTE: the CommandListener must be launched prior to anything, to
 		# ensure connection validation form clients and other servers are
@@ -181,6 +201,7 @@ class LicornDaemon(Singleton):
 
 			from licorn.daemon import client
 			client.ServerLMC.connect()
+
 			LMC.init_client_second_pass(client.ServerLMC)
 
 		else:
@@ -190,7 +211,9 @@ class LicornDaemon(Singleton):
 											pids_to_wake=self.pids_to_wake)
 			self.__threads.CommandListener.start()
 
-			self.__threads._inotifier.collect()
+		# now that LMC is setup, collect event methods and inotifies.
+		evt.collect()
+		ino.collect()
 	def __init_daemon_phase_2(self):
 		""" TODO. """
 
@@ -204,7 +227,7 @@ class LicornDaemon(Singleton):
 
 		if self.configuration.role == roles.CLIENT:
 
-			self.service_enqueue(priorities.NORMAL,
+			self.__service_enqueue(priorities.NORMAL,
 						client.client_hello, job_delay=1.0)
 
 			# self.__threads.status = PULL IN the dbus status pusher
@@ -225,7 +248,7 @@ class LicornDaemon(Singleton):
 				logging.info('%s: not starting WMI, disabled on command '
 					'line or by configuration directive.' % str(self))
 
-			self.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
+			self.__service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
@@ -269,6 +292,9 @@ class LicornDaemon(Singleton):
 			# to remove all directory watches.
 			time.sleep(0.3)
 
+		if self.__threads._eventmanager.is_alive():
+			self.__threads._eventmanager.stop()
+			time.sleep(0.01)
 	def run(self):
 		self.refork_if_not_root_or_die()
 
@@ -410,7 +436,9 @@ class LicornDaemon(Singleton):
 
 		# don't use itervalues(), threads are moving target now.
 		tdata = [ ((self.__threads._inotifier.name, 'thread %s\n' %
-			self.__threads._inotifier.dump_status(long_output, precision))) ]
+			self.__threads._inotifier.dump_status(long_output, precision))),
+			((self.__threads._eventmanager.name, 'thread %s\n' %
+			self.__threads._eventmanager.dump_status(long_output, precision))) ]
 
 		for tname, thread in self.__threads.items():
 			if thread.is_alive():
@@ -569,7 +597,6 @@ class LicornDaemon(Singleton):
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
 			multi-lingual parallel workers ;-) """
-		import __builtin__
 
 		def my_(*args, **kwargs):
 			try:
@@ -608,7 +635,7 @@ class LicornDaemon(Singleton):
 			# complicated system, or make announce_shutdown() completely
 			# synchronous, which is not a problem per se but would remove
 			# parallelism from it and make announcing last sightly longer.
-			self.service_wait()
+			self.__service_wait()
 		except AttributeError, e:
 			# this error arises when daemons kill each other. When I want to
 			# take over a TS backgrounded daemon with -rvD and my attached
@@ -753,39 +780,33 @@ class LicornDaemon(Singleton):
 		self.__threads.append(thread)
 		if autostart:
 			thread.start()
-	def service_enqueue(self, prio, func, *args, **kwargs):
+	def __service_enqueue(self, prio, func, *args, **kwargs):
 		#print '>> put', prio, func, args, kwargs
 		self.__queues.serviceQ.put((prio, func, args, kwargs))
-
-	def service_wait(self):
+	def __service_wait(self):
 		if isinstance(current_thread(), ServiceWorkerThread):
 			raise RuntimeError('cannot join the serviceQ from '
 				'a ServiceWorkerThread instance, this would deadblock!')
 		#print ">> waiting for", daemon.queues.serviceQ.qsize(), 'jobs to finish'
 		self.__queues.serviceQ.join()
-
-	def network_enqueue(self, prio, func, *args, **kwargs):
+	def __network_enqueue(self, prio, func, *args, **kwargs):
 		#print '>> put', prio, func, args, kwargs
 		self.__queues.networkQ.put((prio, func, args, kwargs))
-
-	def network_wait(self):
+	def __network_wait(self):
 		if isinstance(current_thread(), NetworkWorkerThread):
 			raise RuntimeError('cannot join the networkQ from '
 				'a NetworkWorkerThread instance, this would deadblock!')
 		self.__queues.networkQ.join()
-
-	def aclcheck_enqueue(self, prio, func, *args, **kwargs):
+	def __aclcheck_enqueue(self, prio, func, *args, **kwargs):
 		#print '>> put', prio, func, args, kwargs
 		self.__queues.aclcheckQ.put((prio, func, args, kwargs))
-
-	def aclcheck_wait(self):
+	def __aclcheck_wait(self):
 		if isinstance(current_thread(), ACLCkeckerThread):
 			raise RuntimeError('cannot join the ackcheckerQ from '
 				'a ACLCkeckerThread instance, this would deadblock!')
 		self.__queues.aclcheckQ.join()
 	def clean_objects(self, delay=None):
 		self.__threads.DeadThreadCleaner.trigger(delay)
-
 	def __job_periodic_cleaner(self):
 		""" Ping all known machines. On online ones, try to connect to pyro and
 		get current detailled status of host. Notify the host that we are its
@@ -796,7 +817,7 @@ class LicornDaemon(Singleton):
 
 		caller = current_thread().name
 
-		assert ltrace('daemon', '| %s:_job_periodic_cleaner()' % caller)
+		assert ltrace('daemon', '| %s:__job_periodic_cleaner()' % caller)
 
 		for (tname, thread) in self.__threads.items():
 			if not thread.is_alive():

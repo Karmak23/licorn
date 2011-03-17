@@ -99,7 +99,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 			# collisions. Smart, hopefully.
 
 			with self.lock:
-				self.conf_hint = self.licornd.inotifier_watch_conf(
+				self.conf_hint = L_inotifier_watch_conf(
 														self.conf_file, self)
 
 				# then load our internal data.

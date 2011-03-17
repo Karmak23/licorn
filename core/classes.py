@@ -50,14 +50,14 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	_licorn_protected_attrs = (
 			MixedDictObject._licorn_protected_attrs
 			+ pyro_protected_attrs
-			+ ['lock']
+			+ [ 'lock' ]
 		)
 
 	@property
 	def licornd(self):
 		return self.__licornd
 
-	def __init__(self, name, warnings=True):
+	def __init__(self, name, warnings=True, look_deeper_for_callbacks=False):
 		MixedDictObject.__init__(self, name)
 		Pyro.core.ObjBase.__init__(self)
 		assert ltrace('objects', '| LockedController.__init__(%s, %s)' % (
@@ -70,6 +70,12 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 		# in case we iter*() the master lock object, for it to return only the
 		# UnitObject locks.
 		self.lock = RLock()
+
+		# this will be set to True if the EventManager needs to walk through
+		# all our contained objects, looking for event callbacks. By default,
+		# this is false, but ModulesManager and other special controllers will
+		# set it to True.
+		self._look_deeper_for_callbacks = look_deeper_for_callbacks
 	def __getitem__(self, key):
 		""" From :class:`LockedController`: this is a classic
 			:meth:`__getitem__` method, made thread-safe by encapsulating it
@@ -284,24 +290,6 @@ class CoreController(LockedController):
 		assert ltrace(self.name, '< find_prefered_backend(%s, %s)' % (
 			self._prefered_backend.name, changed))
 		return changed
-	def run_hooks(self, hook, *args, **kwargs):
-		""" Transitionnal method to run callbacks at some extend. As of now, we
-			iterate extensions and run the specified callbacks.
-
-			.. warning:: In the near future, this method will not stay here and
-				will not do exactly the same. Don't rely on it, the `hooks` API
-				hasn't settled.
-
-		"""
-
-		meth_name = hook + '_callback'
-
-		if not self.extensions:
-			return
-
-		for ext in self.extensions:
-			if hasattr(ext, meth_name):
-				getattr(ext, meth_name)(*args, **kwargs)
 class CoreFSController(CoreController):
 	""" FIXME: TO BE DOCUMENTED
 
@@ -1086,7 +1074,7 @@ class ModulesManager(LockedController):
 				'module_sym_path']
 		)
 	def __init__(self, name, module_type, module_path, module_sym_path):
-		LockedController.__init__(self, name)
+		LockedController.__init__(self, name, look_deeper_for_callbacks=True)
 		self._available_modules = MixedDictObject('<no_type_yet>')
 		self.module_type = module_type
 		self.module_path = module_path
@@ -1552,6 +1540,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: indicates that this module is meant to be used on server only (not
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
+	def __str__(self):
+		return 'module %s' % stylize(ST_NAME, self.name)
+	def __repr__(self):
+		return 'module %s' % stylize(ST_NAME, self.name)
 	def _cli_get_configuration(self):
 		""" Return the configuration subset of us, ready to be displayed in CLI.
 		"""
@@ -1817,7 +1809,7 @@ class CoreFSUnitObject:
 				# is not yet watched. We need to "rewalk" the directory to be sure
 				# we got everything. This is a kind of double-job, but it's
 				# required...
-				#self.licornd.aclcheck_enqueue(priorities.HIGH,
+				#L_aclcheck_enqueue(priorities.HIGH,
 				#					self.__rewalk_directory, event.pathname)
 
 				# no need to lock for this, INotifier events / calls are
@@ -1831,7 +1823,7 @@ class CoreFSUnitObject:
 					self.__watch_directory(event.pathname)
 
 				# wait a small little while, for things to settle.
-				#self.licornd.aclcheck_enqueue(priorities.HIGH,
+				#L_aclcheck_enqueue(priorities.HIGH,
 				#		self.__rewalk_directory, event.pathname, walk_delay=0.01)
 				self.__rewalk_directory(event.pathname)
 
@@ -1878,7 +1870,7 @@ class CoreFSUnitObject:
 
 					# wait a little before rewalking, there is a delay when
 					# we untar the same archive over-and-over.
-					self.licornd.aclcheck_enqueue(priorities.LOW,
+					L_aclcheck_enqueue(priorities.LOW,
 						self.__rewalk_directory, full_path_dir, walk_delay=0.1)
 
 				if full_path_dir in self.__watches:
@@ -1892,7 +1884,7 @@ class CoreFSUnitObject:
 
 				self.__watch_directory(full_path_dir)
 
-				self.licornd.aclcheck_enqueue(priorities.NORMAL,
+				L_aclcheck_enqueue(priorities.NORMAL,
 						self._fast_aclcheck, full_path_dir, expiry_check=True)
 
 			for afile in files:
@@ -1906,7 +1898,7 @@ class CoreFSUnitObject:
 				assert ltrace('inotifier', '  %s: fast-chk missed file %s [from %s]'
 										% (self.name, full_path_file, directory))
 
-				self.licornd.aclcheck_enqueue(priorities.NORMAL,
+				L_aclcheck_enqueue(priorities.NORMAL,
 						self._fast_aclcheck, full_path_file, expiry_check=True)
 
 			# we had to wait a little before checking the main dir, thus we
@@ -1916,14 +1908,14 @@ class CoreFSUnitObject:
 			# before we try to set a new ACL on it.
 			assert ltrace('inotifier', '  %s: fast-chk-miss dir %s' % (self.name, path))
 
-			self.licornd.aclcheck_enqueue(priorities.NORMAL,
+			L_aclcheck_enqueue(priorities.NORMAL,
 								self._fast_aclcheck, path, expiry_check=True)
 	def __watch_directory(self, directory, initial=False):
 		""" initial is set to False only when the group is instanciated, to
 			walk across all shared group data in one call. """
 
 		with self.lock:
-			for key, value in self.licornd.inotifier_add(
+			for key, value in L_inotifier_add(
 									path=directory,
 									rec=initial, auto_add=False,
 									mask=	#pyinotify.ALL_EVENTS,
@@ -1948,7 +1940,7 @@ class CoreFSUnitObject:
 			if directory == self.homeDirectory:
 
 				# rm_watch / inotifier_del wants a list of WDs as argument.
-				self.__recently_deleted.update(self.licornd.inotifier_del(
+				self.__recently_deleted.update(L_inotifier_del(
 							self.__watches.values(), quiet=False).iterkeys())
 				self.__watches.clear()
 
@@ -1973,7 +1965,7 @@ class CoreFSUnitObject:
 						assert ltrace('inotifier', '| %s: remove recursive %s' % (
 								self.name, directory))
 
-						self.__recently_deleted.update(self.licornd.inotifier_del(
+						self.__recently_deleted.update(L_inotifier_del(
 								self.__watches[directory], rec=True).iterkeys())
 
 					except KeyError, e:
@@ -2032,7 +2024,7 @@ class CoreFSUnitObject:
 		# the clean CoreObject deletion.
 
 		if os.path.exists(os.path.dirname(self.__check_file)):
-			self.licornd.inotifier_del_conf_watch(self.__check_file)
+			L_inotifier_del_conf_watch(self.__check_file)
 
 		self.__unwatch_directory(self.homeDirectory)
 
@@ -2067,13 +2059,13 @@ class CoreFSUnitObject:
 		# from inside here, nor the controller.
 		#self.check_file_hint =
 		if os.path.exists(os.path.dirname(self.__check_file)):
-			inotifier.inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
+			L_inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
 
 		#for directory in fsapi.minifind(self.homeDirectory):
 		#	self.__watch_directory(directory)
 
 		# put this in the queue, to avoid taking too much time at daemon start.
-		self.licornd.service_enqueue(priorities.HIGH,
+		L_service_enqueue(priorities.HIGH,
 					self.__watch_directory, self.homeDirectory, initial=True)
 
 		self.__watches_installed = True
@@ -2272,7 +2264,7 @@ class CoreFSUnitObject:
 					# another volume. Just display a warning and give an hint
 					# on what to do after the move.
 					#
-					# NOT self.licornd.aclcheck_enqueue(self.check, batch=True)
+					# NOT L_aclcheck_enqueue(self.check, batch=True)
 					logging.warning(_(u'{0}: home directory {1} disappeared. '
 						'If this is intentional, do not forget to run "{2}" '
 						'afterwards, to restore the inotifier watch.').format(

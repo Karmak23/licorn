@@ -25,6 +25,25 @@ class LicornThreads(MixedDictObject, Singleton):
 class LicornQueues(MixedDictObject, Singleton):
 	pass
 
+class InternalEvent(NamedObject):
+	def __init__(self, _event_name, *args, **kwargs):
+		NamedObject.__init__(self, _event_name)
+
+		if 'synchronous' in kwargs:
+			self.synchronous = kwargs['synchronous']
+			del kwargs['synchronous']
+		else:
+			self.synchronous = False
+
+		if 'callback' in kwargs:
+			self.callback = kwargs['callback']
+			del kwargs['callback']
+		else:
+			self.callback = None
+
+		self.args        = args
+		self.kwargs      = kwargs
+
 roles = EnumDict('licornd_roles', from_dict={
 		'UNSET':  1,
 		'SERVER': 2,
@@ -133,7 +152,7 @@ class LicornDaemonInteractor(NamedObject):
 							sys.stderr.write(_('Console-initiated garbage '
 								'collection and dead thread cleaning.') + '\n')
 
-							self.daemon._job_periodic_cleaner()
+							self.daemon.clean_objects()
 
 						elif char in ('w', 'W'):
 							w = self.daemon.threads.INotifier._wm.watches

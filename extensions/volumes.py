@@ -18,9 +18,10 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
 from licorn.foundations.constants import gamin_events
 
-from licorn.core               import LMC
-from licorn.extensions         import LicornExtension
-from licorn.daemon.threads     import LicornBasicThread
+from licorn.core                import LMC
+from licorn.extensions          import LicornExtension
+from licorn.daemon              import InternalEvent
+from licorn.daemon.threads      import LicornBasicThread
 
 BLKID_re = re.compile(r'([^ =]+)="([^"]+)"')
 
@@ -296,7 +297,16 @@ class Volume:
 									stylize(ST_PATH, self.mount_point)))
 
 				old_mount_point = self.mount_point
-				os.rmdir(old_mount_point)
+
+				try:
+					os.rmdir(old_mount_point)
+
+				except (OSError, IOError), e:
+					if e.errno == 16:
+						# device or resource busy.
+						return
+					else:
+						raise
 				self.mount_point = None
 				logging.info(_(u'{0}: removed directory {1}.').format(
 					stylize(ST_NAME, 'volumes'),
@@ -631,6 +641,9 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		vol.mount()
 
+		L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_added', volume=vol))
+
 		logging.info(_(u'{0}: added {1}.').format(stylize(ST_NAME, self.name), vol))
 	def del_volume_from_device(self, device=None, by_string=None):
 		""" Remove a volume if it exists.
@@ -659,6 +672,8 @@ class VolumesExtension(Singleton, LicornExtension):
 				# already gone from the system...
 
 				volstr = str(self.volumes[kernel_device])
+
+				L_event_dispatch(InternalEvent('volume_removed', volume=vol))
 
 				del self.volumes[kernel_device]
 

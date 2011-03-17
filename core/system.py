@@ -103,7 +103,7 @@ class SystemController(Singleton, CoreController):
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.goodbye_from(remote_interfaces)
 		else:
-			self.licornd.service_enqueue(priorities.HIGH, client.server_shutdown, remote_interfaces)
+			L_service_enqueue(priorities.HIGH, client.server_shutdown, remote_interfaces)
 	def hello_from(self, remote_interfaces):
 		""" a remote Licorn® server is warming up: receive the hello
 			announce and forward it to the
@@ -115,7 +115,7 @@ class SystemController(Singleton, CoreController):
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.hello_from(remote_interfaces)
 		else:
-			self.licornd.service_enqueue(priorities.HIGH, client.server_reconnect, remote_interfaces)
+			L_service_enqueue(priorities.HIGH, client.server_reconnect, remote_interfaces)
 	def get_host_type(self):
 		""" Return local host type. """
 

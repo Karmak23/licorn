@@ -230,7 +230,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 
 		# fu...ing caldavd service which doesn't understand reload.
 		# we put this in a service thread to avoid the long wait.
-		self.licornd.service_enqueue(priorities.NORMAL, self.service, svccmds.RESTART)
+		L_service_enqueue(priorities.NORMAL, self.service, svccmds.RESTART)
 	def users_load(self):
 		""" eventually load users-related data. Currently this method does
 			nothing. """

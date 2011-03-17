@@ -25,10 +25,9 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, distros
 
-from licorn.core         import LMC
-from licorn.core.classes import CoreFSController, CoreStoredObject, CoreFSUnitObject
-from licorn.daemon       import priorities, roles
-
+from licorn.core                import LMC
+from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
+from licorn.daemon              import priorities, roles, InternalEvent
 
 class Group(CoreStoredObject, CoreFSUnitObject):
 	""" a Licorn® group object.
@@ -372,7 +371,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								('@GW', 'w' if self.__permissive else '-')))
 
 			# auto-apply the new permissiveness
-			self.licornd.service_enqueue(priorities.HIGH, self.check, batch=True)
+			L_service_enqueue(priorities.HIGH, self.check, batch=True)
 
 			logging.notice(_(u'Switched group {0} permissive '
 				'state to {1} (Shared content permissions are '
@@ -689,7 +688,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							LMC.configuration.users.group]().add_Users(
 								[ user ], batch=True)
 
-					self.controller.run_hooks('group_pre_add_user', self, user)
+					L_event_run(InternalEvent('group_pre_add_user', self, user))
 
 
 					# the ADD operation, per se.
@@ -716,10 +715,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					self.controller.run_hooks('group_post_add_user', self, user)
+					L_event_run(InternalEvent('group_post_add_user', self, user))
 
 					# THINKING: shouldn't we turn this into an extension?
-					self.licornd.service_enqueue(priorities.LOW,
+					L_service_enqueue(priorities.LOW,
 								self.__add_group_symlink, user, batch=True)
 
 			if batch and work_done:
@@ -755,7 +754,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				if user.weakref in self.__members:
 
-					self.controller.run_hooks('group_pre_del_user', self, user)
+					L_event_run(InternalEvent('group_pre_del_user', self, user))
 
 					self.__members.remove(user.weakref)
 
@@ -777,10 +776,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					self.controller.run_hooks('group_post_del_user', self, user)
+					L_event_run(InternalEvent('group_post_del_user', self, user))
 
 					# THINKING: shouldn't we turn this into an extension?
-					self.licornd.service_enqueue(priorities.LOW,
+					L_service_enqueue(priorities.LOW,
 									self.__del_group_symlink, user, batch=True)
 				else:
 					logging.info(_(u'Skipped user {0}, already not '
@@ -2198,10 +2197,10 @@ class GroupsController(Singleton, CoreFSController):
 						LMC.configuration.groups.gid_min,
 						LMC.configuration.groups.gid_max))
 
-		self.run_hooks('group_pre_add', gid=manual_gid,
+		L_event_run(InternalEvent('group_pre_add', gid=manual_gid,
 										name=name,
 										system=system,
-										description=description)
+										description=description))
 
 		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
 																	gid, name))
@@ -2228,7 +2227,7 @@ class GroupsController(Singleton, CoreFSController):
 		# DO NOT UNCOMMENT: -- if not batch:
 		group.serialize(backend_actions.CREATE)
 
-		self.run_hooks('group_post_add', group)
+		L_event_run(InternalEvent('group_post_add', group))
 
 		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
 
@@ -2346,9 +2345,9 @@ class GroupsController(Singleton, CoreFSController):
 		# the system configuration data is safe. At worst, there is an orphaned
 		# directory remaining in the arbo, which is harmless.
 		if no_archive:
-			self.licornd.service_enqueue(priorities.LOW, fsapi.remove_directory, home)
+			L_service_enqueue(priorities.LOW, fsapi.remove_directory, home)
 		else:
-			self.licornd.service_enqueue(priorities.LOW, fsapi.archive_directory, home, name)
+			L_service_enqueue(priorities.LOW, fsapi.archive_directory, home, name)
 	def __delete_group(self, group):
 		""" Delete a POSIX group."""
 
@@ -2364,7 +2363,7 @@ class GroupsController(Singleton, CoreFSController):
 		gid     = group.gidNumber
 		name    = group.name
 
-		self.run_hooks('group_pre_del', group)
+		L_event_run(InternalEvent('group_pre_del', group))
 
 		if gid in self:
 			del self[gid]
@@ -2392,7 +2391,7 @@ class GroupsController(Singleton, CoreFSController):
 
 		del group
 
-		self.run_hooks('group_post_del', gid, name, system)
+		L_event_run(InternalEvent('group_post_del', gid, name, system))
 
 		log(_(u'Deleted {0}group {1}.').format(
 			_(u'system ') if system else '', stylize(ST_NAME, name)))
@@ -2477,7 +2476,7 @@ class GroupsController(Singleton, CoreFSController):
 			logging.warning(_(u'%s: inconsistency detected. '
 				'Automatic check requested in the background.') %
 					stylize(ST_NAME, self.name))
-			self.licornd.service_enqueue(priorities.HIGH,
+			L_service_enqueue(priorities.HIGH,
 						self.check_groups, batch=True, job_delay=5.0)
 
 		if resps != [] or guests != []:
@@ -2490,7 +2489,7 @@ class GroupsController(Singleton, CoreFSController):
 				for group in groups:
 					self.del_Group(group, force=True, batch=True)
 
-			self.licornd.service_enqueue(priorities.LOW,
+			L_service_enqueue(priorities.LOW,
 											remove_superfluous_groups,
 											resps + guests, job_delay=3.0)
 

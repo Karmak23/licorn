@@ -310,7 +310,7 @@ class Profile(CoreStoredObject):
 				'background.') % ', '.join(stylize(ST_LOGIN, user.login)
 											for user in self.__group().members))
 			for user in self.__group().members:
-				self.licornd.service_enqueue(priorities.NORMAL,
+				L_service_enqueue(priorities.NORMAL,
 								user.apply_skel, profileSkel, batch=True)
 	def mod_profileShell(self, profileShell=None, instant_apply=False,
 											batch=False, auto_answer=None):
@@ -403,7 +403,7 @@ class Profile(CoreStoredObject):
 									if instant_apply else ''))
 
 					if instant_apply:
-						self.licornd.service_enqueue(priorities.NORMAL,
+						L_service_enqueue(priorities.NORMAL,
 									group.add_Users,
 									self.group.gidMembers, batch=True)
 
@@ -440,7 +440,7 @@ class Profile(CoreStoredObject):
 									if instant_apply else ''))
 
 					if instant_apply:
-						self.licornd.service_enqueue(priorities.NORMAL, group.del_Users,
+						L_service_enqueue(priorities.NORMAL, group.del_Users,
 										self.group.gidMembers, batch=True)
 				else:
 					logging.info(_(u'Skipped group {0}, not in groups of '
@@ -541,7 +541,7 @@ class Profile(CoreStoredObject):
 					path=self.__profileSkel, mindepth=1)))
 
 			if something_done:
-				self.licornd.service_enqueue(priorities.NORMAL, user.check, batch=True)
+				L_service_enqueue(priorities.NORMAL, user.check, batch=True)
 
 				logging.notice(_(u'Applyed skel {0} to user {1}, permissions '
 					'are checked in the background.').format(

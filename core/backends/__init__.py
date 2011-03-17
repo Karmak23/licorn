@@ -70,7 +70,9 @@ class CoreBackend(CoreModule):
 		assert ltrace('backends', '| CoreBackend.__init__(%s)' %
 			controllers_compat)
 	def __str__(self):
-		return stylize(ST_NAME, self.name)
+		return 'backend %s' % stylize(ST_NAME, self.name)
+	def __repr__(self):
+		return 'backend %s' % stylize(ST_NAME, self.name)
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO. """
 		if self.initialize():

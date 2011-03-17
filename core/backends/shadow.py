@@ -236,7 +236,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.notice(_(u'{0}: cleaned users data rewrite '
 				'requested in the background.').format(str(self)))
 
-			self.licornd.service_enqueue(priorities.NORMAL,
+			L_service_enqueue(priorities.NORMAL,
 											self.save_Users, LMC.users,
 											job_delay=4.0)
 
@@ -357,7 +357,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.notice(_(u'{0}: cleaned groups data rewrite '
 				'requested in the background.').format(str(self)))
 
-			self.licornd.service_enqueue(priorities.NORMAL,
+			L_service_enqueue(priorities.NORMAL,
 										self.save_Groups, LMC.groups,
 										job_delay=4.5)
 

@@ -35,6 +35,9 @@ trc['gc']            = 0x200000000000000000000000
 # the next 2 are identical, this is meant to be, for syntaxic eases
 trc['lock']          = 0x400000000000000000000000
 trc['locks']         = 0x400000000000000000000000
+# the next 2 are identical, this is meant to be, for syntaxic eases
+trc['event']         = 0x800000000000000000000000
+trc['events']        = 0x800000000000000000000000
 
 
 trc['foundations']   = 0x00000000000000000000ffff
