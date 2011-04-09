@@ -73,6 +73,11 @@ class SquidExtension(Singleton, ServiceExtension):
 
 		self.wanted_default_conf = [
 			('access_log', '/var/log/squid/access.log squid'),
+			# 24Gb proxy spool dir
+			('cache_dir', 'ufs /var/spool/squid 24576 64 128'),
+			# 16Gb maximum object size -> we cache DVDs ISO if needed
+			('maximum_object_size', '16777216'),
+			('access_log', '/var/log/squid/access.log squid'),
 			('acl', 'all src all'),
 			('acl', 'manager proto cache_object'),
 			('acl', 'localhost src 127.0.0.0/8'),
@@ -127,6 +132,10 @@ class SquidExtension(Singleton, ServiceExtension):
 					'localnetwork src %s' % network),
 			for key, value in self.wanted_default_conf:
 				add_or_dupe_enumeration(self.defaults, key, value)
+
+		# TODO: add peers here. iterate other licorn servers on the same LAN
+		# and add a 'cache_peer sibling' directive for them. Then, make them
+		# reflect this change and add us to their siblings list.
 
 	def get_defaults_conf(self):
 		""" TODO """
