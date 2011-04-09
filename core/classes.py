@@ -1128,7 +1128,8 @@ class ModulesManager(LockedController):
 		else:
 			is_client = False
 
-		module_classes_list = []
+		modules_classes      = {}
+		modules_dependancies = {}
 
 		for entry in os.listdir(self.module_path):
 
@@ -1154,19 +1155,22 @@ class ModulesManager(LockedController):
 				print_exc()
 				continue
 
-			# VERY VERY basic dependancies resolver.
-			# FIXME: please, stop joking and implement a real deps-resolver.
-			if hasattr(module_class, 'module_depends'):
-				module_classes_list.append((module_name, module_class))
-			else:
-				module_classes_list.insert(0, (module_name, module_class))
+			modules_classes[module_name] = module_class
+			try:
+				modules_dependancies[module_name] = module_class.module_depends[:]
+
+			except AttributeError:
+				modules_dependancies[module_name] = []
 
 		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
-				', '.join(str(klass) for name, klass in module_classes_list))
+				', '.join(str(klass) for name
+					in self.__resolve_dependancies(modules_dependancies)))
 
 		# dependancies are resolved, now instanciate in the good order:
 		changed = False
-		for (module_name, module_class) in module_classes_list:
+		for module_name in self.__resolve_dependancies(modules_dependancies):
+
+			module_class = modules_classes[module_name]
 
 			# Is module already loaded ?
 
@@ -1397,7 +1401,50 @@ class ModulesManager(LockedController):
 			raise exceptions.DoesntExistException(_('{module_type} '
 				'{module_name} does not exist or is not enabled.').format(
 					module_type=self.module_type, module_name=module_name))
+	def __resolve_dependancies(self, arg):
+		""" Gently taken from http://code.activestate.com/recipes/576570/ (r4)
+			Dependency resolver
 
+		"arg" is a dependency dictionary in which
+		the values are the dependencies of their respective keys.
+
+		Example:
+			d=dict(
+				a=('b','c'),
+				b=('c','d'),
+				e=(),
+				f=('c','e'),
+				g=('h','f'),
+				i=('f',)
+			)
+			print dep(d)
+		"""
+
+		#print '>>> in', arg
+
+		d = dict((k, set(arg[k])) for k in arg)
+
+		r = []
+
+		while d:
+			# values not in keys (items without dep)
+			t = set(i for v in d.values() for i in v) - set(d.keys())
+
+			# and keys without value (items without dep)
+			t.update(k for k, v in d.items() if not v)
+
+			# can be done right away
+
+			# the original code stated "r.append(t)". It is "flatenned" here
+			# because we just need a list of modules to load sequencially, we
+			# do not load them in parallel.
+			r.extend(list(t))
+
+			# and cleaned up
+			d = dict( ((k, v - t) for k, v in d.items() if v) )
+
+		#print '>>> out', r
+		return r
 	def _inotifier_install_watches(self, inotifier):
 		""" forward the inotifier call to our enabled modules, and to
 			our available modules, too: a change in a configuration file
