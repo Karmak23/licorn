@@ -371,11 +371,11 @@ class Machine(CoreStoredObject):
 				#print '>> multiple iface detected', self.mid, remote_ifaces
 				remote_ifaces.remove(self.mid)
 				for iface in remote_ifaces:
-					if iface in self._controller.keys():
+					if iface in self.controller.keys():
 						if not self.master_machine:
 							logging.progress('%s: add link from %s to %s.' % (
 								caller, iface, self.ip))
-							self.add_link(self._controller[iface])
+							self.add_link(self.controller[iface])
 						#else:
 						#	print '>>nothing done'
 
@@ -386,7 +386,7 @@ class Machine(CoreStoredObject):
 						# the pyroize() phase will reconcile master/slave
 						# again. Next service loop.
 						L_service_enqueue(priorities.HIGH,
-									self._controller.add_machine, mid=iface)
+									self.controller.add_machine, mid=iface)
 	def pyro_shutdown(self):
 		""" WIPE the system attribute and mark the machine as shutting down.
 			DO the same for all linked machines if we are the master. Don't
