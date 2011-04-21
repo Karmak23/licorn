@@ -113,27 +113,27 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 						s_year = 's'
 					if time_delta_year > 0:
 						time_delta_string += year_text.format(
-							time_delta_year, s_year)
+							int(time_delta_year), s_year)
 				if time_delta_day > 1 and long_output:
 					s_day = 's'
 				if time_delta_day > 0:
 					time_delta_string += '%s%s' % (
 						sep1 if time_delta_string else '',
-						day_text.format(time_delta_day, s_day)
+						day_text.format(int(time_delta_day), s_day)
 						)
 			if time_delta_hour > 1 and long_output:
 				s_hour = 's'
 			if time_delta_hour > 0:
 				time_delta_string += '%s%s' % (
 					sep2 if time_delta_string else '',
-					hour_text.format(time_delta_hour, s_hour)
+					hour_text.format(int(time_delta_hour), s_hour)
 					)
 		if time_delta_min > 1 and long_output:
 			s_min = 's'
 		if time_delta_min > 0:
 			time_delta_string += '%s%s' % (
 					sep2 if time_delta_string else '',
-					min_text.format(time_delta_min, s_min)
+					min_text.format(int(time_delta_min), s_min)
 					)
 	if time_delta_sec > 1 and long_output:
 		s_sec = 's'
