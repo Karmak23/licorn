@@ -213,7 +213,8 @@ class LicornDaemon(Singleton):
 
 		# now that LMC is setup, collect event methods and inotifies.
 		evt.collect()
-		ino.collect()
+		if self.configuration.inotifier.enabled:
+			ino.collect()
 	def __init_daemon_phase_2(self):
 		""" TODO. """
 
@@ -285,12 +286,13 @@ class LicornDaemon(Singleton):
 				th.stop()
 				time.sleep(0.01)
 
-		assert ltrace('thread', 'stopping thread INotifier.')
-		if self.__threads._inotifier.is_alive():
-			self.__threads._inotifier.stop()
-			# we need to wait a little more for INotifier, it can take ages
-			# to remove all directory watches.
-			time.sleep(0.3)
+		if self.configuration.inotifier.enabled:
+			assert ltrace('thread', 'stopping thread INotifier.')
+			if self.__threads._inotifier.is_alive():
+				self.__threads._inotifier.stop()
+				# we need to wait a little more for INotifier, it can take ages
+				# to remove all directory watches.
+				time.sleep(0.3)
 
 		if self.__threads._eventmanager.is_alive():
 			self.__threads._eventmanager.stop()
@@ -435,10 +437,14 @@ class LicornDaemon(Singleton):
 		#			data += 'controller %s\n' % controller.dump_status(long_output)
 
 		# don't use itervalues(), threads are moving target now.
-		tdata = [ ((self.__threads._inotifier.name, 'thread %s\n' %
-			self.__threads._inotifier.dump_status(long_output, precision))),
-			((self.__threads._eventmanager.name, 'thread %s\n' %
-			self.__threads._eventmanager.dump_status(long_output, precision))) ]
+		if self.configuration.inotifier.enabled:
+			tdata = [ ((self.__threads._inotifier.name, 'thread %s\n' %
+				self.__threads._inotifier.dump_status(long_output, precision))) ]
+		else:
+			tdata = []
+
+		tdata.append((self.__threads._eventmanager.name, 'thread %s\n' %
+				self.__threads._eventmanager.dump_status(long_output, precision)))
 
 		for tname, thread in self.__threads.items():
 			if thread.is_alive():
