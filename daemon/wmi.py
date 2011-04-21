@@ -7,18 +7,21 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, mimetypes, urlparse, posixpath, urllib, socket, time, signal, gettext
-from threading import current_thread
+import os, mimetypes, urlparse, posixpath
+import urllib, socket, time, signal, gettext
 
-from SocketServer       import TCPServer, ThreadingTCPServer
+from threading      import current_thread
+from traceback      import print_exc
+from SocketServer   import TCPServer, ThreadingTCPServer
+from BaseHTTPServer	import BaseHTTPRequestHandler
+
 TCPServer.allow_reuse_address = True
 
-from BaseHTTPServer	    import BaseHTTPRequestHandler
-
-from licorn.foundations         import options, logging, exceptions, process
-from licorn.foundations.styles  import *
-from licorn.foundations.ltrace  import ltrace
-from licorn.daemon.threads      import LicornBasicThread
+from licorn.foundations           import options, logging, exceptions, process
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.constants import verbose
+from licorn.daemon.threads        import LicornBasicThread
 
 from licorn.core import LMC
 
@@ -292,12 +295,40 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		rettype = None
 
 		# from http://www.java2s.com/Open-Source/Python/Web-Server/Snakelets/Snakelets-1.50/snakeserver/server.py.htm
-		referer = self.headers.getheader('referer') or None
+		self.referer = self.headers.getheader('referer') or None
+
+		if self.referer:
+			# get the host and the port from where the client first
+			# connected to us. This is the easiest way.
+			self.hostaddr, self.hostport = self.referer.split('/', 3)[2].split(':')
+
+		else:
+			# try to guess everything, this will lead to errors in
+			# many cases (ssh tunnels, NAT, port forwarding, etc).
+			# we default to `server_name` (which will probably be
+			# 0.0.0.0...) and then try to find something more precise.
+			self.hostaddr = WMIHTTPRequestHandler.server_name
+			self.hostport = LMC.configuration.licornd.wmi.port
+
+			client_address_base = self.client_address[0].rsplit('.', 1)[0]
+
+			# if we can find something more precise, use it.
+			for ip in WMIHTTPRequestHandler.ip_addresses:
+				if ip.startswith(client_address_base):
+					try:
+						# try to return the "short" hostname
+						self.hostaddr = LMC.machines[ip].hostname
+					except KeyError:
+						# if it doesn't resolve,  return the IP address
+						self.hostaddr = ip
+					break
+
+			del client_address_base
 
 		# GET / has special treatment :-)
 		if self.path == '/':
 			rettype, retdata = self.wmi.base.index(
-				self.path, self.http_user, referer=referer)
+				self.path, self.http_user, referer=self.referer)
 
 		else:
 			# remove the last '/' (which is totally useless for us, even if it
@@ -316,19 +347,23 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 				if hasattr(self, 'post_args'):
 					py_code = ('rettype, retdata = self.wmi.%s.%s('
-						'"%s", "%s" %s %s, referer=%s)') % (
+						'"%s", "%s" %s %s, referer=%s, '
+						'wmi_hostname="%s", wmi_port=%s)') % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:]) \
 							if len(args)>2 else ', ',
 						', '.join(self.format_post_args()),
-						'"%s"' % referer if referer else 'None')
+						'"%s"' % self.referer if self.referer else 'None',
+						self.hostaddr, self.hostport)
 				else:
 					py_code = ('rettype, retdata = self.wmi.%s.%s('
-						'"%s", "%s" %s referer=%s)') % (
+						'"%s", "%s" %s referer=%s, '
+						'wmi_hostname="%s", wmi_port=%s)') % (
 						args[0], args[1], self.path, self.http_user,
 						', "%s",' % '","'.join(args[2:])
 							if len(args)>2 else ', ',
-						'"%s"' % referer if referer else 'None')
+						'"%s"' % self.referer if self.referer else 'None',
+						self.hostaddr, self.hostport)
 
 				try:
 					assert ltrace('http',
@@ -351,7 +386,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							self.wmi.utils.get_traceback(e))
 
 				except TypeError, e:
-					logging.warning('Bad_Request/TypeError: %s.' % e)
+					logging.warning('BadRequest/TypeError: %s.' % e)
+					if options.verbose >= verbose.INFO:
+						print_exc()
+
 					rettype, retdata = 	self.wmi.utils.bad_arg_error(
 											self.wmi.utils.get_traceback(e))
 
@@ -391,32 +429,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			elif rettype == self.wmi.utils.HTTP_TYPE_REDIRECT:
 				# special entry, which should not return any data, else
 				# the redirect won't work.
-
-				client_address_base = self.client_address[0].rsplit('.', 1)[0]
-
-				if referer:
-					# get the host and the port from where the client first
-					# connected to us. This is the easiest way.
-					hostaddr, hostport = referer.split('/', 3)[2].split(':')
-
-				else:
-					# try to guess everything, this will lead to errors in
-					# many cases (ssh tunnels, NAT, port forwarding, etc).
-					# we default to server_name and try to find something more
-					# precise.
-					hostaddr = WMIHTTPRequestHandler.server_name
-					hostport = LMC.configuration.licornd.wmi.port
-
-					# if we can find something more precise, use it.
-					for ip in WMIHTTPRequestHandler.ip_addresses:
-						if ip.startswith(client_address_base):
-							try:
-								# try to return the "short" hostname
-								hostaddr = LMC.machines[ip].hostname
-							except KeyError:
-								# if it doesn't resolve,  return the IP address
-								hostaddr = ip
-							break
 
 				self.send_response(302)
 				self.send_header("Location", retdata

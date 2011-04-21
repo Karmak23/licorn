@@ -632,7 +632,7 @@ class CaldavdExtension(Singleton, ServiceExtension):
 	def _cli_get_parse_arguments(self):
 		""" return get compatible args. """
 		pass
-	def _wmi_user_data(self, user, *args, **kwargs):
+	def _wmi_user_data(self, user, hostname, *args, **kwargs):
 		""" return the calendar for a given user. """
 
 		if user.is_system:
@@ -643,10 +643,10 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			'calendars/resources/{login}/calendar">'
 			'CalDAV://{hostname}:{port}/calendars/'
 			'resources/{login}/calendar</a>'.format(
-				hostname=network.get_local_hostname(),
+				hostname=hostname,
 				port=self.data.configuration['HTTPPort'],
 				login=user.login))
-	def _wmi_group_data(self, group, templates, *args, **kwargs):
+	def _wmi_group_data(self, group, templates, hostname, *args, **kwargs):
 		""" return the calendar for a given user. """
 
 		if not (group.is_standard or group.is_guest):
@@ -657,6 +657,6 @@ class CaldavdExtension(Singleton, ServiceExtension):
 			'calendars/resources/{name}/calendar">'
 			'CalDAV://{hostname}:{port}/calendars/'
 			'resources/{name}/calendar</a>'.format(
-					hostname=network.get_local_hostname(),
+					hostname=hostname,
 					port=self.data.configuration['HTTPPort'],
 					name=group.name))

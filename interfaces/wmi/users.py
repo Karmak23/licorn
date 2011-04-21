@@ -612,7 +612,8 @@ def view(uri, http_user, login, **kwargs):
 				group.name,
 				group.gidNumber,
 				group.description,
-				 '\n'.join(wmi_meth(group, templates=('%s<br/>%s', '&nbsp;'))
+				 '\n'.join(wmi_meth(group, templates=('%s<br/>%s', '&nbsp;'),
+							hostname=kwargs['wmi_hostname'])
 							for wmi_meth in exts_wmi_group_meths))
 
 		colspan = 1 + len(exts_wmi_group_meths)
@@ -682,7 +683,8 @@ def view(uri, http_user, login, **kwargs):
 
 				extensions_data='\n'.join('<tr><td><strong>%s</strong></td>'
 					'<td class="not_modifiable">%s</td></tr>\n'
-						% ext._wmi_user_data(user)
+						% ext._wmi_user_data(user,
+											hostname=kwargs['wmi_hostname'])
 							for ext in LMC.extensions
 								if 'users' in ext.controllers_compat
 									and hasattr(ext, '_wmi_user_data')),
