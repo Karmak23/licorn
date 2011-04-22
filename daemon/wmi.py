@@ -434,7 +434,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				self.send_header("Location", retdata
 					if retdata.startswith('http://')
 					else 'http://%s:%s%s' % (
-					hostaddr, hostport, retdata))
+					self.hostaddr, self.hostport, retdata))
 				self.send_header("Connection", 'close')
 				self.end_headers()
 
