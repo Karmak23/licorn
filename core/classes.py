@@ -1163,8 +1163,7 @@ class ModulesManager(LockedController):
 				modules_dependancies[module_name] = []
 
 		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
-				', '.join(str(klass) for name
-					in self.__resolve_dependancies(modules_dependancies)))
+				', '.join(self.__resolve_dependancies(modules_dependancies)))
 
 		# dependancies are resolved, now instanciate in the good order:
 		changed = False
