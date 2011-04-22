@@ -809,7 +809,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				messages.append((priorities.NORMAL,
 					'<p class="light_indicator backup_stats_in_progress '
 					'normal_priority">%s</p>' % (
-						_(u'Backup statistics computation '
+						_('Backup statistics computation '
 							'in progress on volume {volume}…').format(
 							volume=self.current_backup_volume.mount_point))))
 

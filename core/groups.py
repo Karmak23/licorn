@@ -1383,7 +1383,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		all_went_ok = True
 
-		logging.progress(_(u'Checking system specific attributes '
+		logging.progress(_('Checking system specific attributes '
 				'for group {0}…').format(stylize(ST_NAME, self.name))
 			)
 
