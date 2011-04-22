@@ -1936,7 +1936,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 				if opts.newname is not None:
 					something_done = True
-					profile.name(unicode(opts.newname))
+					profile.name = unicode(opts.newname)
 
 				if opts.newgroup is not None:
 					something_done = True
