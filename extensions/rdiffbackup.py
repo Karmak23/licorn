@@ -289,8 +289,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		self.events.active.set()
 	def __stop_timer_thread(self):
 		self.events.active.clear()
-		self.threads.auto_backup_timer.stop()
-		del self.threads.auto_backup_timer
+
+		# we need to test the existence of the thread, because this method
+		# can be called multiple times. When non-enabled volumes are removed,
+		# it will; and this will fail because there was NO timer anyway.
+		if hasattr(self.threads, 'auto_backup_timer'):
+			self.threads.auto_backup_timer.stop()
+			del self.threads.auto_backup_timer
 	def enable(self):
 		""" This method will call :meth=:`is_enabled`, because it does exactly
 			what we need.
@@ -685,7 +690,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self.__create_timer_thread()
 	def volume_removed_callback(self, volume, *args, **kwargs):
 		if self._enabled_volumes() == []:
-			self.__stop_timer_thread()
+				self.__stop_timer_thread()
 	def main_configuration_file_changed_callback(self, *args, **kwargs):
 		""" Trigerred when the Licorn® main configuration file changed. """
 
