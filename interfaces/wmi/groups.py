@@ -224,10 +224,10 @@ def view(uri, http_user, name,**kwargs):
 	try:
 		def user_line(user):
 			return '''<tr>
+				<td><a href="/users/view/{0}">{0}</a></td>
 				<td><a href="/users/view/{0}">{1}</a></td>
-				<td><a href="/users/view/{0}">%s</a></td>
-				<td>2</td>
-				</tr>''' % (user.login, user.gecos, user.uidNumber)
+				<td>{2}</td>
+				</tr>'''.format(user.login, user.gecos, user.uidNumber)
 
 		members = sorted(group.auxilliary_members)
 
@@ -327,7 +327,7 @@ def view(uri, http_user, name,**kwargs):
 		</form>
 		</div>
 			''' % ( form_name, form_name, name,
-				_('GID'), _('immutable'), group['gidNumber'],
+				_('GID'), _('immutable'), group.gidNumber,
 				_('Name'), _('immutable'), name,
 				members_html,
 				resps_html,
