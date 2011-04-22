@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-04-22 12:51+0200\n"
-"PO-Revision-Date: 2011-04-22 13:01+0200\n"
+"POT-Creation-Date: 2011-04-22 17:27+0200\n"
+"PO-Revision-Date: 2011-04-22 16:25+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -362,6 +362,8 @@ msgid ""
 "%s: existing instance still running, we're going to be more incisive in a "
 "few seconds."
 msgstr ""
+"%s : ancienne instance toujours en cours d'exécution, nous allons être plus "
+"incisifs dans quelques secondes."
 
 #: daemon/main.py:553
 #, python-format
@@ -369,6 +371,8 @@ msgid ""
 "%s: re-killing old instance softly with TERM signal and waiting a little "
 "more."
 msgstr ""
+"%s : un nouveau gentil signal TERM a été envoyé à l'ancienne instance, et "
+"nous attendons encore quelques instants."
 
 #: daemon/main.py:587
 msgid "{0}: old instance {1} terminated, we can play now."
@@ -387,6 +391,7 @@ msgstr "avec succès"
 #: daemon/main.py:591
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
+"{0} : un daemon est déjà en cours d'exécution (pid {1}), démarrage avorté."
 
 #: daemon/main.py:601
 msgid "{0}: must be run as {1} (was: {2})."
@@ -979,7 +984,7 @@ msgstr "Désolé, pas encore."
 msgid "Directory %s does not exist. Create it?"
 msgstr "Le répertoire %s n'existe pas. Le créer ?"
 
-#: foundations/fsapi.py:144 core/classes.py:2160
+#: foundations/fsapi.py:144 core/classes.py:2159
 msgid "Created directory {0}."
 msgstr "Le répertoire {0} a été créé."
 
@@ -1540,7 +1545,7 @@ msgstr "Exporter >>"
 
 #: core/machines.py:1227 core/machines.py:1270 interfaces/wmi/groups.py:194
 #: interfaces/wmi/users.py:88 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:224 extensions/rdiffbackup.py:918
+#: interfaces/wmi/users.py:224 extensions/rdiffbackup.py:923
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
@@ -2569,86 +2574,86 @@ msgstr "Ajouté(e)"
 msgid "{0}: error on setting inotifier watches for {1} {2} (was: {3})."
 msgstr ""
 
-#: core/classes.py:1323
+#: core/classes.py:1322
 msgid "{0} {1} already enabled."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/classes.py:1334
+#: core/classes.py:1333
 msgid "successfully enabled {0} {1}."
 msgstr "{1} {0} activé(e) avec succès."
 
-#: core/classes.py:1337 core/classes.py:1368
+#: core/classes.py:1336 core/classes.py:1367
 msgid "No {0} by that name \"{1}\"."
 msgstr "Aucun(e) {0} du nom de “{1}”."
 
-#: core/classes.py:1355
+#: core/classes.py:1354
 msgid "{0} {1} already disabled."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/classes.py:1365
+#: core/classes.py:1364
 msgid "successfully disabled {0} {1}."
 msgstr "{1} {0} désactivé(e) avec succès."
 
-#: core/classes.py:1401
+#: core/classes.py:1400
 msgid "{module_type} {module_name} does not exist or is not enabled."
 msgstr "{module_type} {module_name} inconnu(e) ou désactivé(e). "
 
-#: core/classes.py:1460
+#: core/classes.py:1459
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
 msgstr ""
 
-#: core/classes.py:1829
+#: core/classes.py:1828
 msgid "{0}: manual check already in progress, skipping event {1}."
 msgstr ""
 
-#: core/classes.py:1977
+#: core/classes.py:1976
 #, fuzzy
 msgid "{0}: overwriting watch {1}!"
 msgstr "{0} : arrêt{1}."
 
-#: core/classes.py:2131
+#: core/classes.py:2130
 msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr "{0} {1} : quelqu'un d'autre est déjà en train de vérifier ; abandon."
 
-#: core/classes.py:2141
+#: core/classes.py:2140
 msgid "Checking group {0}…"
 msgstr "Vérification du groupe {0}…"
 
-#: core/classes.py:2153
+#: core/classes.py:2152
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr "Le répertoire %s n'existe pas mais il est obligatoire. Le créer ?"
 
-#: core/classes.py:2167
+#: core/classes.py:2166
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 "Le répertoire %s n'existe pas mais il est obligatoire. La vérification est "
 "annulée."
 
-#: core/classes.py:2191
+#: core/classes.py:2190
 #, fuzzy
 msgid "{0} {1}: meta-data changed on path {1}."
 msgstr "{0} : point de montage {1} créé."
 
-#: core/classes.py:2202
+#: core/classes.py:2201
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr ""
 
-#: core/classes.py:2211
+#: core/classes.py:2210
 #, fuzzy
 msgid "{0} {1}: no shared data to check."
 msgstr "Gérer les groupes et les données partagées"
 
-#: core/classes.py:2315
+#: core/classes.py:2314
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
 msgstr ""
 
-#: core/classes.py:2384
+#: core/classes.py:2383
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 
@@ -3282,7 +3287,7 @@ msgstr "Supprimer"
 
 #: interfaces/wmi/groups.py:131 interfaces/wmi/groups.py:500
 #: interfaces/wmi/users.py:136 interfaces/wmi/users.py:211
-#: extensions/rdiffbackup.py:916
+#: extensions/rdiffbackup.py:921
 msgid "R"
 msgstr "S"
 
@@ -3683,7 +3688,7 @@ msgid "Remove >>"
 msgstr "Supprimer >>"
 
 #: interfaces/wmi/users.py:138 interfaces/wmi/users.py:224
-#: interfaces/wmi/users.py:271 extensions/rdiffbackup.py:918
+#: interfaces/wmi/users.py:271 extensions/rdiffbackup.py:923
 msgid "C"
 msgstr "N"
 
@@ -5572,8 +5577,8 @@ msgstr ""
 #: extensions/caldavd.py:432 extensions/caldavd.py:460
 #: extensions/caldavd.py:493 extensions/caldavd.py:542
 #: extensions/caldavd.py:569 extensions/caldavd.py:597
-#: extensions/caldavd.py:621 extensions/volumes.py:276
-#: extensions/volumes.py:301
+#: extensions/caldavd.py:621 extensions/volumes.py:364
+#: extensions/volumes.py:395
 msgid "{0}: {1}"
 msgstr "{0} : {1}"
 
@@ -5654,148 +5659,148 @@ msgstr ""
 "{0} : extension démarrée, avec le compte-à-rebour pour la sauvegarde "
 "automatique."
 
-#: extensions/rdiffbackup.py:315
+#: extensions/rdiffbackup.py:320
 msgid ""
 "{0}: cannot disable now, a backup is in progress. Please wait until the end "
 "and retry."
 msgstr ""
 
-#: extensions/rdiffbackup.py:362
+#: extensions/rdiffbackup.py:367
 msgid "{0}: computing statistics on {1}, please wait."
 msgstr ""
 
-#: extensions/rdiffbackup.py:434
+#: extensions/rdiffbackup.py:439
 #, python-format
 msgid "Skipped disabled %s."
 msgstr "Le %s désactivé a été ignoré."
 
-#: extensions/rdiffbackup.py:487
+#: extensions/rdiffbackup.py:492
 msgid "{0}: a backup is already running."
 msgstr "{0} : une sauvegarde est déjà en cours."
 
-#: extensions/rdiffbackup.py:538
+#: extensions/rdiffbackup.py:543
 msgid "{0}: a backup is already running, nothing done."
 msgstr "{0} : une sauvegarde est déjà en cours, on la laisse se terminer."
 
-#: extensions/rdiffbackup.py:550
+#: extensions/rdiffbackup.py:555
 msgid "{0}: no volumes to backup onto, aborting."
 msgstr "{0} : aucun volume de backup n'est disponible, abandon."
 
-#: extensions/rdiffbackup.py:564
+#: extensions/rdiffbackup.py:569
 msgid "{0}: not backing up on {1}, last backup is less than {2}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:576
+#: extensions/rdiffbackup.py:581
 msgid "{0}: starting backup on{1} {2}."
 msgstr "{0} : démarrage de la sauvegarde sur {2}{1}."
 
-#: extensions/rdiffbackup.py:577
+#: extensions/rdiffbackup.py:582
 msgid " first available"
 msgstr " (premier volume disponible)"
 
-#: extensions/rdiffbackup.py:584
+#: extensions/rdiffbackup.py:589
 msgid "{0}: created directory {1}."
 msgstr "{0} : répertoire {1} créé."
 
-#: extensions/rdiffbackup.py:600
+#: extensions/rdiffbackup.py:605
 msgid "{0}: Rdiff-backup configuration file {1} does not exist."
 msgstr "{0}: le fichier de configuration {1} de Rdiff-backup n'existe pas."
 
-#: extensions/rdiffbackup.py:630
+#: extensions/rdiffbackup.py:635
 msgid "{0}: terminated backup procedure on {1}."
 msgstr "{0}: procédure de sauvegarde terminée sur {1}."
 
-#: extensions/rdiffbackup.py:644
+#: extensions/rdiffbackup.py:649
 msgid "{0}: updated last backup file {1}."
 msgstr "{0} : le fichier de dernière date de sauvegarde {1} a été mis à jour."
 
-#: extensions/rdiffbackup.py:668
+#: extensions/rdiffbackup.py:673
 msgid "Last backup on this volume occured {0} ago."
 msgstr "La dernière sauvegarde sur ce volume a eu lieu il y a {0}."
 
-#: extensions/rdiffbackup.py:674
+#: extensions/rdiffbackup.py:679
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 
-#: extensions/rdiffbackup.py:675
+#: extensions/rdiffbackup.py:680
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:694
+#: extensions/rdiffbackup.py:699
 msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
 msgstr ""
 
-#: extensions/rdiffbackup.py:709 extensions/rdiffbackup.py:723
+#: extensions/rdiffbackup.py:714 extensions/rdiffbackup.py:728
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:719
+#: extensions/rdiffbackup.py:724
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:739 extensions/rdiffbackup.py:754
+#: extensions/rdiffbackup.py:744 extensions/rdiffbackup.py:759
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:748
+#: extensions/rdiffbackup.py:753
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:761
+#: extensions/rdiffbackup.py:766
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: extensions/rdiffbackup.py:763
+#: extensions/rdiffbackup.py:768
 msgid "Manage backups and restore files"
 msgstr "Gérer les sauvegardes et restaurer des données"
 
-#: extensions/rdiffbackup.py:777
+#: extensions/rdiffbackup.py:782
 msgid "Run backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:779
+#: extensions/rdiffbackup.py:784
 msgid "Run a system incremental backup now"
 msgstr "Exécuter une sauvegarde incrémentale maintenant"
 
-#: extensions/rdiffbackup.py:786
+#: extensions/rdiffbackup.py:791
 msgid "Rescan volumes"
 msgstr "Scanner les volumes"
 
-#: extensions/rdiffbackup.py:788
+#: extensions/rdiffbackup.py:793
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:806
+#: extensions/rdiffbackup.py:811
 msgid "Backup in progress on volume {volume}…"
 msgstr "Sauvegarde en cours sur le volume {volume}…"
 
-#: extensions/rdiffbackup.py:812
+#: extensions/rdiffbackup.py:817
 msgid "Backup statistics computation in progress on volume {volume}…"
 msgstr "Calcul des statistiques de sauvegardes sur le volume {volume}…"
 
-#: extensions/rdiffbackup.py:820
+#: extensions/rdiffbackup.py:825
 msgid "Next backup in {0}"
 msgstr "Prochaine sauvegarde dans {0}"
 
-#: extensions/rdiffbackup.py:831
+#: extensions/rdiffbackup.py:836
 msgid "No backup volume connected"
 msgstr "Aucun volume de sauvegarde connecté"
 
-#: extensions/rdiffbackup.py:855
+#: extensions/rdiffbackup.py:860
 msgid "used"
 msgstr "occupé"
 
-#: extensions/rdiffbackup.py:866
+#: extensions/rdiffbackup.py:871
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:874
+#: extensions/rdiffbackup.py:879
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine "
 "sauvegarde."
 
-#: extensions/rdiffbackup.py:878
+#: extensions/rdiffbackup.py:883
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
 "server before starting this procedure.<br /><br />See <a href=\"http://docs."
@@ -5808,15 +5813,15 @@ msgstr ""
 "html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur "
 "la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:893
+#: extensions/rdiffbackup.py:898
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:898
+#: extensions/rdiffbackup.py:903
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:899
+#: extensions/rdiffbackup.py:904
 msgid ""
 "{auto_select}<br /><br />The last backup has been run {last_backup_time} "
 "ago, which is less than the system configured interval ({interval}). Are you "
@@ -5829,28 +5834,28 @@ msgstr ""
 "sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les "
 "{next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:915
+#: extensions/rdiffbackup.py:920
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:934
+#: extensions/rdiffbackup.py:939
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:937
+#: extensions/rdiffbackup.py:942
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:941
+#: extensions/rdiffbackup.py:946
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 "Ce volume est utilisé{backup_info}, impossible de l'éjecter&nbsp;!{rewind}"
 
-#: extensions/rdiffbackup.py:960
+#: extensions/rdiffbackup.py:965
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:971
+#: extensions/rdiffbackup.py:976
 msgid ""
 "A backup is currently in progress, please do not disconnect <strong>{volume}"
 "</strong>.<br /><br /> (update in {countdown}…)"
@@ -5858,17 +5863,17 @@ msgstr ""
 "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le "
 "volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:999
+#: extensions/rdiffbackup.py:1004
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr ""
 "Aucune donnée d'historique. Merci d'attendre la fin de la première "
 "sauvegarde."
 
-#: extensions/rdiffbackup.py:1005
+#: extensions/rdiffbackup.py:1010
 msgid "Backups on {mount_point}"
 msgstr "Sauvegardes sur {mount_point}"
 
-#: extensions/rdiffbackup.py:1025
+#: extensions/rdiffbackup.py:1030
 msgid ""
 "No backup volume found. Please connect a backup volume to your server, and "
 "backups will automatically start."
@@ -5876,7 +5881,7 @@ msgstr ""
 "Aucun volume de sauvegarde n'a été trouvé. Merci d'en connecter un à votre "
 "serveur, et les sauvegardes démarreront automatiquement."
 
-#: extensions/rdiffbackup.py:1035
+#: extensions/rdiffbackup.py:1040
 msgid ""
 "No backup found, or all backup volumes are currently unmounted (you can "
 "safely disconnect them from your server).<br /><br />Next automatic backup "
@@ -5952,101 +5957,111 @@ msgid ""
 "different one. Please try  again later."
 msgstr ""
 
-#: extensions/volumes.py:191
+#: extensions/volumes.py:207
 #, python-format
-msgid "%s not mounted"
-msgstr "%s n'est pas monté"
+msgid " (on %s)"
+msgstr " (sur %s)"
 
-#: extensions/volumes.py:205
+#: extensions/volumes.py:208
+msgid " (not mounted)"
+msgstr " (non monté)"
+
+#: extensions/volumes.py:247
+msgid "{0}({1}) not mounted"
+msgstr "{0}({1}) non monté"
+
+#: extensions/volumes.py:261
 msgid "{0}: Licorn® usage already enabled on {1}."
 msgstr "{0} : réservation pour Licorn® déjà effectuée sur {1}."
 
-#: extensions/volumes.py:211
+#: extensions/volumes.py:267
 msgid "{0}: enabled Licorn® usage on {1}."
 msgstr "{0}: réservation pour Licorn® effectuée sur {1}."
 
-#: extensions/volumes.py:215
+#: extensions/volumes.py:271
 #, fuzzy
 msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
 msgstr "{0}: réservation pour Licorn® effectuée sur {1}."
 
-#: extensions/volumes.py:231
+#: extensions/volumes.py:287
 msgid "{0}: disabled Licorn® usage on {1}."
 msgstr "{0}: réservation pour Licorn® supprimée de {1}."
 
-#: extensions/volumes.py:234
+#: extensions/volumes.py:290
 msgid "{0}: Licorn® usage already disabled on {1}."
 msgstr "{0} : réservation pour Licorn® déjà supprimée de {1}."
 
-#: extensions/volumes.py:265
+#: extensions/volumes.py:323
 msgid "{0}: created mount point {1}."
 msgstr "{0} : point de montage {1} créé."
 
-#: extensions/volumes.py:279
-msgid "{0}: mounted device {1} at {2}."
-msgstr "{0} : périphérique {1} monté sur {2}."
+#: extensions/volumes.py:367
+msgid "{0}: mounted device {1}({2}) at {3}."
+msgstr "{0} : périphérique {1}({2}) monté sur {3}."
 
-#: extensions/volumes.py:304
+#: extensions/volumes.py:398
 msgid "{0}: unmounted device {1} from {2}."
 msgstr "{0} : périphérique {1} démonté de {2}."
 
-#: extensions/volumes.py:321
+#: extensions/volumes.py:415
 msgid "{0}: removed directory {1}."
 msgstr "{0} : répertoire {1} supprimé."
 
-#: extensions/volumes.py:435
+#: extensions/volumes.py:531
 msgid "{0}: not available because {1}."
 msgstr "{0} : non disponible, car {1}."
 
-#: extensions/volumes.py:447
+#: extensions/volumes.py:543
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
 msgstr "{0}: extension démarrée avec pyudev v{2}, pilotant  udev v{1}."
 
-#: extensions/volumes.py:605
+#: extensions/volumes.py:705
 msgid "{0}: skipped already known volume {1}."
 msgstr "{0} : le volume {1} a été ignoré car il est déjà connu."
 
-#: extensions/volumes.py:615
-#, fuzzy
-msgid "{0}: skipped extended partition {1}."
-msgstr "{0} : partition système {1} ignorée."
+#: extensions/volumes.py:716
+msgid "{0}: skipped LMV/extended partition {1}."
+msgstr "{0} : partition LVM/étendue {1} ignorée."
 
-#: extensions/volumes.py:621
+#: extensions/volumes.py:722
 msgid "{0}: skipped unformatted partition {1}."
 msgstr "{0} : partition non-formattée {1} ignorée."
 
-#: extensions/volumes.py:627
+#: extensions/volumes.py:728
 msgid "{0}: skipped system partition {1}."
 msgstr "{0} : partition système {1} ignorée."
 
-#: extensions/volumes.py:647
+#: extensions/volumes.py:748
 msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
 msgstr "{0} : partition {1} ignorée (système de fichier {2} exclu)."
 
-#: extensions/volumes.py:673
+#: extensions/volumes.py:775
 msgid "{0}: added {1}."
 msgstr "{0} : {1} ajouté."
 
-#: extensions/volumes.py:706
+#: extensions/volumes.py:808
 msgid "{0}: removed {1}."
 msgstr "{0} : {1} supprimé."
 
-#: extensions/volumes.py:744
+#: extensions/volumes.py:847
 #, fuzzy
 msgid "{0}: skipped non existing device or mount_point {1}."
 msgstr "L'extension inexistante %s a été ignorée."
 
-#: extensions/volumes.py:815
-msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.2}%)"
-msgstr ", {0:.2}Go/{1:.2}Go libre(s) ({2:.2}%)"
+#: extensions/volumes.py:918
+msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.1f}%)"
+msgstr ", {0:.2}Go/{1:.2}Go libre(s) ({2:.1f}%)"
 
-#: extensions/volumes.py:821
+#: extensions/volumes.py:925
 msgid " on {0}{1}"
 msgstr " sur {0}{1}"
 
-#: extensions/volumes.py:824
+#: extensions/volumes.py:928
 msgid " not mounted"
 msgstr " non monté"
+
+#~ msgid "%s not mounted"
+#~ msgstr "%s n'est pas monté"
 
 #~ msgid "Checking standard account %s…"
 #~ msgstr "Vérification du compte standard %s…"

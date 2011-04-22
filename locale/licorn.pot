@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-04-22 13:01+0200\n"
+"POT-Creation-Date: 2011-04-22 17:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -900,7 +900,7 @@ msgstr ""
 msgid "Directory %s does not exist. Create it?"
 msgstr ""
 
-#: foundations/fsapi.py:144 core/classes.py:2160
+#: foundations/fsapi.py:144 core/classes.py:2159
 msgid "Created directory {0}."
 msgstr ""
 
@@ -1396,7 +1396,7 @@ msgstr ""
 
 #: core/machines.py:1227 core/machines.py:1270 interfaces/wmi/groups.py:194
 #: interfaces/wmi/users.py:88 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:224 extensions/rdiffbackup.py:918
+#: interfaces/wmi/users.py:224 extensions/rdiffbackup.py:923
 msgid "<< Cancel"
 msgstr ""
 
@@ -2311,81 +2311,81 @@ msgstr ""
 msgid "{0}: error on setting inotifier watches for {1} {2} (was: {3})."
 msgstr ""
 
-#: core/classes.py:1323
+#: core/classes.py:1322
 msgid "{0} {1} already enabled."
 msgstr ""
 
-#: core/classes.py:1334
+#: core/classes.py:1333
 msgid "successfully enabled {0} {1}."
 msgstr ""
 
-#: core/classes.py:1337 core/classes.py:1368
+#: core/classes.py:1336 core/classes.py:1367
 msgid "No {0} by that name \"{1}\"."
 msgstr ""
 
-#: core/classes.py:1355
+#: core/classes.py:1354
 msgid "{0} {1} already disabled."
 msgstr ""
 
-#: core/classes.py:1365
+#: core/classes.py:1364
 msgid "successfully disabled {0} {1}."
 msgstr ""
 
-#: core/classes.py:1401
+#: core/classes.py:1400
 msgid "{module_type} {module_name} does not exist or is not enabled."
 msgstr ""
 
-#: core/classes.py:1460
+#: core/classes.py:1459
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
 msgstr ""
 
-#: core/classes.py:1829
+#: core/classes.py:1828
 msgid "{0}: manual check already in progress, skipping event {1}."
 msgstr ""
 
-#: core/classes.py:1977
+#: core/classes.py:1976
 msgid "{0}: overwriting watch {1}!"
 msgstr ""
 
-#: core/classes.py:2131
+#: core/classes.py:2130
 msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr ""
 
-#: core/classes.py:2141
+#: core/classes.py:2140
 msgid "Checking group {0}…"
 msgstr ""
 
-#: core/classes.py:2153
+#: core/classes.py:2152
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr ""
 
-#: core/classes.py:2167
+#: core/classes.py:2166
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 
-#: core/classes.py:2191
+#: core/classes.py:2190
 msgid "{0} {1}: meta-data changed on path {1}."
 msgstr ""
 
-#: core/classes.py:2202
+#: core/classes.py:2201
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr ""
 
-#: core/classes.py:2211
+#: core/classes.py:2210
 msgid "{0} {1}: no shared data to check."
 msgstr ""
 
-#: core/classes.py:2315
+#: core/classes.py:2314
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
 msgstr ""
 
-#: core/classes.py:2384
+#: core/classes.py:2383
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 
@@ -2955,7 +2955,7 @@ msgstr ""
 
 #: interfaces/wmi/groups.py:131 interfaces/wmi/groups.py:500
 #: interfaces/wmi/users.py:136 interfaces/wmi/users.py:211
-#: extensions/rdiffbackup.py:916
+#: extensions/rdiffbackup.py:921
 msgid "R"
 msgstr ""
 
@@ -3338,7 +3338,7 @@ msgid "Remove >>"
 msgstr ""
 
 #: interfaces/wmi/users.py:138 interfaces/wmi/users.py:224
-#: interfaces/wmi/users.py:271 extensions/rdiffbackup.py:918
+#: interfaces/wmi/users.py:271 extensions/rdiffbackup.py:923
 msgid "C"
 msgstr ""
 
@@ -5089,8 +5089,8 @@ msgstr ""
 #: extensions/caldavd.py:432 extensions/caldavd.py:460
 #: extensions/caldavd.py:493 extensions/caldavd.py:542
 #: extensions/caldavd.py:569 extensions/caldavd.py:597
-#: extensions/caldavd.py:621 extensions/volumes.py:276
-#: extensions/volumes.py:301
+#: extensions/caldavd.py:621 extensions/volumes.py:364
+#: extensions/volumes.py:395
 msgid "{0}: {1}"
 msgstr ""
 
@@ -5165,146 +5165,146 @@ msgstr ""
 msgid "{0}: started extension and auto-backup timer."
 msgstr ""
 
-#: extensions/rdiffbackup.py:315
+#: extensions/rdiffbackup.py:320
 msgid ""
 "{0}: cannot disable now, a backup is in progress. Please wait until the end "
 "and retry."
 msgstr ""
 
-#: extensions/rdiffbackup.py:362
+#: extensions/rdiffbackup.py:367
 msgid "{0}: computing statistics on {1}, please wait."
 msgstr ""
 
-#: extensions/rdiffbackup.py:434
+#: extensions/rdiffbackup.py:439
 #, python-format
 msgid "Skipped disabled %s."
 msgstr ""
 
-#: extensions/rdiffbackup.py:487
+#: extensions/rdiffbackup.py:492
 msgid "{0}: a backup is already running."
 msgstr ""
 
-#: extensions/rdiffbackup.py:538
+#: extensions/rdiffbackup.py:543
 msgid "{0}: a backup is already running, nothing done."
 msgstr ""
 
-#: extensions/rdiffbackup.py:550
+#: extensions/rdiffbackup.py:555
 msgid "{0}: no volumes to backup onto, aborting."
 msgstr ""
 
-#: extensions/rdiffbackup.py:564
+#: extensions/rdiffbackup.py:569
 msgid "{0}: not backing up on {1}, last backup is less than {2}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:576
+#: extensions/rdiffbackup.py:581
 msgid "{0}: starting backup on{1} {2}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:577
+#: extensions/rdiffbackup.py:582
 msgid " first available"
 msgstr ""
 
-#: extensions/rdiffbackup.py:584
+#: extensions/rdiffbackup.py:589
 msgid "{0}: created directory {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:600
+#: extensions/rdiffbackup.py:605
 msgid "{0}: Rdiff-backup configuration file {1} does not exist."
 msgstr ""
 
-#: extensions/rdiffbackup.py:630
+#: extensions/rdiffbackup.py:635
 msgid "{0}: terminated backup procedure on {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:644
+#: extensions/rdiffbackup.py:649
 msgid "{0}: updated last backup file {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:668
+#: extensions/rdiffbackup.py:673
 msgid "Last backup on this volume occured {0} ago."
 msgstr ""
 
-#: extensions/rdiffbackup.py:674
+#: extensions/rdiffbackup.py:679
 msgid "No backup has occured yet."
 msgstr ""
 
-#: extensions/rdiffbackup.py:675
+#: extensions/rdiffbackup.py:680
 msgid "Next backup attempt will occur in {0}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:694
+#: extensions/rdiffbackup.py:699
 msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
 msgstr ""
 
-#: extensions/rdiffbackup.py:709 extensions/rdiffbackup.py:723
+#: extensions/rdiffbackup.py:714 extensions/rdiffbackup.py:728
 msgid "Backup in progress icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:719
+#: extensions/rdiffbackup.py:724
 msgid "Can't eject, backup in progress"
 msgstr ""
 
-#: extensions/rdiffbackup.py:739 extensions/rdiffbackup.py:754
+#: extensions/rdiffbackup.py:744 extensions/rdiffbackup.py:759
 msgid "Eject device icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:748
+#: extensions/rdiffbackup.py:753
 msgid "Eject the volume"
 msgstr ""
 
-#: extensions/rdiffbackup.py:761
+#: extensions/rdiffbackup.py:766
 msgid "Backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:763
+#: extensions/rdiffbackup.py:768
 msgid "Manage backups and restore files"
 msgstr ""
 
-#: extensions/rdiffbackup.py:777
+#: extensions/rdiffbackup.py:782
 msgid "Run backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:779
+#: extensions/rdiffbackup.py:784
 msgid "Run a system incremental backup now"
 msgstr ""
 
-#: extensions/rdiffbackup.py:786
+#: extensions/rdiffbackup.py:791
 msgid "Rescan volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:788
+#: extensions/rdiffbackup.py:793
 msgid "Force the system to rescan and remount connected volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:806
+#: extensions/rdiffbackup.py:811
 msgid "Backup in progress on volume {volume}…"
 msgstr ""
 
-#: extensions/rdiffbackup.py:812
+#: extensions/rdiffbackup.py:817
 msgid "Backup statistics computation in progress on volume {volume}…"
 msgstr ""
 
-#: extensions/rdiffbackup.py:820
+#: extensions/rdiffbackup.py:825
 msgid "Next backup in {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:831
+#: extensions/rdiffbackup.py:836
 msgid "No backup volume connected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:855
+#: extensions/rdiffbackup.py:860
 msgid "used"
 msgstr ""
 
-#: extensions/rdiffbackup.py:866
+#: extensions/rdiffbackup.py:871
 msgid "Run a manual backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:874
+#: extensions/rdiffbackup.py:879
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 
-#: extensions/rdiffbackup.py:878
+#: extensions/rdiffbackup.py:883
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
 "server before starting this procedure.<br /><br />See <a href=\"http://docs."
@@ -5312,15 +5312,15 @@ msgid ""
 "for details on enabling backup volumes."
 msgstr ""
 
-#: extensions/rdiffbackup.py:893
+#: extensions/rdiffbackup.py:898
 msgid "Run a manual backup on volume {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:898
+#: extensions/rdiffbackup.py:903
 msgid "Recent backup detected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:899
+#: extensions/rdiffbackup.py:904
 msgid ""
 "{auto_select}<br /><br />The last backup has been run {last_backup_time} "
 "ago, which is less than the system configured interval ({interval}). Are you "
@@ -5328,47 +5328,47 @@ msgid ""
 "withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:915
+#: extensions/rdiffbackup.py:920
 msgid "Run >>"
 msgstr ""
 
-#: extensions/rdiffbackup.py:934
+#: extensions/rdiffbackup.py:939
 msgid "Eject volume {device}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:937
+#: extensions/rdiffbackup.py:942
 msgid " (a backup is underway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:941
+#: extensions/rdiffbackup.py:946
 msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:960
+#: extensions/rdiffbackup.py:965
 msgid "System backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:971
+#: extensions/rdiffbackup.py:976
 msgid ""
 "A backup is currently in progress, please do not disconnect <strong>{volume}"
 "</strong>.<br /><br /> (update in {countdown}…)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:999
+#: extensions/rdiffbackup.py:1004
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr ""
 
-#: extensions/rdiffbackup.py:1005
+#: extensions/rdiffbackup.py:1010
 msgid "Backups on {mount_point}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1025
+#: extensions/rdiffbackup.py:1030
 msgid ""
 "No backup volume found. Please connect a backup volume to your server, and "
 "backups will automatically start."
 msgstr ""
 
-#: extensions/rdiffbackup.py:1035
+#: extensions/rdiffbackup.py:1040
 msgid ""
 "No backup found, or all backup volumes are currently unmounted (you can "
 "safely disconnect them from your server).<br /><br />Next automatic backup "
@@ -5436,95 +5436,103 @@ msgid ""
 "different one. Please try  again later."
 msgstr ""
 
-#: extensions/volumes.py:191
+#: extensions/volumes.py:207
 #, python-format
-msgid "%s not mounted"
+msgid " (on %s)"
 msgstr ""
 
-#: extensions/volumes.py:205
+#: extensions/volumes.py:208
+msgid " (not mounted)"
+msgstr ""
+
+#: extensions/volumes.py:247
+msgid "{0}({1}) not mounted"
+msgstr ""
+
+#: extensions/volumes.py:261
 msgid "{0}: Licorn® usage already enabled on {1}."
 msgstr ""
 
-#: extensions/volumes.py:211
+#: extensions/volumes.py:267
 msgid "{0}: enabled Licorn® usage on {1}."
 msgstr ""
 
-#: extensions/volumes.py:215
+#: extensions/volumes.py:271
 msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
 msgstr ""
 
-#: extensions/volumes.py:231
+#: extensions/volumes.py:287
 msgid "{0}: disabled Licorn® usage on {1}."
 msgstr ""
 
-#: extensions/volumes.py:234
+#: extensions/volumes.py:290
 msgid "{0}: Licorn® usage already disabled on {1}."
 msgstr ""
 
-#: extensions/volumes.py:265
+#: extensions/volumes.py:323
 msgid "{0}: created mount point {1}."
 msgstr ""
 
-#: extensions/volumes.py:279
-msgid "{0}: mounted device {1} at {2}."
+#: extensions/volumes.py:367
+msgid "{0}: mounted device {1}({2}) at {3}."
 msgstr ""
 
-#: extensions/volumes.py:304
+#: extensions/volumes.py:398
 msgid "{0}: unmounted device {1} from {2}."
 msgstr ""
 
-#: extensions/volumes.py:321
+#: extensions/volumes.py:415
 msgid "{0}: removed directory {1}."
 msgstr ""
 
-#: extensions/volumes.py:435
+#: extensions/volumes.py:531
 msgid "{0}: not available because {1}."
 msgstr ""
 
-#: extensions/volumes.py:447
+#: extensions/volumes.py:543
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
 msgstr ""
 
-#: extensions/volumes.py:605
+#: extensions/volumes.py:705
 msgid "{0}: skipped already known volume {1}."
 msgstr ""
 
-#: extensions/volumes.py:615
-msgid "{0}: skipped extended partition {1}."
+#: extensions/volumes.py:716
+msgid "{0}: skipped LMV/extended partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:621
+#: extensions/volumes.py:722
 msgid "{0}: skipped unformatted partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:627
+#: extensions/volumes.py:728
 msgid "{0}: skipped system partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:647
+#: extensions/volumes.py:748
 msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
 msgstr ""
 
-#: extensions/volumes.py:673
+#: extensions/volumes.py:775
 msgid "{0}: added {1}."
 msgstr ""
 
-#: extensions/volumes.py:706
+#: extensions/volumes.py:808
 msgid "{0}: removed {1}."
 msgstr ""
 
-#: extensions/volumes.py:744
+#: extensions/volumes.py:847
 msgid "{0}: skipped non existing device or mount_point {1}."
 msgstr ""
 
-#: extensions/volumes.py:815
-msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.2}%)"
+#: extensions/volumes.py:918
+msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.1f}%)"
 msgstr ""
 
-#: extensions/volumes.py:821
+#: extensions/volumes.py:925
 msgid " on {0}{1}"
 msgstr ""
 
-#: extensions/volumes.py:824
+#: extensions/volumes.py:928
 msgid " not mounted"
 msgstr ""
