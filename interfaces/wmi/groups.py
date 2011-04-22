@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os, time
+import os, time, operator
 
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.constants import filters
@@ -546,7 +546,7 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 
 	add_members = sorted(w.merge_multi_select(members_dest))
 	del_members = sorted(w.merge_multi_select(members_source))
-	cur_members = group.memberUid
+	cur_members = list(group.memberUid)
 
 	group_pack_del = [
 				(del_members, cur_members, group.del_Users)
@@ -559,11 +559,11 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	if group.is_standard:
 		add_resps = sorted(w.merge_multi_select(resps_dest))
 		del_resps = sorted(w.merge_multi_select(resps_source))
-		cur_resps = group.responsible_group.memberUid
+		cur_resps = list(group.responsible_group.memberUid)
 
 		add_guests = sorted(w.merge_multi_select(guests_dest))
 		del_guests = sorted(w.merge_multi_select(guests_source))
-		cur_guests = group.guest_group.memberUid
+		cur_guests = list(group.guest_group.memberUid)
 
 		group_pack_del.insert(0, (del_guests, cur_guests, group.guest_group.del_Users))
 		group_pack_add.insert(0, (add_guests, cur_guests, group.guest_group.add_Users))
@@ -574,40 +574,29 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	# shortcut in loops
 	byl = LMC.users.by_login
 
-	# NOTE: the order is important: we delete, then add. We demote, then promote.
-	# this avoids conflicts and symlinks overwrite.
-	for (var, cur, func) in group_pack_del:
-		to_del = []
+	def not_contains(a, b):
+		return not operator.contains(a, b)
 
-		for one in var:
-			if one in cur:
+	# NOTE: the order is important: we delete, then add; we demote, then promote.
+	# this avoids conflicts and symlinks overwrite/deletion.
+	for pack, operator_ in ((group_pack_del, operator.contains),
+							(group_pack_add, not_contains)):
+		for var, cur, func in pack:
+			to_operate = []
+
+			for one in var:
+				if operator_(cur, one):
+					try:
+						#print '>>> del/add', one, func
+						to_operate.append(byl(one))
+					except:
+						print_exc()
+
+			if to_operate != []:
 				try:
-					to_del.append(byl(one))
+					func(to_operate, batch=True)
 				except:
 					print_exc()
-
-		if to_del != []:
-			try:
-				func(to_del, batch=True)
-			except:
-				print_exc()
-
-	for (var, cur, func) in group_pack_add:
-		to_add = []
-
-		for one in var:
-			if one not in cur:
-				try:
-					to_add.append(byl(one))
-				except:
-					print_exc()
-
-		if to_add != []:
-			try:
-				func(to_add, batch=True)
-			except:
-				print_exc()
-
 
 	return w.HTTP_TYPE_REDIRECT, successfull_redirect
 def main(uri, http_user, sort="name", order="asc", **kwargs):
