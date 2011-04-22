@@ -105,15 +105,16 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 	"""remove user account."""
 
 	title = _("Remove user account %s") % login
-
 	user = LMC.users.by_login(login)
 
-	if user._wmi_protected():
+	if user._wmi_protected() and LMC.users.by_login(http_user) not in LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members:
 		return w.forgery_error(title)
 
-	if login == http_user or login in \
+	if login == http_user or user in \
 			LMC.groups.by_name(
-				LMC.configuration.defaults.admin_group).all_members:
+				LMC.configuration.defaults.admin_group).all_members \
+			or users.is_system_restricted:
 		return w.fool_proof_protection_error( _('Did you <em>really</em> think '
 			'the system could have allowed you to delete your own account or '
 			'an admin account? I don\'t.'), title)
@@ -444,15 +445,20 @@ def edit(uri, http_user, login, **kwargs):
 	user  = LMC.users.by_login(login)
 	title = _('Edit account %s') % login
 
-	if user._wmi_protected():
+	if user._wmi_protected() and LMC.users.by_login(http_user) not in LMC.groups.by_name(
+			LMC.configuration.defaults.admin_group).all_members:
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
 
 	try:
-		profile = _("Standard account") \
-						if user.primaryGroup.profile is None \
-						else user.primaryGroup.profile.name
+		if user.primaryGroup.profile is None:
+			if user.is_system:
+				profile = _('System account')
+			else:
+				profile = _("Standard account")
+		else:
+			profile = user.primaryGroup.profile.name
 
 		dbl_lists = {}
 
@@ -566,7 +572,8 @@ def view(uri, http_user, login, **kwargs):
 	user  = LMC.users.by_login(login)
 	title = _('View account %s') % login
 
-	if user._wmi_protected():
+	if user._wmi_protected() and LMC.users.by_login(http_user) not in LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members:
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -724,7 +731,11 @@ def record(uri, http_user, login, loginShell=None, password="",
 	user  = LMC.users.by_login(login)
 	title = _("Modification of account %s") % login
 
-	if user._wmi_protected():
+	not_super_admin = (not LMC.users.by_login(http_user)
+			in LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members)
+
+	if user._wmi_protected() and not_super_admin:
 		return w.forgery_error(title)
 
 	# protect against URL forgery
@@ -735,10 +746,10 @@ def record(uri, http_user, login, loginShell=None, password="",
 
 		if hasattr(group_list, '__iter__'):
 			for group in group_list:
-				if LMC.groups.by_name(group)._wmi_protected(complete=False):
+				if LMC.groups.by_name(group)._wmi_protected(complete=False) and not_super_admin:
 					return w.forgery_error(title)
 		else:
-			if LMC.groups.by_name(group_list)._wmi_protected(complete=False):
+			if LMC.groups.by_name(group_list)._wmi_protected(complete=False) and not_super_admin:
 				return w.forgery_error(title)
 
 	wmi_group = LMC.configuration.licornd.wmi.group
@@ -807,6 +818,9 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 	""" display all users in a nice HTML page. """
 	start = time.time()
 
+	super_admin = LMC.users.by_login(http_user) in LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members
+
 	LMC.users.acquire()
 	LMC.groups.acquire()
 	LMC.profiles.acquire()
@@ -832,19 +846,26 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 
 		totals[_('Standard account')] = 0
 
+		if super_admin:
+			totals[_('System account')] = 0
+
 		title = _("User accounts")
 		data  = w.page_body_start(uri, http_user, ctxtnav, title)
 
-		if order == "asc": reverseorder = "desc"
-		else:              reverseorder = "asc"
+		if order == "asc":
+			reverseorder = "desc"
+		else:
+			reverseorder = "asc"
 
 		data += '<table id="users_list">\n		<tr class="users_list_header">\n'
 
-		for (sortcolumn, sortname) in ( ('', ''),
-			("gecos", _("Full name")),
-			("login", _("Identifier")),
-			("profile", _("Profile")),
-			("locked", _("Locked")) ):
+		for (sortcolumn, sortname) in (
+				('', ''),
+				("gecos", _("Full name")),
+				("login", _("Identifier")),
+				("profile", _("Profile")),
+				("locked", _("Locked"))
+			):
 			if sortcolumn == sort:
 				data += '''			<th><img src="/images/sort_%s.png"
 					alt="%s order image" />&#160;
@@ -855,6 +876,7 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 				data += '''			<th><a href="/users/list/%s/asc"
 				title="%s">%s</a></th>\n''' % (sortcolumn,
 					_("Click to sort on this column."), sortname)
+
 		data += '		</tr>\n'
 
 		def html_build_compact(user):
@@ -935,8 +957,12 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 					_("Definitely remove account from the system."))
 			return html_data
 
+		if super_admin:
+			sel_filter = filters.ALL
+		else:
+			sel_filter = filters.STANDARD
 
-		for user in users.select(filters.STANDARD):
+		for user in users.select(sel_filter):
 			login = user.login
 			uid   = user.uid
 
@@ -950,8 +976,13 @@ def main(uri, http_user, sort="login", order="asc", **kwargs):
 				'locked' : str(user.locked) + login
 				}
 
-			p = _("Standard account") if user.primaryGroup.profile is None \
-											else user.primaryGroup.profile.name
+			if user.primaryGroup.profile is None:
+				if user.is_system:
+					p = _("System account")
+				else:
+					p = _("Standard account")
+			else:
+				p = user.primaryGroup.profile.name
 
 			accounts[uid]['profile']      = '%s%s' % (p, login)
 			accounts[uid]['profile_name'] = p

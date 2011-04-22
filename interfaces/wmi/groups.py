@@ -216,7 +216,9 @@ def view(uri, http_user, name,**kwargs):
 	group = LMC.groups.by_name(name)
 	title = _("Details of group %s") % name
 
-	if group._wmi_protected(complete=False):
+	if group._wmi_protected(complete=False) and LMC.users.by_login(http_user) \
+				not in LMC.groups.by_name(
+					LMC.configuration.defaults.admin_group).all_members:
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title)
@@ -349,7 +351,9 @@ def edit(uri, http_user, name, **kwargs):
 	group = LMC.groups.by_name(name)
 	title = _("Editing group %s") %  name
 
-	if group._wmi_protected(complete=False):
+	if group._wmi_protected(complete=False) and LMC.users.by_login(http_user) \
+				not in LMC.groups.by_name(
+					LMC.configuration.defaults.admin_group).all_members:
 		return w.forgery_error(title)
 
 	data  = w.page_body_start(uri, http_user, ctxtnav, title, False)
@@ -511,7 +515,11 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 	group = LMC.groups.by_name(name)
 	title = _("Modifying group %s") % name
 
-	if group._wmi_protected(complete=False):
+	not_super_admin = (not LMC.users.by_login(http_user)
+			in LMC.groups.by_name(
+				LMC.configuration.defaults.admin_group).all_members)
+
+	if group._wmi_protected(complete=False) and not_super_admin:
 		return w.forgery_error(title)
 
 	# protect against URL forgery
@@ -519,20 +527,22 @@ def record(uri, http_user, name, skel=None, permissive=False, description=None,
 			guests_source, guests_dest):
 		if hasattr(user_list, '__iter__'):
 			for user in user_list:
-				if LMC.users.by_login(user)._wmi_protected():
+				if LMC.users.by_login(user)._wmi_protected() and not_super_admin:
 					return w.forgery_error(title)
 		else:
-			if LMC.users.by_login(user_list)._wmi_protected():
+			if LMC.users.by_login(user_list)._wmi_protected() and not_super_admin:
 				return w.forgery_error(title)
 
-	if name == LMC.configuration.licornd.wmi.group and (
+	if name in (LMC.configuration.licornd.wmi.group,
+				LMC.configuration.defaults.admin_group) and (
 		http_user in members_source
 		or http_user in resps_source
 		or http_user in guests_source):
 		return w.fool_proof_protection_error(_("The system won't let you "
-			"remove your own account from the {wmi_group} group, "
-			"sorry.").format(
-				wmi_group=LMC.configuration.licornd.wmi.group), title)
+			"remove your own account from the {wmi_group} or {admin_group} "
+			"groups, sorry.").format(
+				wmi_group=LMC.configuration.licornd.wmi.group,
+				admin_group=LMC.configuration.defaults.admin_group), title)
 
 	data    = '%s<h1>%s</h1>' % (w.backto(), title)
 
