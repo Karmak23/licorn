@@ -748,8 +748,8 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		assert ltrace('machines', '> %s: initial_scan()' % caller)
 
-		logging.info('%s: %s initial network scan.' % (caller,
-			stylize(ST_RUNNING, 'started')))
+		logging.info(_(u'{0}: {1} initial network discovery.').format(caller,
+									stylize(ST_RUNNING, _(u'started'))))
 
 		with self.lock:
 
@@ -767,44 +767,54 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					L_network_enqueue(priorities.LOW, machine.resolve)
 
 			# THEN scan the whole LAN to discover more machines.
-			L_network_enqueue(priorities.LOW, self.scan_network)
+			if LMC.configuration.licornd.network.lan_scan:
+				L_network_enqueue(priorities.LOW, self.scan_network)
+			else:
+				logging.notice(_('{0}: network auto-discovery disabled by '
+					'configuration rule {1}, not going further.').format(
+						caller, stylize(ST_ATTR, 'licornd.network.lan_scan')))
 
 		assert ltrace('machines', '< %s: initial_scan()' % caller)
-	def scan_network(self):
+	def scan_network(self, network_to_scan=None):
 		""" Scan a whole network and add all discovered machines to
-		the local configuration. """
+		the local configuration. If arg"""
 
 		caller = current_thread().name
 
 		assert ltrace('machines', '> %s: scan_network()' % caller)
 
-		if LMC.configuration.licornd.network.lan_scan:
-			known_ips   = self.keys()
-			ips_to_scan = []
+		known_ips   = self.keys()
+		ips_to_scan = []
+
+		if network_to_scan is None:
 			for iface in network.interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
+
 				if 2 in iface_infos:
 					logging.info('%s: programming scan of LAN %s.0/%s.'
 						% (caller, iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 							network.netmask2prefix(
 												iface_infos[2][0]['netmask'])))
 
-					with self.lock:
-						for ipaddr in ipcalc.Network('%s.0/%s' % (
-								iface_infos[2][0]['addr'].rsplit('.', 1)[0],
-								network.netmask2prefix(
-									iface_infos[2][0]['netmask']))):
-							# need to convert because ipcalc returns IP() objects.
-							ipaddr = str(ipaddr)
-							if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
-								if ipaddr in known_ips:
-									L_network_enqueue(priorities.LOW,
-															self[str(ipaddr)].ping)
-								else:
-									self.add_machine(mid=str(ipaddr))
+					for ipaddr in ipcalc.Network('%s.0/%s' % (
+							iface_infos[2][0]['addr'].rsplit('.', 1)[0],
+							network.netmask2prefix(
+								iface_infos[2][0]['netmask']))):
+						# need to convert because ipcalc returns IP() objects.
+						ips_to_scan.append(str(ipaddr))
 		else:
-			logging.progress('%s: LAN scan disabled by configuration '
-														'directive.' % caller)
+			for netw in network_to_scan.split(','):
+				for ipaddr in ipcalc.Network(netw):
+					ips_to_scan.append(str(ipaddr))
+
+		for ipaddr in ips_to_scan:
+			if ipaddr[-2:] != '.0' and ipaddr[-4:] != '.255':
+				if ipaddr in known_ips:
+					L_network_enqueue(priorities.LOW,
+											self[str(ipaddr)].ping)
+				else:
+					self.add_machine(mid=str(ipaddr))
+
 		assert ltrace('machines', '< %s: scan_network()' % caller)
 	def goodbye_from(self, remote_ips):
 		""" this method is called on the remote side, when the local side calls
