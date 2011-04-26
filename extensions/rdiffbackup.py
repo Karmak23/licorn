@@ -884,7 +884,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						'Please plug a {app_name} enabled volume into '
 						'your server before starting this procedure.'
 						'<br /><br />See <a href="http://docs.licorn.org'
-						'/extensions/rdiffbackup.html">'
+						'/extensions/rdiffbackup.en.html">'
 						'Backup-related documentation</a> for '
 						'details on enabling backup volumes.').format(
 						app_name=LMC.configuration.app_name))))
@@ -985,7 +985,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			data += backup_status
 
-			for volume in backup_volumes:
+			for volume in self._backup_enabled_volumes():
 				base_div = ('<h2>{h2title}</h2>\n'
 							'<p>{eject_status}</p>\n'
 							'<p>{backup_info}</p>\n'
