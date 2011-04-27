@@ -18,7 +18,14 @@ from licorn.foundations.ltrace import ltrace
 
 # used for static data only
 from licorn.core import LMC
-configuration = LMC.configuration
+
+if not hasattr(LMC, 'configuration'):
+	# this is a special case for documentation generation, where licorn modules
+	# are imported from sphinx, while LMC is not initialized.
+	from licorn.foundations.base import LicornConfigObject
+	LMC = LicornConfigObject()
+	LMC.configuration = LicornConfigObject()
+	LMC.configuration.app_name = 'Licorn®'
 
 licence_text = _(u'{0} is distributed under the <a href="http://www.gnu.org/'
 	'licenses/gpl.html">GNU GPL version 2</a> license, without any kind of '
@@ -412,7 +419,7 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 <script language="javascript" type="text/javascript" src="/js/flotr-0.2.0-alpha.js"></script>
 </head>
 <body>
-""" % (_("%s WMI:") %configuration.app_name, title)
+""" % (_("%s WMI:") % LMC.configuration.app_name, title)
 def tail():
 	return """\n</body></html>"""
 
