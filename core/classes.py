@@ -2187,8 +2187,8 @@ class CoreFSUnitObject:
 
 								if length != old_length:
 									old_length = length
-									logging.progress(_('{0} {1}: meta-data changed on '
-										'path {1}.').format(
+									logging.progress(_('{0} {1}: meta-data '
+										'changed on path {2}.').format(
 											self.controller.object_type_str,
 											stylize(ST_NAME, self.name),
 											stylize(ST_PATH, checked_path)))
@@ -2198,8 +2198,8 @@ class CoreFSUnitObject:
 
 						if full_display:
 							# FIXME: pluralize
-							logging.progress(_('{0} {1}: meta-data changed on {2} '
-								'path(s).').format(
+							logging.progress(_('{0} {1}: meta-data changed '
+								'on {2} path(s).').format(
 									self.controller.object_type_str,
 									stylize(ST_NAME, self.name),
 									stylize(ST_PATH, len(checked))))
@@ -2207,7 +2207,8 @@ class CoreFSUnitObject:
 					except TypeError:
 						# nothing to check (fsapi.*() returned None and yielded nothing).
 						if full_display:
-							logging.info(_('{0} {1}: no shared data to check.').format(
+							logging.info(_('{0} {1}: no shared data to '
+								'check.').format(
 								self.controller.object_type_str,
 								stylize(ST_NAME, self.name)))
 
