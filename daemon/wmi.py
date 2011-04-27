@@ -83,7 +83,7 @@ class WMIThread(LicornBasicThread):
 					count += 1
 					time.sleep(1)
 				else:
-					logging.error(_(u'{0}: socket error %s.').format(
+					logging.error(_(u'{0}: socket error {1}.').format(
 						stylize(ST_NAME, self.name), e))
 					self.httpd = None
 					self.stop()

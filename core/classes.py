@@ -710,7 +710,7 @@ class CoreFSController(CoreController):
 							self.file_name, self.line_no,
 							text=acl,
 							optional_exception=_(u'posix1e.ACL(text=%s)'
-								'.check() fail') % di_text)
+								'.check() call failed.') % di_text)
 
 				if dir_info.content_acl:
 					di_text = dir_info.dirs_perm[:].replace(
@@ -722,7 +722,7 @@ class CoreFSController(CoreController):
 							self.file_name, self.line_no,
 							text=acl,
 							optional_exception=_(u'posix1e.ACL(text=%s)'
-								'.check() fail') % dir_info.root_dir_perm)
+								'.check() call failed.') % dir_info.root_dir_perm)
 
 			return dir_info
 		def expand_tilde(self, text, object_id):
