@@ -58,12 +58,17 @@ class SquidExtension(Singleton, ServiceExtension):
 		# standalone one (no data, just configuration).
 		self.controllers_compat = []
 
+		# we could be squid v2 or v3.
+
 		self.service_name = 'squid'
 		self.paths.squid_conf = '/etc/squid/squid.conf'
+		self.paths.squid3_conf = '/etc/squid/squid.conf'
 		self.paths.squid_bin = '/usr/sbin/squid'
+		self.paths.squid3_bin = '/usr/sbin/squid3'
 		self.paths.squid_pid = '/var/run/squid.pid'
 
 		self.defaults_conf = self.get_defaults_conf()
+
 		self.unwanted_default_conf = [
 			('acl', 'localnet src 10.0.0.0/8	# RFC1918 possible internal network'),
 			('acl', 'localnet src 172.16.0.0/12	# RFC1918 possible internal network'),
@@ -140,16 +145,16 @@ class SquidExtension(Singleton, ServiceExtension):
 	def get_defaults_conf(self):
 		""" TODO """
 
-		#attention: "dict" est un mot réservé (builtin "dict()" de python)
-		dict = Enumeration()
-		dict['port'] = '3128'
-		dict['client_file'] = '/etc/environment'
-		dict['apt_conf'] = '/etc/apt/apt.conf.d/proxy'
-		dict['client_cmd_http'] = 'http_proxy'
-		dict['client_cmd_ftp'] = 'ftp_proxy'
+		conf_dict = Enumeration()
+		conf_dict['port']            = '3128'
+		conf_dict['client_file']     = '/etc/environment'
+		conf_dict['apt_conf']        = '/etc/apt/apt.conf.d/00-proxy'
+		conf_dict['client_cmd_http'] = 'http_proxy'
+		conf_dict['client_cmd_ftp']  = 'ftp_proxy'
 
 		if LMC.configuration.licornd.role == roles.SERVER:
-			dict['subnet'] = []
+			conf_dict['subnet'] = []
+
 			for iface in network.interfaces():
 				iface_infos = netifaces.ifaddresses(iface)
 				if 2 in iface_infos:
@@ -157,44 +162,57 @@ class SquidExtension(Singleton, ServiceExtension):
 						iface_infos[2][0]['addr'].rsplit('.', 1)[0],
 						network.netmask2prefix(
 							iface_infos[2][0]['netmask']))
-					dict['subnet'].append(subnet)
+					conf_dict['subnet'].append(subnet)
 
-			dict['config_file'] = '/etc/squid/squid.conf'
-			dict['host'] = '127.0.0.1'
+			conf_dict['config_file'] = '/etc/squid/squid.conf'
+			conf_dict['host'] = '127.0.0.1'
+
 		else:
-			dict['host'] = LMC.configuration.server_main_address
+			conf_dict['host'] = LMC.configuration.server_main_address
 
-		dict['client_cmd_value_http'] = '"http://%s:%s/"' % (
-			dict['host'], dict['port'])
-		dict['client_cmd_value_ftp'] = '"ftp://%s:%s/"' % (
-			dict['host'], dict['port'])
-		dict['apt_cmd_http'] = 'Acquire::http::Proxy'
-		dict['apt_cmd_http_value'] = '"http://%s:%s";' % (
-			dict['host'], dict['port'])
-		dict['apt_cmd_ftp'] = 'Acquire::ftp::Proxy'
-		dict['apt_cmd_ftp_value'] = '"ftp://%s:%s";' % (
-			dict['host'], dict['port'])
+		conf_dict['client_cmd_value_http'] = '"http://%s:%s/"' % (
+			conf_dict['host'], conf_dict['port'])
 
-		return dict
+		conf_dict['client_cmd_value_ftp'] = '"ftp://%s:%s/"' % (
+			conf_dict['host'], conf_dict['port'])
+
+		conf_dict['apt_cmd_http'] = 'Acquire::http::Proxy'
+		conf_dict['apt_cmd_http_value'] = '"http://%s:%s/";' % (
+			conf_dict['host'], conf_dict['port'])
+		conf_dict['apt_cmd_ftp'] = 'Acquire::ftp::Proxy'
+		conf_dict['apt_cmd_ftp_value'] = '"ftp://%s:%s/";' % (
+			conf_dict['host'], conf_dict['port'])
+
+		return conf_dict
 	def initialize(self):
 		""" TODO """
 		assert ltrace(self.name, '> initialize()')
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 
-			if os.path.exists(self.paths.squid_bin) \
-				and os.path.exists(self.paths.squid_conf):
+			if os.path.exists(self.paths.squid_bin):
 				self.available = True
 
+				self.name = 'squid2'
+
 				self.configuration = ConfigFile(self.paths.squid_conf,
-					name='squid', separator=' ')
+							name='squid', separator=' ', caller=self.name)
+
+			elif os.path.exists(self.paths.squid3_bin):
+				self.available = True
+
+				self.name = self.service_name = 'squid3'
+				self.service_type =	services.SYSV
+
+				self.configuration = ConfigFile(self.paths.squid3_conf,
+							name='squid', separator=' ', caller=self.name)
 
 			else:
-				logging.warning2(_(u'{0}: not available because {1} or {2} '
+				logging.warning2(_(u'{0}: not available because {1} '
 					'do not exist on the system.').format(
-						self.name, stylize(ST_PATH, self.paths.squid_bin),
-						stylize(ST_PATH, self.paths.squid_conf)))
-				self.remove_configuration()
+						stylize(ST_NAME, self.name),
+						stylize(ST_PATH, self.paths.squid_bin)))
+				self.remove_configuration(batch=True)
 
 		else:
 			# squid extension is always available on clients.
@@ -223,7 +241,7 @@ class SquidExtension(Singleton, ServiceExtension):
 			return True
 		else:
 			return False
-	def update_client(self, batch=None, auto_answer=None):
+	def update_client(self, batch=False, auto_answer=None):
 		""" update the client, make the client connecting through the proxy if
 		the extension is enabled.
 			We need to set/unset several parameters in different places :
@@ -239,49 +257,48 @@ class SquidExtension(Singleton, ServiceExtension):
 			(batch, auto_answer))
 
 		env_file = ConfigFile(self.defaults_conf.client_file,
-			separator='=')
+								separator='=', caller=self.name)
 		env_need_rewrite = False
 
 		if self.enabled:
-			# set the env param
+
+			# set variables for the current environment
 			os.putenv(self.defaults_conf.client_cmd_http,
 				self.defaults_conf.client_cmd_value_http)
+
+			os.putenv(self.defaults_conf.client_cmd_http.upper(),
+				self.defaults_conf.client_cmd_value_http)
+
 			os.putenv(self.defaults_conf.client_cmd_ftp,
+				self.defaults_conf.client_cmd_value_ftp)
+
+			os.putenv(self.defaults_conf.client_cmd_ftp.upper(),
 				self.defaults_conf.client_cmd_value_ftp)
 
 			# set 'http_proxy' in /etc/environment
 			for cmd, value in (
 				(self.defaults_conf.client_cmd_http,
-				self.defaults_conf.client_cmd_value_http) ,
+				self.defaults_conf.client_cmd_value_http),
+				(self.defaults_conf.client_cmd_http.upper(),
+				self.defaults_conf.client_cmd_value_http),
+				(self.defaults_conf.client_cmd_ftp.upper(),
+				self.defaults_conf.client_cmd_value_ftp),
 				(self.defaults_conf.client_cmd_ftp,
 				self.defaults_conf.client_cmd_value_ftp)):
 
-				if env_file.has(cmd):
-					if env_file[cmd] != value:
+				if env_file.has('export ' + cmd):
+					if env_file['export ' + cmd] != value:
 
 						env_need_rewrite = True
-						env_file.add(
-							key=cmd,
-							value=value,
-							replace=True)
+						env_file.add(key='export ' + cmd,
+							value=value, replace=True)
 				else:
 					env_need_rewrite = True
-					env_file.add(
-						key=cmd,
+					env_file.add(key='export ' + cmd,
 						value=value)
 
 			if env_need_rewrite:
-				if batch or logging.ask_for_repair('%s must be modified' %
-					stylize(ST_PATH, self.defaults_conf.client_file),
-					auto_answer=auto_answer):
-					env_file.backup()
-					env_file.save()
-					logging.info('Written configuration file %s.' %
-					stylize(ST_PATH, self.defaults_conf.client_file))
-				else:
-					raise exceptions.LicornModuleError(
-						'configuration file %s must be altered to continue.' %
-							self.defaults_conf.client_file)
+				env_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 
 			if os.path.exists('/usr/bin/gconftool-2'):
 
@@ -302,6 +319,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					#'--list-type',  'string'])
 				base_command = [ 'gconftool-2', '--direct', '--config-source',
 					'xml:readwrite:/etc/gconf/gconf.xml.mandatory', '--type' ]
+
 				for gconf_value in gconf_values:
 					command = base_command[:]
 					command.extend(gconf_value)
@@ -310,36 +328,27 @@ class SquidExtension(Singleton, ServiceExtension):
 
 			# set params in apt conf
 			apt_file = ConfigFile(self.defaults_conf.apt_conf,
-				separator=' ')
+									separator=' ', caller=self.name)
 			apt_need_rewrite = False
 
 			if not apt_file.has(key=self.defaults_conf.apt_cmd_http):
 				apt_need_rewrite = True
 				apt_file.add(key=self.defaults_conf.apt_cmd_http,
 					value=self.defaults_conf.apt_cmd_http_value)
+
 			if not apt_file.has(key=self.defaults_conf.apt_cmd_ftp):
 				apt_need_rewrite = True
 				apt_file.add(key=self.defaults_conf.apt_cmd_ftp,
 					value=self.defaults_conf.apt_cmd_ftp_value)
-			if apt_need_rewrite:
-				if batch or logging.ask_for_repair('%s must be modified' %
-					stylize(ST_PATH, self.defaults_conf.apt_conf),
-					auto_answer=auto_answer):
-					apt_file.backup()
-					apt_file.save()
-					logging.info('Written configuration file %s.' %
-					stylize(ST_PATH, self.defaults_conf.apt_conf))
-				else:
-					raise exceptions.LicornModuleError(
-						'configuration file %s must be altered to continue.' %
-							elf.defaults_conf.apt_conf)
 
+			if apt_need_rewrite:
+				apt_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 
 		else:
 			self.remove_configuration()
 
 		assert ltrace(self.name, '< update_client()' )
-	def check(self, batch=None, auto_answer=None):
+	def check(self, batch=False, auto_answer=None):
 		""" check if *stricly needed* values are in the configuration file.
 		if they are not, the extension will not be enabled
 
@@ -384,18 +393,7 @@ class SquidExtension(Singleton, ServiceExtension):
 					self.configuration.remove(key, value=value)
 
 			if need_rewrite:
-				if batch or logging.ask_for_repair('%s must be modified' %
-						stylize(ST_PATH, self.paths.squid_conf),
-						auto_answer=auto_answer):
-					self.configuration.backup()
-					self.configuration.save()
-					logging.info('Written configuration file %s.' %
-						stylize(ST_PATH, self.paths.squid_conf))
-				else:
-					raise exceptions.LicornCheckError(
-						'configuration file %s must be altered to continue.' %
-							self.paths.sshd_config)
-
+				self.configuration.backup_and_save(batch=batch, auto_answer=auto_answer)
 				self.service(svccmds.RELOAD)
 
 		# finally, update system to deal or not with the extension.
@@ -403,22 +401,28 @@ class SquidExtension(Singleton, ServiceExtension):
 
 		assert ltrace(self.name, '< check()' )
 		return True
-	def remove_configuration(self, batch=None, auto_answer=None):
+	def remove_configuration(self, batch=False, auto_answer=None):
 		""" TODO """
 		env_file = ConfigFile(self.defaults_conf.client_file,
-			separator='=')
+								separator='=', caller=self.name)
 		env_need_rewrite = False
 
 		# unset env param
-		os.putenv(self.defaults_conf.client_cmd_http,'')
-		os.putenv(self.defaults_conf.client_cmd_ftp,'')
+		os.putenv(self.defaults_conf.client_cmd_http, '')
+		os.putenv(self.defaults_conf.client_cmd_ftp, '')
 
 		# unset 'http_proxy' in /etc/environment
 		for cmd in (self.defaults_conf.client_cmd_http,
-			self.defaults_conf.client_cmd_ftp):
+					self.defaults_conf.client_cmd_http.upper(),
+					self.defaults_conf.client_cmd_ftp,
+					self.defaults_conf.client_cmd_ftp.upper()):
 
 			if env_file.has(cmd):
 				env_file.remove(key=cmd)
+				env_need_rewrite = True
+
+			if env_file.has('export ' + cmd):
+				env_file.remove(key='export ' + cmd)
 				env_need_rewrite = True
 
 		if os.path.exists('/usr/bin/gconftool-2'):
@@ -435,18 +439,7 @@ class SquidExtension(Singleton, ServiceExtension):
 			os.unlink(self.defaults_conf.apt_conf)
 
 		if env_need_rewrite:
-			if batch or logging.ask_for_repair('%s must be modified' %
-				stylize(ST_PATH, self.defaults_conf.client_file),
-				auto_answer=auto_answer):
-				env_file.backup()
-				env_file.save()
-				logging.info('Written configuration file %s.' %
-				stylize(ST_PATH, self.defaults_conf.client_file))
-			else:
-				raise exceptions.LicornModuleError(
-						'configuration file %s must be altered to continue.' %
-							self.defaults_conf.client_file)
-
+			env_file.backup_and_save(batch=batch, auto_answer=auto_answer)
 
 	def enable(self, batch=False, auto_answer=None):
 		""" TODO """

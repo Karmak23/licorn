@@ -10,7 +10,8 @@ Licorn foundations: classes - http://docs.licorn.org/
 
 """
 
-import sys, os, time
+import sys, os, time, tempfile
+from threading import current_thread
 
 # PLEASE do not import "logging" here.
 import exceptions, pyutils, fsapi
@@ -30,19 +31,35 @@ class ConfigFile(Enumeration):
 	"""
 
 	def __init__(self, filename, name=None, reader=readers.generic_reader,
-		separator=None):
+		separator=None, caller=None):
 		assert ltrace('objects', '| ConfigFile.__init__(filename=%s, name=%s)' %
 			(filename, name))
 		Enumeration.__init__(self, name=name if name else filename)
 
 		self._filename = filename
+
 		if not os.path.exists(filename):
 			fsapi.touch(filename)
 
 		self._separator = separator
 		self._reader = reader
 
+		self.__caller = caller
+
 		self.reload()
+	@property
+	def _caller(self):
+		""" read-only property, returning the name of the caller (as a string).
+			The caller can be a thread, a module, another Licorn® object
+			instance, whatever.
+
+			If it is None (not set at creation of the current :class:`ConfigFile`)
+			instance, the name of the current thread will be returned.
+		"""
+		if self.__caller is None:
+			return current_thread()
+		else:
+			return self.__caller
 	def __str__(self):
 		data = ''
 
@@ -68,15 +85,38 @@ class ConfigFile(Enumeration):
 		with FileLock(self, filename):
 			if self._separator is None:
 				func = self._reader(filename)
+
 			else:
 				func = self._reader(filename, self._separator)
 
 			for key, value in func.iteritems():
+				#print '>> setting', key, '=', value
+
 				if hasattr(value, '__iter__'):
 					for v in value:
 						add_or_dupe_enumeration(self, key, v)
 				else:
 					self[key] = value
+	def backup_and_save(self, batch=False, auto_answer=None):
+		""" do the "backup and save" operation in one method call, which wraps
+			logging and user questioning, to avoid code duplication when this
+			functionnality is required (and it is *a lot*)."""
+
+		if batch or logging.ask_for_repair(_(u'{0}: system file {1} must be '
+			'modified for the configuration to be complete. Do it?').format(
+						stylize(ST_NAME, self._caller),
+						stylize(ST_PATH, self._filename)),
+					auto_answer=auto_answer):
+
+			self.backup()
+			self.save()
+
+			logging.notice(_(u'{0}: altered configuration file {1}.').format(
+				stylize(ST_NAME, self._caller), stylize(ST_PATH, self._filename)))
+
+		else:
+			raise exceptions.LicornModuleError(_(u'{0}: configuration file {1} '
+				'must be altered to continue.').format(self._caller, self._filename))
 	def backup(self):
 		return fsapi.backup_file(self._filename)
 	def save(self, filename=None):
@@ -94,6 +134,21 @@ class ConfigFile(Enumeration):
 
 		with FileLock(self, filename):
 			open(filename, 'w').write(data)
+
+			# for /etc/passwd
+			ftempp, fpathp = tempfile.mkstemp(dir=os.path.dirname(filename))
+			os.write(ftempp, data)
+
+			# FIXME: implement these ch* calls properly, with dynamic values...
+			os.fchmod(ftempp, 0644)
+			#os.fchown(ftempp, 0, 0)
+
+			os.close(ftempp)
+
+			# FIXME: implement this one too...
+			#self.__hint_pwd += 1
+
+			os.rename(fpathp, filename)
 	def has(self, key, value=None):
 		""" Return true or false if config is already in. """
 
@@ -107,14 +162,14 @@ class ConfigFile(Enumeration):
 		if replace:
 			self[key] = value
 			logging.progress('%s: %s configuration key %s with value %s' % (
-				stylize(ST_PATH, self.name), stylize(ST_OK, "modified"), 
+				stylize(ST_PATH, self.name), stylize(ST_OK, "modified"),
 				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: overwritten '%s %s'" % (
 				self.name, key, value))
 		elif dont_check or not self.has(key, value):
 			pyutils.add_or_dupe_enumeration(self, key, value)
 			logging.progress('%s: %s configuration key %s with value %s' % (
-				stylize(ST_PATH, self.name), stylize(ST_OK, "added"), 
+				stylize(ST_PATH, self.name), stylize(ST_OK, "added"),
 				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: added '%s %s'" % (
 					self.name, key, value))
@@ -129,7 +184,7 @@ class ConfigFile(Enumeration):
 			else:
 				del self[key]
 			logging.progress('%s: %s configuration key %s with value %s' % (
-				stylize(ST_PATH, self.name), stylize(ST_BAD, "removed"), 
+				stylize(ST_PATH, self.name), stylize(ST_BAD, "removed"),
 				stylize(ST_NAME, key), stylize(ST_NAME, value)))
 			assert ltrace('objects', "%s: removed '%s%s'" % (
 				self.name, key, ' ' + value if value else ''))
@@ -190,6 +245,7 @@ class FileLock:
 			else:
 				try:
 					open(self.filename, "w")
+
 				except (IOError, OSError):
 					raise IOError, "Can't create lockfile %s." % self.filename
 
