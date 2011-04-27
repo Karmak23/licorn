@@ -39,7 +39,7 @@ master_doc = 'index.en'
 
 # General information about the project.
 project = u'Licorn®'
-copyright = u'2010, Olivier Cortès, Robin Lucbernet, META IT S.à.S and others'
+copyright = u'2007-2011, Olivier Cortès, Robin Lucbernet, META IT S.à.S and others'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

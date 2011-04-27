@@ -4,11 +4,11 @@
 Extension Rdiff-backup
 ======================
 
-L'extension `Rdiff-backup` gère les sauvegardes sur les disques externes.
+L'extension `Rdiff-backup` gère les sauvegardes du système sur disque externe. Les sauvegardes système contiennent toute la configuration spécifique de la machine, ainsi que toutes les données utilisateurs (contenu du :file:`/home/` principalement).
 
-Les sauvegardes ne sont pas compressées ni encryptées. La première sauvegarde nécessite environ 1Go d'espace libre (pour la partie système), en plus du volume de vos propres données (utilisateurs et groupes).
+En l'état actuel, les sauvegardes ne sont pas compressées ni encryptées. La première sauvegarde nécessitera au moins 1Gio d'espace libre pour la partie système, en plus du volume de vos propres données (utilisateurs et groupes).
 
-Les sauvegardes sont incrémentales et chaque incrément ne prend que peu d'espace (à pondérer suivant la quantité de données qui changent chaque jour, bien sûr).
+Les sauvegardes sont incrémentales et chaque incrément ne prend que peu d'espace (à moduler en fonction de la quantité de données qui changent chaque jour, bien sûr).
 
 Utilisation
 ===========
@@ -38,4 +38,4 @@ Actuellement, **les restaurations sont complètement manuelles** et doivent êtr
 Documentation pour les développeurs
 ===================================
 
-Voyez la :ref:`documentation dédiée de l'extension rdiffbackup <extensions.rdiffbackup.dev>` (en anglais).
+Voyez la :ref:`documentation dédiée de l'extension rdiffbackup <extensions.rdiffbackup.dev.en>` (en anglais).

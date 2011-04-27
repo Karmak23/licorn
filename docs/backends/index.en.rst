@@ -1,4 +1,4 @@
-.. _backends:
+.. _backends.en:
 
 ========
 Backends
@@ -7,9 +7,9 @@ Backends
 .. toctree::
 	:maxdepth: 2
 
-	shadow
-	openldap
-	dnsmasq
+	shadow.en
+	openldap.en
+	dnsmasq.en
 
 
 More to come...

@@ -10,16 +10,16 @@ The Licorn® CLI consists of five tools, used to manage the entire system:
 
 	get
 		list, select and display data
-	
+
 	add
 		add objects to the system
-	
+
 	mod
 		modify system objects
-	
-	del 
+
+	del
 		delete objects from the system
-	
+
 	chk
 		check objects, paths, configuration, whatever can be, and repair interactively (or not).
 
@@ -34,34 +34,34 @@ Licorn GET
 ==========
 
 .. toctree::
-	
-	get
+
+	get.en
 
 Licorn ADD
 ==========
 
 .. toctree::
-	
-	add
+
+	add.en
 
 Licorn MOD
 ==========
 
 .. toctree::
-	
-	mod
+
+	mod.en
 
 Licorn DEL
 ==========
 
 .. toctree::
-	
-	del
+
+	del.en
 
 Licorn CHK
 ==========
 
 .. toctree::
-	
-	chk
+
+	chk.en
 

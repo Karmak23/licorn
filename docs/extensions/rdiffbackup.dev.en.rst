@@ -1,5 +1,5 @@
 
-.. _extensions.rdiffbackup.dev:
+.. _extensions.rdiffbackup.dev.en:
 
 ==============================================
 Rdiff-backup extension developer documentation
@@ -30,3 +30,5 @@ Classes documentation
 .. automodule:: licorn.extensions.rdiffbackup
 	:members:
 	:undoc-members:
+
+

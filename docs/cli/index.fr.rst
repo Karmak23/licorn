@@ -44,33 +44,33 @@ Licorn GET
 
 .. toctree::
 
-	get
+	get.fr
 
 Licorn ADD
 ==========
 
 .. toctree::
 
-	add
+	add.fr
 
 Licorn MOD
 ==========
 
 .. toctree::
 
-	mod
+	mod.fr
 
 Licorn DEL
 ==========
 
 .. toctree::
 
-	del
+	del.fr
 
 Licorn CHK
 ==========
 
 .. toctree::
 
-	chk
+	chk.fr
 

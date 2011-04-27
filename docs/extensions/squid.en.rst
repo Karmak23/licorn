@@ -1,4 +1,4 @@
-.. _extensions.squid:
+.. _extensions.squid.en:
 
 ===============
 Squid extension
@@ -6,7 +6,7 @@ Squid extension
 
 *NOTE: this is a work in progress.*
 
-The `Squid` extension affects clients and server. It handles completely the HTTP/FTP proxy configuration for the local network.
+The `Squid` extension handles the web and FTP proxy configuration, and affects Licorn® clients and servers. It is extensively tested on Squid 2.7, and has been modified to work with Squid 3 (but not tested as much as 2.7).
 
 Server side
 ===========
@@ -24,9 +24,8 @@ Client side
 * idem for gconf/gnome (mandatory setting).
 * idem for KDE.
 
-Class documentation
-===================
 
-.. automodule:: licorn.extensions.squid
-	:members:
-	:undoc-members:
+Developper documentation
+========================
+
+see the :ref:`squid extension dedicated developer documentation <extensions.squid.dev.en>`.

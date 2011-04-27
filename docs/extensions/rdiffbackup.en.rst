@@ -1,12 +1,14 @@
-.. _extensions.rdiffbackup:
+.. _extensions.rdiffbackup.en:
 
 ======================
 Rdiff-backup extension
 ======================
 
-*this is a work in progress.*
+The `Rdiff-backup` extension takes care of backups on external volumes. Backups include system specific data (configuration), and all user data (basically, :file:`/home/` contents).
 
-The `Rdiff-backup` extension takes care of backups on external volumes.
+Currently, backups are not compressed nor encrypted. The first backup will need at least 1Gib of free space (for system data), added to your own data volume (the :file:`/home/` contents).
+
+Backups are incremental, and each increment take only a few space more (this actually depends on the volume of changing data, so this can vary a lot from a system to another).
 
 Usage
 =====
@@ -34,4 +36,4 @@ Currently, **restore operations are fully manual** and must be done outside Lico
 Developper documentation
 ========================
 
-see the :ref:`rdiffbackup dedicated developer documentation <extensions.rdiffbackup.dev>`.
+see the :ref:`rdiffbackup extension dedicated developer documentation <extensions.rdiffbackup.dev.en>`.

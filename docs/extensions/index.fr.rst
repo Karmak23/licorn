@@ -1,3 +1,4 @@
+.. _extension.fr:
 
 ============================
 Documentation des extensions
