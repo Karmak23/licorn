@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Licorn extensions: rdiff-backup - http://docs.licorn.org/extensions/rdiff_backup.html
+Licorn extensions: rdiff-backup - http://docs.licorn.org/extensions/rdiffbackup.en.html
 
-:copyright: 2010 Olivier Cortès <olive@deep-ocean.net>
+:copyright: 2010-2011 Olivier Cortès <olive@deep-ocean.net>
 
 :license: GNU GPL version 2
 
@@ -25,15 +25,17 @@ from licorn.interfaces.wmi     import WMIObject, wmi_register, wmi_unregister
 from licorn.daemon             import priorities, roles
 
 class RdiffbackupException(exceptions.LicornRuntimeException):
-	""" A type of exception to deal with rdiff-backup specific problems.
+	""" A simple type of exception, to deal with rdiff-backup specific problems.
 
 		.. versionadded:: 1.2.4
 	"""
 	pass
 class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
-	""" Handle Incremental backups via rdiff-backup.
+	""" Handle Incremental backups via rdiff-backup, and offers a
+		:class:`licorn.interfaces.wmi.WMIObject` interface for nice GUI
+		operations.
 
-		Web site: http://www.nongnu.org/rdiff-backup/
+		Rdiff-backup web site: http://www.nongnu.org/rdiff-backup/
 
 		:command:`rdiff-backup` verbosity settings go from 0 to 9, with 3 as
 		the default), and the :option:`--print-statistics` switch so some
@@ -41,12 +43,12 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		statistics will still be saved in the :file:`rdiff-backup-data`
 		directory.
 
-		Restoring:
+		Restoring::
 
 			--restore-as-of now
-							10D
-							5m4s
-							2010-01-23
+			                10D
+			                5m4s
+			                2010-01-23
 
 		Restore from increment::
 
@@ -55,8 +57,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		Cleaning::
 
-			rdiff-backup --remove-older-than 	2W host.net::/remote-dir
-												20B		(20 backups)
+			rdiff-backup --remove-older-than 2W host.net::/remote-dir
+			                                 20B    (20 backups)
 
 
 		Globing filelist::
@@ -81,68 +83,70 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		Average statistics::
 
-			rdiff-backup --calculate-average \
-			out-dir/rdiff-backup-data/session_statistics*
+			rdiff-backup --calculate-average
+			       out-dir/rdiff-backup-data/session_statistics*
 
 
-		--create-full-path
-			Normally only the final directory of the destination  path  will
-			be  created  if it does not exist. With this option, all missing
-			directories on the destination path will be  created.  Use  this
-			option  with  care:  if  there is a typo in the remote path, the
-			remote filesystem could fill up  very  quickly  (by  creating  a
-			duplicate backup tree). For this reason this option is primarily
-			aimed at scripts which automate backups.
+		Other interesting options::
+
+			--create-full-path
+				Normally only the final directory of the destination  path  will
+				be  created  if it does not exist. With this option, all missing
+				directories on the destination path will be  created.  Use  this
+				option  with  care:  if  there is a typo in the remote path, the
+				remote filesystem could fill up  very  quickly  (by  creating  a
+				duplicate backup tree). For this reason this option is primarily
+				aimed at scripts which automate backups.
 
 
-		--exclude-special-files
-			Exclude all device files, fifo files, socket files, and symbolic
-			links.
+			--exclude-special-files
+				Exclude all device files, fifo files, socket files, and symbolic
+				links.
 
 
-		-l, --list-increments
-			List  the  number  and  date of partial incremental backups con-
-			tained in the specified destination  directory.   No  backup  or
-			restore will take place if this option is given.
+			-l, --list-increments
+				List  the  number  and  date of partial incremental backups con-
+				tained in the specified destination  directory.   No  backup  or
+				restore will take place if this option is given.
 
 
-		--list-increment-sizes
-			List  the  total  size  of all the increment and mirror files by
-			time.  This may be helpful in deciding how  many  increments  to
-			keep,  and  when to --remove-older-than.  Specifying a subdirec-
-			tory is allowable; then only the sizes of the mirror and  incre-
-			ments pertaining to that subdirectory will be listed.
+			--list-increment-sizes
+				List  the  total  size  of all the increment and mirror files by
+				time.  This may be helpful in deciding how  many  increments  to
+				keep,  and  when to --remove-older-than.  Specifying a subdirec-
+				tory is allowable; then only the sizes of the mirror and  incre-
+				ments pertaining to that subdirectory will be listed.
 
 
-		--parsable-output
-			If set, rdiff-backup's output will be tailored for easy  parsing
-			by computers, instead of convenience for humans.  Currently this
-			only applies when listing increments using  the  -l  or  --list-
-			increments  switches,  where  the  time will be given in seconds
-			since the epoch.
+			--parsable-output
+				If set, rdiff-backup's output will be tailored for easy  parsing
+				by computers, instead of convenience for humans.  Currently this
+				only applies when listing increments using  the  -l  or  --list-
+				increments  switches,  where  the  time will be given in seconds
+				since the epoch.
 
 
-		--preserve-numerical-ids
-			If  set,  rdiff-backup will preserve uids/gids instead of trying
-			to preserve unames and gnames.  See the USERS AND GROUPS section
-			for more information.
+			--preserve-numerical-ids
+				If  set,  rdiff-backup will preserve uids/gids instead of trying
+				to preserve unames and gnames.  See the USERS AND GROUPS section
+				for more information.
 
 
-		--print-statistics
-			If  set,  summary  statistics will be printed after a successful
-			backup.  If not set, this information will  still  be  available
-			from  the  session  statistics file.  See the STATISTICS section
-			for more information.
+			--print-statistics
+				If  set,  summary  statistics will be printed after a successful
+				backup.  If not set, this information will  still  be  available
+				from  the  session  statistics file.  See the STATISTICS section
+				for more information.
 
 
-		-r, --restore-as-of restore_time
-			Restore the specified directory as it was  as  of  restore_time.
-			See  the TIME FORMATS section for more information on the format
-			of restore_time, and see the RESTORING section for more informa-
-			tion on restoring.
+			-r, --restore-as-of restore_time
+				Restore the specified directory as it was  as  of  restore_time.
+				See  the TIME FORMATS section for more information on the format
+				of restore_time, and see the RESTORING section for more informa-
+				tion on restoring.
 
 
-		.. note:: TODO: snapshot backups http://wiki.rdiff-backup.org/wiki/index.php/UnattendedRdiff
+		.. TODO:: snapshot backups http://wiki.rdiff-backup.org/wiki/index.php/UnattendedRdiff
 
 
 		.. versionadded:: 1.2.4
@@ -241,12 +245,14 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		assert ltrace(self.name, '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
-		""" the :class:`RdiffbackupExtension` is enabled when the
-			:mod:`~licorn.extensions.volumes` extension is available (we need
-			volumes to backup onto).
+		""" the :class:`RdiffbackupExtension` is enabled if available and when
+			the :mod:`~licorn.extensions.volumes` extension is available too
+			(we need volumes, to backup onto).
 
 			If we are enabled, create a :class:`RdiffbackupThread` instance
-			to be later collected and started by the daemon.
+			to be later collected and started by the daemon, the necessary
+			internal :class:`~threading.Event` to run and synchronize
+			properly, and the wmi_object part too.
 		"""
 		if 'volumes' in LMC.extensions:
 
@@ -278,43 +284,46 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		return False
 	def __create_timer_thread(self):
-		self.threads.auto_backup_timer = LicornJobThread(
-						target=self.backup,
-						delay=LMC.configuration.backup.interval,
-						tname='extensions.rdiffbackup.AutoBackupTimer',
-						# first backup starts 1 minutes later.
-						time=(time.time()+15.0)
-						)
-		self.threads.auto_backup_timer.start()
-		self.events.active.set()
+		if not self.events.active.is_set():
+			self.threads.auto_backup_timer = LicornJobThread(
+							target=self.backup,
+							delay=LMC.configuration.backup.interval,
+							tname='extensions.rdiffbackup.AutoBackupTimer',
+							# first backup starts 1 minutes later.
+							time=(time.time()+15.0)
+							)
+			self.threads.auto_backup_timer.start()
+			self.events.active.set()
 	def __stop_timer_thread(self):
-		self.events.active.clear()
+		if self.events.active.is_set():
+			self.events.active.clear()
 
-		# we need to test the existence of the thread, because this method
-		# can be called multiple times. When non-enabled volumes are removed,
-		# it will; and this will fail because there was NO timer anyway.
-		if hasattr(self.threads, 'auto_backup_timer'):
-			self.threads.auto_backup_timer.stop()
-			del self.threads.auto_backup_timer
+			# we need to test the existence of the thread, because this method
+			# can be called multiple times. When non-enabled volumes are removed,
+			# it will; and this will fail because there was NO timer anyway.
+			if hasattr(self.threads, 'auto_backup_timer'):
+				self.threads.auto_backup_timer.stop()
+				del self.threads.auto_backup_timer
 	def enable(self):
-		""" This method will call :meth=:`is_enabled`, because it does exactly
-			what we need.
+		""" This method will (re-)enable the extension, if :meth:`is_enabled`
+			agrees that we can do it. The WMI object (already created by
+			:meth:`is_enabled`) will be registered (a simple "reload" in the
+			browser will see the Backup related things magically appear [again]).
 		"""
 
 		self.enabled = self.is_enabled()
 
 		if self.enabled:
+			# register our callbacks in the event manager.
 			L_event_collect(self)
-
-			if self._enabled_volumes() != []:
-				self.__create_timer_thread()
 
 			wmi_register(self)
 
-
 		return self.enabled
 	def disable(self):
-		""" disable the Timer thread. TODO: disable the WMI object. """
+		""" Disable the extension. This disables everything, from the timer
+			thread to the WMI objects, dynamically (a simple "reload" in the
+			WMI will see all "Backups" related things vanish. """
 
 		if self.events.running.is_set():
 			logging.warning(_('{0}: cannot disable now, a backup is in '
@@ -325,6 +334,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		# avoid a race with a backup beiing relaunched while we stop.
 		self.events.running.set()
 
+		# unregister our callbacks, to avoid beiing called while stopping
 		L_event_uncollect(self)
 
 		self.__stop_timer_thread()
@@ -337,29 +347,42 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		del self.volumes
 
-		self.events.running.clear()
-		del self.events.running
 		del self.events.backup
-
-		self.licornd.event_uncollect(self)
 
 		self.enabled = False
 
+		self.events.running.clear()
+		del self.events.running
+
 		return True
 	def running(self):
+		""" Returns ``True`` if a backup is currently running, else ``False``.
+		"""
 		return self.events.running.is_set()
 	def system_load(self):
-		""" TODO. """
+		""" This methods does nothing, but returns ``True``. It exists because
+			this extension is affiliated to the
+			:class:`~licorn.core.system.SystemController`, and
+			every system-affiliated class must define it.
 
-		#TODO: refresh statistics.
+			.. TODO:: in the future, this method will probably refresh
+				statistics and update the timer value according to the last
+				backup date-time.
+		"""
 
 		return True
 	def _enabled_volumes(self):
-		""" Return a list of licorn enabled volumes. """
+		""" Returns a list of Licorn® enabled volumes. """
 
 		return [ volume for volume in self.volumes if volume.enabled ]
 	def _rdiff_statistics(self, volume):
-		""" TODO """
+		""" Compute statistics on a given volume. This method internally
+			launches :program:`rdiff-backup-statistics` multiple times to
+			pre-compute statistics and save them in hidden files on the
+			volume, making WMI data outputs always ready and CPU friendly
+			(the statistics operation is very lenghty and CPU intensive, its
+			output must be cached).
+		"""
 
 		assert ltrace(self.name, '| _rdiff_statistics(%s)' % volume)
 
@@ -400,19 +423,24 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			return True
 	def _record_statistics_duration(self, volume, duration):
-		""" TODO. """
+		""" This methods does nothing yet.
+
+			.. TODO:: to be implemented.
+		"""
 
 		pass
 	def _backup_dir(self, volume):
+		""" Returns the fixed path for the backup directory of a volume, passed
+			as parameter. """
 		return '%s/%s' % (volume.mount_point, self.paths.backup_directory)
 	def _backup_enabled(self, volume):
-		""" Test if a volume is backup-enabled or not (the backup directory is
-			present on it.
+		""" Test if a volume is backup-enabled or not (is the backup directory
+			present on it?).
 
 			.. note:: This method won't automatically mount connected but
 				unmounted volumes, to avoid confusing the user, displaying
 				an information as if the volumes was mounted, whereas it
-				is not (remember locking a volume will automatically mount
+				is not (remember: locking a volume will automatically mount
 				it, and unmount it right after the operation; in queries
 				it will appear mounted, even if the situation has changed
 				just after).
@@ -424,10 +452,18 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		return False
 	def _backup_enabled_volumes(self):
+		""" Returns a list of backup-enabled volumes. """
 		return [ volume for volume in self.volumes
 						if self._backup_enabled(volume) ]
 	def recompute_statistics(self, volumes=None):
-		""" TODO """
+		""" Launch the :meth:`_rdiff_statistics` methods on each volume of a
+			list passed as parameter, or on all enabled volumes if parameter
+			is ``None``.
+
+			It will verify if the volume is Licorn® enabled before running
+			anything, and will skip unusable ones.
+
+		"""
 
 		if volumes is None:
 			volumes = self._enabled_volumes()
@@ -444,18 +480,28 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 	# a comfort alias
 	statistics = recompute_statistics
 	def _compute_needed_space(self, volume, clean=False):
+		""" Currently this method does nothing.
 
+			.. todo:: implement me.
+		"""
 		logging.progress('>> please implement volumes._compute_needed_space(self, ...)')
 	def _remove_old_backups(self, volume, size=None, number=None,
 															older_than=None):
+		""" Currently this method does nothing.
+
+			.. todo:: implement me.
+		"""
 		logging.progress('>> please implement volumes._remove_old_backups(self, ...)')
 	def time_before_next_automatic_backup(self, as_string=True):
-		""" Display a notice about time remaining before next automatic backup.
+		""" Returns the time until next automatic backup, as a nicely formatted
+			and localized string. If ``as_string`` is ``False``, the time will
+			be returned as a `float` usable directly in any calculus-expression,
+			without any formatting.
 
 			You can call this method from the daemon's interactive shell, if
 			you find it of any use::
 
-				[…]
+				[…] [press "i" on your keyboard]
 				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
 				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
 				licornd> LMC.extensions.rdiffbackup.time_before_next_automatic_backup()
@@ -471,14 +517,37 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		else:
 			return self.threads.auto_backup_timer.remaining_time()
 	def backup(self, volume=None, force=False):
-		""" Start a backup and reset the backup timer, if no other backup is
-			currently running.
+		""" Start a backup in the background (`NORMAL` priority) and reset the
+			backup timer, if no other backup is currently running. Internally,
+			this method enqueues the private :meth:`__backup_procedure` method
+			in the Service Queue.
+
+			.. note::
+				* If a backup takes more than the configured
+				  :term:`backup interval <backup.interval>` to complete,
+				  next planned backup will *not* occur because it will be
+				  cancelled by the :meth:`running` method having returned
+				  ``True``. This avoids backups running over them-selves,
+				  but implies backups are not really ran at the configured
+				  interval.
+
+				* if all service threads are busy
+				  (which is very unlikely to occur, given how many they are),
+				  the backup could eventually be delayed until one service
+				  thread is free again.
+
+				* in this very same case, the backup timer would have been
+				  reset anyway,
+				  leading to a potential desynchronization
+				  between the times of the "real" backup event and the timer
+				  completion. I find this completely harmless, until proven
+				  otherwise (feel free to shed a light on any problem I forgot).
 
 			Provided your Licorn® daemon is attached to your terminal, you can
 			launch a manual backup in the daemon's interactive shell, like
 			this::
 
-				[…] [i on keyboard]
+				[…] [press "i" on your keyboard]
 				 * [2011/11/01 20:19:22.0170] Entering interactive mode. Welcome into licornd's arcanes…
 				Licorn® @DEVEL@, Python 2.6.6 (r266:84292, Sep 15 2010, 15:52:39) [GCC 4.4.5] on linux2
 				licornd> LMC.extensions.rdiffbackup.backup(force=True)
@@ -526,12 +595,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				backup has been done in less than the configured
 				:term:`backup interval <backup.interval>`.
 
-			.. note:: If a backup takes more than the configured
-				:term:`backup interval <backup.interval>` to complete, next
-				planned backup will not occur.
-
 			.. warning::
 				* **DO NOT CALL THIS METHOD DIRECTLY**. Instead, run
+				  :meth:`backup` to reset the timer properly, and check if
+				  a backup is not already in progress.
 				* If a volume is left is a locked state for any reason,
 				  this is currently a problem because not future backup
 				  will happen until the lock is released. **TODO:** we should
@@ -686,13 +753,30 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			return (time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup(as_string=False))
 	def volume_added_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a new volume is added on the system. It will check
+			if any of the connected volumes is enabled for Licorn®, and will
+			create the timer thread if not already done.
+		"""
 		if self._enabled_volumes() != []:
 			self.__create_timer_thread()
 	def volume_removed_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a volume is disconnected from the system. If no
+			Licorn® enabled volume remains, this method will stop the timer
+			thread, if not already stopped.
+		"""
 		if self._enabled_volumes() == []:
 				self.__stop_timer_thread()
 	def main_configuration_file_changed_callback(self, *args, **kwargs):
-		""" Trigerred when the Licorn® main configuration file changed. """
+		""" Trigerred when the Licorn® main configuration file changed. If the
+			:ref:`backup.interval <backup.interval.en>` changed and the
+			timer thread is running, it will be reset with the new interval
+			value.
+
+			.. note:: when a dynamic change occur, the timer will be simply
+				reset. No sophisticated computation will be done to substract
+				the already-passed time from the new interval.
+
+		"""
 
 		if self.events.active.is_set():
 			if LMC.configuration.backup.interval != self.threads.auto_backup_timer.delay:
@@ -703,6 +787,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				self.__stop_timer_thread()
 				self.__create_timer_thread()
 	def _html_eject_status(self, volume, small=False):
+		""" Builds a part of HTML code used in the WMI object, related to
+			ejection status of a given volume. This method should probably
+			migrate into a template some day.
+		"""
 		if volume.locked():
 			if small:
 				return ('<span class="micro_indicator micro_{eject_css}">'
@@ -763,10 +851,20 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 	# these 3 will be mapped into R/O properties by the WMIObject creation
 	# process method. They will be deleted from here after the mapping is done.
 	def _wmi_name(self):
+		""" Normalized-name method which returns a localized string for the
+			name of the WMI part of this extension.
+		"""
 		return _(u'Backups')
 	def _wmi_alt_string(self):
+		""" Normalized-name method which returns a localized string for the
+			Alternate description string of the WMI part of this extension.
+		"""
 		return _(u'Manage backups and restore files')
 	def _wmi_context_menu(self):
+		""" Normalized-name method which returns the dynamic context menu for
+			the WMI part of this extension.
+
+		"""
 		"""
 					# disabled, to come:
 						(_(u'Explore backups'), '/backups/search',
@@ -798,8 +896,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					)
 				)
 	def _wmi__status(self):
-		""" Method called from wmi:/, to integrate backup informations on the
-			status page. """
+		""" Method called from the WMI root, to nicely integrate backup
+			status and critical messages on the dashboard. """
 
 		messages = []
 
@@ -837,8 +935,8 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		return messages
 	def _wmi__info(self):
-		""" Method called from wmi:/, to integrate backup informations on the
-			status page. """
+		""" Method called from WMI root, to nicely integrate backup
+			informations on the dashboard. """
 
 		messages = []
 		vprogress = ''
@@ -864,8 +962,12 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		return messages
 	def _wmi_run(self, uri, http_user, volume=None, force=False, **kwargs):
-		""" Run a backup from the WMI. Propose the user to force the
-			operation if the last backup is less than one hour. """
+		""" Run a backup from the WMI (from http://xxx/backup/run). Offer the
+			user to force the operation if the last backup is less than the
+			configured interval.
+
+			.. note:: this method should probably migrate to a template someday.
+		"""
 
 		w = self.utils
 		title = _(u'Run a manual backup')
