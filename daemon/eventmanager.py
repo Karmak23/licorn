@@ -70,7 +70,6 @@ class EventManager(LicornBasicThread):
 					stylize(ST_NAME, event.name)),
 					to_listener=False)
 				self.__events[event.name] = []
-
 	def dispatch(self, priority, event):
 		self._input_queue.put((priority, event))
 

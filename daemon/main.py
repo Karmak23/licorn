@@ -298,6 +298,9 @@ class LicornDaemon(Singleton):
 			self.__threads._eventmanager.stop()
 			time.sleep(0.01)
 	def run(self):
+
+		assert ltrace('daemon', '> run()')
+
 		self.refork_if_not_root_or_die()
 
 		self.__setup_threaded_gettext()
@@ -371,6 +374,8 @@ class LicornDaemon(Singleton):
 		# if we get here (don't know how at all: we should only receive
 		# signals), stop cleanly (as if a signal was received).
 		self.terminate(None, None)
+
+		assert ltrace('daemon', '< run()')
 	def dump_status(self, long_output=False, precision=None):
 		""" return daemon status (and all threads status, too). """
 
@@ -481,7 +486,17 @@ class LicornDaemon(Singleton):
 			Find'em and kill'em all, callaghan.
 		"""
 
-		exclude.append(self.pid)
+		assert ltrace('daemon', '> check_aborted_daemon() [my_pid=%s]' % self.pid)
+
+		# exclude ourselves from the search, and our parent, too. If we are in
+		# refork_as_root() phase, the parent pid still exists for a moment. On
+		# Ubuntu Lucid / Maverick, we didn't encounter any problem not having
+		# the parent pid here (which was probably only because of luck!), but
+		# on Natty, we die after every launch, by killing our parent. Hopefully
+		# this is fixed now, and this will fix random "kill: 95: no such
+		# process" errors encountered on Maverick and previous releases.
+		exclude.extend((self.pid, os.getppid()))
+
 		my_process_name = sys.argv[0]
 
 		for entry in os.listdir('/proc'):
@@ -490,11 +505,17 @@ class LicornDaemon(Singleton):
 					continue
 
 				try:
-					if my_process_name in open('/proc/%s/cmdline' % entry).read():
+					command_line = open('/proc/%s/cmdline' % entry).read()
+
+					if my_process_name in command_line:
+						#print '>> cmd', command_line.replace('\0', ' ')
+
 						os.kill(int(entry), signal.SIGKILL)
+
 						time.sleep(0.2)
 						logging.notice(_(u'{0}: killed aborted '
 							'instance @pid {1}.').format(str(self), entry))
+
 				except (IOError, OSError), e:
 					# in rare cases, the process vanishes during the clean-up
 					if e.errno != 2:
@@ -505,6 +526,8 @@ class LicornDaemon(Singleton):
 			process won't die after a certain period of time (10 seconds), alert the
 			user and exit.
 		"""
+
+		assert ltrace('daemon', '> replace_or_exit()')
 
 		exclude = []
 
@@ -591,9 +614,14 @@ class LicornDaemon(Singleton):
 				logging.notice(_(u'{0}: daemon already running (pid {1}), '
 					'not restarting.').format(str(self), old_pid))
 				sys.exit(0)
+
+		assert ltrace('daemon', '< replace_or_exit()')
 	def refork_if_not_root_or_die(self):
 		""" If the current process is not UID(0), try to refork as root. If
 			this fails, exit with an error. """
+
+		assert ltrace('daemon', '| refork_if_not_root_or_die()')
+
 		if os.getuid() != 0 or os.geteuid() != 0:
 			try:
 				process.refork_as_root_or_die('licorn-daemon')
@@ -603,6 +631,8 @@ class LicornDaemon(Singleton):
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
 			multi-lingual parallel workers ;-) """
+
+		assert ltrace('daemon', '| __setup_threaded_gettext()')
 
 		def my_(*args, **kwargs):
 			try:
@@ -711,6 +741,8 @@ class LicornDaemon(Singleton):
 	def unlink_pid_file(self):
 		""" remove the pid file and bork if any error. """
 
+		assert ltrace('daemon', '| unlink_pid_file()')
+
 		try:
 			if os.path.exists(self.pid_file):
 				os.unlink(self.pid_file)
@@ -722,6 +754,8 @@ class LicornDaemon(Singleton):
 				pyutils.format_time_delta(time.time() - dstart_time))
 	def terminate(self, signum=None, frame=None):
 		""" Close threads, wipe pid files, clean everything before closing. """
+
+		assert ltrace('daemon', '| terminate(%s, %s)' % (signum, frame))
 
 		if signum is None:
 			logging.progress(_('%s: cleaning up and stopping threads…') % str(self))

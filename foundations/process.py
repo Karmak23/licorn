@@ -59,7 +59,8 @@ def daemonize(log_file=None):
 def write_pid_file(pid_file):
 	""" write PID into the pidfile. """
 	if pid_file:
-		open(pid_file,'w').write("%s\n" % os.getpid())
+		with open(pid_file, 'w') as f:
+			f.write("%s\n" % os.getpid())
 def use_log_file(log_file):
 	""" replace stdout/stderr with the logfile.
 		stderr becomes /dev/null.
