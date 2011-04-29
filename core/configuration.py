@@ -55,6 +55,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.app_name = 'Licorn®'
 
+		self.experimental_should_be_enabled = False
+
 		# this lock is used only by inotifier for now.
 		self.lock = RLock()
 
@@ -85,6 +87,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			if not minimal:
 				self.load1(batch=batch)
+
 			# must be done to find a way to find our network server.
 			self.FindDistro()
 
@@ -92,6 +95,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				self.load2(batch=batch)
 
 			self.load_configuration_complete()
+
 			if not minimal:
 				self.load3(batch=batch)
 
@@ -296,7 +300,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		assert ltrace('configuration', '| load_factory_defaults()')
 
-		mandatory_dict = {
+		self._load_configuration({
 			'licornd.role'                 : roles.UNSET,
 			'licornd.pyro.port'            : os.getenv('PYRO_PORT', 299),
 			# don't set in case there is no eth0 on the system.
@@ -327,10 +331,12 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			'licornd.wmi.port'             : 3356,
 			'licornd.wmi.log_file'         : '/var/log/licornd-wmi.log',
 			'backup.interval'              : 3600,   # one hour between backups.
-			'experimental.enabled'         : False,
-			}
+			'experimental.enabled'         : self.experimental_should_be_enabled,
+			})
 
-		self._load_configuration(mandatory_dict)
+		if self.experimental.enabled:
+			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
+				'Have fun, but do not break anything!')))
 	def convert_configuration_values(self):
 		""" take components of human written configuration directive, and
 		convert them to machine-friendly values. """
@@ -503,34 +509,65 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				if lsb_release['DISTRIB_ID'] == 'Licorn':
 					self.distro = distros.UBUNTU
 				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
-					if lsb_release['DISTRIB_CODENAME'] in ('maverick', 'lucid',
-						'karmik', 'jaunty'):
-						self.distro = distros.UBUNTU
+					self.distro = distros.UBUNTU
+
+					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'maverick',
+						):
+						pass
+
+					elif lsb_release['DISTRIB_CODENAME'] in ('natty', 'oneiric', ):
+
+						self.experimental_should_be_enabled = True
+
+					elif lsb_release['DISTRIB_CODENAME'] in ('dapper', 'hardy',
+						'intrepid', 'jaunty', 'karmik'):
+						logging.warning(_(u'Your ubuntu version ("{0}") is '
+							'no longer supported by {1} developpers. '
+							'You should consider upgrading to a newer '
+							'one.').format(
+								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME']),
+								stylize(ST_APPNAME, self.app_name)))
+
+					elif lsb_release['DISTRIB_CODENAME'] in ('warty', 'hoary',
+						'breezy', 'edgy', 'feisty', 'gutsy'):
+						logging.warning(_(u'Greetings old-timer :-) Does {0} '
+							'still run on your aged ubuntu version ("{1}")? '
+							'Anyway it is no longer supported by {0} '
+							'developpers. Even Canonical nor Ubuntu community '
+							'does not support it anymore. You should very '
+							'strongly consider upgrading to a newer version.'
+							).format(
+								stylize(ST_APPNAME, self.app_name),
+								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME'])))
+
 					else:
-						raise exceptions.LicornRuntimeError(
-							'''This Ubuntu version is not '''
-							'''supported, sorry !''')
+						raise exceptions.LicornRuntimeError(_(u'This Ubuntu '
+							'version ("{0}") is not [yet] supported, sorry !').format(
+								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME'])))
 				self.distro_version = lsb_release['DISTRIB_RELEASE']
 
 			else:
 				# OLD / non-lsb compatible system or BSD
-				if  os.path.exists( '/etc/gentoo-release' ):
+				if os.path.exists('/etc/gentoo-release'):
 					raise exceptions.LicornRuntimeError(
 						"Gentoo is not yet supported, sorry !")
-				elif  os.path.exists( '/etc/debian_version' ):
+				elif os.path.exists('/etc/debian_version'):
 					raise exceptions.LicornRuntimeError(
 						"Old Debian systems are not supported, sorry !")
-				elif  os.path.exists( '/etc/SuSE-release' ) \
+				elif  os.path.exists('/etc/SuSE-release') \
 					or os.path.exists( '/etc/suse-release' ):
 					raise exceptions.LicornRuntimeError(
 						"SuSE are not yet supported, sorry !")
-				elif  os.path.exists( '/etc/redhat_release' ) \
-					or os.path.exists( '/etc/redhat-release' ):
+				elif  os.path.exists('/etc/redhat_release') \
+					or os.path.exists('/etc/redhat-release'):
 					raise exceptions.LicornRuntimeError(
 						"RedHat/Mandriva is not yet supported, sorry !")
 				else:
-					raise exceptions.LicornRuntimeError(
-						"Unknown Linux Distro, sorry !")
+					raise exceptions.LicornRuntimeError(_(u'You are running an '
+						'unknown or unsupported Linux distro. Please get in '
+						'touch with {0} developpers, and consider submitting '
+						'a patch to make your system officially supported.'
+						).format(stylize(ST_APPNAME, self.app_name)))
 		else:
 			raise exceptions.LicornRuntimeError(
 				"Not on a supported system ! Please send a patch ;-)")
