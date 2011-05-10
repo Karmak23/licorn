@@ -1384,13 +1384,41 @@ class ModulesManager(LockedController):
 
 		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
 
+		to_disable = []
+
 		with self.lock:
 			# check our modules, AND available (not enabled) modules too. It's
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in itertools.chain(self, self._available_modules):
 				assert ltrace(self.name, '  check(%s)' % module.name)
-				module.check(batch=batch, auto_answer=auto_answer)
+				try:
+					module.check(batch=batch, auto_answer=auto_answer)
+
+				except Exception, e:
+					# an uncatched exception occured, the module is buggy or
+					# doesn't handle a very specific situation. Disable it to
+					# avoir further problems.
+					#
+					# We disable it later to avoid dictionnary changes during
+					# present iteration cycle, and will disable them in the
+					# reverse order to avoid dependancies-related problems.
+					to_disable.append(module)
+
+			for module in reversed(to_disable):
+				if module.enabled:
+					# demote the module to available-only state
+					self.disable(module.name)
+
+				if module.available:
+					# anyway, if the exception was not catched inside the
+					# module, it should even not be available, because
+					# check() will re-fail if nothing is done.
+					module.available = False
+					self._available_modules.remove(module)
+					del module
+
+			del to_disable
 
 		assert ltrace(self.name, '< check()')
 	def guess_one(self, module_name):
