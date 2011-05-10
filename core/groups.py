@@ -1789,8 +1789,12 @@ class GroupsController(Singleton, CoreFSController):
 	def get_hidden_state(self):
 		""" See if /home/groups is readable or not. """
 
+		groups_home = '%s/%s' % (LMC.configuration.defaults.home_base_path,
+						LMC.configuration.groups.names.plural)
+
 		try:
 			users_gid = self.name_to_gid(LMC.configuration.users.group)
+
 		except (AttributeError, KeyError):
 			# we got AttributeError because by_name() fails,
 			# because controller has not yet loaded any data. Get
@@ -1801,9 +1805,8 @@ class GroupsController(Singleton, CoreFSController):
 			users_gid = grp.getgrnam(
 						LMC.configuration.users.group).gr_gid
 		try:
-			for line in posix1e.ACL(file='%s/%s' % (
-								LMC.configuration.defaults.home_base_path,
-								LMC.configuration.groups.names.plural)):
+
+			for line in posix1e.ACL(file=groups_home):
 				if line.tag_type & posix1e.ACL_GROUP:
 						if line.qualifier == users_gid:
 							return not line.permset.read
@@ -1817,8 +1820,23 @@ class GroupsController(Singleton, CoreFSController):
 					'be mounted with {1} option to continue!').format(
 						stylize(ST_PATH, LMC.configuration.home_base_path),
 						stylize(ST_ATTR, 'acl')))
+
+			elif e.errno == 2:
+				# /home/groups doesn't exist. At the very first launch of the
+				# licorn daemon, this error is perfectly normal: the
+				# directory will be created later. We cannot do it now because
+				# GroupsController is not yet loaded, and calling
+				# LMC.configuration.check_base_dirs(batch=True) would thus
+				# fail. Just return the default hidden_state value, which will
+				# in turn we used when the directory is created.
+				logging.warning2(_(u'{0}: {1} does not exist and will be '
+					'created later in the process.').format(
+						stylize(ST_NAME, self.name),
+						stylize(ST_PATH, groups_home)))
+				return LMC.configuration.groups.hidden_default
+
 			else:
-				raise e
+				raise
 	def serialize(self, group=None):
 		""" Save internal data structure to backends. """
 

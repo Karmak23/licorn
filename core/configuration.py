@@ -723,8 +723,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		assert ltrace('configuration', '> LoadManagersConfiguration(batch=%s)' %
 			batch)
 
-		# defaults to False, because this is mostly annoying. Administrator must
-		# have a good reason to hide groups.
+		# The "hidden groups" feature (chmod 710 on /home/groups) defaults to
+		# False, because it is just annoying in real life. Administrator must
+		# have a good reason to hide groups from users.
+		self.groups.hidden_default = False
+
+		# "None" means "unknown value", and will be filled when GroupsController
+		# load()s. If the current state cannot be determined, the value
+		# "hidden_default" will be used instead; this allows the admin to
+		# overide the default in the configuration file (the 'real' status is
+		# always modified 'live' on the FS, and not stored anywhere else).
 		self.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf(batch=batch,
