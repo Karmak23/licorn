@@ -185,7 +185,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					self.bind_as_admin = True
 
 				else:
-					raise e
+					raise
 
 			self.check_defaults()
 
@@ -195,6 +195,28 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace('openldap', '< initialize(%s)' % self.available)
 		return self.available
+	def is_enabled(self):
+
+		if NSSBackend.is_enabled(self):
+
+			try:
+				self.sasl_bind()
+				return True
+
+			except pyldap.SERVER_DOWN:
+				logging.warning(_(u'{0}: server {1} is down, disabling '
+					'backend. This will produce timeouts because {2} '
+					'is enabled in NSS configuration.').format(
+						stylize(ST_NAME, self.name),
+						stylize(ST_URL, self.uri),
+						stylize(ST_COMMENT, 'ldap')))
+				self.enabled = False
+				return False
+
+		else:
+			# not enabled at NSS level, sufficient to notice we are not used.
+			return False
+
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
@@ -447,7 +469,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 								'''Insufficient permissions. '''
 								'''Are you root?\n\t%s''' % e)
 						else:
-							raise e
+							raise
 				else:
 					raise exceptions.LicornRuntimeError(_(u'{0}: {1} is '
 							'mandatory for {2} to work properly. Cannot '
@@ -455,7 +477,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					self.files.openldap_secret, LMC.configuration.app_name))
 		except (OSError, IOError), e :
 			if e.errno != 13:
-				raise e
+				raise
 
 		#
 		# TODO: check openldap_conf contents, or verify by researcu that it is
@@ -551,51 +573,59 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		except pyldap.NO_SUCH_OBJECT:
 			return
 
-		for dn, entry in openldap_result:
+		try:
+			for dn, entry in openldap_result:
 
-			assert ltrace('openldap', '  load_user(%s)' % entry)
+				assert ltrace('openldap', '  load_user(%s)' % entry)
 
-			uid = int(entry['uidNumber'][0])
+				uid = int(entry['uidNumber'][0])
 
-			yield uid, User(
-				# Get the cn from the dn here, else we could end in a situation
-				# where the user could not be deleted if it was created manually
-				# and the cn is inconsistent.
-				login=dn.split(',')[0][4:],     # rip out uid=
-				uidNumber=uid,
-				gidNumber=int(entry['gidNumber'][0]),
-				homeDirectory=entry['homeDirectory'][0],
-				loginShell=entry['loginShell'][0],
-				gecos=gecos_decode(entry['gecos'][0]),
- 				userPassword=password_decode(entry['userPassword'][0]),
-				shadowLastChange=entry.get('shadowLastChange', [ 0 ])[0],
-				shadowMin=entry.get('shadowMax', [ 99999 ])[0],
-				shadowMax=entry.get('shadowMin', [ 0 ])[0],
-				shadowWarning=entry.get('shadowWarning', [ 7 ])[0],
-				shadowInactive=entry.get('shadowInactive', [ 0 ])[0],
-				shadowExpire=entry.get('shadowExpire', [ 0 ])[0],
-				shadowFlag=entry.get('shadowFlag', [ '' ])[0],
-				backend=self
-				)
+				yield uid, User(
+					# Get the cn from the dn here, else we could end in a situation
+					# where the user could not be deleted if it was created manually
+					# and the cn is inconsistent.
+					login=dn.split(',')[0][4:],     # rip out uid=
+					uidNumber=uid,
+					gidNumber=int(entry['gidNumber'][0]),
+					homeDirectory=entry['homeDirectory'][0],
+					loginShell=entry['loginShell'][0],
+					gecos=gecos_decode(entry['gecos'][0]),
+					userPassword=password_decode(entry['userPassword'][0]),
+					shadowLastChange=entry.get('shadowLastChange', [ 0 ])[0],
+					shadowMin=entry.get('shadowMax', [ 99999 ])[0],
+					shadowMax=entry.get('shadowMin', [ 0 ])[0],
+					shadowWarning=entry.get('shadowWarning', [ 7 ])[0],
+					shadowInactive=entry.get('shadowInactive', [ 0 ])[0],
+					shadowExpire=entry.get('shadowExpire', [ 0 ])[0],
+					shadowFlag=entry.get('shadowFlag', [ '' ])[0],
+					backend=self
+					)
 
-			"""
-							shadowLastChange=int(entry['shadowLastChange'][0])
-									if 'shadowLastChange' in entry else 0,
-				shadowMin=int(entry['shadowMax'][0])
-								if 'shadowMax' in entry else 99999,
-				shadowMax=int(entry['shadowMin'][0])
-								if 'shadowMin' in entry else 0,
-				shadowWarning=int(entry['shadowWarning'][0])
-								if 'shadowWarning' in entry else 7,
-				shadowInactive=int(entry['shadowInactive'][0])
-								if 'shadowInactive' in entry else 0,
-				shadowExpire=int(entry['shadowExpire'][0])
-								if 'shadowExpire' in entry else 0,
-				shadowFlag=str(entry['shadowFlag'][0])
-								if 'shadowFlag' in entry else '',
-			"""
+				"""
+								shadowLastChange=int(entry['shadowLastChange'][0])
+										if 'shadowLastChange' in entry else 0,
+					shadowMin=int(entry['shadowMax'][0])
+									if 'shadowMax' in entry else 99999,
+					shadowMax=int(entry['shadowMin'][0])
+									if 'shadowMin' in entry else 0,
+					shadowWarning=int(entry['shadowWarning'][0])
+									if 'shadowWarning' in entry else 7,
+					shadowInactive=int(entry['shadowInactive'][0])
+									if 'shadowInactive' in entry else 0,
+					shadowExpire=int(entry['shadowExpire'][0])
+									if 'shadowExpire' in entry else 0,
+					shadowFlag=str(entry['shadowFlag'][0])
+									if 'shadowFlag' in entry else '',
+				"""
 
-			#ltrace('openldap', 'userPassword: %s' % temp_user_dict['userPassword'])
+				#ltrace('openldap', 'userPassword: %s' % temp_user_dict['userPassword'])
+		except KeyError, e:
+			logging.warning(_(u'{0}: skipped account {1} (was: '
+				'KeyError on field {2}).').format(
+					stylize(ST_NAME, self.name),
+					stylize(ST_NAME, dn),
+					e))
+			pass
 
 		assert ltrace('openldap', '< load_users()')
 	def load_Groups(self):
