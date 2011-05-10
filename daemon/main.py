@@ -39,7 +39,7 @@ gettext.install('licorn', unicode=True)
 import time
 dstart_time = time.time()
 
-import os, sys, signal, resource, gc, __builtin__
+import os, sys, signal, resource, gc, re, __builtin__
 
 
 from threading   import current_thread
@@ -566,8 +566,9 @@ class LicornDaemon(Singleton):
 				proc_pid = '/proc/%s' % old_pid
 
 				counter = 0
-				not_yet_displayed_one = True
-				not_yet_displayed_two = True
+				not_yet_displayed_one   = True
+				not_yet_displayed_two   = True
+				not_yet_displayed_three = True
 				killed  = False
 				while os.path.exists(proc_pid):
 					time.sleep(0.1)
@@ -579,6 +580,7 @@ class LicornDaemon(Singleton):
 
 						try:
 							os.kill(old_pid, signal.SIGTERM)
+
 						except (OSError, IOError), e:
 							if e.errno != 3:
 								# errno 3 is "no such process": it died in the
@@ -589,13 +591,14 @@ class LicornDaemon(Singleton):
 						not_yet_displayed_one = False
 
 					elif counter >= 50 and not_yet_displayed_two:
-						logging.notice('%s: old instance won\'t '
+						logging.notice(_(u'%s: old instance won\'t '
 							'terminate after 8 seconds. Sending '
-							'KILL signal.' % str(self))
+							'KILL signal.') % str(self))
 
 						killed = True
 						try:
 							os.kill(old_pid, signal.SIGKILL)
+
 						except (OSError, IOError), e:
 							if e.errno != 3:
 								# errno 3 is "no such process": it died in the
@@ -604,6 +607,53 @@ class LicornDaemon(Singleton):
 						time.sleep(0.2)
 						counter += 2
 						not_yet_displayed_two = False
+
+					elif counter >= 60 and not_yet_displayed_three:
+						# on ubuntu Natty, sudo doesn't work as on older systems.
+						# it stays in the process list, instead of exec'ing the
+						# wanted program on top of itself. Thus, Control-Z
+						# stops it instead of stopping licornd. Thus, trying to
+						# kill the child has no effect at all. We must find the
+						# parent and kill it instead.
+						parent_pid = int(re.findall('PPid:\t(.*)',
+								open('/proc/%s/status' % old_pid).read())[0])
+
+						if 'sudo' in open('/proc/%s/cmdline' % parent_pid).read():
+							logging.notice(_(u'%s: killing old instance\'s '
+								'father (sudo, pid %s) without any mercy.') % (
+								str(self), parent_pid))
+
+							killed = True
+							try:
+								os.kill(parent_pid, signal.SIGKILL)
+
+							except (OSError, IOError), e:
+								if e.errno != 3:
+									# errno 3 is "no such process": it died in the
+									# meantime. Don't crash for this.
+									raise
+							time.sleep(0.2)
+							counter += 2
+
+						else:
+							logging.warning(_(u'{0}: old instance won\'t '
+								'terminate after 9 seconds and cannot '
+								'be killed. We won\t try to kill any other '
+								'parent than "{1}", you are in a non-trivial '
+								'situation. Up to you to solve it.') % (
+									str(self), stylize(ST_NAME, 'sudo')))
+							sys.exit(-10)
+
+						not_yet_displayed_three = False
+
+					elif counter >=120:
+						logging.warning(_(u'%s: old instance won\'t '
+							'terminate after 15 seconds and cannot '
+							'be killed directly or by killing its direct '
+							'parent, bailing out. You\'re in trouble '
+							'on a system where "kill -9" does not work '
+							'as advertised. Sorry for you.') % str(self))
+						sys.exit(-9)
 
 					counter += 1
 
