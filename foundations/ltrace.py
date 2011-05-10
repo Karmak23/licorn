@@ -18,14 +18,13 @@ ltrace - light procedural trace (debug only)
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
-from sys  import stderr
-from os   import getenv
+import sys, os
 from time import time, localtime, strftime
 
 # WARNING: please do not import anything from licorn here, except styles.
 from styles import *
 
-trc={}
+trc = {}
 
 trc['all']           = 0xffffffffffffffffffffffff
 trc['none']          = 0x000000000000000000000000
@@ -161,8 +160,9 @@ def mytime():
 
 # the new LTRACE env variable takes precedence, then we try the old one
 # LICORN_TRACE.
-new_trace = getenv('LTRACE', None)
-old_trace = getenv('LICORN_TRACE', None)
+new_trace = os.getenv('LTRACE', None)
+old_trace = os.getenv('LICORN_TRACE', None)
+
 
 if new_trace != None or old_trace != None:
 
@@ -171,11 +171,10 @@ if new_trace != None or old_trace != None:
 	else:
 		env_trace = old_trace
 
-	import sys
 	ltrace_level = 0
 	maxwidth = 0
 
-	for key in trc.keys():
+	for key in trc:
 		if len(key) > maxwidth:
 			maxwidth = len(key)
 
@@ -187,7 +186,7 @@ if new_trace != None or old_trace != None:
 
 	def ltrace(module, message):
 		if  ltrace_level & trc[module]:
-			stderr.write('%s %s: %s\n' % (
+			sys.stderr.write('%s %s: %s\n' % (
 				stylize(ST_COMMENT, '   %s' % mytime()),
 				stylize(ST_DEBUG, 'TRACE  ' + module.rjust(maxwidth)), message))
 		return True
@@ -197,13 +196,11 @@ if new_trace != None or old_trace != None:
 		# inserted in all our executables.
 		# NOTE: don't use assert ltrace here, this will fail to display the
 		# message on first launch, where -OO is active.
-		stderr.write('Licorn®: %s for %s\n' % (
+		sys.stderr.write('Licorn®: %s for %s\n' % (
 					stylize(ST_IMPORTANT, 'LTRACE enabled'),
-					stylize(ST_COMMENT, env_trace)
-				)
-			)
-
+					stylize(ST_COMMENT, env_trace)))
 		return ['python']
+
 else:
 	def ltrace(a, b):
 		return True
