@@ -2330,8 +2330,8 @@ class GroupsController(Singleton, CoreFSController):
 
 			# remove the inotifier watch before deleting the group, else
 			# the call will fail, and before archiving group shared
-			# data, else it will leave ghost notifies in our gamin
-			# daemon, which doesn't need that.
+			# data, else it will leave ghost notifies in our Inotifier thread,
+			# which doesn't need that.
 			group._inotifier_del_watch(self.licornd)
 
 			# For a standard group, there are a few steps more :

@@ -13,7 +13,7 @@ from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.base      import BasicCounter
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import filters, gamin_events
+from licorn.foundations.constants import filters
 from licorn.core                  import LMC
 from licorn.daemon                import priorities
 from licorn.daemon.threads        import LicornBasicThread

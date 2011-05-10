@@ -8,7 +8,7 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, gamin, dbus, pyudev, select, re
+import os, dbus, pyudev, select, re
 from traceback import print_exc
 from threading import RLock, current_thread
 
@@ -16,7 +16,6 @@ from licorn.foundations           import logging, pyutils, process, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
-from licorn.foundations.constants import gamin_events
 
 from licorn.core                import LMC
 from licorn.extensions          import LicornExtension

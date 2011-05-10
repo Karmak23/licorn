@@ -20,7 +20,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, MixedDictObject, LicornConfigObject
 from licorn.foundations.classes   import FileLock
-from licorn.foundations.constants import gamin_events, distros, services, svccmds
+from licorn.foundations.constants import distros, services, svccmds
 
 from licorn.core       import LMC
 from licorn.daemon     import priorities

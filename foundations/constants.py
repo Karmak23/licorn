@@ -175,18 +175,3 @@ svccmds.START   = 1
 svccmds.STOP    = 2
 svccmds.RESTART = 3
 svccmds.RELOAD  = 4
-
-
-# this is a replica of python.gamin, to help displaying messages in a
-# human-readable form.
-gamin_events = {
-	1: 'GAMChanged',
-	2: 'GAMDeleted',
-	3: 'GAMStartExecuting',
-	4: 'GAMStopExecuting',
-	5: 'GAMCreated',
-	6: 'GAMMoved',
-	7: 'GAMAcknowledge',
-	8: 'GAMExists',
-	9: 'GAMEndExist'
-	}
