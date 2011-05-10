@@ -1,7 +1,7 @@
 
 
 sudo apt-get -qy --fix-missing --force-yes install nullmailer darcs \
-                pyro python-gamin python-pylibacl python-ldap \
+                pyro python-pyinotify python-pylibacl python-ldap \
                 python-xattr python-netifaces python-dumbnet \
                 python-pyip python-ipcalc python-dbus python-gobject \
                 python-udev
@@ -31,5 +31,6 @@ sudo ln -sf "${LCN_DEV_DIR}/locale/fr.mo" \
 
 sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.6/dist-packages/licorn
 
+sudo mount -o remount,acl /home || sudo mount -o remount,acl /
 
 sudo su - -c 'echo "licornd.role = SERVER" >> /etc/licorn/licorn.conf'
