@@ -140,10 +140,9 @@ class EventManager(LicornBasicThread):
 				self.__events[event_name].remove(unr_method)
 
 		except KeyError:
-			logging.warning(_(u'{0}: event "{2}" not found when trying to '
-				'unregister method {1}.').format(stylize(ST_NAME, self.name),
-					stylize(ST_NAME, str(method)),
-					stylize(ST_NAME, event_name)))
+			logging.warning(_(u'{0}: event "{1}" not found when trying to '
+				'unregister method {2}.').format(stylize(ST_NAME, self.name),
+					stylize(ST_NAME, event_name), stylize(ST_NAME, str(method))))
 
 		except ValueError:
 			logging.warning(_(u'{0}: method {1} already not registered for '

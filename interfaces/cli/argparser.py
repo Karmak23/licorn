@@ -391,7 +391,7 @@ def __get_output_group(app, parser, mode):
 		outputgroup.add_option("-p", "--php", "--php-code",
 			action="store_const", const = "PHP", dest="cli_format",
 			default="short",
-			help=_(u'Like previous option, but export the configuration '
+			help=_('Like previous option, but export the configuration '
 				'subset in a usefull way to be included in PHP code (i.e. '
 				'$VAR="value", use it with eval(`…`)).'))
 	else:

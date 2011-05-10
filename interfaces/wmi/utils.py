@@ -27,7 +27,7 @@ if not hasattr(LMC, 'configuration'):
 	LMC.configuration = LicornConfigObject()
 	LMC.configuration.app_name = 'Licorn®'
 
-licence_text = _(u'{0} is distributed under the <a href="http://www.gnu.org/'
+licence_text = _('{0} is distributed under the <a href="http://www.gnu.org/'
 	'licenses/gpl.html">GNU GPL version 2</a> license, without any kind of '
 	'waranty. Copyleft &copy; 2007-2011 Olivier Cortès, Guillaume Masson '
 	'&amp; Régis Cobrun for project {0}, and all other libre software '

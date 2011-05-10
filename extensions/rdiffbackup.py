@@ -1075,7 +1075,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			if self.events.running.is_set():
 				backup_status = ('<div class="backups important '
 					'backups_important">{0}</div>'.format(
-						_(u'A backup is currently in progress, '
+						_('A backup is currently in progress, '
 						'please do not disconnect <strong>{volume}</strong>.'
 						'<br /><br /> (update in {countdown}…)').format(
 							volume=''.join([ vol.mount_point

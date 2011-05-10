@@ -373,7 +373,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# auto-apply the new permissiveness
 			L_service_enqueue(priorities.HIGH, self.check, batch=True)
 
-			logging.notice(_(u'Switched group {0} permissive '
+			logging.notice(_('Switched group {0} permissive '
 				'state to {1} (Shared content permissions are '
 				'beiing checked in the background, this can '
 				'take a while…)').format(
