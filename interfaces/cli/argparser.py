@@ -809,7 +809,7 @@ def add_user_parse_arguments(app):
 
 	addimport.add_option("--confirm-import",
 		action="store_true", dest="confirm_import", default = False,
-		help=_(u"Really do the import. %s on the system, but only give "
+		help=_("Really do the import. %s on the system, but only give "
 			"you an example of what will be done, which is useful to "
 			"verify your file has been correctly parsed (fields order, "
 			"separator…).") % stylize(ST_IMPORTANT,

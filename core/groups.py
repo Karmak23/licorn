@@ -953,7 +953,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			NOT locked because can be long, and harmless if fails.
 		"""
 
-		logging.progress(_(u'Checking %s symlinks in members homes, '
+		logging.progress(_('Checking %s symlinks in members homes, '
 			'this can be long…')  % stylize(ST_NAME, self.name))
 
 		all_went_ok = True
