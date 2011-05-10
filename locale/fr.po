@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-05-10 12:48+0200\n"
-"PO-Revision-Date: 2011-05-10 12:49+0200\n"
+"POT-Creation-Date: 2011-05-10 15:30+0200\n"
+"PO-Revision-Date: 2011-05-10 15:31+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -327,36 +327,36 @@ msgstr ""
 "%s : initialisation des services internes, backends, contrôleurs et "
 "extensions."
 
-#: daemon/main.py:269
+#: daemon/main.py:271
 #, python-format
 msgid "%s: starting all threads."
 msgstr "%s : démarrage de tous les threads."
 
-#: daemon/main.py:279
+#: daemon/main.py:281
 #, python-format
 msgid "%s: stopping threads."
 msgstr "%s : arrêt des threads."
 
-#: daemon/main.py:361
+#: daemon/main.py:363
 #, python-format
 msgid "%s: all threads started, going to sleep waiting for signals."
 msgstr "%s : tous les threads ont démarré. En attente de signaux."
 
-#: daemon/main.py:365
+#: daemon/main.py:367
 #, python-format
 msgid "%s: all threads started, ready for TTY interaction."
 msgstr "%s : threads démarrés ; prêt pour l'intéraction sur le terminal."
 
-#: daemon/main.py:516
+#: daemon/main.py:518
 msgid "{0}: killed aborted instance @pid {1}."
 msgstr "{0} : l'instance avortée (pid {1}) a été tuée."
 
-#: daemon/main.py:542
+#: daemon/main.py:544
 msgid "{0}: trying to replace existing instance @pid {1}."
 msgstr ""
 "{0} : tentative de remplacement de l'instance en cours d'exécution @pid {1}."
 
-#: daemon/main.py:554
+#: daemon/main.py:556
 #, python-format
 msgid ""
 "%s: existing instance still running, we're going to be more incisive in a "
@@ -365,7 +365,7 @@ msgstr ""
 "%s : ancienne instance toujours en cours d'exécution, nous allons être plus "
 "incisifs dans quelques secondes."
 
-#: daemon/main.py:577
+#: daemon/main.py:579
 #, python-format
 msgid ""
 "%s: re-killing old instance softly with TERM signal and waiting a little "
@@ -374,20 +374,20 @@ msgstr ""
 "%s : un nouveau gentil signal TERM a été envoyé à l'ancienne instance, et "
 "nous attendons encore quelques instants."
 
-#: daemon/main.py:594
+#: daemon/main.py:596
 #, python-format
 msgid "%s: old instance won't terminate after 8 seconds. Sending KILL signal."
 msgstr ""
 "%s : l'ancienne instance ne s'est pas terminée après 8 secondes. Envoi du "
 "signal KILL."
 
-#: daemon/main.py:622
+#: daemon/main.py:624
 #, python-format
 msgid "%s: killing old instance's father (sudo, pid %s) without any mercy."
 msgstr ""
 "%s : terminaison sans merci du père de l'ancienne instance (sudo, pid %s)."
 
-#: daemon/main.py:639
+#: daemon/main.py:641
 msgid ""
 "{0}: old instance won't terminate after 9 seconds and cannot be killed. We "
 "won\t try to kill any other parent than \"{1}\", you are in a non-trivial "
@@ -398,7 +398,7 @@ msgstr ""
 "\"{1}\" car vous êtes dans une situation trop spécifique. C'est maintenant à "
 "vous de régler le problème."
 
-#: daemon/main.py:650
+#: daemon/main.py:652
 #, python-format
 msgid ""
 "%s: old instance won't terminate after 15 seconds and cannot be killed "
@@ -410,84 +410,84 @@ msgstr ""
 "Abandon. Vous êtes sur un système où \"kill -9\" n'a pas les effets vendus "
 "par la pub. Désolé pour vous."
 
-#: daemon/main.py:660
+#: daemon/main.py:662
 msgid "{0}: old instance {1} terminated, we can play now."
 msgstr ""
 "{0} : l'ancienne instance a été terminée {1}, on va pouvoir s'amuser "
 "maintenant."
 
-#: daemon/main.py:661
+#: daemon/main.py:663
 msgid "nastily"
 msgstr "brutalement"
 
-#: daemon/main.py:662
+#: daemon/main.py:664
 msgid "successfully"
 msgstr "avec succès"
 
-#: daemon/main.py:664
+#: daemon/main.py:666
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
 "{0} : un daemon est déjà en cours d'exécution (pid {1}), démarrage avorté."
 
-#: daemon/main.py:679
+#: daemon/main.py:681
 msgid "{0}: must be run as {1} (was: {2})."
 msgstr "{0} : doit être lancé en tant que {1} (erreur initiale : {2})."
 
-#: daemon/main.py:730
+#: daemon/main.py:732
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 "{0} : impossible d'annoncer notre terminaison aux hotes distants (problème "
 "initial : {1})."
 
-#: daemon/main.py:735
+#: daemon/main.py:737
 #, python-format
 msgid "%s: joining threads."
 msgstr "%s : rappel des threads."
 
-#: daemon/main.py:749
+#: daemon/main.py:751
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr "{0} : attente de terminaison du thread {1}{2}."
 
-#: daemon/main.py:752
+#: daemon/main.py:754
 #, python-format
 msgid " (currently working on %s)"
 msgstr " (actuellement sur %s)"
 
-#: daemon/main.py:800
+#: daemon/main.py:802
 msgid "{0}: cannot remove {1} (was: {2})."
 msgstr "{0} : impossible de supprimer {1} (erreur initiale : {2})."
 
-#: daemon/main.py:803
+#: daemon/main.py:805
 #, python-format
 msgid " (up %s)"
 msgstr " (démarré depuis %s)"
 
-#: daemon/main.py:811
+#: daemon/main.py:813
 #, python-format
 msgid "%s: cleaning up and stopping threads…"
 msgstr "%s : nettoyage et arrêt des threads…"
 
-#: daemon/main.py:813
+#: daemon/main.py:815
 msgid "{0}: signal {1} received, shutting down…"
 msgstr "{0} : signal {1} reçu, arrêt en cours…"
 
-#: daemon/main.py:818
+#: daemon/main.py:820
 msgid "{0}: exiting{1}."
 msgstr "{0} : arrêt{1}."
 
-#: daemon/main.py:821
+#: daemon/main.py:823
 msgid "{0}: SIGUSR1 received, preparing restart."
 msgstr "{0} : signal SIGUSR1 reçu, préparation du redémarrage."
 
-#: daemon/main.py:857
+#: daemon/main.py:859
 msgid "{0}: restarting{1}."
 msgstr "{0} : redémarrage{1}."
 
-#: daemon/main.py:916
+#: daemon/main.py:918
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 
-#: daemon/main.py:920
+#: daemon/main.py:922
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr ""
 
@@ -525,22 +525,22 @@ msgstr "{0} : la variable inotify {1} a été augmentée à {2}."
 msgid "{0}{1} ({2} events & {3} callbacks registered)"
 msgstr "{0}{1} ({2} évènements & {3} callbacks enregistré(s))"
 
-#: daemon/eventmanager.py:68 daemon/eventmanager.py:102
+#: daemon/eventmanager.py:68 daemon/eventmanager.py:111
 msgid "{0}: no callbacks / methods for event {1}."
 msgstr "{0} : pas de callback ou de méthode pour l'évènement {1}."
 
-#: daemon/eventmanager.py:88
+#: daemon/eventmanager.py:87
 msgid "{0}: exception encountered while running event {1}: {2}"
 msgstr ""
 "{0} : exception rencontrée pendant l'exécution de l'évènement {1} : {2}"
 
-#: daemon/eventmanager.py:130
+#: daemon/eventmanager.py:143
 msgid "{0}: event \"{2}\" not found when trying to unregister method {1}."
 msgstr ""
 "{0} : évènement \"{2}\" non trouvé pendant la tentative de dés-"
 "enregistrement de la méthode {1}."
 
-#: daemon/eventmanager.py:136
+#: daemon/eventmanager.py:149
 msgid "{0}: method {1} already not registered for event {2}."
 msgstr "{0} : méthode {1} déjà non-enregistrée pour l'évènement {2}."
 
@@ -1035,7 +1035,7 @@ msgstr "Désolé, pas encore."
 msgid "Directory %s does not exist. Create it?"
 msgstr "Le répertoire %s n'existe pas. Le créer ?"
 
-#: foundations/fsapi.py:144 core/classes.py:2187
+#: foundations/fsapi.py:144 core/classes.py:2190
 msgid "Created directory {0}."
 msgstr "Le répertoire {0} a été créé."
 
@@ -1489,7 +1489,7 @@ msgstr "utilisateurs"
 msgid "groups"
 msgstr "groupes"
 
-#: core/configuration.py:1472
+#: core/configuration.py:1471
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
@@ -1920,7 +1920,7 @@ msgstr "La description du groupe {0} est maintenant \"{1}\"."
 msgid "You must specify a groupSkel"
 msgstr "Vous devez spécifier un squelette de groupe"
 
-#: core/groups.py:423 core/groups.py:2032
+#: core/groups.py:423 core/groups.py:2041
 msgid "Invalid skel {0}. Valid skels are: {1}."
 msgstr "Squelette {0} invalide. Les squelettes valides sont : {1}."
 
@@ -2148,7 +2148,7 @@ msgstr "Vérification des attributs spécifiques aux groupes système pour {0}�
 msgid "Removed superfluous attribute {0} of system group {1}"
 msgstr "L'attribut superflu {0} a été supprimé du groupe système {1}."
 
-#: core/groups.py:1407 core/groups.py:2020
+#: core/groups.py:1407 core/groups.py:2029
 #, python-format
 msgid "Members of group “%s”"
 msgstr "Les membres du groupe « %s »"
@@ -2197,73 +2197,73 @@ msgid "Cannot collect guests for group {0} (was: {1})."
 msgstr ""
 "Impossible de collecter les invités du groupe {0} (problème initial: {1})."
 
-#: core/groups.py:1762
+#: core/groups.py:1771
 msgid "{0}.reload: Overwritten gid {1}."
 msgstr "{0}.reload : GID {1} écrasé."
 
-#: core/groups.py:1775
+#: core/groups.py:1784
 msgid "{0}: removing disapeared group {1}."
 msgstr "{0} : suppression du groupe disparu {1}."
 
-#: core/groups.py:1819
+#: core/groups.py:1828
 msgid "File-system {0} must be mounted with {1} option to continue!"
 msgstr ""
 "Le système de fichier {0} doit être monté avec l'option {1} pour continuer !"
 
-#: core/groups.py:1832
+#: core/groups.py:1841
 msgid "{0}: {1} does not exist and will be created later in the process."
 msgstr ""
 
-#: core/groups.py:1967
+#: core/groups.py:1976
 #, python-format
 msgid "GID %s does not exist on the system."
 msgstr "Le GID %s n'existe pas sur le système."
 
-#: core/groups.py:2008
+#: core/groups.py:2017
 msgid "Malformed group name \"{0}\", must match /{1}/i."
 msgstr ""
 "Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/groups.py:2013
+#: core/groups.py:2022
 msgid ""
 "Group name must be smaller than {0} characters (\"{1}\" is {2} chars long)."
 msgstr ""
 "La longueur du nom du groupe doit être inférieure ou égale à {0} caractères "
 "(\"{1}\" en compte {2})."
 
-#: core/groups.py:2023
+#: core/groups.py:2032
 msgid "Malformed group description \"{0}\", must match /{1}/i."
 msgstr ""
 "La description de groupe \"{0}\" est mal-formée ; elle doit vérifier /{1}/i."
 
-#: core/groups.py:2086
+#: core/groups.py:2095
 msgid "Created system group {0} (gid={1})."
 msgstr "Le groupe système {0} (gid={1}) a été créé."
 
-#: core/groups.py:2105
+#: core/groups.py:2114
 msgid "Created {0} group {1} (gid={2})."
 msgstr "Le groupe {0} {1} (gid={2}) a été créé."
 
-#: core/groups.py:2106
+#: core/groups.py:2115
 msgid "permissive"
 msgstr "permissif"
 
-#: core/groups.py:2108 interfaces/cli/argparser.py:855
+#: core/groups.py:2117 interfaces/cli/argparser.py:855
 msgid "not permissive"
 msgstr "non permissif"
 
-#: core/groups.py:2134
+#: core/groups.py:2143
 msgid "GID {0} is already taken by group {1}. Please choose another one."
 msgstr ""
 "Le GID {0} est déjà pris par le groupe {1}. Choisissez-en un autre SVP."
 
-#: core/groups.py:2147 core/groups.py:2160
+#: core/groups.py:2156 core/groups.py:2169
 #, python-format
 msgid "The group %s already exists."
 msgstr "Le groupe %s existe déjà."
 
-#: core/groups.py:2150
+#: core/groups.py:2159
 #, python-format
 msgid ""
 "The group %s already exists but has not the same type. Please choose another "
@@ -2272,7 +2272,7 @@ msgstr ""
 "Un groupe %s existe déjà, mais n'a pas le même type. Choisissez un autre nom "
 "pour ce groupe."
 
-#: core/groups.py:2163
+#: core/groups.py:2172
 #, python-format
 msgid ""
 "The group %s already exists with a different GID. Please check this is what "
@@ -2281,7 +2281,7 @@ msgstr ""
 "Le groupe %s existe déjà avec un GID différent. Merci de vérifier que c'est "
 "ce que vous voulez, et prenez une décision quant à son avenir."
 
-#: core/groups.py:2168
+#: core/groups.py:2177
 msgid ""
 "The group {0} already exists but has not the same type. Please choose "
 "another name for your group."
@@ -2289,7 +2289,7 @@ msgstr ""
 "Le groupe {0} existe déjà, mais n'a pas le même type. Choisissez un autre "
 "nom pour votre nouveau groupe."
 
-#: core/groups.py:2184
+#: core/groups.py:2193
 #, python-format
 msgid ""
 "A user account called %s already exists, this could trigger a bug in the "
@@ -2303,11 +2303,11 @@ msgstr ""
 "nom pour votre groupe, ou utilisez l'argument --force si vous voulez "
 "vraiment l'ajouter sur le système."
 
-#: core/groups.py:2202
+#: core/groups.py:2211
 msgid "Autogenerated GID for group {0}: {1}."
 msgstr "GID auto-généré pour le groupe {0} : {1}."
 
-#: core/groups.py:2209
+#: core/groups.py:2218
 msgid ""
 "GID out of range for the kind of group you specified. System GIDs must be "
 "between {0} and {1}, standard GIDs must be between {2} and {3}."
@@ -2316,7 +2316,7 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les GIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/groups.py:2264
+#: core/groups.py:2273
 msgid ""
 "Cannot delete group {0}, currently primary group of profile {1}. Please "
 "delete the profile instead, and the group will be deleted at the same time."
@@ -2325,7 +2325,7 @@ msgstr ""
 "profil {1}. Supprimez plutôt le profil, et le groupe sera effacé dans le "
 "même temps."
 
-#: core/groups.py:2275
+#: core/groups.py:2284
 msgid ""
 "The group still has members. You must delete them first, or use  the --del-"
 "users argument. WARNING: this is usually a bad idea; use with caution."
@@ -2334,7 +2334,7 @@ msgstr ""
 "préalablement, ou utiliser l'argument --del-users. ATTENTION : en général "
 "c'est une mauvaise idée, utilisez-le avec beaucoup de précautions."
 
-#: core/groups.py:2287
+#: core/groups.py:2296
 #, python-format
 msgid ""
 "Cannot delete a helper group. Please delete the standard associated group %s "
@@ -2343,7 +2343,7 @@ msgstr ""
 "Impossible de supprimer un groupe système associé. Supprimez plutôt le "
 "groupe standard %s, et celui-là sera effacé dans le même temps."
 
-#: core/groups.py:2294
+#: core/groups.py:2303
 #, python-format
 msgid ""
 "Cannot delete restricted system group %s without the --force argument, this "
@@ -2352,19 +2352,19 @@ msgstr ""
 "Impossible de supprimer le groupe système restreint %s sans l'argument --"
 "force, c'est trop dangereux."
 
-#: core/groups.py:2389
+#: core/groups.py:2398
 msgid "{0}: group {1} already not referenced in controller!"
 msgstr "{0} : le groupe {1} est déjà non-référencé par le contrôleur !"
 
-#: core/groups.py:2414
+#: core/groups.py:2423
 msgid "Deleted {0}group {1}."
 msgstr "Le groupe {0}{1} a été supprimé."
 
-#: core/groups.py:2415
+#: core/groups.py:2424
 msgid "system "
 msgstr "système "
 
-#: core/groups.py:2494
+#: core/groups.py:2503
 #, python-format
 msgid ""
 "%s: inconsistency detected. Automatic check requested in the background."
@@ -2372,7 +2372,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes. Une vérification automatique a "
 "été lancée en arrière-plan."
 
-#: core/groups.py:2501
+#: core/groups.py:2510
 #, python-format
 msgid ""
 "%s: dangling helper group(s) detected. Automatic removal requested in the "
@@ -2381,7 +2381,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes systèmes. Un nettoyage "
 "automatique a été lancé en arrière-plan."
 
-#: core/groups.py:2547
+#: core/groups.py:2556
 msgid ""
 "{0}: primary group is missing for user(s) {1}. This is harmless, but should "
 "be corrected manually by re-creating groups with fixed GIDs, or changing "
@@ -2393,11 +2393,11 @@ msgstr ""
 "en changeant le GID primaire des-dits utilisateurs vers un GID système "
 "existant. "
 
-#: core/groups.py:2552
+#: core/groups.py:2561
 msgid "{0}(gid={1})"
 msgstr "{0}(gid={1})"
 
-#: core/groups.py:2578
+#: core/groups.py:2587
 #, python-format
 msgid "Skipped non-existing group name or GID %s."
 msgstr "Le nom de groupe ou GID non-existant %s a été ignoré."
@@ -2439,7 +2439,7 @@ msgstr ""
 msgid "You must specify a gecos"
 msgstr "Vous devez spécifier un GECOS"
 
-#: core/users.py:305 core/users.py:1202
+#: core/users.py:305 core/users.py:1212
 msgid "Malformed GECOS field \"{0}\", must match /{1}/i."
 msgstr "Le champ GECOS \"{0}\" est invalide, il ne vérifie pas /{1}/i."
 
@@ -2521,15 +2521,15 @@ msgstr "— aucune appartenance à des groupes —"
 msgid "UID"
 msgstr "UID"
 
-#: core/users.py:1008
+#: core/users.py:1018
 msgid "{0}.reload: Overwritten uid {1}."
 msgstr "{0}.reload : UID {1} écrasé."
 
-#: core/users.py:1019
+#: core/users.py:1029
 msgid "{0}: removing disapeared user {1}."
 msgstr "{0} : suppression de l'utilisateur disparu {1}."
 
-#: core/users.py:1095
+#: core/users.py:1105
 msgid ""
 "Specified directory {0} for system user {1} already exists. If you really "
 "want to use it, please use the --force argument."
@@ -2537,7 +2537,7 @@ msgstr ""
 "Le répertoire {0} spécifié pour le compte système {1} existe déjà. Si vous "
 "voulez vraiment l'utiliser, ajoutez l'argument --force à votre commande."
 
-#: core/users.py:1109
+#: core/users.py:1119
 msgid ""
 "Specified home directory {0} for system user {1} is outside {2} and /var, or "
 "inside {3}/{4} or a temporary directory (/var/tmp, /tmp). This is "
@@ -2547,7 +2547,7 @@ msgstr ""
 "var, ou dans {3}/{4} ou un répertoire temporaire (/var/tmp, /tmp). C'est "
 "très dangereux, et à ce titre, non-supporté. Opération annulée."
 
-#: core/users.py:1121
+#: core/users.py:1131
 msgid ""
 "Specified home directory {0} for system user {1} is already owned by another "
 "user. Please choose another one."
@@ -2555,7 +2555,7 @@ msgstr ""
 "Le répertoire maison {0} choisi pour l'utilisateur système {1} est déjà "
 "attribué à un autre utilisateur. Choisissez-en un autre SVP."
 
-#: core/users.py:1130
+#: core/users.py:1140
 msgid ""
 "Specifying an alternative home directory is not allowed for standard users. "
 "Using standard home path {0} instead."
@@ -2564,7 +2564,7 @@ msgstr ""
 "les comptes utilisateurs standard. Utilisation du chemin normalisé {0} à la "
 "place."
 
-#: core/users.py:1143
+#: core/users.py:1153
 msgid ""
 "You must specify a login, a firstname *and* lastname couple, or a GECOS "
 "(login will be built from them)."
@@ -2573,12 +2573,12 @@ msgstr ""
 "(firstname) *et* un nom (lastname), soit un nom complet (GECOS) ; "
 "l'identifiant final sera fondé dessus."
 
-#: core/users.py:1160
+#: core/users.py:1170
 #, python-format
 msgid "User account %s"
 msgstr "Compte utilisateur %s"
 
-#: core/users.py:1167
+#: core/users.py:1177
 msgid ""
 "You must specify a lastname and a firstname *or* a GECOS. If you specify the "
 "GECOS, do not specify firstname/lastname."
@@ -2586,30 +2586,30 @@ msgstr ""
 "Vous devez spécifier un nom et un prénom *OU* un champ GECOS, mais pas les "
 "deux à la fois."
 
-#: core/users.py:1182
+#: core/users.py:1192
 msgid "Malformed login \"{0}\", must match /{1}/."
 msgstr ""
 "Identifiant \"{0}\" mal-formé, les identifiants doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/users.py:1208
+#: core/users.py:1218
 msgid "Invalid shell \"{0}\". Valid shells are: {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont : {1}."
 
-#: core/users.py:1215
+#: core/users.py:1225
 msgid "Invalid skel \"{0}\". Valid skels are: {1}."
 msgstr "Squelette « {0} » invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:1228
+#: core/users.py:1238
 msgid "UID {0} is already taken by user {1}. Please choose another one."
 msgstr ""
 "L'UID {0} est déjà pris par l'utilisateur {1}. Choisissez-en un autre SVP."
 
-#: core/users.py:1237
+#: core/users.py:1247
 msgid "User account {0} already exists!"
 msgstr "Le compte utilisateur {0} existe déjà !"
 
-#: core/users.py:1240
+#: core/users.py:1250
 msgid ""
 "A user account {0} already exists but has not the same type. Please choose "
 "another login for your user."
@@ -2617,7 +2617,7 @@ msgstr ""
 "Un compte utilisateur {0} existe déjà, mais n'a pas le même type. Choisissez "
 "un autre identifiant pour ce compte utilisateur."
 
-#: core/users.py:1267
+#: core/users.py:1277
 msgid ""
 "A group named {0} exists on the system. This could eventually conflict in "
 "Debian/Ubuntu system tools. Please choose another login, or use the --force "
@@ -2628,11 +2628,11 @@ msgstr ""
 "ou utilisez l'argument --force si vous voulez vraiment l'ajouter sur le "
 "système."
 
-#: core/users.py:1285
+#: core/users.py:1295
 msgid "Autogenerated UID for user {0}: {1}."
 msgstr "UID auto-généré pour l'utilisateur {0}: {1}."
 
-#: core/users.py:1293
+#: core/users.py:1303
 msgid ""
 "UID out of range for the kind of user account you specified. System UIDs "
 "must be between {0} and {1}, standard UIDs must be between {2} and {3}."
@@ -2641,31 +2641,31 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les UIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/users.py:1365
+#: core/users.py:1375
 msgid "Home directory {0} already exists."
 msgstr "Le répertoire maison {0} existe déjà."
 
-#: core/users.py:1369
+#: core/users.py:1379
 msgid "Created home directory {0}."
 msgstr "Le répertoire maison {0} a été créé."
 
-#: core/users.py:1427
+#: core/users.py:1437
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 
-#: core/users.py:1435
+#: core/users.py:1445
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1436 core/classes.py:893
+#: core/users.py:1446 core/classes.py:896
 msgid "system"
 msgstr "système"
 
-#: core/users.py:1436
+#: core/users.py:1446
 msgid "standard"
 msgstr "standard"
 
-#: core/users.py:1464
+#: core/users.py:1474
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
@@ -2674,116 +2674,116 @@ msgstr ""
 "Impossible de supprimer le compte système protégé %s sans l'argument --"
 "force, c'est trop risqué."
 
-#: core/users.py:1495
+#: core/users.py:1505
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr "{0} : compte {1} déjà non-référencé par le contrôleur !"
 
-#: core/users.py:1517
+#: core/users.py:1527
 msgid "Deleted user account {0}."
 msgstr "Compte utilisateur {0} supprimé."
 
-#: core/users.py:1622
+#: core/users.py:1632
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr "Certaines vérifications ont échoué, ou n'ont pas été corrigées."
 
-#: core/users.py:1643
+#: core/users.py:1653
 #, python-format
 msgid "Skipped non-existing login or UID %s."
 msgstr "L'identifiant ou l'UID non-existant %s a été ignoré."
 
-#: core/users.py:1658
+#: core/users.py:1668
 msgid "You must specify an UID or a login to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/users.py:1666
+#: core/users.py:1676
 #, python-format
 msgid "User %s does not exist"
 msgstr "L'utilisateur %s n'existe pas."
 
-#: core/users.py:1673
+#: core/users.py:1683
 #, python-format
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
 
-#: core/classes.py:501 core/classes.py:521
+#: core/classes.py:504 core/classes.py:524
 #, python-format
 msgid "Ignoring unexisting entry \"%s\"."
 msgstr "Chemin non-existant \"%s\" ignoré."
 
-#: core/classes.py:573 core/classes.py:582
+#: core/classes.py:576 core/classes.py:585
 msgid "Impossible to apply this perm or ACL."
 msgstr "Impossible d'appliquer cette permission ou ACL en l'état."
 
-#: core/classes.py:712 core/classes.py:724
+#: core/classes.py:715 core/classes.py:727
 #, python-format
 msgid "posix1e.ACL(text=%s).check() call failed."
 msgstr "l'appel posix1e.ACL(text=%s).check() a échoué."
 
-#: core/classes.py:744
+#: core/classes.py:747
 #, python-format
 msgid "Do not know how to expand tildes for %s objects!"
 msgstr "Aucun moyen connu pour étendre les tildes des objets %s !"
 
-#: core/classes.py:853
+#: core/classes.py:856
 #, python-format
 msgid "%s: System default rule has been overwriten by user rule."
 msgstr ""
 "%s: la règle système par défaut a été écrasée par une règle utilisateur."
 
-#: core/classes.py:855
+#: core/classes.py:858
 msgid "Skipped"
 msgstr "Ignoré"
 
-#: core/classes.py:874
+#: core/classes.py:877
 msgid ""
 "{0} group rule for path {1} ({2}:{3}), overriden by system rule ({4}:{5})."
 msgstr ""
 "Règle de groupe {0} pour le chemin {1} ({2}:{3}), écrasée par la règle "
 "système ({4}:{5})."
 
-#: core/classes.py:876
+#: core/classes.py:879
 msgid "Ignored"
 msgstr "Ignoré"
 
-#: core/classes.py:890
+#: core/classes.py:893
 msgid "{0} {1} ACL rule: \"{2}\" for \"{3}\"."
 msgstr "Règle ACL {1} {0} : “{2}” pour {3}."
 
-#: core/classes.py:892
+#: core/classes.py:895
 msgid "Added"
 msgstr "Ajouté(e)"
 
-#: core/classes.py:1037
+#: core/classes.py:1040
 msgid "{0}: error on setting inotifier watches for {1} {2} (was: {3})."
 msgstr ""
 "{0} : erreur à la création des observateurs pour le {1} {2} (problème "
 "initial : {3})."
 
-#: core/classes.py:1322
+#: core/classes.py:1325
 msgid "{0} {1} already enabled."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/classes.py:1333
+#: core/classes.py:1336
 msgid "successfully enabled {0} {1}."
 msgstr "{1} {0} activé(e) avec succès."
 
-#: core/classes.py:1336 core/classes.py:1367
+#: core/classes.py:1339 core/classes.py:1370
 msgid "No {0} by that name \"{1}\"."
 msgstr "Aucun(e) {0} du nom de “{1}”."
 
-#: core/classes.py:1354
+#: core/classes.py:1357
 msgid "{0} {1} already disabled."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/classes.py:1364
+#: core/classes.py:1367
 msgid "successfully disabled {0} {1}."
 msgstr "{1} {0} désactivé(e) avec succès."
 
-#: core/classes.py:1428
+#: core/classes.py:1431
 msgid "{module_type} {module_name} does not exist or is not enabled."
 msgstr "{module_type} {module_name} inconnu(e) ou désactivé(e). "
 
-#: core/classes.py:1487
+#: core/classes.py:1490
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
@@ -2791,47 +2791,47 @@ msgstr ""
 "{name} : erreur lors de l'installation des observateurs pour {type} {module} "
 "(problème initial : {exc})."
 
-#: core/classes.py:1856
+#: core/classes.py:1859
 msgid "{0}: manual check already in progress, skipping event {1}."
 msgstr "{0} : vérification manuelle déjà en cours ; évènement {1} ignoré."
 
-#: core/classes.py:2004
+#: core/classes.py:2007
 msgid "{0}: overwriting watch {1}!"
 msgstr "{0} : écrasement de l'observateur {1} !"
 
-#: core/classes.py:2158
+#: core/classes.py:2161
 msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr "{0} {1} : quelqu'un d'autre est déjà en train de vérifier ; abandon."
 
-#: core/classes.py:2168
+#: core/classes.py:2171
 msgid "Checking group {0}…"
 msgstr "Vérification du groupe {0}…"
 
-#: core/classes.py:2180
+#: core/classes.py:2183
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr "Le répertoire %s n'existe pas mais il est obligatoire. Le créer ?"
 
-#: core/classes.py:2194
+#: core/classes.py:2197
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 "Le répertoire %s n'existe pas mais il est obligatoire. La vérification est "
 "annulée."
 
-#: core/classes.py:2218
+#: core/classes.py:2221
 msgid "{0} {1}: meta-data changed on path {2}."
 msgstr "{0} {1} : les métadonnées ont changé sur le chemin {2}."
 
-#: core/classes.py:2229
+#: core/classes.py:2232
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr "{0} {1} : les méta-données ont changé sur {2} chemin(s)."
 
-#: core/classes.py:2238
+#: core/classes.py:2241
 msgid "{0} {1}: no shared data to check."
 msgstr "{0} {1} : aucune donnée partagée à vérifier."
 
-#: core/classes.py:2343
+#: core/classes.py:2346
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
@@ -2840,7 +2840,7 @@ msgstr ""
 "n'oubliez pas de lancer \"{2}\" après votre manipulation, pour ré-installer "
 "les observateurs."
 
-#: core/classes.py:2412
+#: core/classes.py:2415
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 "{0} : problème pendant la vérification de {1}, opération annulée (contenu de "
