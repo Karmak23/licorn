@@ -193,15 +193,13 @@ class SquidExtension(Singleton, ServiceExtension):
 			if os.path.exists(self.paths.squid_bin):
 				self.available = True
 
-				self.name = 'squid2'
-
 				self.configuration = ConfigFile(self.paths.squid_conf,
 							name='squid', separator=' ', caller=self.name)
 
 			elif os.path.exists(self.paths.squid3_bin):
 				self.available = True
 
-				self.name = self.service_name = 'squid3'
+				self.service_name = 'squid3'
 				self.service_type =	services.SYSV
 
 				self.configuration = ConfigFile(self.paths.squid3_conf,
