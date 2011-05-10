@@ -62,7 +62,7 @@ class SquidExtension(Singleton, ServiceExtension):
 
 		self.service_name = 'squid'
 		self.paths.squid_conf = '/etc/squid/squid.conf'
-		self.paths.squid3_conf = '/etc/squid/squid.conf'
+		self.paths.squid3_conf = '/etc/squid3/squid.conf'
 		self.paths.squid_bin = '/usr/sbin/squid'
 		self.paths.squid3_bin = '/usr/sbin/squid3'
 		self.paths.squid_pid = '/var/run/squid.pid'
