@@ -70,11 +70,6 @@ class EventManager(LicornBasicThread):
 					stylize(ST_NAME, event.name)),
 					to_listener=False)
 				self.__events[event.name] = []
-	def dispatch(self, priority, event):
-		self._input_queue.put((priority, event))
-
-	# comfort alias
-	send_event = dispatch
 
 	def __run_one_event_method(self, event, method):
 		""" Run a given method, for a given event. ``event`` is only used to
@@ -82,6 +77,10 @@ class EventManager(LicornBasicThread):
 			callback if defined. """
 
 		try:
+			assert ltrace('events', '| EventsManager.__run_one_event_method(%s, %s, %s, callback=%s, %s)' % (
+				event.name, method, ', '.join(event.args), event.callback,
+				', '.join('%s=%s' % (key, value) for key,value in event.kwargs.iteritems())))
+
 			method(*event.args, callback=event.callback, **event.kwargs)
 
 		except Exception, e:
@@ -90,12 +89,22 @@ class EventManager(LicornBasicThread):
 					stylize(ST_NAME, self.name),
 					stylize(ST_NAME, event.name), e))
 			print_exc()
+	def dispatch(self, priority, event):
+		assert ltrace('events', '| EventsManager.dispath(%s, %s)' % (priority, event.name))
+
+		self._input_queue.put((priority, event))
 	def run_event(self, event):
-		""" Will run all callbacks associated with a given ``event`` in turn,
-			in a synchronous way. Will not crash if an exception is encoutered
+		""" Will "run" or execute an event synchronously: all callbacks
+			associated with a given ``event`` are executed in turn, then this
+			method returns.
+
+			It will not crash if an exception is encoutered
 			in any method, but will display a stack trace and continue with
 			next method. """
+
 		try:
+			assert ltrace('events', '| EventsManager.run_event(%s)' % event.name)
+
 			methods = self.__events[event.name]
 
 		except KeyError, e:
@@ -108,7 +117,10 @@ class EventManager(LicornBasicThread):
 
 		for method in methods:
 			self.__run_one_event_method(event, method)
+	# comfort alias
+	send_event = dispatch
 	def event_register(self, event_name, reg_method):
+
 		assert ltrace('events', '  %s: register method %s of %s for event %s.' % (
 							current_thread().name, reg_method.im_func,
 							reg_method.im_self, stylize(ST_NAME, event_name)))
@@ -118,6 +130,7 @@ class EventManager(LicornBasicThread):
 			except KeyError:
 				self.__events[event_name] = [ reg_method ]
 	def event_unregister(self, event_name, unr_method):
+
 		try:
 			assert ltrace('events', '  %s: unregister method %s of %s for event %s.' % (
 							current_thread().name, unr_method.im_func,
@@ -139,11 +152,15 @@ class EventManager(LicornBasicThread):
 					stylize(ST_NAME, event_name)))
 	def __collect(self, objekt):
 
+		assert ltrace('events', '| EventsManager.__collect(%s)' % objekt.name)
+
 		for attr in dir(objekt):
 			if attr.endswith('_callback'):
 				self.event_register(attr[0:-9], getattr(objekt, attr), )
 	def uncollect(self, on_object=None):
 
+		assert ltrace('events', '| EventsManager.uncollect(%s)' % (
+							'None' if on_object is None else on_object.name))
 		assert ltrace('locks', '> EventsManager.uncollect(): %s' % self.__lock)
 
 		with self.__lock:
@@ -153,13 +170,16 @@ class EventManager(LicornBasicThread):
 				self.__uncollect(on_object)
 	def __uncollect(self, objekt):
 
+		assert ltrace('events', '| EventsManager.__uncollect(%s)' % objekt.name)
+
 		for attr in dir(objekt):
 			if attr.endswith('_callback'):
 				self.event_unregister(attr[0:-9], getattr(objekt, attr))
 	def collect(self, on_object=None):
 		""" collect controllers, extensions  and unit objects event callbacks.
 		"""
-
+		assert ltrace('events', '> EventsManager.collect(%s)' % (
+							'None' if on_object is None else on_object.name))
 		assert ltrace('locks', '> EventsManager.collect(): %s' % self.__lock)
 
 		with self.__lock:

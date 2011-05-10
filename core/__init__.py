@@ -214,12 +214,18 @@ class LicornMasterController(MixedDictObject):
 
 		assert LicornMasterController._init_conf_full
 
+		# NOTE: this couldn't have been done before, because EventsManager was
+		# not up and ready. Now this will succeed, and we are still *before* all
+		# other controllers load, so no event will be missed.
+		L_event_collect(self.configuration)
+
 		if self._master:
 
 			# Initialize backends prior to controllers, because
 			# controllers need backends to populate themselves.
 			from backends import BackendsManager
 			self.backends = BackendsManager()
+
 			self.backends.load()
 
 			# users and groups must be OK before everything. For this, backends
@@ -240,10 +246,14 @@ class LicornMasterController(MixedDictObject):
 
 			# We create it in first pass, because :class:`CommandListener` needs it.
 			from licorn.foundations.messaging import MessageProcessor
+
 			self.msgproc = MessageProcessor(
 				ip_address=network.find_first_local_ip_address() \
 					if self.configuration.licornd.role == roles.CLIENT \
 					else None)
+
+			# NOTE: we DO NOT collect events on message processor, because it
+			# is not meant to listen for them.
 
 			# NOTE: the msgproc must be connected to foundations.options,
 			# in order for callbacks between pyro clients and server to work.
@@ -292,6 +302,7 @@ class LicornMasterController(MixedDictObject):
 		from privileges import PrivilegesWhiteList
 
 		self.privileges = PrivilegesWhiteList()
+
 		self.privileges.load()
 
 		# The daemon (in server mode) holds every core object. We *MUST* check

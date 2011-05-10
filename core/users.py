@@ -976,13 +976,20 @@ class UsersController(Singleton, CoreFSController):
 		if UsersController.load_ok:
 			return
 
+		L_event_run(InternalEvent('users_loading', users=self))
+
 		assert ltrace('users', '| load()')
-		self.reload()
+		self.reload(send_event=False)
+
+		L_event_run(InternalEvent('users_loaded', users=self))
 
 		UsersController.load_ok = True
-	def reload(self):
+	def reload(self, send_event=True):
 		""" Load (or reload) the data structures from the system data. """
 		assert ltrace('users', '| reload()')
+
+		if send_event:
+			L_event_run(InternalEvent('users_reloading', users=self))
 
 		with self.lock:
 			for backend in self.backends:
@@ -993,6 +1000,9 @@ class UsersController(Singleton, CoreFSController):
 		# groups are loaded, because it needs resolution to set
 		# rules contents.
 		CoreFSController.reload(self)
+
+		if send_event:
+			L_event_run(InternalEvent('users_reloaded', users=self))
 	def reload_backend(self, backend):
 		""" Reload only one backend data (called from inotifier). """
 

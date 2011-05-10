@@ -1714,17 +1714,23 @@ class GroupsController(Singleton, CoreFSController):
 		# be sure our depency is OK.
 		LMC.users.load()
 
-		self.reload()
+		L_event_run(InternalEvent('groups_loading', groups=self))
 
-		LMC.configuration.groups.hidden = self.get_hidden_state()
-		LMC.configuration.acls.gid      = self.by_name(
-									LMC.configuration.acls.group).gidNumber
-		#print '>> ACL GID', LMC.configuration.acls.gid
+		# call the generic reload() method, but silently: this will avoid the
+		# rest of the program believe we are reloading, which is not really the
+		# case.
+		self.reload(send_event=False)
+
+		L_event_run(InternalEvent('groups_loaded', groups=self))
+
 		GroupsController.load_ok = True
-	def reload(self):
+	def reload(self, send_event=True):
 		""" load or reload internal data structures from backends data. """
 
 		assert ltrace('groups', '| reload()')
+
+		if send_event:
+			L_event_run(InternalEvent('groups_reloading', groups=self))
 
 		# lock users too, because we feed the members cache inside.
 		with nested(self.lock, LMC.users.lock):
@@ -1741,6 +1747,9 @@ class GroupsController(Singleton, CoreFSController):
 
 			self.__connect_groups()
 			self.__connect_users()
+
+		if send_event:
+			L_event_run(InternalEvent('groups_reloaded', groups=self))
 	def reload_backend(self, backend):
 		""" reload only one backend contents (used from inotifier). """
 

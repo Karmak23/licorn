@@ -72,10 +72,13 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 		self.lock = RLock()
 
 		# this will be set to True if the EventManager needs to walk through
-		# all our contained objects, looking for event callbacks. By default,
+		# all our *contained* objects, looking for event callbacks. By default,
 		# this is false, but ModulesManager and other special controllers will
 		# set it to True.
 		self._look_deeper_for_callbacks = look_deeper_for_callbacks
+
+		#once initialized, make sure the EventsManager gather callbacks inside us.
+		L_event_collect(self)
 	def __getitem__(self, key):
 		""" From :class:`LockedController`: this is a classic
 			:meth:`__getitem__` method, made thread-safe by encapsulating it
@@ -112,6 +115,12 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 			the_lock.release()
 			return False
 		return True
+	def __str__(self):
+		""" TODO: enhance this method. """
+		return 'CoreController %s (%s objects)' % (self.name, len(self))
+	def __repr__(self):
+		""" TODO: enhance this method. """
+		return 'CoreController %s (%s objects)' % (self.name, len(self))
 class CoreController(LockedController):
 	""" The :class:`CoreController` class implements multiple functionnalities:
 
@@ -170,12 +179,6 @@ class CoreController(LockedController):
 			self.extensions = LMC.extensions.find_compatibles(self)
 		else:
 			self.extensions = None
-	def __str__(self):
-		""" TODO: enhance this method. """
-		return 'CoreController %s (%s objects)' % (self.name, len(self))
-	def __repr__(self):
-		""" TODO: enhance this method. """
-		return 'CoreController %s (%s objects)' % (self.name, len(self))
 	def reload(self):
 		""" load extensions if possible. This could not be possible if the
 			controller is :meth:`reload` ing during the CLIENT-daemon first

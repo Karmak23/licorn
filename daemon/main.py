@@ -147,7 +147,6 @@ class LicornDaemon(Singleton):
 		__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
 		__builtin__.__dict__['L_network_wait']     = self.__network_wait
 
-
 		# create the Event Manager, and map its methods to us.
 		evt = self.__threads._eventmanager = EventManager(self)
 
@@ -212,7 +211,10 @@ class LicornDaemon(Singleton):
 			self.__threads.CommandListener.start()
 
 		# now that LMC is setup, collect event methods and inotifies.
-		evt.collect()
+		# NOTE: this is now done "au fil de l'eau", by the controllers
+		# __init__() methods.
+		#evt.collect()
+
 		if self.configuration.inotifier.enabled:
 			ino.collect()
 	def __init_daemon_phase_2(self):
@@ -913,11 +915,11 @@ class LicornDaemon(Singleton):
 			if not thread.is_alive():
 				del self.__threads[tname]
 				del thread
-				logging.progress(_('{0}: wiped dead thread {1} '
+				assert ltrace('thread', _('{0}: wiped dead thread {1} '
 					'from memory.').format(
 						caller, stylize(ST_NAME, tname)))
 
-		logging.progress(_(u'{0}: doing manual '
+		assert ltrace('thread', _(u'{0}: doing manual '
 			'garbage collection on {1}.').format(caller,
 				', '.join(str(x) for x in gc.garbage)))
 		del gc.garbage[:]

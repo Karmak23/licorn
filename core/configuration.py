@@ -888,11 +888,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.acls.group = 'acl'
 
 		# this one will be filled later, when GroupsController is instanciated.
-		self.acls.gid   = 0
+		self.acls.gid = 0
 
 		self.acls.groups_dir = '%s/%s' % (
-			self.defaults.home_base_path,
-			self.groups.names.plural)
+								self.defaults.home_base_path,
+								self.groups.names.plural)
 		self.acls.acl_base = 'u::rwx,g::---,o:---'
 		self.acls.acl_mask = 'm:rwx'
 		self.acls.acl_admins_ro = 'g:%s:r-x' % self.defaults.admin_group
@@ -1340,15 +1340,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if e.errno != 17:
 				raise e
 
-		self.CheckSystemGroups(minimal=minimal, batch=batch,
-			auto_answer=auto_answer)
+		# this has already been done in the loading phase.
+		#self.CheckSystemGroups(minimal=minimal, batch=batch,
+		#	auto_answer=auto_answer)
 
 		acls_conf = self.acls
 
 		home_groups = FsapiObject(name='home_groups')
 		home_groups.path = acls_conf.groups_dir
-		# FIXME: don't hardcode 'acl' here.
-		home_groups.group = LMC.groups.by_name('acl').gidNumber
+		home_groups.group = acls_conf.gid
 		home_groups.user = 0
 		home_groups.root_dir_acl = True
 		home_groups.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
@@ -1357,8 +1357,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		home_backups = FsapiObject(name='home_backups')
 		home_backups.path = self.home_backup_dir
-		# FIXME: don't hardcode 'acl' here.
-		home_backups.group = LMC.groups.by_name('acl').gidNumber
+		home_backups.group = acls_conf.gid
 		home_backups.user = 0
 		home_backups.root_dir_acl = True
 		home_backups.root_dir_perm = "%s,%s,%s" % (acls_conf.acl_base,
@@ -1494,6 +1493,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						)
 
 		assert ltrace('configuration', '< CheckSystemGroups()')
+	def groups_loaded_callback(self, groups, *args, **kwargs):
+		self.CheckSystemGroups(batch=True)
+
+		self.groups.hidden = groups.get_hidden_state()
+
+		# cache this here for faster access in check methods
+		self.acls.gid = groups.by_name(self.acls.group).gidNumber
+		#print '>> ACL GID', LMC.configuration.acls.gid
+
 	def CheckHostname(self, batch = False, auto_answer = None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""
