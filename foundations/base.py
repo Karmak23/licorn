@@ -213,7 +213,7 @@ class MixedDictObject(NamedObject, dict):
 	def append(self, thing):
 		dict.__setitem__(self, thing.name, thing)
 	def remove(self, thing):
-		for key, value in dict.iteritems():
+		for key, value in dict.iteritems(self):
 			if value == thing:
 				dict.__delitem__(self, key)
 				break
