@@ -108,7 +108,7 @@ class EventManager(LicornBasicThread):
 			methods = self.__events[event.name]
 
 		except KeyError, e:
-			logging.warning2(_(u'{0}: no callbacks / methods for event {1}.').format(
+			assert ltrace('events', _(u'{0}: no callbacks / methods for event {1}.').format(
 								stylize(ST_NAME, self.name),
 								stylize(ST_NAME, event.name)),
 								to_listener=False)
