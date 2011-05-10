@@ -1340,10 +1340,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if e.errno != 17:
 				raise e
 
-		# this has already been done in the loading phase.
-		#self.CheckSystemGroups(minimal=minimal, batch=batch,
-		#	auto_answer=auto_answer)
-
 		acls_conf = self.acls
 
 		home_groups = FsapiObject(name='home_groups')
@@ -1480,8 +1476,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					else:
 						gid = None
 
-					LMC.groups.AddGroup(group, system=True,
-						desired_gid=gid)
+					LMC.groups.add_Group(name=group, system=True,
+															desired_gid=gid)
 					del gid
 				else:
 					raise exceptions.LicornRuntimeError(
