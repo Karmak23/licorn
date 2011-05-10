@@ -13,7 +13,7 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, socket, Pyro.core
+import sys, os, re, socket, getpass, Pyro.core
 from threading import RLock
 
 from licorn.foundations           import logging, exceptions
@@ -336,7 +336,12 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		if self.experimental.enabled:
 			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
-				'Have fun, but do not break anything!')))
+				'Have fun, but do not break anything%s.') % (
+					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
+						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
+							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
+							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
+						else '')))
 	def convert_configuration_values(self):
 		""" take components of human written configuration directive, and
 		convert them to machine-friendly values. """
