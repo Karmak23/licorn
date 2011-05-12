@@ -12,6 +12,8 @@ import re
 from licorn.foundations        import exceptions
 from licorn.foundations.styles import *
 
+# please, just in case: never forget to read http://sed.sourceforge.net/sed1line.txt
+
 # common regexs used in various places of licorn.core.*
 regex = {}
 regex['uri']          = r'''^(?P<protocol>\w+s?)://(?P<host>\S+)(?P<port>(:\d+)?).*$'''
@@ -24,10 +26,14 @@ regex['description']  = u'''^[-@#~*!¡&_…{}—–™®©/'"\w«»“”() ,;.�
 regex['group_name']   = '''^[a-z]([-_.a-z0-9]*[a-z0-9][$]?)?$'''
 regex['login']        = '''^[a-z][-_.a-z0-9]*[a-z0-9]$'''
 regex['keyword']      = u'''^[a-z][- _./\w]*[a-z0-9]$'''
+# IP regexxes come from http://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python/319293#319293
+regex['ipv4']         = r'''^(?:(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|0x0*[0-9a-f]{1,2}|0+[1-3]?[0-7]{0,2})(?:\.(?:[3-9]\d?|2(?:5[0-5]|[0-4]?\d)?|1\d{0,2}|0x0*[0-9a-f]{1,2}|0+[1-3]?[0-7]{0,2})){3})$'''
+# stripped out from the IPv4: short (hexa-)decimal forms, not commonly seen and error-prone to match standard integers: |0x0*[0-9a-f]{1,8}|0+[0-3]?[0-7]{0,10}|429496729[0-5]|42949672[0-8]\d|4294967[01]\d\d|429496[0-6]\d{3}|42949[0-5]\d{4}|4294[0-8]\d{5}|429[0-3]\d{6}|42[0-8]\d{7}|4[01]\d{8}|[1-3]\d{0,9}|[4-9]\d{0,8}
 regex['conf_comment'] = u'''^(#.*|\s*)$'''
-regex['ipv4']         = '''^\d+\.\d+\.\d+\.\d+$'''
+regex['ipv6']         = r'''^(?!.*::.*::)(?:(?!:)|:(?=:))(?:[0-9a-f]{0,4}(?:(?<=::)|(?<!::):)){6}(?:[0-9a-f]{0,4}(?:(?<=::)|(?<!::):)[0-9a-f]{0,4}(?:(?<=::)|(?<!:)|(?<=:)(?<!::):)|(?:25[0-4]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-4]|2[0-4]\d|1\d\d|[1-9]?\d)){3})$'''
 regex['ether_addr']   = '''^([\da-f]+:){5}[\da-f]+$'''
 regex['duration']     = '''^(infinite|\d+[dhms])$'''
+regex['ip_address']   = r'(?:' + regex['ipv4'] + r'|' + regex['ipv6'] + r')'
 
 # precompile all these to gain some time in the licorn daemon.
 cregex = {}
@@ -39,6 +45,8 @@ cregex['login']        = re.compile(regex['login'],        re.IGNORECASE)
 cregex['keyword']      = re.compile(regex['keyword'],      re.IGNORECASE | re.UNICODE)
 cregex['conf_comment'] = re.compile(regex['conf_comment'], re.IGNORECASE | re.UNICODE)
 cregex['ipv4']         = re.compile(regex['ipv4'],         re.IGNORECASE)
+cregex['ipv6']         = re.compile(regex['ipv6'],         re.IGNORECASE)
+cregex['ip_address']   = re.compile(regex['ip_address'],   re.IGNORECASE)
 cregex['ether_addr']   = re.compile(regex['ether_addr'],   re.IGNORECASE)
 cregex['duration']     = re.compile(regex['duration'],     re.IGNORECASE)
 
