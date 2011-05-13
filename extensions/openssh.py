@@ -11,10 +11,10 @@ Licorn extensions: OpenSSH - http://docs.licorn.org/extensions/openssh.html
 import os
 
 from licorn.foundations           import exceptions, logging
-from licorn.foundations           import fsapi, readers
+from licorn.foundations           import fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton, MixedDictObject
+from licorn.foundations.base      import Singleton
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.constants import services, svccmds
 

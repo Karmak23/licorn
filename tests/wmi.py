@@ -12,9 +12,9 @@ Licensed under the terms of the GNU GPL version 2.
 import gettext
 gettext.install('licorn', unicode=True)
 
-import os, sys, curses, re, gzip,
-import urllib2, urllib, webbrowser, httplib, hashlib
-import tempfile, base64, shutil
+import os, sys, curses, re, gzip
+import urllib2, urllib, httplib, hashlib
+import tempfile, base64
 
 from licorn.foundations        import logging, exceptions, process
 from licorn.foundations.styles import *

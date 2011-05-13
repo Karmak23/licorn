@@ -12,21 +12,19 @@ Extensions can "extend" :ref:`CoreController`s
 
 """
 
-import os, time
-from threading import RLock, Timer, current_thread
+import time
+from threading import RLock, Timer
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.base      import Singleton, MixedDictObject
+from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import services, svccmds
 
 from licorn.core                  import LMC
 from licorn.core.classes          import ModulesManager, CoreModule
 from licorn.daemon                import roles
-
-from licorn.interfaces.wmi import utils as _wmi_utils
 
 class ExtensionsManager(Singleton, ModulesManager):
 	""" Store and manage all Licorn® extensions instances. For now, this

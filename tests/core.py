@@ -12,10 +12,9 @@ Licensed under the terms of the GNU GPL version 2.
 import gettext
 gettext.install('licorn', unicode=True)
 
-import sys, os, curses, re, hashlib, tempfile, termios
-import gzip, time, fcntl, struct, stat, shutil
+import sys, os, re, hashlib, tempfile,
+import gzip, time, shutil
 
-from optparse                  import OptionParser
 from subprocess                import Popen, PIPE, STDOUT
 from traceback                 import print_exc
 
