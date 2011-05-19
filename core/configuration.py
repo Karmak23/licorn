@@ -333,15 +333,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			'backup.interval'              : 3600,   # one hour between backups.
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 			})
-
-		if self.experimental.enabled:
-			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
-				'Have fun, but do not break anything%s.') % (
-					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
-						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
-							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
-							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
-						else '')))
 	def convert_configuration_values(self):
 		""" take components of human written configuration directive, and
 		convert them to machine-friendly values. """
@@ -462,11 +453,21 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			self._load_configuration(readers.shell_conf_load_dict(
 				self.main_config_file,
 				convert='full'))
+
 		except IOError, e:
 			if e.errno != 2:
 				# errno == 2 is "no such file or directory" -> don't worry if
 				# main config file isn't here, this is not required.
 				raise e
+
+		if self.experimental.enabled:
+			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
+				'Have fun, but do not break anything%s.') % (
+					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
+						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
+							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
+							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
+						else '')))
 
 		assert ltrace('configuration', '< load_configuration_from_main_config_file()')
 	def load_nsswitch(self):
