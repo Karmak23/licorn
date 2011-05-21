@@ -30,12 +30,6 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 
 """
 
-#: import gettext for all licorn code, and setup utf-8 codeset.
-#: this is particularly needed to avoid #531 and all other kind
-#: of equivalent problems.
-import gettext
-gettext.install('licorn', unicode=True)
-
 import time
 dstart_time = time.time()
 
@@ -55,7 +49,9 @@ from licorn.foundations.thread    import _threads, _thcount
 
 from licorn.core                  import version, LMC
 
-from licorn.daemon                import LicornDaemonInteractor, \
+# NOTE: we must import gettext here, because it is globaly initialized there,
+# first before anything.
+from licorn.daemon                import gettext, LicornDaemonInteractor, \
 											LicornThreads, LicornQueues, \
 											priorities, roles, \
 											client

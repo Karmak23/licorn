@@ -8,11 +8,17 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 
 """
 
-import sys, os, select, code, readline, curses
-import signal, termios
-from threading import current_thread
+#: import gettext for all licorn code, and setup utf-8 codeset.
+#: this is particularly needed to avoid #531 and all other kind
+#: of equivalent problems.
+import gettext
+gettext.install('licorn', unicode=True)
 
+import sys, os, select, code, readline, curses, signal, termios
+
+from threading   import current_thread
 from rlcompleter import Completer
+
 from licorn.foundations           import options, logging, exceptions
 from licorn.foundations           import process, pyutils
 from licorn.foundations.styles    import *
