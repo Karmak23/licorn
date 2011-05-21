@@ -287,4 +287,42 @@ def expand_vars_and_tilde(text, uid=None):
 			'~', user_home).replace(
 			'$HOME', user_home).replace(
 			user_home, '')
+def resolve_dependancies_from_dict_strings(arg):
+	""" Gently taken from http://code.activestate.com/recipes/576570/ (r4)
+		Dependency resolver
 
+	"arg" is a dependency dictionary in which
+	the values are the dependencies of their respective keys.
+
+	Example:
+		d=dict(
+			a=('b','c'),
+			b=('c','d'),
+			e=(),
+			f=('c','e'),
+			g=('h','f'),
+			i=('f',)
+		)
+		print dep(d)
+	"""
+
+	d = dict((k, set(arg[k])) for k in arg)
+	r = []
+
+	while d:
+		# values not in keys (items without dep)
+		t = set(i for v in d.values() for i in v) - set(d.keys())
+
+		# and keys without value (items without dep)
+		t.update(k for k, v in d.items() if not v)
+
+		# can be done right away
+
+		# the original code stated "r.append(t)". We "flaten" the list here
+		# because we just need a list of things to load/check sequencially.
+		r.extend(list(t))
+
+		# and cleaned up
+		d = dict( ((k, v - t) for k, v in d.items() if v) )
+
+	return r

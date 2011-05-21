@@ -17,11 +17,11 @@ import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
 from threading import RLock, Event, current_thread
 from traceback import print_exc
 
-from licorn.foundations           import exceptions, logging
+from licorn.foundations           import exceptions, logging, options
 from licorn.foundations           import hlstr, pyutils, fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, verbose
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 										NamedObject, MixedDictObject, \
 										pyro_protected_attrs, \
@@ -1137,13 +1137,14 @@ class ModulesManager(LockedController):
 		for entry in os.listdir(self.module_path):
 
 			if entry[0] == '_' or entry[-3:] != '.py' \
-					or os.path.isdir(self.module_path + '/' + entry):
+					or os.path.isdir(self.module_path + '/' + entry) \
+					or 'test' in entry:
 				continue
 
 			# remove '.py'
 			module_name = entry[:-3]
+			class_name  = module_name.title() + self.module_type.title()
 
-			class_name = module_name.title() + self.module_type.title()
 			try:
 				python_module = __import__(self.module_sym_path
 											+ '.' + module_name,
@@ -1159,6 +1160,7 @@ class ModulesManager(LockedController):
 				continue
 
 			modules_classes[module_name] = module_class
+
 			try:
 				modules_dependancies[module_name] = module_class.module_depends[:]
 
@@ -1166,11 +1168,11 @@ class ModulesManager(LockedController):
 				modules_dependancies[module_name] = []
 
 		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
-				', '.join(self.__resolve_dependancies(modules_dependancies)))
+				', '.join(pyutils.resolve_dependancies_from_dict_strings(modules_dependancies)))
 
-		# dependancies are resolved, now instanciate in the good order:
 		changed = False
-		for module_name in self.__resolve_dependancies(modules_dependancies):
+
+		for module_name in pyutils.resolve_dependancies_from_dict_strings(modules_dependancies):
 
 			module_class = modules_classes[module_name]
 
@@ -1217,6 +1219,7 @@ class ModulesManager(LockedController):
 							try:
 								self.disable_func(module_name)
 								changed = True
+
 							except exceptions.DoesntExistException, e:
 								logging.warning2('cannot disable '
 									'non-existing %s %s.' % (self.module_type,
@@ -1249,8 +1252,8 @@ class ModulesManager(LockedController):
 									stylize(ST_PATH,
 										LMC.configuration.main_config_file)))
 				else:
-					logging.info('%s %s %s, manually ignored in %s.' %
-								(stylize(ST_DISABLED, 'Skipped'),
+					logging.info(_(u'{0} {1} {2}, manually ignored in {3}.').format(
+									stylize(ST_DISABLED, _(u'Skipped')),
 									self.module_type,
 									stylize(ST_NAME, module.name),
 									stylize(ST_PATH,
@@ -1288,8 +1291,8 @@ class ModulesManager(LockedController):
 
 		# if no configuration directive is found, the module is considered
 		# not ignored by default, it will be loaded.
-		assert ltrace(self.name, '| not_manually_ignored(%s) → %s (no match)'
-			% (module_name, True))
+		assert ltrace(self.name, '| not_manually_ignored(%s) → %s (no match)' % (
+															module_name, True))
 		return True
 	def find_compatibles(self, controller):
 		""" Return a list of modules (real instances, not just
@@ -1406,12 +1409,21 @@ class ModulesManager(LockedController):
 					# We disable it later to avoid dictionnary changes during
 					# present iteration cycle, and will disable them in the
 					# reverse order to avoid dependancies-related problems.
+					logging.warning(_(u'{0}: unhandled exception {1} in '
+						'{2} {3} during check. Disabling it to avoid '
+						'problems.').format(stylize(ST_NAME, self.name),
+							stylize(ST_COMMENT, e), self.module_type,
+							stylize(ST_NAME, module.name)))
+
+					if options.verbose >= verbose.INFO:
+						print_exc()
+
 					to_disable.append(module)
 
 			for module in reversed(to_disable):
 				if module.enabled:
 					# demote the module to available-only state
-					self.disable(module.name)
+					self.disable_func(module.name)
 
 				if module.available:
 					# anyway, if the exception was not catched inside the
@@ -1431,50 +1443,6 @@ class ModulesManager(LockedController):
 			raise exceptions.DoesntExistException(_('{module_type} '
 				'{module_name} does not exist or is not enabled.').format(
 					module_type=self.module_type, module_name=module_name))
-	def __resolve_dependancies(self, arg):
-		""" Gently taken from http://code.activestate.com/recipes/576570/ (r4)
-			Dependency resolver
-
-		"arg" is a dependency dictionary in which
-		the values are the dependencies of their respective keys.
-
-		Example:
-			d=dict(
-				a=('b','c'),
-				b=('c','d'),
-				e=(),
-				f=('c','e'),
-				g=('h','f'),
-				i=('f',)
-			)
-			print dep(d)
-		"""
-
-		#print '>>> in', arg
-
-		d = dict((k, set(arg[k])) for k in arg)
-
-		r = []
-
-		while d:
-			# values not in keys (items without dep)
-			t = set(i for v in d.values() for i in v) - set(d.keys())
-
-			# and keys without value (items without dep)
-			t.update(k for k, v in d.items() if not v)
-
-			# can be done right away
-
-			# the original code stated "r.append(t)". It is "flatenned" here
-			# because we just need a list of modules to load sequencially, we
-			# do not load them in parallel.
-			r.extend(list(t))
-
-			# and cleaned up
-			d = dict( ((k, v - t) for k, v in d.items() if v) )
-
-		#print '>>> out', r
-		return r
 	def _inotifier_install_watches(self, inotifier):
 		""" forward the inotifier call to our enabled modules, and to
 			our available modules, too: a change in a configuration file
