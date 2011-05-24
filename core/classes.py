@@ -1171,8 +1171,17 @@ class ModulesManager(LockedController):
 				', '.join(pyutils.resolve_dependancies_from_dict_strings(modules_dependancies)))
 
 		changed = False
+		depended_disabled_modules = []
 
 		for module_name in pyutils.resolve_dependancies_from_dict_strings(modules_dependancies):
+
+			if module_name in depended_disabled_modules:
+				logging.warning(_(u'{0}: will not try to load {1} {2} because '
+					'one or more of its dependancies failed to load.').format(
+						stylize(ST_NAME, self.name),
+							self.module_type,
+							stylize(ST_NAME, module_name)))
+				continue
 
 			module_class = modules_classes[module_name]
 
@@ -1206,7 +1215,37 @@ class ModulesManager(LockedController):
 				self.module_type, stylize(ST_NAME, module_name)))
 
 			if self.__not_manually_ignored(module.name):
-				module.load(server_modules=server_side_modules)
+				try:
+					module.load(server_modules=server_side_modules)
+
+				except Exception, e:
+					# an uncatched exception occured, the module is buggy or
+					# doesn't handle a very specific situation. The module
+					# didn't load, we must disable other modules which depend
+					# on it.
+
+					r_depended = [m for m in
+						modules_dependancies.keys()
+							if module_name in modules_dependancies[m]]
+
+					depended_disabled_modules.extend(r_depended)
+
+					logging.warning(_(u'{0}: unhandled exception {1} in '
+						'{2} {3} during load.{4}').format(
+							stylize(ST_NAME, self.name),
+							stylize(ST_COMMENT, e), self.module_type,
+							stylize(ST_NAME, module_name),
+							_(u' Disabling dependant {0}(s) {1} '
+								'to avoid further problems.').format(
+									self.module_type,
+									', '.join(stylize(ST_NAME, name)
+									for name in r_depended))
+								if len(r_depended) > 0 else ''))
+
+					if options.verbose >= verbose.INFO:
+						print_exc()
+
+					continue
 
 				if module.available:
 					if module.enabled:
@@ -1338,6 +1377,7 @@ class ModulesManager(LockedController):
 
 					logging.notice(_(u'successfully enabled {0} {1}.').format(
 						module_name, self.module_type))
+
 			except KeyError:
 				raise exceptions.DoesntExistException(_(u'No {0} by that '
 					'name "{1}".').format(self.module_type, module_name))
@@ -1369,6 +1409,7 @@ class ModulesManager(LockedController):
 
 					logging.notice(_(u'successfully disabled {0} {1}.').format(
 						module_name, self.module_type))
+
 			except KeyError:
 				raise exceptions.DoesntExistException(_(u'No {0} by that '
 					'name "{1}".').format(self.module_type, module_name))
