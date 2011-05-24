@@ -1151,7 +1151,7 @@ class ModulesManager(LockedController):
 											globals(), locals(), class_name)
 				module_class  = getattr(python_module, class_name)
 
-			except ImportError, e:
+			except (ImportError, SyntaxError), e:
 				logging.warning('{0} unusable {1} {2}: {3}. '
 					'Traceback follows:'.format(
 					stylize(ST_BAD, 'Skipped'), self.module_type,
