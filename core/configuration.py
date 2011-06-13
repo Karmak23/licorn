@@ -1159,11 +1159,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				for b in LMC.backends:
 					data += '%s(%s%s%s)\n' % (b.name,
 						stylize(ST_INFO, 'U') \
-						if b.name == LMC.users._prefered_backend.name else '',
+						if LMC.users._prefered_backend != None
+							and b.name == LMC.users._prefered_backend.name else '',
 						stylize(ST_INFO, 'G') \
-						if b.name == LMC.groups._prefered_backend.name else '',
+						if LMC.groups._prefered_backend != None
+							and b.name == LMC.groups._prefered_backend.name else '',
 						stylize(ST_INFO, 'M') \
-						if b.name == LMC.machines._prefered_backend.name else '',
+						if LMC.machines._prefered_backend != None
+							and b.name == LMC.machines._prefered_backend.name else '',
 						)
 				for b in LMC.backends.available():
 					data += '%s\n' % b.name
