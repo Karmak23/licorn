@@ -110,8 +110,7 @@ class EventManager(LicornBasicThread):
 		except KeyError, e:
 			assert ltrace('events', _(u'{0}: no callbacks / methods for event {1}.').format(
 								stylize(ST_NAME, self.name),
-								stylize(ST_NAME, event.name)),
-								to_listener=False)
+								stylize(ST_NAME, event.name)))
 			self.__events[event.name] = []
 			return
 
