@@ -1113,7 +1113,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		"""
 
 		if args is not None:
-			data = ""
+			data = ''
 
 			if cli_format == "bourne":
 				cli = {
@@ -1171,6 +1171,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			elif args[0] == 'extensions':
 				for e in LMC.extensions:
 					data += '%s\n' % stylize(ST_ENABLED, e.name)
+
 				for e in LMC.extensions.available():
 					data += '%s\n' % stylize(ST_DISABLED, e.name)
 
@@ -1199,18 +1200,17 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						)
 				else:
 					data +=	 "%s\n" % (varval)
+
 			elif args[0] in ('sysgroups', 'system_groups', 'system-groups'):
 
-				for group in [ self.acls.group, self.defaults.admin_group ]:
-					data += "%s\n" % group
+				data += '%s\n' % '\n'.join((self.acls.group,
+											self.defaults.admin_group))
 
-				for priv in LMC.privileges:
-					data += "%s\n" % priv
+				data += "%s\n" % '\n'.join(x.name for x in LMC.privileges)
 
 			elif args[0] in ('priv', 'privs', 'privileges'):
 
-				for priv in LMC.privileges:
-					data += "%s\n" % priv
+				data += "%s\n" % '\n'.join(x.name for x in LMC.privileges)
 
 			else:
 				raise NotImplementedError(

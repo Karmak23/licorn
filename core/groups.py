@@ -254,10 +254,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__class__,
 			stylize(ST_UGID, self.__gidNumber),
 			stylize(ST_NAME, self.__name),
-			'\n\t'.join('%s: %s' % (attr_name, getattr(self, attr_name))
-					for attr_name in dir(self)
-						if attr_name not in ('__profile', 'profile'))
-			)
+			'\n\t'.join('%s: %s' % (attr_name, str(attr))
+					for attr_name, attr in self.__dict__.items()
+						if not callable(attr)))
 	def __repr__(self):
 		return '%s(%s‣%s)' % (
 			self.__class__,
