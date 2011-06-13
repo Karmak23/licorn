@@ -227,7 +227,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							stylize(ST_COMMENT, lang),
 							stylize(ST_LOGIN, self.http_user)))
 					break
-
 	def user_authorized(self):
 
 		""" Return True if authorization exists AND user is authorized."""
@@ -375,28 +374,26 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 					#getattr(getattr(wmi, niv1), niv2)(self.path, self.htt_user, **kwargs)
 					exec py_code
 
-				except (AttributeError, NameError), e:
-					# this warning is needed as long as send_head() will produce
-					# a 404 for ANY error. When it will able to distinguish
-					# between bad requests and real 404, this warning will
-					# disapear.
-					logging.warning("exec(%s): %s." % (py_code, e))
-					self.send_error(500,
-						"Internal server error or bad request.\n\n%s" %
-							self.wmi.utils.get_traceback(e))
-
-				except TypeError, e:
-					logging.warning('BadRequest/TypeError: %s.' % e)
-					if options.verbose >= verbose.INFO:
-						print_exc()
-
-					rettype, retdata = 	self.wmi.utils.bad_arg_error(
-											self.wmi.utils.get_traceback(e))
-
 				except exceptions.LicornRuntimeException, e:
 					logging.warning('Bad_Request/LicornRuntimeException: %s.'
 						% e)
 					rettype, retdata = self.wmi.utils.forgery_error()
+
+				except Exception, e:
+					logging.warning('Bad request: %s%s %s.' % (
+						('%s → ' % py_code)
+							if options.verbose >= verbose.INFO
+							else '', type(e), e))
+
+					if options.verbose >= verbose.INFO:
+						print_exc()
+
+					self.send_error(500,
+						'Internal server error or bad request%s' % (
+							('\n\n<br />%s' % self.wmi.utils.get_traceback(e))
+							if options.verbose >= verbose.INFO
+							else ''))
+
 			else:
 				# not a self.wmi.* module
 				raise exceptions.LicornWebException(
