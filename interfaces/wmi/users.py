@@ -114,7 +114,7 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 	if login == http_user or user in \
 			LMC.groups.by_name(
 				LMC.configuration.defaults.admin_group).all_members \
-			or users.is_system_restricted:
+			or user.is_system_restricted:
 		return w.fool_proof_protection_error( _('Did you <em>really</em> think '
 			'the system could have allowed you to delete your own account or '
 			'an admin account? I don\'t.'), title)
@@ -143,7 +143,6 @@ def delete(uri, http_user, login, sure=False, no_archive=False, **kwargs):
 		return (w.HTTP_TYPE_TEXT, w.page(title, data + w.page_body_end()))
 
 	else:
-
 		try:
 			LMC.users.del_User(user, no_archive=True if no_archive else False)
 
