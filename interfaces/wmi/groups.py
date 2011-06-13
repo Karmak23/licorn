@@ -672,8 +672,7 @@ def main(uri, http_user, sort="name", order="asc", **kwargs):
 			tgroups[gid] = {
 				'name'        : name,
 				'description' : group.description + name,
-				'skel'        : (_(u'none') if group.groupSkel
-											else group.groupSkel) + name,
+				'skel'        : (group.groupSkel or _(u'none')) + name,
 				'permissive'  : str(group.permissive) + name
 				}
 			totals[filter_name] += 1
