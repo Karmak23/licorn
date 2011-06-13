@@ -322,7 +322,11 @@ class LicornDaemon(Singleton):
 		# NOTE: this method must be called *after*
 		# :meth:`self._cli_parse_arguments()`, because it uses
 		# :attr:`self.options` which must be already filled.
-		self.replace_or_exit()
+		self.replace_or_shutdown()
+
+		# we were called only to shutdown the current instance. Don't go farther.
+		if self.options.shutdown:
+			sys.exit(0)
 
 		# NOTE: :arg:`--batch` is needed generally in the daemon, because it is
 		# per nature a non-interactive process. At first launch, it will have to
@@ -518,14 +522,14 @@ class LicornDaemon(Singleton):
 					# in rare cases, the process vanishes during the clean-up
 					if e.errno != 2:
 						raise e
-	def replace_or_exit(self):
+	def replace_or_shutdown(self):
 		""" See if another daemon process if already running. If it is and we're not
 			asked to replace it, exit. Else, try to kill it and start. It the
 			process won't die after a certain period of time (10 seconds), alert the
 			user and exit.
 		"""
 
-		assert ltrace('daemon', '> replace_or_exit()')
+		assert ltrace('daemon', '> replace_or_shutdown()')
 
 		exclude = []
 
@@ -536,9 +540,10 @@ class LicornDaemon(Singleton):
 		self.check_aborted_daemon(exclude)
 
 		if process.already_running(self.pid_file):
-			if self.options.replace:
-				logging.notice(_(u'{0}: trying to replace existing instance '
-					'@pid {1}.').format(str(self), old_pid))
+			if self.options.replace or self.options.shutdown:
+				logging.notice(_(u'{0}: trying to {1} existing instance '
+					'@pid {2}.').format(str(self), _(u'replace')
+						if self.options.replace else _(u'shutdown'), old_pid))
 
 				# kill the existing instance, gently
 				os.kill(old_pid, signal.SIGTERM)
@@ -655,15 +660,18 @@ class LicornDaemon(Singleton):
 
 					counter += 1
 
-				logging.notice(_(u'{0}: old instance {1} terminated, we can '
-					'play now.').format(str(self), _(u'nastily') if killed
-							else _(u'successfully')))
+				logging.notice(_(u'{0}: old instance {1} terminated{2}').format(
+						str(self),
+						_(u'nastily') if killed else _(u'successfully'),
+						_(u', we can play now.')
+									if self.options.replace else '.'))
+
 			else:
 				logging.notice(_(u'{0}: daemon already running (pid {1}), '
 					'not restarting.').format(str(self), old_pid))
-				sys.exit(0)
+				sys.exit(5)
 
-		assert ltrace('daemon', '< replace_or_exit()')
+		assert ltrace('daemon', '< replace_or_shutdown()')
 	def refork_if_not_root_or_die(self):
 		""" If the current process is not UID(0), try to refork as root. If
 			this fails, exit with an error. """
@@ -982,10 +990,16 @@ class LicornDaemon(Singleton):
 			help='Specify a PID to send SIGUSR1 to, when daemon is ready. Used '
 				'internaly only when CLI tools start the daemon themselves.')
 
-		parser.add_option("-r", "--replace",
-			action="store_true", dest="replace", default=False,
+		parser.add_option('-r', '--replace',
+			action='store_true', dest='replace', default=False,
 			help='Replace an existing daemon instance. A comfort flag to avoid'
 				'killing an existing daemon before relaunching a new one.')
+
+		parser.add_option('-k', '--kill', '-T', '--terminate', '-S', '--shutdown',
+			action="store_true", dest='shutdown', default=False,
+			help='Shutdown any currently running Licorn® daemon. We will try '
+				'to terminate them nicely, before beiing more agressive after '
+				'a given period of time.')
 
 		parser.add_option("-B", "--no-boot-check",
 			action="store_true", dest="no_boot_check", default=False,
