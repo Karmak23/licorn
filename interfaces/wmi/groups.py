@@ -99,7 +99,7 @@ def lock(uri, http_user, name, sure=False, **kwargs):
 			'this can take some time, depending of the volume of shared data '
 			'(about 15 seconds per Gib).')
 
-		data += (w.page_body_start(uri, http_user, ctxtnav, title, False)
+		data = (w.page_body_start(uri, http_user, ctxtnav, title, False)
 			+ w.question(_('Are you sure you want to disable permissiveness '
 			'on group <strong>%s</strong>?') % name,
 			description, yes_values   = [ _("Disable") + ' >>',
