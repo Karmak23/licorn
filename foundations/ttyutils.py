@@ -7,7 +7,7 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, termios
+import sys, termios, threading
 
 from styles    import *
 from base      import Singleton
@@ -57,31 +57,45 @@ def interactive_ask_for_repair(message, auto_answer=None):
 		return False
 
 	else:
+		if sys.stdin.isatty():
+			is_a_tty = True
+			# see tty and termios modules for implementation details.
+			fd = sys.stdin.fileno()
+			old = termios.tcgetattr(fd)
+			new = termios.tcgetattr(fd)
+			# lflags
+			new[3] = new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
+			new[6][termios.VMIN] = 1
+			new[6][termios.VTIME] = 0
+
+			def restore_terminal(flush=True):
+				termios.tcsetattr(fd, termios.TCSADRAIN, old)
+				if flush:
+					sys.stderr.write("\n")
+
+		else:
+			is_a_tty = False
+
 		while True:
-			if sys.stdin.isatty():
-				# see tty and termios modules for implementation details.
-				fd = sys.stdin.fileno()
-				old = termios.tcgetattr(fd)
-				new = termios.tcgetattr(fd)
+			if is_a_tty:
+				# We need to add a method to restore the terminal to the MainThread,
+				# because in CLI programs only the MainThread receives the
+				# SIGINT, and it doesn't directly know if it has to restore the
+				# terminal because the current function is usually called from the
+				# Pyro thread.
+				threading.enumerate()[0].restore_terminal = restore_terminal
 
 				# put the TTY in nearly raw mode to be able to get characters
 				# one by one (not to wait for newline to get one).
+				termios.tcsetattr(fd, termios.TCSAFLUSH, new)
 
-				# lflags
-				new[3] = new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
-				new[6][termios.VMIN] = 1
-				new[6][termios.VTIME] = 0
-				try:
-					try:
-						termios.tcsetattr(fd, termios.TCSAFLUSH, new)
-						char = sys.stdin.read(1)
-					except KeyboardInterrupt:
-						sys.stderr.write("\n")
-						raise
-				finally:
-					# put it back in standard mode after input, whatever
-					# happened. The terminal has to be restored.
-					termios.tcsetattr(fd, termios.TCSADRAIN, old)
+				char = sys.stdin.read(1)
+
+				# put the terminal back in standard mode after input.
+				restore_terminal(flush=False)
+
+				del threading.enumerate()[0].restore_terminal
+
 			else:
 				char = sys.stdin.read(1)
 

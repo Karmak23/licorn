@@ -14,7 +14,7 @@ gettext.install('licorn', unicode=True)
 import os, signal, sys, time, operator
 import Pyro.core, Pyro.util, Pyro.configuration
 
-from threading import Thread
+from threading import Thread, current_thread
 
 from licorn.foundations           import options, exceptions, logging
 from licorn.foundations           import pyutils, hlstr
@@ -152,6 +152,9 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 		getattr(argparser, functions[mode][0])(app=app_data)
 
 	except KeyboardInterrupt, e:
+		t = current_thread()
+		if hasattr(t, 'restore_terminal'):
+			t.restore_terminal()
 		logging.warning(_(u'Interrupted, cleaning up!'))
 
 	except exceptions.NeedRestartException, e:
