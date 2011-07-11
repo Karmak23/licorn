@@ -201,7 +201,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			selection = filters.SYSTEM
 
 		elif opts.not_system:
-			selection = filters.STANDARD
+			selection = filters.NOT_SYSTEM
 
 		users_to_get = self.select(LMC.users, args,
 					include_id_lists = [
@@ -2233,7 +2233,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		users_to_chk = self.select(LMC.users, args,
 			include_id_lists = include_id_lists,
-			exclude_id_lists = exclude_id_lists)
+			exclude_id_lists = exclude_id_lists,
+			default_selection = selection,
+			all=opts.all)
 
 		assert ltrace('chk', '> chk_user(%s)' % users_to_chk)
 
