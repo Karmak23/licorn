@@ -1065,7 +1065,7 @@ class UsersController(Singleton, CoreFSController):
 			if filters.ALL == filter_string:
 				filtered_users = self.values()
 
-			elif filters.NONE & filter_string:
+			elif filters.NONE == filter_string:
 				filtered_users = []
 
 			elif type(filter_string) == type([]):
