@@ -25,6 +25,8 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, insert_ltrace, dump, fulldump
 from licorn.foundations.base      import NamedObject, MixedDictObject, EnumDict, Singleton
 from licorn.foundations.thread    import _threads, _thcount
+from licorn.foundations.constants import verbose
+
 
 class LicornThreads(MixedDictObject, Singleton):
 	pass
@@ -170,6 +172,38 @@ class LicornDaemonInteractor(NamedObject):
 						elif char in ('t', 'T'):
 							sys.stderr.write(_(u'{0} active threads: {1}').format(
 								_thcount(), _threads()) + '\n')
+
+						elif char in ('v', 'V'):
+							if options.verbose < verbose.DEBUG:
+								options.verbose += 1
+								self.daemon.options.verbose += 1
+
+								logging.notice(_(u'{0}: increased verbosity level '
+									'to {1}.').format(self.name,
+										stylize(ST_COMMENT,
+											verbose[options.verbose])))
+
+							else:
+								logging.notice(_(u'{0}: verbosity level already '
+									'at the maximum value ({1}).').format(
+										self.name, stylize(ST_COMMENT,
+											verbose[options.verbose])))
+
+						elif char in ('q', 'Q'):
+							if options.verbose > verbose.NOTICE:
+								options.verbose -= 1
+								self.daemon.options.verbose -= 1
+
+								logging.notice(_(u'{0}: decreased verbosity level '
+									'to {1}.').format(self.name,
+										stylize(ST_COMMENT,
+											verbose[options.verbose])))
+
+							else:
+								logging.notice(_(u'{0}: verbosity level already '
+									'at the minimum value ({1}).').format(
+										self.name, stylize(ST_COMMENT,
+											verbose[options.verbose])))
 
 						elif char == '\f': # ^L (form-feed, clear screen)
 							sys.stdout.write(clear)
