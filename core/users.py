@@ -20,7 +20,7 @@ from licorn.foundations           import pyutils, fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
-from licorn.foundations.constants import filters, backend_actions
+from licorn.foundations.constants import filters, backend_actions, distros
 
 from licorn.core                import LMC
 from licorn.core.groups         import Group
@@ -793,25 +793,95 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# uids > 65000, like nobody. Just stick to adduser or licorn created
 			# system uids.
 			if self.is_system_unrestricted:
-				return self.__check_system_user(batch=batch,
+				return self.__check_unrestricted_system_user(batch=batch,
 							auto_answer=auto_answer, full_display=full_display)
 
 			elif self.is_standard:
 				return self.__check_standard_user(minimal=minimal, batch=batch,
 							auto_answer=auto_answer, full_display=full_display)
 			else:
-				# not system account between 300 < 999, not standard account.
-				# the account is thus a special (reserved) system account, below
-				# uid 300 or above uid 65000. Just don't do anything.
-				logging.info(_(u'Skipped reserved system account %s '
-					'(we do not check them at all).') %
-						stylize(ST_NAME, self.__login))
-				return True
+				return self.__check_restricted_system_user(batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
 	# aliases to CoreFSUnitObject methods
 	__check_standard_user = CoreFSUnitObject._standard_check
+	def __check_common_system_user(self, minimal=True, batch=False,
+										auto_answer=None, full_display=True):
 
-	def __check_system_user(self, minimal=True, batch=False, auto_answer=None,
+		my_gecos = self.__gecos
+
+		if my_gecos != my_gecos.strip():
+			my_gecos = my_gecos.strip()
+
+		something_done = False
+
+		if my_gecos.endswith(',,,'):
+			something_done = True
+			my_gecos = my_gecos[:-3]
+
+		if my_gecos.endswith(',,'):
+			something_done = True
+			my_gecos = my_gecos[:-2]
+
+		if my_gecos.endswith(','):
+			something_done = True
+			my_gecos = my_gecos[:-1]
+
+		my_gecos = my_gecos.strip()
+
+		if something_done:
+			logging.notice(_(u"Auto-cleaned {0}'s gecos to \"{1}\".").format(
+				stylize(ST_LOGIN, self.__login),
+				stylize(ST_COMMENT, my_gecos)))
+
+		for login, meaningless_gecoses, replacement_gecos in (
+					('bin', ('bin'), _(u'Special Executable Restrictor Account')),
+					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro]),
+					('caldavd', ('calendarserver daemon'), _(u'Apple Calendar Server Daemon')),
+					('daemon', ('daemon'), _(u'Generic System Daemon')),
+					('dhcpd', ('dhcpd'), _(u'DHCP Daemon')),
+					('dnsmasq', ('dnsmasq'), _(u'DNSmasq (DHCP & DNS) Daemon')),
+					('ftp', ('ftp'), _(u'FTP Daemon / restricted account')),
+					('games', ('games'), _(u'Games Specific Account')),
+					('haldaemon', ('Hardware abstraction layer'), _(u'Hardware Abstraction Layer Daemon')),
+					('hplip', ('HPLIP system user'), _(u'Hewlett-Packard Linux Imaging & Printing Daemon')),
+					('irc', ('ircd'), _(u'Internet Relay Chats Daemon')),
+					('kernoops', ('Kernel Oops Tracking Daemon'), _(u'Kernel OOPs Tracking Daemon')),
+					('libuuid', (''), _(u'UUID Library Account')),
+					('lp', ('lp'), _('Line Printer Daemon')),
+					('mail', ('mail'), _(u'Local E-Mail System Account')),
+					('man', ('man'), _(u'Unix Manual Pages Generator')),
+					('memcache', ('Memcached'), _(u'Memory Cache Daemon')),
+					('messagebus', (''), _(u'System Message Bus (D-BUS)')),
+					('news', ('news'), _(u'Very unprivileged System Account')),
+					('nobody', ('nobody'), _(u'Very unprivileged System Account')),
+					('messagebus', (''), _(u'System Message Bus (D-BUS)')),
+					('postfix', (''), _(u'Postfix® Mail System')),
+					('proxy', ('proxy'), _(u'Web (& possibly more) Proxy Server')),
+					('root', ('root'), _(u'John Root, System Administrator (BOFH)')),
+					('saned', (''), _(u'Scanner Access Now Easy daemon')),
+					('sshd', (''), _(u'Secure SHell Daemon')),
+					('sync', ('sync'), _(u'Generic Synchronization Account')),
+					('sys', ('sys'), _(u'Generic System Account')),
+					('syslog', ('syslog'), _(u'System Logger Daemon')),
+					('uucp', ('uucp'), _(u'Unix to Unix Copy Protocol daemon')),
+					('www-data', ('www-data'), _(u'Web Server unprivileged Account')),
+					('ntp', (''), _(u'Network Time Protocol Daemon')),
+				):
+			if self.__login == login and self.is_system:
+				if my_gecos in meaningless_gecoses:
+					if batch or logging.ask_for_repair(_(u'{0}\'s GECOS "{1}" '
+						u'is currently meaningless, or we have a far better '
+						u'and hypish value "{2}" ready to enhance it. Would '
+						u'you like to use it?').format(
+							stylize(ST_LOGIN, self.__login),
+							stylize(ST_COMMENT, my_gecos),
+							stylize(ST_OK, replacement_gecos))):
+						my_gecos = replacement_gecos
+
+			if my_gecos != self.__gecos:
+				self.gecos = my_gecos
+	def __check_unrestricted_system_user(self, minimal=True, batch=False, auto_answer=None,
 														full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
@@ -851,6 +921,25 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				del checked
 
 			self._checking.clear()
+	def __check_restricted_system_user(self, minimal=True, batch=False, auto_answer=None,
+														full_display=True):
+		""" Check the home dir and its contents, if it exists (this is not
+			mandatory for a system account). If it does not exist, it will not
+			be created. """
+		logging.progress(_(u'Checking restricted system account %s…') %
+											stylize(ST_NAME, self.__login))
+
+		if self._checking.is_set():
+			logging.warning(_(u'account {0} already beiing ckecked, '
+				'aborting.').format(stylize(ST_LOGIN, self.__login)))
+			return
+
+		with self.lock:
+			self._checking.set()
+			result = self.__check_common_system_user(batch=batch,
+						auto_answer=auto_answer, full_display=full_display)
+			self._checking.clear()
+			return result
 	def _cli_get(self, long_output=False, no_colors=False):
 		""" return a beautifull view for the current User object. """
 		try:
