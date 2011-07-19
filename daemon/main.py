@@ -684,7 +684,8 @@ class LicornDaemon(Singleton):
 				process.refork_as_root_or_die('licorn-daemon')
 			except exceptions.LicornRuntimeException, e:
 				logging.error(_(u'{0}: must be run as {1} '
-					'(was: {2}).').format(str(self), stylize(ST_NAME, 'root'), e))
+					'(was: {2}).').format(str(self),
+					stylize(ST_NAME, 'root'), e))
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
 			multi-lingual parallel workers ;-) """

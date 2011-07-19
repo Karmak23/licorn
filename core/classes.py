@@ -2177,7 +2177,8 @@ class CoreFSUnitObject:
 			try:
 				self._checking.set()
 
-				logging.progress(_(u'Checking group {0}…').format(
+				logging.progress(_(u'Checking {0} {1}…').format(
+						_(self.__class__.__name__.lower()),
 						stylize(ST_NAME, self.name)))
 
 				if hasattr(self, '_pre_standard_check_method'):
