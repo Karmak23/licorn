@@ -2135,7 +2135,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					LMC.extensions.disable_extension(extension)
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
-						stylize(ST_NAME, backend), to_local=False)
+						stylize(ST_NAME, extension), to_local=False)
 
 		elif opts.enable_extensions != None:
 			for extension in opts.enable_extensions.split(','):
@@ -2143,7 +2143,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					LMC.extensions.enable_extension(extension)
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
-						stylize(ST_NAME, backend), to_local=False)
+						stylize(ST_NAME, extension), to_local=False)
 
 		else:
 			raise exceptions.NeedHelpException(_(u'What do you want to '
