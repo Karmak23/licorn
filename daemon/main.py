@@ -153,6 +153,7 @@ class LicornDaemon(Singleton):
 		__builtin__.__dict__['L_event_register']   = evt.event_register
 		__builtin__.__dict__['L_event_unregister'] = evt.event_unregister
 		__builtin__.__dict__['L_event_collect']    = evt.collect
+		__builtin__.__dict__['L_event_uncollect']  = evt.uncollect
 
 		# create the INotifier thread, and map its WatchManager methods to
 		# us, they will be used by controllers, extensions and every single
