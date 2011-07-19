@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-06-13 17:43+0200\n"
-"PO-Revision-Date: 2011-06-13 17:46+0200\n"
+"POT-Creation-Date: 2011-07-19 18:52+0200\n"
+"PO-Revision-Date: 2011-07-19 19:26+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -18,6 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: utf8\n"
 "X-Poedit-Language: French\n"
 "X-Poedit-Country: FRANCE\n"
+"Plural-Forms: 1\n"
 
 #: tests/core.py:86
 msgid "running "
@@ -929,7 +930,7 @@ msgstr "{0}j{1}"
 msgid "Directory %s does not exist. Create it?"
 msgstr "Le répertoire %s n'existe pas. Le créer ?"
 
-#: foundations/fsapi.py:144 core/classes.py:2199
+#: foundations/fsapi.py:144 core/classes.py:2200
 msgid "Created directory {0}."
 msgstr "Le répertoire {0} a été créé."
 
@@ -1539,30 +1540,30 @@ msgstr ""
 msgid "Are you sure you want to check all users?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les comptes utilisateurs ?"
 
-#: daemon/rwi.py:2246
+#: daemon/rwi.py:2248
 #, python-format
 msgid "Check account %s?"
 msgstr "Vérifier  le compte %s ?"
 
-#: daemon/rwi.py:2302
+#: daemon/rwi.py:2304
 msgid "Are you sure you want to check all groups?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les groupes ?"
 
-#: daemon/rwi.py:2325
+#: daemon/rwi.py:2327
 #, python-format
 msgid "Check group %s?"
 msgstr "Vérifier le groupe %s ?"
 
-#: daemon/rwi.py:2353
+#: daemon/rwi.py:2355
 msgid "Are you sure you want to check all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les profils ?"
 
-#: daemon/rwi.py:2367
+#: daemon/rwi.py:2369
 #, python-format
 msgid "Check profile %s?"
 msgstr "Vérifier le profil %s ?"
 
-#: daemon/rwi.py:2370
+#: daemon/rwi.py:2372
 msgid "Sorry, not yet."
 msgstr "Désolé, pas encore."
 
@@ -1573,43 +1574,43 @@ msgstr ""
 "%s : initialisation des services internes, backends, contrôleurs et "
 "extensions."
 
-#: daemon/main.py:267
+#: daemon/main.py:268
 #, python-format
 msgid "%s: starting all threads."
 msgstr "%s : démarrage de tous les threads."
 
-#: daemon/main.py:277
+#: daemon/main.py:278
 #, python-format
 msgid "%s: stopping threads."
 msgstr "%s : arrêt des threads."
 
-#: daemon/main.py:363
+#: daemon/main.py:364
 #, python-format
 msgid "%s: all threads started, going to sleep waiting for signals."
 msgstr "%s : tous les threads ont démarré. En attente de signaux."
 
-#: daemon/main.py:367
+#: daemon/main.py:368
 #, python-format
 msgid "%s: all threads started, ready for TTY interaction."
 msgstr "%s : threads démarrés ; prêt pour l'intéraction sur le terminal."
 
-#: daemon/main.py:518
+#: daemon/main.py:519
 msgid "{0}: killed aborted instance @pid {1}."
 msgstr "{0} : l'instance avortée (pid {1}) a été tuée."
 
-#: daemon/main.py:544
+#: daemon/main.py:545
 msgid "{0}: trying to {1} existing instance @pid {2}."
 msgstr "{0} : tentative de {1} de l'instance en cours d'exécution @pid {2}."
 
-#: daemon/main.py:545
+#: daemon/main.py:546
 msgid "replace"
 msgstr "remplacement"
 
-#: daemon/main.py:546
+#: daemon/main.py:547
 msgid "shutdown"
 msgstr "terminaison"
 
-#: daemon/main.py:557
+#: daemon/main.py:558
 #, python-format
 msgid ""
 "%s: existing instance still running, we're going to be more incisive in a "
@@ -1618,7 +1619,7 @@ msgstr ""
 "%s : ancienne instance toujours en cours d'exécution, nous allons être plus "
 "incisifs dans quelques secondes."
 
-#: daemon/main.py:580
+#: daemon/main.py:581
 #, python-format
 msgid ""
 "%s: re-killing old instance softly with TERM signal and waiting a little "
@@ -1627,20 +1628,20 @@ msgstr ""
 "%s : un nouveau gentil signal TERM a été envoyé à l'ancienne instance, et "
 "nous attendons encore quelques instants."
 
-#: daemon/main.py:597
+#: daemon/main.py:598
 #, python-format
 msgid "%s: old instance won't terminate after 8 seconds. Sending KILL signal."
 msgstr ""
 "%s : l'ancienne instance ne s'est pas terminée après 8 secondes. Envoi du "
 "signal KILL."
 
-#: daemon/main.py:625
+#: daemon/main.py:626
 #, python-format
 msgid "%s: killing old instance's father (sudo, pid %s) without any mercy."
 msgstr ""
 "%s : terminaison sans merci du père de l'ancienne instance (sudo, pid %s)."
 
-#: daemon/main.py:642
+#: daemon/main.py:643
 msgid ""
 "{0}: old instance won't terminate after 9 seconds and cannot be killed. We "
 "won\t try to kill any other parent than \"{1}\", you are in a non-trivial "
@@ -1651,7 +1652,7 @@ msgstr ""
 "\"{1}\" car vous êtes dans une situation trop spécifique. C'est maintenant à "
 "vous de régler le problème."
 
-#: daemon/main.py:653
+#: daemon/main.py:654
 #, python-format
 msgid ""
 "%s: old instance won't terminate after 15 seconds and cannot be killed "
@@ -1663,129 +1664,145 @@ msgstr ""
 "Abandon. Vous êtes sur un système où \"kill -9\" n'a pas les effets vendus "
 "par la pub. Désolé pour vous."
 
-#: daemon/main.py:663
+#: daemon/main.py:664
 msgid "{0}: old instance {1} terminated{2}"
 msgstr "{0} : l'ancienne instance a été terminée {1}{2}"
 
-#: daemon/main.py:665
+#: daemon/main.py:666
 msgid "nastily"
 msgstr "brutalement"
 
-#: daemon/main.py:665
+#: daemon/main.py:666
 msgid "successfully"
 msgstr "avec succès"
 
-#: daemon/main.py:666
+#: daemon/main.py:667
 msgid ", we can play now."
 msgstr ", on va pouvoir s'amuser."
 
-#: daemon/main.py:670
+#: daemon/main.py:671
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
 "{0} : un daemon est déjà en cours d'exécution (pid {1}), démarrage avorté."
 
-#: daemon/main.py:685
+#: daemon/main.py:686
 msgid "{0}: must be run as {1} (was: {2})."
 msgstr "{0} : doit être lancé en tant que {1} (erreur initiale : {2})."
 
-#: daemon/main.py:736
+#: daemon/main.py:738
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 "{0} : impossible d'annoncer notre terminaison aux hotes distants (problème "
 "initial : {1})."
 
-#: daemon/main.py:741
+#: daemon/main.py:743
 #, python-format
 msgid "%s: joining threads."
 msgstr "%s : rappel des threads."
 
-#: daemon/main.py:755
+#: daemon/main.py:757
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr "{0} : attente de terminaison du thread {1}{2}."
 
-#: daemon/main.py:758
+#: daemon/main.py:760
 #, python-format
 msgid " (currently working on %s)"
 msgstr " (actuellement sur %s)"
 
-#: daemon/main.py:806
+#: daemon/main.py:808
 msgid "{0}: cannot remove {1} (was: {2})."
 msgstr "{0} : impossible de supprimer {1} (erreur initiale : {2})."
 
-#: daemon/main.py:809
+#: daemon/main.py:811
 #, python-format
 msgid " (up %s)"
 msgstr " (démarré depuis %s)"
 
-#: daemon/main.py:817
+#: daemon/main.py:819
 #, python-format
 msgid "%s: cleaning up and stopping threads…"
 msgstr "%s : nettoyage et arrêt des threads…"
 
-#: daemon/main.py:819
+#: daemon/main.py:821
 msgid "{0}: signal {1} received, shutting down…"
 msgstr "{0} : signal {1} reçu, arrêt en cours…"
 
-#: daemon/main.py:824
+#: daemon/main.py:826
 msgid "{0}: exiting{1}."
 msgstr "{0} : arrêt{1}."
 
-#: daemon/main.py:827
+#: daemon/main.py:829
 msgid "{0}: SIGUSR1 received, preparing restart."
 msgstr "{0} : signal SIGUSR1 reçu, préparation du redémarrage."
 
-#: daemon/main.py:863
+#: daemon/main.py:865
 msgid "{0}: restarting{1}."
 msgstr "{0} : redémarrage{1}."
 
-#: daemon/main.py:922
+#: daemon/main.py:924
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 
-#: daemon/main.py:926
+#: daemon/main.py:928
 msgid "{0}: doing manual garbage collection on {1}."
-msgstr ""
+msgstr "{0} : réalisation d'un ramassage de miettes manuel de {1}."
 
-#: daemon/__init__.py:153
+#: daemon/__init__.py:155
 msgid "{0}: switched long_output status to {1}."
-msgstr ""
+msgstr "{0} : l'état des sorties longues sur la console est {1}."
 
-#: daemon/__init__.py:154
+#: daemon/__init__.py:156
 msgid "enabled"
 msgstr "activé(e)"
 
-#: daemon/__init__.py:155 interfaces/cli/argparser.py:822
+#: daemon/__init__.py:157 interfaces/cli/argparser.py:822
 msgid "disabled"
 msgstr "désactivé(e)"
 
-#: daemon/__init__.py:158
+#: daemon/__init__.py:160
 msgid "Console-initiated garbage collection and dead thread cleaning."
-msgstr ""
+msgstr "Ramassage des miettes et nettoyage des threads initié sur la console."
 
-#: daemon/__init__.py:171
+#: daemon/__init__.py:173
 msgid "{0} active threads: {1}"
 msgstr "{0} threads actifs : {1}"
 
-#: daemon/__init__.py:194
+#: daemon/__init__.py:181
+msgid "{0}: increased verbosity level to {1}."
+msgstr "{0} : le niveau de verbosité a été augmenté à la valeur {1}."
+
+#: daemon/__init__.py:187
+msgid "{0}: verbosity level already at the maximum value ({1})."
+msgstr "{0}: le niveau de verbosité est déjà à la valeur maximum ({1})."
+
+#: daemon/__init__.py:197
+msgid "{0}: decreased verbosity level to {1}."
+msgstr "{0} : le niveau de verbosité a été diminué à la valeur {1}."
+
+#: daemon/__init__.py:203
+msgid "{0}: verbosity level already at the minimum value ({1})."
+msgstr "{0}: le niveau de verbosité est déjà à la valeur minimum ({1})."
+
+#: daemon/__init__.py:228
 #, python-format
 msgid "%s: killing ourselves badly."
 msgstr "%s: on se tire une balle dans le pied."
 
-#: daemon/__init__.py:210
+#: daemon/__init__.py:244
 #, python-format
 msgid "%s: Entering interactive mode. Welcome into licornd's arcanes…"
 msgstr "%s : mode intéractif activé. Bienvenue dans les arcanes de licornd…"
 
-#: daemon/__init__.py:243
+#: daemon/__init__.py:277
 msgid "Licorn® {0}, Python {1} on {2}"
 msgstr "Licorn® {0}, Python {1} sur {2}"
 
-#: daemon/__init__.py:249
+#: daemon/__init__.py:283
 #, python-format
 msgid "%s: leaving interactive mode. Welcome back to Real World™."
 msgstr "%s : sortie du mode intéractif. Bon retour dans le monde réel™."
 
-#: daemon/__init__.py:260
+#: daemon/__init__.py:294
 msgid "{0}: received unhandled char \"{1}\", ignoring."
 msgstr "{0} : caractère non géré « {1} », ignoré."
 
@@ -1912,11 +1929,11 @@ msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn®</spam>"
 msgid "Unknow mode %s!"
 msgstr "Mode %s inconnu !"
 
-#: interfaces/cli/__init__.py:155
+#: interfaces/cli/__init__.py:158
 msgid "Interrupted, cleaning up!"
 msgstr "Interrompu ! En cours de nettoyage avant fermeture…"
 
-#: interfaces/cli/__init__.py:158
+#: interfaces/cli/__init__.py:161
 msgid "daemon needs a restart, sending USR1 signal."
 msgstr "Le daemon doit redémarrer, envoi d'un signal USR1."
 
@@ -1953,14 +1970,13 @@ msgid "{0} {1}: this can be a very long operation{2}"
 msgstr "{0} {1} : cette opération peut être très longue{2}"
 
 #: interfaces/cli/argparser.py:104
-#, fuzzy, python-format
+#, python-format
 msgid "Check *all* %s on the system."
-msgstr "Impossible d'arrêter le système."
+msgstr "Vérifier *tous* les %s sur le système."
 
 #: interfaces/cli/argparser.py:107
-#, fuzzy
 msgid "Check every bit of the configuration."
-msgstr "Créer la configuration d'une machine"
+msgstr "Vérifier chaque point de la configuration minutieusement."
 
 #: interfaces/cli/argparser.py:108
 msgid "WARNING"
@@ -2383,7 +2399,7 @@ msgstr ""
 #: interfaces/cli/argparser.py:736
 #, python-format
 msgid "The user will have no password. %s."
-msgstr ""
+msgstr "L'utilisateur n'aura pas de mot de passe. %s."
 
 #: interfaces/cli/argparser.py:737 interfaces/cli/argparser.py:744
 msgid ""
@@ -2590,7 +2606,7 @@ msgstr ""
 
 #: interfaces/cli/argparser.py:966
 msgid "This can be risky in some situations"
-msgstr ""
+msgstr "Celà peut être risqué dans bon nombre de situations"
 
 #: interfaces/cli/argparser.py:982
 msgid "Add keyword options"
@@ -2773,9 +2789,8 @@ msgid "unlock the user account and restore login ability."
 msgstr ""
 
 #: interfaces/cli/argparser.py:1297
-#, fuzzy
 msgid "make user member of these groups."
-msgstr "Aucun membre dans ce groupe."
+msgstr "Rendre l'utilisateur membre de ces groupes."
 
 #: interfaces/cli/argparser.py:1301
 #, fuzzy
@@ -3741,7 +3756,7 @@ msgstr "Identifiant"
 
 #: interfaces/wmi/groups.py:253 interfaces/wmi/groups.py:278
 #: interfaces/wmi/groups.py:303 interfaces/wmi/groups.py:775
-#: interfaces/wmi/users.py:678 core/users.py:944
+#: interfaces/wmi/users.py:678 core/users.py:1033
 msgid "UID"
 msgstr "UID"
 
@@ -4843,7 +4858,7 @@ msgstr ""
 "Merci de contacter les développeurs {0}, et considérer la soumission d'un "
 "patch pour rendre votre système officiellement supporté."
 
-#: core/configuration.py:859 core/users.py:941
+#: core/configuration.py:859 core/users.py:1030
 msgid "user"
 msgstr "utilisateur"
 
@@ -4908,6 +4923,9 @@ msgid ""
 "{0}: server {1} is down, disabling backend. This will produce timeouts "
 "because {2} is enabled in NSS configuration."
 msgstr ""
+"{0} : le serveur {1} est arrêté, désactivation du backend correspondant. "
+"Cela produira inévitablement des ralentissements et blocages sur le système "
+"car {2} est activé dans la configuration NSS."
 
 #: core/backends/openldap.py:442
 msgid ""
@@ -5558,7 +5576,7 @@ msgstr ""
 msgid "You must specify a gecos"
 msgstr "Vous devez spécifier un GECOS"
 
-#: core/users.py:305 core/users.py:1212
+#: core/users.py:305 core/users.py:1301
 msgid "Malformed GECOS field \"{0}\", must match /{1}/i."
 msgstr "Le champ GECOS \"{0}\" est invalide, il ne vérifie pas /{1}/i."
 
@@ -5610,35 +5628,169 @@ msgstr "Le compte utilisateur {0} est déjà déverrouillé."
 msgid "Invalid skel \"{0}\". Valid skels are {1}."
 msgstr "Squelette \"{0}\" invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:806
-#, python-format
-msgid "Skipped reserved system account %s (we do not check them at all)."
+#: core/users.py:833
+msgid "Auto-cleaned {0}'s gecos to \"{1}\"."
 msgstr ""
-"Le compte système restreint %s a été ignoré (leur gestion est laissée aux "
-"mainteneurs de la distribution)."
+"Le GECOS de l'utilisateur {0} a été automatiquement nettoyé, avec la "
+"nouvelle valeur \"{1}\"."
 
-#: core/users.py:819
+#: core/users.py:838
+msgid "Special Executable Restrictor Account"
+msgstr "Compte spécial de restriction des exécutables"
+
+#: core/users.py:839
+#, python-format
+msgid "%s Automatic Backup System"
+msgstr "Système de sauvegarde automatique %s"
+
+#: core/users.py:840
+msgid "Apple Calendar Server Daemon"
+msgstr "Daemon du serveur de calendriers Apple"
+
+#: core/users.py:841
+msgid "Generic System Daemon"
+msgstr "Compte daemon générique du Système"
+
+#: core/users.py:842
+msgid "DHCP Daemon"
+msgstr "Daemon DHCP"
+
+#: core/users.py:843
+msgid "DNSmasq (DHCP & DNS) Daemon"
+msgstr "Daemon DNSmasq (DHCP et DNS)"
+
+#: core/users.py:844
+msgid "FTP Daemon / restricted account"
+msgstr "Compte restreint / daemon FTP"
+
+#: core/users.py:845
+msgid "Games Specific Account"
+msgstr "Compte spécifique aux jeux systèmes"
+
+#: core/users.py:846
+msgid "Hardware Abstraction Layer Daemon"
+msgstr "Daemon de la couche d'abstraction du matériel"
+
+#: core/users.py:847
+msgid "Hewlett-Packard Linux Imaging & Printing Daemon"
+msgstr "Daemon du logiciel HP Image et Impression"
+
+#: core/users.py:848
+msgid "Internet Relay Chats Daemon"
+msgstr "Daemon IRC (Internet Relay Chats)"
+
+#: core/users.py:849
+msgid "Kernel OOPs Tracking Daemon"
+msgstr "Daemon de suivi des plantages du noyau"
+
+#: core/users.py:850
+msgid "UUID Library Account"
+msgstr "Compte de bibliothèque UUID"
+
+#: core/users.py:851
+msgid "Line Printer Daemon"
+msgstr "Daemon de l'impression"
+
+#: core/users.py:852
+msgid "Local E-Mail System Account"
+msgstr "Compte local de gestion du courrier électronique"
+
+#: core/users.py:853
+msgid "Unix Manual Pages Generator"
+msgstr "Générateur de pages de manuel"
+
+#: core/users.py:854
+msgid "Memory Cache Daemon"
+msgstr "Daemon de cache en mémoire"
+
+#: core/users.py:855 core/users.py:858
+msgid "System Message Bus (D-BUS)"
+msgstr "Bus des messages système (D-BUS)"
+
+#: core/users.py:856 core/users.py:857
+msgid "Very unprivileged System Account"
+msgstr "Compte système vraiment très restreint"
+
+#: core/users.py:859
+msgid "Postfix® Mail System"
+msgstr "Système de courrier électronique Postfix"
+
+#: core/users.py:860
+msgid "Web (& possibly more) Proxy Server"
+msgstr "Serveur proxy Web (et plus)"
+
+#: core/users.py:861
+msgid "John Root, System Administrator (BOFH)"
+msgstr "Jean Racine, administrateur système (BOFH)"
+
+#: core/users.py:862
+msgid "Scanner Access Now Easy daemon"
+msgstr "Daemon des scanners et imprimantes multi-fonctions"
+
+#: core/users.py:863
+msgid "Secure SHell Daemon"
+msgstr "Daemon des connexions sécurisées (SSH)"
+
+#: core/users.py:864
+msgid "Generic Synchronization Account"
+msgstr "Compte de synchronisation générique"
+
+#: core/users.py:865
+msgid "Generic System Account"
+msgstr "Compte système générique"
+
+#: core/users.py:866
+msgid "System Logger Daemon"
+msgstr "Daemon d'historisation des messages système"
+
+#: core/users.py:867
+msgid "Unix to Unix Copy Protocol daemon"
+msgstr "Daemon de copie Unix à Unix"
+
+#: core/users.py:868
+msgid "Web Server unprivileged Account"
+msgstr "Compte de serveur web non-privilégié"
+
+#: core/users.py:869
+msgid "Network Time Protocol Daemon"
+msgstr "Daemon de synchronisation du temps en réseau"
+
+#: core/users.py:873
+msgid ""
+"{0}'s GECOS \"{1}\" is currently meaningless, or we have a far better and "
+"hypish value \"{2}\" ready to enhance it. Would you like to use it?"
+msgstr ""
+"Le GECOS \"{1}\" de l'utilisateur {0} n'a actuellement aucun sens, ou alors "
+"nous avons en magasin une valeur bien meilleure et complètement hype pour "
+"l'améliorer. Voulez-vous l'utiliser ?"
+
+#: core/users.py:889
 #, python-format
 msgid "Checking system account %s…"
 msgstr "Vérification du compte système %s…"
 
-#: core/users.py:823
+#: core/users.py:893 core/users.py:933
 msgid "account {0} already beiing ckecked, aborting."
 msgstr "Le compte utilisateur {0} est déjà en cours de vérification, abandon."
 
-#: core/users.py:895
+#: core/users.py:929
+#, python-format
+msgid "Checking restricted system account %s…"
+msgstr "Vérification du compte système restreint %s…"
+
+#: core/users.py:984
 msgid "— no membership —"
 msgstr "— aucune appartenance à des groupes —"
 
-#: core/users.py:1018
+#: core/users.py:1107
 msgid "{0}.reload: Overwritten uid {1}."
 msgstr "{0}.reload : UID {1} écrasé."
 
-#: core/users.py:1029
+#: core/users.py:1118
 msgid "{0}: removing disapeared user {1}."
 msgstr "{0} : suppression de l'utilisateur disparu {1}."
 
-#: core/users.py:1105
+#: core/users.py:1194
 msgid ""
 "Specified directory {0} for system user {1} already exists. If you really "
 "want to use it, please use the --force argument."
@@ -5646,7 +5798,7 @@ msgstr ""
 "Le répertoire {0} spécifié pour le compte système {1} existe déjà. Si vous "
 "voulez vraiment l'utiliser, ajoutez l'argument --force à votre commande."
 
-#: core/users.py:1119
+#: core/users.py:1208
 msgid ""
 "Specified home directory {0} for system user {1} is outside {2} and /var, or "
 "inside {3}/{4} or a temporary directory (/var/tmp, /tmp). This is "
@@ -5656,7 +5808,7 @@ msgstr ""
 "var, ou dans {3}/{4} ou un répertoire temporaire (/var/tmp, /tmp). C'est "
 "très dangereux, et à ce titre, non-supporté. Opération annulée."
 
-#: core/users.py:1131
+#: core/users.py:1220
 msgid ""
 "Specified home directory {0} for system user {1} is already owned by another "
 "user. Please choose another one."
@@ -5664,7 +5816,7 @@ msgstr ""
 "Le répertoire maison {0} choisi pour l'utilisateur système {1} est déjà "
 "attribué à un autre utilisateur. Choisissez-en un autre SVP."
 
-#: core/users.py:1140
+#: core/users.py:1229
 msgid ""
 "Specifying an alternative home directory is not allowed for standard users. "
 "Using standard home path {0} instead."
@@ -5673,7 +5825,7 @@ msgstr ""
 "les comptes utilisateurs standard. Utilisation du chemin normalisé {0} à la "
 "place."
 
-#: core/users.py:1153
+#: core/users.py:1242
 msgid ""
 "You must specify a login, a firstname *and* lastname couple, or a GECOS "
 "(login will be built from them)."
@@ -5682,12 +5834,12 @@ msgstr ""
 "(firstname) *et* un nom (lastname), soit un nom complet (GECOS) ; "
 "l'identifiant final sera fondé dessus."
 
-#: core/users.py:1170
+#: core/users.py:1259
 #, python-format
 msgid "User account %s"
 msgstr "Compte utilisateur %s"
 
-#: core/users.py:1177
+#: core/users.py:1266
 msgid ""
 "You must specify a lastname and a firstname *or* a GECOS. If you specify the "
 "GECOS, do not specify firstname/lastname."
@@ -5695,30 +5847,30 @@ msgstr ""
 "Vous devez spécifier un nom et un prénom *OU* un champ GECOS, mais pas les "
 "deux à la fois."
 
-#: core/users.py:1192
+#: core/users.py:1281
 msgid "Malformed login \"{0}\", must match /{1}/."
 msgstr ""
 "Identifiant \"{0}\" mal-formé, les identifiants doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/users.py:1218
+#: core/users.py:1307
 msgid "Invalid shell \"{0}\". Valid shells are: {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont : {1}."
 
-#: core/users.py:1225
+#: core/users.py:1314
 msgid "Invalid skel \"{0}\". Valid skels are: {1}."
 msgstr "Squelette « {0} » invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:1238
+#: core/users.py:1327
 msgid "UID {0} is already taken by user {1}. Please choose another one."
 msgstr ""
 "L'UID {0} est déjà pris par l'utilisateur {1}. Choisissez-en un autre SVP."
 
-#: core/users.py:1247
+#: core/users.py:1336
 msgid "User account {0} already exists!"
 msgstr "Le compte utilisateur {0} existe déjà !"
 
-#: core/users.py:1250
+#: core/users.py:1339
 msgid ""
 "A user account {0} already exists but has not the same type. Please choose "
 "another login for your user."
@@ -5726,7 +5878,7 @@ msgstr ""
 "Un compte utilisateur {0} existe déjà, mais n'a pas le même type. Choisissez "
 "un autre identifiant pour ce compte utilisateur."
 
-#: core/users.py:1277
+#: core/users.py:1366
 msgid ""
 "A group named {0} exists on the system. This could eventually conflict in "
 "Debian/Ubuntu system tools. Please choose another login, or use the --force "
@@ -5737,11 +5889,11 @@ msgstr ""
 "ou utilisez l'argument --force si vous voulez vraiment l'ajouter sur le "
 "système."
 
-#: core/users.py:1295
+#: core/users.py:1384
 msgid "Autogenerated UID for user {0}: {1}."
 msgstr "UID auto-généré pour l'utilisateur {0}: {1}."
 
-#: core/users.py:1303
+#: core/users.py:1392
 msgid ""
 "UID out of range for the kind of user account you specified. System UIDs "
 "must be between {0} and {1}, standard UIDs must be between {2} and {3}."
@@ -5750,31 +5902,31 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les UIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/users.py:1375
+#: core/users.py:1464
 msgid "Home directory {0} already exists."
 msgstr "Le répertoire maison {0} existe déjà."
 
-#: core/users.py:1379
+#: core/users.py:1468
 msgid "Created home directory {0}."
 msgstr "Le répertoire maison {0} a été créé."
 
-#: core/users.py:1437
+#: core/users.py:1526
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 
-#: core/users.py:1445
+#: core/users.py:1534
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1446 core/classes.py:896
+#: core/users.py:1535 core/classes.py:896
 msgid "system"
 msgstr "système"
 
-#: core/users.py:1446
+#: core/users.py:1535
 msgid "standard"
 msgstr "standard"
 
-#: core/users.py:1474
+#: core/users.py:1563
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
@@ -5783,33 +5935,33 @@ msgstr ""
 "Impossible de supprimer le compte système protégé %s sans l'argument --"
 "force, c'est trop risqué."
 
-#: core/users.py:1505
+#: core/users.py:1594
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr "{0} : compte {1} déjà non-référencé par le contrôleur !"
 
-#: core/users.py:1527
+#: core/users.py:1616
 msgid "Deleted user account {0}."
 msgstr "Compte utilisateur {0} supprimé."
 
-#: core/users.py:1632
+#: core/users.py:1721
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr "Certaines vérifications ont échoué, ou n'ont pas été corrigées."
 
-#: core/users.py:1653
+#: core/users.py:1742
 #, python-format
 msgid "Skipped non-existing login or UID %s."
 msgstr "L'identifiant ou l'UID non-existant %s a été ignoré."
 
-#: core/users.py:1668
+#: core/users.py:1757
 msgid "You must specify an UID or a login to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/users.py:1676
+#: core/users.py:1765
 #, python-format
 msgid "User %s does not exist"
 msgstr "L'utilisateur %s n'existe pas."
 
-#: core/users.py:1683
+#: core/users.py:1772
 #, python-format
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
@@ -5940,34 +6092,34 @@ msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr "{0} {1} : quelqu'un d'autre est déjà en train de vérifier ; abandon."
 
 #: core/classes.py:2180
-msgid "Checking group {0}…"
-msgstr "Vérification du groupe {0}…"
+msgid "Checking {0} {1}…"
+msgstr "Vérification du {0} {1}…"
 
-#: core/classes.py:2192
+#: core/classes.py:2193
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr "Le répertoire %s n'existe pas mais il est obligatoire. Le créer ?"
 
-#: core/classes.py:2206
+#: core/classes.py:2207
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 "Le répertoire %s n'existe pas mais il est obligatoire. La vérification est "
 "annulée."
 
-#: core/classes.py:2230
+#: core/classes.py:2231
 msgid "{0} {1}: meta-data changed on path {2}."
 msgstr "{0} {1} : les métadonnées ont changé sur le chemin {2}."
 
-#: core/classes.py:2241
+#: core/classes.py:2242
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr "{0} {1} : les méta-données ont changé sur {2} chemin(s)."
 
-#: core/classes.py:2250
+#: core/classes.py:2251
 msgid "{0} {1}: no shared data to check."
 msgstr "{0} {1} : aucune donnée partagée à vérifier."
 
-#: core/classes.py:2355
+#: core/classes.py:2356
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
@@ -5976,7 +6128,7 @@ msgstr ""
 "n'oubliez pas de lancer \"{2}\" après votre manipulation, pour ré-installer "
 "les observateurs."
 
-#: core/classes.py:2424
+#: core/classes.py:2425
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 "{0} : problème pendant la vérification de {1}, opération annulée (contenu de "
@@ -6290,6 +6442,14 @@ msgstr "nombre de machines <strong>%s</strong>&#160;:"
 #: core/machines.py:1556
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
+
+#~ msgid "Checking group {0}…"
+#~ msgstr "Vérification du groupe {0}…"
+
+#~ msgid "Skipped reserved system account %s (we do not check them at all)."
+#~ msgstr ""
+#~ "Le compte système restreint %s a été ignoré (leur gestion est laissée aux "
+#~ "mainteneurs de la distribution)."
 
 #~ msgid "%s not mounted"
 #~ msgstr "%s n'est pas monté"
