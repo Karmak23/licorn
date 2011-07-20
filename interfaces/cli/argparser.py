@@ -784,7 +784,7 @@ def add_user_parse_arguments(app):
 	addimport.add_option("--group-column",
 		action="store", type="int", dest="group_col", default = 2,
 		help=_(u"{0} column number in CSV file (default is {1}).").format(
-			stylize(ST_SPECIAL, LMC.configuration.groups.names.plural),
+			stylize(ST_SPECIAL, LMC.configuration.groups._plural),
 			stylize(ST_DEFAULT, "2")))
 
 	addimport.add_option("--login-column",
@@ -1728,16 +1728,13 @@ def mod_configuration_parse_arguments(app):
 	configuration_group.add_option("-u", "--hide-groups", "--set-groups-hidden",
 		action="store_true", dest="hidden_groups", default=None,
 		help=_(u"Set restrictive perms (710) on %s.") %
-			stylize(ST_PATH,
-				"%s/%s" % (LMC.configuration.defaults.home_base_path,
-					LMC.configuration.groups.names.plural)))
+			stylize(ST_PATH, LMC.configuration.groups.base_path))
 
 	configuration_group.add_option("-U", "--unhide-groups",
 		"--set-groups-visible",
 		action="store_false", dest="hidden_groups", default=None,
 		help=_(u"Set relaxed perms (750) on %s.") % stylize(ST_PATH,
-		"%s/%s" % (LMC.configuration.defaults.home_base_path,
-			LMC.configuration.groups.names.plural)))
+			LMC.configuration.groups.base_path))
 
 	configuration_group.add_option('-b', "--enable-backends",
 		action="store", dest="enable_backends", default=None,

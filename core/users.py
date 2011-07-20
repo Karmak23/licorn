@@ -761,8 +761,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		self.__groups[:] = []
 	def _build_standard_home(self):
-		return '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
-							LMC.configuration.users.names.plural,
+		return '%s/%s' % (LMC.configuration.users.base_path,
 							self.__login)
 	def _build_system_home(self, directory):
 		""" A system user has a home, which can be anywhere. """
@@ -1200,21 +1199,18 @@ class UsersController(Singleton, CoreFSController):
 				if not home.startswith(
 					LMC.configuration.defaults.home_base_path) \
 					and not home.startswith('/var') \
-					or home.startswith('%s/%s' % (
-						LMC.configuration.defaults.home_base_path,
-						LMC.configuration.groups.names.plural)) \
+					or home.startswith(LMC.configuration.groups.base_path) \
 					or home.find('/tmp') != -1:
 
 					raise exceptions.BadArgumentError(_(u'Specified home '
 						'directory {0} for system user {1} is outside {2} '
-						'and /var, or inside {3}/{4} or a temporary '
+						'and /var, or inside {3} or a temporary '
 						'directory (/var/tmp, /tmp). This is unsupported, '
 						'Aborting.').format(
 						stylize(ST_PATH, home),
 						stylize(ST_NAME,login),
 						LMC.configuration.defaults.home_base_path,
-						LMC.configuration.defaults.home_base_path,
-						LMC.configuration.groups.names.plural))
+						LMC.configuration.groups.base_path))
 
 				if home in (user.homeDirectory for user in self):
 					raise exceptions.BadArgumentError(_(u'Specified home '

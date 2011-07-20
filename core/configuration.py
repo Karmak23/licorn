@@ -78,6 +78,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			# WARNING: beside this point, order of method is VERY important,
 			# their contents depend on each other.
 
+			self.SetDefaultNamesAndPaths()
+
 			# WARNING: don't change order of these.
 			self.SetUsersDefaults()
 			self.SetGroupsDefaults()
@@ -191,8 +193,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		# extensions to /etc/group
 		self.extendedgroup_data_file = self.config_dir + "/groups"
-
-		self.SetDefaultNamesAndPaths()
 
 		self.home_backup_dir         = (
 			"%s/backup" % self.defaults.home_base_path)
@@ -851,17 +851,13 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# see groupadd(8), coming from addgroup(8)
 		self.users.login_maxlenght = 31
 
-		# the _xxx variables are needed for gettextized interfaces
-		# (core and CLI are NOT gettextized)
-		self.users.names = LicornConfigObject()
-		self.users.names.singular = 'user'
-		self.users.names.plural = 'users'
-		self.users.names._singular = _('user')
-		self.users.names._plural = _('users')
+		self.users._singular = _('user')
+		self.users._plural = _('users')
 	def SetGroupsDefaults(self):
 		"""Create self.groups attributes and start feeding it."""
 
 		self.groups = LicornConfigObject()
+		self.groups.base_path  = self.defaults.home_base_path + '/groups'
 		self.groups.apache_dir = self.users.apache_dir
 
 		self.groups.check_config_file_suffix = '.check.conf'
@@ -873,13 +869,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# 31 - len(prefix)
 		self.groups.name_maxlenght = 27
 
-		# the _xxx variables are needed for gettextized interfaces
-		# (core and CLI are NOT gettextized)
-		self.groups.names = LicornConfigObject()
-		self.groups.names.singular = 'group'
-		self.groups.names.plural = 'groups'
-		self.groups.names._singular = _('group')
-		self.groups.names._plural = _('groups')
+		self.groups._singular = _('group')
+		self.groups._plural   = _('groups')
 	def set_acl_defaults(self):
 		""" Prepare the basic ACL configuration inside us. """
 
@@ -891,9 +882,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# this one will be filled later, when GroupsController is instanciated.
 		self.acls.gid = 0
 
-		self.acls.groups_dir = '%s/%s' % (
-								self.defaults.home_base_path,
-								self.groups.names.plural)
 		self.acls.acl_base = 'u::rwx,g::---,o:---'
 		self.acls.acl_mask = 'm:rwx'
 		self.acls.acl_admins_ro = 'g:%s:r-x' % self.defaults.admin_group
@@ -1340,6 +1328,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		try:
 			os.makedirs(self.users.base_path)
+
 		except (OSError, IOError), e:
 			if e.errno != 17:
 				raise e
@@ -1347,7 +1336,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		acls_conf = self.acls
 
 		home_groups = FsapiObject(name='home_groups')
-		home_groups.path = acls_conf.groups_dir
+		home_groups.path = self.groups.base_path
 		home_groups.group = acls_conf.gid
 		home_groups.user = 0
 		home_groups.root_dir_acl = True

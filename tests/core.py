@@ -721,9 +721,8 @@ def test_groups(context):
 	gname = 'groupeA'
 
 	def chk_acls_cmds(group, subdir=None):
-		return [ 'getfacl', '-R', '%s/%s/%s%s' % (
-		configuration.defaults.home_base_path,
-		configuration.groups.names.plural,
+		return [ 'getfacl', '-R', '%s/%s%s' % (
+		LMC.configuration.groups.base_path,
 		group,
 		'/%s' % subdir if subdir else '') ]
 
@@ -745,48 +744,42 @@ def test_groups(context):
 
 	# completeny remove the shared group dir and verify CHK repairs it.
 	remove_group_cmds = [ "rm", "-vrf",
-		"%s/%s/%s" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		"%s/%s" % (
+			configuration.groups.base_path,
 			gname)
 		]
 
 	# idem with public_html shared subdir.
 	remove_group_html_cmds = [ "rm", "-vrf",
-		"%s/%s/%s/public_html" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		"%s/%s/public_html" % (
+			configuration.groups.base_path,
 			gname)
 		]
 
 	# remove the posix ACLs and let CHK correct everything (after having
 	# declared an error first with --auto-no).
 	remove_group_acls_cmds = [ "setfacl", "-R", "-b",
-		"%s/%s/%s" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		"%s/%s" % (
+			configuration.groups.base_path,
 			gname)
 		]
 
 	# idem for public_html subdir.
 	remove_group_html_acls_cmds = [ "setfacl", "-R", "-b",
-		"%s/%s/%s/public_html" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		"%s/%s/public_html" % (
+			configuration.groups.base_path,
 			gname)
 		]
 
 	bad_chown_group_cmds = [ 'chown', 'bin:daemon', '--changes',
-		'%s/%s/%s' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		'%s/%s' % (
+			configuration.groups.base_path,
 			gname)
 		]
 
 	bad_chown_group_html_cmds = [ 'chown', 'bin:daemon', '--changes',
-		'%s/%s/%s/public_html' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		'%s/%s/public_html' % (
+			configuration.groups.base_path,
 			gname)
 		]
 
@@ -904,17 +897,14 @@ def test_groups(context):
 
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', gname, '-v' ],
-		[ 'touch', 		"%s/%s/%s/test.txt" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'touch', 		"%s/%s/test.txt" % (
+			configuration.groups.base_path,
 			gname) ],
-		[ 'mkdir', "%s/%s/%s/testdir" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'mkdir', "%s/%s/testdir" % (
+			configuration.groups.base_path,
 			gname) ],
-		[ 'touch', "%s/%s/%s/testdir/testfile" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'touch', "%s/%s/testdir/testfile" % (
+			configuration.groups.base_path,
 			gname) ],
 		# wait for the inotifier to complete ACLs application.
 		['sleep', '1'],
@@ -952,9 +942,8 @@ def test_groups(context):
 	#fix #259
 	testsuite.add_scenario(ScenarioTest([
 		ADD + [ 'group', '--name=%s' % gname ],
-		[ 'rm', '-vrf', "%s/%s/%s" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'rm', '-vrf', "%s/%s" % (
+			configuration.groups.base_path,
 			gname)],
 		DEL + [ 'group', '--name=%s' % gname ],
 		],
@@ -1001,9 +990,8 @@ def test_groups(context):
 		ADD + [ 'group', gname, '-v' ],
 		chk_acls_cmds(gname),
 
-		[ 'chown', '-R', '-c', uname, "%s/%s/%s" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'chown', '-R', '-c', uname, "%s/%s" % (
+			configuration.groups.base_path,
 			gname)],
 		# wait for the inotifier to complete ACLs application.
 		['sleep', '1'],
@@ -1012,9 +1000,8 @@ def test_groups(context):
 		CHK + [ 'group', gname, '-vb' ],
 		chk_acls_cmds(gname),
 
-		[ 'chgrp', '-R', '-c', 'audio', "%s/%s/%s" % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural,
+		[ 'chgrp', '-R', '-c', 'audio', "%s/%s" % (
+			configuration.groups.base_path,
 			gname)],
 		# wait for the inotifier to complete ACLs application.
 		['sleep', '1'],
@@ -2262,35 +2249,24 @@ def test_system():
 	testsuite.add_scenario(ScenarioTest([
 		[ 'killall', '-r', '-9', 'licornd' ],
 		# make backups
-		[ 'mv', '%s/%s' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural),
-		  '%s/%s.bak' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural)],
+		[ 'mv', configuration.groups.base_path,
+		  '%s.bak' % (
+			configuration.groups.base_path)],
 		[ 'mv', '%s' % configuration.users.base_path,
 		  '%s.bak' % configuration.users.base_path],
 		# be sure there is no groups and user dir
-		[ 'rm', '-rf', '%s/%s' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural)],
-		[ 'rm', '-rf', '%s' % configuration.users.base_path],
+		[ 'rm', '-rf', configuration.groups.base_path],
+		[ 'rm', '-rf', configuration.users.base_path],
 		# launch any command to start the daemon
 		GET + [ 'users' ],
 		[ 'ls', '-al', '%s' %
 			configuration.defaults.home_base_path],
-		[ 'rm', '-rf', '%s/%s' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural)],
-		[ 'rm', '-rf', '%s' % configuration.users.base_path],
-		[ 'mv', '%s/%s.bak' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural),
-		  '%s/%s' % (
-			configuration.defaults.home_base_path,
-			configuration.groups.names.plural)],
+		[ 'rm', '-rf', configuration.groups.base_path],
+		[ 'rm', '-rf', configuration.users.base_path],
+		[ 'mv', '%s.bak' % configuration.groups.base_path,
+		  configuration.groups.base_path],
 		[ 'mv', '%s.bak' % configuration.users.base_path,
-		  '%s' % configuration.users.base_path],
+		  configuration.users.base_path],
 		],
 		descr='test if /home/groups and /home/users are created during startup '
 			'of deamon if they don\'t exist.'

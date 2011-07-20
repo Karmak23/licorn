@@ -38,9 +38,7 @@ class KeywordsController(Singleton, LockedController):
 		self.licorn_xattr  = "user.Licorn.keywords"
 
 		self.work_path     = os.getenv(
-			"LICORN_KEYWORDS_PATH", "%s/%s" % (
-				LMC.configuration.defaults.home_base_path,
-				LMC.configuration.groups.names.plural))
+			"LICORN_KEYWORDS_PATH", LMC.configuration.groups.base_path)
 		#
 		# TODO: work_path could be HOME if fsapi.minifind is configured to follow symlinks, this would be
 		# more optimized than to walk /home/groups (because user has small prob to be in all groups).

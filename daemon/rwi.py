@@ -833,7 +833,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						'printed version after having transmitted their '
 						'password to your users.'),
 					direct_access=_(u'Direct access to {0}:').format(
-						LMC.configuration.groups.names.plural),
+						LMC.configuration.groups._plural),
 					css='''
 						body { font-size:14pt; }
 						h1,h2,h3 { text-align:center; }
@@ -860,7 +860,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					<th>{lastname}</th><th>{firstname}</th><th>{login}</th><th>password</th>
 					</tr>\n'''.format(
 					group=group,
-					singular=LMC.configuration.groups.names.singular,
+					singular=LMC.configuration.groups._singular,
 					lastname=_(u'Lastname'),
 					firstname=_(u'Firstname'),
 					login=_(u'Login'),

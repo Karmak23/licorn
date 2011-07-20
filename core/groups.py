@@ -973,16 +973,13 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				# symlinks at all for other type of system groups
 				return
 
-			link_src = os.path.join(LMC.configuration.defaults.home_base_path,
-									LMC.configuration.groups.names.plural,
+			link_src = os.path.join(LMC.configuration.groups.base_path,
 									link_basename)
 
 			if oldname is None:
 				link_src_old = None
 			else:
-				link_src_old = os.path.join(
-								LMC.configuration.defaults.home_base_path,
-								LMC.configuration.groups.names.plural,
+				link_src_old = os.path.join(LMC.configuration.groups.base_path,
 								oldname)
 
 			for link in fsapi.minifind(user.homeDirectory, maxdepth=2,
@@ -1115,9 +1112,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.serialize()
 
 	def _build_standard_home(self):
-		return '%s/%s/%s' % (LMC.configuration.defaults.home_base_path,
-							LMC.configuration.groups.names.plural,
-							self.__name)
+		return '%s/%s' % (LMC.configuration.groups.base_path, self.__name)
 	def _build_system_home(self, ignored_value):
 		""" A system group doesn't have a home. """
 		return None
@@ -1446,8 +1441,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		assert ltrace('groups',
 					'| %s.__add_group_symlink(%s)' % (self.name, user.login))
 
-		link_src = os.path.join(LMC.configuration.defaults.home_base_path,
-								LMC.configuration.groups.names.plural,
+		link_src = os.path.join(LMC.configuration.groups.base_path,
 								link_basename)
 
 		link_dst = os.path.join(user.homeDirectory, link_basename)
@@ -1477,8 +1471,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		assert ltrace('groups',
 					'| %s.__del_group_symlink(%s)' % (self.name, user.login))
 
-		link_src = os.path.join(LMC.configuration.defaults.home_base_path,
-								LMC.configuration.groups.names.plural,
+		link_src = os.path.join(LMC.configuration.groups.base_path,
 								link_basename)
 
 		for link in fsapi.minifind(user.homeDirectory,
@@ -1797,8 +1790,7 @@ class GroupsController(Singleton, CoreFSController):
 	def get_hidden_state(self):
 		""" See if /home/groups is readable or not. """
 
-		groups_home = '%s/%s' % (LMC.configuration.defaults.home_base_path,
-						LMC.configuration.groups.names.plural)
+		groups_home = LMC.configuration.groups.base_path
 
 		try:
 			users_gid = self.name_to_gid(LMC.configuration.users.group)
