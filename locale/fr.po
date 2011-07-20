@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-07-19 18:52+0200\n"
-"PO-Revision-Date: 2011-07-19 19:26+0200\n"
+"POT-Creation-Date: 2011-07-20 13:35+0200\n"
+"PO-Revision-Date: 2011-07-20 13:37+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -18,7 +18,6 @@ msgstr ""
 "Content-Transfer-Encoding: utf8\n"
 "X-Poedit-Language: French\n"
 "X-Poedit-Country: FRANCE\n"
-"Plural-Forms: 1\n"
 
 #: tests/core.py:86
 msgid "running "
@@ -1085,32 +1084,30 @@ msgstr ""
 msgid "Repaired vanished symlink %s."
 msgstr "Le lien symbolique disparu %s a été recréé."
 
-#: foundations/fsapi.py:731
+#: foundations/fsapi.py:721
 msgid ""
-"{path} already exists but it is not a symlink, thus it does not point to "
-"{dest}.  Replace it with a correct symlink?"
+"{link} already exists but it is not a symlink, thus it does not point to "
+"{dest}. Rename and replace it with a correct symlink?"
 msgstr ""
-"{path} existe déjà mais ce n'est pas un lien symbolique, il ne pointe donc "
-"pas vers {dest}.  Dois-je le renommer et le remplacer par un lien symbolique "
-"valide ?"
+"{link} existe déjà mais n'est pas un lien symbolique, il ne pointe donc pas "
+"vers {dest}. Renommer et remplacer par un lien symbolique valide ?"
 
-#: foundations/fsapi.py:741
-#, python-format
-msgid " (%s conflict)"
-msgstr "(conflit du %s)"
+#: foundations/fsapi.py:732
+msgid "{0} ({1} conflict){2}"
+msgstr "{0} (conflit du {1}){2}"
 
-#: foundations/fsapi.py:742 daemon/rwi.py:810
+#: foundations/fsapi.py:733 daemon/rwi.py:810
 msgid "%d %m %Y at %H:%M:%S"
-msgstr "le %d %m %Y à %H:%M:%S"
+msgstr "%d %m %Y à %H:%M:%S"
 
-#: foundations/fsapi.py:746
+#: foundations/fsapi.py:737
 msgid ""
 "Renamed {link} to {newname} and replaced it by a symlink pointing to {dest}."
 msgstr ""
 "{link} a été renommé en {newname}, et remplacé par un lien symbolique "
 "pointant vers {dest}."
 
-#: foundations/fsapi.py:755
+#: foundations/fsapi.py:746
 msgid ""
 "While making symlink to {dest}, the destination {link} already exists and is "
 "not a link."
@@ -1118,21 +1115,21 @@ msgstr ""
 "Pendant la création d'un lien symbolique pointant vers {dest}, la "
 "destination {link} existe déjà et n'est pas un lien."
 
-#: foundations/fsapi.py:773
+#: foundations/fsapi.py:764
 #, python-format
 msgid "Cannot remove %s, it does not exist!"
 msgstr "Impossible de supprimer %s, il n'existe pas !"
 
-#: foundations/fsapi.py:797
+#: foundations/fsapi.py:788
 msgid "Archived {0} as {1}."
 msgstr "{0} a été archivé en tant que {1}."
 
-#: foundations/fsapi.py:805
+#: foundations/fsapi.py:796
 #, python-format
 msgid "Cannot archive %s, it does not exist!"
 msgstr "Impossible d'archiver %s, il n'existe pas !"
 
-#: foundations/fsapi.py:830
+#: foundations/fsapi.py:821
 msgid "Backed up {orig} as {backup}."
 msgstr "Le fichier {orig} a été sauvegardé en tant que {backup}."
 
@@ -1567,50 +1564,50 @@ msgstr "Vérifier le profil %s ?"
 msgid "Sorry, not yet."
 msgstr "Désolé, pas encore."
 
-#: daemon/main.py:112
+#: daemon/main.py:111
 #, python-format
 msgid "%s: initializing facilities, backends, controllers and extensions."
 msgstr ""
 "%s : initialisation des services internes, backends, contrôleurs et "
 "extensions."
 
-#: daemon/main.py:268
+#: daemon/main.py:267
 #, python-format
 msgid "%s: starting all threads."
 msgstr "%s : démarrage de tous les threads."
 
-#: daemon/main.py:278
+#: daemon/main.py:277
 #, python-format
 msgid "%s: stopping threads."
 msgstr "%s : arrêt des threads."
 
-#: daemon/main.py:364
+#: daemon/main.py:363
 #, python-format
 msgid "%s: all threads started, going to sleep waiting for signals."
 msgstr "%s : tous les threads ont démarré. En attente de signaux."
 
-#: daemon/main.py:368
+#: daemon/main.py:367
 #, python-format
 msgid "%s: all threads started, ready for TTY interaction."
 msgstr "%s : threads démarrés ; prêt pour l'intéraction sur le terminal."
 
-#: daemon/main.py:519
+#: daemon/main.py:518
 msgid "{0}: killed aborted instance @pid {1}."
 msgstr "{0} : l'instance avortée (pid {1}) a été tuée."
 
-#: daemon/main.py:545
+#: daemon/main.py:544
 msgid "{0}: trying to {1} existing instance @pid {2}."
 msgstr "{0} : tentative de {1} de l'instance en cours d'exécution @pid {2}."
 
-#: daemon/main.py:546
+#: daemon/main.py:545
 msgid "replace"
 msgstr "remplacement"
 
-#: daemon/main.py:547
+#: daemon/main.py:546
 msgid "shutdown"
 msgstr "terminaison"
 
-#: daemon/main.py:558
+#: daemon/main.py:557
 #, python-format
 msgid ""
 "%s: existing instance still running, we're going to be more incisive in a "
@@ -1619,7 +1616,7 @@ msgstr ""
 "%s : ancienne instance toujours en cours d'exécution, nous allons être plus "
 "incisifs dans quelques secondes."
 
-#: daemon/main.py:581
+#: daemon/main.py:580
 #, python-format
 msgid ""
 "%s: re-killing old instance softly with TERM signal and waiting a little "
@@ -1628,20 +1625,20 @@ msgstr ""
 "%s : un nouveau gentil signal TERM a été envoyé à l'ancienne instance, et "
 "nous attendons encore quelques instants."
 
-#: daemon/main.py:598
+#: daemon/main.py:597
 #, python-format
 msgid "%s: old instance won't terminate after 8 seconds. Sending KILL signal."
 msgstr ""
 "%s : l'ancienne instance ne s'est pas terminée après 8 secondes. Envoi du "
 "signal KILL."
 
-#: daemon/main.py:626
+#: daemon/main.py:625
 #, python-format
 msgid "%s: killing old instance's father (sudo, pid %s) without any mercy."
 msgstr ""
 "%s : terminaison sans merci du père de l'ancienne instance (sudo, pid %s)."
 
-#: daemon/main.py:643
+#: daemon/main.py:642
 msgid ""
 "{0}: old instance won't terminate after 9 seconds and cannot be killed. We "
 "won\t try to kill any other parent than \"{1}\", you are in a non-trivial "
@@ -1652,7 +1649,7 @@ msgstr ""
 "\"{1}\" car vous êtes dans une situation trop spécifique. C'est maintenant à "
 "vous de régler le problème."
 
-#: daemon/main.py:654
+#: daemon/main.py:653
 #, python-format
 msgid ""
 "%s: old instance won't terminate after 15 seconds and cannot be killed "
@@ -1664,86 +1661,86 @@ msgstr ""
 "Abandon. Vous êtes sur un système où \"kill -9\" n'a pas les effets vendus "
 "par la pub. Désolé pour vous."
 
-#: daemon/main.py:664
+#: daemon/main.py:663
 msgid "{0}: old instance {1} terminated{2}"
 msgstr "{0} : l'ancienne instance a été terminée {1}{2}"
 
-#: daemon/main.py:666
+#: daemon/main.py:665
 msgid "nastily"
 msgstr "brutalement"
 
-#: daemon/main.py:666
+#: daemon/main.py:665
 msgid "successfully"
 msgstr "avec succès"
 
-#: daemon/main.py:667
+#: daemon/main.py:666
 msgid ", we can play now."
 msgstr ", on va pouvoir s'amuser."
 
-#: daemon/main.py:671
+#: daemon/main.py:670
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
 "{0} : un daemon est déjà en cours d'exécution (pid {1}), démarrage avorté."
 
-#: daemon/main.py:686
+#: daemon/main.py:685
 msgid "{0}: must be run as {1} (was: {2})."
 msgstr "{0} : doit être lancé en tant que {1} (erreur initiale : {2})."
 
-#: daemon/main.py:738
+#: daemon/main.py:737
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 "{0} : impossible d'annoncer notre terminaison aux hotes distants (problème "
 "initial : {1})."
 
-#: daemon/main.py:743
+#: daemon/main.py:742
 #, python-format
 msgid "%s: joining threads."
 msgstr "%s : rappel des threads."
 
-#: daemon/main.py:757
+#: daemon/main.py:756
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr "{0} : attente de terminaison du thread {1}{2}."
 
-#: daemon/main.py:760
+#: daemon/main.py:759
 #, python-format
 msgid " (currently working on %s)"
 msgstr " (actuellement sur %s)"
 
-#: daemon/main.py:808
+#: daemon/main.py:799
 msgid "{0}: cannot remove {1} (was: {2})."
 msgstr "{0} : impossible de supprimer {1} (erreur initiale : {2})."
 
-#: daemon/main.py:811
+#: daemon/main.py:802
 #, python-format
 msgid " (up %s)"
 msgstr " (démarré depuis %s)"
 
-#: daemon/main.py:819
+#: daemon/main.py:810
 #, python-format
 msgid "%s: cleaning up and stopping threads…"
 msgstr "%s : nettoyage et arrêt des threads…"
 
-#: daemon/main.py:821
+#: daemon/main.py:812
 msgid "{0}: signal {1} received, shutting down…"
 msgstr "{0} : signal {1} reçu, arrêt en cours…"
 
-#: daemon/main.py:826
+#: daemon/main.py:817
 msgid "{0}: exiting{1}."
 msgstr "{0} : arrêt{1}."
 
-#: daemon/main.py:829
+#: daemon/main.py:820
 msgid "{0}: SIGUSR1 received, preparing restart."
 msgstr "{0} : signal SIGUSR1 reçu, préparation du redémarrage."
 
-#: daemon/main.py:865
+#: daemon/main.py:854
 msgid "{0}: restarting{1}."
 msgstr "{0} : redémarrage{1}."
 
-#: daemon/main.py:924
+#: daemon/main.py:910
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 
-#: daemon/main.py:928
+#: daemon/main.py:914
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr "{0} : réalisation d'un ramassage de miettes manuel de {1}."
 
@@ -1793,16 +1790,16 @@ msgstr "%s: on se tire une balle dans le pied."
 msgid "%s: Entering interactive mode. Welcome into licornd's arcanes…"
 msgstr "%s : mode intéractif activé. Bienvenue dans les arcanes de licornd…"
 
-#: daemon/__init__.py:277
+#: daemon/__init__.py:279
 msgid "Licorn® {0}, Python {1} on {2}"
 msgstr "Licorn® {0}, Python {1} sur {2}"
 
-#: daemon/__init__.py:283
+#: daemon/__init__.py:293
 #, python-format
 msgid "%s: leaving interactive mode. Welcome back to Real World™."
 msgstr "%s : sortie du mode intéractif. Bon retour dans le monde réel™."
 
-#: daemon/__init__.py:294
+#: daemon/__init__.py:297
 msgid "{0}: received unhandled char \"{1}\", ignoring."
 msgstr "{0} : caractère non géré « {1} », ignoré."
 
