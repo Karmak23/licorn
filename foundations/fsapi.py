@@ -718,34 +718,25 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 						logging.info(_(u'Repaired vanished symlink %s.') %
 							stylize(ST_LINK, link_dst))
 			else:
-
-				# TODO / WARNING: we need to investigate a bit more: if current
-				# link_src is a file, overwriting it could be very bad (e.g.
-				# user could loose a document). This is the same for a
-				# directory, modulo the user could loose much more than just a
-				# document. We should scan the dir and replace it only if empty
-				# (idem for the file), and rename it (thus find a unique name,
-				# like 'the file.autosave.XXXXXX.txt' where XXXXXX is a random
-				# string…)
-
-				if batch or logging.ask_for_repair(_(u'{path} already '
-								'exists but it is not a symlink, thus '
-								'it does not point to {dest}. '
-								' Replace it with a correct symlink?').format(
+				if batch or logging.ask_for_repair(_(u'{link} already '
+								u'exists but it is not a symlink, thus '
+								u'it does not point to {dest}. '
+								u'Rename and replace it with '
+								u'a correct symlink?').format(
 									link=stylize(ST_LINK, link_dst),
 									dest=stylize(ST_PATH, link_src)
 								),
 								auto_answer=auto_answer):
 
 					pathname, ext = os.path.splitext(link_dst)
-					newname = (pathname + _(' (%s conflict)') % time.strftime(
-							_(u'%d %m %Y at %H:%M:%S')) + ext)
+					newname = _(u'{0} ({1} conflict){2}').format(pathname,
+							time.strftime(_(u'%d %m %Y at %H:%M:%S')), ext)
 					os.rename(link_dst, newname)
 					os.symlink(link_src, link_dst)
 
 					logging.info(_(u'Renamed {link} to {newname} '
-							'and replaced it by a symlink '
-							'pointing to {dest}.').format(
+							u'and replaced it by a symlink '
+							u'pointing to {dest}.').format(
 								link=stylize(ST_LINK, link_dst),
 								newname=stylize(ST_PATH, newname),
 								dest=stylize(ST_PATH, link_src)
@@ -753,8 +744,8 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 						)
 				else:
 					raise exceptions.LicornRuntimeException(_(u'While making '
-						'symlink to {dest}, the destination {link} '
-						'already exists and is not a link.').format(
+						u'symlink to {dest}, the destination {link} '
+						u'already exists and is not a link.').format(
 							dest=link_src, link=link_dst))
 def remove_directory(path):
 	""" Remove a directory hierarchy. But first, rename it to something
