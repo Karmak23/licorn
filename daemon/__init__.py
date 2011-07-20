@@ -73,11 +73,11 @@ class LicornDaemonInteractor(NamedObject):
 			assert ltrace('interactor', '| HistoryConsole.__init__()')
 			code.InteractiveConsole.__init__(self, locals, filename)
 			self.histfile = histfile
+			readline.set_completer(Completer(namespace=self.locals).complete)
+			readline.parse_and_bind("tab: complete")
 
 		def init_history(self):
 			assert ltrace('interactor', '| HistoryConsole.init_history()')
-			readline.set_completer(Completer(namespace=self.locals).complete)
-			readline.parse_and_bind("tab: complete")
 			if hasattr(readline, "read_history_file"):
 				try:
 					readline.read_history_file(self.histfile)
@@ -266,6 +266,7 @@ class LicornDaemonInteractor(NamedObject):
 									'LMC'           : LMC,
 									'dump'          : dump,
 									'fulldump'      : fulldump,
+									'options'       : options,
 									})
 
 							# put the TTY in standard mode (echo on).
@@ -273,15 +274,14 @@ class LicornDaemonInteractor(NamedObject):
 							sys.ps1 = 'licornd> '
 							sys.ps2 = '...'
 							interpreter.init_history()
-							interpreter.interact(
-								banner=_(u'Licorn® {0}, Python {1} '
-									'on {2}').format(version,
-									sys.version.replace('\n', ''),
-									sys.platform))
-							interpreter.save_history()
 
-							logging.notice(_('%s: leaving interactive mode. '
-								'Welcome back to Real World™.') % self.name)
+							interpreter.interact(
+									banner=_(u'Licorn® {0}, Python {1} '
+										'on {2}').format(version,
+										sys.version.replace('\n', ''),
+										sys.platform))
+
+							interpreter.save_history()
 
 							# restore signal and terminal handling
 							signal.signal(signal.SIGINT,
@@ -289,6 +289,9 @@ class LicornDaemonInteractor(NamedObject):
 
 							# take the TTY back into command mode.
 							self.prepare_terminal()
+
+							logging.notice(_('%s: leaving interactive mode. '
+								'Welcome back to Real World™.') % self.name)
 
 						else:
 							logging.warning2(_(u'{0}: received unhandled '

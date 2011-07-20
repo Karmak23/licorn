@@ -83,7 +83,6 @@ class LicornDaemon(Singleton):
 		self.__queues  = LicornQueues('daemon_queues')
 
 		LMC.licornd    = self
-		#print '>> licornd.__init__', LMC, LMC.licornd
 	def __str__(self):
 		return '%s(%s)' % (stylize(ST_NAME, self.name), self.pid)
 	def __repr__(self):
@@ -770,14 +769,6 @@ class LicornDaemon(Singleton):
 		for thname, th in threads_pass2:
 			th.join()
 
-		# we must join queues after threads, else we don't know why queues
-		# are still full of jobs.
-		#logging.progress("%s(%s): joining queues." % (self.name, self.pid))
-		#for (qname, queue) in self.__queues.iteritems():
-		#	assert ltrace('daemon', 'joining queue %s (%d items left).' % (
-		#			qname, queue.qsize()))
-		#	queue.join()
-
 		# display the remaining active threads (presumably stuck hanging on
 		# something very blocking).
 		assert ltrace('thread', 'after joining threads, %s remaining: %s' % (
@@ -860,11 +851,10 @@ class LicornDaemon(Singleton):
 		if not found:
 			cmd.extend(sys.argv[:])
 
-		#print '>> daemon.restart %s' % cmd
-
 		logging.notice(_(u'{0}: restarting{1}.').format(str(self), self.uptime()))
 
-		# XXX: awful tricking for execvp but i'm tired of this.
+		# XXX: awful tricking for execvp but i'm tired of trying to find a clean
+		# way to do this.
 		os.execvp(cmd[1], [cmd[0]] + cmd[2:])
 	def reload(self):
 		return "reload not implemented yet"
@@ -879,16 +869,13 @@ class LicornDaemon(Singleton):
 		if autostart:
 			thread.start()
 	def __service_enqueue(self, prio, func, *args, **kwargs):
-		#print '>> put', prio, func, args, kwargs
 		self.__queues.serviceQ.put((prio, func, args, kwargs))
 	def __service_wait(self):
 		if isinstance(current_thread(), ServiceWorkerThread):
 			raise RuntimeError('cannot join the serviceQ from '
 				'a ServiceWorkerThread instance, this would deadblock!')
-		#print ">> waiting for", daemon.queues.serviceQ.qsize(), 'jobs to finish'
 		self.__queues.serviceQ.join()
 	def __network_enqueue(self, prio, func, *args, **kwargs):
-		#print '>> put', prio, func, args, kwargs
 		self.__queues.networkQ.put((prio, func, args, kwargs))
 	def __network_wait(self):
 		if isinstance(current_thread(), NetworkWorkerThread):
@@ -896,7 +883,6 @@ class LicornDaemon(Singleton):
 				'a NetworkWorkerThread instance, this would deadblock!')
 		self.__queues.networkQ.join()
 	def __aclcheck_enqueue(self, prio, func, *args, **kwargs):
-		#print '>> put', prio, func, args, kwargs
 		self.__queues.aclcheckQ.put((prio, func, args, kwargs))
 	def __aclcheck_wait(self):
 		if isinstance(current_thread(), ACLCkeckerThread):
