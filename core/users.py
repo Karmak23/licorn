@@ -834,8 +834,9 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				stylize(ST_COMMENT, my_gecos)))
 
 		for login, meaningless_gecoses, replacement_gecos in (
-					('bin', ('bin'), _(u'Special Executable Restrictor Account')),
 					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro]),
+					('bin', ('bin'), _(u'Special Executable Restrictor Account')),
+					('bind', ('bind'), _(u'ISC Domain Name Service daemon')),
 					('caldavd', ('calendarserver daemon'), _(u'Apple Calendar Server Daemon')),
 					('daemon', ('daemon'), _(u'Generic System Daemon')),
 					('dhcpd', ('dhcpd'), _(u'DHCP Daemon')),
@@ -846,12 +847,14 @@ class User(CoreStoredObject, CoreFSUnitObject):
 					('hplip', ('HPLIP system user'), _(u'Hewlett-Packard Linux Imaging & Printing Daemon')),
 					('irc', ('ircd'), _(u'Internet Relay Chats Daemon')),
 					('kernoops', ('Kernel Oops Tracking Daemon'), _(u'Kernel OOPs Tracking Daemon')),
+					('landscape', (''), _(u'Canonical\'s Lanscape Remote Administration account')),
 					('libuuid', (''), _(u'UUID Library Account')),
 					('lp', ('lp'), _('Line Printer Daemon')),
 					('mail', ('mail'), _(u'Local E-Mail System Account')),
 					('man', ('man'), _(u'Unix Manual Pages Generator')),
 					('memcache', ('Memcached'), _(u'Memory Cache Daemon')),
 					('messagebus', (''), _(u'System Message Bus (D-BUS)')),
+					('motion', ('motion'), _(u'Video Motion Detection daemon')),
 					('news', ('news'), _(u'Very unprivileged System Account')),
 					('nobody', ('nobody'), _(u'Very unprivileged System Account')),
 					('messagebus', (''), _(u'System Message Bus (D-BUS)')),
