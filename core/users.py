@@ -1172,10 +1172,10 @@ class UsersController(Singleton, CoreFSController):
 				if filters.SYSTEM == filter_string:
 					filtered_users.extend(user for user in self if user.is_system)
 
-				if filters.SYSTEM_RESTRICTED & filter_string:
+				elif filters.SYSTEM_RESTRICTED & filter_string:
 					filtered_users.extend(user for user in self if user.is_system_restricted)
 
-				if filters.SYSTEM_UNRESTRICTED & filter_string:
+				elif filters.SYSTEM_UNRESTRICTED & filter_string:
 					filtered_users.extend(user for user in self if user.is_system_unrestricted)
 			else:
 					uid_re = re.compile("^uid=(?P<uid>\d+)")
