@@ -7,17 +7,17 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import os, mimetypes, urlparse, posixpath
+import os, re, mimetypes, urlparse, posixpath, base64
 import urllib, socket, time, signal, gettext
 
 from threading      import current_thread
-from traceback      import print_exc
+from traceback      import print_exc, format_exc
 from SocketServer   import TCPServer, ThreadingTCPServer
 from BaseHTTPServer	import BaseHTTPRequestHandler
 
 TCPServer.allow_reuse_address = True
 
-from licorn.foundations           import options, logging, exceptions, process
+from licorn.foundations           import options, logging, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.constants import verbose
@@ -118,6 +118,10 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 	server_name = None
 	server_port = None
+
+	tty_replace_re = re.compile(r'(%s)' % '|'.join(
+								x.replace('[', '\[')
+									for x in cli_ascii_codes.itervalues()))
 	def do_HEAD(self):
 		try:
 			f = self.send_head()
@@ -196,6 +200,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				self.switch_lang()
 
 				retdata = self.serve_virtual_uri()
+
 			except exceptions.LicornWebException:
 				retdata = self.serve_local_file()
 		else:
@@ -228,7 +233,6 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 							stylize(ST_LOGIN, self.http_user)))
 					break
 	def user_authorized(self):
-
 		""" Return True if authorization exists AND user is authorized."""
 
 		authorization = self.headers.getheader("authorization")
@@ -326,136 +330,200 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		# GET / has special treatment :-)
 		if self.path == '/':
-			rettype, retdata = self.wmi.base.index(
-				self.path, self.http_user, referer=self.referer)
+			self.path = '/base/index'
 
+		# remove the last '/' (which is totally useless for us, even if it
+		# is considered semantic for a dir/)
+		if self.path[-1] == '/':
+			self.path = self.path[:-1]
+
+		# remove the first '/' before splitting (it is senseless here).
+		args = self.path[1:].split('/')
+
+		method_name = args[-1]
+
+		# correctly handle JSON jQuery requests
+		# rettype, retdata = self.wmi.users.get_users_list_JSON?callback=jsonp1311168395885("/users/get_users_lis
+		if 'callback=' in method_name:
+			if '?' in method_name:
+				splitter = '?'
+			else:
+				splitter = '&'
+			args[-1] = method_name.split(splitter)[0]
+			callback = method_name.split('=')[1]
 		else:
-			# remove the last '/' (which is totally useless for us, even if it
-			# is considered semantic for a dir/)
-			if self.path[-1] == '/':
-				self.path = self.path[:-1]
-			# remove the first '/' before splitting (it is senseless here).
-			args = self.path[1:].split('/')
+			callback = ''
 
-			if len(args) == 1:
-				args.append('main')
-			elif args[1] == 'list':
-				args[1] = 'main'
+		if len(args) == 1:
+			args.append('main')
+		elif args[1] == 'list':
+			args[1] = 'main'
 
-			if args[0] in dir(self.wmi):
+		if args[0] in dir(self.wmi):
 
-				if hasattr(self, 'post_args'):
-					py_code = ('rettype, retdata = self.wmi.%s.%s('
-						'"%s", "%s" %s %s, referer=%s, '
-						'wmi_hostname="%s", wmi_port=%s)') % (
-						args[0], args[1], self.path, self.http_user,
-						', "%s",' % '","'.join(args[2:]) \
-							if len(args)>2 else ', ',
-						', '.join(self.format_post_args()),
-						'"%s"' % self.referer if self.referer else 'None',
-						self.hostaddr, self.hostport)
-				else:
-					py_code = ('rettype, retdata = self.wmi.%s.%s('
-						'"%s", "%s" %s referer=%s, '
-						'wmi_hostname="%s", wmi_port=%s)') % (
-						args[0], args[1], self.path, self.http_user,
-						', "%s",' % '","'.join(args[2:])
-							if len(args)>2 else ', ',
-						'"%s"' % self.referer if self.referer else 'None',
-						self.hostaddr, self.hostport)
+			if hasattr(self, 'post_args'):
+				py_code = ('rettype, retdata = self.wmi.%s.%s('
+					'"%s", "%s" %s %s, referer=%s, '
+					'wmi_hostname="%s", wmi_port=%s, callback="%s")') % (
+					args[0], args[1], self.path, self.http_user,
+					', "%s",' % '","'.join(args[2:]) \
+						if len(args)>2 else ', ',
+					', '.join(self.format_post_args()),
+					'"%s"' % self.referer if self.referer else 'None',
+					self.hostaddr, self.hostport, callback)
+			else:
+				py_code = ('rettype, retdata = self.wmi.%s.%s('
+					'"%s", "%s" %s referer=%s, '
+					'wmi_hostname="%s", wmi_port=%s, callback="%s")') % (
+					args[0], args[1], self.path, self.http_user,
+					', "%s",' % '","'.join(args[2:])
+						if len(args)>2 else ', ',
+					'"%s"' % self.referer if self.referer else 'None',
+					self.hostaddr, self.hostport, callback)
 
-				try:
-					assert ltrace('http',
-						'serve_virtual_uri:exec("%s")' % py_code)
+			current_thread().listener = self
+			self.notifications = []
+			self.verbose = verbose.NOTICE
 
-					#TODO: #431
-					#for i in postargs.iteritems() :
-					#	kwargs[i] = i
-					#getattr(getattr(wmi, niv1), niv2)(self.path, self.htt_user, **kwargs)
-					exec py_code
+			#TODO: #431
+			#for i in postargs.iteritems() :
+			#	kwargs[i] = i
+			#getattr(getattr(wmi, niv1), niv2)(self.path, self.htt_user, **kwargs)
 
-				except exceptions.LicornRuntimeException, e:
-					logging.warning('Bad_Request/LicornRuntimeException: %s.'
-						% e)
-					rettype, retdata = self.wmi.utils.forgery_error()
+			try:
+				assert ltrace('http',
+					'serve_virtual_uri:exec("%s")' % py_code)
 
-				except Exception, e:
-					logging.warning('Bad request: %s%s %s.' % (
-						('%s → ' % py_code)
-							if options.verbose >= verbose.INFO
-							else '', type(e), e))
+				exec py_code
 
-					if options.verbose >= verbose.INFO:
-						print_exc()
+			except exceptions.LicornRuntimeException, e:
+				logging.warning('Bad_Request/LicornRuntimeException: %s.'
+					% e)
+				rettype, retdata = self.wmi.utils.forgery_error(e)
 
-					self.send_error(500,
-						'Internal server error or bad request%s' % (
-							('\n\n<br />%s' % self.wmi.utils.get_traceback(e))
+			except Exception, e:
+				logging.warning('Internal error, Bad request or '
+								'Unhandled exception: %s%s %s.' % (
+									('%s → ' % py_code)
+										if options.verbose >= verbose.INFO
+										else '', type(e), e))
+
+				if options.verbose >= verbose.INFO:
+					print_exc()
+
+				self.send_error(500, 'Internal server error or bad request%s'
+						% (('\n\n<br />%s' % self.format_traceback(e))
 							if options.verbose >= verbose.INFO
 							else ''))
 
-			else:
-				# not a self.wmi.* module
-				raise exceptions.LicornWebException(
-					'Bad base request (probably a regular file request).')
+		else:
+			# not a self.wmi.* module
+			raise exceptions.LicornWebException(
+				'Bad base request (probably a regular file request).')
 
 		#logging.info('>> %s: %s,\n %s: %s' % (type(rettype), rettype,
 		#	type(retdata), retdata))
 
-		if retdata:
+		if rettype in ('img', self.wmi.utils.HTTP_TYPE_IMG):
+			self.send_response(200)
+			self.send_header("Content-type", 'image/png')
 
-			if rettype in ('img', self.wmi.utils.HTTP_TYPE_IMG):
-				self.send_response(200)
-				self.send_header("Content-type", 'image/png')
+		elif rettype == self.wmi.utils.HTTP_TYPE_DOWNLOAD:
+			# fix #104
+			self.send_response(200)
+			self.send_header('Content-type',
+				'application/force-download; charset=utf-8')
+			self.send_header('Content-Disposition',
+				'attachment; filename=export.%s' % retdata[0])
+			self.send_header('Pragma', 'no-cache')
+			self.send_header('Expires', '0')
 
-			elif rettype == self.wmi.utils.HTTP_TYPE_DOWNLOAD:
-				# fix #104
-				self.send_response(200)
-				self.send_header('Content-type',
-					'application/force-download; charset=utf-8')
-				self.send_header('Content-Disposition',
-					'attachment; filename=export.%s' % retdata[0])
-				self.send_header('Pragma', 'no-cache')
-				self.send_header('Expires', '0')
+			# retdata was a tuple in this particular case.
+			# forget the first argument (the content type) and
+			# make retdata suitable for next operation.
+			retdata = retdata[1]
 
-				# retdata was a tuple in this particular case.
-				# forget the first argument (the content type) and
-				# make retdata suitable for next operation.
-				retdata = retdata[1]
+		elif rettype == self.wmi.utils.HTTP_TYPE_REDIRECT:
+			# special entry, which should not return any data, else
+			# the redirect won't work.
 
-			elif rettype == self.wmi.utils.HTTP_TYPE_REDIRECT:
-				# special entry, which should not return any data, else
-				# the redirect won't work.
+			self.send_response(302)
+			self.send_header("Location", retdata
+				if retdata.startswith('http://')
+				else 'http://%s:%s%s' % (
+				self.hostaddr, self.hostport, retdata))
+			self.send_header("Connection", 'close')
+			self.end_headers()
 
-				self.send_response(302)
-				self.send_header("Location", retdata
-					if retdata.startswith('http://')
-					else 'http://%s:%s%s' % (
-					self.hostaddr, self.hostport, retdata))
-				self.send_header("Connection", 'close')
-				self.end_headers()
+			return ''
+		else: # self.wmi.utils.HTTP_TYPE_TEXT or self.wmi.utils.HTTP_TYPE_AJAX
+			if rettype == self.wmi.utils.HTTP_TYPE_JSON:
+				content_type = 'application/json'
+			else:
+				content_type = 'text/html'
 
-				return ''
+			msg_text =  self.format_notifications()
 
-			else: # self.wmi.utils.HTTP_TYPE_TEXT
-				self.send_response(200)
-				self.send_header("Content-type", 'text/html; charset=utf-8')
-				self.send_header("Pragma", "no-cache")
+			self.send_response(200)
+			self.send_header("Content-type", '%s; charset=utf-8' %
+														content_type)
+			self.send_header("Pragma", "no-cache")
 
-			self.send_header("Content-Length", len(retdata))
+			if rettype not in (self.wmi.utils.HTTP_TYPE_JSON,
+				self.wmi.utils.HTTP_TYPE_JSON_NOTIF):
+				retdata = '''<div class='ajax_response'>%s</div>
+				<div class='notif'>%s</div>''' % (retdata, msg_text)
+			else:
+				if rettype == self.wmi.utils.HTTP_TYPE_JSON_NOTIF:
+					msg_text = retdata;
+					retdata = '"None"'
+
+				if retdata is None:
+					retdata = '"None"'
+
+				if (retdata.startswith('[') and retdata.endswith(']')) \
+					or (retdata.startswith('{') and retdata.endswith('}')):
+					#print 'obj detected'
+					retdata = retdata
+				else:
+					#print 'string detected'
+					retdata = '"%s"' % base64.standard_b64encode(retdata)
+
+				retdata = ('{ "notif" : "%s",  "content" : %s }' % (base64.standard_b64encode(str(msg_text)), str(retdata)))
+
+		self.send_header("Content-Length", len(retdata))
 
 		return retdata
+	def format_notifications(self):
+		data = ''
+
+		# we use msg[3:] to skip the CLI first 3 characters (' * ' or '/!\')
+		# I worked on regexes to strip them but didn't succeed, and the [3:]
+		# is more CPU friendly, and never miss ;-)
+		# we use it *after* the regex to be sure ASCII codes are already
+		# removed, else the 3 first text-characters are not at string start.
+
+		if hasattr(self, 'notifications'):
+			for msg, msg_level in self.notifications:
+				data += ('<span class="notification_message '
+						'notification_level_%d">%s</span><br />' %
+							(msg_level, WMIHTTPRequestHandler.tty_replace_re.sub('', msg)[3:]))
+			del self.notifications
+
+		return data
+	def format_traceback(self, e):
+		""" Reformat the traceback for web display. """
+		return '<p>Traceback:</p><pre style="font-size: 80%%;">%s</pre>' % (
+			format_exc(e))
 	def serve_local_file(self):
 		""" Serve a local file (image, css, js…) if it exists. """
 
 		retdata = None
-
-		path = self.translate_path(self.path)
+		path    = self.translate_path(self.path)
 
 		assert ltrace('http', 'serving file: %s.' % path)
 
 		if os.path.exists(path):
-
 			ctype = self.guess_type(path)
 
 			if ctype.startswith('text/'):
@@ -544,6 +612,17 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 				word = 'images/favicon.ico'
 			path = os.path.join(path, word)
 		return path
+	def process(self, msg, msg_level):
+
+		# TODO: make this better.
+		if not os.path.isdir('/var/log/wmi'):
+			os.mkdir('/var/log/wmi')
+
+		with open('/var/log/wmi/%s.log' % self.http_user, "a") as f:
+			f.write("%s\t%s" % (msg_level, msg))
+
+		#variable locale de notifs
+		self.notifications.append((msg, msg_level))
 
 	#
 	# TODO: implement and override

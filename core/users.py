@@ -310,6 +310,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__gecos = gecos
 			self.serialize()
 			self._cli_invalidate()
+			
 			logging.notice(_(u'Changed user {0} gecos '
 				'to "{1}".').format(stylize(ST_NAME, self.__login),
 				stylize(ST_COMMENT, gecos)))
@@ -734,12 +735,15 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			try:
 				os.mkdir('%s/%s' % (self.__homeDirectory, LMC.configuration.users.config_dir))
+				
 			except (IOError, OSError), e:
 				if e.errno != 17:
 					# don't bork if already exists, else bork.
 					raise
 
 			self._checking.clear()
+			logging.notice(_(u'Applyed skel {0} for user {1}').format(
+				skel, stylize(ST_LOGIN, self.__login)))
 	def link_Group(self, group, sort=True):
 		""" add a group in my double-link cache, and invalidate my CLI view.
 			This is costy because we sort the group after the append(). """
@@ -1018,6 +1022,31 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__loginShell,
 						self.backend.name
 					)
+
+	def to_JSON(self):
+			return ('{"login" : "%s", '
+				'"uidNumber" : "%s", '
+				'"gidNumber" : "%s", '
+				'"gecos" : "%s", '
+				'"homeDirectory" : "%s", '
+				'"loginShell" : "%s", '
+				'"backend" : "%s", '
+				'"locked" : "%s", '
+				'"profile" : "%s", '
+				'"is_system" : "%s", '
+				'"search_fields": [ "uidNumber", "gecos", "login", "profile"] }' % (
+						self.__login,
+						self.__uidNumber,
+						self.__gidNumber,
+						self.__gecos,
+						self.__homeDirectory,
+						self.__loginShell,
+						self.backend.name,
+						self.__locked,
+						self.__primaryGroup().name
+							if self.__is_standard else '',
+						self.__is_system
+					))
 
 class UsersController(Singleton, CoreFSController):
 	""" Handle global operations on unit User objects,
@@ -1695,6 +1724,19 @@ class UsersController(Singleton, CoreFSController):
 					'%s\n'
 					'</users-list>\n') % '\n'.join(
 						user.to_XML() for user in users)
+
+	def to_JSON(self, selected=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				users = self
+			else:
+				users = selected
+
+			assert ltrace('users', '| to_JSON(%r)' % users)
+
+			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
 		auto_answer=None):
 		"""Check user accounts and account data consistency."""

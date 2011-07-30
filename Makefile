@@ -60,21 +60,35 @@ cleanlang:
 
 lang: i18n
 
+# the .js.MO links are necessary for the gettext2json to work as expected.
 i18n: update-po
+	mkdir -p interfaces/wmi/js/json
 	for lang in fr ; \
 		do \
-			mkdir -p locale/$${lang}/LC_MESSAGES; ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			mkdir -p locale/$${lang}/LC_MESSAGES; \
+			ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			ln -sf ../../$${lang}.js.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).js.mo ; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
+			touch locale/$${lang}.js.po ; \
+			msgfmt locale/$${lang}.js.po -o locale/$${lang}.js.mo ; \
+			python locale/gettext2json.py $(APP_NAME).js locale/$${lang}.js.po $${lang} \
+				> interfaces/wmi/js/json/$(APP_NAME).$${lang}.json ; \
 		done ;
 
 update-pot:
-	rm locale/$(APP_NAME).pot ; cp locale/$(APP_NAME).template.pot locale/$(APP_NAME).pot
-	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' | xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot 
+	rm -f locale/$(APP_NAME).pot locale/$(APP_NAME)js.pot
+	cp locale/$(APP_NAME).template.pot locale/$(APP_NAME).pot
+	cp locale/$(APP_NAME)js.template.pot locale/$(APP_NAME)js.pot
+	find . -type f \( -name '*.py' -or -name '*.glade' \) | grep -v '_darcs' \
+		| xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME).pot
+	find interfaces/wmi -type f \( -name '*.js' \) \
+		| xargs xgettext -k_ -kN_ -j -o locale/$(APP_NAME)js.pot
 
 update-po: update-pot
 	for lang in fr ; \
 		do \
 			msgmerge -U locale/$${lang}.po locale/$(APP_NAME).pot ; \
+			msgmerge -U locale/$${lang}.js.po locale/$(APP_NAME)js.pot ; \
 		done ;
 
 cleandoc:

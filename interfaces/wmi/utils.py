@@ -9,11 +9,11 @@ Copyright (C) 2005-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 
 """
+import os
 
 from subprocess import Popen, PIPE
+from urllib     import unquote_plus
 
-from licorn.core               import LMC
-from licorn.foundations        import process
 from licorn.foundations.ltrace import ltrace
 
 # used for static data only
@@ -58,16 +58,14 @@ def merge_multi_select(*lists):
 	final = []
 
 	for alist in lists:
-		#print '>> got list', alist
 		if alist == []:
 			continue
 
 		if type(alist) == type(''):
 			final.append(alist)
+
 		else:
 			final.extend(alist)
-
-	#print '>> return', final
 	return final
 
 # EXEC / SYSTEM functions.
@@ -165,7 +163,14 @@ def doubleListBox(titles, id, values_source = [], values_dest = []):
 	masker   = id + '_masker'
 	id_left  = id + '_source'
 	id_right = id + '_dest'
-	return '''
+	data = '<select class="multiselect" multiple="multiple" name="groups[]">'
+	for v in values_dest:
+		data += '	<option value="%s">%s</option>' % (v,v)
+	for v in values_dest:
+		data += '	<option value="%s" selected="selected">%s</option>' % (v,v)
+	data += '</select>'
+	return data
+	"""
 	<div id="%s" class="accordion_content">
 		<table class="accordion-multi-group-table">
 			<tr>
@@ -185,8 +190,16 @@ def doubleListBox(titles, id, values_source = [], values_dest = []):
 		id_left, id_right, id,
 		_('Remove'),
 		id_right, id_left, id,
-		selectbox(titles[2], id_right, id, values_dest) )
+		selectbox(titles[2], id_right, id, values_dest) )"""
+def multiselect(titles, id, values_sources = [], values_dest = []):
+	data = '<select class="multiselect" multiple="multiple" name="%s">' % id
+	for v in values_sources:
+		data += '	<option value="%s">%s</option>' % (v,v)
+	for v in values_dest:
+		data += '	<option value="%s" selected="selected">%s</option>' % (v,v)
+	data += '</select>'
 
+	return data
 # GRAPHICAL functions
 def question(title, message, yes_values, no_values, form_options = None):
 	"""Build ha HTML Question / Confirmation FORM.
@@ -251,22 +264,16 @@ def metanav(http_user):
 	return '<div id="metanav" class="nav"><ul><li>%s</li></ul></div>' \
 	% (_('Logged in as %s') % http_user)
 def page_body_start(uri, http_user, ctxtnav_func, title, active=True):
-	return '''<div id="banner">
-	{back_to_home}
-	{meta_nav}
-	{menu}
-</div><!-- banner -->
-<div id="main" class="main_{uri_class}">
-{context_navigation}
-<div id="content" class="content_{uri_class}">
-	<h1 class="h1_{uri_class} title title_{uri_class}">{title}</h1>
-	'''.format(
-		back_to_home=backto(),
-		meta_nav=metanav(http_user),
-		menu=menu(uri),
-		context_navigation=ctxtnav_func(active),
-		title=title,
-		uri_class=uri[1:].split('/', 1)[0].replace('/main', '').replace('/list', ''))
+		return '''
+		<div id="banner">
+				{back_to_home}
+				{meta_nav}
+				{menu}
+		</div><!-- banner -->'''.format(
+				back_to_home=backto(),
+				meta_nav=metanav(http_user),
+				menu=menu(uri))
+
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
 def bad_arg_error(message=None):
@@ -277,20 +284,9 @@ def bad_arg_error(message=None):
 				'''to the WMI.'''),
 				'<br /><br />%s' % message if message else '')
 		)))
-def forgery_error(title=_("Impossible action")):
-	return (HTTP_TYPE_TEXT, page(title,
-		error(_("Impossible action"),
-			description = _('''Some parts of the system cannot be modified, '''
-				'''for your own safety and the world to rest in peace.''')
-		)))
-def fool_proof_protection_error(message, title=_("Impossible action")):
-	return (HTTP_TYPE_TEXT, page(title,
-		error(_("Impossible action"),
-			description = message )))
-def get_traceback(excep):
-	""" Reformat the traceback for web display. """
-	return '<p>Traceback:</p><pre style="font-size: 80%%;">%s\n%s</pre>' % (
-		('\n').join(process.get_traceback()), excep)
+
+def fool_proof_protection_error(message):
+	return (HTTP_TYPE_TEXT, ajax_response('', _('Impossible action: ') + message))
 # HTML FORM functions
 def access_key(key):
 	if key:
@@ -299,15 +295,28 @@ def access_key(key):
 		return ''
 def reset(value = "Revenir au valeurs d'origine"):
 	return '''<input type="reset" value="%s" />''' % (value)
-def submit(name, value = "", onClick = "", accesskey = None):
+def submit(name, value = "", onClick = "", submit_id = '',
+	accesskey = None):
 	if value == "": value = name
 	if onClick != "": onClickValue = 'onClick="%s"' % onClick
 	else: onClickValue = ""
-	return '''<input type="submit" name="%s" value="%s" %s %s />''' % (name, value, onClickValue, access_key(accesskey))
-def button(label, value, accesskey = None):
-	return '''<a href="%s"><button type="button" %s>%s</button></a>''' % (value, access_key(accesskey), label)
-def select(name, values, current = '', dont_display=(), func=str, accesskey=None):
-	data = '<select name="%s" %s>\n' % (name, access_key(accesskey))
+	if submit_id != "": id_value = 'id="%s"' % submit_id
+	else: id_value = ""
+	return '''<input type="submit" name="%s" value="%s" %s %s %s />''' % (name, value, id_value, onClickValue, access_key(accesskey))
+def button(label, value, button_id=None, accesskey = None):
+	if value is None: href_value = ''
+	else: href_value = 'href="%s"' % value
+	if button_id is None: id_value = ''
+	else: id_value = 'id="%s"' % button_id
+
+	return '''<a %s><button type="button" %s %s>%s</button></a>''' % (href_value, id_value, access_key(accesskey), label)
+def select(name, values, select_id=None, current = "", dont_display = (), func = str, accesskey = None, instant_apply = False, instant_apply_action=None):
+	instant_apply_text = ''
+	if select_id is None: id_text = ''
+	else: id_text = "id='%s'" % select_id
+	if instant_apply and instant_apply_action is not None:
+		instant_apply_text = "class='instant_apply_select' action='%s'" % instant_apply_action
+	data = '<select name="%s" %s %s %s>\n' % (name, access_key(accesskey), instant_apply_text, id_text)
 	for value in values:
 		if value in dont_display: continue
 		elif value == current: selected = "selected=selected"
@@ -315,13 +324,29 @@ def select(name, values, current = '', dont_display=(), func=str, accesskey=None
 		data += '	<option value="%s" %s>%s</option>\n' % (value, selected, func(value))
 	data += '</select>'
 	return data
-def	input(name, value, size = 20, maxlength = 1024, disabled = False, password = False, accesskey = None):
+def	input(name, value, size = 20, maxlength = 1024, disabled = False,
+	password = False, accesskey = None, instant_apply = False,
+	instant_apply_action = None, instant_apply_password = False,
+	input_id=None):
+
+	if input_id is None: id_value = ''
+	else: id_value = "id='%s'" % input_id
 	if disabled: disabled = 'disabled="disabled"'
 	else: disabled = ""
 	if password: type = "password"
 	else: type = "text"
-	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s />''' % (type, name, value, size, maxlength, disabled, access_key(accesskey))
-def	checkbox(name, value, label, checked=False, disabled=False, accesskey=None):
+	if instant_apply:
+		instant_apply_text = "class='instant_apply_textbox' action='%s'" % instant_apply_action
+	elif instant_apply_password:
+		instant_apply_text = "class='instant_apply_password' action='%s'" % instant_apply_action
+	else:
+		instant_apply_text = ""
+	return '''<input type="%s" name="%s" value="%s" size="%d" maxlength="%d" %s %s %s %s/>''' % (type, name, value, size, maxlength, id_value, disabled, access_key(accesskey), instant_apply_text)
+def	checkbox(name, value, label, checked=False, disabled=False, accesskey=None, checkbox_id="", instant_apply=False, instant_apply_action=''):
+	if checkbox_id == "":
+		chk_id = ''
+	else:
+		chk_id= 'id=%s' % checkbox_id
 	if disabled:
 		disabled = 'disabled="disabled"'
 	else:
@@ -330,7 +355,11 @@ def	checkbox(name, value, label, checked=False, disabled=False, accesskey=None):
 		checked = 'checked="checked"'
 	else:
 		checked = ""
-	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s />&#160;%s</label>''' % (name, value, checked, disabled, access_key(accesskey), label)
+	if instant_apply:
+		instant_apply_text = "class='instant_apply_checkbox' action='%s'" % instant_apply_action
+	else:
+		instant_apply_text = ""
+	return '''<label><input type="checkbox" name="%s" value="%s" %s %s %s %s %s/>&#160;%s</label>''' % (name, value, chk_id, checked, disabled, access_key(accesskey), instant_apply_text, label)
 
 # HTML DOCUMENT functions
 def acr(word):
@@ -361,33 +390,155 @@ def menu(uri):
 
 	return '''
 <div id="mainnav" class="nav">
-<ul>
-<li%s><a href="/" title="%s">%s</a></li>
-<li%s><a href="/users/" title="%s">%s</a></li>
-<li%s><a href="/groups/" title="%s">%s</a></li>
-%s
-<!--<li%s><a href="/internet/" title="%s">%s</a></li>-->
-</ul>
+	<div class="menu-item" >
+		<div class="menu-title current">
+			<a href="/" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+		<div class="menu-content">
+			<span class="menu-content-item">
+				<img src="/images/24x24/eteindre.png"/>
+				<span class="menu-content-text">
+				Éteindre
+				</span>
+			</span>
+			<span class="menu-content-item">
+				<img src="/images/24x24/redemarrer.png"/>
+				<span class="menu-content-text">
+				Redémarrer
+				</span>
+			</span>
+		</div>
+	</div>
+
+	<div class="menu-item" >
+		<div class="menu-title">
+			<a href="/users" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+		<div class="menu-content">
+			<span class="menu-content-item">
+				<img src="/images/24x24/ajouter.png"/>
+				<span class="menu-content-text" id='add_user_menu'>
+					Ajouter
+				</span>
+			</span>
+			<span class="menu-content-item">
+				<img src="/images/24x24/importer.png"/>
+				<span class="menu-content-text" id='import_user_menu'>
+					Importer
+				</span>
+			</span>
+		</div>
+	</div>
+
+
+
+
+	<div class="menu-item" >
+		<div class="menu-title">
+			<a href="/groups" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+		<div class="menu-content">
+			<span class="menu-content-item">
+				<img src="/images/24x24/shutdown.png"/>
+				<span class="menu-content-text" id='add_group_menu'>
+				Ajouter
+				</span>
+			</span>
+			<span class="menu-content-item">
+				<img src="/images/24x24/shutdown.png"/>
+				<span class="menu-content-text" id='import_group_menu'>
+				Importer
+				</span>
+			</span>
+		</div>
+	</div>
+		%s
+		<!--
+		<div class="menu-item" >
+		<div class="menu-title">
+			<a href="/internet" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+		<div class="menu-content">
+			<span class="menu-content-item">
+				<img src="/images/24x24/shutdown.png"/>
+				<span class="menu-content-text">
+				blabla
+				</span>
+			</span>
+			<span class="menu-content-item">
+				<img src="/images/24x24/shutdown.png"/>
+				<span class="menu-content-text">
+				blabla
+				</span>
+			</span>
+		</div>
+	</div>
+		-->
+	<div class="menu-item" >
+		<div class="menu-title">
+			<a href="http://docs.licorn.org/userdoc/index.html" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+	</div>
+	<div class="menu-item" >
+		<div class="menu-title">
+			<a href="mailto:support@meta-it.fr?subject=[Support Licorn®]" class="menu_link" title="%s">
+				<div class="menu-back "></div>
+				<div class='menu-text'>%s</div>
+			</a>
+		</div>
+	</div>
 </div>
-<div id="auxnav" class="nav">
-<ul>
-<li><a href="http://docs.licorn.org/userdoc/index.html" title="%s">%s</a></li>
-<li%s><a href="mailto:support@meta-it.fr?subject=[Support Licorn®] " title="%s">%s</a></li>
-</ul>
+<!--<div id="auxnav" class="nav">-->
+
 </div>
-''' % (classes['/'], _('Server, UPS and hardware sub-systems status.'), _('Status'),
-		classes['users'], _('Manage user accounts.'), _('Users'),
-		classes['groups'], _('Manage groups and shared data.'), _('Groups'),
-		'\n'.join([ '<li%s><a href="/%s/" title="%s">%s</a></li>' % (
-										classes[ext.uri],
-										ext.uri,
-										ext.alt_string(),
-										ext.name()
-									) for ext in wmi.__dict__.values() if hasattr(ext, 'uri') ]
+''' % ( _('Server, UPS and hardware sub-systems status.'), _('Status'),
+		 _('Manage user accounts.'), _('Users'),
+		 _('Manage groups and shared data.'), _('Groups'),
+		'\n'.join([ '''
+		<div class="menu-item" >
+			<div class="menu-title">
+				<a href="/{menu_uri}/" class="menu_link" title="{menu_alt}">
+					<div class="menu-back "></div>
+					<div class='menu-text'>{menu_title}</div>
+				</a>
+			</div>
+			<div class="menu-content">
+				{menu_content}
+			</div>
+		</div>'''.format(
+			menu_uri = ext.uri,
+			menu_alt = ext.alt_string(),
+			menu_title = ext.name(),
+			menu_content = '\n'.join(['''
+				<span class="menu-content-item">
+					<img src="{sub_menu_icon}"/>
+					<span class="menu-content-text">
+						{sub_menu_text}
+					</span>
+				</span>
+			'''.format(
+				sub_menu_icon = icon,
+				sub_menu_text = name) for name, link, alt, class_text, icon, fct in ext.context_menu()])
+			) for ext in wmi.__dict__.values() if hasattr(ext, 'uri') ]
 		),
-		classes['internet'], _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
+		 _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),
 		_('Go to online documentation website.'), _('Documentation'),
-		classes['support'], _('Get product support / help'), _('Support')
+		_('Get product support / help'), _('Support'),
 		)
 def page(title, data):
 	return head(title) + data + tail()
@@ -396,32 +547,51 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 	Bubble Tooltips come from:	http://www.dustindiaz.com/sweet-titles
 	Rounded Divs comme from  : http://www.html.it/articoli/niftycube/index.html
 	"""
+
 	return """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<title>%s %s</title>
-<link rel="shortcut icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
-<link rel="icon" href="/favicon.ico" type="image/vnd.microsoft.icon" />
-<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
-<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/sweetTitles.css" />
-<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/lightwindow.css" />
-<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/accordion.css" />
-<script language="javascript" type="text/javascript" src="/js/tools.js"></script>
-<script language="javascript" type="text/javascript" src="/js/niftyCube.js"></script>
-<script language="javascript" type="text/javascript" src="/js/sweetTitles.js"></script>
-<script language="javascript" type="text/javascript" src="/js/addEvent.js"></script>
-<script language="javascript" type="text/javascript" src="/js/prototype-1.6.0.2.js"></script>
-<script language="javascript" type="text/javascript" src="/js/effects.js"></script>
-<script language="javascript" type="text/javascript" src="/js/lightwindow.js"></script>
-<script language="javascript" type="text/javascript" src="/js/progressbar.js"></script>
-<!-- Flotr -->
-<!--[if IE]><script language="javascript" type="text/javascript" src="/js/excanvas.js"></script><![endif]-->
-<script language="javascript" type="text/javascript" src="/js/flotr-0.2.0-alpha.js"></script>
-</head>
-<body>
-""" % (_("%s WMI:") % LMC.configuration.app_name, title)
+		<html xmlns="http://www.w3.org/1999/xhtml">
+			<head>
+			<title>%s %s</title>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+				<!--
+					<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/jquery-ui.css" />
+					<link rel="stylesheet" type="text/css" href="/css/jquery.jqplot.css" />
+				-->
+				<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
+				<script language="javascript" type="text/javascript" src="/js/jquery.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/jquery.gettext.js"></script>
+				%s
+				<!--
+					<script language="javascript" type="text/javascript" src="/js/jquery-ui.js"></script>
+
+					<script language="javascript" type="text/javascript" src="/js/jquery.cookie.js"></script>
+					<script language="javascript" type="text/javascript" src="/js/jquery.jqplot.min.js"></script>
+					<script language="javascript" type="text/javascript" src="/js/jqplot.pieRenderer.min.js"></script>
+					<script language="javascript" type="text/javascript" src="/js/manage_content.js"></script>
+					<script language="javascript" type="text/javascript" src="/js/on_load.js"></script>
+				-->
+				<script language="javascript" type="text/javascript" src="/js/jquery.easing.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/jquery.base64.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/utils.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/main.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/menu.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/on_load_server.js"></script>
+				<!-- <script language="javascript" type="text/javascript" src="/js/tools.js"></script> -->
+			</head>
+			<body>""" % (
+				_("%s WMI:") % LMC.configuration.app_name,
+				title,
+				'\n'.join('<link href="/js/json/%s" lang="%s" rel="gettext"/>' % (
+						entry, entry.split('.')[1]
+					) for entry in os.listdir('%s/wmi/js/json' % LMC.configuration.share_data_dir)
+						if entry.endswith('.json'))
+			)
+
 def tail():
-	return """\n</body></html>"""
+	return """
+		</body>
+	</html>
+	"""
 
 # LightBox type windows
 def minihead(title = _("administration %s") % LMC.configuration.app_name):
@@ -467,3 +637,58 @@ HTTP_TYPE_TEXT     = 1
 HTTP_TYPE_IMG      = 2
 HTTP_TYPE_DOWNLOAD = 3
 HTTP_TYPE_REDIRECT = 4
+HTTP_TYPE_AJAX     = 5
+HTTP_TYPE_JSON     = 6
+HTTP_TYPE_JSON_NOTIF    = 7
+
+def main_content(content):
+	return '''
+	<div id="notification"></div>
+	<div id="dialog" ></div>
+	<div id='dialog-content'></div>
+	<div id="content"> <!-- start content -->
+		<div id=main_content> <!-- start main_content -->
+			{content}
+		</div> <!-- end main_content -->
+		'''.format(content=content)
+def sub_content(sub_content):
+	return '''
+		<div id=sub_content> <!-- start sub_content -->
+			<div id="sub_content_main">
+				%s
+			</div>
+
+		</div> <!-- end sub_content -->\n
+		'''% sub_content
+
+def ajax_response(data, notification):
+	return '''
+	<div class='ajax_response'>%s</div>
+	<div class='notif'>%s</div>''' % (data, notification)
+
+def notifications_success(msg):
+	return '<span class="notifications_success">%s</span>' % msg
+
+def notifications_error(msg):
+	return '<span class="notifications_error">%s</span>' % msg
+
+def notifications_color_name(msg):
+	return '<span class="notifications_color_name">%s</span>' % msg
+def notifications_color_uid(msg):
+	return '<span class="notifications_color_uid">%s</span>' % msg
+def notifications_color_comment(msg):
+	return '<span class="notifications_color_comment">%s</span>' % msg
+def notifications_color_regex(msg):
+	return '<span class="notifications_color_regex">%s</div>' % msg
+
+def my_unquote(string):
+	try:
+		return unquote_plus(string).decode('ISO-8859-1')
+	except UnicodeError:
+		try:
+			return unquote_plus(string).decode('utf8')
+		except UnicodeError:
+			return unquote_plus(string)
+
+def forgery_error(msg):
+	return (HTTP_TYPE_JSON_NOTIF, msg)

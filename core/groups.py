@@ -1646,6 +1646,34 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				','.join(x().login for x in self.__members),
 				self.backend.name
 				)
+	def to_JSON(self):
+		#print self._members
+		if hasattr(self, '_members'):
+			members = '[%s]' % '"%s"' if self._members is not [] else '' % '","'.join(x().login for x in self.__members)
+		else:
+			members = ''
+		return ('{"name" : "%s", '
+			'"gidNumber" : "%s", '
+			'"userPassword" : "%s", '
+			'"description" : "%s", '
+			'"permissive" : "%s", '
+			'"groupSkel" : "%s", '
+			'"memberUid" : "%s", '
+			'"backend" : "%s", '
+			'"is_priv" : "%s", '
+			'"is_system" : "%s", '
+			'"search_fields": [ "name", "gidNumber", "description", "permissive", "groupSkel"] }' % (
+					self.__name,
+					self.__gidNumber,
+					self.__userPassword,
+					self.__description,
+					self.__permissive,
+					'' if self.__is_system else self.__groupSkel,
+					members,
+					self.backend.name,
+					self.__is_privilege,
+					self.__is_system
+				))
 	def _wmi_protected(self, complete=True):
 		""" return true if the current group must not be used/modified in WMI. """
 
@@ -1999,6 +2027,19 @@ class GroupsController(Singleton, CoreFSController):
 				'%s\n'
 				'</groups-list>\n') % '\n'.join(
 						group.to_XML() for group in groups)
+
+	def to_JSON(self, selected=None):
+		""" Export the user accounts list to XML. """
+
+		with self.lock:
+			if selected is None:
+				groups = self
+			else:
+				groups = selected
+
+			assert ltrace('groups', '| to_JSON(%r)' % groups)
+
+			return '[ %s ]' % ','.join(group.to_JSON() for group in groups)
 	def _validate_fields(self, name, description, groupSkel):
 		""" apply sane tests on AddGroup needed arguments. """
 		if name is None:

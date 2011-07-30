@@ -25,6 +25,7 @@ from licorn.core                  import LMC
 from licorn.core.classes          import CoreController, CoreStoredObject
 from licorn.daemon                import priorities, roles
 from licorn.interfaces.wmi        import WMIObject
+from licorn.interfaces.wmi 		  import utils as w
 
 class Machine(CoreStoredObject):
 
@@ -1104,7 +1105,8 @@ class MachinesController(Singleton, CoreController, WMIObject):
 				_('Manage network-wide Energy &amp; '
 					'power saving policies.'),
 				'ctxt-icon',
-				'icon-energyprefs'
+				'icon-energyprefs',
+				None
 			)
 		)
 	def _wmi_shutdown(self, uri, http_user, hostname=None, sure=False,

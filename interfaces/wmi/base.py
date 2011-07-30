@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import time, re, socket
+import time, re, CairoPlot, os
 
-from subprocess            import Popen, PIPE
+from subprocess import Popen, PIPE
 
 from licorn.foundations           import process
 from licorn.foundations.base      import NamedObject
@@ -15,96 +15,8 @@ from licorn.core import LMC
 # (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi import utils as w
 
-def ctxtnav(active=True):
-	return '''
-	<div id="ctxtnav" class="nav">
-        <h2>Context Navigation</h2>
-		<ul>
-		<li><a href="/server/reboot" title="%s" class="lightwindow">
-		<div class="ctxt-icon" id="icon-reboot">%s</div></a></li>
-		<li><a href="/server/halt" title="%s" class="lightwindow">
-		<div class="ctxt-icon" id="icon-shutdown">%s</div></a></li>
-		</ul>
-        <hr />
-	</div>
-	''' % (
-		_('Restart server.'),
-		_('Restart server'),
-		_('Shutdown server.'),
-		_('Shutdown server'))
-def _flotr_pie_ram(progs, cache, buff, free):
+load_references = [None, None, None]
 
-	return '''<div id="flotr_memory" style="width:450px;height:300px;"></div>
-	<script type="text/javascript">
-	document.observe('dom:loaded', function(){
-// Fill series.
-var d1 = [[0, "%.2f"]];
-var d2 = [[0, "%.2f"]];
-var d3 = [[0, "%.2f"]];
-var d4 = [[0, "%.2f"]];
-
-//Draw the graph.
-var f = Flotr.draw($('flotr_memory'), [
-	{data:d1, label: '%s'},
-	{data:d2, label: '%s'},
-	{data:d3, label: '%s'},
-	{data:d4, label: '%s', pie: {explode: 20}}
-], {
-colors: ['#FB8B00', '#EEC73E', '#C0D800', '#4DA74D' ],
-title: "%s",
-HtmlText: true,
-grid: {
-verticalLines: false,
-horizontalLines: false,
-outlineWidth: 0
-},
-xaxis: {showLabels: false},
-yaxis: {showLabels: false},
-pie: {show: true},
-legend:{
-position: 'ne',
-backgroundColor: '#FFFFFF'
-}
-});
-});
-</script>
-''' % (progs, cache, buff, free,
-	_('Programs'), _('Cache'), _('Buffers'), _('Free'),
-	_('Memory occupation')
-	)
-def _flotr_pie_swap(used, free):
-
-	return '''<div id="flotr_swap" style="width:450px;height:300px;"></div>
-	<script type="text/javascript">
-	document.observe('dom:loaded', function(){
-// Fill series.
-var d1 = [[0, "%.2f"]];
-var d2 = [[0, "%.2f"]];
-
-//Draw the graph.
-var f = Flotr.draw($('flotr_swap'), [
-	{data:d1, label: '%s'},
-	{data:d2, label: '%s'}
-], {
-colors: ['#cb4b4b', '#4da74d' ],
-title: "%s",
-HtmlText: true,
-grid: {
-verticalLines: false,
-horizontalLines: false,
-outlineWidth: 0
-},
-xaxis: {showLabels: false},
-yaxis: {showLabels: false},
-pie: {show: true},
-legend:{
-position: 'ne',
-backgroundColor: '#FFFFFF'
-}
-});
-});
-</script>
-''' % (used, free, _('Used'), _('Free'), _('Swap occupation'))
 def index(uri, http_user, **kwargs):
 
 	import licorn.interfaces.wmi as wmi
@@ -113,9 +25,11 @@ def index(uri, http_user, **kwargs):
 	start = time.time()
 
 	title = _("Server status")
-	data  = w.page_body_start(uri, http_user, ctxtnav, title)
+	data  = w.page_body_start(uri, http_user, None, title)
 
 	loads   = open('/proc/loadavg').read().split(" ")
+
+	nbusers = len(LMC.users.select(filters.STANDARD))
 
 	cxusers = len(process.execute(['who'])[0].split('\n'))
 	if cxusers > 1:
@@ -160,6 +74,30 @@ def index(uri, http_user, **kwargs):
 			'Cached', 'SwapTotal', 'SwapFree' ):
 			mem.update(compute_mem(line, x))
 
+	if mem['SwapTotal'] == 0:
+		# no swap on this system. Weird, but possible. fixes #40
+		swap_message = _("no virtual memory installed.")
+	else:
+		swap_message = (_("virtual memory: <strong>%.2f</strong> Mb total.")
+															% mem['SwapTotal'])
+
+	def load_picture(index):
+		r = load_references[index]
+		l = loads[index]
+		if r is None:
+			#print "None"
+			return_data = 'bla'
+		if l < r:
+			return_data = '<img src="/images/12x12/loads_desc.png"/>'
+		elif l > r:
+			return_data = '<img src="/images/12x12/loads_asc.png"/>'
+		elif l == r:
+			return_data = '<img src="/images/12x12/loads_equal.png"/>'
+
+		load_references[index] = l
+		return return_data
+
+
 	status_messages = {
 		priorities.LOW: '',
 		priorities.NORMAL: '',
@@ -175,51 +113,129 @@ def index(uri, http_user, **kwargs):
 		priorities.HIGH: ''
 		}
 
-	if mem['SwapTotal'] == 0:
-		# no swap on this system. Weird, but possible. fixes #40
-		swap_message = '&nbsp;'
-		swap_pie = '&nbsp;'
-		info_messages[priorities.HIGH] += (
-					'<p class="light_indicator high_priority">'
-					'<img src="/images/16x16/emblem-important.png" '
-					'alt="Important emblem" width="16" height="16" '
-					'style="margin-top: -5px" />'
-					'&nbsp;%s</p>' % _(u"No virtual memory configured!"))
-	else:
-		swap_message = (_("virtual memory: <strong>%.2f</strong> Mb total.")
-															% mem['SwapTotal'])
-		swap_pie = _flotr_pie_swap(mem['SwapTotal'] - mem['SwapFree'],
-									mem['SwapFree'])
+	main_content = '''
+	<div>
+		<h1>{system_info_title}</h1>
+		{info_messages[0]}
+		<p>{system_info}</p>
+		{info_messages[10]}
+	</div>
+	<div>
+		<h1>{system_status_title}</h1>
+		{status_messages[0]}
+		<p>{system_status}<br /><br /></p>
+		{status_messages[10]}
 
-	def load_background(load):
-		if load <= 0.5:
-			return 'load_avg_level1'
-		elif load <= 1.0:
-			return 'load_avg_level2'
-		elif load <= 1.5:
-			return 'load_avg_level3'
-		elif load <= 2.0:
-			return 'load_avg_level4'
-		elif load <= 3.0:
-			return 'load_avg_level5'
-		elif load <= 5.0:
-			return 'load_avg_level6'
-		else:
-			return 'load_avg_level7'
+	</div> '''.format(
+		status_messages=status_messages,
+		system_status_title=_('System status'),
+		system_status=_('Up and running since <strong>{uptime}</strong>.<br /><br />'
+			'Users: <strong>{accounts}</strong> {account_word}, '
+			'<strong>{connected} {open_session_word}</strong>.<br /><br />'
+			'<div class="stat_line">Last minute load average : <strong>{load_average_last_value}</strong> {load_average_last_picture}</div>'
+			'<div class="stat_line">Last 5 minutes load average : <strong>{load_average_five_value}</strong> {load_average_five_picture}</div>'
+			'<div class="stat_line">Last 15 minutes load average : <strong>{load_average_fifteen_value}</strong> {load_average_fifteen_picture}</div>'
+			).format(
+			uptime=uptime_string, accounts=nbusers, connected=cxusers,
+			account_word=_('user accounts')
+				if nbusers > 1 else _('user account'),
+			open_session_word=_('open sessions')
+				if cxusers > 1 else _('open session'),
+			load_average_last_value = loads[0],
+			load_average_last_picture = load_picture(0),
+			load_average_five_value = loads[1],
+			load_average_five_picture = load_picture(1),
+			load_average_fifteen_value = loads[2],
+			load_average_fifteen_picture = load_picture(2),
+			),
+		system_info_title=_('System information'),
+		system_info=_('Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong>'
+			'<br /><br />'
+			'Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />'
+			'{swap_total}').format(
+				s_cpu=s_cpu, nb_cpu=cpus, cpu_model=model,
+				ram=mem['MemTotal'],
+				swap_total=swap_message),
+		info_messages=info_messages)
 
-	try:
-		hostname = socket.gethostname()
-	except Exception, e:
-		logging.warning('WMI: cannot get hostname (was: %s)' % e)
-		hostname = ''
+	data += w.main_content(main_content)
 
-	if hostname in ('', 'localhost', 'localhost6', 'localhost.localdomain',
-					'localhost6.localdomain6'):
-		hostname = ''
-	else:
-		hostname = _(u'“<strong>{hostname}</strong>” ').format(hostname=hostname)
 
-	for obj in wmi.__dict__.itervalues():
+	# sub content
+	chart_folder = os.path.realpath(__file__).rsplit('/', 1)[0] + "/images"
+	background = (1, 1, 1)
+	inner_radius = 0.90
+	height = 230
+	width = 370
+
+	# memory pie chart
+	mem_pie_data = {
+			_(u'Apps') + ' (%d%%)' % ((mem['Inactive'] + mem['Active']) *
+										100.0 / mem['MemTotal']) : mem['Inactive'] + mem['Active'],
+			_(u'Cache') + ' (%d%%)' % (mem['Cached'] * 100.0 / mem['MemTotal']) : mem['Cached'],
+			_(u'Buffers') + ' (%d%%)' % (mem['Buffers'] * 100.0 / mem['MemTotal']): mem['Buffers'],
+			_(u'Free') + ' (%d%%)' % (mem['MemFree'] * 100.0 / mem['MemTotal']): mem['MemFree']
+		}
+	mem_pie_colors = [
+			(255.0/255, 0.0/255, 102.0/255),
+			(106.0/255, 0.0/255, 43.0/255),
+			(86.0/255, 220.0/255, 255.0/255),
+			(100.0/255, 102.0/255, 64.0/255)
+		]
+
+	CairoPlot.donut_plot("%s/mem_pie_donnut.png" % chart_folder,
+		mem_pie_data, width, height, colors = mem_pie_colors,
+		inner_radius=inner_radius, background= background,
+		radius=100)
+
+	# Swap pie chart
+	swap_pie_data = {
+			_(u'Free') + ' (%d%%)' % (mem['SwapFree'] * 100.0 / mem['SwapTotal']): mem['SwapFree'],
+			_(u'Used') + ' (%d%%)' % ((mem['SwapTotal'] - mem['SwapFree']) *
+										100.0 / mem['SwapTotal']): mem['SwapTotal']-mem['SwapFree']
+		}
+	swap_pie_colors = [
+			(255.0/255, 0.0/255, 102.0/255),
+			(106.0/255, 0.0/255, 43.0/255)
+		]
+
+	CairoPlot.donut_plot("%s/swap_pie_donnut.png" % chart_folder,
+		swap_pie_data, width, height, colors=swap_pie_colors,
+		inner_radius=inner_radius, background=background,
+		radius=100)
+
+	sub_content = '''<div id='charts'>
+		<h1>{title}</h1>
+		<div id="ram_usage_content" class="donut_content">
+			<h2>{mem_title}</h2>
+			<div class="pie_chart" title="%s">
+				<img src='/images/mem_pie_donnut.png'/>
+			</div>
+		</div>
+		<div id="swap_usage_content" class="donut_content">
+			<h2>{swap_title}</h2>
+			<div class="pie_chart" title="%s">
+				<img src='/images/swap_pie_donnut.png'/>
+			</div>
+		</div>
+	</div>'''.format(
+			title=_('System resources usage'),
+			mem_title=_('Physical memory'),
+			swap_title=_('Virtual (swap) memory')
+		)
+
+	data += w.sub_content(sub_content)
+
+
+
+	page = w.page(title,
+		data + w.page_body_end(w.total_time(start, time.time())))
+
+	return (w.HTTP_TYPE_TEXT, page)
+
+
+
+	"""	for obj in wmi.__dict__.itervalues():
 		if isinstance(obj, NamedObject):
 			if hasattr(obj, '_status'):
 				for msgtuple in getattr(obj, '_status')():
@@ -261,15 +277,16 @@ def index(uri, http_user, **kwargs):
 	</table>
 	'''.format(
 			system_status_title=_('System status'),
-			system_status=_('{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br />'
-				'<strong>{connected} user {open_session_words}</strong>.<br /><br />'
+			system_status=_('Up and running since <strong>{uptime}</strong>.<br /><br />'
+				'Users: <strong>{accounts}</strong> {account_word}, '
+				'<strong>{connected} {open_session_words}</strong>.<br /><br />'
 				'1, 5, and 15 last minutes load average: '
 				'<span class="small_indicator {load_back1}">{load1}</span> '
 				'<span class="small_indicator {load_back5}">{load5}</span> '
-				'<span class="small_indicator {load_back15}">{load15}</span>'
-				).format(hostname=hostname, up_and_running=_(u'up and running')
-					if hostname else _(u'Up and running'),
-				uptime=uptime_string, connected=cxusers,
+				'<span class="small_indicator {load_back15}">{load15}</span>').format(
+				uptime=uptime_string, accounts=nbusers, connected=cxusers,
+				account_word=_('user accounts')
+					if nbusers > 1 else _('user account'),
 				open_session_words=_('open sessions')
 					if cxusers > 1 else _('open session'),
 				load1=loads[0], load5=loads[1], load15=loads[2],
@@ -293,11 +310,12 @@ def index(uri, http_user, **kwargs):
 				mem['MemFree']
 			),
 
-			swap_pie=swap_pie,
+			swap_pie=_flotr_pie_swap(mem['SwapTotal']-mem['SwapFree'], mem['SwapFree'])
+				if swap_message != '' else '',
 
 			status_messages=status_messages,
 			info_messages=info_messages
 		)
 
 	return (w.HTTP_TYPE_TEXT, w.page(title,
-		data + w.page_body_end(w.total_time(start, time.time()))))
+		data + w.page_body_end(w.total_time(start, time.time()))))"""

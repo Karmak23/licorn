@@ -18,6 +18,8 @@ from ttyutils  import interactive_ask_for_repair
 from ltrace    import ltrace, mytime
 from base      import Singleton
 from messaging import LicornMessage
+from licorn.foundations.messaging import MessageProcessor
+from BaseHTTPServer	import BaseHTTPRequestHandler
 
 #
 # FIXME: define a policy explaining where we can call logging.error() (which
@@ -73,8 +75,15 @@ def send_to_listener(message, verbose_level=verbose.QUIET):
 		return None
 	else:
 		if listener.verbose >= verbose_level:
-			return listener.process(message,
-				options.msgproc.getProxy())
+			# WARNING: should test Pyro object instead of WMI one, but 
+			# listener is not type(MessageProcessor) but type(instance) 
+			# instead because in pyro only the remote object will be 
+			# the wanted type.
+			if isinstance(listener, BaseHTTPRequestHandler):
+				return listener.process(message.data, verbose_level)
+			else:
+				return listener.process(message,
+					options.msgproc.getProxy())
 def error(mesg, returncode=1, full=False, tb=None):
 	""" Display a stylized error message and exit badly.	"""
 
@@ -104,7 +113,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 	text_message = "%s%s %s\n" % (stylize(ST_WARNING, '/!\\'), mytime(), mesg)
 
 	if to_listener:
-		send_to_listener(LicornMessage(text_message))
+		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
 
 	if to_local:
 		with __output_lock:
