@@ -1,0 +1,89 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2011-07-30 15:17+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: interfaces/wmi/js/users.js:50
+msgid ""
+"It is currently impossible to add systems user; please select the standard "
+"users list first, to add a standard user account."
+msgstr ""
+
+#: interfaces/wmi/js/users.js:210
+msgid "Please confirm massive removal"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:240
+msgid "Massive skeleton reapplying"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:276 interfaces/wmi/js/users.js:318
+#: interfaces/wmi/js/users.js:336
+msgid "Unlock user "
+msgstr ""
+
+#: interfaces/wmi/js/users.js:276 interfaces/wmi/js/users.js:318
+#: interfaces/wmi/js/users.js:336
+msgid " (re-grant access to machines)."
+msgstr ""
+
+#: interfaces/wmi/js/users.js:279 interfaces/wmi/js/users.js:321
+#: interfaces/wmi/js/users.js:339
+msgid "Unlock account "
+msgstr ""
+
+#: interfaces/wmi/js/users.js:283 interfaces/wmi/js/users.js:325
+#: interfaces/wmi/js/users.js:343
+msgid "Lock user "
+msgstr ""
+
+#: interfaces/wmi/js/users.js:286 interfaces/wmi/js/users.js:328
+#: interfaces/wmi/js/users.js:346
+msgid "Lock account "
+msgstr ""
+
+#: interfaces/wmi/js/users.js:364
+msgid "Are you sure you want to unlock user account %1?"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:371
+msgid "Lock confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:372
+msgid "Are you sure you want to lock user account %1?"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:388
+msgid "Removal confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:389
+msgid "Are you sure you want to remove user account %1?"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:400
+msgid "Skeleton reapplying confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/users.js:401
+msgid "Are you sure you want to reapply skeleton to user account %1?"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:136
+msgid "Deletion confirmation"
+msgstr ""

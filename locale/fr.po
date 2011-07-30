@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-07-20 13:35+0200\n"
-"PO-Revision-Date: 2011-07-20 13:37+0200\n"
+"POT-Creation-Date: 2011-07-30 15:15+0200\n"
+"PO-Revision-Date: 2011-07-30 15:17+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -153,15 +153,15 @@ msgstr ""
 msgid "System config files backup comparison finished successfully."
 msgstr "Comparaison des fichiers systèmes effectuée avec succès."
 
-#: tests/core.py:2410
+#: tests/core.py:2386
 msgid "giving back all scenarii data to {0}:{1}."
 msgstr "Changement du propriétaire des données de scénarios vers {0}:{1}.q"
 
-#: tests/core.py:2431
+#: tests/core.py:2407
 msgid "Testsuite terminated successfully."
 msgstr "Suite de tests terminée avec succès."
 
-#: tests/core.py:2432
+#: tests/core.py:2408
 msgid ""
 "Don't forget to test massive del/mod/chk with -a argument (not tested "
 "because too dangerous)"
@@ -170,7 +170,7 @@ msgstr ""
 "(opérations massives), qui ne sont pas testées automatiquement car trop "
 "dangereuses."
 
-#: tests/core.py:2436
+#: tests/core.py:2412
 msgid "Cleaning testsuite context, please wait…"
 msgstr "Nettoyage du contexte de la suite de tests, merci de patienter…"
 
@@ -801,20 +801,15 @@ msgstr ""
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:1023 interfaces/wmi/groups.py:131
-#: interfaces/wmi/groups.py:500 interfaces/wmi/users.py:136
-#: interfaces/wmi/users.py:210
+#: extensions/rdiffbackup.py:1023 interfaces/wmi/users.py:60
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:1025 interfaces/wmi/groups.py:194
-#: interfaces/wmi/users.py:88 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:223 core/machines.py:1237 core/machines.py:1280
+#: extensions/rdiffbackup.py:1025 core/machines.py:1239 core/machines.py:1282
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:1025 interfaces/wmi/users.py:138
-#: interfaces/wmi/users.py:223 interfaces/wmi/users.py:270
+#: extensions/rdiffbackup.py:1025
 msgid "C"
 msgstr "N"
 
@@ -1133,7 +1128,7 @@ msgstr "Impossible d'archiver %s, il n'existe pas !"
 msgid "Backed up {orig} as {backup}."
 msgstr "Le fichier {orig} a été sauvegardé en tant que {backup}."
 
-#: foundations/logging.py:39
+#: foundations/logging.py:41
 msgid "Exception occured in {0}: {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
@@ -1237,8 +1232,8 @@ msgstr "identifiant"
 msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:648 daemon/rwi.py:731 core/configuration.py:881
-#: core/groups.py:1675
+#: daemon/rwi.py:648 daemon/rwi.py:731 core/configuration.py:872
+#: core/groups.py:1696
 msgid "group"
 msgstr "groupe"
 
@@ -1318,11 +1313,11 @@ msgstr "Nom"
 msgid "Firstname"
 msgstr "Prénom"
 
-#: daemon/rwi.py:866 interfaces/wmi/users.py:679
+#: daemon/rwi.py:866 interfaces/wmi/users.py:545
 msgid "Login"
 msgstr "Identifiant"
 
-#: daemon/rwi.py:867 interfaces/wmi/users.py:375
+#: daemon/rwi.py:867 interfaces/wmi/users.py:704
 msgid "Password"
 msgstr "Mot de passe"
 
@@ -1843,11 +1838,11 @@ msgstr "{0} : {1} à répondre aux requêtes à l'adresse {2}."
 msgid "ready"
 msgstr "prêt"
 
-#: daemon/wmi.py:224
+#: daemon/wmi.py:229
 msgid "{0}: switched to language {1} for http_user {2}."
 msgstr "{0}: langue basculée vers {1} pour utilisateur HTTP {2}."
 
-#: daemon/wmi.py:268
+#: daemon/wmi.py:272
 #, python-format
 msgid "%s: empty username or password sent as authentification string."
 msgstr ""
@@ -2460,8 +2455,7 @@ msgid ""
 "generated and {2} chars long)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:802 interfaces/wmi/groups.py:675
-#: interfaces/wmi/groups.py:725 interfaces/wmi/groups.py:787
+#: interfaces/cli/argparser.py:802
 msgid "none"
 msgstr "aucun"
 
@@ -2502,7 +2496,7 @@ msgstr ""
 msgid "required"
 msgstr "obligatoire"
 
-#: interfaces/cli/argparser.py:855 core/groups.py:2116
+#: interfaces/cli/argparser.py:855 core/groups.py:2149
 msgid "not permissive"
 msgstr "non permissif"
 
@@ -3099,165 +3093,166 @@ msgstr ""
 msgid "Set restrictive perms (710) on %s."
 msgstr "Appliquer des permissions restrictives (710) sur %s."
 
-#: interfaces/cli/argparser.py:1738
+#: interfaces/cli/argparser.py:1736
 #, python-format
 msgid "Set relaxed perms (750) on %s."
 msgstr "Appliquer des permissions relâchées (750) sur %s."
 
-#: interfaces/cli/argparser.py:1744
+#: interfaces/cli/argparser.py:1741
 #, python-format
 msgid ""
 "Enable given backend(s) on the current system (separated by commas without "
 "spaces). List of available backends with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1750
+#: interfaces/cli/argparser.py:1747
 #, python-format
 msgid ""
 "Disable given backend(s) on the current system (separated by commas without "
 "spaces). List of available backends with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1756
+#: interfaces/cli/argparser.py:1753
 #, python-format
 msgid ""
 "Enable given extension(s) on the current system (separated by commas without "
 "spaces). List of available extensions with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1762
+#: interfaces/cli/argparser.py:1759
 #, python-format
 msgid ""
 "Disable given extension(s) on the current system (separated by commas "
 "without spaces). List of available extensions with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1768
+#: interfaces/cli/argparser.py:1765
 #, fuzzy
 msgid "change machine hostname (not yet implemented)."
 msgstr ""
 "Les vérifications étendues ne sont pas encore gérées pour les utilisateurs."
 
-#: interfaces/cli/argparser.py:1772
+#: interfaces/cli/argparser.py:1769
 msgid "change machine's IP (for eth0 only) (not yet implemented)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1776
+#: interfaces/cli/argparser.py:1773
 #, fuzzy
 msgid "add privileges (system groups) to privileges whitelist."
 msgstr "Le privilège %s a été ajouté à la liste."
 
-#: interfaces/cli/argparser.py:1781
+#: interfaces/cli/argparser.py:1778
 #, fuzzy
 msgid "remove privileges (system groups) from privileges whitelist."
 msgstr "Le privilège %s a été supprimé de la liste."
 
-#: interfaces/wmi/base.py:31 interfaces/wmi/server.py:22
-msgid "Restart server."
-msgstr "Redémarrer le serveur."
+#: interfaces/wmi/decorators.py:42
+msgid "Impossible to do actions on restricted users for the moment, sorry."
+msgstr ""
 
-#: interfaces/wmi/base.py:32 interfaces/wmi/server.py:23
-msgid "Restart server"
-msgstr "Redémarrer le serveur"
+#: interfaces/wmi/decorators.py:51 interfaces/wmi/decorators.py:65
+#, python-format
+msgid "User %s: Impossible to %s your own account!"
+msgstr ""
 
-#: interfaces/wmi/base.py:33 interfaces/wmi/server.py:24
-msgid "Shutdown server."
-msgstr "Éteindre le serveur."
+#: interfaces/wmi/decorators.py:56
+#, python-format
+msgid "User %s: Impossible to remove your own account from group %s!"
+msgstr ""
 
-#: interfaces/wmi/base.py:34 interfaces/wmi/server.py:25
-msgid "Shutdown server"
-msgstr "Éteindre le serveur"
+#: interfaces/wmi/decorators.py:76 interfaces/wmi/decorators.py:104
+#, fuzzy, python-format
+msgid "You cannot modify group %s"
+msgstr "Modifier le groupe %s ?"
 
-#: interfaces/wmi/base.py:72
-msgid "Programs"
-msgstr "Applications"
+#: interfaces/wmi/decorators.py:79
+#, python-format
+msgid ""
+"Impossible action, you cannot remove yourself from the privileged group %s."
+msgstr ""
 
-#: interfaces/wmi/base.py:72
-msgid "Cache"
-msgstr "Anté-mémoire"
+#: interfaces/wmi/decorators.py:95
+#, python-format
+msgid ""
+"User %s: Impossible action,you cannot do anything on member more powerfull "
+"than you are."
+msgstr ""
 
-#: interfaces/wmi/base.py:72
-msgid "Buffers"
-msgstr "Tampons"
+#: interfaces/wmi/decorators.py:129
+msgid "Impossible to do actions on restricted groups for the moment, sorry."
+msgstr ""
 
-#: interfaces/wmi/base.py:72 interfaces/wmi/base.py:107
-msgid "Free"
-msgstr "Libre"
+#: interfaces/wmi/decorators.py:136
+#, fuzzy, python-format
+msgid "Group %s: Impossible to remove the admins group!"
+msgstr "Aucun responsable de ce groupe."
 
-#: interfaces/wmi/base.py:73
-msgid "Memory occupation"
-msgstr "Répartition de l'occupation mémoire"
+#: interfaces/wmi/decorators.py:141
+#, python-format
+msgid ""
+"Group %s: You have not enought rights to do  actions on the admins group!"
+msgstr ""
 
-#: interfaces/wmi/base.py:107
-msgid "Used"
-msgstr "Utilisé"
+#: interfaces/wmi/decorators.py:144
+#, fuzzy, python-format
+msgid "Group %s: Impossible to remove a privileged group!"
+msgstr "Aucun responsable de ce groupe."
 
-#: interfaces/wmi/base.py:107
-msgid "Swap occupation"
-msgstr "Occupation du fichier d'échange"
-
-#: interfaces/wmi/base.py:115
+#: interfaces/wmi/base.py:27
 msgid "Server status"
 msgstr "État du serveur"
 
-#: interfaces/wmi/base.py:172
-#, python-format
-msgid "automatic update of this page in %s."
-msgstr "rechargement de cette page dans %s."
+#: interfaces/wmi/base.py:79
+msgid "no virtual memory installed."
+msgstr "Pas de mémoire virtuelle configurée."
 
-#: interfaces/wmi/base.py:187
-msgid "No virtual memory configured!"
-msgstr "Pas de mémoire virtuelle configurée&nbsp;!"
-
-#: interfaces/wmi/base.py:189
+#: interfaces/wmi/base.py:81
 #, python-format
 msgid "virtual memory: <strong>%.2f</strong> Mb total."
 msgstr "Mémoire Virtuelle&nbsp;: <strong>%.2f</strong> Mo configuré(s)."
 
-#: interfaces/wmi/base.py:220
-msgid "“<strong>{hostname}</strong>” "
-msgstr "« <strong>{hostname}</strong> » "
+#: interfaces/wmi/base.py:110
+#, python-format
+msgid "automatic update of this page in %s."
+msgstr "rechargement de cette page dans %s."
 
-#: interfaces/wmi/base.py:263
+#: interfaces/wmi/base.py:131
 msgid "System status"
 msgstr "État du système"
 
-#: interfaces/wmi/base.py:264
+#: interfaces/wmi/base.py:132
 msgid ""
-"{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br /"
-"><strong>{connected} user {open_session_words}</strong>.<br /><br />1, 5, "
-"and 15 last minutes load average: <span class=\"small_indicator "
-"{load_back1}\">{load1}</span> <span class=\"small_indicator {load_back5}\">"
-"{load5}</span> <span class=\"small_indicator {load_back15}\">{load15}</span>"
+"Up and running since <strong>{uptime}</strong>.<br /><br />Users: <strong>"
+"{accounts}</strong> {account_word}, <strong>{connected} {open_session_word}</"
+"strong>.<br /><br /><div class=\"stat_line\">Last minute load average : "
+"<strong>{load_average_last_value}</strong> {load_average_last_picture}</"
+"div><div class=\"stat_line\">Last 5 minutes load average : <strong>"
+"{load_average_five_value}</strong> {load_average_five_picture}</div><div "
+"class=\"stat_line\">Last 15 minutes load average : <strong>"
+"{load_average_fifteen_value}</strong> {load_average_fifteen_picture}</div>"
 msgstr ""
-"{hostname}{up_and_running} depuis <strong>{uptime}</strong>.<br /><br /"
-"><strong>{connected} {open_session_words}</strong>.<br /><br />Charge "
-"système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class="
-"\"small_indicator {load_back1}\">{load1}</span> <span class="
-"\"small_indicator {load_back5}\">{load5}</span> <span class="
-"\"small_indicator {load_back15}\">{load15}</span>"
 
-#: interfaces/wmi/base.py:270
-msgid "up and running"
-msgstr "en marche"
+#: interfaces/wmi/base.py:140
+msgid "user accounts"
+msgstr "comptes utilisateurs"
 
-#: interfaces/wmi/base.py:271
-msgid "Up and running"
-msgstr "En marche"
+#: interfaces/wmi/base.py:141
+msgid "user account"
+msgstr "compte utilisateur"
 
-#: interfaces/wmi/base.py:273
+#: interfaces/wmi/base.py:142
 msgid "open sessions"
 msgstr "sessions ouvertes"
 
-#: interfaces/wmi/base.py:274
+#: interfaces/wmi/base.py:143
 msgid "open session"
 msgstr "session ouverte"
 
-#: interfaces/wmi/base.py:280
+#: interfaces/wmi/base.py:151
 msgid "System information"
 msgstr "Informations système"
 
-#: interfaces/wmi/base.py:281
+#: interfaces/wmi/base.py:152
 msgid ""
 "Processor{s_cpu}: {nb_cpu} x <strong>{cpu_model}</strong><br /><br /"
 ">Physical memory: <strong>{ram:.2f}Mb</strong> total.<br />{swap_total}"
@@ -3266,8 +3261,39 @@ msgstr ""
 ">Mémoire physique&nbsp;: <strong>{ram:.2f}Mo</strong> installé(s).<br /> "
 "{swap_total}"
 
-#: interfaces/wmi/__init__.py:70 interfaces/wmi/groups.py:14
-#: interfaces/wmi/users.py:30
+#: interfaces/wmi/base.py:173
+msgid "Apps"
+msgstr "Apps"
+
+#: interfaces/wmi/base.py:175
+msgid "Cache"
+msgstr "Anté-mémoire"
+
+#: interfaces/wmi/base.py:176
+msgid "Buffers"
+msgstr "Tampons"
+
+#: interfaces/wmi/base.py:177 interfaces/wmi/base.py:193
+msgid "Free"
+msgstr "Libre"
+
+#: interfaces/wmi/base.py:194
+msgid "Used"
+msgstr "Utilisé"
+
+#: interfaces/wmi/base.py:222
+msgid "System resources usage"
+msgstr "Utilisation des ressources système"
+
+#: interfaces/wmi/base.py:223
+msgid "Physical memory"
+msgstr "Mémoire physique"
+
+#: interfaces/wmi/base.py:224
+msgid "Virtual (swap) memory"
+msgstr "Mémoire virtuelle (swap)"
+
+#: interfaces/wmi/__init__.py:70 interfaces/wmi/groups.py:16
 msgid ""
 "<br /><br />Go back with your browser, double-check data and validate the "
 "web-form."
@@ -3406,108 +3432,92 @@ msgstr ""
 msgid "%s Web Management Interface"
 msgstr "Interface de Gestion Web %s"
 
-#: interfaces/wmi/utils.py:81
+#: interfaces/wmi/utils.py:79
 msgid "Command must be a list or tuple!"
 msgstr ""
 "La commande à exécuter doit être transmise sous forme de liste ou de "
 "tuple&nbsp;!"
 
-#: interfaces/wmi/utils.py:107
+#: interfaces/wmi/utils.py:105
 #, python-format
 msgid "%d&nbsp;hours,"
 msgstr "%d&nbsp;heures, "
 
-#: interfaces/wmi/utils.py:111
+#: interfaces/wmi/utils.py:109
 #, python-format
 msgid " %d&nbsp;minutes,"
 msgstr " %d&nbsp;minutes,"
 
-#: interfaces/wmi/utils.py:113
+#: interfaces/wmi/utils.py:111
 #, python-format
 msgid " %.3f&nbsp;seconds."
 msgstr " %.3f&nbsp;secondes."
 
-#: interfaces/wmi/utils.py:114
+#: interfaces/wmi/utils.py:112
 #, python-format
 msgid "Core execution time: %s"
 msgstr "Temps d'exécution du moteur : %s"
 
-#: interfaces/wmi/utils.py:184
-msgid "Add"
-msgstr "Ajouter"
-
-#: interfaces/wmi/utils.py:186
-msgid "Remove"
-msgstr "Supprimer"
-
-#: interfaces/wmi/utils.py:238
+#: interfaces/wmi/utils.py:251
 msgid "Executed command:"
 msgstr "Commande exécutée&nbsp;:"
 
-#: interfaces/wmi/utils.py:241
+#: interfaces/wmi/utils.py:254
 msgid "Error reported by system:"
 msgstr "Erreur rapportée par le système&nbsp;:"
 
-#: interfaces/wmi/utils.py:245 interfaces/wmi/utils.py:246
+#: interfaces/wmi/utils.py:258 interfaces/wmi/utils.py:259
 msgid "Back to root of management interface"
 msgstr "Retour à la racine de l'interface de gestion"
 
-#: interfaces/wmi/utils.py:252
+#: interfaces/wmi/utils.py:265
 #, python-format
 msgid "Logged in as %s"
 msgstr "Connecté en tant que %s"
 
-#: interfaces/wmi/utils.py:273 interfaces/wmi/utils.py:274
+#: interfaces/wmi/utils.py:280 interfaces/wmi/utils.py:281
 msgid "Bad request or argument"
 msgstr "Requête ou argument erroné"
 
-#: interfaces/wmi/utils.py:276
+#: interfaces/wmi/utils.py:283
 msgid "There was a problem in the request you sent to the WMI."
 msgstr ""
 "Il y a eu un problème dans le traitement de la requête que vous avez envoyé "
 "à la WMI."
 
-#: interfaces/wmi/utils.py:280 interfaces/wmi/utils.py:282
-#: interfaces/wmi/utils.py:286 interfaces/wmi/utils.py:288
-msgid "Impossible action"
-msgstr "Action impossible"
+#: interfaces/wmi/utils.py:289
+msgid "Impossible action: "
+msgstr "Action impossible&nbsp;:"
 
-#: interfaces/wmi/utils.py:283
-msgid ""
-"Some parts of the system cannot be modified, for your own safety and the "
-"world to rest in peace."
-msgstr ""
-"Certaines parties du système ne peuvent pas être modifiées, pour votre "
-"sécurité et pour que le monde reste en paix."
-
-#: interfaces/wmi/utils.py:378
+#: interfaces/wmi/utils.py:509
 msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/wmi/utils.py:378 core/machines.py:1321
+#: interfaces/wmi/utils.py:509 core/machines.py:1323
 msgid "Status"
 msgstr "État"
 
-#: interfaces/wmi/utils.py:379
+#: interfaces/wmi/utils.py:510
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: interfaces/wmi/utils.py:379 core/profiles.py:694 core/profiles.py:700
+#: interfaces/wmi/utils.py:510 interfaces/wmi/groups.py:539
+#: core/profiles.py:694 core/profiles.py:700
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: interfaces/wmi/utils.py:380
+#: interfaces/wmi/utils.py:511
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/wmi/utils.py:380 interfaces/wmi/groups.py:625
-#: interfaces/wmi/groups.py:661 interfaces/wmi/users.py:388
-#: interfaces/wmi/users.py:554
+#: interfaces/wmi/utils.py:511 interfaces/wmi/groups.py:780
+#: interfaces/wmi/groups.py:901 interfaces/wmi/users.py:420
+#: interfaces/wmi/users.py:729
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/wmi/utils.py:388
+#: interfaces/wmi/utils.py:539
 msgid ""
 "Manage Internet connexion and parameters, firewall protection, URL filter "
 "and e-mail parameters."
@@ -3515,64 +3525,57 @@ msgstr ""
 "Gérer la connexion internet et ses paramètres, les protections par pare-feu "
 "et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/wmi/utils.py:388
+#: interfaces/wmi/utils.py:539
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/wmi/utils.py:389
+#: interfaces/wmi/utils.py:540
 msgid "Go to online documentation website."
 msgstr "Accéder à l'aide en ligne."
 
-#: interfaces/wmi/utils.py:389
+#: interfaces/wmi/utils.py:540
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/wmi/utils.py:390
+#: interfaces/wmi/utils.py:541
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/wmi/utils.py:390
+#: interfaces/wmi/utils.py:541
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/wmi/utils.py:394
+#: interfaces/wmi/utils.py:545
 #, python-format
 msgid "%s Management"
 msgstr "Administration %s"
 
-#: interfaces/wmi/utils.py:422
+#: interfaces/wmi/utils.py:582
 #, python-format
 msgid "%s WMI:"
 msgstr "IGW %s&nbsp;:"
 
-#: interfaces/wmi/utils.py:427
+#: interfaces/wmi/utils.py:597
 #, python-format
 msgid "administration %s"
 msgstr "Administration %s"
 
-#: interfaces/wmi/groups.py:33
-msgid "Add a new group on the system."
-msgstr "Ajouter un nouveau groupe sur le système."
-
-#: interfaces/wmi/groups.py:33
-msgid "Add a group"
-msgstr "Ajouter un groupe"
-
-#: interfaces/wmi/groups.py:40
+#: interfaces/wmi/groups.py:23
 #, python-format
 msgid "Make group %s permissive"
 msgstr "Rendre le groupe %s permissif"
 
-#: interfaces/wmi/groups.py:54
+#: interfaces/wmi/groups.py:34
 msgid ""
-"This will permit global access to files and folders in the group shared dir, "
-"by allow <strong>any member</strong> of the group to modify / delete any "
-"document (even if he/she is not owner of the document). Enabling this option "
-"depends on how members are used to work together. Generally speaking, you "
-"will enable this feature on small-sized working groups. <br />Note: <strong> "
-"The system will propagate new permissions on share data in the background</"
-"strong>, after you toggle this feature, and this can take some time, "
-"depending of the volume of shared data (about 15 seconds per Gib)."
+"This will permit large access to files and folders\n"
+"\t\t\tin the group shared dir, and will allow any member of the group to\n"
+"\t\t\tmodify / delete any document, even if he/she is not owner of the\n"
+"\t\t\tdocument. This option can be dangerous, but if group members are\n"
+"\t\t\taccustomed to work together, there is no problem. Generally speaking\n"
+"\t\t\tyou will use this feature on small working groups. <br /> Warning:\n"
+"\t\t\t<strong> The operation may be lengthy because the system will change\n"
+"\t\t\tpermissions of all current data </ strong> (duration is therefore\n"
+"\t\t\tdepending on the volume of data, about 1 second for 100Mio)."
 msgstr ""
 "Cela déverrouillera les accès aux fichiers et dossiers, et permettra à "
 "n'importe quel membre du groupe de modifier/supprimer n'importe quel "
@@ -3584,51 +3587,48 @@ msgstr ""
 "l'arrière-plan. Son temps de complétion est fonction du volume de données "
 "partagées (de l'ordre de 15 secondes pour 1Gio)."
 
-#: interfaces/wmi/groups.py:66
-#, python-format
+#: interfaces/wmi/groups.py:44
+#, fuzzy, python-format
 msgid ""
-"Are you sure you want to enable permissiveness on group <strong>%s</strong>?"
+"Are you sure you want to active permissiveness on group <strong>%s</strong>?"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir activer la permissivité du groupe <strong>%s</"
 "strong>&#160;?"
 
-#: interfaces/wmi/groups.py:68
-msgid "Enable"
+#: interfaces/wmi/groups.py:46
+msgid "Activate"
 msgstr "Activer"
 
-#: interfaces/wmi/groups.py:69 interfaces/wmi/groups.py:185
-#: interfaces/wmi/users.py:268
+#: interfaces/wmi/groups.py:47 interfaces/wmi/groups.py:228
 msgid "A"
 msgstr "A"
 
-#: interfaces/wmi/groups.py:70 interfaces/wmi/groups.py:107
-#: interfaces/wmi/groups.py:132 interfaces/wmi/groups.py:497
-#: interfaces/wmi/users.py:269 interfaces/wmi/users.py:392
-#: interfaces/wmi/users.py:558 core/machines.py:1131 core/machines.py:1186
+#: interfaces/wmi/groups.py:48 interfaces/wmi/groups.py:86
+#: core/machines.py:1133 core/machines.py:1188
 msgid "Cancel"
 msgstr "Annuler"
 
-#: interfaces/wmi/groups.py:70 interfaces/wmi/groups.py:107
-#: interfaces/wmi/groups.py:133 interfaces/wmi/groups.py:194
-#: interfaces/wmi/groups.py:497
+#: interfaces/wmi/groups.py:48 interfaces/wmi/groups.py:86
 msgid "N"
 msgstr "N"
 
-#: interfaces/wmi/groups.py:77
+#: interfaces/wmi/groups.py:63
 #, python-format
 msgid "Make group %s not permissive"
 msgstr "Rendre le groupe %s non permissif"
 
-#: interfaces/wmi/groups.py:91
+#: interfaces/wmi/groups.py:72
 msgid ""
-"This will ensure finer write access to files and folders in the group shared "
-"dir. Only the owner / creator of a document will be able to modify it; other "
-"group members will only be able to read such a document (unless the owner "
-"manually assign other permissions, which will not be maintained by the "
-"system).<br />Note: <strong> The system will propagate new permissions on "
-"share data in the background</strong>, after you toggle this feature, and "
-"this can take some time, depending of the volume of shared data (about 15 "
-"seconds per Gib)."
+"This will ensure finer write access to files and\n"
+"\t\tfolders in the group shared dir. Only the owner / creator of a document\n"
+"\t\twill be able to modify it; other group members will only be able to "
+"read\n"
+"\t\tsuch a document (unless the owner manually assign other permissions,\n"
+"\t\twhich are not guaranteed to be maintained by the system). <br />\n"
+"\t\tWarning: <strong> The operation may be lengthy because the system will\n"
+"\t\tswitch permissions of all current group shared data</strong> (duration\n"
+"\t\tis therefore depending on the volume of data, about 1 sec. for 100Mio).\n"
+"\t\t"
 msgstr ""
 "Cela autorisera des accès aux fichiers et dossiers gérés plus finement. Seul "
 "le propriétaire/créateur d'un document pourra le modifier, les autres "
@@ -3639,333 +3639,235 @@ msgstr ""
 "peut durer un certain temps, en fonction du volume de données (de l'ordre de "
 "15 secondes pour 1Gio)."
 
-#: interfaces/wmi/groups.py:103
+#: interfaces/wmi/groups.py:82
 #, python-format
-msgid ""
-"Are you sure you want to disable permissiveness on group <strong>%s</strong>?"
+msgid "Are you sure you want to make group <strong>%s</strong> not permissive?"
 msgstr ""
-"Êtes-vous sûr(e) de vouloir désactiver la permissivité du groupe <strong>%s</"
-"strong>&#160;?"
+"Êtes-vous sûr(e) de vouloir rendre le groupe <strong>%s</strong> NON "
+"permissif&#160;?"
 
-#: interfaces/wmi/groups.py:105
-msgid "Disable"
+#: interfaces/wmi/groups.py:84
+msgid "Deactivate"
 msgstr "Désactiver"
 
-#: interfaces/wmi/groups.py:106 interfaces/wmi/groups.py:187
+#: interfaces/wmi/groups.py:85 interfaces/wmi/groups.py:232
 msgid "D"
 msgstr "D"
 
-#: interfaces/wmi/groups.py:114
-#, python-format
-msgid "Remove group %s"
-msgstr "Supprimer le groupe %s"
-
-#: interfaces/wmi/groups.py:122
-#, python-format
-msgid "Are you sure you want to delete group <strong>%s</strong>?"
+#: interfaces/wmi/groups.py:102
+#, fuzzy, python-format
+msgid "Are you sure you want to remove group <strong>%s</strong> ? <br/><br/>"
 msgstr ""
-"Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>%s</strong>&#160;?"
+"Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/wmi/groups.py:124
+#: interfaces/wmi/groups.py:104
+#, fuzzy, python-format
 msgid ""
-"Shared data will be archived in directory {0}, and accessible to members of "
-"group {1} for eventual recovery. However, you can decide to remove them "
-"permanently."
+"Group shared data will be archived in directory %s,\n"
+"\t\t\tand accessible to members of group %s for eventual\n"
+"\t\t\trecovery. However, you can decideto remove them\n"
+"\t\t\tpermanently."
 msgstr ""
 "Les données partagées du groupe <strong>seront archivées</strong> dans le "
 "répertoire <code>{0}</code> et resteront accessibles aux membres du groupe "
 "<strong>{1}</strong> pour une récupération éventuelle. Vous pouvez cependant "
 "décider de les effacer définitivement."
 
-#: interfaces/wmi/groups.py:130
-msgid "Delete"
-msgstr "Supprimer"
+#: interfaces/wmi/groups.py:117
+#, fuzzy, python-format
+msgid ""
+"Are you sure you want to reapply this skel to\n"
+"\t\tall of the members of %s?<br />This will reset the desktops, icons and "
+"menus\n"
+"\t\tof all members of the group, according to the content of the\n"
+"\t\tskel you choose. This will NOT alter any of the user personnal\n"
+"\t\tdata, nor the group shared data. <br /><br />Which skel do you want to "
+"apply?\n"
+"\t\t%s"
+msgstr ""
+"Cela remettra le bureau de tous les membres du groupe à zéro, y compris les "
+"icônes et les menus.\n"
+"\t\t\tCeci n'altèrera pas les données personnelles des utilisateurs, ni les "
+"données partagées du groupe.\n"
+"\t\t\t<strong>Il est nécessaire que l'utilisateur soit déconnecté du système "
+"pour que l'opération\n"
+"\t\t\tréussisse.</strong>"
 
-#: interfaces/wmi/groups.py:135
-msgid "Definitely remove group shared data."
-msgstr "Supprimer définitivement les données partagées."
+#: interfaces/wmi/groups.py:186
+#, python-format
+msgid "You cannot reapply skel of user %s, you have not enaugh rights"
+msgstr ""
 
-#: interfaces/wmi/groups.py:153
+#: interfaces/wmi/groups.py:193
 msgid "Creating a new group"
 msgstr "Création d'un nouveau groupe"
 
-#: interfaces/wmi/groups.py:184 interfaces/wmi/groups.py:488
+#: interfaces/wmi/groups.py:225
+msgid "Add a new group"
+msgstr "Ajouter un groupe"
+
+#: interfaces/wmi/groups.py:226 interfaces/wmi/groups.py:529
 msgid "Group name"
 msgstr "Nom de groupe"
 
-#: interfaces/wmi/groups.py:186 interfaces/wmi/groups.py:491
+#: interfaces/wmi/groups.py:229 interfaces/wmi/groups.py:533
 msgid "Group description"
 msgstr "Description du groupe"
 
-#: interfaces/wmi/groups.py:186
+#: interfaces/wmi/groups.py:230
 msgid "(optional)"
 msgstr "(optionnel)"
 
-#: interfaces/wmi/groups.py:188
+#: interfaces/wmi/groups.py:233
 msgid "Skel of future group members"
 msgstr "Squelette des futurs membres du groupe"
 
-#: interfaces/wmi/groups.py:192 interfaces/wmi/groups.py:429
+#: interfaces/wmi/groups.py:237 interfaces/wmi/groups.py:488
 msgid "Permissive shared dir?"
 msgstr "Répertoire de groupe permissif&#160;?"
 
-#: interfaces/wmi/groups.py:193 interfaces/wmi/groups.py:431
+#: interfaces/wmi/groups.py:238 interfaces/wmi/groups.py:490
 msgid "Yes"
 msgstr "Oui"
 
-#: interfaces/wmi/groups.py:193 interfaces/wmi/groups.py:340
-#: interfaces/wmi/users.py:376 interfaces/wmi/users.py:713
+#: interfaces/wmi/groups.py:239 interfaces/wmi/users.py:577
+#: interfaces/wmi/users.py:709
 msgid "P"
 msgstr "P"
 
-#: interfaces/wmi/groups.py:195 interfaces/wmi/users.py:393
+#: interfaces/wmi/groups.py:240
 msgid "Create"
 msgstr "Créer"
 
-#: interfaces/wmi/groups.py:196
-msgid "T"
-msgstr "T"
-
-#: interfaces/wmi/groups.py:217
+#: interfaces/wmi/groups.py:262
 #, python-format
 msgid "Details of group %s"
 msgstr "Détails du groupe %s"
 
-#: interfaces/wmi/groups.py:249 interfaces/wmi/groups.py:639
+#: interfaces/wmi/groups.py:288 interfaces/wmi/groups.py:303
 msgid "Members"
 msgstr "Membres"
 
-#: interfaces/wmi/groups.py:250 interfaces/wmi/groups.py:275
-#: interfaces/wmi/groups.py:300
+#: interfaces/wmi/groups.py:304 interfaces/wmi/groups.py:340
+#: interfaces/wmi/groups.py:367
 msgid "(ordered by login)"
 msgstr "(classés par identifiant)"
 
-#: interfaces/wmi/groups.py:251 interfaces/wmi/groups.py:276
-#: interfaces/wmi/groups.py:301 interfaces/wmi/groups.py:774
+#: interfaces/wmi/groups.py:305 interfaces/wmi/groups.py:341
+#: interfaces/wmi/groups.py:368
 msgid "Full Name"
 msgstr "Nom complet"
 
-#: interfaces/wmi/groups.py:252 interfaces/wmi/groups.py:277
-#: interfaces/wmi/groups.py:302 interfaces/wmi/groups.py:775
-#: interfaces/wmi/users.py:384 interfaces/wmi/users.py:864
+#: interfaces/wmi/groups.py:306 interfaces/wmi/groups.py:342
+#: interfaces/wmi/groups.py:369 interfaces/wmi/users.py:719
 msgid "Identifier"
 msgstr "Identifiant"
 
-#: interfaces/wmi/groups.py:253 interfaces/wmi/groups.py:278
-#: interfaces/wmi/groups.py:303 interfaces/wmi/groups.py:775
-#: interfaces/wmi/users.py:678 core/users.py:1033
+#: interfaces/wmi/groups.py:307 interfaces/wmi/groups.py:343
+#: interfaces/wmi/groups.py:370 interfaces/wmi/users.py:544 core/users.py:1064
 msgid "UID"
 msgstr "UID"
 
-#: interfaces/wmi/groups.py:256
+#: interfaces/wmi/groups.py:312
 msgid "No member in this group."
 msgstr "Aucun membre dans ce groupe."
 
-#: interfaces/wmi/groups.py:274 interfaces/wmi/groups.py:640
+#: interfaces/wmi/groups.py:320
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: interfaces/wmi/groups.py:282
-msgid "No responsible for this group."
-msgstr "Aucun responsable de ce groupe."
-
-#: interfaces/wmi/groups.py:299 interfaces/wmi/groups.py:641
+#: interfaces/wmi/groups.py:324
 msgid "Guests"
 msgstr "Invités"
 
-#: interfaces/wmi/groups.py:307
+#: interfaces/wmi/groups.py:349
+msgid "No responsible for this group."
+msgstr "Aucun responsable de ce groupe."
+
+#: interfaces/wmi/groups.py:374
 msgid "No guest in this group."
 msgstr "Aucun invité dans ce groupe."
 
-#: interfaces/wmi/groups.py:332 interfaces/wmi/groups.py:486
-#: core/privileges.py:51 core/groups.py:1678
+#: interfaces/wmi/groups.py:437 interfaces/wmi/groups.py:526
+#: core/privileges.py:51 core/groups.py:1699
 msgid "GID"
 msgstr "GID"
 
-#: interfaces/wmi/groups.py:332 interfaces/wmi/groups.py:333
-#: interfaces/wmi/users.py:680
+#: interfaces/wmi/groups.py:438 interfaces/wmi/users.py:546
 msgid "immutable"
 msgstr "non modifiable"
 
-#: interfaces/wmi/groups.py:333 interfaces/wmi/groups.py:635
+#: interfaces/wmi/groups.py:440
 msgid "Name"
 msgstr "Nom"
 
-#: interfaces/wmi/groups.py:337 interfaces/wmi/users.py:709
-msgid "<< Go back"
-msgstr "<< Revenir"
+#: interfaces/wmi/groups.py:442
+msgid "Description"
+msgstr "Description du groupe"
 
-#: interfaces/wmi/groups.py:337 interfaces/wmi/users.py:710
-msgid "B"
-msgstr "R"
+#: interfaces/wmi/groups.py:444
+msgid "Permissive"
+msgstr "Permissif"
 
-#: interfaces/wmi/groups.py:338 interfaces/wmi/users.py:711
-msgid "Print"
-msgstr "Imprimer"
+#: interfaces/wmi/groups.py:445
+msgid "True"
+msgstr "activée"
 
-#: interfaces/wmi/groups.py:344 interfaces/wmi/groups.py:504
+#: interfaces/wmi/groups.py:445
+msgid "False"
+msgstr "désactivée"
+
+#: interfaces/wmi/groups.py:452 interfaces/wmi/groups.py:545
 #, python-format
 msgid "Group %s doesn't exist (%s, %s)!"
 msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
 
-#: interfaces/wmi/groups.py:352
+#: interfaces/wmi/groups.py:463
 #, python-format
 msgid "Editing group %s"
 msgstr "Édition du groupe %s"
 
-#: interfaces/wmi/groups.py:366 interfaces/wmi/groups.py:376
-msgid "Manage members"
-msgstr "Gérer les membres"
-
-#: interfaces/wmi/groups.py:366 interfaces/wmi/groups.py:377
-msgid "Users not yet members"
-msgstr "Utilisateurs non-membres"
-
-#: interfaces/wmi/groups.py:367 interfaces/wmi/groups.py:378
-#: interfaces/wmi/groups.py:750 interfaces/wmi/groups.py:753
-msgid "Current members"
-msgstr "Membres actuels"
-
-#: interfaces/wmi/groups.py:381
-msgid "Manage responsibles"
-msgstr "Gérer les responsables"
-
-#: interfaces/wmi/groups.py:382
-msgid "Users not yet responsibles"
-msgstr "Utilisateurs pas encore responsables"
-
-#: interfaces/wmi/groups.py:383 interfaces/wmi/groups.py:754
-msgid "Current responsibles"
-msgstr "Responsables actuels"
-
-#: interfaces/wmi/groups.py:386
-msgid "Manage guests"
-msgstr "Gérer les invités"
-
-#: interfaces/wmi/groups.py:387
-msgid "Users not yet guests"
-msgstr "Utilisateurs pas encore invités"
-
-#: interfaces/wmi/groups.py:388 interfaces/wmi/groups.py:755
-msgid "Current guests"
-msgstr "Invités actuels"
-
-#: interfaces/wmi/groups.py:419 interfaces/wmi/groups.py:637
+#: interfaces/wmi/groups.py:478
 msgid "Skeleton"
 msgstr "Squelette"
 
-#: interfaces/wmi/groups.py:445
-msgid "Group responsibles"
-msgstr "Responsables du groupe"
+#: interfaces/wmi/groups.py:525
+#, python-format
+msgid "Edit group %s"
+msgstr "Édition du groupe %s"
 
-#: interfaces/wmi/groups.py:447
-msgid "Group guests"
-msgstr "Invités du groupe"
-
-#: interfaces/wmi/groups.py:486 interfaces/wmi/groups.py:488
+#: interfaces/wmi/groups.py:527 interfaces/wmi/groups.py:530
 msgid "(immutable)"
 msgstr "(non modifiable)"
 
-#: interfaces/wmi/groups.py:494
-msgid "Group members"
-msgstr "Membres du groupe"
+#: interfaces/wmi/groups.py:759
+msgid "System users:"
+msgstr "Comptes utilisateurs système"
 
-#: interfaces/wmi/groups.py:498
-msgid "Record"
-msgstr "Enregistrer"
+#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:843
+msgid "System groups"
+msgstr "Groupes système"
 
-#: interfaces/wmi/groups.py:516
-#, python-format
-msgid "Modifying group %s"
-msgstr "Modification du groupe %s"
-
-#: interfaces/wmi/groups.py:541
-msgid ""
-"The system won't let you remove your own account from the {wmi_group} or "
-"{admin_group} groups, sorry."
-msgstr ""
-"Le système ne vous laissera pas supprimer votre propre compte des groupes "
-"{wmi_group} ou {admin_group}, désolé."
-
-#: interfaces/wmi/groups.py:636
-msgid "Description"
-msgstr "Description du groupe"
-
-#: interfaces/wmi/groups.py:638
-msgid "Perm."
-msgstr "Perm."
-
-#: interfaces/wmi/groups.py:649
-#, python-format
-msgid "%s order"
-msgstr "ordre %s"
-
-#: interfaces/wmi/groups.py:650 interfaces/wmi/users.py:873
-#: core/machines.py:1334
-msgid "Click to sort in reverse order."
-msgstr "Cliquer pour classer dans l'ordre inverse."
-
-#: interfaces/wmi/groups.py:654 interfaces/wmi/users.py:877
-#: core/machines.py:1340
-msgid "Click to sort on this column."
-msgstr "Cliquer pour classer sur cette colonne."
-
-#: interfaces/wmi/groups.py:662 interfaces/wmi/users.py:389
-#: interfaces/wmi/users.py:555 interfaces/wmi/users.py:685
+#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:422
+#: interfaces/wmi/users.py:551 interfaces/wmi/users.py:731
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: interfaces/wmi/groups.py:720
-msgid ""
-"View the group details, its parameters,\n"
-"\t\t\t\t\tmembers, responsibles and guests.\n"
-"\t\t\t\t\tFrom there you can print all group-related informations."
-msgstr ""
-"Visualiser le groupe, ses paramètres,ses membres, responsables et invités, "
-"en vue de les imprimer."
+#: interfaces/wmi/server.py:22
+msgid "Restart server."
+msgstr "Redémarrer le serveur."
 
-#: interfaces/wmi/groups.py:736
-msgid ""
-"Shared group directory is currently <strong>permissive</strong>. Click to "
-"deactivate permissiveness."
-msgstr ""
-"Le répertoire de groupe est actuellement <strong>permissif</strong>. Cliquez "
-"pour désactiver la permissivité."
+#: interfaces/wmi/server.py:23
+msgid "Restart server"
+msgstr "Redémarrer le serveur"
 
-#: interfaces/wmi/groups.py:738
-msgid "Group is currently permissive."
-msgstr "Le groupe est actuellement permissif."
+#: interfaces/wmi/server.py:24
+msgid "Shutdown server."
+msgstr "Éteindre le serveur."
 
-#: interfaces/wmi/groups.py:745
-msgid ""
-"Shared group directory is currently\n"
-"\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
-"\t\t\t\t\tpermissiveness."
-msgstr ""
-"Le répertoire de groupe est actuellement <strong>NON</strong> permissif. "
-"Cliquez pour activer la permissivité."
-
-#: interfaces/wmi/groups.py:747
-msgid "Group is NOT permissive."
-msgstr "Le groupe N'EST PAS permissif actuellement."
-
-#: interfaces/wmi/groups.py:794
-#, python-format
-msgid "See %s of group %s."
-msgstr "Voir les %s du groupe %s."
-
-#: interfaces/wmi/groups.py:809
-msgid "Definitely remove this group from system."
-msgstr "Supprimer définitivement le compte du système."
-
-#: interfaces/wmi/groups.py:824 interfaces/wmi/users.py:1011
-#, python-format
-msgid "number of <strong>%s</strong>:"
-msgstr "nombre de <strong>%s</strong>&#160;:"
-
-#: interfaces/wmi/groups.py:836
-msgid "Total number of groups:"
-msgstr "Nombre total de groupes&#160;:"
+#: interfaces/wmi/server.py:25
+msgid "Shutdown server"
+msgstr "Éteindre le serveur"
 
 #: interfaces/wmi/server.py:33
 msgid "Can't reboot the system."
@@ -3997,139 +3899,20 @@ msgstr "Arrêt en cours…"
 msgid "Sure you want to shutdown the %s server?"
 msgstr "Êtes-vous sûr(e) de vouloir éteindre le serveur %s ?"
 
-#: interfaces/wmi/users.py:17
-msgid "Customize groups"
-msgstr "Personnaliser les groupes"
-
-#: interfaces/wmi/users.py:18
-msgid "Available groups"
-msgstr "Groupes disponibles"
-
-#: interfaces/wmi/users.py:18
-msgid "Affected groups"
-msgstr "Groupes affectés"
-
-#: interfaces/wmi/users.py:20
-msgid "Customize privileges"
-msgstr "Affiner les privilèges"
-
-#: interfaces/wmi/users.py:21
-msgid "Available privileges"
-msgstr "Privilèges disponibles"
-
-#: interfaces/wmi/users.py:21
-msgid "granted privileges"
-msgstr "Privilèges octroyés"
-
-#: interfaces/wmi/users.py:23
-msgid "Assign responsibilities"
-msgstr "Assigner des responsabilités"
-
 #: interfaces/wmi/users.py:24
-msgid "Available responsibilities"
-msgstr "Responsabilités disponibles"
-
-#: interfaces/wmi/users.py:24
-msgid "Assigned responsibilities"
-msgstr "Responsabilités assignées"
-
-#: interfaces/wmi/users.py:26
-msgid "Propose invitations"
-msgstr "Proposer des invitations"
-
-#: interfaces/wmi/users.py:27
-msgid "Available invitations"
-msgstr "Invitations disponibles"
-
-#: interfaces/wmi/users.py:27
-msgid "Offered invitations"
-msgstr "Invitation offertes"
-
-#: interfaces/wmi/users.py:56
-msgid "Add a new user account on the system."
-msgstr "Ajouter un nouveau compte utilisateur sur le système."
-
-#: interfaces/wmi/users.py:58
-msgid "Add an account"
-msgstr "Ajouter un compte"
-
-#: interfaces/wmi/users.py:59
-msgid "Import new user accounts from a CSV-delimited file."
-msgstr "Importer de nouveaux comptes utilisateurs depuis un fichier CSV."
-
-#: interfaces/wmi/users.py:61
-msgid "Import accounts"
-msgstr "Importer des comptes"
-
-#: interfaces/wmi/users.py:62
-msgid "Export current user accounts list to a CSV or XML file."
-msgstr "Exporter les comptes utilisateurs actuels vers un fichier CSV ou XML."
-
-#: interfaces/wmi/users.py:64
-msgid "Export accounts"
-msgstr "Exporter les comptes"
-
-#: interfaces/wmi/users.py:69
-msgid "Export user accounts list"
-msgstr "Exporter les comptes utilisateurs"
-
-#: interfaces/wmi/users.py:73 core/machines.py:1222 core/machines.py:1265
+#, fuzzy, python-format
 msgid ""
-"CSV file-format is used by spreadsheets and most systems which offer import "
-"functionnalities. XML file-format is a modern exchange format, used in soma "
-"applications which respect interoperability constraints.<br /><br />When you "
-"submit this form, your web browser will automatically offer you to download "
-"and save the export-file (it won't be displayed). When you're done, please "
-"click the “back” button of your browser."
-msgstr ""
-"Le format CSV est utilisé par les tableurs et la plupart des systèmes qui "
-"offrent des possibilités d'import. Le format XML est un format d'échanges de "
-"données moderne utilisé par des applications qui respectent certaines normes "
-"ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez "
-"sur \"Exporter\", votre navigateur vous proposera automatiquement "
-"d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme "
-"une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
-
-#: interfaces/wmi/users.py:82
-#, python-format
-msgid "Which file format do you want accounts to be exported to? %s"
-msgstr "Dans quel format de sortie voulez-vous exporter les comptes&#160;? %s"
-
-#: interfaces/wmi/users.py:85 core/machines.py:1234 core/machines.py:1277
-msgid "Please choose file format for export list"
-msgstr "Choisissez le format de fichier d'export"
-
-#: interfaces/wmi/users.py:87 core/machines.py:1236 core/machines.py:1279
-msgid "Export >>"
-msgstr "Exporter >>"
-
-#: interfaces/wmi/users.py:107
-#, python-format
-msgid "Remove user account %s"
-msgstr "Supprimer le compte %s"
-
-#: interfaces/wmi/users.py:118
-msgid ""
-"Did you <em>really</em> think the system could have allowed you to delete "
-"your own account or an admin account? I don't."
-msgstr ""
-"Pensiez vous <em>vraiment</em> que le système allait vous autoriser à "
-"supprimer votre propre compte, ou le compte d'un administrateur&nbsp;? Je ne "
-"pense pas."
-
-#: interfaces/wmi/users.py:126
-#, python-format
-msgid "Are you sure you want to remove account <strong>%s</strong>?"
+"Are you sure you want to remove account <strong>%s</strong> ? <br/><br/>"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir supprimer le compte <strong>%s</strong>&#160;!"
 
-#: interfaces/wmi/users.py:128
-#, python-format
+#: interfaces/wmi/users.py:26
+#, fuzzy, python-format
 msgid ""
 "User's <strong>personnal data</strong> (his/her HOME dir) will be "
 "<strong>archived</strong> in directory <code>%s</code> and members of group "
-"<strong>%s</strong> will be able to  access it to operate an eventual "
-"recover.<br />However, you can decide to permanently remove it."
+"<strong>%s</strong> will be able to access it to operate an eventual recover."
+"<br />However, you can decide to permanently remove it. <br/><br/>"
 msgstr ""
 "<strong>Les données personnelles</strong> de l'utilisateur (son home dir) "
 "<strong>seront archivées</strong>\t\t\t\tdans le répertoire <code>%s</code> "
@@ -4137,60 +3920,20 @@ msgstr ""
 "récupération éventuelle.<br />\t\t\t\tVous pouvez cependant décider de les "
 "effacer définitivement."
 
-#: interfaces/wmi/users.py:136
-msgid "Remove >>"
-msgstr "Supprimer >>"
-
-#: interfaces/wmi/users.py:140
-msgid "Definitely remove account data (no archiving)."
-msgstr ""
-"Supprimer définitivement toutes les données liées à ce compte (pas "
-"d'archivage)."
-
-#: interfaces/wmi/users.py:155
-#, python-format
-msgid "Unlock account %s"
-msgstr "Déverrouiller le compte %s"
-
-#: interfaces/wmi/users.py:164
-msgid "Failed to unlock account"
-msgstr "Impossible de déverrouiller le compte"
-
-#: interfaces/wmi/users.py:165
-msgid "alter system account."
-msgstr "modification d'un compte système"
-
-#: interfaces/wmi/users.py:166
-msgid "insufficient permission to perform operation."
-msgstr "permissions insuffisantes pour accomplir l'opération."
-
-#: interfaces/wmi/users.py:177
-#, python-format
-msgid "Lock account %s"
-msgstr "Verrouiller le compte %s"
-
-#: interfaces/wmi/users.py:185
+#: interfaces/wmi/users.py:41
+#, fuzzy
 msgid ""
-"I don't think you really want to lock you own account or any admin account, "
-"pal. And I won't let you do it."
-msgstr ""
-"Je ne pense pas que vous vouliez vraiment verrouiller votre propre compte, "
-"ni un compte administrateur. En tout cas, je ne vous laisserai pas faire."
-
-#: interfaces/wmi/users.py:193
-#, python-format
-msgid ""
-"This will prevent user to connect to network clients (thin ones, and "
-"Windows&reg;, %s/Linux&reg; and Macintosh&reg; ones)."
+"Do you really want to lock user {0} ?<br/><br/>This will prevent user to "
+"connect to network clients (thin ones, and Windows&reg;, {1}/Linux&reg; and "
+"Macintosh&reg; ones)."
 msgstr ""
 "Cela l'empêchera de se connecter sur les terminaux légers\t%s/Linux et les "
 "postes autonomes Windows&reg; et Macintosh&reg;."
 
-#: interfaces/wmi/users.py:200
-#, python-format
+#: interfaces/wmi/users.py:50
+#, fuzzy, python-format
 msgid ""
-"<br /><br />\n"
-"\t\t\t\t\tBut this will not block incoming %s network connections, if the "
+"<br /><br /> But this will not block incoming %s network connections, if the "
 "user uses %s %s or %s public/private keys. To block ANY access to the "
 "system, <strong>remove him/her from %s group</strong>."
 msgstr ""
@@ -4199,69 +3942,110 @@ msgstr ""
 "connecter.\t\t\t\tPour lui interdire complètement l'accès au système, \t\t\t"
 "\t<strong>retirez-le aussi du groupe %s</strong>."
 
-#: interfaces/wmi/users.py:208
+#: interfaces/wmi/users.py:58
 msgid "Remove user from group <code>remotessh</code> in the same time."
 msgstr "Supprimer l'utilisateur du groupe <code>remotessh</code> au passage."
 
-#: interfaces/wmi/users.py:217
-#, python-format
-msgid "Are you sure you want to lock account <strong>%s</strong>?"
-msgstr ""
-"Êtes-vous sûr(e) de vouloir verrouiler le compte <strong>%s</strong>&#160;!"
-
-#: interfaces/wmi/users.py:221
-msgid "Lock >>"
-msgstr "Verrouiller >>"
-
-#: interfaces/wmi/users.py:221
-msgid "L"
-msgstr "V"
-
-#: interfaces/wmi/users.py:245
-#, python-format
-msgid "Reapply skel to user account %s"
-msgstr "Reappliquer un squelette au compte %s"
-
-#: interfaces/wmi/users.py:256
+#: interfaces/wmi/users.py:65
+#, fuzzy, python-format
 msgid ""
-"This will rebuild his/her desktop from scratch, with defaults icons and so "
-"on.<br /><br />The user must be disconnected for the operation to be "
-"completely successfull."
+"This will rebuild %s's desktop from scratch, with defaults icons and so on."
+"<br /><br /><strong>The user must be disconnected for the operation to be "
+"completely successfull.</strong>"
 msgstr ""
 "Cela remettra son bureau à zéro, avec les icônes d'origine.<br /><br /"
 "><strong>Il est nécessaire que l'utilisateur soit déconnecté du système pour "
 "que l'opération réussisse.</strong>"
 
-#: interfaces/wmi/users.py:260
-#, python-format
-msgid "Which skel do you want to apply? %s"
+#: interfaces/wmi/users.py:69
+#, fuzzy, python-format
+msgid "<br /><br />Which skel do you want to apply? %s"
 msgstr "Quel skelette voulez-vous appliquer&#160;? %s"
 
-#: interfaces/wmi/users.py:264
+#: interfaces/wmi/users.py:282
 #, python-format
-msgid ""
-"Are you sure you want to apply this skel to account <strong>%s</strong>?"
-msgstr ""
-"Êtes-vous sûr de vouloir appliquer ce squelette au compte <strong>%s</"
-"strong>&#160;!"
+msgid "Added: %s"
+msgstr "Ajouté(e)&nbsp;: %s"
 
-#: interfaces/wmi/users.py:267
-msgid "Apply"
-msgstr "Appliquer"
+#: interfaces/wmi/users.py:285
+#, python-format
+msgid "Removed: %s"
+msgstr "Supprimé(e)&nbsp;: %s"
 
-#: interfaces/wmi/users.py:286
-msgid "New user account"
-msgstr "Nouveau compte utilisateur"
+#: interfaces/wmi/users.py:302
+msgid "Customize groups"
+msgstr "Personnaliser les groupes"
 
-#: interfaces/wmi/users.py:299
-msgid "This user is a"
-msgstr "Cet utilisateur est un(e)"
+#: interfaces/wmi/users.py:303
+msgid "Available groups"
+msgstr "Groupes disponibles"
 
-#: interfaces/wmi/users.py:306 interfaces/wmi/users.py:863
-msgid "Full name"
-msgstr "Nom complet"
+#: interfaces/wmi/users.py:303
+msgid "Affected groups"
+msgstr "Groupes affectés"
 
-#: interfaces/wmi/users.py:372 interfaces/wmi/users.py:540
+#: interfaces/wmi/users.py:305
+msgid "Customize privileges"
+msgstr "Affiner les privilèges"
+
+#: interfaces/wmi/users.py:306
+msgid "Available privileges"
+msgstr "Privilèges disponibles"
+
+#: interfaces/wmi/users.py:306
+msgid "granted privileges"
+msgstr "Privilèges octroyés"
+
+#: interfaces/wmi/users.py:308
+msgid "Assign responsibilities"
+msgstr "Assigner des responsabilités"
+
+#: interfaces/wmi/users.py:309
+msgid "Available responsibilities"
+msgstr "Responsabilités disponibles"
+
+#: interfaces/wmi/users.py:309
+msgid "Assigned responsibilities"
+msgstr "Responsabilités assignées"
+
+#: interfaces/wmi/users.py:311
+msgid "Propose invitations"
+msgstr "Proposer des invitations"
+
+#: interfaces/wmi/users.py:312
+msgid "Available invitations"
+msgstr "Invitations disponibles"
+
+#: interfaces/wmi/users.py:312
+msgid "Offered invitations"
+msgstr "Invitation offertes"
+
+#: interfaces/wmi/users.py:322 interfaces/wmi/users.py:442
+msgid "Standard account"
+msgstr "Compte standard"
+
+#: interfaces/wmi/users.py:385
+#, python-format
+msgid "Edit account %s"
+msgstr "Édition du compte %s"
+
+#: interfaces/wmi/users.py:388
+msgid "<strong>UID</strong> (fixed)"
+msgstr "<strong>UID</strong><br />(non-modifiable)"
+
+#: interfaces/wmi/users.py:390
+msgid "<strong>Identifier</strong> (fixed)"
+msgstr "<strong>Identifiant</strong><br />(non-modifiable)"
+
+#: interfaces/wmi/users.py:391
+msgid "<strong>Profile</strong> (fixed)"
+msgstr "<strong>Profil</strong><br />(non-modifiable)"
+
+#: interfaces/wmi/users.py:393
+msgid "<strong>Full name</strong>"
+msgstr "<strong>Nom complet</strong>"
+
+#: interfaces/wmi/users.py:397 interfaces/wmi/users.py:700
 #, python-format
 msgid ""
 "Password must be at least %d characters long. You can use all alphabet "
@@ -4271,228 +4055,111 @@ msgstr ""
 "toutes les lettre de l'alphabet, les chiffres, les caractères spéciaux et "
 "les signes de ponctuation sauf '?!'."
 
-#: interfaces/wmi/users.py:375 interfaces/wmi/users.py:544
+#: interfaces/wmi/users.py:403 interfaces/wmi/users.py:705
 #, python-format
 msgid "(%d chars. min.)"
 msgstr "(%d car. min.)"
 
-#: interfaces/wmi/users.py:378
-msgid "Password confirmation."
-msgstr "Confirmation du mot de passe."
-
-#: interfaces/wmi/users.py:380
-msgid ""
-"Identifier must be lowercase, without accents or special characters (you can "
-"use dots and carets).<br /><br />If you let this field empty, identifier "
-"will be automaticaly guessed from first name and last name."
-msgstr ""
-"L'identifiant doit être en lettres minuscules, sans accents ni caractères "
-"spéciaux (vous pouvez utiliser seulement les points et les tirets).<br /"
-"><br />\n"
-"Si vous laissez le champ vide, l'identifiant sera automatiquement déterminé "
-"à partir du nom et du prénom."
-
-#: interfaces/wmi/users.py:385
-msgid "I"
-msgstr "I"
-
-#: interfaces/wmi/users.py:386 interfaces/wmi/users.py:551
-msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
-msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
-
-#: interfaces/wmi/users.py:390 interfaces/wmi/users.py:556
-#: interfaces/wmi/users.py:682
-msgid "Responsibilities"
-msgstr "Responsabilités"
-
-#: interfaces/wmi/users.py:391 interfaces/wmi/users.py:557
-#: interfaces/wmi/users.py:684
-msgid "Invitations"
-msgstr "Invitations"
-
-#: interfaces/wmi/users.py:405
-#, python-format
-msgid "New user account %s"
-msgstr "Nouveau compte %s"
-
-#: interfaces/wmi/users.py:410 interfaces/wmi/users.py:773
-#, python-format
-msgid "Passwords do not match!%s"
-msgstr "Les mots de passe ne correspondent pas&#160;!%s"
-
-#: interfaces/wmi/users.py:414
-#, python-format
-msgid "Password must be at least %d characters long!%s"
-msgstr "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
-
-#: interfaces/wmi/users.py:419
-#, python-format
-msgid "GECOS and login can't be both empty!%s"
-msgstr ""
-"Les champs GECOS et login ne doivent pas être vides tous les deux@nbsp;!%s"
-
-#: interfaces/wmi/users.py:445
-#, python-format
-msgid "Edit account %s"
-msgstr "Édition du compte %s"
-
-#: interfaces/wmi/users.py:456 interfaces/wmi/users.py:849
-#: interfaces/wmi/users.py:980
-msgid "System account"
-msgstr "Compte système"
-
-#: interfaces/wmi/users.py:458 interfaces/wmi/users.py:581
-#: interfaces/wmi/users.py:846 interfaces/wmi/users.py:982
-msgid "Standard account"
-msgstr "Compte standard"
-
-#: interfaces/wmi/users.py:535
-msgid "<strong>UID</strong> (fixed)"
-msgstr "<strong>UID</strong><br />(non-modifiable)"
-
-#: interfaces/wmi/users.py:536
-msgid "<strong>Identifier</strong> (fixed)"
-msgstr "<strong>Identifiant</strong><br />(non-modifiable)"
-
-#: interfaces/wmi/users.py:537
-msgid "<strong>Profile</strong> (fixed)"
-msgstr "<strong>Profil</strong><br />(non-modifiable)"
-
-#: interfaces/wmi/users.py:538
-msgid "<strong>Full name</strong>"
-msgstr "<strong>Nom complet</strong>"
-
-#: interfaces/wmi/users.py:544
-msgid "New password"
-msgstr "Nouveau mot de passe"
-
-#: interfaces/wmi/users.py:548
+#: interfaces/wmi/users.py:409
 msgid "password confirmation."
 msgstr "confirmation du mot de passe."
 
-#: interfaces/wmi/users.py:559
-msgid "Record changes"
-msgstr "Enregistrer les changements"
+#: interfaces/wmi/users.py:414
+msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
+msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
-#: interfaces/wmi/users.py:572
+#: interfaces/wmi/users.py:541
 #, python-format
-msgid "View account %s"
-msgstr "Résumé du compte %s"
+msgid "User account %s's informations"
+msgstr "Informations sur le compte utilisateur %s"
 
-#: interfaces/wmi/users.py:681
+#: interfaces/wmi/users.py:547
 msgid "Gecos"
 msgstr "Nom complet"
 
-#: interfaces/wmi/users.py:683
+#: interfaces/wmi/users.py:548
+msgid "Responsibilities"
+msgstr "Responsabilités"
+
+#: interfaces/wmi/users.py:549
 msgid "Standard memberships"
 msgstr "Appartenances standard"
 
-#: interfaces/wmi/users.py:686
+#: interfaces/wmi/users.py:550
+msgid "Invitations"
+msgstr "Invitations"
+
+#: interfaces/wmi/users.py:552
 msgid "Other system memberships"
 msgstr "Autres appartenances systèmes"
 
-#: interfaces/wmi/users.py:731
-#, python-format
-msgid "Modification of account %s"
-msgstr "Modification du compte %s"
+#: interfaces/wmi/users.py:573
+msgid "<< Go back"
+msgstr "<< Revenir"
 
-#: interfaces/wmi/users.py:763
-msgid ""
-"You cannot remove yourself from the {wmi_group} group, this would be like "
-"shooting yourself in the foot a with Perl-crafted bullet from a C# compiled "
-"handgun: non-sense (this is a geek private-joke). I won't allow you to do "
-"that."
-msgstr ""
-"Vous ne pouvez pas supprimer votre compte du groupe {wmi_group}, ça serait à "
-"peu près comme vous tirer dans le pied un balle écrite en Perl avec une "
-"pétoire compilée en C#: un non-sens (ceci est une blague de geek). Je ne "
-"vous laisserai pas faire ça."
+#: interfaces/wmi/users.py:574
+msgid "B"
+msgstr "R"
 
-#: interfaces/wmi/users.py:777
-#, python-format
-msgid "The password --%s-- must be at least %d characters long!%s"
-msgstr "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
+#: interfaces/wmi/users.py:575
+msgid "Print"
+msgstr "Imprimer"
 
-#: interfaces/wmi/users.py:851
+#: interfaces/wmi/users.py:592 interfaces/wmi/users.py:906
 msgid "User accounts"
 msgstr "Comptes utilisateurs"
 
-#: interfaces/wmi/users.py:865
-msgid "Profile"
-msgstr "Profil"
+#: interfaces/wmi/users.py:627 interfaces/wmi/users.py:697
+msgid "Full name"
+msgstr "Nom complet"
 
-#: interfaces/wmi/users.py:866
-msgid "Locked"
-msgstr "Verr."
+#: interfaces/wmi/users.py:690
+msgid "New account creation:"
+msgstr "Création d'un compte utilisateur&nbsp;:"
 
-#: interfaces/wmi/users.py:885
-#, python-format
+#: interfaces/wmi/users.py:692
+msgid "This user will be a"
+msgstr "Cet utilisateur sera un(e)"
+
+#: interfaces/wmi/users.py:710
+msgid "Password confirmation."
+msgstr "Confirmation du mot de passe."
+
+#: interfaces/wmi/users.py:714
 msgid ""
-"<em>Click to edit current user account parameters:</em>\n"
-"\t\t\t\t\t<br />\n"
-"\t\t\t\t\tUID: <strong>%d</strong><br />\n"
-"\t\t\t\t\tGID: %d (primary group <strong>%s</strong>)<br /><br />\n"
-"\t\t\t\t\tGroups:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t\tPrivileges:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t\tResponsabilities:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t\t"
+"Identifier must be lowercase, without accents or special characters (you can "
+"use dots and carets). If you let this field empty, identifier will be "
+"automaticaly guessed from first name and last name."
 msgstr ""
-"<em>Cliquer pour éditer les paramètres actuels du compte&#160;:</em><br />\n"
-"\t\t\t\tUID: <strong>%d</strong><br />\n"
-"\t\t\t\tGID: %d (groupe primaire <strong>%s</strong>)<br /><br />\n"
-"\t\t\t\tGroupes:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tPrivilèges:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tResponsabilités:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
-"\t\t\t\t"
+"Cet identifiant doit être en lettres minuscules, sans accents ni caractères "
+"spéciaux (vous pouvez utiliser seulement les points et les tirets). Si vous "
+"laissez le champ vide, un identifiant sera automatiquement déterminé à "
+"partir du nom et du prénom."
 
-#: interfaces/wmi/users.py:917
-msgid ""
-"View the user account details, its parameters,\n"
-"\t\t\t\t\tmemberships, responsibilities and invitations.\n"
-"\t\t\t\t\tFrom there you can print all user-related informations."
-msgstr ""
-"Visualiser le compte utilisateur, ses paramètres, ses appartenances aux "
-"groupes, ses responsabitilités et invitations, en vue de les imprimer."
+#: interfaces/wmi/users.py:722
+msgid "I"
+msgstr "I"
 
-#: interfaces/wmi/users.py:930
-msgid "Unlock password (re-grant access to machines)."
-msgstr ""
-"Déverrouiller le mot de passe (redonne accès aux machines du réseau à "
-"l'utilisateur)."
+#: interfaces/wmi/users.py:723
+msgid "Shell"
+msgstr "interpréteur"
 
-#: interfaces/wmi/users.py:931
-msgid "Remove account."
-msgstr "Supprimer le compte."
+#: interfaces/wmi/users.py:724
+msgid "(Unix command line interpreter)"
+msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
-#: interfaces/wmi/users.py:938
-msgid "Lock password (revoke access to machines)."
-msgstr "Verrouiller le mot de passe (supprime l'accès aux machines du réseau)."
+#: interfaces/wmi/users.py:733
+#, fuzzy
+msgid "uCancel"
+msgstr "Annuler"
 
-#: interfaces/wmi/users.py:939
-msgid "Lock account."
-msgstr "Verrouiller le compte."
+#: interfaces/wmi/users.py:735
+msgid "Record new user"
+msgstr "Enregistrer le nouveau compte"
 
-#: interfaces/wmi/users.py:951
-msgid ""
-"Reapply origin skel data in the personnal directory of user. This is usefull "
-"when user has lost icons, or modified too much his/her desktop (menus, "
-"panels and so on).\n"
-"\t\t\t\t\tThis will get all his/her desktop back."
-msgstr ""
-"Réappliquer les données d'origine du skelette dans le répertoire personnel "
-"de l'utilisateur. Ceci est utilisé lorsque l'utilisateur a perdu ou trop "
-"modifié le contenu de son bureau (icônes, menus, panneaux et barres "
-"d'outils) et permet de lui remettre le bureau d'«&#160;usine&#160;»."
-
-#: interfaces/wmi/users.py:956
-msgid "Definitely remove account from the system."
-msgstr "Supprime définitivement le compte du système."
-
-#: interfaces/wmi/users.py:1024
-msgid "<strong>Total number of accounts:</strong>"
-msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
+#: interfaces/wmi/users.py:955
+msgid "System user accounts"
+msgstr "Comptes utilisateurs systèmes"
 
 #: core/profiles.py:114
 msgid "profile {0}: group {1} does not exist, ignored."
@@ -4687,7 +4354,7 @@ msgstr "Utilisateurs des machines de bureau"
 msgid "The %s profile"
 msgstr "Le profil des %s"
 
-#: core/profiles.py:760 core/users.py:329
+#: core/profiles.py:760 core/users.py:330
 msgid "Invalid shell \"{0}\". Valid shells are {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont {1}."
 
@@ -4855,19 +4522,19 @@ msgstr ""
 "Merci de contacter les développeurs {0}, et considérer la soumission d'un "
 "patch pour rendre votre système officiellement supporté."
 
-#: core/configuration.py:859 core/users.py:1030
+#: core/configuration.py:854 core/users.py:1061
 msgid "user"
 msgstr "utilisateur"
 
-#: core/configuration.py:860
+#: core/configuration.py:855
 msgid "users"
 msgstr "utilisateurs"
 
-#: core/configuration.py:882
+#: core/configuration.py:873
 msgid "groups"
 msgstr "groupes"
 
-#: core/configuration.py:1471
+#: core/configuration.py:1460
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
@@ -4949,18 +4616,18 @@ msgstr ""
 msgid "{0}: skipped account {1} (was: KeyError on field {2})."
 msgstr "{0} : doit être lancé en tant que {1} (erreur initiale : {2})."
 
-#: core/keywords.py:137
+#: core/keywords.py:135
 msgid "You must specify a keyword name."
 msgstr "Vous devez spécifier une étiquette."
 
-#: core/keywords.py:150
+#: core/keywords.py:148
 #, fuzzy
 msgid "Malformed keyword name \"{0}\", must match /{1}/i."
 msgstr ""
 "Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/keywords.py:155
+#: core/keywords.py:153
 #, fuzzy
 msgid "Malformed keyword description \"{0}\", must match /{1}/i."
 msgstr "La description \"{0}\" est mal-formée car elle doit vérifier /{1}/i."
@@ -5074,7 +4741,7 @@ msgstr "La description du groupe {0} est maintenant \"{1}\"."
 msgid "You must specify a groupSkel"
 msgstr "Vous devez spécifier un squelette de groupe"
 
-#: core/groups.py:422 core/groups.py:2040
+#: core/groups.py:422 core/groups.py:2073
 msgid "Invalid skel {0}. Valid skels are: {1}."
 msgstr "Squelette {0} invalide. Les squelettes valides sont : {1}."
 
@@ -5118,18 +4785,18 @@ msgstr "L'utilisateur {0} a été supprimé des membres du groupe {1}."
 msgid "Skipped user {0}, already not a member of group {1}"
 msgstr "L'utilisateur {0} n'est pas membre du groupe {1}, ignoré. "
 
-#: core/groups.py:827 core/users.py:598
+#: core/groups.py:827 core/users.py:599
 #, python-format
 msgid "Backend %s does not exist or is not enabled."
 msgstr "Le backend %s n'existe pas ou n'est pas activé."
 
-#: core/groups.py:833 core/users.py:604
+#: core/groups.py:833 core/users.py:605
 msgid "Skipped move of group {0}, already stored in backend {1}."
 msgstr ""
 "Le groupe {0} n'a pas été déplacé dans le backend {1} car il y est déjà "
 "stocké."
 
-#: core/groups.py:840 core/users.py:611
+#: core/groups.py:840 core/users.py:612
 msgid ""
 "Skipped move of restricted system group {0} (please use {1} if you really "
 "want to do this, but it is strongly not recommended)."
@@ -5137,7 +4804,7 @@ msgstr ""
 "Le déplacement du groupe système restreint {0} a été évité (utilisez {1} si "
 "vous voulez vraiment faire celà, mais c'est vivement déconseillé)."
 
-#: core/groups.py:848 core/users.py:619
+#: core/groups.py:848 core/users.py:620
 msgid ""
 "Cannot move an associated system group without moving its standard  group "
 "too. Please move the standard group instead, if this is what you meant."
@@ -5146,7 +4813,7 @@ msgstr ""
 "standard aussi. Merci de plutôt déplacer le groupe standard, si c'est ce que "
 "vous voulez."
 
-#: core/groups.py:857 core/users.py:628
+#: core/groups.py:857 core/users.py:629
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated "
 "responsible system group failed."
@@ -5154,7 +4821,7 @@ msgstr ""
 "Le déplacement du groupe {0} vers le backend {1} a été annulé car le "
 "déplacement du groupe responsable associé a échoué."
 
-#: core/groups.py:870 core/users.py:641
+#: core/groups.py:870 core/users.py:642
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated system "
 "guest group failed."
@@ -5162,7 +4829,7 @@ msgstr ""
 "Le déplacement du groupe {0} vers le backend {1} a été annulé car le "
 "déplacement du groupe invité associé a échoué."
 
-#: core/groups.py:880 core/users.py:651
+#: core/groups.py:880 core/users.py:652
 msgid ""
 "Exception {0} happened while trying to move group {1} from {2} to {3}, "
 "aborting (group left unchanged)."
@@ -5171,7 +4838,7 @@ msgstr ""
 "vers {3}. Opération annulé (le groupe est dans l'état initial avant "
 "déplacement)."
 
-#: core/groups.py:902 core/users.py:673
+#: core/groups.py:902 core/users.py:674
 msgid ""
 "Exception {0} happened while trying to restore a stable situation during "
 "group {1} move, we could be in big trouble."
@@ -5180,7 +4847,7 @@ msgstr ""
 "situation stable à la suite d'un problème rencontré pendant le déplacement "
 "du groupe {1}. On est dans la panade, appelez-moi le directeur…"
 
-#: core/groups.py:912 core/users.py:683
+#: core/groups.py:912 core/users.py:684
 msgid "Moved group {0} from backend {1} to {2}."
 msgstr "Le groupe {0} a été déplacé du backend {1} au backend {2}."
 
@@ -5191,54 +4858,54 @@ msgstr ""
 "Vérification des liens symboliques %s dans les répertoires des membres, ça "
 "peut prendre un certain temps…"
 
-#: core/groups.py:998 core/groups.py:1490
+#: core/groups.py:995 core/groups.py:1483
 #, python-format
 msgid "Deleted symlink %s."
 msgstr "Le lien symbolique %s a été supprimé."
 
-#: core/groups.py:1003 core/groups.py:1494
+#: core/groups.py:1000 core/groups.py:1487
 msgid "Unable to delete symlink {0} (was: {1})."
 msgstr ""
 "Impossible de supprimer le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1016
+#: core/groups.py:1013
 #, python-format
 msgid "Deleted old symlink %s."
 msgstr "Le vieux lien symbolique %s a été supprimé."
 
-#: core/groups.py:1020
+#: core/groups.py:1017
 msgid "Unable to read symlink {0} (was: {1})."
 msgstr "Impossible de lire le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1028
+#: core/groups.py:1025
 msgid "User {0} lacks the symlink to group shared dir {1}. Create it?"
 msgstr ""
 "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}. Voulez-"
 "vous le créer ?"
 
-#: core/groups.py:1038
+#: core/groups.py:1035
 msgid "User {0} lacks the symlink to group shared dir {1}."
 msgstr "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}."
 
-#: core/groups.py:1063
+#: core/groups.py:1060
 msgid "Group {0} already in the list of profile {1}."
 msgstr "Le groupe {0} est déja dans la liste du profil {1}."
 
-#: core/groups.py:1099
+#: core/groups.py:1096
 msgid "Deleting group {0} from profile {1}."
 msgstr "Suppression du groupe {0} dans le profil {1}."
 
-#: core/groups.py:1109
+#: core/groups.py:1106
 msgid "Group {0} already absent from profile {1}."
 msgstr "Le groupe {0} est déjà absent du profil {1}."
 
-#: core/groups.py:1168
+#: core/groups.py:1163
 msgid "Shared dir {0} does not exist, please run \"chk group {1}\" to fix."
 msgstr ""
 "Le répertoire partagé {0} n'existe pas. Exécutez \"chk group {1}\" pour "
 "corriger le problème."
 
-#: core/groups.py:1221
+#: core/groups.py:1216
 #, python-format
 msgid ""
 "Cannot demote user %s from standard membership to guest without --force flag."
@@ -5246,14 +4913,14 @@ msgstr ""
 "Impossible de rétrograder l'utilisateur %s de membre standard à invité sans "
 "utiliser l'argument --force."
 
-#: core/groups.py:1235
+#: core/groups.py:1230
 #, python-format
 msgid "Cannot demote user %s from responsible to guest without --force flag."
 msgstr ""
 "Impossible de rétrograder l'utilisateur %s de responsable à invité sans "
 "utiliser l'argument --force."
 
-#: core/groups.py:1266
+#: core/groups.py:1261
 #, python-format
 msgid ""
 "Cannot demote user %s from responsible to standard membership without --"
@@ -5262,20 +4929,20 @@ msgstr ""
 "Impossible de rétrograder l'utilisateur %s de responsable à membre standard "
 "sans utiliser l'argument --force."
 
-#: core/groups.py:1310
+#: core/groups.py:1305
 msgid "responsibles"
 msgstr "Responsables"
 
-#: core/groups.py:1313
+#: core/groups.py:1308
 msgid "guests"
 msgstr "Invités"
 
-#: core/groups.py:1319
+#: core/groups.py:1314
 #, python-format
 msgid "Checking system group %s…"
 msgstr "Vérification du groupe système %s…"
 
-#: core/groups.py:1323
+#: core/groups.py:1318
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal. "
 "Create it?"
@@ -5283,137 +4950,137 @@ msgstr ""
 "Le groupe système {0} est requis pour que le groupe {1} soit pleinement "
 "opérationnel. Le créér ?"
 
-#: core/groups.py:1335
+#: core/groups.py:1330
 msgid "{0} of group “{1}”"
 msgstr "Les {0} du groupe « {1} »"
 
-#: core/groups.py:1361
+#: core/groups.py:1356
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal."
 msgstr ""
 "Le groupe système {0} est requis pour que le groupe {1} soit pleinement "
 "opérationnel."
 
-#: core/groups.py:1385
+#: core/groups.py:1380
 msgid "Checking system specific attributes for group {0}…"
 msgstr "Vérification des attributs spécifiques aux groupes système pour {0}…"
 
-#: core/groups.py:1396
+#: core/groups.py:1391
 msgid "Removed superfluous attribute {0} of system group {1}"
 msgstr "L'attribut superflu {0} a été supprimé du groupe système {1}."
 
-#: core/groups.py:1406 core/groups.py:2028
+#: core/groups.py:1401 core/groups.py:2061
 #, python-format
 msgid "Members of group “%s”"
 msgstr "Les membres du groupe « %s »"
 
-#: core/groups.py:1408
+#: core/groups.py:1403
 msgid "Added missing {0} attribute with a default value for system group {1}."
 msgstr ""
 "L'attribut manquant {0} a été ajouté au groupe système {1} avec une valeur "
 "par défaut."
 
-#: core/groups.py:1415
+#: core/groups.py:1410
 msgid "Do you want to commit these changes to the system (highly recommended)?"
 msgstr ""
 "Voulez-vous enregistrer ces changements dans le système (hautement "
 "recommandé) ?"
 
-#: core/groups.py:1424
+#: core/groups.py:1419
 msgid "Corrections of system group {0} not commited"
 msgstr "Les corrections du groupe {0} n'ont pas été enregistrées."
 
-#: core/groups.py:1459
+#: core/groups.py:1453
 msgid "Unable to create symlink {0} (was: {1})."
 msgstr ""
 "Impossible de supprimer le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1528
+#: core/groups.py:1521
 msgid "password:"
 msgstr "mot de passe:"
 
-#: core/groups.py:1532
+#: core/groups.py:1525
 msgid "skel:"
 msgstr "squelette :"
 
-#: core/groups.py:1555 core/groups.py:1588 core/groups.py:1604
+#: core/groups.py:1548 core/groups.py:1581 core/groups.py:1597
 msgid "— no member —"
 msgstr "— aucun membre —"
 
-#: core/groups.py:1566
+#: core/groups.py:1559
 msgid "Cannot collect responsibles for group {0} (was: {1})."
 msgstr ""
 "Impossible de collecter les responsables du groupe {0} (problème initial : "
 "{1})."
 
-#: core/groups.py:1575
+#: core/groups.py:1568
 msgid "Cannot collect guests for group {0} (was: {1})."
 msgstr ""
 "Impossible de collecter les invités du groupe {0} (problème initial: {1})."
 
-#: core/groups.py:1770
+#: core/groups.py:1791
 msgid "{0}.reload: Overwritten gid {1}."
 msgstr "{0}.reload : GID {1} écrasé."
 
-#: core/groups.py:1783
+#: core/groups.py:1804
 msgid "{0}: removing disapeared group {1}."
 msgstr "{0} : suppression du groupe disparu {1}."
 
-#: core/groups.py:1827
+#: core/groups.py:1847
 msgid "File-system {0} must be mounted with {1} option to continue!"
 msgstr ""
 "Le système de fichier {0} doit être monté avec l'option {1} pour continuer !"
 
-#: core/groups.py:1840
+#: core/groups.py:1860
 msgid "{0}: {1} does not exist and will be created later in the process."
 msgstr ""
 
-#: core/groups.py:1975
+#: core/groups.py:1995
 #, python-format
 msgid "GID %s does not exist on the system."
 msgstr "Le GID %s n'existe pas sur le système."
 
-#: core/groups.py:2016
+#: core/groups.py:2049
 msgid "Malformed group name \"{0}\", must match /{1}/i."
 msgstr ""
 "Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/groups.py:2021
+#: core/groups.py:2054
 msgid ""
 "Group name must be smaller than {0} characters (\"{1}\" is {2} chars long)."
 msgstr ""
 "La longueur du nom du groupe doit être inférieure ou égale à {0} caractères "
 "(\"{1}\" en compte {2})."
 
-#: core/groups.py:2031
+#: core/groups.py:2064
 msgid "Malformed group description \"{0}\", must match /{1}/i."
 msgstr ""
 "La description de groupe \"{0}\" est mal-formée ; elle doit vérifier /{1}/i."
 
-#: core/groups.py:2094
+#: core/groups.py:2127
 msgid "Created system group {0} (gid={1})."
 msgstr "Le groupe système {0} (gid={1}) a été créé."
 
-#: core/groups.py:2113
+#: core/groups.py:2146
 msgid "Created {0} group {1} (gid={2})."
 msgstr "Le groupe {0} {1} (gid={2}) a été créé."
 
-#: core/groups.py:2114
+#: core/groups.py:2147
 msgid "permissive"
 msgstr "permissif"
 
-#: core/groups.py:2142
+#: core/groups.py:2175
 msgid "GID {0} is already taken by group {1}. Please choose another one."
 msgstr ""
 "Le GID {0} est déjà pris par le groupe {1}. Choisissez-en un autre SVP."
 
-#: core/groups.py:2155 core/groups.py:2168
+#: core/groups.py:2188 core/groups.py:2201
 #, python-format
 msgid "The group %s already exists."
 msgstr "Le groupe %s existe déjà."
 
-#: core/groups.py:2158
+#: core/groups.py:2191
 #, python-format
 msgid ""
 "The group %s already exists but has not the same type. Please choose another "
@@ -5422,7 +5089,7 @@ msgstr ""
 "Un groupe %s existe déjà, mais n'a pas le même type. Choisissez un autre nom "
 "pour ce groupe."
 
-#: core/groups.py:2171
+#: core/groups.py:2204
 #, python-format
 msgid ""
 "The group %s already exists with a different GID. Please check this is what "
@@ -5431,7 +5098,7 @@ msgstr ""
 "Le groupe %s existe déjà avec un GID différent. Merci de vérifier que c'est "
 "ce que vous voulez, et prenez une décision quant à son avenir."
 
-#: core/groups.py:2176
+#: core/groups.py:2209
 msgid ""
 "The group {0} already exists but has not the same type. Please choose "
 "another name for your group."
@@ -5439,7 +5106,7 @@ msgstr ""
 "Le groupe {0} existe déjà, mais n'a pas le même type. Choisissez un autre "
 "nom pour votre nouveau groupe."
 
-#: core/groups.py:2192
+#: core/groups.py:2225
 #, python-format
 msgid ""
 "A user account called %s already exists, this could trigger a bug in the "
@@ -5453,11 +5120,11 @@ msgstr ""
 "nom pour votre groupe, ou utilisez l'argument --force si vous voulez "
 "vraiment l'ajouter sur le système."
 
-#: core/groups.py:2210
+#: core/groups.py:2243
 msgid "Autogenerated GID for group {0}: {1}."
 msgstr "GID auto-généré pour le groupe {0} : {1}."
 
-#: core/groups.py:2217
+#: core/groups.py:2250
 msgid ""
 "GID out of range for the kind of group you specified. System GIDs must be "
 "between {0} and {1}, standard GIDs must be between {2} and {3}."
@@ -5466,7 +5133,7 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les GIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/groups.py:2272
+#: core/groups.py:2305
 msgid ""
 "Cannot delete group {0}, currently primary group of profile {1}. Please "
 "delete the profile instead, and the group will be deleted at the same time."
@@ -5475,7 +5142,7 @@ msgstr ""
 "profil {1}. Supprimez plutôt le profil, et le groupe sera effacé dans le "
 "même temps."
 
-#: core/groups.py:2283
+#: core/groups.py:2316
 msgid ""
 "The group still has members. You must delete them first, or use  the --del-"
 "users argument. WARNING: this is usually a bad idea; use with caution."
@@ -5484,7 +5151,7 @@ msgstr ""
 "préalablement, ou utiliser l'argument --del-users. ATTENTION : en général "
 "c'est une mauvaise idée, utilisez-le avec beaucoup de précautions."
 
-#: core/groups.py:2295
+#: core/groups.py:2328
 #, python-format
 msgid ""
 "Cannot delete a helper group. Please delete the standard associated group %s "
@@ -5493,7 +5160,7 @@ msgstr ""
 "Impossible de supprimer un groupe système associé. Supprimez plutôt le "
 "groupe standard %s, et celui-là sera effacé dans le même temps."
 
-#: core/groups.py:2302
+#: core/groups.py:2335
 #, python-format
 msgid ""
 "Cannot delete restricted system group %s without the --force argument, this "
@@ -5502,19 +5169,19 @@ msgstr ""
 "Impossible de supprimer le groupe système restreint %s sans l'argument --"
 "force, c'est trop dangereux."
 
-#: core/groups.py:2397
+#: core/groups.py:2430
 msgid "{0}: group {1} already not referenced in controller!"
 msgstr "{0} : le groupe {1} est déjà non-référencé par le contrôleur !"
 
-#: core/groups.py:2422
+#: core/groups.py:2455
 msgid "Deleted {0}group {1}."
 msgstr "Le groupe {0}{1} a été supprimé."
 
-#: core/groups.py:2423
+#: core/groups.py:2456
 msgid "system "
 msgstr "système "
 
-#: core/groups.py:2502
+#: core/groups.py:2535
 #, python-format
 msgid ""
 "%s: inconsistency detected. Automatic check requested in the background."
@@ -5522,7 +5189,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes. Une vérification automatique a "
 "été lancée en arrière-plan."
 
-#: core/groups.py:2509
+#: core/groups.py:2542
 #, python-format
 msgid ""
 "%s: dangling helper group(s) detected. Automatic removal requested in the "
@@ -5531,7 +5198,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes systèmes. Un nettoyage "
 "automatique a été lancé en arrière-plan."
 
-#: core/groups.py:2555
+#: core/groups.py:2588
 msgid ""
 "{0}: primary group is missing for user(s) {1}. This is harmless, but should "
 "be corrected manually by re-creating groups with fixed GIDs, or changing "
@@ -5543,11 +5210,11 @@ msgstr ""
 "en changeant le GID primaire des-dits utilisateurs vers un GID système "
 "existant. "
 
-#: core/groups.py:2560
+#: core/groups.py:2593
 msgid "{0}(gid={1})"
 msgstr "{0}(gid={1})"
 
-#: core/groups.py:2586
+#: core/groups.py:2619
 #, python-format
 msgid "Skipped non-existing group name or GID %s."
 msgstr "Le nom de groupe ou GID non-existant %s a été ignoré."
@@ -5573,23 +5240,23 @@ msgstr ""
 msgid "You must specify a gecos"
 msgstr "Vous devez spécifier un GECOS"
 
-#: core/users.py:305 core/users.py:1301
+#: core/users.py:305 core/users.py:1329
 msgid "Malformed GECOS field \"{0}\", must match /{1}/i."
 msgstr "Le champ GECOS \"{0}\" est invalide, il ne vérifie pas /{1}/i."
 
-#: core/users.py:313
+#: core/users.py:314
 msgid "Changed user {0} gecos to \"{1}\"."
 msgstr "Le GECOS de l'utilisateur {0} est maintenant \"{1}\"."
 
-#: core/users.py:326
+#: core/users.py:327
 msgid "You must specify a shell"
 msgstr "Vous devez spécifier un interpréteur"
 
-#: core/users.py:338
+#: core/users.py:339
 msgid "Changed user {0} shell to {1}."
 msgstr "Le shell de l'utilisateur {0} est maintenant {1}."
 
-#: core/users.py:372
+#: core/users.py:373
 msgid ""
 "Setting an empty password for user {0}. This is dangerous and totally "
 "insecure!"
@@ -5597,162 +5264,179 @@ msgstr ""
 "L'utilisateur {0} a maintenant un mot de passe vide. C'est dangereux et "
 "totalement non-sécurisé !"
 
-#: core/users.py:396
+#: core/users.py:397
 msgid "Set password for user {0} to {1}."
 msgstr "Le mot de passe de l'utilisateur {0} est maintenant {1}."
 
-#: core/users.py:403
+#: core/users.py:404
 msgid "Changed password for user {0}."
 msgstr "Le mot de passe de l'utilisateur {0} a été changé."
 
-#: core/users.py:483
+#: core/users.py:484
 msgid "Account {0} already locked."
 msgstr "Le compte utilisateur {0} est déjà verrouillé."
 
-#: core/users.py:492
+#: core/users.py:493
 msgid "Locked user account {0}."
 msgstr "Le compte utilisateur {0} a été verrouillé."
 
-#: core/users.py:505
+#: core/users.py:506
 msgid "Unlocked user account {0}."
 msgstr "Le compte utilisateur {0} a été déverrouillé."
 
-#: core/users.py:510
+#: core/users.py:511
 msgid "Account {0} already unlocked."
 msgstr "Le compte utilisateur {0} est déjà déverrouillé."
 
-#: core/users.py:711
+#: core/users.py:712
 msgid "Invalid skel \"{0}\". Valid skels are {1}."
 msgstr "Squelette \"{0}\" invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:833
+#: core/users.py:745
+#, fuzzy
+msgid "Applyed skel {0} for user {1}"
+msgstr "Squelette {0} invalide. Les squelettes valides sont {1}."
+
+#: core/users.py:836
 msgid "Auto-cleaned {0}'s gecos to \"{1}\"."
 msgstr ""
 "Le GECOS de l'utilisateur {0} a été automatiquement nettoyé, avec la "
 "nouvelle valeur \"{1}\"."
 
-#: core/users.py:838
-msgid "Special Executable Restrictor Account"
-msgstr "Compte spécial de restriction des exécutables"
-
-#: core/users.py:839
+#: core/users.py:841
 #, python-format
 msgid "%s Automatic Backup System"
 msgstr "Système de sauvegarde automatique %s"
 
-#: core/users.py:840
+#: core/users.py:842
+msgid "Special Executable Restrictor Account"
+msgstr "Compte spécial de restriction des exécutables"
+
+#: core/users.py:843
+msgid "ISC Domain Name Service daemon"
+msgstr "Service de Noms de Domaines de l'ISC"
+
+#: core/users.py:844
 msgid "Apple Calendar Server Daemon"
 msgstr "Daemon du serveur de calendriers Apple"
 
-#: core/users.py:841
+#: core/users.py:845
 msgid "Generic System Daemon"
 msgstr "Compte daemon générique du Système"
 
-#: core/users.py:842
+#: core/users.py:846
 msgid "DHCP Daemon"
 msgstr "Daemon DHCP"
 
-#: core/users.py:843
+#: core/users.py:847
 msgid "DNSmasq (DHCP & DNS) Daemon"
 msgstr "Daemon DNSmasq (DHCP et DNS)"
 
-#: core/users.py:844
+#: core/users.py:848
 msgid "FTP Daemon / restricted account"
 msgstr "Compte restreint / daemon FTP"
 
-#: core/users.py:845
+#: core/users.py:849
 msgid "Games Specific Account"
 msgstr "Compte spécifique aux jeux systèmes"
 
-#: core/users.py:846
+#: core/users.py:850
 msgid "Hardware Abstraction Layer Daemon"
 msgstr "Daemon de la couche d'abstraction du matériel"
 
-#: core/users.py:847
+#: core/users.py:851
 msgid "Hewlett-Packard Linux Imaging & Printing Daemon"
 msgstr "Daemon du logiciel HP Image et Impression"
 
-#: core/users.py:848
+#: core/users.py:852
 msgid "Internet Relay Chats Daemon"
 msgstr "Daemon IRC (Internet Relay Chats)"
 
-#: core/users.py:849
+#: core/users.py:853
 msgid "Kernel OOPs Tracking Daemon"
 msgstr "Daemon de suivi des plantages du noyau"
 
-#: core/users.py:850
+#: core/users.py:854
+msgid "Canonical's Lanscape Remote Administration account"
+msgstr ""
+
+#: core/users.py:855
 msgid "UUID Library Account"
 msgstr "Compte de bibliothèque UUID"
 
-#: core/users.py:851
+#: core/users.py:856
 msgid "Line Printer Daemon"
 msgstr "Daemon de l'impression"
 
-#: core/users.py:852
+#: core/users.py:857
 msgid "Local E-Mail System Account"
 msgstr "Compte local de gestion du courrier électronique"
 
-#: core/users.py:853
+#: core/users.py:858
 msgid "Unix Manual Pages Generator"
 msgstr "Générateur de pages de manuel"
 
-#: core/users.py:854
+#: core/users.py:859
 msgid "Memory Cache Daemon"
 msgstr "Daemon de cache en mémoire"
 
-#: core/users.py:855 core/users.py:858
+#: core/users.py:860 core/users.py:864
 msgid "System Message Bus (D-BUS)"
 msgstr "Bus des messages système (D-BUS)"
 
-#: core/users.py:856 core/users.py:857
+#: core/users.py:861
+msgid "Video Motion Detection daemon"
+msgstr "Daemon de détection de mouvement vidéo"
+
+#: core/users.py:862 core/users.py:863
 msgid "Very unprivileged System Account"
 msgstr "Compte système vraiment très restreint"
 
-#: core/users.py:859
+#: core/users.py:865
 msgid "Postfix® Mail System"
 msgstr "Système de courrier électronique Postfix"
 
-#: core/users.py:860
+#: core/users.py:866
 msgid "Web (& possibly more) Proxy Server"
 msgstr "Serveur proxy Web (et plus)"
 
-#: core/users.py:861
+#: core/users.py:867
 msgid "John Root, System Administrator (BOFH)"
 msgstr "Jean Racine, administrateur système (BOFH)"
 
-#: core/users.py:862
+#: core/users.py:868
 msgid "Scanner Access Now Easy daemon"
 msgstr "Daemon des scanners et imprimantes multi-fonctions"
 
-#: core/users.py:863
+#: core/users.py:869
 msgid "Secure SHell Daemon"
 msgstr "Daemon des connexions sécurisées (SSH)"
 
-#: core/users.py:864
+#: core/users.py:870
 msgid "Generic Synchronization Account"
 msgstr "Compte de synchronisation générique"
 
-#: core/users.py:865
+#: core/users.py:871
 msgid "Generic System Account"
 msgstr "Compte système générique"
 
-#: core/users.py:866
+#: core/users.py:872
 msgid "System Logger Daemon"
 msgstr "Daemon d'historisation des messages système"
 
-#: core/users.py:867
+#: core/users.py:873
 msgid "Unix to Unix Copy Protocol daemon"
 msgstr "Daemon de copie Unix à Unix"
 
-#: core/users.py:868
+#: core/users.py:874
 msgid "Web Server unprivileged Account"
 msgstr "Compte de serveur web non-privilégié"
 
-#: core/users.py:869
+#: core/users.py:875
 msgid "Network Time Protocol Daemon"
 msgstr "Daemon de synchronisation du temps en réseau"
 
-#: core/users.py:873
+#: core/users.py:879
 msgid ""
 "{0}'s GECOS \"{1}\" is currently meaningless, or we have a far better and "
 "hypish value \"{2}\" ready to enhance it. Would you like to use it?"
@@ -5761,33 +5445,33 @@ msgstr ""
 "nous avons en magasin une valeur bien meilleure et complètement hype pour "
 "l'améliorer. Voulez-vous l'utiliser ?"
 
-#: core/users.py:889
+#: core/users.py:895
 #, python-format
 msgid "Checking system account %s…"
 msgstr "Vérification du compte système %s…"
 
-#: core/users.py:893 core/users.py:933
+#: core/users.py:899 core/users.py:939
 msgid "account {0} already beiing ckecked, aborting."
 msgstr "Le compte utilisateur {0} est déjà en cours de vérification, abandon."
 
-#: core/users.py:929
+#: core/users.py:935
 #, python-format
 msgid "Checking restricted system account %s…"
 msgstr "Vérification du compte système restreint %s…"
 
-#: core/users.py:984
+#: core/users.py:990
 msgid "— no membership —"
 msgstr "— aucune appartenance à des groupes —"
 
-#: core/users.py:1107
+#: core/users.py:1138
 msgid "{0}.reload: Overwritten uid {1}."
 msgstr "{0}.reload : UID {1} écrasé."
 
-#: core/users.py:1118
+#: core/users.py:1149
 msgid "{0}: removing disapeared user {1}."
 msgstr "{0} : suppression de l'utilisateur disparu {1}."
 
-#: core/users.py:1194
+#: core/users.py:1225
 msgid ""
 "Specified directory {0} for system user {1} already exists. If you really "
 "want to use it, please use the --force argument."
@@ -5795,17 +5479,18 @@ msgstr ""
 "Le répertoire {0} spécifié pour le compte système {1} existe déjà. Si vous "
 "voulez vraiment l'utiliser, ajoutez l'argument --force à votre commande."
 
-#: core/users.py:1208
+#: core/users.py:1237
+#, fuzzy
 msgid ""
 "Specified home directory {0} for system user {1} is outside {2} and /var, or "
-"inside {3}/{4} or a temporary directory (/var/tmp, /tmp). This is "
-"unsupported, Aborting."
+"inside {3} or a temporary directory (/var/tmp, /tmp). This is unsupported, "
+"Aborting."
 msgstr ""
 "Le répertoire {0} spécifié pour le compte système {1} est hors de {2} et /"
 "var, ou dans {3}/{4} ou un répertoire temporaire (/var/tmp, /tmp). C'est "
 "très dangereux, et à ce titre, non-supporté. Opération annulée."
 
-#: core/users.py:1220
+#: core/users.py:1248
 msgid ""
 "Specified home directory {0} for system user {1} is already owned by another "
 "user. Please choose another one."
@@ -5813,7 +5498,7 @@ msgstr ""
 "Le répertoire maison {0} choisi pour l'utilisateur système {1} est déjà "
 "attribué à un autre utilisateur. Choisissez-en un autre SVP."
 
-#: core/users.py:1229
+#: core/users.py:1257
 msgid ""
 "Specifying an alternative home directory is not allowed for standard users. "
 "Using standard home path {0} instead."
@@ -5822,7 +5507,7 @@ msgstr ""
 "les comptes utilisateurs standard. Utilisation du chemin normalisé {0} à la "
 "place."
 
-#: core/users.py:1242
+#: core/users.py:1270
 msgid ""
 "You must specify a login, a firstname *and* lastname couple, or a GECOS "
 "(login will be built from them)."
@@ -5831,12 +5516,12 @@ msgstr ""
 "(firstname) *et* un nom (lastname), soit un nom complet (GECOS) ; "
 "l'identifiant final sera fondé dessus."
 
-#: core/users.py:1259
+#: core/users.py:1287
 #, python-format
 msgid "User account %s"
 msgstr "Compte utilisateur %s"
 
-#: core/users.py:1266
+#: core/users.py:1294
 msgid ""
 "You must specify a lastname and a firstname *or* a GECOS. If you specify the "
 "GECOS, do not specify firstname/lastname."
@@ -5844,30 +5529,30 @@ msgstr ""
 "Vous devez spécifier un nom et un prénom *OU* un champ GECOS, mais pas les "
 "deux à la fois."
 
-#: core/users.py:1281
+#: core/users.py:1309
 msgid "Malformed login \"{0}\", must match /{1}/."
 msgstr ""
 "Identifiant \"{0}\" mal-formé, les identifiants doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/users.py:1307
+#: core/users.py:1335
 msgid "Invalid shell \"{0}\". Valid shells are: {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont : {1}."
 
-#: core/users.py:1314
+#: core/users.py:1342
 msgid "Invalid skel \"{0}\". Valid skels are: {1}."
 msgstr "Squelette « {0} » invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:1327
+#: core/users.py:1355
 msgid "UID {0} is already taken by user {1}. Please choose another one."
 msgstr ""
 "L'UID {0} est déjà pris par l'utilisateur {1}. Choisissez-en un autre SVP."
 
-#: core/users.py:1336
+#: core/users.py:1364
 msgid "User account {0} already exists!"
 msgstr "Le compte utilisateur {0} existe déjà !"
 
-#: core/users.py:1339
+#: core/users.py:1367
 msgid ""
 "A user account {0} already exists but has not the same type. Please choose "
 "another login for your user."
@@ -5875,7 +5560,7 @@ msgstr ""
 "Un compte utilisateur {0} existe déjà, mais n'a pas le même type. Choisissez "
 "un autre identifiant pour ce compte utilisateur."
 
-#: core/users.py:1366
+#: core/users.py:1394
 msgid ""
 "A group named {0} exists on the system. This could eventually conflict in "
 "Debian/Ubuntu system tools. Please choose another login, or use the --force "
@@ -5886,11 +5571,11 @@ msgstr ""
 "ou utilisez l'argument --force si vous voulez vraiment l'ajouter sur le "
 "système."
 
-#: core/users.py:1384
+#: core/users.py:1412
 msgid "Autogenerated UID for user {0}: {1}."
 msgstr "UID auto-généré pour l'utilisateur {0}: {1}."
 
-#: core/users.py:1392
+#: core/users.py:1420
 msgid ""
 "UID out of range for the kind of user account you specified. System UIDs "
 "must be between {0} and {1}, standard UIDs must be between {2} and {3}."
@@ -5899,31 +5584,31 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les UIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/users.py:1464
+#: core/users.py:1492
 msgid "Home directory {0} already exists."
 msgstr "Le répertoire maison {0} existe déjà."
 
-#: core/users.py:1468
+#: core/users.py:1496
 msgid "Created home directory {0}."
 msgstr "Le répertoire maison {0} a été créé."
 
-#: core/users.py:1526
+#: core/users.py:1554
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 
-#: core/users.py:1534
+#: core/users.py:1562
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1535 core/classes.py:896
+#: core/users.py:1563 core/classes.py:896
 msgid "system"
 msgstr "système"
 
-#: core/users.py:1535
+#: core/users.py:1563
 msgid "standard"
 msgstr "standard"
 
-#: core/users.py:1563
+#: core/users.py:1591
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
@@ -5932,33 +5617,33 @@ msgstr ""
 "Impossible de supprimer le compte système protégé %s sans l'argument --"
 "force, c'est trop risqué."
 
-#: core/users.py:1594
+#: core/users.py:1622
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr "{0} : compte {1} déjà non-référencé par le contrôleur !"
 
-#: core/users.py:1616
+#: core/users.py:1644
 msgid "Deleted user account {0}."
 msgstr "Compte utilisateur {0} supprimé."
 
-#: core/users.py:1721
+#: core/users.py:1762
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr "Certaines vérifications ont échoué, ou n'ont pas été corrigées."
 
-#: core/users.py:1742
+#: core/users.py:1783
 #, python-format
 msgid "Skipped non-existing login or UID %s."
 msgstr "L'identifiant ou l'UID non-existant %s a été ignoré."
 
-#: core/users.py:1757
+#: core/users.py:1798
 msgid "You must specify an UID or a login to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/users.py:1765
+#: core/users.py:1806
 #, python-format
 msgid "User %s does not exist"
 msgstr "L'utilisateur %s n'existe pas."
 
-#: core/users.py:1772
+#: core/users.py:1813
 #, python-format
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
@@ -6131,104 +5816,104 @@ msgstr ""
 "{0} : problème pendant la vérification de {1}, opération annulée (contenu de "
 "la pile et dir_info ci-dessous)"
 
-#: core/machines.py:602
+#: core/machines.py:603
 msgid "machine"
 msgstr "machine"
 
-#: core/machines.py:604
+#: core/machines.py:605
 msgid "MID"
 msgstr "MID"
 
-#: core/machines.py:692
+#: core/machines.py:693
 #, python-format
 msgid "Overwritten mid %s"
 msgstr "MID %s écrasé"
 
-#: core/machines.py:751
+#: core/machines.py:752
 msgid "{0}: {1} initial network discovery."
 msgstr "{0} : auto-scan initial du réseau {1}."
 
-#: core/machines.py:752
+#: core/machines.py:753
 msgid "started"
 msgstr "démarré"
 
-#: core/machines.py:773
+#: core/machines.py:774
 msgid ""
 "{0}: network auto-discovery disabled by configuration rule {1}, not going "
 "further."
 msgstr ""
 "{0} : auto-scan du réseau désactivé par la directive de configuration {1}."
 
-#: core/machines.py:963
+#: core/machines.py:964
 msgid " (this machine)"
 msgstr "(cette machine)"
 
-#: core/machines.py:1061
+#: core/machines.py:1062
 msgid "You must pass a hostname to verify!"
 msgstr "Vous devez passer un nom de machine à vérifier !"
 
-#: core/machines.py:1069
+#: core/machines.py:1070
 msgid "Cannot build a valid hostname (got {0}, which does not verify {1})."
 msgstr ""
 "Impossible de construire un nom de machine valide (obtenu {0}, qui ne "
 "vérifie pas {1})"
 
-#: core/machines.py:1078 core/machines.py:1312
+#: core/machines.py:1079 core/machines.py:1314
 msgid "Machines"
 msgstr "Machines"
 
-#: core/machines.py:1080
+#: core/machines.py:1081
 msgid ""
 "Manage network clients (computers, printers, etc) and energy preferences"
 msgstr ""
 "Gérer les clients en réseau (ordinateurs, imprimantes, etc) et les "
 "préférences d'économie d'énergie"
 
-#: core/machines.py:1094
+#: core/machines.py:1095
 msgid "Shutdown machines"
 msgstr "Éteindre des machines"
 
-#: core/machines.py:1096
+#: core/machines.py:1097
 msgid "Shutdown machines on the network."
 msgstr "Éteindre des machines sur le réseau."
 
-#: core/machines.py:1102
+#: core/machines.py:1103
 msgid "Energy policies"
 msgstr "Politiques énergétiques"
 
-#: core/machines.py:1104
+#: core/machines.py:1105
 msgid "Manage network-wide Energy &amp; power saving policies."
 msgstr "Gérer les directives d'économie d'énergie globales."
 
-#: core/machines.py:1116
+#: core/machines.py:1118
 #, python-format
 msgid "Shutdown machine %s"
 msgstr "Éteindre la machine %s"
 
-#: core/machines.py:1120
+#: core/machines.py:1122
 #, python-format
 msgid "Are you sure you want to remotely shutdown machine %s?"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir éteindre la machine <strong>%s</strong>&#160;?"
 
-#: core/machines.py:1124
+#: core/machines.py:1126
 msgid "Warn connected user(s) before shuting system down."
 msgstr ""
 "Avertir l(es) utilisateur(s) connecté(e)(s) que leur machine va s'éteindre."
 
-#: core/machines.py:1127
+#: core/machines.py:1129
 msgid "Please confirm operation"
 msgstr "SVP, confirmez l'opération"
 
-#: core/machines.py:1129 core/machines.py:1184
+#: core/machines.py:1131 core/machines.py:1186
 msgid "Shutdown"
 msgstr "Éteindre"
 
-#: core/machines.py:1154
+#: core/machines.py:1156
 msgid "Massive shutdown"
 msgstr "Extinctions en masse"
 
-#: core/machines.py:1158
+#: core/machines.py:1160
 msgid ""
 "You can shutdown all currently running and/or idle machines. This is a quite "
 "dangerous operation, because users will be disconnected, and there is a "
@@ -6244,19 +5929,19 @@ msgstr ""
 "s'éteindre).<br /><br />Les machines seront éteintes <strong>UNE minute</"
 "strong> après que vous en ayez donné l'ordre."
 
-#: core/machines.py:1168
+#: core/machines.py:1170
 msgid "Shutdown <strong>active</strong> machines"
 msgstr "Éteindre les machines actuellement <strong>utilisées</strong>"
 
-#: core/machines.py:1170
+#: core/machines.py:1172
 msgid "Shutdown <strong>idle</strong> machines"
 msgstr "Éteindre les machines actuellement <strong>inutilisées</strong>"
 
-#: core/machines.py:1172
+#: core/machines.py:1174
 msgid "Shutdown <strong>asleep</strong> machines"
 msgstr "Éteindre toutes les machines actuellement <strong>en veille</strong>"
 
-#: core/machines.py:1174
+#: core/machines.py:1176
 msgid ""
 "Shutdown the <strong>administrator</strong> machine too<br/>(the one "
 "currently connected to the WMI)."
@@ -6264,58 +5949,91 @@ msgstr ""
 "Éteindre la machine de l'<strong>administrateur</strong> aussi<br /> (celle "
 "avec laquelle vous êtes actuellement connecté(e) à l'interface de gestion)."
 
-#: core/machines.py:1178
+#: core/machines.py:1180
 msgid "Warn connected users before shuting systems down."
 msgstr "Avertir les utilisateurs connectés que leur machine va s'éteindre."
 
-#: core/machines.py:1182
+#: core/machines.py:1184
 msgid "Choose machines to shutdown"
 msgstr "Choisissez les machines à éteindre"
 
-#: core/machines.py:1219
+#: core/machines.py:1221
 msgid "Energy saving policies"
 msgstr "Politiques d'économie d'énergie"
 
-#: core/machines.py:1231 core/machines.py:1274
+#: core/machines.py:1224 core/machines.py:1267
+msgid ""
+"CSV file-format is used by spreadsheets and most systems which offer import "
+"functionnalities. XML file-format is a modern exchange format, used in soma "
+"applications which respect interoperability constraints.<br /><br />When you "
+"submit this form, your web browser will automatically offer you to download "
+"and save the export-file (it won't be displayed). When you're done, please "
+"click the “back” button of your browser."
+msgstr ""
+"Le format CSV est utilisé par les tableurs et la plupart des systèmes qui "
+"offrent des possibilités d'import. Le format XML est un format d'échanges de "
+"données moderne utilisé par des applications qui respectent certaines normes "
+"ou recommandations d'interopérabilité. <br /><br />Lorsque vous cliquerez "
+"sur \"Exporter\", votre navigateur vous proposera automatiquement "
+"d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme "
+"une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
+
+#: core/machines.py:1233 core/machines.py:1276
 #, python-format
 msgid "Which file format do you want the machines list to be exported to? %s"
 msgstr ""
 "Dans quel format de sortie voulez-vous exporter la liste des machines&#160;? "
 "%s"
 
-#: core/machines.py:1261
+#: core/machines.py:1236 core/machines.py:1279
+msgid "Please choose file format for export list"
+msgstr "Choisissez le format de fichier d'export"
+
+#: core/machines.py:1238 core/machines.py:1281
+msgid "Export >>"
+msgstr "Exporter >>"
+
+#: core/machines.py:1263
 msgid "Export machines list"
 msgstr "Exporter la liste des machines"
 
-#: core/machines.py:1308 core/machines.py:1347
+#: core/machines.py:1310 core/machines.py:1349
 msgid "managed"
 msgstr "accrochées"
 
-#: core/machines.py:1309 core/machines.py:1349
+#: core/machines.py:1311 core/machines.py:1351
 msgid "floating"
 msgstr "flottantes"
 
-#: core/machines.py:1322
+#: core/machines.py:1324
 msgid "Host name"
 msgstr "Nom de machine"
 
-#: core/machines.py:1323
+#: core/machines.py:1325
 msgid "IP address"
 msgstr "Adresse IP"
 
-#: core/machines.py:1324
+#: core/machines.py:1326
 msgid "Hardware address"
 msgstr "Adresse Ethernet"
 
-#: core/machines.py:1325
+#: core/machines.py:1327
 msgid "Expiry"
 msgstr "Délai d'expiration"
 
-#: core/machines.py:1326
+#: core/machines.py:1328
 msgid "Managed"
 msgstr "Accrochée"
 
-#: core/machines.py:1353
+#: core/machines.py:1336
+msgid "Click to sort in reverse order."
+msgstr "Cliquer pour classer dans l'ordre inverse."
+
+#: core/machines.py:1342
+msgid "Click to sort on this column."
+msgstr "Cliquer pour classer sur cette colonne."
+
+#: core/machines.py:1355
 #, python-format
 msgid ""
 "Host %s is in an unknown state. Nothing is possible. Please wait for a "
@@ -6324,7 +6042,7 @@ msgstr ""
 "La machine %s est dans un état inconnu, aucune action à distance n'est "
 "possible. Merci d'attendre sa reconnexion."
 
-#: core/machines.py:1356
+#: core/machines.py:1358
 #, python-format
 msgid ""
 "Host %s is offline, and cannot be powered on from here,Only from the machine "
@@ -6332,7 +6050,7 @@ msgid ""
 msgstr ""
 "La machine %s est éteinte. Elle ne peut pas être rallumée depuis l'interface."
 
-#: core/machines.py:1359
+#: core/machines.py:1361
 #, python-format
 msgid ""
 "Host %s is going to sleep, it will be unavailable in a small period of time."
@@ -6340,12 +6058,12 @@ msgstr ""
 "La machine %s est en train passer en veille, elle sera complètement "
 "indisponible d'ici peu."
 
-#: core/machines.py:1361 core/machines.py:1367 core/machines.py:1369
+#: core/machines.py:1363 core/machines.py:1369 core/machines.py:1371
 #, python-format
 msgid "Shutdown the machine %s"
 msgstr "Éteindre la machine %s"
 
-#: core/machines.py:1363
+#: core/machines.py:1365
 #, python-format
 msgid ""
 "Host %s is shutting down, it will be unavailable in a small period of time."
@@ -6353,64 +6071,64 @@ msgstr ""
 "La machine %s est en train de s'éteindre, elle sera complètement "
 "indisponible d'ici peu."
 
-#: core/machines.py:1365
+#: core/machines.py:1367
 #, python-format
 msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
 msgstr ""
 "La machine %s est allumé, sans contrôle à distance possible (Licorn© n'est "
 "pas installé dessus, ou pas lancé, ou injoignable)."
 
-#: core/machines.py:1422
+#: core/machines.py:1424
 msgid "This machine has multiple network interfaces."
 msgstr ""
 "Cette machine a plusieurs interfaces réseaux et ses différentes adresses IP "
 "ont été regroupées."
 
-#: core/machines.py:1426
+#: core/machines.py:1428
 msgid "This machine is a virtual computer."
 msgstr "Cette machine est un hôte virtuel de type VMWare®."
 
-#: core/machines.py:1430
+#: core/machines.py:1432
 msgid "This machine runs an undetermined version of Linux®."
 msgstr "Cette machine tourne avec une version indéterminée de Linux®."
 
-#: core/machines.py:1435
+#: core/machines.py:1437
 msgid "This machine is a META IT/Licorn® server."
 msgstr "Cette machine est un serveur META IT/Licorn® original."
 
-#: core/machines.py:1439
+#: core/machines.py:1441
 msgid "This machine has Licorn® installed."
 msgstr "Cette machine est pourvue de Licorn®."
 
-#: core/machines.py:1443
+#: core/machines.py:1445
 msgid "This machine is an ALT® client."
 msgstr "Cette machine est un client ALT® original."
 
-#: core/machines.py:1447
+#: core/machines.py:1449
 msgid "This machine Debian installed."
 msgstr "Cette machine est installée sous Debian GNU/Linux."
 
-#: core/machines.py:1451
+#: core/machines.py:1453
 msgid "This machine is Ubuntu installed."
 msgstr "Cette machine est installée sous Ubuntu."
 
-#: core/machines.py:1455
+#: core/machines.py:1457
 msgid "This machine is manufactured by Apple® Computer Inc."
 msgstr "Cette machine est un produit Apple® Computer Inc."
 
-#: core/machines.py:1459
+#: core/machines.py:1461
 msgid "This machine is a Freebox appliance."
 msgstr "Cette machine est une Freebox."
 
-#: core/machines.py:1463
+#: core/machines.py:1465
 msgid "This machine is a network printer."
 msgstr "Cette machine est une imprimante réseau."
 
-#: core/machines.py:1467
+#: core/machines.py:1469
 msgid "This machine is a network scanner."
 msgstr "Cette machine est un scanner en réseau."
 
-#: core/machines.py:1485
+#: core/machines.py:1487
 msgid ""
 "Unmanage machine (remove it from configuration, in order to allow it to be "
 "managed by another server."
@@ -6419,7 +6137,7 @@ msgstr ""
 "configuration sur le serveur actuel, et la rendre disponible pour être "
 "accrochée à un autre serveur)."
 
-#: core/machines.py:1496
+#: core/machines.py:1498
 msgid ""
 "Manage machine (fix its IP address and configure various aspects of the "
 "client)."
@@ -6427,18 +6145,389 @@ msgstr ""
 "Accrocher la machine (fixer son adresse IP et configurer divers aspects de "
 "la machine, en stockant cette configuration sur le serveur)."
 
-#: core/machines.py:1518
+#: core/machines.py:1520
 msgid "<unknown>"
 msgstr "<inconnu>"
 
-#: core/machines.py:1543
+#: core/machines.py:1545
 #, python-format
 msgid "number of <strong>%s</strong> machines:"
 msgstr "nombre de machines <strong>%s</strong>&#160;:"
 
-#: core/machines.py:1556
+#: core/machines.py:1558
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
+
+#, fuzzy
+#~ msgid "Applications"
+#~ msgstr "Invitations"
+
+#~ msgid "Programs"
+#~ msgstr "Applications"
+
+#~ msgid "Memory occupation"
+#~ msgstr "Répartition de l'occupation mémoire"
+
+#~ msgid "Swap occupation"
+#~ msgstr "Occupation du fichier d'échange"
+
+#~ msgid "“<strong>{hostname}</strong>” "
+#~ msgstr "« <strong>{hostname}</strong> » "
+
+#~ msgid ""
+#~ "{hostname}{up_and_running} since <strong>{uptime}</strong>.<br /><br /"
+#~ "><strong>{connected} user {open_session_words}</strong>.<br /><br />1, 5, "
+#~ "and 15 last minutes load average: <span class=\"small_indicator "
+#~ "{load_back1}\">{load1}</span> <span class=\"small_indicator "
+#~ "{load_back5}\">{load5}</span> <span class=\"small_indicator "
+#~ "{load_back15}\">{load15}</span>"
+#~ msgstr ""
+#~ "{hostname}{up_and_running} depuis <strong>{uptime}</strong>.<br /><br /"
+#~ "><strong>{connected} {open_session_words}</strong>.<br /><br />Charge "
+#~ "système sur les 1, 5, et 15 dernières minutes&nbsp;: <span class="
+#~ "\"small_indicator {load_back1}\">{load1}</span> <span class="
+#~ "\"small_indicator {load_back5}\">{load5}</span> <span class="
+#~ "\"small_indicator {load_back15}\">{load15}</span>"
+
+#~ msgid "up and running"
+#~ msgstr "en marche"
+
+#~ msgid "Up and running"
+#~ msgstr "En marche"
+
+#~ msgid "Add"
+#~ msgstr "Ajouter"
+
+#~ msgid ""
+#~ "Some parts of the system cannot be modified, for your own safety and the "
+#~ "world to rest in peace."
+#~ msgstr ""
+#~ "Certaines parties du système ne peuvent pas être modifiées, pour votre "
+#~ "sécurité et pour que le monde reste en paix."
+
+#~ msgid "Add a new group on the system."
+#~ msgstr "Ajouter un nouveau groupe sur le système."
+
+#~ msgid "Enable"
+#~ msgstr "Activer"
+
+#~ msgid ""
+#~ "Are you sure you want to disable permissiveness on group <strong>%s</"
+#~ "strong>?"
+#~ msgstr ""
+#~ "Êtes-vous sûr(e) de vouloir désactiver la permissivité du groupe <strong>"
+#~ "%s</strong>&#160;?"
+
+#~ msgid "Disable"
+#~ msgstr "Désactiver"
+
+#~ msgid "Remove group %s"
+#~ msgstr "Supprimer le groupe %s"
+
+#~ msgid "Are you sure you want to delete group <strong>%s</strong>?"
+#~ msgstr ""
+#~ "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>%s</strong>&#160;?"
+
+#~ msgid "Delete"
+#~ msgstr "Supprimer"
+
+#~ msgid "Definitely remove group shared data."
+#~ msgstr "Supprimer définitivement les données partagées."
+
+#~ msgid "T"
+#~ msgstr "T"
+
+#~ msgid "Manage members"
+#~ msgstr "Gérer les membres"
+
+#~ msgid "Users not yet members"
+#~ msgstr "Utilisateurs non-membres"
+
+#~ msgid "Current members"
+#~ msgstr "Membres actuels"
+
+#~ msgid "Manage responsibles"
+#~ msgstr "Gérer les responsables"
+
+#~ msgid "Users not yet responsibles"
+#~ msgstr "Utilisateurs pas encore responsables"
+
+#~ msgid "Current responsibles"
+#~ msgstr "Responsables actuels"
+
+#~ msgid "Manage guests"
+#~ msgstr "Gérer les invités"
+
+#~ msgid "Users not yet guests"
+#~ msgstr "Utilisateurs pas encore invités"
+
+#~ msgid "Current guests"
+#~ msgstr "Invités actuels"
+
+#~ msgid "Group responsibles"
+#~ msgstr "Responsables du groupe"
+
+#~ msgid "Group guests"
+#~ msgstr "Invités du groupe"
+
+#~ msgid "Group members"
+#~ msgstr "Membres du groupe"
+
+#~ msgid "Record"
+#~ msgstr "Enregistrer"
+
+#~ msgid "Modifying group %s"
+#~ msgstr "Modification du groupe %s"
+
+#~ msgid ""
+#~ "The system won't let you remove your own account from the {wmi_group} or "
+#~ "{admin_group} groups, sorry."
+#~ msgstr ""
+#~ "Le système ne vous laissera pas supprimer votre propre compte des groupes "
+#~ "{wmi_group} ou {admin_group}, désolé."
+
+#~ msgid "Perm."
+#~ msgstr "Perm."
+
+#~ msgid "%s order"
+#~ msgstr "ordre %s"
+
+#~ msgid ""
+#~ "View the group details, its parameters,\n"
+#~ "\t\t\t\t\tmembers, responsibles and guests.\n"
+#~ "\t\t\t\t\tFrom there you can print all group-related informations."
+#~ msgstr ""
+#~ "Visualiser le groupe, ses paramètres,ses membres, responsables et "
+#~ "invités, en vue de les imprimer."
+
+#~ msgid ""
+#~ "Shared group directory is currently <strong>permissive</strong>. Click to "
+#~ "deactivate permissiveness."
+#~ msgstr ""
+#~ "Le répertoire de groupe est actuellement <strong>permissif</strong>. "
+#~ "Cliquez pour désactiver la permissivité."
+
+#~ msgid "Group is currently permissive."
+#~ msgstr "Le groupe est actuellement permissif."
+
+#~ msgid ""
+#~ "Shared group directory is currently\n"
+#~ "\t\t\t\t\t<strong>NOT</strong> permissive. Click ti activate\n"
+#~ "\t\t\t\t\tpermissiveness."
+#~ msgstr ""
+#~ "Le répertoire de groupe est actuellement <strong>NON</strong> permissif. "
+#~ "Cliquez pour activer la permissivité."
+
+#~ msgid "Group is NOT permissive."
+#~ msgstr "Le groupe N'EST PAS permissif actuellement."
+
+#~ msgid "See %s of group %s."
+#~ msgstr "Voir les %s du groupe %s."
+
+#~ msgid "Definitely remove this group from system."
+#~ msgstr "Supprimer définitivement le compte du système."
+
+#~ msgid "number of <strong>%s</strong>:"
+#~ msgstr "nombre de <strong>%s</strong>&#160;:"
+
+#~ msgid "Total number of groups:"
+#~ msgstr "Nombre total de groupes&#160;:"
+
+#~ msgid "Add a new user account on the system."
+#~ msgstr "Ajouter un nouveau compte utilisateur sur le système."
+
+#~ msgid "Add an account"
+#~ msgstr "Ajouter un compte"
+
+#~ msgid "Import new user accounts from a CSV-delimited file."
+#~ msgstr "Importer de nouveaux comptes utilisateurs depuis un fichier CSV."
+
+#~ msgid "Import accounts"
+#~ msgstr "Importer des comptes"
+
+#~ msgid "Export current user accounts list to a CSV or XML file."
+#~ msgstr ""
+#~ "Exporter les comptes utilisateurs actuels vers un fichier CSV ou XML."
+
+#~ msgid "Export accounts"
+#~ msgstr "Exporter les comptes"
+
+#~ msgid "Export user accounts list"
+#~ msgstr "Exporter les comptes utilisateurs"
+
+#~ msgid "Which file format do you want accounts to be exported to? %s"
+#~ msgstr ""
+#~ "Dans quel format de sortie voulez-vous exporter les comptes&#160;? %s"
+
+#~ msgid "Remove user account %s"
+#~ msgstr "Supprimer le compte %s"
+
+#~ msgid ""
+#~ "Did you <em>really</em> think the system could have allowed you to delete "
+#~ "your own account or an admin account? I don't."
+#~ msgstr ""
+#~ "Pensiez vous <em>vraiment</em> que le système allait vous autoriser à "
+#~ "supprimer votre propre compte, ou le compte d'un administrateur&nbsp;? Je "
+#~ "ne pense pas."
+
+#~ msgid "Remove >>"
+#~ msgstr "Supprimer >>"
+
+#~ msgid "Definitely remove account data (no archiving)."
+#~ msgstr ""
+#~ "Supprimer définitivement toutes les données liées à ce compte (pas "
+#~ "d'archivage)."
+
+#~ msgid "Unlock account %s"
+#~ msgstr "Déverrouiller le compte %s"
+
+#~ msgid "Failed to unlock account"
+#~ msgstr "Impossible de déverrouiller le compte"
+
+#~ msgid "alter system account."
+#~ msgstr "modification d'un compte système"
+
+#~ msgid "insufficient permission to perform operation."
+#~ msgstr "permissions insuffisantes pour accomplir l'opération."
+
+#~ msgid "Lock account %s"
+#~ msgstr "Verrouiller le compte %s"
+
+#~ msgid ""
+#~ "I don't think you really want to lock you own account or any admin "
+#~ "account, pal. And I won't let you do it."
+#~ msgstr ""
+#~ "Je ne pense pas que vous vouliez vraiment verrouiller votre propre "
+#~ "compte, ni un compte administrateur. En tout cas, je ne vous laisserai "
+#~ "pas faire."
+
+#~ msgid "Are you sure you want to lock account <strong>%s</strong>?"
+#~ msgstr ""
+#~ "Êtes-vous sûr(e) de vouloir verrouiler le compte <strong>%s</"
+#~ "strong>&#160;!"
+
+#~ msgid "Lock >>"
+#~ msgstr "Verrouiller >>"
+
+#~ msgid "L"
+#~ msgstr "V"
+
+#~ msgid "Reapply skel to user account %s"
+#~ msgstr "Reappliquer un squelette au compte %s"
+
+#~ msgid ""
+#~ "Are you sure you want to apply this skel to account <strong>%s</strong>?"
+#~ msgstr ""
+#~ "Êtes-vous sûr de vouloir appliquer ce squelette au compte <strong>%s</"
+#~ "strong>&#160;!"
+
+#~ msgid "Apply"
+#~ msgstr "Appliquer"
+
+#~ msgid "New user account"
+#~ msgstr "Nouveau compte utilisateur"
+
+#~ msgid "New user account %s"
+#~ msgstr "Nouveau compte %s"
+
+#~ msgid "Passwords do not match!%s"
+#~ msgstr "Les mots de passe ne correspondent pas&#160;!%s"
+
+#~ msgid "Password must be at least %d characters long!%s"
+#~ msgstr "Le mot de passe doit comporter au moins %d caractères&#160;!%s"
+
+#~ msgid "GECOS and login can't be both empty!%s"
+#~ msgstr ""
+#~ "Les champs GECOS et login ne doivent pas être vides tous les deux@nbsp;!%s"
+
+#~ msgid "New password"
+#~ msgstr "Nouveau mot de passe"
+
+#~ msgid "Modification of account %s"
+#~ msgstr "Modification du compte %s"
+
+#~ msgid ""
+#~ "You cannot remove yourself from the {wmi_group} group, this would be like "
+#~ "shooting yourself in the foot a with Perl-crafted bullet from a C# "
+#~ "compiled handgun: non-sense (this is a geek private-joke). I won't allow "
+#~ "you to do that."
+#~ msgstr ""
+#~ "Vous ne pouvez pas supprimer votre compte du groupe {wmi_group}, ça "
+#~ "serait à peu près comme vous tirer dans le pied un balle écrite en Perl "
+#~ "avec une pétoire compilée en C#: un non-sens (ceci est une blague de "
+#~ "geek). Je ne vous laisserai pas faire ça."
+
+#~ msgid "The password --%s-- must be at least %d characters long!%s"
+#~ msgstr ""
+#~ "Le mot de passe --%s-- doit comporter au moins %d caractères&#160;!%s"
+
+#~ msgid "Profile"
+#~ msgstr "Profil"
+
+#~ msgid "Locked"
+#~ msgstr "Verr."
+
+#~ msgid ""
+#~ "<em>Click to edit current user account parameters:</em>\n"
+#~ "\t\t\t\t\t<br />\n"
+#~ "\t\t\t\t\tUID: <strong>%d</strong><br />\n"
+#~ "\t\t\t\t\tGID: %d (primary group <strong>%s</strong>)<br /><br />\n"
+#~ "\t\t\t\t\tGroups:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\t\tPrivileges:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\t\tResponsabilities:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\t\t"
+#~ msgstr ""
+#~ "<em>Cliquer pour éditer les paramètres actuels du compte&#160;:</em><br /"
+#~ ">\n"
+#~ "\t\t\t\tUID: <strong>%d</strong><br />\n"
+#~ "\t\t\t\tGID: %d (groupe primaire <strong>%s</strong>)<br /><br />\n"
+#~ "\t\t\t\tGroupes:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\tPrivilèges:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\tResponsabilités:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\tInvitations:&#160;<strong>%s</strong><br /><br />\n"
+#~ "\t\t\t\t"
+
+#~ msgid ""
+#~ "View the user account details, its parameters,\n"
+#~ "\t\t\t\t\tmemberships, responsibilities and invitations.\n"
+#~ "\t\t\t\t\tFrom there you can print all user-related informations."
+#~ msgstr ""
+#~ "Visualiser le compte utilisateur, ses paramètres, ses appartenances aux "
+#~ "groupes, ses responsabitilités et invitations, en vue de les imprimer."
+
+#~ msgid "Unlock password (re-grant access to machines)."
+#~ msgstr ""
+#~ "Déverrouiller le mot de passe (redonne accès aux machines du réseau à "
+#~ "l'utilisateur)."
+
+#~ msgid "Remove account."
+#~ msgstr "Supprimer le compte."
+
+#~ msgid "Lock password (revoke access to machines)."
+#~ msgstr ""
+#~ "Verrouiller le mot de passe (supprime l'accès aux machines du réseau)."
+
+#~ msgid "Lock account."
+#~ msgstr "Verrouiller le compte."
+
+#~ msgid ""
+#~ "Reapply origin skel data in the personnal directory of user. This is "
+#~ "usefull when user has lost icons, or modified too much his/her desktop "
+#~ "(menus, panels and so on).\n"
+#~ "\t\t\t\t\tThis will get all his/her desktop back."
+#~ msgstr ""
+#~ "Réappliquer les données d'origine du skelette dans le répertoire "
+#~ "personnel de l'utilisateur. Ceci est utilisé lorsque l'utilisateur a "
+#~ "perdu ou trop modifié le contenu de son bureau (icônes, menus, panneaux "
+#~ "et barres d'outils) et permet de lui remettre le bureau d'«&#160;"
+#~ "usine&#160;»."
+
+#~ msgid "Definitely remove account from the system."
+#~ msgstr "Supprime définitivement le compte du système."
+
+#~ msgid "<strong>Total number of accounts:</strong>"
+#~ msgstr "<strong>Nombre total de comptes&nbsp;:</strong>"
 
 #~ msgid "Checking group {0}…"
 #~ msgstr "Vérification du groupe {0}…"
@@ -6512,25 +6601,10 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 #~ msgid "Invalid skel {0}. Valid skels are {1}."
 #~ msgstr "Squelette {0} invalide. Les squelettes valides sont {1}."
 
-#~ msgid "user accounts"
-#~ msgstr "comptes utilisateurs"
-
-#~ msgid "Activate"
-#~ msgstr "Activer"
-
 #~ msgid ""
 #~ "Failed to activate permissivenes on group\n"
 #~ "\t\t\t<strong>%s</strong>!"
 #~ msgstr "Impossible de rendre le groupe <strong>%s</strong> permissif&#160;!"
-
-#~ msgid ""
-#~ "Are you sure you want to make group <strong>%s</strong> not permissive?"
-#~ msgstr ""
-#~ "Êtes-vous sûr(e) de vouloir rendre le groupe <strong>%s</strong> NON "
-#~ "permissif&#160;?"
-
-#~ msgid "Deactivate"
-#~ msgstr "Désactiver"
 
 #~ msgid ""
 #~ "Failed to remove permissiveness from group\n"
@@ -6541,20 +6615,6 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
 #~ msgid "Failed to remove group <strong>%s</strong>!"
 #~ msgstr "Impossible de supprimer le groupe <strong>%s</strong>&#160;!"
-
-#~ msgid ""
-#~ "This will reset the desktops, icons and menus\n"
-#~ "\t\t\tof all members of the group, according to the content of the\n"
-#~ "\t\t\tskel you choose. This will NOT alter any of the user personnal\n"
-#~ "\t\t\tdata, nor the group shared data."
-#~ msgstr ""
-#~ "Cela remettra le bureau de tous les membres du groupe à zéro, y compris "
-#~ "les icônes et les menus.\n"
-#~ "\t\t\tCeci n'altèrera pas les données personnelles des utilisateurs, ni "
-#~ "les données partagées du groupe.\n"
-#~ "\t\t\t<strong>Il est nécessaire que l'utilisateur soit déconnecté du "
-#~ "système pour que l'opération\n"
-#~ "\t\t\tréussisse.</strong>"
 
 #~ msgid ""
 #~ "Which skel do you wish to reapply to members of\n"
@@ -6639,10 +6699,6 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 #~ msgid "Invalid skel {0}. Valid skels are: %s."
 #~ msgstr "Squelette {0} invalide. Les squelettes valides sont : {1}."
 
-#, fuzzy
-#~ msgid "Applyed skel {0} to user {1}."
-#~ msgstr "Squelette {0} invalide. Les squelettes valides sont {1}."
-
 #~ msgid "Removed dangling reference to non-existing user {0} in group {1}."
 #~ msgstr ""
 #~ "La référence ballante à l'utilisateur manquant {0} a été supprimée du "
@@ -6696,12 +6752,6 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 #~ msgstr ""
 #~ "Le propriétaire ou groupe de {path} a été changé de {current_user}:"
 #~ "{current_group} à {wanted_user}:{wanted_group}."
-
-#~ msgid "True"
-#~ msgstr "activée"
-
-#~ msgid "False"
-#~ msgstr "désactivée"
 
 #~ msgid "Group {0} is already {1}permissive."
 #~ msgstr "Le groupe {0} est déjà {1}permissif."
@@ -6960,10 +7010,6 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 
 #~ msgid "V"
 #~ msgstr "V"
-
-#, fuzzy
-#~ msgid "<strong>Shell</strong>br />(Unix command line interpreter)"
-#~ msgstr "<strong>Shell</strong><br />(interpréteur de commandes Unix)"
 
 #, fuzzy
 #~ msgid "(%d char. min.)"

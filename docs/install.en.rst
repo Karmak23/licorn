@@ -84,6 +84,8 @@ From sources
 		/usr/share/licorn/schemas
 	sudo ln -sf "${LCN_DEV_DIR}/locale/fr.mo" \
 		/usr/share/locale/fr/LC_MESSAGES/licorn.mo
+	sudo ln -sf "${LCN_DEV_DIR}/locale/fr.js.mo" \
+		/usr/share/locale/fr/LC_MESSAGES/licornjs.mo
 
 #. Some version dependant links:
 
