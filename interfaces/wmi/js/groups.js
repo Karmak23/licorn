@@ -520,21 +520,20 @@ function make_users_interaction() {
 function refresh_item_row(json_input) {
 	if (DEBUG || DEBUG_GROUP) console.log("GROUP.refresh_item_row "+json_input.name);
 
-
 	// TODO : we need to be sure that the edit view disapear when we change the current list
 	_LIST = _PAGE.current_list;
 
 	group_div = $("#name_"+json_input.name);
 	group = json_input;
 
+	/*
 	_group = _LIST.get_item(group.name);
-	//console.log(_group.name);
-	//console.log(group_div);
+
 	_group.permissive = group.permissive;
 	_group.description = group.description;
 	_group.groupSkel = group.groupSkel;
 	_group.is_priv = group.is_priv;
-
+	*/
 
 	if (group.permissive == "True") {
 		perm_title = "Make group "+group.name+" NOT permissive.";
@@ -551,19 +550,15 @@ function refresh_item_row(json_input) {
 
 	group_perm_html = "<img src='"+perm_img+"' class='"+perm_class+"' alt='"+perm_alt+"' title='"+perm_title+"'/>";
 
-
-
-	group_desc_html = group.description;
+	group_desc_html = group.description == '' ? '<span class="no_data">(' + _("no description") + ')</span>' : group.description;
 	group_is_priv_html = group.description;
 	group_skel_html = group.groupSkel;
 
 	group_div.find('.'+_LIST.name+'_list_permissive').html(group_perm_html);
 	group_div.find('.'+_LIST.name+'_list_desc').html(group_desc_html);
 	group_div.find('.'+_LIST.name+'_list_skel').html(group_skel_html);
-	group_div.find('.'+_LIST.name+'_list_skel').html(group_skel_html);
+	//group_div.find('.'+_LIST.name+'_list_skel').html(group_skel_html);
 	group_div.find('.'+_LIST.name+'_list_is_priv').html(group_is_priv_html);
-
-
 
 }
 function generate_groups_row(group) {
@@ -571,11 +566,9 @@ function generate_groups_row(group) {
 }
 function generate_item_row(group) {
 
-
-
 			group_name = group.name;
 			group_gid = group.gidNumber;
-			group_desc = group.description;
+			group_desc = group.description == '' ? '<span class="no_data">(' + _("no description") + ')</span>' : group.description;
 			group_skel = group.groupSkel;
 			group_permissive = group.permissive;
 			group_priv = group.is_priv;

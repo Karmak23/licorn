@@ -1171,6 +1171,10 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	line-height: 15px;
 }
 
+.no_data {
+	color: #aaa;
+}
+
 #users_list_header {
 	#border:1px solid red;
 	#width:100%;

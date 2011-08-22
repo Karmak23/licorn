@@ -266,10 +266,12 @@ function refresh_item_row(json_input) {
 	user_div = $("#"+_LIST.main_attr+"_"+$(json_input).attr(_LIST.main_attr));
 	user = json_input
 
+	/*
 	_user = _LIST.get_item(user.login);
 	_user.locked = user.locked;
-	_user.gecos = user.gecos;
+	_user.gecos = user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos;
 	_user.skel = user.skel;
+	*/
 
 	if (user.locked == "True") {
 		//console.log('user locked');
@@ -289,7 +291,7 @@ function refresh_item_row(json_input) {
 	user_locked_html = "<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>";
 
 	user_div.find('.user_locked').html(user_locked_html);
-	user_div.find('.user_gecos').html(user.gecos);
+	user_div.find('.user_gecos').html(user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos);
 
 	user.locked = "False";
 }
@@ -593,10 +595,11 @@ function make_groups_interaction() {
 
 function generate_item_row(user) {
 	if (DEBUG || DEBUG_USER) { console.log('generate_item_row('+user.login+')'); }
-	user_html = '';
-	(user.profile == '') ? user_profile="System" : user_profile=user.profile;
-	(user.geocos == '') ? user_gecos="&nbsp;" : user_gecos=user.gecos;
 
+	user_html = '';
+
+	user_profile = user.profile == '' ? "System" : user.profile;
+	user_gecos = user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos;
 	if (user.is_system == 'True') {
 		content_class = 'users_system_content';
 	}
@@ -634,7 +637,7 @@ function generate_item_row(user) {
 	user_html += '	<span class="user_locked odd_even_typed " login="'+user.login+'"> ' + user_locked_html + ' </span>';
 	user_html += '	<span title="Click to edit user '+user.login+'" class="'+content_class+'" login="' + user.login + '">';
 	user_html += '		<span class="user_login odd_even_typed">' + user.login + '</span>';
-	user_html += '		<span class="user_gecos odd_even_typed">' + user.gecos + '</span>';
+	user_html += '		<span class="user_gecos odd_even_typed">' + user_gecos + '</span>';
 	user_html += '		<span class="user_uid odd_even_typed">' + user.uidNumber + '</span>';
 	user_html += '		<span class="user_profile odd_even_typed">';
 	user_html += '			<span class="user_profile_content">' + user_profile + '</span>';
