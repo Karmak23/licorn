@@ -683,10 +683,10 @@ def notifications_color_regex(msg):
 
 def my_unquote(string):
 	try:
-		return unquote_plus(string).decode('ISO-8859-1')
+		return unquote_plus(string).decode('utf8')
 	except UnicodeError:
 		try:
-			return unquote_plus(string).decode('utf8')
+			return unquote_plus(string).decode('ISO-8859-1')
 		except UnicodeError:
 			return unquote_plus(string)
 
