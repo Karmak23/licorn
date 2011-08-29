@@ -6,7 +6,7 @@
 */
 
 
-var DEBUG = true;
+var DEBUG = false;
 var DEBUG_USER = false;
 var DEBUG_GROUP = false;
 var DEBUG_UTILS = false;

@@ -518,10 +518,22 @@ function apply(page, action) {
 						_PAGE.stop_sub_content_lock();
 					}
 					$('#'+_PAGE.current_list.main_attr + '_' + i).remove();
+					
+					
 				});
 
-				//TODO
-				_PAGE.current_list.sort_items_list('asc', _PAGE.current_list.main_attr);
+				// in case it was the last item in the list
+				if (_PAGE.current_list.items.length == 0) {
+					template = '<span id="new_item_purpose"> No '+ _PAGE.current_list.name + ' yet on your system. Would you like to <span id="new_item">create one</a>?</span></span>'
+					$('#search_bar').remove();
+					$('#'+_PAGE.current_list.name+'_list_header').remove();
+					$('#'+_PAGE.current_list.name + '_list').find('.item_list_content').remove();
+					
+					$('#'+_PAGE.current_list.name + '_list').find('.list_content').append(template);
+				}
+				else {
+					_PAGE.current_list.sort_items_list('asc', _PAGE.current_list.main_attr);
+				}
 				_PAGE.current_list.count_items();
 
 			}
@@ -575,6 +587,17 @@ function apply(page, action) {
 
 					//console.log($('#'+list_name+ '_list'));
 					//console.log($('#'+list_name+ '_list').find('.item_list_content'));
+					if (_PAGE.current_list.items.length == 1) {
+						// hide creation purpose
+						$('#new_item_purpose').remove();
+						// we need to display headers as it is the first element
+						template = _PAGE.current_list.generate_list_header();
+						template += "			<div class='item_list_content'>"
+						template += "			</div>"
+						
+						$('#'+_PAGE.current_list.name + '_list').find('.list_content').append(template);
+						
+					}
 					$('#'+_PAGE.current_list.name + '_list').find('.item_list_content').append(generate_item_row(json_input.content));
 					list_obj.sort_items_list('asc',list_obj.main_attr);
 					list_obj.count_items();
@@ -735,58 +758,72 @@ function Licorn_List(list_obj) {
 	// function initialize_header_events()
 	// initialize events for the list's header
 	this.initialize_header_events = function() {
+		
+		// in case there is no items, initialize the "create one" link
+		if (_LIST.items == '') {
+			$("#new_item").click(function() {
+				page = '/'+_LIST.uri+'/new';
 
-		// search bar
-		var search_box = $('#list_content_'+_LIST.name).find('#search_box');
-		//console.log(search_box);
-		search_box.keyup(function(event) {
-			if (DEBUG || DEBUG_USER) { console.log('<> KEYUP EVENT : on search box of '+_LIST.name+' => '+search_box.val()); }
-			_LIST.search(search_box.val());
-		});
-
-
-		// header item click : sort
-		$("."+_LIST.name+"_header_item").click(function() {
-			item_sort = $(this).attr("id");
-			sort_way = $(this).attr("value");
-
-			if (sort_way == 'desc') {
-				new_sort = 'asc';
-			}
-			else {
-				new_sort = 'desc';
-			}
-
-			$(this).attr("value", new_sort);
-
-			// sort icons
-			$('#'+_LIST.name+'_list').find("#"+item_sort).attr("value", reverse_order[sort_way]);
-			$('#'+_LIST.name+'_list').find(".item_header_sort").html('');
-			$('#'+_LIST.name+'_list').find("#"+item_sort).find(".item_header_sort").html(order_pic[sort_way]);
-
-			if (DEBUG || DEBUG_USER) { console.log('<> CLICK EVENT : on header item '+item_sort+' of '+_LIST.name+' => '+ sort_way); }
-
-			_LIST.sort_items_list(sort_way, item_sort);
-		});
-
-
-		// init massive select
-		$('#'+_LIST.name+'_massive_select').click(function() {
-		current_status = $(this).attr('checked');
-		if (DEBUG || DEBUG_UTILS) { console.log('> CLICK EVENT : on massive select / currently checked : '+current_status); }
-		for(i=0;i<_LIST.items.length;i++) {
-			item = _LIST.items[i];
-			if (! $('#'+_LIST.main_attr+'_'+$(item).attr(_LIST.main_attr)).is(':hidden')) {
-				//if the row is not hidden
-				$('#checkbox_'+$(item).attr(_LIST.main_attr)).attr('checked', current_status);
-			}
+				change_content_of_sub_content_main(page);
+				$('.item_selected').removeClass('item_selected');
+				$('.bkg_selected').removeClass('bkg_selected');
+				
+			});
 		}
-		if (DEBUG || DEBUG_UTILS) { console.log('< CLICK EVENT : on massive select'); }
+		else {
 
-	});
+			// search bar
+			var search_box = $('#list_content_'+_LIST.name).find('#search_box');
+			//console.log(search_box);
+			search_box.keyup(function(event) {
+				if (DEBUG || DEBUG_USER) { console.log('<> KEYUP EVENT : on search box of '+_LIST.name+' => '+search_box.val()); }
+				_LIST.search(search_box.val());
+			});
 
-		// init specif events if needed
-		init_events_list_header(_LIST);
+
+			// header item click : sort
+			$("."+_LIST.name+"_header_item").click(function() {
+				item_sort = $(this).attr("id");
+				sort_way = $(this).attr("value");
+
+				if (sort_way == 'desc') {
+					new_sort = 'asc';
+				}
+				else {
+					new_sort = 'desc';
+				}
+
+				$(this).attr("value", new_sort);
+
+				// sort icons
+				$('#'+_LIST.name+'_list').find("#"+item_sort).attr("value", reverse_order[sort_way]);
+				$('#'+_LIST.name+'_list').find(".item_header_sort").html('');
+				$('#'+_LIST.name+'_list').find("#"+item_sort).find(".item_header_sort").html(order_pic[sort_way]);
+
+				if (DEBUG || DEBUG_USER) { console.log('<> CLICK EVENT : on header item '+item_sort+' of '+_LIST.name+' => '+ sort_way); }
+
+				_LIST.sort_items_list(sort_way, item_sort);
+			});
+
+
+			// init massive select
+			$('#'+_LIST.name+'_massive_select').click(function() {
+				current_status = $(this).attr('checked');
+				if (DEBUG || DEBUG_UTILS) { console.log('> CLICK EVENT : on massive select / currently checked : '+current_status); }
+				for(i=0;i<_LIST.items.length;i++) {
+					item = _LIST.items[i];
+					if (! $('#'+_LIST.main_attr+'_'+$(item).attr(_LIST.main_attr)).is(':hidden')) {
+						//if the row is not hidden
+						$('#checkbox_'+$(item).attr(_LIST.main_attr)).attr('checked', current_status);
+					}
+				}
+				if (DEBUG || DEBUG_UTILS) { console.log('< CLICK EVENT : on massive select'); }
+
+			});
+
+			// init specif events if needed
+			init_events_list_header(_LIST);
+		}
 	}
 	// function get_selected_items()
 	//	returns items selected in the list
@@ -812,20 +849,26 @@ function Licorn_List(list_obj) {
 		else {
 			displayed = '';
 		}
+		
 		template = "<!-- list "+this.name+" -->"
 		template += "	<div id='"+this.name+"_list' class='list'>"
-		template += "	<div class='list_title' id='"+this.name+"'>"
-		template += "		"+this.title+"<div id='"+_LIST.name+"_count' class='list_title_count'></div>";
-		template += "	</div>"
-		template += "	<div class='list_content "+displayed+"' id='list_content_"+this.name+"'>"
-		template += this.generate_list_header();
-		template += "		<div class='item_list_content'>"
-		$.each(this.items, function (k, item) {
-			template += generate_item_row(item);
-		});
+		template += "		<div class='list_title' id='"+this.name+"'>"
+		template += "			"+this.title+"<div id='"+_LIST.name+"_count' class='list_title_count'></div>";
+		template += "		</div>"
+		template += "		<div class='list_content "+displayed+"' id='list_content_"+this.name+"'>"
+		if (this.items != '') {
+			template += this.generate_list_header();
+			template += "			<div class='item_list_content'>"
+			$.each(this.items, function (k, item) {
+				template += generate_item_row(item);
+			});
+			template += "			</div>"
+		}
+		else {
+			template += '<span id="new_item_purpose"> No '+ this.name + ' yet on your system. Would you like to <span id="new_item">create one</a>?</span></span>'
+		}
 		template += "		</div>"
 		template += "	</div>"
-		template += "</div>"
 
 		return template
 	}

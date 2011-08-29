@@ -1879,3 +1879,8 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 .bkg_selected {
 	background-color: #ebe4dc;
 }
+
+#new_item {
+	cursor: pointer;
+	color: blue;
+}
