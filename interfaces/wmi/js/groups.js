@@ -374,8 +374,8 @@ function init_events_on_subcontent_change() {
 	cpt = 0;
 	$('.sub_content_list').each(function() {
 		nb_items_in_list = $(this).find('.click_item').length;
-		if (nb_items_in_list > 50) { nb_items_in_list = 50; }
-		if (nb_items_in_list < 10) { nb_items_in_list = 10; }
+		if (nb_items_in_list > 15) { nb_items_in_list = 15; }
+		if (nb_items_in_list < 2) { nb_items_in_list = 2; }
 		nb_items[cpt] = nb_items_in_list;
 		nb_items_total += nb_items_in_list;
 		cpt += 1;
@@ -385,13 +385,17 @@ function init_events_on_subcontent_change() {
 		percentage[k] = v / nb_items_total;
 	});
 
-	height = $('#sub_content_main').height() - (nb_ligne * $('.sub_content_line').height()) - $('#sub_content_header').height() - 30;
+	height = $('#sub_content_main').height() - (nb_ligne * $('.sub_content_line').height()) - $('#sub_content_header').height() - 15;
+	//height = height_temp / nb_list;
 
 	min_height = 40;
 	cpt = 0;
 	$('.sub_content_list').each(function() {
 		_height = height*percentage[cpt]
-
+		//~ if (_height < min_height) {
+			//~ _height = min_height;
+			//~
+		//~ }
 		$(this).height(_height);
 		cpt += 1;
 	});
