@@ -72,6 +72,7 @@ def check_python_modules_dependancies():
 		('ipcalc',    'python-ipcalc'),
 		('dumbnet',   'python-dumbnet'),
 		('pyudev',    'python-udev')
+		('cairo',    'python-cairo')
 		)
 
 	reqmods_needed = []
