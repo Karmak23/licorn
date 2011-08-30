@@ -409,7 +409,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				sys.stderr.write(process.execute(['smbpasswd', self.__login, '-s'],
 					"%s\n%s\n" % (password, password))[1])
 			except (IOError, OSError), e:
-				if e.errno != 32:
+				if e.errno not in (2, 32):
 					raise e
 	@property
 	def shadowLastChange(self):
