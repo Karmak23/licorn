@@ -92,10 +92,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		if not hlstr.cregex['group_name'].match(groupname):
 			raise exceptions.BadArgumentError(_(u'Cannot build '
-				'a valid UNIX group name (got {0}, which does '
-				'not verify {1}) with the string you provided '
-				'"{2}".').format(groupname,
-					hlstr.regex['group_name'], inputname))
+							u'a valid UNIX group name (got {0}, which does '
+							u'not verify {1}) with the string you provided '
+							u'"{2}".').format(groupname,
+								hlstr.regex['group_name'], inputname))
 
 		# TODO: verify if the group doesn't already exist.
 		#while potential in UsersController.users:
@@ -322,8 +322,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__profile = profile.weakref
 		else:
 			raise exceptions.LicornRuntimeError(_(u'group {0}: Cannot set a '
-				'profile ({1}) which has not the same GID as me '
-				'({2} != {3})!').format(stylize(ST_NAME, self.__name),
+				u'profile ({1}) which has not the same GID as me '
+				u'({2} != {3})!').format(stylize(ST_NAME, self.__name),
 					profile.name,
 					self.__gidNumber, profile.gidNumber))
 	@property
@@ -348,9 +348,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		if self.__permissive == permissive:
 			logging.notice(_(u'Permissive state {0} '
-				'for group {1}.').format(
-					stylize(ST_COMMENT, _(u'unchanged')),
-					stylize(ST_NAME, self.name)))
+							u'for group {1}.').format(
+								stylize(ST_COMMENT, _(u'unchanged')),
+								stylize(ST_NAME, self.name)))
 			return
 
 		with self.lock:
@@ -372,12 +372,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# auto-apply the new permissiveness
 			L_service_enqueue(priorities.HIGH, self.check, batch=True)
 
-			logging.notice(_('Switched group {0} permissive '
-				'state to {1} (Shared content permissions are '
-				'beiing checked in the background, this can '
-				'take a while…)').format(
-					stylize(ST_NAME, self.name),
-					stylize(color, value)))
+			logging.notice(_(u'Switched group {0} permissive '
+							u'state to {1} (Shared content permissions are '
+							u'beiing checked in the background, this can '
+							u'take a while…)').format(
+								stylize(ST_NAME, self.name),
+								stylize(color, value)))
 	@property
 	def userPassword(self):
 		""" Change the password of a group. """
@@ -396,7 +396,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		with self.lock:
 			if not hlstr.cregex['description'].match(description):
 				raise exceptions.BadArgumentError(_(u'Malformed description '
-					'"{0}", must match /{1}/i.').format(
+					u'"{0}", must match /{1}/i.').format(
 					stylize(ST_COMMENT, description),
 					stylize(ST_REGEX, hlstr.regex['description'])))
 
@@ -405,7 +405,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self._cli_invalidate()
 
 			logging.notice(_(u'Changed group {0} description '
-				'to "{1}".').format(stylize(ST_NAME, self.__name),
+				u'to "{1}".').format(stylize(ST_NAME, self.__name),
 				stylize(ST_COMMENT, description)))
 	@property
 	def groupSkel(self):
@@ -420,7 +420,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		if groupSkel not in LMC.configuration.users.skels:
 			raise exceptions.DoesntExistError(_(u'Invalid skel {0}. '
-				'Valid skels are: {1}.').format(
+							u'Valid skels are: {1}.').format(
 					groupSkel, ', '.join(LMC.configuration.users.skels)))
 
 		with self.lock:
@@ -596,24 +596,24 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			except KeyError:
 				rewrite = True
 				logging.warning(_(u'group {0}: removed relationship for '
-					'non-existing user {1}.').format(
-						stylize(ST_NAME, self.__name),
-						stylize(ST_LOGIN, member)))
+									u'non-existing user {1}.').format(
+										stylize(ST_NAME, self.__name),
+										stylize(ST_LOGIN, member)))
 
 			else:
 				if user.weakref in self.__members:
 					rewrite = True
 					logging.warning(_(u'group {0}: removed duplicate '
-						'relationship for member {1}.').format(
-							stylize(ST_NAME, self.__name),
-							stylize(ST_LOGIN, member)))
+									u'relationship for member {1}.').format(
+										stylize(ST_NAME, self.__name),
+										stylize(ST_LOGIN, member)))
 
 				elif user.weakref in self.__gidMembers:
 					rewrite = True
 					logging.warning(_(u'group {0}: removed primary member {1} '
-						'from auxilliary members list.').format(
-							stylize(ST_NAME, self.__name),
-							stylize(ST_LOGIN, member)))
+									u'from auxilliary members list.').format(
+										stylize(ST_NAME, self.__name),
+										stylize(ST_LOGIN, member)))
 
 				else:
 					# this is an automated load procedure, not an administrative
@@ -670,7 +670,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						log = logging.progress
 
 						log(_(u'User {0} is already a member '
-							'of {1} (primary or not), skipped.').format(
+							u'of {1} (primary or not), skipped.').format(
 								stylize(ST_LOGIN, user.login),
 								stylize(ST_NAME, self.__name)))
 				else:
@@ -705,9 +705,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self._cli_invalidate()
 
 					logging.notice(_(u'Added user {0} to members '
-						'of group {1}.').format(
-							stylize(ST_LOGIN, user.login),
-							stylize(ST_NAME, self.__name)))
+									u'of group {1}.').format(
+										stylize(ST_LOGIN, user.login),
+										stylize(ST_NAME, self.__name)))
 
 					if batch:
 						work_done = True
@@ -766,9 +766,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self._cli_invalidate()
 
 					logging.notice(_(u'Removed user {0} from members '
-						'of group {1}.').format(
-							stylize(ST_LOGIN, user.login),
-							stylize(ST_NAME, self.name)))
+										u'of group {1}.').format(
+											stylize(ST_LOGIN, user.login),
+											stylize(ST_NAME, self.name)))
 
 					if batch:
 						work_done = True
@@ -782,9 +782,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 									self.__del_group_symlink, user, batch=True)
 				else:
 					logging.info(_(u'Skipped user {0}, already not '
-						'a member of group {1}').format(
-							stylize(ST_LOGIN, user.login),
-							stylize(ST_NAME, self.name)))
+									u'a member of group {1}').format(
+										stylize(ST_LOGIN, user.login),
+										stylize(ST_NAME, self.name)))
 
 			if batch and work_done:
 				self.serialize()
@@ -825,38 +825,38 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		"""
 		if new_backend.name not in LMC.backends.keys():
 			raise exceptions.DoesntExistException(_(u'Backend %s does not '
-				'exist or is not enabled.') % new_backend.name)
+							u'exist or is not enabled.') % new_backend.name)
 
 		old_backend = self.backend
 
 		if old_backend.name == new_backend.name:
 			logging.info(_(u'Skipped move of group {0}, '
-				'already stored in backend {1}.').format(
+				u'already stored in backend {1}.').format(
 					stylize(ST_NAME, self.name),
 					stylize(ST_NAME, new_backend)))
 			return True
 
 		if self.__is_system_restricted and not force:
 			logging.warning(_(u'Skipped move of restricted system group {0} '
-				'(please use {1} if you really want to do this, '
-				'but it is strongly not recommended).').format(
+				u'(please use {1} if you really want to do this, '
+				u'but it is strongly not recommended).').format(
 					stylize(ST_NAME, self.name),
 					stylize(ST_DEFAULT, '--force')))
 			return
 
 		if self.__is_helper and not internal_operation:
 			raise exceptions.BadArgumentError(_(u'Cannot move an '
-				'associated system group without moving its standard '
-				' group too. Please move the standard group instead, '
-				'if this is what you meant.'))
+				u'associated system group without moving its standard '
+				u'group too. Please move the standard group instead, '
+				u'if this is what you meant.'))
 
 		if self.__is_standard:
 
 			if not self.responsible_group.move_to_backend(new_backend,
 													internal_operation=True):
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
-					'because move of associated responsible system group '
-						'failed.').format(self.name, new_backend))
+					u'because move of associated responsible system group '
+					u'failed.').format(self.name, new_backend))
 				return
 
 			if not self.guest_group.move_to_backend(new_backend,
@@ -868,8 +868,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 													internal_operation=True)
 
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
-					'because move of associated system guest group '
-						'failed.').format(self.name, new_backend))
+					u'because move of associated system guest group '
+					u'failed.').format(self.name, new_backend))
 				return
 
 		try:
@@ -878,8 +878,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		except KeyboardInterrupt, e:
 			logging.warning(_(u'Exception {0} happened while trying to '
-				'move group {1} from {2} to {3}, aborting (group left '
-				'unchanged).').format(e, group_name, old_backend, new_backend))
+				u'move group {1} from {2} to {3}, aborting (group left '
+				u'unchanged).').format(e, group_name, old_backend, new_backend))
 			print_exc()
 
 			try:
@@ -900,8 +900,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 			except Exception, e:
 				logging.warning(_(u'Exception {0} happened while trying to '
-					'restore a stable situation during group {1} move, we '
-					'could be in big trouble.').format(e, self.name))
+					u'restore a stable situation during group {1} move, we '
+					u'could be in big trouble.').format(e, self.name))
 				print_exc()
 
 			return False
@@ -910,7 +910,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			old_backend.delete_Group(self.name)
 
 			logging.notice(_(u'Moved group {0} from backend '
-				'{1} to {2}.').format(stylize(ST_NAME, self.name),
+							u'{1} to {2}.').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, old_backend),
 					stylize(ST_NAME, new_backend)))
 			return True
@@ -952,8 +952,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			NOT locked because can be long, and harmless if fails.
 		"""
 
-		logging.progress(_('Checking %s symlinks in members homes, '
-			'this can be long…')  % stylize(ST_NAME, self.name))
+		logging.progress(_(u'Checking %s symlinks in members homes, '
+						u'this can be long…')  % stylize(ST_NAME, self.name))
 
 		all_went_ok = True
 
@@ -998,7 +998,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								if e.errno != 2:
 									raise exceptions.LicornRuntimeError(
 									_(u'Unable to delete symlink {0} '
-									'(was: {1}).').format(
+										u'(was: {1}).').format(
 										stylize(ST_LINK, link), e))
 						else:
 							link_not_found = False
@@ -1015,7 +1015,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						# errno == 2 is a broken link, don't bother.
 						raise exceptions.LicornRuntimeError(_(u'Unable to '
-							'read symlink {0} (was: {1}).').format(
+							u'read symlink {0} (was: {1}).').format(
 								link, str(e)))
 
 			if link_not_found and not delete:
@@ -1023,8 +1023,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				link_dst = os.path.join(user.homeDirectory, link_basename)
 
 				if batch or logging.ask_for_repair(_(u'User {0} lacks the '
-								'symlink to group shared dir {1}. '
-								'Create it?').format(
+								u'symlink to group shared dir {1}. '
+								u'Create it?').format(
 									stylize(ST_LOGIN, user.login),
 									stylize(ST_NAME, link_basename)),
 								auto_answer):
@@ -1033,7 +1033,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 												auto_answer=auto_answer)
 				else:
 					logging.warning(_(u'User {0} lacks the '
-								'symlink to group shared dir {1}.').format(
+								u'symlink to group shared dir {1}.').format(
 									stylize(ST_LOGIN, user.login),
 									stylize(ST_NAME, link_basename)))
 					all_went_ok = False
@@ -1058,12 +1058,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				# Add the group in groups list of profiles
 				if name in LMC.profiles[p]['memberGid']:
 					logging.info(_(u'Group {0} already in the list '
-						'of profile {1}.').format(stylize(ST_NAME, name),
+						u'of profile {1}.').format(stylize(ST_NAME, name),
 						stylize(ST_NAME, p)))
 				else:
 					controllers.profiles.AddGroupsInProfile([name])
 					logging.notice(
-						"Added group %s in the groups list of profile %s." % (
+						u"Added group %s in the groups list of profile %s." % (
 						stylize(ST_NAME, name),
 						stylize(ST_NAME, p)))
 					# Add all 'p''s users in the group 'name'
@@ -1071,7 +1071,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						LMC.profiles[p]['groupName'])
 					self.AddUsersInGroup(name, _users_to_add, users)
 			else:
-				logging.warning("Profile %s doesn't exist, ignored." %
+				logging.warning(u"Profile %s doesn't exist, ignored." %
 					stylize(ST_NAME, p))
 
 		# FIXME: is it needed to save() here ? isn't it already done by the
@@ -1094,7 +1094,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# Delete the group from groups list of profiles
 			if name in controllers.profiles[p]['memberGid']:
 				logging.progress(_(u'Deleting group {0} from '
-					'profile {1}.').format(stylize(ST_NAME, name),
+					u'profile {1}.').format(stylize(ST_NAME, name),
 						stylize(ST_NAME, p)))
 
 				LMC.profiles.DeleteGroupsFromProfile([name])
@@ -1104,7 +1104,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				self.DeleteUsersFromGroup(name, _users_to_del, users)
 			else:
 				logging.info(_(u'Group {0} already absent from '
-					'profile {1}.').format(
+					u'profile {1}.').format(
 					stylize(ST_NAME, name),
 					stylize(ST_NAME, p)))
 
@@ -1161,7 +1161,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						# wanted to know the permissive state, thus there
 						# is a problem.
 						logging.warning(_(u'Shared dir {0} does not exist, '
-							'please run "chk group {1}" to fix.').format(
+							u'please run "chk group {1}" to fix.').format(
 								stylize(ST_PATH, self.__homeDirectory),
 								stylize(ST_NAME, self.__name)))
 					else:
@@ -1214,8 +1214,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self.__standard_group().del_Users([ user ])
 					else:
 						raise exceptions.BadArgumentError(_(u'Cannot demote '
-								'user %s from standard membership to guest '
-								'without --force flag.') %
+								u'user %s from standard membership to guest '
+								u'without --force flag.') %
 									stylize(ST_LOGIN, user.login))
 
 				elif user in self.__responsible_group().members:
@@ -1228,8 +1228,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						self.__responsible_group().del_Users([ user ])
 					else:
 						raise exceptions.BadArgumentError(_(u'Cannot demote '
-							'user %s from responsible to guest without '
-							'--force flag.') %
+							u'user %s from responsible to guest without '
+							u'--force flag.') %
 									stylize(ST_LOGIN, user.login))
 
 			#else:
@@ -1259,8 +1259,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					self.__responsible_group().del_Users([ user ])
 				else:
 					raise exceptions.BadArgumentError(_(u'Cannot demote user '
-						'%s from responsible to standard membership without '
-						'--force flag.') %
+						u'%s from responsible to standard membership without '
+						u'--force flag.') %
 								stylize(ST_LOGIN, user.login))
 			#else:
 			#
@@ -1316,8 +1316,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				if group_ref is None:
 					if batch or logging.ask_for_repair(_(u'The system group '
-									'{0} is required for the group {1} to be '
-									'fully operationnal. Create it?').format(
+									u'{0} is required for the group {1} to be '
+									u'fully operationnal. Create it?').format(
 										stylize(ST_NAME, group_name),
 										stylize(ST_NAME, self.__name)),
 									auto_answer):
@@ -1328,7 +1328,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 											name=group_name,
 											system=True,
 											description=_(u'{0} of group '
-												'“{1}”').format(
+												u'“{1}”').format(
 													title.title(), self.name),
 											backend=self.backend,
 											batch=batch,
@@ -1354,8 +1354,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							print_exc()
 					else:
 						logging.warning(_(u'The system group '
-									'{0} is required for the group {1} to be '
-									'fully operationnal.').format(
+									u'{0} is required for the group {1} to be '
+									u'fully operationnal.').format(
 										stylize(ST_NAME, group_name),
 										stylize(ST_NAME, self.__name)))
 						all_went_ok &= False
@@ -1377,8 +1377,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		all_went_ok = True
 
-		logging.progress(_('Checking system specific attributes '
-				'for group {0}…').format(stylize(ST_NAME, self.name))
+		logging.progress(_(u'Checking system specific attributes '
+				u'for group {0}…').format(stylize(ST_NAME, self.name))
 			)
 
 		update = False
@@ -1389,9 +1389,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			del self.__groupSkel
 
 			logging.info(_(u'Removed superfluous attribute {0} '
-				'of system group {1}').format(
-					stylize(ST_ATTR, 'groupSkel'),
-					stylize(ST_NAME, self.name))
+							u'of system group {1}').format(
+								stylize(ST_ATTR, 'groupSkel'),
+								stylize(ST_NAME, self.name))
 				)
 		# Licorn® system groups should have at least a default description.
 		# restricted system groups are not enforced on that point.
@@ -1401,14 +1401,14 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				self.description = _('Members of group “%s”') % self.name
 
 				logging.info(_(u'Added missing {0} attribute with a '
-					'default value for system group {1}.').format(
-						stylize(ST_ATTR, 'description'),
-						stylize(ST_NAME, self.name))
+								u'default value for system group {1}.').format(
+									stylize(ST_ATTR, 'description'),
+									stylize(ST_NAME, self.name))
 					)
 
 		if update:
-			if batch or logging.ask_for_repair(_('Do you want to commit '
-				'these changes to the system (highly recommended)?'),
+			if batch or logging.ask_for_repair(_(u'Do you want to commit '
+				u'these changes to the system (highly recommended)?'),
 				auto_answer=auto_answer):
 
 				self.serialize()
@@ -1417,7 +1417,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				return True
 			else:
 				logging.warning(_(u'Corrections of system group '
-					'{0} not commited').format(self.name))
+					u'{0} not commited').format(self.name))
 				return False
 		return True
 
@@ -1451,8 +1451,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		except Exception, e:
 			raise exceptions.LicornRuntimeError(_(u'Unable to create symlink '
-				'{0} (was: {1}).').format(
-							stylize(ST_LINK, link_dst), e))
+												u'{0} (was: {1}).').format(
+												stylize(ST_LINK, link_dst), e))
 	def __del_group_symlink(self, user, batch=False, auto_answer=None):
 		""" Remove the group symlink from the user's home. Exactly, from
 			anywhere in the user's home (with maxdepth=2 limitation). """
@@ -1485,8 +1485,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			except (IOError, OSError), e:
 				if e.errno != 2:
 					raise exceptions.LicornRuntimeError(_(u'Unable to delete '
-						'symlink {0} (was: {1}).').format(
-							stylize(ST_LINK, link), e))
+										u'symlink {0} (was: {1}).').format(
+											stylize(ST_LINK, link), e))
 
 	def _cli_get(self, long_output=False, no_colors=False):
 		""" FIXME: make long_output a dedicated precalc variable... """
@@ -1531,11 +1531,11 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						# the information because normally it is encoded simply with
 						# colors..
 						if self.__is_permissive is None:
-							accountdata.append("UNKNOWN")
+							accountdata.append(_(u"UNKNOWN"))
 						elif self.__is_permissive:
-							accountdata.append("permissive")
+							accountdata.append(_(u"permissive"))
 						else:
-							accountdata.append("NOT permissive")
+							accountdata.append(_(u"NOT permissive"))
 
 				if len(self.__members) > 0:
 					accountdata.append('%s%s' % (
@@ -1557,7 +1557,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 									for user in self.__responsible_group().members ])
 					except Exception, e:
 						logging.warning(_(u'Cannot collect responsibles '
-							'for group {0} (was: {1}).').format(self.name, e))
+							u'for group {0} (was: {1}).').format(self.name, e))
 
 					try:
 						members.extend([ (user.login, '%s%s' % (
@@ -1566,7 +1566,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 									for user in self.__guest_group().members ])
 					except Exception, e:
 						logging.warning(_(u'Cannot collect guests '
-							'for group {0} (was: {1}).').format(self.name, e))
+							u'for group {0} (was: {1}).').format(self.name, e))
 
 					members.extend([ (user.login, user._cli_get_small())
 								for user in self.members if user ])
@@ -1758,13 +1758,6 @@ class GroupsController(Singleton, CoreFSController):
 				for gid, group in backend.load_Groups():
 					self[gid] = group
 
-			#print self.keys()
-			#print Group.by_name.keys()
-			#print self.values()
-			#print str(self[300])
-			#print Group.by_name['acl']
-			#print str(self.by_name('acl'))
-
 			self.__connect_groups()
 			self.__connect_users()
 
@@ -1779,11 +1772,6 @@ class GroupsController(Singleton, CoreFSController):
 		# lock users too, because we feed the members cache inside.
 		with nested(self.lock, LMC.users.lock):
 
-			#for gid, group in self.items():
-			#	if group.backend.name == backend.name:
-			#		del self[gid]
-			#		del group
-
 			loaded = []
 
 			for gid, group in backend.load_Groups():
@@ -1791,7 +1779,6 @@ class GroupsController(Singleton, CoreFSController):
 					logging.progress(_(u'{0}.reload: Overwritten gid {1}.').format(
 							stylize(ST_NAME, self.name), gid))
 
-				#print '>> save', gid, group.name
 				self[gid] = group
 				loaded.append(gid)
 
@@ -1802,7 +1789,7 @@ class GroupsController(Singleton, CoreFSController):
 
 					else:
 						logging.progress(_(u'{0}: removing disapeared group '
-							'{1}.').format(stylize(ST_NAME, self.name),
+							u'{1}.').format(stylize(ST_NAME, self.name),
 								stylize(ST_NAME, group.name)))
 
 						self.del_Group(group, batch=True, force=True)
@@ -1845,7 +1832,7 @@ class GroupsController(Singleton, CoreFSController):
 		except (IOError, OSError), e:
 			if e.errno == 95:
 				raise exceptions.LicornRuntimeError(_(u'File-system {0} must '
-					'be mounted with {1} option to continue!').format(
+					u'be mounted with {1} option to continue!').format(
 						stylize(ST_PATH, LMC.configuration.home_base_path),
 						stylize(ST_ATTR, 'acl')))
 
@@ -1858,7 +1845,7 @@ class GroupsController(Singleton, CoreFSController):
 				# fail. Just return the default hidden_state value, which will
 				# in turn we used when the directory is created.
 				logging.warning2(_(u'{0}: {1} does not exist and will be '
-					'created later in the process.').format(
+					u'created later in the process.').format(
 						stylize(ST_NAME, self.name),
 						stylize(ST_PATH, groups_home)))
 				return LMC.configuration.groups.hidden_default
@@ -1992,8 +1979,8 @@ class GroupsController(Singleton, CoreFSController):
 					if gid in self.iterkeys():
 						filtered_groups.append(gid)
 					else:
-						raise exceptions.DoesntExistException(_('GID %s does '
-							'not exist on the system.') % gid)
+						raise exceptions.DoesntExistException(_(u'GID %s does '
+							u'not exist on the system.') % gid)
 
 		assert ltrace('groups', '< Select(%s)' % filtered_groups)
 		return filtered_groups
@@ -2022,10 +2009,10 @@ class GroupsController(Singleton, CoreFSController):
 			assert ltrace('groups', '| to_XML(%s)' % ','.join(
 											group.name for group in groups))
 
-		return ('<?xml version="1.0" encoding="UTF-8"?>\n'
-				'<groups-list>\n'
-				'%s\n'
-				'</groups-list>\n') % '\n'.join(
+		return (u'<?xml version="1.0" encoding="UTF-8"?>\n'
+				u'<groups-list>\n'
+				u'%s\n'
+				u'</groups-list>\n') % u'\n'.join(
 						group.to_XML() for group in groups)
 
 	def to_JSON(self, selected=None):
@@ -2043,26 +2030,26 @@ class GroupsController(Singleton, CoreFSController):
 	def _validate_fields(self, name, description, groupSkel):
 		""" apply sane tests on AddGroup needed arguments. """
 		if name is None:
-			raise exceptions.BadArgumentError("You must specify a group name.")
+			raise exceptions.BadArgumentError(u"You must specify a group name.")
 
 		if not hlstr.cregex['group_name'].match(name):
 			raise exceptions.BadArgumentError(_(u'Malformed group name "{0}", '
-				'must match /{1}/i.').format(stylize(ST_NAME, name),
+				u'must match /{1}/i.').format(stylize(ST_NAME, name),
 				stylize(ST_REGEX, hlstr.regex['group_name'])))
 
 		if len(name) > LMC.configuration.groups.name_maxlenght:
 			raise exceptions.LicornRuntimeError(_(u'Group name must be '
-				'smaller than {0} characters ("{1}" is {2} chars '
-				'long).').format(
+				u'smaller than {0} characters ("{1}" is {2} chars '
+				u'long).').format(
 					stylize(ST_ATTR, LMC.configuration.groups.name_maxlenght),
 					stylize(ST_NAME, name), stylize(ST_BAD, len(name))))
 
 		if description is None:
-			description = _('Members of group “%s”') % name
+			description = _(u'Members of group “%s”') % name
 
 		elif not hlstr.cregex['description'].match(description):
 			raise exceptions.BadArgumentError(_(u'Malformed group description '
-				'"{0}", must match /{1}/i.').format(
+				u'"{0}", must match /{1}/i.').format(
 					stylize(ST_COMMENT, description),
 					stylize(ST_REGEX, hlstr.regex['description'])))
 
@@ -2071,7 +2058,7 @@ class GroupsController(Singleton, CoreFSController):
 
 		elif groupSkel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(_(u'Invalid skel {0}. Valid '
-				'skels are: {1}.').format(stylize(ST_BAD, skel),
+				u'skels are: {1}.').format(stylize(ST_BAD, skel),
 					', '.join(stylize(ST_PATH, x)
 						for x in LMC.configuration.users.skels)))
 
@@ -2125,7 +2112,7 @@ class GroupsController(Singleton, CoreFSController):
 					log = logging.notice
 
 				log(_(u'Created system group {0} '
-					'(gid={1}).').format(stylize(ST_NAME, name),
+					u'(gid={1}).').format(stylize(ST_NAME, name),
 						stylize(ST_UGID, group.gid)))
 
 			if users_to_add:
@@ -2173,7 +2160,7 @@ class GroupsController(Singleton, CoreFSController):
 		# first verify if GID is not already taken.
 		if manual_gid in self.iterkeys():
 			raise exceptions.AlreadyExistsError(_(u'GID {0} is already taken '
-				'by group {1}. Please choose another one.').format(
+				u'by group {1}. Please choose another one.').format(
 					stylize(ST_UGID, manual_gid),
 					stylize(ST_NAME, self[manual_gid].name)))
 
@@ -2186,11 +2173,11 @@ class GroupsController(Singleton, CoreFSController):
 				if system and existing_group.is_system \
 					or not system and existing_group.is_standard:
 					raise exceptions.AlreadyExistsException(_(u'The group %s '
-						'already exists.') % stylize(ST_NAME, name))
+						u'already exists.') % stylize(ST_NAME, name))
 				else:
 					raise exceptions.AlreadyExistsError(_(u'The group %s '
-						'already exists but has not the same type. Please '
-						'choose another name for your group.') %
+						u'already exists but has not the same type. Please '
+						u'choose another name for your group.') %
 							stylize(ST_NAME, name))
 			else:
 				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
@@ -2199,16 +2186,16 @@ class GroupsController(Singleton, CoreFSController):
 				if system and existing_group.is_system:
 					if existing_group.gid == manual_gid:
 						raise exceptions.AlreadyExistsException(_(u'The group '
-							'%s already exists.') % stylize(ST_NAME, name))
+							u'%s already exists.') % stylize(ST_NAME, name))
 					else:
 						raise exceptions.AlreadyExistsError(_(u'The group %s '
-							'already exists with a different GID. Please '
-							'check this is what you want, and take a decision.')
+							u'already exists with a different GID. Please '
+							u'check this is what you want, and make a decision.')
 							% stylize(ST_NAME, name))
 				else:
 					raise exceptions.AlreadyExistsError(_(u'The group {0} '
-						'already exists but has not the same type. Please '
-						'choose another name for your group.').format(
+						u'already exists but has not the same type. Please '
+						u'choose another name for your group.').format(
 							stylize(ST_NAME, name)))
 		except KeyError:
 			# name doesn't exist, path is clear.
@@ -2223,11 +2210,11 @@ class GroupsController(Singleton, CoreFSController):
 			# https://launchpad.net/distros/ubuntu/+source/adduser/+bug/45970
 			if LMC.users.login_cache.has_key(name) and not force:
 				raise exceptions.UpstreamBugException(_(u'A user account called '
-					'%s already exists, this could trigger a bug in the '
-					'Debian/Ubuntu adduser code when deleting the user. '
-					'Please choose another name for your group, or use the '
-					'--force argument if you really want to add this group '
-					'on the system.') % stylize(ST_NAME, name))
+					u'%s already exists, this could trigger a bug in the '
+					u'Debian/Ubuntu adduser code when deleting the user. '
+					u'Please choose another name for your group, or use the '
+					u'--force argument if you really want to add this group '
+					u'on the system.') % stylize(ST_NAME, name))
 
 		# Find a new GID
 		if manual_gid is None:
@@ -2248,9 +2235,9 @@ class GroupsController(Singleton, CoreFSController):
 				gid = manual_gid
 			else:
 				raise exceptions.BadArgumentError(_(u'GID out of range '
-					'for the kind of group you specified. System GIDs '
-					'must be between {0} and {1}, standard GIDs must be '
-					'between {2} and {3}.').format(
+					u'for the kind of group you specified. System GIDs '
+					u'must be between {0} and {1}, standard GIDs must be '
+					u'between {2} and {3}.').format(
 						LMC.configuration.groups.system_gid_min,
 						LMC.configuration.groups.system_gid_max,
 						LMC.configuration.groups.gid_min,
@@ -2303,9 +2290,9 @@ class GroupsController(Singleton, CoreFSController):
 
 			if check_profiles and group.gid in LMC.profiles.iterkeys():
 				raise exceptions.BadArgumentError(_(u'Cannot delete '
-					'group {0}, currently primary group of profile '
-					'{1}. Please delete the profile instead, and the '
-					'group will be deleted at the same time.').format(
+					u'group {0}, currently primary group of profile '
+					u'{1}. Please delete the profile instead, and the '
+					u'group will be deleted at the same time.').format(
 					stylize(ST_NAME, group.name),
 					stylize(ST_NAME, LMC.profiles.group_to_name(group.name))
 					))
@@ -2314,9 +2301,9 @@ class GroupsController(Singleton, CoreFSController):
 
 			if prim_memb != [] and not del_users:
 				raise exceptions.BadArgumentError(_(u'The group still '
-					'has members. You must delete them first, or use '
-					' the --del-users argument. WARNING: this is '
-					'usually a bad idea; use with caution.'))
+					u'has members. You must delete them first, or use '
+					u'the --del-users argument. WARNING: this is '
+					u'usually a bad idea; use with caution.'))
 
 			if del_users:
 				for user in prim_memb:
@@ -2326,15 +2313,15 @@ class GroupsController(Singleton, CoreFSController):
 
 				if group.is_helper and group.standard_group is not None:
 					raise exceptions.BadArgumentError(_(u'Cannot delete a '
-						'helper group. Please delete the standard associated '
-						'group %s instead, and this group will be deleted in '
-						'the same time.') % stylize(ST_NAME,
+						u'helper group. Please delete the standard associated '
+						u'group %s instead, and this group will be deleted in '
+						u'the same time.') % stylize(ST_NAME,
 						group.standard_group.name))
 
 				elif group.is_system_restricted and not force:
 					raise exceptions.BadArgumentError(_(u'Cannot delete '
-						'restricted system group %s without the --force '
-						'argument, this is too dangerous.') %
+						u'restricted system group %s without the --force '
+						u'argument, this is too dangerous.') %
 							stylize(ST_NAME, group.name))
 
 				# wipe the group from the privileges if present there.
@@ -2428,7 +2415,7 @@ class GroupsController(Singleton, CoreFSController):
 			del self[gid]
 		else:
 			logging.warning2(_(u'{0}: group {1} already not referenced in '
-				'controller!').format(stylize(ST_NAME, self.name),
+				u'controller!').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, name)))
 
 		# FIXME: this is not very smart.
@@ -2533,14 +2520,14 @@ class GroupsController(Singleton, CoreFSController):
 
 		if connected != len(stds):
 			logging.warning(_(u'%s: inconsistency detected. '
-				'Automatic check requested in the background.') %
+				u'Automatic check requested in the background.') %
 					stylize(ST_NAME, self.name))
 			L_service_enqueue(priorities.HIGH,
 						self.check_groups, batch=True, job_delay=5.0)
 
 		if resps != [] or guests != []:
 			logging.warning(_(u'%s: dangling helper group(s) detected. '
-				'Automatic removal requested in the background.') %
+				u'Automatic removal requested in the background.') %
 					stylize(ST_NAME, self.name))
 
 			def remove_superfluous_groups(groups):
@@ -2586,10 +2573,10 @@ class GroupsController(Singleton, CoreFSController):
 
 		if len(missing_gids) > 0:
 			logging.warning(_(u'{0}: primary group is missing for '
-				'user(s) {1}. This is harmless, but should be '
-				'corrected manually by re-creating groups with '
-				'fixed GIDs, or changing these users GIDs to other '
-				'values.').format(self.name, ', '.join(
+				u'user(s) {1}. This is harmless, but should be '
+				u'corrected manually by re-creating groups with '
+				u'fixed GIDs, or changing these users GIDs to other '
+				u'values.').format(self.name, ', '.join(
 					( _(u'{0}(gid={1})').format(
 							stylize(ST_LOGIN, user.login),
 							stylize(ST_UGID, user.gid))
@@ -2638,14 +2625,14 @@ class GroupsController(Singleton, CoreFSController):
 			return gid in self.iterkeys()
 
 		raise exceptions.BadArgumentError(
-			"You must specify a GID or a name to test existence of.")
+			_(u"You must specify a GID or a name to test existence of."))
 	def gid_to_name(self, gid):
 		""" Return the group name for a given GID."""
 		try:
 			return self[gid].name
 		except KeyError:
 			raise exceptions.DoesntExistException(
-				"GID %s doesn't exist" % gid)
+				_(u"GID %s doesn't exist") % gid)
 	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
 		try:
@@ -2655,7 +2642,7 @@ class GroupsController(Singleton, CoreFSController):
 			return self.by_name(name).gidNumber
 		except KeyError:
 			raise exceptions.DoesntExistException(
-				"Group %s doesn't exist" % name)
+				_(u"Group %s doesn't exist") % name)
 
 	def _cli_get(self, selected=None, long_output=False, no_colors=False):
 		""" Export the groups list to human readable (= « get group ») form. """
@@ -2668,9 +2655,9 @@ class GroupsController(Singleton, CoreFSController):
 
 			# FIXME: forward long_output to _cli_get(), or remove it
 			if long_output:
-				return '%s\n' % '\n'.join((group._cli_get()
+				return u'%s\n' % u'\n'.join((group._cli_get()
 								for group in sorted(groups, key=attrgetter('gid'))))
 			else:
-				return '%s\n' % '\n'.join((group._cli_get()
+				return u'%s\n' % u'\n'.join((group._cli_get()
 								for group in sorted(groups, key=attrgetter('gid'))
 									if not group.is_helper))
