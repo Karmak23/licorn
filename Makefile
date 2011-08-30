@@ -19,11 +19,11 @@ configure:
 build: configure i18n
 
 binary-install: build
-	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)"
+	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)" "$(LOCALE_DIR)"
 	cp -a config/* "$(CONFDIR)"
 	cp -a interfaces/gui/*.glade "$(SHARE_DIR)"
 	cp -a interfaces daemon core extensions foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
-	#find src/po -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" "$(LOCALE_DIR)" \;
+	find locale -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" $(LOCALE_DIR) \;
 	ln -sf ../"$(EXEC_LINK_DIR)"/interfaces/wmi "$(SHARE_DIR)"/wmi
 	ln -sf ../"$(EXEC_LINK_DIR)"/core/backends/schemas "$(SHARE_DIR)"/schemas
 	chown -R root: "$(CONFDIR)" "$(SHARE_DIR)" "$(LOCALE_DIR)" "$(PROJECT_LIB_DIR)"
