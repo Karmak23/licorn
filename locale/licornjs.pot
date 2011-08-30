@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-08-30 08:36+0200\n"
+"POT-Creation-Date: 2011-08-30 22:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,120 +17,8 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: interfaces/wmi/js/utils.js:174
-msgid "No"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:177
-msgid "Close"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:182
-msgid "Yes"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:349
-msgid "Incorrect password for user %1"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:516
-msgid " ms of javascript execution"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:762
-msgid "No %1 yet on your system. Would you like to "
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:764
-msgid "create one?"
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:1002
-msgid "Mass actions: "
-msgstr ""
-
-#: interfaces/wmi/js/utils.js:1031 interfaces/wmi/js/utils.js:1043
-msgid "Click to sort on this column."
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:57 interfaces/wmi/js/users.js:40
+#: interfaces/wmi/js/users.js:40 interfaces/wmi/js/groups.js:57
 msgid "Not yet developped"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:68
-msgid ""
-"It is currently impossible to add systems group; please select the standard "
-"groups list first, to add a standard group account."
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:124
-msgid "Deletion confirmation"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:127
-msgid "Please select at least one group to delete"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:131
-msgid "Do you really want to remove groups:"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:133
-msgid "Disable backup"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:154
-msgid "Reapply skel confirmation"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:157
-msgid "Please select at least one group to reapply skel"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:161
-msgid "Do you really want to reappl skel of groups:"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:248 interfaces/wmi/js/groups.js:251
-#: interfaces/wmi/js/groups.js:265 interfaces/wmi/js/groups.js:268
-msgid "Make group %1 not permissive."
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:254 interfaces/wmi/js/groups.js:257
-#: interfaces/wmi/js/groups.js:271 interfaces/wmi/js/groups.js:274
-msgid "Make group %1 permissive."
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:292 interfaces/wmi/js/groups.js:300
-msgid "Permissiveness confirmation"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:293
-msgid "Do you really want to make the group %1 not permissive?"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:301
-msgid "Do you really want to make the group %1 permissive?"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:313 interfaces/wmi/js/users.js:390
-msgid "Removal confirmation"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:324
-msgid "Reapply skel"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:511 interfaces/wmi/js/groups.js:525
-msgid "no description"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:538
-msgid "Reapply skel of group %1"
-msgstr ""
-
-#: interfaces/wmi/js/groups.js:541
-msgid "Delete group %1"
 msgstr ""
 
 #: interfaces/wmi/js/users.js:50
@@ -209,6 +97,10 @@ msgstr ""
 msgid "Are you sure you want to lock user account %1?"
 msgstr ""
 
+#: interfaces/wmi/js/users.js:390 interfaces/wmi/js/groups.js:313
+msgid "Removal confirmation"
+msgstr ""
+
 #: interfaces/wmi/js/users.js:391
 msgid "Are you sure you want to remove user account %1?"
 msgstr ""
@@ -247,4 +139,112 @@ msgstr ""
 
 #: interfaces/wmi/js/users.js:638
 msgid "Click to edit user %1"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:174
+msgid "No"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:177
+msgid "Close"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:182
+msgid "Yes"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:349
+msgid "Incorrect password for user %1"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:516
+msgid " ms of javascript execution"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:762
+msgid "No %1 yet on your system. Would you like to "
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:764
+msgid "create one?"
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:1002
+msgid "Mass actions: "
+msgstr ""
+
+#: interfaces/wmi/js/utils.js:1031 interfaces/wmi/js/utils.js:1043
+msgid "Click to sort on this column."
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:68
+msgid ""
+"It is currently impossible to add systems group; please select the standard "
+"groups list first, to add a standard group account."
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:124
+msgid "Deletion confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:127
+msgid "Please select at least one group to delete"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:131
+msgid "Do you really want to remove groups:"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:133
+msgid "Disable backup"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:154
+msgid "Reapply skel confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:157
+msgid "Please select at least one group to reapply skel"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:161
+msgid "Do you really want to reappl skel of groups:"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:248 interfaces/wmi/js/groups.js:251
+#: interfaces/wmi/js/groups.js:265 interfaces/wmi/js/groups.js:268
+msgid "Make group %1 not permissive."
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:254 interfaces/wmi/js/groups.js:257
+#: interfaces/wmi/js/groups.js:271 interfaces/wmi/js/groups.js:274
+msgid "Make group %1 permissive."
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:292 interfaces/wmi/js/groups.js:300
+msgid "Permissiveness confirmation"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:293
+msgid "Do you really want to make the group %1 not permissive?"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:301
+msgid "Do you really want to make the group %1 permissive?"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:324
+msgid "Reapply skel"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:511 interfaces/wmi/js/groups.js:525
+msgid "no description"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:538
+msgid "Reapply skel of group %1"
+msgstr ""
+
+#: interfaces/wmi/js/groups.js:541
+msgid "Delete group %1"
 msgstr ""
