@@ -994,7 +994,7 @@ function Licorn_List(list_obj) {
 			html += '		<span id="search_bar_nav">';
 			html += '			<div id="search_bar_nav_content">';
 			$.each(this.list_obj.massive_operations.items, function(k, ope) {
-				html += '			<img src="'+ope.icon_link+'" id="'+ope.id+'"/>';
+				html += '			<img src="'+ope.icon_link+'" id="'+ope.id+'" alt="'+ope.alt+'" title="'+ope.title+'"/>';
 			});
 
 			html += '			</div>';

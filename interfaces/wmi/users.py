@@ -869,11 +869,17 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					'"displayed" : "True",'
 					'"items" : [ '
 						'{ "icon_link" : "/images/24x24/mass_del.png",'
-						'"id" : "users_massive_delete"},'
+						'"id" : "users_massive_delete",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_skel.png",'
-						'"id" : "users_massive_skel"},'
+						'"id" : "users_massive_skel",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_export.png",'
-						'"id" : "users_massive_export"}'
+						'"id" : "users_massive_export",'
+						'"alt" : "%s",'
+						'"title" : "%s"}'
 					']'
 				'},'
 				'"search" : {'
@@ -907,6 +913,12 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 				'}'
 	 		'} ' % (_(u'User accounts'), 
 				LMC.users.to_JSON(selected=LMC.users.select(_filter)),
+				_('Massive delete icon'), 
+				_('Selected user(s) massive removal'),
+				_('Massive skel icon'), 
+				_('Selected user(s) massive reapply skel'),
+				_('Massive export icon'), 
+				_('Selected user(s) massive export'),
 				_('Login'), _('GECOS'), _('UID'), _('Skel')))
 
 	if is_super_admin:
@@ -920,11 +932,17 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					'"displayed" : "True",'
 					'"items" : [ '
 						'{ "icon_link" : "/images/24x24/mass_del.png",'
-						'"id" : "users_system_massive_delete"},'
+						'"id" : "users_system_massive_delete",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_skel.png",'
-						'"id" : "users_system_massive_skel"},'
+						'"id" : "users_system_massive_skel",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_export.png",'
-						'"id" : "users_system_massive_export"}'
+						'"id" : "users_system_massive_export",'
+						'"alt" : "%s",'
+						'"title" : "%s"}'
 					']'
 				'},'
 				'"search" : {'
@@ -956,9 +974,16 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"sortable" : "False"}'
 					']'
 				'}'
-			'}' % (_(u'System user accounts'), 
+			'}') % (
+				_(u'System user accounts'), 
 				LMC.users.to_JSON(selected=LMC.users.select(filters.SYSTEM)),
-				_('Login'), _('GECOS'), _('UID'), _('Skel')))
+				_('Massive delete icon'), 
+				_('Selected system user(s) massive removal'),
+				_('Massive skel icon'), 
+				_('Selected system user(s) massive reapply skel'),
+				_('Massive export icon'), 
+				_('Selected system user(s) massive export'),
+				_('Login'), _('GECOS'), _('UID'), _('Skel'))
 
 	obj_content += '] }'
 

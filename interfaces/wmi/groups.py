@@ -818,11 +818,13 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					'"displayed" : "True",'
 					'"items" : [ '
 						'{ "icon_link" : "/images/24x24/mass_del.png",'
-						'"id" : "groups_massive_delete"},'
-						'{ "icon_link" : "/images/24x24/mass_skel.png",'
-						'"id" : "groups_massive_skel"},'
+						'"id" : "groups_massive_delete",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_export.png",'
-						'"id" : "groups_massive_export"}'
+						'"id" : "groups_massive_export",'
+						'"alt" : "%s",'
+						'"title" : "%s"}'
 					']'
 				'},'
 				'"search" : {'
@@ -865,9 +867,13 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					'"displayed" : "True",'
 					'"items" : [ '
 						'{ "icon_link" : "/images/24x24/mass_del.png",'
-						'"id" : "privs_massive_delete"},'
+						'"id" : "privs_massive_delete",'
+						'"alt" : "%s",'
+						'"title" : "%s"},'
 						'{ "icon_link" : "/images/24x24/mass_export.png",'
-						'"id" : "privs_massive_export"}'
+						'"id" : "privs_massive_export",'
+						'"alt" : "%s",'
+						'"title" : "%s"}'
 					']'
 				'},'
 				'"search" : {'
@@ -897,10 +903,19 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					']'
 				'}'
 	 		'} ]'
-	 '}' % (_(u'Groups'), LMC.groups.to_JSON(selected=LMC.groups.select(filters.STANDARD)),
+	 '}' % (_(u'Groups'), 
+		LMC.groups.to_JSON(selected=LMC.groups.select(filters.STANDARD)),
+		_(u'Massive removal icon'), 
+		_(u'Selected group(s) massive removal'), 
+		_(u'Massive export icon'),
+		_(u'Selected group(s) massive export'),
 		_(u"Name"), _(u"Description"), _(u"GID"), _(u"Skel"),
 		_(u"System groups") if is_super_admin else _(u"Privileges"),
 		LMC.groups.to_JSON(selected=LMC.groups.select(_filter_priv)),
+		_(u'Massive removal icon'), 
+		_(u'Selected group(s) massive removal'), 
+		_(u'Massive export icon'),
+		_(u'Selected group(s) massive export'),
 		_(u"Priv."), _(u"Name"), _(u"Description"), _(u"GID")))
 
 	return (w.HTTP_TYPE_JSON, obj_content)
