@@ -266,36 +266,38 @@ function refresh_item_row(json_input) {
 	user_div = $("#"+_LIST.main_attr+"_"+$(json_input).attr(_LIST.main_attr));
 	user = json_input
 
-	/*
+	
 	_user = _LIST.get_item(user.login);
 	_user.locked = user.locked;
-	_user.gecos = user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos;
+	/*_user.gecos = user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos;
 	_user.skel = user.skel;
 	*/
 
+	user_locked_html = generate_user_locked_html(user);
+
+	user_div.find('.user_locked').html(user_locked_html);
+	user_div.find('.user_gecos').html(user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos);
+	
+	//user.locked = "False";
+}
+function generate_user_locked_html(user) {
 	if (user.locked == "True") {
 		//console.log('user locked');
-		lock_title = _("Unlock user ") + user.login + _(" (re-grant access to machines).");
+		lock_title = "TOTO";
 		lock_class = "user_unlock_action";
 		lock_img = "/images/24x24/locked.png";
 		lock_alt = _("Unlock account ") + user.login + ".";
 	}
 	else {
 		//console.log('user not locked');
-		lock_title = _("Lock user ") + user.login + ".";
+		lock_title = "TATA";
 		lock_class = "locked_box user_lock_action";
 		lock_img = '/images/24x24/locked_box.png';
 		lock_alt = _("Lock account ") + user.login + ".";
 	}
 
-	user_locked_html = "<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>";
-
-	user_div.find('.user_locked').html(user_locked_html);
-	user_div.find('.user_gecos').html(user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos);
-
-	user.locked = "False";
+	return "<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>";
 }
-
 function init_events(me) {
 
 	if (DEBUG || DEBUG_USER) { console.log('> init_events('+me.find('.user_locked').attr('login')+')'); }
@@ -313,41 +315,43 @@ function init_events(me) {
 		user_login = $(this).attr('login');
 		if (DEBUG || DEBUG_USER) console.log('> HOVER EVENT : on .user_locked of '+user_login);
 		user = _PAGE.current_list.get_item(user_login);
-		//console.log(user);
-
+		
 		if (user.locked == "True") {
 			//console.log('user locked');
-			lock_title = _("Unlock user ") + user.login + _(" (re-grant access to machines).");
+			lock_title = "TOTO";
 			lock_class = "user_unlock_action";
 			lock_img = "/images/24x24/locked.png";
 			lock_alt = _("Unlock account ") + user.login + ".";
 		}
 		else {
 			//console.log('user not locked');
-			lock_title = _("Lock user ") + user.login + ".";
+			lock_title = "TATA";
 			lock_class = "locked_box user_lock_action";
-			lock_img = '/images/24x24/locked_box.png';
+			lock_img = '/images/24x24/locked_over.png';
 			lock_alt = _("Lock account ") + user.login + ".";
 		}
 
-		$(this).html("<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user_login+"'/>");
+		$(this).html("<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>");
 
 	}, function() {
+
 		if (user.locked == "True") {
 			//console.log('user locked');
-			lock_title = _("Unlock user ") + user.login + _(" (re-grant access to machines).");
+			lock_title = "TOTO";
 			lock_class = "user_unlock_action";
 			lock_img = "/images/24x24/locked.png";
 			lock_alt = _("Unlock account ") + user.login + ".";
 		}
 		else {
 			//console.log('user not locked');
-			lock_title = _("Lock user ") + user.login + ".";
+			lock_title = "TATA";
 			lock_class = "locked_box user_lock_action";
 			lock_img = '/images/24x24/locked_box.png';
 			lock_alt = _("Lock account ") + user.login + ".";
 		}
-		$(this).html("<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user_login+"'/>");
+
+		$(this).html("<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>");
+
 		if (DEBUG || DEBUG_USER) console.log('< HOVER EVENT : on .user_locked of '+user_login);
 
 	});
@@ -607,20 +611,8 @@ function generate_item_row(user) {
 		content_class = 'users_content';
 	}
 
-	if (user.locked == "True") {
-		lock_title = strargs(_("Unlock user %1 (re-grant access to machine)."), [user.login]);
-		lock_class = "user_unlock_action";
-		lock_img = "/images/24x24/locked.png";
-		lock_alt = strargs(_("Unlock account %1"), [user.login]);
-	}
-	else {
-		lock_title =  strargs(_("Lock user %1"), [user.login]); 
-		lock_class = "locked_box user_lock_action";
-		lock_img = "/images/24x24/locked_box.png";
-		lock_alt = strargs(_("Lock account %1"), [user.login]);
-	}
-
-	user_locked_html = '<img src="'+lock_img+'" class="'+lock_class+'" alt="'+lock_alt+'" title="'+lock_title+'"/>';
+	user_locked_html = generate_user_locked_html(user);
+	console.log(user_locked_html);
 
 	user_nav = '<div class="reapply_skel_user" login="'+user.login+'">';
 	user_nav += '	<img src="/images/16x16/reapply-skel.png" title="'+strargs(_("Reapply skel of user %1"), [user.login])+'" alt="'+strargs(_("Reapply skel of user %1"), [user.login])+'"/>';

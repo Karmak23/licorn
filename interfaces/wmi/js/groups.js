@@ -492,6 +492,9 @@ function refresh_item_row(json_input) {
 
 	group_div = $("#name_"+json_input.name);
 	group = json_input;
+	
+	_group = _LIST.get_item(group.name);
+	_group.permissive = group.permissive;
 
 	if (group.permissive == "True") {
 		perm_title = "Make group "+group.name+" NOT permissive.";
