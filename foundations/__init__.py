@@ -71,7 +71,7 @@ def check_python_modules_dependancies():
 		('ping',      'python-pyip'),
 		('ipcalc',    'python-ipcalc'),
 		('dumbnet',   'python-dumbnet'),
-		('pyudev',    'python-udev')
+		('pyudev',    'python-udev'),
 		('cairo',    'python-cairo')
 		)
 
