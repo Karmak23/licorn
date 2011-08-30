@@ -741,6 +741,14 @@ def new(uri, http_user, **kwargs):
 # helper for html generation
 def make_groups_list(user):
 
+	groups = LMC.groups.select(filters.STANDARD)
+	
+	if len(groups) == 0:
+		temp = '<div class="no_item_text"><center>'
+		temp += _("There is no standard group on the system")
+		temp += '</center></div>'
+		return temp
+
 	def get_relationship(user, group):
 		if user is None:
 			return 'no_membership'
@@ -759,7 +767,7 @@ def make_groups_list(user):
 			return 'no_membership'
 
 	data = ''
-	for group in LMC.groups.select(filters.STANDARD):
+	for group in groups:
 		if user is None:
 			data += "<span class='click_item'>"
 		else:
@@ -776,6 +784,15 @@ def make_groups_list(user):
 	return data
 def make_privs_list(user):
 	data = ''
+	
+	groups = LMC.groups.select(filters.PRIVILEGED)
+	
+	if len(groups) == 0:
+		temp = '<div class="no_item_text"><center>'
+		temp += _("There is no privilege on the system")
+		temp += '</center></div>'
+		return temp
+
 	def get_relationship(user, group):
 		if user is None:
 			return 'no_membership'
@@ -785,7 +802,7 @@ def make_privs_list(user):
 		else:
 			return 'no_membership'
 
-	for group in LMC.groups.select(filters.PRIVILEGED):
+	for group in groups:
 		if user is None:
 			data += "<span class='click_item priv_item'>"
 		else:
@@ -807,7 +824,7 @@ def make_groups_sys_list(http_user, user):
 	if not is_super_admin:
 		return ''
 
-
+	
 	data = ''
 	def get_relationship(user, group):
 		if user is None:
@@ -820,6 +837,12 @@ def make_groups_sys_list(http_user, user):
 
 	privs = LMC.groups.select(filters.PRIVILEGED)
 	filtered_groups = [ g for g in LMC.groups.select(filters.SYSTEM) if g not in privs ]
+	
+	if len(filtered_groups) == 0:
+		temp = '<div class="no_item_text"><center>'
+		temp += _("There is no system group on the system")
+		temp += '</center></div>'
+		return temp
 
 	for group in filtered_groups:
 		if user is None:

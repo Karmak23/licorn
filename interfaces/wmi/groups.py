@@ -646,7 +646,16 @@ def edit_members(uri, http_user, gname, users='', **kwargs):
 
 
 def make_users_list( group):
-
+	
+	users = LMC.users.select(filters.STANDARD)
+	
+	if len(users) == 0:
+		temp = '<div class="no_item_text"><center>'
+		temp += _("There is no user on the system")
+		temp += '</center></div>'
+		return temp
+	
+	
 	def get_relationship(user, group):
 		if user is None:
 			return 'no_membership'
@@ -666,18 +675,7 @@ def make_users_list( group):
 		return 'no_membership'
 
 	data = ''
-
-	#if is_super_admin:
-	#	_filter = filters.ALL
-	#else:
-	_filter = filters.STANDARD
-
-
-	for user in LMC.users.select(_filter):
-		#print "EEEEEEEEEEEEEEEEEEEEEEEEEEEEE %s" % group
-		#print "EEEEEEEEEEEEEEEEEEEEEEEEEEEEE %s" % group.is_privilege
-		#print LMC.groups[group]['name']
-
+	for user in users:
 		if group.is_privilege or group.is_system:
 			data += "<span class='click_item priv_item " \
 			"instant_apply_click cat_%s' action='/groups/" \
@@ -700,14 +698,21 @@ def make_users_list( group):
 def make_users_sys_list(is_super_admin, group):
 	if not is_super_admin:
 		return ''
-
+		
+	sys_users = LMC.users.select(filters.SYSTEM)
+	
+	if len(sys_users) == 0:
+		temp = '<div class="no_item_text"><center>'
+		temp += _("There is no system user on the system")
+		temp += '</center></div>'
+		return temp
+	
 	def get_relationship(user, group):
 		if user is None:
 			return 'no_membership'
 
 		# keep a copy here to avoid rebuilding from the weakrefs every "if".
 		user_groups = user.groups
-
 
 		if not group.is_system and group.responsible_group in user_groups:
 			return 'resp'
@@ -720,18 +725,7 @@ def make_users_sys_list(is_super_admin, group):
 		return 'no_membership'
 
 	data = ''
-
-	#if is_super_admin:
-	#	_filter = filters.ALL
-	#else:
-	_filter = filters.SYSTEM
-
-
-	for user in LMC.users.select(_filter):
-		#print "EEEEEEEEEEEEEEEEEEEEEEEEEEEEE %s" % group
-		#print "EEEEEEEEEEEEEEEEEEEEEEEEEEEEE %s" % group.is_privilege
-		#print LMC.groups[group]['name']
-
+	for user in sys_users:
 		if group.is_privilege or group.is_system:
 			data += "<span class='click_item priv_item " \
 			"instant_apply_click cat_%s' action='/groups/" \
