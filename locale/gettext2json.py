@@ -35,4 +35,4 @@ def gettext_json(domain=None, path=None, lang=None, indent=False):
 		print_exc()
 
 if __name__ == '__main__':
-	gettext_json(sys.argv[1], None, sys.argv[3].split(','))
+	gettext_json(sys.argv[1], sys.argv[2], sys.argv[3].split(','))

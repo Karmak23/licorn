@@ -68,12 +68,11 @@ i18n: update-po
 	for lang in fr ; \
 		do \
 			mkdir -p locale/$${lang}/LC_MESSAGES; \
-			cp $${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
-			cp $${lang}.js.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).js.mo ; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
-			touch locale/$${lang}.js.po ; \
 			msgfmt locale/$${lang}.js.po -o locale/$${lang}.js.mo ; \
-			python locale/gettext2json.py $(APP_NAME).js locale/$${lang}.js.po $${lang} \
+			cp locale/$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			cp locale/$${lang}.js.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).js.mo ; \
+			python locale/gettext2json.py $(APP_NAME).js ./locale $${lang} \
 				> interfaces/wmi/js/json/$(APP_NAME).$${lang}.json ; \
 		done ;
 
@@ -90,6 +89,7 @@ update-po: update-pot
 	for lang in fr ; \
 		do \
 			msgmerge -U locale/$${lang}.po locale/$(APP_NAME).pot ; \
+			touch locale/$${lang}.js.po ; \
 			msgmerge -U locale/$${lang}.js.po locale/$(APP_NAME)js.pot ; \
 		done ;
 
