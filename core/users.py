@@ -719,8 +719,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			# no force option with shutil.copytree(),
 			# thus we use cp to force overwrite.
-			process.syscmd('cp -r {0}/* {0}/.??* {1}'.format(
-											skel, self.__homeDirectory))
+			try:
+				process.syscmd('cp -rf {0}/* {0}/.??* {1}'.format(
+							skel, self.__homeDirectory))
+			except exceptions.SystemCommandError, e:
+				logging.warning(e)
 
 			# set permission (because we are root)
 			# FIXME: this should have already been covered by the inotifier.
