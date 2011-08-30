@@ -43,6 +43,7 @@ class LicornSyntaxException(LicornConfigurationException):
 	errno = 31
 	def __init__(self, file_name=None, line_no=None, text=None, text_part=None,
 		desired_syntax=None, optional_exception=None):
+		LicornConfigurationException.__init__(self)
 		self.file_name = file_name
 		self.line_no = line_no
 		self.text = text
@@ -192,6 +193,7 @@ class LicornHookEventError(LicornHookError):
 class SystemCommandError(LicornRuntimeError):
 	""" A system command has exited with an error."""
 	def __init__(self, cmd, errno):
+		LicornRuntimeError.__init__(self)
 		self.cmd   = cmd
 		self.errno = errno
 	def __str__(self):
@@ -199,6 +201,7 @@ class SystemCommandError(LicornRuntimeError):
 class SystemCommandSignalError(LicornRuntimeError):
 	""" A system command has exited because it received a signal."""
 	def __init__(self, cmd, errno):
+		LicornRuntimeError.__init__(self)
 		self.cmd   = cmd
 		self.errno = errno
 	def __str__(self):
@@ -211,6 +214,7 @@ class CorruptFileError(LicornIOError):
 	__msg = "" # Error message
 	__reason = ""
 	def __init__(self, filename="", reason=""):
+		LicornIOError.__init__(self)
 		self.__filename = filename
 		self.__reason = reason
 	def SetFilename(self, filename):
@@ -231,6 +235,7 @@ class AbsolutePathError(LicornIOError):
 	__path = ""
 	__msg = "" # Error message
 	def __init__(self, path=""):
+		LicornIOError.__init__(self)
 		self.__path = path
 	def __str__(self):
 		return "The path `" + self.__path + "` is not correct. It must be a valid absolute path"
