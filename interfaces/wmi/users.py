@@ -32,8 +32,9 @@ def delete_message(uri, http_user, login, **kwargs):
 			LMC.configuration.home_archive_dir,
 			LMC.configuration.defaults.admin_group)
 	description += "<input type='checkbox' id='delete_user_make_" \
-		"backup'/> <label for='delete_user_make_backup'>Definitely remove "\
-		"account data (no archiving).</label> "
+		"backup'/> <label for='delete_user_make_backup'> "
+	description += _("Definitely remove")
+	description += "account data (no archiving).</label> "
 	return (w.HTTP_TYPE_JSON, description)
 def lock_message(uri, http_user, login, **kwargs):
 	""" return the message prompted when locking a user """
@@ -399,7 +400,7 @@ def edit(uri, http_user, login, **kwargs):
 				"numbers, special characters and punctuation signs, "
 				"except '?!'.") %
 					LMC.configuration.users.min_passwd_size,
-			password_text = "<strong>New password</strong>",
+			password_text = _("<strong>New password</strong>"),
 			password_sub = _("(%d chars. min.)") % \
 				LMC.configuration.users.min_passwd_size,
 			password_input = w.input('password', '', size=30,
@@ -887,23 +888,25 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"content" : "<img src=\'/images/24x24/locked_header.png\'/>",'
 						'"sortable" : "True"},'
 						'{ "name" : "login",'
-						'"content" : "Login",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "gecos",'
-						'"content" : "GECOS",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "uidNumber",'
-						'"content" : "UID",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "profile",'
-						'"content" : "Skel",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "nav",'
 						'"content" : "",'
 						'"sortable" : "False"}'
 					']'
 				'}'
-	 		'} ' % (_(u'User accounts'), LMC.users.to_JSON(selected=LMC.users.select(_filter))))
+	 		'} ' % (_(u'User accounts'), 
+				LMC.users.to_JSON(selected=LMC.users.select(_filter)),
+				_('Login'), _('GECOS'), _('UID'), _('Skel')))
 
 	if is_super_admin:
 		 obj_content += (', { "name" : "users_system", '
@@ -936,23 +939,25 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"content" : "<img src=\'/images/24x24/locked_header.png\'/>",'
 						'"sortable" : "True"},'
 						'{ "name" : "login",'
-						'"content" : "Login",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "gecos",'
-						'"content" : "GECOS",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "uidNumber",'
-						'"content" : "UID",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "profile",'
-						'"content" : "Skel",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "nav",'
 						'"content" : "",'
 						'"sortable" : "False"}'
 					']'
 				'}'
-			'}' % (_(u'System user accounts'), LMC.users.to_JSON(selected=LMC.users.select(filters.SYSTEM))))
+			'}' % (_(u'System user accounts'), 
+				LMC.users.to_JSON(selected=LMC.users.select(filters.SYSTEM)),
+				_('Login'), _('GECOS'), _('UID'), _('Skel')))
 
 	obj_content += '] }'
 

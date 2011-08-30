@@ -58,10 +58,14 @@
 		load: function() {
 			$('link[rel=gettext]').each(function(){
 				var lang = this.lang;
+				// robin's modification
+				$.gt.setLang(lang);
 				$.get(this.href, function(data){
 					$.gt.messages[lang] = $.gt.messages[lang] || {};
 					try {
-						var messages = eval('(' + data + ')');
+						// robin's modification
+						//var messages = eval('(' + data + ')');
+						var messages = eval(data);
 					} catch(e) {
 						return;
 					}
@@ -82,7 +86,8 @@
 					}
 				});
 			});
-			$.gt.setLang($('html').attr('lang'));
+			// robin's modification
+			//$.gt.setLang($('html').attr('lang'));
 		},
 		gettext: function(msgstr) {
 			var lang = $.gt.lang;

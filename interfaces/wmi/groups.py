@@ -839,16 +839,16 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"content" : "<img src=\'/images/24x24/locked_header.png\'/>",'
 						'"sortable" : "True"},'
 						'{ "name" : "name",'
-						'"content" : "Name",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "description",'
-						'"content" : "Description",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "gidNumber",'
-						'"content" : "GID",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "skel",'
-						'"content" : "Skel",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "nav",'
 						'"content" : "",'
@@ -881,16 +881,16 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"content" : "<input type=\'checkbox\' name=\'select\' id=\'privs_massive_select\'>",'
 						'"sortable" : "False"},'
 						'{ "name" : "is_priv",'
-						'"content" : "Priv.",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "name",'
-						'"content" : "Name",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "description",'
-						'"content" : "Description",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "gidNumber",'
-						'"content" : "GID",'
+						'"content" : "%s",'
 						'"sortable" : "True"},'
 						'{ "name" : "nav",'
 						'"content" : "",'
@@ -899,8 +899,10 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 				'}'
 	 		'} ]'
 	 '}' % (_(u'Groups'), LMC.groups.to_JSON(selected=LMC.groups.select(filters.STANDARD)),
+		_(u"Name"), _(u"Description"), _(u"GID"), _(u"Skel"), 
 		_(u"System groups") if is_super_admin else _(u"Privileges"),
-		LMC.groups.to_JSON(selected=LMC.groups.select(_filter_priv))))
+		LMC.groups.to_JSON(selected=LMC.groups.select(_filter_priv)),
+		_(u"Priv."), _(u"Name"), _(u"Description"), _(u"GID")))
 
 	return (w.HTTP_TYPE_JSON, obj_content)
 

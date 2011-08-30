@@ -115,15 +115,11 @@ order_pic['desc'] = '<img src="/images/12x12/sort_desc.png" alt="desc order imag
  * Change the content of the sub_content part.
  * Parameter :
  * 		- url_page (string) : url to get
- *
- * Need specific functions:
- * 		- init_events_sub_content_new
- * 		- init_events_on_subcontent_change
  */
 
  function change_content_of_sub_content_main(url_page, check_lock) {
-	if (!check_lock) { check_lock = false; }
 	if (DEBUG || DEBUG_UTILS) console.log('> change_content_of_sub_content_main(page='+url_page+')');
+	if (!check_lock) { check_lock = false; }	
 	// if url_page is null, clear #sub_content_main
 	if (url_page == null) {
 		$('#sub_content_main').fadeOut(function() {
@@ -175,15 +171,15 @@ function dialog(title, content, yes_no, yes_action, content_has_to_be_loaded, ur
 		data += '<div id="dialog-buttons">';
 		data += '	<div class="dialog-button" id="dialog-close-button">';
 		if (this.yes_no == true) {
-			data += '		Non';
+			data += _("No");
 		}
 		else {
-			data += '		Fermer';
+			data += _("Close");
 		}
 		data += '	</div>';
 		if (this.yes_no == true) {
 			data += '	<div class="dialog-button" id="dialog-action-button">';
-			data += '		Oui';
+			data += _("Yes");
 			data += '	</div>';
 		}
 		data += '</div>';
@@ -262,30 +258,16 @@ notification_displayed = false;
 tab_timeout_text = new Array();
 compt = 0;
 function show_message_through_notification(msg) {
-	/*
-	var myDate = new Date();
-	var time = myDate.getTime();
-	var hour = myDate.getHours();
-	var minute = myDate.getMinutes();
-	var second = myDate.getSeconds();
-	if (hour < 10) { hour = "0" + hour; }
-	if (minute < 10) { minute = "0" + minute; }
-	if (second < 10) { second = "0" + second; }
-	var theDate = " " + hour + ":" + minute + ":" + second;
-	*/
 	compt +=1;
-	//"+theDate + ":
 	new_msg = "<div class='notification-text' id='number-"+ compt +"'>"+ msg +"</div>";
 
 	if (notification_displayed) {
-		//$('#notification').append(new_msg);
 		clearTimeout(notification_timeout);
 		current = $('#notification').html();
 		$('#notification').html(current + new_msg);
 	}
 	else {
-		//$('#notification').append(new_msg).show();
-		//$(new_msg).appendTo('#notification');
+
 		notification_displayed = true;
 		$('#notification').html(new_msg).fadeIn();
 	}
@@ -293,7 +275,6 @@ function show_message_through_notification(msg) {
 	tab_timeout_text[compt] = setTimeout(hide_item, notification_timeout_value, compt);
 
 	function hide_item(compt) {
-		//console.log("blabalbalbal " +  $("#number-"+compt).html());
 		$("#number-"+compt).slideDown();
 		$("#number-"+compt).fadeOut();
 	}
@@ -305,22 +286,17 @@ function show_message_through_notification(msg) {
 	}, notification_timeout_value);
 }
 function init_instant_apply() {
-	//console.log("init_instant_apply_textboxes");
 	interval = 1000;
-
 
 	function function_apply(page, action) {
 		apply(page, action);
 	}
 
-
-	//instant apply
 	var instant_apply_timeout_textbox;
-	//var current_gecos;
+	
 	$(".instant_apply_textbox").keyup(function() {
 		clearTimeout(instant_apply_timeout_textbox);
 		value = $.URLEncode(this.value);
-		//console.log(value);
 		page=$(this).attr('action') + value;
 		login = $(this).attr('action').split('/')[3];
 		instant_apply_timeout_textbox = setTimeout(function_apply, interval, page, 'instant_apply');
@@ -330,22 +306,17 @@ function init_instant_apply() {
 		clearTimeout(instant_apply_timeout_checkbox);
 		checked = this.checked;
 		page=$(this).attr('action') + $.URLEncode(checked);
-		//page=$(this).attr('action') + value;
 		login = $(this).attr('action').split('/')[3];
-		//$("#sub_content_back").html('<img src="/images/progress/ajax-loader.gif"/>')
-		//waiting_save_lock = true;
 		instant_apply_timeout_checkbox = setTimeout(function_apply, interval, page, 'instant_apply');
 	});
 	var instant_apply_timeout_pwd;
 	function one_password_is_empty() {
 		r = false;
 		$(".instant_apply_password").each(function() {
-			//console.log("$(this).val() = " + $(this).val());
 			if ($(this).val() == "") {
 				r = true;
 			}
 		});
-		//console.log("return false");
 		return r;
 	}
 	$(".instant_apply_password").keyup(function() {
@@ -353,13 +324,8 @@ function init_instant_apply() {
 
 			clearTimeout(instant_apply_timeout_pwd);
 
-			//console.log("ok");
-
 			login  = $(this).attr('action').split('/')[3];
 			action = $(this).attr('action');
-
-			//$("#sub_content_back").html('<img src="/images/progress/ajax-loader.gif"/>')
-			//waiting_save_lock = true;
 
 			instant_apply_timeout_pwd = setTimeout(function(){
 				pwds = new Array();
@@ -377,64 +343,36 @@ function init_instant_apply() {
 				}
 				if (pwds_match) {
 					page =  action + ref;
-					//console.log("page = "+page);
 					apply(page, 'instant_apply');
-					//show_message_through_notification("Nouveau mot de passe enregistré pour l'utilisateur "+ login);
 				}
 				else {
-					show_message_through_notification("Mot de passe non valide pour l'utilisateur "+ login);
+					show_message_through_notification(strargs(_("Incorrect password for user %1"), [login]));
 				}
-
-
 			}, interval);
 		}
 	});
 	var instant_apply_timeout_select;
 	$(".instant_apply_select").change(function() {
-
 		clearTimeout(instant_apply_timeout_select);
-
 		page = $(this).attr('action') + $.URLEncode($(".instant_apply_select option:selected").val());
-
 		login = $(this).attr('action').split('/')[3];
-
-		//console.log("page = " + page + " ; login = " + login);
-		//$("#sub_content_back").html('<img src="/images/progress/ajax-loader.gif"/>')
-		//waiting_save_lock = true;
-
 		instant_apply_timeout_select = setTimeout(function(){
 				apply(page, 'instant_apply');
 			}, interval);
 	});
 
 	var instant_apply_timeout_click;
-
 	$(".instant_apply_click").click(function() {
-
 		clearTimeout(instant_apply_timeout_click);
 
-		//karmak
-		//groups = get_items_selected('.click_item');
 		groups = get_items_selected('.click_item');
-
-		//console.log("groups = " + groups);
-
 		action = $(this).attr('action');
-
 		login = $(this).attr('action').split('/')[3];
-
 		page = '';
-
-		//$("#sub_content_back").html('<img src="/images/progress/ajax-loader.gif"/>')
-		//waiting_save_lock = true;
-
-		//console.log("page = " + page + " ; login = " + login);
 
 		instant_apply_timeout_click = setTimeout(function(){
 			page= action + '/' + groups;
-			//console.log(page);
 			apply(page, 'instant_apply');
-
 		}, 3000);
 	});
 }
@@ -444,10 +382,6 @@ function get_items_selected(pattern) {
 		gname = $(this).find('.item_hidden_input').attr('value');
 		relation = $(this).find('.item_hidden_input').attr('name');
 		if (relation != 'no_membership') {
-
-			//karmak
-			//console.log("RELATION " + gname + "=>" + relation);
-
 			prefix = '';
 			if (relation == 'guest') {
 				prefix = 'gst-';
@@ -474,7 +408,6 @@ function get_items_selected(pattern) {
 function apply(page, action) {
 	if (DEBUG || DEBUG_UTILS) console.log('> apply(page='+page+', action='+action+')');
 
-
    start_time = new Date();
 
 	$.getJSON(page, function(json_input) {
@@ -489,8 +422,6 @@ function apply(page, action) {
 			show_message_through_notification($.base64Decode(json_input.notif));
 		}
 
-		//console.log('ajax_response='+ajax_response.text());
-		//console.log("ajax_response.text() = #"+json_input.content+"|");
 		if (json_input.content != '' && json_input.content != 'None' ) {
 			if (action == 'instant_apply')  {
 				if (DEBUG || DEBUG_UTILS) console.log("Refreshing user_row.");
@@ -498,28 +429,18 @@ function apply(page, action) {
 				refresh_item_row(json_input.content);
 			}
 			else if (action == 'delete')  {
-				//console.log("DELETE");
 				item = json_input.content;
-				//console.log(item);
 
-				//console.log("toto");
 				$.each(item, function(key, i) {
 					//remove item from list array
 					_PAGE.current_list.items = jQuery.grep(_PAGE.current_list.items, function(value) {
-						//console.log(value)
 						return $(value).attr(_PAGE.current_list.main_attr) != i;
 					});
-					//console.log("new list");
-					//console.log(_PAGE.current_list.items);
-					//remove div
-					//console.log("tata");
 					div = $('#'+_PAGE.current_list.main_attr + '_' + i);
 					if (div.hasClass('item_selected')) {
 						_PAGE.stop_sub_content_lock();
 					}
 					$('#'+_PAGE.current_list.main_attr + '_' + i).remove();
-					
-					
 				});
 
 				// in case it was the last item in the list
@@ -538,55 +459,40 @@ function apply(page, action) {
 
 			}
 			else if (action == 'change_sub_content') {
-				//console.log('page = '+page);
-				//console.log((_PAGE.is_locked() && page.search('edit') == -1));
-				//console.log((_PAGE.is_locked() && page.search('new') == -1));
 				// lock mecanism:
 				//	if page is locked : hovers are not prompted
 				if (_PAGE.is_locked() && page.search('view') != -1)   {
-					//console.log('STOOOOOOOOPPPPP');
-					return false; }
+					return false; 
+				}
 				// write data in sub_content_main
 				content = $.base64Decode(json_input.content);
 				$('#sub_content_main').html(content);
 				// show sub_content_main
 				$('#sub_content_main').fadeIn();
 				if (page.match('/edit/')) {
-					// TODO !
 					$('#sub_content_back').click(function() {
-						//console.log('click');
 						_PAGE.stop_sub_content_lock();
 					});
 					_PAGE.acquire_lock();
-
 					init_events_on_subcontent_change();
 				}
 				else if (page.match('/new')) {
-					// TODO !
 					$('#sub_content_back').click(function() {
 						_PAGE.stop_sub_content_lock();;
 					});
 					_PAGE.acquire_lock();
 					init_events_sub_content_new();
 				}
-
-
 			}
 			else if (action == 'create') {
-				//console.log('----------------------------A-----------------------------');
 				if (json_input.content != $.base64Encode('"None"')) {
 
 					_PAGE.current_list.items.push(json_input.content);
-					//console.log(json_input.content);
-					//console.log('dsqdqsdq :'+$(generate_item_row(json_input.content)));
-					//console.log('trying addin div into :'+'#'+_PAGE.current_list.name + '_list');
-					//console.log('html :' + generate_item_row(json_input.content));
 
 					list_name = _PAGE.current_list.name;
 					list_obj = _PAGE.current_list;
 
-					//console.log($('#'+list_name+ '_list'));
-					//console.log($('#'+list_name+ '_list').find('.item_list_content'));
+					// if it is the first item
 					if (_PAGE.current_list.items.length == 1) {
 						// hide creation purpose
 						$('#new_item_purpose').remove();
@@ -596,7 +502,6 @@ function apply(page, action) {
 						template += "			</div>"
 						
 						$('#'+_PAGE.current_list.name + '_list').find('.list_content').append(template);
-						
 					}
 					$('#'+_PAGE.current_list.name + '_list').find('.item_list_content').append(generate_item_row(json_input.content));
 					list_obj.sort_items_list('asc',list_obj.main_attr);
@@ -608,7 +513,7 @@ function apply(page, action) {
 
 			// update timer :
 			end_time = new Date();
-			$('#timer').html((end_time-start_time)+ " ms d'execution javascript");
+			$('#timer').html((end_time-start_time)+ _(" ms of javascript execution"));
 		}
 		else {
 			if (DEBUG || DEBUG_UTILS) console.log("Nothing to display.");
@@ -739,19 +644,7 @@ function Licorn_List(list_obj) {
 	// count and display the number of items
 	this.count_items = function() {
 		var nb_items = this.items.length;
-		//~ var nb_items_displayed = 0;
-		//~ $.each(this.items, function(k ,item) {
-			//~ if (! $('#'+_LIST.main_attr+'_'+$(item).attr(_LIST.main_attr)).is(':hidden')) {
-				//~ nb_items_displayed += 1;
-			//~ }
-		//~ });
-
 		var text = '('+nb_items+')';
-		//~ console.log('nb_items :'+nb_items);
-		//~ console.log('nb_items_displayed :'+nb_items_displayed);
-		//~ if (nb_items != nb_items_displayed) {
-			//~ text += ' ('+nb_items_displayed+' displayed)';
-		//~ }
 		$('#'+_LIST.name+'_count').html(text);
 	};
 
@@ -865,7 +758,11 @@ function Licorn_List(list_obj) {
 			template += "			</div>"
 		}
 		else {
-			template += '<span id="new_item_purpose"> No '+ this.name + ' yet on your system. Would you like to <span id="new_item">create one</a>?</span></span>'
+			template += '<span id="new_item_purpose">'
+			template += 	strargs(_("No %1 yet on your system. Would you like to "), [this.name]);
+			template += '	<span id="new_item">'
+			template += _("create one?");
+			template += '</span></span>'
 		}
 		template += "		</div>"
 		template += "	</div>"
@@ -906,7 +803,6 @@ function Licorn_List(list_obj) {
 		// go through all attributes of each item, and keep only items
 		// whose attributes (one or more) match.
 		$.each(this.items, function(key, obj) {
-			//console.log('iii');
 			// OBJECT part of the search.
 
 			match = false;
@@ -1102,7 +998,9 @@ function Licorn_List(list_obj) {
 			});
 
 			html += '			</div>';
-			html += '			<div id="search_bar_nav_title">Opérations massives :</div>';
+			html += '			<div id="search_bar_nav_title">';
+			html += _("Mass actions: ");
+			html += '			</div>';
 			html += '		</span>';
 		}
 
@@ -1130,7 +1028,7 @@ function Licorn_List(list_obj) {
 
 					html += '<div class="'+list_name+'_header_'+item.name+' '+list_name+'_header_item list_header_item" id="'+item.name+'" value="'+reverseorder+'">';
 					html += '	<div class="user_header_content">';
-					html += '		<a title="'+_('Click to sort on this column.')+'">';
+					html += '		<a title="'+_("Click to sort on this column.")+'">';
 					html += '			'+item.content;
 					html += '		</a>';
 					html += '	</div>';
@@ -1142,7 +1040,7 @@ function Licorn_List(list_obj) {
 				else {
 					html += '<div class="'+list_name+'_header_'+item.name+' list_header_item">';
 					html += '	<div class="user_header_content">';
-					html += '		<a title="'+_('Click to sort on this column.')+'">';
+					html += '		<a title="'+_("Click to sort on this column.")+'">';
 					html += '			'+item.content;
 					html += '		</a>';
 					html += '	</div>';

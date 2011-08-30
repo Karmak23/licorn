@@ -37,7 +37,7 @@ $(document).ready(function() {
 		$("#main_content").append("<!-- end lists -->");
 	});
 
-	not_yet_dialog = new dialog(_('Not yet developped'), _('Not yet developped'));
+	not_yet_dialog = new dialog(_("Not yet developped"), _("Not yet developped"));
 });
 
 // User specific functions
@@ -210,13 +210,13 @@ function init_events_list_header(list) {
 		delete_dialog_title = _("Please confirm massive removal");
 
 		if (users_selected_html == '<ul></ul>') {
-			delete_dialog_content = _('Please select at least one user account.');
+			delete_dialog_content = _("Please select at least one user account.");
 			delete_dialog = new dialog(delete_dialog_title, delete_dialog_content);
 		}
 		else {
-			delete_dialog_content = _('Are you sure you want to remove these account(s):');
+			delete_dialog_content = _("Are you sure you want to remove these account(s):");
 			delete_dialog_content += users_selected_html;
-			delete_dialog_content += "<input type='checkbox' id='massive_delete_make_backup'/> <label for='massive_delete_make_backup'>" + _('Definitely remove their home directories without archiving them') + "</label>";
+			delete_dialog_content += "<input type='checkbox' id='massive_delete_make_backup'/> <label for='massive_delete_make_backup'>" + _("Definitely remove their home directories without archiving them") + "</label>";
 			delete_dialog = new dialog(delete_dialog_title,delete_dialog_content,
 				true, delete_dialog_action);
 		}
@@ -240,11 +240,11 @@ function init_events_list_header(list) {
 		skel_dialog_title = _("Massive skeleton reapplying");
 
 		if (users_selected_html == '<ul></ul>') {
-			skel_dialog_content =  _('Please select at least one user account.');
+			skel_dialog_content =  _("Please select at least one user account.");
 			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content);
 		}
 		else {
-			skel_dialog_content = _('Are you sure you want to reapply their skeleton to these user account(s):');
+			skel_dialog_content = _("Are you sure you want to reapply their skeleton to these user account(s):");
 			skel_dialog_content += users_selected_html;
 			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content,
 				true, reapply_skel_dialog_action);
@@ -362,7 +362,7 @@ function init_events(me) {
 		if (user.locked == "True") {
 			if (DEBUG || DEBUG_USER) console.log(user_login + " is locked, present unlock dialog");
 			// unlock
-			unlock_dialog_title = _('Unlock confirmation');
+			unlock_dialog_title = _("Unlock confirmation");
 			unlock_dialog_content = strargs(_("Are you sure you want to unlock user account %1?"), [user_login]);
 			unlock_dialog = new dialog(unlock_dialog_title, unlock_dialog_content, true, unlock_dialog_action);
 			unlock_dialog.show();
@@ -608,25 +608,25 @@ function generate_item_row(user) {
 	}
 
 	if (user.locked == "True") {
-		lock_title = "Unlock user "+user.login+" (re-grant access to machine).";
+		lock_title = strargs(_("Unlock user %1 (re-grant access to machine)."), [user.login]);
 		lock_class = "user_unlock_action";
 		lock_img = "/images/24x24/locked.png";
-		lock_alt = "Unlock account "+user.login+".";
+		lock_alt = strargs(_("Unlock account %1"), [user.login]);
 	}
 	else {
-		lock_title = "Lock user "+user.login+".";
+		lock_title =  strargs(_("Lock user %1"), [user.login]); 
 		lock_class = "locked_box user_lock_action";
 		lock_img = "/images/24x24/locked_box.png";
-		lock_alt = "Lock account "+user.login+".";
+		lock_alt = strargs(_("Lock account %1"), [user.login]);
 	}
 
 	user_locked_html = '<img src="'+lock_img+'" class="'+lock_class+'" alt="'+lock_alt+'" title="'+lock_title+'"/>';
 
 	user_nav = '<div class="reapply_skel_user" login="'+user.login+'">';
-	user_nav += '	<img src="/images/16x16/reapply-skel.png" title="Reapply skel of user '+user.login+'" alt="Reapply skel of user '+user.login+'"/>';
+	user_nav += '	<img src="/images/16x16/reapply-skel.png" title="'+strargs(_("Reapply skel of user %1"), [user.login])+'" alt="'+strargs(_("Reapply skel of user %1"), [user.login])+'"/>';
 	user_nav += '</div>';
 	user_nav += '<div class="delete_user" login="'+user.login+'">';
-	user_nav += '	<img src="/images/16x16/supprimer.png" title="Delete user '+user.login+'" alt="Delete user '+user.login+'"/></a>';
+	user_nav += '	<img src="/images/16x16/supprimer.png" title="'+strargs(_("Delete user %1"), [user.login])+'" alt="'+strargs(_("Delete user %1"), [user.login])+'"/></a>';
 	user_nav += '</div>';
 
 
@@ -635,7 +635,7 @@ function generate_item_row(user) {
 	user_html += '		<input type="checkbox" name="selected" class="user_checkbox" id="checkbox_' + user.login + '">';
 	user_html += '	</span>';
 	user_html += '	<span class="user_locked odd_even_typed " login="'+user.login+'"> ' + user_locked_html + ' </span>';
-	user_html += '	<span title="Click to edit user '+user.login+'" class="'+content_class+'" login="' + user.login + '">';
+	user_html += '	<span title="'+strargs(_("Click to edit user %1"), [user.login])+'" class="'+content_class+'" login="' + user.login + '">';
 	user_html += '		<span class="user_login odd_even_typed">' + user.login + '</span>';
 	user_html += '		<span class="user_gecos odd_even_typed">' + user_gecos + '</span>';
 	user_html += '		<span class="user_uid odd_even_typed">' + user.uidNumber + '</span>';
@@ -647,7 +647,6 @@ function generate_item_row(user) {
 	user_html += '		<span class="item_menu">' + user_nav + '</span>';
 	user_html += '	</span>';
 	user_html += '</span>';
-	//console.log(user_html);
 
 	return user_html;
 }

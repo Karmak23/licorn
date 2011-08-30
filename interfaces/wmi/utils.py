@@ -98,18 +98,18 @@ def run(command, successfull_redirect, page_data, error_message):
 	else:
 		return (HTTP_TYPE_REDIRECT, successfull_redirect)
 def total_time(start, end):
-	elapsed = end - start
-	ptime   = ""
-	if elapsed > 3600:
-		h = elapsed / 3600
-		ptime += _("%d&nbsp;hours,") % h
-		elapsed -= h * 3600
-	if elapsed > 60:
-		m = elapsed / 60
-		ptime += _(" %d&nbsp;minutes,") % m
-		elapsed -= m * 60
-	ptime += _(" %.3f&nbsp;seconds.") % elapsed
-	return ('''<div id="timer">%s</div>''' % _('Core execution time: %s')) % ptime
+        elapsed = end - start
+        ptime   = ""
+        if elapsed > 3600:
+                h = elapsed / 3600
+                ptime += _("%d&nbsp;hours,") % h
+                elapsed -= h * 3600
+        if elapsed > 60:
+                m = elapsed / 60
+                ptime += _(" %d&nbsp;minutes,") % m
+                elapsed -= m * 60
+        ptime += _(" %.3f&nbsp;seconds.") % elapsed
+        return ('''<div id="timer">%s</div>''' % _('Core execution time: %s')) % ptime
 
 # AJAX Functions
 def doubleListBox_orig(titles, id, values_source = [], values_dest = []):
@@ -400,15 +400,11 @@ def menu(uri):
 		<div class="menu-content">
 			<span class="menu-content-item">
 				<img src="/images/24x24/eteindre.png"/>
-				<span class="menu-content-text">
-				Éteindre
-				</span>
+				<span class="menu-content-text"> %s	</span>
 			</span>
 			<span class="menu-content-item">
 				<img src="/images/24x24/redemarrer.png"/>
-				<span class="menu-content-text">
-				Redémarrer
-				</span>
+				<span class="menu-content-text"> %s </span>
 			</span>
 		</div>
 	</div>
@@ -423,14 +419,14 @@ def menu(uri):
 		<div class="menu-content">
 			<span class="menu-content-item">
 				<img src="/images/24x24/ajouter.png"/>
-				<span class="menu-content-text" id='add_user_menu'>
-					Ajouter
+				<span class="menu-content-text" id='add_user_menu'> 
+					%s 
 				</span>
 			</span>
 			<span class="menu-content-item">
 				<img src="/images/24x24/importer.png"/>
-				<span class="menu-content-text" id='import_user_menu'>
-					Importer
+				<span class="menu-content-text" id='import_user_menu'> 
+					%s
 				</span>
 			</span>
 		</div>
@@ -450,13 +446,13 @@ def menu(uri):
 			<span class="menu-content-item">
 				<img src="/images/24x24/shutdown.png"/>
 				<span class="menu-content-text" id='add_group_menu'>
-				Ajouter
+					%s
 				</span>
 			</span>
 			<span class="menu-content-item">
 				<img src="/images/24x24/shutdown.png"/>
 				<span class="menu-content-text" id='import_group_menu'>
-				Importer
+					%s
 				</span>
 			</span>
 		</div>
@@ -507,8 +503,11 @@ def menu(uri):
 
 </div>
 ''' % ( _('Server, UPS and hardware sub-systems status.'), _('Status'),
-		 _('Manage user accounts.'), _('Users'),
-		 _('Manage groups and shared data.'), _('Groups'),
+		_('Shutdown'), _('Restart'),
+		_('Manage user accounts.'), _('Users'),
+		_('Add'), _('Import'),
+		_('Manage groups and shared data.'), _('Groups'),
+		_('Add'), _('Import'),
 		'\n'.join([ '''
 		<div class="menu-item" >
 			<div class="menu-title">
@@ -561,21 +560,11 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 				<script language="javascript" type="text/javascript" src="/js/jquery.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/jquery.gettext.js"></script>
 				%s
-				<!--
-					<script language="javascript" type="text/javascript" src="/js/jquery-ui.js"></script>
-
-					<script language="javascript" type="text/javascript" src="/js/jquery.cookie.js"></script>
-					<script language="javascript" type="text/javascript" src="/js/jquery.jqplot.min.js"></script>
-					<script language="javascript" type="text/javascript" src="/js/jqplot.pieRenderer.min.js"></script>
-					<script language="javascript" type="text/javascript" src="/js/manage_content.js"></script>
-					<script language="javascript" type="text/javascript" src="/js/on_load.js"></script>
-				-->
 				<script language="javascript" type="text/javascript" src="/js/jquery.easing.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/jquery.base64.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/utils.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/main.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/menu.js"></script>
-				<script language="javascript" type="text/javascript" src="/js/on_load_server.js"></script>
 				<!-- <script language="javascript" type="text/javascript" src="/js/tools.js"></script> -->
 			</head>
 			<body>""" % (

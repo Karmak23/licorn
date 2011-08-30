@@ -5,13 +5,6 @@
 * Licensed under the terms of the GNU GPL version 2
 */
 
-
-//var _LIST_GROUPS = new List('groups', 'name', "#groups_privs_list_content", '.group_content');
-//var _LIST_PRIVS = new List('privs', 'name', "#privs_list_content", '.privs_select', '.priv_content');
-
-
-
-
 function template_main_content_list(content_obj) {
 
 }
@@ -35,16 +28,13 @@ $(document).ready(function() {
 	 * 	"choice_item" : "is_priv"
 	 * }
 	 * */
-	// obj_content.lists_name = [ 'Groupes', 'Privilèges' ]
-	//console.log('hiaaa');
+
 	page = '/groups/get_main_content_JSON'
 
 	_PAGE = new Page('groups');
 
 	$.getJSON(page, function(obj_content){
-		//console.log('on y est');
 		obj = obj_content.content
-		//console.log(obj);
 		$("#main_content").html("<!-- starting lists -->");
 		$.each(obj.lists, function (k, list_obj) {
 			var handler = setTimeout(function(){
@@ -64,7 +54,7 @@ $(document).ready(function() {
 		$("#main_content").append("<!-- end lists -->");
 	});
 
-	not_yet_dialog = new dialog('Not yet developped', 'Not yet developped');
+	not_yet_dialog = new dialog(_("Not yet developped"), _("Not yet developped"));
 });
 
 // group specific functions
@@ -75,7 +65,7 @@ $("#add_group_menu").click(function() {
 
 	// do not let the user add a priv from the wmi
 	if (_PAGE.current_list.name != 'groups') {
-		alert("impossible to add priv from the wmi, in order to add a group please go on the groups list.");
+		alert(_("It is currently impossible to add systems group; please select the standard groups list first, to add a standard group account."));
 	}
 	else {
 		change_content_of_sub_content_main(page);
@@ -124,8 +114,6 @@ function init_events_list_header(list) {
 		if (DEBUG || DEBUG_GROUP) { console.log('> CLICK EVENT : on massive delete'); }
 		groups_selected = _PAGE.current_list.get_selected_items();
 
-		//console.log(groups_selected);
-
 		groups_selected_html = '<ul>'
 		$.each(groups_selected, function(k, group) {
 			groups_selected_html += '<li>'+group.name+'</li>';
@@ -136,13 +124,13 @@ function init_events_list_header(list) {
 		delete_dialog_title = _("Deletion confirmation");;
 
 		if (groups_selected_html == '<ul></ul>') {
-			delete_dialog_content = _('Please select at least one group to delete');
+			delete_dialog_content = _("Please select at least one group to delete");
 			delete_dialog = new dialog(delete_dialog_title, delete_dialog_content);
 		}
 		else {
-			delete_dialog_content = _('Do you really want to remove groups:');
+			delete_dialog_content = _("Do you really want to remove groups:");
 			delete_dialog_content += groups_selected_html;
-			delete_dialog_content += "<input type='checkbox' id='massive_delete_make_backup'/> <label for='massive_delete_make_backup'>"+_('Disable backup')+"</label>";
+			delete_dialog_content += "<input type='checkbox' id='massive_delete_make_backup'/> <label for='massive_delete_make_backup'>"+_("Disable backup")+"</label>";
 			delete_dialog = new dialog(delete_dialog_title,delete_dialog_content,
 				true, delete_dialog_action);
 		}
@@ -163,14 +151,14 @@ function init_events_list_header(list) {
 		if (DEBUG || DEBUG_GROUP) { console.log('> CLICK EVENT : on massive skel'); }
 		if (DEBUG || DEBUG_GROUP) console.log('massive skel on ' + groups_selected_html);
 
-		skel_dialog_title = _('Reapply skel confirmation');;
+		skel_dialog_title = _("Reapply skel confirmation");;
 
 		if (groups_selected_html == '<ul></ul>') {
-			skel_dialog_content = _('Please select at least one group to reapply skel');
+			skel_dialog_content = _("Please select at least one group to reapply skel");
 			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content);
 		}
 		else {
-			skel_dialog_content = _('Do you really want to reappl skel of groups:');
+			skel_dialog_content = _("Do you really want to reappl skel of groups:");
 			skel_dialog_content += groups_selected_html;
 			skel_dialog = new dialog(skel_dialog_title,	skel_dialog_content,
 				true, reapply_skel_dialog_action);
@@ -257,16 +245,16 @@ function init_events(me) {
 		group = _PAGE.current_list.get_item(group_name);
 
 		if (group.permissive == "True") {
-			perm_title = "Make group "+group_name+" NOT permissive.";
+			perm_title = strargs(_("Make group %1 not permissive.", [group_name]));
 			perm_class = "group_unperm_action";
 			perm_img = "/images/24x24/locked.png";
-			perm_alt = "Make group "+group_name+" NOT permissive.";
+			perm_alt = strargs(_("Make group %1 not permissive.", [group_name]));
 		}
 		else {
-			perm_title = "Make group "+group_name+" permissive.";
+			perm_title = strargs(_("Make group %1 permissive.", [group_name]));
 			perm_class = "perm_box group_perm_action";
 			perm_img = '/images/24x24/locked_over.png';
-			perm_alt = "Make group "+group_name+" permissive.";
+			perm_alt = strargs(_("Make group %1 permissive.", [group_name]));
 		}
 
 		group_perm_html = "<img src='"+perm_img+"' class='"+perm_class+"' alt='"+perm_alt+"' title='"+perm_title+"'/>";
@@ -274,16 +262,16 @@ function init_events(me) {
 
 	}, function() {
 		if (group.permissive == 'True') {
-			perm_title = "Make group "+group_name+" NOT permissive.";
+			perm_title = strargs(_("Make group %1 not permissive.", [group_name]));
 			perm_class = "group_unperm_action";
 			perm_img = "/images/24x24/locked.png";
-			prem_alt = "Make group "+group_name+" NOT permissive.";
+			prem_alt = strargs(_("Make group %1 not permissive.", [group_name]));
 		}
 		else {
-			perm_title = "Make group "+group_name+" permissive.";
+			perm_title = strargs(_("Make group %1 permissive.", [group_name]));
 			perm_class = "perm_box group_perm_action";
 			perm_img = '/images/24x24/locked_box.png';
-			perm_alt = "Make group "+group_name+" permissive.";
+			perm_alt = strargs(_("Make group %1 permissive.", [group_name]));
 		}
 		group_perm_html = "<img src='"+perm_img+"' class='"+perm_class+"' alt='"+perm_alt+"' title='"+perm_title+"'/>";
 		$(this).html(group_perm_html);
@@ -301,16 +289,16 @@ function init_events(me) {
 		if (group.permissive == "True") {
 			if (DEBUG || DEBUG_GROUP) console.log(group_name + " is permissive, present NOTpermissive dialog");
 			// unlock
-			unperm_dialog_title = "Confirmation pour la permissivité";
-			unperm_dialog_content = "Voulez-vous vraiment rendre le groupe "+group_name+" non permissif ?";
+			unperm_dialog_title = _("Permissiveness confirmation");
+			unperm_dialog_content = strargs(_("Do you really want to make the group %1 not permissive?"), [group_name])
 			unperm_dialog = new dialog(unperm_dialog_title, unperm_dialog_content, true, unperm_dialog_action);
 			unperm_dialog.show();
 		}
 		else {
 			// lock
 			if (DEBUG || DEBUG_GROUP) console.log(group_name + " is NOT permissive, present permissive dialog");
-			perm_dialog_title = "Confirmation pour la permissivité";
-			perm_dialog_content = "Voulez-vous vraiment rendre le groupe "+group_name+" permissif ?";
+			perm_dialog_title = _("Permissiveness confirmation");
+			perm_dialog_content = strargs(_("Do you really want to make the group %1 permissive?"), [group_name])
 			perm_dialog = new dialog(perm_dialog_title, perm_dialog_content, true, perm_dialog_action);
 			perm_dialog.show();
 		}
@@ -322,8 +310,8 @@ function init_events(me) {
 			group_to_delete = $(this).attr('name');
 			$(this).attr('id', 'deleting_group');
 			if (DEBUG || DEBUG_GROUP) console.log('> CLICK EVENT : on .delete_group for group '+group_to_delete);
-			delete_group_dialog_title = "Confirmation de suppression";
-			delete_group_dialog_content = "error";
+			delete_group_dialog_title = _("Removal confirmation");
+			delete_group_dialog_content = "";
 			delete_group_dialog = new dialog(delete_group_dialog_title,	delete_group_dialog_content,
 				true, delete_group_dialog_action, true, '/groups/delete_message/'+group_to_delete);
 			delete_group_dialog.show();
@@ -333,8 +321,8 @@ function init_events(me) {
 		group_to_reapply_skel = $(this).attr('name');
 		$(this).attr('id', 'reapplying_skel_group');
 		if (DEBUG || DEBUG_GROUP) console.log('> CLICK EVENT : on .reapply_skel_group of '+group_to_reapply_skel);
-		reapply_skel_group_dialog_title = "Rechargement du squelette.";
-		reapply_skel_group_dialog_content = "BLABLA";
+		reapply_skel_group_dialog_title = _("Reapply skel");
+		reapply_skel_group_dialog_content = "";
 		reapply_skel_group_dialog = new dialog(reapply_skel_group_dialog_title, reapply_skel_group_dialog_content,
 			true, reapply_skel_group_dialog_action, true, '/groups/skel_message/'+group_to_reapply_skel);
 		reapply_skel_group_dialog.show();
@@ -398,25 +386,15 @@ function init_events_on_subcontent_change() {
 	});
 
 	height = $('#sub_content_main').height() - (nb_ligne * $('.sub_content_line').height()) - $('#sub_content_header').height() - 30;
-	//height = height_temp / nb_list;
 
 	min_height = 40;
 	cpt = 0;
 	$('.sub_content_list').each(function() {
 		_height = height*percentage[cpt]
-		//~ if (_height < min_height) {
-			//~ _height = min_height;
-			//~
-		//~ }
+
 		$(this).height(_height);
 		cpt += 1;
 	});
-
-	//console.log('HEIGHT : '+height);
-	//console.log('HEIGHT : '+$('#sub_content_main').height());
-	//console.log('nb_ligne : '+nb_ligne);
-	//console.log('HEIGHT : '+(nb_ligne * $('.sub_content_line').height()));
-	//$('.sub_content_list').css({'border' : '1px solid red'});
 }
 
 function make_users_interaction() {
@@ -431,8 +409,6 @@ function make_users_interaction() {
 	states[3] = "resp";
 	states_priv[0] = "no_membership";
 	states_priv[1] = "member";
-
-	//console.log("make groups interaction");
 
 	function get_next_state(state_name, is_priv) {
 		if (is_priv) {
@@ -466,12 +442,6 @@ function make_users_interaction() {
 		$('.click_item').each(function() {
 			current_state = $(this).find('.item_hidden_input').attr('name');
 			cs_id = get_current_state(current_state);
-			//$(this).removeClass('cat_no_membership cat_guest cat_member cat_resp');
-			//$(this).addClass('cat_' + current_state);
-
-			//console.log('current_state = ' + current_state);
-			//console.log('current_state2 = ' + this.width);
-
 			$(this).find('.item_relation').html('<img src="/images/24x24/' + states[cs_id] + '.png"/>');
 		});
 	}
@@ -501,15 +471,12 @@ function make_users_interaction() {
 		else {
 			next_state = get_next_state(current_state, is_priv);
 		}
-		//alert(get_next_state(current_state));
-
 		//change the name of the hidden input
 		$(this).find('.item_hidden_input').attr('name',s[next_state])
 		$(this).removeClass('cat_no_membership cat_guest cat_member cat_resp');
 		$(this).addClass('cat_' + s[next_state]);
 
 		$(this).find('.item_relation').html('<img src="/images/24x24/' + s[next_state] + '.png"/>');
-		//init_list();
 
 	});
 }
@@ -525,15 +492,6 @@ function refresh_item_row(json_input) {
 
 	group_div = $("#name_"+json_input.name);
 	group = json_input;
-
-	/*
-	_group = _LIST.get_item(group.name);
-
-	_group.permissive = group.permissive;
-	_group.description = group.description;
-	_group.groupSkel = group.groupSkel;
-	_group.is_priv = group.is_priv;
-	*/
 
 	if (group.permissive == "True") {
 		perm_title = "Make group "+group.name+" NOT permissive.";
@@ -557,12 +515,8 @@ function refresh_item_row(json_input) {
 	group_div.find('.'+_LIST.name+'_list_permissive').html(group_perm_html);
 	group_div.find('.'+_LIST.name+'_list_desc').html(group_desc_html);
 	group_div.find('.'+_LIST.name+'_list_skel').html(group_skel_html);
-	//group_div.find('.'+_LIST.name+'_list_skel').html(group_skel_html);
 	group_div.find('.'+_LIST.name+'_list_is_priv').html(group_is_priv_html);
 
-}
-function generate_groups_row(group) {
-	//console.log('generate_group_row');
 }
 function generate_item_row(group) {
 
@@ -581,10 +535,10 @@ function generate_item_row(group) {
 			}
 
 			group_nav = '<div class="reapply_skel_group" name="'+group_name+'">';
-			group_nav += '	<img src="/images/16x16/reapply-skel.png" title="Reapply skel of group '+group_name+'" alt="Reapply skel of group '+group_name+'"/>';
+			group_nav += '	<img src="/images/16x16/reapply-skel.png" title="'+strargs(_("Reapply skel of group %1"), [group_name])+' alt="'+strargs(_("Reapply skel of group %1"), [group_name])+'"/>';
 			group_nav += '</div>';
 			group_nav += '<div class="delete_group" name="'+group_name+'">';
-			group_nav += '	<img src="/images/16x16/supprimer.png" title="Delete user '+group_name+'" alt="Delete user '+group_name+'"/>';
+			group_nav += '	<img src="/images/16x16/supprimer.png" title="'+strargs(_("Delete group %1"), [group_name])+'" alt="'+strargs(_("Delete group %1"), [group_name])+'"/>';
 			group_nav += '</div>';
 
 
@@ -646,78 +600,5 @@ function generate_item_row(group) {
 			list_html += '	</div>';
 			list_html += '</div>';
 
-
-
-	/*
-
-	list_html += '</div><!-- end groups_list_content -->';
-	list_html += '<div class="main_content_title">Privilèges :</div>';
-	list_html += '<div id="privs_list_content"><!-- start privs_list_content -->';
-	for (i=0;i<privs_tab.length;i++) {
-
-		//("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"+privs_tab[i].name);
-
-		display = 'display'
-			if (privs_tab[i].displayed == false) {
-				display = 'hidden'
-			}
-
-			group_name = privs_tab[i].name;
-			group_gid = privs_tab[i].gid;
-			group_desc = privs_tab[i].desc;
-			group_skel = privs_tab[i].skel;
-			group_permissive = privs_tab[i].permissive;
-			group_selected = privs_tab[i].selected;
-			group_priv = privs_tab[i].priv;
-
-			//("group_priv="+group_priv);
-
-			if (group_priv == true) {
-					privs_tab.push(privs_tab[i]);
-					continue;
-			}
-
-			group_nav = '<div class="reapply_skel_group" name="'+group_name+'">';
-			group_nav += '';
-			group_nav += '</div>';
-			group_nav += '<div class="delete_group" name="'+group_name+'">';
-			group_nav += '	<img src="/images/16x16/supprimer.png" title="Delete user '+group_name+'" alt="Delete user '+group_name+'"/>';
-			group_nav += '</div>';
-
-
-			checked = '';
-			if (group_selected == true) {
-				checked = 'checked';
-			}
-
-			list_html += '<div class="groups_row" id='+ group_name +'>';
-			list_html += '	<div class="privs_list_item groups_list_select" name='+group_name+'>';
-			list_html += '		<input id="checkbox_'+group_name+'" type="checkbox" '+checked+'/>';
-			list_html += '	</div>';
-			// privs cannot be permissive
-			list_html += '	<div class="privs_list_item groups_list_permissive">';
-			list_html += '	</div>';
-			list_html += '	<div class="group_content" name='+group_name+'>';
-			list_html += '		<div class="privs_list_item groups_list_name">';
-			list_html += '			'+group_name;
-			list_html += '		</div>';
-			list_html += '		<div class="privs_list_item groups_list_desc">';
-			list_html += '			'+group_desc;
-			list_html += '		</div>';
-			list_html += '		<div class="groups_list_item groups_list_gid">';
-			list_html += '			'+group_gid;
-			list_html += '		</div>';
-			list_html += '		<div class="privs_list_item groups_list_skel">';
-			list_html += '			'+group_skel;
-			list_html += '		</div>';
-			list_html += '	</div>';
-			list_html += '	<div class="privs_list_item groups_list_nav">';
-			list_html += '		<div class="item_menu">'+group_nav+'</div>';
-			list_html += '	</div>';
-			list_html += '</div>';
-	}
-
-	list_html += '</div><!-- end privs_list_content -->';
-	*/
 	return list_html;
 }
