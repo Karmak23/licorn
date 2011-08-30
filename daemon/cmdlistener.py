@@ -32,9 +32,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 		the originating socket comes from a process launched by an authorized
 		user (member of group 'admins').
 	"""
-	#: A list of users authorized to connect to the current server.
-	valid_users = []
-
 	#: A list of local (loopback) interfaces. 127.0.1.1 is here because included
 	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
@@ -159,15 +156,18 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			# slower. Thus we use our internals.
 			#
 			#client_login = pwd.getpwuid(client_uid).pw_name
-			client_login = LMC.users.uid_to_login(
-				client_uid)
+			client_login = LMC.users.uid_to_login(client_uid)
 
 			assert ltrace('cmdlistener', 'currently authorized users: %s.' %
-					', '.join(stylize(ST_LOGIN, l)
-						for l in LicornPyroValidator.valid_users))
+					', '.join(stylize(ST_LOGIN, u.login)
+						for u in LMC.groups.by_name(
+									LMC.configuration.defaults.admin_group
+										).all_members))
 
 			if client_uid == 0 \
-				or client_login in LicornPyroValidator.valid_users:
+				or client_uid in [x.uidNumber for x in LMC.groups.by_name(
+									LMC.configuration.defaults.admin_group
+										).all_members]:
 
 				logging.progress('''Authorized client connection from'''
 					''' %s:%s, user %s(%s).''' % (client_addr, client_socket,
@@ -241,10 +241,6 @@ class CommandListener(LicornBasicThread):
 
 		Pyro.core.initServer()
 		Pyro.config.PYRO_PORT=LMC.configuration.licornd.pyro.port
-		#Pyro.config.PYRO_TRACELEVEL=3
-		#Pyro.config.PYRO_USER_TRACELEVEL=3
-		#Pyro.config.PYRO_LOGFILE='pyro.log'
-		#Pyro.config.PYRO_USER_LOGFILE='pyro.user.log'
 
 		count = 0
 
@@ -264,16 +260,6 @@ class CommandListener(LicornBasicThread):
 			# happens with a Control-C during the previous while and pyro daemon
 			# didn't start (we are stopping and didn't acheive to really start).
 			return
-
-		# not strictly needed.
-		#self.pyro_daemon.setTimeout(5)
-		#self.pyro_daemon.setTransientsCleanupAge(5)
-
-		# get a direct reference to the members of group authorized to connect,
-		# this avoids any needs to reload it after a change.
-		LicornPyroValidator.valid_users.extend(LMC.groups.by_name(
-				LMC.configuration.defaults.admin_group
-				).memberUid)
 
 		# get the port number from current configuration.
 		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port

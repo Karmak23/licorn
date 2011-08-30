@@ -319,8 +319,8 @@ def find_network_client_uid(orig_port, client_port, local=True):
 			#print ('--> %s %s / %s %s' % (values[1], values[2],
 			#	('0100007F:%x' % client_port).upper(),
 			#	('0101007F:%x' % client_port).upper()))
-			laddr, lport = values[2].split(':')
-			raddr, rport = values[1].split(':')
+			laddr, lport = values[1].split(':')
+			raddr, rport = values[2].split(':')
 
 			if local:
 				if ('%x' % client_port).upper() == lport \

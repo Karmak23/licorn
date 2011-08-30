@@ -343,7 +343,7 @@ class LicornMasterController(MixedDictObject):
 				# then, tell the controller to find its new prefered in its
 				# refreshed backends list.
 				if controller.find_prefered_backend():
-					raise exceptions.NeedRestartException('backends changed.')
+					raise exceptions.NeedRestartException(_(u'backends changed.'))
 
 					# TODO: restart all the CLIENT-daemons too, to (un-) load
 					# the new backend(s), synchronized with the server.
@@ -371,7 +371,7 @@ class LicornMasterController(MixedDictObject):
 			pyroloc = 'PYROLOC://127.0.0.1:%s' % (
 				self._localconfig.licornd.pyro.port)
 		else:
-			logging.progress("trying to connect to server %s." %
+			logging.progress(_(u'trying to connect to server %s.') %
 									 self._localconfig.server_main_address)
 			pyroloc = 'PYROLOC://%s:%s' % (
 				self._localconfig.server_main_address,
@@ -409,17 +409,23 @@ class LicornMasterController(MixedDictObject):
 					'  connect(): main configuration object connected.')
 				break
 			except Pyro.errors.ProtocolError, e:
+
+				if e.args[0] == 'security reasons':
+					logging.error(_(u'Your user account is not allowed to '
+									u'connect to the Licorn® daemon.'))
+					sys.exit(911)
+
 				if second_try:
 					if self._localconfig.licornd.role == roles.SERVER:
 						logging.error('''Can't connect to the daemon, but it '''
 							'''has been successfully launched. I suspect '''
 							'''you're in trouble (was: %s)''' % e, 199)
 					else:
-						logging.warning('Cannot reach our daemon at %s, '
-							'retrying in 5 seconds. Check your network '
-							'connection, cable, DNS and firewall. Perhaps the '
-							'Licorn® server is simply down.' %
-								stylize(ST_ADDRESS, 'pyro://%s:%s' % (
+						logging.warning(_(u'Cannot reach our daemon at %s, '
+							u'retrying in 5 seconds. Check your network '
+							u'connection, cable, DNS and firewall. Perhaps the '
+							u'Licorn® server is simply down.') %
+								stylize(ST_ADDRESS, u'pyro://%s:%s' % (
 									self._localconfig.server_main_address,
 									self._localconfig.licornd.pyro.port)))
 						time.sleep(5.0)
@@ -442,7 +448,7 @@ class LicornMasterController(MixedDictObject):
 					# cancel the alarm if USR1 received.
 					signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
 
-					logging.notice('waiting for daemon to come up…')
+					logging.notice(_(u'waiting for daemon to come up…'))
 
 					# ALARM or USR1 will break the pause()
 					signal.pause()

@@ -85,7 +85,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 		else:
 
-			assert ltrace('cli', '  cli_main: connecting to core')
+			assert ltrace('cli', '  cli_main: connecting to core.')
 			RWI = LMC.connect()
 
 			try:
@@ -97,7 +97,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 			options.SetFrom(opts)
 
-			assert ltrace('cli', '  cli_main: starting pyro')
+			assert ltrace('cli', '  cli_main: starting pyro!')
 			pyroStarted=True
 			pyro_start_time = time.time()
 
