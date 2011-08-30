@@ -17,27 +17,27 @@ install: binary-install installdoc
 configure:
 
 build: configure i18n
-	chmod a+x $(EXECUTABLES)
-	chmod a+x daemon/main.py
-	chmod a+x tests/core.py tests/wmi.py
 
 binary-install: build
 	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)"
 	cp -a config/* "$(CONFDIR)"
 	cp -a interfaces/gui/*.glade "$(SHARE_DIR)"
 	cp -a interfaces daemon core extensions foundations contrib __init__.py "$(PROJECT_LIB_DIR)"
-	( \
-		for executable in $(EXECUTABLES); do \
-		ln -sf "$(EXEC_LINK_DIR)"/$$executable \
-			"$(DESTDIR)"/usr/bin/`basename $$executable | sed -e "s%\.py%%g"`; \
-		done \
-	)
-	( cd "$(DESTDIR)"/usr/sbin; ln -sf "$(EXEC_LINK_DIR)"/daemon/main.py licornd )
-	mkdir -p "$(LOCALE_DIR)"
-	cp -a locale/* "$(LOCALE_DIR)"
 	#find src/po -mindepth 1 -maxdepth 1 -type d -exec cp -a "{}" "$(LOCALE_DIR)" \;
 	ln -sf ../"$(EXEC_LINK_DIR)"/interfaces/wmi "$(SHARE_DIR)"/wmi
 	ln -sf ../"$(EXEC_LINK_DIR)"/core/backends/schemas "$(SHARE_DIR)"/schemas
+	chown -R root: "$(CONFDIR)" "$(SHARE_DIR)" "$(LOCALE_DIR)" "$(PROJECT_LIB_DIR)"
+	find "$(DESTDIR)" -type d -exec chmod 755 "{}" \;
+	find "$(DESTDIR)" -type f -exec chmod 644 "{}" \;
+	( \
+		for executable in $(EXECUTABLES); do \
+			ln -sf "$(EXEC_LINK_DIR)"/$$executable \
+				"$(DESTDIR)"/usr/bin/`basename $$executable | sed -e "s%\.py%%g"`; \
+			chmod 755 "$(PROJECT_LIB_DIR)"/$$executable ; \
+		done \
+	)
+	( cd "$(DESTDIR)"/usr/sbin; ln -sf "$(EXEC_LINK_DIR)"/daemon/main.py licornd )
+	chmod a+x "$(PROJECT_LIB_DIR)"/daemon/main.py
 
 doc:
 	(cd docs; make html)
@@ -52,11 +52,13 @@ clean: cleandoc cleanlang
 	[ -d src/po/fr ] && rm -r src/po/fr || true
 
 cleanlang:
+	# remove compiled message files
 	rm -f locale/*.mo
+	# remove lang directories
 	for lang in fr ; \
-			do \
-				rm -rf locale/$${lang}; \
-			done
+		do \
+			rm -rf locale/$${lang}; \
+		done
 
 lang: i18n
 
@@ -66,8 +68,8 @@ i18n: update-po
 	for lang in fr ; \
 		do \
 			mkdir -p locale/$${lang}/LC_MESSAGES; \
-			ln -sf ../../$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
-			ln -sf ../../$${lang}.js.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).js.mo ; \
+			cp $${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
+			cp $${lang}.js.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).js.mo ; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
 			touch locale/$${lang}.js.po ; \
 			msgfmt locale/$${lang}.js.po -o locale/$${lang}.js.mo ; \
