@@ -1169,14 +1169,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		# be carefull. default selection is NONE for a DEL operation.
-		selection = filters.NONE
-
 		if opts.system:
 			selection = filters.SYSTEM
 
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
+
+		else:
+			# be careful. default selection is NONE for a DEL operation.
+			selection = filters.NONE
 
 		include_id_lists = [
 			(opts.login, LMC.users.by_login),
@@ -1335,8 +1336,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		selection = filters.NONE
-
 		if opts.privileged:
 			selection = filters.PRIVILEGED
 		elif opts.responsibles:
@@ -1355,6 +1354,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			selection = filters.NOT_SYSTEM
 		elif opts.not_privileged:
 			selection = filters.NOT_PRIVILEGED
+		else:
+			selection = filters.NONE
 
 		# no else: clause. default selection for DEL is NONE (be careful)
 
@@ -1539,16 +1540,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		# by default if nothing is specified, we modify the current user.
-		# this is a special comfort-shortcut behavior.
-		#selection = filters.NONE
-		selection = [ LMC.users.by_login(opts.current_user) ]
-
 		if opts.system:
 			selection = filters.SYSTEM
 
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
+
+		else:
+			# by default if nothing is specified, we modify the current user.
+			# this is a special comfort-shortcut behavior.
+			selection = [ LMC.users.by_login(opts.current_user) ]
 
 		include_id_lists = [
 			(opts.login, LMC.users.by_login),
@@ -1560,6 +1561,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			(opts.exclude_login, LMC.users.by_login),
 			(opts.exclude_uid, LMC.users.by_uid)
 			]
+
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
@@ -1720,8 +1722,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		selection = filters.NONE
-
 		if opts.privileged:
 			selection = filters.PRIVILEGED
 		elif opts.responsibles:
@@ -1743,7 +1743,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		elif not opts.all:
 			# must be the last case!
-			selection = filters.STANDARD
+			selection = filters.NONE
 
 		include_id_lists = [
 			(opts.name, LMC.groups.by_name),
@@ -2197,13 +2197,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		selection = filters.STANDARD
-
 		if opts.system:
 			selection = filters.SYSTEM
 
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
+
+		else:
+			# by default we check the current user
+			selection = [ LMC.users.by_login(opts.current_user) ]
 
 		include_id_lists = [
 			(opts.login, LMC.users.by_login),
