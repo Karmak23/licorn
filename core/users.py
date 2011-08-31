@@ -310,7 +310,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__gecos = gecos
 			self.serialize()
 			self._cli_invalidate()
-			
+
 			logging.notice(_(u'Changed user {0} gecos '
 				'to "{1}".').format(stylize(ST_NAME, self.__login),
 				stylize(ST_COMMENT, gecos)))
@@ -738,7 +738,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			try:
 				os.mkdir('%s/%s' % (self.__homeDirectory, LMC.configuration.users.config_dir))
-				
+
 			except (IOError, OSError), e:
 				if e.errno != 17:
 					# don't bork if already exists, else bork.
@@ -1091,6 +1091,8 @@ class UsersController(Singleton, CoreFSController):
 	@property
 	def logins(self):
 		return (login for login in User.by_login)
+	def word_match(self, word):
+		return hlstr.multi_word_match(word, self.logins)
 	def by_uid(self, uid):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.

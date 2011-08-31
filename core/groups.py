@@ -1721,6 +1721,8 @@ class GroupsController(Singleton, CoreFSController):
 	@property
 	def names(self):
 		return (name for name in Group.by_name)
+	def word_match(self, word):
+		return hlstr.multi_word_match(word, self.names)
 	def by_gid(self, gid):
 		# we need to be sure we get an int(), because the 'gid' comes from RWI
 		# and is often a string.

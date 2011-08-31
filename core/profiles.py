@@ -11,7 +11,7 @@ Barely compatible with gnome-system-tools profiles
 :license: GNU GPL version 2
 """
 
-import sys, gc, os, re, shutil, weakref
+import sys, gc, os, re, shutil, weakref, itertools
 
 from contextlib  import nested
 from operator    import attrgetter
@@ -650,6 +650,8 @@ class ProfilesController(Singleton, CoreController):
 	@property
 	def names(self):
 		return (name for name in Profile.by_name)
+	def word_match(self, word):
+		return hlstr.multi_word_match(word, itertools.chain(self.names, self.groups))
 	def by_name(self, name):
 		# turn the weakref into an object before returning
 		return Profile.by_name[name]()

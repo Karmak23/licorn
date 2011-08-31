@@ -204,15 +204,12 @@ def word_fuzzy_match(part, word):
 		current = word[last:].find(char)
 
 		if current == -1:
-			#print '>> fuzzy match', word, 'NONE'
 			return None
 
 		last = current
 
 	# if we got out of the for loop without returning None, the part
 	# matched, this is a success. Announce it.
-
-	#print '>> fuzzy match', word, ' OK'
 	return word
 def word_match(word, valid_words):
 	""" try to find what the user specified on command line. """
@@ -258,6 +255,16 @@ def word_match(word, valid_words):
 						stylize(ST_COMMENT, a_try)))
 
 	return first_match
+def multi_word_match(word, valid_words):
+	""" try to find what the user specified on command line. """
+
+	matched = set()
+
+	for a_try in valid_words:
+		if word in a_try or word_fuzzy_match(word, a_try):
+			matched.add(a_try)
+
+	return list(matched)
 def statsize2human(size):
 	""" Convert an integer size (coming from a stat object) to a Human readable string.
 

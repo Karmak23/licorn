@@ -83,6 +83,15 @@ def common_filter_group(app, parser, tool, mode):
 					mode[:-1]))
 
 	if tool is 'get':
+		if mode in ('users', 'groups', 'profiles', 'machines'):
+			filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
+				action="store", dest="word_match", default='',
+				help=_(u'grep / fuzzy word match on the login/name/hostname.'))
+			filtergroup.add_option('-G', '--exclude-grep', '--exclude-fuzzy',
+				'--exclude-word-match',
+				action="store", dest="exclude_word_match", default='',
+				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+
 		if mode in ('daemon_status', 'users', 'groups', 'machines'):
 			filtergroup.add_option('-l', '--long', '--full',
 				action="store_true", dest="long", default=False,

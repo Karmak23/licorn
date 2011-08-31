@@ -83,7 +83,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		"""
 		# NOTE: no (generator) for pyro methods...
 		return [ x.name for x in LMC.backends ]
-	def select(self, controller, args=None, include_id_lists=None,
+	def select(self, controller, args=None, opts=None, include_id_lists=None,
 		exclude_id_lists=None, default_selection=filters.NONE, all=False):
 
 		assert ltrace('cli', '''> select(controller=%s, args=%s, '''
@@ -97,8 +97,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if include_id_lists is None:
 			include_id_lists = ()
+
 		if exclude_id_lists is None:
 			exclude_id_lists = ()
+
 		if args is None:
 			args = ()
 
@@ -121,10 +123,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 					include_id_lists.append((arg, controller.guess_one))
 
+			if hasattr(opts, 'word_match'):
+				for arg in opts.word_match.split(','):
+					if arg == '':
+						continue
+
+					include_id_lists.append((controller.word_match(arg), controller.guess_one))
+
 			# select included IDs
 			for id_arg, resolver in include_id_lists:
 				if id_arg is None:
 					continue
+
 				for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
 					if oid is '':
 						continue
@@ -144,9 +154,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						continue
 
 		# select excluded IDs, to remove them from included ones
+
+		if hasattr(opts, 'exclude_word_match'):
+			for arg in opts.exclude_word_match.split(','):
+				if arg == '':
+					continue
+
+				exclude_id_lists.append((controller.word_match(arg), controller.guess_one))
+
 		for id_arg, resolver in exclude_id_lists:
 			if id_arg is None:
 				continue
+
 			for oid in id_arg.split(',') if hasattr(id_arg, 'split') else id_arg:
 				if oid is '':
 					continue
@@ -203,7 +222,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
 
-		users_to_get = self.select(LMC.users, args,
+		users_to_get = self.select(LMC.users, args, opts,
 					include_id_lists = [
 						(opts.login, LMC.users.by_login),
 						(opts.uid, LMC.users.by_uid)
@@ -263,7 +282,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# must be the last case!
 			selection = filters.STANDARD
 
-		groups_to_get = self.select(LMC.groups,	args,
+		groups_to_get = self.select(LMC.groups,	args, opts,
 				include_id_lists = [
 					(opts.name, LMC.groups.by_name),
 					(opts.gid, LMC.groups.by_gid)
@@ -295,7 +314,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
 
-		profiles_to_get = self.select(LMC.profiles, args,
+		profiles_to_get = self.select(LMC.profiles, args, opts,
 				include_id_lists = [
 					(opts.name, LMC.profiles.by_name),
 					(opts.group, LMC.profiles.by_group)
@@ -971,7 +990,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('add', '> add_user_in_group().')
 
-		users_to_add = self.select(LMC.users, args,
+		users_to_add = self.select(LMC.users, args, opts,
 				include_id_lists = [
 					(opts.login, LMC.users.by_login),
 					(opts.uid, LMC.users.by_uid)
@@ -1134,7 +1153,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			(opts.privileges_to_add, LMC.groups.guess_one),
 		]
 
-		privs_to_add = self.select(LMC.privileges, args=args,
+		privs_to_add = self.select(LMC.privileges, args, opts,
 				include_id_lists=include_priv_lists)
 
 		LMC.privileges.add(privs_to_add)
@@ -1211,7 +1230,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
 				])
 
-		users_to_del = self.select(LMC.users, args,
+		users_to_del = self.select(LMC.users, args, opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
 						default_selection = selection
@@ -1233,7 +1252,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace('del', '> del_users_from_group(%s, %s)' % (opts, args))
 
-		users_to_del = self.select(LMC.users, args,
+		users_to_del = self.select(LMC.users, args, opts,
 				include_id_lists = [
 					(opts.login, LMC.users.by_login),
 					(opts.uid, LMC.users.by_uid)
@@ -1390,7 +1409,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		groups_to_del = self.select(LMC.groups, args,
+		groups_to_del = self.select(LMC.groups, args, opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
 						default_selection=selection)
@@ -1434,13 +1453,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		self.__setup_gettext()
 
 		include_id_lists = [
-			(opts.name, LMC.profiles.by_name),
-			(opts.group, LMC.profiles.by_group)
-		]
+				(opts.name, LMC.profiles.by_name),
+				(opts.group, LMC.profiles.by_group)
+			]
 
 		exclude_id_lists = [
-			(opts.exclude, LMC.profiles.guess_one)
-		]
+				(opts.exclude, LMC.profiles.guess_one)
+			]
+
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
@@ -1456,7 +1476,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						(LMC.profiles.select(filters.ALL), lambda x: x)
 					])
 
-		profiles_to_del = self.select(LMC.profiles, args,
+		profiles_to_del = self.select(LMC.profiles, args, opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
 
@@ -1490,11 +1510,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			del args[1]
 
 		include_priv_lists = [
-			(opts.privileges_to_remove, LMC.groups.guess_one),
-		]
+				(opts.privileges_to_remove, LMC.groups.guess_one),
+			]
+
 		exclude_priv_lists = [
-			(opts.exclude, LMC.privileges.guess_one),
-		]
+				(opts.exclude, LMC.privileges.guess_one),
+			]
+
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
@@ -1509,7 +1531,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.privileges.select(filters.ALL), lambda x: x),
 					])
 
-		privs_to_del = self.select(LMC.privileges, args,
+		privs_to_del = self.select(LMC.privileges, args, opts,
 				include_id_lists = include_priv_lists,
 				exclude_id_lists = exclude_priv_lists)
 
@@ -1578,7 +1600,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		users_to_mod = self.select(LMC.users, args,
+		users_to_mod = self.select(LMC.users, args, opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists,
 				default_selection = selection)
@@ -1771,7 +1793,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		groups_to_mod = self.select(LMC.groups, args,
+		groups_to_mod = self.select(LMC.groups, args, opts,
 					include_id_lists = include_id_lists,
 					exclude_id_lists = exclude_id_lists,
 					default_selection = selection)
@@ -1903,6 +1925,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		exclude_id_lists = [
 			(opts.exclude, LMC.profiles.guess_one),
 		]
+
 		if opts.all and (
 			(
 				# NOTE TO THE READER: don't event try to simplify these conditions,
@@ -1918,7 +1941,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.profiles.select(filters.ALL), lambda x: x)
 				])
 
-		profiles_to_mod = self.select(LMC.profiles, args,
+		profiles_to_mod = self.select(LMC.profiles, args, opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
 
@@ -1969,26 +1992,26 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					profile.add_Groups(ggi(sorted(opts.groups_to_add.split(','))),
 										instant_apply=opts.instant_apply)
 
-				include_id_lists = []
+				local_include_id_lists = []
 
 				if opts.apply_to_members:
 					something_done = True
-					include_id_lists.append((profile.group.gidMembers, lambda x: x))
+					local_include_id_lists.append((profile.group.gidMembers, lambda x: x))
 
 				if opts.apply_to_users is not None:
-					include_id_lists.append(
+					local_include_id_lists.append(
 						(opts.apply_to_users.split(','), LMC.users.guess_one))
 
 				if opts.apply_to_groups is not None:
 					for group in LMC.groups.guess_list(
 											sorted(opts.apply_to_groups.split(','))):
-						include_id_lists.append(
+						local_include_id_lists.append(
 							(group.all_members, lambda x: x))
 
 				if opts.apply_all_attributes or opts.apply_skel or opts.apply_groups:
 
-					_users = self.select(LMC.users, (),
-							include_id_lists = include_id_lists,
+					_users = self.select(LMC.users,
+							include_id_lists = local_include_id_lists,
 							exclude_id_lists = [
 								(opts.exclude, LMC.users.guess_one),
 								(opts.exclude_login, LMC.users.by_login),
@@ -2030,7 +2053,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if opts.active:
 				selection |= host_status.ACTIVE
 
-		mids_to_mod = self.select(LMC.machines, args,
+		mids_to_mod = self.select(LMC.machines, args, opts,
 				include_id_lists = [
 					(opts.hostname, LMC.machines.by_hostname),
 					(opts.mid, LMC.machines.has_key)
@@ -2233,7 +2256,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.users.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		users_to_chk = self.select(LMC.users, args,
+		users_to_chk = self.select(LMC.users, args, opts,
 			include_id_lists = include_id_lists,
 			exclude_id_lists = exclude_id_lists,
 			default_selection = selection,
@@ -2311,7 +2334,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		groups_to_chk = self.select(LMC.groups, args,
+		groups_to_chk = self.select(LMC.groups, args, opts,
 			include_id_lists = include_id_lists,
 			exclude_id_lists = exclude_id_lists,
 			default_selection = selection,
@@ -2362,7 +2385,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						(LMC.profiles.select(filters.ALL), lambda x: x)
 					])
 
-		profiles_to_del = self.select(LMC.profiles, args,
+		profiles_to_del = self.select(LMC.profiles, args, opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
 

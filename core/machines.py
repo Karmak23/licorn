@@ -648,6 +648,14 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		L_network_enqueue(priorities.LOW, self[mid].ping, and_more=True)
 
 		return self[mid]
+	@property
+	def hostnames(self):
+		return (h for h in Machine.by_hostname)
+	@property
+	def ethers(self):
+		return (e for e in Machine.by_ether)
+	def word_match(self, word):
+		return hlstr.multi_word_match(e, itertools.chain(self.hostnames, self.ethers))
 	def load(self):
 		if MachinesController.load_ok:
 			return
