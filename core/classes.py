@@ -2168,7 +2168,7 @@ class CoreFSUnitObject:
 
 		if self._checking.is_set():
 			logging.warning(_(u'{0} {1}: somebody is already checking; '
-				'operation aborted.').format(
+				u'operation aborted.').format(
 					self.controller.object_type_str,
 					stylize(ST_NAME, self.name)))
 			return
@@ -2191,7 +2191,7 @@ class CoreFSUnitObject:
 				# access to the path lstat() in ACLRule.check_dir().
 				if not os.path.exists(self.homeDirectory):
 					if batch or logging.ask_for_repair(_(u'Directory %s does not '
-									'exist but it is mandatory. Create it?') %
+									u'exist but it is mandatory. Create it?') %
 										stylize(ST_PATH, self.homeDirectory),
 									auto_answer=auto_answer):
 						os.mkdir(self.homeDirectory)
@@ -2205,7 +2205,7 @@ class CoreFSUnitObject:
 						self._inotifier_add_watch(self.licornd)
 					else:
 						raise exceptions.LicornCheckError(_(u'Directory %s does not '
-							'exist but is mandatory. Check aborted.') %
+							u'exist but is mandatory. Check aborted.') %
 								stylize(ST_PATH, self.homeDirectory))
 
 				if self.check_rules is not None:

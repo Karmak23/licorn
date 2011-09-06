@@ -113,7 +113,7 @@ def common_filter_group(app, parser, tool, mode):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
 				help=_(u'exclude {0} from the selection. Can be IDs or {1} '
-					'names. Separated by commas without spaces.').format(mode,
+					u'names. Separated by commas without spaces.').format(mode,
 					mode[:-1]))
 
 	if mode is 'users':
