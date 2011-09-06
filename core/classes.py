@@ -2177,7 +2177,7 @@ class CoreFSUnitObject:
 			try:
 				self._checking.set()
 
-				logging.progress(_(u'Checking {0} {1}…').format(
+				logging.info(_(u'Checking {0} {1}…').format(
 						_(self.__class__.__name__.lower()),
 						stylize(ST_NAME, self.name)))
 

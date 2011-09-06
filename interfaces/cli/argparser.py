@@ -83,15 +83,6 @@ def common_filter_group(app, parser, tool, mode):
 					mode[:-1]))
 
 	if tool is 'get':
-		if mode in ('users', 'groups', 'profiles', 'machines'):
-			filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
-				action="store", dest="word_match", default='',
-				help=_(u'grep / fuzzy word match on the login/name/hostname.'))
-			filtergroup.add_option('-G', '--exclude-grep', '--exclude-fuzzy',
-				'--exclude-word-match',
-				action="store", dest="exclude_word_match", default='',
-				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
-
 		if mode in ('daemon_status', 'users', 'groups', 'machines'):
 			filtergroup.add_option('-l', '--long', '--full',
 				action="store_true", dest="long", default=False,
@@ -177,6 +168,16 @@ def common_filter_group(app, parser, tool, mode):
 				'without spaces).'))
 
 		if tool in ('get', 'mod', 'del', 'chk'):
+			if mode in ('users', 'groups', 'profiles', 'machines'):
+				# TODO: "if has_attr(controller, 'word_match'):		
+				filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
+					action="store", dest="word_match", default='',
+					help=_(u'grep / fuzzy word match on the login/name/hostname.'))
+				filtergroup.add_option('-G', '--exclude-grep', '--exclude-fuzzy',
+					'--exclude-word-match',
+					action="store", dest="exclude_word_match", default='',
+					help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+		
 			filtergroup.add_option('--system', '--system-groups', '--sys',
 				action="store_true", dest="system", default=False,
 				help=_(u"Only select system groups."))
