@@ -18,6 +18,9 @@ configure:
 
 build: configure i18n
 
+localperms:
+	@chmod 755 $(EXECUTABLES) daemon/main.py
+
 binary-install: build
 	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)" "$(LOCALE_DIR)"
 	cp -a config/* "$(CONFDIR)"
