@@ -33,10 +33,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		self._pipe = os.pipe()
 		self._pollobj.register(self._pipe[0], select.POLLIN)
 
-		#print '>> sysctl', pyinotify.max_user_instances.value, \
-		#					pyinotify.max_user_watches.value, \
-		#					pyinotify.max_queued_events.value
-
 		#self.default_mask = pyinotify.IN_CLOSE_WRITE \
 		#					| pyinotify.IN_CREATE \
 		#					| pyinotify.IN_MOVED_TO \
@@ -63,19 +59,19 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 	def dump_status(self, long_output=False, precision=None):
 
 		if long_output:
-			return '%s%s (%d watched dirs)\n\t%s\n' % (
+			return u'%s%s (%d watched dirs)\n\t%s\n' % (
 				stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
-				'&' if self.daemon else '',
+				u'&' if self.daemon else '',
 				len(self._wm.watches.keys()),
-				'\n\t'.join(sorted(w.path
+				u'\n\t'.join(sorted(w.path
 					for w in self._wm.watches.itervalues()))
 			)
 		else:
 			return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
-				'{4} queued events)').format(stylize(ST_RUNNING
+				u'{4} queued events)').format(stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
-				'&' if self.daemon else '',
+				u'&' if self.daemon else u'',
 				stylize(ST_RUNNING,   str(len(self._watch_manager.watches))),
 				stylize(ST_RUNNING,   str(len(self._watched_conf_files))),
 				stylize(ST_IMPORTANT, str(len(self._eventq)))
@@ -118,7 +114,7 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				try:
 					self.read_events()
 				except pyinotify.NotifierError, e:
-					logging.warning(_('{0}: error on read_events: {1}').format(
+					logging.warning(_(u'{0}: error on read_events: {1}').format(
 						stylize(ST_NAME, self.name), e))
 
 
@@ -137,7 +133,8 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		try:
 			del self._watched_conf_files[conf_file]
 		except Exception, e:
-			logging.warning2(_(u'inotifier: error deleting {0} (was: {1} {2})').format(conf_file, type(e), e))
+			logging.warning2(_(u'inotifier: error deleting {0} '
+				u'(was: {1} {2})').format(conf_file, type(e), e))
 	def watch_conf(self, conf_file, core_obj, reload_method=None, reload_hint=None):
 		""" Helper / Wrapper method for core objects. This will setup a watcher
 			on dirname(conf_file), if not already setup. returns a reload hint
@@ -151,7 +148,8 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 			.. note:: the reload_hint is a tricky thing, because integers are
 				immutable, and thus cannot be shared. It seems the reference is
 				not passed, but only the value, which makes it desynchronized
-				between us and the core object. See http://mail.python.org/pipermail/python-dev/2003-May/035505.html
+				between us and the core object. See
+				http://mail.python.org/pipermail/python-dev/2003-May/035505.html
 				for more details, but we end up with something a bit more
 				complex, because we had no choice.
 		"""
@@ -218,21 +216,16 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		# in different threads. The lock will be released by
 		# core_obj.serialize() even before it can be acquired here.
 
-		#print '>> event', event
-
 		try:
 			name, lock, hint, reload_method = self._watched_conf_files[event.pathname]
-			#print '>> get back', name, lock, hint, reload_method
 
 		except (AttributeError, KeyError):
 			assert ltrace('inotifier', '| __config_file_event unhandled %s' % event)
-			#print '>> nothing found for', event.pathname
 			return
 
 		assert ltrace('locks', '| inotifier conf_enter %s' % lock)
 
 		with lock:
-
 			assert ltrace('inotifier',
 					'| %s handle_config_change %s' % (name, event))
 
@@ -250,7 +243,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				# occur; we just avoided a useless reload() cycle.
 
 				hint -= 1
-				#print '>> modify', hint
 				return
 
 			elif event.mask & pyinotify.IN_MOVED_TO:
@@ -266,17 +258,15 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				# advance, so we'd better reload() a little more, than having
 				# the file on-disk desynchronized with internal data.
 				hint -= 1
-				#print '>> moved_to', hint
 
 			# else:
 			# IN_CLOSE_WRITE just triggers a check, so no particular action.
 			# If MODIFY has lowered the level, this will trigger a reload().
 			# else it will do nothing.
-			#print '>> close_write', hint
 
 			if hint <= 0:
 				logging.info(_(u'{0}: configuration file {1} changed, '
-					'trigerring upstream reload.').format(
+					u'trigerring upstream reload.').format(
 						stylize(ST_NAME, name),
 						stylize(ST_PATH, event.name)))
 
@@ -287,15 +277,17 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 
 		assert ltrace('locks', '| inotifier conf_exit %s' % lock)
 	def collect(self):
-
-		# 1 million watches per user and per group should be a sufficient base
-		# to start with.
+		""" Setup the kernel inotifier arguments, and collect inotifier-related
+			methods and events on controllers and
+			object which export them in our standardized way. """
 
 		number_of_things = (
 			len([user for user in LMC.users if user.is_standard])
 			+ len([group for group in LMC.groups if group.is_standard])
 			)
 
+		# 1 million watches per user and per group should be a sufficient base
+		# to start with.
 		max_user_watches  = 1048576 * number_of_things
 		max_queued_events = 16384 * number_of_things
 
@@ -316,5 +308,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 			if hasattr(controller, '_inotifier_install_watches'):
 				try:
 					getattr(controller, '_inotifier_install_watches')(self)
+
 				except Exception, e:
 					logging.warning(e)
