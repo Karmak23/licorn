@@ -7,11 +7,15 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, termios, threading
+import sys, termios, threading, curses
 
 from styles    import *
 from base      import Singleton
 from ltrace    import mytime
+
+curses.setupterm()
+clear_char = curses.tigetstr('clear')
+
 
 ### Messages ###
 MESG_FIX_PROBLEM_QUESTION = " [Ynas], or ? for help: "
@@ -30,7 +34,11 @@ class RepairChoice(Singleton):
 		RepairChoice.__choice.__setattr__(attrib, value)
 
 repair_choice = RepairChoice()
-
+def clear_terminal(channel=None):
+	if channel is None:
+		channel = sys.sdtout
+	#channel.write('\x1B[2J')
+	channel.write(clear_char)
 def question(mesg):
 	""" Display a stylized question message on stderr."""
 

@@ -391,7 +391,7 @@ class LicornDaemon(Singleton):
 		rusage   = resource.getrusage(resource.RUSAGE_SELF)
 		pagesize = resource.getpagesize()
 
-		data = ('-- Licorn® daemon {full}status: '
+		data = ('Licorn® daemon {full}status: '
 			'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
 			'{nb_queues} queues, {nb_locks} locks\n'
 			'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '

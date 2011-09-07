@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, Pyro.core, gc, __builtin__
+import os, Pyro.core, time, gc, __builtin__
 
 from operator  import attrgetter
 from threading import current_thread
@@ -51,11 +51,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# avoid trigerring an exception at every call of our translator
 			# wrapper.
 			th._ = __builtin__.__dict__['_orig__']
-	def output(self, text_message):
+	def output(self, text_message, clear_terminal=False):
 		""" Output a text message remotely, in CLI caller process, whose
 			reference is stored in :obj:`current_thread().listener`. """
 		return current_thread().listener.process(
-			LicornMessage(data=text_message, channel=1),
+			LicornMessage(data=text_message, channel=1,
+							clear_terminal=clear_terminal),
 			options.msgproc.getProxy())
 	def interact(self, text_message, interaction):
 		""" Send a bi-directionnal message remotely, in CLI caller process,
@@ -444,7 +445,29 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		self.output(self.licornd.dump_status(opts.long, opts.precision))
+		if opts.monitor:
+			if opts.monitor_count:
+				for i in range(opts.monitor_count):
+					self.output(self.licornd.dump_status(opts.long, opts.precision),
+								clear_terminal=opts.monitor_clear)
+					time.sleep(opts.monitor_interval)
+
+			elif opts.monitor_time:
+				monitor_time_stop = time.time() + opts.monitor_time
+				#hlstr.to_seconds(opts.monitor_time)
+				while time.time() <= monitor_time_stop:
+					self.output(self.licornd.dump_status(opts.long, opts.precision),
+								clear_terminal=opts.monitor_clear)
+					time.sleep(opts.monitor_interval)
+
+			else:
+				while True:
+					self.output(self.licornd.dump_status(opts.long, opts.precision),
+								clear_terminal=opts.monitor_clear)
+					time.sleep(opts.monitor_interval)
+		else:
+			# we don't clear the screen for only one output.
+			self.output(self.licornd.dump_status(opts.long, opts.precision))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.

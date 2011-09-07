@@ -94,7 +94,34 @@ def common_filter_group(app, parser, tool, mode):
 				'-p', '--precision', '--precisions', '--pinpoint',
 				action="store", dest="precision", default=None,
 				help=_(u'long output (all info, attributes, etc). '
-					'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+
+			filtergroup.add_option('--monitor', '-m', '--stay-connected',
+				action="store_true", dest="monitor", default=False,
+				help=_(u'Stay connected to the daemon and update the status '
+					u'every given interval (see below). '
+					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+
+			filtergroup.add_option('-i', '--interval', '--monitor-interval',
+				action="store", dest="monitor_interval", default=1,
+				help=_(u'Monitoring interval (in seconds). Default: %s.') %
+					stylize(ST_DEFAULT, _(u'1 sec')))
+
+			filtergroup.add_option('-c', '--count', '--monitor-count',
+				action="store", dest="monitor_count", default=None,
+				help=_(u'Monitor a given number of count. Default: %s.') %
+					stylize(ST_DEFAULT, _(u'infinite')))
+
+			filtergroup.add_option('-t', '--time', '--monitor-time',
+				action="store", dest="monitor_time", default=None,
+				help=_(u'Monitor during a time period, in seconds. Default: %s.') %
+					stylize(ST_DEFAULT, _(u'infinite')))
+
+			filtergroup.add_option('--no-clear', '--continuous',
+				action="store_false", dest="monitor_clear", default=True,
+				help=_(u'Do not clear the screen between each monitor output. '
+					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+
 
 	if tool is 'chk':
 		if mode in ( 'users', 'groups', 'configuration', 'profiles'):
@@ -169,7 +196,7 @@ def common_filter_group(app, parser, tool, mode):
 
 		if tool in ('get', 'mod', 'del', 'chk'):
 			if mode in ('users', 'groups', 'profiles', 'machines'):
-				# TODO: "if has_attr(controller, 'word_match'):		
+				# TODO: "if has_attr(controller, 'word_match'):
 				filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
 					action="store", dest="word_match", default='',
 					help=_(u'grep / fuzzy word match on the login/name/hostname.'))
@@ -177,7 +204,7 @@ def common_filter_group(app, parser, tool, mode):
 					'--exclude-word-match',
 					action="store", dest="exclude_word_match", default='',
 					help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
-		
+
 			filtergroup.add_option('--system', '--system-groups', '--sys',
 				action="store_true", dest="system", default=False,
 				help=_(u"Only select system groups."))

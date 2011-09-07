@@ -327,16 +327,15 @@ def find_network_client_uid(orig_port, client_port, local=True):
 					and laddr in (local_addr1, local_addr2):
 					return int(values[7])
 			else:
-				if ('%x' % client_port).upper() == rport:
+				if ('%x' % client_port).upper() == lport:
 					return int(values[7])
 
 		if first_try:
-			# #379: It *could* be we are too fast for the kernel to update
+			# The problem *could* be we are too fast for the kernel to update
 			# /proc/net/tcp. Wait and try again one time before giving up.
 			time.sleep(0.01)
 			first_try = False
 		else:
-			#print open('/proc/net/tcp').read()
 			break
-	raise IndexError('''can't find client 127.0.0.1:%s or 127.0.1.1:%s in '''
-		'''/proc/net/tcp!''' % (client_port, client_port))
+	raise IndexError(_(u"Cannot find client 127.0.0.1:{0} or 127.0.1.1:{0} in "
+					u"/proc/net/tcp!").format(client_port))

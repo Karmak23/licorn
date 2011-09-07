@@ -23,7 +23,8 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 		or more physical machines.
 	"""
 	def __init__(self, data='empty_message...', my_type=message_type.EMIT,
-		interaction=None, answer=None, auto_answer=None, channel=2):
+					interaction=None, answer=None, auto_answer=None, channel=2,
+					clear_terminal=False):
 
 		Pyro.core.CallbackObjBase.__init__(self)
 
@@ -48,6 +49,8 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 
 		#: the channel to push the message to, as sys.std{out,err}
 		self.channel     = channel
+
+		self.clear_terminal = clear_terminal
 class ListenerObject(object):
 	""" note the listener Pyro proxy object in the current thread.
 		This is quite a hack but will permit to store it in a centralized manner
@@ -110,7 +113,10 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 
 				message.type = message_type.ANSWER
 				return callback.process(message, self.getAttrProxy())
+
 			else:
+				if message.clear_terminal:
+					ttyutils.clear_terminal(MessageProcessor.channels[message.channel])
 				MessageProcessor.channels[message.channel].write(message.data)
 				message.answer = None
 
