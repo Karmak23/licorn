@@ -19,6 +19,7 @@ from threading import Thread, current_thread
 from licorn.foundations           import options, exceptions, logging
 from licorn.foundations           import pyutils, hlstr
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import filters
 from licorn.foundations.messaging import MessageProcessor
@@ -43,7 +44,15 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 	global pyroExit
 	global RWI
 
-	assert ltrace('cli', '> cli_main(%s)' % sys.argv[0])
+	def cli_exec_function():
+		if functions[mode][1] is None:
+			functions[mode][2](RWI, opts, args)
+
+		else:
+			getattr(RWI, functions[mode][1])(opts=opts, args=args)
+
+
+	assert ltrace(TRACE_CLI, '> cli_main(%s)' % sys.argv[0])
 
 	cli_main_start_time = time.time()
 
@@ -85,7 +94,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 		else:
 
-			assert ltrace('cli', '  cli_main: connecting to core.')
+			assert ltrace(TRACE_CLI, '  cli_main: connecting to core.')
 			RWI = LMC.connect()
 
 			try:
@@ -97,7 +106,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 			options.SetFrom(opts)
 
-			assert ltrace('cli', '  cli_main: starting pyro!')
+			assert ltrace(TRACE_CLI, '  cli_main: starting pyro!')
 			pyroStarted=True
 			pyro_start_time = time.time()
 
@@ -122,7 +131,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			msgth = Thread(target=PyroLoop, args=(client_daemon,))
 			msgth.start()
 
-			assert ltrace('timings', '@pyro_start_delay: %.4fs' % (
+			assert ltrace(TRACE_TIMINGS, '@pyro_start_delay: %.4fs' % (
 				time.time() - pyro_start_time))
 			del pyro_start_time
 
@@ -134,15 +143,15 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			if giant_locked:
 				from licorn.foundations.classes import FileLock
 				with FileLock(configuration, app_data['name'], 10):
-					getattr(RWI, functions[mode][1])(opts=opts, args=args)
+					cli_exec_function()
 
 			else :
 				cmd_start_time = time.time()
-				getattr(RWI, functions[mode][1])(opts=opts, args=args)
+				cli_exec_function()
 
 			LMC.release()
 
-			assert ltrace('timings', '@cli_main_exec_time: %.4fs' % (
+			assert ltrace(TRACE_TIMINGS, '@cli_main_exec_time: %.4fs' % (
 				time.time() - cmd_start_time))
 			del cmd_start_time
 
@@ -183,13 +192,13 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			str(e)), 254, full=True, tb=''.join(Pyro.util.getPyroTraceback(e)))
 
 	finally:
-		assert ltrace('cli', '  cli_main: stopping pyro.')
+		assert ltrace(TRACE_CLI, '  cli_main: stopping pyro.')
 		if pyroStarted:
 			pyroExit=1
 			msgth.join()
 
-	assert ltrace('timings', '@cli_main(): %.4fs' % (
+	assert ltrace(TRACE_TIMINGS, '@cli_main(): %.4fs' % (
 		time.time() - cli_main_start_time))
 	del cli_main_start_time
 
-	assert ltrace('cli', '< cli_main(%s)' % sys.argv[0])
+	assert ltrace(TRACE_CLI, '< cli_main(%s)' % sys.argv[0])

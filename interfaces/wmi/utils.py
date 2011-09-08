@@ -15,6 +15,7 @@ from subprocess import Popen, PIPE
 from urllib     import unquote_plus
 
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 
 # used for static data only
 from licorn.core import LMC
@@ -72,7 +73,7 @@ def merge_multi_select(*lists):
 def run(command, successfull_redirect, page_data, error_message):
 	"""Execute a command passed as a list or tuple"""
 
-	assert ltrace('wmi', 'w.run(%s)' % command)
+	assert ltrace(TRACE_WMI, 'w.run(%s)' % command)
 
 	if type(command) not in (type(()), type([])):
 		raise exceptions.LicornWebCommandError(

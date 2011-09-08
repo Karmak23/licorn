@@ -14,6 +14,7 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.constants import services, svccmds
@@ -25,7 +26,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 	""" Handle [our interesting subset of] OpenSSH configuration and options.
 	"""
 	def __init__(self):
-		assert ltrace('openssh', '| OpensshExtension.__init__()')
+		assert ltrace(TRACE_OPENSSH, '| OpensshExtension.__init__()')
 
 		ServiceExtension.__init__(self,
 			name='openssh',
@@ -79,7 +80,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 				simply not installed).
 		"""
 
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		if os.path.exists(self.paths.sshd_binary) \
 				and os.path.exists(self.paths.sshd_config):
@@ -94,7 +95,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.sshd_config)))
 
 
-		assert ltrace(self.name, '< initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" OpenSSH server is enabled when the service-disabler
@@ -116,7 +117,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 		if must_be_running and not self.running(self.paths.pid_file):
 			self.service(svccmds.START)
 
-		assert ltrace(self.name, '| is_enabled() → %s' % must_be_running)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → %s' % must_be_running)
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
 		""" check our OpenSSH needed things (the ``remotessh`` group and our
@@ -133,7 +134,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 			When I've got time. As of now, stay as much careful as we can.
 		"""
 
-		assert ltrace(self.name, '> check()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check()')
 
 		logging.progress(_('{0}: checking existence of group {1}…').format(
 							stylize(ST_NAME, self.name),
@@ -185,7 +186,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 		if need_reload or need_rewrite:
 			self.service(svccmds.RELOAD)
 
-		assert ltrace(self.name, '< check()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< check()')
 	def enable(self, batch=False, auto_answer=None):
 		""" Start ``SSHd``, after having carefully checked all our needed
 			parameters and unlinked the service disabler file.

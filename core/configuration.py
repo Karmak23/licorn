@@ -20,6 +20,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, fsapi, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
 											Enumeration, FsapiObject, \
@@ -47,7 +48,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		if LicornConfiguration.init_ok:
 			return
 
-		assert ltrace('configuration', '> __init__(minimal=%s, batch=%s)' % (
+		assert ltrace(TRACE_CONFIGURATION, '> __init__(minimal=%s, batch=%s)' % (
 			minimal, batch))
 
 		Pyro.core.ObjBase.__init__(self)
@@ -106,7 +107,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				'''Configuration initialization failed: %s''' % e)
 
 		LicornConfiguration.init_ok = True
-		assert ltrace('configuration', '< __init__()')
+		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
@@ -157,7 +158,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		if LicornConfiguration.del_ok:
 			return
 
-		assert ltrace('configuration', '> CleanUp(%s)' %
+		assert ltrace(TRACE_CONFIGURATION, '> CleanUp(%s)' %
 			LicornConfiguration.del_ok)
 
 		try:
@@ -173,11 +174,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				raise e
 
 		LicornConfiguration.del_ok = True
-		assert ltrace('configuration', '< CleanUp()')
+		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
 	def SetBaseDirsAndFiles(self):
 		""" Find and create temporary, data and working directories."""
 
-		assert ltrace('configuration', '> SetBaseDirsAndFiles()')
+		assert ltrace(TRACE_CONFIGURATION, '> SetBaseDirsAndFiles()')
 
 		self.config_dir           = "/etc/licorn"
 		self.check_config_dir     = self.config_dir + "/check.d"
@@ -202,7 +203,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# TODO: is this to be done by package maintainers or me ?
 		self.CreateConfigurationDir()
 
-		assert ltrace('configuration', '< SetBaseDirsAndFiles()')
+		assert ltrace(TRACE_CONFIGURATION, '< SetBaseDirsAndFiles()')
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""
@@ -250,7 +251,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def _load_configuration(self, conf):
 		""" Build the licorn configuration object from a dict. """
 
-		assert ltrace('configuration', '| _load_configuration(%s)' % conf)
+		assert ltrace(TRACE_CONFIGURATION, '| _load_configuration(%s)' % conf)
 
 		for key in conf.keys():
 			subkeys = key.split('.')
@@ -266,7 +267,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 				if hasattr(curobj, subkeys[-1]):
 					if getattr(curobj, subkeys[-1]) != conf[key]:
-						assert ltrace('configuration', 'main config file: subkey %s '
+						assert ltrace(TRACE_CONFIGURATION, 'main config file: subkey %s '
 							'changed from %s to %s' % (key, getattr(curobj, subkeys[-1]),
 								conf[key]))
 						setattr(curobj, subkeys[-1], conf[key])
@@ -276,7 +277,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			else:
 				if hasattr(self, key):
 					if getattr(self, key) != conf[key]:
-						assert ltrace('configuration', 'main config file: %s '
+						assert ltrace(TRACE_CONFIGURATION, 'main config file: %s '
 							'changed from %s to %s' % (key, getattr(self, key),
 								conf[key]))
 						setattr(self, key, conf[key])
@@ -285,7 +286,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def noop(self):
 		""" No-op function, called when connecting pyro, to check if link
 		is OK betwwen the server and the client. """
-		assert ltrace('configuration', '| noop(True)')
+		assert ltrace(TRACE_CONFIGURATION, '| noop(True)')
 		return True
 	def load_factory_defaults(self):
 		""" The defaults set here are expected to exist
@@ -298,7 +299,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			privileges or crash our daemons to bind the port and spoof our
 			protocol). """
 
-		assert ltrace('configuration', '| load_factory_defaults()')
+		assert ltrace(TRACE_CONFIGURATION, '| load_factory_defaults()')
 
 		self._load_configuration({
 			'licornd.role'                 : roles.UNSET,
@@ -337,7 +338,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		""" take components of human written configuration directive, and
 		convert them to machine-friendly values. """
 
-		assert ltrace('configuration', '| convert_configuration_values()')
+		assert ltrace(TRACE_CONFIGURATION, '| convert_configuration_values()')
 
 		from licorn.daemon import roles
 
@@ -380,7 +381,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def check_configuration_directives(self):
 		""" Check directives which must be set, and values, for correctness. """
 
-		assert ltrace('configuration', '| check_configuration_directives()')
+		assert ltrace(TRACE_CONFIGURATION, '| check_configuration_directives()')
 
 		self.check_directive_daemon_role()
 		self.check_directive_daemon_threads()
@@ -388,7 +389,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def check_directive_daemon_role(self):
 		""" check the licornd.role directive for correctness. """
 
-		assert ltrace('configuration', '| check_directive_daemon_role()')
+		assert ltrace(TRACE_CONFIGURATION, '| check_directive_daemon_role()')
 
 		if self.licornd.role == roles.UNSET or \
 			self.licornd.role not in roles:
@@ -405,7 +406,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			self.server_main_address = network.find_server(self)
 	def check_directive_daemon_threads(self):
 		""" check the pingers number for correctness. """
-		assert ltrace('configuration', '| check_directive_daemon_threads()')
+		assert ltrace(TRACE_CONFIGURATION, '| check_directive_daemon_threads()')
 
 		err_message = ''
 
@@ -446,7 +447,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		"""Load main configuration file, and set mandatory defaults
 			if it doesn't exist."""
 
-		assert ltrace('configuration',
+		assert ltrace(TRACE_CONFIGURATION,
 			'> load_configuration_from_main_config_file()')
 
 		try:
@@ -469,7 +470,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
 						else '')))
 
-		assert ltrace('configuration', '< load_configuration_from_main_config_file()')
+		assert ltrace(TRACE_CONFIGURATION, '< load_configuration_from_main_config_file()')
 	def load_nsswitch(self):
 		""" Load the NS switch file. """
 
@@ -479,7 +480,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		""" write the nsswitch.conf file. This method is meant to be called by
 		a backend which has modified. """
 
-		assert ltrace('configuration', '| save_nsswitch()')
+		assert ltrace(TRACE_CONFIGURATION, '| save_nsswitch()')
 
 		nss_data = ''
 
@@ -726,7 +727,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def LoadManagersConfiguration(self, batch=False, auto_answer=None):
 		""" Load Users and Groups managements configuration. """
 
-		assert ltrace('configuration', '> LoadManagersConfiguration(batch=%s)' %
+		assert ltrace(TRACE_CONFIGURATION, '> LoadManagersConfiguration(batch=%s)' %
 			batch)
 
 		# The "hidden groups" feature (chmod 710 on /home/groups) defaults to
@@ -814,7 +815,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.CheckLoginDefs(batch=batch, auto_answer=auto_answer)
 		self.CheckUserAdd(batch=batch, auto_answer=auto_answer)
 
-		assert ltrace('configuration', '< LoadManagersConfiguration()')
+		assert ltrace(TRACE_CONFIGURATION, '< LoadManagersConfiguration()')
 	def SetDefaultNamesAndPaths(self):
 		""" *HARDCODE* some names before we pull them out
 			into configuration files."""
@@ -874,7 +875,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def set_acl_defaults(self):
 		""" Prepare the basic ACL configuration inside us. """
 
-		assert ltrace("configuration", '| set_acl_defaults()')
+		assert ltrace(TRACE_CONFIGURATION, '| set_acl_defaults()')
 
 		self.acls = LicornConfigObject()
 		self.acls.group = 'acl'
@@ -908,7 +909,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			Then load it in a way i can be used in LicornConfiguration.
 		"""
 
-		assert ltrace('configuration', '> CheckAndLoadAdduserConf(batch=%s)' %
+		assert ltrace(TRACE_CONFIGURATION, '> CheckAndLoadAdduserConf(batch=%s)' %
 			batch)
 
 		adduser_conf       = '/etc/adduser.conf'
@@ -994,7 +995,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					'''system tools (adduser/useradd). Can't continue '''
 					'''without this, sorry!''' % adduser_conf)
 
-		assert ltrace('configuration', '< CheckAndLoadAdduserConf(%s)' %
+		assert ltrace(TRACE_CONFIGURATION, '< CheckAndLoadAdduserConf(%s)' %
 			adduser_dict)
 
 		return adduser_dict
@@ -1003,7 +1004,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			Load data, alter it if needed and save the new file.
 		"""
 
-		assert ltrace('configuration', '| CheckLoginDefs(batch=%s)' % batch)
+		assert ltrace(TRACE_CONFIGURATION, '| CheckLoginDefs(batch=%s)' % batch)
 
 		self.check_system_file_generic(filename="/etc/login.defs",
 			reader=readers.simple_conf_load_dict,
@@ -1026,7 +1027,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			Licorn®.
 		"""
 
-		assert ltrace('configuration', '| CheckUserAdd(batch=%s)' % batch)
+		assert ltrace(TRACE_CONFIGURATION, '| CheckUserAdd(batch=%s)' % batch)
 
 		self.check_system_file_generic(filename="/etc/default/useradd",
 			reader=readers.shell_conf_load_dict,
@@ -1039,7 +1040,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def check_system_file_generic(self, filename, reader, defaults, separator,
 		check_exists=False, batch=False, auto_answer=None):
 
-		assert ltrace('configuration', '''> check_system_file_generic('''
+		assert ltrace(TRACE_CONFIGURATION, '''> check_system_file_generic('''
 			'''filename=%s, separator='%s', batch=%s)''' % (filename, separator,
 			batch))
 
@@ -1091,7 +1092,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('''Modifications in %s '''
 					'''are mandatory for Licorn to work properly. Can't '''
 					'''continue without this, sorry!''' % filename)
-		assert ltrace('configuration', '< check_system_file_generic()')
+		assert ltrace(TRACE_CONFIGURATION, '< check_system_file_generic()')
 	### EXPORTS ###
 	def Export(self, doreturn=True, args=None, cli_format='short'):
 		""" Export «self» (the system configuration) to a human
@@ -1313,18 +1314,18 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		""" Check all components of system configuration and repair
 		if asked for."""
 
-		assert ltrace('configuration', '> check()')
+		assert ltrace(TRACE_CONFIGURATION, '> check()')
 
 		self.check_base_dirs(minimal=minimal, batch=batch,
 			auto_answer=auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
-		assert ltrace('configuration', '< check()')
+		assert ltrace(TRACE_CONFIGURATION, '< check()')
 	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
 
-		assert ltrace('configuration', '> check_base_dirs()')
+		assert ltrace(TRACE_CONFIGURATION, '> check_base_dirs()')
 
 		try:
 			os.makedirs(self.users.base_path)
@@ -1385,13 +1386,13 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.check_archive_dir(batch=batch,	auto_answer=auto_answer)
 
-		assert ltrace('configuration', '< check_base_dirs()')
+		assert ltrace(TRACE_CONFIGURATION, '< check_base_dirs()')
 	def check_archive_dir(self, subdir=None, minimal=True, batch=False,
 		auto_answer=None, full_display=True):
 		""" Check only the archive dir, and eventually even only one of its
 			subdir. """
 
-		assert ltrace('configuration', '> check_archive_dir(%s)' % subdir)
+		assert ltrace(TRACE_CONFIGURATION, '> check_archive_dir(%s)' % subdir)
 
 		acls_conf = self.acls
 
@@ -1420,7 +1421,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						styles.stylize(styles.ST_PATH, self.home_archive_dir))
 				subdir=False
 
-		assert ltrace('configuration', ''''< check_archive_dir(return '''
+		assert ltrace(TRACE_CONFIGURATION, ''''< check_archive_dir(return '''
 			'''fsapi.check_dirs_and_contents_perms_and_acls(…))''')
 
 		try:
@@ -1435,7 +1436,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
-		assert ltrace('configuration',
+		assert ltrace(TRACE_CONFIGURATION,
 			'> CheckSystemGroups(minimal=%s, batch=%s)' % (minimal, batch))
 
 		needed_groups = [ self.users.group, self.acls.group,
@@ -1481,7 +1482,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							group, group)
 						)
 
-		assert ltrace('configuration', '< CheckSystemGroups()')
+		assert ltrace(TRACE_CONFIGURATION, '< CheckSystemGroups()')
 	def groups_loaded_callback(self, groups, *args, **kwargs):
 		self.CheckSystemGroups(batch=True)
 

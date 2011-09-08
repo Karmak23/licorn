@@ -21,6 +21,7 @@ from licorn.foundations           import exceptions, logging, options
 from licorn.foundations           import hlstr, pyutils, fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import filters, verbose
 from licorn.foundations.base      import Enumeration, FsapiObject, \
 										NamedObject, MixedDictObject, \
@@ -60,7 +61,7 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 	def __init__(self, name, warnings=True, look_deeper_for_callbacks=False):
 		MixedDictObject.__init__(self, name)
 		Pyro.core.ObjBase.__init__(self)
-		assert ltrace('objects', '| LockedController.__init__(%s, %s)' % (
+		assert ltrace(TRACE_OBJECTS, '| LockedController.__init__(%s, %s)' % (
 															name, warnings))
 		self.__warnings = warnings
 		self.__licornd  = LMC.licornd
@@ -96,12 +97,12 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 			MixedDictObject.__delitem__(self, key)
 	def acquire(self):
 		""" acquire the controller global lock. """
-		assert ltrace('thread', '%s: acquiring %s %s.' % (
+		assert ltrace(TRACE_THREAD, '%s: acquiring %s %s.' % (
 			current_thread().name, self.name, self.lock))
 		return self.lock.acquire()
 	def release(self):
 		""" release the controller global lock. """
-		assert ltrace('thread', '%s: releasing %s %s.' % (
+		assert ltrace(TRACE_THREAD, '%s: releasing %s %s.' % (
 			current_thread().name, self.name, self.lock))
 		return self.lock.release()
 	def is_locked(self):
@@ -148,7 +149,7 @@ class CoreController(LockedController):
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		LockedController.__init__(self, name, warnings=warnings)
 
-		assert ltrace('objects', '| CoreController.__init__(%s, %s)' % (
+		assert ltrace(TRACE_OBJECTS, '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
 
 		#: Keeping the reverse mapping dicts in a container permits having
@@ -186,7 +187,7 @@ class CoreController(LockedController):
 			:meth:`~licorn.core.LicornMasterController.init_client_first_pass`.
 		"""
 
-		assert ltrace(self.name, '| CoreController.reload()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreController.reload()')
 
 		self.reload_extensions()
 	def reload_extensions(self):
@@ -202,13 +203,13 @@ class CoreController(LockedController):
 				self.extensions = None
 	def load_extensions(self):
 		""" special case for SystemController. """
-		assert ltrace(self.name, '| load_extensions()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| load_extensions()')
 		for ext in self.extensions:
 			getattr(ext, self.name + '_load')()
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 
-		assert ltrace(self.name, '| dump()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| dump()')
 
 		with self.lock:
 
@@ -238,7 +239,7 @@ class CoreController(LockedController):
 				controller.
 			"""
 
-		assert ltrace(self.name, '> find_prefered_backend(current=%s, mine=%s, enabled=%s, available=%s, mine_is_ok:by_key=%s,by_value=%s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> find_prefered_backend(current=%s, mine=%s, enabled=%s, available=%s, mine_is_ok:by_key=%s,by_value=%s)' % (
 				self._prefered_backend.name if self._prefered_backend != None else 'none',
 				', '.join(backend.name for backend in self.backends),
 				', '.join(backend.name for backend in LMC.backends.itervalues()),
@@ -247,7 +248,7 @@ class CoreController(LockedController):
 				self._prefered_backend in LMC.backends.itervalues()))
 
 		if self.backends == []:
-			assert ltrace(self.name, '  no backends for %s, aborting prefered search.' % self.name)
+			assert ltrace(globals()['TRACE_' + self.name.upper()], '  no backends for %s, aborting prefered search.' % self.name)
 			return
 
 		changed = False
@@ -268,7 +269,7 @@ class CoreController(LockedController):
 
 		for backend in self.backends:
 			if self._prefered_backend is None:
-				assert ltrace(self.name, ' found first prefered_backend(%s)' %
+				assert ltrace(globals()['TRACE_' + self.name.upper()], ' found first prefered_backend(%s)' %
 					backend.name)
 				self._prefered_backend = backend
 				changed = True
@@ -276,21 +277,21 @@ class CoreController(LockedController):
 			else:
 				if hasattr(backend, 'priority'):
 					if backend.priority > self._prefered_backend.priority:
-						assert ltrace(self.name,
+						assert ltrace(globals()['TRACE_' + self.name.upper()],
 							' found better prefered_backend(%s)' % backend.name)
 						self._prefered_backend = backend
 						changed = True
 					else:
-						assert ltrace(self.name,
+						assert ltrace(globals()['TRACE_' + self.name.upper()],
 							' discard lower prefered_backend(%s)' %
 								backend.name)
 						pass
 				else:
-					assert ltrace(self.name,
+					assert ltrace(globals()['TRACE_' + self.name.upper()],
 						' no priority mechanism, skipping backend %s' %
 							backend.name)
 
-		assert ltrace(self.name, '< find_prefered_backend(%s, %s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< find_prefered_backend(%s, %s)' % (
 			self._prefered_backend.name, changed))
 		return changed
 class CoreFSController(CoreController):
@@ -361,7 +362,7 @@ class CoreFSController(CoreController):
 			base_dir=None, object_id=None, system_wide=True):
 			name = self.generate_name(file_name, rule_text, system_wide, controller.name)
 			Enumeration.__init__(self, name)
-			assert ltrace('checks', '| ACLRule.__init__(%s, %s)' % (
+			assert ltrace(TRACE_CHECKS, '| ACLRule.__init__(%s, %s)' % (
 				name, system_wide))
 			self.checked = False
 			self.file_name = file_name
@@ -386,7 +387,7 @@ class CoreFSController(CoreController):
 				:param system_wide: boolean to know if it is a system rule or
 					an user rule
 			"""
-			assert ltrace('checks', '''| generate_name(file_name=%s, '''
+			assert ltrace(TRACE_CHECKS, '''| generate_name(file_name=%s, '''
 				'''rule_text=%s, system_wide=%s)''' % (
 					file_name, rule_text, system_wide))
 
@@ -755,7 +756,7 @@ class CoreFSController(CoreController):
 
 		CoreController.__init__(self, name, reverse_mappings=reverse_mappings)
 
-		assert ltrace('checks', 'CoreFSController.__init__()')
+		assert ltrace(TRACE_CHECKS, 'CoreFSController.__init__()')
 
 		self._rules_base_conf = '%s/%s.*.conf' % (
 						LMC.configuration.check_config_dir,
@@ -766,7 +767,7 @@ class CoreFSController(CoreController):
 		""" reload the templates rules generated from systems rules. """
 
 
-		assert ltrace('checks', '| LicornCoreFSController.reload(%s)' %
+		assert ltrace(TRACE_CHECKS, '| LicornCoreFSController.reload(%s)' %
 														self._rules_base_conf)
 
 		CoreController.reload(self)
@@ -777,7 +778,7 @@ class CoreFSController(CoreController):
 			self.check_templates
 
 		except AttributeError:
-			assert ltrace('checks', '| load_system_rules(%s)' %
+			assert ltrace(TRACE_CHECKS, '| load_system_rules(%s)' %
 														self._rules_base_conf)
 
 			self.check_templates = Enumeration()
@@ -804,7 +805,7 @@ class CoreFSController(CoreController):
 
 			This function return only applicable rules """
 
-		assert ltrace('checks', '> load_rules(rules_path=%s, object_info=%s, '
+		assert ltrace(TRACE_CHECKS, '> load_rules(rules_path=%s, object_info=%s, '
 			'core_obj=%s, vars_to_replace=%s)' % (rules_path, object_info,
 			core_obj.name, vars_to_replace))
 
@@ -821,11 +822,11 @@ class CoreFSController(CoreController):
 		# check system rules, if the directory/file they are managing exists add
 		# them the the *valid* system rules enumeration.
 		system_special_dirs = Enumeration('system_special_dirs')
-		#assert ltrace(self.name, '  check_templates %s '
+		#assert ltrace(globals()['TRACE_' + self.name.upper()], '  check_templates %s '
 		#	% self.check_templates.dump_status(True))
 
 		for dir_info in self.check_templates:
-			#assert ltrace(self.name, '  using dir_info %s ' % dir_info.dump_status(True))
+			#assert ltrace(globals()['TRACE_' + self.name.upper()], '  using dir_info %s ' % dir_info.dump_status(True))
 			temp_dir_info = dir_info.copy()
 			temp_dir_info.path = temp_dir_info.path % object_info.home
 
@@ -920,14 +921,14 @@ class CoreFSController(CoreController):
 			raise exceptions.LicornCheckError("There is no default "
 			"rule. Check %s." %	stylize(ST_BAD, "aborted"))
 
-		assert ltrace('checks', '< load_rules()')
+		assert ltrace(TRACE_CHECKS, '< load_rules()')
 		return rules
 	def parse_rules(self, rules_path, vars_to_replace, object_info,
 		system_wide=True):
 		""" parse a rule from a line to a FsapiObject. Returns
 			a single :class:`~licorn.foundations.base.Enumeration`, containing
 			either ONE '~' rule, or a bunch of rules. """
-		assert ltrace('checks', "> parse_rules(%s, %s, %s)" % (rules_path,
+		assert ltrace(TRACE_CHECKS, "> parse_rules(%s, %s, %s)" % (rules_path,
 			object_info, system_wide))
 		special_dirs = None
 
@@ -989,7 +990,7 @@ class CoreFSController(CoreController):
 					logging.warning2('%s.parse_rules: %s' % (self.name, e))
 					continue
 				else:
-					#assert ltrace('checks', '  parse_rules(add rule %s)' %
+					#assert ltrace(TRACE_CHECKS, '  parse_rules(add rule %s)' %
 					#	rule.dump_status(True))
 					rules.append(rule)
 
@@ -1017,12 +1018,12 @@ class CoreFSController(CoreController):
 
 				if dir_info.name not in special_dirs.keys():
 					special_dirs.append(dir_info)
-				assert ltrace('fsapi', '  parse_rules(%s dir_info %s)' %
+				assert ltrace(TRACE_FSAPI, '  parse_rules(%s dir_info %s)' %
 						('add' if not dir_info.already_loaded else 'modify',
 						dir_info.dump_status(True) ))
 
 			handler.close()
-		assert ltrace('checks', '< parse_rules(%s)' % special_dirs)
+		assert ltrace(TRACE_CHECKS, '< parse_rules(%s)' % special_dirs)
 
 		if special_dirs == None:
 			special_dirs = Enumeration()
@@ -1036,9 +1037,10 @@ class CoreFSController(CoreController):
 		for obj in self.select(filters.STD):
 			try:
 				obj._inotifier_add_watch(inotifier)
+
 			except Exception, e:
 				logging.warning(_(u'{0}: error on setting inotifier watches '
-					'for {1} {2} (was: {3}).').format(
+					u'for {1} {2} (was: {3}).').format(
 						stylize(ST_NAME, self.name), self.object_type_str,
 						stylize(ST_NAME, obj.name), e))
 	def _expire_events(self):
@@ -1048,7 +1050,7 @@ class CoreFSController(CoreController):
 		# unit object deletion (I encountered the 'dictionnary size changed'
 		# error during tests of TS#62 (massive imports/deletes).
 
-		assert ltrace('locks', '> %s._expire_events: %s' % (self.name, self.lock))
+		assert ltrace(TRACE_LOCKS, '> %s._expire_events: %s' % (self.name, self.lock))
 
 		with self.lock:
 			if (time.time() - self.__last_expire_time) >= LMC.configuration.defaults.global_expire_time:
@@ -1058,7 +1060,7 @@ class CoreFSController(CoreController):
 				for object in self:
 					object._expire_events()
 
-		assert ltrace('locks', '< %s._expire_events: %s' % (self.name, self.lock))
+		assert ltrace(TRACE_LOCKS, '< %s._expire_events: %s' % (self.name, self.lock))
 class ModulesManager(LockedController):
 	""" The basics of a module manager. Backends and extensions are just
 		particular cases of this class.
@@ -1115,7 +1117,7 @@ class ModulesManager(LockedController):
 				couple (at least).
 		"""
 
-		assert ltrace(self.name, '> load(type=%s, path=%s, server=%s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load(type=%s, path=%s, server=%s)' % (
 			self.module_type, self.module_path, server_side_modules))
 
 		# We've got to check the server_side_modules argument too, because at
@@ -1167,7 +1169,7 @@ class ModulesManager(LockedController):
 			except AttributeError:
 				modules_dependancies[module_name] = []
 
-		assert ltrace(self.name, 'resolved dependancies module order: %s.' %
+		assert ltrace(globals()['TRACE_' + self.name.upper()], 'resolved dependancies module order: %s.' %
 				', '.join(pyutils.resolve_dependancies_from_dict_strings(modules_dependancies)))
 
 		changed = False
@@ -1205,13 +1207,13 @@ class ModulesManager(LockedController):
 
 			# module is not already loaded. Load and sync client/server
 
-			assert ltrace(self.name, 'importing %s %s' % (self.module_type,
+			assert ltrace(globals()['TRACE_' + self.name.upper()], 'importing %s %s' % (self.module_type,
 				stylize(ST_NAME, module_name)))
 
 			# the module instance, at last!
 			module = module_class()
 
-			assert ltrace(self.name, 'imported %s %s, now loading.' % (
+			assert ltrace(globals()['TRACE_' + self.name.upper()], 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
 
 			if self.__not_manually_ignored(module.name):
@@ -1250,7 +1252,7 @@ class ModulesManager(LockedController):
 				if module.available:
 					if module.enabled:
 						self[module.name] = module
-						assert ltrace(self.name, 'loaded %s %s' % (
+						assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded %s %s' % (
 							self.module_type,
 							stylize(ST_NAME, module.name)))
 
@@ -1265,7 +1267,7 @@ class ModulesManager(LockedController):
 									stylize(ST_NAME, module.name)))
 					else:
 						self._available_modules[module.name] = module
-						assert ltrace(self.name, '%s %s is only available'
+						assert ltrace(globals()['TRACE_' + self.name.upper()], '%s %s is only available'
 							% (self.module_type,
 								stylize(ST_NAME, module.name)))
 
@@ -1273,7 +1275,7 @@ class ModulesManager(LockedController):
 							self.enable_func(module_name)
 							changed = True
 				else:
-					assert ltrace(self.name, '%s %s NOT available' % (
+					assert ltrace(globals()['TRACE_' + self.name.upper()], '%s %s NOT available' % (
 						self.module_type, stylize(ST_NAME, module.name)))
 
 					if is_client and module_name in server_side_modules:
@@ -1298,7 +1300,7 @@ class ModulesManager(LockedController):
 									stylize(ST_PATH,
 										LMC.configuration.main_config_file)))
 
-		assert ltrace(self.name, '< load(%s)' % changed)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< load(%s)' % changed)
 		return changed
 	def __not_manually_ignored(self, module_name):
 		""" See if module has been manually ignored in the main configuration
@@ -1311,7 +1313,7 @@ class ModulesManager(LockedController):
 
 			# Try the global ignore directive.
 			if hasattr(conf, 'ignore'):
-				assert ltrace(self.name, '| not_manually_ignored(%s) → %s '
+				assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s '
 					'(global)' % (module_name, (module_name
 										not in getattr(conf, 'ignore'))))
 
@@ -1322,7 +1324,7 @@ class ModulesManager(LockedController):
 				module_conf = getattr(conf, module_name)
 
 				if hasattr(module_conf, 'ignore'):
-					assert ltrace(self.name, '| not_manually_ignored(%s) → %s '
+					assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s '
 						'(individually)' % (module_name,
 										getattr(module_conf, 'ignore')))
 
@@ -1330,7 +1332,7 @@ class ModulesManager(LockedController):
 
 		# if no configuration directive is found, the module is considered
 		# not ignored by default, it will be loaded.
-		assert ltrace(self.name, '| not_manually_ignored(%s) → %s (no match)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s (no match)' % (
 															module_name, True))
 		return True
 	def find_compatibles(self, controller):
@@ -1342,7 +1344,7 @@ class ModulesManager(LockedController):
 				the name, please).
 		"""
 
-		assert ltrace(self.name, '| find_compatibles() %s for %s from %s → %s'
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| find_compatibles() %s for %s from %s → %s'
 			% (stylize(ST_COMMENT, self.name),
 				stylize(ST_NAME, controller.name),
 					', '.join([x.name for x in self]),
@@ -1359,7 +1361,7 @@ class ModulesManager(LockedController):
 
 		"""
 
-		assert ltrace(self.name, '| enable_module(%s, active=%s, available=%s)'
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
 		with self.lock:
@@ -1392,7 +1394,7 @@ class ModulesManager(LockedController):
 
 		"""
 
-		assert ltrace(self.name, '| disable_module(%s, active=%s, available=%s)'
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
 		with self.lock:
@@ -1429,7 +1431,7 @@ class ModulesManager(LockedController):
 			module.
 		"""
 
-		assert ltrace(self.name, '> check(%s, %s)' % (batch, auto_answer))
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check(%s, %s)' % (batch, auto_answer))
 
 		to_disable = []
 
@@ -1438,7 +1440,7 @@ class ModulesManager(LockedController):
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in itertools.chain(self, self._available_modules):
-				assert ltrace(self.name, '  check(%s)' % module.name)
+				assert ltrace(globals()['TRACE_' + self.name.upper()], '  check(%s)' % module.name)
 				try:
 					module.check(batch=batch, auto_answer=auto_answer)
 
@@ -1476,7 +1478,7 @@ class ModulesManager(LockedController):
 
 			del to_disable
 
-		assert ltrace(self.name, '< check()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< check()')
 	def guess_one(self, module_name):
 		try:
 			return self[module_name]
@@ -1532,7 +1534,7 @@ class CoreUnitObject(object):
 
 		object.__init__(self)
 
-		assert ltrace('objects',
+		assert ltrace(TRACE_OBJECTS,
 			'| CoreUnitObject.__init__(%s)' % controller)
 
 		assert controller is not None
@@ -1592,7 +1594,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 
 		CoreUnitObject.__init__(self, manager)
 
-		assert ltrace(self.name, '| CoreModule.__init__(controllers_compat=%s)'
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreModule.__init__(controllers_compat=%s)'
 			% controllers_compat)
 
 		# abstract defaults
@@ -1680,7 +1682,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 				``genex_*`` methods.
 		"""
 
-		assert ltrace(self.name, '| CoreModule.generate_exception(%s,%s,%s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreModule.generate_exception(%s,%s,%s)' % (
 			extype, args, kwargs))
 
 		# it's up to the developper to implement the right methods, don't
@@ -1700,7 +1702,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			  must overload this method and provide the good implementation.
 
 		"""
-		assert ltrace(self.name, '| is_enabled(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled(%s)' % self.available)
 		return self.available
 	def enable(self):
 		""" In this abstract method, just return ``False`` (an abstract module
@@ -1712,7 +1714,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			.. note:: your own module's :meth:`enable` method has to return
 				``True`` if the enable process succeeds, otherwise ``False``.
 		"""
-		assert ltrace(self.name, '| enable(False)')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable(False)')
 		return False
 	def disable(self):
 		""" In this abstract method, just return ``True`` (an abstract module
@@ -1724,7 +1726,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			.. note:: your own module's :meth:`disable` method has to return
 				``True`` if the disable process succeeds, otherwise ``False``.
 		"""
-		assert ltrace(self.name, '| disable(True)')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable(True)')
 		return True
 	def initialize(self):
 		""" For an abstract module, this method always return ``False``.
@@ -1750,11 +1752,11 @@ class CoreModule(CoreUnitObject, NamedObject):
 
 		"""
 
-		assert ltrace(self.name, '| initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| initialize(%s)' % self.available)
 		return self.available
 	def check(self, batch=False, auto_answer=None):
 		""" default check method. """
-		assert ltrace(self.name, '| ckeck(%s)' % batch)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| ckeck(%s)' % batch)
 		pass
 	def load_defaults(self):
 		""" A real backend will setup its own needed attributes with values
@@ -1776,13 +1778,17 @@ class CoreStoredObject(CoreUnitObject):
 
 		CoreUnitObject.__init__(self, controller)
 
-		assert ltrace('objects',
+		assert ltrace(TRACE_OBJECTS,
 			'| CoreStoredObject.__init__(%s, %s)' % (
 				controller.name, backend.name))
 
 		self.__backend = backend
 		self.__myref   = weakref.ref(self)
-		self.__lock    = RLock()
+
+		# various locks, with different levels, for different operations.
+		self.__ro_lock = RLock()
+		self.__rw_lock = RLock()
+		self.__lock    = self.__rw_lock
 
 	@property
 	def weakref(self):
@@ -1801,6 +1807,17 @@ class CoreStoredObject(CoreUnitObject):
 	@property
 	def lock(self):
 		return self.__lock
+	def _is_locked(self, lock=None):
+		if lock is None:
+			lock = self.__lock
+		if lock.acquire(blocking=False):
+			lock.release()
+			return False
+		return True
+	def is_ro_locked(self):
+		return self._is_locked(self.__ro_lock)
+	def is_rw_locked(self):
+		return self._is_locked(self.__rw_lock)
 class CoreFSUnitObject:
 	def __init__(self, check_file, object_info, vars_to_replace=None):
 
@@ -1845,16 +1862,17 @@ class CoreFSUnitObject:
 		mask = event.mask
 
 		if mask & pyinotify.IN_IGNORED:
-			#assert ltrace('inotifier', '| %s: ignored %s' % (self.name, event))
+			logging.monitor(TRACE_INOTIFIER, '{0}: ignored {1}', self.name, event)
 			return
 
 		# treat deletes and outboud moves first.
 		if event.dir and (mask & pyinotify.IN_DELETE_SELF
 							or mask & pyinotify.IN_MOVED_FROM):
-			#assert ltrace('inotifier', '| %s: self-delete/move %s' % (self.name, event))
-
 			# if it is a DELETE_SELF, only the dir watch will be removed;
 			# if it is a MOVED, all sub-watches must be removed.
+
+			logging.monitor(TRACE_INOTIFIER,
+				'{0}: directory self-delete/move {1}', self.name, event.pathname)
 			self.__unwatch_directory(event.pathname,
 									deleted=(mask & pyinotify.IN_DELETE_SELF))
 			return
@@ -1865,26 +1883,28 @@ class CoreFSUnitObject:
 		# in pretty convoluted code.
 		if self._checking.is_set():
 			if time.time() - self.__last_msg_time >= 1.0:
+				logging.monitor(TRACE_INOTIFIER, '{0}: skipped event {1} '
+										'(CHK in progress)', self.name, event)
 				logging.progress(_(u'{0}: manual check already in '
-					'progress, skipping event {1}.').format(
-						stylize(ST_NAME, self.name), event))
+								u'progress, skipping event {1}.').format(
+									stylize(ST_NAME, self.name), event))
 				self.__last_msg_time = time.time()
 
-			assert ltrace('inotifier', '| %s: skipped %s' % (self.name, event))
 			return
 
 		# if we can find an expected event for a given path, we should just
 		# discard the check, because the event is self-generated by an
 		# already-ran previous check.
 		if mask & pyinotify.IN_ATTRIB:
-			try:
-				with self.lock:
+			with self.lock:
+				try:
 					self.__check_expected.remove(event.pathname)
+					logging.monitor(TRACE_INOTIFIER,
+						'{0}: skipped expected event {1}', self.name, event)
 
-				#assert ltrace('inotifier', '| %s: expected %s' % (self.name, event))
-				return
-			except:
-				pass
+				except KeyError:
+					pass
+			return
 
 		if event.dir:
 			if mask & pyinotify.IN_CREATE or mask & pyinotify.IN_MOVED_TO:
@@ -1900,34 +1920,36 @@ class CoreFSUnitObject:
 
 				# no need to lock for this, INotifier events / calls are
 				# perfectly sequential.
-				assert ltrace('inotifier', '| %s: rewalk dir %s' % (self.name, event))
 
-				if event.pathname in self.__watches:
-					pass
-				else:
-					#assert ltrace('inotifier', '  %s: watch-new dir %s' % (self.name, event.pathname))
+				if event.pathname not in self.__watches:
+					logging.monitor(TRACE_INOTIFIER,
+							'{0}: watch new dir {1}', self.name, event.pathname)
 					self.__watch_directory(event.pathname)
 
-				# wait a small little while, for things to settle.
-				#L_aclcheck_enqueue(priorities.HIGH,
-				#		self.__rewalk_directory, event.pathname, walk_delay=0.01)
+				logging.monitor(TRACE_INOTIFIER,
+								'{0}: rewalk dir {1}', self.name, event.pathname)
 				self.__rewalk_directory(event.pathname)
 
 			elif mask & pyinotify.IN_ATTRIB:
-				#assert ltrace('inotifier', '| %s: fast-chk dir %s' % (self.name, event))
+				logging.monitor(TRACE_INOTIFIER,
+							'{0}: fast-chk dir {1}', self.name, event.pathname)
 				self._fast_aclcheck(event.pathname)
 
 			else:
-				assert ltrace('inotifier', '| %s: useless dir %s' % (self.name, event))
+				logging.monitor(TRACE_INOTIFIER,
+								'{0}: useless dir event {1}', self.name, event)
 
 		else:
 			if mask & pyinotify.IN_ATTRIB \
 					or mask & pyinotify.IN_CREATE \
 					or mask & pyinotify.IN_MOVED_TO:
-				#assert ltrace('inotifier', '| %s: fast-chk file %s' % (self.name, event))
+				logging.monitor(TRACE_INOTIFIER,
+						'{0}: fast-chk file {1}', self.name, event.pathname)
 				self._fast_aclcheck(event.pathname)
+
 			else:
-				assert ltrace('inotifier', '| %s: useless file %s' % (self.name, event))
+				logging.monitor(TRACE_INOTIFIER,
+					'{0}: useless file event {1}', self.name, event)
 	def __rewalk_directory(self, directory, walk_delay=None):
 		""" TODO. """
 
@@ -1950,8 +1972,8 @@ class CoreFSUnitObject:
 					# little and rewalk the directory manually. This will occur
 					# a small set of supplemental _fast_aclcheck(), but it's
 					# really needed to catch everything.
-					assert ltrace('inotifier', '  %s: rewalk deleted %s' % (
-													self.name, full_path_dir))
+					logging.monitor(TRACE_INOTIFIER,
+						'{0}: rewalk deleted {1}', self.name, full_path_dir)
 					self.__recently_deleted.discard(full_path_dir)
 
 					# wait a little before rewalking, there is a delay when
@@ -1960,13 +1982,13 @@ class CoreFSUnitObject:
 						self.__rewalk_directory, full_path_dir, walk_delay=0.1)
 
 				if full_path_dir in self.__watches:
-					assert ltrace('inotifier', '  %s: already watched %s' % (
-													self.name, full_path_dir))
+					logging.monitor(TRACE_INOTIFIER,
+						'{0}: already watched {1}', self.name, full_path_dir)
 					continue
 
-				assert ltrace('inotifier', '  %s: watch/fast-chk-miss '
-							'dir %s [from %s]' % (self.name,
-								full_path_dir, directory))
+				logging.monitor(TRACE_INOTIFIER, u'{0}: watch/fast-chk missed '
+										u'directory %s [from %s]',
+											self.name, full_path_dir, directory)
 
 				self.__watch_directory(full_path_dir)
 
@@ -1977,12 +1999,13 @@ class CoreFSUnitObject:
 				full_path_file = '%s/%s' % (path, afile)
 
 				if full_path_file in self.__check_expected:
-					assert ltrace('inotifier', '  %s: expected file %s' % (
-													self.name, full_path_file))
+					logging.monitor(TRACE_INOTIFIER,
+						'{0}: expected file {1}', self.name, full_path_file)
 					continue
 
-				assert ltrace('inotifier', '  %s: fast-chk missed file %s [from %s]'
-										% (self.name, full_path_file, directory))
+				logging.monitor(TRACE_INOTIFIER,
+									'{0}: fast-chk missed file {1} [from {2}]',
+										self.name, full_path_file, directory)
 
 				L_aclcheck_enqueue(priorities.NORMAL,
 						self._fast_aclcheck, full_path_file, expiry_check=True)
@@ -1992,7 +2015,8 @@ class CoreFSUnitObject:
 			#  sufficient kind of delay. This should have given enough time
 			# to the process which created the dir to handle its own work
 			# before we try to set a new ACL on it.
-			assert ltrace('inotifier', '  %s: fast-chk-miss dir %s' % (self.name, path))
+			logging.monitor(TRACE_INOTIFIER,
+						'{0}: fast-chk missed directory {1}', self.name, path)
 
 			L_aclcheck_enqueue(priorities.NORMAL,
 								self._fast_aclcheck, path, expiry_check=True)
@@ -2011,32 +2035,30 @@ class CoreFSUnitObject:
 											| pyinotify.IN_MOVED_FROM
 											| pyinotify.IN_DELETE_SELF,
 									#proc_fun=pyinotify.PrintAllEvents())
-									proc_fun=self.__inotify_event_dispatcher).iteritems():
+									proc_fun=self.__inotify_event_dispatcher
+																).iteritems():
 				if key in self.__watches:
 					logging.warning2(_(u'{0}: overwriting watch {1}!').format(
 						stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
 
-				if self.name == 'toto':
-					assert ltrace('inotifier', '  %s: add-watch %s %s' % (self.name, key, value))
+				logging.monitor(TRACE_INOTIFIER,
+							'{0}: add-watch {1} {2}', self.name, key, value)
 				self.__watches[key] = value
 	@logging.warn_exception
 	def __unwatch_directory(self, directory, deleted=False):
 
 		with self.lock:
 			if directory == self.homeDirectory:
-
 				# rm_watch / inotifier_del wants a list of WDs as argument.
 				self.__recently_deleted.update(L_inotifier_del(
 							self.__watches.values(), quiet=False).iterkeys())
 				self.__watches.clear()
 
 			else:
-
 				if deleted:
 					try:
-
-						assert ltrace('inotifier', '| %s: self-del unwatch %s' % (
-								self.name, directory))
+						logging.monitor(TRACE_INOTIFIER,
+							'{0}: self-del unwatch {1}', self.name, directory)
 
 						del self.__watches[directory]
 						self.__recently_deleted.add(directory)
@@ -2048,8 +2070,8 @@ class CoreFSUnitObject:
 
 				else:
 					try:
-						assert ltrace('inotifier', '| %s: remove recursive %s' % (
-								self.name, directory))
+						logging.monitor(TRACE_INOTIFIER,
+							'{0}: remove recursive {1}', self.name, directory)
 
 						self.__recently_deleted.update(L_inotifier_del(
 								self.__watches[directory], rec=True).iterkeys())
@@ -2061,9 +2083,9 @@ class CoreFSUnitObject:
 					else:
 						for watch in self.__watches.keys():
 							if watch.startswith(directory):
-								assert ltrace('inotifier',
-									'| %s: remove internal %s)' % (
-										self.name, watch))
+								logging.monitor(TRACE_INOTIFIER,
+									'{0}: remove internal {1}',
+										self.name, watch)
 								del self.__watches[watch]
 								self.__recently_deleted.add(watch)
 	def __load_check_rules(self, event=None):
@@ -2073,7 +2095,7 @@ class CoreFSUnitObject:
 			The return at the end allows us to use the rules immediately,
 			when we load them in the standard check() method. """
 
-		assert ltrace('checks', '| %s.__load_check_rules(%s)' % (self.name, event))
+		assert ltrace(TRACE_CHECKS, '| %s.__load_check_rules(%s)' % (self.name, event))
 
 		if event is None:
 			try:
@@ -2127,7 +2149,7 @@ class CoreFSUnitObject:
 		""" add a group watch. not used directly by inotifier, but prefixed
 			with it because used in the context. """
 
-		assert ltrace('inotifier', '| %s %s._inotifier_add_watch()' % (self.__class__, self.name))
+		assert ltrace(TRACE_INOTIFIER, '| %s %s._inotifier_add_watch()' % (self.__class__, self.name))
 
 		if self.__watches_installed and not force_reload:
 			return
@@ -2164,7 +2186,7 @@ class CoreFSUnitObject:
 			symlinks, etc).
 		"""
 
-		assert ltrace('checks', '| %s._standard_check()' % self.name)
+		assert ltrace(TRACE_CHECKS, '| %s._standard_check()' % self.name)
 
 		if self._checking.is_set():
 			logging.warning(_(u'{0} {1}: somebody is already checking; '
@@ -2317,7 +2339,7 @@ class CoreFSUnitObject:
 			:param path: path of the modified file/dir
 		"""
 
-		assert ltrace('checks', '| %s._fast_aclcheck(%s, exp_chk=%s)' % (
+		assert ltrace(TRACE_CHECKS, '| %s._fast_aclcheck(%s, exp_chk=%s)' % (
 												self.name, path, expiry_check))
 
 		if expiry_check:
@@ -2328,13 +2350,13 @@ class CoreFSUnitObject:
 					# don't check a previously checked file, if previous check was less
 					# than 5 seconds.
 					if time.time() - expiry < self.__expire_time:
-						assert ltrace('checks', '  %s._fast_aclcheck: not expired %s' % (self.name, path))
+						assert ltrace(TRACE_CHECKS, '  %s._fast_aclcheck: not expired %s' % (self.name, path))
 						return
 					else:
 						del self.__last_fast_check[path]
 
 		# already done
-		#assert ltrace('checks', "> %s._fast_aclcheck(path=%s)" % (self.name, path))
+		#assert ltrace(TRACE_CHECKS, "> %s._fast_aclcheck(path=%s)" % (self.name, path))
 
 		home = self.homeDirectory
 
@@ -2444,5 +2466,5 @@ class CoreFSUnitObject:
 		with self.__expiry_lock:
 			for key, value in self.__last_fast_check.items():
 				if time.time() - value >= self.__expire_time:
-					assert ltrace('checks', '  %s: expired %s' % (self.name, key))
+					assert ltrace(TRACE_CHECKS, '  %s: expired %s' % (self.name, key))
 					del self.__last_fast_check[key]

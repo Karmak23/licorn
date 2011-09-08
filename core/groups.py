@@ -22,6 +22,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, distros
 
@@ -125,7 +126,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		CoreStoredObject.__init__(self,	LMC.groups, backend)
 
-		assert ltrace('objects', '| Group.__init__(%s, %s)' % (gidNumber, name))
+		assert ltrace(TRACE_OBJECTS, '| Group.__init__(%s, %s)' % (gidNumber, name))
 
 		# use private attributes, made public via the property behaviour
 		self.__gidNumber    = gidNumber
@@ -217,7 +218,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			Group._cli_invalidate_all()
 	def __del__(self):
 
-		assert ltrace('gc', '| Group %s.__del__()' % self.__name)
+		assert ltrace(TRACE_GC, '| Group %s.__del__()' % self.__name)
 
 		del self.__profile
 
@@ -535,7 +536,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 	def watches(self):
 		""" R/O property, containing the current group inotifier watches,
 			in the form of a dictionnary of path -> WD. """
-
+		print '>> FIXME core.Group.watches'
 	def _cli_invalidate(self):
 		# invalidate the CLI view
 		try:
@@ -628,7 +629,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 	def serialize(self, backend_action=backend_actions.UPDATE):
 		""" Save group data to originating backend. """
 
-		assert ltrace('groups', '| %s.serialize(%s → %s)' % (
+		assert ltrace(TRACE_GROUPS, '| %s.serialize(%s → %s)' % (
 											stylize(ST_NAME, self.name),
 											self.backend.name,
 											backend_actions[backend_action]))
@@ -639,7 +640,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		caller = current_thread().name
 
-		assert ltrace('groups', '> %s: %s.add_Users(%s)' % (
+		assert ltrace(TRACE_GROUPS, '> %s: %s.add_Users(%s)' % (
 								caller, self.__name,
 								', '.join(user.login for user in users_to_add)))
 
@@ -647,7 +648,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			raise exceptions.BadArgumentError(
 						_(u'You must specify a users list'))
 
-		assert ltrace('locks', '  %s %s' % (LMC.groups.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '  %s %s' % (LMC.groups.lock, LMC.users.lock))
 
 		# we need to lock users to be sure they don't dissapear during this phase.
 		with nested(LMC.groups.lock, LMC.users.lock):
@@ -728,15 +729,15 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				# FIXME: what to do if extensions *need* the group to
 				# be written to disk and batch was True ?
 
-		assert ltrace('locks', '  %s %s' % (LMC.groups.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '  %s %s' % (LMC.groups.lock, LMC.users.lock))
 
-		assert ltrace('groups', '< %s.add_Users()' % self.__name)
+		assert ltrace(TRACE_GROUPS, '< %s.add_Users()' % self.__name)
 	def del_Users(self, users_to_del=None, batch=False):
 		""" Delete a users list from the current group. """
 
 		caller = current_thread().name
 
-		assert ltrace('groups', '> %s: %s.del_Users(%s)' % (
+		assert ltrace(TRACE_GROUPS, '> %s: %s.del_Users(%s)' % (
 								caller, self.__name,
 								', '.join(user.login for user in users_to_del)))
 
@@ -789,7 +790,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			if batch and work_done:
 				self.serialize()
 
-		assert ltrace('groups', '< %s.del_Users()' % self.name)
+		assert ltrace(TRACE_GROUPS, '< %s.del_Users()' % self.name)
 	def link_User(self, user):
 		""" This method is some sort of callback, called by the
 			:class:`~licorn.core.users.User` instance when we first call its
@@ -909,10 +910,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# the copy operation is successfull, make it a real move.
 			old_backend.delete_Group(self.name)
 
-			logging.notice(_(u'Moved group {0} from backend '
-							u'{1} to {2}.').format(stylize(ST_NAME, self.name),
-					stylize(ST_NAME, old_backend),
-					stylize(ST_NAME, new_backend)))
+			logging.notice(_(u'Moved group {0} from {1} to {2}.').format(
+												stylize(ST_NAME, self.name),
+												stylize(ST_NAME, old_backend),
+												stylize(ST_NAME, new_backend)))
 			return True
 	def check(self, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
 		""" Check a group.
@@ -932,7 +933,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				all questions.
 		"""
 
-		assert ltrace('groups', '> %s.check()' % stylize(ST_NAME, self.name))
+		assert ltrace(TRACE_GROUPS, '> %s.check()' % stylize(ST_NAME, self.name))
 
 		#NOTE: don't self.lock here, it would block the inotifier event dispatcher.
 
@@ -1266,7 +1267,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			#
 			# user is not a guest or responsible of the group,
 			# just a brand new member. Nothing to check.
-		assert ltrace('groups', ' | %s.__check_mutual_exclusions() → %s' % (
+		assert ltrace(TRACE_GROUPS, ' | %s.__check_mutual_exclusions() → %s' % (
 				self.name, stylize(ST_OK, 'OK')))
 	def check_associated_groups(self, minimal=True, force=False,
 							batch=False, auto_answer=None, full_display=True):
@@ -1373,7 +1374,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							batch=False, auto_answer=None, full_display=True):
 		""" Check superflous and mandatory attributes of a system group. """
 
-		assert ltrace(self.name, '| %s.__check_system_group()' % self.name)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| %s.__check_system_group()' % self.name)
 
 		all_went_ok = True
 
@@ -1438,7 +1439,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		else:
 			return
 
-		assert ltrace('groups',
+		assert ltrace(TRACE_GROUPS,
 					'| %s.__add_group_symlink(%s)' % (self.name, user.login))
 
 		link_src = os.path.join(LMC.configuration.groups.base_path,
@@ -1468,7 +1469,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		else:
 			return
 
-		assert ltrace('groups',
+		assert ltrace(TRACE_GROUPS,
 					'| %s.__del_group_symlink(%s)' % (self.name, user.login))
 
 		link_src = os.path.join(LMC.configuration.groups.base_path,
@@ -1705,7 +1706,7 @@ class GroupsController(Singleton, CoreFSController):
 
 	def __init__ (self, warnings=True):
 
-		assert ltrace('groups', '> GroupsController.__init__(%s)' %
+		assert ltrace(TRACE_GROUPS, '> GroupsController.__init__(%s)' %
 			GroupsController.init_ok)
 
 		if GroupsController.init_ok:
@@ -1714,7 +1715,7 @@ class GroupsController(Singleton, CoreFSController):
 		CoreFSController.__init__(self, 'groups')
 
 		GroupsController.init_ok = True
-		assert ltrace('groups', '< GroupsController.__init__(%s)' %
+		assert ltrace(TRACE_GROUPS, '< GroupsController.__init__(%s)' %
 			GroupsController.init_ok)
 	def by_name(self, name):
 		return Group.by_name[name]()
@@ -1731,7 +1732,7 @@ class GroupsController(Singleton, CoreFSController):
 		if GroupsController.load_ok:
 			return
 
-		assert ltrace('groups', '| load()')
+		assert ltrace(TRACE_GROUPS, '| load()')
 
 		# be sure our depency is OK.
 		LMC.users.load()
@@ -1749,7 +1750,7 @@ class GroupsController(Singleton, CoreFSController):
 	def reload(self, send_event=True):
 		""" load or reload internal data structures from backends data. """
 
-		assert ltrace('groups', '| reload()')
+		assert ltrace(TRACE_GROUPS, '| reload()')
 
 		if send_event:
 			L_event_run(InternalEvent('groups_reloading', groups=self))
@@ -1768,8 +1769,8 @@ class GroupsController(Singleton, CoreFSController):
 	def reload_backend(self, backend):
 		""" reload only one backend contents (used from inotifier). """
 
-		assert ltrace('groups', '| reload_backend(%s)' % backend.name)
-		assert ltrace('locks', '| locks %s %s' % (self.lock, LMC.users.lock))
+		assert ltrace(TRACE_GROUPS, '| reload_backend(%s)' % backend.name)
+		assert ltrace(TRACE_LOCKS, '| locks %s %s' % (self.lock, LMC.users.lock))
 
 		# lock users too, because we feed the members cache inside.
 		with nested(self.lock, LMC.users.lock):
@@ -1799,7 +1800,7 @@ class GroupsController(Singleton, CoreFSController):
 			self.__connect_groups()
 			self.__connect_users(clear_first=True)
 
-		assert ltrace('locks', '| locks %s %s' % (self.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '| locks %s %s' % (self.lock, LMC.users.lock))
 
 		# we need to reload them, as they connect groups to them.
 		LMC.privileges.reload()
@@ -1857,7 +1858,7 @@ class GroupsController(Singleton, CoreFSController):
 	def serialize(self, group=None):
 		""" Save internal data structure to backends. """
 
-		assert ltrace('groups', '> serialize(%s)' % group)
+		assert ltrace(TRACE_GROUPS, '> serialize(%s)' % group)
 
 		with self.lock:
 			if group:
@@ -1867,14 +1868,14 @@ class GroupsController(Singleton, CoreFSController):
 				for backend in self.backends:
 					backend.save_Groups(self)
 
-		assert ltrace('groups', '< serialize()')
+		assert ltrace(TRACE_GROUPS, '< serialize()')
 	def select(self, filter_string):
 		""" Filter group accounts on different criteria.
 		"""
 
 		filtered_groups = []
 
-		assert ltrace('groups', '> Select(%s)' % filter_string)
+		assert ltrace(TRACE_GROUPS, '> Select(%s)' % filter_string)
 
 		with self.lock:
 			if filters.NONE == filter_string:
@@ -1884,20 +1885,20 @@ class GroupsController(Singleton, CoreFSController):
 				filtered_groups = filter_string
 
 			elif filters.ALL == filter_string:
-				assert ltrace('groups', '> Select(ALL:%s/%s)' % (
+				assert ltrace(TRACE_GROUPS, '> Select(ALL:%s/%s)' % (
 					filters.ALL, filter_string))
 
 				filtered_groups = self.values()
 
 			elif filters.STANDARD == filter_string:
-				assert ltrace('groups', '> Select(STD:%s/%s)' % (
+				assert ltrace(TRACE_GROUPS, '> Select(STD:%s/%s)' % (
 					filters.STD, filter_string))
 
 				filtered_groups.extend(group for group in self
 														if group.is_standard)
 
 			elif filters.EMPTY == filter_string:
-				assert ltrace('groups', '> Select(EMPTY:%s/%s)' % (
+				assert ltrace(TRACE_GROUPS, '> Select(EMPTY:%s/%s)' % (
 					filters.EMPTY, filter_string))
 
 				filtered_groups.extend(group for group in self
@@ -1906,70 +1907,70 @@ class GroupsController(Singleton, CoreFSController):
 			elif filters.SYSTEM & filter_string:
 
 				if filters.GUEST == filter_string:
-					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(GST:%s/%s)' % (
 						filters.GST, filter_string))
 
 					filtered_groups.extend(group for group in self
 															if group.is_guest)
 
 				elif filters.NOT_GUEST == filter_string:
-					assert ltrace('groups', '> Select(GST:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(GST:%s/%s)' % (
 						filters.NOT_GST, filter_string))
 
 					filtered_groups.extend(group for group in self
 													if not group.is_guest)
 
 				elif filters.SYSTEM_RESTRICTED == filter_string:
-					assert ltrace('groups', '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(SYSTEM_RESTRICTED:%s/%s)' % (
 						filters.SYSTEM_RESTRICTED, filter_string))
 
 					filtered_groups.extend(group for group in self
 												if group.is_system_restricted)
 
 				elif filters.SYSTEM_UNRESTRICTED == filter_string:
-					assert ltrace('groups', '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(SYSTEM_UNRESTRICTED:%s/%s)' % (
 						filters.SYSTEM_UNRESTRICTED, filter_string))
 
 					filtered_groups.extend(group for group in self
 										if group.is_system_unrestricted)
 
 				elif filters.RESPONSIBLE == filter_string:
-					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(RSP:%s/%s)' % (
 						filters.RSP, filter_string))
 
 					filtered_groups.extend(group for group in self
 												if group.is_responsible)
 
 				elif filters.NOT_RESPONSIBLE == filter_string:
-					assert ltrace('groups', '> Select(RSP:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(RSP:%s/%s)' % (
 						filters.NOT_RSP, filter_string))
 
 					filtered_groups.extend(group for group in self
 												if not group.is_responsible)
 
 				elif filters.PRIVILEGED == filter_string:
-					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(PRI:%s/%s)' % (
 						filters.PRI, filter_string))
 
 					filtered_groups.extend([ group for group in self
 													if group.is_privilege ])
 
 				elif filters.NOT_PRIVILEGED == filter_string:
-					assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(PRI:%s/%s)' % (
 						filters.NOT_PRI, filter_string))
 
 					filtered_groups.extend([ group for group in self
 												if not group.is_privilege ])
 
 				else:
-					assert ltrace('groups', '> Select(SYS:%s/%s)' % (
+					assert ltrace(TRACE_GROUPS, '> Select(SYS:%s/%s)' % (
 						filters.SYS, filter_string))
 
 					filtered_groups.extend([ group for group in self
 														if group.is_system ])
 
 			elif filters.NOT_SYSTEM == filter_string:
-				assert ltrace('groups', '> Select(PRI:%s/%s)' % (
+				assert ltrace(TRACE_GROUPS, '> Select(PRI:%s/%s)' % (
 					filters.NOT_SYS, filter_string))
 				filtered_groups.extend(group for group in self if group.is_standard)
 
@@ -1984,14 +1985,14 @@ class GroupsController(Singleton, CoreFSController):
 						raise exceptions.DoesntExistException(_(u'GID %s does '
 							u'not exist on the system.') % gid)
 
-		assert ltrace('groups', '< Select(%s)' % filtered_groups)
+		assert ltrace(TRACE_GROUPS, '< Select(%s)' % filtered_groups)
 		return filtered_groups
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 
 		with self.lock:
 
-			assert ltrace('groups', '| dump()')
+			assert ltrace(TRACE_GROUPS, '| dump()')
 
 			data = ''
 
@@ -2008,7 +2009,7 @@ class GroupsController(Singleton, CoreFSController):
 			else:
 				groups = selected
 
-			assert ltrace('groups', '| to_XML(%s)' % ','.join(
+			assert ltrace(TRACE_GROUPS, '| to_XML(%s)' % ','.join(
 											group.name for group in groups))
 
 		return (u'<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -2026,7 +2027,7 @@ class GroupsController(Singleton, CoreFSController):
 			else:
 				groups = selected
 
-			assert ltrace('groups', '| to_JSON(%r)' % groups)
+			assert ltrace(TRACE_GROUPS, '| to_JSON(%r)' % groups)
 
 			return '[ %s ]' % ','.join(group.to_JSON() for group in groups)
 	def _validate_fields(self, name, description, groupSkel):
@@ -2073,7 +2074,7 @@ class GroupsController(Singleton, CoreFSController):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
-		assert ltrace('groups', '''> AddGroup(name=%s, system=%s, gid=%s, '''
+		assert ltrace(TRACE_GROUPS, '''> AddGroup(name=%s, system=%s, gid=%s, '''
 			'''descr=%s, skel=%s, perm=%s)''' % (name, system, desired_gid,
 				description, groupSkel, permissive))
 
@@ -2122,7 +2123,7 @@ class GroupsController(Singleton, CoreFSController):
 
 			# system groups don't have shared group dir nor resp-
 			# nor guest- nor special ACLs. We stop here.
-			assert ltrace('groups', '< AddGroup(name=%s,gid=%d)' % (
+			assert ltrace(TRACE_GROUPS, '< AddGroup(name=%s,gid=%d)' % (
 							group.name, group.gid))
 			return group
 
@@ -2142,7 +2143,7 @@ class GroupsController(Singleton, CoreFSController):
 		if users_to_add:
 			group.add_Users(users_to_add)
 
-		assert ltrace('groups', '< AddGroup(%s): gid %d' % (
+		assert ltrace(TRACE_GROUPS, '< AddGroup(%s): gid %d' % (
 									group.name, group.gid))
 
 		return group
@@ -2154,7 +2155,7 @@ class GroupsController(Singleton, CoreFSController):
 
 		# LOCKS: No need to use self.lock, already encapsulated in AddGroup().
 
-		assert ltrace('groups', '''> __add_group(name=%s, system=%s, gid=%s, '''
+		assert ltrace(TRACE_GROUPS, '''> __add_group(name=%s, system=%s, gid=%s, '''
 			'''descr=%s, skel=%s)''' % (name, system, manual_gid, description,
 				groupSkel)
 			)
@@ -2182,7 +2183,7 @@ class GroupsController(Singleton, CoreFSController):
 						u'choose another name for your group.') %
 							stylize(ST_NAME, name))
 			else:
-				assert ltrace('groups', 'manual GID %d specified.' % manual_gid)
+				assert ltrace(TRACE_GROUPS, 'manual GID %d specified.' % manual_gid)
 
 				# user has manually specified a GID to affect upon creation.
 				if system and existing_group.is_system:
@@ -2250,7 +2251,7 @@ class GroupsController(Singleton, CoreFSController):
 										system=system,
 										description=description))
 
-		assert ltrace('groups', '  __add_group in data structures: %s / %s' % (
+		assert ltrace(TRACE_GROUPS, '  __add_group in data structures: %s / %s' % (
 																	gid, name))
 
 		group = self[gid] = Group(gid, name,
@@ -2277,15 +2278,15 @@ class GroupsController(Singleton, CoreFSController):
 
 		L_event_run(InternalEvent('group_post_add', group))
 
-		assert ltrace('groups', '< __add_group(%s): gid %d.'% (name, gid))
+		assert ltrace(TRACE_GROUPS, '< __add_group(%s): gid %d.'% (name, gid))
 
 		return group
 	def del_Group(self, group, del_users=False, no_archive=False, force=False,
 										check_profiles=True, batch=False):
 		""" Delete a Licorn® group. """
 
-		assert ltrace('groups', '| del_Group(%s,%s)' % (group.name, group.gid))
-		assert ltrace('locks',  '> del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
+		assert ltrace(TRACE_GROUPS, '| del_Group(%s,%s)' % (group.name, group.gid))
+		assert ltrace(TRACE_LOCKS,  '> del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
 
 		# lock everything we *eventually* need, to be sure there are no errors.
 		with nested(self.lock, LMC.privileges.lock, LMC.users.lock):
@@ -2382,7 +2383,7 @@ class GroupsController(Singleton, CoreFSController):
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
 
-		assert ltrace('locks', '< del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '< del_Group: %s %s %s' % (self.lock, LMC.privileges.lock, LMC.users.lock))
 
 		# LOCKS: from here, everything is deleted in internal structures, we
 		# don't need the locks anymore. The inotifier and the archiving parts
@@ -2403,7 +2404,7 @@ class GroupsController(Singleton, CoreFSController):
 		# encapsulated in another, which will acquire self.lock. This is the
 		# case in DeleteGroup().
 
-		assert ltrace('groups', '> __delete_group(%s)' % group.name)
+		assert ltrace(TRACE_GROUPS, '> __delete_group(%s)' % group.name)
 
 		# keep informations for post-deletion hook
 		backend = group.backend
@@ -2434,7 +2435,7 @@ class GroupsController(Singleton, CoreFSController):
 		# http://www.friday.com/bbum/2007/08/24/python-di/
 		# http://mindtrove.info/python-weak-references/
 
-		assert ltrace('gc', '  group ref count before del: %d %s' % (
+		assert ltrace(TRACE_GC, '  group ref count before del: %d %s' % (
 				sys.getrefcount(group), gc.get_referrers(group)))
 
 		del group
@@ -2444,7 +2445,7 @@ class GroupsController(Singleton, CoreFSController):
 		log(_(u'Deleted {0}group {1}.').format(
 			_(u'system ') if system else '', stylize(ST_NAME, name)))
 
-		assert ltrace('groups', '< __delete_group(%s)' % name)
+		assert ltrace(TRACE_GROUPS, '< __delete_group(%s)' % name)
 	def check_groups(self, groups_to_check=None, minimal=True, force=False,
 											batch=False, auto_answer=None):
 		""" Check a list of groups. All other parameters are forwarded to
@@ -2453,7 +2454,7 @@ class GroupsController(Singleton, CoreFSController):
 			:param groups_to_check: a list of :class:`Group` objects.
 		"""
 
-		assert ltrace('groups', '| check_groups(%s, minimal=%s, force=%s,'
+		assert ltrace(TRACE_GROUPS, '| check_groups(%s, minimal=%s, force=%s,'
 			'batch=%s, )' %	('None' if groups_to_check is None
 				else ', '.join(g.name for g in groups_to_check),
 				minimal, force, batch))
@@ -2617,7 +2618,7 @@ class GroupsController(Singleton, CoreFSController):
 	def exists(self, gid=None, name=None):
 		"""Return true if the group or gid exists on the system. """
 
-		assert ltrace('groups', '|  exists(name=%s, gid=%s)' % (name, gid))
+		assert ltrace(TRACE_GROUPS, '|  exists(name=%s, gid=%s)' % (name, gid))
 
 		if name:
 			#print name in Group.by_name
@@ -2638,7 +2639,7 @@ class GroupsController(Singleton, CoreFSController):
 	def name_to_gid(self, name):
 		""" Return the gid of the group 'name'."""
 		try:
-			assert ltrace('groups', '| name_to_gid(%s) -> %s' % (
+			assert ltrace(TRACE_GROUPS, '| name_to_gid(%s) -> %s' % (
 				name, self.by_name(name).gidNumber))
 			# use the cache, Luke !
 			return self.by_name(name).gidNumber

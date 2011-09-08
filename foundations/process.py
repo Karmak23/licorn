@@ -12,6 +12,7 @@ import os, sys, traceback, pwd, grp, time
 
 from licorn.foundations        import exceptions, logging
 from licorn.foundations.ltrace import ltrace, insert_ltrace
+from licorn.foundations.ltraces import *
 #
 # daemon and process functions
 #
@@ -27,7 +28,7 @@ def daemonize(log_file=None):
 			daemon.
 	"""
 
-	assert ltrace('process', '> daemonize(%s)' % os.getpid())
+	assert ltrace(TRACE_PROCESS, '> daemonize(%s)' % os.getpid())
 
 	try:
 		if os.fork() > 0:
@@ -42,7 +43,7 @@ def daemonize(log_file=None):
 	os.setsid()
 	os.umask(0)
 
-	assert ltrace('process', '  daemonize(%s)' % os.getpid())
+	assert ltrace(TRACE_PROCESS, '  daemonize(%s)' % os.getpid())
 
 	# do second fork
 	try:
@@ -53,7 +54,7 @@ def daemonize(log_file=None):
 		logging.error("fork #2 failed: errno %d (%s)" % (
 			e.errno, e.strerror))
 
-	assert ltrace('process', '< daemonize(%s)' % os.getpid())
+	assert ltrace(TRACE_PROCESS, '< daemonize(%s)' % os.getpid())
 
 	use_log_file(log_file)
 def write_pid_file(pid_file):
@@ -144,7 +145,7 @@ def execute(command, input_data = ''):
 	""" Roughly pipe some data into a program.
 	Return the (eventual) stdout and stderr in a tuple. """
 
-	assert ltrace('process', '''execute(%s)%s.''' % (command,
+	assert ltrace(TRACE_PROCESS, '''execute(%s)%s.''' % (command,
 		' with input_data="%s"' % input_data if input_data != '' else ''))
 
 	from subprocess import Popen, PIPE

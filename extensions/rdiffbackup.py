@@ -14,6 +14,7 @@ from threading import RLock, Event
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base   import Singleton, MixedDictObject, LicornConfigObject
 
 from licorn.core               import LMC
@@ -157,7 +158,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 	module_depends = [ 'volumes' ]
 
 	def __init__(self):
-		assert ltrace('rdiffbackup', '| RdiffbackupExtension.__init__()')
+		assert ltrace(TRACE_RDIFFBACKUP, '| RdiffbackupExtension.__init__()')
 		LicornExtension.__init__(self, name='rdiffbackup')
 
 		self.controllers_compat = [ 'system' ]
@@ -204,19 +205,19 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		for syspath in os.getenv('PATH', default_path).split(':'):
 			if os.path.exists(syspath + binary):
 
-				assert ltrace(self.name, '| _find_binary(%s) → %s' % (
+				assert ltrace(globals()['TRACE_' + self.name.upper()], '| _find_binary(%s) → %s' % (
 						binary[1:], syspath + binary))
 
 				return syspath + binary
 
-		assert ltrace(self.name, '| _find_binary(%s) → None' % binary[1:])
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| _find_binary(%s) → None' % binary[1:])
 		return None
 	def initialize(self):
 		""" Return True if :command:`rdiff-backup` is installed on the local
 			system.
 		"""
 
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		# these ones will be filled later.
 		self.paths.binary           = self._find_binary('rdiff-backup')
@@ -242,7 +243,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			logging.warning2('%s: not available because rdiff-binary not '
 				'found in $PATH.' % self.name)
 
-		assert ltrace(self.name, '< initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" the :class:`RdiffbackupExtension` is enabled if available and when
@@ -384,7 +385,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			output must be cached).
 		"""
 
-		assert ltrace(self.name, '| _rdiff_statistics(%s)' % volume)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| _rdiff_statistics(%s)' % volume)
 
 		with volume:
 			logging.notice(_(u'{0}: computing statistics on {1}, '
@@ -406,7 +407,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				command = self.commands.nice[:]
 				command.extend(command_line)
 
-				assert ltrace(self.name, 'executing %s, please wait.' % command)
+				assert ltrace(globals()['TRACE_' + self.name.upper()], 'executing %s, please wait.' % command)
 
 				output, errors = process.execute(command)
 
@@ -416,7 +417,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self._record_statistics_duration(volume, end_time - start_time)
 
-			assert ltrace('timings', '%s duration on '
+			assert ltrace(TRACE_TIMINGS, '%s duration on '
 				'%s: %s.' % (' '.join(command_line[:2]), volume,
 					pyutils.format_time_delta(end_time - start_time)))
 
@@ -677,13 +678,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self._write_last_backup_file(volume)
 
-			assert ltrace(self.name, '  executing %s, please wait.' %
+			assert ltrace(globals()['TRACE_' + self.name.upper()], '  executing %s, please wait.' %
 														' '.join(command))
 			backup_start = time.time()
 
 			output, error = process.execute(command)
 
-			assert ltrace('timings', 'rdiff-backup duration on %s: %s.'
+			assert ltrace(TRACE_TIMINGS, 'rdiff-backup duration on %s: %s.'
 								% (volume, pyutils.format_time_delta(
 											time.time() - backup_start)))
 

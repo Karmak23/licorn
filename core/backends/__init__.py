@@ -25,6 +25,7 @@ import os
 from licorn.foundations        import logging
 from licorn.foundations.styles import *
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base   import Singleton, MixedDictObject
 
 from licorn.core         import LMC
@@ -38,7 +39,7 @@ class BackendsManager(Singleton, ModulesManager):
 	_licorn_protected_attrs = ModulesManager._licorn_protected_attrs
 
 	def __init__(self):
-		assert ltrace('backends', '__init__()')
+		assert ltrace(TRACE_BACKENDS, '__init__()')
 		ModulesManager.__init__(self, name='backends', module_type='backend',
 			module_path=__path__[0], module_sym_path='licorn.core.backends')
 	def enable_backend(self, backend_name):
@@ -48,7 +49,7 @@ class BackendsManager(Singleton, ModulesManager):
 			will probably modify system files or services, but whatever is done
 			is different from a backend to another."""
 
-		assert ltrace(self.name, '| enable_backend(%s)' % backend_name)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable_backend(%s)' % backend_name)
 		if ModulesManager.enable_module(self, backend_name):
 			LMC.reload_controllers_backends()
 	enable_func = enable_backend
@@ -59,7 +60,7 @@ class BackendsManager(Singleton, ModulesManager):
 			done by the backend disabling itself is different from a
 			backend to another."""
 
-		assert ltrace(self.name, '| disable_backend(%s)' % backend_name)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable_backend(%s)' % backend_name)
 		if ModulesManager.disable_module(self, backend_name):
 			LMC.reload_controllers_backends()
 	disable_func = disable_backend
@@ -67,7 +68,7 @@ class CoreBackend(CoreModule):
 	def __init__(self, name='core_backend', controllers_compat=[]):
 		CoreModule.__init__(self, name=name,
 			controllers_compat=controllers_compat, manager=LMC.backends)
-		assert ltrace('backends', '| CoreBackend.__init__(%s)' %
+		assert ltrace(TRACE_BACKENDS, '| CoreBackend.__init__(%s)' %
 			controllers_compat)
 	def __str__(self):
 		return 'backend %s' % stylize(ST_NAME, self.name)
@@ -81,7 +82,7 @@ class NSSBackend(CoreBackend):
 	def __init__(self, name='nss', nss_compat=(), priority=0):
 		CoreBackend.__init__(self, name=name,
 			controllers_compat=['users', 'groups'])
-		assert ltrace('backends', '| NSSBackend.__init__(%s, %s)' % (nss_compat,
+		assert ltrace(TRACE_BACKENDS, '| NSSBackend.__init__(%s, %s)' % (nss_compat,
 			priority))
 
 		self.nss_compat = nss_compat
@@ -128,19 +129,19 @@ class MachinesBackend(CoreBackend):
 """
 	def __init__(self, name='machines'):
 		CoreBackend.__init__(self, name=name, controllers_compat=['machines'])
-		assert ltrace('objects', '| MachinesBackends.__init__()')
+		assert ltrace(TRACE_OBJECTS, '| MachinesBackends.__init__()')
 	def load_Machine(self, mid):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace('backends', '| abstract load_Machine(%s)' % mid)
+		assert ltrace(TRACE_BACKENDS, '| abstract load_Machine(%s)' % mid)
 
 		return self.load_Machines()
 	def save_Machine(self, mid, mode):
 		""" Write the groups data in appropriate system files."""
 
-		assert ltrace('backends', '| abstract save_Machine(%s)' % mid)
+		assert ltrace(TRACE_BACKENDS, '| abstract save_Machine(%s)' % mid)
 
 		return self.save_Machine()
 	def delete_Machine(self, mid):
-		assert ltrace('backends', '| abstract delete_Machine(%s)' % mid)
+		assert ltrace(TRACE_BACKENDS, '| abstract delete_Machine(%s)' % mid)
 		pass

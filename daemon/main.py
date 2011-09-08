@@ -34,16 +34,16 @@ import time
 dstart_time = time.time()
 
 import os, sys, signal, resource, gc, re, __builtin__
-
-
-from threading   import current_thread
-from Queue       import Empty, Queue, PriorityQueue
-from optparse    import OptionParser
+from traceback  import print_exc
+from threading  import current_thread
+from Queue      import Empty, Queue, PriorityQueue
+from optparse   import OptionParser
 
 from licorn.foundations           import options, logging, exceptions
 from licorn.foundations           import process, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, insert_ltrace, dump, fulldump
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, MixedDictObject, Singleton
 from licorn.foundations.thread    import _threads, _thcount
 
@@ -271,7 +271,7 @@ class LicornDaemon(Singleton):
 			# extensions already started them, to catch ealy events (which is
 			# not a problem per se).
 			if not th.is_alive():
-				assert ltrace('daemon', 'starting thread %s.' % thname)
+				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
 				th.start()
 	def __stop_threads(self):
 		logging.progress(_(u'%s: stopping threads.') % str(self))
@@ -279,13 +279,13 @@ class LicornDaemon(Singleton):
 		# don't use iteritems() in case we stop during start and not all threads
 		# have been added yet.
 		for (thname, th) in self.__threads.items():
-			assert ltrace('thread', 'stopping thread %s.' % thname)
+			assert ltrace(TRACE_THREAD, 'stopping thread %s.' % thname)
 			if th.is_alive():
 				th.stop()
 				time.sleep(0.01)
 
 		if self.configuration.inotifier.enabled:
-			assert ltrace('thread', 'stopping thread INotifier.')
+			assert ltrace(TRACE_THREAD, 'stopping thread INotifier.')
 			if self.__threads._inotifier.is_alive():
 				self.__threads._inotifier.stop()
 				# we need to wait a little more for INotifier, it can take ages
@@ -297,7 +297,7 @@ class LicornDaemon(Singleton):
 			time.sleep(0.01)
 	def run(self):
 
-		assert ltrace('daemon', '> run()')
+		assert ltrace(TRACE_DAEMON, '> run()')
 
 		self.refork_if_not_root_or_die()
 
@@ -377,11 +377,11 @@ class LicornDaemon(Singleton):
 		# signals), stop cleanly (as if a signal was received).
 		self.terminate(None, None)
 
-		assert ltrace('daemon', '< run()')
+		assert ltrace(TRACE_DAEMON, '< run()')
 	def dump_status(self, long_output=False, precision=None):
 		""" return daemon status (and all threads status, too). """
 
-		assert ltrace('daemon', '| get_daemon_status(%s, %s)' % (
+		assert ltrace(TRACE_DAEMON, '| get_daemon_status(%s, %s)' % (
 			long_output, precision))
 
 		# if not is_localhost(client) and not is_server_peer(client):
@@ -391,52 +391,82 @@ class LicornDaemon(Singleton):
 		rusage   = resource.getrusage(resource.RUSAGE_SELF)
 		pagesize = resource.getpagesize()
 
-		data = ('Licorn® daemon {full}status: '
-			'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
-			'{nb_queues} queues, {nb_locks} locks\n'
-			'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
-			'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
-				'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n'.format(
+		master_locks  = []
+		master_locked = []
+
+		sub_locks  = []
+		sub_locked = []
+
+		for controller in LMC:
+			if hasattr(controller, 'is_locked'):
+				master_locks.append(controller.name)
+				if controller.is_locked():
+					master_locked.append(controller.name)
+
+			try:
+				for objekt in controller.itervalues():
+					if hasattr(objekt, '_is_locked'):
+						local_name = '%s_%s' % (controller.name, objekt.name)
+						sub_locks.append(local_name)
+						if objekt.is_ro_locked() or objekt.is_rw_locked():
+							sub_locked.append(local_name)
+			except AttributeError:
+				pass
+
+		data = _(u'Licorn® daemon {full}status: '
+			u'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
+			u'{nb_queues} queues, {nb_locked}/{nb_locks} Mlocks, {sub_locked}/{sub_locks} Ulocks\n'
+			u'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
+			u'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
+				u'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n').format(
 			full=stylize(ST_COMMENT, 'full ') if long_output else '',
 			uptime=stylize(ST_COMMENT,
 				pyutils.format_time_delta(time.time() - dstart_time)),
 			nb_threads=_thcount(),
 			nb_controllers=stylize(ST_UGID, len(LMC)),
-			nb_queues= stylize(ST_UGID, len(self.__queues)),
-			nb_locks=stylize(ST_UGID, len(LMC.locks)),
+			nb_queues=stylize(ST_UGID, len(self.__queues)),
+			nb_locked=stylize(ST_IMPORTANT, len(master_locked)),
+			nb_locks=stylize(ST_UGID, len(master_locks)),
+			sub_locked=stylize(ST_IMPORTANT, len(sub_locked)),
+			sub_locks=stylize(ST_UGID, len(sub_locks)),
 			ru_utime=rusage.ru_utime, #format_time_delta(int(rusage.ru_utime), long=False),
 			ru_stime=rusage.ru_stime, #format_time_delta(int(rusage.ru_stime), long=False),
 			mem_res=float(rusage.ru_maxrss * pagesize) / (1024.0*1024.0),
 			mem_shr=float(rusage.ru_ixrss * pagesize) / (1024.0*1024.0),
 			mem_ush=float(rusage.ru_idrss * pagesize) / (1024.0*1024.0),
 			mem_stk=float(rusage.ru_isrss * pagesize) / (1024.0*1024.0)
-			))
+			)
 
-		data += ('Threads: %s\n' %
-				''.join([ ('%s/%s %s' % (tcur, tmax, ttype)).center(20)
+		if len(master_locked) > 0:
+			data += _(u'Mlocks:  %s\n') % u' '.join(master_locked)
+
+		if len(sub_locked) > 0:
+			data += _(u'Slocks:  %s\n') % u' '.join(sub_locked)
+
+		data += _(u'Threads: %s\n') % u''.join([ (u'%s/%s %s' %
+					(tcur, tmax, ttype)).center(20)
 						for tcur, tmax, ttype in (
 							(
 								ServiceWorkerThread.instances,
 								ServiceWorkerThread.peers_max,
-								'servicers'
+								u'servicers'
 							),
 							(
 								ACLCkeckerThread.instances,
 								ACLCkeckerThread.peers_max,
-								'aclcheckers'
+								u'aclcheckers'
 							),
 							(
 								NetworkWorkerThread.instances,
 								NetworkWorkerThread.peers_max,
-								'networkers'
+								u'networkers'
 							)
 						)
 					])
-				)
 
-		data += ('Queues:  %s\n' %
-				''.join([ ('%s: %s' % (qname, queue.qsize())).center(20)
-					for qname, queue in self.__queues.iteritems()]))
+		data += _(u'Queues:  %s\n') % u''.join([ (u'%s: %s' %
+					(qname, queue.qsize())).center(20)
+						for qname, queue in self.__queues.iteritems()])
 
 		#if long_output:
 		#	for controller in LMC:
@@ -445,32 +475,32 @@ class LicornDaemon(Singleton):
 
 		# don't use itervalues(), threads are moving target now.
 		if self.configuration.inotifier.enabled:
-			tdata = [ ((self.__threads._inotifier.name, 'thread %s\n' %
+			tdata = [ ((self.__threads._inotifier.name, u'thread %s\n' %
 				self.__threads._inotifier.dump_status(long_output, precision))) ]
 		else:
 			tdata = []
 
-		tdata.append((self.__threads._eventmanager.name, 'thread %s\n' %
+		tdata.append((self.__threads._eventmanager.name, u'thread %s\n' %
 				self.__threads._eventmanager.dump_status(long_output, precision)))
 
 		for tname, thread in self.__threads.items():
 			if thread.is_alive():
 				if hasattr(thread, 'dump_status'):
-					tdata.append((tname, 'thread %s\n' %
+					tdata.append((tname, u'thread %s\n' %
 									thread.dump_status(long_output, precision)))
 				else:
-					tdata.append((tname, '''thread %s%s(%s) doesn't implement '''
-						'''dump_status().\n''' % (
+					tdata.append((tname, u'thread %s%s(%s) does not implement '
+						u'dump_status().\n' % (
 							stylize(ST_NAME, thread.name),
-							stylize(ST_OK, '&') if thread.daemon else '',
+							stylize(ST_OK, u'&') if thread.daemon else '',
 							thread.ident)))
 			else:
-				tdata.append((tname, 'thread %s%s(%d) has terminated.\n' % (
+				tdata.append((tname, u'thread %s%s(%d) has terminated.\n' % (
 					stylize(ST_NAME, thread.name),
-					stylize(ST_OK, '&') if thread.daemon else '',
+					stylize(ST_OK, u'&') if thread.daemon else '',
 					0 if thread.ident is None else thread.ident)))
 
-		data += ''.join([ value for key, value in sorted(tdata)])
+		data += u''.join([ value for key, value in sorted(tdata)])
 		return data
 	def setup_signals_handler(self):
 		""" redirect termination signals to a the function which will clean everything. """
@@ -488,7 +518,7 @@ class LicornDaemon(Singleton):
 			Find'em and kill'em all, callaghan.
 		"""
 
-		assert ltrace('daemon', '> check_aborted_daemon() [my_pid=%s]' % self.pid)
+		assert ltrace(TRACE_DAEMON, '> check_aborted_daemon() [my_pid=%s]' % self.pid)
 
 		# exclude ourselves from the search, and our parent, too. If we are in
 		# refork_as_root() phase, the parent pid still exists for a moment. On
@@ -529,7 +559,7 @@ class LicornDaemon(Singleton):
 			user and exit.
 		"""
 
-		assert ltrace('daemon', '> replace_or_shutdown()')
+		assert ltrace(TRACE_DAEMON, '> replace_or_shutdown()')
 
 		exclude = []
 
@@ -671,12 +701,12 @@ class LicornDaemon(Singleton):
 					'not restarting.').format(str(self), old_pid))
 				sys.exit(5)
 
-		assert ltrace('daemon', '< replace_or_shutdown()')
+		assert ltrace(TRACE_DAEMON, '< replace_or_shutdown()')
 	def refork_if_not_root_or_die(self):
 		""" If the current process is not UID(0), try to refork as root. If
 			this fails, exit with an error. """
 
-		assert ltrace('daemon', '| refork_if_not_root_or_die()')
+		assert ltrace(TRACE_DAEMON, '| refork_if_not_root_or_die()')
 
 		if os.getuid() != 0 or os.geteuid() != 0:
 			try:
@@ -689,7 +719,7 @@ class LicornDaemon(Singleton):
 		""" Make the gettext language switch be thread-dependant, to have
 			multi-lingual parallel workers ;-) """
 
-		assert ltrace('daemon', '| __setup_threaded_gettext()')
+		assert ltrace(TRACE_DAEMON, '| __setup_threaded_gettext()')
 
 		def my_(*args, **kwargs):
 			try:
@@ -748,10 +778,10 @@ class LicornDaemon(Singleton):
 			# daemonized ones, in case daemons are stuck on blocking socket or
 			# anything preventing a quick and gracefull stop.
 			if th.daemon:
-				assert ltrace('thread', 'skipping daemon thread %s.' % thname)
+				assert ltrace(TRACE_THREAD, 'skipping daemon thread %s.' % thname)
 				pass
 			else:
-				assert ltrace('thread', 'joining %s.' % thname)
+				assert ltrace(TRACE_THREAD, 'joining %s.' % thname)
 				if th.is_alive():
 					logging.warning(_(u'{0}: waiting for thread {1} to '
 						'finish{2}.').format(str(self),
@@ -771,13 +801,13 @@ class LicornDaemon(Singleton):
 
 		# display the remaining active threads (presumably stuck hanging on
 		# something very blocking).
-		assert ltrace('thread', 'after joining threads, %s remaining: %s' % (
+		assert ltrace(TRACE_THREAD, 'after joining threads, %s remaining: %s' % (
 			_thcount(), _threads()))
 
 		for (qname, queue) in self.__queues.iteritems():
 			size = queue.qsize()
 			if size > 0:
-				assert ltrace('daemon', 'queue %s has %d items left: %s' % (
+				assert ltrace(TRACE_DAEMON, 'queue %s has %d items left: %s' % (
 						qname, size, [
 							str(item) for item in queue.get_nowait() ]))
 
@@ -790,7 +820,7 @@ class LicornDaemon(Singleton):
 	def unlink_pid_file(self):
 		""" remove the pid file and bork if any error. """
 
-		assert ltrace('daemon', '| unlink_pid_file()')
+		assert ltrace(TRACE_DAEMON, '| unlink_pid_file()')
 
 		try:
 			if os.path.exists(self.pid_file):
@@ -804,7 +834,7 @@ class LicornDaemon(Singleton):
 	def terminate(self, signum=None, frame=None):
 		""" Close threads, wipe pid files, clean everything before closing. """
 
-		assert ltrace('daemon', '| terminate(%s, %s)' % (signum, frame))
+		assert ltrace(TRACE_DAEMON, '| terminate(%s, %s)' % (signum, frame))
 
 		if signum is None:
 			logging.progress(_('%s: cleaning up and stopping threads…') % str(self))
@@ -901,17 +931,17 @@ class LicornDaemon(Singleton):
 
 		caller = current_thread().name
 
-		assert ltrace('daemon', '| %s:__job_periodic_cleaner()' % caller)
+		assert ltrace(TRACE_DAEMON, '| %s:__job_periodic_cleaner()' % caller)
 
 		for (tname, thread) in self.__threads.items():
 			if not thread.is_alive():
 				del self.__threads[tname]
 				del thread
-				assert ltrace('thread', _('{0}: wiped dead thread {1} '
+				assert ltrace(TRACE_THREAD, _('{0}: wiped dead thread {1} '
 					'from memory.').format(
 						caller, stylize(ST_NAME, tname)))
 
-		assert ltrace('thread', _(u'{0}: doing manual '
+		assert ltrace(TRACE_THREAD, _(u'{0}: doing manual '
 			'garbage collection on {1}.').format(caller,
 				', '.join(str(x) for x in gc.garbage)))
 		del gc.garbage[:]

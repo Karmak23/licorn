@@ -19,6 +19,7 @@ from Queue       import Queue
 from licorn.foundations           import logging, exceptions, options, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.constants import verbose
 from licorn.daemon                import priorities
 
@@ -43,14 +44,14 @@ class LicornThread(Thread):
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
-		assert ltrace('thread', '%s initialized' % self.name)
+		assert ltrace(TRACE_THREAD, '%s initialized' % self.name)
 	def dispatch_message(self, msg):
 		""" get an incoming message in a generic way. """
 		self._input_queue.put(msg)
 	def run(self):
 		""" Process incoming messages until stop Event() is set. """
 		# don't call Thread.run(self), just override it.
-		assert ltrace('thread', '%s running' % self.name)
+		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
 		while not self._stop_event.isSet():
 			data = self._input_queue.get()
@@ -59,12 +60,12 @@ class LicornThread(Thread):
 			self.process_message(data)
 			self._input_queue.task_done()
 
-		assert ltrace('thread', '%s ended' % self.name)
+		assert ltrace(TRACE_THREAD, '%s ended' % self.name)
 	def stop(self):
 		""" Stop current Thread
 		and put a special None entry in the queue, to be
 		sure that self.run() method exits properly. """
-		assert ltrace('thread', '%s stopping' % self.name)
+		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
 		self._input_queue.put(None)
 class LicornBasicThread(Thread):
@@ -83,7 +84,7 @@ class LicornBasicThread(Thread):
 		self._ = __builtin__.__dict__['_orig__']
 
 		self._stop_event  = Event()
-		assert ltrace('thread', '%s initialized.' % self.name)
+		assert ltrace(TRACE_THREAD, '%s initialized.' % self.name)
 	@property
 	def licornd(self):
 		return self.__licornd
@@ -107,7 +108,7 @@ class LicornBasicThread(Thread):
 		"""
 
 		# don't call Thread.run(self), just override it.
-		assert ltrace('thread', '%s running' % self.name)
+		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
 		assert hasattr(self, 'run_action_method')
 
@@ -122,10 +123,10 @@ class LicornBasicThread(Thread):
 
 		self.finish()
 	def finish(self):
-		assert ltrace('thread', '%s ended' % self.name)
+		assert ltrace(TRACE_THREAD, '%s ended' % self.name)
 	def stop(self):
 		""" Stop current Thread. """
-		assert ltrace('thread', '%s stopping' % self.name)
+		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
 class GenericQueueWorkerThread(Thread):
 	"""
@@ -169,7 +170,7 @@ class GenericQueueWorkerThread(Thread):
 		#: the threading.Thread attribute.
 		self.name = '%s-%03d' % (self.__class__.base_name, self.__class__.counter)
 
-		#assert ltrace('thread', '| %s.__init__()' % self.name)
+		#assert ltrace(TRACE_THREAD, '| %s.__init__()' % self.name)
 
 		#: our master queue, from which we get job to do (objects to process).
 		self.input_queue = self.__class__.input_queue
@@ -213,7 +214,7 @@ class GenericQueueWorkerThread(Thread):
 						if self.jobbing.is_set() else 'idle'
 				)
 	def run(self):
-		#assert ltrace('thread', '> %s.run()' % self.name)
+		#assert ltrace(TRACE_THREAD, '> %s.run()' % self.name)
 
 		while True:
 
@@ -249,12 +250,12 @@ class GenericQueueWorkerThread(Thread):
 
 					if self.__class__.instances < self.__class__.peers_max:
 
-						assert ltrace('thread', '  %s: spawing new peer '
+						assert ltrace(TRACE_THREAD, '  %s: spawing new peer '
 							'to always handle HIGH jobs.' % self.name)
 						self.spawn_peer()
 
 					else:
-						assert ltrace('thread', '  %s: delaying job to be '
+						assert ltrace(TRACE_THREAD, '  %s: delaying job to be '
 							'able to always handle HIGH jobs' % self.name)
 
 						# mark the job as done, because we already got() it.
@@ -279,7 +280,7 @@ class GenericQueueWorkerThread(Thread):
 				time.sleep(self.jobs_kwargs['job_delay'])
 				del self.jobs_kwargs['job_delay']
 
-			#assert ltrace('thread', '%s: running job %s' % (
+			#assert ltrace(TRACE_THREAD, '%s: running job %s' % (
 			#										self.name, self.job))
 
 			try:
@@ -319,7 +320,7 @@ class GenericQueueWorkerThread(Thread):
 			self.__class__.instances -= 1
 			#print '>> lock -', self.__class__.instances
 
-		#assert ltrace('thread', '< %s.run()' % self.name)
+		#assert ltrace(TRACE_THREAD, '< %s.run()' % self.name)
 	def throttle_up(self):
 		""" See if there are too many or missing peers to handle queued jobs,
 			and spawn a friend if needed, or terminate myself if no more useful.
@@ -340,7 +341,7 @@ class GenericQueueWorkerThread(Thread):
 
 				if self.__class__.instances < self.__class__.peers_max:
 
-					assert ltrace('thread', '  %s: spawing a new peer because '
+					assert ltrace(TRACE_THREAD, '  %s: spawing a new peer because '
 						'%d instances < %d peers_min or (%d jobs > %d instances '
 						'and all instances busy); '
 						'(BTW %d instances < %d peers_max).' % (self.name,
@@ -359,7 +360,7 @@ class GenericQueueWorkerThread(Thread):
 							'queue size is %s.' % (self.name,
 								self.input_queue.qsize()))
 			else:
-				assert ltrace('thread', '  %s: NOT spawing a new peer because '
+				assert ltrace(TRACE_THREAD, '  %s: NOT spawing a new peer because '
 					'NOT %d instances < %d peers_min or (%d jobs > %d instances '
 					'and all instances busy); '
 					'(BTW %d instances < %d peers_max).' % (self.name,
@@ -388,7 +389,7 @@ class GenericQueueWorkerThread(Thread):
 
 				if self.__class__.instances > self.__class__.peers_min:
 
-					assert ltrace('thread', '  %s: terminating because running out '
+					assert ltrace(TRACE_THREAD, '  %s: terminating because running out '
 						'of jobs (%d jobs <= %d instances '
 						'and %d instances > %d peers_min).' % (
 						self.name,
@@ -400,7 +401,7 @@ class GenericQueueWorkerThread(Thread):
 		self.__licornd.append_thread(
 				self.__class__(licornd=self.__licornd, daemon=self.daemon))
 	def stop(self):
-		#assert ltrace('thread', '| %s.stop()' % self.name)
+		#assert ltrace(TRACE_THREAD, '| %s.stop()' % self.name)
 		self.input_queue.put_nowait((-1, None, None, None))
 
 		# if we are in the process of settling down, tell the
@@ -482,7 +483,7 @@ class AbstractTimerThread(LicornBasicThread):
 			elif self.count >= 1:
 				self.loop = False
 
-		assert ltrace('thread', '| AbstractTimerThread.__init__(time=%s, '
+		assert ltrace(TRACE_THREAD, '| AbstractTimerThread.__init__(time=%s, '
 			'count=%s, delay=%s, loop=%s)' % (self.time,
 				self.count, self.delay, self.loop))
 
@@ -500,7 +501,7 @@ class AbstractTimerThread(LicornBasicThread):
 		else:
 			self.__sleep_delay = self.delay
 
-		assert ltrace('thread', '| %s.sleep(%s)' % (self.name, delay))
+		assert ltrace(TRACE_THREAD, '| %s.sleep(%s)' % (self.name, delay))
 
 		with self._time_lock:
 			self.__time_elapsed = 0.0
@@ -590,7 +591,7 @@ class TriggerTimerThread(AbstractTimerThread):
 		return self._trigger_event.set()
 class TriggerWorkerThread(LicornBasicThread):
 	def __init__(self, target, trigger_event, args=(), kwargs={}, tname=None):
-		assert ltrace('thread', '| TriggerWorkerThread.__init__()')
+		assert ltrace(TRACE_THREAD, '| TriggerWorkerThread.__init__()')
 		LicornBasicThread.__init__(self, tname)
 		self._disable_event     = Event()
 		self._currently_running = Event()
@@ -632,7 +633,7 @@ class TriggerWorkerThread(LicornBasicThread):
 		return self._disable_event.is_set()
 	def run(self):
 		# don't call Thread.run(self), just override it.
-		assert ltrace('thread', '%s running' % self.name)
+		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
 		while True:
 			self._trigger_event.wait()
@@ -641,11 +642,11 @@ class TriggerWorkerThread(LicornBasicThread):
 			self._trigger_event.clear()
 
 			if self._stop_event.is_set():
-				assert ltrace('thread', '%s: breaking our loop now.' % self.name)
+				assert ltrace(TRACE_THREAD, '%s: breaking our loop now.' % self.name)
 				break
 
 			if self._disable_event.is_set():
-				assert ltrace('thread', '%s: triggered, but currently '
+				assert ltrace(TRACE_THREAD, '%s: triggered, but currently '
 					'disabled: not doing anything.' % self.name)
 				continue
 
@@ -662,7 +663,7 @@ class TriggerWorkerThread(LicornBasicThread):
 			else:
 				kwargs = self.kwargs
 
-			assert ltrace('thread', '%s: triggered, running target %s(%s, %s)'
+			assert ltrace(TRACE_THREAD, '%s: triggered, running target %s(%s, %s)'
 				% (self.name, self.target, ', '.join(args), ', '.join(kwargs)))
 
 			self._currently_running.set()
@@ -672,7 +673,7 @@ class TriggerWorkerThread(LicornBasicThread):
 		self.finish()
 	def trigger(self, *args, **kwargs):
 		""" Trigger a worker run if we are not currently stopping. """
-		assert ltrace('thread', '| TriggerWorkerThread.trigger()')
+		assert ltrace(TRACE_THREAD, '| TriggerWorkerThread.trigger()')
 		self.one_time_args = args
 		self.one_time_kwargs = kwargs
 		if not self._stop_event.is_set():
@@ -682,11 +683,11 @@ class TriggerWorkerThread(LicornBasicThread):
 	def disable(self):
 		""" Disable next runs (until re-enabled), but only if we are not
 			currently stopping. """
-		assert ltrace('thread', '| TriggerWorkerThread.disable()')
+		assert ltrace(TRACE_THREAD, '| TriggerWorkerThread.disable()')
 		if not self._stop_event.is_set():
 			return self._disable_event.set()
 	def enable(self):
-		assert ltrace('thread', '| TriggerWorkerThread.enable()')
+		assert ltrace(TRACE_THREAD, '| TriggerWorkerThread.enable()')
 		return self._disable_event.clear()
 	def stop(self):
 		""" Stop the thread properly (things must be done in a certain order,

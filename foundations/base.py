@@ -7,13 +7,16 @@
 
 	:copyright: (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 	:license: GNU GPL version 2
-
 """
+
+# external imports
 import copy
 
+# Licorn® imports
 import exceptions
-from styles import *
-from ltrace import ltrace
+from styles  import *
+from ltrace  import ltrace
+from ltraces import *
 
 #: just a list of Pyro objects attributes, to be able to protect them, when
 #: switching internal attributes and dict items in MixedDictObject and derivatives.
@@ -61,7 +64,7 @@ class ObjectSingleton(object):
 			ObjectSingleton.__instances[cls] = object.__new__(cls)
 
 		# don't use str() here, it will fail in the backends.
-		assert ltrace('base', '| Singleton.__new__(%s)' % cls)
+		assert ltrace(TRACE_BASE, '| Singleton.__new__(%s)' % cls)
 		return ObjectSingleton.__instances[cls]
 class DictSingleton(dict):
 	""" Create a single instance of a dict-derived class. """
@@ -71,7 +74,7 @@ class DictSingleton(dict):
 			DictSingleton.__instances[cls] = dict.__new__(cls)
 
 		# don't use str() here, it will fail in the backends.
-		assert ltrace('base', '| Singleton.__new__(%s)' % cls)
+		assert ltrace(TRACE_BASE, '| Singleton.__new__(%s)' % cls)
 		return DictSingleton.__instances[cls]
 
 Singleton = DictSingleton
@@ -95,7 +98,7 @@ class NamedObject(object):
 		self.__name = name
 
 	def __init__(self, name='<unset>', source=None):
-		assert ltrace('base', '| NamedObject.__init__(%s)' % name)
+		assert ltrace(TRACE_BASE, '| NamedObject.__init__(%s)' % name)
 
 		self.__name = name
 		if source:
@@ -120,13 +123,13 @@ class NamedObject(object):
 		return data
 	def copy(self):
 		""" Implements the copy method like any other base object. """
-		assert ltrace('base', '| NamedObject.copy(%s)' % self.name)
+		assert ltrace(TRACE_BASE, '| NamedObject.copy(%s)' % self.name)
 		temp = self.__class__()
 		temp.copy_from(self)
 		return temp
 	def copy_from(self, source):
 		""" Copy attributes from another object of the same class. """
-		assert ltrace('base', '| NamedObject.copy_from(%s, %s)' % (
+		assert ltrace(TRACE_BASE, '| NamedObject.copy_from(%s, %s)' % (
 			self.name, source.name))
 		self.__name = source.name
 	def dump_status(self, long_output=False, precision=None):
@@ -134,7 +137,7 @@ class NamedObject(object):
 			to dig into complex derivated object at runtime (in the licornd
 			interactive shell).
 		"""
-		assert ltrace('base', '| %s.dump_status(%s, %s)' % (self.name,
+		assert ltrace(TRACE_BASE, '| %s.dump_status(%s, %s)' % (self.name,
 			long_output, precision))
 
 		if long_output:
@@ -170,7 +173,7 @@ class MixedDictObject(NamedObject, dict):
 	def __init__(self, name=None, source=None):
 
 		NamedObject.__init__(self, name=name)
-		assert ltrace('base', '| MixedDictObject.__init__(%s)' % name)
+		assert ltrace(TRACE_BASE, '| MixedDictObject.__init__(%s)' % name)
 
 		if source:
 			self.copy_from(source)
@@ -178,24 +181,24 @@ class MixedDictObject(NamedObject, dict):
 		""" we must implement this one, else python will not be able to choose
 			between the one from NamedObject and from dict. NamedObject will call
 			our self.copy_from() which does the good job. """
-		assert ltrace('base', '| MixedDictObject.copy()')
+		assert ltrace(TRACE_BASE, '| MixedDictObject.copy()')
 		return NamedObject.copy(self)
 	def copy_from(self, source):
-		assert ltrace('base', '| MixedDictObject.copy_from(%s)' %
+		assert ltrace(TRACE_BASE, '| MixedDictObject.copy_from(%s)' %
 			source.name)
 		NamedObject.copy_from(self, source)
 		dict.update(self, dict.copy(source))
 	def iter(self):
 		#print '>> iter', self.name
-		assert ltrace('base', '| MixedDictObject.iter(%s)' % self.name)
+		assert ltrace(TRACE_BASE, '| MixedDictObject.iter(%s)' % self.name)
 		return dict.itervalues(self)
 	def __iter__(self):
 		#print '>> __iter__', self.name
-		assert ltrace('base', '| MixedDictObject.__iter__(%s)' % self.name)
+		assert ltrace(TRACE_BASE, '| MixedDictObject.__iter__(%s)' % self.name)
 		return dict.itervalues(self)
 	def __getattr__(self, attribute):
 		""" Called only when a normal call to "self.attribute" fails. """
-		assert ltrace('base', '| MixedDictObject.__getattr__(%s)' % attribute)
+		assert ltrace(TRACE_BASE, '| MixedDictObject.__getattr__(%s)' % attribute)
 		try:
 			return dict.__getitem__(self, attribute)
 		except KeyError:
@@ -222,7 +225,7 @@ class MixedDictObject(NamedObject, dict):
 			attributes will go into the dict part, to be able to retrieve
 			them in either way (x.attr or x[attr]).
 		"""
-		assert ltrace('base', '| MixedDictObject.__setattr__(%s, %s)' % (
+		assert ltrace(TRACE_BASE, '| MixedDictObject.__setattr__(%s, %s)' % (
 			attribute, value))
 		if attribute[0] == '_' or callable(value) \
 			or attribute in self.__class__._licorn_protected_attrs:
@@ -230,13 +233,13 @@ class MixedDictObject(NamedObject, dict):
 		else:
 			dict.__setitem__(self, attribute, value)
 	def __delattr__(self, key):
-		assert ltrace('base', '| MixedDictObject.__delattr__(%s)' % key)
+		assert ltrace(TRACE_BASE, '| MixedDictObject.__delattr__(%s)' % key)
 		if key[0] == '_' or key in self.__class__._licorn_protected_attrs:
 			dict.__delattr__(self, key)
 		else:
 			dict.__delitem__(self, key)
 	def dump_status(self, long_output=False, precision=None):
-		assert ltrace('base', '| %s.dump_status(%s, %s)' % (self.name,
+		assert ltrace(TRACE_BASE, '| %s.dump_status(%s, %s)' % (self.name,
 			long_output, precision))
 
 		if long_output:
@@ -263,7 +266,7 @@ class TreeNode(NamedObject):
 		first=None, last=None, children=[], copy_from=None):
 
 		NamedObject.__init__(self)
-		assert ltrace('base', 'Enumeration_v2.__init__(%s)' % name)
+		assert ltrace(TRACE_BASE, 'Enumeration_v2.__init__(%s)' % name)
 
 		# graph attributes
 		self._parent   = parent
@@ -295,7 +298,7 @@ class TreeNode(NamedObject):
 		return [ attr for attr, value in self.__dict__.iteritems() \
 			if attr[:2] != '__' and not callable(value) ]
 	def dump_status(self, long_output=False, precision=None):
-		assert ltrace('base', '| %s.dump_status(%s,%s)' % (
+		assert ltrace(TRACE_BASE, '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
 		if long_output:
 			return 'object %s(%s):\n%s' % (stylize(ST_NAME, self.name),
@@ -308,13 +311,13 @@ class TreeNode(NamedObject):
 				len(self), self.keys())
 	def _release(self):
 		""" used to avoid crashing at the end of programs. """
-		assert ltrace('base', '| Enumeration_v2._release(~FAKE~)')
+		assert ltrace(TRACE_BASE, '| Enumeration_v2._release(~FAKE~)')
 		pass
 
 # old-style classes, or classes to be removed at next refactor run.
 class Enumeration(object):
 	def __init__(self, name='<unset>', copy_from=None, **kwargs):
-		assert ltrace('base', '| Enumeration.__init__()')
+		assert ltrace(TRACE_BASE, '| Enumeration.__init__()')
 		object.__init__(self)
 		self.name = name
 
@@ -343,7 +346,7 @@ class Enumeration(object):
 			delattr(self, value)
 	# make enumeration
 	def dump_status(self, long_output=False, precision=None):
-		assert ltrace('base', '| %s.dump_status(%s,%s)' % (
+		assert ltrace(TRACE_BASE, '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
 		if long_output:
 			return 'object %s(%s):\n%s' % (stylize(ST_NAME, self.name),
@@ -380,7 +383,7 @@ class Enumeration(object):
 	def __delitem__(self, key):
 		delattr(self, key)
 	def __getitem__(self, key):
-		assert ltrace('base', '%s trying to get attr %s' % (self.name, key))
+		assert ltrace(TRACE_BASE, '%s trying to get attr %s' % (self.name, key))
 		try:
 			return getattr(self, key)
 		except TypeError:
@@ -410,34 +413,34 @@ class Enumeration(object):
 				yield (attribute_name, getattr(self, attribute_name))
 	def _release(self):
 		""" used to avoid crashing at the end of programs. """
-		assert ltrace('base', '| Enumeration._release(FAKE!!)')
+		assert ltrace(TRACE_BASE, '| Enumeration._release(FAKE!!)')
 		pass
 class EnumDict(Enumeration, dict):
 	def __init__(self, name='<unset>', from_dict=None):
-		assert ltrace('base', '| EnumDict.__init__(%s)' % name)
+		assert ltrace(TRACE_BASE, '| EnumDict.__init__(%s)' % name)
 		dict.__init__(self)
 		Enumeration.__init__(self, name)
 		if from_dict:
 			for key, value in from_dict.iteritems():
 				self.__setattr__(key, value)
 	def __setattr__(self, key, value):
-		assert ltrace('base', '| EnumDict.__setattr__(%s → %s)' % (key, value))
+		assert ltrace(TRACE_BASE, '| EnumDict.__setattr__(%s → %s)' % (key, value))
 		Enumeration.__setattr__(self, key, value)
 		if dict.has_key(self, value):
-			assert ltrace('base', '%s: duplicate key %s in our dict.' % (
+			assert ltrace(TRACE_BASE, '%s: duplicate key %s in our dict.' % (
 				self.name, value))
 			pass
 		elif self._valuable(key):
 			dict.__setitem__(self, value, key)
 	def __getitem__(self, key):
-		assert ltrace('base', '| EnumDict.__getitem__(%s) in %s, %s' % (
+		assert ltrace(TRACE_BASE, '| EnumDict.__getitem__(%s) in %s, %s' % (
 			key, dict.keys(self), Enumeration.keys(self)))
 		try:
 			return dict.__getitem__(self, key)
 		except KeyError:
 			return Enumeration.__getitem__(self, key)
 	def __setitem__(self, key, value):
-		assert ltrace('base', '| EnumDict.__setitem__(%s → %s)' % (key, value))
+		assert ltrace(TRACE_BASE, '| EnumDict.__setitem__(%s → %s)' % (key, value))
 		if dict.has_key(self, key):
 			raise exceptions.AlreadyExistsError('%s already present in %s!' % (
 				key, self))
@@ -448,7 +451,7 @@ class LicornConfigObject():
 	""" a base class just to be able to add/remove custom attributes
 		to other custom attributes (build a tree simply). """
 	def __init__(self, fromdict={}, level=1):
-		assert ltrace('base', '| LicornConfigObject.__init__(%s, %s)' % (
+		assert ltrace(TRACE_BASE, '| LicornConfigObject.__init__(%s, %s)' % (
 			fromdict, level))
 		for key in fromdict.keys():
 			setattr(self, key, fromdict[key])

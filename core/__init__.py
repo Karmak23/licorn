@@ -20,6 +20,7 @@ from licorn.foundations           import logging, exceptions, options
 from licorn.foundations           import process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import MixedDictObject
 from licorn.daemon                import roles
 
@@ -84,7 +85,7 @@ class LicornMasterController(MixedDictObject):
 		else:
 			MixedDictObject.__init__(self, 'HelperLMC')
 
-		assert ltrace('core', '| %s.__init__(%s)' % (str(self.__class__),
+		assert ltrace(TRACE_CORE, '| %s.__init__(%s)' % (str(self.__class__),
 																	self.name))
 
 		self._master = master
@@ -331,7 +332,7 @@ class LicornMasterController(MixedDictObject):
 			daemon: raise the appropriate exception to be catched in
 			:term:`MainThread` and handle the stop/start operations.
 		"""
-		assert ltrace('core', '| reload_controllers_backends()')
+		assert ltrace(TRACE_CORE, '| reload_controllers_backends()')
 
 		for controller in self:
 			if hasattr(controller, 'find_prefered_backend'):
@@ -362,7 +363,7 @@ class LicornMasterController(MixedDictObject):
 
 		"""
 
-		assert ltrace('core', '> connect()')
+		assert ltrace(TRACE_CORE, '> connect()')
 
 		from licorn.core.configuration import LicornConfiguration
 		self._localconfig = LicornConfiguration(minimal=True)
@@ -405,7 +406,7 @@ class LicornMasterController(MixedDictObject):
 					"%s/configuration" % pyroloc)
 				self.configuration._setTimeout(5)
 				self.configuration.noop()
-				assert ltrace('core',
+				assert ltrace(TRACE_CORE,
 					'  connect(): main configuration object connected.')
 				break
 			except Pyro.errors.ProtocolError, e:
@@ -453,7 +454,7 @@ class LicornMasterController(MixedDictObject):
 					# ALARM or USR1 will break the pause()
 					signal.pause()
 				second_try=True
-		assert ltrace('core',
+		assert ltrace(TRACE_CORE,
 			'  connect(): connecting the rest of remote objects.')
 
 		# connection is OK, let's get all other objects connected, and pull
@@ -462,15 +463,15 @@ class LicornMasterController(MixedDictObject):
 		self.system   = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
 		self.rwi      = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
 
-		assert ltrace('timings', '@LMC.connect(): %.4fs' % (
+		assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
 			time.time() - start_time))
 		del start_time
 
-		assert ltrace('core', '< connect()')
+		assert ltrace(TRACE_CORE, '< connect()')
 		return self.rwi
 	def release(self):
 		""" Release all Pyro proxys. """
-		assert ltrace('core', '| release()')
+		assert ltrace(TRACE_CORE, '| release()')
 		for controller in self.items():
 			if hasattr(controller, '_release'):
 				controller._release()

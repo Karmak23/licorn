@@ -12,6 +12,7 @@ from threading import current_thread
 from licorn.foundations           import logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 
 from licorn.core import LicornMasterController, LMC
 
@@ -19,7 +20,7 @@ ServerLMC = LicornMasterController(master=False)
 
 def client_hello():
 
-	assert ltrace('client', '| thread_greeter()')
+	assert ltrace(TRACE_CLIENT, '| thread_greeter()')
 
 	# done in daemon main
 	#ServerLMC.connect()

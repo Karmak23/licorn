@@ -16,6 +16,7 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations           import readers, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.hlstr     import cregex
@@ -29,7 +30,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 
 	def __init__(self):
 		MachinesBackend.__init__(self, name='dnsmasq')
-		assert ltrace('dnsmasq', '| __init__()')
+		assert ltrace(TRACE_DNSMASQ, '| __init__()')
 
 		self.files = Enumeration()
 		self.files.dnsmasq_conf   = '/etc/dnsmasq.conf'
@@ -38,7 +39,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 		# no client counterparts for dnsmasq backend.
 		self.server_only = True
 	def initialize(self):
-		assert ltrace('dnsmasq', '> initialize()')
+		assert ltrace(TRACE_DNSMASQ, '> initialize()')
 
 		if os.path.exists(self.files.dnsmasq_conf):
 			# if the configuration file is not in place, assume dnsmasq is not
@@ -46,13 +47,13 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 			# etc/default/dnsmasq.
 			self.available = True
 
-		assert ltrace('dnsmasq', '< initialize(%s)' % self.available)
+		assert ltrace(TRACE_DNSMASQ, '< initialize(%s)' % self.available)
 		return self.available
 	def load_dhcp_host(self, host_record):
 		""" Called ONLY from self.load_machines().
 			see dnsmasq(8) -> "dhcp-host" for details. """
 
-		assert ltrace('dnsmasq', '> load_dhcp_host(host_record=%s)'
+		assert ltrace(TRACE_DNSMASQ, '> load_dhcp_host(host_record=%s)'
 			% host_record)
 
 		temp_host = Enumeration()
@@ -60,7 +61,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 		for value in host_record:
 			if value == 'ignore' or value.startswith('id:') \
 				or value.startswith('set:'):
-				assert ltrace('machines', '  entry skipped, not a regular host.')
+				assert ltrace(TRACE_MACHINES, '  entry skipped, not a regular host.')
 				del temp_host
 				return None
 
@@ -94,7 +95,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 		if not hasattr(temp_host, 'ip'):
 			# presumably got a general configuration directive,
 			# not speaking about any particular host. SKIP.
-			assert ltrace('machines', '  host skipped because no IPv4 address.')
+			assert ltrace(TRACE_MACHINES, '  host skipped because no IPv4 address.')
 			del temp_host
 			return None
 
@@ -125,7 +126,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 		""" get the machines from static conf and leases, and create the pivot
 		data for our internal data structures. """
 
-		assert ltrace('dnsmasq', '> load_machines()')
+		assert ltrace(TRACE_DNSMASQ, '> load_machines()')
 
 		dnsmasq_conf = readers.dnsmasq_read_conf(self.files.dnsmasq_conf)
 
@@ -168,7 +169,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 				backend=self
 				)
 
-		assert ltrace('dnsmasq', '< load_machines()')
+		assert ltrace(TRACE_DNSMASQ, '< load_machines()')
 	def save_Machines(self):
 		""" save the list of machines. """
 		pass

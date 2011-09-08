@@ -19,6 +19,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import filters
 
@@ -58,7 +59,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 	def __init__(self, conf_file=None):
 		""" Read the configuration file and populate ourselves. """
 
-		assert ltrace('privileges', '> PrivilegesWhiteList.__init__(%s)' %
+		assert ltrace(TRACE_PRIVILEGES, '> PrivilegesWhiteList.__init__(%s)' %
 			PrivilegesWhiteList.init_ok)
 
 		if PrivilegesWhiteList.init_ok:
@@ -74,13 +75,13 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		self.changed = False
 
 		PrivilegesWhiteList.init_ok = True
-		assert ltrace('privileges', '< PrivilegesWhiteList.__init__(%s)' %
+		assert ltrace(TRACE_PRIVILEGES, '< PrivilegesWhiteList.__init__(%s)' %
 			PrivilegesWhiteList.init_ok)
 	def load(self):
 		if PrivilegesWhiteList.load_ok:
 			return
 		else:
-			assert ltrace('privileges', '| load()')
+			assert ltrace(TRACE_PRIVILEGES, '| load()')
 
 			# Make sure our dependancies are OK.
 			LMC.groups.load()
@@ -203,7 +204,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 	def __remove(self, privilege):
 		""" Remove without throw of exception """
 
-		assert ltrace('privileges','| remove(%s)' % privilege.name)
+		assert ltrace(TRACE_PRIVILEGES,'| remove(%s)' % privilege.name)
 
 		#print repr(privilege), self.values()
 
@@ -255,7 +256,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 				'\n' if len(self)>0 else '')
 	def serialize(self):
 		""" Serialize internal data structures into the configuration file. """
-		assert ltrace(self.name, '| serialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| serialize()')
 		with self.lock:
 			if self.changed:
 

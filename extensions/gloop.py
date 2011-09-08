@@ -24,6 +24,7 @@ import dbus.mainloop.glib
 from licorn.foundations           import exceptions, logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import services, svccmds
 from licorn.extensions            import ServiceExtension
@@ -41,7 +42,7 @@ class DbusThread(Thread):
 	"""
 	def __init__(self, daemon=True):
 		# Setup the DBus main loop
-		assert ltrace('dbus', '| DbusThread.__init__()')
+		assert ltrace(TRACE_DBUS, '| DbusThread.__init__()')
 		Thread.__init__(self)
 		self.name = 'extensions/Gloop.GobjectMainLooper'
 		self.daemon = True
@@ -61,7 +62,7 @@ class GloopExtension(Singleton, ServiceExtension):
 		.. versionadded:: 1.2.5
 	"""
 	def __init__(self):
-		assert ltrace('openssh', '| OpensshExtension.__init__()')
+		assert ltrace(TRACE_OPENSSH, '| OpensshExtension.__init__()')
 
 		ServiceExtension.__init__(self,
 			name='gloop',
@@ -91,7 +92,7 @@ class GloopExtension(Singleton, ServiceExtension):
 			and if the configuration file exists where it should be.
 		"""
 
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		if os.path.exists(self.paths.dbus_binary) \
 				and os.path.exists(self.paths.dbus_config):
@@ -106,7 +107,7 @@ class GloopExtension(Singleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.dbus_config)))
 
 
-		assert ltrace(self.name, '< initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" Dbus is always enabled if available. This method will **start**
@@ -128,5 +129,5 @@ class GloopExtension(Singleton, ServiceExtension):
 		logging.info(_(u'{0}: started extension and gobject mainloop '
 			'thread.').format(stylize(ST_NAME, self.name)))
 
-		assert ltrace(self.name, '| is_enabled() → True')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
 		return True

@@ -19,6 +19,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import services, svccmds
 
@@ -38,7 +39,7 @@ class ExtensionsManager(Singleton, ModulesManager):
 		.. versionadded:: 1.3
 	"""
 	def __init__(self):
-		assert ltrace('extensions', '| ExtensionsManager.__init__()')
+		assert ltrace(TRACE_EXTENSIONS, '| ExtensionsManager.__init__()')
 		ModulesManager.__init__(self,
 				name='extensions',
 				module_type='extension',
@@ -46,11 +47,11 @@ class ExtensionsManager(Singleton, ModulesManager):
 				module_sym_path='licorn.extensions'
 			)
 	def enable_extension(self, name):
-		assert ltrace('extensions',
+		assert ltrace(TRACE_EXTENSIONS,
 			'| ExtensionsManager.enable_extension(%s)' % name)
 		return ModulesManager.enable_module(self, name)
 	def disable_extension(self, name):
-		assert ltrace('extensions',
+		assert ltrace(TRACE_EXTENSIONS,
 			'| ExtensionsManager.disable_extension(%s)' % name)
 		return ModulesManager.disable_module(self, name)
 class LicornExtension(CoreModule):
@@ -63,7 +64,7 @@ class LicornExtension(CoreModule):
 		.. versionadded:: 1.2.4
 	"""
 	def __init__(self, name='extension', controllers_compat=[]):
-		assert ltrace(name, '| LicornExtension.__init__()')
+		assert ltrace(globals()['TRACE_' + name.upper()], '| LicornExtension.__init__()')
 		CoreModule.__init__(self,
 				name=name,
 				manager=LMC.extensions,
@@ -82,7 +83,7 @@ class LicornExtension(CoreModule):
 			.. warning:: **do not overload this method**.
 		"""
 
-		assert ltrace(self.name, '| load()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| load()')
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 			if self.initialize():
@@ -142,13 +143,12 @@ class ServiceExtension(LicornExtension):
 	def __init__(self, name='service_extension', controllers_compat=[],
 			service_name=None, service_type=None, service_long=False):
 
-		assert ltrace(name, '| ServiceExtension.__init__(%s, %s)' % (
-			service_name, services[service_type]))
+		assert ltrace(globals()['TRACE_' + name.upper()],
+									'| ServiceExtension.__init__(%s, %s)' % (
+										service_name, services[service_type]))
 
-		LicornExtension.__init__(self,
-				name=name,
-				controllers_compat=controllers_compat
-			)
+		LicornExtension.__init__(self, name=name,
+				controllers_compat=controllers_compat)
 
 		self.service_name = service_name
 		self.service_type = service_type
@@ -175,7 +175,7 @@ class ServiceExtension(LicornExtension):
 	def running(self, pid_file):
 		""" A convenience wrapper for the :func:`~process.already_running`
 			function. """
-		assert ltrace(self.name, '| ServiceExtension.running()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| ServiceExtension.running()')
 		return process.already_running(pid_file)
 	def service(self, command_type, no_wait=False):
 		""" Manage our service by calling
@@ -240,7 +240,7 @@ class ServiceExtension(LicornExtension):
 			This methods
 		"""
 
-		assert ltrace(self.name, '| service_command(%s)' % command_type)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| service_command(%s)' % command_type)
 
 		command = ServiceExtension.commands[self.service_type][command_type][:]
 		command.insert(ServiceExtension.commands[self.service_type][
@@ -303,7 +303,7 @@ class ServiceExtension(LicornExtension):
 			with self.command_lock:
 				self.planned_operation = command_type
 
-				assert ltrace(self.name, '| service_command: delaying '
+				assert ltrace(globals()['TRACE_' + self.name.upper()], '| service_command: delaying '
 					'operation in case there are others coming after this one.')
 
 				if self.command_thread:
@@ -330,7 +330,7 @@ def run_service_command(command, pre_message=None, post_message=None,
 		.. versionadded:: 1.2.4
 	"""
 
-	assert ltrace('process', '| run_service_command(%s)' % command)
+	assert ltrace(TRACE_PROCESS, '| run_service_command(%s)' % command)
 
 	if svcext is not None:
 		svcext.command_lock.acquire()

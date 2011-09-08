@@ -20,6 +20,7 @@ TCPServer.allow_reuse_address = True
 from licorn.foundations           import options, logging, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.constants import verbose
 from licorn.daemon.threads        import LicornBasicThread
 
@@ -27,12 +28,12 @@ from licorn.core import LMC
 
 class WMIThread(LicornBasicThread):
 	def __init__(self, licornd):
-		assert ltrace('http', '| WMIThread.__init__()')
+		assert ltrace(TRACE_HTTP, '| WMIThread.__init__()')
 
 		LicornBasicThread.__init__(self, tname='WMIHTTPServer', licornd=licornd)
 	def run(self):
 
-		assert ltrace('http', 'WMIThread.run()')
+		assert ltrace(TRACE_HTTP, 'WMIThread.run()')
 		#logging.progress('''%s(%d): started, waiting for master to become '''
 		#	'''ready.''' % (pname, os.getpid()))
 
@@ -101,7 +102,7 @@ class WMIThread(LicornBasicThread):
 
 		self.httpd.serve_forever(5.0)
 	def stop(self):
-		assert ltrace('http', 'WMIThread.stop()')
+		assert ltrace(TRACE_HTTP, 'WMIThread.stop()')
 		LicornBasicThread.stop(self)
 		if self.httpd:
 			self.httpd.shutdown()
@@ -391,7 +392,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 			#getattr(getattr(wmi, niv1), niv2)(self.path, self.htt_user, **kwargs)
 
 			try:
-				assert ltrace('http',
+				assert ltrace(TRACE_HTTP,
 					'serve_virtual_uri:exec("%s")' % py_code)
 
 				exec py_code
@@ -521,7 +522,7 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 		retdata = None
 		path    = self.translate_path(self.path)
 
-		assert ltrace('http', 'serving file: %s.' % path)
+		assert ltrace(TRACE_HTTP, 'serving file: %s.' % path)
 
 		if os.path.exists(path):
 			ctype = self.guess_type(path)

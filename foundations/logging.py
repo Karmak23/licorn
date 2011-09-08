@@ -16,6 +16,7 @@ from styles    import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
 from ltrace    import ltrace, mytime
+from ltraces   import *
 from base      import Singleton
 from messaging import LicornMessage
 from licorn.foundations.messaging import MessageProcessor
@@ -71,13 +72,14 @@ def send_to_listener(message, verbose_level=verbose.QUIET):
 		inter-process communication), and send the message to it. """
 	try:
 		listener = current_thread().listener
+
 	except AttributeError:
 		return None
 	else:
 		if listener.verbose >= verbose_level:
-			# WARNING: should test Pyro object instead of WMI one, but 
-			# listener is not type(MessageProcessor) but type(instance) 
-			# instead because in pyro only the remote object will be 
+			# WARNING: should test Pyro object instead of WMI one, but
+			# listener is not type(MessageProcessor) but type(instance)
+			# instead because in pyro only the remote object will be
 			# the wanted type.
 			if isinstance(listener, BaseHTTPRequestHandler):
 				return listener.process(message.data, verbose_level)
@@ -87,20 +89,22 @@ def send_to_listener(message, verbose_level=verbose.QUIET):
 def error(mesg, returncode=1, full=False, tb=None):
 	""" Display a stylized error message and exit badly.	"""
 
-	if full:
-		if tb:
-			sys.stderr.write(tb + '\n')
-		else:
-			import traceback
-			sys.stderr.write ('''>>> %s:
-		''' 	% (stylize(ST_OK, "Call trace")))
-			traceback.print_tb( sys.exc_info()[2] )
-			sys.stderr.write("\n")
+	text_message = '%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'), mytime(), mesg)
 
 	with __output_lock:
-		sys.stderr.write('%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'),
-			mytime(), mesg))
+		if full:
+			if tb:
+				sys.stderr.write(tb + '\n')
+			else:
+				import traceback
+				sys.stderr.write ('''>>> %s:
+			''' 	% (stylize(ST_OK, "Call trace")))
+				traceback.print_tb( sys.exc_info()[2] )
+				sys.stderr.write("\n")
 
+		sys.stderr.write(text_message)
+
+	monitor(TRACE_LOGGING, '{0}', text_message)
 	raise SystemExit(returncode)
 def warning(mesg, once=False, to_listener=True, to_local=True):
 	"""Display a stylized warning message on stderr."""
@@ -118,6 +122,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 	if to_local:
 		with __output_lock:
 			sys.stderr.write(text_message)
+	monitor(TRACE_LOGGING, '{0}', text_message)
 def warning2(mesg, once=False, to_listener=True, to_local=True):
 	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
@@ -135,6 +140,7 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		with __output_lock:
 			sys.stderr.write(text_message)
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
 def notice(mesg, to_listener=True, to_local=True):
 	""" Display a stylized NOTICE message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -147,6 +153,8 @@ def notice(mesg, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.NOTICE:
 		with __output_lock:
 			sys.stderr.write(text_message)
+
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
 def info(mesg, to_listener=True, to_local=True):
 	""" Display a stylized INFO message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -158,6 +166,8 @@ def info(mesg, to_listener=True, to_local=True):
 
 	if to_local and options.verbose >= verbose.INFO:
 		sys.stderr.write(text_message)
+
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
 def progress(mesg, to_listener=True, to_local=True):
 	""" Display a stylized PROGRESS message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -171,7 +181,35 @@ def progress(mesg, to_listener=True, to_local=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+
 	# make logging.progress() be compatible with potential assert calls.
+	return True
+def monitor(facility, *args):
+	""" Send a message to all (network-)attached monitoring sessions, if the
+		facility of the message is wanted by the remote monitor. """
+
+	with options.monitor_lock:
+		for listener_thread in options.monitor_listeners:
+
+			if listener_thread.monitor_facilities & facility:
+				try:
+					listener_thread.listener.process(
+							LicornMessage((u'%s[%s]: %s\n' % (
+									stylize(ST_COMMENT, 'MON'),
+									stylize(ST_COMMENT,
+										facility.name.center(TRACES_MAXWIDTH)),
+									args[0])).format(*args[1:])),
+						options.msgproc.getProxy())
+
+				except AttributeError, e:
+					logging.warning(_(u'Thread {0} has no listener '
+						'anymore, desengaging from monitors.').format(
+							listener_thread.name))
+					options.monitor_listeners.remove(listener)
+
+	# be compatible with assert calls, if some monitor() calls needs to be
+	# dinamically added/removed from the code.
 	return True
 def debug(mesg, to_listener=True):
 	"""Display a stylized DEBUG (level1) message on stderr, and publish it to
@@ -185,6 +223,8 @@ def debug(mesg, to_listener=True):
 	if options.verbose >= verbose.DEBUG:
 		with __output_lock:
 			sys.stderr.write(text_message)
+
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
 
 	# be compatible with assert calls
 	return True
@@ -201,6 +241,8 @@ def debug2(mesg, to_listener=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
+	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+
 	# be compatible with assert calls
 	return True
 def ask_for_repair(message, auto_answer=None):
@@ -214,7 +256,7 @@ def ask_for_repair(message, auto_answer=None):
 		from the :mod:`ttyutils` module.
 	"""
 
-	assert ltrace('logging', '| ask_for_repair(%s)' % auto_answer)
+	assert ltrace(TRACE_LOGGING, '| ask_for_repair(%s)' % auto_answer)
 
 	answer = send_to_listener(LicornMessage(data=message,
 				interaction=interactions.ASK_FOR_REPAIR,
@@ -222,5 +264,6 @@ def ask_for_repair(message, auto_answer=None):
 
 	if answer is not None:
 		return answer
+
 	else:
 		return interactive_ask_for_repair(message, auto_answer)

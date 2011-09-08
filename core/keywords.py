@@ -15,6 +15,7 @@ from licorn.foundations         import exceptions, logging
 from licorn.foundations         import fsapi, readers, hlstr, pyutils
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base    import Singleton
 from licorn.foundations.classes import FileLock
 
@@ -51,7 +52,7 @@ class KeywordsController(Singleton, LockedController):
 		if KeywordsController.load_ok:
 			return
 		else:
-			assert ltrace('keywords', '| load()')
+			assert ltrace(TRACE_KEYWORDS, '| load()')
 			self.reload()
 			KeywordsController.load_ok = True
 	def __getitem__(self, item):
@@ -60,7 +61,7 @@ class KeywordsController(Singleton, LockedController):
 		self.keywords[item]=value
 	def reload(self):
 		""" reload data from system files / databases. """
-		assert ltrace('keywords', '| reload()')
+		assert ltrace(TRACE_KEYWORDS, '| reload()')
 
 		self.keywords = {}
 

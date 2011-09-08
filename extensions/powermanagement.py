@@ -14,6 +14,7 @@ from threading import RLock, Event
 from licorn.foundations        import logging, exceptions, process, pyutils
 from licorn.foundations.styles import *
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base   import Singleton, MixedDictObject, LicornConfigObject
 
 from licorn.core               import LMC
@@ -41,7 +42,7 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 	module_depends = [ 'gloop' ]
 
 	def __init__(self):
-		assert ltrace('powermgmt', '| PowerManagementExtension.__init__()')
+		assert ltrace(TRACE_POWERMGMT, '| PowerManagementExtension.__init__()')
 		LicornExtension.__init__(self, name='powermgmt')
 
 		self.controllers_compat = [ 'system' ]
@@ -50,7 +51,7 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 			system.
 		"""
 
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		if False:
 			self.available = True
@@ -58,7 +59,7 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 		else:
 			logging.warning2(_(u'%s: extension not available because yet to be written.') % stylize(ST_NAME, self.name))
 
-		assert ltrace(self.name, '< initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" the :class:`RdiffbackupExtension` is enabled when the

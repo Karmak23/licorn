@@ -7,6 +7,7 @@ from licorn.foundations           import exceptions, hlstr, logging
 from licorn.foundations.base      import Enumeration
 from licorn.foundations.constants import filters
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 
 from licorn.core import LMC
 from licorn.interfaces.wmi.decorators import check_users
@@ -76,7 +77,7 @@ def skel_message(uri, http_user, login, **kwargs):
 # TODO: we need to check if passwords match before
 def create(uri, http_user, password, password_confirm, loginShell=None,
 	profile=None, login=None, gecos=None, groups=None, **kwargs):
-	assert ltrace('wmi', '> users.create(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.create(uri=%s, http_user=%s, '
 		'password=%s, password_confirm=%s, loginShell=%s, profile=%s, '
 		'login=%s, gecos=%s, groups=%s)' % (uri, http_user, password,
 			password_confirm, loginShell, profile, login, gecos, groups))
@@ -102,7 +103,7 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 @check_users('skel')
 def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
-	assert ltrace('wmi', '> users.skel(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.skel(uri=%s, http_user=%s, '
 		'login=%s, sure=%s, apply_skel=%s)' % (uri, http_user, login,
 			sure, apply_skel))
 
@@ -111,7 +112,7 @@ def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
 @check_users('delete')
 def delete(uri, http_user, login, sure, no_archive=False, **kwargs):
 	"""remove user account."""
-	assert ltrace('wmi', '> users.delete(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.delete(uri=%s, http_user=%s, '
 	'login=%s, sure=%s, no_archive=%s)' % (uri, http_user, login,
 		sure, no_archive))
 	LMC.users.del_User(user=LMC.users.by_login(login),
@@ -120,7 +121,7 @@ def delete(uri, http_user, login, sure, no_archive=False, **kwargs):
 @check_users('unlock')
 def unlock(uri, http_user, login, **kwargs):
 	"""unlock a user account password."""
-	assert ltrace('wmi', '> users.unlock(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.unlock(uri=%s, http_user=%s, '
 		'login=%s)' % (uri, http_user, login))
 
 	LMC.users.by_login(login).locked = False
@@ -129,7 +130,7 @@ def unlock(uri, http_user, login, **kwargs):
 @check_users('lock')
 def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
 	"""lock a user account password."""
-	assert ltrace('wmi', '> users.lock(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.lock(uri=%s, http_user=%s, '
 		'login=%s, sure=%s, remove_remotessh=%s)' % (uri, http_user,
 		login, sure, remove_remotessh))
 
@@ -186,7 +187,7 @@ def massive_import(uri, http_user, filename, firstname_col, lastname_col,
 def massive_delete(uri, http_user, logins, sure, no_archive=False,
 	**kwargs):
 	"""remove several users account."""
-	assert ltrace('wmi', '> users.massive_delete(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.massive_delete(uri=%s, http_user=%s, '
 		'logins=%s, sure=%s, no_archive=%s)' % (uri, http_user,
 			logins, sure, no_archive))
 
@@ -203,7 +204,7 @@ def massive_delete(uri, http_user, logins, sure, no_archive=False,
 	return (w.HTTP_TYPE_JSON, users_deleted)
 def massive_skel(uri, http_user, logins, sure, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
-	assert ltrace('wmi', '> users.massive_skel(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.massive_skel(uri=%s, http_user=%s, '
 		'logins=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
 		logins, sure, apply_skel))
 
@@ -220,7 +221,7 @@ def massive_skel(uri, http_user, logins, sure, apply_skel=None, **kwargs):
 @check_users('edit_gecos')
 def edit_gecos(uri, http_user, login, gecos, **kwargs):
 	""" edit the gecos of the user """
-	assert ltrace('wmi', '> users.edit_gecos(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.edit_gecos(uri=%s, http_user=%s, '
 		'login=%s, gecos=%s)' % (uri, http_user, login, gecos))
 
 	user=LMC.users.by_login(login)
@@ -229,7 +230,7 @@ def edit_gecos(uri, http_user, login, gecos, **kwargs):
 @check_users('edit_password')
 def edit_password(uri, http_user, login, pwd, **kwargs):
 	""" edit user password function"""
-	assert ltrace('wmi', '> users.edit_password(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.edit_password(uri=%s, http_user=%s, '
 		'login=%s, pwd=%s)' % (uri, http_user, login, '*'*len(pwd)))
 
 	LMC.users.by_login(login).password = pwd
@@ -237,7 +238,7 @@ def edit_password(uri, http_user, login, pwd, **kwargs):
 @check_users('edit_groups')
 def edit_groups(uri, http_user, login, groups='', **kwargs):
 	""" edit user groups function"""
-	assert ltrace('wmi', '> users.edit_group(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> users.edit_group(uri=%s, http_user=%s, '
 		'login=%s, groups=%s)' % (uri, http_user, login, groups))
 
 	user = LMC.users.by_login(login)
@@ -264,10 +265,10 @@ def edit_groups(uri, http_user, login, groups='', **kwargs):
 		if group not in user_groups:
 			add_groups_list.append(group)
 
-	assert ltrace('wmi', 'initial list %s' % groups)
-	assert ltrace('wmi', 'initial group list %s' % user_groups)
-	assert ltrace('wmi', 'add list %s' % add_groups_list)
-	assert ltrace('wmi', 'del list %s' % del_groups_list)
+	assert ltrace(TRACE_WMI, 'initial list %s' % groups)
+	assert ltrace(TRACE_WMI, 'initial group list %s' % user_groups)
+	assert ltrace(TRACE_WMI, 'add list %s' % add_groups_list)
+	assert ltrace(TRACE_WMI, 'del list %s' % del_groups_list)
 
 	for group in del_groups_list:
 		group.del_Users(users_to_del=[user])
@@ -285,13 +286,13 @@ def edit_groups(uri, http_user, login, groups='', **kwargs):
 	if del_groups_list != []:
 		groups_removed = _(u'Removed: %s') % ', '.join(g.name for g in del_groups_list)
 
-	assert ltrace('wmi', '< users.edit_groups()')
+	assert ltrace(TRACE_WMI, '< users.edit_groups()')
 
 	return (w.HTTP_TYPE_JSON, None)
 @check_users('edit_shell')
 def edit_shell(uri, http_user, login, newshell, **kwargs):
 	""" edit user shell function"""
-	assert ltrace('users', '> users.edit_shell(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_USERS, '> users.edit_shell(uri=%s, http_user=%s, '
 		'login=%s, newshell=%s)' % (uri, http_user, login, newshell))
 
 	LMC.users.by_login(login).shell = w.my_unquote(newshell)

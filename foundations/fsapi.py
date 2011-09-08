@@ -16,6 +16,7 @@ import os, posix1e, time, shutil
 from stat import *
 
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations        import logging, exceptions, pyutils, process
 from licorn.foundations.styles import *
 
@@ -36,7 +37,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		raise  exceptions.BadArgumentError(
 			"please don't try to exhaust maxdepth.")
 
-	assert ltrace('fsapi', '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
+	assert ltrace(TRACE_FSAPI, '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
 		'''exclude=%s, followlinks=%s, followmounts=%s)''' % (
 			path, type, mindepth, maxdepth, exclude, followlinks, followmounts))
 
@@ -73,7 +74,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 				and ( (type is None and entry_type & S_IFSTD) \
 					or entry_type == type) \
 				and ( perms is None or (entry_mode & perms) ):
-				#ltrace('fsapi', '  minifind(yield=%s)' % entry)
+				#ltrace(TRACE_FSAPI, '  minifind(yield=%s)' % entry)
 				yield entry
 
 			#print 'type %s %s %s' % (entry_type, S_IFLNK, entry_type & S_IFLNK)
@@ -90,7 +91,7 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 						if x not in exclude:
 							next_paths_to_walk.append("%s/%s" % (entry, x))
 						else:
-							assert ltrace('fsapi', '  minifind(excluded=%s)' % entry)
+							assert ltrace(TRACE_FSAPI, '  minifind(excluded=%s)' % entry)
 				except (IOError, OSError), e:
 					if e.errno == 2:
 						# happens on recursive delete() applyed on minifind()
@@ -102,7 +103,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 										auto_answer=None, full_display=True):
 	""" General function to check file/directory. """
 
-	assert ltrace('fsapi', '> check_dirs_and_contents_perms_and_acls_new('
+	assert ltrace(TRACE_FSAPI, '> check_dirs_and_contents_perms_and_acls_new('
 		'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
 			dirs_infos, batch, auto_answer))
 
@@ -262,11 +263,11 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 		raise exceptions.BadArgumentError(
 			"You must pass something through dirs_infos to check!")
 
-	assert ltrace('fsapi', '< check_dirs_and_contents_perms_and_acls_new()')
+	assert ltrace(TRACE_FSAPI, '< check_dirs_and_contents_perms_and_acls_new()')
 def check_perms(dir_info, file_type=None, is_root_dir=False,
 					batch=None, auto_answer=None, full_display=True):
 	""" general function to check if permissions are ok on file/dir """
-	assert ltrace('fsapi', '> check_perms(dir_info=%s, file_type=%s, '
+	assert ltrace(TRACE_FSAPI, '> check_perms(dir_info=%s, file_type=%s, '
 		'is_root_dir=%s, batch=%s, auto_answer=%s' % (
 			dir_info, file_type, is_root_dir, batch, auto_answer))
 
@@ -548,7 +549,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			else:
 				all_went_ok = False
 
-	assert ltrace('fsapi', '< check_perms()')
+	assert ltrace(TRACE_FSAPI, '< check_perms()')
 def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 														full_display=True):
 	""" function that check the uid and gid of a file or a dir. """

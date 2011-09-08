@@ -11,7 +11,24 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
+import uuid, signal
+from traceback import print_exc
 from licorn.interfaces.cli import cli_main
+
+def get_events(RWI, opts, args):
+	""" We need to build an UUID because every call to RWI gets handled by a
+		separate thread on the remote side. We have to unregister the original,
+		which did the first `register` call. """
+
+	my_uuid = uuid.uuid4()
+
+	RWI.register_monitor(my_uuid, opts.facilities)
+
+	try:
+		signal.pause()
+
+	finally:
+		RWI.unregister_monitor(my_uuid)
 
 def get_main():
 
@@ -29,6 +46,8 @@ def get_main():
 		'keywords':      ('get_keywords_parse_arguments', 'get_keywords'),
 		'daemon_status': ('get_daemon_status_parse_arguments',
 														'get_daemon_status'),
+		'events'       : ('get_events_parse_arguments',
+														None, get_events),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),
 		}, {
 		"name"     		: "licorn-get",

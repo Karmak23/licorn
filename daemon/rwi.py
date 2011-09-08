@@ -15,6 +15,7 @@ from licorn.foundations           import options, exceptions, logging
 from licorn.foundations           import fsapi, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject
 from licorn.foundations.constants import filters, interactions, host_status
@@ -33,7 +34,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		NamedObject.__init__(self, name='rwi')
 		Pyro.core.ObjBase.__init__(self)
 		self.__licornd = licornd
-		assert ltrace('rwi', '| RWIController.__init__()')
+		assert ltrace(TRACE_RWI, '| RWIController.__init__()')
 	@property
 	def licornd(self):
 		return self.__licornd
@@ -87,7 +88,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def select(self, controller, args=None, opts=None, include_id_lists=None,
 		exclude_id_lists=None, default_selection=filters.NONE, all=False):
 
-		assert ltrace('cli', '''> select(controller=%s, args=%s, '''
+		assert ltrace(TRACE_CLI, '''> select(controller=%s, args=%s, '''
 			'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
 			'''all=%s)''' % (controller.name, args, include_id_lists,
 				exclude_id_lists, default_selection, all))
@@ -143,7 +144,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					try:
 						something_tried = True
 						ids.add(resolver(oid))
-						#assert ltrace('cli', '  select %s(%s) -> %s' %
+						#assert ltrace(TRACE_CLI, '  select %s(%s) -> %s' %
 						#	(str(resolver), oid, resolver(oid)))
 
 					except (KeyError, ValueError, exceptions.DoesntExistException):
@@ -196,7 +197,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					selection = list(set(
 						controller.select(default_selection)).difference(xids))
 
-		assert ltrace('cli', '< select(return=%s)' % selection)
+		assert ltrace(TRACE_CLI, '< select(return=%s)' % selection)
 		return sorted(selection, key=attrgetter(controller.sort_key))
 	### GET
 	def get_volumes(self, opts, args):
@@ -213,7 +214,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.output(LMC.users.dump())
 			return
 
-		assert ltrace('get', '> get_users(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_users(%s,%s)' % (opts, args))
 
 		selection = filters.SYSUNRSTR | filters.STANDARD
 
@@ -246,7 +247,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if data and data != '\n':
 			self.output(data)
 
-		assert ltrace('get', '< get_users()')
+		assert ltrace(TRACE_GET, '< get_users()')
 	def get_groups(self, opts, args):
 		""" Get the list of POSIX LMC.groups (can be LDAP). """
 
@@ -256,7 +257,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.output(LMC.groups.dump())
 			return
 
-		assert ltrace('get', '> get_groups(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_groups(%s,%s)' % (opts, args))
 
 		selection = filters.NONE
 
@@ -307,13 +308,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if data and data != '\n':
 			self.output(data)
 
-		assert ltrace('get', '< get_groups()')
+		assert ltrace(TRACE_GET, '< get_groups()')
 	def get_profiles(self, opts, args):
 		""" Get the list of user profiles. """
 
 		self.__setup_gettext()
 
-		assert ltrace('get', '> get_profiles(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_profiles(%s,%s)' % (opts, args))
 
 		profiles_to_get = self.select(LMC.profiles, args, opts,
 				include_id_lists = [
@@ -330,13 +331,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if data and data != '\n':
 			self.output(data)
 
-		assert ltrace('get', '< get_profiles()')
+		assert ltrace(TRACE_GET, '< get_profiles()')
 	def get_keywords(self, opts, args):
 		""" Get the list of keywords. """
 
 		self.__setup_gettext()
 
-		assert ltrace('get', '> get_keywords(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_keywords(%s,%s)' % (opts, args))
 
 		if opts.xml:
 			data = LMC.keywords.ExportXML()
@@ -346,13 +347,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if data and data != '\n':
 			self.output(data)
 
-		assert ltrace('get', '< get_keywords()')
+		assert ltrace(TRACE_GET, '< get_keywords()')
 	def get_privileges(self, opts, args):
 		""" Return the current privileges whitelist, one priv by line. """
 
 		self.__setup_gettext()
 
-		assert ltrace('get', '> get_privileges(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_privileges(%s,%s)' % (opts, args))
 
 		if opts.xml:
 			data = LMC.privileges.ExportXML()
@@ -361,7 +362,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.output(data)
 
-		assert ltrace('get', '< get_privileges()')
+		assert ltrace(TRACE_GET, '< get_privileges()')
 	def get_machines(self, opts, args):
 		""" Get the list of machines known from the server (attached or not). """
 
@@ -371,7 +372,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.output(LMC.machines.dump())
 			return
 
-		assert ltrace('get', '> get_machines(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_machines(%s,%s)' % (opts, args))
 
 		if opts.all:
 			selection = host_status.ALL
@@ -426,13 +427,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if data and data != '\n':
 			self.output(data)
 
-		assert ltrace('get', '< get_machines()')
+		assert ltrace(TRACE_GET, '< get_machines()')
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
 		self.__setup_gettext()
 
-		assert ltrace('get', '> get_configuration(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_GET, '> get_configuration(%s,%s)' % (opts, args))
 
 		if len(args) > 1:
 			self.output(LMC.configuration.Export(args=args[1:],
@@ -440,7 +441,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			self.output(LMC.configuration.Export())
 
-		assert ltrace('get', '< get_configuration()')
+		assert ltrace(TRACE_GET, '< get_configuration()')
 	def get_daemon_status(self, opts, args):
 
 		self.__setup_gettext()
@@ -468,6 +469,36 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			# we don't clear the screen for only one output.
 			self.output(self.licornd.dump_status(opts.long, opts.precision))
+	def register_monitor(self, muuid, facilities):
+		t = current_thread()
+		t.monitor_facilities = ltrace_str_to_int(facilities)
+
+		logging.notice(_(u'New trace session started for UUID {0}, '
+			u'facilities {1}({2}).').format(stylize(ST_UGID, muuid),
+				stylize(ST_COMMENT, facilities),
+			ltrace_str_to_int(facilities)))
+
+		t.monitor_uuid = muuid
+
+		with options.monitor_lock:
+			options.monitor_listeners.append(t)
+	def unregister_monitor(self, muuid):
+
+		found = False
+
+		with options.monitor_lock:
+			for t in options.monitor_listeners[:]:
+				if t.monitor_uuid == muuid:
+					found = True
+					options.monitor_listeners.remove(t)
+					del t.monitor_facilities
+					break
+
+		if not found:
+			logging.warning(_(u'Monitor listener with UUID %s not found!') % muuid)
+
+		logging.notice(_(u'Trace session ended for UUID {0}').format(
+													stylize(ST_UGID, muuid)))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.
@@ -530,7 +561,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		assert ltrace('add', '> import_user(%s,%s)' % (opts, args))
+		assert ltrace(TRACE_ADD, '> import_user(%s,%s)' % (opts, args))
 
 		def clean_csv_field(field):
 			return field.replace("'", "").replace('"', '')
@@ -706,7 +737,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			i += 1
 			user['linenumber'] = i
 
-		assert ltrace('add',
+		assert ltrace(TRACE_ADD,
 			'  import_users: users_to_add=%s,\ngroups_to_add=%s' % (
 			users_to_add, groups_to_add))
 
@@ -948,7 +979,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		assert ltrace('add', '> add_user(opts=%s, args=%s)' % (opts, args))
+		assert ltrace(TRACE_ADD, '> add_user(opts=%s, args=%s)' % (opts, args))
 
 		if opts.profile:
 			opts.profile = LMC.profiles.guess_one(opts.profile)
@@ -1005,13 +1036,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(str(e), to_local=False)
 
 		gc.collect()
-		assert ltrace('add', '< add_user()')
+		assert ltrace(TRACE_ADD, '< add_user()')
 	def add_user_in_groups(self, opts, args):
 
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		assert ltrace('add', '> add_user_in_group().')
+		assert ltrace(TRACE_ADD, '> add_user_in_group().')
 
 		users_to_add = self.select(LMC.users, args, opts,
 				include_id_lists = [
@@ -1035,7 +1066,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						stylize(ST_NAME, g.name), str(e)), to_local=False)
 
 		gc.collect()
-		assert ltrace('add', '< add_user_in_group().')
+		assert ltrace(TRACE_ADD, '< add_user_in_group().')
 	def dispatch_add_user(self, opts, args):
 		""" guess how we were called:
 			- add a user (creation)
@@ -1044,7 +1075,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		assert ltrace('add', '> dispatch_add_user(%s, %s)' % (opts, args))
+		assert ltrace(TRACE_ADD, '> dispatch_add_user(%s, %s)' % (opts, args))
 
 		if opts.filename:
 			self.import_users(opts, args)
@@ -1069,13 +1100,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			else:
 				self.add_user(opts, args)
 
-		assert ltrace('add', '< dispatch_add_user()')
+		assert ltrace(TRACE_ADD, '< dispatch_add_user()')
 	def add_group(self, opts, args):
 		""" Add a POSIX group. """
 
 		self.__setup_gettext()
 
-		assert ltrace('add', '> add_group().')
+		assert ltrace(TRACE_ADD, '> add_group().')
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -1087,12 +1118,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.in_backend:
 			opts.in_backend = LMC.backends.guess_one(opts.in_backend)
 
-		assert ltrace('add', 'group(s) to add: %s.' % opts.name)
+		assert ltrace(TRACE_ADD, 'group(s) to add: %s.' % opts.name)
 
 		for name in sorted(opts.name.split(',')) if opts.name != None else []:
 			if name != '':
 				try:
-					assert ltrace('add', 'adding group %s.' % name)
+					assert ltrace(TRACE_ADD, 'adding group %s.' % name)
 
 					LMC.groups.add_Group(name, description=opts.description,
 						system=opts.system, groupSkel=opts.skel,
@@ -1109,13 +1140,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(str(e), to_local=False)
 
 		gc.collect()
-		assert ltrace('add', '< add_group().')
+		assert ltrace(TRACE_ADD, '< add_group().')
 	def add_profile(self, opts, args):
 		""" Add a system wide User profile. """
 
 		self.__setup_gettext()
 
-		assert ltrace('add', '> add_profile().')
+		assert ltrace(TRACE_ADD, '> add_profile().')
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -1152,7 +1183,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				logging.warning(str(e), to_local=False)
 
 		gc.collect()
-		assert ltrace('add', '< add_profile().')
+		assert ltrace(TRACE_ADD, '< add_profile().')
 	def add_keyword(self, opts, args):
 		""" Add a keyword on the system. """
 
@@ -1273,7 +1304,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.__setup_gettext()
 
-		assert ltrace('del', '> del_users_from_group(%s, %s)' % (opts, args))
+		assert ltrace(TRACE_DEL, '> del_users_from_group(%s, %s)' % (opts, args))
 
 		users_to_del = self.select(LMC.users, args, opts,
 				include_id_lists = [
@@ -1296,7 +1327,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						stylize(ST_NAME, g), str(e)), to_local=False)
 
 		gc.collect()
-		assert ltrace('del', '< del_users_from_group()')
+		assert ltrace(TRACE_DEL, '< del_users_from_group()')
 	def dispatch_del_user(self, opts, args):
 
 		self.__setup_gettext()
@@ -1628,7 +1659,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				exclude_id_lists = exclude_id_lists,
 				default_selection = selection)
 
-		assert ltrace('mod', '> mod_user(%s)' % ', '.join(user.login for user in users_to_mod))
+		assert ltrace(TRACE_MOD, '> mod_user(%s)' % ', '.join(user.login for user in users_to_mod))
 
 		something_done = False
 
@@ -1828,7 +1859,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# resolve the backend object from the name
 			opts.move_to_backend = LMC.backends.guess_one(opts.move_to_backend)
 
-		assert ltrace('mod', '> mod_group(%s)' % groups_to_mod)
+		assert ltrace(TRACE_MOD, '> mod_group(%s)' % groups_to_mod)
 
 		something_done = False
 
@@ -1968,7 +1999,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
 
-		assert ltrace('mod', '> mod_profile(%s)' % profiles_to_mod)
+		assert ltrace(TRACE_MOD, '> mod_profile(%s)' % profiles_to_mod)
 
 		ggi = LMC.groups.guess_list
 
@@ -2043,7 +2074,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							default_selection = filters.NONE,
 							all=opts.apply_to_all_accounts)
 
-					assert ltrace('mod',"  mod_profile(on_users=%s)" % _users)
+					assert ltrace(TRACE_MOD,"  mod_profile(on_users=%s)" % _users)
 
 					if _users != []:
 						something_done = True
@@ -2056,7 +2087,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			raise exceptions.NeedHelpException(_(u'What do you want to modify '
 				'about profile(s) %s?') % ', '.join(stylize(ST_NAME, p.name)
 											for p in profiles_to_mod))
-		assert ltrace('mod', '< mod_profile()')
+		assert ltrace(TRACE_MOD, '< mod_profile()')
 	def mod_machine(self, opts, args):
 		""" Modify a machine. """
 
@@ -2285,7 +2316,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			default_selection = selection,
 			all=opts.all)
 
-		assert ltrace('chk', '> chk_user(%s)' % users_to_chk)
+		assert ltrace(TRACE_CHK, '> chk_user(%s)' % users_to_chk)
 
 		if users_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:
@@ -2300,7 +2331,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						user.check(minimal=opts.minimal, batch=opts.batch,
 							auto_answer=opts.auto_answer)
 
-		assert ltrace('chk', '< chk_user()')
+		assert ltrace(TRACE_CHK, '< chk_user()')
 	def chk_group(self, opts, args):
 		""" Check one or more group(s). """
 
@@ -2363,7 +2394,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			default_selection = selection,
 			all=opts.all)
 
-		assert ltrace('chk', '> chk_group(%s)' % groups_to_chk)
+		assert ltrace(TRACE_CHK, '> chk_group(%s)' % groups_to_chk)
 
 		if groups_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:
@@ -2379,7 +2410,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						group.check(minimal=opts.minimal, batch=opts.batch,
 							auto_answer=opts.auto_answer, force=opts.force)
 
-		assert ltrace('chk', '< chk_group()')
+		assert ltrace(TRACE_CHK, '< chk_group()')
 	def chk_profile(self, opts, args):
 		""" TODO: to be implemented. """
 

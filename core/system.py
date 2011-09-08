@@ -19,6 +19,7 @@ from licorn.foundations           import logging
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.constants import host_status, host_types, distros
 
@@ -49,7 +50,7 @@ class SystemController(Singleton, CoreController):
 
 		CoreController.__init__(self, 'system')
 
-		self.status = host_status.ACTIVE
+		self.__status = host_status.ACTIVE
 
 		SystemController.init_ok = True
 	def load(self):
@@ -69,24 +70,24 @@ class SystemController(Singleton, CoreController):
 				self.extensions = None
 	def load_system_extensions(self):
 		""" special case for SystemController. """
-		assert ltrace('system', '| load_system_extension()')
+		assert ltrace(TRACE_SYSTEM, '| load_system_extension()')
 		for ext in self.extensions:
 			ext.system_load()
 	def noop(self):
 		""" No-op function, called when remotely connecting pyro, to check if
 			link is OK between the server and the client. """
-		assert ltrace('system', '| noop(True)')
+		assert ltrace(TRACE_SYSTEM, '| noop(True)')
 		return True
 	def local_ip_addresses(self):
 		return LMC.configuration.network.local_ip_addresses()
 	def get_status(self):
 		""" Get local host current status. """
 		with self.lock:
-			assert ltrace('system', '| get_status(%s)' % self.status)
-			return self.status
+			assert ltrace(TRACE_SYSTEM, '| get_status(%s)' % self.__status)
+			return self.__status
 	def announce_shutdown(self):
 		""" mark us as shutting down and announce this to everyone connected."""
-		self.status = host_status.PYRO_SHUTDOWN
+		self.__status = host_status.PYRO_SHUTDOWN
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.announce_shutdown()
@@ -98,7 +99,7 @@ class SystemController(Singleton, CoreController):
 			:class:`~licorn.core.machines.MachinesController`, it knows what
 			to do with it. """
 
-		assert ltrace('system', '| goodbye_from(%s)' % ', '.join(remote_interfaces))
+		assert ltrace(TRACE_SYSTEM, '| goodbye_from(%s)' % ', '.join(remote_interfaces))
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.goodbye_from(remote_interfaces)
@@ -110,7 +111,7 @@ class SystemController(Singleton, CoreController):
 			:class:`~licorn.core.machines.MachinesController`, it knows what
 			to do with it. """
 
-		assert ltrace('system', '| hello_from(%s)' % ', '.join(remote_interfaces))
+		assert ltrace(TRACE_SYSTEM, '| hello_from(%s)' % ', '.join(remote_interfaces))
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 			LMC.machines.hello_from(remote_interfaces)
@@ -145,25 +146,25 @@ class SystemController(Singleton, CoreController):
 			systype |= host_types.MANDRIVA
 			systype -= host_types.LNX_GEN
 
-		assert ltrace('system', '| get_host_type(%s)' % systype)
+		assert ltrace(TRACE_SYSTEM, '| get_host_type(%s)' % systype)
 
 		return systype
 	def uptime_and_load(self):
-		assert ltrace('system', '| uptime_and_load()')
+		assert ltrace(TRACE_SYSTEM, '| uptime_and_load()')
 		return open('/proc/loadavg').read().split(' ')
 	def uid_connecting_from(self, client_socket):
 		""" TODO """
 		uid = process.find_network_client_uid(
 			LMC.configuration.licornd.pyro.port, client_socket, local=False)
-		assert ltrace('system', '| uid_connecting_from(%s) -> %s(%s)' % (
+		assert ltrace(TRACE_SYSTEM, '| uid_connecting_from(%s) -> %s(%s)' % (
 			client_socket, LMC.users.uid_to_login(uid), uid))
 		return uid
 	def shutdown(self, delay=1, warn_users=True):
 		""" shutdown the local machine. """
-		assert ltrace('system', '| shutdown(warn=%s)' % warn_users)
+		assert ltrace(TRACE_SYSTEM, '| shutdown(warn=%s)' % warn_users)
 
 		with self.lock:
-			if self.status == host_status.SHUTTING_DOWN:
+			if self.__status == host_status.SHUTTING_DOWN:
 				logging.warning('already shutting down!')
 				return True
 
@@ -188,7 +189,7 @@ class SystemController(Singleton, CoreController):
 			os.execvp('shutdown', command)
 		else:
 			with self.lock:
-				self.status = host_status.SHUTTING_DOWN
+				self.__status = host_status.SHUTTING_DOWN
 				return True
 	def get_extensions(self, client_only=False):
 		if client_only:

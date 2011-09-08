@@ -15,6 +15,7 @@ from threading import RLock
 from licorn.foundations           import logging, process, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton, MixedDictObject
 
 from licorn.core                import LMC
@@ -64,7 +65,7 @@ class UdevMonitorThread(LicornBasicThread):
 		.. versionadded:: 1.2.4
 	"""
 	def __init__(self):
-		assert ltrace('volumes', '| UdevMonitorThread.__init__()')
+		assert ltrace(TRACE_VOLUMES, '| UdevMonitorThread.__init__()')
 
 		LicornBasicThread.__init__(self,
 			tname='extensions.volumes.UdevMonitor')
@@ -88,7 +89,7 @@ class UdevMonitorThread(LicornBasicThread):
 		"""
 
 		# this should be a level2 ltrace...
-		#assert ltrace('volumes', '| UdevMonitorThread.run_func()')
+		#assert ltrace(TRACE_VOLUMES, '| UdevMonitorThread.run_func()')
 
 		readf, writef, errf = select.select([self.udev_fileno], [], [])
 
@@ -98,12 +99,12 @@ class UdevMonitorThread(LicornBasicThread):
 			with self.lock:
 				if (action, device.device_node) in self.prevented_actions:
 					self.prevented_actions.remove((action, device.device_node))
-					assert ltrace('volumes', '  skipped prevented action '
+					assert ltrace(TRACE_VOLUMES, '  skipped prevented action '
 									'%s on device %s.' % (action, device))
 					return
 
 			try:
-				assert ltrace('volumes', '| udev action %s received for device '
+				assert ltrace(TRACE_VOLUMES, '| udev action %s received for device '
 							'%s (%s).' % ((stylize(ST_ATTR, action),
 								stylize(ST_PATH, device),
 								', '.join(attr for attr in device.attributes))))
@@ -197,7 +198,7 @@ class Volume:
 
 		else:
 			self.enabled = None
-		assert ltrace('volumes', '| Volume.__init__(%s, %s, enabled=%s)' % (
+		assert ltrace(TRACE_VOLUMES, '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
 	def __str__(self):
 		return 'volume %s[%s]%s' % (
@@ -308,9 +309,9 @@ class Volume:
 
 			"""
 
-		assert ltrace('volumes', '| Volume.mount(%s, %s)' % (
+		assert ltrace(TRACE_VOLUMES, '| Volume.mount(%s, %s)' % (
 											self.device, self.mount_point))
-		assert ltrace('locks', '  locking self.device %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '  locking self.device %s' % self.lock)
 
 		with self.lock:
 			if not self.mount_point:
@@ -355,7 +356,7 @@ class Volume:
 							+ other_mount_options,
 						self.device, self.mount_point ]
 
-				assert ltrace('volumes', '| %s' % ' '.join(mount_cmd))
+				assert ltrace(TRACE_VOLUMES, '| %s' % ' '.join(mount_cmd))
 
 				output = process.execute(mount_cmd)[1].strip()
 
@@ -374,7 +375,7 @@ class Volume:
 	def unmount(self, force=False):
 		""" Unmount a volume and remove its mount point directory. """
 
-		assert ltrace('volumes', '| Volume.unmount(%s, %s)' % (
+		assert ltrace(TRACE_VOLUMES, '| Volume.unmount(%s, %s)' % (
 											self.device, self.mount_point))
 
 		with self.lock:
@@ -441,7 +442,7 @@ class VolumesExtension(Singleton, LicornExtension):
 	module_depends = [ 'gloop' ]
 
 	def __init__(self):
-		assert ltrace('volumes', '| VolumesExtension.__init__()')
+		assert ltrace(TRACE_VOLUMES, '| VolumesExtension.__init__()')
 		LicornExtension.__init__(self,
 			name='volumes',
 			controllers_compat=[ 'system' ])
@@ -492,7 +493,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			Eventually, if udisks is present and enabled, we inhibit it.
 		"""
 
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		# we need the thread to be created to eventually add udisks-related
 		# methods a little later.
@@ -531,13 +532,13 @@ class VolumesExtension(Singleton, LicornExtension):
 				stylize(ST_NAME, self.name), e))
 			self.available = False
 
-		assert ltrace(self.name, '< initialize(%s)' % self.available)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
 
 		return self.available
 	def is_enabled(self):
 		""" Volumes extension is always enabled if available, return always
 			True. """
-		assert ltrace(self.name, '| is_enabled() → True')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
 
 		logging.info(_(u'{0}: started extension with pyudev v{2} '
 			'on top of udev v{1}.').format(stylize(ST_NAME, self.name),
@@ -563,13 +564,13 @@ class VolumesExtension(Singleton, LicornExtension):
 			extension is attached to the :class:`SystemController` (for pure
 			logical purpose, because it doesn't load any data into it). """
 
-		assert ltrace(self.name, '| system_load()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| system_load()')
 		pass
 
 	def __inhibit_udisks(self):
 		""" TODO """
 
-		assert ltrace(self.name, '| __inhibit_udisks(%s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __inhibit_udisks(%s)' % (
 				self.udisks_object is not None))
 
 		if self.udisks_object is not None \
@@ -579,7 +580,7 @@ class VolumesExtension(Singleton, LicornExtension):
 	def __uninhibit_udisks(self):
 		""" TODO """
 
-		assert ltrace(self.name, '| __uninhibit_udisks(%s)' % (
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __uninhibit_udisks(%s)' % (
 						self.udisks_object is not None))
 
 		if self.udisks_object is not None \
@@ -593,7 +594,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			them inside us (creating the corresponding :class:`Volume` objects,
 			and mount them if not already mounted. """
 
-		assert ltrace(self.name, '| rescan_volumes()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| rescan_volumes()')
 
 		udev_context = pyudev.Context()
 
@@ -620,7 +621,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			volumes are pluged in/out) and keep useful informations inside us
 			for future use. """
 
-		assert ltrace(self.name, '| __update_cache_informations()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __update_cache_informations()')
 
 		self.proc_mounts = {}
 		for line in open('/proc/mounts').readlines():
@@ -668,18 +669,18 @@ class VolumesExtension(Singleton, LicornExtension):
 		mounted = self.proc_mounts.keys()
 
 		if device in mounted:
-			assert ltrace(self.name, '|  __system_partition(device) → %s' % (
+			assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → %s' % (
 							self.proc_mounts[device] in self.excluded_mounts))
 			return self.proc_mounts[device] in self.excluded_mounts
 
 		by_uuid = '/dev/disk/by-uuid/' + self.blkid[device]['uuid']
 
 		if by_uuid in mounted:
-			assert ltrace(self.name, '|  __system_partition(device) → %s' % (
+			assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → %s' % (
 							self.proc_mounts[by_uuid] in self.excluded_mounts))
 			return self.proc_mounts[by_uuid] in self.excluded_mounts
 
-		assert ltrace(self.name, '|  __system_partition(device) → False')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → False')
 		return False
 	def add_volume_from_device(self, device=None, by_string=None):
 		""" Add a volume from udev data if it doesn't already exist.
@@ -689,13 +690,13 @@ class VolumesExtension(Singleton, LicornExtension):
 				``/dev/sda1``). **Currently ignored**.
 		"""
 
-		assert ltrace(self.name, '| add_volume_from_device(%s)' % device)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| add_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
 			return
 
-		assert ltrace('locks', '  locking volumes.lock: %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '  locking volumes.lock: %s' % self.lock)
 
 		with self.lock:
 			kernel_device = device.device_node
@@ -781,7 +782,7 @@ class VolumesExtension(Singleton, LicornExtension):
 				``/dev/sda1``). **Currently ignored**.
 		"""
 
-		assert ltrace(self.name, '| del_volume_from_device(%s)' % device)
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| del_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
@@ -822,7 +823,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		# TODO: implement all of this with reverse mappings dicts, this will be
 		# much-much simpler and won't duplicate the code...
 
-		assert ltrace(self.name, '| volumes_call(%s, %s)' % (volumes, method_name))
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| volumes_call(%s, %s)' % (volumes, method_name))
 
 		with self.lock:
 			devices        = self.keys()

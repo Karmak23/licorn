@@ -21,6 +21,7 @@ from licorn.foundations         import logging, exceptions
 from licorn.foundations         import readers, hlstr, fsapi
 from licorn.foundations.styles  import *
 from licorn.foundations.ltrace  import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base    import Singleton, BasicCounter
 from licorn.foundations.classes import FileLock
 
@@ -40,7 +41,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 	def __init__(self):
 
-		assert ltrace('shadow', '> __init__(%s)' % ShadowBackend.init_ok)
+		assert ltrace(TRACE_SHADOW, '> __init__(%s)' % ShadowBackend.init_ok)
 
 		if ShadowBackend.init_ok:
 			return
@@ -55,7 +56,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		self.enabled   = True
 
 		ShadowBackend.init_ok = True
-		assert ltrace('shadow', '< __init__(%s)' % ShadowBackend.init_ok)
+		assert ltrace(TRACE_SHADOW, '< __init__(%s)' % ShadowBackend.init_ok)
 	def initialize(self):
 		""" We have to be sure a human error didn't put
 			``backends.shadow.enabled = False`` in the configuration, else this
@@ -96,17 +97,17 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		return self.available
 	def load_User(self, user):
-		assert ltrace('backends', '| abstract load_User(%s)' % uid)
+		assert ltrace(TRACE_BACKENDS, '| abstract load_User(%s)' % uid)
 
 		# NOTE: which is totally ignored in this backend, we always load ALL
 		# users, because we always read/write the entire files.
 
 		return self.load_Users()
 	def save_User(self, user, mode):
-		assert ltrace('backends', '| abstract save_User(%s)' % user.uid)
+		assert ltrace(TRACE_BACKENDS, '| abstract save_User(%s)' % user.uid)
 		return self.save_Users(LMC.users)
 	def delete_User(self, user):
-		assert ltrace('backends', '| abstract delete_User(%s)' % user.uid)
+		assert ltrace(TRACE_BACKENDS, '| abstract delete_User(%s)' % user.uid)
 		return self.save_Users(LMC.users)
 	def load_Group(self, group):
 		""" Load an individual group.
@@ -119,7 +120,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				default implementation which calls :meth:`load_Groups`).
 		"""
 
-		assert ltrace('backends', '| abstract load_Group(%s)' % gid)
+		assert ltrace(TRACE_BACKENDS, '| abstract load_Group(%s)' % gid)
 
 		return self.load_Groups()
 	def save_Group(self, group, mode):
@@ -143,7 +144,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				specify if the save operation is an update or a creation.
 		"""
 
-		assert ltrace('backends', '| abstract save_Group(%s)' % group.gid)
+		assert ltrace(TRACE_BACKENDS, '| abstract save_Group(%s)' % group.gid)
 
 		return self.save_Groups(LMC.groups)
 	def delete_Group(self, group):
@@ -165,12 +166,12 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			:param gid: the GID of teh group to delete (ignored in this default
 				version of the method).
 		"""
-		assert ltrace('backends', '| abstract delete_Group(%s)' % group.gid)
+		assert ltrace(TRACE_BACKENDS, '| abstract delete_Group(%s)' % group)
 		return self.save_Groups(LMC.groups)
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
-		assert ltrace(self.name, '> load_Users()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load_Users()')
 
 		is_allowed = True
 		need_rewriting = False
@@ -230,7 +231,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					backend=self
 				)
 
-			assert ltrace(self.name, 'loaded user %s' % entry[0])
+			assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded user %s' % entry[0])
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned users data rewrite '
@@ -240,11 +241,11 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 											self.save_Users, LMC.users,
 											job_delay=4.0)
 
-		assert ltrace(self.name, '< load_users()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< load_users()')
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace(self.name, '> load_Group()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load_Group()')
 
 		with self.grlock:
 			etc_group = readers.ug_conf_load_list("/etc/group")
@@ -351,7 +352,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					groupSkel=groupSkel,
 					backend=self)
 
-			assert ltrace(self.name, 'loaded group %s' % name)
+			assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded group %s' % name)
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned groups data rewrite '
@@ -433,7 +434,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
-		assert ltrace(self.name, '> save_groups()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> save_groups()')
 
 		# NOTE: groups should already be sorted on GIDs.
 
@@ -501,9 +502,9 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		logging.progress(_("{0}: saved groups data to disk.").format(str(self)))
 
-		assert ltrace(self.name, '< save_groups()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< save_groups()')
 	def compute_password(self, password, salt=None):
-		assert ltrace(self.name, '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| compute_password(%s, %s)' % (password, salt))
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
@@ -535,7 +536,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			overwrite them, and this will generate a GAMChanged event,
 			which permits us to distringuish between the different uses.
 		"""
-		assert ltrace('inotifier',
+		assert ltrace(TRACE_INOTIFIER,
 			'conf_file %s change -> reload controller %s (index %s)' % (
 				pathname, controller.name, index))
 

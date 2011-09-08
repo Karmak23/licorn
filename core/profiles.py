@@ -23,6 +23,7 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi, hlstr, readers, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import filters
 
@@ -135,7 +136,7 @@ class Profile(CoreStoredObject):
 			stylize(ST_NAME, self.__name))
 	def __del__(self):
 
-		assert ltrace('gc', '| Profile %s.__del__()' % self.__name)
+		assert ltrace(TRACE_GC, '| Profile %s.__del__()' % self.__name)
 
 		del self.__group
 
@@ -286,7 +287,7 @@ class Profile(CoreStoredObject):
 		""" Change the skel, and auto-apply if asked for (default is ``YES``).
 		"""
 
-		assert ltrace('profiles', '| mod_ProfileSkel(%s, %s)' % (
+		assert ltrace(TRACE_PROFILES, '| mod_ProfileSkel(%s, %s)' % (
 			self.__name, profileSkel))
 
 		if profileSkel in (None, ''):
@@ -317,7 +318,7 @@ class Profile(CoreStoredObject):
 		""" Change the profile shell, and instant_apply if asked for
 			(default is ``Yes``). """
 
-		assert ltrace('profiles', '| mod_ProfileShell(%s, %s)' % (
+		assert ltrace(TRACE_PROFILES, '| mod_ProfileShell(%s, %s)' % (
 			self.__name, profileShell))
 
 		if profileShell in (None, ''):
@@ -344,7 +345,7 @@ class Profile(CoreStoredObject):
 		""" Change the profile Quota, and instant_apply it to all current users.
 		"""
 
-		assert ltrace('profiles', '| mod_profileQuota(%s, %s)' % (
+		assert ltrace(TRACE_PROFILES, '| mod_profileQuota(%s, %s)' % (
 												self.__name, profileQuota))
 
 		try:
@@ -367,7 +368,7 @@ class Profile(CoreStoredObject):
 	def add_Groups(self, groups_to_add=None, instant_apply=True):
 		""" Add groups in the groups list of the profile 'group'. """
 
-		assert ltrace('profiles', '> %s.add_Groups(%s)' % (
+		assert ltrace(TRACE_PROFILES, '> %s.add_Groups(%s)' % (
 												self.__name, groups_to_add))
 
 		if groups_to_add is None:
@@ -412,7 +413,7 @@ class Profile(CoreStoredObject):
 	def del_Groups(self, groups_to_del=None, instant_apply=True):
 		""" Delete groups from the groups list of the profile 'group'. """
 
-		assert ltrace('profiles', '> %s.del_Groups(%s)' % (
+		assert ltrace(TRACE_PROFILES, '> %s.del_Groups(%s)' % (
 												self.__name, groups_to_del))
 
 		if groups_to_del is None:
@@ -636,7 +637,7 @@ class ProfilesController(Singleton, CoreController):
 	def __init__(self):
 		""" Load profiles from system configuration file. """
 
-		assert ltrace('profiles', '> ProfilesController.__init__(%s)' %
+		assert ltrace(TRACE_PROFILES, '> ProfilesController.__init__(%s)' %
 			ProfilesController.init_ok)
 
 		if ProfilesController.init_ok:
@@ -645,7 +646,7 @@ class ProfilesController(Singleton, CoreController):
 		CoreController.__init__(self, 'profiles')
 
 		ProfilesController.init_ok = True
-		assert ltrace('profiles', '< ProfilesController.__init__(%s)' %
+		assert ltrace(TRACE_PROFILES, '< ProfilesController.__init__(%s)' %
 			ProfilesController.init_ok)
 	@property
 	def names(self):
@@ -668,7 +669,7 @@ class ProfilesController(Singleton, CoreController):
 		if ProfilesController.load_ok:
 			return
 
-		assert ltrace('profiles', '| load()')
+		assert ltrace(TRACE_PROFILES, '| load()')
 
 		# be sure our dependancies are OK.
 		LMC.groups.load()
@@ -712,7 +713,7 @@ class ProfilesController(Singleton, CoreController):
 				raise e
 	def serialize(self):
 		""" Write internal data into our file. """
-		assert ltrace('profiles', '| serialize()')
+		assert ltrace(TRACE_PROFILES, '| serialize()')
 
 		# FIXME: lock our datafile with a FileLock() ?
 		with self.lock:
@@ -723,7 +724,7 @@ class ProfilesController(Singleton, CoreController):
 	def select(self, filter_string):
 		""" Filter profiles on different criteria. """
 
-		assert ltrace('profiles', '> Select(%s)' % filter_string)
+		assert ltrace(TRACE_PROFILES, '> Select(%s)' % filter_string)
 
 		with self.lock:
 
@@ -746,7 +747,7 @@ class ProfilesController(Singleton, CoreController):
 					profile = arg.group('profile')
 					filtered_profiles.append(profile)
 
-		assert ltrace('profiles', '< Select(%s)' % filtered_profiles)
+		assert ltrace(TRACE_PROFILES, '< Select(%s)' % filtered_profiles)
 
 		return filtered_profiles
 	def _validate_fields(self, name, group, description, profileShell,
@@ -812,7 +813,7 @@ class ProfilesController(Singleton, CoreController):
 		""" Add a user profile (LMC.groups is an instance of GroupsController
 			and is needed to create the profile group). """
 
-		assert ltrace('profiles', '''> AddProfile(%s): '''
+		assert ltrace(TRACE_PROFILES, '''> AddProfile(%s): '''
 			'''group=%s, profileQuota=%d, groups=%s, description=%s, '''
 			'''profileShell=%s, profileSkel=%s, force_existing=%s''' % (
 				stylize(ST_NAME, name), group,
@@ -891,11 +892,11 @@ class ProfilesController(Singleton, CoreController):
 		""" Delete a user profile (LMC.groups is an instance of
 			GroupsController and is needed to delete the profile group). """
 
-		assert ltrace('profiles', '> del_Profile(%s)' % (profile.name))
+		assert ltrace(TRACE_PROFILES, '> del_Profile(%s)' % (profile.name))
 
 		# we need to hold the users lock, in case we need to delete users.
 
-		assert ltrace('locks', '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
 
 		with nested(self.lock, LMC.groups.lock, LMC.users.lock):
 
@@ -920,7 +921,7 @@ class ProfilesController(Singleton, CoreController):
 
 			name = profile.name
 
-			assert ltrace('gc', '  profile ref count before del: %d %s' % (
+			assert ltrace(TRACE_GC, '  profile ref count before del: %d %s' % (
 				sys.getrefcount(profile), gc.get_referrers(profile)))
 			# delete the hopefully last reference to the object. This will
 			# delete it from the reverse mapping caches too.
@@ -933,7 +934,7 @@ class ProfilesController(Singleton, CoreController):
 
 		logging.notice(_(u'Deleted profile %s.') % stylize(ST_NAME, name))
 
-		assert ltrace('locks', '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
+		assert ltrace(TRACE_LOCKS, '  del_Profile locks: %s, %s, %s' % (self.lock, LMC.groups.lock, LMC.users.lock))
 	def reapply_Profile(self, users_to_mod=None, apply_groups=False,
 		apply_skel=False, batch=False, auto_answer=None):
 		""" Reapply the profile of users.
@@ -946,7 +947,7 @@ class ProfilesController(Singleton, CoreController):
 			the daemon log.
 		"""
 
-		assert ltrace('profiles', '''> ReapplyProfilesOfUsers(users=%s, '''
+		assert ltrace(TRACE_PROFILES, '''> ReapplyProfilesOfUsers(users=%s, '''
 			'''apply_groups=%s, apply_skel=%s)''' % (users, apply_groups,
 				apply_skel))
 
@@ -974,7 +975,7 @@ class ProfilesController(Singleton, CoreController):
 			if apply_skel:
 				user.profile.apply_skel([ user ], batch, auto_answer)
 
-		assert ltrace('profiles', '''< ReapplyProfilesOfUsers()''')
+		assert ltrace(TRACE_PROFILES, '''< ReapplyProfilesOfUsers()''')
 	def _cli_get(self, selected=None):
 		""" Export the user profiles list to human readable form. """
 
@@ -985,7 +986,7 @@ class ProfilesController(Singleton, CoreController):
 				profiles = selected
 			profiles.sort()
 
-			assert ltrace('profiles', '| _get_cli(%s)' % profiles)
+			assert ltrace(TRACE_PROFILES, '| _get_cli(%s)' % profiles)
 
 			return '%s\n' % '\n'.join(profile._cli_get()
 					for profile in sorted(profiles, key=attrgetter('name')))
@@ -998,7 +999,7 @@ class ProfilesController(Singleton, CoreController):
 			else:
 				profiles = selected
 
-			assert ltrace('profiles', '| to_XML(%s)' % profiles)
+			assert ltrace(TRACE_PROFILES, '| to_XML(%s)' % profiles)
 
 			return '''<?xml version='1.0' encoding=\"UTF-8\"?>
 <profiledb>
@@ -1012,7 +1013,7 @@ class ProfilesController(Singleton, CoreController):
 		""" Try to guess everything of a profile from a
 			single and unknonw-typed info. """
 
-		#assert ltrace('profiles', '| guess_identifier(%s)' % value)
+		#assert ltrace(TRACE_PROFILES, '| guess_identifier(%s)' % value)
 
 		try:
 			profile = self.by_group(value)

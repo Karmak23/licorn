@@ -19,6 +19,7 @@ from licorn.foundations           import logging, exceptions, hlstr
 from licorn.foundations           import pyutils, fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
 from licorn.foundations.constants import filters, backend_actions, distros
 
@@ -117,7 +118,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		CoreStoredObject.__init__(self, controller=LMC.users, backend=backend)
 
-		assert ltrace('objects', '| User.__init__(%s, %s)' % (uidNumber, login))
+		assert ltrace(TRACE_OBJECTS, '| User.__init__(%s, %s)' % (uidNumber, login))
 
 		# use private attributes for properties.
 		self.__uidNumber        = uidNumber
@@ -213,7 +214,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			stylize(ST_NAME, self.__login))
 	def __del__(self):
 
-		assert ltrace('gc', '| User %s.__del__()' % self.__login)
+		assert ltrace(TRACE_GC, '| User %s.__del__()' % self.__login)
 
 		self.__primaryGroup().unlink_gidMember(self)
 
@@ -577,7 +578,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		""" Save group data to originating backend. """
 
 		with self.lock:
-			assert ltrace('users', '| %s.serialize(%s → %s)' % (
+			assert ltrace(TRACE_USERS, '| %s.serialize(%s → %s)' % (
 											stylize(ST_NAME, self.__login),
 											self.backend.name,
 											backend_actions[backend_action]))
@@ -693,7 +694,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		"""
 
 		with self.lock:
-			assert ltrace('users', 'comparing 2 crypted passwords:\n%s\n%s' % (
+			assert ltrace(TRACE_USERS, 'comparing 2 crypted passwords:\n%s\n%s' % (
 				self.__userPassword,
 				self.backend.compute_password(password, self.__userPassword)))
 
@@ -785,7 +786,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 														full_display=True):
 		"""Check current user account data consistency."""
 
-		assert ltrace('users', '> %s.check()' % self.__login)
+		assert ltrace(TRACE_USERS, '> %s.check()' % self.__login)
 
 		with self.lock:
 			# Refering to #322, we should avoid checking system users under uid
@@ -1074,7 +1075,7 @@ class UsersController(Singleton, CoreFSController):
 	def __init__(self):
 		""" Create the user accounts list from the underlying system. """
 
-		assert ltrace('users', '> UsersController.__init__(%s)' %
+		assert ltrace(TRACE_USERS, '> UsersController.__init__(%s)' %
 			UsersController.init_ok)
 
 		if UsersController.init_ok:
@@ -1083,7 +1084,7 @@ class UsersController(Singleton, CoreFSController):
 		CoreFSController.__init__(self, 'users')
 
 		UsersController.init_ok = True
-		assert ltrace('users', '< UsersController.__init__(%s)' %
+		assert ltrace(TRACE_USERS, '< UsersController.__init__(%s)' %
 			UsersController.init_ok)
 	def by_login(self, login):
 		# Call the thing before returning it, because it's a weakref.
@@ -1103,7 +1104,7 @@ class UsersController(Singleton, CoreFSController):
 
 		L_event_run(InternalEvent('users_loading', users=self))
 
-		assert ltrace('users', '| load()')
+		assert ltrace(TRACE_USERS, '| load()')
 		self.reload(send_event=False)
 
 		L_event_run(InternalEvent('users_loaded', users=self))
@@ -1111,7 +1112,7 @@ class UsersController(Singleton, CoreFSController):
 		UsersController.load_ok = True
 	def reload(self, send_event=True):
 		""" Load (or reload) the data structures from the system data. """
-		assert ltrace('users', '| reload()')
+		assert ltrace(TRACE_USERS, '| reload()')
 
 		if send_event:
 			L_event_run(InternalEvent('users_reloading', users=self))
@@ -1131,11 +1132,11 @@ class UsersController(Singleton, CoreFSController):
 	def reload_backend(self, backend):
 		""" Reload only one backend data (called from inotifier). """
 
-		assert ltrace('users', '| reload_backend(%s)' % backend.name)
+		assert ltrace(TRACE_USERS, '| reload_backend(%s)' % backend.name)
 
 		loaded = []
 
-		assert ltrace('locks', '| users.reload_backend enter %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '| users.reload_backend enter %s' % self.lock)
 
 		with self.lock:
 			for uid, user in backend.load_Users():
@@ -1163,11 +1164,11 @@ class UsersController(Singleton, CoreFSController):
 
 			LMC.groups.reload_backend(backend)
 
-		assert ltrace('locks', '| users.reload_backend exit %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '| users.reload_backend exit %s' % self.lock)
 	def serialize(self, user=None):
 		""" Write the user data in appropriate system files."""
 
-		assert ltrace('users', '| serialize()')
+		assert ltrace(TRACE_USERS, '| serialize()')
 
 		with self.lock:
 			if user:
@@ -1437,7 +1438,7 @@ class UsersController(Singleton, CoreFSController):
 		in_groups=None, batch=False, force=False):
 		"""Add a user and return his/her (uid, login, pass)."""
 
-		assert ltrace('users', '''> add_User(login=%s, system=%s, pass=%s, '''
+		assert ltrace(TRACE_USERS, '''> add_User(login=%s, system=%s, pass=%s, '''
 			'''uid=%s, gid=%s, profile=%s, skel=%s, gecos=%s, first=%s, '''
 			'''last=%s, home=%s, shell=%s)''' % (login, system, password,
 			desired_uid, repr(primary_group), repr(profile),
@@ -1582,7 +1583,7 @@ class UsersController(Singleton, CoreFSController):
 			# XXX: Quotatool can return 2 without apparent reason
 			# (the quota is etablished) !
 
-		assert ltrace('users', '< add_User(%r)' % user)
+		assert ltrace(TRACE_USERS, '< add_User(%r)' % user)
 
 		# We *need* to return the password, in case it was autogenerated.
 		# This is the only way we can know it, in massive imports.
@@ -1590,7 +1591,7 @@ class UsersController(Singleton, CoreFSController):
 	def del_User(self, user, no_archive=False, force=False, batch=False):
 		""" Delete a user. """
 
-		assert ltrace('users', "| del_User(%r)" % user)
+		assert ltrace(TRACE_USERS, "| del_User(%r)" % user)
 
 		if user.is_system_restricted and not force:
 			raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -1636,7 +1637,7 @@ class UsersController(Singleton, CoreFSController):
 			# save everything, including the user we want to delete.
 			user.backend.delete_User(user)
 
-			assert ltrace('gc', '  user ref count before del: %d %s' % (
+			assert ltrace(TRACE_GC, '  user ref count before del: %d %s' % (
 					sys.getrefcount(user), gc.get_referrers(user)))
 
 			del user
@@ -1663,7 +1664,7 @@ class UsersController(Singleton, CoreFSController):
 
 		with self.lock:
 
-			assert ltrace('users', '| dump()')
+			assert ltrace(TRACE_USERS, '| dump()')
 
 			uids = self.users.keys()
 			uids.sort()
@@ -1697,7 +1698,7 @@ class UsersController(Singleton, CoreFSController):
 				uids = selected
 			uids.sort()
 
-			assert ltrace('users', '| ExportCSV(%s)' % uids)
+			assert ltrace(TRACE_USERS, '| ExportCSV(%s)' % uids)
 
 			def build_csv_output_licorn(uid):
 				return ';'.join(
@@ -1722,7 +1723,7 @@ class UsersController(Singleton, CoreFSController):
 			else:
 				users = selected
 
-			assert ltrace('users', '| to_XML(%r)' % users)
+			assert ltrace(TRACE_USERS, '| to_XML(%r)' % users)
 
 			return ('<?xml version="1.0" encoding="UTF-8"?>\n'
 					'<users-list>\n'
@@ -1739,14 +1740,14 @@ class UsersController(Singleton, CoreFSController):
 			else:
 				users = selected
 
-			assert ltrace('users', '| to_JSON(%r)' % users)
+			assert ltrace(TRACE_USERS, '| to_JSON(%r)' % users)
 
 			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
 		auto_answer=None):
 		"""Check user accounts and account data consistency."""
 
-		assert ltrace('users', '> chk_Users(%r)' % users_to_check)
+		assert ltrace(TRACE_USERS, '> chk_Users(%r)' % users_to_check)
 
 		# FIXME: should we crash if the user's home we are checking is removed
 		# during the check ? what happens ?
@@ -1767,7 +1768,7 @@ class UsersController(Singleton, CoreFSController):
 			raise exceptions.LicornCheckError(_(u'Some user(s) check(s) did '
 				'not pass, or were not corrected.'))
 
-		assert ltrace('users', '< chk_Users(%s)' % all_went_ok)
+		assert ltrace(TRACE_USERS, '< chk_Users(%s)' % all_went_ok)
 		return all_went_ok
 	def guess_one(self, value):
 		""" Try to guess everything of a user from a
@@ -1829,7 +1830,7 @@ class UsersController(Singleton, CoreFSController):
 
 			users.sort()
 
-			assert ltrace('users', '| _cli_get(%r)' % users)
+			assert ltrace(TRACE_USERS, '| _cli_get(%r)' % users)
 
 			# FIXME: forward long_output, or remove it.
 			return '%s\n' % '\n'.join((user._cli_get()

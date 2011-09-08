@@ -29,7 +29,7 @@ class Cache(Thread):
 	_queue        = Queue()
 
 	def __init__(self, daemon, allkeywords=None, dbfname=cache_path):
-		assert ltrace('cache', '| Cache.__init__()')
+		assert ltrace(TRACE_CACHE, '| Cache.__init__()')
 
 		Thread.__init__(self)
 

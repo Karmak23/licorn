@@ -12,9 +12,13 @@ __version__ = '@DEVEL@'
 version     = __version__
 
 import os, sys
+
+from threading import RLock
+
 from styles    import *
 from base      import ObjectSingleton
 from ltrace    import ltrace
+from ltraces   import *
 from constants import verbose
 
 class LicornOptions(ObjectSingleton):
@@ -29,24 +33,31 @@ class LicornOptions(ObjectSingleton):
 	no_colors   = False
 
 	def __init__(self) :
-		assert ltrace('options', '| __init__()')
+		assert ltrace(TRACE_OPTIONS, '| __init__()')
 		self.msgproc = None
 		self.verbose = verbose.NOTICE
 
+		# a list of threads which receive monitored events.
+		self.monitor_listeners = []
+
+		# this will help dealing with multi-thread concurrency when clients
+		# (un-)register them-selves while monitor messages are beiing processed.
+		self.monitor_lock = RLock()
+
 	def SetVerbose(self, level):
 		""" Change verbose parameter. """
-		assert ltrace('options', '| SetVerbose(%s)' % verbose)
+		assert ltrace(TRACE_OPTIONS, '| SetVerbose(%s)' % verbose)
 		self.verbose = level
 	def SetQuiet(self):
 		""" Change verbose parameter. """
 		self.verbose = verbose.QUIET
 	def SetNoColors(self, no_colors=True):
 		""" Change color output parameter. """
-		assert ltrace('options', '| SetNoColors(%s)' % no_colors)
+		assert ltrace(TRACE_OPTIONS, '| SetNoColors(%s)' % no_colors)
 		self.no_colors = no_colors
 	def SetFrom(self, opts):
 		""" Change parameters, from an object given by an argparser """
-		assert ltrace('options', '| SetFrom(%s)' % opts)
+		assert ltrace(TRACE_OPTIONS, '| SetFrom(%s)' % opts)
 
 		self.SetNoColors(opts.no_colors)
 		self.SetVerbose(opts.verbose)

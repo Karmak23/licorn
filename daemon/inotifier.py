@@ -13,6 +13,7 @@ from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.base      import BasicCounter
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import filters
 from licorn.core                  import LMC
 from licorn.daemon                import priorities
@@ -113,10 +114,10 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				self._sleep(ref_time)
 				try:
 					self.read_events()
+
 				except pyinotify.NotifierError, e:
 					logging.warning(_(u'{0}: error on read_events: {1}').format(
 						stylize(ST_NAME, self.name), e))
-
 
 		pyinotify.Notifier.stop(self)
 
@@ -173,8 +174,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 													if reload_method is None
 													else reload_method)
 
-		#print '>> obj', core_obj.name, 'hint', id(hint), type(hint), self._watched_conf_files[conf_file]
-
 		# then verify if the containing directory is already watched, or not. If
 		# it is, there's nothing else to do.
 		if dirname in self.__watched_conf_dirs:
@@ -219,14 +218,16 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		try:
 			name, lock, hint, reload_method = self._watched_conf_files[event.pathname]
 
+			logging.monitor(TRACE_INOTIFIER, 'New config file event on {0}', event.pathname)
+
 		except (AttributeError, KeyError):
-			assert ltrace('inotifier', '| __config_file_event unhandled %s' % event)
+			assert ltrace(TRACE_INOTIFIER, '| __config_file_event unhandled %s' % event)
 			return
 
-		assert ltrace('locks', '| inotifier conf_enter %s' % lock)
+		assert ltrace(TRACE_LOCKS, '| inotifier conf_enter %s' % lock)
 
 		with lock:
-			assert ltrace('inotifier',
+			assert ltrace(TRACE_INOTIFIER,
 					'| %s handle_config_change %s' % (name, event))
 
 			if event.mask in (pyinotify.IN_MODIFY, pyinotify.IN_CREATE):
@@ -275,7 +276,7 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				hint.set(1)
 				reload_method(event.pathname)
 
-		assert ltrace('locks', '| inotifier conf_exit %s' % lock)
+		assert ltrace(TRACE_LOCKS, '| inotifier conf_exit %s' % lock)
 	def collect(self):
 		""" Setup the kernel inotifier arguments, and collect inotifier-related
 			methods and events on controllers and

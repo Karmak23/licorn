@@ -12,7 +12,7 @@ Licensed under the terms of the GNU GPL version 2.
 import gettext
 gettext.install('licorn', unicode=True)
 
-import sys, os, re, hashlib, tempfile,
+import sys, os, re, hashlib, tempfile
 import gzip, time, shutil
 
 from subprocess                import Popen, PIPE, STDOUT

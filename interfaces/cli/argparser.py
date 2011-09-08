@@ -17,6 +17,7 @@ from optparse import OptionParser, OptionGroup, SUPPRESS_HELP
 from licorn.foundations           import exceptions, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import LicornConfigObject
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.argparser import build_version_string, \
@@ -103,17 +104,17 @@ def common_filter_group(app, parser, tool, mode):
 					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 			filtergroup.add_option('-i', '--interval', '--monitor-interval',
-				action="store", dest="monitor_interval", default=1,
+				action="store", type="int", dest="monitor_interval", default=1,
 				help=_(u'Monitoring interval (in seconds). Default: %s.') %
 					stylize(ST_DEFAULT, _(u'1 sec')))
 
 			filtergroup.add_option('-c', '--count', '--monitor-count',
-				action="store", dest="monitor_count", default=None,
+				action="store", type="int", dest="monitor_count", default=None,
 				help=_(u'Monitor a given number of count. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
 
 			filtergroup.add_option('-t', '--time', '--monitor-time',
-				action="store", dest="monitor_time", default=None,
+				action="store", type="int", dest="monitor_time", default=None,
 				help=_(u'Monitor during a time period, in seconds. Default: %s.') %
 					stylize(ST_DEFAULT, _(u'infinite')))
 
@@ -463,6 +464,35 @@ def get_users_parse_arguments(app):
 	parser.add_option_group(__get_output_group(app, parser,'users'))
 
 	return parser.parse_args()
+def get_events_parse_arguments(app):
+	""" Integrated help and options / arguments for « get user(s) »."""
+
+	usage_text = "\n\t%s %s [[%s] …]" \
+		% (
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "events"),
+			stylize(ST_OPTION, "option")
+		)
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(common_filter_group(app, parser, 'get', 'events'))
+	parser.add_option_group(__get_output_group(app, parser,'users'))
+
+	events = OptionGroup(parser,
+		stylize(ST_OPTION, _(u"Events monitoring options")))
+
+	events.add_option('-f', '--facilities',
+		action='store', type='string', dest='facilities', default='std',
+		help=_(u'Specify facilities to monitor. Default: %s (see online '
+			u'documentation for possible values.') %
+				stylize(ST_DEFAULT, _(u"std")))
+
+	parser.add_option_group(events)
+
+	return parser.parse_args()
 def get_privileges_parse_arguments(app):
 	""" Integrated help and options / arguments for « get user(s) »."""
 
@@ -634,7 +664,7 @@ def get_daemon_status_parse_arguments(app):
 def add_user_parse_arguments(app):
 	"""Integrated help and options / arguments for « add user »."""
 
-	assert ltrace('argparser', '> add_user_parse_arguments()')
+	assert ltrace(TRACE_ARGPARSER, '> add_user_parse_arguments()')
 
 	usage_text = _("""
 	{1}
@@ -860,13 +890,13 @@ def add_user_parse_arguments(app):
 
 	parser.add_option_group(addimport)
 
-	assert ltrace('argparser', '< add_user_parse_arguments()')
+	assert ltrace(TRACE_ARGPARSER, '< add_user_parse_arguments()')
 
 	return check_opts_and_args(parser.parse_args())
 def add_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « add group »."""
 
-	assert ltrace('argparser', '> add_group_parse_arguments()')
+	assert ltrace(TRACE_ARGPARSER, '> add_group_parse_arguments()')
 
 	usage_text = "\n\t%s group --name=<nom_groupe> [--permissive] [--gid=<gid>]\n" % stylize(ST_APPNAME, "%prog") \
 		+ "\t\t[--skel=<nom_squelette>] [--description=<description>]\n" \
@@ -933,7 +963,7 @@ def add_group_parse_arguments(app):
 
 	parser.add_option_group(group)
 
-	assert ltrace('argparser', '< add_group_parse_arguments()')
+	assert ltrace(TRACE_ARGPARSER, '< add_group_parse_arguments()')
 
 	return check_opts_and_args(parser.parse_args())
 def add_profile_parse_arguments(app):

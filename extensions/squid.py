@@ -16,6 +16,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.constants import services, svccmds
 
 from licorn.core                  import LMC
@@ -51,7 +52,7 @@ class SquidExtension(Singleton, ServiceExtension):
 			service_name='squid',
 			service_type=services.UPSTART
 		)
-		assert ltrace(self.name, '| __init__()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __init__()')
 		self.server_only=False
 
 		# no particular controller for this extension, it is a
@@ -186,7 +187,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		return conf_dict
 	def initialize(self):
 		""" TODO """
-		assert ltrace(self.name, '> initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
 		if LMC.configuration.licornd.role == roles.SERVER:
 
@@ -215,7 +216,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		else:
 			# squid extension is always available on clients.
 			self.available = True
-		assert ltrace(self.name, '< initialize()')
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize()')
 		return self.available
 	def is_enabled(self):
 		""" Squid extension is enabled when squid's pid file exists and the
@@ -251,7 +252,7 @@ class SquidExtension(Singleton, ServiceExtension):
 				- deal with gconf to set proxy for gnome apps.
 				- params in apt configuration
 		"""
-		assert ltrace(self.name, '> update_client(batch=%s, auto_answer=%s)' %
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> update_client(batch=%s, auto_answer=%s)' %
 			(batch, auto_answer))
 
 		env_file = ConfigFile(self.defaults_conf.client_file,
@@ -345,7 +346,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		else:
 			self.remove_configuration()
 
-		assert ltrace(self.name, '< update_client()' )
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< update_client()' )
 	def check(self, batch=False, auto_answer=None):
 		""" check if *stricly needed* values are in the configuration file.
 		if they are not, the extension will not be enabled
@@ -364,7 +365,7 @@ class SquidExtension(Singleton, ServiceExtension):
 						server.
 					- http_access deny all : disable access to others.
 		"""
-		assert ltrace(self.name, '> check(batch=%s, auto_answer=%s)' %
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check(batch=%s, auto_answer=%s)' %
 			(batch, auto_answer))
 		if LMC.configuration.licornd.role == roles.SERVER:
 
@@ -397,7 +398,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		# finally, update system to deal or not with the extension.
 		self.update_client(batch=batch, auto_answer=auto_answer)
 
-		assert ltrace(self.name, '< check()' )
+		assert ltrace(globals()['TRACE_' + self.name.upper()], '< check()' )
 		return True
 	def remove_configuration(self, batch=False, auto_answer=None):
 		""" TODO """

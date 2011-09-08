@@ -19,6 +19,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, hlstr, network, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import host_status, host_types, filters
 from licorn.core                  import LMC
@@ -115,7 +116,7 @@ class Machine(CoreStoredObject):
 
 		CoreStoredObject.__init__(self, LMC.machines, backend)
 
-		assert ltrace('objects', '| Machine.__init__(%s, %s)' % (mid, hostname))
+		assert ltrace(TRACE_OBJECTS, '| Machine.__init__(%s, %s)' % (mid, hostname))
 
 		# mid == IP address (unique on a given network)
 		self.__mid = mid
@@ -236,12 +237,12 @@ class Machine(CoreStoredObject):
 							caller, self.mid, key, value))
 					continue
 		else:
-			assert ltrace('machines', '| %s: guess_os(%s) → nmap '
+			assert ltrace(TRACE_MACHINES, '| %s: guess_os(%s) → nmap '
 				'not installed, can\'t guess OS.' % (caller, self.mid))
 	def ping(self, and_more=False):
 		""" PING. """
 		caller = current_thread().name
-		#assert ltrace('machines', '> %s: ping(%s)' % (caller, self.mid))
+		#assert ltrace(TRACE_MACHINES, '> %s: ping(%s)' % (caller, self.mid))
 
 		with self.lock:
 
@@ -251,7 +252,7 @@ class Machine(CoreStoredObject):
 					L_network_enqueue(priorities.NORMAL, self.pyroize)
 					L_network_enqueue(priorities.LOW, self.arping)
 					L_network_enqueue(priorities.LOW, self.resolve)
-				assert ltrace('machines', '| %s: ping(%s) → %s' % (
+				assert ltrace(TRACE_MACHINES, '| %s: ping(%s) → %s' % (
 									caller, self.mid, host_status[self.status]))
 				return
 
@@ -265,7 +266,7 @@ class Machine(CoreStoredObject):
 				self.status = host_status.OFFLINE
 
 			except Exception, e:
-				assert ltrace('machines', '  %s: cannot ping %s (was: %s).' % (
+				assert ltrace(TRACE_MACHINES, '  %s: cannot ping %s (was: %s).' % (
 					caller, self.mid, e))
 				pass
 
@@ -282,20 +283,20 @@ class Machine(CoreStoredObject):
 			pinger.reset(self)
 			del pinger
 
-		assert ltrace('machines', '| %s: ping(%s) → %s' % (
+		assert ltrace(TRACE_MACHINES, '| %s: ping(%s) → %s' % (
 								caller, self.mid, host_status[self.status]))
 	def resolve(self):
 		""" Resolve IP to hostname, if possible. """
 		caller = current_thread().name
 
-		#assert ltrace('machines', '> %s: resolve(%s)' % (caller, self.mid))
+		#assert ltrace(TRACE_MACHINES, '> %s: resolve(%s)' % (caller, self.mid))
 
 		with self.lock:
 			old_hostname = self.hostname
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
 			except Exception, e:
-				assert ltrace('machines', '  %s: cannot resolve %s (was: %s).'
+				assert ltrace(TRACE_MACHINES, '  %s: cannot resolve %s (was: %s).'
 					% (caller, self.mid, e))
 				pass
 			else:
@@ -307,13 +308,13 @@ class Machine(CoreStoredObject):
 				#del LMC.machines.by_hostname[old_hostname]
 				#LMC.machines.by_hostname[self.hostname] = self
 
-		assert ltrace('machines', '| %s: resolve(%s) → %s' % (
+		assert ltrace(TRACE_MACHINES, '| %s: resolve(%s) → %s' % (
 											caller, self.mid, self.hostname))
 	def pyroize(self):
 		""" find if the machine is Pyro enabled or not. """
 		caller = current_thread().name
 
-		#assert ltrace('machines', '> %s: pyroize(%s)' % (caller, self.mid))
+		#assert ltrace(TRACE_MACHINES, '> %s: pyroize(%s)' % (caller, self.mid))
 
 		with self.lock:
 
@@ -340,21 +341,21 @@ class Machine(CoreStoredObject):
 
 			except Pyro.errors.ProtocolError, e:
 				L_network_enqueue(priorities.LOW, self.guess_os)
-				assert ltrace('machines', '  %s: cannot pyroize %s '
+				assert ltrace(TRACE_MACHINES, '  %s: cannot pyroize %s '
 								'(was: %s)' % (caller, self.mid, e))
 
 			except Pyro.errors.PyroError, e:
 				remotesys.release()
 				del remotesys
 				L_network_enqueue(priorities.LOW, self.guess_os)
-				assert ltrace('machines', '%s: pyro error %s on %s.' % (
+				assert ltrace(TRACE_MACHINES, '%s: pyro error %s on %s.' % (
 						caller, e, self.mid))
 
 			else:
 				self.system = remotesys
 				self.pyro_deduplicate()
 				self.update_informations()
-		assert ltrace('machines', '| %s: pyroize(%s) → %s'
+		assert ltrace(TRACE_MACHINES, '| %s: pyroize(%s) → %s'
 											% (caller, self.mid, self.system))
 	def pyro_deduplicate(self):
 		""" try to find if the remote system has multiple interfaces and
@@ -397,7 +398,7 @@ class Machine(CoreStoredObject):
 		caller = current_thread().name
 
 		if self.master_machine:
-			assert ltrace('machines', '%s: not doing pyro_shutdown on self '
+			assert ltrace(TRACE_MACHINES, '%s: not doing pyro_shutdown on self '
 				'(%s), we are slave of %s.' (caller, self.ip,
 					self.master_machine.ip))
 			return
@@ -436,7 +437,7 @@ class Machine(CoreStoredObject):
 
 		caller = current_thread().name
 
-		#assert ltrace('machines', '> %s: arping(%s)' % (caller, self.mid))
+		#assert ltrace(TRACE_MACHINES, '> %s: arping(%s)' % (caller, self.mid))
 
 		with self.lock:
 			try:
@@ -444,9 +445,9 @@ class Machine(CoreStoredObject):
 				self.ether = str(Machine.arp_table.get(dumbnet.addr(self.mid)))
 
 			except Exception, e:
-				assert ltrace('machines', '  %s: cannot arping %s (was: %s).'
+				assert ltrace(TRACE_MACHINES, '  %s: cannot arping %s (was: %s).'
 													% (caller, self.mid, e))
-		assert ltrace('machines', '| %s: arping(%s) → %s'
+		assert ltrace(TRACE_MACHINES, '| %s: arping(%s) → %s'
 											% (caller, self.mid, self.ether))
 	def update_informations(self, system=None, merge=True):
 		""" get detailled information about a remote host, via Pyro.
@@ -614,7 +615,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		if MachinesController.init_ok:
 			return
 
-		assert ltrace('machines', 'MachinesController.__init__()')
+		assert ltrace(TRACE_MACHINES, 'MachinesController.__init__()')
 
 		CoreController.__init__(self, 'machines')
 
@@ -628,7 +629,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		"""
 		caller = current_thread().name
 
-		assert ltrace('machines', '| %s: add_machine(%s, %s, %s, %s, %s, %s, '
+		assert ltrace(TRACE_MACHINES, '| %s: add_machine(%s, %s, %s, %s, %s, %s, '
 			'%s, %s)' % (caller, mid, hostname, ether, backend,
 				system_type, system, status, myself))
 
@@ -660,7 +661,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		if MachinesController.load_ok:
 			return
 
-		assert ltrace('machines', '| load()')
+		assert ltrace(TRACE_MACHINES, '| load()')
 		self.reload()
 
 
@@ -671,7 +672,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 	def reload(self):
 		""" Load (or reload) the data structures from the system files. """
 
-		assert ltrace('machines', '> reload()')
+		assert ltrace(TRACE_MACHINES, '> reload()')
 
 		CoreController.reload(self)
 
@@ -679,7 +680,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			self.clear()
 
 			for backend in self.backends:
-				assert ltrace('machines', '  reload(%s)' % backend.name)
+				assert ltrace(TRACE_MACHINES, '  reload(%s)' % backend.name)
 				for machine in backend.load_Machines():
 					if machine.ip in self.keys():
 						raise backend.generate_exception(
@@ -687,13 +688,13 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 					self.__setitem__(machine.ip, machine)
 
-		assert ltrace('machines', '< reload()')
+		assert ltrace(TRACE_MACHINES, '< reload()')
 	def reload_backend(self, backend):
-		assert ltrace('users', '| reload_backend(%s)' % backend.name)
+		assert ltrace(TRACE_USERS, '| reload_backend(%s)' % backend.name)
 
 		loaded = []
 
-		assert ltrace('locks', '| machines.reload_backend enter %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '| machines.reload_backend enter %s' % self.lock)
 
 		with self.lock:
 			for mid, machine in backend.load_Machines():
@@ -714,7 +715,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			#
 			#			self.del_User(user, batch=True, force=True)
 
-		assert ltrace('locks', '| users.reload_backend exit %s' % self.lock)
+		assert ltrace(TRACE_LOCKS, '| users.reload_backend exit %s' % self.lock)
 	def build_myself(self):
 		""" create internal instance(s) for the current Licorn® daemon. """
 		with self.lock:
@@ -755,7 +756,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		"""
 		caller = current_thread().name
 
-		assert ltrace('machines', '> %s: initial_scan()' % caller)
+		assert ltrace(TRACE_MACHINES, '> %s: initial_scan()' % caller)
 
 		logging.info(_(u'{0}: {1} initial network discovery.').format(caller,
 									stylize(ST_RUNNING, _(u'started'))))
@@ -783,14 +784,14 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					'configuration rule {1}, not going further.').format(
 						caller, stylize(ST_ATTR, 'licornd.network.lan_scan')))
 
-		assert ltrace('machines', '< %s: initial_scan()' % caller)
+		assert ltrace(TRACE_MACHINES, '< %s: initial_scan()' % caller)
 	def scan_network(self, network_to_scan=None):
 		""" Scan a whole network and add all discovered machines to
 		the local configuration. If arg"""
 
 		caller = current_thread().name
 
-		assert ltrace('machines', '> %s: scan_network()' % caller)
+		assert ltrace(TRACE_MACHINES, '> %s: scan_network()' % caller)
 
 		known_ips   = self.keys()
 		ips_to_scan = []
@@ -824,7 +825,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 				else:
 					self.add_machine(mid=str(ipaddr))
 
-		assert ltrace('machines', '< %s: scan_network()' % caller)
+		assert ltrace(TRACE_MACHINES, '< %s: scan_network()' % caller)
 	def goodbye_from(self, remote_ips):
 		""" this method is called on the remote side, when the local side calls
 			:meth:`announce_shutdown`.
@@ -855,7 +856,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		for machine in self:
 			if machine.system and not (
 							machine.master_machine or machine.myself):
-				assert ltrace('machines',
+				assert ltrace(TRACE_MACHINES,
 									'| annouce_shutdown() to %s' % machine.ip)
 				try:
 					#print '>> announce shutdown to', machine.ip
@@ -873,7 +874,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 	def WriteConf(self, mid=None):
 		""" Write the machine data in appropriate system files."""
 
-		assert ltrace('machines', 'saving data structures to disk.')
+		assert ltrace(TRACE_MACHINES, 'saving data structures to disk.')
 
 		with self.lock:
 			if mid:
@@ -888,7 +889,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		filtered_machines = []
 
-		assert ltrace('machines', '> select(%s)' % filter_string)
+		assert ltrace(TRACE_MACHINES, '> select(%s)' % filter_string)
 
 		with self.lock:
 			if filter_type == host_status:
@@ -945,7 +946,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 					mid = int(mid.group('mid'))
 					filtered_machines.append(self[mid])
 
-			assert ltrace('machines', '< select(%s)' % filtered_machines)
+			assert ltrace(TRACE_MACHINES, '< select(%s)' % filtered_machines)
 			if return_ids:
 				return [ m.mid for m in filtered_machines ]
 			else:
@@ -959,7 +960,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			mids = selected
 		mids.sort()
 
-		assert ltrace('machines', '| ExportCLI(%s)' % mids)
+		assert ltrace(TRACE_MACHINES, '| ExportCLI(%s)' % mids)
 
 		justw=10
 
@@ -1009,7 +1010,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			mids = selected
 		mids.sort()
 
-		assert ltrace('machines', '| ExportXML(%s)' % mids)
+		assert ltrace(TRACE_MACHINES, '| ExportXML(%s)' % mids)
 
 		m = self
 
@@ -1052,7 +1053,7 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		except (AttributeError, KeyError):
 			is_ALT = False
 
-		assert ltrace('machines', '| is_alt(mid=%s) → %s' % (mid, is_ALT))
+		assert ltrace(TRACE_MACHINES, '| is_alt(mid=%s) → %s' % (mid, is_ALT))
 
 		return is_ALT
 	def confirm_mid(self, mid):

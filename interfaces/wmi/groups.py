@@ -128,7 +128,7 @@ def skel_message(uri, http_user, name, **kwargs):
 def massive_delete(uri, http_user, names, sure, no_archive=False,
 	**kwargs):
 	"""remove several users account."""
-	assert ltrace('wmi', '> groups.massive_delete(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> groups.massive_delete(uri=%s, http_user=%s, '
 		'names=%s, sure=%s, no_archive=%s)' % (uri, http_user,
 		names, sure, no_archive))
 
@@ -144,7 +144,7 @@ def massive_delete(uri, http_user, names, sure, no_archive=False,
 	return (w.HTTP_TYPE_JSON, groups_deleted)
 def massive_skel(uri, http_user, names, sure, apply_skel=None, **kwargs):
 	"""reapply a group's skel with confirmation."""
-	assert ltrace('wmi', '> groups.massive_skel(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> groups.massive_skel(uri=%s, http_user=%s, '
 		'names=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
 		names, sure, apply_skel))
 
@@ -169,7 +169,7 @@ def delete(uri, http_user, name, sure=False, no_archive=False,
 @check_groups('skel')
 def skel(uri, http_user, name, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
-	assert ltrace('wmi', '> groups.skel(uri=%s, http_user=%s, '
+	assert ltrace(TRACE_WMI, '> groups.skel(uri=%s, http_user=%s, '
 		'name=%s, sure=%s, apply_skel=%s)' % (uri, http_user, name,
 			sure, apply_skel))
 	#print "dealing with group : %s" % name

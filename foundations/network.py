@@ -8,16 +8,15 @@ Licensed under the terms of the GNU GPL version 2
 
 import os, fcntl, struct, socket, platform, re, netifaces
 import icmp, ip, time, select
-from ping import PingSocket
 
+from ping      import PingSocket
 from threading import current_thread, RLock
 
 # other foundations imports.
-import logging
-import process
-import exceptions
-from styles	import *
-from ltrace	import ltrace
+import logging, process, exceptions
+from styles    import *
+from ltrace	   import ltrace
+from ltraces   import *
 from constants import distros
 
 def netmask2prefix(netmask):
@@ -27,7 +26,7 @@ def interfaces(full=False):
 	""" Eventually filter the netifaces.interfaces() result, which contains
 		a bit too much results for our own use. """
 
-	assert ltrace('network', '| interfaces(%s)' % full)
+	assert ltrace(TRACE_NETWORK, '| interfaces(%s)' % full)
 
 	if full:
 		return netifaces.interfaces()
@@ -80,7 +79,7 @@ def find_first_local_ip_address_Linux():
 			interfaces.extend([ '%s%s' % (iface_name, x) for x in range(
 				range_min, range_max) ])
 
-	assert ltrace('network', '|  find_first_local_ip_address(%s)' % interfaces)
+	assert ltrace(TRACE_NETWORK, '|  find_first_local_ip_address(%s)' % interfaces)
 
 	for interface in interfaces:
 		try:
@@ -101,7 +100,7 @@ def local_ip_addresses():
 			ifaces.extend([ '%s%s' % (iface_name, x) for x in range(
 				range_min, range_max) ])
 
-	assert ltrace('network', '|  local_ip_addresses(%s)' % interfaces)
+	assert ltrace(TRACE_NETWORK, '|  local_ip_addresses(%s)' % interfaces)
 
 	addresses = []
 
@@ -123,7 +122,7 @@ def local_interfaces_Linux():
 			interfaces.extend([ '%s%s' % (iface_name, x) for x in range(
 				range_min, range_max) ])
 
-	assert ltrace('network', '|  find_local_ip_addresses(%s)' % interfaces)
+	assert ltrace(TRACE_NETWORK, '|  find_local_ip_addresses(%s)' % interfaces)
 
 	up_ifaces = []
 
@@ -153,7 +152,7 @@ def interface_address_Linux(iface_name, iface_address=None):
 	raise RuntimeError("please don't use this method aymore")
 
 
-	assert ltrace('network', '|  interface_address(%s)' % iface_name)
+	assert ltrace(TRACE_NETWORK, '|  interface_address(%s)' % iface_name)
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -182,7 +181,7 @@ def interface_infos_Linux(iface_name):
 
 	raise RuntimeError("please don't use this method aymore")
 
-	assert ltrace('network', '|  interface_infos_linux(%s)' % iface_name)
+	assert ltrace(TRACE_NETWORK, '|  interface_infos_linux(%s)' % iface_name)
 
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 

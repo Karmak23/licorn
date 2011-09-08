@@ -16,6 +16,7 @@ from traceback import print_exc
 from licorn.foundations           import logging, process, network
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, mytime
+from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import host_status, host_types
 
 from licorn.core                  import LMC
@@ -71,7 +72,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			details. """
 		client_addr, client_socket = connection.addr
 
-		assert ltrace('cmdlistener', 'connection from %s:%s' % (
+		assert ltrace(TRACE_CMDLISTENER, 'connection from %s:%s' % (
 			client_addr, client_socket))
 
 		if client_addr in LicornPyroValidator.local_interfaces:
@@ -158,7 +159,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			#client_login = pwd.getpwuid(client_uid).pw_name
 			client_login = LMC.users.uid_to_login(client_uid)
 
-			assert ltrace('cmdlistener', 'currently authorized users: %s.' %
+			assert ltrace(TRACE_CMDLISTENER, 'currently authorized users: %s.' %
 					', '.join(stylize(ST_LOGIN, u.login)
 						for u in LMC.groups.by_name(
 									LMC.configuration.defaults.admin_group
@@ -194,7 +195,7 @@ class CommandListener(LicornBasicThread):
 	""" A Thread which answer to Pyro remote commands. """
 
 	def __init__(self, licornd, pids_to_wake=[], daemon=False, **kwargs):
-		assert ltrace('cmdlistener', '| CommandListener.__init__()')
+		assert ltrace(TRACE_CMDLISTENER, '| CommandListener.__init__()')
 
 		LicornBasicThread.__init__(self, 'CommandListener', licornd)
 
@@ -237,7 +238,7 @@ class CommandListener(LicornBasicThread):
 		# remove last trailing '\n'
 		return data[:-1]
 	def run(self):
-		assert ltrace('thread', '%s running' % self.name)
+		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
 		Pyro.core.initServer()
 		Pyro.config.PYRO_PORT=LMC.configuration.licornd.pyro.port
@@ -315,7 +316,7 @@ class CommandListener(LicornBasicThread):
 		for pid in self.pids_to_wake:
 			th = Timer(0.25, wake_pid, (pid,))
 			self.wake_threads.append(th)
-			assert ltrace('thread', '%s starting wake up thread %s.' % (
+			assert ltrace(TRACE_THREAD, '%s starting wake up thread %s.' % (
 				self.name, th.name))
 			th.start()
 
@@ -324,7 +325,7 @@ class CommandListener(LicornBasicThread):
 		while not self._stop_event.isSet():
 			try:
 				self.pyro_daemon.handleRequests(0.1)
-				#assert ltrace('cmdlistener', "pyro daemon %d's loop: %s" % (
+				#assert ltrace(TRACE_CMDLISTENER, "pyro daemon %d's loop: %s" % (
 				#	self._pyro_loop, self.pyro_daemon.connections))
 			except Exception, e:
 				logging.warning(e)
@@ -342,7 +343,7 @@ class CommandListener(LicornBasicThread):
 						del th
 
 					if len(self.wake_threads) == 0:
-						assert ltrace('thread',
+						assert ltrace(TRACE_THREAD,
 							'%s: all wakers terminated at loop#%d.' % (
 								self.name, self._pyro_loop))
 						check_wakers = False
@@ -360,9 +361,9 @@ class CommandListener(LicornBasicThread):
 		# finish. Happens if Control-C at the beginning of the daemon. Unlikely
 		# to occur, but who knows.
 		for th in self.wake_threads:
-			assert ltrace('thread', '%s  stopping wake up thread %s.' % (
+			assert ltrace(TRACE_THREAD, '%s  stopping wake up thread %s.' % (
 				self.name, th.name))
 			th.cancel()
 			th.join()
 
-		assert ltrace('thread', '%s ended' % self.name)
+		assert ltrace(TRACE_THREAD, '%s ended' % self.name)

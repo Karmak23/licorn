@@ -4,6 +4,7 @@ from threading import current_thread
 
 from licorn.foundations        import options, logging
 from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltraces import *
 from licorn.foundations.styles import *
 from licorn.foundations.base   import NamedObject
 
@@ -55,7 +56,7 @@ class WMIObject(object):
 
 			.. versionadded:: 1.2.4
 		"""
-		assert ltrace('wmi', '| WMIObject.create_wmi_object(%s, %s)' % (self._wmi_name, uri))
+		assert ltrace(TRACE_WMI, '| WMIObject.create_wmi_object(%s, %s)' % (self._wmi_name, uri))
 		self.wmi              = NamedObject(name=uri)
 		self.wmi.uri          = uri[1:] if uri[0] == '/' else uri
 		self.wmi.name         = self._wmi_name
@@ -78,7 +79,7 @@ class WMIObject(object):
 			standardized names.
 		"""
 
-		assert ltrace('wmi', '| %s.setup_methods()' % self.name)
+		assert ltrace(TRACE_WMI, '| %s.setup_methods()' % self.name)
 
 		for key in dir(self):
 			if key.startswith('_wmi_') and key not in ('_wmi_name', '_wmi_alt_string', '_wmi_context_menu'):
@@ -296,7 +297,7 @@ def init():
 	""" Initialize the WMI module by importing all WMI objects and making them
 		available to the outside world (they must not be used directly). """
 
-	assert ltrace('wmi', '> init()')
+	assert ltrace(TRACE_WMI, '> init()')
 
 	# import pre v1.2.4 WMI objects
 	import users, groups, base, utils, server
@@ -308,7 +309,7 @@ def init():
 
 	for controller in LMC:
 		if isinstance(controller, WMIObject):
-			assert ltrace('wmi', '  collecting WMIObject %s' %
+			assert ltrace(TRACE_WMI, '  collecting WMIObject %s' %
 											stylize(ST_NAME, controller.name))
 			try:
 				my_globals[controller.wmi.uri] = controller.wmi
@@ -321,13 +322,13 @@ def init():
 
 	for ext in LMC.extensions:
 		if isinstance(ext, WMIObject) and ext.enabled:
-			assert ltrace('wmi', '  collecting WMIObject %s' %
+			assert ltrace(TRACE_WMI, '  collecting WMIObject %s' %
 													stylize(ST_NAME, ext.name))
 			my_globals[ext.wmi.uri] = ext.wmi
 
-	assert ltrace('wmi', '< init()')
+	assert ltrace(TRACE_WMI, '< init()')
 
-	#assert ltrace('wmi', '< init(%s)'
+	#assert ltrace(TRACE_WMI, '< init(%s)'
 	#							% ', '.join(globals()))
 
 def wmi_register(wmiobj):
@@ -344,7 +345,7 @@ def wmi_register(wmiobj):
 
 	my_globals[wmiobj.wmi.uri] = wmiobj.wmi
 
-	assert ltrace('wmi', '  %s: successfully registered object %s.' % (
+	assert ltrace(TRACE_WMI, '  %s: successfully registered object %s.' % (
 		current_thread().name, wmiobj.name))
 
 def wmi_unregister(wmiobj):
@@ -357,7 +358,7 @@ def wmi_unregister(wmiobj):
 	if wmiobj.wmi.uri in my_globals.keys():
 		del my_globals[wmiobj.wmi.uri]
 
-		assert ltrace('wmi', '  %s: successfully unregistered object %s.' % (
+		assert ltrace(TRACE_WMI, '  %s: successfully unregistered object %s.' % (
 			current_thread().name, wmiobj.name))
 
 	else:
