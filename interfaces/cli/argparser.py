@@ -346,9 +346,10 @@ def check_opts_and_args(opts_and_args):
 		opts.in_backend = None
 		opts.move_to_backend = None
 
-	if opts.force and opts.batch:
+	if hasattr(opts, 'force') and opts.force \
+				and hasattr(opts, 'batch') and opts.batch:
 		raise exceptions.BadArgumentError(_(u'options --force and '
-		'--batch are mutually exclusive'))
+		u'--batch are mutually exclusive!'))
 
 	if hasattr(opts, 'filename') :
 		if opts.filename is not None and (
