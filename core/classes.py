@@ -1862,7 +1862,9 @@ class CoreFSUnitObject:
 		mask = event.mask
 
 		if mask & pyinotify.IN_IGNORED:
-			logging.monitor(TRACE_INOTIFIER, '{0}: ignored {1}', self.name, event)
+			# don't display this one, it floods the output too much and breaks
+			# the network connection.
+			#logging.monitor(TRACE_INOTIFIER, '{0}: ignored {1}', self.name, event)
 			return
 
 		# treat deletes and outboud moves first.

@@ -1490,7 +1490,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		# cache this here for faster access in check methods
 		self.acls.gid = groups.by_name(self.acls.group).gidNumber
-		#print '>> ACL GID', LMC.configuration.acls.gid
 
 	def CheckHostname(self, batch = False, auto_answer = None):
 		""" Check hostname consistency (by DNS/reverse resolution),
@@ -1505,7 +1504,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			#
 			raise exceptions.BadConfigurationError(
 				'''/etc/hosts must have at least o+r permissions.''')
-
 
 		line = open("/etc/hostname").readline()
 		if line[:-1] != self.mCurrentHostname:

@@ -9,11 +9,19 @@ Licensed under the terms of the GNU GPL version 2
 """
 
 import re, math
-
+from traceback import print_exc
 # WARNING: don't import anything from the core here.
 
-from licorn.foundations import exceptions, logging, styles
+from licorn.foundations import options
+import exceptions, logging
+from styles    import *
+from ltrace    import ltrace
+from ltraces   import *
+from constants import verbose
 
+def print_exception_if_verbose():
+	if options.verbose >= verbose.INFO:
+		print_exc()
 def next_free(used_list, start, end):
 	""" Find a new ID (which is not used).
 		Return the smallest unused identifier in [start_id,end_id] of used_id_list.

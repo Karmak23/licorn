@@ -438,10 +438,12 @@ class LicornDaemon(Singleton):
 			)
 
 		if len(master_locked) > 0:
-			data += _(u'Mlocks:  %s\n') % u' '.join(master_locked)
+			data += _(u'Mlocks:  %s\n') % u', '.join(stylize(ST_IMPORTANT, x)
+													for x in master_locked)
 
 		if len(sub_locked) > 0:
-			data += _(u'Slocks:  %s\n') % u' '.join(sub_locked)
+			data += _(u'Ulocks:  %s\n') % u', '.join(stylize(ST_IMPORTANT, x)
+													for x in sub_locked)
 
 		data += _(u'Threads: %s\n') % u''.join([ (u'%s/%s %s' %
 					(tcur, tmax, ttype)).center(20)
@@ -449,17 +451,17 @@ class LicornDaemon(Singleton):
 							(
 								ServiceWorkerThread.instances,
 								ServiceWorkerThread.peers_max,
-								u'servicers'
+								_(u'servicers')
 							),
 							(
 								ACLCkeckerThread.instances,
 								ACLCkeckerThread.peers_max,
-								u'aclcheckers'
+								_(u'aclcheckers')
 							),
 							(
 								NetworkWorkerThread.instances,
 								NetworkWorkerThread.peers_max,
-								u'networkers'
+								_(u'networkers')
 							)
 						)
 					])
@@ -475,30 +477,31 @@ class LicornDaemon(Singleton):
 
 		# don't use itervalues(), threads are moving target now.
 		if self.configuration.inotifier.enabled:
-			tdata = [ ((self.__threads._inotifier.name, u'thread %s\n' %
+			tdata = [ ((self.__threads._inotifier.name, _(u'thread %s\n') %
 				self.__threads._inotifier.dump_status(long_output, precision))) ]
 		else:
 			tdata = []
 
-		tdata.append((self.__threads._eventmanager.name, u'thread %s\n' %
+		tdata.append((self.__threads._eventmanager.name, _(u'thread %s\n') %
 				self.__threads._eventmanager.dump_status(long_output, precision)))
 
 		for tname, thread in self.__threads.items():
 			if thread.is_alive():
 				if hasattr(thread, 'dump_status'):
-					tdata.append((tname, u'thread %s\n' %
+					tdata.append((tname, _(u'thread %s\n') %
 									thread.dump_status(long_output, precision)))
 				else:
-					tdata.append((tname, u'thread %s%s(%s) does not implement '
-						u'dump_status().\n' % (
+					tdata.append((tname, _(u'thread {0}{1}({2}) does not '
+						u'implement dump_status().\n').format(
 							stylize(ST_NAME, thread.name),
 							stylize(ST_OK, u'&') if thread.daemon else '',
 							thread.ident)))
 			else:
-				tdata.append((tname, u'thread %s%s(%d) has terminated.\n' % (
-					stylize(ST_NAME, thread.name),
-					stylize(ST_OK, u'&') if thread.daemon else '',
-					0 if thread.ident is None else thread.ident)))
+				tdata.append((tname, _(u'thread {0}{1}({2}) '
+					u'has terminated.\n').format(
+						stylize(ST_NAME, thread.name),
+						stylize(ST_OK, u'&') if thread.daemon else '',
+						0 if thread.ident is None else thread.ident)))
 
 		data += u''.join([ value for key, value in sorted(tdata)])
 		return data
@@ -540,8 +543,6 @@ class LicornDaemon(Singleton):
 					command_line = open('/proc/%s/cmdline' % entry).read()
 
 					if my_process_name in command_line:
-						#print '>> cmd', command_line.replace('\0', ' ')
-
 						os.kill(int(entry), signal.SIGKILL)
 
 						time.sleep(0.2)
