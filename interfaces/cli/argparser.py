@@ -370,6 +370,9 @@ def check_opts_and_args(opts_and_args):
 			# it doesn't have the same CWD as the calling user.
 			opts.filename = os.path.abspath(opts.filename)
 
+	# note the current user for diverses mod_user operations
+	opts.current_user = getpass.getuser()
+
 	return (opts, args)
 def general_parse_arguments(app, modes):
 	"""Common options and arguments to all Licorn System Tools,
