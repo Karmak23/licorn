@@ -123,7 +123,6 @@ def common_filter_group(app, parser, tool, mode):
 				help=_(u'Do not clear the screen between each monitor output. '
 					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
-
 	if tool is 'chk':
 		if mode in ( 'users', 'groups', 'configuration', 'profiles'):
 			filtergroup.add_option('-a', '--all',
@@ -183,6 +182,17 @@ def common_filter_group(app, parser, tool, mode):
 			help=_(u'Specify account(s) excluded from current operation by '
 				'their UID (separated by commas without spaces).'))
 
+	if tool in ('get', 'mod', 'del', 'chk'):
+		if mode in ('users', 'groups', 'profiles', 'machines'):
+			# TODO: "if has_attr(controller, 'word_match'):
+			filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
+				action="store", dest="word_match", default='',
+				help=_(u'grep / fuzzy word match on the login/name/hostname.'))
+			filtergroup.add_option('-G', '--exclude-grep', '--exclude-fuzzy',
+				'--exclude-word-match',
+				action="store", dest="exclude_word_match", default='',
+				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+
 	if mode is 'groups':
 		filtergroup.add_option('--name', '--names', '--group', '--groups',
 			'--group-name', '--group-names',
@@ -195,61 +205,50 @@ def common_filter_group(app, parser, tool, mode):
 			help=_(u'Specify group(s) by their GID (separated by commas '
 				'without spaces).'))
 
-		if tool in ('get', 'mod', 'del', 'chk'):
-			if mode in ('users', 'groups', 'profiles', 'machines'):
-				# TODO: "if has_attr(controller, 'word_match'):
-				filtergroup.add_option('-g', '--grep', '--fuzzy', '--word-match',
-					action="store", dest="word_match", default='',
-					help=_(u'grep / fuzzy word match on the login/name/hostname.'))
-				filtergroup.add_option('-G', '--exclude-grep', '--exclude-fuzzy',
-					'--exclude-word-match',
-					action="store", dest="exclude_word_match", default='',
-					help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+		filtergroup.add_option('--system', '--system-groups', '--sys',
+			action="store_true", dest="system", default=False,
+			help=_(u"Only select system groups."))
 
-			filtergroup.add_option('--system', '--system-groups', '--sys',
-				action="store_true", dest="system", default=False,
-				help=_(u"Only select system groups."))
+		filtergroup.add_option('--no-sys', '--not-sys', '--no-system',
+			'--not-system', '--exclude-sys','--exclude-system',
+			action="store_true", dest="not_system", default=False,
+			help=_(u"Only select non-system groups."))
 
-			filtergroup.add_option('--no-sys', '--not-sys', '--no-system',
-				'--not-system', '--exclude-sys','--exclude-system',
-				action="store_true", dest="not_system", default=False,
-				help=_(u"Only select non-system groups."))
+		filtergroup.add_option('--privileged', '--priv', '--privs', '--pri',
+			'--privileged-groups',
+			action="store_true", dest="privileged", default=False,
+			help=_(u"Only select privileged groups."))
 
-			filtergroup.add_option('--privileged', '--priv', '--privs', '--pri',
-				'--privileged-groups',
-				action="store_true", dest="privileged", default=False,
-				help=_(u"Only select privileged groups."))
+		filtergroup.add_option('--no-priv', '--not-priv', '--no-privs',
+			'--not-privs', '--no-privilege', '--not-privilege',
+			'--no-privileges', '--not-privileges ', '--exclude-priv',
+			'--exclude-privs','--exclude-privilege','--exclude-privileges',
+			action="store_true", dest="not_privileged", default=False,
+			help=_(u"Only select non-privileged groups."))
 
-			filtergroup.add_option('--no-priv', '--not-priv', '--no-privs',
-				'--not-privs', '--no-privilege', '--not-privilege',
-				'--no-privileges', '--not-privileges ', '--exclude-priv',
-				'--exclude-privs','--exclude-privilege','--exclude-privileges',
-				action="store_true", dest="not_privileged", default=False,
-				help=_(u"Only select non-privileged groups."))
+		filtergroup.add_option('--responsibles', '--rsp',
+			'--responsible-groups',
+			action="store_true", dest="responsibles", default=False,
+			help=_(u"Only select responsibles groups."))
 
-			filtergroup.add_option('--responsibles', '--rsp',
-				'--responsible-groups',
-				action="store_true", dest="responsibles", default=False,
-				help=_(u"Only select responsibles groups."))
+		filtergroup.add_option('--no-rsp', '--not-rsp', '--no-resp',
+			'--not-resp', '--not-responsible', '--no-responsible',
+			'--exclude-responsible', '--exclude-resp', '--exclude-rsp',
+			action="store_true", dest="not_responsibles", default=False,
+			help=_(u"Only select non-responsible groups."))
 
-			filtergroup.add_option('--no-rsp', '--not-rsp', '--no-resp',
-				'--not-resp', '--not-responsible', '--no-responsible',
-				'--exclude-responsible', '--exclude-resp', '--exclude-rsp',
-				action="store_true", dest="not_responsibles", default=False,
-				help=_(u"Only select non-responsible groups."))
+		filtergroup.add_option('--guests', '--gst', '--guest-groups',
+			action="store_true", dest="guests", default=False,
+			help=_(u"Only select guests groups."))
 
-			filtergroup.add_option('--guests', '--gst', '--guest-groups',
-				action="store_true", dest="guests", default=False,
-				help=_(u"Only select guests groups."))
+		filtergroup.add_option('--no-gst', '--not-gst', '--no-guest',
+			'--not-guest', '--exclude-gst','--exclude-guest',
+			action="store_true", dest="not_guests", default=False,
+			help=_(u"Only select non-guest groups."))
 
-			filtergroup.add_option('--no-gst', '--not-gst', '--no-guest',
-				'--not-guest', '--exclude-gst','--exclude-guest',
-				action="store_true", dest="not_guests", default=False,
-				help=_(u"Only select non-guest groups."))
-
-			filtergroup.add_option('--empty', '--empty-groups',
-				action="store_true", dest="empty", default=False,
-				help=_(u"Only select empty groups."))
+		filtergroup.add_option('--empty', '--empty-groups',
+			action="store_true", dest="empty", default=False,
+			help=_(u"Only select empty groups."))
 
 	if mode is 'groups' or (tool is 'mod' and mode is 'profiles'):
 		filtergroup.add_option('--not-group',
