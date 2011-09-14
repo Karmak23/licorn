@@ -6,10 +6,10 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, Pyro.core, time, gc, __builtin__
+import os, uuid, Pyro.core, time, gc, __builtin__
 
 from operator  import attrgetter
-from threading import current_thread
+from threading import current_thread, RLock
 
 from licorn.foundations           import options, exceptions, logging
 from licorn.foundations           import fsapi, hlstr
@@ -469,35 +469,50 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			# we don't clear the screen for only one output.
 			self.output(self.licornd.dump_status(opts.long, opts.precision))
-	def register_monitor(self, muuid, facilities):
+	def register_monitor(self, facilities):
 		t = current_thread()
 		t.monitor_facilities = ltrace_str_to_int(facilities)
 
-		logging.notice(_(u'New trace session started for UUID {0}, '
-			u'facilities {1}({2}).').format(stylize(ST_UGID, muuid),
-				stylize(ST_COMMENT, facilities),
-			ltrace_str_to_int(facilities)))
+		t.monitor_uuid = uuid.uuid4()
 
-		t.monitor_uuid = muuid
+		logging.notice(_(u'New trace session started with UUID {0}, '
+			u'facilities {1}.').format(stylize(ST_UGID, t.monitor_uuid),
+				stylize(ST_COMMENT, facilities)))
+
+		# The monitor_lock avoids collisions on listener.verbose 
+		# modifications while a flood of messages are beiing sent
+		# on the wire. Having a per-thread lock avoids locking
+		# the master `options.monitor_lock` from the client side
+		# when only one monitor changes its verbose level. This
+		# is more fine grained.
+		t.monitor_lock = RLock()
 
 		with options.monitor_lock:
 			options.monitor_listeners.append(t)
+		
+		# return the UUID of the thread, so that the remote side 
+		# can detach easily when it terminates. 
+		return t.monitor_uuid
 	def unregister_monitor(self, muuid):
 
-		found = False
+		found = None
 
 		with options.monitor_lock:
 			for t in options.monitor_listeners[:]:
 				if t.monitor_uuid == muuid:
-					found = True
+					found = t
 					options.monitor_listeners.remove(t)
-					del t.monitor_facilities
 					break
 
-		if not found:
+		if found:
+			del t.monitor_facilities
+			del t.monitor_uuid
+			del t.monitor_lock
+			
+		else:
 			logging.warning(_(u'Monitor listener with UUID %s not found!') % muuid)
 
-		logging.notice(_(u'Trace session ended for UUID {0}').format(
+		logging.notice(_(u'Trace session UUID {0} ended.').format(
 													stylize(ST_UGID, muuid)))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.

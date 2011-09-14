@@ -11,7 +11,6 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-import uuid, signal
 from traceback import print_exc
 from licorn.interfaces.cli import cli_main
 
@@ -20,15 +19,15 @@ def get_events(RWI, opts, args):
 		separate thread on the remote side. We have to unregister the original,
 		which did the first `register` call. """
 
-	my_uuid = uuid.uuid4()
-
-	RWI.register_monitor(my_uuid, opts.facilities)
+	monitor_id = RWI.register_monitor(opts.facilities)
 
 	try:
-		signal.pause()
-
+		from licorn.foundations import options
+		from licorn.daemon      import LicornDaemonInteractor
+		LicornDaemonInteractor(cli_things=(options._listener, 
+											options._rwi)).run()
 	finally:
-		RWI.unregister_monitor(my_uuid)
+		RWI.unregister_monitor(monitor_id)
 
 def get_main():
 

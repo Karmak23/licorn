@@ -113,12 +113,19 @@ TRACE_HIGH          = TRACE_HIGHLEVEL
 TRACE_STANDARD      = TRACE_HIGHLEVEL
 TRACE_STD           = TRACE_HIGHLEVEL
 
-# NOTE: keep calling it traces with a 's', because we loop 'trace_'* variables
+# Don't add any '_' after 'TRACE'. See NOTE below.
+TRACELEVEL_1       = 1
+TRACELEVEL_2       = 2
+TRACELEVEL_3       = 3
+TRACELEVEL_4       = 4
+
+# NOTE: keep calling it traces with a final 'S', 
+# because we later loop 'TRACE_*' variables
 # names to find the max width.
 TRACES_MAXWIDTH = 0
 
 for key, value in locals().items():
-	if key.startswith('trace_'):
+	if key.startswith('TRACE_'):
 		if len(value.name) > TRACES_MAXWIDTH:
 			TRACES_MAXWIDTH = len(value.name)
 

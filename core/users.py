@@ -19,7 +19,7 @@ from licorn.foundations           import logging, exceptions, hlstr
 from licorn.foundations           import pyutils, fsapi, process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
 from licorn.foundations.constants import filters, backend_actions, distros
 

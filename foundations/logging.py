@@ -10,6 +10,8 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys
 from threading import current_thread, RLock
+from types import *
+from traceback import print_exc
 
 from licorn.foundations import options
 from styles    import *
@@ -104,7 +106,8 @@ def error(mesg, returncode=1, full=False, tb=None):
 
 		sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message)
+	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
+	
 	raise SystemExit(returncode)
 def warning(mesg, once=False, to_listener=True, to_local=True):
 	"""Display a stylized warning message on stderr."""
@@ -122,7 +125,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 	if to_local:
 		with __output_lock:
 			sys.stderr.write(text_message)
-	monitor(TRACE_LOGGING, '{0}', text_message)
+	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
 def warning2(mesg, once=False, to_listener=True, to_local=True):
 	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
@@ -140,7 +143,7 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		with __output_lock:
 			sys.stderr.write(text_message)
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_2, '{0}', text_message[1:3] + text_message[30:-1])
 def notice(mesg, to_listener=True, to_local=True):
 	""" Display a stylized NOTICE message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -154,7 +157,7 @@ def notice(mesg, to_listener=True, to_local=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
 def info(mesg, to_listener=True, to_local=True):
 	""" Display a stylized INFO message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -167,7 +170,7 @@ def info(mesg, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_2, '{0}', text_message[1:3] + text_message[30:-1])
 def progress(mesg, to_listener=True, to_local=True):
 	""" Display a stylized PROGRESS message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -181,32 +184,40 @@ def progress(mesg, to_listener=True, to_local=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[1:3] + text_message[30:-1])
 
 	# make logging.progress() be compatible with potential assert calls.
 	return True
-def monitor(facility, *args):
+def monitor(facility, level, *args):
 	""" Send a message to all (network-)attached monitoring sessions, if the
 		facility of the message is wanted by the remote monitor. """
 
 	with options.monitor_lock:
 		for listener_thread in options.monitor_listeners:
 
-			if listener_thread.monitor_facilities & facility:
-				try:
-					listener_thread.listener.process(
-							LicornMessage((u'%s[%s]: %s\n' % (
-									stylize(ST_COMMENT, 'MON'),
+			with listener_thread.monitor_lock:
+				if listener_thread.monitor_facilities & facility \
+							and listener_thread.listener.verbose >= level:
+					try:
+						listener_thread.listener.process(
+							LicornMessage(
+								u'%s %s %s %s\n' % (
+									stylize(ST_YELLOW, '⧎'),
 									stylize(ST_COMMENT,
-										facility.name.center(TRACES_MAXWIDTH)),
-									args[0])).format(*args[1:])),
-						options.msgproc.getProxy())
+										facility.name.ljust(TRACES_MAXWIDTH)),
+									mytime(),
+									args[0].format(*(stylize(*x) 
+										if type(x) == TupleType 
+										else x
+										for x in args[1:]))
+									)),
+							options.msgproc.getProxy())
 
-				except AttributeError, e:
-					logging.warning(_(u'Thread {0} has no listener '
-						'anymore, desengaging from monitors.').format(
-							listener_thread.name))
-					options.monitor_listeners.remove(listener)
+					except AttributeError, e:
+						logging.warning(_(u'Thread {0} has no listener '
+							'anymore, desengaging from monitors.').format(
+								listener_thread.name))
+						options.monitor_listeners.remove(listener)
 
 	# be compatible with assert calls, if some monitor() calls needs to be
 	# dinamically added/removed from the code.
@@ -224,7 +235,7 @@ def debug(mesg, to_listener=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[0:4] + text_message[30:-1])
 
 	# be compatible with assert calls
 	return True
@@ -241,7 +252,7 @@ def debug2(mesg, to_listener=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, '{0}', text_message[:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[0:4] + text_message[30:-1])
 
 	# be compatible with assert calls
 	return True

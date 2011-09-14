@@ -371,7 +371,7 @@ class LicornDaemon(Singleton):
 			# handled by the global start / stop mechanism, to be able to start
 			# it before every other thread, and stop it after all other have
 			# been stopped.
-			LicornDaemonInteractor(self).run()
+			LicornDaemonInteractor(daemon=self).run()
 
 		# if we get here (don't know how at all: we should only receive
 		# signals), stop cleanly (as if a signal was received).

@@ -58,6 +58,14 @@ class ListenerObject(object):
 		and not forward it everywhere in the code."""
 	def set_listener(self, listener):
 		current_thread().listener = listener
+	def set_listener_verbose(self, verbose_level):
+		# FIXME: we could be setting the verbose level of a wrong 
+		# thread: either we need to be given the client UUID as a
+		# parameter, or the UUID is totally superfluous in the
+		# (un-)register_monitor() sequence.
+		t = current_thread()
+		with t.monitor_lock:
+			t.listener.verbose = verbose_level
 class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 	""" MessageProcessor is not really a controller, thus it doesn't inherit
 		from CoreController. Used only for messaging between core objects,

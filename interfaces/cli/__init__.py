@@ -103,8 +103,11 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			except IndexError, e:
 				sys.argv.append("--help")
 				argparser.general_parse_arguments(app_data)
-
+			
 			options.SetFrom(opts)
+
+			# options._rwi is needed for the Interactor
+			options._rwi = RWI
 
 			assert ltrace(TRACE_CLI, '  cli_main: starting pyro!')
 			pyroStarted=True
@@ -120,13 +123,15 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			Pyro.core.initClient()
 
 			client_daemon = Pyro.core.Daemon()
-			listener      = MessageProcessor(verbose=opts.verbose)
-			client_daemon.connect(listener)
+			# opts._listener is needed for the Interactor
+			options._listener = MessageProcessor(verbose=opts.verbose)
+			
+			client_daemon.connect(options._listener)
 
 			# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
 			# daemon will check listener.verbose, which is not accessible
 			# through a simple Pyro Proxy.
-			RWI.set_listener(listener.getAttrProxy())
+			RWI.set_listener(options._listener.getAttrProxy())
 
 			msgth = Thread(target=PyroLoop, args=(client_daemon,))
 			msgth.start()

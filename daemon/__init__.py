@@ -88,12 +88,20 @@ class LicornDaemonInteractor(NamedObject):
 			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.save_history()')
 			readline.write_history_file(self.histfile)
 
-	def __init__(self, daemon):
+	def __init__(self, daemon=None, cli_things=None):
 		assert ltrace(TRACE_INTERACTOR, '| LicornDaemonInteractor.__init__()')
 		NamedObject.__init__(self, 'interactor')
 		self.long_output = False
 		self.daemon      = daemon
-		self.pname       = daemon.name
+		
+		
+		if daemon is None:
+			self.pname    = 'CLI'
+			self.listener = cli_things[0]
+			self.rwi      = cli_things[1]
+
+		else:
+			self.pname = daemon.name
 		# make it daemon so that it doesn't block the master when stopping.
 		#self.daemon = True
 	def prepare_terminal(self):
@@ -120,7 +128,9 @@ class LicornDaemonInteractor(NamedObject):
 
 			# lflags
 			self.new[3] = \
-				self.new[3] & ~(termios.ECHO|termios.ICANON|termios.IEXTEN)
+				self.new[3] & ~ ( termios.ECHO
+									| termios.ICANON
+									| termios.IEXTEN)
 			self.new[6][termios.VMIN] = 1
 			self.new[6][termios.VTIME] = 0
 
@@ -129,7 +139,8 @@ class LicornDaemonInteractor(NamedObject):
 
 				while True:
 					try:
-						readf, writef, errf = select.select([self.fd], [], [])
+						readf, writef, errf = select.select(
+													[self.fd], [], [])
 						if readf == []:
 							continue
 						else:
@@ -139,7 +150,9 @@ class LicornDaemonInteractor(NamedObject):
 						if e.args[0] == 4:
 							sys.stderr.write("^C\n")
 							self.restore_terminal()
-							self.daemon.terminate(2)
+							
+							if self.daemon is not None:
+								self.daemon.terminate(2)
 						else:
 							raise e
 
@@ -153,56 +166,86 @@ class LicornDaemonInteractor(NamedObject):
 
 							self.long_output = not self.long_output
 
-							logging.notice(_(u'{0}: switched long_output status '
-								'to {1}.').format(self.name, _(u'enabled')
-									if self.long_output else _(u'disabled')))
+							logging.notice(_(u'{0}: switched '
+								u'long_output status to {1}.').format(
+									self.name, _(u'enabled')
+										if self.long_output 
+										else _(u'disabled')))
 
-						elif char in ('c', 'C'):
-							sys.stderr.write(_('Console-initiated garbage '
-								'collection and dead thread cleaning.') + '\n')
+						elif char in ('c', 'C') and self.daemon is not None:
+							sys.stderr.write(_(u'Console-initiated '
+								u'garbage collection and dead thread '
+								u'cleaning.') + '\n')
 
 							self.daemon.clean_objects()
 
-						elif char in ('w', 'W'):
+						elif char in ('w', 'W') and self.daemon is not None:
 							w = self.daemon.threads.INotifier._wm.watches
 
 							sys.stderr.write('\n'.join(repr(watch)
 								for key, watch in w)
 								+ 'total: %d watches\n' % len(w))
 
-						elif char in ('t', 'T'):
-							sys.stderr.write(_(u'{0} active threads: {1}').format(
-								_thcount(), _threads()) + '\n')
+						elif char in ('t', 'T') and self.daemon is not None:
+							sys.stderr.write(_(u'{0} active threads: '
+								u'{1}').format(
+									_thcount(), _threads()) + '\n')
 
 						elif char in ('v', 'V'):
 							if options.verbose < verbose.DEBUG:
 								options.verbose += 1
-								self.daemon.options.verbose += 1
+								
+								if self.daemon is None:
+									# the local side (not really needed,
+									# but keeping it in sync doesn't
+									# hurt).
+									self.listener.verbose += 1
 
-								logging.notice(_(u'{0}: increased verbosity level '
-									'to {1}.').format(self.name,
+									# the daemon side (remote thread)
+									self.rwi.set_listener_verbose(
+												self.listener.verbose)
+								else:
+									self.daemon.options.verbose += 1
+
+								logging.notice(_(u'{0}: increased '
+									u'verbosity level to '
+									u'{1}.').format(self.name,
 										stylize(ST_COMMENT,
 											verbose[options.verbose])))
 
 							else:
-								logging.notice(_(u'{0}: verbosity level already '
-									'at the maximum value ({1}).').format(
+								logging.notice(_(u'{0}: verbosity '
+									u'level already at the maximum '
+									u'value ({1}).').format(
 										self.name, stylize(ST_COMMENT,
 											verbose[options.verbose])))
 
 						elif char in ('q', 'Q'):
 							if options.verbose > verbose.NOTICE:
 								options.verbose -= 1
-								self.daemon.options.verbose -= 1
+								
+								if self.daemon is None:
+									# the local side (not really needed,
+									# but keeping it in sync doesn't
+									# hurt).
+									self.listener.verbose -= 1
+									
+									# the daemon side (remote thread)
+									self.rwi.set_listener_verbose(
+												self.listener.verbose)
+								else:
+									self.daemon.options.verbose -= 1
 
-								logging.notice(_(u'{0}: decreased verbosity level '
-									'to {1}.').format(self.name,
+								logging.notice(_(u'{0}: decreased '
+									u'verbosity level to '
+									u'{1}.').format(self.name,
 										stylize(ST_COMMENT,
 											verbose[options.verbose])))
 
 							else:
-								logging.notice(_(u'{0}: verbosity level already '
-									'at the minimum value ({1}).').format(
+								logging.notice(_(u'{0}: verbosity '
+									u'level already at the minimum '
+									u'value ({1}).').format(
 										self.name, stylize(ST_COMMENT,
 											verbose[options.verbose])))
 
@@ -232,16 +275,17 @@ class LicornDaemonInteractor(NamedObject):
 							self.restore_terminal()
 							os.kill(os.getpid(), signal.SIGKILL)
 
-						elif char == '':
+						elif char == '' and self.daemon is not None:
 							sys.stderr.write(self.daemon.dump_status(
 								long_output=self.long_output))
 
-						elif char in (' ', ''): # ^Y
+						elif char in (' ', '') and self.daemon is not None: # ^Y
 							sys.stdout.write(clear)
 							sys.stdout.flush()
 							sys.stderr.write(self.daemon.dump_status(
 								long_output=self.long_output))
-						elif char in ('i', 'I'):
+								
+						elif char in ('i', 'I') and self.daemon is not None:
 							logging.notice(_('%s: Entering interactive mode. '
 								'Welcome into licornd\'s arcanes…') % self.name)
 
