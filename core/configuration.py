@@ -1336,33 +1336,58 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		acls_conf = self.acls
 
-		home_groups = FsapiObject(name='home_groups')
-		home_groups.path = self.groups.base_path
-		home_groups.group = acls_conf.gid
-		home_groups.user = 0
-		home_groups.root_dir_acl = True
-		home_groups.root_dir_perm = "%s,%s,g:www-data:--x,g:users:%s,%s" % (
-			acls_conf.acl_base, acls_conf.acl_admins_ro,
-			acls_conf.acl_users, acls_conf.acl_mask)
-
-		home_backups = FsapiObject(name='home_backups')
-		home_backups.path = self.home_backup_dir
-		home_backups.group = acls_conf.gid
-		home_backups.user = 0
-		home_backups.root_dir_acl = True
-		home_backups.root_dir_perm = "%s,%s,%s" % (acls_conf.acl_base,
-			acls_conf.acl_admins_ro, acls_conf.acl_mask)
-		home_backups.content_acl = True
-		home_backups.dirs_perm = "%s,%s,%s" % (acls_conf.acl_base,
-			acls_conf.acl_admins_ro, acls_conf.acl_mask)
-		if not minimal:
-			home_backups.files_perm = ("%s,%s,%s" % (
-				acls_conf.acl_base,acls_conf.acl_admins_ro, acls_conf.acl_mask)
-				).replace('r-x', 'r--').replace('rwx', 'rw-')
-
 		dirs_to_verify = []
-		dirs_to_verify.append(home_groups)
-		dirs_to_verify.append(home_backups)
+
+		dirs_to_verify.append(
+			FsapiObject(name='home',
+						path=self.defaults.home_base_path,
+						uid=0, gid=0,
+						root_dir_perm=00755))
+
+		dirs_to_verify.append(
+			FsapiObject(name='home_users',
+						path=self.users.base_path,
+						uid=0, gid=acls_conf.gid,
+						root_dir_acl=True,
+						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+							acls_conf.acl_base,
+							acls_conf.acl_admins_ro,
+							acls_conf.acl_users,
+							acls_conf.acl_mask)))
+
+		dirs_to_verify.append(
+			FsapiObject(name='home_groups',
+						path=self.groups.base_path,
+						uid=0, gid=acls_conf.gid,
+						root_dir_acl=True,
+						root_dir_perm = '%s,%s,g:www-data:--x,g:users:%s,%s' % (
+							acls_conf.acl_base,
+							acls_conf.acl_admins_ro,
+							acls_conf.acl_users,
+							acls_conf.acl_mask)))
+
+		dirs_to_verify.append(
+			FsapiObject(name='home_backups',
+						path=self.home_backup_dir,
+						uid=0, gid=acls_conf.gid,
+						root_dir_acl=True,
+						root_dir_perm='%s,%s,%s' % (
+							acls_conf.acl_base,
+							acls_conf.acl_admins_ro,
+							acls_conf.acl_mask),
+						content_acl=True,
+						dirs_perm='%s,%s,%s' % (
+							acls_conf.acl_base,
+							acls_conf.acl_admins_ro,
+							acls_conf.acl_mask),
+						files_perm=None
+							if minimal
+							else ('%s,%s,%s' % (
+									acls_conf.acl_base,
+									acls_conf.acl_admins_ro,
+									acls_conf.acl_mask)
+										).replace('r-x', 'r--'
+										).replace('rwx', 'rw-')))
 
 		try:
 			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new(

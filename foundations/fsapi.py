@@ -90,8 +90,10 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 					for x in os.listdir(entry):
 						if x not in exclude:
 							next_paths_to_walk.append("%s/%s" % (entry, x))
+
 						else:
 							assert ltrace(TRACE_FSAPI, '  minifind(excluded=%s)' % entry)
+
 				except (IOError, OSError), e:
 					if e.errno == 2:
 						# happens on recursive delete() applyed on minifind()
@@ -158,7 +160,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			if full_display:
 				logging.progress(_(u'Checking file %s…') % stylize(ST_PATH, path))
 
-			if dir_info.files_perm and dir_info.user and dir_info.group:
+			if dir_info.files_perm and dir_info.uid and dir_info.gid:
 				for event in check_perms(file_type=S_IFREG, dir_info=dir_info,
 							batch=batch, auto_answer=auto_answer,
 							full_display=full_display):
@@ -181,7 +183,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 										conf_acls.acl_base,
 										conf_dflt.admin_group,
 										conf_acls.acl_mask)
-				dir_info_root.group = conf_acls.group
+				dir_info_root.gid = conf_acls.gid
 
 				# now that the "root dir" has its special treatment,
 				# prepare dir_info for the rest (its contents)
@@ -279,6 +281,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		if is_root_dir:
 			access_perm = dir_info.root_dir_perm
 			perm_acl    = dir_info.root_dir_acl
+
 		else:
 			access_perm = dir_info.dirs_perm
 			perm_acl    = dir_info.content_acl
@@ -315,7 +318,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	else:
 		gid = dir_info.root_gid
 
-	uid=dir_info.uid
+	uid = dir_info.uid
 
 	for event in check_uid_and_gid(path=path,
 						uid=uid, gid=gid,
@@ -513,6 +516,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		try:
 			pathstat     = os.lstat(path)
 			current_perm = pathstat.st_mode & 07777
+
 		except (IOError, OSError), e:
 			if e.errno == 2: return
 			else: raise e
@@ -851,9 +855,12 @@ def get_file_encoding(filename):
 
 	return ret_encoding
 def execbits2str(filename):
-	"""Find if a file has executable bits and return (only) then as a list of strings, used later to build an ACL permission string.
+	"""Find if a file has executable bits and return (only) then as
+		a list of strings, used later to build an ACL permission string.
 
-		TODO: as these exec perms are used for ACLs only, should not we avoid testing setuid and setgid bits ? what does setguid means in a posix1e ACL ?
+		TODO: as these exec perms are used for ACLs only, should not
+		we avoid testing setuid and setgid bits ? what does setguid
+		means in a posix1e ACL ?
 	"""
 
 	fileperms = os.lstat(filename).st_mode & 07777
