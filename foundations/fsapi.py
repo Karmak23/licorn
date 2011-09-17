@@ -394,6 +394,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									path=stylize(ST_PATH, path)))
 					except (IOError, OSError), e:
 						if e.errno == 2: return
+
+						elif e.errno == 95:
+							logging.warning(_(u'ACL not applyed '
+								u'on {0} (was: {1})').format(path, e))
+
 						else: raise e
 			else:
 				all_went_ok = False
