@@ -160,11 +160,10 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			if full_display:
 				logging.progress(_(u'Checking file %s…') % stylize(ST_PATH, path))
 
-			if dir_info.files_perm and dir_info.uid and dir_info.gid:
-				for event in check_perms(file_type=S_IFREG, dir_info=dir_info,
-							batch=batch, auto_answer=auto_answer,
-							full_display=full_display):
-					yield event
+			for event in check_perms(file_type=S_IFREG, dir_info=dir_info,
+						batch=batch, auto_answer=auto_answer,
+						full_display=full_display):
+				yield event
 
 		# if it is a dir
 		elif (entry_stat.st_mode & 0170000) == S_IFDIR:
