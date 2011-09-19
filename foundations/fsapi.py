@@ -31,14 +31,15 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 	""" Mimic the GNU find behaviour in python. returns an iterator. """
 
 	if mindepth > maxdepth:
-		raise  exceptions.BadArgumentError("mindepth must be <= maxdepth.")
+		raise  exceptions.BadArgumentError(
+			_(u'minifind: mindepth must be <= maxdepth.'))
 
 	if maxdepth > 99:
 		raise  exceptions.BadArgumentError(
-			"please don't try to exhaust maxdepth.")
+			_(u'minifind: please do not try to exhaust maxdepth.'))
 
-	assert ltrace(TRACE_FSAPI, '''> minifind(%s, type=%s, mindepth=%s, maxdepth=%s, '''
-		'''exclude=%s, followlinks=%s, followmounts=%s)''' % (
+	assert ltrace(TRACE_FSAPI, '> minifind(%s, type=%s, mindepth=%s, '
+		'maxdepth=%s, exclude=%s, followlinks=%s, followmounts=%s)' % (
 			path, type, mindepth, maxdepth, exclude, followlinks, followmounts))
 
 	paths_to_walk      = [ path ]
@@ -81,8 +82,8 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 
 			if (entry_type == S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
-				logging.progress('minifind(): skipping link or mountpoint %s.' %
-					stylize(ST_PATH, entry))
+				logging.progress(_(u'minifind(): skipping link or '
+					u'mountpoint {0}.').format(stylize(ST_PATH, entry)))
 				continue
 
 			if entry_type == S_IFDIR and current_depth < maxdepth:
@@ -106,8 +107,8 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	""" General function to check file/directory. """
 
 	assert ltrace(TRACE_FSAPI, '> check_dirs_and_contents_perms_and_acls_new('
-		'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
-			dirs_infos, batch, auto_answer))
+								'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
+									dirs_infos, batch, auto_answer))
 
 	conf_acls = LMC.configuration.acls
 	conf_dflt = LMC.configuration.defaults
@@ -127,8 +128,8 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			elif e.errno == 2:
 
 				if batch or logging.ask_for_repair(_(u'Directory %s does not '
-					'exist. Create it?') % stylize(ST_PATH, path),
-					auto_answer=auto_answer):
+								u'exist. Create it?') % stylize(ST_PATH, path),
+							auto_answer=auto_answer):
 
 					# NOTE: don't yield path here, this would make the
 					# INotifier related thing expect it, and ignore it. And
@@ -149,14 +150,16 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				else:
 					# we cannot continue if dir does not exist.
 					raise exceptions.LicornCheckError(_(u'Cannot continue '
-						'checks for directory {0} (was: {1}).').format(
+						u'checks for directory {0} (was: {1}).').format(
 							path, e))
 			else:
 				# FIXME: do more things to recover from more system errors…
 				raise e
 
+		mode = entry_stat.st_mode & 0170000
+
 		# if it is a file
-		if (entry_stat.st_mode & 0170000) == S_IFREG:
+		if mode == S_IFREG:
 			if full_display:
 				logging.progress(_(u'Checking file %s…') % stylize(ST_PATH, path))
 
@@ -166,7 +169,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				yield event
 
 		# if it is a dir
-		elif (entry_stat.st_mode & 0170000) == S_IFDIR:
+		elif mode == S_IFDIR:
 			if full_display:
 				logging.progress(_(u'Checking directory %s…') %
 										stylize(ST_PATH, path))
@@ -205,6 +208,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			if dir_info.files_perm != None or dir_info.dirs_perm != None:
 				try:
 					exclude_list = dir_info.exclude
+
 				except AttributeError :
 					exclude_list = []
 
@@ -239,7 +243,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 
 		else:
 			logging.warning2(_(u'Not touching %s, it is not a file nor a '
-				'directory.') % path)
+														u'directory.') % path)
 
 	# NOTE: below this point, every dir_info must be copy()ed, else next check
 	# procedure will fail because we would have changed them in place.
@@ -262,7 +266,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				yield event
 	else:
 		raise exceptions.BadArgumentError(
-			"You must pass something through dirs_infos to check!")
+			_(u'You must pass something through dirs_infos to check!'))
 
 	assert ltrace(TRACE_FSAPI, '< check_dirs_and_contents_perms_and_acls_new()')
 def check_perms(dir_info, file_type=None, is_root_dir=False,
@@ -346,8 +350,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 			if batch or logging.ask_for_repair(
 							_(u'Invalid access ACL for {path} '
-							'(it is {current_acl} but '
-							'should be {access_acl}).').format(
+								u'(it is {current_acl} but '
+								u'should be {access_acl}).').format(
 								path=stylize(ST_PATH, path),
 								current_acl=stylize(ST_BAD,
 											_(u'empty')
@@ -384,7 +388,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 						if full_display:
 							logging.info(
 								_(u'Applyed access ACL '
-								'{access_acl} on {path}.').format(
+								u'{access_acl} on {path}.').format(
 									access_acl=stylize(ST_ACL,
 												access_perm.to_any_text(
 													separator=',',
@@ -396,7 +400,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 						elif e.errno == 95:
 							logging.warning(_(u'ACL not applyed '
-								u'on {0} (was: {1})').format(path, e))
+										u'on {0} (was: {1})').format(path, e))
 
 						else: raise e
 			else:
@@ -417,8 +421,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 				if batch or logging.ask_for_repair(
 							_(u'Invalid default ACL for {path} '
-							'(it is {current_acl} but '
-							'should be {access_acl}).').format(
+							u'(it is {current_acl} but '
+							u'should be {access_acl}).').format(
 								path=stylize(ST_PATH, path),
 								current_acl=stylize(ST_BAD,
 									_(u'empty')
@@ -450,7 +454,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 						if full_display:
 							logging.info(
 									_(u'Applyed default ACL {access_acl} '
-									'on {path}.').format(
+									u'on {path}.').format(
 										path=stylize(ST_PATH, path),
 										access_acl=stylize(ST_ACL,
 											default_perm.to_any_text(
@@ -477,8 +481,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			# perms expressed in the ACL grammar. No mask == Not an ACL.
 
 			if batch or logging.ask_for_repair(
-							_('An ACL is present on {path}, '
-							'but it should not.').format(
+							_(u'An ACL is present on {path}, '
+							u'but it should not.').format(
 								path=stylize(ST_PATH, path)),
 							auto_answer=auto_answer):
 
@@ -496,7 +500,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 						if full_display:
 							logging.info(_(u'Deleted default ACL from '
-								'{path}.').format(path=stylize(ST_PATH, path)))
+								u'{path}.').format(path=stylize(ST_PATH, path)))
 
 					# yield the applied event, to be catched in the
 					# inotifier part of the core, who will build an
@@ -509,7 +513,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 					if full_display:
 						logging.info(_(u'Deleted access ACL from '
-							'{path}.').format(path=stylize(ST_PATH, path)))
+							u'{path}.').format(path=stylize(ST_PATH, path)))
 
 				except (IOError, OSError), e:
 					if e.errno == 2: return
@@ -529,8 +533,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 			if batch or logging.ask_for_repair(
 							_(u'Invalid POSIX permissions for {path} '
-							'(it is {current_mode} but '
-							'should be {wanted_mode}).').format(
+							u'(it is {current_mode} but '
+							u'should be {wanted_mode}).').format(
 								path=stylize(ST_PATH, path),
 								current_mode=stylize(ST_BAD,
 									perms2str(current_perm)),
@@ -547,7 +551,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 						if full_display:
 							logging.info(_(u'Applyed POSIX permissions '
-								'{wanted_mode} on {path}.').format(
+								u'{wanted_mode} on {path}.').format(
 									wanted_mode=stylize(ST_ACL,
 										perms2str(access_perm)),
 									path=stylize(ST_PATH, path)))
@@ -615,8 +619,8 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 	if pathstat.st_uid != uid or pathstat.st_gid != gid:
 
 		if batch or logging.ask_for_repair(_(u'Invalid owership for {0}: '
-						'currently {1}:{2} but should be {3}:{4}. '
-						'Correct it?').format(
+						u'currently {1}:{2} but should be {3}:{4}. '
+						u'Correct it?').format(
 							stylize(ST_PATH, path),
 							stylize(ST_BAD, users[pathstat.st_uid].login
 								if pathstat.st_uid in users.iterkeys()
@@ -639,7 +643,7 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 
 				if full_display:
 					logging.info(_(u'Changed owner of {0} '
-									'to {1}:{2}.').format(
+									u'to {1}:{2}.').format(
 										stylize(ST_PATH, path),
 										stylize(ST_UGID, desired_login),
 										stylize(ST_UGID, desired_group)))
@@ -651,7 +655,7 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 			return
 		else:
 			logging.warning2(_(u'Invalid owership for {0}: '
-						'currently {1}:{2} but should be {3}:{4}.').format(
+						u'currently {1}:{2} but should be {3}:{4}.').format(
 					stylize(ST_PATH, path),
 					stylize(ST_BAD, LMC.users[pathstat.st_uid].login
 						if pathstat.st_uid in LMC.users.iterkeys()
@@ -680,10 +684,10 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 					if read_link != link_src:
 						if os.path.exists(read_link):
 							if batch or logging.ask_for_repair(
-											_('A symlink {link} '
-											'already exists, but points '
-											'to {dest}, instead of {good}. '
-											'Correct it?').format(
+											_(u'A symlink {link} '
+											u'already exists, but points '
+											u'to {dest}, instead of {good}. '
+											u'Correct it?').format(
 											link=stylize(ST_LINK, link_dst),
 											dest=stylize(ST_PATH, read_link),
 											good=stylize(ST_PATH, link_src)
@@ -694,24 +698,24 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 								os.symlink(link_src, link_dst)
 
 								logging.info(_(u'Overwritten symlink {link} '
-										'with destination {good} '
-										'instead of {dest}.').format(
+										u'with destination {good} '
+										u'instead of {dest}.').format(
 										link=stylize(ST_LINK, link_dst),
 										good=stylize(ST_PATH, link_src),
 										dest=stylize(ST_PATH, read_link))
 									)
 							else:
 								raise exceptions.LicornRuntimeException(
-									"Can't create symlink %s to %s!" % (
+									_(u'Cannot create symlink {0} to {1}!').format(
 										link_dst, link_src))
 						else:
 							# TODO: should we ask the question ? This isn't
 							# really needed, as the link is broken.
 							# Just replace it and don't bother the administrator.
 							logging.info(_(u'Symlink {link} is currently '
-									'broken, pointing to non-existing '
-									'target {dest}); making it point '
-									'to {good}.').format(
+									u'broken, pointing to non-existing '
+									u'target {dest}); making it point '
+									u'to {good}.').format(
 										link=stylize(ST_LINK, link_dst),
 										dest=stylize(ST_PATH, read_link),
 										good=stylize(ST_PATH, link_src)
@@ -725,7 +729,7 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 						# no such file or directory, link has disapeared…
 						os.symlink(link_src, link_dst)
 						logging.info(_(u'Repaired vanished symlink %s.') %
-							stylize(ST_LINK, link_dst))
+											stylize(ST_LINK, link_dst))
 			else:
 				if batch or logging.ask_for_repair(_(u'{link} already '
 								u'exists but it is not a symlink, thus '
@@ -771,7 +775,7 @@ def remove_directory(path):
 	except (IOError, OSError), e:
 		if e.errno == 2:
 			logging.info(_(u'Cannot remove %s, it does not exist!') %
-				stylize(ST_PATH, path))
+													stylize(ST_PATH, path))
 		else:
 			raise e
 def archive_directory(path, orig_name='unknown'):
