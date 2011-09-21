@@ -123,6 +123,14 @@ class WMIHTTPRequestHandler(BaseHTTPRequestHandler):
 	tty_replace_re = re.compile(r'(%s)' % '|'.join(
 								x.replace('[', '\[')
 									for x in cli_ascii_codes.itervalues()))
+	def log_message(self, format, *args):
+		"""Log an arbitrary message. This Method overrides the one from the
+			BaseHTTPRequestHandler, because the former always do FQDN requests,
+			which is a shame on networks with slow, buggy or unconfigured DNS.
+		"""
+
+		logging.monitor(TRACE_HTTP, TRACELEVEL_1, '{0} {1}',
+									self.client_address[:2][0], format%args)
 	def do_HEAD(self):
 		try:
 			f = self.send_head()
