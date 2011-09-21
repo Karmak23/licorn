@@ -8,7 +8,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys
+import sys, Pyro.errors
 from threading import current_thread, RLock
 from types import *
 from traceback import print_exc
@@ -107,7 +107,7 @@ def error(mesg, returncode=1, full=False, tb=None):
 		sys.stderr.write(text_message)
 
 	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
-	
+
 	raise SystemExit(returncode)
 def warning(mesg, once=False, to_listener=True, to_local=True):
 	"""Display a stylized warning message on stderr."""
@@ -196,28 +196,40 @@ def monitor(facility, level, *args):
 		for listener_thread in options.monitor_listeners:
 
 			with listener_thread.monitor_lock:
-				if listener_thread.monitor_facilities & facility \
-							and listener_thread.listener.verbose >= level:
-					try:
-						listener_thread.listener.process(
-							LicornMessage(
-								u'%s %s %s %s\n' % (
-									stylize(ST_YELLOW, '⧎'),
-									stylize(ST_COMMENT,
-										facility.name.ljust(TRACES_MAXWIDTH)),
-									mytime(),
-									args[0].format(*(stylize(*x) 
-										if type(x) == TupleType 
-										else x
-										for x in args[1:]))
-									)),
-							options.msgproc.getProxy())
+				try:
+					if listener_thread.monitor_facilities & facility \
+								and listener_thread.listener.verbose >= level:
+						try:
+							listener_thread.listener.process(
+								LicornMessage(
+									u'%s %s %s %s\n' % (
+										stylize(ST_YELLOW, '⧎'),
+										stylize(ST_COMMENT,
+											facility.name.ljust(TRACES_MAXWIDTH)),
+										mytime(),
+										args[0].format(*(stylize(*x)
+											if type(x) == TupleType
+											else x
+											for x in args[1:]))
+										)),
+								options.msgproc.getProxy())
 
-					except AttributeError, e:
-						logging.warning(_(u'Thread {0} has no listener '
-							'anymore, desengaging from monitors.').format(
-								listener_thread.name))
-						options.monitor_listeners.remove(listener)
+						except AttributeError, e:
+							# we have to remove the thread before issuing the warning,
+							# else it will create a cycle (warning() calls monitor()).
+							options.monitor_listeners.remove(listener_thread)
+							warning(_(u'Thread {0} has no listener '
+								u'anymore, desengaging from monitors '
+								u'(was: {1}).').format(
+									stylize(ST_NAME, listener_thread.name), e))
+
+				except Pyro.errors.ConnectionClosedError, e:
+					# we have to remove the thread before issuing the warning,
+					# else it will create a cycle (warning() calls monitor()).
+					options.monitor_listeners.remove(listener_thread)
+					warning(_(u'Thread {0} has lost its remote '
+						u'end, desengaging from monitors (was: {1}).').format(
+							stylize(ST_NAME, listener_thread.name), e))
 
 	# be compatible with assert calls, if some monitor() calls needs to be
 	# dinamically added/removed from the code.
