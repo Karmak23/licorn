@@ -610,9 +610,9 @@ class VolumesExtension(Singleton, LicornExtension):
 				self.add_volume_from_device(device)
 
 			# remove old devices, wipped away during the time.
-			for device in self_devices:
-				if device not in kernel_devices:
-					self.del_volume_from_device(device)
+			for device_key in self_devices:
+				if device_key not in kernel_devices:
+					self.del_volume_from_device(self.volumes[device_key])
 
 		del udev_context
 	def __update_cache_informations(self):
@@ -790,7 +790,13 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		with self.lock:
 
-			kernel_device = device.device_node
+			try:
+				kernel_device = device.device_node
+
+			except AttributeError:
+				# we are not deleting from a UDEV device, but from a licorn one.
+				# attribute has not the same name.
+				kernel_device = device.device
 
 			if kernel_device in self.volumes.keys():
 				mount_point = self.volumes[kernel_device].mount_point
