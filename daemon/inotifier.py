@@ -59,17 +59,17 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		self.inotifier_del_conf_watch = self.del_conf_watch
 	def dump_status(self, long_output=False, precision=None):
 
-		if long_output:
-			return u'%s%s (%d watched dirs)\n\t%s\n' % (
-				stylize(ST_RUNNING
-					if self.is_alive() else ST_STOPPED, self.name),
-				u'&' if self.daemon else '',
-				len(self._wm.watches.keys()),
-				u'\n\t'.join(sorted(w.path
-					for w in self._wm.watches.itervalues()))
-			)
-		else:
-			return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
+		#~ if long_output:
+			#~ return u'%s%s (%d watched dirs)\n\t%s\n' % (
+				#~ stylize(ST_RUNNING
+					#~ if self.is_alive() else ST_STOPPED, self.name),
+				#~ u'&' if self.daemon else '',
+				#~ len(self._wm.watches.keys()),
+				#~ u'\n\t'.join(sorted(w.path
+					#~ for w in self._wm.watches.itervalues()))
+			#~ )
+		#~ else:
+		return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
 				u'{4} queued events)').format(stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
 				u'&' if self.daemon else u'',
