@@ -10,6 +10,7 @@ DOC_DIR?=$(DESTDIR)/usr/share/doc
 SHARE_DIR?=$(DESTDIR)/usr/share/$(APP_NAME)
 EXECUTABLES=interfaces/cli/add.py interfaces/cli/mod.py interfaces/cli/del.py interfaces/cli/get.py interfaces/cli/chk.py interfaces/gui/keyword-modify-gui.py interfaces/gui/keyword-query-gui.py
 
+
 all: build doc
 
 install: binary-install installdoc
@@ -17,6 +18,10 @@ install: binary-install installdoc
 configure:
 
 build: configure i18n
+
+.ONESHELL:
+darcs_record_prehook:
+	@sed -ie "s/\(@DEVEL@\|dev+r[0-9]*\)/dev+r`expr 1 + $$(darcs changes --count)`/" version.py
 
 localperms:
 	@chmod 755 $(EXECUTABLES) daemon/main.py

@@ -10,8 +10,7 @@ The Core API of a Licorn system.
 :license: GNU GPL version 2
 """
 
-# this @DEVEL@ will be replaced by package maintainers, don't alter it here.
-version = '@DEVEL@'
+from licorn.version import version
 
 import os, sys, time, signal, Pyro.core, Pyro.configuration
 from threading import RLock
