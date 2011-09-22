@@ -77,7 +77,7 @@ class LockedController(MixedDictObject, Pyro.core.ObjBase):
 		# set it to True.
 		self._look_deeper_for_callbacks = look_deeper_for_callbacks
 
-		#once initialized, make sure the EventsManager gather callbacks inside us.
+		# once initialized, make sure the EventsManager gather callbacks inside us.
 		L_event_collect(self)
 	def __getitem__(self, key):
 		""" From :class:`LockedController`: this is a classic
@@ -1874,8 +1874,8 @@ class CoreFSUnitObject:
 			# if it is a MOVED, all sub-watches must be removed.
 
 			logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
-							'{0}: unwatch deleted/moved directory {1}', 
-								(ST_NAME, self.name), 
+							'{0}: unwatch deleted/moved directory {1}',
+								(ST_NAME, self.name),
 								(ST_PATH, event.pathname))
 			self.__unwatch_directory(event.pathname,
 							deleted=(mask & pyinotify.IN_DELETE_SELF))
@@ -1889,7 +1889,7 @@ class CoreFSUnitObject:
 				try:
 					self.__check_expected.remove(event.pathname)
 					logging.monitor(TRACE_INOTIFIER, TRACELEVEL_3,
-						'{0}: skipped expected event {1}', 
+						'{0}: skipped expected event {1}',
 							(ST_NAME, self.name), event)
 
 				except KeyError:
@@ -1929,21 +1929,21 @@ class CoreFSUnitObject:
 
 				if event.pathname not in self.__watches:
 					logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
-									'{0}: watch new dir {1}', 
-										(ST_NAME, self.name), 
+									'{0}: watch new dir {1}',
+										(ST_NAME, self.name),
 										(ST_PATH, event.pathname))
 					self.__watch_directory(event.pathname)
 
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_1,
-								'{0}: rewalk dir {1}', 
-									(ST_NAME, self.name), 
+								'{0}: rewalk dir {1}',
+									(ST_NAME, self.name),
 									(ST_PATH, event.pathname))
 				self.__rewalk_directory(event.pathname)
 
 			elif mask & pyinotify.IN_ATTRIB:
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_1,
-								'{0}: fast-chk dir {1} (expiry={2})', 
-									(ST_NAME, self.name), 
+								'{0}: fast-chk dir {1} (expiry={2})',
+									(ST_NAME, self.name),
 									(ST_PATH, event.pathname),
 									(ST_VALUE, expiry_check))
 
@@ -1951,7 +1951,7 @@ class CoreFSUnitObject:
 
 			else:
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_4,
-								'{0}: useless dir event {1}', 
+								'{0}: useless dir event {1}',
 								(ST_NAME, self.name), event)
 
 		else:
@@ -1959,14 +1959,14 @@ class CoreFSUnitObject:
 					or mask & pyinotify.IN_CREATE \
 					or mask & pyinotify.IN_MOVED_TO:
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_1,
-								'{0}: fast-chk file {1}', 
-									(ST_NAME, self.name), 
+								'{0}: fast-chk file {1}',
+									(ST_NAME, self.name),
 									(ST_PATH, event.pathname))
 				self._fast_aclcheck(event.pathname)
 
 			else:
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_4,
-								'{0}: useless file event {1}', 
+								'{0}: useless file event {1}',
 									(ST_NAME, self.name), event)
 	def __rewalk_directory(self, directory, walk_delay=None):
 		""" TODO. """
@@ -1991,29 +1991,29 @@ class CoreFSUnitObject:
 					# a small set of supplemental _fast_aclcheck(), but it's
 					# really needed to catch everything.
 					logging.monitor(TRACE_INOTIFIER,  TRACELEVEL_2,
-						'{0}: rewalk deleted {1}', 
-							(ST_NAME, self.name), 
+						'{0}: rewalk deleted {1}',
+							(ST_NAME, self.name),
 							(ST_PATH, full_path_dir))
 					self.__recently_deleted.discard(full_path_dir)
 
 					# wait a little before rewalking, there is a delay when
 					# we untar the same archive over-and-over.
 					L_aclcheck_enqueue(priorities.LOW,
-						self.__rewalk_directory, 
+						self.__rewalk_directory,
 							full_path_dir, walk_delay=0.1)
 
 				if full_path_dir in self.__watches:
 					logging.monitor(TRACE_INOTIFIER,  TRACELEVEL_2,
-						'{0}: already watched {1}', 
-							(ST_NAME, self.name), 
+						'{0}: already watched {1}',
+							(ST_NAME, self.name),
 							(ST_PATH, full_path_dir))
 					continue
 
 				logging.monitor(TRACE_INOTIFIER,  TRACELEVEL_1,
 									u'{0}: watch/fast-chk missed '
 									u'directory {1} [from {2}]',
-										(ST_NAME, self.name), 
-										(ST_PATH, full_path_dir), 
+										(ST_NAME, self.name),
+										(ST_PATH, full_path_dir),
 										(ST_PATH, directory))
 
 				self.__watch_directory(full_path_dir)
@@ -2026,15 +2026,15 @@ class CoreFSUnitObject:
 
 				if full_path_file in self.__check_expected:
 					logging.monitor(TRACE_INOTIFIER,  TRACELEVEL_3,
-									'{0}: expected file {1}', 
-										(ST_NAME, self.name), 
+									'{0}: expected file {1}',
+										(ST_NAME, self.name),
 										(ST_PATH, full_path_file))
 					continue
 
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_1,
 							'{0}: fast-chk missed file {1} [from {2}]',
-								(ST_NAME, self.name), 
-								(ST_PATH, full_path_file), 
+								(ST_NAME, self.name),
+								(ST_PATH, full_path_file),
 								(ST_PATH, directory))
 
 				L_aclcheck_enqueue(priorities.NORMAL,
@@ -2046,7 +2046,7 @@ class CoreFSUnitObject:
 			# to the process which created the dir to handle its own work
 			# before we try to set a new ACL on it.
 			logging.monitor(TRACE_INOTIFIER,  TRACELEVEL_1,
-							'{0}: fast-chk missed directory {1}', 
+							'{0}: fast-chk missed directory {1}',
 							(ST_NAME, self.name), (ST_PATH, path))
 
 			L_aclcheck_enqueue(priorities.NORMAL,
@@ -2073,9 +2073,9 @@ class CoreFSUnitObject:
 						stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
 
 				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
-								'{0}: add-watch {1} {2}', 
-									(ST_NAME, self.name), 
-									(ST_PATH, key), 
+								'{0}: add-watch {1} {2}',
+									(ST_NAME, self.name),
+									(ST_PATH, key),
 									(ST_UGID, value))
 				self.__watches[key] = value
 	@logging.warn_exception
@@ -2092,8 +2092,8 @@ class CoreFSUnitObject:
 				if deleted:
 					try:
 						logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
-										'{0}: self-del unwatch {1}', 
-											(ST_NAME, self.name), 
+										'{0}: self-del unwatch {1}',
+											(ST_NAME, self.name),
 											(ST_PATH, directory))
 
 						del self.__watches[directory]
@@ -2108,12 +2108,12 @@ class CoreFSUnitObject:
 				else:
 					try:
 						logging.monitor(TRACE_INOTIFIER, TRACELEVEL_1,
-										'{0}: remove recursive {1}', 
-											(ST_NAME, self.name), 
+										'{0}: remove recursive {1}',
+											(ST_NAME, self.name),
 											(ST_PATH, directory))
 
 						self.__recently_deleted.update(L_inotifier_del(
-								self.__watches[directory], 
+								self.__watches[directory],
 									rec=True).iterkeys())
 
 					except KeyError, e:
@@ -2124,10 +2124,10 @@ class CoreFSUnitObject:
 					else:
 						for watch in self.__watches.keys():
 							if watch.startswith(directory):
-								logging.monitor(TRACE_INOTIFIER, 
+								logging.monitor(TRACE_INOTIFIER,
 												TRACELEVEL_1,
 											'{0}: remove internal {1}',
-												(ST_NAME, self.name), 
+												(ST_NAME, self.name),
 												(ST_PATH, watch))
 								del self.__watches[watch]
 								self.__recently_deleted.add(watch)
