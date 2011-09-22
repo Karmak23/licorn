@@ -38,13 +38,26 @@ class EventManager(LicornBasicThread):
 	def dump_status(self, long_output=False, precision=None):
 
 		with self.__lock:
-			return _(u'{0}{1} ({2} events & {3} callbacks registered)').format(
-				stylize(ST_RUNNING
-					if self.is_alive() else ST_STOPPED, self.name),
-				'&' if self.daemon else '',
-				stylize(ST_RUNNING,   str(len(self.__events))),
-				stylize(ST_RUNNING,   str(sum(len(l)
-					for l in self.__events.values()))))
+			if long_output:
+				return _(u'{0}{1}: {2} events & {3} callbacks registered\n{4}').format(
+					stylize(ST_RUNNING
+						if self.is_alive() else ST_STOPPED, self.name),
+					u'&' if self.daemon else u'',
+					stylize(ST_RUNNING,   str(len(self.__events))),
+					stylize(ST_RUNNING,   str(sum(len(l)
+						for l in self.__events.values()))),
+					u'\n'.join(u'%s\n\t%s' % (key, '\n\t'.join(str(x)
+																for x in value))
+						for key, value in self.__events.iteritems())
+					)
+			else:
+				return _(u'{0}{1} ({2} events & {3} callbacks registered)').format(
+					stylize(ST_RUNNING
+						if self.is_alive() else ST_STOPPED, self.name),
+					u'&' if self.daemon else u'',
+					stylize(ST_RUNNING,   str(len(self.__events))),
+					stylize(ST_RUNNING,   str(sum(len(l)
+						for l in self.__events.values()))))
 	def stop(self):
 		self.uncollect()
 		LicornBasicThread.stop(self)

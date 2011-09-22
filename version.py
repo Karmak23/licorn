@@ -12,4 +12,4 @@ Just type 'make version' in the repository to update the file.
 :license: GNU GPL version 2
 """
 
-version = 'dev+r1058'
+version = 'dev+r1059'
