@@ -39,6 +39,16 @@ div#banner {
 	float: left;
 }
 
+.online_help {
+	cursor: help;
+	font-weight: bolder;
+	padding-right: 20px;
+	background-image: url('/images/16x16/online_help.png');
+	background-repeat: no-repeat;
+	#background-attachment: fixed;
+	background-position: right center;
+}
+
 .title_, .title_machines, .title_users, .title_groups {
 	display: none;
 	}
@@ -798,7 +808,7 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 
 .backups_important {
 	text-align: center;
-	margin: 10px 25%;
+	margin: 10px 10%;
 	padding: 7px 7px 7px 62px;
 	font-weight: bolder;
 	border-radius:5px;
@@ -806,6 +816,11 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	background-image: url('/images/48x48/dialog-warning.png');
 	background-repeat:no-repeat;
 	background-position: 12px center;
+}
+
+.backups_statistics {
+	font-size: 70%;
+	padding: 1em 0;
 }
 
 .lined {

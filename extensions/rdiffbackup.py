@@ -278,6 +278,17 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			self.create_wmi_object('/backups')
 
+			# NOTE: the event collection must be done here, instead of
+			# self.enable() method, else the callbacks aren't collected at
+			# daemon boot, because only is_enabled() is called by
+			# ExtensionsManager.
+
+			# register our callbacks in the event manager.
+			L_event_collect(self)
+
+			# register the newly-created WMIObject
+			wmi_register(self)
+
 			logging.info(_(u'{0}: started extension and auto-backup '
 				'timer.').format(stylize(ST_NAME, self.name)))
 
@@ -313,12 +324,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 
 		self.enabled = self.is_enabled()
-
-		if self.enabled:
-			# register our callbacks in the event manager.
-			L_event_collect(self)
-
-			wmi_register(self)
 
 		return self.enabled
 	def disable(self):
@@ -372,10 +377,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		"""
 
 		return True
-	def _enabled_volumes(self):
+	def _enabled_volumes(self, complete=True):
 		""" Returns a list of Licorn® enabled volumes. """
 
-		return [ volume for volume in self.volumes if volume.enabled ]
+		return [ volume for volume in self.volumes if volume.enabled
+													and ((complete
+													and volume.mount_point)
+													or not complete) ]
 	def _rdiff_statistics(self, volume):
 		""" Compute statistics on a given volume. This method internally
 			launches :program:`rdiff-backup-statistics` multiple times to
@@ -616,7 +624,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		if volume is None:
 			try:
-				volume = self._enabled_volumes()[0]
+				volume = self._enabled_volumes(complete=False)[0]
 				first_found = True
 
 			except IndexError:
@@ -753,14 +761,38 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		else:
 			return (time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup(as_string=False))
-	def volume_added_callback(self, volume, *args, **kwargs):
-		""" Trigerred when a new volume is added on the system. It will check
-			if any of the connected volumes is enabled for Licorn®, and will
-			create the timer thread if not already done.
+	def volume_mounted_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a volume is mounted on the system. It will check
+			if any of the connected (mounted or not) volumes is enabled for
+			Licorn®, and will create the timer thread, if not already present.
+		"""
+		if self._enabled_volumes(complete=False) != []:
+			self.__create_timer_thread()
+	def volume_unmounted_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a volume is unmounted from the system. If no
+			Licorn® enabled volume remains connected (mounted or not), this
+			method will stop the timer thread, if not already stopped.
+		"""
+		if self._enabled_volumes(complete=False) == []:
+			self.__stop_timer_thread()
+	# NOTE: we don't need a volume_added_callback(): any added volume gets
+	# mounted right away if compatible; thus volume_mounted_callback() will
+	# catch it. Any added but not compatible (thus not mounted) volume will
+	# be of no help, we can safely ignore it.
+	def volume_removed_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a volume is disconnected from the system. If no
+			other Licorn® enabled volume remains connected (mounted or not),
+			this method will stop the timer thread, if not already stopped.
+		"""
+		if self._enabled_volumes(complete=False) == []:
+			self.__stop_timer_thread()
+	def volume_enabled_callback(self, volume, *args, **kwargs):
+		""" Trigerred when a new volume is enabled on the system; will blindly
+			create the timer thread, if not already present.
 		"""
 		if self._enabled_volumes() != []:
 			self.__create_timer_thread()
-	def volume_removed_callback(self, volume, *args, **kwargs):
+	def volume_disabled_callback(self, volume, *args, **kwargs):
 		""" Trigerred when a volume is disconnected from the system. If no
 			Licorn® enabled volume remains, this method will stop the timer
 			thread, if not already stopped.
@@ -776,7 +808,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			.. note:: when a dynamic change occur, the timer will be simply
 				reset. No sophisticated computation will be done to substract
 				the already-passed time from the new interval.
-
 		"""
 
 		if self.events.active.is_set():
@@ -867,7 +898,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 		"""
 		"""
-					# disabled, to come:
+					# to come:
 						(_(u'Explore backups'), '/backups/search',
 							_(u'Search in backup history for files or '
 								'directories to restore'),
@@ -882,7 +913,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						'/backups/run',
 						_(u'Run a system incremental backup now'),
 						'ctxt-icon',
-						'icon-add',
+						'/images/24x24/importer.png',
 						lambda: self._enabled_volumes() != []
 							and not self.events.running.is_set()
 					),
@@ -892,7 +923,7 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 						_(u'Force the system to rescan and remount connected '
 							'volumes'),
 						'ctxt-icon',
-						'icon-energyprefs',
+						'/images/24x24/importer.png',
 						lambda: self._enabled_volumes() == []
 					)
 				)
@@ -981,18 +1012,20 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				auto_select = ('<div style="text-align: center:">%s</div>'
 					% _(u'Note: auto-selected volume {volume} for next '
 						'backup.').format(volume=volume.mount_point))
+
 			except IndexError:
 				return (w.HTTP_TYPE_TEXT, w.page(title,
-					w.error(_(u'No volume to backup onto. '
+					w.main_content(w.error(_(u'No volume to backup onto. '
 						'Please plug a {app_name} enabled volume into '
 						'your server before starting this procedure.'
 						'<br /><br />See <a href="http://docs.licorn.org'
 						'/extensions/rdiffbackup.en.html">'
 						'Backup-related documentation</a> for '
 						'details on enabling backup volumes.').format(
-						app_name=LMC.configuration.app_name))))
+						app_name=LMC.configuration.app_name)))
+					+ w.sub_content('')))
 		else:
-			volume=self.volumes['/dev/'+volume]
+			volume = self.volumes['/dev/' + volume]
 
 		last_backup_time = time.time() - self._last_backup_time(volume)
 
@@ -1000,9 +1033,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			title = _(u'Run a manual backup on volume {0}').format(
 															volume.mount_point)
-			data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
+			data      = w.page_body_start(uri, http_user, self._ctxtnav, title)
+			main_data = ''
 
-			data += w.question(
+			main_data += w.question(
 				_(u'Recent backup detected'),
 				_(u'{auto_select}<br /><br />The last backup has been run '
 					'{last_backup_time} ago, which is less than the '
@@ -1026,7 +1060,10 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					[ _(u"<< Cancel"),   "/backups",      _(u"C") ])
 
 			return (w.HTTP_TYPE_TEXT,
-				w.page(title, data + w.page_body_end()))
+				w.page(title, data
+				+ w.main_content(main_data)
+				+ w.sub_content('')
+				+ w.page_body_end()))
 
 		else:
 			# we've got to translate the 'force' boolean because WMI doesn't
@@ -1034,6 +1071,25 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			self.backup(volume=volume, force=True if force else False)
 			return (self.utils.HTTP_TYPE_REDIRECT,
 							self.wmi.successfull_redirect)
+	def _wmi_enable(self, uri, http_user, device, referer=None, **kwargs):
+		""" Eject a device, from the WMI. """
+
+		device = '/dev/' + device
+		volume = self.volumes[device]
+		title  = _(u"Enable volume {device}").format(device=device)
+
+		try:
+			volume.enable()
+
+		except Exception, e:
+			return (w.HTTP_TYPE_TEXT, w.page(title,
+				w.error(_(u'Could not enable volume {device} (was: '
+					u'{exc}).{rewind}').format(
+						device=device, exc=e,
+						rewind=self.wmi.rewind))))
+
+		return (self.utils.HTTP_TYPE_REDIRECT, referer
+					if referer else self.wmi.successfull_redirect)
 	def _wmi_eject(self, uri, http_user, device, referer=None, **kwargs):
 		""" Eject a device, from the WMI. """
 
@@ -1046,11 +1102,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				if self.events.running.is_set() else '')
 
 			return (w.HTTP_TYPE_TEXT, w.page(title,
-				w.error(_(u"Volume is in use{backup_info}, "
+				w.error(_(u"Volume {device} is in use{backup_info}, "
 					"can't eject it!{rewind}").format(
-						backup_info=backup_info,rewind=self.wmi.rewind))))
+						device=device,
+						backup_info=backup_info,
+						rewind=self.wmi.rewind))))
 
-		self.volumes[device].unmount()
+		volume.unmount()
 
 		return (self.utils.HTTP_TYPE_REDIRECT, referer
 					if referer else self.wmi.successfull_redirect)
@@ -1068,10 +1126,13 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 		title = _(u"System backups")
 		data  = w.page_body_start(uri, http_user, self._ctxtnav, '')
 
+		main_content_data = ''
+		rdiff_stats_output = ''
+		base_div = (u'<div style="font-size:120%; '
+			u'text-align: justify; margin-left:10%; '
+			u'margin-right: 10%;">{message}</div>')
+
 		if self.events.active.is_set():
-			#
-			# display backup data for each connected volume.
-			#
 
 			if self.events.running.is_set():
 				backup_status = ('<div class="backups important '
@@ -1086,61 +1147,42 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 			else:
 				backup_status = ''
 
-			data += backup_status
+			if self._backup_enabled_volumes():
+				main_content_data += backup_status
 
-			for volume in self._backup_enabled_volumes():
-				base_div = ('<h2>{h2title}</h2>\n'
-							'<p>{eject_status}</p>\n'
-							'<p>{backup_info}</p>\n'
-							'<pre style="margin-left:15%; '
-							'margin-right: 15%;">'
-							'{rdiff_output}</pre>')
+				for volume in self._backup_enabled_volumes():
+					base_div = ('<h2>{h2title}</h2>\n'
+								'<p>{eject_status}</p>\n'
+								'<p>{backup_info}</p>\n')
 
-				eject_status = self._html_eject_status(volume)
+					eject_status = self._html_eject_status(volume)
 
-				try:
-					rdiff_stats_output = open(volume.mount_point
-							+ '/' + self.paths.increment_sizes_file).read().strip()
-				except (IOError, OSError), e:
-					if e.errno == 2:
-						# not ready yet (first backup rinnung)
-						rdiff_stats_output = _(u'No historical data yet. '
-							'Please wait for the first backup to finish.')
-					else:
-						raise e
+					try:
+						rdiff_stats_output = open(volume.mount_point
+								+ '/' + self.paths.increment_sizes_file).read().strip()
 
-				data += base_div.format(
-						h2title=_(u'Backups on {mount_point}').format(
-							mount_point=volume.mount_point),
-						backup_info=(
-							self._backup_informations(volume, as_string=True)
-								if backup_status is '' else ''),
-						eject_status=eject_status,
-						rdiff_output=rdiff_stats_output
-					)
+					except (IOError, OSError), e:
+						if e.errno == 2:
+							# not ready yet (first backup rinnung)
+							rdiff_stats_output = _(u'No historical data yet. '
+								'Please wait for the first backup to finish.')
+						else:
+							raise e
 
-			return (w.HTTP_TYPE_TEXT, w.page(title,
-				data + w.page_body_end(w.total_time(start, time.time()))))
-
-		else:
-
-			base_div = ('<div style="font-size:120%; '
-				'text-align: justify; margin-left:33%; '
-				'margin-right: 33%;">{message}</div>')
-
-			if self.volumes.values() == []:
-
-				data += base_div.format(message=_(u'No backup volume found. '
-					'Please connect a backup volume to your server, and '
-					'backups will automatically start.'))
-
+					main_content_data += base_div.format(
+							h2title=_(u'Backups on {mount_point}').format(
+								mount_point=volume.mount_point),
+							backup_info=(
+								self._backup_informations(volume, as_string=True)
+									if backup_status is '' else ''),
+							eject_status=eject_status
+						)
 			else:
-
 				countdown_until_next_backup = self._countdown('next_backup',
 						self.time_before_next_automatic_backup(
 							as_string=False))
 
-				data += base_div.format(message=_(u'No backup found, or all '
+				main_content_data += base_div.format(message=_(u'All '
 					'backup volumes are currently unmounted (you can safely '
 					'disconnect them from your server).<br /><br />Next '
 					'automatic backup will occur in {countdown}, and will '
@@ -1148,6 +1190,57 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					'at this moment.').format(
 						countdown=countdown_until_next_backup))
 
-			return (w.HTTP_TYPE_TEXT, w.page(title,
-				data + w.page_body_end(w.total_time(start, time.time()))))
+			return (w.HTTP_TYPE_TEXT, w.page(title, data
+				+ w.main_content(main_content_data)
+				+ w.sub_content((u'<pre class="backups_statistics">%s</pre>'
+								% rdiff_stats_output)
+									if rdiff_stats_output
+									else '')
+				+ w.page_body_end(w.total_time(start, time.time()))))
+
+		else:
+			if self.volumes.values() == []:
+
+				main_content_data += base_div.format(message=_(u'No backup '
+					u'volume found: '
+					u'no external volume is currently connected to '
+					u'the server, or all the '
+					u'connected volumes are not <a '
+					u'href="http://docs.licorn.org/extensions/'
+					u'volumes.en.html#extensions-volumes-compatible-en" '
+					u'class="online_help" target="_blank" '
+					u'title="Click to know which volumes are compatible, '
+					u'and how to make one.">compatible with '
+					u'Licorn®</a>.<br /><br />'
+					u'Please connect a compatible backup volume to your '
+					u'server, wait a few seconds and reload the current page.'))
+
+			else:
+				local_string = _(u'One or '
+					u'more external volume(s) is '
+					u'connected, but none is currently dedicated to '
+					u'Licorn®. Would you like to '
+					u'<a href="http://docs.licorn.org/extensions/'
+					u'volumes.en.html#extensions-volumes-reserve-en" '
+					u'class="online_help" target="_blank">enable and '
+					u'reserve</a> '
+					u'any of them for Licorn® use?')
+
+				local_string += u'<ul style="margin-top: 30px;">'
+
+				for volume in self.volumes.itervalues():
+					local_string += u'<li><a href="/backups/enable/{0}">{1}</a><br />{2}</li>'.format(
+								volume.device.rsplit('/', 1)[1],
+								_(u'enable volume '
+								u'<strong>{0}</strong>').format(volume.label),
+								_(u'(device: <strong>{volume.name}</strong>, '
+								u'FS type: <strong>{volume.fstype}</strong>)').format(volume=volume))
+				local_string += u'</ul>'
+
+				main_content_data += base_div.format(message=local_string)
+
+			return (w.HTTP_TYPE_TEXT, w.page(title, data
+				+ w.main_content(main_content_data)
+				+ w.sub_content('')
+				+ w.page_body_end(w.total_time(start, time.time()))))
 

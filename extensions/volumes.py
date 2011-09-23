@@ -8,14 +8,15 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, dbus, pyudev, select, re
+import os, dbus, pyudev, select, re, errno
+
 from traceback import print_exc
 from threading import RLock
 
 from licorn.foundations           import logging, process, exceptions
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton, MixedDictObject
 
 from licorn.core                import LMC
@@ -135,7 +136,7 @@ class UdevMonitorThread(LicornBasicThread):
 
 
 			except (IOError, OSError), e:
-				if e.errno != 2:
+				if e.errno != errno.ENOENT:
 					# "no such file or dir" happens sometimes on some devices.
 					# experienced on NTFS partitions (other types don't trigger
 					# the problem).
@@ -267,6 +268,9 @@ class Volume:
 					logging.notice(_('{0}: enabled Licorn® usage on {1}.'
 						).format(stylize(ST_NAME, 'volumes'),
 							stylize(ST_PATH, self.mount_point)))
+
+					L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_enabled', volume=self))
 			else:
 				logging.warning(_('{0}: cannot enable Licorn® usage on {1} '
 					'(unsupported FS {2}).').format(stylize(ST_NAME, 'volumes'),
@@ -282,8 +286,13 @@ class Volume:
 		"""
 		with self.lock:
 			if os.path.exists(self.mount_point + Volume.enabler_file):
+				L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_disabled', volume=self))
+
 				os.unlink(self.mount_point + Volume.enabler_file)
+
 				self.enabled = False
+
 				logging.notice(_('{0}: disabled Licorn® usage on {1}.').format(
 					stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
 			else:
@@ -364,6 +373,10 @@ class Volume:
 					logging.warning(_(u'{0}: {1}').format(
 									stylize(ST_NAME, 'volumes'), output))
 				else:
+
+					L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_mounted', volume=self))
+
 					logging.notice(_(u'{0}: mounted device {1}({2}) at {3}.').format(
 									stylize(ST_NAME, 'volumes'),
 									stylize(ST_DEVICE, self.device),
@@ -389,12 +402,17 @@ class Volume:
 				if self.fstype == 'ntfs':
 					self.controller.threads.udevmonitor.prevent_action_on_device('change', self.device)
 
+				# TODO: Import cdll from ctypes. Then load your os libc, then use libc.mount()
 				output = process.execute(umount_cmd)[1].strip()
 
 				if output:
 					logging.warning(_(u'{0}: {1}').format(
 									stylize(ST_NAME, 'volumes'), output))
 				else:
+
+					L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_unmounted', volume=self))
+
 					logging.notice(_(u'{0}: unmounted device {1} from {2}.').format(
 									stylize(ST_NAME, 'volumes'),
 									stylize(ST_DEVICE, self.device),
@@ -406,11 +424,17 @@ class Volume:
 					os.rmdir(old_mount_point)
 
 				except (OSError, IOError), e:
-					if e.errno == 16:
-						# device or resource busy.
+					if e.errno == errno.EBUSY:
+						logging.warning(_(u'{0}({1}): mount point {2} still '
+							u'busy after unmounting.').format(
+								stylize(ST_NAME, 'volumes'),
+								stylize(ST_DEVICE, self.device),
+								stylize(ST_PATH, self.mount_point)))
 						return
+
 					else:
 						raise
+
 				self.mount_point = None
 				logging.info(_(u'{0}: removed directory {1}.').format(
 					stylize(ST_NAME, 'volumes'),
@@ -799,17 +823,21 @@ class VolumesExtension(Singleton, LicornExtension):
 				kernel_device = device.device
 
 			if kernel_device in self.volumes.keys():
-				mount_point = self.volumes[kernel_device].mount_point
 
-				# we don't unmount, this should have already been done, because
-				# the device disappeared from the kernel/udev list: it's
-				# already gone from the system...
+				volume = self.volumes[kernel_device]
 
-				volstr = str(self.volumes[kernel_device])
+				# keep a trace of the object, to ba able to display a message.
+				volstr = str(volume)
 
+				# TODO: shouldn't this be synchronous ?
 				L_event_dispatch(priorities.NORMAL, InternalEvent('volume_removed', volume=volstr))
 
+				# the unmount should have been done before, hence the force=True.
+				if volume.mount_point:
+					volume.unmount(force=True)
+
 				del self.volumes[kernel_device]
+				del volume
 
 				logging.info(_(u'{0}: removed {1}.').format(stylize(ST_NAME, self.name), volstr))
 	def volumes_call(self, volumes, method_name, **kwargs):

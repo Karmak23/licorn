@@ -82,7 +82,8 @@ class WMIObject(object):
 		assert ltrace(TRACE_WMI, '| %s.setup_methods()' % self.name)
 
 		for key in dir(self):
-			if key.startswith('_wmi_') and key not in ('_wmi_name', '_wmi_alt_string', '_wmi_context_menu'):
+			if key.startswith('_wmi_') and key not in ('_wmi_name',
+									'_wmi_alt_string', '_wmi_context_menu'):
 				value = getattr(self, key)
 				if callable(value):
 					setattr(self.wmi, key[5:], value)
