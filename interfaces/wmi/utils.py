@@ -420,21 +420,18 @@ def menu(uri):
 		<div class="menu-content">
 			<span class="menu-content-item">
 				<img src="/images/24x24/ajouter.png"/>
-				<span class="menu-content-text" id='add_user_menu'> 
-					%s 
+				<span class="menu-content-text" id='add_user_menu'>
+					%s
 				</span>
 			</span>
 			<span class="menu-content-item">
 				<img src="/images/24x24/importer.png"/>
-				<span class="menu-content-text" id='import_user_menu'> 
+				<span class="menu-content-text" id='import_user_menu'>
 					%s
 				</span>
 			</span>
 		</div>
 	</div>
-
-
-
 
 	<div class="menu-item" >
 		<div class="menu-title">
