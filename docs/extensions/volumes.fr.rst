@@ -15,8 +15,10 @@ L'extension `Volumes` gère les disques externes.
 
 Elle surveille les connexions et offre des fonctionnalités de montage / démontage / découverte de périphériques. Elle met les volumes connectés à disposition du reste de Licorn® (par exemple l':ref:`extension Rdiff-Backup <extensions.rdiffbackup.fr>` et d'autres).
 
-Quels périphériques sont supportés ?
-------------------------------------
+.. _extensions.volumes.compatible.fr:
+
+Quels périphériques sont supportés (compatibles) ?
+--------------------------------------------------
 
 Tout disque externe que vous voulez utiliser avec Licorn® **doit être préalablement partitionné et formatté** avec l'un de ces systèmes de fichiers (qui supporte les ACLs ``posix.1e`` et les ``attributs étendus``):
 
@@ -29,7 +31,7 @@ Tout disque externe que vous voulez utiliser avec Licorn® **doit être préalab
 **Dès que vous connectez le disque externe** sur un des ports USB, eSATA ou FireWire de votre serveur, **il est automatiquement monté** dans :file:`/media` (suivant les cas, cette opération peut prendre quelques secondes à quelques minutes, si la partition doit être vérifiée).
 
 .. note::
-	* Tout disque externe non-formatté ou formatté avec un autre système de fichiers ne sera pas utilisé par Licorn®; Par conséquent il ne sera pas monté automatiquement.
+	* Tout disque externe non-formatté ou formatté avec un autre système de fichiers ne sera pas utilisé par Licorn®; Par conséquent **il ne sera pas monté automatiquement**.
 	* Si la partition montée possède un ``label``, le point de montage l'utilisera (et deviendra :file:`/media/label_de_partition`). Si la partition ne possède pas de label, le point de montage sera quelque chose de plus compliqué (par exemple  :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`) : Il sera construit à partir de l'UUID de la partition (un numéro comme ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, qui identifie la partition de manière unique).
 
 .. _extensions.volumes.usage.fr:

@@ -15,8 +15,10 @@ The `Volumes` extension takes care of external mass storage devices.
 
 It watches when you plug them in and out, offers ability to mount/unmount/autodiscover them, and makes the attached volumes available to other parts of Licorn® (e.g. :ref:`extensions.rdiffbackup` and possibly others).
 
-Which devices are supported?
-----------------------------
+.. _extensions.volumes.compatible.en:
+
+Which devices are supported (compatible)?
+-----------------------------------------
 
 Any device you want to use with Licorn **must be already partitioned and formatted** with one of these file-systems (``posix.1e`` ACLs and ``eXtended ATTRibutes`` capable):
 
@@ -31,10 +33,10 @@ Connecting a new volume just requires your human energy to plug the device in on
 **Once the device is connected, it will be automatically mounted** in :file:`/media`.
 
 .. note::
-	*Any non-formatted or other-than-supported-FS formatted device will not be used by Licorn®; **it will thus not be automatically mounted**.
+	* Any non-formatted or other-than-supported-FS formatted device will not be used by Licorn®; **it will thus not be automatically mounted**.
 	* If the partition has a label, the mount-point will be :file:`/media/partition_label`, else it will be something more complicated (the partition UUID, something like ``dafd9069-e7de-4f5f-bc09-a7849b2d5389``, which identifies this partition in a unique way), and the mount-point will be accordingly complicated, like :file:`/media/dafd9069-e7de-4f5f-bc09-a7849b2d5389`.
 
-.. _extensions.volumes.usage:
+.. _extensions.volumes.usage.en:
 
 Usage
 =====
@@ -70,6 +72,7 @@ Keep in mind that you can use either the device name (:file:`/dev/...`) or the m
 	# the long way:
 	mod volume --disable /dev/xxx
 
+.. _extensions.volumes.reserve.en:
 
 Reserving a volume for Licorn® sole usage
 -----------------------------------------
