@@ -172,7 +172,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 1, 0
 				else:
 					logging.warning(_(u'Denied connection tentative '
-						u'from {0}:{1} (allowed are {2} and {3).').format(
+						u'from {0}:{1} (allowed are {2} and {3}).').format(
 							client_addr, client_socket,
 							LicornPyroValidator.server,
 							', '.join(LicornPyroValidator.server_addresses)))
