@@ -331,7 +331,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			'licornd.wmi.listen_address'   : '',
 			'licornd.wmi.port'             : 3356,
 			'licornd.wmi.log_file'         : '/var/log/licornd-wmi.log',
-			'backup.interval'              : 3600,   # one hour between backups.
+			'backup.interval'              : 86400,   # one day between backups.
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 			})
 	def convert_configuration_values(self):
