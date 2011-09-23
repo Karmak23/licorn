@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-08-30 22:00+0200\n"
+"POT-Creation-Date: 2011-09-23 09:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -266,157 +266,157 @@ msgid ""
 "not be reliable."
 msgstr ""
 
-#: extensions/openssh.py:138
+#: extensions/openssh.py:139
 msgid "{0}: checking existence of group {1}…"
 msgstr ""
 
-#: extensions/openssh.py:147
+#: extensions/openssh.py:148
 msgid "{0}: group {1} must be created. Do it?"
 msgstr ""
 
-#: extensions/openssh.py:153
+#: extensions/openssh.py:154
 msgid "Users allowed to connect via SSHd"
 msgstr ""
 
-#: extensions/openssh.py:157
+#: extensions/openssh.py:158
 msgid "{0}: group {1} must exist before continuing."
 msgstr ""
 
-#: extensions/openssh.py:160
+#: extensions/openssh.py:161
 #, python-format
 msgid "Checking good default values in %s…"
 msgstr ""
 
-#: extensions/openssh.py:170
+#: extensions/openssh.py:171
 msgid "{0}: {1} must be modified. Do it?"
 msgstr ""
 
-#: extensions/openssh.py:176
+#: extensions/openssh.py:177
 msgid "{0}: written configuration file {1}."
 msgstr ""
 
-#: extensions/openssh.py:180 foundations/classes.py:118
+#: extensions/openssh.py:181 foundations/classes.py:116
 msgid "{0}: configuration file {1} must be altered to continue."
 msgstr ""
 
-#: extensions/gloop.py:102
+#: extensions/gloop.py:103
 msgid ""
 "{0}: extension not available because {1} or {2} do not exist on the system."
 msgstr ""
 
-#: extensions/gloop.py:128
+#: extensions/gloop.py:129
 msgid "{0}: started extension and gobject mainloop thread."
 msgstr ""
 
-#: extensions/powermanagement.py:59
+#: extensions/powermanagement.py:60
 #, python-format
 msgid "%s: extension not available because yet to be written."
 msgstr ""
 
-#: extensions/caldavd.py:73
+#: extensions/caldavd.py:74
 msgid "{0}: extension not available because {1}."
 msgstr ""
 
-#: extensions/caldavd.py:77
+#: extensions/caldavd.py:78
 msgid ""
 "{0}: extension not yet available because {1} (calendarserver is probably "
 "installing, try again later)."
 msgstr ""
 
-#: extensions/caldavd.py:83
+#: extensions/caldavd.py:84
 msgid "{0}: extension not available because {1} not installed."
 msgstr ""
 
-#: extensions/caldavd.py:98
+#: extensions/caldavd.py:99
 msgid ""
 "**Please implement caldavd extension check for pre-existing users and groups."
 "**"
 msgstr ""
 
-#: extensions/caldavd.py:136 extensions/squid.py:231
+#: extensions/caldavd.py:137 extensions/squid.py:232
 msgid "{0}: started extension, managing {1} service ({2})."
 msgstr ""
 
-#: extensions/caldavd.py:139 extensions/squid.py:235
+#: extensions/caldavd.py:140 extensions/squid.py:236
 #, python-format
 msgid "pid=%s"
 msgstr ""
 
-#: extensions/caldavd.py:142 extensions/squid.py:238
+#: extensions/caldavd.py:143 extensions/squid.py:239
 msgid "Starting up"
 msgstr ""
 
-#: extensions/caldavd.py:148
+#: extensions/caldavd.py:149
 msgid ""
 "{0}: extension disabled because service {1} disabled on the local system."
 msgstr ""
 
-#: extensions/caldavd.py:173 extensions/caldavd.py:191
-#: extensions/caldavd.py:432 extensions/caldavd.py:460
-#: extensions/caldavd.py:493 extensions/caldavd.py:542
-#: extensions/caldavd.py:569 extensions/caldavd.py:597
-#: extensions/caldavd.py:621 extensions/volumes.py:363
-#: extensions/volumes.py:394
+#: extensions/caldavd.py:174 extensions/caldavd.py:192
+#: extensions/caldavd.py:433 extensions/caldavd.py:461
+#: extensions/caldavd.py:494 extensions/caldavd.py:543
+#: extensions/caldavd.py:570 extensions/caldavd.py:598
+#: extensions/caldavd.py:622 extensions/volumes.py:373
+#: extensions/volumes.py:409
 msgid "{0}: {1}"
 msgstr ""
 
-#: extensions/caldavd.py:349
+#: extensions/caldavd.py:350
 msgid "{0}: unable to modify {1} for {2} {3}, not found in {4}."
 msgstr ""
 
-#: extensions/caldavd.py:364
+#: extensions/caldavd.py:365
 msgid "{0}: unable to delete {1} {2}, not found in {3}."
 msgstr ""
 
-#: extensions/caldavd.py:382
+#: extensions/caldavd.py:383
 msgid "{0}: unable to delete user {1} from group {2}, not found in {3}."
 msgstr ""
 
-#: extensions/caldavd.py:418
+#: extensions/caldavd.py:419
 #, python-format
 msgid "R/O holder for user %s."
 msgstr ""
 
-#: extensions/caldavd.py:641
+#: extensions/caldavd.py:642
 msgid "Personnal calendar URI"
 msgstr ""
 
-#: extensions/caldavd.py:655
+#: extensions/caldavd.py:656
 msgid "Group calendar URI"
 msgstr ""
 
-#: extensions/__init__.py:127
+#: extensions/__init__.py:128
 msgid "Started service {0} ({1})."
 msgstr ""
 
-#: extensions/__init__.py:128
+#: extensions/__init__.py:129
 msgid "Stopped service {0} ({1})."
 msgstr ""
 
-#: extensions/__init__.py:129
+#: extensions/__init__.py:130
 msgid "Restarted service {0} ({1})."
 msgstr ""
 
-#: extensions/__init__.py:130
+#: extensions/__init__.py:131
 msgid "Reloaded service {0} ({1})."
-msgstr ""
-
-#: extensions/__init__.py:136
-#, python-format
-msgid "Starting service %s. Please wait, this can take a while."
 msgstr ""
 
 #: extensions/__init__.py:137
 #, python-format
-msgid "Stopping service %s. Please wait, this can take a while."
+msgid "Starting service %s. Please wait, this can take a while."
 msgstr ""
 
 #: extensions/__init__.py:138
 #, python-format
-msgid "Restarting service %s. Please wait, this can take a while."
+msgid "Stopping service %s. Please wait, this can take a while."
 msgstr ""
 
 #: extensions/__init__.py:139
+#, python-format
+msgid "Restarting service %s. Please wait, this can take a while."
+msgstr ""
+
+#: extensions/__init__.py:140
 #, python-format
 msgid "Reloading service %s. Please wait, this can take a while."
 msgstr ""
@@ -436,251 +436,255 @@ msgid ""
 "different one. Please try  again later."
 msgstr ""
 
-#: extensions/volumes.py:206
+#: extensions/volumes.py:208
 #, python-format
 msgid " (on %s)"
 msgstr ""
 
-#: extensions/volumes.py:207
+#: extensions/volumes.py:209
 msgid " (not mounted)"
 msgstr ""
 
-#: extensions/volumes.py:246
+#: extensions/volumes.py:248
 msgid "{0}({1}) not mounted"
 msgstr ""
 
-#: extensions/volumes.py:260
+#: extensions/volumes.py:262
 msgid "{0}: Licorn® usage already enabled on {1}."
 msgstr ""
 
-#: extensions/volumes.py:266
+#: extensions/volumes.py:268
 msgid "{0}: enabled Licorn® usage on {1}."
 msgstr ""
 
-#: extensions/volumes.py:270
+#: extensions/volumes.py:275
 msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
 msgstr ""
 
-#: extensions/volumes.py:286
+#: extensions/volumes.py:296
 msgid "{0}: disabled Licorn® usage on {1}."
 msgstr ""
 
-#: extensions/volumes.py:289
+#: extensions/volumes.py:299
 msgid "{0}: Licorn® usage already disabled on {1}."
 msgstr ""
 
-#: extensions/volumes.py:322
+#: extensions/volumes.py:332
 msgid "{0}: created mount point {1}."
 msgstr ""
 
-#: extensions/volumes.py:366
+#: extensions/volumes.py:380
 msgid "{0}: mounted device {1}({2}) at {3}."
 msgstr ""
 
-#: extensions/volumes.py:397
+#: extensions/volumes.py:416
 msgid "{0}: unmounted device {1} from {2}."
 msgstr ""
 
-#: extensions/volumes.py:414
+#: extensions/volumes.py:428
+msgid "{0}({1}): mount point {2} still busy after unmounting."
+msgstr ""
+
+#: extensions/volumes.py:439
 msgid "{0}: removed directory {1}."
 msgstr ""
 
-#: extensions/volumes.py:530
+#: extensions/volumes.py:555
 msgid "{0}: not available because {1}."
 msgstr ""
 
-#: extensions/volumes.py:542
+#: extensions/volumes.py:567
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
 msgstr ""
 
-#: extensions/volumes.py:704
+#: extensions/volumes.py:729
 msgid "{0}: skipped already known volume {1}."
 msgstr ""
 
-#: extensions/volumes.py:715
+#: extensions/volumes.py:740
 msgid "{0}: skipped LMV/extended partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:721
+#: extensions/volumes.py:746
 msgid "{0}: skipped unformatted partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:727
+#: extensions/volumes.py:752
 msgid "{0}: skipped system partition {1}."
 msgstr ""
 
-#: extensions/volumes.py:747
+#: extensions/volumes.py:772
 msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
 msgstr ""
 
-#: extensions/volumes.py:774
+#: extensions/volumes.py:799
 msgid "{0}: added {1}."
 msgstr ""
 
-#: extensions/volumes.py:807
+#: extensions/volumes.py:842
 msgid "{0}: removed {1}."
 msgstr ""
 
-#: extensions/volumes.py:846
+#: extensions/volumes.py:881
 msgid "{0}: skipped non existing device or mount_point {1}."
 msgstr ""
 
-#: extensions/volumes.py:917
+#: extensions/volumes.py:952
 msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.1f}%)"
 msgstr ""
 
-#: extensions/volumes.py:924
+#: extensions/volumes.py:959
 msgid " on {0}{1}"
 msgstr ""
 
-#: extensions/volumes.py:927
+#: extensions/volumes.py:962
 msgid " not mounted"
 msgstr ""
 
-#: extensions/rdiffbackup.py:280
+#: extensions/rdiffbackup.py:292
 msgid "{0}: started extension and auto-backup timer."
 msgstr ""
 
-#: extensions/rdiffbackup.py:329
+#: extensions/rdiffbackup.py:335
 msgid ""
 "{0}: cannot disable now, a backup is in progress. Please wait until the end "
 "and retry."
 msgstr ""
 
-#: extensions/rdiffbackup.py:390
+#: extensions/rdiffbackup.py:399
 msgid "{0}: computing statistics on {1}, please wait."
 msgstr ""
 
-#: extensions/rdiffbackup.py:475
+#: extensions/rdiffbackup.py:484
 #, python-format
 msgid "Skipped disabled %s."
 msgstr ""
 
-#: extensions/rdiffbackup.py:561
+#: extensions/rdiffbackup.py:570
 msgid "{0}: a backup is already running."
 msgstr ""
 
-#: extensions/rdiffbackup.py:610
+#: extensions/rdiffbackup.py:619
 msgid "{0}: a backup is already running, nothing done."
 msgstr ""
 
-#: extensions/rdiffbackup.py:622
+#: extensions/rdiffbackup.py:631
 msgid "{0}: no volumes to backup onto, aborting."
 msgstr ""
 
-#: extensions/rdiffbackup.py:636
+#: extensions/rdiffbackup.py:645
 msgid "{0}: not backing up on {1}, last backup is less than {2}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:648
+#: extensions/rdiffbackup.py:657
 msgid "{0}: starting backup on{1} {2}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:649
+#: extensions/rdiffbackup.py:658
 msgid " first available"
 msgstr ""
 
-#: extensions/rdiffbackup.py:656
+#: extensions/rdiffbackup.py:665
 msgid "{0}: created directory {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:672
+#: extensions/rdiffbackup.py:681
 msgid "{0}: Rdiff-backup configuration file {1} does not exist."
 msgstr ""
 
-#: extensions/rdiffbackup.py:702
+#: extensions/rdiffbackup.py:711
 msgid "{0}: terminated backup procedure on {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:716
+#: extensions/rdiffbackup.py:725
 msgid "{0}: updated last backup file {1}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:740
+#: extensions/rdiffbackup.py:749
 msgid "Last backup on this volume occured {0} ago."
 msgstr ""
 
-#: extensions/rdiffbackup.py:746
+#: extensions/rdiffbackup.py:755
 msgid "No backup has occured yet."
 msgstr ""
 
-#: extensions/rdiffbackup.py:747
+#: extensions/rdiffbackup.py:756
 msgid "Next backup attempt will occur in {0}."
 msgstr ""
 
-#: extensions/rdiffbackup.py:783
+#: extensions/rdiffbackup.py:815
 msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
 msgstr ""
 
-#: extensions/rdiffbackup.py:802 extensions/rdiffbackup.py:816
+#: extensions/rdiffbackup.py:834 extensions/rdiffbackup.py:848
 msgid "Backup in progress icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:812
+#: extensions/rdiffbackup.py:844
 msgid "Can't eject, backup in progress"
 msgstr ""
 
-#: extensions/rdiffbackup.py:832 extensions/rdiffbackup.py:847
+#: extensions/rdiffbackup.py:864 extensions/rdiffbackup.py:879
 msgid "Eject device icon"
 msgstr ""
 
-#: extensions/rdiffbackup.py:841
+#: extensions/rdiffbackup.py:873
 msgid "Eject the volume"
 msgstr ""
 
-#: extensions/rdiffbackup.py:857
+#: extensions/rdiffbackup.py:889
 msgid "Backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:862
+#: extensions/rdiffbackup.py:894
 msgid "Manage backups and restore files"
 msgstr ""
 
-#: extensions/rdiffbackup.py:880
+#: extensions/rdiffbackup.py:912
 msgid "Run backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:882
+#: extensions/rdiffbackup.py:914
 msgid "Run a system incremental backup now"
 msgstr ""
 
-#: extensions/rdiffbackup.py:889
+#: extensions/rdiffbackup.py:921
 msgid "Rescan volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:891
+#: extensions/rdiffbackup.py:923
 msgid "Force the system to rescan and remount connected volumes"
 msgstr ""
 
-#: extensions/rdiffbackup.py:909
+#: extensions/rdiffbackup.py:941
 msgid "Backup in progress on volume {volume}…"
 msgstr ""
 
-#: extensions/rdiffbackup.py:915
+#: extensions/rdiffbackup.py:947
 msgid "Backup statistics computation in progress on volume {volume}…"
 msgstr ""
 
-#: extensions/rdiffbackup.py:923
+#: extensions/rdiffbackup.py:955
 msgid "Next backup in {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:934
+#: extensions/rdiffbackup.py:966
 msgid "No backup volume connected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:958
+#: extensions/rdiffbackup.py:990
 msgid "used"
 msgstr ""
 
-#: extensions/rdiffbackup.py:973
+#: extensions/rdiffbackup.py:1005
 msgid "Run a manual backup"
 msgstr ""
 
-#: extensions/rdiffbackup.py:981
+#: extensions/rdiffbackup.py:1013
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 
-#: extensions/rdiffbackup.py:985
+#: extensions/rdiffbackup.py:1018
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
 "server before starting this procedure.<br /><br />See <a href=\"http://docs."
@@ -688,15 +692,15 @@ msgid ""
 "for details on enabling backup volumes."
 msgstr ""
 
-#: extensions/rdiffbackup.py:1000
+#: extensions/rdiffbackup.py:1034
 msgid "Run a manual backup on volume {0}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1005
+#: extensions/rdiffbackup.py:1040
 msgid "Recent backup detected"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1006
+#: extensions/rdiffbackup.py:1041
 msgid ""
 "{auto_select}<br /><br />The last backup has been run {last_backup_time} "
 "ago, which is less than the system configured interval ({interval}). Are you "
@@ -704,705 +708,787 @@ msgid ""
 "withing {next_backup_time}, an automatic backup will occur anyway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1022
+#: extensions/rdiffbackup.py:1057
 msgid "Run >>"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1023 interfaces/wmi/users.py:61
+#: extensions/rdiffbackup.py:1058 interfaces/wmi/users.py:62
 msgid "R"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1025 core/machines.py:1239 core/machines.py:1282
+#: extensions/rdiffbackup.py:1060 core/machines.py:1248 core/machines.py:1291
 msgid "<< Cancel"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1025
+#: extensions/rdiffbackup.py:1060
 msgid "C"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1041
+#: extensions/rdiffbackup.py:1079
+msgid "Enable volume {device}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1086
+msgid "Could not enable volume {device} (was: {exc}).{rewind}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1098
 msgid "Eject volume {device}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1044
+#: extensions/rdiffbackup.py:1101
 msgid " (a backup is underway)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1048
-msgid "Volume is in use{backup_info}, can't eject it!{rewind}"
+#: extensions/rdiffbackup.py:1105
+msgid "Volume {device} is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1067
+#: extensions/rdiffbackup.py:1126
 msgid "System backups"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1078
+#: extensions/rdiffbackup.py:1140
 msgid ""
 "A backup is currently in progress, please do not disconnect <strong>{volume}"
 "</strong>.<br /><br /> (update in {countdown}…)"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1106
+#: extensions/rdiffbackup.py:1167
 msgid "No historical data yet. Please wait for the first backup to finish."
 msgstr ""
 
-#: extensions/rdiffbackup.py:1112
+#: extensions/rdiffbackup.py:1173
 msgid "Backups on {mount_point}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:1132
+#: extensions/rdiffbackup.py:1185
 msgid ""
-"No backup volume found. Please connect a backup volume to your server, and "
-"backups will automatically start."
+"All backup volumes are currently unmounted (you can safely disconnect them "
+"from your server).<br /><br />Next automatic backup will occur in "
+"{countdown}, and will automatically remount any backup volume still "
+"connected at this moment."
 msgstr ""
 
-#: extensions/rdiffbackup.py:1142
+#: extensions/rdiffbackup.py:1204
 msgid ""
-"No backup found, or all backup volumes are currently unmounted (you can "
-"safely disconnect them from your server).<br /><br />Next automatic backup "
-"will occur in {countdown}, and will automatically remount any backup volume "
-"still connected at this moment."
+"No backup volume found: no external volume is currently connected to the "
+"server, or all the connected volumes are not <a href=\"http://docs.licorn."
+"org/extensions/volumes.en.html#extensions-volumes-compatible-en\" class="
+"\"online_help\" target=\"_blank\" title=\"Click to know which volumes are "
+"compatible, and how to make one.\">compatible with Licorn®</a>.<br /><br /"
+">Please connect a compatible backup volume to your server, wait a few "
+"seconds and reload the current page."
 msgstr ""
 
-#: extensions/squid.py:209
+#: extensions/rdiffbackup.py:1219
+msgid ""
+"One or more external volume(s) is connected, but none is currently dedicated "
+"to Licorn®. Would you like to <a href=\"http://docs.licorn.org/extensions/"
+"volumes.en.html#extensions-volumes-reserve-en\" class=\"online_help\" target="
+"\"_blank\">enable and reserve</a> any of them for Licorn® use?"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1234
+msgid "enable volume <strong>{0}</strong>"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1236
+msgid ""
+"(device: <strong>{volume.name}</strong>, FS type: <strong>{volume.fstype}</"
+"strong>)"
+msgstr ""
+
+#: extensions/squid.py:210
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr ""
 
-#: foundations/pyutils.py:59
+#: foundations/process.py:341
+msgid "Cannot find client 127.0.0.1:{0} or 127.0.1.1:{0} in /proc/net/tcp!"
+msgstr ""
+
+#: foundations/pyutils.py:67
 #, python-format
 msgid "%s ago"
 msgstr ""
 
-#: foundations/pyutils.py:62
+#: foundations/pyutils.py:70
 #, python-format
 msgid "in %s"
 msgstr ""
 
-#: foundations/pyutils.py:71
+#: foundations/pyutils.py:79
 msgid "{0} year{1}"
 msgstr ""
 
-#: foundations/pyutils.py:72 foundations/pyutils.py:83
+#: foundations/pyutils.py:80 foundations/pyutils.py:91
 msgid "{0}m{1}"
 msgstr ""
 
-#: foundations/pyutils.py:73
+#: foundations/pyutils.py:81
 msgid "{0} day{1}"
 msgstr ""
 
-#: foundations/pyutils.py:74
+#: foundations/pyutils.py:82
 msgid "{0} hour{1}"
 msgstr ""
 
-#: foundations/pyutils.py:75
+#: foundations/pyutils.py:83
 msgid "{0} min{1}"
 msgstr ""
 
-#: foundations/pyutils.py:76
+#: foundations/pyutils.py:84
 msgid "{0} sec{1}"
 msgstr ""
 
-#: foundations/pyutils.py:77
+#: foundations/pyutils.py:85
 msgid "{0:.4f} sec{1}"
 msgstr ""
 
-#: foundations/pyutils.py:82
+#: foundations/pyutils.py:90
 msgid "{0}y{1}"
 msgstr ""
 
-#: foundations/pyutils.py:84
+#: foundations/pyutils.py:92
 msgid "{0}d{1}"
 msgstr ""
 
-#: foundations/fsapi.py:126
+#: foundations/fsapi.py:35
+msgid "minifind: mindepth must be <= maxdepth."
+msgstr ""
+
+#: foundations/fsapi.py:39
+msgid "minifind: please do not try to exhaust maxdepth."
+msgstr ""
+
+#: foundations/fsapi.py:85
+msgid "minifind(): skipping link or mountpoint {0}."
+msgstr ""
+
+#: foundations/fsapi.py:130
 #, python-format
 msgid "Directory %s does not exist. Create it?"
 msgstr ""
 
-#: foundations/fsapi.py:144 core/classes.py:2200
+#: foundations/fsapi.py:148 core/classes.py:2265
 msgid "Created directory {0}."
 msgstr ""
 
-#: foundations/fsapi.py:148
+#: foundations/fsapi.py:152
 msgid "Cannot continue checks for directory {0} (was: {1})."
 msgstr ""
 
-#: foundations/fsapi.py:158
+#: foundations/fsapi.py:164
 #, python-format
 msgid "Checking file %s…"
 msgstr ""
 
-#: foundations/fsapi.py:169
+#: foundations/fsapi.py:174
 #, python-format
 msgid "Checking directory %s…"
 msgstr ""
 
-#: foundations/fsapi.py:193
+#: foundations/fsapi.py:198
 msgid "Checking {1} on {0}…"
 msgstr ""
 
-#: foundations/fsapi.py:194 foundations/fsapi.py:212
+#: foundations/fsapi.py:199 foundations/fsapi.py:218
 msgid "ACLs"
 msgstr ""
 
-#: foundations/fsapi.py:195 foundations/fsapi.py:213 foundations/fsapi.py:328
+#: foundations/fsapi.py:200 foundations/fsapi.py:219 foundations/fsapi.py:335
 msgid "posix perms"
 msgstr ""
 
-#: foundations/fsapi.py:211
+#: foundations/fsapi.py:217
 msgid "Checking {1} on {0} contents…"
 msgstr ""
 
-#: foundations/fsapi.py:239
+#: foundations/fsapi.py:245
 #, python-format
 msgid "Not touching %s, it is not a file nor a directory."
 msgstr ""
 
-#: foundations/fsapi.py:326
+#: foundations/fsapi.py:269
+msgid "You must pass something through dirs_infos to check!"
+msgstr ""
+
+#: foundations/fsapi.py:333
 msgid "Checking {perm_type} of {path}."
 msgstr ""
 
-#: foundations/fsapi.py:327
+#: foundations/fsapi.py:334
 msgid "POSIX.1e ACL"
 msgstr ""
 
-#: foundations/fsapi.py:345
+#: foundations/fsapi.py:352
 msgid ""
 "Invalid access ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
 msgstr ""
 
-#: foundations/fsapi.py:350 foundations/fsapi.py:416
+#: foundations/fsapi.py:357 foundations/fsapi.py:428
 msgid "empty"
 msgstr ""
 
-#: foundations/fsapi.py:383
+#: foundations/fsapi.py:390
 msgid "Applyed access ACL {access_acl} on {path}."
 msgstr ""
 
-#: foundations/fsapi.py:411
+#: foundations/fsapi.py:402
+msgid "ACL not applyed on {0} (was: {1})"
+msgstr ""
+
+#: foundations/fsapi.py:423
 msgid ""
 "Invalid default ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
 msgstr ""
 
-#: foundations/fsapi.py:444
+#: foundations/fsapi.py:456
 msgid "Applyed default ACL {access_acl} on {path}."
 msgstr ""
 
-#: foundations/fsapi.py:472
+#: foundations/fsapi.py:484
 msgid "An ACL is present on {path}, but it should not."
 msgstr ""
 
-#: foundations/fsapi.py:490
+#: foundations/fsapi.py:502
 msgid "Deleted default ACL from {path}."
 msgstr ""
 
-#: foundations/fsapi.py:503
+#: foundations/fsapi.py:515
 msgid "Deleted access ACL from {path}."
 msgstr ""
 
-#: foundations/fsapi.py:522
+#: foundations/fsapi.py:535
 msgid ""
 "Invalid POSIX permissions for {path} (it is {current_mode} but should be "
 "{wanted_mode})."
 msgstr ""
 
-#: foundations/fsapi.py:540
+#: foundations/fsapi.py:553
 msgid "Applyed POSIX permissions {wanted_mode} on {path}."
 msgstr ""
 
-#: foundations/fsapi.py:560
+#: foundations/fsapi.py:573
 #, python-format
 msgid "Checking POSIX uid/gid/perms of %s."
 msgstr ""
 
-#: foundations/fsapi.py:608
+#: foundations/fsapi.py:621
 msgid ""
 "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}. Correct "
 "it?"
 msgstr ""
 
-#: foundations/fsapi.py:632
+#: foundations/fsapi.py:645
 msgid "Changed owner of {0} to {1}:{2}."
 msgstr ""
 
-#: foundations/fsapi.py:644
+#: foundations/fsapi.py:657
 msgid "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}."
 msgstr ""
 
-#: foundations/fsapi.py:661
+#: foundations/fsapi.py:674
 msgid "Created symlink {link}, pointing to {orig}."
 msgstr ""
 
-#: foundations/fsapi.py:674
+#: foundations/fsapi.py:687
 msgid ""
 "A symlink {link} already exists, but points to {dest}, instead of {good}. "
 "Correct it?"
 msgstr ""
 
-#: foundations/fsapi.py:687
+#: foundations/fsapi.py:700
 msgid "Overwritten symlink {link} with destination {good} instead of {dest}."
 msgstr ""
 
-#: foundations/fsapi.py:702
+#: foundations/fsapi.py:709
+msgid "Cannot create symlink {0} to {1}!"
+msgstr ""
+
+#: foundations/fsapi.py:715
 msgid ""
 "Symlink {link} is currently broken, pointing to non-existing target {dest}); "
 "making it point to {good}."
 msgstr ""
 
-#: foundations/fsapi.py:718
+#: foundations/fsapi.py:731
 #, python-format
 msgid "Repaired vanished symlink %s."
 msgstr ""
 
-#: foundations/fsapi.py:721
+#: foundations/fsapi.py:734
 msgid ""
 "{link} already exists but it is not a symlink, thus it does not point to "
 "{dest}. Rename and replace it with a correct symlink?"
 msgstr ""
 
-#: foundations/fsapi.py:732
+#: foundations/fsapi.py:745
 msgid "{0} ({1} conflict){2}"
 msgstr ""
 
-#: foundations/fsapi.py:733 daemon/rwi.py:810
+#: foundations/fsapi.py:746 daemon/rwi.py:898
 msgid "%d %m %Y at %H:%M:%S"
 msgstr ""
 
-#: foundations/fsapi.py:737
+#: foundations/fsapi.py:750
 msgid ""
 "Renamed {link} to {newname} and replaced it by a symlink pointing to {dest}."
 msgstr ""
 
-#: foundations/fsapi.py:746
+#: foundations/fsapi.py:759
 msgid ""
 "While making symlink to {dest}, the destination {link} already exists and is "
 "not a link."
 msgstr ""
 
-#: foundations/fsapi.py:764
+#: foundations/fsapi.py:777
 #, python-format
 msgid "Cannot remove %s, it does not exist!"
 msgstr ""
 
-#: foundations/fsapi.py:788
+#: foundations/fsapi.py:801
 msgid "Archived {0} as {1}."
 msgstr ""
 
-#: foundations/fsapi.py:796
+#: foundations/fsapi.py:809
 #, python-format
 msgid "Cannot archive %s, it does not exist!"
 msgstr ""
 
-#: foundations/fsapi.py:821
+#: foundations/fsapi.py:834
 msgid "Backed up {orig} as {backup}."
 msgstr ""
 
-#: foundations/logging.py:41
+#: foundations/logging.py:44
 msgid "Exception occured in {0}: {1}."
 msgstr ""
 
-#: foundations/hlstr.py:236 foundations/hlstr.py:254
+#: foundations/logging.py:221
+msgid ""
+"Thread {0} has no listener anymore, desengaging from monitors (was: {1})."
+msgstr ""
+
+#: foundations/logging.py:230
+msgid ""
+"Thread {0} has lost its remote end, desengaging from monitors (was: {1})."
+msgstr ""
+
+#: foundations/hlstr.py:233 foundations/hlstr.py:251
 msgid "Ambiguous mode {0} (matches at least {1} and {2})."
 msgstr ""
 
-#: foundations/classes.py:105
+#: foundations/classes.py:103
 msgid ""
 "{0}: system file {1} must be modified for the configuration to be complete. "
 "Do it?"
 msgstr ""
 
-#: foundations/classes.py:114
+#: foundations/classes.py:112
 msgid "{0}: altered configuration file {1}."
 msgstr ""
 
-#: daemon/rwi.py:139 daemon/rwi.py:156
+#: daemon/rwi.py:151 daemon/rwi.py:177
 msgid "Skipped non existing or invalid {0} or {1} \"{2}\"."
 msgstr ""
 
-#: daemon/rwi.py:171
+#: daemon/rwi.py:192
 #, python-format
 msgid "You must specify at least one %s!"
 msgstr ""
 
-#: daemon/rwi.py:498
-msgid "You must specify an import filename."
+#: daemon/rwi.py:478
+msgid "New trace session started with UUID {0}, facilities {1}."
 msgstr ""
 
-#: daemon/rwi.py:503
-msgid "You must specify a profile."
-msgstr ""
-
-#: daemon/rwi.py:509
-msgid "You must specify a firstname column number."
+#: daemon/rwi.py:513
+#, python-format
+msgid "Monitor listener with UUID %s not found!"
 msgstr ""
 
 #: daemon/rwi.py:515
+msgid "Trace session UUID {0} ended."
+msgstr ""
+
+#: daemon/rwi.py:586
+msgid "You must specify an import filename."
+msgstr ""
+
+#: daemon/rwi.py:591
+msgid "You must specify a profile."
+msgstr ""
+
+#: daemon/rwi.py:597
+msgid "You must specify a firstname column number."
+msgstr ""
+
+#: daemon/rwi.py:603
 msgid "You must specify a lastname column number."
 msgstr ""
 
-#: daemon/rwi.py:521
+#: daemon/rwi.py:609
 msgid "You must specify a group column number."
 msgstr ""
 
-#: daemon/rwi.py:528
+#: daemon/rwi.py:616
 msgid ""
 "Two columns have the same number (lastname={0}, firstname={1}, group={2})"
 msgstr ""
 
-#: daemon/rwi.py:537
+#: daemon/rwi.py:625
 msgid "Sorry, CSV file must have no more than 128 columns.\""
 msgstr ""
 
-#: daemon/rwi.py:550
+#: daemon/rwi.py:638
 msgid ""
 "Cannot automatically detect the file encoding, assuming iso-8859-15 "
 "(latin-1)!"
 msgstr ""
 
-#: daemon/rwi.py:558
+#: daemon/rwi.py:646
 #, python-format
 msgid "The profile \"%s\" does not exist."
 msgstr ""
 
-#: daemon/rwi.py:577
+#: daemon/rwi.py:665
 #, python-format
 msgid "Cannot load CSV file (was: %s)."
 msgstr ""
 
-#: daemon/rwi.py:583
+#: daemon/rwi.py:671
 msgid "Reading input file: "
 msgstr ""
 
-#: daemon/rwi.py:617
+#: daemon/rwi.py:705
 msgid "Import error on line {0}: no {1} specified or bad {2} data (was: {3})."
 msgstr ""
 
-#: daemon/rwi.py:622
+#: daemon/rwi.py:710
 #, python-format
 msgid "Encoding not supported for input filename (was: %s)."
 msgstr ""
 
-#: daemon/rwi.py:633 daemon/rwi.py:646
+#: daemon/rwi.py:721 daemon/rwi.py:734
 msgid ""
 "Import error on line {0}: no group specified or bad {2} data (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:635
+#: daemon/rwi.py:723
 msgid "firstname or lastname"
 msgstr ""
 
-#: daemon/rwi.py:636 daemon/rwi.py:730
+#: daemon/rwi.py:724 daemon/rwi.py:818
 msgid "login"
 msgstr ""
 
-#: daemon/rwi.py:639 daemon/rwi.py:651
+#: daemon/rwi.py:727 daemon/rwi.py:739
 msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:648 daemon/rwi.py:731 core/configuration.py:872
-#: core/groups.py:1696
+#: daemon/rwi.py:736 daemon/rwi.py:819 core/configuration.py:873
+#: core/groups.py:1697
 msgid "group"
 msgstr ""
 
-#: daemon/rwi.py:672
+#: daemon/rwi.py:760
 msgid " done."
 msgstr ""
 
-#: daemon/rwi.py:705
+#: daemon/rwi.py:793
 msgid "Added group {0} ({1}/{2}); progress: {3}%"
 msgstr ""
 
-#: daemon/rwi.py:727
+#: daemon/rwi.py:815
 msgid "Fields order:"
 msgstr ""
 
-#: daemon/rwi.py:728
+#: daemon/rwi.py:816
 msgid "FIRSTname"
 msgstr ""
 
-#: daemon/rwi.py:729
+#: daemon/rwi.py:817
 msgid "LASTname"
 msgstr ""
 
-#: daemon/rwi.py:732 interfaces/cli/argparser.py:801
+#: daemon/rwi.py:820 interfaces/cli/argparser.py:871
 msgid "password"
 msgstr ""
 
-#: daemon/rwi.py:747
+#: daemon/rwi.py:835
 msgid ""
 "Added user {0} {1} [login={2}, uid={3}, passwd={4}] ({5}/{6}); progress: {7}%"
 msgstr ""
 
-#: daemon/rwi.py:769
+#: daemon/rwi.py:857
 msgid ""
 "Import error on line {0}.\n"
 "{1}"
 msgstr ""
 
-#: daemon/rwi.py:780
+#: daemon/rwi.py:868
 msgid "(autogenerated upon creation)"
 msgstr ""
 
-#: daemon/rwi.py:804
+#: daemon/rwi.py:892
 msgid "Finished importing, creating summary HTML file: "
 msgstr ""
 
-#: daemon/rwi.py:828
+#: daemon/rwi.py:916
 msgid "{0} accounts and passwords"
 msgstr ""
 
-#: daemon/rwi.py:829
+#: daemon/rwi.py:917
 msgid "Import made on {0}."
 msgstr ""
 
-#: daemon/rwi.py:830
+#: daemon/rwi.py:918
 msgid ""
 "Keeping passwords in any written form is a major security flaw for you "
 "information system.<br />Please be sure obliterate this file and any printed "
 "version after having transmitted their password to your users."
 msgstr ""
 
-#: daemon/rwi.py:835
+#: daemon/rwi.py:923
 msgid "Direct access to {0}:"
 msgstr ""
 
-#: daemon/rwi.py:864
+#: daemon/rwi.py:952
 msgid "Lastname"
 msgstr ""
 
-#: daemon/rwi.py:865
+#: daemon/rwi.py:953
 msgid "Firstname"
 msgstr ""
 
-#: daemon/rwi.py:866 interfaces/wmi/users.py:546 interfaces/wmi/users.py:909
-#: interfaces/wmi/users.py:960
+#: daemon/rwi.py:954 interfaces/wmi/users.py:547 interfaces/wmi/users.py:910
+#: interfaces/wmi/users.py:961
 msgid "Login"
 msgstr ""
 
-#: daemon/rwi.py:867 interfaces/wmi/users.py:705
+#: daemon/rwi.py:955 interfaces/wmi/users.py:706
 msgid "Password"
 msgstr ""
 
-#: daemon/rwi.py:894
+#: daemon/rwi.py:982
 msgid "done."
 msgstr ""
 
-#: daemon/rwi.py:894
+#: daemon/rwi.py:982
 msgid "report:"
 msgstr ""
 
-#: daemon/rwi.py:989
+#: daemon/rwi.py:1077
 msgid "Unable to add user(s) {0} in group {1} (was: {2})."
 msgstr ""
 
-#: daemon/rwi.py:1203
+#: daemon/rwi.py:1292
 msgid "Are you sure you want to delete all users?"
 msgstr ""
 
-#: daemon/rwi.py:1221
+#: daemon/rwi.py:1310
 #, python-format
 msgid "Delete user %s?"
 msgstr ""
 
-#: daemon/rwi.py:1249
+#: daemon/rwi.py:1338
 msgid "Unable to remove user(s) {0} from group {1} (was: {2})."
 msgstr ""
 
-#: daemon/rwi.py:1290
+#: daemon/rwi.py:1379
 msgid "You must specify a file name"
 msgstr ""
 
-#: daemon/rwi.py:1320
+#: daemon/rwi.py:1409
 msgid "Deleting groups ({0}/{1}), progression: {3:.2f}%"
 msgstr ""
 
-#: daemon/rwi.py:1382
+#: daemon/rwi.py:1471
 msgid "Are you sure you want to delete all groups?"
 msgstr ""
 
-#: daemon/rwi.py:1401
+#: daemon/rwi.py:1490
 #, python-format
 msgid "Delete group %s?"
 msgstr ""
 
-#: daemon/rwi.py:1450
+#: daemon/rwi.py:1540
 msgid "Are you sure you want to delete all profiles?"
 msgstr ""
 
-#: daemon/rwi.py:1464
+#: daemon/rwi.py:1554
 #, python-format
 msgid "Delete profile %s?"
 msgstr ""
 
-#: daemon/rwi.py:1504
+#: daemon/rwi.py:1596
 msgid "Are you sure you want to delete all privileges?"
 msgstr ""
 
-#: daemon/rwi.py:1518
+#: daemon/rwi.py:1610
 #, python-format
 msgid "Delete privilege %s?"
 msgstr ""
 
-#: daemon/rwi.py:1570
+#: daemon/rwi.py:1663
 msgid "Are you sure you want to modify all users?"
 msgstr ""
 
-#: daemon/rwi.py:1591
+#: daemon/rwi.py:1684
 #, python-format
 msgid "Modify user %s?"
 msgstr ""
 
-#: daemon/rwi.py:1615
+#: daemon/rwi.py:1708
 #, python-format
 msgid "Please enter new password for user %s: "
 msgstr ""
 
-#: daemon/rwi.py:1617
+#: daemon/rwi.py:1710
 #, python-format
 msgid "Please confirm new password for user %s: "
 msgstr ""
 
-#: daemon/rwi.py:1622
+#: daemon/rwi.py:1715
 msgid "Please enter your OLD (current) password: "
 msgstr ""
 
-#: daemon/rwi.py:1624
+#: daemon/rwi.py:1717
 msgid "Please enter your new password: "
 msgstr ""
 
-#: daemon/rwi.py:1625
+#: daemon/rwi.py:1718
 msgid "Please confirm your new password: "
 msgstr ""
 
-#: daemon/rwi.py:1628
+#: daemon/rwi.py:1721
 #, python-format
 msgid "Please enter %s's OLD (current) password: "
 msgstr ""
 
-#: daemon/rwi.py:1635
+#: daemon/rwi.py:1728
 msgid "Wrong password, procedure aborted."
 msgstr ""
 
-#: daemon/rwi.py:1645
+#: daemon/rwi.py:1738
 msgid "Passwords do not match, leaving the old one in place."
 msgstr ""
 
-#: daemon/rwi.py:1671 daemon/rwi.py:1679
+#: daemon/rwi.py:1764 daemon/rwi.py:1772
 msgid "Unable to remove user {0} from group {1} (was: {2})."
 msgstr ""
 
-#: daemon/rwi.py:1694 daemon/rwi.py:1701
+#: daemon/rwi.py:1787 daemon/rwi.py:1794
 msgid "Unable to add user {0} in group {1} (was: {2})."
 msgstr ""
 
-#: daemon/rwi.py:1715
+#: daemon/rwi.py:1808
 #, python-format
 msgid "What do you want to modify about user(s) %s ?"
 msgstr ""
 
-#: daemon/rwi.py:1766
+#: daemon/rwi.py:1857
 msgid "Are you sure you want to modify all groups?"
 msgstr ""
 
-#: daemon/rwi.py:1792
+#: daemon/rwi.py:1883
 #, python-format
 msgid "Modify group %s?"
 msgstr ""
 
-#: daemon/rwi.py:1798
+#: daemon/rwi.py:1889
 #, python-format
 msgid ""
 "Skipped associated system group %s, handled automatically by standard group "
 "move."
 msgstr ""
 
-#: daemon/rwi.py:1843
+#: daemon/rwi.py:1934
 msgid "Skipped responsible(s) {0} addition on non-standard group {1}."
 msgstr ""
 
-#: daemon/rwi.py:1854
+#: daemon/rwi.py:1945
 msgid "Skipped responsible(s) {0} deletion on non-standard group {1}."
 msgstr ""
 
-#: daemon/rwi.py:1865
+#: daemon/rwi.py:1956
 msgid "Skipped guest(s) {0} addition on non-standard group {1}."
 msgstr ""
 
-#: daemon/rwi.py:1876
+#: daemon/rwi.py:1967
 msgid "Skipped guest(s) {0} deletion on non-standard group {1}."
 msgstr ""
 
-#: daemon/rwi.py:1891
+#: daemon/rwi.py:1982
 #, python-format
 msgid "What do you want to modify about group(s) %s?"
 msgstr ""
 
-#: daemon/rwi.py:1913
+#: daemon/rwi.py:2005
 msgid "Are you sure you want to modify all profiles?"
 msgstr ""
 
-#: daemon/rwi.py:1933
+#: daemon/rwi.py:2025
 #, python-format
 msgid "Modify profile %s?"
 msgstr ""
 
-#: daemon/rwi.py:2010
+#: daemon/rwi.py:2102
 #, python-format
 msgid "What do you want to modify about profile(s) %s?"
 msgstr ""
 
-#: daemon/rwi.py:2048 daemon/rwi.py:2067
+#: daemon/rwi.py:2140 daemon/rwi.py:2159
 msgid "not yet anymore."
 msgstr ""
 
-#: daemon/rwi.py:2121 daemon/rwi.py:2129
+#: daemon/rwi.py:2213 daemon/rwi.py:2221
 #, python-format
 msgid "Skipped non-existing backend %s."
 msgstr ""
 
-#: daemon/rwi.py:2137 daemon/rwi.py:2145
+#: daemon/rwi.py:2229 daemon/rwi.py:2237
 #, python-format
 msgid "Skipped non-existing extension %s."
 msgstr ""
 
-#: daemon/rwi.py:2149
+#: daemon/rwi.py:2241
 msgid "What do you want to modify? use --help to know!"
 msgstr ""
 
-#: daemon/rwi.py:2192
+#: daemon/rwi.py:2284
 msgid "What do you want to modify on volumes? use --help to know!"
 msgstr ""
 
-#: daemon/rwi.py:2226
+#: daemon/rwi.py:2320
 msgid "Are you sure you want to check all users?"
 msgstr ""
 
-#: daemon/rwi.py:2248
+#: daemon/rwi.py:2342
 #, python-format
 msgid "Check account %s?"
 msgstr ""
 
-#: daemon/rwi.py:2304
+#: daemon/rwi.py:2398
 msgid "Are you sure you want to check all groups?"
 msgstr ""
 
-#: daemon/rwi.py:2327
+#: daemon/rwi.py:2421
 #, python-format
 msgid "Check group %s?"
 msgstr ""
 
-#: daemon/rwi.py:2355
+#: daemon/rwi.py:2449
 msgid "Are you sure you want to check all profiles?"
 msgstr ""
 
-#: daemon/rwi.py:2369
+#: daemon/rwi.py:2463
 #, python-format
 msgid "Check profile %s?"
 msgstr ""
 
-#: daemon/rwi.py:2372
+#: daemon/rwi.py:2466
 msgid "Sorry, not yet."
 msgstr ""
 
@@ -1431,54 +1517,108 @@ msgstr ""
 msgid "%s: all threads started, ready for TTY interaction."
 msgstr ""
 
-#: daemon/main.py:518
+#: daemon/main.py:416
+msgid ""
+"Licorn® daemon {full}status: up {uptime}, {nb_threads} threads, "
+"{nb_controllers} controllers, {nb_queues} queues, {nb_locked}/{nb_locks} "
+"Mlocks, {sub_locked}/{sub_locks} Ulocks\n"
+"CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s MEM: res {mem_res:.2}Mb shr "
+"{mem_shr:.2}Mb ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n"
+msgstr ""
+
+#: daemon/main.py:441
+#, python-format
+msgid "Mlocks:  %s\n"
+msgstr ""
+
+#: daemon/main.py:445
+#, python-format
+msgid "Ulocks:  %s\n"
+msgstr ""
+
+#: daemon/main.py:448
+#, python-format
+msgid "Threads: %s\n"
+msgstr ""
+
+#: daemon/main.py:454
+msgid "servicers"
+msgstr ""
+
+#: daemon/main.py:459
+msgid "aclcheckers"
+msgstr ""
+
+#: daemon/main.py:464
+msgid "networkers"
+msgstr ""
+
+#: daemon/main.py:469
+#, python-format
+msgid "Queues:  %s\n"
+msgstr ""
+
+#: daemon/main.py:480 daemon/main.py:485 daemon/main.py:491
+#, python-format
+msgid "thread %s\n"
+msgstr ""
+
+#: daemon/main.py:494
+msgid "thread {0}{1}({2}) does not implement dump_status().\n"
+msgstr ""
+
+#: daemon/main.py:500
+msgid "thread {0}{1}({2}) has terminated.\n"
+msgstr ""
+
+#: daemon/main.py:549
 msgid "{0}: killed aborted instance @pid {1}."
 msgstr ""
 
-#: daemon/main.py:544
+#: daemon/main.py:575
 msgid "{0}: trying to {1} existing instance @pid {2}."
 msgstr ""
 
-#: daemon/main.py:545
+#: daemon/main.py:576
 msgid "replace"
 msgstr ""
 
-#: daemon/main.py:546
+#: daemon/main.py:577
 msgid "shutdown"
 msgstr ""
 
-#: daemon/main.py:557
+#: daemon/main.py:588
 #, python-format
 msgid ""
 "%s: existing instance still running, we're going to be more incisive in a "
 "few seconds."
 msgstr ""
 
-#: daemon/main.py:580
+#: daemon/main.py:611
 #, python-format
 msgid ""
 "%s: re-killing old instance softly with TERM signal and waiting a little "
 "more."
 msgstr ""
 
-#: daemon/main.py:597
+#: daemon/main.py:628
 #, python-format
 msgid "%s: old instance won't terminate after 8 seconds. Sending KILL signal."
 msgstr ""
 
-#: daemon/main.py:625
+#: daemon/main.py:656
 #, python-format
 msgid "%s: killing old instance's father (sudo, pid %s) without any mercy."
 msgstr ""
 
-#: daemon/main.py:642
+#: daemon/main.py:673
 msgid ""
 "{0}: old instance won't terminate after 9 seconds and cannot be killed. We "
 "won\t try to kill any other parent than \"{1}\", you are in a non-trivial "
 "situation. Up to you to solve it."
 msgstr ""
 
-#: daemon/main.py:653
+#: daemon/main.py:684
 #, python-format
 msgid ""
 "%s: old instance won't terminate after 15 seconds and cannot be killed "
@@ -1486,212 +1626,240 @@ msgid ""
 "a system where \"kill -9\" does not work as advertised. Sorry for you."
 msgstr ""
 
-#: daemon/main.py:663
+#: daemon/main.py:694
 msgid "{0}: old instance {1} terminated{2}"
 msgstr ""
 
-#: daemon/main.py:665
+#: daemon/main.py:696
 msgid "nastily"
 msgstr ""
 
-#: daemon/main.py:665
+#: daemon/main.py:696
 msgid "successfully"
 msgstr ""
 
-#: daemon/main.py:666
+#: daemon/main.py:697
 msgid ", we can play now."
 msgstr ""
 
-#: daemon/main.py:670
+#: daemon/main.py:701
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
 
-#: daemon/main.py:685
+#: daemon/main.py:716
 msgid "{0}: must be run as {1} (was: {2})."
 msgstr ""
 
-#: daemon/main.py:737
+#: daemon/main.py:768
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 
-#: daemon/main.py:742
+#: daemon/main.py:773
 #, python-format
 msgid "%s: joining threads."
 msgstr ""
 
-#: daemon/main.py:756
+#: daemon/main.py:787
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr ""
 
-#: daemon/main.py:759
+#: daemon/main.py:790
 #, python-format
 msgid " (currently working on %s)"
 msgstr ""
 
-#: daemon/main.py:799
+#: daemon/main.py:830
 msgid "{0}: cannot remove {1} (was: {2})."
 msgstr ""
 
-#: daemon/main.py:802
+#: daemon/main.py:833
 #, python-format
 msgid " (up %s)"
 msgstr ""
 
-#: daemon/main.py:810
+#: daemon/main.py:841
 #, python-format
 msgid "%s: cleaning up and stopping threads…"
 msgstr ""
 
-#: daemon/main.py:812
+#: daemon/main.py:843
 msgid "{0}: signal {1} received, shutting down…"
 msgstr ""
 
-#: daemon/main.py:817
+#: daemon/main.py:848
 msgid "{0}: exiting{1}."
 msgstr ""
 
-#: daemon/main.py:820
+#: daemon/main.py:851
 msgid "{0}: SIGUSR1 received, preparing restart."
 msgstr ""
 
-#: daemon/main.py:854
+#: daemon/main.py:885
 msgid "{0}: restarting{1}."
 msgstr ""
 
-#: daemon/main.py:910
+#: daemon/main.py:941
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr ""
 
-#: daemon/main.py:914
+#: daemon/main.py:945
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr ""
 
-#: daemon/__init__.py:155
+#: daemon/__init__.py:169
 msgid "{0}: switched long_output status to {1}."
 msgstr ""
 
-#: daemon/__init__.py:156
+#: daemon/__init__.py:171
 msgid "enabled"
 msgstr ""
 
-#: daemon/__init__.py:157 interfaces/cli/argparser.py:822
+#: daemon/__init__.py:173 interfaces/cli/argparser.py:892
 msgid "disabled"
 msgstr ""
 
-#: daemon/__init__.py:160
+#: daemon/__init__.py:176
 msgid "Console-initiated garbage collection and dead thread cleaning."
 msgstr ""
 
-#: daemon/__init__.py:173
+#: daemon/__init__.py:190
 msgid "{0} active threads: {1}"
 msgstr ""
 
-#: daemon/__init__.py:181
+#: daemon/__init__.py:210
 msgid "{0}: increased verbosity level to {1}."
 msgstr ""
 
-#: daemon/__init__.py:187
+#: daemon/__init__.py:217
 msgid "{0}: verbosity level already at the maximum value ({1})."
 msgstr ""
 
-#: daemon/__init__.py:197
+#: daemon/__init__.py:239
 msgid "{0}: decreased verbosity level to {1}."
 msgstr ""
 
-#: daemon/__init__.py:203
+#: daemon/__init__.py:246
 msgid "{0}: verbosity level already at the minimum value ({1})."
 msgstr ""
 
-#: daemon/__init__.py:228
+#: daemon/__init__.py:272
 #, python-format
 msgid "%s: killing ourselves badly."
 msgstr ""
 
-#: daemon/__init__.py:244
+#: daemon/__init__.py:289
 #, python-format
 msgid "%s: Entering interactive mode. Welcome into licornd's arcanes…"
 msgstr ""
 
-#: daemon/__init__.py:279
+#: daemon/__init__.py:324
 msgid "Licorn® {0}, Python {1} on {2}"
 msgstr ""
 
-#: daemon/__init__.py:293
+#: daemon/__init__.py:338
 #, python-format
 msgid "%s: leaving interactive mode. Welcome back to Real World™."
 msgstr ""
 
-#: daemon/__init__.py:297
+#: daemon/__init__.py:342
 msgid "{0}: received unhandled char \"{1}\", ignoring."
 msgstr ""
 
-#: daemon/eventmanager.py:40
+#: daemon/eventmanager.py:42
+msgid ""
+"{0}{1}: {2} events & {3} callbacks registered\n"
+"{4}"
+msgstr ""
+
+#: daemon/eventmanager.py:54
 msgid "{0}{1} ({2} events & {3} callbacks registered)"
 msgstr ""
 
-#: daemon/eventmanager.py:68 daemon/eventmanager.py:111
+#: daemon/eventmanager.py:82 daemon/eventmanager.py:125
 msgid "{0}: no callbacks / methods for event {1}."
 msgstr ""
 
-#: daemon/eventmanager.py:87
+#: daemon/eventmanager.py:101
 msgid "{0}: exception encountered while running event {1}: {2}"
 msgstr ""
 
-#: daemon/eventmanager.py:142
+#: daemon/eventmanager.py:156
 msgid "{0}: event \"{1}\" not found when trying to unregister method {2}."
 msgstr ""
 
-#: daemon/eventmanager.py:147
+#: daemon/eventmanager.py:161
 msgid "{0}: method {1} already not registered for event {2}."
 msgstr ""
 
-#: daemon/wmi.py:80
+#: daemon/wmi.py:81
 #, python-format
 msgid "{0}: socket already in use. waiting (total: %ds)."
 msgstr ""
 
-#: daemon/wmi.py:86
+#: daemon/wmi.py:87
 msgid "{0}: socket error {1}."
 msgstr ""
 
-#: daemon/wmi.py:92
+#: daemon/wmi.py:93
 msgid "{0}: {1} to answer requests at address {2}."
 msgstr ""
 
-#: daemon/wmi.py:93
+#: daemon/wmi.py:94
 msgid "ready"
 msgstr ""
 
-#: daemon/wmi.py:229
+#: daemon/wmi.py:238
 msgid "{0}: switched to language {1} for http_user {2}."
 msgstr ""
 
-#: daemon/wmi.py:272
+#: daemon/wmi.py:281
 #, python-format
 msgid "%s: empty username or password sent as authentification string."
 msgstr ""
 
-#: daemon/inotifier.py:75
+#: daemon/cmdlistener.py:145
+msgid ""
+"Problem finding uid initiating connection from {0}:{1} (was {2}), denying "
+"request."
+msgstr ""
+
+#: daemon/cmdlistener.py:174
+msgid "Denied connection tentative from {0}:{1} (allowed are {2} and {3})."
+msgstr ""
+
+#: daemon/cmdlistener.py:204
+msgid "{0}/{1}: authorized client connection from {2}:{3}, user {4}({5})."
+msgstr ""
+
+#: daemon/cmdlistener.py:214
+msgid "Connection tentative from {0}:{1}, user {2}({3})."
+msgstr ""
+
+#: daemon/cmdlistener.py:221
+msgid "Something went wrong from {0} (was: {1})."
+msgstr ""
+
+#: daemon/inotifier.py:72
 msgid "{0}{1} ({2} watched dirs, {3} config files, {4} queued events)"
 msgstr ""
 
-#: daemon/inotifier.py:93
+#: daemon/inotifier.py:90
 msgid "{0}: closing {1} watches, please wait…"
 msgstr ""
 
-#: daemon/inotifier.py:121
+#: daemon/inotifier.py:119
 msgid "{0}: error on read_events: {1}"
 msgstr ""
 
-#: daemon/inotifier.py:140
+#: daemon/inotifier.py:137
 msgid "inotifier: error deleting {0} (was: {1} {2})"
 msgstr ""
 
-#: daemon/inotifier.py:278
+#: daemon/inotifier.py:269
 msgid "{0}: configuration file {1} changed, trigerring upstream reload."
 msgstr ""
 
-#: daemon/inotifier.py:304 daemon/inotifier.py:310
+#: daemon/inotifier.py:297 daemon/inotifier.py:303
 msgid "{0}: increased inotify {1} to {2}."
 msgstr ""
 
@@ -1731,254 +1899,298 @@ msgstr ""
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr ""
 
-#: interfaces/cli/__init__.py:82
+#: interfaces/cli/__init__.py:91
 #, python-format
 msgid "Unknow mode %s!"
 msgstr ""
 
-#: interfaces/cli/__init__.py:158
+#: interfaces/cli/__init__.py:172
 msgid "Interrupted, cleaning up!"
 msgstr ""
 
-#: interfaces/cli/__init__.py:161
+#: interfaces/cli/__init__.py:175
 msgid "daemon needs a restart, sending USR1 signal."
 msgstr ""
 
-#: interfaces/cli/argparser.py:60
+#: interfaces/cli/argparser.py:61
 msgid "Filter options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:68 interfaces/cli/argparser.py:75
+#: interfaces/cli/argparser.py:69 interfaces/cli/argparser.py:76
 #, python-format
 msgid "Also select system data. I.e. output system %s too."
 msgstr ""
 
-#: interfaces/cli/argparser.py:81 interfaces/cli/argparser.py:115
+#: interfaces/cli/argparser.py:82 interfaces/cli/argparser.py:142
 msgid ""
 "exclude {0} from the selection. Can be IDs or {1} names. Separated by commas "
 "without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:89 interfaces/cli/argparser.py:96
+#: interfaces/cli/argparser.py:90 interfaces/cli/argparser.py:97
 #, python-format
 msgid "long output (all info, attributes, etc). Default: %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:90 interfaces/cli/argparser.py:97
+#: interfaces/cli/argparser.py:91 interfaces/cli/argparser.py:98
+#: interfaces/cli/argparser.py:104 interfaces/cli/argparser.py:124
 msgid "no"
 msgstr ""
 
-#: interfaces/cli/argparser.py:103
+#: interfaces/cli/argparser.py:102
+#, python-format
+msgid ""
+"Stay connected to the daemon and update the status every given interval (see "
+"below). Default: %s."
+msgstr ""
+
+#: interfaces/cli/argparser.py:108
+#, python-format
+msgid "Monitoring interval (in seconds). Default: %s."
+msgstr ""
+
+#: interfaces/cli/argparser.py:109
+msgid "1 sec"
+msgstr ""
+
+#: interfaces/cli/argparser.py:113
+#, python-format
+msgid "Monitor a given number of count. Default: %s."
+msgstr ""
+
+#: interfaces/cli/argparser.py:114 interfaces/cli/argparser.py:119
+msgid "infinite"
+msgstr ""
+
+#: interfaces/cli/argparser.py:118
+#, python-format
+msgid "Monitor during a time period, in seconds. Default: %s."
+msgstr ""
+
+#: interfaces/cli/argparser.py:123
+#, python-format
+msgid "Do not clear the screen between each monitor output. Default: %s."
+msgstr ""
+
+#: interfaces/cli/argparser.py:130
 msgid "{0} {1}: this can be a very long operation{2}"
 msgstr ""
 
-#: interfaces/cli/argparser.py:104
+#: interfaces/cli/argparser.py:131
 #, python-format
 msgid "Check *all* %s on the system."
 msgstr ""
 
-#: interfaces/cli/argparser.py:107
+#: interfaces/cli/argparser.py:134
 msgid "Check every bit of the configuration."
 msgstr ""
 
-#: interfaces/cli/argparser.py:108
+#: interfaces/cli/argparser.py:135
 msgid "WARNING"
 msgstr ""
 
-#: interfaces/cli/argparser.py:109
+#: interfaces/cli/argparser.py:136
 #, python-format
 msgid ", depending of the current number of %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:123
+#: interfaces/cli/argparser.py:150
 msgid "Specify user(s) by their login (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:128
+#: interfaces/cli/argparser.py:155
 msgid "Specify user(s) by their UID (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:134
+#: interfaces/cli/argparser.py:161
 msgid "Only select system accounts."
 msgstr ""
 
-#: interfaces/cli/argparser.py:139
+#: interfaces/cli/argparser.py:166
 msgid "Only select non-system accounts."
 msgstr ""
 
-#: interfaces/cli/argparser.py:149
+#: interfaces/cli/argparser.py:176
 msgid ""
 "Specify account(s) excluded from current operation, by their *login* "
 "(separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:155
+#: interfaces/cli/argparser.py:182
 msgid ""
 "Specify account(s) excluded from current operation by their UID (separated "
 "by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:162
+#: interfaces/cli/argparser.py:190
+msgid "grep / fuzzy word match on the login/name/hostname."
+msgstr ""
+
+#: interfaces/cli/argparser.py:194
+msgid "exclude login/name/hostname if grep / fuzzy word match."
+msgstr ""
+
+#: interfaces/cli/argparser.py:200
 msgid "Specify group(s) by their name (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:167
+#: interfaces/cli/argparser.py:205
 msgid "Specify group(s) by their GID (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:173
+#: interfaces/cli/argparser.py:210
 msgid "Only select system groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:178
+#: interfaces/cli/argparser.py:215
 msgid "Only select non-system groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:183
+#: interfaces/cli/argparser.py:220
 msgid "Only select privileged groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:190
+#: interfaces/cli/argparser.py:227
 msgid "Only select non-privileged groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:195
+#: interfaces/cli/argparser.py:232
 msgid "Only select responsibles groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:201
+#: interfaces/cli/argparser.py:238
 msgid "Only select non-responsible groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:205
+#: interfaces/cli/argparser.py:242
 msgid "Only select guests groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:210
+#: interfaces/cli/argparser.py:247
 msgid "Only select non-guest groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:214
+#: interfaces/cli/argparser.py:251
 msgid "Only select empty groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:223
+#: interfaces/cli/argparser.py:260
 msgid ""
 "Specify group(s) to exclude from current operation, by their *name* "
 "(separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:229
+#: interfaces/cli/argparser.py:266
 msgid ""
 "Specify group(s) to exclude from current operation by their *GID* (separated "
 "by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:236
+#: interfaces/cli/argparser.py:273
 #, python-format
 msgid ""
 "Specify profile by its common name (separated by commas without spaces, when "
 "possible. If name contains spaces, use --group instead). %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:239
+#: interfaces/cli/argparser.py:276
 msgid "one of --name or --group is required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:244
+#: interfaces/cli/argparser.py:281
 msgid ""
 "specify profile by its primary group (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:251
+#: interfaces/cli/argparser.py:288
 msgid ""
 "Specify machine(s) by their hostname (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:257
+#: interfaces/cli/argparser.py:294
 msgid ""
 "Specify machine(s) by their IP address (separated by commas without spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:263
+#: interfaces/cli/argparser.py:300
 msgid "Only select machines whose status is totally unknown."
 msgstr ""
 
-#: interfaces/cli/argparser.py:267
+#: interfaces/cli/argparser.py:304
 msgid ""
 "Only select offline machines (this includes shutdown,going to sleep, asleep, "
 "shutting down and pyro shutdown machine)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:274
+#: interfaces/cli/argparser.py:311
 msgid "Only select going to sleep machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:278
+#: interfaces/cli/argparser.py:315
 msgid "Only select asleep machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:282
+#: interfaces/cli/argparser.py:319
 #, python-format
 msgid ""
 "Only select online machines (%s, and includes booting, idle, active and "
 "loaded machines)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:284
+#: interfaces/cli/argparser.py:321
 msgid "this is the default behaviour"
 msgstr ""
 
-#: interfaces/cli/argparser.py:288
+#: interfaces/cli/argparser.py:325
 msgid "Only select booting machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:292
+#: interfaces/cli/argparser.py:329
 msgid "Only select idle machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:296
+#: interfaces/cli/argparser.py:333
 msgid "Only select active machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:300
+#: interfaces/cli/argparser.py:337
 msgid "Only select loaded machines."
 msgstr ""
 
-#: interfaces/cli/argparser.py:312
-msgid "options --force and --batch are mutually exclusive"
+#: interfaces/cli/argparser.py:350
+msgid "options --force and --batch are mutually exclusive!"
 msgstr ""
 
-#: interfaces/cli/argparser.py:326
+#: interfaces/cli/argparser.py:364
 msgid "option --filename cannot be used with other individual specifiers."
 msgstr ""
 
-#: interfaces/cli/argparser.py:345
+#: interfaces/cli/argparser.py:386
 msgid ""
 "(you can use partial and fuzzy matching on modes, eg. \"{0}\" will call "
 "\"{1}\", \"{2}\" will match \"{3}\", and so on)"
 msgstr ""
 
-#: interfaces/cli/argparser.py:364
+#: interfaces/cli/argparser.py:405
 msgid "Output options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:365
+#: interfaces/cli/argparser.py:406
 msgid "Modify how data is printed/exported."
 msgstr ""
 
-#: interfaces/cli/argparser.py:371
+#: interfaces/cli/argparser.py:412
 #, python-format
 msgid ""
 "Like previous option, but export the configuration subset in the shortest "
 "form factor (only the values when possible ; %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:374
+#: interfaces/cli/argparser.py:415
 msgid "this is the default"
 msgstr ""
 
-#: interfaces/cli/argparser.py:379
+#: interfaces/cli/argparser.py:420
 #, python-format
 msgid ""
 "When using configuration %s to output a subset of the system configuration, "
@@ -1986,40 +2198,55 @@ msgid ""
 "export VAR=\"value\")."
 msgstr ""
 
-#: interfaces/cli/argparser.py:382
+#: interfaces/cli/argparser.py:423
 msgid "sub-category"
 msgstr ""
 
-#: interfaces/cli/argparser.py:387
+#: interfaces/cli/argparser.py:428
 msgid ""
 "Like previous option, but export the configuration subset in a useful way to "
 "be used in a C shell environment (i.e. setenv VAR \"value\")."
 msgstr ""
 
-#: interfaces/cli/argparser.py:394
+#: interfaces/cli/argparser.py:435
 msgid ""
 "Like previous option, but export the configuration subset in a usefull way "
 "to be included in PHP code (i.e. $VAR=\"value\", use it with eval(`…`))."
 msgstr ""
 
-#: interfaces/cli/argparser.py:400
+#: interfaces/cli/argparser.py:441
 #, python-format
 msgid ""
 "Output data as XML (no colors, no verbose). Default: %s, output for CLI, "
 "human-readable."
 msgstr ""
 
-#: interfaces/cli/argparser.py:402
+#: interfaces/cli/argparser.py:443
 msgid "NO XML"
 msgstr ""
 
-#: interfaces/cli/argparser.py:406
+#: interfaces/cli/argparser.py:447
 msgid ""
 "Dump nearly RAW data on stdout. Used for debugging internal data structures. "
 "WARNING: dump output can easily  flood your terminal."
 msgstr ""
 
-#: interfaces/cli/argparser.py:602
+#: interfaces/cli/argparser.py:488
+msgid "Events monitoring options"
+msgstr ""
+
+#: interfaces/cli/argparser.py:492
+#, python-format
+msgid ""
+"Specify facilities to monitor. Default: %s (see online documentation for "
+"possible values."
+msgstr ""
+
+#: interfaces/cli/argparser.py:494
+msgid "std"
+msgstr ""
+
+#: interfaces/cli/argparser.py:672
 msgid ""
 "\n"
 "\t{1}\n"
@@ -2049,28 +2276,28 @@ msgid ""
 "\t\t[--no-sync]\n"
 msgstr ""
 
-#: interfaces/cli/argparser.py:628
+#: interfaces/cli/argparser.py:698
 msgid "Individual user creation:"
 msgstr ""
 
-#: interfaces/cli/argparser.py:629
+#: interfaces/cli/argparser.py:699
 msgid "Massive users creation:"
 msgstr ""
 
-#: interfaces/cli/argparser.py:638
+#: interfaces/cli/argparser.py:708
 msgid "Individual user creation options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:642
+#: interfaces/cli/argparser.py:712
 #, python-format
 msgid "Specify user's login (%s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:644
+#: interfaces/cli/argparser.py:714
 msgid "one of login or firstname+lastname arguments is required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:648
+#: interfaces/cli/argparser.py:718
 #, python-format
 msgid ""
 "Specify user's GECOS field. If given, GECOS takes precedence on --firstname "
@@ -2078,16 +2305,16 @@ msgid ""
 "from firstname & lastname if given, else %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:652
+#: interfaces/cli/argparser.py:722
 msgid "autogenerated from login"
 msgstr ""
 
-#: interfaces/cli/argparser.py:656
+#: interfaces/cli/argparser.py:726
 #, python-format
 msgid "Specify user's password (else will be autogenerated, %d chars long)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:662
+#: interfaces/cli/argparser.py:732
 #, python-format
 msgid ""
 "Specify user's future primary group (at your preference as a group name or a "
@@ -2095,7 +2322,7 @@ msgid ""
 "both. Default: %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:670
+#: interfaces/cli/argparser.py:740
 msgid ""
 "Specify future user's auxilliary groups (at your preference as groupnames or "
 "GIDs, which can be mixed, and separated by commas without spaces). These "
@@ -2103,22 +2330,22 @@ msgid ""
 "if you specify both. Default: None."
 msgstr ""
 
-#: interfaces/cli/argparser.py:678
+#: interfaces/cli/argparser.py:748
 msgid "Create a system account instead of a standard user (root only)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:682
+#: interfaces/cli/argparser.py:752
 #, python-format
 msgid ""
 "Profile which will be applied to the user. Default: None. This argument "
 "overrides the primary group / GID if both are specified. %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:685
+#: interfaces/cli/argparser.py:755
 msgid "It can be used for massive imports, too"
 msgstr ""
 
-#: interfaces/cli/argparser.py:689
+#: interfaces/cli/argparser.py:759
 msgid ""
 "manually specify an UID for the new user. This UID must be free and inside "
 "the range {0} - {1} for a standard user, and outside the range for a system "
@@ -2126,21 +2353,21 @@ msgid ""
 "Default: next free UID in the selected range."
 msgstr ""
 
-#: interfaces/cli/argparser.py:699
+#: interfaces/cli/argparser.py:769
 #, python-format
 msgid ""
 "Specify the user's home directory. Only valid for a system account, else "
 "discarded because standard accounts have a fixed home dir \"%s\"."
 msgstr ""
 
-#: interfaces/cli/argparser.py:706
+#: interfaces/cli/argparser.py:776
 #, python-format
 msgid ""
 "Specify user's shell, from the ones given by command `get config shells`. "
 "Default: %s"
 msgstr ""
 
-#: interfaces/cli/argparser.py:712
+#: interfaces/cli/argparser.py:782
 #, python-format
 msgid ""
 "Specify a particular skeleton to apply to home dir after creation, instead "
@@ -2148,105 +2375,105 @@ msgid ""
 "if a profile is given, else %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:720
+#: interfaces/cli/argparser.py:790
 msgid ""
 "Specify user's first name (required if --lastname is given, overriden by "
 "GECOS)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:725
+#: interfaces/cli/argparser.py:795
 msgid ""
 "Specify user's last name (required if --firstname is given, overriden by "
 "GECOS)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:730
+#: interfaces/cli/argparser.py:800
 msgid ""
 "do not create the home directory when creating account. This is valid only "
 "for system accounts, because standard accounts must always have a home."
 msgstr ""
 
-#: interfaces/cli/argparser.py:736
+#: interfaces/cli/argparser.py:806
 #, python-format
 msgid "The user will have no password. %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:737 interfaces/cli/argparser.py:744
+#: interfaces/cli/argparser.py:807 interfaces/cli/argparser.py:814
 msgid ""
 "Currently this flag is ignored; it exists only for compatibility purposes "
 "with old scripts"
 msgstr ""
 
-#: interfaces/cli/argparser.py:742
+#: interfaces/cli/argparser.py:812
 #, python-format
 msgid "The user will not be able to login after the account creation. %s"
 msgstr ""
 
-#: interfaces/cli/argparser.py:755
+#: interfaces/cli/argparser.py:825
 msgid ""
 "Specify backend in which to store the user account (default: {0}; possible "
 "choices: {1}; {2})."
 msgstr ""
 
-#: interfaces/cli/argparser.py:760 interfaces/cli/argparser.py:894
+#: interfaces/cli/argparser.py:830 interfaces/cli/argparser.py:964
 msgid "this argument can be used for massive imports, too"
 msgstr ""
 
-#: interfaces/cli/argparser.py:766
+#: interfaces/cli/argparser.py:836
 msgid "Massive users creation options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:772
+#: interfaces/cli/argparser.py:842
 msgid "Required in massive imports mode"
 msgstr ""
 
-#: interfaces/cli/argparser.py:770
+#: interfaces/cli/argparser.py:840
 #, python-format
 msgid ""
 "path of the file you want to import accounts from (must point to a valid CSV "
 "file). %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:776
+#: interfaces/cli/argparser.py:846
 #, python-format
 msgid "lastname column number in CSV file (default is %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:781
+#: interfaces/cli/argparser.py:851
 #, python-format
 msgid "firstname column number in CSV (default is %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:786
+#: interfaces/cli/argparser.py:856
 msgid "{0} column number in CSV file (default is {1})."
 msgstr ""
 
-#: interfaces/cli/argparser.py:792
+#: interfaces/cli/argparser.py:862
 msgid ""
 "{0} column number in CSV file (default: {1}, login will be guessed from "
 "firstname and lastname)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:799
+#: interfaces/cli/argparser.py:869
 msgid ""
 "{0} column number in CSV file (default: {1}: password will be randomly "
 "generated and {2} chars long)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:802
+#: interfaces/cli/argparser.py:872
 msgid "none"
 msgstr ""
 
-#: interfaces/cli/argparser.py:807
+#: interfaces/cli/argparser.py:877
 #, python-format
 msgid "Separator for the CSV fields (default: %s, by sniffing in the file)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:808
+#: interfaces/cli/argparser.py:878
 msgid "determined automatically"
 msgstr ""
 
-#: interfaces/cli/argparser.py:812
+#: interfaces/cli/argparser.py:882
 #, python-format
 msgid ""
 "Really do the import. %s on the system, but only give you an example of what "
@@ -2254,83 +2481,83 @@ msgid ""
 "(fields order, separator…)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:816
+#: interfaces/cli/argparser.py:886
 msgid "Without this flag the program will do nothing"
 msgstr ""
 
-#: interfaces/cli/argparser.py:820
+#: interfaces/cli/argparser.py:890
 #, python-format
 msgid ""
 "Commit changes only after all modifications (currently %s because extensions "
 "need things to be commited to work)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:849
+#: interfaces/cli/argparser.py:919
 #, python-format
 msgid "Specify group's name (%s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:850 interfaces/cli/argparser.py:1677
+#: interfaces/cli/argparser.py:920 interfaces/cli/argparser.py:1747
 msgid "required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:855 core/groups.py:2149
+#: interfaces/cli/argparser.py:925 core/groups.py:2139
 msgid "not permissive"
 msgstr ""
 
-#: interfaces/cli/argparser.py:854
+#: interfaces/cli/argparser.py:924
 #, python-format
 msgid "Will the shared group directory be permissive? (default: %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:859
+#: interfaces/cli/argparser.py:929
 msgid "Specify the GID (root / @admin members only)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:863
+#: interfaces/cli/argparser.py:933
 #, python-format
 msgid "Description of the group (free text, but must match /%s/i)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:870
+#: interfaces/cli/argparser.py:940
 #, python-format
 msgid "skeleton directory for the group (default: %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:875
+#: interfaces/cli/argparser.py:945
 #, python-format
 msgid ""
 "The group will be a system group (only root or %s members can decide this, "
 "but this is not enforced yet)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:881
+#: interfaces/cli/argparser.py:951
 msgid "Users to make members of this group just after creation."
 msgstr ""
 
-#: interfaces/cli/argparser.py:889
+#: interfaces/cli/argparser.py:959
 msgid ""
 "Specify backend in which to store the group (default: {0}; possible choices: "
 "{1}; {2})."
 msgstr ""
 
-#: interfaces/cli/argparser.py:915
+#: interfaces/cli/argparser.py:985
 msgid "Add profile options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:919
+#: interfaces/cli/argparser.py:989
 #, python-format
 msgid ""
 "The profile's name (ie: «Administrator», «Power user», «Webmaster», "
 "«Guest»). It must conform to {0} word. %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:922 interfaces/cli/argparser.py:929
-#: interfaces/cli/argparser.py:1018
+#: interfaces/cli/argparser.py:992 interfaces/cli/argparser.py:999
+#: interfaces/cli/argparser.py:1088
 msgid "It is required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:926
+#: interfaces/cli/argparser.py:996
 #, python-format
 msgid ""
 "Group name (or GID) identifying the profile on the system (ie: "
@@ -2338,34 +2565,34 @@ msgid ""
 "plural world and will become a system group. %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:933
+#: interfaces/cli/argparser.py:1003
 #, python-format
 msgid "Description of the profile (free text, but must conform to /%s/i)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:940
+#: interfaces/cli/argparser.py:1010
 #, python-format
 msgid "Default shell for this profile (defaults: %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:945
+#: interfaces/cli/argparser.py:1015
 #, python-format
 msgid "User data quota in Mb (a soft quota, defaults: %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:950
+#: interfaces/cli/argparser.py:1020
 msgid ""
 "Groups users of this profile will become members of.Separated by commas "
 "without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:956
+#: interfaces/cli/argparser.py:1026
 #, python-format
 msgid ""
 "Skeleton dir for this profile (must be an absolute path, defaults to %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:962
+#: interfaces/cli/argparser.py:1032
 #, python-format
 msgid ""
 "Confirm the use of a previously created system group for the profile. %s, "
@@ -2373,36 +2600,36 @@ msgid ""
 "by another package or script)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:966
+#: interfaces/cli/argparser.py:1036
 msgid "This can be risky in some situations"
 msgstr ""
 
-#: interfaces/cli/argparser.py:982
+#: interfaces/cli/argparser.py:1052
 msgid "Add keyword options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:986
+#: interfaces/cli/argparser.py:1056
 #, python-format
 msgid "The keyword's name. It should be a singular word and %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:987
+#: interfaces/cli/argparser.py:1057
 msgid "it is required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:991
+#: interfaces/cli/argparser.py:1061
 msgid "Keyword's parent name."
 msgstr ""
 
-#: interfaces/cli/argparser.py:995
+#: interfaces/cli/argparser.py:1065
 msgid "Description of the keyword (free text)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1011
+#: interfaces/cli/argparser.py:1081
 msgid "Add privilege options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1015
+#: interfaces/cli/argparser.py:1085
 #, python-format
 msgid ""
 "The privilege's name(s), which is really a system group name (only system "
@@ -2410,316 +2637,316 @@ msgid ""
 "multiple ones, separated by commas."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1046
+#: interfaces/cli/argparser.py:1116
 msgid ""
 "Scan a network for online hosts and attach them to the system. Syntax: "
 "192.168.0.0/24 or 10.0.0.0/8 and the like."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1051
+#: interfaces/cli/argparser.py:1121
 msgid "Scan the local area network(s), looking for unattached hosts."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1077
+#: interfaces/cli/argparser.py:1147
 msgid "Add volume(s) options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1098
+#: interfaces/cli/argparser.py:1168
 msgid "Delete user options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1102
+#: interfaces/cli/argparser.py:1172
 #, python-format
 msgid ""
 "Don't make a backup of user's home directory in %s (Default: home directory "
 "will be archived)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1120
+#: interfaces/cli/argparser.py:1190
 msgid "Delete group options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1124
+#: interfaces/cli/argparser.py:1194
 msgid ""
 "get the list of groups from a file (can be stdin, just specify '-' as the "
 "filename)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1129
+#: interfaces/cli/argparser.py:1199
 msgid ""
 "Delete the group primary members (user accounts) too (default: {0}, the "
 "program will annoy you with a sane warning."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1131 interfaces/wmi/server.py:64
+#: interfaces/cli/argparser.py:1201 interfaces/wmi/server.py:64
 #: interfaces/wmi/server.py:102
 msgid "NO"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1135
+#: interfaces/cli/argparser.py:1205
 msgid ""
 "Don't make a backup of users home directories in {0} when deleting members "
 "(default: {1})."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1139
+#: interfaces/cli/argparser.py:1209
 msgid "archive deleted group shared directories"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1158
+#: interfaces/cli/argparser.py:1228
 msgid "Delete profile options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1162
+#: interfaces/cli/argparser.py:1232
 #, python-format
 msgid "the profile's users will be deleted (%s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1163
+#: interfaces/cli/argparser.py:1233
 msgid "Use with caution"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1167
+#: interfaces/cli/argparser.py:1237
 msgid "Don't make a backup of user's home when deleting them."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1183
+#: interfaces/cli/argparser.py:1253
 msgid "Delete keyword options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1187
+#: interfaces/cli/argparser.py:1257
 msgid "Specify the keyword to delete."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1191
+#: interfaces/cli/argparser.py:1261
 msgid "Delete the parent and his children."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1209
+#: interfaces/cli/argparser.py:1279
 msgid "Delete privilege options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1213
+#: interfaces/cli/argparser.py:1283
 #, python-format
 msgid ""
 "The privilege's name(s). %s and can be a single word or multiple ones, "
 "separated by commas."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1215
+#: interfaces/cli/argparser.py:1285
 msgid "This argument is required"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1252
+#: interfaces/cli/argparser.py:1322
 msgid "Modify user options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1256
+#: interfaces/cli/argparser.py:1326
 #, python-format
 msgid ""
 "Specify user's new password on the command line (%s, it can be written in "
 "your shell history file)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1262
+#: interfaces/cli/argparser.py:1332
 msgid ""
 "Ask for a new password for the user. If changing your own password, you will "
 "be asked for the old, too."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1267
+#: interfaces/cli/argparser.py:1337
 msgid "let the system generate a random password for this user."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1272
+#: interfaces/cli/argparser.py:1342
 #, python-format
 msgid "choose the new password length (default %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1277
+#: interfaces/cli/argparser.py:1347
 msgid "Specify user's new GECOS string (generaly first and last names)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1282
+#: interfaces/cli/argparser.py:1352
 #, python-format
 msgid ""
 "Specify user's new shell (generaly /bin/something, must be taken from %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1288
+#: interfaces/cli/argparser.py:1358
 msgid ""
 "lock the account (user wn't be able to login under Linux and Windows/MAC "
 "until unlocked)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1293
+#: interfaces/cli/argparser.py:1363
 msgid "unlock the user account and restore login ability."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1297
+#: interfaces/cli/argparser.py:1367
 msgid "make user member of these groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1301
+#: interfaces/cli/argparser.py:1371
 msgid "remove user from these groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1305
+#: interfaces/cli/argparser.py:1375
 msgid ""
 "Re-apply the user's skel, or another skel you specify on the command line. "
 "(use with caution, it will overwrite the dirs/files provided by the skel in "
 "the user's home dir."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1312
+#: interfaces/cli/argparser.py:1382
 msgid ""
 "Restore the INotifier watch for this account home directory. This is "
 "particularly useful after a directory move."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1339
+#: interfaces/cli/argparser.py:1409
 msgid "Modify machine(s) options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1343
+#: interfaces/cli/argparser.py:1413
 msgid "remotely shutdown specified machine(s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1347
+#: interfaces/cli/argparser.py:1417
 msgid ""
 "Display a warning message to connected user(s) before shutting system(s) "
 "down."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1366
+#: interfaces/cli/argparser.py:1436
 msgid "Modify volume(s) options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1370
+#: interfaces/cli/argparser.py:1440
 #, python-format
 msgid ""
 "Specify one or more volume(s) to enable (mark as available and reserved for "
 "%s internal use), either by giving its device path or mount point."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1377
+#: interfaces/cli/argparser.py:1447
 #, python-format
 msgid ""
 "specify one or more volume(s) to disable (unmark as available for %s), "
 "either by giving its device path or mount point."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1384
+#: interfaces/cli/argparser.py:1454
 msgid "specify one or more volume(s) to (re-)mount."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1389
+#: interfaces/cli/argparser.py:1459
 msgid "specify one or more volume(s) to unmount."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1421
+#: interfaces/cli/argparser.py:1491
 msgid "Modify group options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1425
+#: interfaces/cli/argparser.py:1495
 msgid "Specify group's new name (not yet implemented)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1429
+#: interfaces/cli/argparser.py:1499
 msgid "Specify group's new skel dir."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1433
+#: interfaces/cli/argparser.py:1503
 msgid "Specify new group's description"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1437
+#: interfaces/cli/argparser.py:1507
 msgid "Set the shared directory of the group permissive."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1441
+#: interfaces/cli/argparser.py:1511
 msgid "Set the shared directory of the group not permissive."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1445
+#: interfaces/cli/argparser.py:1515
 msgid ""
 "Restore the INotifier watch for the group home directory. This is "
 "particularly useful after a directory move."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1450
+#: interfaces/cli/argparser.py:1520
 msgid ""
 "Add users to the group. The users are separated by commas without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1455
+#: interfaces/cli/argparser.py:1525
 msgid ""
 "Delete users from the group. The users are separated by commas without "
 "spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1460
+#: interfaces/cli/argparser.py:1530
 msgid ""
 "Add responsibles to the group. The responsibles are separated by commas "
 "without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1465
+#: interfaces/cli/argparser.py:1535
 msgid ""
 "Delete responsibles from the group. The responsibles are separated by commas "
 "without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1470
+#: interfaces/cli/argparser.py:1540
 msgid ""
 "Add guests to the group. The guests are separated by commas without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1475
+#: interfaces/cli/argparser.py:1545
 msgid ""
 "Delete guests from the group. The guests are separated by commas without "
 "spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1480
+#: interfaces/cli/argparser.py:1550
 msgid ""
 "Add the profiles which the users can access to the group's shared directory. "
 "The profiles are separated by commas without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1486
+#: interfaces/cli/argparser.py:1556
 msgid ""
 "Delete the profiles which the users can access to the group's shared "
 "directory. The profiles are separated by commas without spaces."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1495
+#: interfaces/cli/argparser.py:1565
 #, python-format
 msgid ""
 "Move the group from its current backend to another, where it will definitely "
 "be stored (specify new backend name as argument, taken from %s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1524
+#: interfaces/cli/argparser.py:1594
 msgid "specify profile's new name"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1528
+#: interfaces/cli/argparser.py:1598
 msgid "Rename primary group (NOT IMPLEMENTED)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1532
+#: interfaces/cli/argparser.py:1602
 msgid "Change profile's description."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1536
+#: interfaces/cli/argparser.py:1606
 #, python-format
 msgid ""
 "Change profile shell (defaults to %s if you specify --shell without argument)"
 "Instant-applyed to current members if not specified otherwise."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1543
+#: interfaces/cli/argparser.py:1613
 #, python-format
 msgid ""
 "Change profile's user quota (in Mb, defaults to %s if you specify --quota "
@@ -2727,7 +2954,7 @@ msgid ""
 "otherwise."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1550
+#: interfaces/cli/argparser.py:1620
 #, python-format
 msgid ""
 "Change profile skel (specify a skel dir as an absolute pathname, defaults to "
@@ -2735,53 +2962,53 @@ msgid ""
 "if not specified otherwise."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1557
+#: interfaces/cli/argparser.py:1627
 msgid ""
 "Add one or more group(s) to default memberships of profile (separate groups "
 "with commas without spaces).Instant-applyed to current members if not "
 "specified otherwise."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1563
+#: interfaces/cli/argparser.py:1633
 msgid ""
 "Delete one or more group(s) from default memberships of profile (separate "
 "groups with commas without spaces). Instant-applyed to current members if "
 "not specified otherwise."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1569
+#: interfaces/cli/argparser.py:1639
 msgid "Re-apply only the default group memberships of the profile."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1573
+#: interfaces/cli/argparser.py:1643
 msgid "Re-apply only the skel of the profile."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1577
+#: interfaces/cli/argparser.py:1647
 msgid "Re-apply all the profile's attributes (groups and skel)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1581
+#: interfaces/cli/argparser.py:1651
 msgid ""
 "Re-apply to specific users accounts (separate them with commas without "
 "spaces)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1586
+#: interfaces/cli/argparser.py:1656
 msgid ""
 "Re-apply to all members of one or more groups (separate groups with commas "
 "without spaces). You can mix --to-users and --to-groups."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1592
+#: interfaces/cli/argparser.py:1662
 msgid "Re-apply to all users members of the profile."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1596
+#: interfaces/cli/argparser.py:1666
 msgid "Re-apply to all user accounts on the system (LENGHTY operation !)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1601
+#: interfaces/cli/argparser.py:1671
 #, python-format
 msgid ""
 "Don't apply group addition/deletion and other parameters instantly to all "
@@ -2789,125 +3016,125 @@ msgid ""
 "doing)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1608
+#: interfaces/cli/argparser.py:1678
 msgid "Commit changes only after all modifications (currently disabled)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1631 interfaces/cli/argparser.py:1672
+#: interfaces/cli/argparser.py:1701 interfaces/cli/argparser.py:1742
 msgid "Modify keyword options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1635
+#: interfaces/cli/argparser.py:1705
 #, python-format
 msgid "Specify keyword to modify (%s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1640
+#: interfaces/cli/argparser.py:1710
 msgid "Rename keyword"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1644
+#: interfaces/cli/argparser.py:1714
 msgid "Change keyword's parent."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1648 interfaces/cli/argparser.py:1656
-#: interfaces/cli/argparser.py:1697
+#: interfaces/cli/argparser.py:1718 interfaces/cli/argparser.py:1726
+#: interfaces/cli/argparser.py:1767
 msgid "Remove parent."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1652
+#: interfaces/cli/argparser.py:1722
 msgid "Modify all file in all subdirs."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1676
+#: interfaces/cli/argparser.py:1746
 #, python-format
 msgid "specify path of the file/directory to tag (%s)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1681
+#: interfaces/cli/argparser.py:1751
 msgid "Add keywords."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1685
+#: interfaces/cli/argparser.py:1755
 msgid "Remove keywords."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1689
+#: interfaces/cli/argparser.py:1759
 msgid "Remove all keywords."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1693
+#: interfaces/cli/argparser.py:1763
 msgid "Set modifications to all subdirs."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1714
+#: interfaces/cli/argparser.py:1784
 msgid "Modify configuration options"
 msgstr ""
 
-#: interfaces/cli/argparser.py:1718
+#: interfaces/cli/argparser.py:1788
 msgid ""
 "create system groups, directories and settings from system configuration "
 "(PARTIALLY OBSOLETED, TOTALLY UNSUPPORTED AND VERY DANGEROUS, USE WITH "
 "CAUTION)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1724
+#: interfaces/cli/argparser.py:1794
 msgid ""
 "When creating system groups and directories, apply restrictive perms (710) "
 "on shared dirs instead of relaxed ones (750)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1730
+#: interfaces/cli/argparser.py:1800
 #, python-format
 msgid "Set restrictive perms (710) on %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1736
+#: interfaces/cli/argparser.py:1806
 #, python-format
 msgid "Set relaxed perms (750) on %s."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1741
+#: interfaces/cli/argparser.py:1811
 #, python-format
 msgid ""
 "Enable given backend(s) on the current system (separated by commas without "
 "spaces). List of available backends with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1747
+#: interfaces/cli/argparser.py:1817
 #, python-format
 msgid ""
 "Disable given backend(s) on the current system (separated by commas without "
 "spaces). List of available backends with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1753
+#: interfaces/cli/argparser.py:1823
 #, python-format
 msgid ""
 "Enable given extension(s) on the current system (separated by commas without "
 "spaces). List of available extensions with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1759
+#: interfaces/cli/argparser.py:1829
 #, python-format
 msgid ""
 "Disable given extension(s) on the current system (separated by commas "
 "without spaces). List of available extensions with `%s`."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1765
+#: interfaces/cli/argparser.py:1835
 msgid "change machine hostname (not yet implemented)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1769
+#: interfaces/cli/argparser.py:1839
 msgid "change machine's IP (for eth0 only) (not yet implemented)."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1773
+#: interfaces/cli/argparser.py:1843
 msgid "add privileges (system groups) to privileges whitelist."
 msgstr ""
 
-#: interfaces/cli/argparser.py:1778
+#: interfaces/cli/argparser.py:1848
 msgid "remove privileges (system groups) from privileges whitelist."
 msgstr ""
 
@@ -3055,53 +3282,53 @@ msgstr ""
 msgid "Virtual (swap) memory"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:70 interfaces/wmi/groups.py:16
+#: interfaces/wmi/__init__.py:71 interfaces/wmi/groups.py:16
 msgid ""
 "<br /><br />Go back with your browser, double-check data and validate the "
 "web-form."
 msgstr ""
 
-#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
+#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
 msgid "day"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:193 interfaces/wmi/__init__.py:282
+#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
 msgid "days"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
+#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
 msgid "hour"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:194 interfaces/wmi/__init__.py:283
+#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
 msgid "hours"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+#: interfaces/wmi/__init__.py:197 interfaces/wmi/__init__.py:286
 msgid "minute"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+#: interfaces/wmi/__init__.py:197 interfaces/wmi/__init__.py:286
 msgid "minutes"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
+#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
 msgid "second"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
+#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
 msgid "seconds"
 msgstr ""
 
-#: interfaces/wmi/__init__.py:342
+#: interfaces/wmi/__init__.py:344
 msgid "{0}: WMI overwriting {1} object with new instance."
 msgstr ""
 
-#: interfaces/wmi/__init__.py:364
+#: interfaces/wmi/__init__.py:366
 msgid "{0}: unknown object {1}, cannot unregister."
 msgstr ""
 
-#: interfaces/wmi/utils.py:30
+#: interfaces/wmi/utils.py:31
 msgid ""
 "{0} is distributed under the <a href=\"http://www.gnu.org/licenses/gpl.html"
 "\">GNU GPL version 2</a> license, without any kind of waranty. Copyleft "
@@ -3110,199 +3337,199 @@ msgid ""
 "Debian, Python…)."
 msgstr ""
 
-#: interfaces/wmi/utils.py:38
+#: interfaces/wmi/utils.py:39
 msgid "Secure SHell (Secure remote connexion and commands protocol)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:39
+#: interfaces/wmi/utils.py:40
 msgid "File Transfer Protocol"
 msgstr ""
 
-#: interfaces/wmi/utils.py:40
+#: interfaces/wmi/utils.py:41
 msgid "HyperText Transfert Protocol"
 msgstr ""
 
-#: interfaces/wmi/utils.py:41
+#: interfaces/wmi/utils.py:42
 msgid "Internet Message Access Protocol"
 msgstr ""
 
-#: interfaces/wmi/utils.py:42
+#: interfaces/wmi/utils.py:43
 msgid "Virtual Network Computing (Desktop remote connexion protocol)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:43
+#: interfaces/wmi/utils.py:44
 msgid "Remote Desktop Protocol (Desktop remote connexion protocol)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:44
+#: interfaces/wmi/utils.py:45
 msgid "Post-Office Protocol (Simple mail fetching protocol)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:45
+#: interfaces/wmi/utils.py:46
 msgid "Simple Mail Transfer Protocol"
 msgstr ""
 
-#: interfaces/wmi/utils.py:46
+#: interfaces/wmi/utils.py:47
 msgid "Rivest Shamir Adleman (cryptography protocol)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:47
+#: interfaces/wmi/utils.py:48
 msgid "Digital Signature Algorithm"
 msgstr ""
 
-#: interfaces/wmi/utils.py:48
+#: interfaces/wmi/utils.py:49
 msgid ""
 "GNU is Not Unix (recursive acronym ; a set of libre sofware composing a "
 "libre operating system)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:50
+#: interfaces/wmi/utils.py:51
 msgid ""
 "LiCorN system tools (tools for IT managers, see http://docs.licorn.org/)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:52
+#: interfaces/wmi/utils.py:53
 msgid "Licorn Admin Tools (High-level management tools for a GNU/Linux system)"
 msgstr ""
 
-#: interfaces/wmi/utils.py:54
+#: interfaces/wmi/utils.py:55
 #, python-format
 msgid "%s Web Management Interface"
 msgstr ""
 
-#: interfaces/wmi/utils.py:79
+#: interfaces/wmi/utils.py:80
 msgid "Command must be a list or tuple!"
 msgstr ""
 
-#: interfaces/wmi/utils.py:105
+#: interfaces/wmi/utils.py:106
 #, python-format
 msgid "%d&nbsp;hours,"
 msgstr ""
 
-#: interfaces/wmi/utils.py:109
+#: interfaces/wmi/utils.py:110
 #, python-format
 msgid " %d&nbsp;minutes,"
 msgstr ""
 
-#: interfaces/wmi/utils.py:111
+#: interfaces/wmi/utils.py:112
 #, python-format
 msgid " %.3f&nbsp;seconds."
 msgstr ""
 
-#: interfaces/wmi/utils.py:112
+#: interfaces/wmi/utils.py:113
 #, python-format
 msgid "Core execution time: %s"
 msgstr ""
 
-#: interfaces/wmi/utils.py:251
+#: interfaces/wmi/utils.py:252
 msgid "Executed command:"
 msgstr ""
 
-#: interfaces/wmi/utils.py:254
+#: interfaces/wmi/utils.py:255
 msgid "Error reported by system:"
 msgstr ""
 
-#: interfaces/wmi/utils.py:258 interfaces/wmi/utils.py:259
+#: interfaces/wmi/utils.py:259 interfaces/wmi/utils.py:260
 msgid "Back to root of management interface"
 msgstr ""
 
-#: interfaces/wmi/utils.py:265
+#: interfaces/wmi/utils.py:266
 #, python-format
 msgid "Logged in as %s"
 msgstr ""
 
-#: interfaces/wmi/utils.py:280 interfaces/wmi/utils.py:281
+#: interfaces/wmi/utils.py:281 interfaces/wmi/utils.py:282
 msgid "Bad request or argument"
 msgstr ""
 
-#: interfaces/wmi/utils.py:283
+#: interfaces/wmi/utils.py:284
 msgid "There was a problem in the request you sent to the WMI."
 msgstr ""
 
-#: interfaces/wmi/utils.py:289
+#: interfaces/wmi/utils.py:290
 msgid "Impossible action: "
 msgstr ""
 
-#: interfaces/wmi/utils.py:505
+#: interfaces/wmi/utils.py:503
 msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 
-#: interfaces/wmi/utils.py:505 core/machines.py:1323
+#: interfaces/wmi/utils.py:503 core/machines.py:1332
 msgid "Status"
 msgstr ""
 
-#: interfaces/wmi/utils.py:506 core/machines.py:1131 core/machines.py:1186
+#: interfaces/wmi/utils.py:504 core/machines.py:1140 core/machines.py:1195
 msgid "Shutdown"
 msgstr ""
 
-#: interfaces/wmi/utils.py:506
+#: interfaces/wmi/utils.py:504
 msgid "Restart"
 msgstr ""
 
-#: interfaces/wmi/utils.py:507
+#: interfaces/wmi/utils.py:505
 msgid "Manage user accounts."
 msgstr ""
 
-#: interfaces/wmi/utils.py:507 interfaces/wmi/groups.py:539
-#: core/profiles.py:694 core/profiles.py:700
+#: interfaces/wmi/utils.py:505 interfaces/wmi/groups.py:539
+#: core/profiles.py:697 core/profiles.py:703
 msgid "Users"
 msgstr ""
 
-#: interfaces/wmi/utils.py:508 interfaces/wmi/utils.py:510
+#: interfaces/wmi/utils.py:506 interfaces/wmi/utils.py:508
 msgid "Add"
 msgstr ""
 
-#: interfaces/wmi/utils.py:508 interfaces/wmi/utils.py:510
+#: interfaces/wmi/utils.py:506 interfaces/wmi/utils.py:508
 msgid "Import"
 msgstr ""
 
-#: interfaces/wmi/utils.py:509
+#: interfaces/wmi/utils.py:507
 msgid "Manage groups and shared data."
 msgstr ""
 
-#: interfaces/wmi/utils.py:509 interfaces/wmi/groups.py:780
-#: interfaces/wmi/groups.py:901 interfaces/wmi/users.py:421
-#: interfaces/wmi/users.py:730
+#: interfaces/wmi/utils.py:507 interfaces/wmi/groups.py:780
+#: interfaces/wmi/groups.py:901 interfaces/wmi/users.py:422
+#: interfaces/wmi/users.py:731
 msgid "Groups"
 msgstr ""
 
-#: interfaces/wmi/utils.py:538
+#: interfaces/wmi/utils.py:536
 msgid ""
 "Manage Internet connexion and parameters, firewall protection, URL filter "
 "and e-mail parameters."
 msgstr ""
 
-#: interfaces/wmi/utils.py:538
+#: interfaces/wmi/utils.py:536
 msgid "Internet"
 msgstr ""
 
-#: interfaces/wmi/utils.py:539
+#: interfaces/wmi/utils.py:537
 msgid "Go to online documentation website."
 msgstr ""
 
-#: interfaces/wmi/utils.py:539
+#: interfaces/wmi/utils.py:537
 msgid "Documentation"
 msgstr ""
 
-#: interfaces/wmi/utils.py:540
+#: interfaces/wmi/utils.py:538
 msgid "Get product support / help"
 msgstr ""
 
-#: interfaces/wmi/utils.py:540
+#: interfaces/wmi/utils.py:538
 msgid "Support"
 msgstr ""
 
-#: interfaces/wmi/utils.py:544
+#: interfaces/wmi/utils.py:542
 #, python-format
 msgid "%s Management"
 msgstr ""
 
-#: interfaces/wmi/utils.py:571
+#: interfaces/wmi/utils.py:569
 #, python-format
 msgid "%s WMI:"
 msgstr ""
 
-#: interfaces/wmi/utils.py:586
+#: interfaces/wmi/utils.py:584
 #, python-format
 msgid "administration %s"
 msgstr ""
@@ -3340,7 +3567,7 @@ msgid "A"
 msgstr ""
 
 #: interfaces/wmi/groups.py:48 interfaces/wmi/groups.py:86
-#: core/machines.py:1133 core/machines.py:1188
+#: core/machines.py:1142 core/machines.py:1197
 msgid "Cancel"
 msgstr ""
 
@@ -3444,8 +3671,8 @@ msgstr ""
 msgid "Yes"
 msgstr ""
 
-#: interfaces/wmi/groups.py:239 interfaces/wmi/users.py:578
-#: interfaces/wmi/users.py:710
+#: interfaces/wmi/groups.py:239 interfaces/wmi/users.py:579
+#: interfaces/wmi/users.py:711
 msgid "P"
 msgstr ""
 
@@ -3473,13 +3700,13 @@ msgid "Full Name"
 msgstr ""
 
 #: interfaces/wmi/groups.py:306 interfaces/wmi/groups.py:342
-#: interfaces/wmi/groups.py:369 interfaces/wmi/users.py:720
+#: interfaces/wmi/groups.py:369 interfaces/wmi/users.py:721
 msgid "Identifier"
 msgstr ""
 
 #: interfaces/wmi/groups.py:307 interfaces/wmi/groups.py:343
-#: interfaces/wmi/groups.py:370 interfaces/wmi/users.py:545
-#: interfaces/wmi/users.py:909 interfaces/wmi/users.py:960 core/users.py:1067
+#: interfaces/wmi/groups.py:370 interfaces/wmi/users.py:546
+#: interfaces/wmi/users.py:910 interfaces/wmi/users.py:961 core/users.py:1068
 msgid "UID"
 msgstr ""
 
@@ -3505,11 +3732,11 @@ msgstr ""
 
 #: interfaces/wmi/groups.py:437 interfaces/wmi/groups.py:526
 #: interfaces/wmi/groups.py:902 interfaces/wmi/groups.py:905
-#: core/privileges.py:51 core/groups.py:1699
+#: core/privileges.py:52 core/groups.py:1700
 msgid "GID"
 msgstr ""
 
-#: interfaces/wmi/groups.py:438 interfaces/wmi/users.py:547
+#: interfaces/wmi/groups.py:438 interfaces/wmi/users.py:548
 msgid "immutable"
 msgstr ""
 
@@ -3562,17 +3789,17 @@ msgstr ""
 msgid "System users:"
 msgstr ""
 
-#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:909
-#: interfaces/wmi/users.py:960
+#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:910
+#: interfaces/wmi/users.py:961
 msgid "Skel"
 msgstr ""
 
-#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:844
+#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:845
 msgid "System groups"
 msgstr ""
 
-#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:423
-#: interfaces/wmi/users.py:552 interfaces/wmi/users.py:732
+#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:424
+#: interfaces/wmi/users.py:553 interfaces/wmi/users.py:733
 msgid "Privileges"
 msgstr ""
 
@@ -3626,13 +3853,13 @@ msgstr ""
 msgid "Sure you want to shutdown the %s server?"
 msgstr ""
 
-#: interfaces/wmi/users.py:24
+#: interfaces/wmi/users.py:25
 #, python-format
 msgid ""
 "Are you sure you want to remove account <strong>%s</strong> ? <br/><br/>"
 msgstr ""
 
-#: interfaces/wmi/users.py:26
+#: interfaces/wmi/users.py:27
 #, python-format
 msgid ""
 "User's <strong>personnal data</strong> (his/her HOME dir) will be "
@@ -3641,18 +3868,18 @@ msgid ""
 "<br />However, you can decide to permanently remove it. <br/><br/>"
 msgstr ""
 
-#: interfaces/wmi/users.py:36
+#: interfaces/wmi/users.py:37
 msgid "Definitely remove"
 msgstr ""
 
-#: interfaces/wmi/users.py:42
+#: interfaces/wmi/users.py:43
 msgid ""
 "Do you really want to lock user {0} ?<br/><br/>This will prevent user to "
 "connect to network clients (thin ones, and Windows&reg;, {1}/Linux&reg; and "
 "Macintosh&reg; ones)."
 msgstr ""
 
-#: interfaces/wmi/users.py:51
+#: interfaces/wmi/users.py:52
 #, python-format
 msgid ""
 "<br /><br /> But this will not block incoming %s network connections, if the "
@@ -3660,11 +3887,11 @@ msgid ""
 "system, <strong>remove him/her from %s group</strong>."
 msgstr ""
 
-#: interfaces/wmi/users.py:59
+#: interfaces/wmi/users.py:60
 msgid "Remove user from group <code>remotessh</code> in the same time."
 msgstr ""
 
-#: interfaces/wmi/users.py:66
+#: interfaces/wmi/users.py:67
 #, python-format
 msgid ""
 "This will rebuild %s's desktop from scratch, with defaults icons and so on."
@@ -3672,426 +3899,426 @@ msgid ""
 "completely successfull.</strong>"
 msgstr ""
 
-#: interfaces/wmi/users.py:70
+#: interfaces/wmi/users.py:71
 #, python-format
 msgid "<br /><br />Which skel do you want to apply? %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:283
+#: interfaces/wmi/users.py:284
 #, python-format
 msgid "Added: %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:286
+#: interfaces/wmi/users.py:287
 #, python-format
 msgid "Removed: %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:303
+#: interfaces/wmi/users.py:304
 msgid "Customize groups"
 msgstr ""
 
-#: interfaces/wmi/users.py:304
+#: interfaces/wmi/users.py:305
 msgid "Available groups"
 msgstr ""
 
-#: interfaces/wmi/users.py:304
+#: interfaces/wmi/users.py:305
 msgid "Affected groups"
 msgstr ""
 
-#: interfaces/wmi/users.py:306
+#: interfaces/wmi/users.py:307
 msgid "Customize privileges"
 msgstr ""
 
-#: interfaces/wmi/users.py:307
+#: interfaces/wmi/users.py:308
 msgid "Available privileges"
 msgstr ""
 
-#: interfaces/wmi/users.py:307
+#: interfaces/wmi/users.py:308
 msgid "granted privileges"
 msgstr ""
 
-#: interfaces/wmi/users.py:309
+#: interfaces/wmi/users.py:310
 msgid "Assign responsibilities"
 msgstr ""
 
-#: interfaces/wmi/users.py:310
+#: interfaces/wmi/users.py:311
 msgid "Available responsibilities"
 msgstr ""
 
-#: interfaces/wmi/users.py:310
+#: interfaces/wmi/users.py:311
 msgid "Assigned responsibilities"
 msgstr ""
 
-#: interfaces/wmi/users.py:312
+#: interfaces/wmi/users.py:313
 msgid "Propose invitations"
 msgstr ""
 
-#: interfaces/wmi/users.py:313
+#: interfaces/wmi/users.py:314
 msgid "Available invitations"
 msgstr ""
 
-#: interfaces/wmi/users.py:313
+#: interfaces/wmi/users.py:314
 msgid "Offered invitations"
 msgstr ""
 
-#: interfaces/wmi/users.py:323 interfaces/wmi/users.py:443
+#: interfaces/wmi/users.py:324 interfaces/wmi/users.py:444
 msgid "Standard account"
 msgstr ""
 
-#: interfaces/wmi/users.py:386
+#: interfaces/wmi/users.py:387
 #, python-format
 msgid "Edit account %s"
 msgstr ""
 
-#: interfaces/wmi/users.py:389
+#: interfaces/wmi/users.py:390
 msgid "<strong>UID</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:391
+#: interfaces/wmi/users.py:392
 msgid "<strong>Identifier</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:392
+#: interfaces/wmi/users.py:393
 msgid "<strong>Profile</strong> (fixed)"
 msgstr ""
 
-#: interfaces/wmi/users.py:394
+#: interfaces/wmi/users.py:395
 msgid "<strong>Full name</strong>"
 msgstr ""
 
-#: interfaces/wmi/users.py:398 interfaces/wmi/users.py:701
+#: interfaces/wmi/users.py:399 interfaces/wmi/users.py:702
 #, python-format
 msgid ""
 "Password must be at least %d characters long. You can use all alphabet "
 "characters, numbers, special characters and punctuation signs, except '?!'."
 msgstr ""
 
-#: interfaces/wmi/users.py:403
+#: interfaces/wmi/users.py:404
 msgid "<strong>New password</strong>"
 msgstr ""
 
-#: interfaces/wmi/users.py:404 interfaces/wmi/users.py:706
+#: interfaces/wmi/users.py:405 interfaces/wmi/users.py:707
 #, python-format
 msgid "(%d chars. min.)"
 msgstr ""
 
-#: interfaces/wmi/users.py:410
+#: interfaces/wmi/users.py:411
 msgid "password confirmation."
 msgstr ""
 
-#: interfaces/wmi/users.py:415
+#: interfaces/wmi/users.py:416
 msgid "<strong>Shell</strong><br />(Unix command line interpreter)"
 msgstr ""
 
-#: interfaces/wmi/users.py:542
+#: interfaces/wmi/users.py:543
 #, python-format
 msgid "User account %s's informations"
 msgstr ""
 
-#: interfaces/wmi/users.py:548
+#: interfaces/wmi/users.py:549
 msgid "Gecos"
 msgstr ""
 
-#: interfaces/wmi/users.py:549
+#: interfaces/wmi/users.py:550
 msgid "Responsibilities"
 msgstr ""
 
-#: interfaces/wmi/users.py:550
+#: interfaces/wmi/users.py:551
 msgid "Standard memberships"
 msgstr ""
 
-#: interfaces/wmi/users.py:551
+#: interfaces/wmi/users.py:552
 msgid "Invitations"
 msgstr ""
 
-#: interfaces/wmi/users.py:553
+#: interfaces/wmi/users.py:554
 msgid "Other system memberships"
 msgstr ""
 
-#: interfaces/wmi/users.py:574
+#: interfaces/wmi/users.py:575
 msgid "<< Go back"
 msgstr ""
 
-#: interfaces/wmi/users.py:575
+#: interfaces/wmi/users.py:576
 msgid "B"
 msgstr ""
 
-#: interfaces/wmi/users.py:576
+#: interfaces/wmi/users.py:577
 msgid "Print"
 msgstr ""
 
-#: interfaces/wmi/users.py:593 interfaces/wmi/users.py:907
+#: interfaces/wmi/users.py:594 interfaces/wmi/users.py:908
 msgid "User accounts"
 msgstr ""
 
-#: interfaces/wmi/users.py:628 interfaces/wmi/users.py:698
+#: interfaces/wmi/users.py:629 interfaces/wmi/users.py:699
 msgid "Full name"
 msgstr ""
 
-#: interfaces/wmi/users.py:691
+#: interfaces/wmi/users.py:692
 msgid "New account creation:"
 msgstr ""
 
-#: interfaces/wmi/users.py:693
+#: interfaces/wmi/users.py:694
 msgid "This user will be a"
 msgstr ""
 
-#: interfaces/wmi/users.py:711
+#: interfaces/wmi/users.py:712
 msgid "Password confirmation."
 msgstr ""
 
-#: interfaces/wmi/users.py:715
+#: interfaces/wmi/users.py:716
 msgid ""
 "Identifier must be lowercase, without accents or special characters (you can "
 "use dots and carets). If you let this field empty, identifier will be "
 "automaticaly guessed from first name and last name."
 msgstr ""
 
-#: interfaces/wmi/users.py:723
+#: interfaces/wmi/users.py:724
 msgid "I"
 msgstr ""
 
-#: interfaces/wmi/users.py:724
+#: interfaces/wmi/users.py:725
 msgid "Shell"
 msgstr ""
 
-#: interfaces/wmi/users.py:725
+#: interfaces/wmi/users.py:726
 msgid "(Unix command line interpreter)"
 msgstr ""
 
-#: interfaces/wmi/users.py:734
+#: interfaces/wmi/users.py:735
 msgid "uCancel"
 msgstr ""
 
-#: interfaces/wmi/users.py:736
+#: interfaces/wmi/users.py:737
 msgid "Record new user"
 msgstr ""
 
-#: interfaces/wmi/users.py:909 interfaces/wmi/users.py:960
+#: interfaces/wmi/users.py:910 interfaces/wmi/users.py:961
 msgid "GECOS"
 msgstr ""
 
-#: interfaces/wmi/users.py:958
+#: interfaces/wmi/users.py:959
 msgid "System user accounts"
 msgstr ""
 
-#: core/profiles.py:114
+#: core/profiles.py:115
 msgid "profile {0}: group {1} does not exist, ignored."
 msgstr ""
 
-#: core/profiles.py:165
+#: core/profiles.py:166
 msgid "A profile cannot have an empty name!"
 msgstr ""
 
-#: core/profiles.py:169 core/profiles.py:770
+#: core/profiles.py:170 core/profiles.py:773
 msgid "Malformed profile name \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/profiles.py:185
+#: core/profiles.py:186
 msgid "Changed profile {0} name to {1}."
 msgstr ""
 
-#: core/profiles.py:205
+#: core/profiles.py:206
 msgid "You must specify a description (an empty text is OK, but not `None`)."
 msgstr ""
 
-#: core/profiles.py:209 core/profiles.py:780
+#: core/profiles.py:210 core/profiles.py:783
 msgid "Malformed profile description \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/profiles.py:217
+#: core/profiles.py:218
 msgid "Changed profile {0} description to \"{1}\"."
 msgstr ""
 
-#: core/profiles.py:293
+#: core/profiles.py:294
 msgid ""
 "You must specify a valid skel dir for the profile (use --help to know how)."
 msgstr ""
 
-#: core/profiles.py:297
+#: core/profiles.py:298
 msgid " Invalid skeleton \"{0}\". Valid skels are {1}."
 msgstr ""
 
-#: core/profiles.py:305
+#: core/profiles.py:306
 msgid "Changed profile {0} skeleton to {1}."
 msgstr ""
 
-#: core/profiles.py:309
+#: core/profiles.py:310
 #, python-format
 msgid "Applying new skel to current members %s in the background."
 msgstr ""
 
-#: core/profiles.py:324
+#: core/profiles.py:325
 msgid ""
 "You must specify a valid shell for the profile (use --help to know how)."
 msgstr ""
 
-#: core/profiles.py:328
+#: core/profiles.py:329
 msgid "Invalid shell \"{0}\". Allowed shells are {1}."
 msgstr ""
 
-#: core/profiles.py:336
+#: core/profiles.py:337
 msgid "Changed profile {0} shell to {1}."
 msgstr ""
 
-#: core/profiles.py:353
+#: core/profiles.py:354
 msgid "You must specify a quota as integer, not \"{}\"."
 msgstr ""
 
-#: core/profiles.py:360
+#: core/profiles.py:361
 msgid "Changed profile {0} quota to {1}Mb."
 msgstr ""
 
-#: core/profiles.py:374
+#: core/profiles.py:375
 msgid "You must specify a list of groups to add to the profile."
 msgstr ""
 
-#: core/profiles.py:383
+#: core/profiles.py:384
 msgid "Skipped group {0}, already in profile {1}."
 msgstr ""
 
-#: core/profiles.py:388
+#: core/profiles.py:389
 msgid "Cannot add group {0} to its own profile {1}."
 msgstr ""
 
-#: core/profiles.py:397
+#: core/profiles.py:398
 msgid "Added group {0} to profile {1}.{2}"
 msgstr ""
 
-#: core/profiles.py:401 core/profiles.py:438
+#: core/profiles.py:402 core/profiles.py:439
 msgid " Applying to current members in the background."
 msgstr ""
 
-#: core/profiles.py:419
+#: core/profiles.py:420
 msgid "You must specify a list of groups to delete from the profile."
 msgstr ""
 
-#: core/profiles.py:433
+#: core/profiles.py:434
 msgid "Deleted group {0} from profile {1}.{2}"
 msgstr ""
 
-#: core/profiles.py:446
+#: core/profiles.py:447
 msgid "Skipped group {0}, not in groups of profile {1}."
 msgstr ""
 
-#: core/profiles.py:461
+#: core/profiles.py:462
 msgid ""
 "Not applying skel {0} of {1} profile on account {2} because this account is "
 "not in this profile."
 msgstr ""
 
-#: core/profiles.py:471
+#: core/profiles.py:472
 msgid "Applying skel {0} to user {1}."
 msgstr ""
 
-#: core/profiles.py:483
+#: core/profiles.py:484
 #, python-format
 msgid "Installing skel part %s."
 msgstr ""
 
-#: core/profiles.py:546
+#: core/profiles.py:547
 msgid ""
 "Applyed skel {0} to user {1}, permissions are checked in the background."
 msgstr ""
 
-#: core/profiles.py:551
+#: core/profiles.py:552
 msgid "Skel {0} already applied or skipped for user {1}."
 msgstr ""
 
-#: core/profiles.py:560
+#: core/profiles.py:561
 msgid "{name} ({group}, gid={gid}): {descr}"
 msgstr ""
 
-#: core/profiles.py:565
+#: core/profiles.py:566
 msgid ""
 "\t{home_label} {home}, {skel_label} {skel}, {shell_label} {shell}, "
 "{quota_label} {quota}{quota_unit}{groups}"
 msgstr ""
 
-#: core/profiles.py:568
+#: core/profiles.py:569
 msgid "Home:"
 msgstr ""
 
-#: core/profiles.py:570
+#: core/profiles.py:571
 msgid "skeleton:"
 msgstr ""
 
-#: core/profiles.py:572
+#: core/profiles.py:573
 msgid "shell:"
 msgstr ""
 
-#: core/profiles.py:574
+#: core/profiles.py:575
 msgid "quota:"
 msgstr ""
 
-#: core/profiles.py:576
+#: core/profiles.py:577
 msgid "Mb"
 msgstr ""
 
-#: core/profiles.py:578
+#: core/profiles.py:579
 msgid "Groups:"
 msgstr ""
 
-#: core/profiles.py:628
+#: core/profiles.py:629
 msgid "profile"
 msgstr ""
 
-#: core/profiles.py:631
+#: core/profiles.py:632
 msgid "PrID"
 msgstr ""
 
-#: core/profiles.py:692
+#: core/profiles.py:695
 msgid "Adding a default {0} profile on the system (this is mandatory)."
 msgstr ""
 
-#: core/profiles.py:703
+#: core/profiles.py:706
 msgid "Standard desktop users"
 msgstr ""
 
-#: core/profiles.py:754
+#: core/profiles.py:757
 #, python-format
 msgid "The %s profile"
 msgstr ""
 
-#: core/profiles.py:760 core/users.py:330
+#: core/profiles.py:763 core/users.py:331
 msgid "Invalid shell \"{0}\". Valid shells are {1}."
 msgstr ""
 
-#: core/profiles.py:765
+#: core/profiles.py:768
 msgid "Invalid skeleton \"{0}\". Valid skels are {1}."
 msgstr ""
 
-#: core/profiles.py:775
+#: core/profiles.py:778
 msgid "Malformed profile group \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/profiles.py:792
+#: core/profiles.py:795
 msgid "Clamped negative quota value to absolute value {0}."
 msgstr ""
 
-#: core/profiles.py:798
+#: core/profiles.py:801
 msgid "Clamped quota to maximum value {0}Mb."
 msgstr ""
 
-#: core/profiles.py:802
+#: core/profiles.py:805
 msgid ""
 "Malformed profile quota \"{0}\": must be an integer, specifying a size in Mb."
 msgstr ""
 
-#: core/profiles.py:825
+#: core/profiles.py:828
 #, python-format
 msgid ""
 "A profile with name \"%s\" already exists on the system. Please choose "
 "another one."
 msgstr ""
 
-#: core/profiles.py:831
+#: core/profiles.py:834
 msgid ""
 "The group {0} is already taken by profile {1}. Please choose another one."
 msgstr ""
 
-#: core/profiles.py:844
+#: core/profiles.py:847
 #, python-format
 msgid ""
 "A system group named \"%s\" already exists. Please choose another group name "
@@ -4100,81 +4327,81 @@ msgid ""
 "the profile)."
 msgstr ""
 
-#: core/profiles.py:864
+#: core/profiles.py:867
 msgid ""
 "The group {0} (gid={1}) is not a system group. It cannot be used as primary "
 "group for a profile. Please choose another one, or do not specify any, and a "
 "default one will be automatically created."
 msgstr ""
 
-#: core/profiles.py:884
+#: core/profiles.py:887
 msgid "Added profile {0} (group={1}, gid={2})."
 msgstr ""
 
-#: core/profiles.py:907
+#: core/profiles.py:910
 #, python-format
 msgid "Kept restricted system group %s."
 msgstr ""
 
-#: core/profiles.py:932
+#: core/profiles.py:935
 #, python-format
 msgid "Deleted profile %s."
 msgstr ""
 
-#: core/profiles.py:953
+#: core/profiles.py:956
 msgid "You must choose to apply the groups or/and the skel"
 msgstr ""
 
-#: core/profiles.py:958
+#: core/profiles.py:961
 #, python-format
 msgid ""
 "Skipped system account %s (we do not reapply skels on them for safety "
 "reasons)."
 msgstr ""
 
-#: core/profiles.py:964
+#: core/profiles.py:967
 #, python-format
 msgid "Skipped account %s, which has no profile."
 msgstr ""
 
-#: core/profiles.py:1031
+#: core/profiles.py:1034
 msgid "You must specify a groupname or a profile name to test existence of."
 msgstr ""
 
-#: core/profiles.py:1039
+#: core/profiles.py:1042
 #, python-format
 msgid "Profile group %s does not exist."
 msgstr ""
 
-#: core/profiles.py:1047
+#: core/profiles.py:1050
 #, python-format
 msgid "Profile %s does not exist."
 msgstr ""
 
-#: core/profiles.py:1078
+#: core/profiles.py:1081
 msgid "The tag <{0}> was not found in {1}."
 msgstr ""
 
-#: core/profiles.py:1090
+#: core/profiles.py:1093
 msgid "The tag <{0}> must not have an empty value (in {1})."
 msgstr ""
 
-#: core/configuration.py:464
+#: core/configuration.py:465
 #, python-format
 msgid "Experimental features enabled. Have fun, but do not break anything%s."
 msgstr ""
 
-#: core/configuration.py:466
+#: core/configuration.py:467
 msgid " (hear me Nibor?)"
 msgstr ""
 
-#: core/configuration.py:530
+#: core/configuration.py:531
 msgid ""
 "Your ubuntu version (\"{0}\") is no longer supported by {1} developpers. You "
 "should consider upgrading to a newer one."
 msgstr ""
 
-#: core/configuration.py:539
+#: core/configuration.py:540
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged ubuntu version "
 "(\"{1}\")? Anyway it is no longer supported by {0} developpers. Even "
@@ -4182,30 +4409,30 @@ msgid ""
 "strongly consider upgrading to a newer version."
 msgstr ""
 
-#: core/configuration.py:550
+#: core/configuration.py:551
 msgid "This Ubuntu version (\"{0}\") is not [yet] supported, sorry !"
 msgstr ""
 
-#: core/configuration.py:572
+#: core/configuration.py:573
 msgid ""
 "You are running an unknown or unsupported Linux distro. Please get in touch "
 "with {0} developpers, and consider submitting a patch to make your system "
 "officially supported."
 msgstr ""
 
-#: core/configuration.py:854 core/users.py:1064
+#: core/configuration.py:855 core/users.py:1065
 msgid "user"
 msgstr ""
 
-#: core/configuration.py:855
+#: core/configuration.py:856
 msgid "users"
 msgstr ""
 
-#: core/configuration.py:873
+#: core/configuration.py:874
 msgid "groups"
 msgstr ""
 
-#: core/configuration.py:1460
+#: core/configuration.py:1486
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
@@ -4237,483 +4464,491 @@ msgstr ""
 msgid "waiting for daemon to come up…"
 msgstr ""
 
-#: core/backends/dnsmasq.py:176 core/backends/shadow.py:525
+#: core/backends/dnsmasq.py:177 core/backends/shadow.py:526
 msgid "{0}: configuration file {1} changed, reloading {2} controller."
 msgstr ""
 
-#: core/backends/shadow.py:209
+#: core/backends/shadow.py:210
 msgid "{0}: added missing entry for user {1} in {2}."
 msgstr ""
 
-#: core/backends/shadow.py:236
+#: core/backends/shadow.py:237
 msgid "{0}: cleaned users data rewrite requested in the background."
 msgstr ""
 
-#: core/backends/shadow.py:287
+#: core/backends/shadow.py:288
 msgid "{0}: skipped line \"{1}\" from {2}, it seems corrupt."
 msgstr ""
 
-#: core/backends/shadow.py:339
+#: core/backends/shadow.py:340
 msgid "{0}: added missing record for group {1} in {2}."
 msgstr ""
 
-#: core/backends/shadow.py:357
+#: core/backends/shadow.py:358
 msgid "{0}: cleaned groups data rewrite requested in the background."
 msgstr ""
 
-#: core/backends/shadow.py:432
+#: core/backends/shadow.py:433
 msgid "{0}: saved users data to disk."
 msgstr ""
 
-#: core/backends/shadow.py:502
+#: core/backends/shadow.py:503
 msgid "{0}: saved groups data to disk."
 msgstr ""
 
-#: core/backends/openldap.py:207
+#: core/backends/openldap.py:208
 msgid ""
 "{0}: server {1} is down, disabling backend. This will produce timeouts "
 "because {2} is enabled in NSS configuration."
 msgstr ""
 
-#: core/backends/openldap.py:442
+#: core/backends/openldap.py:443
 msgid ""
 "{0}: {1} should contain your LDAP system password, but is currently empty. "
 "Fill it with a random password?"
 msgstr ""
 
-#: core/backends/openldap.py:454
+#: core/backends/openldap.py:455
 msgid ""
 "{0}: autogenerated password for LDAP user {1}: \"{2}\". It is up to you to "
 "update the LDAP database with it, now."
 msgstr ""
 
-#: core/backends/openldap.py:474
+#: core/backends/openldap.py:475
 msgid ""
 "{0}: {1} is mandatory for {2} to work properly. Cannot continue without "
 "this, sorry!"
 msgstr ""
 
-#: core/backends/openldap.py:623
+#: core/backends/openldap.py:624
 msgid "{0}: skipped account {1} (was: KeyError on field {2})."
 msgstr ""
 
-#: core/keywords.py:135
+#: core/keywords.py:136
 msgid "You must specify a keyword name."
 msgstr ""
 
-#: core/keywords.py:148
+#: core/keywords.py:149
 msgid "Malformed keyword name \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/keywords.py:153
+#: core/keywords.py:154
 msgid "Malformed keyword description \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/privileges.py:48
+#: core/privileges.py:49
 msgid "privilege"
 msgstr ""
 
-#: core/privileges.py:142
+#: core/privileges.py:143
 msgid "Skipped privilege {0} refering to a non-existing group."
 msgstr ""
 
-#: core/privileges.py:162
+#: core/privileges.py:163
 msgid ""
 "Rewriting privilege whitelist to remove non-existing references or "
 "duplicates."
 msgstr ""
 
-#: core/privileges.py:184
+#: core/privileges.py:185
 #, python-format
 msgid "Skipped privilege %s, already whitelisted."
 msgstr ""
 
-#: core/privileges.py:189
+#: core/privileges.py:190
 #, python-format
 msgid ""
 "group %s cannot be promoted as privilege, it is not a pure system group."
 msgstr ""
 
-#: core/privileges.py:200
+#: core/privileges.py:201
 #, python-format
 msgid "Added privilege %s to whitelist."
 msgstr ""
 
-#: core/privileges.py:215
+#: core/privileges.py:216
 #, python-format
 msgid "Removed privilege %s from whitelist."
 msgstr ""
 
-#: core/privileges.py:220
+#: core/privileges.py:221
 #, python-format
 msgid "Skipped privilege %s, already not present in the whitelist."
 msgstr ""
 
-#: core/privileges.py:238
+#: core/privileges.py:239
 msgid "Privilege {} does not exist"
 msgstr ""
 
-#: core/groups.py:94
+#: core/groups.py:95
 msgid ""
 "Cannot build a valid UNIX group name (got {0}, which does not verify {1}) "
 "with the string you provided \"{2}\"."
 msgstr ""
 
-#: core/groups.py:324
+#: core/groups.py:325
 msgid ""
 "group {0}: Cannot set a profile ({1}) which has not the same GID as me ({2} !"
 "= {3})!"
 msgstr ""
 
-#: core/groups.py:350
+#: core/groups.py:351
 msgid "Permissive state {0} for group {1}."
 msgstr ""
 
-#: core/groups.py:352
+#: core/groups.py:353
 msgid "unchanged"
 msgstr ""
 
-#: core/groups.py:360
+#: core/groups.py:361
 msgid "activated"
 msgstr ""
 
-#: core/groups.py:363
+#: core/groups.py:364
 msgid "not "
 msgstr ""
 
-#: core/groups.py:364
+#: core/groups.py:365
 msgid "deactivated"
 msgstr ""
 
-#: core/groups.py:375
+#: core/groups.py:376
 msgid ""
 "Switched group {0} permissive state to {1} (Shared content permissions are "
 "beiing checked in the background, this can take a while…)"
 msgstr ""
 
-#: core/groups.py:394
+#: core/groups.py:395
 msgid "You must specify a description"
 msgstr ""
 
-#: core/groups.py:398
+#: core/groups.py:399
 msgid "Malformed description \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/groups.py:407
+#: core/groups.py:408
 msgid "Changed group {0} description to \"{1}\"."
 msgstr ""
 
-#: core/groups.py:419
+#: core/groups.py:420
 msgid "You must specify a groupSkel"
 msgstr ""
 
-#: core/groups.py:422 core/groups.py:2073
+#: core/groups.py:423 core/groups.py:2063
 msgid "Invalid skel {0}. Valid skels are: {1}."
 msgstr ""
 
-#: core/groups.py:430
+#: core/groups.py:431
 msgid "Changed group {0} skel to {1}."
 msgstr ""
 
-#: core/groups.py:598
+#: core/groups.py:599
 msgid "group {0}: removed relationship for non-existing user {1}."
 msgstr ""
 
-#: core/groups.py:606
+#: core/groups.py:607
 msgid "group {0}: removed duplicate relationship for member {1}."
 msgstr ""
 
-#: core/groups.py:613
+#: core/groups.py:614
 msgid "group {0}: removed primary member {1} from auxilliary members list."
 msgstr ""
 
-#: core/groups.py:648 core/groups.py:745
+#: core/groups.py:649 core/groups.py:746
 msgid "You must specify a users list"
 msgstr ""
 
-#: core/groups.py:672
+#: core/groups.py:673
 msgid "User {0} is already a member of {1} (primary or not), skipped."
 msgstr ""
 
-#: core/groups.py:707
+#: core/groups.py:708
 msgid "Added user {0} to members of group {1}."
 msgstr ""
 
-#: core/groups.py:768
+#: core/groups.py:769
 msgid "Removed user {0} from members of group {1}."
 msgstr ""
 
-#: core/groups.py:784
+#: core/groups.py:785
 msgid "Skipped user {0}, already not a member of group {1}"
 msgstr ""
 
-#: core/groups.py:827 core/users.py:599
+#: core/groups.py:828 core/users.py:600
 #, python-format
 msgid "Backend %s does not exist or is not enabled."
 msgstr ""
 
-#: core/groups.py:833 core/users.py:605
+#: core/groups.py:834 core/users.py:606
 msgid "Skipped move of group {0}, already stored in backend {1}."
 msgstr ""
 
-#: core/groups.py:840 core/users.py:612
+#: core/groups.py:841 core/users.py:613
 msgid ""
 "Skipped move of restricted system group {0} (please use {1} if you really "
 "want to do this, but it is strongly not recommended)."
 msgstr ""
 
-#: core/groups.py:848 core/users.py:620
+#: core/groups.py:849
 msgid ""
-"Cannot move an associated system group without moving its standard  group "
+"Cannot move an associated system group without moving its standard group "
 "too. Please move the standard group instead, if this is what you meant."
 msgstr ""
 
-#: core/groups.py:857 core/users.py:629
+#: core/groups.py:858 core/users.py:630
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated "
 "responsible system group failed."
 msgstr ""
 
-#: core/groups.py:870 core/users.py:642
+#: core/groups.py:871 core/users.py:643
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated system "
 "guest group failed."
 msgstr ""
 
-#: core/groups.py:880 core/users.py:652
+#: core/groups.py:881 core/users.py:653
 msgid ""
 "Exception {0} happened while trying to move group {1} from {2} to {3}, "
 "aborting (group left unchanged)."
 msgstr ""
 
-#: core/groups.py:902 core/users.py:674
+#: core/groups.py:903 core/users.py:675
 msgid ""
 "Exception {0} happened while trying to restore a stable situation during "
 "group {1} move, we could be in big trouble."
 msgstr ""
 
-#: core/groups.py:912 core/users.py:684
-msgid "Moved group {0} from backend {1} to {2}."
+#: core/groups.py:913
+msgid "Moved group {0} from {1} to {2}."
 msgstr ""
 
-#: core/groups.py:955
+#: core/groups.py:956
 #, python-format
 msgid "Checking %s symlinks in members homes, this can be long…"
 msgstr ""
 
-#: core/groups.py:995 core/groups.py:1483
+#: core/groups.py:996 core/groups.py:1484
 #, python-format
 msgid "Deleted symlink %s."
 msgstr ""
 
-#: core/groups.py:1000 core/groups.py:1487
+#: core/groups.py:1001 core/groups.py:1488
 msgid "Unable to delete symlink {0} (was: {1})."
 msgstr ""
 
-#: core/groups.py:1013
+#: core/groups.py:1014
 #, python-format
 msgid "Deleted old symlink %s."
 msgstr ""
 
-#: core/groups.py:1017
+#: core/groups.py:1018
 msgid "Unable to read symlink {0} (was: {1})."
 msgstr ""
 
-#: core/groups.py:1025
+#: core/groups.py:1026
 msgid "User {0} lacks the symlink to group shared dir {1}. Create it?"
 msgstr ""
 
-#: core/groups.py:1035
+#: core/groups.py:1036
 msgid "User {0} lacks the symlink to group shared dir {1}."
 msgstr ""
 
-#: core/groups.py:1060
+#: core/groups.py:1061
 msgid "Group {0} already in the list of profile {1}."
 msgstr ""
 
-#: core/groups.py:1096
+#: core/groups.py:1097
 msgid "Deleting group {0} from profile {1}."
 msgstr ""
 
-#: core/groups.py:1106
+#: core/groups.py:1107
 msgid "Group {0} already absent from profile {1}."
 msgstr ""
 
-#: core/groups.py:1163
+#: core/groups.py:1164
 msgid "Shared dir {0} does not exist, please run \"chk group {1}\" to fix."
 msgstr ""
 
-#: core/groups.py:1216
+#: core/groups.py:1217
 #, python-format
 msgid ""
 "Cannot demote user %s from standard membership to guest without --force flag."
 msgstr ""
 
-#: core/groups.py:1230
+#: core/groups.py:1231
 #, python-format
 msgid "Cannot demote user %s from responsible to guest without --force flag."
 msgstr ""
 
-#: core/groups.py:1261
+#: core/groups.py:1262
 #, python-format
 msgid ""
 "Cannot demote user %s from responsible to standard membership without --"
 "force flag."
 msgstr ""
 
-#: core/groups.py:1305
+#: core/groups.py:1306
 msgid "responsibles"
 msgstr ""
 
-#: core/groups.py:1308
+#: core/groups.py:1309
 msgid "guests"
 msgstr ""
 
-#: core/groups.py:1314
+#: core/groups.py:1315
 #, python-format
 msgid "Checking system group %s…"
 msgstr ""
 
-#: core/groups.py:1318
+#: core/groups.py:1319
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal. "
 "Create it?"
 msgstr ""
 
-#: core/groups.py:1330
+#: core/groups.py:1331
 msgid "{0} of group “{1}”"
 msgstr ""
 
-#: core/groups.py:1356
+#: core/groups.py:1357
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal."
 msgstr ""
 
-#: core/groups.py:1380
+#: core/groups.py:1381
 msgid "Checking system specific attributes for group {0}…"
 msgstr ""
 
-#: core/groups.py:1391
+#: core/groups.py:1392
 msgid "Removed superfluous attribute {0} of system group {1}"
 msgstr ""
 
-#: core/groups.py:1401 core/groups.py:2061
+#: core/groups.py:1402 core/groups.py:2051
 #, python-format
 msgid "Members of group “%s”"
 msgstr ""
 
-#: core/groups.py:1403
+#: core/groups.py:1404
 msgid "Added missing {0} attribute with a default value for system group {1}."
 msgstr ""
 
-#: core/groups.py:1410
+#: core/groups.py:1411
 msgid "Do you want to commit these changes to the system (highly recommended)?"
 msgstr ""
 
-#: core/groups.py:1419
+#: core/groups.py:1420
 msgid "Corrections of system group {0} not commited"
 msgstr ""
 
-#: core/groups.py:1453
+#: core/groups.py:1454
 msgid "Unable to create symlink {0} (was: {1})."
 msgstr ""
 
-#: core/groups.py:1521
+#: core/groups.py:1522
 msgid "password:"
 msgstr ""
 
-#: core/groups.py:1525
+#: core/groups.py:1526
 msgid "skel:"
 msgstr ""
 
-#: core/groups.py:1548 core/groups.py:1581 core/groups.py:1597
+#: core/groups.py:1535
+msgid "UNKNOWN"
+msgstr ""
+
+#: core/groups.py:1537 core/groups.py:2137
+msgid "permissive"
+msgstr ""
+
+#: core/groups.py:1539
+msgid "NOT permissive"
+msgstr ""
+
+#: core/groups.py:1549 core/groups.py:1582 core/groups.py:1598
 msgid "— no member —"
 msgstr ""
 
-#: core/groups.py:1559
+#: core/groups.py:1560
 msgid "Cannot collect responsibles for group {0} (was: {1})."
 msgstr ""
 
-#: core/groups.py:1568
+#: core/groups.py:1569
 msgid "Cannot collect guests for group {0} (was: {1})."
 msgstr ""
 
-#: core/groups.py:1791
+#: core/groups.py:1782
 msgid "{0}.reload: Overwritten gid {1}."
 msgstr ""
 
-#: core/groups.py:1804
+#: core/groups.py:1794
 msgid "{0}: removing disapeared group {1}."
 msgstr ""
 
-#: core/groups.py:1847
+#: core/groups.py:1837
 msgid "File-system {0} must be mounted with {1} option to continue!"
 msgstr ""
 
-#: core/groups.py:1860
+#: core/groups.py:1850
 msgid "{0}: {1} does not exist and will be created later in the process."
 msgstr ""
 
-#: core/groups.py:1995
+#: core/groups.py:1985
 #, python-format
 msgid "GID %s does not exist on the system."
 msgstr ""
 
-#: core/groups.py:2049
+#: core/groups.py:2039
 msgid "Malformed group name \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/groups.py:2054
+#: core/groups.py:2044
 msgid ""
 "Group name must be smaller than {0} characters (\"{1}\" is {2} chars long)."
 msgstr ""
 
-#: core/groups.py:2064
+#: core/groups.py:2054
 msgid "Malformed group description \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/groups.py:2127
+#: core/groups.py:2117
 msgid "Created system group {0} (gid={1})."
 msgstr ""
 
-#: core/groups.py:2146
+#: core/groups.py:2136
 msgid "Created {0} group {1} (gid={2})."
 msgstr ""
 
-#: core/groups.py:2147
-msgid "permissive"
-msgstr ""
-
-#: core/groups.py:2175
+#: core/groups.py:2165
 msgid "GID {0} is already taken by group {1}. Please choose another one."
 msgstr ""
 
-#: core/groups.py:2188 core/groups.py:2201
+#: core/groups.py:2178 core/groups.py:2191
 #, python-format
 msgid "The group %s already exists."
 msgstr ""
 
-#: core/groups.py:2191
+#: core/groups.py:2181
 #, python-format
 msgid ""
 "The group %s already exists but has not the same type. Please choose another "
 "name for your group."
 msgstr ""
 
-#: core/groups.py:2204
+#: core/groups.py:2194
 #, python-format
 msgid ""
 "The group %s already exists with a different GID. Please check this is what "
-"you want, and take a decision."
+"you want, and make a decision."
 msgstr ""
 
-#: core/groups.py:2209
+#: core/groups.py:2199
 msgid ""
 "The group {0} already exists but has not the same type. Please choose "
 "another name for your group."
 msgstr ""
 
-#: core/groups.py:2225
+#: core/groups.py:2215
 #, python-format
 msgid ""
 "A user account called %s already exists, this could trigger a bug in the "
@@ -4722,465 +4957,489 @@ msgid ""
 "this group on the system."
 msgstr ""
 
-#: core/groups.py:2243
+#: core/groups.py:2233
 msgid "Autogenerated GID for group {0}: {1}."
 msgstr ""
 
-#: core/groups.py:2250
+#: core/groups.py:2240
 msgid ""
 "GID out of range for the kind of group you specified. System GIDs must be "
 "between {0} and {1}, standard GIDs must be between {2} and {3}."
 msgstr ""
 
-#: core/groups.py:2305
+#: core/groups.py:2295
 msgid ""
 "Cannot delete group {0}, currently primary group of profile {1}. Please "
 "delete the profile instead, and the group will be deleted at the same time."
 msgstr ""
 
-#: core/groups.py:2316
+#: core/groups.py:2306
 msgid ""
-"The group still has members. You must delete them first, or use  the --del-"
+"The group still has members. You must delete them first, or use the --del-"
 "users argument. WARNING: this is usually a bad idea; use with caution."
 msgstr ""
 
-#: core/groups.py:2328
+#: core/groups.py:2318
 #, python-format
 msgid ""
 "Cannot delete a helper group. Please delete the standard associated group %s "
 "instead, and this group will be deleted in the same time."
 msgstr ""
 
-#: core/groups.py:2335
+#: core/groups.py:2325
 #, python-format
 msgid ""
 "Cannot delete restricted system group %s without the --force argument, this "
 "is too dangerous."
 msgstr ""
 
-#: core/groups.py:2430
+#: core/groups.py:2420
 msgid "{0}: group {1} already not referenced in controller!"
 msgstr ""
 
-#: core/groups.py:2455
+#: core/groups.py:2445
 msgid "Deleted {0}group {1}."
 msgstr ""
 
-#: core/groups.py:2456
+#: core/groups.py:2446
 msgid "system "
 msgstr ""
 
-#: core/groups.py:2535
+#: core/groups.py:2525
 #, python-format
 msgid ""
 "%s: inconsistency detected. Automatic check requested in the background."
 msgstr ""
 
-#: core/groups.py:2542
+#: core/groups.py:2532
 #, python-format
 msgid ""
 "%s: dangling helper group(s) detected. Automatic removal requested in the "
 "background."
 msgstr ""
 
-#: core/groups.py:2588
+#: core/groups.py:2578
 msgid ""
 "{0}: primary group is missing for user(s) {1}. This is harmless, but should "
 "be corrected manually by re-creating groups with fixed GIDs, or changing "
 "these users GIDs to other values."
 msgstr ""
 
-#: core/groups.py:2593
+#: core/groups.py:2583
 msgid "{0}(gid={1})"
 msgstr ""
 
-#: core/groups.py:2619
+#: core/groups.py:2609
 #, python-format
 msgid "Skipped non-existing group name or GID %s."
 msgstr ""
 
-#: core/users.py:100
+#: core/groups.py:2631
+msgid "You must specify a GID or a name to test existence of."
+msgstr ""
+
+#: core/groups.py:2638
+#, python-format
+msgid "GID %s doesn't exist"
+msgstr ""
+
+#: core/groups.py:2648
+#, python-format
+msgid "Group %s doesn't exist"
+msgstr ""
+
+#: core/users.py:101
 msgid ""
 "Cannot build a valid login (got \"{0}\", which does not verify {1}) with the "
 "firstname/lastname you provided (\"{2}\" and \"{3}\")."
 msgstr ""
 
-#: core/users.py:272
+#: core/users.py:273
 msgid ""
 "{0}: tried to set {1} as {2} primary group, whose GID is not the same ({3} "
 "vs. {4})."
 msgstr ""
 
-#: core/users.py:301
+#: core/users.py:302
 msgid "You must specify a gecos"
 msgstr ""
 
-#: core/users.py:305 core/users.py:1332
+#: core/users.py:306 core/users.py:1335
 msgid "Malformed GECOS field \"{0}\", must match /{1}/i."
 msgstr ""
 
-#: core/users.py:314
+#: core/users.py:315
 msgid "Changed user {0} gecos to \"{1}\"."
 msgstr ""
 
-#: core/users.py:327
+#: core/users.py:328
 msgid "You must specify a shell"
 msgstr ""
 
-#: core/users.py:339
+#: core/users.py:340
 msgid "Changed user {0} shell to {1}."
 msgstr ""
 
-#: core/users.py:373
+#: core/users.py:374
 msgid ""
 "Setting an empty password for user {0}. This is dangerous and totally "
 "insecure!"
 msgstr ""
 
-#: core/users.py:397
+#: core/users.py:398
 msgid "Set password for user {0} to {1}."
 msgstr ""
 
-#: core/users.py:404
+#: core/users.py:405
 msgid "Changed password for user {0}."
 msgstr ""
 
-#: core/users.py:484
+#: core/users.py:485
 msgid "Account {0} already locked."
 msgstr ""
 
-#: core/users.py:493
+#: core/users.py:494
 msgid "Locked user account {0}."
 msgstr ""
 
-#: core/users.py:506
+#: core/users.py:507
 msgid "Unlocked user account {0}."
 msgstr ""
 
-#: core/users.py:511
+#: core/users.py:512
 msgid "Account {0} already unlocked."
 msgstr ""
 
-#: core/users.py:712
+#: core/users.py:621
+msgid ""
+"Cannot move an associated system group without moving its standard  group "
+"too. Please move the standard group instead, if this is what you meant."
+msgstr ""
+
+#: core/users.py:685
+msgid "Moved group {0} from backend {1} to {2}."
+msgstr ""
+
+#: core/users.py:713
 msgid "Invalid skel \"{0}\". Valid skels are {1}."
 msgstr ""
 
-#: core/users.py:748
+#: core/users.py:749
 msgid "Applyed skel {0} for user {1}"
 msgstr ""
 
-#: core/users.py:839
+#: core/users.py:840
 msgid "Auto-cleaned {0}'s gecos to \"{1}\"."
 msgstr ""
 
-#: core/users.py:844
+#: core/users.py:845
 #, python-format
 msgid "%s Automatic Backup System"
 msgstr ""
 
-#: core/users.py:845
+#: core/users.py:846
 msgid "Special Executable Restrictor Account"
 msgstr ""
 
-#: core/users.py:846
+#: core/users.py:847
 msgid "ISC Domain Name Service daemon"
 msgstr ""
 
-#: core/users.py:847
+#: core/users.py:848
 msgid "Apple Calendar Server Daemon"
 msgstr ""
 
-#: core/users.py:848
+#: core/users.py:849
 msgid "Generic System Daemon"
 msgstr ""
 
-#: core/users.py:849
+#: core/users.py:850
 msgid "DHCP Daemon"
 msgstr ""
 
-#: core/users.py:850
+#: core/users.py:851
 msgid "DNSmasq (DHCP & DNS) Daemon"
 msgstr ""
 
-#: core/users.py:851
+#: core/users.py:852
 msgid "FTP Daemon / restricted account"
 msgstr ""
 
-#: core/users.py:852
+#: core/users.py:853
 msgid "Games Specific Account"
 msgstr ""
 
-#: core/users.py:853
+#: core/users.py:854
 msgid "Hardware Abstraction Layer Daemon"
 msgstr ""
 
-#: core/users.py:854
+#: core/users.py:855
 msgid "Hewlett-Packard Linux Imaging & Printing Daemon"
 msgstr ""
 
-#: core/users.py:855
+#: core/users.py:856
 msgid "Internet Relay Chats Daemon"
 msgstr ""
 
-#: core/users.py:856
+#: core/users.py:857
 msgid "Kernel OOPs Tracking Daemon"
 msgstr ""
 
-#: core/users.py:857
+#: core/users.py:858
 msgid "Canonical's Lanscape Remote Administration account"
 msgstr ""
 
-#: core/users.py:858
+#: core/users.py:859
 msgid "UUID Library Account"
 msgstr ""
 
-#: core/users.py:859
+#: core/users.py:860
 msgid "Line Printer Daemon"
 msgstr ""
 
-#: core/users.py:860
+#: core/users.py:861
 msgid "Local E-Mail System Account"
 msgstr ""
 
-#: core/users.py:861
+#: core/users.py:862
 msgid "Unix Manual Pages Generator"
 msgstr ""
 
-#: core/users.py:862
+#: core/users.py:863
 msgid "Memory Cache Daemon"
 msgstr ""
 
-#: core/users.py:863 core/users.py:867
+#: core/users.py:864 core/users.py:868
 msgid "System Message Bus (D-BUS)"
 msgstr ""
 
-#: core/users.py:864
+#: core/users.py:865
 msgid "Video Motion Detection daemon"
 msgstr ""
 
-#: core/users.py:865 core/users.py:866
+#: core/users.py:866 core/users.py:867
 msgid "Very unprivileged System Account"
 msgstr ""
 
-#: core/users.py:868
+#: core/users.py:869
 msgid "Postfix® Mail System"
 msgstr ""
 
-#: core/users.py:869
+#: core/users.py:870
 msgid "Web (& possibly more) Proxy Server"
 msgstr ""
 
-#: core/users.py:870
+#: core/users.py:871
 msgid "John Root, System Administrator (BOFH)"
 msgstr ""
 
-#: core/users.py:871
+#: core/users.py:872
 msgid "Scanner Access Now Easy daemon"
 msgstr ""
 
-#: core/users.py:872
+#: core/users.py:873
 msgid "Secure SHell Daemon"
 msgstr ""
 
-#: core/users.py:873
+#: core/users.py:874
 msgid "Generic Synchronization Account"
 msgstr ""
 
-#: core/users.py:874
+#: core/users.py:875
 msgid "Generic System Account"
 msgstr ""
 
-#: core/users.py:875
+#: core/users.py:876
 msgid "System Logger Daemon"
 msgstr ""
 
-#: core/users.py:876
+#: core/users.py:877
 msgid "Unix to Unix Copy Protocol daemon"
 msgstr ""
 
-#: core/users.py:877
+#: core/users.py:878
 msgid "Web Server unprivileged Account"
 msgstr ""
 
-#: core/users.py:878
+#: core/users.py:879
 msgid "Network Time Protocol Daemon"
 msgstr ""
 
-#: core/users.py:882
+#: core/users.py:883
 msgid ""
 "{0}'s GECOS \"{1}\" is currently meaningless, or we have a far better and "
 "hypish value \"{2}\" ready to enhance it. Would you like to use it?"
 msgstr ""
 
-#: core/users.py:898
+#: core/users.py:899
 #, python-format
 msgid "Checking system account %s…"
 msgstr ""
 
-#: core/users.py:902 core/users.py:942
+#: core/users.py:903 core/users.py:943
 msgid "account {0} already beiing ckecked, aborting."
 msgstr ""
 
-#: core/users.py:938
+#: core/users.py:939
 #, python-format
 msgid "Checking restricted system account %s…"
 msgstr ""
 
-#: core/users.py:993
+#: core/users.py:994
 msgid "— no membership —"
 msgstr ""
 
-#: core/users.py:1141
+#: core/users.py:1144
 msgid "{0}.reload: Overwritten uid {1}."
 msgstr ""
 
-#: core/users.py:1152
+#: core/users.py:1155
 msgid "{0}: removing disapeared user {1}."
 msgstr ""
 
-#: core/users.py:1228
+#: core/users.py:1231
 msgid ""
 "Specified directory {0} for system user {1} already exists. If you really "
 "want to use it, please use the --force argument."
 msgstr ""
 
-#: core/users.py:1240
+#: core/users.py:1243
 msgid ""
 "Specified home directory {0} for system user {1} is outside {2} and /var, or "
 "inside {3} or a temporary directory (/var/tmp, /tmp). This is unsupported, "
 "Aborting."
 msgstr ""
 
-#: core/users.py:1251
+#: core/users.py:1254
 msgid ""
 "Specified home directory {0} for system user {1} is already owned by another "
 "user. Please choose another one."
 msgstr ""
 
-#: core/users.py:1260
+#: core/users.py:1263
 msgid ""
 "Specifying an alternative home directory is not allowed for standard users. "
 "Using standard home path {0} instead."
 msgstr ""
 
-#: core/users.py:1273
+#: core/users.py:1276
 msgid ""
 "You must specify a login, a firstname *and* lastname couple, or a GECOS "
 "(login will be built from them)."
 msgstr ""
 
-#: core/users.py:1290
+#: core/users.py:1293
 #, python-format
 msgid "User account %s"
 msgstr ""
 
-#: core/users.py:1297
+#: core/users.py:1300
 msgid ""
 "You must specify a lastname and a firstname *or* a GECOS. If you specify the "
 "GECOS, do not specify firstname/lastname."
 msgstr ""
 
-#: core/users.py:1312
+#: core/users.py:1315
 msgid "Malformed login \"{0}\", must match /{1}/."
 msgstr ""
 
-#: core/users.py:1338
+#: core/users.py:1341
 msgid "Invalid shell \"{0}\". Valid shells are: {1}."
 msgstr ""
 
-#: core/users.py:1345
+#: core/users.py:1348
 msgid "Invalid skel \"{0}\". Valid skels are: {1}."
 msgstr ""
 
-#: core/users.py:1358
+#: core/users.py:1361
 msgid "UID {0} is already taken by user {1}. Please choose another one."
 msgstr ""
 
-#: core/users.py:1367
+#: core/users.py:1370
 msgid "User account {0} already exists!"
 msgstr ""
 
-#: core/users.py:1370
+#: core/users.py:1373
 msgid ""
 "A user account {0} already exists but has not the same type. Please choose "
 "another login for your user."
 msgstr ""
 
-#: core/users.py:1397
+#: core/users.py:1400
 msgid ""
 "A group named {0} exists on the system. This could eventually conflict in "
 "Debian/Ubuntu system tools. Please choose another login, or use the --force "
 "argument if you really want to add this user on the system."
 msgstr ""
 
-#: core/users.py:1415
+#: core/users.py:1418
 msgid "Autogenerated UID for user {0}: {1}."
 msgstr ""
 
-#: core/users.py:1423
+#: core/users.py:1426
 msgid ""
 "UID out of range for the kind of user account you specified. System UIDs "
 "must be between {0} and {1}, standard UIDs must be between {2} and {3}."
 msgstr ""
 
-#: core/users.py:1495
+#: core/users.py:1498
 msgid "Home directory {0} already exists."
 msgstr ""
 
-#: core/users.py:1499
+#: core/users.py:1502
 msgid "Created home directory {0}."
 msgstr ""
 
-#: core/users.py:1557
+#: core/users.py:1560
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr ""
 
-#: core/users.py:1565
+#: core/users.py:1568
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr ""
 
-#: core/users.py:1566 core/classes.py:896
+#: core/users.py:1569 core/classes.py:896
 msgid "system"
 msgstr ""
 
-#: core/users.py:1566
+#: core/users.py:1569
 msgid "standard"
 msgstr ""
 
-#: core/users.py:1594
+#: core/users.py:1597
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
 "this is too dangerous."
 msgstr ""
 
-#: core/users.py:1625
+#: core/users.py:1628
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr ""
 
-#: core/users.py:1647
+#: core/users.py:1650
 msgid "Deleted user account {0}."
 msgstr ""
 
-#: core/users.py:1765
+#: core/users.py:1768
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr ""
 
-#: core/users.py:1786
+#: core/users.py:1789
 #, python-format
 msgid "Skipped non-existing login or UID %s."
 msgstr ""
 
-#: core/users.py:1801
+#: core/users.py:1804
 msgid "You must specify an UID or a login to test existence of."
 msgstr ""
 
-#: core/users.py:1809
+#: core/users.py:1812
 #, python-format
 msgid "User %s does not exist"
 msgstr ""
 
-#: core/users.py:1816
+#: core/users.py:1819
 #, python-format
 msgid "UID %s does not exist"
 msgstr ""
@@ -5209,7 +5468,7 @@ msgstr ""
 msgid "%s: System default rule has been overwriten by user rule."
 msgstr ""
 
-#: core/classes.py:858 core/classes.py:1295
+#: core/classes.py:858 core/classes.py:1296
 msgid "Skipped"
 msgstr ""
 
@@ -5230,199 +5489,199 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
-#: core/classes.py:1040
+#: core/classes.py:1041
 msgid "{0}: error on setting inotifier watches for {1} {2} (was: {3})."
 msgstr ""
 
-#: core/classes.py:1179
+#: core/classes.py:1180
 msgid ""
 "{0}: will not try to load {1} {2} because one or more of its dependancies "
 "failed to load."
 msgstr ""
 
-#: core/classes.py:1233
+#: core/classes.py:1234
 msgid "{0}: unhandled exception {1} in {2} {3} during load.{4}"
 msgstr ""
 
-#: core/classes.py:1238
+#: core/classes.py:1239
 msgid " Disabling dependant {0}(s) {1} to avoid further problems."
 msgstr ""
 
-#: core/classes.py:1294
+#: core/classes.py:1295
 msgid "{0} {1} {2}, manually ignored in {3}."
 msgstr ""
 
-#: core/classes.py:1367
+#: core/classes.py:1368
 msgid "{0} {1} already enabled."
 msgstr ""
 
-#: core/classes.py:1378
+#: core/classes.py:1379
 msgid "successfully enabled {0} {1}."
 msgstr ""
 
-#: core/classes.py:1382 core/classes.py:1414
+#: core/classes.py:1383 core/classes.py:1415
 msgid "No {0} by that name \"{1}\"."
 msgstr ""
 
-#: core/classes.py:1400
+#: core/classes.py:1401
 msgid "{0} {1} already disabled."
 msgstr ""
 
-#: core/classes.py:1410
+#: core/classes.py:1411
 msgid "successfully disabled {0} {1}."
 msgstr ""
 
-#: core/classes.py:1453
+#: core/classes.py:1454
 msgid ""
 "{0}: unhandled exception {1} in {2} {3} during check. Disabling it to avoid "
 "problems."
 msgstr ""
 
-#: core/classes.py:1484
+#: core/classes.py:1485
 msgid "{module_type} {module_name} does not exist or is not enabled."
 msgstr ""
 
-#: core/classes.py:1499
+#: core/classes.py:1500
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
 msgstr ""
 
-#: core/classes.py:1868
-msgid "{0}: manual check already in progress, skipping event {1}."
-msgstr ""
-
-#: core/classes.py:2016
+#: core/classes.py:2072
 msgid "{0}: overwriting watch {1}!"
 msgstr ""
 
-#: core/classes.py:2170
+#: core/classes.py:2103 core/classes.py:2120
+msgid "{0}.__unwatch_directory in {1}: {2} not found in watched dirs."
+msgstr ""
+
+#: core/classes.py:2235
 msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr ""
 
-#: core/classes.py:2180
+#: core/classes.py:2245
 msgid "Checking {0} {1}…"
 msgstr ""
 
-#: core/classes.py:2193
+#: core/classes.py:2258
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr ""
 
-#: core/classes.py:2207
+#: core/classes.py:2272
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 
-#: core/classes.py:2231
+#: core/classes.py:2296
 msgid "{0} {1}: meta-data changed on path {2}."
 msgstr ""
 
-#: core/classes.py:2242
+#: core/classes.py:2307
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr ""
 
-#: core/classes.py:2251
+#: core/classes.py:2316
 msgid "{0} {1}: no shared data to check."
 msgstr ""
 
-#: core/classes.py:2356
+#: core/classes.py:2415
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
 msgstr ""
 
-#: core/classes.py:2425
+#: core/classes.py:2484
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 
-#: core/machines.py:603
+#: core/machines.py:604
 msgid "machine"
 msgstr ""
 
-#: core/machines.py:605
+#: core/machines.py:606
 msgid "MID"
 msgstr ""
 
-#: core/machines.py:693
+#: core/machines.py:702
 #, python-format
 msgid "Overwritten mid %s"
 msgstr ""
 
-#: core/machines.py:752
+#: core/machines.py:761
 msgid "{0}: {1} initial network discovery."
 msgstr ""
 
-#: core/machines.py:753
+#: core/machines.py:762
 msgid "started"
 msgstr ""
 
-#: core/machines.py:774
+#: core/machines.py:783
 msgid ""
 "{0}: network auto-discovery disabled by configuration rule {1}, not going "
 "further."
 msgstr ""
 
-#: core/machines.py:964
+#: core/machines.py:973
 msgid " (this machine)"
 msgstr ""
 
-#: core/machines.py:1062
+#: core/machines.py:1071
 msgid "You must pass a hostname to verify!"
 msgstr ""
 
-#: core/machines.py:1070
+#: core/machines.py:1079
 msgid "Cannot build a valid hostname (got {0}, which does not verify {1})."
 msgstr ""
 
-#: core/machines.py:1079 core/machines.py:1314
+#: core/machines.py:1088 core/machines.py:1323
 msgid "Machines"
 msgstr ""
 
-#: core/machines.py:1081
+#: core/machines.py:1090
 msgid ""
 "Manage network clients (computers, printers, etc) and energy preferences"
 msgstr ""
 
-#: core/machines.py:1095
+#: core/machines.py:1104
 msgid "Shutdown machines"
 msgstr ""
 
-#: core/machines.py:1097
+#: core/machines.py:1106
 msgid "Shutdown machines on the network."
 msgstr ""
 
-#: core/machines.py:1103
+#: core/machines.py:1112
 msgid "Energy policies"
 msgstr ""
 
-#: core/machines.py:1105
+#: core/machines.py:1114
 msgid "Manage network-wide Energy &amp; power saving policies."
 msgstr ""
 
-#: core/machines.py:1118
+#: core/machines.py:1127
 #, python-format
 msgid "Shutdown machine %s"
 msgstr ""
 
-#: core/machines.py:1122
+#: core/machines.py:1131
 #, python-format
 msgid "Are you sure you want to remotely shutdown machine %s?"
 msgstr ""
 
-#: core/machines.py:1126
+#: core/machines.py:1135
 msgid "Warn connected user(s) before shuting system down."
 msgstr ""
 
-#: core/machines.py:1129
+#: core/machines.py:1138
 msgid "Please confirm operation"
 msgstr ""
 
-#: core/machines.py:1156
+#: core/machines.py:1165
 msgid "Massive shutdown"
 msgstr ""
 
-#: core/machines.py:1160
+#: core/machines.py:1169
 msgid ""
 "You can shutdown all currently running and/or idle machines. This is a quite "
 "dangerous operation, because users will be disconnected, and there is a "
@@ -5431,37 +5690,37 @@ msgid ""
 "will be shut down <strong>ONE minute</strong> after validation."
 msgstr ""
 
-#: core/machines.py:1170
+#: core/machines.py:1179
 msgid "Shutdown <strong>active</strong> machines"
 msgstr ""
 
-#: core/machines.py:1172
+#: core/machines.py:1181
 msgid "Shutdown <strong>idle</strong> machines"
 msgstr ""
 
-#: core/machines.py:1174
+#: core/machines.py:1183
 msgid "Shutdown <strong>asleep</strong> machines"
 msgstr ""
 
-#: core/machines.py:1176
+#: core/machines.py:1185
 msgid ""
 "Shutdown the <strong>administrator</strong> machine too<br/>(the one "
 "currently connected to the WMI)."
 msgstr ""
 
-#: core/machines.py:1180
+#: core/machines.py:1189
 msgid "Warn connected users before shuting systems down."
 msgstr ""
 
-#: core/machines.py:1184
+#: core/machines.py:1193
 msgid "Choose machines to shutdown"
 msgstr ""
 
-#: core/machines.py:1221
+#: core/machines.py:1230
 msgid "Energy saving policies"
 msgstr ""
 
-#: core/machines.py:1224 core/machines.py:1267
+#: core/machines.py:1233 core/machines.py:1276
 msgid ""
 "CSV file-format is used by spreadsheets and most systems which offer import "
 "functionnalities. XML file-format is a modern exchange format, used in soma "
@@ -5471,164 +5730,164 @@ msgid ""
 "click the “back” button of your browser."
 msgstr ""
 
-#: core/machines.py:1233 core/machines.py:1276
+#: core/machines.py:1242 core/machines.py:1285
 #, python-format
 msgid "Which file format do you want the machines list to be exported to? %s"
 msgstr ""
 
-#: core/machines.py:1236 core/machines.py:1279
+#: core/machines.py:1245 core/machines.py:1288
 msgid "Please choose file format for export list"
 msgstr ""
 
-#: core/machines.py:1238 core/machines.py:1281
+#: core/machines.py:1247 core/machines.py:1290
 msgid "Export >>"
 msgstr ""
 
-#: core/machines.py:1263
+#: core/machines.py:1272
 msgid "Export machines list"
 msgstr ""
 
-#: core/machines.py:1310 core/machines.py:1349
+#: core/machines.py:1319 core/machines.py:1358
 msgid "managed"
 msgstr ""
 
-#: core/machines.py:1311 core/machines.py:1351
+#: core/machines.py:1320 core/machines.py:1360
 msgid "floating"
 msgstr ""
 
-#: core/machines.py:1324
+#: core/machines.py:1333
 msgid "Host name"
 msgstr ""
 
-#: core/machines.py:1325
+#: core/machines.py:1334
 msgid "IP address"
 msgstr ""
 
-#: core/machines.py:1326
+#: core/machines.py:1335
 msgid "Hardware address"
 msgstr ""
 
-#: core/machines.py:1327
+#: core/machines.py:1336
 msgid "Expiry"
 msgstr ""
 
-#: core/machines.py:1328
+#: core/machines.py:1337
 msgid "Managed"
 msgstr ""
 
-#: core/machines.py:1336
+#: core/machines.py:1345
 msgid "Click to sort in reverse order."
 msgstr ""
 
-#: core/machines.py:1342
+#: core/machines.py:1351
 msgid "Click to sort on this column."
 msgstr ""
 
-#: core/machines.py:1355
+#: core/machines.py:1364
 #, python-format
 msgid ""
 "Host %s is in an unknown state. Nothing is possible. Please wait for a "
 "reconnection."
 msgstr ""
 
-#: core/machines.py:1358
+#: core/machines.py:1367
 #, python-format
 msgid ""
 "Host %s is offline, and cannot be powered on from here,Only from the machine "
 "itself."
 msgstr ""
 
-#: core/machines.py:1361
+#: core/machines.py:1370
 #, python-format
 msgid ""
 "Host %s is going to sleep, it will be unavailable in a small period of time."
 msgstr ""
 
-#: core/machines.py:1363 core/machines.py:1369 core/machines.py:1371
+#: core/machines.py:1372 core/machines.py:1378 core/machines.py:1380
 #, python-format
 msgid "Shutdown the machine %s"
 msgstr ""
 
-#: core/machines.py:1365
+#: core/machines.py:1374
 #, python-format
 msgid ""
 "Host %s is shutting down, it will be unavailable in a small period of time."
 msgstr ""
 
-#: core/machines.py:1367
+#: core/machines.py:1376
 #, python-format
 msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
 msgstr ""
 
-#: core/machines.py:1424
+#: core/machines.py:1433
 msgid "This machine has multiple network interfaces."
 msgstr ""
 
-#: core/machines.py:1428
+#: core/machines.py:1437
 msgid "This machine is a virtual computer."
 msgstr ""
 
-#: core/machines.py:1432
+#: core/machines.py:1441
 msgid "This machine runs an undetermined version of Linux®."
 msgstr ""
 
-#: core/machines.py:1437
+#: core/machines.py:1446
 msgid "This machine is a META IT/Licorn® server."
 msgstr ""
 
-#: core/machines.py:1441
+#: core/machines.py:1450
 msgid "This machine has Licorn® installed."
 msgstr ""
 
-#: core/machines.py:1445
+#: core/machines.py:1454
 msgid "This machine is an ALT® client."
 msgstr ""
 
-#: core/machines.py:1449
+#: core/machines.py:1458
 msgid "This machine Debian installed."
 msgstr ""
 
-#: core/machines.py:1453
+#: core/machines.py:1462
 msgid "This machine is Ubuntu installed."
 msgstr ""
 
-#: core/machines.py:1457
+#: core/machines.py:1466
 msgid "This machine is manufactured by Apple® Computer Inc."
 msgstr ""
 
-#: core/machines.py:1461
+#: core/machines.py:1470
 msgid "This machine is a Freebox appliance."
 msgstr ""
 
-#: core/machines.py:1465
+#: core/machines.py:1474
 msgid "This machine is a network printer."
 msgstr ""
 
-#: core/machines.py:1469
+#: core/machines.py:1478
 msgid "This machine is a network scanner."
 msgstr ""
 
-#: core/machines.py:1487
+#: core/machines.py:1496
 msgid ""
 "Unmanage machine (remove it from configuration, in order to allow it to be "
 "managed by another server."
 msgstr ""
 
-#: core/machines.py:1498
+#: core/machines.py:1507
 msgid ""
 "Manage machine (fix its IP address and configure various aspects of the "
 "client)."
 msgstr ""
 
-#: core/machines.py:1520
+#: core/machines.py:1529
 msgid "<unknown>"
 msgstr ""
 
-#: core/machines.py:1545
+#: core/machines.py:1554
 #, python-format
 msgid "number of <strong>%s</strong> machines:"
 msgstr ""
 
-#: core/machines.py:1558
+#: core/machines.py:1567
 msgid "<strong>Total number of machines:</strong>"
 msgstr ""
