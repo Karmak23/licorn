@@ -23,8 +23,16 @@ build: configure i18n
 darcs_record_prehook:
 	@sed -ie "s/\(@DEVEL@\|dev+r[0-9]*\)/dev+r`expr 1 + $$(darcs changes --count)`/" version.py
 
+perms: localperms
+
+permissions: localperms
+
 localperms:
 	@chmod 755 $(EXECUTABLES) daemon/main.py
+
+docsync: doc
+	( cd docs; rsync -av --delete _build/html/ \
+			dev.licorn.org:/home/groups/darcs-Licorn/docs/_build/html )
 
 binary-install: build
 	mkdir -p "$(DESTDIR)" "$(PROJECT_LIB_DIR)" "$(DESTDIR)"/usr/bin "$(DESTDIR)"/usr/sbin "$(SHARE_DIR)" "$(CONFDIR)" "$(LOCALE_DIR)"
