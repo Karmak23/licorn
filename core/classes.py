@@ -395,21 +395,23 @@ class CoreFSController(CoreController):
 					name,
 					LMC.configuration.defaults.check_homedir_filename):
 					return '~'
+
 			elif rule_text[0] in ('~', '$HOME'):
 				return '~'
 
-
 			return (hlstr.validate_name(
-				self.substitute_configuration_defaults(
-				rule_text.split(
-				self.separator, 1)[0]), custom_keep='._')
-				).replace('.', '_')
+						self.substitute_configuration_defaults(
+						rule_text.split(
+						self.separator, 1)[0]), custom_keep='._')
+						).replace('.', '_')
 		def check_acl(self, acl):
 			""" check if an acl is valid or not
 
 				:param acl: string of the acl
 			"""
+
 			rebuilt_acl = []
+
 			if acl.upper() in ['NOACL', 'RESTRICTED', 'POSIXONLY', 'RESTRICT',
 				'PRIVATE']:
 				return acl.upper()
@@ -493,11 +495,13 @@ class CoreFSController(CoreController):
 
 			if self.system_wide:
 				uid = None
+
 			else:
 				if self.uid is -1:
 					try:
 						self.uid = os.lstat('%s/%s' % (
 								self.base_dir, directory)).st_uid
+
 					except (OSError, IOError), e:
 						if e.errno == 2:
 							raise exceptions.PathDoesntExistException(
@@ -527,13 +531,17 @@ class CoreFSController(CoreController):
 			return directory
 		def check(self):
 			""" general check function """
+
 			line=self.rule_text.rstrip()
+
 			try:
 				dir, acl = line.split(self.separator)
+
 			except ValueError, e:
 				raise exceptions.LicornSyntaxException(self.file_name,
 					self.line_no, text=line,
 					desired_syntax='<dir><separator><acl>')
+
 			dir = dir.strip()
 			acl = acl.strip()
 
@@ -592,6 +600,7 @@ class CoreFSController(CoreController):
 			else:
 				if self.dir in ('', '/'):
 					dir_path = '%s%s' % (object_info.home, self.dir)
+
 				else:
 					dir_path = '%s/%s' % (object_info.home, self.dir)
 
@@ -616,7 +625,9 @@ class CoreFSController(CoreController):
 				dir_info.files_perm = 00644
 				dir_info.dirs_perm = 00755
 
-			elif acl.upper() in ('PRIVATE','RESTRICT','RESTRICTED'):
+				#print '>> uid/gid', dir_info.dump_status(True)
+
+			elif acl.upper() in ('PRIVATE', 'RESTRICT', 'RESTRICTED'):
 
 				if dir_info_base is None:
 					dir_info.root_dir_perm = 00700
@@ -708,6 +719,7 @@ class CoreFSController(CoreController):
 					# [:] to keep the original in place.
 					di_text = dir_info.root_dir_perm[:].replace(
 						'@GX','x').replace('@UX','x')
+
 					if posix1e.ACL(text=di_text).check():
 						raise exceptions.LicornSyntaxException(
 							self.file_name, self.line_no,
@@ -899,6 +911,9 @@ class CoreFSController(CoreController):
 					stylize(ST_NAME, dir_info.rule.acl),
 					stylize(ST_NAME, dir_info.path)))
 
+				#print '>>', dir_info.dump_status(True)
+				#print '>>', dir_info.rule.dump_status(True)
+
 			rules[dir_info.name] = dir_info
 
 		# a last loop to prepare the rules.
@@ -923,7 +938,7 @@ class CoreFSController(CoreController):
 		assert ltrace(TRACE_CHECKS, '< load_rules()')
 		return rules
 	def parse_rules(self, rules_path, vars_to_replace, object_info,
-		system_wide=True):
+														system_wide=True):
 		""" parse a rule from a line to a FsapiObject. Returns
 			a single :class:`~licorn.foundations.base.Enumeration`, containing
 			either ONE '~' rule, or a bunch of rules. """
@@ -932,14 +947,14 @@ class CoreFSController(CoreController):
 		special_dirs = None
 
 		if os.path.exists(rules_path):
-			handler=open(rules_path,'r')
+			handler = open(rules_path, 'r')
 			rules = []
 			special_dirs = Enumeration(name=rules_path)
 			line_no = 0
 			list_line = []
 
 			for line in handler.readlines():
-				line_no+=1
+				line_no += 1
 				list_line.append((line, line_no))
 
 			list_line.sort()
@@ -959,7 +974,8 @@ class CoreFSController(CoreController):
 							if not system_wide else None,
 						object_id=object_info.user_uid if not system_wide else None,
 						controller=self)
-					#logging.notice("rule = %s" % rule.dump_status(True))
+					#logging.notice(">>> rule = %s" % rule.dump_status(True))
+
 				except exceptions.LicornRuntimeException, e:
 					logging.warning2(e)
 					continue
@@ -972,6 +988,7 @@ class CoreFSController(CoreController):
 					directory = rule.dir
 					if directory == '':
 						directory = rule.name
+
 					elif directory == '/':
 						directory = rule.name + '/'
 
@@ -985,12 +1002,12 @@ class CoreFSController(CoreController):
 				except exceptions.LicornSyntaxException, e:
 					logging.warning('%s.parse_rules: %s' % (self.name, e))
 					continue
+
 				except exceptions.PathDoesntExistException, e:
 					logging.warning2('%s.parse_rules: %s' % (self.name, e))
 					continue
+
 				else:
-					#assert ltrace(TRACE_CHECKS, '  parse_rules(add rule %s)' %
-					#	rule.dump_status(True))
 					rules.append(rule)
 
 			del line_no
@@ -1001,22 +1018,27 @@ class CoreFSController(CoreController):
 						if rule.dir.endswith('/'):
 							dir_info = rule.generate_dir_info(
 								object_info=object_info,
+								# FIXME: WTF is this dir_info ?
 								dir_info_base=dir_info,
 								system_wide=system_wide,
 								vars_to_replace=vars_to_replace)
+						#else:
+							#print '>>> not a /'
 					else:
 						dir_info = rule.generate_dir_info(
 							object_info=object_info,
 							system_wide=system_wide,
 							vars_to_replace=vars_to_replace)
-						"""if dir_info.name is '':
-							dir_info.name = ''"""
+
 				except exceptions.LicornSyntaxException, e:
 					logging.warning(e)
 					continue
 
 				if dir_info.name not in special_dirs.keys():
 					special_dirs.append(dir_info)
+
+				#print '>>', dir_info.dump_status(True)
+
 				assert ltrace(TRACE_FSAPI, '  parse_rules(%s dir_info %s)' %
 						('add' if not dir_info.already_loaded else 'modify',
 						dir_info.dump_status(True) ))
@@ -1850,6 +1872,7 @@ class CoreFSUnitObject:
 	def check_rules(self):
 		try:
 			return self.__check_rules
+
 		except AttributeError:
 			return self.__load_check_rules()
 	@property
@@ -2143,6 +2166,7 @@ class CoreFSUnitObject:
 		if event is None:
 			try:
 				return self.__check_rules
+
 			except AttributeError:
 				# don't crash: just don't return, the rules will be loaded
 				# as if there were no problem at all.
@@ -2211,9 +2235,6 @@ class CoreFSUnitObject:
 		#self.check_file_hint =
 		if os.path.exists(os.path.dirname(self.__check_file)):
 			L_inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
-
-		#for directory in fsapi.minifind(self.homeDirectory):
-		#	self.__watch_directory(directory)
 
 		# put this in the queue, to avoid taking too much time at daemon start.
 		L_service_enqueue(priorities.HIGH,
