@@ -85,8 +85,8 @@ def common_filter_group(app, parser, tool, mode):
 
 	if tool is 'get':
 		if mode in ('daemon_status', 'users', 'groups', 'machines'):
-			filtergroup.add_option('-l', '--long', '--full',
-				action="store_true", dest="long", default=False,
+			filtergroup.add_option('-l', '--long', '--full', '--long-output',
+				action="store_true", dest="long_output", default=False,
 				help=_(u'long output (all info, attributes, etc). '
 					'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 

@@ -239,10 +239,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.xml:
 			data = LMC.users.to_XML(selected=users_to_get,
-										long_output=opts.long)
+										long_output=opts.long_output)
 		else:
 			data = LMC.users._cli_get(selected=users_to_get,
-										long_output=opts.long)
+										long_output=opts.long_output)
 
 		if data and data != '\n':
 			self.output(data)
@@ -299,10 +299,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.xml:
 			data = LMC.groups.to_XML(selected=groups_to_get,
-										long_output=opts.long)
+										long_output=opts.long_output)
 		else:
 			data = LMC.groups._cli_get(selected=groups_to_get,
-										long_output=opts.long,
+										long_output=opts.long_output,
 										no_colors=opts.no_colors)
 
 		if data and data != '\n':
@@ -419,10 +419,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.xml:
 			data = LMC.machines.ExportXML(selected=machines_to_get,
-											long_output=opts.long)
+											long_output=opts.long_output)
 		else:
 			data = LMC.machines.ExportCLI(selected=machines_to_get,
-											long_output=opts.long)
+											long_output=opts.long_output)
 
 		if data and data != '\n':
 			self.output(data)
