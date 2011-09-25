@@ -446,29 +446,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.__setup_gettext()
 
-		if opts.monitor:
-			if opts.monitor_count:
-				for i in range(opts.monitor_count):
-					self.output(self.licornd.dump_status(opts.long, opts.precision),
+		self.output(self.licornd.dump_status(opts.long_output, opts.precision),
 								clear_terminal=opts.monitor_clear)
-					time.sleep(opts.monitor_interval)
-
-			elif opts.monitor_time:
-				monitor_time_stop = time.time() + opts.monitor_time
-				#hlstr.to_seconds(opts.monitor_time)
-				while time.time() <= monitor_time_stop:
-					self.output(self.licornd.dump_status(opts.long, opts.precision),
-								clear_terminal=opts.monitor_clear)
-					time.sleep(opts.monitor_interval)
-
-			else:
-				while True:
-					self.output(self.licornd.dump_status(opts.long, opts.precision),
-								clear_terminal=opts.monitor_clear)
-					time.sleep(opts.monitor_interval)
-		else:
-			# we don't clear the screen for only one output.
-			self.output(self.licornd.dump_status(opts.long, opts.precision))
 	def register_monitor(self, facilities):
 		t = current_thread()
 		t.monitor_facilities = ltrace_str_to_int(facilities)
@@ -479,7 +458,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			u'facilities {1}.').format(stylize(ST_UGID, t.monitor_uuid),
 				stylize(ST_COMMENT, facilities)))
 
-		# The monitor_lock avoids collisions on listener.verbose 
+		# The monitor_lock avoids collisions on listener.verbose
 		# modifications while a flood of messages are beiing sent
 		# on the wire. Having a per-thread lock avoids locking
 		# the master `options.monitor_lock` from the client side
@@ -489,9 +468,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		with options.monitor_lock:
 			options.monitor_listeners.append(t)
-		
-		# return the UUID of the thread, so that the remote side 
-		# can detach easily when it terminates. 
+
+		# return the UUID of the thread, so that the remote side
+		# can detach easily when it terminates.
 		return t.monitor_uuid
 	def unregister_monitor(self, muuid):
 
@@ -508,7 +487,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			del t.monitor_facilities
 			del t.monitor_uuid
 			del t.monitor_lock
-			
+
 		else:
 			logging.warning(_(u'Monitor listener with UUID %s not found!') % muuid)
 

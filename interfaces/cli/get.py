@@ -10,9 +10,12 @@ Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
 """
+import Pyro.errors, time
 
-from traceback import print_exc
-from licorn.interfaces.cli import cli_main
+from threading import Thread, RLock, Event
+
+from licorn.interfaces.cli import cli_main, CliInteractor
+
 
 def get_events(RWI, opts, args):
 	""" We need to build an UUID because every call to RWI gets handled by a
@@ -22,12 +25,62 @@ def get_events(RWI, opts, args):
 	monitor_id = RWI.register_monitor(opts.facilities)
 
 	try:
-		from licorn.foundations import options
-		from licorn.daemon      import LicornDaemonInteractor
-		LicornDaemonInteractor(cli_things=(options._listener, 
-											options._rwi)).run()
+		CliInteractor().run()
+
 	finally:
-		RWI.unregister_monitor(monitor_id)
+		try:
+			RWI.unregister_monitor(monitor_id)
+
+		except Pyro.errors.ConnectionClosedError:
+			# the connection has been closed by the server side.
+			pass
+def get_status(RWI, opts, args):
+
+	def get_status_thread(opts, args, opts_lock, stop_event):
+
+		with opts_lock:
+			if opts.monitor_time:
+				# TODO: hlstr.to_seconds(opts.monitor_time)
+				monitor_time_stop = time.time() + opts.monitor_time
+
+		count = 1
+
+		while not stop_event.is_set():
+			with opts_lock:
+				RWI.get_daemon_status(opts, args)
+
+				interval = opts.monitor_interval
+
+				if (
+						opts.monitor_count
+						and count >= opts.monitor_count
+						) or (
+						opts.monitor_time
+						and time.time() >= monitor_time_stop):
+					raise SystemExit(0)
+
+			time.sleep(interval)
+			count += 1
+
+	if opts.monitor:
+		opts_lock  = RLock()
+		stop_event = Event()
+
+		output_thread = Thread(target=get_status_thread,
+								args=(opts, args, opts_lock, stop_event))
+		output_thread.start()
+
+		try:
+			CliInteractor(opts, opts_lock).run()
+
+		finally:
+			stop_event.set()
+			output_thread.join()
+
+	else:
+		# we don't clear the screen for only one output.
+		opts.clear_terminal = False
+		RWI.get_daemon_status(opts, args)
 
 def get_main():
 
@@ -44,9 +97,11 @@ def get_main():
 		'tags':          ('get_keywords_parse_arguments', 'get_keywords'),
 		'keywords':      ('get_keywords_parse_arguments', 'get_keywords'),
 		'daemon_status': ('get_daemon_status_parse_arguments',
-														'get_daemon_status'),
+														None, get_status),
 		'events'       : ('get_events_parse_arguments',
 														None, get_events),
+		#'inside'       : (None,
+		#												None, get_inside),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),
 		}, {
 		"name"     		: "licorn-get",

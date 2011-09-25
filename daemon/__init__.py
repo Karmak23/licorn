@@ -14,13 +14,12 @@ Licorn Daemon - http://docs.licorn.org/daemon/index.html
 import gettext
 gettext.install('licorn', unicode=True)
 
-import sys, os, select, code, readline, curses, signal, termios
+import sys, os, signal, termios
 
 from threading   import current_thread
-from rlcompleter import Completer
 
 from licorn.foundations           import options, logging, exceptions
-from licorn.foundations           import process, pyutils
+from licorn.foundations           import process, pyutils, ttyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, insert_ltrace, dump, fulldump
 from licorn.foundations.ltraces   import *
@@ -67,287 +66,175 @@ priorities = EnumDict('service_priorities', from_dict={
 
 # LicornDaemonInteractor is an object dedicated to user interaction when the
 # daemon is started in the foreground.
-class LicornDaemonInteractor(NamedObject):
-	class HistoryConsole(code.InteractiveConsole):
-		def __init__(self, locals=None, filename="<licornd_console>",
-			histfile=os.path.expanduser('~/.licorn/licornd_history')):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.__init__()')
-			code.InteractiveConsole.__init__(self, locals, filename)
-			self.histfile = histfile
-			readline.set_completer(Completer(namespace=self.locals).complete)
-			readline.parse_and_bind("tab: complete")
+class LicornDaemonInteractor(ttyutils.LicornInteractor):
+	def __init__(self, daemon):
 
-		def init_history(self):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.init_history()')
-			if hasattr(readline, "read_history_file"):
-				try:
-					readline.read_history_file(self.histfile)
-				except IOError:
-					pass
-		def save_history(self):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.save_history()')
-			readline.write_history_file(self.histfile)
-
-	def __init__(self, daemon=None, cli_things=None):
 		assert ltrace(TRACE_INTERACTOR, '| LicornDaemonInteractor.__init__()')
-		NamedObject.__init__(self, 'interactor')
-		self.long_output = False
-		self.daemon      = daemon
-		
-		
-		if daemon is None:
-			self.pname    = 'CLI'
-			self.listener = cli_things[0]
-			self.rwi      = cli_things[1]
+
+		super(LicornDaemonInteractor, self).__init__('interactor')
+
+		self.long_output   = False
+		self.daemon        = daemon
+		self.terminate     = self.daemon.terminate
+		self.pname         = daemon.name
+
+		self.handled_chars = {
+			'f'   : self.toggle_long_output,
+			'l'   : self.toggle_long_output,
+			'c'   : self.garbage_collection,
+			'w'   : self.show_watches,
+			't'   : self.show_threads,
+			'v'   : self.raise_verbose_level,
+			'q'   : self.lower_verbose_level,
+			'' : self.send_sigusr1_signal,	# ^R (refresh / reload)
+			'' : self.dump_daemon_status,	# ^T (display status; idea from BSD, ZSH)
+			' '   : self.clear_then_dump_status,
+			''  : self.clear_then_dump_status, # ^Y (display status after clearing the screen
+			'i'   : self.interact,
+			}
+		self.avoid_help = (' ', )
+	def toggle_long_output(self):
+		self.long_output = not self.long_output
+
+		logging.notice(_(u'{0}: switched '
+			u'long_output status to {1}.').format(
+				self.name, _(u'enabled')
+					if self.long_output
+					else _(u'disabled')))
+	toggle_long_output.__doc__ = _(u'toggle [dump status] long ouput on or off')
+	def garbage_collection(self):
+		sys.stderr.write(_(u'Console-initiated '
+			u'garbage collection and dead thread '
+			u'cleaning.') + '\n')
+
+		self.daemon.clean_objects()
+	garbage_collection.__doc__ = _(u'operate a manual garbage collection in '
+									u'the daemon\'s memory, and run other '
+									u'clean-related things')
+	def show_watches(self):
+		w = self.daemon.threads.INotifier._wm.watches
+
+		sys.stderr.write('\n'.join(repr(watch)
+			for key, watch in w)
+			+ 'total: %d watches\n' % len(w))
+	show_watches.__doc__ = _(u'show the INotifier watches (WARNING: this '
+							u'can flood your terminal)')
+	def show_threads(self):
+		sys.stderr.write(_(u'{0} active threads: '
+			u'{1}').format(
+				_thcount(), _threads()) + '\n')
+	show_threads.__doc__ = _(u'show all threads names and their current status')
+	def raise_verbose_level(self):
+		if options.verbose < verbose.DEBUG:
+			options.verbose += 1
+
+			self.daemon.options.verbose += 1
+
+			logging.notice(_(u'{0}: increased '
+				u'verbosity level to '
+				u'{1}.').format(self.name,
+					stylize(ST_COMMENT,
+						verbose[options.verbose])))
 
 		else:
-			self.pname = daemon.name
-		# make it daemon so that it doesn't block the master when stopping.
-		#self.daemon = True
-	def prepare_terminal(self):
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| prepare_terminal()')
-		termios.tcsetattr(self.fd, termios.TCSAFLUSH, self.new)
-	def restore_terminal(self):
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| restore_terminal()')
-		termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
-	def run(self):
-		""" prepare stdin for interaction and wait for chars. """
-		if sys.stdin.isatty():
-			assert ltrace(globals()['TRACE_' + self.name.upper()], '> run()')
+			logging.notice(_(u'{0}: verbosity '
+				u'level already at the maximum '
+				u'value ({1}).').format(
+					self.name, stylize(ST_COMMENT,
+						verbose[options.verbose])))
+	raise_verbose_level.__doc__ = _(u'increase the daemon console verbosity level')
+	def lower_verbose_level(self):
+		if options.verbose > verbose.NOTICE:
+			options.verbose -= 1
 
-			curses.setupterm()
-			clear = curses.tigetstr('clear')
+			self.daemon.options.verbose -= 1
 
-			# see tty and termios modules for implementation details.
-			self.fd = sys.stdin.fileno()
-			self.old = termios.tcgetattr(self.fd)
-			self.new = termios.tcgetattr(self.fd)
+			logging.notice(_(u'{0}: decreased '
+				u'verbosity level to '
+				u'{1}.').format(self.name,
+					stylize(ST_COMMENT,
+						verbose[options.verbose])))
 
-			# put the TTY in nearly raw mode to be able to get characters
-			# one by one (not to wait for newline to get one).
+		else:
+			logging.notice(_(u'{0}: verbosity '
+				u'level already at the minimum '
+				u'value ({1}).').format(
+					self.name, stylize(ST_COMMENT,
+						verbose[options.verbose])))
+	lower_verbose_level.__doc__ = _(u'decrease the daemon console verbosity level')
+	def send_sigusr1_signal(self):
+		#sys.stderr.write('\n')
+		self.restore_terminal()
+		os.kill(os.getpid(), signal.SIGUSR1)
+	send_sigusr1_signal.__doc__ = _(u'{0}: Send URS1 signal (and '
+									u'consequently reload daemon)').format(
+										stylize(ST_OK, 'Control-R'))
+	def dump_daemon_status(self):
+		sys.stderr.write(self.daemon.dump_status(
+			long_output=self.long_output))
+	dump_daemon_status.__doc__ = _(u'{0}: dump daemon status').format(
+										stylize(ST_OK, 'Control-T'))
+	def clear_then_dump_status(self):
+		ttyutils.clear_terminal(sys.stderr)
+		sys.stderr.write(self.daemon.dump_status(
+			long_output=self.long_output))
+	clear_then_dump_status.__doc__ = _(u'{0} or {1}: dump daemon status '
+										u'after having cleared the '
+										u'screen').format(
+											stylize(ST_OK, _(u'Space')),
+											stylize(ST_OK, 'Control-Y'))
+	def interact(self):
+		logging.notice(_('%s: Entering interactive mode. '
+			'Welcome into licornd\'s arcanes…') % self.name)
 
-			# lflags
-			self.new[3] = \
-				self.new[3] & ~ ( termios.ECHO
-									| termios.ICANON
-									| termios.IEXTEN)
-			self.new[6][termios.VMIN] = 1
-			self.new[6][termios.VTIME] = 0
+		# trap SIGINT to avoid shutting down the daemon by
+		# mistake. Now Control-C is used to reset the
+		# current line in the interactor.
+		def interruption(x, y):
+			raise KeyboardInterrupt
 
-			try:
-				self.prepare_terminal()
+		signal.signal(signal.SIGINT, interruption)
 
-				while True:
-					try:
-						readf, writef, errf = select.select(
-													[self.fd], [], [])
-						if readf == []:
-							continue
-						else:
-							char = sys.stdin.read(1)
+		from licorn.core import version, LMC
 
-					except select.error, e:
-						if e.args[0] == 4:
-							sys.stderr.write("^C\n")
-							self.restore_terminal()
-							
-							if self.daemon is not None:
-								self.daemon.terminate(2)
-						else:
-							raise e
+		# NOTE: we intentionnaly restrict the interpreter
+		# environment, else it
+		interpreter = self.__class__.HistoryConsole(
+			locals={
+				'version'       : version,
+				'daemon'        : self.daemon,
+				'queues'        : self.daemon.queues,
+				'threads'       : self.daemon.threads,
+				'uptime'        : self.daemon.uptime,
+				'LMC'           : LMC,
+				'dump'          : dump,
+				'fulldump'      : fulldump,
+				'options'       : options,
+				},
+			filename="<licornd_console>",
+			histfile=os.path.expanduser('~/.licorn/licornd_history'))
 
-					else:
-						# control characters from
-						# http://www.unix-manuals.com/refs/misc/ascii-table.html
-						if char == '\n':
-							sys.stderr.write('\n')
+		# put the TTY in standard mode (echo on).
+		self.restore_terminal()
+		sys.ps1 = 'licornd> '
+		sys.ps2 = '...'
+		interpreter.init_history()
 
-						elif char in ('f', 'F', 'l', 'L'):
+		interpreter.interact(
+				banner=_(u'Licorn® {0}, Python {1} '
+					'on {2}').format(version,
+					sys.version.replace('\n', ''),
+					sys.platform))
 
-							self.long_output = not self.long_output
+		interpreter.save_history()
 
-							logging.notice(_(u'{0}: switched '
-								u'long_output status to {1}.').format(
-									self.name, _(u'enabled')
-										if self.long_output 
-										else _(u'disabled')))
+		# restore signal and terminal handling
+		signal.signal(signal.SIGINT,
+			lambda x, y: self.daemon.terminate)
 
-						elif char in ('c', 'C') and self.daemon is not None:
-							sys.stderr.write(_(u'Console-initiated '
-								u'garbage collection and dead thread '
-								u'cleaning.') + '\n')
+		# take the TTY back into command mode.
+		self.prepare_terminal()
 
-							self.daemon.clean_objects()
-
-						elif char in ('w', 'W') and self.daemon is not None:
-							w = self.daemon.threads.INotifier._wm.watches
-
-							sys.stderr.write('\n'.join(repr(watch)
-								for key, watch in w)
-								+ 'total: %d watches\n' % len(w))
-
-						elif char in ('t', 'T') and self.daemon is not None:
-							sys.stderr.write(_(u'{0} active threads: '
-								u'{1}').format(
-									_thcount(), _threads()) + '\n')
-
-						elif char in ('v', 'V'):
-							if options.verbose < verbose.DEBUG:
-								options.verbose += 1
-								
-								if self.daemon is None:
-									# the local side (not really needed,
-									# but keeping it in sync doesn't
-									# hurt).
-									self.listener.verbose += 1
-
-									# the daemon side (remote thread)
-									self.rwi.set_listener_verbose(
-												self.listener.verbose)
-								else:
-									self.daemon.options.verbose += 1
-
-								logging.notice(_(u'{0}: increased '
-									u'verbosity level to '
-									u'{1}.').format(self.name,
-										stylize(ST_COMMENT,
-											verbose[options.verbose])))
-
-							else:
-								logging.notice(_(u'{0}: verbosity '
-									u'level already at the maximum '
-									u'value ({1}).').format(
-										self.name, stylize(ST_COMMENT,
-											verbose[options.verbose])))
-
-						elif char in ('q', 'Q'):
-							if options.verbose > verbose.NOTICE:
-								options.verbose -= 1
-								
-								if self.daemon is None:
-									# the local side (not really needed,
-									# but keeping it in sync doesn't
-									# hurt).
-									self.listener.verbose -= 1
-									
-									# the daemon side (remote thread)
-									self.rwi.set_listener_verbose(
-												self.listener.verbose)
-								else:
-									self.daemon.options.verbose -= 1
-
-								logging.notice(_(u'{0}: decreased '
-									u'verbosity level to '
-									u'{1}.').format(self.name,
-										stylize(ST_COMMENT,
-											verbose[options.verbose])))
-
-							else:
-								logging.notice(_(u'{0}: verbosity '
-									u'level already at the minimum '
-									u'value ({1}).').format(
-										self.name, stylize(ST_COMMENT,
-											verbose[options.verbose])))
-
-						elif char == '\f': # ^L (form-feed, clear screen)
-							sys.stdout.write(clear)
-							sys.stdout.flush()
-
-						elif char == '': # ^R (refresh / reload)
-							#sys.stderr.write('\n')
-							self.restore_terminal()
-							os.kill(os.getpid(), signal.SIGUSR1)
-
-						elif char == '': # ^U kill -15
-							# no need to log anything, process will display
-							# 'signal received' messages.
-							#logging.warning('%s: killing ourselves softly.' %
-							#	self.pname)
-
-							# no need to kill WMI, terminate() will do it clean.
-							self.restore_terminal()
-							os.kill(os.getpid(), signal.SIGTERM)
-
-						elif char == '\v': # ^K (Kill -9!!)
-							logging.warning(_(u'%s: killing ourselves badly.') %
-								self.name)
-
-							self.restore_terminal()
-							os.kill(os.getpid(), signal.SIGKILL)
-
-						elif char == '' and self.daemon is not None:
-							sys.stderr.write(self.daemon.dump_status(
-								long_output=self.long_output))
-
-						elif char in (' ', '') and self.daemon is not None: # ^Y
-							sys.stdout.write(clear)
-							sys.stdout.flush()
-							sys.stderr.write(self.daemon.dump_status(
-								long_output=self.long_output))
-								
-						elif char in ('i', 'I') and self.daemon is not None:
-							logging.notice(_('%s: Entering interactive mode. '
-								'Welcome into licornd\'s arcanes…') % self.name)
-
-							# trap SIGINT to avoid shutting down the daemon by
-							# mistake. Now Control-C is used to reset the
-							# current line in the interactor.
-							def interruption(x, y):
-								raise KeyboardInterrupt
-
-							signal.signal(signal.SIGINT, interruption)
-
-							from licorn.core import version, LMC
-
-							# NOTE: we intentionnaly restrict the interpreter
-							# environment, else it
-							interpreter = self.__class__.HistoryConsole(
-								locals={
-									'version'       : version,
-									'daemon'        : self.daemon,
-									'queues'        : self.daemon.queues,
-									'threads'       : self.daemon.threads,
-									'uptime'        : self.daemon.uptime,
-									'LMC'           : LMC,
-									'dump'          : dump,
-									'fulldump'      : fulldump,
-									'options'       : options,
-									})
-
-							# put the TTY in standard mode (echo on).
-							self.restore_terminal()
-							sys.ps1 = 'licornd> '
-							sys.ps2 = '...'
-							interpreter.init_history()
-
-							interpreter.interact(
-									banner=_(u'Licorn® {0}, Python {1} '
-										'on {2}').format(version,
-										sys.version.replace('\n', ''),
-										sys.platform))
-
-							interpreter.save_history()
-
-							# restore signal and terminal handling
-							signal.signal(signal.SIGINT,
-								lambda x, y: self.daemon.terminate)
-
-							# take the TTY back into command mode.
-							self.prepare_terminal()
-
-							logging.notice(_('%s: leaving interactive mode. '
-								'Welcome back to Real World™.') % self.name)
-
-						else:
-							logging.warning2(_(u'{0}: received unhandled '
-								'char "{1}", ignoring.').format(
-									self.name, char))
-			finally:
-				# put it back in standard mode after input, whatever
-				# happened. The terminal has to be restored.
-				self.restore_terminal()
-
-		# else:
-		# stdin is not a tty, we are in the daemon, don't do anything.
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< run()')
-
+		logging.notice(_('%s: leaving interactive mode. '
+			'Welcome back to Real World™.') % self.name)
+	interact.__doc__ = _(u'Run an interactive console')
