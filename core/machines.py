@@ -1101,22 +1101,14 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		return (
 			(
-				_('Shutdown machines'),
-				'/machines/massshutdown',
-				_('Shutdown machines on the network.'),
-				'ctxt-icon',
-				'icon-massshutdown',
-				lambda: len(self) > 0
-			),
-			(
 				_('Energy policies'),
 				'/machines/preferences',
 				_('Manage network-wide Energy &amp; '
 					'power saving policies.'),
 				'ctxt-icon',
-				'icon-energyprefs',
+				'/images/16x16/preferences.png',
 				None
-			)
+			),
 		)
 	def _wmi_shutdown(self, uri, http_user, hostname=None, sure=False,
 		warn_users=True, **kwargs):
