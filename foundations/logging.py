@@ -106,7 +106,7 @@ def error(mesg, returncode=1, full=False, tb=None):
 
 		sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_1, 'ERR{0}', mesg)
 
 	raise SystemExit(returncode)
 def warning(mesg, once=False, to_listener=True, to_local=True):
@@ -125,7 +125,8 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 	if to_local:
 		with __output_lock:
 			sys.stderr.write(text_message)
-	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
+
+	monitor(TRACE_LOGGING, TRACELEVEL_1, '/!\\{0}', mesg)
 def warning2(mesg, once=False, to_listener=True, to_local=True):
 	""" Display a stylized warning message on stderr, only if verbose
 		level > INFO. """
@@ -143,7 +144,8 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		with __output_lock:
 			sys.stderr.write(text_message)
-	monitor(TRACE_LOGGING, TRACELEVEL_2, '{0}', text_message[1:3] + text_message[30:-1])
+
+	monitor(TRACE_LOGGING, TRACELEVEL_2, '/2\\{0}', mesg)
 def notice(mesg, to_listener=True, to_local=True):
 	""" Display a stylized NOTICE message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -157,7 +159,7 @@ def notice(mesg, to_listener=True, to_local=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, TRACELEVEL_1, '{0}', text_message[1:3] + text_message[30:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_1, ' ! {0}', mesg)
 def info(mesg, to_listener=True, to_local=True):
 	""" Display a stylized INFO message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -170,7 +172,7 @@ def info(mesg, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, TRACELEVEL_2, '{0}', text_message[1:3] + text_message[30:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_2, ' * {0}', mesg)
 def progress(mesg, to_listener=True, to_local=True):
 	""" Display a stylized PROGRESS message on stderr, and publish it to the
 		remote listener if not told otherwise. """
@@ -184,7 +186,7 @@ def progress(mesg, to_listener=True, to_local=True):
 		with __output_lock:
 			sys.stderr.write(text_message)
 
-	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[1:3] + text_message[30:-1])
+	monitor(TRACE_LOGGING, TRACELEVEL_3, ' > {0}', mesg)
 
 	# make logging.progress() be compatible with potential assert calls.
 	return True
