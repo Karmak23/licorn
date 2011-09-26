@@ -13,7 +13,7 @@ import os, dbus, pyudev, select, re, errno
 from traceback import print_exc
 from threading import RLock
 
-from licorn.foundations           import logging, process, exceptions
+from licorn.foundations           import logging, process, exceptions, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.ltraces   import *
@@ -473,7 +473,13 @@ class VolumesExtension(Singleton, LicornExtension):
 
 		self.server_only = True
 
-		# don't handle these mount points, this is left to the distro.
+		# NOTE on excluded_mounts: don't handle these mount points,
+		# this is left to the distro and they are considered "reserved".
+		#
+		# NOTE 2: we can't put '/' there, because with the lter test we use, it
+		# would match every time. Thus, '/' is handled separately below (see
+		# __system_partition() method).
+		#
 		# FIXME: why don't just 'include' /mnt/* and /media/*, this could be
 		# more secure, instead of the risk of forgetting some special mount
 		# points.
@@ -495,7 +501,8 @@ class VolumesExtension(Singleton, LicornExtension):
 		#~ binfmt_misc on /proc/sys/fs/binfmt_misc type binfmt_misc (rw,noexec,nosuid,nodev)
 		#~ .host:/ on /mnt/hgfs type vmhgfs (rw,ttl=1)
 		#~ none on /proc/fs/vmblock/mountPoint
-		self.excluded_mounts = ('/', '/boot', '/home', '/var', '/tmp',
+		#
+		self.excluded_mounts = ('/boot', '/home', '/var', '/tmp',
 								'/var/tmp')
 
 		# accepted FS must implement posix1e ACLs and user_xattr.
@@ -690,21 +697,29 @@ class VolumesExtension(Singleton, LicornExtension):
 		""" Return ``True`` if the given device or UUID is mounted on one of
 			our protected partitions. """
 
+		# NOTE: the current test is much more conservative than just
+		# 'if device in excluded_mounts': it takes care of sub-directories
+		# system mounted partitions (some external RAID arrays are still
+		# seen as external devices, but are handled manually by system
+		# administrators.
+
 		mounted = self.proc_mounts.keys()
 
 		if device in mounted:
-			assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → %s' % (
-							self.proc_mounts[device] in self.excluded_mounts))
-			return self.proc_mounts[device] in self.excluded_mounts
+			return self.proc_mounts[device] == '/' or reduce(pyutils.keep_true,
+							(self.proc_mounts[device].startswith(x)
+								for x in self.excluded_mounts))
 
 		by_uuid = '/dev/disk/by-uuid/' + self.blkid[device]['uuid']
 
 		if by_uuid in mounted:
-			assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → %s' % (
-							self.proc_mounts[by_uuid] in self.excluded_mounts))
-			return self.proc_mounts[by_uuid] in self.excluded_mounts
+			return self.proc_mounts[by_uuid] == '/' or reduce(pyutils.keep_true,
+							(self.proc_mounts[by_uuid].startswith(x)
+								for x in self.excluded_mounts))
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '|  __system_partition(device) → False')
+
+		assert ltrace(globals()['TRACE_' + self.name.upper()],
+									'|  __system_partition(device) → False')
 		return False
 	def add_volume_from_device(self, device=None, by_string=None):
 		""" Add a volume from udev data if it doesn't already exist.
