@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-09-23 09:28+0200\n"
-"PO-Revision-Date: 2011-09-23 09:28+0200\n"
+"POT-Creation-Date: 2011-09-26 16:39+0200\n"
+"PO-Revision-Date: 2011-09-26 16:48+0200\n"
 "Last-Translator: Olivier Cortès <oc@meta-it.fr>\n"
 "Language-Team: Français <dev@licorn.org>\n"
 "Language: \n"
@@ -417,8 +417,8 @@ msgstr ""
 #: extensions/caldavd.py:433 extensions/caldavd.py:461
 #: extensions/caldavd.py:494 extensions/caldavd.py:543
 #: extensions/caldavd.py:570 extensions/caldavd.py:598
-#: extensions/caldavd.py:622 extensions/volumes.py:373
-#: extensions/volumes.py:409
+#: extensions/caldavd.py:622 extensions/volumes.py:406
+#: extensions/volumes.py:444
 msgid "{0}: {1}"
 msgstr "{0} : {1}"
 
@@ -507,112 +507,128 @@ msgstr ""
 "{0} : la commande {1} ne s'est pas terminée dans les {2} seconds, impossible "
 "d'en exécuter une autre. Merci de ré-essayer plus tard."
 
-#: extensions/volumes.py:208
+#: extensions/volumes.py:125
+msgid "{0}: unhandled action {1} for device {2} ({3})."
+msgstr "{0} : action {1} non gérée pour le périphérique {2} ({3})."
+
+#: extensions/volumes.py:133
+msgid "{0}: unknown action {1} for device {2} ({3})."
+msgstr "{0} : action {1} inconnue pour le périphérique {2} ({3})."
+
+#: extensions/volumes.py:206
+msgid "volume {0}[{1}]{2}"
+msgstr "volume {0}[{1}]{2}"
+
+#: extensions/volumes.py:209
 #, python-format
 msgid " (on %s)"
 msgstr " (sur %s)"
 
-#: extensions/volumes.py:209
+#: extensions/volumes.py:210
 msgid " (not mounted)"
 msgstr " (non monté)"
 
-#: extensions/volumes.py:248
+#: extensions/volumes.py:235
+msgid "{base} {counter}"
+msgstr "{base} {counter}"
+
+#: extensions/volumes.py:255
 msgid "{0}({1}) not mounted"
 msgstr "{0}({1}) non monté"
 
-#: extensions/volumes.py:262
+#: extensions/volumes.py:274
 msgid "{0}: Licorn® usage already enabled on {1}."
 msgstr "{0} : réservation pour Licorn® déjà effectuée sur {1}."
 
-#: extensions/volumes.py:268
+#: extensions/volumes.py:282
 msgid "{0}: enabled Licorn® usage on {1}."
-msgstr "{0}: réservation pour Licorn® effectuée sur {1}."
+msgstr "{0} : réservation pour Licorn® effectuée sur {1}."
 
-#: extensions/volumes.py:275
+#: extensions/volumes.py:292
 msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
 msgstr ""
 "{0}: réservation pour Licorn® impossible sur {1} (système de fichiers {2} "
 "non supporté pour cet usage)."
 
-#: extensions/volumes.py:296
+#: extensions/volumes.py:325
 msgid "{0}: disabled Licorn® usage on {1}."
-msgstr "{0}: réservation pour Licorn® supprimée de {1}."
+msgstr "{0} : réservation pour Licorn® supprimée de {1}."
 
-#: extensions/volumes.py:299
+#: extensions/volumes.py:332
 msgid "{0}: Licorn® usage already disabled on {1}."
 msgstr "{0} : réservation pour Licorn® déjà supprimée de {1}."
 
-#: extensions/volumes.py:332
+#: extensions/volumes.py:364
 msgid "{0}: created mount point {1}."
 msgstr "{0} : point de montage {1} créé."
 
-#: extensions/volumes.py:380
+#: extensions/volumes.py:413
 msgid "{0}: mounted device {1}({2}) at {3}."
 msgstr "{0} : périphérique {1}({2}) monté sur {3}."
 
-#: extensions/volumes.py:416
+#: extensions/volumes.py:451
 msgid "{0}: unmounted device {1} from {2}."
 msgstr "{0} : périphérique {1} démonté de {2}."
 
-#: extensions/volumes.py:428
+#: extensions/volumes.py:463
 msgid "{0}({1}): mount point {2} still busy after unmounting."
 msgstr ""
 "{0}({1}) : le point de montage {2} est toujours occupé après le démontage."
 
-#: extensions/volumes.py:439
+#: extensions/volumes.py:474
 msgid "{0}: removed directory {1}."
 msgstr "{0} : répertoire {1} supprimé."
 
-#: extensions/volumes.py:555
+#: extensions/volumes.py:602
 msgid "{0}: not available because {1}."
 msgstr "{0} : non disponible, car {1}."
 
-#: extensions/volumes.py:567
+#: extensions/volumes.py:614
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
 msgstr "{0} : extension démarrée avec pyudev v{2}, pilotant  udev v{1}."
 
-#: extensions/volumes.py:729
+#: extensions/volumes.py:784
 msgid "{0}: skipped already known volume {1}."
 msgstr "{0} : le volume {1} a été ignoré car il est déjà connu."
 
-#: extensions/volumes.py:740
+#: extensions/volumes.py:795
 msgid "{0}: skipped LMV/extended partition {1}."
 msgstr "{0} : partition LVM/étendue {1} ignorée."
 
-#: extensions/volumes.py:746
+#: extensions/volumes.py:801
 msgid "{0}: skipped unformatted partition {1}."
 msgstr "{0} : partition non-formattée {1} ignorée."
 
-#: extensions/volumes.py:752
+#: extensions/volumes.py:807
 msgid "{0}: skipped system partition {1}."
 msgstr "{0} : partition système {1} ignorée."
 
-#: extensions/volumes.py:772
+#: extensions/volumes.py:827
 msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
 msgstr "{0} : partition {1} ignorée (système de fichier {2} exclu)."
 
-#: extensions/volumes.py:799
+#: extensions/volumes.py:854
 msgid "{0}: added {1}."
 msgstr "{0} : {1} ajouté."
 
-#: extensions/volumes.py:842
+#: extensions/volumes.py:897
 msgid "{0}: removed {1}."
 msgstr "{0} : {1} supprimé."
 
-#: extensions/volumes.py:881
+#: extensions/volumes.py:936
 msgid "{0}: skipped non existing device or mount_point {1}."
 msgstr ""
 "{0} : le périphérique ou point de montage non-existant {1} a été ignoré."
 
-#: extensions/volumes.py:952
-msgid ", {0:.2}Gb/{1:.2}Gb free ({2:.1f}%)"
-msgstr ", {0:.2}Go/{1:.2}Go libre(s) ({2:.1f}%)"
+#: extensions/volumes.py:1009
+msgid ", {0:.2f}Gb/{1:.2f}Gb free ({2:.1%})"
+msgstr ", {0:.2f}Go/{1:.2f}Go libre(s) ({2:.1%})"
 
-#: extensions/volumes.py:959
+#: extensions/volumes.py:1016
 msgid " on {0}{1}"
 msgstr " sur {0}{1}"
 
-#: extensions/volumes.py:962
+#: extensions/volumes.py:1019
 msgid " not mounted"
 msgstr " non monté"
 
@@ -633,51 +649,51 @@ msgstr ""
 #: extensions/rdiffbackup.py:399
 msgid "{0}: computing statistics on {1}, please wait."
 msgstr ""
-"{0} : calcul des statistiques de sauvegardes sur {0}, merci de patienter."
+"{0} : calcul des statistiques de sauvegardes sur {1}, merci de patienter."
 
-#: extensions/rdiffbackup.py:484
+#: extensions/rdiffbackup.py:483
 #, python-format
 msgid "Skipped disabled %s."
 msgstr "Le %s désactivé a été ignoré."
 
-#: extensions/rdiffbackup.py:570
+#: extensions/rdiffbackup.py:569
 msgid "{0}: a backup is already running."
 msgstr "{0} : une sauvegarde est déjà en cours."
 
-#: extensions/rdiffbackup.py:619
+#: extensions/rdiffbackup.py:618
 msgid "{0}: a backup is already running, nothing done."
 msgstr "{0} : une sauvegarde est déjà en cours, on la laisse se terminer."
 
-#: extensions/rdiffbackup.py:631
+#: extensions/rdiffbackup.py:630
 msgid "{0}: no volumes to backup onto, aborting."
 msgstr "{0} : aucun volume de backup n'est disponible, abandon."
 
-#: extensions/rdiffbackup.py:645
+#: extensions/rdiffbackup.py:644
 msgid "{0}: not backing up on {1}, last backup is less than {2}."
 msgstr ""
 "{0} : pas de sauvegarde à lancer sur {1}, la dernière date de moins de {2}."
 
-#: extensions/rdiffbackup.py:657
+#: extensions/rdiffbackup.py:656
 msgid "{0}: starting backup on{1} {2}."
 msgstr "{0} : démarrage de la sauvegarde sur {2}{1}."
 
-#: extensions/rdiffbackup.py:658
+#: extensions/rdiffbackup.py:657
 msgid " first available"
 msgstr " (premier volume disponible)"
 
-#: extensions/rdiffbackup.py:665
+#: extensions/rdiffbackup.py:664
 msgid "{0}: created directory {1}."
 msgstr "{0} : répertoire {1} créé."
 
-#: extensions/rdiffbackup.py:681
+#: extensions/rdiffbackup.py:680
 msgid "{0}: Rdiff-backup configuration file {1} does not exist."
 msgstr "{0}: le fichier de configuration {1} de Rdiff-backup n'existe pas."
 
-#: extensions/rdiffbackup.py:711
+#: extensions/rdiffbackup.py:710
 msgid "{0}: terminated backup procedure on {1}."
 msgstr "{0}: procédure de sauvegarde terminée sur {1}."
 
-#: extensions/rdiffbackup.py:725
+#: extensions/rdiffbackup.py:724
 msgid "{0}: updated last backup file {1}."
 msgstr "{0} : le fichier de dernière date de sauvegarde {1} a été mis à jour."
 
@@ -693,83 +709,83 @@ msgstr "Aucune sauvegarde n'a encore eu lieu sur ce volume."
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine tentative de sauvegarde automatique aura lieu dans {0}."
 
-#: extensions/rdiffbackup.py:815
+#: extensions/rdiffbackup.py:820
 msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
 msgstr ""
 "{0} : l'intervalle de sauvegarde a changé de {1} vers {2}, redémarrage du "
 "compte-à-rebours."
 
-#: extensions/rdiffbackup.py:834 extensions/rdiffbackup.py:848
+#: extensions/rdiffbackup.py:839 extensions/rdiffbackup.py:853
 msgid "Backup in progress icon"
 msgstr "Icône indiquant une sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:844
+#: extensions/rdiffbackup.py:849
 msgid "Can't eject, backup in progress"
 msgstr "Impossible d'éjecter, sauvegarde en cours"
 
-#: extensions/rdiffbackup.py:864 extensions/rdiffbackup.py:879
+#: extensions/rdiffbackup.py:869 extensions/rdiffbackup.py:884
 msgid "Eject device icon"
 msgstr "Icone d'éjection de périphérique"
 
-#: extensions/rdiffbackup.py:873
+#: extensions/rdiffbackup.py:878
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: extensions/rdiffbackup.py:889
+#: extensions/rdiffbackup.py:894
 msgid "Backups"
 msgstr "Sauvegardes"
 
-#: extensions/rdiffbackup.py:894
+#: extensions/rdiffbackup.py:899
 msgid "Manage backups and restore files"
 msgstr "Gérer les sauvegardes et restaurer des données"
 
-#: extensions/rdiffbackup.py:912
-msgid "Run backup"
-msgstr "Lancer une sauvegarde"
+#: extensions/rdiffbackup.py:917
+msgid "Run"
+msgstr "Lancer"
 
-#: extensions/rdiffbackup.py:914
+#: extensions/rdiffbackup.py:919
 msgid "Run a system incremental backup now"
 msgstr "Exécuter une sauvegarde incrémentale maintenant"
 
-#: extensions/rdiffbackup.py:921
-msgid "Rescan volumes"
-msgstr "Scanner les volumes"
+#: extensions/rdiffbackup.py:926
+msgid "Scan volumes"
+msgstr "Rafraîchir"
 
-#: extensions/rdiffbackup.py:923
+#: extensions/rdiffbackup.py:928
 msgid "Force the system to rescan and remount connected volumes"
 msgstr "Forcer le système à re-scanner et remonter tous les volumes connectés"
 
-#: extensions/rdiffbackup.py:941
+#: extensions/rdiffbackup.py:946
 msgid "Backup in progress on volume {volume}…"
 msgstr "Sauvegarde en cours sur le volume {volume}…"
 
-#: extensions/rdiffbackup.py:947
+#: extensions/rdiffbackup.py:952
 msgid "Backup statistics computation in progress on volume {volume}…"
 msgstr "Calcul des statistiques de sauvegardes sur le volume {volume}…"
 
-#: extensions/rdiffbackup.py:955
+#: extensions/rdiffbackup.py:960
 msgid "Next backup in {0}"
 msgstr "Prochaine sauvegarde dans {0}"
 
-#: extensions/rdiffbackup.py:966
+#: extensions/rdiffbackup.py:971
 msgid "No backup volume connected"
 msgstr "Aucun volume de sauvegarde connecté"
 
-#: extensions/rdiffbackup.py:990
+#: extensions/rdiffbackup.py:995
 msgid "used"
 msgstr "occupé"
 
-#: extensions/rdiffbackup.py:1005
+#: extensions/rdiffbackup.py:1010
 msgid "Run a manual backup"
 msgstr "Lancer une sauvegarde"
 
-#: extensions/rdiffbackup.py:1013
+#: extensions/rdiffbackup.py:1018
 msgid "Note: auto-selected volume {volume} for next backup."
 msgstr ""
 "Note: le volume {volume} a été sélectionné automatiquement pour la prochaine "
 "sauvegarde."
 
-#: extensions/rdiffbackup.py:1018
+#: extensions/rdiffbackup.py:1023
 msgid ""
 "No volume to backup onto. Please plug a {app_name} enabled volume into your "
 "server before starting this procedure.<br /><br />See <a href=\"http://docs."
@@ -782,15 +798,15 @@ msgstr ""
 "html\">la documentation dédiée aux sauvegardes</a> obtenir des détails sur "
 "la manière d'activer et dédier un volume à {app_name}."
 
-#: extensions/rdiffbackup.py:1034
+#: extensions/rdiffbackup.py:1039
 msgid "Run a manual backup on volume {0}"
 msgstr "Lancer une sauvegarde sur le volume {0}"
 
-#: extensions/rdiffbackup.py:1040
+#: extensions/rdiffbackup.py:1045
 msgid "Recent backup detected"
 msgstr "Sauvegarde récente détectée"
 
-#: extensions/rdiffbackup.py:1041
+#: extensions/rdiffbackup.py:1046
 msgid ""
 "{auto_select}<br /><br />The last backup has been run {last_backup_time} "
 "ago, which is less than the system configured interval ({interval}). Are you "
@@ -803,50 +819,50 @@ msgstr ""
 "sauvegarde&nbsp;?<br /><br />(Si vous ne répondez pas dans les "
 "{next_backup_time}, une sauvegarde automatique sera lancée de toute façon)"
 
-#: extensions/rdiffbackup.py:1057
+#: extensions/rdiffbackup.py:1062
 msgid "Run >>"
 msgstr "Lancer >>"
 
-#: extensions/rdiffbackup.py:1058 interfaces/wmi/users.py:62
+#: extensions/rdiffbackup.py:1063 interfaces/wmi/users.py:62
 msgid "R"
 msgstr "S"
 
-#: extensions/rdiffbackup.py:1060 core/machines.py:1248 core/machines.py:1291
+#: extensions/rdiffbackup.py:1065 core/machines.py:1240 core/machines.py:1283
 msgid "<< Cancel"
 msgstr "<< Annuler"
 
-#: extensions/rdiffbackup.py:1060
+#: extensions/rdiffbackup.py:1065
 msgid "C"
 msgstr "N"
 
-#: extensions/rdiffbackup.py:1079
+#: extensions/rdiffbackup.py:1085
 msgid "Enable volume {device}"
 msgstr "Activer le volume {device}"
 
-#: extensions/rdiffbackup.py:1086
+#: extensions/rdiffbackup.py:1094
 msgid "Could not enable volume {device} (was: {exc}).{rewind}"
 msgstr ""
 "Impossible d'activer le volume {device} (erreur d'origine : {exc}).{rewind}"
 
-#: extensions/rdiffbackup.py:1098
+#: extensions/rdiffbackup.py:1107
 msgid "Eject volume {device}"
 msgstr "Éjecter le volume {device}"
 
-#: extensions/rdiffbackup.py:1101
+#: extensions/rdiffbackup.py:1110
 msgid " (a backup is underway)"
 msgstr "(une sauvegarde est en cours)"
 
-#: extensions/rdiffbackup.py:1105
+#: extensions/rdiffbackup.py:1114
 msgid "Volume {device} is in use{backup_info}, can't eject it!{rewind}"
 msgstr ""
 "Le volume {device} est utilisé{backup_info}, impossible de l'éjecter&nbsp;!"
 "{rewind}"
 
-#: extensions/rdiffbackup.py:1126
+#: extensions/rdiffbackup.py:1138
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: extensions/rdiffbackup.py:1140
+#: extensions/rdiffbackup.py:1152
 msgid ""
 "A backup is currently in progress, please do not disconnect <strong>{volume}"
 "</strong>.<br /><br /> (update in {countdown}…)"
@@ -854,17 +870,23 @@ msgstr ""
 "Une sauvegarde est actuellement en cours, merci de ne pas déconnecter le "
 "volume <strong>{volume}</strong>.<br /><br />(mise à jour dans {countdown}…)"
 
-#: extensions/rdiffbackup.py:1167
-msgid "No historical data yet. Please wait for the first backup to finish."
+#: extensions/rdiffbackup.py:1184 extensions/rdiffbackup.py:1190
+msgid ""
+"No historical data yet on <strong>{0}</strong>. Please wait for the first "
+"backup to finish."
 msgstr ""
-"Aucune donnée d'historique. Merci d'attendre la fin de la première "
-"sauvegarde."
+"Aucune donnée d'historique sur le volume <strong>{0}</strong>. Merci "
+"d'attendre la fin de la première sauvegarde."
 
-#: extensions/rdiffbackup.py:1173
-msgid "Backups on {mount_point}"
-msgstr "Sauvegardes sur {mount_point}"
+#: extensions/rdiffbackup.py:1198
+msgid "Backup status for {0}"
+msgstr "État des sauvegardes sur {0}"
 
-#: extensions/rdiffbackup.py:1185
+#: extensions/rdiffbackup.py:1202
+msgid "Volume {label}"
+msgstr "Volume {label}"
+
+#: extensions/rdiffbackup.py:1214
 msgid ""
 "All backup volumes are currently unmounted (you can safely disconnect them "
 "from your server).<br /><br />Next automatic backup will occur in "
@@ -876,7 +898,7 @@ msgstr ""
 "sauvegarde automatique sera tentée dans {countdown}, et remontera tout "
 "volume encore physiquement connecté à ce moment là."
 
-#: extensions/rdiffbackup.py:1204
+#: extensions/rdiffbackup.py:1230
 msgid ""
 "No backup volume found: no external volume is currently connected to the "
 "server, or all the connected volumes are not <a href=\"http://docs.licorn."
@@ -895,7 +917,7 @@ msgstr ""
 "compatible sur votre serveur, puis d'attendre quelques secondes et enfin "
 "recharger cette page."
 
-#: extensions/rdiffbackup.py:1219
+#: extensions/rdiffbackup.py:1245
 msgid ""
 "One or more external volume(s) is connected, but none is currently dedicated "
 "to Licorn®. Would you like to <a href=\"http://docs.licorn.org/extensions/"
@@ -908,17 +930,25 @@ msgstr ""
 "class=\"online_help\" target=\"_blank\">activer et réserver</a> certains "
 "pour une utilisation avec Licorn® ? "
 
-#: extensions/rdiffbackup.py:1234
-msgid "enable volume <strong>{0}</strong>"
-msgstr "activer le volume <strong>{0}</strong>"
+#: extensions/rdiffbackup.py:1262
+msgid "use volume \"<strong>{0}</strong>\""
+msgstr "utiliser le volume «&nbsp;<strong>{0}</strong>&nbsp;»"
 
-#: extensions/rdiffbackup.py:1236
-msgid ""
-"(device: <strong>{volume.name}</strong>, FS type: <strong>{volume.fstype}</"
-"strong>)"
-msgstr ""
-"(périphérique&nbsp;: <strong>{volume.name}</strong>, système de "
-"fichiers&nbsp;: <strong>{volume.fstype}</strong>)"
+#: extensions/rdiffbackup.py:1263
+msgid "currently not mounted,"
+msgstr "actuellement non monté,"
+
+#: extensions/rdiffbackup.py:1264
+msgid "currently mounted on: <strong>{0}</strong>,"
+msgstr "actuellement monté à l'emplacement&nbsp;: <strong>{0}</strong>,"
+
+#: extensions/rdiffbackup.py:1265
+msgid "device: <strong>{0}</strong>,"
+msgstr "périphérique système&nbsp;: <strong>{0}</strong>,"
+
+#: extensions/rdiffbackup.py:1266
+msgid "FS type: <strong>{0}</strong>"
+msgstr "système de fichiers&nbsp;: <strong>{0}</strong>"
 
 #: extensions/squid.py:210
 msgid "{0}: not available because {1} do not exist on the system."
@@ -976,26 +1006,67 @@ msgstr "{0} y{1}"
 msgid "{0}d{1}"
 msgstr "{0}j{1}"
 
+#: foundations/ttyutils.py:256
+#, python-format
+msgid "%s: killing ourselves badly."
+msgstr "%s: on se tire une balle dans le pied."
+
+#: foundations/ttyutils.py:269
+msgid ""
+"\n"
+"\tInteractive session commands:\n"
+"\t\"{0}\", \"{1}\" or \"{2}\": display this help message,\n"
+"\t{3}: display a new-line (for readability purposes),\n"
+"\t{4}: clear the screen (idem),\n"
+"\t{5}: interrupt the current program (kill -INT self),\n"
+"\t{6}: terminate (kill -TERM self),\n"
+"\t{7}: die badly (kill -KILL self),\n"
+msgstr ""
+"\n"
+"\tCommandes pour la session intéractive :\n"
+"\t\"{0}\", \"{1}\" ou \"{2}\": afficher ce message d'aide,\n"
+"\t{3}: afficher une nouvelle ligne vide (pour améliorer la lisibilité),\n"
+"\t{4}: nettoyer l'écran (idem),\n"
+"\t{5}: interrompre le programme immédiatement (kill -INT),\n"
+"\t{6}: terminer le programme (kill -TERM),\n"
+"\t{7}: mourrir précipitament (kill -KILL),\n"
+
+#: foundations/ttyutils.py:279
+msgid "Return"
+msgstr "Entrée"
+
+#: foundations/ttyutils.py:285
+msgid "\"{letter_lower}\" or \"{letter_upper}\": "
+msgstr "\"{letter_lower}\" ou \"{letter_upper}\" : "
+
+#: foundations/ttyutils.py:289
+msgid "\" \": "
+msgstr "\" \" : "
+
+#: foundations/ttyutils.py:296
+msgid "{0}: received unhandled char \"{1}\", ignoring."
+msgstr "{0} : caractère non géré « {1} », ignoré."
+
 #: foundations/fsapi.py:35
 msgid "minifind: mindepth must be <= maxdepth."
 msgstr ""
+"minifind: la profondeur minimale doit être inférieure à la profondeur "
+"maximale."
 
 #: foundations/fsapi.py:39
 msgid "minifind: please do not try to exhaust maxdepth."
 msgstr ""
 
 #: foundations/fsapi.py:85
-#, fuzzy
 msgid "minifind(): skipping link or mountpoint {0}."
-msgstr ""
-"{0} : le périphérique ou point de montage non-existant {1} a été ignoré."
+msgstr "minifind() : éviction du lien symbolique ou point de montage {0}."
 
 #: foundations/fsapi.py:130
 #, python-format
 msgid "Directory %s does not exist. Create it?"
 msgstr "Le répertoire %s n'existe pas. Le créer ?"
 
-#: foundations/fsapi.py:148 core/classes.py:2265
+#: foundations/fsapi.py:148 core/classes.py:2286
 msgid "Created directory {0}."
 msgstr "Le répertoire {0} a été créé."
 
@@ -1065,9 +1136,8 @@ msgid "Applyed access ACL {access_acl} on {path}."
 msgstr "L'ACL d'accès {access_acl} a été appliqué sur {path}."
 
 #: foundations/fsapi.py:402
-#, fuzzy
 msgid "ACL not applyed on {0} (was: {1})"
-msgstr "Impossible de lire le lien symbolique {0} (problème initial : {1})."
+msgstr "ACL non appliqué sur {0} (problème initial : {1})"
 
 #: foundations/fsapi.py:423
 msgid ""
@@ -1147,10 +1217,8 @@ msgstr ""
 "au lieu de {dest}."
 
 #: foundations/fsapi.py:709
-#, fuzzy
 msgid "Cannot create symlink {0} to {1}!"
-msgstr ""
-"Impossible de supprimer le lien symbolique {0} (problème initial : {1})."
+msgstr "Impossible de créer le lien symbolique {0} vers {1}!"
 
 #: foundations/fsapi.py:715
 msgid ""
@@ -1177,7 +1245,7 @@ msgstr ""
 msgid "{0} ({1} conflict){2}"
 msgstr "{0} (conflit du {1}){2}"
 
-#: foundations/fsapi.py:746 daemon/rwi.py:898
+#: foundations/fsapi.py:746 daemon/rwi.py:877
 msgid "%d %m %Y at %H:%M:%S"
 msgstr "%d %m %Y à %H:%M:%S"
 
@@ -1218,12 +1286,12 @@ msgstr "Le fichier {orig} a été sauvegardé en tant que {backup}."
 msgid "Exception occured in {0}: {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: foundations/logging.py:221
+#: foundations/logging.py:223
 msgid ""
 "Thread {0} has no listener anymore, desengaging from monitors (was: {1})."
 msgstr ""
 
-#: foundations/logging.py:230
+#: foundations/logging.py:232
 msgid ""
 "Thread {0} has lost its remote end, desengaging from monitors (was: {1})."
 msgstr ""
@@ -1253,138 +1321,135 @@ msgstr "Le {0} ou {1} \"{2}\" inexistant ou invalide a été ignoré."
 msgid "You must specify at least one %s!"
 msgstr "Vous devez spécifier au moins un %s !"
 
-#: daemon/rwi.py:478
+#: daemon/rwi.py:457
 msgid "New trace session started with UUID {0}, facilities {1}."
 msgstr ""
 "Nouvelle session de trace démarrée avec l'UUID {0}, pour les facilités {1}."
 
-#: daemon/rwi.py:513
+#: daemon/rwi.py:492
 #, python-format
 msgid "Monitor listener with UUID %s not found!"
 msgstr ""
 
-#: daemon/rwi.py:515
+#: daemon/rwi.py:494
 msgid "Trace session UUID {0} ended."
 msgstr "La session de trace avec l'UUID {0} est terminée."
 
-#: daemon/rwi.py:586
+#: daemon/rwi.py:565
 msgid "You must specify an import filename."
 msgstr "Vous devez spécifier un nomde fichier d'import."
 
-#: daemon/rwi.py:591
+#: daemon/rwi.py:570
 msgid "You must specify a profile."
 msgstr "Vous devez spécifier un profil."
 
-#: daemon/rwi.py:597
+#: daemon/rwi.py:576
 msgid "You must specify a firstname column number."
 msgstr "Vous devez spécifier un numéro de colonne pour les prénoms."
 
-#: daemon/rwi.py:603
+#: daemon/rwi.py:582
 msgid "You must specify a lastname column number."
 msgstr "Vous devez spécifier un numéro de colonne pour les noms de famille."
 
-#: daemon/rwi.py:609
+#: daemon/rwi.py:588
 msgid "You must specify a group column number."
 msgstr "Vous devez spécifier un numéro de colonne pour les groupes."
 
-#: daemon/rwi.py:616
+#: daemon/rwi.py:595
 msgid ""
 "Two columns have the same number (lastname={0}, firstname={1}, group={2})"
 msgstr ""
 "Two columns have the same number (lastname={0}, firstname={1}, group={2})"
 
-#: daemon/rwi.py:625
-#, fuzzy
+#: daemon/rwi.py:604
 msgid "Sorry, CSV file must have no more than 128 columns.\""
 msgstr "Désolé, le fichier CSV ne doit pas contenir plus de 128 colonnes.\""
 
-#: daemon/rwi.py:638
-#, fuzzy
+#: daemon/rwi.py:617
 msgid ""
 "Cannot automatically detect the file encoding, assuming iso-8859-15 "
 "(latin-1)!"
 msgstr ""
 "Détection automatique de l'encodage du fichier impossible, nous supposons "
-"iso-8859-15 (latin-1) !"
+"que c'est iso-8859-15 (latin-1) !"
 
-#: daemon/rwi.py:646
+#: daemon/rwi.py:625
 #, python-format
 msgid "The profile \"%s\" does not exist."
 msgstr "Le profil \"%s\" n'existe pas."
 
-#: daemon/rwi.py:665
+#: daemon/rwi.py:644
 #, python-format
 msgid "Cannot load CSV file (was: %s)."
 msgstr "Impossible de charger le fichier CSV (erreur initiale : %s)."
 
-#: daemon/rwi.py:671
+#: daemon/rwi.py:650
 msgid "Reading input file: "
 msgstr "Lecture du fichier d'entrée : "
 
-#: daemon/rwi.py:705
-#, fuzzy
+#: daemon/rwi.py:684
 msgid "Import error on line {0}: no {1} specified or bad {2} data (was: {3})."
 msgstr ""
-"Erreur lors de l'importation sur la ligne {0} : pas de {1} spécifié ou "
+"Erreur lors de l'importation sur la ligne {0} : pas de {1} spécifié(e) ou "
 "mauvaise donnée de {2} (erreur : {3})."
 
-#: daemon/rwi.py:710
-#, fuzzy, python-format
+#: daemon/rwi.py:689
+#, python-format
 msgid "Encoding not supported for input filename (was: %s)."
-msgstr "L'encodage du fichier n'est pas supporté (erreur : %s)."
+msgstr "L'encodage du fichier d'import n'est pas supporté (erreur : %s)."
 
-#: daemon/rwi.py:721 daemon/rwi.py:734
+#: daemon/rwi.py:700 daemon/rwi.py:713
 msgid ""
 "Import error on line {0}: no group specified or bad {2} data (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:723
+#: daemon/rwi.py:702
 msgid "firstname or lastname"
 msgstr "prénom ou nom"
 
-#: daemon/rwi.py:724 daemon/rwi.py:818
+#: daemon/rwi.py:703 daemon/rwi.py:797
 msgid "login"
 msgstr "identifiant"
 
-#: daemon/rwi.py:727 daemon/rwi.py:739
+#: daemon/rwi.py:706 daemon/rwi.py:718
 msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:736 daemon/rwi.py:819 core/configuration.py:873
+#: daemon/rwi.py:715 daemon/rwi.py:798 core/configuration.py:873
 #: core/groups.py:1697
 msgid "group"
 msgstr "groupe"
 
-#: daemon/rwi.py:760
+#: daemon/rwi.py:739
 msgid " done."
 msgstr " terminé."
 
-#: daemon/rwi.py:793
+#: daemon/rwi.py:772
 msgid "Added group {0} ({1}/{2}); progress: {3}%"
 msgstr ""
 
-#: daemon/rwi.py:815
+#: daemon/rwi.py:794
 msgid "Fields order:"
 msgstr "Ordre des champs :"
 
-#: daemon/rwi.py:816
+#: daemon/rwi.py:795
 msgid "FIRSTname"
 msgstr "PRÉnom"
 
-#: daemon/rwi.py:817
+#: daemon/rwi.py:796
 msgid "LASTname"
 msgstr "NOM de famille"
 
-#: daemon/rwi.py:820 interfaces/cli/argparser.py:871
+#: daemon/rwi.py:799 interfaces/cli/argparser.py:871
 msgid "password"
 msgstr "mot de passe"
 
-#: daemon/rwi.py:835
+#: daemon/rwi.py:814
 msgid ""
 "Added user {0} {1} [login={2}, uid={3}, passwd={4}] ({5}/{6}); progress: {7}%"
 msgstr ""
 
-#: daemon/rwi.py:857
+#: daemon/rwi.py:836
 msgid ""
 "Import error on line {0}.\n"
 "{1}"
@@ -1392,23 +1457,23 @@ msgstr ""
 "Erreur d'importation à la ligne {0}.\n"
 "{1}"
 
-#: daemon/rwi.py:868
+#: daemon/rwi.py:847
 msgid "(autogenerated upon creation)"
 msgstr "(auto-généré lors de la création)"
 
-#: daemon/rwi.py:892
+#: daemon/rwi.py:871
 msgid "Finished importing, creating summary HTML file: "
 msgstr ""
 
-#: daemon/rwi.py:916
+#: daemon/rwi.py:895
 msgid "{0} accounts and passwords"
 msgstr "Comptes {0} et mots de passes"
 
-#: daemon/rwi.py:917
+#: daemon/rwi.py:896
 msgid "Import made on {0}."
 msgstr "Import réalisé le {0}."
 
-#: daemon/rwi.py:918
+#: daemon/rwi.py:897
 msgid ""
 "Keeping passwords in any written form is a major security flaw for you "
 "information system.<br />Please be sure obliterate this file and any printed "
@@ -1419,162 +1484,162 @@ msgstr ""
 "supprimer ce fichier de manière sécurisée avec des outils appropriés après "
 "avoir transmis leur mot de passe à vos utilisateurs."
 
-#: daemon/rwi.py:923
+#: daemon/rwi.py:902
 msgid "Direct access to {0}:"
 msgstr "Accès direct aux {0} :"
 
-#: daemon/rwi.py:952
+#: daemon/rwi.py:931
 msgid "Lastname"
 msgstr "Nom"
 
-#: daemon/rwi.py:953
+#: daemon/rwi.py:932
 msgid "Firstname"
 msgstr "Prénom"
 
-#: daemon/rwi.py:954 interfaces/wmi/users.py:547 interfaces/wmi/users.py:910
+#: daemon/rwi.py:933 interfaces/wmi/users.py:547 interfaces/wmi/users.py:910
 #: interfaces/wmi/users.py:961
 msgid "Login"
 msgstr "Identifiant"
 
-#: daemon/rwi.py:955 interfaces/wmi/users.py:706
+#: daemon/rwi.py:934 interfaces/wmi/users.py:706
 msgid "Password"
 msgstr "Mot de passe"
 
-#: daemon/rwi.py:982
+#: daemon/rwi.py:961
 msgid "done."
 msgstr "terminé."
 
-#: daemon/rwi.py:982
+#: daemon/rwi.py:961
 msgid "report:"
 msgstr "rapport:"
 
-#: daemon/rwi.py:1077
+#: daemon/rwi.py:1056
 msgid "Unable to add user(s) {0} in group {1} (was: {2})."
 msgstr ""
 "Impossible d'ajouter le(s) utilisateur(s) {1} dans le groupe {1} (problème "
 "initial : {2})."
 
-#: daemon/rwi.py:1292
+#: daemon/rwi.py:1277
 msgid "Are you sure you want to delete all users?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer tous les comptes utilisateurs ?"
 
-#: daemon/rwi.py:1310
+#: daemon/rwi.py:1295
 #, python-format
 msgid "Delete user %s?"
 msgstr "Supprimer l'utilisateur %s ?"
 
-#: daemon/rwi.py:1338
+#: daemon/rwi.py:1323
 msgid "Unable to remove user(s) {0} from group {1} (was: {2})."
 msgstr ""
 "Impossible de supprimer le(s) utilisateur(s) {0} du groupe {1} (problème "
 "initial: {2})."
 
-#: daemon/rwi.py:1379
+#: daemon/rwi.py:1364
 msgid "You must specify a file name"
 msgstr "Vous devez spécifier un nom de fichier d'import."
 
-#: daemon/rwi.py:1409
+#: daemon/rwi.py:1394
 msgid "Deleting groups ({0}/{1}), progression: {3:.2f}%"
 msgstr ""
 
-#: daemon/rwi.py:1471
+#: daemon/rwi.py:1456
 msgid "Are you sure you want to delete all groups?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer tous les groupes ?"
 
-#: daemon/rwi.py:1490
+#: daemon/rwi.py:1475
 #, python-format
 msgid "Delete group %s?"
 msgstr "Supprimer le groupe %s ?"
 
-#: daemon/rwi.py:1540
+#: daemon/rwi.py:1525
 msgid "Are you sure you want to delete all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer tous les profils ?"
 
-#: daemon/rwi.py:1554
+#: daemon/rwi.py:1539
 #, python-format
 msgid "Delete profile %s?"
 msgstr "Supprimer le profil %s ?"
 
-#: daemon/rwi.py:1596
+#: daemon/rwi.py:1581
 msgid "Are you sure you want to delete all privileges?"
 msgstr "Êtes-vous sûr(e) de vouloir supprimer tous les privilèges ?"
 
-#: daemon/rwi.py:1610
+#: daemon/rwi.py:1595
 #, python-format
 msgid "Delete privilege %s?"
 msgstr "Supprimer le privilege %s ?"
 
-#: daemon/rwi.py:1663
+#: daemon/rwi.py:1648
 msgid "Are you sure you want to modify all users?"
 msgstr "Êtes-vous sûr(e) de vouloir modifier tous les comptes utilisateurs ?"
 
-#: daemon/rwi.py:1684
+#: daemon/rwi.py:1669
 #, python-format
 msgid "Modify user %s?"
 msgstr "Modifier le compte %s ?"
 
-#: daemon/rwi.py:1708
+#: daemon/rwi.py:1693
 #, python-format
 msgid "Please enter new password for user %s: "
 msgstr "Saisissez le nouveau mot de passe de %s : "
 
-#: daemon/rwi.py:1710
+#: daemon/rwi.py:1695
 #, python-format
 msgid "Please confirm new password for user %s: "
 msgstr "Confirmez le nouveau mot de passe de %s : "
 
-#: daemon/rwi.py:1715
+#: daemon/rwi.py:1700
 msgid "Please enter your OLD (current) password: "
 msgstr "Saisissez votre mot de passe ACTUEL : "
 
-#: daemon/rwi.py:1717
+#: daemon/rwi.py:1702
 msgid "Please enter your new password: "
 msgstr "Saisissez votre nouveau mot de passe : "
 
-#: daemon/rwi.py:1718
+#: daemon/rwi.py:1703
 msgid "Please confirm your new password: "
 msgstr "Confirmez votre nouveau mot de passe : "
 
-#: daemon/rwi.py:1721
+#: daemon/rwi.py:1706
 #, python-format
 msgid "Please enter %s's OLD (current) password: "
 msgstr "Saisissez le mot de passe ACTUEL de %s : "
 
-#: daemon/rwi.py:1728
+#: daemon/rwi.py:1713
 msgid "Wrong password, procedure aborted."
 msgstr "Mauvais mot de passe, abandon de la procédure."
 
-#: daemon/rwi.py:1738
+#: daemon/rwi.py:1723
 msgid "Passwords do not match, leaving the old one in place."
 msgstr "Les mots de passe ne correspondent pas, l'ancien reste inchangé."
 
-#: daemon/rwi.py:1764 daemon/rwi.py:1772
+#: daemon/rwi.py:1749 daemon/rwi.py:1757
 msgid "Unable to remove user {0} from group {1} (was: {2})."
 msgstr ""
 "Impossible de supprimer le(s) utilisateur(s) {0} du groupe {1} (problème "
 "initial: {2})."
 
-#: daemon/rwi.py:1787 daemon/rwi.py:1794
+#: daemon/rwi.py:1772 daemon/rwi.py:1779
 msgid "Unable to add user {0} in group {1} (was: {2})."
 msgstr ""
 "Impossible d'ajouter le(s) utilisateur(s) {1} dans le groupe {1} (problème "
 "initial : {2})."
 
-#: daemon/rwi.py:1808
+#: daemon/rwi.py:1793
 #, python-format
 msgid "What do you want to modify about user(s) %s ?"
 msgstr "Que voulez-vous modifier sur le(s) compte(s) %s ? "
 
-#: daemon/rwi.py:1857
+#: daemon/rwi.py:1842
 msgid "Are you sure you want to modify all groups?"
 msgstr "Êtes-vous sûr(e) de vouloir modifier tous les groupes ?"
 
-#: daemon/rwi.py:1883
+#: daemon/rwi.py:1868
 #, python-format
 msgid "Modify group %s?"
 msgstr "Modifier le groupe %s ?"
 
-#: daemon/rwi.py:1889
+#: daemon/rwi.py:1874
 #, python-format
 msgid ""
 "Skipped associated system group %s, handled automatically by standard group "
@@ -1583,98 +1648,98 @@ msgstr ""
 "Le groupe système associé %s a été ignoré, son déplacement est géré "
 "automatiquement lorsque son groupe standard est lui-même déplacé."
 
-#: daemon/rwi.py:1934
+#: daemon/rwi.py:1919
 msgid "Skipped responsible(s) {0} addition on non-standard group {1}."
 msgstr ""
 "L'ajout des responsable(s) {0} au groupe non-standard {1} a été ignoré."
 
-#: daemon/rwi.py:1945
+#: daemon/rwi.py:1930
 msgid "Skipped responsible(s) {0} deletion on non-standard group {1}."
 msgstr ""
 "La suppression des responsable(s) {0} du groupe non-standard {1} a été "
 "ignorée."
 
-#: daemon/rwi.py:1956
+#: daemon/rwi.py:1941
 msgid "Skipped guest(s) {0} addition on non-standard group {1}."
 msgstr "L'ajout des invité(s) {0} au groupe non-standard {1} a été ignoré."
 
-#: daemon/rwi.py:1967
+#: daemon/rwi.py:1952
 msgid "Skipped guest(s) {0} deletion on non-standard group {1}."
 msgstr ""
 "La suppression des invité(s) {0} du groupe non-standard {1} a été ignorée."
 
-#: daemon/rwi.py:1982
+#: daemon/rwi.py:1967
 #, python-format
 msgid "What do you want to modify about group(s) %s?"
 msgstr "Que voulez-vous modifier sur le(s) groupe(s) %s ?"
 
-#: daemon/rwi.py:2005
+#: daemon/rwi.py:1990
 msgid "Are you sure you want to modify all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir modifier tous les profils ?"
 
-#: daemon/rwi.py:2025
+#: daemon/rwi.py:2010
 #, python-format
 msgid "Modify profile %s?"
 msgstr "Modifier le profil %s ?"
 
-#: daemon/rwi.py:2102
+#: daemon/rwi.py:2087
 #, python-format
 msgid "What do you want to modify about profile(s) %s?"
 msgstr "Que voulez-vous modifier sur le(s) profil(s) %s ?"
 
-#: daemon/rwi.py:2140 daemon/rwi.py:2159
+#: daemon/rwi.py:2125 daemon/rwi.py:2144
 msgid "not yet anymore."
 msgstr "plus maintenant."
 
-#: daemon/rwi.py:2213 daemon/rwi.py:2221
+#: daemon/rwi.py:2198 daemon/rwi.py:2206
 #, python-format
 msgid "Skipped non-existing backend %s."
 msgstr "Le backend non-existant %s a été ignoré."
 
-#: daemon/rwi.py:2229 daemon/rwi.py:2237
+#: daemon/rwi.py:2214 daemon/rwi.py:2222
 #, python-format
 msgid "Skipped non-existing extension %s."
 msgstr "L'extension inexistante %s a été ignorée."
 
-#: daemon/rwi.py:2241
+#: daemon/rwi.py:2226
 msgid "What do you want to modify? use --help to know!"
 msgstr ""
 "Que voulez-vous modifier ? Utilisez --help pour obtenir plus d'informations. "
 
-#: daemon/rwi.py:2284
+#: daemon/rwi.py:2269
 msgid "What do you want to modify on volumes? use --help to know!"
 msgstr ""
 "Que voulez-vous modifier sur les volumes ? Utilisez --help pour obtenir plus "
 "d'information."
 
-#: daemon/rwi.py:2320
+#: daemon/rwi.py:2305
 msgid "Are you sure you want to check all users?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les comptes utilisateurs ?"
 
-#: daemon/rwi.py:2342
+#: daemon/rwi.py:2327
 #, python-format
 msgid "Check account %s?"
 msgstr "Vérifier  le compte %s ?"
 
-#: daemon/rwi.py:2398
+#: daemon/rwi.py:2383
 msgid "Are you sure you want to check all groups?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les groupes ?"
 
-#: daemon/rwi.py:2421
+#: daemon/rwi.py:2406
 #, python-format
 msgid "Check group %s?"
 msgstr "Vérifier le groupe %s ?"
 
-#: daemon/rwi.py:2449
+#: daemon/rwi.py:2434
 msgid "Are you sure you want to check all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les profils ?"
 
-#: daemon/rwi.py:2463
+#: daemon/rwi.py:2448
 #, python-format
 msgid "Check profile %s?"
 msgstr "Vérifier le profil %s ?"
 
-#: daemon/rwi.py:2466
+#: daemon/rwi.py:2451
 msgid "Sorry, not yet."
 msgstr "Désolé, pas encore."
 
@@ -1917,64 +1982,106 @@ msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr "{0} : réalisation d'un ramassage de miettes manuel de {1}."
 
-#: daemon/__init__.py:169
+#: daemon/__init__.py:99 interfaces/cli/__init__.py:69
 msgid "{0}: switched long_output status to {1}."
 msgstr "{0} : l'état des sorties longues sur la console est {1}."
 
-#: daemon/__init__.py:171
+#: daemon/__init__.py:101 interfaces/cli/__init__.py:71
 msgid "enabled"
 msgstr "activé(e)"
 
-#: daemon/__init__.py:173 interfaces/cli/argparser.py:892
+#: daemon/__init__.py:103 interfaces/cli/__init__.py:73
+#: interfaces/cli/argparser.py:892
 msgid "disabled"
 msgstr "désactivé(e)"
 
-#: daemon/__init__.py:176
+#: daemon/__init__.py:104 interfaces/cli/__init__.py:74
+msgid "toggle [dump status] long ouput on or off"
+msgstr "basculer la sortie longue ou courte [du dump d'état]"
+
+#: daemon/__init__.py:106
 msgid "Console-initiated garbage collection and dead thread cleaning."
 msgstr "Ramassage des miettes et nettoyage des threads initié sur la console."
 
-#: daemon/__init__.py:190
+#: daemon/__init__.py:111
+msgid ""
+"operate a manual garbage collection in the daemon's memory, and run other "
+"clean-related things"
+msgstr ""
+"Lancer un ramassage des miettes manuel dans la mémoire du daemon, et "
+"d'autres tâches relatives au nettoyage"
+
+#: daemon/__init__.py:120
+msgid "show the INotifier watches (WARNING: this can flood your terminal)"
+msgstr ""
+"Afficher les observateurs de l'INotifier (ATTENTION : ça va probablement "
+"innonder votre terminal)"
+
+#: daemon/__init__.py:123
 msgid "{0} active threads: {1}"
 msgstr "{0} threads actifs : {1}"
 
-#: daemon/__init__.py:210
+#: daemon/__init__.py:126
+msgid "show all threads names and their current status"
+msgstr "afficher les noms et l'état de tous les threads en cours"
+
+#: daemon/__init__.py:133 interfaces/cli/__init__.py:86
 msgid "{0}: increased verbosity level to {1}."
 msgstr "{0} : le niveau de verbosité a été augmenté à la valeur {1}."
 
-#: daemon/__init__.py:217
+#: daemon/__init__.py:140 interfaces/cli/__init__.py:93
 msgid "{0}: verbosity level already at the maximum value ({1})."
 msgstr "{0}: le niveau de verbosité est déjà à la valeur maximum ({1})."
 
-#: daemon/__init__.py:239
+#: daemon/__init__.py:145 interfaces/cli/__init__.py:98
+msgid "increase the daemon console verbosity level"
+msgstr "augmenter le niveau de verbosité de la console du daemon"
+
+#: daemon/__init__.py:152 interfaces/cli/__init__.py:112
 msgid "{0}: decreased verbosity level to {1}."
 msgstr "{0} : le niveau de verbosité a été diminué à la valeur {1}."
 
-#: daemon/__init__.py:246
+#: daemon/__init__.py:159 interfaces/cli/__init__.py:119
 msgid "{0}: verbosity level already at the minimum value ({1})."
 msgstr "{0}: le niveau de verbosité est déjà à la valeur minimum ({1})."
 
-#: daemon/__init__.py:272
-#, python-format
-msgid "%s: killing ourselves badly."
-msgstr "%s: on se tire une balle dans le pied."
+#: daemon/__init__.py:164 interfaces/cli/__init__.py:124
+msgid "decrease the daemon console verbosity level"
+msgstr "diminuer le niveau de verbosité de la console du daemon"
 
-#: daemon/__init__.py:289
+#: daemon/__init__.py:169
+msgid "{0}: Send URS1 signal (and consequently reload daemon)"
+msgstr "{0} : Envoyer un signal USR1 (et recharger le daemon, en conséquence)"
+
+#: daemon/__init__.py:175
+msgid "{0}: dump daemon status"
+msgstr "{0} : Afficher l'état du daemon"
+
+#: daemon/__init__.py:181
+msgid "{0} or {1}: dump daemon status after having cleared the screen"
+msgstr "{0} ou {1} : afficher l'état du daemon après avoir vidé l'écran"
+
+#: daemon/__init__.py:184
+msgid "Space"
+msgstr "Espace"
+
+#: daemon/__init__.py:187
 #, python-format
 msgid "%s: Entering interactive mode. Welcome into licornd's arcanes…"
 msgstr "%s : mode intéractif activé. Bienvenue dans les arcanes de licornd…"
 
-#: daemon/__init__.py:324
+#: daemon/__init__.py:224
 msgid "Licorn® {0}, Python {1} on {2}"
 msgstr "Licorn® {0}, Python {1} sur {2}"
 
-#: daemon/__init__.py:338
+#: daemon/__init__.py:238
 #, python-format
 msgid "%s: leaving interactive mode. Welcome back to Real World™."
 msgstr "%s : sortie du mode intéractif. Bon retour dans le monde réel™."
 
-#: daemon/__init__.py:342
-msgid "{0}: received unhandled char \"{1}\", ignoring."
-msgstr "{0} : caractère non géré « {1} », ignoré."
+#: daemon/__init__.py:240
+msgid "Run an interactive console"
+msgstr "Ouvrir une session intéractive"
 
 #: daemon/eventmanager.py:42
 msgid ""
@@ -2130,16 +2237,20 @@ msgstr "Recherche par mot-clef — Licorn®"
 msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr "<span size=\"xx-large\">Recherche par mot-clef — Licorn®</spam>"
 
-#: interfaces/cli/__init__.py:91
+#: interfaces/cli/__init__.py:127
+msgid "end the interactive session cleanly"
+msgstr "terminer la session intéractive proprement"
+
+#: interfaces/cli/__init__.py:183
 #, python-format
 msgid "Unknow mode %s!"
 msgstr "Mode %s inconnu !"
 
-#: interfaces/cli/__init__.py:172
+#: interfaces/cli/__init__.py:264
 msgid "Interrupted, cleaning up!"
 msgstr "Interrompu ! En cours de nettoyage avant fermeture…"
 
-#: interfaces/cli/__init__.py:175
+#: interfaces/cli/__init__.py:267
 msgid "daemon needs a restart, sending USR1 signal."
 msgstr "Le daemon doit redémarrer, envoi d'un signal USR1."
 
@@ -2178,11 +2289,13 @@ msgid ""
 "Stay connected to the daemon and update the status every given interval (see "
 "below). Default: %s."
 msgstr ""
+"Rester connecté au daemon et mettre à jour l'état tous les intervalles (voir "
+"plus haut). Valeur d'usine : %s."
 
 #: interfaces/cli/argparser.py:108
 #, python-format
 msgid "Monitoring interval (in seconds). Default: %s."
-msgstr ""
+msgstr "Intervalle de rafraîchissement (en secondes). Valeur d'usine : %s."
 
 #: interfaces/cli/argparser.py:109
 msgid "1 sec"
@@ -2192,20 +2305,22 @@ msgstr "1 sec"
 #, python-format
 msgid "Monitor a given number of count. Default: %s."
 msgstr ""
+"Surveiller un certain nombre de fois (indépendamment du temps). Valeur "
+"d'usine : %s."
 
 #: interfaces/cli/argparser.py:114 interfaces/cli/argparser.py:119
 msgid "infinite"
-msgstr ""
+msgstr "infini"
 
 #: interfaces/cli/argparser.py:118
 #, python-format
 msgid "Monitor during a time period, in seconds. Default: %s."
-msgstr ""
+msgstr "Surveiller pendant un certain temps, en secondes. Valeur d'usine : %s."
 
 #: interfaces/cli/argparser.py:123
 #, python-format
 msgid "Do not clear the screen between each monitor output. Default: %s."
-msgstr ""
+msgstr "Ne pas nettoyer l'écran entre chaque affichage. Valeur d'usine : %s."
 
 #: interfaces/cli/argparser.py:130
 msgid "{0} {1}: this can be a very long operation{2}"
@@ -2397,7 +2512,6 @@ msgid "Only select loaded machines."
 msgstr "Sélectionner seulement les machines chargées."
 
 #: interfaces/cli/argparser.py:350
-#, fuzzy
 msgid "options --force and --batch are mutually exclusive!"
 msgstr "Les options --force et --batch sont mutuellement exclusives."
 
@@ -3084,7 +3198,6 @@ msgid "remotely shutdown specified machine(s)."
 msgstr ""
 
 #: interfaces/cli/argparser.py:1417
-#, fuzzy
 msgid ""
 "Display a warning message to connected user(s) before shutting system(s) "
 "down."
@@ -3576,7 +3689,7 @@ msgstr "Mémoire physique"
 msgid "Virtual (swap) memory"
 msgstr "Mémoire virtuelle (swap)"
 
-#: interfaces/wmi/__init__.py:71 interfaces/wmi/groups.py:16
+#: interfaces/wmi/__init__.py:74 interfaces/wmi/groups.py:16
 msgid ""
 "<br /><br />Go back with your browser, double-check data and validate the "
 "web-form."
@@ -3584,43 +3697,43 @@ msgstr ""
 "<br /><br />Revenez en arrière dans votre navigateur, vérifiez les données "
 "saisies et re-validez le formulaire."
 
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
 msgid "day"
 msgstr "jour"
 
-#: interfaces/wmi/__init__.py:195 interfaces/wmi/__init__.py:284
+#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
 msgid "days"
 msgstr "jours"
 
-#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
+#: interfaces/wmi/__init__.py:199 interfaces/wmi/__init__.py:288
 msgid "hour"
 msgstr "heure"
 
-#: interfaces/wmi/__init__.py:196 interfaces/wmi/__init__.py:285
+#: interfaces/wmi/__init__.py:199 interfaces/wmi/__init__.py:288
 msgid "hours"
 msgstr "heures"
 
-#: interfaces/wmi/__init__.py:197 interfaces/wmi/__init__.py:286
+#: interfaces/wmi/__init__.py:200 interfaces/wmi/__init__.py:289
 msgid "minute"
 msgstr "minute"
 
-#: interfaces/wmi/__init__.py:197 interfaces/wmi/__init__.py:286
+#: interfaces/wmi/__init__.py:200 interfaces/wmi/__init__.py:289
 msgid "minutes"
 msgstr "minutes"
 
-#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
+#: interfaces/wmi/__init__.py:201 interfaces/wmi/__init__.py:290
 msgid "second"
 msgstr "seconde"
 
-#: interfaces/wmi/__init__.py:198 interfaces/wmi/__init__.py:287
+#: interfaces/wmi/__init__.py:201 interfaces/wmi/__init__.py:290
 msgid "seconds"
 msgstr "secondes"
 
-#: interfaces/wmi/__init__.py:344
+#: interfaces/wmi/__init__.py:347
 msgid "{0}: WMI overwriting {1} object with new instance."
 msgstr "{0} : L'IGW a remplacé l'objet {1} par une nouvelle instance."
 
-#: interfaces/wmi/__init__.py:366
+#: interfaces/wmi/__init__.py:369
 msgid "{0}: unknown object {1}, cannot unregister."
 msgstr ""
 
@@ -3777,11 +3890,11 @@ msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 "État du serveur, de l'onduleur et des sous-systèmes matériel et logiciel."
 
-#: interfaces/wmi/utils.py:503 core/machines.py:1332
+#: interfaces/wmi/utils.py:503 core/machines.py:1324
 msgid "Status"
 msgstr "État"
 
-#: interfaces/wmi/utils.py:504 core/machines.py:1140 core/machines.py:1195
+#: interfaces/wmi/utils.py:504 core/machines.py:1132 core/machines.py:1187
 msgid "Shutdown"
 msgstr "Éteindre"
 
@@ -3810,13 +3923,13 @@ msgstr "Importer"
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: interfaces/wmi/utils.py:507 interfaces/wmi/groups.py:780
-#: interfaces/wmi/groups.py:901 interfaces/wmi/users.py:422
+#: interfaces/wmi/utils.py:507 interfaces/wmi/groups.py:779
+#: interfaces/wmi/groups.py:900 interfaces/wmi/users.py:422
 #: interfaces/wmi/users.py:731
 msgid "Groups"
 msgstr "Groupes"
 
-#: interfaces/wmi/utils.py:536
+#: interfaces/wmi/utils.py:538
 msgid ""
 "Manage Internet connexion and parameters, firewall protection, URL filter "
 "and e-mail parameters."
@@ -3824,37 +3937,37 @@ msgstr ""
 "Gérer la connexion internet et ses paramètres, les protections par pare-feu "
 "et filtrage d'URL, les services de courrier électronique."
 
-#: interfaces/wmi/utils.py:536
+#: interfaces/wmi/utils.py:538
 msgid "Internet"
 msgstr "Internet"
 
-#: interfaces/wmi/utils.py:537
+#: interfaces/wmi/utils.py:539
 msgid "Go to online documentation website."
 msgstr "Accéder à l'aide en ligne."
 
-#: interfaces/wmi/utils.py:537
+#: interfaces/wmi/utils.py:539
 msgid "Documentation"
 msgstr "Documentation"
 
-#: interfaces/wmi/utils.py:538
+#: interfaces/wmi/utils.py:540
 msgid "Get product support / help"
 msgstr "Obtenir du support sur le produit"
 
-#: interfaces/wmi/utils.py:538
+#: interfaces/wmi/utils.py:540
 msgid "Support"
 msgstr "Assistance"
 
-#: interfaces/wmi/utils.py:542
+#: interfaces/wmi/utils.py:544
 #, python-format
 msgid "%s Management"
 msgstr "Administration %s"
 
-#: interfaces/wmi/utils.py:569
+#: interfaces/wmi/utils.py:571
 #, python-format
 msgid "%s WMI:"
 msgstr "IGW %s&nbsp;:"
 
-#: interfaces/wmi/utils.py:584
+#: interfaces/wmi/utils.py:586
 #, python-format
 msgid "administration %s"
 msgstr "Administration %s"
@@ -3903,7 +4016,7 @@ msgid "A"
 msgstr "A"
 
 #: interfaces/wmi/groups.py:48 interfaces/wmi/groups.py:86
-#: core/machines.py:1142 core/machines.py:1197
+#: core/machines.py:1134 core/machines.py:1189
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -4089,7 +4202,7 @@ msgid "No guest in this group."
 msgstr "Aucun invité dans ce groupe."
 
 #: interfaces/wmi/groups.py:437 interfaces/wmi/groups.py:526
-#: interfaces/wmi/groups.py:902 interfaces/wmi/groups.py:905
+#: interfaces/wmi/groups.py:901 interfaces/wmi/groups.py:904
 #: core/privileges.py:52 core/groups.py:1700
 msgid "GID"
 msgstr "GID"
@@ -4098,13 +4211,13 @@ msgstr "GID"
 msgid "immutable"
 msgstr "non modifiable"
 
-#: interfaces/wmi/groups.py:440 interfaces/wmi/groups.py:902
-#: interfaces/wmi/groups.py:905
+#: interfaces/wmi/groups.py:440 interfaces/wmi/groups.py:901
+#: interfaces/wmi/groups.py:904
 msgid "Name"
 msgstr "Nom"
 
-#: interfaces/wmi/groups.py:442 interfaces/wmi/groups.py:902
-#: interfaces/wmi/groups.py:905
+#: interfaces/wmi/groups.py:442 interfaces/wmi/groups.py:901
+#: interfaces/wmi/groups.py:904
 msgid "Description"
 msgstr "Description du groupe"
 
@@ -4143,25 +4256,25 @@ msgstr "Édition du groupe %s"
 msgid "(immutable)"
 msgstr "(non modifiable)"
 
-#: interfaces/wmi/groups.py:759
+#: interfaces/wmi/groups.py:758
 msgid "System users:"
 msgstr "Comptes utilisateurs système"
 
-#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:910
+#: interfaces/wmi/groups.py:901 interfaces/wmi/users.py:910
 #: interfaces/wmi/users.py:961
 msgid "Skel"
 msgstr "Squelette"
 
-#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:845
+#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:845
 msgid "System groups"
 msgstr "Groupes système"
 
-#: interfaces/wmi/groups.py:903 interfaces/wmi/users.py:424
+#: interfaces/wmi/groups.py:902 interfaces/wmi/users.py:424
 #: interfaces/wmi/users.py:553 interfaces/wmi/users.py:733
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: interfaces/wmi/groups.py:905
+#: interfaces/wmi/groups.py:904
 msgid "Priv."
 msgstr ""
 
@@ -5362,7 +5475,7 @@ msgstr "squelette :"
 
 #: core/groups.py:1535
 msgid "UNKNOWN"
-msgstr ""
+msgstr "INCONNU"
 
 #: core/groups.py:1537 core/groups.py:2137
 msgid "permissive"
@@ -5994,7 +6107,7 @@ msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1569 core/classes.py:896
+#: core/users.py:1569 core/classes.py:908
 msgid "system"
 msgstr "système"
 
@@ -6042,112 +6155,112 @@ msgstr "L'utilisateur %s n'existe pas."
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
 
-#: core/classes.py:504 core/classes.py:524
+#: core/classes.py:508 core/classes.py:528
 #, python-format
 msgid "Ignoring unexisting entry \"%s\"."
 msgstr "Chemin non-existant \"%s\" ignoré."
 
-#: core/classes.py:576 core/classes.py:585
+#: core/classes.py:584 core/classes.py:593
 msgid "Impossible to apply this perm or ACL."
 msgstr "Impossible d'appliquer cette permission ou ACL en l'état."
 
-#: core/classes.py:715 core/classes.py:727
+#: core/classes.py:727 core/classes.py:739
 #, python-format
 msgid "posix1e.ACL(text=%s).check() call failed."
 msgstr "l'appel posix1e.ACL(text=%s).check() a échoué."
 
-#: core/classes.py:747
+#: core/classes.py:759
 #, python-format
 msgid "Do not know how to expand tildes for %s objects!"
 msgstr "Aucun moyen connu pour étendre les tildes des objets %s !"
 
-#: core/classes.py:856
+#: core/classes.py:868
 #, python-format
 msgid "%s: System default rule has been overwriten by user rule."
 msgstr ""
 "%s: la règle système par défaut a été écrasée par une règle utilisateur."
 
-#: core/classes.py:858 core/classes.py:1296
+#: core/classes.py:870 core/classes.py:1318
 msgid "Skipped"
 msgstr "Ignoré"
 
-#: core/classes.py:877
+#: core/classes.py:889
 msgid ""
 "{0} group rule for path {1} ({2}:{3}), overriden by system rule ({4}:{5})."
 msgstr ""
 "Règle de groupe {0} pour le chemin {1} ({2}:{3}), écrasée par la règle "
 "système ({4}:{5})."
 
-#: core/classes.py:879
+#: core/classes.py:891
 msgid "Ignored"
 msgstr "Ignoré"
 
-#: core/classes.py:893
+#: core/classes.py:905
 msgid "{0} {1} ACL rule: \"{2}\" for \"{3}\"."
 msgstr "Règle ACL {1} {0} : “{2}” pour {3}."
 
-#: core/classes.py:895
+#: core/classes.py:907
 msgid "Added"
 msgstr "Ajouté(e)"
 
-#: core/classes.py:1041
+#: core/classes.py:1063
 msgid "{0}: error on setting inotifier watches for {1} {2} (was: {3})."
 msgstr ""
 "{0} : erreur à la création des observateurs pour le {1} {2} (problème "
 "initial : {3})."
 
-#: core/classes.py:1180
+#: core/classes.py:1202
 msgid ""
 "{0}: will not try to load {1} {2} because one or more of its dependancies "
 "failed to load."
 msgstr ""
 
-#: core/classes.py:1234
+#: core/classes.py:1256
 #, fuzzy
 msgid "{0}: unhandled exception {1} in {2} {3} during load.{4}"
 msgstr ""
 "{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
 "dans {4}."
 
-#: core/classes.py:1239
+#: core/classes.py:1261
 msgid " Disabling dependant {0}(s) {1} to avoid further problems."
 msgstr ""
 
-#: core/classes.py:1295
+#: core/classes.py:1317
 msgid "{0} {1} {2}, manually ignored in {3}."
 msgstr ""
 
-#: core/classes.py:1368
+#: core/classes.py:1390
 msgid "{0} {1} already enabled."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/classes.py:1379
+#: core/classes.py:1401
 msgid "successfully enabled {0} {1}."
 msgstr "{1} {0} activé(e) avec succès."
 
-#: core/classes.py:1383 core/classes.py:1415
+#: core/classes.py:1405 core/classes.py:1437
 msgid "No {0} by that name \"{1}\"."
 msgstr "Aucun(e) {0} du nom de “{1}”."
 
-#: core/classes.py:1401
+#: core/classes.py:1423
 msgid "{0} {1} already disabled."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/classes.py:1411
+#: core/classes.py:1433
 msgid "successfully disabled {0} {1}."
 msgstr "{1} {0} désactivé(e) avec succès."
 
-#: core/classes.py:1454
+#: core/classes.py:1476
 msgid ""
 "{0}: unhandled exception {1} in {2} {3} during check. Disabling it to avoid "
 "problems."
 msgstr ""
 
-#: core/classes.py:1485
+#: core/classes.py:1507
 msgid "{module_type} {module_name} does not exist or is not enabled."
 msgstr "{module_type} {module_name} inconnu(e) ou désactivé(e). "
 
-#: core/classes.py:1500
+#: core/classes.py:1522
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
@@ -6155,49 +6268,49 @@ msgstr ""
 "{name} : erreur lors de l'installation des observateurs pour {type} {module} "
 "(problème initial : {exc})."
 
-#: core/classes.py:2072
+#: core/classes.py:2095
 msgid "{0}: overwriting watch {1}!"
 msgstr "{0} : écrasement de l'observateur {1} !"
 
-#: core/classes.py:2103 core/classes.py:2120
+#: core/classes.py:2126 core/classes.py:2143
 #, fuzzy
 msgid "{0}.__unwatch_directory in {1}: {2} not found in watched dirs."
 msgstr ""
 "{0} : impossible de supprimer {1} {2}, car il n'a pas été trouvé dans {3}."
 
-#: core/classes.py:2235
+#: core/classes.py:2256
 msgid "{0} {1}: somebody is already checking; operation aborted."
 msgstr "{0} {1} : quelqu'un d'autre est déjà en train de vérifier ; abandon."
 
-#: core/classes.py:2245
+#: core/classes.py:2266
 msgid "Checking {0} {1}…"
 msgstr "Vérification du {0} {1}…"
 
-#: core/classes.py:2258
+#: core/classes.py:2279
 #, python-format
 msgid "Directory %s does not exist but it is mandatory. Create it?"
 msgstr "Le répertoire %s n'existe pas mais il est obligatoire. Le créer ?"
 
-#: core/classes.py:2272
+#: core/classes.py:2293
 #, python-format
 msgid "Directory %s does not exist but is mandatory. Check aborted."
 msgstr ""
 "Le répertoire %s n'existe pas mais il est obligatoire. La vérification est "
 "annulée."
 
-#: core/classes.py:2296
+#: core/classes.py:2317
 msgid "{0} {1}: meta-data changed on path {2}."
 msgstr "{0} {1} : les métadonnées ont changé sur le chemin {2}."
 
-#: core/classes.py:2307
+#: core/classes.py:2328
 msgid "{0} {1}: meta-data changed on {2} path(s)."
 msgstr "{0} {1} : les méta-données ont changé sur {2} chemin(s)."
 
-#: core/classes.py:2316
+#: core/classes.py:2337
 msgid "{0} {1}: no shared data to check."
 msgstr "{0} {1} : aucune donnée partagée à vérifier."
 
-#: core/classes.py:2415
+#: core/classes.py:2436
 msgid ""
 "{0}: home directory {1} disappeared. If this is intentional, do not forget "
 "to run \"{2}\" afterwards, to restore the inotifier watch."
@@ -6206,7 +6319,7 @@ msgstr ""
 "n'oubliez pas de lancer \"{2}\" après votre manipulation, pour ré-installer "
 "les observateurs."
 
-#: core/classes.py:2484
+#: core/classes.py:2505
 msgid "{0}: problem checking {1}, aborting (traceback and dir_info follow)"
 msgstr ""
 "{0} : problème pendant la vérification de {1}, opération annulée (contenu de "
@@ -6254,7 +6367,7 @@ msgstr ""
 "Impossible de construire un nom de machine valide (obtenu {0}, qui ne "
 "vérifie pas {1})"
 
-#: core/machines.py:1088 core/machines.py:1323
+#: core/machines.py:1088 core/machines.py:1315
 msgid "Machines"
 msgstr "Machines"
 
@@ -6266,46 +6379,38 @@ msgstr ""
 "préférences d'économie d'énergie"
 
 #: core/machines.py:1104
-msgid "Shutdown machines"
-msgstr "Éteindre des machines"
-
-#: core/machines.py:1106
-msgid "Shutdown machines on the network."
-msgstr "Éteindre des machines sur le réseau."
-
-#: core/machines.py:1112
 msgid "Energy policies"
 msgstr "Politiques énergétiques"
 
-#: core/machines.py:1114
+#: core/machines.py:1106
 msgid "Manage network-wide Energy &amp; power saving policies."
 msgstr "Gérer les directives d'économie d'énergie globales."
 
-#: core/machines.py:1127
+#: core/machines.py:1119
 #, python-format
 msgid "Shutdown machine %s"
 msgstr "Éteindre la machine %s"
 
-#: core/machines.py:1131
+#: core/machines.py:1123
 #, python-format
 msgid "Are you sure you want to remotely shutdown machine %s?"
 msgstr ""
 "Êtes-vous sûr(e) de vouloir éteindre la machine <strong>%s</strong>&#160;?"
 
-#: core/machines.py:1135
+#: core/machines.py:1127
 msgid "Warn connected user(s) before shuting system down."
 msgstr ""
 "Avertir l(es) utilisateur(s) connecté(e)(s) que leur machine va s'éteindre."
 
-#: core/machines.py:1138
+#: core/machines.py:1130
 msgid "Please confirm operation"
 msgstr "SVP, confirmez l'opération"
 
-#: core/machines.py:1165
+#: core/machines.py:1157
 msgid "Massive shutdown"
 msgstr "Extinctions en masse"
 
-#: core/machines.py:1169
+#: core/machines.py:1161
 msgid ""
 "You can shutdown all currently running and/or idle machines. This is a quite "
 "dangerous operation, because users will be disconnected, and there is a "
@@ -6321,19 +6426,19 @@ msgstr ""
 "s'éteindre).<br /><br />Les machines seront éteintes <strong>UNE minute</"
 "strong> après que vous en ayez donné l'ordre."
 
-#: core/machines.py:1179
+#: core/machines.py:1171
 msgid "Shutdown <strong>active</strong> machines"
 msgstr "Éteindre les machines actuellement <strong>utilisées</strong>"
 
-#: core/machines.py:1181
+#: core/machines.py:1173
 msgid "Shutdown <strong>idle</strong> machines"
 msgstr "Éteindre les machines actuellement <strong>inutilisées</strong>"
 
-#: core/machines.py:1183
+#: core/machines.py:1175
 msgid "Shutdown <strong>asleep</strong> machines"
 msgstr "Éteindre toutes les machines actuellement <strong>en veille</strong>"
 
-#: core/machines.py:1185
+#: core/machines.py:1177
 msgid ""
 "Shutdown the <strong>administrator</strong> machine too<br/>(the one "
 "currently connected to the WMI)."
@@ -6341,19 +6446,19 @@ msgstr ""
 "Éteindre la machine de l'<strong>administrateur</strong> aussi<br /> (celle "
 "avec laquelle vous êtes actuellement connecté(e) à l'interface de gestion)."
 
-#: core/machines.py:1189
+#: core/machines.py:1181
 msgid "Warn connected users before shuting systems down."
 msgstr "Avertir les utilisateurs connectés que leur machine va s'éteindre."
 
-#: core/machines.py:1193
+#: core/machines.py:1185
 msgid "Choose machines to shutdown"
 msgstr "Choisissez les machines à éteindre"
 
-#: core/machines.py:1230
+#: core/machines.py:1222
 msgid "Energy saving policies"
 msgstr "Politiques d'économie d'énergie"
 
-#: core/machines.py:1233 core/machines.py:1276
+#: core/machines.py:1225 core/machines.py:1268
 msgid ""
 "CSV file-format is used by spreadsheets and most systems which offer import "
 "functionnalities. XML file-format is a modern exchange format, used in soma "
@@ -6370,62 +6475,62 @@ msgstr ""
 "d'enregistrer ou d'ouvrir le fichier d'export, il ne l'affichera pas comme "
 "une page web. Lorsque vous avez terminé, cliquez sur “Revenir”."
 
-#: core/machines.py:1242 core/machines.py:1285
+#: core/machines.py:1234 core/machines.py:1277
 #, python-format
 msgid "Which file format do you want the machines list to be exported to? %s"
 msgstr ""
 "Dans quel format de sortie voulez-vous exporter la liste des machines&#160;? "
 "%s"
 
-#: core/machines.py:1245 core/machines.py:1288
+#: core/machines.py:1237 core/machines.py:1280
 msgid "Please choose file format for export list"
 msgstr "Choisissez le format de fichier d'export"
 
-#: core/machines.py:1247 core/machines.py:1290
+#: core/machines.py:1239 core/machines.py:1282
 msgid "Export >>"
 msgstr "Exporter >>"
 
-#: core/machines.py:1272
+#: core/machines.py:1264
 msgid "Export machines list"
 msgstr "Exporter la liste des machines"
 
-#: core/machines.py:1319 core/machines.py:1358
+#: core/machines.py:1311 core/machines.py:1350
 msgid "managed"
 msgstr "accrochées"
 
-#: core/machines.py:1320 core/machines.py:1360
+#: core/machines.py:1312 core/machines.py:1352
 msgid "floating"
 msgstr "flottantes"
 
-#: core/machines.py:1333
+#: core/machines.py:1325
 msgid "Host name"
 msgstr "Nom de machine"
 
-#: core/machines.py:1334
+#: core/machines.py:1326
 msgid "IP address"
 msgstr "Adresse IP"
 
-#: core/machines.py:1335
+#: core/machines.py:1327
 msgid "Hardware address"
 msgstr "Adresse Ethernet"
 
-#: core/machines.py:1336
+#: core/machines.py:1328
 msgid "Expiry"
 msgstr "Délai d'expiration"
 
-#: core/machines.py:1337
+#: core/machines.py:1329
 msgid "Managed"
 msgstr "Accrochée"
 
-#: core/machines.py:1345
+#: core/machines.py:1337
 msgid "Click to sort in reverse order."
 msgstr "Cliquer pour classer dans l'ordre inverse."
 
-#: core/machines.py:1351
+#: core/machines.py:1343
 msgid "Click to sort on this column."
 msgstr "Cliquer pour classer sur cette colonne."
 
-#: core/machines.py:1364
+#: core/machines.py:1356
 #, python-format
 msgid ""
 "Host %s is in an unknown state. Nothing is possible. Please wait for a "
@@ -6434,7 +6539,7 @@ msgstr ""
 "La machine %s est dans un état inconnu, aucune action à distance n'est "
 "possible. Merci d'attendre sa reconnexion."
 
-#: core/machines.py:1367
+#: core/machines.py:1359
 #, python-format
 msgid ""
 "Host %s is offline, and cannot be powered on from here,Only from the machine "
@@ -6442,7 +6547,7 @@ msgid ""
 msgstr ""
 "La machine %s est éteinte. Elle ne peut pas être rallumée depuis l'interface."
 
-#: core/machines.py:1370
+#: core/machines.py:1362
 #, python-format
 msgid ""
 "Host %s is going to sleep, it will be unavailable in a small period of time."
@@ -6450,12 +6555,12 @@ msgstr ""
 "La machine %s est en train passer en veille, elle sera complètement "
 "indisponible d'ici peu."
 
-#: core/machines.py:1372 core/machines.py:1378 core/machines.py:1380
+#: core/machines.py:1364 core/machines.py:1370 core/machines.py:1372
 #, python-format
 msgid "Shutdown the machine %s"
 msgstr "Éteindre la machine %s"
 
-#: core/machines.py:1374
+#: core/machines.py:1366
 #, python-format
 msgid ""
 "Host %s is shutting down, it will be unavailable in a small period of time."
@@ -6463,64 +6568,64 @@ msgstr ""
 "La machine %s est en train de s'éteindre, elle sera complètement "
 "indisponible d'ici peu."
 
-#: core/machines.py:1376
+#: core/machines.py:1368
 #, python-format
 msgid "Machine %s is online but unmanageable (not Licorn® enabled)."
 msgstr ""
 "La machine %s est allumé, sans contrôle à distance possible (Licorn© n'est "
 "pas installé dessus, ou pas lancé, ou injoignable)."
 
-#: core/machines.py:1433
+#: core/machines.py:1425
 msgid "This machine has multiple network interfaces."
 msgstr ""
 "Cette machine a plusieurs interfaces réseaux et ses différentes adresses IP "
 "ont été regroupées."
 
-#: core/machines.py:1437
+#: core/machines.py:1429
 msgid "This machine is a virtual computer."
 msgstr "Cette machine est un hôte virtuel de type VMWare®."
 
-#: core/machines.py:1441
+#: core/machines.py:1433
 msgid "This machine runs an undetermined version of Linux®."
 msgstr "Cette machine tourne avec une version indéterminée de Linux®."
 
-#: core/machines.py:1446
+#: core/machines.py:1438
 msgid "This machine is a META IT/Licorn® server."
 msgstr "Cette machine est un serveur META IT/Licorn® original."
 
-#: core/machines.py:1450
+#: core/machines.py:1442
 msgid "This machine has Licorn® installed."
 msgstr "Cette machine est pourvue de Licorn®."
 
-#: core/machines.py:1454
+#: core/machines.py:1446
 msgid "This machine is an ALT® client."
 msgstr "Cette machine est un client ALT® original."
 
-#: core/machines.py:1458
+#: core/machines.py:1450
 msgid "This machine Debian installed."
 msgstr "Cette machine est installée sous Debian GNU/Linux."
 
-#: core/machines.py:1462
+#: core/machines.py:1454
 msgid "This machine is Ubuntu installed."
 msgstr "Cette machine est installée sous Ubuntu."
 
-#: core/machines.py:1466
+#: core/machines.py:1458
 msgid "This machine is manufactured by Apple® Computer Inc."
 msgstr "Cette machine est un produit Apple® Computer Inc."
 
-#: core/machines.py:1470
+#: core/machines.py:1462
 msgid "This machine is a Freebox appliance."
 msgstr "Cette machine est une Freebox."
 
-#: core/machines.py:1474
+#: core/machines.py:1466
 msgid "This machine is a network printer."
 msgstr "Cette machine est une imprimante réseau."
 
-#: core/machines.py:1478
+#: core/machines.py:1470
 msgid "This machine is a network scanner."
 msgstr "Cette machine est un scanner en réseau."
 
-#: core/machines.py:1496
+#: core/machines.py:1488
 msgid ""
 "Unmanage machine (remove it from configuration, in order to allow it to be "
 "managed by another server."
@@ -6529,7 +6634,7 @@ msgstr ""
 "configuration sur le serveur actuel, et la rendre disponible pour être "
 "accrochée à un autre serveur)."
 
-#: core/machines.py:1507
+#: core/machines.py:1499
 msgid ""
 "Manage machine (fix its IP address and configure various aspects of the "
 "client)."
@@ -6537,18 +6642,37 @@ msgstr ""
 "Accrocher la machine (fixer son adresse IP et configurer divers aspects de "
 "la machine, en stockant cette configuration sur le serveur)."
 
-#: core/machines.py:1529
+#: core/machines.py:1521
 msgid "<unknown>"
 msgstr "<inconnu>"
 
-#: core/machines.py:1554
+#: core/machines.py:1546
 #, python-format
 msgid "number of <strong>%s</strong> machines:"
 msgstr "nombre de machines <strong>%s</strong>&#160;:"
 
-#: core/machines.py:1567
+#: core/machines.py:1559
 msgid "<strong>Total number of machines:</strong>"
 msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
+
+#~ msgid "Run backup"
+#~ msgstr "Lancer une sauvegarde"
+
+#~ msgid "Backups on {mount_point}"
+#~ msgstr "Sauvegardes sur {mount_point}"
+
+#~ msgid "Shutdown machines"
+#~ msgstr "Éteindre des machines"
+
+#~ msgid "Shutdown machines on the network."
+#~ msgstr "Éteindre des machines sur le réseau."
+
+#~ msgid ""
+#~ "(device: <strong>{volume.name}</strong>, FS type: <strong>{volume.fstype}"
+#~ "</strong>)"
+#~ msgstr ""
+#~ "(périphérique&nbsp;: <strong>{volume.name}</strong>, système de "
+#~ "fichiers&nbsp;: <strong>{volume.fstype}</strong>)"
 
 #~ msgid ""
 #~ "No backup volume found. Please connect a backup volume to your server, "
@@ -7149,9 +7273,6 @@ msgstr "<strong>Nombre total de machines&nbsp;:</strong>"
 #~ msgid "Last backup on volume {0}:<br /> {1} ago,<br />next starting in {2}"
 #~ msgstr ""
 #~ "Dernière sauvegarde sur {0}:<br /> il y a {1},<br /> prochaine dans {2}"
-
-#~ msgid "Running %s in interactive mode."
-#~ msgstr "Exécution du scénario %s en mode intéractif."
 
 #~ msgid "Waiting again for any failed scenario…"
 #~ msgstr "De nouveau en attente de travaux échoués…"
