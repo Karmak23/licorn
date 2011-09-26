@@ -550,8 +550,7 @@ def edit(uri, http_user, name, **kwargs):
 @check_groups('edit_description')
 def edit_description(uri, http_user, gname, desc, **kwargs):
 
-
-	LMC.groups.by_name(gname).description = unquote_plus(desc)
+	LMC.groups.by_name(gname).description =  w.my_unquote(desc)
 
 	return (w.HTTP_TYPE_JSON, LMC.groups.by_name(gname).to_JSON())
 def edit_permissive(uri, http_user, gname, permissive, **kwargs):
@@ -899,7 +898,7 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 				'}'
 	 		'} ]'
 	 '}' % (_(u'Groups'), LMC.groups.to_JSON(selected=LMC.groups.select(filters.STANDARD)),
-		_(u"Name"), _(u"Description"), _(u"GID"), _(u"Skel"), 
+		_(u"Name"), _(u"Description"), _(u"GID"), _(u"Skel"),
 		_(u"System groups") if is_super_admin else _(u"Privileges"),
 		LMC.groups.to_JSON(selected=LMC.groups.select(_filter_priv)),
 		_(u"Priv."), _(u"Name"), _(u"Description"), _(u"GID")))
