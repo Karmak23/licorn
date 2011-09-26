@@ -933,7 +933,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			final_volume_list.extend(volume_list.split(','))
 
 		self.volumes_call(final_volume_list, 'unmount', force=force)
-	def mount_volumes(self, volumes):
+	def mount_volumes(self, volumes=None):
 		""" (re-)Mount devices (they must prior be connected).
 
 			This method internally calls the
@@ -948,10 +948,12 @@ class VolumesExtension(Singleton, LicornExtension):
 		# done in cli*. This is because of add not having the same syntax as
 		# mod.
 
-		final_volume_list = []
+		if volumes is None :
+			final_volume_list = self.volumes.itervalues()
 
-		for volume_list in volumes:
-			final_volume_list.extend(volume_list.split(','))
+		else:
+			for volume_list in volumes:
+				final_volume_list = volume_list.split(',')
 
 		self.volumes_call(final_volume_list, 'mount')
 	def get_CLI(self, opts, args):

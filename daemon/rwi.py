@@ -1221,8 +1221,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			LMC.extensions.volumes.rescan_volumes()
 			return
 
+		# TODO: we need the guess_* methods here, to add some flexiness to
+		# the CLI tools (e.g be able to say "sda3" instead of the full "/dev/sda3")
+
 		elif opts.all:
-			volumes = LMC.extensions.volumes.keys()
+			# volumes.mount_volumes() treats "None" arguments (very different
+			# from "[]") as saying "mount all please".
+			volumes = None
+
 		else:
 			volumes = args[1:]
 
