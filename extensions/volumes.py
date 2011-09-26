@@ -949,8 +949,8 @@ class VolumesExtension(Singleton, LicornExtension):
 		def stat_fs_to_str(volume):
 			free, total = volume.stats()
 			#print '>> path', path, 'stat', stat, 'free', free, 'total', total
-			return _(u', {0:.2}Gb/{1:.2}Gb free ({2:.1f}%)').format(
-				free, total, (free / total) * 100.0)
+			return _(u', {0:.2g}Gb/{1:.2g}Gb free ({2:.1%})').format(
+				free, total, (free / total))
 
 		return '\n'.join('%s[%s]%s' % (
 			stylize(ST_ENABLED if self.volumes[volkey].enabled
