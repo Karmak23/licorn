@@ -10,7 +10,6 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 import os, dbus, pyudev, select, re, errno
 
-from traceback import print_exc
 from threading import RLock
 
 from licorn.foundations           import logging, process, exceptions, pyutils
@@ -113,6 +112,7 @@ class UdevMonitorThread(LicornBasicThread):
 				if action == 'add':
 					if 'partition' in device.attributes:
 						LMC.extensions.volumes.add_volume_from_device(device)
+
 				elif action == 'change':
 					if 'partition' in device.attributes:
 
@@ -122,18 +122,18 @@ class UdevMonitorThread(LicornBasicThread):
 						LMC.extensions.volumes.add_volume_from_device(device)
 
 					else:
-						logging.progress('%s: unhandled action %s for device %s '
-							'(%s).' % (self.name, action, device,
-								', '.join(attr for attr in device.attributes)))
+						logging.progress(_(u'{0}: unhandled action {1} for '
+							u'device {2} ({3}).').format(self.name, action,
+								device, ', '.join(attr
+									for attr in device.attributes)))
 
 				elif action == 'remove':
 					LMC.extensions.volumes.del_volume_from_device(device)
 				else:
-					logging.progress('%s: unknown action %s for device %s (%s).' % (
+					logging.progress(_(u'{0}: unknown action {1} for '
+						u'device {2} ({3}).').format(
 						self.name, action, device,
 						', '.join(attr for attr in device.attributes)))
-
-
 
 			except (IOError, OSError), e:
 				if e.errno != errno.ENOENT:
@@ -175,12 +175,12 @@ class Volume:
 	}
 	#: Fixed path where removable volumes should be mounted. Currently set to
 	#: ``/media/`` (with the final '/' to speed up strings concatenations).
-	mount_base_path = '/media/'
+	mount_base_path = u'/media/'
 
 	#: The name of the special file which indicates the volume is reserved.
 	#: Currently ``/.org.licorn.reserved_volume`` (with the leading '/' to
 	#: speed up strings concatenations).
-	enabler_file    = '/.org.licorn.reserved_volume'
+	enabler_file    = u'/.org.licorn.reserved_volume'
 	def __init__(self, kernel_device, fstype, guid, label,
 									mount_point=None, supported=True,
 									volumes_extension=None):
@@ -199,10 +199,11 @@ class Volume:
 
 		else:
 			self.enabled = None
+
 		assert ltrace(TRACE_VOLUMES, '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
 	def __str__(self):
-		return 'volume %s[%s]%s' % (
+		return _(u'volume {0}[{1}]{2}').format(
 					stylize(ST_DEVICE, self.device),
 					stylize(ST_ATTR, self.fstype),
 					_(u' (on %s)') % stylize(ST_PATH, self.mount_point)
@@ -231,7 +232,8 @@ class Volume:
 			mount_point_base = self.mount_point
 			counter = 1
 			while os.path.exists(self.mount_point):
-				self.mount_point = '%s %s' % (mount_point_base, counter)
+				self.mount_point = _(u'{base} {counter}').format(
+								base=mount_point_base, counter=counter)
 				counter += 1
 
 		else:
@@ -243,8 +245,13 @@ class Volume:
 		"""
 		if self.mount_point:
 			stat = os.statvfs(self.mount_point)
+
+			# TODO: make the last 1024 variable, when stat.f_bsize takes different values.
+			# It seems we need it to be 768.0 on VFAT usb keys, don't know why.
+
 			return (stat.f_bfree * stat.f_bsize / (1024.0*1024.0*1024.0),
 					stat.f_blocks * stat.f_bsize / (1024.0*1024.0*1024.0))
+
 		raise VolumeException(_('{0}({1}) not mounted').format(self.device, self.fstype))
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
@@ -255,27 +262,38 @@ class Volume:
 				which can use any number of arguments.
 		"""
 
+		unmount = False
+
 		with self.lock:
 			if self.supported:
+				if self.mount_point is None:
+					unmount = self.mount(emit_event=False)
+
 				if os.path.exists(self.mount_point + Volume.enabler_file):
 
-					logging.info(_('{0}: Licorn® usage already enabled on {1}.'
+					logging.info(_(u'{0}: Licorn® usage already enabled on {1}.'
 						).format(stylize(ST_NAME, 'volumes'),
 							stylize(ST_PATH, self.mount_point)))
 				else:
 					open(self.mount_point + Volume.enabler_file, 'w').write('\n')
+
 					self.enabled = True
-					logging.notice(_('{0}: enabled Licorn® usage on {1}.'
+
+					logging.notice(_(u'{0}: enabled Licorn® usage on {1}.'
 						).format(stylize(ST_NAME, 'volumes'),
 							stylize(ST_PATH, self.mount_point)))
 
 					L_event_dispatch(priorities.NORMAL,
 							InternalEvent('volume_enabled', volume=self))
+
+				if unmount:
+					self.unmount(emit_event=False)
 			else:
-				logging.warning(_('{0}: cannot enable Licorn® usage on {1} '
-					'(unsupported FS {2}).').format(stylize(ST_NAME, 'volumes'),
+				logging.warning(_(u'{0}: cannot enable Licorn® usage on {1} '
+					u'(unsupported FS {2}).').format(stylize(ST_NAME, 'volumes'),
 						stylize(ST_PATH, self.mount_point),
 						stylize(ST_PATH, self.fstype)))
+
 	def disable(self, **kwargs):
 		""" Remove the special file at the root of the volume and thus unmark
 			it reserved for Licorn® usage.
@@ -284,21 +302,36 @@ class Volume:
 				meant to be called via :meth:`VolumesExtension.volumes_call`,
 				which can use any number of arguments.
 		"""
+
+		unmount = False
+
 		with self.lock:
+
+			if self.mount_point is None:
+				unmount = self.mount(emit_event=False)
+
 			if os.path.exists(self.mount_point + Volume.enabler_file):
-				L_event_dispatch(priorities.NORMAL,
-							InternalEvent('volume_disabled', volume=self))
+				# NOTE: the event must be sent *after* disabling the volume,
+				# else other depending extensions will find it still active
+				# if they test the `enabled` attribute.
 
 				os.unlink(self.mount_point + Volume.enabler_file)
 
 				self.enabled = False
 
-				logging.notice(_('{0}: disabled Licorn® usage on {1}.').format(
+				L_event_dispatch(priorities.NORMAL,
+							InternalEvent('volume_disabled', volume=self))
+
+				logging.notice(_(u'{0}: disabled Licorn® usage on {1}.').format(
 					stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
+
+				if unmount:
+					self.unmount(emit_event=False)
+
 			else:
 				logging.info(_(u'{0}: Licorn® usage already disabled on {1}.').format(
 				stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
-	def mount(self, **kwargs):
+	def mount(self, emit_event=True, **kwargs):
 		""" Mount a given volume, after having created its mount point
 			directory if needed. This method simply calls the :command:`mount`
 			program via the :func:`~licorn.foundations.process.execute`
@@ -324,7 +357,6 @@ class Volume:
 
 		with self.lock:
 			if not self.mount_point:
-
 				self.__compute_mount_point()
 
 				if not os.path.exists(self.mount_point):
@@ -337,6 +369,7 @@ class Volume:
 					mount_cmd = [ 'mount', '-t', self.fstype, '-o',
 						','.join(Volume.mount_options[self.fstype]),
 						self.device, self.mount_point ]
+
 				else:
 					# probably VFAT, NTFS or ISO9660. We need to find the
 					# user at console and give the device to him.
@@ -373,8 +406,8 @@ class Volume:
 					logging.warning(_(u'{0}: {1}').format(
 									stylize(ST_NAME, 'volumes'), output))
 				else:
-
-					L_event_dispatch(priorities.NORMAL,
+					if emit_event:
+						L_event_dispatch(priorities.NORMAL,
 							InternalEvent('volume_mounted', volume=self))
 
 					logging.notice(_(u'{0}: mounted device {1}({2}) at {3}.').format(
@@ -385,7 +418,9 @@ class Volume:
 
 			if self.supported:
 				self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
-	def unmount(self, force=False):
+
+		return True
+	def unmount(self, force=False, emit_event=True):
 		""" Unmount a volume and remove its mount point directory. """
 
 		assert ltrace(TRACE_VOLUMES, '| Volume.unmount(%s, %s)' % (
@@ -409,8 +444,8 @@ class Volume:
 					logging.warning(_(u'{0}: {1}').format(
 									stylize(ST_NAME, 'volumes'), output))
 				else:
-
-					L_event_dispatch(priorities.NORMAL,
+					if emit_event:
+						L_event_dispatch(priorities.NORMAL,
 							InternalEvent('volume_unmounted', volume=self))
 
 					logging.notice(_(u'{0}: unmounted device {1} from {2}.').format(
@@ -510,6 +545,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		self.accepted_fs = ('ext2', 'ext3', 'ext4', 'btrfs', 'xfs', 'jfs',
 			'reiserfs')
 
+		# TODO: implement LVM2 handlers...
 		self.container_fs = ('LVM2_member')
 
 		self.volumes = MixedDictObject('volumes')
@@ -517,6 +553,8 @@ class VolumesExtension(Singleton, LicornExtension):
 		# TODO: add our volumes to notifications, to change the status when
 		# administrator touches or unlinks special files in volume's root.
 		self.inotifications = []
+		if __debug__:
+			self.trace_name = self.trace_name
 	def initialize(self):
 		""" The extension is available if udev is OK and we can get a list of
 			already connected devices.
@@ -524,7 +562,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			Eventually, if udisks is present and enabled, we inhibit it.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
+		assert ltrace(self.trace_name, '> initialize()')
 
 		# we need the thread to be created to eventually add udisks-related
 		# methods a little later.
@@ -537,6 +575,7 @@ class VolumesExtension(Singleton, LicornExtension):
 									"/org/freedesktop/UDisks")
 		except:
 			self.udisks_object = None
+
 		else:
 			self.udisks_interface = dbus.Interface(self.udisks_object,
 										'org.freedesktop.UDisks')
@@ -547,6 +586,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 			self.threads.udevmonitor.pre_run_method = self.__inhibit_udisks
 			self.threads.udevmonitor.post_run_method = self.__uninhibit_udisks
+
 		try:
 			# get the list of currently connected devices.
 			self.rescan_volumes()
@@ -558,21 +598,21 @@ class VolumesExtension(Singleton, LicornExtension):
 			self.available = True
 
 		except Exception, e:
-			print_exc(e)
+			pyutils.print_exception_if_verbose()
 			logging.warning2(_(u'{0}: not available because {1}.').format(
 				stylize(ST_NAME, self.name), e))
 			self.available = False
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
+		assert ltrace(self.trace_name, '< initialize(%s)' % self.available)
 
 		return self.available
 	def is_enabled(self):
 		""" Volumes extension is always enabled if available, return always
 			True. """
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
+		assert ltrace(self.trace_name, '| is_enabled() → True')
 
 		logging.info(_(u'{0}: started extension with pyudev v{2} '
-			'on top of udev v{1}.').format(stylize(ST_NAME, self.name),
+			u'on top of udev v{1}.').format(stylize(ST_NAME, self.name),
 				stylize(ST_UGID, pyudev.udev_version()),
 				stylize(ST_UGID, pyudev.__version__)))
 
@@ -595,13 +635,13 @@ class VolumesExtension(Singleton, LicornExtension):
 			extension is attached to the :class:`SystemController` (for pure
 			logical purpose, because it doesn't load any data into it). """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| system_load()')
+		assert ltrace(self.trace_name, '| system_load()')
 		pass
 
 	def __inhibit_udisks(self):
 		""" TODO """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __inhibit_udisks(%s)' % (
+		assert ltrace(self.trace_name, '| __inhibit_udisks(%s)' % (
 				self.udisks_object is not None))
 
 		if self.udisks_object is not None \
@@ -611,7 +651,7 @@ class VolumesExtension(Singleton, LicornExtension):
 	def __uninhibit_udisks(self):
 		""" TODO """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __uninhibit_udisks(%s)' % (
+		assert ltrace(self.trace_name, '| __uninhibit_udisks(%s)' % (
 						self.udisks_object is not None))
 
 		if self.udisks_object is not None \
@@ -625,7 +665,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			them inside us (creating the corresponding :class:`Volume` objects,
 			and mount them if not already mounted. """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| rescan_volumes()')
+		assert ltrace(self.trace_name, '| rescan_volumes()')
 
 		udev_context = pyudev.Context()
 
@@ -652,7 +692,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			volumes are pluged in/out) and keep useful informations inside us
 			for future use. """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __update_cache_informations()')
+		assert ltrace(self.trace_name, '| __update_cache_informations()')
 
 		self.proc_mounts = {}
 		for line in open('/proc/mounts').readlines():
@@ -718,7 +758,7 @@ class VolumesExtension(Singleton, LicornExtension):
 								for x in self.excluded_mounts))
 
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()],
+		assert ltrace(self.trace_name,
 									'|  __system_partition(device) → False')
 		return False
 	def add_volume_from_device(self, device=None, by_string=None):
@@ -729,7 +769,7 @@ class VolumesExtension(Singleton, LicornExtension):
 				``/dev/sda1``). **Currently ignored**.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| add_volume_from_device(%s)' % device)
+		assert ltrace(self.trace_name, '| add_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
@@ -742,7 +782,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 			if kernel_device in self.volumes.keys():
 				logging.progress(_(u'{0}: skipped already known '
-					'volume {1}.').format(stylize(ST_NAME, self.name),
+					u'volume {1}.').format(stylize(ST_NAME, self.name),
 						self.volumes[kernel_device]))
 				# see if we got to remount this one now.
 				self.volumes[kernel_device].mount()
@@ -753,19 +793,19 @@ class VolumesExtension(Singleton, LicornExtension):
 			if kernel_device not in self.blkid.keys() \
 				or self.blkid[kernel_device]['type'] in self.container_fs:
 				logging.progress(_(u'{0}: skipped LMV/extended '
-					'partition {1}.').format(stylize(ST_NAME, self.name),
+					u'partition {1}.').format(stylize(ST_NAME, self.name),
 						stylize(ST_DEVICE, kernel_device)))
 				return
 
 			if 'uuid' not in self.blkid[kernel_device]:
 				logging.progress(_(u'{0}: skipped unformatted '
-					'partition {1}.').format(stylize(ST_NAME, self.name),
+					u'partition {1}.').format(stylize(ST_NAME, self.name),
 						stylize(ST_DEVICE, kernel_device)))
 				return
 
 			if self.__system_partition(kernel_device):
 				logging.progress(_(u'{0}: skipped system partition '
-					'{1}.').format(stylize(ST_NAME, self.name),
+					u'{1}.').format(stylize(ST_NAME, self.name),
 						stylize(ST_DEVICE, kernel_device)))
 				return
 
@@ -785,7 +825,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 				if return_now:
 					logging.progress(_(u'{0}: skipped partition {1} (excluded '
-						'{2} filesystem).').format(stylize(ST_NAME, self.name),
+						u'{2} filesystem).').format(stylize(ST_NAME, self.name),
 							stylize(ST_DEVICE, kernel_device),
 							stylize(ST_ATTR, self.blkid[kernel_device]['type'])))
 					return
@@ -821,7 +861,7 @@ class VolumesExtension(Singleton, LicornExtension):
 				``/dev/sda1``). **Currently ignored**.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| del_volume_from_device(%s)' % device)
+		assert ltrace(self.trace_name, '| del_volume_from_device(%s)' % device)
 
 		if by_string and device is None:
 			print '>> implement getting a udev device from a string'
@@ -872,7 +912,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		# TODO: implement all of this with reverse mappings dicts, this will be
 		# much-much simpler and won't duplicate the code...
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| volumes_call(%s, %s)' % (volumes, method_name))
+		assert ltrace(self.trace_name, '| volumes_call(%s, %s)' % (volumes, method_name))
 
 		with self.lock:
 			devices        = self.keys()
@@ -894,7 +934,7 @@ class VolumesExtension(Singleton, LicornExtension):
 
 				else:
 					logging.warning2(_(u'{0}: skipped non existing device or '
-						'mount_point {1}.').format(stylize(ST_NAME, self.name),
+						u'mount_point {1}.').format(stylize(ST_NAME, self.name),
 							volume))
 	def enable_volumes(self, volumes):
 		""" try to enable the given volumes.
@@ -969,7 +1009,7 @@ class VolumesExtension(Singleton, LicornExtension):
 			return _(u', {0:.2f}Gb/{1:.2f}Gb free ({2:.1%})').format(
 				free, total, (free / total))
 
-		return '\n'.join('%s[%s]%s' % (
+		return u'\n'.join(u'%s[%s]%s' % (
 			stylize(ST_ENABLED if self.volumes[volkey].enabled
 				else ST_DISABLED, volume.device),
 			stylize(ST_ATTR, volume.fstype),
@@ -978,7 +1018,7 @@ class VolumesExtension(Singleton, LicornExtension):
 				stat_fs_to_str(volume))
 					if volume.mount_point else _(u' not mounted'),
 			) for volkey, volume in sorted(self.volumes.items())) + \
-				'\n' if len(self.volumes) > 0 else ''
+				u'\n' if len(self.volumes) > 0 else u''
 	def keys(self):
 		with self.lock:
 			return self.volumes.keys()

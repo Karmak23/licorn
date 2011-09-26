@@ -389,7 +389,7 @@ def menu(uri):
 	else:
 		classes[uri.split('/')[1].split('.')[0]] = ' class="active"'
 
-	return '''
+	return u'''
 <div id="mainnav" class="nav">
 	<div class="menu-item" >
 		<div class="menu-title current">
@@ -468,13 +468,13 @@ def menu(uri):
 			<span class="menu-content-item">
 				<img src="/images/24x24/shutdown.png"/>
 				<span class="menu-content-text">
-				blabla
+				item 1
 				</span>
 			</span>
 			<span class="menu-content-item">
 				<img src="/images/24x24/shutdown.png"/>
 				<span class="menu-content-text">
-				blabla
+				item 2
 				</span>
 			</span>
 		</div>
@@ -506,7 +506,7 @@ def menu(uri):
 		_('Add'), _('Import'),
 		_('Manage groups and shared data.'), _('Groups'),
 		_('Add'), _('Import'),
-		'\n'.join([ '''
+		u'\n'.join([ '''
 		<div class="menu-item" >
 			<div class="menu-title">
 				<a href="/{menu_uri}/" class="menu_link" title="{menu_alt}">
@@ -530,7 +530,9 @@ def menu(uri):
 				</span>
 			'''.format(
 				sub_menu_icon = icon,
-				sub_menu_text = name) for name, link, alt, class_text, icon, fct in ext.context_menu()])
+				sub_menu_text = name
+					if link is None
+					else u'<a href="%s">%s</a>' % (link, name)) for name, link, alt, class_text, icon, fct in ext.context_menu()])
 			) for ext in wmi.__dict__.values() if hasattr(ext, 'uri') ]
 		),
 		 _('Manage Internet connexion and parameters, firewall protection, URL filter and e-mail parameters.'), _('Internet'),

@@ -806,6 +806,26 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	background-color: #CB4B4B;
 }
 
+.volumes_list {
+	font-size: 90%;
+	margin-top: 20px;
+}
+
+.volumes_list li {
+	margin-top: 20px;
+}
+
+.volumes_list ul {
+	margin-top: 5px;
+}
+.volumes_list ul li {
+	white-space: nowrap;
+	#padding-left: 10px;
+	margin-left: 5px;
+	margin-top: 0;
+	line-height: 0.8em;
+}
+
 .backups_important {
 	text-align: center;
 	margin: 10px 10%;

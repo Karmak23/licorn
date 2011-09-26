@@ -65,9 +65,12 @@ class WMIObject(object):
 
 		#del self._wmi_name, self._wmi_alt_string, self._wmi_context_menu
 
-		self.wmi.successfull_redirect = (uri + '/main'
+		self.wmi.successfull_redirect = ((uri + '/main')
 											if successfull_redirect is None
-											else successfull_redirect)
+											else (successfull_redirect
+												+ '/'
+													if successfull_redirect[-1] != '/'
+													else ''))
 		self.wmi.rewind_message       = _('<br /><br />Go back with your '
 											'browser, double-check data and '
 											'validate the web-form.')
@@ -196,7 +199,7 @@ display_{name}({countdown_seconds});
 		hour=_('hour'), hours=_('hours'),
 		minute=_('minute'), minutes=_('minutes'),
 		second=_('second'), seconds=_('seconds'),
-		refresh_uri=uri if uri else ("/" + self.wmi.uri),
+		refresh_uri=uri if uri else ('/%s/' % self.wmi.uri),
 		limit=limit,
 		operation='+' if limit else '-',
 		counter_test='<=' if limit else '>='
