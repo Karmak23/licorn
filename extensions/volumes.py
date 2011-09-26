@@ -243,8 +243,8 @@ class Volume:
 		"""
 		if self.mount_point:
 			stat = os.statvfs(self.mount_point)
-			return (stat.f_bfree * stat.f_bsize / (1024.0*1024.0*768.0),
-					stat.f_blocks * stat.f_bsize / (1024.0*1024.0*768.0))
+			return (stat.f_bfree * stat.f_bsize / (1024.0*1024.0*1024.0),
+					stat.f_blocks * stat.f_bsize / (1024.0*1024.0*1024.0))
 		raise VolumeException(_('{0}({1}) not mounted').format(self.device, self.fstype))
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
@@ -949,7 +949,7 @@ class VolumesExtension(Singleton, LicornExtension):
 		def stat_fs_to_str(volume):
 			free, total = volume.stats()
 			#print '>> path', path, 'stat', stat, 'free', free, 'total', total
-			return _(u', {0:.2g}Gb/{1:.2g}Gb free ({2:.1%})').format(
+			return _(u', {0:.2f}Gb/{1:.2f}Gb free ({2:.1%})').format(
 				free, total, (free / total))
 
 		return '\n'.join('%s[%s]%s' % (
