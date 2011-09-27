@@ -80,7 +80,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 				simply not installed).
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
+		assert ltrace(self.trace_name, '> initialize()')
 
 		if os.path.exists(self.paths.sshd_binary) \
 				and os.path.exists(self.paths.sshd_config):
@@ -95,7 +95,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 					stylize(ST_PATH, self.paths.sshd_config)))
 
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< initialize(%s)' % self.available)
+		assert ltrace(self.trace_name, '< initialize(%s)' % self.available)
 		return self.available
 	def is_enabled(self):
 		""" OpenSSH server is enabled when the service-disabler
@@ -117,7 +117,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 		if must_be_running and not self.running(self.paths.pid_file):
 			self.service(svccmds.START)
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → %s' % must_be_running)
+		assert ltrace(self.trace_name, '| is_enabled() → %s' % must_be_running)
 		return must_be_running
 	def check(self, batch=False, auto_answer=None):
 		""" check our OpenSSH needed things (the ``remotessh`` group and our
@@ -134,11 +134,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 			When I've got time. As of now, stay as much careful as we can.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check()')
-
-		logging.progress(_('{0}: checking existence of group {1}…').format(
-							stylize(ST_NAME, self.name),
-							stylize(ST_NAME, self.group)))
+		assert ltrace(self.trace_name, '> check()')
 
 		need_reload = False
 
@@ -186,7 +182,7 @@ class OpensshExtension(Singleton, ServiceExtension):
 		if need_reload or need_rewrite:
 			self.service(svccmds.RELOAD)
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< check()')
+		assert ltrace(self.trace_name, '< check()')
 	def enable(self, batch=False, auto_answer=None):
 		""" Start ``SSHd``, after having carefully checked all our needed
 			parameters and unlinked the service disabler file.
