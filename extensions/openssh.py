@@ -14,13 +14,14 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations           import fsapi
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.classes   import ConfigFile
 from licorn.foundations.constants import services, svccmds
 
 from licorn.core               import LMC
 from licorn.extensions         import ServiceExtension
+from licorn.daemon             import roles
 
 class OpensshExtension(Singleton, ServiceExtension):
 	""" Handle [our interesting subset of] OpenSSH configuration and options.
@@ -138,21 +139,26 @@ class OpensshExtension(Singleton, ServiceExtension):
 
 		need_reload = False
 
-		# TODO if not self.group in LMC.groups.by_name:
-		if not LMC.groups.exists(name=self.group):
-			need_reload = True
-			if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
-								'created. Do it?').format(
-								stylize(ST_NAME, self.name),
-								stylize(ST_NAME, self.group)),
-							auto_answer=auto_answer):
-				LMC.groups.add_Group(name=self.group,
-					description=_(u'Users allowed to connect via SSHd'),
-					system=True, batch=True)
-			else:
-				raise exceptions.LicornCheckError(
-						_(u'{0}: group {1} must exist before continuing.').format(
-						stylize(ST_NAME, self.name), stylize(ST_NAME, self.group)))
+		if LMC.configuration.licornd.role != roles.CLIENT:
+			# The 'remotessh' group is meant to be checked on the server side.
+			# The client connects to LDAP (or anything equivalent), and the
+			# group is expected to be there.
+
+			# TODO if not self.group in LMC.groups.by_name:
+			if not LMC.groups.exists(name=self.group):
+				need_reload = True
+				if batch or logging.ask_for_repair(_(u'{0}: group {1} must be '
+									'created. Do it?').format(
+									stylize(ST_NAME, self.name),
+									stylize(ST_NAME, self.group)),
+								auto_answer=auto_answer):
+					LMC.groups.add_Group(name=self.group,
+						description=_(u'Users allowed to connect via SSHd'),
+						system=True, batch=True)
+				else:
+					raise exceptions.LicornCheckError(
+							_(u'{0}: group {1} must exist before continuing.').format(
+							stylize(ST_NAME, self.name), stylize(ST_NAME, self.group)))
 
 		logging.progress(_('Checking good default values in %s…') %
 				stylize(ST_PATH, self.paths.sshd_config))
