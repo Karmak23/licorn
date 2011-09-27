@@ -15,7 +15,7 @@ from rlcompleter import Completer
 import logging
 from styles    import *
 from base      import Singleton, NamedObject
-from ltrace    import mytime
+from ltrace    import mytime, ltrace
 from ltraces   import *
 
 curses.setupterm()
