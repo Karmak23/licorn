@@ -21,7 +21,7 @@ from licorn.foundations           import pyutils, hlstr, ttyutils
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.ltraces   import *
 from licorn.foundations.styles    import *
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, verbose
 from licorn.foundations.messaging import MessageProcessor
 
 from licorn.core           import LMC
