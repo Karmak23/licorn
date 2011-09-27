@@ -553,8 +553,6 @@ class VolumesExtension(Singleton, LicornExtension):
 		# TODO: add our volumes to notifications, to change the status when
 		# administrator touches or unlinks special files in volume's root.
 		self.inotifications = []
-		if __debug__:
-			self.trace_name = self.trace_name
 	def initialize(self):
 		""" The extension is available if udev is OK and we can get a list of
 			already connected devices.

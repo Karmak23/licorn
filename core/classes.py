@@ -1649,6 +1649,9 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: indicates that this module is meant to be used on server only (not
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
+
+		if __debug__:
+			self.trace_name = globals()['TRACE_' + self.name.upper()]
 	def __str__(self):
 		return 'module %s' % stylize(ST_NAME, self.name)
 	def __repr__(self):
