@@ -156,8 +156,16 @@ class SystemController(Singleton, CoreController):
 		""" TODO """
 		uid = process.find_network_client_uid(
 			LMC.configuration.licornd.pyro.port, client_socket, local=False)
-		assert ltrace(TRACE_SYSTEM, '| uid_connecting_from(%s) -> %s(%s)' % (
-			client_socket, LMC.users.uid_to_login(uid), uid))
+
+		if __debug__:
+			if LMC.configuration.licornd.role == roles.CLIENT:
+				resolve = lambda x: pwd.getpwuid(x).pw_name
+
+			else:
+				resolve = LMC.users.uid_to_login
+
+			assert ltrace(TRACE_SYSTEM, '| uid_connecting_from(%s) -> %s(%s)' % (
+				client_socket, resolve(uid), uid))
 		return uid
 	def shutdown(self, delay=1, warn_users=True):
 		""" shutdown the local machine. """

@@ -120,27 +120,31 @@ class LicornDaemon(Singleton):
 							# Service threads are not daemon, they must
 							# terminate before we quit.
 							daemon=False))
-		self.__queues.aclcheckQ = PriorityQueue()
-		self.__threads.append(ACLCkeckerThread(
-							in_queue=self.__queues.aclcheckQ,
-							peers_min=self.configuration.threads.aclcheck.min,
-							peers_max=self.configuration.threads.aclcheck.max,
-							licornd=self,
-							daemon=False))
-		self.__queues.networkQ = PriorityQueue()
-		self.__threads.append(NetworkWorkerThread(
-							in_queue=self.__queues.networkQ,
-							peers_min=self.configuration.threads.network.min,
-							peers_max=self.configuration.threads.network.max,
-							licornd=self))
+
+		if LMC.configuration.licornd.role != roles.CLIENT:
+			self.__queues.aclcheckQ = PriorityQueue()
+			self.__threads.append(ACLCkeckerThread(
+								in_queue=self.__queues.aclcheckQ,
+								peers_min=self.configuration.threads.aclcheck.min,
+								peers_max=self.configuration.threads.aclcheck.max,
+								licornd=self,
+								daemon=False))
+
+			self.__queues.networkQ = PriorityQueue()
+			self.__threads.append(NetworkWorkerThread(
+								in_queue=self.__queues.networkQ,
+								peers_min=self.configuration.threads.network.min,
+								peers_max=self.configuration.threads.network.max,
+								licornd=self))
+
+			__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
+			__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
+			__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
+			__builtin__.__dict__['L_network_wait']     = self.__network_wait
 
 		# make them accessible everywhere.
 		__builtin__.__dict__['L_service_enqueue']  = self.__service_enqueue
 		__builtin__.__dict__['L_service_wait']     = self.__service_wait
-		__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
-		__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
-		__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
-		__builtin__.__dict__['L_network_wait']     = self.__network_wait
 
 		# create the Event Manager, and map its methods to us.
 		evt = self.__threads._eventmanager = EventManager(self)
@@ -154,31 +158,32 @@ class LicornDaemon(Singleton):
 		__builtin__.__dict__['L_event_collect']    = evt.collect
 		__builtin__.__dict__['L_event_uncollect']  = evt.uncollect
 
-		# create the INotifier thread, and map its WatchManager methods to
-		# us, they will be used by controllers, extensions and every single
-		# core object.
-		if self.configuration.inotifier.enabled:
-			ino = self.__threads._inotifier = INotifier(self)
+		if LMC.configuration.licornd.role != roles.CLIENT:
+			# create the INotifier thread, and map its WatchManager methods to
+			# us, they will be used by controllers, extensions and every single
+			# core object.
+			if self.configuration.inotifier.enabled:
+				ino = self.__threads._inotifier = INotifier(self)
 
-			ino.start()
+				ino.start()
 
-			# proxy methods to the INotifier (generally speaking, core objects
-			# should cal them via the daemon, only.
-			__builtin__.__dict__['L_inotifier_add']            = ino._wm.add_watch
-			__builtin__.__dict__['L_inotifier_del']            = ino._wm.rm_watch
-			__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
-			__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
-			__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
+				# proxy methods to the INotifier (generally speaking, core objects
+				# should cal them via the daemon, only.
+				__builtin__.__dict__['L_inotifier_add']            = ino._wm.add_watch
+				__builtin__.__dict__['L_inotifier_del']            = ino._wm.rm_watch
+				__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
+				__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
+				__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
 
-		else:
-			def inotifier_disabled(*args, **kwargs):
-				pass
+			else:
+				def inotifier_disabled(*args, **kwargs):
+					pass
 
-			__builtin__.__dict__['L_inotifier_add']            = inotifier_disabled
-			__builtin__.__dict__['L_inotifier_del']            = inotifier_disabled
-			__builtin__.__dict__['L_inotifier_watches']        = inotifier_disabled
-			__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
-			__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
+				__builtin__.__dict__['L_inotifier_add']            = inotifier_disabled
+				__builtin__.__dict__['L_inotifier_del']            = inotifier_disabled
+				__builtin__.__dict__['L_inotifier_watches']        = inotifier_disabled
+				__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
+				__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
 
 		# NOTE: the CommandListener must be launched prior to anything, to
 		# ensure connection validation form clients and other servers are
@@ -206,13 +211,13 @@ class LicornDaemon(Singleton):
 											pids_to_wake=self.pids_to_wake)
 			self.__threads.CommandListener.start()
 
+			if self.configuration.inotifier.enabled:
+				ino.collect()
+
 		# now that LMC is setup, collect event methods and inotifies.
 		# NOTE: this is now done "au fil de l'eau", by the controllers
 		# __init__() methods.
 		#evt.collect()
-
-		if self.configuration.inotifier.enabled:
-			ino.collect()
 	def __init_daemon_phase_2(self):
 		""" TODO. """
 
@@ -284,7 +289,7 @@ class LicornDaemon(Singleton):
 				th.stop()
 				time.sleep(0.01)
 
-		if self.configuration.inotifier.enabled:
+		if LMC.configuration.licornd.role != roles.CLIENT and self.configuration.inotifier.enabled:
 			assert ltrace(TRACE_THREAD, 'stopping thread INotifier.')
 			if self.__threads._inotifier.is_alive():
 				self.__threads._inotifier.stop()

@@ -16,16 +16,15 @@ Licorn OpenLDAP backend - http://docs.licorn.org/core/backends/openldap.html
 
 """
 
-import os
-import ldap as pyldap
-import hashlib
-from base64 import encodestring, decodestring
+import os, time, hashlib, base64
+import ldap      as pyldap
+import ldap.sasl as pyldapsasl
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import readers, process, pyutils, ldaputils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Enumeration, Singleton
 from licorn.foundations.constants import backend_actions
 
@@ -34,10 +33,10 @@ from licorn.core.users            import User
 from licorn.core.groups           import Group
 from licorn.core.backends         import NSSBackend, UsersBackend, GroupsBackend
 
-class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
-	""" OpenLDAP Backend for users and groups.
+from licorn.daemon                import roles
 
-	"""
+class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
+	""" OpenLDAP Backend for users and groups. """
 
 	init_ok = False
 
@@ -71,23 +70,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		twice.
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, '| load_defaults().')
-
-		if LMC.configuration.licornd.role == 'client':
-			waited = 0.1
-			while LMC.configuration.server_main_address is None:
-				#
-				time.sleep(0.1)
-				waited += 0.1
-				if waited > 5:
-					# FIXME: this is not the best thing to do, but server
-					# detection needs a little more love and thinking.
-					raise exceptions.LicornRuntimeException(
-						'No server detected, bailing out…' )
-			server = LMC.configuration.server_main_address
-
-		else:
-			server = '127.0.0.1'
+		assert ltrace(TRACE_OPENLDAP, '| load_defaults()')
 
 		# Stay local (unix socket) for nows
 		# if server is None:
@@ -137,8 +120,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				'nss_base_passwd',
 				'nss_base_shadow'):
 				value = getattr(self, attr)
+
 				try:
 					value.index(self.base)
+
 				except ValueError:
 					setattr(self, attr, '%s,%s' % (value, self.base))
 
@@ -188,7 +173,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				else:
 					raise
 
+			self.find_licorn_ldap_server()
+
 			self.check_defaults()
+
+			assert ltrace(TRACE_OPENLDAP, '| pyldap.initialize({0})'.format(self.uri))
 
 			self.openldap_conn = pyldap.initialize(self.uri)
 
@@ -196,12 +185,39 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace(TRACE_OPENLDAP, '< initialize(%s)' % self.available)
 		return self.available
+	def find_licorn_ldap_server(self):
+
+		if LMC.configuration.licornd.role == roles.CLIENT:
+			waited = 0.1
+			while LMC.configuration.server_main_address is None:
+				#
+				time.sleep(0.1)
+				waited += 0.1
+				if waited > 5:
+					# FIXME: this is not the best thing to do, but server
+					# detection needs a little more love and thinking.
+					raise exceptions.LicornRuntimeException(
+						'No server detected, bailing out…' )
+
+			self.uri = 'ldap://' + LMC.configuration.server_main_address
+			assert ltrace(TRACE_OPENLDAP, '| find_licorn_ldap_server() -> %s' % self.uri)
+
+		# else, keep the default ldapi:/// (local socket) URI.
+		#else:
+			# FIXME: if in cluster mode, 127.0.0.1 could be not the best option.
+			#self. = '127.0.0.1'
 	def is_enabled(self):
+
+		assert ltrace(TRACE_OPENLDAP, '| is_enabled()')
 
 		if NSSBackend.is_enabled(self):
 
 			try:
-				self.sasl_bind()
+				if LMC.configuration.licornd.role == roles.CLIENT:
+					self.bind(need_write_access=True)
+				else:
+					self.sasl_bind()
+
 				return True
 
 			except pyldap.SERVER_DOWN:
@@ -211,13 +227,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 						stylize(ST_NAME, self.name),
 						stylize(ST_URL, self.uri),
 						stylize(ST_COMMENT, 'ldap')))
-				self.enabled = False
 				return False
 
 		else:
 			# not enabled at NSS level, sufficient to notice we are not used.
 			return False
-
 	def check_defaults(self):
 		""" create defaults if they don't exist in current configuration. """
 
@@ -250,13 +264,14 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace(TRACE_OPENLDAP, '| enable_backend()')
 
-		if not ('ldap' in LMC.configuration.nsswitch['passwd'] and \
-			'ldap' in LMC.configuration.nsswitch['shadow'] and \
-			'ldap' in LMC.configuration.nsswitch['group']) :
+		need_save = False
 
-			LMC.configuration.nsswitch['passwd'].append('ldap')
-			LMC.configuration.nsswitch['shadow'].append('ldap')
-			LMC.configuration.nsswitch['group'].append('ldap')
+		for key in ('passwd', 'shadow', 'group'):
+			if 'ldap' not in LMC.configuration.nsswitch[key]:
+				LMC.configuration.nsswitch[key].remove('ldap')
+				need_save = True
+
+		if need_save:
 			LMC.configuration.save_nsswitch()
 
 		self.check_system_files(batch=True)
@@ -283,26 +298,32 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		assert ltrace(TRACE_OPENLDAP, '| disable_backend()')
 
+		need_save = False
+
 		for key in ('passwd', 'shadow', 'group'):
 			try:
 				LMC.configuration.nsswitch[key].remove('ldap')
-			except KeyError:
+				need_save = True
+
+			except IndexError:
 				pass
 
-		LMC.configuration.save_nsswitch()
+		if need_save:
+			LMC.configuration.save_nsswitch()
 
 		return True
 	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
 
-		if not self.available:
+		if not self.available or  LMC.configuration.licornd.role == roles.CLIENT:
+			assert ltrace(TRACE_OPENLDAP, '| DONT check(): not available or CLIENT role')
 			return
 
 		assert ltrace(TRACE_OPENLDAP, '> check(%s)' % (batch))
 
 		if process.whoami() != 'root' and not self.bind_as_admin:
-			logging.warning('''%s: you must be root or have cn=admin access'''
-			''' to continue.''' % self.name)
+			logging.warning(_(u'{0}: you must be root or have cn=admin access'
+				u' to continue.').format(self.name))
 			return
 
 		self.sasl_bind()
@@ -421,7 +442,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		if pyutils.check_file_against_dict(self.files.openldap_conf,
 				(
 					('base',         None),
-					('uri',          None),
+					('uri',          self.uri
+							if LMC.configuration.licornd.role == roles.CLIENT
+							else 'ldapi:///'),
 					('rootbinddn',   None),
 					('pam_password', 'md5'),
 					('ldap_version', 3)
@@ -500,19 +523,18 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		by the way, fix #133.
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, 'binding as root in SASL/external mode.')
+		assert ltrace(TRACE_OPENLDAP, ' | sasl_bind(): as root in SASL/external mode.')
 
-		import ldap.sasl as pyldapsasl
-		auth=pyldapsasl.external()
-		self.openldap_conn.sasl_interactive_bind_s('', auth)
+		self.openldap_conn.sasl_interactive_bind_s('', pyldapsasl.external())
 	def bind(self, need_write_access=True):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
-		assert ltrace(TRACE_OPENLDAP,'binding as %s.' % (
-			stylize(ST_LOGIN, self.bind_dn)))
+
+		assert ltrace(TRACE_OPENLDAP,' | bind(): as %s.' % (stylize(ST_LOGIN, self.bind_dn)))
 
 		if self.bind_as_admin:
 			try:
 				self.openldap_conn.bind_s(self.bind_dn, self.secret, pyldap.AUTH_SIMPLE)
+
 			except pyldap.INVALID_CREDENTIALS:
 				# in rare cases, the error could raise because the LDAP DB is
 				# totally empty.
@@ -522,6 +544,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				self.sasl_bind()
 		else:
 			if process.whoami() == 'root':
+
 				self.sasl_bind()
 			else:
 				if need_write_access:
@@ -548,14 +571,14 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		def password_decode(value):
 			try:
 				# get around an error where password is not base64 encoded.
-				password = decodestring(value.split('}',1)[1])
+				password = base64.decodestring(value.split('}',1)[1])
 			except Exception:
 				password = value
 			return password
 		def gecos_decode(value):
 			try:
 				# get around an error where password is not base64 encoded.
-				gecos = decodestring(value)
+				gecos = base64.decodestring(value)
 			except:
 				gecos = value
 
@@ -705,10 +728,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				# GECOS is IA5 only (ASCII 7bit). Anyway, it seems not used
 				# nowadays, and CN is prefered. We fill it for [put anything
 				# usefull here] purposes only.
-				'gecos'         : encodestring(orig_user.gecos).strip(),
+				'gecos'         : base64.encodestring(orig_user.gecos).strip(),
 
 				# prepare this field in the form slapd expects it.
-				'userPassword'  : '{SHA}%s' % encodestring(
+				'userPassword'  : '{SHA}%s' % base64.encodestring(
 												orig_user.userPassword).strip()
 			}
 

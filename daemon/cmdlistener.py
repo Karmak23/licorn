@@ -146,6 +146,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 							u'connection from {0}:{1} (was {2}), '
 							u'denying request.').format(
 								client_addr, client_socket, e))
+					pyutils.print_exception_if_verbose()
 
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
 

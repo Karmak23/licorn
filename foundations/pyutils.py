@@ -159,10 +159,14 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 
 	return time_delta_string_wrapper % time_delta_string
 def check_file_against_dict(conf_file, defaults, configuration,
-	batch=False, auto_answer=None):
+										batch=False, auto_answer=None):
 	''' Check if a file has some configuration directives,
 	and check against values if given.
 	If the value is None, only the directive existence is tested. '''
+
+	# FIXME: move out configuration and use LMC.configuration
+	# FIXME 2: move this method out of here (if it needs LMC,
+	# it must not be in foundations)!!
 
 	from licorn.foundations import readers
 

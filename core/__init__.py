@@ -234,15 +234,16 @@ class LicornMasterController(MixedDictObject):
 			# sort of things).
 			self.backends.check(batch=True)
 
-			# load common core objects.
-			from users  import UsersController
-			from groups import GroupsController
+			if self.configuration.licornd.role == roles.SERVER:
+				# load common core objects.
+				from users  import UsersController
+				from groups import GroupsController
 
-			self.users  = UsersController()
-			self.groups = GroupsController()
+				self.users  = UsersController()
+				self.groups = GroupsController()
 
-			# groups will load users as a dependancy.
-			self.groups.load()
+				# groups will load users as a dependancy.
+				self.groups.load()
 
 			# We create it in first pass, because :class:`CommandListener` needs it.
 			from licorn.foundations.messaging import MessageProcessor
@@ -268,10 +269,12 @@ class LicornMasterController(MixedDictObject):
 
 		else:
 			self.backends = LMC.backends
-			self.users    = LMC.users
-			self.groups   = LMC.groups
 			self.msgproc  = LMC.msgproc
 			self.system   = LMC.system
+
+			if self.configuration.licornd.role == roles.SERVER:
+				self.users    = LMC.users
+				self.groups   = LMC.groups
 
 		LicornMasterController._init_first_pass = True
 	def __init_common(self):
@@ -291,8 +294,10 @@ class LicornMasterController(MixedDictObject):
 
 		# we've got to reload users, groups and system, else they can't see
 		# their own extensions (chicken and egg problem).
-		self.users.reload_extensions()
-		self.groups.reload_extensions()
+		if self.configuration.licornd.role == roles.SERVER:
+			self.users.reload_extensions()
+			self.groups.reload_extensions()
+
 		self.system.reload_extensions()
 	def __init_server_final(self):
 		""" Final phase of SERVER initialization. Load system controllers

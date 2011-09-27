@@ -22,7 +22,7 @@ from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, distros
 
@@ -580,6 +580,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		try:
 			memberUid = self.__memberUid
 			del self.__memberUid
+
 		except AttributeError:
 			return
 
@@ -591,9 +592,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		rewrite = False
 
 		for member in memberUid:
-
 			try:
 				user = LMC.users.by_login(member)
+
 			except KeyError:
 				rewrite = True
 				logging.warning(_(u'group {0}: removed relationship for '

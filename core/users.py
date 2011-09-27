@@ -1153,14 +1153,13 @@ class UsersController(Singleton, CoreFSController):
 
 					else:
 						logging.progress(_(u'{0}: removing disapeared user '
-							'{1}.').format(stylize(ST_NAME, self.name),
+							u'{1}.').format(stylize(ST_NAME, self.name),
 								stylize(ST_LOGIN, user.login)))
 
 						self.del_User(user, batch=True, force=True)
 
 			# needed to reload the group cache.
-			logging.notice('reloading %s controller too.' %
-				stylize(ST_NAME, LMC.groups.name))
+			logging.notice(_(u'Reloading {0} controller too.').format(stylize(ST_NAME, LMC.groups.name)))
 
 			LMC.groups.reload_backend(backend)
 
@@ -1220,7 +1219,7 @@ class UsersController(Singleton, CoreFSController):
 							filtered_users.append(self[uid])
 						else:
 							raise exceptions.DoesntExistException(
-								'UID %d does not exist.' % uid)
+								_(u'UID {0} does not exist.').format(uid))
 			return filtered_users
 	def __validate_home_dir(self, home, login, system, force):
 		""" Do some basic but sane tests on the home dir provided. """
@@ -1730,7 +1729,6 @@ class UsersController(Singleton, CoreFSController):
 					'%s\n'
 					'</users-list>\n') % '\n'.join(
 						user.to_XML() for user in users)
-
 	def to_JSON(self, selected=None):
 		""" Export the user accounts list to XML. """
 
