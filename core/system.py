@@ -23,7 +23,8 @@ from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.messaging import remote_output, ListenerObject
-from licorn.foundations.constants import host_status, host_types, distros
+from licorn.foundations.constants import host_status, host_types, distros, \
+											reasons, conditions
 
 from licorn.core         import LMC
 from licorn.core.classes import CoreController
@@ -81,12 +82,13 @@ class SystemController(Singleton, CoreController, ListenerObject):
 		assert ltrace(TRACE_SYSTEM, '| noop(True)')
 		return True
 	def get_daemon_status(self, opts, args):
-
+		""" This method is called from CLI tools. """
 		self.setup_listener_gettext()
 
 		remote_output(LMC.licornd.dump_status(opts.long_output, opts.precision),
 								clear_terminal=opts.monitor_clear)
 	def local_ip_addresses(self):
+		""" Called from remote `licornd`. """
 		return LMC.configuration.network.local_ip_addresses()
 	def get_status(self):
 		""" Get local host current status. """
@@ -161,7 +163,8 @@ class SystemController(Singleton, CoreController, ListenerObject):
 		assert ltrace(TRACE_SYSTEM, '| uptime_and_load()')
 		return open('/proc/loadavg').read().split(' ')
 	def explain_connecting_from(self, client_socket):
-		""" TODO """
+		""" Called from remote `licornd` to validate incoming Pyro connections. """
+
 		uid = process.find_network_client_uid(
 			LMC.configuration.licornd.pyro.port, client_socket, local=False)
 
@@ -206,6 +209,31 @@ class SystemController(Singleton, CoreController, ListenerObject):
 			with self.lock:
 				self.__status = host_status.SHUTTING_DOWN
 				return True
+	def restart(self, condition=None, delay=None):
+		""" Called from remove `licornd`. """
+		if delay is None:
+			delay = 0.0
+
+		logging.notice(_(u'{0:s}: machine {1:s} wants us to restart '
+			u'(condition={2:s}, delay={3:s})').format(self,
+				current_thread()._licorn_remote_address,
+				conditions[condition], delay))
+
+		if condition is None:
+			time.sleep(delay)
+			L_event_dispatch(priorities.HIGH,
+					InternalEvent('need_restart',
+						reason=reasons.REMOTE_SYSTEM_ASKED))
+
+		elif condition == conditions.WAIT_FOR_ME_BACK_ONLINE:
+			# TODO: we need to setup :
+			# 	- a new event in the Machines: 'server_came_back_online'
+			# 	- a new event callback which:
+			#		- compares the IP of the emitter
+			#		- unregisters itselfs to avoid duplicate receives of the event
+			# 		- waits the delay
+			#		- and sends the 'need_restart' event.
+			pass
 	def get_extensions(self, client_only=False):
 		if client_only:
 			return [ key for key in LMC.extensions.keys()

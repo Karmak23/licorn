@@ -21,7 +21,8 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import MixedDictObject
-from licorn.daemon                import roles
+from licorn.foundations.constants import reasons
+from licorn.daemon                import roles, priorities, InternalEvent
 
 def connect_error(dummy1, dummy2):
 	""" Method called on SIGALARM when the LMC fails to launch a daemon, or
@@ -348,7 +349,9 @@ class LicornMasterController(MixedDictObject):
 				# then, tell the controller to find its new prefered in its
 				# refreshed backends list.
 				if controller.find_prefered_backend():
-					raise exceptions.NeedRestartException(_(u'backends changed.'))
+					L_event_dispatch(priorities.HIGH,
+							InternalEvent('need_restart',
+								reason=reasons.BACKENDS_CHANGED))
 
 					# TODO: restart all the CLIENT-daemons too, to (un-) load
 					# the new backend(s), synchronized with the server.

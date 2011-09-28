@@ -17,16 +17,15 @@ from subprocess import Popen, PIPE
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import process, hlstr, network, pyutils
-from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.styles    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.constants import *
 from licorn.foundations.base      import Enumeration, Singleton
-from licorn.foundations.constants import host_status, host_types, filters
 from licorn.core                  import LMC
 from licorn.core.classes          import CoreController, CoreStoredObject
 from licorn.daemon                import priorities, roles
-from licorn.interfaces.wmi        import WMIObject
-from licorn.interfaces.wmi 		  import utils as w
+from licorn.interfaces.wmi        import WMIObject, utils as w
 
 class Machine(CoreStoredObject):
 
@@ -181,8 +180,6 @@ class Machine(CoreStoredObject):
 
 	def add_link(self, licorn_object):
 		""" TODO. """
-
-		#print '>> add link from %s to %s' % (licorn_object.ip, self.ip)
 
 		if isinstance(licorn_object, Machine):
 			self.linked_machines.append(licorn_object)
@@ -563,6 +560,12 @@ class Machine(CoreStoredObject):
 		else:
 			raise exceptions.LicornRuntimeException('''Can't shutdown a '''
 				'''non remote-controlled machine!''')
+	def restart(self, condition=None):
+		if self.myself or self.master_machine:
+			return
+
+		if self.system:
+			self.system.restart(condition=condition)
 	def update_status(self, status):
 		""" update the current machine status, in a clever manner. """
 		with self.lock:
@@ -670,7 +673,6 @@ class MachinesController(Singleton, CoreController, WMIObject):
 		assert ltrace(TRACE_MACHINES, '| load()')
 		self.reload()
 
-
 		if LMC.configuration.experimental.enabled:
 			self.create_wmi_object('/machines')
 
@@ -722,6 +724,19 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			#			self.del_User(user, batch=True, force=True)
 
 		assert ltrace(TRACE_LOCKS, '| users.reload_backend exit %s' % self.lock)
+	def daemon_will_restart_callback(self, reason, *args, **kwargs):
+		""" We have some work to do in some cases when the local daemon restart. """
+
+		if reason == reasons.BACKENDS_CHANGED:
+			#TODO: restart peers ?
+			# we need to restart our clients.
+			for machine in self:
+				try:
+					machine.restart(condition=conditions.WAIT_FOR_ME_BACK_ONLINE)
+
+				except Exception, e:
+					pyutils.warn2_exception(_(u'{0:s}: cannot restart '
+						u'machine {1:s} (was: {2:s})'), self, machine, e)
 	def build_myself(self):
 		""" create internal instance(s) for the current Licorn® daemon. """
 		with self.lock:
@@ -833,9 +848,8 @@ class MachinesController(Singleton, CoreController, WMIObject):
 
 		assert ltrace(TRACE_MACHINES, '< %s: scan_network()' % caller)
 	def goodbye_from(self, remote_ips):
-		""" this method is called on the remote side, when the local side calls
-			:meth:`announce_shutdown`.
-		"""
+		""" Called from remote `licornd`, when it runs :meth:`announce_shutdown`. """
+
 		current_ips = self.keys()
 
 		for ip in remote_ips:
@@ -1399,8 +1413,6 @@ class MachinesController(Singleton, CoreController, WMIObject):
 			</td>''' % (
 				power_statuses[status][1],
 				power_statuses[status][2] % hostname)
-
-			#print '>>', machine.linked_machines
 
 			html_data += '''
 

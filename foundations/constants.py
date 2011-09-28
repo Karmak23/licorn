@@ -158,6 +158,13 @@ backend_actions.UPDATE = 2
 backend_actions.DELETE = 3
 backend_actions.RENAME = 4
 
+reasons = EnumDict('reasons')
+reasons.BACKENDS_CHANGED    = 1
+reasons.REMOTE_SYSTEM_ASKED = 2
+
+conditions = EnumDict('conditions')
+conditions.WAIT_FOR_ME_BACK_ONLINE = 1
+
 services = EnumDict('services')
 services.UNKNOWN = 0
 services.UPSTART = 1

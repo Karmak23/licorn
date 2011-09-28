@@ -100,12 +100,6 @@ class LicornStopException(LicornRuntimeException):
 	""" Current Thread of function has been stopped and it is unexpected. """
 	errno = 501
 	pass
-class NeedRestartException(LicornRuntimeException):
-	""" Daemon needs to restart entirely, else bad things will occur. """
-	errno = 502
-	def __init__(self, *args, **kwargs):
-		LicornRuntimeException.__init__(self, *args, **kwargs)
-		self.pid = os.getpid()
 class LicornRuntimeError(LicornError):
 	""" [UNSTABLE] Something very bad has happened during program run.
 		This is not clear exactly when this exception must be used. beware.  """

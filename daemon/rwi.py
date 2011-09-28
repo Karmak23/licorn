@@ -2096,29 +2096,30 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.setup_listener_gettext()
 
+
 		if opts.setup_shared_dirs:
 			LMC.configuration.check_base_dirs(minimal=False, batch=True)
 
-		elif opts.set_hostname:
+		if opts.set_hostname:
 			LMC.configuration.ModifyHostname(opts.set_hostname)
 
-		elif opts.set_ip_address:
+		if opts.set_ip_address:
 			raise exceptions.NotImplementedError(
 				"changing server IP address is not yet implemented.")
 
-		elif opts.privileges_to_add:
+		if opts.privileges_to_add:
 			LMC.privileges.add(sorted(opts.privileges_to_add.split(',')))
 
-		elif opts.privileges_to_remove:
+		if opts.privileges_to_remove:
 			LMC.privileges.delete(sorted(opts.privileges_to_remove.split(',')))
 
-		elif opts.hidden_groups != None:
+		if opts.hidden_groups != None:
 			LMC.configuration.SetHiddenGroups(opts.hidden_groups)
 
 		#FIXME: refactor the next 4 blocks
 		# don't sort the backends, the order is probably important.
 
-		elif opts.disable_backends != None:
+		if opts.disable_backends != None:
 			for backend in opts.disable_backends.split(','):
 				try:
 					LMC.backends.disable_backend(backend)
@@ -2126,7 +2127,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
 
-		elif opts.enable_backends != None:
+		if opts.enable_backends != None:
 			for backend in opts.enable_backends.split(','):
 				try:
 					LMC.backends.enable_backend(backend)
@@ -2134,7 +2135,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
 
-		elif opts.disable_extensions != None:
+		if opts.disable_extensions != None:
 			for extension in opts.disable_extensions.split(','):
 				try:
 					LMC.extensions.disable_extension(extension)
@@ -2142,17 +2143,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
 
-		elif opts.enable_extensions != None:
+		if opts.enable_extensions != None:
 			for extension in opts.enable_extensions.split(','):
 				try:
 					LMC.extensions.enable_extension(extension)
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
-
-		else:
-			raise exceptions.NeedHelpException(_(u'What do you want to '
-				'modify? use --help to know!'))
 	def mod_volume(self, opts, args):
 		""" Modify volumes. """
 

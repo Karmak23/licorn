@@ -299,6 +299,12 @@ def expand_vars_and_tilde(text, uid=None):
 			'~', user_home).replace(
 			'$HOME', user_home).replace(
 			user_home, '')
+def warn_exception(message, *args):
+	logging.warning(message.format(*args))
+	print_exception_if_verbose()
+def warn2_exception(message, *args):
+	logging.warning2(message.format(*args))
+	print_exception_if_verbose()
 def resolve_dependancies_from_dict_strings(arg):
 	""" Gently taken from http://code.activestate.com/recipes/576570/ (r4)
 		Dependency resolver

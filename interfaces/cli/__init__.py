@@ -263,10 +263,6 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			t.restore_terminal()
 		logging.warning(_(u'Interrupted, cleaning up!'))
 
-	except exceptions.NeedRestartException, e:
-		logging.notice(_(u'daemon needs a restart, sending USR1 signal.'))
-		os.kill(e.pid, signal.SIGUSR1)
-
 	except exceptions.LicornError, e:
 		logging.error('%s (%s, errno=%s).' % (
 			str(e), stylize(ST_SPECIAL, str(e.__class__).replace(

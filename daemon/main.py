@@ -35,7 +35,7 @@ dstart_time = time.time()
 
 import os, sys, signal, resource, gc, re, __builtin__
 from traceback  import print_exc
-from threading  import current_thread
+from threading  import current_thread, Thread, Event
 from Queue      import Empty, Queue, PriorityQueue
 from optparse   import OptionParser
 
@@ -53,8 +53,8 @@ from licorn.core                  import version, LMC
 # first before anything.
 from licorn.daemon                import gettext, LicornDaemonInteractor, \
 											LicornThreads, LicornQueues, \
-											priorities, roles, \
-											client
+											priorities, roles, client, \
+											InternalEvent
 from licorn.daemon.wmi            import WMIThread
 from licorn.daemon.threads        import LicornJobThread, \
 											ServiceWorkerThread, \
@@ -78,6 +78,8 @@ class LicornDaemon(Singleton):
 		#NOTE: self.name will be overriten in run()
 		self.__name    = LicornDaemon.dname
 		self.__pid     = os.getpid()
+
+		self.__restart_event = Event()
 
 		self.__threads = LicornThreads('daemon_threads')
 		self.__queues  = LicornQueues('daemon_queues')
@@ -214,10 +216,10 @@ class LicornDaemon(Singleton):
 			if self.configuration.inotifier.enabled:
 				ino.collect()
 
-		# now that LMC is setup, collect event methods and inotifies.
-		# NOTE: this is now done "au fil de l'eau", by the controllers
-		# __init__() methods.
-		#evt.collect()
+		# NOTE: collecting all callbacks is done "au fil de l'eau", by the
+		# controllers themselves when they load. We thus only collect local
+		# daemon's callbacks.
+		evt.collect(self)
 	def __init_daemon_phase_2(self):
 		""" TODO. """
 
@@ -721,6 +723,26 @@ class LicornDaemon(Singleton):
 				logging.error(_(u'{0}: must be run as {1} '
 					'(was: {2}).').format(str(self),
 					stylize(ST_NAME, 'root'), e))
+	def need_restart_callback(self, reason, *args, **kwargs):
+
+		if self.__restart_event.is_set():
+			# be sure we restart only one time. The Event can be
+			# sent more than once time when backend change.
+			return
+
+		self.__restart_event.set()
+
+		# We've got to be sure everyone is ready to restart !
+		L_event_run(InternalEvent('daemon_will_restart', reason=reason))
+
+		# TODO: mark the 'restart' status in LMC.system. This needs
+		# system.status become a property...
+
+		# we need to start a separate daemon thread, else restart() will
+		# do some cleanup work that will deadblock serviceQ.
+		t = Thread(target=self.restart)
+		t.daemon = True
+		t.start()
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
 			multi-lingual parallel workers ;-) """
@@ -854,8 +876,13 @@ class LicornDaemon(Singleton):
 		logging.notice(_(u'{0}: exiting{1}.').format(str(self), self.uptime()))
 		sys.exit(0)
 	def restart(self, signum=None, frame=None):
-		logging.notice(_(u'{0}: SIGUSR1 received, preparing restart.').format(
-						str(self)))
+
+		if signum:
+			logging.notice(_(u'{0:s}: SIGUSR1 received, preparing our '
+												u'restart.').format(self))
+		else:
+			logging.notice(_(u'{0:s}: restart needed, shutting '
+										u'everything down.').format(self))
 
 		self.__daemon_shutdown()
 
