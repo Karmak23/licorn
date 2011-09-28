@@ -1813,6 +1813,7 @@ class UsersController(Singleton, CoreFSController):
 		""" Return the login for an UID, or raise Doesn't exists. """
 		try:
 			return self[uid].login
+
 		except KeyError:
 			raise exceptions.DoesntExistException(_(u'UID %s does not exist') % uid)
 

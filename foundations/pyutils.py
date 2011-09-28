@@ -177,9 +177,9 @@ def check_file_against_dict(conf_file, defaults, configuration,
 	for (directive, value) in defaults:
 		if not conf_file_dict.has_key(directive):
 
-			logging.warning(
-				'''%s should include directive %s, but it doesn't.''' % (
-				styles.stylize(styles.ST_PATH, conf_file), directive))
+			logging.warning(_(u'Inserted missing directive {1} in {0}.').format(
+					stylize(ST_PATH, conf_file),
+					stylize(ST_COMMENT, directive)))
 
 			conf_file_alter           = True
 			conf_file_dict[directive] = value
@@ -188,12 +188,12 @@ def check_file_against_dict(conf_file, defaults, configuration,
 
 		if value != None and conf_file_dict[directive] != value:
 
-			logging.warning('''%s should have directive %s be equal to %s, '''
-				'''but it is %s.'''	% (
-				styles.stylize(styles.ST_PATH, conf_file),
-				styles.stylize(styles.ST_REGEX, directive),
-				styles.stylize(styles.ST_OK, value),
-				styles.stylize(styles.ST_BAD, conf_file_dict[directive])))
+			logging.warning(_(u'modified {0} directive {1} to be equal to {2} '
+				u'(was originaly {3}).').format(
+					stylize(ST_PATH, conf_file),
+					stylize(ST_REGEX, directive),
+					stylize(ST_OK, value),
+					stylize(ST_BAD, conf_file_dict[directive])))
 
 			conf_file_alter           = True
 			conf_file_dict[directive] = value
@@ -204,27 +204,27 @@ def check_file_against_dict(conf_file, defaults, configuration,
 		# everything is OK, just pass.
 
 	if conf_file_alter:
-		if batch or logging.ask_for_repair(
-			'''%s lacks mandatory configuration directive(s).''' % \
-				styles.stylize(styles.ST_PATH, conf_file), auto_answer):
+		if batch or logging.ask_for_repair(_(u'Modify {0} on disk to '
+				u'reflect current in-memory changes?').format(
+					stylize(ST_PATH, conf_file)), auto_answer):
 			try:
 				open(conf_file, 'w').write(conf_file_data)
-				logging.notice(
-					'''Altered %s to match %s pre-requisites.'''
-					% (styles.stylize(styles.ST_PATH, conf_file),
-					configuration.app_name))
+
+				logging.notice(_(u'Altered {0} to match {1} '
+					u'pre-requisites.').format(
+					stylize(ST_PATH, conf_file),
+						stylize(ST_NAME, configuration.app_name)))
 			except (IOError, OSError), e:
 				if e.errno == 13:
-					raise exceptions.LicornRuntimeError(
-						'''Insufficient permissions. '''
-						'''Are you root?\n\t%s''' % e)
+					raise exceptions.LicornRuntimeError(_(u'Insufficient '
+						u'permissions. Are you root?\n\t{0}').format(e))
 				else:
 					raise e
 		else:
-			raise exceptions.LicornRuntimeError(
-			'''Modifications in %s are mandatory for %s to work '''
-			'''properly. Can't continue without this, sorry!''' % (
-			conf_file, configuration.app_name))
+			raise exceptions.LicornRuntimeError(_(u'Modifications in {0} are '
+				u'mandatory for {1} to work properly. Cannot continue without '
+				u'this, sorry!').format(stylize(ST_PATH, conf_file),
+						stylize(ST_NAME, configuration.app_name)))
 
 	return True
 class masq_list(list):

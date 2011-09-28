@@ -730,6 +730,7 @@ class LicornDaemon(Singleton):
 		def my_(*args, **kwargs):
 			try:
 				return current_thread()._(*args, **kwargs)
+
 			except AttributeError:
 				return __builtin__.__dict__['_orig__'](*args, **kwargs)
 

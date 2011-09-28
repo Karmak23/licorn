@@ -13,21 +13,23 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import os
+import os, pwd, uuid
+from threading import current_thread, RLock
 
-from licorn.foundations           import logging
+from licorn.foundations           import logging, options
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
+from licorn.foundations.messaging import remote_output, ListenerObject
 from licorn.foundations.constants import host_status, host_types, distros
 
 from licorn.core         import LMC
 from licorn.core.classes import CoreController
 from licorn.daemon       import roles, client, priorities
 
-class SystemController(Singleton, CoreController):
+class SystemController(Singleton, CoreController, ListenerObject):
 	""" This class implement a local system controller. It is meant to be used
 		remotely, via Pyro calls, to act on the local machine, or transmit
 		informations (status, uptime, load, etc) to the caller.
@@ -78,6 +80,12 @@ class SystemController(Singleton, CoreController):
 			link is OK between the server and the client. """
 		assert ltrace(TRACE_SYSTEM, '| noop(True)')
 		return True
+	def get_daemon_status(self, opts, args):
+
+		self.setup_listener_gettext()
+
+		remote_output(LMC.licornd.dump_status(opts.long_output, opts.precision),
+								clear_terminal=opts.monitor_clear)
 	def local_ip_addresses(self):
 		return LMC.configuration.network.local_ip_addresses()
 	def get_status(self):
@@ -152,21 +160,20 @@ class SystemController(Singleton, CoreController):
 	def uptime_and_load(self):
 		assert ltrace(TRACE_SYSTEM, '| uptime_and_load()')
 		return open('/proc/loadavg').read().split(' ')
-	def uid_connecting_from(self, client_socket):
+	def explain_connecting_from(self, client_socket):
 		""" TODO """
 		uid = process.find_network_client_uid(
 			LMC.configuration.licornd.pyro.port, client_socket, local=False)
 
-		if __debug__:
-			if LMC.configuration.licornd.role == roles.CLIENT:
-				resolve = lambda x: pwd.getpwuid(x).pw_name
+		try:
+			login = pwd.getpwuid(uid).pw_name
 
-			else:
-				resolve = LMC.users.uid_to_login
+		except KeyError:
+			login = None
 
-			assert ltrace(TRACE_SYSTEM, '| uid_connecting_from(%s) -> %s(%s)' % (
-				client_socket, resolve(uid), uid))
-		return uid
+		assert ltrace(TRACE_SYSTEM, '| uid_connecting_from(%s) -> %s (local=%s)' % (
+													client_socket, uid, login))
+		return (uid, login)
 	def shutdown(self, delay=1, warn_users=True):
 		""" shutdown the local machine. """
 		assert ltrace(TRACE_SYSTEM, '| shutdown(warn=%s)' % warn_users)
@@ -211,3 +218,53 @@ class SystemController(Singleton, CoreController):
 						if not LMC.backends[key].server_only ]
 		else:
 			return LMC.backends.keys()
+	def register_monitor(self, facilities):
+
+		self.setup_listener_gettext()
+
+		t = current_thread()
+		t.monitor_facilities = ltrace_str_to_int(facilities)
+
+		t.monitor_uuid = uuid.uuid4()
+
+		logging.notice(_(u'New trace session started with UUID {0}, '
+			u'facilities {1}.').format(stylize(ST_UGID, t.monitor_uuid),
+				stylize(ST_COMMENT, facilities)))
+
+		# The monitor_lock avoids collisions on listener.verbose
+		# modifications while a flood of messages are beiing sent
+		# on the wire. Having a per-thread lock avoids locking
+		# the master `options.monitor_lock` from the client side
+		# when only one monitor changes its verbose level. This
+		# is more fine grained.
+		t.monitor_lock = RLock()
+
+		with options.monitor_lock:
+			options.monitor_listeners.append(t)
+
+		# return the UUID of the thread, so that the remote side
+		# can detach easily when it terminates.
+		return t.monitor_uuid
+	def unregister_monitor(self, muuid):
+
+		self.setup_listener_gettext()
+
+		found = None
+
+		with options.monitor_lock:
+			for t in options.monitor_listeners[:]:
+				if t.monitor_uuid == muuid:
+					found = t
+					options.monitor_listeners.remove(t)
+					break
+
+		if found:
+			del t.monitor_facilities
+			del t.monitor_uuid
+			del t.monitor_lock
+
+		else:
+			logging.warning(_(u'Monitor listener with UUID %s not found!') % muuid)
+
+		logging.notice(_(u'Trace session UUID {0} ended.').format(
+													stylize(ST_UGID, muuid)))

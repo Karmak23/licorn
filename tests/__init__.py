@@ -48,7 +48,7 @@ class Testsuite:
 		# save the current context to restaure it at the end of the testsuite
 		backends = [ line for line in process.execute(['get', 'config',
 					'backends'])[0].split('\n') if 'U' in line ]
-		reduce(lambda x,y: x if y == '' else y, backends)
+		reduce(lambda x, y: x if y == '' else y, backends)
 		self.user_context    = backends[0].split('(')[0]
 		self.current_context = self.user_context
 

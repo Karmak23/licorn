@@ -421,11 +421,17 @@ class Machine(CoreStoredObject):
 			doesn't work as expected. """
 
 		#print '>> pyro_goodbye_from', remote_ifaces, 'to', self.ip
+		caller = current_thread().name
 
 		if self.master_machine:
 			return
 
-		return self.system.goodbye_from(remote_ifaces)
+		try:
+			self.system.goodbye_from(remote_ifaces)
+
+		except Pyro.errors.PyroError, e:
+			logging.warning2('%s: announce_shutdown(): harmless '
+						'error %s from %s.' % (caller, e, machine.ip))
 	def arping(self):
 		""" find the ether address. """
 
@@ -858,14 +864,10 @@ class MachinesController(Singleton, CoreController, WMIObject):
 							machine.master_machine or machine.myself):
 				assert ltrace(TRACE_MACHINES,
 									'| annouce_shutdown() to %s' % machine.ip)
-				try:
-					#print '>> announce shutdown to', machine.ip
-					L_service_enqueue(priorities.HIGH,
-									machine._pyro_forward_goodbye_from,
-										local_ifaces)
-				except Pyro.errors.PyroError, e:
-					logging.warning2('%s: announce_shutdown(): harmless '
-						'error %s from %s.' % (caller, e, machine.ip))
+				#print '>> announce shutdown to', machine.ip
+				L_service_enqueue(priorities.HIGH,
+								machine._pyro_forward_goodbye_from,
+									local_ifaces)
 
 		#
 		# WARNING: don't service_wait() here, the thread would join its own

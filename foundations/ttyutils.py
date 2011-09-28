@@ -174,7 +174,9 @@ class LicornInteractor(NamedObject):
 
 		NamedObject.__init__(self, name)
 
-		self.trace_name  = globals()['TRACE_' + self.name.upper()]
+		if __debug__:
+			self._trace_name  = globals()['TRACE_' + self.name.upper()]
+
 		self._stop_event = threading.Event()
 		self.avoid_help  = ()
 	def prepare_terminal(self):
@@ -186,7 +188,7 @@ class LicornInteractor(NamedObject):
 	def run(self):
 		""" prepare stdin for interaction and wait for chars. """
 		if sys.stdin.isatty():
-			assert ltrace(self.trace_name, '> run()')
+			assert ltrace(self._trace_name, '> run()')
 
 			# see tty and termios modules for implementation details.
 			self.fd = sys.stdin.fileno()
@@ -304,5 +306,5 @@ class LicornInteractor(NamedObject):
 
 		# else: (isatty())
 		# don't do anything.
-		assert ltrace(self.trace_name, '< run()')
+		assert ltrace(self._trace_name, '< run()')
 

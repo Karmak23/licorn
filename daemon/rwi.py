@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, uuid, Pyro.core, time, gc, __builtin__
+import os, time, Pyro.core, gc
 
 from operator  import attrgetter
 from threading import current_thread, RLock
@@ -17,7 +17,7 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
-from licorn.foundations.messaging import LicornMessage, ListenerObject
+from licorn.foundations.messaging import LicornMessage, ListenerObject, remote_output
 from licorn.foundations.constants import filters, interactions, host_status
 
 from licorn.core import LMC
@@ -38,27 +38,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	@property
 	def licornd(self):
 		return self.__licornd
-	def __setup_gettext(self):
-		th = current_thread()
-
-		#print '>> gettext setup', th.listener, th.listener.lang
-
-		try:
-			th._ = self.__licornd.langs[th.listener.lang].ugettext
-			#print '>> switched to', th.listener.lang
-		except KeyError:
-			# the daemon doesn't have the client lang installed. Not a problem.
-			# Still, make a shortcut to the daemon's default translator to
-			# avoid trigerring an exception at every call of our translator
-			# wrapper.
-			th._ = __builtin__.__dict__['_orig__']
-	def output(self, text_message, clear_terminal=False):
-		""" Output a text message remotely, in CLI caller process, whose
-			reference is stored in :obj:`current_thread().listener`. """
-		return current_thread().listener.process(
-			LicornMessage(data=text_message, channel=1,
-							clear_terminal=clear_terminal),
-			options.msgproc.getProxy())
 	def interact(self, text_message, interaction):
 		""" Send a bi-directionnal message remotely, in CLI caller process,
 			whose reference is stored in :obj:`current_thread().listener`.
@@ -202,16 +181,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	### GET
 	def get_volumes(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
-		self.output(LMC.extensions.volumes.get_CLI(opts, args))
+		remote_output(LMC.extensions.volumes.get_CLI(opts, args))
 	def get_users(self, opts, args):
 		""" Get the list of POSIX user accounts (Samba / LDAP included). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.dump:
-			self.output(LMC.users.dump())
+			remote_output(LMC.users.dump())
 			return
 
 		assert ltrace(TRACE_GET, '> get_users(%s,%s)' % (opts, args))
@@ -245,16 +224,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 										long_output=opts.long_output)
 
 		if data and data != '\n':
-			self.output(data)
+			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_users()')
 	def get_groups(self, opts, args):
 		""" Get the list of POSIX LMC.groups (can be LDAP). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.dump:
-			self.output(LMC.groups.dump())
+			remote_output(LMC.groups.dump())
 			return
 
 		assert ltrace(TRACE_GET, '> get_groups(%s,%s)' % (opts, args))
@@ -306,13 +285,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 										no_colors=opts.no_colors)
 
 		if data and data != '\n':
-			self.output(data)
+			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_groups()')
 	def get_profiles(self, opts, args):
 		""" Get the list of user profiles. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_GET, '> get_profiles(%s,%s)' % (opts, args))
 
@@ -329,13 +308,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			data = LMC.profiles._cli_get(profiles_to_get)
 
 		if data and data != '\n':
-			self.output(data)
+			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_profiles()')
 	def get_keywords(self, opts, args):
 		""" Get the list of keywords. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_GET, '> get_keywords(%s,%s)' % (opts, args))
 
@@ -345,13 +324,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			data = LMC.keywords.Export()
 
 		if data and data != '\n':
-			self.output(data)
+			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_keywords()')
 	def get_privileges(self, opts, args):
 		""" Return the current privileges whitelist, one priv by line. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_GET, '> get_privileges(%s,%s)' % (opts, args))
 
@@ -360,16 +339,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			data = LMC.privileges.ExportCLI()
 
-		self.output(data)
+		remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_privileges()')
 	def get_machines(self, opts, args):
 		""" Get the list of machines known from the server (attached or not). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.dump:
-			self.output(LMC.machines.dump())
+			remote_output(LMC.machines.dump())
 			return
 
 		assert ltrace(TRACE_GET, '> get_machines(%s,%s)' % (opts, args))
@@ -425,80 +404,29 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 											long_output=opts.long_output)
 
 		if data and data != '\n':
-			self.output(data)
+			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_machines()')
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_GET, '> get_configuration(%s,%s)' % (opts, args))
 
 		if len(args) > 1:
-			self.output(LMC.configuration.Export(args=args[1:],
+			remote_output(LMC.configuration.Export(args=args[1:],
 						cli_format=opts.cli_format))
 		else:
-			self.output(LMC.configuration.Export())
+			remote_output(LMC.configuration.Export())
 
 		assert ltrace(TRACE_GET, '< get_configuration()')
-	def get_daemon_status(self, opts, args):
-
-		self.__setup_gettext()
-
-		self.output(self.licornd.dump_status(opts.long_output, opts.precision),
-								clear_terminal=opts.monitor_clear)
-	def register_monitor(self, facilities):
-		t = current_thread()
-		t.monitor_facilities = ltrace_str_to_int(facilities)
-
-		t.monitor_uuid = uuid.uuid4()
-
-		logging.notice(_(u'New trace session started with UUID {0}, '
-			u'facilities {1}.').format(stylize(ST_UGID, t.monitor_uuid),
-				stylize(ST_COMMENT, facilities)))
-
-		# The monitor_lock avoids collisions on listener.verbose
-		# modifications while a flood of messages are beiing sent
-		# on the wire. Having a per-thread lock avoids locking
-		# the master `options.monitor_lock` from the client side
-		# when only one monitor changes its verbose level. This
-		# is more fine grained.
-		t.monitor_lock = RLock()
-
-		with options.monitor_lock:
-			options.monitor_listeners.append(t)
-
-		# return the UUID of the thread, so that the remote side
-		# can detach easily when it terminates.
-		return t.monitor_uuid
-	def unregister_monitor(self, muuid):
-
-		found = None
-
-		with options.monitor_lock:
-			for t in options.monitor_listeners[:]:
-				if t.monitor_uuid == muuid:
-					found = t
-					options.monitor_listeners.remove(t)
-					break
-
-		if found:
-			del t.monitor_facilities
-			del t.monitor_uuid
-			del t.monitor_lock
-
-		else:
-			logging.warning(_(u'Monitor listener with UUID %s not found!') % muuid)
-
-		logging.notice(_(u'Trace session UUID {0} ended.').format(
-													stylize(ST_UGID, muuid)))
 	def get_webfilters(self, opts, args):
 		""" Get the list of webfilter databases and entries.
 			This function wraps SquidGuard configuration files.
 		"""
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if args is None:
 			pass # Tout afficher
@@ -553,7 +481,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" Massively import user accounts from a CSV file."""
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> import_user(%s,%s)' % (opts, args))
 
@@ -647,7 +575,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		groups_to_add = []
 		users_to_add  = []
 
-		self.output(_(u'Reading input file: '))
+		remote_output(_(u'Reading input file: '))
 
 		i = 0
 		for fdline in import_fd:
@@ -725,7 +653,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add.append(user)
 
 			if not (i % 100):
-				self.output('.')
+				remote_output('.')
 				# FIXME: how do we force a flush on the client side?
 				#sys.stderr.flush()
 			i += 1
@@ -736,7 +664,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add, groups_to_add))
 
 		import_fd.close()
-		self.output(_(u' done.') + '\n')
+		remote_output(_(u' done.') + '\n')
 
 		# this will be used to recursive build an HTML page of all groups / users
 		# with theyr respective passwords to be printed / distributed to all users.
@@ -790,7 +718,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		else:
 			import string
-			self.output('\n%s\n%s%s%s%s%s\n' % (
+			remote_output('\n%s\n%s%s%s%s%s\n' % (
 				_(u'Fields order:'),
 				stylize(ST_PATH, string.ljust(_('FIRSTname'), col_width)),
 				stylize(ST_PATH, string.ljust(_('LASTname'), col_width)),
@@ -837,7 +765,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								'error on line {0}.\n{1}').format(
 									u['linenumber'], e))
 
-					self.output("%s%s%s%s%s\n" % (
+					remote_output("%s%s%s%s%s\n" % (
 						string.ljust(u['firstname'], col_width),
 						string.ljust(u['lastname'], col_width),
 						string.ljust(login, col_width),
@@ -868,7 +796,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.confirm_import:
 
-			self.output(_(u'Finished importing, creating summary HTML file: '))
+			remote_output(_(u'Finished importing, creating summary HTML file: '))
 
 			groups = data_to_export_to_html.keys()
 			groups.sort()
@@ -934,7 +862,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					password=_(u'Password')
 					))
 
-				self.output('.')
+				remote_output('.')
 
 				groupdata = data_to_export_to_html[group]
 				users = groupdata.keys()
@@ -953,12 +881,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							groupdata[user][3]))
 					i += 1
 					if not (i % 10):
-						self.output('.')
+						remote_output('.')
 				html_file.write('</table>\n')
 
 			html_file.write('</body>\n</html>\n')
 			html_file.close()
-			self.output(' %s\n%s %s\n' %(_(u'done.'), _(u'report:'),
+			remote_output(' %s\n%s %s\n' %(_(u'done.'), _(u'report:'),
 				html_file.name))
 
 		if opts.no_sync:
@@ -971,7 +899,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" Add a user account on the system. """
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> add_user(opts=%s, args=%s)' % (opts, args))
 
@@ -1034,7 +962,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_user_in_groups(self, opts, args):
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> add_user_in_group().')
 
@@ -1067,7 +995,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			- add a user into one or more group(s)
 		"""
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> dispatch_add_user(%s, %s)' % (opts, args))
 
@@ -1098,7 +1026,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_group(self, opts, args):
 		""" Add a POSIX group. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> add_group().')
 
@@ -1138,7 +1066,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_profile(self, opts, args):
 		""" Add a system wide User profile. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> add_profile().')
 
@@ -1181,7 +1109,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_keyword(self, opts, args):
 		""" Add a keyword on the system. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -1191,7 +1119,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			unicode(opts.description))
 	def add_privilege(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.privileges_to_add is None and len(args) == 2:
 			opts.privileges_to_add = args[1]
@@ -1207,7 +1135,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		LMC.privileges.add(privs_to_add)
 	def add_machine(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
@@ -1215,7 +1143,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.rescan:
 			LMC.extensions.volumes.rescan_volumes()
@@ -1240,7 +1168,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" delete one or more user account(s). """
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		if opts.system:
 			selection = filters.SYSTEM
@@ -1302,7 +1230,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_user_from_groups(self, opts, args):
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		assert ltrace(TRACE_DEL, '> del_users_from_group(%s, %s)' % (opts, args))
 
@@ -1330,7 +1258,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace(TRACE_DEL, '< del_users_from_group()')
 	def dispatch_del_user(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.login is None:
 			if len(args) == 3:
@@ -1345,7 +1273,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			self.del_user(opts, args)
 	def dispatch_del_group(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.filename:
 			self.desimport_groups(opts, args)
@@ -1355,7 +1283,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" Delete the groups (and theyr members) present in a import file.	"""
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		raise NotImplementedError('this method must be refreshed before use.')
 
@@ -1391,7 +1319,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			try:
 				group = LMC.groups.guess_one(g)
 				i += 1
-				self.output('\r' + _(u'Deleting groups ({0}/{1}), '
+				remote_output('\r' + _(u'Deleting groups ({0}/{1}), '
 					'progression: {3:.2f}%').format(i, length_groups, progression))
 
 				LMC.groups.del_Group(group, del_users=True, no_archive=True)
@@ -1407,7 +1335,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" delete an Licorn group. """
 
 		# already done in dispatch_*
-		#self.__setup_gettext()
+		#self.setup_listener_gettext()
 
 		if opts.privileged:
 			selection = filters.PRIVILEGED
@@ -1504,7 +1432,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		include_id_lists = [
 				(opts.name, LMC.profiles.by_name),
@@ -1548,7 +1476,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_keyword(self, opts, args):
 		""" Delete a system wide User profile. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.name is None and len(args) == 2:
 			opts.name = args[1]
@@ -1557,7 +1485,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		LMC.keywords.DeleteKeyword(opts.name, opts.del_children)
 	def del_privilege(self, opts, args):
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.privileges_to_remove is None and len(args) == 2:
 			opts.privileges_to_remove = args[1]
@@ -1600,7 +1528,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def del_volume(self, opts, args):
 		""" Modify volumes. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.all:
 			volumes = LMC.extensions.volumes.keys()
@@ -1614,7 +1542,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_user(self, opts, args):
 		""" Modify a POSIX user account (Samba / LDAP included). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.system:
 			selection = filters.SYSTEM
@@ -1796,7 +1724,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_group(self, opts, args):
 		""" Modify a group. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.privileged:
 			selection = filters.PRIVILEGED
@@ -1970,7 +1898,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_profile(self, opts, args):
 		""" Modify a system wide User profile. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		include_id_lists = [
 			(opts.name, LMC.profiles.by_name),
@@ -2091,7 +2019,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_machine(self, opts, args):
 		""" Modify a machine. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.all:
 			selection = host_status.ALL
@@ -2120,7 +2048,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_keyword(self, opts, args):
 		""" Modify a keyword. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		raise NotImplementedError(_(u'not yet anymore.'))
 
@@ -2139,7 +2067,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_path(self, opts, args):
 		""" Manage keywords of a file or directory. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		raise NotImplementedError(_(u'not yet anymore.'))
 
@@ -2166,7 +2094,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		""" Modify some aspects or abstract directives of the system configuration
 			(use with caution)."""
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.setup_shared_dirs:
 			LMC.configuration.check_base_dirs(minimal=False, batch=True)
@@ -2228,7 +2156,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def mod_volume(self, opts, args):
 		""" Modify volumes. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		# TODO: move that code into the extension.
 
@@ -2272,7 +2200,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def chk_user(self, opts, args):
 		""" Check one or more user account(s). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		if opts.system:
 			selection = filters.SYSTEM
@@ -2335,7 +2263,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def chk_group(self, opts, args):
 		""" Check one or more group(s). """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		selection = filters.NONE
 
@@ -2414,7 +2342,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def chk_profile(self, opts, args):
 		""" TODO: to be implemented. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		include_id_lists = [
 			(opts.name, LMC.profiles.by_name),
@@ -2452,7 +2380,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def chk_configuration(self, opts, args):
 		""" TODO: to be implemented. """
 
-		self.__setup_gettext()
+		self.setup_listener_gettext()
 
 		LMC.configuration.check(opts.minimal, batch=opts.batch,
 			auto_answer=opts.auto_answer)

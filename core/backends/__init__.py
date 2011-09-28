@@ -22,11 +22,11 @@ a backend should implement the following methods:
 
 import os
 
-from licorn.foundations        import logging
-from licorn.foundations.styles import *
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations         import logging
+from licorn.foundations.styles  import *
+from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.ltraces import *
-from licorn.foundations.base   import Singleton, MixedDictObject
+from licorn.foundations.base    import Singleton, MixedDictObject
 
 from licorn.core         import LMC
 from licorn.core.classes import ModulesManager, CoreModule

@@ -7,12 +7,12 @@ Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 :license: GNU GPL version 2.
 """
 
-import signal, os, time, new
+import signal, os, time, new, pwd
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
 from threading import Thread, Timer, RLock, current_thread
 
-from licorn.foundations           import logging, process, network, pyutils
+from licorn.foundations           import logging, process, exceptions, network, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import ltrace, mytime
 from licorn.foundations.ltraces   import *
@@ -99,7 +99,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return 0, Pyro.constants.DENIED_UNSPECIFIED
 
 			else:
-				return self.acceptUid(daemon, client_uid, client_addr,
+				return self.acceptUid(daemon, client_uid, None, client_addr,
 					client_socket)
 		else:
 			if self.role == roles.SERVER:
@@ -121,7 +121,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 						# ACCEPT the connection, don't start a check-loop.
 						LicornPyroValidator.current_checks.remove(client_addr)
 
-						t = self.setup_licorn_thread('root', '0',
+						t = self.setup_licorn_thread('root', 0,
 												client_addr, client_socket)
 
 						logging.monitor(TRACE_CMDLISTENER,
@@ -138,7 +138,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 									client_addr, client_socket)
 
 				try:
-					client_uid = remote_system.uid_connecting_from(
+					client_uid, client_login = remote_system.explain_connecting_from(
 																client_socket)
 
 				except Exception, e:
@@ -151,8 +151,8 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
 
 				else:
-					return self.acceptUid(daemon, client_uid, client_addr,
-						client_socket)
+					return self.acceptUid(daemon, client_uid, client_login,
+										client_addr, client_socket)
 			else:
 				# FIXME: we are on the client, just accept any connection
 				# coming from our server, else deny. This must be refined to be
@@ -166,7 +166,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 							current_thread().name, self.__class__.__name__,
 								client_addr, client_socket)
 
-					self.setup_licorn_thread('root', '0',
+					self.setup_licorn_thread('root', 0,
 											client_addr, client_socket)
 
 					# ACCEPT
@@ -179,14 +179,63 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 							', '.join(LicornPyroValidator.server_addresses)))
 
 					return 0, Pyro.constants.DENIED_HOSTBLOCKED
-	def acceptUid(self, daemon, client_uid, client_addr, client_socket):
+	def acceptUid(self, daemon, client_uid, client_login, client_addr, client_socket):
 		try:
 			# NOTE: measured with LICORN_TRACE=timings, using pwd.getpwuid()
 			# is **at best** as quick as users.uid_to_login(), but generally
 			# slower. Thus we use our internals.
-			#
 			#client_login = pwd.getpwuid(client_uid).pw_name
-			client_login = LMC.users.uid_to_login(client_uid)
+
+			if LMC.configuration.licornd.role == roles.CLIENT:
+
+				if client_addr.startswith('127.'):
+					logging.warning(_(u'Please implement client.server.bounce '
+						u'auth. Accepted for now (localhost, uid {0}).').format(
+							stylize(ST_UGID, client_uid)))
+
+					t = self.setup_licorn_thread('<unknown>', client_uid,
+												client_addr, client_socket)
+
+					return 1, 0
+				else:
+					logging.warning(_(u'Senseless connection tentative from {0}, '
+						u'uid {2}.').format(
+							stylize(ST_ADDRESS, '%s:%s' % (client_addr, client_socket)),
+							stylize(ST_UGID, client_uid)))
+
+					return 0, Pyro.constants.DENIED_SECURITY
+			else:
+				local_login = LMC.users.uid_to_login(client_uid)
+
+		except (exceptions.DoesntExistException, KeyError), e:
+			logging.warning(_(u'Connection tentative from {0}: '
+							u'unknown local UID {1}!').format(
+					stylize(ST_ADDRESS, '%s:%s' % (client_addr, client_socket)),
+					stylize(ST_UGID, client_uid)))
+
+			return 0, Pyro.constants.DENIED_SECURITY
+
+		except Exception, e:
+			logging.warning(_(u'Something went wrong from {0} '
+				u'(was: {1}).').format(
+					stylize(ST_ADDRESS, '%s:%s' % (client_addr, client_socket)),
+					e))
+			pyutils.print_exception_if_verbose()
+
+			return 0, Pyro.constants.DENIED_UNSPECIFIED
+
+		else:
+			if client_login:
+				if client_login != local_login:
+					# TODO: send an alert ?
+					logging.warning(_(u'Remote login {0} is different from '
+						u'local {1} for UID {2}. Using {0}.').format(
+						stylize(ST_LOGIN, client_login),
+						stylize(ST_LOGIN, local_login),
+						stylize(ST_UGID, client_uid)))
+
+				# remote login takes precedence
+				local_login = client_login
 
 			assert ltrace(TRACE_CMDLISTENER, 'currently authorized users: %s.' %
 					', '.join(stylize(ST_LOGIN, u.login)
@@ -199,14 +248,14 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 									LMC.configuration.defaults.admin_group
 										).all_members]:
 
-				t = self.setup_licorn_thread(client_login, client_uid,
+				t = self.setup_licorn_thread(local_login, client_uid,
 										client_addr, client_socket)
 
 				logging.progress(_(u'{0}/{1}: authorized client connection from '
 						u'{2}:{3}, user {4}({5}).').format(
 						t.name, self.__class__.__name__,
 						client_addr, client_socket,
-						stylize(ST_NAME, client_login),
+						stylize(ST_NAME, local_login),
 						stylize(ST_UGID, client_uid)))
 
 				# ACCEPT
@@ -218,13 +267,6 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 
 				return 0, Pyro.constants.DENIED_SECURITY
 
-		except Exception, e:
-			logging.warning(_(u'Something went wrong from {0} '
-				u'(was: {1}).').format(stylize(ST_ADDRESS, '%s:%s' % (client_addr,
-					client_socket)), e))
-			pyutils.print_exception_if_verbose()
-
-			return 0, Pyro.constants.DENIED_UNSPECIFIED
 	def setup_licorn_thread(self, client_login, client_uid,
 								client_addr, client_socket):
 		# When a Pyro connection is granted, the current thread (already
@@ -233,6 +275,8 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 		# integrate it a little more in Licorn® (most notably
 		# in the daemon status).
 		t = current_thread()
+
+		t._licornd                  = LMC.licornd
 		t._licorn_remote_user       = client_login
 		t._licorn_remote_uid        = client_uid
 		t._licorn_remote_address    = client_addr
@@ -345,9 +389,9 @@ class CommandListener(LicornBasicThread):
 			self.uris['rwi'] = self.pyro_daemon.connect(
 				RealWorldInterface(self.licornd), 'rwi')
 
-			# for other daemons (cluster ?)
-			self.uris['machines'] = self.pyro_daemon.connect(
-				LMC.machines, 'machines')
+			# TODO: for other daemons (cluster ?)
+			#self.uris['machines'] = self.pyro_daemon.connect(
+			#	LMC.machines, 'machines')
 
 		# CLIENT and SERVER export their system and msgproc to communicate
 		# with each other.

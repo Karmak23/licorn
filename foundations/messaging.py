@@ -9,16 +9,25 @@
 	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, getpass
+import sys, os, getpass, __builtin__
 import Pyro.core, Pyro.util
 from threading import current_thread
+
 # WARNING: don't import logging here (circular loop).
+from licorn.foundations import options
 import exceptions, ttyutils
 from ltrace    import ltrace
 from ltraces   import *
 from base      import NamedObject, pyro_protected_attrs
 from constants import message_type, verbose, interactions
 
+def remote_output(text_message, clear_terminal=False):
+	""" Output a text message remotely, in CLI caller process, whose
+		reference is stored in :obj:`current_thread().listener`. """
+	return current_thread().listener.process(
+		LicornMessage(data=text_message, channel=1,
+						clear_terminal=clear_terminal),
+		options.msgproc.getProxy())
 class LicornMessage(Pyro.core.CallbackObjBase):
 	""" Small message object pushed back and forth between Pyro instances on one
 		or more physical machines.
@@ -58,8 +67,20 @@ class ListenerObject(object):
 		and not forward it everywhere in the code."""
 	def set_listener(self, listener):
 		current_thread().listener = listener
+	def setup_listener_gettext(self):
+		th = current_thread()
+
+		try:
+			th._ = th._licornd.langs[th.listener.lang].ugettext
+			#print '>> switched to', th.listener.lang
+		except KeyError:
+			# the daemon doesn't have the client lang installed. Not a problem.
+			# Still, make a shortcut to the daemon's default translator to
+			# avoid trigerring an exception at every call of our translator
+			# wrapper.
+			th._ = __builtin__.__dict__['_orig__']
 	def set_listener_verbose(self, verbose_level):
-		# FIXME: we could be setting the verbose level of a wrong 
+		# FIXME: we could be setting the verbose level of a wrong
 		# thread: either we need to be given the client UUID as a
 		# parameter, or the UUID is totally superfluous in the
 		# (un-)register_monitor() sequence.

@@ -411,8 +411,24 @@ class LicornMasterController(MixedDictObject):
 				self.configuration._setTimeout(5)
 				self.configuration.noop()
 				assert ltrace(TRACE_CORE,
-					'  connect(): main configuration object connected.')
+					'  connect(): main configuration object connected (Remote is SERVER).')
+
+				# connection is OK, let's get all other objects connected, and pull
+				# them back to the calling process.
+				#self.machines = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
+				self.rwi = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
+				self.system = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
 				break
+
+			except AttributeError:
+				self.system = Pyro.core.getAttrProxyForURI(
+					"%s/system" % pyroloc)
+				self.system._setTimeout(5)
+				self.system.noop()
+				assert ltrace(TRACE_CORE,
+					'  connect(): main system object connected (Remote is CLIENT).')
+				break
+
 			except Pyro.errors.ProtocolError, e:
 
 				if e.args[0] == 'security reasons':
@@ -458,21 +474,20 @@ class LicornMasterController(MixedDictObject):
 					# ALARM or USR1 will break the pause()
 					signal.pause()
 				second_try=True
-		assert ltrace(TRACE_CORE,
-			'  connect(): connecting the rest of remote objects.')
 
-		# connection is OK, let's get all other objects connected, and pull
-		# them back to the calling process.
-		#self.machines = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
-		self.system   = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
-		self.rwi      = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
 
 		assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
 			time.time() - start_time))
 		del start_time
 
 		assert ltrace(TRACE_CORE, '< connect()')
-		return self.rwi
+
+		try:
+			return self.rwi
+
+		except AttributeError:
+			# the remote daemon has only the `system` attribute, it's a CLIENT.
+			return self.system
 	def release(self):
 		""" Release all Pyro proxys. """
 		assert ltrace(TRACE_CORE, '| release()')

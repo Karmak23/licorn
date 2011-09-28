@@ -268,13 +268,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 		for key in ('passwd', 'shadow', 'group'):
 			if 'ldap' not in LMC.configuration.nsswitch[key]:
-				LMC.configuration.nsswitch[key].remove('ldap')
+				LMC.configuration.nsswitch[key].append('ldap')
 				need_save = True
 
 		if need_save:
 			LMC.configuration.save_nsswitch()
-
-		self.check_system_files(batch=True)
 
 		self.check(batch=True)
 
@@ -305,7 +303,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				LMC.configuration.nsswitch[key].remove('ldap')
 				need_save = True
 
-			except IndexError:
+			except ValueError:
 				pass
 
 		if need_save:
@@ -315,8 +313,14 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 	def check(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
 
-		if not self.available or  LMC.configuration.licornd.role == roles.CLIENT:
-			assert ltrace(TRACE_OPENLDAP, '| DONT check(): not available or CLIENT role')
+		# we always check system files, whatever.
+		self.check_system_files(batch, auto_answer)
+
+		if not self.available or LMC.configuration.licornd.role == roles.CLIENT:
+			assert ltrace(TRACE_OPENLDAP, '| DONT check(): %s' % (
+				('not available' if not self.available else '')
+				+ ('CLIENT') if LMC.configuration.licornd.role == roles.CLIENT
+							else ''))
 			return
 
 		assert ltrace(TRACE_OPENLDAP, '> check(%s)' % (batch))
@@ -437,7 +441,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
-		assert ltrace(TRACE_OPENLDAP, '> check_system_files()')
+		assert ltrace(TRACE_OPENLDAP, '> check_system_files(%s,%s)' % (batch, auto_answer))
 
 		if pyutils.check_file_against_dict(self.files.openldap_conf,
 				(
@@ -449,7 +453,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					('pam_password', 'md5'),
 					('ldap_version', 3)
 				),
-				LMC.configuration):
+				LMC.configuration, batch, auto_answer):
 
 			# keep the values inside ourselves, to use afterwards.
 			for (key, value) in readers.simple_conf_load_dict(
@@ -508,7 +512,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		# useless nowadays.
 		#
 
-		assert ltrace(TRACE_OPENLDAP, '< check_system() %s.' % stylize(
+		assert ltrace(TRACE_OPENLDAP, '< check_system_files(%s)' % stylize(
 			ST_OK, 'True'))
 		return True
 

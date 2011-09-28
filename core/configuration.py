@@ -1531,6 +1531,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				'''/etc/hosts must have at least o+r permissions.''')
 
 		line = open("/etc/hostname").readline()
+
 		if line[:-1] != self.mCurrentHostname:
 			raise exceptions.BadConfigurationError(
 				'''current hostname and /etc/hostname are not in sync !''')

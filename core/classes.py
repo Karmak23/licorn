@@ -148,6 +148,9 @@ class CoreController(LockedController):
 	def __init__(self, name, warnings=True, reverse_mappings=[]):
 		LockedController.__init__(self, name, warnings=warnings)
 
+		if __debug__:
+			self._trace_name = globals()['TRACE_' + self.name.upper()]
+
 		assert ltrace(TRACE_OBJECTS, '| CoreController.__init__(%s, %s)' % (
 			name, warnings))
 
@@ -177,6 +180,7 @@ class CoreController(LockedController):
 		# on client first pass, extensions are not yet loaded.
 		if hasattr(LMC, 'extensions'):
 			self.extensions = LMC.extensions.find_compatibles(self)
+
 		else:
 			self.extensions = None
 	def reload(self):
@@ -186,7 +190,7 @@ class CoreController(LockedController):
 			:meth:`~licorn.core.LicornMasterController.init_client_first_pass`.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreController.reload()')
+		assert ltrace(self._trace_name, '| CoreController.reload()')
 
 		self.reload_extensions()
 	def reload_extensions(self):
@@ -202,13 +206,13 @@ class CoreController(LockedController):
 				self.extensions = None
 	def load_extensions(self):
 		""" special case for SystemController. """
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| load_extensions()')
+		assert ltrace(self._trace_name, '| load_extensions()')
 		for ext in self.extensions:
 			getattr(ext, self.name + '_load')()
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| dump()')
+		assert ltrace(self._trace_name, '| dump()')
 
 		with self.lock:
 
@@ -238,7 +242,7 @@ class CoreController(LockedController):
 				controller.
 			"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> find_prefered_backend(current=%s, mine=%s, enabled=%s, available=%s, mine_is_ok:by_key=%s,by_value=%s)' % (
+		assert ltrace(self._trace_name, '> find_prefered_backend(current=%s, mine=%s, enabled=%s, available=%s, mine_is_ok:by_key=%s,by_value=%s)' % (
 				self._prefered_backend.name if self._prefered_backend != None else 'none',
 				', '.join(backend.name for backend in self.backends),
 				', '.join(backend.name for backend in LMC.backends.itervalues()),
@@ -247,7 +251,7 @@ class CoreController(LockedController):
 				self._prefered_backend in LMC.backends.itervalues()))
 
 		if self.backends == []:
-			assert ltrace(globals()['TRACE_' + self.name.upper()], '  no backends for %s, aborting prefered search.' % self.name)
+			assert ltrace(self._trace_name, '  no backends for %s, aborting prefered search.' % self.name)
 			return
 
 		changed = False
@@ -268,7 +272,7 @@ class CoreController(LockedController):
 
 		for backend in self.backends:
 			if self._prefered_backend is None:
-				assert ltrace(globals()['TRACE_' + self.name.upper()], ' found first prefered_backend(%s)' %
+				assert ltrace(self._trace_name, ' found first prefered_backend(%s)' %
 					backend.name)
 				self._prefered_backend = backend
 				changed = True
@@ -276,21 +280,21 @@ class CoreController(LockedController):
 			else:
 				if hasattr(backend, 'priority'):
 					if backend.priority > self._prefered_backend.priority:
-						assert ltrace(globals()['TRACE_' + self.name.upper()],
+						assert ltrace(self._trace_name,
 							' found better prefered_backend(%s)' % backend.name)
 						self._prefered_backend = backend
 						changed = True
 					else:
-						assert ltrace(globals()['TRACE_' + self.name.upper()],
+						assert ltrace(self._trace_name,
 							' discard lower prefered_backend(%s)' %
 								backend.name)
 						pass
 				else:
-					assert ltrace(globals()['TRACE_' + self.name.upper()],
+					assert ltrace(self._trace_name,
 						' no priority mechanism, skipping backend %s' %
 							backend.name)
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< find_prefered_backend(%s, %s)' % (
+		assert ltrace(self._trace_name, '< find_prefered_backend(%s, %s)' % (
 			self._prefered_backend.name, changed))
 		return changed
 class CoreFSController(CoreController):
@@ -833,11 +837,11 @@ class CoreFSController(CoreController):
 		# check system rules, if the directory/file they are managing exists add
 		# them the the *valid* system rules enumeration.
 		system_special_dirs = Enumeration('system_special_dirs')
-		#assert ltrace(globals()['TRACE_' + self.name.upper()], '  check_templates %s '
+		#assert ltrace(self._trace_name, '  check_templates %s '
 		#	% self.check_templates.dump_status(True))
 
 		for dir_info in self.check_templates:
-			#assert ltrace(globals()['TRACE_' + self.name.upper()], '  using dir_info %s ' % dir_info.dump_status(True))
+			#assert ltrace(self._trace_name, '  using dir_info %s ' % dir_info.dump_status(True))
 			temp_dir_info = dir_info.copy()
 			temp_dir_info.path = temp_dir_info.path % object_info.home
 
@@ -1105,6 +1109,9 @@ class ModulesManager(LockedController):
 		self.module_type = module_type
 		self.module_path = module_path
 		self.module_sym_path = module_sym_path
+
+		if __debug__:
+			self._trace_name = globals()['TRACE_' + self.name.upper()]
 	def available(self):
 		""" just a shortcut to get :attr:`self._available_modules`. When I
 			type::
@@ -1138,7 +1145,7 @@ class ModulesManager(LockedController):
 				couple (at least).
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load(type=%s, path=%s, server=%s)' % (
+		assert ltrace(self._trace_name, '> load(type=%s, path=%s, server=%s)' % (
 			self.module_type, self.module_path, server_side_modules))
 
 		# We've got to check the server_side_modules argument too, because at
@@ -1190,7 +1197,7 @@ class ModulesManager(LockedController):
 			except AttributeError:
 				modules_dependancies[module_name] = []
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], 'resolved dependancies module order: %s.' %
+		assert ltrace(self._trace_name, 'resolved dependancies module order: %s.' %
 				', '.join(pyutils.resolve_dependancies_from_dict_strings(modules_dependancies)))
 
 		changed = False
@@ -1228,13 +1235,13 @@ class ModulesManager(LockedController):
 
 			# module is not already loaded. Load and sync client/server
 
-			assert ltrace(globals()['TRACE_' + self.name.upper()], 'importing %s %s' % (self.module_type,
+			assert ltrace(self._trace_name, 'importing %s %s' % (self.module_type,
 				stylize(ST_NAME, module_name)))
 
 			# the module instance, at last!
 			module = module_class()
 
-			assert ltrace(globals()['TRACE_' + self.name.upper()], 'imported %s %s, now loading.' % (
+			assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
 				self.module_type, stylize(ST_NAME, module_name)))
 
 			if self.__not_manually_ignored(module.name):
@@ -1273,7 +1280,7 @@ class ModulesManager(LockedController):
 				if module.available:
 					if module.enabled:
 						self[module.name] = module
-						assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded %s %s' % (
+						assert ltrace(self._trace_name, 'loaded %s %s' % (
 							self.module_type,
 							stylize(ST_NAME, module.name)))
 
@@ -1288,7 +1295,7 @@ class ModulesManager(LockedController):
 									stylize(ST_NAME, module.name)))
 					else:
 						self._available_modules[module.name] = module
-						assert ltrace(globals()['TRACE_' + self.name.upper()], '%s %s is only available'
+						assert ltrace(self._trace_name, '%s %s is only available'
 							% (self.module_type,
 								stylize(ST_NAME, module.name)))
 
@@ -1296,7 +1303,7 @@ class ModulesManager(LockedController):
 							self.enable_func(module_name)
 							changed = True
 				else:
-					assert ltrace(globals()['TRACE_' + self.name.upper()], '%s %s NOT available' % (
+					assert ltrace(self._trace_name, '%s %s NOT available' % (
 						self.module_type, stylize(ST_NAME, module.name)))
 
 					if is_client and module_name in server_side_modules:
@@ -1321,7 +1328,7 @@ class ModulesManager(LockedController):
 									stylize(ST_PATH,
 										LMC.configuration.main_config_file)))
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< load(%s)' % changed)
+		assert ltrace(self._trace_name, '< load(%s)' % changed)
 		return changed
 	def __not_manually_ignored(self, module_name):
 		""" See if module has been manually ignored in the main configuration
@@ -1334,7 +1341,7 @@ class ModulesManager(LockedController):
 
 			# Try the global ignore directive.
 			if hasattr(conf, 'ignore'):
-				assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s '
+				assert ltrace(self._trace_name, '| not_manually_ignored(%s) → %s '
 					'(global)' % (module_name, (module_name
 										not in getattr(conf, 'ignore'))))
 
@@ -1345,7 +1352,7 @@ class ModulesManager(LockedController):
 				module_conf = getattr(conf, module_name)
 
 				if hasattr(module_conf, 'ignore'):
-					assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s '
+					assert ltrace(self._trace_name, '| not_manually_ignored(%s) → %s '
 						'(individually)' % (module_name,
 										getattr(module_conf, 'ignore')))
 
@@ -1353,7 +1360,7 @@ class ModulesManager(LockedController):
 
 		# if no configuration directive is found, the module is considered
 		# not ignored by default, it will be loaded.
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| not_manually_ignored(%s) → %s (no match)' % (
+		assert ltrace(self._trace_name, '| not_manually_ignored(%s) → %s (no match)' % (
 															module_name, True))
 		return True
 	def find_compatibles(self, controller):
@@ -1365,7 +1372,7 @@ class ModulesManager(LockedController):
 				the name, please).
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| find_compatibles() %s for %s from %s → %s'
+		assert ltrace(self._trace_name, '| find_compatibles() %s for %s from %s → %s'
 			% (stylize(ST_COMMENT, self.name),
 				stylize(ST_NAME, controller.name),
 					', '.join([x.name for x in self]),
@@ -1382,7 +1389,7 @@ class ModulesManager(LockedController):
 
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable_module(%s, active=%s, available=%s)'
+		assert ltrace(self._trace_name, '| enable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
 		with self.lock:
@@ -1415,7 +1422,7 @@ class ModulesManager(LockedController):
 
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable_module(%s, active=%s, available=%s)'
+		assert ltrace(self._trace_name, '| disable_module(%s, active=%s, available=%s)'
 			% (module_name, self.keys(), self._available_modules.keys()))
 
 		with self.lock:
@@ -1452,7 +1459,7 @@ class ModulesManager(LockedController):
 			module.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check(%s, %s)' % (batch, auto_answer))
+		assert ltrace(self._trace_name, '> %s.check(%s, %s)' % (self.__class__.__name__, batch, auto_answer))
 
 		to_disable = []
 
@@ -1461,7 +1468,7 @@ class ModulesManager(LockedController):
 			# the only way to make sure they can be fully usable before
 			# enabling them.
 			for module in itertools.chain(self, self._available_modules):
-				assert ltrace(globals()['TRACE_' + self.name.upper()], '  check(%s)' % module.name)
+				#assert ltrace(self._trace_name, '  check(%s)' % module.name)
 				try:
 					module.check(batch=batch, auto_answer=auto_answer)
 
@@ -1479,8 +1486,7 @@ class ModulesManager(LockedController):
 							stylize(ST_COMMENT, e), self.module_type,
 							stylize(ST_NAME, module.name)))
 
-					if options.verbose >= verbose.INFO:
-						print_exc()
+					pyutils.print_exception_if_verbose()
 
 					to_disable.append(module)
 
@@ -1499,7 +1505,7 @@ class ModulesManager(LockedController):
 
 			del to_disable
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< check()')
+		assert ltrace(self._trace_name, '< check()')
 	def guess_one(self, module_name):
 		try:
 			return self[module_name]
@@ -1615,7 +1621,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 
 		CoreUnitObject.__init__(self, manager)
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreModule.__init__(controllers_compat=%s)'
+		if __debug__:
+			self._trace_name = globals()['TRACE_' + self.name.upper()]
+
+		assert ltrace(self._trace_name, '| CoreModule.__init__(controllers_compat=%s)'
 			% controllers_compat)
 
 		# abstract defaults
@@ -1650,8 +1659,6 @@ class CoreModule(CoreUnitObject, NamedObject):
 		#: replicated / configured on CLIENTS).
 		self.server_only = False
 
-		if __debug__:
-			self.trace_name = globals()['TRACE_' + self.name.upper()]
 	def __str__(self):
 		return 'module %s' % stylize(ST_NAME, self.name)
 	def __repr__(self):
@@ -1706,7 +1713,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 				``genex_*`` methods.
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| CoreModule.generate_exception(%s,%s,%s)' % (
+		assert ltrace(self._trace_name, '| CoreModule.generate_exception(%s,%s,%s)' % (
 			extype, args, kwargs))
 
 		# it's up to the developper to implement the right methods, don't
@@ -1726,7 +1733,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			  must overload this method and provide the good implementation.
 
 		"""
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled(%s)' % self.available)
+		assert ltrace(self._trace_name, '| is_enabled(%s)' % self.available)
 		return self.available
 	def enable(self):
 		""" In this abstract method, just return ``False`` (an abstract module
@@ -1738,7 +1745,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			.. note:: your own module's :meth:`enable` method has to return
 				``True`` if the enable process succeeds, otherwise ``False``.
 		"""
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable(False)')
+		assert ltrace(self._trace_name, '| enable(False)')
 		return False
 	def disable(self):
 		""" In this abstract method, just return ``True`` (an abstract module
@@ -1750,7 +1757,7 @@ class CoreModule(CoreUnitObject, NamedObject):
 			.. note:: your own module's :meth:`disable` method has to return
 				``True`` if the disable process succeeds, otherwise ``False``.
 		"""
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable(True)')
+		assert ltrace(self._trace_name, '| disable(True)')
 		return True
 	def initialize(self):
 		""" For an abstract module, this method always return ``False``.
@@ -1776,11 +1783,11 @@ class CoreModule(CoreUnitObject, NamedObject):
 
 		"""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| initialize(%s)' % self.available)
+		assert ltrace(self._trace_name, '| initialize(%s)' % self.available)
 		return self.available
 	def check(self, batch=False, auto_answer=None):
 		""" default check method. """
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| ckeck(%s)' % batch)
+		assert ltrace(self._trace_name, '| ckeck(%s)' % batch)
 		pass
 	def load_defaults(self):
 		""" A real backend will setup its own needed attributes with values
