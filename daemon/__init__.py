@@ -216,15 +216,15 @@ class LicornDaemonInteractor(ttyutils.LicornInteractor):
 
 		# put the TTY in standard mode (echo on).
 		self.restore_terminal()
-		sys.ps1 = 'licornd> '
-		sys.ps2 = '...'
+		sys.ps1 = u'licornd> '
+		sys.ps2 = u'...'
 		interpreter.init_history()
 
 		interpreter.interact(
 				banner=_(u'Licorn® {0}, Python {1} '
-					'on {2}').format(version,
-					sys.version.replace('\n', ''),
-					sys.platform))
+						u'on {2}').format(version,
+							sys.version.replace('\n', ''),
+							sys.platform))
 
 		interpreter.save_history()
 
@@ -235,6 +235,6 @@ class LicornDaemonInteractor(ttyutils.LicornInteractor):
 		# take the TTY back into command mode.
 		self.prepare_terminal()
 
-		logging.notice(_('%s: leaving interactive mode. '
-			'Welcome back to Real World™.') % self.name)
+		logging.notice(_(u'%s: leaving interactive mode. '
+			u'Welcome back to Real World™.') % self.name)
 	interact.__doc__ = _(u'Run an interactive console')
