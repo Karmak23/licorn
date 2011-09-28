@@ -20,6 +20,7 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import sys, os
 from time import time, localtime, strftime
+from types import *
 
 # WARNING: please do not import anything from licorn here, except styles.
 from styles  import *
@@ -74,8 +75,14 @@ if new_trace != None or old_trace != None:
 
 	ltrace_level = ltrace_str_to_int(env_trace)
 
-	def ltrace(module, message):
+	def ltrace(module, message, *args):
 		if  ltrace_level & module:
+			if args:
+				message = message.format(*(stylize(*x)
+											if type(x) == TupleType
+											else x
+											for x in args))
+
 			sys.stderr.write('%s %s: %s\n' % (
 				stylize(ST_COMMENT, '   %s' % mytime()),
 				stylize(ST_DEBUG, 'TRACE ' + module.name.rjust(TRACES_MAXWIDTH)), message))
@@ -92,7 +99,7 @@ if new_trace != None or old_trace != None:
 		return ['python']
 
 else:
-	def ltrace(a, b):
+	def ltrace(a, b, *args):
 		return True
 	def insert_ltrace():
 		return []

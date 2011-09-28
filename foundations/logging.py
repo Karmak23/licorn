@@ -10,8 +10,7 @@ Licensed under the terms of the GNU GPL version 2.
 
 import sys, Pyro.errors
 from threading import current_thread, RLock
-from types import *
-from traceback import print_exc
+from types     import *
 
 from licorn.foundations import options
 from styles    import *
