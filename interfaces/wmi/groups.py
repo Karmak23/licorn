@@ -250,9 +250,9 @@ def create(uri, http_user, name, description=None, skel="", permissive=False,
 		permissive = False
 
 	LMC.groups.add_Group(name,
-		description=unquote_plus(description),
-		groupSkel=unquote_plus(skel),
-		permissive=True if permissive else False)
+		description=w.my_unquote(description),
+		groupSkel=w.my_unquote(skel),
+		permissive=permissive)
 
 	return (w.HTTP_TYPE_JSON, LMC.groups.by_name(name).to_JSON())
 
