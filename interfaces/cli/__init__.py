@@ -42,10 +42,8 @@ class CliInteractor(ttyutils.LicornInteractor):
 	def __init__(self, opts=None, opts_lock=None):
 		super(CliInteractor, self).__init__('interactor')
 
-		global RWI
 		global _listener
 
-		self.rwi      = RWI
 		self.listener = _listener
 
 		if opts is None:
@@ -80,7 +78,7 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose += 1
 
 			# the daemon side (remote Pyro thread)
-			self.rwi.set_listener_verbose(
+			LMC.system.set_listener_verbose(
 						self.listener.verbose)
 
 			logging.notice(_(u'{0}: increased '
@@ -106,7 +104,7 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose -= 1
 
 			# the daemon side (remote thread)
-			self.rwi.set_listener_verbose(
+			LMC.system.set_listener_verbose(
 						self.listener.verbose)
 
 			logging.notice(_(u'{0}: decreased '
