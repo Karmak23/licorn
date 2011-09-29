@@ -56,6 +56,86 @@ def keep_true(x, y):
 
 	if x is True: return x
 	else:         return y
+def bytes_to_human(bytes, as_string=True, binary=True):
+	""" From http://fr.wikipedia.org/wiki/Octet (in french in the text). """
+	bytes = float(bytes)
+	if binary:
+		if bytes >= 1180591620717411303424L:
+			# yobibytes
+			size_val = bytes / 1180591620717411303424L
+			size_str = _(u'{0:.2f}Yib')
+		elif bytes >= 1152921504606846976L:
+			# zebibytes
+			size_val = bytes / 1152921504606846976L
+			size_str = _(u'{0:.2f}Zib')
+		elif bytes >= 1125899906842624L:
+			# exbibytes
+			size_val = bytes / 1125899906842624L
+			size_str = _(u'{0:.2f}Eib')
+		elif bytes >= 1125899906842620:
+			# pebibytes
+			size_val = bytes / 1125899906842620
+			size_str = _(u'{0:.2f}Pib')
+		elif bytes >= 1099511627776:
+			# tebibytes
+			size_val = bytes / 1099511627776
+			size_str = _(u'{0:.2f}Tib')
+		elif bytes >= 1073741824:
+			# gibibytes
+			size_val = bytes / 1073741824
+			size_str = _(u'{0:.2f}Gib')
+		elif bytes >= 1048576:
+			# mebibytes
+			size_val = bytes / 1048576
+			size_str = _(u'{0:.2f}Mib')
+		elif bytes >= 1024:
+			#kibibytes
+			size_val = bytes / 1024
+			size_str = _(u'{0:.2f}Kib')
+		else:
+			size_val = bytes
+			size_str = (u'{0:.2f}b')
+	else:
+		if bytes >= 1000000000000000000000000L:
+			#yottabytes
+			size_val = bytes / 1000000000000000000000000L
+			size_str = _(u'{0:.2f}Yib')
+		elif bytes >= 1000000000000000000000L:
+			# zettabytes
+			size_val = bytes / 1000000000000000000000L
+			size_str = _(u'{0:.2f}Zib')
+		elif bytes >= 1000000000000000000L:
+			# exabytes
+			size_val = bytes / 1000000000000000000L
+			size_str = _(u'{0:.2f}Eib')
+		elif bytes >= 1000000000000000L:
+			# petabytes
+			size_val = bytes / 1000000000000000L
+			size_str = _(u'{0:.2f}Pib')
+		elif bytes >= 1000000000000:
+			# terabytes
+			size_val = bytes / 1000000000000
+			size_str = _(u'{0:.2f}Tib')
+		elif bytes >= 1000000000:
+			# gigabytes
+			size_val = bytes / 1000000000
+			size_str = _(u'{0:.2f}Gib')
+		elif bytes >= 1000000:
+			# megabytes
+			size_val = bytes / 1000000
+			size_str = _(u'{0:.2f}Mib')
+		elif bytes >= 1000:
+			# kilobytes
+			size_val = bytes / 1000
+			size_str = _(u'{0:.2f}Kib')
+		else:
+			size_val = bytes
+			size_str = (u'{0:.2f}b')
+
+	if as_string:
+		return size_str.format(size_val)
+	else:
+		return size_val
 def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 	big_precision=False):
 	""" build a time-related human readable string from a time given in seconds.
