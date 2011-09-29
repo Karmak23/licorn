@@ -191,11 +191,9 @@ class LicornMasterController(MixedDictObject):
 		#print '>> server backends:', ServerLMC.system.get_backends(
 		#													client_only=True)
 
-		if self.backends.load(
+		self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
-															client_only=True)):
-			self.users.reload()
-			self.groups.reload()
+															client_only=True))
 
 		self.__init_common()
 		LicornMasterController._init_client = True

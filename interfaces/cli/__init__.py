@@ -138,7 +138,7 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 
 	def cli_exec_function():
 		if functions[mode][1] is None:
-			functions[mode][2](RWI, opts, args)
+			functions[mode][2](opts, args)
 
 		else:
 			getattr(RWI, functions[mode][1])(opts=opts, args=args)
@@ -223,7 +223,9 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 			# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
 			# daemon will check listener.verbose, which is not accessible
 			# through a simple Pyro Proxy.
-			RWI.set_listener(_listener.getAttrProxy())
+			if hasattr(LMC, 'rwi'):
+				LMC.rwi.set_listener(_listener.getAttrProxy())
+			LMC.system.set_listener(_listener.getAttrProxy())
 
 			msgth = Thread(target=PyroLoop, args=(client_daemon,))
 			msgth.start()

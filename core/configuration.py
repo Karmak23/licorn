@@ -403,6 +403,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					)
 				)
 		elif self.licornd.role == roles.CLIENT:
+			self.licornd.inotifier.enabled = False
+			self.licornd.network.lan_scan  = False
+			self.licornd.wmi.enabled       = False
 			self.server_main_address = network.find_server(self)
 	def check_directive_daemon_threads(self):
 		""" check the pingers number for correctness. """

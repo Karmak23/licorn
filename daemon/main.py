@@ -122,6 +122,9 @@ class LicornDaemon(Singleton):
 							# Service threads are not daemon, they must
 							# terminate before we quit.
 							daemon=False))
+		# make them accessible everywhere.
+		__builtin__.__dict__['L_service_enqueue']  = self.__service_enqueue
+		__builtin__.__dict__['L_service_wait']     = self.__service_wait
 
 		if LMC.configuration.licornd.role != roles.CLIENT:
 			self.__queues.aclcheckQ = PriorityQueue()
@@ -131,6 +134,8 @@ class LicornDaemon(Singleton):
 								peers_max=self.configuration.threads.aclcheck.max,
 								licornd=self,
 								daemon=False))
+			__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
+			__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
 
 			self.__queues.networkQ = PriorityQueue()
 			self.__threads.append(NetworkWorkerThread(
@@ -139,14 +144,8 @@ class LicornDaemon(Singleton):
 								peers_max=self.configuration.threads.network.max,
 								licornd=self))
 
-			__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
-			__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
 			__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
 			__builtin__.__dict__['L_network_wait']     = self.__network_wait
-
-		# make them accessible everywhere.
-		__builtin__.__dict__['L_service_enqueue']  = self.__service_enqueue
-		__builtin__.__dict__['L_service_wait']     = self.__service_wait
 
 		# create the Event Manager, and map its methods to us.
 		evt = self.__threads._eventmanager = EventManager(self)
@@ -160,32 +159,32 @@ class LicornDaemon(Singleton):
 		__builtin__.__dict__['L_event_collect']    = evt.collect
 		__builtin__.__dict__['L_event_uncollect']  = evt.uncollect
 
-		if LMC.configuration.licornd.role != roles.CLIENT:
-			# create the INotifier thread, and map its WatchManager methods to
-			# us, they will be used by controllers, extensions and every single
-			# core object.
-			if self.configuration.inotifier.enabled:
-				ino = self.__threads._inotifier = INotifier(self)
+		# see core.cofiguration (CLIENT -> inotifier disabled)
+		# create the INotifier thread, and map its WatchManager methods to
+		# us, they will be used by controllers, extensions and every single
+		# core object.
+		if self.configuration.inotifier.enabled:
+			ino = self.__threads._inotifier = INotifier(self)
 
-				ino.start()
+			ino.start()
 
-				# proxy methods to the INotifier (generally speaking, core objects
-				# should cal them via the daemon, only.
-				__builtin__.__dict__['L_inotifier_add']            = ino._wm.add_watch
-				__builtin__.__dict__['L_inotifier_del']            = ino._wm.rm_watch
-				__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
-				__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
-				__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
+			# proxy methods to the INotifier (generally speaking, core objects
+			# should cal them via the daemon, only.
+			__builtin__.__dict__['L_inotifier_add']            = ino._wm.add_watch
+			__builtin__.__dict__['L_inotifier_del']            = ino._wm.rm_watch
+			__builtin__.__dict__['L_inotifier_watches']        = ino._wm.watches
+			__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
+			__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
 
-			else:
-				def inotifier_disabled(*args, **kwargs):
-					pass
+		else:
+			def inotifier_disabled(*args, **kwargs):
+				pass
 
-				__builtin__.__dict__['L_inotifier_add']            = inotifier_disabled
-				__builtin__.__dict__['L_inotifier_del']            = inotifier_disabled
-				__builtin__.__dict__['L_inotifier_watches']        = inotifier_disabled
-				__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
-				__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_add']            = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_del']            = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_watches']        = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
+			__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
 
 		# NOTE: the CommandListener must be launched prior to anything, to
 		# ensure connection validation form clients and other servers are
@@ -213,8 +212,9 @@ class LicornDaemon(Singleton):
 											pids_to_wake=self.pids_to_wake)
 			self.__threads.CommandListener.start()
 
-			if self.configuration.inotifier.enabled:
-				ino.collect()
+		# see core.cofiguration (CLIENT -> inotifier disabled)
+		if self.configuration.inotifier.enabled:
+			ino.collect()
 
 		# NOTE: collecting all callbacks is done "au fil de l'eau", by the
 		# controllers themselves when they load. We thus only collect local
@@ -243,18 +243,19 @@ class LicornDaemon(Singleton):
 			# one in sync with the NFS-served files.
 
 		else: # roles.SERVER
+			self.__service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 
 			#self.__threads.syncer   = ServerSyncer(self)
 			#self.__threads.searcher = FileSearchServer(self)
 			#self.__threads.cache    = Cache(self, keywords)
 
-			if self.configuration.wmi.enabled and self.options.wmi_enabled:
-				self.__threads.wmi = WMIThread(self)
-			else:
-				logging.info('%s: not starting WMI, disabled on command '
-					'line or by configuration directive.' % str(self))
+		# see core.configuration (CLIENT -> wmi disabled)
+		if self.configuration.wmi.enabled and self.options.wmi_enabled:
+			self.__threads.wmi = WMIThread(self)
+		else:
+			logging.info('%s: not starting WMI, disabled on command '
+				'line or by configuration directive.' % str(self))
 
-			self.__service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
@@ -420,13 +421,14 @@ class LicornDaemon(Singleton):
 			except AttributeError:
 				pass
 
-		data = _(u'Licorn® daemon {full}status: '
+		data = _(u'Licorn® {role} daemon {full}status: '
 			u'up {uptime}, {nb_threads} threads, {nb_controllers} controllers, '
 			u'{nb_queues} queues, {nb_locked}/{nb_locks} Mlocks, {sub_locked}/{sub_locks} Ulocks\n'
 			u'CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s '
 			u'MEM: res {mem_res:.2}Mb shr {mem_shr:.2}Mb '
 				u'ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n').format(
 			full=stylize(ST_COMMENT, 'full ') if long_output else '',
+			role=stylize(ST_ATTR, roles[self.configuration.role]),
 			uptime=stylize(ST_COMMENT,
 				pyutils.format_time_delta(time.time() - dstart_time)),
 			nb_threads=_thcount(),
@@ -452,25 +454,26 @@ class LicornDaemon(Singleton):
 			data += _(u'Ulocks:  %s\n') % u', '.join(stylize(ST_IMPORTANT, x)
 													for x in sub_locked)
 
+		service_threads_infos = [(
+							ServiceWorkerThread.instances,
+							ServiceWorkerThread.peers_max,
+							_(u'servicers')
+						)]
+		if self.configuration.role != roles.CLIENT:
+			service_threads_infos.extend([(
+							ACLCkeckerThread.instances,
+							ACLCkeckerThread.peers_max,
+							_(u'aclcheckers')
+						),
+						(
+							NetworkWorkerThread.instances,
+							NetworkWorkerThread.peers_max,
+							_(u'networkers')
+						)])
+
 		data += _(u'Threads: %s\n') % u''.join([ (u'%s/%s %s' %
 					(tcur, tmax, ttype)).center(20)
-						for tcur, tmax, ttype in (
-							(
-								ServiceWorkerThread.instances,
-								ServiceWorkerThread.peers_max,
-								_(u'servicers')
-							),
-							(
-								ACLCkeckerThread.instances,
-								ACLCkeckerThread.peers_max,
-								_(u'aclcheckers')
-							),
-							(
-								NetworkWorkerThread.instances,
-								NetworkWorkerThread.peers_max,
-								_(u'networkers')
-							)
-						)
+						for tcur, tmax, ttype in service_threads_infos
 					])
 
 		data += _(u'Queues:  %s\n') % u''.join([ (u'%s: %s' %
