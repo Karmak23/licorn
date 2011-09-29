@@ -718,9 +718,6 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 					u'aborting.').format(stylize(ST_NAME, self.name)))
 				return
 
-		logging.progress(_(u'{0:s}: backup procedure computes pre-requisites, '
-			u'please wait.').format(self.name))
-
 		with volume.mount():
 			if not force and (
 					time.time() - self._last_backup_time(volume) <
@@ -734,6 +731,9 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 				return
 
 			self.events.running.set()
+
+			logging.progress(_(u'{0:s}: backup procedure computes pre-requisites, '
+				u'please wait.').format(self.name))
 
 			already_cleaned = False
 			nb_backups      = self._held_backups(volume)
