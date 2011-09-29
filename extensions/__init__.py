@@ -64,7 +64,7 @@ class LicornExtension(CoreModule):
 		.. versionadded:: 1.2.4
 	"""
 	def __init__(self, name='extension', controllers_compat=[]):
-		assert ltrace(self._trace_name, '| LicornExtension.__init__()')
+		assert ltrace(TRACE_EXTENSIONS, '| LicornExtension.__init__()')
 		CoreModule.__init__(self,
 				name=name,
 				manager=LMC.extensions,
@@ -143,7 +143,7 @@ class ServiceExtension(LicornExtension):
 	def __init__(self, name='service_extension', controllers_compat=[],
 			service_name=None, service_type=None, service_long=False):
 
-		assert ltrace(self._trace_name,
+		assert ltrace(TRACE_EXTENSIONS,
 									'| ServiceExtension.__init__(%s, %s)' % (
 										service_name, services[service_type]))
 
