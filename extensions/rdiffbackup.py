@@ -737,26 +737,29 @@ class RdiffbackupExtension(Singleton, LicornExtension, WMIObject):
 
 			already_cleaned = False
 			nb_backups      = self._held_backups(volume)
+			try:
+				while not self._has_enough_free_space(volume):
 
-			while not self._has_enough_free_space(volume):
+					if nb_backups < 2:
+						# TODO: implement an alert mechanism !!
+						logging.warning(_(u'{0:s}: volume {1:s} does not have '
+							u'enough free space or is not big enough to hold '
+							u'more than two backups, aborting. '
+							u'Space needed: {2}; free space: {3}.').format(
+								self, volume,
+								pyutils.bytes_to_human(self._compute_needed_space(volume), as_string=True),
+								pyutils.bytes_to_human(volume.stats()[0], as_string=True)))
+						return
 
-				if nb_backups < 2:
-					# TODO: implement an alert mechanism !!
-					logging.warning(_(u'{0:s}: volume {1:s} does not have '
-						u'enough free space or is not big enough to hold '
-						u'more than two backups, aborting. '
-						u'Space needed: {2}; free space: {3}.').format(
-							self, volume,
-							pyutils.bytes_to_human(self._compute_needed_space(volume), as_string=True),
-							pyutils.bytes_to_human(volume.stats()[0], as_string=True)))
-					self.events.running.clear()
-					return
+					nb_backups -= 1
+					# remove the last backup on the volume (see beginning of this
+					# file for explanation of rdiff-backup syntax).
+					self._remove_old_backups(volume, older_than=str(nb_backups) + 'B')
+					already_cleaned = True
 
-				nb_backups -= 1
-				# remove the last backup on the volume (see beginning of this
-				# file for explanation of rdiff-backup syntax).
-				self._remove_old_backups(volume, older_than=str(nb_backups) + 'B')
-				already_cleaned = True
+			finally:
+				self.events.running.clear()
+
 
 			self.events.backup.set()
 
