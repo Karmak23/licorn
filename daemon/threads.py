@@ -164,6 +164,7 @@ class GenericQueueWorkerThread(Thread):
 		# as base class, but doesn't handle on-the-fly multilingual switch.
 		try:
 			self._ = __builtin__.__dict__['_orig__']
+
 		except KeyError:
 			self._ = __builtin__.__dict__['_']
 

@@ -86,9 +86,10 @@ class LicornDaemon(Singleton):
 
 		LMC.licornd    = self
 	def __str__(self):
-		return '%s(%s)' % (stylize(ST_NAME, self.name), self.pid)
+		return _('{0}({1})').format(stylize(ST_NAME, self.name), self.pid)
 	def __repr__(self):
-		return '%s(%s)' % (stylize(ST_NAME, self.name), self.pid)
+		return _('{0} {1}({2})').format(self.__class__.__name__,
+				stylize(ST_NAME, self.name), self.pid)
 
 	@property
 	def name(self):
@@ -110,8 +111,8 @@ class LicornDaemon(Singleton):
 		# available to LMC, controllers and others if they need to plan
 		# background correction jobs, or the like.
 
-		logging.info(_(u'%s: initializing facilities, backends, '
-								'controllers and extensions.') % str(self))
+		logging.info(_(u'{0:s}: initializing facilities, backends, '
+								u'controllers and extensions.').format(self))
 
 		self.__queues.serviceQ = PriorityQueue()
 		self.__threads.append(ServiceWorkerThread(
@@ -253,8 +254,8 @@ class LicornDaemon(Singleton):
 		if self.configuration.wmi.enabled and self.options.wmi_enabled:
 			self.__threads.wmi = WMIThread(self)
 		else:
-			logging.info('%s: not starting WMI, disabled on command '
-				'line or by configuration directive.' % str(self))
+			logging.info(_(u'{0:s}: not starting WMI, disabled on command '
+				u'line or by configuration directive.').format(self))
 
 	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
@@ -272,7 +273,7 @@ class LicornDaemon(Singleton):
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
-		logging.notice(_(u'%s: starting all threads.') % str(self))
+		logging.notice(_(u'{0:s}: starting all threads.').format(self))
 
 		for (thname, th) in self.__threads.items():
 			# check if threads are alive before starting them, because some
@@ -282,7 +283,7 @@ class LicornDaemon(Singleton):
 				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
 				th.start()
 	def __stop_threads(self):
-		logging.progress(_(u'%s: stopping threads.') % str(self))
+		logging.progress(_(u'{0:s}: stopping threads.').format(self))
 
 		# don't use iteritems() in case we stop during start and not all threads
 		# have been added yet.
@@ -368,12 +369,12 @@ class LicornDaemon(Singleton):
 		self.__start_threads()
 
 		if options.daemon:
-			logging.notice(_(u'%s: all threads started, going to sleep '
-				'waiting for signals.') % str(self))
+			logging.notice(_(u'{0:s}: all threads started, going to sleep '
+				'waiting for signals.').format(self))
 			signal.pause()
 		else:
-			logging.notice(_(u'%s: all threads started, ready for TTY '
-				'interaction.') % str(self))
+			logging.notice(_(u'{0:s}: all threads started, ready for TTY '
+				'interaction.').format(self))
 			# set up the interaction with admin on TTY std*, only if we do not
 			# fork into the background. This is a special thread case, not
 			# handled by the global start / stop mechanism, to be able to start
@@ -556,8 +557,8 @@ class LicornDaemon(Singleton):
 						os.kill(int(entry), signal.SIGKILL)
 
 						time.sleep(0.2)
-						logging.notice(_(u'{0}: killed aborted '
-							'instance @pid {1}.').format(str(self), entry))
+						logging.notice(_(u'{0:s}: killed aborted '
+							u'instance @pid {1}.').format(self, entry))
 
 				except (IOError, OSError), e:
 					# in rare cases, the process vanishes during the clean-up
@@ -582,8 +583,8 @@ class LicornDaemon(Singleton):
 
 		if process.already_running(self.pid_file):
 			if self.options.replace or self.options.shutdown:
-				logging.notice(_(u'{0}: trying to {1} existing instance '
-					'@pid {2}.').format(str(self), _(u'replace')
+				logging.notice(_(u'{0:s}: trying to {1} existing instance '
+					u'@pid {2}.').format(self, _(u'replace')
 						if self.options.replace else _(u'shutdown'), old_pid))
 
 				# kill the existing instance, gently
@@ -595,9 +596,9 @@ class LicornDaemon(Singleton):
 					time.sleep(0.1)
 
 					if counter >= 25:
-						logging.notice(_(u'%s: existing instance still '
-							'running, we\'re going to be more incisive in '
-							'a few seconds.') % str(self))
+						logging.notice(_(u'{0:s}: existing instance still '
+							u'running, we\'re going to be more incisive in '
+							u'a few seconds.').format(self))
 						break
 					counter+=1
 
@@ -618,9 +619,9 @@ class LicornDaemon(Singleton):
 					time.sleep(0.1)
 
 					if counter >= 25 and not_yet_displayed_one:
-						logging.notice(_(u'%s: re-killing old instance '
-							'softly with TERM signal and waiting a little '
-							'more.') % str(self))
+						logging.notice(_(u'{0:s}: re-killing old instance '
+							u'softly with TERM signal and waiting a little '
+							u'more.').format(self))
 
 						try:
 							os.kill(old_pid, signal.SIGTERM)
@@ -635,9 +636,9 @@ class LicornDaemon(Singleton):
 						not_yet_displayed_one = False
 
 					elif counter >= 50 and not_yet_displayed_two:
-						logging.notice(_(u'%s: old instance won\'t '
-							'terminate after 8 seconds. Sending '
-							'KILL signal.') % str(self))
+						logging.notice(_(u'{0:s}: old instance has not '
+							u'terminated after 8 seconds. Sending '
+							u'KILL signal.').format(self))
 
 						killed = True
 						try:
@@ -663,9 +664,9 @@ class LicornDaemon(Singleton):
 								open('/proc/%s/status' % old_pid).read())[0])
 
 						if 'sudo' in open('/proc/%s/cmdline' % parent_pid).read():
-							logging.notice(_(u'%s: killing old instance\'s '
-								'father (sudo, pid %s) without any mercy.') % (
-								str(self), parent_pid))
+							logging.notice(_(u'{0:s}: killing old instance\'s '
+								u'father (sudo, pid %s) without any '
+								u'mercy.').format(self, parent_pid))
 
 							killed = True
 							try:
@@ -680,36 +681,35 @@ class LicornDaemon(Singleton):
 							counter += 2
 
 						else:
-							logging.warning(_(u'{0}: old instance won\'t '
-								'terminate after 9 seconds and cannot '
-								'be killed. We won\t try to kill any other '
-								'parent than "{1}", you are in a non-trivial '
-								'situation. Up to you to solve it.') % (
-									str(self), stylize(ST_NAME, 'sudo')))
+							logging.warning(_(u'{0:s}: old instance has not '
+								u'terminated after 9 seconds and cannot '
+								u'be killed. We will not try to kill any other '
+								u'parent than "{1}", you are in a non-trivial '
+								u'situation. Up to you to solve it.').format(
+									self, stylize(ST_NAME, 'sudo')))
 							sys.exit(-10)
 
 						not_yet_displayed_three = False
 
 					elif counter >=120:
-						logging.warning(_(u'%s: old instance won\'t '
-							'terminate after 15 seconds and cannot '
-							'be killed directly or by killing its direct '
-							'parent, bailing out. You\'re in trouble '
-							'on a system where "kill -9" does not work '
-							'as advertised. Sorry for you.') % str(self))
+						logging.warning(_(u'{0:s}: old instance has not '
+							u'terminated after 15 seconds and cannot '
+							u'be killed directly or by killing its direct '
+							u'parent, bailing out. You are in trouble '
+							u'on a system where "kill -9" does not work '
+							u'as advertised. Sorry for you.').format(self))
 						sys.exit(-9)
 
 					counter += 1
 
-				logging.notice(_(u'{0}: old instance {1} terminated{2}').format(
-						str(self),
-						_(u'nastily') if killed else _(u'successfully'),
+				logging.notice(_(u'{0:s}: old instance {1} terminated{2}').format(
+						self, _(u'nastily') if killed else _(u'successfully'),
 						_(u', we can play now.')
 									if self.options.replace else '.'))
 
 			else:
-				logging.notice(_(u'{0}: daemon already running (pid {1}), '
-					'not restarting.').format(str(self), old_pid))
+				logging.notice(_(u'{0:s}: daemon already running (pid {1}), '
+					u'not restarting.').format(self, old_pid))
 				sys.exit(5)
 
 		assert ltrace(TRACE_DAEMON, '< replace_or_shutdown()')
@@ -723,8 +723,8 @@ class LicornDaemon(Singleton):
 			try:
 				process.refork_as_root_or_die('licorn-daemon')
 			except exceptions.LicornRuntimeException, e:
-				logging.error(_(u'{0}: must be run as {1} '
-					'(was: {2}).').format(str(self),
+				logging.error(_(u'{0:s}: must be run as {1} '
+					u'(was: {2}).').format(self,
 					stylize(ST_NAME, 'root'), e))
 	def need_restart_callback(self, reason, *args, **kwargs):
 
@@ -766,9 +766,9 @@ class LicornDaemon(Singleton):
 
 		fr_lang    = gettext.translation('licorn', languages=['fr'])
 		self.langs = {
-				'fr_FR.utf8' : fr_lang,
-				'fr_FR'      : fr_lang,
-				'fr'         : fr_lang,
+				u'fr_FR.utf8' : fr_lang,
+				u'fr_FR'      : fr_lang,
+				u'fr'         : fr_lang,
 			}
 
 		# make the current thread (MainThread) not trigger the except everytime.
@@ -796,12 +796,12 @@ class LicornDaemon(Singleton):
 			# take over a TS backgrounded daemon with -rvD and my attached
 			# daemon gets rekilled immediately by another, launched by the TS.
 			# This is harmless, but annoying.
-			logging.warning(_(u'{0}: cannot announce shutdown '
-				'to remote hosts (was: {1}).').format(str(self), e))
+			logging.warning(_(u'{0:s}: cannot announce shutdown '
+				u'to remote hosts (was: {1}).').format(self, e))
 
 		self.__stop_threads()
 
-		logging.progress(_(u'%s: joining threads.') % str(self))
+		logging.progress(_(u'{0:s}: joining threads.').format(self))
 
 		threads_pass2 = []
 
@@ -815,8 +815,8 @@ class LicornDaemon(Singleton):
 			else:
 				assert ltrace(TRACE_THREAD, 'joining %s.' % thname)
 				if th.is_alive():
-					logging.warning(_(u'{0}: waiting for thread {1} to '
-						'finish{2}.').format(str(self),
+					logging.warning(_(u'{0:s}: waiting for thread {1} to '
+						u'finish{2}.').format(self,
 							stylize(ST_NAME, thname),
 							_(u' (currently working on %s)')
 									% stylize(ST_NAME, th.job)
@@ -858,25 +858,25 @@ class LicornDaemon(Singleton):
 			if os.path.exists(self.pid_file):
 				os.unlink(self.pid_file)
 		except (OSError, IOError), e:
-			logging.warning(_(u'{0}: cannot remove {1} (was: {2}).').format(
-				str(self), stylize(ST_PATH, self.pid_file), e))
+			logging.warning(_(u'{0:s}: cannot remove {1} (was: {2}).').format(
+				self, stylize(ST_PATH, self.pid_file), e))
 	def uptime(self):
-		return _(u' (up %s)') % stylize(ST_COMMENT,
-				pyutils.format_time_delta(time.time() - dstart_time))
+		return _(u' (up {0})').format(stylize(ST_COMMENT,
+				pyutils.format_time_delta(time.time() - dstart_time)))
 	def terminate(self, signum=None, frame=None):
 		""" Close threads, wipe pid files, clean everything before closing. """
 
 		assert ltrace(TRACE_DAEMON, '| terminate(%s, %s)' % (signum, frame))
 
 		if signum is None:
-			logging.progress(_('%s: cleaning up and stopping threads…') % str(self))
+			logging.progress(_(u'{0:s}: cleaning up and stopping threads…').format(self))
 		else:
-			logging.notice(_('{0}: signal {1} received, '
-				'shutting down…').format(str(self), signum))
+			logging.notice(_(u'{0:s}: signal {1} received, '
+				u'shutting down…').format(self, signum))
 
 		self.__daemon_shutdown()
 
-		logging.notice(_(u'{0}: exiting{1}.').format(str(self), self.uptime()))
+		logging.notice(_(u'{0:s}: exiting{1}.').format(self, self.uptime()))
 		sys.exit(0)
 	def restart(self, signum=None, frame=None):
 
@@ -918,7 +918,7 @@ class LicornDaemon(Singleton):
 		if not found:
 			cmd.extend(sys.argv[:])
 
-		logging.notice(_(u'{0}: restarting{1}.').format(str(self), self.uptime()))
+		logging.notice(_(u'{0:s}: restarting{1}.').format(self, self.uptime()))
 
 		# XXX: awful tricking for execvp but i'm tired of trying to find a clean
 		# way to do this.
@@ -939,22 +939,22 @@ class LicornDaemon(Singleton):
 		self.__queues.serviceQ.put((prio, func, args, kwargs))
 	def __service_wait(self):
 		if isinstance(current_thread(), ServiceWorkerThread):
-			raise RuntimeError('cannot join the serviceQ from '
-				'a ServiceWorkerThread instance, this would deadblock!')
+			raise RuntimeError(_(u'Cannot join the serviceQ from '
+				u'a ServiceWorkerThread instance, this would deadblock!'))
 		self.__queues.serviceQ.join()
 	def __network_enqueue(self, prio, func, *args, **kwargs):
 		self.__queues.networkQ.put((prio, func, args, kwargs))
 	def __network_wait(self):
 		if isinstance(current_thread(), NetworkWorkerThread):
-			raise RuntimeError('cannot join the networkQ from '
-				'a NetworkWorkerThread instance, this would deadblock!')
+			raise RuntimeError(_(u'Cannot join the networkQ from '
+				u'a NetworkWorkerThread instance, this would deadblock!'))
 		self.__queues.networkQ.join()
 	def __aclcheck_enqueue(self, prio, func, *args, **kwargs):
 		self.__queues.aclcheckQ.put((prio, func, args, kwargs))
 	def __aclcheck_wait(self):
 		if isinstance(current_thread(), ACLCkeckerThread):
-			raise RuntimeError('cannot join the ackcheckerQ from '
-				'a ACLCkeckerThread instance, this would deadblock!')
+			raise RuntimeError(_(u'Cannot join the ackcheckerQ from '
+				u'a ACLCkeckerThread instance, this would deadblock!'))
 		self.__queues.aclcheckQ.join()
 	def clean_objects(self, delay=None):
 		self.__threads.DeadThreadCleaner.trigger(delay)
@@ -974,12 +974,12 @@ class LicornDaemon(Singleton):
 			if not thread.is_alive():
 				del self.__threads[tname]
 				del thread
-				assert ltrace(TRACE_THREAD, _('{0}: wiped dead thread {1} '
-					'from memory.').format(
+				assert ltrace(TRACE_THREAD, _(u'{0}: wiped dead thread {1} '
+					u'from memory.').format(
 						caller, stylize(ST_NAME, tname)))
 
 		assert ltrace(TRACE_THREAD, _(u'{0}: doing manual '
-			'garbage collection on {1}.').format(caller,
+			u'garbage collection on {1}.').format(caller,
 				', '.join(str(x) for x in gc.garbage)))
 		del gc.garbage[:]
 
@@ -997,15 +997,15 @@ class LicornDaemon(Singleton):
 			)
 
 		app = {
-			'name' : 'licornd',
-			'description' : 'Licorn® Daemon:\n'
-				'	Global system and service manager,\n'
-				'	Command Line Interface proxy,\n'
-				'	Network scanner and updater,\n'
-				'	Posix1e ACL auto checker with inotify support,\n'
-				'	Web Management Interface HTTP server,\n'
-				'	File meta-data crawler.',
-			'author' : 'Olivier Cortès <olive@deep-ocean.net>'
+			u'name' : u'licornd',
+			u'description' : u'Licorn® Daemon:\n'
+				u'	Global system and service manager,\n'
+				u'	Command Line Interface proxy,\n'
+				u'	Network scanner and updater,\n'
+				u'	Posix1e ACL auto checker with inotify support,\n'
+				u'	Web Management Interface HTTP server,\n'
+				u'	File meta-data crawler.',
+			u'author' : u'Olivier Cortès <olive@deep-ocean.net>'
 		}
 
 		usage_text = '''
@@ -1022,49 +1022,49 @@ class LicornDaemon(Singleton):
 
 		parser.add_option("-D", "--no-daemon",
 			action="store_false", dest="daemon", default=True,
-			help="Don't fork as a daemon, stay on the current terminal instead."
-				" Logs will be printed on standard output "
-				"instead of beiing written into the logfile.")
+			help=_(u"Don't fork as a daemon, stay on the current terminal instead."
+				u" Logs will be printed on standard output "
+				u"instead of beiing written into the logfile."))
 
 		parser.add_option("-W", "--no-wmi",
 			action="store_false", dest="wmi_enabled", default=True,
-			help="Don't fork the WMI. This flag overrides the setting in %s." %
+			help=_(u"Don't fork the WMI. This flag overrides the setting in %s.") %
 				stylize(ST_PATH, LMC.configuration.main_config_file))
 
 		parser.add_option("-w", "--wmi-listen-address",
 			action="store", dest="wmi_listen_address", default=None,
-			help='Specify an IP address or a hostname to bind to. Only %s can '
-				'be specified (the WMI cannot yet bind on multiple interfaces '
-				'at the same time). This option takes precedence over the '
-				'configuration directive, if present in %s.' % (
+			help=_(u'Specify an IP address or a hostname to bind to. Only {0} can '
+				u'be specified (the WMI cannot yet bind on multiple interfaces '
+				u'at the same time). This option takes precedence over the '
+				u'configuration directive, if present in {1}.').format(
 				stylize(ST_IMPORTANT, 'ONE address or hostname'),
 				stylize(ST_PATH, LMC.configuration.main_config_file)))
 
 		parser.add_option("-p", "--wake-pid", "--pid-to-wake",
 			action="store", type="int", dest="pid_to_wake", default=None,
-			help='Specify a PID to send SIGUSR1 to, when daemon is ready. Used '
-				'internaly only when CLI tools start the daemon themselves.')
+			help=_(u'Specify a PID to send SIGUSR1 to, when daemon is ready. Used '
+				u'internaly only when CLI tools start the daemon themselves.'))
 
 		parser.add_option('-r', '--replace',
 			action='store_true', dest='replace', default=False,
-			help='Replace an existing daemon instance. A comfort flag to avoid'
-				'killing an existing daemon before relaunching a new one.')
+			help=_(u'Replace an existing daemon instance. A comfort flag to avoid'
+				u'killing an existing daemon before relaunching a new one.'))
 
 		parser.add_option('-k', '--kill', '-T', '--terminate', '-S', '--shutdown',
 			action="store_true", dest='shutdown', default=False,
-			help='Shutdown any currently running Licorn® daemon. We will try '
-				'to terminate them nicely, before beiing more agressive after '
-				'a given period of time.')
+			help=_(u'Shutdown any currently running Licorn® daemon. We will try '
+				u'to terminate them nicely, before beiing more agressive after '
+				u'a given period of time.'))
 
 		parser.add_option("-B", "--no-boot-check",
 			action="store_true", dest="no_boot_check", default=False,
-			help="Don't run the initial check on all shared directories. This "
-				"makes daemon be ready faster to answer users legitimate "
-				"requests, at the cost of consistency of shared data. %s: don't"
-				" use this flag at server boot in init scripts. Only on daemon "
-				"relaunch, on an already running system, for testing or "
-				"debugging purposes." % stylize(ST_IMPORTANT,
-				'EXTREME CAUTION'))
+			help=_(u"Don't run the initial check on all shared directories. This "
+				u"makes daemon be ready faster to answer users legitimate "
+				u"requests, at the cost of consistency of shared data. {0}: don't"
+				u" use this flag at server boot in init scripts. Only on daemon "
+				u"relaunch, on an already running system, for testing or "
+				u"debugging purposes.").format(stylize(ST_IMPORTANT,
+				'EXTREME CAUTION')))
 
 		parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
