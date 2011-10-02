@@ -133,6 +133,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.convert_configuration_values()
 		self.check_configuration_directives()
+		self.check_debug_variable()
 	def _inotifier_install_watches(self, inotifier=None):
 		self.__configuration_hint = L_inotifier_watch_conf(self.main_config_file,
 									self, self.__configuration_file_changed)
@@ -378,6 +379,19 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			# TODO: check if the IP or the hostname is really on the local host.
 			# check if self.licornd.pyro.listen_address \
 			# in [ network.interface_address(x) for x in network.list_interfaces() ]
+	def check_debug_variable(self):
+		self.debug = []
+
+		env_variable = os.getenv('LICORN_DEBUG', None)
+
+		if env_variable is not None:
+
+			for name in env_variable.split(','):
+				self.debug.append(name.lower())
+
+			logging.warning(_(u'{0:1}: internal debug enabled for {1}').format(
+				stylize(ST_NAME, 'configuration'),
+				u', '.join(stylize(ST_NAME, x) for x in self.debug)))
 	def check_configuration_directives(self):
 		""" Check directives which must be set, and values, for correctness. """
 

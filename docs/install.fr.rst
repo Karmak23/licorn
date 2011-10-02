@@ -123,7 +123,7 @@ Depuis les sources
 	sudo -s
 	echo 'licornd.role = SERVER' >> /etc/licorn/licorn.conf
 	cat >> /etc/sudoers <<EOF
-	Defaults	env_keep = "DISPLAY LTRACE LICORN_SERVER"
+	Defaults	env_keep = "DISPLAY LTRACE LICORN_SERVER LICORN_DEBUG"
 	EOF
 	exit
 
