@@ -514,10 +514,14 @@ class AbstractTimerThread(LicornBasicThread):
 				break
 
 			if self._reset_event.is_set():
-				logging.progress('%s: timer reset after %s elapsed.' % (self.name,
-						pyutils.format_time_delta(self.__time_elapsed)))
+				logging.progress(_(u'%s: timer reset after {} elapsed.').format(
+						stylize(ST_NAME, self.name),
+						pyutils.format_time_delta(self.__time_elapsed,
+													big_precision=True)))
+
 				with self._time_lock:
 					self.__time_elapsed = 0.0
+
 				self._reset_event.clear()
 
 			if self._trigger_event.is_set():
