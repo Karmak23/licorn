@@ -293,10 +293,13 @@ display_{name}({countdown_seconds});
 		operation='+' if limit else '-',
 		counter_test='<=' if limit else '>='
 	)
-	def _progress_bar(self, name, value):
-		return ('<span class="progressBar" '
-			'id="{name}">{value}%</span>\n'.format(
-			name=name, value=value))
+	def _progress_bar(self, name, value, css_classes=None):
+		return (u'<div id="progressbar_{name}" '
+			u'class="progressbar_overlayed {css_classes}"></div>\n'
+			u'<script language="javascript" type="text/javascript">'
+			u'$("#progressbar_{name}").progressbar({{ value: {value:.1f} }});'
+			u'</script>').format(name=name, value=value,
+				css_classes='' if css_classes is None else css_classes)
 def init():
 	""" Initialize the WMI module by importing all WMI objects and making them
 		available to the outside world (they must not be used directly). """

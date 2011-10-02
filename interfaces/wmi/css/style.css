@@ -761,6 +761,7 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 }
 
 .light_indicator {
+	clear: both;
 	text-align: center;
 	padding: 3px 7px;
 	border-radius:5px;
@@ -1504,6 +1505,8 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 
 .pie_chart {
 	#border: 1px solid;
+	margin-left: auto;
+	margin-right: auto;
 	width:	370px;
 	height: 230px;
 	#border: 1px solid blue;
@@ -1512,14 +1515,43 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 .donut_content {
 	text-align: center;
 	#border: 1px solid black;
-	float: left;
+	#float: left;
 }
 
 #charts {
 	#border: 1px solid red;
-	width: 100%;
+	#width: 100%;
+	text-align: center;
 	margin-right: auto;
 	margin-left: auto;
+}
+
+.progressbar_overlayed {
+#	position: relative;
+#	top: 0;
+#	left: 0;
+#	z-index: 10;
+#	width: 80%;
+#	border: 2px dotted red;
+}
+
+#.progressbar_micro_indicator {
+#	height: 28px;
+#}
+
+.progressbar_overlay_content {
+	position: relative;
+	#border: 1px dotted blue;
+	top: -28px;
+	left: 0;
+	padding: 0 10px;
+	z-index: 100;
+}
+.progressbar_overlay_content {
+
+}
+.overlay_content_part {
+	padding: 0 10px;
 }
 
 .stat_line {

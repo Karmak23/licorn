@@ -553,11 +553,12 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 			<title>%s %s</title>
 			<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 				<!--
-					<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/jquery-ui.css" />
-					<link rel="stylesheet" type="text/css" href="/css/jquery.jqplot.css" />
+				<link rel="stylesheet" type="text/css" href="/css/jquery.jqplot.css" />
 				-->
 				<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/style.css" />
+				<link rel="stylesheet" type="text/css" media="screen,projection" href="/css/jquery-ui_lightness.css" />
 				<script language="javascript" type="text/javascript" src="/js/jquery.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/jquery-ui.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/jquery.gettext.js"></script>
 				%s
 				<script language="javascript" type="text/javascript" src="/js/jquery.easing.js"></script>

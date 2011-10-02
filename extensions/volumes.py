@@ -39,7 +39,7 @@ def self_locked(func):
 			return func(self, *args, **kwargs)
 
 	return decorated
-def automount(func):
+def automount(lazy_lock=False):
 	""" Volume automount decorator. This will automount the volume, and
 		unmount after the end of the operation, if it was previously
 		unmounted. Things worth to note:
@@ -51,26 +51,46 @@ def automount(func):
 		   mounted, so other threads must not react to the auto-mount.
 	"""
 
-	@self_locked
-	def decorated(self, *args, **kwargs):
+	def automount_decorated(func):
+
+		def decorated(self, *args, **kwargs):
+
+			lazy_locked = False
+
+			if lazy_lock:
+				if not self.locked():
+					lazy_locked = True
+					self.lock.acquire()
+
+			else:
+				self.lock.acquire()
 
 			if self.mount_point is None:
 				assert ltrace(self._trace_name, '  volume %s auto-mounting.' % self)
 				self.mount(emit_event=False)
 				auto_unmount = True
+
 			else:
 				auto_unmount = False
 
-			res = func(self, *args, **kwargs)
+			try:
+				res = func(self, *args, **kwargs)
 
-			if auto_unmount:
-				assert ltrace(self._trace_name, '  volume %s auto-unmounting.' % self)
-				self.unmount(emit_event=False)
+			finally:
+				if auto_unmount:
+					assert ltrace(self._trace_name, '  volume %s auto-unmounting.' % self)
+					self.unmount(emit_event=False)
+
+				if lazy_lock:
+					if lazy_locked:
+						self.lock.release()
+
+				else:
+					self.lock.release()
 
 			return res
-
-	return decorated
-
+		return decorated
+	return automount_decorated
 class UdevMonitorThread(LicornBasicThread):
 	""" Handles the :command:`udev` connection and events.
 
@@ -288,7 +308,7 @@ class Volume:
 		else:
 			# overmounting is very unlikely to happen with guid...
 			self.mount_point = Volume.mount_base_path + self.guid
-	@automount
+	@automount(lazy_lock=True)
 	def stats(self):
 		""" See http://docs.python.org/library/os.html#os.statvfs for
 			details.
@@ -298,7 +318,7 @@ class Volume:
 
 		return (mpt_stat.f_bavail * mpt_stat.f_bsize * 1.0,
 				mpt_stat.f_blocks * mpt_stat.f_bsize * 1.0)
-	@automount
+	@automount(lazy_lock=False)
 	def enable(self, **kwargs):
 		""" Reserve a volume for Licorn® usage by placing a special hidden
 			file at the root of it.
@@ -330,7 +350,7 @@ class Volume:
 				u'(unsupported FS {2}).').format(stylize(ST_NAME, 'volumes'),
 					stylize(ST_PATH, self.mount_point),
 					stylize(ST_PATH, self.fstype)))
-	@automount
+	@automount(lazy_lock=False)
 	def disable(self, **kwargs):
 		""" Remove the special file at the root of the volume and thus unmark
 			it reserved for Licorn® usage.
@@ -358,8 +378,7 @@ class Volume:
 		else:
 			logging.info(_(u'{0}: Licorn® usage already disabled on {1}.').format(
 			stylize(ST_NAME, 'volumes'), stylize(ST_PATH, self.mount_point)))
-	@self_locked
-	def mount(self, emit_event=True, **kwargs):
+	def mount(self, emit_event=True, *args, **kwargs):
 		""" Mount a given volume, after having created its mount point
 			directory if needed. This method simply calls the :command:`mount`
 			program via the :func:`~licorn.foundations.process.execute`
@@ -373,77 +392,90 @@ class Volume:
 			:option:`exec` (this is a fixed parameter and can't currently be
 			modified; this could change in the near future).
 
-			.. note:: The mount point creation heuristics take care of already
-				existing mount points, and will find a unique and not currently
-				taken mount point directory name in any case.
-
+			.. note::
+				* if the volume is already mounted, nothing happens and
+				  the method simply returns `self` to be compatible with
+				  context-managers-related `with volume.mount()` calls.
+				* The mount point creation heuristics take care of already
+				  existing mount points, and will find a unique and not currently
+				  taken mount point directory name in any case.
 			"""
 
 		assert ltrace(TRACE_VOLUMES, '| Volume.mount(%s, current_mount_point=%s)' % (
 											self.device, self.mount_point))
 
-		if not self.mount_point:
-			self.__compute_mount_point()
+		# to be compatible with the @self_locked decorator without blocking,
+		# the real part of this method lies in `self.__mount()`.
+		if self.mount_point:
+			return self
 
-			if not os.path.exists(self.mount_point):
-				os.makedirs(self.mount_point)
-				logging.info(_(u'{0}: created mount point {1}.').format(
-					stylize(ST_NAME, 'volumes'),
-					stylize(ST_PATH, self.mount_point)))
+		return self.__mount(emit_event, *args, **kwargs)
+	@self_locked
+	def __mount(self, emit_event=True, *args, **kwargs):
+		""" The real mount procedure. """
+		assert ltrace(TRACE_VOLUMES, '| Volume.__mount(%s, current_mount_point=%s)' % (
+											self.device, self.mount_point))
+		self.__compute_mount_point()
 
-			if self.supported:
-				mount_cmd = [ 'mount', '-t', self.fstype, '-o',
-					','.join(Volume.mount_options[self.fstype]),
-					self.device, self.mount_point ]
+		if not os.path.exists(self.mount_point):
+			os.makedirs(self.mount_point)
+			logging.info(_(u'{0}: created mount point {1}.').format(
+				stylize(ST_NAME, 'volumes'),
+				stylize(ST_PATH, self.mount_point)))
 
-			else:
-				# probably VFAT, NTFS or ISO9660. We need to find the
-				# user at console and give the device to him.
+		if self.supported:
+			mount_cmd = [ 'mount', '-t', self.fstype, '-o',
+				','.join(Volume.mount_options[self.fstype]),
+				self.device, self.mount_point ]
 
-				other_mount_options = ''
+		else:
+			# probably VFAT, NTFS or ISO9660. We need to find the
+			# user at console and give the device to him.
 
-				# TODO: use ConsoleKit or whatever is better than this. As
-				# of 20110420, I couldn't find easily what is deprecated
-				# and what should officially be used to find the user at
-				# console. Any hint is welcome. At least, this
-				# implementation is very simple and works on Ubuntu
-				# (tested on Maverick).
-				if os.path.isdir('/var/run/console'):
-					for entry in os.listdir('/var/run/console'):
-						try:
-							user = LMC.users.by_login(entry)
-							other_mount_options = ',uid=%s,gid=%s' % (
-								user.uidNumber, user.gidNumber)
-							break
-						except KeyError:
-							pass
+			other_mount_options = ''
 
-				mount_cmd = [ 'mount', '-t', self.fstype, '-o',
-					'noatime,errors=remount-ro,'
-						+ ','.join(Volume.mount_options[self.fstype])
-						+ other_mount_options,
-					self.device, self.mount_point ]
+			# TODO: use ConsoleKit or whatever is better than this. As
+			# of 20110420, I couldn't find easily what is deprecated
+			# and what should officially be used to find the user at
+			# console. Any hint is welcome. At least, this
+			# implementation is very simple and works on Ubuntu
+			# (tested on Maverick).
+			if os.path.isdir('/var/run/console'):
+				for entry in os.listdir('/var/run/console'):
+					try:
+						user = LMC.users.by_login(entry)
+						other_mount_options = ',uid=%s,gid=%s' % (
+							user.uidNumber, user.gidNumber)
+						break
+					except KeyError:
+						pass
 
-			assert ltrace(TRACE_VOLUMES, '| %s' % ' '.join(mount_cmd))
+			mount_cmd = [ 'mount', '-t', self.fstype, '-o',
+				'noatime,errors=remount-ro,'
+					+ ','.join(Volume.mount_options[self.fstype])
+					+ other_mount_options,
+				self.device, self.mount_point ]
 
-			output = process.execute(mount_cmd)[1].strip()
+		assert ltrace(TRACE_VOLUMES, '| %s' % ' '.join(mount_cmd))
 
-			if output:
-				logging.warning(_(u'{0}: {1}').format(
-								stylize(ST_NAME, 'volumes'), output))
-			else:
-				if emit_event:
-					L_event_dispatch(priorities.NORMAL,
-						InternalEvent('volume_mounted', volume=self))
+		output = process.execute(mount_cmd)[1].strip()
 
-				logging.notice(_(u'{0}: mounted device {1}({2}) at {3}.').format(
-								stylize(ST_NAME, 'volumes'),
-								stylize(ST_DEVICE, self.device),
-								stylize(ST_DEVICE, self.fstype),
-								stylize(ST_PATH, self.mount_point)))
+		if output:
+			logging.warning(_(u'{0}: {1}').format(
+							stylize(ST_NAME, 'volumes'), output))
 
-			if self.supported:
-				self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
+		if emit_event:
+			L_event_dispatch(priorities.NORMAL,
+				InternalEvent('volume_mounted', volume=self))
+
+		logging.notice(_(u'{0}: mounted device {1}({2}) at {3}.').format(
+						stylize(ST_NAME, 'volumes'),
+						stylize(ST_DEVICE, self.device),
+						stylize(ST_DEVICE, self.fstype),
+						stylize(ST_PATH, self.mount_point)))
+
+		if self.supported:
+			self.enabled = os.path.exists(self.mount_point + Volume.enabler_file)
 
 		return self
 	@self_locked

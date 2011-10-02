@@ -113,6 +113,16 @@ def index(uri, http_user, **kwargs):
 		priorities.HIGH: ''
 		}
 
+	for obj in wmi.__dict__.itervalues():
+		if isinstance(obj, NamedObject):
+			if hasattr(obj, '_status'):
+				for msgtuple in getattr(obj, '_status')():
+					status_messages[msgtuple[0]] += msgtuple[1] + '\n'
+			if hasattr(obj, '_info'):
+				for msgtuple in getattr(obj, '_info')():
+					info_messages[msgtuple[0]] += msgtuple[1] + '\n'
+
+
 	main_content = '''
 	<div>
 		<h1>{system_info_title}</h1>
@@ -125,6 +135,7 @@ def index(uri, http_user, **kwargs):
 		{status_messages[0]}
 		<p>{system_status}<br /><br /></p>
 		{status_messages[10]}
+		{status_messages[20]}
 
 	</div> '''.format(
 		status_messages=status_messages,
@@ -204,7 +215,8 @@ def index(uri, http_user, **kwargs):
 		inner_radius=inner_radius, background=background,
 		radius=100)
 
-	sub_content = '''<div id='charts'>
+	sub_content = '''
+	<div id='charts'>
 		<h1>{title}</h1>
 		<div id="ram_usage_content" class="donut_content">
 			<h2>{mem_title}</h2>
@@ -218,15 +230,16 @@ def index(uri, http_user, **kwargs):
 				<img src='/images/swap_pie_donnut.png'/>
 			</div>
 		</div>
-	</div>'''.format(
+	</div>
+	{info_messages[20]}
+'''.format(
 			title=_('System resources usage'),
 			mem_title=_('Physical memory'),
-			swap_title=_('Virtual (swap) memory')
+			swap_title=_('Virtual (swap) memory'),
+			info_messages=info_messages
 		)
 
 	data += w.sub_content(sub_content)
-
-
 
 	page = w.page(title,
 		data + w.page_body_end(w.total_time(start, time.time())))
@@ -235,15 +248,7 @@ def index(uri, http_user, **kwargs):
 
 
 
-	"""	for obj in wmi.__dict__.itervalues():
-		if isinstance(obj, NamedObject):
-			if hasattr(obj, '_status'):
-				for msgtuple in getattr(obj, '_status')():
-					status_messages[msgtuple[0]] += msgtuple[1] + '\n'
-			if hasattr(obj, '_info'):
-				for msgtuple in getattr(obj, '_info')():
-					info_messages[msgtuple[0]] += msgtuple[1] + '\n'
-
+	"""
 	data += '''
 	<table style="margin-top: -40px">
 	<tr>
