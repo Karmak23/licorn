@@ -1830,10 +1830,10 @@ class CoreStoredObject(CoreUnitObject):
 	@backend.setter
 	def backend(self, backend):
 		if hasattr(self, 'move_to_backend'):
-			self.__backend == backend
+			self.__backend = backend
 		else:
-			raise exceptions.LicornRuntimeError('cannot set a backend without '
-				'a "move_to_backend" method in the current class.')
+			raise exceptions.LicornRuntimeError(_(u'Cannot set a backend '
+				u'without a "move_to_backend" method on the current instance.'))
 
 	@property
 	def lock(self):

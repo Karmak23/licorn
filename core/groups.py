@@ -825,6 +825,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			handled by distros maintainer, you'd better not touch them.
 
 		"""
+
 		if new_backend.name not in LMC.backends.keys():
 			raise exceptions.DoesntExistException(_(u'Backend %s does not '
 							u'exist or is not enabled.') % new_backend.name)
@@ -878,11 +879,11 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.backend = new_backend
 			self.serialize(backend_actions.CREATE)
 
-		except KeyboardInterrupt, e:
+		except Exception, e:
 			logging.warning(_(u'Exception {0} happened while trying to '
 				u'move group {1} from {2} to {3}, aborting (group left '
 				u'unchanged).').format(e, group_name, old_backend, new_backend))
-			print_exc()
+			pyutils.print_exception_if_verbose()
 
 			try:
 				# try to restore old situation as much as possible.
