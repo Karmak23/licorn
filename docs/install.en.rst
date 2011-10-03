@@ -128,5 +128,14 @@ From sources
 	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
 	sudo mod config -b openldap
 
+	# Then edit /etc/ldap.conf and put this content into it:
+	base dc=meta-it,dc=local
+	uri ldapi:///
+	ldap_version 3
+	rootbinddn cn=admin,dc=meta-it,dc=local
+	pam_password md5
+
+	# The file /etc/ldap.secret will be automatically filled by licornd at next launch.
+
 #. optional: launch the daemon with `licornd -vD` (`-v`is optionnal, this is the verbose flag). Without `-D` it will fork into the background. With it, you will see what the daemon does. This step is optional because every Licorn® tool will get the daemon automatically started if they need it.
 #. enjoy Licorn® on your Linux system.
