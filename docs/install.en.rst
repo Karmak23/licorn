@@ -43,7 +43,7 @@ From sources
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
 			python-pyip python-ipcalc python-udev python-dbus \
-			python-gobject gettext
+			python-gobject gettext python-pygments
 
 #. About `python-pylibacl`: be sure to install at least version *0.3*.
 #. Get the source localy with darcs::
@@ -89,13 +89,17 @@ From sources
 
 #. Some version dependant links:
 
-  * Under debian / Ubuntu <= Karmic (Python 2.5)::
+  * Under debian / Ubuntu <= Natty Narwhal (Python 2.7)::
 
-	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.5/site-packages/licorn
+        sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.7/site-packages/licorn
 
   * Under debian / Ubuntu *>= Lucid* (Python 2.6)::
 
 	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.6/dist-packages/licorn
+
+  * Under debian / Ubuntu <= Karmic (Python 2.5)::
+
+        sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.5/site-packages/licorn
 
 #. optional : to get `licornd` started at boot, get the init-script, and configure it::
 
@@ -125,7 +129,7 @@ From sources
 #. From here, you don't need to use `sudo` anymore. Members of group `admins` can control `licornd`
 #. if you want LDAP support:  (see wiki/LDAPBackend] for configuration defaults, which Licorn® expects)::
 
-	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
+	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap ldap-auth-config-licorn
 	sudo mod config -b openldap
 
 	# Then edit /etc/ldap.conf and put this content into it:

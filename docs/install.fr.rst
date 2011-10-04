@@ -46,7 +46,7 @@ Depuis les sources
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
 			python-pyip python-ipcalc python-udev python-dbus \
-			python-gobject gettext
+			python-gobject gettext python-pygments
 
 #. à propos de ``python-pylibacl`` : vérifiez que c'est au moins la version *0.3* (à partir de ``Hardy`` c'est bon).
 #. Récupérez les sources avec :program:`darcs`::
@@ -93,6 +93,10 @@ Depuis les sources
 
 #. Quelques liens qui dépendent de la version de votre système:
 
+  * Pour Debian / Ubuntu *>= Natty Narwhal (Python 2.7)::
+
+	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.7/dist-packages/licorn
+
   * Pour Debian / Ubuntu *>= Lucid* (Python 2.6)::
 
 	sudo ln -sf "${LCN_DEV_DIR}" /usr/lib/python2.6/dist-packages/licorn
@@ -138,7 +142,7 @@ Depuis les sources
 #. À partir de maintenant, `sudo` n'est plus nécessaire. Les membres du groupe ``admins`` peuvent controller :program:`licornd` directement (ce groupe a été créé par le démon à son premier lancement).
 #. Si vous désirez activer le support LDAP::
 
-	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
+	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap ldap-auth-config-licorn
 	sudo mod config -b openldap
 
 	# puis éditez /etc/ldap.conf avec le contenu suivant :
