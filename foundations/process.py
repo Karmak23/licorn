@@ -8,10 +8,12 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, traceback, pwd, grp, time
+import os, sys, traceback, pwd, grp, time, signal
+from types import *
 
-from licorn.foundations        import exceptions, logging
-from licorn.foundations.ltrace import ltrace, insert_ltrace
+from licorn.foundations         import exceptions, logging
+from licorn.foundations.styles  import *
+from licorn.foundations.ltrace  import ltrace, insert_ltrace
 from licorn.foundations.ltraces import *
 #
 # daemon and process functions
@@ -34,6 +36,7 @@ def daemonize(log_file=None):
 		if os.fork() > 0:
 			# exit first parent
 			sys.exit(0)
+
 	except OSError, e:
 		logging.error("fork #1 failed: errno %d (%s)" % (
 			e.errno, e.strerror))
@@ -50,6 +53,7 @@ def daemonize(log_file=None):
 		if os.fork() > 0:
 			# exit from second parent
 			sys.exit(0)
+
 	except OSError, e:
 		logging.error("fork #2 failed: errno %d (%s)" % (
 			e.errno, e.strerror))
@@ -114,7 +118,7 @@ def already_running(pid_file):
 #
 # System() / Popen*() convenience wrappers.
 #
-def syscmd(command, expected_retcode = 0):
+def syscmd(command, expected_retcode=0):
 	""" Execute `command` in a subshell and grab the return value to test it.
 		If the test fails, an exception is raised.
 		The exception must be an instance of exceptions.SystemCommandError or
@@ -141,14 +145,26 @@ def syscmd(command, expected_retcode = 0):
 		raise exceptions.SystemCommandError(command, retcode)
 	if signal != 0:
 		raise exceptions.SystemCommandSignalError(command, signal)
-def execute(command, input_data = ''):
-	""" Roughly pipe some data into a program.
+def execute(command, input_data='', dry_run=None):
+	""" Execute a command (passed as a list or tuple) and roughly pipe some
+		data into the executed program.
 	Return the (eventual) stdout and stderr in a tuple. """
 
-	assert ltrace(TRACE_PROCESS, '''execute(%s)%s.''' % (command,
-		' with input_data="%s"' % input_data if input_data != '' else ''))
+	assert ltrace(TRACE_PROCESS, 'execute(%s)%s, dry_run=%s.' % (command,
+		' with input_data="%s"' % input_data if input_data != '' else '', dry_run))
 
 	from subprocess import Popen, PIPE
+
+	if dry_run:
+		logging.notice(_(u'{0:s}: dry_run({1}){2}.').format(
+			stylize(ST_NAME, u'execute'),
+			stylize(ST_COMMENT, u' '.join(command)),
+			_(u' → sleep({0})').format(dry_run)))
+
+		if type(dry_run) in (IntType, LongType, FloatType):
+			time.sleep(float(dry_run))
+
+		return ('', '')
 
 	if input_data != '':
 		p = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
@@ -195,22 +211,21 @@ def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
 		if prefunc != None:
 			prefunc()
 
-		logging.progress('''Exec'ing ourselves with sudo to gain root '''
-			'''privileges (execvp(%s)).''' % cmd)
+		logging.progress(_(u'Exec\'ing ourselves with sudo to gain root '
+				u'privileges (execvp(%s)).') % cmd)
 
-		#print '>> process.refork_as_root_or_die %s' % cmd
 		os.execvp('sudo', cmd)
 
 	else:
-		raise exceptions.LicornRuntimeError('''You're not a member of group '''
-			'''%s, can't do anything for you, sorry!''' % group)
+		raise exceptions.LicornRuntimeError(_(u'You are not a member of group '
+			u'%s, cannot do anything for you, sorry!') % group)
 def get_traceback():
 	return traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))
 def fork_licorn_daemon(pid_to_wake=None):
 	""" Start the Licorn® daemon (fork it). """
 
 	try:
-		logging.progress('forking licornd.')
+		logging.progress(_(u'Forking licornd.'))
 		if os.fork() == 0:
 			# NOTE: we need to force a replace, in case the existing daemon is
 			# in a bad posture, eg. stuck in a restart procedure: it's not
@@ -231,7 +246,7 @@ def fork_licorn_daemon(pid_to_wake=None):
 			os.execvp('licornd', args)
 
 	except (IOError, OSError), e:
-		logging.error("licornd fork failed: errno %d (%s)." % (e.errno,
+		logging.error(_(u'licornd fork failed: errno %d (%s).') % (e.errno,
 			e.strerror))
 def find_network_client_uid(orig_port, client_port, local=True):
 	""" will only work on localhost, and on linux, from a root process...
