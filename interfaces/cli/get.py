@@ -10,13 +10,13 @@ Partial Copyright (C) 2006-2007 Régis Cobrun <reg53fr@yahoo.fr>
 Licensed under the terms of the GNU GPL version 2.
 
 """
-import Pyro.errors, time
+import sys, os, Pyro.errors, time
 
 from threading import Thread, RLock, Event
 
 from licorn.foundations    import logging, options, pyutils
 from licorn.interfaces.cli import cli_main, CliInteractor
-from licorn.core           import LMC
+from licorn.core           import version, LMC
 
 def get_events(opts, args):
 	system = LMC.system
@@ -94,6 +94,63 @@ def get_status(opts, args):
 			logging.warning(e)
 			pyutils.print_exception_if_verbose()
 			stop_event.set()
+def get_inside(opts, args):
+
+	import code
+
+	class ProxyConsole(code.InteractiveConsole):
+		"""(local) Proxy interactive console to remote interpreter. Taken from
+			rfoo nearly verbatim and adapted to Pyro / Licorn needs. """
+
+		def __init__(self):
+			code.InteractiveConsole.__init__(self)
+		def complete(self, phrase, state):
+			"""Auto complete support for interactive console."""
+
+			# Allow tab key to simply insert spaces when proper.
+			if phrase == '':
+				if state == 0:
+					return '	'
+				return None
+
+			return LMC.system.console_complete(phrase, state)
+		def runsource(self, source, filename="<licorn console>", symbol="single"):
+
+			more, output = LMC.system.console_runsource(source, filename)
+
+			if output:
+				self.write(output)
+
+			return more
+
+	console      = ProxyConsole()
+	history_file = os.path.expanduser('~/.licorn/interactor_history')
+
+	try:
+		import readline
+		readline.set_completer(console.complete)
+		readline.parse_and_bind('tab: complete')
+		try:
+			readline.read_history_file(history_file)
+		except IOError:
+			pass
+
+	except ImportError:
+		history_file = None
+
+	try:
+		LMC.system.console_start()
+		sys.ps1 = u'licornd> '
+
+		console.interact(banner=_(u'Licorn® {0}, Python {1} '
+						u'on {2}').format(version,
+							sys.version.replace('\n', ''),
+							sys.platform))
+
+	finally:
+		LMC.system.console_stop()
+		if history_file:
+			readline.write_history_file(history_file)
 
 def get_main():
 
@@ -113,8 +170,8 @@ def get_main():
 														None, get_status),
 		'events'       : ('get_events_parse_arguments',
 														None, get_events),
-		#'inside'       : (None,
-		#												None, get_inside),
+		'inside'       : ('get_inside_parse_arguments',
+														None, get_inside),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),
 		}, {
 		"name"     		: "licorn-get",

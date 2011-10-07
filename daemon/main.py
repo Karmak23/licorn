@@ -370,11 +370,11 @@ class LicornDaemon(Singleton):
 
 		if options.daemon:
 			logging.notice(_(u'{0:s}: all threads started, going to sleep '
-				'waiting for signals.').format(self))
+				u'waiting for signals.').format(self))
 			signal.pause()
 		else:
 			logging.notice(_(u'{0:s}: all threads started, ready for TTY '
-				'interaction.').format(self))
+				u'interaction.').format(self))
 			# set up the interaction with admin on TTY std*, only if we do not
 			# fork into the background. This is a special thread case, not
 			# handled by the global start / stop mechanism, to be able to start

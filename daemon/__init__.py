@@ -90,7 +90,6 @@ class LicornDaemonInteractor(ttyutils.LicornInteractor):
 			'' : self.dump_daemon_status,	# ^T (display status; idea from BSD, ZSH)
 			' '   : self.clear_then_dump_status,
 			''  : self.clear_then_dump_status, # ^Y (display status after clearing the screen
-			'i'   : self.interact,
 			}
 		self.avoid_help = (' ', )
 	def toggle_long_output(self):
@@ -183,58 +182,3 @@ class LicornDaemonInteractor(ttyutils.LicornInteractor):
 										u'screen').format(
 											stylize(ST_OK, _(u'Space')),
 											stylize(ST_OK, 'Control-Y'))
-	def interact(self):
-		logging.notice(_('%s: Entering interactive mode. '
-			'Welcome into licornd\'s arcanes…') % self.name)
-
-		# trap SIGINT to avoid shutting down the daemon by
-		# mistake. Now Control-C is used to reset the
-		# current line in the interactor.
-		def interruption(x, y):
-			raise KeyboardInterrupt
-
-		signal.signal(signal.SIGINT, interruption)
-
-		from licorn.core import version, LMC
-
-		# NOTE: we intentionnaly restrict the interpreter
-		# environment, else it
-		interpreter = self.__class__.HistoryConsole(
-			locals={
-				'version'       : version,
-				'daemon'        : self.daemon,
-				'queues'        : self.daemon.queues,
-				'threads'       : self.daemon.threads,
-				'uptime'        : self.daemon.uptime,
-				'LMC'           : LMC,
-				'dump'          : dump,
-				'fulldump'      : fulldump,
-				'options'       : options,
-				},
-			filename="<licornd_console>",
-			histfile=os.path.expanduser('~/.licorn/licornd_history'))
-
-		# put the TTY in standard mode (echo on).
-		self.restore_terminal()
-		sys.ps1 = u'licornd> '
-		sys.ps2 = u'...'
-		interpreter.init_history()
-
-		interpreter.interact(
-				banner=_(u'Licorn® {0}, Python {1} '
-						u'on {2}').format(version,
-							sys.version.replace('\n', ''),
-							sys.platform))
-
-		interpreter.save_history()
-
-		# restore signal and terminal handling
-		signal.signal(signal.SIGINT,
-			lambda x, y: self.daemon.terminate)
-
-		# take the TTY back into command mode.
-		self.prepare_terminal()
-
-		logging.notice(_(u'%s: leaving interactive mode. '
-			u'Welcome back to Real World™.') % self.name)
-	interact.__doc__ = _(u'Run an interactive console')

@@ -482,7 +482,7 @@ def get_events_parse_arguments(app):
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
 	parser.add_option_group(common_filter_group(app, parser, 'get', 'events'))
-	parser.add_option_group(__get_output_group(app, parser,'users'))
+	parser.add_option_group(__get_output_group(app, parser, 'events'))
 
 	events = OptionGroup(parser,
 		stylize(ST_OPTION, _(u"Events monitoring options")))
@@ -494,6 +494,24 @@ def get_events_parse_arguments(app):
 				stylize(ST_DEFAULT, _(u"std")))
 
 	parser.add_option_group(events)
+
+	return parser.parse_args()
+def get_inside_parse_arguments(app):
+	""" Integrated help and options / arguments for « get user(s) »."""
+
+	usage_text = "\n\t%s %s" \
+		% (
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE, "inside"),
+		)
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
+	# no behaviour / filter change here
+	#parser.add_option_group(common_filter_group(app, parser, 'get', 'inside'))
 
 	return parser.parse_args()
 def get_privileges_parse_arguments(app):

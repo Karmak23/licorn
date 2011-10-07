@@ -7,7 +7,7 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, os, termios, threading, curses, code, readline, select, signal
+import sys, os, termios, threading, curses, code, readline, select, signal, pprint
 
 from rlcompleter import Completer
 
@@ -149,26 +149,6 @@ def interactive_ask_for_repair(message, auto_answer=None):
 # or when the daemon is in the foreground. CLI and the daemon define inherited
 # classes of this one, which does pretty nothing.
 class LicornInteractor(NamedObject):
-	class HistoryConsole(code.InteractiveConsole):
-		def __init__(self, locals=None, filename="<licornd_console>",
-			histfile=os.path.expanduser('~/.licorn/interactor_history')):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.__init__()')
-			code.InteractiveConsole.__init__(self, locals, filename)
-			self.histfile = histfile
-			readline.set_completer(Completer(namespace=self.locals).complete)
-			readline.parse_and_bind("tab: complete")
-
-		def init_history(self):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.init_history()')
-			if hasattr(readline, "read_history_file"):
-				try:
-					readline.read_history_file(self.histfile)
-				except IOError:
-					pass
-		def save_history(self):
-			assert ltrace(TRACE_INTERACTOR, '| HistoryConsole.save_history()')
-			readline.write_history_file(self.histfile)
-
 	def __init__(self, name):
 		assert ltrace(TRACE_INTERACTOR, '| LicornInteractor.__init__()')
 
@@ -208,7 +188,7 @@ class LicornInteractor(NamedObject):
 			try:
 				self.prepare_terminal()
 
-				while not self._stop_event.is_set()		:
+				while not self._stop_event.is_set():
 					try:
 						readf, writef, errf = select.select([self.fd], [], [])
 

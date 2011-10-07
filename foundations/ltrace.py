@@ -28,11 +28,11 @@ from ltraces import *
 
 def dump_one(obj_to_dump, long_output=False):
 	try:
-		print obj_to_dump.dump_status(long_output=long_output)
+		return obj_to_dump.dump_status(long_output=long_output)
 
 	except AttributeError:
 		if long_output:
-			print '%s %s:\n%s' % (
+			return '%s %s:\n%s' % (
 				str(obj_to_dump.__class__),
 				stylize(ST_NAME, obj_to_dump.name),
 				'\n'.join(['%s(%s): %s' % (
@@ -41,7 +41,7 @@ def dump_one(obj_to_dump, long_output=False):
 					getattr(obj_to_dump, key))
 						for key in dir(obj_to_dump)]))
 		else:
-			print '%s %s: %s' % (
+			return '%s %s: %s' % (
 				str(obj_to_dump.__class__),
 				stylize(ST_NAME, obj_to_dump.name),
 				[ key for key in dir(obj_to_dump)])

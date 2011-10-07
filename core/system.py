@@ -13,23 +13,35 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import os, pwd, uuid
+import sys, os, pwd, uuid, code, rlcompleter, pprint
+
 from threading import current_thread, RLock
 
 from licorn.foundations           import logging, options
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import ltrace, dump, fulldump
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.messaging import remote_output, ListenerObject
 from licorn.foundations.constants import host_status, host_types, distros, \
 											reasons, conditions
 
-from licorn.core         import LMC
+from licorn.core         import version, LMC
 from licorn.core.classes import CoreController
 from licorn.daemon       import roles, client, priorities
 
+
+class BufferedInterpreter(code.InteractiveInterpreter):
+	""" This one comes from rfoo, verbatim. I tried to implement it another way,
+		but the rffo way is really cool.
+		http://code.google.com/p/rfoo/
+	"""
+	def __init__(self, *args, **kwargs):
+		code.InteractiveInterpreter.__init__(self, *args, **kwargs)
+		self.output_buffer = ''
+	def write(self, data):
+		self.output_buffer += data
 class SystemController(Singleton, CoreController, ListenerObject):
 	""" This class implement a local system controller. It is meant to be used
 		remotely, via Pyro calls, to act on the local machine, or transmit
@@ -296,3 +308,73 @@ class SystemController(Singleton, CoreController, ListenerObject):
 
 		logging.notice(_(u'Trace session UUID {0} ended.').format(
 													stylize(ST_UGID, muuid)))
+	def console_start(self):
+		#self._console_namespace   = sys._getframe(1).f_globals
+		self._console_namespace = {
+				'version'       : version,
+				'daemon'        : self.licornd,
+				'queues'        : self.licornd.queues,
+				'threads'       : self.licornd.threads,
+				'uptime'        : self.licornd.uptime,
+				'LMC'           : LMC,
+				'dump'          : dump,
+				'fulldump'      : fulldump,
+				'options'       : options,
+				}
+		self._console_interpreter = BufferedInterpreter(self._console_namespace)
+		self._console_completer   = rlcompleter.Completer(self._console_namespace)
+
+		t = current_thread()
+		logging.notice(_(u'{0}: Interactive console requested by {1} '
+			u'from {2}.').format(self.licornd,
+			stylize(ST_NAME, t._licorn_remote_user),
+			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
+											t._licorn_remote_port))))
+		remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n')
+	def console_stop(self):
+		del self._console_completer
+		del self._console_interpreter
+		del self._console_namespace
+
+		t = current_thread()
+		logging.notice(_(u'{0}: Interactive console terminated by {1} '
+			u'from {2}.').format(self.licornd,
+			stylize(ST_NAME, t._licorn_remote_user),
+			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
+											t._licorn_remote_port))))
+		remote_output(_(u'Welcome back to Real World™.') + '\n')
+	def console_complete(self, phrase, state):
+		#print '>> compl', phrase, state, self._console_completer.complete(phrase, state)
+		return self._console_completer.complete(phrase, state)
+	def console_runsource(self, source, filename="<input>"):
+		"""Variation of InteractiveConsole which returns expression
+		result as second element of returned tuple.
+		"""
+
+		# Inject a global variable to capture expression result.
+		# This implies the fix for http://dev.licorn.org/ticket/582
+		self._console_namespace['_console_result_'] = None
+
+		try:
+			# In case of an expression, capture result.
+			compile(source, '<input>', 'eval')
+			source = '_console_result_ = ' + source
+
+		except SyntaxError:
+			pass
+
+		more = self._console_interpreter.runsource(source, filename)
+		result = self._console_namespace.pop('_console_result_')
+
+		if more is True:
+			# nothing to display, just return, for the remote side to continue.
+			return True, ''
+
+		output = self._console_interpreter.output_buffer
+		self._console_interpreter.output_buffer = ''
+
+		if result is not None:
+			result = pprint.pformat(result)
+			output += result + '\n'
+
+		return False, output
