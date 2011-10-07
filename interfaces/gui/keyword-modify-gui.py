@@ -235,7 +235,7 @@ class LicornModifyKeywordsWindow(LicornKeywordsGtkWindow):
 		else:                           max = 1
 
 		map( lambda x: count_keywords(x),
-			fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+			fsapi.minifind(path, maxdepth=max, itype=stat.S_IFREG))
 
 		assert logging.debug('Dir %s, %d files, kwu: %s.' % (styles.stylize(styles.ST_PATH, path), keyword_usage['@fc@'], keyword_usage))
 

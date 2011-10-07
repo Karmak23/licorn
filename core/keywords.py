@@ -238,7 +238,7 @@ class KeywordsController(Singleton, LockedController):
 			# TODO: affine path
 			map(
 				lambda x: __rename_keyword_from_path(x),
-				 fsapi.minifind(self.work_path, type = stat.S_IFREG) )
+				 fsapi.minifind(self.work_path, itype=(stat.S_IFREG,)) )
 			self.DeleteKeyword(name, del_children=True, modify_file=False)
 			self.WriteConf()
 		except KeyError:
@@ -329,7 +329,7 @@ class KeywordsController(Singleton, LockedController):
 			if recursive: max = 99
 			else:         max = 1
 			map(lambda x: __add_keywords_to_file(x),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+				 fsapi.minifind(path, maxdepth=max, itype=(stat.S_IFREG,)))
 	def DeleteKeywordsFromPath(self, path, keywords_to_del, recursive=False):
 		""" Delete keywords from a file or directory files
 		"""
@@ -386,7 +386,7 @@ class KeywordsController(Singleton, LockedController):
 			# skip related files if mount point is not mounted with user_xattr.
 
 			map(lambda x: __delete_keywords_from_file(x),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+				 fsapi.minifind(path, maxdepth=max, itype=(stat.S_IFREG,)))
 	def ClearKeywords(self, path, recursive=False):
 		""" Delete all keywords from a file or directory files
 		"""
@@ -401,7 +401,7 @@ class KeywordsController(Singleton, LockedController):
 			if recursive: max = 99
 			else:         max = 1
 			map(lambda x: xattr.setxattr(x, self.licorn_xattr, ""),
-				 fsapi.minifind(path, maxdepth=max, type = stat.S_IFREG))
+				 fsapi.minifind(path, maxdepth=max, itype=(stat.S_IFREG,)))
 	def GetKeywordsFromPath(self, path):
 		""" get user_xattr keywords from a given path. """
 		return xattr.getxattr(path, self.licorn_xattr).split(',')
@@ -431,6 +431,6 @@ class KeywordsController(Singleton, LockedController):
 		# TODO: affine the path
 		paths = filter(
 			search,
-			fsapi.minifind(self.work_path, type = stat.S_IFREG)
+			fsapi.minifind(self.work_path, itype=(stat.S_IFREG,))
 			)
 		return paths

@@ -15,10 +15,10 @@ Licensed under the terms of the GNU GPL version 2
 import os, posix1e, time, shutil
 from stat import *
 
-from licorn.foundations.ltrace import ltrace
+from licorn.foundations.ltrace  import ltrace
 from licorn.foundations.ltraces import *
-from licorn.foundations        import logging, exceptions, pyutils, process
-from licorn.foundations.styles import *
+from licorn.foundations         import logging, exceptions, pyutils, process
+from licorn.foundations.styles  import *
 
 from licorn.core import LMC
 
@@ -26,8 +26,8 @@ from licorn.core import LMC
 # just pass "configuration" as a parameter if you need it somewhere.
 # fsapi is meant to to be totally independant of licorn.core.configuration !!
 
-def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
-	followlinks=False, followmounts=True):
+def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
+	followlinks=False, followmounts=True, yield_type=False):
 	""" Mimic the GNU find behaviour in python. returns an iterator. """
 
 	if mindepth > maxdepth:
@@ -38,14 +38,15 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		raise  exceptions.BadArgumentError(
 			_(u'minifind: please do not try to exhaust maxdepth.'))
 
-	assert ltrace(TRACE_FSAPI, '> minifind(%s, type=%s, mindepth=%s, '
+	assert ltrace(TRACE_FSAPI, '> minifind(%s, itype=%s, mindepth=%s, '
 		'maxdepth=%s, exclude=%s, followlinks=%s, followmounts=%s)' % (
-			path, type, mindepth, maxdepth, exclude, followlinks, followmounts))
+			path, itype, mindepth, maxdepth, exclude, followlinks, followmounts))
 
 	paths_to_walk      = [ path ]
 	next_paths_to_walk = []
 	current_depth      = 0
-	S_IFSTD            = S_IFDIR | S_IFREG
+	if itype is None:
+		itype = (S_IFDIR, S_IFREG)
 
 	while True:
 
@@ -65,20 +66,25 @@ def minifind(path, type=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 			entry_stat = os.lstat(entry)
 			entry_type = entry_stat.st_mode & 0170000
 			entry_mode = entry_stat.st_mode & 07777
+
 		except (IOError, OSError), e:
 			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
 				continue
 			else:
 				raise e
 		else:
-			if current_depth >= mindepth \
-				and ( (type is None and entry_type & S_IFSTD) \
-					or entry_type == type) \
-				and ( perms is None or (entry_mode & perms) ):
+			if (current_depth >= mindepth
+				and entry_type in itype
+				and (perms is None or entry_mode & perms)):
 				#ltrace(TRACE_FSAPI, '  minifind(yield=%s)' % entry)
-				yield entry
 
-			#print 'type %s %s %s' % (entry_type, S_IFLNK, entry_type & S_IFLNK)
+				if yield_type:
+					yield (entry, entry_type)
+
+				else:
+					yield entry
+
+			#print 'itype %s %s %s' % (entry_type, S_IFLNK, entry_type & S_IFLNK)
 
 			if (entry_type == S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
@@ -219,22 +225,17 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 								if dir_info.content_acl else _(u'posix perms')))
 
 				if dir_info.dirs_perm != None:
-					for directory in minifind(path, type=S_IFDIR,
-										exclude=exclude_list, mindepth=1):
+					itype = (S_IFREG, S_IFDIR)
 
-						dir_info.path=directory
-						for event in check_perms(file_type=S_IFDIR,
-												dir_info=dir_info,
-												batch=batch,
-												auto_answer=auto_answer,
-												full_display=full_display):
-							yield event
+				else:
+					itype = (S_IFREG,)
 
-				for filename in minifind(path, type=S_IFREG,
-									exclude=exclude_list, mindepth=1):
+				for entry, etype in minifind(path, itype=itype,
+									exclude=exclude_list, mindepth=1,
+									yield_type=True):
 
-						dir_info.path=filename
-						for event in check_perms(file_type=S_IFREG,
+						dir_info.path = entry
+						for event in check_perms(file_type=etype,
 												dir_info=dir_info,
 												batch=batch,
 												auto_answer=auto_answer,
@@ -344,7 +345,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
 			if e.errno == 2: return
-			else: raise e
+			else:
+				logging.warning(_(u"Exception encoutered while trying to "
+					u"get the posix.1e ACL of {0}.").format(path))
+				pyutils.print_exception_if_verbose()
+				return
 
 		if current_perm != access_perm:
 
@@ -397,12 +402,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									path=stylize(ST_PATH, path)))
 					except (IOError, OSError), e:
 						if e.errno == 2: return
+						else:
+							logging.warning(_(u"Exception encoutered while "
+								u"trying to set a posix.1e ACL "
+								u"on {0}.").format(path))
+							pyutils.print_exception_if_verbose()
+							return
 
-						elif e.errno == 95:
-							logging.warning(_(u'ACL not applyed '
-										u'on {0} (was: {1})').format(path, e))
-
-						else: raise e
 			else:
 				all_went_ok = False
 
@@ -464,7 +470,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									)))
 					except (IOError, OSError), e:
 						if e.errno == 2: return
-						else: raise e
+						else:
+							logging.warning(_(u"Exception encoutered while "
+								u"trying to set a posix.1e default ACL "
+								u"on {0}.").format(path))
+							pyutils.print_exception_if_verbose()
+							return
+
 				else:
 					all_went_ok = False
 	else:
@@ -473,7 +485,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			extended_acl = has_extended_acl(path)
 		except (IOError, OSError), e:
 			if e.errno == 2: return
-			else: raise e
+			else:
+				logging.warning(_(u"Exception encoutered while "
+					u"trying to find if {0} holds an ACL or not.").format(path))
+				pyutils.print_exception_if_verbose()
+				return
 
 		if extended_acl:
 			# if an ACL is present, this could be what is borking the Unix mode.
@@ -517,7 +533,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 				except (IOError, OSError), e:
 					if e.errno == 2: return
-					else: raise e
+					else:
+						logging.warning(_(u"Exception encoutered while "
+							u"trying to delete the posix.1e ACL "
+							u"on {0}.").format(path))
+						pyutils.print_exception_if_verbose()
+						return
+
 			else:
 				all_went_ok = False
 
@@ -527,7 +549,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 		except (IOError, OSError), e:
 			if e.errno == 2: return
-			else: raise e
+			else:
+				logging.warning(_(u"Exception encoutered while "
+					u"trying to `lstat()` {0}.").format(path))
+				pyutils.print_exception_if_verbose()
+				return
 
 		if current_perm != access_perm:
 
@@ -557,7 +583,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									path=stylize(ST_PATH, path)))
 					except (IOError, OSError), e:
 						if e.errno == 2: return
-						else: raise e
+						else:
+							logging.warning(_(u"Exception encoutered while "
+								u"trying to change posix permissions "
+								u"on {0}.").format(path))
+							pyutils.print_exception_if_verbose()
+							return
+
 			else:
 				all_went_ok = False
 

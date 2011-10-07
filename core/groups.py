@@ -986,7 +986,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								oldname)
 
 			for link in fsapi.minifind(user.homeDirectory, maxdepth=2,
-										type=stat.S_IFLNK):
+										itype=(stat.S_IFLNK,)):
 				try:
 					link_src_abs = os.path.abspath(os.readlink(link))
 
@@ -1478,7 +1478,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 								link_basename)
 
 		for link in fsapi.minifind(user.homeDirectory,
-									maxdepth=2, type=stat.S_IFLNK):
+									maxdepth=2, itype=(stat.S_IFLNK,)):
 			try:
 				if os.path.abspath(os.readlink(link)) == link_src:
 					os.unlink(link)

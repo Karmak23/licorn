@@ -268,7 +268,7 @@ class Cache(Thread):
 		logging.progress('%s: Starting to Cache(%s, force=%d).' % (self.getName(), styles.stylize(styles.ST_PATH, path), force))
 
 		try:
-			map(lambda x: self.__cache_one_file(x, batch = True, force = force), fsapi.minifind(path, type = stat.S_IFREG))
+			map(lambda x: self.__cache_one_file(x, batch = True, force = force), fsapi.minifind(path, itype=(stat.S_IFREG,)))
 		except exceptions.LicornStopException:
 			logging.info("%s: stop request received, cleaning up." % self.getName())
 	def removeEntry(self, path):

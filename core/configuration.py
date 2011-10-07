@@ -730,7 +730,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if os.path.exists(skel_path):
 				try:
 					for new_skel in fsapi.minifind(path=skel_path,
-						type=stat.S_IFDIR, mindepth=2, maxdepth=2):
+						itype=(stat.S_IFDIR,), mindepth=2, maxdepth=2):
 						self.users.skels.append(new_skel)
 				except OSError, e:
 					logging.warning('''Custom skels must have at least %s '''
