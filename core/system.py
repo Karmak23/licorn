@@ -31,7 +31,6 @@ from licorn.core         import version, LMC
 from licorn.core.classes import CoreController
 from licorn.daemon       import roles, client, priorities
 
-
 class BufferedInterpreter(code.InteractiveInterpreter):
 	""" This one comes from rfoo, verbatim. I tried to implement it another way,
 		but the rffo way is really cool.
@@ -329,7 +328,8 @@ class SystemController(Singleton, CoreController, ListenerObject):
 			u'from {2}.').format(self.licornd,
 			stylize(ST_NAME, t._licorn_remote_user),
 			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
-											t._licorn_remote_port))))
+											t._licorn_remote_port))),
+											to_listener=False)
 		remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n')
 	def console_stop(self):
 		del self._console_completer
@@ -341,10 +341,10 @@ class SystemController(Singleton, CoreController, ListenerObject):
 			u'from {2}.').format(self.licornd,
 			stylize(ST_NAME, t._licorn_remote_user),
 			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
-											t._licorn_remote_port))))
+											t._licorn_remote_port))),
+											to_listener=False)
 		remote_output(_(u'Welcome back to Real World™.') + '\n')
 	def console_complete(self, phrase, state):
-		#print '>> compl', phrase, state, self._console_completer.complete(phrase, state)
 		return self._console_completer.complete(phrase, state)
 	def console_runsource(self, source, filename="<input>"):
 		"""Variation of InteractiveConsole which returns expression
