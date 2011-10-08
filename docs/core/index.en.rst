@@ -1,4 +1,4 @@
-.. _core:
+.. _core.en:
 
 ============
 Licorn® Core
@@ -33,7 +33,7 @@ Modules: backends and extensions
 .. toctree::
 	:maxdepth: 2
 
-	backends.en
+	backends/index.en
 	../extensions/index.en
 
 

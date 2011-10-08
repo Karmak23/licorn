@@ -1,4 +1,4 @@
-.. _core.backends.shadow:
+.. _core.backends.shadow.en:
 
 ==============
 Shadow backend

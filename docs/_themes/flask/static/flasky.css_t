@@ -78,6 +78,7 @@ div.body {
 img.floatingflask {
     padding: 0 0 10px 10px;
     float: right;
+    max-width: 100%;
 }
 
 div.footer {

@@ -1,4 +1,4 @@
-.. _core.backends.openldap:
+.. _core.backends.openldap.en:
 
 ================
 OpenLDAP backend

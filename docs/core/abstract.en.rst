@@ -1,4 +1,4 @@
-.. _core.abstract:
+.. _core.abstract.en:
 
 =================
 Core abstractions
@@ -58,6 +58,14 @@ The CoreStoredObject
 
 Modules abstract classes
 ========================
+
+Modules states
+--------------
+
+.. image:: /_static/core/Licorn®_modules_states.png
+   :alt: Licorn® modules states diagram
+   :class: floatingflask
+
 
 The ModulesManager
 ------------------

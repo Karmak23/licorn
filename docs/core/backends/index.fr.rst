@@ -15,11 +15,18 @@ Il hérite du gestionnaire de modules (voir :class:`~licorn.core.classes.Modules
 Backends
 ========
 
-Voici les backends en eux-mêmes. Ils héritent tous des :ref:`classes abstraites de backends <core.backends.abstract>` (en anglais).
+Voici les backends en eux-mêmes. Ils héritent tous des :ref:`classes abstraites de backends <core.backends.abstract.fr>`.
 
 .. toctree::
 	:maxdepth: 2
 
-	backends/shadow
-	backends/openldap
-	backends/dnsmasq
+	backends/shadow.fr
+	backends/openldap.fr
+	backends/dnsmasq.fr
+
+.. _core.backends.abstract.fr:
+
+Classes abstraites des backends
+===============================
+
+La :ref:`documentation sur les classes abstraites des backends <core.backends.abstract.en>` n'est disponible qu'en anglais pour l'instant. N'oubliez pas le :ref:`Gestionnaire de backends <core.backends.manager.class.en>`, qui fait partie des classes abstraites mais dont la documentation anglaise est située juste au dessus.

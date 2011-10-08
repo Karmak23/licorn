@@ -1,9 +1,9 @@
 
-.. _core.lmc.en:
+.. _core.lmc.fr:
 
-=========================
-Licorn® Master Controller
-=========================
+====================================================================
+Le contrôleur maître de Licorn® (Licorn® Master Controller, aka LMC)
+====================================================================
 
 Description
 ===========

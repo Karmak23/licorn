@@ -1,4 +1,4 @@
-.. _core.backends.dnsmasq:
+.. _core.backends.dnsmasq.en:
 
 ===============
 DNSmasq backend

@@ -1,4 +1,4 @@
-.. _core.backends:
+.. _core.backends.en:
 
 ========
 Backends
@@ -10,6 +10,8 @@ Backends manager
 The backends manager holds all the backends instance. It loads and unloads them, enables and disables them.
 
 All in all, the backends manager inherits from the :class:`~licorn.core.classes.ModulesManager`, and shares a lot with :class:`~licorn.extensions.ExtensionsManager` (see :ref:`core.modules` for more details).
+
+.. _core.backends.manager.class.en:
 
 .. autoclass:: licorn.core.backends.BackendsManager
 	:exclude-members: GUID, getAttrProxy, getDaemon, getLocalStorage, delegateTo, getProxy, Pyro_dyncall, remote_retrieve_code, remote_supply_code, setCodeValidator, setPyroDaemon, setGUID
@@ -29,7 +31,7 @@ These are the real backends implementation. They all inherit from one or more of
 	backends/openldap.en
 	backends/dnsmasq.en
 
-.. _core.backends.abstract:
+.. _core.backends.abstract.en:
 
 Backends abstract classes
 =========================
