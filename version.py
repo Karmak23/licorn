@@ -11,4 +11,4 @@ Just type 'make darcs_record_prehook' in the repository to update the file.
 :license: GNU GPL version 2
 """
 
-version = 'dev+r1126'
+version = 'dev+r1127'

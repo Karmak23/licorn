@@ -114,7 +114,10 @@ def get_inside(opts, args):
 				return None
 
 			return LMC.system.console_complete(phrase, state)
-		def runsource(self, source, filename="<licorn console>", symbol="single"):
+		def runsource(self, source, filename=None, symbol="single"):
+
+			if filename is None:
+				filename = "<licorn_remote_console>"
 
 			more, output = LMC.system.console_runsource(source, filename)
 
@@ -122,6 +125,10 @@ def get_inside(opts, args):
 				self.write(output)
 
 			return more
+		def write(self, data):
+			#if output[0] == 'u' and output[-1] in ('"', '"'):
+			#	output = eval(output)
+			sys.stdout.write(data)
 
 	console      = ProxyConsole()
 	history_file = os.path.expanduser('~/.licorn/interactor_history')

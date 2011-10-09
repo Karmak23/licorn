@@ -18,14 +18,36 @@ ltrace - light procedural trace (debug only)
 Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, os
-from time import time, localtime, strftime
+import sys, os, threading, traceback
+from time  import time, localtime, strftime
 from types import *
 
 # WARNING: please do not import anything from licorn here, except styles.
 from styles  import *
 from ltraces import *
 
+try:
+	from pygments import highlight
+	from pygments.lexers import PythonLexer
+	from pygments.formatters import Terminal256Formatter
+
+	lexer = PythonLexer()
+	formatter = Terminal256Formatter()
+except ImportError:
+	highlight = lambda x, y, z: x
+	lexer     = ''
+	formatter = ''
+
+def dumpstacks(signal=None, frame=None):
+    id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
+    code = []
+    for threadId, stack in sys._current_frames().items():
+        code.append(_("\n# Thread: %s(%d)") % (id2name[threadId], threadId))
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            code.append(_('	File: "%s", line %d, in %s') % (filename, lineno, name))
+            if line:
+                code.append("	  %s" % (line.strip()))
+    return highlight("\n".join(code), lexer, formatter)
 def dump_one(obj_to_dump, long_output=False):
 	try:
 		return obj_to_dump.dump_status(long_output=long_output)
@@ -46,15 +68,13 @@ def dump_one(obj_to_dump, long_output=False):
 				stylize(ST_NAME, obj_to_dump.name),
 				[ key for key in dir(obj_to_dump)])
 def dump(*args, **kwargs):
-	for arg in args:
-		dump_one(arg)
-	for key, value in kwargs:
-		dump_one(value)
+	data = u'\n'.join(dump_one(arg) for arg in args)
+	data += u'\n'.join(dump_one(value) for key, value in kwargs)
+	return data
 def fulldump(*args, **kwargs):
-	for arg in args:
-		dump_one(arg, True)
-	for key, value in kwargs:
-		dump_one(value, True)
+	data = u'\n'.join(dump_one(arg, True) for arg in args)
+	data += u'\n'.join(dump_one(value, True) for key, value in kwargs)
+	return data
 def mytime():
 	""" close http://dev.licorn.org/ticket/46 """
 	t = time()

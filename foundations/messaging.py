@@ -9,7 +9,7 @@
 	:license: Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, os, getpass, __builtin__
+import sys, os, getpass, time, __builtin__
 import Pyro.core, Pyro.util
 from threading import current_thread
 
@@ -21,12 +21,12 @@ from ltraces   import *
 from base      import NamedObject, pyro_protected_attrs
 from constants import message_type, verbose, interactions
 
-def remote_output(text_message, clear_terminal=False):
+def remote_output(text_message, clear_terminal=False, *args, **kwargs):
 	""" Output a text message remotely, in CLI caller process, whose
 		reference is stored in :obj:`current_thread().listener`. """
 	return current_thread().listener.process(
 		LicornMessage(data=text_message, channel=1,
-						clear_terminal=clear_terminal),
+						clear_terminal=clear_terminal, **kwargs),
 		options.msgproc.getProxy())
 class LicornMessage(Pyro.core.CallbackObjBase):
 	""" Small message object pushed back and forth between Pyro instances on one
@@ -34,7 +34,7 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 	"""
 	def __init__(self, data='empty_message...', my_type=message_type.EMIT,
 					interaction=None, answer=None, auto_answer=None, channel=2,
-					clear_terminal=False):
+					clear_terminal=False, char_delay=None, word_delay=None):
 
 		Pyro.core.CallbackObjBase.__init__(self)
 
@@ -61,6 +61,10 @@ class LicornMessage(Pyro.core.CallbackObjBase):
 		self.channel     = channel
 
 		self.clear_terminal = clear_terminal
+
+		# fancy things, not used a lot.
+		self.char_delay = char_delay
+		self.word_delay = word_delay
 class ListenerObject(object):
 	""" note the listener Pyro proxy object in the current thread.
 		This is quite a hack but will permit to store it in a centralized manner
@@ -147,7 +151,27 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 			else:
 				if message.clear_terminal:
 					ttyutils.clear_terminal(MessageProcessor.channels[message.channel])
-				MessageProcessor.channels[message.channel].write(message.data)
+
+				chan_flush = MessageProcessor.channels[message.channel].flush
+				chan_write = MessageProcessor.channels[message.channel].write
+
+				if message.word_delay:
+					delay = message.word_delay
+					for word in message.data.split(' '):
+						chan_write(word + ('' if word == '\n' else ' '))
+						chan_flush()
+						time.sleep(delay)
+
+				elif message.char_delay:
+					delay = message.char_delay
+					for char in message.data:
+						chan_write(char)
+						chan_flush()
+						time.sleep(min(delay*4, 0.4) if char == ' ' else delay)
+
+				else:
+					chan_write(message.data)
+
 				message.answer = None
 
 		elif message.type == message_type.ANSWER:

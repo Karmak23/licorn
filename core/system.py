@@ -13,14 +13,14 @@ Licorn core: system - http://docs.licorn.org/core/system.html
 
 """
 
-import sys, os, pwd, uuid, code, rlcompleter, pprint
+import sys, os, pwd, uuid, code, rlcompleter
 
 from threading import current_thread, RLock
 
 from licorn.foundations           import logging, options
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, dump, fulldump
+from licorn.foundations.ltrace    import ltrace, dump, fulldump, dumpstacks
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.messaging import remote_output, ListenerObject
@@ -318,6 +318,7 @@ class SystemController(Singleton, CoreController, ListenerObject):
 				'LMC'           : LMC,
 				'dump'          : dump,
 				'fulldump'      : fulldump,
+				'dumpstacks'    : dumpstacks,
 				'options'       : options,
 				}
 		self._console_interpreter = BufferedInterpreter(self._console_namespace)
@@ -330,7 +331,8 @@ class SystemController(Singleton, CoreController, ListenerObject):
 			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
 											t._licorn_remote_port))),
 											to_listener=False)
-		remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n')
+		remote_output(_(u'Welcome into licornd\'s arcanes…') + '\n',
+						clear_terminal=True, char_delay=0.025)
 	def console_stop(self):
 		del self._console_completer
 		del self._console_interpreter
@@ -343,13 +345,17 @@ class SystemController(Singleton, CoreController, ListenerObject):
 			stylize(ST_ADDRESS, '%s:%s' % (t._licorn_remote_address,
 											t._licorn_remote_port))),
 											to_listener=False)
-		remote_output(_(u'Welcome back to Real World™.') + '\n')
+		# NOTE: there are console NBSPs at some choosen places in the sentences.
+		remote_output(_(u'Welcome back to Real World™. Have a nice day!') + '\n', word_delay=0.25)
 	def console_complete(self, phrase, state):
 		return self._console_completer.complete(phrase, state)
-	def console_runsource(self, source, filename="<input>"):
+	def console_runsource(self, source, filename=None):
 		"""Variation of InteractiveConsole which returns expression
 		result as second element of returned tuple.
 		"""
+
+		if filename is None:
+			filename = '<remote_console_input>'
 
 		# Inject a global variable to capture expression result.
 		# This implies the fix for http://dev.licorn.org/ticket/582
@@ -357,7 +363,7 @@ class SystemController(Singleton, CoreController, ListenerObject):
 
 		try:
 			# In case of an expression, capture result.
-			compile(source, '<input>', 'eval')
+			compile(source, filename, 'eval')
 			source = '_console_result_ = ' + source
 
 		except SyntaxError:
@@ -374,7 +380,9 @@ class SystemController(Singleton, CoreController, ListenerObject):
 		self._console_interpreter.output_buffer = ''
 
 		if result is not None:
-			result = pprint.pformat(result)
+		# NOTE: don't pprint, it avoids the ascii-escaped strings to be
+		# interpreted correctly.
+		#	result = pprint.pformat(result)
 			output += result + '\n'
 
 		return False, output
