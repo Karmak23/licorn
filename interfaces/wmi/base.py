@@ -130,6 +130,7 @@ def index(uri, http_user, **kwargs):
 	float: left;
 	stroke: white;
 	font: 10px sans-serif;
+	font-weight: lighter;
 	color: black;
 }}
 
@@ -154,6 +155,15 @@ def index(uri, http_user, **kwargs):
 	padding: 3px;
 	margin: 1px;
 }}
+
+.scaleline {{
+	stroke: #ccc;
+}}
+
+.baseline {{
+	stroke: #000;
+}}
+
 .rule, .label {{
 	font: sans-serif;
 	font-size: 10px;
@@ -163,7 +173,11 @@ def index(uri, http_user, **kwargs):
 }}
 </style>
 <script language="javascript">
+	// not global. this changes afterwards.
 	move_from_x = 0;
+
+	var transition_delay = 2500;
+	var transition_fast  = 1750;
 
 	avg_chart_data = {initial_data};
 
@@ -191,13 +205,12 @@ def index(uri, http_user, **kwargs):
 		.data(avg_chart_x.ticks(10))
 		.enter().append("svg:line")
 		.attr("class", "scaleline")
-		.attr("x1", move_from_x)
+		//.attr("x1", move_from_x)
 		.attr("y1", 0)
-		.attr("x2", move_from_x)
+		//.attr("x2", move_from_x)
 		.attr("y2", 75)
-		.attr("stroke", "#ccc")
-		.transition()
-			.duration(1000)
+		//.transition()
+		//	.duration(transition_fast)
 		.attr("x1", avg_chart_x)
 		.attr("x2", avg_chart_x);
 
@@ -209,7 +222,7 @@ def index(uri, http_user, **kwargs):
 		.attr("height", avg_chart_y.rangeBand() - 4)
 		.attr("class", function (d, i) {{ return 'databar load_avg_chart_bar' + i; }})
 		.transition()
-			.duration(1000)
+			.duration(transition_delay)
 		.attr("width", avg_chart_x);
 
 	avg_chart.selectAll("text.label")
@@ -223,7 +236,7 @@ def index(uri, http_user, **kwargs):
 		.attr("dy", ".35em") // vertical-align: middle
 		.text(String)
 		.transition()
-			.duration(1000)
+			.duration(transition_delay)
 		.attr("x", function(d) {{ if (d > limit) {{
 									return avg_chart_x(d);
 								}} else {{
@@ -234,28 +247,24 @@ def index(uri, http_user, **kwargs):
 		.data(avg_chart_x.ticks(10))
 		.enter().append("svg:text")
 		.attr("class", "rule")
-		.attr("x", move_from_x)
+		//.attr("x", move_from_x)
 		.attr("y", 0)
 		.attr("dy", -3)
 		.attr("text-anchor", "middle")
 		.text(function(d){{ return d.toFixed(2); }})
-		.transition()
-			.duration(1000)
+		//.transition()
+		//	.duration(transition_fast)
 		.attr("x", avg_chart_x);
 
 	avg_chart.append("svg:line")
 		.attr("class", "baseline")
 		.attr("y1", 0)
-		.attr("y2", 75)
-		.attr("stroke", "#000");
+		.attr("y2", 75);
 
 	function redraw_avg_chart(data) {{
 
 		//console.log('redraw ' + data.toString() + ' max: ' + [0, (parseFloat(d3.max(data)) + 0.5)].toString());
 		//console.log('old domain: ' + avg_chart_x.domain());
-
-		transition_delay = 2500;
-		transition_fast  = 1000;
 
 		var avg_chart_old_max = avg_chart_x.domain()[1];
 		var avg_chart_new_max = Math.ceil(d3.max(data));
@@ -282,6 +291,8 @@ def index(uri, http_user, **kwargs):
 
 		if (changes) {{
 
+			old_ticks = avg_chart_x.ticks(10);
+
 			// recompute x scale, based on new values
 			avg_chart_x.domain([0, avg_chart_new_max]);
 
@@ -289,16 +300,29 @@ def index(uri, http_user, **kwargs):
 
 			new_ticks = avg_chart_x.ticks(10);
 
-			updated_rules = avg_chart.selectAll("text.rule").data(new_ticks);
+			//console.log('ticks: ' + old_ticks + ' -> ' + new_ticks);
+
+			if (moving_down && new_ticks.length > old_ticks.length) {{
+
+				new_ticks.reverse();
+
+				//console.log('reverse applying ' + new_ticks);
+
+			}}
+
+			updated_rules = avg_chart.selectAll("text.rule").data(new_ticks, function(d) {{ return d;}});
 			updated_lines = avg_chart.selectAll("line.scaleline")
-								.data(new_ticks);
+								.data(new_ticks, function(d) {{ return d;}});
 
 			if (moving_down) {{
 				// insert new ticks on the left
 
 				updated_rules.enter()
 					.insert("svg:text", "text.rule")
+					.attr("color", "white")
 					.attr("class", "rule")
+					//.transition()
+					//	.delay(transition_fast)
 					.attr("x", move_from_x)
 					.attr("y", 0)
 					.attr("dy", -3)
@@ -306,18 +330,22 @@ def index(uri, http_user, **kwargs):
 					.text(function(d){{ return d.toFixed(2); }})
 					.transition()
 						.duration(transition_fast)
+					.attr("color", "#580d27")
 					.attr("x", avg_chart_x);
 
 				updated_lines.enter()
 					.insert("svg:line", 'line')
+					.attr("stroke", "white")
 					.attr("class", "scaleline")
+					//.transition()
+					//	.delay(transition_fast)
 					.attr("x1", move_from_x)
 					.attr("y1", 0)
 					.attr("x2", move_from_x)
 					.attr("y2", 75)
-					.attr("stroke", "#ccc")
 					.transition()
 						.duration(transition_fast)
+					.attr("stroke", "#ccc")
 					.attr("x1", avg_chart_x)
 					.attr("x2", avg_chart_x);
 
@@ -326,7 +354,10 @@ def index(uri, http_user, **kwargs):
 
 				updated_rules.enter()
 					.append("svg:text")
+					.attr("color", "white")
 					.attr("class", "rule")
+					//.transition()
+					//	.delay(transition_fast)
 					.attr("x", move_from_x)
 					.attr("y", 0)
 					.attr("dy", -3)
@@ -334,23 +365,24 @@ def index(uri, http_user, **kwargs):
 					.text(function(d){{ return d.toFixed(2); }})
 					.transition()
 						.duration(transition_fast)
+					.attr("color", "#580d27")
 					.attr("x", avg_chart_x);
 
 				// we must insert them before the rects databars, else they get
 				// printed above instead of below.
 				updated_lines.enter()
-					.insert("svg:line", "rect.databar")
+					.insert("svg:line", "line")
 					.attr("class", "scaleline")
+					//.transition()
+					//	.delay(transition_fast)
 					.attr("x1", move_from_x)
 					.attr("y1", 0)
 					.attr("x2", move_from_x)
 					.attr("y2", 75)
-					.attr("stroke", "#ccc")
 					.transition()
 						.duration(transition_fast)
 					.attr("x1", avg_chart_x)
 					.attr("x2", avg_chart_x);
-
 			}}
 
 			updated_rules
