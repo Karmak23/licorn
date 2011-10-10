@@ -273,7 +273,7 @@ def page_body_start(uri, http_user, ctxtnav_func, title, active=True):
 		</div><!-- banner -->'''.format(
 				back_to_home=backto(),
 				meta_nav=metanav(http_user),
-				menu=menu(uri))
+				menu=menu(uri, http_user))
 
 def page_body_end(data=''):
 	return '''</div><!-- content -->\n%s\n</div><!-- main -->''' % data
@@ -368,9 +368,25 @@ def acr(word):
 		return '<acronym title="%s">%s</acronym>' % (acronyms[word.upper()], word)
 	except KeyError:
 		return word
-def menu(uri):
+def is_super_admin(http_user):
+	# FIXME: this code is likely to be replicated in users.py and groups.py
+	return LMC.users.by_login(http_user) in LMC.groups.by_name(
+			LMC.configuration.defaults.admin_group).all_members
+def menu(uri, http_user=None):
 
 	import licorn.interfaces.wmi as wmi
+
+	debug_status = u''
+
+	if http_user:
+		if is_super_admin(http_user):
+			debug_status = u'''			<span class="menu-content-item">
+					<img src="/images/24x24/debug_status.png"/>
+					<span class="menu-content-text">
+					%s
+					</span>
+				</span>
+	''' % _(u'État du daemon')
 
 	class defdict(dict):
 		def __init__(self, default=''):
@@ -407,6 +423,7 @@ def menu(uri):
 				<img src="/images/24x24/redemarrer.png"/>
 				<span class="menu-content-text"> %s </span>
 			</span>
+			%s
 		</div>
 	</div>
 
@@ -456,8 +473,8 @@ def menu(uri):
 		</div>
 	</div>
 		%s
-		<!--
-		<div class="menu-item" >
+	<!--
+	<div class="menu-item" >
 		<div class="menu-title">
 			<a href="/internet" class="menu_link" title="%s">
 				<div class="menu-back "></div>
@@ -479,7 +496,7 @@ def menu(uri):
 			</span>
 		</div>
 	</div>
-		-->
+	-->
 	<div class="menu-item" >
 		<div class="menu-title">
 			<a href="http://docs.licorn.org/userdoc/index.html" class="menu_link" title="%s">
@@ -502,11 +519,12 @@ def menu(uri):
 </div>
 ''' % ( _('Server, UPS and hardware sub-systems status.'), _('Status'),
 		_('Shutdown'), _('Restart'),
+		debug_status,
 		_('Manage user accounts.'), _('Users'),
 		_('Add'), _('Import'),
 		_('Manage groups and shared data.'), _('Groups'),
 		_('Add'), _('Import'),
-		u'\n'.join([ '''
+		u'\n'.join([ u'''
 		<div class="menu-item" >
 			<div class="menu-title">
 				<a href="/{menu_uri}/" class="menu_link" title="{menu_alt}">
@@ -563,6 +581,7 @@ def head(title=_("%s Management") % LMC.configuration.app_name):
 				%s
 				<script language="javascript" type="text/javascript" src="/js/jquery.easing.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/jquery.base64.js"></script>
+				<script language="javascript" type="text/javascript" src="/js/d3/d3.min.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/utils.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/main.js"></script>
 				<script language="javascript" type="text/javascript" src="/js/menu.js"></script>

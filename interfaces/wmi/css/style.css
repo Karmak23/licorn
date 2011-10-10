@@ -1503,6 +1503,25 @@ span.delete-entry, span.view-entry, span.reapply-skel {
 	color: #FFFF00;
 }
 
+.load_avg_wrapper {
+	#border: 1px dotted blue;
+	clear: both;
+	width: 100%;
+	height: 120px;
+}
+
+.load_avg_label {
+	#border: 1px dotted red;
+	float:left;
+	width: 100px;
+	padding: 20px 10px 0 0;
+	height: 120px;
+	text-align:right;
+	vertical-align: center;
+}
+
+/******************************* SVG ************************************/
+
 .pie_chart {
 	#border: 1px solid;
 	margin-left: auto;
