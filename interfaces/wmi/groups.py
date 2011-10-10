@@ -95,12 +95,12 @@ def lock(uri, http_user, name, sure=False, **kwargs):
 		return (w.HTTP_TYPE_REDIRECT, successfull_redirect)
 
 
-def delete_message(uri, http_user, name, **kwargs):
+def delete_message(uri, http_user, gid, **kwargs):
 
-	group = LMC.groups.by_name(name)
+	group = LMC.groups.by_gid(gid)
 
 	description = _("Are you sure you want to remove group "
-		"<strong>%s</strong> ? <br/><br/>") % name
+		"<strong>%s</strong> ? <br/><br/>") % group.name
 	description += _('''Group shared data will be archived in directory %s,
 			and accessible to members of group %s for eventual
 			recovery. However, you can decideto remove them
@@ -125,49 +125,49 @@ def skel_message(uri, http_user, name, **kwargs):
 	return (w.HTTP_TYPE_JSON, description)
 
 
-def massive_delete(uri, http_user, names, sure, no_archive=False,
+def massive_delete(uri, http_user, gids, sure, no_archive=False,
 	**kwargs):
 	"""remove several users account."""
 	assert ltrace(TRACE_WMI, '> groups.massive_delete(uri=%s, http_user=%s, '
-		'names=%s, sure=%s, no_archive=%s)' % (uri, http_user,
-		names, sure, no_archive))
+		'gids=%s, sure=%s, no_archive=%s)' % (uri, http_user,
+		gids, sure, no_archive))
 
-	names = w.my_unquote(names)
+	gids = w.my_unquote(gids)
 	groups_deleted = []
-	for name in names.split(',') if names != '' else []:
+	for gid in gids.split(',') if gids != '' else []:
 		try:
-			t = delete(uri, http_user, name, sure, no_archive=no_archive)
-			groups_deleted.append(name)
+			t = delete(uri, http_user, gid, sure, no_archive=no_archive)
+			groups_deleted.append(gid)
 		except Exception, e:
 			raise
 	groups_deleted = '["%s"]' % '","'.join(groups_deleted)
 	return (w.HTTP_TYPE_JSON, groups_deleted)
-def massive_skel(uri, http_user, names, sure, apply_skel=None, **kwargs):
+def massive_skel(uri, http_user, gids, sure, apply_skel=None, **kwargs):
 	"""reapply a group's skel with confirmation."""
 	assert ltrace(TRACE_WMI, '> groups.massive_skel(uri=%s, http_user=%s, '
-		'names=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
-		names, sure, apply_skel))
+		'gids=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
+		gids, sure, apply_skel))
 
 	if apply_skel is None:
 		apply_skel = LMC.configuration.users.default_skel
 
-	names = w.my_unquote(names)
-	for name in names.split(',') if names != '' else []:
+	gids = w.my_unquote(gids)
+	for gid in gids.split(',') if gids != '' else []:
 		#print 'dealing with group %s' % name
-		skel(uri, http_user, name, sure=sure, apply_skel=apply_skel, massive_operation=True)
+		skel(uri, http_user, gid, sure=sure, apply_skel=apply_skel, massive_operation=True)
 
 	return (w.HTTP_TYPE_JSON, None)
 @check_groups('delete')
-def delete(uri, http_user, name, sure=False, no_archive=False,
+def delete(uri, http_user, gid, sure=False, no_archive=False,
 	massive_operation=False, **kwargs):
 	""" Remove group and archive (or not) group shared dir. """
 
-	group = LMC.groups.by_name(name)
-	LMC.groups.del_Group(group=LMC.groups.by_name(name), no_archive=bool(no_archive));
+	group = LMC.groups.by_gid(gid)
+	LMC.groups.del_Group(group=LMC.groups.by_gid(gid), no_archive=bool(no_archive));
 
-	return (w.HTTP_TYPE_JSON, group.to_JSON())
+	return (w.HTTP_TYPE_JSON, "[%s]" % gid)
 @check_groups('skel')
-def skel(uri, http_user, name, sure=False, apply_skel=None, **kwargs):
+def skel(uri, http_user, gid, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
 	assert ltrace(TRACE_WMI, '> groups.skel(uri=%s, http_user=%s, '
 		'name=%s, sure=%s, apply_skel=%s)' % (uri, http_user, name,
@@ -176,12 +176,14 @@ def skel(uri, http_user, name, sure=False, apply_skel=None, **kwargs):
 	#print "members : %s" %  LMC.groups.by_name(name).members
 
 	http_u = LMC.users.by_login(http_user)
-	g = LMC.groups.by_name(name)
+	g = LMC.groups.by_gid(gid)
 	wmi_group = LMC.groups.by_name(
 				LMC.configuration.licornd.wmi.group)
 	admins_group = LMC.groups.by_name(
 				LMC.configuration.defaults.admin_group)
-	for user in LMC.groups.by_name(name).members:
+	if len(LMC.groups.by_gid(gid).members) == 0:
+		logging.notice(_('Group {0} has no member.'.format(g.name)))
+	for user in LMC.groups.by_gid(gid).members:
 		if http_u not in admins_group.members and user in admins_group.members:
 			logging.notice(_('You cannot reapply skel of user %s, you have not enaugh rights') % user.login)
 			continue
@@ -256,13 +258,16 @@ def create(uri, http_user, name, description=None, skel="", permissive=False,
 
 	return (w.HTTP_TYPE_JSON, LMC.groups.by_name(name).to_JSON())
 
-def view(uri, http_user, name,**kwargs):
+def view(uri, http_user, gid,**kwargs):
 	"""Prepare a group view to be printed."""
 
+	
+
+	group = LMC.groups.by_gid(gid)
+	name = group.name
+	
 	title = _("Details of group %s") % name
-
-	group = LMC.groups.by_name(name)
-
+	
 	#data  = w.page_body_start(uri, http_user, ctxtnav, title)
 	data = ''
 
@@ -453,12 +458,13 @@ def view(uri, http_user, name,**kwargs):
 			name, "group = g[LMC.groups.name_to_gid(name)]", e))
 
 	return (w.HTTP_TYPE_JSON, data)
-def edit(uri, http_user, name, **kwargs):
+def edit(uri, http_user, gid, **kwargs):
 	"""Edit a group."""
 	is_super_admin = LMC.users.by_login(http_user) in LMC.groups.by_name(
 			LMC.configuration.defaults.admin_group).all_members
 
-	group = LMC.groups.by_name(name)
+	group = LMC.groups.by_gid(gid)
+	name = group.name
 
 	title = _("Editing group %s") %  name
 
@@ -548,14 +554,14 @@ def edit(uri, http_user, name, **kwargs):
 	return (w.HTTP_TYPE_JSON, data)
 
 @check_groups('edit_description')
-def edit_description(uri, http_user, gname, desc, **kwargs):
+def edit_description(uri, http_user, gid, desc, **kwargs):
 
-	LMC.groups.by_name(gname).description =  w.my_unquote(desc)
+	LMC.groups.by_gid(gid).description =  w.my_unquote(desc)
 
-	return (w.HTTP_TYPE_JSON, LMC.groups.by_name(gname).to_JSON())
-def edit_permissive(uri, http_user, gname, permissive, **kwargs):
+	return (w.HTTP_TYPE_JSON, LMC.groups.by_gid(gid).to_JSON())
+def edit_permissive(uri, http_user, gid, permissive, **kwargs):
 
-	group = LMC.groups.by_name(gname)
+	group = LMC.groups.by_gid(gid)
 
 	if (permissive == "true"):
 		group.permissive = True;
@@ -565,9 +571,9 @@ def edit_permissive(uri, http_user, gname, permissive, **kwargs):
 	return (w.HTTP_TYPE_JSON, group.to_JSON())
 
 @check_groups('edit_members')
-def edit_members(uri, http_user, gname, users='', **kwargs):
+def edit_members(uri, http_user, gid, users='', **kwargs):
 	""" edit user groups function"""
-	group = LMC.groups.by_name(gname)
+	group = LMC.groups.by_gid(gid)
 
 	# TODO : check if group is a standard group ? normaly it is
 	current_standard_users_list = group.members
@@ -640,7 +646,7 @@ def edit_members(uri, http_user, gname, users='', **kwargs):
 	#print "users removed from resp : %s" % ', '.join(u.login for u in users_removed_in_resp)
 	#print "users added from resp : %s" % ', '.join(u.login for u in users_added_in_resp)
 
-	return (w.HTTP_TYPE_JSON, None)
+	return (w.HTTP_TYPE_JSON, group.to_JSON())
 
 
 
@@ -680,11 +686,11 @@ def make_users_list( group):
 			data += "<span class='click_item priv_item " \
 			"instant_apply_click cat_%s' action='/groups/" \
 			"edit_members/%s'>" % (get_relationship(user, group),
-			group.name)
+			group.gidNumber)
 		else:
 			data += "<span class='click_item instant_apply_click cat_%s" \
 			"' action='/groups/edit_members/%s'>" % (get_relationship(user, group),
-			group.name)
+			group.gidNumber)
 		data += '''	<input type='hidden' class='item_hidden_input' name='{relationship}' value='{user_login}'/>
 					<span class='item_title'>{user_login}</span>
 					<span class='item_relation'></span>
@@ -730,11 +736,11 @@ def make_users_sys_list(is_super_admin, group):
 			data += "<span class='click_item priv_item " \
 			"instant_apply_click cat_%s' action='/groups/" \
 			"edit_members/%s'>" % (get_relationship(user, group),
-			group.name)
+			group.gidNumber)
 		else:
 			data += "<span class='click_item instant_apply_click cat_%s" \
 			"' action='/groups/edit_members/%s'>" % (get_relationship(user, group),
-			group.name)
+			group.gidNumber)
 		data += '''	<input type='hidden' class='item_hidden_input' name='{relationship}' value='{user_login}'/>
 					<span class='item_title'>{user_login}</span>
 					<span class='item_relation'></span>
@@ -807,7 +813,7 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 	 			'"title" : "%s", '
 	 			'"items" : %s,'
 	 			'"displayed" : "True",'
-	 			'"main_attr" : "name",'
+	 			'"main_attr" : "gidNumber",'
 	 			'"massive_operations" : {'
 					'"displayed" : "True",'
 					'"items" : [ '
@@ -856,7 +862,7 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 	 			'"title" : "%s", '
 	 			'"items" : %s,'
 	 			'"displayed" : "False",'
-	 			'"main_attr" : "name",'
+	 			'"main_attr" : "gidNumber",'
 	 			'"massive_operations" : {'
 					'"displayed" : "True",'
 					'"items" : [ '

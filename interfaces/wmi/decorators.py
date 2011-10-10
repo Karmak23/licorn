@@ -29,11 +29,11 @@ GROUPS PERMISSIONS:
 def check_users(action):
 	def decorator(function):
 
-		def decorated(uri, http_user, login, *args, **kwargs):
+		def decorated(uri, http_user, uid, *args, **kwargs):
 			admin_group = LMC.groups.by_name(LMC.configuration.defaults.admin_group)
 
 			user_wmi = LMC.users.by_login(login=http_user)
-			user = LMC.users.by_login(login=login)
+			user = LMC.users.by_uid(uid)
 			msg = ''
 
 			restricted_users = LMC.users.select(filters.SYSTEM_RESTRICTED)
@@ -108,16 +108,16 @@ def check_users(action):
 			if msg != '':
 				return (w.HTTP_TYPE_JSON_NOTIF, msg)
 
-			return function(uri, http_user, login, *args, **kwargs)
+			return function(uri, http_user, uid, *args, **kwargs)
 		return decorated
 	return decorator
 
 def check_groups(action):
 	def decorator(function):
 
-		def decorated(uri, http_user, name, *args, **kwargs):
+		def decorated(uri, http_user, gid, *args, **kwargs):
 			user_wmi = LMC.users.by_login(login=http_user)
-			group = LMC.groups.by_name(name)
+			group = LMC.groups.by_gid(gid)
 			admins_group = LMC.groups.by_name(
 				LMC.configuration.defaults.admin_group)
 			wmi_group = LMC.groups.by_name(
@@ -147,6 +147,6 @@ def check_groups(action):
 			if msg != '':
 				return (w.HTTP_TYPE_JSON_NOTIF, None)
 
-			return function(uri, http_user, name, *args, **kwargs)
+			return function(uri, http_user, gid, *args, **kwargs)
 		return decorated
 	return decorator

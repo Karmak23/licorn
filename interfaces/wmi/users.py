@@ -19,11 +19,11 @@ from licorn.interfaces.wmi import utils as w
 
 # messages functions : generate html output necessary when prompting
 #TODO : if the user we want to delete is system, prompt warning
-def delete_message(uri, http_user, login, **kwargs):
+def delete_message(uri, http_user, uid, **kwargs):
 	""" return the message prompted when deleting a user """
-	user = LMC.users.by_login(login)
+	user = LMC.users.by_uid(uid)
 	description = _("Are you sure you want to remove account "
-		"<strong>%s</strong> ? <br/><br/>") % login
+		"<strong>%s</strong> ? <br/><br/>") % user.login
 	description += _("User's <strong>personnal data</strong> "
 		'(his/her HOME dir) will be <strong>archived</strong> in '
 		'directory <code>%s</code> and members of group <strong>%s'
@@ -37,18 +37,18 @@ def delete_message(uri, http_user, login, **kwargs):
 	description += _("Definitely remove")
 	description += "account data (no archiving).</label> "
 	return (w.HTTP_TYPE_JSON, description)
-def lock_message(uri, http_user, login, **kwargs):
+def lock_message(uri, http_user, uid, **kwargs):
 	""" return the message prompted when locking a user """
-	user  = LMC.users.by_login(login)
+	user  = LMC.users.by_uid(uid)
 	description = _(u"Do you really want to lock user {0} ?<br/><br/>"
 					"This will prevent user to connect to network "
 					"clients (thin ones, and Windows&reg;, {1}/Linux"
-					"&reg; and Macintosh&reg; ones).").format(login,
+					"&reg; and Macintosh&reg; ones).").format(user.login,
 						w.acr('GNU'))
 
 	# TODO: move this in the extension
 	if 'openssh' in LMC.extensions.keys():
-		if login in LMC.groups.by_name(name=LMC.extensions.openssh.group).members:
+		if user.login in LMC.groups.by_name(name=LMC.extensions.openssh.group).members:
 			description += _("<br /><br /> But this will not block "
 				"incoming %s network connections, if the user uses %s "
 				"%s or %s public/private keys. To block ANY access to "
@@ -62,12 +62,13 @@ def lock_message(uri, http_user, login, **kwargs):
 				checked = True, accesskey = _('R'))
 
 	return (w.HTTP_TYPE_JSON, description)
-def skel_message(uri, http_user, login, **kwargs):
+def skel_message(uri, http_user, uid, **kwargs):
+	user  = LMC.users.by_uid(uid)
 	""" return the message prompted when changing skel of a user """
 	description = _("This will rebuild %s's desktop from scratch, "
 		"with defaults icons and so on.<br /><br /><strong>The user "
 		"must be disconnected for the operation to be completely "
-		"successfull.</strong>" % login)
+		"successfull.</strong>" % user.login)
 	description += _("<br /><br />Which skel do you want to apply? "
 		"%s") % w.select("apply_skel", LMC.configuration.users.skels,
 			func=os.path.basename, select_id='skel_to_apply')
@@ -101,41 +102,41 @@ def create(uri, http_user, password, password_confirm, loginShell=None,
 				profile=LMC.profiles.by_gid(int(profile)))
 	return (w.HTTP_TYPE_JSON, user.to_JSON())
 @check_users('skel')
-def skel(uri, http_user, login, sure=False, apply_skel=None, **kwargs):
+def skel(uri, http_user, uid, sure=False, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
 	assert ltrace(TRACE_WMI, '> users.skel(uri=%s, http_user=%s, '
-		'login=%s, sure=%s, apply_skel=%s)' % (uri, http_user, login,
+		'uid=%s, sure=%s, apply_skel=%s)' % (uri, http_user, uid,
 			sure, apply_skel))
 
-	LMC.users.by_login(login).apply_skel(w.my_unquote(apply_skel))
+	LMC.users.by_uid(uid).apply_skel(w.my_unquote(apply_skel))
 	return (w.HTTP_TYPE_JSON, None)
 @check_users('delete')
-def delete(uri, http_user, login, sure, no_archive=False, **kwargs):
+def delete(uri, http_user, uid, sure, no_archive=False, **kwargs):
 	"""remove user account."""
 	assert ltrace(TRACE_WMI, '> users.delete(uri=%s, http_user=%s, '
-	'login=%s, sure=%s, no_archive=%s)' % (uri, http_user, login,
+	'uid=%s, sure=%s, no_archive=%s)' % (uri, http_user, uid,
 		sure, no_archive))
-	LMC.users.del_User(user=LMC.users.by_login(login),
+	LMC.users.del_User(user=LMC.users.by_uid(uid),
 		no_archive=no_archive);
-	return (w.HTTP_TYPE_JSON, LMC.users.by_login(login).to_JSON())
+	return (w.HTTP_TYPE_JSON, "[ {0} ]".format(uid))
 @check_users('unlock')
-def unlock(uri, http_user, login, **kwargs):
+def unlock(uri, http_user, uid, **kwargs):
 	"""unlock a user account password."""
 	assert ltrace(TRACE_WMI, '> users.unlock(uri=%s, http_user=%s, '
-		'login=%s)' % (uri, http_user, login))
+		'uid=%s)' % (uri, http_user, uid))
 
-	LMC.users.by_login(login).locked = False
+	LMC.users.by_uid(uid).locked = False
 
-	return (w.HTTP_TYPE_JSON, LMC.users.by_login(login).to_JSON())
+	return (w.HTTP_TYPE_JSON, LMC.users.by_uid(uid).to_JSON())
 @check_users('lock')
-def lock(uri, http_user, login, sure=False, remove_remotessh=False, **kwargs):
+def lock(uri, http_user, uid, sure=False, remove_remotessh=False, **kwargs):
 	"""lock a user account password."""
 	assert ltrace(TRACE_WMI, '> users.lock(uri=%s, http_user=%s, '
-		'login=%s, sure=%s, remove_remotessh=%s)' % (uri, http_user,
-		login, sure, remove_remotessh))
+		'uid=%s, sure=%s, remove_remotessh=%s)' % (uri, http_user,
+		uid, sure, remove_remotessh))
 
-	LMC.users.by_login(login).locked   = True
-	return (w.HTTP_TYPE_JSON, LMC.users.by_login(login).to_JSON())
+	LMC.users.by_uid(uid).locked   = True
+	return (w.HTTP_TYPE_JSON, LMC.users.by_uid(uid).to_JSON())
 def export(uri, http_user, type="", **kwargs):
 	""" Export user accounts list.
 			TODO !!
@@ -184,64 +185,64 @@ def massive_import(uri, http_user, filename, firstname_col, lastname_col,
 	group_col, **kwargs):
 	#TODO
 	pass
-def massive_delete(uri, http_user, logins, sure, no_archive=False,
+def massive_delete(uri, http_user, uids, sure, no_archive=False,
 	**kwargs):
 	"""remove several users account."""
 	assert ltrace(TRACE_WMI, '> users.massive_delete(uri=%s, http_user=%s, '
-		'logins=%s, sure=%s, no_archive=%s)' % (uri, http_user,
-			logins, sure, no_archive))
+		'uids=%s, sure=%s, no_archive=%s)' % (uri, http_user,
+			uids, sure, no_archive))
 
-	logins = w.my_unquote(logins)
+	uids = w.my_unquote(uids)
 	users_deleted = []
-	for login in logins.split(',') if logins != '' else []:
+	for uid in uids.split(',') if uids != '' else []:
 		try:
-			t = delete(uri, http_user, login, sure, no_archive=no_archive)
-			users_deleted.append(login)
+			t = delete(uri, http_user, uid, sure, no_archive=no_archive)
+			users_deleted.append(uid)
 
 		except Exception, e:
 			raise
 	users_deleted = '["%s"]' % '","'.join(users_deleted)
 	return (w.HTTP_TYPE_JSON, users_deleted)
-def massive_skel(uri, http_user, logins, sure, apply_skel=None, **kwargs):
+def massive_skel(uri, http_user, uids, sure, apply_skel=None, **kwargs):
 	"""reapply a user's skel with confirmation."""
 	assert ltrace(TRACE_WMI, '> users.massive_skel(uri=%s, http_user=%s, '
-		'logins=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
-		logins, sure, apply_skel))
+		'uids=%s, sure=%s, apply_skel=%s)' % (uri, http_user,
+		uids, sure, apply_skel))
 
 	if apply_skel is None:
 		apply_skel = LMC.configuration.users.default_skel
 
-	logins = w.my_unquote(logins)
-	for login in logins.split(',') if logins != '' else []:
-		skel(uri, http_user, login, sure=sure, apply_skel=apply_skel, massive_operation=True)
+	uids = w.my_unquote(uids)
+	for uid in uids.split(',') if uids != '' else []:
+		skel(uri, http_user, uid, sure=sure, apply_skel=apply_skel, massive_operation=True)
 
 	return (w.HTTP_TYPE_JSON, None)
 
 # instant apply functions
 @check_users('edit_gecos')
-def edit_gecos(uri, http_user, login, gecos, **kwargs):
+def edit_gecos(uri, http_user, uid, gecos, **kwargs):
 	""" edit the gecos of the user """
 	assert ltrace(TRACE_WMI, '> users.edit_gecos(uri=%s, http_user=%s, '
-		'login=%s, gecos=%s)' % (uri, http_user, login, gecos))
+		'uid=%s, gecos=%s)' % (uri, http_user, uid, gecos))
 
-	user=LMC.users.by_login(login)
+	user=LMC.users.by_uid(uid)
 	user.gecos = w.my_unquote(gecos)
 	return (w.HTTP_TYPE_JSON, user.to_JSON())
 @check_users('edit_password')
-def edit_password(uri, http_user, login, pwd, **kwargs):
+def edit_password(uri, http_user, uid, pwd, **kwargs):
 	""" edit user password function"""
 	assert ltrace(TRACE_WMI, '> users.edit_password(uri=%s, http_user=%s, '
-		'login=%s, pwd=%s)' % (uri, http_user, login, '*'*len(pwd)))
+		'uid=%s, pwd=%s)' % (uri, http_user, uid, '*'*len(pwd)))
 
-	LMC.users.by_login(login).password = pwd
-	return (w.HTTP_TYPE_JSON, None)
+	LMC.users.by_uid(uid).password = pwd
+	return (w.HTTP_TYPE_JSON, LMC.users.by_uid(uid).to_JSON())
 @check_users('edit_groups')
-def edit_groups(uri, http_user, login, groups='', **kwargs):
+def edit_groups(uri, http_user, uid, groups='', **kwargs):
 	""" edit user groups function"""
 	assert ltrace(TRACE_WMI, '> users.edit_group(uri=%s, http_user=%s, '
-		'login=%s, groups=%s)' % (uri, http_user, login, groups))
+		'uid=%s, groups=%s)' % (uri, http_user, uid, groups))
 
-	user = LMC.users.by_login(login)
+	user = LMC.users.by_uid(uid)
 
 	groups_wmi      = []
 	user_groups     = user.groups
@@ -290,14 +291,14 @@ def edit_groups(uri, http_user, login, groups='', **kwargs):
 
 	assert ltrace(TRACE_WMI, '< users.edit_groups()')
 
-	return (w.HTTP_TYPE_JSON, None)
+	return (w.HTTP_TYPE_JSON, user.to_JSON())
 @check_users('edit_shell')
-def edit_shell(uri, http_user, login, newshell, **kwargs):
+def edit_shell(uri, http_user, uid, newshell, **kwargs):
 	""" edit user shell function"""
 	assert ltrace(TRACE_USERS, '> users.edit_shell(uri=%s, http_user=%s, '
-		'login=%s, newshell=%s)' % (uri, http_user, login, newshell))
+		'uid=%s, newshell=%s)' % (uri, http_user, uid, newshell))
 
-	LMC.users.by_login(login).shell = w.my_unquote(newshell)
+	LMC.users.by_uid(uid).shell = w.my_unquote(newshell)
 	return (w.HTTP_TYPE_JSON, None)
 
 
@@ -315,10 +316,11 @@ groups_filters_lists_ids = (
 	(filters.GUEST, [_('Propose invitations'),
 		_('Available invitations'), _('Offered invitations')],
 			'guest_groups') )
-def edit(uri, http_user, login, **kwargs):
+def edit(uri, http_user, uid, **kwargs):
 	"""Edit an user account, based on login."""
 
-	user = LMC.users.by_login(login)
+	user = LMC.users.by_uid(uid)
+	login = user.login
 	try:
 		try:
 			profile = user.primaryGroup.profile.name
@@ -327,17 +329,6 @@ def edit(uri, http_user, login, **kwargs):
 
 		# keep it here to avoid reconstruction every time.
 		user_groups = user.groups
-
-		dbl_lists = {}
-		for filter, titles, id in groups_filters_lists_ids:
-			dest   = user_groups[:]
-			source = [ g.name for g in LMC.groups.select(filter) ]
-			for current in dest[:]:
-				try: source.remove(current)
-				except ValueError: dest.remove(current)
-			dest.sort()
-			source.sort()
-			dbl_lists[filter] = w.multiselect(titles, id, source, dest)
 
 		form_name = "user_edit_form"
 
@@ -397,7 +388,7 @@ def edit(uri, http_user, login, **kwargs):
 			gecos_text = _("<strong>Full name</strong>"),
 			gecos_input = w.input('gecos', user.gecos, size=30,
 				maxlength=64,	accesskey='N', instant_apply=True,
-				instant_apply_action='/users/edit_gecos/%s/' % login),
+				instant_apply_action='/users/edit_gecos/%s/' % user.uidNumber),
 			password_title = _("Password must be at least %d "
 				"characters long. You can use all alphabet characters, "
 				"numbers, special characters and punctuation signs, "
@@ -409,18 +400,18 @@ def edit(uri, http_user, login, **kwargs):
 			password_input = w.input('password', '', size=30,
 				maxlength=64, accesskey='P', password=True,
 				instant_apply_password=True,
-				instant_apply_action='/users/edit_password/%s/' % login),
+				instant_apply_action='/users/edit_password/%s/' % user.uidNumber),
 			password_confirm_text=_("password confirmation."),
 			password_confirm_input=w.input('password_confirm', '',
 				size=30, maxlength=64, password=True,
 				instant_apply_password=True,
-				instant_apply_action='/users/edit_password/%s/' % login),
+				instant_apply_action='/users/edit_password/%s/' % user.uidNumber),
 			shell_text = _("<strong>Shell</strong><br />(Unix command "
 				"line interpreter)"),
 			shell_input = w.select('loginShell',
 				LMC.configuration.users.shells,	current=user.shell,
 				func=os.path.basename, instant_apply=True,
-				instant_apply_action='/users/edit_shell/%s/' % login),
+				instant_apply_action='/users/edit_shell/%s/' % user.uidNumber),
 			groups_title = _('Groups'),
 			groups_content = make_groups_list(user),
 			privs_title = _('Privileges'),
@@ -433,10 +424,10 @@ def edit(uri, http_user, login, **kwargs):
 
 	return (w.HTTP_TYPE_JSON, data)
 
-def view(uri, http_user, login, **kwargs):
+def view(uri, http_user, uid, **kwargs):
 	""" View a user account parameters, based on login."""
 
-	user = LMC.users.by_login(login)
+	user = LMC.users.by_uid(uid)
 	data = ''
 	try:
 		try:
@@ -773,7 +764,7 @@ def make_groups_list(user):
 		if user is None:
 			data += "<span class='click_item'>"
 		else:
-			data += "<span class='click_item instant_apply_click' action='/users/edit_groups/%s'>" % user.login
+			data += "<span class='click_item instant_apply_click' action='/users/edit_groups/%s'>" % user.uidNumber
 		data += '''
 				<input type='hidden' class='item_hidden_input' name='{relationship}' value='{group_name}'/>
 				<span class='item_title'>{group_name}</span>
@@ -808,7 +799,7 @@ def make_privs_list(user):
 		if user is None:
 			data += "<span class='click_item priv_item'>"
 		else:
-			data += "<span class='click_item priv_item instant_apply_click' action='/users/edit_groups/%s'>" % user.login
+			data += "<span class='click_item priv_item instant_apply_click' action='/users/edit_groups/%s'>" % user.uidNumber
 
 		data += '''	<input type='hidden' class='item_hidden_input' name='{relationship}' value='{group_name}'/>
 					<span class='item_title'>{group_name}</span>
@@ -850,8 +841,7 @@ def make_groups_sys_list(http_user, user):
 		if user is None:
 			data += "<span class='click_item priv_item'>"
 		else:
-			data += "<span class='click_item priv_item instant_apply_click' action='/users/edit_groups/%s'>" % user.login
-
+			data += "<span class='click_item priv_item instant_apply_click' action='/users/edit_groups/%s'>" % user.uidNumber
 		data += '''	<input type='hidden' class='item_hidden_input' name='{relationship}' value='{group_name}'/>
 					<span class='item_title'>{group_name}</span>
 					<span class='item_relation'></span>
@@ -860,13 +850,13 @@ def make_groups_sys_list(http_user, user):
 				group_name = group.name,
 				relationship = get_relationship(user, group))
 
-	data_return = '''<div class='sub_content_line instant_apply_part' action="/users/edit_groups/{login}">
+	data_return = '''<div class='sub_content_line instant_apply_part' action="/users/edit_groups/{uid}">
 				<div class='sub_content_title'>{group_sys_title}</div>
 				<div class='sub_content_list'>
 					{group_sys_content}
 				</div>
 			</div>'''.format(
-				login = user.login,
+				uid = user.uidNumber,
 				group_sys_title = _(u'System groups'),
 				group_sys_content = data
 			)
@@ -889,7 +879,7 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 	 			'"title" : "%s", '
 	 			'"items" : %s,'
 	 			'"displayed" : "True",'
-	 			'"main_attr" : "login",'
+	 			'"main_attr" : "uidNumber",'
 	 			'"massive_operations" : {'
 					'"displayed" : "True",'
 					'"items" : [ '
@@ -952,7 +942,7 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 				'"title" : "%s", '
 				'"items" : %s,'
 				'"displayed" : "False",'
-				'"main_attr" : "login",'
+				'"main_attr" : "uidNumber",'
 				'"massive_operations" : {'
 					'"displayed" : "True",'
 					'"items" : [ '

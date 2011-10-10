@@ -425,22 +425,20 @@ function apply(page, action) {
 		if (json_input.content != '' && json_input.content != 'None' ) {
 			if (action == 'instant_apply')  {
 				if (DEBUG || DEBUG_UTILS) console.log("Refreshing user_row.");
-				console.log(json_input.content)
 				refresh_item_row(json_input.content);
 			}
 			else if (action == 'delete')  {
 				item = json_input.content;
-
 				$.each(item, function(key, i) {
 					//remove item from list array
 					_PAGE.current_list.items = jQuery.grep(_PAGE.current_list.items, function(value) {
 						return $(value).attr(_PAGE.current_list.main_attr) != i;
 					});
-					div = $('#'+_PAGE.current_list.main_attr + '_' + i);
+					div = $('#'+i);
 					if (div.hasClass('item_selected')) {
 						_PAGE.stop_sub_content_lock();
 					}
-					$('#'+_PAGE.current_list.main_attr + '_' + i).remove();
+					$('#'+i).remove();
 				});
 
 				// in case it was the last item in the list
@@ -705,7 +703,7 @@ function Licorn_List(list_obj) {
 				if (DEBUG || DEBUG_UTILS) { console.log('> CLICK EVENT : on massive select / currently checked : '+current_status); }
 				for(i=0;i<_LIST.items.length;i++) {
 					item = _LIST.items[i];
-					if (! $('#'+_LIST.main_attr+'_'+$(item).attr(_LIST.main_attr)).is(':hidden')) {
+					if (! $('#'+$(item).attr(_LIST.main_attr)).is(':hidden')) {
 						//if the row is not hidden
 						$('#checkbox_'+$(item).attr(_LIST.main_attr)).attr('checked', current_status);
 					}
@@ -723,7 +721,7 @@ function Licorn_List(list_obj) {
 	this.get_selected_items = function() {
 		var selected_items = [];
 		$.each(this.items, function(k, item) {
-			item_div = $('#'+_LIST.main_attr+'_'+$(item).attr(_LIST.main_attr));
+			item_div = $('#'+$(item).attr(_LIST.main_attr));
 			//console.log(item_div);
 			//console.log(item_div.find('#checkbox_'+$(item).attr(_LIST.main_attr)));
 			if (item_div.find('#checkbox_'+$(item).attr(_LIST.main_attr)).is(':checked')) {
@@ -826,7 +824,7 @@ function Licorn_List(list_obj) {
 				add_classes = [ 'users_row_even', 'row_even', 'even' ];
 			}
 
-			the_div = $('#'+_LIST.main_attr+'_'+$(obj).attr(_LIST.main_attr));
+			the_div = $('#'+$(obj).attr(_LIST.main_attr));
 
 			if (match) {
 				if (the_div.is(':hidden')) {
@@ -857,8 +855,7 @@ function Licorn_List(list_obj) {
 	//	initialize an item row
 	this.initialize_row_events = function(item) {
 		//console.log('initialize_row_events on '+ item +" , "+ "#"+ this.main_attr + "_" + item);
-
-		me = $("#"+_LIST.main_attr+"_" + item);
+		me = $("#"+item);
 		child = me.find("."+_LIST.name+"_content");
 
 		// hover event of item_content
@@ -1071,7 +1068,7 @@ function Licorn_List(list_obj) {
 
 		hidden = 0;
 		$.each(users_list_return, function(key, obj) {
-			if($('#'+this.main_attr+'_'+$(obj).attr(_LIST.main_attr)).is(':hidden')) { hidden += 1; }
+			if($('#'+$(obj).attr(_LIST.main_attr)).is(':hidden')) { hidden += 1; }
 		});
 
 		// 75ms * number of visible elements seems fine, because a human expects
@@ -1099,7 +1096,7 @@ function Licorn_List(list_obj) {
 			})
 		cpt=0;
 		$.each(users_list_return, function(key, obj) {
-			the_div = $('#'+_LIST.main_attr+'_'+$(obj).attr(_LIST.main_attr));
+			the_div = $('#'+$(obj).attr(_LIST.main_attr));
 
 			final_position   = cpt*51+'px';
 			current_position = the_div.css('margin-top');

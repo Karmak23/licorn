@@ -111,7 +111,7 @@ function mass_import_action() {
 function delete_dialog_action() {
 	var users = []
 	$.each(_PAGE.current_list.get_selected_items(), function(k, user) {
-		users.push(user.login);
+		users.push(user.uidNumber);
 	});
 	if (DEBUG || DEBUG_USER) { console.log('> delete_dialog_action : '+users.join(',')); }
 
@@ -133,7 +133,7 @@ function delete_dialog_action() {
 function reapply_skel_dialog_action() {
 	var users = []
 	$.each(_PAGE.current_list.get_selected_items(), function(k, user) {
-		users.push(user.login);
+		users.push(user.uidNumber);
 	});
 
 	if (DEBUG || DEBUG_USER) { console.log('> reapply_skel_dialog_action : '+users.join(',')); }
@@ -145,25 +145,25 @@ function reapply_skel_dialog_action() {
 
 function lock_dialog_action() {
 	if (DEBUG || DEBUG_USER) { console.log('> lock_dialog_action()'); }
-	user_login = $('#locking_user').attr('login');
+	user_id = $('#locking_user').attr('uidNumber');
 	//TODO
 	delete_from_remotessh = "False";
-	page_url = "/users/lock/" + $.URLEncode(user_login) + "/True/" + delete_from_remotessh;
+	page_url = "/users/lock/" + $.URLEncode(user_id) + "/True/" + delete_from_remotessh;
 	apply(page_url, 'instant_apply');
 	if (DEBUG || DEBUG_USER) { console.log('< lock_dialog_action()'); }
 }
 
 function unlock_dialog_action() {
 	if (DEBUG || DEBUG_USER) { console.log('> unlock_dialog_action()'); }
-	user_login = $('#locking_user').attr('login');
-	page_url = "/users/unlock/" + $.URLEncode(user_login);
+	user_id = $('#locking_user').attr('uidNumber');
+	page_url = "/users/unlock/" + $.URLEncode(user_id);
 	apply(page_url, 'instant_apply');
 	if (DEBUG || DEBUG_USER) { console.log('< lock_dialog_action()'); }
 }
 
 function delete_user_dialog_action() {
 	if (DEBUG || DEBUG_USER) { console.log('> delete_user_dialog_action()'); }
-	user_login = $('#deleting_user').attr('login');
+	user_id = $('#deleting_user').attr('uidNumber');
 	$('#deleting_user').attr('id', '');
 	// check if 'no_archive' checkbox is checked
 	//	the result will be interpretated in the core (python code):
@@ -174,17 +174,17 @@ function delete_user_dialog_action() {
 	else {
 		make_backup = '';
 	}
-	page_url = "/users/delete/" + $.URLEncode(user_login) + "/True/"+make_backup;
+	page_url = "/users/delete/" + $.URLEncode(user_id) + "/True/"+make_backup;
 	apply(page_url, 'delete');
 	if (DEBUG || DEBUG_USER) { console.log('< delete_user_dialog_action()'); }
 }
 
 function reapply_skel_user_dialog_action() {
 	if (DEBUG || DEBUG_USER) { console.log('> reapply_skel_user_dialog_action()'); }
-	user_login = $('#reapplying_skel_user').attr('login');
+	user_id = $('#reapplying_skel_user').attr('uidNumber');
 	$('#reapplying_skel_user').attr('id', '');
 	skel = $("#skel_to_apply").attr('value').toString();
-	page_url = "/users/skel/" + $.URLEncode(user_login) + "/True/"+ $.URLEncode(skel);
+	page_url = "/users/skel/" + $.URLEncode(user_id) + "/True/"+ $.URLEncode(skel);
 	apply(page_url);
 	if (DEBUG || DEBUG_USER) { console.log('< reapply_skel_user_dialog_action()'); }
 }
@@ -197,7 +197,7 @@ function init_events_list_header(list) {
 	$('#'+list.name+'_massive_delete').click(function() {
 		if (DEBUG || DEBUG_USER) { console.log('> CLICK EVENT : on massive delete'); }
 		users_selected = _PAGE.current_list.get_selected_items();
-
+		console.log(users_selected);
 		//console.log(users_selected);
 
 		users_selected_html = '<ul>'
@@ -263,11 +263,10 @@ function refresh_item_row(json_input) {
 
 	_LIST = _PAGE.current_list;
 
-	user_div = $("#"+_LIST.main_attr+"_"+$(json_input).attr(_LIST.main_attr));
+	user_div = $("#"+$(json_input).attr(_LIST.main_attr));
 	user = json_input
-
 	
-	_user = _LIST.get_item(user.login);
+	_user = _LIST.get_item(user.uidNumber);
 	_user.locked = user.locked;
 	/*_user.gecos = user.gecos == '' ? "<span class='no_data'>(" + _("no GECOS") + ")</span>" : user.gecos;
 	_user.skel = user.skel;
@@ -283,14 +282,14 @@ function refresh_item_row(json_input) {
 function generate_user_locked_html(user) {
 	if (user.locked == "True") {
 		//console.log('user locked');
-		lock_title = "TOTO";
+		lock_title = strargs(_("Unlock user %1"), [user.login]);
 		lock_class = "user_unlock_action";
 		lock_img = "/images/24x24/locked.png";
 		lock_alt = _("Unlock account ") + user.login + ".";
 	}
 	else {
 		//console.log('user not locked');
-		lock_title = "TATA";
+		lock_title = strargs(_("Lock user %1"), [user.login]);
 		lock_class = "locked_box user_lock_action";
 		lock_img = '/images/24x24/locked_box.png';
 		lock_alt = _("Lock account ") + user.login + ".";
@@ -300,8 +299,7 @@ function generate_user_locked_html(user) {
 }
 function init_events(me) {
 
-	if (DEBUG || DEBUG_USER) { console.log('> init_events('+me.find('.user_locked').attr('login')+')'); }
-
+	if (DEBUG || DEBUG_USER) { console.log('> init_events('+me.find('.user_locked').attr('uidNumber')+')'); }
 	// hide the navigation
 	me.find('.item_menu').hide();
 
@@ -312,20 +310,21 @@ function init_events(me) {
 
 	// hover events
 	my_user_lock.hover(function() {
-		user_login = $(this).attr('login');
-		if (DEBUG || DEBUG_USER) console.log('> HOVER EVENT : on .user_locked of '+user_login);
-		user = _PAGE.current_list.get_item(user_login);
+		user_id = $(this).attr('uidNumber');
+		user = _PAGE.current_list.get_item(user_id);
+		
+		if (DEBUG || DEBUG_USER) console.log('> HOVER EVENT : on .user_locked of '+user.login);
 		
 		if (user.locked == "True") {
 			//console.log('user locked');
-			lock_title = "TOTO";
+			lock_title = strargs(_("Unlock user %1"), [user.login]);
 			lock_class = "user_unlock_action";
 			lock_img = "/images/24x24/locked.png";
 			lock_alt = _("Unlock account ") + user.login + ".";
 		}
 		else {
 			//console.log('user not locked');
-			lock_title = "TATA";
+			lock_title = strargs(_("Lock user %1"), [user.login]);
 			lock_class = "locked_box user_lock_action";
 			lock_img = '/images/24x24/locked_over.png';
 			lock_alt = _("Lock account ") + user.login + ".";
@@ -352,35 +351,37 @@ function init_events(me) {
 
 		$(this).html("<img src='"+lock_img+"' class='"+lock_class+"' alt='"+lock_alt+"' title='"+lock_title+"' login='"+user.login+"'/>");
 
-		if (DEBUG || DEBUG_USER) console.log('< HOVER EVENT : on .user_locked of '+user_login);
+		if (DEBUG || DEBUG_USER) console.log('< HOVER EVENT : on .user_locked of '+user.login);
 
 	});
 
 	// click event
 	my_user_lock.click(function() {
-		user_login = $(this).attr('login');
-		if (DEBUG || DEBUG_USER) console.log('> CLICK EVENT : on .user_locked of '+user_login);
-		user = _PAGE.current_list.get_item(user_login);
+		user_id = $(this).attr('uidNumber');
+		user = _PAGE.current_list.get_item(user_id);
+		
+		if (DEBUG || DEBUG_USER) console.log('> CLICK EVENT : on .user_locked of '+user.login);
+		
 		$('.user_locked').attr('id','');
 		$(this).attr('id','locking_user');
 		if (user.locked == "True") {
-			if (DEBUG || DEBUG_USER) console.log(user_login + " is locked, present unlock dialog");
+			if (DEBUG || DEBUG_USER) console.log(user.login + " is locked, present unlock dialog");
 			// unlock
 			unlock_dialog_title = _("Unlock confirmation");
-			unlock_dialog_content = strargs(_("Are you sure you want to unlock user account %1?"), [user_login]);
+			unlock_dialog_content = strargs(_("Are you sure you want to unlock user account %1?"), [user.login]);
 			unlock_dialog = new dialog(unlock_dialog_title, unlock_dialog_content, true, unlock_dialog_action);
 			unlock_dialog.show();
 		}
 		else {
 			// lock
-			if (DEBUG || DEBUG_USER) console.log(user_login + " is NOT locked, present lock dialog");
+			if (DEBUG || DEBUG_USER) console.log(user.login + " is NOT locked, present lock dialog");
 			lock_dialog_title = _("Lock confirmation");
-			lock_dialog_content = strargs(_("Are you sure you want to lock user account %1?"), [user_login]);
+			lock_dialog_content = strargs(_("Are you sure you want to lock user account %1?"), [user.login]);
 			lock_dialog = new dialog(lock_dialog_title,	lock_dialog_content,
-				true, lock_dialog_action, true, '/users/lock_message/'+user_login);
+				true, lock_dialog_action, true, '/users/lock_message/'+user.uidNumber);
 			lock_dialog.show();
 		}
-		if (DEBUG || DEBUG_USER) console.log('< CLICK EVENT : on .user_locked of '+user_login);
+		if (DEBUG || DEBUG_USER) console.log('< CLICK EVENT : on .user_locked of '+user.login);
 	});
 
 	/*
@@ -388,7 +389,7 @@ function init_events(me) {
 	 */
 	 // delete click
 	me.find('.delete_user').click(function() {
-		user_to_delete = $(this).attr('login');
+		user_to_delete = $(this).attr('uidNumber');
 		$(this).attr('id', 'deleting_user');
 		if (DEBUG || DEBUG_USER) console.log('> CLICK EVENT : on .delete_user of '+user_to_delete);
 		delete_user_dialog_title = _("Removal confirmation");
@@ -400,7 +401,7 @@ function init_events(me) {
 	});
 
 	me.find('.reapply_skel_user').click(function() {
-		user_to_reapply_skel = $(this).attr('login');
+		user_to_reapply_skel = $(this).attr('uidNumber');
 		$(this).attr('id', 'reapplying_skel_user');
 		if (DEBUG || DEBUG_USER) console.log('> CLICK EVENT : on .reapply_skel_user of '+user_to_reapply_skel);
 		reapply_skel_user_dialog_title = _("Skeleton reapplying confirmation");
@@ -607,22 +608,21 @@ function generate_item_row(user) {
 	}
 
 	user_locked_html = generate_user_locked_html(user);
-	console.log(user_locked_html);
-
-	user_nav = '<div class="reapply_skel_user" login="'+user.login+'">';
+	
+	user_nav = '<div class="reapply_skel_user" uidNumber="'+user.uidNumber+'">';
 	user_nav += '	<img src="/images/16x16/reapply-skel.png" title="'+strargs(_("Reapply skel of user %1"), [user.login])+'" alt="'+strargs(_("Reapply skel of user %1"), [user.login])+'"/>';
 	user_nav += '</div>';
-	user_nav += '<div class="delete_user" login="'+user.login+'">';
+	user_nav += '<div class="delete_user" uidNumber="'+user.uidNumber+'">';
 	user_nav += '	<img src="/images/16x16/supprimer.png" title="'+strargs(_("Delete user %1"), [user.login])+'" alt="'+strargs(_("Delete user %1"), [user.login])+'"/></a>';
 	user_nav += '</div>';
 
 
-	user_html += '<span class="users_row" id="login_' + user.login + '">';
-	user_html += '	<span class="user_select" login="' + user.login + '">';
-	user_html += '		<input type="checkbox" name="selected" class="user_checkbox" id="checkbox_' + user.login + '">';
+	user_html += '<span class="users_row" id="' + user.uidNumber + '">';
+	user_html += '	<span class="user_select" uidNumber="' + user.uidNumber + '">';
+	user_html += '		<input type="checkbox" name="selected" class="user_checkbox" id="checkbox_' + user.uidNumber + '">';
 	user_html += '	</span>';
-	user_html += '	<span class="user_locked odd_even_typed " login="'+user.login+'"> ' + user_locked_html + ' </span>';
-	user_html += '	<span title="'+strargs(_("Click to edit user %1"), [user.login])+'" class="'+content_class+'" login="' + user.login + '">';
+	user_html += '	<span class="user_locked odd_even_typed " uidNumber="' + user.uidNumber + '"> ' + user_locked_html + ' </span>';
+	user_html += '	<span title="'+strargs(_("Click to edit user %1"), [user.login])+'" class="'+content_class+'" uidNumber="' + user.uidNumber + '">';
 	user_html += '		<span class="user_login odd_even_typed">' + user.login + '</span>';
 	user_html += '		<span class="user_gecos odd_even_typed">' + user_gecos + '</span>';
 	user_html += '		<span class="user_uid odd_even_typed">' + user.uidNumber + '</span>';

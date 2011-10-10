@@ -176,7 +176,7 @@ function init_events_list_header(list) {
 
 function perm_dialog_action() {
 	if (DEBUG || DEBUG_GROUP) { console.log('> perm_dialog_action()'); }
-	group_name = $('#making_group_permissive').attr('name');
+	group_name = $('#making_group_permissive').attr('gidNumber');
 	make_permissive = "true"
 	link = "/groups/edit_permissive/" + $.URLEncode(group_name) + "/"+make_permissive;
 
@@ -185,7 +185,7 @@ function perm_dialog_action() {
 }
 function unperm_dialog_action() {
 	if (DEBUG || DEBUG_GROUP) { console.log('> unperm_dialog_action()'); }
-	group_name = $('#making_group_permissive').attr('name');
+	group_name = $('#making_group_permissive').attr('gidNumber');
 	make_permissive = "false"
 
 	link = "/groups/edit_permissive/" + $.URLEncode(group_name) + "/"+make_permissive;
@@ -195,7 +195,7 @@ function unperm_dialog_action() {
 function delete_dialog_action() {
 	var groups = []
 	$.each(_PAGE.current_list.get_selected_items(), function(k, group) {
-		groups.push(group.name);
+		groups.push(group.gidNumber);
 	});
 	if (DEBUG || DEBUG_GROUP) { console.log('> delete_dialog_action : '+groups.join(',')); }
 	// check if 'no_archive' checkbox is checked
@@ -240,7 +240,7 @@ function init_events(me) {
 
 	// hover events
 	my_group_perm.hover(function() {
-		group_name = $(this).attr('name');
+		group_name = $(this).attr('gidNumber');
 		if (DEBUG || DEBUG_GROUP) console.log('> HOVER EVENT : on .groups_list_permissive of '+group_name);
 		group = _PAGE.current_list.get_item(group_name);
 
@@ -281,9 +281,10 @@ function init_events(me) {
 
 	// click event
 	my_group_perm.click(function() {
-		group_name = $(this).attr('name');
+		group_gid = $(this).attr('gidNumber');
 		if (DEBUG || DEBUG_GROUP) console.log('> CLICK EVENT : on .groups_list_permissive of '+group_name);
-		group = _PAGE.current_list.get_item(group_name);
+		group = _PAGE.current_list.get_item(group_gid);
+		group_name = group.name;
 		$('.groups_list_permissive').attr('id','');
 		$(this).attr('id','making_group_permissive');
 		if (group.permissive == "True") {
@@ -307,7 +308,7 @@ function init_events(me) {
 
 	// delete click
 	me.find('.delete_group').click(function() {
-			group_to_delete = $(this).attr('name');
+			group_to_delete = $(this).attr('gidNumber');
 			$(this).attr('id', 'deleting_group');
 			if (DEBUG || DEBUG_GROUP) console.log('> CLICK EVENT : on .delete_group for group '+group_to_delete);
 			delete_group_dialog_title = _("Removal confirmation");
@@ -318,7 +319,7 @@ function init_events(me) {
 			if (DEBUG || DEBUG_GROUP) console.log('< CLICK EVENT : on .delete_user');
 		});
 	me.find('.reapply_skel_group').click(function() {
-		group_to_reapply_skel = $(this).attr('name');
+		group_to_reapply_skel = $(this).attr('gidNumber');
 		$(this).attr('id', 'reapplying_skel_group');
 		if (DEBUG || DEBUG_GROUP) console.log('> CLICK EVENT : on .reapply_skel_group of '+group_to_reapply_skel);
 		reapply_skel_group_dialog_title = _("Reapply skel");
@@ -330,7 +331,7 @@ function init_events(me) {
 	});
 	function delete_group_dialog_action() {
 		if (DEBUG || DEBUG_GROUP) { console.log('> delete_group_dialog_action()'); }
-		group_name = $('#deleting_group').attr('name');
+		group_name = $('#deleting_group').attr('gidNumber');
 		$('#deleting_group').attr('id', '');
 		// check if 'no_archive' checkbox is checked
 		//	the result will be interpretated in the core (python code):
@@ -347,10 +348,10 @@ function init_events(me) {
 	}
 	function reapply_skel_group_dialog_action() {
 		if (DEBUG || DEBUG_GROUP) { console.log('> reapply_skel_group_dialog_action()'); }
-		group_name = $('#reapplying_skel_group').attr('name');
+		group_gid = $('#reapplying_skel_group').attr('gidNumber');
 		$('#reapplying_skel_group').attr('id', '');
 		skel = $("#skel_to_apply").attr('value').toString();
-		link_page = "/groups/skel/" + $.URLEncode(group_name) + "/True/"+ $.URLEncode(skel);
+		link_page = "/groups/skel/" + group_gid + "/True/"+ $.URLEncode(skel);
 
 		apply(link_page, 'instant_apply');
 		if (DEBUG || DEBUG_GROUP) { console.log('< reapply_skel_group_dialog_action()'); }
@@ -494,10 +495,10 @@ function refresh_item_row(json_input) {
 	// TODO : we need to be sure that the edit view disapear when we change the current list
 	_LIST = _PAGE.current_list;
 
-	group_div = $("#name_"+json_input.name);
+	group_div = $("#"+json_input.gidNumber);
 	group = json_input;
 	
-	_group = _LIST.get_item(group.name);
+	_group = _LIST.get_item(group.gidNumber);
 	_group.permissive = group.permissive;
 
 	if (group.permissive == "True") {
@@ -541,10 +542,10 @@ function generate_item_row(group) {
 				list_name = 'groups';
 			}
 
-			group_nav = '<div class="reapply_skel_group" name="'+group_name+'">';
+			group_nav = '<div class="reapply_skel_group" gidNumber="'+group_gid+'">';
 			group_nav += '	<img src="/images/16x16/reapply-skel.png" title="'+strargs(_("Reapply skel of group %1"), [group_name])+' alt="'+strargs(_("Reapply skel of group %1"), [group_name])+'"/>';
 			group_nav += '</div>';
-			group_nav += '<div class="delete_group" name="'+group_name+'">';
+			group_nav += '<div class="delete_group" gidNumber="'+group_gid+'">';
 			group_nav += '	<img src="/images/16x16/supprimer.png" title="'+strargs(_("Delete group %1"), [group_name])+'" alt="'+strargs(_("Delete group %1"), [group_name])+'"/>';
 			group_nav += '</div>';
 
@@ -569,24 +570,24 @@ function generate_item_row(group) {
 			group_priv_html = group.is_priv;
 
 
-			list_html = '<div class="groups_row" id="name_'+ group_name +'">';
-			list_html += '	<div class="groups_list_select" name='+group_name+'>';
-			list_html += '		<input id="checkbox_'+group_name+'" type="checkbox" />';
+			list_html = '<div class="groups_row" id="'+group_gid +'">';
+			list_html += '	<div class="groups_list_select" gidNumber="'+group_gid+'">';
+			list_html += '		<input id="checkbox_'+group_gid+'" type="checkbox" />';
 			list_html += '	</div>';
 
 			if (group.is_priv != 'True' && group.is_system != 'True') {
-				list_html += '	<div class="'+list_name+'_list_permissive '+list_name+'_list_item odd_even_typed" name="'+group_name+'">';
+				list_html += '	<div class="'+list_name+'_list_permissive '+list_name+'_list_item odd_even_typed" gidNumber="'+group_gid+'">';
 				list_html += '		'+group_perm_html;
 				list_html += '	</div>';
 			}
 
 			if (group.is_priv == 'True' || group.is_system == 'True') {
-				list_html += '	<div class="'+list_name+'_list_priv '+list_name+'_list_item odd_even_typed" name="'+group_name+'">';
+				list_html += '	<div class="'+list_name+'_list_priv '+list_name+'_list_item odd_even_typed" gidNumber="'+group_gid+'">';
 				list_html += '		'+group_priv_html;
 				list_html += '	</div>';
 			}
 
-			list_html += '	<div class="'+list_name+'_content" name='+group_name+'>';
+			list_html += '	<div class="'+list_name+'_content" gidNumber="'+group_gid+'">';
 			list_html += '		<div class="'+list_name+'_list_item '+list_name+'_list_name odd_even_typed">';
 			list_html += '			'+group_name;
 			list_html += '		</div>';
