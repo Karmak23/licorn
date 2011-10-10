@@ -255,6 +255,8 @@ def edit_groups(uri, http_user, login, groups='', **kwargs):
 			groups_wmi.append(LMC.groups.by_name(group))
 
 	for group in user_groups:
+		# FIXME: don't hardcode 'admin'. when removing the hardcoded value,
+		# please check it's not present anywhere else.
 		if group.name in groups or group.name in ('admin',
 			LMC.configuration.defaults.admin_group):
 			pass
@@ -742,7 +744,7 @@ def new(uri, http_user, **kwargs):
 def make_groups_list(user):
 
 	groups = LMC.groups.select(filters.STANDARD)
-	
+
 	if len(groups) == 0:
 		temp = '<div class="no_item_text"><center>'
 		temp += _("There is no standard group on the system")
@@ -784,9 +786,9 @@ def make_groups_list(user):
 	return data
 def make_privs_list(user):
 	data = ''
-	
+
 	groups = LMC.groups.select(filters.PRIVILEGED)
-	
+
 	if len(groups) == 0:
 		temp = '<div class="no_item_text"><center>'
 		temp += _("There is no privilege on the system")
@@ -824,7 +826,7 @@ def make_groups_sys_list(http_user, user):
 	if not is_super_admin:
 		return ''
 
-	
+
 	data = ''
 	def get_relationship(user, group):
 		if user is None:
@@ -837,7 +839,7 @@ def make_groups_sys_list(http_user, user):
 
 	privs = LMC.groups.select(filters.PRIVILEGED)
 	filtered_groups = [ g for g in LMC.groups.select(filters.SYSTEM) if g not in privs ]
-	
+
 	if len(filtered_groups) == 0:
 		temp = '<div class="no_item_text"><center>'
 		temp += _("There is no system group on the system")
@@ -934,13 +936,13 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 						'"sortable" : "False"}'
 					']'
 				'}'
-	 		'} ' % (_(u'User accounts'), 
+	 		'} ' % (_(u'User accounts'),
 				LMC.users.to_JSON(selected=LMC.users.select(_filter)),
-				_('Massive delete icon'), 
+				_('Massive delete icon'),
 				_('Selected user(s) massive removal'),
-				_('Massive skel icon'), 
+				_('Massive skel icon'),
 				_('Selected user(s) massive reapply skel'),
-				_('Massive export icon'), 
+				_('Massive export icon'),
 				_('Selected user(s) massive export'),
 				_('Login'), _('GECOS'), _('UID'), _('Skel')))
 
@@ -998,13 +1000,13 @@ def get_main_content_JSON(uri, http_user, **kwargs):
 					']'
 				'}'
 			'}') % (
-				_(u'System user accounts'), 
+				_(u'System user accounts'),
 				LMC.users.to_JSON(selected=LMC.users.select(filters.SYSTEM)),
-				_('Massive delete icon'), 
+				_('Massive delete icon'),
 				_('Selected system user(s) massive removal'),
-				_('Massive skel icon'), 
+				_('Massive skel icon'),
 				_('Selected system user(s) massive reapply skel'),
-				_('Massive export icon'), 
+				_('Massive export icon'),
 				_('Selected system user(s) massive export'),
 				_('Login'), _('GECOS'), _('UID'), _('Skel'))
 
