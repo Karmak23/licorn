@@ -292,6 +292,15 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	else:
 		access_perm = dir_info.files_perm
 		perm_acl    = dir_info.content_acl
+		if not perm_acl and access_perm == 00644:
+			# fix #545 : NOACL should retain the exec bit on files
+			perm = execbits2str(dir_info.path, check_other=True)
+			if perm[0] == "x": # user
+				access_perm += S_IXUSR
+			if perm[1] == "x": # group
+				access_perm += S_IXGRP
+			if perm[2] == "x": # other
+				access_perm += S_IXOTH
 
 	# if we are going to set POSIX1E acls, check '@GX' or '@UX' vars
 	if perm_acl:
@@ -546,7 +555,6 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		try:
 			pathstat     = os.lstat(path)
 			current_perm = pathstat.st_mode & 07777
-
 		except (IOError, OSError), e:
 			if e.errno == 2: return
 			else:
@@ -894,7 +902,7 @@ def get_file_encoding(filename):
 		ret_encoding = None
 
 	return ret_encoding
-def execbits2str(filename):
+def execbits2str(filename, check_other=False):
 	"""Find if a file has executable bits and return (only) then as
 		a list of strings, used later to build an ACL permission string.
 
@@ -917,8 +925,13 @@ def execbits2str(filename):
 		execperms.append('x')
 	else:
 		execperms.append('-')
-
-	# skip exec bit for other, not used in our ACLs.
+		
+	if check_other:
+		# exec bit for other ?
+		if fileperms & S_IXOTH:
+			execperms.append('x')
+		else:
+			execperms.append('-')
 
 	return execperms
 def perms2str(perms, acl_form = False):
