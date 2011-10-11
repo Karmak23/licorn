@@ -499,7 +499,7 @@ def menu(uri, http_user=None):
 	-->
 	<div class="menu-item" >
 		<div class="menu-title">
-			<a href="http://docs.licorn.org/userdoc/index.html" class="menu_link" title="%s">
+			<a href="http://docs.licorn.org/userdoc/" class="menu_link" title="%s">
 				<div class="menu-back "></div>
 				<div class='menu-text'>%s</div>
 			</a>
