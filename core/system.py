@@ -383,6 +383,6 @@ class SystemController(Singleton, CoreController, ListenerObject):
 		# NOTE: don't pprint, it avoids the ascii-escaped strings to be
 		# interpreted correctly.
 		#	result = pprint.pformat(result)
-			output += result + '\n'
+			output += str(result) + '\n'
 
 		return False, output
