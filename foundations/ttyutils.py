@@ -7,9 +7,8 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, os, termios, threading, curses, code, readline, select, signal, pprint
-
-from rlcompleter import Completer
+import sys, os, termios, threading, curses, code
+import select, signal, errno
 
 # licorn.foundations
 import logging
@@ -197,6 +196,13 @@ class LicornInteractor(NamedObject):
 
 						else:
 							char = sys.stdin.read(1)
+
+					except (IOError, OSError), e:
+						if e.errno != errno.EBADF:
+							raise
+						else:
+							self._stop_event.set()
+							break
 
 					except select.error, e:
 						if e.args[0] == 4:
