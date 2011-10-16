@@ -42,6 +42,7 @@ TRACE_MESSAGING     = _ltrace_level(0x0000000000000000000000200, 'messaging')
 # the following two are the same, for syntax comfort
 TRACE_CHECK         = _ltrace_level(0x0000000000000000000000400, 'checks')
 TRACE_CHECKS        = _ltrace_level(0x0000000000000000000000400, 'checks')
+TRACE_SETTINGS      = _ltrace_level(0x0000000000000000000000800, 'settings')
 
 
 TRACE_CORE          = _ltrace_level(0x00000000000000000ffff0000, 'core')
@@ -119,7 +120,7 @@ TRACELEVEL_2       = 2
 TRACELEVEL_3       = 3
 TRACELEVEL_4       = 4
 
-# NOTE: keep calling it traces with a final 'S', 
+# NOTE: keep calling it traces with a final 'S',
 # because we later loop 'TRACE_*' variables
 # names to find the max width.
 TRACES_MAXWIDTH = 0
@@ -134,8 +135,10 @@ def ltrace_str_to_int(string_trace):
 	ltrace_level = 0
 
 	for level in string_trace.split('|'):
+
 		substracts = level.split('^')
 		ltrace_level |= globals()['TRACE_' + substracts[0].upper()]
+
 		for sub_env_mod in substracts[1:]:
 			ltrace_level -= globals()['TRACE_' + sub_env_mod.upper()]
 

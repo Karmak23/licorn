@@ -12,13 +12,14 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, posix1e, time, shutil
+import os, posix1e, time, shutil, errno
 from stat import *
 
-from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations         import logging, exceptions, pyutils, process
-from licorn.foundations.styles  import *
+from licorn.foundations._settings import settings
+from licorn.foundations.ltrace    import ltrace, ltrace_func
+from licorn.foundations.ltraces   import *
+from licorn.foundations           import logging, exceptions, pyutils, process
+from licorn.foundations.styles    import *
 
 from licorn.core import LMC
 
@@ -38,9 +39,7 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		raise  exceptions.BadArgumentError(
 			_(u'minifind: please do not try to exhaust maxdepth.'))
 
-	assert ltrace(TRACE_FSAPI, '> minifind(%s, itype=%s, mindepth=%s, '
-		'maxdepth=%s, exclude=%s, followlinks=%s, followmounts=%s)' % (
-			path, itype, mindepth, maxdepth, exclude, followlinks, followmounts))
+	assert ltrace_func(TRACE_FSAPI)
 
 	paths_to_walk      = [ path ]
 	next_paths_to_walk = []
@@ -68,8 +67,8 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 			entry_mode = entry_stat.st_mode & 07777
 
 		except (IOError, OSError), e:
-			if e.errno == 2 or (e.errno == 13 and entry[-5:] == '.gvfs'):
-				continue
+			if e.errno == errno.ENOENT or (e.errno == 13 and entry[-5:] == '.gvfs'):
+				logging.warning2(_(u'fsapi.minifind(): error on {0}: {1}').format(stylize(ST_PATH, entry), e))
 			else:
 				raise e
 		else:
@@ -102,22 +101,22 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 							assert ltrace(TRACE_FSAPI, '  minifind(excluded=%s)' % entry)
 
 				except (IOError, OSError), e:
-					if e.errno == 2:
+					if e.errno == errno.ENOENT:
 						# happens on recursive delete() applyed on minifind()
 						# results: the dir vanishes during the os.listdir().
-						continue
+						logging.warning2(_(u'fsapi.minifind(): error on {0}: {1}').format(stylize(ST_PATH, entry), e))
+
 					else:
 						raise e
+	assert ltrace_func(TRACE_FSAPI, True)
 def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 										auto_answer=None, full_display=True):
 	""" General function to check file/directory. """
 
-	assert ltrace(TRACE_FSAPI, '> check_dirs_and_contents_perms_and_acls_new('
-								'dirs_infos=%s, batch=%s, auto_answer=%s)' % (
-									dirs_infos, batch, auto_answer))
+	assert ltrace_func(TRACE_FSAPI)
 
 	conf_acls = LMC.configuration.acls
-	conf_dflt = LMC.configuration.defaults
+	conf_dflt = settings.defaults
 
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
 													full_display=full_display):
@@ -269,13 +268,12 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 		raise exceptions.BadArgumentError(
 			_(u'You must pass something through dirs_infos to check!'))
 
-	assert ltrace(TRACE_FSAPI, '< check_dirs_and_contents_perms_and_acls_new()')
+	assert ltrace_func(TRACE_FSAPI, True)
 def check_perms(dir_info, file_type=None, is_root_dir=False,
 					batch=None, auto_answer=None, full_display=True):
 	""" general function to check if permissions are ok on file/dir """
-	assert ltrace(TRACE_FSAPI, '> check_perms(dir_info=%s, file_type=%s, '
-		'is_root_dir=%s, batch=%s, auto_answer=%s' % (
-			dir_info, file_type, is_root_dir, batch, auto_answer))
+
+	assert ltrace_func(TRACE_FSAPI)
 
 	path = dir_info.path
 
@@ -292,13 +290,16 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	else:
 		access_perm = dir_info.files_perm
 		perm_acl    = dir_info.content_acl
+
 		if not perm_acl and access_perm == 00644:
 			# fix #545 : NOACL should retain the exec bit on files
 			perm = execbits2str(dir_info.path, check_other=True)
 			if perm[0] == "x": # user
 				access_perm += S_IXUSR
+
 			if perm[1] == "x": # group
 				access_perm += S_IXGRP
+
 			if perm[2] == "x": # other
 				access_perm += S_IXOTH
 
@@ -312,8 +313,10 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		except (IOError, OSError), e:
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
-			if e.errno == 2: return
-			else: raise e
+			logging.warning2(_(u'fsapi.check_perms(): exception while '
+				u'`execbits2str()` on {0}.').format(stylize(ST_PATH, path), e))
+			pyutils.print_exception_if_verbose()
+			return
 
 		if '@GX' in access_perm or '@UX' in access_perm:
 			access_perm = access_perm.replace(
@@ -353,12 +356,10 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		except (IOError, OSError), e:
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
-			if e.errno == 2: return
-			else:
-				logging.warning(_(u"Exception encoutered while trying to "
-					u"get the posix.1e ACL of {0}.").format(path))
-				pyutils.print_exception_if_verbose()
-				return
+			logging.warning(_(u"Exception while trying to "
+				u"get the posix.1e ACL of {0}.").format(stylize(ST_PATH, path)))
+			pyutils.print_exception_if_verbose()
+			return
 
 		if current_perm != access_perm:
 
@@ -410,11 +411,14 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 													| posix1e.TEXT_SOME_EFFECTIVE)),
 									path=stylize(ST_PATH, path)))
 					except (IOError, OSError), e:
-						if e.errno == 2: return
+						if e.errno == errno.ENOENT:
+							logging.warning2(_(u'fsapi.check_perms(): error '
+								u'on {0}: {1}').format(stylize(ST_PATH, path), e))
+							return
 						else:
 							logging.warning(_(u"Exception encoutered while "
-								u"trying to set a posix.1e ACL "
-								u"on {0}.").format(path))
+											u"trying to set a posix.1e ACL "
+											u"on {0}.").format(path))
 							pyutils.print_exception_if_verbose()
 							return
 
@@ -427,6 +431,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 			if dir_info.dirs_perm != None and ':' in str(dir_info.dirs_perm):
 				default_perm = dir_info.dirs_perm
+
 			else:
 				default_perm = dir_info.root_dir_perm
 
@@ -478,7 +483,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 												| posix1e.TEXT_SOME_EFFECTIVE)
 									)))
 					except (IOError, OSError), e:
-						if e.errno == 2: return
+						if e.errno == errno.ENOENT:
+							logging.warning2(_(u'fsapi.check_perms(): error '
+								u'on {0}: {1}').format(stylize(ST_PATH, path), e))
+							return
+
 						else:
 							logging.warning(_(u"Exception encoutered while "
 								u"trying to set a posix.1e default ACL "
@@ -489,14 +498,13 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 				else:
 					all_went_ok = False
 	else:
-		# delete previus ACL perms in case of existance
+		# delete previous ACL perms in case of existance
 		try:
 			extended_acl = has_extended_acl(path)
+
 		except (IOError, OSError), e:
-			if e.errno == 2: return
-			else:
-				logging.warning(_(u"Exception encoutered while "
-					u"trying to find if {0} holds an ACL or not.").format(path))
+				logging.warning(_(u"Exception while trying to find if {0} "
+					u"holds an ACL or not.").format(stylize(ST_PATH, path)))
 				pyutils.print_exception_if_verbose()
 				return
 
@@ -513,7 +521,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 				try:
 					# if it is a directory we need to delete DEFAULT ACLs too
-					if file_type is S_IFDIR:
+					if file_type == S_IFDIR:
 
 						# yield the applied event, to be catched in the
 						# inotifier part of the core, who will build an
@@ -541,13 +549,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 							u'{path}.').format(path=stylize(ST_PATH, path)))
 
 				except (IOError, OSError), e:
-					if e.errno == 2: return
-					else:
-						logging.warning(_(u"Exception encoutered while "
-							u"trying to delete the posix.1e ACL "
-							u"on {0}.").format(path))
-						pyutils.print_exception_if_verbose()
-						return
+					logging.warning(_(u"Exception while "
+						u"trying to delete the posix.1e ACL "
+						u"on {0}.").format(stylize(ST_PATH, path)))
+					pyutils.print_exception_if_verbose()
+					return
 
 			else:
 				all_went_ok = False
@@ -555,13 +561,12 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		try:
 			pathstat     = os.lstat(path)
 			current_perm = pathstat.st_mode & 07777
+
 		except (IOError, OSError), e:
-			if e.errno == 2: return
-			else:
-				logging.warning(_(u"Exception encoutered while "
-					u"trying to `lstat()` {0}.").format(path))
-				pyutils.print_exception_if_verbose()
-				return
+			logging.warning(_(u"Exception while "
+				u"trying to `lstat()` {0}.").format(stylize(ST_PATH, path)))
+			pyutils.print_exception_if_verbose()
+			return
 
 		if current_perm != access_perm:
 
@@ -589,19 +594,18 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									wanted_mode=stylize(ST_ACL,
 										perms2str(access_perm)),
 									path=stylize(ST_PATH, path)))
+
 					except (IOError, OSError), e:
-						if e.errno == 2: return
-						else:
-							logging.warning(_(u"Exception encoutered while "
-								u"trying to change posix permissions "
-								u"on {0}.").format(path))
-							pyutils.print_exception_if_verbose()
-							return
+						logging.warning(_(u"Exception while "
+							u"trying to change posix permissions "
+							u"on {0}.").format(stylize(ST_PATH, path)))
+						pyutils.print_exception_if_verbose()
+						return
 
 			else:
 				all_went_ok = False
 
-	assert ltrace(TRACE_FSAPI, '< check_perms()')
+	assert ltrace_func(TRACE_FSAPI, True)
 def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 														full_display=True):
 	""" function that check the uid and gid of a file or a dir. """
@@ -616,7 +620,6 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 		pathstat = os.lstat(path)
 
 	except (IOError, OSError), e:
-		if e.errno == 2:
 			# causes of this error:
 			#     - this is a race condition: the dir/file has been deleted
 			#		between the minifind() and the check_*() call.
@@ -624,9 +627,10 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 			#     - when we explicitely want to check a path which does not
 			#		exist because it has not been created yet (eg: ~/.dmrc
 			#		on a brand new user account).
-			return
-		else:
-			raise e
+		logging.warning(_(u"Exception while trying to `lstat()` "
+						u"{0}.").format(stylize(ST_PATH, path)))
+		pyutils.print_exception_if_verbose()
+		return
 
 	# if one or both of the uid or gid are empty, don't check it, use the
 	# current one present in the file meta-data.
@@ -833,7 +837,7 @@ def archive_directory(path, orig_name='unknown'):
 	LMC.configuration.check_base_dirs(minimal=True,	batch=True)
 
 	group_archive_dir = "%s/%s.deleted.%s" % (
-		LMC.configuration.home_archive_dir, orig_name,
+		settings.home_archive_dir, orig_name,
 		time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 	try:
 		os.rename(path, group_archive_dir)
@@ -856,7 +860,7 @@ def archive_directory(path, orig_name='unknown'):
 def has_extended_acl(pathname):
 	# return True if the posix1e representation of pathname's ACL has a MASK.
 	for acl_entry in posix1e.ACL(file = pathname):
-		if acl_entry.tag_type is posix1e.ACL_MASK:
+		if acl_entry.tag_type == posix1e.ACL_MASK:
 			return True
 	return False
 
@@ -925,7 +929,7 @@ def execbits2str(filename, check_other=False):
 		execperms.append('x')
 	else:
 		execperms.append('-')
-		
+
 	if check_other:
 		# exec bit for other ?
 		if fileperms & S_IXOTH:

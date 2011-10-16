@@ -40,14 +40,12 @@ class BasicCounter(object):
 	def __add__(self, val):
 		self.value += val
 	def __iadd__(self, val):
-		#print '>> iadd', val
 		self.value += val
 		return self
 
 	def __sub__(self, val):
 		self.value -= val
 	def __isub__(self, val):
-		#print '>> isub', val
 		self.value -= val
 		return self
 
@@ -189,11 +187,9 @@ class MixedDictObject(NamedObject, dict):
 		NamedObject.copy_from(self, source)
 		dict.update(self, dict.copy(source))
 	def iter(self):
-		#print '>> iter', self.name
 		assert ltrace(TRACE_BASE, '| MixedDictObject.iter(%s)' % self.name)
 		return dict.itervalues(self)
 	def __iter__(self):
-		#print '>> __iter__', self.name
 		assert ltrace(TRACE_BASE, '| MixedDictObject.__iter__(%s)' % self.name)
 		return dict.itervalues(self)
 	def __getattr__(self, attribute):
@@ -329,6 +325,10 @@ class Enumeration(object):
 		if kwargs != {}:
 			for key, value in kwargs.iteritems():
 				self.__setattr__(key, value)
+	def __str__(self):
+		return 'Enumeration "%s"' % stylize(ST_NAME, self.name)
+	def __repr__(self):
+		return '<Enumeration "%s">' % self.name
 	def copy(self):
 		""" make a complete and dereferenced copy of ouselves. """
 		temp = Enumeration()

@@ -106,6 +106,7 @@ ST_INACTIVE  = ST_STOPPED
 ST_DEVICE    = 42
 ST_EMPTY     = 43
 ST_BACKEND   = 44
+ST_VALUE     = 45
 
 colors = {
 	ST_NO       : cli_ascii_codes[ST_NO],
@@ -152,6 +153,7 @@ colors = {
 	ST_STOPPED  : cli_ascii_codes[ST_BRICK],
 	ST_DEVICE   : cli_ascii_codes[ST_BROWN],
 	ST_EMPTY    : cli_ascii_codes[ST_BLACK],
+	ST_VALUE    : cli_ascii_codes[ST_FOREST],
 	}
 
 
