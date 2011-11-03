@@ -2089,7 +2089,7 @@ class CoreFSUnitObject:
 			walk across all shared group data in one call. """
 
 		with self.lock:
-			for key, value in L_inotifier_add(
+			watches = L_inotifier_add(
 									path=directory,
 									rec=initial, auto_add=False,
 									mask=	#pyinotify.ALL_EVENTS,
@@ -2099,18 +2099,19 @@ class CoreFSUnitObject:
 											| pyinotify.IN_MOVED_FROM
 											| pyinotify.IN_DELETE_SELF,
 									#proc_fun=pyinotify.PrintAllEvents())
-									proc_fun=self.__inotify_event_dispatcher
-																).iteritems():
-				if key in self.__watches:
-					logging.warning2(_(u'{0}: overwriting watch {1}!').format(
-						stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
+									proc_fun=self.__inotify_event_dispatcher)
+			if watches:
+				for key, value in watches.iteritems():
+					if key in self.__watches:
+						logging.warning2(_(u'{0}: overwriting watch {1}!').format(
+							stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
 
-				logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
-								'{0}: add-watch {1} {2}',
-									(ST_NAME, self.name),
-									(ST_PATH, key),
-									(ST_UGID, value))
-				self.__watches[key] = value
+					logging.monitor(TRACE_INOTIFIER, TRACELEVEL_2,
+									'{0}: add-watch {1} {2}',
+										(ST_NAME, self.name),
+										(ST_PATH, key),
+										(ST_UGID, value))
+					self.__watches[key] = value
 	@logging.warn_exception
 	def __unwatch_directory(self, directory, deleted=False):
 
