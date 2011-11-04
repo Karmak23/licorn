@@ -79,9 +79,10 @@ From sources
 		sudo chmod a+x /usr/bin/${i}
 	done
 
-	sudo rm -f /usr/sbin/licornd
+	sudo rm -f /usr/sbin/licornd*
 	sudo ln -sf "${LCN_DEV_DIR}/daemon/main.py" /usr/sbin/licornd
-	sudo chmod a+x /usr/sbin/licornd
+	sudo ln -sf "${LCN_DEV_DIR}/daemon/wmi.py" /usr/sbin/licornd-wmi
+	sudo chmod a+x /usr/sbin/licornd*
 
 	sudo mkdir /etc/licorn
 	sudo ln -sf "${LCN_DEV_DIR}/config/check.d" /etc/licorn
