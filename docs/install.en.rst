@@ -42,8 +42,16 @@ From sources
 	sudo apt-get -qy --force-yes install nullmailer darcs \
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
-			python-pyip python-ipcalc python-udev python-dbus \
+			python-pyip python-ipcalc python-dbus \
 			python-gobject gettext python-pygments
+
+#. Given the Ubuntu distro you have::
+
+	# On Ubuntu <= Natty, you need our private package repository for this one (contact us):
+	sudo apt-get install --yes --force-yes python-udev
+
+	# On Oneiric, python-pyudev is available:
+	sudo apt-get install --yes --force-yes python-pyudev
 
 #. About `python-pylibacl`: be sure to install at least version *0.3*.
 #. Get the source localy with darcs::

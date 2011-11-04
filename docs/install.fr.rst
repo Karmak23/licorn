@@ -42,11 +42,19 @@ Depuis les sources
 
 #. Installez :program:`darcs` and les paquetages Python requis::
 
-	sudo apt-get -qy --force-yes install nullmailer darcs \
+	sudo apt-get --yes --force-yes install nullmailer darcs \
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
-			python-pyip python-ipcalc python-udev python-dbus \
+			python-pyip python-ipcalc python-dbus \
 			python-gobject gettext python-pygments
+
+#. Puis, suivant votre distribution::
+
+	# Sur Ubuntu <= Natty, il faut notre source de paquet pour celà :
+	sudo apt-get install --yes --force-yes python-udev
+
+	# Sur Oneiric, python-pyudev est disponible :
+	sudo apt-get install --yes --force-yes python-pyudev
 
 #. à propos de ``python-pylibacl`` : vérifiez que c'est au moins la version *0.3* (à partir de ``Hardy`` c'est bon).
 #. Récupérez les sources avec :program:`darcs`::
