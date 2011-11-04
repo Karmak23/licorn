@@ -41,6 +41,8 @@ The ``LMC`` holds and controls system objects controllers,  and enables or disab
 Usage
 =====
 
+.. warning:: this section needs to be rewritten. The whole process is much more simple, now that we have the `foundations.settings` module.
+
 Once the LMC is instanciated, there are 2 ways for using it:
 
 * **locally** (from inside the daemon), the LMC holds the real system controllers and unit-objects, making them accessible anywhere (`LMC` is a global object).
@@ -76,13 +78,6 @@ Once the LMC is instanciated, there are 2 ways for using it:
 Methods
 =======
 
-Common role-related methods
----------------------------
-
-.. class:: LicornMasterController
-
-	.. automethod:: init_conf
-
 
 Server-role methods
 -------------------
@@ -102,7 +97,7 @@ Client-role methods
 	.. automethod:: init_client_second_pass
 
 
-Remote-side (no-role) methods
+Remote-side (no particular role) methods
 -----------------------------
 
 .. class:: LicornMasterController
