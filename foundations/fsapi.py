@@ -15,7 +15,7 @@ Licensed under the terms of the GNU GPL version 2
 import os, posix1e, time, shutil, errno
 from stat import *
 
-from licorn.foundations._settings import settings
+
 from licorn.foundations.ltrace    import ltrace, ltrace_func
 from licorn.foundations.ltraces   import *
 from licorn.foundations           import logging, exceptions, pyutils, process
@@ -116,7 +116,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	assert ltrace_func(TRACE_FSAPI)
 
 	conf_acls = LMC.configuration.acls
-	conf_dflt = settings.defaults
+	conf_dflt = LMC.configuration.defaults
 
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
 													full_display=full_display):
@@ -837,7 +837,7 @@ def archive_directory(path, orig_name='unknown'):
 	LMC.configuration.check_base_dirs(minimal=True,	batch=True)
 
 	group_archive_dir = "%s/%s.deleted.%s" % (
-		settings.home_archive_dir, orig_name,
+		LMC.configuration.home_archive_dir, orig_name,
 		time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 	try:
 		os.rename(path, group_archive_dir)
