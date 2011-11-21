@@ -6,7 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
 Licensed under the terms of the GNU GPL version 2.
 """
-import os, time, Pyro.core, gc
+import os, time, Pyro.core, gc, types
 
 from operator  import attrgetter
 from threading import current_thread, RLock
@@ -117,7 +117,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					continue
 
 				for oid in id_arg.split(',') if hasattr(id_arg, 'split') else (
-					(id_arg, ) if int(id_arg) else id_arg):
+					(id_arg, ) if type(id_arg) == types.IntType else id_arg):
 					if oid is '':
 						continue
 
