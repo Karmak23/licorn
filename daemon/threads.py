@@ -388,7 +388,9 @@ class GenericQueueWorkerThread(Thread):
 			if (self.input_queue.qsize() <= self.__class__.instances
 					and self.__class__.instances > self.__class__.busy):
 
-				if self.__class__.instances > self.__class__.peers_min:
+				# '+ 1' to avoid the last 2 threads to kill each other
+				# (very basic fix for #607)
+				if self.__class__.instances > self.__class__.peers_min + 1:
 
 					assert ltrace(TRACE_THREAD, '  %s: terminating because running out '
 						'of jobs (%d jobs <= %d instances '
@@ -401,6 +403,9 @@ class GenericQueueWorkerThread(Thread):
 	def spawn_peer(self):
 		self.__licornd.append_thread(
 				self.__class__(licornd=self.__licornd, daemon=self.daemon))
+	def start(self):
+		Thread.start(self)
+		return self
 	def stop(self):
 		#assert ltrace(TRACE_THREAD, '| %s.stop()' % self.name)
 		self.input_queue.put_nowait((-1, None, None, None))

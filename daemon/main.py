@@ -103,7 +103,31 @@ class LicornDaemon(Singleton):
 	@property
 	def threads(self):
 		return self.__threads
-
+	def start_servicers(self):
+		self.__start_service_threads(
+				ServiceWorkerThread,
+				in_queue=self.__queues.serviceQ,
+				peers_min=self.configuration.threads.service.min,
+				peers_max=self.configuration.threads.service.max,
+				# Service threads are not daemon, they must
+				# terminate before we quit.
+				daemon=False
+			)
+	def start_aclcheckers(self):
+		self.__start_service_threads(ACLCkeckerThread,
+				in_queue=self.__queues.aclcheckQ,
+				peers_min=self.configuration.threads.aclcheck.min,
+				peers_max=self.configuration.threads.aclcheck.max,
+				daemon=False
+			)
+	def start_networkers(self):
+		self.__start_service_threads(NetworkWorkerThread,
+				in_queue=self.__queues.networkQ,
+				peers_min=self.configuration.threads.network.min,
+				peers_max=self.configuration.threads.network.max,
+			)
+	def __start_service_threads(self, tclass, **kwargs):
+		self.__threads.append(tclass(licornd=self, **kwargs).start())
 	def __init_daemon_phase_1(self):
 		""" TODO. """
 
@@ -115,35 +139,21 @@ class LicornDaemon(Singleton):
 								u'controllers and extensions.').format(self))
 
 		self.__queues.serviceQ = PriorityQueue()
-		self.__threads.append(ServiceWorkerThread(
-							in_queue=self.__queues.serviceQ,
-							peers_min=self.configuration.threads.service.min,
-							peers_max=self.configuration.threads.service.max,
-							licornd=self,
-							# Service threads are not daemon, they must
-							# terminate before we quit.
-							daemon=False))
+		self.start_servicers()
+
 		# make them accessible everywhere.
 		__builtin__.__dict__['L_service_enqueue']  = self.__service_enqueue
 		__builtin__.__dict__['L_service_wait']     = self.__service_wait
 
 		if LMC.configuration.licornd.role != roles.CLIENT:
 			self.__queues.aclcheckQ = PriorityQueue()
-			self.__threads.append(ACLCkeckerThread(
-								in_queue=self.__queues.aclcheckQ,
-								peers_min=self.configuration.threads.aclcheck.min,
-								peers_max=self.configuration.threads.aclcheck.max,
-								licornd=self,
-								daemon=False))
+			self.start_aclcheckers()
+
 			__builtin__.__dict__['L_aclcheck_enqueue'] = self.__aclcheck_enqueue
 			__builtin__.__dict__['L_aclcheck_wait']    = self.__aclcheck_wait
 
 			self.__queues.networkQ = PriorityQueue()
-			self.__threads.append(NetworkWorkerThread(
-								in_queue=self.__queues.networkQ,
-								peers_min=self.configuration.threads.network.min,
-								peers_max=self.configuration.threads.network.max,
-								licornd=self))
+			self.start_networkers()
 
 			__builtin__.__dict__['L_network_enqueue']  = self.__network_enqueue
 			__builtin__.__dict__['L_network_wait']     = self.__network_wait
@@ -933,7 +943,7 @@ class LicornDaemon(Singleton):
 		return thread
 	def append_thread(self, thread, autostart=True):
 		self.__threads.append(thread)
-		if autostart:
+		if autostart and not thread.is_alive():
 			thread.start()
 	def __service_enqueue(self, prio, func, *args, **kwargs):
 		self.__queues.serviceQ.put((prio, func, args, kwargs))
