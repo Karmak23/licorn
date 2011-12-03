@@ -56,10 +56,11 @@ from licorn.daemon                import gettext, LicornDaemonInteractor, \
 											priorities, roles, client, \
 											InternalEvent
 from licorn.daemon.wmi            import WMIThread
-from licorn.daemon.threads        import LicornJobThread, \
+from licorn.daemon.threads        import GenericQueueWorkerThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
-											NetworkWorkerThread
+											NetworkWorkerThread, \
+											LicornJobThread
 from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.eventmanager   import EventManager
 from licorn.daemon.cmdlistener    import CommandListener
@@ -286,10 +287,10 @@ class LicornDaemon(Singleton):
 		logging.notice(_(u'{0:s}: starting all threads.').format(self))
 
 		for (thname, th) in self.__threads.items():
-			# check if threads are alive before starting them, because some
-			# extensions already started them, to catch ealy events (which is
-			# not a problem per se).
-			if not th.is_alive():
+			# Check for non-GenericQueueWorkerThread and non-already-started 
+			# threads, and start them. Some extensions already started them,
+			# to catch early events.
+			if not isinstance(th, GenericQueueWorkerThread) and not th.is_alive():
 				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
 				th.start()
 	def __stop_threads(self):
