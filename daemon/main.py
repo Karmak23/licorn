@@ -56,7 +56,7 @@ from licorn.daemon                import gettext, LicornDaemonInteractor, \
 											priorities, roles, client, \
 											InternalEvent
 from licorn.daemon.wmi            import WMIThread
-from licorn.daemon.threads        import GenericQueueWorkerThread, \
+from licorn.daemon.threads        import GQWSchedulerThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
 											NetworkWorkerThread, \
@@ -105,30 +105,35 @@ class LicornDaemon(Singleton):
 	def threads(self):
 		return self.__threads
 	def start_servicers(self):
-		self.__start_service_threads(
-				ServiceWorkerThread,
-				in_queue=self.__queues.serviceQ,
-				peers_min=self.configuration.threads.service.min,
-				peers_max=self.configuration.threads.service.max,
-				# Service threads are not daemon, they must
-				# terminate before we quit.
-				daemon=False
+		self.__threads.append(
+			ServiceWorkerThread.setup(self,
+				self.__queues.serviceQ,
+				self.configuration.threads.service.min,
+				self.configuration.threads.service.max
 			)
+		)
 	def start_aclcheckers(self):
-		self.__start_service_threads(ACLCkeckerThread,
-				in_queue=self.__queues.aclcheckQ,
-				peers_min=self.configuration.threads.aclcheck.min,
-				peers_max=self.configuration.threads.aclcheck.max,
-				daemon=False
+		self.__threads.append(
+			ACLCkeckerThread.setup(self,
+				self.__queues.aclcheckQ,
+				self.configuration.threads.aclcheck.min,
+				self.configuration.threads.aclcheck.max
 			)
+		)
 	def start_networkers(self):
-		self.__start_service_threads(NetworkWorkerThread,
-				in_queue=self.__queues.networkQ,
-				peers_min=self.configuration.threads.network.min,
-				peers_max=self.configuration.threads.network.max,
+		self.__threads.append(
+			NetworkWorkerThread.setup(self,
+				self.__queues.networkQ,
+				self.configuration.threads.network.min,
+				self.configuration.threads.network.max,
+				# Network threads are daemon, because they can
+				# take ages to terminate and usually block on
+				# sockets. We can't afford waiting for them.
+				daemon=True
 			)
-	def __start_service_threads(self, tclass, **kwargs):
-		self.__threads.append(tclass(licornd=self, **kwargs).start())
+		)
+	#def __start_service_threads(self, tclass, **kwargs):
+	#	self.__threads.append(tclass(licornd=self, **kwargs).start())
 	def __init_daemon_phase_1(self):
 		""" TODO. """
 
@@ -287,10 +292,11 @@ class LicornDaemon(Singleton):
 		logging.notice(_(u'{0:s}: starting all threads.').format(self))
 
 		for (thname, th) in self.__threads.items():
-			# Check for non-GenericQueueWorkerThread and non-already-started 
+			# Check for non-GenericQueueWorkerThread and non-already-started
 			# threads, and start them. Some extensions already started them,
 			# to catch early events.
-			if not isinstance(th, GenericQueueWorkerThread) and not th.is_alive():
+			if not isinstance(th, GQWSchedulerThread) \
+						and not th.is_alive():
 				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
 				th.start()
 	def __stop_threads(self):

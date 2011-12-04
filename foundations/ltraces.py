@@ -103,6 +103,7 @@ TRACE_CHK           = _ltrace_level(0x0000800000000000000000000, 'chk')
 TRACE_GET           = _ltrace_level(0x0001000000000000000000000, 'get')
 TRACE_ARGPARSER     = _ltrace_level(0x0002000000000000000000000, 'argparser')
 TRACE_WMI           = _ltrace_level(0x0004000000000000000000000, 'wmi')
+TRACE_DJANGO        = _ltrace_level(0x0008000000000000000000000, 'django')
 
 
 TRACE_HIGHLEVEL     = _ltrace_level(TRACE_ALL

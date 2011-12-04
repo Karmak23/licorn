@@ -12,17 +12,34 @@ Licensed under the terms of the GNU GPL version 2.
 """
 
 import time, __builtin__
-from traceback   import print_exc
 from threading   import Thread, Event, RLock, current_thread
 from Queue       import Queue
 
 from licorn.foundations           import logging, exceptions, options, pyutils
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltrace    import ltrace, ltrace_func
+from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import verbose
 from licorn.daemon                import priorities
 
+class BaseLicornThread(Thread):
+	_instances = []
+	def __init__(self, *a, **kw):
+
+		try:
+			self.__class__._instances.append(self)
+
+		except AttributeError:
+			self.__class__._instances = [ self ]
+
+		Thread.__init__(self, *a, **kw)
+	def start(self):
+		""" Just a handy method that allows us to do::
+
+			>>> th = BaseLicornThread(...).start()
+		"""
+		Thread.start(self)
+		return self
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to
@@ -128,35 +145,23 @@ class LicornBasicThread(Thread):
 		""" Stop current Thread. """
 		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
-class GenericQueueWorkerThread(Thread):
+class GQWSchedulerThread(BaseLicornThread):
+	""" Try to dynamically adapt the number of workers for a given qsize.
+
+		.. warning:: this scheduler is very basic, and in loaded conditions,
+			the priorities will not be respected: if all workers are currently
+			handling jobs, any incoming one (even with a higher priority) will
+			have to wait before beiing processed.
+			This can eventually be avoided by the use of greenlets everywhere
+			in licorn code, but this will need a deeper level of code rewrite.
 	"""
-		.. versionadded:: 1.2.5
-	"""
+	def __init__(self, klass, *a, **kw):
+		BaseLicornThread.__init__(self, *a, **kw)
 
-	def __init__(self, licornd, in_queue=None,
-				peers_min=None, peers_max=None, high_bypass=True, daemon=True):
-		Thread.__init__(self)
+		self.scheduled_class = klass
+		self._stop_event     = Event()
 
-		#: the :attr:`daemon` coming from threading.Thread.
-		self.daemon        = daemon
-		self.__high_bypass = high_bypass
-
-		#: a reference to the Licorn daemon, to record myself in threads list.
-		self.__licornd = licornd
-
-		if in_queue:
-			# the very first instance of the class has to setup everything
-			# for its future peers.
-			self.__class__.base_name   = str(self.__class__).rsplit(
-																'.', 1)[1][:-8]
-			self.__class__.counter      = 0
-			self.__class__.instances    = 0
-			self.__class__.busy         = 0
-			self.__class__.input_queue  = in_queue
-			self.__class__.lock         = RLock()
-			self.__class__.peers_min    = peers_min
-			self.__class__.peers_max    = peers_max
-			self.__class__.last_warning = 0
+		self.name   = '%s(%s)' % (self.__class__.__name__, klass.__name__)
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
@@ -168,36 +173,210 @@ class GenericQueueWorkerThread(Thread):
 		except KeyError:
 			self._ = __builtin__.__dict__['_']
 
-		#: the threading.Thread attribute.
-		self.name = '%s-%03d' % (self.__class__.base_name, self.__class__.counter)
 
-		#assert ltrace(TRACE_THREAD, '| %s.__init__()' % self.name)
+	def run(self):
+		assert ltrace_func(TRACE_THREAD)
 
-		#: our master queue, from which we get job to do (objects to process).
-		self.input_queue = self.__class__.input_queue
+		def throttle_up():
+			""" See if there are too many or missing peers to handle queued jobs,
+				and spawn a friend if needed, or terminate myself if no more useful.
+			"""
+			# we acquire the class lock to "freeze" starts/ends while we count
+			# everyone and throttle workers. This can make all workers wait, but
+			# doesn't happen that frequently.
+			with cls.lock:
+				# FIRST, see if peers are in need of help: if there are
+				# still a lot of job to do, spawn another peer to get the
+				# job done, until the configured thread limit is reached.
+
+				if (qsize > cls.instances and cls.instances == cls.busy) \
+						or cls.instances < cls.peers_min:
+
+					if cls.instances < cls.peers_max:
+						# sleep a lot, because we start a lot of workers,
+						# but no more that 10 seconds.
+						return min(10.0, float(self.spawn_worker(min(qsize,
+											cls.peers_max-cls.instances))))
+
+					else:
+						if time.time() - cls.last_warning > 5.0:
+							cls.last_warning = time.time()
+							logging.progress(_(u'{0}: maximum workers already '
+								u' running, but qsize={1}.').format(
+									self.name, qsize))
+
+						# all workers are currently busy, we can wait a lot
+						# before things settle. Keep CPU cycles for our workers.
+						return 10.0
+				else:
+					# things have not changed. Wait a little, but not that
+					# much in case things go up again fast.
+					return 2.0
+		def throttle_down():
+			""" See if there are too many peers to handle queued jobs, and then
+				send terminate signal (put a ``None`` job in the queue), so that
+				one of the peers will terminate.
+			"""
+
+			# we need to get the class lock, else peers could stop() while we are
+			# stopping too, and the daemon could be left without any thread for a
+			# given class of them.
+
+			with cls.lock:
+				# See if jobs have been worked out during the time
+				# we spent joing our job. If things have settled, signify to
+				# one of the peers to terminate (this could be me, or not),
+				# but only if there are still more peers than the configured
+				# lower limit.
+
+				if qsize <= cls.instances and cls.instances > cls.busy:
+					# sleep a lot if we terminate a lot of workers, but
+					# no more than 10 seconds to avoid beiing flooded
+					# by next "queue attack".
+					return min(10.0, float(self.stop_worker(
+									cls.instances - qsize - cls.peers_min)))
+
+				# things have not changed. Wait a little, but not that
+				# much in case things go up again fast.
+				return 2.0
+
+		cls        = self.scheduled_class
+		q          = cls.input_queue
+		prev_qsize = 0
+
+		while not self._stop_event.is_set():
+
+			with cls.lock:
+				qsize = q.qsize()
+
+			if qsize >= prev_qsize:
+				sleep_time = throttle_up()
+
+			else:
+				sleep_time = throttle_down()
+
+			# from time to time, or if we are in the process of settling down,
+			# ask the thread-cleaner to search for dead-threads to wipe from memory.
+			if cls.instances % 10 == 0 or cls.instances <= 2:
+				try:
+					self.scheduled_class.licornd.clean_objects(0.1)
+
+				except AttributeError:
+					# if daemon is currently stopping, the thread-cleaner
+					# could be already wiped out. Harmless.
+					pass
+
+			prev_qsize = qsize
+			time.sleep(sleep_time)
+		assert ltrace_func(TRACE_THREAD, True)
+	def stop(self):
+		assert ltrace_func(TRACE_THREAD)
+
+		self.stop_worker(self.scheduled_class.instances)
+
+		self._stop_event.set()
+
+		assert ltrace_func(TRACE_THREAD, True)
+	def spawn_worker(self, number=None):
+		for i in range(number or 1):
+			self.scheduled_class().start()
+		return number or 1.0
+	def stop_worker(self, number=None):
+		for i in range(number or 1):
+			self.scheduled_class.input_queue.put_nowait(
+				self.scheduled_class.stop_packet)
+		return number or 1.0
+class GenericQueueWorkerThread(BaseLicornThread):
+	"""
+		.. versionadded:: 1.2.5
+	"""
+
+	_setup_done  = False
+	lock         = RLock()
+	counter      = 0
+	instances    = 0
+	busy         = 0
+	last_warning = 0
+
+	#: what we need to put in the queue for a worker to stop.
+	stop_packet  = (-1, None, None, None)
+	scheduler    = None
+
+	@classmethod
+	def setup(cls, licornd, input_queue, peers_min, peers_max, daemon=False):
+
+		if cls._setup_done:
+			return
+
+		#cls.high_bypass = high_bypass
+		cls.peers_min   = peers_min
+		cls.peers_max   = peers_max
+
+		#: a reference to the licorn daemon
+		cls.licornd = licornd
+
+		#: should the worker instances be daemon threads?
+		cls.daemon = daemon
+
+		# the very first instance of the class has to setup everything
+		# for its future peers.
+		cls.input_queue  = input_queue
+
+		# start the class scheduler, which will manage worker threads
+		cls.scheduler = GQWSchedulerThread(cls).start()
+
+		cls._setup_done = True
+
+		# start the first worker, which needs `_setup_done` to be True.
+		cls().start()
+
+		return cls.scheduler
+	def __init__(self, *a, **kw):
+
+		cls = self.__class__
+
+		if not cls._setup_done:
+			raise RuntimeError(_(u'Class method {0}.setup() has not been '
+									u'called!').format(cls.__name__))
+
+		BaseLicornThread.__init__(self, *a, **kw)
+
+		#: the :class:`threading.Thread` attributes.
+		self.name   = '%s-%03d' % (cls.__name__, cls.counter)
+		self.daemon = cls.daemon
+
+		# trap the original gettext translator, to avoid the builtin '_'
+		# trigerring an exception everytime we need to translate a string.
+		# the try/except block is for the testsuite, which uses this thread
+		# as base class, but doesn't handle on-the-fly multilingual switch.
+		try:
+			self._ = __builtin__.__dict__['_orig__']
+
+		except KeyError:
+			self._ = __builtin__.__dict__['_']
 
 		#: used in dump_status (as a display info only), to know which
 		#: object our target function is running onto.
-		self.job = None
-		self.priority = None
-		self.job_args = None
-		self.job_kwargs = None
+		self.job            = None
+		self.priority       = None
+		self.job_args       = None
+		self.job_kwargs     = None
 		self.job_start_time = None
 
 		#: used to sync and not crash between run() and dump_status().
-		self.lock = RLock()
-
-		# necessary to get job status without crashing in corner cases.
+		self.lock    = RLock()
 		self.jobbing = Event()
 
-		with self.__class__.lock:
-			#print '>> lock %s +' % self.name, self.__class__.counter, self.__class__.instances
-			self.__class__.counter   += 1
-			self.__class__.instances += 1
-	def dump_status(self, long_output=False, precision=None):
+		#assert ltrace_locks(cls.lock)
+
+		with cls.lock:
+			cls.counter   += 1
+			cls.instances += 1
+	def dump_status(self, long_output=False, precision=None, as_string=True):
 		""" get detailled thread status. """
 		with self.lock:
-			return '%s%s [%s]' % (
+			if as_string:
+				return '%s%s [%s]' % (
 					stylize(ST_RUNNING
 						if self.is_alive() else ST_STOPPED, self.name),
 					'&' if self.daemon else '',
@@ -213,73 +392,38 @@ class GenericQueueWorkerThread(Thread):
 								time.time() - self.job_start_time,
 								big_precision=True))
 						if self.jobbing.is_set() else 'idle'
-				)
+					)
+			else:
+				return {}
 	def run(self):
-		#assert ltrace(TRACE_THREAD, '> %s.run()' % self.name)
+		assert ltrace_func(TRACE_THREAD)
+
+		cls = self.__class__
+		q   = cls.input_queue
 
 		while True:
 
-			self.priority, self.job, self.job_args, self.jobs_kwargs = \
-														self.input_queue.get()
+			self.priority, self.job, self.job_args, self.jobs_kwargs = q.get()
+
 			if self.job is None:
 				# None is a fake message to unblock the q.get(), when the
 				# main process terminates the current thread with stop(). We
 				# emit task_done(), else the main process will block forever
 				# on q.join().
-				self.input_queue.task_done()
+				q.task_done()
 				break
 
-			with self.__class__.lock:
-				self.__class__.busy += 1
-
-			# Do the throttle_up() out of the lock to release it, for
-			# peers to notice the newcomer. The method re-acquires it anyway.
-			self.throttle_up()
-
-			with self.lock:
-				if self.__high_bypass and self.priority != priorities.HIGH \
-					and self.__class__.busy == self.__class__.instances:
-					# make some room for HIGH priority jobs. They could still
-					# be queued if everyone is busy, but this is less likely
-					# now, because HIGH priority jobs are advised to be very
-					# short (else they should be converted to NORMAL or LOW,
-					# or splitted in smaller tasks).
-					#
-					# If we can spawn aa new peer, it will wait for new
-					# jobs while we run, else we must not handle the
-					# current job
-
-					if self.__class__.instances < self.__class__.peers_max:
-
-						assert ltrace(TRACE_THREAD, '  %s: spawing new peer '
-							'to always handle HIGH jobs.' % self.name)
-						self.spawn_peer()
-
-					else:
-						assert ltrace(TRACE_THREAD, '  %s: delaying job to be '
-							'able to always handle HIGH jobs' % self.name)
-
-						# mark the job as done, because we already got() it.
-						self.input_queue.task_done()
-
-						# reput it at the end of the queue, as if a new job
-						# had been created.
-						self.input_queue.put((self.priority, self.job,
-										self.job_args, self.jobs_kwargs))
-
-						self.job = None
-						self.priority = None
-						self.job_args = None
-						self.job_kwargs = None
-						continue
+			with cls.lock:
+				cls.busy += 1
 
 			with self.lock:
 				self.jobbing.set()
 				self.job_start_time = time.time()
 
-			if 'job_delay' in self.jobs_kwargs:
-				time.sleep(self.jobs_kwargs['job_delay'])
-				del self.jobs_kwargs['job_delay']
+			# this will at most eventually sleep a little if called requested
+			# if, or at best (with 0.0s) switch to another thread needing the
+			# CPU in the Python interpreter before starting to process the job.
+			time.sleep(self.jobs_kwargs.pop('job_delay', 0.0))
 
 			#assert ltrace(TRACE_THREAD, '%s: running job %s' % (
 			#										self.name, self.job))
@@ -287,138 +431,33 @@ class GenericQueueWorkerThread(Thread):
 			try:
 				self.job(*self.job_args, **self.jobs_kwargs)
 
-			except exceptions.LicornError, e:
-				logging.warning('%s: LicornError encountered: %s' % (
-															self.name, e))
-				print_exc()
-			except (exceptions.LicornException, Exception), e:
-				logging.warning('%s: Exception encountered: %s' % (
-															self.name, e))
-				if options.verbose >= verbose.INFO:
-					print_exc()
+			except Exception, e:
+				logging.warning(_(u'{0}: Exception encountered while running '
+					u'{1}({2}, {3}): {4}').format(self.name, self.job.__name__,
+					str(self.job_args), str(self.job_kwargs), e))
+				pyutils.print_exception_if_verbose()
 
-			self.input_queue.task_done()
+			q.task_done()
 
 			with self.lock:
 				self.jobbing.clear()
 
-			with self.__class__.lock:
-				self.__class__.busy -= 1
+			with cls.lock:
+				cls.busy -= 1
 
-			self.job = None
-			self.priority = None
-			self.job_args = None
-			self.job_kwargs = None
+			self.job            = None
+			self.priority       = None
+			self.job_args       = None
+			self.job_kwargs     = None
 			self.job_start_time = None
 
-			self.throttle_down()
-
-			if self.input_queue.qsize() == 0:
+			if q.qsize() == 0:
 				logging.progress('%s: queue is now empty, going '
 					'asleep waiting for jobs.' % self.name)
 
-		with self.__class__.lock:
-			self.__class__.instances -= 1
-			#print '>> lock -', self.__class__.instances
-
-		#assert ltrace(TRACE_THREAD, '< %s.run()' % self.name)
-	def throttle_up(self):
-		""" See if there are too many or missing peers to handle queued jobs,
-			and spawn a friend if needed, or terminate myself if no more useful.
-		"""
-
-		# we need to get the class lock, else peers could stop() while we are
-		# stopping too, and the daemon could be left without any thread for a
-		# given class of them.
-
-		with self.__class__.lock:
-			# FIRST, see if peers are in need of help: if there are
-			# still a lot of job to do, spawn another peer to get the
-			# job done, until the configured thread limit is reached.
-
-			if (self.input_queue.qsize() > self.__class__.instances
-					and self.__class__.instances == self.__class__.busy) \
-					or self.__class__.instances < self.__class__.peers_min:
-
-				if self.__class__.instances < self.__class__.peers_max:
-
-					assert ltrace(TRACE_THREAD, '  %s: spawing a new peer because '
-						'%d instances < %d peers_min or (%d jobs > %d instances '
-						'and all instances busy); '
-						'(BTW %d instances < %d peers_max).' % (self.name,
-							self.__class__.instances, self.__class__.peers_min,
-							self.input_queue.qsize(), self.__class__.instances,
-							self.__class__.instances, self.__class__.peers_max))
-
-					self.spawn_peer()
-				else:
-					# alert the user that we can't spawn a new thread because
-					# upper limit it already reached, but not too much (one alert
-					# per second seems not too much).
-					if time.time() - self.__class__.last_warning > 1.0:
-						self.__class__.last_warning = time.time()
-						logging.progress('%s: maximum peers already running, '
-							'queue size is %s.' % (self.name,
-								self.input_queue.qsize()))
-			else:
-				assert ltrace(TRACE_THREAD, '  %s: NOT spawing a new peer because '
-					'NOT %d instances < %d peers_min or (%d jobs > %d instances '
-					'and all instances busy); '
-					'(BTW %d instances < %d peers_max).' % (self.name,
-						self.__class__.instances, self.__class__.peers_min,
-						self.input_queue.qsize(), self.__class__.instances,
-						self.__class__.instances, self.__class__.peers_max))
-	def throttle_down(self):
-		""" See if there are too many peers to handle queued jobs, and then
-			send terminate signal (put a ``None`` job in the queue), so that
-			one of the peers will terminate.
-		"""
-
-		# we need to get the class lock, else peers could stop() while we are
-		# stopping too, and the daemon could be left without any thread for a
-		# given class of them.
-
-		with self.__class__.lock:
-			# See if jobs have been worked out during the time
-			# we spent joing our job. If things have settled, signify to
-			# one of the peers to terminate (this could be me, or not),
-			# but only if there are still more peers than the configured
-			# lower limit.
-
-			if (self.input_queue.qsize() <= self.__class__.instances
-					and self.__class__.instances > self.__class__.busy):
-
-				# '+ 1' to avoid the last 2 threads to kill each other
-				# (very basic fix for #607)
-				if self.__class__.instances > self.__class__.peers_min + 1:
-
-					assert ltrace(TRACE_THREAD, '  %s: terminating because running out '
-						'of jobs (%d jobs <= %d instances '
-						'and %d instances > %d peers_min).' % (
-						self.name,
-						self.input_queue.qsize(), self.__class__.instances,
-						self.__class__.instances, self.__class__.peers_min))
-
-					self.stop()
-	def spawn_peer(self):
-		self.__licornd.append_thread(
-				self.__class__(licornd=self.__licornd, daemon=self.daemon))
-	def start(self):
-		Thread.start(self)
-		return self
-	def stop(self):
-		#assert ltrace(TRACE_THREAD, '| %s.stop()' % self.name)
-		self.input_queue.put_nowait((-1, None, None, None))
-
-		# if we are in the process of settling down, tell the
-		# master thread cleaner to search for terminated threads to wipe,
-		# but not everytime.
-		if self.__class__.instances % 10 == 0 or self.__class__.instances <= 2:
-			try:
-				self.__licornd.clean_objects(0.1)
-			except AttributeError:
-				# if daemon is stopping, cleaner could be already wiped out.
-				pass
+		# when ending, be sure to notice everyone interested.
+		with cls.lock:
+			cls.instances -= 1
 class ServiceWorkerThread(GenericQueueWorkerThread):
 	pass
 class ACLCkeckerThread(GenericQueueWorkerThread):
