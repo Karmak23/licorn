@@ -189,9 +189,7 @@ class GQWSchedulerThread(BaseLicornThread):
 				# still a lot of job to do, spawn another peer to get the
 				# job done, until the configured thread limit is reached.
 
-				if (qsize > 0 and cls.instances == cls.busy) \
-						or cls.instances < cls.peers_min:
-
+				if qsize > 0 and cls.instances == cls.busy:
 					if cls.instances < cls.peers_max:
 						# sleep a lot, because we start a lot of workers,
 						# but no more that 10 seconds.
