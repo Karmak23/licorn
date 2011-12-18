@@ -1888,6 +1888,11 @@ class CoreFSUnitObject:
 	@property
 	def watches(self):
 		return self.__watches
+
+	# this method must not fail on any exception, else the INotifier will
+	# crash and become unusable. Thus just warn if any exception occurs.
+	# This is better than nothing and will be more precise in the future.
+	@logging.warn_exception
 	def __inotify_event_dispatcher(self, event):
 		""" The inotifier callback. Just a shortcut. """
 
@@ -1943,7 +1948,6 @@ class CoreFSUnitObject:
 		#		self.__last_msg_time = time.time()
 		#
 		#	return
-
 
 		if event.dir:
 			if mask & pyinotify.IN_CREATE or mask & pyinotify.IN_MOVED_TO:
@@ -2084,6 +2088,11 @@ class CoreFSUnitObject:
 
 			L_aclcheck_enqueue(priorities.NORMAL,
 								self._fast_aclcheck, path, expiry_check=True)
+
+	# this method must not fail on any exception, else the INotifier will
+	# crash and become unusable. Thus just warn if any exception occurs.
+	# This is better than nothing and will be more precise in the future.
+	@logging.warn_exception
 	def __watch_directory(self, directory, initial=False):
 		""" initial is set to False only when the group is instanciated, to
 			walk across all shared group data in one call. """
@@ -2112,6 +2121,10 @@ class CoreFSUnitObject:
 										(ST_PATH, key),
 										(ST_UGID, value))
 					self.__watches[key] = value
+
+	# this method must not fail on any exception, else the INotifier will
+	# crash and become unusable. Thus just warn if any exception occurs.
+	# This is better than nothing and will be more precise in the future.
 	@logging.warn_exception
 	def __unwatch_directory(self, directory, deleted=False):
 
