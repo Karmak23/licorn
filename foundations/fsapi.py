@@ -269,13 +269,66 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			_(u'You must pass something through dirs_infos to check!'))
 
 	assert ltrace_func(TRACE_FSAPI, True)
+def check_utf8_filename(path, batch=False, auto_answer=None, full_display=True):
+	try:
+		# try to decode the filename to unicode. If this fails, we need
+		# to rename the file to something better, else all logging() operation
+		# will fail on this file.
+		return u'%s' % path
+
+	except UnicodeDecodeError:
+		valid_name = path.decode('utf8', 'replace')
+
+		if batch or logging.ask_for_repair(_(u'Invalid utf8 filename '
+							u'"{0}". Rename it?').format(
+								stylize(ST_PATH, valid_name)),
+						auto_answer=auto_answer):
+
+			splitted = os.path.splitext(valid_name)
+			new_name = u'{0}{1}{2}'.format(splitted[0],
+						_(u' (invalid utf8 filename)'), splitted[1])
+
+			# Avoid overwriting an existing file.
+			counter = 1
+			while os.path.exists(new_name):
+				new_name = u'{0}{1}{2}'.format(splitted[0],
+						_(u' (invalid utf8 filename, copy #{0})').format(counter),
+						 splitted[1])
+				counter += 1
+
+			os.rename(path, new_name)
+
+			if full_display:
+				logging.info(_(u'Renamed file {0} to {1}.').format(
+									stylize(ST_PATH, valid_name),
+									stylize(ST_PATH, new_name)))
+			return new_name
+		else:
+			raise exceptions.LicornCheckError(_(u'File {0} has an invalid utf8 '
+				u'filename, it must be renamed before beiing checked further.'))
 def check_perms(dir_info, file_type=None, is_root_dir=False,
-					batch=None, auto_answer=None, full_display=True):
+					batch=False, auto_answer=None, full_display=True):
 	""" general function to check if permissions are ok on file/dir """
 
 	assert ltrace_func(TRACE_FSAPI)
 
-	path = dir_info.path
+	try:
+		path = check_utf8_filename(dir_info.path, batch=batch,
+											auto_answer=auto_answer,
+											full_display=full_display)
+	except (OSError, IOError):
+		# this can fail if an inotify event is catched on a transient file
+		# (just created, just deleted), like mkstemp() ones.
+		logging.warning2(_(u'fsapi.check_perms(): exception while checking '
+			u'filename validity of {0}.').format(stylize(ST_PATH, path)))
+		pyutils.print_exception_if_verbose()
+		return
+
+	except exceptions.LicornCheckError:
+		if batch:
+			return
+		else:
+			raise
 
 	# get the access_perm and the type of perm (POSIX1E or POSIX) that will be
 	# applyed on path
@@ -293,7 +346,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 
 		if not perm_acl and access_perm == 00644:
 			# fix #545 : NOACL should retain the exec bit on files
-			perm = execbits2str(dir_info.path, check_other=True)
+			perm = execbits2str(path, check_other=True)
 			if perm[0] == "x": # user
 				access_perm += S_IXUSR
 
@@ -310,11 +363,11 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		try:
 			execperms = execbits2str(path)
 
-		except (IOError, OSError), e:
+		except (IOError, OSError):
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
 			logging.warning2(_(u'fsapi.check_perms(): exception while '
-				u'`execbits2str()` on {0}.').format(stylize(ST_PATH, path), e))
+				u'`execbits2str()` on {0}.').format(stylize(ST_PATH, path)))
 			pyutils.print_exception_if_verbose()
 			return
 
