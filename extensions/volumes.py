@@ -523,10 +523,15 @@ class Volume:
 							stylize(ST_NAME, 'volumes'),
 							stylize(ST_DEVICE, self.device),
 							stylize(ST_PATH, self.mount_point)))
-					return False
 
-				else:
-					raise
+				elif e.errno != errno.ENOENT:
+					logging.warning(_(u'{0}({1}): cannot remove mount '
+						u'point {2}: {3}.').format(
+							stylize(ST_NAME, 'volumes'),
+							stylize(ST_DEVICE, self.device),
+							stylize(ST_PATH, self.mount_point), e))
+
+				return False
 
 			self.mount_point = None
 			logging.info(_(u'{0}: removed directory {1}.').format(
