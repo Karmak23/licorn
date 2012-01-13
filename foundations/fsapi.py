@@ -553,7 +553,9 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	else:
 		# delete previous ACL perms in case of existance
 		try:
-			extended_acl = has_extended_acl(path)
+			# NOTE: be sure to pass a 'str()' to this function. An unicode
+			# string won't work (and check_utf8_filename() returns one).
+			extended_acl = has_extended_acl(str(path))
 
 		except (IOError, OSError), e:
 				logging.warning(_(u"Exception while trying to find if {0} "
