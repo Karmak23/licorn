@@ -94,7 +94,9 @@ div.footer a {
 }
 
 div.related {
-    display: none;
+    width: {{ page_width }};
+    font-size: 90%;
+    margin: 0 auto;
 }
 
 div.sphinxsidebar a {

@@ -46,7 +46,11 @@ Depuis les sources
 			pyro python-gamin python-pylibacl python-ldap \
 			python-xattr python-netifaces python-dumbnet \
 			python-pyip python-ipcalc python-dbus \
-			python-gobject gettext python-pygments
+			python-gobject gettext python-pygments \
+			python-gevent python-sqlite python-django \
+			python-jinja2 python-pip
+
+	sudo pip install djinja
 
 #. Puis, suivant votre distribution::
 

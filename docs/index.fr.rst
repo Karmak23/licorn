@@ -9,8 +9,17 @@
    ⇱ ⇲ ∃ ∄ ∀ ∈ ∉ ∋ ∌ ∊ ∍
    ∝ ∞ … † ‰ ‱ ℡ ™ ℻ ⍺ ⎗ ⎘ ⎙ ⎚ ⟲ ⟳
    ⌨ ⌫ ⌘ ⌃ ⌤ ⌥ ⏏ ⏎ ⎆ ⎇ ⇪ ⇧
+       
    ㎐㎑㎒㎓㎔㎅㎆㎇
-
+   quotation hiphen —
+   non-breaking space " "  
+   ⌨ ⌾ ⌬ ⎆ ⎇ ⎈ ⎊ ⎋ ⎌ ★ ☆ ☠ ☢ ☣ ☤ ⚒
+   ⚓ ⚔ ⚕ ⚐ ⚑ ⚖ ⚘ ⚙ ⚚ ⚛ ⚠ ✎ ✏ ✐ ✑ ✒ ✍
+   ✓ ✔ ✕ ✖ ✗ ✘ ✇ ⧎ ⧓
+   ✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺
+   ✻ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❊ ❋
+   ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➾
+   ′ ″ ‴ ‵ ‶ ‷ “ ” „ ‟ ‘ ’ ‚ ‛
 .. Licorn® documentation master file, created by
    sphinx-quickstart on Tue Nov 23 22:29:46 2010.
    You can adapt this file completely to your liking, but it should at least
