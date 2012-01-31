@@ -12,7 +12,7 @@ If you want to follow Licorn® internal decisions and mechanisms at runtime, thi
 
 The ``ltrace`` mechanism is simple to use:
 
-* setup the :envvar:`LICORN_TRACE` environment variable to any supported value (see below),
+* setup the :envvar:`LTRACE` environment variable to any supported value (see below),
 * launch the Licorn® programs with the :command:`python` interpreter, without any kind of optimization (eg. without using :option:`-O` or :option:`-OO`). This will enable :keyword:`assert` calls, ontop of which :mod:`~licorn.foundations.ltrace` is built.
 
 
@@ -30,8 +30,8 @@ To trace the daemon's internals, instead of typing::
 
 You have to type::
 
-	# see below for LICORN_TRACE values
-	export LICORN_TRACE='…'
+	# see below for LTRACE values
+	export LTRACE='…'
 	sudo python /usr/sbin/licornd -rvvD
 
 
@@ -41,48 +41,48 @@ To trace a CLI command, instead of typing::
 
 You have to type::
 
-	# see below for LICORN_TRACE values
-	export LICORN_TRACE='…'
+	# see below for LTRACE values
+	export LTRACE='…'
 	sudo python /usr/bin/get -l
 
 And so on.
 
 
-LICORN_TRACE values
-===================
+LTRACE values
+=============
 
 To sum up ``ltrace`` internal features:
 
-* you can use different values in the :envvar:`LICORN_TRACE` environment variable, for the daemon and CLI. It's up to you.
-* you can define complex values for the :envvar:`LICORN_TRACE` environment variable, with ``|`` (``OR`` expression) and ``^`` (``NOT`` expression) and combinations of them. Eg::
+* you can use different values in the :envvar:`LTRACE` environment variable, for the daemon and CLI. It's up to you.
+* you can define complex values for the :envvar:`LTRACE` environment variable, with ``|`` (``OR`` expression) and ``^`` (``NOT`` expression) and combinations of them. Eg::
 
 	# traces everything (but you know:
 	# too much verbosity kills the verbosity)
-	export LICORN_TRACE='all'
+	export LTRACE='all'
 
 	# A sane (but still very verbose) default to start with:
-	export LICORN_TRACE='all^base^objects^checks^fsapi^thread^network'
+	export LTRACE='all^base^objects^checks^fsapi^thread^network'
 
 	# ltracing a specific extension:
-	export LICORN_TRACE='volumes'
+	export LTRACE='volumes'
 
 	# ltracing interactions between 2 extensions:
-	export LICORN_TRACE='volumes|rdiffbackup'
+	export LTRACE='volumes|rdiffbackup'
 
 	# ltracing network wide-related things:
-	export LICORN_TRACE='network|machines|system|thread'
+	export LTRACE='network|machines|system|thread'
 
 	# ltracing daemon's internals:
-	export LICORN_TRACE='daemon'
+	export LTRACE='daemon'
 
 	# ltracing daemon's internals, a little more readable:
-	export LICORN_TRACE='daemon^thread^inotifier'
+	export LTRACE='daemon^thread^inotifier'
 
 	# this will not work as expected,
 	# because containers and modules are in the wrong order:
-	export LICORN_TRACE='thread^inotifier|daemon^users^groups|core'
+	export LTRACE='thread^inotifier|daemon^users^groups|core'
 	# you should have written:
-	export LICORN_TRACE='daemon^thread^inotifier|core^users^groups'
+	export LTRACE='daemon^thread^inotifier|core^users^groups'
 
 	#… i'm sure you got the point.
 

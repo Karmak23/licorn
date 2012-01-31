@@ -1,4 +1,4 @@
-.. _extension.fr:
+.. _extensions.fr:
 
 ============================
 Documentation des extensions
@@ -16,3 +16,12 @@ Documentation des extensions
 	postfix.fr
 	nullmailer.fr
 
+Documentation encore non-traduite :
+
+.. toctree::
+	:maxdepth: 1
+
+	caldavd.en
+	samba.en
+	postfix.en
+	nullmailer.en

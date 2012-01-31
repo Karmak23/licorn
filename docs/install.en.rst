@@ -128,7 +128,7 @@ From sources
 
 	echo 'licornd.role = SERVER' >> /etc/licorn/licorn.conf
 	cat >> /etc/sudoers <<EOF
-	Defaults	env_keep = "DISPLAY LICORN_TRACE LICORN_SERVER LICORN_DEBUG"
+	Defaults	env_keep = "DISPLAY LTRACE LICORN_SERVER LICORN_DEBUG"
 	EOF
 
 #. Start the Licorn® daemon, let it handle the last configuration bits, then stop it when you see the message "`ready for interaction`"::
