@@ -1,4 +1,4 @@
-.. _quickstart:
+.. _quickstart.en:
 
 .. highlight:: bash
 

@@ -78,10 +78,11 @@ To sum up ``ltrace`` internal features:
 	# ltracing daemon's internals, a little more readable:
 	export LTRACE='daemon^thread^inotifier'
 
-	# this will not work as expected,
+	# WARNING: the following will not work as expected,
 	# because containers and modules are in the wrong order:
 	export LTRACE='thread^inotifier|daemon^users^groups|core'
-	# you should have written:
+
+	# use this one instead:
 	export LTRACE='daemon^thread^inotifier|core^users^groups'
 
 	#… i'm sure you got the point.
@@ -95,6 +96,6 @@ This is because ``ltrace`` modules are organized in sets, and the containing set
 * ``extensions`` includes ``volumes``, ``rdiffbackup`` and others;
 * and so on.
 
-Until this documentation is finished, see the :mod:`licorn.foundations.ltrace` module for all possible values.
+Until this documentation is finished, see the :mod:`licorn.foundations.ltraces` module for all possible values.
 
-.. note:: ``ltrace`` module names are unique across all the Licorn® code.
+.. note:: ``ltrace`` module names must be unique across all the Licorn® code. As of version 1.3, they are.

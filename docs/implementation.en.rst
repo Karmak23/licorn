@@ -13,9 +13,9 @@ Users, groups & profiles
 
 	- system groups:
 		- are *visually* hidden
-		- don't hold a sharedir
+		- don't hold a shared directory
 		- are not accessible via WMI
-	- we never alter GID < 300, but we use GID(100) as a base for default profile
+	- we never alter GID < 300 (except giving them friendly names in case they are used as privileges), but we use GID 100 [`users`] as a base for default profile.
 
 - Profiles
 
@@ -25,4 +25,4 @@ Users, groups & profiles
 .. toctree::
 	:maxdepth: 2
 
-	daemon/index
+	daemon/index.en

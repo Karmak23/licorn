@@ -1,4 +1,4 @@
-.. _install:
+.. _install.en:
 
 ====================
 Installing the beast
@@ -10,11 +10,11 @@ Installing the beast
 From packages
 =============
 
-The stable version of Licorn has been packaged for `Ubuntu Lucid 10.04 LTS` and higher. Get the packages from the APT repository below::
+The stable version of Licorn is packaged for `Ubuntu Lucid 10.04 LTS` and higher, but is only accessible to our customers (you need a login/password provided by us). If you are one of them, get the packages from the APT repository below. Else, skip to :ref:`installation from sources<install.from_sources.en>`::
 
-	deb http://packages.licorn.org/ubuntu/ <codename> main restricted
+	deb http://login:password@packages.licorn.org/ubuntu/ <codename> main restricted
 
-Where `<codename>` should be "maverick" or "lucid" and so on.
+Where `<codename>` should be `lucid`, `maverick` and so on.
 
 Here are a few package names:
 
@@ -31,6 +31,8 @@ Here are a few package names:
 
 All these packages will install some other depandencies (most notably `python-licorn`, `licorn-bin` and a few other `python-*` packages). For more details, see `the Debian package documentation <http://dev.licorn.org/wiki/UserDoc/DebianPackagesDependancies>`_ on the developper site.
 
+
+.. _install.from_sources.en:
 
 From sources
 ============
@@ -88,7 +90,7 @@ From sources
 	sudo ln -sf "${LCN_DEV_DIR}/daemon/wmi.py" /usr/sbin/licornd-wmi
 	sudo chmod a+x /usr/sbin/licornd*
 
-	sudo mkdir /etc/licorn
+	sudo mkdir -p /etc/licorn
 	sudo ln -sf "${LCN_DEV_DIR}/config/check.d" /etc/licorn
 
 	sudo mkdir -p /usr/share/licorn
@@ -126,12 +128,18 @@ From sources
 
 #. Define the bare minimum directives in your main configuration file (IRL they are positionned by the packages post-installation scripts) and amend `sudoers`::
 
+	# for licorn <= 1.2.5
 	echo 'licornd.role = SERVER' >> /etc/licorn/licorn.conf
+
+	# for licorn >= 1.3 (including DEV and WMI2 branches)
+	echo 'role = SERVER' >> /etc/licorn/licorn.conf
+
+	# common to all versions
 	cat >> /etc/sudoers <<EOF
 	Defaults	env_keep = "DISPLAY LTRACE LICORN_SERVER LICORN_DEBUG"
 	EOF
 
-#. Start the Licorn® daemon, let it handle the last configuration bits, then stop it when you see the message "`ready for interaction`"::
+#. Start the Licorn® daemon, let it handle automatically the last configuration bits. Then stop it when you see the message "`ready for interaction`"::
 
 	sudo licornd -vD
 	[...]
@@ -139,20 +147,26 @@ From sources
 
 	[Control-C]
 
-#. From here, you don't need to use `sudo` anymore. Members of group `admins` can control `licornd`
-#. if you want LDAP support:  (see wiki/LDAPBackend] for configuration defaults, which Licorn® expects)::
+#. From here, you don't need to use `sudo` anymore. Members of group `admins` can control `licornd` and CLI tools directly.
+#. if you want LDAP support, install our packages or see `the LDAP development wiki page<http://dev.licorn.org/wiki/LDAPBackend>`::
 
-	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap ldap-auth-config-licorn
-	sudo mod config -b openldap
+	sudo apt-get install -yq --force-yes slapd libnss-ldap libpam-ldap
 
-	# Then edit /etc/ldap.conf and put this content into it:
+	# this one is available only in our repository.
+	sudo apt-get install -yq --force-yes ldap-auth-config-licorn
+
+	# Edit /etc/ldap.conf if you don't have access to the Debian package,
+	# and put this content into it:
 	base dc=meta-it,dc=local
 	uri ldapi:///
 	ldap_version 3
 	rootbinddn cn=admin,dc=meta-it,dc=local
 	pam_password md5
 
+	# Then make licornd use OpenLDAP over shadow for new accounts/groups.
+	sudo mod config -b openldap
+
 	# The file /etc/ldap.secret will be automatically filled by licornd at next launch.
 
 #. optional: launch the daemon with `licornd -vD` (`-v`is optionnal, this is the verbose flag). Without `-D` it will fork into the background. With it, you will see what the daemon does. This step is optional because every Licorn® tool will get the daemon automatically started if they need it.
-#. enjoy Licorn® on your Linux system.
+#. enjoy Licorn® on your Linux system, by continuing through the :ref:`quickstart<quickstart.en>`.

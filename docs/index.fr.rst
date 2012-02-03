@@ -20,6 +20,7 @@
    ✻ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❊ ❋
    ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➾
    ′ ″ ‴ ‵ ‶ ‷ “ ” „ ‟ ‘ ’ ‚ ‛
+
 .. Licorn® documentation master file, created by
    sphinx-quickstart on Tue Nov 23 22:29:46 2010.
    You can adapt this file completely to your liking, but it should at least
@@ -32,6 +33,8 @@
 =====================
 Documentation Licorn®
 =====================
+
+.. warning:: la documentation Licorn® subit actuellement un gros remaniement pour un rafraîchissement complet par rapport aux nouveautés qui arrivent. Tout devrait être OK pour le 5 Mars 2012. D'ici là, ne prenez pas ce que vous lisez pour argent comptant !
 
 Licorn® est un ensemble de programme conçus pour les administrateurs GNU/Linux et Un*x, pour les aider à traiter leurs tâches quotidiennes (gestion des comptes utilisateurs, des groups, des sauvegardes, imprimantes, partages, etc) de la manière la plus efficace possible.
 

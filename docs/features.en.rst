@@ -37,15 +37,17 @@ Trying to sum up Licorn® features in a few words is a hard task: simply put, he
 	Machines
 		* `machines` refer to computers, networked printers, scanners, routers, etc
 		* automatically discovered at runtime from various sources (local lease files, local network scan, manual adds)
-		* remote power off if supported (with a Licorn® local install)
-		* remote upgrades (can be interactive with GNU/Linux clients)
-		* remote generic settings apply (env / gconf / KDE / win32)
+		* if Licorn® is installed on remote clients / servers, you get:
+			* web-proxy automatic configuration
+			* remote power off and extended status if supported
+			* coming feature: remote upgrades (can be interactive with GNU/Linux clients)
+			* coming feature: remote generic settings apply (env / gconf / KDE / win32)
 
 	Backups
 		* handles automatically :ref:`external mass storage <extensions.volumes>` devices and :ref:`runs automatic backup <extensions.rdiffbackup>` at :term:`configured intervals <backup.interval>`.
 
 	Printers
-		* to be documented (CUPS support)
+		* coming feature: complete and transparent CUPS integration
 
 	Configuration and System
 		* centralize and alter system-wide parameters and other daemons configuration (:program:`apache`, :program:`postfix`, :program:`dnsmasq`…)
@@ -58,9 +60,9 @@ To complement this feature list or to have more detailled information, you can r
 .. toctree::
 	:maxdepth: 1
 
-	backends/index
-	extensions/index
-	implementation
+	backends/index.en
+	extensions/index.en
+	implementation.en
 
 
 Technologies
@@ -73,7 +75,7 @@ Currently supported:
 - :ref:`Shadow (backend) <core.backends.shadow>`
 - :ref:`OpenLDAP (backend) <core.backends.openldap>`
 - :ref:`DNSmasq (backend) <core.backends.dnsmasq>`
-- SaMBa (direct basic integration in the controllers)
+- SaMBa (currently: basic integration in the controllers)
 - :ref:`caldavd (extension) <extensions.caldavd>`
 - :ref:`squid (extension) <extensions.squid>`
 - :ref:`basic volumes management (extension) <extensions.volumes>`
@@ -81,7 +83,7 @@ Currently supported:
 
 Under development or planned:
 
-- samba (as extension)
+- samba (as featured extension)
 - postfix (as extension)
 - apache2 (as extension)
 - BIND9 / DHCPd3 (as backend)

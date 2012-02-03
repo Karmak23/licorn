@@ -1,3 +1,4 @@
+.. _install.fr:
 
 =======================
 Installation de la bête
@@ -9,11 +10,11 @@ Installation de la bête
 Avec des paquetages
 ===================
 
-La version stable de Licorn® est empaquetée pour `Ubuntu Lucid 10.04 LTS` et supérieur. Téléchargez les paquetages depuis l'archive suivante::
+La version stable de Licorn® est empaquetée pour `Ubuntu Lucid 10.04 LTS` et supérieur, mais disponible uniquement pour nos clients sous contrat (vous devez avoir un identifiant/mot-de-pass). Si vous en êtes, téléchargez les paquetages depuis le dépôt suivant, sinon suivez l'`installation depuis les sources<install.from_sources.fr>`::
 
-	deb http://packages.licorn.org/ubuntu/ <codename> main restricted
+	deb http://identifiant:motdepasse@packages.licorn.org/ubuntu/ <codename> main restricted
 
-Où `<codename>` devrait être "maverick" ou "lucid", etc.
+Où `<codename>` devrait être `lucid`, `maverick`, etc.
 
 Quelques noms de paquetages:
 
@@ -34,6 +35,8 @@ Quelques noms de paquetages:
 
 Tous ces paquetages installeront des dépendances externes (comme `python-licorn`, `licorn-bin` et quelques autres paquetages `python-*`). Pour plus de détails, lisez `la documentation des paquets Debian <http://dev.licorn.org/wiki/UserDoc/DebianPackagesDependancies>`_ (en anglais) sur le site de développement.
 
+
+.. _install.from_sources.fr:
 
 Depuis les sources
 ==================

@@ -35,9 +35,9 @@
 Licorn® Documentation
 =====================
 
-Licorn® is a small-set of concise programs, aimed at GNU/Linux and Un*x system administrators, to help them deal with daily system-management tasks (managing users, groups, calendars, printers, backups, shares, and so on) in the most efficient manner possible
+.. warning:: Licorn documentation is undergoing a big refresh to include upcoming functionnalities. All should be OK for March 5th, 2012, but until then, the site contents are going to change a lot, and possibly be broken at some point.
 
-Don't you have ever faced this situation: "*don't get in my way, program, just do what I want and keep it simple, huh?*" . We did, and Licorn® is our answer on the system-management side of the story.
+Licorn® is a set of concise programs aimed at GNU/Linux and Un*x system administrators. They help them deal with daily system-management tasks (managing users, groups, calendars, printers, backups, shares, and so on) in the most efficient manner possible.
 
 It is designed by long-standing GNU/Linux and \*BSD admins, and agile-implemented with the `Python <http://www.python.org/>`_ programming language, with flexibility and extensibility in mind.
 

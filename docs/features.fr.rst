@@ -37,13 +37,13 @@ Essayer de résumer les fonctionnalités de Licorn® en quelques mots tient de l
 		* Elles sont automatiquement découvertes pendant la vie du serveur, via de multiples sources
 		* L'on peut les éteindre à distance si elles sont équipées de Licorn® (sous Linux uniquement, pour l'instant)
 		* L'on peut aussi les mettre à jour (avec des mises à jour intéractives sur les clients GNU/Linux) (fonctionnalité en développement)
-		* L'on peut leur appliquer des paramètres système génériques (par exemple le proxy), leur configuration est centralisée
+		* L'on peut leur appliquer des paramètres système génériques (par exemple le proxy), leur configuration est centralisée (en développement)
 
 	Sauvegardes
 		* Les sauvegardes sont automatiquement gérées sur :ref:`disques externes <extensions.volumes.fr>` et sont :ref:`exécutées automatiquement <extensions.rdiffbackup>` à :term:`intervalles configurés <backup.interval>`.
 
 	Imprimantes
-		* à documenter (support de CUPS)
+		* Support et intégration complète de CUPS (en développement)
 
 	Système et configuration
 		* Licorn® centralise et modifie les paramètres systèmes et la configuration des autres daemons (samba, calendrier, :program:`apache`, :program:`postfix`, :program:`dnsmasq`…)
