@@ -882,7 +882,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		except Exception, e:
 			logging.warning(_(u'Exception {0} happened while trying to '
 				u'move group {1} from {2} to {3}, aborting (group left '
-				u'unchanged).').format(e, group_name, old_backend, new_backend))
+				u'unchanged).').format(e, self.name, old_backend, new_backend))
 			pyutils.print_exception_if_verbose()
 
 			try:
