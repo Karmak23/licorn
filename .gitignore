@@ -9,3 +9,5 @@ locale/fr
 *.pye
 tailoritself\.*
 *.mo
+
+*~
