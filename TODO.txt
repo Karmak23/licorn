@@ -1,4 +1,7 @@
 
+ - foundations.process:
+	> check /proc/$$/cgroup > '1:cpuset:<CGROUP>' before killing a process if cgroup are supported / mounted; else the host kills guests `licornd`
+
  - re-test OpenLDAP / caldav / volumes / rdiffbackup > make the TS work again
 
  - in the stable version, still a 'ascii' decode problem on some paths
