@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-09 15:52+0000\n"
+"POT-Creation-Date: 2012-05-12 11:01+0200\n"
 "PO-Revision-Date: 2012-02-17 09:45+0100\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <>\n"
@@ -133,17 +133,17 @@ msgstr "Oui"
 msgid "No"
 msgstr "Non"
 
-#: media/js/push.js:41
+#: media/js/push.js:43
 msgid "Push connection back online, rock'n roll!"
 msgstr "Flux d'informations de nouveau opérationnel, Rock'n Roll !"
 
-#: media/js/push.js:59
+#: media/js/push.js:64
 msgid "Push connection lost. Retrying in 5 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Nouvelle tentative de connexion dans "
 "5 secondes."
 
-#: media/js/push.js:71
+#: media/js/push.js:75
 msgid "Push connection lost. Retrying in 3 seconds."
 msgstr ""
 "Connexion au flux d'information perdue. Tentative de reconnexion dans 3 "
@@ -172,3 +172,7 @@ msgstr "Déverrouiller le compte utilisateur"
 #: media/js/users.js:154 media/js/users.js.py:160
 msgid "Lock user account"
 msgstr "Verrouiller le compte utilisateur"
+
+#: media/js/utils.js:37
+msgid "Collecting informations, please wait…"
+msgstr ""
