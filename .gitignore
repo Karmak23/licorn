@@ -6,8 +6,10 @@ tests/data/wmitest
 docs/_build
 locale/fr
 
+*~
+
 *.pye
-tailoritself\.*
+*.pyo
+*.pyc
 *.mo
 
-*~
