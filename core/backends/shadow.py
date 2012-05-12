@@ -17,25 +17,22 @@ from threading  import Timer
 from traceback  import print_exc
 from contextlib import nested
 
-from licorn.foundations         import logging, exceptions
-from licorn.foundations         import readers, hlstr, fsapi
-from licorn.foundations.styles  import *
-from licorn.foundations.ltrace  import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.base    import Singleton, BasicCounter
-from licorn.foundations.classes import FileLock
-
-from licorn.core                import LMC
-from licorn.core.users          import User
-from licorn.core.groups         import Group
-from licorn.core.backends       import NSSBackend, UsersBackend, GroupsBackend
-
-from licorn.daemon              import priorities
+from licorn.foundations           import settings, logging, exceptions
+from licorn.foundations           import readers, hlstr, fsapi
+from licorn.foundations.workers   import workers
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.base      import Singleton, BasicCounter
+from licorn.foundations.classes   import FileLock
+from licorn.foundations.constants import priorities
+from licorn.core                  import LMC
+from licorn.core.users            import User
+from licorn.core.groups           import Group
+from licorn.core.backends         import NSSBackend, UsersBackend, GroupsBackend
 
 class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
-	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
-
-	"""
+	""" A backend to cope with /etc/* UNIX shadow traditionnal files. """
 
 	init_ok = False
 
@@ -66,11 +63,14 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			must be always enabled.
 		"""
 
+		assert ltrace_func(TRACE_SHADOW)
+
 		try:
 			if self.name in LMC.configuration.backends.ignore:
 				LMC.configuration.backends.ignore.remove(self.name)
 
 			del LMC.configuration.backends.shadow.ignore
+
 		except AttributeError:
 			pass
 		else:
@@ -78,16 +78,16 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				"please don't try to set %s in %s!" % (
 						stylize(ST_IMPORTANT, 'RE-enabled'),
 						stylize(ST_COMMENT, 'backends.shadow.enabled=False'),
-						stylize(ST_PATH, LMC.configuration.main_config_file)
+						stylize(ST_PATH, settings.main_config_file)
 					)
 				)
 
-		self.pslock = FileLock(LMC.configuration, "/etc/passwd")
-		self.shlock = FileLock(LMC.configuration, "/etc/shadow")
-		self.grlock = FileLock(LMC.configuration,	'/etc/group')
+		self.pslock = FileLock(LMC.configuration, '/etc/passwd')
+		self.shlock = FileLock(LMC.configuration, '/etc/shadow')
+		self.grlock = FileLock(LMC.configuration, '/etc/group')
 		self.gslock = FileLock(LMC.configuration, '/etc/gshadow')
 		self.gelock = FileLock(LMC.configuration,
-								LMC.configuration.extendedgroup_data_file)
+								settings.backends.shadow.extended_group_file)
 
 		# the inotifier hints, to avoid reloading when we write our own files.
 		self.__hint_pwd = BasicCounter(1)
@@ -97,17 +97,17 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		return self.available
 	def load_User(self, user):
-		assert ltrace(TRACE_BACKENDS, '| abstract load_User(%s)' % uid)
+		assert ltrace_func(TRACE_SHADOW)
 
 		# NOTE: which is totally ignored in this backend, we always load ALL
 		# users, because we always read/write the entire files.
 
 		return self.load_Users()
 	def save_User(self, user, mode):
-		assert ltrace(TRACE_BACKENDS, '| abstract save_User(%s)' % user.uid)
+		assert ltrace_func(TRACE_SHADOW)
 		return self.save_Users(LMC.users)
 	def delete_User(self, user):
-		assert ltrace(TRACE_BACKENDS, '| abstract delete_User(%s)' % user.uid)
+		assert ltrace_func(TRACE_SHADOW)
 		return self.save_Users(LMC.users)
 	def load_Group(self, group):
 		""" Load an individual group.
@@ -120,7 +120,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				default implementation which calls :meth:`load_Groups`).
 		"""
 
-		assert ltrace(TRACE_BACKENDS, '| abstract load_Group(%s)' % gid)
+		assert ltrace_func(TRACE_SHADOW)
 
 		return self.load_Groups()
 	def save_Group(self, group, mode):
@@ -144,7 +144,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				specify if the save operation is an update or a creation.
 		"""
 
-		assert ltrace(TRACE_BACKENDS, '| abstract save_Group(%s)' % group.gid)
+		assert ltrace_func(TRACE_SHADOW)
 
 		return self.save_Groups(LMC.groups)
 	def delete_Group(self, group):
@@ -166,12 +166,12 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			:param gid: the GID of teh group to delete (ignored in this default
 				version of the method).
 		"""
-		assert ltrace(TRACE_BACKENDS, '| abstract delete_Group(%s)' % group)
+		assert ltrace_func(TRACE_SHADOW)
 		return self.save_Groups(LMC.groups)
 	def load_Users(self):
 		""" Load user accounts from /etc/{passwd,shadow} """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load_Users()')
+		assert ltrace_func(TRACE_SHADOW)
 
 		is_allowed = True
 		need_rewriting = False
@@ -231,21 +231,21 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					backend=self
 				)
 
-			assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded user %s' % entry[0])
+			assert ltrace(TRACE_SHADOW, 'loaded user %s' % entry[0])
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned users data rewrite '
 				'requested in the background.').format(str(self)))
 
-			L_service_enqueue(priorities.NORMAL,
+			workers.service_enqueue(priorities.NORMAL,
 											self.save_Users, LMC.users,
 											job_delay=4.0)
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< load_users()')
+		assert ltrace_func(TRACE_SHADOW, True)
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> load_Group()')
+		assert ltrace_func(TRACE_SHADOW)
 
 		with self.grlock:
 			etc_group = readers.ug_conf_load_list("/etc/group")
@@ -262,7 +262,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		with self.gelock:
 			try:
 				extras = readers.ug_conf_load_list(
-								LMC.configuration.extendedgroup_data_file)
+								settings.backends.shadow.extended_group_file)
 			except IOError, e:
 				if e.errno != 2:
 					# other than no such file or directory
@@ -313,7 +313,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 						groupSkel   = extra_entry[2]
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
-							LMC.configuration.extendedgroup_data_file,
+							settings.backends.shadow.extended_group_file,
 							'for group "%s" (was: %s).' %
 								(extra_entry[0], str(e)))
 					break
@@ -352,18 +352,19 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					groupSkel=groupSkel,
 					backend=self)
 
-			assert ltrace(globals()['TRACE_' + self.name.upper()], 'loaded group %s' % name)
+			assert ltrace(TRACE_SHADOW, 'loaded group %s' % name)
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned groups data rewrite '
 				'requested in the background.').format(str(self)))
 
-			L_service_enqueue(priorities.NORMAL,
+			workers.service_enqueue(priorities.NORMAL,
 										self.save_Groups, LMC.groups,
 										job_delay=4.5)
 
 		# used at saving time...
 		self.__shadow_gid = LMC.groups.by_name('shadow').gidNumber
+		assert ltrace_func(TRACE_SHADOW, True)
 	def save_Users(self, users):
 		""" Write /etc/passwd and /etc/shadow """
 
@@ -434,7 +435,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> save_groups()')
+		assert ltrace_func(TRACE_SHADOW)
 
 		# NOTE: groups should already be sorted on GIDs.
 
@@ -449,8 +450,6 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				# gotta find it some day.
 				if group.backend.name != self.name:
 					continue
-
-				#print '>>', group.name, group.memberUid, group.backend.name
 
 				etcgroup.append(":".join((
 											group.name,
@@ -498,18 +497,21 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.fchmod(ftempe, 0644)
 			os.fchown(ftempe, 0, 0)
 			os.close(ftempe)
-			os.rename(fpathe, LMC.configuration.extendedgroup_data_file)
+			os.rename(fpathe, settings.backends.shadow.extended_group_file)
 
 		logging.progress(_("{0}: saved groups data to disk.").format(str(self)))
 
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '< save_groups()')
+		assert ltrace_func(TRACE_SHADOW, True)
 	def compute_password(self, password, salt=None):
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace_func(TRACE_SHADOW)
+
 		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
 			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
 
 	def _inotifier_install_watches(self, inotifier):
+
+		assert ltrace_func(TRACE_SHADOW)
 
 		self.__conffiles_threads = {}
 
@@ -523,6 +525,9 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 	def __reload_controller_unix(self, path, controller, *args, **kwargs):
 		""" Timer() callback for watch threads.
 		*args and **kwargs are not used. """
+
+		assert ltrace_func(TRACE_SHADOW)
+
 		logging.notice(_(u'{0}: configuration file {1} changed, '
 			'reloading {2} controller.').format(str(self),
 				stylize(ST_PATH, path),

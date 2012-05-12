@@ -10,18 +10,52 @@ import os, fcntl, struct, socket, platform, re, netifaces
 import icmp, ip, time, select
 
 from ping      import PingSocket
-from threading import current_thread, RLock
+from threading import current_thread
 
 # other foundations imports.
 import logging, process, exceptions
+from threads   import RLock
 from styles    import *
-from ltrace	   import ltrace
+from ltrace	   import *
 from ltraces   import *
 from constants import distros
 
 def netmask2prefix(netmask):
 	return (reduce(lambda x,y: x+y,
 		[ bin(int(x)) for x in netmask.split('.')])).count('1')
+def is_private(address, netmask):
+	""" return ``True`` if the network address + netmask passed as argument is
+		private, else ``False``. Private LAN are:
+
+		* 127.0.0.0/8, 10.0.0.0/8,
+		* 172.16.0.0/32,
+		* 192.168.0.0/24, 169.254.0.0/24.
+
+		:param address: a string like '192.168.23.1'.
+		:param netmask: a string in simplified or complete notation, e.g '8'
+			or '255.0.0.0'.
+
+		.. note:: this function works on IPv4 addresses only.
+
+		.. versionadded:: 1.3.
+	"""
+
+	if address.startswith('127.') or address.startswith('10.'):
+		# whatever the netmask, this LAN is always private.
+		return True
+
+	if address.startswith('172.16.'):
+		if netmask in ('16', '255.255.0.0'):
+			return True
+
+	if address.startswith('192.168.') or address.startswith('169.254'):
+		if netmask in ('24', '255.255.255.0'):
+			return True
+
+	return False
+def is_public(address, netmask):
+	""" The exact opposite of the :func:`is_private` function. """
+	return not is_private(address, netmask)
 def interfaces(full=False):
 	""" Eventually filter the netifaces.interfaces() result, which contains
 		a bit too much results for our own use. """
@@ -39,19 +73,22 @@ def interfaces(full=False):
 					continue
 			ifaces.append(iface)
 		return ifaces
-def find_server_Linux(configuration):
+def find_server_Linux():
 	""" return the hostname / IP of our DHCP server. """
+
+	from licorn.core import LMC
 
 	env_server = os.getenv('LICORN_SERVER', None)
 
 	if env_server:
-		logging.notice('Using fixed value %s for server (please unset '
-			'LICORN_SERVER if you prefer automatic detection via DHCP)' %
-				stylize(ST_NAME, env_server))
+		logging.notice(_(u'Using environment variable value {0} for our '
+			u'server; unset {1} if you prefer automatic detection.').format(
+				stylize(ST_IMPORTANT, env_server),
+				stylize(ST_NAME, 'LICORN_SERVER')))
 		return env_server
 
-	if configuration.distro in (distros.LICORN, distros.UBUNTU,
-		distros.DEBIAN):
+	if LMC.configuration.distro in (distros.LICORN, distros.UBUNTU,
+													distros.DEBIAN):
 		for argument in process.get_process_cmdline('dhclient'):
 			if argument.startswith('/var/lib/dhcp3/dhclient'):
 				for try_host in [ x[0] if x[1] == '' else x[1] \
@@ -61,12 +98,13 @@ def find_server_Linux(configuration):
 					try:
 						socket.gethostbyname(try_host)
 						return try_host
+
 					except socket.gaierror:
-						logging.warning2('''can't resolve host or IP %s.'''
-							% try_host)
+						logging.exception(_(u'Cannot resolve host or IP {0}'),
+							try_host)
 		return None
 	else:
-		raise NotImplementedError('find_server() not implemented yet for your distro!')
+		raise NotImplementedError(_(u'find_server() not implemented yet for your distro!'))
 def find_first_local_ip_address_Linux():
 	""" try to find the main external IP address of the current machine (first
 		found is THE one). Return None if we can't find any.
@@ -249,6 +287,7 @@ def get_local_hostname_Linux():
 	try:
 		ip_addr = find_first_local_ip_address_Linux()
 		return socket.gethostbyaddr(ip_addr)[0]
+
 	except socket.herror:
 		return ip_addr
 get_local_hostname = get_local_hostname_Linux

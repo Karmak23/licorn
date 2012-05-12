@@ -15,27 +15,33 @@ import os, sys, time, re, weakref, gc
 from threading  import current_thread, Event
 from operator   import attrgetter
 
-from licorn.foundations           import logging, exceptions, hlstr
+from licorn.foundations           import logging, exceptions, hlstr, settings
 from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import Singleton, Enumeration, FsapiObject
-from licorn.foundations.constants import filters, backend_actions, distros
+from licorn.foundations.base      import DictSingleton, Enumeration
+from licorn.foundations.constants import filters, backend_actions, distros, priorities, roles, relation
 
 from licorn.core                import LMC
 from licorn.core.groups         import Group
-from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
-from licorn.daemon              import priorities, roles, InternalEvent
+from licorn.core.classes        import SelectableController, CoreFSController, \
+										CoreStoredObject, CoreFSUnitObject
+from licorn.foundations.events import LicornEvent
+
+import types
+
+_locked_colors = {
+		None: ST_NAME,
+		True: ST_BAD,
+		False: ST_OK
+	}
 
 class User(CoreStoredObject, CoreFSUnitObject):
 	""" The User unit-object. """
 
-	_locked_colors = {
-			None: ST_NAME,
-			True: ST_BAD,
-			False: ST_OK
-		}
+	_id_field = 'uidNumber'
 
 	# reverse mapping on logins and an alias to it
 	by_login = {}
@@ -106,17 +112,73 @@ class User(CoreStoredObject, CoreFSUnitObject):
 					stylize(ST_NAME, firstname), stylize(ST_NAME, lastname)))
 
 		return login
+	def __getstate__(self):
+		d = {
+			'login'                : self.__login,
+			'uidNumber'            : self.__uidNumber,
+			'gidNumber'            : self.__gidNumber,
+			'gecos'                : self.__gecos,
+			'homeDirectory'        : self.__homeDirectory,
+			'loginShell'           : self.__loginShell,
+			'locked'               : self.__locked,
+			'shadowLastChange'     : self.__shadowLastChange,
+			'shadowInactive'       : self.__shadowInactive,
+			'shadowWarning'        : self.__shadowWarning,
+			'shadowExpire'         : self.__shadowExpire,
+			'shadowMin'            : self.__shadowMin,
+			'shadowMax'            : self.__shadowMax,
+			'shadowFlag'           : self.__shadowFlag,
+			'is_system'            : self.__is_system,
+			'is_system_restricted' : self.__is_system_restricted,
+			'profile'              : self.profile
+			 }
+		d.update(super(User, self).__getstate__())
+		return d
+	def __setstate__(self, data_dict):
+		""" TODO: this pickle-friendly implementation is incomplete:
+			self.weakref is still unset, so is `self.backend`, etc. """
+
+		super(User, self).__setstate__(data_dict)
+
+		cname = self.__class__.__name__
+
+		for key, value in data_dict.iteritems():
+			# tricky hack to re-construct the private attributes
+			# while unpickling on the Pyro remote side.
+			self.__dict__['_%s__%s' %(cname, key)] = value
+
+		self.__is_standard            = not self.__is_system
+		self.__is_system_unrestricted = not self.__is_system_restricted
+
+		# when unpicking on the remote-side, no groups are present...
+		self.__primaryGroup = None
+
+		self.__pickled = True
+	def get_relationship(self, group):
+
+		if type(group) == types.IntType:
+			group = LMC.groups.by_gid(group)
+
+		if group in self.groups:
+			return relation.MEMBER
+
+		elif group.guest_group in self.groups:
+			return relation.GUEST
+
+		elif group.responsible_group in self.groups:
+			return relation.RESPONSIBLE
+
+		else:
+			return relation.NO_MEMBERSHIP
 
 	def __init__(self, uidNumber, login, password=None, userPassword=None,
 		gidNumber=None, gecos=None, homeDirectory=None, loginShell=None,
 		shadowLastChange=None, shadowInactive=None, shadowWarning=None,
 		shadowExpire=None, shadowMin=None, shadowMax=None, shadowFlag=None,
 		initialyLocked=False, backend=None,
-		# this one is  used only in creation mode, to speed up links between
+		# this one is used only in creation mode, to speed up links between
 		# Licorn® objects.
 		primaryGroup=None):
-
-		CoreStoredObject.__init__(self, controller=LMC.users, backend=backend)
 
 		assert ltrace(TRACE_OBJECTS, '| User.__init__(%s, %s)' % (uidNumber, login))
 
@@ -145,32 +207,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# We are in user creation mode. All controllers are up and running
 			# thus we get a direct Group instance. get info from it and link
 			# everything needed.
-
 			self.__primaryGroup = primaryGroup.weakref
 			self.__gidNumber    = primaryGroup.gidNumber
-			primaryGroup.link_gidMember(self)
-
-		if userPassword:
-			# we are loading from backend, use the crypted password 'as-is' and
-			# feed the private attribute (feeding the property would trigger a
-			# recrypt, which is not what we need at all).
-			self.__userPassword    = userPassword
-			self.__locked          = self.__resolve_locked_state()
-			self.__already_created = True
-		else:
-			# we are in creation mode. Set the password, but don't save it.
-			# The save will be handled by the caller (typically UsersController).
-			self.__userPassword = None
-			self.__locked       = initialyLocked
-
-			self.__already_created = False
-			self.userPassword      = password
-			self.__already_created = True
-
-		# Reverse map the current object from its name (it is indexed on GID
-		# in the Groups Controller), but only a weakref to be sure it will be
-		# delete by the controller.
-		User.by_login[login] = self.weakref
 
 		# useful booleans, must exist before __resolve* methods are called.
 		self.__is_system   = User.is_system_uid(uidNumber)
@@ -189,30 +227,68 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		# quickly when we need. It will be filled when GroupsController loads.
 		self.__groups = []
 
-		CoreFSUnitObject.__init__(self, '%s/%s' % (self.__homeDirectory,
-									LMC.configuration.users.check_config_file),
-						Enumeration(
-								home=self.__homeDirectory,
-								user_uid=self.__uidNumber,
-								user_gid=self.__gidNumber))
+		super(User, self).__init__(
+				controller=LMC.users,
+				backend=backend,
+				check_file='%s/%s' % (self.__homeDirectory,
+					LMC.configuration.users.check_config_file),
+				object_info=Enumeration(
+					home=self.__homeDirectory,
+					user_uid=self.__uidNumber,
+					user_gid=self.__gidNumber)
+			)
+
+		if userPassword:
+			# we are loading from backend, use the crypted password 'as-is' and
+			# feed the private attribute (feeding the property would trigger a
+			# recrypt, which is not what we need at all).
+			self.__userPassword    = userPassword
+			self.__locked          = self.__resolve_locked_state()
+			self.__already_created = True
+
+		else:
+			# we are in creation mode. Set the password, but don't save it.
+			# The save will be handled by the caller (typically UsersController).
+			self.__userPassword = None
+			self.__locked       = initialyLocked
+
+			self.__already_created = False
+			self.userPassword      = password
+			self.__already_created = True
+
+		if primaryGroup:
+			# must be called after super(), else 'no weakref yet'.
+			primaryGroup.link_gidMember(self)
+
+		# Reverse map the current object from its name (it is indexed on GID
+		# in the Groups Controller), but only a weakref to be sure it will be
+		# delete by the controller.
+		#
+		# NOTE: must be called after super(), depends on CoreStoredObject
+		User.by_login[login] = self.weakref
+
 		# CLI output pre-calculations.
 		if len(login) + 2 > User._cw_login:
 			User._cw_login = len(login) + 2
 			User._cli_invalidate_all()
+
+		self.__pickled = False
 	def __str__(self):
-		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
-			self.__class__,
+		return '<%s(%s: %s) at 0x%x>' % (
+			self.__class__.__name__,
 			stylize(ST_UGID, self.__uidNumber),
 			stylize(ST_NAME, self.__login),
-			'\n\t'.join([ '%s: %s' % (attr_name, getattr(self, attr_name))
-					for attr_name in dir(self) ])
-			)
-	def __repr__(self):
-		return '%s(%s‣%s)' % (
-			self.__class__,
-			stylize(ST_UGID, self.__uidNumber),
-			stylize(ST_NAME, self.__login))
+			id(self)
+		)
+		#  = {\n\t%s\n\t}\n' % (
+		#'\n\t'.join([ '%s: %s' % (attr_name, getattr(self, attr_name))
+		#		for attr_name in dir(self) ])
+		#)
 	def __del__(self):
+
+		if self.__pickled:
+			# avoid useless exception on the WMI remote side.
+			return
 
 		assert ltrace(TRACE_GC, '| User %s.__del__()' % self.__login)
 
@@ -250,7 +326,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		#
 		# check the user's home in the background, to give evything to u:g
 		#
-		print '>> please implement User.gidNumber.setter'
+		'>> please implement User.gidNumber.setter'
 	@property
 	def primaryGroup(self):
 		""" The real Licorn® group of the current user, assigned at the end
@@ -269,6 +345,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		if self.__gidNumber == group.gidNumber:
 			self.__primaryGroup = group.weakref
 			group.link_gidMember(self)
+
+			LicornEvent('user_primaryGroup_changed', user=self).emit(priorities.LOW)
 		else:
 			raise exceptions.LicornRuntimeError(_(u'{0}: tried to set {1} '
 				'as {2} primary group, whose GID is not the same '
@@ -279,7 +357,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		""" R/O: return the profile of the current user, via the primaryGroup
 			attribute. The profile can be None, and it particularly useless
 			for system accounts, because we don't apply profiles on them. """
-		return self.__primaryGroup().profile
+		if self.__primaryGroup is not None:
+			return self.__primaryGroup().profile
 	@property
 	def groups(self):
 		# turn the weak ref into real objects before returning.
@@ -312,6 +391,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.serialize()
 			self._cli_invalidate()
 
+			LicornEvent('user_gecos_changed', user=self).emit(priorities.LOW)
+
 			logging.notice(_(u'Changed user {0} gecos '
 				'to "{1}".').format(stylize(ST_NAME, self.__login),
 				stylize(ST_COMMENT, gecos)))
@@ -336,6 +417,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		with self.lock:
 			self.__loginShell = shell
 			self.serialize()
+
+			LicornEvent('user_loginShell_changed', user=self).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed user {0} shell to {1}.').format(
 				stylize(ST_NAME, self.__login), stylize(ST_COMMENT, shell)))
@@ -377,7 +460,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		with self.lock:
 			if self.__already_created:
-				L_event_run(InternalEvent('user_pre_change_password', self, password))
+				LicornEvent('user_pre_change_password', user=self, password=password, synchronous=True).emit()
 
 			prefix = '!' if self.__locked else ''
 
@@ -392,7 +475,12 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if self.__already_created:
 				self.serialize()
-				L_event_run(InternalEvent('user_post_change_password', self, password))
+				LicornEvent('user_post_change_password', user=self, password=password, synchronous=True).emit()
+
+				if self.__already_created:
+					# don't forward this event on user creation, because we
+					# already have the "user_added" for this case.
+					LicornEvent('user_userPassword_changed', user=self).emit(priorities.LOW)
 
 			if display:
 				logging.notice(_(u'Set password for user {0} to {1}.').format(
@@ -404,14 +492,6 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				if self.__already_created:
 					logging.notice(_(u'Changed password for user {0}.').format(
 											stylize(ST_NAME, self.__login)))
-			try:
-				# samba stuff
-				# TODO: forward output to listener…
-				sys.stderr.write(process.execute(['smbpasswd', self.__login, '-s'],
-					"%s\n%s\n" % (password, password))[1])
-			except (IOError, OSError), e:
-				if e.errno not in (2, 32):
-					raise e
 	@property
 	def shadowLastChange(self):
 		""" The last time the password was changed (in days, since the epoch).
@@ -484,12 +564,13 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				if self.__locked:
 					logging.info(_(u'Account {0} already locked.').format(
 											stylize(ST_NAME, self.__login)))
+					return
 				else:
-					L_event_run(InternalEvent('user_pre_lock', self))
+					LicornEvent('user_pre_lock', user=self, synchronous=True).emit()
 
 					self.__userPassword = '!' + self.__userPassword
 
-					L_event_run(InternalEvent('user_post_lock', self))
+					LicornEvent('user_post_lock', user=self, synchronous=True).emit()
 
 					logging.notice(_(u'Locked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -498,11 +579,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			else:
 				if self.__locked:
 
-					L_event_run(InternalEvent('user_pre_unlock', self))
+					LicornEvent('user_pre_unlock', user=self, synchronous=True).emit()
 
 					self.__userPassword = self.__userPassword[1:]
 
-					L_event_run(InternalEvent('user_post_unlock', self))
+					LicornEvent('user_post_unlock', user=self, synchronous=True).emit()
 
 					logging.notice(_(u'Unlocked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -511,9 +592,12 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				else:
 					logging.info(_(u'Account {0} already unlocked.').format(
 											stylize(ST_NAME, self.__login)))
+					return
 
 			self.__locked = lock
 			self.serialize()
+
+			LicornEvent('user_locked_changed', user=self).emit(priorities.LOW)
 	@property
 	def homeDirectory(self):
 		""" Read-write attribute, the path to the home directory of a standard
@@ -527,6 +611,10 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return self.__homeDirectory
 	@homeDirectory.setter
 	def homeDirectory(self, ignored_value):
+		""" Home directory can't be changed yet.
+
+			.. todo:: we should be able to change it for system users, at least.
+		"""
 		self.__homeDirectory = self._resolve_home_directory()
 	@property
 	def is_system(self):
@@ -723,8 +811,10 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			try:
 				process.syscmd('cp -rf {0}/* {0}/.??* {1}'.format(
 							skel, self.__homeDirectory))
+
 			except exceptions.SystemCommandError, e:
 				logging.warning(e)
+				pyutils.print_exception_if_verbose()
 
 			# set permission (because we are root)
 			# FIXME: this should have already been covered by the inotifier.
@@ -746,8 +836,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 					raise
 
 			self._checking.clear()
+
+			LicornEvent('user_skel_applyed', user=self).emit(priorities.LOW)
+
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
-				skel, stylize(ST_LOGIN, self.__login)))
+										skel, stylize(ST_LOGIN, self.__login)))
 	def link_Group(self, group, sort=True):
 		""" add a group in my double-link cache, and invalidate my CLI view.
 			This is costy because we sort the group after the append(). """
@@ -842,7 +935,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				stylize(ST_COMMENT, my_gecos)))
 
 		for login, meaningless_gecoses, replacement_gecos in (
-					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro]),
+					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro].title()),
 					('bin', ('bin'), _(u'Special Executable Restrictor Account')),
 					('bind', ('bind'), _(u'ISC Domain Name Service daemon')),
 					('caldavd', ('calendarserver daemon'), _(u'Apple Calendar Server Daemon')),
@@ -913,7 +1006,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				checked = set()
 
 				for event in fsapi.check_dirs_and_contents_perms_and_acls_new(
-						[ FsapiObject(name='%s_home' % self.__login,
+						[ fsapi.FsapiObject(name='%s_home' % self.__login,
 									path = self.__homeDirectory,
 									uid = self.__uidNumber,
 									gid = self.__gidNumber,
@@ -966,7 +1059,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			accountdata = [ '{login}: ✎{uid} ✐{pri_group} '
 							'{backend}	{gecos}'.format(
 								login=stylize(
-									User._locked_colors[self.__locked],
+									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
 								#id_type=_(u'uid'),
 								uid=stylize(ST_UGID, self.__uidNumber)
@@ -1000,7 +1093,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			return self.__cg_precalc_small
 		except AttributeError:
 			self.__cg_precalc_small = '%s(%s)' % (
-				stylize(User._locked_colors[self.__locked], self.__login),
+				stylize(_locked_colors[self.__locked], self.__login),
 				stylize(ST_UGID, self.__uidNumber))
 
 			return self.__cg_precalc_small
@@ -1026,40 +1119,28 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__loginShell,
 						self.backend.name
 					)
+	def to_WMI(self):
+		""" A simplified version of the current object, suitable to be
+			forwarded via Pyro. """
+		d = self.__getstate__()
+		d.update({
+			'profile'       : self.__primaryGroup().name
+									if self.__is_standard else '',
+			'backend'       : self.backend.name,
 
+			'search_fields' : [ 'uidNumber', 'gecos', 'login', 'profile']
+		})
+		return d
 	def to_JSON(self):
-			return ('{"login" : "%s", '
-				'"uidNumber" : "%s", '
-				'"gidNumber" : "%s", '
-				'"gecos" : "%s", '
-				'"homeDirectory" : "%s", '
-				'"loginShell" : "%s", '
-				'"backend" : "%s", '
-				'"locked" : "%s", '
-				'"profile" : "%s", '
-				'"is_system" : "%s", '
-				'"search_fields": [ "uidNumber", "gecos", "login", "profile"] }' % (
-						self.__login,
-						self.__uidNumber,
-						self.__gidNumber,
-						self.__gecos,
-						self.__homeDirectory,
-						self.__loginShell,
-						self.backend.name,
-						self.__locked,
-						self.__primaryGroup().name
-							if self.__is_standard else '',
-						self.__is_system
-					))
-
-class UsersController(Singleton, CoreFSController):
+			return json.dumps(self.to_WMI())
+class UsersController(DictSingleton, CoreFSController, SelectableController):
 	""" Handle global operations on unit User objects,
 		from a system-wide perspective.
 	"""
 	init_ok = False
 	load_ok = False
 
-	#: used in RWI.
+	#: used in `RWI.select()`
 	@property
 	def object_type_str(self):
 		return _(u'user')
@@ -1072,7 +1153,22 @@ class UsersController(Singleton, CoreFSController):
 			User objects from RWI.select(). """
 		return 'login'
 
-	def __init__(self):
+	# local and specific implementations of SelectableController methods.
+	def by_uid(self, uid):
+		# we need to be sure we get an int(), because the 'uid' comes from RWI
+		# and is often a string.
+		return self[int(uid)]
+	def by_login(self, login):
+		# Call the thing before returning it, because it's a weakref.
+		return User.by_login[login]()
+
+	# the generic way (called by SelectableController)
+	by_key  = by_uid
+	by_id   = by_uid
+	by_name = by_login
+	# end SelectableController
+
+	def __init__(self, *args, **kwargs):
 		""" Create the user accounts list from the underlying system. """
 
 		assert ltrace(TRACE_USERS, '> UsersController.__init__(%s)' %
@@ -1081,33 +1177,26 @@ class UsersController(Singleton, CoreFSController):
 		if UsersController.init_ok:
 			return
 
-		CoreFSController.__init__(self, 'users')
+		super(self.__class__, self).__init__(name='users')
 
 		UsersController.init_ok = True
 		assert ltrace(TRACE_USERS, '< UsersController.__init__(%s)' %
 			UsersController.init_ok)
-	def by_login(self, login):
-		# Call the thing before returning it, because it's a weakref.
-		return User.by_login[login]()
 	@property
 	def logins(self):
 		return (login for login in User.by_login)
 	def word_match(self, word):
 		return hlstr.multi_word_match(word, self.logins)
-	def by_uid(self, uid):
-		# we need to be sure we get an int(), because the 'uid' comes from RWI
-		# and is often a string.
-		return self[int(uid)]
 	def load(self):
 		if UsersController.load_ok:
 			return
 
-		L_event_run(InternalEvent('users_loading', users=self))
+		LicornEvent('users_loading', users=self, synchronous=True).emit()
 
 		assert ltrace(TRACE_USERS, '| load()')
 		self.reload(send_event=False)
 
-		L_event_run(InternalEvent('users_loaded', users=self))
+		LicornEvent('users_loaded', users=self, synchronous=True).emit()
 
 		UsersController.load_ok = True
 	def reload(self, send_event=True):
@@ -1115,7 +1204,7 @@ class UsersController(Singleton, CoreFSController):
 		assert ltrace(TRACE_USERS, '| reload()')
 
 		if send_event:
-			L_event_run(InternalEvent('users_reloading', users=self))
+			LicornEvent('users_reloading', users=self, synchronous=True).emit()
 
 		with self.lock:
 			for backend in self.backends:
@@ -1128,7 +1217,7 @@ class UsersController(Singleton, CoreFSController):
 		CoreFSController.reload(self)
 
 		if send_event:
-			L_event_run(InternalEvent('users_reloaded', users=self))
+			LicornEvent('users_reloaded', users=self, synchronous=True).emit()
 	def reload_backend(self, backend):
 		""" Reload only one backend data (called from inotifier). """
 
@@ -1142,9 +1231,11 @@ class UsersController(Singleton, CoreFSController):
 			for uid, user in backend.load_Users():
 				if uid in self:
 					logging.warning2(_(u'{0}.reload: Overwritten uid {1}.').format(
-						stylize(ST_NAME, self.name), uid))
+											stylize(ST_NAME, self.name), uid))
 				self[uid] = user
 				loaded.append(uid)
+
+				LicornEvent('user_changed', user=user).emit(priorities.LOW)
 
 			for uid, user in self.items():
 				if user.backend.name == backend.name:
@@ -1234,7 +1325,7 @@ class UsersController(Singleton, CoreFSController):
 						stylize(ST_NAME,login)))
 
 				if not home.startswith(
-					LMC.configuration.defaults.home_base_path) \
+					settings.defaults.home_base_path) \
 					and not home.startswith('/var') \
 					or home.startswith(LMC.configuration.groups.base_path) \
 					or home.find('/tmp') != -1:
@@ -1246,7 +1337,7 @@ class UsersController(Singleton, CoreFSController):
 						'Aborting.').format(
 						stylize(ST_PATH, home),
 						stylize(ST_NAME,login),
-						LMC.configuration.defaults.home_base_path,
+						settings.defaults.home_base_path,
 						LMC.configuration.groups.base_path))
 
 				if home in (user.homeDirectory for user in self):
@@ -1285,7 +1376,7 @@ class UsersController(Singleton, CoreFSController):
 		else:
 			login_autogenerated = False
 
-		if gecos is None:
+		if gecos in (None, ''):
 			gecos_autogenerated = True
 
 			if firstname is None or lastname is None:
@@ -1439,9 +1530,9 @@ class UsersController(Singleton, CoreFSController):
 
 		assert ltrace(TRACE_USERS, '''> add_User(login=%s, system=%s, pass=%s, '''
 			'''uid=%s, gid=%s, profile=%s, skel=%s, gecos=%s, first=%s, '''
-			'''last=%s, home=%s, shell=%s)''' % (login, system, password,
+			'''last=%s, home=%s, shell=%s, in_groups=%s)''' % (login, system, password,
 			desired_uid, repr(primary_group), repr(profile),
-			skel, gecos, firstname, lastname, home, shell))
+			skel, gecos, firstname, lastname, home, shell, in_groups))
 
 		assert type(in_groups) == type([])
 
@@ -1452,11 +1543,10 @@ class UsersController(Singleton, CoreFSController):
 		# Everything seems basically OK, we can now lock and go on.
 		with self.lock:
 			self.__validate_important_fields(desired_uid, login, system, force)
-
 			uid = self._generate_uid(login, desired_uid, system)
 
-			L_event_run(InternalEvent('user_pre_add', uid=uid, login=login,
-								system=system, password=password))
+			LicornEvent('user_pre_add', uid=uid, login=login,
+								system=system, password=password, synchronous=True).emit()
 
 			groups_to_add_user_to = in_groups
 
@@ -1464,12 +1554,15 @@ class UsersController(Singleton, CoreFSController):
 			homeDirectory = self.__validate_home_dir(home, login, system, force)
 
 			if profile is not None:
+
+				if type(profile) == types.IntType:
+					profile = LMC.profiles.by_gid(profile)
+
 				loginShell    = profile.profileShell
 				skel_to_apply = profile.profileSkel
 				primary_group = profile.group
 
-				groups_to_add_user_to.extend(LMC.groups.by_name(g)
-												for g in profile.memberGid)
+				groups_to_add_user_to.extend(profile.groups)
 			else:
 				logging.warning2('>> FIXME: UsersController.add_User: skel for '
 					'standard group ? system group ?', to_listener=False, to_local=True)
@@ -1532,7 +1625,10 @@ class UsersController(Singleton, CoreFSController):
 			# thus, DO NOT UNCOMMENT -- if not batch:
 			user.serialize(backend_actions.CREATE)
 
-			L_event_run(InternalEvent('user_post_add', user, password))
+			LicornEvent('user_post_add', user=user, password=password, synchronous=True).emit()
+
+			# NOTE: don't forward the "user_added" event here,
+			# this is too early (see later).
 
 			user.apply_skel(skel_to_apply)
 
@@ -1541,17 +1637,6 @@ class UsersController(Singleton, CoreFSController):
 
 			if user.is_standard:
 				user._inotifier_add_watch(self.licornd)
-
-			# Samba: add Samba user account.
-			# TODO: put this into a module.
-			# TODO: find a way to get the output back to the listener…
-			try:
-				sys.stderr.write(process.execute(
-					['smbpasswd', '-a', user.login, '-s'],
-					'%s\n%s\n' % (password, password))[1])
-			except (IOError, OSError), e:
-				if e.errno not in (2, 32):
-					raise e
 
 		# we needed to delay this display until *after* account creation, to
 		# know the login (it could have been autogenerated by the User class).
@@ -1563,24 +1648,31 @@ class UsersController(Singleton, CoreFSController):
 						stylize(ST_SECRET, password)),
 					to_local=False)
 
-
 		logging.notice(_(u'Created {accttype} user {login} (uid={uid}).').format(
 			accttype=_(u'system') if system else _(u'standard'),
 			login=stylize(ST_LOGIN, login),
 			uid=stylize(ST_UGID, uid)))
 
 		for group in groups_to_add_user_to:
-			group.add_Users([ user ])
+
+			if type(group) == types.IntType:
+				group = LMC.groups.by_gid(group)
+
+			group.add_Users([ user ], emit_event=False)
 
 		# FIXME: Set quota
 		if profile is not None:
-			pass
 			#os.popen2( [ 'quotatool', '-u', str(uid), '-b',
-			#	LMC.configuration.defaults.quota_device, '-l' '%sMB'
+			#	settings.defaults.quota_device, '-l' '%sMB'
 			#	% LMC.profiles[profile]['quota'] ] )[1].read()
 			#logging.warning("quotas are disabled !")
 			# XXX: Quotatool can return 2 without apparent reason
 			# (the quota is etablished) !
+			pass
+
+		# Now that the user is OK and member of its groups,
+		# forward the good news to everyone.
+		LicornEvent('user_added', user=user).emit(priorities.LOW)
 
 		assert ltrace(TRACE_USERS, '< add_User(%r)' % user)
 
@@ -1590,7 +1682,10 @@ class UsersController(Singleton, CoreFSController):
 	def del_User(self, user, no_archive=False, force=False, batch=False):
 		""" Delete a user. """
 
-		assert ltrace(TRACE_USERS, "| del_User(%r)" % user)
+		assert ltrace_func(TRACE_USERS)
+
+		if type(user) == types.IntType:
+			user = self.by_uid(user)
 
 		if user.is_system_restricted and not force:
 			raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -1602,17 +1697,9 @@ class UsersController(Singleton, CoreFSController):
 		# '[:]' to fix #14, see
 		# http://docs.python.org/tut/node6.html#SECTION006200000000000000000
 		for group in user.groups[:]:
-			group.del_Users([ user ], batch=True)
+			group.del_Users([ user ], batch=True, emit_event=False)
 
-		L_event_run(InternalEvent('user_pre_del', user))
-
-		try:
-			# samba stuff
-			# TODO: forward output to listener…
-			sys.stderr.write(process.execute(['smbpasswd', '-x', user.login])[1])
-		except (IOError, OSError), e:
-			if e.errno not in (2, 32):
-				raise e
+		LicornEvent('user_pre_del', user=user, synchronous=True).emit()
 
 		# keep the homedir path, to backup it if requested.
 		homedir = user.homeDirectory
@@ -1627,6 +1714,9 @@ class UsersController(Singleton, CoreFSController):
 				logging.warning2(_(u'{0}: account {1} already not referenced in '
 					'controller!').format(stylize(ST_NAME, self.name),
 						stylize(ST_LOGIN, login)))
+
+			# forward the bad news to anyone interested.
+			LicornEvent('user_deleted', user=user).emit(priorities.LOW)
 
 			if user.is_standard:
 				user._inotifier_del_watch(self.licornd)
@@ -1649,15 +1739,15 @@ class UsersController(Singleton, CoreFSController):
 		logging.notice(_(u'Deleted user account {0}.').format(
 			stylize(ST_LOGIN, login)))
 
-		L_event_run(InternalEvent('user_post_del', uid=uid, login=login,
-														no_archive=no_archive))
+		LicornEvent('user_post_del', uid=uid, login=login,
+						no_archive=no_archive, synchronous=True).emit()
 
 		# user is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
 		if no_archive:
-			L_service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
+			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
 		else:
-			L_service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
+			workers.service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
 	def dump(self):
 		""" Dump the internal data structures (debug and development use). """
 
@@ -1768,31 +1858,6 @@ class UsersController(Singleton, CoreFSController):
 
 		assert ltrace(TRACE_USERS, '< chk_Users(%s)' % all_went_ok)
 		return all_went_ok
-	def guess_one(self, value):
-		""" Try to guess everything of a user from a
-			single and unknonw-typed info. """
-		try:
-			user = self.by_uid(int(value))
-		except (TypeError, ValueError):
-				user = self.by_login(value)
-		return user
-	def guess_list(self, value_list):
-		users = []
-
-		for value in value_list:
-			try:
-				user = self.guess_one(value)
-
-			except (KeyError, exceptions.DoesntExistException):
-				logging.notice(_(u'Skipped non-existing login or UID %s.')
-																	% value)
-			else:
-				if user in users:
-					pass
-				else:
-					users.append(user)
-
-		return users
 	def exists(self, uid=None, login=None):
 		if uid:
 			return uid in self.iterkeys()

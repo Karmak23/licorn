@@ -12,20 +12,554 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, posix1e, time, shutil, errno
+import os, posix1e, time, shutil, errno, re, types
 from stat import *
 
+# ================================================= Licorn® foundations imports
 
-from licorn.foundations.ltrace    import ltrace, ltrace_func
-from licorn.foundations.ltraces   import *
-from licorn.foundations           import logging, exceptions, pyutils, process
-from licorn.foundations.styles    import *
+# we need the getcwd() function from bootstrap. This is really an `fsapi`
+# function, but `bootstrap` needs it first and can't import `fsapi` because
+# it is... well... `bootstrap`.
+from bootstrap import getcwd
+
+from _settings import settings
+
+import logging, exceptions, styles
+import process, hlstr, cache
+
+from base      import Enumeration
+from ltrace    import *
+from ltraces   import *
+from styles    import *
+
+stylize = styles.stylize
 
 from licorn.core import LMC
 
-# WARNING: DON'T IMPORT licorn.core.configuration HERE.
-# just pass "configuration" as a parameter if you need it somewhere.
-# fsapi is meant to to be totally independant of licorn.core.configuration !!
+# =========================================================== Pseudo-constants
+
+# On a Debian derivative, this should get `/usr/share/pyshared/licorn`
+# In developper installation, this will get whatever like `~user/source/licorn`
+# this is used in various places accross the code to symlink there.
+licorn_python_path = os.path.dirname(os.path.dirname(
+						os.path.realpath('/usr/sbin/licornd')))
+
+# These are paths on wich everything fail. Don't know why.
+special_invalid_paths = ('.gvfs', )
+
+# ============================================================== FS API Classes
+
+class FsapiObject(Enumeration):
+	""" TODO. """
+	def __init__(self, name=None, path=None, uid=-1, gid=-1,
+		root_dir_perm=None, dirs_perm=None, files_perm=None, exclude=None,
+		rule=None, system=False, content_acl=False, root_dir_acl=False,
+		home=None, user_uid=-1, user_gid=-1, copy_from=None):
+
+		super(FsapiObject, self).__init__(name=name, copy_from=copy_from)
+
+		# This one is used only in core.classes.CoreFSController methods
+		if home:
+			self.home     = home
+			self.user_uid = user_uid
+			self.user_gid = user_gid
+		# else:
+		# do not define self.{home,user_uid,user_gid}
+
+		# These other are used in fsapi.check*
+		self.path           = path
+		self.uid            = uid
+		self.root_gid       = gid
+		self.content_gid    = None
+		self.root_dir_perm  = root_dir_perm
+		self.dirs_perm      = dirs_perm
+		self.files_perm     = files_perm
+		self.rule           = rule
+		self.system         = system
+		self.content_acl    = content_acl
+		self.root_dir_acl   = root_dir_acl
+		self.already_loaded = False
+
+		if exclude is None:
+			self.exclude    = []
+		else:
+			self.exclude    = exclude
+class ACLRule(Enumeration):
+	""" Class representing a custom ACL rule for Licorn® check system.
+
+		:param checked: boolean to indicate if the rule has already been
+			checked.
+		:param file_name: path of the file describing the rule.
+		:param line_no: line number of the rule in the file.
+		:param rule_text: string representing the rule.
+		:param system_wide: boolean to know if it is a system rule or
+			an user rule.
+		:param base_dir: string representing the home dir of the object
+			we are checking. Example: if we are checking
+			/home/users/robin/file1, base_dir is /home/users/robin.
+		:param uid: id of the owner of the dir/file that we are checking.
+
+	"""
+	separator = '	'
+	invalid_dir_regex_text = r'^((~.\*|\$HOME.\*|\/|\*\/)|[^%s]*\/?\.\.\/)' % separator
+	invalid_dir_regex = re.compile(invalid_dir_regex_text)
+
+	@staticmethod
+	def substitute_configuration_defaults(acl):
+		""" return an acl (string) where parameters @acls or @default
+			were used.
+
+			:param acl: string to decode """
+		#logging.notice(acl)
+
+		def get_acl_part_from_object(object_name):
+			if acl_tmp.find(':') != -1:
+				temp_acl_part = acl_tmp[:acl_tmp.index('@')] + \
+					eval('%s.%s' % (object_name, acl_tmp[
+							acl_tmp.index('@')+1:acl_tmp.rfind(':')
+							])) + acl_tmp[acl_tmp.rfind(':'):]
+			else:
+				temp_acl_part = eval('%s.%s' % (object_name, acl_tmp[1:]))
+
+				if temp_acl_part is None:
+					raise exceptions.LicornRuntimeException(
+						"%s system entry '%s'" %
+						(stylize(ST_BAD,"Invalid"),
+						stylize(ST_NAME, acl_tmp)))
+
+			return temp_acl_part
+
+		splitted_acls = acl.split(',')
+		acls=[]
+		for acl_tmp in splitted_acls:
+			try:
+				if acl_tmp[acl_tmp.index('@'):12] == '@defaults.':
+
+					# should get settings.defaults.*
+					acls.append(get_acl_part_from_object('settings'))
+
+				elif acl_tmp[acl_tmp.index('@'):6] == '@acls.' \
+						or acl_tmp[acl_tmp.index('@'):7] == '@users.' \
+						or acl_tmp[acl_tmp.index('@'):8] == '@groups.':
+
+					# should get LMC.configuration.users/groups/acls}.*
+					acls.append(get_acl_part_from_object('LMC.configuration'))
+
+				else:
+					acls.append(acl_tmp)
+
+			except ValueError:
+				acls.append(acl_tmp)
+		return ','.join(acls)
+	def __init__(self, controller, file_name=None, rule_text=None, line_no=0,
+					base_dir=None, object_id=None, system_wide=True):
+
+		name = self.generate_name(file_name, rule_text, system_wide, controller.name)
+
+		super(ACLRule, self).__init__(name=name)
+
+		assert ltrace(TRACE_CHECKS, '| ACLRule.__init__(%s, %s)' % (
+									name, system_wide))
+
+		self.checked     = False
+		self.file_name   = file_name
+		self.line_no     = line_no
+		self.rule_text   = rule_text
+		self.system_wide = system_wide
+		self.base_dir    = base_dir
+		self.uid         = object_id
+		self.controller  = controller
+	def generate_name(self, file_name, rule_text, system_wide, name):
+		""" function that generate a name for a rule.
+			Rule name is a keyword used to list rule into lists
+
+			examples:
+
+				- for default rules, return ~
+				- for other rules following the synthax : DIR	ACL, return
+					DIR
+
+			:param filename: path of the file describing the rule
+			:param rule_text: string representing the rule
+			:param system_wide: boolean to know if it is a system rule or
+				an user rule
+		"""
+		assert ltrace(TRACE_CHECKS, '''| generate_name(file_name=%s, '''
+			'''rule_text=%s, system_wide=%s)''' % (
+				file_name, rule_text, system_wide))
+
+		if system_wide:
+			if file_name.rsplit('/', 1)[1] == '%s.%s.conf' % (name,
+				settings.defaults.check_homedir_filename):
+				return '~'
+
+		elif rule_text[0] in ('~', '$HOME'):
+			return '~'
+
+		return (hlstr.validate_name(
+					self.substitute_configuration_defaults(
+					rule_text.split(
+					self.separator, 1)[0]), custom_keep='._')
+					).replace('.', '_')
+	def check_acl(self, acl):
+		""" check if an acl is valid or not
+
+			:param acl: string of the acl
+		"""
+
+		rebuilt_acl = []
+
+		if acl.upper() in ['NOACL', 'RESTRICTED', 'POSIXONLY', 'RESTRICT',
+			'PRIVATE']:
+			return acl.upper()
+
+		elif acl.find(':') == -1 and acl.find(',') == -1:
+			raise exceptions.LicornSyntaxException(self.file_name,
+												self.line_no, acl,
+				desired_syntax='NOACL, RESTRICTED, POSIXONLY, RESTRICT'
+				', PRIVATE')
+
+		if acl.find('@') != -1:
+			acl = self.substitute_configuration_defaults(acl)
+
+		splitted_acls = []
+		for acl_tmp in acl.split(','):
+			splitted_acls.append(acl_tmp.split(':'))
+
+		return_value = True
+
+		for splitted_acl in splitted_acls:
+			if len(splitted_acl) == 3:
+				bad_part=0
+
+				if not self.system_wide:
+					if splitted_acl[1] in ['',
+						settings.defaults.admin_group]:
+						bad_part=2
+
+					else:
+						must_resolve = False
+						if splitted_acl[0] in ('u', 'user'):
+							resolve_method = LMC.users.guess_identifier
+							must_resolve = True
+						elif splitted_acl[0] in ('g', 'group'):
+							resolve_method = LMC.groups.guess_identifier
+							must_resolve = True
+
+						if must_resolve:
+							try:
+								id = resolve_method(splitted_acl[1])
+							except exceptions.DoesntExistException, e:
+								raise exceptions.LicornACLSyntaxException(
+									self.file_name,	self.line_no,
+									text=':'.join(splitted_acl),
+									text_part=splitted_acl[1],
+									optional_exception=e)
+
+					if splitted_acl[2] in [ '---', '-w-', '-wx' ]:
+						bad_part=3
+
+				if bad_part:
+					raise exceptions.LicornACLSyntaxException(
+						self.file_name,	self.line_no,
+						text=':'.join(splitted_acl),
+						text_part=splitted_acl[bad_part-1])
+
+			else:
+				if not self.system_wide:
+					raise exceptions.LicornSyntaxException(self.file_name,
+						self.line_no, text=':'.join(splitted_acl),
+						desired_syntax='(u[user]|g[roup]|o[ther]):'
+							'<login_or_group>:[r-][w-][x-]')
+
+			splitted_acl[1] = self.substitute_configuration_defaults(
+				splitted_acl[1])
+
+			rebuilt_acl.append(':'.join(splitted_acl))
+
+		return ','.join(rebuilt_acl)
+	def check_dir(self, directory):
+		""" check if the dir is ok
+
+			:param directory: string of the directory we are checking
+		"""
+
+		# try to find insecure entries
+		if self.invalid_dir_regex.search(directory):
+			raise exceptions.LicornSyntaxException(self.file_name,
+				self.line_no, text=directory,
+				desired_syntax='NOT ' + self.invalid_dir_regex_text)
+
+		if self.system_wide:
+			uid = None
+
+		else:
+			if self.uid is -1:
+				try:
+					self.uid = os.lstat('%s/%s' % (
+							self.base_dir, directory)).st_uid
+
+				except (OSError, IOError), e:
+					if e.errno == errno.ENOENT:
+						raise exceptions.PathDoesntExistException(
+							_(u'Ignoring unexisting entry "%s".') %
+							stylize(ST_PATH, directory))
+					else:
+						raise e
+
+			uid = self.uid
+
+		directory = self.expand_tilde(directory, uid)
+
+		if directory in ('', '/') or directory == self.base_dir:
+			self.default = True
+		else:
+			self.default = False
+
+		if self.system_wide:
+			return self.substitute_configuration_defaults(directory)
+
+		# if the directory exists in the user directory
+		if not os.path.exists('%s/%s' % (self.base_dir, directory)):
+			raise exceptions.PathDoesntExistException(
+				_(u'Ignoring unexisting entry "%s".') %
+					stylize(ST_PATH, directory))
+
+		return directory
+	def check(self):
+		""" general check function """
+
+		line=self.rule_text.rstrip()
+
+		try:
+			dir, acl = line.split(self.separator)
+
+		except ValueError, e:
+			raise exceptions.LicornSyntaxException(self.file_name,
+				self.line_no, text=line,
+				desired_syntax='<dir><separator><acl>')
+
+		dir = dir.strip()
+		acl = acl.strip()
+
+		self.dir = self.check_dir(directory=dir)
+		self.acl = self.check_acl(acl=acl)
+
+		self.checked = True
+	def generate_dir_info(self, object_info, dir_info_base=None,
+		system_wide=False, vars_to_replace=None):
+		""" generate a FsapiObject from the rule. This object will be
+			understandable by fsapi.check*()
+
+			:param object_info: enumeration object containing home,
+				uid and gid of the current file/dir checked
+			:param dir_info_base: if specified, the dir_info_base will be
+				modified, it may overwrite information of the dir_info_base.
+			:param system_wide: boolean to know if it is a system rule or
+				an user rule.
+			:vars_to_replace: list of tuple to be replaced in the dir_info.
+			"""
+
+		acl = self.acl
+
+		# if we are using a dir_info_base, we must be sure that permissions
+		# will be ok.
+		if dir_info_base is not None:
+			if dir_info_base.rule.acl in ('NOACL', 'POSIXONLY'):
+				# it is a NOACL perm on root_dir, the content could be
+				# either RESTRICT or NOACL or a POSIX1E perm,
+				# everything is possible.
+				pass
+			else:
+				if ':' in dir_info_base.rule.acl:
+					# if the root_dir is POSIX1E, either POSIX1E or RESTRICT
+					# are allowed for the content.
+					if acl in ('NOACL', 'POSIXONLY'):
+						raise exceptions.LicornSyntaxException(
+							self.file_name,
+							self.line_no, text=acl,
+							desired_syntax=_(u'Impossible to apply this '
+								'perm or ACL.'))
+				elif dir_info_base.rule.acl in (
+									'PRIVATE', 'RESTRICT', 'RESTRICTED'):
+					# if root_dir is RESTRICT, only RESTRICT could be set
+					if ':' in acl or acl in ('NOACL', 'POSIXONLY'):
+						raise exceptions.LicornSyntaxException(
+							self.file_name,
+							self.line_no, text=acl,
+							desired_syntax=_(u'Impossible to apply this '
+								'perm or ACL.'))
+		if self.system_wide:
+			dir_path = '%%s/%s' % self.dir if self.dir != '' else '%s'
+			uid      = '%s'
+			gid      = '%s'
+
+		else:
+			if self.dir in ('', '/'):
+				dir_path = '%s%s' % (object_info.home, self.dir)
+
+			else:
+				dir_path = '%s/%s' % (object_info.home, self.dir)
+
+			uid = object_info.user_uid
+			gid = object_info.user_gid
+
+		if dir_info_base is None:
+			dir_info = FsapiObject(name=self.name, system=self.system_wide,
+									path=dir_path, uid=uid, gid=gid,
+									rule=self)
+		else:
+			# do not create a new dir_info, just modify the dir_info_base
+			dir_info                = dir_info_base
+			dir_info.content_gid    = gid
+			dir_info.already_loaded = True
+
+		if acl.upper() in ('NOACL', 'POSIXONLY'):
+
+			if dir_info_base is None:
+				dir_info.root_dir_perm = 00755
+
+			dir_info.files_perm = 00644
+			dir_info.dirs_perm = 00755
+
+		elif acl.upper() in ('PRIVATE', 'RESTRICT', 'RESTRICTED'):
+
+			if dir_info_base is None:
+				dir_info.root_dir_perm = 00700
+
+			dir_info.files_perm = 00600
+			dir_info.dirs_perm = 00700
+
+		elif self.system_wide and ':' in acl:
+
+			if dir_info_base is None:
+				dir_info.root_gid      = LMC.configuration.acls.gid
+				dir_info.root_dir_perm = acl
+
+			else:
+				dir_info.content_gid = LMC.configuration.acls.gid
+
+			dir_info.files_perm = acl
+			dir_info.dirs_perm  = acl.replace('@UX','x').replace('@GX','x')
+
+		elif not self.system_wide:
+			# 3rd case: user sets a custom ACL on dir / file.
+			# merge this custom ACL to the standard one (the
+			# user cannot restrict ACLs, just add).
+
+			if self.controller is LMC.users:
+				acl_base = "%s,g:%s:rw-" % (
+							LMC.configuration.acls.acl_base,
+							settings.defaults.admin_group,
+							)
+				file_acl_base = "%s,g:%s:rw-" % (
+							LMC.configuration.acls.file_acl_base,
+							settings.defaults.admin_group
+							)
+
+			elif self.controller is LMC.groups:
+				acl_base      = LMC.configuration.acls.group_acl_base
+				file_acl_base = LMC.configuration.acls.group_file_acl_base
+
+
+			if dir_info_base is None:
+				dir_info.root_dir_perm = '%s,%s,%s' % (
+										acl_base, acl,
+										LMC.configuration.acls.acl_mask)
+				dir_info.root_gid = LMC.configuration.acls.gid
+
+			else:
+				dir_info.content_gid = LMC.configuration.acls.gid
+
+			dir_info.files_perm = '%s,%s,%s' % (
+									acl_base, acl,
+									LMC.configuration.acls.acl_mask)
+
+			dir_info.dirs_perm = ('%s,%s,%s' % (
+									file_acl_base,	acl,
+									LMC.configuration.acls.file_acl_mask)
+								).replace('@UX','x').replace('@GX','x')
+
+		try:
+			dir_info.content_acl = ':' in dir_info.files_perm
+
+		except TypeError:
+			dir_info.content_acl = False
+
+		try:
+			dir_info.root_dir_acl = ':' in dir_info.root_dir_perm
+
+		except TypeError:
+			dir_info.root_dir_acl = False
+
+		# check the acl with the posix1e module.
+		if not system_wide:
+			if vars_to_replace is not None:
+				for var, value in vars_to_replace:
+					if dir_info.root_dir_acl:
+						if var in dir_info.root_dir_perm:
+							dir_info.root_dir_perm = \
+								dir_info.root_dir_perm.replace(var, value)
+					if dir_info.content_acl:
+						if var in dir_info.dirs_perm:
+							dir_info.dirs_perm = \
+								dir_info.dirs_perm.replace(var, value)
+						if var in dir_info.files_perm:
+							dir_info.files_perm = \
+								dir_info.files_perm.replace(var, value)
+
+			if dir_info.root_dir_acl:
+				# we replace the @*X to be able to posix1e.ACL.check() correctly
+				# this forces us to put a false value in the ACL, so we copy it
+				# [:] to keep the original in place.
+				di_text = dir_info.root_dir_perm[:].replace(
+					'@GX','x').replace('@UX','x')
+
+				if posix1e.ACL(text=di_text).check():
+					raise exceptions.LicornSyntaxException(
+						self.file_name, self.line_no,
+						text=acl,
+						optional_exception=_(u'posix1e.ACL(text=%s)'
+							'.check() call failed.') % di_text)
+
+			if dir_info.content_acl:
+				di_text = dir_info.dirs_perm[:].replace(
+												'@GX','x').replace(
+												'@UX','x')
+
+				if posix1e.ACL(text=di_text).check():
+					raise exceptions.LicornSyntaxException(
+						self.file_name, self.line_no,
+						text=acl,
+						optional_exception=_(u'posix1e.ACL(text=%s)'
+							'.check() call failed.') % dir_info.root_dir_perm)
+
+		return dir_info
+	def expand_tilde(self, text, object_id):
+		""" replace '~' or '$HOME' by the path pointing to the object_id
+
+			:param text: string to be modified
+			:param object_id: id of the object we are checking (uid or gid)
+		"""
+		if object_id is None:
+			home = ''
+		else:
+			if self.controller is LMC.groups:
+				home =  LMC.groups.by_gid(object_id).homeDirectory
+
+			elif self.controller is LMC.users:
+				home = LMC.users.by_uid(object_id).homeDirectory
+
+			else:
+				raise exceptions.LicornRuntimeError(_('Do not know how '
+					'to expand tildes for %s objects!')
+						% self.controller._object_type)
+		return text.replace(
+				'~', home).replace(
+				'$HOME', home).replace(
+				home, '')
+
+# ============================================================ FS API functions
 
 def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 	followlinks=False, followmounts=True, yield_type=False):
@@ -67,8 +601,10 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 			entry_mode = entry_stat.st_mode & 07777
 
 		except (IOError, OSError), e:
-			if e.errno == errno.ENOENT or (e.errno == 13 and entry[-5:] == '.gvfs'):
-				logging.warning2(_(u'fsapi.minifind(): error on {0}: {1}').format(stylize(ST_PATH, entry), e))
+			if e.errno == errno.ENOENT or (e.errno == errno.EACCES
+					and os.path.basename(entry) in special_invalid_paths):
+				logging.warning2(_(u'fsapi.minifind(): error on {0}: {1}').format(
+										stylize(ST_PATH, entry), e))
 			else:
 				raise e
 		else:
@@ -82,8 +618,6 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 
 				else:
 					yield entry
-
-			#print 'itype %s %s %s' % (entry_type, S_IFLNK, entry_type & S_IFLNK)
 
 			if (entry_type == S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
@@ -116,7 +650,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 	assert ltrace_func(TRACE_FSAPI)
 
 	conf_acls = LMC.configuration.acls
-	conf_dflt = LMC.configuration.defaults
+	conf_dflt = settings.defaults
 
 	def check_one_dir_and_acl(dir_info, batch=batch, auto_answer=auto_answer,
 													full_display=full_display):
@@ -127,10 +661,10 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			entry_stat = os.lstat(path)
 
 		except (IOError, OSError), e:
-			if e.errno == 13:
+			if e.errno == errno.EACCES:
 				raise exceptions.InsufficientPermissionsError(str(e))
 
-			elif e.errno == 2:
+			elif e.errno == errno.ENOENT:
 
 				if batch or logging.ask_for_repair(_(u'Directory %s does not '
 								u'exist. Create it?') % stylize(ST_PATH, path),
@@ -319,9 +853,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 	except (OSError, IOError):
 		# this can fail if an inotify event is catched on a transient file
 		# (just created, just deleted), like mkstemp() ones.
-		logging.warning2(_(u'fsapi.check_perms(): exception while checking '
-			u'filename validity of {0}.').format(stylize(ST_PATH, path)))
-		pyutils.print_exception_if_verbose()
+		logging.exception(_(u'fsapi.check_perms(): exception while checking '
+					u'filename validity of {0}.'), stylize(ST_PATH, path))
 		return
 
 	except exceptions.LicornCheckError:
@@ -366,9 +899,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		except (IOError, OSError):
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
-			logging.warning2(_(u'fsapi.check_perms(): exception while '
+			logging.exception(_(u'fsapi.check_perms(): exception while '
 				u'`execbits2str()` on {0}.').format(stylize(ST_PATH, path)))
-			pyutils.print_exception_if_verbose()
 			return
 
 		if '@GX' in access_perm or '@UX' in access_perm:
@@ -409,9 +941,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		except (IOError, OSError), e:
 			# this can fail if an inotify event is catched on a transient file
 			# (just created, just deleted), like mkstemp() ones.
-			logging.warning(_(u"Exception while trying to "
-				u"get the posix.1e ACL of {0}.").format(stylize(ST_PATH, path)))
-			pyutils.print_exception_if_verbose()
+			logging.exception(_(u'Exception while getting the posix.1e ACL '
+												u'of {0}'), (ST_PATH, path))
 			return
 
 		if current_perm != access_perm:
@@ -464,16 +995,10 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 													| posix1e.TEXT_SOME_EFFECTIVE)),
 									path=stylize(ST_PATH, path)))
 					except (IOError, OSError), e:
-						if e.errno == errno.ENOENT:
-							logging.warning2(_(u'fsapi.check_perms(): error '
-								u'on {0}: {1}').format(stylize(ST_PATH, path), e))
-							return
-						else:
-							logging.warning(_(u"Exception encoutered while "
-											u"trying to set a posix.1e ACL "
-											u"on {0}.").format(path))
-							pyutils.print_exception_if_verbose()
-							return
+						logging.exception(_(u'fsapi.check_perms(): Exception '
+											u'while setting a posix.1e ACL on {0}'),
+											(ST_PATH, path))
+						return
 
 			else:
 				all_went_ok = False
@@ -536,32 +1061,23 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 												| posix1e.TEXT_SOME_EFFECTIVE)
 									)))
 					except (IOError, OSError), e:
-						if e.errno == errno.ENOENT:
-							logging.warning2(_(u'fsapi.check_perms(): error '
-								u'on {0}: {1}').format(stylize(ST_PATH, path), e))
-							return
-
-						else:
-							logging.warning(_(u"Exception encoutered while "
-								u"trying to set a posix.1e default ACL "
-								u"on {0}.").format(path))
-							pyutils.print_exception_if_verbose()
-							return
+						logging.exception(_(u'fsapi.check_perms(): exception '
+									u'while setting a default ACL on {0}'),
+									(ST_PATH, path))
+						return
 
 				else:
 					all_went_ok = False
 	else:
 		# delete previous ACL perms in case of existance
 		try:
-			# NOTE: be sure to pass a 'str()' to this function. An unicode
-			# string won't work (and check_utf8_filename() returns one).
+			# `has_extended_acl()` complains if we pass it an unicode string.
+			# It explicitly wants an str(). Here we go...
 			extended_acl = has_extended_acl(str(path))
 
-		except (IOError, OSError), e:
-				logging.warning(_(u"Exception while trying to find if {0} "
-					u"holds an ACL or not.").format(stylize(ST_PATH, path)))
-				pyutils.print_exception_if_verbose()
-				return
+		except (IOError, OSError, TypeError):
+			logging.exception(_(u'Exception while looking for an ACL on {0}'), (ST_PATH, path))
+			return
 
 		if extended_acl:
 			# if an ACL is present, this could be what is borking the Unix mode.
@@ -604,10 +1120,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 							u'{path}.').format(path=stylize(ST_PATH, path)))
 
 				except (IOError, OSError), e:
-					logging.warning(_(u"Exception while "
-						u"trying to delete the posix.1e ACL "
-						u"on {0}.").format(stylize(ST_PATH, path)))
-					pyutils.print_exception_if_verbose()
+					logging.exception(_(u'Exception while deleting the '
+								u'posix.1e ACL on {0}'), (ST_PATH, path))
 					return
 
 			else:
@@ -618,9 +1132,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			current_perm = pathstat.st_mode & 07777
 
 		except (IOError, OSError), e:
-			logging.warning(_(u"Exception while "
-				u"trying to `lstat()` {0}.").format(stylize(ST_PATH, path)))
-			pyutils.print_exception_if_verbose()
+			logging.exception(_(u'Exception while trying to `lstat()` {0}'), (ST_PATH, path))
 			return
 
 		if current_perm != access_perm:
@@ -651,10 +1163,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 									path=stylize(ST_PATH, path)))
 
 					except (IOError, OSError), e:
-						logging.warning(_(u"Exception while "
-							u"trying to change posix permissions "
-							u"on {0}.").format(stylize(ST_PATH, path)))
-						pyutils.print_exception_if_verbose()
+						logging.warning(_(u'Exception while trying to change '
+								u'posix permissions on {0}.'), (ST_PATH, path))
 						return
 
 			else:
@@ -682,9 +1192,7 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 			#     - when we explicitely want to check a path which does not
 			#		exist because it has not been created yet (eg: ~/.dmrc
 			#		on a brand new user account).
-		logging.warning(_(u"Exception while trying to `lstat()` "
-						u"{0}.").format(stylize(ST_PATH, path)))
-		pyutils.print_exception_if_verbose()
+		logging.exception(_(u'Exception while trying to `lstat()` {0}'), (ST_PATH, path))
 		return
 
 	# if one or both of the uid or gid are empty, don't check it, use the
@@ -748,7 +1256,7 @@ def check_uid_and_gid(path, uid=-1, gid=-1, batch=None, auto_answer=None,
 										stylize(ST_UGID, desired_group)))
 
 			except (IOError, OSError), e:
-				if e.errno == 2: return
+				if e.errno == errno.ENOENT: return
 				else: raise e
 
 			return
@@ -824,7 +1332,7 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 							os.symlink(link_src, link_dst)
 
 				except OSError, e:
-					if e.errno == 2:
+					if e.errno == errno.ENOENT:
 						# no such file or directory, link has disapeared…
 						os.symlink(link_src, link_dst)
 						logging.info(_(u'Repaired vanished symlink %s.') %
@@ -856,9 +1364,9 @@ def make_symlink(link_src, link_dst, batch=False, auto_answer=None):
 						)
 				else:
 					raise exceptions.LicornRuntimeException(_(u'While making '
-						u'symlink to {dest}, the destination {link} '
-						u'already exists and is not a link.').format(
-							dest=link_src, link=link_dst))
+								u'symlink to {dest}, the destination {link} '
+								u'already exists and is not a link.').format(
+									dest=link_src, link=link_dst))
 def remove_directory(path):
 	""" Remove a directory hierarchy. But first, rename it to something
 		quite convoluted, in case the system (or administrator) wants to
@@ -872,7 +1380,7 @@ def remove_directory(path):
 	try:
 		shutil.rmtree(path)
 	except (IOError, OSError), e:
-		if e.errno == 2:
+		if e.errno == errno.ENOENT:
 			logging.info(_(u'Cannot remove %s, it does not exist!') %
 													stylize(ST_PATH, path))
 		else:
@@ -892,7 +1400,7 @@ def archive_directory(path, orig_name='unknown'):
 	LMC.configuration.check_base_dirs(minimal=True,	batch=True)
 
 	group_archive_dir = "%s/%s.deleted.%s" % (
-		LMC.configuration.home_archive_dir, orig_name,
+		settings.home_archive_dir, orig_name,
 		time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 	try:
 		os.rename(path, group_archive_dir)
@@ -904,14 +1412,11 @@ def archive_directory(path, orig_name='unknown'):
 		LMC.configuration.check_archive_dir(group_archive_dir, batch=True,
 													full_display=__debug__)
 	except OSError, e:
-		if e.errno == 2:
+		if e.errno == errno.ENOENT:
 			logging.info(_(u'Cannot archive %s, it does not exist!') %
 				stylize(ST_PATH, path))
 		else:
 			raise e
-
-# various unordered functions, which still need to find a more elegant home.
-
 def has_extended_acl(pathname):
 	# return True if the posix1e representation of pathname's ACL has a MASK.
 	for acl_entry in posix1e.ACL(file = pathname):
@@ -924,12 +1429,128 @@ if hasattr(posix1e, 'HAS_EXTENDED_CHECK'):
 	if posix1e.HAS_EXTENDED_CHECK:
 		has_extended_acl = posix1e.has_extended
 
+if hasattr(os, "chflags"):
+	def has_flags(filename, flags):
+
+		# Stay compatible with our shell implementation used
+		# when `os.chflags()` does not exist.
+		if type(flags) == types.ListType:
+			nflags = 0
+			for f in flags:
+				nflags |= f
+
+		return os.stat(filename).st_flags & nflags
+
+else:
+	# because of LP#969032, we must implement wheels, hands and foots...
+	# lsattr /etc/squid3/squid.conf
+	# ----i--------e- /etc/squid3/squid.conf
+	# Then from e2progs/lib/e2p/pf.c :
+	#~ static struct flags_name flags_array[] = {
+			#~ { EXT2_SECRM_FL, "s", "Secure_Deletion" },
+			#~ { EXT2_UNRM_FL, "u" , "Undelete" },
+			#~ { EXT2_SYNC_FL, "S", "Synchronous_Updates" },
+			#~ { EXT2_DIRSYNC_FL, "D", "Synchronous_Directory_Updates" },
+			#~ { EXT2_IMMUTABLE_FL, "i", "Immutable" },
+			#~ { EXT2_APPEND_FL, "a", "Append_Only" },
+			#~ { EXT2_NODUMP_FL, "d", "No_Dump" },
+			#~ { EXT2_NOATIME_FL, "A", "No_Atime" },
+			#~ { EXT2_COMPR_FL, "c", "Compression_Requested" },
+	#~ #ifdef ENABLE_COMPRESSION
+			#~ { EXT2_COMPRBLK_FL, "B", "Compressed_File" },
+			#~ { EXT2_DIRTY_FL, "Z", "Compressed_Dirty_File" },
+			#~ { EXT2_NOCOMPR_FL, "X", "Compression_Raw_Access" },
+			#~ { EXT2_ECOMPR_FL, "E", "Compression_Error" },
+	#~ #endif
+			#~ { EXT3_JOURNAL_DATA_FL, "j", "Journaled_Data" },
+			#~ { EXT2_INDEX_FL, "I", "Indexed_directory" },
+			#~ { EXT2_NOTAIL_FL, "t", "No_Tailmerging" },
+			#~ { EXT2_TOPDIR_FL, "T", "Top_of_Directory_Hierarchies" },
+			#~ { EXT4_EXTENTS_FL, "e", "Extents" },
+			#~ { EXT4_HUGE_FILE_FL, "h", "Huge_file" },
+			#~ { 0, NULL, NULL }
+	#~ };
+
+
+	# in the order they are encountered in the `lsattr` output.
+	shellflags = {
+		UF_IMMUTABLE: 'i',
+		UF_APPEND: 'a',
+		UF_NODUMP: '?',
+		UF_OPAQUE: '?',
+		SF_APPEND: 'a',
+		SF_NOUNLINK: 'u',
+		SF_ARCHIVED: '?',
+		SF_IMMUTABLE: 'i',
+		SF_SNAPSHOT: '?',
+	}
+
+	def has_flags(filename, flags):
+		""" take a list of flags an return ``True`` if the file has all
+			of them, else ``False``. """
+
+		assert type(flags) == types.ListType
+
+		out, err = process.execute(['lsattr', filename])
+		outflags = out.strip().split(' ')[0].replace('-', '')
+		for flag in flags:
+			if shellflags[flag] not in outflags:
+				return False
+		return True
+
+backup_ext = '.licorn.bak'
+def clone_stat(src, dst, clone_owner=True, clone_group=True, clone_acl=False):
+	""" Does the same job as :meth:`shutil.copystat`, but preserves owner,
+		group and posix1e ACL if not told otherwise.
+
+		.. versionadded:: 1.3
+
+		.. note:: as of version 1.3, cloning ACL is not yet implemented because
+			we don't need it.
+	"""
+
+	src_stat = os.stat(src)
+	src_mode = S_IMODE(src_stat.st_mode)
+
+	if hasattr(os, 'utime'):
+		os.utime(dst, (src_stat.st_atime, src_stat.st_mtime))
+
+	if hasattr(os, 'chmod'):
+		os.chmod(dst, src_mode)
+
+	if hasattr(os, 'chflags') and hasattr(st, 'st_flags'):
+		try:
+			os.chflags(dst, src_stat.st_flags)
+
+		except OSError, why:
+			if (not hasattr(errno, 'EOPNOTSUPP') or
+				why.errno != errno.EOPNOTSUPP):
+				raise
+
+	if clone_owner or clone_group:
+		dst_stat = os.stat(dst)
+		os.chown(dst, src_stat.st_uid if clone_owner else dst_stat.st_uid,
+					src_stat.st_gid if clone_group else dst_stat.st_gid)
+
+	if clone_acl:
+		logging.warning(_(u'Cloning ACLs is not yet implemented in fsapi.clone_stat(), sorry.'))
 def backup_file(filename):
-	""" make a backup of a given file. """
-	bckp_ext='.licorn.bak'
-	backup_name = filename + bckp_ext
-	open(backup_name, 'w').write(open(filename).read())
-	os.chmod(backup_name, os.lstat(filename).st_mode)
+	""" Make a backup copy of a given file, with the extension :file:`.licorn.bak`.
+
+		File contents are copied verbatim. Unix mode is preserved. ACLs are not
+		guaranteed to be preserved because no particular operation is done
+		on them.
+
+		.. warning:: backup filename extension is currently fixed, without any
+			timestamp. Thus, there can only be one backup at a time for a given
+			file.
+	"""
+	backup_name = filename + backup_ext
+
+	open(backup_name, 'wb').write(open(filename, 'rb').read())
+
+	clone_stat(filename, backup_name)
+
 	logging.progress(_(u'Backed up {orig} as {backup}.').format(
 			orig=stylize(ST_PATH, filename),
 			backup=stylize(ST_COMMENT, backup_name)))
@@ -1087,3 +1708,125 @@ def touch(fname, times=None):
 	"""
 	with file(fname, 'a'):
 		os.utime(fname, times)
+def remove_files(*args):
+	""" Remove some files whose names are passed as string arguments, and
+		raise exceptions only if the deletion failed for a real reason.
+
+		Notably, failing to remove a file because it doesn't exist isn't a
+		real reason, thus this error is muted and the operation continue
+		as if there was no problem.
+	"""
+
+	for filename in args:
+		try:
+			os.unlink(filename)
+
+		except (IOError, OSError), e:
+			if e.errno != errno.ENOENT:
+				raise
+class BlockDeviceID(object):
+	""" UUID="c2576193-0b70-497a-b998-870b6096b55d" TYPE="swap"  """
+	__slots__ = ('name', 'uuid', 'type')
+	def __init__(self, *args, **kwargs):
+		attrs = kwargs.pop('from_line').split(' ')
+
+		# remove ending ':'
+		self.name = attrs[0][:-1]
+
+		for attr in attrs[1:]:
+			name, value = attr.split('=')
+
+			# remove surrounding '"'
+			setattr(self, name.lower(), value[1:-1])
+def find_mount_point(origpath):
+	while not os.path.ismount(origpath):
+		origpath = os.path.dirname(origpath)
+	return origpath
+def remount(mount_point):
+	""" Remount a given `mount_point` with ``-o remount``, generally to
+		commit a change to :file:`/etc/fstab`.
+
+		:param mount_point: a string, like '/' or '/home'. No checking is made
+			at all about the mount point validity. It's up to you to find the
+			right path with :func:`find_mount_point`.
+	"""
+	process.execute([ 'mount', '-o', 'remount', mount_point ])
+	logging.notice(_(u'Remounted {0} to apply new mount options.').format(
+					stylize(ST_PATH, mount_point)))
+def check_needed_fstab_options(mount_point, mount_options):
+	""" Check :file:`/etc/fstab` to see if the given mount_point has the wanted
+		mount options or not.
+
+		In case it doesn't, `fstab` will be edited and the options added,
+		one by one. If it already has one or more, only the missing will
+		be inserted.
+
+		The function returns a list of really inserted options, or an empty
+		list if no option was inserted.
+
+		:param mount_point: a string, like '/' or '/home'.
+		:param mount_options: an iterable containing strings like 'acl', 'rsize=8192'…
+
+		.. note:: :file:`/etc/fstab` will be backed up with :func:`backup_file`
+			before processing.
+	"""
+	altered = []
+
+	fstab = open('/etc/fstab', 'r').read()
+
+	# NOTE: don't add '^' nor '$' to a find/replace RE.
+	replace_re = re.compile(r'''
+						(
+						[-_=\w/]+	# device, can be `/dev/…` or `UUID=…`
+							\s+
+						{0}			# {{mount_point}}
+							\s+
+						\w+			# fs type
+							\s+
+						)			# keep everything until now
+						([-\w,=]+)	# keep current mount options separated
+						(.*)		# and keep anything until end of line
+						'''.format(mount_point), re.X)
+
+	for mount_option in mount_options:
+		if re.findall(r'\s+{0}\s+.*[^\w]{1}[^\w].*'.format(
+				mount_point, mount_option), fstab) == []:
+			fstab = replace_re.sub(r'\1\2,{0}\3'.format(mount_option), fstab)
+
+			altered.append(mount_option)
+
+	if altered:
+		backup_file('/etc/fstab')
+
+		with open('/etc/fstab', 'wb') as f:
+			f.write(fstab)
+
+		logging.notice(_(u'Added option(s) {0} to {1} permanently.').format(
+							','.join(stylize(ST_ATTR, x) for x in altered),
+							stylize(ST_PATH, mount_point)))
+
+	return altered
+
+@cache.cached(cache.half_a_day)
+def blkid(partition=None, *args, **kwargs):
+	"""	Return either the full :program:`blkid` output, converted to
+		simple objects,
+
+		Or return or just the line for the asked partition,
+		as a simple object.
+
+		:param partition: a string, containing something like ``sda1`` or
+			``/dev/sda1``.
+	"""
+	result = process.execute([ 'blkid' ])[1].split('\n')
+	blkids = []
+
+	for res in result:
+		bid = BlockDeviceID(from_line=res)
+		if partition and bid.name.endswith(partition):
+			return bid
+		blkids.append(partition)
+
+	return blkids
+
+
