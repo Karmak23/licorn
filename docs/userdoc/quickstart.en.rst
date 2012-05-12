@@ -1,7 +1,9 @@
+
 .. _quickstart.en:
 
 .. highlight:: bash
 
+==================================
 Quickstarter: Licorn® in 3 minutes
 ==================================
 
@@ -11,8 +13,10 @@ You can quickstart with the :abbr:`CLI Command Line Interface`, which is my pref
 
 The :abbr:`WMI Web Management Interface` is perfect for normal persons: it has less functionnalities and is totally fool-proof (no root acces). Some say it's a nice piece of modern web interface.
 
+.. _quickstart.cli.en:
+
 CLI Quickstarter
-----------------
+================
 
 Creating 3 users and putting them together in a work group just created::
 
@@ -69,13 +73,16 @@ Clean everything just done in this quickstarter::
 
 Now you can :ref:`discover more about the CLI <cli>`.
 
+.. _quickstart.wmi.en:
+
 WMI Quickstarter
-----------------
+================
 
 The WMI offers high-level but limited-set of functionnality compared to CLI. It is aimed at non-professionnal users and occasionnal system administrators. It's fully internationnalized and localized (currently English and French, but more translations are welcome).
 
 To connect to the WMI, you must identify yourself as a user member of group ``licorn-wmi``. To do this, provided you're already an admin of the local machine, just run::
 
+	# this step has already been done by the developer installation script
 	add user <my_login> licorn-wmi
 
 Then, using the WMI is pretty straightforward: `just head to it with your web browser <http://localhost:3356/>`_ and log in with your standard account.

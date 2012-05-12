@@ -12,7 +12,7 @@ L'audience principale de Licorn® est composée d'administrateurs système.
 	../cli/index.fr
 	../wmi/index.fr
 	../configuration.fr
-	../daemon.fr
+	../daemon/index.fr
 	../extensions/index.fr
 
 «Lights on…»

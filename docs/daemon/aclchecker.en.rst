@@ -1,4 +1,4 @@
-.. _aclchecker:
+.. _aclchecker.dev.en:
 
 ==========
 ACLChecker

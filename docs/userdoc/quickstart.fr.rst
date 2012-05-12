@@ -13,6 +13,8 @@ Vous pouvez démarrer avec la prise en main des outils :abbr:`CLI Command Line I
 
 La :abbr:`WMI Web Management Interface` (Interface de Gestion par le Web) est parfaite pour les gens normaux: elle offre moins de fonctionnalité mais elle est totalement blindée (aucun accès root ou équivalent, impossible de casser le système avec) it has less functionnalities and is totally fool-proof (no root acces). Some say it's a nice piece of modern web interface.
 
+.. _quickstart.cli.fr:
+
 Prise en main de la CLI
 =======================
 
@@ -82,6 +84,8 @@ Nettoyons maintenant tous les exemples utilisés dans cette prise en main::
 
 Maintenant, vous pouvez passer à :ref:`la documentation complète de la CLI <cli.fr>` pour en découvrir toutes les fonctionnalités..
 
+.. _quickstart.wmi.fr:
+
 Prise en main rapide de la WMI
 ==============================
 
@@ -94,6 +98,7 @@ Autoriser les connexions à la WMI
 
 Pour vous connecter à la WMI, vous aurez besoin de faire partie d'un groupe spécial nommé ``licorn-wmi``. Pour vous rendre membre de ce groupe (j'espère que vous êtes déjà administrateur de la machine, sinon ça ne marchera pas), tapez ::
 
+	# cette étape est déjà effectuée dans l'installation développeur
 	add user <mon_identifiant> licorn-wmi
 
 Après ça, utiliser la WMI est assez simple: `dirigez votre navigateur internet vers la WMI <http://localhost:3356/>`_ et utilisez votre identifiant et votre mot de passe pour y entrer.

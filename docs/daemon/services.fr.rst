@@ -1,4 +1,6 @@
 
+.. _daemon.services.fr:
+
 =======================
 Le mécanisme de Service
 =======================

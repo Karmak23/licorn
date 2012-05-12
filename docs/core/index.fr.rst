@@ -43,3 +43,5 @@ Classes abstraites et concepts
 .. toctree::
 
 	abstract.fr
+
+En attendant la traduction française de la documentation, :ref:`celle en anglais est disponible<core.abstract.en>`.
