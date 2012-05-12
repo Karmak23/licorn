@@ -13,21 +13,22 @@ Extensions can "extend" :ref:`CoreController`s
 """
 
 import time
-from threading import RLock, Timer
+from threading import Timer
+from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import process
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.base      import Singleton
-from licorn.foundations.constants import services, svccmds
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.events    import LicornEvent
+from licorn.foundations.base      import DictSingleton
+from licorn.foundations.constants import services, svccmds, roles, priorities
 
 from licorn.core                  import LMC
 from licorn.core.classes          import ModulesManager, CoreModule
-from licorn.daemon                import roles
 
-class ExtensionsManager(Singleton, ModulesManager):
+class ExtensionsManager(DictSingleton, ModulesManager):
 	""" Store and manage all Licorn® extensions instances. For now, this
 		manager does nothing more than the
 		:class:`~licorn.core.classes.ModulesManager`.
@@ -39,21 +40,31 @@ class ExtensionsManager(Singleton, ModulesManager):
 		.. versionadded:: 1.3
 	"""
 	def __init__(self):
-		assert ltrace(TRACE_EXTENSIONS, '| ExtensionsManager.__init__()')
-		ModulesManager.__init__(self,
+
+		assert ltrace_func(TRACE_EXTENSIONS)
+
+		super(ExtensionsManager, self).__init__(
 				name='extensions',
 				module_type='extension',
 				module_path=__path__[0],
 				module_sym_path='licorn.extensions'
 			)
-	def enable_extension(self, name):
-		assert ltrace(TRACE_EXTENSIONS,
-			'| ExtensionsManager.enable_extension(%s)' % name)
-		return ModulesManager.enable_module(self, name)
-	def disable_extension(self, name):
-		assert ltrace(TRACE_EXTENSIONS,
-			'| ExtensionsManager.disable_extension(%s)' % name)
-		return ModulesManager.disable_module(self, name)
+	def enable_extension(self, extension_name):
+		assert ltrace_func(TRACE_EXTENSIONS)
+
+		if ModulesManager.enable_module(self, extension_name):
+			LicornEvent('extension_enabled', extension=self[extension_name]).emit(priorities.HIGH)
+			return True
+
+		return False
+
+	def disable_extension(self, extension_name):
+		assert ltrace_func(TRACE_EXTENSIONS)
+		if ModulesManager.disable_module(self, extension_name):
+			LicornEvent('extension_disabled',	extension=self[extension_name]).emit(priorities.HIGH)
+			return True
+
+		return False
 class LicornExtension(CoreModule):
 	""" The bare minimum attributes and methods for an extension.
 
@@ -63,6 +74,11 @@ class LicornExtension(CoreModule):
 
 		.. versionadded:: 1.2.4
 	"""
+
+	# no special attribute here, but we need to propagate the _pickle_ for
+	# subclasses, in case things change one day.
+	#_lpickle_ =
+
 	def __init__(self, name='extension', controllers_compat=[]):
 		assert ltrace(TRACE_EXTENSIONS, '| LicornExtension.__init__()')
 		CoreModule.__init__(self,
@@ -70,13 +86,6 @@ class LicornExtension(CoreModule):
 				manager=LMC.extensions,
 				controllers_compat=controllers_compat
 			)
-
-		#: add a locking capability for multi-thread safety.
-		self.lock = RLock()
-	def __str__(self):
-		return 'extension %s' % stylize(ST_NAME, self.name)
-	def __repr__(self):
-		return 'extension %s' % stylize(ST_NAME, self.name)
 	def load(self, server_modules, batch=False, auto_answer=None):
 		""" TODO.
 
@@ -85,7 +94,7 @@ class LicornExtension(CoreModule):
 
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '| load()')
 
-		if LMC.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 			if self.initialize():
 				self.enabled = self.is_enabled()
 		else:
@@ -107,18 +116,18 @@ class ServiceExtension(LicornExtension):
 		services.UPSTART: {
 			#: the position in the list where the service name will be inserted.
 			svccmds.POSITION : 1,
-			svccmds.START    : ['start' ],
-			svccmds.STOP     : ['stop' ],
-			svccmds.RESTART  : ['restart' ],
-			svccmds.RELOAD   : ['reload' ]
+			svccmds.START    : [ 'start' ],
+			svccmds.STOP     : [ 'stop' ],
+			svccmds.RESTART  : [ 'restart' ],
+			svccmds.RELOAD   : [ 'reload' ]
 		},
 
 		services.SYSV: {
 			svccmds.POSITION : 1,
-			svccmds.START    : ['service', 'start'],
-			svccmds.STOP     : ['service', 'stop' ],
-			svccmds.RESTART  : ['service', 'restart' ],
-			svccmds.RELOAD   : ['service', 'reload' ]
+			svccmds.START    : [ 'service', 'start' ],
+			svccmds.STOP     : [ 'service', 'stop' ],
+			svccmds.RESTART  : [ 'service', 'restart' ],
+			svccmds.RELOAD   : [ 'service', 'reload' ]
 		},
 	}
 
@@ -159,15 +168,11 @@ class ServiceExtension(LicornExtension):
 
 		#: to avoid running multiple service calls, and delayed run to
 		#: interfere with a newly created one.
-		self.command_lock = RLock()
+		self.locks.command = RLock()
 
 		#: the current delayed command, stored to raise an exception if another
 		#: in ran while this one has not yet completed.
 		self.planned_operation = None
-
-		#: the reference to the :class:`~threading.Timer` thread, to be able to
-		#: wipe old ones to reclaim system resources.
-		self.command_thread = None
 
 		#: the delay the timer will wait before trigerring the service command.
 		#: any repetition of the same command within this delay will reset it.
@@ -290,31 +295,40 @@ class ServiceExtension(LicornExtension):
 					time.sleep(0.1)
 					waited += 0.1
 
-			with self.command_lock:
+			with self.locks.command:
 				# reset the timer.
-				self.command_thread.cancel()
-				del self.command_thread
+				try:
+					self.threads.command.cancel()
+					del self.threads.command
 
-				self.command_thread = Timer(self.delay,
+				except (AttributeError, KeyError):
+					# no timer launched.
+					pass
+
+				self.threads.command = Timer(self.delay,
 							run_service_command, kwargs=thread_kwargs)
-				self.command_thread.start()
+				self.threads.command.start()
 
 		else:
-			with self.command_lock:
+			with self.locks.command:
 				self.planned_operation = command_type
 
 				assert ltrace(globals()['TRACE_' + self.name.upper()], '| service_command: delaying '
 					'operation in case there are others coming after this one.')
 
-				if self.command_thread:
+				try:
 					# wipe any traces of older job to reclaim resources.
-					del self.command_thread
+					del self.threads.command
 
-				self.command_thread = Timer(self.delay,
+				except (AttributeError, KeyError):
+					# happens when no command thread has been started yet.
+					pass
+
+				self.threads.command = Timer(self.delay,
 								run_service_command, kwargs=thread_kwargs)
-				self.command_thread.start()
+				self.threads.command.start()
 def run_service_command(command, pre_message=None, post_message=None,
-		svcext=None):
+															svcext=None):
 	""" This is the "real" function ran by the :class:`~threading.Timer`
 		thread, managed by the :meth:`~ServiceExtension.service_command`
 		method.
@@ -323,7 +337,7 @@ def run_service_command(command, pre_message=None, post_message=None,
 		system-level command to execute the service operation.
 
 		.. note:: this function will acquire/release the
-			:attr:`ServiceExtension.command_lock` lock, to avoid
+			:attr:`ServiceExtension.locks.command` lock, to avoid
 			interferences during the service operation (which can be long,
 			depending on the service).
 
@@ -333,7 +347,7 @@ def run_service_command(command, pre_message=None, post_message=None,
 	assert ltrace(TRACE_PROCESS, '| run_service_command(%s)' % command)
 
 	if svcext is not None:
-		svcext.command_lock.acquire()
+		svcext.locks.command.acquire()
 
 	if pre_message:
 		logging.notice(pre_message)
@@ -349,4 +363,4 @@ def run_service_command(command, pre_message=None, post_message=None,
 
 	if svcext is not None:
 		svcext.planned_operation = None
-		svcext.command_lock.release()
+		svcext.locks.command.release()

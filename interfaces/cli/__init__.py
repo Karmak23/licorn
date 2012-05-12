@@ -8,43 +8,25 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-import gettext
-gettext.install('licorn', unicode=True)
-
 import os, signal, sys, time, operator
-import Pyro.core, Pyro.util, Pyro.configuration
 
-from threading import Thread, current_thread
-
-from licorn.foundations           import options, exceptions, logging
-from licorn.foundations           import pyutils, hlstr, ttyutils
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations           import settings, options, logging
+from licorn.foundations           import ttyutils, hlstr
+from licorn.foundations.base      import ObjectSingleton
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.styles    import *
-from licorn.foundations.constants import filters, verbose
-from licorn.foundations.messaging import MessageProcessor
+from licorn.foundations.constants import verbose
 
 from licorn.core           import LMC
+from licorn.interfaces     import LicornInterfaceBaseApplication
 from licorn.interfaces.cli import argparser
 
-#: Proxy to `daemon.cmdlistener.rwi` used in all CLI tools to transmit commands
-#: to the Licorn® daemon.
-RWI = None
-
-#: the local listener, which receives output from the daemon.
-_listener = None
-
-#: various Pyro related variables.
-pyroStarted = False
-pyroExit = 0
-
 class CliInteractor(ttyutils.LicornInteractor):
-	def __init__(self, opts=None, opts_lock=None):
+	def __init__(self, listener, opts=None, opts_lock=None):
 		super(CliInteractor, self).__init__('interactor')
 
-		global _listener
-
-		self.listener = _listener
+		self.listener = listener
 
 		if opts is None:
 			self.handled_chars = {
@@ -78,7 +60,8 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose += 1
 
 			# the daemon side (remote Pyro thread)
-			LMC.system.set_listener_verbose(
+			LMC.rwi.set_listener_verbose(
+						self.listener.getAttrProxy(),
 						self.listener.verbose)
 
 			logging.notice(_(u'{0}: increased '
@@ -104,7 +87,8 @@ class CliInteractor(ttyutils.LicornInteractor):
 			self.listener.verbose -= 1
 
 			# the daemon side (remote thread)
-			LMC.system.set_listener_verbose(
+			LMC.rwi.set_listener_verbose(
+						self.listener.getAttrProxy(),
 						self.listener.verbose)
 
 			logging.notice(_(u'{0}: decreased '
@@ -122,55 +106,32 @@ class CliInteractor(ttyutils.LicornInteractor):
 	lower_verbose_level.__doc__ = _(u'decrease the daemon console verbosity level')
 	def quit_interactor(self):
 		self._stop_event.set()
+		# be sure to wake up the select.select() waiting on stdin...
+		# see http://stackoverflow.com/questions/4660756/interrupting-select-to-add-another-socket-to-watch-in-python
+		os.write(self.exit_pipe[1], 'quit')
 	quit_interactor.__doc__ = _(u'end the interactive session cleanly')
-def PyroLoop(daemon):
-	global pyroExit
-	daemon.requestLoop(lambda: not pyroExit, 0.1)
-def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
-	""" common structure for all licorn cli tools. """
+class LicornCliApplication(ObjectSingleton, LicornInterfaceBaseApplication):
+	def __init__(self, *args, **kwargs):
+		LicornInterfaceBaseApplication.__init__(self)
+		self.run(*args, **kwargs)
+	def parse_arguments(self, functions, app_data, giant_locked=False, expected_min_args=3, *args, **kwargs): #CLI
+		""" CLI specific """
+		try:
+			return getattr(argparser, functions[self.mode][0])(app=app_data)
 
-	global pyroStarted
-	global pyroExit
-	global RWI
-	global _listener
-
-	def cli_exec_function():
-		if functions[mode][1] is None:
-			functions[mode][2](opts, args)
-
-		else:
-			getattr(RWI, functions[mode][1])(opts=opts, args=args)
-
-
-	assert ltrace(TRACE_CLI, '> cli_main(%s)' % sys.argv[0])
-
-	cli_main_start_time = time.time()
-
-	# This 'utf-8' thing is needed for a bunch of reasons in our code. We do
-	# unicode stuff internally and need utf-8 to deal with real world problems.
-	# Ascii comes from another age…
-	# We need to set this here, because before it was done ONCE by the
-	# configuration object, but with the pyro changes, configuration is now only
-	# initialized on the daemon side, and CLI doesn't benefit of it.
-	if sys.getdefaultencoding() == "ascii":
-		reload(sys)
-		sys.setdefaultencoding("utf-8")
-
-	try:
-		# this is the first thing to do, else all help and usage will get colors
-		# even if no_colors is True, because it is parsed too late.
-		if "--no-colors" in sys.argv:
-			options.SetNoColors(True)
-
+		except IndexError, e:
+			sys.argv.append("--help")
+			argparser.general_parse_arguments(app_data)
+	def main_pre_parse_arguments(self, functions, app_data, giant_locked=False, expected_min_args=3, *args, **kwargs):
 		try:
 			# we need to copy the keys because they will be modified by the
 			# function.
-			mode = hlstr.word_match(sys.argv[1].lower(), sorted(functions.keys()))
+			self.mode = hlstr.word_match(sys.argv[1].lower(), sorted(functions.keys()))
 
 		except IndexError:
-			mode = None
+			self.mode = None
 
-		if mode is None:
+		if self.mode is None:
 
 			if len(sys.argv) < expected_min_args:
 				# auto-display usage when called with no arguments or just one.
@@ -181,117 +142,35 @@ def cli_main(functions, app_data, giant_locked=False, expected_min_args=3):
 				logging.warning(_(u'Unknow mode %s!') % sys.argv[1])
 
 			argparser.general_parse_arguments(app_data, sorted(functions.iterkeys()))
+			sys.exit(1)
 
-		else:
+		# CLI tools need the RWI to be connected to parse arguments.
+		self.connect()
+	def main_body(self, functions, app_data, giant_locked=False, expected_min_args=3, *args, **kwargs): # CLI
 
-			assert ltrace(TRACE_CLI, '  cli_main: connecting to core.')
-			RWI = LMC.connect()
+		def cli_exec_function():
+			if functions[self.mode][1] is None:
 
-			try:
-				(opts, args) = getattr(argparser, functions[mode][0])(app=app_data)
+				try:
+					self.resync_specific = functions[self.mode][3]
 
-			except IndexError, e:
-				sys.argv.append("--help")
-				argparser.general_parse_arguments(app_data)
+				except IndexError:
+					pass
 
-			options.SetFrom(opts)
+				functions[self.mode][2](self.opts, self.args, listener=self.local_listener)
 
-			# options._rwi is needed for the Interactor
-			options._rwi = RWI
+			else:
+				getattr(self.RWI, functions[self.mode][1])(opts=self.opts, args=self.args)
 
-			assert ltrace(TRACE_CLI, '  cli_main: starting pyro!')
-			pyroStarted = True
-			pyro_start_time = time.time()
+		cmd_start_time = time.time()
 
-			# this is important for Pyro to be able to create temp files
-			# in a self-writable directory, else it will lamentably fail
-			# because default value for PYRO_STORAGE is '.', and the user
-			# is not always positionned in a welcomed place.
-			Pyro.config.PYRO_STORAGE=os.getenv('HOME', os.path.expanduser('~'))
-
-			Pyro.core.initServer()
-			Pyro.core.initClient()
-
-			client_daemon = Pyro.core.Daemon()
-			# opts._listener is needed for the Interactor
-			_listener = MessageProcessor(verbose=opts.verbose)
-
-			client_daemon.connect(_listener)
-
-			# NOTE: an AttrProxy is needed, not a simple Proxy. Because the
-			# daemon will check listener.verbose, which is not accessible
-			# through a simple Pyro Proxy.
-			if hasattr(LMC, 'rwi'):
-				LMC.rwi.set_listener(_listener.getAttrProxy())
-			LMC.system.set_listener(_listener.getAttrProxy())
-
-			msgth = Thread(target=PyroLoop, args=(client_daemon,))
-			msgth.start()
-
-			assert ltrace(TRACE_TIMINGS, '@pyro_start_delay: %.4fs' % (
-				time.time() - pyro_start_time))
-			del pyro_start_time
-
-			# not used yet, but kept for future use.
-			#server=Pyro.core.getAttrProxyForURI(
-			#	"PYROLOC://localhost:%s/msgproc" %
-			#		configuration.licornd.pyro.port)
-
-			if giant_locked:
-				from licorn.foundations.classes import FileLock
-				with FileLock(configuration, app_data['name'], 10):
-					cli_exec_function()
-
-			else :
-				cmd_start_time = time.time()
+		if giant_locked:
+			from licorn.foundations.classes import FileLock
+			with FileLock(LMC.configuration, self.app_data['name'], 10):
 				cli_exec_function()
 
-			LMC.release()
+		else :
+			cli_exec_function()
 
-			assert ltrace(TRACE_TIMINGS, '@cli_main_exec_time: %.4fs' % (
-				time.time() - cmd_start_time))
-			del cmd_start_time
-
-	except exceptions.NeedHelpException, e:
-		logging.warning(e)
-		sys.argv.append("--help")
-		getattr(argparser, functions[mode][0])(app=app_data)
-
-	except KeyboardInterrupt, e:
-		t = current_thread()
-		if hasattr(t, 'restore_terminal'):
-			t.restore_terminal()
-		logging.warning(_(u'Interrupted, cleaning up!'))
-
-	except exceptions.LicornError, e:
-		logging.error('%s (%s, errno=%s).' % (
-			str(e), stylize(ST_SPECIAL, str(e.__class__).replace(
-			"<class '",'').replace("'>", '')), e.errno), e.errno,
-			full=True if options.verbose > 2 else False,
-			tb=''.join(Pyro.util.getPyroTraceback(e)
-				if options.verbose > 2 else ''))
-
-	except exceptions.LicornException, e:
-		logging.error('%s: %s (errno=%s).' % (
-			stylize(ST_SPECIAL, str(e.__class__).replace(
-			"<class '",'').replace("'>", '')),
-			str(e), e.errno), e.errno, full=True,
-			tb=''.join(Pyro.util.getPyroTraceback(e)))
-
-	except Exception, e:
-		logging.error('%s: %s.' % (
-			stylize(ST_SPECIAL, str(e.__class__).replace(
-			"<class '",'').replace("<type '",'').replace("'>", '')),
-			str(e)), 254, full=True, tb=''.join(Pyro.util.getPyroTraceback(e)))
-
-	finally:
-		assert ltrace(TRACE_CLI, '  cli_main: stopping pyro.')
-		if pyroStarted:
-			pyroExit = 1
-			msgth.join()
-
-	assert ltrace(TRACE_TIMINGS, '@cli_main(): %.4fs' % (
-		time.time() - cli_main_start_time))
-	del cli_main_start_time
-
-	assert ltrace(TRACE_CLI, '< cli_main(%s)' % sys.argv[0])
+		assert ltrace(TRACE_TIMINGS, '@cli_main_exec_time: %.4fs' % (
+			time.time() - cmd_start_time))

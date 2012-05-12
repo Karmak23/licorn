@@ -10,21 +10,20 @@ Licorn extensions: squid - http://docs.licorn.org/extensions/squid.html
 
 import os, netifaces
 
-from licorn.foundations.pyutils   import add_or_dupe_enumeration
-from licorn.foundations           import logging, exceptions, readers, process, network
+from licorn.foundations           import logging, exceptions, settings
+from licorn.foundations           import readers, process, network
+from licorn.foundations.ltrace    import *
 from licorn.foundations.styles    import *
-from licorn.foundations.base      import Singleton, Enumeration
+from licorn.foundations.ltraces   import *
+from licorn.foundations.base      import ObjectSingleton, Enumeration
 from licorn.foundations.classes   import ConfigFile
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.constants import services, svccmds
+from licorn.foundations.pyutils   import add_or_dupe_enumeration
+from licorn.foundations.constants import services, svccmds, priorities, roles, distros
 
 from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
-from licorn.daemon                import roles
 
-
-class SquidExtension(Singleton, ServiceExtension):
+class SquidExtension(ObjectSingleton, ServiceExtension):
 	""" A proxy extension using squid.
 
 		On the server:
@@ -51,8 +50,10 @@ class SquidExtension(Singleton, ServiceExtension):
 			name='squid',
 			service_name='squid',
 			service_type=services.UPSTART
+							if LMC.configuration.distro == distros.UBUNTU
+							else services.SYSV
 		)
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '| __init__()')
+		assert ltrace_func(TRACE_EXTENSIONS)
 		self.server_only=False
 
 		# no particular controller for this extension, it is a
@@ -61,12 +62,12 @@ class SquidExtension(Singleton, ServiceExtension):
 
 		# we could be squid v2 or v3.
 
-		self.service_name = 'squid'
-		self.paths.squid_conf = '/etc/squid/squid.conf'
+		self.service_name      = 'squid'
+		self.paths.squid_conf  = '/etc/squid/squid.conf'
 		self.paths.squid3_conf = '/etc/squid3/squid.conf'
-		self.paths.squid_bin = '/usr/sbin/squid'
-		self.paths.squid3_bin = '/usr/sbin/squid3'
-		self.paths.squid_pid = '/var/run/squid.pid'
+		self.paths.squid_bin   = '/usr/sbin/squid'
+		self.paths.squid3_bin  = '/usr/sbin/squid3'
+		self.paths.squid_pid   = '/var/run/squid.pid'
 
 		self.defaults_conf = self.get_defaults_conf()
 
@@ -131,11 +132,11 @@ class SquidExtension(Singleton, ServiceExtension):
 			('refresh_pattern', "-i (/cgi-bin/|\?) 0     0%      0")
 		]
 
-		if LMC.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 			self.defaults = Enumeration()
 			for network in self.defaults_conf.subnet:
 				add_or_dupe_enumeration(self.defaults, 'acl',
-					'localnetwork src %s' % network),
+										'localnetwork src %s' % network),
 			for key, value in self.wanted_default_conf:
 				add_or_dupe_enumeration(self.defaults, key, value)
 
@@ -146,6 +147,8 @@ class SquidExtension(Singleton, ServiceExtension):
 	def get_defaults_conf(self):
 		""" TODO """
 
+		assert ltrace_func(TRACE_SQUID)
+
 		conf_dict = Enumeration()
 		conf_dict['port']            = '3128'
 		conf_dict['client_file']     = '/etc/environment'
@@ -153,7 +156,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		conf_dict['client_cmd_http'] = 'http_proxy'
 		conf_dict['client_cmd_ftp']  = 'ftp_proxy'
 
-		if LMC.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 			conf_dict['subnet'] = []
 
 			for iface in network.interfaces():
@@ -189,7 +192,7 @@ class SquidExtension(Singleton, ServiceExtension):
 		""" TODO """
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '> initialize()')
 
-		if LMC.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 
 			if os.path.exists(self.paths.squid_bin):
 				self.available = True
@@ -365,13 +368,11 @@ class SquidExtension(Singleton, ServiceExtension):
 						server.
 					- http_access deny all : disable access to others.
 		"""
-		assert ltrace(globals()['TRACE_' + self.name.upper()], '> check(batch=%s, auto_answer=%s)' %
-			(batch, auto_answer))
-		if LMC.configuration.licornd.role == roles.SERVER:
+		assert ltrace_func(TRACE_SQUID)
 
-
+		if settings.role == roles.SERVER:
 			logging.progress('Checking good default values in %s…' %
-					stylize(ST_PATH, self.paths.squid_conf))
+									stylize(ST_PATH, self.paths.squid_conf))
 
 			need_rewrite = False
 
@@ -444,6 +445,10 @@ class SquidExtension(Singleton, ServiceExtension):
 		""" TODO """
 		self.check(batch=batch, auto_answer=auto_answer)
 		self.service(svccmds.START)
+		self.enabled = True
+		return True
 	def disable(self):
 		# TODO : self.remove_configuration()
 		self.service(svccmds.STOP)
+		self.enabled = False
+		return True

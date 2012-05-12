@@ -11,17 +11,18 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-from licorn.interfaces.cli import cli_main
+from licorn.interfaces.cli import LicornCliApplication
 
 def chk_main():
 
-	cli_main({
+	LicornCliApplication({
 		'users':         ('chk_user_parse_arguments', 'chk_user'),
 		'groups':        ('chk_group_parse_arguments', 'chk_group'),
 		'profiles':      ('chk_profile_parse_arguments', 'chk_profile'),
 		'configuration': ('chk_configuration_parse_arguments',
 														'chk_configuration'),
 		'volumes':       ('chk_volume_parse_arguments', 'chk_volume'),
+		'system':		 ('chk_system_parse_arguments', 'chk_system'),
 		}, {
 		"name"        : "licorn-check",
 		"description" : "Licorn Check Entries",
