@@ -278,7 +278,7 @@ def first_licornd_run():
 
 	# follow the log and launch licornd
 	bg_thread(['tail', '-f', '/var/log/licornd.log'])
-	execute(['/usr/sbin/licornd', '-rvv'])
+	execute(['/usr/sbin/licornd', '-rv'])
 
 	counter = 1
 
