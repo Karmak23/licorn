@@ -1,0 +1,18 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- from 'widgets/common.html' import countdown -%}
+
+<div>
+    <h1>{{_('Documentation') }}</h1>
+
+    <p>{{ _('You will find online documentation at <a href="http://docs.licorn.org/">http://docs.licorn.org/</a>, available in many languages.') }}</p>
+</div>
+<div>
+	<h1>{{ _('System status') }}</h1>
+
+	<p>{{ _('Up and running since') }} <strong>{{ countdown(uptime, limit=9999999.9, show_seconds=False) }}</strong>.</p>
+
+	<p>Daemon uptime: {{ countdown(daemon_status.uptime, limit=9999999.9) }}</p>
+
+</div>

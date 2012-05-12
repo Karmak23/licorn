@@ -1,0 +1,69 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- extends 'base.html' -%}
+
+{%- block base_media -%}
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/menu.css">
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/dialog.css" />
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/main.css" />
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/subcontent.css" />
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/forms.css" />
+
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/ajax.css" />
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery-ui_lightness.css" />
+
+	<script language="javascript" type="text/javascript" src="/media/js/jquery-1.7.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.color.20111012.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.easing-1.3.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.confirm-1.3.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.base64.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.preload-0.95.min.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/bgpos.min.js"></script>
+
+	<script type="text/javascript" src="{{ url_for('django.views.i18n.javascript_catalog', args=['djangojs']) }}"></script>
+
+	<script language="javascript" type="text/javascript" src="/media/js/utils.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/push.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/menu.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/main.js"></script>
+{%- endblock -%}
+
+{%- block end_media -%}
+	{#- "LESS" needs to be loaded last, in case extended_media loads more less-CSS. -#}
+	<script language="javascript" type="text/javascript" src="/media/js/less-1.1.5.min.js"></script>
+{%- endblock -%}
+
+
+{%- block body -%}
+
+	{%- include 'sidebar.html' -%}
+
+	<div id="content">
+		{%- block content -%}
+			<div id="notification"></div>
+			<div id="dialog"></div>
+			<div id="dialog-content"></div>
+			<div id="main_content">
+				{%- block main_content -%}
+					{%- if main_content_template -%}
+						{%- include main_content_template -%}
+
+					{%- endif -%}
+				{%- endblock -%}
+			</div><!-- end main_content -->
+			<div id="sub_content_wrapper">
+				<div id="sub_content">
+					{%- block sub_content -%}
+						{%- if sub_content_template -%}
+							{%- include sub_content_template -%}
+
+						{%- endif -%}
+					{%- endblock -%}
+				</div><!-- end sub_content -->
+			</div><!-- end sub_content_wrapper -->
+		{%- endblock -%}
+	</div><!-- end content -->
+
+{%- endblock -%}
+

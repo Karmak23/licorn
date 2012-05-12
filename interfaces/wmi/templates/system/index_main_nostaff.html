@@ -1,0 +1,33 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+<div>
+
+	<h1>{{ _('My Informations') }}</h1>
+
+	<div id='table' name='{{ user_uid }}'>
+	<br />
+
+		{%- for field in form.visible_fields() -%}
+			{%- set immutable = field.name in form.immutables -%}
+				<div class='sub_content_line big_line'>
+					<div class='sub_content_half_line'>
+						<strong>{{ field.label_tag() }}</strong>{{ _('(fixed)') if immutable }}</div>
+					<div class='sub_content_half_line align_right'>
+						{%- if immutable -%}
+							{{ field.value() }}
+						{%- else -%}
+							{{ field }}
+						{%- endif -%}
+
+					</div>
+				</div>
+		{%- endfor -%}
+	</div>
+
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+		init_instant_apply('users');
+	});
+</script>

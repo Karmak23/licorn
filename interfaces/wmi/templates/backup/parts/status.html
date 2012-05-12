@@ -1,0 +1,25 @@
+{%- from 'widgets/common.html' import countdown, occupied_bar with context -%}
+{%- from 'backup/widgets.html' import display_needed_space with context -%}
+
+{%- if request.user.is_staff -%}
+
+	{%- if extension.event('running') -%}
+		<p class="backup_in_progress">A backup is running on {{ extension.current_operated_volume.mount_point }}.</p>
+		{# need http://fgnass.github.com/spin.js/ #}
+	{%- elif extension.event('active') -%}
+
+		<p>{{ _('Next backup planned in {0}.').format(countdown(
+			extension.time_before_next_automatic_backup(), short=True)) }}</p>
+		<p>{{ display_needed_space() }}</p>
+
+		{%- for vol in extension.enabled_volumes() -%}
+			{# occupied_bar('') #}
+
+		{%- endfor -%}
+
+	{%- else -%}
+		{{ display_needed_space(extension.compute_total_space()) }}
+
+	{%- endif -%}
+
+{%- endif -%}

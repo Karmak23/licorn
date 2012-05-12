@@ -1,0 +1,63 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{% from 'widgets/common.html' import countdown %}
+
+{%- set statuses = [ '', '', '' ] -%}
+{%- for ds_method in dynstatuses().itervalues() -%}
+	{% do dyndata_merge(statuses, ds_method(request)) %}
+{%- endfor -%}
+
+{%- set informations = [ '', '', '' ] -%}
+{%- for ds_method in dyninfos().itervalues() -%}
+	{% do dyndata_merge(informations, ds_method(request)) %}
+{%- endfor -%}
+
+<div>
+
+	<h1>{{ _('System information') }}</h1>
+
+	{{ informations[0] }}
+
+	<p>{{ _('Licorn® Server <strong>{0}</strong>, {1} {2} (version&nbsp;{3}).').format(
+			config('network.hostname'),
+			config('distro_id'),
+			config('distro_codename')|title,
+			config('distro_version')
+			) }}</p>
+
+	<p>{{ ngettext('Processor: %(cpus)d × %(cpu_model)s.',
+				'Processors: %(cpus)d × %(cpu_model)s.', cpus)|format(
+				cpus=cpus, cpu_model=cpu_model) }}</p>
+
+	<p>{{ _('Physical memory: %(ram).2fMb installed.')|format(ram=ram['MemTotal']) }}</p>
+
+	{%- if ram['SwapTotal'] == 0 -%}
+		<p class="notification_level_3">{{ _('No virtual memory installed.') }}</p>
+	{%- else -%}
+		<p>{{ _('Virtual memory: %(swap).2fMb installed.')|format(swap=ram['SwapTotal']) }}</p>
+	{%- endif -%}
+
+	{{ informations[1] }}
+
+	{{ informations[2] }}
+
+</div>
+<div>
+	<h1>{{ _('System status') }}</h1>
+
+	{{ statuses[0] }}
+
+	<p>{{ _('Up and running since') }} <strong>{{ countdown(uptime, limit=9999999.9, show_seconds=False) }}</strong>,
+
+	{{ ngettext('%(num)d user connected', '%(num)d users connected', connected)|format(num=connected) }}.</p>
+
+	{%- include 'widgets/loadavg.html' -%}
+
+	<!-- {%- include 'widgets/weeklybars.html' -%} -->
+
+	<div>{{ statuses[1] }}</div>
+
+	<div>{{ statuses[2] }}</div>
+
+</div>

@@ -1,0 +1,192 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- from 'widgets/common.html' import countdown -%}
+
+<!--<div id="daemon_status_wrapper">-->
+<div id="daemon_status">
+	<h1>{{ _('Daemon status') }}</h1>
+	<div id="daemon_status_counters">
+		<div class="daemon_status_info_block">
+			<h2>{{ _('Statistics') }}</h2>
+			<p>role={{ daemon_status.role }}, <span class="_refresh" id="_rf_ds_nbht">{{ daemon_status.nb_threads }}</span> {{ _('threads') }}</p>
+			<h3>{{_('CPU consumed')}}</h3>
+				<ul class='daemon_resource_info'>
+					<li><span class="_refresh" id="_rf_ds_rcu">{{ '%.2f' % daemon_status.ru_utime }}</span>s {{_('usr')}}</li>
+					<li><span class="_refresh" id="_rf_ds_rcs">{{ '%.2f' % daemon_status.ru_stime }}</span>s {{_('sys')}}</li>
+				</ul>
+			<h3>{{ _('RAM consumed') }}</h3>
+				<ul class='daemon_resource_info'>
+					<li><span class="_refresh" id="_rf_ds_rrr">{{ '%.2f' % daemon_status.mem_res }}</span>{{_('Mb')}} {{_('res')}}</li>
+					<li><span class="_refresh" id="_rf_ds_rrs">{{ '%.2f' % daemon_status.mem_shr }}</span>{{_('Mb')}} {{_('shr')}}</li>
+					<li><span class="_refresh" id="_rf_ds_rru">{{ '%.2f' % daemon_status.mem_ush }}</span>{{_('Mb')}} {{_('ush')}}</li>
+					<li><span class="_refresh" id="_rf_ds_rrt">{{ '%.2f' % daemon_status.mem_stk }}</span>{{_('Mb')}} {{_('stack')}}</li>
+				</ul>
+
+			<h2>Services</h2>
+			<ul>
+				{%- for sname, sinfo in daemon_status.threads_infos.iteritems() -%}
+					<li class="_refresh" id="_rf_ds_s{{ loop.index }}">{{ sname }}: {{ sinfo[0] }} / {{ sinfo[1] }}</li>
+				{%- endfor -%}
+			</ul>
+
+		</div><!-- info_block -->
+
+		<div class="daemon_status_info_block">
+			<h2>{{ _('Queues') }}</h2>
+			<ul>
+				{%- for name, size in daemon_status.queues_infos.iteritems() -%}
+					<li class="_refresh" id="_rf_ds_q{{ loop.index }}">{{ name }}: {{ size }} {{ _('items') }}</li>
+				{%- endfor -%}
+			</ul>
+			<h2>{{ _('Internal Locks') }}</h2>
+			<h3>{{ _('Masters locks') }} (<span class="_refresh" id="_rf_ds_mlks">{{ daemon_status.mlocks|count }}</span>)</h3>
+			{%- if mlocked -%}
+				<p class="_refresh" id="_rf_ds_mlkd">{{ _('Currently locked:') }} {{ ', '.join(mlocked) }}</p>
+			{%- else -%}
+				<p class="_refresh" id="_rf_ds_mlkd">{{ _('None locked yet.') }}</p>
+			{%- endif -%}
+			<h3>{{ _('Unit locks') }} (<span class="_refresh" id="_rf_ds_slks">{{ daemon_status.slocks|count }}</span>)</h3>
+			{%- if slocked -%}
+				<p class="_refresh" id="_rf_ds_slkd">{{ _('Currently locked:') }} {{ ', '.join(slocked) }}</p>
+			{%- else -%}
+				<p class="_refresh" id="_rf_ds_slkd">{{ _('None locked yet.') }}</p>
+			{%- endif -%}
+
+		</div><!-- info_block -->
+	</div><!-- daemon_status_counters -->
+	<div id="daemon_status_threads">
+		<h2>{{ _('Dedicated threads') }}</h2>
+		<dl>
+			{%- for tdata in daemon_status.threads_data -%}
+				{%- set tindex = loop.index -%}
+				{%- set tattrs = [] -%}
+				{%- for attrname in ('loops', 'watches', 'qsize', 'wakers') -%}
+					{%- if attrname in tdata -%}
+						{%- do tattrs.append('%s=<span class="_refresh" id="_rf_ds_dtdda%d">%d</span>' % (
+											attrname, loop.index, tdata[attrname])) -%}
+					{%- endif -%}
+				{%- endfor -%}
+				{%- set tattrs = tattrs|join(', ') -%}
+				<dd><span class="_refresh" id="_rf_ds_dtdd{{ tindex }}">
+						<span class="thread_name thread_{{ 'alive' if tdata.alive else 'dead' }}">
+						{{ tdata.name }}{{ '&amp;' if tdata.daemon }}
+						</span>
+					</span>
+					{{ (' (%s)' % tattrs) if tattrs != '' }}</dd>
+				<dt>
+					<ul>
+					{% for key, value in tdata.iteritems() %}
+						{%- if key == 'handlers' -%}
+							<li><span class="ajax-slider-toggle-master" id="ds_toggle_handlers">
+									<span class="_refresh" id="_rf_ds_dtdt_hl{{ loop.index }}">{{ value|count }}</span>
+																					{{ _('Directly handlable events') }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden" id="ds_toggle_handlers">
+									<ul class="_refresh" id="_rf_ds_dtdt_hl_val{{ loop.index }}">
+									{%- for event in value|sort -%}
+										{%- set handlers = value[event]|count -%}
+										<li><code>{{ event }}</code> ({{ handlers }} {{ _('handlers') if handlers > 1 else _('handler') }})</li>
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+
+						{%- elif key == 'callbacks' -%}
+							<li><span class="ajax-slider-toggle-master" id="ds_toggle_callbacks">
+									<span class="_refresh" id="_rf_ds_dtdt_cb{{ loop.index }}">{{ value|count }}</span>
+																					{{ _('Callbackable events') }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden" id="ds_toggle_callbacks">
+									<ul class="_refresh" id="_rf_ds_dtdt_cb_val{{ loop.index }}">
+									{%- for event in value|sort -%}
+										{%- set callbacks = value[event]|count -%}
+										<li><code>{{ event }}</code> ({{ callbacks }} {{ _('callbacks') if callbacks > 1 else _('callback') }})</li>
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+
+						{%- elif key == 'conf_files' -%}
+							<li><span class="ajax-slider-toggle-master"
+										id="ds_toggle_conf_files">
+									<span class="_refresh" id="_rf_ds_dtdt_cf{{ loop.index }}">{{ value|count }}</span>
+									{{ _('Configuration files watched') }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden"
+									id="ds_toggle_conf_files">
+									<ul class="_refresh" id="_rf_ds_dtdt_cf_val{{ loop.index }}">
+									{%- for conf_file in value|sort -%}
+										<li><code>{{ conf_file }}</code></li>
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+
+						{%- elif key == 'collectors' -%}
+							{%- set colls = value|count -%}
+							{%- if colls > 0 -%}
+								<li class="_refresh" id="_rf_ds_dtdtli{{ loop.index }}">
+									{{ colls }} collector{{ 's' if colls > 1 }} registered.</li>
+							{%- else -%}
+								<li class="_refresh" id="_rf_ds_dtdtli{{ loop.index }}">
+									No collector registered.</li>
+							{%- endif -%}
+
+						{%- elif key == 'workers' -%}
+							{%- set workers = value|count -%}
+							<li><span class="ajax-slider-toggle-master"
+									id="ds_toggle_workers_{{ tindex }}">
+									<span class="_refresh" id="_rf_ds_dtdt_wkr{{ tindex }}">{{ workers }}</span>
+								Worker{{ 's' if workers > 1 }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden"
+									id="ds_toggle_workers_{{ tindex }}">
+									<ul class="_refresh" id="_rf_ds_dtdtulwkr{{ tindex }}">
+									{%- for worker in value -%}
+										{%- if worker.jobbing -%}
+											<li>{{ worker.name }}, on {{ connection.remote_user }} since ...</li>
+
+										{%- else -%}
+											<li>{{ worker.name }} (idle)</li>
+
+										{%- endif -%}
+
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+
+						{%- elif key == 'connections' -%}
+							{%- set conns = value|count -%}
+							<li><span class="ajax-slider-toggle-master" id="ds_toggle_pyro_cnx">
+								<span class="_refresh" id="_rf_ds_dtdt_cnx{{ loop.index }}">{{ conns }}</span>
+								Connection{{ 's' if conns > 1 }}</span>
+								<div class="ajax-slider-toggle-slave ajax-initially-hidden" id="ds_toggle_pyro_cnx">
+									<ul class="_refresh" id="_rf_ds_dtdt_cnx_val{{ loop.index }}">
+									{%- for connection in value -%}
+										<li>{{ connection.name }}, for {{ connection.remote_user }} from {{connection.remote_address}}:{{connection.remote_port}}</li>
+									{%- endfor -%}
+									</ul>
+								</div>
+							</li>
+						{%- elif key in ('wake_up') -%}
+							{#- don't display this attribute in the WMI -#}
+
+						{%- elif key not in ('name', 'ident', 'collectors',
+											'daemon', 'alive', 'qsize', 'loops',
+											'wakers', 'watches', 'workers', 
+											'handlers', 'callbacks') -%}
+							<li class="_refresh" id="_rf_ds_dtdtli{{ loop.index }}">{{ key }}: {{ value }}</li>
+
+						{%- endif -%}
+
+					{%- endfor -%}
+					</ul>
+				</dt>
+			{%- endfor -%}
+		</dl>
+	</div><!-- daemon_status_threads -->
+	<script type="text/javascript" language="javascript">
+		setup_ajax_initially_hidden('#daemon_status');
+		setup_ajax_togglers('#daemon_status');
+
+	</script>
+</div><!-- daemon_status -->
+<!-- </div> daemon_status_wrapper -->

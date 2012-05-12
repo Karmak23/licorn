@@ -1,0 +1,174 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Olivier Cortès <olive@licorn.org>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-05-09 15:52+0000\n"
+"PO-Revision-Date: 2012-02-17 09:45+0100\n"
+"Last-Translator: Olivier Cortès <olive@licorn.org>\n"
+"Language-Team: français <>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: media/js/groups.js:24
+msgid "Make group “%1” not permissive"
+msgstr ""
+
+#: media/js/groups.js:25
+msgid "Are you sure you want to make group “%1” not permissive?"
+msgstr ""
+
+#: media/js/groups.js:29
+msgid "Make group “%1” permissive?"
+msgstr ""
+
+#: media/js/groups.js:30
+msgid ""
+"This will permit wider access to files and folders in the group shared "
+"directory, allowing any <strong>member of the group</strong> to modify or "
+"delete any document in the shared directory (whichever the current owner). "
+"<br /><br /> <strong>If the group members are already accustomed to work "
+"together on the same documents, making the group permissive is the right "
+"choice.</strong> You would usually use this feature on small working groups "
+"of people only, as it makes hard to track “who modified what”. <br /><br /> "
+"NOTE: The operation may be lengthy because the system will change "
+"permissions of all current files (duration is therefore depending on the "
+"volume of data, about 10 second for 1Gb)."
+msgstr ""
+
+#: media/js/groups.js:42 media/js/users.js:49
+msgid "Removal confirmation"
+msgstr ""
+
+#: media/js/groups.js:63 media/js/users.js:68
+msgid "Skeleton reapplying confirmation"
+msgstr ""
+
+#: media/js/groups.js:140 media/js/groups.js.py:145
+msgid "Make group %1 not permissive"
+msgstr ""
+
+#: media/js/groups.js:142 media/js/groups.js.py:147 media/js/groups.js:154
+msgid "Make group "
+msgstr ""
+
+#: media/js/groups.js:151
+msgid "Make group %1 permissive"
+msgstr ""
+
+#: media/js/list.js:57
+msgid "Massive removal"
+msgstr ""
+
+#: media/js/list.js:60
+msgid "Please select at least one account."
+msgstr ""
+
+#: media/js/list.js:64
+msgid "Are you sure you want to remove these account(s):"
+msgstr ""
+
+#: media/js/list.js:66
+msgid "Definitely remove account data (no archiving)"
+msgstr ""
+
+#: media/js/list.js:109
+msgid "Massive skeleton reapplying"
+msgstr ""
+
+#: media/js/list.js:112
+msgid "Please select at least one user account."
+msgstr ""
+
+#: media/js/list.js:117
+msgid ""
+"Are you sure you want to reapply their skeleton to these user account(s):"
+msgstr ""
+
+#: media/js/list.js:151
+msgid "Massive group premissiveness"
+msgstr ""
+
+#: media/js/list.js:154
+msgid "Please select at least one group."
+msgstr ""
+
+#: media/js/list.js:159
+msgid "Are you sure you want to toggle permissiveness of group(s):"
+msgstr ""
+
+#: media/js/machines.js:18
+msgid "Unlock user %1"
+msgstr "Déverrouiller le compte %1"
+
+#: media/js/machines.js:21
+msgid "Unlock account "
+msgstr "Déverrouiller le compte"
+
+#: media/js/machines.js:25
+msgid "Lock user %1"
+msgstr "Verrouiller le compte %1"
+
+#: media/js/machines.js:28 media/js/machines.js.py:31 media/js/machines.js:34
+msgid "Lock account "
+msgstr "Verrouiller le compte"
+
+#: media/js/menu.js:63
+msgid "Sure?"
+msgstr "Confirmer ?"
+
+#: media/js/menu.js:71
+msgid "Yes"
+msgstr "Oui"
+
+#: media/js/menu.js:72
+msgid "No"
+msgstr "Non"
+
+#: media/js/push.js:41
+msgid "Push connection back online, rock'n roll!"
+msgstr "Flux d'informations de nouveau opérationnel, Rock'n Roll !"
+
+#: media/js/push.js:59
+msgid "Push connection lost. Retrying in 5 seconds."
+msgstr ""
+"Connexion au flux d'information perdue. Nouvelle tentative de connexion dans "
+"5 secondes."
+
+#: media/js/push.js:71
+msgid "Push connection lost. Retrying in 3 seconds."
+msgstr ""
+"Connexion au flux d'information perdue. Tentative de reconnexion dans 3 "
+"secondes."
+
+#: media/js/users.js:27
+msgid "Unlock confirmation"
+msgstr "Confirmation de déverrouillage"
+
+#: media/js/users.js:28
+msgid "Do you really want to unlock user account “%1”?"
+msgstr "Voulez-vous vraiment déverrouiller le compte utilisateur « %1 » ?"
+
+#: media/js/users.js:37
+msgid "Lock confirmation"
+msgstr "Confirmation de verrouillage"
+
+#: media/js/users.js:70
+msgid "Are you sure you want to reapply skeleton to user account “%1”?"
+msgstr ""
+
+#: media/js/users.js:147
+msgid "Unlock user account"
+msgstr "Déverrouiller le compte utilisateur"
+
+#: media/js/users.js:154 media/js/users.js.py:160
+msgid "Lock user account"
+msgstr "Verrouiller le compte utilisateur"
