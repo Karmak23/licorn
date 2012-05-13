@@ -113,4 +113,80 @@
  - renommer event() en is_event_set()
  - idem pour lock() en is_locked()
 
+________________________________________________________________________________
+
+olive@Leto ~ @ get vol
+/dev/sdc1[ext4] sur /media/Save_Leto_4To 1, 791.29Gio sur 3.64Tio libre(s) (21.2%)
+/dev/sdg1[ext4] sur /media/500Gib 1, 433.76Gio sur 465.26Gio libre(s) (93.2%)
+/dev/sdh1[ext4] sur /media/Photos_Videos 1, 130.65Gio sur 931.41Gio libre(s) (14.0%)
+olive@Leto ~ @ mount
+/dev/sda1 on / type ext4 (rw,errors=remount-ro,acl,user_xattr)
+proc on /proc type proc (rw,noexec,nosuid,nodev)
+sysfs on /sys type sysfs (rw,noexec,nosuid,nodev)
+none on /sys/fs/fuse/connections type fusectl (rw)
+none on /sys/kernel/debug type debugfs (rw)
+none on /sys/kernel/security type securityfs (rw)
+udev on /dev type devtmpfs (rw,mode=0755)
+devpts on /dev/pts type devpts (rw,noexec,nosuid,gid=5,mode=0620)
+tmpfs on /run type tmpfs (rw,noexec,nosuid,size=10%,mode=0755)
+none on /run/lock type tmpfs (rw,noexec,nosuid,nodev,size=5242880)
+none on /run/shm type tmpfs (rw,nosuid,nodev)
+cgroup on /sys/fs/cgroup type tmpfs (rw,relatime,mode=755)
+cgroup on /sys/fs/cgroup/cpuset type cgroup (rw,relatime,cpuset)
+cgroup on /sys/fs/cgroup/cpu type cgroup (rw,relatime,cpu)
+cgroup on /sys/fs/cgroup/cpuacct type cgroup (rw,relatime,cpuacct)
+cgroup on /sys/fs/cgroup/memory type cgroup (rw,relatime,memory)
+cgroup on /sys/fs/cgroup/devices type cgroup (rw,relatime,devices)
+cgroup on /sys/fs/cgroup/freezer type cgroup (rw,relatime,freezer)
+cgroup on /sys/fs/cgroup/blkio type cgroup (rw,relatime,blkio)
+cgroup on /sys/fs/cgroup/perf_event type cgroup (rw,relatime,perf_event)
+/dev/md0 on /home type ext4 (rw,noatime,errors=remount-ro,acl,user_xattr)
+/dev/sdg1 on /media/500Gib 1 type ext4 (rw,nodev,noatime,acl,user_xattr,errors=remount-ro)
+/dev/sdh1 on /media/Photos_Videos 1 type ext4 (rw,nodev,noatime,acl,user_xattr,errors=remount-ro)
+/dev/sdc1 on /media/Save_Leto_4To 1 type ext4 (rw,nodev,noatime,acl,user_xattr,errors=remount-ro)
+gvfs-fuse-daemon on /home/users/olive/.gvfs type fuse.gvfs-fuse-daemon (rw,nosuid,nodev,user=olive)
+olive@Leto ~ @ del vol =a
+olive@Leto ~ @ del vol -
+^[[Aolive@Leto ~ @ del vol -a
+ * [2012/13/05 21:48:32.6696] volumes : périphérique /dev/sdh1 démonté de /media/Photos_Videos 1.
+ * [2012/13/05 21:48:32.8079] volumes : périphérique /dev/sdg1 démonté de /media/500Gib 1.
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/dist-packages/licorn/interfaces/__init__.py", line 214, in run
+    self.main_body(*args, **kwargs)
+  File "/usr/lib/python2.7/dist-packages/licorn/interfaces/cli/__init__.py", line 173, in main_body
+    cli_exec_function()
+  File "/usr/lib/python2.7/dist-packages/licorn/interfaces/cli/__init__.py", line 163, in cli_exec_function
+    getattr(self.RWI, functions[self.mode][1])(opts=self.opts, args=self.args)
+  File "/usr/lib/pymodules/python2.7/Pyro/core.py", line 381, in __call__
+    return self.__send(self.__name, args, kwargs)
+  File "/usr/lib/pymodules/python2.7/Pyro/core.py", line 456, in _invokePYRO
+    return self.adapter.remoteInvocation(name, Pyro.constants.RIF_VarargsAndKeywords, vargs, kargs)
+  File "/usr/lib/pymodules/python2.7/Pyro/protocol.py", line 457, in remoteInvocation
+    return self._remoteInvocation(method, flags, *args)
+  File "/usr/lib/pymodules/python2.7/Pyro/protocol.py", line 532, in _remoteInvocation
+    answer.raiseEx()
+  File "/usr/lib/pymodules/python2.7/Pyro/errors.py", line 72, in raiseEx
+    raise self.excObj
+AttributeError: 'Thread' object has no attribute 'dump_status'
+ +--- This exception occured remotely (Pyro) - Remote traceback:
+ | Traceback (most recent call last):
+ |   File "/usr/lib/pymodules/python2.7/Pyro/protocol.py", line 719, in _handleInvocation2
+ |     res = obj.Pyro_dyncall(req[1],flags,req[3])	# (method,flags,args)
+ |   File "/usr/lib/pymodules/python2.7/Pyro/core.py", line 108, in Pyro_dyncall
+ |     return getattr(self.delegate or self,method) (*args,**keywords)
+ |   File "/usr/lib/python2.7/dist-packages/licorn/daemon/rwi.py", line 1726, in del_volume
+ |     force=opts.force)
+ |   File "/usr/lib/python2.7/dist-packages/licorn/extensions/volumes.py", line 1133, in unmount_volumes
+ |     self.volumes_call(final_volume_list, 'unmount', force=force)
+ |   File "/usr/lib/python2.7/dist-packages/licorn/extensions/volumes.py", line 1085, in volumes_call
+ |     getattr(by_kernel[volume], method_name)(*args, **kwargs)
+ |   File "/usr/lib/python2.7/dist-packages/licorn/extensions/volumes.py", line 43, in decorated
+ |     return func(self, *args, **kwargs)
+ |   File "/usr/lib/python2.7/dist-packages/licorn/extensions/volumes.py", line 466, in unmount
+ |     '\n'.join(w.dump_status() for w in self.workers)))
+ |   File "/usr/lib/python2.7/dist-packages/licorn/extensions/volumes.py", line 466, in <genexpr>
+ |     '\n'.join(w.dump_status() for w in self.workers)))
+ | AttributeError: 'Thread' object has no attribute 'dump_status'
+ +--- End of remote traceback
+ERROR: [2012/13/05 21:48:32.8987] exceptions.AttributeError: 'Thread' object has no attribute 'dump_status'.
 
