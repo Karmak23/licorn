@@ -1,0 +1,26 @@
+{#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+
+{%- extends 'fullbase.html' -%}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/energy.css" />
+{%- endblock -%}
+
+{%- block title -%}{{ _('Energy politics') }}{%- endblock -%}
+
+{%- block main_content -%}
+
+	<div class="title">
+		Extinction calendar
+	</div>
+
+
+{%- endblock -%}
+
+{%- block sub_content -%}
+{%- endblock -%}
+
+
