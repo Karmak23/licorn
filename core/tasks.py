@@ -833,7 +833,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		gc.collect()
 
 	def dump_status(self, long_output=False, precision=None, 
-		as_string=True, *args, **kwargs):
+		as_string=True, cli_output=True, *args, **kwargs):
 		
 		if as_string:
 			desc = "Scheduler threads :"
