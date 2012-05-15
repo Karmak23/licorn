@@ -50,6 +50,7 @@ function refresh_div(div, html, no_effect) {
 
 	if (typeof no_effect == 'undefined' || no_effect) {
 
+
 		div.find('._refresh').each(function() {
 			$(this).html(new_html.find('#' + $(this).attr('id')).html());
 		});
@@ -165,3 +166,13 @@ $(document).keyup(function(e) {
 		}
 	}
 });
+
+function generate_machine() {
+	$.each($('.licorn_machine'), function(i, v) {
+		mid = $(this).attr('id');
+
+		$.get('/energy/generate_machine_html/'+mid, function(html) {
+			$(v).before($(html));
+		})		
+	})
+}
