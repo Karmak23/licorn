@@ -4,30 +4,43 @@
 <div>
 
 	<h1>{{ _('My Informations') }}</h1>
+	<div id='index_no_staff'>
+		<div id='table' name='{{ user_uid }}'>
+		<br />
 
-	<div id='table' name='{{ user_uid }}'>
-	<br />
+			{%- for field in form.visible_fields() -%}
+				{%- set immutable = field.name in form.immutables -%}
+					<div class='sub_content_line big_line'>
+						<div class='sub_content_half_line'>
+							<strong>{{ field.label_tag() }}</strong>{{ _('(fixed)') if immutable }}</div>
+						<div class='sub_content_half_line align_right'>
+							{%- if immutable -%}
+								{{ field.value() }}
+							{%- else -%}
+								{%- if field.name == 'password' -%}
+									<span><img id="generate_pwds" src="/media/images/16x16/generate.png" alt="'+ gettext("Generate passwords") +'"/></span> {{ field }}
+									<span id='pwd_strenght' style='font-size:12px;'></span>
+								{%- elif field.name == 'password_confirm'-%}
+									<span id="check_pwds"></span> {{ field }}
+								{%- else -%}
+									{{ field }}
+								{%- endif -%}
 
-		{%- for field in form.visible_fields() -%}
-			{%- set immutable = field.name in form.immutables -%}
-				<div class='sub_content_line big_line'>
-					<div class='sub_content_half_line'>
-						<strong>{{ field.label_tag() }}</strong>{{ _('(fixed)') if immutable }}</div>
-					<div class='sub_content_half_line align_right'>
-						{%- if immutable -%}
-							{{ field.value() }}
-						{%- else -%}
-							{{ field }}
-						{%- endif -%}
+							{%- endif -%}
 
+						</div>
 					</div>
-				</div>
-		{%- endfor -%}
+			{%- endfor -%}
+		</div>
 	</div>
 
 </div>
 <script type="text/javascript">
 	$(document).ready(function() {
 		init_instant_apply('users');
+
+		// from main.js
+		password_helpers($("#index_no_staff"))
+
 	});
 </script>
