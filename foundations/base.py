@@ -57,7 +57,6 @@ class method_decorator(object):
 			return self.func(instance, *args, **kwargs)
 
 		for key, value in self.kwargs.iteritems():
-			#print '>> setattr', key, value, 'ON', wrapper
 			setattr(wrapper, key, value)
 
 		# This instance does not need the descriptor anymore,
@@ -70,6 +69,11 @@ class method_decorator(object):
 						wrapper, instance, instance.__class__))
 
 		return wrapper
+
+class class_property(property):
+	#http://stackoverflow.com/questions/128573/using-property-on-classmethods
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 class BasicCounter(object):
 	def __init__(self, init=0):

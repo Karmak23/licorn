@@ -70,7 +70,8 @@ def common_filter_group(app, parser, tool, mode):
 				'output system %s too.') % mode)
 
 	if tool in ('get', 'mod', 'del'):
-		if mode in ('volumes', 'users', 'groups', 'profiles', 'privileges', 'machines'):
+		if mode in ('volumes', 'users', 'groups', 'profiles', 'privileges', 
+			'machines', 'tasks'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default=False,
 				help=_(u'Also select system data. I.e. '
@@ -84,7 +85,7 @@ def common_filter_group(app, parser, tool, mode):
 					mode[:-1]))
 
 	if tool is 'get':
-		if mode in ('daemon_status', 'users', 'groups', 'machines'):
+		if mode in ('daemon_status', 'users', 'groups', 'machines', 'tasks'):
 			filtergroup.add_option('-l', '--long', '--full', '--long-output',
 				action="store_true", dest="long_output", default=False,
 				help=_(u'long output (all info, attributes, etc). '
@@ -335,6 +336,24 @@ def common_filter_group(app, parser, tool, mode):
 			filtergroup.add_option('--loaded', '--loaded-machines',
 				action="store_true", dest="loaded", default=False,
 				help=_(u"Only select loaded machines."))
+
+
+	if mode == "tasks":
+		filtergroup.add_option('--interval', '-I',
+			action="store_true", dest="interval", default=False,
+			help=_(u"Only select task wich mode is 'interval'"))
+		filtergroup.add_option('--single', '-S',
+			action="store_true", dest="single", default=False,
+			help=_(u"Only select task wich mode is 'single'"))
+		filtergroup.add_option('--day', '-D',
+			action="store_true", dest="day", default=False,
+			help=_(u"Only select task wich mode is 'day'"))
+		filtergroup.add_option('--week', '-W',
+			action="store_true", dest="week", default=False,
+			help=_(u"Only select task wich mode is 'week'"))
+		filtergroup.add_option('--month', '-M',
+			action="store_true", dest="month", default=False,
+			help=_(u"Only select task wich mode is 'month'"))
 
 	return filtergroup
 def check_opts_and_args(opts_and_args):
@@ -603,6 +622,24 @@ def get_machines_parse_arguments(app):
 	parser.add_option_group(common_filter_group(app, parser, 'get', 'machines'))
 	parser.add_option_group(__get_output_group(app, parser,'machines'))
 
+	return parser.parse_args()
+def get_tasks_parse_arguments(app):
+	""" Integrated help and options / arguments for « get task(s) »."""
+
+	usage_text = "\n\t%s %s [[%s] …]" \
+		% (
+			stylize(ST_APPNAME, "%prog"),
+			stylize(ST_MODE,
+				"task[s]"),
+			stylize(ST_OPTION, "option")
+		)
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
+	parser.add_option_group(common_filter_group(app, parser, 'get', 'tasks'))
+	parser.add_option_group(__get_output_group(app, parser,'tasks'))
+	
 	return parser.parse_args()
 def get_configuration_parse_arguments(app):
 	""" Integrated help and options / arguments for « get »."""
@@ -1169,6 +1206,77 @@ def add_volume_parse_arguments(app):
 		default=False, help=SUPPRESS_HELP)
 
 	return check_opts_and_args(parser.parse_args())
+def add_task_parse_arguments(app):
+
+	usage_text = """
+	%s task [--name] <name> --action <action>
+		[--year <year>] [--month <month>] [--day <day>] [--week-day <week-day>] [--hour <hour>] [--minute <minute>] [--second <second>]
+		[--delay-until-year <year>] [--delay-until-month <month>] [--delay-until-day <day>] [--delay-until-hour <hour>] [--delay-until-minute <minute>] [--delay-until-second <second>]
+		[--args <args>] [--kwargs <kwargs>] 
+		[--do-not-defer-resolution]"""% (
+			stylize(ST_APPNAME, "%prog"))
+
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'add_task'))
+	#parser.add_option_group(common_filter_group(app, parser, 'add', 'tasks'))
+
+	tasks = OptionGroup(parser, stylize(ST_OPTION, _(u"Add task(s) options")))
+	parser.add_option_group(tasks)
+
+
+	tasks.add_option('--name', '-n', action="store", type="string", dest="name", 
+		default="", help=_(u"Specify name for the task, {0}". format(
+			stylize(ST_IMPORTANT, _(u"This argument is required")))))
+	tasks.add_option('--action', '-a', action="store", type="string", dest="action", 
+		default="", help=_(u"Specify action for the task, {0}".format(
+			stylize(ST_IMPORTANT, _(u"This argument is required")))))
+
+	tasks.add_option('--year', '-y', action="store", type="string", 
+		dest="year", default=None, help=_(u"Specify year for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]]."
+			" Only used in mode 'single'"))
+	tasks.add_option('--month', '-m', action="store", type="string", 
+		dest="month", default=None, help=_(u"Specify month for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."
+			" Only used in mode 'single'"))
+	tasks.add_option('--day', '-d', action="store", type="string", 
+		dest="day", default=None, help=_(u"Specify day for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."
+			" Only used in mode 'single'"))
+	tasks.add_option('--hour', '-H', action="store", type="string", 
+		dest="hour", default=None, help=_(u"Specify hour for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."))
+	tasks.add_option('--minute', '-M', action="store", type="string", 
+		dest="minute", default=None, help=_(u"Specify minute for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."))
+	tasks.add_option('--second', '-s', action="store", type="string", 
+		dest="second", default=None, help=_(u"Specify second for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."))
+	tasks.add_option('--week-day', action="store", type="string", 
+		dest="week_day", default=None, help=_(u"Specify week days for the action, use the following syntax [*|*/n|n-m|n[,m[...]]]^[n[,m[...]]].."))
+
+	tasks.add_option('--delay-until-year', action="store", type="string", 
+		dest="delay_until_year", default=None, help=_(u"Specify a year to start the task, integer."))
+	tasks.add_option('--delay-until-month', action="store", type="string", 
+		dest="delay_until_month", default=None, help=_(u"Specify a month to start the task, integer."))	
+	tasks.add_option('--delay-until-day', action="store", type="string", 
+		dest="delay_until_day", default=None, help=_(u"Specify a day to start the task, integer."))	
+	tasks.add_option('--delay-until-hour', action="store", type="string", 
+		dest="delay_until_hour", default=None, help=_(u"Specify an hour to start the task, integer."))	
+	tasks.add_option('--delay-until-minute', action="store", type="string", 
+		dest="delay_until_minute", default=None, help=_(u"Specify an hour to start the task, integer."))	
+	tasks.add_option('--delay-until-second', action="store", type="string", 
+		dest="delay_until_second", default=None, help=_(u"Specify a second to start the task, integer."))	
+
+	tasks.add_option('--args', action="store", type="string", 
+		dest="args", default="", help=_(u"Specify args for the action, format: --args=\"arg1[;arg2[;arg3[...]]]\""))
+	tasks.add_option('--kwargs', action="store", type="string", 
+		dest="kwargs", default="", help=_(u"Specify kwargs for the action, format: --kwargs=\"k1=v1[;k2=v2[;k3=v3[...]]]\""))
+	tasks.add_option('--do-not-defer-resolution', action="store_false", 
+		dest="defer_resolution", default=True, help=_(u"Specify if arguments "
+		" will be resolved during execution or during task's load. Default is during task's execution"))
+
+
+	return check_opts_and_args(parser.parse_args())
+
 
 ### Delete arguments ###
 def del_user_parse_arguments(app):
@@ -1190,6 +1298,28 @@ def del_user_parse_arguments(app):
 		help=_(u"Don't make a backup of user's home directory in %s "
 			"(Default: home directory will be archived)." %
 				stylize(ST_PATH, settings.home_archive_dir)))
+
+	parser.add_option_group(user)
+	return check_opts_and_args(parser.parse_args())
+def del_task_parse_arguments(app):
+	"""Integrated help and options / arguments for « delete task »."""
+
+	usage_text = "\n\t%s task < --name=<name> | --id=ID >" % stylize(ST_APPNAME, "%prog")
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'del_task'))
+	parser.add_option_group(common_filter_group(app, parser, 'del', 'tasks'))
+
+	user = OptionGroup(parser, stylize(ST_OPTION, _(u"Delete user options")))
+
+	user.add_option("--name", action="store", type="string", dest="name", 
+		default=None, help=_(u"name of the task to delete)."))
+	
+	user.add_option("--id", action="store", type="int", dest="id", 
+		default=0, help=_(u"id of the task to delete)."))
 
 	parser.add_option_group(user)
 	return check_opts_and_args(parser.parse_args())
@@ -1443,6 +1573,19 @@ def mod_machine_parse_arguments(app):
 		help=_(u"remotely upgrade pending packages (do security updates)."))
 
 	parser.add_option_group(machine)
+
+	return check_opts_and_args(parser.parse_args())
+def mod_task_parse_arguments(app):
+
+	usage_text = "\n\t%s task[s] : Not yet implement, please delete the task " \
+	" and create a new one." % stylize(ST_APPNAME, "%prog")
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	# common behaviour group
+	parser.add_option_group(common_behaviour_group(app, parser, 'mod_task'))
+	parser.add_option_group(common_filter_group(app, parser, 'mod', 'task'))
 
 	return check_opts_and_args(parser.parse_args())
 def mod_volume_parse_arguments(app):

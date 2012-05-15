@@ -6,7 +6,7 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 
 :license: GNU GPL version 2
 """
-import os, time
+import os, time, types
 from collections import deque
 
 import netifaces, ipcalc, dumbnet, Pyro, socket, functools
@@ -1257,7 +1257,16 @@ class MachinesController(DictSingleton, CoreController):
 		""" Shutdown a machine, after having warned the connected user(s) if
 			asked to."""
 
-		self[mid].shutdown(warn_users=warn_users)
+		if type(mid) in (types.StringType, types.UnicodeType):
+			self[mid].shutdown(warn_users=warn_users)
+		elif type(mid) == types.ListType:
+			for m in mid:
+				try:
+					self[m].shutdown(warn_users=warn_users)
+				except KeyError:
+					logging.exception('{0} to shutdown machine {1}, not'
+					' referenced in the machines controller'.format(
+						stylize(ST_BAD, "Unable"), stylize(ST_PATH, m)))
 	def is_alt(self, mid=None, ether=None):
 		""" Return True if the machine is an ALT client, else False.
 			TODO: move this to Machine class.

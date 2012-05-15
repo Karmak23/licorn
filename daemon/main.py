@@ -54,6 +54,7 @@ from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.cmdlistener    import CommandListener
 
 from licorn.daemon.rwi            import RealWorldInterface
+from licorn.daemon.wmi            import WebManagementInterface
 
 #from licorn.daemon.cache         import Cache
 #from licorn.daemon.searcher      import FileSearchServer
@@ -107,7 +108,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				daemon=True
 			)
 		)
-	def init_daemon_services(self):
+	def __init_daemon_phase_1(self):
 		""" TODO. """
 
 		# the service facility is the first thing started, to make it
@@ -136,8 +137,23 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# NOTE: the CommandListener must be launched prior to anything, to
 		# ensure connection validation form clients and other servers are
 		# possible as early as possible.
-		if settings.role != roles.CLIENT:
+		if settings.role == roles.CLIENT:
 
+			# the CommandListener needs the objects :obj:`LMC.groups`,
+			# :obj:`LMC.system` and :obj:`LMC.msgproc` to be OK to run, that's
+			# why there's a first pass.
+			LMC.init_client_first_pass()
+
+			self.__threads.CommandListener = CommandListener(licornd=self,
+											pids_to_wake1=self.pids_to_wake1)
+			self.__threads.CommandListener.start()
+
+			from licorn.daemon import client
+			client.ServerLMC.connect()
+
+			LMC.init_client_second_pass(client.ServerLMC)
+
+		else:
 			# if we are forking into the background, there will be no possibility
 			# for the user to answer questions he won't see. Load everything in
 			# batch mode for the daemon not to be halted by any question about
@@ -155,16 +171,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 											pids_to_wake2=set(self.pids_to_wake2))
 			self.__threads.CommandListener.start()
 
-		else:
-			# the CommandListener needs the objects :obj:`LMC.groups`,
-			# :obj:`LMC.system` and :obj:`LMC.msgproc` to be OK to run, that's
-			# why there's a first pass.
-			LMC.init_client_first_pass()
-
-			# The remaining client configuration occurs in the
-			# `configuration_loaded` callback below.
-
-		# see foundations.settings (CLIENT -> inotifier disabled)
+		# see core.cofiguration (CLIENT -> inotifier disabled)
 		# create the INotifier thread, and map its WatchManager methods to
 		# us, they will be used by controllers, extensions and every single
 		# core object.
@@ -192,6 +199,9 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			__builtin__.__dict__['L_inotifier_watch_conf']     = inotifier_disabled
 			__builtin__.__dict__['L_inotifier_del_conf_watch'] = inotifier_disabled
 
+	def __init_daemon_phase_2(self):
+		""" TODO. """
+
 		# client and server mode get the benefits of periodic thread cleaner.
 		self.__threads.append(LicornJobThread(
 				tname='DeadThreadCleaner',
@@ -200,32 +210,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				delay=self.configuration.threads.wipe_time
 			))
 
-		if settings.role == roles.SERVER:
-
-			self.collect_and_start_threads()
-
-			workers.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
-
-			#self.__threads.syncer   = ServerSyncer(self)
-			#self.__threads.searcher = FileSearchServer(self)
-			#self.__threads.cache    = Cache(self, keywords)
-
-	@events.callback_method
-	def configuration_loaded(self, event, *args, **kwargs):
 		if settings.role == roles.CLIENT:
-
-			self.__threads.CommandListener = CommandListener(licornd=self,
-											pids_to_wake1=self.pids_to_wake1)
-			self.__threads.CommandListener.start()
-
-			# NOTE: the remaining of the client processing takes place later,
-			# in the 'configuration_loaded' callback.
-
-			from licorn.daemon import client
-			client.ServerLMC.connect()
-
-			LMC.init_client_second_pass(client.ServerLMC)
-
 			workers.service_enqueue(priorities.NORMAL,
 						client.client_hello, job_delay=1.0)
 
@@ -235,20 +220,35 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# TODO: get the cache from the server, it has the
 			# one in sync with the NFS-served files.
 
-			self.collect_and_start_threads()
+		else: # roles.SERVER
+			workers.service_enqueue(priorities.NORMAL, LMC.machines.initial_scan)
 
-	def collect_and_start_threads(self):
+			#self.__threads.syncer   = ServerSyncer(self)
+			#self.__threads.searcher = FileSearchServer(self)
+			#self.__threads.cache    = Cache(self, keywords)
+	def __collect_modules_threads(self):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
-		logging.info(_(u'{0:s}: collecting all threads.').format(self))
 
-		for module_manager in (LMC.backends, LMC.extensions):
-			for module in module_manager:
-				for thread in module.threads:
-					self.__threads[thread.name] = thread
-					if not thread.is_alive():
-						thread.start()
+		def collect_and_start(thread):
+			self.__threads[thread.name] = thread
+			if not thread.is_alive():
+				thread.start()
+		
+		for controller in (LMC.backends, LMC.extensions, LMC.tasks):
+			if controller == LMC.tasks:
+				threaded_tasks = [ o for o in controller if o.scheduled ]
+				for objekt in threaded_tasks:
+					collect_and_start(objekt.thread)
+							
+			else:
+				for objekt in controller:
+					for thread in objekt.threads:
+						collect_and_start(thread)
+	def __start_threads(self):
+		""" Iterate :attr:`self.__threads` and start
+			all not already started threads. """
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
@@ -298,9 +298,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		assert ltrace_func(TRACE_DAEMON)
 
 		if self.configuration.wmi.enabled and self.opts.wmi_enabled:
-				# This event will trigger handlers in the `upgrades` module,
-				# to check the current machine setup, and then call in turn
-				# the callback below, which will really launch the WMI.
+				# This event will trigger some handlers in `upgrades` to
+				# check the current machine setup (packages / configuration),
+				# and then call in turn the callback just below, which will
+				# really launch the WMI thread.
 				LicornEvent('wmi_starts').emit()
 
 		else:
@@ -312,10 +313,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			Used as a callback because WMI2 setup can take a while (installing
 			packages and al.).
 		"""
-
-		# we cannot import this earlier, because we need the `upgrades`
-		# mechanism to install twisted-web if missing.
-		from licorn.daemon.wmi import WebManagementInterface
 
 		self.__threads._wmi = WebManagementInterface().start()
 	def run(self):
@@ -384,7 +381,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		self.setup_signals_handler()
 
-		self.init_daemon_services()
+		self.__init_daemon_phase_1()
+		self.__collect_modules_threads()
+		self.__init_daemon_phase_2()
+		self.__start_threads()
 
 		if options.daemon:
 			logging.notice(_(u'{0:s}: all threads started, going to sleep '
@@ -476,6 +476,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			else:
 				tdata.append(process.thread_basic_info(thread, as_string))
 
+		for thread in LicornJobThread.instances:
+			if thread.name not in self.__threads:
+				tdata.append(thread.dump_status(long_output, precision, as_string))
+			
 		controllers = {}
 
 		if long_output:
@@ -741,12 +745,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		for (tname, thread) in self.__threads.items():
 			if thread.is_alive():
 				if isinstance(thread, GQWSchedulerThread):
-					for worker in thread.scheduled_class._instances[:]:
+					for worker in thread.scheduled_class.instances:
 						if not worker.is_alive():
 							assert ltrace(TRACE_THREAD, _(u'{0}: wiped dead '
 								u'thread {1} from memory.').format(caller,
 									stylize(ST_NAME, worker.name)))
-							thread.scheduled_class._instances.remove(worker)
+							#thread.scheduled_class._instances.remove(worker)
 							del worker
 			else:
 				del self.__threads[tname], thread

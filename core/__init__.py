@@ -305,6 +305,7 @@ class LicornMasterController(MixedDictObject):
 		from profiles import ProfilesController
 		from keywords import KeywordsController
 		from machines import MachinesController
+		from tasks    import TasksController
 
 		self.profiles = ProfilesController()
 		self.profiles.load()
@@ -312,6 +313,9 @@ class LicornMasterController(MixedDictObject):
 		self.machines.load()
 		self.keywords = KeywordsController()
 		self.keywords.load()
+		self.tasks = TasksController()
+		self.tasks.load()
+
 	def terminate(self):
 
 		if self._ServerLMC:

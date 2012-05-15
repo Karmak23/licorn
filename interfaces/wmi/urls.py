@@ -35,4 +35,5 @@ urlpatterns = patterns('',
 	(r'^groups/', include('wmi.groups.urls')),
 	(r'^machines/', include('wmi.machines.urls')),
 	(r'^backups?/', include('wmi.backup.urls')),
+	(r'^energy?/', include('wmi.energy.urls')),
 )

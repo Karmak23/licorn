@@ -193,49 +193,31 @@ class LicornBaseDaemon:
 		assert ltrace_func(TRACE_SETTINGS)
 
 		settings.merge_settings({
-			# We don't set this in case there is no "eth0" on the system.
-			# Default will be '*', which is sane.
+			# don't set in case there is no eth0 on the system.
 			#'licornd.pyro.listen_address': 'if:eth0'
-
 			# ACLChecker will ruin I/O performance if we create too much.
 			'licornd.threads.aclcheck.min' : 1,
 			'licornd.threads.aclcheck.max' : 10,
-
 			# ServiceWorker is a generic thread, we could need much of them.
 			'licornd.threads.service.min'  : 1,
 			'licornd.threads.service.max'  : 50,
-
 			# NetWorkWorker is a consuming service, for short operations, we need a lot.
-			'licornd.threads.network.min'     : 1,
-			'licornd.threads.network.max'     : 100,
-
-			# Wipe dead thread every 10 minutes
-			'licornd.threads.wipe_time'       : 600,
-
-			# disabled services.
-			#'licornd.syncer.port'             : 3344,
-			#'licornd.searcher.port'           : 3355,
-			#'licornd.cache_file'              : '/var/cache/licorn/licornd.db',
-			#'licornd.socket_path'             : '/var/run/licornd.sock',
-
-			'licornd.buffer_size'             : 16*1024,
-			'licornd.log_file'                : '/var/log/licornd.log',
-			'licornd.pid_file'                : '/var/run/licornd.pid',
-
-			# the inotifier on users/groups is enabled by default
-			'licornd.inotifier.enabled'       : True,
-
-			# We scan the LANs connected to each network interface
-			'licornd.network.lan_scan'        : True,
-
-			# But we don't scan a LAN if it has a public IP address,
-			# e.g if if is not a private LAN (10.*.*.*, 172.16.*.*, 192.168.*.*)
-			'licornd.network.lan_scan_public' : False,
-
-			# ==================================================== WMI settings
+			'licornd.threads.network.min'  : 1,
+			'licornd.threads.network.max'  : 100,
+			'licornd.threads.wipe_time'    : 600,   # 10 minutes
+			'licornd.syncer.port'          : 3344,
+			'licornd.searcher.port'        : 3355,
+			'licornd.buffer_size'          : 16*1024,
+			'licornd.log_file'             : '/var/log/licornd.log',
+			'licornd.pid_file'             : '/var/run/licornd.pid',
+			'licornd.cache_file'           : '/var/cache/licorn/licornd.db',
+			'licornd.socket_path'          : '/var/run/licornd.sock',
+			'licornd.inotifier.enabled'    : True,
+			'licornd.network.lan_scan'     : True,
+			# WMI settings are here, because some of them must be already known
+			# prior to trying to start the WMI.
 			'licornd.wmi.enabled'          : True,
 			'licornd.wmi.group'            : 'licorn-wmi',
-
 			# WMI listens on all interfaces by default (empty == *)
 			'licornd.wmi.listen_address'   : '',
 			'licornd.wmi.port'             : 3356,
@@ -243,6 +225,7 @@ class LicornBaseDaemon:
 			'licornd.wmi.pid_file'         : '/var/run/licornd-wmi.pid',
 			'licornd.wmi.ssl_cert'         : '/etc/ssl/certs/licornd-wmi.crt',
 			'licornd.wmi.ssl_key'          : '/etc/ssl/private/licornd-wmi.key',
+			'licornd.cron_file'            : '/etc/licorn/cron.conf',
 		}, overwrite=False, emit_event=False)
 	def __check_settings(self):
 
