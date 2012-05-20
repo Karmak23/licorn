@@ -1,0 +1,319 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<!DOCTYPE glade-interface SYSTEM "http://gazpacho.sicem.biz/gazpacho-0.1.dtd">
+<glade-interface>
+    <widget class="GtkWindow" id="modify_window">
+        <property name="default_height">400</property>
+        <property name="default_width">300</property>
+        <property name="title" context="yes" translatable="yes">Licorn Keywords File Modifier</property>
+        <child>
+            <widget class="GtkVBox" id="modify_vbox1">
+                <property name="visible">True</property>
+                <child>
+                    <widget class="GtkVBox" id="modify_vbox2">
+                        <property name="border_width">15</property>
+                        <property name="spacing">10</property>
+                        <property name="visible">True</property>
+                        <child>
+                            <widget class="GtkLabel" id="modify_title_label">
+                                <property name="label" context="yes" translatable="yes">&lt;span size="xx-large"&gt;Licorn Keywords modifier&lt;/span&gt;</property>
+                                <property name="use_markup">True</property>
+                                <property name="visible">True</property>
+                                <property name="xalign">0.0</property>
+                            </widget>
+                            <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                            </packing>
+                        </child>
+                        <child>
+                            <widget class="GtkFrame" id="modify_paths_frame">
+                                <property name="label" context="yes" translatable="yes">  Paths affected by keywords  </property>
+                                <property name="shadow">in</property>
+                                <property name="shadow_type">in</property>
+                                <property name="visible">True</property>
+                                <child>
+                                    <widget class="GtkVBox" id="modify_vbox3">
+                                        <property name="border_width">15</property>
+                                        <property name="spacing">10</property>
+                                        <property name="visible">True</property>
+                                        <child>
+                                            <widget class="GtkScrolledWindow" id="modify_scrollwindow">
+                                                <property name="hscrollbar_policy">never</property>
+                                                <property name="visible">True</property>
+                                                <property name="vscrollbar_policy">automatic</property>
+                                                <child>
+                                                    <widget class="GtkTreeView" id="modify_treeview">
+                                                        <property name="is_focus">True</property>
+                                                        <property name="search_column">0</property>
+                                                        <property name="visible">True</property>
+                                                    </widget>
+                                                </child>
+                                            </widget>
+                                        </child>
+                                        <child>
+                                            <widget class="GtkHBox" id="hbox1">
+                                                <property name="visible">True</property>
+                                                <child>
+                                                    <widget class="GtkCheckButton" id="modify_recursive_chkbtn">
+                                                        <property name="is_focus">True</property>
+                                                        <property name="label" context="yes" translatable="yes">Apply keywords recusively to dirs</property>
+                                                        <property name="visible">True</property>
+                                                        <property name="xalign">0.0</property>
+                                                        <property name="yalign">0.0</property>
+                                                    </widget>
+                                                </child>
+                                                <child>
+                                                    <widget class="GtkButton" id="modify_empty_button">
+                                                        <property name="is_focus">True</property>
+                                                        <property name="relief">none</property>
+                                                        <property name="visible">True</property>
+                                                        <child>
+                                                            <widget class="GtkImage" id="image1">
+                                                                <property name="stock">gtk-clear</property>
+                                                                <property name="visible">True</property>
+                                                            </widget>
+                                                        </child>
+                                                    </widget>
+                                                    <packing>
+                                                        <property name="expand">False</property>
+                                                        <property name="position">1</property>
+                                                    </packing>
+                                                </child>
+                                            </widget>
+                                            <packing>
+                                                <property name="expand">False</property>
+                                                <property name="position">1</property>
+                                            </packing>
+                                        </child>
+                                    </widget>
+                                </child>
+                            </widget>
+                            <packing>
+                                <property name="position">1</property>
+                            </packing>
+                        </child>
+                        <child>
+                            <widget class="GtkFrame" id="modify_keywords_frame">
+                                <property name="label" context="yes" translatable="yes">  Keywords (instant apply)  </property>
+                                <property name="shadow">in</property>
+                                <property name="shadow_type">in</property>
+                                <property name="visible">True</property>
+                                <child>
+                                    <widget class="GtkVBox" id="modify_vbox4">
+                                        <property name="border_width">15</property>
+                                        <property name="spacing">10</property>
+                                        <property name="visible">True</property>
+                                        <child>
+                                            <widget class="GtkHBox" id="modify_hbox1">
+                                                <property name="spacing">15</property>
+                                                <property name="visible">True</property>
+                                                <child>
+                                                    <widget class="GtkLabel" id="modify_cursel_label">
+                                                        <property name="label" context="yes" translatable="yes">Current selection:</property>
+                                                        <property name="visible">True</property>
+                                                        <property name="xalign">0.0</property>
+                                                    </widget>
+                                                    <packing>
+                                                        <property name="expand">False</property>
+                                                    </packing>
+                                                </child>
+                                                <child>
+                                                    <widget class="GtkLabel" id="modify_cursel_value_label">
+                                                        <property name="label" context="yes" translatable="yes">&lt;b&gt;-&lt;/b&gt;</property>
+                                                        <property name="single_line_mode">True</property>
+                                                        <property name="use_markup">True</property>
+                                                        <property name="visible">True</property>
+                                                        <property name="wrap">True</property>
+                                                        <property name="wrap_mode">word-char</property>
+                                                        <property name="xalign">0.0</property>
+                                                    </widget>
+                                                    <packing>
+                                                        <property name="position">1</property>
+                                                    </packing>
+                                                </child>
+                                                <child>
+                                                    <widget class="GtkButton" id="modify_clear_button">
+                                                        <property name="is_focus">True</property>
+                                                        <property name="relief">none</property>
+                                                        <property name="visible">True</property>
+                                                        <child>
+                                                            <widget class="GtkImage" id="image1">
+                                                                <property name="stock">gtk-clear</property>
+                                                                <property name="visible">True</property>
+                                                            </widget>
+                                                        </child>
+                                                    </widget>
+                                                    <packing>
+                                                        <property name="expand">False</property>
+                                                        <property name="position">2</property>
+                                                    </packing>
+                                                </child>
+                                            </widget>
+                                        </child>
+                                        <child>
+                                            <widget class="GtkNotebook" id="modify_notebook">
+                                                <property name="is_focus">True</property>
+                                                <property name="tab_hborder">10</property>
+                                                <property name="tab_vborder">5</property>
+                                                <property name="visible">True</property>
+                                                <child>
+                                                    <placeholder/>
+                                                    <packing>
+                                                        <property name="tab_label">Page 1</property>
+                                                        <property name="tab_expand">False</property>
+                                                    </packing>
+                                                </child>
+                                            </widget>
+                                            <packing>
+                                                <property name="position">1</property>
+                                            </packing>
+                                        </child>
+                                    </widget>
+                                </child>
+                            </widget>
+                            <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                            </packing>
+                        </child>
+                    </widget>
+                </child>
+                <child>
+                    <widget class="GtkStatusbar" id="modify_statusbar">
+                        <property name="visible">True</property>
+                    </widget>
+                    <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
+                    </packing>
+                </child>
+            </widget>
+        </child>
+    </widget>
+    <widget class="GtkWindow" id="query_window">
+        <property name="default_height">400</property>
+        <property name="default_width">300</property>
+        <property name="title" context="yes" translatable="yes">Licorn Keywords File Query</property>
+        <child>
+            <widget class="GtkVBox" id="query_vbox1">
+                <property name="visible">True</property>
+                <child>
+                    <widget class="GtkVBox" id="query_vbox2">
+                        <property name="border_width">15</property>
+                        <property name="spacing">10</property>
+                        <property name="visible">True</property>
+                        <child>
+                            <widget class="GtkLabel" id="query_title_label">
+                                <property name="label" context="yes" translatable="yes">&lt;span size="xx-large"&gt;Licorn Keywords File Query&lt;/span&gt;</property>
+                                <property name="use_markup">True</property>
+                                <property name="visible">True</property>
+                                <property name="xalign">0.0</property>
+                            </widget>
+                            <packing>
+                                <property name="expand">False</property>
+                            </packing>
+                        </child>
+                        <child>
+                            <widget class="GtkHBox" id="query_hbox1">
+                                <property name="spacing">15</property>
+                                <property name="visible">True</property>
+                                <child>
+                                    <widget class="GtkLabel" id="query_cursel_label">
+                                        <property name="label" context="yes" translatable="yes">Current selection:</property>
+                                        <property name="visible">True</property>
+                                        <property name="xalign">0.00999999977648</property>
+                                    </widget>
+                                    <packing>
+                                        <property name="expand">False</property>
+                                    </packing>
+                                </child>
+                                <child>
+                                    <widget class="GtkLabel" id="query_cursel_value_label">
+                                        <property name="label" context="yes" translatable="yes">&lt;b&gt;-&lt;/b&gt;</property>
+                                        <property name="single_line_mode">True</property>
+                                        <property name="use_markup">True</property>
+                                        <property name="visible">True</property>
+                                        <property name="wrap">True</property>
+                                        <property name="wrap_mode">word-char</property>
+                                        <property name="xalign">0.0</property>
+                                    </widget>
+                                    <packing>
+                                        <property name="position">1</property>
+                                    </packing>
+                                </child>
+                                <child>
+                                    <widget class="GtkButton" id="query_clear_button">
+                                        <property name="is_focus">True</property>
+                                        <property name="relief">none</property>
+                                        <property name="visible">True</property>
+                                        <child>
+                                            <widget class="GtkImage" id="image1">
+                                                <property name="stock">gtk-clear</property>
+                                                <property name="visible">True</property>
+                                            </widget>
+                                        </child>
+                                    </widget>
+                                    <packing>
+                                        <property name="expand">False</property>
+                                        <property name="position">2</property>
+                                    </packing>
+                                </child>
+                            </widget>
+                            <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                            </packing>
+                        </child>
+                        <child>
+                            <widget class="GtkNotebook" id="query_notebook">
+                                <property name="is_focus">True</property>
+                                <property name="tab_hborder">10</property>
+                                <property name="tab_vborder">5</property>
+                                <property name="visible">True</property>
+                                <child>
+                                    <placeholder/>
+                                    <packing>
+                                        <property name="tab_label">Page 1</property>
+                                        <property name="tab_expand">False</property>
+                                    </packing>
+                                </child>
+                            </widget>
+                            <packing>
+                                <property name="expand">False</property>
+                                <property name="position">2</property>
+                            </packing>
+                        </child>
+                        <child>
+                            <widget class="GtkScrolledWindow" id="query_scrolledwindow">
+                                <property name="hscrollbar_policy">never</property>
+                                <property name="is_focus">True</property>
+                                <property name="shadow_type">out</property>
+                                <property name="visible">True</property>
+                                <property name="vscrollbar_policy">automatic</property>
+                                <child>
+                                    <widget class="GtkTreeView" id="query_treeview">
+                                        <property name="is_focus">True</property>
+                                        <property name="search_column">0</property>
+                                        <property name="visible">True</property>
+                                    </widget>
+                                </child>
+                            </widget>
+                            <packing>
+                                <property name="position">3</property>
+                            </packing>
+                        </child>
+                    </widget>
+                </child>
+                <child>
+                    <widget class="GtkStatusbar" id="query_statusbar">
+                        <property name="visible">True</property>
+                    </widget>
+                    <packing>
+                        <property name="expand">False</property>
+                        <property name="position">1</property>
+                    </packing>
+                </child>
+            </widget>
+        </child>
+    </widget>
+</glade-interface>

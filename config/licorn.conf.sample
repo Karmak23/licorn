@@ -1,0 +1,50 @@
+# This sample file should go to /etc/licorn/licorn.conf
+# see http://docs.licorn.org/configuration.html for details.
+
+# Role (default: unset, licornd doesn't start).
+licornd.role = server
+
+# Example: 6 hours between backups (system defaults: ONE day == 24 hours)
+# backup.interval = 21600
+
+# Experimental features (default: False)
+#experimental.enabled = True
+
+# Adjust global number of Service Threads (default: see online documentation)
+#licornd.threads.service.max = 500
+
+# Disable some of licornd features if you want (default: all enabled).
+#licornd.wmi.enabled = False
+#licorn.network.enabled = False
+#licornd.network.lan_scan = False
+
+# don't disable the INotifier unless you know exactly what you do, or a Licorn®
+# developper asks you to do it. Else, all your shared files ACLs will go out of
+# sync and you will need to run `chk` everytime any file/directory changes.
+#licornd.inotifier.enabled = False
+
+# Completely disable extensions at will (2 ways).
+#
+# In normal conditions, extension availability and activation are determined
+# by the real presence of services and binaries on your system (and their
+# status in /etc/default/*, or distro equivalent).
+#
+# But you could want to force one or more extension not to load (eg. extensions
+# which are always enabled, or services you want to manage manually).
+#
+# The global directive (a python list):
+#extensions.ignore = [ 'squid', 'rdiffbackup' ]
+#
+# or the individual settings:
+#extensions.openssh.ignore = True
+#extensions.volumes.ignore = True
+#extensions.caldavd.ignore = True
+#extensions.squid.ignore = True
+#extensions.caldavd.ignore = True
+
+# You can manually disable backends the same way (global or individual directive)
+#backends.openldap.ignore = True
+#backends.dnsmasq.ignore = True
+
+# Just for testing. This should NOT work (shadow backend must always be enabled).
+#backends.shadow.enabled = False
