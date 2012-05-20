@@ -1,0 +1,45 @@
+# Database settings
+dn: olcDatabase=hdb,cn=config
+changetype: modify
+add: olcRootDN
+olcRootDN: cn=admin,dc=meta-it,dc=local
+-
+add: olcRootPW
+olcRootPW: metasecret
+-
+add: olcDbConfig
+olcDbConfig: set_cachesize 0 2097152 0
+olcDbConfig: set_lk_max_objects 1500
+olcDbConfig: set_lk_max_locks 1500
+olcDbConfig: set_lk_max_lockers 1500
+-
+add: olcDbIndex
+olcDbIndex: objectClass eq
+olcDbIndex: uid eq
+olcDbIndex: cn eq
+olcDbIndex: uidNumber eq
+olcDbIndex: gidNumber eq
+olcDbIndex: memberUid eq
+olcDbIndex: uniqueMember eq
+-
+add: olcDbCheckpoint
+olcDbCheckpoint: 512 30
+-
+replace: olcAccess
+olcAccess: to attrs=userPassword
+ by dn="cn=admin,dc=meta-it,dc=local" write
+ by self write
+ by anonymous auth
+ by * none
+olcAccess: to attrs=shadowLastChange
+ by self write
+ by anonymous auth
+ by * none
+olcAccess: to dn.base=""
+ by users read
+ by * none
+# Below line modified from "*" to "users" to prevent anonymous access.
+olcAccess: to *
+ by dn="cn=admin,dc=meta-it,dc=local" write
+ by users read
+ by * none
