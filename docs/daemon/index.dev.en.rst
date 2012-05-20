@@ -1,4 +1,4 @@
-.. _daemondev:
+.. _daemon.dev.en:
 
 ==================
 The Licorn® daemon
@@ -77,8 +77,7 @@ Internals
 .. toctree::
 	:maxdepth: 2
 
-	init
-	core
-	main
-	cmdlistener
-	aclchecker
+	daemon.base.en
+	daemon.main.en
+	cmdlistener.en
+	aclchecker.en

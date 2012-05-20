@@ -15,16 +15,20 @@ gettext.install('licorn', unicode=True)
 import os, sys, curses, re, gzip
 import urllib2, urllib, httplib, hashlib
 import tempfile, base64
-
-from licorn.foundations        import logging, exceptions, process
-from licorn.foundations.styles import *
 from subprocess                import Popen, PIPE, STDOUT
+
+from licorn.foundations        import logging, exceptions
+from licorn.foundations        import ttyutils, process
+from licorn.foundations.styles import *
+
 from licorn.tests import *
+
 from licorn.core.configuration import LicornConfiguration
+
 configuration = LicornConfiguration()
 
 """ parameters to connect to the wmi """
-WMI_url = 'http://localhost:3356'
+WMI_url  = 'https://localhost:3356'
 username = 'wmitest'
 password = 'wmitest'
 
@@ -72,7 +76,7 @@ class Scenario:
 						(self.base_path, cmdnum)).read()
 					gz_file = False
 				if ref_output != output:
-					clear_term()
+					ttyutils.clear_term()
 					handle, tmpfilename = tempfile.mkstemp()
 					if gz_file:
 						handle2, tmpfilename2 = tempfile.mkstemp()
@@ -103,7 +107,7 @@ class Scenario:
 					logging.notice('command #%d \'%s\' completed successfully.' % (
 					cmdnum, stylize(ST_NAME,small_cmd_wmi(self.cmds[cmdnum-1]))))
 			else:
-				clear_term()
+				ttyutils.clear_term()
 				logging.notice('''%s\n\nno reference output for scenario %s : %s (cmd %s/%s)'''
 					'''\n\n%s''' % (
 						strip_moving_data(output),
@@ -309,20 +313,6 @@ def get_all_urls(start_url):
 						urls.add(final_url)
 						urls_to_walk.add(final_url)
 	return urls
-def clean_path_name(command):
-	""" return a multo-OS friendly path for a given command."""
-	return ('_'.join(command)).replace(
-		'../', '').replace('./', '').replace('//','_').replace(
-		'/','_').replace('>','_').replace('&', '_').replace(
-		'`', '_').replace('\\','_').replace("'",'_').replace(
-		'|','_').replace('^','_').replace('%', '_').replace(
-		'(', '_').replace(')', '_').replace ('*', '_').replace(
-		' ', '_').replace('__', '_')
-def clear_term():
-	curses.setupterm()
-	clear = curses.tigetstr('clear')
-	sys.stdout.write(clear)
-	sys.stdout.flush()
 
 def strip_moving_data(output):
 	""" strip dates from warnings and traces, else outputs and references
@@ -812,7 +802,7 @@ if __name__ == "__main__":
 			testsuite.select(scenario_number=testsuite.get_state(),mode='start')
 	if options.execute or options.start_from or options.all:
 		process.execute(['add', 'user', 'wmitest', '-p', 'wmitest', '-G',
-			LMC.configuration.licornd.wmi.group, '-S', '/bin/false'])
+			settings.licornd.wmi.group, '-S', '/bin/false'])
 		try:
 			testsuite.run()
 			test_message("Testsuite terminated successfully.")

@@ -1,0 +1,24 @@
+{#-
+	This snipplet is used to generate "pieces" of HTML for ajax requests.
+	I tried to include it in 'fullbase.html', but this didn't work, I needed
+	to duplicate the contents.
+
+-#}
+<div id="main_content">
+
+	{%- block main_content -%}
+		{%- include 'content_main.html' -%}
+
+	{%- endblock -%}
+
+</div><!-- end main_content -->
+<div id="sub_content_wrapper">
+	<div id="sub_content">
+
+			{%- block sub_content -%}
+				{%- include 'content_sub.html' -%}
+
+			{%- endblock -%}
+
+	</div><!-- end sub_content -->
+</div>

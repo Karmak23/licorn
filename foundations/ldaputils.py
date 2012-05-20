@@ -6,8 +6,7 @@ Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import ldap
-import string
+import ldap, string, cStringIO, tempfile
 from ldif import LDIFParser
 
 def list_dict(l):
@@ -130,16 +129,33 @@ def modifyModlist(old_entry, new_entry, ignore_attr_types=None,
 			modlist.append((ldap.MOD_DELETE, attrtype, None))
 	return modlist # modifyModlist()
 class LicornSmallLDIFParser(LDIFParser):
-	def __init__(self, input_name):
-		LDIFParser.__init__(self, open('%s/schemas/%s.ldif' % (
-			'/usr/share/licorn', input_name), 'r'))
+	def __init__(self, input_name, replacement_table=None):
+
+		replacement_table = replacement_table if replacement_table else {}
+
+		# we must keep this one handy because the LDIFParser
+		# will not access it immediately, and it must stay open.
+		self.stringio = cStringIO.StringIO()
+
+		with open('%s/schemas/%s.ldif'
+				% ('/usr/share/licorn', input_name), 'rb') as ldapf:
+
+			data = ldapf.read()
+			for key, value in replacement_table.iteritems():
+				data = data.replace(key, value)
+
+			self.stringio.write(data)
+			self.stringio.seek(0)
+
+		LDIFParser.__init__(self, self.stringio)
 
 		#print '%s/schemas/%s.ldif' % (
 		#	os.path.dirname(__file__),input_name)
 
-		self.__lcn_data = []
+		self.ldap_data = []
 	def handle(self, dn, entry):
-		self.__lcn_data.append((dn,entry))
+		self.ldap_data.append((dn, entry))
 	def get(self):
 		self.parse()
-		return self.__lcn_data
+
+		return self.ldap_data

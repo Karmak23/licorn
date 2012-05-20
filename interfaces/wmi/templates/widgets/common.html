@@ -1,0 +1,216 @@
+{%- macro jquery_popover_media() -%}
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/jquery.popover.css" />
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/ug-popover.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.popover.js"></script>
+{%- endmacro -%}
+
+
+{%- macro occupied_bar(arg1) -%}
+	<div>{ occupied_bar to be implemented }</div>
+{%- endmacro -%}
+
+
+{%- macro countdown(value, redirect_uri=None, limit=0, show_seconds=True, short=False) %}
+	{#-
+		WARNING: be sure to not make countdown names overlap:
+			- 'daemon_uptime' and 'system_uptime' is OK
+			- 'daemon_uptime' and 'uptime' will NOT work
+				(both will run faster than you expect them to...)
+
+	-#}
+	{%- set name = unique_hash() -%}
+	{% if redirect_uri == None %}
+		{% set redirect_uri = '/' %}
+	{% endif %}
+	{#- http://www.plus2net.com/javascript_tutorial/countdown.php -#}
+	{%- if limit > 0 -%}
+		{%- set operation = '+' -%}
+		{%- set round_value = 0.0 -%}
+		{%- set counter_test = '<=' -%}
+	{%- else -%}
+		{%- set counter_test = '>=' -%}
+		{%- set operation = '-' -%}
+		{%- set round_value = 2.0 -%}
+	{%- endif -%}
+	<script type="text/javascript">
+		var countdown_{{ name }}_start = {{ value }} + {{ round_value }};
+		var countdown_{{ name }}_end = {{ limit }};
+
+		function recompute_countdown_{{ name }}() {
+			// Calculate the number of days left
+			var days = Math.floor(countdown_{{ name }}_start / 86400);
+
+			// After deducting the days calculate the number of hours left
+			var hours = Math.floor((countdown_{{ name }}_start - (days*86400))/3600);
+
+			// After days and hours , how many minutes are left
+			var minutes = Math.floor((countdown_{{ name }}_start - (days*86400) - (hours*3600))/60);
+
+			// Finally how many seconds left after removing days, hours and minutes.
+			var secs = Math.floor((countdown_{{ name }}_start - (days*86400) - (hours*3600) - (minutes*60)));
+
+			var x = "";
+
+			if (days > 1)
+				x += days + "{{ _('d') if short else _(' days') }}";
+
+			else if (days > 0)
+				x += days + "{{ _('d') if short else _(' day') }}";
+
+			if (days > 0 && (hours > 0 || minutes > 0 || secs > 0))
+				x += "{{ ' ' if short else ', ' }}";
+
+			if (hours > 1)
+				x += hours + "{{ _('h') if short else _(' hours') }}";
+
+			else if (hours > 0)
+				x += hours + "{{ _('h') if short else _(' hour') }}";
+
+			if (hours > 0 && (minutes > 0 {%- if show_seconds -%} || secs > 0 {%- endif -%}))
+				x += "{{ ' ' if short else ', ' }}";
+
+			if (minutes > 1)
+				x += minutes + "{{ _('m') if short else _(' minutes') }}";
+
+			else if (minutes > 0)
+				x += minutes + "{{ _('m') if short else _(' minute') }}";
+
+			{%- if show_seconds -%}
+
+				if (minutes > 0 && secs > 0)
+					x += "{{ ' ' if short else ', ' }}";
+
+				if (secs > 1)
+					x += secs + "{{ _('s') if short else _(' seconds') }}";
+
+				else if (secs > 0)
+					x += secs + "{{ _('s') if short else _(' second') }}";
+
+			{%- endif -%}
+
+			$('#countdown_{{name}}').html(x);
+
+			// change the operation to make the counter go upwards or downwards
+			countdown_{{ name }}_start = countdown_{{ name }}_start {{ operation }} 1;
+		}
+
+	function update_countdown_{{ name }}(){
+		if(countdown_{{ name }}_start {{counter_test}} countdown_{{ name }}_end) {
+			recompute_countdown_{{ name }}();
+		} else {
+			document.location = "{{ redirect_uri }}";
+		}
+	}
+
+	update_countdown_{{ name }}();
+
+	setInterval(update_countdown_{{ name }}, 1000);
+	</script>
+	<span id='countdown_{{name}}' class="countdown"></span>
+{%- endmacro %}
+
+{%- macro menu_subitem(item_id, href, title, text, img_src, more_css='') -%}
+		<span class="menu-content-item" id="{{ item_id }}">
+			<a href="{{ href }}"
+				class="menu_link ajax-sidebar-menuitem {{ more_css }}"
+								title="{{ title }}">
+				<img src="{{ img_src }}" />
+				<span class="menu-content-text">{{ text }}</span>
+			</a>
+		</span>
+{%- endmacro -%}
+
+{%- macro menu_item(menu_id, href, title, text, sub_items=None, target=None) -%}
+	{%- if sub_items == None -%}
+		{%- set sub_items = [] -%}
+	{%- endif -%}
+	<div class="menu-item" id="{{ menu_id }}">
+		<div class="menu-title">
+			<a href="{{ href }}" class="menu_link ajax-menu-link-item"
+					title="{{ title }}" {{ ('target="%s"' % target) if target }}>
+				<div class="menu-back"></div>
+				<div class='menu-text'>{{ text }}</div>
+			</a>
+		</div>
+		<div class="menu-content">
+		{%- for item in sub_items -%}
+			{{ menu_subitem(*item) }}
+		{%- endfor -%}
+		</div>
+	</div>
+{%- endmacro -%}
+
+{%- macro licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) %}
+<div class="list ajax-sortable ajax-content-resizable" id="{{ name }}_list">
+	<span id='_list_name' style='display: none'>{{ name }}</span>
+	<div class="list_content">
+
+		<div class="search_bar">
+			<div class="list_title">
+				{{ title }} (<span id="{{ name }}_list_count" class='list_count'>{{ list_items|length }}</span>)
+			</div>
+
+			<div id="search_bar_nav">
+				<div id="search_bar_nav_title">
+				 {{ _("Mass actions:") }}
+				</div>
+
+				<div id="search_bar_nav_content">
+					{%- for action in massive_actions -%}
+					<img src="{{ action['icon'] }}"
+						id="{{ name }}_massive_{{ action['action_name'] }}"
+						alt="{{ _('Massive {0} icon').format(action['action_name']) }}"
+						title="{{ _('Selected name massive {0}').format(action['action_name']) }}"/>
+					&nbsp;
+					{%- endfor -%}
+				</div>
+			</div>
+
+			<div id="search_bar_search">
+				<input type="text" name="search" id="search_box" accesskey="f">
+			</div>
+		</div>
+
+	<div class="list_header">
+		{%- for header in headers -%}
+			{%- if header['sortable'] -%}
+				{%- set sort_class = "sortable" -%}
+			{%- else -%}
+				{%- set sort_class = "not_sortable" -%}
+			{%- endif -%}
+			{%- set current_sort_class = "" -%}
+
+			<div class="list_header_item header_{{ header['name'] }} {{ sort_class }}
+						{{ 'current_sort' if header['default_sort'] }}"
+						id="{{ header['name'] }}" value='asc'>
+				<div class="header_content">
+					<a title="{{ _('Click to sort on this column') }}">
+						{{ header['content'] }}
+					</a>
+				</div>
+				{%- if header['sortable'] -%}
+				<div class="item_header_sort sortable">
+					{%- if header['default_sort'] -%}
+						<img src="/media/images/12x12/sort_desc.png" alt="{{ _('Descending order image') }}" />
+					{%- else -%}
+						&nbsp;
+					{%- endif -%}
+				</div>
+				{%- endif -%}
+
+			</div>
+		{%- endfor -%}
+	</div>
+	<div class="list_items">
+	{%- for item in list_items -%}
+		{%- include macro_row -%}
+	{%- endfor -%}
+	</div>
+	<script language="javascript" type="text/javascript">
+	$(document).ready(function() {
+		init_list_events("{{ name }}", '{{ main_column }}', {{ search_columns }}, '{{ identifier }}');
+	});
+	</script>
+	</div>
+</div>
+{%- endmacro %}

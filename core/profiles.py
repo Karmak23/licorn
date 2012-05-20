@@ -19,25 +19,25 @@ from xml.dom     import minidom
 from xml         import dom as xmldom
 from xml.parsers import expat
 
-from licorn.foundations           import exceptions, logging
+from licorn.foundations           import settings, exceptions, logging
 from licorn.foundations           import fsapi, hlstr, readers, pyutils
+from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.base      import Singleton, Enumeration
-from licorn.foundations.constants import filters
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.base      import DictSingleton, Enumeration
+from licorn.foundations.constants import filters, priorities, roles
 
 from licorn.core         import LMC
 from licorn.core.groups  import Group
 from licorn.core.classes import CoreController, CoreStoredObject
-from licorn.daemon       import priorities, roles
 
 
 # the bakend is a fake one because we don't have backends for profiles
 # yet. The Controller handles the dirty job directly. But the
 # :class:`~licorn.core.classes.CoreStoredObject` adds locking and
 # controller informations, so we use it to avoid duplicating the work.
-profile_fake_backend = Enumeration('fake_backend')
+profile_fake_backend = Enumeration(name='fake_backend')
 
 class Profile(CoreStoredObject):
 	""" A Licorn® profile.
@@ -68,6 +68,38 @@ class Profile(CoreStoredObject):
 	by_name  = {}
 	by_group = {}
 
+	_id_field = 'gidNumber'
+
+	def __getstate__(self):
+		""" WARNING: this pickle implementatiin is voluntarily imcomplete.
+			It is not meant to be used outside of licornd as much as inside. """
+
+		d = {
+			'name'                 : self.__name,
+			'gidNumber'            : self.__gidNumber,
+			'groupName'            : self.__groupName,
+			'description'          : self.__description,
+			'profileSkel'          : self.__profileSkel,
+			'profileShell'         : self.__profileShell,
+			'profileQuota'         : self.__profileQuota,
+			 }
+
+		d.update(CoreStoredObject.__getstate__(self))
+
+		return d
+	def __setstate__(self, data_dict):
+		""" TODO: this pickle-friendly implementation is incomplete:
+			self.weakref is still unset, so is `self.backend`, etc. """
+		CoreStoredObject.__setstate__(self, data_dict)
+
+		cname = self.__class__.__name__
+
+		for key, value in data_dict.iteritems():
+			# tricky hack to re-construct the private attributes
+			# while unpickling on the Pyro remote side.
+			self.__dict__['_%s__%s' %(cname, key)] = value
+
+		self.__pickled = True
 	def __init__(self, name,
 				group=None, groupName=None,
 				description=None,
@@ -78,8 +110,6 @@ class Profile(CoreStoredObject):
 
 		if backend is None:
 			backend = profile_fake_backend
-
-		CoreStoredObject.__init__(self,	LMC.profiles, backend)
 
 		self.__name         = name
 		self.__description  = description
@@ -93,16 +123,6 @@ class Profile(CoreStoredObject):
 		self.__group     = group.weakref
 		self.__groupName = group.name
 		self.__gidNumber = group.gidNumber
-
-		# the group will verify the profile GID, which must be set before.
-		group.profile = self
-
-		del group
-
-		# the profile reverse mappings, weak references to avoid keeping the
-		# object alive on deletion.
-		Profile.by_name[self.__name]       = self.weakref
-		Profile.by_group[self.__groupName] = self.weakref
 
 		if groups is None:
 			self.__groups = []
@@ -120,23 +140,30 @@ class Profile(CoreStoredObject):
 					group.link_Profile(self)
 		else:
 			self.__groups = [ group.weakref for group in groups ]
+
+		super(Profile, self).__init__(controller=LMC.profiles, backend=backend)
+
+		# NOTE: the 3 following assignations must be done after the super() call.
+
+		# the group will verify the profile GID, which must be set before.
+		group.profile = self
+
+		# the profile reverse mappings, weak references to avoid keeping the
+		# object alive on deletion.
+		Profile.by_name[self.__name]       = self.weakref
+		Profile.by_group[self.__groupName] = self.weakref
+
 	def __str__(self):
-		return '%s(%s‣%s) = {\n\t%s\n\t}\n' % (
-			self.__class__,
-			stylize(ST_UGID, self.__gidNumber),
-			stylize(ST_NAME, self.__name),
-			'\n\t'.join('%s: %s' % (attr_name, getattr(self, attr_name))
-					for attr_name in dir(self)
-						if attr_name not in ('__group', 'primaryGroup', 'group'))
-			)
-	def __repr__(self):
 		return '%s(%s‣%s)' % (
 			self.__class__,
 			stylize(ST_UGID, self.__gidNumber),
 			stylize(ST_NAME, self.__name))
 	def __del__(self):
 
-		assert ltrace(TRACE_GC, '| Profile %s.__del__()' % self.__name)
+		assert ltrace_func(TRACE_GC)
+
+		if self.__pickled:
+			return
 
 		del self.__group
 
@@ -311,7 +338,7 @@ class Profile(CoreStoredObject):
 				'background.') % ', '.join(stylize(ST_LOGIN, user.login)
 											for user in self.__group().members))
 			for user in self.__group().members:
-				L_service_enqueue(priorities.NORMAL,
+				workers.service_enqueue(priorities.NORMAL,
 								user.apply_skel, profileSkel, batch=True)
 	def mod_profileShell(self, profileShell=None, instant_apply=False,
 											batch=False, auto_answer=None):
@@ -363,7 +390,7 @@ class Profile(CoreStoredObject):
 
 		if instant_apply:
 			# on self.group.members, batch=True
-			print '>> please implement core.profiles.Profile.mod_profileQuota() instant_apply parameter.'
+			lprint('>> please implement core.profiles.Profile.mod_profileQuota() instant_apply parameter.')
 
 	def add_Groups(self, groups_to_add=None, instant_apply=True):
 		""" Add groups in the groups list of the profile 'group'. """
@@ -404,7 +431,7 @@ class Profile(CoreStoredObject):
 									if instant_apply else ''))
 
 					if instant_apply:
-						L_service_enqueue(priorities.NORMAL,
+						workers.service_enqueue(priorities.NORMAL,
 									group.add_Users,
 									self.group.gidMembers, batch=True)
 
@@ -441,7 +468,7 @@ class Profile(CoreStoredObject):
 									if instant_apply else ''))
 
 					if instant_apply:
-						L_service_enqueue(priorities.NORMAL, group.del_Users,
+						workers.service_enqueue(priorities.NORMAL, group.del_Users,
 										self.group.gidMembers, batch=True)
 				else:
 					logging.info(_(u'Skipped group {0}, not in groups of '
@@ -542,7 +569,7 @@ class Profile(CoreStoredObject):
 					path=self.__profileSkel, mindepth=1)))
 
 			if something_done:
-				L_service_enqueue(priorities.NORMAL, user.check, batch=True)
+				workers.service_enqueue(priorities.NORMAL, user.check, batch=True)
 
 				logging.notice(_(u'Applyed skel {0} to user {1}, permissions '
 					'are checked in the background.').format(
@@ -613,7 +640,7 @@ class Profile(CoreStoredObject):
 						if len(self.__groups) > 0 else ''
 				)
 
-class ProfilesController(Singleton, CoreController):
+class ProfilesController(DictSingleton, CoreController):
 	""" Controller and representation of /etc/licorn/profiles.xml, compatible
 		with GNOME system tools (as much as possible but as of 20110211, the
 		same XML file works for both of us).
@@ -643,7 +670,7 @@ class ProfilesController(Singleton, CoreController):
 		if ProfilesController.init_ok:
 			return
 
-		CoreController.__init__(self, 'profiles')
+		super(ProfilesController, self).__init__(name='profiles')
 
 		ProfilesController.init_ok = True
 		assert ltrace(TRACE_PROFILES, '< ProfilesController.__init__(%s)' %
@@ -664,6 +691,9 @@ class ProfilesController(Singleton, CoreController):
 		return Profile.by_group[group]()
 	def by_gid(self, gid):
 		return self[gid]
+	# the generic way (called from RWI)
+	by_key = by_gid
+	by_id  = by_gid
 	def load(self):
 
 		if ProfilesController.load_ok:
@@ -717,10 +747,10 @@ class ProfilesController(Singleton, CoreController):
 
 		# FIXME: lock our datafile with a FileLock() ?
 		with self.lock:
-			open(LMC.configuration.profiles_config_file,
+			open(settings.core.profiles.config_file,
 					'w').write(self.to_XML())
 	def handle_config_changes(self):
-		print '>> please implement ProfilesController.handle_config_changes()'
+		lprint('>> please implement ProfilesController.handle_config_changes()')
 	def select(self, filter_string):
 		""" Filter profiles on different criteria. """
 
@@ -1067,7 +1097,7 @@ class ProfilesController(Singleton, CoreController):
 					barely returning a dict.
 		"""
 
-		filename           = LMC.configuration.profiles_config_file
+		filename           = settings.core.profiles.config_file
 		empty_allowed_tags = ( 'description', )
 
 		def get_profile_data(rootelement, leaftag, isoptional=False):

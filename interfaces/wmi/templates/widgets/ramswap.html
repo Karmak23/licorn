@@ -1,0 +1,331 @@
+
+<style type="text/css">
+
+#ramswap_wrapper {
+	text-align: center;
+	padding: 10px 10px;
+	border-radius: 5px;
+	margin-bottom: 10px;
+}
+
+#ramswap_label {
+	text-align: center;
+	width: 175px;
+	margin: -250px auto 0;
+	padding-bottom: 212px;
+}
+
+#ramswap_update {
+	margin: -280px auto 0;
+	padding-bottom: 252px;
+}
+
+.ramswap_value_label {
+	font: sans-serif;
+	font-size: 11px;
+	color: #580d27;
+}
+
+</style>
+<div id="ramswap_wrapper">
+		<div id="ramswap_donut"></div>
+		<div id="ramswap_label">{{ _('Physical and virtual memory occupation') }}</div>
+		<div id="ramswap_update">
+			<input type="button" id="ramswap_update_button" value="UPDATE" />
+		</div>
+	</div>
+</div>
+<script language="javascript">
+
+	$("#ramswap_label").hide();
+	$("#ramswap_update").hide();
+
+	$("#ramswap_label").delay(2500).fadeIn('slow');
+
+	// this is meant for debug only
+	//$("#ramswap_update").delay(1500).fadeIn('slow');
+
+	var ramswap_is_ready = false;
+
+	var ramswap_w     = 450,
+		ramswap_h     = 450,
+		ramswap_r     = Math.min(ramswap_w, ramswap_h) / 2,
+		ram_colors    = d3.scale.ordinal().range([ "#5c112f", "#646542", "#e13971", "#969863", "#89dafa" ]),
+		swap_colors   = d3.scale.ordinal().range([ "#5c112f", "#e13971" ]),
+		ram_arc       = d3.svg.arc().outerRadius(ramswap_r * 0.8),
+		swap_arc      = d3.svg.arc().outerRadius(ramswap_r * 0.55),
+		ram_donut     = d3.layout.pie();
+		swap_donut    = d3.layout.pie();
+
+	function ram_tweenPie(b) {
+	  b.innerRadius = 0;
+	  var i = d3.interpolate({startAngle: 0, endAngle: 0}, b);
+	  return function(t) {
+		return ram_arc(i(t));
+	  };
+	}
+	function ram_tweenDonut(b) {
+	  b.innerRadius = ramswap_r * .87;
+	  var i = d3.interpolate({innerRadius: 0}, b);
+	  return function(t) {
+		return ram_arc(i(t));
+	  };
+	}
+	function swap_tweenPie(b) {
+	  b.innerRadius = 0;
+	  var i = d3.interpolate({startAngle: 0, endAngle: 0}, b);
+	  return function(t) {
+		return swap_arc(i(t));
+	  };
+	}
+	function swap_tweenDonut(b) {
+	  b.innerRadius = ramswap_r * .62;
+	  var i = d3.interpolate({innerRadius: 0}, b);
+	  return function(t) {
+		return swap_arc(i(t));
+	  };
+	}
+
+	// Stash the old values for transition.
+	function stash(d, i) {
+		d.startAngle0 = d.startAngle;
+		d.endAngle0 = d.endAngle;
+	}
+
+	function ram_tweenPie_update(a) {
+		a.innerRadius = ramswap_r * .87;
+
+		var i = d3.interpolate({startAngle: a.startAngle0, endAngle: a.endAngle0 }, a);
+
+		return function(t) {
+			var b = i(t);
+
+			a.startAngle0 = b.startAngle;
+			a.endAngle0 = b.endAngle;
+
+			return ram_arc(b);
+		};
+	}
+
+	function swap_tweenPie_update(a) {
+		a.innerRadius = ramswap_r * .62;
+
+		var i = d3.interpolate({startAngle: a.startAngle0, endAngle: a.endAngle0 }, a);
+
+		return function(t) {
+			var b = i(t);
+
+			a.startAngle0 = b.startAngle;
+			a.endAngle0 = b.endAngle;
+
+			return swap_arc(b);
+		};
+	}
+
+	var ram_labels  = [
+						"{{ _('Active Applications: ') }}",
+						"{{ _('Inactive Applications: ') }}",
+						"{{ _('Cached: ') }}",
+						"{{ _('Buffers: ') }}",
+						"{{ _('Free: ') }}"
+					];
+	var swap_labels = [ "{{ _('Occupied: ') }}", "{{ _('Free: ') }}" ];
+
+	var ram_total = ram_data = swap_total = swap_data = 0;
+
+	// hold global references to the vis SVG and paths, to update the data
+	// more easily afterwards.
+	var vis =
+		ram_arcs_group = ram_arcs = ram_paths =
+			ram_txt1 = ram_txt2 =
+		swap_arcs_group = swap_arcs = swap_paths =
+			swap_txt1 = swap_txt2 = null;
+
+	update_ramswap_data({{ ram }});
+
+	ram_total  = {{ ram.MemTotal }};
+	swap_total = {{ ram.SwapTotal }};
+
+	create_ramswap();
+
+	d3.select("#ramswap_update_button").on("click", function() {
+		$.getJSON('/system/ramswap/json', function(d) {
+			redraw_ramswap(d);
+		});
+	});
+
+	function update_ramswap_data(rs_data) {
+
+		ram_data  = [ rs_data.Active, rs_data.Inactive,
+				rs_data.Cached, rs_data.Buffers, rs_data.MemFree ];
+
+		swap_data = [ rs_data.SwapTotal - rs_data.SwapFree, rs_data.SwapFree ];
+	}
+
+	function create_ramswap() {
+
+		vis = d3.select("#ramswap_donut")
+		  .append("svg:svg")
+			.attr("width", ramswap_w)
+			.attr("height", ramswap_h);
+
+		ram_arcs_group = vis.selectAll("g.ram_arcs_data")
+			.data([ram_data])
+			.enter().append("svg:g")
+			.attr("class", "ram_arcs_data");
+
+		ram_arcs = ram_arcs_group.selectAll("g.ram_arc")
+			.data(ram_donut)
+		  .enter().append("svg:g")
+			.attr("class", "ram_arc")
+			.attr("transform", "translate(" + ramswap_r + "," + ramswap_r + ")");
+
+		ram_paths = ram_arcs.append("svg:path")
+			.attr("fill", function(d, i) { return ram_colors(i); });
+
+		ram_paths.transition()
+			.duration(500)
+			.attrTween("d", ram_tweenPie);
+
+		ram_paths.transition()
+			.ease("elastic")
+			.delay(function(d, i) { return 500 + i * 50; })
+			.duration(500)
+			.attrTween("d", ram_tweenDonut)
+			.each(stash);
+
+		ram_txt1 = ram_arcs.append("svg:text")
+			.transition()
+			.delay(function(d, i) { return 500 + i * 100; })
+			.attr("class", "ramswap_value_label ramswap_value_descr")
+			.attr("transform", function(d) { return "translate(" + ram_arc.centroid(d) + ")"; })
+			.attr("dy", "0em")
+			.attr("text-anchor", "middle")
+			.text(function(d, i) { return ram_labels[i] });
+
+		ram_txt2 = ram_arcs.append("svg:text")
+			.transition()
+			.delay(function(d, i) { return 500 + i * 100; })
+			.attr("class", "ramswap_value_label ramswap_value_number")
+			.attr("transform", function(d) { return "translate(" + ram_arc.centroid(d) + ")"; })
+			.attr("dy", "1.1em")
+			.attr("text-anchor", "middle")
+			.text(function(d, i) { return d.value.toFixed(0)
+										+ '{{ _('Mb') }}' + ' ('
+										+ (d.value / ram_total * 100.00).toFixed(1)
+										+ '%)'; });
+
+		setTimeout(create_swap, 1500);
+	}
+
+	function create_swap() {
+
+		// the SWAP inner donut
+		swap_arcs_group = vis.selectAll("g.swap_arcs_data")
+			.data([swap_data])
+			.enter().append("svg:g")
+			.attr("class", "swap_arcs_data");
+
+		swap_arcs = swap_arcs_group.selectAll("g.swap_arc")
+			.data(swap_donut)
+			.enter().append("svg:g")
+			.attr("class", "swap_arc")
+			.attr("transform", "translate(" + ramswap_r + "," + ramswap_r + ")");
+
+		swap_paths = swap_arcs.append("svg:path")
+			.attr("fill", function(d, i) { return swap_colors(i); });
+
+		swap_paths.transition()
+			.duration(500)
+			.attrTween("d", swap_tweenPie);
+
+		swap_paths.transition()
+			.ease("elastic")
+			.delay(function(d, i) { return 500 + i * 50; })
+			.duration(500)
+			.attrTween("d", swap_tweenDonut);
+
+		swap_txt1 = swap_arcs.append("svg:text")
+			.transition()
+			.delay(function(d, i) { return 500 + i * 100; })
+			.attr("class", "ramswap_value_label ramswap_value_descr")
+			.attr("transform", function(d) { return "translate(" + swap_arc.centroid(d) + ")"; })
+			.attr("dy", "0em")
+			.attr("text-anchor", "middle")
+			.text(function(d, i) { return swap_labels[i] });
+
+		swap_txt2 = swap_arcs.append("svg:text")
+			.transition()
+			.delay(function(d, i) { return 500 + i * 100; })
+			.attr("class", "ramswap_value_label ramswap_value_number")
+			.attr("transform", function(d) { return "translate(" + swap_arc.centroid(d) + ")"; })
+			.attr("dy", "1.1em")
+			.attr("text-anchor", "middle")
+			.text(function(d, i) { return d.value.toFixed(0)
+										+ '{{ _('Mb') }}' + ' ('
+										+ (d.value / swap_total * 100.00).toFixed(1)
+										+ '%)'; });
+
+		ramswap_is_ready = true;
+	}
+
+	function update_ramswap(data) {
+
+		if (!ramswap_is_ready) {
+			// prevent updates from the collectors if the D3 representation
+			// is not fully built.
+			return;
+		}
+
+		update_ramswap_data(data);
+
+		ram_arcs_group.data([ram_data]);
+		ram_donut(ram_data);
+		ram_arcs.data(ram_donut);
+
+		// setting the donut to ram_arcs.data() isn't sufficient.
+		ram_paths.data(ram_donut);
+
+		// these doesn't help, I can't seem to find how to move the text.
+		//ram_txt1.data(ram_donut);
+		//ram_txt2.data(ram_donut);
+
+		ram_paths.transition()
+			.duration(500)
+			.attrTween("d", ram_tweenPie_update);
+
+		// record new position after move.
+		ram_paths.each(stash);
+
+		ram_arcs.select("text.ramswap_value_number")
+			.transition().duration(500)
+			.text(function(d, i) { return d.value.toFixed(0)
+										+ '{{ _('Mb') }}' + ' ('
+										+ (d.value / ram_total * 100.00).toFixed(1)
+										+ '%)'; });
+
+
+		swap_arcs_group.data([swap_data]);
+
+		swap_donut(swap_data);
+
+		swap_arcs.data(swap_donut)
+
+		swap_paths.transition()
+			.duration(500)
+			.attrTween("d", swap_tweenPie_update);
+
+		// record new positions.
+		swap_paths.each(stash);
+
+		swap_txt2
+			.transition().duration(500)
+			.attr("dy", "1.1em")
+			.text(function(d, i) { return d.value.toFixed(0)
+										+ '{{ _('Mb') }}' + ' ('
+										+ (d.value / swap_total * 100.00).toFixed(1)
+										+ '%)'; });
+
+	}
+</script>
+

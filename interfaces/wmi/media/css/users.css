@@ -1,0 +1,140 @@
+
+.header_select {
+	text-align: center;
+	min-width: 4%;
+	display: block;
+	float:left;
+	line-height: 30px;
+	vertical-align: center;
+}
+
+.header_locked {
+	text-align: center;
+	min-width: 50px;
+	width:10%;
+	display: block;
+	float:left;
+}
+
+.header_profile {
+	width:15%;
+	display: block;
+	float:left;
+}
+
+.header_nav {
+	width:4%;
+	display: block;
+	float:left;
+	height: 45px;
+}
+
+.header_login {
+	width:15%;
+	display: block;
+	float: left;
+}
+
+.header_gecos {
+	width:39%;
+	display: block;
+	float: left;
+}
+
+.header_uidNumber {
+	width:12%;
+	display: block;
+	float: left;
+}
+
+.content_header {
+	width:100%;
+	height: 30px;
+	line-height: 30px;
+	vertical-align:center;
+	cursor: pointer;
+}
+
+.users_row {
+	text-align: center;
+	cursor: pointer;
+}
+
+.users_select, .sys_users_select {
+	min-width: 20px;
+	width:4%;
+	display: block;
+	height:34px;
+	float: left;
+	clear: left;
+	padding-top: 16px;
+}
+.users_locked, .sys_users_locked {
+	width:10%;
+	display: block;
+	float: left;
+	padding-top: 13px;
+	height: 37px;
+	text-align: center;
+}
+.users_content, .sys_users_content {
+	line-height: 50px;
+	vertical-align: center;
+	cursor: pointer;
+}
+.users_profile, .sys_users_profile {
+	width: 15%;
+	display: block;
+	float: left;
+	line-height: 50px;
+}
+
+.users_gecos, .sys_users_gecos {
+	width: 39%;
+	display: block;
+	float: left;
+	text-align: left;
+	max-height: 50px;
+	font-size: 90%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.users_login, .sys_users_login {
+	width: 15%;
+	display: block;
+	float:left;
+	max-height:50px;
+	overflow:hidden;
+
+}
+.users_uidNumber, .sys_users_uidNumber {
+	display: block;
+	right: 0;
+	width: 12%;
+	float:left;
+}
+
+.users_profile_content, .sys_users_profile_content {
+	width:100%;
+	display: block;
+}
+.users_nav, .sys_users_nav {
+	text-align: center;
+	width:4%;
+	display: block;
+	float:left;
+	height:50px;
+}
+.users_reapply_skel, .sys_users_reapply_skel {
+	cursor: pointer;
+	padding-top:3px;
+	height:50%;
+	line-height: 100%;
+	vertical-align: center;
+}
+.users_delete, .users_delete_sys {
+	cursor: pointer;
+	height:50%;
+	line-height: 100%;
+	vertical-align: center;
+}

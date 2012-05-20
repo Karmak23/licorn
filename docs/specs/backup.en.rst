@@ -1,4 +1,4 @@
-.. _backup_spec:
+.. _specs.backup.en:
 
 .. highlight:: bash
 
@@ -88,8 +88,3 @@ Here is how I intend to use the backup module from CLI::
 
 	# remove all backups older than...
 	del backups --older 3 months
-
-Rationale
-=========
-
-We make backup

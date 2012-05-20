@@ -1,5 +1,5 @@
 
-.. _extensions.oepnssh.dev:
+.. _extensions.openssh.dev.en:
 
 =========================================
 OpenSSH extension developer documentation

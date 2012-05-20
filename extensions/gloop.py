@@ -23,10 +23,12 @@ import dbus.mainloop.glib
 
 from licorn.foundations           import exceptions, logging
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.base      import Singleton
-from licorn.foundations.constants import services, svccmds
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.base      import ObjectSingleton
+from licorn.foundations.constants import services, svccmds, distros
+
+from licorn.core                  import LMC
 from licorn.extensions            import ServiceExtension
 
 class DbusThread(Thread):
@@ -55,7 +57,7 @@ class DbusThread(Thread):
 		self.mainloop.run()
 	def stop(self):
 		self.mainloop.quit()
-class GloopExtension(Singleton, ServiceExtension):
+class GloopExtension(ObjectSingleton, ServiceExtension):
 	""" Handle [our interesting subset of] Dbus configuration and options.
 		Provide a dbus/gobject loop.
 
@@ -67,24 +69,25 @@ class GloopExtension(Singleton, ServiceExtension):
 		ServiceExtension.__init__(self,
 			name='gloop',
 			service_name='dbus',
-			service_type=services.UPSTART
+			service_type=services.UPSTART 
+							if LMC.configuration.distro == distros.UBUNTU 
+							else services.SYSV
 		)
 
-		# TODO: parameter service_* from the distro
-		# 		if LMC.configuration.distro in (
-		#	distros.LICORN,
-		#	distros.UBUNTU,
-		#	distros.DEBIAN,
-		#	distros.REDHAT,
-		#	distros.GENTOO,
-		#	distros.MANDRIVA,
-		#	distros.NOVELL
-		#	):
+		dbus_binary_paths = {
+			distros.UBUNTU: '/bin/dbus-daemon',
+			distros.DEBIAN: '/usr/bin/dbus-daemon',
+		}
 
+		# NOTE: same path on Ubuntu and Debian.
 		self.paths.dbus_config = '/etc/dbus-1/system.conf'
-		self.paths.dbus_binary = '/bin/dbus-daemon'
+
+		# NOTE: different path on Ubuntu and Debian. Don't know other distros.
+		self.paths.dbus_binary = dbus_binary_paths.get(LMC.configuration.distro, 
+									'/distro_not_supported/for_gloop_extension/dbus-daemon')
 
 		# TODO: get this from the config file.
+		# NOTE: same path on Ubuntu and Debian.
 		self.paths.pid_file    = '/var/run/dbus/pid'
 
 	def initialize(self):

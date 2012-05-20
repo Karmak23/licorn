@@ -6,17 +6,16 @@ Licorn Daemon inotifier thread.
 :license: GNU GPL version 2
 """
 
-import os, time, pyinotify, select
+import os, time, pyinotify, select, errno
 
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.base      import BasicCounter
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, priorities
 from licorn.core                  import LMC
-from licorn.daemon                import priorities
 from licorn.daemon.threads        import LicornBasicThread
 
 class INotifier(LicornBasicThread, pyinotify.Notifier):
@@ -57,26 +56,38 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		self.inotifier_del            = self._wm.rm_watch
 		self.inotifier_watch_conf     = self.watch_conf
 		self.inotifier_del_conf_watch = self.del_conf_watch
-	def dump_status(self, long_output=False, precision=None):
+	def dump_status(self, long_output=False, precision=None, as_string=True):
 
-		#~ if long_output:
-			#~ return u'%s%s (%d watched dirs)\n\t%s\n' % (
-				#~ stylize(ST_RUNNING
-					#~ if self.is_alive() else ST_STOPPED, self.name),
-				#~ u'&' if self.daemon else '',
-				#~ len(self._wm.watches.keys()),
-				#~ u'\n\t'.join(sorted(w.path
-					#~ for w in self._wm.watches.itervalues()))
-			#~ )
-		#~ else:
-		return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
-				u'{4} queued events)').format(stylize(ST_RUNNING
-					if self.is_alive() else ST_STOPPED, self.name),
-				u'&' if self.daemon else u'',
-				stylize(ST_RUNNING,   str(len(self._watch_manager.watches))),
-				stylize(ST_RUNNING,   str(len(self._watched_conf_files))),
-				stylize(ST_IMPORTANT, str(len(self._eventq)))
-				))
+		if as_string:
+			#~ if long_output:
+				#~ return u'%s%s (%d watched dirs)\n\t%s\n' % (
+					#~ stylize(ST_RUNNING
+						#~ if self.is_alive() else ST_STOPPED, self.name),
+					#~ u'&' if self.daemon else '',
+					#~ len(self._wm.watches.keys()),
+					#~ u'\n\t'.join(sorted(w.path
+						#~ for w in self._wm.watches.itervalues()))
+				#~ )
+			#~ else:
+			return (_(u'{0}{1} ({2} watched dirs, {3} config files, '
+					u'{4} queued events)').format(stylize(ST_RUNNING
+						if self.is_alive() else ST_STOPPED, self.name),
+					u'&' if self.daemon else u'',
+					stylize(ST_RUNNING,   str(len(self._watch_manager.watches))),
+					stylize(ST_RUNNING,   str(len(self._watched_conf_files))),
+					stylize(ST_IMPORTANT, str(len(self._eventq)))
+					))
+		else:
+			return dict(
+					name=self.name,
+					daemon=self.daemon,
+					alive=self.is_alive(),
+					ident=self.ident,
+					watches=len(self._watch_manager.watches),
+					conf_files=self._watched_conf_files.keys(),
+					qsize=len(self._eventq)
+				)
+
 	def stop(self):
 		""" Stop notifier's loop. Stop notification. Join the thread. """
 
@@ -119,7 +130,12 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 					logging.warning(_(u'{0}: error on read_events: {1}').format(
 						stylize(ST_NAME, self.name), e))
 
-		pyinotify.Notifier.stop(self)
+		try:
+			pyinotify.Notifier.stop(self)
+
+		except (OSError, IOError), e:
+			if e.errno != errno.EBADF:
+				raise e
 
 		try:
 			self._pollobj.unregister(self._pipe[0])
@@ -133,6 +149,7 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 	def del_conf_watch(self, conf_file):
 		try:
 			del self._watched_conf_files[conf_file]
+
 		except Exception, e:
 			logging.warning2(_(u'inotifier: error deleting {0} '
 				u'(was: {1} {2})').format(conf_file, type(e), e))
@@ -292,23 +309,34 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		max_user_watches  = 1048576 * number_of_things
 		max_queued_events = 16384 * number_of_things
 
-		if int(open('/proc/sys/fs/inotify/max_user_watches').read().strip()) < max_user_watches:
-			open('/proc/sys/fs/inotify/max_user_watches', 'w').write(str(max_user_watches))
-			logging.info(_(u'{0}: increased inotify {1} to {2}.').format(
-				stylize(ST_NAME, self.name), stylize(ST_ATTR, 'max_user_watches'),
-				stylize(ST_ATTR, max_user_watches)))
+		for name, value in (('max_user_watches', max_user_watches),
+							('max_queued_events', max_queued_events)):
 
-		if int(open('/proc/sys/fs/inotify/max_queued_events').read().strip()) < max_queued_events:
-			open('/proc/sys/fs/inotify/max_queued_events', 'w').write(str(max_queued_events))
-			logging.info(_(u'{0}: increased inotify {1} to {2}.').format(
-				stylize(ST_NAME, self.name), stylize(ST_ATTR, 'max_queued_events'),
-				stylize(ST_ATTR, max_queued_events)))
+			curval = int(open('/proc/sys/fs/inotify/{0}'.format(name)).read().strip())
+			if curval < value:
+				try:
+					open('/proc/sys/fs/inotify/{0}'.format(name), 'w').write(str(value))
+					logging.info(_(u'{0}: increased inotify {1} to {2}.').format(
+						stylize(ST_NAME, self.name), stylize(ST_ATTR, name),
+						stylize(ST_ATTR, value)))
+
+				except (IOError, OSError), e:
+					if e.errno not in (errno.EPERM, errno.EACCES):
+						raise
+
+					# in LXC, we don't always have permissions to tweak `/proc`.
+					# This should not stop us, anyway.
+					logging.exception(_(u'{0}: unable to increase inotify {1} to {2}').format(
+						stylize(ST_NAME, self.name), stylize(ST_ATTR, name),
+						stylize(ST_ATTR, value)))
 
 		# setup controllers notifies.
 		for controller in LMC:
 			if hasattr(controller, '_inotifier_install_watches'):
 				try:
-					getattr(controller, '_inotifier_install_watches')(self)
+					controller._inotifier_install_watches(self)
 
 				except Exception, e:
-					logging.warning(e)
+					logging.warning(_(u'{0:s}: exception install watches of '
+							u'{1:s}.').format(self, controller))
+					pyutils.print_exception_if_verbose()

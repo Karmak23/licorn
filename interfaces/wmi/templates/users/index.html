@@ -1,0 +1,97 @@
+{#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+
+{%- extends 'fullbase.html' -%}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/users.css" />
+	{{ jquery_popover_media() }}
+	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/users.js"></script>
+{%- endblock -%}
+
+{%- block title -%}{{ _('Users management') }}{%- endblock -%}
+
+{%- block main_content -%}
+
+	<!-- standard users list -->
+
+	{%- set name = "users" -%}
+	{%- set identifier = "uidNumber" -%}
+	{%- set main_column = "login" -%}
+	{%- set title = _('Users') -%}
+	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
+								{ "action_name" : "skel", "icon" : "/media/images/24x24/mass_skel.png"}, ] -%}
+								{# { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%} #}
+	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'users_massive_select\'>", "sortable" : False},
+						{ "name" : "locked", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
+						{ "name" : "login", "content" : _('Login'), "sortable" : True, "default_sort" : True},
+						{ "name" : "gecos", "content" : _('Full name'), "sortable" : True, "default_sort" : False},
+						{ "name" : "uidNumber", "content" : _('UID'), "sortable" : True, "default_sort" : False},
+						{ "name" : "profile", "content" : _('Profile'), "sortable" : True, "default_sort" : False},
+						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+	{%- set list_items = users_list -%}
+	{%- set macro_row = 'users/user_row.html' -%}
+	{%- set search_columns = [ 'uidNumber', 'gecos', 'login', 'profile' ] -%}
+
+	{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
+
+	{%- if request.user.is_superuser -%}
+		<!-- system users list -->
+
+		{%- set name = "sys_users" -%}
+		{%- set title = _('System users') -%}
+		{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'sys_users_massive_select\'>", "sortable" : False},
+						{ "name" : "locked", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
+						{ "name" : "login", "content" : _('Login'), "sortable" : True, "default_sort" : True},
+						{ "name" : "gecos", "content" : _('Full name'), "sortable" : True, "default_sort" : False},
+						{ "name" : "uidNumber", "content" : _('uid'), "sortable" : True, "default_sort" : False},
+						{ "name" : "profile", "content" : _('Profile'), "sortable" : True, "default_sort" : False},
+						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+		{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},
+								{ "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"} ] -%}
+		{%- set list_items = system_users_list -%}
+
+		{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
+
+	{%- endif -%}
+
+	<script language="javascript" type="text/javascript">
+		$(document).ready(function() {
+
+			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
+
+			//init size of lists
+			$(".list_content").hide();
+
+			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
+			content = $(".list:first").find(".list_content");
+			content.show()
+			$(".list:first").addClass('current_list');
+			//content.show().height(height);
+			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
+			$('.row').width(content.find('.list_header').width());
+
+			// init click event on list title
+			$(".list_title").each(function() {
+				$(this).click(function() {
+					$('.current_list').removeClass('current_list');
+					$(this).parent().addClass('current_list');
+					$(".list_content").hide();
+					$(this).parent().find(".list_content").show();
+				});
+			});
+
+			$("#search_box").focus();
+		});
+	</script>
+
+{%- endblock -%}
+
+{%- block sub_content -%}
+{%- endblock -%}
+
+

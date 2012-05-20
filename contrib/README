@@ -1,14 +1,11 @@
-= Contrib API =
+= Licorn® Contribs =
 
-Contains API and tools modules :
- * which are roughly equivalent to CORE modules when talking about functiunalities, 
- * but not integrated into core for various reasons (not so clean, not well designed, and so on)
- * Contrib modules use foundations and CORE api when needed.
- 
-For example, today Contrib API modules are mainly classes and procedures called by Debian maintainer - python - scripts, like /usr/sbin/update-licorn-*.
+Code contained here is either:
 
-== What should be here ? ==
+	* not coming from licorn. Eg. :file:`apt_check.py` comes from :program:`update-notifier` but is slightly modified to fit in licorn, thus copied here.
 
- * backup.py
- * update.py
- * services.py
+	* not related to Licorn® at runtime. Eg. `dev_install.py` is an install script run by the `Makefile` target `devinstall`. See http://docs.licorn.org/ for details.
+
+	* old code, or things I want to look at some day.
+
+.. note:: **important**: `contrib` is *imported* in various places in Licorn®. Each file you put here should be syntaxically correct at least!!

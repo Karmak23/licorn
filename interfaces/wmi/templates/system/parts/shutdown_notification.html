@@ -1,0 +1,8 @@
+{%- from 'widgets/common.html' import countdown -%}
+
+{{ _('System will %(what)s in %(countdown)s. Please '
+		'disconnect, or %(cancel)s.')|format(
+			what=_('reboot') if reboot else _('shutdown'),
+			countdown=countdown(55),
+			cancel='<a href="/system/shutdown/cancel" class="ajax-link ajax-link-confirm">{0}</a>'.format(_('cancel the operation')))
+}}

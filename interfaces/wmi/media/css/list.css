@@ -1,0 +1,128 @@
+
+.search_bar {
+	width: 100%;
+	margin-top: 1%;
+	height: 25px;
+}
+
+#search_bar_select {
+	width:4%;
+	display: block;
+	text-align:center;
+	line-height:60px;
+	vertical-align:center;
+	float: left;
+}
+
+#search_bar_nav {
+	float: left;
+	height: 30px;
+	width: 34%;
+	text-align: right;
+}
+
+#search_bar_nav_title {
+	float: left;
+	height: 25px;
+	text-align: right;
+	padding-top: 4px;
+	margin-right: 10px;
+	font-size: 90%;
+}
+
+#search_bar_nav_content {
+	float: left;
+	vertical-align: center;
+	text-align: right;
+}
+
+#search_bar_search {
+	float: left;
+	width: 33%;
+	text-align: right;
+	vertical-align: center;
+}
+
+#search_box {
+	background: #ffe url('/media/images/22x22/search.png') right no-repeat;
+	height: 24px;
+	padding: 0 22px 0 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+
+/* ================================================================== LIST */
+
+.list_title {
+	float: left;
+	width: 33%;
+	color: #4c0b21;
+	font-size: 120%;
+	font-weight: bolder;
+	text-align: left;
+	padding: 0;
+	margin-bottom: 20px;
+	cursor: pointer;
+}
+.list_count {
+	font-weight: normal;
+	font-size: 80%;
+
+}
+.list_header_item {
+	float: left;
+	height: 30px;
+	line-height: 30px;
+	vertical-align: center;
+	text-align: center;
+	cursor: pointer;
+}
+.list_header {
+	clear: both;
+	margin-top: 15px;
+	margin-bottom: 0;
+	width: 100%;
+	display: block;
+	height: 45px;
+	text-align: center;
+	border-bottom: 1px solid black;
+}
+.item_header_sort {
+	width: 100%;
+	height: 15px;
+	text-align: center;
+	line-height: 15px;
+}
+.list_items {
+	padding-bottom: 20px;
+	width:103%;
+	padding-right: 10px;
+	overflow: auto;
+	position: relative;
+}
+.list_content {
+	/*border: 1px solid green;*/
+}
+.row {
+	width:100%;
+	height: 51px;
+	position: absolute;
+	background-color: white;
+}
+
+.item_selected {
+	background: #ebe4dc url('/media/images/user_selected_arrow.png') right no-repeat;
+	background-color: null;
+	padding-right: 9px;
+}
+.row_even {
+	/*border-bottom: 1px solid black;*/
+}
+.row_odd {
+	background-color: #fafafa;
+}
+
+.bkg_selected {
+	background-color: #ebe4dc;
+}

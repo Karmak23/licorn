@@ -1,0 +1,108 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2.
+
+    left-to-right slide:
+        http://www.webinventif.fr/wp-content/uploads/projets/wslide/test-wslide-2.htm
+-#}
+
+{% extends "base.html" %}
+
+{% block title %}Identification{% endblock %}
+
+{% if next %}
+    {% block notifications %}
+    {{ super() }}
+        <p>Vous devez d'abord vous identifier pour accéder à cette adresse ({{ next }}).</p>
+    {% endblock %}
+{% endif %}
+
+{%- block base_media -%}
+    <script language="javascript" type="text/javascript" src="/media/js/jquery-1.7.min.js"></script>
+{% endblock %}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/login.css" />
+	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/forms.css" />
+    <script language="javascript" type="text/javascript" src="/media/js/login.js"></script>
+    {#- "LESS" needs to be loaded last, in case extended_media loads more less-CSS. -#}
+	<script language="javascript" type="text/javascript" src="/media/js/less-1.1.5.min.js"></script>
+{% endblock %}
+
+{% block body %}
+    <div id="vertical_wrapper">
+        <!--<div id="vertical_wrapper">-->
+            <div id="content">
+                <div id="content_filler">
+                    <div id="logo" class="hidden">
+                        <a href="http://dev.licorn.org/">
+                            <img src="/media/images/logo_licorn_160.png" alt="Licorn® is alive" border="0" width="120" />
+                        </a>
+                    </div><!-- logo -->
+                    <div id="login_form_wrapper">
+                        <h2 class="hidden">{{ _('Welcome to Licorn&reg;!') }}</h2>
+
+                        <div id="real_form_wrapper" class="hidden">
+                            <form action="{{ app_path }}" method="post" id="login_form">{% csrf_token %}
+                                <table>
+                                    <tr>
+                                        <td colspan="3">
+                                            {% if form.errors or form.non_field_errors() %}
+                                                <div class="errornote">
+                                                    {% trans count=form.errors.items()|length() %}
+                                                        Please correct the error below:
+                                                    {% pluralize %}
+                                                        Please correct the errors below:
+                                                    {% endtrans %}
+                                                </div>
+                                            {% else %}
+                                                <div class="login_help_text">{{ _('Please enter your authentification credentials:') }}</div>
+                                            {% endif %}
+
+                                            {% if form.non_field_errors() %}
+                                                {% for error in form.non_field_errors() %}
+                                            <div class="errornote error_message">
+                                                {{ error }}
+                                            </div>
+                                                {% endfor %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr class="form-row-td">
+                                        <td>
+                                            {% set add_class = 'error_div' if form.username.errors else '' %}
+                                              <div class="form-row {{add_class}}">
+                                                    {% if form.username.errors %}
+                                                        {{ form.username.errors }}<br />
+                                                    {% endif %}
+                                                <label for="id_username" class="required">{{ _('Login:') }}</label> {{ form.username }}
+                                              </div>
+                                        </td>
+                                        <td>
+                                          {% set add_class = 'error_div' if form.password.errors else '' %}
+                                          <div class="form-row {{add_class}}">
+                                                {% if form.password.errors %}
+                                                    {{ form.password.errors }}<br />
+                                                {% endif %}
+                                            <label for="id_password" class="required">{{ _('Password:') }}</label> {{ form.password }}
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="this_is_the_login_form" value="1" />
+                                            {#- we need to replace * occurences of '/ident_success/',
+                                                which get appended when the user fails (or forgets) at
+                                                typing his/her password. -#}
+                                            <input type="hidden" name="next" value="{{ next }}" />
+                                          </div>
+                                          <div class="submit-row">
+                                            <input type="submit" id="login_form_submit" value="{{ _('Enter') }}" />
+                                          </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </form>
+                        </div>
+                    </div>
+                </div><!-- content_filler -->
+            </div><!-- content -->
+        <!--</div>-->
+    </div><!-- vertical_wrapper -->
+{% endblock %}

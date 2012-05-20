@@ -1,0 +1,69 @@
+{%- set gname = item['name'] -%}
+
+{%- if item.is_permissive -%}
+	{%- set perm_title = _("Make group {0} permissive.").format(gname) -%}
+	{%- set perm_class = "group_permissive_action" -%}
+	{%- set perm_img   = "/media/images/24x24/locked_box.png" -%}
+
+{%- else -%}
+	{%- set perm_title = _("Make group {0} NOT permissive.").format(gname) -%}
+	{%- set perm_class = "group_unpermissive_action" -%}
+	{%- set perm_img   = "/media/images/24x24/locked.png" -%}
+
+{%- endif -%}
+{%- set perm_alt = perm_title -%}
+<div class='{{ name }}_row row' id="{{ item['gidNumber'] }}">
+	<span class="{{ name }}_select">
+
+			<input type="checkbox" name="selected"
+			class="{{ name }}_checkbox" {{ "disabled" if item.is_system_restricted }}>
+	</span>
+	{%- if item.is_system -%}
+		<span class="{{ name }}_privilege odd_even_typed "
+			value='{{ item.is_privilege }}'>
+			{{ item.is_privilege }}
+		</span>
+	{%- else -%}
+		<span class="{{ name }}_permissive odd_even_typed
+			{{ 'is_permissive' if item.is_permissive }}">
+			<img src='{{ perm_img }}' class='{{ perm_class }}'
+				alt='{{ perm_alt }}' title='{{ perm_title }}'/>
+		</span>
+	{%- endif -%}
+
+	<span title="{{ _("Click to edit group {0}").format(gname) }}"
+		class="{{ name }}_content">
+		<span class="{{ name }}_name odd_even_typed"> {{ gname }}</span>
+		<span class="{{ name }}_description odd_even_typed {{ 'grayed_out' if not item.description }}">{{ item.description or _('No description') }}</span>
+		<span class="{{ name }}_gidNumber odd_even_typed">{{ item.gidNumber }}</span>
+		<span class="{{ name }}_skel odd_even_typed">{{ item.groupSkel }}</span>
+	</span>
+	<span class="{{ name }}_nav odd_even_typed">
+		<span class="item_menu">
+			{%- if not item.is_system_restricted -%}
+
+				{%- if not item.is_system -%}
+					{%- set skmsg = _('Reapply skel of members of group {0}').format(gname) %}
+
+					<div class="{{ name }}_reapply_skel">
+						<img src="/media/images/16x16/reapply-skel.png"
+							title="{{ skmsg }}" alt="{{ skmsg }}"/>
+					</div>
+
+				{%- endif -%}
+
+				{%- set delmsg = _('Delete group {0}').format(gname) -%}
+				<div class="{{ name }}_delete{{ ('_bottom') if item.is_system }}">
+					<img src="/media/images/16x16/supprimer.png"
+						title="{{ delmsg }}" alt="{{ delmsg }}"/>
+				</div>
+
+			{%- endif -%}
+		</span>
+	</span>
+</div>
+<script type='text/javascript'>
+	$(document).ready(function() {
+		init_groups_events('{{ name }}', '{{ item.gidNumber }}', '{{ gname }}', 'gidNumber');
+	});
+</script>
