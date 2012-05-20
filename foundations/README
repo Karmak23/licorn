@@ -1,0 +1,14 @@
+= Licorn Foundations =
+
+What is here ?
+ * Classes
+   * hooks
+   * transactions
+   * FileLocks
+   * Constants
+   * Exceptions
+   * Messaging
+   * Options and preferences
+   * NLS (gettext)
+   * fsAPI (ex swissknives)
+   * CacheAPI (ex a part of harvester.py)

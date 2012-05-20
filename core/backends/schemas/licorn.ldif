@@ -1,0 +1,12 @@
+dn: cn=licorn,cn=schema,cn=config
+cn: licorn
+objectClass: olcSchemaConfig
+olcAttributeTypes: {0}( 1.3.6.1.1.1.1.99 NAME 'memberGid' EQUALITY caseExactIA
+ 5Match SUBSTR caseExactIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.2
+ 6 )
+olcAttributeTypes: {1}( 1.3.6.1.1.1.1.100 NAME 'groupSkel' DESC 'The absolute 
+ path to the group skeleton' EQUALITY caseExactIA5Match SYNTAX 1.3.6.1.4.1.146
+ 6.115.121.1.26 SINGLE-VALUE )
+olcObjectClasses: {0}( 1.3.6.1.1.1.2.99 NAME 'licornGroup' DESC 'Abstraction o
+ f a Licorn group' SUP top AUXILIARY MUST ( cn $ gidNumber ) MAY ( description
+  $ groupSkel $ homeDirectory $ memberGid ) )

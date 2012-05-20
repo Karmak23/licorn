@@ -1,0 +1,14 @@
+= Contrib API =
+
+Contains API and tools modules :
+ * which are roughly equivalent to CORE modules when talking about functiunalities, 
+ * but not integrated into core for various reasons (not so clean, not well designed, and so on)
+ * Contrib modules use foundations and CORE api when needed.
+ 
+For example, today Contrib API modules are mainly classes and procedures called by Debian maintainer - python - scripts, like /usr/sbin/update-licorn-*.
+
+== What should be here ? ==
+
+ * backup.py
+ * update.py
+ * services.py

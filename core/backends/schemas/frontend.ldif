@@ -1,0 +1,24 @@
+# Create top-level object in domain
+dn: dc=meta-it,dc=local
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: META IT
+dc: META-IT
+description: META IT
+
+# Admin user.
+dn: cn=admin,dc=meta-it,dc=local
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin
+description: LDAP administrator
+userPassword: metasecret
+
+dn: ou=People,dc=meta-it,dc=local
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Groups,dc=meta-it,dc=local
+objectClass: organizationalUnit
+ou: Groups

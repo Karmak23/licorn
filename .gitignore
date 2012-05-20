@@ -1,0 +1,15 @@
+tests/data/scenarii
+tests/data/\..*_status
+tests/data/\.owner
+tests/data/wmitest
+
+docs/_build
+locale/fr
+
+*~
+
+*.pye
+*.pyo
+*.pyc
+*.mo
+
