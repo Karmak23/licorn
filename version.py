@@ -2,13 +2,11 @@
 """
 Licorn version
 
-This file should contain only variables, which content are set via the Makefile
-or packaging tools. Don't alter it manually.
-
-Just type 'make darcs_record_prehook' in the repository to update the file.
+This file should contain only variables.
+They must be altered manually, while using the GIT flow tools on a new "release".
 
 :copyright: 2005-2010 Olivier Cortès <oc@meta-it.fr>
 :license: GNU GPL version 2
 """
 
-version = 'dev+r1156'
+version = '1.2.5.1'
