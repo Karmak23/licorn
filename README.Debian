@@ -1,0 +1,9 @@
+
+
+# Package build
+
+- django-admin is needed for build, and we need Django 1.3. On Lucid, this requires a PPA:
+
+sudo apt-add-repository ppa:lukasz-czyzykowski/ppa
+sudo apt-get update
+sudo apt-get install python-django

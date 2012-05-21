@@ -1,0 +1,46 @@
+{%- from 'widgets/common.html' import menu_item -%}
+
+{%- if request.user.is_staff -%}
+
+
+	{%- set subitems = [] -%}
+
+	{%- if extension.enabled_volumes() != [] and not extension.event('running') -%}
+		{%-
+			do subitems.append(
+				(
+					'backup_run_menuitem',
+					"/backup/run",
+					_('Start an incremental backup.'),
+					_('Run now'),
+					"/media/images/24x24/ajouter.png",
+					'ajax-sidebar-menuitem-dialog'
+				)
+			)
+		-%}
+	{%- endif -%}
+
+	{%- if extension.enabled_volumes() == [] -%}
+		{%-
+			do subitems.append(
+				(
+					'backup_rescan_menuitem',
+					'/backup/rescan',
+					_('Force the system to rescan and remount connected volumes'),
+					_('Rescan volumes'),
+					'/media/images/24x24/importer.png',
+				)
+			)
+		-%}
+	{%- endif -%}
+
+	{{
+		menu_item(
+			"backup_menuitem",
+			"/backup",
+			_('Manage backups.'),
+			_('Backup'),
+			subitems
+		)
+	}}
+{%- endif -%}

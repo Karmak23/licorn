@@ -1,49 +1,43 @@
 
+.. _daemon.en:
+
 .. highlight:: bash
 
 ==================
 The Licorn® daemon
 ==================
 
-:program:`licornd` handles all the dirty job for you. It manages the system, users, groups and all other valuable objects. It updates :file:`/etc/*`, monitors shared group dirs and automatically checks and enforces files permissions and `POSIX.1e` :abbr:`ACL (Access Control Lists)`\s on files and directories, so you never have to handle them manually (in case of any problem, :ref:`chk <chk.en>` is your friend).
+:program:`licornd` handles all the dirty job for us — I thank it for that. It manages the system, users, groups and all other valuable objects. It updates :file:`/etc/*`, monitors shared group dirs and automatically checks and enforces files permissions and `POSIX.1e` :abbr:`ACL (Access Control Lists)`\s on files and directories, so you never have to handle them manually (in case of any problem, :ref:`chk <chk.en>` is your friend).
 
-It also **runs the WMI** and the automatic incremental-backup as threads (and many others), provides a :ref:`top-like information interface <daemon_toplike_interface>` when you start it attached to the terminal, and even a built-in :ref:`fully interactive shell <daemon_interactive_shell>` if you need to gather specific informations or just want to be curious about its internals.
+It also **starts the WMI**, and run the automatic incremental-backup via threads, provides a :ref:`top-like information interface <daemon_toplike_interface>`, and even a built-in remote :ref:`fully interactive shell <daemon_interactive_shell>` if you need to gather specific informations or just want to be curious about its internals.
 
 Behinds this seems-quite-huge presentation, you will find a big-balled but very administrator-friendly program.
 
 Daemon status
 =============
 
-
 At any moment you could want informations about the running daemon::
 
 	get status
-		-- Licorn® daemon status: up 2 secs, 24 threads, 10 controllers, 1 queues, 10 locks, 10 service threads (150 started so far)
-		CPU: usr 3.404s, sys 2.312s MEM: res 71.53Mb shr 0.00Mb ush 0.00Mb stk 0.00Mb
-		Queues: serviceQ(0).
-		thread extensions/Rdiffbackup.AutoBackupWorker (enabled, idle)
-		thread licornd/inotifier(-1279341712) alive (0 call) queues stati: [total: 4] [cancel: 0] [add: 0] [rem: 0] [ack: 0] [exist: 0] [endex: 0] [creat: 0] [chg: 0].
-		thread licornd/wmi (stop=False)
-		thread ServiceWorker-62& [idle]
-		thread licornd/<module 'dbus' from '/usr/lib/pymodules/python2.6/dbus/__init__.pyo'>(-1220592784) doesn't implement dump_status().
-		thread licornd/cmdlistener(-1254163600) alive (32 calls, 0 wakers)
-			Thread <Thread(Thread-160, started daemon -1505944720)>
-			Thread <Thread(Thread-161, started daemon -2068255888)>
-			Thread <Thread(Thread-162, started daemon -1472373904)>
-			Thread <Thread(Thread-163, started daemon 1991715696)>
-		thread ServiceWorker-94& [idle]
-		thread extensions/Rdiffbackup.AutoBackupTimer (stop=False)
-		thread ServiceWorker-16& [idle]
-		thread ServiceWorker-13& [idle]
-		thread ServiceWorker-28& [idle]
-		thread ServiceWorker-26& [idle]
-		thread licornd/cleaner [<bound method LicornDaemon._job_periodic_cleaner of licornd/master@server(22610)>()]
-		thread licornd/aclchecker(-1270949008) alive (0 call, 0 pending events)
-		thread extensions/Volumes.UdevMonitor& (stop=False)
-		thread ServiceWorker-35& [idle]
-		thread ServiceWorker-31& [idle]
-		thread ServiceWorker-49& [idle]
-		thread ServiceWorker-41& [idle]
+		État du daemon Licorn®: lancé depuis 1 heure 11 mins 32 secs, 16 threads, 11 controlleurs, 3 files, 0/8 Mlocks, 0/373 Ulocks
+		UC: utl 82.0s, sys 75.4s MÉM: rés 1.2e+02Mo prt 0.0Mo upr 0.0Mo pil 0.0Mo
+		Threads:   1/100 networkers     1/50 servicers     1/10 aclcheckers
+		Files d'attente:      serviceQ: 0         aclcheckQ: 0        networkQ: 0
+		DeadThreadCleaner [sleeping, wake up in 4 mins 3 secs]
+		EventManager (19 évènements & 5 callbacks enregistré(s))
+		GQWSchedulerThread for ACLCkeckerThread [1 workers; wake up in 0 sec]
+			ACLCkeckerThread-000 [idle]
+		GQWSchedulerThread for NetworkWorkerThread [1 workers; wake up in 1 secs]
+			NetworkWorkerThread-099& [idle]
+		GQWSchedulerThread for ServiceWorkerThread [1 workers; wake up in 0 sec]
+			ServiceWorkerThread-000 [idle]
+		INotifier (1148 répertoires observés, 11 fichiers de configuration, 0 événements en file d'attente)
+		extensions.volumes.UdevMonitor& (stop=False)
+		CommandListener(139700220770048) alive (21331 loops, 0 wakers)
+			Thread-16&: RWI calls for root(0) @127.0.0.1:49838 (started il y a 1h11m25s)
+			Thread-29&: RWI calls for root(0) @192.168.111.1:35387 (started il y a 1h11m24s)
+			Thread-128&: RWI calls for olive(1000) @127.0.0.1:49917 (started il y a 1s)
+		Thread extensions/Gloop.GobjectMainLooper&: alive, but no more info.
 
 
 Start and auto-start
@@ -95,15 +89,24 @@ For some reason, you will want or need to interact directly with the daemon (Act
 	licornd -vD
 	# and so on with -vvD and -vvvD
 
-The daemon then stays attached to your terminal. You now have 2 levels of interactions with it:
-
-* the **top-like interface**, directly accessible when you type one letter commands on your keyboard.
-* the **interactive shell**, where you call any method and access any object of the daemon.
+The daemon then stays attached to your terminal. You now have the **top-like interface** available to you.
 
 .. _daemon_toplike_interface:
 
 Top-like interface
 ------------------
+
+If your daemon is not locally connected to you console, you can invoke the top-like interface remotely::
+
+	get sta -m
+
+	# the long story; --monitor is mandatory if you want to keep the connection
+	# open and interact with the daemon.
+	get status --monitor
+
+	# a remote daemon?
+	export LICORN_SERVER=192.168.0.10
+	get sta -m
 
 These keyboard short commands are available:
 
@@ -156,6 +159,17 @@ The daemon's interactive shell is an enhanced python shell. Its major features a
 * the Licorn runtime environment: you are **inside** the daemon, which keeps running while you type. You can act on threads, send messages, fill `queues` with manually-crafted data to see how the system reacts, import modules to test them, and more.
 * 2 helper functions: :func:`~foundations.ltrace.dump` and :func:`~foundations.ltrace.fulldump`, to introspect nearly any Licorn® object.
 
+If your daemon is not locally connected to your console, you can invoke the interactive shell::
+
+	get in
+
+	# the long story
+	get inside
+
+	# a remote daemon?
+	export LICORN_SERVER=192.168.0.10
+	get inside
+
 Other daemon's arguments
 ========================
 
@@ -164,5 +178,5 @@ Please refer to integrated help for an exhaustive listing of the daemon's CLI ar
 	licornd --help
 
 .. seealso::
-	:ref:`The daemon developer documentation <daemon/index.en>`.
-	:ref:`The service facility <daemon/service.en>`.
+	* :ref:`The daemon developer documentation <daemon.dev.en>`.
+	* :ref:`The service facility <daemon.services.en>`.

@@ -8,8 +8,6 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import re
-
 # bright is to be added to dark colors (00;XXm) to obtain the brighter colors.
 #   "bright": '\x1b[0;01m',
 # http://ascii-table.com/ansi-escape-sequences.php
@@ -33,23 +31,23 @@ ST_BLACK  = 15
 ST_BBLACK = 16
 
 cli_ascii_codes = {
-	ST_BLACK   : '\x1b[01;30m',
-	ST_BBLACK  : '\x1b[01;30m',
-	ST_RED     : '\x1b[01;31m',
-	ST_BRICK   : '\x1b[00;31m',
-	ST_FOREST  : '\x1b[00;32m',
-	ST_GREEN   : '\x1b[01;32m',
-	ST_BROWN   : '\x1b[00;33m',
-	ST_YELLOW  : '\x1b[01;33m',
-	ST_NAVY    : '\x1b[00;34m',
-	ST_BLUE    : '\x1b[01;34m',
-	ST_PURPLE  : '\x1b[00;35m',
-	ST_MAGENTA : '\x1b[01;35m',
-	ST_CADET   : '\x1b[00;36m',
-	ST_CYAN    : '\x1b[01;36m',
-	ST_GREY    : '\x1b[00;37m',
-	ST_WHITE   : '\x1b[01;37m',
-	ST_NO      : '\x1b[0;0m'
+	ST_BLACK   : u'\x1b[01;30m',
+	ST_BBLACK  : u'\x1b[01;30m',
+	ST_RED     : u'\x1b[01;31m',
+	ST_BRICK   : u'\x1b[00;31m',
+	ST_FOREST  : u'\x1b[00;32m',
+	ST_GREEN   : u'\x1b[01;32m',
+	ST_BROWN   : u'\x1b[00;33m',
+	ST_YELLOW  : u'\x1b[01;33m',
+	ST_NAVY    : u'\x1b[00;34m',
+	ST_BLUE    : u'\x1b[01;34m',
+	ST_PURPLE  : u'\x1b[00;35m',
+	ST_MAGENTA : u'\x1b[01;35m',
+	ST_CADET   : u'\x1b[00;36m',
+	ST_CYAN    : u'\x1b[01;36m',
+	ST_GREY    : u'\x1b[00;37m',
+	ST_WHITE   : u'\x1b[01;37m',
+	ST_NO      : u'\x1b[0;0m'
 	}
 
 ST_OK        = 1
@@ -121,7 +119,6 @@ colors = {
 	ST_NAME     : cli_ascii_codes[ST_CADET],
 	ST_APPNAME  : cli_ascii_codes[ST_YELLOW],
 	ST_OPTION   : cli_ascii_codes[ST_NAVY],
-	ST_DEBUG	: cli_ascii_codes[ST_BROWN],
 	ST_REGEX    : cli_ascii_codes[ST_BROWN],
 	ST_MODE     : cli_ascii_codes[ST_FOREST],
 	ST_ATTRVALUE: cli_ascii_codes[ST_FOREST],
@@ -156,11 +153,29 @@ colors = {
 	ST_VALUE    : cli_ascii_codes[ST_FOREST],
 	}
 
+stylize = lambda *a: a
+
+def stylize_cli_no_colors(type, what):
+	""" Return a non-colorized ascii string. """
+	return what
+
+def stylize_cli_colors(type, what):
+	"""	Return a colorized unicode string.
+
+		This won't work as expected on nested styles,
+		but in CLI they shouldn't be used anyway.
+	"""
+	return u'{0}{1}{2}'.format(colors[type], what, colors[ST_NO])
 
 def stylize_choose(type, what):
 	""" On first call of the function, choose what styling will be done for the entire run. """
 
 	global stylize
+
+	# We can't do this, `ltrace_func()` calls us.
+	#from licorn.foundations.ltrace  import ltrace_func
+	#from licorn.foundations.ltraces import TRACE_BASE
+	#ltrace_func(TRACE_BASE, devel=True, level=2)
 
 	# we must use this try/except block here, else it will produce a circular
 	# loop at first load of 'styles'. This is a know problem between foundations
@@ -174,25 +189,23 @@ def stylize_choose(type, what):
 			stylize = stylize_cli_colors
 
 	except:
-			stylize = stylize_cli_colors
+		stylize = stylize_cli_colors
 
 	# TODO: create and use options.wmi_output and stylize_web()
 
-	# after the choice was made, call the real function
+	# After the choice was made, call the real function to output the colored
+	# string. Next call will avoid the choice and color (or not) the string
+	# directly.
 	return stylize(type, what)
 
-def stylize_cli_no_colors(type, what):
-	"""Return a non-colorized acsii string."""
-	return what
-
-def stylize_cli_colors(type, what):
-	"""	Return a colorized acsii string.
-		This won't work as expected on nested styles, but in CLI they shouldn't be used anyway.
-	"""
-	return "%s%s%s" % (colors[type], what, colors[ST_NO])
-
-# on instanciation, use the first function that will choose the right one after 'options" is
-# initialized. This must be done this way because in 99% of cases, the 'styles" modules is
-# loaded before the 'options" are set.
+# on instanciation, use the first function that will choose the right one
+# after `options` is initialized. This must be done this way because in 99%
+# of cases, the `styles` modules is loaded before the `options` are set.
+#
+# NOTE: this won't work as expected if yo do 'from styles import *', because
+# your `stylize` variable in the local namespace will become a dupe of the
+# the one from `styles` module (and not a real direct reference too). This is
+# a limitation of `import *`. You should always do `from licorn.foundations
+# import styles`.
 stylize = stylize_choose
 

@@ -1,0 +1,346 @@
+<style type="text/css">
+
+.load_avg_wrapper {
+	height: 120px;
+	text-align: center;
+	background-color: #fafafa;
+	padding: 10px 10px 0;
+	border-radius: 5px;
+	margin: 10px auto;
+	width: 450px;
+}
+
+.load_avg_label {
+	text-align: center;
+	font-size: 80%;
+}
+
+#load_avg_chart {
+	font: 10px sans-serif;
+	font-weight: lighter;
+	color: black;
+}
+
+.databar {
+	text-align: center;
+	padding: 3px;
+	margin: 1px;	
+}
+
+.load_avg_chart_bar0 {
+	fill: #969863;
+}
+
+.load_avg_chart_bar1 {
+	fill: #e13971;
+}
+
+.load_avg_chart_bar2 {
+	fill: #89dafa;
+}
+
+.scaleline {
+	stroke: #ccc;
+}
+
+.baseline {
+	stroke: #000;
+}
+
+.rule, .label {
+	font: sans-serif;
+	font-size: 11px;
+	color: #580d27;
+}
+
+</style>
+<div class="load_avg_wrapper">
+	<div id="load_avg_chart"></div>
+	<div class="load_avg_label">{{ _('System load average on last 15, 5, 1 minutes') }}</div>
+</div>
+<script language="javascript">
+	// this is not a global variable, because the value changes afterwards.
+	move_from_x = 0;
+
+	var avg_loads_is_ready = false;
+
+	// global variables, they are used inside the redraw() function.
+	var transition_delay = 2500;
+	var transition_fast  = 1750;
+
+	// create a global variable, start the graph with arbitrary values.
+	var avg_chart_data = [ 0.01, 0.02, 0.03 ];
+
+	// for an unknown reason, reversing the data in the template,
+	// server-side, doesn't work as expected.
+	avg_chart_data = avg_chart_data.reverse();
+
+	var avg_chart_x = d3.scale.linear()
+		.domain([0, Math.ceil(d3.max(avg_chart_data))])
+		.range([0, 400]);
+
+	// the limit where the avg label must be draw outside the bar, because
+	// the bar is too small.
+	var limit = avg_chart_x.domain()[1] * 0.07;
+
+	var avg_chart_y = d3.scale.ordinal()
+		.domain(avg_chart_data)
+		.rangeBands([4, 75]);
+
+	var avg_chart = d3.select('div#load_avg_chart')
+					.append("svg:svg")
+						.attr("id", "load_avg_chart")
+						.attr("width", 430)
+						.attr("height", 95)
+						.append("svg:g")
+						.attr("transform", "translate(10, 15)");
+
+	avg_chart.selectAll("line.scaleline")
+		.data(avg_chart_x.ticks(10))
+		.enter()
+			.append("svg:line")
+			.attr("class", "scaleline")
+			// Y-bottom
+			.attr("y1", 0)
+			// Y-top
+			.attr("y2", 75)
+			// X-bottom
+			.attr("x1", avg_chart_x)
+			// X-top
+			.attr("x2", avg_chart_x);
+
+	avg_chart.selectAll("text.rule")
+		.data(avg_chart_x.ticks(10))
+		.enter().append("svg:text")
+		.attr("class", "rule")
+		.attr("y", 0)
+		.attr("dy", -3)
+		.attr("text-anchor", "middle")
+		.text(function(d){ return d.toFixed(2); })
+		.attr("x", avg_chart_x);
+
+	avg_chart.selectAll("rect.databar")
+		.data(avg_chart_data)
+		.enter()
+			.append("svg:rect")
+			.attr("y", avg_chart_y)
+			.attr("x", move_from_x)
+			.attr("height", avg_chart_y.rangeBand() - 4)
+			.attr("class", function (d, i) {
+									return 'databar load_avg_chart_bar' + i; })
+			.transition()
+				.duration(transition_delay)
+			.attr("width", avg_chart_x);
+
+	avg_chart.selectAll("text.label")
+		.data(avg_chart_data)
+		.enter()
+			.append("svg:text")
+			.attr("class", "label")
+			.attr("x", move_from_x)
+			.attr("text-anchor", "end") // text-align: right
+			.attr("y", function(d) {
+						return avg_chart_y(d) + (avg_chart_y.rangeBand() - 4) / 2; })
+			.attr("dx", -3) // padding-right
+			.attr("dy", ".35em") // vertical-align: middle
+			.text(function(d) { return d.toFixed(2); })
+			.transition()
+				.duration(transition_delay)
+			.attr("x", function(d) { if (d > limit) {
+									return avg_chart_x(d);
+								} else {
+									return avg_chart_x(d) + avg_chart_x(limit);
+								} });
+
+
+	// the X0 dark baseline, which is drawn over the first tick bar.
+	avg_chart.append("svg:line")
+		.attr("class", "baseline")
+		.attr("y1", 0)
+		.attr("y2", 75);
+
+	avg_loads_is_ready = true;
+
+	function update_avg_loads(data) {
+
+		if (!avg_loads_is_ready) {
+			// prevent updates from the collectors if the D3 representation
+			// is not fully built.
+			return;
+		}
+
+		data = data.reverse();
+
+		var avg_chart_old_max = avg_chart_x.domain()[1];
+		var avg_chart_new_max = Math.ceil(d3.max(data));
+
+		changes = false;
+
+		if (avg_chart_new_max > avg_chart_old_max) {
+			changes = true;
+			moving_up = true;
+			moving_down = false;
+			move_to_x = 0;
+			move_from_x = 435;
+
+		} else if (avg_chart_new_max < avg_chart_old_max) {
+			changes = true;
+			moving_up = false;
+			moving_down = true;
+			move_to_x = 435;
+			move_from_x = 0;
+
+		}
+
+		if (changes) {
+
+			old_ticks = avg_chart_x.ticks(10);
+
+			// recompute x scale, based on new values
+			avg_chart_x.domain([0, avg_chart_new_max]);
+
+			new_ticks = avg_chart_x.ticks(10);
+
+			if (moving_down && new_ticks.length > old_ticks.length) {
+				new_ticks.reverse();
+			}
+
+			updated_rules = avg_chart.selectAll("text.rule")
+								.data(new_ticks, function(d) { return d;});
+			updated_lines = avg_chart.selectAll("line.scaleline")
+								.data(new_ticks, function(d) { return d;});
+
+			if (moving_down) {
+				// insert new ticks on the left end, make them slide
+				// to their position.
+
+				updated_rules.enter()
+					// when moving down, we insert at left
+					.insert("svg:text", "text.rule")
+					.attr("class", "rule")
+					.attr("x", move_from_x)
+					.attr("y", 0)
+					.attr("dy", -3)
+					.attr("text-anchor", "middle")
+					.text(function(d){ return d.toFixed(2); })
+					.style("opacity", 1e-6)
+					.transition()
+						.duration(transition_fast)
+					.attr("x", avg_chart_x)
+					.style("opacity", 1);
+
+				updated_lines.enter()
+					// when moving down, we insert at left
+					.insert("svg:line", 'line')
+					.attr("class", "scaleline")
+					.attr("x1", move_from_x)
+					.attr("y1", 0)
+					.attr("x2", move_from_x)
+					.attr("y2", 75)
+					.style("opacity", 1e-6)
+					.transition()
+						.duration(transition_fast)
+					.attr("x1", avg_chart_x)
+					.attr("x2", avg_chart_x)
+					.style("opacity", 1);
+
+			} else {
+				// append new ticks on the right end, make them slide
+				// to their position.
+
+				updated_rules.enter()
+					// when moving down, we append at right
+					.append("svg:text")
+					.attr("class", "rule")
+					.attr("x", move_from_x)
+					.attr("y", 0)
+					.attr("dy", -3)
+					.attr("text-anchor", "middle")
+					.text(function(d){ return d.toFixed(2); })
+					.style("opacity", 1e-6)
+					.transition()
+						.duration(transition_fast)
+					.style("opacity", 1)
+					.attr("x", avg_chart_x);
+					
+				updated_lines.enter()
+					// we must insert the ticks before the rects databars, else
+					// they get printed in front of the rects instead of behind.
+					.insert("svg:line", "line")
+					.attr("class", "scaleline")
+					.attr("x1", move_from_x)
+					.attr("y1", 0)
+					.attr("x2", move_from_x)
+					.attr("y2", 75)
+					.style("opacity", 1e-6)
+					.transition()
+						.duration(transition_fast)
+					.attr("x1", avg_chart_x)
+					.attr("x2", avg_chart_x)
+					.style("opacity", 1);
+;
+			}
+
+			// move the unchanged ticks from their old position to the new.
+			// If they don't need to move, this will do nothing.
+
+			updated_rules
+				.transition()
+					.duration(transition_fast)
+				.style("opacity", 1)
+				.attr("x", avg_chart_x)
+				.text(function(d){ return d.toFixed(2); });
+
+			updated_lines
+				.transition()
+					.duration(transition_fast)
+				.style("opacity", 1)
+				.attr("x1", avg_chart_x)
+				.attr("x2", avg_chart_x);
+
+
+			// remove the ticks that must disapeer. make them slide to the
+			// end that reprensents the movement of the graph, to increase
+			// the feeling of the 'scale' going up or down.
+			updated_rules.exit()
+				.transition()
+					.duration(transition_fast)
+				.attr("x", move_to_x)
+				.style("opacity", 1e-6)
+				.remove();
+
+			updated_lines.exit()
+				.transition()
+					.duration(transition_fast)
+				.attr("x1", move_to_x)
+				.attr("x2", move_to_x)
+				.style("opacity", 1e-6)
+				.remove();
+		}
+
+		// change load rect widths to reflect current loads.
+		avg_chart.selectAll("rect.databar")
+			.data(data)
+			.transition()
+				.duration(transition_delay)
+			.attr("width", avg_chart_x);
+
+		// if any of the load go below this limit, the load text will be
+		// printed outside the rect, instead of inside.
+		limit = avg_chart_x.domain()[1] * 0.07;
+
+		// redraw load values, and recompute text coordinates.
+		avg_chart.selectAll("text.label")
+			.data(data)
+			.transition()
+				.duration(transition_delay)
+			.attr("x", function(d) { if (d > limit) {
+									return avg_chart_x(d);
+								} else {
+									return avg_chart_x(d) + avg_chart_x(limit);
+								} })
+			.text(function(d) { return d.toFixed(2); });
+	}
+
+	update_avg_loads({{ avg_loads }});
+</script>

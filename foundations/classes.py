@@ -10,13 +10,16 @@ Licorn foundations: classes - http://docs.licorn.org/
 
 """
 
-import sys, os, time, tempfile
-from threading import current_thread
+import sys, os, time, tempfile, weakref, types, stat, errno
 
-# PLEASE do not import "logging" here.
-import exceptions, pyutils, fsapi, readers, logging
+from threading   import current_thread
+from collections import deque
+
+# Licorn foundations imports.
+import exceptions, logging
+import pyutils, fsapi, readers
 from styles    import *
-from ltrace    import ltrace
+from ltrace    import *
 from ltraces   import *
 from base      import Enumeration
 
@@ -88,8 +91,6 @@ class ConfigFile(Enumeration):
 				func = self._reader(filename, self._separator)
 
 			for key, value in func.iteritems():
-				#print '>> setting', key, '=', value
-
 				if hasattr(value, '__iter__'):
 					for v in value:
 						pyutils.add_or_dupe_enumeration(self, key, v)
@@ -131,14 +132,21 @@ class ConfigFile(Enumeration):
 					% self.name) + str(self)
 
 		with FileLock(self, filename):
-			open(filename, 'w').write(data)
+			# old method, the hard and insecure way.
+			#open(filename, 'w').write(data)
 
-			# for /etc/passwd
+			# For /etc/passwd (and others),
+			# we need to make this a little more atomic
 			ftempp, fpathp = tempfile.mkstemp(dir=os.path.dirname(filename))
 			os.write(ftempp, data)
 
-			# FIXME: implement these ch* calls properly, with dynamic values...
+			# FIXME: implement these ch* calls properly, with dynamic for
+			# the permissions...
 			os.fchmod(ftempp, 0644)
+
+			# TODO: we cannot give everything to root inconditionnaly.
+			# we should get the original UID/GID of the previous file,
+			# to reapply them on the new.
 			#os.fchown(ftempp, 0, 0)
 
 			os.close(ftempp)
@@ -146,7 +154,29 @@ class ConfigFile(Enumeration):
 			# FIXME: implement this one too...
 			#self.__hint_pwd += 1
 
-			os.rename(fpathp, filename)
+			try:
+				os.rename(fpathp, filename)
+
+			except (IOError, OSError), e:
+				if e.errno in (errno.EPERM, errno.EACCES):
+					# FIXME: we are root, EPERM/EACCES is not an option. The
+					# file is probably made `chattr +i` until #558 is fixed.
+					# In that case, we will assume the configuration is OK
+					# and we should not crash at all. Informing the sysadmin
+					# about the situation is fine, though: he will not forget
+					# the file is flagged.
+					if fsapi.has_flags(filename, [ stat.SF_IMMUTABLE ]):
+						logging.warning(_(u'{0}: File {1} is protected by '
+							u'the {2} flag, we cannot alter it. Hope this '
+							u'is intended, because we are continuing like '
+							u'if it was modified but it is NOT.').format(
+								stylize(ST_IMPORTANT, _(u'IMPORTANT')),
+								stylize(ST_PATH, filename),
+								stylize(ST_ATTR, 'IMMUTABLE')
+								)
+							)
+				else:
+					raise
 	def has(self, key, value=None):
 		""" Return true or false if config is already in. """
 
@@ -306,3 +336,158 @@ class StateMachine:
 				break
 			else:
 				handler = self.handlers[newState]
+class SharedResource(object):
+	""" Make the current object be usable by many threads, and keep
+		reference of threads working on it.
+
+		This is kind of an inverse-semaphore (any number of workers can use
+		the current object).
+
+		offers a busy() method which returns True if one worker or more
+		currently owns the object.
+		"""
+	_lpickle_ = {
+			'to_drop': [ '_SharedResource__workers' ]
+		}
+
+	def __init__(self, **kwargs):
+		# usage of a `deque` avoids the need of a surrounding RLock()
+		self.__workers = deque(maxlen=kwargs.pop('limit', None))
+	@property
+	def workers(self):
+		return self.__workers
+	def __enter__(self):
+		self.__workers.append(current_thread())
+		#print '>> ACQUIRED', self.name, 'BY', self.__workers
+	acquire = __enter__
+	def __exit__(self, etype=None, value=None, traceback=None):
+		""" TODO: use arguments... """
+		self.__workers.remove(current_thread())
+		#print '>> RELEASED', self.name, 'REMAINS', self.__workers
+	release = __exit__
+	def busy(self):
+		if current_thread() in self.__workers:
+			return len(self.__workers) > 1
+		else:
+			return len(self.__workers) > 0
+class PicklableObject(object):
+	""" Currently, this serves only as base for `CoreModule`, because
+		`CoreUnitObjects` derivatives have too much specialties to be
+		refactored into this class.
+
+		Worth reads:
+
+		* http://rhettinger.wordpress.com/2011/05/26/super-considered-super/
+		* http://stackoverflow.com/questions/576169/understanding-python-super-and-init-methods
+		* http://stackoverflow.com/questions/222877/how-to-use-super-in-python
+		* http://fuhm.net/super-harmful/ : this one points best practices that
+			are just "required" practices to me...
+		* http://www.artima.com/weblogs/viewpost.jsp?thread=236275
+		* http://stackoverflow.com/questions/2922628/how-to-pickle-and-unpickle-objects-with-self-references-and-from-a-class-with-sl
+
+		Descriptors worth read:
+
+		* http://users.rcn.com/python/download/Descriptor.htm
+	"""
+
+	_lpickle_ = {
+			# should pickle drop '_*' attributes ?
+			# this is done last, in __getstate__(), in case some private
+			# attributes need to be converted first.
+			#
+			# NOTE: there is a problem when a subclass wants to keep some `__*`
+			# attributes, all higher classes need to drop them by their name,
+			# which is not very practical. This will eventually be resolved
+			# some day; for now, higher classes have a small number of
+			# attributes, thus we have listed them by hand to be dropped and
+			# everything is fine.
+			'drop__' : True,
+		}
+
+	def _lpickle_merge_conf(self):
+		try:
+			return self.__class__.lpickle_merged_conf
+
+		except AttributeError:
+			self.__class__.lpickle_merged_conf = pyutils.merge_dicts_of_lists(*[
+								cls._lpickle_
+									# mro[:-1] avoids taking 'object' in the loop
+									for cls in reversed(self.__class__.__mro__[:-1]) if hasattr(cls, '_lpickle_')
+							], unique=True)
+			return self.__class__.lpickle_merged_conf
+	def __getstate__(self):
+		pickle_conf = self._lpickle_merge_conf()
+		cur_state   = self.__dict__.copy()
+
+		#print '>>> PKL', self.name, self.__class__
+		#print '>>>', cur_state
+
+		for special in pickle_conf.get('to_drop', ()):
+			try:
+				del cur_state[special]
+				#print '>>> drop', special
+
+			except KeyError: pass
+
+		#print '>>>', cur_state
+
+		for special in pickle_conf.get('by_name', ()):
+			try:
+				cur_state[special + '_pickle_name_'] = getattr(self, special).name
+				del cur_state[special]
+				#print '>>> by_name', special
+
+			except (AttributeError, KeyError):
+				# Either "getattr(self, special)" or "del cur_state[special]"
+				# did not work. This is harmless in any case.
+				pass
+
+		if pickle_conf.get('drop__', True):
+			# NOTE: don't use 'for key in cur_state:', it will break for
+			# 'dictionnary changed during iteration.', and you will not
+			# notice it because Pyro is so weak in forwarding pickle exceptions.
+			for key in cur_state.keys():
+				if key.startswith('_'):
+					try:
+						del cur_state[key]
+						#print '>>> drop', key
+
+					except: pass
+
+		# we still need to drop unpicklable types.
+		for key, value in cur_state.items():
+			#print '>> PKL', key, value, type(value), type(value) == types.FunctionType
+			if isinstance(value, weakref.ReferenceType) or (
+										hasattr(value, '__call__') and
+										(hasattr(value, 'is_callback') or
+										hasattr(value, 'is_handler'))):
+				try:
+					del cur_state[key]
+					#print '>>> drop', key
+
+				except: pass
+
+		cur_state['_pickled'] = True
+
+		return cur_state
+	def __setstate__(self, data):
+		pickle_conf = self._lpickle_merge_conf()
+
+		# CURRENT: use conf or guess from key.endswith() ?
+
+		for special in pickle_conf.get('by_name', ()):
+			try:
+				# TODO: use data.pop()
+				special_value = data.get(special + '_pickle_name_')
+
+			except KeyError:
+				pass
+
+			else:
+				try:
+					setattr(self, special_value, getattr(LMC, special_value))
+
+				except (NameError, AttributeError):
+					pass
+
+		self.__dict__.update(data)

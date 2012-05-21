@@ -23,10 +23,6 @@ TRACE_GC            = _ltrace_level(0x0200000000000000000000000, 'gc')
 # the next 2 are identical, this is meant to be, for syntaxic eases
 TRACE_LOCK          = _ltrace_level(0x0400000000000000000000000, 'locks')
 TRACE_LOCKS         = _ltrace_level(0x0400000000000000000000000, 'locks')
-# the next 2 are identical, this is meant to be, for syntaxic eases
-TRACE_EVENT         = _ltrace_level(0x0800000000000000000000000, 'events')
-TRACE_EVENTS        = _ltrace_level(0x0800000000000000000000000, 'events')
-
 
 TRACE_FOUNDATIONS   = _ltrace_level(0x000000000000000000000ffff, 'foundations')
 TRACE_LOGGING       = _ltrace_level(0x0000000000000000000000001, 'logging')
@@ -39,10 +35,14 @@ TRACE_FSAPI         = _ltrace_level(0x0000000000000000000000040, 'fsapi')
 TRACE_NETWORK       = _ltrace_level(0x0000000000000000000000080, 'network')
 TRACE_DBUS          = _ltrace_level(0x0000000000000000000000100, 'dbus')
 TRACE_MESSAGING     = _ltrace_level(0x0000000000000000000000200, 'messaging')
-# the following two are the same, for syntax comfort
+# the next 2 are identical, this is meant to be, for syntaxic eases
 TRACE_CHECK         = _ltrace_level(0x0000000000000000000000400, 'checks')
 TRACE_CHECKS        = _ltrace_level(0x0000000000000000000000400, 'checks')
 TRACE_SETTINGS      = _ltrace_level(0x0000000000000000000000800, 'settings')
+TRACE_PYUTILS       = _ltrace_level(0x0000000000000000000001000, 'pyutils')
+# the next 2 are identical, this is meant to be, for syntaxic eases
+TRACE_EVENT         = _ltrace_level(0x0000000000000000000002000, 'events')
+TRACE_EVENTS        = _ltrace_level(0x0000000000000000000002000, 'events')
 
 
 TRACE_CORE          = _ltrace_level(0x00000000000000000ffff0000, 'core')
@@ -61,13 +61,15 @@ TRACE_BACKENDS      = _ltrace_level(0x0000000000000ffff00000000, 'backends')
 TRACE_OPENLDAP      = _ltrace_level(0x0000000000000000100000000, 'openldap')
 TRACE_SHADOW        = _ltrace_level(0x0000000000000000200000000, 'shadow')
 TRACE_DNSMASQ       = _ltrace_level(0x0000000000000000400000000, 'dnsmasq')
+TRACE_SQLITE        = _ltrace_level(0x0000000000000000800000000, 'sqlite')
+TRACE_PICKLE        = _ltrace_level(0x0000000000000001000000000, 'pickle')
 
 
 TRACE_EXTENSIONS    = _ltrace_level(0x000000000ffff000000000000, 'extensions')
 TRACE_POSTFIX       = _ltrace_level(0x0000000000001000000000000, 'postfix')
 TRACE_APACHE2       = _ltrace_level(0x0000000000002000000000000, 'apache2')
 TRACE_CALDAVD       = _ltrace_level(0x0000000000004000000000000, 'caldavd')
-TRACE_SAMBA         = _ltrace_level(0x0000000000008000000000000, 'samba')
+TRACE_SAMBA3        = _ltrace_level(0x0000000000008000000000000, 'samba3')
 TRACE_COURIER       = _ltrace_level(0x0000000000010000000000000, 'courier')
 TRACE_OPENSSH       = _ltrace_level(0x0000000000020000000000000, 'openssh')
 TRACE_VOLUMES       = _ltrace_level(0x0000000000040000000000000, 'volumes')

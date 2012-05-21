@@ -1,4 +1,5 @@
-.. _daemonmain:
+
+.. _daemon.main.en:
 
 ===========
 Daemon main

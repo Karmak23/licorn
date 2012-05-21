@@ -11,11 +11,11 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-from licorn.interfaces.cli        import cli_main
+from licorn.interfaces.cli import LicornCliApplication
 
 def del_main():
 
-	cli_main({
+	LicornCliApplication({
 		'users':         ('del_user_parse_arguments', 'dispatch_del_user'),
 		'groups':        ('del_group_parse_arguments', 'dispatch_del_group'),
 		'profiles':      ('del_profile_parse_arguments', 'del_profile'),

@@ -1,0 +1,54 @@
+
+{#
+	No need to check if the volume selection succeeds, we cannot come here
+	if there is none, already (the link is not accessible). We currently
+	don't pay attention to URL forgers, the WMI won't crash for a crashed view.
+
+		except IndexError:
+			return (w.HTTP_TYPE_TEXT, w.page(title,
+				w.main_content(w.error(_(u'No volume to backup onto. '
+					'Please plug a {app_name} enabled volume into '
+					'your server before starting this procedure.'
+					'<br /><br />See <a href="http://docs.licorn.org'
+					'/extensions/rdiffbackup.en.html">'
+					'Backup-related documentation</a> for '
+					'details on enabling backup volumes.').format(
+					app_name=LMC.rwi.configuration_get('app_name'))))
+				+ w.sub_content('')))
+	else:
+		volume = self.volumes['/dev/' + volume]
+#}
+
+
+
+
+
+{#
+		title = _(u'Run a manual backup on volume {0}').format(
+														volume.mount_point)
+		data      = w.page_body_start(uri, http_user, self._ctxtnav, title)
+		main_data = ''
+
+		main_data += w.question(
+			_(u'Recent backup detected'),
+			_(u'{auto_select}<br /><br />The last backup has been run '
+				'{last_backup_time} ago, which is less than the '
+				'system configured interval ({interval}). Are you '
+				'sure you want to force a manual backup now?<br /><br />'
+				'(if you do not answer withing {next_backup_time}, '
+				'an automatic backup will occur anyway)').format(
+					auto_select=auto_select,
+					last_backup_time=self._countdown('last_backup',
+							last_backup_time,
+							limit=9999999999.0),
+					next_backup_time=self._countdown('next_backup',
+							self.time_before_next_automatic_backup(
+								as_string=False)),
+					interval=pyutils.format_time_delta(
+						settings.backup.interval)),
+			yes_values   = \
+				[ _(u"Run >>"), "/backups/run/%s/force" %
+						volume.device.rsplit('/', 1)[1], _(u"R") ],
+			no_values    = \
+				[ _(u"<< Cancel"),   "/backups",      _(u"C") ])
+#}

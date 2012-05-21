@@ -1,0 +1,109 @@
+
+@dialog-bgcolor: #a50042;
+@dialog-text-bgcolor: #fff;
+
+#dialog {
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	background-color:black;
+	z-index:100000;
+	opacity:0.7;
+}
+
+@border-radius-value: 3px;
+
+#dialog-content {
+	position: absolute;
+	max-height: 60%;
+	min-height: 25%;
+	margin-top: 15%;
+	margin-left: 23%;
+	background-color: @dialog-text-bgcolor;
+	z-index:100001;
+	opacity:1;
+	-webkit-border-radius: @border-radius-value;
+	-moz-border-radius: @border-radius-value;
+	border-radius: @border-radius-value;
+}
+
+#dialog-content ul {
+	padding: 10px;
+}
+#dialog-content ul li {
+	margin: 0 0 5px 20px;
+	list-style: disc;
+}
+
+#dialog-head {
+	background-color: @dialog-bgcolor;
+	font-size: 120%;
+	color: white;
+	font-weight: bold;
+	margin: 5px 5px 5px 5px;
+	padding: 5px 0px 5px 10px;
+	height: 25px;
+	-webkit-border-top-left-radius: @border-radius-value;
+	-webkit-border-top-right-radius: @border-radius-value;
+	-moz-border-radius-topleft: @border-radius-value;
+	-moz-border-radius-topright: @border-radius-value;
+	border-top-left-radius: @border-radius-value;
+	border-top-right-radius: @border-radius-value;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+#dialog-text {
+	padding: 10px 10px 60px;
+	max-height: 400px;
+	max-width: 500px;
+	margin: 0 auto;
+	overflow: auto;
+}
+#dialog-title {
+	width: 90%;
+	float: left;
+}
+
+#dialog-close {
+	padding: 0px 5px;
+	margin-right: 5px;
+	float: right;
+	cursor: pointer;
+	-webkit-border-radius: @border-radius-value;
+	-moz-border-radius: @border-radius-value;
+	border-radius: @border-radius-value;
+}
+
+#dialog-close:hover {
+	background-color: lighten(@dialog-bgcolor, 30%);
+}
+
+#dialog-buttons {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	padding: 0;
+	text-align: right;
+}
+
+.dialog-button {
+	padding: 5px 11px 5px 10px;
+	margin: 0 10px 10px 10px;
+	float: right;
+	background-color: @dialog-bgcolor;
+	color: white;
+	font-weight: bold;
+	cursor: pointer;
+	-webkit-border-radius: @border-radius-value;
+	-moz-border-radius: @border-radius-value;
+	border-radius: @border-radius-value;
+}
+
+#dialog-close-button {
+	background-color: lighten(desaturate(@dialog-bgcolor, 70%), 20%);
+}
+
+.dialog-button:hover, #dialog-close-button:hover {
+	background-color: lighten(@dialog-bgcolor, 30%);
+}

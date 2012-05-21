@@ -1,0 +1,75 @@
+
+/* common to main.css, menu.css, subcontent.css */
+@font_color: #580d27;
+@back_color: #8d153e;
+
+@selection_color: #55ddff;
+
+@input_color: #000;
+@input_background: #ffe;
+@input_border_width: 1px;
+
+@button_color: #fff;
+@button_background: #a33;
+
+.shadow (@color: @selection_color) {
+	-moz-box-shadow:    0 0 3px 4px @color;
+	-webkit-box-shadow: 0 0 3px 4px @color;
+	box-shadow:         0 0 3px 4px @color;
+}
+
+.border_radius (@radius: 3px) {
+	-webkit-border-radius: @radius;
+	-moz-border-radius: @radius;
+	border-radius: @radius;
+}
+
+.background_gradient_sunken () {
+	background-color: #797979;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(121, 121, 121)), to(rgb(235, 235, 235)));
+	background-image: -webkit-linear-gradient(top, rgb(121, 121, 121), rgb(235, 235, 235));
+	background-image: -moz-linear-gradient(top, rgb(121, 121, 121), rgb(235, 235, 235));
+	background-image: -o-linear-gradient(top, rgb(121, 121, 121), rgb(235, 235, 235));
+	background-image: linear-gradient(top, rgb(121, 121, 121), rgb(235, 235, 235));
+}
+
+.background_gradient_sunken_small () {
+	background-color: #c1c1c1;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(193, 193, 193)), to(rgb(235, 235, 235)));
+	background-image: -webkit-linear-gradient(top, rgb(193, 193, 193), rgb(235, 235, 235));
+	background-image: -moz-linear-gradient(top, rgb(193, 193, 193), rgb(235, 235, 235));
+	background-image: -o-linear-gradient(top, rgb(193, 193, 193), rgb(235, 235, 235));
+	background-image: linear-gradient(top, rgb(193, 193, 193), rgb(235, 235, 235));
+}
+
+.background_gradient_bevel () {
+	background-color: #ebebeb;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(235, 235, 235)), to(rgb(121, 121, 121)));
+	background-image: -webkit-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+	background-image: -moz-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+	background-image: -o-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+	background-image: linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+}
+
+.background_gradient_bevel_small () {
+	background-color: #ebebeb;
+	background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(235, 235, 235)), to(rgb(193, 193, 193)));
+	background-image: -webkit-linear-gradient(top, rgb(235, 235, 235), rgb(193, 193, 193));
+	background-image: -moz-linear-gradient(top, rgb(235, 235, 235), rgb(193, 193, 193));
+	background-image: -o-linear-gradient(top, rgb(235, 235, 235), rgb(193, 193, 193));
+	background-image: linear-gradient(top, rgb(235, 235, 235), rgb(193, 193, 193));
+}
+
+.input_border_sunken (@color: #c1c1c1) {
+	border-top: @input_border_width solid desaturate(darken(@color, 20%), 20%);
+	border-left: @input_border_width solid desaturate(darken(@color, 20%), 20%);
+	border-bottom: @input_border_width solid lighten(@color, 30%);
+	border-right: @input_border_width solid lighten(@color, 30%);
+}
+
+.input_border_bevel (@color: #ebebeb) {
+	border-bottom: @input_border_width solid desaturate(darken(@color, 30%), 30%);
+	border-right: @input_border_width solid desaturate(darken(@color, 30%), 30%);
+	border-top: @input_border_width solid lighten(@color, 30%);
+	border-left: @input_border_width solid lighten(@color, 30%);
+}

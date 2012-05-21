@@ -17,9 +17,9 @@ Licensed under the terms of the GNU GPL version 2
 import os, re, plistlib
 import xml.etree.ElementTree as ET
 
-from licorn.foundations         import exceptions
-from licorn.foundations.pyutils import add_or_dupe_enumeration
-from licorn.foundations.base    import Enumeration
+import exceptions
+from pyutils import add_or_dupe_enumeration
+from base    import Enumeration
 
 
 
@@ -237,7 +237,7 @@ def	dnsmasq_read_leases(filename=None, data=None, convert='semi'):
 		try:
 			expiry, mac, ipaddr, hostname, clientid = line.split(' ')
 		except ValueError, e:
-			print 'corrupt line "%s" in ...' % line
+			lprint('corrupt line "%s" in ...' % line)
 			return
 
 		if (not confdict.has_key(mac)) or expiry > confdict[mac]['expiry']:

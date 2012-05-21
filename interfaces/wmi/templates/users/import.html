@@ -1,0 +1,91 @@
+
+<div id='sub_content_header'>
+	<h1 id='sub_content_title'>{{ _('User accounts import') }}</h1>
+</div>
+
+<div id='sub_content_area'>
+	<div style="padding: 0 10px 20px; text-align: center">
+		{{ _('Please select a CSV file to import user accounts from:') }}
+	</div>
+	<form id="LoadCSV_form" method='post' enctype='multipart/form-data' target='result'>
+		{% csrf_token %}
+		{%- for field in form.visible_fields() -%}
+			<div class='sub_content_line big_line'>
+				<div class='sub_content_third_line'>
+					<strong>{{ field.label_tag() }}</strong></div>
+				<div class='sub_content_two_third_line align_right'>
+					{{ field }}
+				</div>
+			</div>
+		{%- endfor -%}
+
+		<input type='hidden' id='csv_filepath'/>
+		<div id='new_item_actions' class="one_line">
+			<span class='sub_content_half_line'>
+				<input type="button" name="test_submit"
+					value="{{ _('Test import') }}" id='TestCSV_button'
+					class="interface_button float_left"/>
+			</span>
+			<span class='sub_content_half_line'>
+				<input type="button" name="submit" value="{{ _('Import') }}"
+					id='ImportCSV_button' class="interface_button float_right"/>
+			</span>
+		</div>
+	</form>
+	<div id='test_result'></div>
+</div><!-- sub_content_area -->
+
+<script type="text/javascript" src='/media/js/jquery.ajaxfileupload.js'></script>
+<script type="text/javascript" src='/media/js/jquery.csvtotable.js'></script>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#TestCSV_button').click(function() {
+			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification(_('Please select a CSV file first.')); }
+			else {
+				$.post("/users/import/", {
+					'lastname'           : $('input[name$="lastname"]').val(),
+					'firstname'          : $('input[name$="firstname"]').val(),
+					'group'              : $('input[name$="group"]').val(),
+					'login'              : $('input[name$="login"]').val(),
+					'password'           : $('input[name$="password"]').val(),
+					'csv_filepath'       : $('#csv_filepath').attr('value'),
+					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
+					'profile'            : $('select[name$="profile"] option:selected').val()
+					});
+			}
+			// disable submit button
+			return false;
+		});
+		$('#ImportCSV_button').click(function() {
+			if ($('#csv_filepath').attr('value') == '') { show_message_through_notification(_('Please select a CSV file first.')); }
+			else {
+				$.post("/users/import/True", {
+					'lastname'           : $('input[name$="lastname"]').val(),
+					'firstname'          : $('input[name$="firstname"]').val(),
+					'group'              : $('input[name$="group"]').val(),
+					'login'              : $('input[name$="login"]').val(),
+					'password'           : $('input[name$="password"]').val(),
+					'csv_filepath'       : $('#csv_filepath').attr('value'),
+					'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value'),
+					'profile'            : $('select[name$="profile"] option:selected').val()
+					});
+			}
+			// disable submit button
+			return false;
+		});
+
+
+		// upload the file when selected
+		$('#id_file').ajaxfileupload({
+			'action': '/users/upload',
+			'params': {
+				'csrfmiddlewaretoken': $('input[name$="csrfmiddlewaretoken"]').attr('value')
+			},
+			'onComplete': function(response) {
+				$('#csv_filepath').attr('value', response)
+			  },
+
+		});
+	});
+

@@ -1,0 +1,119 @@
+{#- Copyright 2011 META IT & & Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+<div id='sub_content_header'>
+	<h1 id='sub_content_title'>{{ title }}</h1>
+</div>
+
+<div id='sub_content_area'>
+	<form id='user_form'>{% csrf_token %}
+	<div id='table' name='{{ group_gid }}'>
+	<br />
+
+		{%- for field in form.visible_fields() -%}
+			{%- set immutable = field.name in form.immutables -%}
+				<div class='sub_content_line big_line'>
+					<div class='sub_content_half_line'>
+						<strong>{{ field.label_tag() }}</strong><br />{{ _('(fixed)') if immutable }}</div>
+					<div class='sub_content_half_line align_right'>
+						{%- if immutable -%}
+							{{ field.value() }}
+						{%- else -%}
+							{{ field }}
+						{%- endif -%}
+
+					</div>
+				</div>
+		{%- endfor -%}
+	</div>
+
+	{%- for title, users_list in users_lists -%}
+		{%- include 'groups/users_list.html' -%}
+	{%- endfor -%}
+
+	{%- if not edit_mod -%}
+	<div id='new_item_actions' class="one_line">
+		<span class='sub_content_half_line'>
+			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
+		</span>
+		<span class='sub_content_half_line'>
+			<div id='save_user_button' class="interface_button float_right">{{ _('Add') }}</div>
+		</span>
+	</div>
+	{%- endif -%}
+
+	</form>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		$('.click_item').each(function() {
+			// display only relevant groups
+			rel = $(this).attr('value');
+			$(this).find('.rel_'+rel).hide();
+			$(this).popover({content: $(this).find('.user_popover_content')});
+		});
+
+		$('.popover_item').click(function() {
+			// update the current popover
+			user_id = $(this).attr('id');
+			new_rel = $(this).attr('value');
+
+			div = $('#sub_content').find('#'+user_id).filter('.click_item');
+			div.find('.item_hidden_input').attr('value', ''); // erase old membership
+			div.find('input[name$="'+new_rel+'_users"]').attr('value', user_id); // update new membership
+
+			{%- if not edit_mod -%}
+				// visual feedback on users because no instant_apply in new
+				update_relationship('user', user_id, null, new_rel) ;
+			{%- endif -%}
+
+			//close the popover
+			$(document).trigger('hideOpenPopover');
+		});
+
+		{%- if edit_mod -%}
+			init_instant_apply('groups');
+
+			lock_sub_content("{{ group_gid }}");
+			select_row("groups", "{{ group_gid }}");
+		{%- else -%}
+			unlock_sub_content();
+
+			function post_form() {
+				$.post("/groups/create/", $('#user_form').serialize());
+			}
+
+			$(document).keyup(function(e) {
+				if (e.keyCode == 13) { // enter
+					post_form();
+				}
+			});
+
+
+			// click save button
+			$('#save_user_button').click( function() {
+				post_form();
+			});
+
+			// click cancel button
+			$('#cancel_button').click(function() {
+				unlock_sub_content();
+				reload_div('#sub_content','');
+			});
+		{%- endif -%}
+
+		// we need to wait a small amount of time, else the subcontent is
+		// not yet reloaded and the focus won't work.
+		setTimeout(function() {
+			{%- if edit_mod -%}
+				$('#id_description').focus();
+
+			{%- else -%}
+				$('#id_name').focus();
+
+			{%- endif -%}
+		}, 250);
+	});
+</script>

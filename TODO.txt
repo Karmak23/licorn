@@ -1,0 +1,102 @@
+
+ - re-test OpenLDAP / caldav / volumes / rdiffbackup > make the TS work again
+
+ - in the stable version, still a 'ascii' decode problem on some paths
+	> get the trace from dev.licorn.org, in my byobu session, and open a ticket.
+
+ - nettoyage de derniers fichiers PY de l'ancienne archi (renommés en .old, déplacés dans libs, ou supprimés)
+	> renomé utils.py et CairoPlot.py en .old pour ne pas oublier de les effacer au commit
+
+ - When disabling the rdiffbackup extension on a running system:
+	> [CHECK] on the WMI side, the notification is received correctly (someone disabled ...) but the page doesn't reload
+	> if I manually go to /, the WMI crashes with 'rdiffbackup ext has no volumes attribute' (see screen on Leto)
+
+ - [R] passwd strengh indicator on / view for standard users (no admins/licorn-wmi)
+
+ - [R] "Mes informations"
+	> voir les groupes de l'utilisateur sans possibilité de les modifier (comme dans la view)
+	> ajouter le générateur et l'indicateur de mot de passe, comme dans la vue edit classique
+
+ - now that the WMI is in licornd again, the import / setup / upgrades doesn't work correctly in devinstall mode.
+	> sudo apt-get install python-twisted-web python-django
+	> SSL certificate generation doesn't work.
+
+ - `du` commands from compute_* should use nice + ionice!
+
+ - CLI: "add user" (and all similar) should say "use **--help** for more details.".
+
+ - rdiff: on inotify update on *.conf, call compute_needed_space(cache_force_expire=True)
+
+ * [2012/02/04 22:33:35.4624] volumes : périphérique /dev/sdc1(ext4) monté sur /media/Save_Leto_4To.
+{E}[2012/02/04 22:33:35.4632] EventLooper: exception encountered while running gestionnaire d'évènement <function volume_mounted at 0x7fa8f00456e0> for event volume_mounted, skipping to next method.: TypeError: volume_mounted() got multiple values for keyword argument 'volume'
+ * [2012/02/04 22:37:28.6732] volumes : réservation pour Licorn® effectuée sur /media/Save_Leto_4To.
+{E}[2012/02/04 22:37:28.6764] EventLooper: exception encountered while running gestionnaire d'évènement <function volume_enabled at 0x7fa8f0045578> for event volume_enabled, skipping to next method.: TypeError: volume_enabled() got multiple values for keyword argument 'volume'
+
+ - re-merge / review settings.* and settings.licornd.*, there seem to be a conflict (at least in the documentation)
+
+ - foundations.packaging: install_packages() doesn't see if apt-get doesn't work (if squid is down for example).
+
+ - LTRACE doesn't work as documented on Debian Squeeze.
+
+ - debian/, doc, foundations...
+	- depend on python-apt
+	- recommend unattended-upgrades
+
+ - les logging.progress d'un daemon lancé en -rvvvvW apparaissent sur le terminal alors qu'ils devraient aller dans un log...
+
+ - [R] plus de message "aucun groupe sur le système, voulez-vous en <a>créer un</a> ?" quand il n'y a pas de groupe sur le système.
+	> idem vérifier users
+
+ - [R] [EN COURS] finir les décorateurs de vues pour protéger toutes les URLs.
+ - [R] users.message.lock et LMC.extensions
+ - [R] download import : http://stackoverflow.com/questions/1156246/having-django-serve-downloadable-files/1158750#1158750
+ - [R] user perm : si c'est moi, je veux quand meme pouvoir changer mes groupes
+ - [R] après un mass action, ou n'importe quelle autre action souris, toujours re-focuser le champ de recherche.
+ 	- idée : une fct global action_done appellé partout
+ - [R] when "add user" crashes on the daemon side, we have no information/message/notification on the browser side.
+
+ - [R] Pas URGENT : rendre les tableaux des ::Views sortables sur leurs colonnes (et ajouter la flèche pour le classement par défaut; gecos pour les users, name pour les groups)
+
+ - Later : massive_export() not implemented
+	> create a ticket!
+
+ - LANG:
+	 - https://docs.djangoproject.com/en/1.3/topics/i18n/internationalization/ pour le javascript
+	 - django makemessages n'extrait pas les _('') dans les .html
+		- il faut merger les .html avec `django.po` et faire le xgettext "par ailleurs"
+		- gettext n'arrive pas à parser les templates (django les "re-prépare" déjà avec `makemessages`, mais il en en loupe lui aussi)
+
+ - float-right icon on '/' near system-status if software updates available.
+
+ - machines:
+	- implement hover's
+	- implement the one-click-security-update and the one-click-massive-security-update
+	- idem for software-updates or just security ? a checkbox in the previous dialog (eg. "Install normal software updates too"; disabled by default)?
+	- finish the "base" implementation (listing, no crash)
+	- implement the sidebar items (with dynamic?)
+	- [OK] act on 'licorn_host_online' and other events
+	- [OK] implement the rescan action/view
+
+ - deep-rescan for machine (re-pyroize already known ones, in case licornd is up again on them, re-try to resolve, etc)
+
+ - dans daemon_status_main.html, utiliser les vrais thread.ident plutôt que les 'loop.index' ou le faux 'tident' ; nécessite de abs(tident) car certains sont négatifs.
+
+ - licornd_auth: dans gecos.split(), remove trailing commas
+
+ - don't make a "ping myself"; "myself" seems weak in some situations.
+
+ - ltrace_func_??? -> enhance with self & caller automatically displayed
+
+ - integrate `libvirt` in `core.system` to:
+	- get nature of local machine (container or guest?)
+	- get list of hosted virtual machines
+	- assemble them automatically under the host? (or just a "link"?)
+	- integrate LXC to create / run / ephemeral / shutdown / force-stop containers on Licorn® servers
+
+ - [to check] make the `core` use super(*a, **kw) everywhere
+ - conflict between X.controler_name & X.controler -> X.controler_pickle_name_ in the `core.remote.CoreObjectProxy`?
+
+ - renommer event() en is_event_set()
+ - idem pour lock() en is_locked()
+
+

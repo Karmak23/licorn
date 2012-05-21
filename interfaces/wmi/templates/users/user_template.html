@@ -1,0 +1,12 @@
+{#- Copyright 2011 META IT & & Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+  
+{%- extends 'users/index.html' -%}
+
+{%- block sub_content -%}
+	<div id="users_sub_content" class="locked" value="{{ user.uidNumber }}">
+		{%- include 'users/user.html' -%}
+	</div>
+{%- endblock -%}
+
+

@@ -1,0 +1,82 @@
+
+
+#daemon_status_wrapper {
+}
+
+._refresh {
+	border-radius: 5px;
+	padding: 0 2px;
+}
+
+#daemon_status {
+	height: 100%;
+	overflow: auto;
+	padding-right: 30px;
+	font-size: 80%;
+}
+
+#daemon_status h1, #daemon_status h2, #daemon_status h3 {
+	margin: 0;
+	padding: 0;
+}
+
+#daemon_status h1 {
+	font-size: 150%;
+	text-align: center;
+
+}
+
+#daemon_status h2 {
+	font-size: 120%;
+	text-align: center;
+}
+
+#daemon_status h3 {
+	font-size: 110%;
+}
+
+#daemon_status dd {
+	font-size: 110%;
+	font-weight: bold;
+}
+
+.daemon_status_info_block {
+	background-color: #dde;
+	border-top: 2px solid #eef;
+	border-left: 2px solid #eef;
+	border-right: 2px solid #ccd;
+	border-bottom: 2px solid #ccd;
+	border-top-left-radius: 15px;
+	border-bottom-right-radius: 15px;
+	padding: 10px;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+
+#daemon_status_counters {
+	float: right;
+	width: 30%;
+}
+#daemon_status_threads {
+	float: left;
+	width: 65%;
+	margin-right: 10px;
+}
+
+#daemon_status ul {
+	padding-left: 20px;
+}
+
+#daemon_status dd {
+	padding: 5px 0 0;
+}
+
+#daemon_status dt {
+	padding-left: 10px;
+}
+
+.daemon_resource_info li {
+	display: inline;
+	list-style: none;
+}
