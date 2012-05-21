@@ -23,32 +23,31 @@
 	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/horizontal-layout.css" />-->
 {%- endblock -%}
 
-{%- block title -%}{{ _('Energy politics') }}{%- endblock -%}
+{%- block title -%}{{ _('Energy policies') }}{%- endblock -%}
 
 {%- block main_content -%}
 
-	<div class="title">
-		Add a scenario
-	</div>
+	<div class="title">	{{ _('Add a scenario') }} </div>
 
 	<div id="extinction_rules">
 
 		<input type="text" id='extinction_machine_list'/>
 		<input type="hidden" id='extinction_machine_list_result'/> 
-		will be stopped at 
+		{{ _('will be stopped at') }}	
 		<input type="text" class='textbox_small' id='extinction_machine_hour'/>
 		<!--:
 		<input type="text" class='textbox_small' id='extinction_machine_minute'/>-->
-		on
+		{{ _('on') }}
 		<input type="text" class='textbox_medium' id='extinction_machine_day'/>
 		
 		<input type='button' value="add" id='rule_extinction_add'/>
 		<br /><br /><br />
 	</div>
-	<div class="title">
-		Recap of existing rules
-	</div>
 
+
+
+	<div class="title"> {{ _('Recap of existing rules') }} </div>
+	<!-- #extinction_reacap is filled by javascript -->
 	<div id="extinction_recap"></div>
 
 
@@ -57,16 +56,17 @@
 {%- block sub_content -%}
 	
 	
-	<div class="title">
-		Extinction calendar
-	</div>
+	<div class="title"> {{ _('Extinction calendar') }} </div>
 
 	{% with calendar_rules=calendar_rules %}
 		{% include "widgets/weeklybars.html" %}
 	{% endwith %}
-	<br />
+	
 	
 	<script language="javascript" type="text/javascript">
+
+		var days = [ gettext("Monday"), gettext("Tuesday"), gettext("Wednesday"), 
+				gettext("Thrusday"), gettext("Friday"), gettext("Satursday"), gettext("Sunday") ]
 		
 		function del_rule(who, hour, day) {
 			$.get('/energy/del_rule/'+who+'/'+hour+'/'+day, function(data) {
@@ -102,7 +102,7 @@
 		}
 		function translate_day(day) {
 			/* return the weekday number [0,1,..,6] of the specified day */
-			days = [ "Monday","Tuesday","Wednesday","Thrusday","Friday","Satursday","Sunday" ]
+			
 			for (i=0; i < days.length ; i++) {
 				if (days[i] == day) {
 					return i;
@@ -126,7 +126,7 @@
 				return hour;
 			}
 			else { 
-				show_message_through_notification("Time interval is between 6h and 22h")
+				show_message_through_notification(gettext("The interval period allowed to record an extinction rule is between 6h and 22h"))
 				return null;
 			}
 		}
@@ -144,7 +144,7 @@
 				day  = translate_day($.trim($(this).parent().find("#extinction_machine_day").val()));
 				
 				if (who == null || who == '' || hour == null || day == null) {
-					show_message_through_notification("Cannot add rule : at least one of the required field is missing, please check information")
+					show_message_through_notification(gettext("Cannot add rule : at least one of the required field is missing, please check information"))
 					return;
 				}
 
@@ -213,7 +213,7 @@
 	    	});
 
 	    	$("#extinction_machine_day").autocomplete({
-	    		source: [ "Monday","Tuesday","Wednesday","Thrusday","Friday","Satursday","Sunday"],
+	    		source: days,
 	    	});
 			
 		});

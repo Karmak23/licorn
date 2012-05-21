@@ -7,8 +7,10 @@ from django.contrib.auth.decorators     import login_required
 from django.shortcuts                   import *
 from django.template.loader             import render_to_string
 
-from licorn.foundations           import exceptions, hlstr, logging, settings, pyutils
-from licorn.foundations.constants import filters, relation, priorities, host_status
+from licorn.foundations           import exceptions, hlstr, logging, settings, \
+										pyutils
+from licorn.foundations.constants import filters, relation, priorities, \
+										host_status
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import ObjectSingleton
@@ -34,7 +36,7 @@ class ExtinctionCalendar(ObjectSingleton):
 	def __init__(self):
 		# our calendar
 		self.calendar = []
-
+		self.rule_prefix = '_extinction-calendar_'
 		self.days=[_('monday'), _('tuesday'), _('wednesday'), _('thursday'), 
 			_('friday'), _('satursday'), _('sunday') ]
 	def get_recap(self):
@@ -48,30 +50,33 @@ class ExtinctionCalendar(ObjectSingleton):
 		html += '<th>{0}</th>'.format(_("Machines"))
 		html += '</thead>'
 		
-		sorted_list = sorted(sorted(self.calendar, key=itemgetter('hour')), key=itemgetter('day'))
+		sorted_list = sorted(sorted(self.calendar, key=itemgetter('hour')), 
+			key=itemgetter('day'))
 		for rule in sorted_list:
 			
 			machines = ''
 			for m in rule['who'].split(','):
 				m = m.strip()
 				if m.lower() == 'all':
-					machines  += "<span> ALL MACHINES </span>"
+					machines  += "<span>{0}</span>".format(_("All machines"))
 				else:
-					machines += "<span class='licorn_machine' id='{0}'></span>".format(m)
+					machines += ("<span class='licorn_machine' id='{0}'>"
+						"</span>".format(m))
 					
 			html +=	'<tr>'
-			html +=	'<td width="20%"> {0} </td>'.format(self.days[int(rule['day'])])
+			html +=	'<td width="20%"> {0} </td>'.format(
+				self.days[int(rule['day'])])
 			html +=	'<td width="10%"> {0} </td>'.format(rule['hour'])
 			html +=	'<td width="60%"> {0} </td>'.format(machines)
 
-			del_func = "del_rule('{0}','{1}','{2}')".format(rule['who'], rule['hour'],
-				rule['day'])
+			del_func = "del_rule('{0}','{1}','{2}')".format(rule['who'], 
+				rule['hour'], rule['day'])
 
 			html +=	('<td width="10%"> '
 				'<span onClick="{0}">'
 					'<img src="/media/images/16x16/delete.png" '
-					'alt="Delete rule" width="16" height="16" /> <span> '
-					'</td>'.format(del_func))
+					'alt="{1}" width="16" height="16" /> <span> '
+					'</td>'.format(del_func, _("Delete rule")))
 			html +=	'</tr>'
 		
 
@@ -87,7 +92,7 @@ class ExtinctionCalendar(ObjectSingleton):
 			
 			if not load:
 				# create the Licorn Task
-				tname = '_extinction-calendar_{0}-{1}-{2}'.format(who, hour, 
+				tname = '{0}{1}-{2}-{3}'.format(self.rule_prefix, who, hour, 
 					day)
 
 				if who.lower() == 'all':
@@ -118,7 +123,8 @@ class ExtinctionCalendar(ObjectSingleton):
 					r['who'] = '{0},{1}'.format(r['who'], rule['who'])
 
 			if not already_added:
-				data_sep.append({ 'day': rule['day'], 'who':rule['who'], 'hour':rule['hour']})
+				data_sep.append({ 'day': rule['day'], 'who':rule['who'], 
+					'hour':rule['hour']})
 		
 		return data_sep
 	def get_data_on_off(self):
@@ -140,8 +146,8 @@ class ExtinctionCalendar(ObjectSingleton):
 	def del_rule(self, request, who, hour, day):
 		""" delete an extinction rule """
 		#delete the task
-		LMC.tasks.del_task(LMC.tasks.by_name('_extinction-calendar_{0}-{1}-{2}'
-			.format(who.replace(" ", ""), hour, day)).id)
+		LMC.tasks.del_task(LMC.tasks.by_name('{0}{1}-{2}-{3}'
+			.format(self.rule_prefix, who.replace(" ", ""), hour, day)).id)
 
 		# delete its reference
 		for i, v in enumerate(self.calendar):
@@ -154,7 +160,7 @@ class ExtinctionCalendar(ObjectSingleton):
 
 		rules = []
 		for task in LMC.tasks:
-			if task.name.startswith('_extinction-calendar_'):
+			if task.name.startswith(self.rule_prefix):
 				args = task.args
 				for i, a in enumerate(args):
 					if 'host_status.ACTIVE' in a:
