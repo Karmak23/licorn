@@ -10,17 +10,70 @@
 """
 
 # external imports
-import copy
+import types, copy, functools, new
 
-# Licorn® imports
-import exceptions
+# ============================================================= Licorn® imports
+import exceptions, styles
 from styles  import *
-from ltrace  import ltrace
+from ltrace  import *
 from ltraces import *
+
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
 
 #: just a list of Pyro objects attributes, to be able to protect them, when
 #: switching internal attributes and dict items in MixedDictObject and derivatives.
 pyro_protected_attrs = ['objectGUID', 'lastUsed', 'delegate', 'daemon']
+
+class method_decorator(object):
+	""" This method decorator gets the real method by using a descriptor.
+		Original information: http://wiki.python.org/moin/PythonDecoratorLibrary
+
+		And other [non-best-working] tries:
+		http://stackoverflow.com/questions/1672064/decorating-instance-methods-in-python
+
+	"""
+	def __init__(self, func, **kwargs):
+		self.func     = func
+		self.kwargs   = kwargs
+		self.__name__ = func.__name__
+	def __get__(self, instance, klass):
+		if instance is None:
+			# Class method was requested
+			return self.make_unbound(klass)
+		return self.make_bound(instance)
+
+	def make_unbound(self, klass):
+		@functools.wraps(self.func)
+		def wrapper(*args, **kwargs):
+			raise TypeError(_(u'Unbound method %s() must be called with %s '
+				u'instance as first argument (got nothing instead)') % (
+					self.func.__name__, klass.__name__))
+		return wrapper
+
+	def make_bound(self, instance):
+		@functools.wraps(self.func)
+		def wrapper(*args, **kwargs):
+			return self.func(instance, *args, **kwargs)
+
+		for key, value in self.kwargs.iteritems():
+			setattr(wrapper, key, value)
+
+		# This instance does not need the descriptor anymore,
+		# let it find the wrapper directly next time.
+		#
+		# Create a new instance method on the fly, to avoid
+		# this special one beiing seen as a simple 'function'
+		# instead of 'instancemethod'.
+		setattr(instance, self.func.__name__, new.instancemethod(
+						wrapper, instance, instance.__class__))
+
+		return wrapper
+
+class class_property(property):
+	#http://stackoverflow.com/questions/128573/using-property-on-classmethods
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
 
 class BasicCounter(object):
 	def __init__(self, init=0):
@@ -28,8 +81,6 @@ class BasicCounter(object):
 		self.value = init
 	def __str__(self):
 		return str(self.value)
-	def __repr__(self):
-		return 'BasicCounter(%d)' % self.value
 	def __call__(self):
 		return self.value
 
@@ -58,21 +109,33 @@ class ObjectSingleton(object):
 	""" Create a single instance of an object-derived class. """
 	__instances = {}
 	def __new__(cls, *args, **kargs):
-		if ObjectSingleton.__instances.get(cls) is None:
-			ObjectSingleton.__instances[cls] = object.__new__(cls)
 
-		# don't use str() here, it will fail in the backends.
-		assert ltrace(TRACE_BASE, '| Singleton.__new__(%s)' % cls)
-		return ObjectSingleton.__instances[cls]
+		# WARNING: using 'cls' instead of 'cls.__name__' for instances dict
+		# keys can lead to not having singletons in the reality, because
+		# <class 'wmi.app.WmiEventApplication'> is not the same thing as
+		# <class 'licorn.interfaces.wmi.app.WmiEventApplication'> when
+		# importing classes from packages with a different base path.
+		name = cls.__name__
+
+		if ObjectSingleton.__instances.get(name) is None:
+
+			# don't use str() here, it will fail in the backends.
+			assert ltrace_func(TRACE_BASE)
+
+			ObjectSingleton.__instances[name] = object.__new__(cls)
+
+		assert ltrace_var(TRACE_BASE, ObjectSingleton.__instances[name])
+		return ObjectSingleton.__instances[name]
 class DictSingleton(dict):
 	""" Create a single instance of a dict-derived class. """
 	__instances = {}
 	def __new__(cls, *args, **kargs):
 		if DictSingleton.__instances.get(cls) is None:
+			assert ltrace_func(TRACE_BASE)
 			DictSingleton.__instances[cls] = dict.__new__(cls)
 
 		# don't use str() here, it will fail in the backends.
-		assert ltrace(TRACE_BASE, '| Singleton.__new__(%s)' % cls)
+		assert ltrace_var(TRACE_BASE, DictSingleton.__instances[cls])
 		return DictSingleton.__instances[cls]
 
 Singleton = DictSingleton
@@ -87,72 +150,85 @@ class NamedObject(object):
 		other protected attributes.
 	"""
 	_licorn_protected_attrs = [ 'name' ]
+	name = '<unset_yet>'
 
-	@property
-	def name(self):
-		return self.__name
-	@name.setter
-	def name(self, name):
-		self.__name = name
+	def __init__(self, *args, **kwargs):
 
-	def __init__(self, name='<unset>', source=None):
-		assert ltrace(TRACE_BASE, '| NamedObject.__init__(%s)' % name)
+		source = kwargs.pop('source', None)
 
-		self.__name = name
+		# object.__init__ is not super() compatible...
+		#super(NamedObject, self).__init__(*args, **kwargs)
+
+		assert ltrace_func(TRACE_BASE)
+
+		# this instance variable should override the class one.
+		# the class variable is used to avoid crash when ltrace tries
+		# to str() objects during their initialisation.
+		self.name = kwargs.pop('name', NamedObject.name)
+
 		if source:
 			self.copy_from(source)
+	def __hash__(self):
+		return id(self)
+	@property
+	def pretty_name(self):
+		try:
+			return self.__pretty_name
+
+		except:
+			self.__pretty_name = stylize(ST_NAME, self.name)
+			return self.__pretty_name
 	def __str__(self):
-		data = ''
-		for i in sorted(self.__dict__):
-			if i[0] == '_' or i == 'parent': continue
-			if type(getattr(self, i)) == type(self):
-				data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
-			else:
-				data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
-		return data
-	def __repr__(self):
-		data = ''
-		for i in sorted(self.__dict__):
-			if i[0] == '_' or i == 'parent': continue
-			if type(getattr(self, i)) == type(self):
-				data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
-			else:
-				data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
-		return data
+		#data = ''
+		#for i in sorted(self.__dict__):
+		#	if i[0] == '_' or i == 'parent': continue
+		#	if type(getattr(self, i)) == type(self):
+		#		data += '%s↳ %s:\n%s' % ('\t', i, str(getattr(self, i)))
+		#	else:
+		#		data += '%s↳ %s = %s\n' % ('\t', str(i), str(getattr(self, i)))
+		return "<%s: '%s' at 0x%x>" % (
+			stylize(ST_ATTR, self.__class__.__name__),
+			stylize(ST_NAME, self.name),
+			id(self))
+	def __unicode__(self):
+		return unicode(str(self))
 	def copy(self):
 		""" Implements the copy method like any other base object. """
-		assert ltrace(TRACE_BASE, '| NamedObject.copy(%s)' % self.name)
+		assert ltrace_func(TRACE_BASE)
 		temp = self.__class__()
 		temp.copy_from(self)
 		return temp
 	def copy_from(self, source):
 		""" Copy attributes from another object of the same class. """
-		assert ltrace(TRACE_BASE, '| NamedObject.copy_from(%s, %s)' % (
-			self.name, source.name))
-		self.__name = source.name
-	def dump_status(self, long_output=False, precision=None):
+		assert ltrace_func(TRACE_BASE)
+		self.name = source.name
+	def dump_status(self, long_output=False, precision=None, as_string=False):
 		""" method called by :meth:`ltrace.dump` and :meth:`ltrace.fulldump`
 			to dig into complex derivated object at runtime (in the licornd
 			interactive shell).
 		"""
-		assert ltrace(TRACE_BASE, '| %s.dump_status(%s, %s)' % (self.name,
-			long_output, precision))
+		assert ltrace_func(TRACE_BASE)
 
 		if long_output:
-			return '%s %s:\n%s' % (
-				str(self.__class__),
+			return u'%s %s:\n%s' % (
+				unicode(self.__class__),
 				stylize(ST_NAME, self.name),
-				'\n'.join('%s(%s): %s' % (
-					stylize(ST_ATTR, key), type(value), value)
-						for key, value in self.__dict__.iteritems() \
-							if key[:2] != '__' and not callable(value) \
+				u'\n'.join(u'%s(%s): %s' % (
+							stylize(ST_ATTR, key),
+							type(value),
+							# some non-licorn objects (notably the Pyro daemon)
+							# don't provide __unicode__() and trigger a crash.
+							value if hasattr(value, '__unicode__')
+								else unicode(str(value))
+						) for key, value in self.__dict__.iteritems() \
+							if key[:2] != u'__' and not callable(value) \
 							and key not in self.__class__._licorn_protected_attrs))
 		else:
-			return '%s %s: %s' % (
-				str(self.__class__),
+			return u'%s %s: %s' % (
+				unicode(self.__class__),
 				stylize(ST_NAME, self.name),
-				[ key for key, value \
-					in self.__dict__.iteritems() if key[:2] != '__' \
+				[ unicode(key) for key, value \
+					in self.__dict__.iteritems() if key[:2] != u'__' \
 						and not callable(value) \
 						and key not in self.__class__._licorn_protected_attrs])
 class MixedDictObject(NamedObject, dict):
@@ -168,50 +244,66 @@ class MixedDictObject(NamedObject, dict):
 
 	"""
 	_licorn_protected_attrs = NamedObject._licorn_protected_attrs
-	def __init__(self, name=None, source=None):
 
-		NamedObject.__init__(self, name=name)
-		assert ltrace(TRACE_BASE, '| MixedDictObject.__init__(%s)' % name)
+	def __init__(self, *args, **kwargs):
+
+		source = kwargs.pop('source', None)
+
+		assert ltrace_func(TRACE_BASE)
+
+		super(MixedDictObject, self).__init__(*args, **kwargs)
 
 		if source:
-			self.copy_from(source)
+			self.copy_from(kwargs.pop('source'))
 	def copy(self):
 		""" we must implement this one, else python will not be able to choose
 			between the one from NamedObject and from dict. NamedObject will call
 			our self.copy_from() which does the good job. """
-		assert ltrace(TRACE_BASE, '| MixedDictObject.copy()')
+		assert ltrace_func(TRACE_BASE)
 		return NamedObject.copy(self)
 	def copy_from(self, source):
-		assert ltrace(TRACE_BASE, '| MixedDictObject.copy_from(%s)' %
-			source.name)
+		assert ltrace_func(TRACE_BASE)
 		NamedObject.copy_from(self, source)
 		dict.update(self, dict.copy(source))
 	def iter(self):
-		assert ltrace(TRACE_BASE, '| MixedDictObject.iter(%s)' % self.name)
-		return dict.itervalues(self)
+		assert ltrace_func(TRACE_BASE)
+		return self.__iter__()
 	def __iter__(self):
-		assert ltrace(TRACE_BASE, '| MixedDictObject.__iter__(%s)' % self.name)
-		return dict.itervalues(self)
+		assert ltrace_func(TRACE_BASE)
+		for v in dict.itervalues(self):
+			yield v
 	def __getattr__(self, attribute):
 		""" Called only when a normal call to "self.attribute" fails. """
-		assert ltrace(TRACE_BASE, '| MixedDictObject.__getattr__(%s)' % attribute)
+		assert ltrace_func(TRACE_BASE)
+
 		try:
 			return dict.__getitem__(self, attribute)
+
 		except KeyError:
-			raise AttributeError("'%s' %s%s" % (stylize(ST_BAD, attribute),
-					'' if attribute in self.__class__._licorn_protected_attrs
-						else ('\n\t- it is currently missing from %s '
-							'(currently=%s)' % ('%s.%s' % (
-								stylize(ST_NAME, self.name),
-								stylize(ST_ATTR,'_licorn_protected_attrs')),
-						', '.join(stylize(ST_COMMENT, value)
-							for value in self.__class__._licorn_protected_attrs))),
-					'\n\t- perhaps you tried to %s a %s?' % (
-						stylize(ST_ATTR, 'getattr()'),
-						stylize(ST_COMMENT, 'property()'))))
+			try:
+				return dict.__getattr__(self, attribute)
+
+			except AttributeError:
+				try:
+					return NamedObject.__getattr__(self, attribute)
+
+				except AttributeError:
+					raise AttributeError("'%s' %s%s" % (stylize(ST_BAD, attribute),
+							'' if attribute in self.__class__._licorn_protected_attrs
+								else ('\n\t- it is currently missing from %s '
+									'(currently=%s)' % ('%s.%s' % (
+										stylize(ST_NAME, self.name),
+										stylize(ST_ATTR,'_licorn_protected_attrs')),
+								', '.join(stylize(ST_COMMENT, value)
+									for value in self.__class__._licorn_protected_attrs))),
+							'\n\t- perhaps you tried to %s a %s?' % (
+								stylize(ST_ATTR, 'getattr()'),
+								stylize(ST_COMMENT, 'property()'))))
 	def append(self, thing):
+		assert ltrace_func(TRACE_BASE)
 		dict.__setitem__(self, thing.name, thing)
 	def remove(self, thing):
+		assert ltrace_func(TRACE_BASE)
 		for key, value in dict.iteritems(self):
 			if value == thing:
 				dict.__delitem__(self, key)
@@ -221,22 +313,24 @@ class MixedDictObject(NamedObject, dict):
 			attributes will go into the dict part, to be able to retrieve
 			them in either way (x.attr or x[attr]).
 		"""
-		assert ltrace(TRACE_BASE, '| MixedDictObject.__setattr__(%s, %s)' % (
-			attribute, value))
+		assert ltrace_func(TRACE_BASE)
+
 		if attribute[0] == '_' or callable(value) \
-			or attribute in self.__class__._licorn_protected_attrs:
+						or attribute in self.__class__._licorn_protected_attrs:
 			dict.__setattr__(self, attribute, value)
+
 		else:
 			dict.__setitem__(self, attribute, value)
 	def __delattr__(self, key):
-		assert ltrace(TRACE_BASE, '| MixedDictObject.__delattr__(%s)' % key)
+		assert ltrace_func(TRACE_BASE)
+
 		if key[0] == '_' or key in self.__class__._licorn_protected_attrs:
 			dict.__delattr__(self, key)
+
 		else:
 			dict.__delitem__(self, key)
-	def dump_status(self, long_output=False, precision=None):
-		assert ltrace(TRACE_BASE, '| %s.dump_status(%s, %s)' % (self.name,
-			long_output, precision))
+	def dump_status(self, long_output=False, precision=None, as_string=False):
+		assert ltrace_func(TRACE_BASE)
 
 		if long_output:
 			return '%s %s:\n%s' % (
@@ -293,7 +387,7 @@ class TreeNode(NamedObject):
 	def __lsattrs__(self):
 		return [ attr for attr, value in self.__dict__.iteritems() \
 			if attr[:2] != '__' and not callable(value) ]
-	def dump_status(self, long_output=False, precision=None):
+	def dump_status(self, long_output=False, precision=None, as_string=True):
 		assert ltrace(TRACE_BASE, '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
 		if long_output:
@@ -312,11 +406,13 @@ class TreeNode(NamedObject):
 
 # old-style classes, or classes to be removed at next refactor run.
 class Enumeration(object):
-	def __init__(self, name='<unset>', copy_from=None, **kwargs):
+
+	def __init__(self, *args, **kwargs):
 		assert ltrace(TRACE_BASE, '| Enumeration.__init__()')
 		object.__init__(self)
-		self.name = name
+		self.name = kwargs.pop('name', '<unset>')
 
+		copy_from = kwargs.pop('copy_from', None)
 		if copy_from:
 			self.name = copy_from.name[:]
 			for attrname, attrvalue in copy_from.iteritems():
@@ -326,9 +422,8 @@ class Enumeration(object):
 			for key, value in kwargs.iteritems():
 				self.__setattr__(key, value)
 	def __str__(self):
-		return 'Enumeration "%s"' % stylize(ST_NAME, self.name)
-	def __repr__(self):
-		return '<Enumeration "%s">' % self.name
+		return "<%s: '%s' at 0x%x>" % (stylize(ST_ATTR, self.__class__.__name__),
+						stylize(ST_NAME, self.name), id(self))
 	def copy(self):
 		""" make a complete and dereferenced copy of ouselves. """
 		temp = Enumeration()
@@ -345,7 +440,7 @@ class Enumeration(object):
 		except AttributeError:
 			delattr(self, value)
 	# make enumeration
-	def dump_status(self, long_output=False, precision=None):
+	def dump_status(self, long_output=False, precision=None, as_string=True):
 		assert ltrace(TRACE_BASE, '| %s.dump_status(%s,%s)' % (
 			str(self.name), long_output, precision))
 		if long_output:
@@ -369,7 +464,6 @@ class Enumeration(object):
 
 		if attr_value is None:
 			attr_value = getattr(self, attr_name)
-		#print "bla:%s:%s" % (attr_name, len(attr_name))
 
 		return attr_name[0] != '_' and not attr_name == 'name' \
 			and not callable(attr_value)
@@ -386,6 +480,7 @@ class Enumeration(object):
 		assert ltrace(TRACE_BASE, '%s trying to get attr %s' % (self.name, key))
 		try:
 			return getattr(self, key)
+
 		except TypeError:
 			return 'NONE Object'
 	def update(self, upddict):
@@ -447,24 +542,39 @@ class EnumDict(Enumeration, dict):
 		else:
 			dict.__setitem__(self, key, value)
 		Enumeration.__setattr__(self, value, key)
-class LicornConfigObject():
+class LicornConfigObject:
 	""" a base class just to be able to add/remove custom attributes
 		to other custom attributes (build a tree simply). """
-	def __init__(self, fromdict={}, level=1):
-		assert ltrace(TRACE_BASE, '| LicornConfigObject.__init__(%s, %s)' % (
-			fromdict, level))
-		for key in fromdict.keys():
-			setattr(self, key, fromdict[key])
-		self._level = level
+	def __init__(self, fromdict={}, _name=None, parent=None, level=0):
+
+		assert ltrace_func(TRACE_BASE)
+
+		self._name = _name
+
+		if parent:
+			self._level = parent._level + 1
+
+		else:
+			self._level = level
+
+		for key, value in fromdict.iteritems():
+			setattr(self, key,
+					LicornConfigObject(fromdict=value, parent=self)
+						if isinstance(value, types.DictType)
+						else value)
 	def __str__(self):
-		data = ""
-		for i in sorted(self.__dict__):
-			if i[0] == '_': continue
-			if type(getattr(self, i)) == type(self):
-				data += '%s↳ %s:\n%s' % ('\t'*self._level, i, str(getattr(self, i)))
-			else:
-				data += '%s↳ %s = %s\n' % ('\t'*self._level, str(i), str(getattr(self, i)))
-		return data
+		data   = ''
+		sep    = '  '
+		sublev = self._level + 1
+
+		for key, value in self.__dict__.iteritems():
+
+			if key[0] == '_':
+				continue
+
+			data += '%s%s: %s,\n' % (sep * sublev, key, value)
+
+		return '{\n%s%s}' % (data, sep * self._level)
 	def iteritems(self):
 		for key, value in sorted(self.__dict__.iteritems()):
 			if key[0] != '_':
@@ -472,42 +582,6 @@ class LicornConfigObject():
 	def __iter__(self):
 		""" make this object sequence-compatible, for use in
 			LicornConfiguration(). """
-		for key, value in sorted(self.__dict__.iteritems()):
-			if key[0] != '_' and not callable(value):
+		for key, value in self.__dict__.iteritems():
+			if key[0] != '_':
 				yield value
-class FsapiObject(Enumeration):
-	""" TODO. """
-	def __init__(self, name=None, path=None, uid=-1, gid=-1,
-		root_dir_perm=None, dirs_perm=None, files_perm=None, exclude=None,
-		rule=None, system=False, content_acl=False, root_dir_acl=False,
-		home=None, user_uid=-1, user_gid=-1,
-		copy_from=None):
-
-		Enumeration.__init__(self, name, copy_from)
-
-		# This one is used only in core.classes.CoreFSController methods
-		if home:
-			self.home     = home
-			self.user_uid = user_uid
-			self.user_gid = user_gid
-		# else:
-		# do not define self.{home,user_uid,user_gid}
-
-		# These other are used in fsapi.check*
-		self.path           = path
-		self.uid            = uid
-		self.root_gid       = gid
-		self.content_gid    = None
-		self.root_dir_perm  = root_dir_perm
-		self.dirs_perm      = dirs_perm
-		self.files_perm     = files_perm
-		self.rule           = rule
-		self.system         = system
-		self.content_acl    = content_acl
-		self.root_dir_acl   = root_dir_acl
-		self.already_loaded = False
-
-		if exclude is None:
-			self.exclude    = []
-		else:
-			self.exclude    = exclude

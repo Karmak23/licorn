@@ -1,0 +1,93 @@
+{#- Copyright 2011 META IT & Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{% from 'widgets/common.html' import licorn_list, jquery_popover_media %}
+
+{%- extends 'fullbase.html' -%}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/list.css" />
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/groups.css" />
+	{{ jquery_popover_media() }}
+	<script language="javascript" type="text/javascript" src="/media/js/list.js"></script>
+	<script language="javascript" type="text/javascript" src="/media/js/groups.js"></script>
+{%- endblock -%}
+
+{%- block title -%}{{ _('Groups management') }}{%- endblock -%}
+
+{%- block main_content -%}
+
+	<!-- standard users list -->
+
+	{%- set name = "groups" -%}
+	{%- set identifier = "gidNumber" -%}
+	{%- set main_column = "name" -%}
+	{%- set title = _('Groups') -%}
+	{%- set massive_actions = [ { "action_name" : "delete", "icon" : "/media/images/24x24/mass_del.png"},						
+								{ "action_name" : "permissiveness", "icon" : "/media/images/24x24/mass_perm.png"} ] -%}
+								{# { "action_name" : "export", "icon" : "/media/images/24x24/mass_export.png"}, #}	
+
+	{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'groups_massive_select\'>", "sortable" : False},
+						{ "name" : "permissive", "content" : "<img src=\'/media/images/24x24/locked_header.png\'/>", "sortable" : True, "default_sort" : False},
+						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
+						{ "name" : "description", "content" : _('Description'), "sortable" : True, "default_sort" : False},
+						{ "name" : "gidNumber", "content" : _('GID'), "sortable" : True, "default_sort" : False},
+						{ "name" : "skel", "content" : _('Skeleton'), "sortable" : True, "default_sort" : False},
+						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+	{%- set list_items = groups_list -%}
+	{%- set macro_row = 'groups/group_row.html' -%}
+	{%- set search_columns = [ 'gidNumber', 'description', 'name' ] -%}
+
+	{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
+
+	{%- if request.user.is_superuser -%}
+		<!-- system users list -->
+
+		{%- set name = "sys_groups" -%}
+		{%- set title = _('System groups') -%}
+		{%- set headers = [ { "name" : "select", "content" : "<input type=\'checkbox\' name=\'select\' id=\'sys_groups_massive_select\'>", "sortable" : False},
+						{ "name" : "priv", "content" : "Privilege", "sortable" : True, "default_sort" : False},
+						{ "name" : "name", "content" : _('Name'), "sortable" : True, "default_sort" : True},
+						{ "name" : "description", "content" : _('description'), "sortable" : True, "default_sort" : False},
+						{ "name" : "gidNumber", "content" : _('uid'), "sortable" : True, "default_sort" : False},
+						{ "name" : "nav", "content" : "", "sortable" : False} ]	-%}
+		{%- set list_items = system_groups_list -%}
+
+		{{ licorn_list(name, main_column, title, massive_actions, headers, list_items, macro_row, search_columns, identifier) }}
+
+	{%- endif -%}
+
+	<script language="javascript" type="text/javascript">
+		$(document).ready(function() {
+			number_of_list = {{ 2 if request.user.is_superuser else 1 }};
+
+			//init size of lists
+			$(".list_content").hide();
+
+			height = $("#main_content").height() - number_of_list * ($(".list_title").height());
+			content = $(".list:first").find(".list_content");
+			content.show()
+			$(".list:first").addClass('current_list');
+
+			$('.list_items').height(height - content.find('.search_bar').height() - content.find('.list_header').height() - 100);
+			$('.row').width(content.find('.list_header').width());
+
+			// init click event on list title
+			$(".list_title").each(function() {
+				$(this).click(function() {
+					$(".list_content").hide();
+					$(this).addClass('current_list');
+					$(this).parent().find(".list_content").show();
+				});
+			});
+
+			$("#search_box").focus();
+		});
+	</script>
+
+{%- endblock -%}
+
+{%- block sub_content -%}
+{%- endblock -%}
+
+

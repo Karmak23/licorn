@@ -8,7 +8,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-from licorn.foundations import process, exceptions, logging
+import process, exceptions, logging
 
 class LicornTransaction:
 	""" 2007/11: This class has still to be really implemented and used wherever it is needed.

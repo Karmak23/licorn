@@ -8,9 +8,10 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import re
-from licorn.foundations        import exceptions
-from licorn.foundations.styles import *
+import random, re
+
+import exceptions
+from styles import *
 
 # please, just in case: never forget to read http://sed.sourceforge.net/sed1line.txt
 
@@ -88,7 +89,11 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 						u'ß': u'ss',
 						u"'": u'',
 						u'"': u'',
-						u' ': u'_'
+						u' ': u'_',
+						u'©':u'',
+						u'®':u'',
+						u'':u'',
+						u'':u'',
 						}
 
 	for elem in translation_map:
@@ -147,13 +152,11 @@ def generate_salt(maxlen = 12):
 				salt += special_chars[number]
 
 	return salt
-def generate_password(maxlen = 12, use_all_chars = False):
-	"""Generate a random password."""
-
-	import random
+def generate_password(maxlen=12, use_all_chars=False):
+	""" Generate a random password. """
 
 	# ascii table: 48+ = numbers, 65+ = upper letter, 97+ = lower letters
-	special_chars = [ '.', '/',  '_', '*', '+', '-', '=', '@' ]
+	special_chars = [ '.', '/', '_', '*', '+', '-', '=', '@' ]
 
 	if use_all_chars:
 		special_chars.extend([ '$', '%', '&', '!', '?', '(', ')', ',',
@@ -161,7 +164,7 @@ def generate_password(maxlen = 12, use_all_chars = False):
 
 	special_chars_count = len(special_chars) -1
 
-	password = ""
+	password = ''
 
 	for i in range(0, maxlen):
 		char_type = random.randint(1, 4)
@@ -214,8 +217,6 @@ def word_fuzzy_match(part, word):
 def word_match(word, valid_words):
 	""" try to find what the user specified on command line. """
 
-	#print '>> match', word, 'in', valid_words, '(', remove, ' removed).'
-
 	for a_try in valid_words:
 		if word == a_try:
 			# we won't get anything better than this
@@ -226,15 +227,15 @@ def word_match(word, valid_words):
 	for a_try in valid_words:
 		if a_try.startswith(word):
 			if first_match is None:
-				#print '>> partial match', a_try, 'continuing for disambiguity.'
 				first_match = a_try
 
 			else:
-				raise exceptions.BadArgumentError(_('Ambiguous mode {0} '
-					'(matches at least {1} and {2}).').format(
-						stylize(ST_BAD, word),
-						stylize(ST_COMMENT, first_match),
-						stylize(ST_COMMENT, a_try)))
+				raise exceptions.BadArgumentError(_(u'Ambiguous word {0}, '
+								u'matches at least {1} and {2}. '
+								u'Please refine your query.').format(
+									stylize(ST_BAD, word),
+									stylize(ST_COMMENT, first_match),
+									stylize(ST_COMMENT, a_try)))
 
 	# return an intermediate partial best_result, if it exists, else
 	# continue for partial matches.
@@ -248,11 +249,12 @@ def word_match(word, valid_words):
 				first_match = a_try
 
 			else:
-				raise exceptions.BadArgumentError(_('Ambiguous mode {0} '
-					'(matches at least {1} and {2}).').format(
-						stylize(ST_BAD, word),
-						stylize(ST_COMMENT, first_match),
-						stylize(ST_COMMENT, a_try)))
+				raise exceptions.BadArgumentError(_(u'Ambiguous word {0}, '
+								u'matches at least {1} and {2}. '
+								u'Please refine your query.').format(
+									stylize(ST_BAD, word),
+									stylize(ST_COMMENT, first_match),
+									stylize(ST_COMMENT, a_try)))
 
 	return first_match
 def multi_word_match(word, valid_words):
@@ -290,3 +292,19 @@ def statsize2human(size):
 		size /= 1024.0
 		unit = 'Pib'
 	return '%d %s' % (round(size), unit)
+def shell_quote(message):
+	return message.replace("'","''").replace("(",r"\(").replace(")",r"\)").replace("!", r"\!")
+def clean_path_name(command):
+	""" Return a multi-OS friendly path (not usable for anything else than
+		display, though) for a given command-line or full path (as a string).
+
+		Used in the TS.
+	"""
+
+	return ('_'.join(command)).replace(
+		'../', '').replace('./', '').replace('//','_').replace(
+		'/','_').replace('>','_').replace('&', '_').replace(
+		'`', '_').replace('\\','_').replace("'",'_').replace(
+		'|','_').replace('^','_').replace('%', '_').replace(
+		'(', '_').replace(')', '_').replace ('*', '_').replace(
+		' ', '_').replace('__', '_')

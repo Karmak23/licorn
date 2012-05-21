@@ -11,10 +11,10 @@ Licorn core: keywords - http://docs.licorn.org/core/privileges.html
 
 import xattr, os.path, stat
 
-from licorn.foundations         import exceptions, logging
+from licorn.foundations         import settings, exceptions, logging
 from licorn.foundations         import fsapi, readers, hlstr, pyutils
 from licorn.foundations.styles  import *
-from licorn.foundations.ltrace  import ltrace
+from licorn.foundations.ltrace  import *
 from licorn.foundations.ltraces import *
 from licorn.foundations.base    import Singleton
 from licorn.foundations.classes import FileLock
@@ -76,7 +76,7 @@ class KeywordsController(Singleton, LockedController):
 
 		try:
 			map(import_keywords, readers.ug_conf_load_list(
-				LMC.configuration.keywords_data_file))
+				settings.core.keywords.config_file))
 		except IOError, e:
 			if e.errno == 2:
 				pass
@@ -95,10 +95,10 @@ class KeywordsController(Singleton, LockedController):
 				self.pretty_name)
 
 			lock_file = FileLock(LMC.configuration,
-				LMC.configuration.keywords_data_file)
+				settings.core.keywords.config_file)
 
 			lock_file.Lock()
-			open(LMC.configuration.keywords_data_file , "w").write(
+			open(settings.core.keywords.config_file , "w").write(
 				self.__build_cli_output())
 			lock_file.Unlock()
 

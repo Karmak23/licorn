@@ -1,4 +1,6 @@
 
+.. _daemon.services.en:
+
 ====================
 The Service facility
 ====================

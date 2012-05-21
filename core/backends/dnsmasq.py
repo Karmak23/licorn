@@ -15,8 +15,8 @@ import os
 from licorn.foundations           import exceptions, logging
 from licorn.foundations           import readers, network
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton, Enumeration
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.hlstr     import cregex

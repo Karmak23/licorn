@@ -1,0 +1,50 @@
+# -*- coding: utf-8 -*-
+"""
+Licorn foundations - http://dev.licorn.org/documentation/foundations
+
+apt - apt high-level API for Licorn®
+
+:copyright: 2012 Olivier Cortès <olive@deep-ocean.net>
+:license: GNU GPL version 2
+"""
+
+import sys, apt_pkg
+
+# licorn.foundations imports
+import cache, process, logging
+from base    import LicornConfigObject
+from styles  import *
+from ltrace  import *
+from ltraces import *
+
+if not process.executable_exists_in_path('unattended-upgrades'):
+	logging.warning(_(u'You must install the debian package {0} for the '
+		u'upgrade mechanism to work fully. Currently you will only be able to '
+		u'check if the system needs upgrading').format(stylize(ST_NAME, 'unattended-upgrades')))
+
+# version_compare() will refuse to work without this.
+apt_pkg.init()
+
+from licorn.contrib import apt_check
+
+opts = LicornConfigObject()
+opts.show_package_names          = False
+opts.readable_output             = False
+opts.security_updates_unattended = False
+
+@cache.cached(cache.one_day)
+def apt_do_check(**kwargs):
+	""" Just cache the apt-check result. We need `**kwargs` to eventually be
+		able to force the cache to expire after an upgrade. """
+
+	# The init() has to be recomputed at every call, because it
+	# works in-memory and won't notice real-life changes if not re-run.
+	apt_check.init()
+	return apt_check.run(opts)
+
+def apt_do_upgrade():
+	try:
+		process.execute(['unattended-upgrades'])
+
+	except:
+		logging.exception(_(u'Error while running « unattended-upgrades »!'))

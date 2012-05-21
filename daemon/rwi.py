@@ -1,26 +1,47 @@
 # -*- coding: utf-8 -*-
 """
-Licorn Daemon Real World Interface.
+Licorn Daemon Real World Interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Copyright (C) 2010 Olivier Cortès <olive@deep-ocean.net>
-Partial Copyright (C) 2010 Robin Lucbernet <robinlucbernet@gmail.com>
-Licensed under the terms of the GNU GPL version 2.
+The RWI wraps calls from interfaces (WMI, CLI) to the core, and operates
+arguments transformation (e.g. numeric IDs and string names to real Core
+objects) and checking. It is a common entry point, thus the name "Real
+World Interface" ;-)
+
+The RWI Methods are technically called via the Pyro `CommandListener` Thread.
+All interfaces connect to the Licorn® daemon via the Pyro channel.
+
+:copyright:
+	* 2010-2012 Olivier Cortès <olive@deep-ocean.net>
+	* partial 2011-2012 META IT http://meta-it.fr/
+	* partial 2010, 2011 Robin Lucbernet <robinlucbernet@gmail.com>
+:license:
+	* GNU GPL version 2.
 """
-import os, time, Pyro.core, gc, types
+import os, time, types, Pyro.core, gc, itertools
 
 from operator  import attrgetter
-from threading import current_thread, RLock
+from threading import current_thread
+from licorn.foundations.threads import RLock, Event
 
-from licorn.foundations           import options, exceptions, logging
-from licorn.foundations           import fsapi, hlstr
+from licorn.foundations           import options, exceptions, logging, settings
+from licorn.foundations           import fsapi, hlstr, pyutils, events, styles
+from licorn.foundations.events    import LicornEvent
+from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject, remote_output
-from licorn.foundations.constants import filters, interactions, host_status
+from licorn.foundations.constants import filters, interactions, host_status, priorities
 
-from licorn.core import LMC
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
+
+from licorn.core         import LMC, version
+from licorn.core.classes import SelectableController
+
+import types
 
 class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	""" Receive requests from "outside" programs and objects (typically CLI and
@@ -64,13 +85,63 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		"""
 		# NOTE: no (generator) for pyro methods...
 		return [ x.name for x in LMC.backends ]
+
+	# ================================================== Generic access methods
+	#
+	# Used massively in the :class:`~licorn.interfaces.wmi.libs.utils.WmiProxy`
+	# instances for real-time in-core interaction.
+	#
+	# They are all surrounded by the exception catcher, because any problem
+	# will be hardly represented by the Pyro tunnel, and can be very hard to
+	# debug if not catched before.
+	@pyutils.catch_exception
+	def generic_controller_method_call(self, controller_name, method_name, *args, **kwargs):
+		return getattr(SelectableController.instances[controller_name], method_name)(*args, **kwargs)
+	@pyutils.catch_exception
+	def generic_core_object_method_call(self, controller_name, object_id, method_name, *args, **kwargs):
+		return getattr(SelectableController.instances[controller_name].by_key(object_id), method_name)(*args, **kwargs)
+	@pyutils.catch_exception
+	def generic_core_object_property_set(self, controller_name, object_id, property_name, property_value):
+		setattr(SelectableController.instances[controller_name].by_key(object_id), property_name, property_value)
+	@pyutils.catch_exception
+	def generic_core_object_property_get(self, controller_name, object_id, property_name):
+		return getattr(getattr(LMC, controller_name).by_key(object_id), property_name)
+	@pyutils.catch_exception
+	def generic_resolved_call(self, object_name, method_name, *args, **kwargs):
+		return getattr(pyutils.resolve_attr(object_name, { "LMC": LMC }), method_name)(*args, **kwargs)
+	@pyutils.catch_exception
+	def configuration_get(self, attr_name):
+		""" R/O access to configuration for external callers. R/W access might
+			come if we need it someday.
+
+			.. versionadded:: 1.3
+		"""
+		result = pyutils.resolve_attr("LMC.configuration.%s" % attr_name, { "LMC": LMC })
+
+		return result() if callable(result) else result
+	@pyutils.catch_exception
+	def setting_get(self, attr_name):
+		""" R/O access to settings for external callers. R/W access might
+			come if we need it someday.
+
+			.. versionadded:: 1.3
+		"""
+		return pyutils.resolve_attr("settings.%s" % attr_name, {'settings': settings})
+	def register_event_collector(self, collector):
+		events.register_collector(collector)
+	def unregister_event_collector(self, collector):
+		events.unregister_collector(collector)
+
+	# ============================================== WMI and CLI access methods
+
+	@pyutils.catch_exception
 	def select(self, controller, args=None, opts=None, include_id_lists=None,
 		exclude_id_lists=None, default_selection=filters.NONE, all=False):
 
-		assert ltrace(TRACE_CLI, '''> select(controller=%s, args=%s, '''
-			'''include_id_lists=%s, exclude_id_lists=%s, default_selection=%s, '''
-			'''all=%s)''' % (controller.name, args, include_id_lists,
-				exclude_id_lists, default_selection, all))
+		if type(controller) == types.StringType:
+			controller = SelectableController.instances[controller]
+
+		assert ltrace_func(TRACE_CLI)
 
 		# use a set() to avoid duplicates during selections. This will allow us,
 		# later in implementation to do more complex selections (unions,
@@ -92,6 +163,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# will still be excluded, to allow "--all --exclude-login toto"
 			# semi-complex selections.
 			ids = set(controller)
+
 		else:
 			ids = set()
 
@@ -109,10 +181,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					if arg == '':
 						continue
 
-					include_id_lists.append((controller.word_match(arg), controller.guess_one))
+					include_id_lists.append((controller.word_match(arg),
+												controller.guess_one))
 
 			# select included IDs
 			for id_arg, resolver in include_id_lists:
+
+				if type(resolver) == types.StringType:
+					resolver = getattr(controller, resolver)
+
 				if id_arg is None:
 					continue
 
@@ -142,7 +219,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				if arg == '':
 					continue
 
-				exclude_id_lists.append((controller.word_match(arg), controller.guess_one))
+				exclude_id_lists.append((controller.word_match(arg),
+											controller.guess_one))
 
 		for id_arg, resolver in exclude_id_lists:
 			if id_arg is None:
@@ -153,6 +231,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					continue
 				try:
 					xids.add(resolver(oid))
+
 				except (KeyError, ValueError, exceptions.DoesntExistException):
 					logging.notice(_(u'Skipped non existing or invalid {0} or '
 						'{1} "{2}".').format(
@@ -178,8 +257,35 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						controller.select(default_selection)).difference(xids))
 
 		assert ltrace(TRACE_CLI, '< select(return=%s)' % selection)
+
 		return sorted(selection, key=attrgetter(controller.sort_key))
-	### GET
+
+	# ========================================= CLI "GET" interactive functions
+
+	def get_daemon_status(self, opts=None, args=None, cli_output=True):
+		""" This method is called from CLI tools. """
+
+		try:
+			if cli_output:
+				self.setup_listener_gettext()
+				remote_output(LMC.licornd.dump_status(opts.long_output,
+								opts.precision), clear_terminal=opts.monitor_clear)
+			else:
+				return LMC.licornd.dump_status(as_string=False)
+		except Exception:
+			# When the daemon is restarting, the CommandListener thread
+			# shutdowns the Pyro daemon, and its reference attribute is
+			# deleted, producing an AttributeError, forwarded to the
+			# client-side caller. We catch any other 'Exception' to avoid
+			# borking the client side.
+			#
+			# We just avoid forwarding it, this nothing to care about. As
+			# the current method is called many times in a 'while 1' loop
+			# on the client side, only one iteration of the loop will not
+			# produce any output, which will get totally un-noticed and
+			# is harmless.
+			logging.warning2(_('Harmless Exception encountered in RWI.get_daemon_status()'))
+			pyutils.print_exception_if_verbose()
 	def get_volumes(self, opts, args):
 
 		self.setup_listener_gettext()
@@ -408,6 +514,38 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			remote_output(data)
 
 		assert ltrace(TRACE_GET, '< get_machines()')
+
+	def get_tasks(self, opts, args):
+		""" Get the list of tasks. """
+
+		self.setup_listener_gettext()
+		assert ltrace(TRACE_GET, '> get_tasks(%s,%s)' % (opts, args))
+
+		if opts.all is False and len(args) == 1:
+			opts.all = True
+		if opts.all is False and len(args) == 2:
+			try:
+				tid = int(args[1])
+			except:
+				tid = LMC.tasks.by_name(args[1]).id
+
+			selection = tid
+
+		if opts.all:
+			selection = filters.ALL
+		else:
+			# Running, finished
+			pass
+		
+		tasks_to_get = LMC.tasks.select(selection)
+
+		data = LMC.tasks._cli_get(selected=tasks_to_get,
+										long_output=opts.long_output)
+
+		if data and data != '\n':
+			remote_output(data)
+
+		assert ltrace(TRACE_GET, '< get_tasks()')
 	def get_configuration(self, opts, args):
 		""" Output th current Licorn system configuration. """
 
@@ -417,7 +555,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if len(args) > 1:
 			remote_output(LMC.configuration.Export(args=args[1:],
-						cli_format=opts.cli_format))
+												cli_format=opts.cli_format))
 		else:
 			remote_output(LMC.configuration.Export())
 
@@ -478,13 +616,35 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			print "Options are: time-constraints | forbidden-destinations"
 	### ADD
-	def import_users(self, opts, args):
+	def import_users(self, opts, args=None, background=False):
+		if background:
+			workers.service_enqueue(priorities.NORMAL, self._import_users, opts, args, background)
+
+		else:
+			return self._import_users(opts, args, background)
+	def _import_users(self, opts, args=None, wmi_output=False):
 		""" Massively import user accounts from a CSV file."""
 
 		# already done in dispatch_*
 		#self.setup_listener_gettext()
 
 		assert ltrace(TRACE_ADD, '> import_user(%s,%s)' % (opts, args))
+
+		if wmi_output:
+			wmi_buffer = []
+
+			def _wmi_output(mesg, _wmi_display=False, end=False):
+				if end:
+					return ''.join(wmi_buffer)
+
+				if _wmi_display:
+					wmi_buffer.append(mesg)
+
+			fct_output = _wmi_output
+
+		else:
+			fct_output = remote_output
+
 
 		def clean_csv_field(field):
 			return field.replace("'", "").replace('"', '')
@@ -558,7 +718,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		from licorn.core.users  import User
 		from licorn.core.groups import Group
 
-
 		firstline  = open(import_filename).readline()
 		lcndialect = csv.Sniffer().sniff(firstline)
 
@@ -569,14 +728,17 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		try:
 			import_fd = open(import_filename, 'rb')
+
 		except (OSError, IOError), e:
-			raise exceptions.LicornRuntimeError(_(u'Cannot load CSV file '
-				'(was: %s).') % str(e))
+			raise exceptions.LicornRuntimeException(
+					_(u'Cannot load CSV file (was: %s).') % e)
+
+		if opts.confirm_import:
+			LicornEvent('users_import_started').emit()
 
 		groups_to_add = []
 		users_to_add  = []
-
-		remote_output(_(u'Reading input file: '))
+		fct_output(_(u'Reading input file: '))
 
 		i = 0
 		for fdline in import_fd:
@@ -654,7 +816,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add.append(user)
 
 			if not (i % 100):
-				remote_output('.')
+				fct_output('.')
 				# FIXME: how do we force a flush on the client side?
 				#sys.stderr.flush()
 			i += 1
@@ -665,7 +827,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			users_to_add, groups_to_add))
 
 		import_fd.close()
-		remote_output(_(u' done.') + '\n')
+		fct_output(_(u' done.') + '\n')
 
 		# this will be used to recursive build an HTML page of all groups / users
 		# with theyr respective passwords to be printed / distributed to all users.
@@ -718,14 +880,30 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				#sys.stdout.flush()
 
 		else:
-			import string
-			remote_output('\n%s\n%s%s%s%s%s\n' % (
-				_(u'Fields order:'),
-				stylize(ST_PATH, string.ljust(_('FIRSTname'), col_width)),
-				stylize(ST_PATH, string.ljust(_('LASTname'), col_width)),
-				stylize(ST_PATH, string.ljust(_('login'), col_width)),
-				stylize(ST_PATH, string.ljust(_('group'), col_width)),
-				stylize(ST_PATH, _(u'password'))))
+			if wmi_output:
+				fct_output(_(u'Fields order:'), _wmi_display=True)
+				fct_output(_(u'<table>'), _wmi_display=True)
+				fct_output(_(u'<tr>'), _wmi_display=True)
+
+				for (header_title, header_width) in [
+						(_('FIRSTname'), col_width),
+						(_('LASTname'), col_width),
+						(_('login'), col_width),
+						(_('group'), col_width),
+						(_('password'), '') ]:
+
+					fct_output(_(u'<th width="{0}">{1}</th>').format(header_width, header_title), _wmi_display=True)
+				fct_output(_(u'</tr>'), _wmi_display=True)
+
+			else:
+				import string
+				fct_output('\n%s\n%s%s%s%s%s\n' % (
+					_(u'Fields order:'),
+					stylize(ST_PATH, string.ljust(_('FIRSTname'), col_width)),
+					stylize(ST_PATH, string.ljust(_('LASTname'), col_width)),
+					stylize(ST_PATH, string.ljust(_('login'), col_width)),
+					stylize(ST_PATH, string.ljust(_('group'), col_width)),
+					stylize(ST_PATH, _(u'password'))))
 
 		i = 0
 		for u in users_to_add:
@@ -765,15 +943,29 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							raise exceptions.LicornRuntimeError(_(u'Import '
 								'error on line {0}.\n{1}').format(
 									u['linenumber'], e))
+					if wmi_output:
+						fct_output(_(u'<tr>'), _wmi_display=True)
 
-					remote_output("%s%s%s%s%s\n" % (
-						string.ljust(u['firstname'], col_width),
-						string.ljust(u['lastname'], col_width),
-						string.ljust(login, col_width),
-						string.ljust(u['group'], col_width),
-						u['password']
-							if u['password']
-							else _(u'(autogenerated upon creation)')))
+						for text in [
+								u['firstname'],
+								u['lastname'],
+								login,
+								u['group'],
+								u['password'] if u['password'] else _(u'(autogenerated upon creation)')
+							]:
+
+							fct_output(_(u'<td>{0}</td>').format(text), _wmi_display=True)
+						fct_output(_(u'</tr>'), _wmi_display=True)
+					else:
+						fct_output("%s%s%s%s%s\n" % (
+							string.ljust(u['firstname'], col_width),
+							string.ljust(u['lastname'], col_width),
+							string.ljust(login, col_width),
+							string.ljust(u['group'], col_width),
+							u['password']
+								if u['password']
+								else _(u'(autogenerated upon creation)')),
+							_wmi_display=True)
 
 					if i > 10:
 						# 10 examples should be sufficient for admin
@@ -797,7 +989,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.confirm_import:
 
-			remote_output(_(u'Finished importing, creating summary HTML file: '))
+			fct_output(_(u'Finished importing, creating summary HTML file: '))
 
 			groups = data_to_export_to_html.keys()
 			groups.sort()
@@ -809,27 +1001,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 								# don't take the name, it could have spaces in it.
 								profile.groupName,
 								hlstr.validate_name(date_time)), 'w')
-			html_file.write('''<html>
-				<head>
-					<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-					<style type=\"text/css\">
-					<!-- {css} -->
-					</style>
-				</head>
-				<body>
-					<h1>{title}</h1>
-					<h2>{import_on_date}</h2>
-					<div class="secflaw">{security_flaw}</div>
-					<div>{direct_access}'''.format(
-					title=_(u'{0} accounts and passwords').format(profile.name),
-					import_on_date=_(u'Import made on {0}.').format(date_time),
-					security_flaw=_(u'Keeping passwords in any written form '
-						'is a major security flaw for you information system.'
-						'<br />Please be sure obliterate this file and any '
-						'printed version after having transmitted their '
-						'password to your users.'),
-					direct_access=_(u'Direct access to {0}:').format(
-						LMC.configuration.groups._plural),
+			if wmi_output:
+				dl_lnk = _('''This repport is available on the server '''
+					'''at "<code>{0}</code>", you can '''
+					'''<a href="/users/dl_import/import_{1}-{2}.html">'''
+					'''download it</a> for easier access''').format(html_file.name, profile.groupName, hlstr.validate_name(date_time))
+			else:
+				dl_lnk = ''
+				html_file.write('''<html>
+					<head>
+						<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+						<style type=\"text/css\">
+						<!-- {css} -->
+						</style>
+					</head>
+					<body>''').format(
 					css='''
 						body { font-size:14pt; }
 						h1,h2,h3 { text-align:center; }
@@ -841,10 +1027,28 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						.even { background-color: #eef; }
 						.odd { background-color: #efe; }
 						div.secflaw { color: #f00; background-color: #fdd; text-align: center; border: 2px dashed #f00; margin: 3em 10%%; padding: 1em; }
-						'''))
+						''')
+
+			html_file.write('''
+					<h1>{title}</h1>
+					<h2>{import_on_date}</h2>
+					{download_link}
+					<div class="secflaw">{security_flaw}</div>
+					<div>{direct_access}'''.format(
+					title=_(u'{0} accounts and passwords').format(profile.name),
+					import_on_date=_(u'Import made on {0}.').format(date_time),
+					security_flaw=_(u'Keeping passwords in any written form '
+						'is a major security flaw for you information system.'
+						'<br />Please be sure obliterate this file and any '
+						'printed version after having transmitted their '
+						'password to your users.'),
+					download_link= dl_lnk,
+					direct_access=_(u'Direct access to {0}:').format(
+						LMC.configuration.groups._plural)))
 
 			for group in groups:
 				html_file.write("&nbsp; <a href=\"#%s\">%s</a> &nbsp;" % (group, group))
+
 			html_file.write("</div>")
 
 			for group in groups:
@@ -863,7 +1067,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					password=_(u'Password')
 					))
 
-				remote_output('.')
+				fct_output('.')
 
 				groupdata = data_to_export_to_html[group]
 				users = groupdata.keys()
@@ -882,18 +1086,31 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							groupdata[user][3]))
 					i += 1
 					if not (i % 10):
-						remote_output('.')
+						fct_output('.')
+
 				html_file.write('</table>\n')
 
-			html_file.write('</body>\n</html>\n')
+			if not wmi_output:
+				html_file.write('</body>\n</html>\n')
+
 			html_file.close()
-			remote_output(' %s\n%s %s\n' %(_(u'done.'), _(u'report:'),
-				html_file.name))
+
+			fct_output(' %s\n%s %s\n' %(_(u'done.'), _(u'report:'),
+					html_file.name))
 
 		if opts.no_sync:
 			LMC.groups.serialize()
 			LMC.users.serialize()
 			LMC.profiles.serialize()
+
+		if opts.confirm_import:
+			LicornEvent('users_import_finished',
+									result_filename=html_file.name).emit()
+
+		else:
+			if wmi_output:
+				LicornEvent('users_import_tested',
+										import_preview=fct_output('', end=True)).emit()
 
 		gc.collect()
 	def add_user(self, opts, args):
@@ -1052,7 +1269,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
 						backend=opts.in_backend,
-						users_to_add=self.select(LMC.users,
+						members_to_add=self.select(LMC.users,
 										include_id_lists=
 											[ (opts.users_to_add,
 												LMC.users.guess_one) ])
@@ -1141,6 +1358,86 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.auto_scan or opts.discover:
 			LMC.machines.scan_network(
 				network_to_scan=None if opts.auto_scan else [ opts.discover ])
+	def add_task(self, opts, args):
+		self.setup_listener_gettext()
+
+		if opts.name is '' and len(args) == 2:
+			opts.name = args[1]
+			del args[1]
+
+		if opts.name=='' and opts.action=='' and len(args) == 3:
+			opts.name = args[1]
+			opts.action = args[2]
+	
+
+		if opts.action == '' or opts.name == '':
+			logging.warning("{0} : One of the required argument '{1}' or "
+			"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'action')), to_local=False)
+			return
+		
+		task_name = opts.name
+		task_action = opts.action
+
+		task_defer_resolution = opts.defer_resolution
+
+		task_year   = opts.year
+		task_month  = opts.month
+		task_day    = opts.day
+		task_hour   = opts.hour
+		task_minute = opts.minute
+		task_second = opts.second
+		task_week_day = opts.week_day
+
+		task_delay_until_year   = opts.delay_until_year
+		task_delay_until_month  = opts.delay_until_month
+		task_delay_until_day    = opts.delay_until_day
+		task_delay_until_hour   = opts.delay_until_hour
+		task_delay_until_minute = opts.delay_until_minute
+		task_delay_until_second = opts.delay_until_second
+
+		if opts.args == "":
+			task_args = []
+		else:
+			try:
+				if ';' not in opts.args:
+					task_args = opts.args.split(';')
+				else:
+					task_args = opts.args
+			except:
+				logging.exception("{0} : {3} unpacking args of task {1} "
+					"(args={2}) ".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					opts.name, opts.id, stylize(ST_BAD, "Error while"),
+					stylize(ST_PATH, task_name), task_args), 
+					to_local=False)
+		
+		task_kwargs = {}
+		if opts.kwargs != "":
+			try:
+				for kw in opts.kwargs.split(';'):
+					_kw = kw.split('=')
+					task_kwargs.update({_kw[0]:_kw[1]})
+			except Exception, e:
+				logging.exception("{0} : {3} unpacking kwargs of task {1} "
+					"(kwargs={2}) ".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					opts.name, opts.id, stylize(ST_BAD, "Error while"),
+					stylize(ST_PATH, task_name), task_kwargs), 
+					to_local=False)
+
+			
+		LMC.tasks.add_task(task_name, task_action, 
+			year=task_year, month=task_month, day=task_day, hour=task_hour,
+			minute=task_minute, second=task_second, week_day=task_week_day,
+			delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
+			delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
+			delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
+			args=task_args, kwargs=task_kwargs, 
+			defer_resolution=task_defer_resolution)
+
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
 
@@ -1392,7 +1689,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
 					])
 
-		groups_to_del = self.select(LMC.groups, args, opts,
+		groups_to_del = self.select(LMC.groups, args[1:], opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
 						default_selection=selection)
@@ -1429,6 +1726,45 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		# this one has no effect at all. Only the gc.collect() has.
 		#del groups_to_del
+	def del_task(self, opts, args):
+		self.setup_listener_gettext()
+		tasks_to_del = []
+		
+		if opts.name is None and len(args) == 2:
+			for t in args[1].split(','):
+				try:
+					tasks_to_del.append(LMC.tasks.guess_one(t))
+				except exceptions.DoesntExistException:
+					logging.notice("{0} : Unknown task {1}, invalid or "
+						"non-existing".format(
+						stylize(ST_NAME, LMC.tasks.name),
+						stylize(ST_PATH, t)))
+		
+			del args[1]
+
+		elif opts.all:
+			tasks_to_del = LMC.tasks.select(filters.ALL)
+		else:
+			if opts.name == None and opts.id == 0:
+				logging.warning("{0} : One of the required argument '{1}' or "
+					"'{2}' is missing.".format(
+					stylize(ST_NAME, LMC.tasks.name),
+					stylize(ST_PATH, 'name'),
+					stylize(ST_PATH, 'id')), to_local=False)
+			elif opts.name != None:
+				tasks_to_del = [ LMC.tasks.by_name(opts.name) ]
+			elif opts.id != 0:
+				try:
+					_id = LMC.tasks.by_id(opts.id)
+				except exception.DoesntExistException:
+					logging.exception('{0} : no task with id {1}'.format(
+						stylize(ST_NAME, LMC.tasks.name), stylize(ST_PATH, t_id)))
+				
+				tasks_to_del = [ _id ]
+
+			
+		for task in tasks_to_del:
+			LMC.tasks.del_task(task.id)
 
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
@@ -2025,7 +2361,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.all:
 			selection = host_status.ALL
 		else:
-			selection = filters.NONE
+			selection = host_status.ONLINE
 
 			if opts.idle:
 				selection |= host_status.IDLE
@@ -2044,8 +2380,22 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				default_selection=selection)
 
 		for machine in mids_to_mod:
-			if opts.shutdown:
-				machine.shutdown(warn_users=opts.warn_users)
+			try:
+				if opts.shutdown:
+					machine.shutdown(warn_users=opts.warn_users)
+				if opts.do_upgrade:
+					machine.do_upgrade()
+			except:
+				logging.exception('Failed to operate on machine {0}.', (ST_NAME, machine.hostname))
+	def mod_task(self, opts, args):
+		""" Modify a machine. """
+
+		self.setup_listener_gettext()
+
+		remote_output("{0}, please delete the task you want to modify and "
+		"create a new one. \n\t {1} : You can easily modify the configuration "
+		"file to change few arguments of a task.\n".format(
+			stylize(ST_BAD, 'Not implemented'), stylize(ST_OK, "TIP")))
 	def mod_keyword(self, opts, args):
 		""" Modify a keyword. """
 
@@ -2140,6 +2490,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			for extension in opts.disable_extensions.split(','):
 				try:
 					LMC.extensions.disable_extension(extension)
+
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
@@ -2148,6 +2499,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			for extension in opts.enable_extensions.split(','):
 				try:
 					LMC.extensions.enable_extension(extension)
+
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
@@ -2382,3 +2734,42 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		LMC.configuration.check(opts.minimal, batch=opts.batch,
 			auto_answer=opts.auto_answer)
+	def chk_system(self, opts, args):
+
+		self.setup_listener_gettext()
+
+		if opts.wmi_test_apps:
+			self.chk_system_wmi_tests([app for app in opts.wmi_test_apps.split(',') if app != ''])
+
+	def chk_system_wmi_tests(self, apps):
+
+		# execute_manager will fail without this, but this should already be
+		#sys.path.extend(['licorn.interfaces', 'licorn.interfaces.wmi'])
+
+		from licorn.foundations.testutils import monkey_patch_unittest; monkey_patch_unittest()
+
+		# we rename the Django settings to `djsettings` not to
+		# clash with `licorn.foundations.settings`.
+		from licorn.interfaces.wmi  import wmi_event_app, django_setup, settings as djsettings
+		from django.core.management import execute_manager
+
+		# we must put 'manage.py' in the arguments for Django to lookup
+		# correctly the commands set for this utility.
+		django_setup()
+
+		if apps in ([], [ 'all' ]):
+			apps = wmi_event_app.django_apps_list()
+
+		for app in apps:
+			logging.progress(_(u'Running WMI Django tests for app {0}, '
+					u'this may take a while…').format(stylize(ST_NAME, app)))
+
+			try:
+				execute_manager(djsettings, [ 'manage.py', 'test', app ])
+
+			except:
+				logging.exception(_(u'Could not run tests for app {0}.'), (ST_NAME, app))
+				continue
+
+			logging.info(_(u'Successfully ran Django WMI tests '
+					u'for app {0}.').format(stylize(ST_NAME, app)))

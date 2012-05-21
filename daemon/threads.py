@@ -11,28 +11,40 @@ Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import time, __builtin__
-from threading   import Thread, Event, RLock, current_thread
+import time, __builtin__, weakref
+from threading   import Thread, current_thread
 from Queue       import Queue
 
-from licorn.foundations           import logging, exceptions, options, pyutils
+from licorn.foundations           import logging, exceptions, options
+from licorn.foundations           import process, pyutils
+from licorn.foundations.base      import class_property
+from licorn.foundations.threads   import RLock, Event
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, ltrace_func
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import verbose
-from licorn.daemon                import priorities
+from licorn.foundations.constants import verbose, priorities
 
 class BaseLicornThread(Thread):
-	_instances = []
+	""" A simple class of thread which records its own instances, and whose
+		start() method returns the current instance. This allows to instanciate
+		and start the thread in one line.
+	"""
 	def __init__(self, *a, **kw):
-
+		self.__weakref = weakref.ref(self)
 		try:
-			self.__class__._instances.append(self)
+			# using self.__class__ will fill subclasses._instances,
+			# instead of BaseLicornThread._instances.
+			self.__class__._instances.append(self.__weakref)
 
 		except AttributeError:
-			self.__class__._instances = [ self ]
+			self.__class__._instances = [ self.__weakref ]
 
 		Thread.__init__(self, *a, **kw)
+	
+	@property 
+	def weakref(self):
+		return self.__weakref
+
 	def start(self):
 		""" Just a handy method that allows us to do::
 
@@ -40,6 +52,17 @@ class BaseLicornThread(Thread):
 		"""
 		Thread.start(self)
 		return self
+	
+	@classmethod
+	def __get_instances(cls):
+		return [t() for t in cls._instances]
+
+	instances = class_property(__get_instances)
+				
+	def __del__(self):
+		self.__class__._instances.remove(self.__weakref)
+
+
 class LicornThread(Thread):
 	"""
 		A simple thread with an Event() used to stop it properly, and a Queue() to
@@ -57,11 +80,25 @@ class LicornThread(Thread):
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
-		self._ = __builtin__.__dict__['_orig__']
+		try:
+			self._ = __builtin__.__dict__['_orig__']
+
+		except KeyError:
+			# In case our threaded gettext is not set up. Eg in WMI, we
+			# don't set it up: Django does it, but much later that when
+			# we initialize. Thus, we take the original gettext as fallback.
+			self._ = __builtin__.__dict__['_']
 
 		self._stop_event  = Event()
 		self._input_queue = Queue()
 		assert ltrace(TRACE_THREAD, '%s initialized' % self.name)
+	def start(self):
+		""" Just a handy method that allows us to do::
+
+			>>> th = LicornThread(...).start()
+		"""
+		Thread.start(self)
+		return self
 	def dispatch_message(self, msg):
 		""" get an incoming message in a generic way. """
 		self._input_queue.put(msg)
@@ -74,7 +111,7 @@ class LicornThread(Thread):
 			data = self._input_queue.get()
 			if data is None:
 				break
-			self.process_message(data)
+			self.process_data(data)
 			self._input_queue.task_done()
 
 		assert ltrace(TRACE_THREAD, '%s ended' % self.name)
@@ -85,11 +122,34 @@ class LicornThread(Thread):
 		assert ltrace(TRACE_THREAD, '%s stopping' % self.name)
 		self._stop_event.set()
 		self._input_queue.put(None)
-class LicornBasicThread(Thread):
-	""" A simple thread with an Event() used to stop it properly. """
+class LicornBasicThread(BaseLicornThread):
+	""" A simple Thread with an Event(), used to stop it properly. Threaded
+		gettext is setup in the :meth:`__init__` method.
+
+		You must implement a method named `run_action_method` which does
+		**one** processing at a time. This method will be automatically run
+		in a `while` loop. It will be Exception-immune: any encountered
+		exception is printed with a full stack trace, and next run goes on.
+
+		..warning:: Don't put any infinite loop in your `run_action_method`,
+			else the thread will never stop().
+
+		Optional:
+
+		- if a method named `pre_run_method` exists, it is run before entering
+			the main while loop.
+		- if a method named `post_run_method` exists, it is run after exiting
+			the main while loop.
+		- you should  probably overload :method:`dump_status()` to provide
+			more informations about the current thread.
+
+
+		.. versionadded:: a long while ago, I can't even remember when. Before
+			version 1.2, this is sure.
+	"""
 
 	def __init__(self, tname=None, licornd=None):
-		Thread.__init__(self)
+		BaseLicornThread.__init__(self)
 
 		self.name = (tname if tname else
 				str(self.__class__).rsplit('.', 1)[1].split("'")[0])
@@ -98,20 +158,31 @@ class LicornBasicThread(Thread):
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
-		self._ = __builtin__.__dict__['_orig__']
+		try:
+			self._ = __builtin__.__dict__['_orig__']
+
+		except KeyError:
+			# In case our threaded gettext is not set up. Eg in WMI, we
+			# don't set it up: Django does it, but much later that when
+			# we initialize. Thus, we take the original gettext as fallback.
+			self._ = __builtin__.__dict__['_']
 
 		self._stop_event  = Event()
 		assert ltrace(TRACE_THREAD, '%s initialized.' % self.name)
 	@property
 	def licornd(self):
 		return self.__licornd
-	def dump_status(self, long_output=False, precision=None):
-		return '%s%s (stop=%s)' % (
+	def dump_status(self, long_output=False, precision=None, as_string=False):
+		if as_string:
+			return '%s%s (stop=%s)' % (
 				stylize(ST_RUNNING
 					if self.is_alive() else ST_STOPPED, self.name),
 				'&' if self.daemon else '',
 				self._stop_event.is_set()
 			)
+		else:
+			# TODO: more details
+			return process.thread_basic_info(self)
 	def run(self):
 		""" default run method, which calls:
 
@@ -130,13 +201,30 @@ class LicornBasicThread(Thread):
 		assert hasattr(self, 'run_action_method')
 
 		if hasattr(self, 'pre_run_method'):
-			getattr(self, 'pre_run_method')()
+			try:
+				getattr(self, 'pre_run_method')()
+
+			except:
+				logging.exception(_(u'{0}: Exception in self.pre_run_method(), aborting.'),
+									(ST_NAME, self.name))
+				self.finish()
+				return
 
 		while not self._stop_event.is_set():
-			self.run_action_method()
+			try:
+				self.run_action_method()
+
+			except:
+				logging.exception(_(u'{0}: Exception in self.run_action_method(), '
+						u'continuing.'), (ST_NAME, self.name))
 
 		if hasattr(self, 'post_run_method'):
-			getattr(self, 'post_run_method')()
+			try:
+				getattr(self, 'post_run_method')()
+
+			except:
+				logging.exception(_(u'{0}: Exception in self.post_run_method()'),
+									(ST_NAME, self.name))
 
 		self.finish()
 	def finish(self):
@@ -160,8 +248,11 @@ class GQWSchedulerThread(BaseLicornThread):
 
 		self.scheduled_class = klass
 		self._stop_event     = Event()
+		self.sleep_lock      = RLock()
 
 		self.name   = '%s(%s)' % (self.__class__.__name__, klass.__name__)
+
+		self.sleep_start_time = 0
 
 		# trap the original gettext translator, to avoid the builtin '_'
 		# trigerring an exception everytime we need to translate a string.
@@ -172,8 +263,26 @@ class GQWSchedulerThread(BaseLicornThread):
 
 		except KeyError:
 			self._ = __builtin__.__dict__['_']
+	def dump_status(self, long_output=False, precision=None, as_string=False):
 
+		if as_string:
+			return _('%s%s for %s [%s workers; wake up in %s]\n%s') % (
+				stylize(ST_RUNNING if self.is_alive() else ST_STOPPED,
+						self.__class__.__name__),
+				'&' if self.daemon else '',
+				self.scheduled_class.__name__,
+				self.scheduled_class.instances_nr,
+				pyutils.format_time_delta(self.sleep_start_time + self.sleep_time - time.time()),
+				'\n'.join(('\t%s' % t.dump_status(long_output, precision, as_string))
+									# `.instances` is the list of threads.
+									for t in self.scheduled_class.instances)
+			)
 
+		else:
+			return dict(workers=[ t.dump_status(long_output, precision, as_string)
+									for t in self.scheduled_class.instances ],
+						wake_up=self.sleep_start_time + self.sleep_time,
+					**process.thread_basic_info(self))
 	def run(self):
 		assert ltrace_func(TRACE_THREAD)
 
@@ -227,12 +336,12 @@ class GQWSchedulerThread(BaseLicornThread):
 				# but only if there are still more peers than the configured
 				# lower limit.
 
-				if qsize <= cls.instances and cls.instances > cls.busy:
+				if qsize <= len(cls.instances) and len(cls.instances) > cls.busy:
 					# sleep a lot if we terminate a lot of workers, but
 					# no more than 10 seconds to avoid beiing flooded
 					# by next "queue attack".
 					return min(10.0, float(self.stop_worker(
-									cls.instances - qsize - cls.peers_min)))
+									len(cls.instances) - qsize - cls.peers_min)))
 
 				# things have not changed. Wait a little, but not that
 				# much in case things go up again fast.
@@ -242,35 +351,50 @@ class GQWSchedulerThread(BaseLicornThread):
 		q          = cls.input_queue
 		prev_qsize = 0
 
+		from licorn.core import LMC
+
 		while not self._stop_event.is_set():
 
 			with cls.lock:
 				qsize = q.qsize()
 
-			if qsize >= prev_qsize:
-				sleep_time = throttle_up()
+			with self.sleep_lock:
+				if qsize >= prev_qsize:
+					self.sleep_time = throttle_up()
 
-			else:
-				sleep_time = throttle_down()
+				else:
+					self.sleep_time = throttle_down()
 
 			# from time to time, or if we are in the process of settling down,
 			# ask the thread-cleaner to search for dead-threads to wipe from memory.
-			if cls.instances % 10 == 0 or cls.instances <= 2:
-				try:
-					self.scheduled_class.licornd.clean_objects(0.1)
+			try:
+				if len(cls.instances) != cls.instances:
+					try:
+						LMC.licornd.clean_objects(delay=1.0)
 
-				except AttributeError:
-					# if daemon is currently stopping, the thread-cleaner
-					# could be already wiped out. Harmless.
-					pass
+					except AttributeError:
+						# if daemon is currently stopping, the thread-cleaner
+						# could be already wiped out. Harmless.
+						pass
+
+			except AttributeError:
+				# the first time, cls.instances is not yet set. harmless.
+				pass
 
 			prev_qsize = qsize
+			self.sleep_start_time = time.time()
+
+			with self.sleep_lock:
+				# don't hold the lock while we sleep, this would cause
+				# dump_status() to hang.
+				sleep_time = self.sleep_time
+
 			time.sleep(sleep_time)
 		assert ltrace_func(TRACE_THREAD, True)
 	def stop(self):
 		assert ltrace_func(TRACE_THREAD)
 
-		self.stop_worker(self.scheduled_class.instances)
+		self.stop_worker(len(self.scheduled_class.instances))
 
 		self._stop_event.set()
 
@@ -292,7 +416,7 @@ class GenericQueueWorkerThread(BaseLicornThread):
 	_setup_done  = False
 	lock         = RLock()
 	counter      = 0
-	instances    = 0
+	instances_nr = 0
 	busy         = 0
 	last_warning = 0
 
@@ -302,9 +426,17 @@ class GenericQueueWorkerThread(BaseLicornThread):
 
 	@classmethod
 	def setup(cls, licornd, input_queue, peers_min, peers_max, daemon=False):
+		""" Setup The Worker class. Starts the Scheduler thread, and return it.
+
+			You have to store the scheduler reference somewhere!
+
+			To stop the workers, invoke the scheduler `stop()` method.
+		"""
 
 		if cls._setup_done:
 			return
+
+		cls._instance = []
 
 		#cls.high_bypass = high_bypass
 		cls.peers_min   = peers_min
@@ -368,8 +500,8 @@ class GenericQueueWorkerThread(BaseLicornThread):
 		#assert ltrace_locks(cls.lock)
 
 		with cls.lock:
-			cls.counter   += 1
-			cls.instances += 1
+			cls.counter      += 1
+			cls.instances_nr += 1
 	def dump_status(self, long_output=False, precision=None, as_string=True):
 		""" get detailled thread status. """
 		with self.lock:
@@ -390,9 +522,14 @@ class GenericQueueWorkerThread(BaseLicornThread):
 								time.time() - self.job_start_time,
 								big_precision=True))
 						if self.jobbing.is_set() else 'idle'
-					)
+				)
 			else:
-				return {}
+				return dict(job=self.job,
+							job_args=self.job_args,
+							job_kwargs=self.job_kwargs,
+							start_time=self.job_start_time,
+							jobbing=self.jobbing.is_set(),
+							**process.thread_basic_info(self))
 	def run(self):
 		assert ltrace_func(TRACE_THREAD)
 
@@ -431,8 +568,8 @@ class GenericQueueWorkerThread(BaseLicornThread):
 
 			except Exception, e:
 				logging.warning(_(u'{0}: Exception encountered while running '
-					u'{1}({2}, {3}): {4}').format(self.name, self.job.__name__,
-					str(self.job_args), str(self.job_kwargs), e))
+								u'{1}({2}, {3}): {4}').format(self.name, self.job,
+								str(self.job_args), str(self.job_kwargs), e))
 				pyutils.print_exception_if_verbose()
 
 			q.task_done()
@@ -450,12 +587,12 @@ class GenericQueueWorkerThread(BaseLicornThread):
 			self.job_start_time = None
 
 			if q.qsize() == 0:
-				logging.progress('%s: queue is now empty, going '
-					'asleep waiting for jobs.' % self.name)
+				logging.progress(_(u'%s: queue is now empty, going '
+								u'asleep waiting for jobs.') % self.name)
 
 		# when ending, be sure to notice everyone interested.
 		with cls.lock:
-			cls.instances -= 1
+			cls.instances_nr -= 1
 class ServiceWorkerThread(GenericQueueWorkerThread):
 	pass
 class ACLCkeckerThread(GenericQueueWorkerThread):
@@ -492,8 +629,7 @@ class AbstractTimerThread(LicornBasicThread):
 			``run_action_method``, else they will fail.
 
 	"""
-	def __init__(self, tname=None, time=None, count=None,
-		delay=0.0, daemon=False):
+	def __init__(self, tname=None, time=None, count=None, delay=0.0, daemon=False):
 
 		LicornBasicThread.__init__(self, tname=tname)
 
@@ -631,7 +767,7 @@ class TriggerTimerThread(AbstractTimerThread):
 	def __init__(self, trigger_event, tname=None, time=None, count=None,
 		delay=0.0, daemon=False):
 		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
-			daemon=daemon, tname=tname)
+											daemon=daemon, tname=tname)
 
 		self._trigger_event = trigger_event
 	def run_action_method(self):
@@ -651,17 +787,20 @@ class TriggerWorkerThread(LicornBasicThread):
 		# used on manual triggering only.
 		self.one_time_args   = None
 		self.one_time_kwargs = None
-	def dump_status(self, long_output=False, precision=None):
-		return '%s%s (%s)' % (
-			stylize(ST_RUNNING if self.is_alive() else ST_STOPPED, self.name),
-			'&' if self.daemon else '',
-			stylize(ST_OFF, 'disabled') if self._disable_event.is_set()
+	def dump_status(self, long_output=False, precision=None, as_string=False):
+		if as_string:
+			return '%s%s (%s)' % (
+				stylize(ST_RUNNING if self.is_alive() else ST_STOPPED, self.name),
+				'&' if self.daemon else '',
+				stylize(ST_OFF, 'disabled') if self._disable_event.is_set()
 					else '%s, %s' % (
 							stylize(ST_ON, 'enabled'),
 							stylize(ST_ON, 'active') if
 								self._currently_running.is_set() else 'idle'
 						)
 			)
+		else:
+			return process.thread_basic_info(self)
 	def active(self):
 		""" Returns ``True`` if the internal worker is running, else ``False``
 			(the thread can be considered idle). """
@@ -749,14 +888,14 @@ class TriggerWorkerThread(LicornBasicThread):
 		self._trigger_event.set()
 class LicornJobThread(AbstractTimerThread):
 	def __init__(self, target, tname=None, time=None, count=None,
-		delay=0.0, target_args=(), target_kwargs={}, daemon=False):
+				delay=0.0, target_args=(), target_kwargs={}, daemon=False):
 		""" TODO: this class is meant to be removed in version 1.3+, replaced
 			by the couple
 			:class:`TriggerWorkerThread` / :class:`TriggerTimerThread`.
 		"""
 
 		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
-			daemon=daemon, tname=tname)
+										daemon=daemon, tname=tname)
 
 		self.target        = target
 		self.target_args   = target_args
@@ -765,8 +904,9 @@ class LicornJobThread(AbstractTimerThread):
 		# a parallel thread that will run the real job, to be able to continue
 		# to countdown the delay while job is running.
 		self.job_runner = None
-	def dump_status(self, long_output=False, precision=None):
-		return '%s%s [%s]' % (
+	def dump_status(self, long_output=False, precision=None, as_string=False):
+		if as_string:
+			return '%s%s [%s]' % (
 				stylize(ST_RUNNING
 					if self.job_runner else ST_STOPPED, self.name),
 				'&' if self.daemon else '',
@@ -777,6 +917,9 @@ class LicornJobThread(AbstractTimerThread):
 				if self.job_runner else 'sleeping, wake up in %s'
 					% pyutils.format_time_delta(self.remaining_time())
 			)
+		else:
+			# TODO: more details
+			return process.thread_basic_info(self)
 	def run_action_method(self):
 		""" A method that will wrap self.target into a JobRunner simple
 			:class:`~threading.Thread`. """

@@ -1,4 +1,4 @@
-	# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Licorn core: configuration - http://docs.licorn.org/core/configuration.html
 
@@ -14,22 +14,22 @@ Unified Configuration API for an entire linux server system
 """
 
 import sys, os, re, socket, getpass, Pyro.core
-from threading import RLock
+from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, exceptions
-from licorn.foundations           import readers, fsapi, network
+from licorn.foundations           import logging, options, exceptions, settings
+from licorn.foundations           import readers, fsapi, network, events, hlstr
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import distros, servers, mailboxes
+from licorn.foundations.constants import distros, servers, mailboxes, roles, priorities
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
-											Enumeration, FsapiObject, \
+											Enumeration, \
 											MixedDictObject, pyro_protected_attrs
 from licorn.foundations.classes   import FileLock
 
 from licorn.core                import LMC
 from licorn.core.classes        import LockedController, CoreModule
-from licorn.daemon              import roles, priorities, InternalEvent
 
 class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
@@ -48,15 +48,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		if LicornConfiguration.init_ok:
 			return
 
-		assert ltrace(TRACE_CONFIGURATION, '> __init__(minimal=%s, batch=%s)' % (
-			minimal, batch))
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		self.app_name = 'Licorn®'
+		LicornEvent('configuration_initialises', configuration=self, synchronous=True).emit()
 
-		self.experimental_should_be_enabled = False
+		self.app_name = 'Licorn®'
 
 		# this lock is used only by inotifier for now.
 		self.lock = RLock()
@@ -79,14 +78,12 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			# WARNING: beside this point, order of method is VERY important,
 			# their contents depend on each other.
 
-			self.SetDefaultNamesAndPaths()
-
-			# WARNING: don't change order of these.
 			self.SetUsersDefaults()
 			self.SetGroupsDefaults()
 
-			self.SetBaseDirsAndFiles()
 			self.FindUserDir()
+
+			LicornEvent('configuration_loads', configuration=self, synchronous=True).emit()
 
 			if not minimal:
 				self.load1(batch=batch)
@@ -97,17 +94,24 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if not minimal:
 				self.load2(batch=batch)
 
-			self.load_configuration_complete()
+			self.import_settings()
 
 			if not minimal:
 				self.load3(batch=batch)
+
+			LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(
 				'''Configuration initialization failed: %s''' % e)
 
+		events.collect(self)
+
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
+	def import_settings(self):
+		from licorn.foundations import settings
+		self.settings = settings
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
@@ -123,26 +127,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.network_infos()
 	def load3(self, batch=False):
 		self.load_nsswitch()
-	def load_configuration_complete(self):
-		# this has to be done LAST, in order to eventually override any
-		# other configuration directive (eventually coming from
-		# Ubuntu/Debian, too).
-		self.load_factory_defaults()
-
-		self.load_configuration_from_main_config_file()
-
-		self.convert_configuration_values()
-		self.check_configuration_directives()
-		self.check_debug_variable()
 	def _inotifier_install_watches(self, inotifier=None):
-		self.__configuration_hint = L_inotifier_watch_conf(self.main_config_file,
+		self.__configuration_hint = L_inotifier_watch_conf(settings.main_config_file,
 									self, self.__configuration_file_changed)
 	def __configuration_file_changed(self, pathname):
 
-		self.load_configuration_complete()
-
-		L_event_dispatch(priorities.NORMAL,
-					InternalEvent('main_configuration_file_changed'))
+		# it's up to settings to trigger the LicornEvent. It will do it only
+		# if something has really changed. This avoids running callbacks if
+		# no directive changed.
+		self.settings.reload()
 	#
 	# make LicornConfiguration object be usable as a context manager.
 	#
@@ -176,35 +169,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		LicornConfiguration.del_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
-	def SetBaseDirsAndFiles(self):
-		""" Find and create temporary, data and working directories."""
-
-		assert ltrace(TRACE_CONFIGURATION, '> SetBaseDirsAndFiles()')
-
-		self.config_dir           = "/etc/licorn"
-		self.check_config_dir     = self.config_dir + "/check.d"
-		self.main_config_file     = self.config_dir + "/licorn.conf"
-
-		# system profiles, compatible with gnome-system-tools
-		self.profiles_config_file = self.config_dir + "/profiles.xml"
-
-		self.privileges_whitelist_data_file = (
-			self.config_dir + "/privileges-whitelist.conf")
-
-		self.keywords_data_file = self.config_dir + "/keywords.conf"
-
-		# extensions to /etc/group
-		self.extendedgroup_data_file = self.config_dir + "/groups"
-
-		self.home_backup_dir         = (
-			"%s/backup" % self.defaults.home_base_path)
-		self.home_archive_dir        = (
-			"%s/archives" % self.defaults.home_base_path)
-
-		# TODO: is this to be done by package maintainers or me ?
-		self.CreateConfigurationDir()
-
-		assert ltrace(TRACE_CONFIGURATION, '< SetBaseDirsAndFiles()')
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""
@@ -249,245 +213,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError(
 					'''Can't create / chmod %s[/data]:\n\t%s''' % (
 						self.user_dir, e))
-	def _load_configuration(self, conf):
-		""" Build the licorn configuration object from a dict. """
-
-		assert ltrace(TRACE_CONFIGURATION, '| _load_configuration(%s)' % conf)
-
-		for key in conf.keys():
-			subkeys = key.split('.')
-			if len(subkeys) > 1:
-				curobj = self
-				level  = 1
-				for subkey in subkeys[:-1]:
-					if not hasattr(curobj, subkey):
-						setattr(curobj, subkey, LicornConfigObject(level=level))
-					#down one level.
-					curobj = getattr(curobj, subkey)
-					level += 1
-
-				if hasattr(curobj, subkeys[-1]):
-					if getattr(curobj, subkeys[-1]) != conf[key]:
-						assert ltrace(TRACE_CONFIGURATION, 'main config file: subkey %s '
-							'changed from %s to %s' % (key, getattr(curobj, subkeys[-1]),
-								conf[key]))
-						setattr(curobj, subkeys[-1], conf[key])
-
-				else:
-					setattr(curobj, subkeys[-1], conf[key])
-			else:
-				if hasattr(self, key):
-					if getattr(self, key) != conf[key]:
-						assert ltrace(TRACE_CONFIGURATION, 'main config file: %s '
-							'changed from %s to %s' % (key, getattr(self, key),
-								conf[key]))
-						setattr(self, key, conf[key])
-				else:
-					setattr(self, key, conf[key])
 	def noop(self):
 		""" No-op function, called when connecting pyro, to check if link
 		is OK betwwen the server and the client. """
 		assert ltrace(TRACE_CONFIGURATION, '| noop(True)')
 		return True
-	def load_factory_defaults(self):
-		""" The defaults set here are expected to exist
-			by other parts of the programs.
-
-			Note: we use port 299 for pyro. This is completely unusual. Port 299
-			doesn't seem to be reserved in a recent /etc/services file, and this
-			ensure that we are root when binding the port, and thus provide a
-			*small* security guarantee (any attacker but first gain root
-			privileges or crash our daemons to bind the port and spoof our
-			protocol). """
-
-		assert ltrace(TRACE_CONFIGURATION, '| load_factory_defaults()')
-
-		self._load_configuration({
-			'licornd.role'                 : roles.UNSET,
-			'licornd.pyro.port'            : os.getenv('PYRO_PORT', 299),
-			# don't set in case there is no eth0 on the system.
-			#'licornd.pyro.listen_address': 'if:eth0'
-			# ACLChecker will ruin I/O performance if we create too much.
-			'licornd.threads.aclcheck.min' : 1,
-			'licornd.threads.aclcheck.max' : 10,
-			# ServiceWorker is a generic thread, we could need much of them.
-			'licornd.threads.service.min'  : 1,
-			'licornd.threads.service.max'  : 50,
-			# NetWorkWorker is a consuming service, for short operations, we need a lot.
-			'licornd.threads.network.min'  : 1,
-			'licornd.threads.network.max'  : 100,
-			'licornd.threads.wipe_time'    : 600,   # 10 minutes
-			'licornd.syncer.port'          : 3344,
-			'licornd.searcher.port'        : 3355,
-			'licornd.buffer_size'          : 16*1024,
-			'licornd.log_file'             : '/var/log/licornd.log',
-			'licornd.pid_file'             : '/var/run/licornd.pid',
-			'licornd.cache_file'           : '/var/cache/licorn/licornd.db',
-			'licornd.socket_path'          : '/var/run/licornd.sock',
-			'licornd.inotifier.enabled'    : True,
-			'licornd.network.lan_scan'     : True,
-			'licornd.wmi.enabled'          : True,
-			'licornd.wmi.group'            : 'licorn-wmi',
-			# WMI listens on all interfaces by default ('' = *)
-			'licornd.wmi.listen_address'   : '',
-			'licornd.wmi.port'             : 3356,
-			'licornd.wmi.log_file'         : '/var/log/licornd-wmi.log',
-			'backup.interval'              : 86400,   # one day between backups.
-			'experimental.enabled'         : self.experimental_should_be_enabled,
-			})
-	def convert_configuration_values(self):
-		""" take components of human written configuration directive, and
-		convert them to machine-friendly values. """
-
-		assert ltrace(TRACE_CONFIGURATION, '| convert_configuration_values()')
-
-		from licorn.daemon import roles
-
-		if self.licornd.role not in roles:
-			# use upper() to avoid bothering user if he has typed "server"
-			# instead of "SERVER". Just be cool when possible.
-			if hasattr(roles, self.licornd.role.upper()):
-				self.licornd.role = getattr(roles,
-					self.licornd.role.upper())
-
-		if hasattr(self.licornd.pyro, 'listen_address'):
-			if self.licornd.pyro.listen_address[:3] == 'if:' \
-				or self.licornd.pyro.listen_address[:6] == 'iface:':
-					try:
-						self.licornd.pyro.listen_address = \
-							network.interface_address(
-								self.licornd.pyro.listen_address.split(':')[1])
-					except (IOError, OSError), e:
-						raise exceptions.BadConfigurationError(
-							'''Problem getting interface %s address (was: '''
-							'''%s).''' % (
-								self.licornd.pyro.listen_address.split(':')[1],
-								e)
-							)
-			else:
-				try:
-					# validate the IP address
-					socket.inet_aton(self.licornd.pyro.listen_address)
-				except socket.error:
-					try:
-						socket.gethostbyname(self.licornd.pyro.listen_address)
-						# keep the hostname, it resolves.
-					except socket.gaierror:
-						raise exceptions.BadConfigurationError('Bad IP address '
-							'or hostname %s. Please check the syntax.' %
-							self.licornd.pyro.listen_address)
-			# TODO: check if the IP or the hostname is really on the local host.
-			# check if self.licornd.pyro.listen_address \
-			# in [ network.interface_address(x) for x in network.list_interfaces() ]
-	def check_debug_variable(self):
-		self.debug = []
-
-		env_variable = os.getenv('LICORN_DEBUG', None)
-
-		if env_variable is not None:
-
-			for name in env_variable.split(','):
-				self.debug.append(name.lower())
-
-			logging.warning(_(u'{0:1}: internal debug enabled for {1}').format(
-				stylize(ST_NAME, 'configuration'),
-				u', '.join(stylize(ST_NAME, x) for x in self.debug)))
-	def check_configuration_directives(self):
-		""" Check directives which must be set, and values, for correctness. """
-
-		assert ltrace(TRACE_CONFIGURATION, '| check_configuration_directives()')
-
-		self.check_directive_daemon_role()
-		self.check_directive_daemon_threads()
-		self.check_directive_backup()
-	def check_directive_daemon_role(self):
-		""" check the licornd.role directive for correctness. """
-
-		assert ltrace(TRACE_CONFIGURATION, '| check_directive_daemon_role()')
-
-		if self.licornd.role == roles.UNSET or \
-			self.licornd.role not in roles:
-			raise exceptions.BadConfigurationError('''%s is currently '''
-				'''unset or invalid in %s. Please set it to either %s or '''
-				'''%s and retry.''' % (
-					stylize(ST_SPECIAL, 'licornd.role'),
-					stylize(ST_PATH, self.main_config_file),
-					stylize(ST_COMMENT, 'SERVER'),
-					stylize(ST_COMMENT, 'CLIENT')
-					)
-				)
-		elif self.licornd.role == roles.CLIENT:
-			self.licornd.inotifier.enabled = False
-			self.licornd.network.lan_scan  = False
-			self.licornd.wmi.enabled       = False
-			self.server_main_address = network.find_server(self)
-	def check_directive_daemon_threads(self):
-		""" check the pingers number for correctness. """
-		assert ltrace(TRACE_CONFIGURATION, '| check_directive_daemon_threads()')
-
-		err_message = ''
-
-		for directive, vmin, vmax, directive_name in (
-				(self.licornd.threads.aclcheck.min, 1,   5,
-									'licornd.threads.aclcheck.min'),
-				(self.licornd.threads.aclcheck.max, 1,   10,
-									'licornd.threads.aclcheck.max'),
-				(self.licornd.threads.service.min,  1,   25,
-									'licornd.threads.service.min'),
-				(self.licornd.threads.service.max,  25,  100,
-									'licornd.threads.service.max'),
-				(self.licornd.threads.network.min,  1,   50,
-									'licornd.threads.network.min'),
-				(self.licornd.threads.network.max,  50,  200,
-									'licornd.threads.network.max')
-				):
-			if directive < vmin or directive > vmax:
-				err_message += ('\n\tinvalid value %s for configuration '
-					'directive %s: must be an integer between '
-					'%s and %s.' % (stylize(ST_BAD, directive),
-						stylize(ST_COMMENT, directive_name),
-						stylize(ST_COMMENT, vmin), stylize(ST_COMMENT, vmax)))
-
-		if err_message:
-			raise exceptions.BadConfigurationError(err_message)
-	def check_directive_backup(self):
-		""" TODO. """
-		if self.backup.interval < 3600 or self.backup.interval > 604800:
-			raise exceptions.BadConfigurationError(
-				'\n\tinvalid value %s for configuration '
-				'directive %s: must be an integer between '
-				'%s (one hour) and %s (one week).' % (
-					stylize(ST_BAD, self.backup.interval),
-					stylize(ST_COMMENT, 'backup.interval'),
-					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))
-	def load_configuration_from_main_config_file(self):
-		"""Load main configuration file, and set mandatory defaults
-			if it doesn't exist."""
-
-		assert ltrace(TRACE_CONFIGURATION,
-			'> load_configuration_from_main_config_file()')
-
-		try:
-			self._load_configuration(readers.shell_conf_load_dict(
-				self.main_config_file,
-				convert='full'))
-
-		except IOError, e:
-			if e.errno != 2:
-				# errno == 2 is "no such file or directory" -> don't worry if
-				# main config file isn't here, this is not required.
-				raise e
-
-		if self.experimental.enabled:
-			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
-				'Have fun, but do not break anything%s.') % (
-					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
-						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
-							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
-							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
-						else '')))
-
-		assert ltrace(TRACE_CONFIGURATION, '< load_configuration_from_main_config_file()')
 	def load_nsswitch(self):
 		""" Load the NS switch file. """
 
@@ -510,74 +240,20 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		nss_lock.Lock()
 		open('/etc/nsswitch.conf', 'w').write(nss_data)
 		nss_lock.Unlock()
-	def CreateConfigurationDir(self):
-		"""Create the configuration dir if it doesn't exist."""
-
-		if not os.path.exists(self.config_dir):
-			try:
-				os.makedirs(self.config_dir)
-				logging.info("Automatically created %s." % \
-					stylize(ST_PATH, self.config_dir))
-			except (IOError,OSError):
-				# user is not root, forget it !
-				pass
 	def FindDistro(self):
 		""" Determine which Linux / BSD / else distro we run on. """
 
 		self.distro = None
 
 		if os.name is "posix":
-			if os.path.exists( '/etc/lsb-release' ):
-				lsb_release = readers.shell_conf_load_dict('/etc/lsb-release', convert='none')
+			try:
+				import lsb_release
 
-				if lsb_release['DISTRIB_ID'] == 'Licorn':
-					self.distro = distros.UBUNTU
-				elif lsb_release['DISTRIB_ID'] == "Ubuntu":
-					self.distro = distros.UBUNTU
-
-					if lsb_release['DISTRIB_CODENAME'] in ('lucid', 'maverick',
-						):
-						pass
-
-					elif lsb_release['DISTRIB_CODENAME'] in ('natty', 'oneiric', ):
-
-						self.experimental_should_be_enabled = True
-
-					elif lsb_release['DISTRIB_CODENAME'] in ('dapper', 'hardy',
-						'intrepid', 'jaunty', 'karmik'):
-						logging.warning(_(u'Your ubuntu version ("{0}") is '
-							'no longer supported by {1} developpers. '
-							'You should consider upgrading to a newer '
-							'one.').format(
-								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME']),
-								stylize(ST_APPNAME, self.app_name)))
-
-					elif lsb_release['DISTRIB_CODENAME'] in ('warty', 'hoary',
-						'breezy', 'edgy', 'feisty', 'gutsy'):
-						logging.warning(_(u'Greetings old-timer :-) Does {0} '
-							'still run on your aged ubuntu version ("{1}")? '
-							'Anyway it is no longer supported by {0} '
-							'developpers. Even Canonical nor Ubuntu community '
-							'does not support it anymore. You should very '
-							'strongly consider upgrading to a newer version.'
-							).format(
-								stylize(ST_APPNAME, self.app_name),
-								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME'])))
-
-					else:
-						raise exceptions.LicornRuntimeError(_(u'This Ubuntu '
-							'version ("{0}") is not [yet] supported, sorry !').format(
-								stylize(ST_NAME, lsb_release['DISTRIB_CODENAME'])))
-				self.distro_version = lsb_release['DISTRIB_RELEASE']
-
-			else:
+			except ImportError:
 				# OLD / non-lsb compatible system or BSD
 				if os.path.exists('/etc/gentoo-release'):
 					raise exceptions.LicornRuntimeError(
 						"Gentoo is not yet supported, sorry !")
-				elif os.path.exists('/etc/debian_version'):
-					raise exceptions.LicornRuntimeError(
-						"Old Debian systems are not supported, sorry !")
 				elif  os.path.exists('/etc/SuSE-release') \
 					or os.path.exists( '/etc/suse-release' ):
 					raise exceptions.LicornRuntimeError(
@@ -588,15 +264,102 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 						"RedHat/Mandriva is not yet supported, sorry !")
 				else:
 					raise exceptions.LicornRuntimeError(_(u'You are running an '
-						'unknown or unsupported Linux distro. Please get in '
-						'touch with {0} developpers, and consider submitting '
-						'a patch to make your system officially supported.'
+						u'unknown or unsupported non-LSB but POSIX Operating '
+						u'System. Please get in '
+						u'touch with {0} developpers, and consider submitting '
+						u'a patch to make your system officially supported.'
 						).format(stylize(ST_APPNAME, self.app_name)))
+
+			distro_info          = lsb_release.get_distro_information()
+			self.distro_id       = distro_info['ID']
+			self.distro_codename = distro_info['CODENAME']
+
+			if distro_info['ID'] in ('Licorn', 'Ubuntu'):
+				self.distro = distros.UBUNTU
+
+				codename = distro_info['CODENAME']
+
+				if codename in ('lucid', 'maverick', 'natty', 'oneiric', ):
+					# nothing special to do here.
+					pass
+
+				elif codename in ('precise', ):
+					settings.experimental_should_be_enabled = True
+
+				elif codename in ( 'hardy', 'intrepid', 'jaunty', 'karmik'):
+					logging.warning(_(u'Your Ubuntu version "{0}" is '
+						'no longer supported by {1} developpers nor Canonical. '
+						'You should consider upgrading to a newer '
+						'one.').format(
+							stylize(ST_NAME, codename),
+							stylize(ST_APPNAME, self.app_name)))
+
+				elif codename in ('warty', 'hoary',
+					'breezy', 'dapper', 'edgy', 'feisty', 'gutsy'):
+					logging.warning(_(u'Greetings old-timer :-) Does {0} '
+						u'still run on your aged Ubuntu version "{1}"? '
+						u'Anyway it is no longer supported by {0} '
+						u'developpers. Even Canonical nor Ubuntu community '
+						u'does not support it anymore. You should very '
+						u'strongly consider upgrading to a newer version.'
+						).format(
+							stylize(ST_APPNAME, self.app_name),
+							stylize(ST_NAME, codename)))
+
+				else:
+					raise exceptions.LicornRuntimeError(_(u'This Ubuntu '
+						u'version "{0}" is not [yet] supported, sorry !').format(
+							stylize(ST_NAME, codename)))
+
+			elif distro_info['ID'] in ('Debian', ):
+				self.distro = distros.DEBIAN
+
+				codename = distro_info['CODENAME']
+
+				if codename in ('squeeze', ):
+					# nothing special, just a supported distro.
+					pass
+
+				elif codename in ('wheezy', 'sid', ):
+					settings.experimental_should_be_enabled = True
+
+				elif codename in ('etch', 'lenny', ):
+					logging.warning(_(u'Your Debian version ("{0}") is '
+						u'no longer supported by {1} developpers nor Debian. '
+						u'You should consider upgrading to a newer '
+						u'one.').format(
+							stylize(ST_NAME, codename),
+							stylize(ST_APPNAME, self.app_name)))
+
+				elif codename in ('buzz', 'rex', 'bo', 'hamm', 'slink',
+									'potato', 'woody', 'sarge'):
+					logging.warning(_(u'Greetings old-timer :-) Does {0} '
+						u'still run on your aged Debian version "{1}"? '
+						u'Anyway it is no longer supported by {0} '
+						u'developpers. Even Debian community '
+						u'does not support it anymore. You should very '
+						u'strongly consider upgrading to a newer version.'
+						).format(
+							stylize(ST_APPNAME, self.app_name),
+							stylize(ST_NAME, codename)))
+
+				else:
+					raise exceptions.LicornRuntimeError(_(u'This Debian '
+						u'version "{0}" is not [yet] supported, sorry !').format(
+							stylize(ST_NAME, codename)))
+
+			else:
+				raise exceptions.LicornRuntimeError(_(u'Your LSB distro '
+					u'is not yet supported. This should be trivial to '
+					u'implement, but this is still to be done, sorry!'))
+
+			self.distro_version = distro_info['RELEASE']
+
 		else:
 			raise exceptions.LicornRuntimeError(
 				"Not on a supported system ! Please send a patch ;-)")
 
-		del(lsb_release)
+		del lsb_release, distro_info
 	def detect_services(self):
 		""" Concentrates all calls for service detection on the current system
 		"""
@@ -726,7 +489,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		import stat
 
 		for skel_path in ("%s/skels" % \
-			self.defaults.home_base_path, "/usr/share/skels"):
+			settings.defaults.home_base_path, "/usr/share/skels"):
 			if os.path.exists(skel_path):
 				try:
 					for new_skel in fsapi.minifind(path=skel_path,
@@ -760,7 +523,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.groups.hidden = None
 
 		add_user_conf = self.CheckAndLoadAdduserConf(batch=batch,
-			auto_answer=auto_answer)
+											auto_answer=auto_answer)
 		self.users.min_passwd_size = 8
 		self.users.uid_min         = add_user_conf['FIRST_UID']
 		self.users.uid_max         = add_user_conf['LAST_UID']
@@ -833,25 +596,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.CheckUserAdd(batch=batch, auto_answer=auto_answer)
 
 		assert ltrace(TRACE_CONFIGURATION, '< LoadManagersConfiguration()')
-	def SetDefaultNamesAndPaths(self):
-		""" *HARDCODE* some names before we pull them out
-			into configuration files."""
-
-		self.defaults = LicornConfigObject()
-
-		self.defaults.home_base_path = '/home'
-		self.defaults.check_homedir_filename = '00_default'
-
-		# default expiration time (float, in seconds) for various things
-		# (see core.classes.CoreFSController._expire_events()).
-		self.defaults.global_expire_time = 10.0
-
-		# WARNING: Don't translate this. This still has to be discussed.
-		# TODO: move this into a plugin
-		self.defaults.admin_group = 'admins'
-
-		# TODO: autodetect this & see if it not autodetected elsewhere.
-		#self.defaults.quota_device = "/dev/hda1"
 	def SetUsersDefaults(self):
 		"""Create self.users attributes and start feeding it."""
 
@@ -863,20 +607,20 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		self.users.group = 'users'
 
-		# FIXME: don't hardcode this (this will come from the apache extension)
-		self.users.apache_dir = 'public_html'
-
 		# see groupadd(8), coming from addgroup(8)
 		self.users.login_maxlenght = 31
 
+		# FIXME: still needed now that all threads are i18n capable?
 		self.users._singular = _('user')
 		self.users._plural = _('users')
+
+		# FIXME: don't hardcode these (this will come from the apache extension)
+		self.users.apache_dir = 'public_html'
 	def SetGroupsDefaults(self):
 		"""Create self.groups attributes and start feeding it."""
 
 		self.groups = LicornConfigObject()
-		self.groups.base_path  = self.defaults.home_base_path + '/groups'
-		self.groups.apache_dir = self.users.apache_dir
+		self.groups.base_path  = settings.defaults.home_base_path + '/groups'
 
 		self.groups.check_config_file_suffix = '.check.conf'
 
@@ -887,8 +631,12 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# 31 - len(prefix)
 		self.groups.name_maxlenght = 27
 
+		# FIXME: still needed now that all threads are i18n capable?
 		self.groups._singular = _('group')
 		self.groups._plural   = _('groups')
+
+		# FIXME: should come from the apache extension too.
+		self.groups.apache_dir = self.users.apache_dir
 	def set_acl_defaults(self):
 		""" Prepare the basic ACL configuration inside us. """
 
@@ -900,34 +648,32 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# this one will be filled later, when GroupsController is instanciated.
 		self.acls.gid = 0
 
-		self.acls.acl_base = 'u::rwx,g::---,o:---'
-		self.acls.acl_mask = 'm:rwx'
-		self.acls.acl_admins_ro = 'g:%s:r-x' % self.defaults.admin_group
-		self.acls.acl_admins_rw = 'g:%s:rwx' % self.defaults.admin_group
-		self.acls.acl_users = '--x' if self.groups.hidden else 'r-x'
+		self.acls.acl_base      = 'u::rwx,g::---,o:---'
+		self.acls.acl_mask      = 'm:rwx'
+		self.acls.acl_admins_ro = 'g:%s:r-x' % settings.defaults.admin_group
+		self.acls.acl_admins_rw = 'g:%s:rwx' % settings.defaults.admin_group
+		self.acls.acl_users     = '--x' if self.groups.hidden else 'r-x'
 		self.acls.file_acl_base = 'u::rw@UX,g::---,o:---'
 		self.acls.acl_restrictive_mask = 'm:r-x'
 		self.acls.file_acl_mask = 'm:rw@GX'
 		self.acls.file_acl_restrictive_mask = 'm:rw@GX'
 		self.acls.group_acl_base = ('u::rwx,g::---,o:---,g:%s:rwx,'
-						'g:%s@GROUP:r-x,g:%s@GROUP:rwx,g:@GROUP:rwx') % (
-							LMC.configuration.defaults.admin_group,
-							LMC.configuration.groups.guest_prefix,
-							LMC.configuration.groups.resp_prefix)
+							'g:%s@GROUP:r-x,g:%s@GROUP:rwx,g:@GROUP:rwx') % (
+								settings.defaults.admin_group,
+								self.groups.guest_prefix,
+								self.groups.resp_prefix)
 		self.acls.group_file_acl_base = ('u::rw@UX,g::---,o:---,g:%s:rw@GX,'
-						'g:%s@GROUP:r-@GX,g:%s@GROUP:rw@GX,g:@GROUP:r@GW@GX')%(
-							LMC.configuration.defaults.admin_group,
-							LMC.configuration.groups.guest_prefix,
-							LMC.configuration.groups.resp_prefix)
-
+							'g:%s@GROUP:r-@GX,g:%s@GROUP:rw@GX,g:@GROUP:r@GW@GX')%(
+								settings.defaults.admin_group,
+								self.groups.guest_prefix,
+								self.groups.resp_prefix)
 	def CheckAndLoadAdduserConf(self, batch=False, auto_answer=None):
 		""" Check the contents of adduser.conf to be compatible with Licorn.
 			Alter it, if not.
 			Then load it in a way i can be used in LicornConfiguration.
 		"""
 
-		assert ltrace(TRACE_CONFIGURATION, '> CheckAndLoadAdduserConf(batch=%s)' %
-			batch)
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		adduser_conf       = '/etc/adduser.conf'
 		adduser_conf_alter = False
@@ -939,7 +685,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# present, and we assume this during the file patch.
 		defaults = (
 			('DHOME', '%s/users' % \
-				self.defaults.home_base_path),
+				settings.defaults.home_base_path),
 			('DSHELL', '/bin/bash'),
 			('SKEL',   '/etc/skel'),
 			('GROUPHOMES',  'no'),
@@ -981,25 +727,27 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 				# else: everything's OK !
 			else:
-				logging.warning(
-					'''In %s, directive %s is missing. Setting it to %s.'''
-					% (stylize(ST_PATH, adduser_conf),
-						directive, value))
+				logging.warning(_(u'In {0}, directive {1} is missing. Setting it to {2}.').format(
+						stylize(ST_PATH, adduser_conf),	directive, value))
+
 				adduser_dict[directive] = value
 				adduser_conf_alter      = True
 				adduser_data            = re.sub(r'(LAST_SYSTEM_UID.*)',
-					r'\1\n%s=%s' % (directive, value), adduser_data)
+												r'\1\n%s=%s' % (directive, value),
+												adduser_data)
 
 		if adduser_conf_alter:
-			if batch or logging.ask_for_repair(
-				'''%s lacks mandatory configuration directive(s).'''
-							% stylize(ST_PATH, adduser_conf),
+			if batch or logging.ask_for_repair(_(u'{0} lacks mandatory '
+									u'configuration directive(s).').format(
+										stylize(ST_PATH, adduser_conf)),
 								auto_answer):
 				try:
 					fsapi.backup_file(adduser_conf)
 					open(adduser_conf, 'w').write(adduser_data)
-					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
-						% stylize(ST_PATH, adduser_conf))
+
+					logging.notice(_(u'Altered {0} to match Licorn® '
+						u'pre-requisites.').format(stylize(ST_PATH, adduser_conf)))
+
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -1012,8 +760,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					'''system tools (adduser/useradd). Can't continue '''
 					'''without this, sorry!''' % adduser_conf)
 
-		assert ltrace(TRACE_CONFIGURATION, '< CheckAndLoadAdduserConf(%s)' %
-			adduser_dict)
+		assert ltrace_func(TRACE_CONFIGURATION, 1)
 
 		return adduser_dict
 	def CheckLoginDefs(self, batch=False, auto_answer=None):
@@ -1021,7 +768,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			Load data, alter it if needed and save the new file.
 		"""
 
-		assert ltrace(TRACE_CONFIGURATION, '| CheckLoginDefs(batch=%s)' % batch)
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		self.check_system_file_generic(filename="/etc/login.defs",
 			reader=readers.simple_conf_load_dict,
@@ -1044,7 +791,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			Licorn®.
 		"""
 
-		assert ltrace(TRACE_CONFIGURATION, '| CheckUserAdd(batch=%s)' % batch)
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		self.check_system_file_generic(filename="/etc/default/useradd",
 			reader=readers.shell_conf_load_dict,
@@ -1057,12 +804,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def check_system_file_generic(self, filename, reader, defaults, separator,
 		check_exists=False, batch=False, auto_answer=None):
 
-		assert ltrace(TRACE_CONFIGURATION, '''> check_system_file_generic('''
-			'''filename=%s, separator='%s', batch=%s)''' % (filename, separator,
-			batch))
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		if check_exists and not os.path.exists(filename):
-			logging.warning2('''%s doesn't exist on this system.''' % filename)
+			logging.warning(_(u'%s does not exist on this system!') % filename)
 			return
 
 		alter_file = False
@@ -1072,32 +817,38 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		for (directive, value) in defaults:
 			try:
 				if data_dict[directive] != value:
-					logging.warning('''In %s, directive %s should be %s,'''
-						''' but it is %s.''' % (
-							stylize(ST_PATH, filename),
-							directive, value, data_dict[directive]))
+					logging.warning(_(u'In {0}, directive {1} should be {2}, '
+										u'but it is {3}.').format(
+											stylize(ST_PATH, filename),
+											directive, value,
+											data_dict[directive]))
 					alter_file           = True
 					data_dict[directive] = value
 					file_data            = re.sub(r'%s.*' % directive,
-						r'%s%s%s' % (directive, separator, value), file_data)
+												r'%s%s%s' % (directive, separator, value),
+												file_data)
 			except KeyError:
-				logging.warning('''In %s, directive %s isn't present but '''
-					'''should be, with value %s.''' % (
-						stylize(ST_PATH, filename),
-						directive, value))
+				logging.warning(_(u'In {0}, directive {1} is not present but '
+									u'should be, with value {2}.').format(
+										stylize(ST_PATH, filename),
+										directive, value))
 				alter_file           = True
 				data_dict[directive] = value
 				file_data += '%s%s%s\n' % (directive, separator, value)
 
 		if alter_file:
-			if batch or logging.ask_for_repair(
-				'''%s should be altered to be in sync with Licorn®. Fix it ?'''
-				% stylize(ST_PATH, filename), auto_answer):
+			if batch or logging.ask_for_repair(_(u'{0} should be altered to work '
+												u'with Licorn®. Fix it?').format(
+													stylize(ST_PATH, filename)),
+							auto_answer):
 				try:
 					fsapi.backup_file(filename)
 					open(filename, 'w').write(file_data)
-					logging.notice('Tweaked %s to match Licorn® pre-requisites.'
-						% stylize(ST_PATH, filename))
+
+					logging.notice(_(u'Altered {0} to match Licorn® '
+							u'pre-requisites.').format(
+								stylize(ST_PATH, filename)))
+
 				except (IOError, OSError), e:
 					if e.errno == 13:
 						raise exceptions.LicornRuntimeError(
@@ -1109,7 +860,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				raise exceptions.LicornRuntimeError('''Modifications in %s '''
 					'''are mandatory for Licorn to work properly. Can't '''
 					'''continue without this, sorry!''' % filename)
-		assert ltrace(TRACE_CONFIGURATION, '< check_system_file_generic()')
+
+		assert ltrace_func(TRACE_CONFIGURATION, 1)
 	### EXPORTS ###
 	def Export(self, doreturn=True, args=None, cli_format='short'):
 		""" Export «self» (the system configuration) to a human
@@ -1118,10 +870,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			directly to stdout.
 		"""
 
-		if args is not None:
-			data = ''
+		if args:
+			data = u''
 
-			if cli_format == "bourne":
+			if cli_format in ('bourne', 'bash'):
 				cli = {
 					'prefix': "export ",
 					'name': True,
@@ -1150,87 +902,119 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					'suffix': ""
 					}
 			else:
-				raise exceptions.BadArgumentError(
-					"Bad CLI output format « %s » !" % cli_format)
+				raise exceptions.BadArgumentError(_(u'Bad CLI output '
+											u'format "%s"!') % cli_format)
 
-			if args[0] == "shells":
+			words = {
+				'app_name'                : _(u'Application name'),
+				'backends'                : _(u'Storage backends for Core objects'),
+				'config_dir'              : _(u'Application main configuration directory'),
+				'extendedgroup_data_file' : _(u'Filename of extended group data'),
+				'extensions'              : _(u'Application extensions (available add-ons)'),
+				'help'                    : _(u'This current help'),
+				'main_config_file'        : _(u'Application main configuration filename'),
+				'privileges'              : _(u'System groups tagged as privileges'),
+				'shells'                  : _(u'System valid shells when creating a new user'),
+				'skels'                   : _(u'System valid skels to apply on a user account'),
+				'system-groups'           : _(u'Mandatory system groups for {0}').format(stylize(ST_APPNAME, self.app_name)),
+				 }
+
+			word = hlstr.word_match(args[0], words.keys())
+
+			if word is None:
+				raise exceptions.BadArgument(_(u'Sorry, "%s" is not a '
+											u'recognized keyword.') % args[0])
+
+			if word == 'help':
+				data += u'%s\n%s\n' % (
+								_(u'Valid keywords for {0} (fuzzy '
+									u'matching):').format(
+										stylize(ST_COMMENT,
+											u'get config <keyword>')),
+								u'\n'.join(_(u'{0}: {1}').format(
+									stylize(ST_NAME, k.rjust(max(len(x) for x in words))), v)
+										for k,v in words.iteritems()))
+
+			elif word == 'shells':
 				for shell in self.users.shells:
-					data += "%s\n" % shell
+					data += u'%s\n' % shell
 
-			elif args[0] == "skels":
+			elif word == 'skels':
 				for skel in self.users.skels:
-					data += "%s\n" % skel
+					data += u'%s\n' % skel
 
-			elif args[0] == 'backends':
+			elif word == 'backends':
+
 				for b in LMC.backends:
-					data += '%s(%s%s%s)\n' % (b.name,
-						stylize(ST_INFO, 'U') \
-						if LMC.users._prefered_backend != None
-							and b.name == LMC.users._prefered_backend.name else '',
-						stylize(ST_INFO, 'G') \
-						if LMC.groups._prefered_backend != None
-							and b.name == LMC.groups._prefered_backend.name else '',
-						stylize(ST_INFO, 'M') \
-						if LMC.machines._prefered_backend != None
-							and b.name == LMC.machines._prefered_backend.name else '',
+					data += u'%s(%s%s%s%s)\n' % (
+						str(b),
+						stylize(ST_INFO, u'U')
+							if LMC.users._prefered_backend != None
+								and b.name == LMC.users._prefered_backend.name
+							else u'',
+						stylize(ST_INFO, u'G')
+							if LMC.groups._prefered_backend != None
+								and b.name == LMC.groups._prefered_backend.name
+							else u'',
+						stylize(ST_INFO, u'M')
+							if LMC.machines._prefered_backend != None
+								and b.name == LMC.machines._prefered_backend.name
+							else u'',
+						(stylize(ST_INFO, u'T')
+							if LMC.tasks._prefered_backend != None
+								and b.name == LMC.tasks._prefered_backend.name
+							else u'') if hasattr(LMC, 'tasks') else u'',
 						)
-				for b in LMC.backends.available():
-					data += '%s\n' % b.name
 
-			elif args[0] == 'extensions':
-				for e in LMC.extensions:
-					data += '%s\n' % stylize(ST_ENABLED, e.name)
+			elif word == 'extensions':
+				data += u'\n'.join(str(e) for e in LMC.extensions) + u'\n'
 
-				for e in LMC.extensions.available():
-					data += '%s\n' % stylize(ST_DISABLED, e.name)
+			# TODO: update this code for 'settings' use...
+			elif word in ('config_dir', 'main_config_file',
+						'extendedgroup_data_file', 'app_name'):
 
-			elif args[0] in ("config_dir", "main_config_file",
-				"extendedgroup_data_file", "app_name"):
+				varname = word.upper()
 
-				varname = args[0].upper()
-
-				if args[0] == "config_dir":
+				if word == 'config_dir':
 					varval = self.config_dir
-				elif args[0] == "main_config_file":
+
+				elif word == 'main_config_file':
 					varval = self.main_config_file
-				elif args[0] == "extendedgroup_data_file":
+
+				elif word == 'extendedgroup_data_file':
 					varval = self.extendedgroup_data_file
 
-				elif args[0] == "app_name":
+				elif word == 'app_name':
 					varval = self.app_name
 
-				if cli["name"]:
-					data +=	 "%s%s%s\"%s\"%s\n" % (
-						cli["prefix"],
+				if cli['name']:
+					data +=	 '%s%s%s"%s"%s\n' % (
+						cli['prefix'],
 						varname,
-						cli["equals"],
+						cli['equals'],
 						varval,
-						cli["suffix"]
+						cli['suffix']
 						)
 				else:
-					data +=	 "%s\n" % (varval)
+					data +=	 '%s\n' % (varval)
 
-			elif args[0] in ('sysgroups', 'system_groups', 'system-groups'):
+			elif word == 'system-groups':
 
-				data += '%s\n' % '\n'.join((self.acls.group,
-											self.defaults.admin_group))
+				data += u'%s\n' % u'\n'.join((self.acls.group,
+											settings.defaults.admin_group))
 
-				data += "%s\n" % '\n'.join(x.name for x in LMC.privileges)
+				if LMC.privileges.keys():
+					data += u'%s\n' % u'\n'.join(x.name for x in LMC.privileges)
 
-			elif args[0] in ('priv', 'privs', 'privileges'):
-
-				data += "%s\n" % '\n'.join(x.name for x in LMC.privileges)
-
-			else:
-				raise NotImplementedError(
-					"Sorry, outputing selectively %s is not yet implemented !" \
-						% args[0])
+			elif word == 'privileges':
+				data += u'%s\n' % u'\n'.join(x.name for x in LMC.privileges)
 
 		else:
 			data = self._export_all()
 
 		if doreturn is True:
 			return data
+
 		else:
 			sys.stdout.write(data + "\n")
 	def _export_all(self):
@@ -1301,6 +1085,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# real interfaces of the machine.
 		self.network.interfaces = network.interfaces
 		self.network.local_ip_addresses = network.local_ip_addresses
+		self.network.hostname = network.get_local_hostname
 	### MODIFY ###
 	def ModifyHostname(self, new_hostname):
 		"""Change the hostname of the running system."""
@@ -1329,12 +1114,20 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	### CHECKS ###
 	def check(self, minimal=True, batch=False, auto_answer=None):
 		""" Check all components of system configuration and repair
-		if asked for."""
+		if asked for.
+
+		.. note:: for developers: the contents of this method need to stay
+				in sync with :meth:`groups_loaded`, they basically do the
+				same things.
+		"""
 
 		assert ltrace(TRACE_CONFIGURATION, '> check()')
 
+		self.check_system_groups(minimal=minimal, batch=batch,
+								auto_answer=auto_answer)
+
 		self.check_base_dirs(minimal=minimal, batch=batch,
-			auto_answer=auto_answer)
+								auto_answer=auto_answer)
 
 		# not yet ready.
 		#self.CheckHostname(minimal, auto_answer)
@@ -1342,7 +1135,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def check_base_dirs(self, minimal=True, batch=False, auto_answer=None):
 		"""Check and eventually repair default needed dirs."""
 
-		assert ltrace(TRACE_CONFIGURATION, '> check_base_dirs()')
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		try:
 			os.makedirs(self.users.base_path)
@@ -1356,13 +1149,13 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		dirs_to_verify = []
 
 		dirs_to_verify.append(
-			FsapiObject(name='home',
-						path=self.defaults.home_base_path,
+			fsapi.FsapiObject(name='home',
+						path=settings.defaults.home_base_path,
 						uid=0, gid=0,
 						root_dir_perm=00755))
 
 		dirs_to_verify.append(
-			FsapiObject(name='home_users',
+			fsapi.FsapiObject(name='home_users',
 						path=self.users.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
@@ -1373,7 +1166,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							acls_conf.acl_mask)))
 
 		dirs_to_verify.append(
-			FsapiObject(name='home_groups',
+			fsapi.FsapiObject(name='home_groups',
 						path=self.groups.base_path,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
@@ -1384,8 +1177,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							acls_conf.acl_mask)))
 
 		dirs_to_verify.append(
-			FsapiObject(name='home_backups',
-						path=self.home_backup_dir,
+			fsapi.FsapiObject(name='home_backups',
+						path=settings.home_backup_dir,
 						uid=0, gid=acls_conf.gid,
 						root_dir_acl=True,
 						root_dir_perm='%s,%s,%s' % (
@@ -1408,7 +1201,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		try:
 			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new(
-												dirs_to_verify, batch=True):
+						dirs_to_verify, batch=batch, auto_answer=auto_answer):
 				pass
 		except (IOError, OSError), e:
 			if e.errno == 95:
@@ -1420,8 +1213,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 					'''Filesystem must be mounted with 'acl' option:\n\t%s''' \
 						% e)
 			else:
-				logging.warning(e)
-				raise e
+				raise
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
@@ -1438,8 +1230,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		acls_conf = self.acls
 
-		home_archive = FsapiObject(name='home_archive')
-		home_archive.path = self.home_archive_dir
+		home_archive = fsapi.FsapiObject(name='home_archive')
+		home_archive.path = settings.home_archive_dir
 		# FIXME: don't hardcode 'acl' here.
 		home_archive.group = LMC.groups.by_name('acl').gidNumber
 		home_archive.user = 0
@@ -1448,7 +1240,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			acls_conf.acl_base, acls_conf.acl_admins_rw, acls_conf.acl_mask)
 
 		if subdir:
-			if os.path.dirname(subdir) == self.home_archive_dir:
+			if os.path.dirname(subdir) == settings.home_archive_dir:
 				home_archive.content_acl = True
 				home_archive.dirs_perm = "%s,%s,%s" % (
 					acls_conf.acl_base, acls_conf.acl_admins_rw,
@@ -1460,7 +1252,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			else:
 				logging.warning(
 					'the subdir you specified is not inside %s, skipped.' %
-						styles.stylize(styles.ST_PATH, self.home_archive_dir))
+						styles.stylize(styles.ST_PATH, settings.home_archive_dir))
 				subdir=False
 
 		assert ltrace(TRACE_CONFIGURATION, ''''< check_archive_dir(return '''
@@ -1474,15 +1266,14 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		except TypeError:
 			# nothing to check (fsapi.... returned None and yielded nothing).
 			pass
-	def CheckSystemGroups(self, minimal=True, batch=False, auto_answer=None):
+	def check_system_groups(self, minimal=True, batch=False, auto_answer=None):
 		"""Check if needed groups are present on the system, and repair
 			if asked for."""
 
-		assert ltrace(TRACE_CONFIGURATION,
-			'> CheckSystemGroups(minimal=%s, batch=%s)' % (minimal, batch))
+		assert ltrace_func(TRACE_CONFIGURATION)
 
 		needed_groups = [ self.users.group, self.acls.group,
-			self.defaults.admin_group ]
+							settings.defaults.admin_group ]
 
 		if not minimal:
 			needed_groups.extend([ group for group in LMC.privileges.iterkeys()
@@ -1494,8 +1285,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			# operate properly.
 
 		for group in needed_groups:
-			logging.progress('Checking existence of group %s…' %
-				stylize(ST_NAME, group))
+			logging.progress(_(u'Checking existence of group %s…') %
+									stylize(ST_NAME, group))
 
 			# licorn.core.groups is not loaded yet, and it would create a
 			# circular dependancy to import it now. We HAVE to do this manually.
@@ -1524,15 +1315,25 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 							group, group)
 						)
 
-		assert ltrace(TRACE_CONFIGURATION, '< CheckSystemGroups()')
-	def groups_loaded_callback(self, groups, *args, **kwargs):
-		self.CheckSystemGroups(batch=True)
+		assert ltrace_func(TRACE_CONFIGURATION, 1)
+	@events.handler_method
+	def groups_loaded(self, *args, **kwargs):
+		""" `core.configuration` needs to do some basic chech when groups are loaded.
+
+			.. note:: for developers: the contents of this event handler need to stay
+				in sync with :meth:`check`, they basically do the same things.
+		"""
+
+		groups = kwargs.pop('groups')
+
+		self.check_system_groups(batch=True)
 
 		self.groups.hidden = groups.get_hidden_state()
 
 		# cache this here for faster access in check methods
 		self.acls.gid = groups.by_name(self.acls.group).gidNumber
 
+		self.check_base_dirs(batch=True)
 	def CheckHostname(self, batch = False, auto_answer = None):
 		""" Check hostname consistency (by DNS/reverse resolution),
 			and check /etc/hosts against flakynesses."""

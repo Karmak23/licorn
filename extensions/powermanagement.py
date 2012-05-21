@@ -9,21 +9,18 @@ Licorn extensions: Power management - http://docs.licorn.org/extensions/powerman
 """
 
 import os, sys, time
-from threading import RLock, Event
+from licorn.foundations.threads import RLock, Event
 
-from licorn.foundations        import logging, exceptions, process, pyutils
-from licorn.foundations.styles import *
-from licorn.foundations.ltrace import ltrace
-from licorn.foundations.ltraces import *
-from licorn.foundations.base   import Singleton, MixedDictObject, LicornConfigObject
+from licorn.foundations           import logging, exceptions, process, pyutils
+from licorn.foundations.styles    import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
+from licorn.foundations.base      import ObjectSingleton, MixedDictObject, LicornConfigObject
+from licorn.foundations.constants import priorities
 
 from licorn.core               import LMC
 from licorn.daemon.threads     import LicornJobThread
 from licorn.extensions         import LicornExtension
-from licorn.extensions.volumes import VolumeException
-from licorn.interfaces.wmi     import WMIObject
-
-from licorn.daemon             import priorities
 
 class PowermanagementException(exceptions.LicornRuntimeException):
 	""" A type of exception to deal with rdiff-backup specific problems.
@@ -31,7 +28,7 @@ class PowermanagementException(exceptions.LicornRuntimeException):
 		.. versionadded:: 1.2.4
 	"""
 	pass
-class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
+class PowermanagementExtension(ObjectSingleton, LicornExtension):
 	""" Handle energy and power-saving features on the local host, via multiple
 		methods.
 
@@ -70,24 +67,6 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 			to be later collected and started by the daemon.
 		"""
 		if 'gloop' in LMC.extensions:
-
-			"""
-			self.create_wmi_object(uri='/energy', name=_('Energy'),
-				alt_string=_('Manage Energy and network-wide power-saving preferences'),
-				context_menu_data=(
-					(_('Run backup'), '/backups/run',
-						_('Run a system incremental backup now'),
-						'ctxt-icon', 'icon-add',
-						lambda: self._enabled_volumes() != []
-							and not self.running()),
-					(_('Rescan volumes'), '/backups/rescan',
-						_('Force the system to rescan and remount connected '
-						'volumes'),
-						'ctxt-icon', 'icon-energyprefs',
-						lambda: self._backup_enabled_volumes() == [])
-				)
-			)
-			"""
 			return True
 
 		return False
@@ -97,8 +76,3 @@ class PowermanagementExtension(Singleton, LicornExtension, WMIObject):
 		#TODO: refresh statistics.
 
 		return True
-	def _wmi__status(self):
-		""" Method called from wmi:/, to integrate backup informations on the
-			status page. """
-
-		return '<strong>NOTHING YET</strong>'

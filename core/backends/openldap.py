@@ -20,20 +20,19 @@ import os, time, hashlib, base64
 import ldap      as pyldap
 import ldap.sasl as pyldapsasl
 
-from licorn.foundations           import logging, exceptions
-from licorn.foundations           import readers, process, pyutils, ldaputils
+from licorn.foundations           import logging, exceptions, settings
+from licorn.foundations           import readers, process, pyutils
+from licorn.foundations           import ldaputils, hlstr
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Enumeration, Singleton
-from licorn.foundations.constants import backend_actions
+from licorn.foundations.constants import backend_actions, roles
 
 from licorn.core                  import LMC
 from licorn.core.users            import User
 from licorn.core.groups           import Group
 from licorn.core.backends         import NSSBackend, UsersBackend, GroupsBackend
-
-from licorn.daemon                import roles
 
 class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 	""" OpenLDAP Backend for users and groups. """
@@ -70,27 +69,33 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		twice.
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, '| load_defaults()')
+		assert ltrace_func(TRACE_OPENLDAP)
 
-		# Stay local (unix socket) for nows
-		# if server is None:
+		# Stay local (unix socket) for now
+		#if server is None:
 		self.uri             = 'ldapi:///'
-		self.base            = 'dc=meta-it,dc=local'
+		self.base            = 'dc=licorn,dc=local'
 		self.rootbinddn      = 'cn=admin,%s' % self.base
-		self.secret          = 'metasecret'
+		self.secret          = hlstr.generate_password()
 		self.nss_base_group  = 'ou=Groups'
 		self.nss_base_passwd = 'ou=People'
 		self.nss_base_shadow = 'ou=People'
+		self.nss_base_hosts  = 'ou=Hosts'
+
 	def initialize(self):
-		"""	try to start it without any tests (it should work if it's
+		"""	Try to start the backend without any tests (it should work if it's
 			installed) and become available.
-			If that fails, try to guess a little and help user resolving issue.
-			else, just fail miserably.
 
-		setup the backend, by gathering LDAP related configuration in system
-		files. """
+			If that fails, try to guess things a little, and help the
+			sysadmin resolving issue.
 
-		assert ltrace(TRACE_OPENLDAP, '> initialize()')
+			If guessing fails, the backend will not load.
+
+			If guessing succeeds, setup the backend by gathering LDAP related
+			configuration in system files.
+		"""
+
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		self.load_defaults()
 
@@ -102,23 +107,29 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		except (IOError, OSError), e:
 			if e.errno != 2:
 				if os.path.exists(self.files.openldap_conf):
-					logging.warning('''Problem initializing the LDAP backend.'''
-					''' LDAP seems installed but not configured or unusable. '''
-					'''Please run 'sudo chk config -evb' to correct. '''
-					'''(was: %s)''' % e)
+					logging.exception(_(u'{0}: Problem initializing the '
+						u'backend. OpenLDAP seems installed but not '
+						u'configured, or unusable. Please run {1} to try '
+						u'fix the situation.'), self.pretty_name,
+						(ST_PATH, 'chk config -evb'))
+
 			elif e.errno == 2:
-				# ldap.conf not present -> pam-ldap not installed -> just
-				# discard the LDAP backend completely.
+				# ldap.conf is not present
+				#	> libpam-ldap is not installed
+				# 	> the OpenLDAP backend will be completely discarded.
 				pass
+
 			else:
 				# another problem worth noticing.
-				raise e
+				raise
+
 		else:
 			# add the self.base extension to self.nss_* if not present.
 			for attr in (
 				'nss_base_group',
 				'nss_base_passwd',
-				'nss_base_shadow'):
+				'nss_base_shadow',
+				'nss_base_hosts'):
 				value = getattr(self, attr)
 
 				try:
@@ -133,7 +144,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			try:
 				# if we have access to /etc/ldap.secret, we are root.
 
-				self.secret = open(self.files.openldap_secret).read().strip()
+				# loading it overrides the default secret generated in
+				# self.load_defaults(). This is wanted.
+				self.secret  = open(self.files.openldap_secret).read().strip()
 				self.bind_dn = self.rootbinddn
 				self.bind_as_admin = True
 
@@ -158,24 +171,29 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 				elif e.errno == 2:
 					# no such file or directory. Assume we are root and fill
-					# the default password in the file. This will make
-					# everything go smoother.
+					# the default password in the file. This should make
+					# everything work. On schema check, the contents of the
+					# secret file will be used to fill the templates and
+					# passwords should match.
 
-					logging.notice('''seting up default password in %s. You '''
-						'''can change it later if you want by running '''
-						'''FIXME_COMMAND_HERE.''' % (
+					# TODO: create a command to change default admin password.
+					#	it will need to update /etc/ldap.secret, and the LDAP
+					#	related schemata.
+
+					logging.notice(_(u'{0}: setting a default password in '
+						u'{1}.').format(self.pretty_name,
 						stylize(ST_PATH, self.files.openldap_secret)))
 
-					open(self.files.openldap_secret, 'w').write(self.secret)
-					self.bind_dn = self.rootbinddn
+					with open(self.files.openldap_secret, 'w') as f:
+						f.write(self.secret)
+
+					self.bind_dn       = self.rootbinddn
 					self.bind_as_admin = True
 
 				else:
 					raise
 
 			self.find_licorn_ldap_server()
-
-			self.check_defaults()
 
 			assert ltrace(TRACE_OPENLDAP, '| pyldap.initialize({0})'.format(self.uri))
 
@@ -187,7 +205,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		return self.available
 	def find_licorn_ldap_server(self):
 
-		if LMC.configuration.licornd.role == roles.CLIENT:
+		if settings.role == roles.CLIENT:
 			waited = 0.1
 			while LMC.configuration.server_main_address is None:
 				#
@@ -208,12 +226,12 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			#self. = '127.0.0.1'
 	def is_enabled(self):
 
-		assert ltrace(TRACE_OPENLDAP, '| is_enabled()')
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		if NSSBackend.is_enabled(self):
 
 			try:
-				if LMC.configuration.licornd.role == roles.CLIENT:
+				if settings.role == roles.CLIENT:
 					self.bind(need_write_access=True)
 				else:
 					self.sasl_bind()
@@ -224,7 +242,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				logging.warning(_(u'{0}: server {1} is down, disabling '
 					'backend. This will produce timeouts because {2} '
 					'is enabled in NSS configuration.').format(
-						stylize(ST_NAME, self.name),
+						self.pretty_name,
 						stylize(ST_URL, self.uri),
 						stylize(ST_COMMENT, 'ldap')))
 				return False
@@ -232,21 +250,6 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		else:
 			# not enabled at NSS level, sufficient to notice we are not used.
 			return False
-	def check_defaults(self):
-		""" create defaults if they don't exist in current configuration. """
-
-		assert ltrace(TRACE_OPENLDAP, '| check_defaults()')
-
-		defaults = (
-			('nss_base_passwd', 'ou=People'),
-			('nss_base_shadow', 'ou=People'),
-			('nss_base_group', 'ou=Groups'),
-			('nss_base_hosts', 'ou=Hosts')
-			)
-
-		for (key, value) in defaults :
-			if not hasattr(self, key):
-				setattr(self, key, value)
 	def enable(self):
 		""" Do whatever is needed on the underlying system for the LDAP backend
 		to be fully operational (this is really a "force_enable" method).
@@ -262,7 +265,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		point).
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, '| enable_backend()')
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		need_save = False
 
@@ -283,6 +286,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			('passwd:.*ldap.*', ''),
 		re.susbt(r'')
 		"""
+		self.enabled = True
 		return True
 	def disable(self):
 		""" make the LDAP backend inoperant. The receipe is simple, and follows
@@ -294,7 +298,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		system administrator to clean them up if wanted.
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, '| disable_backend()')
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		need_save = False
 
@@ -309,71 +313,73 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		if need_save:
 			LMC.configuration.save_nsswitch()
 
+		self.enabled = False
 		return True
-	def check(self, batch=False, auto_answer=None):
+	def check_func(self, batch=False, auto_answer=None):
 		""" check the OpenLDAP daemon configuration and set it up if needed. """
+
+		assert ltrace_func(TRACE_OPENLDAP)
+
+		logging.progress(_(u'{0}: checking backend configuration…').format(self.pretty_name))
 
 		# we always check system files, whatever.
 		self.check_system_files(batch, auto_answer)
 
-		if not self.available or LMC.configuration.licornd.role == roles.CLIENT:
-			assert ltrace(TRACE_OPENLDAP, '| DONT check(): %s' % (
-				('not available' if not self.available else '')
-				+ ('CLIENT') if LMC.configuration.licornd.role == roles.CLIENT
-							else ''))
+		if not self.available or settings.role == roles.CLIENT:
+			logging.warning2(_(u'{0:s}: backend not available, not checking.'))
 			return
 
-		assert ltrace(TRACE_OPENLDAP, '> check(%s)' % (batch))
-
 		if process.whoami() != 'root' and not self.bind_as_admin:
-			logging.warning(_(u'{0}: you must be root or have cn=admin access'
-				u' to continue.').format(self.name))
+			logging.warning(_(u'{0}: you must be root or have {1} access'
+								u' to continue.').format(self.pretty_name,
+									stylize(ST_COMMENT, self.bind_dn)))
 			return
 
 		self.sasl_bind()
 
 		try:
-			# load all config objects from the daemon.
-			# there may be none, eg on a fresh install.
+			# Load all config objects from the daemon;
+			# there may be none (on a fresh install).
 			#
 			openldap_result = self.openldap_conn.search_s(
-				'cn=config',
-				pyldap.SCOPE_SUBTREE,
-				'(objectClass=*)',
-				['dn', 'cn'])
-
-			# they will be checked later, extract them and keep them hot.
-			dn_already_present = [ x for x,y in openldap_result ]
+									'cn=config',
+									pyldap.SCOPE_SUBTREE,
+									'(objectClass=*)',
+									['dn', 'cn']
+								)
 
 		except pyldap.NO_SUCH_OBJECT:
-			dn_already_present = []
+			openldap_result = []
+
+		# Keep them handy, they will be checked later.
+		dn_already_present = [ x for x, y in openldap_result ]
 
 		try:
-			# search for the frontend, which is not in cn=config
+			# Search for the frontend, which is not in cn=config
 			openldap_result = self.openldap_conn.search_s(
-				self.base,
-				pyldap.SCOPE_SUBTREE,
-				'(objectClass=*)',
-				['dn', 'cn'])
+									self.base,
+									pyldap.SCOPE_SUBTREE,
+									'(objectClass=*)',
+									['dn', 'cn']
+								)
 
-			dn_already_present.extend([ x for x,y in openldap_result ])
 		except pyldap.NO_SUCH_OBJECT:
-			# just forget this error, the schema will be automatically added
-			# if not found.
-			pass
+			# Just don't halt on this error, the schema will be
+			# automatically added later if not found.
+			openldap_result = []
+
+		dn_already_present.extend(x for x, y in openldap_result)
 
 		# DEVEL DEBUG
-		#
-		#print dn_already_present
-		#for dn, entry in openldap_result:
-		#	ltrace(TRACE_OPENLDAP, '%s -> %s' % (dn, entry))
+		#for key, value in dn_already_present:
+		#	print '>>', key, '>>', value
 
 		# Here follows a list of which DN to check for presence, associated to
-		# which openldap_schema to load if the corresponding DN is not present in
+		# which LDAP schema to load if the corresponding DN is not present in
 		# slapd configuration.
 		defaults = (
-			# SKIP dn: cn=config (should be already there at fresh install)
-			# SKIP dn: cn=schema,cn=config (filled by followers)
+			# SKIP: dn: cn=config (should be already there at fresh install)
+			# SKIP: dn: cn=schema,cn=config (auto-filled by followers)
 			('cn={0}core,cn=schema,cn=config', 'core'),
 			('cn={1}cosine,cn=schema,cn=config', 'cosine'),
 			('cn={2}nis,cn=schema,cn=config', 'nis'),
@@ -382,53 +388,90 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			('cn={5}licorn,cn=schema,cn=config', 'licorn'),
 			('cn=module{0},cn=config', 'backend.module'),
 			('olcDatabase={1}hdb,cn=config', 'backend.hdb'),
-			# ALREADY INCLUDED olcDatabase={-1}frontend,cn=config
-			# ALREADY INCLUDED olcDatabase={0}config,cn=config
-			# and don't forget the frontend, handled in a special way (not with
-			# root user, but LDAP cn=admin).
+			# ALREADY INCLUDED: olcDatabase={-1}frontend,cn=config
+			# ALREADY INCLUDED: olcDatabase={0}config,cn=config
+			# and don't forget the frontend, handled in a special way:
+			# not with root user, but LDAP cn=admin (or "manager").
 			(self.base, 'frontend')
 			)
 
+		replacement_table = {
+			'@@base@@'            : self.base,
+			'@@rootbinddn@@'      : self.rootbinddn,
+			'@@secret@@'          : self.secret,
+
+			# 'organization' is 1.3.6.1.4.1.1466.115.121.1.15, which is really
+			# utf-8: see ftp://ftp.rfc-editor.org/in-notes/rfc2252.txt
+			'@@organization@@'    : settings.backends.openldap.organization,
+
+			# 'dc' is an ASCII-only string. Too bad, we need to convert 'o'.
+			# validate_name is not fully sure (not exhaustive), but covers
+			# some French / German cases and is a good start.
+			'@@organization_dc@@' : hlstr.validate_name(
+									settings.backends.openldap.organization),
+		}
+
+		logging.progress(_(u'{0}: checking slapd schemata…').format(self.pretty_name))
+
 		for dn, schema in defaults:
 			if not dn in dn_already_present:
-				if batch or logging.ask_for_repair('%s: %s lacks mandatory '
-					'schema %s.' % (self.name, stylize(ST_PATH, 'slapd'),
-						schema), auto_answer):
+				if batch or logging.ask_for_repair(_(u'{0}: {1} lacks mandatory '
+													u'schema {2}.').format(
+													self.pretty_name,
+													stylize(ST_NAME, 'slapd'),
+													schema),
+												auto_answer):
 
 					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
 					if schema == 'backend.hdb':
 						try:
-							logging.notice('disabling AppArmor profile for slapd.')
+							logging.notice(_(u'{0}: disabling AppArmor '
+										u'profile for {1}.').format(self.pretty_name,
+											stylize(ST_NAME, 'slapd')))
 							os.system('echo -n /usr/sbin/slapd > /sys/kernel/security/apparmor/.remove')
-						except Exception, e:
-							logging.warning(e)
 
-					if schema == 'frontend':
+						except:
+							logging.exception(_(u'{0:s}: Exception encountered while disabling AppArmor profile.'))
+							continue
+
+					#if schema == 'frontend':
 						# the frontend is a special case which can't be filled by root.
 						# We have to bind as cn=admin, else it will fail with
 						# "Insufficient privileges" error.
-						self.bind()
+					#	self.bind()
 
-					logging.info('%s: loading schema %s into slapd.' % (
-						self.name, schema))
+					logging.info(_(u'{0}: loading schema {1} into '
+									u'{2}.').format(self.pretty_name,
+									stylize(ST_PATH, schema),
+									stylize(ST_NAME, 'slapd')))
 
-					for (dn, entry) in \
-							ldaputils.LicornSmallLDIFParser(schema).get():
+					for (dn, entry) in ldaputils.LicornSmallLDIFParser(
+											schema, replacement_table).get():
 						try:
-							logging.progress('''adding %s -> %s into '''
-								'''schema %s.''' % (dn, entry, schema))
+							logging.progress(_(u'{0}: adding {1} -> {2} into '
+								u'schema {3}.').format(self.pretty_name, dn, entry, schema))
 
 							self.openldap_conn.add_s(dn, ldaputils.addModlist(entry))
+
 						except pyldap.ALREADY_EXISTS:
-							logging.notice('skipping already present dn %s.' % dn)
+							logging.notice(_(u'{0}: skipped already present '
+											u'dn {1}.').format(self.pretty_name, dn))
+
+						except:
+							logging.exception(_(u'{0}: Exception encountered '
+								u'while adding {1} > {2} into schema {3}.'),
+									self.pretty_name, dn, entry, schema)
 
 					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
 					if schema == 'backend.hdb':
 						try:
-							logging.notice('enabling AppArmor profile for slapd.')
+							logging.notice(_(u'{0}: re-enabling AppArmor '
+										u'profile for {1}.').format(self.pretty_name,
+											stylize(ST_NAME, 'slapd')))
 							os.system('/sbin/apparmor_parser --write-cache --replace -- /etc/apparmor.d/usr.sbin.slapd')
-						except Exception, e:
-							logging.warning(e)
+
+						except:
+							logging.exception(_(u'{0:s}: Exception encountered while re-enabling AppArmor profile.'))
 
 				else:
 					# all these schemas are mandatory for Licorn to work,
@@ -437,17 +480,19 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 						'''Can't continue without altering slapd '''
 						'''configuration.''')
 
-		assert ltrace(TRACE_OPENLDAP, '< check()')
+		assert ltrace_func(TRACE_OPENLDAP, True)
 	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
-		assert ltrace(TRACE_OPENLDAP, '> check_system_files(%s,%s)' % (batch, auto_answer))
+		assert ltrace_func(TRACE_OPENLDAP)
+
+		logging.progress(_(u'{0}: checking system files…').format(self.pretty_name))
 
 		if pyutils.check_file_against_dict(self.files.openldap_conf,
 				(
 					('base',         None),
 					('uri',          self.uri
-							if LMC.configuration.licornd.role == roles.CLIENT
+							if settings.role == roles.CLIENT
 							else 'ldapi:///'),
 					('rootbinddn',   None),
 					('pam_password', 'md5'),
@@ -471,7 +516,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 								'contain your LDAP system password, but '
 								'is currently empty. Fill it with a '
 								'random password?').format(
-								self.name,
+								self.pretty_name,
 								stylize(ST_SECRET, self.files.openldap_secret)),
 							auto_answer=auto_answer):
 					try:
@@ -481,8 +526,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 						logging.notice(_(u'{0}: autogenerated password for '
 							'LDAP user {1}: "{2}". It is up to you to update '
-							'the LDAP database with it, now.').format(self.name,
-								stylize(ST_LOGIN, 'manager'),
+							'the LDAP database with it, now.').format(
+								self.pretty_name,
+								stylize(ST_LOGIN, 'admin'),
 								stylize(ST_SECRET, genpass)))
 
 						open(self.files.openldap_secret, 'w').write(genpass + '\n')
@@ -501,8 +547,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				else:
 					raise exceptions.LicornRuntimeError(_(u'{0}: {1} is '
 							'mandatory for {2} to work properly. Cannot '
-							'continue without this, sorry!').format(self.name,
-					self.files.openldap_secret, LMC.configuration.app_name))
+							'continue without this, sorry!').format(
+								self.pretty_name,
+								self.files.openldap_secret,
+								LMC.configuration.app_name))
 		except (OSError, IOError), e :
 			if e.errno != 13:
 				raise
@@ -512,8 +560,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		# useless nowadays.
 		#
 
-		assert ltrace(TRACE_OPENLDAP, '< check_system_files(%s)' % stylize(
-			ST_OK, 'True'))
+		assert ltrace_func(TRACE_OPENLDAP, True)
 		return True
 
 	# LDAP specific methods
@@ -527,16 +574,20 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		by the way, fix #133.
 		"""
 
-		assert ltrace(TRACE_OPENLDAP, ' | sasl_bind(): as root in SASL/external mode.')
+		assert ltrace_func(TRACE_OPENLDAP)
+
+		logging.progress(_(u'{0}: binding in EXTERNAL SASL mode.').format(self.pretty_name))
 
 		self.openldap_conn.sasl_interactive_bind_s('', pyldapsasl.external())
 	def bind(self, need_write_access=True):
 		""" Bind as admin or user, when LDAP needs a stronger authentication."""
 
-		assert ltrace(TRACE_OPENLDAP,' | bind(): as %s.' % (stylize(ST_LOGIN, self.bind_dn)))
 
 		if self.bind_as_admin:
 			try:
+				logging.progress(_(u'{0}: binding as as {1}.').format(
+								self.pretty_name, stylize(ST_LOGIN, self.bind_dn)))
+
 				self.openldap_conn.bind_s(self.bind_dn, self.secret, pyldap.AUTH_SIMPLE)
 
 			except pyldap.INVALID_CREDENTIALS:
@@ -558,6 +609,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					# self.initialize() for details.
 					#
 					import getpass
+					logging.info(_(u'{0}: binding as as {1}.').format(
+								self.pretty_name, stylize(ST_LOGIN, self.bind_dn)))
+
 					self.openldap_conn.bind_s(self.bind_dn,
 						getpass.getpass('Please enter your LDAP password: '),
 						pyldap.AUTH_SIMPLE)
@@ -588,7 +642,8 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 			return gecos
 
-		assert ltrace(TRACE_OPENLDAP, '> load_users() %s' % self.nss_base_shadow)
+		assert ltrace_func(TRACE_OPENLDAP)
+		assert ltrace_var(TRACE_OPENLDAP, self.nss_base_shadow)
 
 		if process.whoami() == 'root':
 			self.bind(False)
@@ -650,16 +705,15 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		except KeyError, e:
 			logging.warning(_(u'{0}: skipped account {1} (was: '
 				'KeyError on field {2}).').format(
-					stylize(ST_NAME, self.name),
-					stylize(ST_NAME, dn),
-					e))
+					self.pretty_name, stylize(ST_NAME, dn), e))
 			pass
 
-		assert ltrace(TRACE_OPENLDAP, '< load_users()')
+		assert ltrace_func(TRACE_OPENLDAP, True)
 	def load_Groups(self):
 		""" Load groups from /etc/{group,gshadow} and /etc/licorn/group. """
 
-		assert ltrace(TRACE_OPENLDAP, '> load_groups() %s' % self.nss_base_group)
+		assert ltrace_func(TRACE_OPENLDAP)
+		assert ltrace_var(TRACE_OPENLDAP, self.nss_base_group)
 
 		try:
 			openldap_result = self.openldap_conn.search_s(
@@ -694,9 +748,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				backend=self
 				)
 
-		assert ltrace(TRACE_OPENLDAP, '< load_groups()')
+		assert ltrace_func(TRACE_OPENLDAP, True)
 	def save_Users(self, users):
 		""" save users into LDAP, but only those who need it. """
+
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		for user in users:
 			if user.backend.name != self.name:
@@ -705,6 +761,8 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			self.save_User(user)
 	def save_Groups(self, groups):
 		""" Save groups into LDAP, but only those who need it. """
+
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		for group in groups:
 			if group.backend.name != self.name:
@@ -715,13 +773,15 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		""" Save one user in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
+		assert ltrace_func(TRACE_OPENLDAP)
+
 		# we have to duplicate the data, to avoid #206
 		# in fact, this allows to keep only what we want in the backend,
 		# without bothering about other backends / extensions additions.
 		user = {
 				# Create these required fields.
 				'cn'            : orig_user.login,
-				'uid'           : orig_user.login,
+				'uid'           : str(orig_user.login),
 				'sn'            : orig_user.gecos,
 				'givenName'     : orig_user.gecos,
 				# basic shadow data.
@@ -793,8 +853,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					orig_user.login, self.nss_base_shadow),
 					ldaputils.addModlist(user))
 			else:
-				logging.warning('%s: unknown mode %s for user %s(uid=%s).' %(
-					self.name, mode, orig_user.login, orig_user.uid))
+				logging.warning(_(u'{0}: unknown mode {1} for user '
+					u'{2}(uid={3}).').format(self.pretty_name, mode,
+					orig_user.login, orig_user.uid))
 		except (
 				pyldap.NO_SUCH_OBJECT,
 				pyldap.INVALID_CREDENTIALS,
@@ -805,6 +866,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
+		assert ltrace_func(TRACE_OPENLDAP)
 		# we have to duplicate into a dict, because pyldap wants that. This
 		# allows to ignore extensions and Licorn® specific data without
 		# bothering about new attributes.
@@ -840,6 +902,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(
 					old_entry, group, ignore_oldexistent=1))
+
 			elif mode == backend_actions.CREATE:
 
 				assert ltrace(TRACE_OPENLDAP,'creating group %s.' % (
@@ -854,8 +917,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 					orig_group.name, self.nss_base_group),
 					ldaputils.addModlist(group))
 			else:
-				logging.warning('%s: unknown mode %s for group %s(gid=%s).' % (
-					self.name, mode, orig_group.name, orig_group.gid))
+				logging.warning(_(u'{0}: unknown mode {1} for group '
+							u'{2}(gid={3}).').format(self.pretty_name, mode,
+								orig_group.name, orig_group.gid))
 		except (
 				pyldap.NO_SUCH_OBJECT,
 				pyldap.INVALID_CREDENTIALS,
@@ -866,7 +930,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			logging.warning(e[0]['desc'])
 	def delete_User(self, user):
 		""" Delete one user from the LDAP backend. """
-		assert ltrace(TRACE_OPENLDAP, '| delete_User(%s)' % user.login)
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		try:
 			self.bind()
@@ -879,7 +943,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		#	pass
 	def delete_Group(self, group):
 		""" Delete one group from the LDAP backend. """
-		assert ltrace(TRACE_OPENLDAP, '| delete_Group(%s)' % group.name)
+		assert ltrace_func(TRACE_OPENLDAP)
 
 		try:
 			self.bind()
@@ -891,5 +955,5 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		# except BAD_BIND:
 		#	pass
 	def compute_password(self, password, salt=None):
-		assert ltrace(TRACE_OPENLDAP, '| compute_password(%s, %s)' % (password, salt))
+		assert ltrace_func(TRACE_OPENLDAP)
 		return hashlib.sha1(password).digest()

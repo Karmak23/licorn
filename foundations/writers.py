@@ -18,7 +18,7 @@ configuration files:
 import os, plistlib, tempfile
 import xml.etree.ElementTree as ET
 
-from licorn.foundations import fsapi
+import fsapi
 
 def	shell_conf_write_from_dict(data, filename, mode=0644, uid=0, gid=0):
 	""" Read a shell configuration file with variables (VAR=value on each line)

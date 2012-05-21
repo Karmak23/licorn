@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Licorn contrib - http://dev.licorn.org/documentation/contrib
+WARNING: 20120301 - this file is completely outdated and not used. I keep it here
+ for eventual inspiration purposes only.
 
 Copyright (C) 2005-2007 Olivier Cortès <olive@deep-ocean.net>,
 Partial Copyright (C) 2006 Régis Cobrun <reg53fr@yahoo.fr>

@@ -1,0 +1,211 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+{%- from 'widgets/common.html' import menu_item -%}
+
+<div id="banner">
+	<div id="header">
+		<div id="logo_wrapper">
+			<a id="logo" href="/"
+				title="{{ _('Click to jump back to root of Licorn® Web Management Interface') }}">
+				<img id="logo_img" src="/media/images/logo_licorn_160.png"
+					alt="{{ _('Image representing a unicorn, the logo of Licorn®.') }}"
+					width="160" height="160" />
+			</a>
+		</div>
+	</div>
+	<div id="mainnav_list" class="nav">
+	<div id="dynamic_mainnav_list" class="nav">
+		{#-
+			sub_item arguments: item_id, href, title, text, img_src, more_css=''
+			See 'widgets/common.html' for details.
+		-#}
+		{% if request.user.is_staff -%}
+			{%- set system_sub_items = [
+				(
+					'shutdown_menuitem',
+					'/system/shutdown',
+					_('Shutdown the server.'),
+					_('Shutdown'),
+					'/media/images/24x24/eteindre.png',
+					'ajax-sidebar-menuitem-confirm',
+				),
+				(
+					'restart_menuitem',
+					'/system/restart',
+					_('Restart the server.'),
+					_('Restart'),
+					'/media/images/24x24/redemarrer.png',
+					'ajax-sidebar-menuitem-confirm',
+				)
+			] -%}
+
+			{%- if request.user.is_superuser %}
+				{%- do system_sub_items.append((
+									'daemon_status_menuitem',
+									'/system/daemon',
+									_('View the Licorn® daemon detailled status'),
+									_('Daemon status'),
+									"/media/images/24x24/debug_status.png",
+									'ajax-load-content ajax-push-setup'
+					)) -%}
+			{%- endif -%}
+
+			{{
+				menu_item(
+					'system_menuitem',
+					'/',
+					_('Server, UPS and hardware sub-systems status.'),
+					_('Status'),
+					system_sub_items)
+			}}
+
+			{{
+				menu_item(
+					"users_menuitem",
+					"/users",
+					_('Manage user accounts.'),
+					_('Users'),
+					(
+						(
+							'user_add_menuitem',
+							"/users/new",
+							_('Add user on the system.'),
+							_('Add'),
+							"/media/images/24x24/ajouter.png",
+							'ajax-load-sub-content',
+						),
+						(
+							'users_import_menuitem',
+							'/users/import',
+							_('Import user accounts from a CSV file'),
+							_('Import'),
+							"/media/images/24x24/importer.png",
+							'ajax-load-sub-content',
+						)
+					)
+				)
+			}}
+
+			{{
+				menu_item(
+					"groups_menuitem",
+					"/groups",
+					_('Manage groups and shared data.'),
+					_('Groups'),
+					(
+						(
+							'group_add_menuitem',
+							'/groups/new',
+							_('Add a group on the system'),
+							_('Add'),
+							"/media/images/24x24/ajouter.png",
+							'ajax-load-sub-content',
+						),
+					)
+				)
+			}}
+			{#
+			,
+						(
+							'groups_import_menuitem',
+							'/groups/import',
+							_('Import groups from a CSV file'),
+							_('Import'),
+							"/media/images/24x24/importer.png",
+						),
+			#}
+
+			{%- if licorn_setting('experimental.enabled') -%}
+
+				{{
+					menu_item(
+						"machines_menuitem",
+						"/machines",
+						_('Manage machines on the network.'),
+						_('Machines'),
+						(
+							(
+								'groups_import_menuitem',
+								'/machines/scan',
+								_('Scan the network'),
+								_('Scan network'),
+								"/media/images/24x24/mass_skel.png",
+							),
+						)
+					)
+				}}
+
+				{{
+					menu_item(
+						"energy_menuitem",
+						"/energy",
+						_('Manage energy over the network.'),
+						_('Energy'),
+						(
+							(
+								'energy_policies_menuitem',
+								'/energy/policies',
+								_('Energetic policies'),
+								_('Policies'),
+								"/media/images/24x24/mass_skel.png",
+							),
+							(
+								'energy_metrology_menuitem',
+								'/energy/metrology',
+								_('Energetic metrology'),
+								_('Metrology'),
+								"/media/images/24x24/mass_skel.png",
+							),
+						)
+					)
+				}}
+			
+			{%- endif -%}
+		{%- endif -%}
+
+		{%- if request.user.is_superuser -%}
+
+			{#- TODO: create links to system configuration:
+				- extensions
+				- backends
+				- licorn internals (threads, lan_scan, etc)
+			-#}
+
+		{%- endif -%}
+		{%- for name, ds_method in dynsidebars().iteritems() -%}
+			{{ ds_method(request) }}
+		{%- endfor -%}
+		</div><!-- dynamic_mainnav_list -->
+		{{
+			menu_item(
+				'documentation_menuitem',
+				'http://docs.licorn.org/userdoc/',
+				_('Go to online documentation website (in another window/tab)'),
+				_('Documentation'),
+				target='_blank'
+			)
+		}}
+		{{
+			menu_item(
+				'support_link_menuitem',
+				"mailto:support@meta-it.fr?subject=[Support Licorn®]",
+				_('Get product support / help'),
+				_('Support')
+			)
+		}}
+	</div><!-- mainnav_list -->
+	<div id="metanav" class="nav">
+		<ul>
+			<li>{{ request.user.username }}<!--, staff={{ request.user.is_staff }}, super={{ request.user.is_superuser }}--></li>
+			<li class="last"><a href="/logout/" title="{{ _('Log out from the Licorn® WMI') }}">{{ _('logout') }}</a></li>
+		</ul>
+	</div><!-- metanav -->
+	{{ version_html() }}
+</div><!-- banner -->
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#logo_img').hide().delay(500).fadeIn('slow');
+	});
+</script>
+

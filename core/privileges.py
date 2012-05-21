@@ -15,12 +15,13 @@ import os, tempfile, pyinotify
 
 from threading import Event
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import settings, logging, exceptions
 from licorn.foundations           import readers
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
+from licorn.foundations.workers   import workers
 from licorn.foundations.constants import filters
 
 from licorn.core         import LMC
@@ -68,7 +69,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		LockedController.__init__(self, 'privileges')
 
 		if conf_file is None:
-			self.conf_file = LMC.configuration.privileges_whitelist_data_file
+			self.conf_file = settings.core.privileges.config_file
 		else:
 			self.conf_file = conf_file
 
@@ -86,22 +87,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 			# Make sure our dependancies are OK.
 			LMC.groups.load()
 
-			# Then install the configuration file watcher. The hint will be
-			# shared between us and the inotifier, to avoid reloading the
-			# contents just after we save our own configuration file.
-			#
-			# The hint must exist before we call reload(), because in case
-			# reload() detects an inconsistency, it will call serialize(),
-			# which expects the hint to already be here.
-			#
-			# If an improbable event occurs during the first reload() phase,
-			# this is not a problem because we already own the lock, and the
-			# INotifier will have to wait until we release it. No race, no
-			# collisions. Smart, hopefully.
-
 			with self.lock:
-				self.conf_hint = L_inotifier_watch_conf(
-														self.conf_file, self)
 
 				# then load our internal data.
 				self.reload()
@@ -112,6 +98,23 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		# just in case it wasn't done before (in batched operations, for example).
 		if self.changed:
 			self.serialize()
+	def _inotifier_install_watches(self, inotifier):
+		# Install the configuration file watcher. The hint will be
+		# shared between us and the inotifier, to avoid reloading the
+		# contents just after we save our own configuration file.
+		#
+		# The hint must exist before we call reload(), because in case
+		# reload() detects an inconsistency, it will trigger serialize(),
+		# which expects the hint to already be here. There is a job_delay
+		# of 3.0 seconds to be sure the hint will be there, but there is 
+		# still a small probability of race.
+		#
+		# If an improbable external event occurs during the first reload() phase,
+		# this is not a problem because we already own the lock, and the
+		# INotifier will have to wait until we release it. No race on that one,
+		# no collisions. Smart, hopefully.
+		self.conf_hint = L_inotifier_watch_conf(self.conf_file, self)
+
 	def reload(self, *args, **kwargs):
 		""" Reload internal data. the event, *args and **kwargs catch the eventual
 			inotify events.
@@ -160,9 +163,12 @@ class PrivilegesWhiteList(Singleton, LockedController):
 				# this is needed for serialize() to do its job.
 				self.changed = True
 
-				logging.notice(_(u'Rewriting privilege whitelist to remove '
-						'non-existing references or duplicates.'))
-				self.serialize()
+				logging.notice(_(u'Triggering privilege whitelist rewrite in 3 seconds '
+						u'to remove non-existing references or duplicates.'))
+
+				workers.service_enqueue(priorities.HIGH,
+						self.serialize, job_delay=3.0)
+
 	def add(self, privileges):
 		""" One-time multi-add method (list as argument).
 			This method doesn't need locking, all sub-methods are already.
@@ -260,14 +266,17 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		with self.lock:
 			if self.changed:
 
-				#raise the hint level, so as the MOVED_TO event will make it
-				# just back to the state where only ONE event will suffice to
-				# trigger it again.
-				self.conf_hint += 1
+				try:
+					#raise the hint level, so as the MOVED_TO event will make it
+					# just back to the state where only ONE event will suffice to
+					# trigger it again.
+					self.conf_hint += 1
+				except:
+					pass
 
 				#print '>> serialize', self.conf_hint
 
-				ftemp, fpath = tempfile.mkstemp(dir=LMC.configuration.config_dir)
+				ftemp, fpath = tempfile.mkstemp(dir=settings.config_dir)
 
 				os.write(ftemp, '%s\n' % '\n'.join(sorted(self.iterkeys())))
 				os.fchmod(ftemp, 0644)

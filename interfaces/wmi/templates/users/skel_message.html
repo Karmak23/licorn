@@ -1,0 +1,5 @@
+{%- if complete_template -%}
+	{{ _('This will rebuild %(user_login)s\'s desktop from scratch, with defaults icons and so on.<br /><br /><strong>The user must be disconnected during the operation to be successfull.</strong>') % { 'user_login': user_login } }}
+	<br /><br />
+{%- endif -%}
+{{ skel_input }}

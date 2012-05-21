@@ -1,0 +1,164 @@
+.groups_row {
+	width:100%;
+	display: block;
+	height: 51px;
+	text-align: center;
+	position: absolute;
+	background-color: white;
+	cursor: pointer;
+}
+
+.header_select {
+	text-align: center;
+	width: 4%;
+	display: block;
+	float:left;
+	line-height: 30px;
+	vertical-align: center;
+}
+.header_permissive, .header_privilege {
+	width:7%;
+	padding-top: 3px;
+	margin-bottom: 3px;
+	height:27px;
+}
+.header_name {
+	width:21%;
+	display: block;
+	float: left;
+	text-align: center;
+}
+.header_description {
+	width:41%;
+	display: block;
+	float: left;
+	text-align: center;
+}
+.header_gidNumber {
+	width:11%;
+	display: block;
+	float: left;
+	text-align: center;
+}
+.header_nav {
+	width:4%;
+	display: block;
+	float: left;
+	text-align: center;
+}
+.header_skel {
+	width:12%;
+	display: block;
+	float: left;
+	text-align: center;
+}
+
+.groups_select, .sys_groups_select {
+	width: 4%;
+	text-align: center;
+	display: block;
+	float:left;
+	line-height: 50px;
+	vertical-align: center;
+}
+.groups_permissive, .sys_groups_privilege {
+	width: 7%;
+	display: block;
+	float: left;
+	padding-top: 13px;
+	height: 37px;
+	text-align: center;
+}
+.groups_content {
+	width: 83%;
+	float:left;
+	line-height: 50px;
+}
+.sys_groups_content {
+	width: 85%;
+	float:left;
+	display:block;
+	line-height: 50px;
+}
+.groups_name {
+	width: 25%;
+	text-align: center;
+	display: block;
+	float:left;
+	line-height: 50px;
+	vertical-align: center;
+}
+.sys_groups_name {
+	width: 32%;
+	text-align: center;
+	display: block;
+	float:left;
+	line-height: 50px;
+	vertical-align: center;
+}
+.groups_description {
+	width: 47%;
+	text-align: left;
+	display: block;
+	float: left;
+	line-height: 50px;
+	height: 50px;
+	vertical-align: center;
+	font-size: 90%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.sys_groups_description {
+	width: 54%;
+	text-align: left;
+	display: block;
+	float: left;
+	line-height: 50px;
+	vertical-align: center;
+	font-size: 90%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.groups_gidNumber, .sys_groups_gidNumber {
+	width: 13%;
+	text-align: center;
+	display: block;
+	float:left;
+	line-height: 50px;
+	vertical-align: center;
+}
+
+.groups_skel {
+	width: 15%;
+	text-align: center;
+	display: block;
+	float:left;
+	line-height: 50px;
+	vertical-align: center;
+}
+
+.groups_nav, .sys_groups_nav {
+	text-align: center;
+	width:4%;
+	display: block;
+	float:left;
+	height:50px;
+	line-height: 50px;
+	vertical-align: center;
+}
+
+.groups_reapply_skel, .sys_groups_reapply_skel {
+	cursor: pointer;
+	padding-top:3px;
+	height:50%;
+	line-height: 100%;
+	vertical-align: center;
+}
+
+.groups_delete, .sys_groups_delete {
+	cursor: pointer;
+	height:50%;
+	line-height: 100%;
+	vertical-align: center;
+}
+
