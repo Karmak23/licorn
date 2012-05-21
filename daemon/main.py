@@ -471,15 +471,31 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# don't use iteritems(), threads are moving targets now and the items
 		# can change very quickly.
 		for tname, thread in self.__threads.items():
-			if hasattr(thread, 'dump_status'):
-				tdata.append(thread.dump_status(long_output, precision, as_string))
-			else:
-				tdata.append(process.thread_basic_info(thread, as_string))
+			if not thread in LicornJobThread.instances:
+				if hasattr(thread, 'dump_status'):
+					tdata.append(thread.dump_status(long_output, precision, as_string))
+				else:
+					tdata.append(process.thread_basic_info(thread, as_string))
 
+		# LicornJobThreads
+		if as_string:
+			job_data = '{0}: [{1} running]\n'.format(
+				stylize(ST_PATH,"LicornJobThread"),
+				len(LicornJobThread.instances))
+
+		else:
+			job_data = {'jobs':[], 'name':'LicornJobThreads'}
+					
 		for thread in LicornJobThread.instances:
-			if thread.name not in self.__threads:
-				tdata.append(thread.dump_status(long_output, precision, as_string))
-			
+			#if thread.name not in self.__threads:
+			if as_string:
+				job_data += '\t{0}\n'.format(thread.dump_status(long_output, precision, as_string))
+			else:
+				job_data['jobs'].append(thread.dump_status(long_output, precision, as_string))
+
+		#print "JOBBBBBBB" , job_data
+		tdata.append(job_data)
+
 		controllers = {}
 
 		if long_output:
@@ -551,7 +567,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 						stylize(ST_OK, u'&') if thread.daemon else '',
 						0 if thread.ident is None else thread.ident)))
 			"""
-			#print tdata
 			data += u'\n'.join(sorted(tdata)) + '\n'
 
 			return data

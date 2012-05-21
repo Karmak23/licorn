@@ -21,10 +21,10 @@ from licorn.interfaces.wmi.libs.old_decorators import check_groups
 # (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi.libs import old_utils as w
 
-from licorn.interfaces.wmi.app          import wmi_event_app
-from licorn.interfaces.wmi.libs         import decorators, utils, perms_decorators
-from licorn.interfaces.wmi.machines     import wmi_data
-
+from licorn.interfaces.wmi.app              import wmi_event_app
+from licorn.interfaces.wmi.libs             import  utils, perms_decorators
+from licorn.interfaces.wmi.machines         import wmi_data
+from licorn.interfaces.wmi.libs.decorators  import *
 
 from operator import itemgetter
 
@@ -196,23 +196,29 @@ class ExtinctionCalendar(ObjectSingleton):
 		return True
 
 @login_required
+@staff_only
 def policies(request, *args, **kwargs):
 	""" policies view """
 	return render(request, 'energy/policies.html')
 # our extinction calendar object
 calendar = ExtinctionCalendar()
+@staff_only
 def add_rule(request, new=None, who=None, hour=None, day=None):
 	calendar.add_rule(request, who=who, hour=hour, day=day)
 	return HttpResponse('add rule')
+@staff_only
 def del_rule(request, who, hour, day):
 	calendar.del_rule(request, who=who, hour=hour, day=day)
 	return HttpResponse('DEL OK.')
+@staff_only
 def load_calendar(request):
 	calendar.load_rules(request)
 	return HttpResponse("LOAD CALENDAR")
+@staff_only
 def get_recap(request):
 	""" return an html table containing all extinction rules """
 	return HttpResponse(calendar.get_recap())
+@staff_only
 def get_calendar_data(request):
 	return HttpResponse(json.dumps({
 		'data_separators' : calendar.get_data_separators(),
@@ -237,6 +243,7 @@ def generate_machine_html(request, mid):
 	_new += '</span>'
 
 	return HttpResponse(_new)
+
 def machine_type(_type):
 			return ('<img src="/media/images/16x16/'
 				'{0}" alt="'
@@ -244,11 +251,13 @@ def machine_type(_type):
 				'height="16" />'.format(
 					wmi_data.get_host_type_html(_type)[0],
 					wmi_data.get_host_type_html(_type)[1]))
+				
 def machine_status(status):
 	return ('<img src="/media/images/16x16/{0}"'
 		'alt="{1}" width="16" height="16" />'.format(
 			wmi_data.get_host_status_html[status][0],
 			wmi_data.get_host_status_html[status][1]))
+
 def get_machine_list(request):
 	ret = []
 	for m in utils.select('machines', default_selection=host_status.ALL):

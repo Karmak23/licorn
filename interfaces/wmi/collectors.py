@@ -44,7 +44,7 @@ avg_loads.interval = 5
 
 def daemon_status():
 	from licorn.daemon.main import daemon
-	return daemon.dump_status(cli_output=False)
+	return daemon.dump_status(as_string=False)
 daemon_status.interval        = 5
 daemon_status.js_method       = 'refresh_div'
 daemon_status.js_arguments    = ([ '$("#main_content")' ], [ 'false' ])

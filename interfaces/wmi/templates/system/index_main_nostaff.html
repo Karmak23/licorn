@@ -32,6 +32,74 @@
 					</div>
 			{%- endfor -%}
 		</div>
+		<!--<div>
+			<table>
+
+			{%- for list in groups_lists -%}
+			<tr>
+				<td colspan="2">
+					<h2><span class="{{ 'grayed_out' if list.groups == []  }}">{{ list.title }}</span></h2>
+					<table class="item_members user_memberships">
+						{%- if list.groups != [] -%}
+							<thead>
+							<tr>
+								<th class="align_left" width="70%">{{ _('Description') }}</th>
+								<th class="align_center" nowrap width="20%">{{ _('Name') }}</th>
+								<th class="align_right" width="10%">{{ _('GID') }}</th>
+							</tr>
+							</thead>
+							<tbody>
+							{%- for group in list.groups|sort(attribute='name') -%}
+									<tr>
+										<td colspan="3">
+										<table>
+											<tr>
+											<td class="align_left first" width="70%">
+												<a href="/groups/view/{{ group.name }}">
+													{{ group.description
+													or ('<span class="grayed_out">{0}</span>').format(
+														_('No description')) }}</a>
+											</td>
+											<td class="align_center" nowrap width="20%">
+												<a href="/groups/view/{{ group.name }}">
+													<strong>{{ group.name }}</strong></a>
+											</td>
+											<td class="align_right last" width="10%">
+												<a href="/groups/view/{{ group.name }}">
+													{{ group.gidNumber }}</a>
+											</td>
+											
+										</table>
+										</td>
+									</tr>
+							{%- endfor -%}
+							</tbody>
+							<tfoot></tfoot>
+						{%- else -%}
+							<tbody>
+								<tr>
+									<td colspan="3">
+										<span class="grayed_out">
+											{{ _('This user is not {0} of any group yet.').format(list.kind) }}
+										</span>
+									</td>
+								</tr>
+							</tbody>
+						{%- endif -%}
+					</table>
+				</td>
+			</tr>
+				{#
+					extensions_group_data='\n'.join(wmi_meth(group,
+								templates=(
+									'%s<br/>%s', '&nbsp;'),
+								hostname=kwargs['wmi_hostname'])
+							for wmi_meth in exts_wmi_group_meths)
+				#}
+
+			{%- endfor -%}
+			</table>
+		</div>-->
 	</div>
 
 </div>

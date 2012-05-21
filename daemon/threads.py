@@ -897,6 +897,7 @@ class LicornJobThread(AbstractTimerThread):
 		AbstractTimerThread.__init__(self, time=time, count=count, delay=delay,
 										daemon=daemon, tname=tname)
 
+		self.tname         = tname
 		self.target        = target
 		self.target_args   = target_args
 		self.target_kwargs = target_kwargs
@@ -918,8 +919,8 @@ class LicornJobThread(AbstractTimerThread):
 					% pyutils.format_time_delta(self.remaining_time())
 			)
 		else:
-			# TODO: more details
-			return process.thread_basic_info(self)
+			return dict(next_run=pyutils.format_time_delta(self.remaining_time()),
+				**process.thread_basic_info(self))
 	def run_action_method(self):
 		""" A method that will wrap self.target into a JobRunner simple
 			:class:`~threading.Thread`. """

@@ -845,7 +845,8 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 							 else 'Currently running', 
 					task.action, task.args, task.kwargs)
 
-			return desc
+			return desc	
+			
 			
 	# used in `RWI.select()`
 	@property
