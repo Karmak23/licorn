@@ -1,0 +1,23 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>{{ _('Licorn® WMI: ') }}{%- block title -%}{%- endblock -%}</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="shortcut icon" href="/media/favicon.ico" type="image/vnd.microsoft.icon" />
+	<link rel="icon" href="/media/favicon.ico" type="image/vnd.microsoft.icon" />
+	{%- block base_media %}
+	{%- endblock %}
+	{%- block extended_media %}
+	{%- endblock %}
+	{%- block end_media %}
+	{%- endblock %}
+</head>
+<body>
+{%- block body -%}
+	{%- set settings = djsettings() -%}
+
+{%- endblock -%}
+</body>
+</html>

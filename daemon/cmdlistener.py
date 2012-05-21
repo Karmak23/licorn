@@ -10,21 +10,22 @@ Licorn Daemon CommandListener, implemented with Pyro (Python Remote Objects)
 import signal, os, time, new, pwd
 import Pyro.core, Pyro.protocol, Pyro.configuration, Pyro.constants
 
-from threading import Thread, Timer, RLock, current_thread
+from threading import Thread, Timer, current_thread
+from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, process, exceptions, network, pyutils
+from licorn.foundations           import logging, settings, exceptions
+from licorn.foundations           import process, network, pyutils
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace, mytime
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import host_status, host_types
+from licorn.foundations.constants import host_status, host_types, priorities, roles
 
 from licorn.core                  import LMC
-from licorn.daemon                import priorities, roles
 from licorn.daemon.threads        import LicornBasicThread
-from licorn.daemon.rwi            import RealWorldInterface
 
-def _pyro_thread_dump_status(self, long_output=False, precision=None):
-	return u'\t%s%s: RWI calls for %s(%s) @%s:%s %s\n' % (
+def _pyro_thread_dump_status(self, long_output=False, precision=None, as_string=True):
+	if as_string:
+		return u'\t%s%s: RWI calls for %s(%s) @%s:%s %s\n' % (
 			stylize(ST_RUNNING if self.is_alive() else ST_STOPPED, self.name),
 			stylize(ST_OK, u'&') if self.daemon else '',
 			stylize(ST_LOGIN, self._licorn_remote_user),
@@ -34,6 +35,17 @@ def _pyro_thread_dump_status(self, long_output=False, precision=None):
 			('(started %s)' % pyutils.format_time_delta(
 						self._licorn_thread_start_time - time.time(),
 						use_neg=True, long_output=False)))
+	else:
+		return dict(
+			alive=self.is_alive(),
+			name=self.name,
+			daemon=self.daemon,
+			remote_user=self._licorn_remote_user,
+			remote_uid=self._licorn_remote_uid,
+			remote_address=self._licorn_remote_address,
+			remote_port=self._licorn_remote_port,
+			started=self._licorn_thread_start_time - time.time()
+		)
 class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	""" Validator class for Pyro connections, for both client and server
 		licornd. Modes of operations:
@@ -47,7 +59,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	#: in Ubuntu (don't know why they don't just use the plain 127.0.0.1).
 	local_interfaces = [ '127.0.0.1', '127.0.1.1' ]
 
-	#: :attr:`pyro_port` will be filled by :term:`licornd.pyro.port` value
+	#: :attr:`pyro_port` will be filled by :term:`pyro.port` value
 	#: before the thread starts. See :ref:`configuration` object for details
 	#: about port numbers.
 	pyro_port = None
@@ -75,7 +87,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 	def __init__(self, role):
 		Pyro.protocol.DefaultConnValidator.__init__(self)
 
-		#: A local copy of :ref:`licornd.role`, to avoid importing LMC here.
+		#: A local copy of :ref:`settings.role`, to avoid importing LMC here.
 		self.role = role
 	def acceptHost(self, daemon, connection):
 		""" Basic check of the connection. See :class:`LicornPyroValidator` for
@@ -88,9 +100,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 		if client_addr in LicornPyroValidator.local_interfaces:
 
 			try:
-				client_uid = process.find_network_client_uid(
+				client_uid, client_pid = process.find_network_client_infos(
 					LicornPyroValidator.pyro_port, client_socket,
-					local=True if client_addr[:3] == '127' else False)
+					local=True if client_addr[:3] == '127' else False, pid=True)
 
 			except Exception, e:
 				logging.warning('error finding network connection from '
@@ -99,8 +111,14 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 				return 0, Pyro.constants.DENIED_UNSPECIFIED
 
 			else:
-				return self.acceptUid(daemon, client_uid, None, client_addr,
-					client_socket)
+				accept, reason = self.acceptUid(daemon, client_uid, None,
+												client_addr, client_socket)
+
+				if accept and client_pid:
+					# record the PID for SIGUSR2 eventual sending on restart.
+					CommandListener.add_listener_pid(client_pid)
+
+				return accept, reason
 		else:
 			if self.role == roles.SERVER:
 				# connect to the client's Pyro daemon and make sure the request
@@ -141,12 +159,10 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 					client_uid, client_login = remote_system.explain_connecting_from(
 																client_socket)
 
-				except Exception, e:
-					logging.warning(_(u'Problem finding uid initiating '
-							u'connection from {0}:{1} (was {2}), '
-							u'denying request.').format(
-								client_addr, client_socket, e))
-					pyutils.print_exception_if_verbose()
+				except:
+					logging.exception(_(u'Problem finding uid initiating '
+							u'connection from {0}:{1}, denying request.'),
+								client_addr, client_socket)
 
 					return 0, Pyro.constants.DENIED_UNSPECIFIED
 
@@ -186,7 +202,7 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			# slower. Thus we use our internals.
 			#client_login = pwd.getpwuid(client_uid).pw_name
 
-			if LMC.configuration.licornd.role == roles.CLIENT:
+			if settings.role == roles.CLIENT:
 
 				if client_addr.startswith('127.'):
 					logging.warning(_(u'Please implement client.server.bounce '
@@ -240,12 +256,12 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 			assert ltrace(TRACE_CMDLISTENER, 'currently authorized users: %s.' %
 					', '.join(stylize(ST_LOGIN, u.login)
 						for u in LMC.groups.by_name(
-									LMC.configuration.defaults.admin_group
+									settings.defaults.admin_group
 										).all_members))
 
 			if client_uid == 0 \
 				or client_uid in [x.uidNumber for x in LMC.groups.by_name(
-									LMC.configuration.defaults.admin_group
+									settings.defaults.admin_group
 										).all_members]:
 
 				t = self.setup_licorn_thread(local_login, client_uid,
@@ -276,6 +292,9 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 		# in the daemon status).
 		t = current_thread()
 
+		# Set a smarter name than 'Thread-28', easier to track in status.
+		t.setName('Pyro' + t.name)
+
 		t._licornd                  = LMC.licornd
 		t._licorn_remote_user       = client_login
 		t._licorn_remote_uid        = client_uid
@@ -288,7 +307,21 @@ class LicornPyroValidator(Pyro.protocol.DefaultConnValidator):
 class CommandListener(LicornBasicThread):
 	""" A Thread which answer to Pyro remote commands. """
 
-	def __init__(self, licornd, pids_to_wake=[], daemon=False, **kwargs):
+	listeners_pids = set()
+	# we need to protect the set() from multi-thread access.
+	lplock         = RLock()
+
+	@classmethod
+	def add_listener_pid(cls, pid_to_add):
+
+		with cls.lplock:
+			for pid in cls.listeners_pids.copy():
+				if not os.path.exists('/proc/%s/cmdline' % pid):
+					cls.listeners_pids.remove(pid)
+
+			cls.listeners_pids.add(pid_to_add)
+	def __init__(self, licornd, pids_to_wake1=[], pids_to_wake2=[],
+													daemon=False, **kwargs):
 		assert ltrace(TRACE_CMDLISTENER, '| CommandListener.__init__()')
 
 		LicornBasicThread.__init__(self, 'CommandListener', licornd)
@@ -296,12 +329,17 @@ class CommandListener(LicornBasicThread):
 		#: the thread attribute
 		self.daemon = daemon
 
-		self.pids_to_wake = pids_to_wake
+		# wake them with USR1
+		self.pids_to_wake1 = pids_to_wake1
+
+		#wake them with USR2
+		self.pids_to_wake2 = pids_to_wake2
+
 		self.wake_threads = []
 
 		for attr_name in kwargs:
 			setattr(self, attr_name, kwargs[attr_name])
-	def dump_status(self, long_output=False, precision=None):
+	def dump_status(self, long_output=False, precision=None, as_string=True):
 		""" get detailled thread status. """
 		if long_output:
 			uri_status= '\n\tObjects URI: %s' % str(self.uris).replace(
@@ -310,7 +348,8 @@ class CommandListener(LicornBasicThread):
 		else:
 			uri_status = ''
 
-		return '%s(%s%s) %s (%d calls, %d wakers)%s%s' % (
+		if as_string:
+			return '%s(%s%s) %s (%d loops, %d wakers)%s%s' % (
 				stylize(ST_NAME, self.name),
 				self.ident, stylize(ST_OK, '&') if self.daemon else '',
 				stylize(ST_OK, 'alive') \
@@ -318,32 +357,58 @@ class CommandListener(LicornBasicThread):
 				self._pyro_loop, len(self.wake_threads), uri_status,
 				self.dump_pyro_connections(long_output, precision)
 			)
-	def dump_pyro_connections(self, long_output=False, precision=None):
+		else:
+			return dict(
+				name=self.name,
+				ident=self.ident,
+				daemon=self.daemon,
+				alive=self.is_alive(),
+				loops=self._pyro_loop,
+				wakers=len(self.wake_threads),
+				uri_status=uri_status,
+				connections=self.dump_pyro_connections(long_output, precision, as_string)
+			)
+	def dump_pyro_connections(self, long_output=False, precision=None, as_string=True):
 		""" """
-		data = '\n'
-		for conn in self.pyro_daemon.connections:
-			if isinstance(conn, Pyro.protocol.TCPConnection):
-				#data += '\tTCPConn %s: %s:%s ‣ %s:%s\n'
-				data += '%s\n' % str(conn)
-			elif isinstance(conn, Thread):
-				try:
-					data += conn._pyro_thread_dump_status(long_output, precision)
-				except AttributeError:
-					data += (u'thread %s%s(%s) does not implement '
-								u'dump_status().\n' % (
-								stylize(ST_NAME, conn.name),
-								stylize(ST_OK, u'&') if conn.daemon else '',
-								conn.ident))
-			else:
-				data += 'unknown %s\n' % str(conn)
+		if as_string:
+			data = '\n'
+			for conn in self.pyro_daemon.connections:
+				if isinstance(conn, Pyro.protocol.TCPConnection):
+					#data += '\tTCPConn %s: %s:%s ‣ %s:%s\n'
+					data += '%s\n' % str(conn)
 
-		# remove last trailing '\n'
-		return data[:-1]
+				elif isinstance(conn, Thread):
+					try:
+						data += conn._pyro_thread_dump_status(long_output, precision, as_string)
+					except AttributeError:
+						data += (u'thread %s%s(%s) does not implement '
+									u'dump_status().\n' % (
+									stylize(ST_NAME, conn.name),
+									stylize(ST_OK, u'&') if conn.daemon else '',
+									conn.ident))
+				else:
+					data += 'unknown %s\n' % str(conn)
+
+			# remove last trailing '\n'
+			return data[:-1]
+
+		else:
+			conns = []
+			for conn in self.pyro_daemon.connections:
+				if isinstance(conn, Thread):
+					try:
+						conns.append(conn._pyro_thread_dump_status(
+										long_output, precision, as_string))
+					except AttributeError:
+						conns.append(process.thread_basic_info(conn))
+				else:
+					conns.append(dict(name=str(conn)))
+			return conns
 	def run(self):
 		assert ltrace(TRACE_THREAD, '%s running' % self.name)
 
 		Pyro.core.initServer()
-		Pyro.config.PYRO_PORT=LMC.configuration.licornd.pyro.port
+		Pyro.config.PYRO_PORT=settings.pyro.port
 
 		count = 0
 
@@ -351,7 +416,7 @@ class CommandListener(LicornBasicThread):
 			try:
 				# by default Pyro listens on all interfaces, no need to refine.
 				self.pyro_daemon=Pyro.core.Daemon(norange=1,
-					port=LMC.configuration.licornd.pyro.port)
+					port=settings.pyro.port)
 				break
 			except Pyro.core.DaemonError, e:
 				logging.warning('''%s: %s. '''
@@ -365,29 +430,28 @@ class CommandListener(LicornBasicThread):
 			return
 
 		# get the port number from current configuration.
-		LicornPyroValidator.pyro_port = LMC.configuration.licornd.pyro.port
+		LicornPyroValidator.pyro_port = settings.pyro.port
 
 		# dynamicly gather local interfaces IP addresses
 		LicornPyroValidator.local_interfaces.extend(
 			network.local_ip_addresses())
 
-		if LMC.configuration.licornd.role == roles.CLIENT:
+		if settings.role == roles.CLIENT:
 			LicornPyroValidator.server = LMC.configuration.server_main_address
 
 		self.pyro_daemon.setNewConnectionValidator(
-			LicornPyroValidator(LMC.configuration.licornd.role))
+			LicornPyroValidator(settings.role))
 		self.pyro_daemon.cmdlistener = self
 		self.uris = {}
 
-		if LMC.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 
 			# for clients: centralized configuration.
 			self.uris['configuration'] = self.pyro_daemon.connect(
-				LMC.configuration, 'configuration')
+											LMC.configuration, 'configuration')
 
 			# Used by CLI.
-			self.uris['rwi'] = self.pyro_daemon.connect(
-				RealWorldInterface(self.licornd), 'rwi')
+			self.uris['rwi'] = self.pyro_daemon.connect(self.licornd.rwi, 'rwi')
 
 			# TODO: for other daemons (cluster ?)
 			#self.uris['machines'] = self.pyro_daemon.connect(
@@ -407,31 +471,42 @@ class CommandListener(LicornBasicThread):
 			self.name, stylize(ST_OK, "ready"),
 			stylize(ST_URL, 'pyro://*:%s' % self.pyro_daemon.port)))
 
-		def wake_pid(pid):
+		def wake_pid(pid, wake_signal):
 			try:
-				os.kill(pid, signal.SIGUSR1)
+				os.kill(pid, wake_signal)
+
 			except OSError, e:
 				# no such process, not a real problem.
 				if e.errno != 3:
 					raise e
 
-		for pid in self.pids_to_wake:
-			th = Timer(0.25, wake_pid, (pid,))
-			self.wake_threads.append(th)
-			assert ltrace(TRACE_THREAD, '%s starting wake up thread %s.' % (
-				self.name, th.name))
-			th.start()
+		for pids_list, wake_signal in ((self.pids_to_wake1, signal.SIGUSR1),
+										(self.pids_to_wake2, signal.SIGUSR2)):
+			for pid in pids_list:
+				th = Timer(0.25, wake_pid, (pid, wake_signal))
+				self.wake_threads.append(th)
+				assert ltrace(TRACE_THREAD, '%s starting wake up thread %s.' % (
+															self.name, th.name))
+				th.start()
 
 		check_wakers = True
 		self._pyro_loop = 0
 		while not self._stop_event.isSet():
 			try:
-				self.pyro_daemon.handleRequests(0.1)
+				# NOTE: 0.5s seems to be the lowest resources consuming value.
+				# on an idle system with WMI::/system/daemon displayed,
+				#	- 2.0s  leads to
+				#	- 1.0s  leads to
+				#	- 0.5s  leads to 37s SYS for 52min run, 150 loops/sec
+				#	- 0.2s  leads to 10 loops/sec
+				#	- 0.1s  leads to 59m SYS for 55min run, 20 loops/sec
+				#	- 0.01s leads to
+				self.pyro_daemon.handleRequests(0.2)
 				#assert ltrace(TRACE_CMDLISTENER, "pyro daemon %d's loop: %s" % (
 				#	self._pyro_loop, self.pyro_daemon.connections))
 			except Exception, e:
 				logging.warning(e)
-			self._pyro_loop +=1
+			self._pyro_loop += 1
 
 			if check_wakers:
 				# we check wake threads only at the beginning of loop. After

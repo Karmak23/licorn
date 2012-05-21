@@ -11,11 +11,11 @@ Licensed under the terms of the GNU GPL version 2.
 
 """
 
-from licorn.interfaces.cli import cli_main
+from licorn.interfaces.cli import LicornCliApplication
 
 def add_main():
 
-	cli_main({
+	LicornCliApplication({
 		'users':         ('add_user_parse_arguments', 'dispatch_add_user'),
 		'groups':        ('add_group_parse_arguments', 'add_group'),
 		'profiles':      ('add_profile_parse_arguments', 'add_profile'),

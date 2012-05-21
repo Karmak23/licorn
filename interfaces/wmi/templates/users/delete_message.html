@@ -1,0 +1,19 @@
+<div>
+	{{
+		_("Are you sure you want to remove account “<strong>{0}</strong>”?").format(user_login)
+	}}
+	<br /><br />
+	{{
+		_('The user\'s <strong>personnal data</strong> (HOME directory) will be '
+		'<strong>archived</strong> in directory <strong>{0}</strong>. '
+		'Members of group <strong>{1}</strong> will be able to access it '
+		'to operate an eventual recover.').format(archive_dir, admin_group)
+	}}
+	<br /><br />
+	{{ _("However, you can decide to permanently remove it.") }}
+	<br /><br />
+	<input type='checkbox' id='delete_user_no_archive' />
+		<label for='delete_user_no_archive'>
+			{{ _("Definitely remove account data (no archiving).") }}
+		</label>
+</div>

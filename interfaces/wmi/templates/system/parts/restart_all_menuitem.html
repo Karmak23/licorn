@@ -1,0 +1,11 @@
+{%- from 'widgets/common.html' import menu_subitem -%}
+{{
+	menu_subitem(
+		"restart_all_menuitem",
+		"/system/restart/all",
+		_('Restart all remote-controlled machines on the network.'),
+		_('Restart all'),
+		"/media/images/24x24/redemarrer.png",
+		"ajax-sidebar-menuitem-confirm"
+	)
+}}

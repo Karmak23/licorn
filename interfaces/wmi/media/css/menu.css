@@ -1,0 +1,156 @@
+
+/* Main navigation bar */
+
+@menu_width: 200px;
+@menu_line_height: 40px;
+@menu_item_height: 30px;
+@menu_link_color: white;
+
+#mainnav {
+	border: none;
+	font: inherit;
+	font-size: 120%;
+	width: @menu_width;
+}
+
+#auxnav {
+	border: none;
+	font: inherit;
+	font-size: 120%;
+	margin: 50px 0 0 0;
+	position: absolute;
+	left: 0;
+	bottom: @menu_line_height;
+}
+
+#mainnav li, #auxnav li {
+	margin:0;
+}
+
+.menu-item {
+	width: @menu_width + 20;
+}
+
+.menu_link {
+	display: block;
+	height: @menu_line_height;
+	color: @menu_link_color;
+	cursor: pointer;
+}
+
+.menu-content-item {
+	cursor: pointer;
+}
+
+.menu-title {
+	margin-bottom: 3px;
+	vertical-align: middle;
+	line-height: @menu_line_height;
+}
+.menu-title a {
+	color: @menu_link_color;
+}
+.menu-content {
+	width: @menu_width;
+	display: block;
+	margin-bottom: 3px;
+	overflow: hidden;
+	font-size: 90%;
+}
+.menu-content-item {
+	display: block;
+	width: 100%;
+	padding-left: 45px;
+	margin-bottom: 2px;
+	height: @menu_item_height;
+	line-height: @menu_item_height;
+	vertical-align: center;
+	cursor: pointer;
+	opacity:0.5;
+}
+.menu_link {
+	text-decoration: none;
+}
+.menu-content-text {
+	margin-top: 1px;
+}
+.menu-content-item:hover {
+	opacity: 1;
+}
+.menu-content-item a {
+	color: @menu_link_color;
+}
+.menu-content-item img{
+	border: 0;
+	vertical-align: middle;
+}
+.menu-content-item:first-of-type {
+	padding-top: 10px;
+}
+.menu-content-item:last-of-type {
+	padding-bottom: 10px;
+	margin-bottom: 0;
+}
+
+.menu-text {
+	padding-left: 45px;
+	position: relative;
+	/* WARNING: don't ever type "- @menu_line_height" with a space between
+		the minus and the variable; this won't work. */
+	top: -@menu_line_height;
+	left: 0;
+	background: url('/media/images/fleche_pourpre.png') no-repeat;
+	background-position: -(@menu_width + 20) top;
+}
+
+.menu-back {
+	background: url('/media/images/background_item_menu.png');
+	width: @menu_width;
+	position: relative;
+	top:0;
+	left: 0;
+	height: @menu_line_height;
+}
+
+div#header {
+	padding: 10px;
+	text-align: center;
+}
+
+/* ================================================== Metanav navigation bar */
+
+#metanav {
+	position: absolute;
+	left: 0;
+	bottom: 25px;
+	text-align: center;
+	width: @menu_width;
+}
+
+#metanav ul {
+	margin: 0 auto;
+	text-align: center;
+}
+
+#metanav ul li {
+	display: inline;
+	margin: 0;
+	padding: 2px 6px 2px 4px;
+	border-right: 1px dotted white;
+}
+
+#metanav ul li.last {
+	border-right: 0;
+}
+
+.licorn_version {
+	position: absolute;
+	bottom: 5px;
+	left: 0;
+	text-align: center;
+	font-size: 80%;
+	color: #f55;
+	margin-left: -10px;
+	width: 100%;
+}
+

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Licorn service update infrastructure.
+20120301: This code is not used, it's kept here mainly for inspiration reasons.
 
 Copyright (C) 2007-2008 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2

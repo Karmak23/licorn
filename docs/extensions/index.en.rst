@@ -12,7 +12,7 @@ Extensions documentation
 	rdiffbackup.en
 	caldavd.en
 	squid.en
-	samba.en
+	samba3.en
 	postfix.en
 	nullmailer.en
 

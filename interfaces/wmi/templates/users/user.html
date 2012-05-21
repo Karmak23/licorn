@@ -1,0 +1,207 @@
+{#- Copyright 2011 META IT, Olivier Cortès <oc@meta-it.fr>, Robin Lucbernet<rl@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+<div id='sub_content_header'>
+	<h1 id='sub_content_title'>{{ title }}</h1>
+</div>
+
+<div id='sub_content_area'>
+	<form id='user_form'>{% csrf_token %}
+	<div id='table' name='{{ user_uid }}'>
+	<br />
+
+		{%- for field in form.visible_fields() -%}
+			{%- set immutable = field.name in form.immutables -%}
+				<div class='sub_content_line big_line'>
+					<div class='sub_content_half_line'>
+						<strong>{{ field.label_tag() }}</strong>{{ _('(fixed)') if immutable }}</div>
+					<div class='sub_content_half_line align_right'>
+						{%- if immutable -%}
+							{{ field.value() }}
+						{%- else -%}
+							{%- if field.name == 'password' -%}
+								<span><img id="generate_pwds" src="/media/images/16x16/generate.png" alt="'+ gettext("Generate passwords") +'"/></span> {{ field }}
+								<span id='pwd_strenght' style='font-size:12px;'></span>
+							{%- elif field.name == 'password_confirm'-%}
+								<span id="check_pwds"></span> {{ field }}
+							{%- else -%}
+								{{ field }}
+							{%- endif -%}
+
+						{%- endif -%}
+
+					</div>
+				</div>
+		{%- endfor -%}
+	</div>
+
+	{%- for title, groups_list in groups_lists -%}
+		{%- include 'users/groups_list.html' -%}
+	{%- endfor -%}
+
+	{%- if action == 'new' -%}
+	<div id='new_item_actions' class="one_line">
+		<span class='sub_content_half_line'>
+			<div id='cancel_button' class="interface_button float_left">{{ _('Cancel') }}</div>
+		</span>
+		<span class='sub_content_half_line'>
+			<div id='save_user_button' class="interface_button float_right">{{ _('Add') }}</div>
+		</span>
+	</div>
+	{%- endif -%}
+	</form>
+</div>
+
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		content = $('#sub_content_area');
+		var passwords_match = false;
+		var check_user_pwd;
+		content.find('input:password').keyup(function() {
+
+			var empty = false;
+			content.find('input:password').each(function() {
+				if ($(this).val() == '') {
+					empty = true;
+				}
+			});
+
+			// while one of the two password field is empty do not do
+			// anything.
+			if ( !empty ) {
+					var first = true;
+					var match = true;
+					content.find('input:password').each(function() {
+						if (first) {
+							pwd = $(this).val();
+						}
+						else {
+							if (pwd != $(this).val()) { match = false; }
+						}
+						first = false;
+					});
+					if ( match ) {
+						//if they match check password strenght
+						$('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
+						$.get("/users/check_pwd_strenght/"+pwd, function(html) {
+							if (html != pwd) {
+								$('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
+							}
+							else {
+								$('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
+							}
+						});
+						passwords_match = true;
+					}
+					else {
+						$('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
+						passwords_match = false
+
+						$('#pwd_strenght').html('')
+					}
+			}
+			else {
+				$('#check_pwds').html('')
+				$('#pwd_strenght').html('')
+			}
+		});
+
+		$('#generate_pwds').click(function() {
+			var pwd_generated = null;
+			$.get('/users/generate_pwd/', function(pwd) {
+				pwd_generated = pwd
+				gen_pwd_dialog = new dialog(gettext("Generate random password"),
+					strargs(gettext("The generate password is “%1”. Please remember to copy it."), [pwd_generated]),
+					true, function() {
+						content.find('input:password').val(pwd_generated).trigger('keyup');
+
+
+				});
+				gen_pwd_dialog.show();
+			})
+
+		})
+
+		$('.click_item').each(function() {
+			// display only relevant groups
+			rel = $(this).attr('value');
+			$(this).find('.rel_'+rel).hide();
+			$(this).popover({content: $(this).find('.group_popover_content')});
+		});
+
+		$('.popover_item').click(function() {
+			// update the current popover
+			group_id = $(this).attr('id');
+			new_rel = $(this).attr('value');
+
+			div = $('#sub_content').find('#'+group_id).filter('.click_item');
+			div.find('.item_hidden_input').attr('value', ''); // erase old membership
+			div.find('input[name$="'+new_rel+'_users"]').attr('value', group_id); // update new membership
+
+			{%- if not edit_mod -%}
+				// visual feedback on users because no instant_apply in new
+				update_relationship('group', null, group_id, new_rel) ;
+			{%- endif -%}
+
+			//close the popover
+			$(document).trigger('hideOpenPopover');
+		});
+
+		{%- if action == 'edit' -%}
+			init_instant_apply('users');
+
+			lock_sub_content("{{ user_uid }}");
+			select_row($('.current_list').find('#_list_name').text(),
+						"{{ user_uid }}");
+
+		{%- else -%}
+			// unselect row in case a user has been selected
+			unselect_row();
+			lock_sub_content();
+
+			function post_form() {
+				if (passwords_match) {
+					if ($('#id_login').val() == '' && $('#id_gecos').val() == "") {
+						show_message_through_notification('Login and gecos cannot be both empty, impossible to save user')
+					}
+					else {
+						$.post("/users/create/", $('#user_form').serialize());
+					}
+				} else {
+					show_message_through_notification('Passwords empty or missmatch, impossible to save user.')
+				}
+			}
+
+			// click save button
+			$('#save_user_button').click(function() {
+				post_form();
+			});
+
+			$(document).keyup(function(e) {
+				if (e.keyCode == 13) { // enter
+					post_form();
+				}
+			});
+
+			// click cancel button
+			$('#cancel_button').click(function() {
+				reload_div('#sub_content','');
+				unlock_sub_content();
+			});
+		{%- endif -%}
+
+		// we need to wait a small amount of time, else the subcontent is
+		// not yet reloaded and the focus won't work.
+		setTimeout(function() {
+			{%- if action == 'edit' -%}
+				$('#id_gecos').focus();
+
+			{%- else -%}
+				$('#id_login').focus();
+
+			{%- endif -%}
+		}, 250);
+
+	});
+</script>

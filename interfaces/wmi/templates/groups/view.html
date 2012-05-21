@@ -1,0 +1,69 @@
+<div id='sub_content_header'>
+	<h1 id='sub_content_title'>{{ _("Group {0}").format(group.name) }}</h1>
+</div>
+<div id="sub_content_area">
+	<table>
+		<tr>
+			<td>{{ _("Name (GID)") }}</td>
+			<td class="not_modifiable"><strong>{{ group.name }}</strong> ({{ group.gidNumber }})</td>
+		</tr>
+		<tr>
+			<td>{{ _('Description') }}</td>
+			<td><strong>{{ group.description }}</strong></td>
+		</tr>
+		<tr>
+			<td>{{ _('Data sharing') }}</td>
+			<td nowrap>
+				<strong>
+					{%- if group.is_permissive -%}
+						{{ _('Permissive') }}
+
+					{%- else -%}
+						<img src="/media/images/24x24/locked.png" />&nbsp;{{ _('Not Permissive') }}
+
+					{%- endif -%}
+				</strong>
+			</td>
+		</tr>
+		{%- for list in lists -%}
+		<tr>
+			<td colspan="2">
+				<h2 class="{{ 'grayed_out' if list.users == [] }}">{{ list.title }}</h2>
+				<table class="item_members group_members">
+					{%- if list.users != [] -%}
+						<thead>
+							<tr>
+								<th class="align_left">{{ _('Full name') }}</th>
+								<th class="align_center">{{ _('login') }}</th>
+								<th class="align_right">{{ _('UID') }}</th>
+							</tr>
+						</thead>
+						<tbody>
+						{%- for user in list.users|sort(attribute='gecos') -%}
+							<tr>
+								<td class="align_left first {{ 'grayed_out'
+									if not user.gecos }}"><a href="/users/view/{{ user.login }}">{{ user.gecos or
+										('<span class="grayed_out">{0}</span>').format(
+													_('No name given')) }}</a></td>
+								<td class="align_center"><a href="/users/view/{{ user.login }}"><strong>{{ user.login }}</strong></a></td>
+								<td class="align_right last">{{ user.uidNumber }}</td>
+							</tr>
+						{%- endfor -%}
+						</tbody>
+						<tfoot></tfoot>
+					{%- else -%}
+						<!-- This table has no <thead> nor <tfoot> -->
+						<tbody>
+							<tr>
+								<td colspan="3" class="alone grayed_out">
+									{{ _('No {0} users in this group yet.').format(list.kind) }}
+								</td>
+							</tr>
+						</tbody>
+					{%- endif -%}
+				</table>
+			</td>
+		</tr>
+		{%- endfor -%}
+	</table>
+</div>

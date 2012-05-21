@@ -12,7 +12,7 @@ Documentation des extensions
 	rdiffbackup.fr
 	caldavd.fr
 	squid.fr
-	samba.fr
+	samba3.fr
 	postfix.fr
 	nullmailer.fr
 
@@ -22,6 +22,5 @@ Documentation encore non-traduite :
 	:maxdepth: 1
 
 	caldavd.en
-	samba.en
 	postfix.en
 	nullmailer.en

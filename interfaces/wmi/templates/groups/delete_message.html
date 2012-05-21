@@ -1,0 +1,20 @@
+
+<div>
+	{{ _("Are you sure you want to remove group <strong>{0}</strong>?").format(group_name) }}
+	<br/>
+	<br/>
+	{{ _("Group shared data will be archived in directory <strong>{0}</strong> "
+		"and accessible to members of group {1} for eventual recovery."
+		).format(archive_dir, admin_group) }}
+	<br/>
+	<br/>
+	{{ _("However, you can decide to remove them permanently.") }}
+	<br />
+	<br />
+	<input type='checkbox' id='delete_group_no_archive'/>
+	<label for='delete_group_no_archive'>
+		<strong>{{ _("Definitely remove group shared data (no archiving).") }}</strong>
+	</label>
+	<br />
+	<br />
+</div>

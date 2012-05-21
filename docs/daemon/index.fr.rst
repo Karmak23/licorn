@@ -1,49 +1,43 @@
 
+.. daemon.fr:
+
 .. highlight:: bash
 
 =================
 Le daemon Licorn®
 =================
 
-:program:`licornd` est le machin qui fait le sale boulot à votre place (autant dire que je l'apprécie beaucoup). Il administre les objets système (utilisateurs, groupes, etc) de l'intérieur. Il met à jour :file:`/etc/*`, surveille les données partagées, vérifie et applique automatiquement les bonnes permissions et les :abbr:`ACL (Access Control Lists -- listes de contrôle d'accès)`\s ``POSIX.1e``, de manière à ce que vous n'ayez jamais besoin de les manipuler directement (en cas de problème constaté, :ref:`chk <chk.fr>` est votre ami).
+:program:`licornd` est le programme qui fait le sale boulot à notre place — autant dire que je l'apprécie beaucoup. Il administre les objets système (utilisateurs, groupes, etc) de l'intérieur. Il met à jour :file:`/etc/*`, surveille les données partagées, vérifie et applique automatiquement les bonnes permissions et les :abbr:`ACL (Access Control Lists -- listes de contrôle d'accès)`\s ``POSIX.1e``, de manière à ce que vous n'ayez jamais besoin de les manipuler directement (en cas de problème constaté, :ref:`chk <chk.fr>` est votre ami).
 
-Il fait aussi tourner la `WMI <wmi/index.fr>`_ et les sauvegardes incrémentales du système en tant que processus légers (threads), offre une :ref:`interface d'informations à la top <daemon_toplike_interface.fr>` quand vous le démarrez dans votre terminal, et même un :ref:`interpréteur interactif <daemon_interactive_shell.fr>` si vous avez besoin de récupérer des informations spécifiques ou si vous êtes juste curieu[x|se] à propos de son fonctionnement.
+Il lance la `WMI <wmi/index.fr>`_ et fait tourner les sauvegardes incrémentales du système en tant que processus légers (threads), offre une :ref:`interface d'informations à la top <daemon_toplike_interface.fr>`, et même un :ref:`interpréteur interactif <daemon_interactive_shell.fr>` à distance si vous avez besoin de récupérer des informations spécifiques ou si vous êtes juste curieu[x|se] à propos de son fonctionnement.
 
 Derrière cette présentation qui semble décrire quelque chose d'énorme et pataud, vous trouverez un processus très économe en ressources système qui fera tout son possible pour assister l'administrateur système dans des tâches qui sans :program:`licornd`, seraient d'une longueur interminable et d'un ennui mortel (vous avez déjà été obligé(e) de corriger des :abbr:`ACL (Access Control Lists -- listes de contrôle d'accès)`\s sur plusieurs Gigaoctets de données ?).
 
 État du daemon
 ==============
 
-
 À tout moment, vous pouvez obtenir des informations sur le daemon actuellement en fonctionnement, avec une commande spécifique::
 
 	get status
-		-- Licorn® daemon status: up 2 secs, 24 threads, 10 controllers, 1 queues, 10 locks, 10 service threads (150 started so far)
-		CPU: usr 3.404s, sys 2.312s MEM: res 71.53Mb shr 0.00Mb ush 0.00Mb stk 0.00Mb
-		Queues: serviceQ(0).
-		thread extensions/Rdiffbackup.AutoBackupWorker (enabled, idle)
-		thread licornd/inotifier(-1279341712) alive (0 call) queues stati: [total: 4] [cancel: 0] [add: 0] [rem: 0] [ack: 0] [exist: 0] [endex: 0] [creat: 0] [chg: 0].
-		thread licornd/wmi (stop=False)
-		thread ServiceWorker-62& [idle]
-		thread licornd/<module 'dbus' from '/usr/lib/pymodules/python2.6/dbus/__init__.pyo'>(-1220592784) doesn't implement dump_status().
-		thread licornd/cmdlistener(-1254163600) alive (32 calls, 0 wakers)
-			Thread <Thread(Thread-160, started daemon -1505944720)>
-			Thread <Thread(Thread-161, started daemon -2068255888)>
-			Thread <Thread(Thread-162, started daemon -1472373904)>
-			Thread <Thread(Thread-163, started daemon 1991715696)>
-		thread ServiceWorker-94& [idle]
-		thread extensions/Rdiffbackup.AutoBackupTimer (stop=False)
-		thread ServiceWorker-16& [idle]
-		thread ServiceWorker-13& [idle]
-		thread ServiceWorker-28& [idle]
-		thread ServiceWorker-26& [idle]
-		thread licornd/cleaner [<bound method LicornDaemon._job_periodic_cleaner of licornd/master@server(22610)>()]
-		thread licornd/aclchecker(-1270949008) alive (0 call, 0 pending events)
-		thread extensions/Volumes.UdevMonitor& (stop=False)
-		thread ServiceWorker-35& [idle]
-		thread ServiceWorker-31& [idle]
-		thread ServiceWorker-49& [idle]
-		thread ServiceWorker-41& [idle]
+		État du daemon Licorn®: lancé depuis 1 heure 11 mins 32 secs, 16 threads, 11 controlleurs, 3 files, 0/8 Mlocks, 0/373 Ulocks
+		UC: utl 82.0s, sys 75.4s MÉM: rés 1.2e+02Mo prt 0.0Mo upr 0.0Mo pil 0.0Mo
+		Threads:   1/100 networkers     1/50 servicers     1/10 aclcheckers
+		Files d'attente:      serviceQ: 0         aclcheckQ: 0        networkQ: 0
+		DeadThreadCleaner [sleeping, wake up in 4 mins 3 secs]
+		EventManager (19 évènements & 5 callbacks enregistré(s))
+		GQWSchedulerThread for ACLCkeckerThread [1 workers; wake up in 0 sec]
+			ACLCkeckerThread-000 [idle]
+		GQWSchedulerThread for NetworkWorkerThread [1 workers; wake up in 1 secs]
+			NetworkWorkerThread-099& [idle]
+		GQWSchedulerThread for ServiceWorkerThread [1 workers; wake up in 0 sec]
+			ServiceWorkerThread-000 [idle]
+		INotifier (1148 répertoires observés, 11 fichiers de configuration, 0 événements en file d'attente)
+		extensions.volumes.UdevMonitor& (stop=False)
+		CommandListener(139700220770048) alive (21331 loops, 0 wakers)
+			Thread-16&: RWI calls for root(0) @127.0.0.1:49838 (started il y a 1h11m25s)
+			Thread-29&: RWI calls for root(0) @192.168.111.1:35387 (started il y a 1h11m24s)
+			Thread-128&: RWI calls for olive(1000) @127.0.0.1:49917 (started il y a 1s)
+		Thread extensions/Gloop.GobjectMainLooper&: alive, but no more info.
 
 
 
@@ -97,10 +91,8 @@ Si vous souhaitez intéragir avec le daemon (Quelque fois, c'est rigolo), démar
 	licornd -vD
 	# et de même avec -vvD et -vvvD pour afficher de plus en plus de messages
 
-Le daemon restera alors attaché à votre terminal. Vous avez alors deux niveaux d'intéraction possible:
+Le daemon restera alors attaché à votre terminal. Vous avez alors accès à l' **interface top-like**.
 
-* l' **interface top-like**, dorès-et-déjà accessible à travers des commandes à une touche depuis votre clavier.
-* l' **interpréteur intéractif**, où vous pouvez appeler n'importe quelle méthode du daemon ou accéder à n'importe lequel de ses objets.
 
 .. _daemon_toplike_interface.fr:
 
@@ -166,5 +158,7 @@ Please refer to integrated help for an exhaustive listing of the daemon's CLI ar
 	licornd --help
 
 .. seealso::
-	:ref:`The daemon developer documentation <daemon/index.en>`.
-	:ref:`The service facility <daemon/service.en>`.
+	En anglais pour l'instant, en attendant la traduction:
+
+	* :ref:`La documentation développeur du daemon <daemon.index.dev.fr>`.
+	* :ref:`L'infrastructure de services <daemon.services.en>`.
