@@ -1,4 +1,4 @@
-Massive patch for version 1.3. WMI2 + settings + upgrades + related changes. Fixes or implements #103, #496, #597, #599, #621, #626, #631, #634, #641, #642, #647, #657, #658, #659, #660, #671, #674, #676, #685, #687
+Massive patch for version 1.3. WMI2 + settings + upgrades + related changes. Fixes or implements #103, #477, #496, #597, #599, #621, #626, #631, #634, #641, #642, #647, #657, #658, #659, #660, #671, #674, #676, #685, #687, #700
  * split LMC.configuration into 2 parts:
    * a new `foundations.settings`, which contains roughly the licorn-only parts;
    * `LMC.configuration` is still there and accessed like before, but it contains only `core` and `extension` parameters.

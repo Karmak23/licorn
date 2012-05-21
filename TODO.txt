@@ -11,15 +11,6 @@
 	> [CHECK] on the WMI side, the notification is received correctly (someone disabled ...) but the page doesn't reload
 	> if I manually go to /, the WMI crashes with 'rdiffbackup ext has no volumes attribute' (see screen on Leto)
 
- - Implement MixIns for:
-	- LicornPyroThread (on COmmandListeners standard Threads to avoid the `new.method()` call)
-	- BackupVolume (on `Volume`) in rdiffbackup extension
-	- LxcMachine (on `Machine`) in LXC backend
-		- more work need on this one: how to render on the WMI side or use in CLI ?
-
- - rdiff / wmi: make the compute_needed_space() call a view which will do it, and display a throbber during the time the view runs.
-	> create a global defer mechanism for visual things that need lots of computation efforts, something that could be sent afterwards via the PUSH stream.
-
  - [R] passwd strengh indicator on / view for standard users (no admins/licorn-wmi)
 
  - [R] "Mes informations"
@@ -29,8 +20,6 @@
  - now that the WMI is in licornd again, the import / setup / upgrades doesn't work correctly in devinstall mode.
 	> sudo apt-get install python-twisted-web python-django
 	> SSL certificate generation doesn't work.
-
- - move accr() from */views* to Jinja2 globals, much easier to use into templates.
 
  - `du` commands from compute_* should use nice + ionice!
 
