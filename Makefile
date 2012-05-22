@@ -44,7 +44,7 @@ binary-install: build
 uninstall:
 	@rm -f "$(DESTDIR)"/usr/bin/{add,mod,del,get,chk}
 	@rm -f "$(DESTDIR)"/usr/sbin/licornd*
-	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)" "$(CONF_DIR)"
+	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)" "$(CONF_DIR)" /usr/lib/python*/{dist,site}-packages/licorn
 
 # In developer install, the first 'make lang' will fail because Django
 # is not yet installed. But this will go far enough to compile the PO
@@ -74,6 +74,9 @@ devinstall: devinstall_packages perms
 devuninstall: uninstall
 
 doc:
+	#
+	# Sphinx (python-sphinx) should be installed before continuing.
+	#
 	(cd docs; make html)
 
 installdoc: doc
@@ -89,7 +92,7 @@ localperms:
 
 docsync: doc
 	( cd docs; rsync -av --delete _build/html/ \
-			dev.licorn.org:/home/groups/darcs-Licorn/docs/_build/html )
+			docs.licorn.org:/home/www/docs.licorn.org/ )
 
 clean: cleandoc cleanlang
 	find ./ -type f \( -name '*~' -o -name '.*.swp' \

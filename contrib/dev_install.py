@@ -270,6 +270,11 @@ def first_licornd_run():
 		t.start()
 		return t
 
+	# unlink the `upgrades` symlink, in case we are doing a fresh re-install
+	# from another repository/branch. The daemon will recreate it automatically.
+	from licorn.upgrades import upgrades_root
+	unlink(upgrades_root)
+
 	# reset the log in case of old install.
 	unlink('/var/log/licornd.log')
 	fsapi.touch('/var/log/licornd.log')

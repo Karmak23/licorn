@@ -20,7 +20,7 @@ from ltraces import *
 if not process.executable_exists_in_path('unattended-upgrades'):
 	logging.warning(_(u'You must install the debian package {0} for the '
 		u'upgrade mechanism to work fully. Currently you will only be able to '
-		u'check if the system needs upgrading').format(stylize(ST_NAME, 'unattended-upgrades')))
+		u'check if the system needs upgrading.').format(stylize(ST_NAME, 'unattended-upgrades')))
 
 # version_compare() will refuse to work without this.
 apt_pkg.init()
@@ -44,7 +44,11 @@ def apt_do_check(**kwargs):
 
 def apt_do_upgrade():
 	try:
-		process.execute(['unattended-upgrades'])
+		return process.execute(['unattended-upgrades'])
+
+		# NOTE: we do not send an event / notification here. It's up
+		# to the [much higher] calling function to do it.
 
 	except:
 		logging.exception(_(u'Error while running « unattended-upgrades »!'))
+		return None, None

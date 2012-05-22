@@ -37,7 +37,7 @@
 Licorn® Documentation
 =====================
 
-.. warning:: The Licorn® documentation website is undergoing a big refresh to include upcoming functionnalities. All should be OK for March 5th, 2012, but until then the site contents are going to change a lot, and possibly be broken at some point.
+.. warning:: The Licorn® documentation website is undergoing a big refresh to include upcoming functionnalities in version 1.3. Until then the site contents are going to change a lot, and possibly be broken at some point. Check `the developer's blog <http://dev.licorn.org/blog/>`_ to know when it's done!
 
 Licorn® is a set of concise programs aimed at GNU/Linux and Un*x system administrators. They help them deal with daily system-management tasks (managing users, groups, calendars, printers, backups, shares, and so on) in the most efficient manner possible.
 

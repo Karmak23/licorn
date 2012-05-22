@@ -9,3 +9,6 @@ OpenLDAP backend
 .. autoclass:: OpenldapBackend
 	:members:
 	:undoc-members:
+
+
+See the :ref:`design notes <core.backends.openldap.design.en>` for more informations.
