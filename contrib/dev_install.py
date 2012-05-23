@@ -58,7 +58,7 @@ config_dir     = '/etc/licorn'
 share_dir      = '/usr/share/licorn'
 distro         = run_command(['lsb_release', '-i', '-s']).strip()
 rel_ver        = run_command(['lsb_release', '-r', '-s']).strip()
-base_packages  = ('nullmailer darcs pyro python-pylibacl python-ldap python-xattr '
+base_packages  = ('git-core git-flow pyro python-pylibacl python-ldap python-xattr '
 				'python-netifaces python-dumbnet python-pyip python-ipcalc '
 				'python-dbus python-gobject gettext python-pygments python-apt '
 				'python-pyinotify python-sqlite python-cracklib python-pip '
@@ -269,6 +269,11 @@ def first_licornd_run():
 		t.daemon = True
 		t.start()
 		return t
+
+	# unlink the `upgrades` symlink, in case we are doing a fresh re-install
+	# from another repository/branch. The daemon will recreate it automatically.
+	from licorn.upgrades import upgrades_root
+	unlink(upgrades_root)
 
 	# reset the log in case of old install.
 	unlink('/var/log/licornd.log')

@@ -2,18 +2,20 @@
 
 ## Documentation
 
-See http://docs.licorn.org/ for up-to-date content.
-Locally, the directory `docs/` holds the versionned content which is used to create the documentation website.
+Please visit http://docs.licorn.org/ for up-to-date content. In fact the website
+is an HTML version of the `docs/` directory (generated via `Sphinx`).
 
-## Project
+## Project / Editor / Conventions / Notes
 
 ### GEANY
 
 *.py;*.rst;*.md;Makefile;README*;*.txt;*.html;*.csv;*.conf;*.css;*.ldif;*.js
 
-while true; do clear; ps ax | grep licorn | grep -vE '(grep|tail)'; sleep 2; done
+### Debugging the daemon / start-stop process
 
-#### special characters
+	while true; do clear; ps ax | grep licorn | grep -vE '(grep|tail)'; sleep 2; done
+
+#### Special characters for i18n UTF-8 strings
 
 ← ↑ → ↓ ↖ ↗ ↘ ↙ ↝ ↣ ↤ ↥ ↧ ↩ ↪ ↫ ↬
 ↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷
@@ -34,134 +36,13 @@ non-breaking space " "  
 ➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➾
 ′ ″ ‴ ‵ ‶ ‷ “ ” „ ‟ ‘ ’ ‚ ‛ …
 
-### CSS / jQuery hints
 
-http://lesscss.org/
-http://border-radius.com/
-http://jscompress.com/
-http://stackoverflow.com/questions/5784781/how-to-turn-a-whole-tr-into-a-link
-http://stackoverflow.com/questions/7510753/trhover-not-working
+## mini-TS for WMI2 events
 
-http://stackoverflow.com/questions/1160008/which-keycode-for-escape-key-with-jquery
-https://github.com/jquery/jquery-color
-
-image / css preloader
-http://binarykitten.me.uk/dev/jq-plugins/107-jquery-image-preloader-plus-callbacks.html
-
-animate background-position ne marche plus avec jQuery 1.5+
-http://www.screenfeed.fr/blog/jquery-1-5-remedier-au-bug-de-animate-avec-background-position-0296/
-
-ça peut servir un jour :
-http://www.webinventif.fr/wp-content/uploads/projets/wslide/index.htm
-
-
-### DJango / Jinja2
-
-http://exyr.org/2010/Jinja-in-Django/ (url_for)
-
-
-### Ldap / OpenLDAP
-
-deb package:
-	- /etc/hosts matters for `hostname -d`, which determines the default `dn` in Precise 12.04.
-		- 127.0.1.1 machine.domain.name machine
-		- the entry with the domain name must be first
-	- /etc/hostname: unsure. FQDN or not ?
-		- works with FQDN
-		- is it necessary ? (in the default conf, /etc/hostname != FQDN)
-
-### Python cache
-
-http://stackoverflow.com/questions/1427255/is-there-a-python-caching-library
-http://stackoverflow.com/questions/5157696/python-cache-library
-http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-
-
-### (probably) Useful Python modules (to study for inclusion)
-
-Ptrace as a working alternative to "inotify on /proc"
-http://help.lockergnome.com/linux/inotify-proc--ftopict486108.html
-https://bitbucket.org/haypo/python-ptrace/wiki/Home
-
-
-## Statistics
-
-20120306:
-
-	cloc . --exclude-dir=docs/_build,interfaces/wmi/media/js/d3 --not-match-f='(jquery|d3).*(js|css)'
-	     380 text files.
-	     367 unique files.
-	     769 files ignored.
-
-	http://cloc.sourceforge.net v 1.53  T=1.0 s (229.0 files/s, 57671.0 lines/s)
-	-------------------------------------------------------------------------------
-	Language                     files          blank        comment           code
-	-------------------------------------------------------------------------------
-	Python                         141           9173           9540          31662
-	HTML                            58            549             20           2893
-	Javascript                      14            380            279           1391
-	CSS                             14            186             32           1339
-	make                             2             38             16            173
-	-------------------------------------------------------------------------------
-	SUM:                           229          10326           9887          37458
-	-------------------------------------------------------------------------------
-
-
-## mini-TS pour les events
+Just paste this into a terminal, and observe events be pushed to the WMI page you're browsing. You can "watch" them from any page, but from the users ou groups page will produce more shining output.
 
 add user test ; add group test1 ; add user test test1 ; mod user test -l ; mod group test1 -p ;
 mod user test -L ; mod group test1 -P ; del user test test1 ; del group test1 --no-archive ; del user test --no-archive
 
 sudo add user test ; sudo add group test1 ; sudo add user test test1 ; sudo mod group test1 -p ; sudo mod group test1 -P ; sudo del user test test1 ; sudo del group test1 --no-archive ; sudo del user test --no-archive
 
-
-## Notes Diverses
-
-Générer une erreur 503 au lieu d'une 500
-	http://mathieu.agopian.info/blog/2011/04/django-et-le-handler500-retourner-une-erreur-503/
-
-msg push > 250 octets
-	http://markmail.org/message/jekfsuvw2ajwigo3
-
-http://lucumr.pocoo.org/
-
-
-http://net.tutsplus.com/tutorials/python-tutorials/10-insanely-useful-django-tips/
-
-
-## Stream HTTP / push, etc
-
-Principes de base :
-	http://en.wikipedia.org/wiki/Comet_%28programming%29
-	http://ajaxpatterns.org/HTTP_Streaming
-
-Exemples avec gevent:
-	http://blog.gevent.org/2009/10/10/simpler-long-polling-with-django-and-gevent/
-	https://bitbucket.org/denis/gevent/src/tip/examples/webchat/chat/views.py
-
-http://blog.gevent.org/2009/12/05/more-comet-with-gevent/
-https://bitbucket.org/denis/stream-web/changeset/25640cac0c65
-
-
-WebSockets:
-	http://websocket.org/quantum.html
-	http://pypi.python.org/pypi/gevent-websocket/
-	http://blog.chromium.org/2011/08/new-websocket-protocol-secure-and.html
-		dans chrome depuis la version 14.x
-
-Reconnexion dans le cadre du long-polling:
-	très long: http://jsguy.com/?p=103
-	plus court: http://stackoverflow.com/questions/333664/simple-long-polling-example-code
-
-Throbber sympa:
-	http://stackoverflow.com/questions/6021848/block-ui-spinning-preloader
-
-feature de ouf pour la WMI en accès externe : "VNC in browser" : gevent, websocket, hybi protocol
-http://arkaitzj.wordpress.com/2011/11/12/vnc-in-your-browser-through-websockets-handled-by-gevent/
-
-
-## Multiple web sessions in multiple tabs
-
-http://stackoverflow.com/questions/368653/how-to-differ-sessions-in-browser-tabs
-http://stackoverflow.com/questions/4479995/managing-webapp-session-data-controller-flow-for-multiple-tabs
-https://github.com/chrisdew/subsession
