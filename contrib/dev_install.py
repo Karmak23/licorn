@@ -58,7 +58,7 @@ config_dir     = '/etc/licorn'
 share_dir      = '/usr/share/licorn'
 distro         = run_command(['lsb_release', '-i', '-s']).strip()
 rel_ver        = run_command(['lsb_release', '-r', '-s']).strip()
-base_packages  = ('nullmailer darcs pyro python-pylibacl python-ldap python-xattr '
+base_packages  = ('git-core git-flow pyro python-pylibacl python-ldap python-xattr '
 				'python-netifaces python-dumbnet python-pyip python-ipcalc '
 				'python-dbus python-gobject gettext python-pygments python-apt '
 				'python-pyinotify python-sqlite python-cracklib python-pip '
