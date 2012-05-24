@@ -231,6 +231,9 @@ def make_symlinks():
 			('{0}/config/check.d'.format(devel_dir),
 			'{0}/check.d'.format(config_dir)),
 
+			('{0}/config/rdiff-backup-globs.conf'.format(devel_dir),
+			'{0}/rdiff-backup-globs.conf'.format(config_dir)),
+
 			('{0}/interfaces/wmi'.format(devel_dir),
 			'{0}/wmi'.format(share_dir)),
 
