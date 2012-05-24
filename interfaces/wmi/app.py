@@ -239,6 +239,7 @@ class DataCollectorThread(BaseLicornThread):
 				data = { 'method': meth, 'arguments': args }
 
 				for listener in self.listeners:
+					#assert ltrace(TRACE_WMI, 'push {0} to listener {1}.', (ST_COMMENT, data), (ST_NAME, listener))
 					listener.put(data)
 
 			except Exception, e:
@@ -352,7 +353,7 @@ class WmiEventApplication(ObjectSingleton):
 				if data.name in self.handlers:
 					try:
 						for handler in self.handlers[data.name]:
-							assert ltrace(TRACE_DJANGO, 'yield to user {0}@{1} {2}',
+							assert ltrace(TRACE_WMI, 'yield to user {0}@{1} {2}',
 												request.user.username,
 												request.META['REMOTE_ADDR'],
 												stylize(ST_NAME, handler.__name__))
@@ -365,9 +366,8 @@ class WmiEventApplication(ObjectSingleton):
 											u'handler {0}; continuing.'),
 											stylize(ST_NAME, handler.__name__))
 				else:
-					logging.warning2(_(u'No WMI handler yet for '
-										u'event "{0}".').format(
-											stylize(ST_NAME, data.name)))
+					logging.warning2(_(u'No WMI handler yet for event '
+								u'"{0}".').format(stylize(ST_NAME, data.name)))
 					#yield utils.notify(_(u'No event handler <strong>yet</strong> '
 					#	u'for event « <strong><code>{0}</code></strong> ».').format(data.name))
 

@@ -78,7 +78,7 @@
 
 			{%- for volume in mounted_volumes -%}
 
-				<h2>{{ _('Volume {0}').format(volume.label) }}</h2>
+				<h2>{{ _('Volume {0}').format(volume.name) }}</h2>
 				<p>{{ eject_status(volume, extension.event('backup')) }}</p>
 				<!-- NEED TO FORMAT THESE VALUES INTO A STRING
 					<p>{{ extension._backup_informations(volume)
@@ -90,12 +90,12 @@
 					<p>
 						{{
 							_('No historical data yet on <strong>{0}</strong>. '
-							'Please wait for the first backup to finish.').format(volume.label)
+							'Please wait for the first backup to finish.').format(volume.name)
 						}}
 					</p>
 
 				{%- else -%}
-					<h3>{{ _('Backup history on {0}').format(volume.label) }}</h3>
+					<h3>{{ _('Backup history on {0}').format(volume.name) }}</h3>
 					<pre class="backups_statistics">
 					{{ stats }}
 					</pre>
@@ -161,7 +161,7 @@
 				<li><form action="/backups/enable/{{ volume.device.rsplit('/', 1)[1] }}"
 						method="GET"><input
 							type="button" class="action_button use_volume_button"
-							value="{{ _('use volume “{0}”').format(volume.label) }}" />
+							value="{{ _('use volume “{0}”').format(volume.name) }}" />
 					</form>
 						<p>{{ eject_status(volume, extension.event('backup')) }}</p>
 						<ul class="volume_atributes">
@@ -173,7 +173,8 @@
 														volume.mount_point)
 							}}
 						</li>
-						<li>{{ _('device: <strong>{0}</strong>,').format(volume.name) }}</li>
+						<li>{{ _('device: <strong>{0}</strong>,').format(volume.device) }}
+							({{ _('GUID: {0}').format(volume.guid) }})</li>
 						<li>{{ _('FS type: <strong>{0}</strong>').format(volume.fstype) }}</li>
 					</ul>
 			{%- endfor -%}

@@ -175,6 +175,7 @@ class UdevMonitorThread(LicornBasicThread):
 
 				elif action == 'remove':
 					LMC.extensions.volumes.del_volume_from_device(device)
+
 				else:
 					logging.progress(_(u'{0}: unknown action {1} for '
 						u'device {2} ({3}).').format(
@@ -241,8 +242,7 @@ class Volume(PicklableObject, SharedResource):
 
 		super(Volume, self).__init__()
 
-		self.name        = kernel_device
-		self.device      = self.name
+		self.device      = kernel_device
 		self.label       = label
 		self.fstype      = fstype
 		self.guid        = guid
@@ -258,6 +258,15 @@ class Volume(PicklableObject, SharedResource):
 
 		assert ltrace(TRACE_VOLUMES, '| Volume.__init__(%s, %s, enabled=%s)' % (
 			self.name, self.mount_point, self.enabled))
+	@property
+	def name(self):
+		""" Sometimes, a volume doesn't have a label.
+			In this case we return the guid. """
+
+		if self.label != '':
+			return self.label
+
+		return self.guid
 	def __str__(self):
 		return _(u'volume {0}[{1}]{2}').format(
 					stylize(ST_DEVICE, self.device),
