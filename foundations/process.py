@@ -27,6 +27,14 @@ __all__ = ('daemonize', 'write_pid_file', 'use_log_file', 'set_name',
 	'get_traceback', 'find_network_client_infos', 'pidof', 'pid_for_socket',
 	'thread_basic_info', 'executable_exists_in_path', )
 
+cgroup = None
+
+with open('/etc/mtab') as mtab:
+	for mline in mtab.readlines():
+		if '/sys/fs/cgroup' in mline:
+			cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+			break
+
 # daemon and process functions
 def daemonize(log_file=None, close_all=False, process_name=None):
 	""" UNIX double-fork magic to create a daemon.
@@ -182,7 +190,7 @@ def already_running(pid_file):
 	return os.path.exists(pid_file) and \
 		os.path.exists('/proc/' + open(pid_file, 'r').read().strip())
 def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
-	group='admins'):
+								group='admins'):
 	""" check if current user is root. if not, check if he/she is member of
 		group "admins" and then refork ourselves with sudo, to gain root
 		privileges, needed for Licorn® daemon.
@@ -440,7 +448,8 @@ def pidof(process_name):
 		..versionadded:: 1.3
 	"""
 
-	pids  = []
+	pids = []
+
 	if 'licornd' in process_name:
 		# licorn / linux 3.x specifiq : we can match 'licornd/wmi'
 		# faster than 'licornd-wmi', and in some case the 'cmdline'
@@ -453,6 +462,11 @@ def pidof(process_name):
 	for entry in os.listdir('/proc'):
 		if entry.isdigit():
 			try:
+
+				if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
+					logging.progress('Skipped process @{0} which is not in the same cgroup.'.format(entry))
+					continue
+
 				try:
 					# Linux 3.x only
 					command_line1 = open('/proc/%s/comm' % entry).read().strip()

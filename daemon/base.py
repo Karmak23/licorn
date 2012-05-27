@@ -431,12 +431,18 @@ class LicornBaseDaemon:
 		# process seems completely stalled and doesn't respond even to SIGKILL.
 		my_process_names = [ self.dname, my_process_name, my_process_name.replace('/', '-')]
 
+		cgroup = process.cgroup
+
 		for entry in os.listdir('/proc'):
 			if entry.isdigit():
 				if int(entry) in exclude:
 					continue
 
 				try:
+					if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
+						logging.progress('{0:s}: skipped process @{0} which is not in the same cgroup.'.format(self, entry))
+						continue
+
 					try:
 						# linux 3.x only
 						command_line1 = open('/proc/{0}/comm'.format(entry)).read().strip()
