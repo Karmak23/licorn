@@ -1060,11 +1060,15 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		#NOTE: don't self.lock here, it would block the inotifier event dispatcher.
 
 		if self.is_system:
-			return self.__check_system_group(minimal, force,
-											batch, auto_answer, full_display)
+			return self.__check_system_group(minimal=minimal, force=force,
+												batch=batch,
+												auto_answer=auto_answer,
+												full_display=full_display)
 		else:
-			return self.__check_standard_group(minimal, force,
-											batch, auto_answer, full_display)
+			return self.__check_standard_group(minimal=minimal, force=force,
+													batch=batch,
+													auto_answer=auto_answer,
+													full_display=full_display)
 	def check_symlinks(self, oldname=None, delete=False,
 						batch=False, auto_answer=None, *args, **kwargs):
 		""" For each member of a group, verify member has a symlink to the
@@ -2253,7 +2257,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			return group
 
 		# This will create shared group directory.
-		group.check(minimal=True, batch=True, force=force)
+		group.check(minimal=True, batch=True, force=force, full_display=False)
 
 		if not_already_exists:
 			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
