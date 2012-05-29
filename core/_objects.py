@@ -19,13 +19,38 @@ from licorn.foundations.threads import RLock, Event
 
 from licorn.foundations           import settings, exceptions, logging, options
 from licorn.foundations           import hlstr, pyutils, fsapi
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.classes   import PicklableObject
 from licorn.foundations.constants import filters, verbose, priorities, roles
+
 from licorn.core                  import LMC
+
+
+def exclude_filter_func(path):
+	""" Return True if a path is within one that is excluded system-wide.
+
+		We need to test more than "path in inotifier_exclusions" because
+		The pyinotify WatchManager continues to traverse sub-directories
+		even if the containing directory is excluded.
+
+		This is a simple helper for CoreFSUnitObject.
+
+		NOTE: This helper must not go into daemon/inotifier, else user
+		configuration files will be discarded when users home directories
+		are "unwatched". We want to still watch ~/.licorn/ even if ~/ is
+		unwatched.
+
+	"""
+
+	for excl_path in settings.inotifier_exclusions:
+		if path.startswith(excl_path):
+			assert ltrace(TRACE_INOTIFIER,'%s excluded because in %s' % (path, excl_path))
+			return True
+	return False
 
 class CoreUnitObject(PicklableObject):
 	""" Common attributes for unit objects and
@@ -170,10 +195,13 @@ class CoreFSUnitObject(object):
 		# don't set it, this will be handled by _fast*() or check().
 		#self.__check_rules    = None
 
-		# this one will be filled by inotifier-related things.
-		self.__watches = {}
-
+		# these will be filled by inotifier-related things.
+		self.__watches           = {}
 		self.__watches_installed = False
+
+		# This one needs the 2 others to exists in case it's `True`.
+		self.__is_inotified      = self.__resolve_inotified_state(kwargs.pop('inotified', None))
+
 	@property
 	def check_rules(self):
 		try:
@@ -184,6 +212,100 @@ class CoreFSUnitObject(object):
 	@property
 	def watches(self):
 		return self.__watches
+
+	@property
+	def inotified(self):
+		return self.__is_inotified
+	@inotified.setter
+	def inotified(self, inotified):
+		""" Change the inotify state of the object, and start/stop inotifier
+			watches accordingly. """
+		return self.inotified_toggle(inotified)
+	def inotified_toggle(self, inotified, full_display=True):
+
+		object_type_str = self.controller.object_type_str
+
+		if inotified == self.__is_inotified:
+			if full_display:
+				logging.notice(_(u'Inotify state {0} for {1} {2}.').format(
+								stylize(ST_COMMENT, _(u'unchanged')),
+								object_type_str,
+								stylize(ST_NAME, self.name)))
+			return
+
+		with self.lock:
+
+			self.__is_inotified = inotified
+
+			if inotified:
+				qualif     = ''
+				act_value  = _(u'activated')
+				set_value  = _(u'setup')
+				color      = ST_OK
+
+				settings.del_inotifier_exclusion(self.homeDirectory)
+
+				# setup the inotify watches
+				self._inotifier_add_all_watches()
+
+			else:
+				qualif     = _(u'not ')
+				act_value  = _(u'deactivated')
+				set_value  = _(u'torn down')
+				color      = ST_BAD
+
+				# or tear them down
+				self._inotifier_del_watch()
+
+				settings.add_inotifier_exclusion(self.homeDirectory)
+
+			# the watched state is displayed in CLI.
+			self._cli_invalidate()
+
+			# we need a kwargs named 'group' or 'user', thus the **{...}.
+			LicornEvent('%s_inotify_state_changed' % object_type_str,
+						**{ object_type_str: self }).emit(priorities.LOW)
+
+			if full_display:
+				logging.notice(_(u'Switched {0} {1} inotify state to {2} '
+								u'(watchers for shared content are '
+								u'beiing {3} in the background, this can '
+								u'take a while…)').format(
+									object_type_str,
+									stylize(ST_NAME, self.name),
+									stylize(color, act_value),
+									set_value))
+	def __resolve_inotified_state(self, inotified=None):
+		""" Check if a given user/group is 'inotified' (its homeDirectory is
+			watched) or not. This method is used in 2 different context:
+
+			- at creation via `controller.add_*()`
+			- at load via `backend.load_*()`.
+
+			At creation, `inotified` will be ``True`` or ``False``, to indicate
+			what default value it should be, because the current value can't
+			be determined from `settings` nor the FS (the home directory is not
+			yet created and settings aren't set for this user/group).
+
+			At load, the `inotified` param should be ``None`` (backends don't
+			need to care about it) and the user/group will determine the correct
+			value from `settings.inotifier_exclusions`.
+
+			:param inotified: a boolean, which can be ``None`` (and it's the
+				default value if not passed when calling this method).
+		"""
+
+		# we can't use self.__is_system because it's not an attribute of
+		# the current class.
+		if self.is_system:
+			# system users/groups don't handle the inotified attribute.
+			return None
+
+		if inotified is None:
+			return self.homeDirectory not in settings.inotifier_exclusions
+
+		else:
+			return inotified
 
 	# This method must not fail on any exception, else the INotifier will
 	# crash and become unusable. Thus just warn if any exception occurs.
@@ -398,16 +520,31 @@ class CoreFSUnitObject(object):
 			watches = L_inotifier_add(
 									path=directory,
 									rec=initial, auto_add=False,
-									mask=	#pyinotify.ALL_EVENTS,
+									mask=#pyinotify.ALL_EVENTS,
 											pyinotify.IN_CREATE
 											| pyinotify.IN_ATTRIB
 											| pyinotify.IN_MOVED_TO
 											| pyinotify.IN_MOVED_FROM
 											| pyinotify.IN_DELETE_SELF,
-									#proc_fun=pyinotify.PrintAllEvents())
-									proc_fun=self.__inotify_event_dispatcher)
+									proc_fun=self.__inotify_event_dispatcher,
+									# just log any error, don't raise
+									# exceptions while adding watches.
+									quiet=True,
+									# When recursively adding homes, use
+									# system-wide exclusions to relax the
+									# inotifier.
+									exclude_filter=exclude_filter_func)
 			if watches:
 				for key, value in watches.iteritems():
+					if value < 0:
+						# reason -2 is "path excluded by exclude_filter()",
+						# check for yourself directly in `pyinotify` source.
+						# Then, no need to bother us with a false-negative,
+						# because exclusion is the desired behaviour.
+						if value != -2:
+							logging.warning(_(u'Watch add failed for {0}, reason {1}').format(key, value))
+						continue
+
 					if key in self.__watches:
 						logging.warning2(_(u'{0}: overwriting watch {1}!').format(
 							stylize(ST_NAME, self.name), stylize(ST_PATH, key)))
@@ -427,16 +564,17 @@ class CoreFSUnitObject(object):
 
 		with self.lock:
 			if directory == self.homeDirectory:
-				try:
-					# rm_watch / inotifier_del wants a list of WDs as argument.
-					self.__recently_deleted.update(L_inotifier_del(
-								self.__watches.values(), quiet=False).iterkeys())
 
-				except AttributeError:
-					# L_inotifier_del() will return None if inotifier is
-					# disabled, else it should *always* return something.
-					if settings.licornd.inotifier.enabled:
-						raise
+				# NOTE: using sorted( ... , reverse=True) doesn't help
+				# suppressing the useless pyinotify warnings.
+				for watch in self.__watches.values():
+					try:
+						# rm_watch / inotifier_del wants a list of WDs as argument.
+						self.__recently_deleted.update(L_inotifier_del([watch], quiet=True).iterkeys())
+
+					except:
+						logging.exception(_(u'Cannot remove watch {0}, continuing'), watch)
+						continue
 
 				self.__watches.clear()
 
@@ -537,15 +675,38 @@ class CoreFSUnitObject(object):
 
 		except AttributeError, e:
 			# this happens when a CoreObject is deleted but has not been
-			# checked since daemon stats. Rare, but happens.
+			# checked since daemon start. Rare, but happens.
 			logging.warning2('del %s: %s' % (self.name, e))
 
+		# we have no watches left. Reclaim some memory ;-)
+		self.__recently_deleted.clear()
+
 		self.__watches_installed = False
-	def _inotifier_add_watch(self, inotifier, force_reload=False):
+	def _inotifier_add_watch(self, inotifier=None, force_reload=False):
 		""" add a group watch. not used directly by inotifier, but prefixed
 			with it because used in the context. """
 
-		assert ltrace(TRACE_INOTIFIER, '| %s %s._inotifier_add_watch()' % (self.__class__, self.name))
+		assert ltrace_func(TRACE_CHECKS)
+
+		# The configuration file watch is installed inconditionally (watched
+		# home or not).
+		#
+		# NOTE1: the inotifier hint is not needed for the configuration
+		# file, because we don't modify it from inside licornd. Only the
+		# user/admin modifies it; no hint implies that any inotify event will
+		# trigger the reload, which is what we want.
+		#self.check_file_hint =
+		#
+		# NOTE2: don't check if the configuration file exists or not, just
+		# watch it. This allows automatic detection of manually created files
+		# by the administrator, which is a quite cool feature.
+		#if os.path.exists(os.path.dirname(self.__check_file)):
+		L_inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
+
+		if self.inotified:
+			self._inotifier_add_all_watches(force_reload)
+	def _inotifier_add_all_watches(self, force_reload=False):
+		assert ltrace_func(TRACE_INOTIFIER)
 
 		if self.__watches_installed and not force_reload:
 			return
@@ -554,21 +715,16 @@ class CoreFSUnitObject(object):
 			# set the property to whatever, it will find the directory for itself.
 			self.homeDirectory = 'wasted string'
 
+		# This is just in case it hasn't already been done before.
 		self.__load_check_rules()
-
-		# The hint is not needed for the user configuration file, because we
-		# don't modify it from inside licornd. Only the user does modify it.
-		#self.check_file_hint =
-		if os.path.exists(os.path.dirname(self.__check_file)):
-			L_inotifier_watch_conf(self.__check_file, self, self.__load_check_rules)
 
 		# put this in the queue, to avoid taking too much time at daemon start.
 		workers.service_enqueue(priorities.HIGH,
 					self.__watch_directory, self.homeDirectory, initial=True)
 
 		self.__watches_installed = True
-	def _standard_check(self, minimal=True, force=False,
-						batch=False, auto_answer=None, full_display=True):
+	def _standard_check(self, initial=False, minimal=True, skel_to_apply=None, force=False,
+							batch=False, auto_answer=None, full_display=True):
 		""" Check a standard CoreFSUnitObject. This works for users and groups,
 			and generally speaking, any object which has a home directory.
 
@@ -576,22 +732,27 @@ class CoreFSUnitObject(object):
 			symlinks, etc).
 		"""
 
-		assert ltrace(TRACE_CHECKS, '| %s._standard_check()' % self.name)
+		assert ltrace_func(TRACE_CHECKS)
 
 		if self._checking.is_set():
 			logging.warning(_(u'{0} {1}: somebody is already checking; '
-				u'operation aborted.').format(
-					self.controller.object_type_str,
-					stylize(ST_NAME, self.name)))
+								u'operation aborted.').format(
+									self.controller.object_type_str,
+									stylize(ST_NAME, self.name)))
 			return
+
+		directory_type = _(u'shared') if self.__class__.__name__ == 'Group' else _(u'home')
 
 		with self.lock:
 			try:
 				self._checking.set()
 
-				logging.info(_(u'Checking {0} {1}…').format(
-						_(self.__class__.__name__.lower()),
-						stylize(ST_NAME, self.name)))
+				need_watches = False
+
+				if full_display:
+					logging.info(_(u'Checking {0} {1}…').format(
+									_(self.__class__.__name__.lower()),
+									stylize(ST_NAME, self.name)))
 
 				if hasattr(self, '_pre_standard_check_method'):
 					self._pre_standard_check_method(minimal, force, batch,
@@ -601,29 +762,44 @@ class CoreFSUnitObject(object):
 				# is done in fsapi.check_one_dir_and_acl(). but we *must* do it
 				# because we set uid and gid to -1, and this implies the need to
 				# access to the path lstat() in ACLRule.check_dir().
-				if not os.path.exists(self.homeDirectory):
-					if batch or logging.ask_for_repair(_(u'Directory %s does not '
-									u'exist but it is mandatory. Create it?') %
-										stylize(ST_PATH, self.homeDirectory),
+				if os.path.exists(self.homeDirectory):
+					if full_display and initial:
+						logging.info(_(u'{0} directory {1} already exists.').format(
+											directory_type.title(),
+											stylize(ST_PATH, self.homeDirectory)))
+				else:
+					if batch or logging.ask_for_repair(_(u'{0} directory {1} '
+									u'does not exist but it is mandatory. '
+									u'Create it?').format(directory_type,
+										stylize(ST_PATH, self.homeDirectory)),
 									auto_answer=auto_answer):
 						os.mkdir(self.homeDirectory)
 
 						if full_display:
-							logging.info(_(u'Created directory {0}.').format(
-								stylize(ST_PATH, self.homeDirectory)))
+							logging.info(_(u'Created {0} directory {1}.').format(
+								directory_type, stylize(ST_PATH, self.homeDirectory)))
 
-						# if home directory was missing, inotify watch is probably
-						# missing. re-set it up.
-						self._inotifier_add_watch(self.licornd)
+						need_watches = True
 					else:
-						raise exceptions.LicornCheckError(_(u'Directory %s does not '
-							u'exist but is mandatory. Check aborted.') %
-								stylize(ST_PATH, self.homeDirectory))
+						raise exceptions.LicornCheckError(_(u'Directory %s '
+							u'does not exist but is mandatory. Check aborted.')
+								% stylize(ST_PATH, self.homeDirectory))
+
+				if skel_to_apply is not None and hasattr(self, 'apply_skel'):
+					self.apply_skel(skel_to_apply)
+
+				if need_watches:
+					# if home directory was missing, inotify watches are
+					# probably missing. (Re-)set them up. If the object is
+					# not inotified, this will install only the
+					# configuration file watch. If the skel was just applied
+					# its directories will be watched too (if applicable).
+					self._inotifier_add_watch()
 
 				if self.check_rules is not None:
 
 					try:
-						checked    = set()
+						checked = set()
 
 						if __debug__:
 							length     = 0
@@ -684,10 +860,10 @@ class CoreFSUnitObject(object):
 			# CheckGroups, which calls CheckUsers, which could call
 			# CheckGroups()… use minimal=True as argument here, don't forward
 			# the current "minimal" value.
-			self._extended_standard_check_method(
-				batch=batch, auto_answer=auto_answer, full_display=full_display)
+			self._extended_standard_check_method(batch=batch,
+							auto_answer=auto_answer, full_display=full_display)
 
-	# private methods.
+	# pseudo-private methods.
 	def _resolve_home_directory(self, directory=None):
 		""" construct the standard value for a user/group home directory, and
 			try to find if it a symlink. If yes, resolve the symlink and
@@ -721,7 +897,6 @@ class CoreFSUnitObject(object):
 				home = os.path.realpath(home)
 
 		return home
-
 	def _fast_aclcheck(self, path, expiry_check=False):
 		""" check a file in a shared group directory and apply its perm
 			without any confirmation.
@@ -763,10 +938,10 @@ class CoreFSUnitObject(object):
 						u'If this is intentional, do not forget to run "{2}" '
 						u'afterwards, to restore the inotifier watch.').format(
 							stylize(ST_NAME, self.name), stylize(ST_PATH, home),
-							stylize(ST_IMPORTANT, 'mod %s %s -w' % (
+							stylize(ST_IMPORTANT, 'mod %s %s --restore-watches' % (
 								self.controller.object_type_str, self.name))))
 
-					self._inotifier_del_watch(self.licornd)
+					self._inotifier_del_watch()
 			else:
 				raise e
 
@@ -827,16 +1002,14 @@ class CoreFSUnitObject(object):
 						# (NOACL or RESTRICT are non-sense, the dir is *shared*).
 						dir_info.gid = LMC.configuration.acls.gid
 
-		except Exception, e:
-			logging.warning(_(u'{0}: problem checking {1}, aborting '
-				'(traceback and dir_info follow)').format(self.name, path))
-			pyutils.print_exception_if_verbose()
+		except:
+			logging.exception(_(u'{0}: problem while checking {1}, aborting'),
+								self.name, path)
 			return
 
 		# run the check, and catch expected events on the way: check_perms
 		# yields touched paths along the way.
 		with self.lock:
-
 			self.__check_expected.update(fsapi.check_perms(dir_info, batch=True,
 					file_type=(entry_stat.st_mode & 0170000),
 					is_root_dir=(rule_name is ''), full_display=__debug__))

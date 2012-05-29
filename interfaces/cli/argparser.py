@@ -67,41 +67,41 @@ def common_filter_group(app, parser, tool, mode):
 		filtergroup.add_option('-a', '--all',
 			action="store_true", dest="all", default=False,
 			help=_(u'Also select system data. I.e. '
-				'output system %s too.') % mode)
+					u'output system %s too.') % mode)
 
 	if tool in ('get', 'mod', 'del'):
 		if mode in ('volumes', 'users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default=False,
 				help=_(u'Also select system data. I.e. '
-					'output system %s too.') % mode)
+						u'output system %s too.') % mode)
 
 		if mode in ('users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
 				help=_(u'exclude {0} from the selection. Can be IDs or {1} '
-					'names. Separated by commas without spaces.').format(mode,
-					mode[:-1]))
+						u'names. Separated by commas without spaces.').format(
+						mode, mode[:-1]))
 
 	if tool is 'get':
 		if mode in ('daemon_status', 'users', 'groups', 'machines'):
 			filtergroup.add_option('-l', '--long', '--full', '--long-output',
 				action="store_true", dest="long_output", default=False,
 				help=_(u'long output (all info, attributes, etc). '
-					'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 		if mode == 'daemon_status':
 			filtergroup.add_option('--detail', '--details',
 				'-p', '--precision', '--precisions', '--pinpoint',
 				action="store", dest="precision", default=None,
 				help=_(u'long output (all info, attributes, etc). '
-					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 			filtergroup.add_option('--monitor', '-m', '--stay-connected',
 				action="store_true", dest="monitor", default=False,
 				help=_(u'Stay connected to the daemon and update the status '
-					u'every given interval (see below). '
-					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'every given interval (see below). '
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 			filtergroup.add_option('-i', '--interval', '--monitor-interval',
 				action="store", type="int", dest="monitor_interval", default=1,
@@ -139,7 +139,7 @@ def common_filter_group(app, parser, tool, mode):
 		if mode in ('users', 'groups', 'profiles'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
-				help=_(u'exclude {0} from the selection. Can be IDs or {1} '
+				help=_(u'Exclude {0} from the selection. Can be IDs or {1} '
 					u'names. Separated by commas without spaces.').format(mode,
 					mode[:-1]))
 
@@ -192,6 +192,16 @@ def common_filter_group(app, parser, tool, mode):
 				'--exclude-word-match',
 				action="store", dest="exclude_word_match", default='',
 				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+
+	if tool in ('get', 'chk') and mode in ('users', 'groups'):
+		filtergroup.add_option('-w', '--watched', '--inotified',
+			action="store_true", dest="inotified", default=False,
+			help=_(u'Include all watched {0}.').format(_(mode)))
+
+		filtergroup.add_option('-W', '--not-watched', '--not-inotified',
+			action="store_true", dest="not_inotified", default=False,
+			help=_(u'Include all non-watched {0}. Handy for checking all '
+				u'of them at once in a cron script.').format(_(mode)))
 
 	if mode is 'groups':
 		filtergroup.add_option('--name', '--names', '--group', '--groups',
@@ -819,6 +829,16 @@ def add_user_parse_arguments(app):
 			"is valid only for system accounts, because standard accounts "
 			"must always have a home."))
 
+	user.add_option("-W", "--not-watched", "--set-not-watched",
+						"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="inotified", default=True,
+		help=_(u"Do not watch the home directory of the user for content "
+			u"changes. Usefull for big directories which slow down licornd. "
+			u"You have to manually run {0} on non-watched users. (default: "
+			u"{1})").format(
+				stylize(ST_DEFAULT, 'chk'),
+				stylize(ST_DEFAULT, _(u"watched"))))
+
 	user.add_option("--disabled-password",
 		action="store_true", dest="disabled_password", default=False,
 		help=_(u"The user will have no password. %s.") % stylize(ST_DEFAULT,
@@ -940,7 +960,18 @@ def add_group_parse_arguments(app):
 	group.add_option('-p', '--permissive',
 		action="store_true", dest="permissive", default=False,
 		help=_(u"Will the shared group directory be permissive? "
-			"(default: %s)." % stylize(ST_DEFAULT, _(u"not permissive"))))
+				u"(default: {0}).".format(
+				stylize(ST_DEFAULT, _(u"not permissive")))))
+
+	group.add_option("-W", "--not-watched", "--set-not-watched",
+		"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="inotified", default=True,
+		help=_(u"Do not watch the shared directory of the group for content "
+			u"changes. Usefull for big directories which slow down licornd. "
+			u"You have to manually run {0} on non-watched groups. (default: "
+			u"{1})").format(
+				stylize(ST_DEFAULT, 'chk'),
+				stylize(ST_DEFAULT, _(u"watched"))))
 
 	group.add_option('-g', '--gid',
 		action="store", type="int", dest="gid", default=None,
@@ -949,7 +980,7 @@ def add_group_parse_arguments(app):
 	group.add_option('-d', '--description', '-c', '--comment',
 		action="store", type="string", dest="description", default=None,
 		help=_(u"Description of the group (free text, "
-			"but must match /%s/i).") % stylize(ST_COMMENT,
+			u"but must match /%s/i).") % stylize(ST_COMMENT,
 				hlstr.regex['description']))
 
 	group.add_option('-S', '--skel', '--skeleton',
@@ -960,8 +991,8 @@ def add_group_parse_arguments(app):
 
 	group.add_option('-s', '--system', '--system-group', '--sysgroup',
 		action='store_true', dest='system', default=False,
-		help=_("The group will be a system group (only root or %s members "
-			"can decide this, but this is not enforced yet).") %
+		help=_(u"The group will be a system group (only root or %s members "
+			u"can decide this, but this is not enforced yet).") %
 				stylize(ST_NAME, settings.defaults.admin_group))
 
 	group.add_option('-u', '--users', '--add-users', '--members',
@@ -975,12 +1006,12 @@ def add_group_parse_arguments(app):
 			action='store', dest='in_backend',
 			default=None,
 			help=_(u"Specify backend in which to store the group (default: "
-				"{0}; possible choices: {1}; {2}).").format(
+				u"{0}; possible choices: {1}; {2}).").format(
 				stylize(ST_DEFAULT, LMC.rwi.prefered_groups_backend_name()),
 				', '.join(stylize(ST_NAME, backend)
 					for backend in backends),
 				stylize(ST_DEFAULT, _(u'this argument can be used for '
-					'massive imports, too'))))
+					u'massive imports, too'))))
 
 	parser.add_option_group(group)
 
@@ -1380,6 +1411,19 @@ def mod_user_parse_arguments(app):
 		action="store_false", dest="lock", default=None,
 		help=_(u"unlock the user account and restore login ability."))
 
+	user.add_option("-w", "--watched", "--set-watched",
+		"--inotified", "--set-inotified",
+		action="store_true", dest="inotified", default=None,
+		help=_(u"(Re-)watch the home directory of the user for content changes."))
+
+	user.add_option("-W", "--not-watched", "--set-not-watched",
+		"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="inotified", default=None,
+		help=_(u"Do not watch the home directory of the user for content "
+			u"changes. Usefull for big directory which slow down licornd. You "
+			u"have to manually run {0} on non-watched groups.").format(
+				stylize(ST_DEFAULT, 'chk')))
+
 	user.add_option("--add-groups",
 		dest="groups_to_add", default=None,
 		help=_(u"make user member of these groups."))
@@ -1395,7 +1439,7 @@ def mod_user_parse_arguments(app):
 			"overwrite the dirs/files provided by the skel in the "
 			"user's home dir."))
 
-	user.add_option('-w', '--watch', '--restore-watch',
+	user.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for this account home directory. "
 			"This is particularly useful after a directory move."))
@@ -1535,7 +1579,20 @@ def mod_group_parse_arguments(app):
 		action="store_false", dest="permissive", default=None,
 		help=_(u"Set the shared directory of the group not permissive."))
 
-	group.add_option('-w', '--watch', '--restore-watch',
+	group.add_option("-w", "--watched", "--set-watched",
+		"--inotified", "--set-inotified",
+		action="store_true", dest="inotified", default=None,
+		help=_(u"(Re-)watch the shared directory of the group for content changes."))
+
+	group.add_option("-W", "--not-watched", "--set-not-watched",
+		"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="inotified", default=None,
+		help=_(u"Do not watch the shared directory of the group for content "
+			u"changes. Usefull for big directory which slow down licornd. You "
+			u"have to manually run {0} on non-watched groups.").format(
+				stylize(ST_DEFAULT, 'chk')))
+
+	group.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for the group home directory. "
 			"This is particularly useful after a directory move."))
