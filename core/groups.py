@@ -2484,7 +2484,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				return
 
 			# Remove the inotifier watches before deleting the group.
-			group.inotified = False
+			group.inotified_toggle(False, full_display=False)
 
 			# For a standard group, there are a few steps more :
 			# 	- delete the responsible and guest groups (if exists),
