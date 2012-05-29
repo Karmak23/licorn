@@ -10,7 +10,7 @@ import os, time, pyinotify, select, errno
 
 from threading import Timer
 
-from licorn.foundations           import logging, exceptions
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.base      import BasicCounter
 from licorn.foundations.styles    import *
@@ -64,7 +64,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		# writes a configuration file, we get 3 events (DEL, CREATE, MODIFY)
 		# and we must temporize the refresh, else we will do it more than once.
 		self._timers = {}
-
 	def dump_status(self, long_output=False, precision=None, as_string=True):
 
 		if as_string:
@@ -96,7 +95,6 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 					conf_files=self._watched_conf_files.keys(),
 					qsize=len(self._eventq)
 				)
-
 	def stop(self):
 		""" Stop notifier's loop. Stop notification. Join the thread. """
 

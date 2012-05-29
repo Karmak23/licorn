@@ -180,6 +180,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			__builtin__.__dict__['L_inotifier_watch_conf']     = ino.inotifier_watch_conf
 			__builtin__.__dict__['L_inotifier_del_conf_watch'] = ino.inotifier_del_conf_watch
 
+			# TODO: make the collection automatic for settings (or
+			# globally for foundations), too.
+			settings._inotifier_install_watches()
+
 			ino.collect()
 
 		else:
@@ -209,6 +213,15 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			#self.__threads.syncer   = ServerSyncer(self)
 			#self.__threads.searcher = FileSearchServer(self)
 			#self.__threads.cache    = Cache(self, keywords)
+	@events.handler_method
+	def settings_changed(self, event, *args, **kwargs):
+		""" TODO. """
+
+		# TODO: implement inotifier shutdown if settings say it is now.
+		#		- idem for extensions / backends, etc.
+		#	This method can do tricky things, that's why it's not
+		# implemented for now.
+		pass
 
 	@events.callback_method
 	def configuration_loaded(self, event, *args, **kwargs):

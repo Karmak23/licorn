@@ -302,6 +302,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_GET, '> get_users(%s,%s)' % (opts, args))
 
+		# default selection
 		selection = filters.SYSUNRSTR | filters.STANDARD
 
 		if opts.system:
@@ -309,6 +310,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
+
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
 
 		users_to_get = self.select(LMC.users, args[1:], opts,
 					include_id_lists = [
@@ -365,6 +372,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			selection = filters.NOT_SYSTEM
 		elif opts.not_privileged:
 			selection = filters.NOT_PRIVILEGED
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
 
 		elif not opts.all:
 			# must be the last case!
@@ -1136,6 +1147,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						primary_group=opts.primary_gid,
 						profile=opts.profile,
 						backend=opts.in_backend,
+						inotified=opts.inotified,
 						skel=opts.skel, batch=opts.batch, force=opts.force,
 						shell=opts.shell, lastname=lastname, firstname=firstname,
 						in_groups=opts.in_groups)
@@ -1237,6 +1249,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
 						backend=opts.in_backend,
+						inotified=opts.inotified,
 						members_to_add=self.select(LMC.users,
 										include_id_lists=
 											[ (opts.users_to_add,
@@ -1801,6 +1814,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						something_done = True
 						user.password = opts.newpassword
 
+					if opts.inotified is not None:
+						something_done = True
+						user.inotified = opts.inotified
+
 					if opts.interactive_password:
 						something_done = True
 
@@ -1994,8 +2011,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						group.move_to_backend(opts.move_to_backend,	opts.force)
 
 				if opts.permissive is not None:
-					something_done = True
+					something_done   = True
 					group.permissive = opts.permissive
+
+				if opts.inotified is not None:
+					something_done  = True
+					group.inotified = opts.inotified
 
 				if opts.restore_watch:
 					if group.inotified:
@@ -2400,6 +2421,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		elif opts.not_system:
 			selection = filters.NOT_SYSTEM
 
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
+
 		else:
 			# by default we check the current user
 			selection = [ LMC.users.by_login(opts.current_user) ]
@@ -2477,6 +2504,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			selection = filters.NOT_SYSTEM
 		elif opts.not_privileged:
 			selection = filters.NOT_PRIVILEGED
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
 
 		elif not opts.all:
 			# must be the last case!

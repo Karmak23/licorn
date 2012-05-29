@@ -20,6 +20,7 @@ from operator   import attrgetter
 
 from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import fsapi, pyutils, hlstr
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -31,7 +32,6 @@ from licorn.foundations.constants import filters, backend_actions, \
 from licorn.core                import LMC
 from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
 #from licorn.core.users          import User
-from licorn.foundations.events import LicornEvent
 
 class Group(CoreStoredObject, CoreFSUnitObject):
 	""" a Licorn® group object.
@@ -207,7 +207,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				return relation.NO_MEMBERSHIP
 	def __init__(self, gidNumber, name, memberUid=None,
 		homeDirectory=None, permissive=None, description=None,
-		groupSkel=None, userPassword=None, backend=None):
+		groupSkel=None, userPassword=None, inotified=None, backend=None):
 
 		assert ltrace_func(TRACE_OBJECTS)
 
@@ -287,7 +287,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		super(Group, self).__init__(
 				controller=LMC.groups,
 				backend=backend,
-
+				inotified=inotified,
 				# There is no '/', this is intentionnal, because the check_file
 				# is stored outside of the group directory.
 				check_file='%s%s' % (self.__homeDirectory,
@@ -1260,7 +1260,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		"""
 
 		if self.__is_system:
-			# system groups don't handle the permisse attribute.
+			# system groups don't handle the permissive attribute.
 			return None
 
 		try:
@@ -1610,6 +1610,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		""" FIXME: make long_output a dedicated precalc variable... """
 		try:
 			return self.__cg_precalc_full
+
 		except AttributeError:
 
 			# NOTE: 5 = len(str(65535)) == len(max_uid) == len(max_gid)
@@ -1618,7 +1619,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			gid_label_rest = 5 - len(str(self.__gidNumber))
 
 			accountdata = [ '{group_name}: ✎{gid} {backend}	'
-								'{descr}'.format(
+								'{descr} {inotified}'.format(
 								group_name=stylize(
 									Group._permissive_colors[self.__is_permissive]
 										if self.__is_standard
@@ -1632,7 +1633,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 									' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								descr= stylize(ST_COMMENT, self.__description)
-									if self.__description != '' else '') ]
+									if self.__description != '' else '',
+								inotified='' if self.is_system or self.inotified
+												else stylize(ST_BAD,
+													_('(not watched)'))) ]
 
 			if long_output:
 				if hasattr(self, '__userPassword'):
@@ -1992,14 +1996,23 @@ class GroupsController(DictSingleton, CoreFSController):
 
 				filtered_groups = self.values()
 
+			elif filters.WATCHED == filter_string:
+				assert ltrace(TRACE_GROUPS, '> Select(INO:%s/%s)' % (
+					filters.NOT_WATCHED, filter_string))
+				filtered_groups.extend(group for group in self
+														if group.inotified)
+
+			elif filters.NOT_WATCHED == filter_string:
+				assert ltrace(TRACE_GROUPS, '> Select(UNW:%s/%s)' % (
+					filters.NOT_WATCHED, filter_string))
+				filtered_groups.extend(group for group in self
+														if group.is_standard and not group.inotified)
+
 			elif filters.STANDARD == filter_string:
 				assert ltrace(TRACE_GROUPS, '> Select(STD:%s/%s)' % (
 					filters.STD, filter_string))
-				try:
-					filtered_groups.extend(group for group in self
+				filtered_groups.extend(group for group in self
 														if group.is_standard)
-				except AttributeError, e:
-					print [ '%s, %s' % (x, type(x)) for x in self ]
 
 			elif filters.EMPTY == filter_string:
 				assert ltrace(TRACE_GROUPS, '> Select(EMPTY:%s/%s)' % (
@@ -2174,7 +2187,8 @@ class GroupsController(DictSingleton, CoreFSController):
 											backend=None, members_to_add=None,
 											responsibles_to_add=None,
 											guests_to_add=None, batch=False,
-											force=False, async=True):
+											force=False, async=True,
+											inotified=True):
 		""" Add a Licorn group (the group + the guest/responsible group +
 			the shared dir + permissions (ACL)). """
 
@@ -2194,6 +2208,7 @@ class GroupsController(DictSingleton, CoreFSController):
 					description=description,
 					groupSkel=groupSkel,
 					permissive=permissive,
+					inotified=inotified,
 					backend=backend, batch=batch, force=force)
 
 			except exceptions.AlreadyExistsException, e:
@@ -2241,8 +2256,6 @@ class GroupsController(DictSingleton, CoreFSController):
 		group.check(minimal=True, batch=True, force=force)
 
 		if not_already_exists:
-			group._inotifier_add_watch(self.licornd)
-
 			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
 								stylize(ST_OK, _(u'permissive'))
 								if permissive else
@@ -2267,7 +2280,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		return group
 	def __add_group(self, name, manual_gid=None, system=False, description=None,
 						groupSkel=None, permissive=None, backend=None,
-						batch=False, force=False):
+						inotified=True, batch=False, force=False):
 		""" Add a POSIX group, write the system data files.
 			Return the gid of the group created. """
 
@@ -2373,6 +2386,7 @@ class GroupsController(DictSingleton, CoreFSController):
 										if system else groupSkel,
 									permissive=permissive,
 									userPassword='x',
+									inotified=inotified,
 									backend=self._prefered_backend
 										if backend is None else backend)
 
@@ -2469,11 +2483,8 @@ class GroupsController(DictSingleton, CoreFSController):
 				assert ltrace_func(TRACE_GROUPS, True)
 				return
 
-			# remove the inotifier watch before deleting the group, else
-			# the call will fail, and before archiving group shared
-			# data, else it will leave ghost notifies in our Inotifier thread,
-			# which doesn't need that.
-			group._inotifier_del_watch(self.licornd)
+			# Remove the inotifier watches before deleting the group.
+			group.inotified = False
 
 			# For a standard group, there are a few steps more :
 			# 	- delete the responsible and guest groups (if exists),
@@ -2510,10 +2521,13 @@ class GroupsController(DictSingleton, CoreFSController):
 		# can be very long, releasing the locks is good idea.
 		assert ltrace_locks(self.lock, LMC.privileges.lock, LMC.users.lock)
 
-		# the group information has been wiped out, remove or archive the shared
+		# The group information has been wiped out, remove or archive the shared
 		# directory. If anything fails now, this is not a real problem, because
 		# the system configuration data is safe. At worst, there is an orphaned
 		# directory remaining in the arbo, which is harmless.
+		#
+		# NOTE: harmless warnings can occur if the group directory is
+		# moved/archived before all inotifier watches are removed.
 		if no_archive:
 			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, home)
 

@@ -587,7 +587,7 @@ class CoreFSController(CoreController):
 
 					logging.progress(_(u'{0} {1} ACL rule {2}: "{3}" for '
 						u'"{4}".').format(stylize(ST_OK,_('Added')),
-							self.name, 
+							self.name,
 							_(u'template') if system_wide else u'',
 							stylize(ST_NAME, rule.acl),
 							stylize(ST_NAME, directory)))
@@ -651,14 +651,16 @@ class CoreFSController(CoreController):
 
 		for obj in self.select(filters.STD):
 			try:
-				obj._inotifier_add_watch(inotifier)
+				# NOTE: if the object is not inotified, it will only install
+				# the configuration file watch, not all the rest.
+				obj._inotifier_add_watch()
 
 			except:
-				logging.warning(_(u'{0}: error on setting inotifier watches '
-					u'for {1} {2}.').format(
-						stylize(ST_NAME, self.name), self.object_type_str,
-						stylize(ST_NAME, obj.name)))
-				pyutils.print_exception_if_verbose()
+				logging.exception(_(u'{0}: exception while installing '
+									u'inotifier watches for {1} {2}'),
+										stylize(ST_NAME, self.name),
+										self.object_type_str,
+										stylize(ST_NAME, obj.name))
 
 	def _expire_events(self):
 		""" iterate all our unit objects and make them verify they expired data. """

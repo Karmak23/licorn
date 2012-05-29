@@ -17,6 +17,7 @@ from operator   import attrgetter
 
 from licorn.foundations           import logging, exceptions, hlstr, settings
 from licorn.foundations           import pyutils, fsapi, process
+from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -28,7 +29,6 @@ from licorn.core                import LMC
 from licorn.core.groups         import Group
 from licorn.core.classes        import SelectableController, CoreFSController, \
 										CoreStoredObject, CoreFSUnitObject
-from licorn.foundations.events import LicornEvent
 
 import types
 
@@ -175,7 +175,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		gidNumber=None, gecos=None, homeDirectory=None, loginShell=None,
 		shadowLastChange=None, shadowInactive=None, shadowWarning=None,
 		shadowExpire=None, shadowMin=None, shadowMax=None, shadowFlag=None,
-		initialyLocked=False, backend=None,
+		initialyLocked=False, backend=None, inotified=None,
 		# this one is used only in creation mode, to speed up links between
 		# Licorn® objects.
 		primaryGroup=None):
@@ -230,6 +230,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		super(User, self).__init__(
 				controller=LMC.users,
 				backend=backend,
+				inotified=inotified,
 				check_file='%s/%s' % (self.__homeDirectory,
 					LMC.configuration.users.check_config_file),
 				object_info=Enumeration(
@@ -1057,7 +1058,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								- len(str(self.__gidNumber)))
 
 			accountdata = [ '{login}: ✎{uid} ✐{pri_group} '
-							'{backend}	{gecos}'.format(
+							'{backend}	{gecos} {inotified}'.format(
 								login=stylize(
 									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
@@ -1069,7 +1070,10 @@ class User(CoreStoredObject, CoreFSUnitObject):
 										' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								gecos=stylize(ST_COMMENT,
-									self.__gecos) if self.__gecos != '' else '') ]
+									self.__gecos) if self.__gecos != '' else '',
+								inotified='' if self.is_system or self.inotified
+												else stylize(ST_BAD,
+													_('(not watched)'))) ]
 
 			if len(self.__groups) > 0:
 
@@ -1290,11 +1294,20 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			elif type(filter_string) == type(1):
 				filtered_users = []
 
-				if filter_string & filters.NOT_SYSTEM \
+				if filters.WATCHED == filter_string:
+					filtered_users.extend(user for user in self
+														if user.inotified)
+
+				elif filters.NOT_WATCHED == filter_string:
+					filtered_users.extend(user for user in self
+														if user.is_standard and not user.inotified)
+
+
+				elif filter_string & filters.NOT_SYSTEM \
 						or filter_string & filters.STANDARD:
 					filtered_users.extend(user for user in self if user.is_standard)
 
-				if filters.SYSTEM == filter_string:
+				elif filters.SYSTEM == filter_string:
 					filtered_users.extend(user for user in self if user.is_system)
 
 				elif filters.SYSTEM_RESTRICTED & filter_string:
@@ -1302,6 +1315,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 				elif filters.SYSTEM_UNRESTRICTED & filter_string:
 					filtered_users.extend(user for user in self if user.is_system_unrestricted)
+
 			else:
 					uid_re = re.compile("^uid=(?P<uid>\d+)")
 					uid = uid_re.match(filter_string)
@@ -1311,6 +1325,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						else:
 							raise exceptions.DoesntExistException(
 								_(u'UID {0} does not exist.').format(uid))
+
 			return filtered_users
 	def __validate_home_dir(self, home, login, system, force):
 		""" Do some basic but sane tests on the home dir provided. """
@@ -1525,7 +1540,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 	def add_User(self, login=None, system=False, password=None, gecos=None,
 		desired_uid=None, primary_group=None, profile=None, backend=None,
 		skel=None, shell=None, home=None, lastname=None, firstname=None,
-		in_groups=None, batch=False, force=False):
+		in_groups=None, inotified=True, batch=False, force=False):
 		"""Add a user and return his/her (uid, login, pass)."""
 
 		assert ltrace(TRACE_USERS, '''> add_User(login=%s, system=%s, pass=%s, '''
@@ -1614,6 +1629,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 								password=password,
 								loginShell=loginShell,
 								homeDirectory=homeDirectory,
+								inotified=inotified,
 								backend=self._prefered_backend
 									if backend is None else backend,
 								initialyLocked=False)
@@ -1634,9 +1650,6 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			# this will implicitely load the check_rules for the user.
 			user.check(minimal=True, batch=True)
-
-			if user.is_standard:
-				user._inotifier_add_watch(self.licornd)
 
 		# we needed to delay this display until *after* account creation, to
 		# know the login (it could have been autogenerated by the User class).
@@ -1719,7 +1732,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			LicornEvent('user_deleted', user=user).emit(priorities.LOW)
 
 			if user.is_standard:
-				user._inotifier_del_watch(self.licornd)
+				user.inotified = False
 
 			# NOTE: this must be done *after* having deleted the data from self,
 			# else mono-maniac backends (like shadow) don't see the change and
@@ -1742,8 +1755,11 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		LicornEvent('user_post_del', uid=uid, login=login,
 						no_archive=no_archive, synchronous=True).emit()
 
-		# user is now wiped out from the system.
+		# The user account is now wiped out from the system.
 		# Last thing to do is to delete or archive the HOME dir.
+		# NOTE: altering homeDir while inotifier is removing watches can
+		# produce warnings on the inotify side ("vanished directory ...").
+		# These warnings are harmless.
 		if no_archive:
 			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
 		else:

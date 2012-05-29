@@ -74,6 +74,12 @@ filters.NOT_RSP             = filters.NOT_RESPONSIBLE
 filters.NOT_SYSTEM          = filters.ALL - filters.SYSTEM
 filters.NOT_SYS             = filters.NOT_SYSTEM
 
+filters.WATCHED             = 0x00000800
+filters.INOTIFIED           = filters.WATCHED
+
+filters.NOT_WATCHED         = filters.STANDARD - filters.WATCHED
+filters.NOT_INOTIFIED       = filters.NOT_WATCHED
+
 filters.EMPTY               = 0x00ff0000
 
 # enum machine stati, for core.machines
