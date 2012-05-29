@@ -878,7 +878,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 										auto_answer=None, full_display=True):
 		"""Check current user account data consistency."""
 
-		assert ltrace_func(TRACE_USERS)
+		assert ltrace_func(TRACE_CHECKS)
 
 		with self.lock:
 			# Refering to #322, we should avoid checking system users under uid
@@ -893,21 +893,27 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			# system uids.
 			if self.is_system_unrestricted:
 				return self.__check_unrestricted_system_user(batch=batch,
-							skel_to_apply=skel_to_apply,
-							auto_answer=auto_answer, full_display=full_display)
+												skel_to_apply=skel_to_apply,
+												auto_answer=auto_answer,
+												full_display=full_display)
 
 			elif self.is_standard:
 				return self.__check_standard_user(minimal=minimal,
-							skel_to_apply=skel_to_apply, batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
+												skel_to_apply=skel_to_apply,
+												batch=batch,
+												auto_answer=auto_answer,
+												full_display=full_display)
 			else:
 				return self.__check_restricted_system_user(batch=batch,
-							auto_answer=auto_answer, full_display=full_display)
+													auto_answer=auto_answer,
+													full_display=full_display)
 
 	# aliases to CoreFSUnitObject methods
 	__check_standard_user = CoreFSUnitObject._standard_check
 	def __check_common_system_user(self, minimal=True, batch=False,
 										auto_answer=None, full_display=True):
+
+		assert ltrace_func(TRACE_CHECKS)
 
 		my_gecos = self.__gecos
 
@@ -932,8 +938,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if something_done:
 			logging.notice(_(u"Auto-cleaned {0}'s gecos to \"{1}\".").format(
-				stylize(ST_LOGIN, self.__login),
-				stylize(ST_COMMENT, my_gecos)))
+								stylize(ST_LOGIN, self.__login),
+								stylize(ST_COMMENT, my_gecos)))
 
 		for login, meaningless_gecoses, replacement_gecos in (
 					('backup', ('backup'), _(u'%s Automatic Backup System') % distros[LMC.configuration.distro].title()),
@@ -994,13 +1000,18 @@ class User(CoreStoredObject, CoreFSUnitObject):
 											stylize(ST_NAME, self.__login))
 
 		if self._checking.is_set():
-			logging.warning(_(u'account {0} already beiing ckecked, '
-				'aborting.').format(stylize(ST_LOGIN, self.__login)))
+			logging.warning(_(u'Account {0} already beiing ckecked, '
+							u'aborting.').format(stylize(ST_LOGIN, self.__login)))
 			return
 
 		with self.lock:
 
 			self._checking.set()
+
+			result = self.__check_common_system_user(minimal=minimal,
+													batch=batch,
+													auto_answer=auto_answer,
+													full_display=full_display)
 
 			if os.path.exists(self.__homeDirectory):
 
@@ -1025,23 +1036,30 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				del checked
 
 			self._checking.clear()
-	def __check_restricted_system_user(self, minimal=True, batch=False, auto_answer=None,
-														full_display=True):
+
+			return result
+	def __check_restricted_system_user(self, minimal=True, batch=False,
+										auto_answer=None, full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
 			be created. """
+
+		assert ltrace_func(TRACE_CHECKS)
+
 		logging.progress(_(u'Checking restricted system account %s…') %
 											stylize(ST_NAME, self.__login))
 
 		if self._checking.is_set():
 			logging.warning(_(u'account {0} already beiing ckecked, '
-				'aborting.').format(stylize(ST_LOGIN, self.__login)))
+							u'aborting.').format(stylize(ST_LOGIN, self.__login)))
 			return
 
 		with self.lock:
 			self._checking.set()
-			result = self.__check_common_system_user(batch=batch,
-						auto_answer=auto_answer, full_display=full_display)
+			result = self.__check_common_system_user(minimal=minimal,
+													batch=batch,
+													auto_answer=auto_answer,
+													full_display=full_display)
 			self._checking.clear()
 			return result
 	def _cli_get(self, long_output=False, no_colors=False):
@@ -1839,7 +1857,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			return '[ %s ]' % ','.join(user.to_JSON() for user in users)
 	def chk_Users(self, users_to_check=[], minimal=True, batch=False,
-		auto_answer=None):
+														auto_answer=None):
 		"""Check user accounts and account data consistency."""
 
 		assert ltrace(TRACE_USERS, '> chk_Users(%r)' % users_to_check)
@@ -1851,11 +1869,10 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		LMC.configuration.check_base_dirs(minimal=minimal,
 			batch=batch, auto_answer=auto_answer)
 
-		def my_check_user(user, minimal=minimal,
-					batch=batch, auto_answer=auto_answer):
-			return user.check(minimal, batch, auto_answer)
+		def my_check_user(user, minimal=minimal, batch=batch, auto_answer=auto_answer):
+			return user.check(minimal=minimal, batch=batch, auto_answer=auto_answer)
 
-		all_went_ok=reduce(pyutils.keep_false, map(my_check_user, users_to_check))
+		all_went_ok = reduce(pyutils.keep_false, map(my_check_user, users_to_check))
 
 		if all_went_ok is False:
 			# NOTICE: don't test just "if reduce():", the result could be None

@@ -2413,6 +2413,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	def chk_user(self, opts, args):
 		""" Check one or more user account(s). """
 
+		assert ltrace_func(TRACE_CHK)
+
 		self.setup_listener_gettext()
 
 		if opts.system:
@@ -2476,7 +2478,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						auto_answer=opts.auto_answer):
 
 						user.check(minimal=opts.minimal, batch=opts.batch,
-							auto_answer=opts.auto_answer)
+									auto_answer=opts.auto_answer)
 
 		assert ltrace(TRACE_CHK, '< chk_user()')
 	def chk_group(self, opts, args):

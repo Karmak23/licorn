@@ -723,7 +723,7 @@ class CoreFSUnitObject(object):
 
 		self.__watches_installed = True
 	def _standard_check(self, minimal=True, skel_to_apply=None, force=False,
-						batch=False, auto_answer=None, full_display=True):
+							batch=False, auto_answer=None, full_display=True):
 		""" Check a standard CoreFSUnitObject. This works for users and groups,
 			and generally speaking, any object which has a home directory.
 
@@ -735,9 +735,9 @@ class CoreFSUnitObject(object):
 
 		if self._checking.is_set():
 			logging.warning(_(u'{0} {1}: somebody is already checking; '
-				u'operation aborted.').format(
-					self.controller.object_type_str,
-					stylize(ST_NAME, self.name)))
+								u'operation aborted.').format(
+									self.controller.object_type_str,
+									stylize(ST_NAME, self.name)))
 			return
 
 		directory_type = _(u'shared') if self.__class__.__name__ == 'Group' else _(u'home')
@@ -765,7 +765,7 @@ class CoreFSUnitObject(object):
 					if full_display:
 						logging.info(_(u'{0} directory {1} already exists.').format(
 											directory_type.title(),
-											stylize(ST_PATH, homeDirectory)))
+											stylize(ST_PATH, self.homeDirectory)))
 				else:
 					if batch or logging.ask_for_repair(_(u'{0} directory {1} '
 									u'does not exist but it is mandatory. '
