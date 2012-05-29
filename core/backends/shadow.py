@@ -11,7 +11,7 @@ Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import os, crypt, tempfile, grp, pyinotify
+import os, crypt, tempfile, grp
 
 from threading  import Timer
 from traceback  import print_exc
@@ -311,6 +311,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 					try:
 						description = extra_entry[1]
 						groupSkel   = extra_entry[2]
+
 					except IndexError, e:
 						raise exceptions.CorruptFileError(
 							settings.backends.shadow.extended_group_file,
@@ -324,6 +325,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				if name ==  gshadow_entry[0]:
 					try:
 						userPassword = gshadow_entry[1]
+
 					except IndexError, e:
 						# TODO: set need_rewriting = True, construct a good
 						# default entry and continue.
@@ -516,9 +518,9 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		self.__conffiles_threads = {}
 
 		for watched_file, controller, hint, callback_func in (
-				('/etc/passwd', LMC.users,   self.__hint_pwd, self.__event_on_passwd),
-				('/etc/shadow', LMC.users,   self.__hint_shw, self.__event_on_passwd),
-				('/etc/group', LMC.groups,   self.__hint_grp, self.__event_on_group),
+				('/etc/passwd',  LMC.users,  self.__hint_pwd, self.__event_on_passwd),
+				('/etc/shadow',  LMC.users,  self.__hint_shw, self.__event_on_passwd),
+				('/etc/group',   LMC.groups, self.__hint_grp, self.__event_on_group),
 				('/etc/gshadow', LMC.groups, self.__hint_gsh, self.__event_on_group)
 			):
 			inotifier.watch_conf(watched_file, controller, callback_func, hint)
