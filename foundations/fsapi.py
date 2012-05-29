@@ -81,9 +81,10 @@ class FsapiObject(Enumeration):
 		self.already_loaded = False
 
 		if exclude is None:
-			self.exclude    = []
+			self.exclude = set()
+
 		else:
-			self.exclude    = exclude
+			self.exclude = set(exclude)
 class ACLRule(Enumeration):
 	""" Class representing a custom ACL rule for Licorn® check system.
 
@@ -152,14 +153,13 @@ class ACLRule(Enumeration):
 				acls.append(acl_tmp)
 		return ','.join(acls)
 	def __init__(self, controller, file_name=None, rule_text=None, line_no=0,
-					base_dir=None, object_id=None, system_wide=True):
+							base_dir=None, object_id=None, system_wide=True):
 
 		name = self.generate_name(file_name, rule_text, system_wide, controller.name)
 
 		super(ACLRule, self).__init__(name=name)
 
-		assert ltrace(TRACE_CHECKS, '| ACLRule.__init__(%s, %s)' % (
-									name, system_wide))
+		assert ltrace_func(TRACE_CHECKS)
 
 		self.checked     = False
 		self.file_name   = file_name
@@ -287,8 +287,9 @@ class ACLRule(Enumeration):
 		# try to find insecure entries
 		if self.invalid_dir_regex.search(directory):
 			raise exceptions.LicornSyntaxException(self.file_name,
-				self.line_no, text=directory,
-				desired_syntax='NOT ' + self.invalid_dir_regex_text)
+										self.line_no, text=directory,
+										desired_syntax='NOT '
+											+ self.invalid_dir_regex_text)
 
 		if self.system_wide:
 			uid = None
@@ -297,7 +298,7 @@ class ACLRule(Enumeration):
 			if self.uid is -1:
 				try:
 					self.uid = os.lstat('%s/%s' % (
-							self.base_dir, directory)).st_uid
+									self.base_dir, directory)).st_uid
 
 				except (OSError, IOError), e:
 					if e.errno == errno.ENOENT:
@@ -313,6 +314,7 @@ class ACLRule(Enumeration):
 
 		if directory in ('', '/') or directory == self.base_dir:
 			self.default = True
+
 		else:
 			self.default = False
 
@@ -320,12 +322,14 @@ class ACLRule(Enumeration):
 			return self.substitute_configuration_defaults(directory)
 
 		# if the directory exists in the user directory
-		if not os.path.exists('%s/%s' % (self.base_dir, directory)):
-			raise exceptions.PathDoesntExistException(
-				_(u'Ignoring unexisting entry "%s".') %
-					stylize(ST_PATH, directory))
+		if os.path.exists('%s/%s' % (self.base_dir, directory)):
+			return directory
 
-		return directory
+		# implicit: else
+		raise exceptions.PathDoesntExistException(
+							_(u'Ignoring unexisting entry "%s".') %
+								stylize(ST_PATH, directory))
+
 	def check(self):
 		""" general check function """
 
@@ -543,17 +547,19 @@ class ACLRule(Enumeration):
 		"""
 		if object_id is None:
 			home = ''
+
 		else:
 			if self.controller is LMC.groups:
-				home =  LMC.groups.by_gid(object_id).homeDirectory
+				home = self.base_dir
 
 			elif self.controller is LMC.users:
 				home = LMC.users.by_uid(object_id).homeDirectory
 
 			else:
-				raise exceptions.LicornRuntimeError(_('Do not know how '
-					'to expand tildes for %s objects!')
-						% self.controller._object_type)
+				raise exceptions.LicornRuntimeError(_(u'Do not know how '
+											u'to expand tildes for %s objects!')
+												% self.controller._object_type)
+
 		return text.replace(
 				'~', home).replace(
 				'$HOME', home).replace(
@@ -595,6 +601,9 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 		else:
 			break
 
+		# remove path from entry to get where we are.
+		current_path = entry[len(path+os.sep):]
+
 		try:
 			entry_stat = os.lstat(entry)
 			entry_type = entry_stat.st_mode & 0170000
@@ -609,15 +618,16 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 				raise e
 		else:
 			if (current_depth >= mindepth
-				and entry_type in itype
-				and (perms is None or entry_mode & perms)):
+					and entry_type in itype
+					and (perms is None or entry_mode & perms)):
 				#ltrace(TRACE_FSAPI, '  minifind(yield=%s)' % entry)
 
-				if yield_type:
-					yield (entry, entry_type)
+				if current_path not in exclude:
+					if yield_type:
+						yield (entry, entry_type)
 
-				else:
-					yield entry
+					else:
+						yield entry
 
 			if (entry_type == S_IFLNK and not followlinks) \
 				or (os.path.ismount(entry) and not followmounts):
@@ -628,8 +638,8 @@ def minifind(path, itype=None, perms=None, mindepth=0, maxdepth=99, exclude=[],
 			if entry_type == S_IFDIR and current_depth < maxdepth:
 				try:
 					for x in os.listdir(entry):
-						if x not in exclude:
-							next_paths_to_walk.append("%s/%s" % (entry, x))
+						if os.path.join(current_path, x) not in exclude:
+							next_paths_to_walk.append(os.path.join(entry, x))
 
 						else:
 							assert ltrace(TRACE_FSAPI, '  minifind(excluded=%s)' % entry)
@@ -761,7 +771,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 					itype = (S_IFREG, S_IFDIR)
 
 				else:
-					itype = (S_IFREG,)
+					itype = (S_IFREG, )
 
 				for entry, etype in minifind(path, itype=itype,
 									exclude=exclude_list, mindepth=1,

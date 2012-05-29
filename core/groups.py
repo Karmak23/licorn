@@ -998,10 +998,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.serialize(backend_actions.CREATE)
 
 		except Exception, e:
-			logging.warning(_(u'Exception {0} happened while trying to '
-				u'move group {1} from {2} to {3}, aborting (group left '
-				u'unchanged).').format(e, self.name, old_backend, new_backend))
-			pyutils.print_exception_if_verbose()
+			logging.exception(_(u'Exception happened while trying to '
+				u'move group {0} from {1} to {2}, aborting (group left '
+				u'unchanged)'), self.name, old_backend, new_backend)
 
 			try:
 				# try to restore old situation as much as possible.
@@ -2257,7 +2256,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			return group
 
 		# This will create shared group directory.
-		group.check(minimal=True, batch=True, force=force, full_display=False)
+		group.check(initial=True, minimal=True, batch=True, force=force, full_display=False)
 
 		if not_already_exists:
 			logging.notice(_(u'Created {0} group {1} (gid={2}).').format(
@@ -2760,7 +2759,6 @@ class GroupsController(DictSingleton, CoreFSController):
 		assert ltrace_func(TRACE_GROUPS)
 
 		if name:
-			#print name in Group.by_name
 			return name in Group.by_name
 
 		if gid:

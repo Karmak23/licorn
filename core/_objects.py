@@ -537,9 +537,10 @@ class CoreFSUnitObject(object):
 			if watches:
 				for key, value in watches.iteritems():
 					if value < 0:
-						# reason -2 is "path excluded by exclude_filter()".
-						# No need to bother us with a false-negative, this
-						# is the desired behaviour.
+						# reason -2 is "path excluded by exclude_filter()",
+						# check for yourself directly in `pyinotify` source.
+						# Then, no need to bother us with a false-negative,
+						# because exclusion is the desired behaviour.
 						if value != -2:
 							logging.warning(_(u'Watch add failed for {0}, reason {1}').format(key, value))
 						continue
@@ -722,7 +723,7 @@ class CoreFSUnitObject(object):
 					self.__watch_directory, self.homeDirectory, initial=True)
 
 		self.__watches_installed = True
-	def _standard_check(self, minimal=True, skel_to_apply=None, force=False,
+	def _standard_check(self, initial=False, minimal=True, skel_to_apply=None, force=False,
 							batch=False, auto_answer=None, full_display=True):
 		""" Check a standard CoreFSUnitObject. This works for users and groups,
 			and generally speaking, any object which has a home directory.
@@ -762,7 +763,7 @@ class CoreFSUnitObject(object):
 				# because we set uid and gid to -1, and this implies the need to
 				# access to the path lstat() in ACLRule.check_dir().
 				if os.path.exists(self.homeDirectory):
-					if full_display:
+					if full_display and initial:
 						logging.info(_(u'{0} directory {1} already exists.').format(
 											directory_type.title(),
 											stylize(ST_PATH, self.homeDirectory)))

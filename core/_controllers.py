@@ -406,6 +406,14 @@ class CoreFSController(CoreController):
 					'core_obj=%s, vars_to_replace=%s)' % (rules_path, object_info,
 					core_obj.name, vars_to_replace))
 
+		def path_to_exclude(dir_info):
+			tmp_path = dir_info.path[:]
+
+			if tmp_path.endswith('/'):
+				tmp_path = tmp_path[:-1]
+
+			return tmp_path.replace('%s%s' % (object_info.home, os.sep), '')
+
 		# load system rules.
 		self.load_system_rules(vars_to_replace=vars_to_replace)
 
@@ -441,7 +449,7 @@ class CoreFSController(CoreController):
 
 				system_special_dirs.append(temp_dir_info)
 
-		default_exclusions = []
+		default_exclusions = set()
 
 		# we need to know if there is a user default rule.
 		user_default = False
@@ -456,9 +464,9 @@ class CoreFSController(CoreController):
 			# if it is a system default rule, and if there is a user default
 			# rule, skip the system one.
 			if dir_info.rule.default and user_default:
-				logging.progress(_(u'%s: System default rule has been '
-									u'overwriten by user rule.') %
-										stylize(ST_BAD, _(u'Skipped')))
+				logging.progress(_(u'{0} user rule that wanted to overwrite '
+									u'system default rule.').format(
+										stylize(ST_BAD, _(u'Skipped'))))
 				continue
 
 			# if there are variables to replace, do it
@@ -493,14 +501,11 @@ class CoreFSController(CoreController):
 									dir_info.rule.line_no))
 			# if the system rule is not in the user rules, add it.
 			else:
-				tmp = dir_info.copy()
 
-				if tmp.path.endswith('/'):
-					tmp.path = tmp.path[:len(tmp.path)-1]
+				tmp_path = path_to_exclude(dir_info)
 
-				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
-
-				default_exclusions.append(tmp.path)
+				if tmp_path != dir_info.path:
+					default_exclusions.add(tmp_path)
 
 				logging.progress(_(u'{0} {1} ACL rule: '
 									u'"{2}" for "{3}".').format(
@@ -520,19 +525,29 @@ class CoreFSController(CoreController):
 				rules.remove(di.name)
 
 			else:
-				tmp = di.copy()
-				if tmp.path.endswith('/'):
-					tmp.path = tmp.path[:len(tmp.path)-1]
-				tmp.path = tmp.path.replace('%s/' % object_info.home, '')
-				default_exclusions.append(tmp.path)
+				tmp_path = path_to_exclude(di)
+
+				# exclude the rule path from the default rule, but only if
+				# it is a sub-sub-dir; because subdirs (only 1 level) will
+				# already be excluded by the next inner loop.
+				if os.sep in tmp_path:
+					default_exclusions.add(tmp_path)
+
+				# Then, exclude the rule path from other "surrounding" rules.
+				# Eg. if we have 2 rules for 'rep1/' and 'rep1/subrep', we
+				# have to exclude 'subrep' from the 'rep1/' rule, else it
+				# will be checked twice.
+				for other_rule in rules:
+					if os.path.dirname(di.path) == other_rule.path:
+						other_rule.exclude.add(os.path.basename(di.path))
 
 		# add dirs/files exclusions to the default rule.
 		try:
-			rules._default.exclude = default_exclusions
+			rules._default.exclude |= default_exclusions
 
 		except AttributeError, e:
 			raise exceptions.LicornCheckError(_(u'There is no default '
-				u'rule. Check %s.') % stylize(ST_BAD, _(u'aborted')))
+					u'rule. Check %s.') % stylize(ST_BAD, _(u'aborted')))
 
 		assert ltrace(TRACE_CHECKS, '< load_rules()')
 		return rules
@@ -541,6 +556,7 @@ class CoreFSController(CoreController):
 		""" parse a rule from a line to a fsapi.FsapiObject. Returns
 			a single :class:`~licorn.foundations.base.Enumeration`, containing
 			either ONE '~' rule, or a bunch of rules. """
+
 		assert ltrace(TRACE_CHECKS, "> parse_rules(%s, %s, %s)" % (rules_path,
 			object_info, system_wide))
 
@@ -561,12 +577,15 @@ class CoreFSController(CoreController):
 
 				try:
 					# generate rule
-					rule = fsapi.ACLRule(file_name=rules_path, rule_text=line,
-						line_no=line_no, system_wide=system_wide,
-						base_dir=object_info.home
-							if not system_wide else None,
-						object_id=object_info.user_uid if not system_wide else None,
-						controller=self)
+					rule = fsapi.ACLRule(file_name=rules_path,
+										rule_text=line,
+										line_no=line_no,
+										system_wide=system_wide,
+										base_dir=object_info.home
+											if not system_wide else None,
+										object_id=object_info.user_uid
+											if not system_wide else None,
+										controller=self)
 					#logging.notice(">>> rule = %s" % rule.dump_status(True))
 
 				except exceptions.LicornRuntimeException, e:
@@ -623,10 +642,9 @@ class CoreFSController(CoreController):
 							vars_to_replace=vars_to_replace)
 
 				except exceptions.LicornSyntaxException, e:
-					logging.warning(_(u'parse_rules(): Exception on {0} '
-						u'(special={1}).').format(stylize(ST_NAME, rule.name),
-							stylize(ST_ATTR, rule.name in special_dirs.keys())))
-					pyutils.print_exception_if_verbose()
+					logging.exception(_(u'parse_rules(): Exception on {0} '
+						u'(special={1}).'), (ST_NAME, rule.name),
+							(ST_ATTR, rule.name in special_dirs.keys()))
 					continue
 
 				if dir_info.name not in special_dirs.keys():
