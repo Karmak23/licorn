@@ -8,12 +8,15 @@ Licorn Daemon inotifier thread.
 
 import os, time, pyinotify, select, errno
 
+from threading import Timer
+
 from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils
 from licorn.foundations.base      import BasicCounter
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
+from licorn.foundations.threads   import RLock
 from licorn.foundations.constants import filters, priorities
 from licorn.core                  import LMC
 from licorn.daemon.threads        import LicornBasicThread
@@ -56,6 +59,12 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		self.inotifier_del            = self._wm.rm_watch
 		self.inotifier_watch_conf     = self.watch_conf
 		self.inotifier_del_conf_watch = self.del_conf_watch
+
+		# Timer threads used to buffer multiple quick events. Eg. when VIM
+		# writes a configuration file, we get 3 events (DEL, CREATE, MODIFY)
+		# and we must temporize the refresh, else we will do it more than once.
+		self._timers = {}
+
 	def dump_status(self, long_output=False, precision=None, as_string=True):
 
 		if as_string:
@@ -153,6 +162,16 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 		except Exception, e:
 			logging.warning2(_(u'inotifier: error deleting {0} '
 				u'(was: {1} {2})').format(conf_file, type(e), e))
+
+		else:
+			try:
+				self._timers[conf_file].cancel()
+
+			except KeyError:
+				pass
+
+			else:
+				del self._timers[conf_file]
 	def watch_conf(self, conf_file, core_obj, reload_method=None, reload_hint=None):
 		""" Helper / Wrapper method for core objects. This will setup a watcher
 			on dirname(conf_file), if not already setup. returns a reload hint
@@ -263,8 +282,9 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				hint -= 1
 				return
 
-			elif event.mask & pyinotify.IN_MOVED_TO:
-				# IN_MOVED_TO lowers the level and triggers a check. If we
+			elif event.mask in (pyinotify.IN_MOVED_FROM, pyinotify.IN_MOVED_TO, pyinotify.IN_DELETE):
+				# IN_MOVED_TO (the file appeared, moved from somewhere else)
+				# lowers the level and triggers a check. If we
 				# modified the file internally, the hint would have been
 				# raised by one, making it just reach the normal state now.
 				# If the file was moved by an outside process, the -1 will
@@ -275,23 +295,41 @@ class INotifier(LicornBasicThread, pyinotify.Notifier):
 				# reload() is useless. Unfortunately, we can't know that in
 				# advance, so we'd better reload() a little more, than having
 				# the file on-disk desynchronized with internal data.
+				#
+				# MOVE_FROM and IN_DELETE lower and trigger a check too: we
+				# must notify the caller that the file is empty now.
 				hint -= 1
 
-			# else:
+			# else: (implicit)
 			# IN_CLOSE_WRITE just triggers a check, so no particular action.
 			# If MODIFY has lowered the level, this will trigger a reload().
 			# else it will do nothing.
 
 			if hint <= 0:
-				logging.info(_(u'{0}: configuration file {1} changed, '
-					u'trigerring upstream reload.').format(
-						stylize(ST_NAME, name),
-						stylize(ST_PATH, event.name)))
+				# NOTE: no need to surprotect, we already have the "lock" from
+				# the controller. This is enough to avoid touching the Timer
+				# thread from more than one place.
 
 				# reset the hint to normal state before reloading(), to avoid
 				# missing another eventual future event.
 				hint.set(1)
-				reload_method(event.pathname)
+
+				try:
+					self._timers[event.pathname].cancel()
+					del self._timers[event.pathname]
+
+				except:
+					pass
+
+				def reload_wrapper():
+					logging.info(_(u'{0}: configuration file {1} changed, '
+						u'trigerring upstream reload.').format(
+							stylize(ST_NAME, name),
+							stylize(ST_PATH, event.pathname)))
+					reload_method(event.pathname)
+
+				self._timers[event.pathname] = Timer(1.0, reload_wrapper)
+				self._timers[event.pathname].start()
 
 		assert ltrace(TRACE_LOCKS, '| inotifier conf_exit %s' % lock)
 	def collect(self):
