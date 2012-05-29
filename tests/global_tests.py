@@ -1657,6 +1657,47 @@ def test_status_and_dump(testsuite):
 		],
 		descr='''test daemon status and core objects dumping'''
 		))
+def test_inotifier_exclusions(testsuite):
+
+	uname1 = 'uw1'
+	gname1 = 'gw1'
+	uname2 = 'uW2'
+	gname2 = 'gW2'
+
+	testsuite.add_scenario(ScenarioTest([
+		ADD + [ 'user', uname1, '-v' ],
+		ADD + [ 'group', gname1, '-v' ],
+		ADD + [ 'user', uname2, '-vW' ],
+		ADD + [ 'group', gname2, '-vW' ],
+
+		# we should see some "not watched"
+		GET + [ 'users', '-l' ],
+		GET + [ 'groups', '-l' ],
+
+		# only the watched ones
+		GET + [ 'users', '-w' ],
+		GET + [ 'groups', '-w' ],
+
+		# only the non-watched ones
+		GET + [ 'users', '-W' ],
+		GET + [ 'groups', '-W' ],
+
+		# watch the unwatched
+		MOD + [ 'users', uname2, '-w' ],
+		MOD + [ 'groups', gname2, '-w' ],
+
+		# should display no user/group now.
+		GET + [ 'users', '-W' ],
+		GET + [ 'groups', '-W' ],
+
+		# should display all users/groups
+		GET + [ 'users', '-w' ],
+		GET + [ 'groups', '-w' ],
+
+		DEL + [ 'groups', '--empty', '--no-archive', '-v' ],
+		DEL + [ 'users', '%s,%s' % (uname1, uname2), '--no-archive', '-v' ],
+		],
+		descr='''Add and modify watched and unwatched groups, check it is OK in GET.''', clean_num=2))
 def test_system(testsuite):
 	testsuite.add_scenario(ScenarioTest([
 		[ 'killall', '-r', '-9', 'licornd' ],

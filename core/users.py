@@ -875,7 +875,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				return True
 
 		return False
-	def check(self, minimal=True, skel_to_apply=None, batch=False,
+	def check(self, initial=False, minimal=True, skel_to_apply=None, batch=False,
 										auto_answer=None, full_display=True):
 		"""Check current user account data consistency."""
 
@@ -896,22 +896,24 @@ class User(CoreStoredObject, CoreFSUnitObject):
 				return self.__check_unrestricted_system_user(batch=batch,
 												skel_to_apply=skel_to_apply,
 												auto_answer=auto_answer,
-												full_display=full_display)
+												full_display=full_display,
+												initial=initial)
 
 			elif self.is_standard:
 				return self.__check_standard_user(minimal=minimal,
 												skel_to_apply=skel_to_apply,
-												batch=batch,
+												batch=batch, initial=initial,
 												auto_answer=auto_answer,
 												full_display=full_display)
 			else:
 				return self.__check_restricted_system_user(batch=batch,
 													auto_answer=auto_answer,
-													full_display=full_display)
+													full_display=full_display,
+													initial=initial)
 
 	# aliases to CoreFSUnitObject methods
 	__check_standard_user = CoreFSUnitObject._standard_check
-	def __check_common_system_user(self, minimal=True, batch=False,
+	def __check_common_system_user(self, initial=False, minimal=True, batch=False,
 										auto_answer=None, full_display=True):
 
 		assert ltrace_func(TRACE_CHECKS)
@@ -992,7 +994,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if my_gecos != self.__gecos:
 				self.gecos = my_gecos
-	def __check_unrestricted_system_user(self, minimal=True, skel_to_apply=None,
+	def __check_unrestricted_system_user(self, initial=False, minimal=True, skel_to_apply=None,
 							batch=False, auto_answer=None, full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not
@@ -1039,7 +1041,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self._checking.clear()
 
 			return result
-	def __check_restricted_system_user(self, minimal=True, batch=False,
+	def __check_restricted_system_user(self, initial=False, minimal=True, batch=False,
 										auto_answer=None, full_display=True):
 		""" Check the home dir and its contents, if it exists (this is not
 			mandatory for a system account). If it does not exist, it will not

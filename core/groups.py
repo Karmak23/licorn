@@ -1036,7 +1036,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 												stylize(ST_NAME, old_backend),
 												stylize(ST_NAME, new_backend)))
 			return True
-	def check(self, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
+	def check(self, initial=False, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
 		""" Check a group.
 			Will verify the various needed
 			conditions for a Licorn® group to be valid, and then check all
@@ -1060,12 +1060,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		if self.is_system:
 			return self.__check_system_group(minimal=minimal, force=force,
-												batch=batch,
+												batch=batch, initial=initial,
 												auto_answer=auto_answer,
 												full_display=full_display)
 		else:
 			return self.__check_standard_group(minimal=minimal, force=force,
-													batch=batch,
+													batch=batch, initial=initial,
 													auto_answer=auto_answer,
 													full_display=full_display)
 	def check_symlinks(self, oldname=None, delete=False,
