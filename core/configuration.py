@@ -128,14 +128,11 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	def load3(self, batch=False):
 		self.load_nsswitch()
 	def _inotifier_install_watches(self, inotifier=None):
-		self.__configuration_hint = L_inotifier_watch_conf(settings.main_config_file,
-									self, self.__configuration_file_changed)
+		""" settings watches are setup in foundations.settings. """
+		pass
 	def __configuration_file_changed(self, pathname):
-
-		# it's up to settings to trigger the LicornEvent. It will do it only
-		# if something has really changed. This avoids running callbacks if
-		# no directive changed.
-		self.settings.reload()
+		""" nothing yet. """
+		pass
 	#
 	# make LicornConfiguration object be usable as a context manager.
 	#
