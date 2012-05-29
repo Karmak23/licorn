@@ -1785,8 +1785,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					auto_answer=opts.auto_answer):
 
 					if opts.restore_watch:
-						something_done = True
-						user._inotifier_add_watch(self.licornd, force_reload=True)
+						if user.inotified:
+							something_done = True
+							user._inotifier_add_watch(force_reload=True)
 
 					if opts.newgecos is not None:
 						something_done = True
@@ -1812,13 +1813,13 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						if opts.current_user != 'root':
 							if opts.current_user == login:
 								old_message = _(u'Please enter your OLD '
-										'(current) password: ')
+										u'(current) password: ')
 								message=_(u'Please enter your new password: ')
 								confirm=_(u'Please confirm your new password: ')
 
 							else:
 								old_message = _(u"Please enter %s's OLD "
-									"(current) password: ") % stylize(ST_LOGIN, login)
+									u"(current) password: ") % stylize(ST_LOGIN, login)
 
 							if not user.check_password(
 									self.interact(old_message,
@@ -1835,7 +1836,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							user.password = password1
 						else:
 							raise exceptions.BadArgumentError(_(u'Passwords '
-								'do not match, leaving the old one in place.'))
+								u'do not match, leaving the old one in place.'))
 
 					if opts.auto_passwd:
 						something_done = True
@@ -1861,16 +1862,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 									group.del_Users([ user ])
 								except exceptions.LicornRuntimeException, e:
 									logging.warning(_(u'Unable to remove '
-										'user {0} from group {1} '
-										'(was: {2}).').format(
+										u'user {0} from group {1} '
+										u'(was: {2}).').format(
 											stylize(ST_LOGIN, user.login),
 											stylize(ST_NAME, group.name),
 											str(e)), to_local=False)
 								except exceptions.LicornException, e:
 									raise exceptions.LicornRuntimeError(
 										_(u'Unable to remove '
-										'user {0} from group {1} '
-										'(was: {2}).').format(
+										u'user {0} from group {1} '
+										u'(was: {2}).').format(
 											stylize(ST_LOGIN, user.login),
 											stylize(ST_NAME, group.name),
 											str(e)))
@@ -1884,14 +1885,14 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 									group.add_Users([ user ], force=opts.force)
 								except exceptions.LicornRuntimeException, e:
 									logging.warning(_(u'Unable to add user '
-										'{0} in group {1} (was: {2}).').format(
+										u'{0} in group {1} (was: {2}).').format(
 											stylize(ST_LOGIN, user.login),
 											stylize(ST_NAME, group.name),
 											str(e)), to_local=False)
 								except exceptions.LicornException, e:
 									raise exceptions.LicornRuntimeError(
 										_(u'Unable to add user '
-										'{0} in group {1} (was: {2}).').format(
+										u'{0} in group {1} (was: {2}).').format(
 											stylize(ST_LOGIN, user.login),
 											stylize(ST_NAME, group.name),
 											str(e)))
@@ -1905,7 +1906,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if not something_done:
 			raise exceptions.NeedHelpException(_(u'What do you want to modify '
-				'about user(s) %s ?') % ', '.join(stylize(ST_LOGIN, user.login)
+				u'about user(s) %s ?') % ', '.join(stylize(ST_LOGIN, user.login)
 					for user in users_to_mod))
 	def mod_group(self, opts, args):
 		""" Modify a group. """
@@ -1986,7 +1987,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					gname = group.name
 					if group.is_helper:
 						logging.info(_(u'Skipped associated system group %s, '
-							'handled automatically by standard group move.') %
+							u'handled automatically by standard group move.') %
 								stylize(ST_NAME, gname), to_local=False)
 					else:
 						something_done = True
@@ -1997,8 +1998,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					group.permissive = opts.permissive
 
 				if opts.restore_watch:
-					something_done = True
-					group._inotifier_add_watch(self.licornd, force_reload=True)
+					if group.inotified:
+						something_done = True
+						group._inotifier_add_watch(force_reload=True)
 
 				if opts.newname is not None:
 					something_done = True
@@ -2031,7 +2033,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							force=opts.force)
 					else:
 						logging.warning(_(u'Skipped responsible(s) {0} addition '
-							'on non-standard group {1}.').format(resps_to_add,
+							u'on non-standard group {1}.').format(resps_to_add,
 								group.name), to_local=False)
 
 				if opts.resps_to_del:
@@ -2042,7 +2044,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							force=opts.force)
 					else:
 						logging.warning(_(u'Skipped responsible(s) {0} deletion '
-							'on non-standard group {1}.').format(resps_to_del,
+							u'on non-standard group {1}.').format(resps_to_del,
 								group.name), to_local=False)
 
 				if opts.guests_to_add:
@@ -2053,7 +2055,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							force=opts.force)
 					else:
 						logging.warning(_(u'Skipped guest(s) {0} addition '
-							'on non-standard group {1}.').format(guests_to_add,
+							u'on non-standard group {1}.').format(guests_to_add,
 								group.name), to_local=False)
 
 				if opts.guests_to_del:
@@ -2064,7 +2066,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 							force=opts.force)
 					else:
 						logging.warning(_(u'Skipped guest(s) {0} deletion '
-							'on non-standard group {1}.').format(guests_to_del,
+							u'on non-standard group {1}.').format(guests_to_del,
 								group.name), to_local=False)
 
 				if opts.granted_profiles_to_add is not None:
@@ -2079,7 +2081,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if not something_done:
 			raise exceptions.NeedHelpException(_(u'What do you want to modify '
-				'about group(s) %s?') % ', '.join(stylize(ST_NAME, group.name)
+				u'about group(s) %s?') % ', '.join(stylize(ST_NAME, group.name)
 					for group in groups_to_mod))
 	def mod_profile(self, opts, args):
 		""" Modify a system wide User profile. """
