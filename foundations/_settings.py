@@ -6,7 +6,7 @@ Copyright (C) 2011 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import sys, os, getpass, errno
+import os, getpass, errno
 
 # ================================================= Licorn® foundations imports
 import logging, styles, events
@@ -16,7 +16,7 @@ from ltraces   import *
 from styles    import *
 from threads   import RLock
 from base      import ObjectSingleton, NamedObject, LicornConfigObject, BasicCounter
-from constants import roles, priorities
+from constants import roles
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -147,9 +147,9 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		assert ltrace_func(TRACE_SETTINGS)
 
 		if self.role == roles.UNSET or self.role not in roles:
-			raise exceptions.BadConfigurationError(_(u'%s is currently '
-				u'unset or invalid in %s. Please set it to either %s or '
-				u'%s and retry.') % (
+			raise exceptions.BadConfigurationError(_(u'{0} is currently '
+				u'unset or invalid in {1}. Please set it to either {2} or '
+				u'{3} and retry.').format(
 					stylize(ST_SPECIAL, 'role'),
 					stylize(ST_PATH, self.main_config_file),
 					stylize(ST_COMMENT, 'SERVER'),
@@ -176,9 +176,9 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		if self.backup.interval < 3600 or self.backup.interval > 604800:
 			raise exceptions.BadConfigurationError(_(
-				u'\n\tinvalid value %s for configuration '
-				u'directive %s: must be an integer between '
-				u'%s (one hour) and %s (one week).') % (
+				u'\n\tinvalid value {0} for configuration '
+				u'directive {1}: must be an integer between '
+				u'{2} (one hour) and {3} (one week).').format(
 					stylize(ST_BAD, self.backup.interval),
 					stylize(ST_COMMENT, 'backup.interval'),
 					stylize(ST_COMMENT, '3600'), stylize(ST_COMMENT, '604800')))

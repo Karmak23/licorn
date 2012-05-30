@@ -10,7 +10,6 @@ import os, fcntl, struct, socket, platform, re, netifaces
 import icmp, ip, time, select
 
 from ping      import PingSocket
-from threading import current_thread
 
 # other foundations imports.
 import logging, process, exceptions

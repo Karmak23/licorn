@@ -275,7 +275,7 @@ class LicornBaseDaemon:
 									settings.licornd.pyro.listen_address.split(':')[1])
 						except (IOError, OSError), e:
 							raise exceptions.BadConfigurationError(_(u'Problem '
-								u'getting interface %s address (was: %s).') % (
+								u'getting interface {0} address (was: {1}).').format(
 								settings.licornd.pyro.listen_address.split(':')[1], e))
 				else:
 					try:

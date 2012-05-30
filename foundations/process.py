@@ -251,8 +251,8 @@ def fork_licorn_daemon(pid_to_wake=None):
 			os.execv('/usr/sbin/licornd', args)
 
 	except (IOError, OSError), e:
-		logging.error(_(u'licornd fork failed: errno %d (%s).') % (e.errno,
-																e.strerror))
+		logging.error(_(u'licornd fork failed: errno {0} ({1}).').format(
+														e.errno, e.strerror))
 
 # System() / Popen*() convenience wrappers.
 def syscmd(command, expected_retcode=0):

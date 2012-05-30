@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-12 11:01+0200\n"
+"POT-Creation-Date: 2012-05-30 15:26+0200\n"
 "PO-Revision-Date: 2012-03-04 17:23+0100\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <>\n"
@@ -42,25 +42,25 @@ msgstr ""
 msgid "{0}: exception while emptying our queue."
 msgstr ""
 
-#: app.py:245
+#: app.py:246
 #, fuzzy
 msgid "{0:s}: Exception while collecting {1}."
 msgstr "Exception dans {0} : {1}."
 
-#: app.py:271
+#: app.py:272
 msgid "{0}: cannot exec {0}({1}, {2})!"
 msgstr ""
 
-#: app.py:330
+#: app.py:331
 msgid "PUSH-stream force-close for user {0} (session {1})"
 msgstr "Fermeture forcée du flux PUSH pour l'utilisateur {0} (session {1})"
 
-#: app.py:364
+#: app.py:365
 #, fuzzy
 msgid "Unexpected exception in Event handler {0}; continuing."
 msgstr "Erreur imprévue dans le gestionnaire d'évènement %s."
 
-#: app.py:368
+#: app.py:369
 msgid "No WMI handler yet for event \"{0}\"."
 msgstr "Aucun gestionnaire pour l'évènement « {0} » dans la WMI."
 
@@ -114,43 +114,43 @@ msgstr ""
 msgid "Backup extension disabled by someone else, quitting page."
 msgstr ""
 
-#: backup/event_handlers.py:49
+#: backup/event_handlers.py:52
 msgid "Volume {0} reserved for Licorn® usage."
 msgstr "Volume {0} réservé pour Licorn®."
 
-#: backup/event_handlers.py:53
+#: backup/event_handlers.py:56
 msgid "Volume {0} un-reserved for Licorn® usage."
 msgstr "Volume {0} libéré par Licorn®."
 
-#: backup/event_handlers.py:57
+#: backup/event_handlers.py:60
 msgid "Volume {0} added on the system."
 msgstr "Volume « {0} » ajouté sur le système."
 
-#: backup/event_handlers.py:62
+#: backup/event_handlers.py:66
 msgid "Volume {0} removed from the system."
 msgstr "VOlume « {0} » supprimé du système."
 
-#: backup/event_handlers.py:66
+#: backup/event_handlers.py:70
 msgid "Volume {0} mounted."
 msgstr "Volume {0} monté."
 
-#: backup/event_handlers.py:70
+#: backup/event_handlers.py:74
 msgid "Volume {0} unmounted."
 msgstr "Volume {0} démonté."
 
-#: backup/event_handlers.py:74
+#: backup/event_handlers.py:78
 msgid "Backup started on volume {0}."
 msgstr "Sauvegarde démarrée sur le volume {0}."
 
-#: backup/event_handlers.py:78
+#: backup/event_handlers.py:82
 msgid "Backup ended on volume {0}."
 msgstr "Sauvegarde terminée sur le volume {0}."
 
-#: backup/event_handlers.py:82
+#: backup/event_handlers.py:86
 msgid "Backup statistics computation started on volume {0}."
 msgstr "Calcul des statistiques démarré sur le volume {0}."
 
-#: backup/event_handlers.py:86
+#: backup/event_handlers.py:90
 msgid "Backup statistics computation ended on volume {0}."
 msgstr "Calcul des statistiques de sauvegarde terminé sur le volume {0}."
 
@@ -779,6 +779,10 @@ msgid "device: <strong>{0}</strong>,"
 msgstr "périphérique : <strong>{0}</strong>,"
 
 #: templates/backup/index_main.html:177
+msgid "GUID: {0}"
+msgstr ""
+
+#: templates/backup/index_main.html:178
 msgid "FS type: <strong>{0}</strong>"
 msgstr "Système de fichiers : <strong>{0}</strong>"
 

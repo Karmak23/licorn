@@ -226,8 +226,6 @@ class ACLRule(Enumeration):
 		for acl_tmp in acl.split(','):
 			splitted_acls.append(acl_tmp.split(':'))
 
-		return_value = True
-
 		for splitted_acl in splitted_acls:
 			if len(splitted_acl) == 3:
 				bad_part=0
@@ -248,7 +246,8 @@ class ACLRule(Enumeration):
 
 						if must_resolve:
 							try:
-								id = resolve_method(splitted_acl[1])
+								resolve_method(splitted_acl[1])
+
 							except exceptions.DoesntExistException, e:
 								raise exceptions.LicornACLSyntaxException(
 									self.file_name,	self.line_no,
@@ -338,10 +337,10 @@ class ACLRule(Enumeration):
 		try:
 			dir, acl = line.split(self.separator)
 
-		except ValueError, e:
+		except ValueError:
 			raise exceptions.LicornSyntaxException(self.file_name,
-				self.line_no, text=line,
-				desired_syntax='<dir><separator><acl>')
+													self.line_no, text=line,
+									desired_syntax='<dir><separator><acl>')
 
 		dir = dir.strip()
 		acl = acl.strip()
@@ -1141,7 +1140,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			pathstat     = os.lstat(path)
 			current_perm = pathstat.st_mode & 07777
 
-		except (IOError, OSError), e:
+		except (IOError, OSError):
 			logging.exception(_(u'Exception while trying to `lstat()` {0}'), (ST_PATH, path))
 			return
 
@@ -1172,8 +1171,8 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 										perms2str(access_perm)),
 									path=stylize(ST_PATH, path)))
 
-					except (IOError, OSError), e:
-						logging.warning(_(u'Exception while trying to change '
+					except (IOError, OSError):
+						logging.exception(_(u'Exception while trying to change '
 								u'posix permissions on {0}.'), (ST_PATH, path))
 						return
 

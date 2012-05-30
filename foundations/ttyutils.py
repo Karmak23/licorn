@@ -7,7 +7,7 @@ ttyutils - manipulate TTY; display messages and interact with TTY user.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 """
-import sys, os, termios, threading, curses, code
+import sys, os, termios, threading, curses
 import select, signal, errno
 
 # licorn.foundations

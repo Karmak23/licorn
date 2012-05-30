@@ -78,9 +78,9 @@ def ltrace_dumpstacks(signal=None, frame=None, thread_ident=None):
     code = []
     for threadId, stack in sys._current_frames().items():
 		if not thread_ident or threadId == thread_ident:
-			code.append(_("\n# Thread: %s(%d)") % (id2name[threadId], threadId))
+			code.append(_("\n# Thread: {0}({1})").format(id2name[threadId], threadId))
 			for filename, lineno, name, line in traceback.extract_stack(stack):
-				code.append(_('	File: "%s", line %d, in %s') % (filename, lineno, name))
+				code.append(_('	File: "{0}", line {1}, in {2}').format(filename, lineno, name))
 				if line:
 					code.append("	  %s" % (line.strip()))
     return highlight("\n".join(code), lexer, formatter)

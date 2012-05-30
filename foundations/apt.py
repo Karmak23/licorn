@@ -8,7 +8,7 @@ apt - apt high-level API for Licorn®
 :license: GNU GPL version 2
 """
 
-import sys, apt_pkg
+import apt_pkg
 
 # licorn.foundations imports
 import cache, process, logging

@@ -254,7 +254,7 @@ class GQWSchedulerThread(BaseLicornThread):
 	def dump_status(self, long_output=False, precision=None, as_string=False):
 
 		if as_string:
-			return _('%s%s for %s [%s workers; wake up in %s]\n%s') % (
+			return _('{0}{1} for {2} [{3} workers; wake up in {4}]\n{5}').format(
 				stylize(ST_RUNNING if self.is_alive() else ST_STOPPED,
 						self.__class__.__name__),
 				'&' if self.daemon else '',

@@ -21,7 +21,7 @@ class OpNullProgress(object):
         pass
 
 def _handleException(type, value, tb):
-    sys.stderr.write("E: "+ _("Unknown Error: '%s' (%s)") % (type,value))
+    sys.stderr.write("E: "+ _("Unknown Error: '{0}' ({1})").format(type,value))
     sys.exit(-1)
 
 def clean(cache, depcache):
