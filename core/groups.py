@@ -2587,7 +2587,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			_(u'system ') if system else '', stylize(ST_NAME, name)))
 
 		assert ltrace_func(TRACE_GROUPS, True)
-	def check_groups(self, groups_to_check=None, minimal=True, force=False,
+	def chk_Groups(self, groups_to_check=None, minimal=True, force=False,
 											batch=False, auto_answer=None):
 		""" Check a list of groups. All other parameters are forwarded to
 			:meth:`Group.check` without any modification and are not used here.
@@ -2599,13 +2599,14 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		if groups_to_check is None:
 			# we have to duplicate the values, in case the check adds/remove
-			# groups. Else, this will raise a RuntimeError.
+			# groups. Else, this will raise a RuntimeError in the loop.
 			groups_to_check = self.values()
 
 		for group in groups_to_check:
-			group.check(minimal, force, batch, auto_answer)
+			group.check(minimal=minimal, force=force, batch=batch, auto_answer=auto_answer)
 
 		del groups_to_check
+
 		self.licornd.clean_objects()
 	def __connect_groups(self):
 		""" Iterate all groups and connect standard/guest/responsible if they
@@ -2664,7 +2665,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'Automatic check requested in the background.') %
 					stylize(ST_NAME, self.name))
 			workers.service_enqueue(priorities.HIGH,
-						self.check_groups, batch=True, job_delay=5.0)
+						self.chk_Groups, batch=True, job_delay=5.0)
 
 		if resps != [] or guests != []:
 			logging.warning(_(u'%s: dangling helper group(s) detected. '

@@ -1870,7 +1870,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 		# dependancy: base dirs must be OK before checking users's homes.
 		LMC.configuration.check_base_dirs(minimal=minimal,
-			batch=batch, auto_answer=auto_answer)
+										batch=batch, auto_answer=auto_answer)
 
 		def my_check_user(user, minimal=minimal, batch=batch, auto_answer=auto_answer):
 			return user.check(minimal=minimal, batch=batch, auto_answer=auto_answer)
@@ -1881,7 +1881,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			# NOTICE: don't test just "if reduce():", the result could be None
 			# and everything is OK when None…
 			raise exceptions.LicornCheckError(_(u'Some user(s) check(s) did '
-				'not pass, or were not corrected.'))
+										u'not pass, or were not corrected.'))
 
 		assert ltrace(TRACE_USERS, '< chk_Users(%s)' % all_went_ok)
 		return all_went_ok

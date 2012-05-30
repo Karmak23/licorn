@@ -2551,7 +2551,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if groups_to_chk != []:
 			if opts.force or opts.batch or opts.non_interactive:
-				LMC.groups.check_groups(groups_to_chk,
+				LMC.groups.chk_Groups(groups_to_chk,
 					minimal=opts.minimal, batch=opts.batch,
 					auto_answer=opts.auto_answer, force=opts.force)
 			else:
