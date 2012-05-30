@@ -116,7 +116,9 @@ i18n: update-po
 			mkdir -p locale/$${lang}/LC_MESSAGES; \
 			msgfmt locale/$${lang}.po -o locale/$${lang}.mo ; \
 			cp locale/$${lang}.mo locale/$${lang}/LC_MESSAGES/$(APP_NAME).mo ; \
-			(cd interfaces/wmi ; django-admin compilemessages -l $${lang} || django-admin.py compilemessages -l $${lang}) ; \
+			(cd interfaces/wmi ; django-admin compilemessages -l $${lang} \
+				|| django-admin.py compilemessages -l $${lang} \
+				|| true) ; \
 		done ;
 
 update-pot:
@@ -133,8 +135,12 @@ update-po: update-pot
 			touch locale/$${lang}.js.po ; \
 			( \
 				cd interfaces/wmi ; \
-				django-admin makemessages -d django -l $${lang} || django-admin.py makemessages -d django -l $${lang} ; \
-				django-admin makemessages -d djangojs -l $${lang} || django-admin.py makemessages -d djangojs -l $${lang} \
+				django-admin makemessages -d django -l $${lang} \
+					|| django-admin.py makemessages -d django -l $${lang} \
+					|| true; \
+				django-admin makemessages -d djangojs -l $${lang} \
+					|| django-admin.py makemessages -d djangojs -l $${lang} \
+					|| true \
 			) ; \
 		done ;
 
