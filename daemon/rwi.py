@@ -302,20 +302,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_GET, '> get_users(%s,%s)' % (opts, args))
 
-		# default selection
-		selection = filters.SYSUNRSTR | filters.STANDARD
-
-		if opts.system:
-			selection = filters.SYSTEM
-
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-
-		elif opts.inotified:
-			selection = filters.INOTIFIED
-
-		elif opts.not_inotified:
-			selection = filters.NOT_INOTIFIED
+		include_id_lists, exclude_id_lists = self.__default_users_includes_excludes(opts)
 
 		users_to_get = self.select(LMC.users, args[1:], opts,
 					include_id_lists = [
@@ -327,7 +314,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						(opts.exclude_login, LMC.users.by_login),
 						(opts.exclude_uid, LMC.users.by_uid)
 					],
-					default_selection = selection,
+					default_selection = self.__default_users_selection(opts, for_get=True),
 					all=opts.all)
 
 		if opts.xml:
@@ -352,46 +339,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		assert ltrace(TRACE_GET, '> get_groups(%s,%s)' % (opts, args))
 
-		selection = filters.NONE
-
-		if opts.privileged:
-			selection = filters.PRIVILEGED
-		elif opts.responsibles:
-			selection = filters.RESPONSIBLE
-		elif opts.guests:
-			selection = filters.GUEST
-		elif opts.system:
-			selection = filters.SYSTEM
-		elif opts.empty:
-			selection = filters.EMPTY
-		elif opts.not_responsibles:
-			selection = filters.NOT_RESPONSIBLE
-		elif opts.not_guests:
-			selection = filters.NOT_GUEST
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-		elif opts.not_privileged:
-			selection = filters.NOT_PRIVILEGED
-		elif opts.inotified:
-			selection = filters.INOTIFIED
-		elif opts.not_inotified:
-			selection = filters.NOT_INOTIFIED
-
-		elif not opts.all:
-			# must be the last case!
-			selection = filters.STANDARD
+		include_id_lists, exclude_id_lists = self.__default_groups_includes_excludes(opts)
 
 		groups_to_get = self.select(LMC.groups,	args[1:], opts,
-				include_id_lists = [
-					(opts.name, LMC.groups.by_name),
-					(opts.gid, LMC.groups.by_gid)
-				],
-				exclude_id_lists = [
-					(opts.exclude, LMC.groups.guess_one),
-					(opts.exclude_group, LMC.groups.by_name),
-					(opts.exclude_gid, LMC.groups.by_gid)
-				],
-				default_selection=selection,
+				include_id_lists = include_id_lists,
+				exclude_id_lists = exclude_id_lists,
+				default_selection=self.__default_groups_selection(opts),
 				all=opts.all)
 
 		if opts.xml:
@@ -1147,7 +1100,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						primary_group=opts.primary_gid,
 						profile=opts.profile,
 						backend=opts.in_backend,
-						inotified=opts.inotified,
+						inotified=opts.set_inotified,
 						skel=opts.skel, batch=opts.batch, force=opts.force,
 						shell=opts.shell, lastname=lastname, firstname=firstname,
 						in_groups=opts.in_groups)
@@ -1249,7 +1202,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						system=opts.system, groupSkel=opts.skel,
 						desired_gid=opts.gid, permissive=opts.permissive,
 						backend=opts.in_backend,
-						inotified=opts.inotified,
+						inotified=opts.set_inotified,
 						members_to_add=self.select(LMC.users,
 										include_id_lists=
 											[ (opts.users_to_add,
@@ -1369,27 +1322,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.setup_listener_gettext()
 
-		if opts.system:
-			selection = filters.SYSTEM
-
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-
-		else:
-			# be careful. default selection is NONE for a DEL operation.
-			selection = filters.NONE
-
-		include_id_lists = [
-			(opts.login, LMC.users.by_login),
-			(opts.uid, LMC.users.by_uid)
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.users.guess_one),
-			(opts.exclude_login, LMC.users.by_login),
-			(opts.exclude_uid, LMC.users.by_uid),
-			([os.getuid()], lambda x: x)
-		]
+		include_id_lists, exclude_id_lists = self.__default_users_includes_excludes(opts)
 
 		if opts.all and (
 					(
@@ -1414,7 +1347,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		users_to_del = self.select(LMC.users, args[1:], opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
-						default_selection = selection
+						default_selection = self.__default_users_selection(opts, for_delete=True)
 					)
 
 		for user in users_to_del:
@@ -1536,39 +1469,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		# already done in dispatch_*
 		#self.setup_listener_gettext()
 
-		if opts.privileged:
-			selection = filters.PRIVILEGED
-		elif opts.responsibles:
-			selection = filters.RESPONSIBLE
-		elif opts.guests:
-			selection = filters.GUEST
-		elif opts.system:
-			selection = filters.SYSTEM
-		elif opts.empty:
-			selection = filters.EMPTY
-		elif opts.not_responsibles:
-			selection = filters.NOT_RESPONSIBLE
-		elif opts.not_guests:
-			selection = filters.NOT_GUEST
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-		elif opts.not_privileged:
-			selection = filters.NOT_PRIVILEGED
-		else:
-			selection = filters.NONE
-
-		# no else: clause. default selection for DEL is NONE (be careful)
-
-		include_id_lists = [
-			(opts.name, LMC.groups.by_name),
-			(opts.gid, LMC.groups.by_gid),
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_one),
-			(opts.exclude_group, LMC.groups.by_name),
-			(opts.exclude_gid, LMC.groups.by_gid)
-		]
+		include_id_lists, exclude_id_lists = self.__default_groups_includes_excludes(opts)
 
 		if opts.all and (
 				(
@@ -1593,9 +1494,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		groups_to_del = self.select(LMC.groups, args[1:], opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
-						default_selection=selection)
-
-		#gc.set_debug(gc.DEBUG_LEAK)
+						default_selection=self.__default_groups_selection(opts, for_delete=True))
 
 		for group in groups_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \
@@ -1624,10 +1523,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		#
 		# I thus add this gc.collect() call at the end of all RWI methods.
 		gc.collect()
-
-		# this one has no effect at all. Only the gc.collect() has.
-		#del groups_to_del
-
 	def del_profile(self, opts, args):
 		""" Delete a system wide User profile. """
 
@@ -1743,27 +1638,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.setup_listener_gettext()
 
-		if opts.system:
-			selection = filters.SYSTEM
-
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-
-		else:
-			# by default if nothing is specified, we modify the current user.
-			# this is a special comfort-shortcut behavior.
-			selection = [ LMC.users.by_login(opts.current_user) ]
-
-		include_id_lists = [
-			(opts.login, LMC.users.by_login),
-			(opts.uid, LMC.users.by_uid)
-			]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.users.guess_one),
-			(opts.exclude_login, LMC.users.by_login),
-			(opts.exclude_uid, LMC.users.by_uid)
-			]
+		include_id_lists, exclude_id_lists = self.__default_users_includes_excludes(opts)
 
 		if opts.all and (
 			(
@@ -1784,7 +1659,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		users_to_mod = self.select(LMC.users, args[1:], opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists,
-				default_selection = selection)
+				default_selection = self.__default_users_selection(opts))
 
 		assert ltrace(TRACE_MOD, '> mod_user(%s)' % ', '.join(user.login for user in users_to_mod))
 
@@ -1814,9 +1689,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 						something_done = True
 						user.password = opts.newpassword
 
-					if opts.inotified is not None:
+					if opts.set_inotified is not None:
 						something_done = True
-						user.inotified = opts.inotified
+						user.inotified = opts.set_inotified
 
 					if opts.interactive_password:
 						something_done = True
@@ -1925,44 +1800,107 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			raise exceptions.NeedHelpException(_(u'What do you want to modify '
 				u'about user(s) %s ?') % ', '.join(stylize(ST_LOGIN, user.login)
 					for user in users_to_mod))
+	def __default_users_selection(self, opts, for_get=False, for_delete=False):
+
+		#
+		# Default selection when nothing is specified
+		# depends on the calling CLI program.
+		#
+		if for_get:
+			selection = filters.STANDARD
+
+		elif for_delete:
+			# users must be explicitely selected for del operations.
+			selection = filters.NONE
+
+		else:
+			# For CHK / MOD, we select the current user by default,
+			# this is a comfort option when no name is given on the CLI.
+			selection = [ LMC.users.by_login(opts.current_user) ]
+
+		#
+		# Then, if something is specified, it takes
+		# precedence over the default selection.
+		#
+
+		if opts.system:
+			selection = filters.SYSTEM
+
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
+
+		return selection
+	def __default_groups_selection(self, opts, for_delete=False):
+
+		selection = filters.NONE
+
+		if opts.privileged:
+			selection = filters.PRIVILEGED
+
+		elif opts.responsibles:
+			selection = filters.RESPONSIBLE
+
+		elif opts.guests:
+			selection = filters.GUEST
+
+		elif opts.system:
+			selection = filters.SYSTEM
+
+		elif opts.empty:
+			selection = filters.EMPTY
+
+		elif opts.not_responsibles:
+			selection = filters.NOT_RESPONSIBLE
+
+		elif opts.not_guests:
+			selection = filters.NOT_GUEST
+
+		elif opts.not_system:
+			selection = filters.NOT_SYSTEM
+
+		elif opts.not_privileged:
+			selection = filters.NOT_PRIVILEGED
+
+
+		elif not opts.all:
+			if not for_delete:
+				# by default, we select only standard groups,
+				# this is the most common case; except for a delete
+				# operation where we select NONE to avoid human errors.
+				selection = filters.STANDARD
+
+		return selection
+	def __default_users_includes_excludes(self, opts):
+		return ([
+			(opts.login, LMC.users.by_login),
+			(opts.uid, LMC.users.by_uid)
+		], [
+			(opts.exclude, LMC.users.guess_one),
+			(opts.exclude_login, LMC.users.by_login),
+			(opts.exclude_uid, LMC.users.by_uid)
+		])
+
+	def __default_groups_includes_excludes(self, opts):
+		return ([
+			(opts.name, LMC.groups.by_name),
+			(opts.gid, LMC.groups.by_gid)
+		], [
+			(opts.exclude, LMC.groups.guess_one),
+			(opts.exclude_group, LMC.groups.by_name),
+			(opts.exclude_gid, LMC.groups.by_gid)
+		])
 	def mod_group(self, opts, args):
 		""" Modify a group. """
 
 		self.setup_listener_gettext()
 
-		if opts.privileged:
-			selection = filters.PRIVILEGED
-		elif opts.responsibles:
-			selection = filters.RESPONSIBLE
-		elif opts.guests:
-			selection = filters.GUEST
-		elif opts.system:
-			selection = filters.SYSTEM
-		elif opts.empty:
-			selection = filters.EMPTY
-		elif opts.not_responsibles:
-			selection = filters.NOT_RESPONSIBLE
-		elif opts.not_guests:
-			selection = filters.NOT_GUEST
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-		elif opts.not_privileged:
-			selection = filters.NOT_PRIVILEGED
-
-		elif not opts.all:
-			# must be the last case!
-			selection = filters.NONE
-
-		include_id_lists = [
-			(opts.name, LMC.groups.by_name),
-			(opts.gid, LMC.groups.by_gid)
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_one),
-			(opts.exclude_group, LMC.groups.by_name),
-			(opts.exclude_gid, LMC.groups.by_gid)
-		]
+		include_id_lists, exclude_id_lists = self.__default_groups_includes_excludes(opts)
 
 		if opts.all and (
 			(
@@ -1982,7 +1920,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		groups_to_mod = self.select(LMC.groups, args[1:], opts,
 					include_id_lists = include_id_lists,
 					exclude_id_lists = exclude_id_lists,
-					default_selection = selection)
+					default_selection = self.__default_groups_selection(opts))
 
 		guess_one_user   = LMC.users.guess_one
 		guess_users_list = LMC.users.guess_list
@@ -2014,9 +1952,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					something_done   = True
 					group.permissive = opts.permissive
 
-				if opts.inotified is not None:
+				if opts.set_inotified is not None:
 					something_done  = True
-					group.inotified = opts.inotified
+					group.inotified = opts.set_inotified
 
 				if opts.restore_watch:
 					if group.inotified:
@@ -2417,32 +2355,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.setup_listener_gettext()
 
-		if opts.system:
-			selection = filters.SYSTEM
-
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-
-		elif opts.inotified:
-			selection = filters.INOTIFIED
-
-		elif opts.not_inotified:
-			selection = filters.NOT_INOTIFIED
-
-		else:
-			# by default we check the current user
-			selection = [ LMC.users.by_login(opts.current_user) ]
-
-		include_id_lists = [
-			(opts.login, LMC.users.by_login),
-			(opts.uid, LMC.users.by_uid)
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.users.guess_one),
-			(opts.exclude_login, LMC.users.by_login),
-			(opts.exclude_uid, LMC.users.by_uid)
-		]
+		include_id_lists, exclude_id_lists = self.__default_users_includes_excludes(opts)
 
 		if opts.all and (
 			(
@@ -2462,7 +2375,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		users_to_chk = self.select(LMC.users, args[1:], opts,
 			include_id_lists = include_id_lists,
 			exclude_id_lists = exclude_id_lists,
-			default_selection = selection,
+			default_selection = self.__default_users_selection(opts),
 			all=opts.all)
 
 		assert ltrace(TRACE_CHK, '> chk_user(%s)' % users_to_chk)
@@ -2486,45 +2399,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		self.setup_listener_gettext()
 
-		selection = filters.NONE
-
-		if opts.privileged:
-			selection = filters.PRIVILEGED
-		elif opts.responsibles:
-			selection = filters.RESPONSIBLE
-		elif opts.guests:
-			selection = filters.GUEST
-		elif opts.system:
-			selection = filters.SYSTEM
-		elif opts.empty:
-			selection = filters.EMPTY
-		elif opts.not_responsibles:
-			selection = filters.NOT_RESPONSIBLE
-		elif opts.not_guests:
-			selection = filters.NOT_GUEST
-		elif opts.not_system:
-			selection = filters.NOT_SYSTEM
-		elif opts.not_privileged:
-			selection = filters.NOT_PRIVILEGED
-		elif opts.inotified:
-			selection = filters.INOTIFIED
-		elif opts.not_inotified:
-			selection = filters.NOT_INOTIFIED
-
-		elif not opts.all:
-			# must be the last case!
-			selection = filters.STANDARD
-
-		include_id_lists = [
-			(opts.name, LMC.groups.by_name),
-			(opts.gid, LMC.groups.by_gid)
-		]
-
-		exclude_id_lists = [
-			(opts.exclude, LMC.groups.guess_one),
-			(opts.exclude_group, LMC.groups.by_name),
-			(opts.exclude_gid, LMC.groups.by_gid)
-		]
+		include_id_lists, exclude_id_lists = self.__default_groups_includes_excludes(opts)
 
 		if opts.all and (
 			(
@@ -2544,7 +2419,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		groups_to_chk = self.select(LMC.groups, args[1:], opts,
 			include_id_lists = include_id_lists,
 			exclude_id_lists = exclude_id_lists,
-			default_selection = selection,
+			default_selection = self.__default_groups_selection(opts),
 			all=opts.all)
 
 		assert ltrace(TRACE_CHK, '> chk_group(%s)' % groups_to_chk)
@@ -2615,7 +2490,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		if opts.wmi_test_apps:
 			self.chk_system_wmi_tests([app for app in opts.wmi_test_apps.split(',') if app != ''])
-
 	def chk_system_wmi_tests(self, apps):
 
 		# execute_manager will fail without this, but this should already be

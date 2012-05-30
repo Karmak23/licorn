@@ -193,15 +193,29 @@ def common_filter_group(app, parser, tool, mode):
 				action="store", dest="exclude_word_match", default='',
 				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
 
-	if tool in ('get', 'chk') and mode in ('users', 'groups'):
-		filtergroup.add_option('-w', '--watched', '--inotified',
-			action="store_true", dest="inotified", default=False,
-			help=_(u'Include all watched {0}.').format(_(mode)))
+	if tool in ('get', 'chk', 'del') and mode in ('users', 'groups'):
+			# for GET/CHK/DEL, we can select the group with the -w flag.
+			filtergroup.add_option('-w', '--watched', '--inotified',
+				action="store_true", dest="inotified", default=False,
+				help=_(u'Include all watched {0}.').format(_(mode)))
 
-		filtergroup.add_option('-W', '--not-watched', '--not-inotified',
-			action="store_true", dest="not_inotified", default=False,
-			help=_(u'Include all non-watched {0}. Handy for checking all '
-				u'of them at once in a cron script.').format(_(mode)))
+			filtergroup.add_option('-W', '--not-watched', '--not-inotified',
+				action="store_true", dest="not_inotified", default=False,
+				help=_(u'Include all non-watched {0}. Handy for checking all '
+					u'of them at once in a cron script.').format(_(mode)))
+
+	elif tool == 'mod' and mode in ('users', 'groups'):
+			# for MOD, there would be a conflict between the selector flag
+			# and the modifier flag. We choose to assign the short ones to
+			# the modifier, like it is for 'add'
+			filtergroup.add_option('--watched', '--inotified',
+				action="store_true", dest="inotified", default=False,
+				help=_(u'Include all watched {0}.').format(_(mode)))
+
+			filtergroup.add_option('--not-watched', '--not-inotified',
+				action="store_true", dest="not_inotified", default=False,
+				help=_(u'Include all non-watched {0}. Handy for checking all '
+					u'of them at once in a cron script.').format(_(mode)))
 
 	if mode is 'groups':
 		filtergroup.add_option('--name', '--names', '--group', '--groups',
@@ -831,7 +845,7 @@ def add_user_parse_arguments(app):
 
 	user.add_option("-W", "--not-watched", "--set-not-watched",
 						"--not-inotified", "--set-not-inotified",
-		action="store_false", dest="inotified", default=True,
+		action="store_false", dest="set_inotified", default=True,
 		help=_(u"Do not watch the home directory of the user for content "
 			u"changes. Usefull for big directories which slow down licornd. "
 			u"You have to manually run {0} on non-watched users. (default: "
@@ -965,7 +979,7 @@ def add_group_parse_arguments(app):
 
 	group.add_option("-W", "--not-watched", "--set-not-watched",
 		"--not-inotified", "--set-not-inotified",
-		action="store_false", dest="inotified", default=True,
+		action="store_false", dest="set_inotified", default=True,
 		help=_(u"Do not watch the shared directory of the group for content "
 			u"changes. Usefull for big directories which slow down licornd. "
 			u"You have to manually run {0} on non-watched groups. (default: "
@@ -1411,14 +1425,14 @@ def mod_user_parse_arguments(app):
 		action="store_false", dest="lock", default=None,
 		help=_(u"unlock the user account and restore login ability."))
 
-	user.add_option("-w", "--watched", "--set-watched",
-		"--inotified", "--set-inotified",
-		action="store_true", dest="inotified", default=None,
+	# the --watched flag is used as a selector, thus not here in modifiers
+	user.add_option("-w", "--set-watched", "--set-inotified",
+		action="store_true", dest="set_inotified", default=None,
 		help=_(u"(Re-)watch the home directory of the user for content changes."))
 
-	user.add_option("-W", "--not-watched", "--set-not-watched",
-		"--not-inotified", "--set-not-inotified",
-		action="store_false", dest="inotified", default=None,
+	# the --not-watched flag is used as a selector, thus not here in modifiers
+	user.add_option("-W", "--set-not-watched", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=None,
 		help=_(u"Do not watch the home directory of the user for content "
 			u"changes. Usefull for big directory which slow down licornd. You "
 			u"have to manually run {0} on non-watched groups.").format(
@@ -1579,14 +1593,14 @@ def mod_group_parse_arguments(app):
 		action="store_false", dest="permissive", default=None,
 		help=_(u"Set the shared directory of the group not permissive."))
 
-	group.add_option("-w", "--watched", "--set-watched",
-		"--inotified", "--set-inotified",
-		action="store_true", dest="inotified", default=None,
+	# the --watched flag is used as a selector, thus not here in modifiers
+	group.add_option("-w", "--set-watched", "--set-inotified",
+		action="store_true", dest="set_inotified", default=None,
 		help=_(u"(Re-)watch the shared directory of the group for content changes."))
 
-	group.add_option("-W", "--not-watched", "--set-not-watched",
-		"--not-inotified", "--set-not-inotified",
-		action="store_false", dest="inotified", default=None,
+	# the --not-watched flag is used as a selector, thus not here in modifiers
+	group.add_option("-W", "--set-not-watched", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=None,
 		help=_(u"Do not watch the shared directory of the group for content "
 			u"changes. Usefull for big directory which slow down licornd. You "
 			u"have to manually run {0} on non-watched groups.").format(
