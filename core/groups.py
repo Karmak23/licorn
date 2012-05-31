@@ -2492,7 +2492,9 @@ class GroupsController(DictSingleton, CoreFSController):
 				return
 
 			# Remove the inotifier watches before deleting the group.
-			group.inotified_toggle(False, full_display=False)
+			# ``serialize=False`` because we don't want the group home
+			# to remain in nowatch.conf after the deletion.
+			group.inotified_toggle(False, full_display=False, serialize=False)
 
 			# For a standard group, there are a few steps more :
 			# 	- delete the responsible and guest groups (if exists),

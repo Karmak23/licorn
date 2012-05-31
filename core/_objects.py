@@ -219,9 +219,29 @@ class CoreFSUnitObject(object):
 	@inotified.setter
 	def inotified(self, inotified):
 		""" Change the inotify state of the object, and start/stop inotifier
-			watches accordingly. """
+			watches accordingly. Internally, this just calls
+			:meth:`inotified_toggle`. """
+
 		return self.inotified_toggle(inotified)
-	def inotified_toggle(self, inotified, full_display=True):
+	def inotified_toggle(self, inotified, full_display=True, serialize=True):
+		""" Toggle the inotified status of the current instance.
+
+			:param inotified: set to ``True`` or ``False``, given if you
+				want the object to toggle the inotifier status on or off.
+
+			:param full_display: set to ``False`` when the object is beiing
+				created, to avoid displaying the “ status change ” message
+				which would not be appropriate for a newly created object.
+
+			:param serialize: a boolean, defaults to ``True``. The only case
+				when one would set it to ``False`` is when the instance is
+				going to be deleted right after the toggle. This is used in
+				Users and Groups controller, to properly shutdown the
+				inotifier watches before wiping users/groups. In this case we
+				don't want the inotified status to be recorded, because it
+				would let it remain in the system configuration while the
+				object no longer exists.
+		"""
 
 		object_type_str = self.controller.object_type_str
 
@@ -229,8 +249,7 @@ class CoreFSUnitObject(object):
 			if full_display:
 				logging.notice(_(u'Inotify state {0} for {1} {2}.').format(
 								stylize(ST_COMMENT, _(u'unchanged')),
-								object_type_str,
-								stylize(ST_NAME, self.name)))
+								object_type_str, stylize(ST_NAME, self.name)))
 			return
 
 		with self.lock:
@@ -243,7 +262,8 @@ class CoreFSUnitObject(object):
 				set_value  = _(u'setup')
 				color      = ST_OK
 
-				settings.del_inotifier_exclusion(self.homeDirectory)
+				if serialize:
+					settings.del_inotifier_exclusion(self.homeDirectory)
 
 				# setup the inotify watches
 				self._inotifier_add_all_watches()
@@ -257,7 +277,8 @@ class CoreFSUnitObject(object):
 				# or tear them down
 				self._inotifier_del_watch()
 
-				settings.add_inotifier_exclusion(self.homeDirectory)
+				if serialize:
+					settings.add_inotifier_exclusion(self.homeDirectory)
 
 			# the watched state is displayed in CLI.
 			self._cli_invalidate()
