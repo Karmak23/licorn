@@ -54,7 +54,6 @@ def get_status(opts, args, listener):
 						LMC.rwi.get_daemon_status(opts, args)
 
 					except Pyro.errors.ConnectionClosedError:
-
 						# wait a little before exiting, in case the daemon
 						# reconnects automatically.
 						if stop_count > 5:
@@ -63,9 +62,8 @@ def get_status(opts, args, listener):
 
 						stop_count += 1
 
-					except Exception, e:
-						logging.warning('exc in get_status_thread: %s.' % e)
-						pyutils.print_exception_if_verbose()
+					except:
+						logging.exception(_(u'Could not get daemon status'))
 						quit_func()
 
 					interval = opts.monitor_interval
@@ -80,22 +78,28 @@ def get_status(opts, args, listener):
 				time.sleep(interval)
 				count += 1
 
-		opts_lock  = RLock()
-
+		opts_lock      = RLock()
 		cli_interactor = CliInteractor(listener, opts, opts_lock)
-		stop_event = cli_interactor._stop_event
-		quit_func = cli_interactor.quit_interactor
-
-		output_thread = Thread(target=get_status_thread,
+		stop_event     = cli_interactor._stop_event
+		quit_func      = cli_interactor.quit_interactor
+		output_thread  = Thread(target=get_status_thread,
 								args=(opts, args, opts_lock, stop_event, quit_func))
 		output_thread.start()
 
 		try:
-			cli_interactor.run()
+			try:
+				cli_interactor.run()
+
+			except KeyboardInterrupt:
+				# This is needed to restore the terminal state.
+				# Relying on the "finally" clause isn't sufficient.
+				cli_interactor.quit_interactor()
+				raise
 
 		finally:
 			if not stop_event.is_set():
 				stop_event.set()
+
 			output_thread.join()
 
 	else:
@@ -104,9 +108,8 @@ def get_status(opts, args, listener):
 		try:
 			LMC.rwi.get_daemon_status(opts, args)
 
-		except Exception, e:
-			logging.warning(e)
-			pyutils.print_exception_if_verbose()
+		except:
+			logging.exception(_(u'Could not obtain daemon status'))
 def get_inside(opts, args, listener):
 
 	import code
