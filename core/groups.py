@@ -1492,7 +1492,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__guest_group().responsible_group = self.__responsible_group()
 
 		return all_went_ok
-	def __check_system_group(self, minimal=True, force=False,
+	def __check_system_group(self, initial=False, minimal=True, force=False,
 							batch=False, auto_answer=None, full_display=True):
 		""" Check superflous and mandatory attributes of a system group. """
 
