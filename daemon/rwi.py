@@ -1867,6 +1867,11 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		elif opts.not_privileged:
 			selection = filters.NOT_PRIVILEGED
 
+		elif opts.inotified:
+			selection = filters.INOTIFIED
+
+		elif opts.not_inotified:
+			selection = filters.NOT_INOTIFIED
 
 		elif not opts.all:
 			if not for_delete:
