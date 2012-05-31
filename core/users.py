@@ -1744,10 +1744,13 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			LicornEvent('user_deleted', user=user).emit(priorities.LOW)
 
 			if user.is_standard:
-				user.inotified_toggle(False, full_display=False)
+				# serialize=False because we don't want the user's home
+				# to remain in nowatch.conf after the deletion.
+				user.inotified_toggle(False, full_display=False, serialize=False)
 
-			# NOTE: this must be done *after* having deleted the data from self,
-			# else mono-maniac backends (like shadow) don't see the change and
+			# NOTE: the backend deletion must be done *after* having deleted
+			# the object from the controller, else mono-maniac backends (like
+			# shadow) don't "see" the change (they walk the controller) and
 			# save everything, including the user we want to delete.
 			user.backend.delete_User(user)
 

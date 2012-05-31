@@ -392,7 +392,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			# ALREADY INCLUDED: olcDatabase={0}config,cn=config
 			# and don't forget the frontend, handled in a special way:
 			# not with root user, but LDAP cn=admin (or "manager").
-			(self.base, 'frontend')
+			(self.base, 'frontend'),
+			(self.rootbinddn, 'frontend.admin'),
+			(self.nss_base_shadow, 'frontend.users'),
+			(self.nss_base_group, 'frontend.groups'),
+
 			)
 
 		replacement_table = {
@@ -409,6 +413,12 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			# some French / German cases and is a good start.
 			'@@organization_dc@@' : hlstr.validate_name(
 									settings.backends.openldap.organization),
+
+			# we keep only 'People' and 'Groups' from the O.U's
+			'@@nss_base_shadow@@' :
+						self.nss_base_shadow.split(',', 1)[0].split('=', 1)[1],
+			'@@nss_base_group@@'  :
+						self.nss_base_group.split(',', 1)[0].split('=', 1)[1],
 		}
 
 		logging.progress(_(u'{0}: checking slapd schemata…').format(self.pretty_name))
@@ -434,11 +444,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 							logging.exception(_(u'{0:s}: Exception encountered while disabling AppArmor profile.'))
 							continue
 
-					#if schema == 'frontend':
+					if 'frontend' in schema:
 						# the frontend is a special case which can't be filled by root.
 						# We have to bind as cn=admin, else it will fail with
 						# "Insufficient privileges" error.
-					#	self.bind()
+						self.bind()
 
 					logging.info(_(u'{0}: loading schema {1} into '
 									u'{2}.').format(self.pretty_name,
@@ -702,10 +712,9 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				"""
 
 				#ltrace(TRACE_OPENLDAP, 'userPassword: %s' % temp_user_dict['userPassword'])
-		except KeyError, e:
-			logging.warning(_(u'{0}: skipped account {1} (was: '
-				'KeyError on field {2}).').format(
-					self.pretty_name, stylize(ST_NAME, dn), e))
+		except KeyError:
+			logging.exception(_(u'{0}: skipped account {1}'),
+								self.pretty_name, (ST_NAME, dn))
 			pass
 
 		assert ltrace_func(TRACE_OPENLDAP, True)
@@ -839,29 +848,23 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 				# prepare the LDAP entry like the LDAP daemon assumes it will
 				# be : add or change necessary fields.
-				user['objectClass'] = [
-						'inetOrgPerson',
-						'posixAccount',
-						'shadowAccount'
-					]
+				user['objectClass'] = ('inetOrgPerson', 'posixAccount', 'shadowAccount')
 
 				assert ltrace(TRACE_OPENLDAP, 'add user %s: %s' % (
 					stylize(ST_LOGIN, orig_user.login),
 					ldaputils.addModlist(user)))
 
-				self.openldap_conn.add_s('uid=%s,%s' % (
-					orig_user.login, self.nss_base_shadow),
-					ldaputils.addModlist(user))
+				self.openldap_conn.add_s('uid=%s,%s' % (orig_user.login,
+							self.nss_base_shadow), ldaputils.addModlist(user))
 			else:
 				logging.warning(_(u'{0}: unknown mode {1} for user '
-					u'{2}(uid={3}).').format(self.pretty_name, mode,
-					orig_user.login, orig_user.uid))
-		except (
-				pyldap.NO_SUCH_OBJECT,
-				pyldap.INVALID_CREDENTIALS,
-				pyldap.STRONG_AUTH_REQUIRED
-			), e:
-			logging.warning(e[0]['desc'])
+								u'{2}(uid={3}).').format(self.pretty_name,
+								mode, orig_user.login, orig_user.uid))
+
+		except:
+			logging.warning(_(u'{0}: unable to save user {1}').format(
+								self.pretty_name, orig_user.login))
+			raise
 	def save_Group(self, orig_group, mode):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
@@ -877,7 +880,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				# cn IS name. 'name' is forbidden.
 				#'name'        : orig_group.name,
 				'gidNumber'   : orig_group.gidNumber,
-				'memberUid'   : orig_group.memberUid,
+				# be sure to pass a list: the python-ldap can't stand
+				# a generator, and will fail at best, or write an empty
+				# list without warning if we are unlucky.
+				'memberUid'   : list(orig_group.memberUid),
 				'description' : orig_group.description,
 			}
 
@@ -898,36 +904,33 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 									'(cn=%s)' % orig_group.name)[0]
 
 				assert ltrace(TRACE_OPENLDAP,'updating group %s.' % \
-					stylize(ST_LOGIN, orig_group.name))
+									stylize(ST_LOGIN, orig_group.name))
 
 				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(
-					old_entry, group, ignore_oldexistent=1))
+											old_entry, group,
+											ignore_oldexistent=1))
 
 			elif mode == backend_actions.CREATE:
 
 				assert ltrace(TRACE_OPENLDAP,'creating group %s.' % (
 					stylize(ST_LOGIN, orig_group.name)))
 
-				group['objectClass'] = [
-						'posixGroup',
-						'licornGroup'
-					]
+				group['objectClass'] = ('posixGroup', 'licornGroup')
 
 				self.openldap_conn.add_s('cn=%s,%s' % (
-					orig_group.name, self.nss_base_group),
-					ldaputils.addModlist(group))
+									orig_group.name, self.nss_base_group),
+									ldaputils.addModlist(group))
 			else:
 				logging.warning(_(u'{0}: unknown mode {1} for group '
-							u'{2}(gid={3}).').format(self.pretty_name, mode,
-								orig_group.name, orig_group.gid))
-		except (
-				pyldap.NO_SUCH_OBJECT,
-				pyldap.INVALID_CREDENTIALS,
-				pyldap.STRONG_AUTH_REQUIRED
-			), e:
+								u'{2}(gid={3}).').format(self.pretty_name,
+								mode, orig_group.name, orig_group.gid))
+
+		except:
 			# there is also e['info'] on ldap.STRONG_AUTH_REQUIRED, but
 			# it is just repeat.
-			logging.warning(e[0]['desc'])
+			logging.warning(_(u'{0}: unable to save group {1}').format(
+								self.pretty_name, orig_group.name))
+			raise
 	def delete_User(self, user):
 		""" Delete one user from the LDAP backend. """
 		assert ltrace_func(TRACE_OPENLDAP)

@@ -208,7 +208,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				sentry = [ login, '', '0', '0', '99999', '7', '', '', '' ]
 
 				logging.warning(_(u'{0}: added missing entry for user {1} '
-					'in {2}.').format(str(self), stylize(ST_LOGIN, login),
+					'in {2}.').format(self.pretty_name, stylize(ST_LOGIN, login),
 						stylize(ST_PATH, '/etc/shadow')))
 
 				need_rewriting = True
@@ -235,7 +235,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned users data rewrite '
-				'requested in the background.').format(str(self)))
+				'requested in the background.').format(self.pretty_name))
 
 			workers.service_enqueue(priorities.NORMAL,
 											self.save_Users, LMC.users,
@@ -340,7 +340,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 				# this happens if debian tools were used between 2 Licorn CLI
 				# calls, or on first call of CLI tools on a Debian system.
 				logging.notice(_(u'{0}: added missing record '
-					'for group {1} in {2}.').format(str(self),
+					'for group {1} in {2}.').format(self.pretty_name,
 						stylize(ST_NAME, name),
 						stylize(ST_PATH, '/etc/gshadow')))
 				need_rewriting = True
@@ -358,7 +358,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 
 		if need_rewriting and is_allowed:
 			logging.notice(_(u'{0}: cleaned groups data rewrite '
-				'requested in the background.').format(str(self)))
+				'requested in the background.').format(self.pretty_name))
 
 			workers.service_enqueue(priorities.NORMAL,
 										self.save_Groups, LMC.groups,
@@ -433,7 +433,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			self.__hint_shw += 1
 			os.rename(fpaths, '/etc/shadow')
 
-		logging.progress(_("{0}: saved users data to disk.").format(str(self)))
+		logging.progress(_("{0}: saved users data to disk.").format(self.pretty_name))
 	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
@@ -501,7 +501,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.close(ftempe)
 			os.rename(fpathe, settings.backends.shadow.extended_group_file)
 
-		logging.progress(_("{0}: saved groups data to disk.").format(str(self)))
+		logging.progress(_("{0}: saved groups data to disk.").format(self.pretty_name))
 
 		assert ltrace_func(TRACE_SHADOW, True)
 	def compute_password(self, password, salt=None):
@@ -531,7 +531,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		assert ltrace_func(TRACE_SHADOW)
 
 		logging.notice(_(u'{0}: configuration file {1} changed, '
-			'reloading {2} controller.').format(str(self),
+			'reloading {2} controller.').format(self.pretty_name,
 				stylize(ST_PATH, path),
 				stylize(ST_NAME, controller.name)))
 

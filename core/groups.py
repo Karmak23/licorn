@@ -954,7 +954,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			logging.info(_(u'Skipped move of group {0}, '
 				u'already stored in backend {1}.').format(
 					stylize(ST_NAME, self.name),
-					stylize(ST_NAME, new_backend)))
+					new_backend.pretty_name))
 			return True
 
 		if self.__is_system_restricted and not force:
@@ -977,7 +977,7 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 													internal_operation=True):
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
 					u'because move of associated responsible system group '
-					u'failed.').format(self.name, new_backend))
+					u'failed.').format(self.name, new_backend.pretty_name))
 				return
 
 			if not self.guest_group.move_to_backend(new_backend,
@@ -990,17 +990,20 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				logging.warning(_(u'Skipped move of group {0} to backend {1} '
 					u'because move of associated system guest group '
-					u'failed.').format(self.name, new_backend))
+					u'failed.').format(self.name, new_backend.pretty_name))
 				return
 
+		self.backend = new_backend
+
 		try:
-			self.backend = new_backend
 			self.serialize(backend_actions.CREATE)
 
-		except Exception, e:
+		except:
 			logging.exception(_(u'Exception happened while trying to '
-				u'move group {0} from {1} to {2}, aborting (group left '
-				u'unchanged)'), self.name, old_backend, new_backend)
+								u'move group {0} from {1} to {2}, aborting '
+								u'(group left unchanged)'), self.name,
+									old_backend.pretty_name,
+									new_backend.pretty_name)
 
 			try:
 				# try to restore old situation as much as possible.
@@ -1018,23 +1021,25 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 				self.guest_group.move_to_backend(old_backend,
 													internal_operation=True)
 
-			except Exception, e:
-				logging.warning(_(u'Exception {0} happened while trying to '
-					u'restore a stable situation during group {1} move, we '
-					u'could be in big trouble.').format(e, self.name))
-				print_exc()
+			except:
+				logging.exception(_(u'An error occured while trying to '
+					u'restore a stable situation during group {0} move, we '
+					u'could be in big trouble.'), (ST_NAME, self.name))
 
 			return False
+
 		else:
 			# the copy operation is successfull, make it a real move.
-			old_backend.delete_Group(self.name)
+			old_backend.delete_Group(self)
 
 			LicornEvent('group_moved_backend', group=self).emit(priorities.LOW)
 
 			logging.notice(_(u'Moved group {0} from {1} to {2}.').format(
 												stylize(ST_NAME, self.name),
-												stylize(ST_NAME, old_backend),
-												stylize(ST_NAME, new_backend)))
+												old_backend.pretty_name,
+												new_backend.pretty_name))
+
+			self._cli_invalidate()
 			return True
 	def check(self, initial=False, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
 		""" Check a group.
@@ -2487,7 +2492,9 @@ class GroupsController(DictSingleton, CoreFSController):
 				return
 
 			# Remove the inotifier watches before deleting the group.
-			group.inotified_toggle(False, full_display=False)
+			# ``serialize=False`` because we don't want the group home
+			# to remain in nowatch.conf after the deletion.
+			group.inotified_toggle(False, full_display=False, serialize=False)
 
 			# For a standard group, there are a few steps more :
 			# 	- delete the responsible and guest groups (if exists),

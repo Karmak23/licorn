@@ -588,7 +588,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				threads_data=tdata,
 			)
 	@events.handler_method
-	def need_restart(self, reason=None, *args, **kwargs):
+	def need_restart(self, *args, **kwargs):
 
 		if self.__restart_event.is_set():
 			# be sure we restart only one time. The Event can be
@@ -598,7 +598,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__restart_event.set()
 
 		# We've got to be sure everyone is ready to restart !
-		LicornEvent('daemon_will_restart', reason=reason, synchronous=True).emit()
+		LicornEvent('daemon_will_restart', reason=kwargs.get('reason'), synchronous=True).emit()
 
 		# TODO: mark the 'restart' status in LMC.system. This needs
 		# system.status become a property...
