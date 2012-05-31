@@ -214,55 +214,57 @@ class ACLRule(Enumeration):
 			return acl.upper()
 
 		elif acl.find(':') == -1 and acl.find(',') == -1:
-			raise exceptions.LicornSyntaxException(self.file_name,
-												self.line_no, acl,
-				desired_syntax='NOACL, RESTRICTED, POSIXONLY, RESTRICT'
-				', PRIVATE')
+			raise exceptions.LicornSyntaxException(
+						self.file_name, self.line_no, acl, desired_syntax=
+							'NOACL, RESTRICTED, POSIXONLY, RESTRICT, PRIVATE')
 
 		if acl.find('@') != -1:
 			acl = self.substitute_configuration_defaults(acl)
 
 		splitted_acls = []
+
 		for acl_tmp in acl.split(','):
 			splitted_acls.append(acl_tmp.split(':'))
 
 		for splitted_acl in splitted_acls:
 			if len(splitted_acl) == 3:
-				bad_part=0
+				bad_part = 0
 
 				if not self.system_wide:
-					if splitted_acl[1] in ['',
-						settings.defaults.admin_group]:
-						bad_part=2
+					if splitted_acl[1] in ('', settings.defaults.admin_group):
+						bad_part = 2
 
 					else:
-						must_resolve = False
-						if splitted_acl[0] in ('u', 'user'):
-							resolve_method = LMC.users.guess_identifier
-							must_resolve = True
-						elif splitted_acl[0] in ('g', 'group'):
-							resolve_method = LMC.groups.guess_identifier
-							must_resolve = True
+						resolve_method = None
 
-						if must_resolve:
+						if splitted_acl[0] in ('u', 'user'):
+							resolve_method = LMC.users.guess_one
+
+						elif splitted_acl[0] in ('g', 'group'):
+							resolve_method = LMC.groups.guess_one
+
+						if resolve_method:
 							try:
 								resolve_method(splitted_acl[1])
 
 							except exceptions.DoesntExistException, e:
 								raise exceptions.LicornACLSyntaxException(
-									self.file_name,	self.line_no,
-									text=':'.join(splitted_acl),
-									text_part=splitted_acl[1],
-									optional_exception=e)
+											self.file_name,	self.line_no,
+											text=':'.join(splitted_acl),
+											text_part=splitted_acl[1],
+											optional_exception=e)
+						#FIXME:
+						# else: what to do???
+						# check if ('m', 'mask') else raise ?
 
-					if splitted_acl[2] in [ '---', '-w-', '-wx' ]:
-						bad_part=3
+					if splitted_acl[2] in ( '---', '-w-', '-wx' ):
+						bad_part = 3
 
 				if bad_part:
 					raise exceptions.LicornACLSyntaxException(
-						self.file_name,	self.line_no,
-						text=':'.join(splitted_acl),
-						text_part=splitted_acl[bad_part-1])
+										self.file_name,	self.line_no,
+										text=':'.join(splitted_acl),
+										text_part=splitted_acl[bad_part-1])
 
 			else:
 				if not self.system_wide:
@@ -332,7 +334,7 @@ class ACLRule(Enumeration):
 	def check(self):
 		""" general check function """
 
-		line=self.rule_text.rstrip()
+		line = self.rule_text.rstrip()
 
 		try:
 			dir, acl = line.split(self.separator)
