@@ -48,7 +48,7 @@ class SelectableController(NamedObject, dict):
 		SelectableController.instances[self.name] = self
 	def guess_one(self, value):
 		""" Try to guess everything of a user from a
-			single and unknonw-typed info. """
+			single and unknown-typed info. """
 		try:
 			return self.by_id(value)
 
@@ -72,8 +72,8 @@ class SelectableController(NamedObject, dict):
 		try:
 			return dict.__getitem__(self, attr_name)
 		except KeyError:
-			raise AttributeError(_('"{0}" is neither an attribute nor an '
-								'item of {1}.').format(attr_name, str(self)))
+			raise AttributeError(_(u'"{0}" is neither an attribute nor an '
+								u'item of {1}.').format(attr_name, str(self)))
 class LockedController(SelectableController):
 	""" Thread-safe object, protected by a global :class:`~threading.RLock`,
 		with a :attr:`licornd` property giving access to the Licorn® daemon

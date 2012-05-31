@@ -1888,16 +1888,18 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 	def exists(self, uid=None, login=None):
 		if uid:
 			return uid in self.iterkeys()
+
 		if login:
 			return login in self.logins
 
 		raise exceptions.BadArgumentError(_(u'You must specify an UID or a '
-			'login to test existence of.'))
+											u'login to test existence of.'))
 	def login_to_uid(self, login):
 		""" Return the uid of the user 'login' """
 		try:
 			# use the cache, Luke !
 			return self.by_login(login).uid
+
 		except KeyError:
 			raise exceptions.DoesntExistException(_(u'User %s does not exist')
 																	% login)

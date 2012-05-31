@@ -22,10 +22,10 @@ import os, time, types, Pyro.core, gc, itertools
 
 from operator  import attrgetter
 from threading import current_thread
-from licorn.foundations.threads import RLock, Event
 
 from licorn.foundations           import options, exceptions, logging, settings
 from licorn.foundations           import fsapi, hlstr, pyutils, events, styles
+from licorn.foundations.threads   import RLock, Event
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
