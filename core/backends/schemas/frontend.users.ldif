@@ -1,0 +1,4 @@
+# Create the user accounts container
+dn: ou=@@nss_base_shadow@@,@@base@@
+objectClass: organizationalUnit
+ou: @@nss_base_shadow@@

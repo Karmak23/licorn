@@ -6,19 +6,3 @@ objectClass: organization
 o: @@organization@@
 dc: @@organization_dc@@
 description: @@organization@@
-
-# Admin user.
-dn: @@rootbinddn@@
-objectClass: simpleSecurityObject
-objectClass: organizationalRole
-cn: admin
-description: LDAP administrator
-userPassword: @@secret@@
-
-dn: ou=People,@@base@@
-objectClass: organizationalUnit
-ou: People
-
-dn: ou=Groups,@@base@@
-objectClass: organizationalUnit
-ou: Groups
