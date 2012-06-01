@@ -399,7 +399,15 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 			)
 
-		replacement_table = {
+		logging.progress(_(u'{0}: checking slapd schemata…').format(self.pretty_name))
+
+		for dn, schema in defaults:
+			if not dn in dn_already_present:
+				self.install_schema(schema, batch=batch, auto_answer=auto_answer)
+
+		assert ltrace_func(TRACE_OPENLDAP, True)
+	def replacement_table(self):
+		return {
 			'@@base@@'            : self.base,
 			'@@rootbinddn@@'      : self.rootbinddn,
 			'@@secret@@'          : self.secret,
@@ -420,77 +428,144 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			'@@nss_base_group@@'  :
 						self.nss_base_group.split(',', 1)[0].split('=', 1)[1],
 		}
+	def schema_preop(self, schema):
+		# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
+		if schema == 'backend.hdb':
+			try:
+				logging.notice(_(u'{0}: disabling AppArmor '
+							u'profile for {1}.').format(
+								self.pretty_name,
+								stylize(ST_NAME, 'slapd')))
+				os.system('echo -n /usr/sbin/slapd '
+					'> /sys/kernel/security/apparmor/.remove')
 
-		logging.progress(_(u'{0}: checking slapd schemata…').format(self.pretty_name))
+			except:
+				logging.exception(_(u'{0:s}: Exception encountered '
+							u'while disabling AppArmor profile.'))
+				raise
 
-		for dn, schema in defaults:
-			if not dn in dn_already_present:
-				if batch or logging.ask_for_repair(_(u'{0}: {1} lacks mandatory '
-													u'schema {2}.').format(
-													self.pretty_name,
-													stylize(ST_NAME, 'slapd'),
-													schema),
-												auto_answer):
+		if 'frontend' in schema:
+			# the frontend is a special case which can't be filled
+			# by root. We have to bind as cn=admin, else it will
+			# fail with "Insufficient privileges" error.
+			self.bind()
+	def schema_postop(self, schema):
+		# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
+		if schema == 'backend.hdb':
+			try:
+				logging.notice(_(u'{0}: re-enabling AppArmor '
+							u'profile for {1}.').format(
+								self.pretty_name,
+								stylize(ST_NAME, 'slapd')))
+				os.system('/sbin/apparmor_parser --write-cache '
+					'--replace -- /etc/apparmor.d/usr.sbin.slapd')
 
-					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
-					if schema == 'backend.hdb':
-						try:
-							logging.notice(_(u'{0}: disabling AppArmor '
-										u'profile for {1}.').format(self.pretty_name,
-											stylize(ST_NAME, 'slapd')))
-							os.system('echo -n /usr/sbin/slapd > /sys/kernel/security/apparmor/.remove')
+			except:
+				logging.exception(_(u'{0:s}: Exception encountered '
+							u'while re-enabling AppArmor profile.'))
+	def install_schema(self, schema, batch=False,
+									auto_answer=None, full_display=True):
 
-						except:
-							logging.exception(_(u'{0:s}: Exception encountered while disabling AppArmor profile.'))
-							continue
+		replacement_table = self.replacement_table()
 
-					if 'frontend' in schema:
-						# the frontend is a special case which can't be filled by root.
-						# We have to bind as cn=admin, else it will fail with
-						# "Insufficient privileges" error.
-						self.bind()
+		if batch or logging.ask_for_repair(_(u'{0}: {1} lacks mandatory '
+											u'schema {2}.').format(
+											self.pretty_name,
+											stylize(ST_NAME, 'slapd'),
+											schema),
+										auto_answer):
 
-					logging.info(_(u'{0}: loading schema {1} into '
+			self.schema_preop(schema)
+
+			logging.progress(_(u'{0}: loading schema {1} into '
+							u'{2}.').format(self.pretty_name,
+							stylize(ST_PATH, schema),
+							stylize(ST_NAME, 'slapd')))
+
+			for (dn, entry) in ldaputils.LicornSmallLDIFParser(
+									schema, replacement_table).get():
+				try:
+					logging.debug(_(u'{0}: adding {1} -> {2} into '
+						u'schema {3}.').format(self.pretty_name, dn,
+							entry, schema))
+
+					self.openldap_conn.add_s(dn, ldaputils.addModlist(entry))
+
+					if full_display:
+						logging.info(_(u'{0}: loaded schema {1} into '
+										u'{2}.').format(self.pretty_name,
+										stylize(ST_PATH, schema),
+										stylize(ST_NAME, 'slapd')))
+
+				except pyldap.ALREADY_EXISTS:
+					logging.notice(_(u'{0}: skipped already present '
+									u'dn {1}.').format(self.pretty_name, dn))
+
+				except:
+					logging.exception(_(u'{0}: Exception encountered '
+						u'while adding {1} > {2} into schema {3}.'),
+							self.pretty_name, dn, entry, schema)
+
+			self.schema_postop(schema)
+
+		else:
+			# all these schemas are mandatory for Licorn to work,
+			# we should not reach here.
+			raise exceptions.LicornRuntimeError(_(u'Cannot continue '
+							u'without altering slapd configuration.'))
+	def modify_schema(self, schema, batch=False,
+									auto_answer=None, full_display=True):
+		""" WARNING: This method can only modify one object at a time for
+			the moment. Eg. an attribute of a schema, but no more.
+
+			If you need to modify many attributes, call it multiple times
+			with multiple schema names.
+		"""
+
+		replacement_table = self.replacement_table()
+
+		if batch or logging.ask_for_repair(_(u'{0}: {1} schema {2} needs '
+											u'updating.').format(
+												self.pretty_name,
+												stylize(ST_NAME, 'slapd'),
+												schema),
+											auto_answer):
+
+			self.schema_preop(schema)
+
+			logging.progress(_(u'{0}: updating schema {1} in '
+								u'{2}.').format(self.pretty_name,
+								stylize(ST_PATH, schema),
+								stylize(ST_NAME, 'slapd')))
+
+			# NOTE: the "dn" variable is overwritten, this is intended: it's
+			# the same in both files. We just need it, with "old" and "new".
+			dn, old = ldaputils.LicornSmallLDIFParser(
+									schema + '_old', replacement_table).get()[0]
+			dn, new = ldaputils.LicornSmallLDIFParser(
+									schema + '_new', replacement_table).get()[0]
+			try:
+				self.openldap_conn.modify_s(dn, ldaputils.modifyModlist(old, new))
+
+				if full_display:
+					logging.info(_(u'{0}: updated schema {1} in '
 									u'{2}.').format(self.pretty_name,
 									stylize(ST_PATH, schema),
 									stylize(ST_NAME, 'slapd')))
 
-					for (dn, entry) in ldaputils.LicornSmallLDIFParser(
-											schema, replacement_table).get():
-						try:
-							logging.progress(_(u'{0}: adding {1} -> {2} into '
-								u'schema {3}.').format(self.pretty_name, dn, entry, schema))
+			except:
+				logging.exception(_(u'{0}: Exception encountered '
+					u'while modifying {1} from {2} > {3} into schema {4}.'),
+						self.pretty_name, dn, old, new, schema)
 
-							self.openldap_conn.add_s(dn, ldaputils.addModlist(entry))
+			self.schema_postop(schema)
 
-						except pyldap.ALREADY_EXISTS:
-							logging.notice(_(u'{0}: skipped already present '
-											u'dn {1}.').format(self.pretty_name, dn))
+		else:
+			# all these schemas are mandatory for Licorn to work,
+			# we should not reach here.
+			raise exceptions.LicornRuntimeError(_(u'Cannot continue '
+							u'without altering slapd configuration.'))
 
-						except:
-							logging.exception(_(u'{0}: Exception encountered '
-								u'while adding {1} > {2} into schema {3}.'),
-									self.pretty_name, dn, entry, schema)
-
-					# circumvent https://bugs.launchpad.net/ubuntu/+source/openldap/+bug/612525
-					if schema == 'backend.hdb':
-						try:
-							logging.notice(_(u'{0}: re-enabling AppArmor '
-										u'profile for {1}.').format(self.pretty_name,
-											stylize(ST_NAME, 'slapd')))
-							os.system('/sbin/apparmor_parser --write-cache --replace -- /etc/apparmor.d/usr.sbin.slapd')
-
-						except:
-							logging.exception(_(u'{0:s}: Exception encountered while re-enabling AppArmor profile.'))
-
-				else:
-					# all these schemas are mandatory for Licorn to work,
-					# we should not reach here.
-					raise exceptions.LicornRuntimeError(
-						'''Can't continue without altering slapd '''
-						'''configuration.''')
-
-		assert ltrace_func(TRACE_OPENLDAP, True)
 	def check_system_files(self, batch=False, auto_answer=None):
 		""" Check that the underlying system is ready to go LDAP. """
 
@@ -640,14 +715,34 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			try:
 				# get around an error where password is not base64 encoded.
 				password = base64.decodestring(value.split('}',1)[1])
+
 			except Exception:
 				password = value
+
 			return password
 		def gecos_decode(value):
+			# In versions < 1.3 we encoded the gecos to base64 because the
+			# official field is not UTF8 compliant (only ascii) and this
+			# caused errors.
+			#
+			# In versions >= 1.3, the LDAP 'nis' schema has an UTF8 field.
+			# This doesn't agree with the RFC, but everyone needs it to
+			# be UTF8 nowadays. An ascii only field is not 21th-century
+			# friendly.
+			#
+			# For more discussions, see:
+			#	- http://www.gentoo-wiki.info/OpenLDAP#Migration
+			#	- http://www.openldap.org/lists/openldap-bugs/200803/msg00043.html
+			#	- http://developer.skolelinux.no/devel-archive/msg01692.html
+			#	- http://projects.mandriva.org/issues/1400
+			#
+			# And the final word seems to go in our direction:
+			#	- http://lists.debian.org/debian-devel/2004/03/msg00832.html
 			try:
-				# get around an error where password is not base64 encoded.
 				gecos = base64.decodestring(value)
+
 			except:
+				# The gecos is not base64 encoded, return it "as is".
 				gecos = value
 
 			return gecos
@@ -750,10 +845,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				# and the cn is inconsistent.
 				name=dn.split(',')[0][3:],
 				gidNumber=gid,
-				memberUid=entry.get('memberUid', []),
-				userPassword=entry.get('userPassword', [ 'x' ])[0],
-				groupSkel=entry.get('groupSkel', [ None ])[0],
-				description=entry.get('description', [ '' ])[0],
+				memberUid=entry.get('memberUid', ()),
+				userPassword=entry.get('userPassword', ('x', ))[0],
+				groupSkel=entry.get('groupSkel', (None, ))[0],
+				description=entry.get('description', ('', ))[0],
 				backend=self
 				)
 
@@ -767,7 +862,10 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			if user.backend.name != self.name:
 				continue
 
-			self.save_User(user)
+			self.save_User(user, backend_actions.UPDATE, full_display=False)
+
+		logging.progress(_(u'{0}: saved all user accounts in the '
+							u'directory.').format(self.pretty_name))
 	def save_Groups(self, groups):
 		""" Save groups into LDAP, but only those who need it. """
 
@@ -777,8 +875,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			if group.backend.name != self.name:
 				continue
 
-			self.save_Group(group)
-	def save_User(self, orig_user, mode):
+			self.save_Group(group, backend_actions.UPDATE, ull_display=False)
+
+		logging.progress(_(u'{0}: saved all groups in the directory.').format(
+															self.pretty_name))
+	def save_User(self, orig_user, mode, full_display=True):
 		""" Save one user in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
@@ -798,10 +899,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				'gidNumber'     : orig_user.gidNumber,
 				'loginShell'    : orig_user.loginShell,
 				'homeDirectory' : orig_user.homeDirectory,
-				# GECOS is IA5 only (ASCII 7bit). Anyway, it seems not used
-				# nowadays, and CN is prefered. We fill it for [put anything
-				# usefull here] purposes only.
-				'gecos'         : base64.encodestring(orig_user.gecos).strip(),
+				'gecos'         : orig_user.gecos,
 
 				# prepare this field in the form slapd expects it.
 				'userPassword'  : '{SHA}%s' % base64.encodestring(
@@ -862,10 +960,15 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 								mode, orig_user.login, orig_user.uid))
 
 		except:
-			logging.warning(_(u'{0}: unable to save user {1}').format(
+			logging.warning(_(u'{0}: unable to save user {1}.').format(
 								self.pretty_name, orig_user.login))
 			raise
-	def save_Group(self, orig_group, mode):
+
+		if full_display:
+			logging.progress(_(u'{0}: saved user account {1} in the '
+								u'directory.').format(self.pretty_name,
+									stylize(ST_NAME, orig_user.login)))
+	def save_Group(self, orig_group, mode, full_display=True):
 		""" Save one group in the LDAP backend.
 			If updating, the entry will be dropped prior of insertion. """
 
@@ -880,10 +983,13 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 				# cn IS name. 'name' is forbidden.
 				#'name'        : orig_group.name,
 				'gidNumber'   : orig_group.gidNumber,
-				# be sure to pass a list: the python-ldap can't stand
-				# a generator, and will fail at best, or write an empty
-				# list without warning if we are unlucky.
-				'memberUid'   : list(orig_group.memberUid),
+				# NOTES about memberUid:
+				#	- be sure to pass a list: the python-ldap can't stand
+				# 		a generator, and will fail at best, or write an empty
+				#		list without warning if we are unlucky.
+				#	- pass standard strings (not Unicode), else it fails too
+				#		with error ('expected a string in the list', u'<user_login>')
+				'memberUid'   : tuple(str(u) for u in orig_group.memberUid),
 				'description' : orig_group.description,
 			}
 
@@ -928,10 +1034,14 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 		except:
 			# there is also e['info'] on ldap.STRONG_AUTH_REQUIRED, but
 			# it is just repeat.
-			logging.warning(_(u'{0}: unable to save group {1}').format(
+			logging.warning(_(u'{0}: unable to save group {1}.').format(
 								self.pretty_name, orig_group.name))
 			raise
-	def delete_User(self, user):
+
+		if full_display:
+			logging.progress(_("{0}: saved group {1} in the directory.").format(
+						self.pretty_name, stylize(ST_NAME, orig_group.name)))
+	def delete_User(self, user, full_display=True):
 		""" Delete one user from the LDAP backend. """
 		assert ltrace_func(TRACE_OPENLDAP)
 
@@ -944,7 +1054,12 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			pass
 		# except BAD_BIND:
 		#	pass
-	def delete_Group(self, group):
+
+		if full_display:
+			logging.progress(_(u'{0}: deleted user account {1} from the '
+								u'directory.').format(self.pretty_name,
+									stylize(ST_NAME, user.login)))
+	def delete_Group(self, group, full_display=True):
 		""" Delete one group from the LDAP backend. """
 		assert ltrace_func(TRACE_OPENLDAP)
 
@@ -957,6 +1072,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			pass
 		# except BAD_BIND:
 		#	pass
+
+		if full_display:
+			logging.progress(_(u'{0}: deleted group {1} from the '
+								u'directory.').format(self.pretty_name,
+									stylize(ST_NAME, group.name)))
 	def compute_password(self, password, salt=None):
 		assert ltrace_func(TRACE_OPENLDAP)
 		return hashlib.sha1(password).digest()

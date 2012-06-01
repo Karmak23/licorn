@@ -1,0 +1,19 @@
+#
+# NOTE: this file is kept for reference only, and is not used in Licorn®.
+#
+# It was created to test the gecos utf-8 update from the command-line with:
+#
+#	sudo ldapmodify -Y EXTERNAL -H ldapi:/// -f nis-utf8-update.ldiff
+#
+# In our code, the updater needs 2 files to generate and old and new entry,
+# without the 'add' and 'delete' words, nor the 'changetype'.
+#
+# See `nis-utf8_*.ldif` for the conversion result.
+#
+dn: cn={2}nis,cn=schema,cn=config
+changetype: modify
+delete: olcAttributeTypes
+olcAttributeTypes: ( 1.3.6.1.1.1.1.2 NAME 'gecos' DESC 'The GECOS field; the common name' EQUALITY caseIgnoreIA5Match SUBSTR caseIgnoreIA5SubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.26 SINGLE-VALUE )
+-
+add: olcAttributeTypes
+olcAttributeTypes: ( 1.3.6.1.1.1.1.2 NAME 'gecos' DESC 'The GECOS field; the common name' EQUALITY caseIgnoreMatch SUBSTR caseIgnoreSubstringsMatch SYNTAX 1.3.6.1.4.1.1466.115.121.1.15 SINGLE-VALUE )
