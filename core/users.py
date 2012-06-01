@@ -24,7 +24,8 @@ from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
-from licorn.foundations.constants import filters, backend_actions, distros, priorities, roles, relation
+from licorn.foundations.constants import filters, backend_actions, distros, \
+											priorities, roles, relation
 
 from licorn.core                import LMC
 from licorn.core.groups         import Group

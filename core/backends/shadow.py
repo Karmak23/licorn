@@ -433,7 +433,7 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			self.__hint_shw += 1
 			os.rename(fpaths, '/etc/shadow')
 
-		logging.progress(_("{0}: saved users data to disk.").format(self.pretty_name))
+		logging.progress(_(u'{0}: saved users data to disk.').format(self.pretty_name))
 	def save_Groups(self, groups):
 		""" Write the groups data in appropriate system files."""
 
@@ -501,16 +501,16 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 			os.close(ftempe)
 			os.rename(fpathe, settings.backends.shadow.extended_group_file)
 
-		logging.progress(_("{0}: saved groups data to disk.").format(self.pretty_name))
+		logging.progress(_(u'{0}: saved groups data to disk.').format(self.pretty_name))
 
 		assert ltrace_func(TRACE_SHADOW, True)
 	def compute_password(self, password, salt=None):
+
 		assert ltrace_func(TRACE_SHADOW)
 
-		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt() \
-			if salt is None else salt)
 		#return '$6$' + hashlib.sha512(password).hexdigest()
-
+		return crypt.crypt(password, '$6$%s' % hlstr.generate_salt()
+												if salt is None else salt)
 	def _inotifier_install_watches(self, inotifier):
 
 		assert ltrace_func(TRACE_SHADOW)
