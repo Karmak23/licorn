@@ -101,7 +101,12 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.merge_settings({
 			'role'                         : roles.UNSET,
 			'pyro.port'                    : int(os.getenv('PYRO_PORT', 299)),
-			'backup.interval'              : 86400,   # one day between backups.
+
+			# timeout for CLI connect; in seconds.
+			'connect.timeout'              : 30,
+
+			# one day between backups.
+			'backup.interval'              : 86400,
 			'experimental.enabled'         : self.experimental_should_be_enabled,
 
 			# TODO: move the following directives to where they belong.

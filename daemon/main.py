@@ -49,7 +49,7 @@ from licorn.daemon.threads        import GQWSchedulerThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
 											NetworkWorkerThread, \
-											LicornJobThread
+											LicornJobThread, BaseLicornThread
 from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.cmdlistener    import CommandListener
 
@@ -260,8 +260,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			for module in module_manager:
 				for thread in module.threads:
 					self.__threads[thread.name] = thread
-					if not thread.is_alive():
-						thread.start()
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
@@ -273,8 +271,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# to catch early events.
 			if not isinstance(th, GQWSchedulerThread) \
 						and not th.is_alive():
-				assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
-				th.start()
+				try:
+					assert ltrace(TRACE_DAEMON, 'starting thread %s.' % thname)
+					th.start()
+
+				except RuntimeError:
+					logging.exception(_(u'Could not start thread {0}'), th.name)
 	def __stop_threads(self):
 		logging.progress(_(u'{0:s}: stopping threads.').format(self))
 
