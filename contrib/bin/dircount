@@ -65,4 +65,4 @@ for entry, numbers in sorted(directories.iteritems(),
 		empty_dirs.append(entry)
 
 if empty_dirs:
-	sys.stderr.write('Empty directories:\n{0}\n'.format('\n'.join(empty_dirs)))
+	sys.stderr.write('Empty directories:\n{0}\n'.format('\n'.join(d for d in empty_dirs if not os.path.islink(d))))
