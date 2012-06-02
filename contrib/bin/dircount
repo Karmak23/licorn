@@ -1,0 +1,62 @@
+#!/usr/bin/python
+# -*- coding: utf8 -*-
+
+import sys, os, stat, operator
+
+from licorn.foundations        import fsapi, styles
+from licorn.foundations.styles import *
+
+# the shortcut tu avoid wasted CPU cycles.
+stylize = styles.stylize
+
+totals      = [0, 0]
+directories = { '.' : [0, 0] }
+maxlen      = 0
+
+for entry in os.listdir('.'):
+
+	if os.path.isdir(entry):
+		directories['.'][0] += 1
+
+		directories[entry] = [0, 0]
+
+		for subent, typ in fsapi.minifind(entry, mindepth=2, yield_type=True):
+			if typ == stat.S_IFREG:
+				directories[entry][1] += 1
+
+			else:
+				directories[entry][0] += 1
+
+		totals[0] += directories[entry][0]
+		totals[1] += directories[entry][1]
+
+		# we update maxlen only if the dir has subdirs,
+		# else it won't be displayed, don't bother.
+		if directories[entry][0] and len(entry) > maxlen:
+			maxlen = len(entry)
+
+
+	else:
+		directories['.'][1] += 1
+
+totals[0] += directories['.'][0]
+totals[1] += directories['.'][1]
+
+# add the final '/'
+maxlen += 1
+
+sys.stdout.write('{0}	{1}{2}{3}\n'.format(stylize(ST_NAME, 'TOTALS'.rjust(maxlen)),
+			('%d dir%s' % (totals[0], 's' if totals[0] > 1 else '')) if totals[0] else '',
+			', ' if (totals[0] and totals[1]) else '(empty)',
+			('%d file%s' % (totals[1], 's' if totals[1] > 1 else '')) if totals[1] else ''))
+
+for entry, numbers in sorted(directories.iteritems(),
+								key=operator.itemgetter(1), reverse=True):
+	if numbers[0] == 0:
+		sys.stderr.write('Other dirs are empty.\n')
+		break
+
+	sys.stdout.write('{0}	{1}{2}{3}\n'.format(stylize(ST_PATH, (entry + '/').rjust(maxlen)),
+				('%d dir%s' % (numbers[0], 's' if numbers[0] > 1 else '')) if numbers[0] else '',
+				', ' if (numbers[0] and numbers[1]) else '',
+				('%d file%s' % (numbers[1], 's' if numbers[1] > 1 else '')) if numbers[1] else ''))
