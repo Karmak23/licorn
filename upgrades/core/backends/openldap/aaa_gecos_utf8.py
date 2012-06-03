@@ -37,7 +37,7 @@ def backend_openldap_check_finished(*args, **kwargs):
 	ssse, schema = ldap.schema.urlfetch('ldapi:///')
 	sa = schema.get_obj(ldap.schema.AttributeType, 'gecos')
 
-	if sa.syntax == '1.3.6.1.4.1.1466.115.121.1.26':
+	if False and sa.syntax == '1.3.6.1.4.1.1466.115.121.1.26':
 		# The LDAP 'gecos' field is ascii only: we need to load our schema
 		# which sets up an utf8 field. See backends/openldap.py for more info.
 
