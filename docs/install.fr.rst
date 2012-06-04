@@ -49,20 +49,20 @@ Ceci installera Licorn® en mode serveur sur votre machine locale, de manière �
 
 .. note:: vous devez être un utilisateur de `sudo` confirmé avant de commencer cette installation. Sur Ubuntu, ça devrait être déjà le cas. Sur Debian vous devrez vous rendre membre du groupe ``sudo``.
 
-#. Installez :program:`darcs`::
+#. Installez :program:`git`, `git-flow` et le minimum vital::
 
-	sudo apt-get install darcs
+	sudo apt-get install git-core git-flow make gettext python-sphinx
 
-#. Récupérez les sources de Licorn® avec :program:`darcs`::
+#. Récupérez les sources de Licorn® avec :program:`git`::
 
 	mkdir sources && cd sources
-	[ -d licorn ] && ( cd licorn; darcs pull -a )
-	[ -d licorn ] || darcs get dev.licorn.org:/home/groups/darcs-Licorn licorn
+	[ -d licorn ] && ( cd licorn; git pull )
+	[ -d licorn ] || git clone dev.licorn.org:/home/groups/licorn.git licorn
 
 #. Installez Licorn® en mode développeur::
 
 	cd licorn && make devinstall
-	# à partir de là, vous n'avez plus besoin de `sudo` pour Licorn®.
+	# à partir de là, vous n'avez plus besoin de `sudo` pour utiliser Licorn®.
 
 	# à n'importe quel moment, vous pouvez tout désinstaller :
 	#make uninstall
@@ -81,25 +81,27 @@ Ceci installera Licorn® en mode serveur sur votre machine locale, de manière �
 Support LDAP
 ------------
 
-#. Si vous désirez activer le support LDAP::
 
-	sudo apt-get install --yes --force-yes slapd libnss-ldap libpam-ldap 
+#. Preparez votre système pour l'installation de `slapd` :
 
-	# le paquet suivant n'est disponible que dans notre repo privé,
-	# mais il ne fait rien de plus qu'auto-configurer pam-ldap.
-	sudo apt-get install --yes --force-yes ldap-auth-config-licorn
+	- Vérfiez que votre machine a bien un FQDN dans `/etc/hostname` : « Machine.licorn.local » est bon, « Machine » ne l'est pas.
+	- Vérifiez que `hostname` renvoie bien ce nom complet;
+	- Vérifiez que `dnsdomainname` renvoie juste la partie domaine du FQDN. Sinon éditez `/etc/hosts` pour qu'il ressemble à ça::
 
-	# puis éditez /etc/ldap.conf avec le contenu suivant :
-	base dc=meta-it,dc=local
-	uri ldapi:///
-	ldap_version 3
-	rootbinddn cn=admin,dc=meta-it,dc=local
-	pam_password md5
+		127.0.1.1	nom-machine.mon.fqdn.complet nom-machine
 
-	# Demandez à Licorn® d'activer LDAP au niveau système, et
-	# pour les nouveaux comptes utilisateurs et groupes.
+#. Installez le support LDAP (client/serveur)::
+
+	sudo apt-get install --yes --force-yes slapd libnss-ldap libpam-ldap
+
+#. Configurez les paquets debian avec « dc=mon,dc=domaine,dc=complet » ;
+
+#. Relancez `licornd` pour qu'il détecte la nouvelle installation::
+
+	licornd -r
+
+#. Activez l'extension LDAP dans `licornd` ce qui l'activera au niveau système via NSS::
+
 	mod config -b openldap
 
-	# le fichier /etc/ldap.secret sera rempli automatiquement au prochain démarrage de licornd.
-
-Pour une vue détaillée de ce que fait Licorn®, voyez `la page du wiki de développement sur LDAP <http://dev.licorn.org/wiki/LDAPBackend>`_, et le code source du :ref:`backend OpenLDAP <backends.openldap.fr>`.
+À partir de maintenant les nouveaux comptes utilisateurs et groupes seront créés dans LDAP. Vous pouvez cependant continuer à les créer dans `shadow` avec l'argument CLI ``--backend shadow``.

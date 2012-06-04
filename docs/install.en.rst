@@ -46,15 +46,15 @@ This will install Licorn® in :ref:`local server mode <settings.role.en>`, makin
 
 .. note:: you should be a valid `sudo` user before starting this installation. On Ubuntu, there should be no problem by default. On Debian you should add yourself to the ``sudo`` group.
 
-#. Install darcs::
+#. Install `git`, `git-flow` and a few needed packages::
 
-	sudo apt-get install darcs
+	sudo apt-get install git-core git-flow make gettext python-sphinx
 
 #. Get the source localy with darcs::
 
 	mkdir sources && cd sources
-	[ -d licorn ] && ( cd licorn; darcs pull -a )
-	[ -d licorn ] || darcs get dev.licorn.org:/home/groups/darcs-Licorn licorn
+	[ -d licorn ] && ( cd licorn; git pull )
+	[ -d licorn ] || git clone dev.licorn.org:/home/groups/licorn.git licorn
 
 #. Install for developement::
 
@@ -77,25 +77,27 @@ This will install Licorn® in :ref:`local server mode <settings.role.en>`, makin
 LDAP Support
 ------------
 
-#. if you want LDAP support::
+#. Prepare your system for `slapd` installation:
+
+	- Make sure your machine has a FQDN in `/etc/hostname`;
+	- Make sure `hostname` outputs this name correctly;
+	- Make sure `dnsdomainname` outputs the domain part of the FQDN, or edit `/etc/hosts` to make it read like this::
+
+		127.0.1.1	machine-name.my.complete.fqdn machine-name
+
+#. Install LDAP support (client/server)::
 
 	sudo apt-get install --yes --force-yes slapd libnss-ldap libpam-ldap
 
-	# this one is available only in our repository.
-	sudo apt-get install --yes --force-yes ldap-auth-config-licorn
+#. Configure the debian packages with ``dc=my,dc=complete,dc=fqdn``;
 
-	# Edit /etc/ldap.conf if you don't have access to the Debian package,
-	# and put this content into it:
-	base dc=meta-it,dc=local
-	uri ldapi:///
-	ldap_version 3
-	rootbinddn cn=admin,dc=meta-it,dc=local
-	pam_password md5
+#. Restart `licornd` to make it detect the lib*-ldap installation::
 
-	# Then make licornd activate OpenLDAP system-wide and 
-	# use it over shadow for new user accounts and groups.
+	licornd -r
+
+#. Then activate the OpenLDAP extension. This makes `licornd` activate LDAP system-wide via NSS::
+
 	mod config -b openldap
 
-	# The file /etc/ldap.secret will be automatically filled by :program:`licornd` at next launch.
+Once activated, the LDAP backend has precedence over `shadow` for new user accounts and groups. You can still create users/groups in the `shadow` backend by using the ``--backend shadow`` CLI switch.
 
-For a more detailled view of what Licorn® does, see `the LDAP development wiki page <http://dev.licorn.org/wiki/LDAPBackend>`_, and the source code of the :ref:`openldap backend <backends.openldap.en>`.
