@@ -27,6 +27,10 @@ pip_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-pip'])
 # This one is for explanation purposes only, when on an unknown distro.
 pip_packages.setdefault(distros.UNKNOWN, 'PIP')
 
+ssl_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-openssl'])
+# This one is for explanation purposes only, when on an unknown distro.
+ssl_packages.setdefault(distros.UNKNOWN, 'OpenSSL Python module')
+
 jinja2_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-jinja2'])
 # distros.UNKNOWN value serves for explanation purposes and PIP installation.
 # Do not modify it unless PIP package name changes.
@@ -45,6 +49,17 @@ django_packages.setdefault(distros.UNKNOWN, 'Django')
 def check_and_install_pip():
 	if not os.path.exists('/usr/bin/pip'):
 		packaging.install_packages(pip_packages)
+def check_and_install_openssl():
+
+	if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
+
+		ssl_ = glob.glob('/usr/share/pyshared/OpenSSL')
+
+		if ssl_ == []:
+			packaging.install_packages(ssl_packages)
+
+	else:
+		packaging.raise_not_installable(ssl_packages[distros.UNKNOWN])
 def check_and_install_twisted():
 
 	if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
@@ -253,6 +268,7 @@ def wmi_starts(*args, **kwargs):
 	"""
 
 	check_and_install_pip()
+	check_and_install_openssl()
 	check_and_install_twisted()
 	check_and_install_django()
 	check_and_install_jinja2()
