@@ -247,17 +247,22 @@ class Machine(CoreStoredObject, SharedResource):
 	def add_link(self, licorn_object):
 		""" TODO. """
 
+		caller = current_thread().name
+
 		if isinstance(licorn_object, Machine):
+
 			self.linked_machines.append(licorn_object)
 			licorn_object.master_machine = self
 
 			# avoid talking to myself via the network, if applicable.
 			licorn_object.myself = self.myself
+
 		else:
 			raise NotImplementedError(_(u'no other link than machine yet'))
 
-		logging.info(_(u'{0}: Added link from {1} to {2}.').format(
-						caller, iface, self.ip))
+		logging.info(_(u'{0}: Linked {1} to {2}.').format(
+								caller, stylize(ST_UGID, licorn_object.ip),
+								stylize(ST_UGID, self.ip)))
 	def guess_os(self):
 		""" Use NMAP for OS fingerprinting and better service detection. """
 
