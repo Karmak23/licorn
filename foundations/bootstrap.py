@@ -86,6 +86,8 @@ def check_python_modules_dependancies():
 		(u'dbus',      u'python-dbus'),
 		)
 
+	# for more dependancies (needed by the WMI) see `upgrades/…`
+
 	reqmods_needed = []
 	reqpkgs_needed = []
 
