@@ -64,6 +64,9 @@ class ModulesManager(LockedController):
 	by_key = by_name
 	by_id  = by_name
 
+	def word_match(self, word):
+		return hlstr.word_match(word, self.keys())
+
 	def __init__(self, *args, **kwargs):
 
 		# add this argument for LockedController.__init__()

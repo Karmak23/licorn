@@ -2279,7 +2279,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.disable_backends != None:
 			for backend in opts.disable_backends.split(','):
 				try:
-					LMC.backends.disable_backend(backend)
+					LMC.backends.disable_backend(LMC.backends.word_match(backend))
+
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
@@ -2287,7 +2288,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.enable_backends != None:
 			for backend in opts.enable_backends.split(','):
 				try:
-					LMC.backends.enable_backend(backend)
+					LMC.backends.enable_backend(LMC.backends.word_match(backend))
+
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
@@ -2295,7 +2297,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.disable_extensions != None:
 			for extension in opts.disable_extensions.split(','):
 				try:
-					LMC.extensions.disable_extension(extension)
+					LMC.extensions.disable_extension(LMC.extensions.word_match(extension))
 
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
@@ -2304,7 +2306,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.enable_extensions != None:
 			for extension in opts.enable_extensions.split(','):
 				try:
-					LMC.extensions.enable_extension(extension)
+					LMC.extensions.enable_extension(LMC.extensions.word_match(extension))
 
 				except exceptions.DoesntExistException, e:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
