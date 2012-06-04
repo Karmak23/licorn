@@ -29,7 +29,6 @@ from licorn.foundations.constants import filters, verbose, priorities, roles
 
 from licorn.core                  import LMC
 
-
 def exclude_filter_func(path):
 	""" Return True if a path is within one that is excluded system-wide.
 
@@ -697,7 +696,8 @@ class CoreFSUnitObject(object):
 		except AttributeError, e:
 			# this happens when a CoreObject is deleted but has not been
 			# checked since daemon start. Rare, but happens.
-			logging.warning2('del %s: %s' % (self.name, e))
+			logging.exception(_(u'Exception while deleting inotifier '
+								u'watches for {0}'), self.name)
 
 		# we have no watches left. Reclaim some memory ;-)
 		self.__recently_deleted.clear()
@@ -826,9 +826,10 @@ class CoreFSUnitObject(object):
 							length     = 0
 							old_length = 0
 
-						for checked_path in fsapi.check_dirs_and_contents_perms_and_acls_new(
-							self.check_rules, batch=batch, auto_answer=auto_answer,
-								full_display=full_display):
+						for checked_path in fsapi.check_full(
+											self.check_rules, batch=batch,
+											auto_answer=auto_answer,
+											full_display=full_display):
 
 							checked.add(checked_path)
 
@@ -837,35 +838,35 @@ class CoreFSUnitObject(object):
 
 								if length != old_length:
 									old_length = length
-									logging.progress(_('{0} {1}: meta-data '
-										'changed on path {2}.').format(
-											self.controller.object_type_str,
-											stylize(ST_NAME, self.name),
-											stylize(ST_PATH, checked_path)))
+									logging.progress(_(u'{0} {1}: meta-data '
+											u'changed on path {2}.').format(
+												self.controller.object_type_str,
+												stylize(ST_NAME, self.name),
+												stylize(ST_PATH, checked_path)))
 
 							# give CPU to other threads.
 							time.sleep(0)
 
 						if full_display:
 							# FIXME: pluralize
-							logging.progress(_('{0} {1}: meta-data changed '
-								'on {2} path(s).').format(
-									self.controller.object_type_str,
-									stylize(ST_NAME, self.name),
-									stylize(ST_PATH, len(checked))))
+							logging.progress(_(u'{0} {1}: meta-data changed '
+										u'on {2} path(s).').format(
+											self.controller.object_type_str,
+											stylize(ST_NAME, self.name),
+											stylize(ST_PATH, len(checked))))
 
 					except TypeError:
 						# nothing to check (fsapi.*() returned None and yielded nothing).
 						if full_display:
-							logging.info(_('{0} {1}: no shared data to '
-								'check.').format(
-								self.controller.object_type_str,
-								stylize(ST_NAME, self.name)))
+							logging.info(_(u'{0} {1}: no shared data to '
+										u'check.').format(
+											self.controller.object_type_str,
+											stylize(ST_NAME, self.name)))
 
 					except exceptions.DoesntExistException, e:
-						logging.warning('%s %s: %s' % (
-							self.controller.object_type_str,
-							stylize(ST_NAME, self.name), e))
+						logging.warning(_(u'{0} {1}: {2}').format(
+											self.controller.object_type_str,
+											stylize(ST_NAME, self.name), e))
 
 				# if the home dir or helper groups get corrected,
 				# we need to update the CLI view.
@@ -1025,7 +1026,7 @@ class CoreFSUnitObject(object):
 
 		except:
 			logging.exception(_(u'{0}: problem while checking {1}, aborting'),
-								self.name, path)
+								self.name, (ST_PATH, path))
 			return
 
 		# run the check, and catch expected events on the way: check_perms
