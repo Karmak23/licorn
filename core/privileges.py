@@ -22,7 +22,7 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.foundations.workers   import workers
-from licorn.foundations.constants import filters
+from licorn.foundations.constants import filters, priorities
 
 from licorn.core         import LMC
 from licorn.core.groups  import Group
@@ -106,7 +106,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 		# The hint must exist before we call reload(), because in case
 		# reload() detects an inconsistency, it will trigger serialize(),
 		# which expects the hint to already be here. There is a job_delay
-		# of 3.0 seconds to be sure the hint will be there, but there is 
+		# of 3.0 seconds to be sure the hint will be there, but there is
 		# still a small probability of race.
 		#
 		# If an improbable external event occurs during the first reload() phase,
