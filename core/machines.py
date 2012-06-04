@@ -254,7 +254,10 @@ class Machine(CoreStoredObject, SharedResource):
 			# avoid talking to myself via the network, if applicable.
 			licorn_object.myself = self.myself
 		else:
-			raise NotImplementedError('no other link than machine yet')
+			raise NotImplementedError(_(u'no other link than machine yet'))
+
+		logging.info(_(u'{0}: Added link from {1} to {2}.').format(
+						caller, iface, self.ip))
 	def guess_os(self):
 		""" Use NMAP for OS fingerprinting and better service detection. """
 
@@ -289,19 +292,22 @@ class Machine(CoreStoredObject, SharedResource):
 							'Nmap done', 'Note'):
 						continue
 					else:
-						logging.warning2('%s: guess_os(%s) → unknown key "%s" '
-							'with value "%s", please update database.' % (
-								caller, self.mid, key, value))
+						logging.warning2(_(u'{0}: guess_os({1}) → unknown '
+							u'key "{2}" with value "{2}", please update our '
+							u'knowledge database if you what type of device '
+							u'it is.').format(caller, self.mid, key, value))
 						continue
 
 				except KeyError:
-					logging.warning2('%s: guess_os(%s) → unknown %s value "%s", '
-						'please update database.' % (
+					logging.warning2(_(u'{0}: guess_os({1}) → unknown {2} '
+						u'value "{3}", please update our knowledge database '
+						u'if you what type of device it is.').format(
 							caller, self.mid, key, value))
 					continue
 		else:
 			assert ltrace(TRACE_MACHINES, '| %s: guess_os(%s) → nmap '
 				'not installed, can\'t guess OS.' % (caller, self.mid))
+			pass
 	def ping(self, and_more=False):
 		""" PING. """
 		caller = current_thread().name
@@ -373,7 +379,8 @@ class Machine(CoreStoredObject, SharedResource):
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
 
 			except Exception:
-				logging.exception(_(u'Could not resolve machine name for address {0}'), self.mid)
+				logging.exception(_(u'Could not resolve machine name for '
+									u'address {0}'), self.mid)
 
 		assert ltrace(TRACE_MACHINES, '| %s: resolve(%s) → %s' % (
 											caller, self.mid, self.hostname))
@@ -436,8 +443,8 @@ class Machine(CoreStoredObject, SharedResource):
 				return
 
 			if self.system is not None:
-				logging.progress('%s: %s already pyroized, not redoing.' % (
-					caller, self.mid))
+				logging.progress(_(u'{0}: {1} already pyroized, not doing '
+								u'the work again.').format(caller, self.mid))
 				return
 
 			try:
@@ -487,8 +494,6 @@ class Machine(CoreStoredObject, SharedResource):
 				for iface in remote_ifaces:
 					if iface in self.controller.keys():
 						if not self.master_machine:
-							logging.progress('%s: add link from %s to %s.' % (
-								caller, iface, self.ip))
 							self.add_link(self.controller[iface])
 						#else:
 						#	print '>>nothing done'
@@ -515,9 +520,9 @@ class Machine(CoreStoredObject, SharedResource):
 					self.master_machine.ip))
 			return
 
-		logging.notice('%s: %s at %s.' % (caller,
-			stylize(ST_BAD, 'Licorn® %s shutdown' % ('server'
-				if self.system_type & host_types.META_SRV else 'client')),
+		logging.notice(_(u'{0}: {1} at {2}.').format(caller,
+			stylize(ST_BAD, _(u'Licorn® %s shutdown') % (_(u'server')
+				if self.system_type & host_types.META_SRV else _(u'client'))),
 			stylize(ST_ADDRESS, self.mid)))
 
 		LicornEvent('licorn_host_shutdown', host=self).emit()
@@ -544,8 +549,8 @@ class Machine(CoreStoredObject, SharedResource):
 			self.system.goodbye_from(remote_ifaces)
 
 		except Pyro.errors.PyroError, e:
-			logging.warning2('%s: _pyro_forward_goodbye_from(): harmless '
-						'error %s from %s.' % (caller, e, self.ip))
+			logging.exception(_(u'{0}: _pyro_forward_goodbye_from(): harmless '
+								u'error {1} from {2}.'), caller, e, self.ip)
 	def arping(self):
 		""" find the ether address. """
 
@@ -633,9 +638,9 @@ class Machine(CoreStoredObject, SharedResource):
 					if self.master_machine:
 						return
 
-					logging.notice('%s: %s at %s.' % (caller,
-						stylize(ST_OK, 'new Licorn® %s' % ('server'
-							if is_server else 'client')),
+					logging.notice(_(u'{0}: {1} at {2}.').format(caller,
+						stylize(ST_OK, _(u'new Licorn® %s') % (_(u'server')
+							if is_server else _(u'client'))),
 						stylize(ST_ADDRESS, self.mid)))
 
 					# FIXME: merge the next LicornEvent with this one,
@@ -654,18 +659,17 @@ class Machine(CoreStoredObject, SharedResource):
 				if old_status & host_status.OFFLINE \
 					and self.status & host_status.ONLINE:
 					if is_licorn:
-						logging.notice('%s: %s at %s.' % (caller,
-							stylize(ST_OK, 'Licorn® %s back online' % ('server'
-								if is_server else 'client')),
+						logging.notice(_(u'{0}: {1} at {2}.').format(caller,
+							stylize(ST_OK, _(u'Licorn® %s back online') % (
+								_(u'server') if is_server else _(u'client'))),
 							stylize(ST_ADDRESS, self.mid)))
 
 						LicornEvent('licorn_host_online', host=self).emit()
 
 					else:
-						logging.progress('%s: %s at %s.' % (caller,
-							stylize(ST_ADDRESS, self.mid),
-							stylize(ST_RUNNING, 'came back online')
-							))
+						logging.progress(_(u'{0}: {1} came back '
+											u'online.').format(caller,
+											stylize(ST_ADDRESS, self.mid)))
 
 			for machine in self.linked_machines:
 				machine.system_type = self.system_type
@@ -1178,12 +1182,16 @@ class MachinesController(DictSingleton, CoreController):
 				up, sec = system.updates_available(full=True)
 
 			except:
-				logging.exception(_('Package status unavailable on machine {0}.'), (ST_NAME, m.hostname))
-				return _(', {0}').format(stylize(ST_DEBUG, _('packages status unavailable')))
+				logging.exception(_(u'Package status unavailable on '
+					u'machine {0}.'), (ST_NAME, m.hostname))
 
-			return _(', {0} package(s) to upgrade {1}').format(up,
-					stylize(ST_IMPORTANT if sec else ST_OK,
-					_('({0} security update(s))').format(sec or _('no'))))
+				return _(u', {0}').format(stylize(ST_DEBUG,
+						_(u'packages status unavailable')))
+
+			return _(u', {0} package(s) to upgrade {1}').format(up,
+						stylize(ST_IMPORTANT if sec else ST_OK,
+						_(u'({0} security update(s))').format(
+						sec or _(u'no'))))
 
 		def build_cli_output_machine_data(mid):
 
@@ -1193,30 +1201,31 @@ class MachinesController(DictSingleton, CoreController):
 							if m.managed else ST_SPECIAL,
 							m.hostname) + (_(u' (this machine)')
 								if m.myself else ''),
-						'%s: %s%s%s' % (
-								_('status').rjust(justw),
+						_(u'{0}: {1}{2}{3}').format(
+								_(u'status').rjust(justw),
 								cli_status(m),
-								_(' (remote control enabled)') if m.system else '',
+								_(u' (remote control enabled)') if m.system else u'',
 								test_upgrade_needed(m)
 							),
-						'%s: %s (%s%s)' % (
-								'address'.rjust(justw),
+						_(u'{0}: {1} ({2}{3})').format(
+								_(u'address').rjust(justw),
 								str(mid),
-								'expires: %s, ' % stylize(ST_ATTR,
+								_(u'expires: %s, ') % stylize(ST_ATTR,
+									# TODO: locale-formated time.
 									strftime('%Y-%d-%m %H:%M:%S',
 									localtime(float(m.expiry))))
-										if m.expiry else '',
-									'managed' if m.managed
-													else 'floating',
+										if m.expiry else u'',
+									_(u'managed') if m.managed
+													else _(u'floating'),
 							),
-						'%s: %s' % (
-								'ethernet'.rjust(justw),
+						_(u'{0}: {1}').format(
+								_(u'ethernet').rjust(justw),
 								str(m.ether)
 							)
 						]
-			return '\n'.join(account)
+			return u'\n'.join(account)
 
-		data = '\n'.join(map(build_cli_output_machine_data, mids)) + '\n'
+		data = u'\n'.join(map(build_cli_output_machine_data, mids)) + u'\n'
 
 		return data
 	def ExportXML(self, selected=None, long_output=False):
@@ -1266,8 +1275,10 @@ class MachinesController(DictSingleton, CoreController):
 		try:
 			if ether:
 				is_ALT = ether.startswith('00:e0:f4:')
+
 			else:
 				is_ALT = self[mid].ether.lower().startswith('00:e0:f4:')
+
 		except (AttributeError, KeyError):
 			is_ALT = False
 
@@ -1279,501 +1290,21 @@ class MachinesController(DictSingleton, CoreController):
 		try:
 			return self[mid].ip
 		except KeyError:
-			raise exceptions.DoesntExistException(
-				"MID %s doesn't exist" % mid)
+			raise exceptions.DoesntExistException(_(u'MID %s does not exist') % mid)
 	def make_hostname(self, inputhostname=None):
 		""" Make a valid hostname from what we're given. """
 
 		if inputhostname is None:
 			raise exceptions.BadArgumentError(
-				_('''You must pass a hostname to verify!'''))
+									_('You must pass a hostname to verify!'))
 
 		# use provided hostname and verify it.
 		hostname = hlstr.validate_name(str(inputhostname),
 			maxlenght = LMC.configuration.machines.hostname_maxlenght)
 
 		if not hlstr.cregex['hostname'].match(hostname):
-			raise exceptions.LicornRuntimeError(
-				_(u'Cannot build a valid hostname (got {0}, which does not '
-				'verify {1}).').format(
-					inputhostname, hlstr.regex['hostname']))
+			raise exceptions.LicornRuntimeError(_(u'Cannot build a valid '
+					u'hostname (got {0}, which does not verify {1}).').format(
+						inputhostname, hlstr.regex['hostname']))
 
 		return hostname
-
-	# these 3 will be mapped into R/O properties by the WMIObject creation
-	# process method. They will be deleted from here after the mapping is done.
-	def _wmi_name(self):
-		return _('Machines')
-	def _wmi_alt_string(self):
-		return _('Manage network clients (computers, printers, '
-					'etc) and energy preferences')
-	def _wmi_context_menu(self):
-		"""
-			NOT YET:
-				_("Add a machine"),
-				_("Create a configuration record for a machine which is not yet on "
-					"the network."),
-				_("Export current machines list to a CSV or XML file."),
-				_("Export this list")
-			"""
-
-		return (
-			(
-				_('Energy policies'),
-				'/machines/preferences',
-				_('Manage network-wide Energy &amp; '
-					'power saving policies.'),
-				'ctxt-icon',
-				'/images/16x16/preferences.png',
-				None
-			),
-		)
-	def _wmi_shutdown(self, uri, http_user, hostname=None, sure=False,
-		warn_users=True, **kwargs):
-		""" Shutdown a machine. """
-
-		w = self.utils
-
-		title = _("Shutdown machine %s") % hostname
-		data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
-
-		if not sure:
-			description = _('''Are you sure you want to remotely shutdown '''
-				'''machine %s?''') % hostname
-
-			form_options = w.checkbox("warn_users", "True",
-					'<strong>' + _("Warn connected user(s) before shuting "
-						"system down.") + '</strong>', True)
-
-			data += w.question(_("Please confirm operation"),
-				description,
-				yes_values   = [ _("Shutdown") + ' >>',
-							"/machines/shutdown/%s/sure" % hostname, "S" ],
-				no_values    = [ '<< ' + _("Cancel"),  "/machines/list",   "N" ],
-				form_options = form_options)
-
-			data += '</div><!-- end main -->'
-
-			return (w.HTTP_TYPE_TEXT, w.page(title, data))
-
-		else:
-
-			# TODO: find a way to callback the result to the WMI...
-
-			workers.service_enqueue(priorities.LOW,
-				self.by_hostname(hostname).shutdown, warn_users=warn_users)
-
-			return (self.utils.HTTP_TYPE_REDIRECT,
-							self.wmi.successfull_redirect)
-	def _wmi_massshutdown(self, uri, http_user, sure=False, asleep=None, idle=None,
-		active=None, warn_users=None, admin=None, **kwargs):
-		""" Shutdown a bunch of machines et once,
-			based on their current status (active, idle, etc). """
-
-		w = self.utils
-
-		title = _("Massive shutdown")
-		data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
-
-		if not sure:
-			description = _('You can shutdown all currently running and/or idle'
-				' machines. This is a quite dangerous operation, because users'
-				' will be disconnected, and there is a potential to loose '
-				'unsaved work on idle machines (users are not in front of'
-				' them, they will not notice the system is shuting down.<br />'
-				'<br />Systems will be shut down <strong>ONE minute</strong> '
-				'after validation.')
-
-			form_options = '%s<br />%s<br />%s<br />%s<br /><br />%s' % (
-				w.checkbox('active', 'True',
-					_('Shutdown <strong>active</strong> machines'), True),
-				w.checkbox('idle', 'True',
-					_('Shutdown <strong>idle</strong> machines'), True),
-				w.checkbox('asleep', 'True',
-					_('Shutdown <strong>asleep</strong> machines'), True),
-				w.checkbox('admin', 'True',
-					_('Shutdown the <strong>administrator</strong> '
-						'machine too<br/>(the one currently connected '
-						'to the WMI).'), False),
-				w.checkbox('warn_users', 'True',
-					'<strong>' + _('Warn connected users before shuting '
-						'systems down.') + '</strong>', True)
-				)
-
-			data += w.question(_('Choose machines to shutdown'),
-				description,
-				yes_values   = [ _('Shutdown') + ' >>',
-										'/machines/massshutdown/sure', 'S' ],
-				no_values    = [ '<< ' + _('Cancel'),  '/machines/list',   'N' ],
-				form_options = form_options)
-
-			data += '</div><!-- end main -->'
-
-			return (w.HTTP_TYPE_TEXT, w.page(title, data))
-
-		else:
-			# TODO: reimplement the ALL variant
-			if False:
-				selection = host_status.IDLE | host_status.ASLEEP | host_status.ACTIVE
-			else:
-				selection = filters.NONE
-
-			if idle:
-				selection |= host_status.IDLE
-
-			if asleep:
-				selection |= host_status.ASLEEP
-
-			if active:
-				selection |= host_status.ACTIVE
-
-			for machine in self.select(filter_string=selection):
-				workers.service_enqueue(priorities.LOW,	machine.shutdown, warn_users=warn_users)
-
-			return (self.utils.HTTP_TYPE_REDIRECT,
-							self.wmi.successfull_redirect)
-	def _wmi_preferences(self, uri, http_user, **kwargs):
-		""" Export machine list."""
-
-		w = self.utils
-
-		title = _("Energy saving policies")
-
-		if type == "":
-			description = _('''CSV file-format is used by spreadsheets and most '''
-			'''systems which offer import functionnalities. XML file-format is a '''
-			'''modern exchange format, used in soma applications which respect '''
-			'''interoperability constraints.<br /><br />When you submit this '''
-			'''form, your web browser will automatically offer you to download '''
-			'''and save the export-file (it won't be displayed). When you're '''
-			'''done, please click the “back” button of your browser.''')
-
-			form_options = \
-				_("Which file format do you want the machines list to be exported to? %s") \
-					% w.select("type", [ "CSV", "XML"])
-
-			data += w.question(_("Please choose file format for export list"),
-				description,
-				yes_values   = [ _("Export >>"), "/machines/export", "E" ],
-				no_values    = [ _("<< Cancel"),  "/machines/list",   "N" ],
-				form_options = form_options)
-
-			data += '</div><!-- end main -->'
-
-			return (w.HTTP_TYPE_TEXT, w.page(title, data))
-
-		else:
-			LMC.machines.select(filters.STANDARD)
-
-			if type == "CSV":
-				data = LMC.machines.ExportCSV()
-			else:
-				data = LMC.machines.ExportXML()
-
-			return w.HTTP_TYPE_DOWNLOAD, (type, data)
-	def _wmi_export(self, uri, http_user, type = "", yes=None, configuration=None,
-		machines=None, **kwargs):
-		""" Export machine list."""
-
-		w = self.utils
-
-		return (w.HTTP_TYPE_TEXT, "not implemented yet.")
-
-		title = _("Export machines list")
-		data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
-
-		if type == "":
-			description = _('''CSV file-format is used by spreadsheets and most '''
-			'''systems which offer import functionnalities. XML file-format is a '''
-			'''modern exchange format, used in soma applications which respect '''
-			'''interoperability constraints.<br /><br />When you submit this '''
-			'''form, your web browser will automatically offer you to download '''
-			'''and save the export-file (it won't be displayed). When you're '''
-			'''done, please click the “back” button of your browser.''')
-
-			form_options = \
-				_("Which file format do you want the machines list to be exported to? %s") \
-					% w.select("type", [ "CSV", "XML"])
-
-			data += w.question(_("Please choose file format for export list"),
-				description,
-				yes_values   = [ _("Export >>"), "/machines/export", "E" ],
-				no_values    = [ _("<< Cancel"),  "/machines/list",   "N" ],
-				form_options = form_options)
-
-			data += '</div><!-- end main -->'
-
-			return (w.HTTP_TYPE_TEXT, w.page(title, data))
-
-		else:
-			LMC.machines.select(filters.STANDARD)
-
-			if type == "CSV":
-				data = LMC.machines.ExportCSV()
-			else:
-				data = LMC.machines.ExportXML()
-
-			return w.HTTP_TYPE_DOWNLOAD, (type, data)
-	def _wmi_main(self, uri, http_user, sort="hostname", order="asc", **kwargs):
-		""" display all machines in a nice HTML page. """
-
-		w = self.utils
-
-		start = time.time()
-
-		m = self
-
-		accounts = {}
-		ordered  = {}
-		totals   = {
-			_('managed'): 0,
-			_('floating'): 0
-			}
-
-		title = _("Machines")
-		data  = w.page_body_start(uri, http_user, self._ctxtnav, title)
-
-		if order == "asc": reverseorder = "desc"
-		else:              reverseorder = "asc"
-
-		data += '<table id="machines_list">\n		<tr class="machines_list_header">'
-
-		for (sortcolumn, sortname) in (
-				("status", _("Status")),
-				("hostname", _("Host name")),
-				("ip", _("IP address")),
-				("ether", _("Hardware address")),
-				("expiry", _("Expiry")),
-				("managed", _("Managed"))
-			):
-			if sortcolumn == sort:
-				data += '''
-				<th><img src="/images/sort_%s.png"
-					alt="%s order image" />&#160;
-					<a href="/machines/list/%s/%s" title="%s">%s</a>
-				</th>\n''' % (order, order, sortcolumn, reverseorder,
-						_("Click to sort in reverse order."), sortname)
-			else:
-				data += '''
-				<th>
-					<a href="/machines/list/%s/asc"	title="%s">%s</a>
-				</th>\n''' % (sortcolumn,
-					_("Click to sort on this column."), sortname)
-		data += '		</tr>\n'
-
-		def html_build_compact(machine):
-			hostname = machine.hostname
-			edit     = 'machine %s (IP %s)' % (hostname, machine.ip)
-			if machine.managed:
-				totals[_('managed')] += 1
-			else:
-				totals[_('floating')] += 1
-
-			power_statuses = {
-				host_status.UNKNOWN: (None, 'unknown',
-					_('''Host %s is in an unknown state. Nothing is possible. '''
-						'''Please wait for a reconnection.''')),
-				host_status.OFFLINE: (None, 'offline',
-					_('''Host %s is offline, and cannot be powered on from here,'''
-						'''Only from the machine itself.''')),
-				host_status.GOING_TO_SLEEP: (None, 'going_to_sleep',
-					_('Host %s is going to sleep, it will be unavailable in a small period of time.')),
-				host_status.ASLEEP: ('shutdown', 'asleep',
-					_('Shutdown the machine %s')),
-				host_status.SHUTTING_DOWN: (None, 'shutting_down',
-					_('Host %s is shutting down, it will be unavailable in a small period of time.')),
-				host_status.ONLINE: (None, 'online',
-					_('Machine %s is online but unmanageable (not Licorn® enabled).')),
-				host_status.IDLE: ('shutdown', 'idle',
-					_('Shutdown the machine %s')),
-				host_status.ACTIVE: ('shutdown', 'active',
-					_('Shutdown the machine %s')),
-				}
-
-			status = machine.status
-			if power_statuses[status][0]:
-
-				html_data = '''
-		<tr class="userdata">
-			<!-- STATUS -->
-			<td class="user_action_center">
-				<a href="/machines/%s/%s" title="%s" class="%s">
-				<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
-			</td>''' % (
-				power_statuses[status][0],
-				hostname,
-				power_statuses[status][2] % hostname,
-				power_statuses[status][1]
-				)
-
-			else:
-				html_data = '''
-		<tr class="userdata">
-			<!-- STATUS -->
-			<td class="user_action_center">
-				<span class="%s" title="%s">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-			</td>''' % (
-				power_statuses[status][1],
-				power_statuses[status][2] % hostname)
-
-			html_data += '''
-
-			<!-- HOSTNAME -->
-			<td class="paddedright">
-				<a href="/machines/edit/%s" title="%s" class="edit-entry">%s%s</a>
-			</td>
-			<!-- IP -->
-			<td class="paddedright">
-				<a href="/machines/edit/%s" title="%s" class="edit-entry">%s</a>
-			</td>
-			<!-- ETHER -->
-			<td class="paddedright">
-				<a href="/machines/edit/%s" title="%s" class="edit-entry">%s</a>
-			</td>
-			<!-- EXPIRY -->
-			<td class="paddedright">
-				<a href="/machines/edit/%s" title="%s" class="edit-entry">%s</a>
-			</td>
-				''' % (
-					hostname, edit, hostname,
-						((
-						'&nbsp;<img src="/images/16x16/linked.png" alt="%s" width="16" height="16" />'
-							% _('This machine has multiple network interfaces.')
-								if machine.linked_machines else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/vmware.png" alt="%s" width="16" height="16" />'
-							% _('This machine is a virtual computer.')
-								if machine.system_type & host_types.VMWARE else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/linux.png" alt="%s" width="16" height="16" />'
-							% _('This machine runs an undetermined version '
-								'of Linux®.')
-								if machine.system_type & host_types.LNX_GEN else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/server.png" alt="%s" width="16" height="16" />'
-							% _('This machine is a META IT/Licorn® server.')
-								if (machine.system_type & host_types.META_SRV) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/licorn.png" alt="%s" width="16" height="16" />'
-							% _('This machine has Licorn® installed.')
-								if (machine.system_type & host_types.LICORN) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/alt.png" alt="%s" width="16" height="16" />'
-							% _('This machine is an ALT® client.')
-								if (machine.system_type & host_types.ALT) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/debian.png" alt="%s" width="16" height="16" />'
-							% _('This machine Debian installed.')
-								if (machine.system_type & host_types.DEBIAN) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/ubuntu.png" alt="%s" width="16" height="16" />'
-							% _('This machine is Ubuntu installed.')
-								if (machine.system_type & host_types.UBUNTU) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/apple.png" alt="%s" width="16" height="16" />'
-							% _('This machine is manufactured by Apple® Computer Inc.')
-								if (machine.system_type & host_types.APPLE) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/free.png" alt="%s" width="16" height="16" />'
-							% _('This machine is a Freebox appliance.')
-								if (machine.system_type & host_types.FREEBOX) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/printer.png" alt="%s" width="16" height="16" />'
-							% _('This machine is a network printer.')
-								if (machine.system_type & host_types.PRINTER) else ''
-						) + (
-						'&nbsp;<img src="/images/16x16/scanner.png" alt="%s" width="16" height="16" />'
-							% _('This machine is a network scanner.')
-								if (machine.system_type & host_types.MULTIFUNC) else ''
-						)),
-					hostname, edit, machine.ip,
-					hostname, edit, machine.ether,
-					hostname, edit, pyutils.format_time_delta(
-						float(machine.expiry) - time.time(), use_neg=True) \
-								if machine.expiry else '-'
-					)
-
-			if machine.managed:
-				html_data += '''
-
-			<!-- MANAGED -->
-			<td class="user_action_center">
-				<a href="/machines/unmanage/%s" title="%s" class="managed">
-				<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
-			</td>
-				''' % (hostname, _("""Unmanage machine (remove it from """
-					"""configuration, in order to allow it to be managed by """
-					"""another server."""))
-			else:
-				html_data += '''
-
-			<!-- UNMANAGED -->
-			<td class="user_action_center">
-				<a href="/machines/manage/%s" title="%s" class="floating">
-				<span class="delete-entry">&nbsp;&nbsp;&nbsp;&nbsp;</span></a>
-			</td>
-				''' % (hostname, _("""Manage machine (fix its IP address and """
-					"""configure various aspects of the client)."""))
-
-			return html_data
-
-		for machine in self:
-			# don't display offline machines
-			if machine.status & host_status.OFFLINE \
-					or machine.master_machine:
-				continue
-
-			#machine  = m[mid]
-			hostname = machine.hostname
-
-			# we add the hostname to gecosValue and lockedValue to be sure to obtain
-			# unique values. This prevents problems with empty or non-unique GECOS
-			# and when sorting on locked status (accounts would be overwritten and
-			# lost because sorting must be done on unique values).
-			accounts[machine.ip] = {
-				'status'  : str(machine.status) + hostname,
-				'hostname': hostname,
-				'ip'      : machine.ip,
-				'ether'   : machine.ether if machine.ether else _('<unknown>') + hostname,
-				'expiry'  : machine.expiry,
-				'managed' : str(machine.managed) + hostname
-			}
-
-			# index on the column choosen for sorting, and keep trace of the mid
-			# to find account data back after ordering.
-			ordered[hlstr.validate_name(accounts[machine.ip][sort])] = machine
-
-		sorted_data = ordered.keys()
-		sorted_data.sort()
-		if order == "desc": sorted_data.reverse()
-
-		for order_key in sorted_data:
-			data += html_build_compact(ordered[order_key])
-
-		def print_totals(totals):
-			output = ""
-			for total in totals:
-				if totals[total] != 0:
-					output += '''
-		<tr class="list_total">
-			<td colspan="5" class="total_left">%s</td>
-			<td class="total_right">%d</td>
-		</tr>
-			''' % (_("number of <strong>%s</strong> machines:") % total, totals[total])
-			return output
-
-		data += '''
-		<tr>
-			<td colspan="5">&#160;</td></tr>
-		%s
-		<tr class="list_total">
-			<td colspan="5" class="total_left">%s</td>
-			<td class="total_right">%d</td>
-		</tr>
-	</table>
-		''' % (print_totals(totals),
-			_("<strong>Total number of machines:</strong>"),
-			reduce(lambda x, y: x+y, totals.values()))
-
-		return (w.HTTP_TYPE_TEXT, w.page(title,
-			data + w.page_body_end(w.total_time(start, time.time()))))
