@@ -1,0 +1,12 @@
+{%- from 'widgets/common.html' import menu_subitem -%}
+{{
+	menu_subitem(
+		"shutdown_all_menuitem",
+		"/system/shutdown/all",
+		_('Shutdown all remote-controlled machines on the network.'),
+		_('Shutdown all'),
+		"/media/images/24x24/eteindre.png",
+		"ajax-sidebar-menuitem-confirm"
+	)
+}}
+

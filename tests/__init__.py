@@ -9,17 +9,21 @@ Copyright (C) 2010 Robin Lucbernet <rl@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2.
 
 """
-import os, curses, re, sys, shutil, time
+import os, curses, re, sys, shutil, time, hashlib, tempfile, gzip
 
-from threading import Event
-from Queue     import PriorityQueue, Empty
+from subprocess import Popen, PIPE, STDOUT
+from traceback  import print_exc
+from threading  import Event
+from Queue      import PriorityQueue, Empty
 
-from licorn.foundations           import logging, options, process
+from licorn.foundations           import logging, options, exceptions, settings
+from licorn.foundations           import process, fsapi, pyutils, hlstr
 from licorn.foundations.styles    import *
-from licorn.foundations.constants import verbose
+from licorn.foundations.constants import verbose, priorities
 from licorn.foundations.base      import EnumDict
-from licorn.daemon                import priorities
+
 from licorn.daemon.threads        import GenericQueueWorkerThread
+from licorn.core                  import LMC
 
 # set this if you want background thread debugging.
 options.SetVerbose(verbose.INFO)
@@ -30,14 +34,18 @@ sce_status.RUNNING     = 0x1
 sce_status.FAILED      = 0x2
 sce_status.PASSED      = 0x3
 
-class TestsuiteRunnerThread(GenericQueueWorkerThread):
-	""" Will run the tests. """
-	pass
+rwi = LMC.connect()
+configuration_get = rwi.configuration_get
 
+# ===================================================================== CLASSES
+
+class TestsuiteRunnerThread(GenericQueueWorkerThread):
+	""" Will actually run the tests by poping them from the run queue. """
+	pass
 class Testsuite:
 	verbose = False
 	def __init__(self, name, directory_scenarii,
-			clean_func, state_file, cmd_display_func):
+									clean_func, state_file, cmd_display_func):
 		self.name               = name
 		self.list_scenario      = []
 		self.selected_scenario  = []
@@ -47,8 +55,8 @@ class Testsuite:
 		self.state_file         = state_file
 		# save the current context to restaure it at the end of the testsuite
 		backends = [ line for line in process.execute(['get', 'config',
-					'backends'])[0].split('\n') if 'U' in line ]
-		reduce(lambda x, y: x if y == '' else y, backends)
+								'backends'])[0].split('\n') if 'U' in line
+															and line != '' ]
 		self.user_context    = backends[0].split('(')[0]
 		self.current_context = self.user_context
 
@@ -57,6 +65,14 @@ class Testsuite:
 		self.passed     = []
 		self.best_state = 1
 		self.working    = Event()
+
+		# As contexts are shared with one only licorn, we cannot run more
+		# than 1 parallel job for now. But this still allows to continue
+		# to run jobs while the tester inspects job results, and this is
+		# still important to save time on success jobs which don't wait.
+		self.workers_scheduler = TestsuiteRunnerThread.setup(licornd=None,
+									input_queue=self.to_run,
+									peers_min=1, peers_max=1, daemon=True)
 
 		# used to modify the best state behaviour when running one one test
 		# or the whole TS.
@@ -79,6 +95,10 @@ class Testsuite:
 	def add_scenario(self,scenario):
 		""" add a scenario to the testsuite and set a number for it """
 		scenario.set_number(len(self.list_scenario) + 1)
+
+		# link us to the scenario
+		scenario.testsuite = self
+
 		self.list_scenario.append(scenario)
 	def run(self):
 		""" Run selected scenarii. """
@@ -104,27 +124,15 @@ class Testsuite:
 					sce.Run(interactive=True)
 
 				except KeyboardInterrupt:
-					test_message(_(u"Keyboard Interrupt received; cleaning scenario, please wait…"))
+					test_message(_(u"Keyboard Interrupt received; "
+									u"cleaning scenario, please wait…"))
 					sce.clean()
 					raise
 
 			self.passed.append(sce.counter)
 			self.save_best_state()
 	def run_threaded(self):
-
-		self.threads = []
-		self.threads.append(
-				TestsuiteRunnerThread(
-					in_queue=self.to_run,
-					peers_min=1,
-					peers_max=1,
-					licornd=self,
-					high_bypass=False,
-					daemon=False
-				)
-			)
-		self.threads[0].start()
-
+		""" Feed the queue with things to do. """
 		if self.selected_scenario != []:
 			# clean the system from previus run
 			self.clean_system()
@@ -138,7 +146,7 @@ class Testsuite:
 			self.selected_scenario = []
 
 		test_message(_(u'Started background tests, '
-						'waiting for any failed scenario…'))
+						u'waiting for any failed scenario…'))
 
 		# wait for the first job to be run, else counter displays '-1'.
 		time.sleep(2.0)
@@ -156,7 +164,7 @@ class Testsuite:
 					# the next to check. This permits the user to check
 					# scenario to the end, before checking a new one, at
 					# the expense of a little more loop cycles.
-					#print '>> downgrading sce %s %s' % (sce.counter, sce.name)
+					print '>> downgrading sce %s %s' % (sce.counter, sce.name)
 					self.failed.task_done()
 					self.failed.put((sce.counter, sce))
 					# if we got another job, our current failed one is still
@@ -164,7 +172,7 @@ class Testsuite:
 					time.sleep(1.0)
 					continue
 
-				#print '>> run sce %s %s ' % (sce.counter, sce.name)
+				print '>> run sce %s %s ' % (sce.counter, sce.name)
 				self.display_status()
 				sce.Run(interactive=True)
 				self.failed.task_done()
@@ -177,7 +185,7 @@ class Testsuite:
 					self.to_run.put(
 						(sce.counter, self.run_scenario, (sce,), {}))
 					test_message(_(u'Re-put scenario in the run queue '
-						'for further execution.'))
+									u'for further execution.'))
 					# wait a short while, to avoid displaying next status
 					# working on the end of the last failed scenario, which
 					# is a false-positive.
@@ -186,11 +194,11 @@ class Testsuite:
 				#best state is already saved.
 
 				test_message(_(u'Stopping the run queue worker '
-					'and cleaning, please wait…'))
+								u'and cleaning, please wait…'))
 
-				self.threads[0].stop()
+				self.workers_scheduler.stop()
 				self.display_status()
-				self.threads[0].join()
+				#self.threads[0].join()
 				raise
 
 			except Empty:
@@ -198,12 +206,12 @@ class Testsuite:
 				if self.to_run.qsize() == 0 and self.failed.qsize() == 0 \
 											and not self.working.is_set():
 
-					self.threads[0].stop()
+					self.workers_scheduler.stop()
 					self.save_best_state()
 					logging.notice(_(u'no more jobs, ending testsuite.'))
 					break
 
-		self.threads[0].join()
+		self.workers_scheduler.stop()
 	def save_best_state(self):
 		""" find the highest number of a consecutive suite of non failed ones,
 			and save it as the best state we could reach in the current session.
@@ -270,7 +278,6 @@ class Testsuite:
 			* while running scenario commands, always display the status.
 
 		"""
-		#clear_term()
 		# "1" counts for the job currently under test: it is not yet done.
 
 		if self.working.is_set():
@@ -359,7 +366,7 @@ class Testsuite:
 					logging.notice("--> cmd %2d: %s" % (cmd,
 						self.cmd_display_func(scenario.cmds[cmd])))
 	def get_stats(self):
-		""" display some statistique of the TS (number of scenario, number
+		""" display some statistics of the TS (number of scenario, number
 		of commands) """
 
 		sce_ = len(self.list_scenario)
@@ -375,6 +382,7 @@ class Testsuite:
 			# select all scenarii
 			self.selected_scenario = self.list_scenario[:]
 			self.best_state = 1
+
 		elif scenario_number != None and mode == None:
 			try:
 				# select only one scenario
@@ -384,6 +392,7 @@ class Testsuite:
 				self.best_state_only_one = scenario_number
 			except IndexError, e:
 				test_message(_(u"No scenario selected"))
+
 		elif scenario_number != None and mode == 'start':
 			# start selection from a scenario to the end of the list
 			for scenario in self.list_scenario[scenario_number-1:]:
@@ -450,29 +459,511 @@ class Testsuite:
 	def cmdfmt_big(self, cmd, prefix=''):
 		'''convert a sequence to a colorized string.'''
 		return '%s%s' % (prefix, stylize(ST_LOG, self.cmd_display_func(cmd)))
-curses.setupterm()
-clear = curses.tigetstr('clear')
-def clean_path_name(command):
-	# return a multo-OS friendly path for a given command.
-	return ('_'.join(command)).replace(
-		'../', '').replace('./', '').replace('//','_').replace(
-		'/','_').replace('>','_').replace('&', '_').replace(
-		'`', '_').replace('\\','_').replace("'",'_').replace(
-		'|','_').replace('^','_').replace('%', '_').replace(
-		'(', '_').replace(')', '_').replace ('*', '_').replace(
-		' ', '_').replace('__', '_')
-def clear_term():
-	sys.stdout.write(clear)
-	sys.stdout.flush()
-def term_size():
-	#print '(rows, cols, x pixels, y pixels) =',
-	return struct.unpack("HHHH",
-		fcntl.ioctl(
-			sys.stdout.fileno(),
-			termios.TIOCGWINSZ,
-			struct.pack("HHHH", 0, 0, 0, 0)
-			)
-		)
+class ScenarioTest:
+	counter   = 0
+	def __init__(self, cmds, context='std', descr=None, clean_num=0):
+
+		# This one will be filled directly by the TS, when the scenario
+		# is added to it.
+		self.testsuite  = None
+
+
+		self.context    = context
+		self.counter    = None
+		self.sce_number = ScenarioTest.counter
+		self.descr      = descr
+
+		# the number of commands, starting from the end of the scenario,
+		# that must be run to consider the scenario data has been cleaned
+		# from the system.
+		self.clean_num  = clean_num
+
+		self.status     = sce_status.NOT_STARTED
+		self.failed_cmd = -1
+
+		# used from the outside to know the current sce status
+		self.current_cmd = None
+
+		# we have to give a unique number to commands in case they are repeated.
+		# this is quite common, to test commands twice (the second call should
+		# fail in that case).
+		self.cmd_counter = 0
+
+		self.name = '%s%s%s%s%s' % (
+			stylize(ST_NAME, 'Scenario #'),
+			stylize(ST_OK, ScenarioTest.counter+1),
+			stylize(ST_NAME, ' (%s)' % descr) if descr else '',
+			stylize(ST_NAME, ', context '),
+			stylize(ST_OK, self.context))
+
+		ScenarioTest.counter += 1
+
+		self.cmds = {}
+
+		for cmd in cmds:
+			self.cmds[self.cmd_counter] = cmd
+			self.cmd_counter += 1
+
+		# used from the inside and the outside to display the current status.
+		self.total_cmds = len(self.cmds)
+
+		self.batch_run        = False
+		self.full_interactive = False
+
+		string_to_hash = "%s%s" % (self.context, str(cmds))
+		self.hash      = hashlib.sha1(string_to_hash).hexdigest()
+		self.base_path = 'data/scenarii/%s' % self.hash
+	def set_number(self, num):
+		self.counter = num
+	def check_failed_command(self):
+		""" Check failed command interactively.
+
+			Uses:
+
+			* self.failed_cmd (int)
+			* self.current_output (str)
+			* self.current_retcode (int)
+
+		"""
+
+		try:
+			ref_output, ref_code, gz_file = self.load_output(self.failed_cmd)
+
+		except exceptions.DoesntExistException:
+
+			if self.interactive or self.full_interactive:
+				logging.notice(_(u'no reference output for {sce_name}, '
+					'cmd #{cmd_num}/{total_cmds}:'
+					'\n\n{highlight_cmds}\n\n{run_output}').format(
+						sce_name=self.name,
+						cmd_num=stylize(ST_OK, self.failed_cmd+1),
+						total_cmds=stylize(ST_OK, self.total_cmds),
+						highlight_cmds=self.show_commands(highlight_num=self.failed_cmd),
+						run_output=self.current_output))
+
+			if self.batch_run or logging.ask_for_repair(
+									_(u'is this output good to keep as '
+									'reference for future runs?')):
+				# Save the output AND the return code for future
+				# references and comparisons
+				self.SaveOutput(self.failed_cmd,
+								self.current_output,
+								self.current_retcode)
+				return True
+			else:
+				return False
+		else:
+			# we must diff the failed command with its previous output.
+			handle, tmpfilename = tempfile.mkstemp(
+				prefix=hlstr.clean_path_name(self.cmds[self.failed_cmd]))
+
+			if gz_file:
+				handle2, tmpfilename2 = tempfile.mkstemp(
+					prefix=hlstr.clean_path_name(self.cmds[self.failed_cmd]))
+				open(tmpfilename2, 'w').write(ref_output)
+
+			open(tmpfilename, 'w').write(self.current_output)
+
+			diff_output = process.execute(['diff', '-u',
+									tmpfilename2
+										if gz_file
+										else '%s/%s/out.txt' % (
+											self.base_path, self.failed_cmd),
+									tmpfilename])[0]
+
+			if self.interactive or self.full_interactive:
+				logging.warning(_(u'command #{cmd_num}/{total_cmds} failed '
+					'(sce#{sce_num}, ctx {context}). '
+					'Retcode {ret_code} (ref {ref_code}).'
+					'\n\n{highlight_cmds}\n\n{diff_output}').format(
+					cmd_num=stylize(ST_OK, self.failed_cmd+1),
+					total_cmds=stylize(ST_OK, self.total_cmds),
+					sce_num=stylize(ST_OK, self.sce_number+1),
+					context=stylize(ST_OK, self.context),
+					ret_code=stylize(ST_BAD, self.current_retcode),
+					ref_code=stylize(ST_OK, ref_code),
+					highlight_cmds=self.show_commands(
+											highlight_num=self.failed_cmd),
+					diff_output=diff_output))
+
+			if self.batch_run or logging.ask_for_repair(
+						_(u'Should I keep the new return code '
+						'and trace as reference for future runs?')):
+				self.SaveOutput(self.failed_cmd,
+								self.current_output, self.current_retcode)
+				return True
+			else:
+				return False
+	def check_for_context(self):
+		""" Check if the scenario's context is the same than the user. """
+
+		changed = False
+
+		if self.context == 'shadow' and str(self.testsuite.current_context) != 'shadow':
+			execute([ 'mod', 'config', '-B', 'openldap'])
+
+			if self.interactive:
+				test_message(_(u"Backend changed to shadow"))
+
+			self.testsuite.current_context = 'shadow'
+			changed = True
+
+		if self.context == 'openldap' and str(self.testsuite.current_context) != 'openldap':
+			execute([ 'mod', 'config', '-b', 'openldap'])
+
+			if self.interactive:
+				test_message(_(u"Backend changed to OpenLDAP"))
+
+			self.testsuite.current_context = 'openldap'
+			changed = True
+
+		if changed:
+			time.sleep(4.0)
+	def SaveOutput(self, cmdnum, output, code):
+		try:
+			os.makedirs('%s/%s' % (self.base_path, cmdnum))
+
+		except (OSError, IOError), e:
+			if e.errno != 17:
+				raise e
+
+		open('%s/%s/cmdline.txt' % (
+				self.base_path, cmdnum), 'w').write(
+				' '.join(self.cmds[cmdnum]))
+		open('%s/%s/code.txt' % (self.base_path, cmdnum), 'w').write(str(code))
+
+		filename_gz  = '%s/%s/out.txt.gz' % (self.base_path, cmdnum)
+		filename_txt = '%s/%s/out.txt' % (self.base_path, cmdnum)
+		# we have to try to delete the other logfile, bacause in some rare
+		# cases (when output raises above 1024 or lower besides), the format
+		# changes and testsuite loops comparing to a wrong output.
+		if len(output) > 1024:
+			try:
+				os.unlink(filename_txt)
+			except (OSError, IOError), e:
+				if e.errno != 2:
+					raise e
+			file = gzip.GzipFile(filename=filename_gz, mode='wb', compresslevel=9)
+		else:
+			try:
+				os.unlink(filename_gz)
+			except (OSError, IOError), e:
+				if e.errno != 2:
+					raise e
+			file = open(filename_txt, 'w')
+		file.write(output)
+		file.close()
+	def show_commands(self, highlight_num):
+		""" output all commands, to get an history of the current scenario,
+			and higlight the current one. """
+
+		data = ''
+
+		for cmdcounter in self.cmds:
+			if cmdcounter < highlight_num:
+				data += '	%s\n' % self.testsuite.cmdfmt(self.cmds[cmdcounter],
+					prefix='  ')
+
+			elif cmdcounter == highlight_num:
+				data += '	%s\n' % self.testsuite.cmdfmt_big(
+										self.cmds[cmdcounter],
+										prefix='> ')
+
+			elif cmdcounter > highlight_num:
+				data += '	%s%s\n' % (
+					self.testsuite.cmdfmt(
+						self.cmds[cmdcounter],
+						prefix='  '),
+						'\n	%s' % self.testsuite.cmdfmt(u'[…]', prefix='  ') \
+							if len(self.cmds) > cmdcounter+1 \
+							else '')
+				break
+
+		return data
+	def load_output(self, cmdnum):
+		try:
+			if os.path.exists('%s/%s' % (self.base_path, cmdnum)):
+
+				if os.path.exists('%s/%s/out.txt.gz' % (
+										self.base_path, cmdnum)):
+
+					ref_output = gzip.open('%s/%s/out.txt.gz' %
+						(self.base_path, cmdnum), 'r').read()
+					gz_file = True
+
+				else:
+					ref_output = open('%s/%s/out.txt' %
+						(self.base_path, cmdnum)).read()
+					gz_file = False
+
+				ref_code = int(open('%s/%s/code.txt' % (
+							self.base_path, cmdnum)).read())
+
+				return ref_output, ref_code, gz_file
+
+		except Exception, e:
+			logging.warning(_(u'Exception {exc} while loading output of '
+				'cmd {cmd}, sce {sce}. Traceback follows, '
+				'raising DoesntExistException').format(
+				exc=e, cmd=cmdnum, sce=self.name))
+			print_exc()
+
+		raise exceptions.DoesntExistException(
+								'problem loading data of command %s' % cmdnum)
+	def RunCommand(self, cmdnum):
+		try:
+			ref_output, ref_code, gz_file = self.load_output(cmdnum)
+
+		except exceptions.DoesntExistException:
+			output, self.current_retcode = execute(self.cmds[cmdnum],
+											interactive=self.interactive)
+			self.current_output = strip_moving_data(output)
+			return False
+
+		output, self.current_retcode = execute(self.cmds[cmdnum],
+											interactive=self.interactive)
+		self.current_output = strip_moving_data(output)
+
+		if self.current_retcode == ref_code \
+								and  self.current_output == ref_output:
+			return True
+		else:
+			return False
+	def Run(self, options=[], interactive=False):
+		""" run each command of the scenario, in turn. """
+
+		self.interactive = interactive
+
+		if self.interactive:
+			# display a blank line to separate from TS status display.
+			if self.full_interactive:
+				logging.notice(_(u'Start run %s. Please wait while commands '
+					'are executed, this can take some time.')
+						% stylize(ST_NAME, self.name))
+			else:
+				sys.stderr.write('\n')
+
+		self.check_for_context()
+
+		#print '>> entering with', sce_status[self.status], self.name
+
+		if self.status == sce_status.NOT_STARTED:
+			self.clean()
+			start = 0
+
+		elif self.status == sce_status.FAILED:
+
+			if self.clean_num:
+				# the scenario has been cleaned by necessity, we must restart.
+				self.check_failed_command()
+				self.status = sce_status.NOT_STARTED
+				#print '>> not started', self.name
+				return
+
+			else:
+				# the scenario has no clean command, its just integrity or
+				# unit test, we can continue from the failed cmd. if it
+				# succeeds, continue from next; if it fails, rerun until
+				# success.
+				if self.check_failed_command():
+					start = self.failed_cmd + 1
+				else:
+					start = self.failed_cmd
+
+		elif self.status == sce_status.PASSED:
+
+			if self.interactive:
+				logging.warning(_(u'Already passed scenario %s') % self.name)
+			return
+
+		self.status = sce_status.RUNNING
+
+		for cmdnum in self.cmds:
+
+			# just for the display, we need to start from 1, not 0
+			self.current_cmd = cmdnum + 1
+
+			if not self.RunCommand(cmdnum):
+				self.status     = sce_status.FAILED
+				self.failed_cmd = cmdnum
+
+				if self.full_interactive:
+					while not self.check_failed_command():
+						if self.RunCommand(cmdnum):
+							break
+
+				elif self.batch_run:
+					if verbose:
+						logging.notice(_(u'Automatically saved new output for '
+							'scenario #{sce} command #{cmd}/{total}').format(
+								sce=self.counter, cmd=self.current_cmd,
+								total=self.total_cmds))
+
+					self.check_failed_command()
+					self.failed_cmd = None
+				else:
+					self.current_cmd = None
+					if self.interactive:
+						logging.notice(_(u'Checking FAILED cmd {cmd}/{total} '
+							'of scenario {sce}').format(
+							sce=stylize(ST_NAME, self.name), cmd=cmdnum,
+							total=self.total_cmds))
+					self.clean()
+					#print '>> failed', self.name
+					return
+
+		# no need to clean() now, clean commands are part of the scenario,
+		# they have already been run if everything went fine.
+		#self.clean()
+		#print '>> passed end', self.name
+		self.status = sce_status.PASSED
+		if self.interactive:
+			logging.notice(_(u'End run %s.') % stylize(ST_NAME, self.name))
+	def clean(self):
+		""" execute clean commands without bothering on their output. """
+		for cmdnum in sorted(self.cmds.keys())[-self.clean_num:]:
+			#print '>> clean', cmdnum, ' '.join(self.cmds[cmdnum])
+			#  don't call RunCommand(), it would overwrite the self.current_*
+			# of the last failed command, if any.
+			execute(self.cmds[cmdnum], interactive=True)
+		return True
+
+# =================================================================== FUNCTIONS
+
+def log_and_exec(command, inverse_test=False, result_code=0, comment="",
+	verb=verbose):
+	"""Display a command, execute it, and exit if soemthing went wrong."""
+
+	sys.stderr.write(("%s>>> " + _(u'running ') + "%s%s%s\n") % (
+		colors[ST_LOG], colors[ST_PATH], ' '.join(command), colors[ST_NO]))
+
+	output, retcode = execute(command)
+	must_exit = False
+
+	#
+	# TODO: implement a precise test on a precise exit value.
+	# for example, when you try to add a group with an invalid name,
+	# licorn-add should exit (e.g.) 34. We must test on this precise
+	# value and not on != 0, because if something wrong but *other* than
+	# errno 34 happened, we won't know it if we don't check carefully the
+	# program output.
+	#
+
+	if inverse_test:
+		if retcode != result_code:
+			must_exit = True
+	else:
+		if retcode != 0:
+			must_exit = True
+
+	if must_exit:
+		if inverse_test:
+			test = ("	%s→ it should have failed with reason: %s%s%s\n"
+				% (colors[ST_PATH], colors[ST_BAD],
+					comment, colors[ST_NO]))
+		else:
+			test = ""
+
+		sys.stderr.write("	%s→ return code of command: %s%d%s (expected: %d)%s\n%s	→ log follows:\n"
+			% (	colors[ST_LOG], colors[ST_BAD],
+				retcode, colors[ST_LOG], result_code,
+				colors[ST_NO], test) )
+		sys.stderr.write(output)
+		test_message(
+			_(u'The last command failed to execute, '
+				'or returned an unexpected result!'))
+		raise SystemExit(retcode)
+
+	if verb:
+		sys.stderr.write(output)
+def execute(cmd, verbose=verbose, interactive=False):
+	if verbose and interactive:
+		logging.notice('running %s.' % ' '.join(cmd))
+	p4 = Popen(cmd, shell=False,
+		  stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
+	output = p4.stdout.read()
+	retcode = p4.wait()
+	if verbose and interactive:
+		sys.stderr.write(output)
+	return output, retcode
+def strip_moving_data(output):
+	""" strip dates from warnings and traces, else outputs and references
+	always compare false ."""
+	return	re.sub(r', line \d+, ', r', line [LINE], ',
+			re.sub(r'([gu])id=(\x1b\[\d\d;\d\dm)?\d+(\x1b\[0;0m)?', r'\1id=[ID]',
+			re.sub(r'(\.\d\d\d\d\d\d\d\d-\d\d\d\d\d\d|'
+			'\[\d\d\d\d/\d\d/\d\d\s\d\d:\d\d:\d\d\.\d\d\d\d\]\s)', r'[D/T] ',
+			re.sub(r'(Autogenerated\spassword\sfor\suser\s.*:|'
+				'Set\spassword\sfor\suser\s.*\sto)\s.*', r'\1 [Password]',
+			re.sub(r'report: /home/archives/import_.*.html',
+				'report: /home/archives/import_[profile]-[D/T].html',
+			re.sub(r'<(Thread|function|bound method)[^>]+>',
+				r'<\1 at [hex_address]>',
+				output
+			))))))
+def clean_dir_contents(directory):
+	""" Totally empty the contents of a given directory, the licorn way. """
+	if verbose:
+		test_message(_(u'Cleaning directory %s.') % directory)
+
+	def delete_entry(entry):
+		if verbose:
+			logging.notice(_(u'Deleting %s.') % entry)
+
+		if os.path.isdir(entry):
+			shutil.rmtree(entry)
+		else:
+			os.unlink(entry)
+
+	map(delete_entry, fsapi.minifind(directory, mindepth=1, maxdepth=2))
+
+	if verbose:
+		test_message(_(u'Cleaned directory %s.') % directory)
+def make_backups(mode):
+	"""Make backup of important system files before messing them up ;-) """
+
+	# this is mandatory, else there could be some inconsistencies following
+	# backend (de)activation, and backup comparison could fail (false-negative)
+	# because of this.
+	execute([ 'chk', 'config', '-avvb'])
+
+	if mode == 'shadow':
+		for file in system_files:
+			if os.path.exists('/etc/%s' % file):
+				execute([ 'cp', '-f', '/etc/%s' % file,
+					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
+
+	elif mode == 'openldap':
+		execute([ 'slapcat', '-l', '/tmp/backup.1.ldif' ])
+
+	else:
+		logging.error('backup mode not understood.')
+
+	test_message(_(u'Backed up system files for context %s.') % mode)
+def compare_delete_backups(mode):
+	""" """
+	test_message(_(u'Comparing backups of system files after tests '
+		'for side-effects alterations.'))
+
+	if mode == 'shadow':
+		for file in system_files:
+			if os.path.exists('/etc/%s' % file):
+				log_and_exec([ '/usr/bin/diff', '/etc/%s' % file,
+					'/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)], False,
+				comment="should not display any diff (system has been cleaned).",
+				verb = True)
+				execute([ 'rm', '/tmp/%s.bak.%s' % (file.replace('/', '_'), bkp_ext)])
+	elif mode == 'openldap':
+		execute([ 'slapcat', '-l', '/tmp/backup.2.ldif'])
+		log_and_exec([ '/usr/bin/diff', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'],
+			False,
+			comment="should not display any diff (system has been cleaned).",
+			verb = True)
+		execute([ 'rm', '/tmp/backup.1.ldif', '/tmp/backup.2.ldif'])
+	else:
+		logging.error('backup mode not understood.')
+
+	test_message(_(u'System config files backup comparison finished successfully.'))
 def small_cmd_cli(cmd):
 	return re.sub(r'((sudo|python|-OO) |\.\./interfaces/cli/|\.py\b)',
 					r'', ' '.join(cmd))
@@ -486,45 +977,72 @@ def small_cmd_wmi(cmd):
 	return small_cmd_cli(list_cmd)
 def test_message(msg):
 	#display a message to stderr.
-	sys.stderr.write("%s>>> %s%s\n"
-		% (colors[ST_LOG], msg, colors[ST_NO]))
-
+	sys.stderr.write("%s>>> %s%s\n" % (colors[ST_LOG], msg, colors[ST_NO]))
 def testsuite_parse_args():
 	""" return basic options of a TS """
 	from optparse import OptionParser
 	parser = OptionParser()
 	parser.add_option("-r", "--reload", action="store_true", dest="reload",
-	help=_(u"reload testsuite. Start from beginning"))
+						help=_(u"reload testsuite. Start from beginning."))
 	parser.add_option("-e", "--execute", dest="execute", type="int",
 		default=False, help=_(u"execute a specific scenario of the testsuite."))
 	parser.add_option("-l", "--list", action="store_true", dest="list",
-		default=False, help=_(u"list all scenarii of the testsuite."))
+		default=False, help=_(u"List all scenarii of the testsuite."))
 	parser.add_option("-a", "--all", action="store_true", dest="all",
-		default=False, help=_(u"select all scenarii"))
+		default=False, help=_(u"Select all scenarii."))
 	parser.add_option("-s", "--start-from", dest="start_from", type="int",
-		default=False, help=_(u"start from the scenario N."))
+		default=False, help=_(u"Start from the scenario N."))
 	parser.add_option("-v", "--verbose", action="store_true", dest="verbose",
-		default=False, help=_(u"display messages during command execution."))
+		default=False, help=_(u"Display messages during command execution."))
 	parser.add_option("-c", "--clean", action="store_true", dest="clean",
-		default=False, help=_(u"clean scenarii directory."))
+		default=False, help=_(u"Clean scenarii directory."))
 	parser.add_option("-d", "--delete-trace", dest="delete_trace", type="int",
-		default=False, help=_(u"delete trace of a scenario"))
+		default=False, help=_(u"Delete traces of a given scenario."))
 	parser.add_option("--stats", action="store_true", dest="stats",
-		default=False, help=_(u"display statistics of the testsuite."))
+		default=False, help=_(u"Display statistics of the testsuite."))
 	parser.add_option("-i", "--interactive",
 		dest="interactive", action="store_true", default=False,
-		help=_(u"run the testsuite in standard interactive mode (one scenario "
-			"at a time. Use this when you have modified a mega bunch of code, "
-			"and you know it will be better to check everything manually "
-			"before doing anything else, and the batch run is not what you "
-			"want because your code is still in alpha stage."))
+		help=_(u"Run the testsuite in standard interactive mode (one scenario "
+			u"at a time. Use this when you have modified a mega bunch of code, "
+			u"and you know it will be better to check everything manually "
+			u"before doing anything else, and the batch run is not what you "
+			u"want because your code is still in alpha stage."))
 	parser.add_option("-b", "--batch-run", "--build-initial-data",
 		dest="batch_run", action="store_true", default=False,
-		help=_(u"don't halt the scenario on fail, just accept the result of "
-			"the failed command and continue. WARNING: this flag is meant to "
-			"be used only when you don't have any scenario data in your "
-			"repository, to build a new one from scratch. Use this flag only"
-			"on a clean source tree, else your TS results will not be "
-			"reliable."))
+		help=_(u"Don't halt the scenario on fail, just accept the result of "
+			u"the failed command and continue. WARNING: this flag is meant to "
+			u"be used only when you don't have any scenario data in your "
+			u"repository, to build a new one from scratch. Use this flag only"
+			u"on a clean source tree, else your TS results will not be "
+			u"reliable."))
 	return parser
 
+
+# =================================================================== MAIN
+
+system_files = ( 'passwd', 'shadow', 'group', 'gshadow', 'adduser.conf',
+				'login.defs', 'licorn/main.conf', 'licorn/group',
+				'licorn/profiles.xml')
+
+bkp_ext = 'licorn'
+state_files = {
+	'context':  'data/.ctx_status',
+	'scenarii':	'data/.sce_status',
+	'owner':    'data/.owner'
+	}
+
+# see http://docs.python.org/library/os.html#os.environ for details.
+# we must unset them, else all argparser-related methods fail if there are
+# any terminal movements between 2 runs.
+for var_name in ('COLS', 'COLUMNS', 'LINES'):
+	try:
+		del os.environ[var_name]
+	except KeyError:
+		pass
+
+if __debug__:
+	PYTHON = [ 'python' ]
+	verbose=True
+else:
+	PYTHON = [ 'python', '-OO' ]
+	verbose=False

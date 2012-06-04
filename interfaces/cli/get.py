@@ -12,33 +12,33 @@ Licensed under the terms of the GNU GPL version 2.
 """
 import sys, os, Pyro.errors, time
 
-from threading import Thread, RLock, Event
+from threading import Thread
+from licorn.foundations.threads import RLock, Event
 
 from licorn.foundations    import logging, options, pyutils
-from licorn.interfaces.cli import cli_main, CliInteractor
+from licorn.interfaces.cli import LicornCliApplication, CliInteractor
 from licorn.core           import version, LMC
 
-def get_events(opts, args):
-	system = LMC.system
+def get_events(opts, args, listener):
 
-	monitor_id = system.register_monitor(opts.facilities)
+	monitor_id = LMC.rwi.register_monitor(opts.facilities)
 
 	try:
-		CliInteractor().run()
+		CliInteractor(listener).run()
 
 	finally:
 		try:
-			system.unregister_monitor(monitor_id)
+			LMC.rwi.unregister_monitor(monitor_id)
 
 		except Pyro.errors.ConnectionClosedError:
 			# the connection has been closed by the server side.
 			pass
-def get_status(opts, args):
-
-	system = LMC.system
+def get_events_reconnect(opts, args, listener):
+	LMC.rwi.register_monitor(opts.facilities)
+def get_status(opts, args, listener):
 
 	if opts.monitor:
-		def get_status_thread(opts, args, opts_lock, stop_event):
+		def get_status_thread(opts, args, opts_lock, stop_event, quit_func):
 
 			with opts_lock:
 				if opts.monitor_time:
@@ -46,55 +46,71 @@ def get_status(opts, args):
 					monitor_time_stop = time.time() + opts.monitor_time
 
 			count = 1
+			stop_count = 0
 
 			while not stop_event.is_set():
 				with opts_lock:
 					try:
-						system.get_daemon_status(opts, args)
+						LMC.rwi.get_daemon_status(opts, args)
 
-					except Exception, e:
-						logging.warning(e)
-						pyutils.print_exception_if_verbose()
-						stop_event.set()
+					except Pyro.errors.ConnectionClosedError:
+						# wait a little before exiting, in case the daemon
+						# reconnects automatically.
+						if stop_count > 5:
+							logging.warning(_(u'Daemon connection lost, bailing out.'))
+							quit_func()
+
+						stop_count += 1
+
+					except:
+						logging.exception(_(u'Could not get daemon status'))
+						quit_func()
 
 					interval = opts.monitor_interval
 
-					if (
-							opts.monitor_count
-							and count >= opts.monitor_count
-							) or (
-							opts.monitor_time
-							and time.time() >= monitor_time_stop):
-						raise SystemExit(0)
+				if (opts.monitor_count
+						and count >= opts.monitor_count
+						) or (
+						opts.monitor_time
+						and time.time() >= monitor_time_stop):
+					quit_func()
 
 				time.sleep(interval)
 				count += 1
 
-		opts_lock  = RLock()
-		stop_event = Event()
-
-		output_thread = Thread(target=get_status_thread,
-								args=(opts, args, opts_lock, stop_event))
+		opts_lock      = RLock()
+		cli_interactor = CliInteractor(listener, opts, opts_lock)
+		stop_event     = cli_interactor._stop_event
+		quit_func      = cli_interactor.quit_interactor
+		output_thread  = Thread(target=get_status_thread,
+								args=(opts, args, opts_lock, stop_event, quit_func))
 		output_thread.start()
 
 		try:
-			CliInteractor(opts, opts_lock).run()
+			try:
+				cli_interactor.run()
+
+			except KeyboardInterrupt:
+				# This is needed to restore the terminal state.
+				# Relying on the "finally" clause isn't sufficient.
+				cli_interactor.quit_interactor()
+				raise
 
 		finally:
-			stop_event.set()
+			if not stop_event.is_set():
+				stop_event.set()
+
 			output_thread.join()
 
 	else:
 		# we don't clear the screen for only one output.
 		opts.clear_terminal = False
 		try:
-			system.get_daemon_status(opts, args)
+			LMC.rwi.get_daemon_status(opts, args)
 
-		except Exception, e:
-			logging.warning(e)
-			pyutils.print_exception_if_verbose()
-			stop_event.set()
-def get_inside(opts, args):
+		except:
+			logging.exception(_(u'Could not obtain daemon status'))
+def get_inside(opts, args, listener):
 
 	import code
 
@@ -113,25 +129,29 @@ def get_inside(opts, args):
 					return '	'
 				return None
 
-			return LMC.system.console_complete(phrase, state)
+			return LMC.rwi.console_complete(phrase, state)
 		def runsource(self, source, filename=None, symbol="single"):
 
 			if filename is None:
 				filename = "<licorn_remote_console>"
 
-			more, output = LMC.system.console_runsource(source, filename)
+			more, output = LMC.rwi.console_runsource(source, filename)
 
 			if output:
 				self.write(output)
 
 			return more
 		def write(self, data):
-			#if output[0] == 'u' and output[-1] in ('"', '"'):
-			#	output = eval(output)
 			sys.stdout.write(data)
 
 	console      = ProxyConsole()
 	history_file = os.path.expanduser('~/.licorn/interactor_history')
+
+	if history_file:
+		history_dir  = os.path.dirname(history_file)
+
+		if not os.path.exists(history_dir):
+			os.makedirs(history_dir)
 
 	try:
 		import readline
@@ -139,6 +159,7 @@ def get_inside(opts, args):
 		readline.parse_and_bind('tab: complete')
 		try:
 			readline.read_history_file(history_file)
+
 		except IOError:
 			pass
 
@@ -146,22 +167,37 @@ def get_inside(opts, args):
 		history_file = None
 
 	try:
-		LMC.system.console_start()
-		sys.ps1 = u'licornd> '
+		try:
+			LMC.rwi.console_start()
+			sys.ps1 = u'licornd> '
 
-		console.interact(banner=_(u'Licorn® {0}, Python {1} '
-						u'on {2}').format(version,
-							sys.version.replace('\n', ''),
-							sys.platform))
+			console.interact(banner=_(u'Licorn® {0}, Python {1} '
+							u'on {2}').format(version,
+								sys.version.replace('\n', ''),
+								sys.platform))
+		except:
+			logging.exception('Error running the remote console!')
 
 	finally:
-		LMC.system.console_stop()
+		# save the history file locally before stopping the console,
+		# in case the console can't be stopped for any reason (mainly
+		# network disconnect, but anything can happen).
 		if history_file:
-			readline.write_history_file(history_file)
+			try:
+				readline.write_history_file(history_file)
+
+			except:
+				logging.exception(_(u'unable to write history file!'))
+
+		try:
+			LMC.rwi.console_stop()
+
+		except Pyro.errors.ConnectionClosedError:
+			pass
 
 def get_main():
 
-	cli_main({
+	LicornCliApplication({
 		'users':         ('get_users_parse_arguments', 'get_users'),
 		'passwd':        ('get_users_parse_arguments', 'get_users'),
 		'groups':        ('get_groups_parse_arguments', 'get_groups'),
@@ -176,7 +212,8 @@ def get_main():
 		'daemon_status': ('get_daemon_status_parse_arguments',
 														None, get_status),
 		'events'       : ('get_events_parse_arguments',
-														None, get_events),
+														None, get_events,
+														get_events_reconnect),
 		'inside'       : ('get_inside_parse_arguments',
 														None, get_inside),
 		'volumes':       ('get_volumes_parse_arguments', 'get_volumes'),

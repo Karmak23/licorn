@@ -2,10 +2,10 @@
 dn: olcDatabase=hdb,cn=config
 changetype: modify
 add: olcRootDN
-olcRootDN: cn=admin,dc=meta-it,dc=local
+olcRootDN: @@rootbinddn@@
 -
 add: olcRootPW
-olcRootPW: metasecret
+olcRootPW: @@secret@@
 -
 add: olcDbConfig
 olcDbConfig: set_cachesize 0 2097152 0
@@ -27,7 +27,7 @@ olcDbCheckpoint: 512 30
 -
 replace: olcAccess
 olcAccess: to attrs=userPassword
- by dn="cn=admin,dc=meta-it,dc=local" write
+ by dn="@@rootbinddn@@" write
  by self write
  by anonymous auth
  by * none
@@ -40,6 +40,6 @@ olcAccess: to dn.base=""
  by * none
 # Below line modified from "*" to "users" to prevent anonymous access.
 olcAccess: to *
- by dn="cn=admin,dc=meta-it,dc=local" write
+ by dn="@@rootbinddn@@" write
  by users read
  by * none

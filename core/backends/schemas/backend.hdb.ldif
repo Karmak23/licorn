@@ -3,10 +3,10 @@ dn: olcDatabase=hdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcHdbConfig
 olcDatabase: {1}hdb
-olcSuffix: dc=meta-it,dc=local
+olcSuffix: @@base@@
 olcDbDirectory: /var/lib/ldap
-olcRootDN: cn=admin,dc=meta-it,dc=local
-olcRootPW: metasecret
+olcRootDN: @@rootbinddn@@
+olcRootPW: @@secret@@
 olcDbConfig: set_cachesize 0 2097152 0
 olcDbConfig: set_lk_max_objects 1500
 olcDbConfig: set_lk_max_locks 1500
@@ -21,8 +21,8 @@ olcDbIndex: uniqueMember eq
 olcLastMod: TRUE
 olcMonitoring: TRUE
 olcDbCheckpoint: 512 30
-olcAccess: to attrs=userPassword by dn="cn=admin,dc=meta-it,dc=local" write by self write by anonymous auth by * none
+olcAccess: to attrs=userPassword by dn="@@rootbinddn@@" write by self write by anonymous auth by * none
 olcAccess: to attrs=shadowLastChange by self write by anonymous auth by * none
 olcAccess: to dn.base="" by * read
-olcAccess: to * by dn="cn=admin,dc=meta-it,dc=local" write by * read
+olcAccess: to * by dn="cn=@@rootbinddn@@" write by * read
 

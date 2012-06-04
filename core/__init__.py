@@ -13,16 +13,20 @@ The Core API of a Licorn system.
 from licorn.version import version
 
 import os, sys, time, signal, Pyro.core, Pyro.configuration
-from threading import RLock
+from threading import current_thread, Timer
 
-from licorn.foundations           import logging, exceptions, options
-from licorn.foundations           import process, network
+from licorn.foundations.threads   import RLock
+from licorn.foundations           import logging, exceptions, options, settings
+from licorn.foundations           import process, network, events
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
+from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import MixedDictObject
-from licorn.foundations.constants import reasons
-from licorn.daemon                import roles, priorities, InternalEvent
+from licorn.foundations.constants import reasons, roles, priorities
+
+from licorn.foundations.events import LicornEvent
+
+timeout = settings.connect.timeout
 
 def connect_error(dummy1, dummy2):
 	""" Method called on SIGALARM when the LMC fails to launch a daemon, or
@@ -30,10 +34,10 @@ def connect_error(dummy1, dummy2):
 		Exit with an error.
 	"""
 
-	logging.error('''daemon didn't wake us in 10 seconds, there is probably '''
-		'''a problem with it. Please check %s for errors or contact your '''
-		''' system administrator (if it's not you, else you're in trouble).''',
-		200)
+	logging.error(_(u'The daemon did not wake us in 10 seconds, there is '
+		u'probably a problem with it. Please check the log for errors or '
+		u'contact your system administrator if it is not you. Else you '
+		u'already know you are in trouble ;-)'), 911)
 
 class LicornMasterController(MixedDictObject):
 	""" The master container of all Licorn® system objects. It handles
@@ -71,7 +75,7 @@ class LicornMasterController(MixedDictObject):
 		#	raise exceptions.LicornRuntimeError(_(u'Cannot anything other than '
 		#		'the daemon here!'))
 		self.__licornd = licornd
-	def __init__(self, licornd=None, master=True):
+	def __init__(self, *args, **kwargs):
 		""" Default name of :class:`LicornMasterController` is "LMC" because it
 			is meant to be only one LMC.
 
@@ -79,76 +83,69 @@ class LicornMasterController(MixedDictObject):
 				else ``False``. This will permit reusing already loaded
 				controllers in helper LMCs (only used in CLIENT mode as of now).
 		"""
-		if master:
-			MixedDictObject.__init__(self, 'LMC')
-			self.__licornd = licornd
-		else:
-			MixedDictObject.__init__(self, 'HelperLMC')
 
-		assert ltrace(TRACE_CORE, '| %s.__init__(%s)' % (str(self.__class__),
-																	self.name))
+		licornd = kwargs.pop('licornd', None)
+		master  = kwargs.pop('master', True)
+
+		if master:
+			super(LicornMasterController, self).__init__(name='LMC')
+
+		else:
+			super(LicornMasterController, self).__init__(name='HelperLMC')
+
+		self.__licornd = licornd
+
+		assert ltrace_func(TRACE_CORE)
 
 		self._master = master
 
-		# FIXME: get rid of these locks, they are useless now that everything
-		# is on the daemon.
-		self.locks = MixedDictObject('locks')
+		self._connect_lock = RLock()
+		self._connections  = 0
 
 		self._ServerLMC = None
-	def init_conf(self, minimal=False, batch=False):
-		""" Init only the configuration object (prior to full LMC
-			initialization). 3 scenarii are possible:
-			- init in one pass (default, calling with ``minimal=False``).
-			- init in 2 passes (will do the same as one pass init), like this::
 
-				LMC.init_conf(minimal=True)
-				...
-				LMC.init_conf()
+		events.collect(self)
+	def __init_configuration(self, batch=False):
+		""" Init the configuration object, prior to full LMC initialization.
 
-			- only init in minimal mode (used in the CLIENT daemon). This
-			  permits to get a small configuration object, containing the
-			  bare minimum to connect to a SERVER daemon.
-
-			:param minimal: a boolean indicating if we want to initialize the
-			                configuration object as small as possible.
-			:param batch: a boolean to indicate that every problem encountered
+			:param batch: a boolean indicating that every problem encountered
 			              during configuration initialization should be
-			              corrected automatically (or not).
+			              corrected automatically (default: ``False``).
 		"""
-		if LicornMasterController._init_conf_full or (
-			minimal and LicornMasterController._init_conf_minimal):
+		if LicornMasterController._init_conf_full:
 			return
 
 		if self._master:
 
 			try:
 				from configuration import LicornConfiguration
-				self.configuration = LicornConfiguration(
-													minimal=True, batch=batch)
+
+				self.configuration = LicornConfiguration(minimal=True, batch=batch)
 
 			except exceptions.BadConfigurationError, e:
 				logging.error(e)
 
-			if minimal:
-				LicornMasterController._init_conf_minimal = True
-			else:
-				self.configuration.load(batch=batch)
+			self.configuration.load(batch=batch)
 
-				LicornMasterController._init_conf_full = True
+			LicornMasterController._init_conf_full = True
+
 		else:
 			self.configuration = LMC.configuration
 	def init_server(self, batch=False):
 		""" Meant to be called at the beginning of SERVER-daemon
 			initialization. It is a one pass method. After having
 			called it, the SERVER-daemon's `LMC` is ready to operate.
+
+			:param batch: a boolean specifying the configuration should
+				be loaded in ``batch`` mode, which means it will correct
+				every needed part of the system to work.
 		"""
 
-		assert LicornMasterController._init_conf_full
-
+		self.__init_configuration(batch=batch)
 		self.__init_first_pass()
 		self.__init_common()
 		self.__init_server_final()
-	def init_client_first_pass(self):
+	def init_client_first_pass(self, batch=False):
 		""" Loads backends, users and groups only. There is a small difference
 			between 2 calls of this method, on the client:
 
@@ -161,6 +158,7 @@ class LicornMasterController(MixedDictObject):
 			  :meth:`init_client_second_pass`), and thus users and groups
 			  contains the data from the server, merged with local (server's
 			  data has precedence). """
+		self.__init_configuration(batch=batch)
 		self.__init_first_pass()
 	def init_client_second_pass(self, ServerLMC):
 		""" Reload the backends, users and groups, to correspond to server data.
@@ -188,8 +186,8 @@ class LicornMasterController(MixedDictObject):
 
 		self._ServerLMC = ServerLMC
 
-		#print '>> server backends:', ServerLMC.system.get_backends(
-		#													client_only=True)
+		logging.info(_(u'Server backends: {0}').format(
+						ServerLMC.system.get_backends(client_only=True)))
 
 		self.backends.load(
 				server_side_modules=ServerLMC.system.get_backends(
@@ -213,11 +211,6 @@ class LicornMasterController(MixedDictObject):
 
 		assert LicornMasterController._init_conf_full
 
-		# NOTE: this couldn't have been done before, because EventsManager was
-		# not up and ready. Now this will succeed, and we are still *before* all
-		# other controllers load, so no event will be missed.
-		L_event_collect(self.configuration)
-
 		if self._master:
 
 			# Initialize backends prior to controllers, because
@@ -233,7 +226,7 @@ class LicornMasterController(MixedDictObject):
 			# sort of things).
 			self.backends.check(batch=True)
 
-			if self.configuration.licornd.role == roles.SERVER:
+			if settings.role == roles.SERVER:
 				# load common core objects.
 				from users  import UsersController
 				from groups import GroupsController
@@ -249,7 +242,7 @@ class LicornMasterController(MixedDictObject):
 
 			self.msgproc = MessageProcessor(
 				ip_address=network.find_first_local_ip_address() \
-					if self.configuration.licornd.role == roles.CLIENT \
+					if settings.role == roles.CLIENT \
 					else None)
 
 			# NOTE: we DO NOT collect events on message processor, because it
@@ -271,7 +264,7 @@ class LicornMasterController(MixedDictObject):
 			self.msgproc  = LMC.msgproc
 			self.system   = LMC.system
 
-			if self.configuration.licornd.role == roles.SERVER:
+			if settings.role == roles.SERVER:
 				self.users    = LMC.users
 				self.groups   = LMC.groups
 
@@ -293,11 +286,13 @@ class LicornMasterController(MixedDictObject):
 
 		# we've got to reload users, groups and system, else they can't see
 		# their own extensions (chicken and egg problem).
-		if self.configuration.licornd.role == roles.SERVER:
+		if settings.role == roles.SERVER:
 			self.users.reload_extensions()
 			self.groups.reload_extensions()
 
-		self.system.reload_extensions()
+		# no more needed. system will eventually be integrated into RWI
+		# but should at least become no more a real controller.
+		#self.system.reload_extensions()
 	def __init_server_final(self):
 		""" Final phase of SERVER initialization. Load system controllers
 			and objects that doesn't need anything but are required to work.
@@ -308,12 +303,6 @@ class LicornMasterController(MixedDictObject):
 		self.privileges = PrivilegesWhiteList()
 
 		self.privileges.load()
-
-		# The daemon (in server mode) holds every core object. We *MUST* check
-		# the configuration prior to everything else, to ensure the system is
-		# in a good state before using or modifying it. minimal=False to be
-		# sure every needed system group gets created.
-		self.configuration.check(minimal=False, batch=True)
 
 		from profiles import ProfilesController
 		from keywords import KeywordsController
@@ -347,13 +336,12 @@ class LicornMasterController(MixedDictObject):
 				# then, tell the controller to find its new prefered in its
 				# refreshed backends list.
 				if controller.find_prefered_backend():
-					L_event_dispatch(priorities.HIGH,
-							InternalEvent('need_restart',
-								reason=reasons.BACKENDS_CHANGED))
+					LicornEvent('need_restart',
+						reason=reasons.BACKENDS_CHANGED).emit(priorities.HIGH)
 
 					# TODO: restart all the CLIENT-daemons too, to (un-) load
 					# the new backend(s), synchronized with the server.
-	def connect(self):
+	def connect(self, delayed_daemon_start=False):
 		""" Create remote connections to all Licorn® core objects. This method
 			excludes calling all other `init*()` methods, because LMC can't be
 			used both locally and remotely.
@@ -367,137 +355,206 @@ class LicornMasterController(MixedDictObject):
 				...
 
 		"""
+		assert ltrace_func(TRACE_CORE, level=99)
 
-		assert ltrace(TRACE_CORE, '> connect()')
+		# we need to protect the whole method, in case 2 threads try to
+		# connect in // (this happens at WMI start).
+		with self._connect_lock:
+			self._connections += 1
 
-		from licorn.core.configuration import LicornConfiguration
-		self._localconfig = LicornConfiguration(minimal=True)
+			if self._connections > 1:
+				# someone already connected us, just return the current
+				# connected master object.
+				return self.rwi
 
-		if self._localconfig.licornd.role == roles.SERVER:
-			pyroloc = 'PYROLOC://127.0.0.1:%s' % (
-				self._localconfig.licornd.pyro.port)
-		else:
-			logging.progress(_(u'trying to connect to server %s.') %
-									 self._localconfig.server_main_address)
-			pyroloc = 'PYROLOC://%s:%s' % (
-				self._localconfig.server_main_address,
-				self._localconfig.licornd.pyro.port)
+			if settings.role == roles.SERVER:
+				pyroloc = 'PYROLOC://127.0.0.1:%s' % (settings.pyro.port)
+			else:
+				logging.progress(_(u'trying to connect to server %s.') %
+													settings.server_main_address)
+				pyroloc = 'PYROLOC://%s:%s' % (settings.server_main_address,
+												settings.pyro.port)
 
-			if not self._master:
-				# remove current values of controllers, they are pointing to LMC.
-				self.configuration = None
-				self.backends = None
-				self.extension = None
-				self.users = None
-				self.groups = None
-				self.system = None
-				self.msgproc = None
+				if not self._master:
+					# remove current values of controllers, they are pointing to LMC.
+					self.configuration = None
+					self.backends = None
+					self.extension = None
+					self.users = None
+					self.groups = None
+					self.system = None
+					self.msgproc = None
 
-		# the opposite is already used to define licornd.pyro.port
-		#Pyro.config.PYRO_PORT=_localconfig.licornd.pyro.port
+			# the opposite is already used to define pyro.port
+			#Pyro.config.PYRO_PORT=settings.pyro.port
 
-		start_time = time.time()
+			start_time      = time.time()
+			second_try      = False
+			already_delayed = False
 
-		second_try=False
-		while True:
-			# This while seems infinite but is not.
-			#   - on first succeeding connection, it will break.
-			#   - on pyro exception (can't connect), the daemon will be forked
-			#	  and signals will be setup, to wait for the daemon to come up:
-			#     if the daemon comes up, the loop restarts and should break
-			#	  because connection succeeds.
+			while True:
+				# This while seems infinite but is not.
+				#   - on first succeeding connection, it will break.
+				#   - on pyro exception (can't connect), the daemon will be forked
+				#	  and signals will be setup, to wait for the daemon to come up:
+				#     if the daemon comes up, the loop restarts and should break
+				#	  because connection succeeds.
+				try:
+					msgth = Timer(3, logging.notice, args=(_(u'Connection '
+						u'established. Please be patient, the daemon seems '
+						u'quite busy.'), ))
+					msgth.start()
+
+					# a server daemon offers 'LMC.rwi' + `LMC.system`
+					self.rwi = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
+
+					# Set a timeout for establishing the connection.
+					# On a loaded daemon which is in the process of setting up
+					# inotifier watches, this can be long.
+					self.rwi._setTimeout(timeout)
+
+					# be sure the connection can be established; without this
+					# call, Pyro is lazy and doens't check someone really
+					# listens at the other end.
+					self.rwi.noop()
+
+					try:
+						# don't display the waiting message if not already done.
+						msgth.cancel()
+
+					except:
+						logging.notice(_(u'OK. We\'re running now!'))
+
+					del msgth
+
+					# re-set an infinite timeout for normal operations, because
+					# CLI methods can last a very long time (thinking about
+					# `CHK`), while nothing is transmitted via the Pyro tunnel
+					# all output goes via another thread / tunnel, and the
+					# operation caller has just to wait that the called method
+					# returns.
+					self.rwi._setTimeout(0)
+
+					assert ltrace(TRACE_CORE,
+						'  connect(): RWI object connected (Remote is SERVER).')
+					break
+
+				except AttributeError:
+					# a client daemon only offers "LMC.system", for remote-control.
+					# This is used from `get {inside,events,status}` commands
+					# with `export LICORN_SERVER=...` to inspect client daemons.
+
+					self.system = Pyro.core.getAttrProxyForURI(
+															"%s/system" % pyroloc)
+					self.system._setTimeout(timeout)
+					self.system.noop()
+					assert ltrace(TRACE_CORE,
+						'  connect(): system object connected (Remote is CLIENT).')
+					break
+
+				except Pyro.errors.ProtocolError, e:
+
+					if e.args[0] == 'security reasons':
+						logging.error(_(u'Your user account is not allowed to '
+										u'connect to the Licorn® daemon.'))
+						sys.exit(911)
+
+					if second_try:
+						if settings.role == roles.SERVER:
+							logging.error(_(u'Cannot connect to the daemon, '
+								u'but it has been successfully launched. I '
+								u' suspect you are in trouble (was: %s)') %
+									e, 199)
+						else:
+							logging.warning(_(u'Cannot reach our daemon at %s, '
+								u'retrying in 5 seconds. Check your network '
+								u'connection, cable, DNS and firewall. Perhaps '
+								u' the Licorn® server is simply down.') %
+									stylize(ST_ADDRESS, u'pyro://%s:%s' % (
+										settings.server_main_address,
+										settings.pyro.port)))
+							time.sleep(5.0)
+							continue
+
+					if settings.role == roles.SERVER:
+
+						if delayed_daemon_start and not already_delayed:
+							already_delayed = True
+							time.sleep(5.0)
+							continue
+
+						# The daemon will fork in the background and the call
+						# will return nearly immediately.
+						process.fork_licorn_daemon(pid_to_wake=os.getpid())
+
+						# Wait to receive SIGUSR1 from the daemon when it's
+						# ready. On loaded system with lots of groups, this
+						# can take a while (I observed ~12min for 45K watches
+						# on my Core i3 2,6Ghz + 8Gb + 4Tb RAID0 system), but
+						# it will never take more than `first_connect_timeout`
+						# seconds because of the daemon's multithreaded
+						# nature. Thus we setup a signal to wake us
+						# inconditionnaly after the timeout and report an
+						# error if the daemon hasn't waked us in this time.
+						signal.signal(signal.SIGALRM, connect_error)
+						signal.alarm(timeout)
+
+						# Cancel the alarm if USR1 received.
+						signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
+
+						logging.notice(_(u'waiting up to 20 seconds for '
+										u'daemon to come up… Please wait.'))
+
+						# ALARM or USR1 will break the pause()
+						signal.pause()
+					second_try=True
+
+			assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
+				time.time() - start_time))
+			del start_time
+
+			assert ltrace(TRACE_CORE, '< connect()')
+
 			try:
-				self.configuration = Pyro.core.getAttrProxyForURI(
-					"%s/configuration" % pyroloc)
-				self.configuration._setTimeout(5)
-				self.configuration.noop()
-				assert ltrace(TRACE_CORE,
-					'  connect(): main configuration object connected (Remote is SERVER).')
-
-				# connection is OK, let's get all other objects connected, and pull
-				# them back to the calling process.
-				#self.machines = Pyro.core.getAttrProxyForURI("%s/machines" % pyroloc)
-				self.rwi = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
-				self.system = Pyro.core.getAttrProxyForURI("%s/system" % pyroloc)
-				break
+				return self.rwi
 
 			except AttributeError:
-				self.system = Pyro.core.getAttrProxyForURI(
-					"%s/system" % pyroloc)
-				self.system._setTimeout(5)
-				self.system.noop()
-				assert ltrace(TRACE_CORE,
-					'  connect(): main system object connected (Remote is CLIENT).')
-				break
+				# the remote daemon has only the `system` attribute, it's a CLIENT.
+				return self.system
 
-			except Pyro.errors.ProtocolError, e:
-
-				if e.args[0] == 'security reasons':
-					logging.error(_(u'Your user account is not allowed to '
-									u'connect to the Licorn® daemon.'))
-					sys.exit(911)
-
-				if second_try:
-					if self._localconfig.licornd.role == roles.SERVER:
-						logging.error('''Can't connect to the daemon, but it '''
-							'''has been successfully launched. I suspect '''
-							'''you're in trouble (was: %s)''' % e, 199)
-					else:
-						logging.warning(_(u'Cannot reach our daemon at %s, '
-							u'retrying in 5 seconds. Check your network '
-							u'connection, cable, DNS and firewall. Perhaps the '
-							u'Licorn® server is simply down.') %
-								stylize(ST_ADDRESS, u'pyro://%s:%s' % (
-									self._localconfig.server_main_address,
-									self._localconfig.licornd.pyro.port)))
-						time.sleep(5.0)
-						continue
-
-				if self._localconfig.licornd.role == roles.SERVER:
-					# the daemon will fork in the background and the call will
-					# return nearly immediately.
-					process.fork_licorn_daemon(pid_to_wake=os.getpid())
-
-					# wait to receive SIGUSR1 from the daemon when it's ready.
-					# On loaded system with lots of groups, this can take a
-					# while, but it will never take more than 10 seconds because
-					# of the daemon's multithreaded nature, so we setup a signal
-					# to wake us inconditionnaly in 10 seconds and report an
-					# error if the daemon hasn't waked us in this time.
-					signal.signal(signal.SIGALRM, connect_error)
-					signal.alarm(10)
-
-					# cancel the alarm if USR1 received.
-					signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
-
-					logging.notice(_(u'waiting for daemon to come up…'))
-
-					# ALARM or USR1 will break the pause()
-					signal.pause()
-				second_try=True
-
-
-		assert ltrace(TRACE_TIMINGS, '@LMC.connect(): %.4fs' % (
-			time.time() - start_time))
-		del start_time
-
-		assert ltrace(TRACE_CORE, '< connect()')
-
-		try:
-			return self.rwi
-
-		except AttributeError:
-			# the remote daemon has only the `system` attribute, it's a CLIENT.
-			return self.system
-	def release(self):
+	def release(self, force=False):
 		""" Release all Pyro proxys. """
-		assert ltrace(TRACE_CORE, '| release()')
-		for controller in self.items():
-			if hasattr(controller, '_release'):
-				controller._release()
+
+		# we need to protect the whole method in case 2 threads try to
+		# disconnect at the same time (this can happen in the WMI, with the
+		# @lmc_connected decorator).
+		with self._connect_lock:
+			if force:
+				self._connections = 0
+
+			else:
+				self._connections -= 1
+
+			if self._connections != 0:
+				# there are still some parts of the current interpreter
+				# connected or using the connection, or the connection has already
+				# been closed with force=True by someone else.
+				# Don't try to `release()` anything.
+				return
+
+			assert ltrace_func(TRACE_CORE)
+
+			for controller in self.items():
+				if hasattr(controller, '_release'):
+					controller._release()
+					controller.close()
+	@events.handler_method
+	def backend_enabled(self, *args, **kwargs):
+		self.reload_controllers_backends()
+	@events.handler_method
+	def backend_disabled(self, *args, **kwargs):
+		self.reload_controllers_backends()
 
 LMC = LicornMasterController()
 
-if sys.getdefaultencoding() == "ascii":
-	reload(sys)
-	sys.setdefaultencoding("utf-8")
+__all__ = ('LMC', )

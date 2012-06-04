@@ -1,0 +1,109 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #570c27;
+    color: white;
+    font-family: "Bitstream Charter", Georgia, Serif;
+}
+
+h2 {
+    font-weight: normal;
+    opacity: 0.9;
+}
+
+img {
+	border: none;
+}
+
+.hidden {
+    display: none;
+}
+
+#vertical_wrapper {
+    width: 100%;
+    height: 100%;
+    background-image: url('/media/images/login/back_vert.png');
+    background-repeat: repeat-x;
+    background-attachment: left top;
+}
+
+#horizontal_wrapper {
+    width: 100%;
+    height: 100%;
+    background-image: url('/media/images/login/back_horiz.png');
+    background-repeat: repeat-y;
+    background-attachment: right top;
+}
+
+#content {
+    padding: 10% 0 10%;
+    width: 100%;
+    text-align: center;
+}
+
+#content_filler {
+    min-height: 100px;
+}
+
+#logo {
+    margin: auto;
+    text-align: center;
+}
+
+#login_form_wrapper {
+	text-align: center;
+	vertical-align: center;
+}
+
+#login_form_wrapper table {
+    border-collapse: collapse;
+    margin: auto;
+}
+
+#login_form_wrapper table td {
+    padding: 0 10px;
+}
+
+#real_form_wrapper {
+    width: 525px;
+    margin: 20px auto;
+    padding: 10px 10px 15px;
+    color: #555;
+    background-color: #ebebeb;
+    background-image: -webkit-gradient(linear, left top, left bottom, from(rgb(235, 235, 235)), to(rgb(121, 121, 121)));
+    background-image: -webkit-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+    background-image: -moz-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+    background-image: -o-linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+    background-image: linear-gradient(top, rgb(235, 235, 235), rgb(121, 121, 121));
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+}
+
+.form-row-td td {
+    vertical-align: bottom;
+}
+
+.login_help_text {
+    padding: 0 0 10px;
+}
+
+.errorlist {
+    padding-top: 10px;
+    list-style: none;
+}
+
+.errorlist li {
+    margin-bottom: -18px;
+    text-align: right;
+    color: orange;
+}
+
+.error_message {
+    max-width: 600px;
+    color: #a30000;
+    padding: 10px 60px;
+}

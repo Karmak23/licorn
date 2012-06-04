@@ -1,0 +1,4 @@
+# Create the groups container
+dn: ou=@@nss_base_group@@,@@base@@
+objectClass: organizationalUnit
+ou: @@nss_base_group@@

@@ -11,8 +11,8 @@ from threading import current_thread
 
 from licorn.foundations           import logging
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
 
 from licorn.core import LicornMasterController, LMC
 
@@ -38,9 +38,8 @@ def client_hello():
 	logging.notice('%s: %s to Licorn® server %s.' % (
 		current_thread().name,
 		stylize(ST_OK, 'Successfully connected'),
-		stylize(ST_ADDRESS, 'pyro://%s:%s' % (
-			LMC.configuration.server_main_address,
-			LMC.configuration.licornd.pyro.port))))
+		stylize(ST_ADDRESS, 'pyro://%s:%s' % (settings.server_main_address,
+												settings.pyro.port))))
 
 	# NO NEED to do this, the server updates automatically the status if the
 	# previous connection succeeds.
@@ -55,11 +54,11 @@ def server_shutdown(remote_interfaces):
 		logging.notice('%s: %s to Licorn® server %s.' % (
 			current_thread().name,
 			stylize(ST_BAD, 'Closed connection'),
-			stylize(ST_ADDRESS, 'pyro://%s:%s' % (
-				LMC.configuration.server_main_address,
-				LMC.configuration.licornd.pyro.port))))
+			stylize(ST_ADDRESS, 'pyro://%s:%s' % (settings.server_main_address,
+													settings.pyro.port))))
 	else:
-		print '>> other server shutdown'
+		#lprint('>> other server shutdown')
+		pass
 
 def server_reconnect(remote_interfaces):
 	from licorn.daemon.cmdlistener import LicornPyroValidator
@@ -69,9 +68,8 @@ def server_reconnect(remote_interfaces):
 		logging.notice('%s: %s to Licorn® server %s.' % (
 			current_thread().name,
 			stylize(ST_OK, 'Successfully reconnected'),
-			stylize(ST_ADDRESS, 'pyro://%s:%s' % (
-				LMC.configuration.server_main_address,
-				LMC.configuration.licornd.pyro.port))))
+			stylize(ST_ADDRESS, 'pyro://%s:%s' % (settings.server_main_address,
+													settings.pyro.port))))
 
 
 def client_goodbye():

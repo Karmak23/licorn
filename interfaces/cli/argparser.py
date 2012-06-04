@@ -14,14 +14,14 @@ import os, getpass
 
 from optparse import OptionParser, OptionGroup, SUPPRESS_HELP
 
-from licorn.foundations           import exceptions, hlstr
+from licorn.foundations           import exceptions, hlstr, settings
 from licorn.foundations.styles    import *
-from licorn.foundations.ltrace    import ltrace
-from licorn.foundations.ltraces import *
+from licorn.foundations.ltrace    import *
+from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import LicornConfigObject
 from licorn.foundations.pyutils   import add_or_dupe_obj
 from licorn.foundations.argparser import build_version_string, \
-	common_behaviour_group
+											common_behaviour_group
 
 from licorn.core import LMC, version
 
@@ -67,41 +67,41 @@ def common_filter_group(app, parser, tool, mode):
 		filtergroup.add_option('-a', '--all',
 			action="store_true", dest="all", default=False,
 			help=_(u'Also select system data. I.e. '
-				'output system %s too.') % mode)
+					u'output system %s too.') % mode)
 
 	if tool in ('get', 'mod', 'del'):
 		if mode in ('volumes', 'users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-a', '--all',
 				action="store_true", dest="all", default=False,
 				help=_(u'Also select system data. I.e. '
-					'output system %s too.') % mode)
+						u'output system %s too.') % mode)
 
 		if mode in ('users', 'groups', 'profiles', 'privileges', 'machines'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
 				help=_(u'exclude {0} from the selection. Can be IDs or {1} '
-					'names. Separated by commas without spaces.').format(mode,
-					mode[:-1]))
+						u'names. Separated by commas without spaces.').format(
+						mode, mode[:-1]))
 
 	if tool is 'get':
 		if mode in ('daemon_status', 'users', 'groups', 'machines'):
 			filtergroup.add_option('-l', '--long', '--full', '--long-output',
 				action="store_true", dest="long_output", default=False,
 				help=_(u'long output (all info, attributes, etc). '
-					'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 		if mode == 'daemon_status':
 			filtergroup.add_option('--detail', '--details',
 				'-p', '--precision', '--precisions', '--pinpoint',
 				action="store", dest="precision", default=None,
 				help=_(u'long output (all info, attributes, etc). '
-					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 			filtergroup.add_option('--monitor', '-m', '--stay-connected',
 				action="store_true", dest="monitor", default=False,
 				help=_(u'Stay connected to the daemon and update the status '
-					u'every given interval (see below). '
-					u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
+						u'every given interval (see below). '
+						u'Default: %s.') % stylize(ST_DEFAULT, _(u'no')))
 
 			filtergroup.add_option('-i', '--interval', '--monitor-interval',
 				action="store", type="int", dest="monitor_interval", default=1,
@@ -139,7 +139,7 @@ def common_filter_group(app, parser, tool, mode):
 		if mode in ('users', 'groups', 'profiles'):
 			filtergroup.add_option('-X', '--not', '--exclude',
 				action="store", dest="exclude", default=None,
-				help=_(u'exclude {0} from the selection. Can be IDs or {1} '
+				help=_(u'Exclude {0} from the selection. Can be IDs or {1} '
 					u'names. Separated by commas without spaces.').format(mode,
 					mode[:-1]))
 
@@ -192,6 +192,30 @@ def common_filter_group(app, parser, tool, mode):
 				'--exclude-word-match',
 				action="store", dest="exclude_word_match", default='',
 				help=_(u'exclude login/name/hostname if grep / fuzzy word match.'))
+
+	if tool in ('get', 'chk', 'del') and mode in ('users', 'groups'):
+			# for GET/CHK/DEL, we can select the group with the -w flag.
+			filtergroup.add_option('-w', '--watched', '--inotified',
+				action="store_true", dest="inotified", default=False,
+				help=_(u'Include all watched {0}.').format(_(mode)))
+
+			filtergroup.add_option('-W', '--not-watched', '--not-inotified',
+				action="store_true", dest="not_inotified", default=False,
+				help=_(u'Include all non-watched {0}. Handy for checking all '
+					u'of them at once in a cron script.').format(_(mode)))
+
+	elif tool == 'mod' and mode in ('users', 'groups'):
+			# for MOD, there would be a conflict between the selector flag
+			# and the modifier flag. We choose to assign the short ones to
+			# the modifier, like it is for 'add'
+			filtergroup.add_option('--watched', '--inotified',
+				action="store_true", dest="inotified", default=False,
+				help=_(u'Include all watched {0}.').format(_(mode)))
+
+			filtergroup.add_option('--not-watched', '--not-inotified',
+				action="store_true", dest="not_inotified", default=False,
+				help=_(u'Include all non-watched {0}. Handy for checking all '
+					u'of them at once in a cron script.').format(_(mode)))
 
 	if mode is 'groups':
 		filtergroup.add_option('--name', '--names', '--group', '--groups',
@@ -295,7 +319,7 @@ def common_filter_group(app, parser, tool, mode):
 				'commas without spaces).'))
 
 		if tool in ('get', 'mod', 'chk'):
-			filtergroup.add_option('-u', '--unknown', '--unknown-machines',
+			filtergroup.add_option('--unknown', '--unknown-machines',
 				action="store_true", dest="unknown", default=False,
 				help=_(u"Only select machines whose status is totally unknown."))
 
@@ -742,7 +766,7 @@ def add_user_parse_arguments(app):
 	user.add_option('-p', "--password",
 		action="store", type="string", dest="password", default=None,
 		help=_(u"Specify user's password (else will be autogenerated, %d "
-			"chars long).") % LMC.configuration.users.min_passwd_size)
+			"chars long).") % LMC.rwi.configuration_get('users.min_passwd_size'))
 
 	user.add_option('-g', '--in-group', '--primary-group', '--gid',
 			'--primary-gid', '--group',
@@ -750,7 +774,7 @@ def add_user_parse_arguments(app):
 		help=_(u"Specify user's future primary group (at your preference as "
 			"a group name or a GID). This parameter is overriden by the "
 			"profile argument if you specify both. Default: %s.") %
-				LMC.configuration.users.default_gid)
+				LMC.rwi.configuration_get('users.default_gid'))
 
 	user.add_option('-G', '--in-groups', '--auxilliary-groups',
 		'--add-to-groups', '--aux-groups', '--secondary-groups', '--groups',
@@ -779,21 +803,21 @@ def add_user_parse_arguments(app):
 			"outside the range for a system account, else it will be "
 			"rejected and the user account won't be created. Default: "
 			"next free UID in the selected range.").format(
-			stylize(ST_DEFAULT, LMC.configuration.users.uid_min),
-			stylize(ST_DEFAULT, LMC.configuration.users.uid_max)))
+			stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.uid_min')),
+			stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.uid_max'))))
 
 	user.add_option('-H', "--home",
 		action="store", type="string", dest="home", default=None,
 		help=_(u'Specify the user\'s home directory. Only valid for a system '
 			'account, else discarded because standard accounts have a '
 			'fixed home dir "%s".') % stylize(ST_PATH,
-				'%s/login' % LMC.configuration.users.base_path))
+				'%s/login' % LMC.rwi.configuration_get('users.base_path')))
 
 	user.add_option("-S", "--shell",
 		action="store", type="string", dest="shell", default=None,
 		help=_(u"Specify user's shell, from the ones given by command "
 			"`get config shells`. Default: %s") % stylize(ST_COMMENT,
-			LMC.configuration.users.default_shell))
+			LMC.rwi.configuration_get('users.default_shell')))
 
 	user.add_option('-K', "--skel",
 		action="store", type="string", dest="skel", default=None,
@@ -801,7 +825,7 @@ def add_user_parse_arguments(app):
 			'creation, instead of the profile or the primary-group '
 			'implicit skel. Default: the profile skel if a profile is given, '
 			'else %s.' % stylize(ST_COMMENT,
-				LMC.configuration.users.default_skel)))
+				LMC.rwi.configuration_get('users.default_skel'))))
 
 	user.add_option("--firstname",
 		action="store", type="string", dest="firstname", default=None,
@@ -818,6 +842,16 @@ def add_user_parse_arguments(app):
 		help=_(u"do not create the home directory when creating account. This "
 			"is valid only for system accounts, because standard accounts "
 			"must always have a home."))
+
+	user.add_option("-W", "--not-watched", "--set-not-watched",
+						"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=True,
+		help=_(u"Do not watch the home directory of the user for content "
+			u"changes. Usefull for big directories which slow down licornd. "
+			u"You have to manually run {0} on non-watched users. (default: "
+			u"{1})").format(
+				stylize(ST_DEFAULT, 'chk'),
+				stylize(ST_DEFAULT, _(u"watched"))))
 
 	user.add_option("--disabled-password",
 		action="store_true", dest="disabled_password", default=False,
@@ -872,7 +906,7 @@ def add_user_parse_arguments(app):
 	addimport.add_option("--group-column",
 		action="store", type="int", dest="group_col", default = 2,
 		help=_(u"{0} column number in CSV file (default is {1}).").format(
-			stylize(ST_SPECIAL, LMC.configuration.groups._plural),
+			stylize(ST_SPECIAL, LMC.rwi.configuration_get('groups._plural')),
 			stylize(ST_DEFAULT, "2")))
 
 	addimport.add_option("--login-column",
@@ -888,7 +922,7 @@ def add_user_parse_arguments(app):
 			"will be randomly generated and {2} chars long).").format(
 				stylize(ST_SPECIAL, _(u"password")),
 				stylize(ST_DEFAULT, _(u"none")),
-				LMC.configuration.users.min_passwd_size))
+				LMC.rwi.configuration_get('users.min_passwd_size')))
 
 	addimport.add_option("--separator",
 		action="store", type="string", dest="separator", default = ";",
@@ -940,7 +974,18 @@ def add_group_parse_arguments(app):
 	group.add_option('-p', '--permissive',
 		action="store_true", dest="permissive", default=False,
 		help=_(u"Will the shared group directory be permissive? "
-			"(default: %s)." % stylize(ST_DEFAULT, _(u"not permissive"))))
+				u"(default: {0}).".format(
+				stylize(ST_DEFAULT, _(u"not permissive")))))
+
+	group.add_option("-W", "--not-watched", "--set-not-watched",
+		"--not-inotified", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=True,
+		help=_(u"Do not watch the shared directory of the group for content "
+			u"changes. Usefull for big directories which slow down licornd. "
+			u"You have to manually run {0} on non-watched groups. (default: "
+			u"{1})").format(
+				stylize(ST_DEFAULT, 'chk'),
+				stylize(ST_DEFAULT, _(u"watched"))))
 
 	group.add_option('-g', '--gid',
 		action="store", type="int", dest="gid", default=None,
@@ -949,20 +994,20 @@ def add_group_parse_arguments(app):
 	group.add_option('-d', '--description', '-c', '--comment',
 		action="store", type="string", dest="description", default=None,
 		help=_(u"Description of the group (free text, "
-			"but must match /%s/i).") % stylize(ST_COMMENT,
+			u"but must match /%s/i).") % stylize(ST_COMMENT,
 				hlstr.regex['description']))
 
 	group.add_option('-S', '--skel', '--skeleton',
 		action='store', type='string', dest='skel',
-		default=LMC.configuration.users.default_skel,
+		default=LMC.rwi.configuration_get('users.default_skel'),
 		help=_(u"skeleton directory for the group (default: %s).") %
-		stylize(ST_DEFAULT, LMC.configuration.users.default_skel))
+		stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.default_skel')))
 
 	group.add_option('-s', '--system', '--system-group', '--sysgroup',
 		action='store_true', dest='system', default=False,
-		help=_("The group will be a system group (only root or %s members "
-			"can decide this, but this is not enforced yet).") %
-				stylize(ST_NAME, LMC.configuration.defaults.admin_group))
+		help=_(u"The group will be a system group (only root or %s members "
+			u"can decide this, but this is not enforced yet).") %
+				stylize(ST_NAME, settings.defaults.admin_group))
 
 	group.add_option('-u', '--users', '--add-users', '--members',
 		action='store', dest='users_to_add', default=None,
@@ -975,12 +1020,12 @@ def add_group_parse_arguments(app):
 			action='store', dest='in_backend',
 			default=None,
 			help=_(u"Specify backend in which to store the group (default: "
-				"{0}; possible choices: {1}; {2}).").format(
+				u"{0}; possible choices: {1}; {2}).").format(
 				stylize(ST_DEFAULT, LMC.rwi.prefered_groups_backend_name()),
 				', '.join(stylize(ST_NAME, backend)
 					for backend in backends),
 				stylize(ST_DEFAULT, _(u'this argument can be used for '
-					'massive imports, too'))))
+					u'massive imports, too'))))
 
 	parser.add_option_group(group)
 
@@ -1024,9 +1069,9 @@ def add_profile_parse_arguments(app):
 
 	profile.add_option("--shell",
 		action="store", type="string", dest="shell",
-		default=LMC.configuration.users.default_shell,
+		default=LMC.rwi.configuration_get('users.default_shell'),
 		help=_(u"Default shell for this profile (defaults: %s).") %
-			stylize(ST_DEFAULT, LMC.configuration.users.default_shell))
+			stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.default_shell')))
 
 	profile.add_option("--quota",
 		action="store", type="int", dest="quota", default=None,
@@ -1040,10 +1085,10 @@ def add_profile_parse_arguments(app):
 
 	profile.add_option("--skel",
 		action="store", type="string", dest="skeldir",
-		default=LMC.configuration.users.default_skel,
+		default=LMC.rwi.configuration_get('users.default_skel'),
 		help=_(u"Skeleton dir for this profile (must be an absolute path, "
 			"defaults to %s).") % stylize(ST_DEFAULT,
-				LMC.configuration.users.default_skel))
+				LMC.rwi.configuration_get('users.default_skel')))
 
 	profile.add_option("--force-existing", '--use-existing',
 		action="store_true", dest="force_existing", default=False,
@@ -1189,7 +1234,7 @@ def del_user_parse_arguments(app):
 		action="store_true", dest="no_archive", default = False,
 		help=_(u"Don't make a backup of user's home directory in %s "
 			"(Default: home directory will be archived)." %
-				stylize(ST_PATH, LMC.configuration.home_archive_dir)))
+				stylize(ST_PATH, settings.home_archive_dir)))
 
 	parser.add_option_group(user)
 	return check_opts_and_args(parser.parse_args())
@@ -1222,7 +1267,7 @@ def del_group_parse_arguments(app):
 		action="store_true", dest="no_archive", default=False,
 		help=_(u"Don't make a backup of users home directories in {0} when "
 			"deleting members (default: {1}).").format(
-				stylize(ST_PATH, LMC.configuration.home_archive_dir),
+				stylize(ST_PATH, settings.home_archive_dir),
 				stylize(ST_DEFAULT,
 					_(u"archive deleted group shared directories"))))
 
@@ -1356,9 +1401,9 @@ def mod_user_parse_arguments(app):
 
 	user.add_option("--password-size", '-S',
 		type='int', dest="passwd_size",
-		default=LMC.configuration.users.min_passwd_size,
+		default=LMC.rwi.configuration_get('users.min_passwd_size'),
 		help=_(u"choose the new password length (default %s).") %
-			LMC.configuration.users.min_passwd_size)
+			LMC.rwi.configuration_get('users.min_passwd_size'))
 
 	user.add_option('-e', "--gecos",
 		dest="newgecos", default=None,
@@ -1369,7 +1414,7 @@ def mod_user_parse_arguments(app):
 		dest="newshell", default=None,
 		help=_(u"Specify user's new shell (generaly /bin/something, must "
 			"be taken from %s).") % ', '.join(stylize(ST_COMMENT, shell)
-				for shell in LMC.configuration.users.shells))
+				for shell in LMC.rwi.configuration_get('users.shells')))
 
 	user.add_option('-l', "--lock",
 		action="store_true", dest="lock", default=None,
@@ -1379,6 +1424,19 @@ def mod_user_parse_arguments(app):
 	user.add_option('-L', "--unlock",
 		action="store_false", dest="lock", default=None,
 		help=_(u"unlock the user account and restore login ability."))
+
+	# the --watched flag is used as a selector, thus not here in modifiers
+	user.add_option("-w", "--set-watched", "--set-inotified",
+		action="store_true", dest="set_inotified", default=None,
+		help=_(u"(Re-)watch the home directory of the user for content changes."))
+
+	# the --not-watched flag is used as a selector, thus not here in modifiers
+	user.add_option("-W", "--set-not-watched", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=None,
+		help=_(u"Do not watch the home directory of the user for content "
+			u"changes. Usefull for big directory which slow down licornd. You "
+			u"have to manually run {0} on non-watched groups.").format(
+				stylize(ST_DEFAULT, 'chk')))
 
 	user.add_option("--add-groups",
 		dest="groups_to_add", default=None,
@@ -1395,7 +1453,7 @@ def mod_user_parse_arguments(app):
 			"overwrite the dirs/files provided by the skel in the "
 			"user's home dir."))
 
-	user.add_option('-w', '--watch', '--restore-watch',
+	user.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for this account home directory. "
 			"This is particularly useful after a directory move."))
@@ -1404,7 +1462,7 @@ def mod_user_parse_arguments(app):
 	try:
 		opts, args = parser.parse_args()
 	except Exception, e:
-		print e
+		lprint(e)
 
 	if opts.newpassword is None and not opts.non_interactive:
 		pass
@@ -1415,7 +1473,7 @@ def mod_user_parse_arguments(app):
 	return opts, args
 def mod_machine_parse_arguments(app):
 
-	usage_text = "\n\t%s machine[s] [--shutdown] [--warn-users] " % stylize(ST_APPNAME, "%prog")
+	usage_text = "\n\t%s machine[s] [[--shutdown] [--warn-users]] [--upgrade]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1434,6 +1492,13 @@ def mod_machine_parse_arguments(app):
 		action="store_false", dest="warn_users", default=True,
 		help=_(u'Display a warning message to connected user(s) before '
 			'shutting system(s) down.'))
+
+	machine.add_option('--upgrade', '-u', '--do-upgrade',
+		'--update',
+		'--do-updates', '--install-updates',
+		'--unattended-upgrades', '--do-unattended-upgrades',
+		action='store_true', dest="do_upgrade", default=False,
+		help=_(u"remotely upgrade pending packages (do security updates)."))
 
 	parser.add_option_group(machine)
 
@@ -1458,14 +1523,14 @@ def mod_volume_parse_arguments(app):
 		help=_(u"Specify one or more volume(s) to enable (mark as available "
 			"and reserved for %s internal use), either by giving its "
 			"device path or mount point.") %
-				stylize(ST_NAME, LMC.configuration.app_name))
+				stylize(ST_NAME, LMC.rwi.configuration_get('app_name')))
 
 	volume.add_option('-E', '-d', '--disable', '--disable-volume',
 		'--disable-volumes', action="store", dest="disable_volumes",
 		default=None, help=_(u"specify one or more volume(s) to disable "
 			"(unmark as available for %s), either by giving its device "
 			"path or mount point.") %
-				stylize(ST_NAME, LMC.configuration.app_name))
+				stylize(ST_NAME, LMC.rwi.configuration_get('app_name')))
 
 	volume.add_option('-m', '--mount', '--mount-volume',  '--mount-volumes',
 		action='store', dest="mount_volumes", default=None,
@@ -1528,7 +1593,20 @@ def mod_group_parse_arguments(app):
 		action="store_false", dest="permissive", default=None,
 		help=_(u"Set the shared directory of the group not permissive."))
 
-	group.add_option('-w', '--watch', '--restore-watch',
+	# the --watched flag is used as a selector, thus not here in modifiers
+	group.add_option("-w", "--set-watched", "--set-inotified",
+		action="store_true", dest="set_inotified", default=None,
+		help=_(u"(Re-)watch the shared directory of the group for content changes."))
+
+	# the --not-watched flag is used as a selector, thus not here in modifiers
+	group.add_option("-W", "--set-not-watched", "--set-not-inotified",
+		action="store_false", dest="set_inotified", default=None,
+		help=_(u"Do not watch the shared directory of the group for content "
+			u"changes. Usefull for big directory which slow down licornd. You "
+			u"have to manually run {0} on non-watched groups.").format(
+				stylize(ST_DEFAULT, 'chk')))
+
+	group.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for the group home directory. "
 			"This is particularly useful after a directory move."))
@@ -1624,7 +1702,7 @@ def mod_profile_parse_arguments(app):
 		help=_(u"Change profile shell (defaults to %s "
 			"if you specify --shell without argument)"
 			"Instant-applyed to current members if not specified otherwise.") %
-				stylize(ST_DEFAULT, LMC.configuration.users.default_shell))
+				stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.default_shell')))
 
 	profile.add_option("--quota",
 		action="store", type="int", dest="newquota", default=None,
@@ -1638,7 +1716,7 @@ def mod_profile_parse_arguments(app):
 		help=_(u"Change profile skel (specify a skel dir as an absolute "
 			"pathname, defaults to %s if you give --skel without argument)."
 			"Instant-applyed to current members if not specified otherwise.") %
-				stylize(ST_DEFAULT, LMC.configuration.users.default_skel))
+				stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.default_skel')))
 
 	profile.add_option("--add-groups",
 		action="store", type="string", dest="groups_to_add", default=None,
@@ -1804,49 +1882,49 @@ def mod_configuration_parse_arguments(app):
 	configuration_group.add_option("--setup-shared-dirs",
 		action="store_true", dest="setup_shared_dirs", default=False,
 		help=_(u'create system groups, directories and settings from system '
-			'configuration (PARTIALLY OBSOLETED, TOTALLY UNSUPPORTED AND '
-			'VERY DANGEROUS, USE WITH CAUTION).'))
+			u'configuration (PARTIALLY OBSOLETED, TOTALLY UNSUPPORTED AND '
+			u'VERY DANGEROUS, USE WITH CAUTION).'))
 
 	configuration_group.add_option("-r", "--restrictive", "--set-restrictive",
 		action="store_true", dest="restrictive", default=False,
 		help=_(u'When creating system groups and directories, apply '
-			'restrictive perms (710) on shared dirs instead of relaxed '
-			'ones (750).'))
+			u'restrictive perms (710) on shared dirs instead of relaxed '
+			u'ones (750).'))
 
 	configuration_group.add_option("-u", "--hide-groups", "--set-groups-hidden",
 		action="store_true", dest="hidden_groups", default=None,
 		help=_(u"Set restrictive perms (710) on %s.") %
-			stylize(ST_PATH, LMC.configuration.groups.base_path))
+			stylize(ST_PATH, LMC.rwi.configuration_get('groups.base_path')))
 
 	configuration_group.add_option("-U", "--unhide-groups",
 		"--set-groups-visible",
 		action="store_false", dest="hidden_groups", default=None,
 		help=_(u"Set relaxed perms (750) on %s.") % stylize(ST_PATH,
-			LMC.configuration.groups.base_path))
+			LMC.rwi.configuration_get('groups.base_path')))
 
 	configuration_group.add_option('-b', "--enable-backends",
 		action="store", dest="enable_backends", default=None,
 		help=_(u'Enable given backend(s) on the current system (separated '
-			'by commas without spaces). List of available backends with '
-			'`%s`.') % stylize(ST_MODE, 'get config backends'))
+			u'by commas without spaces). List of available backends with '
+			u'`%s`.') % stylize(ST_MODE, 'get config backends'))
 
 	configuration_group.add_option('-B', "--disable-backends",
 		action="store", dest="disable_backends", default=None,
 		help=_(u'Disable given backend(s) on the current system (separated '
-			'by commas without spaces). List of available backends with '
-			'`%s`.') % stylize(ST_MODE, 'get config backends'))
+			u'by commas without spaces). List of available backends with '
+			u'`%s`.') % stylize(ST_MODE, 'get config backends'))
 
 	configuration_group.add_option('-e', "--enable-extensions",
 		action="store", dest="enable_extensions", default=None,
 		help=_(u'Enable given extension(s) on the current system (separated '
-			'by commas without spaces). List of available extensions with '
-			'`%s`.') % stylize(ST_MODE, 'get config extensions'))
+			u'by commas without spaces). List of available extensions with '
+			u'`%s`.') % stylize(ST_MODE, 'get config extensions'))
 
 	configuration_group.add_option('-E', "--disable-extensions",
 		action="store", dest="disable_extensions", default=None,
 		help=_(u'Disable given extension(s) on the current system (separated '
-			'by commas without spaces). List of available extensions with '
-			'`%s`.') % stylize(ST_MODE, 'get config extensions'))
+			u'by commas without spaces). List of available extensions with '
+			u'`%s`.') % stylize(ST_MODE, 'get config extensions'))
 
 	configuration_group.add_option( "--set-hostname",
 		action="store", type="string", dest="set_hostname", default=None,
@@ -1887,7 +1965,7 @@ def chk_user_parse_arguments(app):
 def chk_group_parse_arguments(app):
 	"""Integrated help and options / arguments for « check group(s) »."""
 
-	usage_text = "\n\t%s group[s] --name group1[[,group2][…]]" % stylize(ST_APPNAME, "%prog")
+	usage_text = "\n\t%s group[s] --name group1[[,group2][,…]]" % stylize(ST_APPNAME, "%prog")
 
 	parser = OptionParser(usage=usage_text,
 		version=build_version_string(app, version))
@@ -1918,5 +1996,26 @@ def chk_configuration_parse_arguments(app):
 
 	parser.add_option_group(common_behaviour_group(app, parser, 'check'))
 	parser.add_option_group(common_filter_group(app, parser, 'chk', 'configuration'))
+
+	return parser.parse_args()
+def chk_system_parse_arguments(app):
+	"""TODO"""
+
+	usage_text = "\n\t%s system -a [-w|--wmi-tests app1[,app2[,…]] " % stylize(ST_APPNAME, "%prog")
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'check'))
+	parser.add_option_group(common_filter_group(app, parser, 'chk', 'system'))
+
+	group = OptionGroup(parser, stylize(ST_OPTION,
+		_(u"Modify configuration options")))
+
+	group.add_option('-w', '--wmi-test', '--wmi-tests',
+		action='store', type='string', dest="wmi_test_apps", default='',
+		help=_(u'Launch Django tests against the WMI2 apps, separated by '
+				u'commas without spaces. Just type "all" if you want it.'))
+	parser.add_option_group(group)
 
 	return parser.parse_args()

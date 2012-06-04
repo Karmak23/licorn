@@ -7,9 +7,34 @@ constants - all enums for the rest of the world.
 Copyright (C) 2010 Olivier Cortès <oc@meta-it.fr>
 Licensed under the terms of the GNU GPL version 2
 """
+import stat
 
+# ============================================================== licorn imports
+import styles
 from styles     import *
 from base       import EnumDict
+
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
+
+roles = EnumDict('roles', from_dict={
+		'UNSET':  1,
+		'SERVER': 2,
+		'CLIENT': 3
+	})
+
+priorities = EnumDict('service_priorities', from_dict={
+		'LOW':  20,
+		'NORMAL': 10,
+		'HIGH': 0
+	})
+
+#relationships
+relation = EnumDict('relation')
+relation.NO_MEMBERSHIP = 0
+relation.GUEST         = 1
+relation.MEMBER        = 2
+relation.RESPONSIBLE   = 3
 
 # verbose levels for options and logging.*
 verbose = EnumDict('verbose')
@@ -49,23 +74,33 @@ filters.NOT_RSP             = filters.NOT_RESPONSIBLE
 filters.NOT_SYSTEM          = filters.ALL - filters.SYSTEM
 filters.NOT_SYS             = filters.NOT_SYSTEM
 
+filters.WATCHED             = 0x00000800
+filters.INOTIFIED           = filters.WATCHED
+
+filters.NOT_WATCHED         = filters.STANDARD - filters.WATCHED
+filters.NOT_INOTIFIED       = filters.NOT_WATCHED
+
 filters.EMPTY               = 0x00ff0000
 
 # enum machine stati, for core.machines
 host_status = EnumDict('host_status')
-host_status.UNKNOWN        = -0x0001
-host_status.NONE           =  0x0000
-host_status.ALL            =  0xffff
-host_status.OFFLINE        =  0x00ff
-host_status.GOING_TO_SLEEP =  0x0001
-host_status.ASLEEP         =  0x0002
-host_status.SHUTTING_DOWN  =  0x0004
-host_status.PYRO_SHUTDOWN  =  0x0008
-host_status.ONLINE         =  0xff00
-host_status.BOOTING        =  0x0100
-host_status.IDLE           =  0x0200
-host_status.ACTIVE         =  0x0400
-host_status.LOADED         =  0x0800
+host_status.UNKNOWN        = -0x00000001
+host_status.NONE           =  0x00000000
+host_status.ALL            =  0xffffffff
+host_status.OFFLINE        =  0x000000ff
+host_status.GOING_TO_SLEEP =  0x00000001
+host_status.ASLEEP         =  0x00000002
+host_status.SHUTTING_DOWN  =  0x00000004
+host_status.PYRO_SHUTDOWN  =  0x00000008
+host_status.ONLINE         =  0x0000ff00
+host_status.PINGS          =  0x00000100
+host_status.BOOTING        =  0x00000200
+host_status.IDLE           =  0x00000400
+host_status.ACTIVE         =  0x00000800
+host_status.LOADED         =  0x00001000
+host_status.OP_IN_PROGRESS =  0xffff0000
+host_status.UPGRADING      =  0x00010000
+
 
 # FIXME: merge this with distros (don't duplicate)
 host_types = EnumDict('host_types')
@@ -123,6 +158,7 @@ interactions.GET_PASSWORD   = 0x02
 
 # constants from core.configuration
 distros = EnumDict('distros')
+distros.UNKNOWN  = 0
 distros.UBUNTU   = 1
 distros.LICORN   = distros.UBUNTU
 distros.DEBIAN   = 2

@@ -1,14 +1,14 @@
-.. _specs:
+.. _specs.en:
 
 ==============
 Specifications
 ==============
 
-All specifications to date are stored `in our Trac <http://dev.licorn.org/>`_. They will be slowly imported here (user documentation is more important than specs on this present site). New ones will be written here directly, because this is much easier to write reSt files than web edit a page in Trac.
+All specifications to date are stored `in our Trac <http://dev.licorn.org/wiki/Specifications>`_. They will eventually be slowly imported here; but user documentation is more important than specs on this present site.
 
 
 .. toctree::
 	:maxdepth: 2
 
-	backup
+	backup.en
 

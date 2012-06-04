@@ -2,23 +2,72 @@
 """
 Licorn Foundations - http://dev.licorn.org/documentation/foundations
 
-pyutils - Pure Python utilities functions, which are not present in python 2.4
+`pyutils` - Pure Python [low-level] utilities functions, which are not present in python 2.x
 
-Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
-Licensed under the terms of the GNU GPL version 2
+:copyright:
+	* 2007-2012 Olivier Cortès <olive@deep-ocean.net>
+	* 2012 META IT http://meta-it.fr/
+:license:
+	* GNU GPL version 2
 """
 
-import re, math
+import re, math, functools
 from traceback import print_exc
+
 # WARNING: don't import anything from the core here.
 
-from licorn.foundations import options
-import exceptions, logging
+# ============================================================= Licorn® imports
+import exceptions, logging, styles
+from _options  import options
 from styles    import *
-from ltrace    import ltrace
+from ltrace    import *
 from ltraces   import *
 from constants import verbose
 
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
+
+max_string_size = 128
+
+def catch_exception(func):
+	@functools.wraps(func)
+	def wrap(*a, **kw):
+
+		try:
+			assert ltrace(TRACE_PYUTILS, 'RUN {0}({1}, {2})', func.__name__, str(a), str(kw))
+
+			res = func(*a, **kw)
+
+			assert ltrace(TRACE_PYUTILS, 'RETURN {0}', res)
+
+			return res
+
+		except Exception, e:
+			# We need to truncate the output in case of a very long one. As
+			# __str__() and __repr__() methods of the core often list all
+			# elements, this is wanted.
+			#s
+			# http://stackoverflow.com/questions/2872512/python-truncate-a-long-string
+			logging.exception(_('Exception {0} while running {1}({2}{3}{4})'),
+					type(e).__name__, func.__name__,
+					', '.join(str(i)[:max_string_size] + (
+							str(i)[max_string_size:] and stylize(ST_COMMENT, '… (truncated)')) for i in a),
+					', ' if a and kw else '',
+					', '.join('{0}={1}'.format(str(k), str(v)[:max_string_size]
+							+ (str(v)[max_string_size:] and stylize(ST_COMMENT, '… (truncated)')))
+						for k, v in kw.iteritems()))
+	return wrap
+def resolve_attr(multi_attr_str, globals_):
+	""" Given an argument string "object.attr1.attr2", return `attr2`
+		as a usable python object.  """
+
+	attrs        = multi_attr_str.split('.')
+	current_attr = globals_[attrs[0]]
+
+	for attr_name in attrs[1:]:
+		current_attr = getattr(current_attr, attr_name)
+
+	return current_attr
 def print_exception_if_verbose():
 	if options.verbose >= verbose.INFO:
 		print_exc()
@@ -58,7 +107,9 @@ def keep_true(x, y):
 	else:         return y
 def bytes_to_human(bytes, as_string=True, binary=True):
 	""" From http://fr.wikipedia.org/wiki/Octet (in french in the text). """
+
 	bytes = float(bytes)
+
 	if binary:
 		if bytes >= 1180591620717411303424L:
 			# yobibytes
@@ -424,3 +475,36 @@ def resolve_dependancies_from_dict_strings(arg):
 		d = dict( ((k, v - t) for k, v in d.items() if v) )
 
 	return r
+def merge_dicts_of_lists(*args, **kwargs):
+	""" From *dicts, return a new (copy). Eg::
+
+			{ 1: [2, 3] } + { 1: [4, 5] } => { 1: [2, 3, 4, 5] }
+
+		If values doesn't understand '.extend()', the right-outer has always
+		precedence, eg::
+
+			{1: True}  + {1: False} => {1: False}
+			{1: False} + {1: True}  => {1: True}
+
+		Tips from http://stackoverflow.com/questions/38987/how-can-i-merge-two-python-dictionaries-as-a-single-expression
+
+		worth a read: http://stackoverflow.com/questions/2365921/merging-python-dictionaries
+	"""
+	new_dict = args[0].copy()
+
+	unique = kwargs.pop('unique', False)
+
+	for other_dict in args[1:]:
+		for key, value in other_dict.iteritems():
+			try:
+				if unique:
+					new_dict[key] = list(set(new_dict[key]) | set(value[:]))
+				else:
+					new_dict[key].extend(value[:])
+
+			except (KeyError, AttributeError, TypeError):
+				if unique:
+					new_dict[key] = value
+				else:
+					new_dict[key] = list(set(value))
+	return new_dict

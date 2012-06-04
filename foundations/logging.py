@@ -8,22 +8,26 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, Pyro.errors
-from threading import current_thread, RLock
+import sys, Pyro.errors, traceback
+
+from threading import current_thread
 from types     import *
 
-from licorn.foundations import options
+# licorn.foundations imports
+import exceptions, styles
+from threads   import RLock
+from _options  import options
 from styles    import *
+from ltrace    import *
+from ltraces   import *
 from constants import verbose, interactions
 from ttyutils  import interactive_ask_for_repair
-from ltrace    import ltrace, mytime
-from ltraces   import *
-from base      import Singleton
-from messaging import LicornMessage
-from licorn.foundations.messaging import MessageProcessor
-from BaseHTTPServer	import BaseHTTPRequestHandler
+from base      import ObjectSingleton
+from messaging import LicornMessage, MessageProcessor
 
-#
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
+
 # FIXME: define a policy explaining where we can call logging.error() (which
 # implies exit()), where we can't, where we must raise an exception or an error.
 #
@@ -33,20 +37,8 @@ from BaseHTTPServer	import BaseHTTPRequestHandler
 #		- in the calling programs, we MUST catch the exceptions/errors raised
 #			and call logging.error() when appropriate.
 #
-def warn_exception(func):
-	""" Catch any exception and display a warning about it, but don't fail.
-		Meant to be used as a decorator in various places. """
-	def internal_func(*args, **kwargs):
-		try:
-			func(*args, **kwargs)
-		except Exception, e:
-			warning(_(u'Exception occured in {0}: {1}.').format(func, e),
-				# this is propably an obscure and harmless internal error,
-				# don't forward it to the CLI user.
-				to_listener=False)
-	return internal_func
 
-class LicornWarningsDB(Singleton):
+class LicornWarningsDB(ObjectSingleton):
 	""" a singleton dict, to hold all warnings already displayed. """
 
 	warnings = None
@@ -64,7 +56,7 @@ class LicornWarningsDB(Singleton):
 __warningsdb = LicornWarningsDB()
 
 #: we've got to synchronize all threads for outputing anything, else in rare
-#: cases the display can be corrupted by two threads saying somthing at the
+#: cases the display can be corrupted by two threads saying something at the
 #: exact same time. Seen on 20101210 with 2 PyroFinders.
 __output_lock = RLock()
 
@@ -78,19 +70,12 @@ def send_to_listener(message, verbose_level=verbose.QUIET):
 		return None
 	else:
 		if listener.verbose >= verbose_level:
-			# WARNING: should test Pyro object instead of WMI one, but
-			# listener is not type(MessageProcessor) but type(instance)
-			# instead because in pyro only the remote object will be
-			# the wanted type.
-			if isinstance(listener, BaseHTTPRequestHandler):
-				return listener.process(message.data, verbose_level)
-			else:
-				return listener.process(message,
+			return listener.process(message,
 					options.msgproc.getProxy())
 def error(mesg, returncode=1, full=False, tb=None):
 	""" Display a stylized error message and exit badly.	"""
 
-	text_message = '%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'), mytime(), mesg)
+	text_message = '%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'), ltrace_time(), mesg)
 
 	with __output_lock:
 		if full:
@@ -104,10 +89,11 @@ def error(mesg, returncode=1, full=False, tb=None):
 				sys.stderr.write("\n")
 
 		sys.stderr.write(text_message)
+		#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_1, 'ERR{0}', mesg)
 
-	raise SystemExit(returncode)
+	sys.exit(returncode)
 def warning(mesg, once=False, to_listener=True, to_local=True):
 	"""Display a stylized warning message on stderr."""
 
@@ -116,7 +102,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 
 	__warningsdb[mesg] = True
 
-	text_message = "%s%s %s\n" % (stylize(ST_WARNING, '/!\\'), mytime(), mesg)
+	text_message = "%s%s %s\n" % (stylize(ST_WARNING, '/!\\'), ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
@@ -124,6 +110,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 	if to_local:
 		with __output_lock:
 			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_1, '/!\\{0}', mesg)
 def warning2(mesg, once=False, to_listener=True, to_local=True):
@@ -135,7 +122,7 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 
 	__warningsdb[mesg] = True
 
-	text_message = "%s%s %s\n" % (stylize(ST_WARNING, '/2\\'), mytime(), mesg)
+	text_message = "%s%s %s\n" % (stylize(ST_WARNING, '/2\\'), ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
@@ -143,52 +130,94 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 	if to_local and options.verbose >= verbose.INFO:
 		with __output_lock:
 			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_2, '/2\\{0}', mesg)
+	# be compatible with potential assert calls.
+	return True
 def notice(mesg, to_listener=True, to_local=True):
 	""" Display a stylized NOTICE message on stderr, and publish it to the
 		remote listener if not told otherwise. """
 
-	text_message = " %s %s %s\n" % (stylize(ST_INFO, '*'), mytime(), mesg)
+	text_message = " %s %s %s\n" % (stylize(ST_INFO, '*'), ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
 
 	if to_local and options.verbose >= verbose.NOTICE:
 		with __output_lock:
-			sys.stderr.write(text_message)
+			sys.stdout.write(text_message)
+			#sys.stdout.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_1, ' ! {0}', mesg)
 def info(mesg, to_listener=True, to_local=True):
 	""" Display a stylized INFO message on stderr, and publish it to the
 		remote listener if not told otherwise. """
 
-	text_message = " * %s %s\n" % (mytime(), mesg)
+	text_message = " * %s %s\n" % (ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
 
 	if to_local and options.verbose >= verbose.INFO:
-		sys.stderr.write(text_message)
+		with __output_lock:
+			sys.stdout.write(text_message)
+			#sys.stdout.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_2, ' * {0}', mesg)
 def progress(mesg, to_listener=True, to_local=True):
 	""" Display a stylized PROGRESS message on stderr, and publish it to the
 		remote listener if not told otherwise. """
 
-	text_message = " > %s %s\n" % (mytime(), mesg)
+	text_message = " > %s %s\n" % (ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.PROGRESS)
 
 	if to_local and options.verbose >= verbose.PROGRESS:
 		with __output_lock:
-			sys.stderr.write(text_message)
+			sys.stdout.write(text_message)
+			#sys.stdout.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_3, ' > {0}', mesg)
 
 	# make logging.progress() be compatible with potential assert calls.
 	return True
+def exception(*args, **kwargs):
+	""" display full exception if >= PROGRESS, else just display a message. """
+
+	if options.verbose >= verbose.PROGRESS:
+		text_message = "%s%s %s\n%s" % (stylize(ST_WARNING, '{E}'), ltrace_time(),
+							args[0].format(*(stylize(*x)
+								if type(x) == TupleType
+								else x
+								for x in args[1:])),
+							# full traceback.
+							traceback.format_exc())
+
+	else:
+		text_message = "%s%s %s: %s\n" % (stylize(ST_WARNING, '{E}'), ltrace_time(),
+							args[0].format(*(stylize(*x)
+								if type(x) == TupleType
+								else x
+								for x in args[1:])),
+							# only last line of traceback.
+							traceback.format_exc(1).split('\n')[-2])
+
+	# else:
+	# implicit: as this function is meant to display exceptions but not exit
+	# in case we hit one, we don't display them in NOTICE production
+	# environments. This will avoid polluting the output and logs.
+
+	if kwargs.get('to_listener', True):
+		send_to_listener(LicornMessage(text_message), verbose.INFO)
+
+	if kwargs.get('to_local', True) and options.verbose >= verbose.INFO:
+		with __output_lock:
+			sys.stderr.write(text_message)
+			#sys.stderr.flush()
+
+	monitor(TRACE_LOGGING, TRACELEVEL_1, '{{E}}{0}', text_message)
 def monitor(facility, level, *args):
 	""" Send a message to all (network-)attached monitoring sessions, if the
 		facility of the message is wanted by the remote monitor. """
@@ -207,7 +236,7 @@ def monitor(facility, level, *args):
 										stylize(ST_YELLOW, '⧎'),
 										stylize(ST_COMMENT,
 											facility.name.ljust(TRACES_MAXWIDTH)),
-										mytime(),
+										ltrace_time(),
 										args[0].format(*(stylize(*x)
 											if type(x) == TupleType
 											else x
@@ -239,7 +268,7 @@ def debug(mesg, to_listener=True):
 	"""Display a stylized DEBUG (level1) message on stderr, and publish it to
 		the remote listener if not told otherwise. """
 
-	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB1'), mytime(), mesg)
+	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB1'), ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG)
@@ -247,6 +276,7 @@ def debug(mesg, to_listener=True):
 	if options.verbose >= verbose.DEBUG:
 		with __output_lock:
 			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[0:4] + text_message[30:-1])
 
@@ -256,7 +286,7 @@ def debug2(mesg, to_listener=True):
 	"""Display a stylized DEBUG (level2) message on stderr, and publish it to
 		the remote listener if not told otherwise. """
 
-	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB2'), mytime(), mesg)
+	text_message = '%s%s %s\n' % (stylize(ST_DEBUG, 'DB2'), ltrace_time(), mesg)
 
 	if to_listener:
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG2)
@@ -264,6 +294,7 @@ def debug2(mesg, to_listener=True):
 	if options.verbose >= verbose.DEBUG2:
 		with __output_lock:
 			sys.stderr.write(text_message)
+			#sys.stderr.flush()
 
 	monitor(TRACE_LOGGING, TRACELEVEL_3, '{0}', text_message[0:4] + text_message[30:-1])
 
@@ -291,3 +322,13 @@ def ask_for_repair(message, auto_answer=None):
 
 	else:
 		return interactive_ask_for_repair(message, auto_answer)
+def warn_or_raise(msg, once=False, to_listener=True, to_local=True, warn_only=False, exc_class=None):
+	if warn_only:
+		warning(msg, once, to_listener, to_local)
+
+	else:
+		if exc_class is None:
+			raise exceptions.LicornRuntimeException(msg)
+
+		else:
+			raise exc_class(msg)

@@ -28,7 +28,8 @@ All of them include integrated help if you call the program with argument `--hel
 The logic behind the CLI is convention-driven, oriented towards extreme simplicity and maximum automatism. All CLI tools will try to provide maximum flexibility to you. Understand that:
 
 #. commands you type can be as small as possible, provided there is no ambiguity,
-#. command-line flags are legions, but most of them are synonyms: *just pick the one that fits you best*,
+#. command-line flags are legions, and many of them have synonyms: *just pick the one that fits you best*,
+#. if you use the command-line a lot (like me), you'll find that Licorn® CLI tools try to match "common" arguments: `-i` (like in `rm -i`), `-f` (like in `cp -f`), `-a` (for `all`), and some other that you could be used to.
 
 Licorn GET
 ==========

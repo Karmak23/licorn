@@ -8,17 +8,35 @@ Copyright (C) 2007-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2
 """
 
-import os, sys, traceback, pwd, grp, time, signal
-from types import *
+import os, sys, traceback, pwd, grp, time, signal, errno
+from types     import *
+from threading import current_thread
 
-from licorn.foundations         import exceptions, logging
-from licorn.foundations.styles  import *
-from licorn.foundations.ltrace  import ltrace, insert_ltrace
-from licorn.foundations.ltraces import *
-#
+# licorn foundations imports
+import exceptions, logging, styles
+from styles  import *
+from ltrace  import *
+from ltraces import *
+
+# circumvent the `import *` local namespace duplication limitation.
+stylize = styles.stylize
+
+__all__ = ('daemonize', 'write_pid_file', 'use_log_file', 'set_name',
+	'get_process_cmdline', 'already_running', 'syscmd', 'execute',
+	'execute_remote', 'whoami', 'refork_as_root_or_die', 'fork_licorn_daemon',
+	'get_traceback', 'find_network_client_infos', 'pidof', 'pid_for_socket',
+	'thread_basic_info', 'executable_exists_in_path', )
+
+cgroup = None
+
+with open('/etc/mtab') as mtab:
+	for mline in mtab.readlines():
+		if '/sys/fs/cgroup' in mline:
+			cgroup = open('/proc/%s/cpuset' % os.getpid()).read().strip()
+			break
+
 # daemon and process functions
-#
-def daemonize(log_file=None):
+def daemonize(log_file=None, close_all=False, process_name=None):
 	""" UNIX double-fork magic to create a daemon.
 		See Stevens' "Advanced Programming in the UNIX Environment"
 		for details (ISBN 0201563177).
@@ -30,60 +48,107 @@ def daemonize(log_file=None):
 			daemon.
 	"""
 
-	assert ltrace(TRACE_PROCESS, '> daemonize(%s)' % os.getpid())
+	assert ltrace_func(TRACE_PROCESS, devel=True, level=2)
+
+	if process_name is None:
+		my_process_name = stylize(ST_NAME, 'foundations.daemonize')
+	else:
+		my_process_name = stylize(ST_NAME, process_name)
+
+	logging.progress(_(u'{0}({1}): fork #1.').format(
+		my_process_name, stylize(ST_UGID, os.getpid())))
+
+	# decouple from parent environment
+	os.chdir('/')
+	os.chroot('/')
+	os.umask(0)
 
 	try:
 		if os.fork() > 0:
-			# exit first parent
+			logging.progress(_(u'{0}({1}): exit parent #1.').format(
+							my_process_name, stylize(ST_UGID, os.getpid())))
 			sys.exit(0)
 
 	except OSError, e:
-		logging.error("fork #1 failed: errno %d (%s)" % (
-			e.errno, e.strerror))
+		logging.error(_(u'{0}({1}): fork #1 failed: errno {2} ({3}).').format(
+							my_process_name, stylize(ST_UGID, os.getpid()),
+												e.errno, e.strerror))
 
-	# decouple from parent environment
-	os.chdir("/")
 	os.setsid()
-	os.umask(0)
 
-	assert ltrace(TRACE_PROCESS, '  daemonize(%s)' % os.getpid())
+	logging.progress(_(u'{0}({1}): fork #2.').format(
+			my_process_name, stylize(ST_UGID, os.getpid())))
 
 	# do second fork
 	try:
 		if os.fork() > 0:
-			# exit from second parent
+			logging.progress(_(u'{0}({1}): exit parent #2.').format(
+							my_process_name, stylize(ST_UGID, os.getpid())))
 			sys.exit(0)
 
 	except OSError, e:
-		logging.error("fork #2 failed: errno %d (%s)" % (
-			e.errno, e.strerror))
+		logging.error(_(u'{0}({1}): fork #2 failed: errno {2} ({3}).').format(
+						my_process_name, stylize(ST_UGID, os.getpid()),
+											e.errno, e.strerror))
 
-	assert ltrace(TRACE_PROCESS, '< daemonize(%s)' % os.getpid())
+	logging.progress(_(u'{0}({1}): closing all FDs.').format(
+					my_process_name, stylize(ST_UGID, os.getpid())))
 
-	use_log_file(log_file)
+	# Close all FDs, except stdin/out/err
+	os.closerange(3, 2048)
+
+	logging.progress(_(u'{0}({1}): ignoring TTY-related signals.').format(
+								my_process_name, stylize(ST_UGID, os.getpid())))
+
+	# IGNORE TTY-related signals
+	signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+	signal.signal(signal.SIGTTIN, signal.SIG_IGN)
+	signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+
+	use_log_file(log_file, process_name)
+	return os.getpid()
 def write_pid_file(pid_file):
 	""" write PID into the pidfile. """
-	if pid_file:
+	if pid_file is not None:
+		assert ltrace(TRACE_PROCESS, u'| write_pid_file({0}) ↣ {1}',
+								(ST_NAME, pid_file), (ST_UGID, os.getpid()))
+
 		with open(pid_file, 'w') as f:
 			f.write("%s\n" % os.getpid())
-def use_log_file(log_file):
+def use_log_file(log_file, process_name=None):
 	""" replace stdout/stderr with the logfile.
 		stderr becomes /dev/null.
 	"""
-	if log_file is not None:
-		out_log  = file(log_file, 'a')
-		dev_null = file('/dev/null', 'r')
 
-		sys.stdout.flush()
-		sys.stderr.flush()
+	if process_name is None:
+		my_process_name = stylize(ST_NAME, 'foundations.use_log_file')
+	else:
+		my_process_name = stylize(ST_NAME, process_name)
 
-		os.close(sys.stdin.fileno())
-		os.close(sys.stdout.fileno())
-		os.close(sys.stderr.fileno())
+	logging.progress(_(u'{0}({1}): using {2} as log channel.').format(
+					my_process_name, stylize(ST_UGID, os.getpid()),
+					stylize(ST_PATH, log_file if log_file else 'stdout')))
 
-		os.dup2(dev_null.fileno(), sys.stdin.fileno())
-		os.dup2(out_log.fileno(), sys.stdout.fileno())
-		os.dup2(out_log.fileno(), sys.stderr.fileno())
+	if log_file:
+		out_log = file(log_file, 'ab+')
+
+	else:
+		out_log = sys.stdout
+
+	dev_null = file(os.devnull, 'rw')
+
+	# not needed.
+	#sys.stdout.flush()
+	#sys.stderr.flush()
+
+	# also not needed.
+	#os.close(sys.stdin.fileno())
+	#os.close(sys.stdout.fileno())
+	#os.close(sys.stderr.fileno())
+
+	os.dup2(dev_null.fileno(), sys.stdin.fileno())
+	os.dup2(out_log.fileno(), sys.stdout.fileno())
+	os.dup2(out_log.fileno(), sys.stderr.fileno())
 def set_name(name):
 	""" Change process name in `ps`, `top`, gnome-system-monitor and al.
 
@@ -95,11 +160,15 @@ def set_name(name):
 			http://mail.python.org/pipermail/python-list/2002-July/155471.html
 			http://davyd.livejournal.com/166352.html
 		"""
+
+	assert ltrace(TRACE_PROCESS, u'| set_name({0})', (ST_NAME, name))
+
 	try:
 		import ctypes
 		ctypes.cdll.LoadLibrary('libc.so.6').prctl(15, name + '\0', 0, 0, 0)
+
 	except Exception, e:
-		logging.warning('''Can't set process name (was %s).''' % e)
+		logging.warning(_(u'Cannot set process name (was %s).') % e)
 def get_process_cmdline(process_name):
 	""" do equivalent of ps aux and grep the given process, then return its
 		command line as a list."""
@@ -113,11 +182,79 @@ def already_running(pid_file):
 	""" Returns ``True`` if the given pid file exists and the PID recorded in it
 		exists in /proc. Else returns ``False``.
 	"""
+
+	assert ltrace(TRACE_PROCESS, u'| already_running({0}) ↣ {1}',
+		(ST_PATH, pid_file), (ST_ATTR, os.path.exists(pid_file) and
+			os.path.exists('/proc/' + open(pid_file, 'r').read().strip())))
+
 	return os.path.exists(pid_file) and \
 		os.path.exists('/proc/' + open(pid_file, 'r').read().strip())
-#
+def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
+								group='admins'):
+	""" check if current user is root. if not, check if he/she is member of
+		group "admins" and then refork ourselves with sudo, to gain root
+		privileges, needed for Licorn® daemon.
+		Do it with traditionnal syscalls, because the rest of Licorn® is not
+		initialized if we run this function. """
+
+	assert ltrace_func(TRACE_PROCESS)
+
+	try:
+		gmembers = grp.getgrnam(group).gr_mem
+
+	except KeyError:
+		logging.error(_(u'group %s does not exist and we are not root, '
+			u'aborting. Please manually relaunch this program with root '
+			u'privileges to automatically create this group.') % group)
+
+	if pwd.getpwuid(os.getuid()).pw_name in gmembers:
+
+		cmd = [ process_title ]
+		cmd.extend(insert_ltrace())
+
+		cmd.extend(sys.argv)
+
+		if prefunc != None:
+			prefunc()
+
+		logging.progress(_(u'Re-exec() ourselves with sudo to gain root '
+									u'privileges (execvp(%s)).') % cmd)
+
+		os.execvp('sudo', cmd)
+
+	else:
+		raise exceptions.LicornRuntimeError(_(u'You are not a member of group '
+			u'%s; cannot do anything for you, sorry!') % group)
+def fork_licorn_daemon(pid_to_wake=None):
+	""" Start the Licorn® daemon (fork it). """
+
+	try:
+		logging.progress(_(u'Forking licornd.'))
+
+		if os.fork() == 0:
+			# NOTE: we need to force a replace, in case the existing daemon is
+			# in a bad posture, eg. stuck in a restart procedure: it's not
+			# responding to the calling CLI process, but in the wait for a
+			# restart. This the current starting daemon will fail, then the
+			# waiting CLI will not be awaken and will timeout and show the
+			# "connect timeout, something is bad" message to the administrator,
+			# which will be a totally false-negative situation because
+			# meanwhile the restarting daemon will be ready in a perfect
+			# state.
+			# All of this is a timing problem, and I hope the soft
+			# :arg:`--replace` flag will solve this corner-case situation.
+			args = ['licornd', '--replace']
+
+			if pid_to_wake:
+				args.extend(['--pid-to-wake1', str(pid_to_wake)])
+
+			os.execv('/usr/sbin/licornd', args)
+
+	except (IOError, OSError), e:
+		logging.error(_(u'licornd fork failed: errno {0} ({1}).').format(
+														e.errno, e.strerror))
+
 # System() / Popen*() convenience wrappers.
-#
 def syscmd(command, expected_retcode=0):
 	""" Execute `command` in a subshell and grab the return value to test it.
 		If the test fails, an exception is raised.
@@ -166,14 +303,19 @@ def execute(command, input_data='', dry_run=None):
 
 		return ('', '')
 
-	if input_data != '':
-		p = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-			close_fds=True)
-		return p.communicate(input_data)
-	else:
-		p = Popen(command, shell=False, stdout=PIPE, stderr=PIPE,
-			close_fds=True)
-		return p.communicate()
+	try:
+		if input_data != '':
+			p = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+																close_fds=True)
+			return p.communicate(input_data)
+		else:
+			p = Popen(command, shell=False, stdout=PIPE, stderr=PIPE,
+																close_fds=True)
+			return p.communicate()
+	except (OSError, IOError), e:
+		logging.exception(_(u'{0}: Exception while trying to run {1}.'),
+				(ST_NAME, current_thread().name), (ST_COMMENT, ' '.join(command)))
+		raise
 def execute_remote(ipaddr, command):
 	""" Exectute command on a machine with SSH. """
 
@@ -184,71 +326,12 @@ def whoami():
 		rest of Licorn® is not initialized if we run this function. '''
 	#from subprocess import Popen, PIPE
 	#return (Popen(['/usr/bin/whoami'], stdout=PIPE).communicate()[0])[:-1]
+	assert ltrace(TRACE_PROCESS, u'| whoami() ↣ {0}', (ST_LOGIN, pwd.getpwuid(os.getuid()).pw_name))
+
 	return pwd.getpwuid(os.getuid()).pw_name
-def refork_as_root_or_die(process_title='licorn-generic', prefunc=None,
-	group='admins'):
-	""" check if current user is root. if not, check if he/she is member of
-		group "admins" and then refork ourselves with sudo, to gain root
-		privileges, needed for Licorn® daemon.
-		Do it with traditionnal syscalls, because the rest of Licorn® is not
-		initialized if we run this function. """
-
-	try:
-		gmembers = grp.getgrnam(group).gr_mem
-
-	except KeyError:
-		logging.error('''group %s doesn't exist and we are not root, '''
-			'''aborting. Please manually relaunch this program with root '''
-			'''privileges for the group to be created.''' % group)
-
-	if pwd.getpwuid(os.getuid()).pw_name in gmembers:
-
-		cmd = [process_title]
-		cmd.extend(insert_ltrace())
-
-		cmd.extend(sys.argv)
-
-		if prefunc != None:
-			prefunc()
-
-		logging.progress(_(u'Exec\'ing ourselves with sudo to gain root '
-				u'privileges (execvp(%s)).') % cmd)
-
-		os.execvp('sudo', cmd)
-
-	else:
-		raise exceptions.LicornRuntimeError(_(u'You are not a member of group '
-			u'%s, cannot do anything for you, sorry!') % group)
 def get_traceback():
 	return traceback.format_list(traceback.extract_tb(sys.exc_info()[2]))
-def fork_licorn_daemon(pid_to_wake=None):
-	""" Start the Licorn® daemon (fork it). """
-
-	try:
-		logging.progress(_(u'Forking licornd.'))
-		if os.fork() == 0:
-			# NOTE: we need to force a replace, in case the existing daemon is
-			# in a bad posture, eg. stuck in a restart procedure: it's not
-			# responding to the calling CLI process, but in the wait for a
-			# restart. This the current starting daemon will fail, then the
-			# waiting CLI will not be awaken and will timeout and show the
-			# "connect timeout, something is bad" message to the administrator,
-			# which will be a totally false-negative situation because
-			# meanwhile the restarting daemon will be ready in a perfect
-			# state.
-			# All of this is a timing problem, and I hope the soft
-			# :arg:`--replace` flag will solve this corner-case situation.
-			args = ['licornd', '--replace']
-
-			if pid_to_wake:
-				args.extend(['--pid-to-wake', str(pid_to_wake)])
-
-			os.execvp('licornd', args)
-
-	except (IOError, OSError), e:
-		logging.error(_(u'licornd fork failed: errno %d (%s).') % (e.errno,
-			e.strerror))
-def find_network_client_uid(orig_port, client_port, local=True):
+def find_network_client_infos(orig_port, client_port, local=True, pid=False):
 	""" will only work on localhost, and on linux, from a root process...
 
 	As a general recommendation, use strace(1) to answer this kind of
@@ -290,19 +373,19 @@ def find_network_client_uid(orig_port, client_port, local=True):
 	|-------------------------------> transmit-queue
 
 	1000 0 54165785 4 cd1e6040 25 4 27 3 -1
-	| | | | | | | | | |--> slow start size threshold,
-	| | | | | | | | | or -1 if the treshold
-	| | | | | | | | | is >= 0xFFFF
-	| | | | | | | | |----> sending congestion window
-	| | | | | | | |-------> (ack.quick<<1)|ack.pingpong
-	| | | | | | |---------> Predicted tick of soft clock
-	| | | | | | (delayed ACK control data)
-	| | | | | |------------> retransmit timeout
-	| | | | |------------------> location of socket in memory
-	| | | |-----------------------> socket reference count
-	| | |-----------------------------> inode
-	| |----------------------------------> unanswered 0-window probes
-	|---------------------------------------------> uid
+	   | | |        |        | |  | | | |--> slow start size threshold,
+	   | | |        |        | |  | | | or -1 if the treshold
+	   | | |        |        | |  | | | is >= 0xFFFF
+	   | | |        |        | |  | | |----> sending congestion window
+	   | | |        |        | |  | |-------> (ack.quick<<1)|ack.pingpong
+	   | | |        |        | |  |---------> Predicted tick of soft clock
+	   | | |        |        | |  (delayed ACK control data)
+	   | | |        |        | |------------> retransmit timeout
+	   | | |        |        |------------------> location of socket in memory
+	   | | |        |-----------------------> socket reference count
+	   | | |-----------------------------> inode
+	   | |----------------------------------> unanswered 0-window probes
+	   |---------------------------------------------> uid
 
 	timer_active:
 	0 no timer is pending
@@ -341,10 +424,10 @@ def find_network_client_uid(orig_port, client_port, local=True):
 			if local:
 				if ('%x' % client_port).upper() == lport \
 					and laddr in (local_addr1, local_addr2):
-					return int(values[7])
+					return int(values[7]), pid_for_socket(values[9]) if pid else None
 			else:
 				if ('%x' % client_port).upper() == lport:
-					return int(values[7])
+					return int(values[7]), None
 
 		if first_try:
 			# The problem *could* be we are too fast for the kernel to update
@@ -355,3 +438,103 @@ def find_network_client_uid(orig_port, client_port, local=True):
 			break
 	raise IndexError(_(u"Cannot find client 127.0.0.1:{0} or 127.0.1.1:{0} in "
 					u"/proc/net/tcp!").format(client_port))
+def pidof(process_name):
+	""" This works only on Linux...
+
+		.. note:: the pidof feature works on /proc/%s/comm and
+			matches only the exact word. There is no kind of fuzzy
+			matching yet.
+
+		..versionadded:: 1.3
+	"""
+
+	pids = []
+
+	if 'licornd' in process_name:
+		# licorn / linux 3.x specifiq : we can match 'licornd/wmi'
+		# faster than 'licornd-wmi', and in some case the 'cmdline'
+		# is empty, whereas the 'comm' is not.
+		names = [ process_name, process_name.replace('/', '-') ]
+
+	else:
+		names = [ process_name ]
+
+	for entry in os.listdir('/proc'):
+		if entry.isdigit():
+			try:
+
+				if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
+					logging.progress('Skipped process @{0} which is not in the same cgroup.'.format(entry))
+					continue
+
+				try:
+					# Linux 3.x only
+					command_line1 = open('/proc/%s/comm' % entry).read().strip()
+				except:
+					command_line1 = ''
+
+				command_line2 = open('/proc/%s/cmdline' % entry).read().strip()
+
+				for pname in names:
+					if pname == command_line1 or pname+'\0' in command_line2:
+						pids.append(int(entry))
+
+			except (IOError, OSError), e:
+				# in rare cases, the process vanishes during iteration. This
+				# is harmless. Any other error is not cool, raise it.
+				if e.errno != errno.ENOENT:
+					raise e
+
+	return pids
+def pid_for_socket(socket_number):
+	""" "This works only on Linux..."""
+
+	bn = os.path.basename
+	rp = os.path.realpath
+
+	searched = 'socket:[%s]' % socket_number
+
+	for entry in os.listdir('/proc'):
+		if entry.isdigit():
+			try:
+				current_path = '/proc/%s/fd' % entry
+				for openfd in os.listdir(current_path):
+					if searched == bn(rp('%s/%s' % (current_path, openfd))):
+						return int(entry)
+
+			except (IOError, OSError), e:
+				# in rare cases, the process vanishes during iteration. This
+				# is harmless. Any other error is not cool, raise it.
+				if e.errno != errno.ENOENT:
+					raise e
+
+	return None
+def thread_basic_info(thread, as_string=False):
+	if as_string:
+		return _('Thread {0}{1}: {2}, but no more info.').format(
+			thread.name, '&' if thread.daemon else '',
+			_('alive') if thread.is_alive() else _('dead')
+		)
+	else:
+		return dict(
+				name=thread.name,
+				alive=thread.is_alive(),
+				daemon=thread.daemon,
+				ident=thread.ident
+			)
+def executable_exists_in_path(filename, raise_message=None):
+	""" Check if a given exectable is found in $PATH and:
+
+		* raise a :class:~licorn.foundations.exceptions.LicornRuntimeError`,
+			if argument ``raise_message`` is set.
+		* else return ``True`` or ``False``, depending on the found result.
+	"""
+
+	for pathname in os.environ['PATH'].split(':'):
+		if os.path.exists(os.path.join(pathname, filename)):
+			return True
+
+	if raise_message:
+		raise exceptions.LicornRuntimeError(raise_message)
+
+	return False

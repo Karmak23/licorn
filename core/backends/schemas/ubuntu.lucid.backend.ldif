@@ -17,10 +17,10 @@ dn: olcDatabase=hdb,cn=config
 objectClass: olcDatabaseConfig
 objectClass: olcHdbConfig
 olcDatabase: {1}hdb
-olcSuffix: dc=meta-it,dc=local
+olcSuffix: @@base@@
 olcDbDirectory: /var/lib/ldap
-olcRootDN: cn=admin,dc=meta-it,dc=local
-olcRootPW: metasecret
+olcRootDN: @@rootbinddn@@
+olcRootPW: @@secret@@
 olcDbConfig: set_cachesize 0 2097152 0
 olcDbConfig: set_lk_max_objects 1500
 olcDbConfig: set_lk_max_locks 1500
@@ -36,7 +36,7 @@ olcLastMod: TRUE
 olcMonitoring: TRUE
 olcDbCheckpoint: 512 30
 olcAccess: to attrs=userPassword
- by dn="cn=admin,dc=meta-it,dc=local" write
+ by dn="@@rootbinddn@@" write
  by self write
  by anonymous auth
  by * none
@@ -49,7 +49,7 @@ olcAccess: to dn.base=""
  by * none
 # Below line modified from "*" to "users" to prevent anonymous access.
 olcAccess: to *
- by dn="cn=admin,dc=meta-it,dc=local" write
+ by dn="@@rootbinddn@@" write
  by users read
  by * none
 
@@ -58,13 +58,13 @@ olcAccess: to *
 #dn: olcDatabase={0}config,cn=config
 #changetype: modify
 #add: olcRootDN
-#olcRootDN: cn=admin,dc=meta-it,dc=local
+#olcRootDN: @@rootbinddn@@
 
 dn: olcDatabase={-1}frontend,cn=config
 changetype: modify
 add: olcAccess
 olcAccess: to dn.subtree="cn=Monitor"
- by dn="cn=admin,dc=meta-it,dc=local" read
+ by dn="@@rootbinddn@@" read
 
 # http://www.openldap.org/doc/admin24/monitoringslapd.html
 dn: olcDatabase=monitor,cn=config

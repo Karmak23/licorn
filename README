@@ -1,5 +1,48 @@
-= Licorn Project =
+# Licorn Project
 
-== Documentation ==
+## Documentation
 
-Please, see http://licorn.org/documentation for up-to-date content.
+Please visit http://docs.licorn.org/ for up-to-date content. In fact the website
+is an HTML version of the `docs/` directory (generated via `Sphinx`).
+
+## Project / Editor / Conventions / Notes
+
+### GEANY
+
+*.py;*.rst;*.md;Makefile;README*;*.txt;*.html;*.csv;*.conf;*.css;*.ldif;*.js
+
+### Debugging the daemon / start-stop process
+
+	while true; do clear; ps ax | grep licorn | grep -vE '(grep|tail)'; sleep 2; done
+
+#### Special characters for i18n UTF-8 strings
+
+← ↑ → ↓ ↖ ↗ ↘ ↙ ↝ ↣ ↤ ↥ ↧ ↩ ↪ ↫ ↬
+↯ ↰ ↱ ↲ ↳ ↴ ↵ ↶ ↷
+↹ ↺ ↻ ⇄ ⇅ ⇵ ⇆ ⇇ ⇈ ⇉ ⇊
+⇐ ⇑ ⇒ ⇓ ⇔ ⇕ ⇖ ⇗ ⇘ ⇙ ⇠ ⇡ ⇢ ⇣ ⇤ ⇥
+⇱ ⇲ ∃ ∄ ∀ ∈ ∉ ∋ ∌ ∊ ∍
+∝ ∞ … † ‰ ‱ ℡ ™ ℻ ⍺ ⎗ ⎘ ⎙ ⎚ ⟲ ⟳
+⌨ ⌫ ⌘ ⌃ ⌤ ⌥ ⏏ ⏎ ⎆ ⎇ ⇪ ⇧
+    
+㎐㎑㎒㎓㎔㎅㎆㎇
+quotation hiphen —
+non-breaking space " "  
+⌨ ⌾ ⌬ ⎆ ⎇ ⎈ ⎊ ⎋ ⎌ ★ ☆ ☠ ☢ ☣ ☤ ⚒
+⚓ ⚔ ⚕ ⚐ ⚑ ⚖ ⚘ ⚙ ⚚ ⚛ ⚠ ✎ ✏ ✐ ✑ ✒ ✍
+✓ ✔ ✕ ✖ ✗ ✘ ✇ ⧎ ⧓
+✩ ✪ ✫ ✬ ✭ ✮ ✯ ✰ ✱ ✲ ✳ ✴ ✵ ✶ ✷ ✸ ✹ ✺
+✻ ✿ ❀ ❁ ❂ ❃ ❄ ❅ ❆ ❇ ❈ ❊ ❋
+➔ ➘ ➙ ➚ ➛ ➜ ➝ ➞ ➟ ➠ ➡ ➢ ➣ ➤ ➾
+′ ″ ‴ ‵ ‶ ‷ “ ” „ ‟ ‘ ’ ‚ ‛ …
+
+
+## mini-TS for WMI2 events
+
+Just paste this into a terminal, and observe events be pushed to the WMI page you're browsing. You can "watch" them from any page, but from the users ou groups page will produce more shining output.
+
+add user test ; add group test1 ; add user test test1 ; mod user test -l ; mod group test1 -p ;
+mod user test -L ; mod group test1 -P ; del user test test1 ; del group test1 --no-archive ; del user test --no-archive
+
+sudo add user test ; sudo add group test1 ; sudo add user test test1 ; sudo mod group test1 -p ; sudo mod group test1 -P ; sudo del user test test1 ; sudo del group test1 --no-archive ; sudo del user test --no-archive
+
