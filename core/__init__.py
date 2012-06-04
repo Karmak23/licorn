@@ -4,9 +4,9 @@ Licorn core - http://docs.licorn.org/core.html
 
 The Core API of a Licorn system.
 
-([=\[(,\s])((users|groups|system|configuration|backends|privileges|profiles|machines)\.)
-
-:copyright: 2005-2010 Olivier Cortès <oc@meta-it.fr>
+:copyright:
+	* 2005-2012 Olivier Cortès <olive@licorn.org>
+	* 2009-2012 META IT http://meta-it.fr/
 :license: GNU GPL version 2
 """
 
@@ -27,6 +27,7 @@ from licorn.foundations.constants import reasons, roles, priorities
 from licorn.foundations.events import LicornEvent
 
 timeout = settings.connect.timeout
+msgth   = None
 
 def connect_error(dummy1, dummy2):
 	""" Method called on SIGALARM when the LMC fails to launch a daemon, or
@@ -34,10 +35,29 @@ def connect_error(dummy1, dummy2):
 		Exit with an error.
 	"""
 
-	logging.error(_(u'The daemon did not wake us in 10 seconds, there is '
+	logging.error(_(u'The daemon did not wake us in {0} seconds, there is '
 		u'probably a problem with it. Please check the log for errors or '
 		u'contact your system administrator if it is not you. Else you '
-		u'already know you are in trouble ;-)'), 911)
+		u'already know you are in trouble ;-)').format(timeout), 911)
+def start_message_thread():
+	global msgth
+
+	msgth = Timer(3, logging.notice, args=(_(u'Connection '
+		u'established. Please be patient, the daemon seems '
+		u'quite busy.'), ))
+
+	msgth.start()
+
+def stop_message_thread():
+	global msgth
+	try:
+		# don't display the waiting message if not already done.
+		msgth.cancel()
+
+	except:
+		logging.notice(_(u'OK. We\'re running now!'))
+
+	del msgth
 
 class LicornMasterController(MixedDictObject):
 	""" The master container of all Licorn® system objects. It handles
@@ -400,10 +420,7 @@ class LicornMasterController(MixedDictObject):
 				#     if the daemon comes up, the loop restarts and should break
 				#	  because connection succeeds.
 				try:
-					msgth = Timer(3, logging.notice, args=(_(u'Connection '
-						u'established. Please be patient, the daemon seems '
-						u'quite busy.'), ))
-					msgth.start()
+					start_message_thread()
 
 					# a server daemon offers 'LMC.rwi' + `LMC.system`
 					self.rwi = Pyro.core.getAttrProxyForURI("%s/rwi" % pyroloc)
@@ -418,14 +435,8 @@ class LicornMasterController(MixedDictObject):
 					# listens at the other end.
 					self.rwi.noop()
 
-					try:
-						# don't display the waiting message if not already done.
-						msgth.cancel()
-
-					except:
-						logging.notice(_(u'OK. We\'re running now!'))
-
-					del msgth
+					# Cancel the status display as soon as `noop()` returns.
+					stop_message_thread()
 
 					# re-set an infinite timeout for normal operations, because
 					# CLI methods can last a very long time (thinking about
@@ -448,11 +459,18 @@ class LicornMasterController(MixedDictObject):
 															"%s/system" % pyroloc)
 					self.system._setTimeout(timeout)
 					self.system.noop()
+
+					stop_message_thread()
+
 					assert ltrace(TRACE_CORE,
 						'  connect(): system object connected (Remote is CLIENT).')
 					break
 
 				except Pyro.errors.ProtocolError, e:
+
+					# We won't connect, whatever the reason. Don't display
+					# the status waiting message.
+					stop_message_thread()
 
 					if e.args[0] == 'security reasons':
 						logging.error(_(u'Your user account is not allowed to '
@@ -502,8 +520,9 @@ class LicornMasterController(MixedDictObject):
 						# Cancel the alarm if USR1 received.
 						signal.signal(signal.SIGUSR1, lambda x,y: signal.alarm(0))
 
-						logging.notice(_(u'waiting up to 20 seconds for '
-										u'daemon to come up… Please wait.'))
+						logging.notice(_(u'Waiting up to {0} seconds for '
+										u'daemon to come up… Please hold '
+										u'on.').format(timeout))
 
 						# ALARM or USR1 will break the pause()
 						signal.pause()

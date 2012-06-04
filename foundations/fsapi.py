@@ -814,6 +814,7 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 			_(u'You must pass something through dirs_infos to check!'))
 
 	assert ltrace_func(TRACE_FSAPI, True)
+check_full = check_dirs_and_contents_perms_and_acls_new
 def check_utf8_filename(path, batch=False, auto_answer=None, full_display=True):
 	try:
 		# try to decode the filename to unicode. If this fails, we need

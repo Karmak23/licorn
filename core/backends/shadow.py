@@ -74,10 +74,10 @@ class ShadowBackend(Singleton, UsersBackend, GroupsBackend):
 		except AttributeError:
 			pass
 		else:
-			logging.warning("%s shadow backend (this is important, "
-				"please don't try to set %s in %s!" % (
-						stylize(ST_IMPORTANT, 'RE-enabled'),
-						stylize(ST_COMMENT, 'backends.shadow.enabled=False'),
+			logging.warning(_(u'{0} shadow backend (this is important, '
+				u'please do not try to set {1} in {2}!').format(
+						stylize(ST_IMPORTANT, _(u'RE-enabled')),
+						stylize(ST_COMMENT, u'backends.shadow.enabled=False'),
 						stylize(ST_PATH, settings.main_config_file)
 					)
 				)

@@ -1049,22 +1049,22 @@ def add_profile_parse_arguments(app):
 
 	profile.add_option("--name", '--profile-name', '--profile',
 		action="store", type="string", dest="name", default=None,
-		help=_(u"The profile's name (ie: «Administrator», «Power user», "
-			"«Webmaster», «Guest»). It must conform to {0} word. %s.").format(
+		help=_(u"The profile's name (ie: « Administrator », « Power user », "
+			u"« Webmaster », « Guest »). It must conform to {0} word. {1}.").format(
 				stylize(ST_COMMENT, hlstr.regex['profile_name']),
 				stylize(ST_IMPORTANT, _(u"It is required"))))
 
 	profile.add_option('-g', "--group", '--profile-group',
 		action="store", type="string", dest="group", default=None,
 		help=_(u"Group name (or GID) identifying the profile on the system "
-			"(ie: «administrators», «power-users», «webmasters», «guests»). "
-			"It should be a plural world and will become a system group. %s.")
+			u"(ie: «administrators», «power-users», «webmasters», «guests»). "
+			u"It should be a plural world and will become a system group. %s.")
 				% stylize(ST_IMPORTANT, _(u"It is required")))
 
 	profile.add_option('-d', "--description", '-c', '--comment',
 		action="store", type="string", dest="description", default=None,
 		help=_(u"Description of the profile (free text, but must "
-			"conform to /%s/i).") % stylize(ST_COMMENT,
+			u"conform to /%s/i).") % stylize(ST_COMMENT,
 				hlstr.regex['description']))
 
 	profile.add_option("--shell",
@@ -1081,21 +1081,21 @@ def add_profile_parse_arguments(app):
 	profile.add_option('-G', "--groups", "--add-groups",
 		action="store", type="string", dest="groups", default=None,
 		help=_("Groups users of this profile will become members of."
-			"Separated by commas without spaces."))
+			u"Separated by commas without spaces."))
 
 	profile.add_option("--skel",
 		action="store", type="string", dest="skeldir",
 		default=LMC.rwi.configuration_get('users.default_skel'),
 		help=_(u"Skeleton dir for this profile (must be an absolute path, "
-			"defaults to %s).") % stylize(ST_DEFAULT,
+			u"defaults to %s).") % stylize(ST_DEFAULT,
 				LMC.rwi.configuration_get('users.default_skel')))
 
 	profile.add_option("--force-existing", '--use-existing',
 		action="store_true", dest="force_existing", default=False,
 		help=_(u"Confirm the use of a previously created system group "
-			"for the profile. %s, but in some cases it is needed and "
-			"perfectly safe (when the group is created by another package "
-			"or script).") % stylize(ST_IMPORTANT,
+			u"for the profile. %s, but in some cases it is needed and "
+			u"perfectly safe (when the group is created by another package "
+			u"or script).") % stylize(ST_IMPORTANT,
 				_(u"This can be risky in some situations")))
 
 	parser.add_option_group(profile)
@@ -1146,8 +1146,8 @@ def add_privilege_parse_arguments(app):
 	priv.add_option("--name", "--names",
 		action="store", type="string", dest="privileges_to_add", default=None,
 		help=_(u"The privilege's name(s), which is really a system group name "
-		"(only system groups can be promoted to privileges). %s and can be a "
-		"single word or multiple ones, separated by commas." %
+		u"(only system groups can be promoted to privileges). %s and can be a "
+		u"single word or multiple ones, separated by commas." %
 			stylize(ST_IMPORTANT, _(u"It is required"))))
 
 	parser.add_option_group(priv)
@@ -1177,7 +1177,7 @@ def add_machine_parse_arguments(app):
 	machine.add_option("--discover", '--scan', '--scan-network',
 		action="store", dest="discover", default=None,
 		help=_(u"Scan a network for online hosts and attach them to the "
-			"system. Syntax: 192.168.0.0/24 or 10.0.0.0/8 and the like."))
+			u"system. Syntax: 192.168.0.0/24 or 10.0.0.0/8 and the like."))
 
 	machine.add_option('-a', '--auto-discover', '--auto-scan',
 		action='store_true', dest='auto_scan', default=False,
@@ -1233,8 +1233,8 @@ def del_user_parse_arguments(app):
 	user.add_option("--no-archive",
 		action="store_true", dest="no_archive", default = False,
 		help=_(u"Don't make a backup of user's home directory in %s "
-			"(Default: home directory will be archived)." %
-				stylize(ST_PATH, settings.home_archive_dir)))
+				u"(Default: home directory will be archived)." %
+					stylize(ST_PATH, settings.home_archive_dir)))
 
 	parser.add_option_group(user)
 	return check_opts_and_args(parser.parse_args())
@@ -1260,13 +1260,13 @@ def del_group_parse_arguments(app):
 	group.add_option("--del-users",
 		action="store_true", dest="del_users", default=False,
 		help=_(u"Delete the group primary members (user accounts) too "
-			"(default: {0}, the program will annoy you with a sane "
-			"warning.").format(stylize(ST_DEFAULT, _(u"NO"))))
+			u"(default: {0}, the program will annoy you with a sane "
+			u"warning.").format(stylize(ST_DEFAULT, _(u"NO"))))
 
 	group.add_option("--no-archive",
 		action="store_true", dest="no_archive", default=False,
 		help=_(u"Don't make a backup of users home directories in {0} when "
-			"deleting members (default: {1}).").format(
+			u"deleting members (default: {1}).").format(
 				stylize(ST_PATH, settings.home_archive_dir),
 				stylize(ST_DEFAULT,
 					_(u"archive deleted group shared directories"))))
@@ -1344,7 +1344,7 @@ def del_privilege_parse_arguments(app):
 	priv.add_option("--name", "--names",
 		action="store", type="string", dest="privileges_to_remove", default=None,
 		help=_(u"The privilege's name(s). %s and can be a single word "
-			"or multiple ones, separated by commas.") %
+			u"or multiple ones, separated by commas.") %
 				stylize(ST_IMPORTANT, _(u"This argument is required")))
 
 	parser.add_option_group(priv)
@@ -1387,13 +1387,13 @@ def mod_user_parse_arguments(app):
 	user.add_option("--password", '-p',
 		dest="newpassword", default=None,
 		help=_(u"Specify user's new password on the command line "
-			"(%s, it can be written in your shell history file).") %
+			u"(%s, it can be written in your shell history file).") %
 			stylize(ST_IMPORTANT, 'insecure'))
 
 	user.add_option("--change-password", '-C', '--interactive-password',
 		action="store_true", dest="interactive_password", default=False,
 		help=_(u"Ask for a new password for the user. If changing your own "
-			"password, you will be asked for the old, too."))
+			u"password, you will be asked for the old, too."))
 
 	user.add_option("--auto-password", '-P', '--random-password',
 		action="store_true", dest="auto_passwd", default=False,
@@ -1408,18 +1408,18 @@ def mod_user_parse_arguments(app):
 	user.add_option('-e', "--gecos",
 		dest="newgecos", default=None,
 		help=_(u"Specify user's new GECOS string (generaly "
-			"first and last names)."))
+			u"first and last names)."))
 
 	user.add_option('-s', "--shell",
 		dest="newshell", default=None,
 		help=_(u"Specify user's new shell (generaly /bin/something, must "
-			"be taken from %s).") % ', '.join(stylize(ST_COMMENT, shell)
+			u"be taken from %s).") % ', '.join(stylize(ST_COMMENT, shell)
 				for shell in LMC.rwi.configuration_get('users.shells')))
 
 	user.add_option('-l', "--lock",
 		action="store_true", dest="lock", default=None,
 		help=_(u"lock the account (user wn't be able to login under Linux "
-			"and Windows/MAC until unlocked)."))
+			u"and Windows/MAC until unlocked)."))
 
 	user.add_option('-L', "--unlock",
 		action="store_false", dest="lock", default=None,
@@ -1449,14 +1449,14 @@ def mod_user_parse_arguments(app):
 	user.add_option("--apply-skel",
 		action="store", type="string", dest="apply_skel", default=None,
 		help=_(u"Re-apply the user's skel, or another skel you specify on "
-			"the command line. (use with caution, it will "
-			"overwrite the dirs/files provided by the skel in the "
-			"user's home dir."))
+			u"the command line. (use with caution, it will "
+			u"overwrite the dirs/files provided by the skel in the "
+			u"user's home dir."))
 
 	user.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for this account home directory. "
-			"This is particularly useful after a directory move."))
+			u"This is particularly useful after a directory move."))
 
 	parser.add_option_group(user)
 	try:
@@ -1491,7 +1491,7 @@ def mod_machine_parse_arguments(app):
 	machine.add_option('--warn-user', '--warn-users', '-w',
 		action="store_false", dest="warn_users", default=True,
 		help=_(u'Display a warning message to connected user(s) before '
-			'shutting system(s) down.'))
+			u'shutting system(s) down.'))
 
 	machine.add_option('--upgrade', '-u', '--do-upgrade',
 		'--update',
@@ -1528,8 +1528,8 @@ def mod_volume_parse_arguments(app):
 	volume.add_option('-E', '-d', '--disable', '--disable-volume',
 		'--disable-volumes', action="store", dest="disable_volumes",
 		default=None, help=_(u"specify one or more volume(s) to disable "
-			"(unmark as available for %s), either by giving its device "
-			"path or mount point.") %
+			u"(unmark as available for %s), either by giving its device "
+			u"path or mount point.") %
 				stylize(ST_NAME, LMC.rwi.configuration_get('app_name')))
 
 	volume.add_option('-m', '--mount', '--mount-volume',  '--mount-volumes',
@@ -1609,49 +1609,49 @@ def mod_group_parse_arguments(app):
 	group.add_option('--restore-watches',
 		action='store_true', dest='restore_watch', default=False,
 		help=_(u"Restore the INotifier watch for the group home directory. "
-			"This is particularly useful after a directory move."))
+			u"This is particularly useful after a directory move."))
 
 	group.add_option("--add-users",
 		action="store", type="string", dest="users_to_add", default=None,
 		help=_(u"Add users to the group. The users are separated "
-			"by commas without spaces."))
+			u"by commas without spaces."))
 
 	group.add_option("--del-users",
 		action="store", type="string", dest="users_to_del", default=None,
 		help=_(u"Delete users from the group. The users are separated "
-			"by commas without spaces."))
+			u"by commas without spaces."))
 
 	group.add_option("--add-resps",
 		action="store", type="string", dest="resps_to_add", default=None,
 		help=_(u"Add responsibles to the group. The responsibles are "
-			"separated by commas without spaces."))
+			u"separated by commas without spaces."))
 
 	group.add_option("--del-resps",
 		action="store", type="string", dest="resps_to_del", default=None,
 		help=_(u"Delete responsibles from the group. The responsibles "
-			"are separated by commas without spaces."))
+			u"are separated by commas without spaces."))
 
 	group.add_option("--add-guests",
 		action="store", type="string", dest="guests_to_add", default=None,
 		help=_(u"Add guests to the group. The guests are separated "
-			"by commas without spaces."))
+			u"by commas without spaces."))
 
 	group.add_option("--del-guests",
 		action="store", type="string", dest="guests_to_del", default = None,
 		help=_(u"Delete guests from the group. The guests are separated "
-			"by commas without spaces."))
+			u"by commas without spaces."))
 
 	group.add_option("--add-granted-profiles",
 		action="store", type="string", dest="granted_profiles_to_add", default=None,
 		help=_(u"Add the profiles which the users can access to the "
-			"group's shared directory. The profiles are separated by "
-			"commas without spaces."))
+			u"group's shared directory. The profiles are separated by "
+			u"commas without spaces."))
 
 	group.add_option("--del-granted-profiles",
 		action="store", type="string", dest="granted_profiles_to_del", default=None,
 		help=_(u"Delete the profiles which the users can access "
-			"to the group's shared directory. The profiles are "
-			"separated by commas without spaces."))
+			u"to the group's shared directory. The profiles are "
+			u"separated by commas without spaces."))
 
 	backends = LMC.rwi.groups_backends_names()
 
@@ -1659,9 +1659,9 @@ def mod_group_parse_arguments(app):
 		group.add_option('--move-to-backend', '--change-backend', '--move-backend',
 			action="store", type="string", dest="move_to_backend", default=None,
 			help=_(u'Move the group from its current backend to another, '
-				'where it will definitely be stored (specify new backend '
-				'name as argument, taken from %s).') %
-				', '.join(stylize(ST_NAME, backend) for backend in backends))
+				u'where it will definitely be stored (specify new backend '
+				u'name as argument, taken from %s).') %
+				u', '.join(stylize(ST_NAME, backend) for backend in backends))
 
 	parser.add_option_group(group)
 
@@ -1707,28 +1707,28 @@ def mod_profile_parse_arguments(app):
 	profile.add_option("--quota",
 		action="store", type="int", dest="newquota", default=None,
 		help=_(u"Change profile's user quota (in Mb, defaults "
-			"to %s if you specify --quota without argument)."
-			"Instant-applyed to current members if not specified otherwise.") %
+			u"to %s if you specify --quota without argument)."
+			u"Instant-applyed to current members if not specified otherwise.") %
 				stylize(ST_DEFAULT, "1024"))
 
 	profile.add_option("--skel",
 		action="store", type="string", dest="newskel", default=None,
 		help=_(u"Change profile skel (specify a skel dir as an absolute "
-			"pathname, defaults to %s if you give --skel without argument)."
-			"Instant-applyed to current members if not specified otherwise.") %
+			u"pathname, defaults to %s if you give --skel without argument)."
+			u"Instant-applyed to current members if not specified otherwise.") %
 				stylize(ST_DEFAULT, LMC.rwi.configuration_get('users.default_skel')))
 
 	profile.add_option("--add-groups",
 		action="store", type="string", dest="groups_to_add", default=None,
 		help=_(u"Add one or more group(s) to default memberships of "
-			"profile (separate groups with commas without spaces)."
-			"Instant-applyed to current members if not specified otherwise."))
+			u"profile (separate groups with commas without spaces)."
+			u"Instant-applyed to current members if not specified otherwise."))
 
 	profile.add_option("--del-groups",
 		action="store", type="string", dest="groups_to_del", default=None,
 		help=_(u"Delete one or more group(s) from default memberships "
-			"of profile (separate groups with commas without spaces). "
-			"Instant-applyed to current members if not specified otherwise."))
+			u"of profile (separate groups with commas without spaces). "
+			u"Instant-applyed to current members if not specified otherwise."))
 
 	profile.add_option("--apply-groups",
 		action="store_true", dest="apply_groups", default=False,
@@ -1750,8 +1750,8 @@ def mod_profile_parse_arguments(app):
 	profile.add_option("--to-groups",
 		action="store", type="string", dest="apply_to_groups", default=None,
 		help=_(u"Re-apply to all members of one or more groups "
-			"(separate groups with commas without spaces). "
-			"You can mix --to-users and --to-groups."))
+			u"(separate groups with commas without spaces). "
+			u"You can mix --to-users and --to-groups."))
 
 	profile.add_option("--to-members",
 		action="store_true", dest="apply_to_members", default = False,
@@ -1760,19 +1760,19 @@ def mod_profile_parse_arguments(app):
 	profile.add_option("--to-all",
 		action="store_true", dest="apply_to_all_accounts", default=None,
 		help=_(u"Re-apply to all user accounts on the system "
-			"(LENGHTY operation !)."))
+			u"(LENGHTY operation !)."))
 
 	profile.add_option("--no-instant-apply",
 		action="store_false", dest="instant_apply", default=True,
 		help=_(u"Don't apply group addition/deletion and other parameters "
-			"instantly to all members of the modified profile "
-			"(%s; use this only if you know what you're doing).") %
-				stylize(ST_IMPORTANT, "this is not recommended"))
+			u"instantly to all members of the modified profile "
+			u"(%s; use this only if you know what you're doing).") %
+				stylize(ST_IMPORTANT, u"this is not recommended"))
 
 	profile.add_option("--no-sync",
 		action="store_true", dest="no_sync", default = False,
 		help=_(u"Commit changes only after all modifications "
-			"(currently disabled)."))
+			u"(currently disabled)."))
 
 	parser.add_option_group(profile)
 
