@@ -201,7 +201,7 @@ def create(request, **kwargs):
 		groups.extend(gresolver(int(gid)).responsible_group.gidNumber
 				for gid in request.POST.getlist('resp_groups') if gid != '')
 
-		lprint(groups)
+		#lprint(groups)
 
 		profile     = LMC.profiles[
 									int(w.my_unquote(request.POST['profile']))
