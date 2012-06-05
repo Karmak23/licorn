@@ -10,7 +10,7 @@ bootstrap - the very base.
 :license: GNU GPL version 2
 """
 
-import sys, os, inspect, traceback
+import sys, os, codecs, inspect, traceback
 
 def getcwd():
 	""" We can't rely on `os.getcwd()`: it will resolve the CWD if it is a
@@ -48,13 +48,38 @@ def setup_sys_path():
 	if current_folder != '' and current_folder not in sys.path:
 		sys.path.insert(0, current_folder)
 def setup_utf8():
-	""" We need to set the system encoding to utf-8. I know that this is
-		officially unsupported at least on Python 2.x installations, but which
-		system uses only 'ascii' nowadays?? Everything we do is utf8.
+	""" We need to set the system encoding and stdout/stderr to utf-8.
+		I already know that this is officially unsupported at least on
+		Python 2.x installations, but many strings in Licorn® have UTF-8
+		characters inside. Our terminal	emulators are all utf-8 natively,
+		and outputing UTF-8 to log files never hurted anyone. Distros we
+		support are all UTF-8 enabled at the lower level.
+
+		If for some reason you would want another encoding, just define the
+		PYTHONIOENCODING environment variable. This will probably hurt though,
+		because many things in Licorn® assume a modern UTF-8 underlying OS.
+
+		Some discussions:
+
+		- http://drj11.wordpress.com/2007/05/14/python-how-is-sysstdoutencoding-chosen/
+		- http://www.haypocalc.com/wiki/Python_Unicode (in french)
+		- http://stackoverflow.com/questions/1473577/writing-unicode-strings-via-sys-stdout-in-python
+		- http://stackoverflow.com/questions/492483/setting-the-correct-encoding-when-piping-stdout-in-python
+		- http://stackoverflow.com/questions/4374455/how-to-set-sys-stdout-encoding-in-python-3
 	"""
-	if sys.getdefaultencoding() == "ascii":
+
+	default_encoding = os.getenv('PYTHONIOENCODING', 'utf-8')
+
+	if sys.getdefaultencoding() != default_encoding:
 		reload(sys)
-		sys.setdefaultencoding("utf-8")
+		sys.setdefaultencoding(default_encoding)
+
+	if sys.stdout.encoding != default_encoding:
+		sys.stdout = codecs.getwriter(default_encoding)(sys.stdout)
+
+	if sys.stderr.encoding != default_encoding:
+		sys.stderr = codecs.getwriter(default_encoding)(sys.stderr)
+
 def setup_gettext():
 	""" Import gettext for all licorn code, and setup unicode.
 		this is particularly needed to avoid #531 and all other kind

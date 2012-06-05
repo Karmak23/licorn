@@ -11,6 +11,7 @@ from licorn.version import version
 # ===================================================== foundations imports
 import bootstrap
 
+# warning: import gettext *after* bootstrap (for UTF8 setup).
 import gettext
 
 from _options  import options
