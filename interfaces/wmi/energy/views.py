@@ -55,14 +55,12 @@ def policies(request, *args, **kwargs):
 
 @staff_only
 def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
-	print ">> add rule"
 	try:
 		# add the task
 		LMC.tasks.add_task("_extinction-cal_{0}".format(
 			LMC.tasks.get_next_unset_id()),	'LMC.machines.shutdown', 
 						args=[who], hour=str(hour), minute=str(minute),
 						week_day=str(day))
-		print "end adding"
 		return HttpResponse('add rule')
 	except exceptions.BadArgumentError, e:
 		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : {3}.').format(

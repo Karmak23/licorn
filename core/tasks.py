@@ -899,7 +899,6 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		args=None, kwargs=None, test=False, load=False):
 		""" add a new task into the controller """
 
-		print "tasks.add_task , name = ", name			
 		# apply defaults here
 		if year is None:
 			year   = '*'
@@ -923,16 +922,11 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			defer_resolution = True
 		# end defaults
 
-		print "create task obj, check name"
 		# create the task object
 		# check if task name is unique:
 		try:
-			self.by_name(name)
-			print name
-			print "in the try"
-			print self.by_name(name)	
+			self.by_name(name)	
 		except KeyError, IndexError:
-			print "unique name"
 			# check task type (e.g. TaskExtinction....)
 			if action == 'LMC.machines.shutdown':
 				taskClass = pyutils.MixIn(TaskExtinction, Task)
@@ -966,7 +960,6 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 					"argument".format( stylize(ST_BAD, "Cannot resolve action"),
 						stylize(ST_PATH, self.name))))
 			
-			print task.schedule()
 			if task.schedule():
 				task.serialize(backend_actions.CREATE)
 
@@ -991,7 +984,6 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				LicornEvent('task_added', task=task).emit(priorities.LOW)
 	
 		else:
-			print "ALREADY SAME NAME"
 			logging.notice(_('{0} : {1} task named {2}, another task with the '
 				'same name already exists'.format(
 					stylize(ST_NAME, LMC.tasks.name),
@@ -1011,8 +1003,10 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			# cancel it from the scheduler 
 			task.stop()
 			
+			del self[task.id].__class__.by_name[task.name]
 			# del its reference
 			del self[task.id]
+			
 			
 			# del it from the config
 			task.backend.delete_Task(task)
@@ -1021,9 +1015,10 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				stylize(ST_NAME, LMC.tasks.name), 
 				stylize(ST_PATH, task.name),
 				stylize(ST_BAD, "deleted"))))
+			logging.notice('  task ref count before del: %d %s' % (
+					sys.getrefcount(task), gc.get_referrers(task)))
 			
-			
-			assert ltrace(TRACE_GC, '  task ref count before del: %d %s' % (
+			logging.notice('  task ref count before del: %d %s' % (
 					sys.getrefcount(task), gc.get_referrers(task)))
 
 			del task
