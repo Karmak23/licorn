@@ -74,6 +74,8 @@ filters.NOT_RSP             = filters.NOT_RESPONSIBLE
 filters.NOT_SYSTEM          = filters.ALL - filters.SYSTEM
 filters.NOT_SYS             = filters.NOT_SYSTEM
 
+filters.EXTINCTION_TASK     = 0x00010000
+
 filters.EMPTY               = 0x00ff0000
 
 # enum machine stati, for core.machines

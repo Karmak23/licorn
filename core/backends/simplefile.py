@@ -73,7 +73,7 @@ class SimplefileBackend(Singleton, TasksBackend):
 					name = json_data['name']
 					action = json_data['action']
 				except KeyError:
-					logging.notice('required fields')
+					logging.exception('Exception while loading tasks')
 					return
 				
 				_year   = json_data['year'] if json_data.has_key('year') else None
@@ -101,7 +101,7 @@ class SimplefileBackend(Singleton, TasksBackend):
 					hour=hour, minute=minute, second=second, delay_until_year=delay_until_year,
 					delay_until_month=delay_until_month, delay_until_day=delay_until_day,
 					delay_until_minute=delay_until_minute, delay_until_second=delay_until_second,
-					args=args, kwargs=kwargs, defer_resolution=defer_resolution, week_day=week_day)
+					args=args, kwargs=kwargs, defer_resolution=defer_resolution, week_day=week_day, load=True)
 				
 					
 		assert ltrace_func(TRACE_SHADOW, 1)

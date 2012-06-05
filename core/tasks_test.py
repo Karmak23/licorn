@@ -1087,36 +1087,3 @@ def test_massive():
 
 
 
-def test_bad_arguments():
-	default_rule = {
-	'name' : 'toto',
-	'action' : 'logging.notice',
-
-	'year' : '*',
-	'month' : '*',
-	'day' : '*',
-	'hour' : '*',
-	'minute' : '*',
-	'second' : '0',
-
-	'week_day' : None,
-
-	'delay_until_year'   : None,
-	'delay_until_month'  : None,
-	'delay_until_day'    : None,
-	'delay_until_hour'   : None,
-	'delay_until_minute' : None,
-	'delay_until_second' : None,
-
-	'defer_resolution' : True
-}	
-	
-	for arg in ('year', 'month', 'day', 'hour', 'minute', 'second', 'week_day',
-			'delay_until_year', 'delay_until_month', 'delay_until_day', 
-			'delay_until_hour', 'delay_until_minute', 'delay_until_second'):
-		for t in ('tototo', [1,2,3], True, False):
-			kw = default_rule.copy()
-			kw[arg]    = t
-			with py.test.raises(exceptions.BadArgumentError):
-				TasksController.validate_task(**kw)
-

@@ -339,21 +339,9 @@ def common_filter_group(app, parser, tool, mode):
 
 
 	if mode == "tasks":
-		filtergroup.add_option('--interval', '-I',
-			action="store_true", dest="interval", default=False,
-			help=_(u"Only select task wich mode is 'interval'"))
-		filtergroup.add_option('--single', '-S',
-			action="store_true", dest="single", default=False,
-			help=_(u"Only select task wich mode is 'single'"))
-		filtergroup.add_option('--day', '-D',
-			action="store_true", dest="day", default=False,
-			help=_(u"Only select task wich mode is 'day'"))
-		filtergroup.add_option('--week', '-W',
-			action="store_true", dest="week", default=False,
-			help=_(u"Only select task wich mode is 'week'"))
-		filtergroup.add_option('--month', '-M',
-			action="store_true", dest="month", default=False,
-			help=_(u"Only select task wich mode is 'month'"))
+		filtergroup.add_option('--extinction-tasks', '-e', '--extinction',
+			action="store_true", dest="extinction", default=False,
+			help=_(u"Only select 'extinction' tasks"))
 
 	return filtergroup
 def check_opts_and_args(opts_and_args):
@@ -639,6 +627,7 @@ def get_tasks_parse_arguments(app):
 	parser.add_option_group(common_behaviour_group(app, parser, 'get'))
 	parser.add_option_group(common_filter_group(app, parser, 'get', 'tasks'))
 	parser.add_option_group(__get_output_group(app, parser,'tasks'))
+
 	
 	return parser.parse_args()
 def get_configuration_parse_arguments(app):

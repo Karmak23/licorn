@@ -73,61 +73,114 @@
 	var separator_height = 5
 	var separator_width = 0.6*total_width_bar	
 
+
 	// create the chart
-	var wbchart = d3.select('div#weekly_bars_chart_container')
-					.append("svg:svg")
+		var wbchart = d3.select('div#weekly_bars_chart_container')
+					.insert("svg:svg")
 						.attr("id", "weekly_bars_chart")
 						.attr("width", total_width)
 						.attr("height", total_height)
 						.append("svg:g");
 
-	// hour line vectors
-	var hour_vect = d3.scale.linear()
-	    .domain([6, 22])
-    	.range([25, total_height_graph]);
 
-    // day cols vectors
-    var day_vect = d3.scale.ordinal()
-		.domain([0,1,2,3,4,5,6])
-		.rangeBands([35, total_width_graph]);
-    
-    // hour line
-	wbchart.selectAll("line_hour")
-	    .data([6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22])
-	    .enter().append("svg:line")
-		.attr("y1", hour_vect)
-		.attr("y2", hour_vect)
-		.attr("x1", 35)
-		.attr("x2", total_width_graph)
-		.text(String)
-	    .style("stroke", "#ccc");
+		/*h = []
+		
+		
+		data_separators = {{ data_separators }}
 
-	// hour text 
-	wbchart.selectAll("text.hour")
-		.data([6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22])
-		.enter().append("svg:text")
-		.attr("class", "hour")
-		.attr("x", 25)
-		.attr("y", hour_vect)
-		.attr("dx", -3)
-		.text(function(d){ return d.toString() + 'h00'; })
-		.attr("text-anchor", "middle")
-		.text(String);
+		$.each(data_separators, function(i, data) {
+			//console.log(data)
+			h.push(parseInt(data['hour']))
+		})
+		
+		data_on_off = [
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+			{ 'on': d3.min(h)*60, 'off': d3.min(h)*60},
+		]
 
-	// DAY TEXT 
-	wbchart.selectAll("text.day")
-	.data([ "{{ _('Mon.') }}", "{{ _('Tue.') }}", "{{_('Wed.') }}", 
-					"{{ _('Thu.') }}", "{{_('Fri.') }}", "{{_('Sat.') }}", 
-					"{{_('Sun.') }}" ])
-	.enter()
-		.append("svg:text")
-		.attr("class", "day")
-		.attr("x", day_vect)
-		.attr("y", 20)
-		.attr("dx", function(d, i){ return total_width_bar/2.5; })
-		.text(function(d, i){ return d; })
+		console.log(data_on_off)
 
-	function draw_extinction_calendar(data_separators, data_on_off) {
+		$.each(data_separators, function(i, data) {
+			off = data_on_off[parseInt(data['day'])]['off']
+			if (off == null || off < parseInt(data['hour']) * 60 + parseInt(data['minute'])) {
+				data_on_off[parseInt(data['day'])]['off'] = parseInt(data['hour'])*60+parseInt(data['minute'])
+				console.log('change ', off)
+			}
+		})
+
+		if (d3.min(h) < 8) {
+			hour_min = d3.min(h);
+		} else {
+			hour_min = 8;
+		}
+
+		if (d3.max(h) > 20) {
+			hour_max = d3.max(h);
+		} else {
+			hour_max = 20;
+		}
+
+
+
+		hour_range  = d3.range(hour_min*60, (hour_max+1)*60+1, 60)
+
+		// hour line vectors
+		var hour_vect = d3.scale.linear()
+		    .domain([hour_min*60, (hour_max+1)*60])
+	    	.range([25, total_height_graph]);
+
+	    // day cols vectors
+	    var day_vect = d3.scale.ordinal()
+			.domain([0,1,2,3,4,5,6])
+			.rangeBands([35, total_width_graph]);
+
+
+
+		 // hour line
+	    hour_line = wbchart.selectAll("line_hour")
+		    .data(hour_range)
+		
+		hour_line.enter()
+		    	.append("svg:line")
+
+				.attr("class", "line_hour")
+				.attr("y1", hour_vect)
+				.attr("y2", hour_vect)
+				.attr("x1", 35)
+				.attr("x2", total_width_graph)
+				.text(String)
+		    	.style("stroke", "#ccc");
+
+		// hour text 
+		hour_text = wbchart.selectAll("text.hour")
+			.data(hour_range)
+		hour_text.enter().append("svg:text")
+			.attr("class", "hour")
+			.attr("x", 25)
+			.attr("y", hour_vect)
+			.attr("dx", -3)
+			.text(function(d){ return (d/60).toString() + 'h00'; })
+			.attr("text-anchor", "middle");
+		
+		// DAY TEXT 
+		wbchart.selectAll("text.day")
+		.data([ "{{ _('Mon.') }}", "{{ _('Tue.') }}", "{{_('Wed.') }}", 
+						"{{ _('Thu.') }}", "{{_('Fri.') }}", "{{_('Sat.') }}", 
+						"{{_('Sun.') }}" ])
+		.enter()
+			.append("svg:text")
+			.attr("class", "day")
+			.attr("x", day_vect)
+			.attr("y", 20)
+			.attr("dx", function(d, i){ return total_width_bar/2.5; })
+			.text(function(d, i){ return d; })
+
+		
 		
 		// rect on
 		rect_on = wbchart.selectAll(".rect_on").data(data_on_off)
@@ -138,14 +191,171 @@
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
 			
 			.attr("width", bar_width)
-			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(d.on) })
-			.attr("y", function(d) { return hour_vect(d.on); });
+			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(hour_min*60) })
+			.attr("y", function(d) { return hour_vect(hour_min*60); });
+
+		
+		
+		// rect off
+		rect_off= wbchart.selectAll(".rect_off").data(data_on_off)
+			
+		rect_off.enter()
+			.append("svg:rect")
+			.attr("class", "rect_off")
+			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
+			
+			.attr("width", bar_width)
+			.attr("height", function(d) { return hour_vect((hour_max+1)*60) - hour_vect(d.off) })
+			.attr("y", function(d) { console.log('off', d.off); return hour_vect(d.off); });
+		
+		
+
+		// draw separators		
+		separators = wbchart.selectAll(".rect_sep").data(data_separators)
+
+		separators.enter()
+			.insert("svg:rect")
+			.attr("class", "rect_sep")
+			.attr("x", function(d) { return day_vect(d.day) + ( total_width_bar - separator_width)/2 })
+			.attr("width", separator_width)
+			.attr("height", separator_height)
+			.attr("y", function(d) { return hour_vect(parseInt(d.hour)*60+parseInt(d.minute)) - separator_height/2 })
+		
+		
+		
+		
+		
+		$('svg .rect_sep').tipsy({ 
+	    	gravity: 's', 
+	    	html: true, 
+	    	title: function() {
+	    		var d = this.__data__, g = d.who;
+	    		return strargs(gettext('Extinction of %1'), [ g ]); 
+	    	   }
+	    }); */
+
+
+
+	function draw_extinction_calendar(new_data_separators) {
+		console.log(new_data_separators)
+		h=[]
+		$.each(new_data_separators, function(i, data) {
+			//console.log(data)
+			h.push(parseInt(data['hour']))
+		})
+		console.log("h ", h)
+		if (d3.min(h) < 8) {
+			hour_min = d3.min(h);
+		} else {
+			hour_min = 8;
+		}
+
+		if (d3.max(h) > 20) {
+			hour_max = d3.max(h);
+		} else {
+			hour_max = 20;
+		}
+
+		data_on_off = [
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+			{ 'on': d3.min(h)*60, 'off': hour_min*60},
+		]
+
+		//console.log(data_on_off)
+
+		$.each(new_data_separators, function(i, data) {
+			off = data_on_off[parseInt(data['day'])]['off']
+			if (off == null || off < parseInt(data['hour']) * 60 + parseInt(data['minute'])) {
+				data_on_off[parseInt(data['day'])]['off'] = parseInt(data['hour'])*60+parseInt(data['minute'])
+				console.log('change ', off)
+			}
+		})
+		
+		// hour line vectors
+		var hour_vect = d3.scale.linear()
+		    .domain([hour_min*60, (hour_max+1)*60])
+	    	.range([25, total_height_graph]);
+	    
+	     // day cols vectors
+	    var day_vect = d3.scale.ordinal()
+			.domain([0,1,2,3,4,5,6])
+			.rangeBands([35, total_width_graph]);
+
+	    console.log("hour_min = ", hour_min)
+	    console.log("hour_max = ", hour_max)
+
+		hour_range  = d3.range(hour_min*60, (hour_max+1)*60+1, 60)
+
+
+		 // hour line
+		//remvoe old lines
+		hour_line = wbchart.selectAll("line.line_hour")
+		    .data(hour_range)
+		
+
+		hour_line.enter()
+		    	.append("svg:line")
+		    	.attr('class', 'line_hour')
+				.attr("y1", hour_vect)
+				.attr("y2", hour_vect)
+				.attr("x1", 35)
+				.attr("x2", total_width_graph)
+				.text(String)
+		    	.style("stroke", "#ccc");
+		hour_line
+			.attr("y1", hour_vect)
+			.attr("y2", hour_vect)
+		hour_line.exit().remove();
+	
+
+		// hour text 
+		hour_text = wbchart.selectAll("text.hour")
+			.data(hour_range)
+		hour_text.enter().append("svg:text")
+			.attr("class", "hour")
+			.attr("x", 25)
+			.attr("y", hour_vect)
+			.attr("dx", -3)
+			.text(function(d){ return (d/60).toString() + 'h00'; })
+			.attr("text-anchor", "middle");
+		hour_text.attr("y", hour_vect)
+		hour_text.exit().remove();
+		
+		// DAY TEXT 
+		wbchart.selectAll("text.day")
+		.data([ "{{ _('Mon.') }}", "{{ _('Tue.') }}", "{{_('Wed.') }}", 
+						"{{ _('Thu.') }}", "{{_('Fri.') }}", "{{_('Sat.') }}", 
+						"{{_('Sun.') }}" ])
+		.enter()
+			.append("svg:text")
+			.attr("class", "day")
+			.attr("x", day_vect)
+			.attr("y", 20)
+			.attr("dx", function(d, i){ return total_width_bar/2.5; })
+			.text(function(d, i){ return d; })
+
+		
+		
+		// rect on
+		rect_on = wbchart.selectAll(".rect_on").data(data_on_off)
+			
+		rect_on.enter()
+			.append("svg:rect")
+			.attr("class", "rect_on")
+			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
+			
+			.attr("width", bar_width)
+			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(hour_min*60) })
+			.attr("y", function(d) { return hour_vect(hour_min*60); });
 
 		rect_on
-			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
-			.attr("width", bar_width)
-			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(d.on) })
-			.attr("y", function(d) { return hour_vect(d.on); });
+			.attr("height", function(d) { return hour_vect(d.off) - hour_vect(hour_min*60) })
+			.attr("y", function(d) { return hour_vect(hour_min*60); });
 		
 		rect_on.exit().remove()
 		
@@ -158,20 +368,20 @@
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
 			
 			.attr("width", bar_width)
-			.attr("height", function(d) { return hour_vect(22) - hour_vect(d.off) })
-			.attr("y", function(d) { return hour_vect(d.off); });
+			.attr("height", function(d) { return hour_vect((hour_max+1)*60) - hour_vect(d.off) })
+			.attr("y", function(d) { console.log('off', d.off); return hour_vect(d.off); });
 		
 		rect_off
 			.attr("x", function(d, i) { return day_vect(i) + bar_width/2 })
 			.attr("width", bar_width)
-			.attr("height", function(d) { return hour_vect(22) - hour_vect(d.off) })
+			.attr("height", function(d) { return hour_vect((hour_max+1)*60) - hour_vect(d.off) })
 			.attr("y", function(d) { return hour_vect(d.off); });
 		
 		rect_off.exit().remove()
 		
 
 		// draw separators		
-		separators = wbchart.selectAll(".rect_sep").data(data_separators)
+		separators = wbchart.selectAll(".rect_sep").data(new_data_separators)
 
 		separators.enter()
 			.insert("svg:rect")
@@ -179,14 +389,14 @@
 			.attr("x", function(d) { return day_vect(d.day) + ( total_width_bar - separator_width)/2 })
 			.attr("width", separator_width)
 			.attr("height", separator_height)
-			.attr("y", function(d) { return hour_vect(d.hour) - separator_height/2 })
+			.attr("y", function(d) { return hour_vect(parseInt(d.hour)*60+parseInt(d.minute)) - separator_height/2 })
 		
 		separators
 			.attr("class", "rect_sep")
 			.attr("x", function(d) { return day_vect(d.day) + ( total_width_bar - separator_width)/2 })
 			.attr("width", separator_width)
 			.attr("height", separator_height)
-			.attr("y", function(d) { return hour_vect(d.hour) - separator_height/2 })
+			.attr("y", function(d) { return hour_vect(parseInt(d.hour)*60+parseInt(d.minute)) - separator_height/2 })
 
 		separators.exit().remove()
 
@@ -201,6 +411,9 @@
 	    		return strargs(gettext('Extinction of %1'), [ g ]); 
 	    	   }
 	    });
+
+	
+	   
 
 	}
 

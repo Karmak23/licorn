@@ -140,6 +140,9 @@ from licorn.core.classes          import CoreController, CoreStoredObject, \
 										SelectableController
 
 from licorn.daemon.threads        import LicornJobThread
+from licorn.interfaces.wmi.app import wmi_event_app
+
+from licorn.foundations.events import LicornEvent
 
 # ranges of temporal args
 ranges = {
@@ -151,7 +154,16 @@ ranges = {
 		'year'     : range(1, 2038), 
 		'week_day' : range(7) # 0 is monday
 		}
-
+days = {
+	'0': _('Monday'),
+	'1': _('Tuesday'), 
+	'2': _('Wednesday'),
+	'3': _('Thrusday'),
+	'4': _('Friday'), 
+	'5': _('Satursday'), 
+	'6': _('Sunday'),
+	'*': _('ALL') }
+	
 
 class Task(CoreStoredObject):
 	"""
@@ -256,12 +268,12 @@ class Task(CoreStoredObject):
 				_args.append(eval(a))
 				#lprint("arg {0} has been resolved as {1}".format(a, eval(a)))
 			except KeyError, e:
-				logging.notice('{2} : arg {0} has not bee resolved, the object '
+				logging.notice(_('{2} : arg {0} has not bee resolved, the object '
 					'referenced by {1} does not exist, you may want to defer '
 					'the action\'s parameters resolution using defer_resolution'
 					' arg'.format(
 						stylize(ST_PATH, a), stylize(ST_PATH, e), 
-						stylize(ST_NAME, LMC.tasks.name)))
+						stylize(ST_NAME, LMC.tasks.name))))
 			except Exception, e:
 				_args.append(a)
 				# lprint("arg {0} has not been resolved (was:{1})".format(a, e))
@@ -405,8 +417,8 @@ class Task(CoreStoredObject):
 			
 			_arg = getattr(self, arg)
 			
-			logging.debug('>check_for_exclusion(arg={0}, _arg={1}, kwargs={2}'.
-				format(arg,_arg, kwargs))
+			#logging.debug('>check_for_exclusion(arg={0}, _arg={1}, kwargs={2}'.
+			#	format(arg,_arg, kwargs))
 			
 			if '^' in _arg :
 				s = _arg.split('^')
@@ -425,14 +437,14 @@ class Task(CoreStoredObject):
 				kwargs.update({rrule_kwargs[arg] : [ t for t in ranges[arg] \
 					if t not in to_exclude ]})
 				
-				logging.debug('<check_for_exclusion(return_arg={0}, kwargs={1}'.
-					format(return_arg, kwargs))
+				#logging.debug('<check_for_exclusion(return_arg={0}, kwargs={1}'.
+				#	format(return_arg, kwargs))
 				return return_arg, kwargs
 			
 			# if no excape chars in arg, return it untouched
 			else:
-				logging.debug('<check_for_exclusion(UNTOUCHED _arg={0}, '
-					'kwargs={1}'.format(_arg, kwargs))
+				#logging.debug('<check_for_exclusion(UNTOUCHED _arg={0}, '
+				#	'kwargs={1}'.format(_arg, kwargs))
 				return _arg, kwargs
 
 		args = ['year', 'month', 'day', 'hour', 'minute', 'second', 'week_day']
@@ -590,10 +602,10 @@ class Task(CoreStoredObject):
 			return running_time
 
 		if running_time is None:
-			logging.notice("{0} : {1} for task {2}.".format(
+			logging.notice(_("{0} : {1} for task {2}.".format(
 				stylize(ST_NAME, LMC.tasks.name),
 				stylize(ST_BAD, "No remaining occurence"), 
-				stylize(ST_PATH, self.name)))
+				stylize(ST_PATH, self.name))))
 			if LMC.tasks.by_name(self.name) != None:
 				LMC.tasks.del_task(self.id)
 			return False
@@ -617,6 +629,197 @@ class Task(CoreStoredObject):
 		self.thread.stop()
 		del self.thread
 
+	def validate(self):
+		""" task validation mechanism """
+
+		args_to_check = [
+			('name', self.name), ('action', self.action), ('year', self.year), ('month', self.month),
+			('day', self.day), ('hour', self.hour), ('minute', self.minute), ('second', self.second),
+			('week_day', self.week_day), ('delay_until_year', self.delay_until_year), 
+			('delay_until_month', self.delay_until_month), 
+			('delay_until_day', self.delay_until_day), 
+			('delay_until_hour', self.delay_until_hour), 
+			('delay_until_minute', self.delay_until_minute),
+			('delay_until_second', self.delay_until_second),
+		]
+
+		temporal_args = ['year', 'month', 'day', 'hour', 
+			'minute', 'second', 'week_day']
+
+		def validate_range(t, arg, can_be_neg=False):
+			if arg != 'day':
+				# negativ arg only for day argument
+				can_be_neg = False
+
+			if can_be_neg:
+  				if str(t)[0]=='-':
+  					t=str(t)[1:]
+  				
+  			if int(t) not in ranges[arg]:
+  				raise exceptions.BadArgumentError(_("{1} on task {0} for argument"
+					" {2}={5} : should be between {3} and {4}".format(
+						stylize(ST_NAME, name),
+						stylize(ST_BAD, 'Not in range'),
+						arg, min(ranges[arg]) if not can_be_neg \
+							else '-{0}'.format(max(ranges[arg])), 
+								max(ranges[arg]),
+						t)))
+			
+		def validate_exclusion(arg, _arg, can_be_neg=False):
+			""" validate exclusion X^x[,y[..]] where x,y are positiv integer"""
+			
+			if '^' in str(_arg) :
+				s = _arg.split('^')
+				return_arg = s[0]
+				to_exclude = [ int(a) for a in str(s[1]).split(',') if a != '' ]
+				for a in to_exclude:
+					validate_range(a, arg, can_be_neg=can_be_neg)
+			
+				return return_arg
+			else:
+				return _arg
+		
+		for arg, _arg in args_to_check:
+			if _arg == None:
+				continue
+			# first of all check every type
+			if type(_arg) not in (types.StringType, types.NoneType, 
+				types.IntType, types.UnicodeType):
+				
+				raise exceptions.BadArgumentError(_("{0} on task {1} for argument "
+					"{2}={3} : excepted type are String, Int or None".format(
+						stylize(ST_BAD, "Type error"),
+						stylize(ST_PATH, name), arg, _arg)))
+			
+			# if temporal arg, check it carefully
+			if arg in temporal_args:
+				_arg=str(_arg)
+				if _arg == '*':
+					continue
+				elif str(_arg).startswith('*') and str(_arg)[1] == '/':
+					# check exclusion
+					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
+
+					# check range
+					for t in str(_arg[2:]).split(','):
+						if t != '':
+							validate_range(t, arg)
+				elif str(_arg).startswith('*') and str(_arg)[1] == '^':
+					# check exclusion
+					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
+
+					# check range
+					for t in str(_arg[2:]).split(','):
+						if t != '':
+							validate_range(t, arg)
+				
+				elif ':' in str(_arg):
+					# check exclusion
+					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
+
+					# check range
+					for t in _arg.split(':'):
+						validate_range(int(t), arg)
+													
+				else:
+					
+					_arg = str(_arg)
+					# check exclusion
+					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
+					# check range
+					for t in str(_arg).split(','):
+						try:
+							t = int(t)
+						except:
+							raise exceptions.BadArgumentError(_("{0} on task {1} for argument {2}={3} has to "
+								"be an Int".format( stylize(ST_BAD, "Type error"),
+									stylize(ST_PATH, self.name), arg, t)))
+						validate_range(t, arg, can_be_neg=True)
+						if arg=='year':
+							if int(t) < datetime.now().year:
+								raise exceptions.BadArgumentError(_("{0} on task {1} for argument {2}={3} has to "
+										"be > {4}".format( stylize(ST_BAD, "Argument error"),
+											stylize(ST_PATH, self.name), arg, t, datetime.now().year)))
+			# delay_until_* arguments are only int, nothing more
+			elif str(arg).startswith('delay_until_'):
+				try:
+					t = int(_arg)
+				except:
+					raise exceptions.BadArgumentError(_("{1} on task {0} for "
+						"argument {2}={3} : should be transtypable to int".format(
+						name, stylize(ST_BAD, 'Type Error'),
+						arg, _arg)))
+		
+		# check action
+		if type(self.action) not in (types.UnicodeType, types.StringType):
+			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'action'={2} has to "
+				"be a String".format( stylize(ST_BAD, "Type error"),
+					stylize(ST_PATH, self.name), self.action)))
+
+		# check defer_resolution
+		if type(self.defer_resolution) != types.BooleanType:
+			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'defer_resolution'={2} has to "
+				"be a Boolean".format( stylize(ST_BAD, "Type error"),
+					stylize(ST_PATH, self.name), self.defer_resolution)))
+		
+
+class TaskExtinction(Task):
+	def validate(self):
+		super(TaskExtinction, self).validate()
+	
+		if self.hour == '*':
+			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'hour'={2} has to "
+				"be a Int where 0<=hour<60".format( stylize(ST_BAD, "BadArgumentError"),
+					stylize(ST_PATH, self.name), self.hour))
+		if self.minute == '*':
+			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'minute'={2} has to "
+				"be a Int where 0<=minute<60".format( stylize(ST_BAD, "BadArgumentError"),
+					stylize(ST_PATH, self.name), self.minute))	
+		
+
+		# Extinction Task specific tests :
+		# We only need to check that a rule of a speficied machine, is only set once by day and hour.
+		# eg. we cannot set a rule for the machine '192.168.0.16' twice on monday at 14.
+		# but we can set a rule for the machine '192.168.0.16' on monday at 14h and another on monday at 15h.
+
+		our_days = self.week_day.split(',')
+		if our_days == ['*']:
+			our_days = range(0,7)
+
+		for task in LMC.tasks:
+			if isinstance(task, TaskExtinction):
+				same_day     = False
+				same_hour    = False
+				same_machine = False
+
+
+				# check day
+				for d in our_days:
+					if task.week_day == '*':
+						same_day = True
+						_day = '*'
+					else:
+						if d in task.week_day.split(','):
+							# same day
+							same_day = True
+							_day = d
+				
+				if task.minute == self.minute and task.hour == self.hour:
+					same_hour = True
+					_hour = '{0}:{1}'.format(task.hour, task.minute) 
+
+				# check machines
+				for m in task.args:
+					if m in self.args:
+						same_machine = True
+						_machine = m
+				
+					if same_machine and same_hour and same_day:
+						raise exceptions.BadArgumentError(_('Another rule already exists for the '
+												'machine {0} on day {1} at {2}, please delete it first.'
+												.format(_machine, days[str(_day) if _day != '*' else '*'], _hour)))
+					
+		
 class TasksController(DictSingleton, CoreController, SelectableController):
 	"""	
 	Task Controler. Manage tasks, add them, delete them.
@@ -686,14 +889,14 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				# do not catch the 'unknown file', if there is no config file, 
 				# it's ok
 				#if e.errno != errno.ENOENT:
-				logging.exception("{0} : Exception while reloading "
-					"tasks".format(stylize(ST_NAME, LMC.tasks.name)))
+				logging.exception(_("{0} : Exception while reloading "
+					"tasks".format(stylize(ST_NAME, LMC.tasks.name))))
 		
 	def add_task(self, name, action, year=None, month=None, day=None, hour=None,
 		minute=None, second=None, week_day=None, delay_until_year=None, 
 		delay_until_month=None,	delay_until_day=None, delay_until_hour=None,
 		delay_until_minute=None, delay_until_second=None, defer_resolution=None,
-		args=None, kwargs=None, test=False):
+		args=None, kwargs=None, test=False, load=False):
 		""" add a new task into the controller """
 
 		# apply defaults here
@@ -725,32 +928,14 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			self.by_name(name)	
 		except KeyError, IndexError:
 
-			#check task function, define if the rule is coherent or not """
-			try :
-				self.validate_task(
-					name=name,
-					action=action,
-					
-					year=year,
-					month=month,
-					day=day,
-					hour=hour,
-					minute=minute,
-					second=second,
-					week_day=week_day, 
-					delay_until_year=delay_until_year,
-					delay_until_month=delay_until_month, 
-					delay_until_day=delay_until_day, 
-					delay_until_hour=delay_until_hour, 
-					delay_until_minute=delay_until_minute,
-					delay_until_second=delay_until_second,
-					defer_resolution=defer_resolution)
+			# check task type (e.g. TaskExtinction....)
+			if action == 'LMC.machines.shutdown':
+				taskClass = pyutils.MixIn(TaskExtinction, Task)
+			else:
+				taskClass = Task
 
-			except exceptions.BadArgumentError:
-				logging.exception("Error while validating task")
-				return
-
-			task = Task(self._prefered_backend, name, action, year=year, 
+			# instanciate the task object
+			task = taskClass(self._prefered_backend, name, action, year=year, 
 				month=month, day=day, hour=hour, minute=minute, second=second, 
 				week_day=week_day, delay_until_year=delay_until_year, 
 				delay_until_month=delay_until_month, 
@@ -759,21 +944,23 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				delay_until_minute=delay_until_minute, 
 				delay_until_second=delay_until_second,
 				defer_resolution=defer_resolution, args=args, kwargs=kwargs)
-			
+						
+			try :
+				task.validate()
+			except exceptions.BadArgumentError, e:
+				raise e
+				
 			self[task.id] = task
-			
-			
+					
 			#resolve action
 			try:
 				task.action_func = pyutils.resolve_attr(task.action, 
 						{"LMC" : LMC, "logging": logging})
 			except Exception, e:
-				raise exceptions.BadArgumentError("{0} on task {1} : please check the action "
+				raise exceptions.BadArgumentError(_("{0} on task {1} : please check the action "
 					"argument".format( stylize(ST_BAD, "Cannot resolve action"),
-						stylize(ST_PATH, self.name)))
+						stylize(ST_PATH, self.name))))
 			
-
-				
 
 			if task.schedule():
 				task.serialize(backend_actions.CREATE)
@@ -786,19 +973,24 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 					if getattr(task, arg) != None:
 						task_args += ' {0}={1}'.format(arg, getattr(task, arg))
 				
-				logging.notice("{0} : scheduling task {1} {2} - {4} - {3}".format(
+				logging.notice(_("{0} : scheduling task {1} {2} - {4} - {3}".format(
 					stylize(ST_NAME, LMC.tasks.name),
 					stylize(ST_PATH, task.name),
 					"on {0}".format(stylize(ST_OK, task.next_running_time)),
 					task_args, '{0}({1}, {2})'.format(task.action, task.args, 
-					task.kwargs)))
+					task.kwargs))))
+
+				if isinstance(task, TaskExtinction):
+					LicornEvent('task_extinction_added', task=task).emit(priorities.LOW)
+				# forward the good news
+				LicornEvent('task_added', task=task).emit(priorities.LOW)
 	
 		else:
-			logging.notice('{0} : {1} task named {2}, another task with the '
+			logging.notice(_('{0} : {1} task named {2}, another task with the '
 				'same name already exists'.format(
 					stylize(ST_NAME, LMC.tasks.name),
 					stylize(ST_BAD, "Cannot add"),
-					stylize(ST_NAME, name)))
+					stylize(ST_PATH, name)), to_local=load))
 	def get_next_unset_id(self):
 		# TODO : use settings.core.tasks.max_tasks
 		return pyutils.next_free(self.keys(), 0, 65535)
@@ -807,6 +999,9 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		task = self.by_id(task_id)
 
 		if task != None:
+			name = task.name
+			is_instance = isinstance(task, TaskExtinction)
+			
 			# cancel it from the scheduler 
 			task.stop()
 			
@@ -816,16 +1011,21 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			# del it from the config
 			task.backend.delete_Task(task)
 
-			logging.notice('{0} : task {1} {2}'.format(
+			logging.notice(_('{0} : task {1} {2}'.format(
 				stylize(ST_NAME, LMC.tasks.name), 
 				stylize(ST_PATH, task.name),
-				stylize(ST_BAD, "deleted")))
+				stylize(ST_BAD, "deleted"))))
 			
 			
 			assert ltrace(TRACE_GC, '  task ref count before del: %d %s' % (
 					sys.getrefcount(task), gc.get_referrers(task)))
 
 			del task
+
+			if is_instance:
+				LicornEvent('task_extinction_deleted', name=name).emit(priorities.LOW)
+			LicornEvent('task_deleted', name=name).emit(priorities.LOW)
+
 
 		# checkpoint, needed for multi-delete (users-groups-profile) operation,
 		# to avoid collecting the deleted users at the end of the run, making
@@ -866,10 +1066,16 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		with self.lock:
 			if filters.ALL == filter_string:
 				filtered_tasks = self.values()
+			elif filter_string == filters.EXTINCTION_TASK:
+				filtered_tasks = []
+				for task in self.values():
+					if isinstance(task, TaskExtinction):
+						 filtered_tasks.append(task)
 			else:
+				filtered_tasks = []
 				for t in self.values():
 					if t.id == filter_string:
-						filtered_tasks = [t]
+						filtered_tasks.append(t)
 						
 			return filtered_tasks
 
@@ -891,140 +1097,4 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			return '%s\n' % '\n'.join((task._cli_get()
 							for task in sorted(tasks, key=attrgetter('id'))))	
 
-	@classmethod
-	def validate_task(cls, name=None, action=None, year=None, month=None, 
-		day=None, hour=None, minute=None, second=None, week_day=None,
-		delay_until_year=None, delay_until_month=None, delay_until_day=None, 
-		delay_until_hour=None, delay_until_minute=None, delay_until_second=None,
-		defer_resolution=None):
-		""" task validation mechanism """
-		args_to_check = [
-			('name', name), ('action', action), ('year', year), ('month', month),
-			('day', day), ('hour', hour), ('minute', minute), ('second', second),
-			('week_day', week_day), ('delay_until_year', delay_until_year), 
-			('delay_until_month', delay_until_month), 
-			('delay_until_day', delay_until_day), 
-			('delay_until_hour', delay_until_hour), 
-			('delay_until_minute', delay_until_minute),
-			('delay_until_second', delay_until_second),
-		]
-
-		temporal_args = ['year', 'month', 'day', 'hour', 
-			'minute', 'second', 'week_day']
-
-		def validate_range(t, arg, can_be_neg=False):
-			if arg != 'day':
-				# negativ arg only for day argument
-				can_be_neg = False
-
-			if can_be_neg:
-  				if str(t)[0]=='-':
-  					t=str(t)[1:]
-  				
-  			if int(t) not in ranges[arg]:
-  				raise exceptions.BadArgumentError("{1} on task {0} for argument"
-					" {2}={5} : should be between {3} and {4}".format(
-						stylize(ST_NAME, name),
-						stylize(ST_BAD, 'Not in range'),
-						arg, min(ranges[arg]) if not can_be_neg \
-							else '-{0}'.format(max(ranges[arg])), 
-								max(ranges[arg]),
-						t))
-			
-		def validate_exclusion(arg, _arg, can_be_neg=False):
-			""" validate exclusion X^x[,y[..]] where x,y are positiv integer"""
-			
-			if '^' in str(_arg) :
-				s = _arg.split('^')
-				return_arg = s[0]
-				to_exclude = [ int(a) for a in str(s[1]).split(',') if a != '' ]
-				for a in to_exclude:
-					validate_range(a, arg, can_be_neg=can_be_neg)
-			
-				return return_arg
-			else:
-				return _arg
-		
-		for arg, _arg in args_to_check:
-			if _arg == None:
-				continue
-			# first of all check every type
-			if type(_arg) not in (types.StringType, types.NoneType, 
-				types.IntType, types.UnicodeType):
-				
-				raise exceptions.BadArgumentError("{0} on task {1} for argument "
-					"{2}={3} : excepted type are String, Int or None".format(
-						stylize(ST_BAD, "Type error"),
-						stylize(ST_PATH, name), arg, _arg))
-			
-			# if temporal arg, check it carefully
-			if arg in temporal_args:
-				_arg=str(_arg)
-				if _arg == '*':
-					continue
-				elif str(_arg).startswith('*') and str(_arg)[1] == '/':
-					# check exclusion
-					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
-
-					# check range
-					for t in str(_arg[2:]).split(','):
-						if t != '':
-							validate_range(t, arg)
-				elif str(_arg).startswith('*') and str(_arg)[1] == '^':
-					# check exclusion
-					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
-
-					# check range
-					for t in str(_arg[2:]).split(','):
-						if t != '':
-							validate_range(t, arg)
-				
-				elif ':' in str(_arg):
-					# check exclusion
-					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
-
-					# check range
-					for t in _arg.split(':'):
-						validate_range(int(t), arg)
-													
-				else:
-					
-					_arg = str(_arg)
-					# check exclusion
-					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
-					# check range
-					for t in str(_arg).split(','):
-						try:
-							t = int(t)
-						except:
-							raise exceptions.BadArgumentError("{0} on task {1} for argument {2}={3} has to "
-								"be an Int".format( stylize(ST_BAD, "Type error"),
-									stylize(ST_PATH, name), arg, t))
-						validate_range(t, arg, can_be_neg=True)
-						if arg=='year':
-							if int(t) < datetime.now().year:
-								raise exceptions.BadArgumentError("{0} on task {1} for argument {2}={3} has to "
-										"be > {4}".format( stylize(ST_BAD, "Argument error"),
-											stylize(ST_PATH, name), arg, t, datetime.now().year))
-			# delay_until_* arguments are only int, nothing more
-			elif str(arg).startswith('delay_until_'):
-				try:
-					t = int(_arg)
-				except:
-					raise exceptions.BadArgumentError("{1} on task {0} for "
-						"argument {2}={3} : should be transtypable to int".format(
-						name, stylize(ST_BAD, 'Type Error'),
-						arg, _arg))
-		
-		# check action
-		if type(action) not in (types.UnicodeType, types.StringType):
-			raise exceptions.BadArgumentError("{0} on task {1} for argument 'action'={2} has to "
-				"be a String".format( stylize(ST_BAD, "Type error"),
-					stylize(ST_PATH, name), action))
-
-		# check defer_resolution
-		if type(defer_resolution) != types.BooleanType:
-			raise exceptions.BadArgumentError("{0} on task {1} for argument 'defer_resolution'={2} has to "
-				"be a Boolean".format( stylize(ST_BAD, "Type error"),
-					stylize(ST_PATH, name), defer_resolution))
-		
+	

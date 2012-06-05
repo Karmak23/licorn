@@ -406,7 +406,7 @@ class WmiEventApplication(ObjectSingleton):
 		self.dynamic_infos    = {}
 
 		for entry in os.listdir(dirname):
-
+			
 			# if is has a 'views', it's a django submodule; it SHOULD have
 			# a `push_permissions` dict defined in __init__.py
 			if os.path.exists(os.path.join(dirname, entry, 'views.py')):
@@ -444,6 +444,7 @@ class WmiEventApplication(ObjectSingleton):
 						self.dynamic_infos[entry] = module.dynamic_infos
 
 			if os.path.exists(os.path.join(dirname, entry, 'event_handlers.py')):
+
 				module = __import__('licorn.interfaces.wmi.%s.event_handlers' % entry,
 								fromlist=["licorn.interfaces.wmi.%s" % entry])
 

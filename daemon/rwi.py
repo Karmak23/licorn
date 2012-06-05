@@ -530,9 +530,15 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				tid = LMC.tasks.by_name(args[1]).id
 
 			selection = tid
+		
+
+		print opts
 
 		if opts.all:
 			selection = filters.ALL
+		if opts.extinction:
+			print "ext"
+			selection = filters.EXTINCTION_TASK
 		else:
 			# Running, finished
 			pass
@@ -1428,15 +1434,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					stylize(ST_PATH, task_name), task_kwargs), 
 					to_local=False)
 
-			
-		LMC.tasks.add_task(task_name, task_action, 
-			year=task_year, month=task_month, day=task_day, hour=task_hour,
-			minute=task_minute, second=task_second, week_day=task_week_day,
-			delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
-			delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
-			delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
-			args=task_args, kwargs=task_kwargs, 
-			defer_resolution=task_defer_resolution)
+		try:
+			LMC.tasks.add_task(task_name, task_action, 
+				year=task_year, month=task_month, day=task_day, hour=task_hour,
+				minute=task_minute, second=task_second, week_day=task_week_day,
+				delay_until_year=task_delay_until_year, delay_until_month=task_delay_until_month,
+				delay_until_day=task_delay_until_day, delay_until_hour=task_delay_until_hour,
+				delay_until_minute=task_delay_until_minute, delay_until_second=task_delay_until_second,
+				args=task_args, kwargs=task_kwargs, 
+				defer_resolution=task_defer_resolution)
+		except Exception, e:
+			remote_output(_("{0} while adding task {1} : {2}\n".format(
+				stylize(ST_BAD, "Error"), stylize(ST_PATH, task_name),e )))
 
 	def add_volume(self, opts, args):
 		""" Modify volumes. """
