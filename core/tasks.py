@@ -899,6 +899,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		args=None, kwargs=None, test=False, load=False):
 		""" add a new task into the controller """
 
+		print "tasks.add_task , name = ", name			
 		# apply defaults here
 		if year is None:
 			year   = '*'
@@ -922,12 +923,16 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			defer_resolution = True
 		# end defaults
 
+		print "create task obj, check name"
 		# create the task object
 		# check if task name is unique:
 		try:
-			self.by_name(name)	
+			self.by_name(name)
+			print name
+			print "in the try"
+			print self.by_name(name)	
 		except KeyError, IndexError:
-
+			print "unique name"
 			# check task type (e.g. TaskExtinction....)
 			if action == 'LMC.machines.shutdown':
 				taskClass = pyutils.MixIn(TaskExtinction, Task)
@@ -961,7 +966,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 					"argument".format( stylize(ST_BAD, "Cannot resolve action"),
 						stylize(ST_PATH, self.name))))
 			
-
+			print task.schedule()
 			if task.schedule():
 				task.serialize(backend_actions.CREATE)
 
@@ -986,11 +991,12 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				LicornEvent('task_added', task=task).emit(priorities.LOW)
 	
 		else:
+			print "ALREADY SAME NAME"
 			logging.notice(_('{0} : {1} task named {2}, another task with the '
 				'same name already exists'.format(
 					stylize(ST_NAME, LMC.tasks.name),
 					stylize(ST_BAD, "Cannot add"),
-					stylize(ST_PATH, name)), to_local=load))
+					stylize(ST_PATH, name))))
 	def get_next_unset_id(self):
 		# TODO : use settings.core.tasks.max_tasks
 		return pyutils.next_free(self.keys(), 0, 65535)
