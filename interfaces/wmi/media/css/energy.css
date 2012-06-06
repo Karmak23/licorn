@@ -34,11 +34,8 @@
 
 @sansFontFamily = @serifFontFamily = @monoFontFamily = "Bitstream Charter", Georgia, Serif;
 
-.ui-autocomplete {
-		max-height: 100px;
-		overflow: hidden;
-	}
 
+.ui-autocomplete { height: 200px; overflow-y: scroll; overflow-x: hidden;}
 .textbox_small {
 	width:40px;
 }

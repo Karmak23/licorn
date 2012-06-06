@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
+"""
+Licorn® WMI - energy views
 
-import os, time, json
-from urllib import unquote_plus
+:copyright:
+	* 2012 Robin Lucbernet <robinlucbernet@gmail.com>
+:license: GNU GPL version 2
+"""
+
+import json
 
 from django.contrib.auth.decorators     import login_required
 from django.shortcuts                   import *
-from django.template.loader             import render_to_string
 
 from licorn.foundations           import exceptions, hlstr, logging, settings, \
 										pyutils
@@ -13,10 +18,8 @@ from licorn.foundations.constants import filters, relation, priorities, \
 										host_status
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.workers   import workers
 
 from licorn.core import LMC
-from licorn.interfaces.wmi.libs.old_decorators import check_groups
 
 # warning: this import will fail if nobody has previously called wmi.init()
 # (this should have been done in the WMIThread.run() method.
@@ -25,12 +28,9 @@ from licorn.interfaces.wmi.libs.utils       import notify
 from licorn.interfaces.wmi.libs             import utils
 from licorn.interfaces.wmi.machines         import wmi_data
 from licorn.interfaces.wmi.libs.decorators  import *
-
-
 from licorn.interfaces.wmi.app              import wmi_event_app
 
 from licorn.core.tasks                      import TaskExtinction
-
 
 
 days= {
@@ -42,8 +42,6 @@ days= {
 	'5' : _('Satursday'),
 	'6' : _('Sunday'),
 	'*': 'ALL' }
-
-
 
 @login_required
 @staff_only
@@ -59,7 +57,7 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 		# add the task
 		LMC.tasks.add_task("_extinction-cal_{0}".format(
 			LMC.tasks.get_next_unset_id()),	'LMC.machines.shutdown', 
-						args=[who], hour=str(hour), minute=str(minute),
+						args=who.split(','), hour=str(hour), minute=str(minute),
 						week_day=str(day))
 		return HttpResponse('add rule')
 	except exceptions.BadArgumentError, e:

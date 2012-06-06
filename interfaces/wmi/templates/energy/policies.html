@@ -27,13 +27,13 @@
 
 {%- block main_content -%}
 
-	<div class="title">	{{ _('Add a scenario') }} </div>
+	<div class="title">	{{ _('Add a policy') }} </div>
 
 	<div id="extinction_rules">
-
+		{{ _('Shutdown machine(s) ')}}
 		<input type="text" id='extinction_machine_list'/>
 		<input type="hidden" id='extinction_machine_list_result'/> 
-		{{ _('will be stopped at') }}	
+		{{ _(' at ') }}	
 		<input type="text" class='textbox_small' id='extinction_machine_hour'/>
 		:
 		<input type="text" class='textbox_small' id='extinction_machine_minute' value='00'/>
@@ -42,11 +42,11 @@
 		<input type="hidden" id='extinction_machine_day_result'/>
 		
 		<input type='button' value="add" id='rule_extinction_add'/>
-		<input type='button' value="reset" id='rule_extinction_reset'/>
+		<!--<input type='button' value="reset" id='rule_extinction_reset'/>-->
 		<br /><br /><br />
 	</div>
 
-	<div class="title"> {{ _('Recap of existing rules') }} </div>
+	<div class="title"> {{ _('Current policies') }} </div>
 	<!-- #extinction_reacap is filled by javascript -->
 	<div id="extinction_recap"></div>
 
@@ -56,7 +56,7 @@
 {%- block sub_content -%}
 	
 	
-	<div class="title"> {{ _('Extinction calendar') }} </div>
+	<div class="title"> {{ _('Shutdown calendar') }} </div>
 
 	{% with data_separators= data_separators %}
 		{% include "widgets/weeklybars.html" %}
@@ -171,7 +171,7 @@
 
 		}
 		$(document).ready(function() {
-			
+		
 			update_recap()
 			update_calendar()
 
@@ -254,7 +254,7 @@
 							}
 							$('#extinction_machine_list_result').val(result_terms.join(','));
 							return false;
-						}
+						},
 					});
 
 	    	});  
