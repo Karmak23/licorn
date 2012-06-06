@@ -11,7 +11,7 @@ Barely compatible with gnome-system-tools profiles
 :license: GNU GPL version 2
 """
 
-import sys, gc, os, re, shutil, weakref, itertools
+import sys, gc, os, re, shutil, itertools
 
 from contextlib  import nested
 from operator    import attrgetter
@@ -20,13 +20,13 @@ from xml         import dom as xmldom
 from xml.parsers import expat
 
 from licorn.foundations           import settings, exceptions, logging
-from licorn.foundations           import fsapi, hlstr, readers, pyutils
+from licorn.foundations           import fsapi, hlstr, pyutils
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
-from licorn.foundations.constants import filters, priorities, roles
+from licorn.foundations.constants import filters, priorities
 
 from licorn.core         import LMC
 from licorn.core.groups  import Group

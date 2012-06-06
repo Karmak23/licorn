@@ -13,12 +13,12 @@ Classes, methods and decorators used to access Licorn® core remotely.
 """
 
 # Python imports
-import time
-import cPickle as pickle, Pyro.errors
+import time, Pyro.errors
+import cPickle as pickle
 from functools import wraps, partial
 
 # Licorn® imports
-from licorn.foundations        import options, settings, exceptions, logging
+from licorn.foundations        import logging
 from licorn.foundations.styles import *
 from licorn.core               import LMC
 
@@ -54,7 +54,7 @@ def lmc_connected(retry=2):
 
 					try:
 						# we need to wait a little, to avoid cycle restarts.
-						RWI = LMC.connect(delayed_daemon_start=True)
+						LMC.connect(delayed_daemon_start=True)
 
 						#print '>> lmc_connected[1] for', func.__name__, str(a), str(kw)
 						try:
@@ -196,6 +196,7 @@ class CoreObjectProxy(object):
 											)
 
 		else:
+			# FIXME: this won't do what we expect, will it??
 			thing = getattr(obj, attr_name)
 	@lmc_connected()
 	def __proxy_method_call(self, controller_name, object_id, method_name, *args, **kwargs):

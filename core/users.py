@@ -10,9 +10,8 @@ Licorn core: users - http://docs.licorn.org/core/users.html
 :license: GNU GPL version 2
 """
 
-import os, sys, time, re, weakref, gc
+import os, sys, time, re, gc
 
-from threading  import current_thread, Event
 from operator   import attrgetter
 from traceback  import print_exc
 
@@ -25,7 +24,7 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, distros, \
-											priorities, roles, relation
+											priorities, relation
 
 from licorn.core                import LMC
 from licorn.core.groups         import Group

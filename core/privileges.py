@@ -11,9 +11,7 @@ privileges - everything internal to system privileges management
 :license: GNU GPL version 2
 
 """
-import os, tempfile, pyinotify
-
-from threading import Event
+import os, tempfile
 
 from licorn.foundations           import settings, logging, exceptions
 from licorn.foundations           import readers
@@ -25,7 +23,6 @@ from licorn.foundations.workers   import workers
 from licorn.foundations.constants import filters, priorities
 
 from licorn.core         import LMC
-from licorn.core.groups  import Group
 from licorn.core.classes import LockedController
 
 class PrivilegesWhiteList(Singleton, LockedController):

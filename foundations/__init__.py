@@ -9,9 +9,11 @@ Licensed under the terms of the GNU GPL version 2
 from licorn.version import version
 
 # ===================================================== foundations imports
+
+# make bootstrap code run prior to anything in Licorn® foundations.
 import bootstrap
 
-# warning: import gettext *after* bootstrap (for UTF8 setup).
+# WARNING: import gettext *after* bootstrap (for UTF8 setup).
 import gettext
 
 from _options  import options

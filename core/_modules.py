@@ -8,22 +8,21 @@ Licorn core modules base classes
 :license: GNU GPL version 2
 
 """
-import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
+import os
 
-from threading import current_thread
-from licorn.foundations.threads import RLock, Event
+from licorn.foundations.threads import RLock
 
-from licorn.foundations           import settings, exceptions, logging, options
-from licorn.foundations           import hlstr, pyutils, fsapi
+from licorn.foundations           import settings, exceptions, logging
+from licorn.foundations           import hlstr, pyutils
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.events    import LicornEvent
-from licorn.foundations.constants import filters, verbose, priorities, roles
+from licorn.foundations.constants import roles
 from licorn.foundations.base      import NamedObject, MixedDictObject, \
-											pyro_protected_attrs, \
 											LicornConfigObject
-from licorn.core                  import LMC
+
+# local core imports
 from _controllers                 import LockedController
 from _objects                     import CoreUnitObject
 
@@ -55,9 +54,6 @@ class ModulesManager(LockedController):
 	@property
 	def object_id_str(self):
 		return _(u'module name')
-	@property
-	def sort_key(self):
-		return 'name'
 	def by_name(self, name):
 		return self[name]
 	#: the generic way, called from `RWI.select()`
@@ -121,7 +117,7 @@ class ModulesManager(LockedController):
 												globals(), locals(), class_name)
 					module_class  = getattr(python_module, class_name)
 
-				except (ImportError, SyntaxError, AttributeError), e:
+				except (ImportError, SyntaxError, AttributeError):
 					logging.exception(_(u'{0} unusable {1} {2}, exception '
 										u'encountered during import.'),
 										(ST_BAD, _(u'Skipped')), self.module_type,
@@ -754,4 +750,4 @@ class CoreModule(CoreUnitObject, NamedObject):
 		afterwards and will overwrite these attributes. """
 		pass
 
-__all__ = ('ModulesManager', 'CoreModule')
+__all__ = ('ModulesManager', 'CoreModule', )
