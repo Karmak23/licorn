@@ -1,0 +1,80 @@
+<table class="table table-striped" id="extinction_recap_table">
+	<thead>
+		<th>{{ _('Week day') }}</th>
+		<th>{{ _('Time') }}</th>
+		<th>{{ _('Machines') }}</th>
+	</thead>
+	
+	{%- for rule in tasks -%}
+		
+		<tr>
+			<td width="20%">
+				<!-- Week day -->
+				{{ get_days(rule.week_day) }}
+			<td width="10%"> 
+				<!-- time -->
+				{{rule.hour.zfill(2)}}:{{rule.minute.zfill(2)}}
+			<td width="60%"> 
+				<!-- machines -->
+				{%- for m in rule.args -%}
+					{{ generate_machine_html(m) }}
+				{%- endfor -%}
+			</td>
+
+			<!-- delete button -->
+			<td width="10%">
+				<span class='del_rule' onClick="del_rule({{ rule.id }})">
+					<img src="/media/images/24x24/mass_del.png" alt="{{ _('Delete rule') }}" width='16' height='16'/>
+				<span> 
+			</td>
+		</tr>
+
+	{%- endfor -%}
+	
+</table>
+<script language="javascript" type="text/javascript">
+
+		$(document).ready(function() {
+			$('.del_rule').hide();
+			$("#extinction_recap_table tr").mouseover(function() {
+				$(this).find(".del_rule").show();
+			}).mouseout(function(){
+				$(this).find(".del_rule").hide();
+			});
+		});
+
+</script>
+
+	<!--for rule in sorted(extinction_tasks, key=attrgetter('week_day')):
+		
+		machines = ''
+		for m in rule.args:
+			m = m.strip()
+			if m.lower() == 'lmc.machines.select(default_selection=host_status.alive)':
+				machines  += "<span>{0}</span>".format(_("All machines"))
+			else:
+				machines += ("<span class='licorn_machine' id='{0}'>"
+					"</span>".format(m))
+
+
+		wd = rule.week_day
+		if wd == '*':
+			wd='0,1,2,3,4,5,6'
+
+		html +=	'<tr>'
+		html +=	'<td width="20%"> {0} </td>'.format(', '.join([ days[d] for d in wd.split(',')]) )
+		html +=	'<td width="10%"> {0}:{1} </td>'.format(rule.hour, rule.minute)
+		html +=	'<td width="60%"> {0} </td>'.format(machines)
+
+		del_func = "del_rule({0})".format(rule.id)
+
+		html +=	('<td width="10%"> '
+			'<span onClick="{0}">'
+				'<img src="/media/images/16x16/delete.png" '
+				'alt="{1}" width="16" height="16" /> <span> '
+				'</td>'.format(del_func, _("Delete rule")))
+		html +=	'</tr>'
+	
+
+	html +=	'</table>'-->
+

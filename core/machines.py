@@ -748,7 +748,8 @@ class MachinesController(DictSingleton, CoreController):
 		return self[mid]
 	def by_hostname(self, hostname):
 		# Call the thing before returning it, because it's a weakref.
-		return Machine.by_hostname[hostname]()
+		# return Machine.by_hostname[hostname]()
+		return Machine.by_hostname[hostname]
 
 	# the generic way (called by SelectableController)
 	by_key  = by_mid

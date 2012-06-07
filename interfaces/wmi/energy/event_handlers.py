@@ -9,13 +9,8 @@ from licorn.interfaces.wmi.libs   import utils
 
 from licorn.core import LMC
 
-from licorn.interfaces.wmi.energy.views import days
+from licorn.interfaces.wmi.energy.views import get_days
 
-def get_days(wd):
-	dayz = []
-	for d in wd.split(','):
-		dayz.append(days[str(d)])
-	', '.join(dayz)
 def task_extinction_added_handler(request, event):
 
 	task = utils.select('tasks', [ event.kwargs['task'].id ])[0]

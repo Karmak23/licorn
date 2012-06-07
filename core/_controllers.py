@@ -52,7 +52,7 @@ class SelectableController(NamedObject, dict):
 		try:
 			return self.by_id(value)
 
-		except (TypeError, ValueError):
+		except (TypeError, ValueError, KeyError):
 				return self.by_name(value)
 	def guess_list(self, value_list):
 		objs = set()

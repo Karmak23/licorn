@@ -32,6 +32,9 @@ from licorn.interfaces.wmi.app              import wmi_event_app
 
 from licorn.core.tasks                      import TaskExtinction
 
+from django.template.loader                 import render_to_string
+
+from operator import attrgetter
 
 days= {
 	'0' : _('Monday'), 
@@ -43,6 +46,30 @@ days= {
 	'6' : _('Sunday'),
 	'*': 'ALL' }
 
+def get_days(wd):
+	tab = wd.split(',')
+
+	if len(tab) > 4:
+		# who is not present ?
+		not_present = []
+		for k, v in days.iteritems():
+			if k not in tab:
+				not_present.append(k)
+
+		return "ALL except {0}".format(', '.join([ days[d] for d in not_present if d != '*' ]))
+	else:
+		dayz = []
+		for d in wd.split(','):
+			dayz.append(days[str(d)])
+	
+		return ', '.join(dayz)
+
+def get_machines_html(request, machines):
+	html = ''
+	for m in machines:
+		html += generate_machine_html(m)
+	
+	return HttpResponse(html)
 @login_required
 @staff_only
 def policies(request, *args, **kwargs):
@@ -51,19 +78,55 @@ def policies(request, *args, **kwargs):
 		'data_separators' : get_calendar_data(request, ret=False)})
 
 
+
 @staff_only
 def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
+	"""  add an extinction task in the TaskController """
 	try:
+		# get the next unsed id in order to generate the task name
+		max_num = 0
+		for task in [ t for t in LMC.tasks if isinstance(t, TaskExtinction) if '_extinction-cal_' in t.name]:
+			num=int(task.name[16:])
+			if num > max_num:
+				max_num = num
+
+		name = "_extinction-cal_" + str(max_num + 1)
+
+		# we have to translate each machine into its main IP address (accessible from the server)
+		machines_to_shutdown = []
+		for m in who.split(','):
+			if m.lower() == 'all':
+				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ALIVE)')
+			else:
+				machines_to_shutdown.append( LMC.machines.guess_one(m).master_machine.mid )
+
+		# guess days too:
+		_day = []
+		for d in day.split(','):
+			try:
+				t = int(d)
+			except:
+				for k,v in days.iteritems():
+					if v == d:
+						t = k
+			
+			_day.append(t)
+
+
+		print _day
 		# add the task
-		LMC.tasks.add_task("_extinction-cal_{0}".format(
-			LMC.tasks.get_next_unset_id()),	'LMC.machines.shutdown', 
-						args=who.split(','), hour=str(hour), minute=str(minute),
-						week_day=str(day))
+		LMC.tasks.add_task(name, 'LMC.machines.shutdown', 
+						args=machines_to_shutdown, hour=str(hour), minute=str(minute),
+						week_day=','.join([ str(d) for d in _day]))
+		
 		return HttpResponse('add rule')
 	except exceptions.BadArgumentError, e:
 		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : {3}.').format(
 			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
 		return HttpResponse(_('BadArgumentError while adding rule'))
+	except KeyError, e:
+		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : One machine cannot be resolved : {3}.').format(
+			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
 	except:
 		logging.exception(_('Unknown error while adding extinction task'))
 		return HttpResponse(_('Unknown error while adding rule'))
@@ -74,25 +137,28 @@ def del_rule(request, tid):
 	LMC.tasks.del_task(tid)
 	return HttpResponse(_('DEL OK.'))
 
-def generate_machine_html(request, mid):
-	try:
-		m       = utils.select('machines', [ mid ])[0]
-		mtype   = machine_type(m.system_type)
-		mstatus = machine_status(m.status)
-		mname   = m.name
-	except:
+def generate_machine_html(mid, minimum=False):
+	if mid == "LMC.machines.select(default_selection=host_status.ALIVE)":
 		mtype   = ''
-		mstatus = machine_status(host_status.OFFLINE)
-		mname   = mid
-		
-		 
-	_new  = '<span class="lmachine" id=''>'
-	_new += 	'<span class="lmachine_type">{0}</span>'.format(mtype)
-	_new +=		'<span>{0}</span>'.format(mname)
-	_new += 	'<span class="lmachine_status">{0}</span>'.format(mstatus)
-	_new += '</span>'
+		mname   = 'ALL'
+		mstatus = ''
+	else:
+		try:
+			m       = utils.select('machines', [ mid ])[0]
+			mtype   = machine_type(m.system_type)
+			mstatus = machine_status(m.status)
+			mname   = m.name
+		except:
+			mtype   = ''
+			mstatus = machine_status(host_status.OFFLINE)
+			mname   = mid
+			
+	return render_to_string('/energy/machine.html', { 
+		'mtype'   : mtype if not minimum else '',
+		'mname'   : mname,
+		'mstatus' : mstatus if not minimum else ''})
+	
 
-	return HttpResponse(_new)
 def machine_type(_type):
 			return ('<img src="/media/images/16x16/'
 				'{0}" alt="'
@@ -136,7 +202,7 @@ def get_calendar_data(request, ret=True):
 			if not already_added:
 				days = rule.week_day.split(',') if rule.week_day != '*' else range(0,7)
 				for d in days:
-					data_sep.append({ 'day': d, 'who':rule.args, 
+					data_sep.append({ 'day': d, 'who':rule.args, 'who_html': ''.join([ generate_machine_html(m, minimum=True) for m in rule.args]),
 						'hour':rule.hour, 'minute': rule.minute })
 	if ret:
 		return HttpResponse(json.dumps(data_sep))
@@ -152,46 +218,11 @@ def get_recap(request):
 	if len(extinction_tasks) == 0:
 		return HttpResponse("No extinction task created yet")
 
-	html = '<table class="table table-striped" id="extinction_recap_table">'
-	
-	html += '<thead>'
-	html += '<th>{0}</th>'.format(_("Week day"))
-	html += '<th>{0}</th>'.format(_("Hour"))
-	html += '<th>{0}</th>'.format(_("Machines"))
-	html += '</thead>'
-	
-	from operator import attrgetter
-	for rule in sorted(extinction_tasks, key=attrgetter('week_day')):
-		
-		machines = ''
-		for m in rule.args:
-			m = m.strip()
-			if m.lower() == 'all':
-				machines  += "<span>{0}</span>".format(_("All machines"))
-			else:
-				machines += ("<span class='licorn_machine' id='{0}'>"
-					"</span>".format(m))
-
-
-		wd = rule.week_day
-		if wd == '*':
-			wd='0,1,2,3,4,5,6'
-
-		html +=	'<tr>'
-		html +=	'<td width="20%"> {0} </td>'.format(', '.join([ days[d] for d in wd.split(',')]) )
-		html +=	'<td width="10%"> {0}:{1} </td>'.format(rule.hour, rule.minute)
-		html +=	'<td width="60%"> {0} </td>'.format(machines)
-
-		del_func = "del_rule({0})".format(rule.id)
-
-		html +=	('<td width="10%"> '
-			'<span onClick="{0}">'
-				'<img src="/media/images/16x16/delete.png" '
-				'alt="{1}" width="16" height="16" /> <span> '
-				'</td>'.format(del_func, _("Delete rule")))
-		html +=	'</tr>'
 	
 
-	html +=	'</table>'
+	return HttpResponse(render_to_string('energy/recap_policies.html', {
+				'tasks'    : sorted(extinction_tasks, key=attrgetter('week_day')),
+				'get_days' : get_days,
+				'generate_machine_html' : generate_machine_html,
+			}))
 
-	return HttpResponse(html)

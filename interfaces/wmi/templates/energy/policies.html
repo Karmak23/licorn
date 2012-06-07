@@ -178,10 +178,10 @@
 			generate_machine()
 			
 			$('#rule_extinction_add').click( function() {
-				who  = check_who($(this).parent().find("#extinction_machine_list_result").val());
+				who  = check_who($(this).parent().find("#extinction_machine_list").val());
 				hour = check_hour(parseInt($.trim($(this).parent().find("#extinction_machine_hour").val())));
 				minute = check_minute(parseInt($.trim($(this).parent().find("#extinction_machine_minute").val())));
-				day  = $.trim($(this).parent().find("#extinction_machine_day_result").val());
+				day  = $.trim($(this).parent().find("#extinction_machine_day").val());
 
 
 				console.log('html '+ $(this).parent().find("#extinction_machine_day_result").val())
@@ -244,15 +244,6 @@
 							terms.push( "" );
 							this.value = terms.join( "," );
 
-							result_terms = []
-							for (i=0; i < terms.length; i++) {
-									$.each(data, function(j, val){ 
-										if (val['mname'] == terms[i]) {
-				        					result_terms.push(val['mid'])
-				            			}  
-				        			})
-							}
-							$('#extinction_machine_list_result').val(result_terms.join(','));
 							return false;
 						},
 					});
@@ -295,20 +286,7 @@
 					result_terms = []
 					console.log('len '+terms.length)
 					console.log('terms[0] '+ terms[0])
-					if (terms.length == 2 && terms[0]==gettext("ALL")) {
-						result_terms.push('*')
-					}
-					else {
-						for (i=0; i < terms.length; i++) {
-								$.each(days, function(j, val){ 
-									console.log(val, "==", terms[i], (val == terms[i]))
-									if (val == terms[i]) {
-			        					result_terms.push(j)
-			            			}  
-			        			})
-						}
-					}
-					$('#extinction_machine_day_result').val(result_terms.join(','));
+					
 					return false;
 				}
 	    	});

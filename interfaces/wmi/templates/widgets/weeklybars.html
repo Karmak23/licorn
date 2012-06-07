@@ -1,11 +1,9 @@
 <style type="text/css">
 	
 .weekly_bars_wrapper {
-	height: 80%;
 	text-align: center;
 	background-color: #fafafa;
 	border-radius: 5px;
-	width: 90%;
 }
 
 .weekly_bars_label {
@@ -19,7 +17,6 @@
 	color: black;
 	border: 1px solid black;
 }
-
 .databar {
 	text-align: center;
 	padding: 3px;
@@ -74,6 +71,7 @@
 	var separator_width = 0.6*total_width_bar	
 
 
+	$("#weekly_bars_chart_container").width(total_width)
 	// create the chart
 		var wbchart = d3.select('div#weekly_bars_chart_container')
 					.insert("svg:svg")
@@ -81,6 +79,7 @@
 						.attr("width", total_width)
 						.attr("height", total_height)
 						.append("svg:g");
+		
 
 
 		/*h = []
@@ -402,14 +401,21 @@
 
 		
 		
-		
+		$.get('/energy/get_machines_html/')
+
+
+
 		$('svg .rect_sep').tipsy({ 
 	    	gravity: 's', 
 	    	html: true, 
 	    	title: function() {
-	    		var d = this.__data__, g = d.who;
-	    		return strargs(gettext('Extinction of %1'), [ g ]); 
+	    		var d = this.__data__, g = d.who_html;
+	    		return "{{ _('Extinction of ') }} "+g
+
+
+	    		 
 	    	   }
+	    	
 	    });
 
 	
