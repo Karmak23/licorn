@@ -806,10 +806,31 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if volume is None:
 			volume = self.find_first_volume_available()
 
+		elif not volume.enabled:
+			raise exceptions.BadArgumentError(_(u'Cannot run a backup on '
+											u'non-reserved volume {0}. Please '
+											u'reserve it first, or choose '
+											u'another one.').format(volume.name))
+
 		if volume:
+
+			if not force and (
+					time.time() - self._last_backup_time(volume) <
+										settings.backup.interval):
+
+				logging.notice(_(u'{0}: not backing up on {1}, last backup is '
+								u'less than {2}.').format(
+									stylize(ST_NAME, self.name),
+									volume, pyutils.format_time_delta(
+									settings.backup.interval)))
+				return
+
 			workers.service_enqueue(priorities.NORMAL,
 										self.__backup_procedure,
 										volume=volume, force=force)
+
+		else:
+			logging.warning(_(u'Sorry, no backup volumes available.'))
 	# WARNING: do not protect/lock/lazy_mount this one.
 	def __backup_procedure(self, volume, force=False, *args, **kwargs):
 		""" Do a complete backup procedure, which includes:
@@ -850,16 +871,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		"""
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
-
-		if not force and (
-				time.time() - self._last_backup_time(volume) <
-									settings.backup.interval):
-
-			logging.notice(_(u'{0}: not backing up on {1}, last backup is '
-				u'less than {2}.').format(stylize(ST_NAME, self.name),
-					volume, pyutils.format_time_delta(
-						settings.backup.interval)))
-			return
 
 		already_cleaned = self.__backup_check_space(volume, force=force)
 
