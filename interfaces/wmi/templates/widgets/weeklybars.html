@@ -399,18 +399,12 @@
 
 		separators.exit().remove()
 
-		
-		
-		$.get('/energy/get_machines_html/')
-
-
-
 		$('svg .rect_sep').tipsy({ 
 	    	gravity: 's', 
 	    	html: true, 
 	    	title: function() {
 	    		var d = this.__data__, g = d.who_html;
-	    		return "{{ _('Extinction of ') }} "+g
+	    		return "{{ _('Extinction of ') }} "+ g
 
 
 	    		 

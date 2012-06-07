@@ -31,10 +31,6 @@
 	.btn;
 }
 
-.tipsy {
-	border:1px solid red;
-	background-color: white;
-}
 #extinction_recap {
 	overflow:auto;
 	height:80%;

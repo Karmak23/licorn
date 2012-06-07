@@ -15,6 +15,6 @@ urlpatterns = patterns('energy.views',
     (r'^generate_machine_html/(?P<mid>.*)/?$', 'generate_machine_html'),
     (r'^get_machine_list/?$', 'get_machine_list'),
 
-	(r'^get_machines_html/(?P<machines>.*)/?$', 'get_machines_html'),    
+	#(r'^get_machines_html/(?P<machines>.*)/?$', 'get_machines_html'),    
 
 )

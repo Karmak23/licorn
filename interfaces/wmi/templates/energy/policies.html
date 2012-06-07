@@ -32,14 +32,12 @@
 	<div id="extinction_rules">
 		{{ _('Shutdown machine(s) ')}}
 		<input type="text" id='extinction_machine_list'/>
-		<input type="hidden" id='extinction_machine_list_result'/> 
 		{{ _(' at ') }}	
 		<input type="text" class='textbox_small' id='extinction_machine_hour'/>
 		:
 		<input type="text" class='textbox_small' id='extinction_machine_minute' value='00'/>
 		{{ _('on') }}
 		<input type="text" class='textbox_medium' id='extinction_machine_day'/>
-		<input type="hidden" id='extinction_machine_day_result'/>
 		
 		<input type='button' value="add" id='rule_extinction_add'/>
 		<!--<input type='button' value="reset" id='rule_extinction_reset'/>-->
@@ -184,7 +182,6 @@
 				day  = $.trim($(this).parent().find("#extinction_machine_day").val());
 
 
-				console.log('html '+ $(this).parent().find("#extinction_machine_day_result").val())
 				console.log('adding rule ', who, hour, minute, day)
 				
 				if (who == null || who == '' || hour == null || day == null || minute == null) {
@@ -196,15 +193,6 @@
 					console.log('success')
 				})
 			});
-			$('#rule_extinction_reset').click( function() {
-				$('#extinction_machine_list_result').val('');
-				$('#extinction_machine_list').val('');
-				$('#extinction_machine_hour').val('');
-				$('#extinction_machine_minute').val('');
-				$('#extinction_machine_day').val('');
-				$('#extinction_machine_day_result').val('');
-
-			})
 
 			/* AUTOCOMPLETE BOX */
 

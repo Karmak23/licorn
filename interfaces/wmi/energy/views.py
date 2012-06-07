@@ -64,12 +64,7 @@ def get_days(wd):
 	
 		return ', '.join(dayz)
 
-def get_machines_html(request, machines):
-	html = ''
-	for m in machines:
-		html += generate_machine_html(m)
-	
-	return HttpResponse(html)
+
 @login_required
 @staff_only
 def policies(request, *args, **kwargs):
@@ -139,39 +134,25 @@ def del_rule(request, tid):
 
 def generate_machine_html(mid, minimum=False):
 	if mid == "LMC.machines.select(default_selection=host_status.ALIVE)":
-		mtype   = ''
-		mname   = 'ALL'
-		mstatus = ''
+		machine = { 'mtype': '', 'mname': "ALL", 'mstatus': '' }
 	else:
 		try:
 			m       = utils.select('machines', [ mid ])[0]
-			mtype   = machine_type(m.system_type)
-			mstatus = machine_status(m.status)
-			mname   = m.name
+			machine = { 'mtype': wmi_data.get_host_type_html(m.system_type) if not minimum else '', 
+						'mname': m.name, 
+						'mstatus': wmi_data.get_host_status_html[int(m.status)]  if not minimum else ''
+					}
 		except:
-			mtype   = ''
-			mstatus = machine_status(host_status.OFFLINE)
-			mname   = mid
+			machine = { 'mtype': '', 'mname': mid, 'mstatus': wmi_data.get_host_status_html[host_status.OFFLINE]  if not minimum else '' }
 			
 	return render_to_string('/energy/machine.html', { 
-		'mtype'   : mtype if not minimum else '',
-		'mname'   : mname,
-		'mstatus' : mstatus if not minimum else ''})
+		'machine'  : machine,
+		})
 	
 
-def machine_type(_type):
-			return ('<img src="/media/images/16x16/'
-				'{0}" alt="'
-				'{1}" width="16" '
-				'height="16" />'.format(
-					wmi_data.get_host_type_html(_type)[0],
-					wmi_data.get_host_type_html(_type)[1]))
-def machine_status(status):
-	return ('<img src="/media/images/16x16/{0}"'
-		'alt="{1}" width="16" height="16" />'.format(
-			wmi_data.get_host_status_html[status][0],
-			wmi_data.get_host_status_html[status][1]))
+
 def get_machine_list(request):
+	""" return a list of all ALIVE machines. To be displayed in the machine autocompleter """
 	ret = []
 	for m in utils.select('machines', default_selection=host_status.ALL):
 		ret.append({'mid': str(m.mid), 'mname':str(m.name)})
@@ -182,7 +163,7 @@ def get_machine_list(request):
 
 @staff_only
 def get_calendar_data(request, ret=True):
-	""" return a List object containing extinction rules regrouped by time """
+	""" return a List object containing extinction rules regrouped by time. """
 	data_sep = []
 	
 	#TODO check minute too !!
