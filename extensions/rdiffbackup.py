@@ -12,21 +12,20 @@ import os, sys, time, errno, types, glob
 from functools import wraps
 from threading import Event
 
-from licorn.foundations           import options, settings, logging
-from licorn.foundations           import exceptions, process, pyutils, fsapi
+from licorn.foundations           import settings, logging, exceptions
+from licorn.foundations           import process, pyutils, fsapi
 from licorn.foundations           import events, cache
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import ObjectSingleton, MixedDictObject, LicornConfigObject
-from licorn.foundations.constants import priorities, roles
+from licorn.foundations.base      import ObjectSingleton, LicornConfigObject
+from licorn.foundations.constants import priorities
 from licorn.foundations.workers   import workers
 
 from licorn.core                import LMC
 from licorn.daemon.threads      import LicornJobThread
 from licorn.extensions          import LicornExtension
-from licorn.extensions.volumes  import VolumeException
 
 def lazy_mounted(func):
 	@wraps(func)

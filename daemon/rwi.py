@@ -18,14 +18,13 @@ All interfaces connect to the Licorn® daemon via the Pyro channel.
 :license:
 	* GNU GPL version 2.
 """
-import os, time, types, Pyro.core, gc, itertools
+import types, Pyro.core, itertools, gc
 
 from operator  import attrgetter
 from threading import current_thread
 
 from licorn.foundations           import options, exceptions, logging, settings
 from licorn.foundations           import fsapi, hlstr, pyutils, events, styles
-from licorn.foundations.threads   import RLock, Event
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -40,8 +39,6 @@ stylize = styles.stylize
 
 from licorn.core         import LMC, version
 from licorn.core.classes import SelectableController
-
-import types
 
 class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 	""" Receive requests from "outside" programs and objects (typically CLI and
@@ -1248,7 +1245,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				LMC.profiles.add_Profile(name, group=opts.group,
 					profileQuota=opts.quota,
 					groups=self.select(LMC.groups,
-						include_id_lists=[(opts.groups, LMC.groups.guess_one)])
+						include_id_lists=[(opts.groups, guess_one_group)])
 							if opts.groups else [],
 					description=opts.description,
 					profileShell=opts.shell, profileSkel=opts.skeldir,
@@ -1967,7 +1964,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					exclude_id_lists = exclude_id_lists,
 					default_selection = self.__default_groups_selection(opts))
 
-		guess_one_user   = LMC.users.guess_one
 		guess_users_list = LMC.users.guess_list
 
 		if opts.move_to_backend:
@@ -2321,7 +2317,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				try:
 					LMC.backends.disable_backend(LMC.backends.word_match(backend))
 
-				except exceptions.DoesntExistException, e:
+				except exceptions.DoesntExistException:
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
 
@@ -2330,7 +2326,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				try:
 					LMC.backends.enable_backend(LMC.backends.word_match(backend))
 
-				except exceptions.DoesntExistException, e:
+				except exceptions.DoesntExistException:
 					logging.warning(_(u'Skipped non-existing backend %s.') %
 						stylize(ST_NAME, backend), to_local=False)
 
@@ -2339,7 +2335,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				try:
 					LMC.extensions.disable_extension(LMC.extensions.word_match(extension))
 
-				except exceptions.DoesntExistException, e:
+				except exceptions.DoesntExistException:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
 
@@ -2348,7 +2344,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				try:
 					LMC.extensions.enable_extension(LMC.extensions.word_match(extension))
 
-				except exceptions.DoesntExistException, e:
+				except exceptions.DoesntExistException:
 					logging.warning(_(u'Skipped non-existing extension %s.') %
 						stylize(ST_NAME, extension), to_local=False)
 	def mod_volume(self, opts, args):
