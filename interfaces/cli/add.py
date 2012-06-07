@@ -25,12 +25,13 @@ def add_main():
 		'machines':		 ('add_machine_parse_arguments', 'add_machine'),
 		'clients':		 ('add_machine_parse_arguments', 'add_machine'),
 		'volumes':       ('add_volume_parse_arguments', 'add_volume'),
+		'backup':        ('add_backup_parse_arguments', 'add_backup'),
 		}, {
 		"name"        : "licorn-add",
 		"description" : "Licorn Add Entries",
-		"author"      : 'Olivier Cortès <olive@deep-ocean.net>, '
-						'Régis Cobrun <reg53fr@yahoo.fr>, '
-						'Robin Lucbernet <robinlucbernet@gmail.com>'
+		"author"      : u'Olivier Cortès <olive@deep-ocean.net>, '
+						u'Régis Cobrun <reg53fr@yahoo.fr>, '
+						u'Robin Lucbernet <robinlucbernet@gmail.com>'
 		})
 
 if __name__ == "__main__":

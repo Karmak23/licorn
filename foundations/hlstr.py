@@ -215,7 +215,12 @@ def word_fuzzy_match(part, word):
 	# matched, this is a success. Announce it.
 	return word
 def word_match(word, valid_words):
-	""" try to find what the user specified on command line. """
+	""" try to find what the user specified on command line.
+
+		:param valid_words: a list (or tuple) of strings or unicode strings.
+			Generators and `itertools.chain()` objects won't work, because
+			this argument is iterated two times.
+	"""
 
 	for a_try in valid_words:
 		if word == a_try:
