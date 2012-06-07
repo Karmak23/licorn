@@ -91,7 +91,7 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 		machines_to_shutdown = []
 		for m in who.split(','):
 			if m.lower() == 'all':
-				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ALIVE)')
+				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ACTIVE)')
 			else:
 				mach = LMC.machines.guess_one(m)
 				if mach.master_machine is not None:
@@ -135,7 +135,7 @@ def del_rule(request, tid):
 	return HttpResponse(_('DEL OK.'))
 
 def generate_machine_html(mid, minimum=False):
-	if mid == "LMC.machines.select(default_selection=host_status.ALIVE)":
+	if mid == "LMC.machines.select(default_selection=host_status.ACTIVE)":
 		machine = { 'mtype': '', 'mname': "ALL", 'mstatus': '' }
 	else:
 		try:
@@ -154,13 +154,13 @@ def generate_machine_html(mid, minimum=False):
 
 
 def get_machine_list(request):
-	""" return a list of all ALIVE machines. To be displayed in the machine autocompleter """
+	""" return a list of all ACTIVE machines. To be displayed in the machine autocompleter """
 	ret = []
-	for m in utils.select('machines', default_selection=host_status.ALL):
+	for m in utils.select('machines', default_selection=host_status.ACTIVE):
 		ret.append({'mid': str(m.mid), 'mname':str(m.name)})
 
 	# add a 'ALL' shortcut
-	ret.append({'mid': 'LMC.machines.select(default_selection=host_status.ALIVE)', 'mname': 'ALL'})
+	ret.append({'mid': 'LMC.machines.select(default_selection=host_status.ACTIVE)', 'mname': 'ALL'})
 	return HttpResponse(json.dumps(ret))
 
 @staff_only
