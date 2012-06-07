@@ -1003,8 +1003,8 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 			# cancel it from the scheduler 
 			task.stop()
 			
-			del self[task.id].__class__.by_name[task.name]
 			# del its reference
+			del self[task.id].__class__.by_name[task.name]
 			del self[task.id]
 			
 			
@@ -1015,12 +1015,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				stylize(ST_NAME, LMC.tasks.name), 
 				stylize(ST_PATH, task.name),
 				stylize(ST_BAD, "deleted"))))
-			logging.notice('  task ref count before del: %d %s' % (
-					sys.getrefcount(task), gc.get_referrers(task)))
 			
-			logging.notice('  task ref count before del: %d %s' % (
-					sys.getrefcount(task), gc.get_referrers(task)))
-
 			del task
 
 			if is_instance:

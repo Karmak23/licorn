@@ -107,8 +107,6 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 			
 			_day.append(t)
 
-
-		print _day
 		# add the task
 		LMC.tasks.add_task(name, 'LMC.machines.shutdown', 
 						args=machines_to_shutdown, hour=str(hour), minute=str(minute),
