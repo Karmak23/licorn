@@ -1314,6 +1314,46 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 		# TODO: move that code into the extension.
 		LMC.extensions.volumes.mount_volumes(volumes=volumes)
+	def add_backup(self, opts, args):
+		""" Add a backup from CLI. TODO: make this code provided directly
+			by the extension. """
+
+		self.setup_listener_gettext()
+
+		match_volname = LMC.extensions.volumes.word_match
+		guess_volobj  = LMC.extensions.volumes.guess_one
+
+		something_done = False
+
+		# `args[0]` is 'backup' from 'add backup …' command, we skip it.
+		for volname in itertools.chain(*[arg.split(',') if hasattr(arg, 'split')
+											else (arg, ) for arg in args[1:]]):
+			if volname == '':
+				continue
+
+			something_done = True
+
+			try:
+				volume = guess_volobj(match_volname(volname))
+
+			except KeyError:
+				logging.notice(_(u'No volume matched "{0}". Volume attributes '
+					u'are case sensitive.').format(stylize(ST_COMMENT, volname)))
+
+			else:
+				try:
+					LMC.extensions.rdiffbackup.backup(volume=volume, force=opts.force)
+
+				except exceptions.BadArgumentError, e:
+					logging.warning(e)
+
+				except:
+					logging.exception(_(u'Exception happened while launching '
+								u'backup on volume {0}'), (ST_NAME, volname),
+									to_listener=True)
+		if not something_done:
+			# ask for autodetection of first available volume.
+			LMC.extensions.rdiffbackup.backup(force=opts.force)
 
 	### DEL
 	def del_user(self, opts, args):

@@ -1130,6 +1130,23 @@ def add_keyword_parse_arguments(app):
 	parser.add_option_group(keyword)
 
 	return parser.parse_args()
+def add_backup_parse_arguments(app):
+	"""Integrated help and options / arguments for « add keyword »."""
+
+	usage_text = _(u"\n\t{0} backup [--force] [{1}]\n\n"
+					u"\tWhere {1} is optionnal, and will bu fuzzy matched "
+					u"against device names, volume labels and GUIDs "
+					u"if provided. If not specified, the program will "
+					u"auto-select the first available volume.").format(
+					stylize(ST_APPNAME, u"%prog"),
+					stylize(ST_PATH, u"backup_volume"))
+
+	parser = OptionParser(usage=usage_text,
+		version=build_version_string(app, version))
+
+	parser.add_option_group(common_behaviour_group(app, parser, 'add_backup'))
+
+	return parser.parse_args()
 def add_privilege_parse_arguments(app):
 	"""Integrated help and options / arguments for « add keyword »."""
 
