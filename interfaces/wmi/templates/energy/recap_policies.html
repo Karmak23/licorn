@@ -16,9 +16,11 @@
 				{{rule.hour.zfill(2)}}:{{rule.minute.zfill(2)}}
 			<td width="60%"> 
 				<!-- machines -->
+				{%- set tab = [] -%}
 				{%- for m in rule.args -%}
-					{{ generate_machine_html(m) }}
+					{%- do tab.append(generate_machine_html(m)) -%}
 				{%- endfor -%}
+				{{ tab|join(', ') }}
 			</td>
 
 			<!-- delete button -->

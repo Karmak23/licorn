@@ -93,7 +93,11 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 			if m.lower() == 'all':
 				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ALIVE)')
 			else:
-				machines_to_shutdown.append( LMC.machines.guess_one(m).master_machine.mid )
+				mach = LMC.machines.guess_one(m)
+				if mach.master_machine is not None:
+					machines_to_shutdown.append(mach.master_machine.mid)
+				else:
+					machines_to_shutdown.append(mach.mid)
 
 		# guess days too:
 		_day = []
@@ -181,7 +185,7 @@ def get_calendar_data(request, ret=True):
 			if not already_added:
 				days = rule.week_day.split(',') if rule.week_day != '*' else range(0,7)
 				for d in days:
-					data_sep.append({ 'day': d, 'who':rule.args, 'who_html': ''.join([ generate_machine_html(m, minimum=True) for m in rule.args]),
+					data_sep.append({ 'day': d, 'who':rule.args, 'who_html': ', '.join([ generate_machine_html(m, minimum=True) for m in rule.args]),
 						'hour':rule.hour, 'minute': rule.minute })
 	if ret:
 		return HttpResponse(json.dumps(data_sep))
