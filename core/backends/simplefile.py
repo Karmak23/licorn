@@ -10,20 +10,19 @@ Licorn Simple File backend -
 
 import os, crypt, tempfile, grp, pyinotify, json, datetime
 
-from threading  import Timer
-from traceback  import print_exc
-from contextlib import nested
+from threading                    import Timer
+from traceback                    import print_exc
+from contextlib                   import nested
 
 from licorn.foundations           import settings, logging, exceptions
 from licorn.foundations           import readers, hlstr, fsapi, workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import Singleton, BasicCounter
-from licorn.foundations.classes   import FileLock
-from licorn.foundations.constants import priorities
+from licorn.foundations.base      import Singleton
 from licorn.core                  import LMC
-from licorn.core.tasks            import Task
+
+
 from licorn.core.backends         import TasksBackend
 
 class SimplefileBackend(Singleton, TasksBackend):
@@ -61,12 +60,9 @@ class SimplefileBackend(Singleton, TasksBackend):
 			_file = open(settings.licornd.cron_file, "rb")
 			data = json.load(_file)
 			_file.close()
-		except IOError, e:
+		except:
 			data = []
 		
-
-		now = datetime.datetime.now()
-
 		for json_data in data:
 			if json_data is not None:
 				try:
@@ -99,7 +95,7 @@ class SimplefileBackend(Singleton, TasksBackend):
 				
 				LMC.tasks.add_task(name, action, year=_year, month=month, day=day, 
 					hour=hour, minute=minute, second=second, delay_until_year=delay_until_year,
-					delay_until_month=delay_until_month, delay_until_day=delay_until_day,
+					delay_until_month=delay_until_month, delay_until_day=delay_until_day, delay_until_hour=delay_until_hour,
 					delay_until_minute=delay_until_minute, delay_until_second=delay_until_second,
 					args=args, kwargs=kwargs, defer_resolution=defer_resolution, week_day=week_day, load=True)
 				

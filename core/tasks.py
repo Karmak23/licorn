@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" 
+"""
 :copyright: 2012 Robin Lucbernet <robin@meta-it.fr>
 
 :license: GNU GPL version 2
@@ -119,12 +119,13 @@ Developer documentation
 
 
 """
-import time, types, json, calendar, errno, re, gc, sys
+import types, json, calendar, errno, re, gc, sys
+import time
 from operator   import attrgetter
 
-from datetime         import datetime, timedelta
-from dateutil.rrule  import *
-from dateutil.relativedelta import *
+from datetime                     import datetime, timedelta
+from dateutil.rrule               import *
+from dateutil.relativedelta       import *
 
 from licorn.foundations           import settings, logging, exceptions, \
 										pyutils
@@ -140,19 +141,19 @@ from licorn.core.classes          import CoreController, CoreStoredObject, \
 										SelectableController
 
 from licorn.daemon.threads        import LicornJobThread
-from licorn.interfaces.wmi.app import wmi_event_app
+from licorn.interfaces.wmi.app    import wmi_event_app
 
-from licorn.foundations.events import LicornEvent
+from licorn.foundations.events    import LicornEvent
 
 # ranges of temporal args
 ranges = {
-		'second'   : range(60),
-		'minute'   : range(60),
-		'hour'     : range(24),
-		'day'      : range(1,32),
-		'month'    : range(12),
-		'year'     : range(1, 2038), 
-		'week_day' : range(7) # 0 is monday
+	'second': range(60),
+	'minute': range(60),
+	'hour': range(24),
+	'day': range(1,32),
+	'month': range(12),
+	'year': range(1, 2038), 
+	'week_day': range(7) # 0 is monday
 		}
 days = {
 	'0': _('Monday'),
@@ -513,7 +514,6 @@ class Task(CoreStoredObject):
 		dtstart = None
 		years   = None
 		if kwargs_rrule.has_key('byyear'):
-			is_year_sorted = True
 			years = [ y for y in kwargs_rrule["byyear"] if y >= datetime.now().year ]
 			 
 			ref = datetime(year=min(years), month=1, day=1)
@@ -866,8 +866,6 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		
 		assert ltrace(TRACE_TASKS, '| load()')
 		self.reload()
-
-		now = datetime.now()
 		
 		TasksController.load_ok = True
 	def reload(self):
@@ -885,7 +883,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				# reload tasks
 				for backend in self.backends:
 					backend.load_Tasks()
-			except Exception, e:
+			except Exception:
 				# do not catch the 'unknown file', if there is no config file, 
 				# it's ok
 				#if e.errno != errno.ENOENT:
@@ -926,7 +924,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		# check if task name is unique:
 		try:
 			self.by_name(name)	
-		except KeyError, IndexError:
+		except:
 			# check task type (e.g. TaskExtinction....)
 			if action == 'LMC.machines.shutdown':
 				taskClass = pyutils.MixIn(TaskExtinction, Task)

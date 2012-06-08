@@ -1374,7 +1374,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.name=='' and opts.action=='' and len(args) == 3:
 			opts.name = args[1]
 			opts.action = args[2]
-	
 
 		if opts.action == '' or opts.name == '':
 			logging.warning("{0} : One of the required argument '{1}' or "
@@ -1427,7 +1426,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					_kw = kw.split('=')
 					task_kwargs.update({_kw[0]:_kw[1]})
 			except Exception, e:
-				logging.exception("{0} : {3} unpacking kwargs of task {1} "
+				logging.exception("{0} : {3} unpacking kwargs of task {1} "    
 					"(kwargs={2}) ".format(
 					stylize(ST_NAME, LMC.tasks.name),
 					opts.name, opts.id, stylize(ST_BAD, "Error while"),

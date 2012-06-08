@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from django.template.loader       import render_to_string
 from django.utils.translation     import ugettext as _
-
-from licorn.foundations.ltrace    import *
-from licorn.foundations.constants import relation, filters
 from licorn.interfaces.wmi.libs   import utils
-
-from licorn.core import LMC
-
 from licorn.interfaces.wmi.energy.views import get_days
 
 def task_extinction_added_handler(request, event):
