@@ -96,7 +96,7 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 			# presumably got a general configuration directive,
 			# not speaking about any particular host. SKIP.
 			assert ltrace(TRACE_MACHINES, '  host skipped because no IPv4 address.')
-			del temp_host
+
 			return None
 
 		# be sure we have a unique hostname, else many things could
@@ -111,7 +111,6 @@ class DnsmasqBackend(Singleton, MachinesBackend):
 		for key in ('ether', 'lease_time', 'expiry'):
 			if key in temp_host.keys():
 				setattr(final_host, key, getattr(temp_host, key))
-		del temp_host
 
 		return final_host
 	def genex_AlreadyExistsException(self, ip, *args, **kwargs):

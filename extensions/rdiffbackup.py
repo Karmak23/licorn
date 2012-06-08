@@ -12,21 +12,20 @@ import os, sys, time, errno, types, glob
 from functools import wraps
 from threading import Event
 
-from licorn.foundations           import options, settings, logging
-from licorn.foundations           import exceptions, process, pyutils, fsapi
+from licorn.foundations           import settings, logging, exceptions
+from licorn.foundations           import process, pyutils, fsapi
 from licorn.foundations           import events, cache
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import ObjectSingleton, MixedDictObject, LicornConfigObject
-from licorn.foundations.constants import priorities, roles
+from licorn.foundations.base      import ObjectSingleton, LicornConfigObject
+from licorn.foundations.constants import priorities
 from licorn.foundations.workers   import workers
 
 from licorn.core                import LMC
 from licorn.daemon.threads      import LicornJobThread
 from licorn.extensions          import LicornExtension
-from licorn.extensions.volumes  import VolumeException
 
 def lazy_mounted(func):
 	@wraps(func)
@@ -806,10 +805,31 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if volume is None:
 			volume = self.find_first_volume_available()
 
+		elif not volume.enabled:
+			raise exceptions.BadArgumentError(_(u'Cannot run a backup on '
+											u'non-reserved volume {0}. Please '
+											u'reserve it first, or choose '
+											u'another one.').format(volume.name))
+
 		if volume:
+
+			if not force and (
+					time.time() - self._last_backup_time(volume) <
+										settings.backup.interval):
+
+				logging.notice(_(u'{0}: not backing up on {1}, last backup is '
+								u'less than {2}.').format(
+									stylize(ST_NAME, self.name),
+									volume, pyutils.format_time_delta(
+									settings.backup.interval)))
+				return
+
 			workers.service_enqueue(priorities.NORMAL,
 										self.__backup_procedure,
 										volume=volume, force=force)
+
+		else:
+			logging.warning(_(u'Sorry, no backup volumes available.'))
 	# WARNING: do not protect/lock/lazy_mount this one.
 	def __backup_procedure(self, volume, force=False, *args, **kwargs):
 		""" Do a complete backup procedure, which includes:
@@ -850,16 +870,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		"""
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
-
-		if not force and (
-				time.time() - self._last_backup_time(volume) <
-									settings.backup.interval):
-
-			logging.notice(_(u'{0}: not backing up on {1}, last backup is '
-				u'less than {2}.').format(stylize(ST_NAME, self.name),
-					volume, pyutils.format_time_delta(
-						settings.backup.interval)))
-			return
 
 		already_cleaned = self.__backup_check_space(volume, force=force)
 

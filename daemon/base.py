@@ -440,7 +440,7 @@ class LicornBaseDaemon:
 
 				try:
 					if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
-						logging.progress('{0:s}: skipped process @{0} which is not in the same cgroup.'.format(self, entry))
+						logging.progress('{0}: skipped process @{0} which is not in the same cgroup.'.format(self, entry))
 						continue
 
 					try:
@@ -457,7 +457,7 @@ class LicornBaseDaemon:
 							os.kill(int(entry), signal.SIGKILL)
 
 							time.sleep(0.2)
-							logging.notice(_(u'{0:s}: killed aborted '
+							logging.notice(_(u'{0}: killed aborted '
 								u'instance @pid {1}.').format(self, entry))
 
 				except (IOError, OSError), e:
@@ -620,7 +620,7 @@ class LicornBaseDaemon:
 
 		if process.already_running(self.pid_file):
 			if self.opts.replace or self.opts.shutdown:
-				logging.notice(_(u'{0:s}: trying to {1} existing instance '
+				logging.notice(_(u'{0}: trying to {1} existing instance '
 					u'@pid {2}.').format(self, _(u'replace')
 						if self.opts.replace else _(u'shutdown'), old_pid))
 
@@ -633,7 +633,7 @@ class LicornBaseDaemon:
 					time.sleep(0.1)
 
 					if counter >= 25:
-						logging.notice(_(u'{0:s}: existing instance still '
+						logging.notice(_(u'{0}: existing instance still '
 							u'running, we\'re going to be more incisive in '
 							u'a few seconds.').format(self))
 						break
@@ -656,7 +656,7 @@ class LicornBaseDaemon:
 					time.sleep(0.1)
 
 					if counter >= 25 and not_yet_displayed_one:
-						logging.notice(_(u'{0:s}: re-killing old instance '
+						logging.notice(_(u'{0}: re-killing old instance '
 							u'softly with TERM signal and waiting a little '
 							u'more.').format(self))
 
@@ -673,7 +673,7 @@ class LicornBaseDaemon:
 						not_yet_displayed_one = False
 
 					elif counter >= 50 and not_yet_displayed_two:
-						logging.notice(_(u'{0:s}: old instance has not '
+						logging.notice(_(u'{0}: old instance has not '
 							u'terminated after 8 seconds. Sending '
 							u'KILL signal.').format(self))
 
@@ -701,7 +701,7 @@ class LicornBaseDaemon:
 								open('/proc/%s/status' % old_pid).read())[0])
 
 						if 'sudo' in open('/proc/%s/cmdline' % parent_pid).read():
-							logging.notice(_(u'{0:s}: killing old instance\'s '
+							logging.notice(_(u'{0}: killing old instance\'s '
 								u'father (sudo, pid %s) without any '
 								u'mercy.').format(self, parent_pid))
 
@@ -718,7 +718,7 @@ class LicornBaseDaemon:
 							counter += 2
 
 						else:
-							logging.warning(_(u'{0:s}: old instance has not '
+							logging.warning(_(u'{0}: old instance has not '
 								u'terminated after 9 seconds and cannot '
 								u'be killed. We will not try to kill any other '
 								u'parent than "{1}", you are in a non-trivial '
@@ -729,7 +729,7 @@ class LicornBaseDaemon:
 						not_yet_displayed_three = False
 
 					elif counter >=120:
-						logging.warning(_(u'{0:s}: old instance has not '
+						logging.warning(_(u'{0}: old instance has not '
 							u'terminated after 15 seconds and cannot '
 							u'be killed directly or by killing its direct '
 							u'parent, bailing out. You are in trouble '
@@ -739,13 +739,13 @@ class LicornBaseDaemon:
 
 					counter += 1
 
-				logging.notice(_(u'{0:s}: old instance {1} terminated{2}').format(
+				logging.notice(_(u'{0}: old instance {1} terminated{2}').format(
 						self, _(u'nastily') if killed else _(u'successfully'),
 						_(u', we can play now.')
 									if self.opts.replace else '.'))
 
 			else:
-				logging.notice(_(u'{0:s}: daemon already running (pid {1}), '
+				logging.notice(_(u'{0}: daemon already running (pid {1}), '
 					u'not restarting.').format(self, old_pid))
 				sys.exit(5)
 	def refork_if_not_root_or_die(self):
@@ -759,7 +759,7 @@ class LicornBaseDaemon:
 				process.refork_as_root_or_die(self.dname)
 
 			except exceptions.LicornRuntimeException, e:
-				logging.error(_(u'{0:s}: must be run as {1} '
+				logging.error(_(u'{0}: must be run as {1} '
 								u'(was: {2}).').format(self,
 								stylize(ST_NAME, 'root'), e))
 	def unlink_pid_file(self):
@@ -767,13 +767,13 @@ class LicornBaseDaemon:
 
 		try:
 			if os.path.exists(self.pid_file):
-				logging.progress(_(u'{0:s}: unlinking PID file {1}.').format(
+				logging.progress(_(u'{0}: unlinking PID file {1}.').format(
 										self, stylize(ST_PATH, self.pid_file)))
 				os.unlink(self.pid_file)
 
 		except (OSError, IOError), e:
 			if e.errno != errno.ENOENT:
-				logging.exception(_(u'{0:s}: cannot unlink {1}.').format(
+				logging.exception(_(u'{0}: cannot unlink {1}.').format(
 									self, stylize(ST_PATH, self.pid_file)))
 	def uptime(self):
 
@@ -786,10 +786,10 @@ class LicornBaseDaemon:
 
 		if self.stopping_event.is_set():
 			if signum is None:
-				logging.warning2(_(u'{0:s}: already stopping, ignored '
+				logging.warning2(_(u'{0}: already stopping, ignored '
 								u'another terminate() call.').format(self))
 			else:
-				logging.warning2(_(u'{0:s}: already stopping, ignored '
+				logging.warning2(_(u'{0}: already stopping, ignored '
 								u'signal {1}.').format(self, signum))
 			return
 
@@ -798,10 +798,10 @@ class LicornBaseDaemon:
 		assert ltrace(TRACE_DAEMON, '| terminate({0}, {1})', signum, frame)
 
 		if signum is None:
-			logging.progress(_(u'{0:s}: cleaning up and stopping threads…').format(self))
+			logging.progress(_(u'{0}: cleaning up and stopping threads…').format(self))
 
 		else:
-			logging.notice(_(u'{0:s}: signal {1} received, '
+			logging.notice(_(u'{0}: signal {1} received, '
 							u'shutting down…').format(self, signum))
 
 		if hasattr(self, 'daemon_shutdown'):
@@ -815,7 +815,7 @@ class LicornBaseDaemon:
 
 		self.unlink_pid_file()
 
-		logging.notice(_(u'{0:s}: exiting{1}.').format(self, self.uptime()))
+		logging.notice(_(u'{0}: exiting{1}.').format(self, self.uptime()))
 
 		print '>>', _threads()
 		#if __debug__:
@@ -839,10 +839,10 @@ class LicornBaseDaemon:
 			(ST_UGID, signum), frame)
 
 		if signum:
-			logging.notice(_(u'{0:s}: SIGUSR1 received, preparing our '
+			logging.notice(_(u'{0}: SIGUSR1 received, preparing our '
 												u'restart.').format(self))
 		else:
-			logging.notice(_(u'{0:s}: restart needed, shutting '
+			logging.notice(_(u'{0}: restart needed, shutting '
 										u'everything down.').format(self))
 
 		if hasattr(self, 'daemon_shutdown'):

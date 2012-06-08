@@ -8,21 +8,18 @@ Licorn extensions: volumes - http://docs.licorn.org/extensions/volumes.html
 
 """
 
-import os, dbus, pyudev, select, re, errno, functools
+import os, dbus, pyudev, select, re, errno, functools, itertools
 
-from threading   import current_thread
 from collections import deque
 
-from licorn.foundations           import logging, exceptions, settings
-from licorn.foundations           import process, pyutils
-from licorn.foundations.threads   import RLock, Event
+from licorn.foundations           import logging, exceptions
+from licorn.foundations           import process, pyutils, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.base      import DictSingleton, MixedDictObject, Enumeration
 from licorn.foundations.classes   import PicklableObject, SharedResource
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import priorities
 
 from licorn.core                import LMC
 from licorn.core.classes        import SelectableController
@@ -570,9 +567,25 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		# and is often a string.
 		return self.volumes[device]
 	# the generic way (called from RWI)
-	by_key = by_device
-	by_id  = by_device
+	by_key  = by_device
+	by_id   = by_device
+	by_name = by_device
+
 	# end `RWI.select()`
+	def guess_one(self, thing):
+		try:
+			return SelectableController.guess_one(self, thing)
+
+		except KeyError:
+			for vol in self:
+				if vol.label == thing or vol.mount_point == thing or vol.guid == thing:
+					return vol
+
+			raise KeyError(_(u'No Volume by that device name, label, mount_point nor GUID "{0}"!').format(thing))
+
+	def word_match(self, word):
+		return hlstr.word_match(word, tuple(itertools.chain(*[
+						(vol.device, vol.label, vol.guid) for vol in self])))
 
 	def __init__(self):
 		assert ltrace(TRACE_VOLUMES, '| VolumesExtension.__init__()')
@@ -617,7 +630,7 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		# accepted FS must implement posix1e ACLs and user_xattr.
 		# 'vfat' doesn't, 'fuseblk' can be too much things.
 		self.accepted_fs = ('ext2', 'ext3', 'ext4', 'btrfs', 'xfs', 'jfs',
-			'reiserfs')
+																'reiserfs')
 
 		# TODO: implement LVM2 handlers...
 		self.container_fs = ('LVM2_member')
@@ -673,10 +686,8 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# we are always available, because only relying on udev.
 			self.available = True
 
-		except Exception, e:
-			pyutils.print_exception_if_verbose()
-			logging.warning2(_(u'{0}: not available because {1}.').format(
-				stylize(ST_NAME, self.name), e))
+		except Exception:
+			logging.exception(_(u'{0}: not available because'), (ST_NAME, self.name))
 			self.available = False
 
 		assert ltrace(self._trace_name, '< initialize(%s)' % self.available)

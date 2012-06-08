@@ -11,10 +11,9 @@ Licorn Shadow backend - http://docs.licorn.org/core/backends/shadow.html
 	better match reality and avoid potential name conflicts.
 """
 
-import os, crypt, tempfile, grp
+import os, crypt, tempfile
 
 from threading  import Timer
-from traceback  import print_exc
 from contextlib import nested
 
 from licorn.foundations           import settings, logging, exceptions

@@ -6,14 +6,13 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 
 :license: GNU GPL version 2
 """
-import os, time
+import os
 from collections import deque
 
 import netifaces, ipcalc, dumbnet, Pyro, socket, functools
 
 from threading  import current_thread
 from time       import strftime, localtime
-from subprocess import Popen, PIPE
 
 from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import process, hlstr, network, pyutils, events
@@ -379,7 +378,8 @@ class Machine(CoreStoredObject, SharedResource):
 		#assert ltrace(TRACE_MACHINES, '> %s: resolve(%s)' % (caller, self.mid))
 
 		with self.lock:
-			old_hostname = self.hostname
+			#old_hostname = self.hostname
+
 			try:
 				self.hostname = socket.gethostbyaddr(self.mid)[0]
 
@@ -485,8 +485,6 @@ class Machine(CoreStoredObject, SharedResource):
 		""" try to find if the remote system has multiple interfaces and
 			if we have multiple record for it. Then, link them.
 		"""
-
-		caller = current_thread().name
 
 		with self.lock:
 			# merge remote hosts, particularly if they are connected
@@ -655,7 +653,7 @@ class Machine(CoreStoredObject, SharedResource):
 					workers.service_enqueue(priorities.HIGH, self.system.hello_from,
 						LMC.system.local_ip_addresses())
 
-			except Pyro.errors.PyroError, e:
+			except Pyro.errors.PyroError:
 				self.pyro_shutdown()
 
 			else:
@@ -1035,7 +1033,6 @@ class MachinesController(DictSingleton, CoreController):
 	def announce_shutdown(self):
 		""" announce our shutdown to all connected machines. """
 
-		caller       = current_thread().name
 		local_ifaces = LMC.configuration.network.local_ip_addresses()
 
 		for machine in self:
@@ -1043,7 +1040,6 @@ class MachinesController(DictSingleton, CoreController):
 							machine.master_machine or machine.myself):
 				assert ltrace(TRACE_MACHINES,
 									'| annouce_shutdown() to %s' % machine.ip)
-				#print '>> announce shutdown to', machine.ip
 				workers.service_enqueue(priorities.HIGH,
 								machine._pyro_forward_goodbye_from,
 									local_ifaces)

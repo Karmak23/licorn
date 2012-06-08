@@ -10,10 +10,11 @@ The Core API of a Licorn system.
 :license: GNU GPL version 2
 """
 
+# We need version here, to be able to do `from licorn.core import LMC, version`
 from licorn.version import version
 
 import os, sys, time, signal, Pyro.core, Pyro.configuration
-from threading import current_thread, Timer
+from threading import Timer
 
 from licorn.foundations.threads   import RLock
 from licorn.foundations           import logging, exceptions, options, settings

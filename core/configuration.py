@@ -13,23 +13,22 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, socket, getpass, Pyro.core
+import sys, os, re, Pyro.core
 from licorn.foundations.threads import RLock
 
-from licorn.foundations           import logging, options, exceptions, settings
+from licorn.foundations           import logging, exceptions, settings
 from licorn.foundations           import readers, fsapi, network, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import distros, servers, mailboxes, roles, priorities
+from licorn.foundations.constants import distros, servers, mailboxes
 from licorn.foundations.base      import LicornConfigObject, Singleton, \
-											Enumeration, \
 											MixedDictObject, pyro_protected_attrs
 from licorn.foundations.classes   import FileLock
 
 from licorn.core                import LMC
-from licorn.core.classes        import LockedController, CoreModule
+from licorn.core.classes        import CoreModule
 
 class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 	""" Contains all the underlying system configuration as attributes.
@@ -110,7 +109,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
 	def import_settings(self):
-		from licorn.foundations import settings
 		self.settings = settings
 	def load(self, batch=False):
 		""" just a compatibility method. """

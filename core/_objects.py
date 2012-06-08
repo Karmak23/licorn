@@ -12,20 +12,19 @@ Basic objects used in all core controllers.
 
 """
 
-import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
+import os, weakref, time, pyinotify
 
-from threading import current_thread
 from licorn.foundations.threads import RLock, Event
 
-from licorn.foundations           import settings, exceptions, logging, options
-from licorn.foundations           import hlstr, pyutils, fsapi
+from licorn.foundations           import settings, exceptions, logging
+from licorn.foundations           import pyutils, fsapi
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.classes   import PicklableObject
-from licorn.foundations.constants import filters, verbose, priorities, roles
+from licorn.foundations.constants import priorities
 
 from licorn.core                  import LMC
 
@@ -256,7 +255,6 @@ class CoreFSUnitObject(object):
 			self.__is_inotified = inotified
 
 			if inotified:
-				qualif     = ''
 				act_value  = _(u'activated')
 				set_value  = _(u'setup')
 				color      = ST_OK
@@ -268,7 +266,6 @@ class CoreFSUnitObject(object):
 				self._inotifier_add_all_watches()
 
 			else:
-				qualif     = _(u'not ')
 				act_value  = _(u'deactivated')
 				set_value  = _(u'torn down')
 				color      = ST_BAD
@@ -693,7 +690,7 @@ class CoreFSUnitObject(object):
 		try:
 			del self.__check_rules
 
-		except AttributeError, e:
+		except AttributeError:
 			# this happens when a CoreObject is deleted but has not been
 			# checked since daemon start. Rare, but happens.
 			logging.exception(_(u'Exception while deleting inotifier '

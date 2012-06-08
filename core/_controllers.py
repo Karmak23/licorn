@@ -10,22 +10,21 @@ Licorn core controllers
 
 """
 
-import Pyro.core, re, glob, os, posix1e, weakref, time, pyinotify, itertools
+import glob, os, time
 
 from threading import current_thread
 
 
-from licorn.foundations           import settings, exceptions, logging, options
-from licorn.foundations           import hlstr, pyutils, fsapi
-from licorn.foundations.threads    import RLock, Event
+from licorn.foundations           import settings, exceptions, logging
+from licorn.foundations           import fsapi
+from licorn.foundations.threads   import RLock
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import filters, verbose, priorities, roles
+from licorn.foundations.constants import filters
 from licorn.foundations.base      import Enumeration, NamedObject, \
-											MixedDictObject, \
-											pyro_protected_attrs, \
-											LicornConfigObject
+											MixedDictObject
+
 from licorn.core                  import LMC
 
 class SelectableController(NamedObject, dict):
@@ -545,7 +544,7 @@ class CoreFSController(CoreController):
 		try:
 			rules._default.exclude |= default_exclusions
 
-		except AttributeError, e:
+		except AttributeError:
 			raise exceptions.LicornCheckError(_(u'There is no default '
 					u'rule. Check %s.') % stylize(ST_BAD, _(u'aborted')))
 

@@ -11,14 +11,13 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import sys, os, stat, posix1e, re, time, weakref, gc, types
+import sys, os, stat, posix1e, re, gc, types
 
 from traceback  import print_exc
-from threading  import current_thread, Event
 from contextlib import nested
 from operator   import attrgetter
 
-from licorn.foundations           import logging, exceptions, settings
+from licorn.foundations           import logging, exceptions
 from licorn.foundations           import fsapi, pyutils, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
@@ -27,7 +26,7 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import DictSingleton, Enumeration
 from licorn.foundations.constants import filters, backend_actions, \
-											distros, priorities, roles, relation
+											distros, priorities, relation
 
 from licorn.core                import LMC
 from licorn.core.classes        import CoreFSController, CoreStoredObject, CoreFSUnitObject
@@ -279,11 +278,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.__responsible_group = None
 		self.__guest_group       = None
 
-		# update arguments for underlying classes
-		kwargs = {
-
-			}
-
 		super(Group, self).__init__(
 				controller=LMC.groups,
 				backend=backend,
@@ -459,11 +453,9 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		with self.lock:
 
 			if permissive:
-				qualif = ''
 				value  = _(u'activated')
 				color  = ST_OK
 			else:
-				qualif = _(u'not ')
 				value  = _(u'deactivated')
 				color  = ST_BAD
 
@@ -750,7 +742,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.backend.save_Group(self, backend_action)
 	def add_Users(self, users_to_add=None, force=False, batch=False, emit_event=True):
 		""" Add a user list in the group 'name'. """
-		caller = current_thread().name
 
 		assert ltrace_func(TRACE_GROUPS)
 
@@ -849,7 +840,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 	def del_Users(self, users_to_del=None, batch=False, emit_event=True):
 		""" Delete a users list from the current group. """
-		caller = current_thread().name
 
 		assert ltrace_func(TRACE_GROUPS)
 
@@ -1502,8 +1492,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		""" Check superflous and mandatory attributes of a system group. """
 
 		assert ltrace_func(TRACE_GROUPS)
-
-		all_went_ok = True
 
 		logging.progress(_(u'Checking system specific attributes '
 				u'for group {0}…').format(stylize(ST_NAME, self.name))
@@ -2555,7 +2543,6 @@ class GroupsController(DictSingleton, CoreFSController):
 		assert ltrace_func(TRACE_GROUPS)
 
 		# keep informations for post-deletion hook
-		backend = group.backend
 		system  = group.is_system
 		gid     = group.gidNumber
 		name    = group.name

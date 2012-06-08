@@ -13,9 +13,9 @@ Licensed under the terms of the GNU GPL version 2.
 import sys, os, Pyro.errors, time
 
 from threading import Thread
-from licorn.foundations.threads import RLock, Event
+from licorn.foundations.threads import RLock
 
-from licorn.foundations    import logging, options, pyutils
+from licorn.foundations    import logging
 from licorn.interfaces.cli import LicornCliApplication, CliInteractor
 from licorn.core           import version, LMC
 
