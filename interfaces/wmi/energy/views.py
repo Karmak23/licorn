@@ -44,7 +44,7 @@ days= {
 	'4' : _('Friday'),
 	'5' : _('Satursday'),
 	'6' : _('Sunday'),
-	'*': 'ALL' }
+	'*' : _('ALL'),}
 
 def get_days(wd):
 	tab = wd.split(',')
@@ -119,7 +119,7 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 		return HttpResponse('add rule')
 	except exceptions.BadArgumentError, e:
 		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : {3}.').format(
-			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
+			who, ", ".join([ days[str(d)] for d in day.split(',') if d != '']), '{0}:{1}'.format(hour, minute), e))))
 		return HttpResponse(_('BadArgumentError while adding rule'))
 	except KeyError, e:
 		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : One machine cannot be resolved : {3}.').format(

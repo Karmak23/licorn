@@ -31,13 +31,13 @@
 
 	<div id="extinction_rules">
 		{{ _('Shutdown machine(s) ')}}
-		<input type="text" id='extinction_machine_list'/>
+		<input type="text" class='textbox_medium' id='extinction_machine_list' title='{{_("Machine(s) to shutdown, separated by a \",\".")}}'/>
 		{{ _(' at ') }}	
-		<input type="text" class='textbox_small' id='extinction_machine_hour'/>
+		<input type="text" class='textbox_small' id='extinction_machine_hour' title='{{_("Shutdown hour (0<=hour<=23)")}}'/>
 		:
-		<input type="text" class='textbox_small' id='extinction_machine_minute' value='00'/>
+		<input type="text" class='textbox_small' id='extinction_machine_minute' value='00' title='{{_("Shutdown minute (0<=hour<=59)")}}'/>
 		{{ _('on') }}
-		<input type="text" class='textbox_medium' id='extinction_machine_day'/>
+		<input type="text" class='textbox_medium' id='extinction_machine_day' title='{{_("Shutdown day (0<=day<=6, \"ALL\", \"*\", or day in plain text), separated by a \",\".")}}'/>
 		
 		<input type='button' value="add" id='rule_extinction_add'/>
 		<!--<input type='button' value="reset" id='rule_extinction_reset'/>-->
@@ -101,12 +101,12 @@
 		function translate_day(day) {
 			// translate days
 
-
-
-			console.log('translate_day '+day)
-
+			
 			/* return the weekday number [0,1,..,6] of the specified day */
-			if (day == '*') { day = "0,1,2,3,4,5,6"}
+			if (day == '*' || day == 'all' || day == 'ALL') { return "0,1,2,3,4,5,6"}
+			if (day == '0' || day == '1' || day == '2' || day == '3' || day == '4' || day == '5' || day == '6') {
+				return parseInt(day);
+			}
 
 			for (i=0; i < days.length ; i++) {
 				if (days[i] == day) {
@@ -181,7 +181,11 @@
 				minute = check_minute(parseInt($.trim($(this).parent().find("#extinction_machine_minute").val())));
 				day  = $.trim($(this).parent().find("#extinction_machine_day").val());
 
-
+				var t = split(day);
+				for (i=0;i<t.length;i++){
+					t[i] = translate_day(t[i])
+				}
+				day = t.join(', ')
 				console.log('adding rule ', who, hour, minute, day)
 				
 				if (who == null || who == '' || hour == null || day == null || minute == null) {
