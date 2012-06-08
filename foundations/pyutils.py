@@ -188,8 +188,8 @@ def bytes_to_human(bytes, as_string=True, binary=True):
 	else:
 		return size_val
 def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
-	big_precision=False):
-	""" build a time-related human readable string from a time given in seconds.
+														big_precision=False):
+	""" Build a time-related human readable string from a time given in seconds.
 		How the delta is used is function of the arguments (it can be a time in
 		the past or in the future). """
 
