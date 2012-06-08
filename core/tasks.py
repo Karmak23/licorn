@@ -7,60 +7,60 @@
 Introduction
 ============
 
-	The TaskController is a scheduler to manage tasks. A task is an action that 
+	The TaskController is a scheduler to manage tasks. A task is an action that
 	can be delayed in the time and rescheduled.
 
-	The main goal of this controller is to automate execution of several Licorn 
+	The main goal of this controller is to automate execution of several Licorn
 	tasks (automate machine extinction ...)
-	
+
 Task arguments
 ==============
 
-	``name`` : 
+	``name`` :
 		name of the task (string) - **REQUIRED**
-	``action`` : 
+	``action`` :
 		action of the task / method to run (string) - **REQUIRED**
 
-	``year``, ``month``, ``day``, ``week_day``, ``hour``, ``minute``, 
+	``year``, ``month``, ``day``, ``week_day``, ``hour``, ``minute``,
 	``second``:
-		temporal arguments defining when the task will be scheduled. The syntax 
+		temporal arguments defining when the task will be scheduled. The syntax
 		used for temporal arguments is inspired by the cron timing format :
 
-		+-------------------+-------------------------------------------+-----------------------------+ 
-		| Syntax            | Explanation                               | Example(s)                  | 
-		+===================+===========================================+=============================+ 
-		| `\*`              | every                                     |                             | 
-		+-------------------+-------------------------------------------+-----------------------------+ 
+		+-------------------+-------------------------------------------+-----------------------------+
+		| Syntax            | Explanation                               | Example(s)                  |
+		+===================+===========================================+=============================+
+		| `\*`              | every                                     |                             |
+		+-------------------+-------------------------------------------+-----------------------------+
 		| `\*/n`            | every modulo n                            | - \*/2 = [0,2,4,6,8,...]    |
 		|                   |                                           | - \*/15 = [0,15,30,45]      |
 		|                   |                                           | - \*/45 = [0,45]            |
 		+-------------------+-------------------------------------------+-----------------------------+
-		| `n:m`             | period, from n to m (included)            | 5:10 = [5,6,7,8,9,10]       | 
-		+-------------------+-------------------------------------------+-----------------------------+  
-		| `[x[,y[...]]]`    | several occurence                         |                             | 
-		+-------------------+-------------------------------------------+-----------------------------+  
+		| `n:m`             | period, from n to m (included)            | 5:10 = [5,6,7,8,9,10]       |
+		+-------------------+-------------------------------------------+-----------------------------+
+		| `[x[,y[...]]]`    | several occurence                         |                             |
+		+-------------------+-------------------------------------------+-----------------------------+
 		| `A^[x[,y[...]]]`  | A except x,y,...                          | - \*/2^4,6 = [0,2,8,10,...] |
 		|                   |                                           | - 5:10^7 = [5,6,8,9,10]     |
-		+-------------------+-------------------------------------------+-----------------------------+  
+		+-------------------+-------------------------------------------+-----------------------------+
 
-		Every arguments are positive integers, except for ``day`` where 
-		we can user negative integer to specify day from the end of the month 
+		Every arguments are positive integers, except for ``day`` where
+		we can user negative integer to specify day from the end of the month
 		(-1 is the last day, -2 the days before and so on ...)
 
-		By default, every temporal arguments are equal to **\***, except 
+		By default, every temporal arguments are equal to **\***, except
 		``second`` which is **0**.
 
-	``delay_until_year``, ``delay_until_month``, ``delay_until_day``, 
+	``delay_until_year``, ``delay_until_month``, ``delay_until_day``,
 	``delay_until_hour``, ``delay_until_minute``, ``delay_until_second`` :
-		These args can be used in order to delay the first occurence of the 
+		These args can be used in order to delay the first occurence of the
 		task. Defaults are None.
 
-	``args`` and ``kwargs`` 
-		define args and kwargs of the action. Expected arg syntax : 
+	``args`` and ``kwargs``
+		define args and kwargs of the action. Expected arg syntax :
 		arg1[;arg2[...]] ; kwarg syntax : k1=v1[;k2=v2[...]]
 
-	``defer_resolution`` 
-		define when args and kwargs will be resolved. If True, by default, 
+	``defer_resolution``
+		define when args and kwargs will be resolved. If True, by default,
 		during each task execution. Else, during task load.
 
 CLI examples
@@ -68,40 +68,40 @@ CLI examples
 
 	1. **ADD** task:
 
-	
+
 
 	+ Basic action, every minute::
 
-		add task --name "example1" --action logging.notice 
+		add task --name "example1" --action logging.notice
 			--args "example1 : every minute"
 
 	+ Basic action, every 5 second::
-	             
-		add task --name "example2" --action logging.notice 
+
+		add task --name "example2" --action logging.notice
 			--args "example2 : every 5 sec" --second \*/5
 
 	+ The 2012, july 14 at 13h37 every 15 second except 30::
 
-		add task --name "example3" --action logging.notice 
+		add task --name "example3" --action logging.notice
 			--args msg --year 2012 --month 7 --day 14 --hour 13
 			--minute 37 --second \*/15^30
 
-	+ The 15 and the last day of the month, every 15 minutes except 30, between 
+	+ The 15 and the last day of the month, every 15 minutes except 30, between
 	hours 12 and 14::
 
-		add task --name "example3" --action logging.notice --args msg 
+		add task --name "example3" --action logging.notice --args msg
 			--day 15,-1	--hour 12:14 --minute \*/15^30
 
 	2. **DEL** task :
 
 	You can use either ``id`` or ``name`` of the task to delete it::
-	
+
 		del task 0
-		del task example1 
+		del task example1
 
 	3. **MOD** task :
 
-	This is not avalaible for the moment. Just delete the task you want to 
+	This is not avalaible for the moment. Just delete the task you want to
 	modify and create it correctly.
 
 	4. **GET** task :
@@ -152,23 +152,23 @@ ranges = {
 	'hour': range(24),
 	'day': range(1,32),
 	'month': range(12),
-	'year': range(1, 2038), 
+	'year': range(1, 2038),
 	'week_day': range(7) # 0 is monday
 		}
 days = {
 	'0': _('Monday'),
-	'1': _('Tuesday'), 
+	'1': _('Tuesday'),
 	'2': _('Wednesday'),
 	'3': _('Thrusday'),
-	'4': _('Friday'), 
-	'5': _('Satursday'), 
+	'4': _('Friday'),
+	'5': _('Satursday'),
 	'6': _('Sunday'),
 	'*': _('ALL') }
-	
+
 
 class Task(CoreStoredObject):
 	"""
-		Create a new Task object. 
+		Create a new Task object.
 
 		This class provide method to validate and schedule the task.
 
@@ -186,31 +186,31 @@ class Task(CoreStoredObject):
 		:defer_resolution: if True, the args resolution will be done just before task execution, else during task load, only the first time.
 
 	"""
-	
+
 	# from upper class, manage what to drop during Pyro pickle
 	_lpickle_ = {
 		'to_drop': [
 				'thread', 'action_func'
 			]
 		}
-	
+
 	by_name = {}
-	
+
 	def __init__(self, backend, name, action, year, month, day, hour, minute,
-		second,	week_day, delay_until_year, delay_until_month, delay_until_day, 
-		delay_until_hour, delay_until_minute, delay_until_second, 
+		second,	week_day, delay_until_year, delay_until_month, delay_until_day,
+		delay_until_hour, delay_until_minute, delay_until_second,
 		defer_resolution, args, kwargs, *our_args, **our_kwargs):
 		""" init the new task object """
-		
+
 		super(Task, self).__init__(backend=backend, controller=LMC.tasks)
-		
+
 		self.id       = LMC.tasks.get_next_unset_id()
 
 		# name of the task
 		self.name   = name
 		# action assigned to the task
 		self.action = action
-		
+
 		# temporal argument, defined occurence of the task
 		self.year   = year
 		self.month  = month
@@ -220,7 +220,7 @@ class Task(CoreStoredObject):
 		self.second = second
 
 		self.week_day = week_day
-		
+
 		self.delay_until_year   = delay_until_year
 		self.delay_until_month  = delay_until_month
 		self.delay_until_day    = delay_until_day
@@ -233,7 +233,7 @@ class Task(CoreStoredObject):
 		self.defer_resolution = defer_resolution
 
 		# always keep args and kwargs to be able to resolve them again
-		self.args            = args 
+		self.args            = args
 		self.kwargs          = kwargs
 		self.resolved_args   = None
 		self.resolved_kwargs = None
@@ -244,12 +244,12 @@ class Task(CoreStoredObject):
 
 		# our job thread
 		self.thread   = None
-		
+
 		self.nb_of_run = 0
 		self.checked   = False
 		self.scheduled = False
 		self.next_running_time = None
-		
+
 		self.neg_to_exclude = []
 
 		# TODO : use weakref
@@ -273,7 +273,7 @@ class Task(CoreStoredObject):
 					'referenced by {1} does not exist, you may want to defer '
 					'the action\'s parameters resolution using defer_resolution'
 					' arg'.format(
-						stylize(ST_PATH, a), stylize(ST_PATH, e), 
+						stylize(ST_PATH, a), stylize(ST_PATH, e),
 						stylize(ST_NAME, LMC.tasks.name))))
 			except Exception, e:
 				_args.append(a)
@@ -288,40 +288,56 @@ class Task(CoreStoredObject):
 			except Exception, e:
 				_kwargs.update({k : v})
 				#lprint("kwarg {0} has not been resolved (was:{1})".format(k, e))
-		
+
 		# save them
 		self.resolved_args, self.resolved_kwargs = _args, _kwargs
 	def _cli_get(self, long_output=False, no_colors=False):
 		""" Command Line Interface get task output """
 
-		data ="{0}: {1}\t > {2}({3}{4}{5}) ".format(self.id,
-				 stylize(ST_NAME, self.name), self.action, 
-				 ', '.join([str(a) for a in self.args ]), ', ' \
-				 	if (self.args != [] and self.kwargs != {}) else '',
-				 ', '.join([ '{0}={1}'.format(k, v) \
-				 	 for k, v in self.kwargs.iteritems()]))
+		def format_time_args():
+			return stylize(ST_EMPTY, u', '.join(
+					u'{0}={1}'.format(_(arg), getattr(self, arg))
+						for arg in (u'year', u'month', u'day', u'hour',
+									u'minute', u'second', u'week_day',
+									u'delay_until_year', u'delay_until_month',
+									u'delay_until_day', u'delay_until_hour',
+									u'delay_until_minute', u'delay_until_second')
+							if getattr(self, arg) != None
+					))
 
-		t_args = []
-		for arg in ('year', 'month', 'day', 'hour', 'minute', 'second', 'week_day',
-					'delay_until_year', 'delay_until_month', 'delay_until_day',
-					'delay_until_hour', 'delay_until_minute', 'delay_until_second'):
-			
-			if getattr(self, arg) != None:
-				t_args.append('{0}={1}'.format(arg, getattr(self, arg)))
+		def format_next_run():
+			if self.thread.is_alive():
+				return _(u"next @{0} {1}").format(
+							self.next_running_time,
+							stylize(ST_EMPTY, u'(in %s)'
+									% pyutils.format_time_delta(
+										self.thread.remaining_time(),
+										long_output=False)
+								)
+						)
+			else:
+				return stylize(ST_BAD, _(u'Operation thread is down.'))
 
-		data += ', '.join(t_args)
-		data += ' ; defer_resolution = {0}'.format(str(self.defer_resolution))
-		
-		data += '\n\t Running : {0}'.format(stylize(ST_OK, "True") \
-			if self.thread.is_alive() else stylize(ST_BAD, 'False'))
-		
-		if self.thread.is_alive():
-			data += "\t\t @ {0} \t in {1}".format(self.next_running_time, 
-					pyutils.format_time_delta(self.thread.remaining_time()))
-	
-		data += '\n\t Ran {0} times'.format(stylize(ST_PATH, self.nb_of_run))
-		
-		return data
+
+		return _(u'''{id}: {name}, {counter}, {next}
+	{action}({args}{comma}{kwargs}) {defer}
+	{time}''').format(
+				id=self.id,
+				name=stylize(ST_NAME, self.name),
+				action=stylize(ST_COMMENT, self.action),
+				args=u', '.join([str(a) for a in self.args ]),
+				comma=u', ' if (self.args != [] and self.kwargs != {}) else u'',
+				kwargs=u', '.join([ u'{0}={1}'.format(k, v)
+					for k, v in self.kwargs.iteritems()]),
+				defer=stylize(ST_EMPTY, _(u' ({0})').format(
+						_(u'with deferred resolution')
+					)) if self.defer_resolution else u'',
+				time=format_time_args(),
+				next=format_next_run(),
+				counter=_(u'ran {0} time(s)').format(
+					stylize(ST_PATH, self.nb_of_run))
+			)
+
 	def serialize(self, backend_action=None):
 		""" Save task data to backend. """
 		if backend_action == None:
@@ -340,15 +356,15 @@ class Task(CoreStoredObject):
 		# resolve parameters now if needed:
 		if self.defer_resolution:
 			self.resolve_parameters()
-		
+
 		# we need to execute it
 		self.nb_of_run += 1
-		workers.service_enqueue(priorities.NORMAL, self.action_func, 
+		workers.service_enqueue(priorities.NORMAL, self.action_func,
 			*self.resolved_args, **self.resolved_kwargs)
 
-		# try to reschedule it 
+		# try to reschedule it
 		self.schedule(rescheduling=True)
-		
+
 	def json_dump(self):
 		""" return task as JSON in order to save it. """
 		# Do not record unserializable object like function instance or thread
@@ -376,25 +392,25 @@ class Task(CoreStoredObject):
 
 			"defer_resolution" : self.defer_resolution
 		}
-	
+
 	def get_next_running_date(self, now=None):
 		""" return the date of the next task's occurence """
 		if now is None:
 			now = datetime.now()
-	
+
 		for d in self.get_running_dates():
 			if d > now:
 				return d
 	def get_running_dates(self, now=None):
 		""" generator yield next task occurence.
 		This function massively used the ``rrule`` function from the ``dateutil``
-		package. 
+		package.
 		"""
-		
+
 		# We use the rrule function from the python-dateutil package.
 		# Prepare its kwargs dict.
 		kwargs_rrule = {}
-		
+
 		if now is None:
 			now = datetime.now()
 
@@ -410,38 +426,38 @@ class Task(CoreStoredObject):
 		}
 
 		def check_for_exclusion(arg, kwargs):
-			""" check exclusion X^[x[,y[...]]], return X and the kwargs dict 
+			""" check exclusion X^[x[,y[...]]], return X and the kwargs dict
 				containing only not excluded value.
 
 				:arg: name of the argument to check
 				:kwargs: kwargs dict to use """
-			
+
 			_arg = getattr(self, arg)
-			
+
 			#logging.debug('>check_for_exclusion(arg={0}, _arg={1}, kwargs={2}'.
 			#	format(arg,_arg, kwargs))
-			
+
 			if '^' in _arg :
 				s = _arg.split('^')
 				return_arg = s[0]
 				to_exclude = [ int(a) for a in s[1].split(',') ]
-				
-				# check for negativ argument, they will be excluded before 
+
+				# check for negativ argument, they will be excluded before
 				# yielding
 				for i, a in enumerate(to_exclude):
 					if a < 0:
 						if arg == 'day':
 							self.neg_to_exclude.append(a)
 							del to_exclude[i]
-				
-				# update the rrule's kwargs 
+
+				# update the rrule's kwargs
 				kwargs.update({rrule_kwargs[arg] : [ t for t in ranges[arg] \
 					if t not in to_exclude ]})
-				
+
 				#logging.debug('<check_for_exclusion(return_arg={0}, kwargs={1}'.
 				#	format(return_arg, kwargs))
 				return return_arg, kwargs
-			
+
 			# if no excape chars in arg, return it untouched
 			else:
 				#logging.debug('<check_for_exclusion(UNTOUCHED _arg={0}, '
@@ -452,7 +468,7 @@ class Task(CoreStoredObject):
 		for arg in args:
 			# resolve the argument
 			_arg = getattr(self, arg)
-			
+
 			if _arg != None:
 				_arg=str(_arg)
 				if _arg == '*':
@@ -467,7 +483,7 @@ class Task(CoreStoredObject):
 					_arg, kwargs_rrule = check_for_exclusion(arg, kwargs_rrule)
 
 					interval = int(_arg[2:])
-					
+
 					possibilities = kwargs_rrule[rrule_kwargs[arg]] if \
 						kwargs_rrule.has_key(rrule_kwargs[arg]) else ranges[arg]
 
@@ -479,22 +495,22 @@ class Task(CoreStoredObject):
 					_arg, kwargs_rrule = check_for_exclusion(arg, kwargs_rrule)
 
 					s = _arg.split(':')
-					
+
 					possibilities = kwargs_rrule[rrule_kwargs[arg]] if \
 						kwargs_rrule.has_key(rrule_kwargs[arg]) else ranges[arg]
-					
-					# increment the 2nd arg in order to include it too 
-					period = [ t for t in possibilities if t in range(int(s[0]), 
+
+					# increment the 2nd arg in order to include it too
+					period = [ t for t in possibilities if t in range(int(s[0]),
 						int(s[1])+1)]
 					kwargs_rrule.update({ rrule_kwargs[arg] : period})
-									
+
 				else:
 					#SEVERAL
 					_arg, kwargs_rrule = check_for_exclusion(arg, kwargs_rrule)
 
 					possibilities = kwargs_rrule[rrule_kwargs[arg]] if \
 						kwargs_rrule.has_key(rrule_kwargs[arg]) else ranges[arg]
-					
+
 					several = [int(a) for a in _arg.split(',')]
 
 					match=[]
@@ -502,10 +518,10 @@ class Task(CoreStoredObject):
 						# if negativ value, add it
 						if str(t)[0]=='-':
 							match.append(int(t))
-							
-						# else if it is possible 
+
+						# else if it is possible
 						elif t in possibilities:
-								match.append(int(t)) 
+								match.append(int(t))
 
 					kwargs_rrule.update({ rrule_kwargs[arg] : match})
 
@@ -515,12 +531,12 @@ class Task(CoreStoredObject):
 		years   = None
 		if kwargs_rrule.has_key('byyear'):
 			years = [ y for y in kwargs_rrule["byyear"] if y >= datetime.now().year ]
-			 
+
 			ref = datetime(year=min(years), month=1, day=1)
 			if ref > now:
 				dtstart=ref
 			del kwargs_rrule["byyear"]
-		
+
 		# finally check delay_until_* and modify the dtstart if necessary
 		delta = relativedelta()
 		if self.delay_until_year != None:
@@ -540,7 +556,7 @@ class Task(CoreStoredObject):
 		if self.delay_until_hour != None:
 			hour_ref = int(kwargs_rrule['dtstart'].hour) \
 				if kwargs_rrule.has_key('dtstart') else now.hour
-			#print "hour", relativedelta(hours=(int(self.delay_until_hour)-hour_ref))	
+			#print "hour", relativedelta(hours=(int(self.delay_until_hour)-hour_ref))
 			delta += relativedelta(hours=(int(self.delay_until_hour)-hour_ref))
 		if self.delay_until_minute != None:
 			minute_ref = int(kwargs_rrule['dtstart'].minute) \
@@ -556,10 +572,10 @@ class Task(CoreStoredObject):
 			dtstart = now + delta
 		else:
 			if dtstart == None:
-				dtstart = now	
-		
+				dtstart = now
+
 		kwargs_rrule['dtstart'] = dtstart
-	
+
 		# deal with rrule_freq
 		freq_rrule = YEARLY
 		if self.month=='*':
@@ -572,10 +588,10 @@ class Task(CoreStoredObject):
 			freq_rrule = MINUTELY
 		if self.second == '*':
 			freq_rrule = SECONDLY
-		
+
 		#print kwargs_rrule
 		#print list(rrule(freq_rrule, count=50, **kwargs_rrule))
-		
+
 		for d in rrule(freq_rrule, **kwargs_rrule):
 			# special treatment for 'year' because rrule does not manage it
 			if years != None:
@@ -594,37 +610,37 @@ class Task(CoreStoredObject):
 		""" schedule or reschedule a task """
 		if now == None:
 			now = datetime.now()
-		
+
 		# get the next running date
 		running_time = self.get_next_running_date(now=now)
-		
+
 		if test:
 			return running_time
 
 		if running_time is None:
 			logging.notice(_("{0} : {1} for task {2}.".format(
 				stylize(ST_NAME, LMC.tasks.name),
-				stylize(ST_BAD, "No remaining occurence"), 
+				stylize(ST_BAD, "No remaining occurence"),
 				stylize(ST_PATH, self.name))))
 			if LMC.tasks.by_name(self.name) != None:
 				LMC.tasks.del_task(self.id)
 			return False
-		
+
 		if running_time > now:
 			self.next_running_time = running_time
 			job=LicornJobThread(self.execute, tname=self.name,
 						time=time.mktime(running_time.timetuple()), count=1)
 
 			if rescheduling:
-				self.thread.stop()	
+				self.thread.stop()
 
-			self.thread = job 
-			self.thread.start()	
+			self.thread = job
+			self.thread.start()
 
 			self.scheduled = True
-			
+
 		return self.scheduled
-	
+
 	def stop(self):
 		self.thread.stop()
 		del self.thread
@@ -635,15 +651,15 @@ class Task(CoreStoredObject):
 		args_to_check = [
 			('name', self.name), ('action', self.action), ('year', self.year), ('month', self.month),
 			('day', self.day), ('hour', self.hour), ('minute', self.minute), ('second', self.second),
-			('week_day', self.week_day), ('delay_until_year', self.delay_until_year), 
-			('delay_until_month', self.delay_until_month), 
-			('delay_until_day', self.delay_until_day), 
-			('delay_until_hour', self.delay_until_hour), 
+			('week_day', self.week_day), ('delay_until_year', self.delay_until_year),
+			('delay_until_month', self.delay_until_month),
+			('delay_until_day', self.delay_until_day),
+			('delay_until_hour', self.delay_until_hour),
 			('delay_until_minute', self.delay_until_minute),
 			('delay_until_second', self.delay_until_second),
 		]
 
-		temporal_args = ['year', 'month', 'day', 'hour', 
+		temporal_args = ['year', 'month', 'day', 'hour',
 			'minute', 'second', 'week_day']
 
 		def validate_range(t, arg, can_be_neg=False):
@@ -654,43 +670,43 @@ class Task(CoreStoredObject):
 			if can_be_neg:
   				if str(t)[0]=='-':
   					t=str(t)[1:]
-  				
+
   			if int(t) not in ranges[arg]:
   				raise exceptions.BadArgumentError(_("{1} on task {0} for argument"
 					" {2}={5} : should be between {3} and {4}".format(
 						stylize(ST_NAME, name),
 						stylize(ST_BAD, 'Not in range'),
 						arg, min(ranges[arg]) if not can_be_neg \
-							else '-{0}'.format(max(ranges[arg])), 
+							else '-{0}'.format(max(ranges[arg])),
 								max(ranges[arg]),
 						t)))
-			
+
 		def validate_exclusion(arg, _arg, can_be_neg=False):
 			""" validate exclusion X^x[,y[..]] where x,y are positiv integer"""
-			
+
 			if '^' in str(_arg) :
 				s = _arg.split('^')
 				return_arg = s[0]
 				to_exclude = [ int(a) for a in str(s[1]).split(',') if a != '' ]
 				for a in to_exclude:
 					validate_range(a, arg, can_be_neg=can_be_neg)
-			
+
 				return return_arg
 			else:
 				return _arg
-		
+
 		for arg, _arg in args_to_check:
 			if _arg == None:
 				continue
 			# first of all check every type
-			if type(_arg) not in (types.StringType, types.NoneType, 
+			if type(_arg) not in (types.StringType, types.NoneType,
 				types.IntType, types.UnicodeType):
-				
+
 				raise exceptions.BadArgumentError(_("{0} on task {1} for argument "
 					"{2}={3} : excepted type are String, Int or None".format(
 						stylize(ST_BAD, "Type error"),
 						stylize(ST_PATH, name), arg, _arg)))
-			
+
 			# if temporal arg, check it carefully
 			if arg in temporal_args:
 				_arg=str(_arg)
@@ -712,7 +728,7 @@ class Task(CoreStoredObject):
 					for t in str(_arg[2:]).split(','):
 						if t != '':
 							validate_range(t, arg)
-				
+
 				elif ':' in str(_arg):
 					# check exclusion
 					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
@@ -720,9 +736,9 @@ class Task(CoreStoredObject):
 					# check range
 					for t in _arg.split(':'):
 						validate_range(int(t), arg)
-													
+
 				else:
-					
+
 					_arg = str(_arg)
 					# check exclusion
 					_arg = validate_exclusion(arg, _arg, can_be_neg=True)
@@ -749,7 +765,7 @@ class Task(CoreStoredObject):
 						"argument {2}={3} : should be transtypable to int".format(
 						name, stylize(ST_BAD, 'Type Error'),
 						arg, _arg)))
-		
+
 		# check action
 		if type(self.action) not in (types.UnicodeType, types.StringType):
 			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'action'={2} has to "
@@ -761,12 +777,12 @@ class Task(CoreStoredObject):
 			raise exceptions.BadArgumentError(_("{0} on task {1} for argument 'defer_resolution'={2} has to "
 				"be a Boolean".format( stylize(ST_BAD, "Type error"),
 					stylize(ST_PATH, self.name), self.defer_resolution)))
-		
+
 
 class TaskExtinction(Task):
 	def validate(self):
 		super(TaskExtinction, self).validate()
-	
+
 		if self.hour == '*':
 			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'hour'={2} has to "
 				"be a Int where 0<=hour<60".format( stylize(ST_BAD, "BadArgumentError"),
@@ -774,8 +790,8 @@ class TaskExtinction(Task):
 		if self.minute == '*':
 			raise exceptions.BadArgumentError("{0} on extinction task {1} for argument 'minute'={2} has to "
 				"be a Int where 0<=minute<60".format( stylize(ST_BAD, "BadArgumentError"),
-					stylize(ST_PATH, self.name), self.minute))	
-		
+					stylize(ST_PATH, self.name), self.minute))
+
 
 		# Extinction Task specific tests :
 		# We only need to check that a rule of a speficied machine, is only set once by day and hour.
@@ -803,52 +819,52 @@ class TaskExtinction(Task):
 							# same day
 							same_day = True
 							_day = d
-				
+
 				if task.minute == self.minute and task.hour == self.hour:
 					same_hour = True
-					_hour = '{0}:{1}'.format(task.hour, task.minute) 
+					_hour = '{0}:{1}'.format(task.hour, task.minute)
 
 				# check machines
 				for m in task.args:
 					if m in self.args:
 						same_machine = True
 						_machine = m
-				
+
 					if same_machine and same_hour and same_day:
 						raise exceptions.BadArgumentError(_('Another rule already exists for the '
 												'machine {0} on day {1} at {2}, please delete it first.'
 												.format(_machine, days[str(_day) if _day != '*' else '*'], _hour)))
-					
-		
+
+
 class TasksController(DictSingleton, CoreController, SelectableController):
-	"""	
+	"""
 	Task Controler. Manage tasks, add them, delete them.
 	"""
 	init_ok = False
 	load_ok = False
-	
+
 	# local and specific implementations of SelectableController methods.
 	def by_id(self, t_id):
 		return self[int(t_id)]
-	
+
 	def by_name(self, t_name):
 		# call weakref to retrun real object
 		return Task.by_name[t_name]()
 
 	by_key  = by_id
-	
+
 	# end SelectableController
-		
+
 	def __init__(self, load=True):
-		""" Init the TasksController. It will manage all tasks through sched 
+		""" Init the TasksController. It will manage all tasks through sched
 		python module """
 		if TasksController.init_ok:
 			return
-		
+
 		self.backend = None
 		super(TasksController, self).__init__(name='tasks')
 
-		
+
 		TasksController.init_ok = True
 
 		#self.threads.scheduler = TaskSchedulerThread(self)
@@ -863,10 +879,10 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		""" Load tasks form different backends """
 		if TasksController.load_ok:
 			return
-		
+
 		assert ltrace(TRACE_TASKS, '| load()')
 		self.reload()
-		
+
 		TasksController.load_ok = True
 	def reload(self):
 		""" Load (or reload) the data structures from the system data. """
@@ -878,20 +894,20 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				t.stop(force=True)
 			self.threads = []
 
-			
+
 			try:
 				# reload tasks
 				for backend in self.backends:
 					backend.load_Tasks()
 			except Exception:
-				# do not catch the 'unknown file', if there is no config file, 
+				# do not catch the 'unknown file', if there is no config file,
 				# it's ok
 				#if e.errno != errno.ENOENT:
 				logging.exception(_("{0} : Exception while reloading "
 					"tasks".format(stylize(ST_NAME, LMC.tasks.name))))
-		
+
 	def add_task(self, name, action, year=None, month=None, day=None, hour=None,
-		minute=None, second=None, week_day=None, delay_until_year=None, 
+		minute=None, second=None, week_day=None, delay_until_year=None,
 		delay_until_month=None,	delay_until_day=None, delay_until_hour=None,
 		delay_until_minute=None, delay_until_second=None, defer_resolution=None,
 		args=None, kwargs=None, test=False, load=False):
@@ -923,7 +939,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		# create the task object
 		# check if task name is unique:
 		try:
-			self.by_name(name)	
+			self.by_name(name)
 		except:
 			# check task type (e.g. TaskExtinction....)
 			if action == 'LMC.machines.shutdown':
@@ -932,32 +948,32 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				taskClass = Task
 
 			# instanciate the task object
-			task = taskClass(self._prefered_backend, name, action, year=year, 
-				month=month, day=day, hour=hour, minute=minute, second=second, 
-				week_day=week_day, delay_until_year=delay_until_year, 
-				delay_until_month=delay_until_month, 
-				delay_until_day=delay_until_day, 
-				delay_until_hour=delay_until_hour, 
-				delay_until_minute=delay_until_minute, 
+			task = taskClass(self._prefered_backend, name, action, year=year,
+				month=month, day=day, hour=hour, minute=minute, second=second,
+				week_day=week_day, delay_until_year=delay_until_year,
+				delay_until_month=delay_until_month,
+				delay_until_day=delay_until_day,
+				delay_until_hour=delay_until_hour,
+				delay_until_minute=delay_until_minute,
 				delay_until_second=delay_until_second,
 				defer_resolution=defer_resolution, args=args, kwargs=kwargs)
-						
+
 			try :
 				task.validate()
 			except exceptions.BadArgumentError, e:
 				raise e
-				
+
 			self[task.id] = task
-					
+
 			#resolve action
 			try:
-				task.action_func = pyutils.resolve_attr(task.action, 
+				task.action_func = pyutils.resolve_attr(task.action,
 						{"LMC" : LMC, "logging": logging})
 			except Exception, e:
 				raise exceptions.BadArgumentError(_("{0} on task {1} : please check the action "
 					"argument".format( stylize(ST_BAD, "Cannot resolve action"),
 						stylize(ST_PATH, self.name))))
-			
+
 			if task.schedule():
 				task.serialize(backend_actions.CREATE)
 
@@ -965,22 +981,22 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				for arg in ('year', 'month', 'day', 'hour', 'minute', 'second', 'week_day',
 					'delay_until_year', 'delay_until_month', 'delay_until_day',
 					'delay_until_hour', 'delay_until_minute', 'delay_until_second'):
-			
+
 					if getattr(task, arg) != None:
 						task_args += ' {0}={1}'.format(arg, getattr(task, arg))
-				
+
 				logging.notice(_("{0} : scheduling task {1} {2} - {4} - {3}".format(
 					stylize(ST_NAME, LMC.tasks.name),
 					stylize(ST_PATH, task.name),
 					"on {0}".format(stylize(ST_OK, task.next_running_time)),
-					task_args, '{0}({1}, {2})'.format(task.action, task.args, 
+					task_args, '{0}({1}, {2})'.format(task.action, task.args,
 					task.kwargs))))
 
 				if isinstance(task, TaskExtinction):
 					LicornEvent('task_extinction_added', task=task).emit(priorities.LOW)
 				# forward the good news
 				LicornEvent('task_added', task=task).emit(priorities.LOW)
-	
+
 		else:
 			logging.notice(_('{0} : {1} task named {2}, another task with the '
 				'same name already exists'.format(
@@ -997,23 +1013,23 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		if task != None:
 			name = task.name
 			is_instance = isinstance(task, TaskExtinction)
-			
-			# cancel it from the scheduler 
+
+			# cancel it from the scheduler
 			task.stop()
-			
+
 			# del its reference
 			del self[task.id].__class__.by_name[task.name]
 			del self[task.id]
-			
-			
+
+
 			# del it from the config
 			task.backend.delete_Task(task)
 
 			logging.notice(_('{0} : task {1} {2}'.format(
-				stylize(ST_NAME, LMC.tasks.name), 
+				stylize(ST_NAME, LMC.tasks.name),
 				stylize(ST_PATH, task.name),
 				stylize(ST_BAD, "deleted"))))
-			
+
 			del task
 
 			if is_instance:
@@ -1026,9 +1042,9 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
 
-	def dump_status(self, long_output=False, precision=None, 
+	def dump_status(self, long_output=False, precision=None,
 		as_string=True, cli_output=True, *args, **kwargs):
-		
+
 		if as_string:
 			desc = "Scheduler threads :"
 			for task in self.values():
@@ -1036,12 +1052,12 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 					stylize(ST_NAME,task.name), task.id,
 					'next in %s ' % pyutils.format_time_delta(
 						task.thread.remaining_time()) if time != 0 \
-							 else 'Currently running', 
+							 else 'Currently running',
 					task.action, task.args, task.kwargs)
 
-			return desc	
-			
-			
+			return desc
+
+
 	# used in `RWI.select()`
 	@property
 	def object_type_str(self):
@@ -1070,7 +1086,7 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 				for t in self.values():
 					if t.id == filter_string:
 						filtered_tasks.append(t)
-						
+
 			return filtered_tasks
 
 	def _cli_get(self, selected=None, long_output=False, no_colors=False):
@@ -1089,6 +1105,5 @@ class TasksController(DictSingleton, CoreController, SelectableController):
 
 			# FIXME: forward long_output, or remove it.
 			return '%s\n' % '\n'.join((task._cli_get()
-							for task in sorted(tasks, key=attrgetter('id'))))	
+							for task in sorted(tasks, key=attrgetter('id'))))
 
-	
