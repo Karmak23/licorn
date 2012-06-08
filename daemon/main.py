@@ -335,11 +335,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.__threads._wmi = WebManagementInterface().start()
 	def run(self):
 
-		assert ltrace(TRACE_DAEMON, '> run()')
-
-		self.refork_if_not_root_or_die()
-
-		self.__setup_threaded_gettext()
+		assert ltrace_func(TRACE_DAEMON)
 
 		# this has to be done before anything else.
 		self.load_settings()
@@ -348,6 +344,13 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.pid_file      = self.configuration.pid_file
 
 		(self.opts, self.args) = self.parse_arguments()
+
+		# setup the Licorn® global options.
+		options.SetFrom(self.opts)
+
+		self.__setup_threaded_gettext()
+
+		self.refork_if_not_root_or_die()
 
 		self.__name = '%s/%s' % (LicornDaemon.dname,
 						roles[settings.role].lower())
@@ -373,9 +376,6 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# :arg:`--force` related questions will make it stop, and there should not
 		# be any of these in its daemon's life.
 		self.opts.batch = True
-
-		# setup the Licorn-global options object.
-		options.SetFrom(self.opts)
 
 		if self.opts.daemon:
 			self.pid = process.daemonize(self.configuration.log_file,
@@ -612,7 +612,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		t.start()
 	def __setup_threaded_gettext(self):
 		""" Make the gettext language switch be thread-dependant, to have
-			multi-lingual parallel workers ;-) """
+			multi-lingual parallel workers ;-)
+
+			.. note:: it seems `foundations.options` is not yet setup when
+				this method launches. No output
+		"""
 
 		assert ltrace(TRACE_DAEMON, '| __setup_threaded_gettext()')
 
@@ -628,12 +632,29 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		__builtin__.__dict__['_'] = my_
 
-		fr_lang    = gettext.translation('licorn', languages=['fr'])
-		self.langs = {
-				u'fr_FR.utf8' : fr_lang,
-				u'fr_FR'      : fr_lang,
-				u'fr'         : fr_lang,
+		self.langs = {}
+		langs      = {
+				'fr': (u'fr_FR.utf8', u'fr_FR'),
 			}
+
+		for lang, alternatives in langs.iteritems():
+			try:
+				gtlang = gettext.translation('licorn', languages=[ lang ])
+
+			except (IOError, OSError):
+				logging.exception(_(u'Could not load gettext translations '
+									u'for language {0}'), (ST_NAME, lang))
+
+			else:
+				logging.progress(_('Successfully loaded gettext translations '
+						u'for language {0}.').format(stylize(ST_NAME, lang)))
+
+				# setup aliases
+				# FIXME: shouldn't we get them from /etc/locale.alias ?
+				for alternative in alternatives:
+					self.langs[alternative] = gtlang
+
+				self.langs[lang] = gtlang
 
 		# make the current thread (MainThread) not trigger the except everytime.
 		current_thread()._ = __builtin__.__dict__['_orig__']
