@@ -108,7 +108,7 @@
 {% macro operations_status() %}
 	{% set all_status = extension.operations_status() %}
 	{%- set status_trans = {
-			False:	_('Failed'),
+			False:	_('Errors'),
 			True:	_('Success'),
 			None:	_('Not run yet'),
 		} -%}
@@ -124,7 +124,7 @@
 					<span id="op_{{operation}}_status" class="ajax-slider-toggle-master">{{ status_trans[status] }}&nbsp;<img style="margin-bottom: -5px;" src="/media/images/22x22/emblem-important.png" alt="{{ _('(display log details)') }}" /></span></td></tr>
 					<tr>
 				<td colspan="2">
-					<pre id="op_{{operation}}_status" class="ajax-slider-toggle-slave ajax-initially-hidden">{{logdata}}</pre>
+					<p id="op_{{operation}}_status" class="ajax-slider-toggle-slave ajax-initially-hidden greyed_out smallest">{{logdata.replace('\n', '<br /><br />')}}</p>
 				{% else %}
 					<span class="grayed_out">{{ status_trans[status] }} {{ _('(no details available)') }}</span>
 				{% endif %}
