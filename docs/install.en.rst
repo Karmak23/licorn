@@ -12,9 +12,9 @@ From packages
 
 The stable version of Licorn is packaged for `Ubuntu Lucid 10.04 LTS` and higher, but is only accessible to our customers (you need a login/password provided by us). If you are one of them, get the packages from the APT repository below. Else, skip to :ref:`installation from sources<install.from_sources.en>`::
 
-	deb http://login:password@packages.licorn.org/ubuntu/ <codename> main restricted
+	deb http://archive.licorn.org/ubuntu/ <codename> main restricted
 
-Where `<codename>` should be `lucid`, `maverick` and so on.
+Where `<codename>` should be `precise` (12.04 LTS) `lucid` (10.04 LTS).
 
 Here are a few package names:
 
