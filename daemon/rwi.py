@@ -1592,16 +1592,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		profiles_to_del = self.select(LMC.profiles, args[1:], opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
+		
+		if profiles_to_del is not None:
+		
+			for p in profiles_to_del:
+				if opts.non_interactive or opts.batch or opts.force or \
+					logging.ask_for_repair(_(u'Delete profile %s?') %
+						stylize(ST_LOGIN, p.name),
+						auto_answer=opts.auto_answer):
 
-		for p in profiles_to_del:
-			if opts.non_interactive or opts.batch or opts.force or \
-				logging.ask_for_repair(_(u'Delete profile %s?') %
-					stylize(ST_LOGIN, p.name),
-					auto_answer=opts.auto_answer):
-
-				LMC.profiles.del_Profile(p,
-					del_users=opts.del_users,
-					no_archive=opts.no_archive)
+					LMC.profiles.del_Profile(p,
+						del_users=opts.del_users,
+						no_archive=opts.no_archive)
 
 		gc.collect()
 	def del_keyword(self, opts, args):
