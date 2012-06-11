@@ -1,6 +1,7 @@
 {#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
+
 <div>
 
 	<h1>{{ _('My Informations') }}</h1>
@@ -30,6 +31,11 @@
 				</div>
 		{%- endfor -%}
 	</div>
+	<table>
+	{%- for list in groups_lists -%}
+		{%- include 'users/view_groups.html' -%}
+	{%- endfor -%}
+	</table>
 </div>
 </div>
 <script type="text/javascript">
