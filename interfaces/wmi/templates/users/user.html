@@ -59,6 +59,7 @@
 		var passwords_match = false;
 		var check_user_pwd;
 		
+		// from main.js
 		password_helpers(content)
 
 		$('.click_item').each(function() {
@@ -99,7 +100,7 @@
 			lock_sub_content();
 
 			function post_form() {
-				if (passwords_match) {
+				if ($('#id_password').val() == $('#id_password_confim').val()) {
 					if ($('#id_login').val() == '' && $('#id_gecos').val() == "") {
 						show_message_through_notification('Login and gecos cannot be both empty, impossible to save user')
 					}
