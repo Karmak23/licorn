@@ -1823,11 +1823,11 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			def build_csv_output_licorn(uid):
 				return ';'.join(
 					[
-						self.users[uid]['gecos'],
-						self.users[uid]['login'],
-						str(self.users[uid]['gidNumber']),
-						','.join(self.users[uid]['groups']),
-						self.users[uid]['backend']
+						self[uid].gecos,
+						self[uid].login,
+						str(self[uid].gidNumber),
+						','.join([ g.name for g in self[uid].groups]),
+						self[uid].backend.name
 					]
 					)
 
