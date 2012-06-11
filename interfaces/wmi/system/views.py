@@ -132,6 +132,60 @@ def index(request, *args, **kwargs):
 
 		f = UserForm(edit_mod, user)
 
+
+		resps     = []
+		guests    = []
+		stdgroups = []
+		privs     = []
+		sysgroups = []
+
+		for group in user.groups:
+			if group.is_responsible:
+				resps.append(group.standard_group)
+
+			elif group.is_guest:
+				guests.append(group.standard_group)
+
+			elif group.is_standard:
+				stdgroups.append(group)
+
+			elif group.is_privilege:
+				privs.append(group)
+
+			else:
+				sysgroups.append(group)
+
+		lists = [
+					{
+						'title'  : _('Responsibilities'),
+						'kind'   : _('responsible'),
+						'groups' : resps
+					},
+					{
+						'title'  : _('Memberships'),
+						'kind'   : _('member'),
+						'groups' : stdgroups
+					},
+					{
+						'title'  : _('Invitations'),
+						'kind'   : _('guest'),
+						'groups' : guests
+					},
+					{
+						'title'  : _('Privileges'),
+						'kind'   : _('privileged member'),
+						'groups' : privs
+					},
+					{
+						'title'  : _('Other system groups'),
+						'kind'   : _('system member'),
+						'groups' : sysgroups
+					},
+
+			]
+
+
+
 		_dict.update({
 				'main_content_template' : 'system/index_main_nostaff.html',
 				'sub_content_template'  : 'system/index_sub_nostaff.html',
@@ -140,7 +194,7 @@ def index(request, *args, **kwargs):
 				'edit_mod'              : edit_mod,
 				'title'                 : title,
 				'form'                  : f,
-				'groups_lists'          : []
+				'groups_lists'          : lists
 		})
 
 	return render(request, 'system/index.html', _dict)
