@@ -27,9 +27,9 @@ from licorn.foundations.constants import filters, relation
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
-from licorn.core                      import LMC
-from licorn.interfaces.wmi.libs       import decorators, utils, perms_decorators
-
+from licorn.core                               import LMC
+from licorn.interfaces.wmi.libs                import utils, perms_decorators
+from licorn.interfaces.wmi.libs.decorators     import *
 # FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
 from licorn.interfaces.wmi.libs                import old_utils as w
 from licorn.interfaces.wmi.libs.old_decorators import check_users
@@ -151,7 +151,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 	# updating the web page is done in the event handler, via the push stream.
 	return HttpResponse('MOD DONE.')
 
-@login_required
+@staff_only
 @perms_decorators.check_users('delete')
 def delete(request, uid, no_archive, *args, **kwargs):
 
@@ -166,7 +166,7 @@ def delete(request, uid, no_archive, *args, **kwargs):
 
 	return HttpResponse('DONE.')
 
-@login_required
+@staff_only
 def massive(request, uids, action, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -184,7 +184,7 @@ def massive(request, uids, action, *args, **kwargs):
 		pass
 	return HttpResponse('MASSIVE DONE.')
 
-@login_required
+@staff_only
 def create(request, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -230,14 +230,14 @@ def create(request, **kwargs):
 	return HttpResponse('DONE.')
 
 # TODO:
-@login_required
+@staff_only
 def massive_import(uri, http_user, filename, firstname_col, lastname_col,
 													group_col, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	pass
 
-@login_required
+@staff_only
 def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -314,7 +314,7 @@ def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 
 		return render(request, 'users/user_template.html', _dict)
 
-@login_required
+@staff_only
 def view(request, uid=None, login=None, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -437,7 +437,7 @@ def upload_file(request, *args, **kwargs):
 		#lprint(destination)
 		return HttpResponse(csv_filename)
 
-@login_required
+@staff_only
 def import_download(request, import_id, *args, **kwargs):
 	""" http://djangosnippets.org/snippets/365/ """
 
@@ -450,7 +450,7 @@ def import_download(request, import_id, *args, **kwargs):
 	response['Content-Disposition'] = 'attachment; filename={0}'.format(import_id)
 	return response
 
-@login_required
+@staff_only
 def import_view(request, confirm='', *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -493,7 +493,7 @@ def import_view(request, confirm='', *args, **kwargs):
 		else:
 			return render(request, '/users/import_template.html', {'form': form})
 
-@login_required
+@staff_only
 def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)

@@ -36,7 +36,7 @@ from licorn.interfaces.wmi.libs.decorators import *
 
 from forms                              import GroupForm
 
-@login_required
+@staff_only
 def message(request, part, gid=None, *args, **kwargs):
 
 	if gid != None:
@@ -189,7 +189,7 @@ def create(request, **kwargs):
 
 	return HttpResponse("DONE.")
 
-@login_required
+@staff_only
 def view(request, gid=None, name=None, *args, **kwargs):
 
 	if gid != None:
@@ -248,7 +248,7 @@ def view(request, gid=None, name=None, *args, **kwargs):
 
 		return render(request, 'groups/view_template.html', _dict)
 
-@login_required
+@staff_only
 def group(request, gid=None, name= None, action='edit', *args, **kwargs):
 
 	# resolve group
@@ -316,7 +316,7 @@ def group(request, gid=None, name= None, action='edit', *args, **kwargs):
 
 		return render(request, 'groups/group_template.html', _dict)
 
-@login_required
+@staff_only
 def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 
 	groups = utils.select('groups', default_selection=filters.STANDARD)
