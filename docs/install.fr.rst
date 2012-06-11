@@ -12,9 +12,9 @@ Avec des paquetages
 
 La version stable de Licorn® est empaquetée pour `Ubuntu Lucid 10.04 LTS` et supérieur, mais disponible uniquement pour nos clients sous contrat (vous devez avoir un identifiant/mot-de-pass). Si vous en êtes, téléchargez les paquetages depuis le dépôt suivant, sinon suivez l'`installation depuis les sources<install.from_sources.fr>`::
 
-	deb http://identifiant:motdepasse@packages.licorn.org/ubuntu/ <codename> main restricted
+	deb http://archive.licorn.org/ubuntu/ <codename> main restricted
 
-Où `<codename>` devrait être `lucid`, `maverick`, etc.
+Où `<codename>` devrait être `precise` (12.04 LTS) ou `lucid` (10.04 LTS).
 
 Quelques noms de paquetages:
 
