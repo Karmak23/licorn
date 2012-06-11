@@ -72,8 +72,6 @@ def policies(request, *args, **kwargs):
 	return render(request, 'energy/policies.html', { 
 		'data_separators' : get_calendar_data(request, ret=False)})
 
-
-
 @staff_only
 def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 	"""  add an extinction task in the TaskController """
@@ -93,7 +91,12 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 			if m.lower() == 'all':
 				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ACTIVE)')
 			else:
-				mach = LMC.machines.guess_one(m)
+				try:
+					mach = LMC.machines.guess_one(LMC.machines.word_match(m))
+				except KeyError:
+					wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : One machine cannot be resolved : {3}.').format(
+			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
+
 				if mach.master_machine is not None:
 					machines_to_shutdown.append(mach.master_machine.mid)
 				else:
@@ -120,10 +123,7 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 	except exceptions.BadArgumentError, e:
 		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : {3}.').format(
 			who, ", ".join([ days[str(d)] for d in day.split(',') if d != '']), '{0}:{1}'.format(hour, minute), e))))
-		return HttpResponse(_('BadArgumentError while adding rule'))
-	except KeyError, e:
-		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : One machine cannot be resolved : {3}.').format(
-			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
+		return HttpResponse(_('BadArgumentError while adding rule'))		
 	except:
 		logging.exception(_('Unknown error while adding extinction task'))
 		return HttpResponse(_('Unknown error while adding rule'))

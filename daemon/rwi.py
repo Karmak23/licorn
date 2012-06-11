@@ -1408,16 +1408,19 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		else:
 			try:
 				if ';' not in opts.args:
-					task_args = opts.args.split(';')
+					task_args = [ LMC.machines.guess_one(LMC.machines.word_match(m)).mid for m in opts.args.split(';') ]
 				else:
-					task_args = opts.args
+					task_args = [ LMC.machines.guess_one(LMC.machines.word_match(opts.args)).mid ]
+
+			except KeyError, e:
+				logging.exception('unable to recognize machine {0}'.format(e))
 			except:
 				logging.exception("{0} : {3} unpacking args of task {1} "
 					"(args={2}) ".format(
 					stylize(ST_NAME, LMC.tasks.name),
-					opts.name, opts.id, stylize(ST_BAD, "Error while"),
-					stylize(ST_PATH, task_name), task_args), 
-					to_local=False)
+					opts.name, opts.args, stylize(ST_BAD, "Error while"),
+					to_local=False))
+				return		
 		
 		task_kwargs = {}
 		if opts.kwargs != "":
@@ -1429,7 +1432,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				logging.exception("{0} : {3} unpacking kwargs of task {1} "    
 					"(kwargs={2}) ".format(
 					stylize(ST_NAME, LMC.tasks.name),
-					opts.name, opts.id, stylize(ST_BAD, "Error while"),
+					opts.name, kw, stylize(ST_BAD, "Error while"),
 					stylize(ST_PATH, task_name), task_kwargs), 
 					to_local=False)
 

@@ -9,7 +9,7 @@ Licorn core: machines - http://docs.licorn.org/core/machines.html
 import os, time, types
 from collections import deque
 
-import netifaces, ipcalc, dumbnet, Pyro, socket, functools
+import netifaces, ipcalc, dumbnet, Pyro, socket, functools, itertools
 
 from threading  import current_thread
 from time       import strftime, localtime
@@ -1309,6 +1309,19 @@ class MachinesController(DictSingleton, CoreController):
 					inputhostname, hlstr.regex['hostname']))
 
 		return hostname
+
+
+	def word_match(self, word): 
+		print set(itertools.chain(*[ 
+			(m.name if m.name != m.mid else '', m.mid) for m in self]))
+		return hlstr.word_match(word, set(itertools.chain(*[ 
+			(m.name, m.mid) for m in self]))) 
+
+
+
+
+
+
 
 	# these 3 will be mapped into R/O properties by the WMIObject creation
 	# process method. They will be deleted from here after the mapping is done.
