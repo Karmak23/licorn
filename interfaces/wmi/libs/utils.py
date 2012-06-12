@@ -8,7 +8,7 @@ Licorn WMI2 utils
 :license: GNU GPL version 2
 """
 
-import time, types, json, uuid, functools
+import time, types, json, functools
 
 from Queue import Queue
 
@@ -46,11 +46,6 @@ def select_one(*a, **kw):
 		return None
 
 # ================================================================== WMI2 utils
-
-def unique_hash(replacement=None):
-	""" Jinja2 globals which just returns `uuid.uuid4().hex`. """
-
-	return str(uuid.uuid4().hex).replace('-', replacement or '-')
 
 # JS and RPC-JS related functions
 def notify(message, timeout=None, css_class=None):
