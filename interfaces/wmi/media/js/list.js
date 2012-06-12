@@ -123,24 +123,41 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		else {
 			export_content = gettext("Are you sure you want to export these account(s):");
 			export_content += html;
-			export_dialog = new dialog(export_title, export_content,
-				true, function() {
-						items=[]
-						$('#'+list_name+'_list').find(".row").each(function() {
-							if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
-								items.push($(this).find('.'+list_name+'_'+identifier).text());
-								clear_sub_content_with_id($(this).find('.'+list_name+'_'+identifier).text())
-							}
-						});
+			export_content += '<br />';
+			export_content += gettext("Please choose the export format : ");
+			export_content += '<select id="id_export_type">';
+			export_content += '<option name="csv">CSV</option>';
+			export_content += '<option name="XML">XML</option>';
+			export_content += '</select>';
+			export_content += '<iframe id="download_iframe" style="display:none"></iframe>';
 
-						page_url = "/"+list_name+"/massive/export/" + $.URLEncode(items.join(',')) + "/csv";
-						$.get(page_url, function(data) {
-							file_name = data.file_name
-							preview = data.preview
-
-							$('#sub_content').html(preview + '!!!!' + file_name + '!!!!' + '<a href="/users/download/'+file_name+'">totot</a>')
-						}, "json");
+			//export_content += '<input type="button" onClick="my_export(\''+$.trim(list_name)+'\',\''+$.trim(identifier)+'\')" value="Export"/>'
+					
+			export_dialog = new dialog(export_title, export_content, true, function() {
+				
+					items=[]
+					$('#'+list_name+'_list').find(".row").each(function() {
+						if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+							items.push($(this).find('.'+list_name+'_'+identifier).text());
+							clear_sub_content_with_id($(this).find('.'+list_name+'_'+identifier).text())
+						}
 					});
+					
+					console.log($("#id_export_type"))
+					type = $("#id_export_type").val().toString();	
+					page_url = "/"+list_name+"/massive/export/" + $.URLEncode(items.join(',')) + "/"+ type;
+					$.get(page_url, function(data) {
+						file_name = data.file_name
+						preview = data.preview
+						
+						// iframe "trick" to be able to prompt download at the correct time
+						iframe = document.getElementById('download_iframe')
+						iframe.src = "/download/"+file_name
+						
+
+					}, "json");
+				});
+			
 		}
 		export_dialog.show();
 	});

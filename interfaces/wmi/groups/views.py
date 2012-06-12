@@ -10,7 +10,7 @@ Licorn® WMI - groups views
 :license: GNU GPL version 2
 """
 
-import os, time
+import os, time, tempfile, json, csv
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts               import *
@@ -89,12 +89,32 @@ def massive(request, gids, action, value='', *args, **kwargs):
 	if action == 'delete':
 		for gid in gids.split(','):
 			delete(request, gid=int(gid), no_archive=bool(value))
-	elif action == 'export':
-		#TODO
-		pass
 	elif action == 'permissiveness':
 		for gid in gids.split(','):
 			toogle_permissiveness(request, gid=int(gid))
+	elif action == 'export':
+		_type = value
+
+		export_handler, export_filename = tempfile.mkstemp()
+
+		if _type.lower() == 'csv':
+			export = LMC.groups.get_CSV_data(selected=[ int(g) for g in gids.split(',')])
+
+			out = csv.writer(open(export_filename,"w"), delimiter=';',quoting=csv.QUOTE_MINIMAL)
+			for row in export:
+				out.writerow(row)
+
+		else:
+			export = LMC.groups.to_XML(selected=[ LMC.groups.by_gid(int(g)) for g in gids.split(',')])
+
+			
+			destination = open(export_filename, 'wb+')
+			for chunk in export:
+				destination.write(chunk)
+			destination.close()
+		
+		return HttpResponse(json.dumps({ "file_name" : export_filename }))
+
 	return HttpResponse('MASSIVE DONE.')
 
 #@perms_decorators.check_groups('mod')

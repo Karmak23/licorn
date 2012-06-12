@@ -180,34 +180,25 @@ def massive(request, uids, action, *args, **kwargs):
 			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
 
 	if action == 'export':
-
-		export = LMC.users.ExportCSV(selected=[ int(u) for u in uids.split(',')])
+		_type = kwargs.get('type', False)
+		if _type.lower() == 'csv':
+			export = LMC.users.ExportCSV(selected=[ int(u) for u in uids.split(',')])
+		else:
+			export = LMC.users.to_XML(selected=[ LMC.users.by_uid(int(u)) for u in uids.split(',')])
 
 		export_handler, export_filename = tempfile.mkstemp()
 
 		destination = open(export_filename, 'wb+')
-		t = ''
 		for chunk in export:
 			destination.write(chunk)
-			t += chunk
 		destination.close()
-		#lprint(destination)
 		
 		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
 		
-		wrapper = FileWrapper(file(export_filename))
-		print wrapper, export_filename
-		response = HttpResponse(wrapper, content_type='text/plain')
-		response['Content-Length'] = os.path.getsize(export_filename)
-		response['Content-Disposition'] = 'attachment; filename={0}'.format('export_filename')
-		print "returning dl response"
-		return response
-
-
-
 
 	return HttpResponse('MASSIVE DONE.')
 
+@staff_only
 def create(request, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -460,9 +451,13 @@ def upload_file(request, *args, **kwargs):
 		#lprint(destination)
 		return HttpResponse(csv_filename)
 
+<<<<<<< HEAD
 @staff_only
+=======
+"""@login_required
+>>>>>>> 35a2d58... feature Export as CSV or XML in the WMI
 def import_download(request, import_id, *args, **kwargs):
-	""" http://djangosnippets.org/snippets/365/ """
+	
 
 	assert ltrace_func(TRACE_DJANGO)
 
@@ -471,7 +466,7 @@ def import_download(request, import_id, *args, **kwargs):
 	response = HttpResponse(wrapper, content_type='text/plain')
 	response['Content-Length'] = os.path.getsize(filename)
 	response['Content-Disposition'] = 'attachment; filename={0}'.format(import_id)
-	return response
+	return response"""
 
 @staff_only
 def import_view(request, confirm='', *args, **kwargs):

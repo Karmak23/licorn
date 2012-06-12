@@ -38,9 +38,8 @@ urlpatterns = patterns('users.views',
     (r'^massive/export/(?P<uids>.+)/(?P<type>.*)/?$', 'massive', {'action': 'export'}),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
-    (r'^dl_import/(?P<import_id>.+)/?$', 'import_download'),
-    (r'^download/(?P<_file>.+)/?$', 'download'),
     (r'^upload/?$', 'upload_file'),
+    
     (r'^check_pwd_strenght/(?P<pwd>.+)/?$', 'check_pwd_strenght'),
     (r'^generate_pwd/?$', 'generate_pwd'),    
     )

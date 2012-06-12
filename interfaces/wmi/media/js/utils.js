@@ -503,3 +503,4 @@ function no_accent(s) {
     r = r.replace(new RegExp("[ýÿ]", 'g'),"y");
     return r;
 }
+

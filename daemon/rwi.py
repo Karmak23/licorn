@@ -18,7 +18,7 @@ All interfaces connect to the Licorn® daemon via the Pyro channel.
 :license:
 	* GNU GPL version 2.
 """
-import types, Pyro.core, itertools, gc
+import types, Pyro.core, itertools, gc, tempfile
 
 from operator  import attrgetter
 from threading import current_thread
@@ -925,16 +925,21 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 			import time
 			date_time = time.strftime(_(u'%d %m %Y at %H:%M:%S'), time.gmtime())
+
+			html_file_handler, html_file_filename = tempfile.mkstemp()
+
+			html_file = open(html_file_filename, 'wb+')
+			"""
 			html_file = open('%s/import_%s-%s.html' % (
 								settings.home_archive_dir,
 								# don't take the name, it could have spaces in it.
 								profile.groupName,
-								hlstr.validate_name(date_time)), 'w')
+								hlstr.validate_name(date_time)), 'w')"""
 			if wmi_output:
 				dl_lnk = _('''This repport is available on the server '''
 					'''at "<code>{0}</code>", you can '''
-					'''<a href="/users/dl_import/import_{1}-{2}.html">'''
-					'''download it</a> for easier access''').format(html_file.name, profile.groupName, hlstr.validate_name(date_time))
+					'''<a href="/download/{0}">'''
+					'''download it</a> for easier access''').format(html_file_filename)
 			else:
 				dl_lnk = ''
 				html_file.write('''<html>

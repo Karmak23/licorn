@@ -35,4 +35,7 @@ urlpatterns = patterns('',
 	(r'^groups/', include('wmi.groups.urls')),
 	(r'^machines/', include('wmi.machines.urls')),
 	(r'^backups?/', include('wmi.backup.urls')),
+
+
+    (r'^download/(?P<_file>.+)/?$', 'wmi.libs.views.download'),
 )
