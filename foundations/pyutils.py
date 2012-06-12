@@ -11,7 +11,7 @@ Licorn Foundations - http://dev.licorn.org/documentation/foundations
 	* GNU GPL version 2
 """
 
-import re, math, functools
+import re, math, uuid, functools
 from traceback import print_exc
 
 # WARNING: don't import anything from the core here.
@@ -430,6 +430,11 @@ def expand_vars_and_tilde(text, uid=None):
 			'~', user_home).replace(
 			'$HOME', user_home).replace(
 			user_home, '')
+def unique_hash(replacement=None):
+	""" Just returns `uuid.uuid4().hex`, with '-' replaced (or not if ``None``).
+		Used in `WMI` and `My`. """
+
+	return str(uuid.uuid4().hex).replace('-', replacement or '-')
 def warn_exception(message, *args):
 	logging.warning(message.format(*args))
 	print_exception_if_verbose()
