@@ -77,6 +77,8 @@ TRACE_RDIFFBACKUP   = _ltrace_level(0x0000000000080000000000000, 'rdiffbackup')
 TRACE_SQUID         = _ltrace_level(0x0000000000100000000000000, 'squid')
 TRACE_POWERMGMT     = _ltrace_level(0x0000000000200000000000000, 'powermgmt')
 TRACE_GLOOP         = _ltrace_level(0x0000000000400000000000000, 'gloop')
+TRACE_MYLICORN      = _ltrace_level(0x0000000000800000000000000, 'mylicorn')
+TRACE_GLOOP         = _ltrace_level(0x0000000001000000000000000, 'simplesharing')
 
 
 TRACE_DAEMON        = _ltrace_level(0x00000ffff0000000000000000, 'daemon')
