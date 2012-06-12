@@ -451,22 +451,6 @@ def upload_file(request, *args, **kwargs):
 		#lprint(destination)
 		return HttpResponse(csv_filename)
 
-<<<<<<< HEAD
-@staff_only
-=======
-"""@login_required
->>>>>>> 35a2d58... feature Export as CSV or XML in the WMI
-def import_download(request, import_id, *args, **kwargs):
-	
-
-	assert ltrace_func(TRACE_DJANGO)
-
-	filename = os.path.join(settings.home_archive_dir, import_id)
-	wrapper = FileWrapper(file(filename))
-	response = HttpResponse(wrapper, content_type='text/plain')
-	response['Content-Length'] = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format(import_id)
-	return response"""
 
 @staff_only
 def import_view(request, confirm='', *args, **kwargs):
