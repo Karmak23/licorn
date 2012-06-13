@@ -4,7 +4,7 @@ from django.contrib.auth.models import User, check_password
 from django.conf                import settings
 
 from licorn.foundations         import logging, settings as licorn_settings
-from licorn.foundations         import pyutils
+from licorn.foundations         import exceptions.pyutils
 from licorn.core                import LMC
 
 class LicorndAuthBackend:
