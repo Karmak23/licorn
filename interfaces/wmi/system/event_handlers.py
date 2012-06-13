@@ -92,35 +92,3 @@ def wmi_starts_handler(request, event):
 
 
 
-# NO STAFF 
-def group_member_added_handler(request, event, *args, **kwargs):
-	# if this is the currently user logged in the wmi
-	user = event.kwargs['user']
-	if str(request.user) == str(user.login):
-		group = event.kwargs['group']
-
-		# get the relation
-		if group.is_responsible:
-			rel = relation.RESPONSIBLE
-			group = group.standard_group
-		elif group.is_guest:
-			rel = relation.GUEST
-			group = group.standard_group
-		elif group.is_system:
-			rel = relation.SYSMEMBER
-		elif group.is_privilege:
-			rel = relation.PRIVILEGE
-		else:
-			rel = relation.MEMBERS
-
-		yield utils.format_RPC_JS('insert_into_table', rel, get_group_view_html(group.name), group.name)
-
-def group_member_deleted_handler(request, event):
-	user = event.kwargs['user']
-	if str(request.user) == str(user.login):
-		group = event.kwargs['group']
-		if group.is_responsible:
-			group = group.standard_group
-		elif group.is_guest:
-			group = group.standard_group
-		yield utils.format_RPC_JS('remove_tr', group.name)
