@@ -138,6 +138,17 @@
 
 			{%- endif -%}
 
+		{% else %}
+			{#- standard users
+				Information without S : http://www.wordreference.com/fren/informations   -#}
+			{{
+				menu_item(
+					'nostaff_menuitem',
+					'/',
+					_('My own details.'),
+					_('My information'),
+					system_sub_items)
+			}}
 		{%- endif -%}
 
 		{%- if request.user.is_superuser -%}
