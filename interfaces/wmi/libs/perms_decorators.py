@@ -21,13 +21,13 @@ USER PERMISSIONS:
 
 
 GROUPS PERMISSIONS:
-	if group == admins
+	if my group == admins
 		if I'm staff members:
 			I can't do anything
 		if I'm superuser:
 			I can't DELETE it
 
-	if group == licorn-wmi:
+	if my group == licorn-wmi:
 		if group is privileged I cannot DELETE it
 """
 
@@ -57,6 +57,9 @@ def check_users(meta_action, *args, **kwargs):
 						group=utils.select('groups', [group_id])[0]
 						if request.user.is_staff:
 							if int(rel_id) == 0 and group.is_privilege:
+								msg = _('You tried to remove your own account from a privileged group. I cannot let you do that !')
+								print "toto",str(msg)
+								print type(msg)
 								q.put(utils.notify(_('You tried to remove your own account from a privileged group. I cannot let you do that !')))
 								return HttpResponse()
 						elif request.user.is_superuser:
