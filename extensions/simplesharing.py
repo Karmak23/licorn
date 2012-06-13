@@ -28,6 +28,8 @@ from licorn.core.users            import User
 from licorn.extensions            import LicornExtension
 
 class SimpleShare(PicklableObject):
+	""" Object representing a share. It count contents, change password, shows
+		external sharing URL, and the like. """
 	share_file  = '.lshare.conf'
 	uploads_dir = 'uploads'
 
@@ -74,18 +76,25 @@ class SimpleShare(PicklableObject):
 		return os.path.join(self.__path, self.__class__.uploads_dir)
 	@property
 	def accepts_uploads(self):
-		return os.path.exists(self.uploads_directory) \
+		""" No password means no uploads. Security matters. No anonymous
+			uploaded porn/warez in world-open web shares! """
+		return self.__password != None \
+					and os.path.exists(self.uploads_directory) \
 					and os.path.isdir(self.uploads_directory)
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
 
 		with self.lock:
 			if self.accepts_uploads == accepts:
-				logging.info(_(u'{0}: simple share state unchanged.').format(
-																self.pretty_name))
+				logging.info(_(u'{0}: simple share upload state '
+									u'unchanged.').format(self.pretty_name))
 				return
 
 			if accepts:
+				if self.__password is None:
+					raise exceptions.LicornRuntimeException(_(u'Please set a '
+											u'password on the share first.'))
+
 				os.makedirs(self.uploads_directory)
 
 			else:
@@ -93,13 +102,28 @@ class SimpleShare(PicklableObject):
 				if os.listdir(self.uploads_directory) != []:
 					fsapi.archive_directory(self.uploads_directory,
 								orig_name='share_%s_uploads' % self.name)
+
+			LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
 	def password(self):
 		return self.__password
 	@password.setter
 	def password(self, newpass):
-		self.__password = self.compute_password(newpass)
+		""" Sets the password. It can be ``None``, but only if the share
+			doesn't accept uploads. Then the share is not protected, but this
+			is a non-issue security-wise because shares are always read-only.
+
+			It can be an issue if the user places sensitive data in the share,
+			but then we can do nothing if the user is dumb or makes mistakes.
+		"""
+		self.__password = self.compute_password(newpass) if newpass else None
 		self.save_configuration()
+
+		LicornEvent('share_password_changed', share=self, password=newpass).emit()
+
+		if newpass is None:
+			# remove the upload directory if no password.
+			self.accepts_uploads = False
 	@property
 	def uri(self):
 		""" There is no setter for the URI attribute. Once assigned, the URI
@@ -162,6 +186,7 @@ class SimpleSharingUser(object):
 	# to avoid looking it via LMC everytime we need it.
 	ssext = None
 
+	@property
 	def accepts_shares(self):
 		""" System users never accept shares. Standard users accept them,
 			unless they have created the :file:`~/.licorn/noshares.please`
@@ -181,7 +206,7 @@ class SimpleSharingUser(object):
 		return None
 	def check_shares(self, batch=False, auto_answer=None, full_display=True):
 
-		if self.accepts_shares():
+		if self.accepts_shares:
 			with self.lock:
 				if not os.path.exists(self.shares_directory):
 					if batch or logging.ask_for_repair(_(u'User {0} home '
@@ -234,7 +259,8 @@ class SimpleSharingUser(object):
 		pass
 class SimplesharingExtension(ObjectSingleton, LicornExtension):
 	""" Provide local users the ability to share files publicly via their
-		:file:`${HOME}/Public/` directory, on the Web.
+		:file:`${HOME}/Public/` directory, on the Web. For more details see
+		the `file sharing specification <http://dev.licorn.org/wiki/ExternalFileSharing>`_.
 
 		.. versionadded:: 1.4
 	"""
@@ -256,9 +282,8 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_SIMPLESHARING, 1)
 	def initialize(self):
-		""" Return True if :program:`dbus-daemon` is installed on the system
-			and if the configuration file exists where it should be.
-		"""
+		""" Return ``True`` inconditionnaly. This extension is always available
+			unless manually ignored in the main configuration file. """
 
 		assert ltrace_func(TRACE_SIMPLESHARING)
 
@@ -266,15 +291,7 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 
 		return self.available
 	def is_enabled(self):
-		""" Dbus is always enabled if available. This method will **start**
-			the dbus/gobject mainloop (not just instanciate it), in a
-			separate thread (which will be collected later by the daemon).
-
-			.. note:: Dbus is too important on a Linux system to be disabled
-			if present. I've never seen a linux system where it is installed
-			but not used (apart from maintenance mode, but Licorn® should not
-			have been started in this case).
-		"""
+		""" Simple shares are always enabled if available. """
 
 		logging.info(_(u'{0}: extension always enabled unless manually '
 							u'ignored in {1}.').format(self.pretty_name,
@@ -286,8 +303,11 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		return True
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
-		""" Create a caldavd user account and the associated calendar resource,
-			then write the configuration and release the associated lock.
+		""" On user creation, check its shares directory, this will create it
+			if needed.
+
+			.. note:: no need for a `user_post_del()` method, the share dir
+				will be archived like any other home directory contents.
 		"""
 
 		assert ltrace_func(TRACE_SIMPLESHARING)
@@ -295,10 +315,10 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		user = kwargs.pop('user')
 
 		try:
-				user.check_shares(batch=True)
-				return True
+			user.check_shares(batch=True)
+			return True
 
 		except Exception:
-			logging.exception(_(u'{0}: Exception while setting up user {1}'),
-								self.pretty_name, (ST_LOGIN, user.login))
+			logging.exception(_(u'{0}: Exception while setting up shares for '
+						u'user {1}'), self.pretty_name, (ST_LOGIN, user.login))
 			return False
