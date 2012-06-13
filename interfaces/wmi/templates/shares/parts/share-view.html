@@ -1,0 +1,19 @@
+{#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+<h2>{{ share.name }} <small>(<a href="{{ url_for('wmi.shares.views.serve', args=share.name.split('/')) }}" target="_blank">{{ _('public view') }}</a>)</small></h2>
+<ul>
+	<li><p>{{ _('Path on the server: <strong><code class="biggest">{0}</code></strong>').format(
+		share.path.replace(user.homeDirectory, '$HOME')) }}</p><p class="grayed_out smaller">{{ _('You can manage files in this directory with you prefered sofware: <code>nautilus</code> on Ubuntu, <code>Explorer</code> on Windows and <code>Finder</code> on a Mac.') }}</p></li>
+	{%- set contents = share.contents() -%}
+	{%- if contents.files -%}
+		<li>{{ _('Contains {0} file(s)').format(contents.files) }}</li>
+	{%- elif contents.uploads == None -%}
+		<li>{{ _('Does not accept uploads by external visitor(s)') }}</li>
+	{%- elif contents.uploads > 0 -%}
+		<li>{{ _('Contains {0} uploaded documents').format(
+				contents.uploads) }}</li>
+	{%- else -%}
+		<li>{{ _('is currently empty') }}</li>
+	{%- endif -%}
+</ul>

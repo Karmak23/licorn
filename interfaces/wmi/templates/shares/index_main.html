@@ -1,0 +1,109 @@
+{#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
+
+<style type="text/css">
+.volumes_list {
+	margin-top: 20px;
+	list-style: none;
+}
+
+.volumes_list li {
+	margin-top: 20px;
+}
+
+.volumes_list ul {
+	margin-top: 5px;
+}
+.volumes_list ul li {
+	white-space: nowrap;
+	#padding-left: 10px;
+	margin-left: 25px;
+	margin-top: 0;
+}
+
+.backups_important {
+	text-align: center;
+	margin: 10px 10%;
+	padding: 7px 7px 7px 62px;
+	font-weight: bolder;
+	border-radius:5px;
+	background-color: #CB4B4B;
+	background-image: url('/media/images/48x48/dialog-warning.png');
+	background-repeat:no-repeat;
+	background-position: 12px center;
+}
+
+.backups_statistics {
+	font-size: 70%;
+	padding: 1em 0;
+}
+</style>
+	<div style="font-size:120%;
+		text-align: justify; margin-left:10%;
+		margin-right: 10%;">
+
+	{%- if user.accepts_shares -%}
+
+		<h1>{{ _('My web shares') }}</h1>
+
+		{%- set shares = user.list_shares() -%}
+
+		{%- if shares -%}
+
+			<ul>
+
+			{%- for share in shares -%}
+
+				<li>{%- include 'shares/parts/share-view.html' with context -%}
+				</li>
+			{%- endfor -%}
+			</ul>
+		{%- else -%}
+
+			<p>You do not have any share yet. Would you like to create one?</p>
+
+		{%- endif -%}
+
+
+		{%- if request.user.is_staff -%}
+
+			<p class="grayed_out smallest" style="margin-top: 100px;">You can <a href="{{ url_for('wmi.shares.views.disable') }}">
+				disable the web shares</a> for your account if you want.</p>
+
+		{%- endif -%}
+
+
+	{%- else -%}
+
+		<h1>Web shares turned off</h1>
+		<p>You (or someone else) disabled the web sharing feature for your
+			account. You can <a href="{{ url_for('wmi.shares.views.enable') }}">
+			enable them again</a> now or later.</p>
+
+		{%- if request.user.is_staff -%}
+
+		<p>If you want to manually re-enable them, just remove the
+			file named <code>{{ user.shares_disabler }}</code>. This
+			has exactly the same effect.</p>
+
+		{%- endif -%}
+
+	{%- endif -%}
+	</div>
+	<script type="text/javascript" language="javascript">
+	$(document).ready(function() {
+
+		$('.action_button').each(function() {
+			$(this).click(function() {
+
+				thelink = $(this).parent().attr('action');
+
+				$.get(thelink, function(data){
+					//console.log(thelink + ' returned ' + data);
+				});
+			});
+		});
+
+		setup_ajaxized_links('.ajax-shares-link');
+	});
+	</script>

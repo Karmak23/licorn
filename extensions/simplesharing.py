@@ -10,7 +10,7 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os
+import os, stat, time
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events
@@ -37,19 +37,20 @@ class SimpleShare(PicklableObject):
 
 		if not os.path.isdir(directory):
 			raise exceptions.BadArgumentError(_(u'{0}: "{1}" must be a '
-				u'directory!').format(self.__class__.__name__, directory))
+					u'directory!').format(self.__class__.__name__, directory))
 
-		if not os.path.exists(self.config_file):
+		self.__path = directory
+
+		if not os.path.exists(self.configuration_file):
 			raise exceptions.BadArgumentError(_(u'{0}: "{1}" must hold the '
-				u'special {2} file!').format(self.__class__.__name__,
-					directory, self.__class__.share_file))
+						u'special {2} file!').format(self.__class__.__name__,
+							directory, self.__class__.share_file))
 
-		self.__path    = directory
 		self.__coreobj = coreobj.weakref
 		self.__name    = u'%s/%s' % (coreobj.name, os.path.basename(directory))
 
 		for key, value in json.load(open(self.configuration_file)).iteritems():
-			setattr(self, '__%s' % key, value)
+			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
 
 		for attr_name in ('password', 'uri'):
 			if not hasattr(self, attr_name):
@@ -135,7 +136,7 @@ class SimpleShare(PicklableObject):
 				'uri'      : self.__uri,
 			}, open(self.configuration_file))
 	@cache.cached(cache.one_hour)
-	def contents(self, *args, **kwargs):
+	def contents(self, with_paths=False, *args, **kwargs):
 		""" Return a dict({'directories', 'files', 'uploads'}) counting the
 			subentries (recursively) of the current share. What the contents
 			really are doesn't matter.
@@ -150,33 +151,57 @@ class SimpleShare(PicklableObject):
 				  But as always the cache can be manually expired.
 		"""
 
-		dirs    = 0
-		files   = 0
-		uploads = 0
+		dirs    = []
+		files   = []
+		uploads = []
 
 		uploads_dir = self.__class__.uploads_dir
 
-		for subent, typ in fsapi.minifind(entry, mindepth=1, yield_type=True):
-
+		for subent, typ in fsapi.minifind(self.path, mindepth=1, yield_type=True):
 			if os.path.basename(subent)[0] == '.':
 				# this avoids counting config file and hidden things.
 				continue
 
 			if uploads_dir in subent:
-				uploads += 1
+				uploads.append(subent)
 				continue
 
 			if typ == stat.S_IFREG:
-				files += 1
+				files.append(subent)
 
 			else:
-				dirs += 1
+				dirs.append(subent)
+
+		if with_paths:
+			return {	'directories' : dirs,
+						'files'       : files,
+						'uploads'     : uploads
+										if self.accepts_uploads else None }
+		else:
+			return {	'directories' : len(dirs),
+						'files'       : len(files),
+						'uploads'     : len(uploads)
+										if self.accepts_uploads else None }
+	def file_informations(self, filename):
+		if not filename.startswith(self.path):
+			raise exceptions.BadArgument(_(u'Not a file from that share.'))
+
+		if not os.path.abspath(os.path.realpath(filename)).startswith(
+										settings.defaults.home_base_path):
+			raise exceptions.LicornSecurityError(_(u'Unsafe absolute path '
+										u'for file "{0}"!').format(filename))
+
+		# We follow symlinks
+		fstat   = os.stat(filename)
+		curtime = time.time()
 
 		return {
-				'directories' : dirs,
-				'files'       : files,
-				'uploads'     : uploads if self.accepts_uploads else None
-			}
+			'size'     : fstat.st_size,
+			# not yet ready.
+			#'mimetype' : …,
+			'mtime'    : fstat.st_mtime - curtime,
+			'ctime'    : fstat.st_ctime - curtime,
+		}
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing
@@ -192,15 +217,41 @@ class SimpleSharingUser(object):
 			unless they have created the :file:`~/.licorn/noshares.please`
 			empty file. """
 
-		if self.is_standard:
-			return not os.path.exists(os.path.join(self.homeDirectory,
-											LMC.configuration.users.config_dir,
-											self.ssext.paths.disabler))
-		return False
+		with self.lock:
+			if self.is_standard:
+				return not os.path.exists(self.shares_disabler)
+			return False
+	@accepts_shares.setter
+	def accepts_shares(self, accepts):
+
+		with self.lock:
+			if not self.is_standard:
+				raise exceptions.LicornRuntimeException(_(u'Someone tried to '
+					u'switch simple shares on a non-standard user account!'))
+
+			if self.accepts_shares == accepts:
+				logging.info(_('{0}: shares status unchanged.').format(self.pretty_name))
+				return
+
+			if accepts:
+				os.unlink(self.shares_disabler)
+
+			else:
+				fsapi.touch(self.shares_disabler)
+
+		LicornEvent('shares_status_changed', user=self)
+
+		logging.notice(_('{0}: simple shares status switched to {1}.').format(
+			self.pretty_name, _(u'activated') if accepts else _(u'deactivated')))
+	@property
+	def shares_disabler(self):
+		return os.path.join(self.homeDirectory,
+							LMC.configuration.users.config_dir,
+							self.ssext.paths.disabler)
 	@property
 	def shares_directory(self):
 		if self.is_standard:
-			return os.path.join(user.homeDirectory,
+			return os.path.join(self.homeDirectory,
 								self.ssext.paths.user_share_dir)
 
 		return None
@@ -229,28 +280,35 @@ class SimpleSharingUser(object):
 									u'shares, check skipped.').format(
 										stylize(ST_LOGIN, self.login)))
 	def list_shares(self):
+		""" List a user shares, via a generator yielding every share found
+			in the user shares directory. """
+
+		shares = []
 
 		with self.lock:
 			try:
 				for entry in os.listdir(self.shares_directory):
 					try:
-						yield SimpleShare(directory=os.path.join(
+						shares.append(SimpleShare(directory=os.path.join(
 												self.shares_directory, entry),
-											coreobj=self, loading=True)
+											coreobj=self))
 
-					except CorruptFileError, e:
+					except exceptions.CorruptFileError, e:
 						# the share configuration file is imcomplete.
 						logging.warning(e)
 
-					except BadArgumentError, e:
+					except exceptions.BadArgumentError, e:
 						# probably and simply not a share directory.
 						# don't bother with a polluting message.
 						logging.warning2(e)
 
 			except (OSError, IOError):
-				logging.exception(_(u'{0}: error while listing shares, '
-					u'launching a check in the background.'), self.pretty_name)
-				workers.service_enqueue(priorities.LOW, self.check_shares, batch=True)
+				if self.accepts_shares:
+					logging.exception(_(u'{0}: error while listing shares, '
+						u'launching a check in the background.'), self.pretty_name)
+					workers.service_enqueue(priorities.LOW, self.check_shares, batch=True)
+
+			return shares
 	def create_share(self, name, password=None, uploads=False):
 
 		# create dir
