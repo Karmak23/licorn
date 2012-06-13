@@ -15,6 +15,9 @@ from django.utils.translation     import ugettext as _
 from licorn.interfaces.wmi.libs   import utils
 from licorn.interfaces.wmi.system import wmi_data
 
+from licorn.interfaces.wmi.libs.views import get_group_view_html
+from licorn.foundations.constants     import relation
+
 def daemon_is_restarting_handler(request, event, *args, **kwargs):
 	yield utils.notify(_(u'Licorn® daemon is restarting in the background. '
 						u'You will not be able to do anything in this '
@@ -86,3 +89,28 @@ def wmi_starts_handler(request, event):
 	time.sleep(0.01)
 
 	yield utils.format_RPC_JS('remove_notification', 'daemon_is_restarting')
+
+
+
+# NO STAFF 
+def group_member_added_handler(request, event, *args, **kwargs):
+	# if this is the currently user logged in the wmi
+	user = event.kwargs['user']
+	if str(request.user) == str(user.login):
+		group = event.kwargs['group']
+
+		# get the relation
+		if group.is_responsible:
+			rel = relation.RESPONSIBLE
+			group = group.standard_group
+		elif group.is_guest:
+			rel = relation.GUEST
+			group = group.standard_group
+		elif group.is_system:
+			rel = relation.SYSMEMBER
+		elif group.is_privilege:
+			rel = relation.PRIVILEGE
+		else:
+			rel = relation.MEMBERS
+
+		yield utils.format_RPC_JS('insert_into_table', rel, get_group_view_html(group.name))

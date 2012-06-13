@@ -24,8 +24,9 @@ from django.utils.translation       import ugettext_lazy as _
 
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import priorities
+from licorn.foundations.constants import priorities, relation
 from licorn.core                  import LMC
+
 
 # local wmi.system.collectors, used in index()
 from licorn.interfaces.wmi                 import collectors
@@ -158,26 +159,31 @@ def index(request, *args, **kwargs):
 		lists = [
 					{
 						'title'  : _('Responsibilities'),
+						'name'   : relation.RESPONSIBLE,
 						'kind'   : _('responsible'),
 						'groups' : resps
 					},
 					{
 						'title'  : _('Memberships'),
+						'name'   : relation.MEMBER,
 						'kind'   : _('member'),
 						'groups' : stdgroups
 					},
 					{
 						'title'  : _('Invitations'),
+						'name'   : relation.GUEST,
 						'kind'   : _('guest'),
 						'groups' : guests
 					},
 					{
 						'title'  : _('Privileges'),
+						'name'   : relation.PRIVILEGE,
 						'kind'   : _('privileged member'),
 						'groups' : privs
 					},
 					{
 						'title'  : _('Other system groups'),
+						'name'   : relation.SYSMEMBER,
 						'kind'   : _('system member'),
 						'groups' : sysgroups
 					},

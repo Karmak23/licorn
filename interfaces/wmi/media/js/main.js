@@ -236,3 +236,10 @@ function password_helpers(content) {
 
 	});
 }
+
+
+
+function insert_into_table(table_id, tr_html) {
+	console.log($('table #'+table_id+' tr:last'))
+	$('table #'+table_id+' tr:last').after(tr_html)
+}
