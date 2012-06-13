@@ -14,6 +14,9 @@ import os
 from django.contrib.auth.decorators import login_required
 from django.core.servers.basehttp   import FileWrapper
 from django.shortcuts               import *
+from django.template.loader         import render_to_string
+
+from licorn.core                    import LMC
 
 @login_required
 def download(request, _file, *args, **kwargs):
@@ -29,3 +32,9 @@ def download(request, _file, *args, **kwargs):
 		return response
 	else:
 		return HttpResponse('Bad file speficied')
+
+
+def get_group_view_html(group_name):
+	return render_to_string('/users/view_group_template.html', {
+		'group' : LMC.groups.by_name(group_name)
+	})
