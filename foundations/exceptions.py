@@ -203,20 +203,21 @@ class SystemCommandSignalError(LicornRuntimeError):
 
 class CorruptFileError(LicornIOError):
 	""" A configuration is corrupt, or is empty and it was attended not to be.  """
-	errno = 60
-	__filename = ""
-	__msg = "" # Error message
-	__reason = ""
-	def __init__(self, filename="", reason=""):
+	errno      = 60
+	def __init__(self, filename, reason=None):
 		LicornIOError.__init__(self)
-		self.__filename = filename
-		self.__reason = reason
+		self.filename = filename
+		self.reason   = reason
 	def SetFilename(self, filename):
-		self.__filename = filename
+		self.filename = filename
 	def __str__(self):
-		out = "The file " + self.__filename + " is corrupted"
-		if self.__reason != "":
-			out += "\nReason: " + self.__reason
+		return str(self.__unicode__())
+	def __unicode__(self):
+		out = _(u'The file {0} is corrupt!').format(self.filename)
+
+		if self.reason:
+			out += u'\n' + _(u'Reason: {0}').format(self.reason)
+
 		return out
 class SGCorruptFileError(CorruptFileError):
 	""" [UNSTABLE] squidGuard configuration file is corrupt.
