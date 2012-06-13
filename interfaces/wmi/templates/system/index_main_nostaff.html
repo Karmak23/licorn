@@ -31,11 +31,7 @@
 				</div>
 		{%- endfor -%}
 	</div>
-	<table>
-	{%- for list in groups_lists -%}
-		{%- include 'users/view_groups.html' -%}
-	{%- endfor -%}
-	</table>
+	{%- include 'users/view_groups_template.html' -%}
 </div>
 </div>
 <script type="text/javascript">
@@ -47,8 +43,5 @@
 
 		
 	});
-	function update_relationship(a, b, c, d) {
-			console.log("update")
-			location.reload();
-		}
+	
 </script>
