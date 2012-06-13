@@ -102,6 +102,7 @@ def validate_name(s, aggressive=False, maxlenght=128, custom_keep='-.'):
 	# delete any strange (or forgotten by translation map…) char left
 	if aggressive:
 		s = re.sub('[^.a-z0-9]', '', s)
+
 	else:
 		# keep dashes (or custom characters)
 		s = re.sub('[^%sa-z0-9]' % custom_keep, '', s)
