@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Licorn extensions: Dbus - http://docs.licorn.org/extensions/dbus.html
+Licorn extensions: GLoop - http://docs.licorn.org/extensions/gloop
 
 * the first purpose of this extension is to provide a dbus/gobject mainloop
-  outside of the licorn daemon, for enhanced flexibility.
+  outside of the licorn daemon `MainThread`, for enhanced flexibility.
 
 .. note:: This extension is named after 'gloop' because naming it 'dbus'
 	produces awful results and import cycles (conflict with standard dbus
@@ -69,8 +69,8 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		ServiceExtension.__init__(self,
 			name='gloop',
 			service_name='dbus',
-			service_type=services.UPSTART 
-							if LMC.configuration.distro == distros.UBUNTU 
+			service_type=services.UPSTART
+							if LMC.configuration.distro == distros.UBUNTU
 							else services.SYSV
 		)
 
@@ -83,7 +83,7 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		self.paths.dbus_config = '/etc/dbus-1/system.conf'
 
 		# NOTE: different path on Ubuntu and Debian. Don't know other distros.
-		self.paths.dbus_binary = dbus_binary_paths.get(LMC.configuration.distro, 
+		self.paths.dbus_binary = dbus_binary_paths.get(LMC.configuration.distro,
 									'/distro_not_supported/for_gloop_extension/dbus-daemon')
 
 		# TODO: get this from the config file.
