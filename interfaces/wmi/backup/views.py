@@ -70,8 +70,8 @@ def run(request, *args, **kwargs):
 
 			except Exception, e:
 				pyutils.print_exception_if_verbose()
-				wmi_event_app.enqueue_notification(_('Could not start backup on '
-											'{0} (was: {1})').format(device, e))
+				wmi_event_app.enqueue_notification(request, _('Could not '
+					'start backup on {0} (was: {1})').format(device, e))
 
 	return return_for_request(request)
 @staff_only
@@ -87,7 +87,7 @@ def enable(request, device, **kwargs):
 	except Exception, e:
 		pyutils.print_exception_if_verbose()
 
-		wmi_event_app.enqueue_notification(_('Could not enable volume '
+		wmi_event_app.enqueue_notification(request, _('Could not enable volume '
 									'{0} (was: {1})').format(device, e))
 
 	return return_for_request(request)
