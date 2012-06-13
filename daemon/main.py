@@ -642,7 +642,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				gtlang = gettext.translation('licorn', languages=[ lang ])
 
 			except (IOError, OSError):
-				logging.exception(_(u'Could not load gettext translations '
+				if os.geteuid() == 0:
+					# Don't bother when we are not root, the daemon will
+					# refork/re-exec and re-encounter this error anyway.
+					logging.exception(_(u'Could not load gettext translations '
 									u'for language {0}'), (ST_NAME, lang))
 
 			else:
