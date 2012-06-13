@@ -2,7 +2,7 @@
 
 import utils
 from django.shortcuts          import *
-from django.utils.translation  import ugettext_lazy as _
+from django.utils.translation  import ugettext as _
 
 from licorn.foundations        import settings as licorn_settings
 from licorn.foundations.ltrace import *
@@ -21,14 +21,14 @@ USER PERMISSIONS:
 
 
 GROUPS PERMISSIONS:
-	if my group == admins
+	if group == admins
 		if I'm staff members:
 			I can't do anything
 		if I'm superuser:
 			I can't DELETE it
 
-	if my group == licorn-wmi:
-		if group is privileged I cannot DELETE it
+
+	if group is privileged I cannot DELETE it
 """
 
 def check_users(meta_action, *args, **kwargs):
@@ -57,9 +57,6 @@ def check_users(meta_action, *args, **kwargs):
 						group=utils.select('groups', [group_id])[0]
 						if request.user.is_staff:
 							if int(rel_id) == 0 and group.is_privilege:
-								msg = _('You tried to remove your own account from a privileged group. I cannot let you do that !')
-								print "toto",str(msg)
-								print type(msg)
 								q.put(utils.notify(_('You tried to remove your own account from a privileged group. I cannot let you do that !')))
 								return HttpResponse()
 						elif request.user.is_superuser:
@@ -86,7 +83,6 @@ def check_users(meta_action, *args, **kwargs):
 				# if he is more powerful or equal to myself, I cannot do anything on him
 				elif request.user.is_staff:
 					if victim.login in admins_members:
-
 						q.put(utils.notify(_('You tried to do something on an account more or as powerfull than you are. I cannot let you do that !')))
 						return HttpResponse()
 
@@ -97,12 +93,16 @@ def check_users(meta_action, *args, **kwargs):
 def check_groups(meta_action, *args, **kwargs):
 	def decorator(view_func):
 		def decorated(request, *args, **kwargs):
-
 			q = wmi_event_app.queue(request)
 
-			victim      = utils.select('users', [ kwargs.get('gid') ])[0]
+			victim      = utils.select('groups', [ kwargs.get('gid') ])[0]
 			wmi_user    = utils.select('users', [request.user.username])[0]
 			admin_group = utils.select('groups', [ licorn_settings.defaults.admin_group ])[0]
+
+			#FIXME: don't hardcode 'licorn-wmi' here.
+			admins_members = (set(u.login for u in admin_group.members)
+							| set(u.login for u in utils.select('groups', ['licorn-wmi'])[0].members))
+
 
 			if victim.name == admin_group.name:
 				if request.user.is_staff:
@@ -120,6 +120,16 @@ def check_groups(meta_action, *args, **kwargs):
 					# I cannot remove a privileged group
 					q.put(utils.notify(_('You cannot delete privileged group {0} !').format(victim.name)))
 					return HttpResponse()
+
+			# check if we are not adding/removing admins user from group
+			if meta_action == 'mod':
+				if kwargs.get('action') == 'users':
+					# syntax value = "1000/1" => user_id/relation_id (see groups.views.mod)
+					uid = kwargs.get('value').split("/")[0]
+					if utils.select('users', [ uid ])[0].login in admins_members:
+						q.put(utils.notify(_('You tried to do something on an account more or as powerfull than you are. I cannot let you do that !')))
+						return HttpResponse()
+
 
 			return view_func(request, *args, **kwargs)
 		return decorated

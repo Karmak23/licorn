@@ -47,17 +47,6 @@ def select_one(*a, **kw):
 
 # ================================================================== WMI2 utils
 
-from django.utils.functional import Promise
-from django.utils.translation import force_unicode
-from django.utils.simplejson import JSONEncoder
-
-class LazyEncoder(JSONEncoder):
-    def default(self, o):
-        if isinstance(o, Promise):
-            return force_unicode(o)
-        else:
-            return super(LazyEncoder, self).default(o)
-
 def unique_hash(replacement=None):
 	""" Jinja2 globals which just returns `uuid.uuid4().hex`. """
 
@@ -68,18 +57,14 @@ def notify(message, timeout=None, css_class=None):
 	""" TODO. """
 
 	assert ltrace_func(TRACE_DJANGO)
-	print 'message = ', message
-	print type(message)
 	return format_RPC_JS('show_message_through_notification', message, timeout or u'', css_class or u'')
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
-	print js_arguments
-	print [type(a) for a in js_arguments]
 	return { 'method'    : JS_method_name,
 						'arguments' : [ json.dumps(unicode(a)
 											if type(a) == types.StringType
-											else a, cls=LazyEncoder) for a in js_arguments ] }
+											else a) for a in js_arguments ] }
 
 # =============================================================== Jinja2 globals
 

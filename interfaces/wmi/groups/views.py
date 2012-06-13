@@ -28,7 +28,7 @@ from licorn.core import LMC
 # warning: this import will fail if nobody has previously called wmi.init()
 # (this should have been done in the WMIThread.run() method.
 from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.old_decorators import check_groups
+from licorn.interfaces.wmi.libs.perms_decorators import check_groups
 
 from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils, perms_decorators
@@ -117,7 +117,7 @@ def massive(request, gids, action, value='', *args, **kwargs):
 
 	return HttpResponse('MASSIVE DONE.')
 
-#@perms_decorators.check_groups('mod')
+@perms_decorators.check_groups('mod')
 @staff_only
 def mod(request, gid, action, value, *args, **kwargs):
 	""" edit the gecos of the user """
