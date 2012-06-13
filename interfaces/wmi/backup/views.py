@@ -133,7 +133,7 @@ def rescan(request, **kwargs):
 	wmi_event_app.enqueue_notification(request, _('Volumes rescanned.'), 3000)
 
 	return return_for_request(request)
-@login_required
+@staff_only
 def index(request, sort="date", order="asc", **kwargs):
 	""" Main backup list (integrates volumes). """
 
