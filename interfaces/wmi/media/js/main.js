@@ -239,7 +239,10 @@ function password_helpers(content) {
 
 
 
-function insert_into_table(table_id, tr_html) {
-	console.log($('table #'+table_id+' tr:last'))
-	$('table #'+table_id+' tr:last').after(tr_html)
+function insert_into_table(table_id, tr_html, tr_id) {
+	$('#'+table_id+' > tbody > tr:first').after($(tr_html).attr('id', tr_id))
+}
+
+function remove_tr(tr_id) {
+	$('table tr #'+tr_id).remove()
 }

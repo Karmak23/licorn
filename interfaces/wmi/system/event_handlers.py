@@ -113,4 +113,14 @@ def group_member_added_handler(request, event, *args, **kwargs):
 		else:
 			rel = relation.MEMBERS
 
-		yield utils.format_RPC_JS('insert_into_table', rel, get_group_view_html(group.name))
+		yield utils.format_RPC_JS('insert_into_table', rel, get_group_view_html(group.name), group.name)
+
+def group_member_deleted_handler(request, event):
+	user = event.kwargs['user']
+	if str(request.user) == str(user.login):
+		group = event.kwargs['group']
+		if group.is_responsible:
+			group = group.standard_group
+		elif group.is_guest:
+			group = group.standard_group
+		yield utils.format_RPC_JS('remove_tr', group.name)
