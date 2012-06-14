@@ -1,21 +1,52 @@
 {#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-<h2>{{ share.name.split('/')[1] }} <small>(<a href="{{ url_for('wmi.shares.views.serve', args=share.name.split('/')) }}" target="_blank">{{ _('public view') }}</a>)</small></h2>
-<ul>
-	<li><p>{{ _('Directory on disk: <strong title="Full absolute path: {0}">
-			<code class="biggest cursor-help">{1}</code></strong>').format(
-			share.path, share.path.replace(user.homeDirectory, '$HOME')) }}</p>
-		<p class="grayed_out smaller">{{ _('You can manage files in this directory with you prefered sofware: <code>nautilus</code> on Ubuntu, <code>Explorer</code> on Windows and <code>Finder</code> on a Mac.') }}</p></li>
+<tr>
+	<td><span title="{{ _('Full path on the Licorn® server: {0}').format(share.path) }}"
+			class="bigger cursor-help"> {{ share.name }}</span>
+		<br /><small class="smaller"><a href="{{ url_for('wmi.shares.views.serve',
+								args=(share.coreobj.name, share.name)) }}"
+					target="_blank">{{ _('view ↗') }}</a></small>
+	</td>
+	<td class="centered">
 	{%- set contents = share.contents() -%}
-	{%- if contents.files -%}
-		<li>{{ _('Contains {0} file(s)').format(contents.files) }}</li>
-	{%- elif contents.uploads == None -%}
-		<li>{{ _('Does not accept uploads by external visitor(s)') }}</li>
-	{%- elif contents.uploads > 0 -%}
-		<li>{{ _('Contains {0} uploaded documents').format(
-				contents.uploads) }}</li>
+	{%- if contents.files > 0 -%}
+		{{ _('{0} file(s)').format(contents.files) }}
+
 	{%- else -%}
-		<li>{{ _('is currently empty') }}</li>
+		{{ _('Nothing to share').format(contents.files) }}
+
 	{%- endif -%}
-</ul>
+	{%- if share.accepts_uploads -%}
+		<br />
+		{%- if contents.uploads > 0 -%}
+			{{ _('{0} uploaded file(s)').format(contents.uploads) }}
+
+		{%- else -%}
+			{{ _('Nothing uploaded') }}
+
+		{%- endif -%}
+	{%- endif -%}
+	</td>
+	<td class="centered">
+		{%- if share.accepts_uploads -%}
+			{{ _('Yes') }}
+
+		{%- else -%}
+			{{ _('No') }}
+
+		{%- endif -%}
+	</td>
+	<td class="centered">
+		{%- if share.expired -%}
+
+		{%- elif share.expire == None -%}
+			{{ _('never') }}
+
+		{%- else -%}
+			{{ format_time_delta(share.expire - time(),
+					use_neg=True, long_output=False) }}
+
+		{%- endif -%}
+	</td>
+</tr>

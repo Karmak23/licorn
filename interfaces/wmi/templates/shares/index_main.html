@@ -44,21 +44,31 @@
 
 	{%- if user.accepts_shares -%}
 
-		<h1>{{ _('My web shares') }}</h1>
-
 		{%- set shares = user.list_shares() -%}
+
+		<h1>{{ _('My web shares') }} {{ '({0})'.format(shares|count) }}</h1>
 
 		{%- if shares -%}
 
-			<ul>
-
+			<table class="wmi-table">
+			<tr>
+				<th>{{ _('Name') }}</th>
+				<th>{{ _('Actual contents') }}</th>
+				<th>{{ _('Writable') }}</th>
+				<th>{{ _('Expires') }}</th>
+			</tr>
 			{%- for share in shares -%}
+				{%- include 'shares/parts/share-view.html' with context -%}
 
-				<li>{%- include 'shares/parts/share-view.html' with context -%}
-				</li>
 			{%- endfor -%}
-			</ul>
+			</table>
+
+		<p class="grayed_out smaller centered vertical-space-big">{{ _('You can manage files in your shares with your prefered file-manager: <code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</code> on Windows and <code>Finder</code> on a Mac.') }}</p>
+
+
 		{%- else -%}
+
+			<h1>{{ _('No web share') }}</h1>
 
 			<p>You do not have any share yet. Would you like to create one?</p>
 
@@ -67,7 +77,7 @@
 
 		{%- if request.user.is_staff -%}
 
-			<p class="grayed_out smallest" style="margin-top: 100px;">You can <a href="{{ url_for('wmi.shares.views.disable') }}">
+			<p class="grayed_out smallest centered vertical-space-small">You can <a href="{{ url_for('wmi.shares.views.disable') }}">
 				disable the web shares</a> for your account if you want.</p>
 
 		{%- endif -%}

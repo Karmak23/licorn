@@ -244,7 +244,11 @@ def test(request):
 @login_required
 def download(request, filename, *args, **kwargs):
 	""" download a file, can only be in '/tmp' else download is refused
-	from : http://djangosnippets.org/snippets/365/ """
+	from : http://djangosnippets.org/snippets/365/
+
+		.. todo:: merge this view with shares.views.download(), if url
+			merging is possible.
+	"""
 
 	# check_file_path() will return a cleaned path, or `None` if insecure.
 	filename = fsapi.check_file_path(filename, ('/tmp/', ))

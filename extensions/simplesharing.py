@@ -42,26 +42,48 @@ class SimpleShare(PicklableObject):
 			raise exceptions.BadArgumentError(_(u'{0}: "{1}" must be a '
 					u'directory!').format(self.__class__.__name__, directory))
 
-		self.__path = directory
-
-		if not os.path.exists(self.configuration_file):
-			raise exceptions.BadArgumentError(_(u'{0}: "{1}" must hold the '
-						u'special {2} file!').format(self.__class__.__name__,
-							directory, self.__class__.share_file))
-
+		self.__path    = directory
 		self.__coreobj = coreobj.weakref
-		self.__name    = u'%s/%s' % (coreobj.name, os.path.basename(directory))
+		self.__name    = os.path.basename(directory)
 
-		for key, value in json.load(open(self.configuration_file)).iteritems():
-			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
-
-		for attr_name in ('password', 'uri'):
-			if not hasattr(self, attr_name):
-				raise exceptions.CorruptFileError(
-						filename=self.configuration_file,
-						reason=_('it lacks the {0} directive').format(attr_name))
-
+		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
+
+		self.__load_share_configuration()
+	def __load_share_configuration(self):
+
+		# defaults parameters for a share.
+		basedict = {'password': None, 'uri': None, 'expire': None}
+
+		if os.path.exists(self.share_configuration_file):
+			basedict.update(json.load(open(self.share_configuration_file)))
+
+		for key, value in basedict.iteritems():
+			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
+	@property
+	def expired(self):
+		return self.__expire != None and time.time() > self.__expire
+	@property
+	def valid(self):
+		return not self.expired
+	@property
+	def expire(self):
+		return self.__expire
+	@expire.setter
+	def expire(self, newexpire):
+		""" None == "never"
+			< 0   == 'already expired' => deactivate immediately.
+			> 0   == delta, starting from now
+		"""
+		if expire != None:
+			if expire > 0:
+				expire += time.time()
+
+			else:
+				expire = -1
+
+		self.__expire = newexpire
+		self.__save_share_configuration(expire=newexpire)
 	@property
 	def coreobj(self):
 		return self.__coreobj()
@@ -73,7 +95,7 @@ class SimpleShare(PicklableObject):
 	def name(self):
 		return self.__name
 	@property
-	def configuration_file(self):
+	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
 	@property
 	def uploads_directory(self):
@@ -82,9 +104,10 @@ class SimpleShare(PicklableObject):
 	def accepts_uploads(self):
 		""" No password means no uploads. Security matters. No anonymous
 			uploaded porn/warez in world-open web shares! """
-		return self.__password != None \
-					and os.path.exists(self.uploads_directory) \
-					and os.path.isdir(self.uploads_directory)
+
+		return self.__password != None and (
+								os.path.isdir(self.uploads_directory)
+								or not os.path.exists(self.uploads_directory))
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
 
@@ -105,7 +128,8 @@ class SimpleShare(PicklableObject):
 				# Archive the uploads/ directory only if non-empty.
 				if os.listdir(self.uploads_directory) != []:
 					fsapi.archive_directory(self.uploads_directory,
-								orig_name='share_%s_uploads' % self.name)
+								orig_name='share_%s_%s_uploads' % (
+												self.coreobj.name, self.name))
 
 			LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
@@ -121,23 +145,36 @@ class SimpleShare(PicklableObject):
 			but then we can do nothing if the user is dumb or makes mistakes.
 		"""
 		self.__password = self.compute_password(newpass) if newpass else None
-		self.save_configuration()
 
-		LicornEvent('share_password_changed', share=self, password=newpass).emit()
+		self.__save_share_configuration(password=self.__password)
 
 		if newpass is None:
 			# remove the upload directory if no password.
 			self.accepts_uploads = False
 	@property
 	def uri(self):
-		""" There is no setter for the URI attribute. Once assigned, the URI
-			will not change. """
+		""" There is no setter for the URI attribute. """
 		return self.__uri
-	def save_configuration(self):
-		json.dump({
-				'password' : self.__password,
-				'uri'      : self.__uri,
-			}, open(self.configuration_file))
+	@uri.setter
+	def uri(self, newuri):
+
+		if not newuri.startswith('http') and newuri != None:
+			raise exceptions.BadArgumentError(_('Bad URI {0}').format(newuri))
+
+		self.__uri = newuri
+		self.__save_share_configuration(uri=newuri)
+	def __save_share_configuration(self, **kwargs):
+
+		basedict = {}
+
+		if os.path.exists(self.share_configuration_file):
+			basedict.update(json.load(open(self.share_configuration_file)))
+
+		basedict.update(kwargs)
+
+		json.dump(basedict, open(self.share_configuration_file))
+
+		LicornEvent('share_configuration_changed', share=self, **kwargs).emit()
 	@cache.cached(cache.one_hour)
 	def contents(self, with_paths=False, *args, **kwargs):
 		""" Return a dict({'directories', 'files', 'uploads'}) counting the
@@ -296,10 +333,6 @@ class SimpleSharingUser(object):
 												self.shares_directory, entry),
 											coreobj=self))
 
-					except exceptions.CorruptFileError, e:
-						# the share configuration file is imcomplete.
-						logging.warning(e)
-
 					except exceptions.BadArgumentError, e:
 						# probably and simply not a share directory.
 						# don't bother with a polluting message.
@@ -312,6 +345,12 @@ class SimpleSharingUser(object):
 					workers.service_enqueue(priorities.LOW, self.check_shares, batch=True)
 
 			return shares
+	def find_share(self, share_name):
+		for share in self.list_shares():
+			if share.name == share_name:
+				return share
+
+		return None
 	def create_share(self, name, password=None, uploads=False):
 
 		# create dir

@@ -8,7 +8,18 @@
 
 {%- block container -%}
 <div class="row">
-	<h1>{{ _('Welcome to share <em>{0}</em>').format(share.name) }}</h1>
+
+	<div class="span8 offset2">
+		{%- if request.user.is_authenticated()
+						and request.user.username == share.coreobj.name -%}
+
+			<a href="{{ url_for('wmi.shares.views.index') }}"
+				class="btn btn-primary pull-right">Configure your share &raquo;</a>
+
+		{%- endif -%}
+
+		<h1>{{ _('Welcome to share <em>{0}</em>').format(share.name) }}</h1>
+	</div>
 
 	{%- set contents_numbers = share.contents() -%}
 
@@ -19,7 +30,7 @@
 				{{ _('Contains {0} uploaded documents').format(
 										contents_numbers.uploads) }}
 			{%- else -%}
-				{{ _('is currently empty') }}
+				{{ _('No documents uploaded') }}
 			{%- endif -%}
 		</div>
 
@@ -43,19 +54,21 @@
 		<table class="table table-striped">
 			<tr>
 				<th>{{_('File name')}}</th>
-				<th>{{_('Type')}}</th>
 				<th>{{_('Size')}}</th>
 				<th>{{_('Last modified')}}</th>
+				<th>{{_('Type')}}</th>
 			</tr>
 
-			{%- for filename in contents.files -%}
+			{%- for filename in contents.files|sort -%}
 				{%- set infos     = share.file_informations(filename) -%}
 				{%- set pub_fname = filename.replace(share.path, '')[1:] -%}
 				<tr>
-					<td><i class="icon-file"></i> <a href="{{ url_for('wmi.shares.views.download', args=share.name.split('/') + [pub_fname])}}">{{ pub_fname }}</a></td>
-					<td>{{ infos.mimetype }}</td>
+					<td><i class="icon-file"></i> <a href="{{
+								url_for('wmi.shares.views.download',
+								args=(share.coreobj.name, share.name, pub_fname))}}">{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>
 					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
+					<td>{{ infos.mimetype }}</td>
 				</tr>
 
 			{%- endfor -%}

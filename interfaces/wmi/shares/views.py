@@ -8,16 +8,20 @@ Licorn WMI2 system views
 :license: GNU GPL version 2
 """
 
+import os
+
 from django.contrib.auth.decorators import login_required
 from django.http					import HttpResponse, \
 											HttpResponseForbidden, \
 											HttpResponseNotFound, \
-											HttpResponseRedirect
+											HttpResponseRedirect, \
+											HttpResponseServerError, \
+											HttpResponseBadRequest
 
 from django.shortcuts               import *
 from django.utils.translation       import ugettext as _
 
-from licorn.foundations             import settings
+from licorn.foundations             import settings, fsapi
 from licorn.foundations.constants   import priorities
 from licorn.foundations.styles      import *
 from licorn.foundations.ltrace      import *
@@ -78,18 +82,47 @@ def serve(request, login, shname):
 	user = LMC.users.by_login(login)
 
 	if not user.accepts_shares:
-		return HttpResponseForbidden(_('This user has no visible shares.'))
+		return HttpResponseNotFound(_('This user has no visible shares.'))
 
-	wanted = '%s/%s' % (login, shname)
-	_d     = wmi_data.base_data_dict(request)
+	_d = wmi_data.base_data_dict(request)
 
 	for share in user.list_shares():
-		if share.name == wanted:
+		if share.name == shname:
+
+			if share.expired:
+				return HttpResponseForbidden(_('This share has expired. It '
+													'is no more available.'))
+
 			_d.update({'share': share})
 			return render(request, 'shares/serve-share.html',_d)
 
 	return HttpResponseNotFound(_('No Web share at this URI, sorry.'))
 def download(request, login, shname, filename):
-	return HttpResponseNotFound(_('Not implemented yet, sorry.'))
+	"""
+		.. todo:: merge this view with system.views.download() (see there).
+	"""
+
+	share = LMC.users.by_login(login).find_share(shname)
+
+	# NOTE: we cannot use `LMC.configuration.users.base_path` to test all
+	# download file paths, because some (standard) users have their home
+	# outside of it. Notably the ones created before Licorn® is installed.
+	# Thus, we use the user's homeDirectory, which seems even more secure.
+	filename = fsapi.check_file_path(os.path.join(share.path, filename),
+										(share.coreobj.homeDirectory, ))
+
+	if filename:
+		try:
+			return utils.download_response(filename)
+
+		except:
+			logging.exception(_(u'Error while sending file {0}'), (ST_PATH, filename))
+
+			return HttpResponseServerError(_(u'Problem occured while sending '
+											u'file. Please try again later.'))
+
+	else:
+		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
+
 def upload(request, login, shname, filename):
 	return HttpResponseNotFound(_('Not implemented yet, sorry.'))
