@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-14 16:35+0200\n"
-"PO-Revision-Date: 2012-06-14 16:34+0200\n"
+"POT-Creation-Date: 2012-06-14 16:37+0200\n"
+"PO-Revision-Date: 2012-06-14 16:38+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -1067,11 +1067,19 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:86
+#: templates/shares/index_main.html:79
+msgid ""
+"You can <a href=\"{0}\">disable web shares</a> for your account at any "
+"moment."
+msgstr ""
+"Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
+"compte à n'importe quel moment."
+
+#: templates/shares/index_main.html:85
 msgid "Web shares turned off"
 msgstr "Partage web désactivé"
 
-#: templates/shares/index_main.html:92
+#: templates/shares/index_main.html:91
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."

@@ -76,8 +76,7 @@
 
 		{%- if request.user.is_staff -%}
 
-			<p class="grayed_out smallest centered vertical-space-small">{{
-				_('You can <a href="{0}">disable web shares</a> for your account at any moment.').format(url_for('wmi.shares.views.disable')) }}</p>
+			<p class="grayed_out smallest centered vertical-space-small">{{ _('You can <a href="{0}">disable web shares</a> for your account at any moment.').format(url_for('wmi.shares.views.disable')) }}</p>
 
 		{%- endif -%}
 
