@@ -43,10 +43,10 @@
               <li>{%- block about -%}{%- endblock -%}</li>
               <li>{%- block contact -%}{%- endblock -%}</li>
             </ul>
-			<div class="btn pull-right">
-              <i class="icon-home"></i> {{ _('Licorn® server '
+			<a href="/" class="btn pull-right">
+              <i class="icon-home"></i> {{ _('Licorn® server '
 					'<strong>{0}</strong>').format(request.get_host()) }}
-              </div>
+              </a>
 
 			<ul class="nav pull-right">
 				<li></li>
