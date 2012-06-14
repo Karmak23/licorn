@@ -407,9 +407,10 @@ class WmiEventApplication(ObjectSingleton):
 
 		for entry in os.listdir(dirname):
 
-			# if is has a 'views', it's a django submodule; it SHOULD have
-			# a `push_permissions` dict defined in __init__.py
-			if os.path.exists(os.path.join(dirname, entry, 'views.py')):
+			# If is has 'views' and 'urls', we consider it a django app;
+			# it SHOULD have a `push_permissions` dict defined in __init__.py
+			if os.path.exists(os.path.join(dirname, entry, 'views.py')) \
+					and os.path.exists(os.path.join(dirname, entry, 'urls.py')):
 				try:
 					module = __import__('licorn.interfaces.wmi.%s' % entry,
 									fromlist=["licorn.interfaces.wmi.%s" % entry])
