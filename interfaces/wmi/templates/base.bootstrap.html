@@ -36,7 +36,7 @@
       <div class="navbar-inner">
         <div class="container">
           {%- block brand -%}
-			<a class="brand" href="http://dev.licorn.org/">Licorn®</a>
+			<a class="brand" href="http://dev.licorn.org/">{{ _('Licorn®: efficient system management') }}</a>
           {%- endblock -%}
             <ul class="nav">
               <li class="active">{%- block active_link -%}{%- endblock -%}</li>
@@ -44,8 +44,9 @@
               <li>{%- block contact -%}{%- endblock -%}</li>
             </ul>
 			<a href="/" class="btn pull-right">
-              <i class="icon-home"></i> {{ _('Licorn® server '
-					'<strong>{0}</strong>').format(request.get_host()) }}
+              <i class="icon-home"></i> {{
+					_('Licorn® server <strong>{0}</strong>').format(
+						request.get_host()) }}
               </a>
 
 			<ul class="nav pull-right">
@@ -63,7 +64,7 @@
 
 	<footer>
 		<div class="row">
-		<div class="span6 offset3 centered">&copy; 2012 Olivier Cortès and <a href="http://meta-it.fr/">META IT</a>. All rights reserved.</div>
+		<div class="span6 offset3 centered">{{ &copy; 2012 Olivier Cortès, <a href="http://meta-it.fr/">META IT</a>. {{ _('All rights reserved.') }}</div>
 		</div>
 	</footer>
     </div> <!-- /container -->

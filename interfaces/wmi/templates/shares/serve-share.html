@@ -14,7 +14,7 @@
 						and request.user.username == share.coreobj.name -%}
 
 			<a href="{{ url_for('wmi.shares.views.index') }}"
-				class="btn btn-primary pull-right">Configure your share &raquo;</a>
+				class="btn btn-primary pull-right">{{ _('Configure your share &raquo;') }}</a>
 
 		{%- endif -%}
 
