@@ -1,7 +1,7 @@
 <tr>
 			<td colspan="2">
 				<h2><span class="{{ 'grayed_out' if list.groups == []  }}">{{ list.title }}</span></h2>
-				<table class="item_members user_memberships">
+				<table id='{{ list.name }}' class="item_members user_memberships">
 					{%- if list.groups != [] -%}
 						<thead>
 						<tr>
@@ -12,33 +12,7 @@
 						</thead>
 						<tbody>
 						{%- for group in list.groups|sort(attribute='name') -%}
-								<tr>
-									<td colspan="3">
-									<table>
-										<tr>
-										<td class="align_left first" width="70%">
-											<a href="/groups/view/{{ group.name }}">
-												{{ group.description
-												or ('<span class="grayed_out">{0}</span>').format(
-													_('No description')) }}</a>
-										</td>
-										<td class="align_center" nowrap width="20%">
-											<a href="/groups/view/{{ group.name }}">
-												<strong>{{ group.name }}</strong></a>
-										</td>
-										<td class="align_right last" width="10%">
-											<a href="/groups/view/{{ group.name }}">
-												{{ group.gidNumber }}</a>
-										</td>
-										<tr>
-											<td colspan="3" class="alone">
-												<span class="grayed_out very_small_font">{{ _('Extensions WMI2 rendering not yet implemented') }}</span>
-												{# extensions_group_data #}
-											</td>
-										</tr>
-									</table>
-									</td>
-								</tr>
+								{%- include 'users/view_group_template.html' -%}
 						{%- endfor -%}
 						</tbody>
 						<tfoot></tfoot>

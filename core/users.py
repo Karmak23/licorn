@@ -1126,6 +1126,18 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return self.__is_system
 
 	def to_XML(self):
+		""" return user as xml data 
+		minimum : login;uid;prigroup;gecos;memberships;backend """
+
+		groups = []
+		for g in self.groups:
+			if g.is_responsible:
+				groups.append(LMC.configuration.groups.resp_prefix + g.name)
+			elif g.is_guest:
+				groups.append(LMC.configuration.groups.guest_prefix + g.name)
+			else:
+				groups.append(g.name)
+
 
 		return '''		<user>
 			<login>%s</login>
@@ -1135,6 +1147,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			<homeDirectory>%s</homeDirectory>
 			<loginShell>%s</loginShell>
 			<backend>%s</backend>
+			<memberships>%s<memberships>
 		</user>''' % (
 						self.__login,
 						self.__uidNumber,
@@ -1142,7 +1155,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 						self.__gecos,
 						self.__homeDirectory,
 						self.__loginShell,
-						self.backend.name
+						self.backend.name,
+						','.join([group.name for group in self.groups])
 					)
 	def to_WMI(self):
 		""" A simplified version of the current object, suitable to be
@@ -1812,6 +1826,34 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				)
 
 			return data
+	def get_CSV_data(self, selected=None, long_output=False):
+		""" return the user accounts list ready to be parsed by python csv module. 
+			login;uid;prigroup;gecos;memberships;backend
+		"""
+
+		with self.lock:
+			csv_data = []
+			for user in [ u for u in self if u.uid in selected]:
+				groups = []
+				for g in user.groups:
+					if g.is_responsible:
+						groups.append(LMC.configuration.groups.resp_prefix + g.name)
+					elif g.is_guest:
+						groups.append(LMC.configuration.groups.guest_prefix + g.name)
+					else:
+						groups.append(g.name)
+
+
+				csv_data.append([ 
+					user.login,
+					user.uid,
+					user.primary_group,
+					user.gecos,
+					','.join(groups),
+					user.backend.name	
+				])
+				
+			return csv_data
 	def ExportCSV(self, selected=None, long_output=False):
 		""" Export the user accounts list to CSV. """
 
@@ -1827,11 +1869,11 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			def build_csv_output_licorn(uid):
 				return ';'.join(
 					[
-						self.users[uid]['gecos'],
-						self.users[uid]['login'],
-						str(self.users[uid]['gidNumber']),
-						','.join(self.users[uid]['groups']),
-						self.users[uid]['backend']
+						self[uid].gecos,
+						self[uid].login,
+						str(self[uid].gidNumber),
+						','.join([ g.name for g in self[uid].groups]),
+						self[uid].backend.name
 					]
 					)
 

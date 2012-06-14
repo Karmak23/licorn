@@ -10,7 +10,7 @@ Licorn® WMI - users views
 :license: GNU GPL version 2
 """
 
-import os, time, base64, tempfile, crack
+import os, time, base64, tempfile, crack, json
 from threading import current_thread
 
 from django.shortcuts               import *
@@ -180,8 +180,22 @@ def massive(request, uids, action, *args, **kwargs):
 			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
 
 	if action == 'export':
-		#TODO
-		pass
+		_type = kwargs.get('type', False)
+		if _type.lower() == 'csv':
+			export = LMC.users.ExportCSV(selected=[ int(u) for u in uids.split(',')])
+		else:
+			export = LMC.users.to_XML(selected=[ LMC.users.by_uid(int(u)) for u in uids.split(',')])
+
+		export_handler, export_filename = tempfile.mkstemp()
+
+		destination = open(export_filename, 'wb+')
+		for chunk in export:
+			destination.write(chunk)
+		destination.close()
+		
+		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
+		
+
 	return HttpResponse('MASSIVE DONE.')
 
 @staff_only
@@ -437,18 +451,6 @@ def upload_file(request, *args, **kwargs):
 		#lprint(destination)
 		return HttpResponse(csv_filename)
 
-@staff_only
-def import_download(request, import_id, *args, **kwargs):
-	""" http://djangosnippets.org/snippets/365/ """
-
-	assert ltrace_func(TRACE_DJANGO)
-
-	filename = os.path.join(settings.home_archive_dir, import_id)
-	wrapper = FileWrapper(file(filename))
-	response = HttpResponse(wrapper, content_type='text/plain')
-	response['Content-Length'] = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format(import_id)
-	return response
 
 @staff_only
 def import_view(request, confirm='', *args, **kwargs):

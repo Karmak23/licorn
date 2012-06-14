@@ -1740,8 +1740,11 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 						, '%s%s' % ('⚑' if is_priv else '', self.__name)),
 					stylize(ST_UGID, self.__gidNumber))
 			return self.__cg_precalc_small
+
 	def to_XML(self, selected=None, long_output=False):
-		""" Export the groups list to XML. """
+		""" Export the groups list to XML. 
+			minimun : name;gid;desc;members;backend;permissive
+		"""
 
 		with self.lock:
 			return '''		<group>
@@ -2121,6 +2124,10 @@ class GroupsController(DictSingleton, CoreFSController):
 				groups = self
 			else:
 				groups = selected
+				for g in groups:
+					if not g.is_system:
+						groups.append(g.responsible_group)
+						groups.append(g.guest_group)
 
 			assert ltrace(TRACE_GROUPS, '| to_XML(%s)' % ','.join(
 											group.name for group in groups))
@@ -2130,6 +2137,40 @@ class GroupsController(DictSingleton, CoreFSController):
 				u'%s\n'
 				u'</groups-list>\n') % u'\n'.join(
 						group.to_XML() for group in groups)
+
+
+	def get_CSV_data(self, selected=None, long_output=False):
+		""" return the group accounts list ready to be parsed by python csv module. 
+			name;gid;desc;members;backend;permissive
+		"""
+
+		with self.lock:
+			csv_data = []
+			for group in [ g for g in self if g.gid in selected]:
+				if group.is_system:
+					csv_data.append([ 
+						group.name,
+						group.gid,
+						group.description,
+						','.join([u.login for u in g.members]),
+						group.backend.name,
+						None			
+					])
+				else:
+					# export the group and its helpers
+					groups = [ group, group.responsible_group, group.guest_group ]
+					for g in groups:
+						csv_data.append([ 
+							g.name,
+							g.gid,
+							g.description,
+							','.join([u.login for u in g.members]),
+							g.backend.name,
+							g.permissive			
+						])
+				
+			return csv_data
+
 	def to_JSON(self, selected=None):
 		""" Export the user accounts list to XML. """
 

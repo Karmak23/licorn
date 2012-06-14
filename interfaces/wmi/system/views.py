@@ -24,9 +24,11 @@ from django.utils.translation       import ugettext_lazy as _
 
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import priorities
+from licorn.foundations.constants import priorities, relation
 from licorn.core                  import LMC
 
+
+from django.template.loader         import render_to_string
 # local wmi.system.collectors, used in index()
 from licorn.interfaces.wmi                 import collectors
 from licorn.interfaces.wmi.app             import wmi_event_app
@@ -158,26 +160,31 @@ def index(request, *args, **kwargs):
 		lists = [
 					{
 						'title'  : _('Responsibilities'),
+						'name'   : relation.RESPONSIBLE,
 						'kind'   : _('responsible'),
 						'groups' : resps
 					},
 					{
 						'title'  : _('Memberships'),
+						'name'   : relation.MEMBER,
 						'kind'   : _('member'),
 						'groups' : stdgroups
 					},
 					{
 						'title'  : _('Invitations'),
+						'name'   : relation.GUEST,
 						'kind'   : _('guest'),
 						'groups' : guests
 					},
 					{
 						'title'  : _('Privileges'),
+						'name'   : relation.PRIVILEGE,
 						'kind'   : _('privileged member'),
 						'groups' : privs
 					},
 					{
 						'title'  : _('Other system groups'),
+						'name'   : relation.SYSMEMBER,
 						'kind'   : _('system member'),
 						'groups' : sysgroups
 					},
@@ -276,3 +283,70 @@ def shutdown_all_cancel(request):
 	#wmi_event_app.enqueue_operation(request, 'LMC.system.shutdown_all_cancel')
 
 	return HttpResponse('Shutdown CANCEL!')
+
+
+def view_groups(request):
+	""" return the html table groups for the currently logged in user """
+	print "vgroups"
+	user = LMC.users.by_login(str(request.user))
+	print user
+
+	resps     = []
+	guests    = []
+	stdgroups = []
+	privs     = []
+	sysgroups = []
+
+	for group in user.groups:
+		if group.is_responsible:
+			resps.append(group.standard_group)
+
+		elif group.is_guest:
+			guests.append(group.standard_group)
+
+		elif group.is_standard:
+			stdgroups.append(group)
+
+		elif group.is_privilege:
+			privs.append(group)
+
+		else:
+			sysgroups.append(group)
+
+	lists = [
+				{
+					'title'  : _('Responsibilities'),
+					'name'   : relation.RESPONSIBLE,
+					'kind'   : _('responsible'),
+					'groups' : resps
+				},
+				{
+					'title'  : _('Memberships'),
+					'name'   : relation.MEMBER,
+					'kind'   : _('member'),
+					'groups' : stdgroups
+				},
+				{
+					'title'  : _('Invitations'),
+					'name'   : relation.GUEST,
+					'kind'   : _('guest'),
+					'groups' : guests
+				},
+				{
+					'title'  : _('Privileges'),
+					'name'   : relation.PRIVILEGE,
+					'kind'   : _('privileged member'),
+					'groups' : privs
+				},
+				{
+					'title'  : _('Other system groups'),
+					'name'   : relation.SYSMEMBER,
+					'kind'   : _('system member'),
+					'groups' : sysgroups
+				},
+
+		]
+
+	return render_to_string('/users/view_groups_template.html', {
+		'groups_lists' : lists
+	})

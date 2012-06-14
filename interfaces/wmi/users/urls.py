@@ -34,11 +34,12 @@ urlpatterns = patterns('users.views',
 	# consider (?:\d,?)+ as RE for P<uids>
 
     (r'^massive/delete/(?P<uids>.+)/(?P<no_archive>.*)/?$', 'massive', {'action': 'delete'}),
-    (r'^massive/skel/(?P<uids>.+)/(?P<skel>/.*)/?$', 'massive', {'action': 'skel'}),
+    (r'^massive/skel/(?P<uids>.+)/(?P<skel>.*)/?$', 'massive', {'action': 'skel'}),
+    (r'^massive/export/(?P<uids>.+)/(?P<type>.*)/?$', 'massive', {'action': 'export'}),
 
     (r'^import/(?P<confirm>.*)/?$', 'import_view'),
-    (r'^dl_import/(?P<import_id>.+)/?$', 'import_download'),
     (r'^upload/?$', 'upload_file'),
+    
     (r'^check_pwd_strenght/(?P<pwd>.+)/?$', 'check_pwd_strenght'),
     (r'^generate_pwd/?$', 'generate_pwd'),    
     )

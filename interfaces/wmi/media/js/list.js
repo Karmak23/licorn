@@ -101,6 +101,68 @@ function init_list_events(list_name, main_column, search_columns, identifier) {
 		delete_dialog.show();
 	});
 
+	$('#'+list_name+'_massive_export').click(function() {
+		items=[]
+		$('#'+list_name+'_list').find(".row").each(function() {
+			if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+				items.push($.trim($(this).find('.'+list_name+'_'+main_column).text()));
+			}
+		});
+		console.log(items)
+		html = '<ul>'
+		$.each(items, function(k, item) {
+			html += '<li>'+item+'</li>';
+		});
+		html += '</ul>';
+		export_title = gettext("Massive export");
+
+		if (html == '<ul></ul>') {
+			export_content = gettext("Please select at least one account.");
+			export_dialog = new dialog(export_title, export_content);
+		}
+		else {
+			export_content = gettext("Are you sure you want to export these account(s):");
+			export_content += html;
+			export_content += '<br />';
+			export_content += gettext("Please choose the export format : ");
+			export_content += '<select id="id_export_type">';
+			export_content += '<option name="csv">CSV</option>';
+			export_content += '<option name="XML">XML</option>';
+			export_content += '</select>';
+			export_content += '<iframe id="download_iframe" style="display:none"></iframe>';
+
+			//export_content += '<input type="button" onClick="my_export(\''+$.trim(list_name)+'\',\''+$.trim(identifier)+'\')" value="Export"/>'
+					
+			export_dialog = new dialog(export_title, export_content, true, function() {
+				
+					items=[]
+					$('#'+list_name+'_list').find(".row").each(function() {
+						if ($(this).find('.'+list_name+'_checkbox').is(':checked') == true) {
+							items.push($(this).find('.'+list_name+'_'+identifier).text());
+							clear_sub_content_with_id($(this).find('.'+list_name+'_'+identifier).text())
+						}
+					});
+					
+					console.log($("#id_export_type"))
+					type = $("#id_export_type").val().toString();	
+					page_url = "/"+list_name+"/massive/export/" + $.URLEncode(items.join(',')) + "/"+ type;
+					$.get(page_url, function(data) {
+						file_name = data.file_name
+						preview = data.preview
+						
+						// iframe "trick" to be able to prompt download at the correct time
+						iframe = document.getElementById('download_iframe')
+						iframe.src = "/download/"+file_name
+						
+
+					}, "json");
+				});
+			
+		}
+		export_dialog.show();
+	});
+
+
 	$('#'+list_name+'_massive_skel').click(function() {
 		users=[]
 		$('#'+list_name+'_list').find(".row").each(function() {

@@ -23,7 +23,7 @@ def extension_enabled_handler(request, event):
 	if event.kwargs['extension'].name == 'rdiffbackup':
 		yield utils.format_RPC_JS('add_row', 'mainnav',
 								render_to_string('backup/parts/sidebar.html',
-									{ 'ext': utils.WmiProxy(event.kwargs['extension']) }),
+									{ 'ext': event.kwargs['extension'] }),
 								'')
 		#yield utils.format_RPC_JS('add_row', 'mainnav',
 		#						render_to_string('system/parts/shutdown_all_menuitem.html'),
@@ -43,49 +43,74 @@ def extension_disabled_handler(request, event):
 def reload_main_content():
 	""" Reload only if extension is present and enabled, else this will produce
 		exceptions (harmless but polluting). """
-	if 'rdiffbackup' in LMC.extensions.keys() and LMC.extensions.rdiffbackup.enabled:
+	if 'rdiffbackup' in LMC.extensions.keys() \
+								and LMC.extensions.rdiffbackup.enabled:
 		return utils.format_RPC_JS('reload_div', "#main_content",
 									render_to_string('backup/index_main.html',
 										wmi_data.base_data_dict()))
 
 def volume_enabled_handler(request, event):
-	yield utils.notify(_('Volume {0} reserved for Licorn® usage.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} reserved for Licorn® usage.').format(
+												event.kwargs['volume'].name))
+		yield reload_main_content()
 
 def volume_disabled_handler(request, event):
-	yield utils.notify(_('Volume {0} un-reserved for Licorn® usage.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} un-reserved for Licorn® usage.').format(
+												event.kwargs['volume'].name))
+		yield reload_main_content()
 
 def volume_added_handler(request, event):
-	yield utils.notify(_('Volume {0} added on the system.').format(event.kwargs['volume'].name))
-	# 'volume_mounted' should do this after this event.
-	#yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} added on the system.').format(
+												event.kwargs['volume'].name))
+		# 'volume_mounted' should do this after this event.
+		#yield reload_main_content()
 
 def volume_removed_handler(request, event):
 	# NOTE: the removed volume doesn't exist anymore, we are given only the `str(vol)` as argument.
-	yield utils.notify(_('Volume {0} removed from the system.').format(event.kwargs['volume']))
-	yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} removed from the system.').format(
+													event.kwargs['volume']))
+		yield reload_main_content()
 
 def volume_mounted_handler(request, event):
-	yield utils.notify(_('Volume {0} mounted.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} mounted.').format(
+												event.kwargs['volume'].name))
+		yield reload_main_content()
 
 def volume_unmounted_handler(request, event):
-	yield utils.notify(_('Volume {0} unmounted.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	if request.user.is_staff:
+		yield utils.notify(_('Volume {0} unmounted.').format(
+												event.kwargs['volume'].name))
+		yield reload_main_content()
 
 def backup_started_handler(request, event):
-	yield utils.notify(_('Backup started on volume {0}.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	yield utils.notify(_('Backup started on volume {0}.').format(
+												event.kwargs['volume'].name))
+
+	if request.user.is_staff:
+		yield reload_main_content()
 
 def backup_ended_handler(request, event):
-	yield utils.notify(_('Backup ended on volume {0}.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	yield utils.notify(_('Backup ended on volume {0}.').format(
+												event.kwargs['volume'].name))
+
+	if request.user.is_staff:
+		yield reload_main_content()
 
 def backup_statistics_started_handler(request, event):
-	yield utils.notify(_('Backup statistics computation started on volume {0}.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	yield utils.notify(_('Backup statistics computation started on '
+							'volume {0}.').format(event.kwargs['volume'].name))
+
+	if request.user.is_staff:
+		yield reload_main_content()
 
 def backup_statistics_ended_handler(request, event):
-	yield utils.notify(_('Backup statistics computation ended on volume {0}.').format(event.kwargs['volume'].name))
-	yield reload_main_content()
+	yield utils.notify(_('Backup statistics computation ended on '
+							'volume {0}.').format(event.kwargs['volume'].name))
+
+	if request.user.is_staff:
+		yield reload_main_content()

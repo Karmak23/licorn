@@ -11,4 +11,10 @@
 	<script language="javascript" type="text/javascript" src="/media/js/d3/d3.layout.min.js"></script>
 {%- endblock -%}
 
-{%- block title -%}{{ _('Server status') }}{%- endblock -%}
+{%- block title -%}
+	{%- if request.user.is_staff -%}
+		{{ _('Server status') }}
+	{%- else -%}
+		{{ _('My information') }}
+	{%- endif -%}
+{%- endblock -%}

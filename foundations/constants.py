@@ -35,6 +35,8 @@ relation.NO_MEMBERSHIP = 0
 relation.GUEST         = 1
 relation.MEMBER        = 2
 relation.RESPONSIBLE   = 3
+relation.PRIVILEGE     = 4
+relation.SYSMEMBER     = 5
 
 # verbose levels for options and logging.*
 verbose = EnumDict('verbose')
