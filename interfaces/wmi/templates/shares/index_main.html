@@ -83,8 +83,7 @@
 	{%- else -%}
 
 		<h1>{{ _('Web shares turned off') }}</h1>
-		<p>{{ _('You (or someone else) disabled the web sharing feature for your account. You can <a href="{0}">enable them again</a> at any moment.').format(
-				url_for('wmi.shares.views.enable')) }}</p>
+		<p>{{ _('You (or someone else) disabled the web sharing feature for your account. You can <a href="{0}">enable them again</a> at any moment.').format(url_for('wmi.shares.views.enable')) }}</p>
 
 		{%- if request.user.is_staff -%}
 

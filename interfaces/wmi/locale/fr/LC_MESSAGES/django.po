@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-14 16:37+0200\n"
-"PO-Revision-Date: 2012-06-14 16:38+0200\n"
+"POT-Creation-Date: 2012-06-14 16:50+0200\n"
+"PO-Revision-Date: 2012-06-14 16:46+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -786,12 +786,16 @@ msgid "Page not found!"
 msgstr "Page non trouvée !"
 
 #: templates/base.bootstrap.html:24
-msgid "Licorn®: "
-msgstr "Licorn® :"
+msgid "Licorn&reg;: "
+msgstr "Licorn&reg; :"
 
 #: templates/base.bootstrap.html:39
-msgid "Licorn®: efficient system management"
-msgstr "Licorn® : administration système efficace"
+msgid "Licorn&reg;: efficient system management"
+msgstr "Licorn&reg; : administration système efficace"
+
+#: templates/base.bootstrap.html:66
+msgid "All rights reserved."
+msgstr "Tous droits réservés."
 
 #: templates/base.html:6
 msgid "Licorn® WMI: "
@@ -1077,9 +1081,18 @@ msgstr ""
 
 #: templates/shares/index_main.html:85
 msgid "Web shares turned off"
-msgstr "Partage web désactivé"
+msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:91
+#: templates/shares/index_main.html:86
+msgid ""
+"You (or someone else) disabled the web sharing feature for your account. You "
+"can <a href=\"{0}\">enable them again</a> at any moment."
+msgstr ""
+"Vous (ou quelqu'un d'autre) avez désactivé la fonctionnalité de partage web "
+"pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
+"n'importe quel moment."
+
+#: templates/shares/index_main.html:90
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1140,11 +1153,13 @@ msgstr ""
 "répertoire de partage."
 
 #: templates/shares/parts/share-view.html:5
-msgid "Full path on the Licorn® server: {0}"
+#, fuzzy
+msgid "Full path on the Licorn&reg; server: {0}"
 msgstr "Chemin complet sur le serveur Licorn® : {0}"
 
 #: templates/shares/parts/share-view.html:9
-msgid "view ↗"
+#, fuzzy
+msgid "view"
 msgstr "visiter ↗"
 
 #: templates/shares/parts/share-view.html:14

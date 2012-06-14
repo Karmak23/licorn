@@ -2,11 +2,11 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 <tr>
-	<td><span title="{{ _('Full path on the Licorn® server: {0}').format(share.path) }}"
+	<td><span title="{{ _('Full path on the Licorn&reg; server: {0}').format(share.path) }}"
 			class="bigger cursor-help"> {{ share.name }}</span>
 		<br /><small class="smaller"><a href="{{ url_for('wmi.shares.views.serve',
 								args=(share.coreobj.name, share.name)) }}"
-					target="_blank">{{ _('view ↗') }}</a></small>
+					target="_blank">{{ _('view') }} ↗</a></small>
 	</td>
 	<td class="centered">
 	{%- set contents = share.contents() -%}
