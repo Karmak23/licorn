@@ -20,8 +20,9 @@ from django.utils                   import simplejson
 from licorn.foundations             import logging, pyutils
 from licorn.foundations             import settings as licorn_settings
 from licorn.foundations.ltrace      import *
-from licorn.foundations.constants   import filters
+from licorn.foundations.constants   import filters, relation
 from licorn.core                    import LMC
+
 
 # local imports
 import utils
@@ -62,21 +63,20 @@ def check_users(meta_action, *args, **kwargs):
 		def decorated(request, *args, **kwargs):
 
 			from licorn.interfaces.wmi.app import wmi_event_app
-
+			
 			q = wmi_event_app.queue(request)
 
 			victim      = LMC.users.by_uid(kwargs.get('uid'))
 			wmi_user    = LMC.users.by_login(request.user.username)
 			admin_group = LMC.groups.by_name(licorn_settings.defaults.admin_group)
 			wmi_group   = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
-
-			if victim in LMC.users.select(filters.SYSTEM_RESTRICTED) \
-											and not request.user.is_superuser:
+			restricted_users =  LMC.users.select(filters.SYSTEM_RESTRICTED)
+			if victim in  restricted_users and not request.user.is_superuser:
 				# Even a staff user can't touch restricted account.
 				q.put(utils.notify(_('No operation allowed on restricted '
 										'system accounts.')))
 				return HttpResponse('ABORTED.')
-
+											
 			if victim == wmi_user:
 				if meta_action == 'delete':
 					# I cannot remove my own account
@@ -136,6 +136,35 @@ def check_users(meta_action, *args, **kwargs):
 							'you are. <strong>Operation aborted</strong>.')))
 						return HttpResponse('ABORTED.')
 
+			# check if we are not adding/removing users from unwanted group
+			if meta_action == 'mod':
+				if kwargs.get('action') == 'groups':
+					# syntax value = "1000/1" => user_id/relation_id 
+					#(see users.views.mod)
+					gid, rel = kwargs.get('value').split("/")
+
+					# cannot remove an admins account from the admins group
+					# even if we are admins.
+					if wmi_user in admin_group.members and \
+						LMC.groups.by_gid(gid) == admin_group and \
+						rel == relation.NO_MEMBERSHIP:
+							q.put(utils.notify(_('You tried to remove an '
+								'account as powerful as you are from the '
+								'<em>{0}<em> group. <strong>Operation aborted'
+								'</strong>. If you really want to do '
+								'it, run this operation from a CLI command.')))
+							return HttpResponse('ABORTED.')
+									
+					# if staff, cannot do anything on restricted groups	
+					elif wmi_user in wmi_group.members and \
+						LMC.groups.by_gid(gid) in set(LMC.groups.select(
+							filters.SYSTEM_RESTRICTED) + [admin_group]):
+
+								q.put(utils.notify(_('You tried to do something on '
+									'a <em>restricted group</em>. '
+									'<strong>Operation aborted</strong>.')))
+								return HttpResponse('ABORTED.')
+
 			return view_func(request, *args, **kwargs)
 		return decorated
 	return decorator
@@ -147,42 +176,52 @@ def check_groups(meta_action, *args, **kwargs):
 
 			q = wmi_event_app.queue(request)
 
-			victim      = utils.select('groups', [ kwargs.get('gid') ])[0]
-			wmi_user    = utils.select('users', [request.user.username])[0]
-			admin_group = utils.select('groups', [ licorn_settings.defaults.admin_group ])[0]
+			victim      = LMC.groups.by_gid(kwargs.get('gid'))
+			admin_group = LMC.groups.by_name(licorn_settings.defaults.admin_group)
+			wmi_group   = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
+			admins_members = set(admin_group.members + wmi_group.members)
+			
+			if victim in LMC.groups.select(filters.SYSTEM_RESTRICTED) \
+											and not request.user.is_superuser:
+				# Even a staff user can't touch restricted account.
+				q.put(utils.notify(_('No operation allowed on restricted '
+										'system accounts.')))
+				return HttpResponse('ABORTED.')
 
-			#FIXME: don't hardcode 'licorn-wmi' here.
-			admins_members = (set(u.login for u in admin_group.members)
-							| set(u.login for u in utils.select('groups', ['licorn-wmi'])[0].members))
-
-			# FIXME: restricted system groups from old_decorators.
-
-			if victim.name == admin_group.name:
+			if victim == admin_group:
 				if request.user.is_staff:
 					# I cannot do anythiong on admins group
-					q.put(utils.notify(_('I cannot let you do anything on {0} group !').format(admin_group.name)))
-					return HttpResponse()
+					q.put(utils.notify(_('You tried to touch to <em>{0}</em> '
+						'group account.  <strong>Operation aborted</strong>.'
+						).format(admin_group.name)))
+					return HttpResponse("ABORTED")
 				elif request.user.is_super_admin:
 					if meta_action == 'delete':
 						# I cannot remove admins group
-						q.put(utils.notify(_('I cannot let you delete {0} group !').format(admin_group.name)))
-						return HttpResponse()
+						q.put(utils.notify(_('You tried to delete <em>{0}</em> '
+						'group. <strong>Operation aborted</strong>.').format(
+							admin_group.name)))
+						return HttpResponse("ABORTED")
 
 			elif victim.is_privilege:
 				if meta_action == 'delete':
 					# I cannot remove a privileged group
-					q.put(utils.notify(_('You cannot delete privileged group {0} !').format(victim.name)))
-					return HttpResponse()
+					q.put(utils.notify(_('You tried to delete the <em>privileged'
+						'</em> group {0}.  <strong>Operation aborted</strong>.'
+						).format(victim.name)))
+					return HttpResponse("ABORTED")
 
-			# check if we are not adding/removing admins user from group
+			# check if we are not adding/removing admins user from any group
 			if meta_action == 'mod':
 				if kwargs.get('action') == 'users':
-					# syntax value = "1000/1" => user_id/relation_id (see groups.views.mod)
+					# syntax value = "1000/1" => user_id/relation_id 
+					#(see groups.views.mod)
 					uid = kwargs.get('value').split("/")[0]
-					if utils.select('users', [ uid ])[0].login in admins_members:
-						q.put(utils.notify(_('You tried to do something on an account more or as powerfull than you are. I cannot let you do that !')))
-						return HttpResponse()
-
+					if LMC.users.by_uid(uid) in admins_members:
+						q.put(utils.notify(_('You tried to do something on '
+							'an account as powerful (or even more) than '
+							'you are. <strong>Operation aborted</strong>.')))
+						return HttpResponse('ABORTED.')
 
 			return view_func(request, *args, **kwargs)
 		return decorated

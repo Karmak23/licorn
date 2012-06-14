@@ -58,9 +58,8 @@ def message(request, part, gid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
-# FIXME: reactivate
-#@check_groups('delete')
 @staff_only
+@check_groups('delete')
 def delete(request, gid, no_archive='', *args, **kwargs):
 	try:
 		# remote:
