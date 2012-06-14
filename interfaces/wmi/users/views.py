@@ -27,18 +27,21 @@ from licorn.foundations.constants import filters, relation
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
-from licorn.core                               import LMC
-from licorn.interfaces.wmi.libs                import utils, perms_decorators
-from licorn.interfaces.wmi.libs.decorators     import *
-# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
-from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.old_decorators import check_users
+from licorn.core                  import LMC
 
-from licorn.interfaces.wmi.app import wmi_event_app
+# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
+# WARNING: this import will fail if nobody has previously called `wmi.init()`.
+# This should have been done in the WMIThread.run() method. Anyway, this must
+# disappear soon!!
+from licorn.interfaces.wmi.libs            import old_utils as w
+
+from licorn.interfaces.wmi.app             import wmi_event_app
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
 from forms import UserForm, SkelInput, ImportForm
 
-@login_required
+@staff_only
 def message(request, part, uid=None, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -89,7 +92,7 @@ def message(request, part, uid=None, *args, **kwargs):
 	return HttpResponse(html)
 
 @login_required
-@perms_decorators.check_users('mod')
+@check_users('mod')
 def mod(request, uid, action, value, *args, **kwargs):
 	""" edit the gecos of the user """
 
@@ -152,7 +155,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 	return HttpResponse('MOD DONE.')
 
 @staff_only
-@perms_decorators.check_users('delete')
+@check_users('delete')
 def delete(request, uid, no_archive, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -192,9 +195,9 @@ def massive(request, uids, action, *args, **kwargs):
 		for chunk in export:
 			destination.write(chunk)
 		destination.close()
-		
+
 		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
-		
+
 
 	return HttpResponse('MASSIVE DONE.')
 

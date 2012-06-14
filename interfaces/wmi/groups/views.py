@@ -25,16 +25,17 @@ from licorn.foundations.ltraces   import *
 
 from licorn.core import LMC
 
-# warning: this import will fail if nobody has previously called wmi.init()
-# (this should have been done in the WMIThread.run() method.
-from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.perms_decorators import check_groups
+# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
+# WARNING: this import will fail if nobody has previously called `wmi.init()`.
+# This should have been done in the WMIThread.run() method. Anyway, this must
+# disappear soon!!
+from licorn.interfaces.wmi.libs            import old_utils as w
 
 from licorn.interfaces.wmi.app             import wmi_event_app
-from licorn.interfaces.wmi.libs            import utils, perms_decorators
-from licorn.interfaces.wmi.libs.decorators import *
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only, check_groups
 
-from forms                              import GroupForm
+from forms import GroupForm
 
 @staff_only
 def message(request, part, gid=None, *args, **kwargs):
@@ -57,7 +58,8 @@ def message(request, part, gid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
-#@perms_decorators.check_groups('delete')
+# FIXME: reactivate
+#@check_groups('delete')
 @staff_only
 def delete(request, gid, no_archive='', *args, **kwargs):
 	try:
@@ -107,18 +109,18 @@ def massive(request, gids, action, value='', *args, **kwargs):
 		else:
 			export = LMC.groups.to_XML(selected=[ LMC.groups.by_gid(int(g)) for g in gids.split(',')])
 
-			
+
 			destination = open(export_filename, 'wb+')
 			for chunk in export:
 				destination.write(chunk)
 			destination.close()
-		
+
 		return HttpResponse(json.dumps({ "file_name" : export_filename }))
 
 	return HttpResponse('MASSIVE DONE.')
 
-@perms_decorators.check_groups('mod')
 @staff_only
+@check_groups('mod')
 def mod(request, gid, action, value, *args, **kwargs):
 	""" edit the gecos of the user """
 	assert ltrace_func(TRACE_WMI)
