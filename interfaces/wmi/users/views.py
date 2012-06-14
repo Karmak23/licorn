@@ -183,18 +183,19 @@ def massive(request, uids, action, *args, **kwargs):
 		_type = kwargs.get('type', False)
 		if _type.lower() == 'csv':
 			export = LMC.users.ExportCSV(selected=[ int(u) for u in uids.split(',')])
+			extension = 'csv'
 		else:
 			export = LMC.users.to_XML(selected=[ LMC.users.by_uid(int(u)) for u in uids.split(',')])
+			extension = 'xml'
 
-		export_handler, export_filename = tempfile.mkstemp()
+		export_handler, export_filename = tempfile.mkstemp('.%s' % extension)
 
-		destination = open(export_filename, 'wb+')
 		for chunk in export:
-			destination.write(chunk)
-		destination.close()
-		
+			export_handler.write(chunk)
+		export_handler.close()
+
 		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
-		
+
 
 	return HttpResponse('MASSIVE DONE.')
 
@@ -205,29 +206,29 @@ def create(request, **kwargs):
 
 	if request.method == 'POST':
 
-		gresolver = LMC.groups.by_gid
-
-		groups = [ int(g) for g in request.POST.getlist('member_groups') if g != '' ]
-
-		groups.extend(gresolver(int(gid)).guest_group.gidNumber
-				for gid in request.POST.getlist('guest_groups') if gid != '')
-
-		groups.extend(gresolver(int(gid)).responsible_group.gidNumber
-				for gid in request.POST.getlist('resp_groups') if gid != '')
-
-		#lprint(groups)
-
-		profile     = LMC.profiles[
-									int(w.my_unquote(request.POST['profile']))
-								]
-		shell       = request.POST['shell']
-		gecos       = w.my_unquote(request.POST['gecos'])
-		login       = w.my_unquote(request.POST['login'])
-
-		# XXX: why not unquote the password too ?
-		password    = request.POST['password']
-
 		try:
+
+			gresolver = LMC.groups.by_gid
+
+			groups = [ int(g) for g in request.POST.getlist('member_groups')
+																	if g != '' ]
+
+			groups.extend(gresolver(int(gid)).guest_group.gidNumber
+					for gid in request.POST.getlist('guest_groups') if gid != '')
+
+			groups.extend(gresolver(int(gid)).responsible_group.gidNumber
+					for gid in request.POST.getlist('resp_groups') if gid != '')
+
+			profile     = LMC.profiles[
+								int(w.my_unquote(request.POST['profile']))
+							]
+			shell       = request.POST['shell']
+			gecos       = w.my_unquote(request.POST['gecos'])
+			login       = w.my_unquote(request.POST['login'])
+
+			# XXX: why not unquote the password too ?
+			password    = request.POST['password']
+
 			LMC.users.add_User(
 						login=login if login != '' else None,
 						gecos=gecos if gecos != '' else None,
@@ -238,7 +239,8 @@ def create(request, **kwargs):
 						profile=profile)
 
 		except Exception, e:
-			wmi_event_app.queue(request).put(notify(_('Unable to add '
+			logging.exception(_(u'Unable to add user'))
+			wmi_event_app.queue(request).put(utils.notify(_('Unable to add '
 									'user {0}: {1}.').format(login, e)))
 
 	return HttpResponse('DONE.')

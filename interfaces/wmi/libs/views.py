@@ -18,22 +18,6 @@ from django.template.loader         import render_to_string
 
 from licorn.core                    import LMC
 
-@login_required
-def download(request, _file, *args, **kwargs):
-	""" download a file, can only be in '/tmp' else download is refused 
-	from : http://djangosnippets.org/snippets/365/ """
-
-	if _file.startswith('/tmp/'):
-		filename = os.path.join(_file)
-		wrapper = FileWrapper(file(filename))
-		response = HttpResponse(wrapper, content_type='text/plain')
-		response['Content-Length'] = os.path.getsize(filename)
-		response['Content-Disposition'] = 'attachment; filename={0}'.format('Custom_export')
-		return response
-	else:
-		return HttpResponse('Bad file speficied')
-
-
 def get_group_view_html(group_name):
 	return render_to_string('/users/view_group_template.html', {
 		'group' : LMC.groups.by_name(group_name)

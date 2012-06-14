@@ -18,18 +18,19 @@ from django.contrib.auth			import REDIRECT_FIELD_NAME, \
 from django.http					import HttpResponse, \
 											HttpResponseForbidden, \
 											HttpResponseNotFound, \
-											HttpResponseRedirect
+											HttpResponseRedirect, \
+											HttpResponseServerError, \
+											HttpResponseBadRequest
 from django.shortcuts               import *
+from django.template.loader         import render_to_string
 from django.utils.translation       import ugettext_lazy as _
 
-from licorn.foundations.ltrace    import *
-from licorn.foundations.ltraces   import *
-from licorn.foundations.constants import priorities, relation
-from licorn.core                  import LMC
-
-
-from django.template.loader         import render_to_string
-# local wmi.system.collectors, used in index()
+from licorn.foundations                    import fsapi
+from licorn.foundations.styles             import *
+from licorn.foundations.ltrace             import *
+from licorn.foundations.ltraces            import *
+from licorn.foundations.constants          import priorities, relation
+from licorn.core                           import LMC
 from licorn.interfaces.wmi                 import collectors
 from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
@@ -63,7 +64,6 @@ def __gather_wmi_messages(request):
 				info_messages[msgtuple[0]] += msgtuple[1] + '\n'
 
 	return status_messages, info_messages
-
 
 def __cpu_infos():
 	cpus = 0
@@ -240,6 +240,27 @@ def test(request):
 			', '.join(x.name for x in user.groups))
 
 	return HttpResponse(response)
+
+@login_required
+def download(request, filename, *args, **kwargs):
+	""" download a file, can only be in '/tmp' else download is refused
+	from : http://djangosnippets.org/snippets/365/ """
+
+	# check_file_path() will return a cleaned path, or `None` if insecure.
+	filename = fsapi.check_file_path(filename, ('/tmp/', ))
+
+	if filename:
+		try:
+			return utils.download_response(filename)
+
+		except:
+			logging.exception(_(u'Error while sending file {0}'), (ST_PATH, filename))
+
+			return HttpResponseServerError(_(u'Problem occured while sending '
+											u'file. Please try again later.'))
+
+	else:
+		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
 
 @staff_only
 def main(request, sort="name", order="asc", select=None, **kwargs):

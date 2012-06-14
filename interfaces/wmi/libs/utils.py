@@ -8,22 +8,17 @@ Licorn WMI2 utils
 :license: GNU GPL version 2
 """
 
-import time, types, json, functools
+import os, time, types, json, mimetypes
 
-from Queue import Queue
+from django.core.servers.basehttp   import FileWrapper
+from django.http					import HttpResponse
+from licorn.foundations.ltrace      import *
+from licorn.foundations.ltraces     import *
+from licorn.foundations             import logging, pyutils, settings
+from licorn.core                    import LMC, version
 
-from licorn.foundations.ltrace  import *
-from licorn.foundations.ltraces import *
-from licorn.foundations         import logging, pyutils, settings
-
-from licorn.core        import LMC, version
-from decorators         import *
-
-# NO MORE a remote app:
-#from licorn.core.remote import select, select_one, CoreObjectProxy as WmiProxy
-
-# NOW a local app:
-# see in select() function.
+# local imports
+from decorators                     import *
 
 def select(*a, **kw):
 	""" Mimics the daemon.rwi.select() method, but wraps the results into
@@ -35,7 +30,6 @@ def select(*a, **kw):
 	#remote_selection = daemon.rwi.select(*a, **kw)
 	#lprint(remote_selection)
 	return daemon.rwi.select(*a, **kw)
-
 def select_one(*a, **kw):
 	from licorn.daemon.main import daemon
 
@@ -53,7 +47,8 @@ def notify(message, timeout=None, css_class=None):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	return format_RPC_JS('show_message_through_notification', message, timeout or u'', css_class or u'')
+	return format_RPC_JS('show_message_through_notification', message,
+							out or u'', css_class or u'')
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -62,6 +57,26 @@ def format_RPC_JS(JS_method_name, *js_arguments):
 						'arguments' : [ json.dumps(unicode(a)
 											if type(a) == types.StringType
 											else a) for a in js_arguments ] }
+
+# This must be done at least once.
+mimetypes.init()
+
+def download_response(filename):
+	""" Gets a filename from a string, returns an `HttpResponse` for the download.
+
+		When reaching here, no check is made on the filename, path, etc.
+		It's up to the caller to verify the filename and the file content
+		is secure to transmit.
+	"""
+
+	wrapper  = FileWrapper(file(filename))
+	mtype    = mimetypes.guess_type(filename)[0]
+	response = HttpResponse(wrapper, content_type=mtype or 'application/octet-stream')
+
+	response['Content-Length']      = os.path.getsize(filename)
+	response['Content-Disposition'] = 'attachment; filename={0}'.format('Custom_export')
+
+	return response
 
 # =============================================================== Jinja2 globals
 
@@ -74,7 +89,6 @@ def config(key_name):
 	# local:
 	result = pyutils.resolve_attr("LMC.configuration.%s" % key_name, { "LMC": LMC })
 	return result() if callable(result) else result
-
 def licorn_setting(key_name):
 	#remote:
 	#return LMC.rwi.setting_get(key_name)
