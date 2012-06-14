@@ -12,7 +12,7 @@
 {%- endblock -%}
 
 {%- block title -%}
-	{%- if request.user.is_staff or request.user.is_superuser -%}
+	{%- if request.user.is_staff -%}
 		{{ _('Server status') }}
 	{%- else -%}
 		{{ _('My information') }}

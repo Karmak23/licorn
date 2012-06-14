@@ -184,7 +184,10 @@
 	</div><!-- mainnav_list -->
 	<div id="metanav" class="nav">
 		<ul>
-			<li>{{ request.user.username }}<!--, staff={{ request.user.is_staff }}, super={{ request.user.is_superuser }}--></li>
+			<li>{{ request.user.username }}<!--,
+					staff={{ request.user.is_staff }},
+					super={{ request.user.is_superuser }}
+				--></li>
 			<li class="last"><a href="/logout/" title="{{ _('Log out from the Licorn® WMI') }}">{{ _('logout') }}</a></li>
 		</ul>
 	</div><!-- metanav -->
