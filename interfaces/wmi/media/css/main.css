@@ -116,6 +116,10 @@ div#banner {
     cursor: pointer;
 }
 
+.cursor-help {
+    cursor: help;
+}
+
 .item_title {
 	text-align: center;
 	float: left;

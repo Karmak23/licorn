@@ -6,85 +6,6 @@
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
 
-{% block body %}
-    <div id="vertical_wrapper">
-        <!--<div id="vertical_wrapper">-->
-            <div id="content">
-                <div id="content_filler">
-                    <div id="logo" class="hidden">
-                        <a href="http://dev.licorn.org/">
-                            <img src="/media/images/logo_licorn_160.png" alt="Licorn® is alive" border="0" width="120" />
-                        </a>
-                    </div><!-- logo -->
-                    <div id="login_form_wrapper">
-                        <h2 class="hidden">{{ _('Welcome to Licorn&reg;!') }}</h2>
-
-                        <div id="real_form_wrapper" class="hidden">
-                            <form action="{{ app_path }}" method="post" id="login_form">{% csrf_token %}
-                                <table>
-                                    <tr>
-                                        <td colspan="3">
-                                            {% if form.errors or form.non_field_errors() %}
-                                                <div class="errornote">
-                                                    {% trans count=form.errors.items()|length() %}
-                                                        Please correct the error below:
-                                                    {% pluralize %}
-                                                        Please correct the errors below:
-                                                    {% endtrans %}
-                                                </div>
-                                            {% else %}
-                                                <div class="login_help_text">{{ _('Please enter your authentification credentials:') }}</div>
-                                            {% endif %}
-
-                                            {% if form.non_field_errors() %}
-                                                {% for error in form.non_field_errors() %}
-                                            <div class="errornote error_message">
-                                                {{ error }}
-                                            </div>
-                                                {% endfor %}
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                    <tr class="form-row-td">
-                                        <td>
-                                            {% set add_class = 'error_div' if form.username.errors else '' %}
-                                              <div class="form-row {{add_class}}">
-                                                    {% if form.username.errors %}
-                                                        {{ form.username.errors }}<br />
-                                                    {% endif %}
-                                                <label for="id_username" class="required">{{ _('Login:') }}</label> {{ form.username }}
-                                              </div>
-                                        </td>
-                                        <td>
-                                          {% set add_class = 'error_div' if form.password.errors else '' %}
-                                          <div class="form-row {{add_class}}">
-                                                {% if form.password.errors %}
-                                                    {{ form.password.errors }}<br />
-                                                {% endif %}
-                                            <label for="id_password" class="required">{{ _('Password:') }}</label> {{ form.password }}
-                                        </td>
-                                        <td>
-                                            <input type="hidden" name="this_is_the_login_form" value="1" />
-                                            {#- we need to replace * occurences of '/ident_success/',
-                                                which get appended when the user fails (or forgets) at
-                                                typing his/her password. -#}
-                                            <input type="hidden" name="next" value="{{ next }}" />
-                                          </div>
-                                          <div class="submit-row">
-                                            <input type="submit" id="login_form_submit" value="{{ _('Enter') }}" />
-                                          </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </form>
-                        </div>
-                    </div>
-                </div><!-- content_filler -->
-            </div><!-- content -->
-        <!--</div>-->
-    </div><!-- vertical_wrapper -->
-{% endblock %}
-
 {%- block container -%}
 <div class="row">
 	<h1>{{ _('Welcome to share <em>{0}</em>').format(share.name) }}</h1>
@@ -114,18 +35,32 @@
 
 	{%- if contents_numbers.files -%}
 
-	<p>{{ _('Click on a filename to download it to your computer:') }}</p>
+	<p>&nbsp;</p>
+	<p class="span8 offset2">{{ _('Click on a filename to download it to your computer:') }}</p>
 
 		{%- set contents = share.contents(with_paths=True) -%}
-		<ul>
+		<div class="span8 offset2">
+		<table class="table table-striped">
+			<tr>
+				<th>{{_('File name')}}</th>
+				<th>{{_('Type')}}</th>
+				<th>{{_('Size')}}</th>
+				<th>{{_('Last modified')}}</th>
+			</tr>
+
 			{%- for filename in contents.files -%}
 				{%- set infos     = share.file_informations(filename) -%}
 				{%- set pub_fname = filename.replace(share.path, '')[1:] -%}
-				<li><i class="icon-file"></i> <a href="{{ url_for('wmi.shares.views.download', args=share.name.split('/') + [pub_fname])}}">{{ pub_fname }}</a> ({# not yet: infos.mimetype #}{{ bytes_to_human(infos.size) }}, {{ _('last modified: {0}').format(format_time_delta(infos.mtime, use_neg=True))}})</li>
+				<tr>
+					<td><i class="icon-file"></i> <a href="{{ url_for('wmi.shares.views.download', args=share.name.split('/') + [pub_fname])}}">{{ pub_fname }}</a></td>
+					<td>{{ infos.mimetype }}</td>
+					<td>{{ bytes_to_human(infos.size) }}</td>
+					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
+				</tr>
 
 			{%- endfor -%}
-		</ul>
-
+		</table>
+		</div>
 	{%- else -%}
 
 		<div class="span12">&nbsp;</div>

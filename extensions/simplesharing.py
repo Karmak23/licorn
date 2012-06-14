@@ -10,7 +10,7 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time
+import os, stat, time, mimetypes
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events
@@ -26,6 +26,9 @@ from licorn.foundations.constants import services, svccmds, distros
 from licorn.core                  import LMC
 from licorn.core.users            import User
 from licorn.extensions            import LicornExtension
+
+# Just to be sure it is done.
+mimetypes.init()
 
 class SimpleShare(PicklableObject):
 	""" Object representing a share. It count contents, change password, shows
@@ -198,7 +201,7 @@ class SimpleShare(PicklableObject):
 		return {
 			'size'     : fstat.st_size,
 			# not yet ready.
-			#'mimetype' : …,
+			'mimetype' : mimetypes.guess_type(filename)[0] or _('Unknown'),
 			'mtime'    : fstat.st_mtime - curtime,
 			'ctime'    : fstat.st_ctime - curtime,
 		}
