@@ -236,8 +236,15 @@ class ModulesManager(LockedController):
 
 			if not_manually_ignored(module.name):
 
+				LicornEvent('%s_%s_loads' % (
+									self.module_type, module_name),
+							synchronous=True).emit()
+
 				try:
 					module.load(server_modules=server_side_modules)
+
+					LicornEvent('%s_%s_loaded' % (
+									self.module_type, module_name)).emit()
 
 				except Exception, e:
 					# an uncatched exception occured, the module is buggy or
@@ -249,10 +256,8 @@ class ModulesManager(LockedController):
 						modules_dependancies.keys()
 							if module_name in modules_dependancies[m]]
 
-					logging.exception(_(u'{0}: unhandled exception {1} in '
-									u'{2} {3} during load.'),
-							self.pretty_name, (ST_COMMENT, e),
-							self.module_type, (ST_NAME, module_name))
+					logging.exception(_(u'{0}: Exception in {1} {2} during load'),
+						self.pretty_name, self.module_type, (ST_NAME, module_name))
 
 					if r_depended:
 						depended_disabled_modules.extend(r_depended)
