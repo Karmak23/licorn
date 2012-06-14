@@ -48,7 +48,7 @@ def notify(message, timeout=None, css_class=None):
 	assert ltrace_func(TRACE_DJANGO)
 
 	return format_RPC_JS('show_message_through_notification', message,
-							out or u'', css_class or u'')
+											timeout or u'', css_class or u'')
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -71,10 +71,12 @@ def download_response(filename):
 
 	wrapper  = FileWrapper(file(filename))
 	mtype    = mimetypes.guess_type(filename)[0]
-	response = HttpResponse(wrapper, content_type=mtype or 'application/octet-stream')
+	response = HttpResponse(wrapper,
+							content_type=mtype or 'application/octet-stream')
 
 	response['Content-Length']      = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format('Custom_export')
+	response['Content-Disposition'] = 'attachment; filename={0}'.format(
+													os.path.basename(filename))
 
 	return response
 
