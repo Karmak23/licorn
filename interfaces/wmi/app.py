@@ -538,12 +538,12 @@ class WmiEventApplication(ObjectSingleton):
 				threads[collector_name].add_listener(q)
 
 			except KeyError:
-				logging.warning(_('Cannot setup collector {0}.').format(collector_name))
+				logging.warning(_(u'Cannot setup collector {0}.').format(collector_name))
 
 		if request.session.get('not_yet_welcomed', True):
 			# a kind of welcome message
 			wmi_event_app.queue(request).put(
-				utils.notify(_('Welcome to Licorn® WMI, {0}.').format(
+				utils.notify(_(u'Welcome to Licorn® WMI, {0}.').format(
 										request.user.username)), 3500)
 			request.session['not_yet_welcomed'] = False
 
