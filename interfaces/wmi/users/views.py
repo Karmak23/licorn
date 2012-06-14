@@ -183,15 +183,15 @@ def massive(request, uids, action, *args, **kwargs):
 
 		_type = kwargs.get('type', False)
 
-		selected_uids = tuple(int(u) for u in uids.split(','))
+		selected_uids = [int(u) for u in uids.split(',')]
 
 		if _type.lower() == 'csv':
 			export = LMC.users.ExportCSV(selected=selected_uids)
 			extension = '.csv'
 
 		else:
-			export = LMC.users.to_XML(selected=tuple(LMC.users.by_uid(u)
-													for u in selected_uids))
+			export = LMC.users.to_XML(selected=[LMC.users.by_uid(u)
+													for u in selected_uids])
 			extension = '.xml'
 
 		export_handler, export_filename = tempfile.mkstemp(suffix=extension,

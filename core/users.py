@@ -1126,7 +1126,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return self.__is_system
 
 	def to_XML(self):
-		""" return user as xml data 
+		""" return user as xml data
 		minimum : login;uid;prigroup;gecos;memberships;backend """
 
 		groups = []
@@ -1147,7 +1147,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			<homeDirectory>%s</homeDirectory>
 			<loginShell>%s</loginShell>
 			<backend>%s</backend>
-			<memberships>%s<memberships>
+			<groups>%s</groups>
 		</user>''' % (
 						self.__login,
 						self.__uidNumber,
@@ -1823,7 +1823,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			return data
 	def get_CSV_data(self, selected=None, long_output=False):
-		""" return the user accounts list ready to be parsed by python csv module. 
+		""" return the user accounts list ready to be parsed by python csv module.
 			login;uid;prigroup;gecos;memberships;backend
 		"""
 
@@ -1840,15 +1840,15 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						groups.append(g.name)
 
 
-				csv_data.append([ 
+				csv_data.append([
 					user.login,
 					user.uid,
 					user.primary_group,
 					user.gecos,
 					','.join(groups),
-					user.backend.name	
+					user.backend.name
 				])
-				
+
 			return csv_data
 	def ExportCSV(self, selected=None, long_output=False):
 		""" Export the user accounts list to CSV. """
