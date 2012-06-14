@@ -191,8 +191,6 @@ def index(request, *args, **kwargs):
 
 			]
 
-
-
 		_dict.update({
 				'main_content_template' : 'system/index_main_nostaff.html',
 				'sub_content_template'  : 'system/index_sub_nostaff.html',
@@ -212,47 +210,6 @@ def status(request, *args, **kwargs):
 
 	# request, session,
 	return render_to_response('system/status.html')
-
-@login_required
-def test(request):
-
-	if not settings.DEBUG:
-		return HttpResponseForbidden('TESTS DISABLED.')
-
-	# notice the utils.select() instead of LMC.rwi.select().
-	# arguments are *exactly* the same (they are mapped via *a and **kw).
-	user = LMC.select('users', args=[ 1001 ])[0]
-
-	# store it locally to 'see' the change. attributes are read remotely.
-	g = user.gecos
-
-	# this should be done remotelly, and will imply a notification feedback from licornd.
-	user.gecos = 'test'
-
-	users = LMC.select('users', default_selection = filters.STANDARD)
-
-	# a small HttpResponse to "see" the change.
-	response = ''
-	for user in users:
-		g = user.gecos
-		response += 'gecos = %s -> %s <br /> profile: %s <br />groups: %s' % (
-			g, user.gecos, user.profile,
-			', '.join(x.name for x in user.groups))
-
-	return HttpResponse(response)
-
-@staff_only
-def main(request, sort="name", order="asc", select=None, **kwargs):
-
-	extensions = [e for e in LMC.extensions ]
-
-	system_users_list = LMC.users.select(filters.SYSTEM)
-
-	return render(request, 'users/index.html', {
-			'users_list'        : users_list,
-			'system_users_list' : system_users_list,
-			'is_super_user'     : request.user.is_superuser,
-		})
 
 @staff_only
 def shutdown(request, reboot=False):
@@ -283,13 +240,10 @@ def shutdown_all_cancel(request):
 	#wmi_event_app.enqueue_operation(request, 'LMC.system.shutdown_all_cancel')
 
 	return HttpResponse('Shutdown CANCEL!')
-
-
+@login_required
 def view_groups(request):
 	""" return the html table groups for the currently logged in user """
-	print "vgroups"
 	user = LMC.users.by_login(str(request.user))
-	print user
 
 	resps     = []
 	guests    = []
