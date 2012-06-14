@@ -180,22 +180,28 @@ def massive(request, uids, action, *args, **kwargs):
 			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
 
 	if action == 'export':
-		_type = kwargs.get('type', False)
-		if _type.lower() == 'csv':
-			export = LMC.users.ExportCSV(selected=[ int(u) for u in uids.split(',')])
-			extension = 'csv'
-		else:
-			export = LMC.users.to_XML(selected=[ LMC.users.by_uid(int(u)) for u in uids.split(',')])
-			extension = 'xml'
 
-		export_handler, export_filename = tempfile.mkstemp('.%s' % extension)
+		_type = kwargs.get('type', False)
+
+		selected_uids = [int(u) for u in uids.split(',')]
+
+		if _type.lower() == 'csv':
+			export = LMC.users.ExportCSV(selected=selected_uids)
+			extension = '.csv'
+
+		else:
+			export = LMC.users.to_XML(selected=[LMC.users.by_uid(u)
+													for u in selected_uids])
+			extension = '.xml'
+
+		export_handler, export_filename = tempfile.mkstemp(suffix=extension,
+															prefix='export_')
 
 		for chunk in export:
-			export_handler.write(chunk)
-		export_handler.close()
+			os.write(export_handler, chunk)
+		os.close(export_handler)
 
 		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
-
 
 	return HttpResponse('MASSIVE DONE.')
 
