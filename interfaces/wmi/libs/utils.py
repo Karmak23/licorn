@@ -53,7 +53,10 @@ def notify(message, timeout=None, css_class=None):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	return format_RPC_JS('show_message_through_notification', message, timeout or u'', css_class or u'')
+	# we use str() in case the message is currently unicode (and ALL our
+	# internal strings ARE unicode :-D
+	return format_RPC_JS('show_message_through_notification', str(message),
+											timeout or u'', css_class or u'')
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
