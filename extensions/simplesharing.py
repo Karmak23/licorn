@@ -415,6 +415,12 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		#self.paths.group_share_dir = 'Public'
 		self.paths.disabler        = 'noshares.please'
 
+		# Nothing to do in client mode. Anyway the WMI is not started on the
+		# clients and this extension is mostly all about the WMI part, but
+		# in any case we do not activate it on the clients, this will lower
+		# memory footprint :-)
+		self.server_only = True
+
 		# a comfort shortcut
 		SimpleSharingUser.ssext = self
 
