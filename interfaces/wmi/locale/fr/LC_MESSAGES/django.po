@@ -8,14 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-30 15:26+0200\n"
-"PO-Revision-Date: 2012-03-04 17:23+0100\n"
+"POT-Creation-Date: 2012-06-15 11:04+0200\n"
+"PO-Revision-Date: 2012-06-15 11:00+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
-"Language-Team: français <>\n"
+"Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bits\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
 #: app.py:119
@@ -56,9 +56,10 @@ msgid "PUSH-stream force-close for user {0} (session {1})"
 msgstr "Fermeture forcée du flux PUSH pour l'utilisateur {0} (session {1})"
 
 #: app.py:365
-#, fuzzy
 msgid "Unexpected exception in Event handler {0}; continuing."
-msgstr "Erreur imprévue dans le gestionnaire d'évènement %s."
+msgstr ""
+"Erreur imprévue dans le gestionnaire d'évènement {0}; continuation des "
+"traitements."
 
 #: app.py:369
 msgid "No WMI handler yet for event \"{0}\"."
@@ -68,45 +69,47 @@ msgstr "Aucun gestionnaire pour l'évènement « {0} » dans la WMI."
 msgid "{0}: starting threads and collecting dynamic handlers."
 msgstr ""
 
-#: app.py:422
+#: app.py:423
 msgid "module {0} does not include a {1} dict in its {2} file!"
 msgstr ""
 
-#: app.py:433
+#: app.py:434
 msgid "Dynamic parts of module {0} cannot be loaded!"
 msgstr ""
 
-#: app.py:463
+#: app.py:464
 msgid "{0}: all threads started, ready to dispatch events."
 msgstr ""
 
-#: app.py:514
+#: app.py:515
 msgid "Manual PUSH-stream queue-flush for user {0} (session {1})"
 msgstr ""
+"Vidage manuel de la file d'attente du flux PUSH de l'utilisateur {0} "
+"(session {1})"
 
-#: app.py:540
+#: app.py:541
 msgid "Cannot setup collector {0}."
 msgstr "Impossible de configurer le collecteur {0}."
 
-#: app.py:545
+#: app.py:546
 msgid "Welcome to Licorn® WMI, {0}."
 msgstr "Bienvenue dans la WMI Licorn®, {0}."
 
-#: app.py:557
+#: app.py:558
 #, fuzzy
 msgid "{0}: stopping operator threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:561
+#: app.py:562
 #, fuzzy
 msgid "{0}: stopping helper threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:565
+#: app.py:566
 msgid "{0}: all thread stopped."
 msgstr ""
 
-#: app.py:593
+#: app.py:594
 msgid "Sorry, the {0} functionnality is not yet implemented."
 msgstr ""
 
@@ -114,57 +117,57 @@ msgstr ""
 msgid "Backup extension disabled by someone else, quitting page."
 msgstr ""
 
-#: backup/event_handlers.py:52
+#: backup/event_handlers.py:54
 msgid "Volume {0} reserved for Licorn® usage."
 msgstr "Volume {0} réservé pour Licorn®."
 
-#: backup/event_handlers.py:56
+#: backup/event_handlers.py:60
 msgid "Volume {0} un-reserved for Licorn® usage."
 msgstr "Volume {0} libéré par Licorn®."
 
-#: backup/event_handlers.py:60
+#: backup/event_handlers.py:66
 msgid "Volume {0} added on the system."
 msgstr "Volume « {0} » ajouté sur le système."
 
-#: backup/event_handlers.py:66
+#: backup/event_handlers.py:74
 msgid "Volume {0} removed from the system."
 msgstr "VOlume « {0} » supprimé du système."
 
-#: backup/event_handlers.py:70
+#: backup/event_handlers.py:80
 msgid "Volume {0} mounted."
 msgstr "Volume {0} monté."
 
-#: backup/event_handlers.py:74
+#: backup/event_handlers.py:86
 msgid "Volume {0} unmounted."
 msgstr "Volume {0} démonté."
 
-#: backup/event_handlers.py:78
+#: backup/event_handlers.py:91
 msgid "Backup started on volume {0}."
 msgstr "Sauvegarde démarrée sur le volume {0}."
 
-#: backup/event_handlers.py:82
+#: backup/event_handlers.py:98
 msgid "Backup ended on volume {0}."
 msgstr "Sauvegarde terminée sur le volume {0}."
 
-#: backup/event_handlers.py:86
+#: backup/event_handlers.py:105
 msgid "Backup statistics computation started on volume {0}."
 msgstr "Calcul des statistiques démarré sur le volume {0}."
 
-#: backup/event_handlers.py:90
+#: backup/event_handlers.py:112
 msgid "Backup statistics computation ended on volume {0}."
 msgstr "Calcul des statistiques de sauvegarde terminé sur le volume {0}."
 
-#: backup/forms.py:7
+#: backup/forms.py:7 shares/forms.py:7
 msgid "Force a backup to be run even if the last is recent."
-msgstr ""
+msgstr "Forcer une sauvegarde même si la dernière est récente."
 
 #: backup/views.py:73
 msgid "Could not start backup on {0} (was: {1})"
-msgstr ""
+msgstr "Impossible de démarrer la sauvegarde sur {0} (erreur : {1})"
 
 #: backup/views.py:90
 msgid "Could not enable volume {0} (was: {1})"
-msgstr ""
+msgstr "Impossible de réserver le volume {0} (erreur : {1})"
 
 #: backup/views.py:107
 msgid "Unhandled exception while unmounting volume {0}"
@@ -172,26 +175,27 @@ msgstr ""
 
 #: backup/views.py:110
 msgid "Could not eject volume {0} (was: {1})"
-msgstr ""
+msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 
 #: backup/views.py:133
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
-#: groups/event_handlers.py:12 templates/groups/users_list.html:64
-#: templates/users/groups_list.html:43 users/views.py:364
+#: groups/event_handlers.py:12 system/views.py:170 system/views.py:351
+#: templates/groups/users_list.html:64 templates/users/groups_list.html:43
+#: users/views.py:386
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:13 groups/views.py:214
-#: templates/groups/users_list.html:59 templates/users/groups_list.html:38
-#: users/views.py:369
+#: groups/event_handlers.py:13 groups/views.py:234 system/views.py:176
+#: system/views.py:357 templates/groups/users_list.html:59
+#: templates/users/groups_list.html:38 users/views.py:391
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:14 groups/views.py:204
-#: templates/groups/users_list.html:68 templates/users/groups_list.html:47
-#: users/views.py:359
+#: groups/event_handlers.py:14 groups/views.py:224 system/views.py:164
+#: system/views.py:345 templates/groups/users_list.html:68
+#: templates/users/groups_list.html:47 users/views.py:381
 msgid "responsible"
 msgstr "responsable"
 
@@ -260,47 +264,47 @@ msgstr ""
 msgid "Error while changing group permissiveness {0}: {1}."
 msgstr "Erreur lors de l'ajout du compte {0} : {1."
 
-#: groups/views.py:155
+#: groups/views.py:175
 msgid "Error while modifying group {0}: {1}."
 msgstr ""
 
-#: groups/views.py:188
+#: groups/views.py:208
 msgid "Error while adding group {0}: {1}."
 msgstr ""
 
-#: groups/views.py:203
+#: groups/views.py:223
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: groups/views.py:208 groups/views.py:219
+#: groups/views.py:228 groups/views.py:239
 msgid "Members"
 msgstr "Membres"
 
-#: groups/views.py:209
+#: groups/views.py:229
 msgid "standard"
 msgstr "standard"
 
-#: groups/views.py:213
+#: groups/views.py:233
 msgid "Guests"
 msgstr "Invité(e)s"
 
-#: groups/views.py:266
+#: groups/views.py:286
 msgid "Edit group {0}"
 msgstr "Édition du groupe {0}"
 
-#: groups/views.py:270
+#: groups/views.py:290
 msgid "Add new group"
 msgstr "Ajouter un groupe"
 
-#: groups/views.py:277
+#: groups/views.py:297
 msgid "Standard users"
 msgstr "Utilisateurs standards"
 
-#: groups/views.py:285 templates/users/index.html:46
+#: groups/views.py:305 templates/users/index.html:47
 msgid "System users"
 msgstr "Utilisateurs système"
 
-#: libs/licornd_auth.py:72
+#: libs/licornd_auth.py:76
 msgid "Exception while trying to authenticate user {0}"
 msgstr ""
 
@@ -425,7 +429,7 @@ msgstr "Interface web de gestion %s"
 
 #: libs/old_utils.py:82
 msgid "Command must be a list or tuple!"
-msgstr ""
+msgstr "La commande doit être une liste ou un tuple !"
 
 #: libs/old_utils.py:108
 #, python-format
@@ -500,7 +504,7 @@ msgstr "Redémarrer"
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: libs/old_utils.py:525 templates/users/index.html:25
+#: libs/old_utils.py:525 templates/users/index.html:26
 msgid "Users"
 msgstr "Utilisateurs"
 
@@ -517,7 +521,7 @@ msgstr "Importer"
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: libs/old_utils.py:527 templates/groups/index.html:25
+#: libs/old_utils.py:527 templates/groups/index.html:26
 msgid "Groups"
 msgstr "Groupes"
 
@@ -551,12 +555,12 @@ msgstr "Support"
 #: libs/old_utils.py:564
 #, python-format
 msgid "%s Management"
-msgstr ""
+msgstr "Administration %s"
 
 #: libs/old_utils.py:593
 #, python-format
 msgid "%s WMI:"
-msgstr ""
+msgstr "WMI %s :"
 
 #: libs/old_utils.py:608
 #, python-format
@@ -601,11 +605,11 @@ msgstr ""
 msgid "You cannot delete privileged group {0} !"
 msgstr ""
 
-#: libs/utils.py:143
+#: libs/utils.py:156
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:148
+#: libs/utils.py:161
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -690,32 +694,121 @@ msgstr ""
 msgid "The type of the machine is unknown"
 msgstr ""
 
-#: system/event_handlers.py:19
+#: shares/views.py:53
+msgid "Could not toggle simple shares status to {0} for user {1}"
+msgstr ""
+
+#: shares/views.py:56
+msgid "Could not toggle shares status to {0} for user {1} (was: {2})."
+msgstr ""
+
+#: shares/views.py:94
+msgid "Could not change password of share {0} (user {1})"
+msgstr ""
+
+#: shares/views.py:97
+msgid "Could not change the password of you share {0} (was: {1})."
+msgstr ""
+
+#: shares/views.py:116
+msgid "This user has no visible shares."
+msgstr "Cet utilisateur n'a pas de partages publics."
+
+#: shares/views.py:124
+msgid "This share has expired. It is no more available."
+msgstr "Ce partage a expiré, il n'est plus disponible."
+
+#: shares/views.py:130
+msgid "No Web share at this URI, sorry."
+msgstr "Aucun partage à cette adresse, désolé."
+
+#: shares/views.py:146
+msgid "Uploaded files are not downloadable."
+msgstr ""
+
+#: shares/views.py:153 system/views.py:261
+msgid "Error while sending file {0}"
+msgstr "Erreur pendant l'envoi du fichier {0}"
+
+#: shares/views.py:155 system/views.py:263
+msgid "Problem occured while sending file. Please try again later."
+msgstr ""
+"Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
+"tard."
+
+#: shares/views.py:159 system/views.py:267
+msgid "Bad file specification or path."
+msgstr "Mauvais chemin ou spécification de fichier."
+
+#: shares/views.py:162
+msgid "Not implemented yet, sorry."
+msgstr ""
+
+#: system/event_handlers.py:22
 msgid ""
 "Licorn® daemon is restarting in the background. You will not be able to do "
 "anything in this interface until it is back to normal."
 msgstr ""
 
-#: system/event_handlers.py:40
+#: system/event_handlers.py:43
 msgid "System restart/shudown cancelled."
 msgstr "Arrêt/redémarrage du système annulé."
 
-#: system/event_handlers.py:83
-#, fuzzy
+#: system/event_handlers.py:86
 msgid "Licornd successfully started; Rock'n Roll again ;-)"
 msgstr "Licornd a redémarré ; la WMI est reconnectée ; Ça roxe de nouveau ;-)"
 
-#: system/views.py:68
+#: system/views.py:70
 msgid "unknown"
 msgstr "inconnu"
 
-#: system/views.py:129 users/views.py:266
+#: system/views.py:131 users/views.py:288
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
+#: system/views.py:162 system/views.py:343 users/views.py:380
+msgid "Responsibilities"
+msgstr "Responsabilités"
+
+#: system/views.py:168 system/views.py:349 users/views.py:385
+msgid "Memberships"
+msgstr "Appartenances"
+
+#: system/views.py:174 system/views.py:355 users/views.py:390
+msgid "Invitations"
+msgstr "Invitations"
+
+#: system/views.py:180 system/views.py:361 users/views.py:395
+msgid "Privileges"
+msgstr "Privilèges"
+
+#: system/views.py:182 system/views.py:363 users/views.py:396
+msgid "privileged member"
+msgstr "membre privilégié"
+
+#: system/views.py:186 system/views.py:367 users/views.py:400
+msgid "Other system groups"
+msgstr "Autres groupes système"
+
+#: system/views.py:188 system/views.py:369 users/views.py:401
+msgid "system member"
+msgstr "membre système"
+
 #: templates/404.html:17
 msgid "Page not found!"
-msgstr ""
+msgstr "Page non trouvée !"
+
+#: templates/base.bootstrap.html:24
+msgid "Licorn&reg;: "
+msgstr "Licorn&reg; :"
+
+#: templates/base.bootstrap.html:39
+msgid "Licorn&reg;: efficient system management"
+msgstr "Licorn&reg; : administration système efficace"
+
+#: templates/base.bootstrap.html:66
+msgid "All rights reserved."
+msgstr "Tous droits réservés."
 
 #: templates/base.html:6
 msgid "Licorn® WMI: "
@@ -733,7 +826,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:86
+#: templates/login.html:86 templates/shares/parts/share-view.html:52
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -750,11 +843,11 @@ msgstr "Bienvenue sur l'interface web de gestion de Licorn&reg;"
 msgid "Image representing a unicorn, the logo of Licorn®."
 msgstr ""
 
-#: templates/sidebar.html:177
+#: templates/sidebar.html:191
 msgid "Log out from the Licorn® WMI"
 msgstr "Se déconnecter de la WMI Licorn®"
 
-#: templates/sidebar.html:177
+#: templates/sidebar.html:191
 msgid "logout"
 msgstr "quitter"
 
@@ -762,71 +855,70 @@ msgstr "quitter"
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: templates/backup/index_main.html:81
+#: templates/backup/index_main.html:83
 msgid "Volume {0}"
 msgstr "Volume {0}"
 
-#: templates/backup/index_main.html:98
+#: templates/backup/index_main.html:100
 msgid "Backup history on {0}"
 msgstr "Historique des sauvegardes sur {0}"
 
-#: templates/backup/index_main.html:164
+#: templates/backup/index_main.html:166
 msgid "use volume “{0}”"
 msgstr "utiliser le volume « {0} »"
 
-#: templates/backup/index_main.html:176
+#: templates/backup/index_main.html:178
 msgid "device: <strong>{0}</strong>,"
 msgstr "périphérique : <strong>{0}</strong>,"
 
-#: templates/backup/index_main.html:177
+#: templates/backup/index_main.html:179
 msgid "GUID: {0}"
 msgstr ""
 
-#: templates/backup/index_main.html:178
+#: templates/backup/index_main.html:180
 msgid "FS type: <strong>{0}</strong>"
 msgstr "Système de fichiers : <strong>{0}</strong>"
 
-#: templates/backup/rundialog.html:3
-#, fuzzy
+#: templates/backup/rundialog.html:6
 msgid "Run an incremental backup?"
-msgstr "Lancer une sauvegarde manuellement"
+msgstr "Lancer une sauvegarde incrémentale ?"
 
-#: templates/backup/widgets.html:6
+#: templates/backup/widgets.html:8 templates/shares/widgets.html:6
 msgid "Last backup age on this volume:"
 msgstr "Âge de la dernière sauvegarde sur ce volume :"
 
-#: templates/backup/widgets.html:11
+#: templates/backup/widgets.html:13 templates/shares/widgets.html:11
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu."
 
-#: templates/backup/widgets.html:26
+#: templates/backup/widgets.html:28 templates/shares/widgets.html:26
 msgid "Operation in progress icon"
 msgstr ""
 
-#: templates/backup/widgets.html:53
+#: templates/backup/widgets.html:55 templates/shares/widgets.html:53
 msgid "Eject device icon"
 msgstr ""
 
-#: templates/backup/widgets.html:69
+#: templates/backup/widgets.html:71 templates/shares/widgets.html:69
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: templates/backup/widgets.html:89
+#: templates/backup/widgets.html:91
 msgid "An error occured while computing space needed for next backup."
 msgstr ""
 
-#: templates/backup/widgets.html:120
+#: templates/backup/widgets.html:122
 #, fuzzy
 msgid "<strong>{0}</strong>"
 msgstr "périphérique : <strong>{0}</strong>,"
 
-#: templates/backup/widgets.html:124
+#: templates/backup/widgets.html:126
 msgid "(display log details)"
-msgstr ""
+msgstr "(afficher le journal)"
 
-#: templates/backup/widgets.html:129
+#: templates/backup/widgets.html:131
 msgid "(no details available)"
-msgstr ""
+msgstr "(pas d'information supplémentaire disponible)"
 
 #: templates/groups/delete_message.html:3
 msgid "Are you sure you want to remove group <strong>{0}</strong>?"
@@ -840,7 +932,7 @@ msgstr "Cependant, vous pouvez décider de les supprimer définitivement."
 msgid "Definitely remove group shared data (no archiving)."
 msgstr "Supprimer définitivement les données partagées (aucun archivage)."
 
-#: templates/groups/group.html:17 templates/system/index_main_nostaff.html:15
+#: templates/groups/group.html:17 templates/system/index_main_nostaff.html:16
 #: templates/users/user.html:17
 msgid "(fixed)"
 msgstr "(non-modifiable)"
@@ -869,11 +961,11 @@ msgstr ""
 msgid "Delete group {0}"
 msgstr "Supprimer le groupe {0}"
 
-#: templates/groups/index.html:16
+#: templates/groups/index.html:17
 msgid "Groups management"
 msgstr "Gestion des groupes"
 
-#: templates/groups/index.html:47 users/views.py:289
+#: templates/groups/index.html:48 users/views.py:311
 msgid "System groups"
 msgstr "Groupes système"
 
@@ -896,7 +988,7 @@ msgstr "Groupe {0}"
 msgid "Name (GID)"
 msgstr "Nom (GID)"
 
-#: templates/groups/view.html:11 templates/users/view.html:49
+#: templates/groups/view.html:11 templates/users/view_groups.html:8
 msgid "Description"
 msgstr "Description"
 
@@ -912,7 +1004,7 @@ msgstr "Permissif"
 msgid "Not Permissive"
 msgstr "Non permissif"
 
-#: templates/groups/view.html:36 templates/users/view.html:12
+#: templates/groups/view.html:36 templates/users/view.html:13
 #: users/forms.py:55
 msgid "Full name"
 msgstr "Nom complet"
@@ -948,6 +1040,214 @@ msgstr "Cliquez pour éditer la machine {0}"
 #: templates/machines/machine_row.html:42
 msgid "Shutdown this machine now."
 msgstr "Éteindre cette machine maintenant."
+
+#: templates/shares/index.html:6 templates/shares/index_main.html:51
+msgid "My web shares"
+msgstr "Mes partages web"
+
+#: templates/shares/index_main.html:57 templates/users/view_groups.html:9
+msgid "Name"
+msgstr "Nom"
+
+#: templates/shares/index_main.html:58
+msgid "Actual contents"
+msgstr "Contenu actuel"
+
+#: templates/shares/index_main.html:59
+msgid "Writable"
+msgstr "Dépôt autorisé"
+
+#: templates/shares/index_main.html:60
+msgid "Expires"
+msgstr "Expire"
+
+#: templates/shares/index_main.html:68
+msgid ""
+"You can manage files in your shares with your prefered file-manager: "
+"<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
+"code> on Windows and <code>Finder</code> on a Mac."
+msgstr ""
+"Vous pouvez gérer le contenu de vos partages avec votre gestionnaire de "
+"fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
+"<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
+
+#: templates/shares/index_main.html:72
+msgid "No web share"
+msgstr "Pas de partage web"
+
+#: templates/shares/index_main.html:74
+msgid ""
+"You do not have any share yet. You can start one easily by making a new "
+"directory in \"~/Public/\" (just create it if it does not exist)."
+msgstr ""
+"Vous n'avez aucun partage pour l'instant. Vous pouvez en démarrer un "
+"simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
+"Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
+
+#: templates/shares/index_main.html:81
+msgid ""
+"You can <a href=\"{0}\">disable web shares</a> for your account at any "
+"moment."
+msgstr ""
+"Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
+"compte à n'importe quel moment."
+
+#: templates/shares/index_main.html:87
+msgid "Web shares turned off"
+msgstr "Partages web désactivés"
+
+#: templates/shares/index_main.html:88
+msgid ""
+"You (or someone else) disabled the web sharing feature for your account. You "
+"can <a href=\"{0}\">enable them again</a> at any moment."
+msgstr ""
+"Vous (ou quelqu'un d'autre) avez désactivé la fonctionnalité de partage web "
+"pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
+"n'importe quel moment."
+
+#: templates/shares/index_main.html:92
+msgid ""
+"If you want to manually re-enable them, just remove the file named <code>{0}"
+"</code>. This has exactly the same effect."
+msgstr ""
+"Pour les réactiver manuellement, supprimez simplement le fichier <code>{0}</"
+"code>. C'est exactement le même effet."
+
+#: templates/shares/serve-share.html:7
+msgid "Web share {0}"
+msgstr "Partage web {0}"
+
+#: templates/shares/serve-share.html:18
+msgid "Configure your share &raquo;"
+msgstr "Configurer ce partage &raquo;"
+
+#: templates/shares/serve-share.html:23
+msgid "Welcome to share <em>{0}</em>"
+msgstr "Bienvenue sur le partage <em>{0}</em>"
+
+#: templates/shares/serve-share.html:31
+msgid "Uploaded documents"
+msgstr "Documents déposés"
+
+#: templates/shares/serve-share.html:34
+msgid "Upload a document &raquo;"
+msgstr "Déposer un document &raquo;"
+
+#: templates/shares/serve-share.html:38
+msgid "Contains {0} uploaded documents"
+msgstr "Contient {0} document(s) déposé(s)"
+
+#: templates/shares/serve-share.html:40
+msgid "No documents uploaded"
+msgstr "Pas de document déposé"
+
+#: templates/shares/serve-share.html:53
+msgid "Click on a filename to download it to your computer:"
+msgstr "Cliquez sur le nom d'un fichier pour le télécharger :"
+
+#: templates/shares/serve-share.html:59
+msgid "File name"
+msgstr "Nom de fichier"
+
+#: templates/shares/serve-share.html:60
+msgid "Size"
+msgstr "Taille"
+
+#: templates/shares/serve-share.html:61
+msgid "Last modified"
+msgstr "Dernière modification"
+
+#: templates/shares/serve-share.html:62
+msgid "Type"
+msgstr "Type"
+
+#: templates/shares/serve-share.html:84
+msgid "No shared document"
+msgstr "Aucun document déposé"
+
+#: templates/shares/serve-share.html:85
+msgid ""
+"Ask the person who sent you here to populate his share directory. Perhaps he "
+"has forgotten?"
+msgstr ""
+"Demandez à la personne qui vous a envoyé(e) à cette adresse de remplir son "
+"répertoire de partage."
+
+#: templates/shares/parts/gettext.html:4
+msgid "My shares"
+msgstr "Mes partages web"
+
+#: templates/shares/parts/share-view.html:5
+msgid "Full path on the Licorn&reg; server: {0}"
+msgstr "Chemin complet sur le serveur Licorn&reg; : {0}"
+
+#: templates/shares/parts/share-view.html:9
+msgid ""
+"Display the share as your visitors see it, from the web address you can give "
+"to them."
+msgstr ""
+"Afficher le partage tel que le voient les visiteurs, depuis l'adresse web "
+"publique que vous pouvez d'ailleurs leur transmettre"
+
+#: templates/shares/parts/share-view.html:10
+msgid "public view"
+msgstr "vue publique"
+
+#: templates/shares/parts/share-view.html:16
+msgid "{0} file(s)"
+msgstr "{0} fichier(s)"
+
+#: templates/shares/parts/share-view.html:19
+msgid "Nothing to share"
+msgstr "Rien à partager"
+
+#: templates/shares/parts/share-view.html:29
+msgid "{0} uploaded file(s)"
+msgstr "{0} fichier(s) déposé(s)"
+
+#: templates/shares/parts/share-view.html:32
+msgid "Nothing uploaded"
+msgstr "Aucun dépôt"
+
+#: templates/shares/parts/share-view.html:41
+msgid ""
+"Can visitors upload documents to this share? Activating this feature "
+"requires setting a password on it (you will be prompted upon activation)."
+msgstr ""
+"Les visiteurs peuvent-ils déposer des documents dans ce partage ? Ceci "
+"nécessite la définition d'un mot de passe pour le partage (il vous sera "
+"demandé à l'activation)."
+
+#: templates/shares/parts/share-view.html:48
+msgid ""
+"Please choose a password to protect this share against anonymous uploads."
+msgstr ""
+"Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
+"anonymes."
+
+#: templates/shares/parts/share-view.html:54
+msgid "SET button"
+msgstr ""
+
+#: templates/shares/parts/share-view.html:57
+msgid "Verify:"
+msgstr "Vérification :"
+
+#: templates/shares/parts/share-view.html:62
+msgid "password_status_JS"
+msgstr ""
+
+#: templates/shares/parts/share-view.html:66
+msgid ""
+"Note: you will not be able to see or recover the password once it is set, "
+"because it is stored encrypted. You will only be able to change it."
+msgstr ""
+"Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
+"le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
+
+#: templates/shares/parts/share-view.html:130
+msgid "never"
+msgstr "jamais"
 
 #: templates/system/daemon_status_main.html:8
 msgid "Daemon status"
@@ -1078,9 +1378,13 @@ msgstr "État du système"
 msgid "Up and running since"
 msgstr "Démarré depuis"
 
-#: templates/system/index.html:13
+#: templates/system/index.html:16
 msgid "Server status"
 msgstr "État du serveur"
+
+#: templates/system/index.html:18
+msgid "My information"
+msgstr "Mes informations"
 
 #: templates/system/index_main.html:18
 msgid "System information"
@@ -1100,7 +1404,7 @@ msgstr "Aucune mémoire virtuelle installée."
 msgid "Virtual memory: %(swap).2fMb installed."
 msgstr "Mémoire virtuelle&nbsp;: %(swap).2fMo installés."
 
-#: templates/system/index_main_nostaff.html:6
+#: templates/system/index_main_nostaff.html:7
 msgid "My Informations"
 msgstr "Mes informations"
 
@@ -1124,7 +1428,7 @@ msgstr "Merci de sélectionner un fichier CSV d'où importer les comptes :"
 msgid "Test import"
 msgstr "Tester l'import"
 
-#: templates/users/index.html:16
+#: templates/users/index.html:17
 msgid "Users management"
 msgstr "Gestion des utilisateurs"
 
@@ -1181,80 +1485,84 @@ msgstr ""
 msgid "Delete user {0}"
 msgstr "Supprimer le compte {0}"
 
-#: templates/users/view.html:2
+#: templates/users/view.html:3
 msgid "User account {0}"
 msgstr "Compte utilisateur « {0} »"
 
-#: templates/users/view.html:7
+#: templates/users/view.html:8
 msgid "Login (UID)"
 msgstr "Identifiant (UID)"
 
-#: templates/users/view.html:8
+#: templates/users/view.html:9
 msgid "immutable"
 msgstr "non-modifiable"
 
-#: templates/users/view.html:16
+#: templates/users/view.html:17
 msgid "Profile (GID)"
 msgstr "Profil (GID)"
 
-#: templates/users/view.html:25
+#: templates/users/view.html:26
 msgid "Shell"
 msgstr "Interpréteur"
 
-#: templates/users/view.html:30
+#: templates/users/view.html:31
 msgid "Password parameters"
-msgstr ""
+msgstr "Paramètres du mot de passe"
 
-#: templates/users/view.html:50
-msgid "Name"
-msgstr "Nom"
-
-#: templates/users/view.html:51
-msgid "GID"
-msgstr "GID"
-
-#: templates/users/view.html:76
+#: templates/users/view_group_template.html:21
 msgid "Extensions WMI2 rendering not yet implemented"
 msgstr "Rendu graphique des extensions non implémenté dans la WMI2"
 
-#: templates/users/view.html:92
+#: templates/users/view_groups.html:10
+msgid "GID"
+msgstr "GID"
+
+#: templates/users/view_groups.html:25
 msgid "This user is not {0} of any group yet."
 msgstr "Cet utilisateur n'est encore {0} d'aucun groupe."
 
-#: templates/widgets/common.html:55 templates/widgets/common.html.py:58
+#: templates/widgets/common.html:18
+msgid "Yes"
+msgstr "Oui"
+
+#: templates/widgets/common.html:19
+msgid "No"
+msgstr "Non"
+
+#: templates/widgets/common.html:76 templates/widgets/common.html.py:79
 msgid "d"
-msgstr ""
+msgstr "j"
 
-#: templates/widgets/common.html:64 templates/widgets/common.html.py:67
+#: templates/widgets/common.html:85 templates/widgets/common.html.py:88
 msgid "h"
-msgstr ""
+msgstr "h"
 
-#: templates/widgets/common.html:73 templates/widgets/common.html.py:76
+#: templates/widgets/common.html:94 templates/widgets/common.html.py:97
 msgid "m"
-msgstr ""
+msgstr "m"
 
-#: templates/widgets/common.html:84 templates/widgets/common.html.py:87
+#: templates/widgets/common.html:105 templates/widgets/common.html.py:108
 msgid "s"
-msgstr ""
+msgstr "s"
 
-#: templates/widgets/common.html:155
+#: templates/widgets/common.html:176
 msgid "Mass actions:"
 msgstr "Actions massives :"
 
-#: templates/widgets/common.html:162
+#: templates/widgets/common.html:183
 msgid "Massive {0} icon"
 msgstr ""
 
-#: templates/widgets/common.html:163
+#: templates/widgets/common.html:184
 #, fuzzy
 msgid "Selected name massive {0}"
 msgstr "Supprimer le compte {0}"
 
-#: templates/widgets/common.html:187
+#: templates/widgets/common.html:208
 msgid "Click to sort on this column"
 msgstr "Cliquez pour classer sur cette colonne"
 
-#: templates/widgets/common.html:194
+#: templates/widgets/common.html:215
 msgid "Descending order image"
 msgstr ""
 
@@ -1292,35 +1600,35 @@ msgstr "Occupée :"
 
 #: templates/widgets/weeklybars.html:48
 msgid "Allowed activity periods"
-msgstr ""
+msgstr "Périodes d'actitivé autorisées"
 
 #: templates/widgets/weeklybars.html:66
 msgid "Mon."
-msgstr ""
+msgstr "Lun."
 
 #: templates/widgets/weeklybars.html:66
 msgid "Tue."
-msgstr ""
+msgstr "Mar."
 
 #: templates/widgets/weeklybars.html:66
 msgid "Wed."
-msgstr ""
+msgstr "Mer."
 
 #: templates/widgets/weeklybars.html:67
 msgid "Thu."
-msgstr ""
+msgstr "Jeu."
 
 #: templates/widgets/weeklybars.html:67
 msgid "Fri."
-msgstr ""
+msgstr "Ven."
 
 #: templates/widgets/weeklybars.html:67
 msgid "Sat."
-msgstr ""
+msgstr "Sam."
 
 #: templates/widgets/weeklybars.html:68
 msgid "Sun."
-msgstr ""
+msgstr "Dim."
 
 #: users/event_handlers.py:9
 msgid "Users import started, please wait while processing…"
@@ -1357,9 +1665,8 @@ msgid "Password changed for user account \"{0}\"."
 msgstr "Mot de passe changé pour le compte « {0} »."
 
 #: users/event_handlers.py:77
-#, fuzzy
 msgid "Skel reapplyed for for user account \"{0}\"."
-msgstr "Mot de passe changé pour le compte « {0} »."
+msgstr "Squelette ré-appliqué sur le compte « {0} »."
 
 #: users/event_handlers.py:83
 msgid "Shell of user account \"{0}\" was changed to \"{1}\"."
@@ -1405,54 +1712,39 @@ msgstr "Colonne de l'identifiant"
 msgid "Password column"
 msgstr "Colonne du mot de passe"
 
-#: users/views.py:227
-#, fuzzy
-msgid "Unable to add user {0}: {1}."
-msgstr "Erreur lors de l'ajout du compte {0} : {1."
+#: users/views.py:248
+msgid "Unable to add user"
+msgstr "Impossible d'ajouter l'utilisateur"
 
-#: users/views.py:271
+#: users/views.py:249
+msgid "Unable to add user {0}: {1}."
+msgstr "Erreur lors de l'ajout du compte {0} : {1}."
+
+#: users/views.py:293
 msgid "Add new user"
 msgstr "Ajouter un utilisateur"
 
-#: users/views.py:277
+#: users/views.py:299
 msgid "Standard groups"
 msgstr "Groupes standard"
 
-#: users/views.py:282
+#: users/views.py:304
 msgid "Privileged groups"
 msgstr "Privilèges"
 
-#: users/views.py:332
+#: users/views.py:354
 msgid "Standard account"
 msgstr "Compte standard"
 
-#: users/views.py:358
-msgid "Responsibilities"
-msgstr "Responsabilités"
+#~ msgid "This share is empty"
+#~ msgstr "Ce partage est vide"
 
-#: users/views.py:363
-msgid "Memberships"
-msgstr "Appartenances"
+#, fuzzy
+#~ msgid "view"
+#~ msgstr "visiter ↗"
 
-#: users/views.py:368
-msgid "Invitations"
-msgstr "Invitations"
-
-#: users/views.py:373
-msgid "Privileges"
-msgstr "Privilèges"
-
-#: users/views.py:374
-msgid "privileged member"
-msgstr "membre privilégié"
-
-#: users/views.py:378
-msgid "Other system groups"
-msgstr "Autres groupes système"
-
-#: users/views.py:379
-msgid "system member"
-msgstr "membre système"
+#~ msgid "You do not have any share yet."
+#~ msgstr "Vous n'avez aucun partage web pour l'instant."
 
 #, fuzzy
 #~ msgid "{0:s}: {1} received, registering ourselves again in licornd."
@@ -1469,9 +1761,6 @@ msgstr "membre système"
 
 #~ msgid "Import users system completed successfully."
 #~ msgstr "L'import des comptes utilisateurs s'est terminé avec succès."
-
-#~ msgid "Error while importing users : {0}"
-#~ msgstr "Erreur pendant l'import des utilisateurs :{0}"
 
 #~ msgid "Run a manual backup on volume {0}"
 #~ msgstr "Lancer une sauvegarde manuellement sur le volume {0}"
@@ -1497,9 +1786,6 @@ msgstr "membre système"
 #, fuzzy
 #~ msgid "Pyro connection closed, retrying{0}."
 #~ msgstr "Connexion perdue, nouvel essai{0}."
-
-#~ msgid " forever"
-#~ msgstr " infini"
 
 #~ msgid "Coming soon..."
 #~ msgstr "Bientôt là…"

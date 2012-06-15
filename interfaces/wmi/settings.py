@@ -90,10 +90,12 @@ INSTALLED_APPS = (
     'wmi.system',
     'wmi.users',
     'wmi.groups',
-    # NOTE: these apps below are dynamically imported,
-    # based on various licorn settings and conditions.
+    # NOTE: the following apps will be dynamically imported,
+    # based on various licorn settings and conditions. Do not
+    # activate them here.
     #'wmi.machines',
     #'wmi.backup',
+    #'wmi.shares',
 )
 
 JINJA2_GLOBALS = {

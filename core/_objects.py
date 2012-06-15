@@ -93,6 +93,9 @@ class CoreUnitObject(PicklableObject):
 		# but will be cleaner than lookup the object by its name...
 		self.__licornd    = LMC.licornd
 	@property
+	def pretty_name(self):
+		return stylize(ST_NAME, self.name)
+	@property
 	def controller(self):
 		return self.__controller
 	@property

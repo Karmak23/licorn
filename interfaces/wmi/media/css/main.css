@@ -116,6 +116,10 @@ div#banner {
     cursor: pointer;
 }
 
+.cursor-help {
+    cursor: help;
+}
+
 .item_title {
 	text-align: center;
 	float: left;
@@ -220,6 +224,58 @@ tr a {
 	text-decoration: none;
 	/*border-bottom: 1px dotted saturate(lighten(@font_color, 20%), 30%);*/
 }
+
+/* ========================================================= WMI table */
+
+.vertical-space-small {
+	margin-top: 10px;
+}
+
+.vertical-space, .vertical-space-normal {
+	margin-top: 20px;
+}
+
+.vertical-space-big {
+	margin-top: 40px;
+}
+
+.vertical-space-huge {
+	margin-top: 80px;
+}
+
+.centered {
+	text-align: center;
+}
+
+.wmi-table {
+	font-size: 80%;
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 20px;
+	white-space: nowrap;
+}
+.wmi-table a {
+	color: @link_color;
+}
+
+.wmi-table tr th {
+	font-weight: bolder;
+	padding: 7px 15px;
+	border-bottom: 1px solid @font_color;
+}
+.wmi-table tr td {
+	font-weight: bolder;
+	padding: 7px 15px;
+	/*border-bottom: 1px solid @font_color;*/
+}
+
+.wmi-table tr:nth-child(odd) {
+	background-color: rgba(255,255,255,0.06);
+}
+.wmi-table tr:nth-child(even) {
+	background-color: rgba(0,0,0,0.06);
+}
+
 
 /* ============================================================= IMPORT PAGE */
 

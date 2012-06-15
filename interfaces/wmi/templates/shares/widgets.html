@@ -1,0 +1,80 @@
+
+{%- macro backup_informations(volume, last_backup_time, next_backup_time) -%}
+	{%- set guid = volume.guid.replace('-', '_') -%}
+
+	{%- if last_backup_time > 0 -%}
+			{{ _('Last backup age on this volume:') }}
+			{{ countdown(now() - last_backup_time,
+								limit=9999999999.0) }}
+
+	{%- else -%}
+		{{ _('No backup has occured yet.') }}
+
+	{%- endif -%}
+			<br />
+	{{ _('Next backup attempt will occur in {0}.').format(
+
+			self._countdown(self.time_before_next_automatic_backup(
+					as_string=False)))
+	}}
+
+{%- endmacro -%}
+
+{%- macro eject_status(volume, is_backup, small=False) -%}
+	{%- if volume.locked() -%}
+
+		{%- set img_alt   = _('Operation in progress icon') -%}
+		{%- set help_text = _('Cannot eject, operation '
+									'in progress on this volume.').format(
+										volume.mount_point) -%}
+
+		{%- if small -%}
+			<span class="micro_indicator micro_impossible" title="{{ help_text }}">
+				<img src="/media/images/22x22/media-record.png" alt="{{ img_alt }}" style="margin-top: -3px;" />
+			</span>
+
+		{%- else -%}
+			<span class="small_indicator impossible">
+				<img src="/media/images/22x22/media-record.png" alt="{{ img_alt }}"
+					style="margin-top: -3px;" />&nbsp;{{
+						_('Cannot eject, {operation} in progress').format(
+									operation=_('backup')
+										if is_backup
+										else _('statistics or cleaning')) }}
+			</span>
+
+		{%- endif -%}
+
+	{%- else -%}
+
+		{%- if volume.mount_point -%}
+
+			{%- set eject_uri = '/backups/eject/' + volume.device.rsplit('/', 1)[1] -%}
+			{%- set img_alt =  _('Eject device icon') -%}
+			{%- set help_text = _('Click to eject volume '
+								'{0}').format(volume.mount_point) -%}
+
+			{%- if small -%}
+
+				<span class="micro_indicator micro_possible" title="{{ help_text }}">
+					<a href="{{ eject_uri }}" title="{{ help_text }}">
+						<img src="/media/images/22x22/eject.png" alt="{{ img_alt }}" />
+					</a>
+				</span>
+
+			{%- else -%}
+				<span class="small_indicator possible">
+					<a href="{{eject_uri}}" title="{{ help_text }}" class="ajax-backup-link">
+						<img src="/media/images/22x22/eject.png"
+							alt="{{ img_alt }}" />&nbsp;{{ _('Eject the volume') }}
+					</a>
+				</span>
+
+			{%- endif -%}
+
+		{%- endif -%}
+
+	{%- endif -%}
+
+{%- endmacro -%}
+

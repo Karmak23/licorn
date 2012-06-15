@@ -1,3 +1,5 @@
+{#- Copyright 2011 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- macro backup_informations(volume, last_backup_time, next_backup_time) -%}
 	{%- set guid = volume.guid.replace('-', '_') -%}

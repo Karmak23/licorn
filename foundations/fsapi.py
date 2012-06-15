@@ -1736,6 +1736,24 @@ def remove_files(*args):
 		except (IOError, OSError), e:
 			if e.errno != errno.ENOENT:
 				raise
+def check_file_path(filename, good_paths_list):
+	""" Check that a file is in a path from a list of wanted "good" paths. The
+		function does a ``realpath(abspath(…))`` before checking, to be sure
+		we are not abused.
+
+		it returns the normalized path if the check succeeds, else ``None``.
+
+		Returning the normalized path avoids the need for the caller to
+		re-operate the path resolution (`realpath` is an expensive syscall).
+	"""
+
+	_fname = os.path.realpath(os.path.abspath(filename))
+
+	for good_path in good_paths_list:
+		if _fname.startswith(good_path):
+			return _fname
+
+	return None
 class BlockDeviceID(object):
 	""" UUID="c2576193-0b70-497a-b998-870b6096b55d" TYPE="swap"  """
 	__slots__ = ('name', 'uuid', 'type')
