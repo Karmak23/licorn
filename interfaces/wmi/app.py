@@ -397,8 +397,7 @@ class WmiEventApplication(ObjectSingleton):
 
 		# hints coming from http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
 
-		dirname  = os.path.dirname(__file__)
-		basename = os.path.dirname(__file__)
+		dirname = os.path.dirname(__file__)
 
 		self.push_permissions = {}
 		self.dynamic_sidebars = {}
