@@ -55,9 +55,11 @@
 			<table class="wmi-table">
 			<tr>
 				<th>{{ _('Name') }}</th>
-				<th>{{ _('Actual contents') }}</th>
+				<th class="centered">{{ _('Actual contents') }}</th>
+				<!-- experimental
 				<th>{{ _('Writable') }}</th>
 				<th>{{ _('Expires') }}</th>
+				-->
 			</tr>
 			{%- for share in shares|sort -%}
 				{%- include 'shares/parts/share-view.html' with context -%}

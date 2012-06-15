@@ -431,15 +431,23 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_SIMPLESHARING)
 
-		self.available = True
+		if settings.experimental.enabled:
+			self.available = True
+
+		else:
+			self.available = False
 
 		return self.available
 	def is_enabled(self):
 		""" Simple shares are always enabled if available. """
 
-		logging.info(_(u'{0}: extension always enabled unless manually '
-							u'ignored in {1}.').format(self.pretty_name,
-								stylize(ST_PATH, settings.main_config_file)))
+		logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
+				u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
+				self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
+
+		#logging.info(_(u'{0}: extension always enabled unless manually '
+		#					u'ignored in {1}.').format(self.pretty_name,
+		#						stylize(ST_PATH, settings.main_config_file)))
 
 		# Enhance the core user with simple_sharing extensions.
 		User.__bases__ += (SimpleSharingUser, )
