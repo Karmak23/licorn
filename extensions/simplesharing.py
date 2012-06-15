@@ -21,7 +21,7 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import ObjectSingleton
 from licorn.foundations.classes   import PicklableObject
-from licorn.foundations.constants import services, svccmds, distros
+from licorn.foundations.constants import services, svccmds, distros, priorities
 
 from licorn.core                  import LMC
 from licorn.core.users            import User
