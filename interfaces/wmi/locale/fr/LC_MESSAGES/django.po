@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 10:38+0200\n"
-"PO-Revision-Date: 2012-06-15 10:38+0200\n"
+"POT-Creation-Date: 2012-06-15 11:04+0200\n"
+"PO-Revision-Date: 2012-06-15 11:00+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -722,21 +722,25 @@ msgstr "Ce partage a expiré, il n'est plus disponible."
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:150 system/views.py:261
+#: shares/views.py:146
+msgid "Uploaded files are not downloadable."
+msgstr ""
+
+#: shares/views.py:153 system/views.py:261
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:152 system/views.py:263
+#: shares/views.py:155 system/views.py:263
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:156 system/views.py:267
+#: shares/views.py:159 system/views.py:267
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:159
+#: shares/views.py:162
 msgid "Not implemented yet, sorry."
 msgstr ""
 
@@ -1168,6 +1172,10 @@ msgid ""
 msgstr ""
 "Demandez à la personne qui vous a envoyé(e) à cette adresse de remplir son "
 "répertoire de partage."
+
+#: templates/shares/parts/gettext.html:4
+msgid "My shares"
+msgstr "Mes partages web"
 
 #: templates/shares/parts/share-view.html:5
 msgid "Full path on the Licorn&reg; server: {0}"
