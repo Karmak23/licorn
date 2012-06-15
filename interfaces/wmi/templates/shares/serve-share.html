@@ -14,7 +14,9 @@
 						and request.user.username == share.coreobj.name -%}
 
 			<a href="{{ url_for('wmi.shares.views.index') }}"
-				class="btn btn-primary pull-right">{{ _('Configure your share &raquo;') }}</a>
+				class="btn btn-primary pull-right">
+				{{ _('Configure your share &raquo;') }}
+			</a>
 
 		{%- endif -%}
 
@@ -25,18 +27,19 @@
 
 	{%- if share.accepts_uploads -%}
 
-		<div class="span10">
+		<div class="span6 offset2 hero-unit">
+		<h2>{{ _('Uploaded documents') }}</h2>
+		<div class="span2 offset4">
+				<a href="#" class="btn btn-primary btn-large">
+					{{ _('Upload a document &raquo;')}}</a>
+		</div>
+		<p>
 			{%- if contents_numbers.uploads -%}
-				{{ _('Contains {0} uploaded documents').format(
-										contents_numbers.uploads) }}
+				{{ _('Contains {0} uploaded documents').format(contents_numbers.uploads) }}
 			{%- else -%}
 				{{ _('No documents uploaded') }}
 			{%- endif -%}
-		</div>
-
-		<div class="span2 offset10">
-				<a href="btn btn-primary btn-large">
-					{{ _('Upload a document &raquo;')}}</a>
+		</p>
 		</div>
 
 	{# else:
@@ -78,7 +81,7 @@
 
 		<div class="span12">&nbsp;</div>
 		<div class="hero-unit span6 offset2">
-			<h2>{{ _('This share is empty') }}</h2>
+			<h2>{{ _('No shared document') }}</h2>
 			<p>{{ _('Ask the person who sent you here to populate his share directory. Perhaps he has forgotten?') }}</p>
 		</div>
 	{%- endif -%}

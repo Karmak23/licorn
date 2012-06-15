@@ -1,6 +1,8 @@
 {#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
     Distributed under the terms of the GNU GPL version 2. -#}
 
+{%- from 'widgets/common.html' import icheckbox, textinput -%}
+
 <style type="text/css">
 .volumes_list {
 	margin-top: 20px;
@@ -57,7 +59,7 @@
 				<th>{{ _('Writable') }}</th>
 				<th>{{ _('Expires') }}</th>
 			</tr>
-			{%- for share in shares -%}
+			{%- for share in shares|sort -%}
 				{%- include 'shares/parts/share-view.html' with context -%}
 
 			{%- endfor -%}

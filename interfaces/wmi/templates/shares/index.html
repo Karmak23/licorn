@@ -5,6 +5,13 @@
 
 {%- block title -%}{{ _('My web shares') }}{%- endblock -%}
 
+{%- from 'widgets/common.html' import jquery_icheckbox_media, jquery_popover_media -%}
+
+{%- block extended_media -%}
+	{{ jquery_icheckbox_media() }}
+	{{ jquery_popover_media() }}
+{%- endblock -%}
+
 {%- block main_content -%}
 	{%- include 'shares/index_main.html' -%}
 {%- endblock -%}

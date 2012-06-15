@@ -60,12 +60,43 @@ def toggle_shares(request, state):
 	return return_for_request(request)
 
 @login_required
-def enable(request, *args, **kwargs):
+def enable(request, **kwargs):
 	return toggle_shares(request,  True)
 
 @login_required
-def disable(request, *args, **kwargs):
+def disable(request, **kwargs):
 	return toggle_shares(request, False)
+
+@login_required
+def accepts_uploads(request, shname, **kwargs):
+
+	login = request.user.username
+	share = LMC.users.by_login(login).find_share(shname)
+
+
+	if request.is_ajax():
+		pass
+	else:
+		return HttpResponse(str(share.accepts_uploads))
+
+@login_required
+def password(request, shname, newpass, **kwargs):
+	""" Change the password of a share. What comes next is decided by the
+		password content, which will set the accepts_uploads status of the
+		share, which will impact the client side via events. """
+
+	login = request.user.username
+
+	try:
+		LMC.users.by_login(login).find_share(shname).password = newpass
+
+	except Exception, e:
+		logging.exception(_(u'Could not change password of share {0} (user {1})'),
+															share.name, login)
+
+		wmi_event_app.enqueue_notification(request, _(u'Could not change the '
+			u'password of you share {0} (was: {1}).').format(share.name, e))
+
 
 @login_required
 def index(request, sort="date", order="asc", **kwargs):
@@ -110,6 +141,9 @@ def download(request, login, shname, filename):
 	# Thus, we use the user's homeDirectory, which seems even more secure.
 	filename = fsapi.check_file_path(os.path.join(share.path, filename),
 										(share.coreobj.homeDirectory, ))
+
+	if filename.startswith(share.uploads_directory):
+		return HttpResponseForbidden(_(u'Uploaded files are not downloadable.'))
 
 	if filename:
 		try:

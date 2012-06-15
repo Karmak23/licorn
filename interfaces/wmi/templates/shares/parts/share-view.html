@@ -6,10 +6,12 @@
 			class="bigger cursor-help"> {{ share.name }}</span>
 		<br /><small class="smaller"><a href="{{ url_for('wmi.shares.views.serve',
 								args=(share.coreobj.name, share.name)) }}"
-					target="_blank">{{ _('view') }} ↗</a></small>
+					title="{{ _('Display the share as your visitors see it, from the web address you can give to them.') }}"
+					target="_blank">{{ _('public view') }} ↗</a></small>
 	</td>
 	<td class="centered">
 	{%- set contents = share.contents() -%}
+
 	{%- if contents.files > 0 -%}
 		{{ _('{0} file(s)').format(contents.files) }}
 
@@ -17,8 +19,12 @@
 		{{ _('Nothing to share').format(contents.files) }}
 
 	{%- endif -%}
+
 	{%- if share.accepts_uploads -%}
-		<br />
+
+		{# don't miss the comma ',' #}
+		,<br />
+
 		{%- if contents.uploads > 0 -%}
 			{{ _('{0} uploaded file(s)').format(contents.uploads) }}
 
@@ -29,13 +35,93 @@
 	{%- endif -%}
 	</td>
 	<td class="centered">
-		{%- if share.accepts_uploads -%}
-			{{ _('Yes') }}
+		<form class="ajax-form" method="GET"
+			action="{# {{ url_for('wmi.shares.views.password', args=(share.name, )) }} #}"
+			id="share_{{ share.shid }}_accepts_uploads"
+			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
+			<div id="popbutton_{{ share.shid }}">
 
-		{%- else -%}
-			{{ _('No') }}
+				{{ icheckbox(share.shid, share.accepts_uploads) }}
 
-		{%- endif -%}
+				<div class="share_popover_password hidden">
+					<div class="centered smaller" style="width: 300px;">
+						<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
+						<hr />
+						<table class="vertical-space-small">
+							<tr>
+								<td>{{ _('Password:') }}</td>
+								<td>{{ textinput('id_password1') }}</td>
+								<td rowspan="2">[{{ _('SET button') }}]</td>
+							</tr>
+							<tr>
+								<td>{{ _('Verify:') }}</td>
+								<td>{{ textinput('id_password2') }}</td>
+							</tr>
+							<tr>
+								<td colspan="3" class="password_status_message smaller">
+									{ {{ _('password_status_JS') }} }
+								</td>
+							</tr>
+						</table>
+						<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
+					</div>
+				</div>
+			</div>
+		</form>
+
+		<script language="javascript">
+			function pop_{{ share.shid }}_check() {
+				//$.get();
+
+			}
+
+			function pop_{{ share.shid }}_hide() {
+				$("#popbutton_{{ share.shid }}").find('.share_popover_password').hide();
+			}
+
+			function pop_{{ share.shid }}_show() {
+
+				cbx = $("#popbutton_{{ share.shid }}");
+
+				cbx.find('.share_popover_password').show();
+
+				cbx.popover({
+						content: cbx.find('.share_popover_password'),
+						preventTop: true,
+						preventLeft: true,
+						preventRight: false,
+						preventBottom: false,
+						closeEvent: pop_{{ share.shid }}_check
+					});
+			}
+
+			function pop_{{ share.shid }}_toggle() {
+				if ($("#id_checkbox_{{ share.shid }}").is(':checked')) {
+					// prevent popover, we don't need a password.
+					console.log('hiding {{ share.shid }}');
+					pop_{{ share.shid }}_hide();
+
+				} else {
+					console.log('showing {{ share.shid }}');
+					pop_{{ share.shid }}_show();
+				}
+			}
+
+			$(document).ready(function() {
+
+				$("#popbutton_{{ share.shid }}").each(function() {
+
+					// Do the first toggle setup
+					pop_{{ share.shid }}_toggle();
+
+					$(this).click(function(){
+						// we need to wait a little because the ':checked' status
+						// changes only at the end of the checkbox animation.
+						pop_{{ share.shid }}_toggle();
+					});
+				});
+			});
+		</script>
 	</td>
 	<td class="centered">
 		{%- if share.expired -%}

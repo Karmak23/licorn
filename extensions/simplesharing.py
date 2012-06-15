@@ -32,7 +32,29 @@ mimetypes.init()
 
 class SimpleShare(PicklableObject):
 	""" Object representing a share. It count contents, change password, shows
-		external sharing URL, and the like. """
+		external sharing URL, and the like.
+
+		Minimal testsuite:
+
+		mkdir -p ~/Public/test{1,_passwd,_uploads,_expire}
+		mkdir ~/Public/test_uploads/uploads
+
+		# put some files in the dirs you want, including uploads/
+
+		get in
+
+		u = LMC.users.by_login('olive')
+		s = u.find_share('test_passwd')
+		s.password = 'testp'
+
+		s = u.find_share('test_uploads')
+		s.password = 'testup'
+
+
+		.. versionadded::
+			* 1.3.1 and later as experimental feature (incomplete)
+			* 1.4 as official feature
+	"""
 	share_file  = '.lshare.conf'
 	uploads_dir = 'uploads'
 
@@ -254,7 +276,12 @@ class SimpleShare(PicklableObject):
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing
-		for more details and specification. """
+		for more details and specification.
+
+		.. versionadded::
+			* 1.3.1 as experimental feature (incomplete)
+			* 1.4 as official feature
+	"""
 
 	# a comfort shortcut to the SimpleSharingExtension,
 	# to avoid looking it via LMC everytime we need it.
@@ -371,7 +398,9 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		:file:`${HOME}/Public/` directory, on the Web. For more details see
 		the `file sharing specification <http://dev.licorn.org/wiki/ExternalFileSharing>`_.
 
-		.. versionadded:: 1.4
+		.. versionadded::
+			* 1.3.1 as experimental feature (incomplete)
+			* 1.4 as official feature
 	"""
 	module_depends = [ 'mylicorn' ]
 

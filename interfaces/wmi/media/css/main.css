@@ -260,12 +260,12 @@ tr a {
 
 .wmi-table tr th {
 	font-weight: bolder;
-	padding: 5px;
+	padding: 7px 15px;
 	border-bottom: 1px solid @font_color;
 }
 .wmi-table tr td {
 	font-weight: bolder;
-	padding: 5px;
+	padding: 7px 15px;
 	/*border-bottom: 1px solid @font_color;*/
 }
 
