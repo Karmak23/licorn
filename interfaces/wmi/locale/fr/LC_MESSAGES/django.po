@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 09:58+0200\n"
-"PO-Revision-Date: 2012-06-15 09:58+0200\n"
+"POT-Creation-Date: 2012-06-15 10:38+0200\n"
+"PO-Revision-Date: 2012-06-15 10:38+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -822,7 +822,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:86 templates/shares/parts/share-view.html:47
+#: templates/login.html:86 templates/shares/parts/share-view.html:52
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -1113,47 +1113,55 @@ msgstr ""
 msgid "Web share {0}"
 msgstr "Partage web {0}"
 
-#: templates/shares/serve-share.html:17
-msgid "Configure your share"
-msgstr "Configurer ce partage"
+#: templates/shares/serve-share.html:18
+msgid "Configure your share &raquo;"
+msgstr "Configurer ce partage &raquo;"
 
-#: templates/shares/serve-share.html:21
+#: templates/shares/serve-share.html:23
 msgid "Welcome to share <em>{0}</em>"
 msgstr "Bienvenue sur le partage <em>{0}</em>"
 
-#: templates/shares/serve-share.html:33
-msgid "No documents uploaded"
-msgstr "Pas de document déposé"
+#: templates/shares/serve-share.html:31
+msgid "Uploaded documents"
+msgstr "Documents déposés"
 
-#: templates/shares/serve-share.html:39
+#: templates/shares/serve-share.html:34
 msgid "Upload a document &raquo;"
 msgstr "Déposer un document &raquo;"
 
-#: templates/shares/serve-share.html:50
+#: templates/shares/serve-share.html:38
+msgid "Contains {0} uploaded documents"
+msgstr "Contient {0} document(s) déposé(s)"
+
+#: templates/shares/serve-share.html:40
+msgid "No documents uploaded"
+msgstr "Pas de document déposé"
+
+#: templates/shares/serve-share.html:53
 msgid "Click on a filename to download it to your computer:"
 msgstr "Cliquez sur le nom d'un fichier pour le télécharger :"
 
-#: templates/shares/serve-share.html:56
+#: templates/shares/serve-share.html:59
 msgid "File name"
 msgstr "Nom de fichier"
 
-#: templates/shares/serve-share.html:57
+#: templates/shares/serve-share.html:60
 msgid "Size"
 msgstr "Taille"
 
-#: templates/shares/serve-share.html:58
+#: templates/shares/serve-share.html:61
 msgid "Last modified"
 msgstr "Dernière modification"
 
-#: templates/shares/serve-share.html:59
+#: templates/shares/serve-share.html:62
 msgid "Type"
 msgstr "Type"
 
-#: templates/shares/serve-share.html:81
-msgid "This share is empty"
-msgstr "Ce partage est vide"
+#: templates/shares/serve-share.html:84
+msgid "No shared document"
+msgstr "Aucun document déposé"
 
-#: templates/shares/serve-share.html:82
+#: templates/shares/serve-share.html:85
 msgid ""
 "Ask the person who sent you here to populate his share directory. Perhaps he "
 "has forgotten?"
@@ -1177,23 +1185,23 @@ msgstr ""
 msgid "public view"
 msgstr "vue publique"
 
-#: templates/shares/parts/share-view.html:15
+#: templates/shares/parts/share-view.html:16
 msgid "{0} file(s)"
 msgstr "{0} fichier(s)"
 
-#: templates/shares/parts/share-view.html:18
+#: templates/shares/parts/share-view.html:19
 msgid "Nothing to share"
 msgstr "Rien à partager"
 
-#: templates/shares/parts/share-view.html:24
+#: templates/shares/parts/share-view.html:29
 msgid "{0} uploaded file(s)"
 msgstr "{0} fichier(s) déposé(s)"
 
-#: templates/shares/parts/share-view.html:27
+#: templates/shares/parts/share-view.html:32
 msgid "Nothing uploaded"
 msgstr "Aucun dépôt"
 
-#: templates/shares/parts/share-view.html:36
+#: templates/shares/parts/share-view.html:41
 msgid ""
 "Can visitors upload documents to this share? Activating this feature "
 "requires setting a password on it (you will be prompted upon activation)."
@@ -1202,26 +1210,26 @@ msgstr ""
 "nécessite la définition d'un mot de passe pour le partage (il vous sera "
 "demandé à l'activation)."
 
-#: templates/shares/parts/share-view.html:43
+#: templates/shares/parts/share-view.html:48
 msgid ""
 "Please choose a password to protect this share against anonymous uploads."
 msgstr ""
 "Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
 "anonymes."
 
-#: templates/shares/parts/share-view.html:49
+#: templates/shares/parts/share-view.html:54
 msgid "SET button"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:52
+#: templates/shares/parts/share-view.html:57
 msgid "Verify:"
 msgstr "Vérification :"
 
-#: templates/shares/parts/share-view.html:57
+#: templates/shares/parts/share-view.html:62
 msgid "password_status_JS"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:61
+#: templates/shares/parts/share-view.html:66
 msgid ""
 "Note: you will not be able to see or recover the password once it is set, "
 "because it is stored encrypted. You will only be able to change it."
@@ -1229,7 +1237,7 @@ msgstr ""
 "Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
 "le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
 
-#: templates/shares/parts/share-view.html:105
+#: templates/shares/parts/share-view.html:130
 msgid "never"
 msgstr "jamais"
 
@@ -1719,6 +1727,9 @@ msgstr "Privilèges"
 #: users/views.py:354
 msgid "Standard account"
 msgstr "Compte standard"
+
+#~ msgid "This share is empty"
+#~ msgstr "Ce partage est vide"
 
 #, fuzzy
 #~ msgid "view"
