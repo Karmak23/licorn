@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 11:04+0200\n"
-"PO-Revision-Date: 2012-06-15 11:00+0200\n"
+"POT-Creation-Date: 2012-06-15 19:31+0200\n"
+"PO-Revision-Date: 2012-06-15 19:31+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -69,47 +69,47 @@ msgstr "Aucun gestionnaire pour l'évènement « {0} » dans la WMI."
 msgid "{0}: starting threads and collecting dynamic handlers."
 msgstr ""
 
-#: app.py:423
+#: app.py:422
 msgid "module {0} does not include a {1} dict in its {2} file!"
 msgstr ""
 
-#: app.py:434
+#: app.py:433
 msgid "Dynamic parts of module {0} cannot be loaded!"
 msgstr ""
 
-#: app.py:464
+#: app.py:463
 msgid "{0}: all threads started, ready to dispatch events."
 msgstr ""
 
-#: app.py:515
+#: app.py:514
 msgid "Manual PUSH-stream queue-flush for user {0} (session {1})"
 msgstr ""
 "Vidage manuel de la file d'attente du flux PUSH de l'utilisateur {0} "
 "(session {1})"
 
-#: app.py:541
+#: app.py:540
 msgid "Cannot setup collector {0}."
 msgstr "Impossible de configurer le collecteur {0}."
 
-#: app.py:546
+#: app.py:545
 msgid "Welcome to Licorn® WMI, {0}."
 msgstr "Bienvenue dans la WMI Licorn®, {0}."
 
-#: app.py:558
+#: app.py:557
 #, fuzzy
 msgid "{0}: stopping operator threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:562
+#: app.py:561
 #, fuzzy
 msgid "{0}: stopping helper threads."
 msgstr "Arrêt du thread collecteur d'évènements de la WMI."
 
-#: app.py:566
+#: app.py:565
 msgid "{0}: all thread stopped."
 msgstr ""
 
-#: app.py:594
+#: app.py:593
 msgid "Sorry, the {0} functionnality is not yet implemented."
 msgstr ""
 
@@ -605,11 +605,33 @@ msgstr ""
 msgid "You cannot delete privileged group {0} !"
 msgstr ""
 
-#: libs/utils.py:156
+#: libs/utils.py:98
+msgid "Could not import module {0}"
+msgstr ""
+
+#: libs/utils.py:115
+msgid ""
+"Dependancy {0} of Django app {1} is unsafe (not a str() nor an unicode() "
+"object),  ignoring the app completely."
+msgstr ""
+
+#: libs/utils.py:125 libs/utils.py:134
+msgid ""
+"Urls of Django app {0} are not loaded because dependancy {1} is not "
+"satisfied."
+msgstr ""
+
+#: libs/utils.py:143
+msgid ""
+"Dynamically loading URL patterns for Django app {0}, all dependancies "
+"satisfied."
+msgstr ""
+
+#: libs/utils.py:241
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:161
+#: libs/utils.py:246
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -826,7 +848,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:86 templates/shares/parts/share-view.html:52
+#: templates/login.html:86 templates/shares/parts/share-view.html:53
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -1053,15 +1075,15 @@ msgstr "Nom"
 msgid "Actual contents"
 msgstr "Contenu actuel"
 
-#: templates/shares/index_main.html:59
+#: templates/shares/index_main.html:60
 msgid "Writable"
 msgstr "Dépôt autorisé"
 
-#: templates/shares/index_main.html:60
+#: templates/shares/index_main.html:61
 msgid "Expires"
 msgstr "Expire"
 
-#: templates/shares/index_main.html:68
+#: templates/shares/index_main.html:70
 msgid ""
 "You can manage files in your shares with your prefered file-manager: "
 "<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
@@ -1071,11 +1093,11 @@ msgstr ""
 "fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
 "<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
 
-#: templates/shares/index_main.html:72
+#: templates/shares/index_main.html:74
 msgid "No web share"
 msgstr "Pas de partage web"
 
-#: templates/shares/index_main.html:74
+#: templates/shares/index_main.html:76
 msgid ""
 "You do not have any share yet. You can start one easily by making a new "
 "directory in \"~/Public/\" (just create it if it does not exist)."
@@ -1084,7 +1106,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:81
+#: templates/shares/index_main.html:83
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1092,11 +1114,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:87
+#: templates/shares/index_main.html:89
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:88
+#: templates/shares/index_main.html:90
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1105,7 +1127,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:92
+#: templates/shares/index_main.html:94
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1139,7 +1161,7 @@ msgstr "Contient {0} document(s) déposé(s)"
 
 #: templates/shares/serve-share.html:40
 msgid "No documents uploaded"
-msgstr "Pas de document déposé"
+msgstr "Aucun document déposé"
 
 #: templates/shares/serve-share.html:53
 msgid "Click on a filename to download it to your computer:"
@@ -1163,7 +1185,7 @@ msgstr "Type"
 
 #: templates/shares/serve-share.html:84
 msgid "No shared document"
-msgstr "Aucun document déposé"
+msgstr "Aucun document partagé"
 
 #: templates/shares/serve-share.html:85
 msgid ""
@@ -1209,7 +1231,7 @@ msgstr "{0} fichier(s) déposé(s)"
 msgid "Nothing uploaded"
 msgstr "Aucun dépôt"
 
-#: templates/shares/parts/share-view.html:41
+#: templates/shares/parts/share-view.html:42
 msgid ""
 "Can visitors upload documents to this share? Activating this feature "
 "requires setting a password on it (you will be prompted upon activation)."
@@ -1218,26 +1240,26 @@ msgstr ""
 "nécessite la définition d'un mot de passe pour le partage (il vous sera "
 "demandé à l'activation)."
 
-#: templates/shares/parts/share-view.html:48
+#: templates/shares/parts/share-view.html:49
 msgid ""
 "Please choose a password to protect this share against anonymous uploads."
 msgstr ""
 "Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
 "anonymes."
 
-#: templates/shares/parts/share-view.html:54
+#: templates/shares/parts/share-view.html:55
 msgid "SET button"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:57
+#: templates/shares/parts/share-view.html:58
 msgid "Verify:"
 msgstr "Vérification :"
 
-#: templates/shares/parts/share-view.html:62
+#: templates/shares/parts/share-view.html:63
 msgid "password_status_JS"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:66
+#: templates/shares/parts/share-view.html:67
 msgid ""
 "Note: you will not be able to see or recover the password once it is set, "
 "because it is stored encrypted. You will only be able to change it."
@@ -1245,7 +1267,7 @@ msgstr ""
 "Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
 "le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
 
-#: templates/shares/parts/share-view.html:130
+#: templates/shares/parts/share-view.html:131
 msgid "never"
 msgstr "jamais"
 

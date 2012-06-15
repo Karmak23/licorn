@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 10:59+0200\n"
+"POT-Creation-Date: 2012-06-15 19:31+0200\n"
 "PO-Revision-Date: 2012-06-14 15:53+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -519,7 +519,7 @@ msgstr ""
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr "{0} : non disponible, car {1} n'existe pas sur le système."
 
-#: extensions/mylicorn.py:43 extensions/simplesharing.py:434
+#: extensions/mylicorn.py:43
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 "{0} : extension inconditionnellement activée sauf si manuellement ignorée "
@@ -595,7 +595,16 @@ msgstr ""
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:460
+#: extensions/simplesharing.py:444
+#, fuzzy
+msgid "{1}: {0} extension enabled. Please report bugs at {2}."
+msgstr "{0} : extension désactivée car {1} est introuvable."
+
+#: extensions/simplesharing.py:445
+msgid "experimental"
+msgstr ""
+
+#: extensions/simplesharing.py:474
 #, fuzzy
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr "{0} : Exception pendant la tentative d'exécution de {1}."

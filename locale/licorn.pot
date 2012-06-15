@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 11:04+0200\n"
+"POT-Creation-Date: 2012-06-15 19:31+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -476,7 +476,7 @@ msgstr ""
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr ""
 
-#: extensions/mylicorn.py:43 extensions/simplesharing.py:434
+#: extensions/mylicorn.py:43
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 
@@ -544,7 +544,15 @@ msgstr ""
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:460
+#: extensions/simplesharing.py:444
+msgid "{1}: {0} extension enabled. Please report bugs at {2}."
+msgstr ""
+
+#: extensions/simplesharing.py:445
+msgid "experimental"
+msgstr ""
+
+#: extensions/simplesharing.py:474
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr ""
 
