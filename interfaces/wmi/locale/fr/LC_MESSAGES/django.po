@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-14 16:50+0200\n"
-"PO-Revision-Date: 2012-06-14 16:46+0200\n"
+"POT-Creation-Date: 2012-06-15 09:58+0200\n"
+"PO-Revision-Date: 2012-06-15 09:58+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -56,9 +56,10 @@ msgid "PUSH-stream force-close for user {0} (session {1})"
 msgstr "Fermeture forcée du flux PUSH pour l'utilisateur {0} (session {1})"
 
 #: app.py:365
-#, fuzzy
 msgid "Unexpected exception in Event handler {0}; continuing."
-msgstr "Erreur imprévue dans le gestionnaire d'évènement %s."
+msgstr ""
+"Erreur imprévue dans le gestionnaire d'évènement {0}; continuation des "
+"traitements."
 
 #: app.py:369
 msgid "No WMI handler yet for event \"{0}\"."
@@ -158,15 +159,15 @@ msgstr "Calcul des statistiques de sauvegarde terminé sur le volume {0}."
 
 #: backup/forms.py:7 shares/forms.py:7
 msgid "Force a backup to be run even if the last is recent."
-msgstr ""
+msgstr "Forcer une sauvegarde même si la dernière est récente."
 
 #: backup/views.py:73
 msgid "Could not start backup on {0} (was: {1})"
-msgstr ""
+msgstr "Impossible de démarrer la sauvegarde sur {0} (erreur : {1})"
 
 #: backup/views.py:90
 msgid "Could not enable volume {0} (was: {1})"
-msgstr ""
+msgstr "Impossible de réserver le volume {0} (erreur : {1})"
 
 #: backup/views.py:107
 msgid "Unhandled exception while unmounting volume {0}"
@@ -174,7 +175,7 @@ msgstr ""
 
 #: backup/views.py:110
 msgid "Could not eject volume {0} (was: {1})"
-msgstr ""
+msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 
 #: backup/views.py:133
 msgid "Volumes rescanned."
@@ -554,12 +555,12 @@ msgstr "Support"
 #: libs/old_utils.py:564
 #, python-format
 msgid "%s Management"
-msgstr ""
+msgstr "Administration %s"
 
 #: libs/old_utils.py:593
 #, python-format
 msgid "%s WMI:"
-msgstr ""
+msgstr "WMI %s :"
 
 #: libs/old_utils.py:608
 #, python-format
@@ -604,11 +605,11 @@ msgstr ""
 msgid "You cannot delete privileged group {0} !"
 msgstr ""
 
-#: libs/utils.py:154
+#: libs/utils.py:156
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:159
+#: libs/utils.py:161
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -701,33 +702,41 @@ msgstr ""
 msgid "Could not toggle shares status to {0} for user {1} (was: {2})."
 msgstr ""
 
-#: shares/views.py:85
+#: shares/views.py:94
+msgid "Could not change password of share {0} (user {1})"
+msgstr ""
+
+#: shares/views.py:97
+msgid "Could not change the password of you share {0} (was: {1})."
+msgstr ""
+
+#: shares/views.py:116
 msgid "This user has no visible shares."
 msgstr "Cet utilisateur n'a pas de partages publics."
 
-#: shares/views.py:93
+#: shares/views.py:124
 msgid "This share has expired. It is no more available."
 msgstr "Ce partage a expiré, il n'est plus disponible."
 
-#: shares/views.py:99
+#: shares/views.py:130
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:119 system/views.py:261
+#: shares/views.py:150 system/views.py:261
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:121 system/views.py:263
+#: shares/views.py:152 system/views.py:263
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:125 system/views.py:267
+#: shares/views.py:156 system/views.py:267
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:128
+#: shares/views.py:159
 msgid "Not implemented yet, sorry."
 msgstr ""
 
@@ -813,7 +822,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:86
+#: templates/login.html:86 templates/shares/parts/share-view.html:47
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -1028,27 +1037,27 @@ msgstr "Cliquez pour éditer la machine {0}"
 msgid "Shutdown this machine now."
 msgstr "Éteindre cette machine maintenant."
 
-#: templates/shares/index.html:6 templates/shares/index_main.html:49
+#: templates/shares/index.html:6 templates/shares/index_main.html:51
 msgid "My web shares"
 msgstr "Mes partages web"
 
-#: templates/shares/index_main.html:55 templates/users/view_groups.html:9
+#: templates/shares/index_main.html:57 templates/users/view_groups.html:9
 msgid "Name"
 msgstr "Nom"
 
-#: templates/shares/index_main.html:56
+#: templates/shares/index_main.html:58
 msgid "Actual contents"
 msgstr "Contenu actuel"
 
-#: templates/shares/index_main.html:57
+#: templates/shares/index_main.html:59
 msgid "Writable"
 msgstr "Dépôt autorisé"
 
-#: templates/shares/index_main.html:58
+#: templates/shares/index_main.html:60
 msgid "Expires"
 msgstr "Expire"
 
-#: templates/shares/index_main.html:66
+#: templates/shares/index_main.html:68
 msgid ""
 "You can manage files in your shares with your prefered file-manager: "
 "<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
@@ -1058,11 +1067,11 @@ msgstr ""
 "fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
 "<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
 
-#: templates/shares/index_main.html:70
+#: templates/shares/index_main.html:72
 msgid "No web share"
 msgstr "Pas de partage web"
 
-#: templates/shares/index_main.html:72
+#: templates/shares/index_main.html:74
 msgid ""
 "You do not have any share yet. You can start one easily by making a new "
 "directory in \"~/Public/\" (just create it if it does not exist)."
@@ -1071,7 +1080,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:79
+#: templates/shares/index_main.html:81
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1079,11 +1088,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:85
+#: templates/shares/index_main.html:87
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:86
+#: templates/shares/index_main.html:88
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1092,7 +1101,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:90
+#: templates/shares/index_main.html:92
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1105,8 +1114,8 @@ msgid "Web share {0}"
 msgstr "Partage web {0}"
 
 #: templates/shares/serve-share.html:17
-msgid "Configure your share &raquo;"
-msgstr "Configurer votre partage &raquo;"
+msgid "Configure your share"
+msgstr "Configurer ce partage"
 
 #: templates/shares/serve-share.html:21
 msgid "Welcome to share <em>{0}</em>"
@@ -1153,36 +1162,74 @@ msgstr ""
 "répertoire de partage."
 
 #: templates/shares/parts/share-view.html:5
-#, fuzzy
 msgid "Full path on the Licorn&reg; server: {0}"
-msgstr "Chemin complet sur le serveur Licorn® : {0}"
+msgstr "Chemin complet sur le serveur Licorn&reg; : {0}"
 
 #: templates/shares/parts/share-view.html:9
-#, fuzzy
-msgid "view"
-msgstr "visiter ↗"
+msgid ""
+"Display the share as your visitors see it, from the web address you can give "
+"to them."
+msgstr ""
+"Afficher le partage tel que le voient les visiteurs, depuis l'adresse web "
+"publique que vous pouvez d'ailleurs leur transmettre"
 
-#: templates/shares/parts/share-view.html:14
+#: templates/shares/parts/share-view.html:10
+msgid "public view"
+msgstr "vue publique"
+
+#: templates/shares/parts/share-view.html:15
 msgid "{0} file(s)"
 msgstr "{0} fichier(s)"
 
-#: templates/shares/parts/share-view.html:17
+#: templates/shares/parts/share-view.html:18
 msgid "Nothing to share"
 msgstr "Rien à partager"
 
-#: templates/shares/parts/share-view.html:23
+#: templates/shares/parts/share-view.html:24
 msgid "{0} uploaded file(s)"
 msgstr "{0} fichier(s) déposé(s)"
 
-#: templates/shares/parts/share-view.html:26
+#: templates/shares/parts/share-view.html:27
 msgid "Nothing uploaded"
 msgstr "Aucun dépôt"
 
 #: templates/shares/parts/share-view.html:36
-msgid "No"
-msgstr "Non"
+msgid ""
+"Can visitors upload documents to this share? Activating this feature "
+"requires setting a password on it (you will be prompted upon activation)."
+msgstr ""
+"Les visiteurs peuvent-ils déposer des documents dans ce partage ? Ceci "
+"nécessite la définition d'un mot de passe pour le partage (il vous sera "
+"demandé à l'activation)."
 
-#: templates/shares/parts/share-view.html:44
+#: templates/shares/parts/share-view.html:43
+msgid ""
+"Please choose a password to protect this share against anonymous uploads."
+msgstr ""
+"Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
+"anonymes."
+
+#: templates/shares/parts/share-view.html:49
+msgid "SET button"
+msgstr ""
+
+#: templates/shares/parts/share-view.html:52
+msgid "Verify:"
+msgstr "Vérification :"
+
+#: templates/shares/parts/share-view.html:57
+msgid "password_status_JS"
+msgstr ""
+
+#: templates/shares/parts/share-view.html:61
+msgid ""
+"Note: you will not be able to see or recover the password once it is set, "
+"because it is stored encrypted. You will only be able to change it."
+msgstr ""
+"Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
+"le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
+
+#: templates/shares/parts/share-view.html:105
 msgid "never"
 msgstr "jamais"
 
@@ -1458,40 +1505,48 @@ msgstr "GID"
 msgid "This user is not {0} of any group yet."
 msgstr "Cet utilisateur n'est encore {0} d'aucun groupe."
 
-#: templates/widgets/common.html:55 templates/widgets/common.html.py:58
+#: templates/widgets/common.html:18
+msgid "Yes"
+msgstr "Oui"
+
+#: templates/widgets/common.html:19
+msgid "No"
+msgstr "Non"
+
+#: templates/widgets/common.html:76 templates/widgets/common.html.py:79
 msgid "d"
 msgstr "j"
 
-#: templates/widgets/common.html:64 templates/widgets/common.html.py:67
+#: templates/widgets/common.html:85 templates/widgets/common.html.py:88
 msgid "h"
 msgstr "h"
 
-#: templates/widgets/common.html:73 templates/widgets/common.html.py:76
+#: templates/widgets/common.html:94 templates/widgets/common.html.py:97
 msgid "m"
 msgstr "m"
 
-#: templates/widgets/common.html:84 templates/widgets/common.html.py:87
+#: templates/widgets/common.html:105 templates/widgets/common.html.py:108
 msgid "s"
 msgstr "s"
 
-#: templates/widgets/common.html:155
+#: templates/widgets/common.html:176
 msgid "Mass actions:"
 msgstr "Actions massives :"
 
-#: templates/widgets/common.html:162
+#: templates/widgets/common.html:183
 msgid "Massive {0} icon"
 msgstr ""
 
-#: templates/widgets/common.html:163
+#: templates/widgets/common.html:184
 #, fuzzy
 msgid "Selected name massive {0}"
 msgstr "Supprimer le compte {0}"
 
-#: templates/widgets/common.html:187
+#: templates/widgets/common.html:208
 msgid "Click to sort on this column"
 msgstr "Cliquez pour classer sur cette colonne"
 
-#: templates/widgets/common.html:194
+#: templates/widgets/common.html:215
 msgid "Descending order image"
 msgstr ""
 
@@ -1664,6 +1719,10 @@ msgstr "Privilèges"
 #: users/views.py:354
 msgid "Standard account"
 msgstr "Compte standard"
+
+#, fuzzy
+#~ msgid "view"
+#~ msgstr "visiter ↗"
 
 #~ msgid "You do not have any share yet."
 #~ msgstr "Vous n'avez aucun partage web pour l'instant."

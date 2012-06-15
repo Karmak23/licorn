@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-14 16:50+0200\n"
+"POT-Creation-Date: 2012-06-15 09:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -476,7 +476,7 @@ msgstr ""
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr ""
 
-#: extensions/mylicorn.py:43 extensions/simplesharing.py:396
+#: extensions/mylicorn.py:43 extensions/simplesharing.py:405
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 
@@ -484,67 +484,67 @@ msgstr ""
 msgid "{0}: \"{1}\" must be a directory!"
 msgstr ""
 
-#: extensions/simplesharing.py:116
+#: extensions/simplesharing.py:125
 msgid "{0}: simple share upload state unchanged."
 msgstr ""
 
-#: extensions/simplesharing.py:122
+#: extensions/simplesharing.py:131
 msgid "Please set a password on the share first."
 msgstr ""
 
-#: extensions/simplesharing.py:162
+#: extensions/simplesharing.py:171
 msgid "Bad URI {0}"
 msgstr ""
 
-#: extensions/simplesharing.py:227
+#: extensions/simplesharing.py:236
 msgid "Not a file from that share."
 msgstr ""
 
-#: extensions/simplesharing.py:231
+#: extensions/simplesharing.py:240
 msgid "Unsafe absolute path for file \"{0}\"!"
 msgstr ""
 
-#: extensions/simplesharing.py:241
+#: extensions/simplesharing.py:250
 msgid "Unknown"
 msgstr ""
 
-#: extensions/simplesharing.py:269
+#: extensions/simplesharing.py:278
 msgid "Someone tried to switch simple shares on a non-standard user account!"
 msgstr ""
 
-#: extensions/simplesharing.py:273
+#: extensions/simplesharing.py:282
 msgid "{0}: shares status unchanged."
 msgstr ""
 
-#: extensions/simplesharing.py:284
+#: extensions/simplesharing.py:293
 msgid "{0}: simple shares status switched to {1}."
 msgstr ""
 
-#: extensions/simplesharing.py:285 core/_objects.py:261 core/groups.py:456
+#: extensions/simplesharing.py:294 core/_objects.py:261 core/groups.py:456
 msgid "activated"
 msgstr ""
 
-#: extensions/simplesharing.py:285 core/_objects.py:272 core/groups.py:459
+#: extensions/simplesharing.py:294 core/_objects.py:272 core/groups.py:459
 msgid "deactivated"
 msgstr ""
 
-#: extensions/simplesharing.py:303
+#: extensions/simplesharing.py:312
 msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
 msgstr ""
 
-#: extensions/simplesharing.py:312
+#: extensions/simplesharing.py:321
 msgid "Created directory {1} in user {0}'s home."
 msgstr ""
 
-#: extensions/simplesharing.py:319
+#: extensions/simplesharing.py:328
 msgid "User {0} does not accept simple shares, check skipped."
 msgstr ""
 
-#: extensions/simplesharing.py:343
+#: extensions/simplesharing.py:352
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:422
+#: extensions/simplesharing.py:431
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr ""
 
