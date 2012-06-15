@@ -5,3 +5,6 @@ push_permissions = {
 		# we have 'shares?' in urls.py. Hope this will work.
 		'/share' : (lambda req: req.user.is_staff, (), ()),
 	}
+
+dependancies = ('LMC.extensions.simplesharing.enabled', )
+base_url     = r'^shares?/'

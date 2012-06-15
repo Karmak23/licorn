@@ -12,9 +12,11 @@ import os, time, types, json, mimetypes
 
 from django.core.servers.basehttp   import FileWrapper
 from django.http					import HttpResponse
+
+from licorn.foundations             import logging, pyutils, settings
 from licorn.foundations.ltrace      import *
 from licorn.foundations.ltraces     import *
-from licorn.foundations             import logging, pyutils, settings
+from licorn.foundations.styles      import *
 from licorn.core                    import LMC, version
 
 # local imports
@@ -55,10 +57,93 @@ def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	return { 'method'    : JS_method_name,
-						'arguments' : [ json.dumps(unicode(a)
+	return { 	'method'    : JS_method_name,
+				'arguments' : [ json.dumps(unicode(a)
 											if type(a) == types.StringType
 											else a) for a in js_arguments ] }
+def dynamic_urlpatterns(dirname):
+	""" Scan the local directory, looking for Django apps that define
+		dependancies and URL base bases in their `__init__.py` and
+		yield them if the dependancies are met.
+
+		* ``dependancies`` must be a list/tuple of strings or unicode
+			expressions that must evaluate to ``True`` for the dependancy
+			to be considered satisfied
+			(eg. 'LMC.extensions.rdiffbackup.enabled'). For this to work,
+			the local environment always contains Licorn® ``LMC`` (from the
+			``core`` and ``settings`` from the ``foundations``.
+		* ``url_base`` must be a string containing the base URL for the
+			module.
+
+		.. versionadded:: 1.3.1
+ 		"""
+
+	# These dependancies are re-imported here to be sure they are always
+	# available when we test Django app dependancies.
+	from licorn.core import LMC
+
+	for entry in os.listdir(dirname):
+
+		if entry[0] == '.':
+			continue
+
+		if os.path.exists(os.path.join(dirname, entry, '__init__.py')):
+
+			modname = 'licorn.interfaces.wmi.%s' % entry
+
+			try:
+				module = __import__(modname, fromlist=[ modname ])
+
+			except ImportError:
+				logging.exception(_('Could not import module {0}'),
+														(ST_NAME, modname))
+				continue
+
+			try:
+				dependancies = module.dependancies
+				base_url     = module.base_url
+
+			except:
+				# module has no dependancies, continue
+				continue
+
+			load_urls = True
+
+			for dependancy in dependancies:
+				if type(dependancy) not in (type(''), type(unicode)):
+					load_urls = False
+					logging.warning(_(u'Dependancy {0} of Django app {1} is '
+						u'unsafe (not a str() nor an unicode() object), '
+						u' ignoring the app completely.'))
+					break
+
+				try:
+					result = eval(dependancy)
+
+				except:
+					load_urls = False
+					logging.warning2(_(u'Urls of Django app {0} are not '
+								u'loaded because dependancy {1} is not '
+								u'satisfied.').format(stylize(ST_NAME, entry),
+									stylize(ST_BAD, dependancy)))
+					break
+
+				else:
+					if not result:
+						load_urls = False
+						logging.warning2(_(u'Urls of Django app {0} are not '
+									u'loaded because dependancy {1} is not '
+									u'satisfied.').format(
+										stylize(ST_NAME, entry),
+										stylize(ST_BAD, dependancy)))
+						break
+
+
+			if load_urls:
+				logging.progress(_(u'Dynamically loading URL patterns for '
+								u'Django app {0}, all dependancies '
+								u'satisfied.').format(stylize(ST_NAME, entry)))
+				yield base_url, entry
 
 # This must be done at least once.
 mimetypes.init()

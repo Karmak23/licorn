@@ -1,6 +1,10 @@
+import os
+
 from django.conf.urls.defaults import *
 from django.conf               import settings
 from django.http               import HttpResponseRedirect, HttpResponsePermanentRedirect
+
+from libs.utils                import dynamic_urlpatterns
 
 urlpatterns = patterns('',
 
@@ -29,11 +33,13 @@ urlpatterns = patterns('',
 	(r'^setup/.*$', 'wmi.app.setup'),
 	(r'^push/?$', 'wmi.app.push'),
 
-	# app routes
+	# static and minimal app routes (core apps)
 	(r'^system/', include('wmi.system.urls')),
 	(r'^users/', include('wmi.users.urls')),
 	(r'^groups/', include('wmi.groups.urls')),
-	(r'^machines/', include('wmi.machines.urls')),
-	(r'^backups?/', include('wmi.backup.urls')),
-	(r'^shares?/', include('wmi.shares.urls')),
 )
+
+# dynamic app routes, loaded only if all dependancies are satisfied.
+for base_url, module_name in dynamic_urlpatterns(os.path.dirname(__file__)):
+	urlpatterns += patterns('', (base_url, include('wmi.%s.urls' % module_name)))
+
