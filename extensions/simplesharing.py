@@ -13,7 +13,7 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 import os, stat, time, mimetypes
 
 from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import json, cache, fsapi, events
+from licorn.foundations           import json, cache, fsapi, events, hlstr
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
@@ -46,6 +46,11 @@ class SimpleShare(PicklableObject):
 		self.__coreobj = coreobj.weakref
 		self.__name    = os.path.basename(directory)
 
+		# We've got to create an ID which is somewhat unique, but non-moving
+		# when re-instanciating the share over time. The ctime makes a good
+		# canditate to help the name, which can collide if used alone.
+		self.__shid      = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
 
@@ -60,6 +65,10 @@ class SimpleShare(PicklableObject):
 
 		for key, value in basedict.iteritems():
 			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
+	@property
+	def shid(self):
+		""" Obviously, ID is read-only. """
+		return self.__shid
 	@property
 	def expired(self):
 		return self.__expire != None and time.time() > self.__expire
@@ -168,11 +177,11 @@ class SimpleShare(PicklableObject):
 		basedict = {}
 
 		if os.path.exists(self.share_configuration_file):
-			basedict.update(json.load(open(self.share_configuration_file)))
+			basedict.update(json.load(open(self.share_configuration_file, 'r')))
 
 		basedict.update(kwargs)
 
-		json.dump(basedict, open(self.share_configuration_file))
+		json.dump(basedict, open(self.share_configuration_file, 'w'))
 
 		LicornEvent('share_configuration_changed', share=self, **kwargs).emit()
 	@cache.cached(cache.one_hour)
@@ -202,12 +211,12 @@ class SimpleShare(PicklableObject):
 				# this avoids counting config file and hidden things.
 				continue
 
-			if uploads_dir in subent:
-				uploads.append(subent)
-				continue
-
 			if typ == stat.S_IFREG:
-				files.append(subent)
+				if uploads_dir in subent:
+					uploads.append(subent)
+
+				else:
+					files.append(subent)
 
 			else:
 				dirs.append(subent)
