@@ -83,6 +83,13 @@ class _notification(ObjectSingleton):
 					message, timeout or u'', css_class or u'')
 				)
 notification = _notification()
+def wmi_exception(request, exc, *args):
+	""" Provide the exception on the daemon side (log or console), and notify
+		the client via the push mechanism, all in one call. """
+
+	logging.exception(*args)
+	notification(request, args[0].format(*args[1:])
+							+ _(' (was: {0})').format(exc))
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
