@@ -801,9 +801,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if skel is None or skel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(_(u'Invalid skel "{0}". '
-				'Valid skels are {1}.').format(stylize(ST_BAD, skel),
-					', '.join(stylize(ST_COMMENT, skel)
-						for skel in LMC.configuration.users.skels)))
+				'Valid skels are {1}.').format(skel,
+					', '.join(LMC.configuration.users.skels)))
 
 		with self.lock:
 			self._checking.set()
@@ -1126,7 +1125,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 		return self.__is_system
 
 	def to_XML(self):
-		""" return user as xml data 
+		""" return user as xml data
 		minimum : login;uid;prigroup;gecos;memberships;backend """
 
 		groups = []
@@ -1823,7 +1822,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			return data
 	def get_CSV_data(self, selected=None, long_output=False):
-		""" return the user accounts list ready to be parsed by python csv module. 
+		""" return the user accounts list ready to be parsed by python csv module.
 			login;uid;prigroup;gecos;memberships;backend
 		"""
 
@@ -1840,15 +1839,15 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 						groups.append(g.name)
 
 
-				csv_data.append([ 
+				csv_data.append([
 					user.login,
 					user.uid,
 					user.primary_group,
 					user.gecos,
 					','.join(groups),
-					user.backend.name	
+					user.backend.name
 				])
-				
+
 			return csv_data
 	def ExportCSV(self, selected=None, long_output=False):
 		""" Export the user accounts list to CSV. """
