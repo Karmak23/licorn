@@ -15,6 +15,7 @@ from Queue import Queue
 from licorn.foundations.ltrace  import *
 from licorn.foundations.ltraces import *
 from licorn.foundations         import logging, pyutils, settings
+from licorn.foundations.base    import ObjectSingleton
 
 from licorn.core        import LMC, version
 from decorators         import *
@@ -58,6 +59,30 @@ def notify(message, timeout=None, css_class=None):
 
 	assert ltrace_func(TRACE_DJANGO)
 	return format_RPC_JS('show_message_through_notification', message, timeout or u'', css_class or u'')
+
+class _notification(ObjectSingleton):
+	""" This class avoids importing the WMI event App everywhere, when a
+		client-side notification is needed. """
+	def __import(self):
+		from licorn.interfaces.wmi.app import wmi_event_app
+		self.wmi_event_app = wmi_event_app
+
+	def __call__(self, request, message, timeout=None, css_class=None):
+
+		assert ltrace_func(TRACE_DJANGO)
+
+		try:
+			self.wmi_event_app.queue(request).put(format_RPC_JS(
+					'show_message_through_notification',
+					message, timeout or u'', css_class or u'')
+				)
+		except:
+			self.__import()
+			self.wmi_event_app.queue(request).put(format_RPC_JS(
+					'show_message_through_notification',
+					message, timeout or u'', css_class or u'')
+				)
+notification = _notification()
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)

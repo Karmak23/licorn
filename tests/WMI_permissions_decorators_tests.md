@@ -3,11 +3,13 @@ add group grp1,grp2
 add user testw1,testw2 -G licorn-wmi,cdrom,audio
 add user testa1,testa2 -G admins,grp1
 
-# Licorn® part-time admins (licorn-wmi)
+# check_users()
+
+## Licorn® part-time admins (licorn-wmi)
 
 	- login testw1
 
-## me
+### me
 
 	- mod gecos > OK
 	- mod passwd > OK
@@ -26,7 +28,7 @@ add user testa1,testa2 -G admins,grp1
 	- skel > OK
 	- massive del > error captain
 
-## standard users
+### standard users
 
 	- add user test3 (in grp1, gst-grp2) > OK
 
@@ -51,7 +53,7 @@ add user testa1,testa2 -G admins,grp1
 	- massive del test5 > OK
 
 
-## siblings
+### siblings
 
 	- mod gecos testw2 > error even more powerful
 	- mod passwd testw2 > error even more powerful
@@ -75,7 +77,7 @@ add user testa1,testa2 -G admins,grp1
 	- add user test4 (in licorn-wmi) > OK
 	- del user test4 > error even more
 
-## more power (admins)
+### more power (admins)
 
 	- mod gecos testa1 > error even more
 	- mod passwd testa1 > error even more
@@ -93,25 +95,25 @@ add user testa1,testa2 -G admins,grp1
 	- del testw2 > error even more
 	- massive del > error even more
 
-# Licorn® Full-time administrators (`admins`)
+## Licorn® Full-time administrators (`admins`)
 
 	- login testa1
 
-## standard users
+### standard users
 
 	- all like `licorn-wmi`
 
 	- add test6 video > OK
 	- del test6 video > OK
 
-## `licorn-wmi` users
+### `licorn-wmi` users
 
 	- all like "standard users" for an admin account.
 
 	- del test7 licorn-wmi > OK
 	- massive del > OK
 
-## Siblings
+### Siblings
 
 	- mod gecos testa2 > error even more powerful
 	- mod passwd testa2 > error even more powerful
@@ -121,15 +123,15 @@ add user testa1,testa2 -G admins,grp1
 	- mod testa2 grp1 > OK
 	- del testa2 grp1 > OK
 
-	### priv restricted
+#### priv restricted
 	- remove testa2 cdrom > OK
 	- add testa2 cdrom > OK
 
-	### restricted
+#### restricted
 	- add testa2 audio > OK
 	- remove testa2 audio > OK
 
-	### system priv
+#### system priv
 	- add testa2 licorn-wmi > OK
 	- remove testa2 licorn-wmi > OK
 
@@ -144,3 +146,7 @@ add user testa1,testa2 -G admins,grp1
 
 	- add user testa3 (in admins) > OK
 	- del user testa3 > error even more
+
+# check_groups()
+
+## To come

@@ -77,9 +77,10 @@ def check_users(meta_action, *args, **kwargs):
 	def decorator(view_func):
 		def decorated(request, *args, **kwargs):
 
-			from licorn.interfaces.wmi.app import wmi_event_app
-
-			q = wmi_event_app.queue(request)
+			def forbidden(message):
+				""" helper function for check_* decorators. """
+				utils.notification(request, message)
+				return HttpResponseForbidden(message)
 
 			victim            = LMC.users.by_uid(kwargs.get('uid'))
 			wmi_user          = LMC.users.by_login(request.user.username)
@@ -90,18 +91,17 @@ def check_users(meta_action, *args, **kwargs):
 
 			if victim in restricted_users and not request.user.is_superuser:
 				# Even a staff user can't touch restricted account.
-				q.put(utils.notify(_('No operation allowed on restricted '
-										'system accounts.')))
-				return HttpResponseForbidden('ABORTED.')
+
+				return forbidden(_(u'No operation allowed on '
+										u'restricted system accounts.'))
 
 			if victim == wmi_user:
 				# I'm trying to modify my own account
 
 				if meta_action == 'delete':
 					# I cannot remove my own account
-					q.put(utils.notify(_('I cannot let you delete your own '
-														'account captain!')))
-					return HttpResponseForbidden(_('Insecure operation.'))
+					return forbidden(_(u'Impossible to delete your own '
+														u'account, captain!'))
 
 				elif meta_action == 'mod':
 					# I can do anything except removing my own power
@@ -112,19 +112,13 @@ def check_users(meta_action, *args, **kwargs):
 						if request.user.is_staff:
 							if LMC.groups.by_gid(group_id).is_privilege \
 										and rel_id == relation.NO_MEMBERSHIP:
-								q.put(utils.notify(_(u'You tried to remove '
-													u'your own account from a '
-													u'privileged group. '
-													u'<strong>Operation '
-													u'aborted</strong>.')))
-								return HttpResponseForbidden(
-													_('Insecure operation.'))
+								return forbidden(_(u'Impossible to remove your '
+												u'own account from a privileged '
+												u'group, captain!'))
 
 					elif kwargs.get('action') == 'lock':
-						q.put(utils.notify(_(u'You tried to lock your own '
-											u'account. <strong>Operation '
-											u'aborted</strong>.')))
-						return HttpResponseForbidden(_('Insecure operation.'))
+						return forbidden(_(u'Impossible to lock your own '
+														u'account, captain!'))
 
 			else:
 				# The victim is not myself but another account. We can't delete
@@ -144,21 +138,28 @@ def check_users(meta_action, *args, **kwargs):
 						# `admins` users can do anything, but we prefer them to
 						# battle in CLI. WMI is a peaceful place.
 						if victim in admin_group.members:
-							q.put(utils.notify(_(u'You tried to alter an '
-								u'account as powerful as yours. '
-								u'<strong>Operation aborted</strong>.<br />'
-								u'If you really want to do this, run this '
-								u'operation from a CLI command.')))
-							return HttpResponseForbidden(_('Operation aborted.'))
+							return forbidden(_(u'Insufficient permissions '
+									u'to alter <em>administrator</em> account '
+									u'<strong>{0}</strong>. If you really '
+									u'want to, use the CLI.').format(
+										victim.login))
 
 					elif request.user.is_staff:
+						err = False
 						# if he is  >=  myself, I cannot do anything
-						if victim in admin_group.members \
-												or victim in wmi_group.members:
-							q.put(utils.notify(_(u'You tried to do something on '
-								u'an account as powerful (or even more) than '
-								u'you are. <strong>Operation aborted</strong>.')))
-							return HttpResponseForbidden(_('Operation aborted.'))
+						if victim in admin_group.members:
+							typ = _('administrator')
+							err = True
+
+						elif victim in wmi_group.members:
+							typ = _('manager')
+							err = True
+
+						if err:
+							return forbidden(_(u'Insufficient permissions to '
+											u'alter <em>{0}</em> account '
+											u' <strong>{1}</strong>.').format(
+												typ, victim.login))
 
 			# Whatever the victim is (me or another user), we check if we
 			# are not adding/removing him from unwanted groups.
@@ -171,43 +172,38 @@ def check_users(meta_action, *args, **kwargs):
 				if request.user.is_superuser:
 					if group_id == admin_group.gidNumber and \
 											rel_id == relation.NO_MEMBERSHIP:
-						q.put(utils.notify(_(u'You tried to remove {0} '
-									u'from the <em>{1}</em> group. '
-									u'<strong>Operation aborted</strong>.'
-									u'<br /> If you really want to do '
-									u'this, run this operation from a '
-									u'CLI command.').format(
-								_(u'you own account') if victim == wmi_user
-								else _(u'an account as powerful as you are'),
-								admin_group.name)))
-						return HttpResponseForbidden(_('Operation aborted.'))
+						return forbidden(_(u'Insufficient permissions to '
+									u'remove <strong>{0}</strong> from '
+									u'the <em>{1}</em> group. If you '
+									u'really want to, use the CLI.').format(
+										_(u'you own account')
+											if victim == wmi_user
+											else _(u'administrator account {0}'
+														).format(victim.login),
+										admin_group.name))
 
 				# `staff` (eg. `licorn-wmi`) accounts cannot
 				# operate on restricted system groups nor
 				# promote / demote `admins`.
 				elif request.user.is_staff:
 
-					# if he is >=  myself, I cannot do anything
 					if victim in admin_group.members:
-						q.put(utils.notify(_(u'You tried to do something on '
-											u'an account more powerful than '
-											u'you are. <strong>Operation '
-											u'aborted</strong>.')))
-						return HttpResponseForbidden(_('Not enough permissions.'))
+						# if he is >=  myself, I cannot do anything
+						return forbidden(_(u'Insufficient permissions to alter '
+											u'administrator account {0}.').format(
+												victim.login))
 
 					elif group_id == wmi_group.gidNumber and \
 											rel_id == relation.NO_MEMBERSHIP:
-						q.put(utils.notify(_(u'You tried to remove {0} '
-											u'from the <em>{1}</em> group. '
-											u'<strong>Operation '
-											u'aborted</strong>.').format(
+						return forbidden(_(u'Insufficient permissions to remove '
+											u'<strong>{0}</strong> from the '
+											u' <em>{1}</em> group.').format(
 												_(u'you own account')
 													if victim == wmi_user
-													else _(u'an account as '
-															u'powerful (or even '
-															u'more) as you are'),
-												wmi_group.name)))
-						return HttpResponseForbidden(_('Not enough permissions.'))
+													else _(u'manager account '
+														u'{0}').format(
+															victim.login),
+												wmi_group.name))
 
 					else:
 						group = LMC.groups.by_gid(group_id)
@@ -216,12 +212,13 @@ def check_users(meta_action, *args, **kwargs):
 												group in restricted_groups
 												and not group.is_privilege):
 
-							q.put(utils.notify(_(u'You tried to do something on '
-											u'a <em>restricted group</em> or the '
-											u'<em>{0}</em>. <strong>Operation '
-											u'aborted</strong>.')))
-							return HttpResponseForbidden(
-												_('Not enough permissions.'))
+							return forbidden(_(u'Insufficient permissions to '
+											u'alter the {0} group '
+											u'<em>{1}</em>.').format(
+												_('administrator')
+													if group == admin_group
+													else _('restricted system'),
+												group.name))
 
 			return view_func(request, *args, **kwargs)
 		return decorated
@@ -237,17 +234,17 @@ def check_groups(meta_action, *args, **kwargs):
 
 			q = wmi_event_app.queue(request)
 
-			victim      = LMC.groups.by_gid(kwargs.get('gid'))
-			admin_group = LMC.groups.by_name(licorn_settings.defaults.admin_group)
-			wmi_group   = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
+			victim         = LMC.groups.by_gid(kwargs.get('gid'))
+			admin_group    = LMC.groups.by_name(licorn_settings.defaults.admin_group)
+			wmi_group      = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
 			admins_members = set(admin_group.members + wmi_group.members)
 
 			if victim in LMC.groups.select(filters.SYSTEM_RESTRICTED) \
 											and not request.user.is_superuser:
-				# Even a staff user can't touch restricted account.
-				q.put(utils.notify(_('No operation allowed on restricted '
-										'system accounts.')))
-				return HttpResponse('ABORTED.')
+				# Even a staff user can't touch restricted groups.
+				q.put(utils.notify(_(u'No operation allowed on restricted '
+									u'system groups.')))
+				return HttpResponseForbidden(_(u'Insufficient permissions.'))
 
 			if victim == admin_group:
 				if request.user.is_staff:
@@ -325,4 +322,5 @@ def json_view(func):
 		return HttpResponse(json, mimetype='application/json')
 	return wrap
 
-
+__all__ = ('superuser_only', 'staff_only', 'check_users', 'check_groups',
+			'json_view')
