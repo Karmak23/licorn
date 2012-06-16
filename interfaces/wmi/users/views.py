@@ -98,7 +98,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	user = utils.select('users', [ uid ])[0]
+	user = LMC.users.by_uid(int(uid))
 
 	def mod_groups(group_id, rel_id):
 		# Typical request: /mod/user_id/groups/group_id/rel_id
@@ -176,11 +176,13 @@ def massive(request, uids, action, *args, **kwargs):
 
 	if action == 'delete':
 		for uid in uids.split(','):
-			delete(request, uid=int(uid), no_archive=bool(kwargs.get('no_archive', False)))
+			delete(request, uid=int(uid),
+					no_archive=bool(kwargs.get('no_archive', False)))
 
 	if action == 'skel':
 		for uid in uids.split(','):
-			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
+			if uid != '':
+				mod(request, uid=uid, action='skel', value=kwargs.get('skel'))
 
 	if action == 'export':
 		_type = kwargs.get('type', False)
