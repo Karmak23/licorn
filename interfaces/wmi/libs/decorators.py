@@ -18,7 +18,7 @@ from django.http                    import HttpResponse, HttpResponseForbidden
 from django.utils                   import simplejson
 
 from licorn.foundations             import logging, pyutils
-from licorn.foundations             import settings as licorn_settings
+from licorn.foundations             import settings as lsettings
 from licorn.foundations.ltrace      import *
 from licorn.foundations.constants   import filters, relation
 from licorn.core                    import LMC
@@ -57,6 +57,73 @@ def staff_only(func):
 	return decorated
 
 #===================================================== fine grained permissions
+def check_mod_users_groups(request, target_user, target_group, rel_id,
+							admin_group, wmi_group, wmi_user,
+							restricted_users, restricted_groups):
+	""" Internal function which contains common checks to users and groups
+		modifications.
+
+		Returns either an `HttpResponseForbidden`, or ``None``
+		(by not returning anything) if there is no problem in the
+		checked operation.
+	"""
+
+	def forbidden(message):
+		""" helper function for check_* decorators. """
+		utils.notification(request, message)
+		return HttpResponseForbidden(message)
+
+	# Cannot remove any `admins` account from the `admins`
+	# group, even if we are `admins` ourselves.
+	if request.user.is_superuser:
+		if target_user in admin_group.members \
+						 and target_group == admin_group \
+						 and rel_id == relation.NO_MEMBERSHIP:
+			return forbidden(_(u'Insufficient permissions to '
+						u'remove <strong>{0}</strong> from '
+						u'the <em>{1}</em> group. If you '
+						u'really want to, use the CLI.').format(
+							_(u'you own account')
+								if target_user == wmi_user
+								else _(u'administrator account <strong>{0}</strong>'
+											).format(target_user.login),
+							admin_group.name))
+
+	# `staff` (eg. `licorn-wmi`) accounts cannot
+	# operate on restricted system groups nor
+	# promote / demote `admins`.
+	elif request.user.is_staff:
+		if target_user in admin_group.members:
+			# if he is >=  myself, I cannot do anything
+			return forbidden(_(u'Insufficient permissions to alter '
+							u'administrator account <strong>{0}</strong>.'
+								).format(target_user.login))
+
+		elif target_user in wmi_group.members \
+							and target_group == wmi_group \
+							and rel_id == relation.NO_MEMBERSHIP:
+			return forbidden(_(u'Insufficient permissions to remove '
+								u'<strong>{0}</strong> from the '
+								u' <em>{1}</em> group.').format(
+									_(u'you own account')
+										if target_user == wmi_user
+										else _(u'manager account '
+											u'{0}').format(
+												target_user.login),
+									wmi_group.name))
+
+		else:
+			if target_group == admin_group or (
+									target_group in restricted_groups
+									and not target_group.is_privilege):
+
+				return forbidden(_(u'Insufficient permissions to '
+					u'alter the {0} group <em>{1}</em>.').format(
+						_('administrator')
+							if target_group == admin_group
+							else _('restricted system'),
+						target_group.name))
+
 def check_users(meta_action, *args, **kwargs):
 	""" Make various checks against "shooting myself or my friends in the foot"
 		classic human errors, which can arise in the WMI because everything
@@ -82,20 +149,19 @@ def check_users(meta_action, *args, **kwargs):
 				utils.notification(request, message)
 				return HttpResponseForbidden(message)
 
-			victim            = LMC.users.by_uid(kwargs.get('uid'))
+			victim_user       = LMC.users.by_uid(kwargs.get('uid'))
+			admin_group       = LMC.groups.by_name(lsettings.defaults.admin_group)
+			wmi_group         = LMC.groups.by_name(lsettings.licornd.wmi.group)
 			wmi_user          = LMC.users.by_login(request.user.username)
-			admin_group       = LMC.groups.by_name(licorn_settings.defaults.admin_group)
-			wmi_group         = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
 			restricted_users  = LMC.users.select(filters.SYSTEM_RESTRICTED)
 			restricted_groups = LMC.groups.select(filters.SYSTEM_RESTRICTED)
 
-			if victim in restricted_users and not request.user.is_superuser:
+			if victim_user in restricted_users and not request.user.is_superuser:
 				# Even a staff user can't touch restricted account.
-
 				return forbidden(_(u'No operation allowed on '
 										u'restricted system accounts.'))
 
-			if victim == wmi_user:
+			if victim_user == wmi_user:
 				# I'm trying to modify my own account
 
 				if meta_action == 'delete':
@@ -137,21 +203,21 @@ def check_users(meta_action, *args, **kwargs):
 					if request.user.is_superuser:
 						# `admins` users can do anything, but we prefer them to
 						# battle in CLI. WMI is a peaceful place.
-						if victim in admin_group.members:
+						if victim_user in admin_group.members:
 							return forbidden(_(u'Insufficient permissions '
 									u'to alter <em>administrator</em> account '
 									u'<strong>{0}</strong>. If you really '
 									u'want to, use the CLI.').format(
-										victim.login))
+										victim_user.login))
 
 					elif request.user.is_staff:
 						err = False
 						# if he is  >=  myself, I cannot do anything
-						if victim in admin_group.members:
+						if victim_user in admin_group.members:
 							typ = _('administrator')
 							err = True
 
-						elif victim in wmi_group.members:
+						elif victim_user in wmi_group.members:
 							typ = _('manager')
 							err = True
 
@@ -159,7 +225,7 @@ def check_users(meta_action, *args, **kwargs):
 							return forbidden(_(u'Insufficient permissions to '
 											u'alter <em>{0}</em> account '
 											u' <strong>{1}</strong>.').format(
-												typ, victim.login))
+												typ, victim_user.login))
 
 			# Whatever the victim is (me or another user), we check if we
 			# are not adding/removing him from unwanted groups.
@@ -167,58 +233,13 @@ def check_users(meta_action, *args, **kwargs):
 				group_id, rel_id = (int(x) for x in
 									kwargs.get('value').split("/"))
 
-				# Cannot remove any `admins` account from the `admins`
-				# group, even if we are `admins` ourselves.
-				if request.user.is_superuser:
-					if group_id == admin_group.gidNumber and \
-											rel_id == relation.NO_MEMBERSHIP:
-						return forbidden(_(u'Insufficient permissions to '
-									u'remove <strong>{0}</strong> from '
-									u'the <em>{1}</em> group. If you '
-									u'really want to, use the CLI.').format(
-										_(u'you own account')
-											if victim == wmi_user
-											else _(u'administrator account {0}'
-														).format(victim.login),
-										admin_group.name))
+				is_forbidden = check_mod_users_groups(request, victim_user,
+										LMC.groups.by_gid(group_id), rel_id,
+										admin_group, wmi_group, wmi_user,
+										restricted_users, restricted_groups)
 
-				# `staff` (eg. `licorn-wmi`) accounts cannot
-				# operate on restricted system groups nor
-				# promote / demote `admins`.
-				elif request.user.is_staff:
-
-					if victim in admin_group.members:
-						# if he is >=  myself, I cannot do anything
-						return forbidden(_(u'Insufficient permissions to alter '
-											u'administrator account {0}.').format(
-												victim.login))
-
-					elif group_id == wmi_group.gidNumber and \
-											rel_id == relation.NO_MEMBERSHIP:
-						return forbidden(_(u'Insufficient permissions to remove '
-											u'<strong>{0}</strong> from the '
-											u' <em>{1}</em> group.').format(
-												_(u'you own account')
-													if victim == wmi_user
-													else _(u'manager account '
-														u'{0}').format(
-															victim.login),
-												wmi_group.name))
-
-					else:
-						group = LMC.groups.by_gid(group_id)
-
-						if group == admin_group	or (
-												group in restricted_groups
-												and not group.is_privilege):
-
-							return forbidden(_(u'Insufficient permissions to '
-											u'alter the {0} group '
-											u'<em>{1}</em>.').format(
-												_('administrator')
-													if group == admin_group
-													else _('restricted system'),
-												group.name))
+				if is_forbidden:
+					return is_forbidden
 
 			return view_func(request, *args, **kwargs)
 		return decorated
@@ -230,56 +251,92 @@ def check_groups(meta_action, *args, **kwargs):
 	def decorator(view_func):
 		def decorated(request, *args, **kwargs):
 
-			from licorn.interfaces.wmi.app import wmi_event_app
+			def forbidden(message):
+				""" helper function for check_* decorators. """
+				utils.notification(request, message)
+				return HttpResponseForbidden(message)
 
-			q = wmi_event_app.queue(request)
+			victim_group      = LMC.groups.by_gid(kwargs.get('gid'))
+			admin_group       = LMC.groups.by_name(lsettings.defaults.admin_group)
+			wmi_group         = LMC.groups.by_name(lsettings.licornd.wmi.group)
+			wmi_user          = LMC.users.by_login(request.user.username)
+			restricted_users  = LMC.users.select(filters.SYSTEM_RESTRICTED)
+			restricted_groups = LMC.groups.select(filters.SYSTEM_RESTRICTED)
+			system_groups     = LMC.groups.select(filters.SYSTEM)
 
-			victim         = LMC.groups.by_gid(kwargs.get('gid'))
-			admin_group    = LMC.groups.by_name(licorn_settings.defaults.admin_group)
-			wmi_group      = LMC.groups.by_name(licorn_settings.licornd.wmi.group)
-			admins_members = set(admin_group.members + wmi_group.members)
-
-			if victim in LMC.groups.select(filters.SYSTEM_RESTRICTED) \
+			if (victim_group in restricted_groups
+				and not victim_group.is_privilege) \
 											and not request.user.is_superuser:
 				# Even a staff user can't touch restricted groups.
-				q.put(utils.notify(_(u'No operation allowed on restricted '
-									u'system groups.')))
-				return HttpResponseForbidden(_(u'Insufficient permissions.'))
+				return forbidden(_(u'No operation allowed on restricted '
+									u'system groups.'))
 
-			if victim == admin_group:
-				if request.user.is_staff:
-					# I cannot do anythiong on admins group
-					q.put(utils.notify(_('You tried to touch to <em>{0}</em> '
-						'group account.  <strong>Operation aborted</strong>.'
-						).format(admin_group.name)))
-					return HttpResponse("ABORTED")
-				elif request.user.is_super_admin:
-					if meta_action == 'delete':
-						# I cannot remove admins group
-						q.put(utils.notify(_('You tried to delete <em>{0}</em> '
-						'group. <strong>Operation aborted</strong>.').format(
-							admin_group.name)))
-						return HttpResponse("ABORTED")
+			if victim_group in system_groups \
+					and not (
+					(victim_group.is_helper or victim_group.is_privilege)
+					and request.user.is_staff):
+				# and staff can only touch helper groups, not any system group.
+				return forbidden(_(u'No operation allowed on non-helpers '
+									u'system groups.'))
 
-			elif victim.is_privilege:
+			if victim_group == admin_group or victim_group.is_privilege:
+
+				group_name_string = _('the administrators groups') \
+								if victim_group == admin_group \
+								else _('the <strong>{0}</strong> privilege'
+									).format(victim_group.name)
+
 				if meta_action == 'delete':
-					# I cannot remove a privileged group
-					q.put(utils.notify(_('You tried to delete the <em>privileged'
-						'</em> group {0}.  <strong>Operation aborted</strong>.'
-						).format(victim.name)))
-					return HttpResponse("ABORTED")
+					# no-one can remove admins group nor privileges
+					return forbidden(_(u'Removing {0} is strongly '
+										u'not recommended.{1}').format(
+											group_name_string,
+											_(u' If you really '
+												u'want to, use the CLI.')
+												if request.user.is_superuser
+												else u''))
+
+				elif meta_action == 'mod' \
+										and kwargs.get('action') != 'users':
+
+					if not request.user.is_superuser:
+						# `licorn-wmi` cannot do anything on `admins` group.
+						return forbidden(_(u'Insufficient permissions to alter '
+											u'{0}.').format(group_name_string))
+
+			elif victim_group.is_helper:
+				# 'delete' is already covered by the CORE code, but covering it
+				# here makes the whole client experience better than a crash.
+				if meta_action == 'delete':
+					# no-one can remove admins group nor privileges
+					return forbidden(_(u'Removing helper group '
+										u'<strong>{0}</strong> is '
+										u'not possible.').format(
+											victim_group.name))
+
+				elif meta_action == 'mod' \
+										and kwargs.get('action') != 'users':
+
+					if not request.user.is_superuser:
+						# `licorn-wmi` cannot do anything on `admins` group.
+						return forbidden(_(u'Insufficient permissions to alter '
+											u'helper group '
+											u'<strong>{0}</strong>.').format(
+												victim_group.name))
 
 			# check if we are not adding/removing admins user from any group
-			if meta_action == 'mod':
-				if kwargs.get('action') == 'users':
-					# syntax value = "1000/1" => user_id/relation_id
-					#(see groups.views.mod)
-					uid = kwargs.get('value').split("/")[0]
-					if LMC.users.by_uid(uid) in admins_members:
-						q.put(utils.notify(_('You tried to do something on '
-							'an account as powerful (or even more) than '
-							'you are. <strong>Operation aborted</strong>.')))
-						return HttpResponse('ABORTED.')
+			if meta_action == 'mod' and kwargs.get('action') == 'users':
+					user_id, rel_id = (int(x) for x in
+										kwargs.get('value').split("/"))
+
+					is_forbidden = check_mod_users_groups(request,
+											LMC.users.by_uid(user_id),
+											victim_group, rel_id,
+											admin_group, wmi_group, wmi_user,
+											restricted_users, restricted_groups)
+
+					if is_forbidden:
+						return is_forbidden
 
 			return view_func(request, *args, **kwargs)
 		return decorated

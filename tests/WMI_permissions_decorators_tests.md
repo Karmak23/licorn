@@ -149,4 +149,62 @@ add user testa1,testa2 -G admins,grp1
 
 # check_groups()
 
-## To come
+## standard user
+
+	- go to /groups/edit/licorn-wmi > 403
+	- go to /groups/edit/admins > 403
+	- go to /groups/edit/root > 403
+	- go to /groups/edit/grp1 > 403
+	- go to /groups/view/grp1 > 403
+
+## `licorn-wmi` user
+
+
+### Standard groups
+
+	- add std group > OK
+	- mod perm > OK
+	- mod perm again > OK
+	- mod perm massive > OK
+	- mod perm massive again > OK
+	- mod description > OK
+
+	- add std {guest,member,resp} > OK
+	- del std {guest,member,resp} > OK
+	- add licorn-wmi {guest,member,resp} > OK
+	- del licorn-wmi {guest,member,resp} > OK
+	- add admins {guest,member,resp} > error insufficient
+	- del admins {guest,member,resp} > error insufficient
+
+	- del std group > OK
+
+### Power groups
+
+#### privileges
+
+	- go to /groups/edit/licorn-wmi
+		- mod description > error insufficient
+		- add / del admins > error insufficient
+		- add std member > OK
+		- go to /groups/del/302 > error strongly not
+
+#### system restricted
+
+	- go to /groups/del/24 > error strongly not		(if add priv cdrom)
+	- go to /groups/del/22 > error restricted
+
+#### system non-restricted non-helpers
+
+	- go to /groups/edit/acl
+		- mod description > error non-helpers
+		- add / del members > error non-helpers
+
+#### helpers
+
+	- go to /groups/edit/gst-grp1
+		- mod description > error insufficient
+		- add / del admins members > error admins
+		- add / del standard / licorn-wmi members > OK
+	- go to /groups/delete/305 > error not possible
+
+## `admins` user
