@@ -29,7 +29,7 @@ priorities = EnumDict('service_priorities', from_dict={
 		'HIGH': 0
 	})
 
-#relationships
+# relationships between users and groups
 relation = EnumDict('relation')
 relation.NO_MEMBERSHIP = 0
 relation.GUEST         = 1
@@ -47,7 +47,7 @@ verbose.PROGRESS = 3
 verbose.DEBUG    = 4
 verbose.DEBUG2   = 5
 
-#filters for users/groups/profiles and al.
+# filters for users/groups/profiles and al.
 filters = EnumDict('filters')
 filters.NONE                = 0x00000000
 filters.ALL                 = 0xffffffff

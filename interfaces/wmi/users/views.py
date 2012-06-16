@@ -94,14 +94,14 @@ def message(request, part, uid=None, *args, **kwargs):
 @login_required
 @check_users('mod')
 def mod(request, uid, action, value, *args, **kwargs):
-	""" edit the gecos of the user """
+	""" Modify all properties of a user account. """
 
 	assert ltrace_func(TRACE_DJANGO)
 
 	user = utils.select('users', [ uid ])[0]
 
 	def mod_groups(group_id, rel_id):
-		# /mod/user_id/groups/group_id/rel_id
+		# Typical request: /mod/user_id/groups/group_id/rel_id
 
 		group = utils.select('groups', [ group_id ])[0]
 		if user.is_standard:
@@ -140,7 +140,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 			user.loginShell = value
 
 	elif action == 'groups':
-		mod_groups(*[ int(x) for x in value.split('/')])
+		mod_groups(*(int(x) for x in value.split('/')))
 
 	elif action == 'skel':
 		user.apply_skel(value)
