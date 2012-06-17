@@ -1,22 +1,47 @@
-{#- Copyright
-		2012 META IT http://meta-it.fr/
-		2012 Olivier Cortès <olive@licorn.org>
+{#- Copyright 2012 Olivier Cortès <olive@licorn.org>, GNU GPL v2 -#}
 
-    Distributed under the terms of the GNU GPL version 2.
--#}
+{%- extends "fullbase.html" -%}
 
-{% extends "base.html" %}
+{%- block title -%}{{ _('Page not found') }}{%- endblock -%}
 
-{% block title %}Page non trouvée{% endblock %}
+{%- block main_content -%}
+	<style type="text/css">
+	.for-o-for-container {
+		margin: 0 0 0 50px;
+	}
+	.for-o-for-container h1,
+	.for-o-for-container h2,
+	.for-o-for-container h3 {
+		margin: 0;
+	}
+	.for-o-for-container h1 {
+		font-size: 300px;
+		opacity: 0.5;
+	}
+	.for-o-for-container h2 {
+		margin-top: -160px;
+		margin-left: 50px;
+		margin-bottom: 50px;
+		font-size: 100px;
+		white-space: nowrap;
+	}
+	.for-o-for-container h3 {
+		margin-bottom: 20px;
+	}
+	.for-o-for-container code {
+		font-size: 120%;
+	}
+	</style>
+	<div class="for-o-for-container">
+		<h1>{{ _('404') }}</h1>
+		<h2>{{ _('Page not found') }}</h2>
+		<h3>{{ _('The address &ldquo;&nbsp;{0}&nbsp;&rdquo; leads to nowhere.').format('<code>{0}</code>'.format(request_path)) }}</h3>
+		<h3>{{ _('That is exactly where you are, now.') }}</h3>
+	</div>
+{%- endblock -%}
 
-{% block body %}
-    <div id="vertical_wrapper">
-        <!--<div id="vertical_wrapper">-->
-            <div id="content">
-                <div id="content_filler">
-					<h1>{{ _('Page not found!') }}</h1>
-                </div><!-- content_filler -->
-            </div><!-- content -->
-        <!--</div>-->
-    </div><!-- vertical_wrapper -->
-{% endblock %}
+{%- block sub_content -%}
+{#- we must define this empty block,
+	else 'fullbase.html' will complain
+	“ please define sub_content_template ”. -#}
+{%- endblock -%}

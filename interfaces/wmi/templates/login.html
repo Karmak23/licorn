@@ -1,18 +1,16 @@
-{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
-    Distributed under the terms of the GNU GPL version 2.
 
-    left-to-right slide:
-        http://www.webinventif.fr/wp-content/uploads/projets/wslide/test-wslide-2.htm
--#}
+
+{#- Copyright 2012 Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
 
 {% extends "base.html" %}
 
-{% block title %}Identification{% endblock %}
+{% block title %}{{ _('Authentication') }}{% endblock %}
 
 {% if next %}
     {% block notifications %}
     {{ super() }}
-        <p>Vous devez d'abord vous identifier pour accéder à cette adresse ({{ next }}).</p>
+        <p>{{ _('You need to authenticate before accessing {0}.').format('<code>%s</code>'%next) }}</p>
     {% endblock %}
 {% endif %}
 

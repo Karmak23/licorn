@@ -25,11 +25,11 @@ from django.shortcuts               import *
 from django.template.loader         import render_to_string
 from django.utils.translation       import ugettext_lazy as _
 
-from licorn.foundations                    import fsapi
+from licorn.foundations                    import logging, options, fsapi
 from licorn.foundations.styles             import *
 from licorn.foundations.ltrace             import *
 from licorn.foundations.ltraces            import *
-from licorn.foundations.constants          import priorities, relation
+from licorn.foundations.constants          import priorities, relation, verbose
 from licorn.core                           import LMC
 from licorn.interfaces.wmi                 import collectors
 from licorn.interfaces.wmi.app             import wmi_event_app
@@ -77,6 +77,20 @@ def __cpu_infos():
 def __uptime():
 	return float(open('/proc/uptime').read().split(" ")[0])
 
+def error_handler(request, *args, **kwargs):
+
+	# we take the lock to be sure nobody will try to output something
+	# while we modify the global verbose level. We can take it without
+	# worrying because it's a `RLock` and the logging call will be
+	# done in the same thread that we already are in.
+	with logging.output_lock:
+		old_level = options.verbose
+		options.SetVerbose(verbose.PROGRESS)
+		logging.exception(_('Unhandled exception in Django WMI code for request {0}'), str(request))
+		options.SetVerbose(old_level)
+
+	return render(request, '500.html')
+
 @superuser_only
 def configuration(request, *args, **kwargs):
 	pass
@@ -98,7 +112,7 @@ def daemon_status(request, *args, **kwargs):
 		return render(request, 'system/index.html', _dict)
 
 @login_required
-def index(request, *args, **kwargs):
+def main(request, *args, **kwargs):
 
 	_dict = {
 		'uptime'  : __uptime(),
@@ -212,34 +226,6 @@ def status(request, *args, **kwargs):
 	return render_to_response('system/status.html')
 
 @login_required
-def test(request):
-
-	if not settings.DEBUG:
-		return HttpResponseForbidden('TESTS DISABLED.')
-
-	# notice the utils.select() instead of LMC.rwi.select().
-	# arguments are *exactly* the same (they are mapped via *a and **kw).
-	user = LMC.select('users', args=[ 1001 ])[0]
-
-	# store it locally to 'see' the change. attributes are read remotely.
-	g = user.gecos
-
-	# this should be done remotelly, and will imply a notification feedback from licornd.
-	user.gecos = 'test'
-
-	users = LMC.select('users', default_selection = filters.STANDARD)
-
-	# a small HttpResponse to "see" the change.
-	response = ''
-	for user in users:
-		g = user.gecos
-		response += 'gecos = %s -> %s <br /> profile: %s <br />groups: %s' % (
-			g, user.gecos, user.profile,
-			', '.join(x.name for x in user.groups))
-
-	return HttpResponse(response)
-
-@login_required
 def download(request, filename, *args, **kwargs):
 	""" download a file, can only be in '/tmp' else download is refused
 	from : http://djangosnippets.org/snippets/365/
@@ -263,18 +249,6 @@ def download(request, filename, *args, **kwargs):
 
 	else:
 		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
-@staff_only
-def main(request, sort="name", order="asc", select=None, **kwargs):
-
-	extensions = [e for e in LMC.extensions ]
-
-	system_users_list = LMC.users.select(filters.SYSTEM)
-
-	return render(request, 'users/index.html', {
-			'users_list'        : users_list,
-			'system_users_list' : system_users_list,
-			'is_super_user'     : request.user.is_superuser,
-		})
 
 @staff_only
 def shutdown(request, reboot=False):

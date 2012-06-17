@@ -6,10 +6,12 @@ from django.http               import HttpResponseRedirect, HttpResponsePermanen
 
 from libs.utils                import dynamic_urlpatterns
 
+handler500 = 'wmi.system.views.error_handler'
+
 urlpatterns = patterns('',
 
 	# / and /test are special
-	(r'^$', 'wmi.system.views.index'),
+	(r'^$', 'wmi.system.views.main'),
 
 	# /favicon.ico doesn't exist in our well-organized world.
 	(r'^media/favicon.ico$', lambda x: HttpResponsePermanentRedirect('/media/images/favicon.ico')),

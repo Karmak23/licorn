@@ -49,6 +49,8 @@
 					{%- if main_content_template -%}
 						{%- include main_content_template -%}
 
+					{%- else -%}
+						<h1>{{ _('Please define <code>main_content_template</code> in your current view.') }}</h1>
 					{%- endif -%}
 				{%- endblock -%}
 			</div><!-- end main_content -->
@@ -57,6 +59,9 @@
 					{%- block sub_content -%}
 						{%- if sub_content_template -%}
 							{%- include sub_content_template -%}
+
+						{%- else -%}
+							<h1>{{ _('Please define <code>sub_content_template</code> in your current view.') }}</h1>
 
 						{%- endif -%}
 					{%- endblock -%}
