@@ -27,18 +27,21 @@ from licorn.foundations.constants import filters, relation
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
-from licorn.core                               import LMC
-from licorn.interfaces.wmi.libs                import utils, perms_decorators
-from licorn.interfaces.wmi.libs.decorators     import *
-# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
-from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.old_decorators import check_users
+from licorn.core                  import LMC
 
-from licorn.interfaces.wmi.app import wmi_event_app
+# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
+# WARNING: this import will fail if nobody has previously called `wmi.init()`.
+# This should have been done in the WMIThread.run() method. Anyway, this must
+# disappear soon!!
+from licorn.interfaces.wmi.libs            import old_utils as w
+
+from licorn.interfaces.wmi.app             import wmi_event_app
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
 from forms import UserForm, SkelInput, ImportForm
 
-@login_required
+@staff_only
 def message(request, part, uid=None, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -88,17 +91,19 @@ def message(request, part, uid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
+# NOTE: mod() is not protected by @staff_only because standard users
+# need to be able to modify their personnal attributes (except groups).
 @login_required
-@perms_decorators.check_users('mod')
+@check_users('mod')
 def mod(request, uid, action, value, *args, **kwargs):
-	""" edit the gecos of the user """
+	""" Modify all properties of a user account. """
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	user = utils.select('users', [ uid ])[0]
+	user = LMC.users.by_uid(int(uid))
 
 	def mod_groups(group_id, rel_id):
-		# /mod/user_id/groups/group_id/rel_id
+		# Typical request: /mod/user_id/groups/group_id/rel_id
 
 		group = utils.select('groups', [ group_id ])[0]
 		if user.is_standard:
@@ -137,7 +142,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 			user.loginShell = value
 
 	elif action == 'groups':
-		mod_groups(*[ int(x) for x in value.split('/')])
+		mod_groups(*(int(x) for x in value.split('/')))
 
 	elif action == 'skel':
 		user.apply_skel(value)
@@ -152,7 +157,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 	return HttpResponse('MOD DONE.')
 
 @staff_only
-@perms_decorators.check_users('delete')
+@check_users('delete')
 def delete(request, uid, no_archive, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -173,11 +178,13 @@ def massive(request, uids, action, *args, **kwargs):
 
 	if action == 'delete':
 		for uid in uids.split(','):
-			delete(request, uid=int(uid), no_archive=bool(kwargs.get('no_archive', False)))
+			delete(request, uid=int(uid),
+					no_archive=bool(kwargs.get('no_archive', False)))
 
 	if action == 'skel':
 		for uid in uids.split(','):
-			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
+			if uid != '':
+				mod(request, uid=uid, action='skel', value=kwargs.get('skel'))
 
 	if action == 'export':
 
@@ -440,7 +447,7 @@ def view(request, uid=None, login=None, *args, **kwargs):
 			})
 		return render(request, 'users/view_template.html', _dict)
 
-@login_required
+@staff_only
 def upload_file(request, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -458,7 +465,6 @@ def upload_file(request, *args, **kwargs):
 		destination.close()
 		#lprint(destination)
 		return HttpResponse(csv_filename)
-
 
 @staff_only
 def import_view(request, confirm='', *args, **kwargs):

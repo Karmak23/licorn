@@ -10,7 +10,6 @@ urlpatterns = patterns('',
 
 	# / and /test are special
 	(r'^$', 'wmi.system.views.index'),
-	(r'^test/?$', 'wmi.system.views.test'),
 
 	# /favicon.ico doesn't exist in our well-organized world.
 	(r'^media/favicon.ico$', lambda x: HttpResponsePermanentRedirect('/media/images/favicon.ico')),
@@ -22,7 +21,7 @@ urlpatterns = patterns('',
 	# Interface with an integrated web-server, not a big-balls high-trafic
 	# website.
 	(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
-				'document_root': settings.MEDIA_ROOT, 'show_indexes':True}),
+				'document_root': settings.MEDIA_ROOT, 'show_indexes': True}),
 
 	# login / logout is handled by django, with out own template only
 	(r'^login/?$', 'django.contrib.auth.views.login',

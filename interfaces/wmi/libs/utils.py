@@ -17,6 +17,7 @@ from licorn.foundations             import logging, pyutils, settings
 from licorn.foundations.ltrace      import *
 from licorn.foundations.ltraces     import *
 from licorn.foundations.styles      import *
+from licorn.foundations.base        import ObjectSingleton
 from licorn.core                    import LMC, version
 
 # local imports
@@ -43,22 +44,61 @@ def select_one(*a, **kw):
 
 # ================================================================== WMI2 utils
 
+def unique_hash(replacement=None):
+	""" Jinja2 globals which just returns `uuid.uuid4().hex`. """
+
+	return str(uuid.uuid4().hex).replace('-', replacement or '-')
+
 # JS and RPC-JS related functions
 def notify(message, timeout=None, css_class=None):
-	""" TODO. """
+	""" OLD notification system (WMI2 version < 1.3.1). Please use
+		`notification()` instead (via the auto-instanciated
+		:class:`_notification` class), it is much simpler and feature
+		complete. """
 
 	assert ltrace_func(TRACE_DJANGO)
+	return format_RPC_JS('show_message_through_notification', message,
+							timeout or u'', css_class or u'')
 
-	# we use str() in case the message is currently unicode (and ALL our
-	# internal strings ARE unicode :-D
-	return format_RPC_JS('show_message_through_notification', str(message),
-											timeout or u'', css_class or u'')
+class _notification(ObjectSingleton):
+	""" This class avoids importing the WMI event App everywhere, when a
+		client-side notification is needed.
+
+		.. versionadded:: 1.3.1, during the #762 re-implementation.
+	"""
+
+	def __import(self):
+		from licorn.interfaces.wmi.app import wmi_event_app
+		self.wmi_event_app = wmi_event_app
+
+	def __call__(self, request, message, timeout=None, css_class=None):
+
+		assert ltrace_func(TRACE_DJANGO)
+
+		try:
+			self.wmi_event_app.queue(request).put(format_RPC_JS(
+					'show_message_through_notification',
+					message, timeout or u'', css_class or u'')
+				)
+		except:
+			self.__import()
+			self.wmi_event_app.queue(request).put(format_RPC_JS(
+					'show_message_through_notification',
+					message, timeout or u'', css_class or u'')
+				)
+notification = _notification()
+def wmi_exception(request, exc, *args):
+	""" Provide the exception on the daemon side (log or console), and notify
+		the client via the push mechanism, all in one call. """
+
+	logging.exception(*args)
+	notification(request, args[0].format(*args[1:])
+							+ _(' (was: {0})').format(exc))
 def format_RPC_JS(JS_method_name, *js_arguments):
 
 	assert ltrace_func(TRACE_DJANGO)
-
-	return { 	'method'    : JS_method_name,
-				'arguments' : [ json.dumps(unicode(a)
+	return { 'method'    : JS_method_name,
+						'arguments' : [ json.dumps(unicode(a)
 											if type(a) == types.StringType
 											else a) for a in js_arguments ] }
 def dynamic_urlpatterns(dirname):

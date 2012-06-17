@@ -191,8 +191,6 @@ def index(request, *args, **kwargs):
 
 			]
 
-
-
 		_dict.update({
 				'main_content_template' : 'system/index_main_nostaff.html',
 				'sub_content_template'  : 'system/index_sub_nostaff.html',
@@ -265,7 +263,6 @@ def download(request, filename, *args, **kwargs):
 
 	else:
 		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
-
 @staff_only
 def main(request, sort="name", order="asc", select=None, **kwargs):
 
@@ -308,8 +305,7 @@ def shutdown_all_cancel(request):
 	#wmi_event_app.enqueue_operation(request, 'LMC.system.shutdown_all_cancel')
 
 	return HttpResponse('Shutdown CANCEL!')
-
-
+@login_required
 def view_groups(request):
 	""" return the html table groups for the currently logged in user """
 	print "vgroups"

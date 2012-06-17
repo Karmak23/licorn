@@ -141,8 +141,8 @@ class PrivilegesWhiteList(Singleton, LockedController):
 
 					except KeyError:
 						logging.warning(_(u'Skipped privilege {0} refering to '
-							'a non-existing group.').format(
-								stylize(ST_NAME, privilege)))
+											u'a non-existing group.').format(
+												stylize(ST_NAME, privilege)))
 						need_rewrite = True
 						continue
 
@@ -160,8 +160,9 @@ class PrivilegesWhiteList(Singleton, LockedController):
 				# this is needed for serialize() to do its job.
 				self.changed = True
 
-				logging.notice(_(u'Triggering privilege whitelist rewrite in 3 seconds '
-						u'to remove non-existing references or duplicates.'))
+				logging.notice(_(u'Triggering privilege whitelist rewrite '
+									u'in 3 seconds to remove non-existing '
+									u'references or duplicates.'))
 
 				workers.service_enqueue(priorities.HIGH,
 						self.serialize, job_delay=3.0)
@@ -189,10 +190,16 @@ class PrivilegesWhiteList(Singleton, LockedController):
 					stylize(ST_NAME, privilege.name))
 				return False
 			else:
-				if privilege.is_standard or privilege.is_helper or privilege.profile:
-					logging.warning(_(u'group %s cannot be promoted as '
-						'privilege, it is not a pure system group.') %
-						stylize(ST_NAME, privilege.name))
+				if privilege.name == settings.defaults.admin_group:
+					logging.warning(_(u'Group %s must not be promoted to '
+									u'privilege for security reasons.') %
+										stylize(ST_NAME, privilege.name))
+					return False
+
+				elif privilege.is_standard or privilege.is_helper or privilege.profile:
+					logging.warning(_(u'Group %s cannot be promoted to '
+									u'privilege, it is not a pure system '
+									u'group.') % stylize(ST_NAME, privilege.name))
 					return False
 
 				else:
@@ -216,13 +223,13 @@ class PrivilegesWhiteList(Singleton, LockedController):
 				del self[privilege.name]
 				privilege.is_privilege = False
 				self.changed = True
-				logging.info(_(u'Removed privilege %s from whitelist.') %
-					stylize(ST_NAME, privilege.name))
+				logging.notice(_(u'Removed privilege %s from whitelist.') %
+											stylize(ST_NAME, privilege.name))
 				return True
 
 			else:
 				logging.info(_(u'Skipped privilege %s, already not present '
-					'in the whitelist.') % stylize(ST_NAME, privilege.name))
+					u'in the whitelist.') % stylize(ST_NAME, privilege.name))
 				return False
 	def Select(self, filter_string):
 		""" filter self against various criteria and return a list of matching
@@ -239,7 +246,7 @@ class PrivilegesWhiteList(Singleton, LockedController):
 			return priv
 		else:
 			raise exceptions.DoesntExistException(
-				_(u'Privilege {} does not exist').format(priv))
+				_(u'Privilege {0} does not exist').format(priv))
 	def guess_one(self, priv):
 		if priv in self:
 			return priv

@@ -801,9 +801,8 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if skel is None or skel not in LMC.configuration.users.skels:
 			raise exceptions.BadArgumentError(_(u'Invalid skel "{0}". '
-				'Valid skels are {1}.').format(stylize(ST_BAD, skel),
-					', '.join(stylize(ST_COMMENT, skel)
-						for skel in LMC.configuration.users.skels)))
+				'Valid skels are {1}.').format(skel,
+					', '.join(LMC.configuration.users.skels)))
 
 		with self.lock:
 			self._checking.set()

@@ -13,8 +13,8 @@ from licorn.foundations.ltraces   import *
 
 from licorn.core import LMC
 
-from licorn.interfaces.wmi.libs            import utils, perms_decorators
-from licorn.interfaces.wmi.libs.decorators import *
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only
 
 # FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
 from licorn.interfaces.wmi.libs                import old_utils as w
