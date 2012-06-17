@@ -41,7 +41,10 @@
 
                         <div id="real_form_wrapper" class="hidden">
                             <form action="{{ app_path }}" method="post" id="login_form">{% csrf_token %}
-                                <table>
+
+								<!-- the table ID "login_table" is used in
+									login.js to make the animation work -->
+                                <table id="login_table">
                                     <tr>
                                         <td colspan="3">
                                             {% if form.errors or form.non_field_errors() %}
