@@ -66,8 +66,8 @@ class LicorndAuthBackend:
 				django_user.email	     = login + '@localhost'
 				django_user.is_active    = not locked
 				django_user.is_superuser = (licorn_settings.defaults.admin_group in groups)
-				django_user.is_staff     = (licorn_settings.licornd.wmi.group    in groups)
-
+				django_user.is_staff     = django_user.is_superuser or (
+											licorn_settings.licornd.wmi.group in groups)
 		except Exception:
 			logging.exception(_(u'Exception while trying to authenticate user {0}'), username)
 

@@ -93,6 +93,7 @@ def toggle_permissiveness(request, gid, *args, **kwargs):
 			u'<strong>{0}</strong> permissiveness'), group.name)
 
 	return HttpResponse('DONE.')
+
 @staff_only
 def massive(request, gids, action, value='', *args, **kwargs):
 
