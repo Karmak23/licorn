@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 19:31+0200\n"
-"PO-Revision-Date: 2012-06-15 19:31+0200\n"
+"POT-Creation-Date: 2012-06-18 00:57+0200\n"
+"PO-Revision-Date: 2012-06-18 00:57+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -181,21 +181,21 @@ msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
-#: groups/event_handlers.py:12 system/views.py:170 system/views.py:351
+#: groups/event_handlers.py:12 system/views.py:184 system/views.py:321
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
-#: users/views.py:386
+#: users/views.py:393
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:13 groups/views.py:234 system/views.py:176
-#: system/views.py:357 templates/groups/users_list.html:59
-#: templates/users/groups_list.html:38 users/views.py:391
+#: groups/event_handlers.py:13 groups/views.py:259 system/views.py:190
+#: system/views.py:327 templates/groups/users_list.html:59
+#: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:14 groups/views.py:224 system/views.py:164
-#: system/views.py:345 templates/groups/users_list.html:68
-#: templates/users/groups_list.html:47 users/views.py:381
+#: groups/event_handlers.py:14 groups/views.py:249 system/views.py:178
+#: system/views.py:315 templates/groups/users_list.html:68
+#: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
 
@@ -255,108 +255,228 @@ msgstr "le répertoire partagé est-il permissif ?"
 msgid "Group skel"
 msgstr "Squelette de groupe"
 
-#: groups/views.py:73
-msgid "Error while deleting group {0}: {1}."
-msgstr ""
-
-#: groups/views.py:83
+#: groups/views.py:78
 #, fuzzy
-msgid "Error while changing group permissiveness {0}: {1}."
+msgid "Error while deleting group {0}"
+msgstr "Erreur pendant l'envoi du fichier {0}"
+
+#: groups/views.py:92
+#, fuzzy
+msgid "Error while changing group <strong>{0}</strong> permissiveness"
 msgstr "Erreur lors de l'ajout du compte {0} : {1."
 
-#: groups/views.py:175
-msgid "Error while modifying group {0}: {1}."
-msgstr ""
+#: groups/views.py:199
+#, fuzzy
+msgid "Error while modifying group <strong>{0}</strong>"
+msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>{0}</strong> ?"
 
-#: groups/views.py:208
-msgid "Error while adding group {0}: {1}."
-msgstr ""
+#: groups/views.py:232
+#, fuzzy
+msgid "Error while adding group <strong>{0}</strong>"
+msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>{0}</strong> ?"
 
-#: groups/views.py:223
+#: groups/views.py:248
 msgid "Responsibles"
 msgstr "Responsables"
 
-#: groups/views.py:228 groups/views.py:239
+#: groups/views.py:253 groups/views.py:264
 msgid "Members"
 msgstr "Membres"
 
-#: groups/views.py:229
+#: groups/views.py:254
 msgid "standard"
 msgstr "standard"
 
-#: groups/views.py:233
+#: groups/views.py:258
 msgid "Guests"
 msgstr "Invité(e)s"
 
-#: groups/views.py:286
+#: groups/views.py:308
+msgid "No group by that {0} “<strong>{1}</strong>”."
+msgstr "Aucun groupe portant le {0} « <strong>{1}</strong> »."
+
+#: groups/views.py:310
+msgid "name"
+msgstr "nom"
+
+#: groups/views.py:310 templates/users/view_groups.html:10
+msgid "GID"
+msgstr "GID"
+
+#: groups/views.py:320
 msgid "Edit group {0}"
 msgstr "Édition du groupe {0}"
 
-#: groups/views.py:290
+#: groups/views.py:325
 msgid "Add new group"
 msgstr "Ajouter un groupe"
 
-#: groups/views.py:297
+#: groups/views.py:328
 msgid "Standard users"
 msgstr "Utilisateurs standards"
 
-#: groups/views.py:305 templates/users/index.html:47
+#: groups/views.py:336 templates/users/index.html:47
 msgid "System users"
 msgstr "Utilisateurs système"
 
+#: libs/decorators.py:82
+msgid ""
+"Insufficient permissions to remove <strong>{0}</strong> from the <em>{1}</"
+"em> group. If you really want to, use the CLI."
+msgstr ""
+"Permissions insuffisantes pour supprimer <strong>{0}</strong> du groupe <em>"
+"{1}</em>. Si vous voulez vraiment le faire, utilisez la CLI."
+
+#: libs/decorators.py:86 libs/decorators.py:113
+msgid "you own account"
+msgstr "votre propre compte"
+
+#: libs/decorators.py:88
+msgid "administrator account <strong>{0}</strong>"
+msgstr "compte administrateur <strong>{0}</strong>"
+
+#: libs/decorators.py:97
+msgid "No operation allowed on {0} system accounts."
+msgstr "Aucune opération autorisée sur les comptes système {0}."
+
+#: libs/decorators.py:98 libs/decorators.py:130 libs/decorators.py:361
+msgid "restricted"
+msgstr "restreints"
+
+#: libs/decorators.py:103
+msgid ""
+"Insufficient permissions to alter administrator account <strong>{0}</strong>."
+msgstr ""
+"Permissions insuffisantes pour modifier le compte administrateur <strong>{0}"
+"</strong>."
+
+#: libs/decorators.py:110
+msgid ""
+"Insufficient permissions to remove <strong>{0}</strong> from the  <em>{1}</"
+"em> group."
+msgstr ""
+"Permissions insuffisantes pour supprimer <strong>{0}</strong> du groupe <em>"
+"{1}</em>."
+
+#: libs/decorators.py:115
+msgid "manager account {0}"
+msgstr "Compte gestionnaire {0}"
+
+#: libs/decorators.py:125
+msgid "Insufficient permissions to alter the {0} group <em>{1}</em>."
+msgstr "Permissions insuffisantes pour modifier le groupe {0} <em>{1}</em>."
+
+#: libs/decorators.py:127 libs/decorators.py:285
+msgid "administrator"
+msgstr "administrateur"
+
+#: libs/decorators.py:129
+msgid "{0} system"
+msgstr "système {0}"
+
+#: libs/decorators.py:167
+msgid "{0}: user {1} tried to alter account {2} with WMI action {3}!"
+msgstr ""
+"{0} : l'utilisateur {1} a essayé de modifier le compte {2} avec l'action {3} "
+"dans la WMI !"
+
+#: libs/decorators.py:169
+msgid "POSSIBLE BREAKIN ATTEMPT"
+msgstr "TENTATIVE DE BRÈCHE POTENTIELLE"
+
+#: libs/decorators.py:193
+msgid "No operation allowed on restricted system accounts."
+msgstr "Aucune opération autorisée sur les comptes systèmes restreints."
+
+#: libs/decorators.py:200
+msgid "No operation allowed on system accounts."
+msgstr "Aucune action autorisée sur les comptes systèmes."
+
+#: libs/decorators.py:207
+msgid "Impossible to delete your own account, captain!"
+msgstr "Impossible de supprimer votre propre compte, mon capitaine !"
+
+#: libs/decorators.py:221
+msgid "Impossible to demote your own account to standard user , captain!"
+msgstr ""
+"Impossible de destituer votre propre compte en compte standard, "
+"mon capitaine ! "
+
+#: libs/decorators.py:229 libs/decorators.py:245
+msgid "Insufficient permissions to alter your own account."
+msgstr "Permissions insuffisantes pour modifier votre compte."
+
+#: libs/decorators.py:233
+msgid "Impossible to lock your own account, captain!"
+msgstr "Impossible de verrouiller votre propre compte, mon capitaine !"
+
+#: libs/decorators.py:240
+msgid "Insufficient permissions to unlock your own account."
+msgstr "Permissions insuffisantes pour déverrouiller votre compte."
+
+#: libs/decorators.py:260
+msgid "Insufficient permissions."
+msgstr "Permissions insuffisantes."
+
+#: libs/decorators.py:275
+msgid ""
+"Insufficient permissions to alter <em>administrator</em> account <strong>{0}"
+"</strong>. If you really want to, use the CLI."
+msgstr ""
+"Permissions insuffisantes pour modifier le compte <em>administrateur</em> "
+"<strong>{0}</strong>. Si vous voulez vraiment le faire, utilisez la CLI."
+
+#: libs/decorators.py:289
+msgid "manager"
+msgstr "gestionnaire"
+
+#: libs/decorators.py:293
+msgid ""
+"Insufficient permissions to alter <em>{0}</em> account  <strong>{1}</strong>."
+msgstr ""
+"Permissions insuffisantes pour modifier le compte <em>{0}</em> <strong>{1}</"
+"strong>."
+
+#: libs/decorators.py:339
+msgid "No operation allowed on restricted system groups."
+msgstr "Aucune opération autorisée sur les groupes systèmes restreints."
+
+#: libs/decorators.py:349
+msgid "No operation allowed on non-helpers system groups."
+msgstr "Aucune opération autorisée sur les groupes systèmes non-assistants."
+
+#: libs/decorators.py:355
+msgid "the administrators groups"
+msgstr "le groupe des administrateurs"
+
+#: libs/decorators.py:357
+msgid "the <strong>{0}</strong> {1}"
+msgstr "le {1} <strong>{0}</strong>"
+
+#: libs/decorators.py:358
+msgid "privilege"
+msgstr "privilège"
+
+#: libs/decorators.py:360
+msgid "{0} system group"
+msgstr "groupe système {0}"
+
+#: libs/decorators.py:377
+msgid "Removing {0} is strongly not recommended.{1}"
+msgstr "Supprimer {0} est vivement déconseillé. {1}"
+
+#: libs/decorators.py:380
+msgid " If you really want to shoot yourself in the foot, use the CLI."
+msgstr ""
+"Si vous voulez vraiment vous tirer une balle dans le pied, utilisez la CLI."
+
+#: libs/decorators.py:391
+msgid "Insufficient permissions to alter {0}."
+msgstr "Permissions insuffisantes pour modifier {0}."
+
 #: libs/licornd_auth.py:76
 msgid "Exception while trying to authenticate user {0}"
-msgstr ""
-
-#: libs/old_decorators.py:47
-msgid "Impossible to do actions on restricted users for the moment, sorry."
-msgstr ""
-
-#: libs/old_decorators.py:56 libs/old_decorators.py:70
-msgid "User {0}: Impossible to {1} your own account!"
-msgstr ""
-
-#: libs/old_decorators.py:61
-msgid "User {0}: Impossible to remove your own account from group {1}!"
-msgstr ""
-
-#: libs/old_decorators.py:81 libs/old_decorators.py:109
-#, python-format
-msgid "You cannot modify group %s"
-msgstr ""
-
-#: libs/old_decorators.py:84
-#, python-format
-msgid ""
-"Impossible action, you cannot remove yourself from the privileged group %s."
-msgstr ""
-
-#: libs/old_decorators.py:100
-#, python-format
-msgid ""
-"User %s: Impossible action,you cannot do anything on member more powerfull "
-"than you are."
-msgstr ""
-
-#: libs/old_decorators.py:134
-msgid "Impossible to do actions on restricted groups for the moment, sorry."
-msgstr ""
-
-#: libs/old_decorators.py:141
-#, python-format
-msgid "Group %s: Impossible to remove the admins group!"
-msgstr ""
-
-#: libs/old_decorators.py:146
-#, python-format
-msgid ""
-"Group %s: You have not enought rights to do  actions on the admins group!"
-msgstr ""
-
-#: libs/old_decorators.py:149
-#, python-format
-msgid "Group %s: Impossible to remove a privileged group!"
-msgstr ""
+msgstr "Exception pendant l'authentification de l'utilisateur {0}"
 
 #: libs/old_utils.py:33
 msgid ""
@@ -565,73 +685,45 @@ msgstr "WMI %s :"
 #: libs/old_utils.py:608
 #, python-format
 msgid "administration %s"
-msgstr ""
+msgstr "administration %s"
 
-#: libs/perms_decorators.py:49
-msgid "I cannot let you delete your own account captain !"
-msgstr ""
+#: libs/utils.py:96
+msgid " (was: {0})"
+msgstr " (erreur : {0})"
 
-#: libs/perms_decorators.py:60
-msgid ""
-"You tried to remove your own account from a privileged group. I cannot let "
-"you do that !"
-msgstr ""
-
-#: libs/perms_decorators.py:66
-msgid ""
-"You tried to remove your own account from {0} group. I cannot let you do "
-"that !"
-msgstr ""
-
-#: libs/perms_decorators.py:71
-msgid "I cannot let you lock your own account !"
-msgstr ""
-
-#: libs/perms_decorators.py:87
-msgid ""
-"You tried to do something on an account more or as powerfull than you are. I "
-"cannot let you do that !"
-msgstr ""
-
-#: libs/perms_decorators.py:107
-msgid "I cannot let you do anything on {0} group !"
-msgstr ""
-
-#: libs/perms_decorators.py:112
-msgid "I cannot let you delete {0} group !"
-msgstr ""
-
-#: libs/perms_decorators.py:118
-msgid "You cannot delete privileged group {0} !"
-msgstr ""
-
-#: libs/utils.py:98
+#: libs/utils.py:138
 msgid "Could not import module {0}"
-msgstr ""
+msgstr "Impossible d'importer le module {0}"
 
-#: libs/utils.py:115
+#: libs/utils.py:155
 msgid ""
 "Dependancy {0} of Django app {1} is unsafe (not a str() nor an unicode() "
 "object),  ignoring the app completely."
 msgstr ""
+"La dépendance {0} de l'application Django {1} n'est pas sûre (pas un objet "
+"str() ni unicode()); l'application est complètement ignorée."
 
-#: libs/utils.py:125 libs/utils.py:134
+#: libs/utils.py:165 libs/utils.py:174
 msgid ""
 "Urls of Django app {0} are not loaded because dependancy {1} is not "
 "satisfied."
 msgstr ""
+"Les URLs de l'application Django {0} ne seront pas chargées car la "
+"dépendance {1} n'est pas satisfaite."
 
-#: libs/utils.py:143
+#: libs/utils.py:183
 msgid ""
 "Dynamically loading URL patterns for Django app {0}, all dependancies "
 "satisfied."
 msgstr ""
+"Chargement dynamique des URLs pour l'application Django {0}, toutes les "
+"dépendances sont satisfaites."
 
-#: libs/utils.py:241
+#: libs/utils.py:281
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:246
+#: libs/utils.py:286
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -746,25 +838,25 @@ msgstr "Aucun partage à cette adresse, désolé."
 
 #: shares/views.py:146
 msgid "Uploaded files are not downloadable."
-msgstr ""
+msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:153 system/views.py:261
+#: shares/views.py:153 system/views.py:245
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:155 system/views.py:263
+#: shares/views.py:155 system/views.py:247
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:159 system/views.py:267
+#: shares/views.py:159 system/views.py:251
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
 #: shares/views.py:162
 msgid "Not implemented yet, sorry."
-msgstr ""
+msgstr "Fonction pas encore implémentée, désolé."
 
 #: system/event_handlers.py:22
 msgid ""
@@ -784,41 +876,88 @@ msgstr "Licornd a redémarré ; la WMI est reconnectée ; Ça roxe de nouveau�
 msgid "unknown"
 msgstr "inconnu"
 
-#: system/views.py:131 users/views.py:288
+#: system/views.py:89
+msgid "Unhandled exception in Django WMI code for request {0}"
+msgstr ""
+"Exception non traitée dans le code Django de la WMI pour la requête {0}"
+
+#: system/views.py:145 users/views.py:295
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:162 system/views.py:343 users/views.py:380
+#: system/views.py:176 system/views.py:313 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:168 system/views.py:349 users/views.py:385
+#: system/views.py:182 system/views.py:319 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:174 system/views.py:355 users/views.py:390
+#: system/views.py:188 system/views.py:325 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:180 system/views.py:361 users/views.py:395
+#: system/views.py:194 system/views.py:331 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:182 system/views.py:363 users/views.py:396
+#: system/views.py:196 system/views.py:333 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:186 system/views.py:367 users/views.py:400
+#: system/views.py:200 system/views.py:337 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:188 system/views.py:369 users/views.py:401
+#: system/views.py:202 system/views.py:339 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
-#: templates/404.html:17
-msgid "Page not found!"
-msgstr "Page non trouvée !"
+#: templates/404.html:5 templates/404.html.py:37
+msgid "Page not found"
+msgstr "Page non trouvée"
+
+#: templates/404.html:36
+msgid "404"
+msgstr "404"
+
+#: templates/404.html:38
+msgid "The address &ldquo;&nbsp;{0}&nbsp;&rdquo; leads to nowhere."
+msgstr "L'adresse &laquo;&nbsp;{0}&nbsp;&raquo; ne conduit nulle part."
+
+#: templates/404.html:39
+msgid "That is exactly where you are, now."
+msgstr "Et c'est exactement là que vous êtes, maintenant."
+
+#: templates/500.html:10
+msgid "Internal server error"
+msgstr "Erreur interne du serveur"
+
+#: templates/500.html:63
+msgid "BOOM"
+msgstr "BOUM"
+
+#: templates/500.html:68
+msgid "BOOM POW!"
+msgstr "BOUM POW !"
+
+#: templates/500.html:69
+msgid "Something crashed in the program."
+msgstr "Quelque chose a craqué dans le programme."
+
+#: templates/500.html:70
+msgid "In most cases you can {0} without further problems."
+msgstr "Dans la plupart des cas vous pouvez {0} sans conséquence particulière."
+
+#: templates/500.html:71
+msgid ""
+"We are very sorry for the inconvenience; all data needed to correct this "
+"error has already been collected, to be exploited if needed by the "
+"developers."
+msgstr ""
+"Nous sommes désolés de cet inconvénient ; toutes les données nécessaires à "
+"la correction de cette erreur ont déjà été collectées, pour être exploitées "
+"au besoin par les développeurs."
 
 #: templates/base.bootstrap.html:24
 msgid "Licorn&reg;: "
@@ -836,23 +975,43 @@ msgstr "Tous droits réservés."
 msgid "Licorn® WMI: "
 msgstr "WMI Licorn® :"
 
-#: templates/login.html:42
+#: templates/fullbase.html:53
+msgid "Please define <code>main_content_template</code> in your current view."
+msgstr ""
+
+#: templates/fullbase.html:64
+msgid "Please define <code>sub_content_template</code> in your current view."
+msgstr ""
+
+#: templates/gettext.html:5
+msgid "go back and continue using it"
+msgstr "revenir en arrière et continuer à l'utiliser"
+
+#: templates/login.html:8
+msgid "Authentication"
+msgstr "Identification"
+
+#: templates/login.html:13
+msgid "You need to authenticate before accessing {0}."
+msgstr "Vous devez vous identifier avant d'accéder à l'adresse {0}."
+
+#: templates/login.html:40
 msgid "Welcome to Licorn&reg;!"
 msgstr "Bienvenue sur Licorn&reg; !"
 
-#: templates/login.html:58
+#: templates/login.html:56
 msgid "Please enter your authentification credentials:"
 msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 
-#: templates/login.html:77
+#: templates/login.html:75
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:86 templates/shares/parts/share-view.html:53
+#: templates/login.html:84 templates/shares/parts/share-view.html:53
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
-#: templates/login.html:96
+#: templates/login.html:94
 msgid "Enter"
 msgstr "Entrer"
 
@@ -895,7 +1054,7 @@ msgstr "périphérique : <strong>{0}</strong>,"
 
 #: templates/backup/index_main.html:179
 msgid "GUID: {0}"
-msgstr ""
+msgstr "GUID : {0}"
 
 #: templates/backup/index_main.html:180
 msgid "FS type: <strong>{0}</strong>"
@@ -930,9 +1089,8 @@ msgid "An error occured while computing space needed for next backup."
 msgstr ""
 
 #: templates/backup/widgets.html:122
-#, fuzzy
 msgid "<strong>{0}</strong>"
-msgstr "périphérique : <strong>{0}</strong>,"
+msgstr "<strong>{0}</strong>"
 
 #: templates/backup/widgets.html:126
 msgid "(display log details)"
@@ -987,7 +1145,7 @@ msgstr "Supprimer le groupe {0}"
 msgid "Groups management"
 msgstr "Gestion des groupes"
 
-#: templates/groups/index.html:48 users/views.py:311
+#: templates/groups/index.html:48 users/views.py:318
 msgid "System groups"
 msgstr "Groupes système"
 
@@ -1535,10 +1693,6 @@ msgstr "Paramètres du mot de passe"
 msgid "Extensions WMI2 rendering not yet implemented"
 msgstr "Rendu graphique des extensions non implémenté dans la WMI2"
 
-#: templates/users/view_groups.html:10
-msgid "GID"
-msgstr "GID"
-
 #: templates/users/view_groups.html:25
 msgid "This user is not {0} of any group yet."
 msgstr "Cet utilisateur n'est encore {0} d'aucun groupe."
@@ -1706,55 +1860,55 @@ msgstr "Compte utilisateur « {0} » déverrouillé."
 msgid "Login"
 msgstr "Identifiant"
 
-#: users/forms.py:72
+#: users/forms.py:71
 msgid "Which skel do you want to apply?"
 msgstr "Quel squelette voulez-vous appliquer ?"
 
-#: users/forms.py:79
+#: users/forms.py:78
 msgid "CSV file"
 msgstr "Fichier CSV"
 
-#: users/forms.py:86
+#: users/forms.py:85
 msgid "Last name column"
 msgstr "Colonne du nom"
 
-#: users/forms.py:89
+#: users/forms.py:88
 msgid "First name column"
 msgstr "Colonne du prénom"
 
-#: users/forms.py:92
+#: users/forms.py:91
 msgid "Group column"
 msgstr "Colonne du groupe"
 
-#: users/forms.py:95
+#: users/forms.py:94
 msgid "Login column"
 msgstr "Colonne de l'identifiant"
 
-#: users/forms.py:98
+#: users/forms.py:97
 msgid "Password column"
 msgstr "Colonne du mot de passe"
 
-#: users/views.py:248
+#: users/views.py:255
 msgid "Unable to add user"
 msgstr "Impossible d'ajouter l'utilisateur"
 
-#: users/views.py:249
+#: users/views.py:256
 msgid "Unable to add user {0}: {1}."
 msgstr "Erreur lors de l'ajout du compte {0} : {1}."
 
-#: users/views.py:293
+#: users/views.py:300
 msgid "Add new user"
 msgstr "Ajouter un utilisateur"
 
-#: users/views.py:299
+#: users/views.py:306
 msgid "Standard groups"
 msgstr "Groupes standard"
 
-#: users/views.py:304
+#: users/views.py:311
 msgid "Privileged groups"
 msgstr "Privilèges"
 
-#: users/views.py:354
+#: users/views.py:361
 msgid "Standard account"
 msgstr "Compte standard"
 
@@ -1817,9 +1971,6 @@ msgstr "Compte standard"
 
 #~ msgid "Submit >>"
 #~ msgstr "Valider >>"
-
-#~ msgid "System"
-#~ msgstr "Système"
 
 #~ msgid "Gecos"
 #~ msgstr "Nom complet"

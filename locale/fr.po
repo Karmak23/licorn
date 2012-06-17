@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-15 19:31+0200\n"
+"POT-Creation-Date: 2012-06-18 00:09+0200\n"
 "PO-Revision-Date: 2012-06-14 15:53+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -3367,7 +3367,7 @@ msgstr "Règle ACL {1} {0} : “{2}” pour {3}."
 msgid "Added"
 msgstr "Ajouté(e)"
 
-#: core/_controllers.py:512 core/users.py:1692
+#: core/_controllers.py:512 core/users.py:1691
 msgid "system"
 msgstr "système"
 
@@ -3427,36 +3427,44 @@ msgid ""
 msgstr ""
 "Ré-écriture de la liste des privilèges pour supprimer les entrées invalides."
 
-#: core/privileges.py:188
+#: core/privileges.py:189
 #, python-format
 msgid "Skipped privilege %s, already whitelisted."
 msgstr "Privilège %s ignoré, car déjà enregistré comme tel."
 
-#: core/privileges.py:193
-#, python-format
-msgid ""
-"group %s cannot be promoted as privilege, it is not a pure system group."
+#: core/privileges.py:194
+#, fuzzy, python-format
+msgid "Group %s must not be promoted to privilege for security reasons."
 msgstr ""
 "Le Groupe %s ne peut pas être promu privilège, ce n'est pas un groupe "
 "système simple (il est soit standard, soit auxillaire)."
 
-#: core/privileges.py:204
+#: core/privileges.py:200
+#, fuzzy, python-format
+msgid ""
+"Group %s cannot be promoted to privilege, it is not a pure system group."
+msgstr ""
+"Le Groupe %s ne peut pas être promu privilège, ce n'est pas un groupe "
+"système simple (il est soit standard, soit auxillaire)."
+
+#: core/privileges.py:211
 #, python-format
 msgid "Added privilege %s to whitelist."
 msgstr "Le privilège %s a été ajouté à la liste."
 
-#: core/privileges.py:219
+#: core/privileges.py:226
 #, python-format
 msgid "Removed privilege %s from whitelist."
 msgstr "Le privilège %s a été supprimé de la liste."
 
-#: core/privileges.py:224
+#: core/privileges.py:231
 #, python-format
 msgid "Skipped privilege %s, already not present in the whitelist."
 msgstr "Privilège %s ignoré, car déjà absent de la liste."
 
-#: core/privileges.py:242
-msgid "Privilege {} does not exist"
+#: core/privileges.py:249
+#, fuzzy
+msgid "Privilege {0} does not exist"
 msgstr "Le privilège {} n'existe pas."
 
 #: core/_objects.py:147
@@ -4109,7 +4117,7 @@ msgstr ""
 msgid "You must specify a gecos"
 msgstr "Vous devez spécifier un GECOS"
 
-#: core/users.py:387 core/users.py:1475
+#: core/users.py:387 core/users.py:1474
 msgid "Malformed GECOS field \"{0}\", must match /{1}/i."
 msgstr "Le champ GECOS \"{0}\" est invalide, il ne vérifie pas /{1}/i."
 
@@ -4227,151 +4235,151 @@ msgstr "Le groupe {0} a été déplacé du backend {1} au backend {2}."
 msgid "Invalid skel \"{0}\". Valid skels are {1}."
 msgstr "Squelette \"{0}\" invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:844
+#: core/users.py:843
 #, fuzzy
 msgid "Applyed skel {0} for user {1}"
 msgstr "Squelette {0} invalide. Les squelettes valides sont {1}."
 
-#: core/users.py:943
+#: core/users.py:942
 msgid "Auto-cleaned {0}'s gecos to \"{1}\"."
 msgstr ""
 "Le GECOS de l'utilisateur {0} a été automatiquement nettoyé, avec la "
 "nouvelle valeur \"{1}\"."
 
-#: core/users.py:948
+#: core/users.py:947
 #, python-format
 msgid "%s Automatic Backup System"
 msgstr "Système de sauvegarde automatique %s"
 
-#: core/users.py:949
+#: core/users.py:948
 msgid "Special Executable Restrictor Account"
 msgstr "Compte spécial de restriction des exécutables"
 
-#: core/users.py:950
+#: core/users.py:949
 msgid "ISC Domain Name Service daemon"
 msgstr "Service de Noms de Domaines de l'ISC"
 
-#: core/users.py:951
+#: core/users.py:950
 msgid "Apple Calendar Server Daemon"
 msgstr "Daemon du serveur de calendriers Apple"
 
-#: core/users.py:952
+#: core/users.py:951
 msgid "Generic System Daemon"
 msgstr "Compte daemon générique du Système"
 
-#: core/users.py:953
+#: core/users.py:952
 msgid "DHCP Daemon"
 msgstr "Daemon DHCP"
 
-#: core/users.py:954
+#: core/users.py:953
 msgid "DNSmasq (DHCP & DNS) Daemon"
 msgstr "Daemon DNSmasq (DHCP et DNS)"
 
-#: core/users.py:955
+#: core/users.py:954
 msgid "FTP Daemon / restricted account"
 msgstr "Compte restreint / daemon FTP"
 
-#: core/users.py:956
+#: core/users.py:955
 msgid "Games Specific Account"
 msgstr "Compte spécifique aux jeux systèmes"
 
-#: core/users.py:957
+#: core/users.py:956
 msgid "Hardware Abstraction Layer Daemon"
 msgstr "Daemon de la couche d'abstraction du matériel"
 
-#: core/users.py:958
+#: core/users.py:957
 msgid "Hewlett-Packard Linux Imaging & Printing Daemon"
 msgstr "Daemon du logiciel HP Image et Impression"
 
-#: core/users.py:959
+#: core/users.py:958
 msgid "Internet Relay Chats Daemon"
 msgstr "Daemon IRC (Internet Relay Chats)"
 
-#: core/users.py:960
+#: core/users.py:959
 msgid "Kernel OOPs Tracking Daemon"
 msgstr "Daemon de suivi des plantages du noyau"
 
-#: core/users.py:961
+#: core/users.py:960
 msgid "Canonical's Lanscape Remote Administration account"
 msgstr "Compte de gestion à distance Landscape (outil de Canonical)"
 
-#: core/users.py:962
+#: core/users.py:961
 msgid "UUID Library Account"
 msgstr "Compte de bibliothèque UUID"
 
-#: core/users.py:963
+#: core/users.py:962
 msgid "Line Printer Daemon"
 msgstr "Daemon de l'impression"
 
-#: core/users.py:964
+#: core/users.py:963
 msgid "Local E-Mail System Account"
 msgstr "Compte local de gestion du courrier électronique"
 
-#: core/users.py:965
+#: core/users.py:964
 msgid "Unix Manual Pages Generator"
 msgstr "Générateur de pages de manuel"
 
-#: core/users.py:966
+#: core/users.py:965
 msgid "Memory Cache Daemon"
 msgstr "Daemon de cache en mémoire"
 
-#: core/users.py:967 core/users.py:971
+#: core/users.py:966 core/users.py:970
 msgid "System Message Bus (D-BUS)"
 msgstr "Bus des messages système (D-BUS)"
 
-#: core/users.py:968
+#: core/users.py:967
 msgid "Video Motion Detection daemon"
 msgstr "Daemon de détection de mouvement vidéo"
 
-#: core/users.py:969 core/users.py:970
+#: core/users.py:968 core/users.py:969
 msgid "Very unprivileged System Account"
 msgstr "Compte système vraiment très restreint"
 
-#: core/users.py:972
+#: core/users.py:971
 msgid "Postfix® Mail System"
 msgstr "Système de courrier électronique Postfix"
 
-#: core/users.py:973
+#: core/users.py:972
 msgid "Web (& possibly more) Proxy Server"
 msgstr "Serveur proxy Web (et plus)"
 
-#: core/users.py:974
+#: core/users.py:973
 msgid "John Root, System Administrator (BOFH)"
 msgstr "Jean Racine, administrateur système (BOFH)"
 
-#: core/users.py:975
+#: core/users.py:974
 msgid "Scanner Access Now Easy daemon"
 msgstr "Daemon des scanners et imprimantes multi-fonctions"
 
-#: core/users.py:976
+#: core/users.py:975
 msgid "Secure SHell Daemon"
 msgstr "Daemon des connexions sécurisées (SSH)"
 
-#: core/users.py:977
+#: core/users.py:976
 msgid "Generic Synchronization Account"
 msgstr "Compte de synchronisation générique"
 
-#: core/users.py:978
+#: core/users.py:977
 msgid "Generic System Account"
 msgstr "Compte système générique"
 
-#: core/users.py:979
+#: core/users.py:978
 msgid "System Logger Daemon"
 msgstr "Daemon d'historisation des messages système"
 
-#: core/users.py:980
+#: core/users.py:979
 msgid "Unix to Unix Copy Protocol daemon"
 msgstr "Daemon de copie Unix à Unix"
 
-#: core/users.py:981
+#: core/users.py:980
 msgid "Web Server unprivileged Account"
 msgstr "Compte de serveur web non-privilégié"
 
-#: core/users.py:982
+#: core/users.py:981
 msgid "Network Time Protocol Daemon"
 msgstr "Daemon de synchronisation du temps en réseau"
 
-#: core/users.py:986
+#: core/users.py:985
 msgid ""
 "{0}'s GECOS \"{1}\" is currently meaningless, or we have a far better and "
 "hypish value \"{2}\" ready to enhance it. Would you like to use it?"
@@ -4380,59 +4388,59 @@ msgstr ""
 "nous avons en magasin une valeur bien meilleure et complètement hype pour "
 "l'améliorer. Voulez-vous l'utiliser ?"
 
-#: core/users.py:1002
+#: core/users.py:1001
 #, python-format
 msgid "Checking system account %s…"
 msgstr "Vérification du compte système %s…"
 
-#: core/users.py:1006
+#: core/users.py:1005
 #, fuzzy
 msgid "Account {0} already beiing ckecked, aborting."
 msgstr "Le compte utilisateur {0} est déjà en cours de vérification, abandon."
 
-#: core/users.py:1052
+#: core/users.py:1051
 #, python-format
 msgid "Checking restricted system account %s…"
 msgstr "Vérification du compte système restreint %s…"
 
-#: core/users.py:1056
+#: core/users.py:1055
 msgid "account {0} already beiing ckecked, aborting."
 msgstr "Le compte utilisateur {0} est déjà en cours de vérification, abandon."
 
-#: core/users.py:1097 core/groups.py:1635
+#: core/users.py:1096 core/groups.py:1635
 #, fuzzy
 msgid "(not watched)"
 msgstr " (non monté)"
 
-#: core/users.py:1112
+#: core/users.py:1111
 msgid "— no membership —"
 msgstr "— aucune appartenance à des groupes —"
 
-#: core/users.py:1185 core/configuration.py:607
+#: core/users.py:1184 core/configuration.py:607
 msgid "user"
 msgstr "utilisateur"
 
-#: core/users.py:1188
+#: core/users.py:1187
 msgid "UID"
 msgstr "UID"
 
-#: core/users.py:1272
+#: core/users.py:1271
 msgid "{0}.reload: Overwritten uid {1}."
 msgstr "{0}.reload : UID {1} écrasé."
 
-#: core/users.py:1285
+#: core/users.py:1284
 msgid "{0}: removing disapeared user {1}."
 msgstr "{0} : suppression de l'utilisateur disparu {1}."
 
-#: core/users.py:1292
+#: core/users.py:1291
 msgid "Reloading {0} controller too."
 msgstr ""
 
-#: core/users.py:1362
+#: core/users.py:1361
 msgid "UID {0} does not exist."
 msgstr "L'UID {0} n'existe pas."
 
-#: core/users.py:1371
+#: core/users.py:1370
 msgid ""
 "Specified directory {0} for system user {1} already exists. If you really "
 "want to use it, please use the --force argument."
@@ -4440,7 +4448,7 @@ msgstr ""
 "Le répertoire {0} spécifié pour le compte système {1} existe déjà. Si vous "
 "voulez vraiment l'utiliser, ajoutez l'argument --force à votre commande."
 
-#: core/users.py:1383
+#: core/users.py:1382
 msgid ""
 "Specified home directory {0} for system user {1} is outside {2} and /var, or "
 "inside {3} or a temporary directory (/var/tmp, /tmp). This is unsupported, "
@@ -4450,7 +4458,7 @@ msgstr ""
 "var, ou dans {3} ou un répertoire temporaire (/var/tmp, /tmp). C'est très "
 "dangereux, et à ce titre, non-supporté. Opération annulée."
 
-#: core/users.py:1394
+#: core/users.py:1393
 msgid ""
 "Specified home directory {0} for system user {1} is already owned by another "
 "user. Please choose another one."
@@ -4458,7 +4466,7 @@ msgstr ""
 "Le répertoire maison {0} choisi pour l'utilisateur système {1} est déjà "
 "attribué à un autre utilisateur. Choisissez-en un autre SVP."
 
-#: core/users.py:1403
+#: core/users.py:1402
 msgid ""
 "Specifying an alternative home directory is not allowed for standard users. "
 "Using standard home path {0} instead."
@@ -4467,7 +4475,7 @@ msgstr ""
 "les comptes utilisateurs standard. Utilisation du chemin normalisé {0} à la "
 "place."
 
-#: core/users.py:1416
+#: core/users.py:1415
 msgid ""
 "You must specify a login, a firstname *and* lastname couple, or a GECOS "
 "(login will be built from them)."
@@ -4476,12 +4484,12 @@ msgstr ""
 "(firstname) *et* un nom (lastname), soit un nom complet (GECOS) ; "
 "l'identifiant final sera fondé dessus."
 
-#: core/users.py:1433
+#: core/users.py:1432
 #, python-format
 msgid "User account %s"
 msgstr "Compte utilisateur %s"
 
-#: core/users.py:1440
+#: core/users.py:1439
 msgid ""
 "You must specify a lastname and a firstname *or* a GECOS. If you specify the "
 "GECOS, do not specify firstname/lastname."
@@ -4489,30 +4497,30 @@ msgstr ""
 "Vous devez spécifier un nom et un prénom *OU* un champ GECOS, mais pas les "
 "deux à la fois."
 
-#: core/users.py:1455
+#: core/users.py:1454
 msgid "Malformed login \"{0}\", must match /{1}/."
 msgstr ""
 "Identifiant \"{0}\" mal-formé, les identifiants doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/users.py:1481
+#: core/users.py:1480
 msgid "Invalid shell \"{0}\". Valid shells are: {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont : {1}."
 
-#: core/users.py:1488
+#: core/users.py:1487
 msgid "Invalid skel \"{0}\". Valid skels are: {1}."
 msgstr "Squelette « {0} » invalide. Les squelettes valides sont : {1}."
 
-#: core/users.py:1501
+#: core/users.py:1500
 msgid "UID {0} is already taken by user {1}. Please choose another one."
 msgstr ""
 "L'UID {0} est déjà pris par l'utilisateur {1}. Choisissez-en un autre SVP."
 
-#: core/users.py:1510
+#: core/users.py:1509
 msgid "User account {0} already exists!"
 msgstr "Le compte utilisateur {0} existe déjà !"
 
-#: core/users.py:1513
+#: core/users.py:1512
 msgid ""
 "A user account {0} already exists but has not the same type. Please choose "
 "another login for your user."
@@ -4520,7 +4528,7 @@ msgstr ""
 "Un compte utilisateur {0} existe déjà, mais n'a pas le même type. Choisissez "
 "un autre identifiant pour ce compte utilisateur."
 
-#: core/users.py:1540
+#: core/users.py:1539
 msgid ""
 "A group named {0} exists on the system. This could eventually conflict in "
 "Debian/Ubuntu system tools. Please choose another login, or use the --force "
@@ -4531,11 +4539,11 @@ msgstr ""
 "ou utilisez l'argument --force si vous voulez vraiment l'ajouter sur le "
 "système."
 
-#: core/users.py:1558
+#: core/users.py:1557
 msgid "Autogenerated UID for user {0}: {1}."
 msgstr "UID auto-généré pour l'utilisateur {0}: {1}."
 
-#: core/users.py:1566
+#: core/users.py:1565
 msgid ""
 "UID out of range for the kind of user account you specified. System UIDs "
 "must be between {0} and {1}, standard UIDs must be between {2} and {3}."
@@ -4544,19 +4552,19 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les UIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/users.py:1682
+#: core/users.py:1681
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 
-#: core/users.py:1691
+#: core/users.py:1690
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1692
+#: core/users.py:1691
 msgid "standard"
 msgstr "standard"
 
-#: core/users.py:1734
+#: core/users.py:1733
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
@@ -4565,28 +4573,28 @@ msgstr ""
 "Impossible de supprimer le compte système protégé %s sans l'argument --"
 "force, c'est trop risqué."
 
-#: core/users.py:1757
+#: core/users.py:1756
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr "{0} : compte {1} déjà non-référencé par le contrôleur !"
 
-#: core/users.py:1785
+#: core/users.py:1784
 msgid "Deleted user account {0}."
 msgstr "Compte utilisateur {0} supprimé."
 
-#: core/users.py:1932
+#: core/users.py:1931
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr "Certaines vérifications ont échoué, ou n'ont pas été corrigées."
 
-#: core/users.py:1944
+#: core/users.py:1943
 msgid "You must specify an UID or a login to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/users.py:1953
+#: core/users.py:1952
 #, python-format
 msgid "User %s does not exist"
 msgstr "L'utilisateur %s n'existe pas."
 
-#: core/users.py:1961
+#: core/users.py:1960
 #, python-format
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
