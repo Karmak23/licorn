@@ -1,34 +1,84 @@
 add priv cdrom
 add group grp1,grp2
+add user tests --system
 add user testw1,testw2 -G licorn-wmi,cdrom,audio
 add user testa1,testa2 -G admins,grp1
 
 # check_users()
 
-## Licorn® part-time admins (licorn-wmi)
+## Standard users
 
-	- login testw1
+### On myself
 
-### me
+	- mod gecos > OK
+	- mod shell > OK
+	- mod password > OK
+	- go to /users/mod/1003/lock/ > error captain + log
+	- go to /users/mod/1003/unlock/ > error insufficient own + log
+	- go to /users/mod/1003/groups/300/1 > error insufficient own + log
+	- go to /users/mod/1003/groups/300/1 > error insufficient own + log
+
+	- view groups > 403
+
+### On others
+
+	- go to /users > 403
+	- go to /users/view/root > 403
+	- go to /users/edit/root > 403
+	- go to /users/delete/0 > 403
+	- go to /users/mod/0/lock > error not allowed + log
+	- go to /users/mod/0/gecos/test > error not allowed + log
+	- go to /users/mod/0/password/test > error not allowed + log
+	- go to /users/mod/0/groups/10000/1 > error not allowed + log
+
+	- go to /users/view/tests > 403
+	- go to /users/edit/tests > 403
+	- go to /users/delete/300 > 403
+	- go to /users/mod/300/lock > error not allowed + log
+	- go to /users/mod/300/unlock > error not allowed + log
+	- go to /users/mod/300/gecos/test > error not allowed + log
+	- go to /users/mod/300/password/test > error not allowed + log
+	- go to /users/mod/300/groups/10000/1 > error not allowed + log
+
+	- go to /users/view/testw1 > 403
+	- go to /users/edit/testw1 > 403
+	- go to /users/delete/1001 > 403
+	- go to /users/mod/1001/lock > error insufficient + log
+	- go to /users/mod/1001/unlock > error insufficient + log
+	- go to /users/mod/1001/gecos/test > error insufficient + log
+	- go to /users/mod/1001/password/test > error insufficient + log
+	- go to /users/mod/1001/groups/10000/1 > error insufficient + log
+
+	- go to /users/view/testa1 > 403
+	- go to /users/edit/testa1 > 403
+	- go to /users/delete/1003 > 403
+	- go to /users/mod/1001/lock > error insufficient + log
+	- go to /users/mod/1001/gecos/test > error insufficient + log
+	- go to /users/mod/1001/groups/10000/1 > error insufficient + log
+
+## Licorn® manager (licorn-wmi)
+
+### On myself
 
 	- mod gecos > OK
 	- mod passwd > OK
 	- mod shell > OK
 
-	- add me grp1 > OK
+	- add me {gst,grp1,rsp} > OK
 	- mod me grp1 > OK
 	- del me grp1 > OK
 
-	- del me licorn-wmi > error priv
-	- del me cdrom > error priv
-	- (del me audio > not visible)
+	- del me licorn-wmi > error remove from privilege
+	- del me cdrom / remotessh > OK
+	- del me audio > not visible
+		- go to /users/mod/1001/groups/29/0 > error system restricted
 
 	- del me > error captain
 	- lock me > error lock me
-	- skel > OK
+	- apply skel > OK
 	- massive del > error captain
 
-### standard users
+### On standard users
 
 	- add user test3 (in grp1, gst-grp2) > OK
 
@@ -40,6 +90,7 @@ add user testa1,testa2 -G admins,grp1
 	- mod test3 grp1 > OK
 	- del test3 grp1 > OK
 
+	(CLI: add priv cdrom)
 	- add test3 cdrom > OK
 	- del test3 cdrom > OK
 
@@ -53,112 +104,155 @@ add user testa1,testa2 -G admins,grp1
 	- massive del test5 > OK
 
 
-### siblings
+### On pre-siblings
 
-	- mod gecos testw2 > error even more powerful
-	- mod passwd testw2 > error even more powerful
-	- mod shell testw2 > error even more powerful
+	- add test6 > OK
+	- add test6 cdrom > OK
+	- add test6 licorn-wmi > OK
+	- del test6 cdrom > OK
+	- del test6 licorn-wmi > error manager
+	- del test6 > error manager
 
-	- add testw2 grp1 > OK
+### On siblings
+
+	- mod gecos testw2 > error manager
+	- mod passwd testw2 > error manager
+	- mod shell testw2 > error manager
+
+	- add testw2 {gst,grp1,rsp} > OK
 	- mod testw2 grp1 > OK
 	- del testw2 grp1 > OK
 
 	- remove testw2 cdrom > OK
 	- add testw2 cdrom > OK
-	- remove testw2 licorn-wmi > error remove licorn-wmi
+	- remove testw2 licorn-wmi > error manager
 
-	- del testw2 > error even more
-	- lock testw2 > error even more
+	- lock testw2 > error manager
 	(CLI: mod user testw2 -l)
-	- unlock testw2 > error even more
-	- skel testw2 > error even more
-	- massive del > error even more
+	- unlock testw2 > error manager
+	- del testw2 > error manager
+	- skel testw2 > error manager
+	- massive del > error manager
 
 	- add user test4 (in licorn-wmi) > OK
-	- del user test4 > error even more
+	- del user test4 > error manager
 
-### more power (admins)
+### On administrators
 
-	- mod gecos testa1 > error even more
-	- mod passwd testa1 > error even more
-	- mod shell testa1 > error even more
+	- mod gecos testa1 > error administrator
+	- mod passwd testa1 > error administrator
+	- mod shell testa1 > error administrator
 
-	- add testa1 grp2 > error even more
-	- mod testa1 grp1 > error even more
-	- del testa1 grp1 > error even more
+	- add testa1 grp2 > error administrator
+	- mod testa1 grp1 > error administrator
+	- del testa1 grp1 > error administrator
 
-	- add testa1 cdrom > error even more
-	- remove testa1 licorn-wmi > error even more
+	- add testa1 cdrom > error administrator
+	- remove testa1 licorn-wmi > error administrator
 
-	- lock testw2 > error even more
-	- skel testw2 > error even more
-	- del testw2 > error even more
-	- massive del > error even more
+	- lock testw2 > error administrator
+	- skel testw2 > error administrator
+	- del testw2 > error administrator
+	- massive del > error administrator
+	- massive skel > error administrator
+
+### On specials
+
+	- go to /users/edit/root
+		- change gecos > error restricted
+		- change passwd > error restricted
+		- change shell > error restricted
+		- add / del {guest,member,resp} > error restricted
+		- add / del privilege > error restricted
+
+	(CLI: add user "tests" --system)
+	- go to /users/edit/tests
+		- change gecos > error system
+		- change passwd > error system
+		- change shell > error system
+		- add / del {guest,member,resp} > error system
+		- add / del privilege > error system
 
 ## Licorn® Full-time administrators (`admins`)
 
 	- login testa1
 
-### standard users
+### On myself
+
+	- mod gecos > OK
+	- mod passwd > OK
+	- mod shell > OK
+
+	- add me {gst,grp1,rsp} > OK
+	- mod me grp1 > OK
+	- del me grp1 > OK
+
+	- del me licorn-wmi > OK
+	- add me licorn-wmi > OK
+	- add / del me cdrom / remotessh > OK
+	- add / del me audio > OK
+	- del me admins > error insufficient + CLI
+
+	- del me > error captain
+	- lock me > error lock me
+	- apply skel > OK
+	- massive del > error captain
+
+### On standard users
 
 	- all like `licorn-wmi`
 
-	- add test6 video > OK
-	- del test6 video > OK
+	- add user / manager video > OK
+	- del user / manager video > OK
 
-### `licorn-wmi` users
+### On managers
 
 	- all like "standard users" for an admin account.
 
 	- del test7 licorn-wmi > OK
 	- massive del > OK
 
-### Siblings
+### On pre-sibling
 
-	- mod gecos testa2 > error even more powerful
-	- mod passwd testa2 > error even more powerful
-	- mod shell testa2 > error even more powerful
+	- add user testa3 (in admins) > OK
+	- del user testa3 > error insufficient + CLI
+	- del user testa3 admins > error insufficient + CLI
 
-	- add testa2 grp1 > OK
+### On siblings
+
+	- mod gecos testa2 > error insufficient + CLI
+	- mod passwd testa2 > error insufficient + CLI
+	- mod shell testa2 > error insufficient + CLI
+
+	- add testa2 {gst,grp1,rsp} > OK
 	- mod testa2 grp1 > OK
 	- del testa2 grp1 > OK
 
-#### priv restricted
-	- remove testa2 cdrom > OK
-	- add testa2 cdrom > OK
+	- add / del testa2 cdrom > OK
+	- add / del testa2 licorn-wmi > OK
+	- add / del testa2 audio > OK
 
-#### restricted
-	- add testa2 audio > OK
-	- remove testa2 audio > OK
+	- del testa2 admins > error insufficient + CLI
 
-#### system priv
-	- add testa2 licorn-wmi > OK
-	- remove testa2 licorn-wmi > OK
-
-	- del testa2 admins > error even more
-
-	- del testa2 > error even more
-	- lock testa2 > error even more
-	(CLI: mod user testa2 -l)
-	- unlock testa2 > error even more
-	- skel testa2 > error even more
-	- massive del > error even more
-
-	- add user testa3 (in admins) > OK
-	- del user testa3 > error even more
+	- del testa2 > error insufficient + CLI
+	- massive del > error insufficient + CLI
 
 # check_groups()
 
-## standard user
+## From a standard user
 
+	- go to /groups/ > 403
 	- go to /groups/edit/licorn-wmi > 403
 	- go to /groups/edit/admins > 403
 	- go to /groups/edit/root > 403
 	- go to /groups/edit/grp1 > 403
 	- go to /groups/view/grp1 > 403
 
-## `licorn-wmi` user
+	- go to /groups/mod/0/* > 403
+	- go to /groups/mod/300/* > 403
+	- go to /groups/mod/10000/* > 403
 
+## From a manager
 
 ### Standard groups
 
@@ -178,6 +272,12 @@ add user testa1,testa2 -G admins,grp1
 
 	- del std group > OK
 
+	- restricted / system members
+		- /groups/mod/10000/users/300/2 > error system
+		- /groups/mod/10000/users/300/0 > error system
+		- /groups/mod/10000/users/0/2 > error restricted
+		- /groups/mod/10000/users/0/0 > error restricted
+
 ### Power groups
 
 #### privileges
@@ -186,12 +286,12 @@ add user testa1,testa2 -G admins,grp1
 		- mod description > error insufficient
 		- add / del admins > error insufficient
 		- add std member > OK
-		- go to /groups/del/302 > error strongly not
+		- go to /groups/delete/302 > error strongly not
 
 #### system restricted
 
-	- go to /groups/del/24 > error strongly not		(if add priv cdrom)
-	- go to /groups/del/22 > error restricted
+	- go to /groups/delete/24 > error strongly not		(if add priv cdrom)
+	- go to /groups/delete/22 > error restricted
 
 #### system non-restricted non-helpers
 
@@ -208,3 +308,40 @@ add user testa1,testa2 -G admins,grp1
 	- go to /groups/delete/305 > error not possible
 
 ## `admins` user
+
+### Standard groups
+
+	- idem `licorn-wmi`
+
+### Power groups
+
+#### privileges
+
+	- go to /groups/edit/licorn-wmi
+		- mod description > OK
+		- add / del std member > OK
+		- add / del licorn-wmi users > OK
+		- add / del admins > OK
+		- go to /groups/delete/302 > error strongly not
+
+#### system non-restricted non-helpers
+
+	- go to /groups/edit/acl
+		- mod description > OK
+		- add / del members > OK
+		- add / del licorn-wmi users > OK
+		- add / del admins > OK
+		- go to /groups/delete/300 > strongly not
+
+#### helpers
+
+	- go to /groups/edit/gst-grp1
+		- mod description > OK
+		- add / del admins members > OK
+		- add / del standard / licorn-wmi members > OK
+	- go to /groups/delete/305 > error strongly not
+
+#### system restricted
+
+	- go to /groups/delete/24 > error strongly not + CLI
+	- go to /groups/delete/22 > error strongly not + CLI

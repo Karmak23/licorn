@@ -91,6 +91,8 @@ def message(request, part, uid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
+# NOTE: mod() is not protected by @staff_only because standard users
+# need to be able to modify their personnal attributes (except groups).
 @login_required
 @check_users('mod')
 def mod(request, uid, action, value, *args, **kwargs):
@@ -437,7 +439,7 @@ def view(request, uid=None, login=None, *args, **kwargs):
 			})
 		return render(request, 'users/view_template.html', _dict)
 
-@login_required
+@staff_only
 def upload_file(request, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -455,7 +457,6 @@ def upload_file(request, *args, **kwargs):
 		destination.close()
 		#lprint(destination)
 		return HttpResponse(csv_filename)
-
 
 @staff_only
 def import_view(request, confirm='', *args, **kwargs):
