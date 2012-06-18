@@ -8,7 +8,7 @@ Licorn WMI2 utils
 :license: GNU GPL version 2
 """
 
-import os, time, types, json, mimetypes
+import os, time, types, json, mimetypes, uuid
 
 from django.core.servers.basehttp   import FileWrapper
 from django.http					import HttpResponse
