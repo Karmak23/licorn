@@ -211,7 +211,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	#: the environment variable used to override rdiff-backup configuration
 	#: during tests or real-life l33Tz runs.
 	globbing_env_var_name = "LICORN_RDIFF_BACKUP_CONF"
-	module_depends = [ 'volumes' ]
+	module_depends        = [ 'volumes' ]
 
 	def __init__(self):
 		assert ltrace_func(TRACE_RDIFFBACKUP)

@@ -1,10 +1,11 @@
 {#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
     Distributed under the terms of the GNU GPL version 2. -#}
 
+
 <div>
 
 	<h1>{{ _('My Informations') }}</h1>
-
+	<div id='index_no_staff'>
 	<div id='table' name='{{ user_uid }}'>
 	<br />
 
@@ -17,17 +18,30 @@
 						{%- if immutable -%}
 							{{ field.value() }}
 						{%- else -%}
-							{{ field }}
+							{%- if field.name == 'password' -%}
+								<span><img id="generate_pwds" src="/media/images/16x16/generate.png" alt="'+ gettext("Generate passwords") +'"/></span> {{ field }}
+								<span id='pwd_strenght' style='font-size:12px;'></span>
+							{%- elif field.name == 'password_confirm'-%}
+								<span id="check_pwds"></span> {{ field }}
+							{%- else -%}
+								{{ field }}
+							{%- endif -%}
 						{%- endif -%}
-
 					</div>
 				</div>
 		{%- endfor -%}
 	</div>
-
+	{%- include 'users/view_groups_template.html' -%}
+</div>
 </div>
 <script type="text/javascript">
 	$(document).ready(function() {
 		init_instant_apply('users');
+
+		// from main.js
+		password_helpers($("#index_no_staff"))
+
+		
 	});
+	
 </script>

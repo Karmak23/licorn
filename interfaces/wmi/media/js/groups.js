@@ -6,7 +6,7 @@
 var hover_timeout;
 function init_groups_events(list_name, gid, name, identifier) {
 	/* initialize user row events */
-	me = $('#'+list_name+'_list').find('.row').filter("#"+gid+"");
+	me = $('#'+list_name+'_list').find('.row').filter("#"+gid);
 
 	// hide the navigation
 	me.find('.item_menu').hide();
@@ -23,13 +23,13 @@ function init_groups_events(list_name, gid, name, identifier) {
 	group_perm.click(function() {
 
 		if ($(this).hasClass('is_permissive')) {
-			perm_title = strargs(gettext("Make group “%1” not permissive"), [name]);
-			perm_content = strargs(gettext("Are you sure you want to make group “%1” not permissive?"), [name]);
+			perm_title = strargs(gettext("Make group <strong>%1</strong> not permissive?"), [name]);
+			perm_content = strargs(gettext("This will lock shared files to their owner, disallowing modifications by other members. This is perfectly safe, and generally used on groups with a great number of members.<br /><br /> <div class=\"smaller greyed_out\"><em>NOTE</em>: The operation may be lengthy because the system will change permissions of all current files (duration is therefore depending on the data volume, about 10 second for 1Gb).</div>"), [name]);
 			perm = ""; //python bool : empty strings are false
 
 		} else {
-			perm_title = strargs(gettext("Make group “%1” permissive?"), [name]);
-			perm_content = gettext('This will permit wider access to files and folders in the group shared directory, allowing any <strong>member of the group</strong> to modify or delete any document in the shared directory (whichever the current owner). <br /><br /> <strong>If the group members are already accustomed to work together on the same documents, making the group permissive is the right choice.</strong> You would usually use this feature on small working groups of people only, as it makes hard to track “who modified what”. <br /><br /> NOTE: The operation may be lengthy because the system will change permissions of all current files (duration is therefore depending on the volume of data, about 10 second for 1Gb).');
+			perm_title = strargs(gettext("Make group <strong>%1</strong> permissive?"), [name]);
+			perm_content = gettext('This will permit wider access to files and folders in the group shared directory, allowing any <strong>member of the group</strong> to modify or delete any document in the shared directory (whichever the current owner). <br /><br /> <strong>If the group members are already accustomed to work together on the same documents, making the group permissive is the right choice.</strong> You would usually use this feature on small working groups of people only, as it makes hard to track &ldquo;&nbsp;who modified what&nbsp;&rdquo;. <br /><br /><div class=\"smaller greyed_out\"><em>NOTE</em>: The operation may be lengthy because the system will change permissions of all current files (duration is therefore depending on the data volume, about 10 second for 1Gb).</div>');
 			perm = "True";
 		}
 
@@ -105,7 +105,7 @@ function init_groups_events(list_name, gid, name, identifier) {
 		if (is_sub_content_locked() && $('#sub_content').attr('value') == $(this).parent().attr('id')) {
 			unlock_sub_content();
 			unselect_row();
-			reload_div('#sub_content', "")
+			reload_div('#sub_content', '')
 		}
 
 		else {
@@ -146,22 +146,19 @@ function generate_permissive_img(hover, perm, group_name) {
 
 	if (perm == 'true') {
 		if (hover == 'in') {
-			lock_title = strargs(gettext("Make group %1 not permissive"), [group_name]);
+			lock_title = strargs(gettext("Make group <strong>%1</strong> not permissive?"), [group_name]);
 			lock_img = '/media/images/24x24/locked_over.png';
-			lock_alt = gettext("Make group ") + group_name + " not permissive.";
 		}
 		else {
-			lock_title = strargs(gettext("Make group %1 not permissive"), [group_name]);
+			lock_title = strargs(gettext("Make group <strong>%1</strong> not permissive?"), [group_name]);
 			lock_img = '/media/images/24x24/locked_box.png';
-			lock_alt = gettext("Make group ") + group_name + " not permissive.";
 		}
 	}
 	else {
-		lock_title = strargs(gettext("Make group %1 permissive"), [group_name]);
+		lock_title = strargs(gettext("Make group <strong>%1</strong> permissive?"), [group_name]);
 		lock_class = "locked_box user_lock_action";
 		lock_img = '/media/images/24x24/locked.png';
-		lock_alt = gettext("Make group ") + group_name + " permissive.";
 	}
 
-	return "<img src='"+lock_img+"' alt='"+lock_alt+"' title='"+lock_title+"'/>"
+	return "<img src='"+lock_img+"' alt='"+lock_title+"' title='"+lock_title+"'/>"
 }

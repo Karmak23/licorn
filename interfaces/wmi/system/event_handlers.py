@@ -15,6 +15,9 @@ from django.utils.translation     import ugettext as _
 from licorn.interfaces.wmi.libs   import utils
 from licorn.interfaces.wmi.system import wmi_data
 
+from views import view_groups
+from licorn.foundations.constants     import relation
+
 def daemon_is_restarting_handler(request, event, *args, **kwargs):
 	yield utils.notify(_(u'Licorn® daemon is restarting in the background. '
 						u'You will not be able to do anything in this '
@@ -86,3 +89,17 @@ def wmi_starts_handler(request, event):
 	time.sleep(0.01)
 
 	yield utils.format_RPC_JS('remove_notification', 'daemon_is_restarting')
+
+
+
+# NO STAFF 
+def group_member_added_handler(request, event, *args, **kwargs):
+	# if this is the currently user logged in the wmi
+	user = event.kwargs['user']
+	if str(request.user) == str(user.login):
+		yield utils.format_RPC_JS('reload_div', '#table_my_groups', view_groups(request))
+
+def group_member_deleted_handler(request, event):
+	user = event.kwargs['user']
+	if str(request.user) == str(user.login):
+		yield utils.format_RPC_JS('reload_div', '#table_my_groups', view_groups(request))

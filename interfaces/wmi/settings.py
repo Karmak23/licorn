@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # Django settings for Licorn® WMI project.
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -87,13 +87,19 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
+    # this 'wmi' is a hack to support a global `djangojs` translation mechanism.
+    # see http://stackoverflow.com/q/1963517
+    'wmi',
+    # end hack
     'wmi.system',
     'wmi.users',
     'wmi.groups',
-    # NOTE: these apps below are dynamically imported,
-    # based on various licorn settings and conditions.
+    # NOTE: the following apps will be dynamically imported,
+    # based on various licorn settings and conditions. Do not
+    # activate them here.
     #'wmi.machines',
     #'wmi.backup',
+    #'wmi.shares',
 )
 
 JINJA2_GLOBALS = {
@@ -105,9 +111,9 @@ JINJA2_GLOBALS = {
     'config'            : 'wmi.libs.utils.config',
     'djsettings'        : 'wmi.libs.utils.djsettings',
     'licorn_setting'    : 'wmi.libs.utils.licorn_setting',
-    'unique_hash'       : 'wmi.libs.utils.unique_hash',
     'version_html'      : 'wmi.libs.utils.version_html',
     'url_for'           : 'django.core.urlresolvers.reverse',
+    'unique_hash'       : 'licorn.foundations.pyutils.unique_hash',
     'bytes_to_human'    : 'licorn.foundations.pyutils.bytes_to_human',
     'format_time_delta' : 'licorn.foundations.pyutils.format_time_delta',
     'time'              : 'time.time',

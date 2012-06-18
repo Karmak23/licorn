@@ -1,0 +1,76 @@
+{#- Copyright 2011 META IT & Olivier Cortès <oc@meta-it.fr>
+    Distributed under the terms of the GNU GPL version 2.
+
+    left-to-right slide:
+        http://www.webinventif.fr/wp-content/uploads/projets/wslide/test-wslide-2.htm
+-#}
+
+{% extends "base.html" %}
+
+{% block title %}{{ _('Internal server error') }}{% endblock %}
+
+
+{%- block base_media -%}
+    <script language="javascript" type="text/javascript" src="/media/js/jquery-1.7.min.js"></script>
+{% endblock %}
+
+{%- block extended_media -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/login.css" />
+    {#- "LESS" needs to be loaded last, in case extended_media loads more less-CSS. -#}
+	<script language="javascript" type="text/javascript" src="/media/js/less-1.1.5.min.js"></script>
+{% endblock %}
+
+{% block body %}
+	<style type="text/css">
+	.five-o-o-container {
+		margin: -100px 0 0 0;
+	}
+	.five-o-o-container h1,
+	.five-o-o-container h2,
+	.five-o-o-container h3 {
+		margin: 0;
+	}
+	.five-o-o-container a {
+		text-decoration: none;
+		color: orange;
+	}
+	.five-o-o-container h1.big-h1 {
+		font-size: 400px;
+		opacity: 0.2;
+		margin-bottom: -210px;
+	}
+	.five-o-o-container h1 {
+		font-size: 100px;
+	}
+	.five-o-o-container h1 img {
+		margin-bottom: -20px;
+		margin-right: -20px;
+	}
+	.five-o-o-container h2 {
+		font-size: 50px;
+	}
+	.five-o-o-container h3 {
+		margin-bottom: 20px;
+	}
+	.five-o-o-container code {
+		font-size: 120%;
+	}
+	</style>
+    <div id="vertical_wrapper">
+		<div id="content">
+			<div id="content_filler">
+				<div class="five-o-o-container">
+					<h1 class="big-h1">{{ _('BOOM') }}</h1>
+					<h1><a href="/">
+						<img src="/media/images/logo_licorn_160.png"
+							alt="Licorn® is alive" border="0" width="120" />
+					</a>
+{{ _('BOOM POW!') }}</h1>
+					<h2>{{ _('Something crashed in the program.') }}</h2>
+					<h3>{{ _('In most cases you can {0} without further problems.').format('<a href="/">%s</a>' % _('go back and continue using it')) }}</h3>
+					<h3 style="width: 50%; margin: 0 auto;">{{ _('We are very sorry for the inconvenience; all data needed to correct this error has already been collected, to be exploited if needed by the developers.') }}</h3>
+				</div>
+			</div><!-- content_filler -->
+		</div><!-- content -->
+    </div><!-- vertical_wrapper -->
+{% endblock %}

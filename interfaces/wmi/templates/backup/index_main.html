@@ -1,3 +1,5 @@
+{#- Copyright 2011 META IT & Olivier Cortès <olive@licorn.org>
+    Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- from 'widgets/common.html' import countdown with context -%}
 {%- from 'backup/widgets.html' import eject_status, operations_status with context -%}
@@ -50,21 +52,10 @@
 			<div class="backups important backups_important">
 
 			{%- if extension.event('backup') -%}
-				{{
-					 _('A backup is currently in progress, '
-						'please do not disconnect '
-						'<strong>{volume}</strong>.').format(
-							volume=curvol.mount_point)
-				}}
+				{{ _('A backup is currently in progress, please do not disconnect <strong>{volume}</strong>.').format(volume=curvol.mount_point) }}
 
 			{%- else -%}
-				{{
-					_('Old backups are currently beiing cleaned '
-						' or statistics are beiing computed on '
-						'<strong>{volume}</strong>. Please do not '
-						'disconnect this volume.').format(
-							volume=curvol.mount_point)
-				}}
+				{{ _('Old backups are currently beiing cleaned or statistics are beiing computed on <strong>{volume}</strong>. Please do not disconnect this volume.').format(volume=curvol.mount_point) }}
 
 			{%- endif -%}
 
@@ -88,17 +79,12 @@
 
 				{%- if stats == None -%}
 					<p>
-						{{
-							_('No historical data yet on <strong>{0}</strong>. '
-							'Please wait for the first backup to finish.').format(volume.name)
-						}}
+						{{ _('No historical data yet on <strong>{0}</strong>. Please wait for the first backup to finish.').format(volume.name) }}
 					</p>
 
 				{%- else -%}
 					<h3>{{ _('Backup history on {0}').format(volume.name) }}</h3>
-					<pre class="backups_statistics">
-					{{ stats }}
-					</pre>
+					<pre class="backups_statistics">{{ stats.replace('Size', '      Size').replace('Cumulative', '      Cumulative') }}</pre>
 					<br /><br /><br />
 
 				{%- endif -%}
@@ -107,19 +93,12 @@
 		{%- else -%}
 
 			<p>
+				{{ _('All backup volumes are currently unmounted (you can safely disconnect them from your server).') }}<br /><br />
+				{{ _('Next automatic backup:') }}
 				{{
-				_('All backup volumes are currently unmounted (you can safely '
-					'disconnect them from your server).')
-				}}<br /><br />
-				{{
-					_('Next '
-					'automatic backup:')
-				}}{{
 					 countdown(extension.time_before_next_automatic_backup())
-				}}<br /><br />{{
-					_('Note: any still connected backup volume will '
-					'be automatically re-mounted if needed.')
-				}}
+				}}<br /><br />
+				{{ _('Note: any still connected backup volume will be automatically re-mounted if needed.') }}
 			</p>
 
 		{%- endif -%}
@@ -129,49 +108,22 @@
 	{%- else -%}
 		{%- if volumes == [] -%}
 
-			{{ _('No backup '
-				'volume found: '
-				'no external volume is currently connected to '
-				'the server, or all the '
-				'connected volumes are not <a '
-				'href="http://docs.licorn.org/extensions/'
-				'volumes.en.html#extensions-volumes-compatible-en" '
-				'class="online_help" target="_blank" '
-				'title="Click to know which volumes are compatible, '
-				'and how to make one.">compatible with '
-				'Licorn®</a>.<br /><br />'
-				'Please connect a compatible backup volume to your '
-				'server, wait a few seconds and reload the current page.')
-			}}
+			{{ _('No backup volume found: no external volume is currently connected to the server, or all the connected volumes are not <a href="http://docs.licorn.org/extensions/volumes.en.html#extensions-volumes-compatible-en" class="online_help" target="_blank" title="Click to know which volumes are compatible, and how to make one.">compatible with Licorn&reg;</a>.<br /><br />Please connect a compatible backup volume to your server, wait a few seconds and reload the current page.') }}
 
 		{%- else -%}
-			{{
-				_('One or '
-					'more external volume(s) is '
-					'connected, but none is currently dedicated to '
-					'Licorn®. Would you like to '
-					'<a href="http://docs.licorn.org/extensions/'
-					'volumes.en.html#extensions-volumes-reserve-en" '
-					'class="online_help" target="_blank">enable and '
-					'reserve</a> any of them for Licorn® use?')
-			}}
+			{{ _('One or more external volume(s) is connected, but none is currently dedicated to Licorn&reg;. Would you like to <a href="http://docs.licorn.org/extensions/volumes.en.html#extensions-volumes-reserve-en" class="online_help" target="_blank">enable and reserve</a> any of them for Licorn&reg; use?') }}
 			<ul class="volumes_list">
 
 			{%- for volume in volumes -%}
 				<li><form action="/backups/enable/{{ volume.device.rsplit('/', 1)[1] }}"
 						method="GET"><input
 							type="button" class="action_button use_volume_button"
-							value="{{ _('use volume “{0}”').format(volume.name) }}" />
+							value="{{ _('use volume <strong>{0}</strong>').format(volume.name) }}" />
 					</form>
 						<p>{{ eject_status(volume, extension.event('backup')) }}</p>
 						<ul class="volume_atributes">
 						<li>
-							{{
-								_('currently not mounted,')
-									if volume.mount_point == None
-									else _('currently mounted on: <strong>{0}</strong>,').format(
-														volume.mount_point)
-							}}
+							{{ _('currently not mounted,') if volume.mount_point == None else _('currently mounted on: <strong>{0}</strong>,').format(volume.mount_point) }}
 						</li>
 						<li>{{ _('device: <strong>{0}</strong>,').format(volume.device) }}
 							({{ _('GUID: {0}').format(volume.guid) }})</li>

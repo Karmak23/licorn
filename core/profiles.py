@@ -162,8 +162,12 @@ class Profile(CoreStoredObject):
 
 		assert ltrace_func(TRACE_GC)
 
-		if self.__pickled:
-			return
+		try:
+			if self.__pickled:
+				return
+		except AttributeError:
+			# no __pickled attribute
+			pass
 
 		del self.__group
 
@@ -955,6 +959,8 @@ class ProfilesController(DictSingleton, CoreController):
 				sys.getrefcount(profile), gc.get_referrers(profile)))
 			# delete the hopefully last reference to the object. This will
 			# delete it from the reverse mapping caches too.
+			import weakref
+			print weakref.getweakrefs(profile)
 			del profile
 
 		# checkpoint, needed for multi-delete (users-groups-profile) operation,

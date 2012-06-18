@@ -397,8 +397,7 @@ class WmiEventApplication(ObjectSingleton):
 
 		# hints coming from http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
 
-		dirname  = os.path.dirname(__file__)
-		basename = os.path.dirname(__file__)
+		dirname = os.path.dirname(__file__)
 
 		self.push_permissions = {}
 		self.dynamic_sidebars = {}
@@ -407,9 +406,10 @@ class WmiEventApplication(ObjectSingleton):
 
 		for entry in os.listdir(dirname):
 
-			# if is has a 'views', it's a django submodule; it SHOULD have
-			# a `push_permissions` dict defined in __init__.py
-			if os.path.exists(os.path.join(dirname, entry, 'views.py')):
+			# If is has 'views' and 'urls', we consider it a django app;
+			# it SHOULD have a `push_permissions` dict defined in __init__.py
+			if os.path.exists(os.path.join(dirname, entry, 'views.py')) \
+					and os.path.exists(os.path.join(dirname, entry, 'urls.py')):
 				try:
 					module = __import__('licorn.interfaces.wmi.%s' % entry,
 									fromlist=["licorn.interfaces.wmi.%s" % entry])
@@ -537,12 +537,12 @@ class WmiEventApplication(ObjectSingleton):
 				threads[collector_name].add_listener(q)
 
 			except KeyError:
-				logging.warning(_('Cannot setup collector {0}.').format(collector_name))
+				logging.warning(_(u'Cannot setup collector {0}.').format(collector_name))
 
 		if request.session.get('not_yet_welcomed', True):
 			# a kind of welcome message
 			wmi_event_app.queue(request).put(
-				utils.notify(_('Welcome to Licorn® WMI, {0}.').format(
+				utils.notify(_(u'Welcome to Licorn® WMI, {0}.').format(
 										request.user.username)), 3500)
 			request.session['not_yet_welcomed'] = False
 

@@ -58,7 +58,7 @@ __warningsdb = LicornWarningsDB()
 #: we've got to synchronize all threads for outputing anything, else in rare
 #: cases the display can be corrupted by two threads saying something at the
 #: exact same time. Seen on 20101210 with 2 PyroFinders.
-__output_lock = RLock()
+output_lock = RLock()
 
 def send_to_listener(message, verbose_level=verbose.QUIET):
 	""" See if current thread has a listener (Remote Pyro object dedicated to
@@ -77,7 +77,7 @@ def error(mesg, returncode=1, full=False, tb=None):
 
 	text_message = '%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'), ltrace_time(), mesg)
 
-	with __output_lock:
+	with output_lock:
 		if full:
 			if tb:
 				sys.stderr.write(tb + '\n')
@@ -108,7 +108,7 @@ def warning(mesg, once=False, to_listener=True, to_local=True):
 		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
 
 	if to_local:
-		with __output_lock:
+		with output_lock:
 			sys.stderr.write(text_message)
 			#sys.stderr.flush()
 
@@ -128,7 +128,7 @@ def warning2(mesg, once=False, to_listener=True, to_local=True):
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
 
 	if to_local and options.verbose >= verbose.INFO:
-		with __output_lock:
+		with output_lock:
 			sys.stderr.write(text_message)
 			#sys.stderr.flush()
 
@@ -145,7 +145,7 @@ def notice(mesg, to_listener=True, to_local=True):
 		send_to_listener(LicornMessage(text_message), verbose.NOTICE)
 
 	if to_local and options.verbose >= verbose.NOTICE:
-		with __output_lock:
+		with output_lock:
 			sys.stdout.write(text_message)
 			#sys.stdout.flush()
 
@@ -160,7 +160,7 @@ def info(mesg, to_listener=True, to_local=True):
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
 
 	if to_local and options.verbose >= verbose.INFO:
-		with __output_lock:
+		with output_lock:
 			sys.stdout.write(text_message)
 			#sys.stdout.flush()
 
@@ -175,7 +175,7 @@ def progress(mesg, to_listener=True, to_local=True):
 		send_to_listener(LicornMessage(text_message), verbose.PROGRESS)
 
 	if to_local and options.verbose >= verbose.PROGRESS:
-		with __output_lock:
+		with output_lock:
 			sys.stdout.write(text_message)
 			#sys.stdout.flush()
 
@@ -213,7 +213,7 @@ def exception(*args, **kwargs):
 		send_to_listener(LicornMessage(text_message), verbose.INFO)
 
 	if kwargs.get('to_local', True) and options.verbose >= verbose.INFO:
-		with __output_lock:
+		with output_lock:
 			sys.stderr.write(text_message)
 			#sys.stderr.flush()
 
@@ -274,7 +274,7 @@ def debug(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG)
 
 	if options.verbose >= verbose.DEBUG:
-		with __output_lock:
+		with output_lock:
 			sys.stderr.write(text_message)
 			#sys.stderr.flush()
 
@@ -292,7 +292,7 @@ def debug2(mesg, to_listener=True):
 		send_to_listener(LicornMessage(text_message), verbose.DEBUG2)
 
 	if options.verbose >= verbose.DEBUG2:
-		with __output_lock:
+		with output_lock:
 			sys.stderr.write(text_message)
 			#sys.stderr.flush()
 

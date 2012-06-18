@@ -54,7 +54,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 							else services.SYSV
 		)
 		assert ltrace_func(TRACE_EXTENSIONS)
-		self.server_only=False
+		self.server_only = False
 
 		# no particular controller for this extension, it is a
 		# standalone one (no data, just configuration).
@@ -152,7 +152,7 @@ class SquidExtension(ObjectSingleton, ServiceExtension):
 		conf_dict = Enumeration()
 		conf_dict['port']            = '3128'
 		conf_dict['client_file']     = '/etc/environment'
-		conf_dict['apt_conf']        = '/etc/apt/apt.conf.d/00-proxy'
+		conf_dict['apt_conf']        = '/etc/apt/apt.conf.d/00proxy'
 		conf_dict['client_cmd_http'] = 'http_proxy'
 		conf_dict['client_cmd_ftp']  = 'ftp_proxy'
 

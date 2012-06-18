@@ -10,7 +10,7 @@ Licorn® WMI - users views
 :license: GNU GPL version 2
 """
 
-import os, time, base64, tempfile, crack
+import os, time, base64, tempfile, crack, json
 from threading import current_thread
 
 from django.shortcuts               import *
@@ -27,18 +27,21 @@ from licorn.foundations.constants import filters, relation
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 
-from licorn.core                      import LMC
-from licorn.interfaces.wmi.libs       import decorators, utils, perms_decorators
+from licorn.core                  import LMC
 
 # FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
-from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.old_decorators import check_users
+# WARNING: this import will fail if nobody has previously called `wmi.init()`.
+# This should have been done in the WMIThread.run() method. Anyway, this must
+# disappear soon!!
+from licorn.interfaces.wmi.libs            import old_utils as w
 
-from licorn.interfaces.wmi.app import wmi_event_app
+from licorn.interfaces.wmi.app             import wmi_event_app
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only, check_users
 
 from forms import UserForm, SkelInput, ImportForm
 
-@login_required
+@staff_only
 def message(request, part, uid=None, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -88,17 +91,19 @@ def message(request, part, uid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
+# NOTE: mod() is not protected by @staff_only because standard users
+# need to be able to modify their personnal attributes (except groups).
 @login_required
-@perms_decorators.check_users('mod')
+@check_users('mod')
 def mod(request, uid, action, value, *args, **kwargs):
-	""" edit the gecos of the user """
+	""" Modify all properties of a user account. """
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	user = utils.select('users', [ uid ])[0]
+	user = LMC.users.by_uid(int(uid))
 
 	def mod_groups(group_id, rel_id):
-		# /mod/user_id/groups/group_id/rel_id
+		# Typical request: /mod/user_id/groups/group_id/rel_id
 
 		group = utils.select('groups', [ group_id ])[0]
 		if user.is_standard:
@@ -137,7 +142,7 @@ def mod(request, uid, action, value, *args, **kwargs):
 			user.loginShell = value
 
 	elif action == 'groups':
-		mod_groups(*[ int(x) for x in value.split('/')])
+		mod_groups(*(int(x) for x in value.split('/')))
 
 	elif action == 'skel':
 		user.apply_skel(value)
@@ -151,8 +156,8 @@ def mod(request, uid, action, value, *args, **kwargs):
 	# updating the web page is done in the event handler, via the push stream.
 	return HttpResponse('MOD DONE.')
 
-@login_required
-@perms_decorators.check_users('delete')
+@staff_only
+@check_users('delete')
 def delete(request, uid, no_archive, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -166,54 +171,77 @@ def delete(request, uid, no_archive, *args, **kwargs):
 
 	return HttpResponse('DONE.')
 
-@login_required
+@staff_only
 def massive(request, uids, action, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
 	if action == 'delete':
 		for uid in uids.split(','):
-			delete(request, uid=int(uid), no_archive=bool(kwargs.get('no_archive', False)))
+			delete(request, uid=int(uid),
+					no_archive=bool(kwargs.get('no_archive', False)))
 
 	if action == 'skel':
 		for uid in uids.split(','):
-			LMC.users.by_uid(int(uid)).apply_skel(kwargs.get('skel'))
+			if uid != '':
+				mod(request, uid=uid, action='skel', value=kwargs.get('skel'))
 
 	if action == 'export':
-		#TODO
-		pass
+
+		_type = kwargs.get('type', False)
+
+		selected_uids = [int(u) for u in uids.split(',')]
+
+		if _type.lower() == 'csv':
+			export = LMC.users.ExportCSV(selected=selected_uids)
+			extension = '.csv'
+
+		else:
+			export = LMC.users.to_XML(selected=[LMC.users.by_uid(u)
+													for u in selected_uids])
+			extension = '.xml'
+
+		export_handler, export_filename = tempfile.mkstemp(suffix=extension,
+															prefix='export_')
+
+		for chunk in export:
+			os.write(export_handler, chunk)
+		os.close(export_handler)
+
+		return HttpResponse(json.dumps({ "file_name" : export_filename, "preview": export}))
+
 	return HttpResponse('MASSIVE DONE.')
 
-@login_required
+@staff_only
 def create(request, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
 	if request.method == 'POST':
 
-		gresolver = LMC.groups.by_gid
-
-		groups = [ int(g) for g in request.POST.getlist('member_groups') if g != '' ]
-
-		groups.extend(gresolver(int(gid)).guest_group.gidNumber
-				for gid in request.POST.getlist('guest_groups') if gid != '')
-
-		groups.extend(gresolver(int(gid)).responsible_group.gidNumber
-				for gid in request.POST.getlist('resp_groups') if gid != '')
-
-		#lprint(groups)
-
-		profile     = LMC.profiles[
-									int(w.my_unquote(request.POST['profile']))
-								]
-		shell       = request.POST['shell']
-		gecos       = w.my_unquote(request.POST['gecos'])
-		login       = w.my_unquote(request.POST['login'])
-
-		# XXX: why not unquote the password too ?
-		password    = request.POST['password']
-
 		try:
+
+			gresolver = LMC.groups.by_gid
+
+			groups = [ int(g) for g in request.POST.getlist('member_groups')
+																	if g != '' ]
+
+			groups.extend(gresolver(int(gid)).guest_group.gidNumber
+					for gid in request.POST.getlist('guest_groups') if gid != '')
+
+			groups.extend(gresolver(int(gid)).responsible_group.gidNumber
+					for gid in request.POST.getlist('resp_groups') if gid != '')
+
+			profile     = LMC.profiles[
+								int(w.my_unquote(request.POST['profile']))
+							]
+			shell       = request.POST['shell']
+			gecos       = w.my_unquote(request.POST['gecos'])
+			login       = w.my_unquote(request.POST['login'])
+
+			# XXX: why not unquote the password too ?
+			password    = request.POST['password']
+
 			LMC.users.add_User(
 						login=login if login != '' else None,
 						gecos=gecos if gecos != '' else None,
@@ -224,20 +252,21 @@ def create(request, **kwargs):
 						profile=profile)
 
 		except Exception, e:
-			wmi_event_app.queue(request).put(notify(_('Unable to add '
+			logging.exception(_(u'Unable to add user'))
+			wmi_event_app.queue(request).put(utils.notify(_('Unable to add '
 									'user {0}: {1}.').format(login, e)))
 
 	return HttpResponse('DONE.')
 
 # TODO:
-@login_required
+@staff_only
 def massive_import(uri, http_user, filename, firstname_col, lastname_col,
 													group_col, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	pass
 
-@login_required
+@staff_only
 def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -314,7 +343,7 @@ def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 
 		return render(request, 'users/user_template.html', _dict)
 
-@login_required
+@staff_only
 def view(request, uid=None, login=None, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -418,7 +447,7 @@ def view(request, uid=None, login=None, *args, **kwargs):
 			})
 		return render(request, 'users/view_template.html', _dict)
 
-@login_required
+@staff_only
 def upload_file(request, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -437,20 +466,7 @@ def upload_file(request, *args, **kwargs):
 		#lprint(destination)
 		return HttpResponse(csv_filename)
 
-@login_required
-def import_download(request, import_id, *args, **kwargs):
-	""" http://djangosnippets.org/snippets/365/ """
-
-	assert ltrace_func(TRACE_DJANGO)
-
-	filename = os.path.join(settings.home_archive_dir, import_id)
-	wrapper = FileWrapper(file(filename))
-	response = HttpResponse(wrapper, content_type='text/plain')
-	response['Content-Length'] = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format(import_id)
-	return response
-
-@login_required
+@staff_only
 def import_view(request, confirm='', *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
@@ -493,7 +509,7 @@ def import_view(request, confirm='', *args, **kwargs):
 		else:
 			return render(request, '/users/import_template.html', {'form': form})
 
-@login_required
+@staff_only
 def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)

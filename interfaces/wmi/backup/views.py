@@ -8,6 +8,8 @@ Licorn WMI2 system views
 :license: GNU GPL version 2
 """
 
+import time
+
 from django.contrib.auth.decorators import login_required
 from django.http					import HttpResponse, \
 											HttpResponseForbidden, \
@@ -70,8 +72,8 @@ def run(request, *args, **kwargs):
 
 			except Exception, e:
 				pyutils.print_exception_if_verbose()
-				wmi_event_app.enqueue_notification(_('Could not start backup on '
-											'{0} (was: {1})').format(device, e))
+				wmi_event_app.enqueue_notification(request, _('Could not '
+					'start backup on {0} (was: {1})').format(device, e))
 
 	return return_for_request(request)
 @staff_only
@@ -87,7 +89,7 @@ def enable(request, device, **kwargs):
 	except Exception, e:
 		pyutils.print_exception_if_verbose()
 
-		wmi_event_app.enqueue_notification(_('Could not enable volume '
+		wmi_event_app.enqueue_notification(request, _('Could not enable volume '
 									'{0} (was: {1})').format(device, e))
 
 	return return_for_request(request)
@@ -133,7 +135,7 @@ def rescan(request, **kwargs):
 	wmi_event_app.enqueue_notification(request, _('Volumes rescanned.'), 3000)
 
 	return return_for_request(request)
-@login_required
+@staff_only
 def index(request, sort="date", order="asc", **kwargs):
 	""" Main backup list (integrates volumes). """
 

@@ -6,29 +6,54 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-05-30 15:26+0200\n"
-"PO-Revision-Date: 2012-02-17 09:45+0100\n"
+"POT-Creation-Date: 2012-06-18 12:40+0200\n"
+"PO-Revision-Date: 2012-06-18 09:59+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
-"Language-Team: français <>\n"
+"Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: media/js/groups.js:24
-msgid "Make group “%1” not permissive"
-msgstr ""
+#: media/js/gettext.js:6
+msgid "Confirm"
+msgstr "Confirmer"
+
+#: media/js/gettext.js:7
+msgid "Cancel"
+msgstr "Annuler"
+
+#: media/js/gettext.js:8
+msgid "Close"
+msgstr "Fermer"
+
+#: media/js/groups.js:24 media/js/groups.js.py:140 media/js/groups.js:144
+msgid "Make group <strong>%1</strong> not permissive?"
+msgstr "Rendre le groupe <strong>%1</strong> non permissif&nbsp;?"
 
 #: media/js/groups.js:25
-msgid "Are you sure you want to make group “%1” not permissive?"
+msgid ""
+"This will lock shared files to their owner, disallowing modifications by "
+"other members. This is perfectly safe, and generally used on groups with a "
+"great number of members.<br /><br /> <div class=\"smaller greyed_out"
+"\"><em>NOTE</em>: The operation may be lengthy because the system will "
+"change permissions of all current files (duration is therefore depending on "
+"the data volume, about 10 second for 1Gb).</div>"
 msgstr ""
+"Ceci verrouillera les fichiers partagés pour leur propriétaire uniquement, "
+"interdisant les modifications et suppressions aux autres membres du groupe. "
+"C'est totalement sûr, et généralement utilisé pour les groupes qui "
+"contiennent un grand nombre de membres.<br /><br />div class=\\\"smaller "
+"greyed_out\\\"><em>NOTE</em>: L'application de cette opération peut être "
+"longue à observer sur les gros partages, car elle dépend du volume de "
+"données partagées (environ 10 secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:29
-msgid "Make group “%1” permissive?"
-msgstr ""
+#: media/js/groups.js:29 media/js/groups.js.py:149
+msgid "Make group <strong>%1</strong> permissive?"
+msgstr "Rendre le groupe <strong>%1</strong> permissif&nbsp;?"
 
 #: media/js/groups.js:30
 msgid ""
@@ -38,72 +63,88 @@ msgid ""
 "<br /><br /> <strong>If the group members are already accustomed to work "
 "together on the same documents, making the group permissive is the right "
 "choice.</strong> You would usually use this feature on small working groups "
-"of people only, as it makes hard to track “who modified what”. <br /><br /> "
-"NOTE: The operation may be lengthy because the system will change "
-"permissions of all current files (duration is therefore depending on the "
-"volume of data, about 10 second for 1Gb)."
+"of people only, as it makes hard to track &ldquo;&nbsp;who modified "
+"what&nbsp;&rdquo;. <br /><br /><div class=\\\"smaller greyed_out\\"
+"\"><em>NOTE</em>: The operation may be lengthy because the system will "
+"change permissions of all current files (duration is therefore depending on "
+"the data volume, about 10 second for 1Gb).</div>"
 msgstr ""
+"Ceci définit un accès plus larges aux documents du répertoire partagé "
+"<em>pour ses membres</em>, leur permettant de modifier ou effacer n'importe "
+"quel document, quelque soit son propriétaire.<br /><br /><strong>Si les "
+"membres du groupes sont déjà habitués à travailler en commun sur certains "
+"documents, rendre le groupe permissif est le choix naturel.</strong> Vous "
+"utiliserez ce mode en général sur de petits groupes de travail, car celà "
+"peut rendre difficile de savoir &laquo;&nbsp;qui a fait quoi&nbsp;?&nbsp;"
+"&raquo;.<br /><br />div class=\\\"smaller greyed_out\\\"><em>NOTE</em>: "
+"L'application de cette opération peut être longue à observer sur les gros "
+"partages, car elle dépend du volume de données partagées (environ 10 "
+"secondes par Gigaoctet).</div>"
 
-#: media/js/groups.js:42 media/js/users.js:49
+#: media/js/groups.js:42 media/js/users.js:50
 msgid "Removal confirmation"
-msgstr ""
+msgstr "Confirmation de suppression"
 
-#: media/js/groups.js:63 media/js/users.js:68
+#: media/js/groups.js:63 media/js/users.js:75
 msgid "Skeleton reapplying confirmation"
-msgstr ""
-
-#: media/js/groups.js:140 media/js/groups.js.py:145
-msgid "Make group %1 not permissive"
-msgstr ""
-
-#: media/js/groups.js:142 media/js/groups.js.py:147 media/js/groups.js:154
-msgid "Make group "
-msgstr ""
-
-#: media/js/groups.js:151
-msgid "Make group %1 permissive"
-msgstr ""
+msgstr "Confirmation de ré-application de skelette"
 
 #: media/js/list.js:57
 msgid "Massive removal"
-msgstr ""
+msgstr "Suppression massive"
 
-#: media/js/list.js:60
+#: media/js/list.js:60 media/js/list.js.py:112
 msgid "Please select at least one account."
-msgstr ""
+msgstr "Sélectionnez au moins un compte."
 
 #: media/js/list.js:64
 msgid "Are you sure you want to remove these account(s):"
-msgstr ""
+msgstr "Récapitulatif des comptes à supprimer :"
 
 #: media/js/list.js:66
 msgid "Definitely remove account data (no archiving)"
-msgstr ""
+msgstr "Supprimer définitivement les données (pas d'archivage)"
 
 #: media/js/list.js:109
+msgid "Massive export"
+msgstr "Export Massif"
+
+#: media/js/list.js:116
+msgid "Are you sure you want to export these account(s):"
+msgstr "Récapitulatif des comptes à exporter :"
+
+#: media/js/list.js:119
+msgid "Please choose the export format : "
+msgstr "Choisissez le format d'export :"
+
+#: media/js/list.js:169
 msgid "Massive skeleton reapplying"
-msgstr ""
+msgstr "Ré-application massive d'un skelette"
 
-#: media/js/list.js:112
+#: media/js/list.js:172
 msgid "Please select at least one user account."
-msgstr ""
+msgstr "Merci de sélectionner au moins un compte utilisateur."
 
-#: media/js/list.js:117
+#: media/js/list.js:177
 msgid ""
 "Are you sure you want to reapply their skeleton to these user account(s):"
 msgstr ""
+"Êtes-vous sûr(e) de vouloir ré-appliquer leur skelette initial aux compte(s) "
+"utilisateur(s) suivant(s)&nbsp;:"
 
-#: media/js/list.js:151
+#: media/js/list.js:211
 msgid "Massive group premissiveness"
-msgstr ""
+msgstr "Basculement massif de permissivité"
 
-#: media/js/list.js:154
+#: media/js/list.js:214
 msgid "Please select at least one group."
-msgstr ""
+msgstr "Merci de sélectionner au moins un groupe."
 
-#: media/js/list.js:159
+#: media/js/list.js:219
 msgid "Are you sure you want to toggle permissiveness of group(s):"
 msgstr ""
+"Êtes-vous sûr(e) de vouloir basculer la permissivité du(des) groupe(s) "
+"suivant(s)&nbsp;:"
 
 #: media/js/machines.js:18
 msgid "Unlock user %1"
@@ -120,6 +161,20 @@ msgstr "Verrouiller le compte %1"
 #: media/js/machines.js:28 media/js/machines.js.py:31 media/js/machines.js:34
 msgid "Lock account "
 msgstr "Verrouiller le compte"
+
+#: media/js/main.js:220
+msgid "Random password generator"
+msgstr "Générateur de mot de passe aléatoire"
+
+#: media/js/main.js:221
+msgid ""
+"<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</"
+"strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</"
+"code> button, and remember it."
+msgstr ""
+"<br />Le mot de passe généré est &laquo;&nbsp;<strong class=\"bigger\">%1</"
+"strong>&nbsp;&raquo;. Si vous êtes d'accord pour l'utiliser, cliquez "
+"simplement sur le bouton <code>Confirmer</code>, et retenez ce mot de passe."
 
 #: media/js/menu.js:63
 msgid "Sure?"
@@ -154,25 +209,39 @@ msgid "Unlock confirmation"
 msgstr "Confirmation de déverrouillage"
 
 #: media/js/users.js:28
-msgid "Do you really want to unlock user account “%1”?"
-msgstr "Voulez-vous vraiment déverrouiller le compte utilisateur « %1 » ?"
+msgid "Do you really want to unlock user account <strong>%1</strong>?"
+msgstr ""
+"Voulez-vous vraiment déverrouiller le compte utilisateur <strong>%1</"
+"strong>&nbsp;?"
 
 #: media/js/users.js:37
 msgid "Lock confirmation"
 msgstr "Confirmation de verrouillage"
 
-#: media/js/users.js:70
-msgid "Are you sure you want to reapply skeleton to user account “%1”?"
+#: media/js/users.js:77
+msgid ""
+"Are you sure you want to reapply skeleton to user account <strong>%1</"
+"strong>?"
 msgstr ""
+"Êtes-vous sûr(e) de vouloir ré-appliquer le skelette système sur le compte "
+"<strong>%1</strong>&nbsp;?"
 
-#: media/js/users.js:147
+#: media/js/users.js:154
 msgid "Unlock user account"
 msgstr "Déverrouiller le compte utilisateur"
 
-#: media/js/users.js:154 media/js/users.js.py:160
+#: media/js/users.js:161 media/js/users.js.py:167
 msgid "Lock user account"
 msgstr "Verrouiller le compte utilisateur"
 
 #: media/js/utils.js:37
-msgid "Collecting informations, please wait…"
-msgstr ""
+msgid "Collecting data, please wait&hellip;"
+msgstr "Rassemblement des données, merci de patienter&hellip;"
+
+#~ msgid "Generate random password"
+#~ msgstr "Générer un mot de passe aléatoire"
+
+#~ msgid "The generate password is “%1”. Please remember to copy it."
+#~ msgstr ""
+#~ "Le mot de passe généré est « <span class=\"biggest\">{%1}</span> ». Merci "
+#~ "de le retenir."

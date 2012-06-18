@@ -4,3 +4,6 @@
 push_permissions = {
 		'/backup' : (lambda req: req.user.is_staff, (), None),
 	}
+
+dependancies = ('LMC.extensions.rdiffbackup.enabled', )
+base_url     = r'^backups?/'

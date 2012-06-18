@@ -165,3 +165,74 @@ $(document).keyup(function(e) {
 		}
 	}
 });
+
+
+function password_helpers(content) {
+	content.find('input:password').keyup(function() {
+
+		var empty = false;
+		content.find('input:password').each(function() {
+			if ($(this).val() == '') {
+				empty = true;
+			}
+		});
+
+		// while one of the two password field is empty do not do
+		// anything.
+		if ( !empty ) {
+				var first = true;
+				var match = true;
+				content.find('input:password').each(function() {
+					if (first) {
+						pwd = $(this).val();
+					}
+					else {
+						if (pwd != $(this).val()) { match = false; }
+					}
+					first = false;
+				});
+				if ( match ) {
+					//if they match check password strenght
+					$('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
+					$.get("/users/check_pwd_strenght/"+pwd, function(html) {
+						if (html != pwd) {
+							$('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
+						}
+						else {
+							$('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
+						}
+					});
+					passwords_match = true;
+				}
+				else {
+					$('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
+					passwords_match = false
+
+					$('#pwd_strenght').html('')
+				}
+		}
+		else {
+			$('#check_pwds').html('')
+			$('#pwd_strenght').html('')
+		}
+	});
+
+	//console.log("content", content)
+
+	$('#generate_pwds').click(function() {
+		var pwd_generated = null;
+		$.get('/users/generate_pwd/', function(pwd) {
+			pwd_generated = pwd
+			gen_pwd_dialog = new dialog(gettext("Random password generator"),
+				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
+				true, function() {
+					//console.log(content)
+					content.find('input:password').val(pwd_generated).trigger('keyup');
+
+
+			});
+			gen_pwd_dialog.show();
+		})
+
+	});
+}

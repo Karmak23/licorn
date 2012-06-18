@@ -58,70 +58,9 @@
 		content = $('#sub_content_area');
 		var passwords_match = false;
 		var check_user_pwd;
-		content.find('input:password').keyup(function() {
-
-			var empty = false;
-			content.find('input:password').each(function() {
-				if ($(this).val() == '') {
-					empty = true;
-				}
-			});
-
-			// while one of the two password field is empty do not do
-			// anything.
-			if ( !empty ) {
-					var first = true;
-					var match = true;
-					content.find('input:password').each(function() {
-						if (first) {
-							pwd = $(this).val();
-						}
-						else {
-							if (pwd != $(this).val()) { match = false; }
-						}
-						first = false;
-					});
-					if ( match ) {
-						//if they match check password strenght
-						$('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
-						$.get("/users/check_pwd_strenght/"+pwd, function(html) {
-							if (html != pwd) {
-								$('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
-							}
-							else {
-								$('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
-							}
-						});
-						passwords_match = true;
-					}
-					else {
-						$('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
-						passwords_match = false
-
-						$('#pwd_strenght').html('')
-					}
-			}
-			else {
-				$('#check_pwds').html('')
-				$('#pwd_strenght').html('')
-			}
-		});
-
-		$('#generate_pwds').click(function() {
-			var pwd_generated = null;
-			$.get('/users/generate_pwd/', function(pwd) {
-				pwd_generated = pwd
-				gen_pwd_dialog = new dialog(gettext("Generate random password"),
-					strargs(gettext("The generate password is “%1”. Please remember to copy it."), [pwd_generated]),
-					true, function() {
-						content.find('input:password').val(pwd_generated).trigger('keyup');
-
-
-				});
-				gen_pwd_dialog.show();
-			})
-
-		})
+		
+		// from main.js
+		password_helpers(content)
 
 		$('.click_item').each(function() {
 			// display only relevant groups
@@ -161,7 +100,7 @@
 			lock_sub_content();
 
 			function post_form() {
-				if (passwords_match) {
+				if ($('#id_password').val() == $('#id_password_confim').val()) {
 					if ($('#id_login').val() == '' && $('#id_gecos').val() == "") {
 						show_message_through_notification('Login and gecos cannot be both empty, impossible to save user')
 					}

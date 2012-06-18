@@ -10,12 +10,17 @@ Licorn® WMI - groups views
 :license: GNU GPL version 2
 """
 
-import os, time
+import os, time, tempfile, json, csv
 
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers       import reverse
 from django.shortcuts               import *
 from django.template.loader         import render_to_string
 from django.utils.translation       import ugettext_lazy as _
+from django.http					import HttpResponse, \
+											HttpResponseForbidden, \
+											HttpResponseNotFound, \
+											HttpResponseRedirect
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import hlstr
@@ -25,22 +30,23 @@ from licorn.foundations.ltraces   import *
 
 from licorn.core import LMC
 
-# warning: this import will fail if nobody has previously called wmi.init()
-# (this should have been done in the WMIThread.run() method.
-from licorn.interfaces.wmi.libs                import old_utils as w
-from licorn.interfaces.wmi.libs.old_decorators import check_groups
+# FIXME: OLD!! MOVE FUNCTIONS to new interfaces.wmi.libs.utils.
+# WARNING: this import will fail if nobody has previously called `wmi.init()`.
+# This should have been done in the WMIThread.run() method. Anyway, this must
+# disappear soon!!
+from licorn.interfaces.wmi.libs            import old_utils as w
 
 from licorn.interfaces.wmi.app             import wmi_event_app
-from licorn.interfaces.wmi.libs            import utils, perms_decorators
-from licorn.interfaces.wmi.libs.decorators import *
+from licorn.interfaces.wmi.libs            import utils
+from licorn.interfaces.wmi.libs.decorators import staff_only, check_groups
 
-from forms                              import GroupForm
+from forms import GroupForm
 
-@login_required
+@staff_only
 def message(request, part, gid=None, *args, **kwargs):
 
 	if gid != None:
-		group = utils.select('groups', [ gid ])[0]
+		group = LMC.groups.by_gid(gid)
 
 	if part == 'delete':
 		html = render_to_string('groups/delete_message.html', {
@@ -57,8 +63,8 @@ def message(request, part, gid=None, *args, **kwargs):
 
 	return HttpResponse(html)
 
-#@perms_decorators.check_groups('delete')
 @staff_only
+@check_groups('delete')
 def delete(request, gid, no_archive='', *args, **kwargs):
 	try:
 		# remote:
@@ -69,43 +75,82 @@ def delete(request, gid, no_archive='', *args, **kwargs):
 		LMC.groups.del_Group(group=int(gid), no_archive=bool(no_archive))
 
 	except Exception, e:
-		wmi_event_app.queue(request).put(utils.notify(
-			_('Error while deleting group {0}: {1}.').format(group.name, e)))
+		utils.wmi_exception(request, e, _(u'Error while deleting group {0}'),
+												LMC.groups.by_gid(gid).name)
+	else:
+		return HttpResponse('DELETED.')
 
-	return HttpResponse('DONE.')
 @staff_only
-def toogle_permissiveness(request, gid, *args, **kwargs):
-	group = utils.select('groups', [ gid ])[0]
+def toggle_permissiveness(request, gid, *args, **kwargs):
+
+	group = LMC.groups.by_gid(gid)
+
 	try:
 		group.is_permissive = not group.is_permissive
+
 	except Exception, e:
-		wmi_event_app.queue(request).put(utils.notify(
-			_('Error while changing group permissiveness {0}: {1}.').format(
-			group.name, e)))
+		utils.wmi_exception(request, e, _(u'Error while changing group '
+			u'<strong>{0}</strong> permissiveness'), group.name)
 
 	return HttpResponse('DONE.')
+
 @staff_only
 def massive(request, gids, action, value='', *args, **kwargs):
+
 	if action == 'delete':
 		for gid in gids.split(','):
 			delete(request, gid=int(gid), no_archive=bool(value))
-	elif action == 'export':
-		#TODO
-		pass
+
 	elif action == 'permissiveness':
 		for gid in gids.split(','):
-			toogle_permissiveness(request, gid=int(gid))
+			toggle_permissiveness(request, gid=int(gid))
+
+	elif action == 'export':
+		_type = value
+
+		export_handler, export_filename = tempfile.mkstemp()
+
+		if _type.lower() == 'csv':
+			export = LMC.groups.get_CSV_data(selected=[int(g)
+													for g in gids.split(',')])
+
+			out = csv.writer(open(export_filename, 'w'),
+								delimiter=';', quoting=csv.QUOTE_MINIMAL)
+			for row in export:
+				out.writerow(row)
+
+		else:
+			export = LMC.groups.to_XML(selected=[LMC.groups.by_gid(int(g))
+													for g in gids.split(',')])
+
+			destination = open(export_filename, 'wb+')
+			for chunk in export:
+				destination.write(chunk)
+			destination.close()
+
+		return HttpResponse(json.dumps({ "file_name" : export_filename }))
+
 	return HttpResponse('MASSIVE DONE.')
 
-#@perms_decorators.check_groups('mod')
 @staff_only
+@check_groups('mod')
 def mod(request, gid, action, value, *args, **kwargs):
 	""" edit the gecos of the user """
 	assert ltrace_func(TRACE_WMI)
 
-	group = utils.select('groups', [ gid ])[0]
+	group = LMC.groups.by_gid(gid)
 
-	def mod_users(user_id, rel_id):
+	def mod_users(group, user_id, rel_id):
+
+		# Allow direct modifications of helper groups via URLs by
+		# swapping the helper group and its standard one, and
+		# swapping the desired membership accordingly.
+		if group.is_helper:
+			if rel_id == relation.MEMBER:
+				rel_id = relation.RESPONSIBLE \
+							if group.is_responsible \
+							else relation.GUEST
+			group = group.standard_group
 
 		if group.is_standard:
 			g_group = group.guest_group
@@ -133,7 +178,7 @@ def mod(request, gid, action, value, *args, **kwargs):
 
 	try:
 		if action == 'users':
-			mod_users(*[ int(x) for x in value.split('/')])
+			mod_users(group, *(int(x) for x in value.split('/')))
 
 		elif action == 'description':
 			if value != group.description:
@@ -151,12 +196,11 @@ def mod(request, gid, action, value, *args, **kwargs):
 				user.apply_skel(group.groupSkel)
 
 	except Exception, e:
-		wmi_event_app.queue(request).put(utils.notify(
-			_('Error while modifying group {0}: {1}.').format(
-				group.name, e)))
+		utils.wmi_exception(request, e, _(u'Error while modifying group '
+										u'<strong>{0}</strong>'), group.name)
 
 	# updating the web page is done in the event handler, via the push stream.
-	return HttpResponse('DONE.')
+	return HttpResponse('MOD DONE.')
 
 @staff_only
 def create(request, **kwargs):
@@ -168,8 +212,8 @@ def create(request, **kwargs):
 		groupSkel   = request.POST.get('skel')
 
 		guest_users = [ int(u) for u in request.POST.getlist('guest_users') if u != '' ]
-		std_users = [ int(u) for u in request.POST.getlist('member_users') if u != '' ]
-		resp_users = [ int(u) for u in request.POST.getlist('resp_users') if u != '' ]
+		std_users   = [ int(u) for u in request.POST.getlist('member_users') if u != '' ]
+		resp_users  = [ int(u) for u in request.POST.getlist('resp_users') if u != '' ]
 
 		try:
 			# remote:
@@ -185,18 +229,19 @@ def create(request, **kwargs):
 				guests_to_add=guest_users, responsibles_to_add=resp_users)
 
 		except Exception, e:
-			wmi_event_app.queue(request).put(utils.notify(_('Error while adding group {0}: {1}.').format(name, e)))
+			utils.wmi_exception(request, e, _(u'Error while adding group '
+											u'<strong>{0}</strong>'), name)
 
-	return HttpResponse("DONE.")
+	return HttpResponse("CREATED.")
 
-@login_required
+@staff_only
 def view(request, gid=None, name=None, *args, **kwargs):
 
 	if gid != None:
-		group = utils.select('groups', [gid])[0]
+		group = LMC.groups.by_gid(gid)
 
 	elif name != None:
-		group = utils.select('groups', [ name ])[0]
+		group = LMC.groups.by_name(name)
 
 	if group.is_standard:
 		lists = [{
@@ -227,7 +272,6 @@ def view(request, gid=None, name=None, *args, **kwargs):
 		return render(request, 'groups/view.html', _dict)
 
 	else:
-
 		if request.user.is_superuser:
 			_sys_groups = set(g.gidNumber for g in utils.select('groups',
 								default_selection=filters.SYSTEM))
@@ -242,59 +286,65 @@ def view(request, gid=None, name=None, *args, **kwargs):
 			sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
 
 		_dict.update({
-				'groups_list'            : utils.select('groups', default_selection=filters.STANDARD),
+				'groups_list'            : utils.select('groups',
+											default_selection=filters.STANDARD),
 				'system_groups_list'     : sys_groups
 			})
 
 		return render(request, 'groups/view_template.html', _dict)
 
-@login_required
-def group(request, gid=None, name= None, action='edit', *args, **kwargs):
+@staff_only
+def group(request, gid=None, name=None, action='edit', *args, **kwargs):
 
-	# resolve group
 	try:
-		group = utils.select('groups', [ gid ])[0]
-	except IndexError:
+		group = LMC.groups.by_gid(gid)
+
+	except:
 		try:
-			group = utils.select('groups', [ name ])[0]
-		except IndexError:
-			group = None
+			group = LMC.groups.by_name(name)
 
+		except Exception, e:
+			if action == 'edit':
+				utils.wmi_exception(request, e, _(u'No group by that {0} '
+									u'“<strong>{1}</strong>”.'),
+									_('name') if name else _('GID'),
+									name or gid)
+				return HttpResponseRedirect(reverse('groups.views.main'))
 
-	if action=='edit':
+			else:
+				# creation mode.
+				group = None
+
+	if action == 'edit':
 		edit_mod = True
 		title    = _('Edit group {0}').format(group.name)
-		group_id  = group.gidNumber
+		group_id = group.gidNumber
+
 	else:
 		edit_mod = False
 		title    = _('Add new group')
-		group_id  = ''
-
-
-	# get form
-	f = GroupForm(edit_mod, group)
+		group_id = ''
 
 	users_list = [ (_('Standard users'),{
-					'group': group,
-					'name': 'standard',
-					'users' : utils.select("users", default_selection=filters.STANDARD)
+					'group' : group,
+					'name'  : 'standard',
+					'users' : utils.select('users', default_selection=filters.STANDARD)
 				}) ]
 
 	# if super user append the system users list
 	if request.user.is_superuser:
 		users_list.append( ( _('System users') ,  {
-			'group': group,
-			'name': 'system',
-			'users' : utils.select("users", default_selection=filters.SYSTEM)
+			'group' : group,
+			'name'  : 'system',
+			'users' : utils.select('users', default_selection=filters.SYSTEM)
 		}))
 
 	_dict = {
-				'group_gid'             : group_id,
-				'edit_mod'              : edit_mod,
-				'title'                 : title,
-				'form'                  : f,
-				'users_lists'           : users_list
-
+				'group_gid'   : group_id,
+				'edit_mod'    : edit_mod,
+				'title'       : title,
+				'form'        : GroupForm(edit_mod, group),
+				'users_lists' : users_list
 			}
 
 	if request.is_ajax():
@@ -309,14 +359,14 @@ def group(request, gid=None, name= None, action='edit', *args, **kwargs):
 		else:
 			sys_groups = utils.select('groups', default_selection=filters.PRIVILEGED)
 
-
 		_dict.update({
-				'groups_list'            : utils.select('groups', default_selection=filters.STANDARD),
+				'groups_list'            : utils.select('groups',
+											default_selection=filters.STANDARD),
 				'system_groups_list'     : sys_groups})
 
 		return render(request, 'groups/group_template.html', _dict)
 
-@login_required
+@staff_only
 def main(request, sort="login", order="asc", select=None, *args, **kwargs):
 
 	groups = utils.select('groups', default_selection=filters.STANDARD)

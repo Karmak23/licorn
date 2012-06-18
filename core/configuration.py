@@ -390,8 +390,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			return
 
 		self.mta = servers.MTA_UNKNOWN
-		logging.progress(_(u'MTA not installed or unsupported, please get in '
-			u'touch with dev@licorn.org.'))
+		logging.progress(_(u'MTA not installed or unsupported.'))
 	def FindMailboxType(self):
 		"""Find how the underlying system handles Mailboxes
 			(this can be Maidlir, mail spool,
