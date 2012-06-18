@@ -43,6 +43,8 @@ def return_for_request(request):
 		return HttpResponseRedirect('/shares')
 
 def toggle_shares(request, state):
+	""" This is not a view, only an helper function.
+		No need to @login_required. """
 
 	login = request.user.username
 
