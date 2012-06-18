@@ -35,7 +35,7 @@ function head_over_to(next_location) {
 
 function loading_animation_func() {
 	$('body').prepend('<div id="loading_information"><span class="push_reconnection_notification">'
-		+ gettext('Collecting informations, please wait…') + '</span></div>');
+		+ gettext('Collecting data, please wait&hellip;') + '</span></div>');
 	$("#loading_information").fadeIn('slow');
 }
 

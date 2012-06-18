@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-18 00:57+0200\n"
-"PO-Revision-Date: 2012-06-18 00:57+0200\n"
+"POT-Creation-Date: 2012-06-18 12:40+0200\n"
+"PO-Revision-Date: 2012-06-18 12:40+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -161,23 +161,23 @@ msgstr "Calcul des statistiques de sauvegarde terminé sur le volume {0}."
 msgid "Force a backup to be run even if the last is recent."
 msgstr "Forcer une sauvegarde même si la dernière est récente."
 
-#: backup/views.py:73
+#: backup/views.py:75
 msgid "Could not start backup on {0} (was: {1})"
 msgstr "Impossible de démarrer la sauvegarde sur {0} (erreur : {1})"
 
-#: backup/views.py:90
+#: backup/views.py:92
 msgid "Could not enable volume {0} (was: {1})"
 msgstr "Impossible de réserver le volume {0} (erreur : {1})"
 
-#: backup/views.py:107
+#: backup/views.py:109
 msgid "Unhandled exception while unmounting volume {0}"
 msgstr ""
 
-#: backup/views.py:110
+#: backup/views.py:112
 msgid "Could not eject volume {0} (was: {1})"
 msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 
-#: backup/views.py:133
+#: backup/views.py:135
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
@@ -256,24 +256,21 @@ msgid "Group skel"
 msgstr "Squelette de groupe"
 
 #: groups/views.py:78
-#, fuzzy
 msgid "Error while deleting group {0}"
-msgstr "Erreur pendant l'envoi du fichier {0}"
+msgstr "Erreur pendant la suppression du groupe {0}"
 
 #: groups/views.py:92
-#, fuzzy
 msgid "Error while changing group <strong>{0}</strong> permissiveness"
-msgstr "Erreur lors de l'ajout du compte {0} : {1."
+msgstr ""
+"Erreur pendant le changement de permissivité du groupe <strong>{0}</strong>"
 
 #: groups/views.py:199
-#, fuzzy
 msgid "Error while modifying group <strong>{0}</strong>"
-msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>{0}</strong> ?"
+msgstr "Erreur pendant la modification du groupe <strong>{0}</strong>"
 
 #: groups/views.py:232
-#, fuzzy
 msgid "Error while adding group <strong>{0}</strong>"
-msgstr "Êtes-vous sûr(e) de vouloir supprimer le groupe <strong>{0}</strong> ?"
+msgstr "Erreur pendant l'ajout du groupe <strong>{0}</strong>"
 
 #: groups/views.py:248
 msgid "Responsibles"
@@ -532,6 +529,8 @@ msgid ""
 "GNU is Not Unix (recursive acronym ; a set of libre sofware composing a "
 "libre operating system)"
 msgstr ""
+"GNU is Not Unix (acronyme réccursif ; un ensemble de logiciels libres "
+"composant un système d'exploitation libre)"
 
 #: libs/old_utils.py:53
 msgid ""
@@ -608,15 +607,15 @@ msgstr ""
 msgid "Server, UPS and hardware sub-systems status."
 msgstr ""
 
-#: libs/old_utils.py:522
+#: libs/old_utils.py:522 templates/gettext.html:15
 msgid "Status"
 msgstr "État"
 
-#: libs/old_utils.py:523
+#: libs/old_utils.py:523 templates/gettext.html:11
 msgid "Shutdown"
 msgstr "Éteindre"
 
-#: libs/old_utils.py:523
+#: libs/old_utils.py:523 templates/gettext.html:9
 msgid "Restart"
 msgstr "Redémarrer"
 
@@ -624,16 +623,19 @@ msgstr "Redémarrer"
 msgid "Manage user accounts."
 msgstr "Gérer les comptes utilisateurs."
 
-#: libs/old_utils.py:525 templates/users/index.html:26
+#: libs/old_utils.py:525 templates/gettext.html:17
+#: templates/users/index.html:26
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: libs/old_utils.py:526 libs/old_utils.py:528 templates/groups/group.html:40
+#: libs/old_utils.py:526 libs/old_utils.py:528 templates/gettext.html:19
+#: templates/gettext.html.py:25 templates/groups/group.html:40
 #: templates/users/user.html:48
 msgid "Add"
 msgstr "Ajouter"
 
-#: libs/old_utils.py:526 libs/old_utils.py:528 templates/users/import.html:30
+#: libs/old_utils.py:526 libs/old_utils.py:528 templates/gettext.html:21
+#: templates/gettext.html.py:27 templates/users/import.html:30
 msgid "Import"
 msgstr "Importer"
 
@@ -641,7 +643,8 @@ msgstr "Importer"
 msgid "Manage groups and shared data."
 msgstr "Gérer les groupes et les données partagées"
 
-#: libs/old_utils.py:527 templates/groups/index.html:26
+#: libs/old_utils.py:527 templates/gettext.html:23
+#: templates/groups/index.html:26
 msgid "Groups"
 msgstr "Groupes"
 
@@ -659,16 +662,17 @@ msgstr ""
 msgid "Go to online documentation website."
 msgstr "Aller sur le site de documentation en ligne."
 
-#: libs/old_utils.py:559 templates/system/daemon_status_sub.html:7
+#: libs/old_utils.py:559 templates/gettext.html:35
+#: templates/system/daemon_status_sub.html:7
 #: templates/system/index_sub_nostaff.html:7
 msgid "Documentation"
 msgstr "Documentation"
 
-#: libs/old_utils.py:560
+#: libs/old_utils.py:560 templates/gettext.html:36
 msgid "Get product support / help"
 msgstr "Obtenir du support ou de l'aide"
 
-#: libs/old_utils.py:560
+#: libs/old_utils.py:560 templates/gettext.html:37
 msgid "Support"
 msgstr "Support"
 
@@ -987,6 +991,132 @@ msgstr ""
 msgid "go back and continue using it"
 msgstr "revenir en arrière et continuer à l'utiliser"
 
+#: templates/gettext.html:8
+msgid "Restart the server"
+msgstr "Redémarrer le serveur"
+
+#: templates/gettext.html:10
+msgid "Shutdown the server"
+msgstr "Éteindre le serveur"
+
+#: templates/gettext.html:12
+msgid "View the Licorn® daemon detailled status"
+msgstr "Voir l'état détaillé du daemon Licorn&reg;"
+
+#: templates/gettext.html:13 templates/system/daemon_status_main.html:8
+msgid "Daemon status"
+msgstr "État du daemon"
+
+#: templates/gettext.html:14
+msgid "Server, UPS and hardware sub-systems status"
+msgstr "État du serveur, de l'onduleur et d'autres sous-systèmes matériels"
+
+#: templates/gettext.html:16
+msgid "Manage user accounts"
+msgstr "Gérer les comptes utilisateurs"
+
+#: templates/gettext.html:18
+msgid "Add user on the system"
+msgstr "Ajouter un compte utilisateur"
+
+#: templates/gettext.html:20
+msgid "Import user accounts from a CSV file"
+msgstr "Importer une liste de compte depuis un fichier CSV"
+
+#: templates/gettext.html:22
+msgid "Manage groups and shared data"
+msgstr "Gérer les groupes et les données partagées"
+
+#: templates/gettext.html:24
+msgid "Add a group on the system"
+msgstr "Ajouter un groupe sur le système"
+
+#: templates/gettext.html:26
+msgid "Import groups from a CSV file"
+msgstr "Importer des groupes depuis un fichier CSV"
+
+#: templates/gettext.html:28
+msgid "Manage machines on the network"
+msgstr "Gérer les machines du réseau"
+
+#: templates/gettext.html:29
+msgid "Machines"
+msgstr "Machines"
+
+#: templates/gettext.html:30
+msgid "Scan the network"
+msgstr "Découvrir les machines sur le réseau local en le scannant"
+
+#: templates/gettext.html:31
+msgid "Scan network"
+msgstr "Découvrir"
+
+#: templates/gettext.html:32
+msgid "View or change my own details"
+msgstr "Voir ou modifier mes détails personnelss"
+
+#: templates/gettext.html:33 templates/system/index.html:18
+msgid "My information"
+msgstr "Mes informations"
+
+#: templates/gettext.html:34
+msgid "Go to online documentation website (in another window/tab)"
+msgstr ""
+"Aller sur le site de documentation en ligne (dans un(e) autre onglet/"
+"fenêtre)."
+
+#: templates/gettext.html:41 templates/widgets/common.html:76
+#: templates/widgets/common.html.py:79
+msgid "d"
+msgstr "j"
+
+#: templates/gettext.html:42
+msgid " day"
+msgstr " jour"
+
+#: templates/gettext.html:43
+msgid " days"
+msgstr " jours"
+
+#: templates/gettext.html:45 templates/widgets/common.html:85
+#: templates/widgets/common.html.py:88
+msgid "h"
+msgstr "h"
+
+#: templates/gettext.html:46
+msgid " hour"
+msgstr " heure"
+
+#: templates/gettext.html:47
+msgid " hours"
+msgstr " heures"
+
+#: templates/gettext.html:49 templates/widgets/common.html:94
+#: templates/widgets/common.html.py:97
+msgid "m"
+msgstr "m"
+
+#: templates/gettext.html:50
+msgid " minute"
+msgstr " minute"
+
+#: templates/gettext.html:51
+msgid " minutes"
+msgstr " minutes"
+
+#: templates/gettext.html:53 templates/widgets/common.html:105
+#: templates/widgets/common.html.py:108
+msgid "s"
+msgstr "s"
+
+#: templates/gettext.html:54
+msgid " second"
+msgstr " seconde"
+
+#: templates/gettext.html:55
+msgid " seconds"
+msgstr " secondes"
+
 #: templates/login.html:8
 msgid "Authentication"
 msgstr "Identification"
@@ -999,30 +1129,31 @@ msgstr "Vous devez vous identifier avant d'accéder à l'adresse {0}."
 msgid "Welcome to Licorn&reg;!"
 msgstr "Bienvenue sur Licorn&reg; !"
 
-#: templates/login.html:56
+#: templates/login.html:59
 msgid "Please enter your authentification credentials:"
 msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 
-#: templates/login.html:75
+#: templates/login.html:78
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:84 templates/shares/parts/share-view.html:53
+#: templates/login.html:87 templates/shares/parts/share-view.html:53
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
-#: templates/login.html:94
+#: templates/login.html:97
 msgid "Enter"
 msgstr "Entrer"
 
 #: templates/sidebar.html:10
-#, fuzzy
 msgid "Click to jump back to root of Licorn® Web Management Interface"
-msgstr "Bienvenue sur l'interface web de gestion de Licorn&reg;"
+msgstr ""
+"Cliquez pour retourner à la racine de l'interface web de gestion de Licorn®"
 
 #: templates/sidebar.html:12
-msgid "Image representing a unicorn, the logo of Licorn®."
+msgid "Image representing a unicorn, the logo of Licorn®"
 msgstr ""
+"Logo de Licorn®, représentant une licorne stylisée en pièce de jeu d'échecs"
 
 #: templates/sidebar.html:191
 msgid "Log out from the Licorn® WMI"
@@ -1036,33 +1167,119 @@ msgstr "quitter"
 msgid "System backups"
 msgstr "Sauvegardes système"
 
-#: templates/backup/index_main.html:83
+#: templates/backup/index_main.html:55
+msgid ""
+"A backup is currently in progress, please do not disconnect <strong>{volume}"
+"</strong>."
+msgstr ""
+"Une sauvegarde est en cours, merci de ne pas déconnecter <strong>{volume}</"
+"strong>."
+
+#: templates/backup/index_main.html:58
+msgid ""
+"Old backups are currently beiing cleaned or statistics are beiing computed "
+"on <strong>{volume}</strong>. Please do not disconnect this volume."
+msgstr ""
+"Les vieilles sauvegardes sont en train d'être nettoyées, ou les statistiques "
+"calculées sur <strong>{volume}</strong>. Merci de ne pas déconnecter ce "
+"volume."
+
+#: templates/backup/index_main.html:72
 msgid "Volume {0}"
 msgstr "Volume {0}"
 
-#: templates/backup/index_main.html:100
+#: templates/backup/index_main.html:82
+msgid ""
+"No historical data yet on <strong>{0}</strong>. Please wait for the first "
+"backup to finish."
+msgstr ""
+"Pas de données d'historique sur <strong>{0}</strong>. Merci d'attendre la "
+"fin de la première sauvegarde automatique."
+
+#: templates/backup/index_main.html:86
 msgid "Backup history on {0}"
 msgstr "Historique des sauvegardes sur {0}"
 
-#: templates/backup/index_main.html:166
-msgid "use volume “{0}”"
-msgstr "utiliser le volume « {0} »"
+#: templates/backup/index_main.html:96
+msgid ""
+"All backup volumes are currently unmounted (you can safely disconnect them "
+"from your server)."
+msgstr ""
+"Tous les volumes de sauvegarde sont actuellement démontés (vous pouvez les "
+"déconnecter du serveur en toute sécurité)."
 
-#: templates/backup/index_main.html:178
+#: templates/backup/index_main.html:97
+msgid "Next automatic backup:"
+msgstr "Prochaine sauvegarde automatique :"
+
+#: templates/backup/index_main.html:101
+msgid ""
+"Note: any still connected backup volume will be automatically re-mounted if "
+"needed."
+msgstr ""
+"Note : tout volume encore connecté sera automatiquement remonté si besoin."
+
+#: templates/backup/index_main.html:111
+msgid ""
+"No backup volume found: no external volume is currently connected to the "
+"server, or all the connected volumes are not <a href=\"http://docs.licorn."
+"org/extensions/volumes.en.html#extensions-volumes-compatible-en\" class="
+"\"online_help\" target=\"_blank\" title=\"Click to know which volumes are "
+"compatible, and how to make one.\">compatible with Licorn&reg;</a>.<br /"
+"><br />Please connect a compatible backup volume to your server, wait a few "
+"seconds and reload the current page."
+msgstr ""
+"Aucun volume de sauvegarde disponible : aucun volume externe n'est "
+"actuellement connecté au serveur, ou aucun des volumes connectés n'est <a "
+"href=\"http://docs.licorn.org/extensions/volumes.fr.html#extensions-volumes-"
+"compatible-fr\" class=\"online_help\" target=\"_blank\" title=\"Cliquez pour "
+"savoir quels types de volumes sont compatibles, et comment rendre un volume "
+"compatible\">compatible avec Licorn&reg;</a>.<br /><br />Merci de connecter "
+"un volume compatible sur votre serveur, attendre quelques secondes et "
+"recharger cette page."
+
+#: templates/backup/index_main.html:114
+msgid ""
+"One or more external volume(s) is connected, but none is currently dedicated "
+"to Licorn&reg;. Would you like to <a href=\"http://docs.licorn.org/"
+"extensions/volumes.en.html#extensions-volumes-reserve-en\" class="
+"\"online_help\" target=\"_blank\">enable and reserve</a> any of them for "
+"Licorn&reg; use?"
+msgstr ""
+"Un ou plusieurs volume(s) sont actuellement connectés, mais aucun n'est "
+"explicitement dédié Licorn&reg;. Voulez-vous <a href=\"http://docs.licorn."
+"org/extensions/volumes.fr.html#extensions-volumes-reserve-fr\" class="
+"\"online_help\" target=\"_blank\">activer et réserver</a> l'un d'entre eux "
+"pour les sauvegardes Licorn&reg;&nbsp;?"
+
+#: templates/backup/index_main.html:121
+msgid "use volume <strong>{0}</strong>"
+msgstr "utiliser le volume <strong>{0}</strong>"
+
+#: templates/backup/index_main.html:126
+msgid "currently not mounted,"
+msgstr "actuellement démonté,"
+
+#: templates/backup/index_main.html:128
 msgid "device: <strong>{0}</strong>,"
 msgstr "périphérique : <strong>{0}</strong>,"
 
-#: templates/backup/index_main.html:179
+#: templates/backup/index_main.html:129
 msgid "GUID: {0}"
 msgstr "GUID : {0}"
 
-#: templates/backup/index_main.html:180
+#: templates/backup/index_main.html:130
 msgid "FS type: <strong>{0}</strong>"
 msgstr "Système de fichiers : <strong>{0}</strong>"
 
 #: templates/backup/rundialog.html:6
 msgid "Run an incremental backup?"
 msgstr "Lancer une sauvegarde incrémentale ?"
+
+#: templates/backup/rundialog.html:10
+msgid "The volume <strong>{0}</strong> has been auto-selected for this backup."
+msgstr ""
+"Le volume <strong>{0}</strong> a été auto-sélectionné pour cette sauvegarde."
 
 #: templates/backup/widgets.html:8 templates/shares/widgets.html:6
 msgid "Last backup age on this volume:"
@@ -1072,33 +1289,71 @@ msgstr "Âge de la dernière sauvegarde sur ce volume :"
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu."
 
-#: templates/backup/widgets.html:28 templates/shares/widgets.html:26
+#: templates/backup/widgets.html:17
+msgid "Next backup attempt will occur in {0}."
+msgstr "La prochaine sauvegarde sera tentée dans {0}."
+
+#: templates/backup/widgets.html:24 templates/shares/widgets.html:26
 msgid "Operation in progress icon"
-msgstr ""
+msgstr "Icône d'opération en cours"
 
-#: templates/backup/widgets.html:55 templates/shares/widgets.html:53
+#: templates/backup/widgets.html:25
+msgid "Cannot eject, operation in progress on this volume."
+msgstr "Impossible d'éjecter, une opération est en cours sur ce volume."
+
+#: templates/backup/widgets.html:36
+msgid "Cannot eject, {0} in progress"
+msgstr "Impossible d'éjecter, {0} en cours"
+
+#: templates/backup/widgets.html:45 templates/shares/widgets.html:53
 msgid "Eject device icon"
-msgstr ""
+msgstr "Icône d'éjection"
 
-#: templates/backup/widgets.html:71 templates/shares/widgets.html:69
+#: templates/backup/widgets.html:61 templates/shares/widgets.html:69
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: templates/backup/widgets.html:91
+#: templates/backup/widgets.html:81
 msgid "An error occured while computing space needed for next backup."
 msgstr ""
+"Une erreur est survenue pendant le calcul de l'espace nécessaire à la "
+"prochaine sauvegarde"
 
-#: templates/backup/widgets.html:122
+#: templates/backup/widgets.html:112
 msgid "<strong>{0}</strong>"
 msgstr "<strong>{0}</strong>"
 
-#: templates/backup/widgets.html:126
+#: templates/backup/widgets.html:116
 msgid "(display log details)"
 msgstr "(afficher le journal)"
 
-#: templates/backup/widgets.html:131
+#: templates/backup/widgets.html:121
 msgid "(no details available)"
 msgstr "(pas d'information supplémentaire disponible)"
+
+#: templates/backup/parts/gettext.html:4
+msgid "Manage backups"
+msgstr "Gestion des sauvegardes du système"
+
+#: templates/backup/parts/gettext.html:5
+msgid "Backups"
+msgstr "Sauvegardes"
+
+#: templates/backup/parts/gettext.html:6
+msgid "Start an incremental backup"
+msgstr "Lancer une sauvegarde incrémentale"
+
+#: templates/backup/parts/gettext.html:7
+msgid "Run now"
+msgstr "Lancer"
+
+#: templates/backup/parts/gettext.html:8
+msgid "Force the system to rescan and remount connected volumes"
+msgstr "Forcer le système à re-scanner et remonter les volumes connectés"
+
+#: templates/backup/parts/gettext.html:9
+msgid "Rescan volumes"
+msgstr "Rescanner"
 
 #: templates/groups/delete_message.html:3
 msgid "Are you sure you want to remove group <strong>{0}</strong>?"
@@ -1135,7 +1390,7 @@ msgstr "Cliquez pour éditer le groupe {0}"
 
 #: templates/groups/group_row.html:46
 msgid "Reapply skel of members of group {0}"
-msgstr ""
+msgstr "Ré-application du skelette des membres du groupe {0}"
 
 #: templates/groups/group_row.html:55
 msgid "Delete group {0}"
@@ -1155,6 +1410,10 @@ msgid ""
 "according to the content of the skel you choose. This will NOT alter any of "
 "the user personnal data, nor the group shared data."
 msgstr ""
+"Ceci remettra le bureau à sa configuration d'origine, ainsi que les icônes "
+"et les menus, pour tous les membres du groupes, en fonction du contenu du "
+"skelette choisi. Ceci ne modifiera pas les données personnelles de "
+"l'utilisateur (rien n'est effacé), ni les données partagées du groupe."
 
 #: templates/groups/users_list.html:54 templates/users/groups_list.html:33
 msgid "no membership"
@@ -1262,7 +1521,7 @@ msgid ""
 msgstr ""
 "Vous n'avez aucun partage pour l'instant. Vous pouvez en démarrer un "
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
-"Public/ » (que vous n'avez qu'à créer aussi s'il n'existe pas)."
+"Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
 
 #: templates/shares/index_main.html:83
 msgid ""
@@ -1298,8 +1557,8 @@ msgid "Web share {0}"
 msgstr "Partage web {0}"
 
 #: templates/shares/serve-share.html:18
-msgid "Configure your share &raquo;"
-msgstr "Configurer ce partage &raquo;"
+msgid "Configure your share&nbsp;&raquo;"
+msgstr "Configurer ce partage&nbsp;&raquo;"
 
 #: templates/shares/serve-share.html:23
 msgid "Welcome to share <em>{0}</em>"
@@ -1428,10 +1687,6 @@ msgstr ""
 #: templates/shares/parts/share-view.html:131
 msgid "never"
 msgstr "jamais"
-
-#: templates/system/daemon_status_main.html:8
-msgid "Daemon status"
-msgstr "État du daemon"
 
 #: templates/system/daemon_status_main.html:11
 msgid "Statistics"
@@ -1562,10 +1817,6 @@ msgstr "Démarré depuis"
 msgid "Server status"
 msgstr "État du serveur"
 
-#: templates/system/index.html:18
-msgid "My information"
-msgstr "Mes informations"
-
 #: templates/system/index_main.html:18
 msgid "System information"
 msgstr "Informations système"
@@ -1587,6 +1838,16 @@ msgstr "Mémoire virtuelle&nbsp;: %(swap).2fMo installés."
 #: templates/system/index_main_nostaff.html:7
 msgid "My Informations"
 msgstr "Mes informations"
+
+#: templates/system/parts/gettext.html:5
+#, python-format
+msgid "%(num)d user connected"
+msgstr "%(num)d utilisateur connecté"
+
+#: templates/system/parts/gettext.html:6
+#, python-format
+msgid "%(num)d users connected"
+msgstr "%(num)d utilisateurs connectés"
 
 #: templates/users/delete_message.html:13
 msgid "However, you can decide to permanently remove it."
@@ -1613,29 +1874,36 @@ msgid "Users management"
 msgstr "Gestion des utilisateurs"
 
 #: templates/users/lock_message.html:1
-#, python-format
-msgid "Do you really want to lock user %(user_login)s ?"
-msgstr "Voulez-vous réellement verrouiller le compte %(user_login)s ?"
-
-#: templates/users/lock_message.html:2
-#, python-format
 msgid ""
-"This will prevent user to connect to network clients (thin ones, and "
-"Windows&reg;, %(acr_gnu)s/Linux &reg; and Macintosh&reg; ones)."
+"Do you really want to lock user account <strong>{0}</strong>?<br/><br/>This "
+"will prevent the user to connect to the WMI and servers and network clients "
+"(thin one, Windows&reg;, {0}/Linux &reg; and Macintosh&reg; ones)."
 msgstr ""
+"Voulez-vous vraiment verrouiller le compte utilisateur <strong>{0}</"
+"strong>&nbsp;?<br/><br/>Ceci empêchera l'utilisateur de se connecter à la "
+"WMI, sur les serveurs et les postes clients du réseau (clients légers, "
+"Windows&reg;, {0}/Linux &reg; et Macintosh&reg;)."
 
-#: templates/users/lock_message.html:15
+#: templates/users/lock_message.html:14
 #, python-format
 msgid "Remove user from group <code>%(remote_group)s</code> in the same time."
 msgstr ""
+"Supprimer l'utilisateur du groupe <code>%(remote_group)s</code> en même "
+"temps."
 
-#: templates/users/skel_message.html:2
-#, python-format
+#: templates/users/skel_message.html:3
 msgid ""
-"This will rebuild %(user_login)s's desktop from scratch, with defaults icons "
-"and so on.<br /><br /><strong>The user must be disconnected during the "
-"operation to be successfull.</strong>"
+"This will potentially rebuild the desktop from scratch (depending on the "
+"skel contents, only you can know), with defaults icons and so on.<br /><br /"
+"><strong>The user must be disconnected during the operation to be "
+"successfull.</strong>"
 msgstr ""
+"Ceci va potentiellement reconstruire le bureau tel qu'à la création du "
+"compte (ça dépend du contenu exact du skelette, seul vous pouvez savoir "
+"précisément), avec les icônes par défaut, etc.<br /><br /"
+"><strong>L'utilisateur doit être déconnecté pour que l'opération soit "
+"complètement un succès, sinon certains fichiers ne pourront pas être remis "
+"en place.</strong>"
 
 #: templates/users/user_row.html:6
 msgid "System account"
@@ -1659,7 +1927,7 @@ msgstr "Cliquez pour éditer le compte utilisateur {0}"
 
 #: templates/users/user_row.html:50
 msgid "Reapply skel of user {0}"
-msgstr ""
+msgstr "Ré-application du skelette de l'utilisateur {0}"
 
 #: templates/users/user_row.html:55
 msgid "Delete user {0}"
@@ -1705,34 +1973,17 @@ msgstr "Oui"
 msgid "No"
 msgstr "Non"
 
-#: templates/widgets/common.html:76 templates/widgets/common.html.py:79
-msgid "d"
-msgstr "j"
-
-#: templates/widgets/common.html:85 templates/widgets/common.html.py:88
-msgid "h"
-msgstr "h"
-
-#: templates/widgets/common.html:94 templates/widgets/common.html.py:97
-msgid "m"
-msgstr "m"
-
-#: templates/widgets/common.html:105 templates/widgets/common.html.py:108
-msgid "s"
-msgstr "s"
-
 #: templates/widgets/common.html:176
 msgid "Mass actions:"
 msgstr "Actions massives :"
 
 #: templates/widgets/common.html:183
 msgid "Massive {0} icon"
-msgstr ""
+msgstr "Icône de {0} massive"
 
 #: templates/widgets/common.html:184
-#, fuzzy
-msgid "Selected name massive {0}"
-msgstr "Supprimer le compte {0}"
+msgid "Massive {0} on selected rows"
+msgstr "{0} massif(ve) sur la(es) rangée(s) sélectionnée(s)"
 
 #: templates/widgets/common.html:208
 msgid "Click to sort on this column"
@@ -1740,7 +1991,7 @@ msgstr "Cliquez pour classer sur cette colonne"
 
 #: templates/widgets/common.html:215
 msgid "Descending order image"
-msgstr ""
+msgstr "Image de classement descendant"
 
 #: templates/widgets/loadavg.html:59
 msgid "System load average on last 15, 5, 1 minutes"
@@ -1912,6 +2163,17 @@ msgstr "Privilèges"
 msgid "Standard account"
 msgstr "Compte standard"
 
+#~ msgid "use volume “{0}”"
+#~ msgstr "utiliser le volume « {0} »"
+
+#, fuzzy
+#~ msgid "Selected name massive {0}"
+#~ msgstr "Supprimer le compte {0}"
+
+#, fuzzy
+#~ msgid "Do you really want to lock user <strong>{0}</strong>?"
+#~ msgstr "Voulez-vous réellement verrouiller le compte %(user_login)s ?"
+
 #~ msgid "This share is empty"
 #~ msgstr "Ce partage est vide"
 
@@ -1941,23 +2203,8 @@ msgstr "Compte standard"
 #~ msgid "Run a manual backup on volume {0}"
 #~ msgstr "Lancer une sauvegarde manuellement sur le volume {0}"
 
-#~ msgid "days"
-#~ msgstr "jours"
-
 #~ msgid "day"
 #~ msgstr "jour"
-
-#~ msgid "hours"
-#~ msgstr "heures"
-
-#~ msgid "hour"
-#~ msgstr "heure"
-
-#~ msgid "seconds"
-#~ msgstr "secondes"
-
-#~ msgid "second"
-#~ msgstr "seconde"
 
 #, fuzzy
 #~ msgid "Pyro connection closed, retrying{0}."

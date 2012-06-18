@@ -9,7 +9,7 @@
 			<a id="logo" href="/"
 				title="{{ _('Click to jump back to root of Licorn® Web Management Interface') }}">
 				<img id="logo_img" src="/media/images/logo_licorn_160.png"
-					alt="{{ _('Image representing a unicorn, the logo of Licorn®.') }}"
+					alt="{{ _('Image representing a unicorn, the logo of Licorn®') }}"
 					width="160" height="160" />
 			</a>
 		</div>
@@ -25,7 +25,7 @@
 				(
 					'shutdown_menuitem',
 					'/system/shutdown',
-					_('Shutdown the server.'),
+					_('Shutdown the server'),
 					_('Shutdown'),
 					'/media/images/24x24/eteindre.png',
 					'ajax-sidebar-menuitem-confirm',
@@ -33,7 +33,7 @@
 				(
 					'restart_menuitem',
 					'/system/restart',
-					_('Restart the server.'),
+					_('Restart the server'),
 					_('Restart'),
 					'/media/images/24x24/redemarrer.png',
 					'ajax-sidebar-menuitem-confirm',
@@ -55,7 +55,7 @@
 				menu_item(
 					'system_menuitem',
 					'/',
-					_('Server, UPS and hardware sub-systems status.'),
+					_('Server, UPS and hardware sub-systems status'),
 					_('Status'),
 					system_sub_items)
 			}}
@@ -64,13 +64,13 @@
 				menu_item(
 					"users_menuitem",
 					"/users",
-					_('Manage user accounts.'),
+					_('Manage user accounts'),
 					_('Users'),
 					(
 						(
 							'user_add_menuitem',
 							"/users/new",
-							_('Add user on the system.'),
+							_('Add user on the system'),
 							_('Add'),
 							"/media/images/24x24/ajouter.png",
 							'ajax-load-sub-content',
@@ -91,7 +91,7 @@
 				menu_item(
 					"groups_menuitem",
 					"/groups",
-					_('Manage groups and shared data.'),
+					_('Manage groups and shared data'),
 					_('Groups'),
 					(
 						(
@@ -122,7 +122,7 @@
 					menu_item(
 						"machines_menuitem",
 						"/machines",
-						_('Manage machines on the network.'),
+						_('Manage machines on the network'),
 						_('Machines'),
 						(
 							(
@@ -145,7 +145,7 @@
 				menu_item(
 					'nostaff_menuitem',
 					'/',
-					_('My own details.'),
+					_('View or change my own details'),
 					_('My information'),
 					system_sub_items)
 			}}
