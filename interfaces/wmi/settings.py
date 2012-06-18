@@ -87,6 +87,10 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'django.contrib.messages',
+    # this 'wmi' is a hack to support a global `djangojs` translation mechanism.
+    # see http://stackoverflow.com/q/1963517
+    'wmi',
+    # end hack
     'wmi.system',
     'wmi.users',
     'wmi.groups',

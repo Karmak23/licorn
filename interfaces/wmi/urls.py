@@ -8,6 +8,8 @@ from libs.utils                import dynamic_urlpatterns
 
 handler500 = 'wmi.system.views.error_handler'
 
+js_info_dict = { 'domain': 'djangojs', 'packages': ('wmi',), }
+
 urlpatterns = patterns('',
 
 	# / and /test are special
@@ -16,7 +18,7 @@ urlpatterns = patterns('',
 	# /favicon.ico doesn't exist in our well-organized world.
 	(r'^media/favicon.ico$', lambda x: HttpResponsePermanentRedirect('/media/images/favicon.ico')),
 
-    (r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog'),
+    (r'^jsi18n/(?P<packages>\S+?)/$', 'django.views.i18n.javascript_catalog', js_info_dict),
 
 	# in the WMI, we serve the media files too. This is not recommended by
 	# Django documentation and developpers, but this is a small Management
