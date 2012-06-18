@@ -217,7 +217,7 @@ function password_helpers(content) {
 		}
 	});
 
-	console.log("content", content)
+	//console.log("content", content)
 
 	$('#generate_pwds').click(function() {
 		var pwd_generated = null;
@@ -226,7 +226,7 @@ function password_helpers(content) {
 			gen_pwd_dialog = new dialog(gettext("Random password generator"),
 				strargs(gettext("<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</code> button, and remember it."), [pwd_generated]),
 				true, function() {
-					console.log(content)
+					//console.log(content)
 					content.find('input:password').val(pwd_generated).trigger('keyup');
 
 

@@ -38,6 +38,15 @@
 		<h3>{{ _('The address &ldquo;&nbsp;{0}&nbsp;&rdquo; leads to nowhere.').format('<code>{0}</code>'.format(request_path)) }}</h3>
 		<h3>{{ _('That is exactly where you are, now.') }}</h3>
 	</div>
+	<script language="javascript">
+		$(document).ready(function(){
+
+			// de-activate the push-stream to avoid more errors.
+			push_active = false;
+
+		});
+
+	</script>
 {%- endblock -%}
 
 {%- block sub_content -%}
