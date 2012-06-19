@@ -440,7 +440,9 @@ class LicornBaseDaemon:
 
 				try:
 					if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
-						logging.progress('{0}: skipped process @{0} which is not in the same cgroup.'.format(self, entry))
+						logging.progress(_(u'{0}: skipped process @{1} which '
+										u'is not in the same cgroup.').format(
+											self, entry))
 						continue
 
 					try:
