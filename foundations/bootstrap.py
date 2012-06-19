@@ -26,12 +26,13 @@ def getcwd():
 
 	except KeyError:
 		try:
-			# `pwd` doesn't resolve the CWD either. Thanks.
-			return run_command(['pwd'])
+			# `pwd` doesn't run `realpath()` on the CWD. It's what we want.
+			return os.system('pwd')
 
 		except:
-			# if all of this fails, we will rely on `os.getcwd()`.
-			# Not cool, but at least it doesn't crash.
+			# If all of this fails, we will rely on `os.getcwd()`. It does
+			# realpath() on the CWD. This is not cool, but at least we won't
+			# crash.
 			return os.getcwd()
 def setup_sys_path():
 	""" To be able to run foundations modules as scripts in various developper
@@ -68,7 +69,9 @@ def setup_utf8():
 		- http://stackoverflow.com/questions/4374455/how-to-set-sys-stdout-encoding-in-python-3
 	"""
 
-	default_encoding = os.getenv('PYTHONIOENCODING', 'utf-8')
+	# WARNING: 'UTF-8' is OK, 'utf-8' is not. It borks the ipython
+	# shell prompt and readline() doesn't work anymore.
+	default_encoding = os.getenv('PYTHONIOENCODING', 'UTF-8')
 
 	if sys.getdefaultencoding() != default_encoding:
 		reload(sys)
@@ -129,7 +132,7 @@ def check_python_modules_dependancies():
 	for modtype, modlist in (('required', reqmods), ('optional', optmods)):
 		for mod, pkg in modlist:
 			try:
-				exec ('import %s' % mod) in globals(), locals()
+				module = __import__(mod, globals(), locals())
 
 			except ImportError:
 				traceback.print_exc()
@@ -137,12 +140,13 @@ def check_python_modules_dependancies():
 				if modtype == 'required':
 					reqmods_needed.append(mod)
 					reqpkgs_needed.append(pkg)
+
 				else:
 					optmods_needed.append(mod)
 					optpkgs_needed.append(pkg)
 
 			else:
-				exec ('del %s' % mod) in globals(), locals()
+				del module
 
 	for modchkfunc, modfinalfunc, modmsg, modlist, pkglist in (
 		(lambda x: not os.path.exists(warn_file),

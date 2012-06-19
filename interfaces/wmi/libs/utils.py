@@ -10,8 +10,11 @@ Licorn WMI2 utils
 
 import os, time, types, json, mimetypes, uuid
 
-from django.core.servers.basehttp   import FileWrapper
-from django.http					import HttpResponse
+#
+# WARNING: please don't import nothing from Django here.
+# If needed, do it in functions. But generally speaking,
+# avoid it: we are in libs, this is a low-level module.
+#
 
 from licorn.foundations             import logging, pyutils, settings
 from licorn.foundations.ltrace      import *
@@ -189,12 +192,18 @@ def dynamic_urlpatterns(dirname):
 mimetypes.init()
 
 def download_response(filename):
-	""" Gets a filename from a string, returns an `HttpResponse` for the download.
+	""" Gets a filename from a string, returns an `HttpResponse` for the
+		download. This is kind of a "view helper". It should probably go
+		elsewhere to avoid the Django imports, but as it's the only of this
+		kind of thing we have, we didn't mind creating a dedicated file yet.
 
 		When reaching here, no check is made on the filename, path, etc.
-		It's up to the caller to verify the filename and the file content
-		is secure to transmit.
+		It's up to the caller view to verify the filename and the file
+		content is secure to transmit.
 	"""
+
+	from django.core.servers.basehttp   import FileWrapper
+	from django.http					import HttpResponse
 
 	wrapper  = FileWrapper(file(filename))
 	mtype    = mimetypes.guess_type(filename)[0]

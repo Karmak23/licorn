@@ -31,12 +31,12 @@ consoles when you change Python code.
 :license: GNU GPL version 3
 """
 
-import sys, os, glob, re, time, subprocess, getpass, traceback, errno
+import sys, os, re, time, subprocess, getpass, traceback, errno
 from threading import Thread
 
 def run_command(cmd, pipe=False):
 	if pipe:
-		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
+		return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
 
 	else:
 		return subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0].strip()
@@ -56,23 +56,31 @@ def getcwd():
 devel_dir      = getcwd()
 config_dir     = '/etc/licorn'
 share_dir      = '/usr/share/licorn'
-distro         = run_command(['lsb_release', '-i', '-s']).strip()
-rel_ver        = run_command(['lsb_release', '-r', '-s']).strip()
-base_packages  = ('git-core git-flow pyro python-pylibacl python-ldap python-xattr '
-				'python-netifaces python-dumbnet python-pyip python-ipcalc '
-				'python-dbus python-gobject gettext python-pygments python-apt '
-				'python-pyinotify python-sqlite python-cracklib python-pip '
-				# test-suite related packages
-				'python-py acl attr colordiff '
+distro         = run_command(['lsb_release', '-i', '-s'])
+rel_ver        = run_command(['lsb_release', '-r', '-s'])
+
+# licornd depend on these to run.
+base_packages  = ('pyro', 'python-pylibacl', 'python-ldap', 'python-xattr',
+				'python-netifaces', 'python-dumbnet', 'python-pyip',
+				'python-ipcalc', 'python-dbus', 'python-gobject', 'gettext',
+				'python-pygments', 'python-apt', 'python-pyinotify',
+				'python-sqlite', 'python-cracklib', 'python-pip',
 				# LXC-environment forgotten packages
-				'psmisc ')
+				'psmisc')
+
+# DEV and test-suite related packages
+# separate these, they don't exist on Lucid,
+# and are not strictly needed to run Licorn®
+dev_packages    = ('git-core', 'git-flow', 'python-py', 'acl', 'attr', 'colordiff')
+
 # build-* are not strictly needed, but in case we need to install C-python
 # modules from source (via PIP), they need to be already installed.
-build_packages  = ('build-essential python-all-dev ')
-				# NOTE: python-sphinx is not installed, because it's notstrictly
-				# required (only for doc building), and on "older" distros it will
-				# pull in a non-wanted old version of Jinja2 < 2.6.
-other_packages = 'pyudev '
+build_packages  = ('build-essential', 'python-all-dev', 'debhelper',
+				'devscripts', 'dupload')
+
+# NOTE: python-sphinx is not installed, because it's notstrictly
+# required (only for doc building), and on "older" distros it will
+# pull in a non-wanted old version of Jinja2 < 2.6.
 
 def err(*args):
 	""" just print something on stderr. """
@@ -84,11 +92,11 @@ def no_fail(*args):
 	except Exception, e:
 		if hasattr(e, 'errno'):
 			#if e.errno not in (errno.ENOENT, errno.EEXIST):
-			err('>> ignored', e, 'for command', '%s(%s)' % (
+			err('	ignored', e, 'for command', '%s(%s)' % (
 						args[0].__name__, ', '.join(str(a) for a in args[1:])))
 			#traceback.print_exc()
 		else:
-			err('>> ignored', e)
+			err('	ignored', e)
 			traceback.print_exc()
 def symlink(*args):
 	""" Encapsulate `os.symlink()` to not fail if the operation
@@ -106,25 +114,36 @@ def execute(*args):
 	""" Encapsulate `subprocess.check_output()` to not fail if
 		the operation has already been done on the local system. """
 	no_fail(run_command, *args)
-def _apt_install_cmd(packages):
+def _apt_install_cmd(package):
 	""" Private. do not use directly. """
 	olddebfront = os.environ.get('DEBIAN_FRONTEND', None)
 	os.environ['DEBIAN_FRONTEND'] = 'noninteractive'
 
-	out = run_command(['apt-get', 'install',
-			'--quiet', '--yes', '--force-yes'] + packages)
+	out, errors = run_command(['apt-get', 'install',
+				'--quiet', '--yes', '--force-yes'] + package, pipe=True)
+	if errors:
+		err(errors.strip())
 
 	if olddebfront:
 		os.environ['DEBIAN_FRONTEND'] = olddebfront
-def _pip_install_cmd(packages):
+def _pip_install_cmd(package):
 	""" Private. do not use directly. """
-	out = run_command(['pip', 'install'] + packages)
-def apt_install(packages_string):
+
+	out, errors = run_command(['pip', 'install'] + package, pipe=True)
+	if errors:
+		err(errors.strip())
+def apt_install(packages_names):
 	#no_fail(_apt_install_cmd, packages_string.split())
-	_apt_install_cmd(packages_string.split())
-def pip_install(packages_string):
+
+	# install them one at a time: in case one fails, the other
+	# will be installed. This will be easier to debug when
+	# licornd launches and doesn't find a particular one.
+	for package in packages_names:
+		_apt_install_cmd([package])
+def pip_install(packages_names):
 	#no_fail(_pip_install_cmd, packages_string.split())
-	_pip_install_cmd(packages_string.split())
+	for package in packages_names:
+		_pip_install_cmd([package])
 def write_if_not_present(thefile, what_to_write, match_re):
 	try:
 		if re.search(match_re, open(thefile).read()) is None:
@@ -140,8 +159,11 @@ def write_if_not_present(thefile, what_to_write, match_re):
 				f.write(what_to_write)
 def install_all_packages():
 	if distro in ('Ubuntu', 'Debian'):
-		err('Installing packages, please wait…')
+		err('Downloading and installing packages, please wait…')
+		run_command(('apt-get', 'update'))
 		apt_install(base_packages)
+		apt_install(dev_packages)
+		apt_install(build_packages)
 
 		# Now that we are sure that python-apt is installed, we can compare
 		# release versions in a reliable way.
@@ -151,8 +173,7 @@ def install_all_packages():
 
 		if (distro == 'Ubuntu' and version_compare(rel_ver, '8.04') == 0
 			) or (distro == 'Debian' and version_compare(rel_ver, '6.0') < 1):
-			apt_install(build_packages)
-			pip_install('pyudev')
+			pip_install(('pyudev', ))
 			unlink('/usr/lib/python2.5/site-packages/licorn')
 			symlink(devel_dir, '/usr/lib/python2.5/site-packages/licorn')
 
@@ -162,14 +183,13 @@ def install_all_packages():
 				) or (distro == 'Debian' and (
 					version_compare(rel_ver, '6.0') >= 0
 					and version_compare(rel_ver, '7.0') < 0)):
-			apt_install(build_packages)
-			pip_install('pyudev')
+			pip_install(('pyudev', ))
 			unlink('/usr/lib/python2.6/dist-packages/licorn')
 			symlink(devel_dir, '/usr/lib/python2.6/dist-packages/licorn')
 
 		elif (distro == 'Ubuntu' and version_compare(rel_ver, '11.04') >= 0
 			) or (distro == 'Debian' and version_compare(rel_ver, '7.0') >=0):
-			apt_install('python-pyudev')
+			apt_install(('python-pyudev', ))
 			unlink('/usr/lib/python2.7/dist-packages/licorn')
 			symlink(devel_dir, '/usr/lib/python2.7/dist-packages/licorn')
 
@@ -253,18 +273,22 @@ def first_licornd_run():
 	def wmi_listening():
 		out, err = process.execute(['netstat', '-antp'])
 		for line in out.split('\n'):
-			if 'LISTEN' in line and '3356' in line:
+			if 'LISTEN' in line and ':3356' in line:
 				return True
 		return False
 
 	def bg_thread(command):
 		def print_command(command):
 			try:
-				fd = run_command(command, pipe=True)
+				out, errors = run_command(command, pipe=True)
 				while 1:
-					sys.stdout.write('\t' + fd.readline())
+					sys.stdout.write('\t' + out.readline())
 					sys.stdout.flush()
+					#sys.stderr.write('\t' + errors.readline())
+					#sys.stderr.flush()
 			except:
+				sys.stdout.write('\n')
+				sys.stdout.flush()
 				pass
 
 
@@ -285,8 +309,8 @@ def first_licornd_run():
 	err('Launching licornd in the background for the first time to check system configuration. Please wait, this can take a while…')
 
 	# follow the log and launch licornd
-	bg_thread(['tail', '-f', '/var/log/licornd.log'])
-	execute(['/usr/sbin/licornd', '-rv'])
+	bg_thread(('tail', '-f', '/var/log/licornd.log'))
+	execute(('/usr/sbin/licornd', '-rv'))
 
 	counter = 1
 
@@ -304,6 +328,7 @@ def first_licornd_run():
 		56: 'Still waiting… Ah, no, finally. Still installing…',
 		64: 'Still waiting… I have a dream! That this installation finishes one day!',
 		72: 'Still waiting… But what kind of internet connection do you have??',
+		73: 'Still waiting… Nah! Sorry, I can be so impatient sometimes.',
 		80: 'Still waiting… I do not have anything more to say, just wait.',
 		}
 
@@ -314,6 +339,10 @@ def first_licornd_run():
 		if msg:
 			err(msg)
 
+		elif counter < 5:
+			# do not display anything during the 5 first seconds.
+			pass
+
 		elif counter < 100:
 			err('Still waiting…')
 
@@ -322,9 +351,10 @@ def first_licornd_run():
 			execute(['/usr/sbin/licornd', '-k'])
 			execute(['killall', 'tail'])
 
-			err(u'So long. Things should have been finished since a while now. Please relaunch '
-				u'`licornd -rvvD` and see what happens. get in touch with dev@licorn.org in case '
-				u'of any problem.')
+			err(u'So long. Things should have been finished since a while now. '
+				u'Please launch `sudo licornd -rvD` and see what happens. Get '
+				u'in touch with dev@licorn.org in case of any problem you do '
+				u'not know how to resolve by yourself.')
 			sys.exit(1)
 
 		time.sleep(5.0)
