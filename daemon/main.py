@@ -23,33 +23,32 @@ This daemon exists:
 import time
 dstart_time = time.time()
 
-import os, sys, signal, resource, gc, re, errno, __builtin__
+import os, sys, signal, resource, gc, __builtin__
 
-from threading  import current_thread, Thread, Event, active_count
-from Queue      import Empty, Queue, PriorityQueue
+from threading  import current_thread, Thread, active_count
 
-from licorn.foundations           import options, settings, logging, exceptions
+from licorn.foundations           import options, settings, logging
 from licorn.foundations           import gettext, process, pyutils, events
 from licorn.foundations.events    import LicornEvent
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import NamedObject, MixedDictObject, ObjectSingleton
+from licorn.foundations.base      import ObjectSingleton
 from licorn.foundations.constants import priorities, roles
-from licorn.foundations.threads   import _threads, _thcount
+from licorn.foundations.threads   import Event, _threads, _thcount
 from licorn.foundations.workers   import workers
 
-from licorn.core                  import version, LMC
+from licorn.core                  import LMC
 
-from licorn.daemon                import client
+#from licorn.daemon                import client
 from licorn.daemon.base           import LicornDaemonInteractor, \
 											LicornBaseDaemon, \
-											LicornThreads, LicornQueues
+											LicornThreads
 from licorn.daemon.threads        import GQWSchedulerThread, \
 											ServiceWorkerThread, \
 											ACLCkeckerThread, \
 											NetworkWorkerThread, \
-											LicornJobThread, BaseLicornThread
+											LicornJobThread
 from licorn.daemon.inotifier      import INotifier
 from licorn.daemon.cmdlistener    import CommandListener
 
@@ -127,7 +126,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		# `upgrades` is a collection of handlers/callbacks that will be run on
 		# various `*load*` events, to check that the system verifies some
-		# conditions. They will "repair" it if not.
+		# conditions. They will "repair" it if not. Importing them is
+		# sufficient to make them registered and run by the `EventManager`.
 		from licorn import upgrades
 
 		logging.info(_(u'{0:s}: {1} callbacks collected.').format(self,
