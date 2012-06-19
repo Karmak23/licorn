@@ -279,7 +279,7 @@ class ListenerObject(object):
 											t._licorn_remote_port))),
 											to_listener=False)
 		# NOTE: there are console NBSPs at some choosen places in the sentences.
-		remote_output(_(u'Welcome back to Real World™. Have a nice day!') + '\n', word_delay=0.25)
+		remote_output(_(u'Welcome back to Real World™. Have a nice day!') + u'\n', word_delay=0.25)
 	def console_complete(self, phrase, state):
 		return self._console_completer.complete(phrase, state)
 	def console_runsource(self, source, filename=None):
@@ -383,7 +383,7 @@ class MessageProcessor(NamedObject, Pyro.core.CallbackObjBase):
 				if message.word_delay:
 					delay = message.word_delay
 					for word in message.data.split(' '):
-						chan_write(word + ('' if word == '\n' else ' '))
+						chan_write(word + ('' if word.endswith('\n') else ' '))
 						chan_flush()
 						time.sleep(delay)
 
