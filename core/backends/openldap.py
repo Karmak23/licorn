@@ -555,7 +555,7 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 
 			except:
 				logging.exception(_(u'{0}: Exception encountered '
-					u'while modifying {1} from {2} > {3} into schema {4}.'),
+					u'while modifying {1} from {2} TO {3} in schema {4}'),
 						self.pretty_name, dn, old, new, schema)
 
 			self.schema_postop(schema)
@@ -740,6 +740,11 @@ class OpenldapBackend(Singleton, UsersBackend, GroupsBackend):
 			#	- http://lists.debian.org/debian-devel/2004/03/msg00832.html
 			try:
 				gecos = base64.decodestring(value)
+
+				if len(gecos) < len(value):
+					# the string was already UTF-8 and base64 succeeded at
+					# decoding a non-base64 string. Great. Thanks. But no.
+					gecos = value
 
 			except:
 				# The gecos is not base64 encoded, return it "as is".
