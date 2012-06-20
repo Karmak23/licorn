@@ -51,7 +51,7 @@ Ceci installera Licorn® en mode serveur sur votre machine locale, de manière �
 
 #. Installez :program:`git`, `git-flow` et le minimum vital::
 
-	sudo apt-get install git-core git-flow make gettext python-sphinx
+	sudo apt-get install git-core git-flow make gettext
 
 #. Récupérez les sources de Licorn® avec :program:`git`::
 
@@ -103,5 +103,8 @@ Support LDAP
 #. Activez l'extension LDAP dans `licornd` ce qui l'activera au niveau système via NSS::
 
 	mod config -b openldap
+
+	# ou la version longue :
+	# mod configuration --enable-backend openldap
 
 À partir de maintenant les nouveaux comptes utilisateurs et groupes seront créés dans LDAP. Vous pouvez cependant continuer à les créer dans `shadow` avec l'argument CLI ``--backend shadow``.

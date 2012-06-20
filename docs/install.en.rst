@@ -48,7 +48,7 @@ This will install Licorn® in :ref:`local server mode <settings.role.en>`, makin
 
 #. Install `git`, `git-flow` and a few needed packages::
 
-	sudo apt-get install git-core git-flow make gettext python-sphinx
+	sudo apt-get install git-core git-flow make gettext
 
 #. Get the source localy with darcs::
 
@@ -97,7 +97,10 @@ LDAP Support
 
 #. Then activate the OpenLDAP extension. This makes `licornd` activate LDAP system-wide via NSS::
 
-	mod config -b openldap
+	mod config -b ldap
+
+	# or the long way:
+	# mod configuration --enable-backend openldap
 
 Once activated, the LDAP backend has precedence over `shadow` for new user accounts and groups. You can still create users/groups in the `shadow` backend by using the ``--backend shadow`` CLI switch.
 
