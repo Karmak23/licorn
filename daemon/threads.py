@@ -130,7 +130,9 @@ class LicornBasicThread(Thread):
 		.. versionadded:: a long while ago, I can't even remember when. Before
 			version 1.2, this is sure.
 	"""
-
+	@property
+	def pretty_name(self):
+		return stylize(ST_NAME, self.name)
 	def __init__(self, tname=None, licornd=None):
 		Thread.__init__(self)
 

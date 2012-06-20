@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-20 10:04+0200\n"
+"POT-Creation-Date: 2012-06-20 21:52+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,1593 +17,74 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: extensions/rdiffbackup.py:38
-msgid "{0}: No default volume found, aborting call of {1}({2}, {3})"
+#: interfaces/cli/get.py:60
+msgid "Daemon connection lost, bailing out."
 msgstr ""
 
-#: extensions/rdiffbackup.py:69
-msgid "{0:s}: an operation is already in progress on {1:s}, aborting."
+#: interfaces/cli/get.py:66
+msgid "Could not get daemon status"
 msgstr ""
 
-#: extensions/rdiffbackup.py:249
-msgid ""
-"{0}: using environment variable {1} pointing to {2} for rdiff-backup "
-"configuration."
+#: interfaces/cli/get.py:112
+msgid "Could not obtain daemon status"
 msgstr ""
 
-#: extensions/rdiffbackup.py:346
-msgid "{0}: started extension and auto-backup timer."
+#: interfaces/cli/get.py:174
+msgid "Licorn® {0}, Python {1} on {2}"
 msgstr ""
 
-#: extensions/rdiffbackup.py:403
-msgid ""
-"{0}: cannot disable now, a backup is in progress. Please wait until the end "
-"and retry."
+#: interfaces/cli/get.py:190
+msgid "unable to write history file!"
 msgstr ""
 
-#: extensions/rdiffbackup.py:484
-msgid "Last Backup"
-msgstr ""
-
-#: extensions/rdiffbackup.py:485
-msgid "Increments listing"
-msgstr ""
-
-#: extensions/rdiffbackup.py:486
-msgid "Statistics computation"
-msgstr ""
-
-#: extensions/rdiffbackup.py:512
-msgid "{0}: no volume found!"
-msgstr ""
-
-#: extensions/rdiffbackup.py:568
-#, python-format
-msgid "Skipped disabled %s."
-msgstr ""
-
-#: extensions/rdiffbackup.py:606
-msgid "{0}: Computing needed space for next backup, please wait…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:733
-msgid "{0:s}: cleaning obsolete backup on {1:s}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:738
-msgid "{0:s}: obsolete backup cleaned on {1:s}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:809
-msgid ""
-"Cannot run a backup on non-reserved volume {0}. Please reserve it first, or "
-"choose another one."
-msgstr ""
-
-#: extensions/rdiffbackup.py:820
-msgid "{0}: not backing up on {1}, last backup is less than {2}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:832
-msgid "Sorry, no backup volumes available."
-msgstr ""
-
-#: extensions/rdiffbackup.py:902
-msgid "{0}: running backup on {1:s}, please wait…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:910
-msgid "{0:s}: created directory {1}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:929
-msgid "{0}: Rdiff-backup configuration file {1} does not exist."
-msgstr ""
-
-#: extensions/rdiffbackup.py:969
-msgid "{0}: backup procedure terminated on {1}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:979
-msgid ""
-"Forcing backup on volume {0}, free space ckeck ignored. This could lead to "
-"incomplete backups, please use with care!"
-msgstr ""
-
-#: extensions/rdiffbackup.py:986
-msgid "{0:s}: computing needed space for next backup, please wait."
-msgstr ""
-
-#: extensions/rdiffbackup.py:992
-msgid ""
-"Volume {0:s} does not have enough free space or is not big enough to hold "
-"more than two backups. Space needed: {1}; free space: {2}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:1025
-msgid "{0}: updated last backup file {1}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:1039
-msgid "{0}: computing statistics on {1}, please wait…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:1093
-msgid "{0}: statistics computation finished on {1:s}."
-msgstr ""
-
-#: extensions/rdiffbackup.py:1211
-msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
-msgstr ""
-
-#: extensions/rdiffbackup.py:1231
-msgid "Backup in progress on volume {volume}…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:1237
-msgid "Statistics computation or cleaning in progress on volume {volume}…"
-msgstr ""
-
-#: extensions/rdiffbackup.py:1245
-msgid "Next backup in {0}"
-msgstr ""
-
-#: extensions/rdiffbackup.py:1256
-msgid "No backup volume connected"
-msgstr ""
-
-#: extensions/rdiffbackup.py:1281
-#, python-format
-msgid "{mount_point}: {used:.1f}% full"
-msgstr ""
-
-#: extensions/openssh.py:143
-msgid "{0}: group {1} must be created. Do it?"
-msgstr ""
-
-#: extensions/openssh.py:149
-msgid "Users allowed to connect via SSHd"
-msgstr ""
-
-#: extensions/openssh.py:153
-msgid "{0}: group {1} must exist before continuing."
-msgstr ""
-
-#: extensions/openssh.py:156
-msgid "{0}: checking good default values in {1}…"
-msgstr ""
-
-#: extensions/openssh.py:166
-msgid "{0}: {1} must be modified. Do it?"
-msgstr ""
-
-#: extensions/openssh.py:172
-msgid "{0}: written configuration file {1}."
-msgstr ""
-
-#: extensions/openssh.py:176 foundations/classes.py:117
-msgid "{0}: configuration file {1} must be altered to continue."
-msgstr ""
-
-#: extensions/caldavd.py:81
-msgid "{0}: extension not available because {1}."
-msgstr ""
-
-#: extensions/caldavd.py:85
-msgid ""
-"{0}: extension not yet available because {1} (calendarserver is probably "
-"installing, try again later)."
-msgstr ""
-
-#: extensions/caldavd.py:91
-msgid "{0}: extension not available because {1} not installed."
-msgstr ""
-
-#: extensions/caldavd.py:108
-msgid ""
-"**Please implement caldavd extension check for pre-existing users and groups."
-"**"
-msgstr ""
-
-#: extensions/caldavd.py:148 extensions/squid.py:235
-msgid "{0}: started extension, managing {1} service ({2})."
-msgstr ""
-
-#: extensions/caldavd.py:151 extensions/squid.py:239
-#, python-format
-msgid "pid=%s"
-msgstr ""
-
-#: extensions/caldavd.py:154 extensions/squid.py:242
-msgid "Starting up"
-msgstr ""
-
-#: extensions/caldavd.py:162
-msgid ""
-"{0}: extension disabled because service {1} disabled on the local system."
-msgstr ""
-
-#: extensions/caldavd.py:192 extensions/caldavd.py:214
-#: extensions/caldavd.py:457 extensions/caldavd.py:489
-#: extensions/caldavd.py:525 extensions/caldavd.py:578
-#: extensions/caldavd.py:608 extensions/caldavd.py:640
-#: extensions/caldavd.py:667 extensions/volumes.py:441
-#: extensions/volumes.py:487 core/machines.py:1222 core/_modules.py:617
-#: core/configuration.py:924
-msgid "{0}: {1}"
-msgstr ""
-
-#: extensions/caldavd.py:369
-msgid "{0}: unable to modify {1} for {2} {3}, not found in {4}."
-msgstr ""
-
-#: extensions/caldavd.py:384
-msgid "{0}: unable to delete {1} {2}, not found in {3}."
-msgstr ""
-
-#: extensions/caldavd.py:402
-msgid "{0}: unable to delete user {1} from group {2}, not found in {3}."
-msgstr ""
-
-#: extensions/caldavd.py:443
-#, python-format
-msgid "R/O holder for user %s."
-msgstr ""
-
-#: extensions/caldavd.py:688
-msgid "Personnal calendar URI"
-msgstr ""
-
-#: extensions/caldavd.py:702
-msgid "Group calendar URI"
-msgstr ""
-
-#: extensions/volumes.py:168
-msgid "{0}: unhandled action {1} for device {2} ({3})."
-msgstr ""
-
-#: extensions/volumes.py:177
-msgid "{0}: unknown action {1} for device {2} ({3})."
-msgstr ""
-
-#: extensions/volumes.py:268
-msgid "volume {0}[{1}]{2}"
-msgstr ""
-
-#: extensions/volumes.py:271
-#, python-format
-msgid " (on %s)"
-msgstr ""
-
-#: extensions/volumes.py:272
-msgid " (not mounted)"
-msgstr ""
-
-#: extensions/volumes.py:283
-msgid "{base} {counter}"
-msgstr ""
-
-#: extensions/volumes.py:313
-msgid "{0}: Licorn® usage already enabled on {1}."
-msgstr ""
-
-#: extensions/volumes.py:321
-msgid "{0}: enabled Licorn® usage on {1}."
-msgstr ""
-
-#: extensions/volumes.py:327
-msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
-msgstr ""
-
-#: extensions/volumes.py:352
-msgid "{0}: disabled Licorn® usage on {1}."
-msgstr ""
-
-#: extensions/volumes.py:356
-msgid "{0}: Licorn® usage already disabled on {1}."
-msgstr ""
-
-#: extensions/volumes.py:399
-msgid "{0}: created mount point {1}."
-msgstr ""
-
-#: extensions/volumes.py:447
-msgid "{0}: mounted device {1}({2}) at {3}."
-msgstr ""
-
-#: extensions/volumes.py:471
-msgid ""
-"{0}: workers {1}\n"
-"{2}\n"
-msgstr ""
-
-#: extensions/volumes.py:474
-msgid "Cannot unmount {0}, still busy in Licorn®."
-msgstr ""
-
-#: extensions/volumes.py:493
-msgid "{0}: unmounted device {1} from {2}."
-msgstr ""
-
-#: extensions/volumes.py:505
-msgid "{0}({1}): mount point {2} still busy after unmounting."
-msgstr ""
-
-#: extensions/volumes.py:512
-msgid "{0}({1}): cannot remove mount point {2}: {3}."
-msgstr ""
-
-#: extensions/volumes.py:521
-msgid "{0}: removed directory {1}."
-msgstr ""
-
-#: extensions/volumes.py:556
-msgid "volume"
-msgstr ""
-
-#: extensions/volumes.py:559
-msgid "device"
-msgstr ""
-
-#: extensions/volumes.py:584
-msgid "No Volume by that device name, label, mount_point nor GUID \"{0}\"!"
-msgstr ""
-
-#: extensions/volumes.py:690
-msgid "{0}: not available because"
-msgstr ""
-
-#: extensions/volumes.py:701
-msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
-msgstr ""
-
-#: extensions/volumes.py:934
-msgid ""
-"{0}: computing global system size is not implemented for systems other than "
-"Linux. Returning 0 and hoping this will be sufficient."
-msgstr ""
-
-#: extensions/volumes.py:958
-msgid "{0}: skipped already known volume {1}."
-msgstr ""
-
-#: extensions/volumes.py:969
-msgid "{0}: skipped LMV/extended partition {1}."
-msgstr ""
-
-#: extensions/volumes.py:975
-msgid "{0}: skipped unformatted partition {1}."
-msgstr ""
-
-#: extensions/volumes.py:981
-msgid "{0}: skipped system partition {1}."
-msgstr ""
-
-#: extensions/volumes.py:1001
-msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
-msgstr ""
-
-#: extensions/volumes.py:1025
-msgid "{0}: added {1}."
-msgstr ""
-
-#: extensions/volumes.py:1070
-msgid "{0}: removed {1}."
-msgstr ""
-
-#: extensions/volumes.py:1114
-msgid "{0}: skipped non existing device or mount_point {1}."
-msgstr ""
-
-#: extensions/volumes.py:1186
-msgid ", {0} of {1} free ({2:.1%})"
-msgstr ""
-
-#: extensions/volumes.py:1194
-msgid " on {0}{1}"
-msgstr ""
-
-#: extensions/volumes.py:1197
-msgid " not mounted"
-msgstr ""
-
-#: extensions/__init__.py:137
-msgid "Started service {0} ({1})."
-msgstr ""
-
-#: extensions/__init__.py:138
-msgid "Stopped service {0} ({1})."
-msgstr ""
-
-#: extensions/__init__.py:139
-msgid "Restarted service {0} ({1})."
-msgstr ""
-
-#: extensions/__init__.py:140
-msgid "Reloaded service {0} ({1})."
-msgstr ""
-
-#: extensions/__init__.py:146
-#, python-format
-msgid "Starting service %s. Please wait, this can take a while."
-msgstr ""
-
-#: extensions/__init__.py:147
-#, python-format
-msgid "Stopping service %s. Please wait, this can take a while."
-msgstr ""
-
-#: extensions/__init__.py:148
-#, python-format
-msgid "Restarting service %s. Please wait, this can take a while."
-msgstr ""
-
-#: extensions/__init__.py:149
-#, python-format
-msgid "Reloading service %s. Please wait, this can take a while."
-msgstr ""
-
-#: extensions/__init__.py:272
-msgid "{0}: waiting for {1} command to complete before queuing {2}."
-msgstr ""
-
-#: extensions/__init__.py:281
-#, python-format
-msgid "%s: waiting 5 seconds more."
-msgstr ""
-
-#: extensions/__init__.py:289
-msgid ""
-"{0}: command {1} did not complete in {2} seconds, cannot exectute a "
-"different one. Please try  again later."
-msgstr ""
-
-#: extensions/powermanagement.py:57
-#, python-format
-msgid "%s: extension not available because yet to be written."
-msgstr ""
-
-#: extensions/gloop.py:106
-msgid ""
-"{0}: extension not available because {1} or {2} do not exist on the system."
-msgstr ""
-
-#: extensions/gloop.py:132
-msgid "{0}: started extension and gobject mainloop thread."
-msgstr ""
-
-#: extensions/squid.py:213
-msgid "{0}: not available because {1} do not exist on the system."
-msgstr ""
-
-#: extensions/mylicorn.py:43
-msgid "{0}: extension always enabled unless manually ignored in {1}."
-msgstr ""
-
-#: extensions/simplesharing.py:64
-msgid "{0}: \"{1}\" must be a directory!"
-msgstr ""
-
-#: extensions/simplesharing.py:147
-msgid "{0}: simple share upload state unchanged."
-msgstr ""
-
-#: extensions/simplesharing.py:153
-msgid "Please set a password on the share first."
-msgstr ""
-
-#: extensions/simplesharing.py:193
-msgid "Bad URI {0}"
-msgstr ""
-
-#: extensions/simplesharing.py:258
-msgid "Not a file from that share."
-msgstr ""
-
-#: extensions/simplesharing.py:262
-msgid "Unsafe absolute path for file \"{0}\"!"
-msgstr ""
-
-#: extensions/simplesharing.py:272
-msgid "Unknown"
-msgstr ""
-
-#: extensions/simplesharing.py:305
-msgid "Someone tried to switch simple shares on a non-standard user account!"
-msgstr ""
-
-#: extensions/simplesharing.py:309
-msgid "{0}: shares status unchanged."
-msgstr ""
-
-#: extensions/simplesharing.py:320
-msgid "{0}: simple shares status switched to {1}."
-msgstr ""
-
-#: extensions/simplesharing.py:321 core/_objects.py:261 core/groups.py:456
-msgid "activated"
-msgstr ""
-
-#: extensions/simplesharing.py:321 core/_objects.py:272 core/groups.py:459
-msgid "deactivated"
-msgstr ""
-
-#: extensions/simplesharing.py:339
-msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
-msgstr ""
-
-#: extensions/simplesharing.py:348
-msgid "Created directory {1} in user {0}'s home."
-msgstr ""
-
-#: extensions/simplesharing.py:355
-msgid "User {0} does not accept simple shares, check skipped."
-msgstr ""
-
-#: extensions/simplesharing.py:379
-msgid "{0}: error while listing shares, launching a check in the background."
-msgstr ""
-
-#: extensions/simplesharing.py:444
-msgid "{1}: {0} extension enabled. Please report bugs at {2}."
-msgstr ""
-
-#: extensions/simplesharing.py:445
-msgid "experimental"
-msgstr ""
-
-#: extensions/simplesharing.py:474
-msgid "{0}: Exception while setting up shares for user {1}"
-msgstr ""
-
-#: extensions/samba3.py:58
-msgid "{0}: extension enabled."
-msgstr ""
-
-#: extensions/samba3.py:64
-msgid "{0}: extension disabled because {1} not found."
-msgstr ""
-
-#: extensions/samba3.py:117
-msgid "{0}: Exception in user_post_add({1})"
-msgstr ""
-
-#: extensions/samba3.py:148
-msgid "{0}: Exception in user_post_change_password({1})"
-msgstr ""
-
-#: extensions/samba3.py:180
-msgid "{0}: Exception in user_pre_del({1})"
-msgstr ""
-
-#: daemon/base.py:83 interfaces/cli/__init__.py:49
+#: interfaces/cli/__init__.py:49 daemon/base.py:83
 msgid "{0}: switched long_output status to {1}."
 msgstr ""
 
-#: daemon/base.py:85 interfaces/cli/__init__.py:51 core/_modules.py:638
+#: interfaces/cli/__init__.py:51 core/_modules.py:638 daemon/base.py:85
 msgid "enabled"
 msgstr ""
 
-#: daemon/base.py:87 interfaces/cli/argparser.py:944
-#: interfaces/cli/__init__.py:53 core/_modules.py:638
+#: interfaces/cli/__init__.py:53 interfaces/cli/argparser.py:944
+#: core/_modules.py:638 daemon/base.py:87
 msgid "disabled"
 msgstr ""
 
-#: daemon/base.py:88 interfaces/cli/__init__.py:54
+#: interfaces/cli/__init__.py:54 daemon/base.py:88
 msgid "toggle [dump status] long ouput on or off"
 msgstr ""
 
-#: daemon/base.py:90
-msgid "Console-initiated garbage collection and dead thread cleaning."
-msgstr ""
-
-#: daemon/base.py:95
-msgid ""
-"operate a manual garbage collection in the daemon's memory, and run other "
-"clean-related things"
-msgstr ""
-
-#: daemon/base.py:104
-msgid "show the INotifier watches (WARNING: this can flood your terminal)"
-msgstr ""
-
-#: daemon/base.py:107
-msgid "{0} active threads: {1}"
-msgstr ""
-
-#: daemon/base.py:110
-msgid "show all threads names and their current status"
-msgstr ""
-
-#: daemon/base.py:117 interfaces/cli/__init__.py:67
+#: interfaces/cli/__init__.py:67 daemon/base.py:117
 msgid "{0}: increased verbosity level to {1}."
 msgstr ""
 
-#: daemon/base.py:124 interfaces/cli/__init__.py:74
+#: interfaces/cli/__init__.py:74 daemon/base.py:124
 msgid "{0}: verbosity level already at the maximum value ({1})."
 msgstr ""
 
-#: daemon/base.py:129 interfaces/cli/__init__.py:79
+#: interfaces/cli/__init__.py:79 daemon/base.py:129
 msgid "increase the daemon console verbosity level"
 msgstr ""
 
-#: daemon/base.py:136 interfaces/cli/__init__.py:94
+#: interfaces/cli/__init__.py:94 daemon/base.py:136
 msgid "{0}: decreased verbosity level to {1}."
 msgstr ""
 
-#: daemon/base.py:143 interfaces/cli/__init__.py:101
+#: interfaces/cli/__init__.py:101 daemon/base.py:143
 msgid "{0}: verbosity level already at the minimum value ({1})."
 msgstr ""
 
-#: daemon/base.py:148 interfaces/cli/__init__.py:106
+#: interfaces/cli/__init__.py:106 daemon/base.py:148
 msgid "decrease the daemon console verbosity level"
 msgstr ""
 
-#: daemon/base.py:153
-msgid "{0}: Send URS1 signal (and consequently reload daemon)"
+#: interfaces/cli/__init__.py:112
+msgid "end the interactive session cleanly"
 msgstr ""
 
-#: daemon/base.py:159
-msgid "{0}: dump daemon status"
-msgstr ""
-
-#: daemon/base.py:165
-msgid "{0} or {1}: dump daemon status after having cleared the screen"
-msgstr ""
-
-#: daemon/base.py:168
-msgid "Space"
-msgstr ""
-
-#: daemon/base.py:180
-msgid "{0}({1})"
-msgstr ""
-
-#: daemon/base.py:276
-msgid "Problem getting interface {0} address (was: {1})."
-msgstr ""
-
-#: daemon/base.py:288
+#: interfaces/cli/__init__.py:142
 #, python-format
-msgid "Bad IP address or hostname %s. Please check syntax."
-msgstr ""
-
-#: daemon/base.py:340
-msgid "{0}: execvp({1})"
-msgstr ""
-
-#: daemon/base.py:348
-msgid "transient process {0}: cannot execvp() {1}."
-msgstr ""
-
-#: daemon/base.py:442
-msgid "{0}: skipped process @{1} which is not in the same cgroup."
-msgstr ""
-
-#: daemon/base.py:461
-msgid "{0}: killed aborted instance @pid {1}."
-msgstr ""
-
-#: daemon/base.py:505
-msgid ""
-"Don't fork as a daemon, stay on the current terminal instead. Logs will be "
-"printed on standard output instead of beiing written into the logfile."
-msgstr ""
-
-#: daemon/base.py:511
-msgid ""
-"Replace an existing daemon instance. A comfort flag to avoidkilling an "
-"existing daemon before relaunching a new one."
-msgstr ""
-
-#: daemon/base.py:516
-msgid ""
-"Shutdown any currently running Licorn® daemon. We will try to terminate them "
-"nicely, before beiing more agressive after a given period of time."
-msgstr ""
-
-#: daemon/base.py:522
-msgid ""
-"Specify an IP address or a hostname to bind to. Only {0} can be specified "
-"(the WMI cannot yet bind on multiple interfaces at the same time). This "
-"option takes precedence over the configuration directive, if present in {1}."
-msgstr ""
-
-#: daemon/base.py:531
-#, python-format
-msgid "Don't fork the WMI. This flag overrides the setting in %s."
-msgstr ""
-
-#: daemon/base.py:544
-msgid ""
-"Don't run the initial check on all shared directories. This makes daemon be "
-"ready faster to answer users legitimate requests, at the cost of consistency "
-"of shared data. {0}: don't use this flag at server boot in init scripts. "
-"Only on daemon relaunch, on an already running system, for testing or "
-"debugging purposes."
-msgstr ""
-
-#: daemon/base.py:624
-msgid "{0}: trying to {1} existing instance @pid {2}."
-msgstr ""
-
-#: daemon/base.py:625
-msgid "replace"
-msgstr ""
-
-#: daemon/base.py:626
-msgid "shutdown"
-msgstr ""
-
-#: daemon/base.py:637
-msgid ""
-"{0}: existing instance still running, we're going to be more incisive in a "
-"few seconds."
-msgstr ""
-
-#: daemon/base.py:660
-msgid ""
-"{0}: re-killing old instance softly with TERM signal and waiting a little "
-"more."
-msgstr ""
-
-#: daemon/base.py:677
-msgid ""
-"{0}: old instance has not terminated after 8 seconds. Sending KILL signal."
-msgstr ""
-
-#: daemon/base.py:705
-#, python-format
-msgid "{0}: killing old instance's father (sudo, pid %s) without any mercy."
-msgstr ""
-
-#: daemon/base.py:722
-msgid ""
-"{0}: old instance has not terminated after 9 seconds and cannot be killed. "
-"We will not try to kill any other parent than \"{1}\", you are in a non-"
-"trivial situation. Up to you to solve it."
-msgstr ""
-
-#: daemon/base.py:733
-msgid ""
-"{0}: old instance has not terminated after 15 seconds and cannot be killed "
-"directly or by killing its direct parent, bailing out. You are in trouble on "
-"a system where \"kill -9\" does not work as advertised. Sorry for you."
-msgstr ""
-
-#: daemon/base.py:743
-msgid "{0}: old instance {1} terminated{2}"
-msgstr ""
-
-#: daemon/base.py:744
-msgid "nastily"
-msgstr ""
-
-#: daemon/base.py:744
-msgid "successfully"
-msgstr ""
-
-#: daemon/base.py:745
-msgid ", we can play now."
-msgstr ""
-
-#: daemon/base.py:749
-msgid "{0}: daemon already running (pid {1}), not restarting."
-msgstr ""
-
-#: daemon/base.py:763
-msgid "{0}: must be run as {1} (was: {2})."
-msgstr ""
-
-#: daemon/base.py:771
-msgid "{0}: unlinking PID file {1}."
-msgstr ""
-
-#: daemon/base.py:777
-msgid "{0}: cannot unlink {1}."
-msgstr ""
-
-#: daemon/base.py:783
-msgid " (up {0})"
-msgstr ""
-
-#: daemon/base.py:790
-msgid "{0}: already stopping, ignored another terminate() call."
-msgstr ""
-
-#: daemon/base.py:793
-msgid "{0}: already stopping, ignored signal {1}."
-msgstr ""
-
-#: daemon/base.py:802
-msgid "{0}: cleaning up and stopping threads…"
-msgstr ""
-
-#: daemon/base.py:805
-msgid "{0}: signal {1} received, shutting down…"
-msgstr ""
-
-#: daemon/base.py:819
-msgid "{0}: exiting{1}."
-msgstr ""
-
-#: daemon/base.py:843
-msgid "{0}: SIGUSR1 received, preparing our restart."
-msgstr ""
-
-#: daemon/base.py:846
-msgid "{0}: restart needed, shutting everything down."
-msgstr ""
-
-#: daemon/threads.py:191
-msgid "{0}: Exception in self.pre_run_method(), aborting."
-msgstr ""
-
-#: daemon/threads.py:201
-msgid "{0}: Exception in self.run_action_method(), continuing."
-msgstr ""
-
-#: daemon/threads.py:209
-msgid "{0}: Exception in self.post_run_method()"
-msgstr ""
-
-#: daemon/threads.py:257
-msgid ""
-"{0}{1} for {2} [{3} workers; wake up in {4}]\n"
-"{5}"
-msgstr ""
-
-#: daemon/threads.py:300
-msgid "{0}: maximum workers already  running, but qsize={1}."
-msgstr ""
-
-#: daemon/threads.py:458
-msgid "Class method {0}.setup() has not been called!"
-msgstr ""
-
-#: daemon/threads.py:559
-msgid "{0}: Exception encountered while running {1}({2}, {3}): {4}"
-msgstr ""
-
-#: daemon/threads.py:579
-#, python-format
-msgid "%s: queue is now empty, going asleep waiting for jobs."
-msgstr ""
-
-#: daemon/threads.py:684
-msgid "{0}: timer reset after {1} elapsed."
-msgstr ""
-
-#: daemon/rwi.py:205 daemon/rwi.py:233
-msgid "Skipped non existing or invalid {0} or {1} \"{2}\"."
-msgstr ""
-
-#: daemon/rwi.py:248
-#, python-format
-msgid "You must specify at least one %s!"
-msgstr ""
-
-#: daemon/rwi.py:284
-msgid "Harmless Exception encountered in RWI.get_daemon_status()"
-msgstr ""
-
-#: daemon/rwi.py:583
-msgid "You must specify an import filename."
-msgstr ""
-
-#: daemon/rwi.py:588
-msgid "You must specify a profile."
-msgstr ""
-
-#: daemon/rwi.py:594
-msgid "You must specify a firstname column number."
-msgstr ""
-
-#: daemon/rwi.py:600
-msgid "You must specify a lastname column number."
-msgstr ""
-
-#: daemon/rwi.py:606
-msgid "You must specify a group column number."
-msgstr ""
-
-#: daemon/rwi.py:613
-msgid ""
-"Two columns have the same number (lastname={0}, firstname={1}, group={2})"
-msgstr ""
-
-#: daemon/rwi.py:622
-msgid "Sorry, CSV file must have no more than 128 columns.\""
-msgstr ""
-
-#: daemon/rwi.py:635
-msgid ""
-"Cannot automatically detect the file encoding, assuming iso-8859-15 "
-"(latin-1)!"
-msgstr ""
-
-#: daemon/rwi.py:643
-#, python-format
-msgid "The profile \"%s\" does not exist."
-msgstr ""
-
-#: daemon/rwi.py:663
-#, python-format
-msgid "Cannot load CSV file (was: %s)."
-msgstr ""
-
-#: daemon/rwi.py:670
-msgid "Reading input file: "
-msgstr ""
-
-#: daemon/rwi.py:704
-msgid "Import error on line {0}: no {1} specified or bad {2} data (was: {3})."
-msgstr ""
-
-#: daemon/rwi.py:709
-#, python-format
-msgid "Encoding not supported for input filename (was: %s)."
-msgstr ""
-
-#: daemon/rwi.py:720 daemon/rwi.py:733
-msgid ""
-"Import error on line {0}: no group specified or bad {2} data (was: {1})."
-msgstr ""
-
-#: daemon/rwi.py:722
-msgid "firstname or lastname"
-msgstr ""
-
-#: daemon/rwi.py:723 daemon/rwi.py:820 daemon/rwi.py:833
-msgid "login"
-msgstr ""
-
-#: daemon/rwi.py:726 daemon/rwi.py:738
-msgid "Import error on line {0} (was: {1})."
-msgstr ""
-
-#: daemon/rwi.py:735 daemon/rwi.py:821 daemon/rwi.py:834 core/groups.py:1799
-#: core/configuration.py:627
-msgid "group"
-msgstr ""
-
-#: daemon/rwi.py:759
-msgid " done."
-msgstr ""
-
-#: daemon/rwi.py:792
-msgid "Added group {0} ({1}/{2}); progress: {3}%"
-msgstr ""
-
-#: daemon/rwi.py:813 daemon/rwi.py:830
-msgid "Fields order:"
-msgstr ""
-
-#: daemon/rwi.py:814
-msgid "<table>"
-msgstr ""
-
-#: daemon/rwi.py:815 daemon/rwi.py:876
-msgid "<tr>"
-msgstr ""
-
-#: daemon/rwi.py:818 daemon/rwi.py:831
-msgid "FIRSTname"
-msgstr ""
-
-#: daemon/rwi.py:819 daemon/rwi.py:832
-msgid "LASTname"
-msgstr ""
-
-#: daemon/rwi.py:822 daemon/rwi.py:835 interfaces/cli/argparser.py:923
-msgid "password"
-msgstr ""
-
-#: daemon/rwi.py:824
-msgid "<th width=\"{0}\">{1}</th>"
-msgstr ""
-
-#: daemon/rwi.py:825 daemon/rwi.py:887
-msgid "</tr>"
-msgstr ""
-
-#: daemon/rwi.py:850
-msgid ""
-"Added user {0} {1} [login={2}, uid={3}, passwd={4}] ({5}/{6}); progress: {7}%"
-msgstr ""
-
-#: daemon/rwi.py:872
-msgid ""
-"Import error on line {0}.\n"
-"{1}"
-msgstr ""
-
-#: daemon/rwi.py:883 daemon/rwi.py:896
-msgid "(autogenerated upon creation)"
-msgstr ""
-
-#: daemon/rwi.py:886
-msgid "<td>{0}</td>"
-msgstr ""
-
-#: daemon/rwi.py:921
-msgid "Finished importing, creating summary HTML file: "
-msgstr ""
-
-#: daemon/rwi.py:927 foundations/fsapi.py:1365
-msgid "%d %m %Y at %H:%M:%S"
-msgstr ""
-
-#: daemon/rwi.py:939
-msgid ""
-"This repport is available on the server at \"<code>{0}</code>\", you can <a "
-"href=\"/download/{0}\">download it</a> for easier access"
-msgstr ""
-
-#: daemon/rwi.py:972
-msgid "{0} accounts and passwords"
-msgstr ""
-
-#: daemon/rwi.py:973
-msgid "Import made on {0}."
-msgstr ""
-
-#: daemon/rwi.py:974
-msgid ""
-"Keeping passwords in any written form is a major security flaw for you "
-"information system.<br />Please be sure obliterate this file and any printed "
-"version after having transmitted their password to your users."
-msgstr ""
-
-#: daemon/rwi.py:980
-msgid "Direct access to {0}:"
-msgstr ""
-
-#: daemon/rwi.py:998
-msgid "Lastname"
-msgstr ""
-
-#: daemon/rwi.py:999
-msgid "Firstname"
-msgstr ""
-
-#: daemon/rwi.py:1000
-msgid "Login"
-msgstr ""
-
-#: daemon/rwi.py:1001
-msgid "Password"
-msgstr ""
-
-#: daemon/rwi.py:1032
-msgid "done."
-msgstr ""
-
-#: daemon/rwi.py:1032
-msgid "report:"
-msgstr ""
-
-#: daemon/rwi.py:1137
-msgid "Unable to add user(s) {0} in group {1} (was: {2})."
-msgstr ""
-
-#: daemon/rwi.py:1342
-msgid "No volume matched \"{0}\". Volume attributes are case sensitive."
-msgstr ""
-
-#: daemon/rwi.py:1353
-msgid "Exception happened while launching backup on volume {0}"
-msgstr ""
-
-#: daemon/rwi.py:1379
-msgid "Are you sure you want to delete all users?"
-msgstr ""
-
-#: daemon/rwi.py:1397
-#, python-format
-msgid "Delete user %s?"
-msgstr ""
-
-#: daemon/rwi.py:1425
-msgid "Unable to remove user(s) {0} from group {1} (was: {2})."
-msgstr ""
-
-#: daemon/rwi.py:1466
-msgid "You must specify a file name"
-msgstr ""
-
-#: daemon/rwi.py:1496
-msgid "Deleting groups ({0}/{1}), progression: {3:.2f}%"
-msgstr ""
-
-#: daemon/rwi.py:1526
-msgid "Are you sure you want to delete all groups?"
-msgstr ""
-
-#: daemon/rwi.py:1543
-#, python-format
-msgid "Delete group %s?"
-msgstr ""
-
-#: daemon/rwi.py:1589
-msgid "Are you sure you want to delete all profiles?"
-msgstr ""
-
-#: daemon/rwi.py:1605
-#, python-format
-msgid "Delete profile %s?"
-msgstr ""
-
-#: daemon/rwi.py:1647
-msgid "Are you sure you want to delete all privileges?"
-msgstr ""
-
-#: daemon/rwi.py:1661
-#, python-format
-msgid "Delete privilege %s?"
-msgstr ""
-
-#: daemon/rwi.py:1694
-msgid "Are you sure you want to modify all users?"
-msgstr ""
-
-#: daemon/rwi.py:1715
-#, python-format
-msgid "Modify user %s?"
-msgstr ""
-
-#: daemon/rwi.py:1744
-#, python-format
-msgid "Please enter new password for user %s: "
-msgstr ""
-
-#: daemon/rwi.py:1746
-#, python-format
-msgid "Please confirm new password for user %s: "
-msgstr ""
-
-#: daemon/rwi.py:1751
-msgid "Please enter your OLD (current) password: "
-msgstr ""
-
-#: daemon/rwi.py:1753
-msgid "Please enter your new password: "
-msgstr ""
-
-#: daemon/rwi.py:1754
-msgid "Please confirm your new password: "
-msgstr ""
-
-#: daemon/rwi.py:1757
-#, python-format
-msgid "Please enter %s's OLD (current) password: "
-msgstr ""
-
-#: daemon/rwi.py:1764
-msgid "Wrong password, procedure aborted."
-msgstr ""
-
-#: daemon/rwi.py:1774
-msgid "Passwords do not match, leaving the old one in place."
-msgstr ""
-
-#: daemon/rwi.py:1800 daemon/rwi.py:1808
-msgid "Unable to remove user {0} from group {1} (was: {2})."
-msgstr ""
-
-#: daemon/rwi.py:1823 daemon/rwi.py:1830
-msgid "Unable to add user {0} in group {1} (was: {2})."
-msgstr ""
-
-#: daemon/rwi.py:1844
-#, python-format
-msgid "What do you want to modify about user(s) %s ?"
-msgstr ""
-
-#: daemon/rwi.py:1961
-msgid "Are you sure you want to modify all groups?"
-msgstr ""
-
-#: daemon/rwi.py:1986
-#, python-format
-msgid "Modify group %s?"
-msgstr ""
-
-#: daemon/rwi.py:1992
-#, python-format
-msgid ""
-"Skipped associated system group %s, handled automatically by standard group "
-"move."
-msgstr ""
-
-#: daemon/rwi.py:2042
-msgid "Skipped responsible(s) {0} addition on non-standard group {1}."
-msgstr ""
-
-#: daemon/rwi.py:2053
-msgid "Skipped responsible(s) {0} deletion on non-standard group {1}."
-msgstr ""
-
-#: daemon/rwi.py:2064
-msgid "Skipped guest(s) {0} addition on non-standard group {1}."
-msgstr ""
-
-#: daemon/rwi.py:2075
-msgid "Skipped guest(s) {0} deletion on non-standard group {1}."
-msgstr ""
-
-#: daemon/rwi.py:2090
-#, python-format
-msgid "What do you want to modify about group(s) %s?"
-msgstr ""
-
-#: daemon/rwi.py:2113
-msgid "Are you sure you want to modify all profiles?"
-msgstr ""
-
-#: daemon/rwi.py:2133
-#, python-format
-msgid "Modify profile %s?"
-msgstr ""
-
-#: daemon/rwi.py:2210
-#, python-format
-msgid "What do you want to modify about profile(s) %s?"
-msgstr ""
-
-#: daemon/rwi.py:2253 daemon/rwi.py:2272
-msgid "not yet anymore."
-msgstr ""
-
-#: daemon/rwi.py:2328 daemon/rwi.py:2337
-#, python-format
-msgid "Skipped non-existing backend %s."
-msgstr ""
-
-#: daemon/rwi.py:2346 daemon/rwi.py:2355
-#, python-format
-msgid "Skipped non-existing extension %s."
-msgstr ""
-
-#: daemon/rwi.py:2398
-msgid "What do you want to modify on volumes? use --help to know!"
-msgstr ""
-
-#: daemon/rwi.py:2417
-msgid "Are you sure you want to check all users?"
-msgstr ""
-
-#: daemon/rwi.py:2439
-#, python-format
-msgid "Check account %s?"
-msgstr ""
-
-#: daemon/rwi.py:2461
-msgid "Are you sure you want to check all groups?"
-msgstr ""
-
-#: daemon/rwi.py:2484
-#, python-format
-msgid "Check group %s?"
-msgstr ""
-
-#: daemon/rwi.py:2512
-msgid "Are you sure you want to check all profiles?"
-msgstr ""
-
-#: daemon/rwi.py:2526
-#, python-format
-msgid "Check profile %s?"
-msgstr ""
-
-#: daemon/rwi.py:2529
-msgid "Sorry, not yet."
-msgstr ""
-
-#: daemon/rwi.py:2563
-msgid "Running WMI Django tests for app {0}, this may take a while…"
-msgstr ""
-
-#: daemon/rwi.py:2570
-msgid "Could not run tests for app {0}"
-msgstr ""
-
-#: daemon/rwi.py:2573
-msgid "Successfully ran Django WMI tests for app {0}."
-msgstr ""
-
-#: daemon/inotifier.py:80
-msgid "{0}{1} ({2} watched dirs, {3} config files, {4} queued events)"
-msgstr ""
-
-#: daemon/inotifier.py:108
-msgid "{0}: closing {1} watches, please wait…"
-msgstr ""
-
-#: daemon/inotifier.py:137
-msgid "{0}: error on read_events: {1}"
-msgstr ""
-
-#: daemon/inotifier.py:161
-msgid "inotifier: error deleting {0} (was: {1} {2})"
-msgstr ""
-
-#: daemon/inotifier.py:323
-msgid "{0}: configuration file {1} changed, trigerring upstream reload."
-msgstr ""
-
-#: daemon/inotifier.py:355
-msgid "{0}: increased inotify {1} to {2}."
-msgstr ""
-
-#: daemon/inotifier.py:365
-msgid "{0}: unable to increase inotify {1} to {2}"
-msgstr ""
-
-#: daemon/inotifier.py:376
-msgid "{0:s}: exception install watches of {1:s}."
-msgstr ""
-
-#: daemon/main.py:116
-msgid "{0}: initializing facilities, backends, controllers and extensions."
-msgstr ""
-
-#: daemon/main.py:133
-msgid "{0}: {1} callbacks collected."
-msgstr ""
-
-#: daemon/main.py:257
-msgid "{0}: collecting all threads."
-msgstr ""
-
-#: daemon/main.py:266
-msgid "{0}: starting all threads."
-msgstr ""
-
-#: daemon/main.py:279
-msgid "Could not start thread {0}"
-msgstr ""
-
-#: daemon/main.py:281
-msgid "{0}: stopping threads."
-msgstr ""
-
-#: daemon/main.py:296
-msgid ""
-"{0}: thread {1} has no stop() nor cancel() method! It is probably still "
-"running."
-msgstr ""
-
-#: daemon/main.py:332
-msgid ""
-"{0}: not starting WMI, disabled on command line or by configuration "
-"directive."
-msgstr ""
-
-#: daemon/main.py:415
-msgid "{0}: all threads started, going to sleep waiting for signals."
-msgstr ""
-
-#: daemon/main.py:419
-msgid "{0}: all threads started, ready for TTY interaction."
-msgstr ""
-
-#: daemon/main.py:513
-msgid ""
-"Licorn® {role} daemon {full}status: up {uptime}, {nb_threads} threads, "
-"{nb_controllers} controllers, {nb_queues} queues, {nb_locked}/{nb_locks} "
-"Mlocks, {sub_locked}/{sub_locks} Ulocks\n"
-"CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s MEM: res {mem_res:.2}Mb shr "
-"{mem_shr:.2}Mb ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n"
-msgstr ""
-
-#: daemon/main.py:539
-#, python-format
-msgid "Mlocks:  %s\n"
-msgstr ""
-
-#: daemon/main.py:543
-#, python-format
-msgid "Ulocks:  %s\n"
-msgstr ""
-
-#: daemon/main.py:546
-#, python-format
-msgid "Threads: %s\n"
-msgstr ""
-
-#: daemon/main.py:551
-#, python-format
-msgid "Queues:  %s\n"
-msgstr ""
-
-#: daemon/main.py:658
-msgid "Could not load gettext translations for language {0}"
-msgstr ""
-
-#: daemon/main.py:662
-msgid "Successfully loaded gettext translations for language {0}."
-msgstr ""
-
-#: daemon/main.py:698
-msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
-msgstr ""
-
-#: daemon/main.py:703
-msgid "{0}: joining threads."
-msgstr ""
-
-#: daemon/main.py:717
-msgid "{0}: waiting for thread {1} to finish{2}."
-msgstr ""
-
-#: daemon/main.py:720
-#, python-format
-msgid " (currently working on %s)"
-msgstr ""
-
-#: daemon/main.py:761
-msgid "{0}: restarting{1}."
-msgstr ""
-
-#: daemon/main.py:795 daemon/main.py:802
-msgid "{0}: wiped dead thread {1} from memory."
-msgstr ""
-
-#: daemon/main.py:805
-msgid "{0}: doing manual garbage collection on {1}."
-msgstr ""
-
-#: daemon/cmdlistener.py:163
-msgid ""
-"Problem finding uid initiating connection from {0}:{1}, denying request."
-msgstr ""
-
-#: daemon/cmdlistener.py:191
-msgid "Denied connection tentative from {0}:{1} (allowed are {2} and {3})."
-msgstr ""
-
-#: daemon/cmdlistener.py:208
-msgid ""
-"Please implement client.server.bounce auth. Accepted for now (localhost, uid "
-"{0})."
-msgstr ""
-
-#: daemon/cmdlistener.py:217
-msgid "Senseless connection tentative from {0}, uid {2}."
-msgstr ""
-
-#: daemon/cmdlistener.py:227
-msgid "Connection tentative from {0}: unknown local UID {1}!"
-msgstr ""
-
-#: daemon/cmdlistener.py:235
-msgid "Something went wrong from {0} (was: {1})."
-msgstr ""
-
-#: daemon/cmdlistener.py:247
-msgid "Remote login {0} is different from local {1} for UID {2}. Using {0}."
-msgstr ""
-
-#: daemon/cmdlistener.py:270
-msgid "{0}/{1}: authorized client connection from {2}:{3}, user {4}({5})."
-msgstr ""
-
-#: daemon/cmdlistener.py:280
-msgid "Connection tentative from {0}:{1}, user {2}({3})."
-msgstr ""
-
-#: daemon/wmi.py:133
-#, python-format
-msgid "{0}: socket already in use. waiting (total: %ds)."
-msgstr ""
-
-#: daemon/wmi.py:139
-msgid "{0}: socket error {1}."
-msgstr ""
-
-#: daemon/wmi.py:144
-msgid "{0}: {1} to answer requests at address {2}."
-msgstr ""
-
-#: daemon/wmi.py:145
-msgid "ready"
-msgstr ""
-
-#: upgrades/extensions/squid/aaa_rename_apt_proxy.py:24
-msgid "{0}: could not rename {1} to {2}"
-msgstr ""
-
-#: upgrades/extensions/squid/aaa_rename_apt_proxy.py:29
-msgid "{0}: renamed {1} to {2}."
-msgstr ""
-
-#: upgrades/daemon/aaa_wmi2_setup.py:149
-msgid "Fixing permissions in {0}, this may take a while…"
-msgstr ""
-
-#: upgrades/daemon/aaa_wmi2_setup.py:195
-msgid "Creating the Django session database in {0}, this may take a while…"
-msgstr ""
-
-#: upgrades/daemon/aaa_wmi2_setup.py:210
-msgid "Successfully created Django session database in {0}."
-msgstr ""
-
-#: upgrades/daemon/aaa_wmi2_setup.py:225
-msgid "Creating an SSL certificate/key pair for the WMI…"
-msgstr ""
-
-#: upgrades/daemon/aaa_wmi2_setup.py:254
-msgid "Successfully created WMI SSL certificate/key pair."
-msgstr ""
-
-#: upgrades/core/aaa_first_installation.py:20
-msgid "Created configuration directory {0}."
-msgstr ""
-
-#: upgrades/core/aaa_first_installation.py:24
-msgid "Cannot create configuration directory {0}!"
-msgstr ""
-
-#: upgrades/core/backends/openldap/aaa_gecos_utf8.py:34
-msgid "{0}: impossible to reload {1} schema into {2}!"
-msgstr ""
-
-#: upgrades/core/backends/openldap/aaa_gecos_utf8.py:38
-msgid "{0}: updated {1} schema to support utf-8 gecos."
-msgstr ""
-
-#: interfaces/gui/hkew.glade:7
-msgid "Licorn Keywords File Modifier"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:18
-msgid "<span size=\"xx-large\">Licorn Keywords modifier</span>"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:30
-msgid "  Paths affected by keywords  "
-msgstr ""
-
-#: interfaces/gui/hkew.glade:59
-msgid "Apply keywords recusively to dirs"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:97
-msgid "  Keywords (instant apply)  "
-msgstr ""
-
-#: interfaces/gui/hkew.glade:112 interfaces/gui/hkew.glade:222
-msgid "Current selection:"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:122 interfaces/gui/hkew.glade:232
-msgid "<b>-</b>"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:196
-msgid "Licorn Keywords File Query"
-msgstr ""
-
-#: interfaces/gui/hkew.glade:207
-msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
-msgstr ""
-
-#: interfaces/__init__.py:109
-msgid "Harmless exception while releasing the LMC."
-msgstr ""
-
-#: interfaces/__init__.py:120
-msgid "{0}: {1} received, restarting listener."
-msgstr ""
-
-#: interfaces/__init__.py:121
-msgid "SIGUSR2"
-msgstr ""
-
-#: interfaces/__init__.py:226
-msgid "Interrupted, cleaning up!"
+msgid "Unknow mode %s!"
 msgstr ""
 
 #: interfaces/cli/argparser.py:61
@@ -2180,6 +661,10 @@ msgstr ""
 msgid ""
 "{0} column number in CSV file (default: {1}: password will be randomly "
 "generated and {2} chars long)."
+msgstr ""
+
+#: interfaces/cli/argparser.py:923 daemon/rwi.py:822 daemon/rwi.py:835
+msgid "password"
 msgstr ""
 
 #: interfaces/cli/argparser.py:924
@@ -2906,609 +1391,64 @@ msgid ""
 "spaces. Just type \"all\" if you want it."
 msgstr ""
 
-#: interfaces/cli/__init__.py:112
-msgid "end the interactive session cleanly"
+#: interfaces/__init__.py:109
+msgid "Harmless exception while releasing the LMC."
 msgstr ""
 
-#: interfaces/cli/__init__.py:142
-#, python-format
-msgid "Unknow mode %s!"
+#: interfaces/__init__.py:120
+msgid "{0}: {1} received, restarting listener."
 msgstr ""
 
-#: interfaces/cli/get.py:60
-msgid "Daemon connection lost, bailing out."
+#: interfaces/__init__.py:121
+msgid "SIGUSR2"
 msgstr ""
 
-#: interfaces/cli/get.py:66
-msgid "Could not get daemon status"
+#: interfaces/__init__.py:226
+msgid "Interrupted, cleaning up!"
 msgstr ""
 
-#: interfaces/cli/get.py:112
-msgid "Could not obtain daemon status"
+#: interfaces/gui/hkew.glade:7
+msgid "Licorn Keywords File Modifier"
 msgstr ""
 
-#: interfaces/cli/get.py:174
-msgid "Licorn® {0}, Python {1} on {2}"
+#: interfaces/gui/hkew.glade:18
+msgid "<span size=\"xx-large\">Licorn Keywords modifier</span>"
 msgstr ""
 
-#: interfaces/cli/get.py:190
-msgid "unable to write history file!"
+#: interfaces/gui/hkew.glade:30
+msgid "  Paths affected by keywords  "
 msgstr ""
 
-#: core/machines.py:46 core/machines.py:63
-msgid "Failed to call `{0}()` on machine {1}!"
+#: interfaces/gui/hkew.glade:59
+msgid "Apply keywords recusively to dirs"
 msgstr ""
 
-#: core/machines.py:49 core/machines.py:66
-msgid "Cannot call `{0}` on non-connected machine {1}!"
+#: interfaces/gui/hkew.glade:97
+msgid "  Keywords (instant apply)  "
 msgstr ""
 
-#: core/machines.py:260
-msgid "no other link than machine yet"
+#: interfaces/gui/hkew.glade:112 interfaces/gui/hkew.glade:222
+msgid "Current selection:"
 msgstr ""
 
-#: core/machines.py:262
-msgid "{0}: Linked {1} to {2}."
+#: interfaces/gui/hkew.glade:122 interfaces/gui/hkew.glade:232
+msgid "<b>-</b>"
 msgstr ""
 
-#: core/machines.py:299
-msgid ""
-"{0}: guess_os({1}) → unknown key \"{2}\" with value \"{2}\", please update "
-"our knowledge database if you what type of device it is."
+#: interfaces/gui/hkew.glade:196
+msgid "Licorn Keywords File Query"
 msgstr ""
 
-#: core/machines.py:306
-msgid ""
-"{0}: guess_os({1}) → unknown {2} value \"{3}\", please update our knowledge "
-"database if you what type of device it is."
+#: interfaces/gui/hkew.glade:207
+msgid "<span size=\"xx-large\">Licorn Keywords File Query</span>"
 msgstr ""
 
-#: core/machines.py:387
-msgid "Could not resolve machine name for address {0}"
+#: contrib/apt_check.py:24
+msgid "Unknown Error: '{0}' ({1})"
 msgstr ""
 
-#: core/machines.py:451
-msgid "{0}: {1} already pyroized, not doing the work again."
-msgstr ""
-
-#: core/machines.py:526 core/machines.py:644 core/machines.py:665
-msgid "{0}: {1} at {2}."
-msgstr ""
-
-#: core/machines.py:527
-#, python-format
-msgid "Licorn® %s shutdown"
-msgstr ""
-
-#: core/machines.py:527 core/machines.py:645 core/machines.py:667
-msgid "server"
-msgstr ""
-
-#: core/machines.py:528 core/machines.py:646 core/machines.py:667
-msgid "client"
-msgstr ""
-
-#: core/machines.py:555
-msgid "{0}: _pyro_forward_goodbye_from(): harmless error {1} from {2}."
-msgstr ""
-
-#: core/machines.py:645
-#, python-format
-msgid "new Licorn® %s"
-msgstr ""
-
-#: core/machines.py:666
-#, python-format
-msgid "Licorn® %s back online"
-msgstr ""
-
-#: core/machines.py:673
-msgid "{0}: {1} came back online."
-msgstr ""
-
-#: core/machines.py:695
-msgid "Shut down machine {0}."
-msgstr ""
-
-#: core/machines.py:744
-msgid "machine"
-msgstr ""
-
-#: core/machines.py:746
-msgid "MID"
-msgstr ""
-
-#: core/machines.py:855
-#, python-format
-msgid "Overwritten mid %s"
-msgstr ""
-
-#: core/machines.py:884
-msgid "{0:s}: cannot restart machine {1:s} (was: {2:s})"
-msgstr ""
-
-#: core/machines.py:953
-msgid ""
-"{0}: network auto-discovery disabled by configuration rule {1}, not going "
-"further."
-msgstr ""
-
-#: core/machines.py:966
-msgid "{0}: {1} initial network discovery."
-msgstr ""
-
-#: core/machines.py:967
-msgid "starting"
-msgstr ""
-
-#: core/machines.py:1186
-msgid "Package status unavailable on machine {0}."
-msgstr ""
-
-#: core/machines.py:1189
-msgid ", {0}"
-msgstr ""
-
-#: core/machines.py:1190
-msgid "packages status unavailable"
-msgstr ""
-
-#: core/machines.py:1192
-msgid ", {0} package(s) to upgrade {1}"
-msgstr ""
-
-#: core/machines.py:1194
-msgid "({0} security update(s))"
-msgstr ""
-
-#: core/machines.py:1203
-msgid " (this machine)"
-msgstr ""
-
-#: core/machines.py:1205
-msgid "{0}: {1}{2}{3}"
-msgstr ""
-
-#: core/machines.py:1206
-msgid "status"
-msgstr ""
-
-#: core/machines.py:1208
-msgid " (remote control enabled)"
-msgstr ""
-
-#: core/machines.py:1211
-msgid "{0}: {1} ({2}{3})"
-msgstr ""
-
-#: core/machines.py:1212
-msgid "address"
-msgstr ""
-
-#: core/machines.py:1214
-#, python-format
-msgid "expires: %s, "
-msgstr ""
-
-#: core/machines.py:1219
-msgid "managed"
-msgstr ""
-
-#: core/machines.py:1220
-msgid "floating"
-msgstr ""
-
-#: core/machines.py:1223
-msgid "ethernet"
-msgstr ""
-
-#: core/machines.py:1294
-#, python-format
-msgid "MID %s does not exist"
-msgstr ""
-
-#: core/machines.py:1300
-msgid "You must pass a hostname to verify!"
-msgstr ""
-
-#: core/machines.py:1307
-msgid "Cannot build a valid hostname (got {0}, which does not verify {1})."
-msgstr ""
-
-#: core/_controllers.py:64
-msgid "Skipped non-existing {0} or {1} {2}."
-msgstr ""
-
-#: core/_controllers.py:74
-msgid "\"{0}\" is neither an attribute nor an item of {1}."
-msgstr ""
-
-#: core/_controllers.py:466
-msgid "{0} user rule that wanted to overwrite system default rule."
-msgstr ""
-
-#: core/_controllers.py:468 core/_modules.py:123 core/_modules.py:318
-msgid "Skipped"
-msgstr ""
-
-#: core/_controllers.py:492
-msgid ""
-"{0} group rule for path {1} ({2}:{3}), overriden by system rule ({4}:{5})."
-msgstr ""
-
-#: core/_controllers.py:495
-msgid "Ignored"
-msgstr ""
-
-#: core/_controllers.py:509
-msgid "{0} {1} ACL rule: \"{2}\" for \"{3}\"."
-msgstr ""
-
-#: core/_controllers.py:511 core/_controllers.py:607
-msgid "Added"
-msgstr ""
-
-#: core/_controllers.py:512 core/users.py:1691
-msgid "system"
-msgstr ""
-
-#: core/_controllers.py:548
-#, python-format
-msgid "There is no default rule. Check %s."
-msgstr ""
-
-#: core/_controllers.py:549
-msgid "aborted"
-msgstr ""
-
-#: core/_controllers.py:606
-msgid "{0} {1} ACL rule {2}: \"{3}\" for \"{4}\"."
-msgstr ""
-
-#: core/_controllers.py:609
-msgid "template"
-msgstr ""
-
-#: core/_controllers.py:614 core/_controllers.py:618
-msgid "{0}.parse_rules: {1}"
-msgstr ""
-
-#: core/_controllers.py:644
-msgid "parse_rules(): Exception on {0} (special={1})."
-msgstr ""
-
-#: core/_controllers.py:667
-msgid "{0:s}: installing watches…"
-msgstr ""
-
-#: core/_controllers.py:676
-msgid "{0}: exception while installing inotifier watches for {1} {2}"
-msgstr ""
-
-#: core/privileges.py:47
-msgid "privilege"
-msgstr ""
-
-#: core/privileges.py:50 core/groups.py:1802
-msgid "GID"
-msgstr ""
-
-#: core/privileges.py:143
-msgid "Skipped privilege {0} refering to a non-existing group."
-msgstr ""
-
-#: core/privileges.py:163
-msgid ""
-"Triggering privilege whitelist rewrite in 3 seconds to remove non-existing "
-"references or duplicates."
-msgstr ""
-
-#: core/privileges.py:189
-#, python-format
-msgid "Skipped privilege %s, already whitelisted."
-msgstr ""
-
-#: core/privileges.py:194
-#, python-format
-msgid "Group %s must not be promoted to privilege for security reasons."
-msgstr ""
-
-#: core/privileges.py:200
-#, python-format
-msgid ""
-"Group %s cannot be promoted to privilege, it is not a pure system group."
-msgstr ""
-
-#: core/privileges.py:211
-#, python-format
-msgid "Added privilege %s to whitelist."
-msgstr ""
-
-#: core/privileges.py:226
-#, python-format
-msgid "Removed privilege %s from whitelist."
-msgstr ""
-
-#: core/privileges.py:231
-#, python-format
-msgid "Skipped privilege %s, already not present in the whitelist."
-msgstr ""
-
-#: core/privileges.py:249
-msgid "Privilege {0} does not exist"
-msgstr ""
-
-#: core/_objects.py:147
-msgid ""
-"Cannot set a backend without a \"move_to_backend\" method on the current "
-"instance."
-msgstr ""
-
-#: core/_objects.py:251
-msgid "Inotify state {0} for {1} {2}."
-msgstr ""
-
-#: core/_objects.py:252 core/groups.py:449
-msgid "unchanged"
-msgstr ""
-
-#: core/_objects.py:262
-msgid "setup"
-msgstr ""
-
-#: core/_objects.py:273
-msgid "torn down"
-msgstr ""
-
-#: core/_objects.py:290
-msgid ""
-"Switched {0} {1} inotify state to {2} (watchers for shared content are "
-"beiing {3} in the background, this can take a while…)"
-msgstr ""
-
-#: core/_objects.py:565
-msgid "Watch add failed for {0}, reason {1}"
-msgstr ""
-
-#: core/_objects.py:569
-msgid "{0}: overwriting watch {1}!"
-msgstr ""
-
-#: core/_objects.py:596
-msgid "Cannot remove watch {0}, continuing"
-msgstr ""
-
-#: core/_objects.py:613 core/_objects.py:630
-msgid "{0}.__unwatch_directory in {1}: {2} not found in watched dirs."
-msgstr ""
-
-#: core/_objects.py:699
-msgid "Exception while deleting inotifier watches for {0}"
-msgstr ""
-
-#: core/_objects.py:759
-msgid "{0} {1}: somebody is already checking; operation aborted."
-msgstr ""
-
-#: core/_objects.py:765
-msgid "shared"
-msgstr ""
-
-#: core/_objects.py:765
-msgid "home"
-msgstr ""
-
-#: core/_objects.py:774
-msgid "Checking {0} {1}…"
-msgstr ""
-
-#: core/_objects.py:788
-msgid "{0} directory {1} already exists."
-msgstr ""
-
-#: core/_objects.py:792
-msgid "{0} directory {1} does not exist but it is mandatory. Create it?"
-msgstr ""
-
-#: core/_objects.py:800
-msgid "Created {0} directory {1}."
-msgstr ""
-
-#: core/_objects.py:805
-#, python-format
-msgid "Directory %s does not exist but is mandatory. Check aborted."
-msgstr ""
-
-#: core/_objects.py:841
-msgid "{0} {1}: meta-data changed on path {2}."
-msgstr ""
-
-#: core/_objects.py:852
-msgid "{0} {1}: meta-data changed on {2} path(s)."
-msgstr ""
-
-#: core/_objects.py:861
-msgid "{0} {1}: no shared data to check."
-msgstr ""
-
-#: core/_objects.py:867
-msgid "{0} {1}: {2}"
-msgstr ""
-
-#: core/_objects.py:959
-msgid ""
-"{0}: home directory {1} disappeared. If this is intentional, do not forget "
-"to run \"{2}\" afterwards, to restore the inotifier watch."
-msgstr ""
-
-#: core/_objects.py:1028
-msgid "{0}: problem while checking {1}, aborting"
-msgstr ""
-
-#: core/_modules.py:53
-msgid "module"
-msgstr ""
-
-#: core/_modules.py:56
-msgid "module name"
-msgstr ""
-
-#: core/_modules.py:121
-msgid "{0} unusable {1} {2}, exception encountered during import."
-msgstr ""
-
-#: core/_modules.py:196
-msgid ""
-"{0}: will not try to load {1} {2} because one or more of its dependancies "
-"failed to load."
-msgstr ""
-
-#: core/_modules.py:259
-msgid "{0}: Exception in {1} {2} during load"
-msgstr ""
-
-#: core/_modules.py:265
-msgid "Disabling dependant {0}(s) {1} to avoid further problems."
-msgstr ""
-
-#: core/_modules.py:287
-msgid "cannot disable non-existing {0} {1}."
-msgstr ""
-
-#: core/_modules.py:303
-msgid ""
-"{0} {1} is enabled on the server side but not available locally, probably an "
-"installation problem."
-msgstr ""
-
-#: core/_modules.py:310
-msgid ""
-"{0} {1} is enabled on the server side but manually ignored locally in {2}, "
-"please fix the problem before continuing."
-msgstr ""
-
-#: core/_modules.py:317
-msgid "{0} {1} {2}, manually ignored in {3}."
-msgstr ""
-
-#: core/_modules.py:361 core/_modules.py:401
-msgid "No {0} by that name \"{1}\"."
-msgstr ""
-
-#: core/_modules.py:365
-msgid "{0} {1} already enabled."
-msgstr ""
-
-#: core/_modules.py:371
-msgid "successfully enabled {0} {1}."
-msgstr ""
-
-#: core/_modules.py:376
-msgid "{0} {1} would not enable itself."
-msgstr ""
-
-#: core/_modules.py:381
-msgid "Exception while enabling {0} {1}."
-msgstr ""
-
-#: core/_modules.py:406
-msgid "{0} {1} already disabled."
-msgstr ""
-
-#: core/_modules.py:412
-msgid "successfully disabled {0} {1}."
-msgstr ""
-
-#: core/_modules.py:417
-msgid "{0} {1} would not disable itself."
-msgstr ""
-
-#: core/_modules.py:423
-msgid "Exception while disabling {0} {1}."
-msgstr ""
-
-#: core/_modules.py:462
-msgid "{0}: unhandled exception during {1} {2} check. Disabling it."
-msgstr ""
-
-#: core/_modules.py:485
-msgid "{0}: global check finished."
-msgstr ""
-
-#: core/_modules.py:493
-msgid "{0} {1} does not exist or is not enabled."
-msgstr ""
-
-#: core/_modules.py:507
-msgid ""
-"{name}: problem while installing inotifier watches for {type} {module} (was: "
-"{exc})."
-msgstr ""
-
-#: core/_modules.py:628
-msgid ""
-"↳ {0} ({1} {2}):\n"
-"\t{3}\n"
-"{4}"
-msgstr ""
-
-#: core/_modules.py:631
-msgid "client/server"
-msgstr ""
-
-#: core/_modules.py:633
-msgid "depends on: {0}"
-msgstr ""
-
-#: core/_modules.py:634
-msgid "no dependancies"
-msgstr ""
-
-#: core/__init__.py:39
-msgid ""
-"The daemon did not wake us in {0} seconds, there is probably a problem with "
-"it. Please check the log for errors or contact your system administrator if "
-"it is not you. Else you already know you are in trouble ;-)"
-msgstr ""
-
-#: core/__init__.py:46
-msgid "Connection established. Please be patient, the daemon seems quite busy."
-msgstr ""
-
-#: core/__init__.py:59
-msgid "OK. We're running now!"
-msgstr ""
-
-#: core/__init__.py:210
-msgid "Server backends: {0}"
-msgstr ""
-
-#: core/__init__.py:394
-#, python-format
-msgid "trying to connect to server %s."
-msgstr ""
-
-#: core/__init__.py:477
-msgid "Your user account is not allowed to connect to the Licorn® daemon."
-msgstr ""
-
-#: core/__init__.py:483
-#, python-format
-msgid ""
-"Cannot connect to the daemon, but it has been successfully launched. I  "
-"suspect you are in trouble (was: %s)"
-msgstr ""
-
-#: core/__init__.py:488
-#, python-format
-msgid ""
-"Cannot reach our daemon at %s, retrying in 5 seconds. Check your network "
-"connection, cable, DNS and firewall. Perhaps  the Licorn® server is simply "
-"down."
-msgstr ""
-
-#: core/__init__.py:524
-msgid "Waiting up to {0} seconds for daemon to come up… Please hold on."
+#: contrib/apt_check.py:95
+msgid "Error: BrokenCount > 0"
 msgstr ""
 
 #: core/profiles.py:135
@@ -4203,6 +2143,10 @@ msgstr ""
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr ""
 
+#: core/users.py:1691 core/_controllers.py:512
+msgid "system"
+msgstr ""
+
 #: core/users.py:1691
 msgid "standard"
 msgstr ""
@@ -4238,6 +2182,801 @@ msgstr ""
 #: core/users.py:1960
 #, python-format
 msgid "UID %s does not exist"
+msgstr ""
+
+#: core/backends/shadow.py:76
+msgid ""
+"{0} shadow backend (this is important, please do not try to set {1} in {2}!"
+msgstr ""
+
+#: core/backends/shadow.py:78
+msgid "RE-enabled"
+msgstr ""
+
+#: core/backends/shadow.py:209
+msgid "{0}: added missing entry for user {1} in {2}."
+msgstr ""
+
+#: core/backends/shadow.py:236
+msgid "{0}: cleaned users data rewrite requested in the background."
+msgstr ""
+
+#: core/backends/shadow.py:287
+msgid "{0}: skipped line \"{1}\" from {2}, it seems corrupt."
+msgstr ""
+
+#: core/backends/shadow.py:341
+msgid "{0}: added missing record for group {1} in {2}."
+msgstr ""
+
+#: core/backends/shadow.py:359
+msgid "{0}: cleaned groups data rewrite requested in the background."
+msgstr ""
+
+#: core/backends/shadow.py:435
+msgid "{0}: saved users data to disk."
+msgstr ""
+
+#: core/backends/shadow.py:503
+msgid "{0}: saved groups data to disk."
+msgstr ""
+
+#: core/backends/shadow.py:532 core/backends/dnsmasq.py:176
+msgid "{0}: configuration file {1} changed, reloading {2} controller."
+msgstr ""
+
+#: core/backends/openldap.py:110
+msgid ""
+"{0}: Problem initializing the backend. OpenLDAP seems installed but not "
+"configured, or unusable. Please run {1} to try fix the situation."
+msgstr ""
+
+#: core/backends/openldap.py:183
+msgid "{0}: setting a default password in {1}."
+msgstr ""
+
+#: core/backends/openldap.py:242
+msgid ""
+"{0}: server {1} is down, disabling backend. This will produce timeouts "
+"because {2} is enabled in NSS configuration."
+msgstr ""
+
+#: core/backends/openldap.py:323
+msgid "{0}: checking backend configuration…"
+msgstr ""
+
+#: core/backends/openldap.py:329
+msgid "{0:s}: backend not available, not checking."
+msgstr ""
+
+#: core/backends/openldap.py:333
+msgid "{0}: you must be root or have {1} access to continue."
+msgstr ""
+
+#: core/backends/openldap.py:402
+msgid "{0}: checking slapd schemata…"
+msgstr ""
+
+#: core/backends/openldap.py:435
+msgid "{0}: disabling AppArmor profile for {1}."
+msgstr ""
+
+#: core/backends/openldap.py:443
+msgid "{0:s}: Exception encountered while disabling AppArmor profile."
+msgstr ""
+
+#: core/backends/openldap.py:456
+msgid "{0}: re-enabling AppArmor profile for {1}."
+msgstr ""
+
+#: core/backends/openldap.py:464
+msgid "{0:s}: Exception encountered while re-enabling AppArmor profile."
+msgstr ""
+
+#: core/backends/openldap.py:471
+msgid "{0}: {1} lacks mandatory schema {2}."
+msgstr ""
+
+#: core/backends/openldap.py:480
+msgid "{0}: loading schema {1} into {2}."
+msgstr ""
+
+#: core/backends/openldap.py:488
+msgid "{0}: adding {1} -> {2} into schema {3}."
+msgstr ""
+
+#: core/backends/openldap.py:495
+msgid "{0}: loaded schema {1} into {2}."
+msgstr ""
+
+#: core/backends/openldap.py:501
+msgid "{0}: skipped already present dn {1}."
+msgstr ""
+
+#: core/backends/openldap.py:505
+msgid "{0}: Exception encountered while adding {1} > {2} into schema {3}."
+msgstr ""
+
+#: core/backends/openldap.py:514 core/backends/openldap.py:566
+msgid "Cannot continue without altering slapd configuration."
+msgstr ""
+
+#: core/backends/openldap.py:527
+msgid "{0}: {1} schema {2} needs updating."
+msgstr ""
+
+#: core/backends/openldap.py:536
+msgid "{0}: updating schema {1} in {2}."
+msgstr ""
+
+#: core/backends/openldap.py:551
+msgid "{0}: updated schema {1} in {2}."
+msgstr ""
+
+#: core/backends/openldap.py:557
+msgid ""
+"{0}: Exception encountered while modifying {1} from {2} TO {3} in schema {4}"
+msgstr ""
+
+#: core/backends/openldap.py:574
+msgid "{0}: checking system files…"
+msgstr ""
+
+#: core/backends/openldap.py:600
+msgid ""
+"{0}: {1} should contain your LDAP system password, but is currently empty. "
+"Fill it with a random password?"
+msgstr ""
+
+#: core/backends/openldap.py:612
+msgid ""
+"{0}: autogenerated password for LDAP user {1}: \"{2}\". It is up to you to "
+"update the LDAP database with it, now."
+msgstr ""
+
+#: core/backends/openldap.py:633
+msgid ""
+"{0}: {1} is mandatory for {2} to work properly. Cannot continue without "
+"this, sorry!"
+msgstr ""
+
+#: core/backends/openldap.py:664
+msgid "{0}: binding in EXTERNAL SASL mode."
+msgstr ""
+
+#: core/backends/openldap.py:673 core/backends/openldap.py:697
+msgid "{0}: binding as as {1}."
+msgstr ""
+
+#: core/backends/openldap.py:816
+msgid "{0}: skipped account {1}"
+msgstr ""
+
+#: core/backends/openldap.py:872
+msgid "{0}: saved all user accounts in the directory."
+msgstr ""
+
+#: core/backends/openldap.py:885
+msgid "{0}: saved all groups in the directory."
+msgstr ""
+
+#: core/backends/openldap.py:963
+msgid "{0}: unknown mode {1} for user {2}(uid={3})."
+msgstr ""
+
+#: core/backends/openldap.py:968
+msgid "{0}: unable to save user {1}."
+msgstr ""
+
+#: core/backends/openldap.py:973
+msgid "{0}: saved user account {1} in the directory."
+msgstr ""
+
+#: core/backends/openldap.py:1035
+msgid "{0}: unknown mode {1} for group {2}(gid={3})."
+msgstr ""
+
+#: core/backends/openldap.py:1042
+msgid "{0}: unable to save group {1}."
+msgstr ""
+
+#: core/backends/openldap.py:1047
+msgid "{0}: saved group {1} in the directory."
+msgstr ""
+
+#: core/backends/openldap.py:1064
+msgid "{0}: deleted user account {1} from the directory."
+msgstr ""
+
+#: core/backends/openldap.py:1082
+msgid "{0}: deleted group {1} from the directory."
+msgstr ""
+
+#: core/privileges.py:47
+msgid "privilege"
+msgstr ""
+
+#: core/privileges.py:50 core/groups.py:1802
+msgid "GID"
+msgstr ""
+
+#: core/privileges.py:143
+msgid "Skipped privilege {0} refering to a non-existing group."
+msgstr ""
+
+#: core/privileges.py:163
+msgid ""
+"Triggering privilege whitelist rewrite in 3 seconds to remove non-existing "
+"references or duplicates."
+msgstr ""
+
+#: core/privileges.py:189
+#, python-format
+msgid "Skipped privilege %s, already whitelisted."
+msgstr ""
+
+#: core/privileges.py:194
+#, python-format
+msgid "Group %s must not be promoted to privilege for security reasons."
+msgstr ""
+
+#: core/privileges.py:200
+#, python-format
+msgid ""
+"Group %s cannot be promoted to privilege, it is not a pure system group."
+msgstr ""
+
+#: core/privileges.py:211
+#, python-format
+msgid "Added privilege %s to whitelist."
+msgstr ""
+
+#: core/privileges.py:226
+#, python-format
+msgid "Removed privilege %s from whitelist."
+msgstr ""
+
+#: core/privileges.py:231
+#, python-format
+msgid "Skipped privilege %s, already not present in the whitelist."
+msgstr ""
+
+#: core/privileges.py:249
+msgid "Privilege {0} does not exist"
+msgstr ""
+
+#: core/remote.py:65
+msgid "Exception while running {0}({1}, {2})"
+msgstr ""
+
+#: core/remote.py:73
+msgid "{0}: Pickle error on licornd side, passing this turn."
+msgstr ""
+
+#: core/remote.py:85
+msgid "Pyro connection closed, retrying{0}."
+msgstr ""
+
+#: core/remote.py:86
+msgid " forever"
+msgstr ""
+
+#: core/remote.py:105
+msgid "Exception while releasing LMC."
+msgstr ""
+
+#: core/system.py:231
+msgid "Already shutting down!"
+msgstr ""
+
+#: core/system.py:261
+msgid "Warning: automatic system shutdown"
+msgstr ""
+
+#: core/system.py:262
+msgid "Accept fate"
+msgstr ""
+
+#: core/system.py:263
+msgid "Cancel shutdown"
+msgstr ""
+
+#: core/system.py:264
+msgid ""
+"The system will automatically shutdown in one minute. Please save all your "
+"work and close your session.\\n\\nYou can choose to cancel this operation, "
+"but i imagine that your sysadmin will not be happy 'bout that!"
+msgstr ""
+
+#: core/system.py:295
+msgid "Already NOT currently shutting down."
+msgstr ""
+
+#: core/system.py:316
+msgid "{0:s}: machine {1:s} wants us to restart (condition={2:s}, delay={3:s})"
+msgstr ""
+
+#: core/__init__.py:39
+msgid ""
+"The daemon did not wake us in {0} seconds, there is probably a problem with "
+"it. Please check the log for errors or contact your system administrator if "
+"it is not you. Else you already know you are in trouble ;-)"
+msgstr ""
+
+#: core/__init__.py:46
+msgid "Connection established. Please be patient, the daemon seems quite busy."
+msgstr ""
+
+#: core/__init__.py:59
+msgid "OK. We're running now!"
+msgstr ""
+
+#: core/__init__.py:210
+msgid "Server backends: {0}"
+msgstr ""
+
+#: core/__init__.py:394
+#, python-format
+msgid "trying to connect to server %s."
+msgstr ""
+
+#: core/__init__.py:477
+msgid "Your user account is not allowed to connect to the Licorn® daemon."
+msgstr ""
+
+#: core/__init__.py:483
+#, python-format
+msgid ""
+"Cannot connect to the daemon, but it has been successfully launched. I  "
+"suspect you are in trouble (was: %s)"
+msgstr ""
+
+#: core/__init__.py:488
+#, python-format
+msgid ""
+"Cannot reach our daemon at %s, retrying in 5 seconds. Check your network "
+"connection, cable, DNS and firewall. Perhaps  the Licorn® server is simply "
+"down."
+msgstr ""
+
+#: core/__init__.py:524
+msgid "Waiting up to {0} seconds for daemon to come up… Please hold on."
+msgstr ""
+
+#: core/configuration.py:104
+#, python-format
+msgid "Configuration initialization failed: %s"
+msgstr ""
+
+#: core/configuration.py:159
+#, python-format
+msgid ""
+"Temporary directory %s has vanished during run, or already been wiped by "
+"another process."
+msgstr ""
+
+#: core/configuration.py:208
+msgid ""
+"Cannot create or change owner of {0}[/data]:\n"
+"\t{1}"
+msgstr ""
+
+#: core/configuration.py:261
+msgid ""
+"You are running an unknown or unsupported non-LSB but POSIX Operating "
+"System. Please get in touch with {0} developpers, and consider submitting a "
+"patch to make your system officially supported."
+msgstr ""
+
+#: core/configuration.py:285
+msgid ""
+"Your Ubuntu version \"{0}\" is no longer supported by {1} developpers nor "
+"Canonical. You should consider upgrading to a newer one."
+msgstr ""
+
+#: core/configuration.py:294
+msgid ""
+"Greetings old-timer :-) Does {0} still run on your aged Ubuntu version "
+"\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Canonical "
+"nor Ubuntu community does not support it anymore. You should very strongly "
+"consider upgrading to a newer version."
+msgstr ""
+
+#: core/configuration.py:305
+msgid "This Ubuntu version \"{0}\" is not [yet] supported, sorry !"
+msgstr ""
+
+#: core/configuration.py:322
+msgid ""
+"Your Debian version (\"{0}\") is no longer supported by {1} developpers nor "
+"Debian. You should consider upgrading to a newer one."
+msgstr ""
+
+#: core/configuration.py:331
+msgid ""
+"Greetings old-timer :-) Does {0} still run on your aged Debian version "
+"\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Debian "
+"community does not support it anymore. You should very strongly consider "
+"upgrading to a newer version."
+msgstr ""
+
+#: core/configuration.py:342
+msgid "This Debian version \"{0}\" is not [yet] supported, sorry !"
+msgstr ""
+
+#: core/configuration.py:347
+msgid ""
+"Your LSB distro is not yet supported. This should be trivial to implement, "
+"but this is still to be done, sorry!"
+msgstr ""
+
+#: core/configuration.py:393
+msgid "MTA not installed or unsupported."
+msgstr ""
+
+#: core/configuration.py:452
+msgid ""
+"Mail{box,dir} system not supported yet. Please get in touch with dev@licorn."
+"org."
+msgstr ""
+
+#: core/configuration.py:493
+msgid ""
+"Custom skels must have at least {0} perms on dirs and {1} on files:\n"
+"\t{2}"
+msgstr ""
+
+#: core/configuration.py:607
+msgid "users"
+msgstr ""
+
+#: core/configuration.py:627 core/groups.py:1799 daemon/rwi.py:735
+#: daemon/rwi.py:821 daemon/rwi.py:834
+msgid "group"
+msgstr ""
+
+#: core/configuration.py:628
+msgid "groups"
+msgstr ""
+
+#: core/configuration.py:701
+msgid "In {0}, directive {1} should be at least {2}, but it is {3}."
+msgstr ""
+
+#: core/configuration.py:711
+msgid "In {0}, directive {1} should be set to {2}, but it is {3}."
+msgstr ""
+
+#: core/configuration.py:722
+msgid "In {0}, directive {1} is missing. Setting it to {2}."
+msgstr ""
+
+#: core/configuration.py:732
+msgid "{0} lacks mandatory configuration directive(s)."
+msgstr ""
+
+#: core/configuration.py:740 core/configuration.py:839
+msgid "Altered {0} to match Licorn® pre-requisites."
+msgstr ""
+
+#: core/configuration.py:745 core/configuration.py:845
+#, python-format
+msgid ""
+"Insufficient permissions. Are you root?\n"
+"\t%s"
+msgstr ""
+
+#: core/configuration.py:749
+#, python-format
+msgid ""
+"Modifications in %s are mandatory for Licorn® to work properly with other "
+"system tools (adduser/useradd). Cannot continue without this, sorry!"
+msgstr ""
+
+#: core/configuration.py:801
+#, python-format
+msgid "%s does not exist on this system!"
+msgstr ""
+
+#: core/configuration.py:811
+msgid "In {0}, directive {1} should be {2}, but it is {3}."
+msgstr ""
+
+#: core/configuration.py:822
+msgid "In {0}, directive {1} is not present but should be, with value {2}."
+msgstr ""
+
+#: core/configuration.py:831
+msgid "{0} should be altered to work with Licorn®. Fix it?"
+msgstr ""
+
+#: core/configuration.py:850
+#, python-format
+msgid ""
+"Modifications in %s are mandatory for Licorn® to work properly. Cannot "
+"continue without this, sorry!"
+msgstr ""
+
+#: core/configuration.py:895
+#, python-format
+msgid "Bad CLI output format \"%s\"!"
+msgstr ""
+
+#: core/configuration.py:899
+msgid "Application name"
+msgstr ""
+
+#: core/configuration.py:900
+msgid "Storage backends for Core objects"
+msgstr ""
+
+#: core/configuration.py:901
+msgid "Application main configuration directory"
+msgstr ""
+
+#: core/configuration.py:902
+msgid "Filename of extended group data"
+msgstr ""
+
+#: core/configuration.py:903
+msgid "Application extensions (available add-ons)"
+msgstr ""
+
+#: core/configuration.py:904
+msgid "This current help"
+msgstr ""
+
+#: core/configuration.py:905
+msgid "Application main configuration filename"
+msgstr ""
+
+#: core/configuration.py:906
+msgid "System groups tagged as privileges"
+msgstr ""
+
+#: core/configuration.py:907
+msgid "System valid shells when creating a new user"
+msgstr ""
+
+#: core/configuration.py:908
+msgid "System valid skels to apply on a user account"
+msgstr ""
+
+#: core/configuration.py:909
+msgid "Mandatory system groups for {0}"
+msgstr ""
+
+#: core/configuration.py:915
+#, python-format
+msgid "Sorry, \"%s\" is not a recognized keyword."
+msgstr ""
+
+#: core/configuration.py:920
+msgid "Valid keywords for {0} (fuzzy matching):"
+msgstr ""
+
+#: core/configuration.py:924 core/machines.py:1222 core/_modules.py:617
+#: extensions/volumes.py:441 extensions/volumes.py:487
+#: extensions/caldavd.py:192 extensions/caldavd.py:214
+#: extensions/caldavd.py:457 extensions/caldavd.py:489
+#: extensions/caldavd.py:525 extensions/caldavd.py:578
+#: extensions/caldavd.py:608 extensions/caldavd.py:640
+#: extensions/caldavd.py:667
+msgid "{0}: {1}"
+msgstr ""
+
+#: core/configuration.py:1087
+msgid ""
+"New hostname must be composed only of letters, digits and hyphens, but not "
+"starting nor ending with an hyphen !"
+msgstr ""
+
+#: core/configuration.py:1099
+#, python-format
+msgid ""
+"Cannot modify /etc/hostname, verify the file is still clean:\n"
+"\t%s)"
+msgstr ""
+
+#: core/configuration.py:1200
+#, python-format
+msgid ""
+"Filesystem must be mounted with \"acl\" option:\n"
+"\t%s"
+msgstr ""
+
+#: core/configuration.py:1272
+#, python-format
+msgid "Checking existence of group %s…"
+msgstr ""
+
+#: core/configuration.py:1278
+#, python-format
+msgid ""
+"The system group %s is mandatory for the system to work properly, but it "
+"does not exist yet."
+msgstr ""
+
+#: core/configuration.py:1294
+msgid ""
+"The system group \"{0}\" is mandatory but does not exist on your system !\n"
+"Use \"chk config\" or \"add group --system --name {0}\" to fix the problem "
+"before continuing."
+msgstr ""
+
+#: core/configuration.py:1330
+msgid "/etc/hosts must have at least o+r permissions."
+msgstr ""
+
+#: core/configuration.py:1336
+msgid "Current hostname and /etc/hostname are not in sync!"
+msgstr ""
+
+#: core/configuration.py:1345
+msgid ""
+"Hostname {0} does not resolve to 127.0.0.1 but to {1}, please check /etc/"
+"hosts!"
+msgstr ""
+
+#: core/configuration.py:1356
+#, python-format
+msgid ""
+"127.0.0.1 does not resolve back to hostname %s, please check /etc/hosts and/"
+"or DNS !"
+msgstr ""
+
+#: core/configuration.py:1400
+msgid ""
+"Cannot resolve {0} ({1}), is the DNS server running on 127.0.0.1? Else check "
+"DNS files syntax !"
+msgstr ""
+
+#: core/configuration.py:1407
+msgid "127.0.0.1 *must* be in /etc/resolv.conf on a Licorn® server."
+msgstr ""
+
+#: core/configuration.py:1413
+msgid ""
+"Problem while resolving {0}, please check your configuration:\n"
+"\terrno {1}, {2}"
+msgstr ""
+
+#: core/configuration.py:1428
+msgid ""
+"127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on a Licorn® "
+"server."
+msgstr ""
+
+#: core/configuration.py:1433
+#, python-format
+msgid ""
+"DNS does not seem properly configured (%s does not resolve back to itself)."
+msgstr ""
+
+#: core/configuration.py:1438
+msgid ""
+"DNS is not properly configured ({0} does not resolve to {1}, but to {2})."
+msgstr ""
+
+#: core/configuration.py:1446
+msgid ""
+"127.0.0.1 should be the only nameserver in /etc/resolv.conf on a Licorn® "
+"server."
+msgstr ""
+
+#: core/_objects.py:147
+msgid ""
+"Cannot set a backend without a \"move_to_backend\" method on the current "
+"instance."
+msgstr ""
+
+#: core/_objects.py:251
+msgid "Inotify state {0} for {1} {2}."
+msgstr ""
+
+#: core/_objects.py:252 core/groups.py:449
+msgid "unchanged"
+msgstr ""
+
+#: core/_objects.py:261 core/groups.py:456 extensions/simplesharing.py:321
+msgid "activated"
+msgstr ""
+
+#: core/_objects.py:262
+msgid "setup"
+msgstr ""
+
+#: core/_objects.py:272 core/groups.py:459 extensions/simplesharing.py:321
+msgid "deactivated"
+msgstr ""
+
+#: core/_objects.py:273
+msgid "torn down"
+msgstr ""
+
+#: core/_objects.py:290
+msgid ""
+"Switched {0} {1} inotify state to {2} (watchers for shared content are "
+"beiing {3} in the background, this can take a while…)"
+msgstr ""
+
+#: core/_objects.py:565
+msgid "Watch add failed for {0}, reason {1}"
+msgstr ""
+
+#: core/_objects.py:569
+msgid "{0}: overwriting watch {1}!"
+msgstr ""
+
+#: core/_objects.py:596
+msgid "Cannot remove watch {0}, continuing"
+msgstr ""
+
+#: core/_objects.py:613 core/_objects.py:630
+msgid "{0}.__unwatch_directory in {1}: {2} not found in watched dirs."
+msgstr ""
+
+#: core/_objects.py:699
+msgid "Exception while deleting inotifier watches for {0}"
+msgstr ""
+
+#: core/_objects.py:759
+msgid "{0} {1}: somebody is already checking; operation aborted."
+msgstr ""
+
+#: core/_objects.py:765
+msgid "shared"
+msgstr ""
+
+#: core/_objects.py:765
+msgid "home"
+msgstr ""
+
+#: core/_objects.py:774
+msgid "Checking {0} {1}…"
+msgstr ""
+
+#: core/_objects.py:788
+msgid "{0} directory {1} already exists."
+msgstr ""
+
+#: core/_objects.py:792
+msgid "{0} directory {1} does not exist but it is mandatory. Create it?"
+msgstr ""
+
+#: core/_objects.py:800
+msgid "Created {0} directory {1}."
+msgstr ""
+
+#: core/_objects.py:805
+#, python-format
+msgid "Directory %s does not exist but is mandatory. Check aborted."
+msgstr ""
+
+#: core/_objects.py:841
+msgid "{0} {1}: meta-data changed on path {2}."
+msgstr ""
+
+#: core/_objects.py:852
+msgid "{0} {1}: meta-data changed on {2} path(s)."
+msgstr ""
+
+#: core/_objects.py:861
+msgid "{0} {1}: no shared data to check."
+msgstr ""
+
+#: core/_objects.py:867
+msgid "{0} {1}: {2}"
+msgstr ""
+
+#: core/_objects.py:959
+msgid ""
+"{0}: home directory {1} disappeared. If this is intentional, do not forget "
+"to run \"{2}\" afterwards, to restore the inotifier watch."
+msgstr ""
+
+#: core/_objects.py:1028
+msgid "{0}: problem while checking {1}, aborting"
 msgstr ""
 
 #: core/groups.py:100
@@ -4665,24 +3404,369 @@ msgstr ""
 msgid "Group %s doesn't exist"
 msgstr ""
 
-#: core/remote.py:65
-msgid "Exception while running {0}({1}, {2})"
+#: core/_controllers.py:64
+msgid "Skipped non-existing {0} or {1} {2}."
 msgstr ""
 
-#: core/remote.py:73
-msgid "{0}: Pickle error on licornd side, passing this turn."
+#: core/_controllers.py:74
+msgid "\"{0}\" is neither an attribute nor an item of {1}."
 msgstr ""
 
-#: core/remote.py:85
-msgid "Pyro connection closed, retrying{0}."
+#: core/_controllers.py:466
+msgid "{0} user rule that wanted to overwrite system default rule."
 msgstr ""
 
-#: core/remote.py:86
-msgid " forever"
+#: core/_controllers.py:468 core/_modules.py:123 core/_modules.py:318
+msgid "Skipped"
 msgstr ""
 
-#: core/remote.py:105
-msgid "Exception while releasing LMC."
+#: core/_controllers.py:492
+msgid ""
+"{0} group rule for path {1} ({2}:{3}), overriden by system rule ({4}:{5})."
+msgstr ""
+
+#: core/_controllers.py:495
+msgid "Ignored"
+msgstr ""
+
+#: core/_controllers.py:509
+msgid "{0} {1} ACL rule: \"{2}\" for \"{3}\"."
+msgstr ""
+
+#: core/_controllers.py:511 core/_controllers.py:607
+msgid "Added"
+msgstr ""
+
+#: core/_controllers.py:548
+#, python-format
+msgid "There is no default rule. Check %s."
+msgstr ""
+
+#: core/_controllers.py:549
+msgid "aborted"
+msgstr ""
+
+#: core/_controllers.py:606
+msgid "{0} {1} ACL rule {2}: \"{3}\" for \"{4}\"."
+msgstr ""
+
+#: core/_controllers.py:609
+msgid "template"
+msgstr ""
+
+#: core/_controllers.py:614 core/_controllers.py:618
+msgid "{0}.parse_rules: {1}"
+msgstr ""
+
+#: core/_controllers.py:644
+msgid "parse_rules(): Exception on {0} (special={1})."
+msgstr ""
+
+#: core/_controllers.py:667
+msgid "{0:s}: installing watches…"
+msgstr ""
+
+#: core/_controllers.py:676
+msgid "{0}: exception while installing inotifier watches for {1} {2}"
+msgstr ""
+
+#: core/machines.py:46 core/machines.py:63
+msgid "Failed to call `{0}()` on machine {1}!"
+msgstr ""
+
+#: core/machines.py:49 core/machines.py:66
+msgid "Cannot call `{0}` on non-connected machine {1}!"
+msgstr ""
+
+#: core/machines.py:260
+msgid "no other link than machine yet"
+msgstr ""
+
+#: core/machines.py:262
+msgid "{0}: Linked {1} to {2}."
+msgstr ""
+
+#: core/machines.py:299
+msgid ""
+"{0}: guess_os({1}) → unknown key \"{2}\" with value \"{2}\", please update "
+"our knowledge database if you what type of device it is."
+msgstr ""
+
+#: core/machines.py:306
+msgid ""
+"{0}: guess_os({1}) → unknown {2} value \"{3}\", please update our knowledge "
+"database if you what type of device it is."
+msgstr ""
+
+#: core/machines.py:387
+msgid "Could not resolve machine name for address {0}"
+msgstr ""
+
+#: core/machines.py:451
+msgid "{0}: {1} already pyroized, not doing the work again."
+msgstr ""
+
+#: core/machines.py:526 core/machines.py:644 core/machines.py:665
+msgid "{0}: {1} at {2}."
+msgstr ""
+
+#: core/machines.py:527
+#, python-format
+msgid "Licorn® %s shutdown"
+msgstr ""
+
+#: core/machines.py:527 core/machines.py:645 core/machines.py:667
+msgid "server"
+msgstr ""
+
+#: core/machines.py:528 core/machines.py:646 core/machines.py:667
+msgid "client"
+msgstr ""
+
+#: core/machines.py:555
+msgid "{0}: _pyro_forward_goodbye_from(): harmless error {1} from {2}."
+msgstr ""
+
+#: core/machines.py:645
+#, python-format
+msgid "new Licorn® %s"
+msgstr ""
+
+#: core/machines.py:666
+#, python-format
+msgid "Licorn® %s back online"
+msgstr ""
+
+#: core/machines.py:673
+msgid "{0}: {1} came back online."
+msgstr ""
+
+#: core/machines.py:695
+msgid "Shut down machine {0}."
+msgstr ""
+
+#: core/machines.py:744
+msgid "machine"
+msgstr ""
+
+#: core/machines.py:746
+msgid "MID"
+msgstr ""
+
+#: core/machines.py:855
+#, python-format
+msgid "Overwritten mid %s"
+msgstr ""
+
+#: core/machines.py:884
+msgid "{0:s}: cannot restart machine {1:s} (was: {2:s})"
+msgstr ""
+
+#: core/machines.py:953
+msgid ""
+"{0}: network auto-discovery disabled by configuration rule {1}, not going "
+"further."
+msgstr ""
+
+#: core/machines.py:966
+msgid "{0}: {1} initial network discovery."
+msgstr ""
+
+#: core/machines.py:967
+msgid "starting"
+msgstr ""
+
+#: core/machines.py:1186
+msgid "Package status unavailable on machine {0}."
+msgstr ""
+
+#: core/machines.py:1189
+msgid ", {0}"
+msgstr ""
+
+#: core/machines.py:1190
+msgid "packages status unavailable"
+msgstr ""
+
+#: core/machines.py:1192
+msgid ", {0} package(s) to upgrade {1}"
+msgstr ""
+
+#: core/machines.py:1194
+msgid "({0} security update(s))"
+msgstr ""
+
+#: core/machines.py:1203
+msgid " (this machine)"
+msgstr ""
+
+#: core/machines.py:1205
+msgid "{0}: {1}{2}{3}"
+msgstr ""
+
+#: core/machines.py:1206
+msgid "status"
+msgstr ""
+
+#: core/machines.py:1208
+msgid " (remote control enabled)"
+msgstr ""
+
+#: core/machines.py:1211
+msgid "{0}: {1} ({2}{3})"
+msgstr ""
+
+#: core/machines.py:1212
+msgid "address"
+msgstr ""
+
+#: core/machines.py:1214
+#, python-format
+msgid "expires: %s, "
+msgstr ""
+
+#: core/machines.py:1219
+msgid "managed"
+msgstr ""
+
+#: core/machines.py:1220
+msgid "floating"
+msgstr ""
+
+#: core/machines.py:1223
+msgid "ethernet"
+msgstr ""
+
+#: core/machines.py:1294
+#, python-format
+msgid "MID %s does not exist"
+msgstr ""
+
+#: core/machines.py:1300
+msgid "You must pass a hostname to verify!"
+msgstr ""
+
+#: core/machines.py:1307
+msgid "Cannot build a valid hostname (got {0}, which does not verify {1})."
+msgstr ""
+
+#: core/_modules.py:53
+msgid "module"
+msgstr ""
+
+#: core/_modules.py:56
+msgid "module name"
+msgstr ""
+
+#: core/_modules.py:121
+msgid "{0} unusable {1} {2}, exception encountered during import."
+msgstr ""
+
+#: core/_modules.py:196
+msgid ""
+"{0}: will not try to load {1} {2} because one or more of its dependancies "
+"failed to load."
+msgstr ""
+
+#: core/_modules.py:259
+msgid "{0}: Exception in {1} {2} during load"
+msgstr ""
+
+#: core/_modules.py:265
+msgid "Disabling dependant {0}(s) {1} to avoid further problems."
+msgstr ""
+
+#: core/_modules.py:287
+msgid "cannot disable non-existing {0} {1}."
+msgstr ""
+
+#: core/_modules.py:303
+msgid ""
+"{0} {1} is enabled on the server side but not available locally, probably an "
+"installation problem."
+msgstr ""
+
+#: core/_modules.py:310
+msgid ""
+"{0} {1} is enabled on the server side but manually ignored locally in {2}, "
+"please fix the problem before continuing."
+msgstr ""
+
+#: core/_modules.py:317
+msgid "{0} {1} {2}, manually ignored in {3}."
+msgstr ""
+
+#: core/_modules.py:361 core/_modules.py:401
+msgid "No {0} by that name \"{1}\"."
+msgstr ""
+
+#: core/_modules.py:365
+msgid "{0} {1} already enabled."
+msgstr ""
+
+#: core/_modules.py:371
+msgid "successfully enabled {0} {1}."
+msgstr ""
+
+#: core/_modules.py:376
+msgid "{0} {1} would not enable itself."
+msgstr ""
+
+#: core/_modules.py:381
+msgid "Exception while enabling {0} {1}."
+msgstr ""
+
+#: core/_modules.py:406
+msgid "{0} {1} already disabled."
+msgstr ""
+
+#: core/_modules.py:412
+msgid "successfully disabled {0} {1}."
+msgstr ""
+
+#: core/_modules.py:417
+msgid "{0} {1} would not disable itself."
+msgstr ""
+
+#: core/_modules.py:423
+msgid "Exception while disabling {0} {1}."
+msgstr ""
+
+#: core/_modules.py:462
+msgid "{0}: unhandled exception during {1} {2} check. Disabling it."
+msgstr ""
+
+#: core/_modules.py:485
+msgid "{0}: global check finished."
+msgstr ""
+
+#: core/_modules.py:493
+msgid "{0} {1} does not exist or is not enabled."
+msgstr ""
+
+#: core/_modules.py:507
+msgid ""
+"{name}: problem while installing inotifier watches for {type} {module} (was: "
+"{exc})."
+msgstr ""
+
+#: core/_modules.py:628
+msgid ""
+"↳ {0} ({1} {2}):\n"
+"\t{3}\n"
+"{4}"
+msgstr ""
+
+#: core/_modules.py:631
+msgid "client/server"
+msgstr ""
+
+#: core/_modules.py:633
+msgid "depends on: {0}"
+msgstr ""
+
+#: core/_modules.py:634
+msgid "no dependancies"
 msgstr ""
 
 #: core/keywords.py:96
@@ -4763,688 +3847,1772 @@ msgstr ""
 msgid "Removed xattr from %s."
 msgstr ""
 
-#: core/system.py:231
-msgid "Already shutting down!"
+#: upgrades/core/backends/openldap/aaa_gecos_utf8.py:34
+msgid "{0}: impossible to reload {1} schema into {2}!"
 msgstr ""
 
-#: core/system.py:261
-msgid "Warning: automatic system shutdown"
+#: upgrades/core/backends/openldap/aaa_gecos_utf8.py:38
+msgid "{0}: updated {1} schema to support utf-8 gecos."
 msgstr ""
 
-#: core/system.py:262
-msgid "Accept fate"
+#: upgrades/core/aaa_first_installation.py:20
+msgid "Created configuration directory {0}."
 msgstr ""
 
-#: core/system.py:263
-msgid "Cancel shutdown"
+#: upgrades/core/aaa_first_installation.py:24
+msgid "Cannot create configuration directory {0}!"
 msgstr ""
 
-#: core/system.py:264
-msgid ""
-"The system will automatically shutdown in one minute. Please save all your "
-"work and close your session.\\n\\nYou can choose to cancel this operation, "
-"but i imagine that your sysadmin will not be happy 'bout that!"
+#: upgrades/extensions/squid/aaa_rename_apt_proxy.py:24
+msgid "{0}: could not rename {1} to {2}"
 msgstr ""
 
-#: core/system.py:295
-msgid "Already NOT currently shutting down."
+#: upgrades/extensions/squid/aaa_rename_apt_proxy.py:29
+msgid "{0}: renamed {1} to {2}."
 msgstr ""
 
-#: core/system.py:316
-msgid "{0:s}: machine {1:s} wants us to restart (condition={2:s}, delay={3:s})"
+#: upgrades/daemon/aaa_wmi2_setup.py:149
+msgid "Fixing permissions in {0}, this may take a while…"
 msgstr ""
 
-#: core/configuration.py:104
+#: upgrades/daemon/aaa_wmi2_setup.py:195
+msgid "Creating the Django session database in {0}, this may take a while…"
+msgstr ""
+
+#: upgrades/daemon/aaa_wmi2_setup.py:210
+msgid "Successfully created Django session database in {0}."
+msgstr ""
+
+#: upgrades/daemon/aaa_wmi2_setup.py:225
+msgid "Creating an SSL certificate/key pair for the WMI…"
+msgstr ""
+
+#: upgrades/daemon/aaa_wmi2_setup.py:254
+msgid "Successfully created WMI SSL certificate/key pair."
+msgstr ""
+
+#: extensions/simplesharing.py:64
+msgid "{0}: \"{1}\" must be a directory!"
+msgstr ""
+
+#: extensions/simplesharing.py:147
+msgid "{0}: simple share upload state unchanged."
+msgstr ""
+
+#: extensions/simplesharing.py:153
+msgid "Please set a password on the share first."
+msgstr ""
+
+#: extensions/simplesharing.py:193
+msgid "Bad URI {0}"
+msgstr ""
+
+#: extensions/simplesharing.py:258
+msgid "Not a file from that share."
+msgstr ""
+
+#: extensions/simplesharing.py:262
+msgid "Unsafe absolute path for file \"{0}\"!"
+msgstr ""
+
+#: extensions/simplesharing.py:272
+msgid "Unknown"
+msgstr ""
+
+#: extensions/simplesharing.py:305
+msgid "Someone tried to switch simple shares on a non-standard user account!"
+msgstr ""
+
+#: extensions/simplesharing.py:309
+msgid "{0}: shares status unchanged."
+msgstr ""
+
+#: extensions/simplesharing.py:320
+msgid "{0}: simple shares status switched to {1}."
+msgstr ""
+
+#: extensions/simplesharing.py:339
+msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
+msgstr ""
+
+#: extensions/simplesharing.py:348
+msgid "Created directory {1} in user {0}'s home."
+msgstr ""
+
+#: extensions/simplesharing.py:355
+msgid "User {0} does not accept simple shares, check skipped."
+msgstr ""
+
+#: extensions/simplesharing.py:379
+msgid "{0}: error while listing shares, launching a check in the background."
+msgstr ""
+
+#: extensions/simplesharing.py:444
+msgid "{1}: {0} extension enabled. Please report bugs at {2}."
+msgstr ""
+
+#: extensions/simplesharing.py:445
+msgid "experimental"
+msgstr ""
+
+#: extensions/simplesharing.py:474
+msgid "{0}: Exception while setting up shares for user {1}"
+msgstr ""
+
+#: extensions/powermanagement.py:57
 #, python-format
-msgid "Configuration initialization failed: %s"
+msgid "%s: extension not available because yet to be written."
 msgstr ""
 
-#: core/configuration.py:159
+#: extensions/openssh.py:143
+msgid "{0}: group {1} must be created. Do it?"
+msgstr ""
+
+#: extensions/openssh.py:149
+msgid "Users allowed to connect via SSHd"
+msgstr ""
+
+#: extensions/openssh.py:153
+msgid "{0}: group {1} must exist before continuing."
+msgstr ""
+
+#: extensions/openssh.py:156
+msgid "{0}: checking good default values in {1}…"
+msgstr ""
+
+#: extensions/openssh.py:166
+msgid "{0}: {1} must be modified. Do it?"
+msgstr ""
+
+#: extensions/openssh.py:172
+msgid "{0}: written configuration file {1}."
+msgstr ""
+
+#: extensions/openssh.py:176 foundations/classes.py:117
+msgid "{0}: configuration file {1} must be altered to continue."
+msgstr ""
+
+#: extensions/gloop.py:106
+msgid ""
+"{0}: extension not available because {1} or {2} do not exist on the system."
+msgstr ""
+
+#: extensions/gloop.py:132
+msgid "{0}: started extension and gobject mainloop thread."
+msgstr ""
+
+#: extensions/__init__.py:137
+msgid "Started service {0} ({1})."
+msgstr ""
+
+#: extensions/__init__.py:138
+msgid "Stopped service {0} ({1})."
+msgstr ""
+
+#: extensions/__init__.py:139
+msgid "Restarted service {0} ({1})."
+msgstr ""
+
+#: extensions/__init__.py:140
+msgid "Reloaded service {0} ({1})."
+msgstr ""
+
+#: extensions/__init__.py:146
+#, python-format
+msgid "Starting service %s. Please wait, this can take a while."
+msgstr ""
+
+#: extensions/__init__.py:147
+#, python-format
+msgid "Stopping service %s. Please wait, this can take a while."
+msgstr ""
+
+#: extensions/__init__.py:148
+#, python-format
+msgid "Restarting service %s. Please wait, this can take a while."
+msgstr ""
+
+#: extensions/__init__.py:149
+#, python-format
+msgid "Reloading service %s. Please wait, this can take a while."
+msgstr ""
+
+#: extensions/__init__.py:272
+msgid "{0}: waiting for {1} command to complete before queuing {2}."
+msgstr ""
+
+#: extensions/__init__.py:281
+#, python-format
+msgid "%s: waiting 5 seconds more."
+msgstr ""
+
+#: extensions/__init__.py:289
+msgid ""
+"{0}: command {1} did not complete in {2} seconds, cannot exectute a "
+"different one. Please try  again later."
+msgstr ""
+
+#: extensions/squid.py:213
+msgid "{0}: not available because {1} do not exist on the system."
+msgstr ""
+
+#: extensions/squid.py:235 extensions/caldavd.py:148
+msgid "{0}: started extension, managing {1} service ({2})."
+msgstr ""
+
+#: extensions/squid.py:239 extensions/caldavd.py:151
+#, python-format
+msgid "pid=%s"
+msgstr ""
+
+#: extensions/squid.py:242 extensions/caldavd.py:154
+msgid "Starting up"
+msgstr ""
+
+#: extensions/volumes.py:168
+msgid "{0}: unhandled action {1} for device {2} ({3})."
+msgstr ""
+
+#: extensions/volumes.py:177
+msgid "{0}: unknown action {1} for device {2} ({3})."
+msgstr ""
+
+#: extensions/volumes.py:268
+msgid "volume {0}[{1}]{2}"
+msgstr ""
+
+#: extensions/volumes.py:271
+#, python-format
+msgid " (on %s)"
+msgstr ""
+
+#: extensions/volumes.py:272
+msgid " (not mounted)"
+msgstr ""
+
+#: extensions/volumes.py:283
+msgid "{base} {counter}"
+msgstr ""
+
+#: extensions/volumes.py:313
+msgid "{0}: Licorn® usage already enabled on {1}."
+msgstr ""
+
+#: extensions/volumes.py:321
+msgid "{0}: enabled Licorn® usage on {1}."
+msgstr ""
+
+#: extensions/volumes.py:327
+msgid "{0}: cannot enable Licorn® usage on {1} (unsupported FS {2})."
+msgstr ""
+
+#: extensions/volumes.py:352
+msgid "{0}: disabled Licorn® usage on {1}."
+msgstr ""
+
+#: extensions/volumes.py:356
+msgid "{0}: Licorn® usage already disabled on {1}."
+msgstr ""
+
+#: extensions/volumes.py:399
+msgid "{0}: created mount point {1}."
+msgstr ""
+
+#: extensions/volumes.py:447
+msgid "{0}: mounted device {1}({2}) at {3}."
+msgstr ""
+
+#: extensions/volumes.py:471
+msgid ""
+"{0}: workers {1}\n"
+"{2}\n"
+msgstr ""
+
+#: extensions/volumes.py:474
+msgid "Cannot unmount {0}, still busy in Licorn®."
+msgstr ""
+
+#: extensions/volumes.py:493
+msgid "{0}: unmounted device {1} from {2}."
+msgstr ""
+
+#: extensions/volumes.py:505
+msgid "{0}({1}): mount point {2} still busy after unmounting."
+msgstr ""
+
+#: extensions/volumes.py:512
+msgid "{0}({1}): cannot remove mount point {2}: {3}."
+msgstr ""
+
+#: extensions/volumes.py:521
+msgid "{0}: removed directory {1}."
+msgstr ""
+
+#: extensions/volumes.py:556
+msgid "volume"
+msgstr ""
+
+#: extensions/volumes.py:559
+msgid "device"
+msgstr ""
+
+#: extensions/volumes.py:584
+msgid "No Volume by that device name, label, mount_point nor GUID \"{0}\"!"
+msgstr ""
+
+#: extensions/volumes.py:690
+msgid "{0}: not available because"
+msgstr ""
+
+#: extensions/volumes.py:701
+msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
+msgstr ""
+
+#: extensions/volumes.py:934
+msgid ""
+"{0}: computing global system size is not implemented for systems other than "
+"Linux. Returning 0 and hoping this will be sufficient."
+msgstr ""
+
+#: extensions/volumes.py:958
+msgid "{0}: skipped already known volume {1}."
+msgstr ""
+
+#: extensions/volumes.py:969
+msgid "{0}: skipped LMV/extended partition {1}."
+msgstr ""
+
+#: extensions/volumes.py:975
+msgid "{0}: skipped unformatted partition {1}."
+msgstr ""
+
+#: extensions/volumes.py:981
+msgid "{0}: skipped system partition {1}."
+msgstr ""
+
+#: extensions/volumes.py:1001
+msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
+msgstr ""
+
+#: extensions/volumes.py:1025
+msgid "{0}: added {1}."
+msgstr ""
+
+#: extensions/volumes.py:1070
+msgid "{0}: removed {1}."
+msgstr ""
+
+#: extensions/volumes.py:1114
+msgid "{0}: skipped non existing device or mount_point {1}."
+msgstr ""
+
+#: extensions/volumes.py:1186
+msgid ", {0} of {1} free ({2:.1%})"
+msgstr ""
+
+#: extensions/volumes.py:1194
+msgid " on {0}{1}"
+msgstr ""
+
+#: extensions/volumes.py:1197
+msgid " not mounted"
+msgstr ""
+
+#: extensions/samba3.py:58
+msgid "{0}: extension enabled."
+msgstr ""
+
+#: extensions/samba3.py:64
+msgid "{0}: extension disabled because {1} not found."
+msgstr ""
+
+#: extensions/samba3.py:117
+msgid "{0}: Exception in user_post_add({1})"
+msgstr ""
+
+#: extensions/samba3.py:148
+msgid "{0}: Exception in user_post_change_password({1})"
+msgstr ""
+
+#: extensions/samba3.py:180
+msgid "{0}: Exception in user_pre_del({1})"
+msgstr ""
+
+#: extensions/caldavd.py:81
+msgid "{0}: extension not available because {1}."
+msgstr ""
+
+#: extensions/caldavd.py:85
+msgid ""
+"{0}: extension not yet available because {1} (calendarserver is probably "
+"installing, try again later)."
+msgstr ""
+
+#: extensions/caldavd.py:91
+msgid "{0}: extension not available because {1} not installed."
+msgstr ""
+
+#: extensions/caldavd.py:108
+msgid ""
+"**Please implement caldavd extension check for pre-existing users and groups."
+"**"
+msgstr ""
+
+#: extensions/caldavd.py:162
+msgid ""
+"{0}: extension disabled because service {1} disabled on the local system."
+msgstr ""
+
+#: extensions/caldavd.py:369
+msgid "{0}: unable to modify {1} for {2} {3}, not found in {4}."
+msgstr ""
+
+#: extensions/caldavd.py:384
+msgid "{0}: unable to delete {1} {2}, not found in {3}."
+msgstr ""
+
+#: extensions/caldavd.py:402
+msgid "{0}: unable to delete user {1} from group {2}, not found in {3}."
+msgstr ""
+
+#: extensions/caldavd.py:443
+#, python-format
+msgid "R/O holder for user %s."
+msgstr ""
+
+#: extensions/caldavd.py:688
+msgid "Personnal calendar URI"
+msgstr ""
+
+#: extensions/caldavd.py:702
+msgid "Group calendar URI"
+msgstr ""
+
+#: extensions/rdiffbackup.py:38
+msgid "{0}: No default volume found, aborting call of {1}({2}, {3})"
+msgstr ""
+
+#: extensions/rdiffbackup.py:69
+msgid "{0:s}: an operation is already in progress on {1:s}, aborting."
+msgstr ""
+
+#: extensions/rdiffbackup.py:249
+msgid ""
+"{0}: using environment variable {1} pointing to {2} for rdiff-backup "
+"configuration."
+msgstr ""
+
+#: extensions/rdiffbackup.py:346
+msgid "{0}: started extension and auto-backup timer."
+msgstr ""
+
+#: extensions/rdiffbackup.py:403
+msgid ""
+"{0}: cannot disable now, a backup is in progress. Please wait until the end "
+"and retry."
+msgstr ""
+
+#: extensions/rdiffbackup.py:484
+msgid "Last Backup"
+msgstr ""
+
+#: extensions/rdiffbackup.py:485
+msgid "Increments listing"
+msgstr ""
+
+#: extensions/rdiffbackup.py:486
+msgid "Statistics computation"
+msgstr ""
+
+#: extensions/rdiffbackup.py:512
+msgid "{0}: no volume found!"
+msgstr ""
+
+#: extensions/rdiffbackup.py:568
+#, python-format
+msgid "Skipped disabled %s."
+msgstr ""
+
+#: extensions/rdiffbackup.py:606
+msgid "{0}: Computing needed space for next backup, please wait…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:733
+msgid "{0:s}: cleaning obsolete backup on {1:s}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:738
+msgid "{0:s}: obsolete backup cleaned on {1:s}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:809
+msgid ""
+"Cannot run a backup on non-reserved volume {0}. Please reserve it first, or "
+"choose another one."
+msgstr ""
+
+#: extensions/rdiffbackup.py:820
+msgid "{0}: not backing up on {1}, last backup is less than {2}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:832
+msgid "Sorry, no backup volumes available."
+msgstr ""
+
+#: extensions/rdiffbackup.py:902
+msgid "{0}: running backup on {1:s}, please wait…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:910
+msgid "{0:s}: created directory {1}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:929
+msgid "{0}: Rdiff-backup configuration file {1} does not exist."
+msgstr ""
+
+#: extensions/rdiffbackup.py:969
+msgid "{0}: backup procedure terminated on {1}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:979
+msgid ""
+"Forcing backup on volume {0}, free space ckeck ignored. This could lead to "
+"incomplete backups, please use with care!"
+msgstr ""
+
+#: extensions/rdiffbackup.py:986
+msgid "{0:s}: computing needed space for next backup, please wait."
+msgstr ""
+
+#: extensions/rdiffbackup.py:992
+msgid ""
+"Volume {0:s} does not have enough free space or is not big enough to hold "
+"more than two backups. Space needed: {1}; free space: {2}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:1025
+msgid "{0}: updated last backup file {1}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:1039
+msgid "{0}: computing statistics on {1}, please wait…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1093
+msgid "{0}: statistics computation finished on {1:s}."
+msgstr ""
+
+#: extensions/rdiffbackup.py:1211
+msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
+msgstr ""
+
+#: extensions/rdiffbackup.py:1231
+msgid "Backup in progress on volume {volume}…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1237
+msgid "Statistics computation or cleaning in progress on volume {volume}…"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1245
+msgid "Next backup in {0}"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1256
+msgid "No backup volume connected"
+msgstr ""
+
+#: extensions/rdiffbackup.py:1281
+#, python-format
+msgid "{mount_point}: {used:.1f}% full"
+msgstr ""
+
+#: extensions/mylicorn.py:43
+msgid "{0}: extension always enabled unless manually ignored in {1}."
+msgstr ""
+
+#: daemon/inotifier.py:80
+msgid "{0}{1} ({2} watched dirs, {3} config files, {4} queued events)"
+msgstr ""
+
+#: daemon/inotifier.py:108
+msgid "{0}: closing {1} watches, please wait…"
+msgstr ""
+
+#: daemon/inotifier.py:137
+msgid "{0}: error on read_events: {1}"
+msgstr ""
+
+#: daemon/inotifier.py:161
+msgid "inotifier: error deleting {0} (was: {1} {2})"
+msgstr ""
+
+#: daemon/inotifier.py:323
+msgid "{0}: configuration file {1} changed, trigerring upstream reload."
+msgstr ""
+
+#: daemon/inotifier.py:355
+msgid "{0}: increased inotify {1} to {2}."
+msgstr ""
+
+#: daemon/inotifier.py:365
+msgid "{0}: unable to increase inotify {1} to {2}"
+msgstr ""
+
+#: daemon/inotifier.py:376
+msgid "{0:s}: exception install watches of {1:s}."
+msgstr ""
+
+#: daemon/base.py:90
+msgid "Console-initiated garbage collection and dead thread cleaning."
+msgstr ""
+
+#: daemon/base.py:95
+msgid ""
+"operate a manual garbage collection in the daemon's memory, and run other "
+"clean-related things"
+msgstr ""
+
+#: daemon/base.py:104
+msgid "show the INotifier watches (WARNING: this can flood your terminal)"
+msgstr ""
+
+#: daemon/base.py:107
+msgid "{0} active threads: {1}"
+msgstr ""
+
+#: daemon/base.py:110
+msgid "show all threads names and their current status"
+msgstr ""
+
+#: daemon/base.py:153
+msgid "{0}: Send URS1 signal (and consequently reload daemon)"
+msgstr ""
+
+#: daemon/base.py:159
+msgid "{0}: dump daemon status"
+msgstr ""
+
+#: daemon/base.py:165
+msgid "{0} or {1}: dump daemon status after having cleared the screen"
+msgstr ""
+
+#: daemon/base.py:168
+msgid "Space"
+msgstr ""
+
+#: daemon/base.py:180
+msgid "{0}({1})"
+msgstr ""
+
+#: daemon/base.py:276
+msgid "Problem getting interface {0} address (was: {1})."
+msgstr ""
+
+#: daemon/base.py:288
+#, python-format
+msgid "Bad IP address or hostname %s. Please check syntax."
+msgstr ""
+
+#: daemon/base.py:340
+msgid "{0}: execvp({1})"
+msgstr ""
+
+#: daemon/base.py:348
+msgid "transient process {0}: cannot execvp() {1}."
+msgstr ""
+
+#: daemon/base.py:442
+msgid "{0}: skipped process @{1} which is not in the same cgroup."
+msgstr ""
+
+#: daemon/base.py:461
+msgid "{0}: killed aborted instance @pid {1}."
+msgstr ""
+
+#: daemon/base.py:505
+msgid ""
+"Don't fork as a daemon, stay on the current terminal instead. Logs will be "
+"printed on standard output instead of beiing written into the logfile."
+msgstr ""
+
+#: daemon/base.py:511
+msgid ""
+"Replace an existing daemon instance. A comfort flag to avoidkilling an "
+"existing daemon before relaunching a new one."
+msgstr ""
+
+#: daemon/base.py:516
+msgid ""
+"Shutdown any currently running Licorn® daemon. We will try to terminate them "
+"nicely, before beiing more agressive after a given period of time."
+msgstr ""
+
+#: daemon/base.py:522
+msgid ""
+"Specify an IP address or a hostname to bind to. Only {0} can be specified "
+"(the WMI cannot yet bind on multiple interfaces at the same time). This "
+"option takes precedence over the configuration directive, if present in {1}."
+msgstr ""
+
+#: daemon/base.py:531
+#, python-format
+msgid "Don't fork the WMI. This flag overrides the setting in %s."
+msgstr ""
+
+#: daemon/base.py:544
+msgid ""
+"Check the system for compliance with Licorn®. Meant to be used during first "
+"installation. The daemon will check, auto-repair and install everything "
+"necessary, and give the hand back. {0}; no need to supply \"-D\". Do not "
+"misunderstand that the daemon will {1} run this check in normal conditions; "
+"but with this flag it will {2} run the checks and exit immediately after "
+"them."
+msgstr ""
+
+#: daemon/base.py:551
+msgid "This option implies that the daemon will not fork into the background"
+msgstr ""
+
+#: daemon/base.py:553
+msgid "always"
+msgstr ""
+
+#: daemon/base.py:554
+msgid "only"
+msgstr ""
+
+#: daemon/base.py:564
+msgid "{0}: running initial checks in the foreground."
+msgstr ""
+
+#: daemon/base.py:631
+msgid "{0}: trying to {1} existing instance @pid {2}."
+msgstr ""
+
+#: daemon/base.py:632
+msgid "replace"
+msgstr ""
+
+#: daemon/base.py:633
+msgid "shutdown"
+msgstr ""
+
+#: daemon/base.py:644
+msgid ""
+"{0}: existing instance still running, we're going to be more incisive in a "
+"few seconds."
+msgstr ""
+
+#: daemon/base.py:667
+msgid ""
+"{0}: re-killing old instance softly with TERM signal and waiting a little "
+"more."
+msgstr ""
+
+#: daemon/base.py:684
+msgid ""
+"{0}: old instance has not terminated after 8 seconds. Sending KILL signal."
+msgstr ""
+
+#: daemon/base.py:712
+#, python-format
+msgid "{0}: killing old instance's father (sudo, pid %s) without any mercy."
+msgstr ""
+
+#: daemon/base.py:729
+msgid ""
+"{0}: old instance has not terminated after 9 seconds and cannot be killed. "
+"We will not try to kill any other parent than \"{1}\", you are in a non-"
+"trivial situation. Up to you to solve it."
+msgstr ""
+
+#: daemon/base.py:740
+msgid ""
+"{0}: old instance has not terminated after 15 seconds and cannot be killed "
+"directly or by killing its direct parent, bailing out. You are in trouble on "
+"a system where \"kill -9\" does not work as advertised. Sorry for you."
+msgstr ""
+
+#: daemon/base.py:750
+msgid "{0}: old instance {1} terminated{2}"
+msgstr ""
+
+#: daemon/base.py:751
+msgid "nastily"
+msgstr ""
+
+#: daemon/base.py:751
+msgid "successfully"
+msgstr ""
+
+#: daemon/base.py:752
+msgid ", we can play now."
+msgstr ""
+
+#: daemon/base.py:756
+msgid "{0}: daemon already running (pid {1}), not restarting."
+msgstr ""
+
+#: daemon/base.py:770
+msgid "{0}: must be run as {1} (was: {2})."
+msgstr ""
+
+#: daemon/base.py:778
+msgid "{0}: unlinking PID file {1}."
+msgstr ""
+
+#: daemon/base.py:784
+msgid "{0}: cannot unlink {1}."
+msgstr ""
+
+#: daemon/base.py:790
+msgid " (up {0})"
+msgstr ""
+
+#: daemon/base.py:797
+msgid "{0}: already stopping, ignored another terminate() call."
+msgstr ""
+
+#: daemon/base.py:800
+msgid "{0}: already stopping, ignored signal {1}."
+msgstr ""
+
+#: daemon/base.py:809
+msgid "{0}: cleaning up and stopping threads…"
+msgstr ""
+
+#: daemon/base.py:812
+msgid "{0}: signal {1} received, shutting down…"
+msgstr ""
+
+#: daemon/base.py:826
+msgid "{0}: remaining threads before exit: {1}."
+msgstr ""
+
+#: daemon/base.py:829
+msgid "{0}: exiting{1}."
+msgstr ""
+
+#: daemon/base.py:852
+msgid "{0}: SIGUSR1 received, preparing our restart."
+msgstr ""
+
+#: daemon/base.py:855
+msgid "{0}: restart needed, shutting everything down."
+msgstr ""
+
+#: daemon/main.py:125
+msgid "{0}: initializing facilities, backends, controllers and extensions."
+msgstr ""
+
+#: daemon/main.py:142
+msgid "{0}: {1} callbacks collected."
+msgstr ""
+
+#: daemon/main.py:266
+msgid "{0}: collecting all threads."
+msgstr ""
+
+#: daemon/main.py:275
+msgid "{0}: starting all threads."
+msgstr ""
+
+#: daemon/main.py:288
+msgid "Could not start thread {0}"
+msgstr ""
+
+#: daemon/main.py:292
+msgid "{0}: stopping threads."
+msgstr ""
+
+#: daemon/main.py:307
+msgid ""
+"{0}: thread {1} has no stop() nor cancel() method! It is probably still "
+"running."
+msgstr ""
+
+#: daemon/main.py:346
+msgid ""
+"{0}: not starting WMI, disabled on command line or by configuration "
+"directive."
+msgstr ""
+
+#: daemon/main.py:358
+msgid "{0}: not starting the WMI because initial check in progress."
+msgstr ""
+
+#: daemon/main.py:380
+msgid "{0}: initial check finished, terminating."
+msgstr ""
+
+#: daemon/main.py:456
+msgid "{0}: all threads started, going to sleep waiting for signals."
+msgstr ""
+
+#: daemon/main.py:461
+msgid "{0}: all threads started, waiting for the end of initial check."
+msgstr ""
+
+#: daemon/main.py:466
+msgid "{0}: all threads started, ready for TTY interaction."
+msgstr ""
+
+#: daemon/main.py:560
+msgid ""
+"Licorn® {role} daemon {full}status: up {uptime}, {nb_threads} threads, "
+"{nb_controllers} controllers, {nb_queues} queues, {nb_locked}/{nb_locks} "
+"Mlocks, {sub_locked}/{sub_locks} Ulocks\n"
+"CPU: usr {ru_utime:.3}s, sys {ru_stime:.3}s MEM: res {mem_res:.2}Mb shr "
+"{mem_shr:.2}Mb ush {mem_ush:.2}Mb stk {mem_stk:.2}Mb\n"
+msgstr ""
+
+#: daemon/main.py:586
+#, python-format
+msgid "Mlocks:  %s\n"
+msgstr ""
+
+#: daemon/main.py:590
+#, python-format
+msgid "Ulocks:  %s\n"
+msgstr ""
+
+#: daemon/main.py:593
+#, python-format
+msgid "Threads: %s\n"
+msgstr ""
+
+#: daemon/main.py:598
+#, python-format
+msgid "Queues:  %s\n"
+msgstr ""
+
+#: daemon/main.py:705
+msgid "Could not load gettext translations for language {0}"
+msgstr ""
+
+#: daemon/main.py:709
+msgid "Successfully loaded gettext translations for language {0}."
+msgstr ""
+
+#: daemon/main.py:745
+msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
+msgstr ""
+
+#: daemon/main.py:750
+msgid "{0}: joining threads."
+msgstr ""
+
+#: daemon/main.py:764
+msgid "{0}: waiting for thread {1} to finish{2}."
+msgstr ""
+
+#: daemon/main.py:767
+#, python-format
+msgid " (currently working on %s)"
+msgstr ""
+
+#: daemon/main.py:808
+msgid "{0}: restarting{1}."
+msgstr ""
+
+#: daemon/main.py:842 daemon/main.py:849
+msgid "{0}: wiped dead thread {1} from memory."
+msgstr ""
+
+#: daemon/main.py:852
+msgid "{0}: doing manual garbage collection on {1}."
+msgstr ""
+
+#: daemon/threads.py:193
+msgid "{0}: Exception in self.pre_run_method(), aborting."
+msgstr ""
+
+#: daemon/threads.py:203
+msgid "{0}: Exception in self.run_action_method(), continuing."
+msgstr ""
+
+#: daemon/threads.py:211
+msgid "{0}: Exception in self.post_run_method()"
+msgstr ""
+
+#: daemon/threads.py:259
+msgid ""
+"{0}{1} for {2} [{3} workers; wake up in {4}]\n"
+"{5}"
+msgstr ""
+
+#: daemon/threads.py:302
+msgid "{0}: maximum workers already  running, but qsize={1}."
+msgstr ""
+
+#: daemon/threads.py:460
+msgid "Class method {0}.setup() has not been called!"
+msgstr ""
+
+#: daemon/threads.py:561
+msgid "{0}: Exception encountered while running {1}({2}, {3}): {4}"
+msgstr ""
+
+#: daemon/threads.py:581
+#, python-format
+msgid "%s: queue is now empty, going asleep waiting for jobs."
+msgstr ""
+
+#: daemon/threads.py:686
+msgid "{0}: timer reset after {1} elapsed."
+msgstr ""
+
+#: daemon/wmi.py:133
+#, python-format
+msgid "{0}: socket already in use. waiting (total: %ds)."
+msgstr ""
+
+#: daemon/wmi.py:139
+msgid "{0}: socket error {1}."
+msgstr ""
+
+#: daemon/wmi.py:144
+msgid "{0}: {1} to answer requests at address {2}."
+msgstr ""
+
+#: daemon/wmi.py:145 daemon/cmdlistener.py:479
+msgid "ready"
+msgstr ""
+
+#: daemon/rwi.py:205 daemon/rwi.py:233
+msgid "Skipped non existing or invalid {0} or {1} \"{2}\"."
+msgstr ""
+
+#: daemon/rwi.py:248
+#, python-format
+msgid "You must specify at least one %s!"
+msgstr ""
+
+#: daemon/rwi.py:284
+msgid "Harmless Exception encountered in RWI.get_daemon_status()"
+msgstr ""
+
+#: daemon/rwi.py:583
+msgid "You must specify an import filename."
+msgstr ""
+
+#: daemon/rwi.py:588
+msgid "You must specify a profile."
+msgstr ""
+
+#: daemon/rwi.py:594
+msgid "You must specify a firstname column number."
+msgstr ""
+
+#: daemon/rwi.py:600
+msgid "You must specify a lastname column number."
+msgstr ""
+
+#: daemon/rwi.py:606
+msgid "You must specify a group column number."
+msgstr ""
+
+#: daemon/rwi.py:613
+msgid ""
+"Two columns have the same number (lastname={0}, firstname={1}, group={2})"
+msgstr ""
+
+#: daemon/rwi.py:622
+msgid "Sorry, CSV file must have no more than 128 columns.\""
+msgstr ""
+
+#: daemon/rwi.py:635
+msgid ""
+"Cannot automatically detect the file encoding, assuming iso-8859-15 "
+"(latin-1)!"
+msgstr ""
+
+#: daemon/rwi.py:643
+#, python-format
+msgid "The profile \"%s\" does not exist."
+msgstr ""
+
+#: daemon/rwi.py:663
+#, python-format
+msgid "Cannot load CSV file (was: %s)."
+msgstr ""
+
+#: daemon/rwi.py:670
+msgid "Reading input file: "
+msgstr ""
+
+#: daemon/rwi.py:704
+msgid "Import error on line {0}: no {1} specified or bad {2} data (was: {3})."
+msgstr ""
+
+#: daemon/rwi.py:709
+#, python-format
+msgid "Encoding not supported for input filename (was: %s)."
+msgstr ""
+
+#: daemon/rwi.py:720 daemon/rwi.py:733
+msgid ""
+"Import error on line {0}: no group specified or bad {2} data (was: {1})."
+msgstr ""
+
+#: daemon/rwi.py:722
+msgid "firstname or lastname"
+msgstr ""
+
+#: daemon/rwi.py:723 daemon/rwi.py:820 daemon/rwi.py:833
+msgid "login"
+msgstr ""
+
+#: daemon/rwi.py:726 daemon/rwi.py:738
+msgid "Import error on line {0} (was: {1})."
+msgstr ""
+
+#: daemon/rwi.py:759
+msgid " done."
+msgstr ""
+
+#: daemon/rwi.py:792
+msgid "Added group {0} ({1}/{2}); progress: {3}%"
+msgstr ""
+
+#: daemon/rwi.py:813 daemon/rwi.py:830
+msgid "Fields order:"
+msgstr ""
+
+#: daemon/rwi.py:814
+msgid "<table>"
+msgstr ""
+
+#: daemon/rwi.py:815 daemon/rwi.py:876
+msgid "<tr>"
+msgstr ""
+
+#: daemon/rwi.py:818 daemon/rwi.py:831
+msgid "FIRSTname"
+msgstr ""
+
+#: daemon/rwi.py:819 daemon/rwi.py:832
+msgid "LASTname"
+msgstr ""
+
+#: daemon/rwi.py:824
+msgid "<th width=\"{0}\">{1}</th>"
+msgstr ""
+
+#: daemon/rwi.py:825 daemon/rwi.py:887
+msgid "</tr>"
+msgstr ""
+
+#: daemon/rwi.py:850
+msgid ""
+"Added user {0} {1} [login={2}, uid={3}, passwd={4}] ({5}/{6}); progress: {7}%"
+msgstr ""
+
+#: daemon/rwi.py:872
+msgid ""
+"Import error on line {0}.\n"
+"{1}"
+msgstr ""
+
+#: daemon/rwi.py:883 daemon/rwi.py:896
+msgid "(autogenerated upon creation)"
+msgstr ""
+
+#: daemon/rwi.py:886
+msgid "<td>{0}</td>"
+msgstr ""
+
+#: daemon/rwi.py:921
+msgid "Finished importing, creating summary HTML file: "
+msgstr ""
+
+#: daemon/rwi.py:927 foundations/fsapi.py:1365
+msgid "%d %m %Y at %H:%M:%S"
+msgstr ""
+
+#: daemon/rwi.py:939
+msgid ""
+"This repport is available on the server at \"<code>{0}</code>\", you can <a "
+"href=\"/download/{0}\">download it</a> for easier access"
+msgstr ""
+
+#: daemon/rwi.py:972
+msgid "{0} accounts and passwords"
+msgstr ""
+
+#: daemon/rwi.py:973
+msgid "Import made on {0}."
+msgstr ""
+
+#: daemon/rwi.py:974
+msgid ""
+"Keeping passwords in any written form is a major security flaw for you "
+"information system.<br />Please be sure obliterate this file and any printed "
+"version after having transmitted their password to your users."
+msgstr ""
+
+#: daemon/rwi.py:980
+msgid "Direct access to {0}:"
+msgstr ""
+
+#: daemon/rwi.py:998
+msgid "Lastname"
+msgstr ""
+
+#: daemon/rwi.py:999
+msgid "Firstname"
+msgstr ""
+
+#: daemon/rwi.py:1000
+msgid "Login"
+msgstr ""
+
+#: daemon/rwi.py:1001
+msgid "Password"
+msgstr ""
+
+#: daemon/rwi.py:1032
+msgid "done."
+msgstr ""
+
+#: daemon/rwi.py:1032
+msgid "report:"
+msgstr ""
+
+#: daemon/rwi.py:1137
+msgid "Unable to add user(s) {0} in group {1} (was: {2})."
+msgstr ""
+
+#: daemon/rwi.py:1342
+msgid "No volume matched \"{0}\". Volume attributes are case sensitive."
+msgstr ""
+
+#: daemon/rwi.py:1353
+msgid "Exception happened while launching backup on volume {0}"
+msgstr ""
+
+#: daemon/rwi.py:1379
+msgid "Are you sure you want to delete all users?"
+msgstr ""
+
+#: daemon/rwi.py:1397
+#, python-format
+msgid "Delete user %s?"
+msgstr ""
+
+#: daemon/rwi.py:1425
+msgid "Unable to remove user(s) {0} from group {1} (was: {2})."
+msgstr ""
+
+#: daemon/rwi.py:1466
+msgid "You must specify a file name"
+msgstr ""
+
+#: daemon/rwi.py:1496
+msgid "Deleting groups ({0}/{1}), progression: {3:.2f}%"
+msgstr ""
+
+#: daemon/rwi.py:1526
+msgid "Are you sure you want to delete all groups?"
+msgstr ""
+
+#: daemon/rwi.py:1543
+#, python-format
+msgid "Delete group %s?"
+msgstr ""
+
+#: daemon/rwi.py:1589
+msgid "Are you sure you want to delete all profiles?"
+msgstr ""
+
+#: daemon/rwi.py:1605
+#, python-format
+msgid "Delete profile %s?"
+msgstr ""
+
+#: daemon/rwi.py:1647
+msgid "Are you sure you want to delete all privileges?"
+msgstr ""
+
+#: daemon/rwi.py:1661
+#, python-format
+msgid "Delete privilege %s?"
+msgstr ""
+
+#: daemon/rwi.py:1694
+msgid "Are you sure you want to modify all users?"
+msgstr ""
+
+#: daemon/rwi.py:1715
+#, python-format
+msgid "Modify user %s?"
+msgstr ""
+
+#: daemon/rwi.py:1744
+#, python-format
+msgid "Please enter new password for user %s: "
+msgstr ""
+
+#: daemon/rwi.py:1746
+#, python-format
+msgid "Please confirm new password for user %s: "
+msgstr ""
+
+#: daemon/rwi.py:1751
+msgid "Please enter your OLD (current) password: "
+msgstr ""
+
+#: daemon/rwi.py:1753
+msgid "Please enter your new password: "
+msgstr ""
+
+#: daemon/rwi.py:1754
+msgid "Please confirm your new password: "
+msgstr ""
+
+#: daemon/rwi.py:1757
+#, python-format
+msgid "Please enter %s's OLD (current) password: "
+msgstr ""
+
+#: daemon/rwi.py:1764
+msgid "Wrong password, procedure aborted."
+msgstr ""
+
+#: daemon/rwi.py:1774
+msgid "Passwords do not match, leaving the old one in place."
+msgstr ""
+
+#: daemon/rwi.py:1800 daemon/rwi.py:1808
+msgid "Unable to remove user {0} from group {1} (was: {2})."
+msgstr ""
+
+#: daemon/rwi.py:1823 daemon/rwi.py:1830
+msgid "Unable to add user {0} in group {1} (was: {2})."
+msgstr ""
+
+#: daemon/rwi.py:1844
+#, python-format
+msgid "What do you want to modify about user(s) %s ?"
+msgstr ""
+
+#: daemon/rwi.py:1961
+msgid "Are you sure you want to modify all groups?"
+msgstr ""
+
+#: daemon/rwi.py:1986
+#, python-format
+msgid "Modify group %s?"
+msgstr ""
+
+#: daemon/rwi.py:1992
 #, python-format
 msgid ""
-"Temporary directory %s has vanished during run, or already been wiped by "
-"another process."
+"Skipped associated system group %s, handled automatically by standard group "
+"move."
 msgstr ""
 
-#: core/configuration.py:208
-msgid ""
-"Cannot create or change owner of {0}[/data]:\n"
-"\t{1}"
+#: daemon/rwi.py:2042
+msgid "Skipped responsible(s) {0} addition on non-standard group {1}."
 msgstr ""
 
-#: core/configuration.py:261
-msgid ""
-"You are running an unknown or unsupported non-LSB but POSIX Operating "
-"System. Please get in touch with {0} developpers, and consider submitting a "
-"patch to make your system officially supported."
+#: daemon/rwi.py:2053
+msgid "Skipped responsible(s) {0} deletion on non-standard group {1}."
 msgstr ""
 
-#: core/configuration.py:285
-msgid ""
-"Your Ubuntu version \"{0}\" is no longer supported by {1} developpers nor "
-"Canonical. You should consider upgrading to a newer one."
+#: daemon/rwi.py:2064
+msgid "Skipped guest(s) {0} addition on non-standard group {1}."
 msgstr ""
 
-#: core/configuration.py:294
-msgid ""
-"Greetings old-timer :-) Does {0} still run on your aged Ubuntu version "
-"\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Canonical "
-"nor Ubuntu community does not support it anymore. You should very strongly "
-"consider upgrading to a newer version."
+#: daemon/rwi.py:2075
+msgid "Skipped guest(s) {0} deletion on non-standard group {1}."
 msgstr ""
 
-#: core/configuration.py:305
-msgid "This Ubuntu version \"{0}\" is not [yet] supported, sorry !"
-msgstr ""
-
-#: core/configuration.py:322
-msgid ""
-"Your Debian version (\"{0}\") is no longer supported by {1} developpers nor "
-"Debian. You should consider upgrading to a newer one."
-msgstr ""
-
-#: core/configuration.py:331
-msgid ""
-"Greetings old-timer :-) Does {0} still run on your aged Debian version "
-"\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Debian "
-"community does not support it anymore. You should very strongly consider "
-"upgrading to a newer version."
-msgstr ""
-
-#: core/configuration.py:342
-msgid "This Debian version \"{0}\" is not [yet] supported, sorry !"
-msgstr ""
-
-#: core/configuration.py:347
-msgid ""
-"Your LSB distro is not yet supported. This should be trivial to implement, "
-"but this is still to be done, sorry!"
-msgstr ""
-
-#: core/configuration.py:393
-msgid "MTA not installed or unsupported."
-msgstr ""
-
-#: core/configuration.py:452
-msgid ""
-"Mail{box,dir} system not supported yet. Please get in touch with dev@licorn."
-"org."
-msgstr ""
-
-#: core/configuration.py:493
-msgid ""
-"Custom skels must have at least {0} perms on dirs and {1} on files:\n"
-"\t{2}"
-msgstr ""
-
-#: core/configuration.py:607
-msgid "users"
-msgstr ""
-
-#: core/configuration.py:628
-msgid "groups"
-msgstr ""
-
-#: core/configuration.py:701
-msgid "In {0}, directive {1} should be at least {2}, but it is {3}."
-msgstr ""
-
-#: core/configuration.py:711
-msgid "In {0}, directive {1} should be set to {2}, but it is {3}."
-msgstr ""
-
-#: core/configuration.py:722
-msgid "In {0}, directive {1} is missing. Setting it to {2}."
-msgstr ""
-
-#: core/configuration.py:732
-msgid "{0} lacks mandatory configuration directive(s)."
-msgstr ""
-
-#: core/configuration.py:740 core/configuration.py:839
-msgid "Altered {0} to match Licorn® pre-requisites."
-msgstr ""
-
-#: core/configuration.py:745 core/configuration.py:845
+#: daemon/rwi.py:2090
 #, python-format
-msgid ""
-"Insufficient permissions. Are you root?\n"
-"\t%s"
+msgid "What do you want to modify about group(s) %s?"
 msgstr ""
 
-#: core/configuration.py:749
+#: daemon/rwi.py:2113
+msgid "Are you sure you want to modify all profiles?"
+msgstr ""
+
+#: daemon/rwi.py:2133
 #, python-format
-msgid ""
-"Modifications in %s are mandatory for Licorn® to work properly with other "
-"system tools (adduser/useradd). Cannot continue without this, sorry!"
+msgid "Modify profile %s?"
 msgstr ""
 
-#: core/configuration.py:801
+#: daemon/rwi.py:2210
 #, python-format
-msgid "%s does not exist on this system!"
+msgid "What do you want to modify about profile(s) %s?"
 msgstr ""
 
-#: core/configuration.py:811
-msgid "In {0}, directive {1} should be {2}, but it is {3}."
+#: daemon/rwi.py:2253 daemon/rwi.py:2272
+msgid "not yet anymore."
 msgstr ""
 
-#: core/configuration.py:822
-msgid "In {0}, directive {1} is not present but should be, with value {2}."
-msgstr ""
-
-#: core/configuration.py:831
-msgid "{0} should be altered to work with Licorn®. Fix it?"
-msgstr ""
-
-#: core/configuration.py:850
+#: daemon/rwi.py:2328 daemon/rwi.py:2337
 #, python-format
-msgid ""
-"Modifications in %s are mandatory for Licorn® to work properly. Cannot "
-"continue without this, sorry!"
+msgid "Skipped non-existing backend %s."
 msgstr ""
 
-#: core/configuration.py:895
+#: daemon/rwi.py:2346 daemon/rwi.py:2355
 #, python-format
-msgid "Bad CLI output format \"%s\"!"
+msgid "Skipped non-existing extension %s."
 msgstr ""
 
-#: core/configuration.py:899
-msgid "Application name"
+#: daemon/rwi.py:2398
+msgid "What do you want to modify on volumes? use --help to know!"
 msgstr ""
 
-#: core/configuration.py:900
-msgid "Storage backends for Core objects"
+#: daemon/rwi.py:2417
+msgid "Are you sure you want to check all users?"
 msgstr ""
 
-#: core/configuration.py:901
-msgid "Application main configuration directory"
-msgstr ""
-
-#: core/configuration.py:902
-msgid "Filename of extended group data"
-msgstr ""
-
-#: core/configuration.py:903
-msgid "Application extensions (available add-ons)"
-msgstr ""
-
-#: core/configuration.py:904
-msgid "This current help"
-msgstr ""
-
-#: core/configuration.py:905
-msgid "Application main configuration filename"
-msgstr ""
-
-#: core/configuration.py:906
-msgid "System groups tagged as privileges"
-msgstr ""
-
-#: core/configuration.py:907
-msgid "System valid shells when creating a new user"
-msgstr ""
-
-#: core/configuration.py:908
-msgid "System valid skels to apply on a user account"
-msgstr ""
-
-#: core/configuration.py:909
-msgid "Mandatory system groups for {0}"
-msgstr ""
-
-#: core/configuration.py:915
+#: daemon/rwi.py:2439
 #, python-format
-msgid "Sorry, \"%s\" is not a recognized keyword."
+msgid "Check account %s?"
 msgstr ""
 
-#: core/configuration.py:920
-msgid "Valid keywords for {0} (fuzzy matching):"
+#: daemon/rwi.py:2461
+msgid "Are you sure you want to check all groups?"
 msgstr ""
 
-#: core/configuration.py:1087
-msgid ""
-"New hostname must be composed only of letters, digits and hyphens, but not "
-"starting nor ending with an hyphen !"
-msgstr ""
-
-#: core/configuration.py:1099
+#: daemon/rwi.py:2484
 #, python-format
-msgid ""
-"Cannot modify /etc/hostname, verify the file is still clean:\n"
-"\t%s)"
+msgid "Check group %s?"
 msgstr ""
 
-#: core/configuration.py:1200
+#: daemon/rwi.py:2512
+msgid "Are you sure you want to check all profiles?"
+msgstr ""
+
+#: daemon/rwi.py:2526
 #, python-format
-msgid ""
-"Filesystem must be mounted with \"acl\" option:\n"
-"\t%s"
+msgid "Check profile %s?"
 msgstr ""
 
-#: core/configuration.py:1272
+#: daemon/rwi.py:2529
+msgid "Sorry, not yet."
+msgstr ""
+
+#: daemon/rwi.py:2563
+msgid "Running WMI Django tests for app {0}, this may take a while…"
+msgstr ""
+
+#: daemon/rwi.py:2570
+msgid "Could not run tests for app {0}"
+msgstr ""
+
+#: daemon/rwi.py:2573
+msgid "Successfully ran Django WMI tests for app {0}."
+msgstr ""
+
+#: daemon/cmdlistener.py:164
+msgid ""
+"Problem finding uid initiating connection from {0}:{1}, denying request."
+msgstr ""
+
+#: daemon/cmdlistener.py:192
+msgid "Denied connection tentative from {0}:{1} (allowed are {2} and {3})."
+msgstr ""
+
+#: daemon/cmdlistener.py:209
+msgid ""
+"Please implement client.server.bounce auth. Accepted for now (localhost, uid "
+"{0})."
+msgstr ""
+
+#: daemon/cmdlistener.py:218
+msgid "Senseless connection tentative from {0}, uid {2}."
+msgstr ""
+
+#: daemon/cmdlistener.py:228
+msgid "Connection tentative from {0}: unknown local UID {1}!"
+msgstr ""
+
+#: daemon/cmdlistener.py:236
+msgid "Something went wrong from {0} (was: {1})."
+msgstr ""
+
+#: daemon/cmdlistener.py:248
+msgid "Remote login {0} is different from local {1} for UID {2}. Using {0}."
+msgstr ""
+
+#: daemon/cmdlistener.py:271
+msgid "{0}/{1}: authorized client connection from {2}:{3}, user {4}({5})."
+msgstr ""
+
+#: daemon/cmdlistener.py:281
+msgid "Connection tentative from {0}:{1}, user {2}({3})."
+msgstr ""
+
+#: daemon/cmdlistener.py:414
+msgid "{0}: not starting because initial check in progress."
+msgstr ""
+
+#: daemon/cmdlistener.py:478
+msgid "{0}: {1} to answer requests at {2}."
+msgstr ""
+
+#: tests/core.py:40
 #, python-format
-msgid "Checking existence of group %s…"
+msgid "%s does not exist on this system and is mandatory for this testsuite."
 msgstr ""
 
-#: core/configuration.py:1278
+#: tests/core.py:45
+msgid "Please install missing packages before continuing."
+msgstr ""
+
+#: tests/core.py:137
+msgid "giving back all scenarii data to {0}:{1}."
+msgstr ""
+
+#: tests/core.py:158
+msgid "Testsuite terminated successfully."
+msgstr ""
+
+#: tests/core.py:159
+msgid ""
+"Don't forget to test massive del/mod/chk with -a argument (not tested "
+"because too dangerous)"
+msgstr ""
+
+#: tests/core.py:164
+msgid "Cleaning testsuite context, please wait…"
+msgstr ""
+
+#: tests/__init__.py:94
 #, python-format
-msgid ""
-"The system group %s is mandatory for the system to work properly, but it "
-"does not exist yet."
+msgid "Restored initial backend to %s."
 msgstr ""
 
-#: core/configuration.py:1294
-msgid ""
-"The system group \"{0}\" is mandatory but does not exist on your system !\n"
-"Use \"chk config\" or \"add group --system --name {0}\" to fix the problem "
-"before continuing."
+#: tests/__init__.py:127
+msgid "Keyboard Interrupt received; cleaning scenario, please wait…"
 msgstr ""
 
-#: core/configuration.py:1330
-msgid "/etc/hosts must have at least o+r permissions."
+#: tests/__init__.py:148
+msgid "Started background tests, waiting for any failed scenario…"
 msgstr ""
 
-#: core/configuration.py:1336
-msgid "Current hostname and /etc/hostname are not in sync!"
+#: tests/__init__.py:187
+msgid "Re-put scenario in the run queue for further execution."
 msgstr ""
 
-#: core/configuration.py:1345
-msgid ""
-"Hostname {0} does not resolve to 127.0.0.1 but to {1}, please check /etc/"
-"hosts!"
+#: tests/__init__.py:196
+msgid "Stopping the run queue worker and cleaning, please wait…"
 msgstr ""
 
-#: core/configuration.py:1356
+#: tests/__init__.py:211
+msgid "no more jobs, ending testsuite."
+msgstr ""
+
+#: tests/__init__.py:236
 #, python-format
+msgid "Saved best state #%s (not inclusive)."
+msgstr ""
+
+#: tests/__init__.py:300
 msgid ""
-"127.0.0.1 does not resolve back to hostname %s, please check /etc/hosts and/"
-"or DNS !"
+"TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) "
+"{passed_content}- {failed} failed ({percent_failed:.2}%) - best score until "
+"now: #{best}"
 msgstr ""
 
-#: core/configuration.py:1400
+#: tests/__init__.py:316
+msgid "context setup"
+msgstr ""
+
+#: tests/__init__.py:326
+msgid "last: {passed}{passed_more} "
+msgstr ""
+
+#: tests/__init__.py:329
+msgid "…"
+msgstr ""
+
+#: tests/__init__.py:375
 msgid ""
-"Cannot resolve {0} ({1}), is the DNS server running on 127.0.0.1? Else check "
-"DNS files syntax !"
+"The {0} testsuite holds {1} scenarii, counting {2} commands (avg of {3} cmds "
+"per scenario)."
 msgstr ""
 
-#: core/configuration.py:1407
-msgid "127.0.0.1 *must* be in /etc/resolv.conf on a Licorn® server."
+#: tests/__init__.py:394 tests/__init__.py:406
+msgid "No scenario selected"
 msgstr ""
 
-#: core/configuration.py:1413
-msgid ""
-"Problem while resolving {0}, please check your configuration:\n"
-"\terrno {1}, {2}"
-msgstr ""
-
-#: core/configuration.py:1428
-msgid ""
-"127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on a Licorn® "
-"server."
-msgstr ""
-
-#: core/configuration.py:1433
+#: tests/__init__.py:403
 #, python-format
+msgid "Cannot select a higher scenario than the current best_state (%s)"
+msgstr ""
+
+#: tests/__init__.py:424
+#, python-format
+msgid "Scenario number '%s' is not valid."
+msgstr ""
+
+#: tests/__init__.py:455
+msgid "State file deleted, start from beginning."
+msgstr ""
+
+#: tests/__init__.py:535
 msgid ""
-"DNS does not seem properly configured (%s does not resolve back to itself)."
-msgstr ""
-
-#: core/configuration.py:1438
-msgid ""
-"DNS is not properly configured ({0} does not resolve to {1}, but to {2})."
-msgstr ""
-
-#: core/configuration.py:1446
-msgid ""
-"127.0.0.1 should be the only nameserver in /etc/resolv.conf on a Licorn® "
-"server."
-msgstr ""
-
-#: core/backends/shadow.py:76
-msgid ""
-"{0} shadow backend (this is important, please do not try to set {1} in {2}!"
-msgstr ""
-
-#: core/backends/shadow.py:78
-msgid "RE-enabled"
-msgstr ""
-
-#: core/backends/shadow.py:209
-msgid "{0}: added missing entry for user {1} in {2}."
-msgstr ""
-
-#: core/backends/shadow.py:236
-msgid "{0}: cleaned users data rewrite requested in the background."
-msgstr ""
-
-#: core/backends/shadow.py:287
-msgid "{0}: skipped line \"{1}\" from {2}, it seems corrupt."
-msgstr ""
-
-#: core/backends/shadow.py:341
-msgid "{0}: added missing record for group {1} in {2}."
-msgstr ""
-
-#: core/backends/shadow.py:359
-msgid "{0}: cleaned groups data rewrite requested in the background."
-msgstr ""
-
-#: core/backends/shadow.py:435
-msgid "{0}: saved users data to disk."
-msgstr ""
-
-#: core/backends/shadow.py:503
-msgid "{0}: saved groups data to disk."
-msgstr ""
-
-#: core/backends/shadow.py:532 core/backends/dnsmasq.py:176
-msgid "{0}: configuration file {1} changed, reloading {2} controller."
-msgstr ""
-
-#: core/backends/openldap.py:110
-msgid ""
-"{0}: Problem initializing the backend. OpenLDAP seems installed but not "
-"configured, or unusable. Please run {1} to try fix the situation."
-msgstr ""
-
-#: core/backends/openldap.py:183
-msgid "{0}: setting a default password in {1}."
-msgstr ""
-
-#: core/backends/openldap.py:242
-msgid ""
-"{0}: server {1} is down, disabling backend. This will produce timeouts "
-"because {2} is enabled in NSS configuration."
-msgstr ""
-
-#: core/backends/openldap.py:323
-msgid "{0}: checking backend configuration…"
-msgstr ""
-
-#: core/backends/openldap.py:329
-msgid "{0:s}: backend not available, not checking."
-msgstr ""
-
-#: core/backends/openldap.py:333
-msgid "{0}: you must be root or have {1} access to continue."
-msgstr ""
-
-#: core/backends/openldap.py:402
-msgid "{0}: checking slapd schemata…"
-msgstr ""
-
-#: core/backends/openldap.py:435
-msgid "{0}: disabling AppArmor profile for {1}."
-msgstr ""
-
-#: core/backends/openldap.py:443
-msgid "{0:s}: Exception encountered while disabling AppArmor profile."
-msgstr ""
-
-#: core/backends/openldap.py:456
-msgid "{0}: re-enabling AppArmor profile for {1}."
-msgstr ""
-
-#: core/backends/openldap.py:464
-msgid "{0:s}: Exception encountered while re-enabling AppArmor profile."
-msgstr ""
-
-#: core/backends/openldap.py:471
-msgid "{0}: {1} lacks mandatory schema {2}."
-msgstr ""
-
-#: core/backends/openldap.py:480
-msgid "{0}: loading schema {1} into {2}."
-msgstr ""
-
-#: core/backends/openldap.py:488
-msgid "{0}: adding {1} -> {2} into schema {3}."
-msgstr ""
-
-#: core/backends/openldap.py:495
-msgid "{0}: loaded schema {1} into {2}."
-msgstr ""
-
-#: core/backends/openldap.py:501
-msgid "{0}: skipped already present dn {1}."
-msgstr ""
-
-#: core/backends/openldap.py:505
-msgid "{0}: Exception encountered while adding {1} > {2} into schema {3}."
-msgstr ""
-
-#: core/backends/openldap.py:514 core/backends/openldap.py:566
-msgid "Cannot continue without altering slapd configuration."
-msgstr ""
-
-#: core/backends/openldap.py:527
-msgid "{0}: {1} schema {2} needs updating."
-msgstr ""
-
-#: core/backends/openldap.py:536
-msgid "{0}: updating schema {1} in {2}."
-msgstr ""
-
-#: core/backends/openldap.py:551
-msgid "{0}: updated schema {1} in {2}."
-msgstr ""
-
-#: core/backends/openldap.py:557
-msgid ""
-"{0}: Exception encountered while modifying {1} from {2} TO {3} in schema {4}"
-msgstr ""
-
-#: core/backends/openldap.py:574
-msgid "{0}: checking system files…"
-msgstr ""
-
-#: core/backends/openldap.py:600
-msgid ""
-"{0}: {1} should contain your LDAP system password, but is currently empty. "
-"Fill it with a random password?"
-msgstr ""
-
-#: core/backends/openldap.py:612
-msgid ""
-"{0}: autogenerated password for LDAP user {1}: \"{2}\". It is up to you to "
-"update the LDAP database with it, now."
-msgstr ""
-
-#: core/backends/openldap.py:633
-msgid ""
-"{0}: {1} is mandatory for {2} to work properly. Cannot continue without "
-"this, sorry!"
-msgstr ""
-
-#: core/backends/openldap.py:664
-msgid "{0}: binding in EXTERNAL SASL mode."
-msgstr ""
-
-#: core/backends/openldap.py:673 core/backends/openldap.py:697
-msgid "{0}: binding as as {1}."
-msgstr ""
-
-#: core/backends/openldap.py:816
-msgid "{0}: skipped account {1}"
-msgstr ""
-
-#: core/backends/openldap.py:872
-msgid "{0}: saved all user accounts in the directory."
-msgstr ""
-
-#: core/backends/openldap.py:885
-msgid "{0}: saved all groups in the directory."
-msgstr ""
-
-#: core/backends/openldap.py:963
-msgid "{0}: unknown mode {1} for user {2}(uid={3})."
-msgstr ""
-
-#: core/backends/openldap.py:968
-msgid "{0}: unable to save user {1}."
-msgstr ""
-
-#: core/backends/openldap.py:973
-msgid "{0}: saved user account {1} in the directory."
-msgstr ""
-
-#: core/backends/openldap.py:1035
-msgid "{0}: unknown mode {1} for group {2}(gid={3})."
-msgstr ""
-
-#: core/backends/openldap.py:1042
-msgid "{0}: unable to save group {1}."
-msgstr ""
-
-#: core/backends/openldap.py:1047
-msgid "{0}: saved group {1} in the directory."
-msgstr ""
-
-#: core/backends/openldap.py:1064
-msgid "{0}: deleted user account {1} from the directory."
-msgstr ""
-
-#: core/backends/openldap.py:1082
-msgid "{0}: deleted group {1} from the directory."
-msgstr ""
-
-#: foundations/base.py:49
-msgid ""
-"Unbound method {0}() must be called with {1} instance as first argument (got "
-"nothing instead)"
-msgstr ""
-
-#: foundations/exceptions.py:216
-msgid "The file {0} is corrupt!"
-msgstr ""
-
-#: foundations/exceptions.py:219
-msgid "Reason: {0}"
-msgstr ""
-
-#: foundations/network.py:83
-msgid ""
-"Using environment variable value {0} for our server; unset {1} if you prefer "
-"automatic detection."
-msgstr ""
-
-#: foundations/network.py:102
-msgid "Cannot resolve host or IP {0}"
-msgstr ""
-
-#: foundations/network.py:106
-msgid "find_server() not implemented yet for your distro!"
-msgstr ""
-
-#: foundations/packaging.py:58
-msgid ""
-"Your distro is not yet supported to automatically install package {0}, "
-"skipping it."
-msgstr ""
-
-#: foundations/packaging.py:78
-msgid "{0}: Installing needed packages {1} before continuing. Please wait…"
-msgstr ""
-
-#: foundations/packaging.py:84
-msgid ""
-"{0}: An error occured while installing package(s) {1}! Apt-Get Log follows:"
-msgstr ""
-
-#: foundations/packaging.py:88 foundations/packaging.py:122
-msgid "{0}: Successfully installed package(s) {1} via {2}."
-msgstr ""
-
-#: foundations/packaging.py:93
-msgid ""
-"Installing packages on your distro is not yet supported, sorry. You should "
-"install {0} yourself before continuing."
-msgstr ""
-
-#: foundations/packaging.py:112
-msgid ""
-"{0}: Installing needed packages {1} from source before continuing. Please "
-"wait…"
-msgstr ""
-
-#: foundations/packaging.py:118
-msgid ""
-"An error occured while installing package(s) {0}! PIP install Log follows:"
-msgstr ""
-
-#: foundations/packaging.py:125
-msgid ""
-"Sorry, automatic install of {0} is not yet supported on your distro. Please "
-"install it manually before continuing."
-msgstr ""
-
-#: foundations/classes.py:104
-msgid ""
-"{0}: system file {1} must be modified for the configuration to be complete. "
-"Do it?"
-msgstr ""
-
-#: foundations/classes.py:113
-msgid "{0}: altered configuration file {1}."
-msgstr ""
-
-#: foundations/classes.py:169
-msgid ""
-"{0}: File {1} is protected by the {2} flag, we cannot alter it. Hope this is "
-"intended, because we are continuing like if it was modified but it is NOT."
-msgstr ""
-
-#: foundations/classes.py:173
-msgid "IMPORTANT"
-msgstr ""
-
-#: foundations/ltrace.py:81
-msgid ""
+"no reference output for {sce_name}, cmd #{cmd_num}/{total_cmds}:\n"
 "\n"
-"# Thread: {0}({1})"
+"{highlight_cmds}\n"
+"\n"
+"{run_output}"
 msgstr ""
 
-#: foundations/ltrace.py:83
-msgid "\tFile: \"{0}\", line {1}, in {2}"
+#: tests/__init__.py:545
+msgid "is this output good to keep as reference for future runs?"
 msgstr ""
 
-#: foundations/ltrace.py:135
-msgid "stack frame unavailable in runtime-compiled code."
-msgstr ""
-
-#: foundations/ltrace.py:331
-msgid "Licorn®: {0} for {1}\n"
-msgstr ""
-
-#: foundations/workers.py:62
+#: tests/__init__.py:575
 msgid ""
-"Cannot join the serviceQ from a ServiceWorkerThread instance, this would "
-"deadblock!"
+"command #{cmd_num}/{total_cmds} failed (sce#{sce_num}, ctx {context}). "
+"Retcode {ret_code} (ref {ref_code}).\n"
+"\n"
+"{highlight_cmds}\n"
+"\n"
+"{diff_output}"
 msgstr ""
 
-#: foundations/workers.py:79
+#: tests/__init__.py:590
 msgid ""
-"Cannot join the networkQ from a NetworkWorkerThread instance, this would "
-"deadblock!"
+"Should I keep the new return code and trace as reference for future runs?"
 msgstr ""
 
-#: foundations/workers.py:96
-msgid ""
-"Cannot join the ackcheckerQ from a ACLCkeckerThread instance, this would "
-"deadblock!"
+#: tests/__init__.py:606
+msgid "Backend changed to shadow"
 msgstr ""
 
-#: foundations/bootstrap.py:154
-msgid ""
-"You may want to install optional python module{0} {1} to benefit of full "
-"functionnality (debian package{2} {3}). As this is optional, you will not "
-"see this message again.\n"
+#: tests/__init__.py:615
+msgid "Backend changed to OpenLDAP"
 msgstr ""
 
-#: foundations/bootstrap.py:160
+#: tests/__init__.py:705
 msgid ""
-"You must install required python module{0} {1} (Debian/PIP package{2} {3}) "
-"before continuing.\n"
+"Exception {exc} while loading output of cmd {cmd}, sce {sce}. Traceback "
+"follows, raising DoesntExistException"
+msgstr ""
+
+#: tests/__init__.py:740
+#, python-format
+msgid ""
+"Start run %s. Please wait while commands are executed, this can take some "
+"time."
+msgstr ""
+
+#: tests/__init__.py:776
+#, python-format
+msgid "Already passed scenario %s"
+msgstr ""
+
+#: tests/__init__.py:797
+msgid ""
+"Automatically saved new output for scenario #{sce} command #{cmd}/{total}"
+msgstr ""
+
+#: tests/__init__.py:807
+msgid "Checking FAILED cmd {cmd}/{total} of scenario {sce}"
+msgstr ""
+
+#: tests/__init__.py:821
+#, python-format
+msgid "End run %s."
+msgstr ""
+
+#: tests/__init__.py:837
+msgid "running "
+msgstr ""
+
+#: tests/__init__.py:873
+msgid "The last command failed to execute, or returned an unexpected result!"
+msgstr ""
+
+#: tests/__init__.py:907
+#, python-format
+msgid "Cleaning directory %s."
+msgstr ""
+
+#: tests/__init__.py:911
+#, python-format
+msgid "Deleting %s."
+msgstr ""
+
+#: tests/__init__.py:921
+#, python-format
+msgid "Cleaned directory %s."
+msgstr ""
+
+#: tests/__init__.py:942
+#, python-format
+msgid "Backed up system files for context %s."
+msgstr ""
+
+#: tests/__init__.py:945
+msgid ""
+"Comparing backups of system files after tests for side-effects alterations."
+msgstr ""
+
+#: tests/__init__.py:966
+msgid "System config files backup comparison finished successfully."
+msgstr ""
+
+#: tests/__init__.py:986
+msgid "reload testsuite. Start from beginning."
+msgstr ""
+
+#: tests/__init__.py:988
+msgid "execute a specific scenario of the testsuite."
+msgstr ""
+
+#: tests/__init__.py:990
+msgid "List all scenarii of the testsuite."
+msgstr ""
+
+#: tests/__init__.py:992
+msgid "Select all scenarii."
+msgstr ""
+
+#: tests/__init__.py:994
+msgid "Start from the scenario N."
+msgstr ""
+
+#: tests/__init__.py:996
+msgid "Display messages during command execution."
+msgstr ""
+
+#: tests/__init__.py:998
+msgid "Clean scenarii directory."
+msgstr ""
+
+#: tests/__init__.py:1000
+msgid "Delete traces of a given scenario."
+msgstr ""
+
+#: tests/__init__.py:1002
+msgid "Display statistics of the testsuite."
+msgstr ""
+
+#: tests/__init__.py:1005
+msgid ""
+"Run the testsuite in standard interactive mode (one scenario at a time. Use "
+"this when you have modified a mega bunch of code, and you know it will be "
+"better to check everything manually before doing anything else, and the "
+"batch run is not what you want because your code is still in alpha stage."
+msgstr ""
+
+#: tests/__init__.py:1012
+msgid ""
+"Don't halt the scenario on fail, just accept the result of the failed "
+"command and continue. WARNING: this flag is meant to be used only when you "
+"don't have any scenario data in your repository, to build a new one from "
+"scratch. Use this flag onlyon a clean source tree, else your TS results will "
+"not be reliable."
 msgstr ""
 
 #: foundations/pyutils.py:51
@@ -5557,19 +5725,22 @@ msgid ""
 "without this, sorry!"
 msgstr ""
 
-#: foundations/logging.py:251
+#: foundations/workers.py:62
 msgid ""
-"Thread {0} has no listener anymore, desengaging from monitors (was: {1})."
+"Cannot join the serviceQ from a ServiceWorkerThread instance, this would "
+"deadblock!"
 msgstr ""
 
-#: foundations/logging.py:260
+#: foundations/workers.py:79
 msgid ""
-"Thread {0} has lost its remote end, desengaging from monitors (was: {1})."
+"Cannot join the networkQ from a NetworkWorkerThread instance, this would "
+"deadblock!"
 msgstr ""
 
-#: foundations/cache.py:61
-#, python-format
-msgid "Key %s expired!"
+#: foundations/workers.py:96
+msgid ""
+"Cannot join the ackcheckerQ from a ACLCkeckerThread instance, this would "
+"deadblock!"
 msgstr ""
 
 #: foundations/process.py:58
@@ -5669,6 +5840,128 @@ msgstr ""
 
 #: foundations/process.py:517
 msgid "dead"
+msgstr ""
+
+#: foundations/network.py:83
+msgid ""
+"Using environment variable value {0} for our server; unset {1} if you prefer "
+"automatic detection."
+msgstr ""
+
+#: foundations/network.py:102
+msgid "Cannot resolve host or IP {0}"
+msgstr ""
+
+#: foundations/network.py:106
+msgid "find_server() not implemented yet for your distro!"
+msgstr ""
+
+#: foundations/logging.py:251
+msgid ""
+"Thread {0} has no listener anymore, desengaging from monitors (was: {1})."
+msgstr ""
+
+#: foundations/logging.py:260
+msgid ""
+"Thread {0} has lost its remote end, desengaging from monitors (was: {1})."
+msgstr ""
+
+#: foundations/messaging.py:36
+msgid "{0}.remote_output() aborted (no listener registered)."
+msgstr ""
+
+#: foundations/messaging.py:176
+msgid "New trace session started with UUID {0}, facilities {1}."
+msgstr ""
+
+#: foundations/messaging.py:216
+#, python-format
+msgid "Monitor listener with UUID %s not found!"
+msgstr ""
+
+#: foundations/messaging.py:218
+msgid "Trace session UUID {0} ended."
+msgstr ""
+
+#: foundations/messaging.py:257
+msgid "{0}: Interactive console requested by {1} from {2}."
+msgstr ""
+
+#: foundations/messaging.py:263
+msgid "Welcome into licornd's arcanes…"
+msgstr ""
+
+#: foundations/messaging.py:275
+msgid "{0}: Interactive console terminated by {1} from {2}."
+msgstr ""
+
+#: foundations/messaging.py:282
+msgid "Welcome back to Real World™. Have a nice day!"
+msgstr ""
+
+#: foundations/_settings.py:77
+#, python-format
+msgid "Experimental features enabled. Have fun, but do not break anything%s."
+msgstr ""
+
+#: foundations/_settings.py:79
+msgid " (hear me Nibor?)"
+msgstr ""
+
+#: foundations/_settings.py:138
+msgid "{0}: internal debug enabled for {1}"
+msgstr ""
+
+#: foundations/_settings.py:155
+msgid ""
+"{0} is currently unset or invalid in {1}. Please set it to either {2} or {3} "
+"and retry."
+msgstr ""
+
+#: foundations/_settings.py:170
+msgid "Trying to find our Licorn® server…"
+msgstr ""
+
+#: foundations/_settings.py:173
+msgid ""
+"Could not find our Licorn® server via autodetection. Please contact your "
+"network administrator or set the {0} environment variable."
+msgstr ""
+
+#: foundations/_settings.py:177
+msgid "Our Licorn® server is {0}"
+msgstr ""
+
+#: foundations/_settings.py:184
+msgid ""
+"\n"
+"\tinvalid value {0} for configuration directive {1}: must be an integer "
+"between {2} (one hour) and {3} (one week)."
+msgstr ""
+
+#: foundations/_settings.py:269
+msgid "Exception while loading {0}; no exclusions defined"
+msgstr ""
+
+#: foundations/_settings.py:291
+msgid "Unable to remove {0} from inotifier exclusions"
+msgstr ""
+
+#: foundations/_settings.py:306
+msgid "Exception while saving {0}!"
+msgstr ""
+
+#: foundations/bootstrap.py:154
+msgid ""
+"You may want to install optional python module{0} {1} to benefit of full "
+"functionnality (debian package{2} {3}). As this is optional, you will not "
+"see this message again.\n"
+msgstr ""
+
+#: foundations/bootstrap.py:160
+msgid ""
+"You must install required python module{0} {1} (Debian/PIP package{2} {3}) "
+"before continuing.\n"
 msgstr ""
 
 #: foundations/fsapi.py:307 foundations/fsapi.py:331
@@ -5965,6 +6258,35 @@ msgstr ""
 msgid "Added option(s) {0} to {1} permanently."
 msgstr ""
 
+#: foundations/base.py:49
+msgid ""
+"Unbound method {0}() must be called with {1} instance as first argument (got "
+"nothing instead)"
+msgstr ""
+
+#: foundations/ltrace.py:81
+msgid ""
+"\n"
+"# Thread: {0}({1})"
+msgstr ""
+
+#: foundations/ltrace.py:83
+msgid "\tFile: \"{0}\", line {1}, in {2}"
+msgstr ""
+
+#: foundations/ltrace.py:135
+msgid "stack frame unavailable in runtime-compiled code."
+msgstr ""
+
+#: foundations/ltrace.py:331
+msgid "Licorn®: {0} for {1}\n"
+msgstr ""
+
+#: foundations/hlstr.py:239 foundations/hlstr.py:258
+msgid ""
+"Ambiguous word {0}, matches at least {1} and {2}. Please refine your query."
+msgstr ""
+
 #: foundations/ttyutils.py:30
 msgid " [Ynas], or ? for help: "
 msgstr ""
@@ -6057,74 +6379,6 @@ msgstr ""
 msgid "{0}: bad character received on input, ignored."
 msgstr ""
 
-#: foundations/_settings.py:77
-#, python-format
-msgid "Experimental features enabled. Have fun, but do not break anything%s."
-msgstr ""
-
-#: foundations/_settings.py:79
-msgid " (hear me Nibor?)"
-msgstr ""
-
-#: foundations/_settings.py:138
-msgid "{0}: internal debug enabled for {1}"
-msgstr ""
-
-#: foundations/_settings.py:155
-msgid ""
-"{0} is currently unset or invalid in {1}. Please set it to either {2} or {3} "
-"and retry."
-msgstr ""
-
-#: foundations/_settings.py:170
-msgid "Trying to find our Licorn® server…"
-msgstr ""
-
-#: foundations/_settings.py:173
-msgid ""
-"Could not find our Licorn® server via autodetection. Please contact your "
-"network administrator or set the {0} environment variable."
-msgstr ""
-
-#: foundations/_settings.py:177
-msgid "Our Licorn® server is {0}"
-msgstr ""
-
-#: foundations/_settings.py:184
-msgid ""
-"\n"
-"\tinvalid value {0} for configuration directive {1}: must be an integer "
-"between {2} (one hour) and {3} (one week)."
-msgstr ""
-
-#: foundations/_settings.py:269
-msgid "Exception while loading {0}; no exclusions defined"
-msgstr ""
-
-#: foundations/_settings.py:291
-msgid "Unable to remove {0} from inotifier exclusions"
-msgstr ""
-
-#: foundations/_settings.py:306
-msgid "Exception while saving {0}!"
-msgstr ""
-
-#: foundations/apt.py:21
-msgid ""
-"You must install the debian package {0} for the upgrade mechanism to work "
-"fully. Currently you will only be able to check if the system needs "
-"upgrading."
-msgstr ""
-
-#: foundations/apt.py:53
-msgid "Error while running « unattended-upgrades »!"
-msgstr ""
-
-#: foundations/hlstr.py:239 foundations/hlstr.py:258
-msgid ""
-"Ambiguous word {0}, matches at least {1} and {2}. Please refine your query."
-msgstr ""
-
 #: foundations/events.py:67
 msgid "Event push to collector: {0} > {1}"
 msgstr ""
@@ -6208,301 +6462,88 @@ msgstr ""
 msgid "{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)"
 msgstr ""
 
-#: foundations/messaging.py:36
-msgid "{0}.remote_output() aborted (no listener registered)."
-msgstr ""
-
-#: foundations/messaging.py:176
-msgid "New trace session started with UUID {0}, facilities {1}."
-msgstr ""
-
-#: foundations/messaging.py:216
-#, python-format
-msgid "Monitor listener with UUID %s not found!"
-msgstr ""
-
-#: foundations/messaging.py:218
-msgid "Trace session UUID {0} ended."
-msgstr ""
-
-#: foundations/messaging.py:257
-msgid "{0}: Interactive console requested by {1} from {2}."
-msgstr ""
-
-#: foundations/messaging.py:263
-msgid "Welcome into licornd's arcanes…"
-msgstr ""
-
-#: foundations/messaging.py:275
-msgid "{0}: Interactive console terminated by {1} from {2}."
-msgstr ""
-
-#: foundations/messaging.py:282
-msgid "Welcome back to Real World™. Have a nice day!"
-msgstr ""
-
-#: contrib/apt_check.py:24
-msgid "Unknown Error: '{0}' ({1})"
-msgstr ""
-
-#: contrib/apt_check.py:95
-msgid "Error: BrokenCount > 0"
-msgstr ""
-
-#: tests/core.py:40
-#, python-format
-msgid "%s does not exist on this system and is mandatory for this testsuite."
-msgstr ""
-
-#: tests/core.py:45
-msgid "Please install missing packages before continuing."
-msgstr ""
-
-#: tests/core.py:137
-msgid "giving back all scenarii data to {0}:{1}."
-msgstr ""
-
-#: tests/core.py:158
-msgid "Testsuite terminated successfully."
-msgstr ""
-
-#: tests/core.py:159
+#: foundations/apt.py:21
 msgid ""
-"Don't forget to test massive del/mod/chk with -a argument (not tested "
-"because too dangerous)"
+"You must install the debian package {0} for the upgrade mechanism to work "
+"fully. Currently you will only be able to check if the system needs "
+"upgrading."
 msgstr ""
 
-#: tests/core.py:164
-msgid "Cleaning testsuite context, please wait…"
+#: foundations/apt.py:53
+msgid "Error while running « unattended-upgrades »!"
 msgstr ""
 
-#: tests/__init__.py:94
+#: foundations/cache.py:61
 #, python-format
-msgid "Restored initial backend to %s."
+msgid "Key %s expired!"
 msgstr ""
 
-#: tests/__init__.py:127
-msgid "Keyboard Interrupt received; cleaning scenario, please wait…"
-msgstr ""
-
-#: tests/__init__.py:148
-msgid "Started background tests, waiting for any failed scenario…"
-msgstr ""
-
-#: tests/__init__.py:187
-msgid "Re-put scenario in the run queue for further execution."
-msgstr ""
-
-#: tests/__init__.py:196
-msgid "Stopping the run queue worker and cleaning, please wait…"
-msgstr ""
-
-#: tests/__init__.py:211
-msgid "no more jobs, ending testsuite."
-msgstr ""
-
-#: tests/__init__.py:236
-#, python-format
-msgid "Saved best state #%s (not inclusive)."
-msgstr ""
-
-#: tests/__init__.py:300
+#: foundations/classes.py:104
 msgid ""
-"TS global status: on #{current}, {ran}/{total} passed ({percent_done:.2}%) "
-"{passed_content}- {failed} failed ({percent_failed:.2}%) - best score until "
-"now: #{best}"
+"{0}: system file {1} must be modified for the configuration to be complete. "
+"Do it?"
 msgstr ""
 
-#: tests/__init__.py:316
-msgid "context setup"
+#: foundations/classes.py:113
+msgid "{0}: altered configuration file {1}."
 msgstr ""
 
-#: tests/__init__.py:326
-msgid "last: {passed}{passed_more} "
-msgstr ""
-
-#: tests/__init__.py:329
-msgid "…"
-msgstr ""
-
-#: tests/__init__.py:375
+#: foundations/classes.py:169
 msgid ""
-"The {0} testsuite holds {1} scenarii, counting {2} commands (avg of {3} cmds "
-"per scenario)."
+"{0}: File {1} is protected by the {2} flag, we cannot alter it. Hope this is "
+"intended, because we are continuing like if it was modified but it is NOT."
 msgstr ""
 
-#: tests/__init__.py:394 tests/__init__.py:406
-msgid "No scenario selected"
+#: foundations/classes.py:173
+msgid "IMPORTANT"
 msgstr ""
 
-#: tests/__init__.py:403
-#, python-format
-msgid "Cannot select a higher scenario than the current best_state (%s)"
-msgstr ""
-
-#: tests/__init__.py:424
-#, python-format
-msgid "Scenario number '%s' is not valid."
-msgstr ""
-
-#: tests/__init__.py:455
-msgid "State file deleted, start from beginning."
-msgstr ""
-
-#: tests/__init__.py:535
+#: foundations/packaging.py:58
 msgid ""
-"no reference output for {sce_name}, cmd #{cmd_num}/{total_cmds}:\n"
-"\n"
-"{highlight_cmds}\n"
-"\n"
-"{run_output}"
+"Your distro is not yet supported to automatically install package {0}, "
+"skipping it."
 msgstr ""
 
-#: tests/__init__.py:545
-msgid "is this output good to keep as reference for future runs?"
+#: foundations/packaging.py:78
+msgid "{0}: Installing needed packages {1} before continuing. Please wait…"
 msgstr ""
 
-#: tests/__init__.py:575
+#: foundations/packaging.py:84
 msgid ""
-"command #{cmd_num}/{total_cmds} failed (sce#{sce_num}, ctx {context}). "
-"Retcode {ret_code} (ref {ref_code}).\n"
-"\n"
-"{highlight_cmds}\n"
-"\n"
-"{diff_output}"
+"{0}: An error occured while installing package(s) {1}! Apt-Get Log follows:"
 msgstr ""
 
-#: tests/__init__.py:590
+#: foundations/packaging.py:88 foundations/packaging.py:122
+msgid "{0}: Successfully installed package(s) {1} via {2}."
+msgstr ""
+
+#: foundations/packaging.py:93
 msgid ""
-"Should I keep the new return code and trace as reference for future runs?"
+"Installing packages on your distro is not yet supported, sorry. You should "
+"install {0} yourself before continuing."
 msgstr ""
 
-#: tests/__init__.py:606
-msgid "Backend changed to shadow"
-msgstr ""
-
-#: tests/__init__.py:615
-msgid "Backend changed to OpenLDAP"
-msgstr ""
-
-#: tests/__init__.py:705
+#: foundations/packaging.py:112
 msgid ""
-"Exception {exc} while loading output of cmd {cmd}, sce {sce}. Traceback "
-"follows, raising DoesntExistException"
+"{0}: Installing needed packages {1} from source before continuing. Please "
+"wait…"
 msgstr ""
 
-#: tests/__init__.py:740
-#, python-format
+#: foundations/packaging.py:118
 msgid ""
-"Start run %s. Please wait while commands are executed, this can take some "
-"time."
+"An error occured while installing package(s) {0}! PIP install Log follows:"
 msgstr ""
 
-#: tests/__init__.py:776
-#, python-format
-msgid "Already passed scenario %s"
-msgstr ""
-
-#: tests/__init__.py:797
+#: foundations/packaging.py:125
 msgid ""
-"Automatically saved new output for scenario #{sce} command #{cmd}/{total}"
+"Sorry, automatic install of {0} is not yet supported on your distro. Please "
+"install it manually before continuing."
 msgstr ""
 
-#: tests/__init__.py:807
-msgid "Checking FAILED cmd {cmd}/{total} of scenario {sce}"
+#: foundations/exceptions.py:216
+msgid "The file {0} is corrupt!"
 msgstr ""
 
-#: tests/__init__.py:821
-#, python-format
-msgid "End run %s."
-msgstr ""
-
-#: tests/__init__.py:837
-msgid "running "
-msgstr ""
-
-#: tests/__init__.py:873
-msgid "The last command failed to execute, or returned an unexpected result!"
-msgstr ""
-
-#: tests/__init__.py:907
-#, python-format
-msgid "Cleaning directory %s."
-msgstr ""
-
-#: tests/__init__.py:911
-#, python-format
-msgid "Deleting %s."
-msgstr ""
-
-#: tests/__init__.py:921
-#, python-format
-msgid "Cleaned directory %s."
-msgstr ""
-
-#: tests/__init__.py:942
-#, python-format
-msgid "Backed up system files for context %s."
-msgstr ""
-
-#: tests/__init__.py:945
-msgid ""
-"Comparing backups of system files after tests for side-effects alterations."
-msgstr ""
-
-#: tests/__init__.py:966
-msgid "System config files backup comparison finished successfully."
-msgstr ""
-
-#: tests/__init__.py:986
-msgid "reload testsuite. Start from beginning."
-msgstr ""
-
-#: tests/__init__.py:988
-msgid "execute a specific scenario of the testsuite."
-msgstr ""
-
-#: tests/__init__.py:990
-msgid "List all scenarii of the testsuite."
-msgstr ""
-
-#: tests/__init__.py:992
-msgid "Select all scenarii."
-msgstr ""
-
-#: tests/__init__.py:994
-msgid "Start from the scenario N."
-msgstr ""
-
-#: tests/__init__.py:996
-msgid "Display messages during command execution."
-msgstr ""
-
-#: tests/__init__.py:998
-msgid "Clean scenarii directory."
-msgstr ""
-
-#: tests/__init__.py:1000
-msgid "Delete traces of a given scenario."
-msgstr ""
-
-#: tests/__init__.py:1002
-msgid "Display statistics of the testsuite."
-msgstr ""
-
-#: tests/__init__.py:1005
-msgid ""
-"Run the testsuite in standard interactive mode (one scenario at a time. Use "
-"this when you have modified a mega bunch of code, and you know it will be "
-"better to check everything manually before doing anything else, and the "
-"batch run is not what you want because your code is still in alpha stage."
-msgstr ""
-
-#: tests/__init__.py:1012
-msgid ""
-"Don't halt the scenario on fail, just accept the result of the failed "
-"command and continue. WARNING: this flag is meant to be used only when you "
-"don't have any scenario data in your repository, to build a new one from "
-"scratch. Use this flag onlyon a clean source tree, else your TS results will "
-"not be reliable."
+#: foundations/exceptions.py:219
+msgid "Reason: {0}"
 msgstr ""

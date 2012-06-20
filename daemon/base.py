@@ -539,23 +539,30 @@ class LicornBaseDaemon:
 			action="store", type="string", dest="pids_to_wake2", default=None,
 			help=SUPPRESS_HELP)
 
-		parser.add_option("-B", "--no-boot-check",
-			action="store_true", dest="no_boot_check", default=False,
-			help=_(u"Don't run the initial check on all shared directories. This "
-				u"makes daemon be ready faster to answer users legitimate "
-				u"requests, at the cost of consistency of shared data. {0}: don't"
-				u" use this flag at server boot in init scripts. Only on daemon "
-				u"relaunch, on an already running system, for testing or "
-				u"debugging purposes.").format(stylize(ST_IMPORTANT,
-				'EXTREME CAUTION')))
+		parser.add_option("-c", "--initial-check", "--initial-setup",
+			action="store_true", dest="initial_check", default=False,
+			help=_(u'Check the system for compliance with Licorn®. Meant to '
+				u'be used during first installation. The daemon will check, '
+				u'auto-repair and install everything necessary, and give the '
+				u'hand back. {0}; no need to supply "-D". Do not '
+				u'misunderstand that the daemon will {1} run this check '
+				u'in normal conditions; but with this flag it will {2} run '
+				u'the checks and exit immediately after them.').format(
+					stylize(ST_IMPORTANT, _('This option implies that the '
+					u'daemon will not fork into the background')),
+					stylize(ST_IMPORTANT, _(u'always')),
+					stylize(ST_IMPORTANT, _(u'only'))
+					))
 
 		parser.add_option_group(common_behaviour_group(app, parser, 'licornd'))
 
 		opts, args = parser.parse_args()
 
-		if hasattr(opts, 'replace_all') and opts.replace_all:
-			opts.replace = True
-
+		if opts.initial_check and opts.daemon:
+			opts.daemon = False
+			if os.geteuid() == 0:
+				logging.notice(_(u'{0}: running initial checks in the '
+												u'foreground.').format(self))
 		return opts, args
 	def clean_sys_argv(self, for_slaves=False):
 		""" Remove from current command-line arguments the one that we can't keep
@@ -582,7 +589,7 @@ class LicornBaseDaemon:
 				args.append(arg)
 
 		if for_slaves:
-			for arg in ("-W", "--no-wmi", "-B", "--no-boot-check",):
+			for arg in ("-W", "--no-wmi", ):
 				try:
 					args.remove(arg)
 
@@ -816,9 +823,11 @@ class LicornBaseDaemon:
 
 		self.unlink_pid_file()
 
+		logging.progress(_(u'{0}: remaining threads before exit: {1}.').format(
+															self, _threads()))
+
 		logging.notice(_(u'{0}: exiting{1}.').format(self, self.uptime()))
 
-		print '>>', _threads()
 		#if __debug__:
 		#	pycallgraph.make_dot_graph('/home/%s.svg' % self.name, format='svg')
 
