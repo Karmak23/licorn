@@ -113,7 +113,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# available to LMC, controllers and others if they need to plan
 		# background correction jobs, or the like.
 
-		logging.info(_(u'{0:s}: initializing facilities, backends, '
+		logging.info(_(u'{0}: initializing facilities, backends, '
 								u'controllers and extensions.').format(self))
 
 		self.start_servicers()
@@ -130,7 +130,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		# sufficient to make them registered and run by the `EventManager`.
 		from licorn import upgrades
 
-		logging.info(_(u'{0:s}: {1} callbacks collected.').format(self,
+		logging.info(_(u'{0}: {1} callbacks collected.').format(self,
 										stylize(ST_NAME, 'upgrades')))
 
 		# NOTE: the CommandListener must be launched prior to anything, to
@@ -254,7 +254,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
-		logging.info(_(u'{0:s}: collecting all threads.').format(self))
+		logging.info(_(u'{0}: collecting all threads.').format(self))
 
 		for module_manager in (LMC.backends, LMC.extensions):
 			for module in module_manager:
@@ -263,7 +263,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
-		logging.notice(_(u'{0:s}: starting all threads.').format(self))
+		logging.notice(_(u'{0}: starting all threads.').format(self))
 
 		for (thname, th) in self.__threads.items():
 			# Check for non-GenericQueueWorkerThread and non-already-started
@@ -278,7 +278,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				except RuntimeError:
 					logging.exception(_(u'Could not start thread {0}'), th.name)
 	def __stop_threads(self):
-		logging.progress(_(u'{0:s}: stopping threads.').format(self))
+		logging.progress(_(u'{0}: stopping threads.').format(self))
 
 		# don't use iteritems() in case we stop during start and not all threads
 		# have been added yet.
@@ -329,7 +329,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 				LicornEvent('wmi_starts').emit()
 
 		else:
-			logging.info(_(u'{0:s}: not starting WMI, disabled on command '
+			logging.info(_(u'{0}: not starting WMI, disabled on command '
 				u'line or by configuration directive.').format(self))
 	@events.callback_method
 	def wmi_starts(self, event, *args, **kwargs):
@@ -412,11 +412,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		self.init_daemon_services()
 
 		if options.daemon:
-			logging.notice(_(u'{0:s}: all threads started, going to sleep '
+			logging.notice(_(u'{0}: all threads started, going to sleep '
 				u'waiting for signals.').format(self))
 			signal.pause()
 		else:
-			logging.notice(_(u'{0:s}: all threads started, ready for TTY '
+			logging.notice(_(u'{0}: all threads started, ready for TTY '
 				u'interaction.').format(self))
 			# set up the interaction with admin on TTY std*, only if we do not
 			# fork into the background. This is a special thread case, not
@@ -695,12 +695,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# take over a TS backgrounded daemon with -rvD and my attached
 			# daemon gets rekilled immediately by another, launched by the TS.
 			# This is harmless, but annoying.
-			logging.warning(_(u'{0:s}: cannot announce shutdown '
+			logging.warning(_(u'{0}: cannot announce shutdown '
 				u'to remote hosts (was: {1}).').format(self, e))
 
 		self.__stop_threads()
 
-		logging.progress(_(u'{0:s}: joining threads.').format(self))
+		logging.progress(_(u'{0}: joining threads.').format(self))
 
 		threads_pass2 = []
 
@@ -714,7 +714,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			else:
 				assert ltrace(TRACE_THREAD, 'joining %s.' % thname)
 				if th.is_alive():
-					logging.warning(_(u'{0:s}: waiting for thread {1} to '
+					logging.warning(_(u'{0}: waiting for thread {1} to '
 						u'finish{2}.').format(self,
 							stylize(ST_NAME, thname),
 							_(u' (currently working on %s)')
@@ -758,7 +758,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			cmd.extend([ '--pids-to-wake2', ','.join(str(p)
 						for p in CommandListener.listeners_pids)])
 
-		logging.notice(_(u'{0:s}: restarting{1}.').format(self, self.uptime()))
+		logging.notice(_(u'{0}: restarting{1}.').format(self, self.uptime()))
 
 		self.execvp(cmd)
 	def reload(self):
