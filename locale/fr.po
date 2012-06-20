@@ -2761,7 +2761,7 @@ msgstr ""
 
 #: core/__init__.py:524
 msgid "Waiting up to {0} seconds for daemon to come up… Please hold on."
-msgstr "Attente jusqu'à {0} du démarrage du daemon… Ne raccrochez pas SVP :-)"
+msgstr "Attente jusqu'à {0} secondes du démarrage du daemon… Ne raccrochez pas SVP :-)"
 
 #: core/configuration.py:104
 #, python-format
