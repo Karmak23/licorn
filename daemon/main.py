@@ -285,7 +285,17 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		for (thname, th) in self.__threads.items():
 			assert ltrace(TRACE_THREAD, 'stopping thread %s.' % thname)
 			if th.is_alive():
-				th.stop()
+				try:
+					th.stop()
+
+				except AttributeError:
+					try:
+						th.cancel()
+
+					except AttributeError:
+						logging.warning(_(u'{0}: thread {1} has no stop() '
+								u'nor cancel() method! It is probably still '
+								u'running.').format(self, th.name))
 				time.sleep(0.01)
 
 		if '_wmi' in self.__threads.keys():
