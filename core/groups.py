@@ -1614,8 +1614,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			align_space    = ' ' * (label_width + 2)
 			gid_label_rest = 5 - len(str(self.__gidNumber))
 
-			accountdata = [ '{group_name}: ✎{gid} {backend}	'
-								'{descr} {inotified}'.format(
+			accountdata = [ u'{group_name}: ✎{gid} {backend}	'
+								u'{descr} {inotified}'.format(
 								group_name=stylize(
 									Group._permissive_colors[self.__is_permissive]
 										if self.__is_standard
@@ -1624,15 +1624,15 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 											else ST_NAME),
 									self.__name.rjust(label_width)),
 								#id_type=_(u'gid='),
-								gid='%s%s' % (
+								gid=u'%s%s' % (
 									stylize(ST_UGID, self.__gidNumber),
-									' ' * gid_label_rest),
+									u' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								descr= stylize(ST_COMMENT, self.__description)
-									if self.__description != '' else '',
-								inotified='' if self.is_system or self.inotified
+									if self.__description != '' else u'',
+								inotified=u'' if self.is_system or self.inotified
 												else stylize(ST_BAD,
-													_('(not watched)'))) ]
+													_(u'(not watched)'))) ]
 
 			if long_output:
 				if hasattr(self, '__userPassword'):

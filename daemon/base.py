@@ -8,7 +8,7 @@ Licorn Daemon base - http://docs.licorn.org/daemon/index.html
 
 """
 
-import sys, os, signal, time, re, errno, atexit
+import sys, os, signal, time, re, errno
 
 #def exitfunc():
 #	print '>> EXIT'
@@ -18,7 +18,6 @@ import sys, os, signal, time, re, errno, atexit
 #if __debug__:
 #	import pycallgraph; pycallgraph.start_trace()
 
-from threading import current_thread, Event
 from optparse  import OptionParser, SUPPRESS_HELP
 
 from licorn.foundations           import options, settings, logging, exceptions
@@ -26,14 +25,14 @@ from licorn.foundations           import process, pyutils, ttyutils, styles
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import NamedObject, MixedDictObject, EnumDict, Singleton
-from licorn.foundations.threads   import _threads, _thcount
+from licorn.foundations.base      import MixedDictObject, Singleton
+from licorn.foundations.threads   import _threads, _thcount, Event
 from licorn.foundations.constants import verbose, roles, priorities
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
 
-from licorn.core import LMC, version
+from licorn.core import version
 
 class LicornThreads(Singleton, MixedDictObject):
 	pass
@@ -345,7 +344,7 @@ class LicornBaseDaemon:
 				# trying to find a way to do this cleaner.
 				os.execvp(cmd[1], [cmd[0]] + cmd[2:])
 
-			except (OSError, IOError), e:
+			except (OSError, IOError):
 				logging.exception(_(u'transient process {0}: cannot execvp() {1}.'),
 									os.getpid(), (ST_ATTR, u' '.join(cmd)))
 				if raise_exc:
@@ -440,7 +439,9 @@ class LicornBaseDaemon:
 
 				try:
 					if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
-						logging.progress('{0}: skipped process @{0} which is not in the same cgroup.'.format(self, entry))
+						logging.progress(_(u'{0}: skipped process @{1} which '
+										u'is not in the same cgroup.').format(
+											self, entry))
 						continue
 
 					try:

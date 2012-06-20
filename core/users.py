@@ -1077,23 +1077,23 @@ class User(CoreStoredObject, CoreFSUnitObject):
 								- len(self.__primaryGroup().name)
 								- len(str(self.__gidNumber)))
 
-			accountdata = [ '{login}: ✎{uid} ✐{pri_group} '
-							'{backend}	{gecos} {inotified}'.format(
+			accountdata = [ u'{login}: ✎{uid} ✐{pri_group} '
+							u'{backend}	{gecos} {inotified}'.format(
 								login=stylize(
 									_locked_colors[self.__locked],
 									(self.__login).rjust(label_width)),
 								#id_type=_(u'uid'),
 								uid=stylize(ST_UGID, self.__uidNumber)
-										+ ' ' * uid_label_rest,
-								pri_group='%s%s' % (
+										+ u' ' * uid_label_rest,
+								pri_group=u'%s%s' % (
 										self.__primaryGroup()._cli_get_small(),
-										' ' * gid_label_rest),
+										u' ' * gid_label_rest),
 								backend=stylize(ST_BACKEND, self.backend.name),
 								gecos=stylize(ST_COMMENT,
-									self.__gecos) if self.__gecos != '' else '',
-								inotified='' if self.is_system or self.inotified
+									self.__gecos) if self.__gecos != '' else u'',
+								inotified=u'' if self.is_system or self.inotified
 												else stylize(ST_BAD,
-													_('(not watched)'))) ]
+													_(u'(not watched)'))) ]
 
 			if len(self.__groups) > 0:
 

@@ -464,7 +464,8 @@ def pidof(process_name):
 			try:
 
 				if cgroup and open('/proc/%s/cpuset' % entry).read().strip() != cgroup:
-					logging.progress('Skipped process @{0} which is not in the same cgroup.'.format(entry))
+					logging.progress(_(u'Skipped process @{0} which is not '
+										u'in the same cgroup.').format(entry))
 					continue
 
 				try:
