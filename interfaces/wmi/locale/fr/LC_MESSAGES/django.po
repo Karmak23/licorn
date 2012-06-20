@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-18 12:40+0200\n"
+"POT-Creation-Date: 2012-06-20 21:52+0200\n"
 "PO-Revision-Date: 2012-06-18 12:40+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -691,15 +691,15 @@ msgstr "WMI %s :"
 msgid "administration %s"
 msgstr "administration %s"
 
-#: libs/utils.py:96
+#: libs/utils.py:99
 msgid " (was: {0})"
 msgstr " (erreur : {0})"
 
-#: libs/utils.py:138
+#: libs/utils.py:141
 msgid "Could not import module {0}"
 msgstr "Impossible d'importer le module {0}"
 
-#: libs/utils.py:155
+#: libs/utils.py:158
 msgid ""
 "Dependancy {0} of Django app {1} is unsafe (not a str() nor an unicode() "
 "object),  ignoring the app completely."
@@ -707,7 +707,7 @@ msgstr ""
 "La dépendance {0} de l'application Django {1} n'est pas sûre (pas un objet "
 "str() ni unicode()); l'application est complètement ignorée."
 
-#: libs/utils.py:165 libs/utils.py:174
+#: libs/utils.py:168 libs/utils.py:177
 msgid ""
 "Urls of Django app {0} are not loaded because dependancy {1} is not "
 "satisfied."
@@ -715,7 +715,7 @@ msgstr ""
 "Les URLs de l'application Django {0} ne seront pas chargées car la "
 "dépendance {1} n'est pas satisfaite."
 
-#: libs/utils.py:183
+#: libs/utils.py:186
 msgid ""
 "Dynamically loading URL patterns for Django app {0}, all dependancies "
 "satisfied."
@@ -723,11 +723,11 @@ msgstr ""
 "Chargement dynamique des URLs pour l'application Django {0}, toutes les "
 "dépendances sont satisfaites."
 
-#: libs/utils.py:281
+#: libs/utils.py:290
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:286
+#: libs/utils.py:295
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -812,53 +812,53 @@ msgstr ""
 msgid "The type of the machine is unknown"
 msgstr ""
 
-#: shares/views.py:53
+#: shares/views.py:55
 msgid "Could not toggle simple shares status to {0} for user {1}"
 msgstr ""
 
-#: shares/views.py:56
+#: shares/views.py:58
 msgid "Could not toggle shares status to {0} for user {1} (was: {2})."
 msgstr ""
 
-#: shares/views.py:94
+#: shares/views.py:96
 msgid "Could not change password of share {0} (user {1})"
 msgstr ""
 
-#: shares/views.py:97
+#: shares/views.py:99
 msgid "Could not change the password of you share {0} (was: {1})."
 msgstr ""
 
-#: shares/views.py:116
+#: shares/views.py:118
 msgid "This user has no visible shares."
 msgstr "Cet utilisateur n'a pas de partages publics."
 
-#: shares/views.py:124
+#: shares/views.py:126
 msgid "This share has expired. It is no more available."
 msgstr "Ce partage a expiré, il n'est plus disponible."
 
-#: shares/views.py:130
+#: shares/views.py:132
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:146
+#: shares/views.py:148
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:153 system/views.py:245
+#: shares/views.py:155 system/views.py:245
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:155 system/views.py:247
+#: shares/views.py:157 system/views.py:247
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:159 system/views.py:251
+#: shares/views.py:161 system/views.py:251
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:162
+#: shares/views.py:164
 msgid "Not implemented yet, sorry."
 msgstr "Fonction pas encore implémentée, désolé."
 
@@ -1523,7 +1523,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:83
+#: templates/shares/index_main.html:80
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1531,11 +1531,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:89
+#: templates/shares/index_main.html:84
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:90
+#: templates/shares/index_main.html:85
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1544,7 +1544,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:94
+#: templates/shares/index_main.html:89
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
