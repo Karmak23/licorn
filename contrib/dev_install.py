@@ -139,10 +139,12 @@ def apt_install(packages_names):
 	# will be installed. This will be easier to debug when
 	# licornd launches and doesn't find a particular one.
 	for package in packages_names:
+		err('	Installing {0}…'.format(package))
 		_apt_install_cmd([package])
 def pip_install(packages_names):
 	#no_fail(_pip_install_cmd, packages_string.split())
 	for package in packages_names:
+		err('	Installing {0}…'.format(package))
 		_pip_install_cmd([package])
 def write_if_not_present(thefile, what_to_write, match_re):
 	try:
@@ -160,7 +162,9 @@ def write_if_not_present(thefile, what_to_write, match_re):
 def install_all_packages():
 	if distro in ('Ubuntu', 'Debian'):
 		err('Downloading and installing packages, please wait…')
+		err('	Updating packages sources…')
 		run_command(('apt-get', 'update'))
+
 		apt_install(base_packages)
 		apt_install(dev_packages)
 		apt_install(build_packages)
