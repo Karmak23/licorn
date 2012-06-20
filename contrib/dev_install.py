@@ -274,100 +274,17 @@ def make_symlinks():
 def first_licornd_run():
 	from licorn.foundations import process, fsapi
 
-	def wmi_listening():
-		out, err = process.execute(['netstat', '-antp'])
-		for line in out.split('\n'):
-			if 'LISTEN' in line and ':3356' in line:
-				return True
-		return False
-
-	def bg_thread(command):
-		def print_command(command):
-			try:
-				out, errors = run_command(command, pipe=True)
-				while 1:
-					sys.stdout.write('\t' + out.readline())
-					sys.stdout.flush()
-					#sys.stderr.write('\t' + errors.readline())
-					#sys.stderr.flush()
-			except:
-				sys.stdout.write('\n')
-				sys.stdout.flush()
-				pass
-
-
-		t = Thread(target=print_command, args=[ command ])
-		t.daemon = True
-		t.start()
-		return t
-
 	# unlink the `upgrades` symlink, in case we are doing a fresh re-install
 	# from another repository/branch. The daemon will recreate it automatically.
 	from licorn.upgrades import upgrades_root
 	unlink(upgrades_root)
 
-	# reset the log in case of old install.
-	unlink('/var/log/licornd.log')
-	fsapi.touch('/var/log/licornd.log')
+	err('Launching licornd for the first time to check system configuration. '
+										'Please wait, this can take a while…')
 
-	err('Launching licornd in the background for the first time to check system configuration. Please wait, this can take a while…')
+	# don't use our execute(), we want the output to shine.
+	os.system('/usr/sbin/licornd -rcv')
 
-	# follow the log and launch licornd
-	bg_thread(('tail', '-f', '/var/log/licornd.log'))
-	os.system('/usr/sbin/licornd -rv')
-
-	counter = 1
-
-	counter_messages = {
-		4: 'Still waiting… Hey, wait!',
-		8: 'Still waiting… PIP is probably compiling something…',
-		12: 'Still waiting… …or borking permissions in /usr/local',
-		13: 'Still waiting… (but don\'t worry, licornd will fix that)',
-		16: 'Still waiting… You\'d better get a coffee/beer/pr0n/whatever.',
-		17: 'Still waiting… Was just joking.',
-		24: 'Still waiting… Do not panic.',
-		32: 'Still waiting… We\'re getting closer.',
-		40: 'Still waiting… I\'m getting warmer!',
-		48: 'Still waiting… And warmer!',
-		56: 'Still waiting… Ah, no, finally. Still installing…',
-		64: 'Still waiting… I have a dream! That this installation finishes one day!',
-		72: 'Still waiting… But what kind of internet connection do you have??',
-		73: 'Still waiting… Nah! Sorry, I can be so impatient sometimes.',
-		80: 'Still waiting… I do not have anything more to say, just wait.',
-		}
-
-	while not wmi_listening():
-
-		msg = counter_messages.pop(counter, None)
-
-		if msg:
-			err(msg)
-
-		elif counter < 5:
-			# do not display anything during the 5 first seconds.
-			pass
-
-		elif counter < 100:
-			err('Still waiting…')
-
-		else:
-			# With a decent internet connection and machine, this should have been done.
-			execute(['/usr/sbin/licornd', '-k'])
-			execute(['killall', 'tail'])
-
-			err(u'So long. Things should have been finished since a while now. '
-				u'Please launch `sudo licornd -rvD` and see what happens. Get '
-				u'in touch with dev@licorn.org in case of any problem you do '
-				u'not know how to resolve by yourself.')
-			sys.exit(1)
-
-		time.sleep(5.0)
-		counter += 1
-
-	execute(['killall', 'tail'])
-
-	# licornd's will be terminated by the user installation,
-	# which need them before cleaning up.
 	err('System installation finished.')
 
 # ======================================================================= MAIN
