@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-18 12:40+0200\n"
+"POT-Creation-Date: 2012-06-20 21:52+0200\n"
 "PO-Revision-Date: 2012-06-18 09:59+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -162,11 +162,11 @@ msgstr "Verrouiller le compte %1"
 msgid "Lock account "
 msgstr "Verrouiller le compte"
 
-#: media/js/main.js:220
+#: media/js/main.js:219
 msgid "Random password generator"
 msgstr "Générateur de mot de passe aléatoire"
 
-#: media/js/main.js:221
+#: media/js/main.js:220
 msgid ""
 "<br />The generated password is &ldquo;&nbsp;<strong class=\"bigger\">%1</"
 "strong>&nbsp;&rdquo;. If you want to use it, just hit the <code>Confirm</"
