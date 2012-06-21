@@ -1,4 +1,4 @@
-.. _cli:
+.. _cli.en:
 
 ====================================
 Licorn® CLI (Command Line Interface)

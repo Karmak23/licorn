@@ -18,6 +18,10 @@ The :abbr:`WMI Web Management Interface` is perfect for normal persons: it has l
 CLI Quickstarter
 ================
 
+To be allowed to use Licorn® CLI tools you must be a members of ``admins`` group. if it's not already done::
+
+	sudo add user `whoami` admins
+	
 Creating 3 users and putting them together in a work group just created::
 
 	add user john --gecos "John Doe"
@@ -42,7 +46,7 @@ Betty lost her password::
 	# the same, human-readable:
 	sudo mod user betty --change-password
 
-The group Workgroup is be not permissive by default, meaning that when a member shares a file with others, they can read it but not modify it (:ref:`more details on permissiveness <permissiveness>`?). It you want to be able to, just make the group permissive::
+The group Workgroup is be not permissive by default, meaning that when a member shares a file with others, they can read it but not modify it (:ref:`more details on permissiveness <permissiveness.en>`?). It you want to be able to, just make the group permissive::
 
 	mod group WorkGroup -p
 	# same thing, human-readable:
@@ -71,7 +75,7 @@ Clean everything just done in this quickstarter::
 	del user --not-system --no-archive
 	del group --not-system --no-archive
 
-Now you can :ref:`discover more about the CLI <cli>`.
+Now you can continue with the WMI, and at any moment :ref:`discover more about the CLI <cli.en>`.
 
 .. _quickstart.wmi.en:
 
@@ -80,9 +84,9 @@ WMI Quickstarter
 
 The WMI offers high-level but limited-set of functionnality compared to CLI. It is aimed at non-professionnal users and occasionnal system administrators. It's fully internationnalized and localized (currently English and French, but more translations are welcome).
 
-To connect to the WMI, you must identify yourself as a user member of group ``licorn-wmi``. To do this, provided you're already an admin of the local machine, just run::
+To connect to the WMI, you must identify yourself as a user member of group ``licorn-wmi``, if you are not already an ``admins`` member (``admins`` are the Licorn® equivalent of ``root``). To do this, provided you're already an admin of the local machine, just run::
 
 	# this step has already been done by the developer installation script
-	add user <my_login> licorn-wmi
+	add user `whoami` licorn-wmi
 
-Then, using the WMI is pretty straightforward: `just head to it with your web browser <http://localhost:3356/>`_ and log in with your standard account.
+Then, using the WMI is pretty straightforward: `just head to it with your web browser <https://localhost:3356/>`_ and log in with your standard account. WMI access is HTTPS only, with a self-signed certificate as of version 1.3.2. You'll have to accept it before connecting.

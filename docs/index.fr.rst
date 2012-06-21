@@ -36,7 +36,7 @@
 Documentation Licorn®
 =====================
 
-.. warning:: la documentation Licorn® subit actuellement un gros remaniement pour un rafraîchissement complet par rapport aux nouveautés qui arrivent dans la version 1.3. D'ici là, ne prenez pas ce que vous lisez pour argent comptant, et visitez `le blog des développeurs <http://dev.licorn.org/blog/>`_ pour savoir quand tout est bon!
+.. warning:: la documentation Licorn® subit actuellement un gros remaniement pour inclure les nouveautés de la version 1.3. D'ici là, ne prenez pas ce que vous lisez pour argent comptant, et visitez `le blog des développeurs <http://dev.licorn.org/blog/>`_ pour savoir quand tout est terminé!
 
 Licorn® est un ensemble de programme conçus pour les administrateurs GNU/Linux et Un*x, pour les aider à traiter leurs tâches quotidiennes (gestion des comptes utilisateurs, des groups, des sauvegardes, imprimantes, partages, etc) de la manière la plus efficace possible.
 
