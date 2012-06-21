@@ -30,7 +30,9 @@ Si vous souhaitez éditer un document *en même temps* à plusieurs, il vous fau
 Partage de fichiers avec des intervenants extérieurs
 ----------------------------------------------------
 
-Pour donner un accès ponctuel à certains documents à des intervenants extérieurs, nul besoin de leur créer un compte sur le serveur, ni de joindre des fichiers imposants à des courriers électronique. Tournez vous vers les :ref:`partages web simplifiés <simple-sharing.fr>` proposés par Licorn®.
+Pour donner un accès ponctuel à certains documents à des intervenants extérieurs, nul besoin de leur créer un compte sur le serveur, ni de joindre des fichiers imposants à des courriers électronique. Tournez vous vers les :ref:`partages web simplifiés <simplesharing.fr>` proposés par Licorn®.
+
+.. seealso:: La :ref:`documentation des partages web simplifiés <simplesharing.fr>` pour plus de détails.
 
 
 Notes pour les gestionnaires / administrateurs

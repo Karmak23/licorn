@@ -30,7 +30,9 @@ If you really want to edit the same file *at the same time*, you need to look at
 Sharing documents with external partners
 ----------------------------------------
 
-To give limited access to some documents to external partners, no need to create them a guest account on your server, nor attach too-big-files to emails. Look at the :ref:`simple web sharing <simple-sharing.en>` feature provided by Licorn®.  
+To give limited access to some documents to external partners, no need to create them a guest account on your server, nor attach too-big-files to emails. Look at the :ref:`simple web sharing <simplesharing.en>` feature provided by Licorn®.  
+
+.. seealso:: :ref:`Simple web sharing documentation <simplesharing.en>` for more details.
 
 
 Notes to managers / administrators
