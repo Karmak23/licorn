@@ -33,7 +33,7 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject, remote_output
 from licorn.foundations.constants import filters, interactions, host_status, \
-											priorities, reasons
+											priorities, reasons, verbose
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -2572,6 +2572,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		from licorn.interfaces.wmi  import wmi_event_app, django_setup, settings as djsettings
 		from django.core.management import execute_manager
 
+		verbose_equivalent_levels = {
+				# We use '-v0' as a starting point, not '-v1', to not pollute
+				# the output with dots or whatever, there is enough from the
+				# CLI messages in the daemon and locally.
+				verbose.NOTICE:		0,
+				verbose.INFO:		1,
+				verbose.PROGRESS: 	2,
+				verbose.DEBUG:		3,
+				# 3 is the max. level in Django / unittest.
+				verbose.DEBUG2:		3,
+			}
+
 		django_setup()
 
 		if apps in ([], [ 'all' ]):
@@ -2581,10 +2593,16 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			logging.notice(_(u'Running WMI Django tests for app {0}, '
 					u'this may take a while…').format(stylize(ST_NAME, app)))
 
+			something_done = False
+
 			try:
 				# we must put 'manage.py' in the arguments for Django
 				# to lookup correctly the commands set for this utility.
-				execute_manager(djsettings, [ 'manage.py', 'test', app ])
+				#
+				execute_manager(djsettings, [ 'manage.py', 'test', '-v%s' %
+					verbose_equivalent_levels[current_thread().listener.verbose], app ])
+
+				something_done = True
 
 			except SystemExit:
 				# We won't exit, this is not the point when running this
@@ -2599,7 +2617,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			logging.notice(_(u'Successfully ran Django WMI tests '
 							u'for app {0}.').format(stylize(ST_NAME, app)))
 
-		if 'users' in apps or 'groups' in apps:
+		#
+		# TODO: remove this 'restart' when #769 is fixed.
+		#
+		if something_done and ('users' in apps or 'groups' in apps):
 			# Until http://dev.licorn.org/ticket/769 is fixed, running the
 			# Django WMI testsuite triggers the bug, we must restart.
 			LicornEvent('need_restart',
