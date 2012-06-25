@@ -254,7 +254,7 @@ def create(request, **kwargs):
 		except Exception, e:
 			logging.exception(_(u'Unable to add user'))
 			wmi_event_app.queue(request).put(utils.notify(_('Unable to add '
-									'user {0}: {1}.').format(login, e)))
+									'user: {0}.').format(e)))
 
 	return HttpResponse('DONE.')
 
