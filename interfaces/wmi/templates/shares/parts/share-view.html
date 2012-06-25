@@ -1,7 +1,7 @@
 {#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-<tr>
+<tr id="{{ share.shid }}" class='share_table'>
 	<td><span title="{{ _('Full path on the Licorn&reg; server: {0}').format(share.path) }}"
 			class="bigger cursor-help"> {{ share.name }}</span>
 		<br /><small class="smaller"><a href="{{ url_for('wmi.shares.views.serve',
@@ -34,7 +34,7 @@
 		{%- endif -%}
 	{%- endif -%}
 	</td>
-	<!-- experimental
+	<!-- experimental -->
 	<td class="centered">
 		<form class="ajax-form" method="GET"
 			action="{# {{ url_for('wmi.shares.views.password', args=(share.name, )) }} #}"
@@ -44,8 +44,35 @@
 
 				{{ icheckbox(share.shid, share.accepts_uploads) }}
 
-				<div class="share_popover_password hidden">
-					<div class="centered smaller" style="width: 300px;">
+			</div>
+		</form>
+
+		<script language="javascript">
+			$(document).ready(function() {
+				$("#popbutton_{{ share.shid }}").click(function() {
+					if ($("#id_checkbox_{{ share.shid }}").attr('checked')) {
+						$("#password_{{ share.shid }}").show();	
+					}					
+				})
+			});
+		</script>
+	</td>
+	<td class="centered">
+		{%- if share.expired -%}
+
+		{%- elif share.expire == None -%}
+			{{ _('never') }}
+
+		{%- else -%}
+			{{ format_time_delta(share.expire - time(),
+					use_neg=True, long_output=False) }}
+
+		{%- endif -%}
+	</td>
+	<!-- -->
+</tr>
+<tr id="password_{{ share.shid }}" class="hidden table">
+	<td colspan="3">
 						<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
 						<hr />
 						<table class="vertical-space-small">
@@ -65,76 +92,6 @@
 							</tr>
 						</table>
 						<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
-					</div>
-				</div>
-			</div>
-		</form>
-
-		<script language="javascript">
-			function pop_{{ share.shid }}_check() {
-				//$.get();
-
-			}
-
-			function pop_{{ share.shid }}_hide() {
-				$("#popbutton_{{ share.shid }}").find('.share_popover_password').hide();
-			}
-
-			function pop_{{ share.shid }}_show() {
-
-				cbx = $("#popbutton_{{ share.shid }}");
-
-				cbx.find('.share_popover_password').show();
-
-				cbx.popover({
-						content: cbx.find('.share_popover_password'),
-						preventTop: true,
-						preventLeft: true,
-						preventRight: false,
-						preventBottom: false,
-						closeEvent: pop_{{ share.shid }}_check
-					});
-			}
-
-			function pop_{{ share.shid }}_toggle() {
-				if ($("#id_checkbox_{{ share.shid }}").is(':checked')) {
-					// prevent popover, we don't need a password.
-					console.log('hiding {{ share.shid }}');
-					pop_{{ share.shid }}_hide();
-
-				} else {
-					console.log('showing {{ share.shid }}');
-					pop_{{ share.shid }}_show();
-				}
-			}
-
-			$(document).ready(function() {
-
-				$("#popbutton_{{ share.shid }}").each(function() {
-
-					// Do the first toggle setup
-					pop_{{ share.shid }}_toggle();
-
-					$(this).click(function(){
-						// we need to wait a little because the ':checked' status
-						// changes only at the end of the checkbox animation.
-						pop_{{ share.shid }}_toggle();
-					});
-				});
-			});
-		</script>
-	</td>
-	<td class="centered">
-		{%- if share.expired -%}
-
-		{%- elif share.expire == None -%}
-			{{ _('never') }}
-
-		{%- else -%}
-			{{ format_time_delta(share.expire - time(),
-					use_neg=True, long_output=False) }}
-
-		{%- endif -%}
-	</td>
-	-->
+				
+	<td>
 </tr>
