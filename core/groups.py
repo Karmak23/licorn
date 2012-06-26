@@ -2512,7 +2512,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				# delete its internal data and exit.
 				self.__delete_group(group)
 
-				# checkpoint, needed for multi-delete (users-groups-profile) operation,
+				# Checkpoint, needed for multi-delete (users-groups-profile) operation,
 				# to avoid collecting the deleted users at the end of the run, making
 				# throw false-negative operation about non-existing groups.
 				gc.collect()
@@ -2550,7 +2550,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			# finally, delete the group.
 			self.__delete_group(group)
 
-		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# Checkpoint, needed for multi-delete (users-groups-profile) operations,
 		# to avoid collecting the deleted users at the end of the run, making
 		# throw false-negative operation about non-existing groups.
 		gc.collect()

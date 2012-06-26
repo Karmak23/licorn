@@ -31,6 +31,17 @@ class SelectableController(NamedObject, dict):
 	""" This class makes the current controller be selectable by
 		`daemon.rwi.select()`. This is used in many places across CLI tools,
 		WMI, and core internals.
+
+		The :class:`SelectableController` inherits :class:`dict` and indexes
+		held :class:`CoreUnitObjects` on their ID.
+
+		.. note:: the only **big** difference with the :class:`dict` behavior
+			is iteration: when you run `for object in controller`, it will
+			**iterate the values**, not the keys. This is the prefered way
+			in Licorn®.
+
+		.. versionadded:: long ago in the past. perhaps Licorn® 1.1 or 1.2, I
+			can't seem to remember.
 	"""
 
 	instances = {}

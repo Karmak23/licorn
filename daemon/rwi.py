@@ -2558,6 +2558,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					)
 
 			return
+
 		self.setup_listener_gettext()
 
 		# `execute_manager` will fail without the PYTHONPATH including our

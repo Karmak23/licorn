@@ -696,8 +696,8 @@ class CoreFSUnitObject(object):
 		except AttributeError:
 			# this happens when a CoreObject is deleted but has not been
 			# checked since daemon start. Rare, but happens.
-			logging.exception(_(u'Exception while deleting inotifier '
-								u'watches for {0}'), self.name)
+			logging.warning2(_(u'While deleting inotifier watches for {0}, '
+				u'it has never been checked (this is harmless).').format(self.name))
 
 		# we have no watches left. Reclaim some memory ;-)
 		self.__recently_deleted.clear()

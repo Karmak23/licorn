@@ -1776,7 +1776,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			del user
 
-		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# Checkpoint, needed for multi-delete (users-groups-profile) operations,
 		# to avoid collecting the deleted users at the end of the run, making
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
@@ -1794,6 +1794,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		# These warnings are harmless.
 		if no_archive:
 			workers.service_enqueue(priorities.LOW, fsapi.remove_directory, homedir)
+
 		else:
 			workers.service_enqueue(priorities.LOW, fsapi.archive_directory, homedir, login)
 	def dump(self):
