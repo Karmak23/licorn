@@ -10,7 +10,7 @@ Licorn core: users - http://docs.licorn.org/core/users.html
 :license: GNU GPL version 2
 """
 
-import os, sys, time, re, gc
+import os, sys, time, re, gc, weakref
 
 from operator   import attrgetter
 from traceback  import print_exc
@@ -159,6 +159,10 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		if type(group) == types.IntType:
 			group = LMC.groups.by_gid(group)
+
+		# We need the real object, else 'group in ...' doesn't work.
+		if type(group) in weakref.ProxyTypes:
+			group = group.weakref()
 
 		if group in self.groups:
 			return relation.MEMBER
@@ -348,7 +352,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__primaryGroup = group.weakref
 			group.link_gidMember(self)
 
-			LicornEvent('user_primaryGroup_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_primaryGroup_changed', user=self.proxy).emit(priorities.LOW)
 		else:
 			raise exceptions.LicornRuntimeError(_(u'{0}: tried to set {1} '
 				'as {2} primary group, whose GID is not the same '
@@ -393,7 +397,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.serialize()
 			self._cli_invalidate()
 
-			LicornEvent('user_gecos_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_gecos_changed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed user {0} gecos '
 				'to "{1}".').format(stylize(ST_NAME, self.__login),
@@ -420,7 +424,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__loginShell = shell
 			self.serialize()
 
-			LicornEvent('user_loginShell_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_loginShell_changed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed user {0} shell to {1}.').format(
 				stylize(ST_NAME, self.__login), stylize(ST_COMMENT, shell)))
@@ -462,7 +466,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 		with self.lock:
 			if self.__already_created:
-				LicornEvent('user_pre_change_password', user=self, password=password, synchronous=True).emit()
+				LicornEvent('user_pre_change_password', user=self.proxy, password=password, synchronous=True).emit()
 
 			prefix = '!' if self.__locked else ''
 
@@ -477,12 +481,12 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			if self.__already_created:
 				self.serialize()
-				LicornEvent('user_post_change_password', user=self, password=password, synchronous=True).emit()
+				LicornEvent('user_post_change_password', user=self.proxy, password=password, synchronous=True).emit()
 
 				if self.__already_created:
 					# don't forward this event on user creation, because we
 					# already have the "user_added" for this case.
-					LicornEvent('user_userPassword_changed', user=self).emit(priorities.LOW)
+					LicornEvent('user_userPassword_changed', user=self.proxy).emit(priorities.LOW)
 
 			if display:
 				logging.notice(_(u'Set password for user {0} to {1}.').format(
@@ -568,11 +572,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 											stylize(ST_NAME, self.__login)))
 					return
 				else:
-					LicornEvent('user_pre_lock', user=self, synchronous=True).emit()
+					LicornEvent('user_pre_lock', user=self.proxy, synchronous=True).emit()
 
 					self.__userPassword = '!' + self.__userPassword
 
-					LicornEvent('user_post_lock', user=self, synchronous=True).emit()
+					LicornEvent('user_post_lock', user=self.proxy, synchronous=True).emit()
 
 					logging.notice(_(u'Locked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -581,11 +585,11 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			else:
 				if self.__locked:
 
-					LicornEvent('user_pre_unlock', user=self, synchronous=True).emit()
+					LicornEvent('user_pre_unlock', user=self.proxy, synchronous=True).emit()
 
 					self.__userPassword = self.__userPassword[1:]
 
-					LicornEvent('user_post_unlock', user=self, synchronous=True).emit()
+					LicornEvent('user_post_unlock', user=self.proxy, synchronous=True).emit()
 
 					logging.notice(_(u'Unlocked user account {0}.').format(
 											stylize(ST_LOGIN, self.__login)))
@@ -599,7 +603,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 			self.__locked = lock
 			self.serialize()
 
-			LicornEvent('user_locked_changed', user=self).emit(priorities.LOW)
+			LicornEvent('user_locked_changed', user=self.proxy).emit(priorities.LOW)
 	@property
 	def homeDirectory(self):
 		""" Read-write attribute, the path to the home directory of a standard
@@ -838,7 +842,7 @@ class User(CoreStoredObject, CoreFSUnitObject):
 
 			self._checking.clear()
 
-			LicornEvent('user_skel_applyed', user=self).emit(priorities.LOW)
+			LicornEvent('user_skel_applyed', user=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Applyed skel {0} for user {1}').format(
 										skel, stylize(ST_LOGIN, self.__login)))
@@ -1192,13 +1196,19 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		return 'login'
 
 	# local and specific implementations of SelectableController methods.
-	def by_uid(self, uid):
+	def by_uid(self, uid, strong=True):
 		# we need to be sure we get an int(), because the 'uid' comes from RWI
 		# and is often a string.
-		return self[int(uid)]
-	def by_login(self, login):
+		if strong:
+			return self[int(uid)]
+		else:
+			return self[int(uid)].proxy
+	def by_login(self, login, strong=True):
 		# Call the thing before returning it, because it's a weakref.
-		return User.by_login[login]()
+		if strong:
+			return User.by_login[login]()
+		else:
+			return User.by_login[login]().proxy
 
 	# the generic way (called by SelectableController)
 	by_key  = by_uid
@@ -1273,7 +1283,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				self[uid] = user
 				loaded.append(uid)
 
-				LicornEvent('user_changed', user=user).emit(priorities.LOW)
+				LicornEvent('user_changed', user=user.proxy).emit(priorities.LOW)
 
 			for uid, user in self.items():
 				if user.backend.name == backend.name:
@@ -1672,7 +1682,8 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 			# This event is fired after the check: some extensions need
 			# the HOME to be created before operating.
-			LicornEvent('user_post_add', user=user, password=password,
+			LicornEvent('user_post_add', user=user.proxy,
+												password=password,
 												synchronous=True).emit()
 
 		# we needed to delay this display until *after* account creation, to
@@ -1714,13 +1725,16 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		# this event too early in the method, other parts of Licorn® assume
 		# the home dir created and groups to be already setup when they
 		# receive this event.
-		LicornEvent('user_added', user=user).emit(priorities.LOW)
+		LicornEvent('user_added', user=user.proxy).emit(priorities.LOW)
 
 		assert ltrace(TRACE_USERS, '< add_User(%r)' % user)
 
 		# We *need* to return the password, in case it was autogenerated.
 		# This is the only way we can know it, in massive imports.
-		return user, password
+		#
+		# we always return a `proxy`, not the real object, to avoid too many
+		# strong references anywhere, which produce strange things like #769.
+		return user.proxy, password
 	def del_User(self, user, no_archive=False, force=False, batch=False):
 		""" Delete a user. """
 
@@ -1728,6 +1742,10 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 
 		if type(user) == types.IntType:
 			user = self.by_uid(user)
+
+		# we need a strong reference during deletion.
+		if type(user) in weakref.ProxyTypes:
+			user = user.weakref()
 
 		if user.is_system_restricted and not force:
 			raise exceptions.BadArgumentError(_(u'Cannot delete '
@@ -1741,25 +1759,30 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		for group in user.groups[:]:
 			group.del_Users([ user ], batch=True, emit_event=False)
 
-		LicornEvent('user_pre_del', user=user, synchronous=True).emit()
+		LicornEvent('user_pre_del', user=user.proxy, synchronous=True).emit()
 
 		# keep the homedir path, to backup it if requested.
 		homedir = user.homeDirectory
 		# keep infos to use them in deletion notice
 		login   = user.login
 		uid     = user.uidNumber
+		system  = user.is_system
 
 		with self.lock:
+			# WARNING: delete the group from the controller before the backend
+			# serialization, else lazy backends (like shadow) will pick it up
+			# again and it will be present at next daemon (re-)start.
 			if uid in self:
 				del self[uid]
 
 			else:
 				logging.warning2(_(u'{0}: account {1} already not referenced in '
-					'controller!').format(stylize(ST_NAME, self.name),
-						stylize(ST_LOGIN, login)))
+							u'controller!').format(stylize(ST_NAME, self.name),
+								stylize(ST_LOGIN, login)))
 
 			# forward the bad news to anyone interested.
-			LicornEvent('user_deleted', user=user).emit(priorities.LOW)
+			LicornEvent('user_deleted', login=login, uid=uid,
+											system=system).emit()
 
 			if user.is_standard:
 				# serialize=False because we don't want the user's home
@@ -1767,9 +1790,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				user.inotified_toggle(False, full_display=False, serialize=False)
 
 			# NOTE: the backend deletion must be done *after* having deleted
-			# the object from the controller, else mono-maniac backends (like
-			# shadow) don't "see" the change (they walk the controller) and
-			# save everything, including the user we want to delete.
+			# the object from the controller. See above WARNING.
 			user.backend.delete_User(user)
 
 			assert ltrace(TRACE_GC, '  user ref count before del: %d %s' % (
@@ -1785,7 +1806,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		logging.notice(_(u'Deleted user account {0}.').format(
 			stylize(ST_LOGIN, login)))
 
-		LicornEvent('user_post_del', uid=uid, login=login,
+		LicornEvent('user_post_del', uid=uid, login=login, system=system,
 						no_archive=no_archive, synchronous=True).emit()
 
 		# The user account is now wiped out from the system.

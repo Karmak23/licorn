@@ -2621,8 +2621,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		#
 		# TODO: remove this 'restart' when #769 is fixed.
 		#
-		if something_done and ('users' in apps or 'groups' in apps):
+		#if something_done and ('users' in apps or 'groups' in apps):
 			# Until http://dev.licorn.org/ticket/769 is fixed, running the
 			# Django WMI testsuite triggers the bug, we must restart.
-			LicornEvent('need_restart',
-						reason=reasons.INTERNAL_LEAK).emit(priorities.HIGH)
+			#LicornEvent('need_restart',
+			#			reason=reasons.INTERNAL_LEAK).emit(priorities.HIGH)

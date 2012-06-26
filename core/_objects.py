@@ -134,6 +134,9 @@ class CoreStoredObject(CoreUnitObject):
 		self.__lock    = self.__rw_lock
 
 	@property
+	def proxy(self):
+		return weakref.proxy(self)
+	@property
 	def weakref(self):
 		return self.__myref
 	@property
@@ -284,7 +287,7 @@ class CoreFSUnitObject(object):
 
 			# we need a kwargs named 'group' or 'user', thus the **{...}.
 			LicornEvent('%s_inotify_state_changed' % object_type_str,
-						**{ object_type_str: self }).emit(priorities.LOW)
+						**{ object_type_str: self.proxy }).emit(priorities.LOW)
 
 			if full_display:
 				logging.notice(_(u'Switched {0} {1} inotify state to {2} '

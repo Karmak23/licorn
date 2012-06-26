@@ -7,7 +7,7 @@ Licorn® WMI - users views tests
 	* 2012 Olivier Cortès <olive@licorn.org>
 :license: GNU GPL version 2
 """
-import urllib, tempfile, gc
+import urllib, tempfile, time
 
 from django.utils	    import unittest
 from django.test.client import Client
@@ -77,7 +77,9 @@ class testUsers(unittest.TestCase):
 		"""
 		# create the standard test user
 		try:
-			cls.standard_user = LMC.users.by_login(cls.get_name(standard_user_login, suffix))
+			cls.standard_user =	LMC.users.by_login(
+						cls.get_name(standard_user_login, suffix), strong=False)
+
 		except KeyError:
 			cls.standard_user, dummy = LMC.users.add_User(
 								login=cls.get_name(standard_user_login, suffix),
@@ -87,7 +89,8 @@ class testUsers(unittest.TestCase):
 
 		# create the manager test user
 		try:
-			cls.manager_user = LMC.users.by_login(cls.get_name(manager_user_login, suffix))
+			cls.manager_user = LMC.users.by_login(
+						cls.get_name(manager_user_login, suffix), strong=False)
 
 		except KeyError:
 			cls.manager_user, dummy = LMC.users.add_User(
@@ -98,9 +101,11 @@ class testUsers(unittest.TestCase):
 									LMC.groups.by_name('licorn-wmi').gidNumber
 									]
 							)
+
 		# create the admin test user
 		try:
-			cls.admin_user = LMC.users.by_login(cls.get_name(admin_user_login, suffix))
+			cls.admin_user = LMC.users.by_login(
+						cls.get_name(admin_user_login, suffix), strong=False)
 
 		except KeyError:
 			cls.admin_user, dummy = LMC.users.add_User(
@@ -114,55 +119,62 @@ class testUsers(unittest.TestCase):
 
 		# create the standard group
 		try:
-			cls.standard_group = LMC.groups.by_name(cls.get_name(standard_group_name, suffix))
+			cls.standard_group = LMC.groups.by_name(
+						cls.get_name(standard_group_name, suffix), strong=False)
 
 		except KeyError:
-			cls.standard_group = LMC.groups.add_Group(name=cls.get_name(standard_group_name, suffix))
+			cls.standard_group = LMC.groups.add_Group(name=cls.get_name(
+												standard_group_name, suffix))
 
 		# create the system group
 		try:
-			cls.system_group = LMC.groups.by_name(cls.get_name(system_group_name, suffix))
+			cls.system_group = LMC.groups.by_name(
+						cls.get_name(system_group_name, suffix), strong=False)
 
 		except KeyError:
-			cls.system_group = LMC.groups.add_Group(name=cls.get_name(system_group_name, suffix),
+			cls.system_group = LMC.groups.add_Group(
+								name=cls.get_name(system_group_name, suffix),
 														system=True)
 
 		# create the system group
 		try:
-			cls.privileged_group = LMC.groups.by_name(cls.get_name(privileged_group_name, suffix))
+			cls.privileged_group = LMC.groups.by_name(
+					cls.get_name(privileged_group_name, suffix), strong=False)
 
 		except KeyError:
 			cls.privileged_group = LMC.groups.add_Group(
-				name=cls.get_name(privileged_group_name, suffix),
-				system=True)
+							name=cls.get_name(privileged_group_name, suffix),
+							system=True)
 
-		LMC.privileges.add([cls.privileged_group])
+		LMC.privileges.add([ cls.privileged_group ])
 
 	@classmethod
 	def setUpClass(cls, suffix):
 		cls.setup_tests_environnement(suffix=suffix)
 
+		logging.notice(_(u'TS: waiting for background events to finish…'))
+		time.sleep(1.5)
+
 	@classmethod
 	def tearDownClass(cls):
 		""" remove the test environnememt """
-		users_to_del = [ cls.standard_user, cls.manager_user, cls.admin_user]
 
-		groups_to_del = [ cls.standard_group, cls.system_group,
-											cls.privileged_group ]
-
-		for u in users_to_del:
+		for u in (cls.standard_user, cls.manager_user, cls.admin_user):
 			LMC.users.del_User(u, no_archive=True)
 
-		for g in groups_to_del:
+		for g in (cls.standard_group, cls.system_group, cls.privileged_group):
 			LMC.groups.del_Group(g, no_archive=True)
 
-		# we must delete everything, else they won't be garbage collected
-		# immediately and next creation will fail (#769).
+		# We must delete everything, else they won't be garbage collected
+		# immediately and next run of the same testsuite will not run
+		# properly (this is related to #769, but not exactly the same).
 		del u, g, cls.manager_user, cls.standard_user, cls.admin_user, \
-			cls.standard_group, cls.system_group, cls.privileged_group, \
-			users_to_del, groups_to_del
+			cls.standard_group, cls.system_group, cls.privileged_group
 
-		gc.collect()
+		#gc.collect()
+
+		logging.notice(_(u'TS: waiting for background events to finish…'))
+		time.sleep(1.5)
 
 class testUsersAnonymous(testUsers):
 	@classmethod
@@ -238,6 +250,7 @@ class testStandardUsers(testUsers):
 		# create the manager user we will log in with
 		try:
 			cls.standard = LMC.users.by_login(std_user_login_test)
+
 		except KeyError:
 			cls.standard, dummy = LMC.users.add_User(
 								login=std_user_login_test,
@@ -248,11 +261,12 @@ class testStandardUsers(testUsers):
 
 	@classmethod
 	def tearDownClass(cls, *args, **kwargs):
-		super(testStandardUsers, cls).tearDownClass(*args, **kwargs)
 
 		# remove our user used to log in as manager
 		LMC.users.del_User(cls.standard, no_archive=True)
 		del cls.standard
+
+		super(testStandardUsers, cls).tearDownClass(*args, **kwargs)
 
 	def setUp(self):
 		self.client = Client()
@@ -441,11 +455,12 @@ class testWmiUsers(testUsers):
 
 	@classmethod
 	def tearDownClass(cls, *args, **kwargs):
-		super(testWmiUsers, cls).tearDownClass(*args, **kwargs)
 
 		# remove our user used to log in as manager
 		LMC.users.del_User(cls.manager, no_archive=True)
 		del cls.manager
+
+		super(testWmiUsers, cls).tearDownClass(*args, **kwargs)
 
 	def setUp(self):
 
@@ -547,29 +562,31 @@ class testWmiUsers(testUsers):
 
 	def test_manager_can_modify_its_own_groups(self):
 
+		user = self.manager.weakref()
+
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager.uid, self.standard_group.gid,
 								relation.GUEST))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager in self.standard_group.guest_group.members, True)
+		self.assertEqual(user in self.standard_group.guest_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager.uid, self.standard_group.gid,
 								relation.MEMBER))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager in self.standard_group.members, True)
+		self.assertEqual(user in self.standard_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager.uid, self.standard_group.gid,
 								relation.RESPONSIBLE))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager in self.standard_group.responsible_group.members, True)
+		self.assertEqual(user in self.standard_group.responsible_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager.uid, self.standard_group.gid,
 								relation.NO_MEMBERSHIP))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager in self.standard_group.members, False)
+		self.assertEqual(user in self.standard_group.members, False)
 
 	def test_manager_can_modify_its_own_skel(self):
 
@@ -583,34 +600,42 @@ class testWmiUsers(testUsers):
 
 	def test_manager_can_modify_licorn_wmi_groups(self):
 		# guest
+
+		# get a strong ref for ' ... in ...' tests
+		user = self.manager_user.weakref()
+
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager_user.uid, self.standard_group.gid,
 								relation.GUEST))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager_user in self.standard_group.guest_group.members, True)
+		self.assertEqual(user in self.standard_group.guest_group.members, True)
 
 		# member
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager_user.uid, self.standard_group.gid,
 								relation.MEMBER))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager_user in self.standard_group.members, True)
+		self.assertEqual(user in self.standard_group.members, True)
 
 		# resp
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager_user.uid, self.standard_group.gid,
 								relation.RESPONSIBLE))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager_user in self.standard_group.responsible_group.members, True)
+		self.assertEqual(user in self.standard_group.responsible_group.members, True)
 
 		# no membership
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.manager_user.uid, self.standard_group.gid,
 								relation.NO_MEMBERSHIP))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.manager_user not in self.standard_group.guest_group.members, True)
-		self.assertEqual(self.manager_user not in self.standard_group.members, True)
-		self.assertEqual(self.manager_user not in self.standard_group.responsible_group.members, True)
+
+		self.assertEqual(user in self.standard_group.guest_group.members, False)
+		self.assertEqual(user in self.standard_group.members, False)
+		self.assertEqual(user in self.standard_group.responsible_group.members, False)
+
+		# don't hold the strong reference for too long, this triggers #769
+		del user
 
 	def test_manager_can_modify_standard_user_gecos(self):
 		for gecos in gecos_to_test:
@@ -641,36 +666,43 @@ class testWmiUsers(testUsers):
 											LMC.configuration.users.shells[-1])
 
 	def test_manager_can_modify_standard_user_groups(self):
+
+		user = self.standard_user.weakref()
+
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.standard_user.uid, self.standard_group.gid,
 								relation.GUEST))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.standard_user in self.standard_group.guest_group.members, True)
+		self.assertEqual(user in self.standard_group.guest_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.standard_user.uid, self.standard_group.gid,
 								relation.MEMBER))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.standard_user in self.standard_group.members, True)
+		self.assertEqual(user in self.standard_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.standard_user.uid, self.standard_group.gid,
 								relation.RESPONSIBLE))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.standard_user in self.standard_group.responsible_group.members, True)
+		self.assertEqual(user in self.standard_group.responsible_group.members, True)
 
 		r = self.client.get('/users/mod/{0}/groups/{1}/{2}'.format(
 								self.standard_user.uid, self.standard_group.gid,
 								relation.NO_MEMBERSHIP))
 		self.assertEqual(r.status_code, 200)
-		self.assertEqual(self.standard_user not in self.standard_group.guest_group.members, True)
-		self.assertEqual(self.standard_user not in self.standard_group.members, True)
-		self.assertEqual(self.standard_user not in self.standard_group.responsible_group.members, True)
+
+		self.assertEqual(user in self.standard_group.guest_group.members, False)
+		self.assertEqual(user in self.standard_group.members, False)
+		self.assertEqual(user in self.standard_group.responsible_group.members, False)
+
+		# don't hold the strong reference too much, this could trigger #769.
+		del user
 
 	def test_manager_can_modify_standard_user_skel(self):
 		r = self.client.get('/users/mod/{0}/skel/{1}'.format(
-								self.standard_user.uid,
-								uqp('/etc/skel')))
+													self.standard_user.uid,
+													uqp('/etc/skel')))
 		self.assertEqual(r.status_code, 200)
 
 	def test_manager_can_lock_and_unlock_standard_user(self):
@@ -690,31 +722,19 @@ class testWmiUsers(testUsers):
 		uid_to_del   = self.standard_user.uidNumber
 		login_to_del = self.standard_user.login
 
-		del self.__class__.standard_user
-
 		r = self.client.get('/users/delete/{0}/False'.format(uid_to_del))
 		self.assertEqual(r.status_code, 200)
 
 		self.assertEqual(uid_to_del in LMC.users.keys(), False)
+		self.assertEqual(login_to_del in LMC.users.logins, False)
 
-		# TODO: re-activate this one when #769 is fixed.
-		#self.assertEqual(login_to_del in LMC.users.logins, False)
-
-		# Recreate the standard_user, it should have been deleted
-		try:
-			# try/except to because of #769
-			# TODO: remove this try/Except when #769 is fixed.
-			self.__class__.standard_user = LMC.users.by_login(standard_user_login)
-
-		except KeyError:
-			self.__class__.standard_user, dummy = LMC.users.add_User(
+		# Recreate the standard_user, we need it to continue testing ;-)
+		self.__class__.standard_user, dummy = LMC.users.add_User(
 								login=standard_user_login,
 								gecos=u'Django TS Account - test user',
 								password="not_so_random",
 								in_groups=[]
 							)
-
-		#logging.notice('>>> %s %s' % (self.__class__.__name__, self.__class__.standard_user))
 
 	def test_manager_can_view_home_page(self):
 		r = self.client.get('/users/')
