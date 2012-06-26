@@ -1752,6 +1752,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 		with self.lock:
 			if uid in self:
 				del self[uid]
+
 			else:
 				logging.warning2(_(u'{0}: account {1} already not referenced in '
 					'controller!').format(stylize(ST_NAME, self.name),

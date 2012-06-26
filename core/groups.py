@@ -2592,6 +2592,7 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		if gid in self:
 			del self[gid]
+
 		else:
 			logging.warning2(_(u'{0}: group {1} already not referenced in '
 				u'controller!').format(stylize(ST_NAME, self.name),
