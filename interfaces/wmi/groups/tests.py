@@ -7,7 +7,7 @@ Licorn® WMI - users views tests
 	* 2012 Olivier Cortès <olive@licorn.org>
 :license: GNU GPL version 2
 """
-import sys, urllib, tempfile, gc
+import sys, urllib, tempfile, gc, time
 
 from django.utils	    import unittest
 from django.test.client import Client
@@ -78,7 +78,9 @@ class testUsers(unittest.TestCase):
 		"""
 		# create the standard test user
 		try:
-			cls.standard_user = LMC.users.by_login(cls.get_name(standard_user_login, suffix))
+			cls.standard_user = LMC.users.by_login(
+					cls.get_name(standard_user_login, suffix), strong=False)
+
 		except KeyError:
 			cls.standard_user, dummy = LMC.users.add_User(
 								login=cls.get_name(standard_user_login, suffix),
@@ -88,7 +90,8 @@ class testUsers(unittest.TestCase):
 
 		# create the manager test user
 		try:
-			cls.manager_user = LMC.users.by_login(cls.get_name(manager_user_login, suffix))
+			cls.manager_user = LMC.users.by_login(
+						cls.get_name(manager_user_login, suffix), strong=False)
 
 		except KeyError:
 			cls.manager_user, dummy = LMC.users.add_User(
@@ -99,9 +102,11 @@ class testUsers(unittest.TestCase):
 									LMC.groups.by_name('licorn-wmi').gidNumber
 									]
 							)
+
 		# create the admin test user
 		try:
-			cls.admin_user = LMC.users.by_login(cls.get_name(admin_user_login, suffix))
+			cls.admin_user = LMC.users.by_login(
+						cls.get_name(admin_user_login, suffix), strong=False)
 
 		except KeyError:
 			cls.admin_user, dummy = LMC.users.add_User(
@@ -115,27 +120,32 @@ class testUsers(unittest.TestCase):
 
 		# create the standard group
 		try:
-			cls.standard_group = LMC.groups.by_name(cls.get_name(standard_group_name, suffix))
+			cls.standard_group = LMC.groups.by_name(
+						cls.get_name(standard_group_name, suffix), strong=False)
 
 		except KeyError:
-			cls.standard_group = LMC.groups.add_Group(name=cls.get_name(standard_group_name, suffix))
+			cls.standard_group = LMC.groups.add_Group(
+								name=cls.get_name(standard_group_name, suffix))
 
 		# create the system group
 		try:
-			cls.system_group = LMC.groups.by_name(cls.get_name(system_group_name, suffix))
+			cls.system_group = LMC.groups.by_name(
+						cls.get_name(system_group_name, suffix), strong=False)
 
 		except KeyError:
-			cls.system_group = LMC.groups.add_Group(name=cls.get_name(system_group_name, suffix),
+			cls.system_group = LMC.groups.add_Group(
+								name=cls.get_name(system_group_name, suffix),
 														system=True)
 
 		# create the system group
 		try:
-			cls.privileged_group = LMC.groups.by_name(cls.get_name(privileged_group_name, suffix))
+			cls.privileged_group = LMC.groups.by_name(
+					cls.get_name(privileged_group_name, suffix), strong=False)
 
 		except KeyError:
 			cls.privileged_group = LMC.groups.add_Group(
-				name=cls.get_name(privileged_group_name, suffix),
-				system=True)
+							name=cls.get_name(privileged_group_name, suffix),
+							system=True)
 
 		LMC.privileges.add([cls.privileged_group])
 
@@ -143,27 +153,25 @@ class testUsers(unittest.TestCase):
 	def setUpClass(cls, suffix):
 		cls.setup_tests_environnement(suffix=suffix)
 
+		logging.notice(_(u'TS: waiting for background events to finish…'))
+		time.sleep(1.5)
 	@classmethod
 	def tearDownClass(cls):
 		""" remove the test environnememt """
-		users_to_del = [ cls.standard_user, cls.manager_user, cls.admin_user]
 
-		groups_to_del = [ cls.standard_group, cls.system_group,
-											cls.privileged_group ]
-
-		for u in users_to_del:
+		for u in (cls.standard_user, cls.manager_user, cls.admin_user):
 			LMC.users.del_User(u, no_archive=True)
 
-		for g in groups_to_del:
+		for g in (cls.standard_group, cls.system_group, cls.privileged_group):
 			LMC.groups.del_Group(g, no_archive=True)
 
-		# we must delete everything, else they won't be garbage collected
-		# immediately and next creation will fail (#769).
-		del u, g, cls.manager_user, cls.standard_user, cls.admin_user, \
-			cls.standard_group, cls.system_group, cls.privileged_group, \
-			users_to_del, groups_to_del
+		# wipe all weakref which will disappear anyway.
+		del u, g, \
+			cls.standard_user, cls.manager_user, cls.admin_user, \
+			cls.standard_group, cls.system_group, cls.privileged_group
 
-		gc.collect()
+		logging.notice(_(u'TS: waiting for background events to finish…'))
+		time.sleep(1.5)
 
 class testWmiUsers(testUsers):
 
@@ -199,7 +207,7 @@ class testWmiUsers(testUsers):
 
 		# create the manager user we will log in with
 		try:
-			cls.manager = LMC.users.by_login(manager_user_login_test)
+			cls.manager = LMC.users.by_login(manager_user_login_test, strong=False)
 
 		except KeyError:
 			cls.manager, dummy = LMC.users.add_User(
@@ -218,6 +226,9 @@ class testWmiUsers(testUsers):
 		# remove our user used to log in as manager
 		LMC.users.del_User(cls.manager, no_archive=True)
 		del cls.manager
+
+		logging.notice(_(u'TS: waiting for background events to finish…'))
+		time.sleep(1.5)
 
 	def setUp(self):
 
@@ -242,30 +253,10 @@ class testWmiUsers(testUsers):
 
 		self.assertEqual(uid_to_del in LMC.users.keys(), False)
 
-		logging.notice('>>> %s: %s %s' % (login_to_del,
-				sys.getrefcount(LMC.users.by_login(login_to_del)),
-				gc.get_referrers(LMC.users.by_login(login_to_del))
-				)
-			)
-
-		for objekt in gc.get_referrers(LMC.users.by_login(login_to_del)):
-			lprint(objekt)
-			for obj2 in gc.get_referrers(objekt):
-				lprint(obj2)
-				for obj3 in gc.get_referrers(obj2):
-					lprint(obj3)
-
-		# TODO: re-activate this one when #769 is fixed.
 		self.assertEqual(login_to_del in LMC.users.logins, False)
 
-		# Recreate the standard_user, it should have been deleted
-		try:
-			# try/except to because of #769
-			# TODO: remove this try/Except when #769 is fixed.
-			self.__class__.standard_user = LMC.users.by_login(standard_user_login)
-
-		except KeyError:
-			self.__class__.standard_user, dummy = LMC.users.add_User(
+		# recreate the user once deleted, we need it for the next actions.
+		self.__class__.standard_user, dummy = LMC.users.add_User(
 								login=standard_user_login,
 								gecos=u'Django TS Account - test user',
 								password="not_so_random",
