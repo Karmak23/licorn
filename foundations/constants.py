@@ -197,8 +197,11 @@ backend_actions.DELETE = 3
 backend_actions.RENAME = 4
 
 reasons = EnumDict('reasons')
+reasons.UNKNOWN             = 0
 reasons.BACKENDS_CHANGED    = 1
 reasons.REMOTE_SYSTEM_ASKED = 2
+reasons.INTERNAL_LEAK       = 99
+
 
 conditions = EnumDict('conditions')
 conditions.WAIT_FOR_ME_BACK_ONLINE = 1

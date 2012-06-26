@@ -42,13 +42,15 @@ def user_added_handler(request, event):
 		yield i
 def user_deleted_handler(request, event):
 
-	user = event.kwargs['user']
+	login  = event.kwargs['login']
+	uid    = event.kwargs['uid']
+	system = event.kwargs['system']
 
 	yield utils.notify(_(u'User account "{0}" deleted from '
-						u'the system.').format(user.login))
+						u'the system.').format(login))
 
-	yield utils.format_RPC_JS('del_row', 'users'
-							if user.is_standard else 'sys_users', user.uid)
+	yield utils.format_RPC_JS('del_row', 'sys_users'
+							if system else 'users', uid)
 
 	for i in update_users_number(request, event):
 		yield i

@@ -11,7 +11,7 @@ Licorn core: groups - http://docs.licorn.org/core/groups.html
 
 """
 
-import sys, os, stat, posix1e, re, gc, types
+import sys, os, stat, posix1e, re, gc, types, weakref
 
 from traceback  import print_exc
 from contextlib import nested
@@ -177,6 +177,10 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 		if type(user) == types.IntType:
 			user = LMC.users.by_uid(user)
+
+		# We need the real object, else 'user in ...' doesn't work.
+		if type(user) in weakref.ProxyTypes:
+			user = user.weakref()
 
 		if self.is_standard:
 			if user in self.guest_group.members:
@@ -417,7 +421,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		if profile.gidNumber == self.__gidNumber:
 			self.__profile = profile.weakref
 
-			LicornEvent('group_profile_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_profile_changed', group=self.proxy
+														).emit(priorities.LOW)
 
 		else:
 			raise exceptions.LicornRuntimeError(_(u'group {0}: Cannot set a '
@@ -467,7 +472,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# auto-apply the new permissiveness
 			workers.service_enqueue(priorities.HIGH, self.check, batch=True)
 
-			LicornEvent('group_permissive_state_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_permissive_state_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Switched group {0} permissive '
 							u'state to {1} (Shared content permissions are '
@@ -500,7 +506,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__description = description
 			self.serialize()
 
-			LicornEvent('group_description_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_description_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			self._cli_invalidate()
 
@@ -527,7 +534,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			self.__groupSkel = groupSkel
 			self.serialize()
 
-			LicornEvent('group_groupSkel_changed', group=self).emit(priorities.LOW)
+			LicornEvent('group_groupSkel_changed',
+								group=self.proxy).emit(priorities.LOW)
 
 			logging.notice(_(u'Changed group {0} skel to {1}.').format(
 					stylize(ST_NAME, self.name),
@@ -792,7 +800,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 							LMC.configuration.users.group]().add_Users(
 								[ user ], batch=True)
 
-					LicornEvent('group_pre_add_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_pre_add_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					# the ADD operation, per se.
 					self.__members.append(user.weakref)
@@ -818,10 +827,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					LicornEvent('group_post_add_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_post_add_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					if emit_event:
-						LicornEvent('group_member_added', group=self, user=user).emit(priorities.LOW)
+						LicornEvent('group_member_added', group=self.proxy,
+										user=user.proxy).emit(priorities.LOW)
 
 					# THINKING: shouldn't we turn this into an extension?
 					workers.service_enqueue(priorities.LOW,
@@ -859,7 +870,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 				if user.weakref in self.__members:
 
-					LicornEvent('group_pre_del_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_pre_del_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					self.__members.remove(user.weakref)
 
@@ -881,11 +893,12 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 					else:
 						self.serialize()
 
-					LicornEvent('group_post_del_user', group=self, user=user, synchronous=True).emit()
+					LicornEvent('group_post_del_user', group=self.proxy,
+									user=user.proxy, synchronous=True).emit()
 
 					if emit_event:
-						LicornEvent('group_member_deleted',
-								group=self, user=user).emit(priorities.LOW)
+						LicornEvent('group_member_deleted', group=self.proxy,
+										user=user.proxy).emit(priorities.LOW)
 
 					# THINKING: shouldn't we turn this into an extension?
 					workers.service_enqueue(priorities.LOW,
@@ -1022,7 +1035,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 			# the copy operation is successfull, make it a real move.
 			old_backend.delete_Group(self)
 
-			LicornEvent('group_moved_backend', group=self).emit(priorities.LOW)
+			LicornEvent('group_moved_backend', group=self.proxy
+													).emit(priorities.LOW)
 
 			logging.notice(_(u'Moved group {0} from {1} to {2}.').format(
 												stylize(ST_NAME, self.name),
@@ -1817,17 +1831,23 @@ class GroupsController(DictSingleton, CoreFSController):
 
 		GroupsController.init_ok = True
 		assert ltrace_func(TRACE_GROUPS, True)
-	def by_name(self, name):
-		return Group.by_name[name]()
 	@property
 	def names(self):
 		return (name for name in Group.by_name)
 	def word_match(self, word):
 		return hlstr.multi_word_match(word, self.names)
-	def by_gid(self, gid):
+	def by_name(self, name, strong=False):
+		if strong:
+			return Group.by_name[name]()
+		else:
+			return Group.by_name[name]().proxy
+	def by_gid(self, gid, strong=False):
 		# we need to be sure we get an int(), because the 'gid' comes from RWI
 		# and is often a string.
-		return self[int(gid)]
+		if strong:
+			return self[int(gid)]
+		else:
+			return self[int(gid)].proxy
 	# the generic way (called from RWI)
 	by_key = by_gid
 	by_id  = by_gid
@@ -1888,7 +1908,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				self[gid] = group
 				loaded.append(gid)
 
-				LicornEvent('group_changed', group=group).emit(priorities.LOW)
+				LicornEvent('group_changed', group=group.proxy).emit(priorities.LOW)
 
 			for gid, group in self.items():
 				if group.backend.name == backend.name:
@@ -2281,7 +2301,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			# the same when the group is deleted, only the standard group
 			# deletion gets "evented".
 			if not group.is_helper:
-				LicornEvent('group_added', group=group).emit()
+				LicornEvent('group_added', group=group.proxy).emit()
 
 			assert ltrace_func(TRACE_GROUPS, True)
 
@@ -2300,7 +2320,7 @@ class GroupsController(DictSingleton, CoreFSController):
 								stylize(ST_NAME, group.name),
 								stylize(ST_UGID, group.gid)))
 
-			LicornEvent('group_added', group=group).emit()
+			LicornEvent('group_added', group=group.proxy).emit()
 
 		if members_to_add:
 			group.add_Users(members_to_add)
@@ -2440,7 +2460,7 @@ class GroupsController(DictSingleton, CoreFSController):
 		# DO NOT UNCOMMENT: -- if not batch:
 		group.serialize(backend_actions.CREATE)
 
-		LicornEvent('group_post_add', group=group, synchronous=True).emit()
+		LicornEvent('group_post_add', group=group.proxy, synchronous=True).emit()
 
 		assert ltrace_func(TRACE_GROUPS, True)
 		return group
@@ -2454,6 +2474,10 @@ class GroupsController(DictSingleton, CoreFSController):
 		# WMI resolver
 		if type(group) == types.IntType:
 			group = LMC.groups.by_gid(group)
+
+		# we need a strong reference during deletion.
+		if type(group) in weakref.ProxyTypes:
+			group = group.weakref()
 
 		# lock everything we *eventually* need, to be sure there are no errors.
 		with nested(self.lock, LMC.privileges.lock, LMC.users.lock):
@@ -2503,7 +2527,8 @@ class GroupsController(DictSingleton, CoreFSController):
 					# the profile.del_Groups() will call self.unlink_Profile()
 					profile.del_Groups([ group ])
 
-				LicornEvent('group_deleted', group=group).emit()
+				LicornEvent('group_deleted', name=group.name, gid=group.gid,
+											system=True).emit()
 
 				# NOTE: no need to wipe cross-references in auxilliary members,
 				# this is done in the Group.__del__ method.
@@ -2512,7 +2537,7 @@ class GroupsController(DictSingleton, CoreFSController):
 				# delete its internal data and exit.
 				self.__delete_group(group)
 
-				# checkpoint, needed for multi-delete (users-groups-profile) operation,
+				# Checkpoint, needed for multi-delete (users-groups-profile) operation,
 				# to avoid collecting the deleted users at the end of the run, making
 				# throw false-negative operation about non-existing groups.
 				gc.collect()
@@ -2545,12 +2570,13 @@ class GroupsController(DictSingleton, CoreFSController):
 			home = group.homeDirectory
 			name = group.name
 
-			LicornEvent('group_deleted', group=group).emit()
+			LicornEvent('group_deleted', name=group.name, gid=group.gid,
+											system=False).emit()
 
 			# finally, delete the group.
 			self.__delete_group(group)
 
-		# checkpoint, needed for multi-delete (users-groups-profile) operation,
+		# Checkpoint, needed for multi-delete (users-groups-profile) operations,
 		# to avoid collecting the deleted users at the end of the run, making
 		# throw false-negative operation about non-existing groups.
 		gc.collect()
@@ -2588,19 +2614,21 @@ class GroupsController(DictSingleton, CoreFSController):
 		gid     = group.gidNumber
 		name    = group.name
 
-		LicornEvent('group_pre_del', group=group, synchronous=True).emit()
-
+		# WARNING: delete the group from the controller before the backend
+		# serialization, else lazy backends (like shadow) will pick it up
+		# again and it will be present at next daemon (re-)start.
 		if gid in self:
 			del self[gid]
+
 		else:
 			logging.warning2(_(u'{0}: group {1} already not referenced in '
 				u'controller!').format(stylize(ST_NAME, self.name),
 					stylize(ST_NAME, name)))
 
-		# FIXME: this is not very smart.
-		# NOTE: this must be done *after* having deleted the data from self,
-		# else mono-maniac backends (like shadow) don't see the change and
-		# save everything, including the group we want to delete.
+		LicornEvent('group_pre_del', group=group.proxy, synchronous=True).emit()
+
+		# NOTE: the backend deletion must be done *after* having deleted
+		# the object from the controller. See above WARNING.
 		group.backend.delete_Group(group)
 
 		if group.is_helper:
