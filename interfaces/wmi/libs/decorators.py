@@ -240,7 +240,7 @@ def check_users(meta_action, *args, **kwargs):
 							return forbidden(_(u'Insufficient permissions to '
 											u'unlock your own account.'))
 
-					elif local_action not in ('gecos', 'shell', 'password'):
+					elif local_action not in ('gecos', 'skel', 'shell', 'password'):
 						# standard users
 						return forbidden(_(u'Insufficient permissions to '
 											u'alter your own account.'))
