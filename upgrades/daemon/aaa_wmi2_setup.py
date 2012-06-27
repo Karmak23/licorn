@@ -155,13 +155,10 @@ def check_pip_perms():
 			#	sudo find /usr/local/lib -print0 | sudo xargs -0 -n 1024 chown root:root
 			#	sudo find /usr/local/lib -type d -print0 | sudo xargs -0 -n 1024 chmod 755
 			#	sudo find /usr/local/lib -type f -print0 | sudo xargs -0 -n 1024 chmod 644
-
 			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new([
 								fsapi.FsapiObject(name='python_path',
-									path=python_path,
-									uid=0, gid=0,
-									root_dir_perm=00755,
-									dirs_perm=00755,
+									path=python_path, uid=0, gid=0,
+									root_dir_perm=00755, dirs_perm=00755,
 									files_perm=00644)
 							], batch=True, full_display=False):
 				# TODO: we could count modified entries and display a nice

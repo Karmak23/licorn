@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import os, re, posix1e, tempfile
+import os
 
-from licorn.foundations        import logging, settings, process, fsapi, events
-from licorn.foundations.styles import *
+from licorn.foundations          import logging, settings
+from licorn.foundations.events   import LicornEvent
+from licorn.foundations.styles   import *
+from licorn.foundations.contants import priorities
 
 @events.handler_function
 def configuration_loads(*args, **kwargs):
@@ -13,16 +15,34 @@ def configuration_loads(*args, **kwargs):
 		.. note:: this callback will be run *before* core.configuration loads.
 	"""
 
-	if not os.path.exists(settings.config_dir):
-		try:
-			os.makedirs(settings.config_dir)
+	for (directory, dtype) in (
+					(settings.config_dir, _(u'configuration'))
+					(settings.cache_dir, _(u'cache'))
+					(settings.data_dir, _(u'data'))
+				):
 
-			logging.info(_(u'Created configuration directory {0}.').format(
-							stylize(ST_PATH, settings.config_dir)))
+		if not os.path.exists(directory):
+			try:
+				os.makedirs(directory)
 
-		except (IOError, OSError):
-			logging.exception(_(u'Cannot create configuration directory {0}!'),
-								(ST_PATH, settings.config_dir))
+				logging.info(_(u'Created {1} directory {0}.').format(
+								stylize(ST_PATH, directory), dtype))
+
+			except (IOError, OSError):
+				logging.exception(_(u'Could not create {1} directory {0}! This '
+						u'is mandatory, exiting'), (ST_PATH, directory), dtype)
+				LicornEvent('need_terminate').emit(priorities.HIGH)
+
+		for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new([
+							fsapi.FsapiObject(name=dtype, path=directory,
+								uid=0, gid=0, root_dir_perm=00750,
+								dirs_perm=00750, files_perm=00640)
+						], batch=True, full_display=True):
+			# TODO: we could count modified entries and display a nice
+			# information message. Not that usefull where we are, and
+			# full_display is already `True`.
+			pass
+
 @events.handler_function
 def configuration_loaded(*args, **kwargs):
 	""" Check if /home (or surrounding mount point) supports ``acls`` and
