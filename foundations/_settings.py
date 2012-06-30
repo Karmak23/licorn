@@ -55,7 +55,7 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 
 		self.config_dir              = u'/etc/licorn'
 		self.data_dir                = u'/var/lib/licorn'
-		self.config_dir              = u'/var/cache/licorn'
+		self.cache_dir               = u'/var/cache/licorn'
 		self.check_config_dir        = self.config_dir + u'/check.d'
 		self.main_config_file        = self.config_dir + u'/licorn.conf'
 		self.inotifier_exclude_file  = self.config_dir + u'/nowatch.conf'
