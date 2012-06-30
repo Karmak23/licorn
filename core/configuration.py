@@ -65,6 +65,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# it is a hack to be able to test guis when Licorn is not installed.
 		# → this is for developers only.
 		self.install_path = os.getenv("LICORN_ROOT", "/usr")
+
 		if self.install_path == '.':
 			self.share_data_dir = '.'
 		else:
@@ -102,7 +103,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(_(u'Configuration '
-				u'initialization failed: %s') % e)
+										u'initialization failed: %s') % e)
 
 		events.collect(self)
 
