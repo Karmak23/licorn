@@ -13,7 +13,7 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, Pyro.core
+import sys, os, re, dmidecode, uuid, Pyro.core
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, exceptions, settings
@@ -116,6 +116,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.load2(batch=batch)
 		self.load3(batch=batch)
 	def load1(self, batch=False):
+		self.load_system_uuid()
 		self.LoadManagersConfiguration(batch=batch)
 		self.set_acl_defaults()
 	def load2(self, batch=False):
@@ -164,6 +165,40 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		LicornConfiguration.del_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
+	def load_system_uuid(self):
+		""" Get the hardware system UUID from `dmidecode`, or generate a random
+			new one and store it for future uses. """
+
+		not_found = True
+
+		for root in dmidecode.system().itervalues():
+			try:
+				self.system_uuid = root['data']['UUID'].replace('-', '').lower()
+
+			except:
+				continue
+
+			else:
+				not_found = False
+				break
+
+		if not_found:
+
+			uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
+
+			if os.path.exists(uuid_data_file):
+				# fallback to the previously generated UUID.
+
+				self.system_uuid = open(uuid_data_file).read().strip()
+
+			else:
+				# If no previous already exists, create a new one and store it.
+
+				self.system_uuid = uuid.uuid4().hex
+
+				with open(uuid_data_file, 'w') as f:
+					f.write('%s\n' % self.system_uuid)
+
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""

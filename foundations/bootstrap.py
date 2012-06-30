@@ -112,6 +112,7 @@ def check_python_modules_dependancies():
 		(u'pygments',  u'python-pygments'),
 		(u'pyinotify', u'python-pyinotify'),
 		(u'dbus',      u'python-dbus'),
+		(u'dmidecode', u'python-dmidecode'),
 		)
 
 	# for more dependancies (needed by the WMI) see `upgrades/…`
