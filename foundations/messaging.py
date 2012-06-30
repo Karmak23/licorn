@@ -249,6 +249,7 @@ class ListenerObject(object):
 				'Event'         : Event,
 				'workers'       : workers,
 				'events'        : events,
+				'LicornEvent'   : events.LicornEvent,
 				}
 		self._console_interpreter = self.__class__.BufferedInterpreter(self._console_namespace)
 		self._console_completer   = rlcompleter.Completer(self._console_namespace)
