@@ -22,7 +22,7 @@ from licorn.core                  import LMC
 from licorn.extensions            import LicornExtension
 
 # local imports; get the constants in here for easy typing/using.
-from mylicorn_data.constants import *
+from constants import *
 
 LicornEvent = events.LicornEvent
 
@@ -75,8 +75,3 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		res = mylicorn.authenticate(LMC.configuration.system_uuid, settings.mylicorn.api_key or None)
 
 		print '>> RES', res
-
-# have the constants handy for external imports
-from mylicorn_data import constants
-
-__all__ = ('MylicornExtension', 'constants', )

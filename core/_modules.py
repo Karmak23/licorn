@@ -102,13 +102,21 @@ class ModulesManager(LockedController):
 
 			for entry in os.listdir(self.module_path):
 
-				if entry[0] == '_' or entry[-3:] != '.py' \
-						or os.path.isdir(os.path.join(self.module_path, entry)) \
-						or 'test' in entry:
+				if os.path.isdir(os.path.join(self.module_path, entry)) \
+								and os.path.exists(os.path.join(
+									self.module_path, entry, '__init__.py')):
+					# extension is a subdir.
+					module_name = entry
+
+				elif entry[0] == '_' or entry[-3:] != '.py' or 'test' in entry:
+					# this is nothing interesting, skip.
 					continue
 
-				# remove '.py'
-				module_name = entry[:-3]
+				else:
+					# extension is a simple <file>.py; remove suffix '.py'
+					module_name = entry[:-3]
+
+				# class name is a convention, guessed from the file / dir name.
 				class_name  = module_name.title() + self.module_type.title()
 
 				try:
