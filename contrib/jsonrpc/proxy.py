@@ -19,9 +19,10 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import sys, urllib2, base64
+import sys, os, urllib2, base64, cookielib
 
-from json import dumps, loads
+from json               import dumps, loads
+from licorn.foundations import settings
 
 class JSONRPCException(Exception):
 	def __init__(self, rpcError):
@@ -43,7 +44,9 @@ class ServiceProxy(object):
 			# Setup all "things" for the base URL.
 			# This will be done only once: when calling methods,
 			# `serviceName` is always not ``None``.
-			ServiceProxy.cookie_jars[serviceURL] = urllib2.HTTPCookieProcessor()
+			ServiceProxy.cookie_jars[serviceURL] = urllib2.HTTPCookieProcessor(
+										cookielib.FileCookieJar(os.path.join(
+											settings.cache_dir, 'cookies.txt')))
 			ServiceProxy.url_openers[serviceURL] = urllib2.build_opener(
 										ServiceProxy.cookie_jars[serviceURL])
 
