@@ -103,7 +103,7 @@ class ModulesManager(LockedController):
 			for entry in os.listdir(self.module_path):
 
 				if entry[0] == '_' or entry[-3:] != '.py' \
-						or os.path.isdir(self.module_path + '/' + entry) \
+						or os.path.isdir(os.path.join(self.module_path, entry)) \
 						or 'test' in entry:
 					continue
 
