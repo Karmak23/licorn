@@ -58,7 +58,6 @@ class Samba3Extension(ObjectSingleton, LicornExtension):
 			logging.info(_(u'{0}: extension enabled.').format(
 				stylize(ST_NAME, self.name)))
 
-			events.collect(self)
 			self.available = True
 		else:
 			logging.info(_(u'{0}: extension disabled because {1} '

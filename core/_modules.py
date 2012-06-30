@@ -251,6 +251,10 @@ class ModulesManager(LockedController):
 				try:
 					module.load(server_modules=server_side_modules)
 
+					# Automatically collect all events and
+					# callbacks of the module.
+					events.collect(module)
+
 					LicornEvent('%s_%s_loaded' % (
 									self.module_type, module_name)).emit()
 
@@ -376,6 +380,9 @@ class ModulesManager(LockedController):
 
 			try:
 				if module.enable():
+					# (re-)collect all event handlers and callbacks of module.
+					events.collect(module)
+
 					logging.notice(_(u'successfully enabled {0} {1}.').format(
 										module_name, self.module_type))
 					return True
@@ -416,7 +423,18 @@ class ModulesManager(LockedController):
 				return False
 
 			try:
+				try:
+					# un(re-)collect all event handlers and callbacks of module.
+					events.uncollect(module)
+
+				except:
+					logging.exception(_(u'Exception while unregistering '
+									u'events handlers/callbacks of {0} {1}'),
+										self.module_type, module_name)
+
+
 				if module.disable():
+
 					logging.notice(_(u'successfully disabled {0} {1}.').format(
 										module_name, self.module_type))
 					return True
