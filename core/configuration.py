@@ -200,10 +200,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			logging.warning2(w)
 			dmidecode.clear_warnings()
 
+		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
+
 		if not_found:
-
-			uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
-
 			if os.path.exists(uuid_data_file):
 				# fallback to the previously generated UUID.
 
@@ -216,6 +215,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 				with open(uuid_data_file, 'w') as f:
 					f.write('%s\n' % self.system_uuid)
+
+		else:
+			# If a system UUID exists, be sure any unused file doesn't remain
+			# on disk, this could confuse the user thinking it is used but it
+			# is not.
+			try:
+				os.unlink(uuid_data_file)
+
+			except:
+				pass
 
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
