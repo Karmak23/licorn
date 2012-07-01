@@ -2788,35 +2788,6 @@ class GroupsController(DictSingleton, CoreFSController):
 								for user in missing_gids))))
 
 		del missing_gids
-	def guess_one(self, value):
-		""" Try to guess everything of a group from a
-			single and unknonw-typed info. """
-		try:
-			group = self.by_gid(int(value))
-
-		except (TypeError, ValueError):
-				group = self.by_name(value)
-
-		return group
-	def guess_list(self, value_list):
-		""" yield valid groups, given a list of 'things'
-		 to validate existence of (can be GIDs or names). """
-		groups = []
-
-		for value in value_list:
-			try:
-				group = self.guess_one(value)
-
-			except (KeyError, exceptions.DoesntExistException):
-				logging.info(_(u'Skipped non-existing group name or GID %s.') %
-					stylize(ST_NAME,value))
-			else:
-				if group in groups:
-					pass
-				else:
-					groups.append(group)
-
-		return groups
 	def exists(self, gid=None, name=None):
 		"""Return true if the group or gid exists on the system. """
 
