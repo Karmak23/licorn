@@ -103,9 +103,10 @@ def check_python_modules_dependancies():
 		""" See `core.configuration` for WHY we do that. """
 
 		if os.geteuid() == 0:
-			sys.stderr.write('%s\n' % module.get_warnings())
-
-		module.clear_warnings()
+			w = module.get_warnings()
+			if w:
+				sys.stderr.write('%s\n' % w)
+				module.clear_warnings()
 
 	reqmods = (
 		(u'gettext',   u'python-gettext',	None),

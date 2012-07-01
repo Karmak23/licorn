@@ -195,8 +195,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# ** END OF WARNINGS **
 		#
 		# NOTE: there is a similar call in `foundations.bootstrap`
-		logging.warning2(dmidecode.get_warnings())
-		dmidecode.clear_warnings()
+		w = dmidecode.get_warnings()
+		if w:
+			logging.warning2(w)
+			dmidecode.clear_warnings()
 
 		if not_found:
 
