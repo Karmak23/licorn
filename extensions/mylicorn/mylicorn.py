@@ -29,7 +29,7 @@ LicornEvent = events.LicornEvent
 # We communicate with MyLicorn® via the JSON-RPC protocol.
 from licorn.contrib import jsonrpc
 
-MY_LICORN_URI = 'http://my.licorn.org/json'
+MY_LICORN_URI = 'http://my.licorn.org/json/'
 
 class MylicornExtension(ObjectSingleton, LicornExtension):
 	""" Provide connexion and remote calls to `my.licorn.org`.
@@ -47,6 +47,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_MYLICORN)
 		self.available = True
+
 		return self.available
 	def is_enabled(self):
 
@@ -55,8 +56,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 								stylize(ST_PATH, settings.main_config_file)))
 
 		return True
-	@events.callback_method
-	def configuration_loaded(self, *args, **kwargs):
+	@events.handler_method
+	def extension_mylicorn_check_finished(self, *args, **kwargs):
 		""" Authenticate ourselves on the central server.
 
 			.. note:: this callback is lanched after LMC.configuration is
@@ -64,14 +65,21 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 				used as the local server unique identifier, added to the
 				API key (if any).
 		"""
+		assert ltrace_func(TRACE_MYLICORN)
 
 		if LMC.configuration.system_uuid is None:
-			logging.warning(u'{0}: system UUID not found, aborting. There may '
-				u'be a serious problem somewhere.')
+			logging.warning(_(u'{0}: system UUID not found, aborting. There '
+									u'may be a serious problem '
+									u'somewhere.').format(self.pretty_name))
 			return
 
-		mylicorn = jsonrpc.ServiceProxy(MY_LICORN_URI)
+		myl = jsonrpc.ServiceProxy(MY_LICORN_URI)
 
-		res = mylicorn.authenticate(LMC.configuration.system_uuid, settings.mylicorn.api_key or None)
+		try:
+			api_key = settings.mylicorn.api_key
+		except:
+			api_key = None
 
-		print '>> RES', res
+		res = myl.authenticate(LMC.configuration.system_uuid, api_key)
+
+		logging.notice('>> %s' % res)
