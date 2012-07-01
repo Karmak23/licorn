@@ -41,14 +41,22 @@ class ServiceProxy(object):
 		self.__serviceName = serviceName
 
 		if serviceName == None:
-			# Setup all "things" for the base URL.
-			# This will be done only once: when calling methods,
-			# `serviceName` is always not ``None``.
+			# Setup all "things" for the base URL. This will be done only once:
+			# when calling methods, `serviceName` is always not ``None``.
+
+			# Setup the local cookies, used to keep the JSON-RPC session open.
 			ServiceProxy.cookie_jars[serviceURL] = urllib2.HTTPCookieProcessor(
 										cookielib.FileCookieJar(os.path.join(
 											settings.cache_dir, 'cookies.txt')))
+
+			#
+			# NOTE: if `http_proxy` variable exists in environment, urllib2
+			# 		will use the proxy automatically. No need for additionnal
+			#		setup / opener.
+			#
+
 			ServiceProxy.url_openers[serviceURL] = urllib2.build_opener(
-										ServiceProxy.cookie_jars[serviceURL])
+									ServiceProxy.cookie_jars[serviceURL])
 
 			if username:
 				if password is None:
