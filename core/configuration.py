@@ -183,6 +183,21 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				not_found = False
 				break
 
+		# Get warnings here, to avoid them beiing freely printed to console
+		# everywhere, from every call, which is purely annoying. Eg:
+		#
+		# del group 10000
+		# * [2012/01/07 11:57:09.8499] Le groupe ou GID "10000" inexistant ou invalide a été ignoré.
+		#
+		# ** COLLECTED WARNINGS **
+		# /dev/mem: Permission denied
+		# No SMBIOS nor DMI entry point found, sorry.
+		# ** END OF WARNINGS **
+		#
+		# NOTE: there is a similar call in `foundations.bootstrap`
+		logging.warning2(dmidecode.get_warnings())
+		dmidecode.clear_warnings()
+
 		if not_found:
 
 			uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
