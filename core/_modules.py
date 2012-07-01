@@ -13,14 +13,15 @@ import os
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import settings, exceptions, logging
-from licorn.foundations           import hlstr, pyutils
+from licorn.foundations           import hlstr, pyutils, events
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.events    import LicornEvent
 from licorn.foundations.constants import roles
 from licorn.foundations.base      import NamedObject, MixedDictObject, \
 											LicornConfigObject
+
+LicornEvent = events.LicornEvent
 
 # local core imports
 from _controllers                 import LockedController
