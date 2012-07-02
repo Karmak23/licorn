@@ -15,7 +15,12 @@ from licorn.foundations.base import EnumDict
 
 common = EnumDict('common', from_dict={
 	'NOTIMPLEMENTED' : -100,
+	'OVERQUOTA'      : -10,
+	'NOTFOUND'       : -9,
+	'SUSPENDED'      : -3,
+	'UNAUTHORIZED'   : -2,
 	'FAILED'         : -1,
+	# 0 is not used.
 	'SUCCESS'        : 1,
 	})
 
