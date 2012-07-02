@@ -19,7 +19,7 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import sys, os, urllib2, base64, cookielib
+import sys, os, urllib2, base64, cookielib, errno
 
 from json               import dumps, loads
 from licorn.foundations import settings
@@ -46,7 +46,7 @@ class ServiceProxy(object):
 
 			# Setup the local cookies, used to keep the JSON-RPC session open.
 			ServiceProxy.cookie_jars[serviceURL] = urllib2.HTTPCookieProcessor(
-										cookielib.FileCookieJar(os.path.join(
+										cookielib.LWPCookieJar(os.path.join(
 											settings.cache_dir, 'cookies.txt')))
 
 			#
@@ -80,10 +80,23 @@ class ServiceProxy(object):
 							'params' : args,
 							'id'     : 'jsonrpc'})
 
+		try:
+			# load cookies from file *before* the request.
+			ServiceProxy.cookie_jars[self.__serviceURL].cookiejar.load()
+		except (IOError, OSError), e:
+			if e.errno != errno.ENOENT:
+				# "no such file or directory" is harmless: this is probably
+				# the first run; it will be created later.
+				raise
+
 		req = urllib2.Request(self.__serviceURL, postdata,
 								ServiceProxy.headers[self.__serviceURL])
 
 		resp = loads(ServiceProxy.url_openers[self.__serviceURL].open(req).read())
+
+		# save cookies to file just after the request, to be able to reload
+		# them at any moment for any future request.
+		ServiceProxy.cookie_jars[self.__serviceURL].cookiejar.save()
 
 		if resp['error'] != None:
 			raise JSONRPCException(resp['error'])
