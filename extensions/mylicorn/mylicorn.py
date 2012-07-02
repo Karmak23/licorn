@@ -8,10 +8,10 @@ Licorn extensions: mylicorn - http://docs.licorn.org/extensions/mylicorn
 
 """
 
-import os
+import os, urllib2
 from threading import Thread
 
-from licorn.foundations           import exceptions, logging, settings, events
+from licorn.foundations           import exceptions, logging, settings, events, json
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -28,6 +28,22 @@ LicornEvent = events.LicornEvent
 
 # We communicate with MyLicorn® via the JSON-RPC protocol.
 from licorn.contrib import jsonrpc
+
+def print_web_exception(e):
+
+	try:
+		error = json.loads(e.read())['error']
+
+	except:
+		# if 'error' is not present, the remote server is not in debug mode.
+		# Do not try to display anything detailled, there won't be.
+		logging.warning('Remote web exception: %s\n\tRequest:\n\t\t%s\n\t%s' % (e,
+			str(e.info()).replace('\n', '\n\t\t'),
+			str(json.loads(e.read())).replace('\n', '\n\t\t')))
+
+	else:
+		logging.warning('Remote web exception: %s\n\tRequest:\n\t\t%s\n\t%s' % (e,
+			str(e.info()).replace('\n', '\n\t\t'), error['stack'].replace('\n', '\n\t\t')))
 
 class MylicornExtension(ObjectSingleton, LicornExtension):
 	""" Provide connexion and remote calls to `my.licorn.org`.
@@ -89,7 +105,16 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		except:
 			api_key = None
 
-		res = myl.authenticate(LMC.configuration.system_uuid, api_key)
+		try:
+			res = myl.authenticate(LMC.configuration.system_uuid, api_key)
+
+		except urllib2.HTTPError:
+			print_web_exception(e)
+			return
+
+		except Exception, e:
+			logging.exception('ERROR')
+			return
 
 		if res['result'] < 0:
 			# if authentication goes wrong, we won't even try to do anything
