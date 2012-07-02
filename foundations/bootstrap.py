@@ -102,11 +102,13 @@ def check_python_modules_dependancies():
 	def clear_dmidecode(module):
 		""" See `core.configuration` for WHY we do that. """
 
-		if os.geteuid() == 0:
-			w = module.get_warnings()
-			if w:
+		w = module.get_warnings()
+		if w:
+			if os.geteuid() == 0:
+				# Print only for root. If not root the warnings will always
+				# occur and are harmless, even annoying for standard users.
 				sys.stderr.write('%s\n' % w)
-				module.clear_warnings()
+			module.clear_warnings()
 
 	reqmods = (
 		(u'gettext',   u'python-gettext',	None),
