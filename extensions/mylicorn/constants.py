@@ -13,7 +13,7 @@ My Licorn® JSON-API return codes
 
 from licorn.foundations.base import EnumDict
 
-common = EnumDict('common', from_dict={
+__common_dict = {
 	'NOTIMPLEMENTED' : -100,
 	'OVERQUOTA'      : -10,
 	'NOTFOUND'       : -9,
@@ -22,11 +22,12 @@ common = EnumDict('common', from_dict={
 	'FAILED'         : -1,
 	# 0 is not used.
 	'SUCCESS'        : 1,
-	})
+	}
 
-authenticate = EnumDict('authenticate', from_dict={
-	''
-	# -1 & 1 come from common
-	'ALREADY'   : 2,
-	'ANONYMOUS' : 3,
-})
+common = EnumDict('common', from_dict=__common_dict)
+
+# we always merge the common dict to include common result codes,
+# this makes it easier to use in logging messages.
+authenticate = EnumDict('authenticate', from_dict=__common_dict)
+authenticate.ALREADY   = 2
+authenticate.ANONYMOUS = 3

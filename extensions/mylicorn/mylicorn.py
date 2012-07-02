@@ -29,8 +29,6 @@ LicornEvent = events.LicornEvent
 # We communicate with MyLicorn® via the JSON-RPC protocol.
 from licorn.contrib import jsonrpc
 
-MY_LICORN_URI = 'http://my.licorn.org/json/'
-
 class MylicornExtension(ObjectSingleton, LicornExtension):
 	""" Provide connexion and remote calls to `my.licorn.org`.
 
@@ -73,6 +71,17 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									u'somewhere.').format(self.pretty_name))
 			return
 
+		# Allow environment override for testing / development.
+		if 'MY_LICORN_URI' in os.environ:
+			MY_LICORN_URI = os.environ.get('MY_LICORN_URI')
+			logging.notice(_(u'{0}: using environment variable {1} pointing '
+				u'to {2}.').format(self.pretty_name,
+					stylize(ST_NAME, 'MY_LICORN_URI'),
+					stylize(ST_URL, MY_LICORN_URI)))
+		else:
+			# default value, pointing to official My Licorn® webapp.
+			MY_LICORN_URI = 'http://my.licorn.org/json/'
+
 		myl = jsonrpc.ServiceProxy(MY_LICORN_URI)
 
 		try:
@@ -82,4 +91,17 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		res = myl.authenticate(LMC.configuration.system_uuid, api_key)
 
-		logging.notice('>> %s' % res)
+		if res['result'] < 0:
+			# if authentication goes wrong, we won't even try to do anything
+			# more. Every RPC call needs authentication.
+			logging.warning(_(u'{0}: failed to authenticate (code: '
+							u'authenticate.{1}, message: {2})').format(
+								self.pretty_name, authenticate[res['result']],
+								res['message']))
+			return
+
+		logging.info(_(u'{0}: sucessfully authenticated ourselves '
+						u'(code: authenticate.{1}, message: {2})').format(
+							self.pretty_name, authenticate[res['result']],
+							res['message']))
+
