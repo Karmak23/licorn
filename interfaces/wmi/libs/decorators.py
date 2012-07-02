@@ -76,7 +76,7 @@ def check_mod_users_groups(request, target_user, target_group, rel_id,
 	# Cannot remove any `admins` account from the `admins`
 	# group, even if we are `admins` ourselves.
 	if request.user.is_superuser:
-		if target_user in admin_group.members \
+		if target_user in admin_group.all_members \
 						 and target_group == admin_group \
 						 and rel_id == relation.NO_MEMBERSHIP:
 			return forbidden(_(u'Insufficient permissions to '
@@ -98,13 +98,13 @@ def check_mod_users_groups(request, target_user, target_group, rel_id,
 				u'accounts.').format(_('restricted')
 					if target_user.is_system_restricted else u''))
 
-		if target_user in admin_group.members:
+		if target_user in admin_group.all_members:
 			# if he is >=  myself, I cannot do anything
 			return forbidden(_(u'Insufficient permissions to alter '
 							u'administrator account <strong>{0}</strong>.'
 								).format(target_user.login))
 
-		elif target_user in wmi_group.members \
+		elif target_user in wmi_group.all_members \
 							and target_group == wmi_group \
 							and rel_id == relation.NO_MEMBERSHIP:
 			return forbidden(_(u'Insufficient permissions to remove '
@@ -240,7 +240,7 @@ def check_users(meta_action, *args, **kwargs):
 							return forbidden(_(u'Insufficient permissions to '
 											u'unlock your own account.'))
 
-					elif local_action not in ('gecos', 'shell', 'password'):
+					elif local_action not in ('gecos', 'skel', 'shell', 'password'):
 						# standard users
 						return forbidden(_(u'Insufficient permissions to '
 											u'alter your own account.'))
@@ -271,7 +271,7 @@ def check_users(meta_action, *args, **kwargs):
 					if request.user.is_superuser:
 						# `admins` users can do anything, but we prefer them to
 						# battle in CLI. WMI is a peaceful place.
-						if victim_user in admin_group.members:
+						if victim_user in admin_group.all_members:
 							return forbidden(_(u'Insufficient permissions '
 									u'to alter <em>administrator</em> account '
 									u'<strong>{0}</strong>. If you really '
@@ -281,11 +281,11 @@ def check_users(meta_action, *args, **kwargs):
 					elif request.user.is_staff:
 						err = False
 						# if he is  >=  myself, I cannot do anything
-						if victim_user in admin_group.members:
+						if victim_user in admin_group.all_members:
 							typ = _('administrator')
 							err = True
 
-						elif victim_user in wmi_group.members:
+						elif victim_user in wmi_group.all_members:
 							typ = _('manager')
 							err = True
 

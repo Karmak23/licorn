@@ -8,7 +8,13 @@ from licorn.foundations         import exceptions, pyutils
 from licorn.core                import LMC
 
 class LicorndAuthBackend:
-	""" Authenticate against OpenERP users. """
+	""" Authenticate against Licorn daemon users.
+
+
+		.. note:: no use of core objects here, we just get "logins" and
+			"group names", this avoids the eventual problem of strong / weak
+			references to core objects.
+	"""
 
 	supports_object_permissions = False
 	supports_anonymous_user     = False

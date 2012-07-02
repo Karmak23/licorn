@@ -32,7 +32,8 @@ from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import NamedObject, pyro_protected_attrs
 from licorn.foundations.messaging import LicornMessage, ListenerObject, remote_output
-from licorn.foundations.constants import filters, interactions, host_status, priorities
+from licorn.foundations.constants import filters, interactions, host_status, \
+											priorities, reasons, verbose
 
 # circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
@@ -1597,9 +1598,9 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		profiles_to_del = self.select(LMC.profiles, args[1:], opts,
 				include_id_lists = include_id_lists,
 				exclude_id_lists = exclude_id_lists)
-		
+
 		if profiles_to_del is not None:
-		
+
 			for p in profiles_to_del:
 				if opts.non_interactive or opts.batch or opts.force or \
 					logging.ask_for_repair(_(u'Delete profile %s?') %
@@ -2541,10 +2542,30 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		if opts.wmi_test_apps:
 			self.chk_system_wmi_tests([app for app in opts.wmi_test_apps.split(',') if app != ''])
 	def chk_system_wmi_tests(self, apps):
+		""" Launch one or more DJango WMI testsuite in the daemon.
 
-		# execute_manager will fail without this, but this should already be
+			this
+		"""
+
+		if not settings.experimental.enabled:
+			logging.warning(_(u'Django WMI tests are not meant to be run on a '
+						u'production system. If you really want to, set {0} in '
+						u'{1}, and prepare to see your daemon restart after '
+						u'each run.').format(
+							stylize(ST_COMMENT, 'experimental.enabled = True'),
+							stylize(ST_PATH, settings.main_configuration_file)
+						)
+					)
+
+			return
+
+		self.setup_listener_gettext()
+
+		# `execute_manager` will fail without the PYTHONPATH including our
+		# project. But this should have already been done when the WMI launched.
 		#sys.path.extend(['licorn.interfaces', 'licorn.interfaces.wmi'])
 
+		# avoid unittest setting up signal handlers, this won't work.
 		from licorn.foundations.testutils import monkey_patch_unittest; monkey_patch_unittest()
 
 		# we rename the Django settings to `djsettings` not to
@@ -2552,8 +2573,18 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		from licorn.interfaces.wmi  import wmi_event_app, django_setup, settings as djsettings
 		from django.core.management import execute_manager
 
-		# we must put 'manage.py' in the arguments for Django to lookup
-		# correctly the commands set for this utility.
+		verbose_equivalent_levels = {
+				# We use '-v0' as a starting point, not '-v1', to not pollute
+				# the output with dots or whatever, there is enough from the
+				# CLI messages in the daemon and locally.
+				verbose.NOTICE:		0,
+				verbose.INFO:		1,
+				verbose.PROGRESS: 	2,
+				verbose.DEBUG:		3,
+				# 3 is the max. level in Django / unittest.
+				verbose.DEBUG2:		3,
+			}
+
 		django_setup()
 
 		if apps in ([], [ 'all' ]):
@@ -2563,12 +2594,35 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			logging.notice(_(u'Running WMI Django tests for app {0}, '
 					u'this may take a while…').format(stylize(ST_NAME, app)))
 
+			something_done = False
+
 			try:
-				execute_manager(djsettings, [ 'manage.py', 'test', app ])
+				# we must put 'manage.py' in the arguments for Django
+				# to lookup correctly the commands set for this utility.
+				#
+				execute_manager(djsettings, [ 'manage.py', 'test', '-v%s' %
+					verbose_equivalent_levels[current_thread().listener.verbose], app ])
+
+				something_done = True
+
+			except SystemExit:
+				# We won't exit, this is not the point when running this
+				# testsuite *in the daemon*. But can't tell `execute_manager`
+				# to avoid it, thus we must trap it and ignore it.
+				pass
 
 			except:
 				logging.exception(_(u'Could not run tests for app {0}'), (ST_NAME, app))
 				continue
 
 			logging.notice(_(u'Successfully ran Django WMI tests '
-					u'for app {0}.').format(stylize(ST_NAME, app)))
+							u'for app {0}.').format(stylize(ST_NAME, app)))
+
+		#
+		# TODO: remove this 'restart' when #769 is fixed.
+		#
+		#if something_done and ('users' in apps or 'groups' in apps):
+			# Until http://dev.licorn.org/ticket/769 is fixed, running the
+			# Django WMI testsuite triggers the bug, we must restart.
+			#LicornEvent('need_restart',
+			#			reason=reasons.INTERNAL_LEAK).emit(priorities.HIGH)
