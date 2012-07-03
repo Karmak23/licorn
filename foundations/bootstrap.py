@@ -107,7 +107,7 @@ def check_python_modules_dependancies():
 			if os.geteuid() == 0:
 				# Print only for root. If not root the warnings will always
 				# occur and are harmless, even annoying for standard users.
-				sys.stderr.write('%s\n' % w)
+				sys.stderr.write('dmidecode warnings:\n\t%s' % w.replace('\n', '\n\t'))
 			module.clear_warnings()
 
 	reqmods = (
