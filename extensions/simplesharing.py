@@ -14,7 +14,6 @@ import os, stat, time, mimetypes, urllib, random
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events, hlstr
-from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -29,6 +28,9 @@ from licorn.extensions            import LicornExtension
 
 from licorn.extensions.mylicorn   import constants
 from django.core.urlresolvers     import reverse as url_for
+
+LicornEvent = events.LicornEvent
+
 # Just to be sure it is done.
 mimetypes.init()
 
@@ -568,7 +570,7 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 						u'user {1}'), self.pretty_name, (ST_LOGIN, user.login))
 			return False
 	@events.handler_method
-	def licornd_cruising(self, *args, **kwargs):
+	def extension_mylicorn_authenticated(self, *args, **kwargs):
 		""" When the daemon has reached ``cruising`` state, we can start to
 			check shares, request short URLs, etc. """
 
