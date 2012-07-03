@@ -28,7 +28,7 @@ from licorn.core.users            import User
 from licorn.extensions            import LicornExtension
 
 from licorn.extensions.mylicorn   import constants
-
+from django.core.urlresolvers     import reverse as url_for
 # Just to be sure it is done.
 mimetypes.init()
 
@@ -87,7 +87,17 @@ class SimpleShare(PicklableObject):
 		basedict = {'password': None, 'uri': None, 'expire': None}
 
 		if os.path.exists(self.share_configuration_file):
-			basedict.update(json.load(open(self.share_configuration_file)))
+			try:
+				basedict.update(json.load(open(self.share_configuration_file)))
+			except:
+				logging.warning(_(u'{0}: configuration file {1} is probably '
+								u'corrupt; removing it.').format(self,
+							stylize(ST_PATH, self.share_configuration_file)))
+				try:
+					os.unlink(self.share_configuration_file)
+
+				except:
+					pass
 
 		for key, value in basedict.iteritems():
 			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
@@ -129,6 +139,11 @@ class SimpleShare(PicklableObject):
 	@property
 	def name(self):
 		return self.__name
+	@property
+	def public_url(self):
+		""" Wow! Django's `url_for()` works like a charm from outside the WMI. """
+		return urllib.quote(url_for('wmi.shares.views.serve',
+									args=(self.coreobj.name, self.name)))
 	@property
 	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
@@ -188,7 +203,8 @@ class SimpleShare(PicklableObject):
 			self.accepts_uploads = False
 	@property
 	def uri(self):
-		""" There is no setter for the URI attribute. """
+		""" Return the public short URI. If the share hasn't any,
+			the method will return ``None``. """
 		return self.__uri
 	@uri.setter
 	def uri(self, newuri):
@@ -296,7 +312,7 @@ class SimpleShare(PicklableObject):
 
 			try:
 				# This will automatically emit an event to update GUIs.
-				result = m.service.shorten_url(urllib.quote(self.path))
+				result = m.service.shorten_url(self.public_url)
 
 			except:
 				logging.exception(_(u'{0}: short URL request failed, '
@@ -306,6 +322,9 @@ class SimpleShare(PicklableObject):
 			else:
 				if result['result'] > 0:
 					self.uri = result['message']
+
+					logging.info(_(u'{0}: short URL successfully set '
+										u'to {1}.').format(self, self.uri))
 
 				else:
 					logging.warning(_(u'{0}: short URL request failed, '
