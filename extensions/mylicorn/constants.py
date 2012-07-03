@@ -38,3 +38,6 @@ set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
 shorten_url = EnumDict('shorten_url', from_dict=__common_dict)
 shorten_url.ALREADY = 2
 
+is_reachable = EnumDict('is_reachable', from_dict=__common_dict)
+is_reachable.UNREACHABLE = -4
+is_reachable.UNKNOWN     = 2
