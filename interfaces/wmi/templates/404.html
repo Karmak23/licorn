@@ -38,6 +38,7 @@
 		<h3>{{ _('The address &ldquo;&nbsp;{0}&nbsp;&rdquo; leads to nowhere.').format('<code>{0}</code>'.format(request_path)) }}</h3>
 		<h3>{{ _('That is exactly where you are, now.') }}</h3>
 	</div>
+	{%- if request.user.is_authenticated() -%}
 	<script language="javascript">
 		$(document).ready(function(){
 
@@ -45,7 +46,7 @@
 			push_active = false;
 
 		});
-
+	{%- endif -%}
 	</script>
 {%- endblock -%}
 
