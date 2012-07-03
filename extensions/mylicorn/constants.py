@@ -31,3 +31,10 @@ common = EnumDict('common', from_dict=__common_dict)
 authenticate = EnumDict('authenticate', from_dict=__common_dict)
 authenticate.ALREADY   = 2
 authenticate.ANONYMOUS = 3
+
+# other JSON-RPC functions
+set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
+
+shorten_url = EnumDict('shorten_url', from_dict=__common_dict)
+shorten_url.ALREADY = 2
+
