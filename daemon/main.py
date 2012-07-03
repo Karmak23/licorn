@@ -432,6 +432,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			self.pid = process.daemonize(self.configuration.log_file,
 												process_name=self.name)
 
+		if self.opts.initial_check:
+			# disable the LAN scan during the initial check,
+			# without saving the setting for it to be still active
+			# at next launch, whatever the real-on-file-setting is.
+			settings.licornd.network.lan_scan = False
+
 		# if still here (not exited before), its time to signify we are going
 		# to stay: write the pid file.
 		process.write_pid_file(self.pid_file)
