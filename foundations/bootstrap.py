@@ -105,8 +105,13 @@ def check_python_modules_dependancies():
 		# here, we don't need to print warnings: we are just testing
 		# if the module can be imported. Avoid polluting the display
 		# with useless false-negative messages.
-		module.get_warnings()
-		module.clear_warnings()
+		try:
+			module.get_warnings()
+			module.clear_warnings()
+
+		except AttributeError:
+			# Old module version, see `core.configuration` for details.
+			pass
 
 	reqmods = (
 		(u'gettext',   u'python-gettext',	None),

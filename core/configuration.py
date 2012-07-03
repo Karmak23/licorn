@@ -195,10 +195,19 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# ** END OF WARNINGS **
 		#
 		# NOTE: there is a similar call in `foundations.bootstrap`
-		w = dmidecode.get_warnings()
-		if w:
-			logging.warning2(w)
-			dmidecode.clear_warnings()
+		try:
+			w = dmidecode.get_warnings()
+
+		except AttributeError:
+			# Old `dmidecode` modules don't have the `*_warnings()` functions.
+			# On Ubuntu 10.04 this is the case. BTW the warning would have
+			# already been printed, so don't bother.
+			pass
+
+		else:
+			if w:
+				logging.warning2(w.replace('\n', '\n\t'))
+				dmidecode.clear_warnings()
 
 		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
 
