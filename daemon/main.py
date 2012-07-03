@@ -465,6 +465,9 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		if options.daemon:
 			logging.notice(_(u'{0}: all threads started, going to sleep '
 									u'waiting for signals.').format(self))
+
+			# This will trigger a lot of things.
+			LicornEvent('licornd_cruising').emit()
 			signal.pause()
 
 		elif self.opts.initial_check:
@@ -480,6 +483,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# handled by the global start / stop mechanism, to be able to start
 			# it before every other thread, and stop it after all other have
 			# been stopped.
+
+			# This will trigger a lot of things. Delay it until interactor is started.
+			LicornEvent('licornd_cruising').emit(delay=5.0)
+
 			self.interactor = LicornDaemonInteractor(daemon=self)
 			self.interactor.run()
 
