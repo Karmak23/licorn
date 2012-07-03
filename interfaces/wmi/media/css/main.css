@@ -247,6 +247,10 @@ tr a {
 	text-align: center;
 }
 
+.nowrap {
+	white-space: nowrap;
+}
+
 .wmi-table {
 	font-size: 80%;
 	width: 100%;
