@@ -34,6 +34,13 @@
 		{%- endif -%}
 	{%- endif -%}
 	</td>
+	<td>
+		{%- if share.uri -%}
+			<a href="{{ share.uri }}" title="{{ _('Share this URI with your partners') }}" target="_blank">{{ share.uri.split('//', 1)[1] }}</a>
+		{%- else -%}
+
+		{%- endif -%}
+	</td>
 	<!-- experimental
 	<td class="centered">
 		<form class="ajax-form" method="GET"
