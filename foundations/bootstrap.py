@@ -102,13 +102,11 @@ def check_python_modules_dependancies():
 	def clear_dmidecode(module):
 		""" See `core.configuration` for WHY we do that. """
 
-		w = module.get_warnings()
-		if w:
-			if os.geteuid() == 0:
-				# Print only for root. If not root the warnings will always
-				# occur and are harmless, even annoying for standard users.
-				sys.stderr.write('dmidecode warnings:\n\t%s' % w.replace('\n', '\n\t'))
-			module.clear_warnings()
+		# here, we don't need to print warnings: we are just testing
+		# if the module can be imported. Avoid polluting the display
+		# with useless false-negative messages.
+		module.get_warnings()
+		module.clear_warnings()
 
 	reqmods = (
 		(u'gettext',   u'python-gettext',	None),

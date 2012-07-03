@@ -13,7 +13,10 @@ def configuration_loads(*args, **kwargs):
 	""" Create the main directories if they don't exist.
 
 		.. note:: this callback will be run *before*
-			`core.configuration` loads (== handler, not callback).
+			`core.configuration` loads (this is a handler,
+			not a callback). It will only *create* the directories
+			and won't check permissions on them, which must be done
+			later when `users` and `groups` have loaded.
 	"""
 
 	for directory, dtype in (
