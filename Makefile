@@ -68,7 +68,8 @@ devinstall: devinstall_packages perms
 	@python contrib/dev_install.py --user-post-installation
 	@make lang  >/dev/null 2>&1
 	#
-	# You can play now :-)
+	# You should logout from your session and log back in to
+	# benefit from your new groups. After that you can play :-)
 	#
 
 devuninstall: uninstall
