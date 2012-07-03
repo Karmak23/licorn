@@ -3,18 +3,69 @@
 
 {%- extends 'base.bootstrap.html' -%}
 
+{% block extended_media %}
+	<script type="text/javascript" src="/media/js/jquery.zclip.min.js"></script>
+{% endblock %}
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
 
 {%- block container -%}
 <div class="row">
 
+	<div class="span5 offset3 alert alert-success">
+		<div class="centered" title="{{ _('Click the button to copy the URL to clipboard') }}">
+			{{ _('Public link for this share:') }}
+				<a id="copy_url" href="#" class="btn btn-success">{{ share.uri }}</a>
+				<div id="copy_message_success" class="hidden">{{ _('Successfully copied to clipboard!') }}</div>
+				<script>
+					function success_message() {
+						setTimeout(function(){
+							$('#copy_message_success').slideDown('fast');
+							setTimeout(function(){
+								$('#copy_message_success').slideUp('slow');
+							}, 2000);
+						}, 150);
+					}
+
+					function setup_zclip(){
+
+						$('a#copy_url').zclip({
+							path:'/media/images/ZeroClipboard.swf',
+							copy:$('a#copy_url').text(),
+							beforeCopy:success_message,
+							afterCopy:function(){
+								$("#copy_message_success").focus();
+
+
+								// remove zclip to restore normal focus,
+								// else flash grabs it eternally.
+								$('a#copy_url').zclip('remove');
+
+								// restore zclip afterwards for the copy
+								// mechanism to continue working.
+								setTimeout(setup_zclip, 50);
+								return true;
+							},
+						});
+					}
+
+					setup_zclip();
+					/*
+						beforeCopy:function(){
+							$('#callback-paragraph').css('background','yellow');
+							$(this).css('color','orange');
+						},
+					*/
+				</script>
+		</div>
+	</div>
+
 	<div class="span8 offset2">
 		{%- if request.user.is_authenticated()
 						and request.user.username == share.coreobj.name -%}
 
 			<a href="{{ url_for('wmi.shares.views.index') }}"
-				class="btn btn-primary pull-right">
+				class="btn pull-right">
 				{{ _('Configure your share&nbsp;&raquo;') }}
 			</a>
 
@@ -66,7 +117,7 @@
 				{%- set infos     = share.file_informations(filename) -%}
 				{%- set pub_fname = filename.replace(share.path, '')[1:] -%}
 				<tr>
-					<td><i class="icon-file"></i> <a href="{{
+					<td class="nowrap"><i class="icon-file"></i> <a href="{{
 								url_for('wmi.shares.views.download',
 								args=(share.coreobj.name, share.name, pub_fname))}}">{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>

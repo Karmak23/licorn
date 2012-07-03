@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-06-20 21:52+0200\n"
-"PO-Revision-Date: 2012-06-18 12:40+0200\n"
+"POT-Creation-Date: 2012-07-03 17:46+0200\n"
+"PO-Revision-Date: 2012-07-03 17:46+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -181,57 +181,57 @@ msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
-#: groups/event_handlers.py:12 system/views.py:184 system/views.py:321
+#: groups/event_handlers.py:15 system/views.py:184 system/views.py:319
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
 #: users/views.py:393
 msgid "member"
 msgstr "membre"
 
-#: groups/event_handlers.py:13 groups/views.py:259 system/views.py:190
-#: system/views.py:327 templates/groups/users_list.html:59
+#: groups/event_handlers.py:16 groups/views.py:259 system/views.py:190
+#: system/views.py:325 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
-#: groups/event_handlers.py:14 groups/views.py:249 system/views.py:178
-#: system/views.py:315 templates/groups/users_list.html:68
+#: groups/event_handlers.py:17 groups/views.py:249 system/views.py:178
+#: system/views.py:313 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
 
-#: groups/event_handlers.py:26
+#: groups/event_handlers.py:29
 msgid "Group \"{0}\" added on the system."
 msgstr "Groupe « {0} » ajouté sur le système."
 
-#: groups/event_handlers.py:39
+#: groups/event_handlers.py:44
 msgid "Group \"{0}\" deleted from the system."
 msgstr "Groupe « {0} » supprimé du système."
 
-#: groups/event_handlers.py:52
+#: groups/event_handlers.py:57
 msgid "User \"{0}\" has no more relationship with group \"{1}\"."
 msgstr "L'utilisateur « {0} » n'a plus aucune relation avec le groupe « {1} »."
 
-#: groups/event_handlers.py:68
+#: groups/event_handlers.py:73
 msgid "User \"{0}\" is now a {1} of group \"{2}\"."
 msgstr "Le compte utilisateur « {0} » est maintenant {1} du groupe « {2} »."
 
-#: groups/event_handlers.py:79
+#: groups/event_handlers.py:84
 msgid "Group \"{0}\" is now {1}."
 msgstr "Le groupe « {0} » est maintenant {1}."
 
-#: groups/event_handlers.py:80
+#: groups/event_handlers.py:85
 msgid "permissive"
 msgstr "permissif"
 
-#: groups/event_handlers.py:80
+#: groups/event_handlers.py:85
 msgid "not permissive"
 msgstr "non permissif"
 
-#: groups/event_handlers.py:85
+#: groups/event_handlers.py:90
 msgid "Group \"{0}\" description has changed to {1}."
 msgstr "La description du groupe « {0} » est maintenant « {1} »."
 
-#: groups/event_handlers.py:91
+#: groups/event_handlers.py:96
 msgid "No description"
 msgstr "Aucune description"
 
@@ -254,6 +254,11 @@ msgstr "le répertoire partagé est-il permissif ?"
 #: groups/forms.py:57
 msgid "Group skel"
 msgstr "Squelette de groupe"
+
+#: groups/tests.py:156 groups/tests.py:173 groups/tests.py:230
+#: users/tests.py:155 users/tests.py:176
+msgid "TS: waiting for background events to finish…"
+msgstr ""
 
 #: groups/views.py:78
 msgid "Error while deleting group {0}"
@@ -471,7 +476,7 @@ msgstr ""
 msgid "Insufficient permissions to alter {0}."
 msgstr "Permissions insuffisantes pour modifier {0}."
 
-#: libs/licornd_auth.py:76
+#: libs/licornd_auth.py:82
 msgid "Exception while trying to authenticate user {0}"
 msgstr "Exception pendant l'authentification de l'utilisateur {0}"
 
@@ -885,35 +890,35 @@ msgid "Unhandled exception in Django WMI code for request {0}"
 msgstr ""
 "Exception non traitée dans le code Django de la WMI pour la requête {0}"
 
-#: system/views.py:145 users/views.py:295
+#: system/views.py:145 users/views.py:294
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:176 system/views.py:313 users/views.py:387
+#: system/views.py:176 system/views.py:311 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:182 system/views.py:319 users/views.py:392
+#: system/views.py:182 system/views.py:317 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:188 system/views.py:325 users/views.py:397
+#: system/views.py:188 system/views.py:323 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:194 system/views.py:331 users/views.py:402
+#: system/views.py:194 system/views.py:329 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:196 system/views.py:333 users/views.py:403
+#: system/views.py:196 system/views.py:331 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:200 system/views.py:337 users/views.py:407
+#: system/views.py:200 system/views.py:335 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:202 system/views.py:339 users/views.py:408
+#: system/views.py:202 system/views.py:337 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
@@ -1137,7 +1142,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:87 templates/shares/parts/share-view.html:53
+#: templates/login.html:87 templates/shares/parts/share-view.html:60
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -1155,11 +1160,11 @@ msgid "Image representing a unicorn, the logo of Licorn®"
 msgstr ""
 "Logo de Licorn®, représentant une licorne stylisée en pièce de jeu d'échecs"
 
-#: templates/sidebar.html:191
+#: templates/sidebar.html:196
 msgid "Log out from the Licorn® WMI"
 msgstr "Se déconnecter de la WMI Licorn®"
 
-#: templates/sidebar.html:191
+#: templates/sidebar.html:196
 msgid "logout"
 msgstr "quitter"
 
@@ -1492,15 +1497,19 @@ msgstr "Nom"
 msgid "Actual contents"
 msgstr "Contenu actuel"
 
-#: templates/shares/index_main.html:60
+#: templates/shares/index_main.html:59
+msgid "Short URI"
+msgstr "URI courte"
+
+#: templates/shares/index_main.html:61
 msgid "Writable"
 msgstr "Dépôt autorisé"
 
-#: templates/shares/index_main.html:61
+#: templates/shares/index_main.html:62
 msgid "Expires"
 msgstr "Expire"
 
-#: templates/shares/index_main.html:70
+#: templates/shares/index_main.html:71
 msgid ""
 "You can manage files in your shares with your prefered file-manager: "
 "<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
@@ -1510,11 +1519,11 @@ msgstr ""
 "fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
 "<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
 
-#: templates/shares/index_main.html:74
+#: templates/shares/index_main.html:75
 msgid "No web share"
 msgstr "Pas de partage web"
 
-#: templates/shares/index_main.html:76
+#: templates/shares/index_main.html:77
 msgid ""
 "You do not have any share yet. You can start one easily by making a new "
 "directory in \"~/Public/\" (just create it if it does not exist)."
@@ -1523,7 +1532,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:80
+#: templates/shares/index_main.html:81
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1531,11 +1540,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:84
+#: templates/shares/index_main.html:85
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:85
+#: templates/shares/index_main.html:86
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1544,7 +1553,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:89
+#: templates/shares/index_main.html:90
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1552,59 +1561,71 @@ msgstr ""
 "Pour les réactiver manuellement, supprimez simplement le fichier <code>{0}</"
 "code>. C'est exactement le même effet."
 
-#: templates/shares/serve-share.html:7
+#: templates/shares/serve-share.html:10
 msgid "Web share {0}"
 msgstr "Partage web {0}"
 
-#: templates/shares/serve-share.html:18
+#: templates/shares/serve-share.html:16
+msgid "Click the button to copy the URL to clipboard"
+msgstr "Cliquez sur le bouton pour copier l'adresse dans votre presse-papier"
+
+#: templates/shares/serve-share.html:17
+msgid "Public link for this share:"
+msgstr "Lien public pour ce partage :"
+
+#: templates/shares/serve-share.html:19
+msgid "Successfully copied to clipboard!"
+msgstr "Adresse copiée dans le presse-papier !"
+
+#: templates/shares/serve-share.html:69
 msgid "Configure your share&nbsp;&raquo;"
 msgstr "Configurer ce partage&nbsp;&raquo;"
 
-#: templates/shares/serve-share.html:23
+#: templates/shares/serve-share.html:74
 msgid "Welcome to share <em>{0}</em>"
 msgstr "Bienvenue sur le partage <em>{0}</em>"
 
-#: templates/shares/serve-share.html:31
+#: templates/shares/serve-share.html:82
 msgid "Uploaded documents"
 msgstr "Documents déposés"
 
-#: templates/shares/serve-share.html:34
+#: templates/shares/serve-share.html:85
 msgid "Upload a document &raquo;"
 msgstr "Déposer un document &raquo;"
 
-#: templates/shares/serve-share.html:38
+#: templates/shares/serve-share.html:89
 msgid "Contains {0} uploaded documents"
 msgstr "Contient {0} document(s) déposé(s)"
 
-#: templates/shares/serve-share.html:40
+#: templates/shares/serve-share.html:91
 msgid "No documents uploaded"
 msgstr "Aucun document déposé"
 
-#: templates/shares/serve-share.html:53
+#: templates/shares/serve-share.html:104
 msgid "Click on a filename to download it to your computer:"
 msgstr "Cliquez sur le nom d'un fichier pour le télécharger :"
 
-#: templates/shares/serve-share.html:59
+#: templates/shares/serve-share.html:110
 msgid "File name"
 msgstr "Nom de fichier"
 
-#: templates/shares/serve-share.html:60
+#: templates/shares/serve-share.html:111
 msgid "Size"
 msgstr "Taille"
 
-#: templates/shares/serve-share.html:61
+#: templates/shares/serve-share.html:112
 msgid "Last modified"
 msgstr "Dernière modification"
 
-#: templates/shares/serve-share.html:62
+#: templates/shares/serve-share.html:113
 msgid "Type"
 msgstr "Type"
 
-#: templates/shares/serve-share.html:84
+#: templates/shares/serve-share.html:135
 msgid "No shared document"
 msgstr "Aucun document partagé"
 
-#: templates/shares/serve-share.html:85
+#: templates/shares/serve-share.html:136
 msgid ""
 "Ask the person who sent you here to populate his share directory. Perhaps he "
 "has forgotten?"
@@ -1648,7 +1669,11 @@ msgstr "{0} fichier(s) déposé(s)"
 msgid "Nothing uploaded"
 msgstr "Aucun dépôt"
 
-#: templates/shares/parts/share-view.html:42
+#: templates/shares/parts/share-view.html:39
+msgid "Share this URI with your partners"
+msgstr "Partagez cette addresse courte avec vos partenaires"
+
+#: templates/shares/parts/share-view.html:49
 msgid ""
 "Can visitors upload documents to this share? Activating this feature "
 "requires setting a password on it (you will be prompted upon activation)."
@@ -1657,26 +1682,26 @@ msgstr ""
 "nécessite la définition d'un mot de passe pour le partage (il vous sera "
 "demandé à l'activation)."
 
-#: templates/shares/parts/share-view.html:49
+#: templates/shares/parts/share-view.html:56
 msgid ""
 "Please choose a password to protect this share against anonymous uploads."
 msgstr ""
 "Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
 "anonymes."
 
-#: templates/shares/parts/share-view.html:55
+#: templates/shares/parts/share-view.html:62
 msgid "SET button"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:58
+#: templates/shares/parts/share-view.html:65
 msgid "Verify:"
 msgstr "Vérification :"
 
-#: templates/shares/parts/share-view.html:63
+#: templates/shares/parts/share-view.html:70
 msgid "password_status_JS"
 msgstr ""
 
-#: templates/shares/parts/share-view.html:67
+#: templates/shares/parts/share-view.html:74
 msgid ""
 "Note: you will not be able to see or recover the password once it is set, "
 "because it is stored encrypted. You will only be able to change it."
@@ -1684,7 +1709,7 @@ msgstr ""
 "Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
 "le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
 
-#: templates/shares/parts/share-view.html:131
+#: templates/shares/parts/share-view.html:138
 msgid "never"
 msgstr "jamais"
 
@@ -2074,36 +2099,36 @@ msgstr "Le test d'import des comptes est un succès."
 msgid "User account \"{0}\" added on the system."
 msgstr "Compte utilisateur « {0} » ajouté sur le système."
 
-#: users/event_handlers.py:47
+#: users/event_handlers.py:49
 msgid "User account \"{0}\" deleted from the system."
 msgstr "Compte utilisateur « {0} » supprimé du système."
 
-#: users/event_handlers.py:59
+#: users/event_handlers.py:61
 msgid "User account \"{0}\" full name has been changed to \"{1}\"."
 msgstr ""
 "Le compte utilisateur « {0} » est maintenant connu sous le nom de « {1} »."
 
-#: users/event_handlers.py:65
+#: users/event_handlers.py:67
 msgid "No name given"
 msgstr "Aucun nom donné"
 
-#: users/event_handlers.py:71
+#: users/event_handlers.py:73
 msgid "Password changed for user account \"{0}\"."
 msgstr "Mot de passe changé pour le compte « {0} »."
 
-#: users/event_handlers.py:77
+#: users/event_handlers.py:79
 msgid "Skel reapplyed for for user account \"{0}\"."
 msgstr "Squelette ré-appliqué sur le compte « {0} »."
 
-#: users/event_handlers.py:83
+#: users/event_handlers.py:85
 msgid "Shell of user account \"{0}\" was changed to \"{1}\"."
 msgstr "Les shell de l'utilisateur « {0} » est maintenant « {1} »."
 
-#: users/event_handlers.py:90
+#: users/event_handlers.py:92
 msgid "User account \"{0}\" has been locked."
 msgstr "Compte utilisateur « {0} » verrouillé."
 
-#: users/event_handlers.py:94
+#: users/event_handlers.py:96
 msgid "User account \"{0}\" has been unlocked."
 msgstr "Compte utilisateur « {0} » déverrouillé."
 
@@ -2144,7 +2169,8 @@ msgid "Unable to add user"
 msgstr "Impossible d'ajouter l'utilisateur"
 
 #: users/views.py:256
-msgid "Unable to add user {0}: {1}."
+#, fuzzy
+msgid "Unable to add user: {0}."
 msgstr "Erreur lors de l'ajout du compte {0} : {1}."
 
 #: users/views.py:300

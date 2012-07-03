@@ -60,7 +60,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		# advertise if we are connected via a standard event.
 		self.events.connected = Event()
-
+	@property
+	def connected(self):
+		return self.events.connected.is_set()
 	def initialize(self):
 		""" The MyLicorn® extension is always available. At worst is it
 			disabled when there is no internet connexion, but even that
@@ -208,3 +210,4 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			LicornEvent('extension_mylicorn_authenticate').emit(delay=3600.0)
 
+__all__ = ('MylicornExtension', )
