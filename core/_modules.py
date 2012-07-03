@@ -126,9 +126,10 @@ class ModulesManager(LockedController):
 												globals(), locals(), class_name)
 					module_class  = getattr(python_module, class_name)
 
-				except (ImportError, SyntaxError, AttributeError):
+				except Exception, e:
+					#(ImportError, SyntaxError, AttributeError):
 					logging.exception(_(u'{0} unusable {1} {2}, exception '
-										u'encountered during import.'),
+										u'at import'),
 										(ST_BAD, _(u'Skipped')), self.module_type,
 										(ST_NAME, module_name))
 					continue
