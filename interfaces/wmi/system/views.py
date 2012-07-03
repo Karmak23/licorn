@@ -282,9 +282,7 @@ def shutdown_all_cancel(request):
 @login_required
 def view_groups(request):
 	""" return the html table groups for the currently logged in user """
-	print "vgroups"
 	user = LMC.users.by_login(str(request.user))
-	print user
 
 	resps     = []
 	guests    = []

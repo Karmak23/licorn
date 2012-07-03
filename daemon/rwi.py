@@ -282,8 +282,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			# on the client side, only one iteration of the loop will not
 			# produce any output, which will get totally un-noticed and
 			# is harmless.
-			logging.warning2(_('Harmless Exception encountered in RWI.get_daemon_status()'))
-			pyutils.print_exception_if_verbose()
+			logging.exception(_('Harmless Exception encountered in RWI.get_daemon_status()'))
 	def get_volumes(self, opts, args):
 
 		self.setup_listener_gettext()
@@ -674,7 +673,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		for fdline in import_fd:
 
 			line = fdline[:-1].split(separator)
-			#print(str(line))
 
 			user = {}
 			for (column, number) in (
@@ -742,7 +740,6 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			if user['group'] not in groups_to_add:
 				groups_to_add.append(user['group'])
 
-			#print str(user)
 			users_to_add.append(user)
 
 			if not (i % 100):
@@ -1515,29 +1512,30 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		include_id_lists, exclude_id_lists = self.__default_groups_includes_excludes(opts)
 
 		if opts.all and (
-				(
-					# NOTE TO THE READER: don't event try to simplify these conditions,
-					# or the order the tests: they just MATTER. Read the tests in pure
-					# english to undestand them and why the order is important.
-					opts.non_interactive and opts.force
-				)
-				or opts.batch
-				or (
-					opts.non_interactive and logging.ask_for_repair(
-						_(u'Are you sure you want to delete all groups?'),
-						auto_answer=opts.auto_answer)
-					or not opts.non_interactive
-				)
-			):
-				include_id_lists.extend([
+					(
+						# NOTE TO THE READER: don't event try to simplify these conditions,
+						# or the order the tests: they just MATTER. Read the tests in pure
+						# english to undestand them and why the order is important.
+						opts.non_interactive and opts.force
+					)
+					or opts.batch
+					or (
+						opts.non_interactive and logging.ask_for_repair(
+							_(u'Are you sure you want to delete all groups?'),
+							auto_answer=opts.auto_answer)
+						or not opts.non_interactive
+					)
+				):
+			include_id_lists.extend([
 					(LMC.groups.select(filters.STD), lambda x: x),
 					(LMC.groups.select(filters.SYSUNRSTR), lambda x: x)
-					])
+				])
 
 		groups_to_del = self.select(LMC.groups, args[1:], opts,
 						include_id_lists = include_id_lists,
 						exclude_id_lists = exclude_id_lists,
-						default_selection=self.__default_groups_selection(opts, for_delete=True))
+						default_selection=self.__default_groups_selection(opts,
+															for_delete=True))
 
 		for group in groups_to_del:
 			if opts.non_interactive or opts.batch or opts.force or \

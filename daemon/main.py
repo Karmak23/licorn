@@ -259,7 +259,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 			self.collect_and_start_threads()
 
-	def collect_and_start_threads(self):
+	def collect_and_start_threads(self, collect_only=False):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
@@ -268,7 +268,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		for module_manager in (LMC.backends, LMC.extensions):
 			for module in module_manager:
 				for thread in module.threads:
-					self.__threads[thread.name] = thread
+					if thread.name not in self.__threads:
+						self.__threads[thread.name] = thread
+
+		if collect_only:
+			return
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.

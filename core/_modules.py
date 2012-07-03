@@ -13,14 +13,15 @@ import os
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import settings, exceptions, logging
-from licorn.foundations           import hlstr, pyutils
+from licorn.foundations           import hlstr, pyutils, events
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.events    import LicornEvent
 from licorn.foundations.constants import roles
 from licorn.foundations.base      import NamedObject, MixedDictObject, \
 											LicornConfigObject
+
+LicornEvent = events.LicornEvent
 
 # local core imports
 from _controllers                 import LockedController
@@ -102,13 +103,21 @@ class ModulesManager(LockedController):
 
 			for entry in os.listdir(self.module_path):
 
-				if entry[0] == '_' or entry[-3:] != '.py' \
-						or os.path.isdir(self.module_path + '/' + entry) \
-						or 'test' in entry:
+				if os.path.isdir(os.path.join(self.module_path, entry)) \
+								and os.path.exists(os.path.join(
+									self.module_path, entry, '__init__.py')):
+					# extension is a subdir.
+					module_name = entry
+
+				elif entry[0] == '_' or entry[-3:] != '.py' or 'test' in entry:
+					# this is nothing interesting, skip.
 					continue
 
-				# remove '.py'
-				module_name = entry[:-3]
+				else:
+					# extension is a simple <file>.py; remove suffix '.py'
+					module_name = entry[:-3]
+
+				# class name is a convention, guessed from the file / dir name.
 				class_name  = module_name.title() + self.module_type.title()
 
 				try:
@@ -243,6 +252,10 @@ class ModulesManager(LockedController):
 				try:
 					module.load(server_modules=server_side_modules)
 
+					# Automatically collect all events and
+					# callbacks of the module.
+					events.collect(module)
+
 					LicornEvent('%s_%s_loaded' % (
 									self.module_type, module_name)).emit()
 
@@ -368,6 +381,9 @@ class ModulesManager(LockedController):
 
 			try:
 				if module.enable():
+					# (re-)collect all event handlers and callbacks of module.
+					events.collect(module)
+
 					logging.notice(_(u'successfully enabled {0} {1}.').format(
 										module_name, self.module_type))
 					return True
@@ -408,7 +424,18 @@ class ModulesManager(LockedController):
 				return False
 
 			try:
+				try:
+					# un(re-)collect all event handlers and callbacks of module.
+					events.uncollect(module)
+
+				except:
+					logging.exception(_(u'Exception while unregistering '
+									u'events handlers/callbacks of {0} {1}'),
+										self.module_type, module_name)
+
+
 				if module.disable():
+
 					logging.notice(_(u'successfully disabled {0} {1}.').format(
 										module_name, self.module_type))
 					return True
