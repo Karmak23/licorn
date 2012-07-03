@@ -127,6 +127,9 @@ def check_python_modules_dependancies():
 		(u'pyinotify', u'python-pyinotify',	None),
 		(u'dbus',      u'python-dbus',		None),
 		(u'dmidecode', u'python-dmidecode',	clear_dmidecode),
+		# dmidecode needs libxml2 and even on Ubuntu 12.04, there is
+		# no valid dependancy in the debian package. Gosh!
+		(u'libxml2',   u'python-libxml2',	None),
 		)
 
 	# for more dependancies (needed by the WMI) see `upgrades/…`
