@@ -21,7 +21,7 @@ from django.http					import HttpResponse, \
 from django.shortcuts               import *
 from django.utils.translation       import ugettext as _
 
-from licorn.foundations             import settings, fsapi
+from licorn.foundations             import logging, settings, fsapi
 from licorn.foundations.constants   import priorities
 from licorn.foundations.styles      import *
 from licorn.foundations.ltrace      import *
