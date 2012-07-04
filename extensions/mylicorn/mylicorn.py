@@ -80,6 +80,18 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 	@property
 	def connected(self):
 		return self.events.connected.is_set()
+	@property
+	def api_key(self):
+		return self.__api_key
+	@api_key.setter
+	def api_key(self, api_key):
+		if not hlstr.cregex['api_key'].match(api_key):
+			raise exceptions.BadArgumentError(_(u'Bad API key "{0}", must '
+						u'match "{1}/i"').format(api_key, hlstr.regex['api_key']))
+
+		# TODO: if connected: check the API key is valid.
+
+		self.__save_configuration(api_key=self.__api_key)
 	def initialize(self):
 		""" The MyLicorn® extension is always available. At worst is it
 			disabled when there is no internet connexion, but even that
@@ -133,18 +145,13 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			setattr(self, '_%s__%s' % (klass, key), data[key])
 
 		return self.available
-	@property
-	def api_key(self):
-		return self.__api_key
-	@api_key.setter
-	def api_key(self, api_key):
-		if not hlstr.cregex['api_key'].match(api_key):
-			raise exceptions.BadArgumentError(_(u'Bad API key "{0}", must '
-						u'match "{1}/i"').format(api_key, hlstr.regex['api_key']))
+	def is_enabled(self):
 
-		# TODO: if connected: check the API key is valid.
+		logging.info(_(u'{0}: extension always enabled unless manually '
+							u'ignored in {1}.').format(self.pretty_name,
+								stylize(ST_PATH, settings.main_config_file)))
 
-		self.__save_configuration(api_key=self.__api_key)
+		return True
 	def __save_configuration(self, **kwargs):
 
 		basedict = {}
@@ -157,14 +164,6 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		json.dump(basedict, open(self.paths.config_file, 'w'))
 
 		LicornEvent('extension_mylicorn_configuration_changed', **kwargs).emit()
-
-	def is_enabled(self):
-
-		logging.info(_(u'{0}: extension always enabled unless manually '
-							u'ignored in {1}.').format(self.pretty_name,
-								stylize(ST_PATH, settings.main_config_file)))
-
-		return True
 
 	@events.handler_method
 	def licornd_cruising(self, *args, **kwargs):
@@ -185,6 +184,15 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		if 'api_key' in kwargs:
 			self.disconnect()
 			self.authenticate()
+
+	@events.handler_method
+	def daemon_shutdown(self, *args, **kwargs):
+		""" Try to disconnected when the daemon shuts down. """
+		if self.enabled:
+			try:
+				self.disconnect()
+			except:
+				pass
 
 	def __start_updater_thread(self):
 
@@ -220,6 +228,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			# and not connected, because not emitting to central.
 			self.events.connected.clear()
 	def __remote_call(self, rpc_func, *args, **kwargs):
+
 		try:
 			result = rpc_func(*args, **kwargs)
 
