@@ -59,7 +59,8 @@ def print_web_exception(e):
 				str(e.info()).replace('\n', '\n\t\t'), str(error).replace('\n', '\n\t\t')))
 
 class MylicornExtension(ObjectSingleton, LicornExtension):
-	""" Provide connexion and remote calls to `my.licorn.org`.
+	""" Provide auto-retrying connection and remote calls to the
+		``my.licorn.org`` services and API.
 
 		.. versionadded:: 1.4
 	"""
@@ -76,12 +77,35 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		self.__is_reachable = None
 	@property
 	def reachable(self):
+		""" R/O property indicating if the current server can be reached from
+			internet.
+
+			The return value is one of:
+
+			* ``True`` if it is.
+			* ``False`` if it is not.
+			* ``None`` if undetermined. This will be the case until the central
+				server has tried to reach us from the outside. Every time the
+				local server's authenticates, or its public address changes,
+				the status will be “ `unknown` ” for a few seconds (at most 30,
+				but this depends on the central server load, too).
+		"""
 		return self.__is_reachable
 	@property
 	def connected(self):
+		""" R/O property that returns ``True`` if the daemon is currently
+			connected to the central `MyLicorn®` service, which means that:
+
+			* it has successfully authenticated,
+			* the regular updater thread is running.
+
+			``False`` will be returned until the first updater call has
+			completed, which is nearly immediate after authentication.
+		"""
 		return self.events.connected.is_set()
 	@property
 	def api_key(self):
+		""" R/W property to set or get the current `MyLicorn®` API key. """
 		return self.__api_key
 	@api_key.setter
 	def api_key(self, api_key):
@@ -95,9 +119,20 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.__save_configuration(api_key=self.__api_key)
 	def initialize(self):
-		""" The MyLicorn® extension is always available. At worst is it
-			disabled when there is no internet connexion, but even that
-			is not yet sure.
+		""" Module related method. The MyLicorn® extension is considered always
+			available, it has no external service dependancy.
+
+			At worst is it “ disconnected ” when there is no internet
+			connection, but that's not enough to disable it.
+
+			This method will make usage of an optional environment variable
+			named after ``MY_LICORN_URI``, that should contain an address to
+			any central server of your choice providing the `MyLicorn®`
+			JSON-RPC API. The default is ``http://my.licorn.org/``. It is
+
+			.. note:: no need to include the trailing ``/json/`` in the web
+				address, it will be automatically added.
+
 		"""
 
 		assert ltrace_func(TRACE_MYLICORN)
@@ -148,6 +183,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		return self.available
 	def is_enabled(self):
+		""" Module related method. Always returns ``True``, unless the extension
+			is manually ignored in the server configuration. """
 
 		logging.info(_(u'{0}: extension always enabled unless manually '
 							u'ignored in {1}.').format(self.pretty_name,
@@ -169,32 +206,45 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 	@events.handler_method
 	def licornd_cruising(self, *args, **kwargs):
-		""" When Licornd is OK, we can start requesting the central server. """
+		""" Event handler that will start the authentication process when
+			Licornd is `cruising`, which means “ `everything is ready, boys` ”. """
 
 		if self.enabled:
 			self.authenticate()
 
 	@events.handler_method
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
-		""" Now that we are authenticated, we can report ourselves
-			to our central server at a regular interval. """
+		""" Event handler that will start the updater thread once we are
+			successfully authenticated on the central server. """
 
 		self.__start_updater_thread()
 
 	@events.handler_method
 	def extension_mylicorn_configuration_changed(self, *args, **kwargs):
+		""" Event handler triggered by an API key change; will call
+			:meth:`disconnect` and then :meth:`authenticate` to benefit from
+			the new API key. """
+
 		if 'api_key' in kwargs:
 			self.disconnect()
 			self.authenticate()
 
 	@events.handler_method
 	def daemon_shutdown(self, *args, **kwargs):
-		""" Try to disconnected when the daemon shuts down. """
+		""" Event handler that will disconnect from the central server when
+			the daemon shuts down.
+
+			Any exception will be just printed with no other consequence.
+
+			Obviously, this handler runs only if the extension is enabled.
+		"""
+
 		if self.enabled:
 			try:
 				self.disconnect()
+
 			except:
-				pass
+				logging.exception(_('{0}: exception while disconnecting'), self.pretty_name)
 
 	def __start_updater_thread(self):
 
@@ -214,7 +264,6 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			logging.info(_(u'{0}: updater thread started.').format(self.pretty_name))
 			self.licornd.collect_and_start_threads(collect_only=True)
-
 	def __stop_updater_thread(self):
 
 		if self.events.connected.is_set():
@@ -253,6 +302,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			return result
 
 	def disconnect(self):
+		""" Disconnect from the central server, and BTW stop advertising our
+			status regularly there. """
 		assert ltrace_func(TRACE_MYLICORN)
 
 		if self.connected:
@@ -329,7 +380,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			LicornEvent('extension_mylicorn_authenticated').emit()
 	def update_reachability(self):
-		""" Ask the central server if we are reachable from the Internet or not. """
+		""" Ask the central server if we are reachable from the
+			Internet or not. This call gives an immediate answer, however
+			the answer can be “ undetermined ” (``None``), which means we
+			will have to retry later to get a real ``True`` / ``False``
+			satisfying value.
+		"""
 
 		# Unknown status by default
 		self.__is_reachable = None
@@ -349,10 +405,11 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 												if code == is_reachable.FAILED
 												else is_reachable[code])))
 	def update_remote_informations(self):
-		""" Method meant to be run from a Job Thread. It will run `noop()`
-			remotely, to trigger a remote informations update from the HTTP
+		""" Method meant to be run from the updater Thread, which can also be
+			run manually at will from the daemon's console. It will run ``noop()``
+			remotely, to trigger a remote information update from the HTTP
 			request contents. From our point of view, this is just a kind of
-			"ping()".
+			``ping()``.
 		"""
 		res = self.__remote_call(self.service.noop)
 
