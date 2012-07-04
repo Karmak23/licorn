@@ -191,8 +191,6 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 	def daemon_shutdown(self, *args, **kwargs):
 		""" Try to disconnected when the daemon shuts down. """
 		if self.enabled:
-			self.__stop_updater_thread()
-
 			try:
 				self.disconnect()
 			except:
@@ -260,6 +258,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		if self.connected:
 
 			LicornEvent('extension_mylicorn_disconnects', synchronous=True).emit()
+
+			self.__stop_updater_thread()
 
 			res = self.__remote_call(self.service.disconnect)
 
