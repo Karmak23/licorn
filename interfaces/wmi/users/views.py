@@ -513,7 +513,6 @@ def import_view(request, confirm='', *args, **kwargs):
 def main(request, sort="login", order="asc", select=None, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
-
 	users_list = utils.select('users', default_selection=filters.STANDARD)
 
 	system_users_list = utils.select('users', default_selection=filters.SYSTEM)

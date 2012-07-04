@@ -41,19 +41,143 @@
 			id="share_{{ share.shid }}_accepts_uploads"
 			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
 			<div id="popbutton_{{ share.shid }}">
+				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }}/>
 
-				{{ icheckbox(share.shid, share.accepts_uploads) }}
-
+				<!--{{ icheckbox(share.shid, share.accepts_uploads) }}-->
+				
 			</div>
 		</form>
+		<div class="share_popover_password hidden" id="password_info_{{ share.shid }}">
+			<div class="centered smaller" style="width: 300px;">
+				<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
+				<hr />
+				<table class="vertical-space-small">
+					<tr>
+						<td>{{ _('Password:') }}</td>
+						<td>{{ textinput('id_password1', True) }}</td>
+						<td rowspan="2">
+							<span id="check_pwds"></span>
+							<span id='save_password_{{ share.shid }}'>SAVE</span>
+							<!--<img id='save_password_{{ share.shid }}' src='/media/images/24x24/ajouter.png' alt='{{ _("Save the password for this share") }}'>-->
+						
+						</td>
+					</tr>
+					<tr>
+						<td>{{ _('Verify:') }}</td>
+						<td>{{ textinput('id_password2', True) }}</td>
+					</tr>
+					<tr>
+						<td colspan="3" class="password_status_message smaller">
+							<span id="pwd_strenght"></span>
+						</td>
+					</tr>
+				</table>
+				<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
+			</div>
+		</div>
 
 		<script language="javascript">
 			$(document).ready(function() {
-				$("#popbutton_{{ share.shid }}").click(function() {
-					if ($("#id_checkbox_{{ share.shid }}").attr('checked')) {
-						$("#password_{{ share.shid }}").show();	
-					}					
+
+				//init the checkbox
+				$('#id_checkbox_{{ share.shid }}').checkbox({
+					"on_text" : "{{ _('Yes') }}",
+					"off_text" : "{{ _('No') }}",
 				})
+
+				function popover_{{ share.shid }}_on_close(popover_div) {
+					// on close we need to be sure if a password has been set or not
+					console.log('onclose {{ share.name }}')
+					
+				}
+
+				function popover_{{ share.shid }}_on_open(popover_div) {
+					console.log("onopen {{ share.name }}")
+					
+					if (! popover_div.hasClass('event_set')) {
+						popover_div.addClass('event_set')
+
+						// check password strength
+						password_helpers(popover_div)
+
+						// save the password if necessary
+						popover_div.find('#save_password_{{ share.shid }}').click(function() {
+							console.log('save pass')
+							pwd = popover_div.find(':input:first').val()
+							console.log("save pwd : ", pwd)
+							// save the password 
+							$.get('/shares/{{ share.name }}/password/'+$.URLEncode(pwd), function() {
+								//reset password inputs
+								popover_div.find(':input').value = '';
+								$('#popbutton_{{ share.shid }}').popover('hide')
+
+							});
+						});
+					}
+				}
+			
+				// init the password popover for this share
+				$('#popbutton_{{ share.shid }}').popover({
+					title : "{{ _('Protect this share') }}",
+					content: $('#password_info_{{ share.shid }}'),
+					trigger: 'manual',
+					position: 'right',
+					hideOnHTMLClick: false,
+					closeEvent: popover_{{ share.shid }}_on_close,
+					openEvent: popover_{{ share.shid }}_on_open,
+					//closeEvent: pop_{{ share.shid }}_chec				
+				});
+
+
+
+
+				$('#id_checkbox_{{ share.shid }}').change(function(event) {	
+					          	
+					if ($(this).is(':checked')) {
+						$('#popbutton_{{ share.shid }}').popover('show')
+					}
+					else {
+						// hide the popover
+						$('#popbutton_{{ share.shid }}').popover('hide')
+
+						// remove the password if one has ben set
+						$.get('/share/{{ share.name }}/accepts_uploads/', function(data) {
+							if (data == 'True') {
+								$.get('/share/{{ share.name }}/password/')
+							}
+						})
+					}
+				})
+
+
+				// link it to the 'iphone checkbox'
+				/*$('#popbutton_{{ share.shid }}').click(function(event) {
+					
+								
+
+
+					//manually propagate the event to the checkbox
+					$('#id_checkbox_{{ share.shid }}').trigger('click')					
+
+					if ($('#id_checkbox_{{ share.shid }}').is(':checked')) {
+						$('#popbutton_{{ share.shid }}').popover('show')
+					}	
+					else {
+						$('#popbutton_{{ share.shid }}').popover('hide')
+						$.get('/share/{{ share.name }}/accepts_uploads/', function(data) {
+							if (data == 'True') {
+								$.get('/share/{{ share.name }}/password/')
+							}
+						})
+					}
+
+				});*/
+
+				
+				
+
+			
+
 			});
 		</script>
 	</td>
@@ -71,27 +195,4 @@
 	</td>
 	<!-- -->
 </tr>
-<tr id="password_{{ share.shid }}" class="hidden table">
-	<td colspan="3">
-						<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
-						<hr />
-						<table class="vertical-space-small">
-							<tr>
-								<td>{{ _('Password:') }}</td>
-								<td>{{ textinput('id_password1') }}</td>
-								<td rowspan="2">[{{ _('SET button') }}]</td>
-							</tr>
-							<tr>
-								<td>{{ _('Verify:') }}</td>
-								<td>{{ textinput('id_password2') }}</td>
-							</tr>
-							<tr>
-								<td colspan="3" class="password_status_message smaller">
-									{ {{ _('password_status_JS') }} }
-								</td>
-							</tr>
-						</table>
-						<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
-				
-	<td>
-</tr>
+

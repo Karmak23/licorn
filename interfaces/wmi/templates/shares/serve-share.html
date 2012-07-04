@@ -2,7 +2,11 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- extends 'base.bootstrap.html' -%}
-
+{%- block base_media %}
+	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
+	<script type="text/javascript" src="/media/js/bootstrap.modal.js"></script>
+    <link rel="stylesheet" type="text/css" href="/media/css/jquery.upload_dnd.css" />
+{%- endblock %}
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
 
@@ -28,24 +32,46 @@
 	{%- if share.accepts_uploads -%}
 
 		<div class="span6 offset2 hero-unit">
-		<h2>{{ _('Uploaded documents') }}</h2>
-		<div class="span2 offset4">
-				<a href="#" class="btn btn-primary btn-large">
-					{{ _('Upload a document &raquo;')}}</a>
-		</div>
-		<p>
-			{%- if contents_numbers.uploads -%}
-				{{ _('Contains {0} uploaded documents').format(contents_numbers.uploads) }}
-			{%- else -%}
-				{{ _('No documents uploaded') }}
-			{%- endif -%}
-		</p>
+			<h2>{{ _('Upload documents') }}</h2>
+			<div class='row'>
+					
+				<div class='span4' id="upload_recap">
+					&nbsp;
+				</div>
+				<div class='span2'>
+					{% csrf_token %}
+					<div id='file_upload'>
+						
+						
+					</div>
+				</div>
+			</div>
+
+			<!--<div class='row'>
+				<div id='upload_recap' class='span4'>
+					&nbsp;
+				</div>
+				<div class="span2">
+						{% csrf_token %}
+						<div id='output'>
+							{{ _('Upload a document &raquo;')}}
+						</div>				
+				</div>
+			</div>	-->	
+			<p>
+				{%- if contents_numbers.uploads -%}
+					{{ _('Contains {0} uploaded documents').format(contents_numbers.uploads) }}
+				{%- else -%}
+					{{ _('No documents uploaded') }}
+				{%- endif -%}
+			</p>
 		</div>
 
 	{# else:
 		We choose not to display a message in case the owner doesn't accept
 		uploads on this share. This could just frustrate the visitor. #}
 	{%- endif -%}
+</div>
 
 	{%- if contents_numbers.files -%}
 
@@ -53,7 +79,7 @@
 	<p class="span8 offset2">{{ _('Click on a filename to download it to your computer:') }}</p>
 
 		{%- set contents = share.contents(with_paths=True) -%}
-		<div class="span8 offset2">
+		<div class="span8 offset2" id='download_table'>
 		<table class="table table-striped">
 			<tr>
 				<th>{{_('File name')}}</th>
@@ -68,7 +94,7 @@
 				<tr>
 					<td><i class="icon-file"></i> <a href="{{
 								url_for('wmi.shares.views.download',
-								args=(share.coreobj.name, share.name, pub_fname))}}">{{ pub_fname }}</a></td>
+								args=(share.coreobj.name, share.name, pub_fname))}}" class='download_file'>{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>
 					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
 					<td>{{ infos.mimetype }}</td>
@@ -86,4 +112,68 @@
 		</div>
 	{%- endif -%}
 </div>
+<script language="javascript">
+	$(document).ready(function() {
+		
+		//$('#file_upload').css({"height" : '200px'})
+		$('#file_upload').upload_dnd( {
+		
+			recap_element : $('#upload_recap'),
+			upload_action_url : "/share/robin/{{ share.name }}/upload/toto",
+			upload_data : {
+				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
+			},
+			// overwritte the run function in order to pass the password of the share
+			/*run_function : function(files, settings) {
+				console.log('custom run func')
+				$('#file_upload').popover('show')
+				$('#user_password_validate').click(function() {
+					console.log('password = ', $('#user_password').val())
+					if ('sharepassword' in settings.upload_data) {
+						console.log('old password '+ settings.upload_data.sharepassword+' detected')
+						settings.upload_data.sharepassword = $('#user_password').val()
+					}
+					else {
+						settings.upload_data = $.extend({'sharepassword' : $('#user_password').val()}, settings.upload_data)
+					}
+					$('#file_upload').popover('hide')
+					do_upload(files, settings)
+				})
+
+			},*/
+
+			upload_box_style : { 'border' : '', 'background': 'url("/media/images/dropbox.png") no-repeat center', 'height' : '150px' },
+			upload_box_style_on_hover : { 'border' : '4px dotted red', 
+											'background': 'url("/media/images/dropbox.png") no-repeat center',
+											'height' : '150px' },
+
+			error_handler: function(error) {				
+			},
+			success_handler: function() {
+			}
+
+		})
+	
+
+		$('.download_file').click(function(event) {
+
+
+			event.stopPropagation();
+			event.preventDefault();
+
+			console.log('download click')
+			$('#download_table').popover('show')
+			$('#user_password_validate').click(function() {
+					console.log('password = ', $('#user_password').val())
+					sharepassword = $('#user_password').val()
+					//do download
+					//$.get('/share/', {})
+				})
+		})
+	
+
+	});
+</script>
+
+
 {% endblock %}

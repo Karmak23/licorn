@@ -8,7 +8,7 @@ Licorn WMI2 system views
 :license: GNU GPL version 2
 """
 
-import os
+import os, json
 
 from django.contrib.auth.decorators import login_required
 from django.http					import HttpResponse, \
@@ -18,9 +18,12 @@ from django.http					import HttpResponse, \
 											HttpResponseServerError, \
 											HttpResponseBadRequest
 
+from django.core.handlers.wsgi import WSGIRequest
+
 from django.shortcuts               import *
 from django.utils.translation       import ugettext as _
 
+from licorn.foundations                    import logging
 from licorn.foundations             import settings, fsapi
 from licorn.foundations.constants   import priorities
 from licorn.foundations.styles      import *
@@ -31,6 +34,9 @@ from licorn.core                           import LMC
 from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import *
+
+
+from django.template.loader         import render_to_string
 
 import wmi_data
 
@@ -76,10 +82,8 @@ def accepts_uploads(request, shname, **kwargs):
 	share = LMC.users.by_login(login).find_share(shname)
 
 
-	if request.is_ajax():
-		pass
-	else:
-		return HttpResponse(str(share.accepts_uploads))
+	
+	return HttpResponse(str(share.accepts_uploads))
 
 @login_required
 def password(request, shname, newpass, **kwargs):
@@ -88,9 +92,22 @@ def password(request, shname, newpass, **kwargs):
 		share, which will impact the client side via events. """
 
 	login = request.user.username
+	share = LMC.users.by_login(login).find_share(shname)
 
 	try:
-		LMC.users.by_login(login).find_share(shname).password = newpass
+		share.password = newpass
+
+		if share.password in ('', None):
+
+			share.accepts_uploads=False
+			wmi_event_app.enqueue_notification(request, _(u'The upload facilities '
+				'for the share <em>{0}</em> has been disabled.').format(share.name))
+		else:
+			share.accepts_uploads=True
+		
+			wmi_event_app.enqueue_notification(request, _(u'A new password '
+				'has been set for the share <em>{0}</em>').format(share.name))
+		
 
 	except Exception, e:
 		logging.exception(_(u'Could not change password of share {0} (user {1})'),
@@ -98,6 +115,8 @@ def password(request, shname, newpass, **kwargs):
 
 		wmi_event_app.enqueue_notification(request, _(u'Could not change the '
 			u'password of you share {0} (was: {1}).').format(share.name, e))
+
+	return HttpResponse('PASSWORD')
 
 
 @login_required
@@ -113,12 +132,42 @@ def serve(request, login, shname):
 	""" Serve a share to web visitors. """
 
 	user = LMC.users.by_login(login)
+	sh = user.find_share(shname)
 
+	print "serve"
+
+	if 'can_access_share_{0}'.format(shname) not in request.session:
+		request.session['can_access_share_{0}'.format(shname)] = False
+	
+
+	_d = wmi_data.base_data_dict(request)
+	_d.update({'share': sh })
+	
+
+
+
+	# if it is a POST Resquest, the user is sending the share password
+	if request.method == 'POST':
+
+		print "POST"
+		if sh.check_password(request.POST['share_password']) and \
+			not request.session['can_access_share_{0}'.format(shname)]:
+
+			request.session['can_access_share_{0}'.format(shname)] = True
+
+		# render the same page again :
+		# 	- in case of correct password, the user will see the regular page,
+		#	- else, the user will see the same password page
+		return HttpResponseRedirect(request.path)
+
+
+	# this is now a GET Request
+
+	# if no share, return a 404
 	if not user.accepts_shares:
 		return HttpResponseNotFound(_('This user has no visible shares.'))
 
-	_d = wmi_data.base_data_dict(request)
-
+	
 	for share in user.list_shares():
 		if share.name == shname:
 
@@ -126,7 +175,15 @@ def serve(request, login, shname):
 				return HttpResponseForbidden(_('This share has expired. It '
 													'is no more available.'))
 
-			_d.update({'share': share})
+			# if the share accept upload the user need a password to access it
+			if share.accepts_uploads:
+				if not request.session['can_access_share_{0}'.format(shname)]:
+					return render(request, 'shares/parts/ask_password.html', {
+						'share' : share,
+						'core_obj' : login
+					})
+
+			# finally, if everything is OK, render the regular view	
 			return render(request, 'shares/serve-share.html',_d)
 
 	return HttpResponseNotFound(_('No Web share at this URI, sorry.'))
@@ -161,4 +218,33 @@ def download(request, login, shname, filename):
 		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
 
 def upload(request, login, shname, filename):
-	return HttpResponseNotFound(_('Not implemented yet, sorry.'))
+	""" upload action """
+	share = LMC.users.by_login(login).find_share(shname)
+	
+	# make sure we can upload in this share
+	if share.accepts_uploads:
+	
+		# make sure the public user can upload in this share
+		if request.session['can_access_share_{0}'.format(shname)]:
+
+			print "upload in ", share.path
+			if request.method == 'POST':
+				crash()
+				print "POST"
+				csv_file = request.FILES['file']
+				print csv_file
+
+				destination = open(os.path.join(share.uploads_directory, str(csv_file)), 'wb+')
+				t = ''
+				for chunk in csv_file.chunks():
+					destination.write(chunk)
+					t += chunk
+				destination.close()
+				#lprint(destination)
+				return HttpResponse(csv_file)
+
+		else: 
+			return HttpResponseForbidden('The password is not correct')
+
+	else:
+		return HttpResponse('cannot upload in this share !')

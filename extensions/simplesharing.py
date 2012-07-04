@@ -141,28 +141,26 @@ class SimpleShare(PicklableObject):
 								or not os.path.exists(self.uploads_directory))
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
+		#if self.accepts_uploads == accepts:
+		#	logging.info(_(u'{0}: simple share upload state '
+		#						u'unchanged.').format(self.name))
+		#	return
 
-		with self.lock:
-			if self.accepts_uploads == accepts:
-				logging.info(_(u'{0}: simple share upload state '
-									u'unchanged.').format(self.pretty_name))
-				return
+		if accepts:
+			if self.__password is None:
+				raise exceptions.LicornRuntimeException(_(u'Please set a '
+										u'password on the share first.'))
 
-			if accepts:
-				if self.__password is None:
-					raise exceptions.LicornRuntimeException(_(u'Please set a '
-											u'password on the share first.'))
+			os.makedirs(self.uploads_directory)
 
-				os.makedirs(self.uploads_directory)
+		else:
+			# Archive the uploads/ directory only if non-empty.
+			if os.listdir(self.uploads_directory) != []:
+				fsapi.archive_directory(self.uploads_directory,
+							orig_name='share_%s_%s_uploads' % (
+											self.coreobj.name, self.name))
 
-			else:
-				# Archive the uploads/ directory only if non-empty.
-				if os.listdir(self.uploads_directory) != []:
-					fsapi.archive_directory(self.uploads_directory,
-								orig_name='share_%s_%s_uploads' % (
-												self.coreobj.name, self.name))
-
-			LicornEvent('share_uploads_state_changed', share=self).emit()
+		LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
 	def password(self):
 		return self.__password
@@ -175,8 +173,9 @@ class SimpleShare(PicklableObject):
 			It can be an issue if the user places sensitive data in the share,
 			but then we can do nothing if the user is dumb or makes mistakes.
 		"""
-		self.__password = self.compute_password(newpass) if newpass else None
-
+		self.__password = self.compute_password(newpass, salt='licorn') \
+			if newpass else None
+		
 		self.__save_share_configuration(password=self.__password)
 
 		if newpass is None:
@@ -273,6 +272,8 @@ class SimpleShare(PicklableObject):
 			'mtime'    : fstat.st_mtime - curtime,
 			'ctime'    : fstat.st_ctime - curtime,
 		}
+	def check_password(self, pw_to_check):
+		return (self.compute_password(pw_to_check, salt='licorn') == self.password)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing

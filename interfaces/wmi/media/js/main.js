@@ -168,8 +168,10 @@ $(document).keyup(function(e) {
 
 
 function password_helpers(content) {
+	console.log("init password helpers")
+	console.log(content.find('input:password'))
 	content.find('input:password').keyup(function() {
-
+		console.log('keyup')
 		var empty = false;
 		content.find('input:password').each(function() {
 			if ($(this).val() == '') {
@@ -193,27 +195,27 @@ function password_helpers(content) {
 				});
 				if ( match ) {
 					//if they match check password strenght
-					$('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
+					content.find('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
 					$.get("/users/check_pwd_strenght/"+pwd, function(html) {
 						if (html != pwd) {
-							$('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
+							content.find('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
 						}
 						else {
-							$('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
+							content.find('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
 						}
 					});
 					passwords_match = true;
 				}
 				else {
-					$('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
+					content.find('#check_pwds').html('<img src="/media/images/16x16/check_bad.png"/>');
 					passwords_match = false
 
-					$('#pwd_strenght').html('')
+					content.find('#pwd_strenght').html('')
 				}
 		}
 		else {
-			$('#check_pwds').html('')
-			$('#pwd_strenght').html('')
+			content.find('#check_pwds').html('')
+			content.find('#pwd_strenght').html('')
 		}
 	});
 
