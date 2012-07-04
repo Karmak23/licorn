@@ -130,7 +130,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 				data.update(json.load(f))
 
 		except (OSError, IOError), e:
-			if e.errno != errno.ENOPERM:
+			if e.errno != errno.ENOENT:
 				raise e
 
 		except:
