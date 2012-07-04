@@ -33,6 +33,9 @@ authenticate.BAD_API_KEY = -4
 authenticate.ALREADY     = 2
 authenticate.ANONYMOUS   = 3
 
+disconnect = EnumDict('disconnect', from_dict=__common_dict)
+disconnect.ALREADY = 2
+
 # other JSON-RPC functions
 set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
 
