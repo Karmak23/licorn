@@ -261,6 +261,9 @@ class SimpleShare(PicklableObject):
 				continue
 
 			if typ == stat.S_IFREG:
+				if fsapi.is_backup_file(subent):
+					continue
+
 				if uploads_dir in subent:
 					uploads.append(subent)
 
