@@ -2,6 +2,7 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- macro backup_informations(volume, last_backup_time, next_backup_time) -%}
+
 	{%- set guid = volume.guid.replace('-', '_') -%}
 
 	{%- if last_backup_time > 0 -%}
@@ -82,16 +83,12 @@
 
 		{% else %}
 
-			<p class="alert">{{ _('Space needed for next increment: {0}.').format(
-					'<strong>%s</strong>' % bytes_to_human(space)
-				) }}</p>
+			<p class="alert">{{ _('Space needed for next backup increment: {0}.').format('<strong>%s</strong>' % bytes_to_human(space)) }}</p>
 
 		{% endif %}
 
 	{% else %}
-		<p class="alert">{{ _('Space needed for a full backup: {0}.').format(
-				'<strong>%s</strong>' % bytes_to_human(known_space)
-			) }}</p>
+		<p class="alert">{{ _('Space needed for a full backup: {0}.').format('<strong>%s</strong>' % bytes_to_human(known_space)) }}</p>
 
 	{% endif %}
 
