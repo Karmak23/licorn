@@ -10,7 +10,7 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time, mimetypes, urllib, random
+import os, stat, time, mimetypes, random
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events, hlstr
@@ -149,8 +149,8 @@ class SimpleShare(PicklableObject):
 	@property
 	def public_url(self):
 		""" Wow! Django's `url_for()` works like a charm from outside the WMI. """
-		return urllib.quote(url_for('wmi.shares.views.serve',
-									args=(self.coreobj.name, self.name)))
+		return url_for('wmi.shares.views.serve',
+									args=(self.coreobj.name, self.name))
 	@property
 	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
