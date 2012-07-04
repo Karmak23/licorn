@@ -14,6 +14,7 @@ urlpatterns = patterns('',
 
 	# / and /test are special
 	(r'^$', 'wmi.system.views.main'),
+	(r'^reach/(?P<key>[\w]{8,8})/?$', 'wmi.system.views.reach'),
 
 	# /favicon.ico doesn't exist in our well-organized world.
 	(r'^media/favicon.ico$', lambda x: HttpResponsePermanentRedirect('/media/images/favicon.ico')),

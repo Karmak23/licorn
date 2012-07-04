@@ -11,14 +11,19 @@ Licorn WMI2 shares dynamic sidebar
 
 from django.template.loader     import render_to_string
 
-from licorn.foundations         import pyutils, cache
+from licorn.foundations         import cache
 from licorn.core                import LMC
-from licorn.interfaces.wmi.libs import utils
 
 @cache.cached(cache.five_minutes)
 def enabled(*args, **kwargs):
 	return 'simplesharing' in LMC.extensions.keys() \
 							and LMC.extensions.simplesharing.enabled
+
+@cache.cached(cache.five_minutes)
+def my_enabled(*args, **kwargs):
+	return 'mylicorn' in LMC.extensions.keys() \
+							and LMC.extensions.simplesharing.enabled
+
 
 def dynamic_sidebar(request):
 
@@ -31,4 +36,25 @@ def dynamic_sidebar(request):
 	return ''
 
 def dynamic_status(request):
-	pass
+
+	pri1 = ''
+	pri2 = ''
+	pri3 = ''
+
+	if my_enabled():
+		m = LMC.extensions.mylicorn
+
+		if not m.connected:
+			pri1 = render_to_string('shares/parts/disconnected.html', {
+				'extension' : m,
+				'request'   : request
+			})
+
+		elif not m.reachable:
+
+			pri1 += render_to_string('shares/parts/unreachable.html', {
+				'extension'      : m,
+				'request'        : request,
+			})
+
+	return (pri1 or None, pri2 or None, pri3 or None)

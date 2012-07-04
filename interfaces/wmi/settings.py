@@ -111,6 +111,8 @@ JINJA2_GLOBALS = {
     'config'            : 'wmi.libs.utils.config',
     'djsettings'        : 'wmi.libs.utils.djsettings',
     'licorn_setting'    : 'wmi.libs.utils.licorn_setting',
+    'get_lmc'           : 'wmi.libs.utils.get_lmc',
+    'server_address'    : 'wmi.libs.utils.server_address',
     'version_html'      : 'wmi.libs.utils.version_html',
     'url_for'           : 'django.core.urlresolvers.reverse',
     'unique_hash'       : 'licorn.foundations.pyutils.unique_hash',

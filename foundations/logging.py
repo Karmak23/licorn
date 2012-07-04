@@ -183,6 +183,26 @@ def progress(mesg, to_listener=True, to_local=True):
 
 	# make logging.progress() be compatible with potential assert calls.
 	return True
+def raw_message(mesg, to_listener=True, to_local=True):
+	""" Send message to listener, and on stdout if told so (default is not)
+		to print the message locally. The message is not formatted in any way.
+
+
+		.. versionadded:: 1.3.3 development cycle.
+	"""
+
+	if to_listener:
+		send_to_listener(LicornMessage(mesg), verbose.NOTICE)
+
+	if to_local:
+		with output_lock:
+			sys.stdout.write(mesg)
+			#sys.stdout.flush()
+
+	monitor(TRACE_LOGGING, TRACELEVEL_3, ' > {0}', mesg)
+
+	# make the function be compatible with potential assert calls.
+	return True
 def exception(*args, **kwargs):
 	""" display full exception if >= PROGRESS, else just display a message. """
 

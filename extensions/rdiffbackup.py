@@ -348,7 +348,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 			workers.service_enqueue(priorities.LOW, self.compute_total_space)
 
-			events.collect(self)
 			return True
 
 		return False
@@ -389,9 +388,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		self.enabled = self.is_enabled()
 
-		# register again our callbacks in the event manager.
-		events.collect(self)
-
 		return self.enabled
 	def disable(self):
 		""" Disable the extension. This disables everything, even the timer
@@ -408,9 +404,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		# Try to avoid any race-collision with any operation beiing
 		# relaunched while we stop.
 		self.events.running.set()
-
-		# unregister our callbacks, to avoid beiing called while stopping
-		events.uncollect(self)
 
 		self.__stop_timer_thread()
 

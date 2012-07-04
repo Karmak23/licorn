@@ -64,7 +64,6 @@ def __gather_wmi_messages(request):
 				info_messages[msgtuple[0]] += msgtuple[1] + '\n'
 
 	return status_messages, info_messages
-
 def __cpu_infos():
 	cpus = 0
 	model = _(u'unknown')
@@ -86,7 +85,8 @@ def error_handler(request, *args, **kwargs):
 	with logging.output_lock:
 		old_level = options.verbose
 		options.SetVerbose(verbose.PROGRESS)
-		logging.exception(_('Unhandled exception in Django WMI code for request {0}'), str(request))
+		logging.exception(_('Unhandled exception in Django WMI code for '
+											'request {0}'), str(request))
 		options.SetVerbose(old_level)
 
 	return render(request, '500.html')
@@ -279,12 +279,11 @@ def shutdown_all_cancel(request):
 	#wmi_event_app.enqueue_operation(request, 'LMC.system.shutdown_all_cancel')
 
 	return HttpResponse('Shutdown CANCEL!')
+
 @login_required
 def view_groups(request):
 	""" return the html table groups for the currently logged in user """
-	print "vgroups"
 	user = LMC.users.by_login(str(request.user))
-	print user
 
 	resps     = []
 	guests    = []
@@ -345,3 +344,17 @@ def view_groups(request):
 	return render_to_string('/users/view_groups_template.html', {
 		'groups_lists' : lists
 	})
+
+# no @login_required, this view is public
+def reach(request, key):
+	""" Called by MyLicorn® central server to test servers reachability. """
+
+	# TODO: test REMOTE_ADDR for *.licorn.org reverse DNS resolution,
+	# return HttpResponseForbidden() if not.
+
+	uuid = LMC.configuration.system_uuid
+
+	if key == (uuid[:4]+uuid[-4:]):
+		return HttpResponse('You found me, dude!')
+
+	return HttpResponseNotFound('Not the one you\'re looking for, dude!')

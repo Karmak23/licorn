@@ -870,8 +870,10 @@ class MachinesController(DictSingleton, CoreController):
 
 		assert ltrace(TRACE_LOCKS, '| users.reload_backend exit %s' % self.lock)
 	@events.handler_method
-	def daemon_will_restart(self, reason=None, *args, **kwargs):
+	def daemon_will_restart(self, *args, **kwargs):
 		""" We have some work to do in some cases when the local daemon restart. """
+
+		reason = kwargs.pop('reason', reasons.UNKNOWN)
 
 		if reason == reasons.BACKENDS_CHANGED:
 			#TODO: restart peers ?

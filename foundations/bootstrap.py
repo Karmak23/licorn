@@ -96,22 +96,43 @@ def check_python_modules_dependancies():
 
 	warn_file = '%s/.licorn_dont_warn_optmods' % os.getenv('HOME', '/root')
 
+	def nothing():
+		return True
+
+	def clear_dmidecode(module):
+		""" See `core.configuration` for WHY we do that. """
+
+		# here, we don't need to print warnings: we are just testing
+		# if the module can be imported. Avoid polluting the display
+		# with useless false-negative messages.
+		try:
+			module.get_warnings()
+			module.clear_warnings()
+
+		except AttributeError:
+			# Old module version, see `core.configuration` for details.
+			pass
+
 	reqmods = (
-		(u'gettext',   u'python-gettext'),
-		(u'posix1e',   u'python-pylibacl'),
-		(u'Pyro',      u'pyro'),
-		(u'gobject',   u'python-gobject'),
-		(u'netifaces', u'python-netifaces'),
-		(u'ping',      u'python-pyip'),
-		(u'ipcalc',    u'python-ipcalc'),
-		(u'dumbnet',   u'python-dumbnet'),
-		(u'pyudev',    u'python-pyudev'),
-		(u'apt_pkg',   u'python-apt'),
-		(u'crack',     u'python-cracklib'),
-		(u'sqlite',    u'python-sqlite'),
-		(u'pygments',  u'python-pygments'),
-		(u'pyinotify', u'python-pyinotify'),
-		(u'dbus',      u'python-dbus'),
+		(u'gettext',   u'python-gettext',	None),
+		(u'posix1e',   u'python-pylibacl',	None),
+		(u'Pyro',      u'pyro',				None),
+		(u'gobject',   u'python-gobject',	None),
+		(u'netifaces', u'python-netifaces',	None),
+		(u'ping',      u'python-pyip',		None),
+		(u'ipcalc',    u'python-ipcalc',	None),
+		(u'dumbnet',   u'python-dumbnet',	None),
+		(u'pyudev',    u'python-pyudev',	None),
+		(u'apt_pkg',   u'python-apt',		None),
+		(u'crack',     u'python-cracklib',	None),
+		(u'sqlite',    u'python-sqlite',	None),
+		(u'pygments',  u'python-pygments',	None),
+		(u'pyinotify', u'python-pyinotify',	None),
+		(u'dbus',      u'python-dbus',		None),
+		(u'dmidecode', u'python-dmidecode',	clear_dmidecode),
+		# dmidecode needs libxml2 and even on Ubuntu 12.04, there is
+		# no valid dependancy in the debian package. Gosh!
+		(u'libxml2',   u'python-libxml2',	None),
 		)
 
 	# for more dependancies (needed by the WMI) see `upgrades/…`
@@ -120,8 +141,8 @@ def check_python_modules_dependancies():
 	reqpkgs_needed = []
 
 	optmods = (
-		(u'xattr',    u'python-xattr'),
-		(u'ldap',     u'python-ldap')
+		(u'xattr',    u'python-xattr',		None),
+		(u'ldap',     u'python-ldap',		None)
 		# plistlib, uuid don't need to be checked, they're part of standard
 		# python dist-packages.
 		)
@@ -130,7 +151,7 @@ def check_python_modules_dependancies():
 	optpkgs_needed = []
 
 	for modtype, modlist in (('required', reqmods), ('optional', optmods)):
-		for mod, pkg in modlist:
+		for mod, pkg, postfunc in modlist:
 			try:
 				module = __import__(mod, globals(), locals())
 
@@ -146,6 +167,8 @@ def check_python_modules_dependancies():
 					optpkgs_needed.append(pkg)
 
 			else:
+				if postfunc:
+					postfunc(module)
 				del module
 
 	for modchkfunc, modfinalfunc, modmsg, modlist, pkglist in (

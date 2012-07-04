@@ -10,11 +10,10 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time, mimetypes
+import os, stat, time, mimetypes, random
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events, hlstr
-from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -26,6 +25,11 @@ from licorn.foundations.constants import services, svccmds, distros, priorities
 from licorn.core                  import LMC
 from licorn.core.users            import User
 from licorn.extensions            import LicornExtension
+
+from licorn.extensions.mylicorn   import constants
+from django.core.urlresolvers     import reverse as url_for
+
+LicornEvent = events.LicornEvent
 
 # Just to be sure it is done.
 mimetypes.init()
@@ -52,8 +56,8 @@ class SimpleShare(PicklableObject):
 
 
 		.. versionadded::
+			* 1.4 as official feature (still incomplete)
 			* 1.3.1 and later as experimental feature (incomplete)
-			* 1.4 as official feature
 	"""
 	share_file  = '.lshare.conf'
 	uploads_dir = 'uploads'
@@ -71,22 +75,39 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid      = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
 
 		self.__load_share_configuration()
+	def __str__(self):
+		return 'share %s' % (stylize(ST_UGID, self.__shid))
 	def __load_share_configuration(self):
 
 		# defaults parameters for a share.
-		basedict = {'password': None, 'uri': None, 'expire': None}
+		defaults = {'password': None, 'uri': None, 'expire': None}
+		data = defaults.copy()
 
 		if os.path.exists(self.share_configuration_file):
-			basedict.update(json.load(open(self.share_configuration_file)))
+			try:
+				data.update(json.load(open(self.share_configuration_file)))
 
-		for key, value in basedict.iteritems():
-			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
+			except:
+				logging.warning(_(u'{0}: configuration file {1} seems '
+								u'corrupt; removing it.').format(self,
+							stylize(ST_PATH, self.share_configuration_file)))
+				try:
+					os.unlink(self.share_configuration_file)
+
+				except:
+					pass
+
+		klass = self.__class__.__name__
+
+		# only take in data the parameters we know, avoiding collisions.
+		for key in defaults:
+			setattr(self, '_%s__%s' % (klass, key), data[key])
 	@property
 	def shid(self):
 		""" Obviously, ID is read-only. """
@@ -125,6 +146,11 @@ class SimpleShare(PicklableObject):
 	@property
 	def name(self):
 		return self.__name
+	@property
+	def public_url(self):
+		""" Wow! Django's `url_for()` works like a charm from outside the WMI. """
+		return url_for('wmi.shares.views.serve',
+									args=(self.coreobj.name, self.name))
 	@property
 	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
@@ -184,7 +210,8 @@ class SimpleShare(PicklableObject):
 			self.accepts_uploads = False
 	@property
 	def uri(self):
-		""" There is no setter for the URI attribute. """
+		""" Return the public short URI. If the share hasn't any,
+			the method will return ``None``. """
 		return self.__uri
 	@uri.setter
 	def uri(self, newuri):
@@ -234,6 +261,9 @@ class SimpleShare(PicklableObject):
 				continue
 
 			if typ == stat.S_IFREG:
+				if fsapi.is_backup_file(subent):
+					continue
+
 				if uploads_dir in subent:
 					uploads.append(subent)
 
@@ -273,14 +303,75 @@ class SimpleShare(PicklableObject):
 			'mtime'    : fstat.st_mtime - curtime,
 			'ctime'    : fstat.st_ctime - curtime,
 		}
+	def __request_short_url(self):
+		""" request a short URL (http://lsha.re/xxxxxxxx) from the central
+			server.
+
+			.. note:: Running this operation multiple time is not a problem
+				because the central server will re-send us the URL for a
+				given path as many times as we ask for it.
+
+		"""
+
+		m = LMC.extensions.mylicorn
+
+		retrigger = False
+
+		if m.connected:
+			logging.progress(_(u'{0}: requesting short URL…').format(self))
+
+			try:
+				# This will automatically emit an event to update GUIs.
+				result = m.service.shorten_url(self.public_url)
+
+			except:
+				logging.exception(_(u'{0}: short URL request failed, '
+							u'deferring next try.'), self, m.pretty_name)
+				retrigger = True
+
+			else:
+				if result['result'] > 0:
+					self.uri = result['message']
+
+					logging.info(_(u'{0}: short URL successfully set '
+										u'to {1}.').format(self, self.uri))
+
+				else:
+					logging.warning(_(u'{0}: short URL request failed, '
+							u'deferring next try (was: code={1}, '
+							u'message={2}).').format(self,
+								constants.shorten_url[result['result']],
+														result['message']))
+					retrigger = True
+
+		else:
+			logging.warning(_(u'{0}: {1} is not connected, deferring short '
+					u'URL request.').format(self, m.pretty_name))
+			retrigger = True
+
+		if retrigger:
+			# Random the job delay to avoid doing all next calls at once,
+			# in case the problem was OVERQUOTA and we need a lot of URLs.
+			workers.network_enqueue(priorities.LOW, self.__request_short_url,
+								job_delay=float(random.randint(1800, 5400)))
+	def check(self, batch=False, auto_answer=None, full_display=True):
+		""" Check the share parameters. For the moment, it just makes sure
+			the share has a short URL, else it will request one.
+
+			.. warning:: If the MY Licorn® central server changes (eg. from
+				development to production or vice-versa), the URLs will not
+				be updated. This is not a bug, just worth noting. """
+
+		if self.uri in (None, ''):
+			workers.network_enqueue(priorities.LOW, self.__request_short_url)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing
 		for more details and specification.
 
 		.. versionadded::
-			* 1.3.1 as experimental feature (incomplete)
 			* 1.4 as official feature
+			* 1.3.1 as experimental feature (incomplete)
 	"""
 
 	# a comfort shortcut to the SimpleSharingExtension,
@@ -335,7 +426,26 @@ class SimpleSharingUser(object):
 
 		if self.accepts_shares:
 			with self.lock:
-				if not os.path.exists(self.shares_directory):
+				if os.path.exists(self.shares_directory):
+
+					shares = self.list_shares()
+
+					if shares:
+						logging.progress(_(u'{0}: checking shares…').format(
+															self.pretty_name))
+
+						for share in shares:
+							share.check(batch=batch, auto_answer=auto_answer,
+										full_display=full_display)
+
+						logging.progress(_(u'{0}: shares check finished.').format(
+																self.pretty_name))
+
+					else:
+						logging.progress(_(u'{0}: no shares to check.').format(
+															self.pretty_name))
+
+				else:
 					if batch or logging.ask_for_repair(_(u'User {0} home '
 										u'lacks the {1} directory to hold '
 										u'simple shares. Create it?').format(
@@ -399,8 +509,8 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		the `file sharing specification <http://dev.licorn.org/wiki/ExternalFileSharing>`_.
 
 		.. versionadded::
-			* 1.3.1 as experimental feature (incomplete)
 			* 1.4 as official feature
+			* 1.3.1 as experimental feature (incomplete)
 	"""
 	module_depends = [ 'mylicorn' ]
 
@@ -431,28 +541,21 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_SIMPLESHARING)
 
-		if settings.experimental.enabled:
-			self.available = True
-
-		else:
-			self.available = False
+		self.available = True
 
 		return self.available
 	def is_enabled(self):
 		""" Simple shares are always enabled if available. """
 
-		logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
-				u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
-				self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
+		if self.available:
+			logging.info(_(u'{0}: extension always enabled unless manually '
+								u'ignored in {1}.').format(self.pretty_name,
+									stylize(ST_PATH, settings.main_config_file)))
 
-		#logging.info(_(u'{0}: extension always enabled unless manually '
-		#					u'ignored in {1}.').format(self.pretty_name,
-		#						stylize(ST_PATH, settings.main_config_file)))
+			# Enhance the core user with simple_sharing extensions.
+			User.__bases__ += (SimpleSharingUser, )
 
-		# Enhance the core user with simple_sharing extensions.
-		User.__bases__ += (SimpleSharingUser, )
-
-		return True
+		return self.available
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
@@ -474,3 +577,20 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 			logging.exception(_(u'{0}: Exception while setting up shares for '
 						u'user {1}'), self.pretty_name, (ST_LOGIN, user.login))
 			return False
+	@events.handler_method
+	def extension_mylicorn_authenticated(self, *args, **kwargs):
+		""" When the daemon has reached ``cruising`` state, we can start to
+			check shares, request short URLs, etc. """
+
+		# The event can occur even if the extension is disabled, because
+		# it is inconditionnaly registered. Avoid false-negatives by not
+		# doing anything if it is the case.
+		if self.enabled:
+
+			logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
+
+			for user in LMC.users:
+				user.check_shares(batch=True)
+
+			logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
+

@@ -13,7 +13,7 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, Pyro.core
+import sys, os, re, dmidecode, uuid, Pyro.core
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, exceptions, settings
@@ -65,6 +65,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# it is a hack to be able to test guis when Licorn is not installed.
 		# → this is for developers only.
 		self.install_path = os.getenv("LICORN_ROOT", "/usr")
+
 		if self.install_path == '.':
 			self.share_data_dir = '.'
 		else:
@@ -102,7 +103,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(_(u'Configuration '
-				u'initialization failed: %s') % e)
+										u'initialization failed: %s') % e)
 
 		events.collect(self)
 
@@ -116,6 +117,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		self.load2(batch=batch)
 		self.load3(batch=batch)
 	def load1(self, batch=False):
+		self.load_system_uuid()
 		self.LoadManagersConfiguration(batch=batch)
 		self.set_acl_defaults()
 	def load2(self, batch=False):
@@ -164,6 +166,75 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		LicornConfiguration.del_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
+	def load_system_uuid(self):
+		""" Get the hardware system UUID from `dmidecode`, or generate a random
+			new one and store it for future uses. """
+
+		not_found = True
+
+		for root in dmidecode.system().itervalues():
+			try:
+				self.system_uuid = root['data']['UUID'].replace('-', '').lower()
+
+			except:
+				continue
+
+			else:
+				not_found = False
+				break
+
+		# Get warnings here, to avoid them beiing freely printed to console
+		# everywhere, from every call, which is purely annoying. Eg:
+		#
+		# del group 10000
+		# * [2012/01/07 11:57:09.8499] Le groupe ou GID "10000" inexistant ou invalide a été ignoré.
+		#
+		# ** COLLECTED WARNINGS **
+		# /dev/mem: Permission denied
+		# No SMBIOS nor DMI entry point found, sorry.
+		# ** END OF WARNINGS **
+		#
+		# NOTE: there is a similar call in `foundations.bootstrap`
+		try:
+			w = dmidecode.get_warnings()
+
+		except AttributeError:
+			# Old `dmidecode` modules don't have the `*_warnings()` functions.
+			# On Ubuntu 10.04 this is the case. BTW the warning would have
+			# already been printed, so don't bother.
+			pass
+
+		else:
+			if w:
+				logging.warning2(w.replace('\n', '\n\t'))
+				dmidecode.clear_warnings()
+
+		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
+
+		if not_found:
+			if os.path.exists(uuid_data_file):
+				# fallback to the previously generated UUID.
+
+				self.system_uuid = open(uuid_data_file).read().strip()
+
+			else:
+				# If no previous already exists, create a new one and store it.
+
+				self.system_uuid = uuid.uuid4().hex
+
+				with open(uuid_data_file, 'w') as f:
+					f.write('%s\n' % self.system_uuid)
+
+		else:
+			# If a system UUID exists, be sure any unused file doesn't remain
+			# on disk, this could confuse the user thinking it is used but it
+			# is not.
+			try:
+				os.unlink(uuid_data_file)
+
+			except:
+				pass
+
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""

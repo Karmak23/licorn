@@ -36,10 +36,17 @@ def dynamic_sidebar(request):
 def dynamic_status(request):
 
 	if enabled():
-		return (None,
+		return (
+				# priority 1: nothing to display.
+				None,
+
+				# priority 2: the next backup size
 				render_to_string('backup/parts/status.html', {
 						'extension' : LMC.extensions.rdiffbackup,
 						'request'   : request
 					}),
-				None)
+
+				# priority 3: nothing to display.
+				None
+			)
 
