@@ -8,7 +8,7 @@ Licorn extensions: mylicorn - http://docs.licorn.org/extensions/mylicorn
 
 """
 
-import os, time, urllib2, random
+import os, time, urllib2, random, errno
 
 from threading import Thread
 
