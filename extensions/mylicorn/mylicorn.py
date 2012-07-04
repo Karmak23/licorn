@@ -189,6 +189,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 	def daemon_shutdown(self, *args, **kwargs):
 		""" Try to disconnected when the daemon shuts down. """
 		if self.enabled:
+			self.__stop_updater_thread()
+
 			try:
 				self.disconnect()
 			except:
@@ -210,7 +212,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			self.threads.updater.start()
 
+			logging.info(_(u'{0}: updater thread started.').format(self.pretty_name))
 			self.licornd.collect_and_start_threads(collect_only=True)
+
 	def __stop_updater_thread(self):
 
 		if self.events.connected.is_set():
@@ -227,6 +231,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			# and not connected, because not emitting to central.
 			self.events.connected.clear()
+
+			logging.info(_(u'{0}: updater thread stopped.').format(self.pretty_name))
 	def __remote_call(self, rpc_func, *args, **kwargs):
 
 		try:
@@ -278,7 +284,6 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		else:
 			logging.warning(_(u'{0}: already disconnected, not trying '
 									u'again.').format(self.pretty_name))
-
 	def authenticate(self):
 		""" Authenticate ourselves on the central server. """
 
@@ -352,6 +357,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		code = res['result']
 
 		if code < 0:
+			logging.warning(_(u'{0}: problem noop()\'ing {1} (was: code={2}, '
+									u'message={3}).').format(self.pretty_name,
+										stylize(ST_URL, self.my_licorn_uri),
+										stylize(ST_UGID, authenticate[code]),
+										stylize(ST_COMMENT, res['message'])))
+
 			# any [remote] exception will halt the current thread, and
 			# re-trigger a full pass of "authentication-then-regularly-update"
 			# after having waited one hour to make things settle.
@@ -361,7 +372,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 													job_delay=random_delay())
 
 		else:
-			logging.info(_('{0}: successfully noop()\'ed {1}.').format(
+			logging.info(_(u'{0}: successfully noop()\'ed {1}.').format(
 						self.pretty_name, stylize(ST_URL, self.my_licorn_uri)))
 
 			# wait a little for the central server to have tested our
