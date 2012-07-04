@@ -19,18 +19,20 @@ Le seul paramètre à lui donner est la clef d'API `MyLicorn®`, et celle-ci est
 Problèmes de connexion au service MyLicorn®
 ===========================================
 
-Causes
-------
+Causes possibles
+----------------
 
 Il peut y avoir plusieurs causes à un problème de connexion :
 
-* la connexion internet est tombée. Licorn® n'y pourra rien, à vous ou votre gestionnaire de réseau de mener les actions nécessaires à son rétablissement. Lorsque celle-ci sera de nouveau fonctionnelle, le daemon Licorn® se reconnectera automatiquement au service `MyLicorn®` dans un délai maximum d'une heure et demie (le délai exact est calculé aléatoirement).
+* la connexion internet est tombée. Licorn® n'y pourra rien ; à vous ou votre gestionnaire de réseau de mener les actions nécessaires à son rétablissement. Lorsque celle-ci sera de nouveau fonctionnelle, Licorn® se reconnectera automatiquement au service dans un délai d'une heure et demie maximum (le délai exact est variable car calculé aléatoirement).
 
-* il y a un problème quelque part sur votre réseau local. Soit le routeur ne fait plus correctement son travail, soit un cable ou un commutateur est défectueux… Il peut y avoir un grand nombre de causes matérielles à un problème de connexion. Le mieux est de vous adresser à votre gestionnaire.
+* il y a un problème physique quelque part sur votre réseau local. Soit le routeur ne fait plus correctement son travail, soit un cable ou un commutateur est débranché ou défectueux… Il peut y avoir un grand nombre de causes matérielles à un problème de connexion. Le mieux est de vous adresser à votre gestionnaire informatique ou votre prestataire de support.
 
-* le serveur central `MyLicorn®` est temporairement indisponible. Celà peut arriver car le service est encore à ses débuts, mais c'est sans conséquence pour vos données. Tout est sauvegardé à distance.
+* le serveur central `MyLicorn®` est temporairement indisponible. Cela peut arriver car le service en est encore à ses débuts, mais c'est sans conséquence pour vos données, qui sont sauvegardées à distance périodiquement.
 
-* votre compte `MyLicorn®` ou le compte de votre serveur a été désactivé, soit parce que vous êtes arrivé(e) en fin de contrat de maintenance, soit pour une autre raison. En général vous serez averti au moins par email à l'avance si ce cas se produit. Pour plus de détails, contactez le support via l'adresse ``support AT licorn DOT org``.
+* votre compte `MyLicorn®` ou le compte de votre serveur a été désactivé, soit parce que vous êtes arrivé(e) en fin de contrat de maintenance, soit pour une autre raison. En général vous serez averti au moins par email à l'avance si ce cas se produit. Pour plus de détails, contactez le support via l'adresse ``support À licorn POINT org``.
+
+D'autres causes plus rares sont également possibles. Contactez votre gestionnaire informatique ou prestataire de support pour plus d'informations.
 
 Conséquences
 ------------
@@ -41,13 +43,48 @@ Les conséquences d'une déconnexion du service `MyLicorn®` sont **toujours tem
 
 * l'impossibilité pour le serveur de savoir s'il est accessible ou non depuis internet. De même, cette information sera immédiatement mise à jour à la reconnexion.
 
-* en cas de panne temporaire du serveur central, votre `interface de gestion centralisée <http://my.licorn.org>`_ sera aussi innaccessible pendant la durée de la panne. Au delà de cet inconvénient à l'importance toute relative, rien ne craint.
+* en cas de panne temporaire du serveur central, votre `interface de gestion centralisée <http://my.licorn.org>`_ sera aussi innaccessible pendant la durée de la panne. Au delà de cet inconvénient à l'importance relative, rien d'autre n'est affecté.
+
+Résolution
+----------
+
+La résolution de ce problème dépend trop de la cause pour être exposée ici. Par ailleurs c'est hors sujet sur ce site dédié à la documentation de Licorn®. Les actions nécessaires doivent être menées à bien par du personnel qualifié.
 
 .. _extensions.mylicorn.unreachable.fr:
 
-Votre serveur est innaccessible depuis internet
-===============================================
+Votre serveur est inaccessible depuis internet
+==============================================
 
-à venir…
+En deux mots : `le fait que vous accédiez à internet ne signifie pas qu'internet peut accéder à vous.` Dans la plupart des cas c'est une bonne chose car cela signifie que votre réseau est correctement sécurisé.
+
+Causes possibles
+----------------
+
+* votre serveur est à l'intérieur d'un réseau protégé, derrière un pare-feu, un routeur ou encore une « box » internet. C'est une configuration toute à fait classique et c'est donc la cause la plus probable.
+
+* si votre serveur Licorn® est mobile – comprenez un « ordinateur portable », les connexions via smartphones bloquent aussi les ports nécessaires à l'acces au serveur chez la plupart des opérateurs. Nous ne pouvons que vous conseiller de choisir un opérateur qui vous laisse `libre` de faire ce que vous entendez faire.
+
+D'autres causes plus rares sont également possibles. Contactez votre gestionnaire informatique ou prestataire de support pour plus d'informations.
+
+Conséquences
+------------
+
+* aucun :ref:`partage web simplifié <simplesharing.fr>` n'est accessible si votre serveur ne l'est pas.
+
+* les connexions à distance (``SSH``) seront vraissemblablement affectées et impossibles elles aussi.
+
+* d'autres services moins communs, comme un serveur de réception de courrier seront affectés de la même manière.
+
+
+Résolution
+----------
+
+* la solution consiste à remonter la chaîne d'accès à internet pour vérifier que chaque maillon permet la connexion depuis l'extérieur. Il ne faut cependant pas tout autoriser vers toutes les machines car cela pourrait avoir de graves conséquences pour la sécurité de votre réseau.
+
+* le minimum vital pour permettre les partages web simplifiés est indiqué par le message de la WMI à destination des gestionnaires de réseau (**numéro de port** à ouvrir et **adresse de la machine** cible).
+
+* pour les connexions à distance et les autres services, le port ouvrir ou translater dépend du service en question. Votre gestionnaire informatique ou votre prestataire de support devrait savoir quoi faire.
+
+La résolution des autres causes est hors sujet sur ce site dédié à la documentation de Licorn®. Les actions nécessaires doivent être menées à bien par du personnel qualifié.
 
 .. seealso:: Voyez la :ref:`documentation pour les développeurs <extensions.mylicorn.dev.en>` (en anglais) pour plus de détails.
