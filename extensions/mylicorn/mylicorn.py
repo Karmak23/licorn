@@ -70,6 +70,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		# advertise if we are connected via a standard event.
 		self.events.connected = Event()
 
+		self.paths.config_file = os.path.join(settings.config_dir, 'mylicorn.conf')
+
 		# unknown reachable status
 		self.__is_reachable = None
 	@property
@@ -108,7 +110,54 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.my_licorn_uri = MY_LICORN_URI
 
+		defaults = { 'api_key': None }
+		data     = defaults.copy()
+
+		try:
+			with open(self.paths.config_file) as f:
+				data.update(json.load(f))
+
+		except (OSError, IOError), e:
+			if e.errno != errno.ENOPERM:
+				raise e
+
+		except:
+			logging.warning(_(u'{0}: configuration file {1} seems '
+								u'corrupt; not using it.').format(self,
+							stylize(ST_PATH, self.paths.config_file)))
+
+		klass = self.__class__.__name__
+
+		# only take in data the parameters we know, avoiding collisions.
+		for key in defaults:
+			setattr(self, '_%s__%s' % (klass, key), data[key])
+
 		return self.available
+	@property
+	def api_key(self):
+		return self.__api_key
+	@api_key.setter
+	def api_key(self, api_key):
+		if not hlstr.cregex['api_key'].match(api_key):
+			raise exceptions.BadArgumentError(_(u'Bad API key "{0}", must '
+						u'match "{1}/i"').format(api_key, hlstr.regex['api_key']))
+
+		# TODO: if connected: check the API key is valid.
+
+		self.__save_configuration(api_key=self.__api_key)
+	def __save_configuration(self, **kwargs):
+
+		basedict = {}
+
+		if os.path.exists(self.paths.config_file):
+			basedict.update(json.load(open(self.paths.config_file, 'r')))
+
+		basedict.update(kwargs)
+
+		json.dump(basedict, open(self.paths.config_file, 'w'))
+
+		LicornEvent('extension_mylicorn_configuration_changed', **kwargs).emit()
+
 	def is_enabled(self):
 
 		logging.info(_(u'{0}: extension always enabled unless manually '
@@ -130,6 +179,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			to our central server at a regular interval. """
 
 		self.__start_updater_thread()
+
+	@events.handler_method
+	def extension_mylicorn_configuration_changed(self, *args, **kwargs):
+		if 'api_key' in kwargs:
+			self.disconnect()
+			self.authenticate()
 
 	def __start_updater_thread(self):
 
@@ -182,12 +237,50 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		else:
 			return result
 
+	def disconnect(self):
+		assert ltrace_func(TRACE_MYLICORN)
+
+		if self.connected:
+
+			LicornEvent('extension_mylicorn_disconnects', synchronous=True).emit()
+
+			res = self.__remote_call(self.service.disconnect)
+
+			code = res['result']
+
+			if code < 0:
+				# if authentication goes wrong, we won't even try to do anything
+				# more. Every RPC call needs authentication.
+				logging.warning(_(u'{0}: failed to disconnect (code: {1}, '
+									u'message: {2})').format(
+										self.pretty_name,
+										stylize(ST_UGID, disconnect[code]),
+										stylize(ST_COMMENT, res['message'])))
+
+			else:
+				logging.info(_(u'{0}: sucessfully disconnected (code: {1}, '
+								u'message: {2})').format(
+									self.pretty_name,
+									stylize(ST_UGID, authenticate[code]),
+									stylize(ST_COMMENT, res['message'])))
+
+				LicornEvent('extension_mylicorn_disconnected').emit()
+
+		else:
+			logging.warning(_(u'{0}: already disconnected, not trying '
+									u'again.').format(self.pretty_name))
+
 	def authenticate(self):
 		""" Authenticate ourselves on the central server. """
 
 		assert ltrace_func(TRACE_MYLICORN)
 
-		if LMC.configuration.system_uuid is None:
+		if self.connected:
+			logging.warning(_(u'{0}: already connected, not doing '
+									u'it again.').format(self.pretty_name))
+			return
+
+		if LMC.configuration.system_uuid in (None, ''):
 			logging.warning(_(u'{0}: system UUID not found, aborting. There '
 									u'may be a serious problem '
 									u'somewhere.').format(self.pretty_name))
@@ -195,14 +288,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.service = jsonrpc.ServiceProxy(self.my_licorn_uri)
 
-		try:
-			api_key = settings.mylicorn.api_key
-
-		except:
-			api_key = None
-
 		res = self.__remote_call(self.service.authenticate,
-									LMC.configuration.system_uuid, api_key)
+									LMC.configuration.system_uuid, self.api_key)
 
 		code = res['result']
 
@@ -218,7 +305,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			workers.network_enqueue(priorities.NORMAL, self.authenticate,
 													job_delay=random_delay())
 		else:
-			logging.info(_(u'{0}: sucessfully authenticated ourselves '
+			logging.info(_(u'{0}: sucessfully authenticated '
 							u'(code: {1}, message: {2})').format(
 								self.pretty_name,
 								stylize(ST_UGID, authenticate[code]),
