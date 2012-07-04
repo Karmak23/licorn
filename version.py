@@ -6,7 +6,7 @@ This file should contain only variables.
 These variables must be altered manually,
 while using the GIT flow tools on a new "release":
 
-	# Example: release_name_and_number == 'licorn-1.3'
+	# Example: release_name_and_number == 'licorn-1.4'
 	git flow release start <release_name_and_number>
 
 	# alter the files… do work…
@@ -19,4 +19,4 @@ while using the GIT flow tools on a new "release":
 :license: GNU GPL version 2
 """
 
-version = '1.3.2'
+version = '1.4'
