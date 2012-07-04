@@ -347,6 +347,13 @@ class SimpleShare(PicklableObject):
 			workers.network_enqueue(priorities.LOW, self.__request_short_url,
 								job_delay=float(random.randint(1800, 5400)))
 	def check(self, batch=False, auto_answer=None, full_display=True):
+		""" Check the share parameters. For the moment, it just makes sure
+			the share has a short URL, else it will request one.
+
+			.. warning:: If the MY Licorn® central server changes (eg. from
+				development to production or vice-versa), the URLs will not
+				be updated. This is not a bug, just worth noting. """
+
 		if self.uri in (None, ''):
 			workers.network_enqueue(priorities.LOW, self.__request_short_url)
 class SimpleSharingUser(object):
