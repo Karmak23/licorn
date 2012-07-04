@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-03 17:29+0200\n"
+"POT-Creation-Date: 2012-07-04 19:54+0200\n"
 "PO-Revision-Date: 2012-07-03 17:44+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
@@ -255,7 +255,7 @@ msgstr ""
 #: extensions/caldavd.py:604 extensions/caldavd.py:636
 #: extensions/caldavd.py:663 extensions/volumes.py:441
 #: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:645
-#: core/configuration.py:986
+#: core/configuration.py:995
 msgid "{0}: {1}"
 msgstr "{0} : {1}"
 
@@ -504,13 +504,82 @@ msgstr ""
 msgid "%s: extension not available because yet to be written."
 msgstr "%s : extension indisponible car pas encore écrite."
 
-#: extensions/mylicorn/mylicorn.py:78
+#: extensions/mylicorn/mylicorn.py:113
+#, fuzzy
+msgid "Bad API key \"{0}\", must match \"{1}/i\""
+msgstr ""
+"Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
+"l'expression rationnelle /{1}/."
+
+#: extensions/mylicorn/mylicorn.py:144
+msgid "{0}: using environment variable {1} pointing to {2}."
+msgstr ""
+"{0} : utilisation de la variable d'environnement {1} pointant vers {2}."
+
+#: extensions/mylicorn/mylicorn.py:174
+#, fuzzy
+msgid "{0}: configuration file {1} seems corrupt; not using it."
+msgstr "{0}: le fichier de configuration {1} doit être modifié pour continuer."
+
+#: extensions/mylicorn/mylicorn.py:189
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 "{0} : extension inconditionnellement activée sauf si manuellement ignorée "
 "dans {1}."
 
-#: extensions/mylicorn/mylicorn.py:102
+#: extensions/mylicorn/mylicorn.py:247
+#, fuzzy
+msgid "{0}: exception while disconnecting"
+msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
+
+#: extensions/mylicorn/mylicorn.py:265
+#, fuzzy
+msgid "{0}: updater thread started."
+msgstr "{0} : l'état des partages web est inchangé."
+
+#: extensions/mylicorn/mylicorn.py:275
+#, fuzzy
+msgid "{0}: exception while stopping updater thread"
+msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
+
+#: extensions/mylicorn/mylicorn.py:284
+#, fuzzy
+msgid "{0}: updater thread stopped."
+msgstr "{0} : arrêt des threads."
+
+#: extensions/mylicorn/mylicorn.py:295
+#, fuzzy
+msgid "{0}: error while executing {1}"
+msgstr "{0} : problème pendant la vérification de {1}, opération annulée"
+
+#: extensions/mylicorn/mylicorn.py:299
+#, python-format
+msgid "RPC %s failed"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:322
+#, fuzzy
+msgid "{0}: failed to disconnect (code: {1}, message: {2})"
+msgstr ""
+"{0} : impossible de s'authentifier, nouvel essai dans une heure (code : "
+"authenticate.{1}, message : {2})"
+
+#: extensions/mylicorn/mylicorn.py:329
+#, fuzzy
+msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
+msgstr "{0} : authentifié avec succès (code : authenticate.{1}, message : {2})"
+
+#: extensions/mylicorn/mylicorn.py:338
+#, fuzzy
+msgid "{0}: already disconnected, not trying again."
+msgstr ""
+"{0} : déjà en train de s'arrêter; appel supplémentaire à terminate() ignoré."
+
+#: extensions/mylicorn/mylicorn.py:346
+msgid "{0}: already connected, not doing it again."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:351
 msgid ""
 "{0}: system UUID not found, aborting. There may be a serious problem "
 "somewhere."
@@ -518,37 +587,34 @@ msgstr ""
 "{0} : UUID système non trouvé, abandon. Il doit y avoir un sacré problème "
 "quelque part, celà ne devrait pas arriver."
 
-#: extensions/mylicorn/mylicorn.py:110
-msgid "{0}: using environment variable {1} pointing to {2}."
-msgstr ""
-"{0} : utilisation de la variable d'environnement {1} pointant vers {2}."
-
-#: extensions/mylicorn/mylicorn.py:135
-msgid "{0}: error while authenticating; will retry in one hour."
-msgstr "{0} : erreur d'authentification, nouvel essai dans une heure."
-
-#: extensions/mylicorn/mylicorn.py:144
-msgid ""
-"{0}: failed to authenticate, retrying in one hour (code: authenticate.{1}, "
-"message: {2})"
+#: extensions/mylicorn/mylicorn.py:366
+#, fuzzy
+msgid "{0}: failed to authenticate, will retry later (code: {1}, message: {2})"
 msgstr ""
 "{0} : impossible de s'authentifier, nouvel essai dans une heure (code : "
 "authenticate.{1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:152
-msgid ""
-"{0}: sucessfully authenticated ourselves (code: authenticate.{1}, message: "
-"{2})"
+#: extensions/mylicorn/mylicorn.py:375
+#, fuzzy
+msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
 msgstr "{0} : authentifié avec succès (code : authenticate.{1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:186
+#: extensions/mylicorn/mylicorn.py:403
 #, fuzzy
-msgid "{0}: exception while stopping updater thread"
-msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
+msgid "{0}: our reachability state is now {1}."
+msgstr "{0} : réservation pour Licorn® effectuée sur {1}."
 
-#: extensions/mylicorn/mylicorn.py:203
-msgid "{0}: error while noop()'ing; retrying in one hour."
-msgstr "{0} : erreur pendant le noop() ; nouvel essai dans une heure."
+#: extensions/mylicorn/mylicorn.py:419
+#, fuzzy
+msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
+msgstr ""
+"{0} : demande d'URL courte échouée, nouvel essai déféré (erreur : code={1}, "
+"message={2})."
+
+#: extensions/mylicorn/mylicorn.py:434
+#, fuzzy
+msgid "{0}: successfully noop()'ed {1}."
+msgstr "{1} {0} activé(e) avec succès."
 
 #: extensions/gloop.py:106
 msgid ""
@@ -566,52 +632,52 @@ msgstr ""
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr "{0} : non disponible, car {1} n'existe pas sur le système."
 
-#: extensions/simplesharing.py:66
+#: extensions/simplesharing.py:68
 msgid "{0}: \"{1}\" must be a directory!"
 msgstr "{0} : \"{1}\" doit être un répertoire !"
 
-#: extensions/simplesharing.py:93
+#: extensions/simplesharing.py:97
 #, fuzzy
-msgid "{0}: configuration file {1} is probably corrupt; removing it."
+msgid "{0}: configuration file {1} seems corrupt; removing it."
 msgstr "{0}: le fichier de configuration {1} doit être modifié pour continuer."
 
-#: extensions/simplesharing.py:166
+#: extensions/simplesharing.py:173
 msgid "{0}: simple share upload state unchanged."
 msgstr "{0} : l'état des partages web est inchangé."
 
-#: extensions/simplesharing.py:172
+#: extensions/simplesharing.py:179
 msgid "Please set a password on the share first."
 msgstr "Merci de configurer un mot de passe sur le partage d'abord."
 
-#: extensions/simplesharing.py:213
+#: extensions/simplesharing.py:220
 msgid "Bad URI {0}"
 msgstr "URL {0} invalide"
 
-#: extensions/simplesharing.py:278
+#: extensions/simplesharing.py:285
 msgid "Not a file from that share."
 msgstr "Pas un fichier de ce partage."
 
-#: extensions/simplesharing.py:282
+#: extensions/simplesharing.py:289
 msgid "Unsafe absolute path for file \"{0}\"!"
 msgstr "Chemin absolu pour le fichier \"{0}\" non-sécurisé !"
 
-#: extensions/simplesharing.py:292
+#: extensions/simplesharing.py:299
 msgid "Unknown"
 msgstr "Inconnu"
 
-#: extensions/simplesharing.py:311
+#: extensions/simplesharing.py:318
 msgid "{0}: requesting short URL…"
 msgstr "{0} : demande d'une URL courte…"
 
-#: extensions/simplesharing.py:318
+#: extensions/simplesharing.py:325
 msgid "{0}: short URL request failed, deferring next try."
 msgstr "{0} : la demande d'URL courte a échoué, nouvel essai déféré."
 
-#: extensions/simplesharing.py:326
+#: extensions/simplesharing.py:333
 msgid "{0}: short URL successfully set to {1}."
 msgstr "{0} : URL courte définie avec succès à {1}."
 
-#: extensions/simplesharing.py:330
+#: extensions/simplesharing.py:337
 msgid ""
 "{0}: short URL request failed, deferring next try (was: code={1}, message="
 "{2})."
@@ -619,81 +685,81 @@ msgstr ""
 "{0} : demande d'URL courte échouée, nouvel essai déféré (erreur : code={1}, "
 "message={2})."
 
-#: extensions/simplesharing.py:338
+#: extensions/simplesharing.py:345
 msgid "{0}: {1} is not connected, deferring short URL request."
 msgstr "{0} : {1} n'est pas connecté, demande d'URL courte déférée."
 
-#: extensions/simplesharing.py:379
+#: extensions/simplesharing.py:393
 msgid "Someone tried to switch simple shares on a non-standard user account!"
 msgstr ""
 
-#: extensions/simplesharing.py:383
+#: extensions/simplesharing.py:397
 msgid "{0}: shares status unchanged."
 msgstr "{0} : état des partages web inchangé."
 
-#: extensions/simplesharing.py:394
+#: extensions/simplesharing.py:408
 #, fuzzy
 msgid "{0}: simple shares status switched to {1}."
 msgstr "{0} : partition système {1} ignorée."
 
-#: extensions/simplesharing.py:395 core/_objects.py:264 core/groups.py:461
+#: extensions/simplesharing.py:409 core/_objects.py:264 core/groups.py:461
 msgid "activated"
 msgstr "activé(e)"
 
-#: extensions/simplesharing.py:395 core/_objects.py:275 core/groups.py:464
+#: extensions/simplesharing.py:409 core/_objects.py:275 core/groups.py:464
 msgid "deactivated"
 msgstr "désactivé(e)"
 
-#: extensions/simplesharing.py:417
+#: extensions/simplesharing.py:431
 msgid "{0}: checking shares…"
 msgstr "{0} : vérifications des partages…"
 
-#: extensions/simplesharing.py:424
+#: extensions/simplesharing.py:438
 msgid "{0}: shares check finished."
 msgstr "{0} : vérification des partages terminée."
 
-#: extensions/simplesharing.py:428
+#: extensions/simplesharing.py:442
 msgid "{0}: no shares to check."
 msgstr "{0} : aucun partage à vérifier."
 
-#: extensions/simplesharing.py:432
+#: extensions/simplesharing.py:446
 #, fuzzy
 msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
 msgstr ""
 "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}. Voulez-"
 "vous le créer ?"
 
-#: extensions/simplesharing.py:441
+#: extensions/simplesharing.py:455
 #, fuzzy
 msgid "Created directory {1} in user {0}'s home."
 msgstr "Le répertoire {0} a été créé."
 
-#: extensions/simplesharing.py:448
+#: extensions/simplesharing.py:462
 msgid "User {0} does not accept simple shares, check skipped."
 msgstr ""
 
-#: extensions/simplesharing.py:472
+#: extensions/simplesharing.py:486
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:537
+#: extensions/simplesharing.py:552
 msgid "{1}: {0} extension enabled. Please report bugs at {2}."
 msgstr "{1} : extension {0} activée. Rapportez les bugs à {2}."
 
-#: extensions/simplesharing.py:538
+#: extensions/simplesharing.py:553
 msgid "experimental"
 msgstr "expérimental"
 
-#: extensions/simplesharing.py:567
+#: extensions/simplesharing.py:582
 #, fuzzy
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
 
-#: extensions/simplesharing.py:575
+#: extensions/simplesharing.py:595
 msgid "{0}: checking all users' shares…"
 msgstr "{0} : vérification de tous les partages utilisateurs…"
 
-#: extensions/simplesharing.py:580
+#: extensions/simplesharing.py:600
 msgid "{0}: shares checks finished."
 msgstr "{0} : vérification des partages terminée."
 
@@ -1162,7 +1228,7 @@ msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
 #: daemon/rwi.py:734 daemon/rwi.py:819 daemon/rwi.py:832 core/groups.py:1813
-#: core/configuration.py:689
+#: core/configuration.py:698
 msgid "group"
 msgstr "groupe"
 
@@ -1693,34 +1759,34 @@ msgstr ""
 msgid "Successfully loaded gettext translations for language {0}."
 msgstr "Chargement des traductions pour la langue {0} effectué avec succès."
 
-#: daemon/main.py:762
+#: daemon/main.py:764
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 "{0} : impossible d'annoncer notre fermeture aux hôtes distants (erreur : "
 "{1})."
 
-#: daemon/main.py:767
+#: daemon/main.py:769
 msgid "{0}: joining threads."
 msgstr "{0} : rappel des threads."
 
-#: daemon/main.py:781
+#: daemon/main.py:783
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr "{0} : attente de terminaison du thread {1}{2}."
 
-#: daemon/main.py:784
+#: daemon/main.py:786
 #, python-format
 msgid " (currently working on %s)"
 msgstr " (actuellement sur %s)"
 
-#: daemon/main.py:825
+#: daemon/main.py:827
 msgid "{0}: restarting{1}."
 msgstr "{0} : redémarrage{1}."
 
-#: daemon/main.py:859 daemon/main.py:866
+#: daemon/main.py:861 daemon/main.py:868
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 
-#: daemon/main.py:869
+#: daemon/main.py:871
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr "{0} : réalisation d'un ramassage de miettes manuel de {1}."
 
@@ -4567,7 +4633,7 @@ msgstr "(non surveillé)"
 msgid "— no membership —"
 msgstr "— aucune appartenance à des groupes —"
 
-#: core/users.py:1188 core/configuration.py:668
+#: core/users.py:1188 core/configuration.py:677
 msgid "user"
 msgstr "utilisateur"
 
@@ -5414,13 +5480,13 @@ msgid ""
 "another process."
 msgstr ""
 
-#: core/configuration.py:270
+#: core/configuration.py:279
 msgid ""
 "Cannot create or change owner of {0}[/data]:\n"
 "\t{1}"
 msgstr ""
 
-#: core/configuration.py:323
+#: core/configuration.py:332
 #, fuzzy
 msgid ""
 "You are running an unknown or unsupported non-LSB but POSIX Operating "
@@ -5431,7 +5497,7 @@ msgstr ""
 "Merci de contacter les développeurs {0}, et considérer la soumission d'un "
 "patch pour rendre votre système officiellement supporté."
 
-#: core/configuration.py:347
+#: core/configuration.py:356
 msgid ""
 "Your Ubuntu version \"{0}\" is no longer supported by {1} developpers nor "
 "Canonical. You should consider upgrading to a newer one."
@@ -5440,7 +5506,7 @@ msgstr ""
 "ni Canonical. Nous vous suggérons de mettre à jour votre système vers une "
 "version plus récente."
 
-#: core/configuration.py:356
+#: core/configuration.py:365
 #, fuzzy
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Ubuntu version "
@@ -5453,11 +5519,11 @@ msgstr ""
 "par les développeurs {0}, et ce depuis bien longtemps. Vous êtes chaudement "
 "encouragé(e) à passer à une version plus récente."
 
-#: core/configuration.py:367
+#: core/configuration.py:376
 msgid "This Ubuntu version \"{0}\" is not [yet] supported, sorry !"
 msgstr "Cette version d'Ubuntu \"{0}\" n'est [pas encore] supportée, désolé !"
 
-#: core/configuration.py:384
+#: core/configuration.py:393
 msgid ""
 "Your Debian version (\"{0}\") is no longer supported by {1} developpers nor "
 "Debian. You should consider upgrading to a newer one."
@@ -5466,7 +5532,7 @@ msgstr ""
 "{1}, ni le projet Debian. Nous vous suggérons de mettre à jour votre système "
 "vers une version plus récente."
 
-#: core/configuration.py:393
+#: core/configuration.py:402
 #, fuzzy
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Debian version "
@@ -5479,11 +5545,11 @@ msgstr ""
 "par les développeurs {0}, et ce depuis bien longtemps. Vous êtes chaudement "
 "encouragé(e) à passer à une version plus récente."
 
-#: core/configuration.py:404
+#: core/configuration.py:413
 msgid "This Debian version \"{0}\" is not [yet] supported, sorry !"
 msgstr "Cette version de Debian \"{0}\" n'est [pas encore] supportée, désolé !"
 
-#: core/configuration.py:409
+#: core/configuration.py:418
 msgid ""
 "Your LSB distro is not yet supported. This should be trivial to implement, "
 "but this is still to be done, sorry!"
@@ -5491,11 +5557,11 @@ msgstr ""
 "Votre distribution LSB n'est pas encore supportée. Ça devrait être trivial à "
 "implémenter mais encore faut-il le faire !"
 
-#: core/configuration.py:455
+#: core/configuration.py:464
 msgid "MTA not installed or unsupported."
 msgstr "MTA non installé ou non supporté."
 
-#: core/configuration.py:514
+#: core/configuration.py:523
 #, fuzzy
 msgid ""
 "Mail{box,dir} system not supported yet. Please get in touch with dev@licorn."
@@ -5504,44 +5570,44 @@ msgstr ""
 "La détection de la configuration SSH n'est pas implémentée sur votre "
 "système. Merci de contacter %s."
 
-#: core/configuration.py:555
+#: core/configuration.py:564
 msgid ""
 "Custom skels must have at least {0} perms on dirs and {1} on files:\n"
 "\t{2}"
 msgstr ""
 
-#: core/configuration.py:669
+#: core/configuration.py:678
 msgid "users"
 msgstr "utilisateurs"
 
-#: core/configuration.py:690
+#: core/configuration.py:699
 msgid "groups"
 msgstr "groupes"
 
-#: core/configuration.py:763
+#: core/configuration.py:772
 msgid "In {0}, directive {1} should be at least {2}, but it is {3}."
 msgstr ""
 "Dans {0}, la directive {1} devrait être au moins {2}, mais elle est égale à "
 "{3}."
 
-#: core/configuration.py:773
+#: core/configuration.py:782
 msgid "In {0}, directive {1} should be set to {2}, but it is {3}."
 msgstr "Dans {0}, la directive {1} devrait être {2}, mais elle c'est {3}."
 
-#: core/configuration.py:784
+#: core/configuration.py:793
 msgid "In {0}, directive {1} is missing. Setting it to {2}."
 msgstr "Dans {0}, la directive {1} est manquante. Instanciation à {2}."
 
-#: core/configuration.py:794
+#: core/configuration.py:803
 msgid "{0} lacks mandatory configuration directive(s)."
 msgstr ""
 "Il manque une(des) directive(s) de configuration obligatoire(s) dans {0}."
 
-#: core/configuration.py:802 core/configuration.py:901
+#: core/configuration.py:811 core/configuration.py:910
 msgid "Altered {0} to match Licorn® pre-requisites."
 msgstr "{0} a été modifié pour prendre en compte les pré-requis Licorn®."
 
-#: core/configuration.py:807 core/configuration.py:907
+#: core/configuration.py:816 core/configuration.py:916
 #, python-format
 msgid ""
 "Insufficient permissions. Are you root?\n"
@@ -5550,7 +5616,7 @@ msgstr ""
 "Permissions insuffisantes. Êtes-vous root ?\n"
 "\t%s"
 
-#: core/configuration.py:811
+#: core/configuration.py:820
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly with other "
@@ -5560,26 +5626,26 @@ msgstr ""
 "avec les autres outils systèmes (adduser/useradd). Impossible de continuer "
 "sans ça, désolé !"
 
-#: core/configuration.py:863
+#: core/configuration.py:872
 #, python-format
 msgid "%s does not exist on this system!"
 msgstr "%s n'existe pas sur ce système !"
 
-#: core/configuration.py:873
+#: core/configuration.py:882
 msgid "In {0}, directive {1} should be {2}, but it is {3}."
 msgstr "Dans {0}, la directive {1} devrait être à {2}, mais elle est à {3}."
 
-#: core/configuration.py:884
+#: core/configuration.py:893
 msgid "In {0}, directive {1} is not present but should be, with value {2}."
 msgstr ""
 "Dans {0}, la directive {1} n'est pas présente mais devrait l'être, avec la "
 "valeur {2}."
 
-#: core/configuration.py:893
+#: core/configuration.py:902
 msgid "{0} should be altered to work with Licorn®. Fix it?"
 msgstr "{0} doit être modifié pour fonctionner avec Licorn®. Corriger ?"
 
-#: core/configuration.py:912
+#: core/configuration.py:921
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly. Cannot "
@@ -5588,80 +5654,80 @@ msgstr ""
 "Les modifications de %s sont nécessaires au bon fonctionnement de Licorn®. "
 "Impossible de continuer sans ça, désolé !"
 
-#: core/configuration.py:957
+#: core/configuration.py:966
 #, python-format
 msgid "Bad CLI output format \"%s\"!"
 msgstr ""
 
-#: core/configuration.py:961
+#: core/configuration.py:970
 msgid "Application name"
 msgstr "Nom d'application"
 
-#: core/configuration.py:962
+#: core/configuration.py:971
 msgid "Storage backends for Core objects"
 msgstr "Système de stockage pour les objets du cœur"
 
-#: core/configuration.py:963
+#: core/configuration.py:972
 msgid "Application main configuration directory"
 msgstr "Répertoire de configuration principal de l'application"
 
-#: core/configuration.py:964
+#: core/configuration.py:973
 msgid "Filename of extended group data"
 msgstr ""
 
-#: core/configuration.py:965
+#: core/configuration.py:974
 msgid "Application extensions (available add-ons)"
 msgstr ""
 
-#: core/configuration.py:966
+#: core/configuration.py:975
 msgid "This current help"
 msgstr ""
 
-#: core/configuration.py:967
+#: core/configuration.py:976
 msgid "Application main configuration filename"
 msgstr "Fichier de configuration principal de l'application"
 
-#: core/configuration.py:968
+#: core/configuration.py:977
 msgid "System groups tagged as privileges"
 msgstr "Groupes systèmes enregistrés comme privilèges"
 
-#: core/configuration.py:969
+#: core/configuration.py:978
 msgid "System valid shells when creating a new user"
 msgstr ""
 
-#: core/configuration.py:970
+#: core/configuration.py:979
 #, fuzzy
 msgid "System valid skels to apply on a user account"
 msgstr "Reappliquer un squelette au compte %s"
 
-#: core/configuration.py:971
+#: core/configuration.py:980
 #, fuzzy
 msgid "Mandatory system groups for {0}"
 msgstr "Autres groupes systèmes"
 
-#: core/configuration.py:977
+#: core/configuration.py:986
 #, python-format
 msgid "Sorry, \"%s\" is not a recognized keyword."
 msgstr ""
 
-#: core/configuration.py:982
+#: core/configuration.py:991
 msgid "Valid keywords for {0} (fuzzy matching):"
 msgstr ""
 
-#: core/configuration.py:1149
+#: core/configuration.py:1158
 msgid ""
 "New hostname must be composed only of letters, digits and hyphens, but not "
 "starting nor ending with an hyphen !"
 msgstr ""
 
-#: core/configuration.py:1161
+#: core/configuration.py:1170
 #, python-format
 msgid ""
 "Cannot modify /etc/hostname, verify the file is still clean:\n"
 "\t%s)"
 msgstr ""
 
-#: core/configuration.py:1262
+#: core/configuration.py:1271
 #, python-format
 msgid ""
 "Filesystem must be mounted with \"acl\" option:\n"
@@ -5670,12 +5736,12 @@ msgstr ""
 "Le système de fichier doit être monté avec l'option \"acl\" :\n"
 "\t%s"
 
-#: core/configuration.py:1334
+#: core/configuration.py:1343
 #, python-format
 msgid "Checking existence of group %s…"
 msgstr "Vérification de l'existence du groupe %s…"
 
-#: core/configuration.py:1340
+#: core/configuration.py:1349
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
@@ -5684,68 +5750,68 @@ msgstr ""
 "Le groupe système %s est obligatoire pour que le système fonctionne "
 "correctement, mais il n'existe pas encore."
 
-#: core/configuration.py:1356
+#: core/configuration.py:1365
 msgid ""
 "The system group \"{0}\" is mandatory but does not exist on your system !\n"
 "Use \"chk config\" or \"add group --system --name {0}\" to fix the problem "
 "before continuing."
 msgstr ""
 
-#: core/configuration.py:1392
+#: core/configuration.py:1401
 msgid "/etc/hosts must have at least o+r permissions."
 msgstr ""
 
-#: core/configuration.py:1398
+#: core/configuration.py:1407
 msgid "Current hostname and /etc/hostname are not in sync!"
 msgstr ""
 
-#: core/configuration.py:1407
+#: core/configuration.py:1416
 msgid ""
 "Hostname {0} does not resolve to 127.0.0.1 but to {1}, please check /etc/"
 "hosts!"
 msgstr ""
 
-#: core/configuration.py:1418
+#: core/configuration.py:1427
 #, python-format
 msgid ""
 "127.0.0.1 does not resolve back to hostname %s, please check /etc/hosts and/"
 "or DNS !"
 msgstr ""
 
-#: core/configuration.py:1462
+#: core/configuration.py:1471
 msgid ""
 "Cannot resolve {0} ({1}), is the DNS server running on 127.0.0.1? Else check "
 "DNS files syntax !"
 msgstr ""
 
-#: core/configuration.py:1469
+#: core/configuration.py:1478
 msgid "127.0.0.1 *must* be in /etc/resolv.conf on a Licorn® server."
 msgstr ""
 
-#: core/configuration.py:1475
+#: core/configuration.py:1484
 msgid ""
 "Problem while resolving {0}, please check your configuration:\n"
 "\terrno {1}, {2}"
 msgstr ""
 
-#: core/configuration.py:1490
+#: core/configuration.py:1499
 msgid ""
 "127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
 msgstr ""
 
-#: core/configuration.py:1495
+#: core/configuration.py:1504
 #, python-format
 msgid ""
 "DNS does not seem properly configured (%s does not resolve back to itself)."
 msgstr ""
 
-#: core/configuration.py:1500
+#: core/configuration.py:1509
 msgid ""
 "DNS is not properly configured ({0} does not resolve to {1}, but to {2})."
 msgstr ""
 
-#: core/configuration.py:1508
+#: core/configuration.py:1517
 msgid ""
 "127.0.0.1 should be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
@@ -6164,7 +6230,7 @@ msgid ""
 "deadblock!"
 msgstr ""
 
-#: foundations/bootstrap.py:172
+#: foundations/bootstrap.py:177
 msgid ""
 "You may want to install optional python module{0} {1} to benefit of full "
 "functionnality (debian package{2} {3}). As this is optional, you will not "
@@ -6174,7 +6240,7 @@ msgstr ""
 "de fonctionnalités supplémentaires (paquet{2} debian {3}). Comme c'est "
 "complètement optionnel, vous ne reverrez pas ce message à l'avenir.\n"
 
-#: foundations/bootstrap.py:178
+#: foundations/bootstrap.py:183
 msgid ""
 "You must install required python module{0} {1} (Debian/PIP package{2} {3}) "
 "before continuing.\n"
@@ -6932,7 +6998,7 @@ msgstr ""
 msgid "Error while running « unattended-upgrades »!"
 msgstr "Erreur pendant l'exécution de « unattended-upgrades » !"
 
-#: foundations/hlstr.py:239 foundations/hlstr.py:258
+#: foundations/hlstr.py:241 foundations/hlstr.py:260
 msgid ""
 "Ambiguous word {0}, matches at least {1} and {2}. Please refine your query."
 msgstr ""
@@ -7400,6 +7466,12 @@ msgstr ""
 "n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources "
 "propres (aucunes modifications locales). Sans ça, vos résultats de TS "
 "risquent fort de ne pas être fiables. "
+
+#~ msgid "{0}: error while authenticating; will retry in one hour."
+#~ msgstr "{0} : erreur d'authentification, nouvel essai dans une heure."
+
+#~ msgid "{0}: error while noop()'ing; retrying in one hour."
+#~ msgstr "{0} : erreur pendant le noop() ; nouvel essai dans une heure."
 
 #~ msgid "Skipped non-existing group name or GID %s."
 #~ msgstr "Le nom de groupe ou GID non-existant %s a été ignoré."
