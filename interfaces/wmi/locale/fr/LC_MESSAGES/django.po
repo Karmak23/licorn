@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-04 20:14+0200\n"
-"PO-Revision-Date: 2012-07-04 20:14+0200\n"
+"POT-Creation-Date: 2012-07-04 22:18+0200\n"
+"PO-Revision-Date: 2012-07-04 22:01+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -1286,39 +1286,39 @@ msgid "The volume <strong>{0}</strong> has been auto-selected for this backup."
 msgstr ""
 "Le volume <strong>{0}</strong> a été auto-sélectionné pour cette sauvegarde."
 
-#: templates/backup/widgets.html:8 templates/shares/widgets.html:6
+#: templates/backup/widgets.html:9 templates/shares/widgets.html:6
 msgid "Last backup age on this volume:"
 msgstr "Âge de la dernière sauvegarde sur ce volume :"
 
-#: templates/backup/widgets.html:13 templates/shares/widgets.html:11
+#: templates/backup/widgets.html:14 templates/shares/widgets.html:11
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu."
 
-#: templates/backup/widgets.html:17
+#: templates/backup/widgets.html:18
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine sauvegarde sera tentée dans {0}."
 
-#: templates/backup/widgets.html:24 templates/shares/widgets.html:26
+#: templates/backup/widgets.html:25 templates/shares/widgets.html:26
 msgid "Operation in progress icon"
 msgstr "Icône d'opération en cours"
 
-#: templates/backup/widgets.html:25
+#: templates/backup/widgets.html:26
 msgid "Cannot eject, operation in progress on this volume."
 msgstr "Impossible d'éjecter, une opération est en cours sur ce volume."
 
-#: templates/backup/widgets.html:36
+#: templates/backup/widgets.html:37
 msgid "Cannot eject, {0} in progress"
 msgstr "Impossible d'éjecter, {0} en cours"
 
-#: templates/backup/widgets.html:45 templates/shares/widgets.html:53
+#: templates/backup/widgets.html:46 templates/shares/widgets.html:53
 msgid "Eject device icon"
 msgstr "Icône d'éjection"
 
-#: templates/backup/widgets.html:61 templates/shares/widgets.html:69
+#: templates/backup/widgets.html:62 templates/shares/widgets.html:69
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: templates/backup/widgets.html:81
+#: templates/backup/widgets.html:82
 msgid ""
 "An error occured while computing space needed for next backup. Please "
 "contact your administrator or support person."
@@ -1327,15 +1327,23 @@ msgstr ""
 "prochaine sauvegarde. Contactez votre admintrateur ou votre responsable du "
 "support."
 
-#: templates/backup/widgets.html:112
+#: templates/backup/widgets.html:86
+msgid "Space needed for next backup increment: {0}."
+msgstr "Espace nécessaire pour le prochain incrément de sauvegarde : {0}."
+
+#: templates/backup/widgets.html:91
+msgid "Space needed for a full backup: {0}."
+msgstr "Espace nécessaire pour une sauvegarde complète : {0}."
+
+#: templates/backup/widgets.html:109
 msgid "<strong>{0}</strong>"
 msgstr "<strong>{0}</strong>"
 
-#: templates/backup/widgets.html:116
+#: templates/backup/widgets.html:113
 msgid "(display log details)"
 msgstr "(afficher le journal)"
 
-#: templates/backup/widgets.html:121
+#: templates/backup/widgets.html:118
 msgid "(no details available)"
 msgstr "(pas d'information supplémentaire disponible)"
 
@@ -1362,6 +1370,14 @@ msgstr "Forcer le système à re-scanner et remonter les volumes connectés"
 #: templates/backup/parts/gettext.html:9
 msgid "Rescan volumes"
 msgstr "Rescanner"
+
+#: templates/backup/parts/status.html:7
+msgid "A backup is running on {0}."
+msgstr "Une sauvegarde est en cours sur {0}."
+
+#: templates/backup/parts/status.html:12
+msgid "Next backup planned in {0}."
+msgstr "Prochaine sauvegarde prévue dans {0}."
 
 #: templates/groups/delete_message.html:3
 msgid "Are you sure you want to remove group <strong>{0}</strong>?"

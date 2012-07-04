@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-04 19:54+0200\n"
-"PO-Revision-Date: 2012-07-03 17:44+0200\n"
+"POT-Creation-Date: 2012-07-04 22:16+0200\n"
+"PO-Revision-Date: 2012-07-04 22:18+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -7010,88 +7010,89 @@ msgid "Event push to collector: {0} > {1}"
 msgstr ""
 
 #: foundations/events.py:73
-msgid "Exception while when pushing event {0} to collector {1}."
-msgstr ""
+#, fuzzy
+msgid "Exception while when pushing event {0} to collector {1}"
+msgstr "Exception rencontrée dans {0} : {1}."
 
-#: foundations/events.py:116
+#: foundations/events.py:117
 msgid "{0}: no {1} for event {2}."
 msgstr "{0} : aucun {1} pour l'évènement {2}."
 
-#: foundations/events.py:130
+#: foundations/events.py:131
 msgid ""
-"{0}: exception encountered while running {1} {2} for event {3}, skipping to "
-"next method."
+"{0}: exception encountered while running {1} {2} for event {3}, continuing "
+"with next method"
 msgstr ""
-"{0} : exception rencontrée pendant l'exécution de {1} {2} pour l'évènement "
-"{3}, saut à la méthode suivante."
+"{0} : exception pendant l'exécution de {1} {2} pour l'évènement {3}, saut à "
+"la méthode suivante"
 
-#: foundations/events.py:150
+#: foundations/events.py:151
 msgid "Processing event {0}"
 msgstr "Traitement de l'évènement {0}"
 
-#: foundations/events.py:152 foundations/events.py:289
-#: foundations/events.py:291
+#: foundations/events.py:154 foundations/events.py:292
+#: foundations/events.py:294
 msgid "event handler"
 msgstr "gestionnaire d'évènement"
 
-#: foundations/events.py:153 foundations/events.py:285
-#: foundations/events.py:287
+#: foundations/events.py:155 foundations/events.py:288
+#: foundations/events.py:290
 msgid "event callback"
 msgstr "rappel d'évènement"
 
-#: foundations/events.py:310
+#: foundations/events.py:313
 #, fuzzy
 msgid "{0}: {1} {2} already registered for event {3}."
 msgstr "{0} : méthode {1} déjà non-enregistrée pour l'évènement {2}."
 
-#: foundations/events.py:323
+#: foundations/events.py:326
 #, fuzzy
 msgid "{0}: registered {1} as new {2} for event {3}."
 msgstr "{0} : méthode {1} déjà non-enregistrée pour l'évènement {2}."
 
-#: foundations/events.py:336
+#: foundations/events.py:339
 #, fuzzy
 msgid "{0}: unregistered {2} {1} for event {3}."
 msgstr "{0} : aucun {1} pour l'évènement {2}."
 
-#: foundations/events.py:342
+#: foundations/events.py:345
 #, fuzzy
 msgid "{0}: event \"{1}\" not found when trying to unregister {2} {3}."
 msgstr ""
 "{0} : évènement \"{1}\" non trouvé pendant la tentative de dés-"
 "enregistrement de la méthode {2}."
 
-#: foundations/events.py:348
+#: foundations/events.py:352
 #, fuzzy
 msgid "{0}: {1} {2} already not registered for event {3}."
 msgstr "{0} : méthode {1} déjà non-enregistrée pour l'évènement {2}."
 
-#: foundations/events.py:366
+#: foundations/events.py:371
 #, fuzzy
 msgid "{0}: registered event collector {1}."
 msgstr "{0} : le niveau de verbosité a été augmenté à la valeur {1}."
 
-#: foundations/events.py:381
+#: foundations/events.py:387
 #, fuzzy
 msgid "{0}: unregistered event collector {0}."
 msgstr "{0} : le niveau de verbosité a été augmenté à la valeur {1}."
 
-#: foundations/events.py:385
+#: foundations/events.py:393
 #, fuzzy
-msgid "Error while trying to unregister collector {0}."
+msgid "Error while trying to unregister collector {0}"
 msgstr ""
 "{0} : évènement \"{1}\" non trouvé pendant la tentative de dés-"
 "enregistrement de la méthode {2}."
 
-#: foundations/events.py:444
+#: foundations/events.py:453
 msgid "{0}: Licorn® Event Loop started."
 msgstr "{0} : boucle d'évènements démarrée."
 
-#: foundations/events.py:456
+#: foundations/events.py:466
 msgid "{0}: Licorn® Event Loop stopped."
 msgstr "{0} : boucle d'évènements stoppée."
 
-#: foundations/events.py:468
+#: foundations/events.py:479
 msgid ""
 "{0}{1}: {2} events, {3} handler(s) and {4} callback(s) registered,\n"
 "{5}\n"
@@ -7101,7 +7102,7 @@ msgstr ""
 "{5}\n"
 "{6}"
 
-#: foundations/events.py:484
+#: foundations/events.py:498
 msgid "{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)"
 msgstr ""
 "{0}{1} ({2} évènements, {3} gestionnaires et {4} callbacks enregistré(s))"

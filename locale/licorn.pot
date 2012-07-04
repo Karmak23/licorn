@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-04 20:14+0200\n"
+"POT-Creation-Date: 2012-07-04 22:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -6328,81 +6328,81 @@ msgid "Event push to collector: {0} > {1}"
 msgstr ""
 
 #: foundations/events.py:73
-msgid "Exception while when pushing event {0} to collector {1}."
+msgid "Exception while when pushing event {0} to collector {1}"
 msgstr ""
 
-#: foundations/events.py:116
+#: foundations/events.py:117
 msgid "{0}: no {1} for event {2}."
 msgstr ""
 
-#: foundations/events.py:130
+#: foundations/events.py:131
 msgid ""
-"{0}: exception encountered while running {1} {2} for event {3}, skipping to "
-"next method."
+"{0}: exception encountered while running {1} {2} for event {3}, continuing "
+"with next method"
 msgstr ""
 
-#: foundations/events.py:150
+#: foundations/events.py:151
 msgid "Processing event {0}"
 msgstr ""
 
-#: foundations/events.py:152 foundations/events.py:289
-#: foundations/events.py:291
+#: foundations/events.py:154 foundations/events.py:292
+#: foundations/events.py:294
 msgid "event handler"
 msgstr ""
 
-#: foundations/events.py:153 foundations/events.py:285
-#: foundations/events.py:287
+#: foundations/events.py:155 foundations/events.py:288
+#: foundations/events.py:290
 msgid "event callback"
 msgstr ""
 
-#: foundations/events.py:310
+#: foundations/events.py:313
 msgid "{0}: {1} {2} already registered for event {3}."
 msgstr ""
 
-#: foundations/events.py:323
+#: foundations/events.py:326
 msgid "{0}: registered {1} as new {2} for event {3}."
 msgstr ""
 
-#: foundations/events.py:336
+#: foundations/events.py:339
 msgid "{0}: unregistered {2} {1} for event {3}."
 msgstr ""
 
-#: foundations/events.py:342
+#: foundations/events.py:345
 msgid "{0}: event \"{1}\" not found when trying to unregister {2} {3}."
 msgstr ""
 
-#: foundations/events.py:348
+#: foundations/events.py:352
 msgid "{0}: {1} {2} already not registered for event {3}."
 msgstr ""
 
-#: foundations/events.py:366
+#: foundations/events.py:371
 msgid "{0}: registered event collector {1}."
 msgstr ""
 
-#: foundations/events.py:381
+#: foundations/events.py:387
 msgid "{0}: unregistered event collector {0}."
 msgstr ""
 
-#: foundations/events.py:385
-msgid "Error while trying to unregister collector {0}."
+#: foundations/events.py:393
+msgid "Error while trying to unregister collector {0}"
 msgstr ""
 
-#: foundations/events.py:444
+#: foundations/events.py:453
 msgid "{0}: Licorn® Event Loop started."
 msgstr ""
 
-#: foundations/events.py:456
+#: foundations/events.py:466
 msgid "{0}: Licorn® Event Loop stopped."
 msgstr ""
 
-#: foundations/events.py:468
+#: foundations/events.py:479
 msgid ""
 "{0}{1}: {2} events, {3} handler(s) and {4} callback(s) registered,\n"
 "{5}\n"
 "{6}"
 msgstr ""
 
-#: foundations/events.py:484
+#: foundations/events.py:498
 msgid "{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)"
 msgstr ""
 
