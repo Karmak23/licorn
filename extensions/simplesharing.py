@@ -56,8 +56,8 @@ class SimpleShare(PicklableObject):
 
 
 		.. versionadded::
+			* 1.4 as official feature (still incomplete)
 			* 1.3.1 and later as experimental feature (incomplete)
-			* 1.4 as official feature
 	"""
 	share_file  = '.lshare.conf'
 	uploads_dir = 'uploads'
@@ -261,6 +261,9 @@ class SimpleShare(PicklableObject):
 				continue
 
 			if typ == stat.S_IFREG:
+				if fsapi.is_backup_file(subent):
+					continue
+
 				if uploads_dir in subent:
 					uploads.append(subent)
 
@@ -367,8 +370,8 @@ class SimpleSharingUser(object):
 		for more details and specification.
 
 		.. versionadded::
-			* 1.3.1 as experimental feature (incomplete)
 			* 1.4 as official feature
+			* 1.3.1 as experimental feature (incomplete)
 	"""
 
 	# a comfort shortcut to the SimpleSharingExtension,
@@ -506,8 +509,8 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		the `file sharing specification <http://dev.licorn.org/wiki/ExternalFileSharing>`_.
 
 		.. versionadded::
-			* 1.3.1 as experimental feature (incomplete)
 			* 1.4 as official feature
+			* 1.3.1 as experimental feature (incomplete)
 	"""
 	module_depends = [ 'mylicorn' ]
 
@@ -538,24 +541,16 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 
 		assert ltrace_func(TRACE_SIMPLESHARING)
 
-		if settings.experimental.enabled:
-			self.available = True
-
-		else:
-			self.available = False
+		self.available = True
 
 		return self.available
 	def is_enabled(self):
 		""" Simple shares are always enabled if available. """
 
 		if self.available:
-			logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
-					u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
-					self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
-
-			#logging.info(_(u'{0}: extension always enabled unless manually '
-			#					u'ignored in {1}.').format(self.pretty_name,
-			#						stylize(ST_PATH, settings.main_config_file)))
+			logging.info(_(u'{0}: extension always enabled unless manually '
+								u'ignored in {1}.').format(self.pretty_name,
+									stylize(ST_PATH, settings.main_config_file)))
 
 			# Enhance the core user with simple_sharing extensions.
 			User.__bases__ += (SimpleSharingUser, )

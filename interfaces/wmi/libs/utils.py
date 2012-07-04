@@ -222,8 +222,11 @@ def download_response(filename):
 							content_type=mtype or 'application/octet-stream')
 
 	response['Content-Length']      = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format(
-													os.path.basename(filename))
+	response['Content-Disposition'] = 'attachment; filename="{0}"'.format(
+								# Double quote are translated to simple ones.
+								# this is ugly, but simple, and avoid crashing
+								# the client with "double headers" error.
+								os.path.basename(filename).replace('"',"'"))
 
 	return response
 
