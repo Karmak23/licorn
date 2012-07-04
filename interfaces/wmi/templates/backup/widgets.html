@@ -78,20 +78,20 @@
 
 		{% if space == -1 %}
 
-			{{ _('An error occured while computing space needed for next backup.') }}</p>
+			<p class="alert alert-error">{{ _('An error occured while computing space needed for next backup. Please contact your administrator or support person.') }}</p>
 
 		{% else %}
 
-			{{ _('Space needed for next increment: {0}.').format(
+			<p class="alert">{{ _('Space needed for next increment: {0}.').format(
 					'<strong>%s</strong>' % bytes_to_human(space)
-				) }}
+				) }}</p>
 
 		{% endif %}
 
 	{% else %}
-		{{ _('Space needed for a full backup: {0}.').format(
+		<p class="alert">{{ _('Space needed for a full backup: {0}.').format(
 				'<strong>%s</strong>' % bytes_to_human(known_space)
-			) }}
+			) }}</p>
 
 	{% endif %}
 

@@ -46,6 +46,14 @@
 
 	{%- if user.accepts_shares -%}
 
+		{%- if not myext.connected -%}
+			{%- include 'shares/parts/disconnected.html' with context -%}
+
+		{%- elif not myext.reachable -%}
+			{%- include 'shares/parts/unreachable.html' with context -%}
+
+		{%- endif -%}
+
 		{%- set shares = user.list_shares() -%}
 
 		<h1>{{ _('My web shares') }} {{ '({0})'.format(shares|count) }}</h1>
