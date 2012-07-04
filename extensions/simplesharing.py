@@ -543,18 +543,19 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 	def is_enabled(self):
 		""" Simple shares are always enabled if available. """
 
-		logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
-				u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
-				self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
+		if self.available:
+			logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
+					u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
+					self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
 
-		#logging.info(_(u'{0}: extension always enabled unless manually '
-		#					u'ignored in {1}.').format(self.pretty_name,
-		#						stylize(ST_PATH, settings.main_config_file)))
+			#logging.info(_(u'{0}: extension always enabled unless manually '
+			#					u'ignored in {1}.').format(self.pretty_name,
+			#						stylize(ST_PATH, settings.main_config_file)))
 
-		# Enhance the core user with simple_sharing extensions.
-		User.__bases__ += (SimpleSharingUser, )
+			# Enhance the core user with simple_sharing extensions.
+			User.__bases__ += (SimpleSharingUser, )
 
-		return True
+		return self.available
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
@@ -581,10 +582,15 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 		""" When the daemon has reached ``cruising`` state, we can start to
 			check shares, request short URLs, etc. """
 
-		logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
+		# The event can occur even if the extension is disabled, because
+		# it is inconditionnaly registered. Avoid false-negatives by not
+		# doing anything if it is the case.
+		if self.enabled:
 
-		for user in LMC.users:
-			user.check_shares(batch=True)
+			logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
 
-		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
+			for user in LMC.users:
+				user.check_shares(batch=True)
+
+			logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
 

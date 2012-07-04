@@ -120,7 +120,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 	@events.handler_method
 	def licornd_cruising(self, *args, **kwargs):
 		""" When Licornd is OK, we can start requesting the central server. """
-		self.authenticate()
+
+		if self.enabled:
+			self.authenticate()
 
 	@events.handler_method
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
