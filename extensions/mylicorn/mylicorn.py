@@ -13,7 +13,7 @@ import os, time, urllib2, random, errno
 from threading import Thread
 
 from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import events, json
+from licorn.foundations           import events, json, hlstr
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -90,6 +90,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 						u'match "{1}/i"').format(api_key, hlstr.regex['api_key']))
 
 		# TODO: if connected: check the API key is valid.
+
+		self.__api_key = api_key
 
 		self.__save_configuration(api_key=self.__api_key)
 	def initialize(self):
