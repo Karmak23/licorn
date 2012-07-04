@@ -75,7 +75,7 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid      = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
@@ -86,13 +86,15 @@ class SimpleShare(PicklableObject):
 	def __load_share_configuration(self):
 
 		# defaults parameters for a share.
-		basedict = {'password': None, 'uri': None, 'expire': None}
+		defaults = {'password': None, 'uri': None, 'expire': None}
+		data = defaults.copy()
 
 		if os.path.exists(self.share_configuration_file):
 			try:
-				basedict.update(json.load(open(self.share_configuration_file)))
+				data.update(json.load(open(self.share_configuration_file)))
+
 			except:
-				logging.warning(_(u'{0}: configuration file {1} is probably '
+				logging.warning(_(u'{0}: configuration file {1} seems '
 								u'corrupt; removing it.').format(self,
 							stylize(ST_PATH, self.share_configuration_file)))
 				try:
@@ -101,8 +103,11 @@ class SimpleShare(PicklableObject):
 				except:
 					pass
 
-		for key, value in basedict.iteritems():
-			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
+		klass = self.__class__.__name__
+
+		# only take in data the parameters we know, avoiding collisions.
+		for key in defaults:
+			setattr(self, '_%s__%s' % (klass, key), data[key])
 	@property
 	def shid(self):
 		""" Obviously, ID is read-only. """
