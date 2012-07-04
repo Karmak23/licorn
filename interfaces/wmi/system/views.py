@@ -89,7 +89,7 @@ def error_handler(request, *args, **kwargs):
 		logging.exception(_('Unhandled exception in Django WMI code for request {0}'), str(request))
 		options.SetVerbose(old_level)
 
-	return render(request, '500.html')
+	return HttpResponseServerError(render_to_string('500.html'))
 
 @superuser_only
 def configuration(request, *args, **kwargs):
