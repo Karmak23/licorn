@@ -1,11 +1,11 @@
 <p class="alert alert-error">
 	{%- if request.user.is_staff -%}
 
-		{{ _('Disconnected from <strong><a href="http://my.licorn.org/" target="_blank">My Licorn®</a></strong> service. If the problem does not come from your internet connection, <a href="http://docs.licorn.org/extensions/mylicorn.html#disconnected">more information is available</a>.') }}
+		{{ _('Disconnected from <strong><a href="http://my.licorn.org/" target="_blank">My Licorn®</a></strong> service. If the problem does not come from your internet connection, <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en">more information is available</a>.') }}
 
 	{%- else -%}
 
-		{{ _('Short URLs cannot be obtained for technical reason. If the problem does not come from a failing internet connection <a href="http://docs.licorn.org/extensions/mylicorn.html#disconnected">more information is available</a>.') }}
+		{{ _('Short URLs cannot be obtained for technical reason. If the problem does not come from a failing internet connection <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en">technical information is available</a>, but it is probably easier to contact your system manager.') }}
 
 {%- endif -%}
 </p>

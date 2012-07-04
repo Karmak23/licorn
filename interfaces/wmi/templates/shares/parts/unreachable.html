@@ -1,11 +1,11 @@
 <p class="alert alert-warning">
 	{%- if request.user.is_staff -%}
 
-		{{ _('Your server is currently unreachable from the internet. <em>No share will be accessible to your partners</em>. You should configure your firewall to forward port <strong>{0}</strong> to this machine <strong>{1}</strong>, or contact your support person if you need any help or more information.').format(request.META['SERVER_PORT'], server_address(request)) }}
+		{{ _('Your server is currently <a href="http://docs.licorn.org/extensions/mylicorn.en.html#extensions-mylicorn-unreachable-en">unreachable from the internet</a>. <em>No share will be accessible to your partners</em>. You should configure your firewall to forward port <strong>{0}</strong> to this machine <strong>{1}</strong>, or contact your support person if you need any help or more information.').format(request.META['SERVER_PORT'], server_address(request)) }}
 
 	{%- else -%}
 
-		{{ _('This server is currently unreachable from the internet. <em>No share will be accessible to your partners</em>. Please contact your system manager for him to take the appropriate action.') }}
+		{{ _('This server is currently unreachable from the internet. <em>No share will be accessible to your partners</em>. Please contact your system manager to take the appropriate action.') }}
 
 	{%- endif -%}
 </p>
