@@ -70,7 +70,8 @@ class RoundRobinEventLooper(LicornBasicThread):
 			except:
 				# The collector probably disconnected without warning us first.
 				# Even without that, it produced an error; drop it.
-				logging.exception(_('Exception while when pushing event {0} to collector {1}.'), event, collector)
+				logging.exception(_(u'Exception while when pushing event '
+									u'{0} to collector {1}'), event, collector)
 				unregister_collector(collector)
 	def run_action_method(self):
 		""" Try to get the next event from our event-queue (else block on it).
@@ -128,8 +129,8 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 			except:
 				logging.exception(_(u'{0}: exception encountered while '
-					u'running {1} {2} for event {3}, skipping to next method.'),
-						(ST_NAME, self.name), method_type,
+					u'running {1} {2} for event {3}, continuing with '
+					u'next method'), (ST_NAME, self.name), method_type,
 						(ST_NAME, method), (ST_NAME, event.name))
 	def run_event(self, event):
 		""" Will "run" or execute an event:
@@ -147,7 +148,8 @@ class RoundRobinEventLooper(LicornBasicThread):
 
 		assert ltrace_func(TRACE_EVENTS)
 
-		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'), (ST_NAME, event.name))
+		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'),
+														(ST_NAME, event.name))
 
 		self.run_methods(event, events_handlers, _('event handler'))
 		self.run_methods(event, events_callbacks, _('event callback'))
@@ -188,7 +190,8 @@ class LicornEvent(NamedObject):
 	def emit(self, priority=None, delay=None):
 
 		if delay:
-			t = Timer(delay, events_queue.put, args=((priority or priorities.NORMAL, self), ))
+			t = Timer(delay, events_queue.put, args=((priority
+												or priorities.NORMAL, self), ))
 			t.start()
 
 		else:
@@ -340,15 +343,17 @@ def unregister_(on_what, mtype, event_name, method):
 
 		except KeyError:
 			logging.warning(_(u'{0}: event "{1}" not found when trying to '
-				u'unregister {2} {3}.').format(stylize(ST_NAME, current_thread().name),
-					stylize(ST_NAME, event_name), mtype,
-					stylize(ST_NAME, method.__name__)))
+								u'unregister {2} {3}.').format(
+									stylize(ST_NAME, current_thread().name),
+									stylize(ST_NAME, event_name), mtype,
+									stylize(ST_NAME, method.__name__)))
 
 		except ValueError:
 			logging.warning(_(u'{0}: {1} {2} already not registered for '
-				u'event {3}.').format(stylize(ST_NAME, current_thread().name),
-					mtype, stylize(ST_NAME, method.__name__)),
-					stylize(ST_NAME, event_name))
+								u'event {3}.').format(
+									stylize(ST_NAME, current_thread().name),
+									mtype, stylize(ST_NAME, method.__name__)),
+									stylize(ST_NAME, event_name))
 def register_collector(collector):
 	assert ltrace_func(TRACE_EVENTS)
 
@@ -364,7 +369,8 @@ def register_collector(collector):
 			pass
 
 	logging.progress( _('{0}: registered event collector {1}.').format(
-						stylize(ST_NAME, current_thread().name), stylize(ST_NAME, collector)))
+									stylize(ST_NAME, current_thread().name),
+									stylize(ST_NAME, collector)))
 
 	# we wait 6 seconds to send this special event, because all web clients
 	# will take at most 5 seconds to reconnect to the WMI when it comes back.
@@ -378,11 +384,14 @@ def unregister_collector(collector):
 			try:
 				events_collectors.remove(collector)
 
-				logging.progress(_('{0}: unregistered event collector {0}.').format(
-						stylize(ST_NAME, current_thread().name), stylize(ST_NAME, collector)))
+				logging.progress(_(u'{0}: unregistered event '
+									u'collector {0}.').format(
+										stylize(ST_NAME, current_thread().name),
+										stylize(ST_NAME, collector)))
 
 			except ValueError:
-				logging.exception(_(u'Error while trying to unregister collector {0}.'), collector)
+				logging.exception(_(u'Error while trying to unregister '
+												u'collector {0}'), collector)
 def scan_object(objekt, meth_handler, meth_callback):
 	for attribute in (getattr(objekt, attr) for attr in dir(objekt)):
 		if callable(attribute):
@@ -441,7 +450,8 @@ def run():
 	looper_thread = RoundRobinEventLooper('EventLooper')
 	looper_thread.start()
 
-	logging.progress(_(u'{0}: Licorn® Event Loop started.').format(stylize(ST_NAME, current_thread().name)))
+	logging.progress(_(u'{0}: Licorn® Event Loop started.').format(
+									stylize(ST_NAME, current_thread().name)))
 def stop():
 	""" Completely stop the event queue. This is meant to be done only
 		one time, when the daemon stops. """
@@ -453,7 +463,8 @@ def stop():
 	# unblock the EventManager run_action_method().
 	events_queue.put((-1, None))
 
-	logging.progress(_(u'{0}: Licorn® Event Loop stopped.').format(stylize(ST_NAME, current_thread().name)))
+	logging.progress(_(u'{0}: Licorn® Event Loop stopped.').format(
+									stylize(ST_NAME, current_thread().name)))
 def dump_status(long_output=False, precision=None, as_string=True):
 
 	t     = looper_thread
@@ -465,32 +476,36 @@ def dump_status(long_output=False, precision=None, as_string=True):
 	with loop_lock:
 		if as_string:
 			if long_output:
-				return _(u'{0}{1}: {2} events, {3} handler(s) and {4} callback(s) registered,\n{5}\n{6}').format(
-					stylize(ST_RUNNING if t.is_alive() else ST_STOPPED, t.name),
-					u'&' if t.daemon else u'',
-					stylize(ST_RUNNING, str(len(evts))),
-					stylize(ST_RUNNING, str(sum(len(l)
-						for l in evts.values()))),
-					stylize(ST_RUNNING, str(sum(len(l)
-						for l in cbks.values()))),
-					u'\n'.join(u'%s\n\t%s' % (key, '\n\t'.join(str(x)
-																for x in value))
-						for key, value in evts.iteritems()),
-					u'\n'.join(u'%s\n\t%s' % (key, '\n\t'.join(str(x)
-																for x in value))
-						for key, value in cbks.iteritems())
-					)
+				return _(u'{0}{1}: {2} events, {3} handler(s) and {4} '
+							u'callback(s) registered,\n{5}\n{6}').format(
+								stylize(ST_RUNNING
+											if t.is_alive()
+											else ST_STOPPED, t.name),
+								u'&' if t.daemon else u'',
+								stylize(ST_RUNNING, str(len(evts))),
+								stylize(ST_RUNNING, str(sum(len(l)
+									for l in evts.values()))),
+								stylize(ST_RUNNING, str(sum(len(l)
+									for l in cbks.values()))),
+								u'\n'.join(u'%s\n\t%s' % (key,
+										'\n\t'.join(str(x) for x in value))
+									for key, value in evts.iteritems()),
+								u'\n'.join(u'%s\n\t%s' % (key,
+										'\n\t'.join(str(x) for x in value))
+									for key, value in cbks.iteritems())
+								)
 			else:
-				return _(u'{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)').format(
-					stylize(ST_RUNNING
-						if t.is_alive() else ST_STOPPED, t.name),
-					u'&' if t.daemon else u'',
-					stylize(ST_RUNNING, str(len(evts))),
-					stylize(ST_RUNNING, str(sum(len(l)
-						for l in evts.values()))),
-					stylize(ST_RUNNING, str(sum(len(l)
-						for l in cbks.values())))
-					)
+				return _(u'{0}{1} ({2} events, {3} handler(s) and {4} '
+							u'callback(s) registered)').format(
+								stylize(ST_RUNNING
+									if t.is_alive() else ST_STOPPED, t.name),
+								u'&' if t.daemon else u'',
+								stylize(ST_RUNNING, str(len(evts))),
+								stylize(ST_RUNNING, str(sum(len(l)
+									for l in evts.values()))),
+								stylize(ST_RUNNING, str(sum(len(l)
+									for l in cbks.values())))
+								)
 		else:
 			return dict(
 					name=t.name,

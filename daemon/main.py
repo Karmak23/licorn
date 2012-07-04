@@ -738,6 +738,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 	def daemon_shutdown(self):
 		""" stop threads and clear pid files. """
 
+		LicornEvent('daemon_shutdown', synchronous=True).emit(priorities.HIGH)
+
 		try:
 			# before stopping threads (notably cmdlistener), we've got to announce
 			# out shutdown to peers, for them not to look for us in the future.

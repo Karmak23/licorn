@@ -10,11 +10,10 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time, mimetypes, urllib, random
+import os, stat, time, mimetypes, random
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events, hlstr
-from licorn.foundations.events    import LicornEvent
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -29,6 +28,9 @@ from licorn.extensions            import LicornExtension
 
 from licorn.extensions.mylicorn   import constants
 from django.core.urlresolvers     import reverse as url_for
+
+LicornEvent = events.LicornEvent
+
 # Just to be sure it is done.
 mimetypes.init()
 
@@ -73,7 +75,7 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid      = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
@@ -84,13 +86,15 @@ class SimpleShare(PicklableObject):
 	def __load_share_configuration(self):
 
 		# defaults parameters for a share.
-		basedict = {'password': None, 'uri': None, 'expire': None}
+		defaults = {'password': None, 'uri': None, 'expire': None}
+		data = defaults.copy()
 
 		if os.path.exists(self.share_configuration_file):
 			try:
-				basedict.update(json.load(open(self.share_configuration_file)))
+				data.update(json.load(open(self.share_configuration_file)))
+
 			except:
-				logging.warning(_(u'{0}: configuration file {1} is probably '
+				logging.warning(_(u'{0}: configuration file {1} seems '
 								u'corrupt; removing it.').format(self,
 							stylize(ST_PATH, self.share_configuration_file)))
 				try:
@@ -99,8 +103,11 @@ class SimpleShare(PicklableObject):
 				except:
 					pass
 
-		for key, value in basedict.iteritems():
-			setattr(self, '_%s__%s' % (self.__class__.__name__, key), value)
+		klass = self.__class__.__name__
+
+		# only take in data the parameters we know, avoiding collisions.
+		for key in defaults:
+			setattr(self, '_%s__%s' % (klass, key), data[key])
 	@property
 	def shid(self):
 		""" Obviously, ID is read-only. """
@@ -142,8 +149,8 @@ class SimpleShare(PicklableObject):
 	@property
 	def public_url(self):
 		""" Wow! Django's `url_for()` works like a charm from outside the WMI. """
-		return urllib.quote(url_for('wmi.shares.views.serve',
-									args=(self.coreobj.name, self.name)))
+		return url_for('wmi.shares.views.serve',
+									args=(self.coreobj.name, self.name))
 	@property
 	def share_configuration_file(self):
 		return os.path.join(self.__path, self.__class__.share_file)
@@ -345,6 +352,13 @@ class SimpleShare(PicklableObject):
 			workers.network_enqueue(priorities.LOW, self.__request_short_url,
 								job_delay=float(random.randint(1800, 5400)))
 	def check(self, batch=False, auto_answer=None, full_display=True):
+		""" Check the share parameters. For the moment, it just makes sure
+			the share has a short URL, else it will request one.
+
+			.. warning:: If the MY Licorn® central server changes (eg. from
+				development to production or vice-versa), the URLs will not
+				be updated. This is not a bug, just worth noting. """
+
 		if self.uri in (None, ''):
 			workers.network_enqueue(priorities.LOW, self.__request_short_url)
 class SimpleSharingUser(object):
@@ -534,18 +548,19 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 	def is_enabled(self):
 		""" Simple shares are always enabled if available. """
 
-		logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
-				u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
-				self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
+		if self.available:
+			logging.notice(_(u'{1}: {0} extension enabled. Please report bugs '
+					u'at {2}.').format(stylize(ST_COMMENT, _('experimental')),
+					self.pretty_name, stylize(ST_URL, 'http://dev.licorn.org/')))
 
-		#logging.info(_(u'{0}: extension always enabled unless manually '
-		#					u'ignored in {1}.').format(self.pretty_name,
-		#						stylize(ST_PATH, settings.main_config_file)))
+			#logging.info(_(u'{0}: extension always enabled unless manually '
+			#					u'ignored in {1}.').format(self.pretty_name,
+			#						stylize(ST_PATH, settings.main_config_file)))
 
-		# Enhance the core user with simple_sharing extensions.
-		User.__bases__ += (SimpleSharingUser, )
+			# Enhance the core user with simple_sharing extensions.
+			User.__bases__ += (SimpleSharingUser, )
 
-		return True
+		return self.available
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
@@ -568,14 +583,19 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 						u'user {1}'), self.pretty_name, (ST_LOGIN, user.login))
 			return False
 	@events.handler_method
-	def licornd_cruising(self, *args, **kwargs):
+	def extension_mylicorn_authenticated(self, *args, **kwargs):
 		""" When the daemon has reached ``cruising`` state, we can start to
 			check shares, request short URLs, etc. """
 
-		logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
+		# The event can occur even if the extension is disabled, because
+		# it is inconditionnaly registered. Avoid false-negatives by not
+		# doing anything if it is the case.
+		if self.enabled:
 
-		for user in LMC.users:
-			user.check_shares(batch=True)
+			logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
 
-		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
+			for user in LMC.users:
+				user.check_shares(batch=True)
+
+			logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
 

@@ -4,13 +4,14 @@
 {%- if request.user.is_staff -%}
 
 	{%- if extension.event('running') -%}
-		<p class="backup_in_progress">A backup is running on {{ extension.current_operated_volume.mount_point }}.</p>
+		<p class="backup_in_progress">{{ _('A backup is running on {0}.').format(extension.current_operated_volume.pretty_name) }}</p>
 		{# need http://fgnass.github.com/spin.js/ #}
+
 	{%- elif extension.event('active') -%}
 
-		<p>{{ _('Next backup planned in {0}.').format(countdown(
-			extension.time_before_next_automatic_backup(), short=True)) }}</p>
-		<p>{{ display_needed_space() }}</p>
+		<p class="alert">{{ _('Next backup planned in {0}.').format(countdown(extension.time_before_next_automatic_backup(), short=True)) }}</p>
+
+		{{ display_needed_space() }}
 
 		{%- for vol in extension.enabled_volumes() -%}
 			{# occupied_bar('') #}

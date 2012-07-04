@@ -29,8 +29,12 @@ common = EnumDict('common', from_dict=__common_dict)
 # we always merge the common dict to include common result codes,
 # this makes it easier to use in logging messages.
 authenticate = EnumDict('authenticate', from_dict=__common_dict)
-authenticate.ALREADY   = 2
-authenticate.ANONYMOUS = 3
+authenticate.BAD_API_KEY = -4
+authenticate.ALREADY     = 2
+authenticate.ANONYMOUS   = 3
+
+disconnect = EnumDict('disconnect', from_dict=__common_dict)
+disconnect.ALREADY = 2
 
 # other JSON-RPC functions
 set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
@@ -38,3 +42,6 @@ set_attribute = EnumDict('set_attribute', from_dict=__common_dict)
 shorten_url = EnumDict('shorten_url', from_dict=__common_dict)
 shorten_url.ALREADY = 2
 
+is_reachable = EnumDict('is_reachable', from_dict=__common_dict)
+is_reachable.UNREACHABLE = -4
+is_reachable.UNKNOWN     = 2

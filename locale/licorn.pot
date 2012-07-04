@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-03 17:46+0200\n"
+"POT-Creation-Date: 2012-07-04 22:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -229,7 +229,7 @@ msgstr ""
 #: extensions/caldavd.py:604 extensions/caldavd.py:636
 #: extensions/caldavd.py:663 extensions/volumes.py:441
 #: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:645
-#: core/configuration.py:986
+#: core/configuration.py:995
 msgid "{0}: {1}"
 msgstr ""
 
@@ -463,42 +463,87 @@ msgstr ""
 msgid "%s: extension not available because yet to be written."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:78
+#: extensions/mylicorn/mylicorn.py:113
+msgid "Bad API key \"{0}\", must match \"{1}/i\""
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:144
+msgid "{0}: using environment variable {1} pointing to {2}."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:174
+msgid "{0}: configuration file {1} seems corrupt; not using it."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:189
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:102
+#: extensions/mylicorn/mylicorn.py:247
+msgid "{0}: exception while disconnecting"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:265
+msgid "{0}: updater thread started."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:275
+msgid "{0}: exception while stopping updater thread"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:284
+msgid "{0}: updater thread stopped."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:295
+msgid "{0}: error while executing {1}"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:299
+#, python-format
+msgid "RPC %s failed"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:322
+msgid "{0}: failed to disconnect (code: {1}, message: {2})"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:329
+msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:338
+msgid "{0}: already disconnected, not trying again."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:346
+msgid "{0}: already connected, not doing it again."
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:351
 msgid ""
 "{0}: system UUID not found, aborting. There may be a serious problem "
 "somewhere."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:110
-msgid "{0}: using environment variable {1} pointing to {2}."
+#: extensions/mylicorn/mylicorn.py:366
+msgid "{0}: failed to authenticate, will retry later (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:135
-msgid "{0}: error while authenticating; will retry in one hour."
+#: extensions/mylicorn/mylicorn.py:375
+msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:144
-msgid ""
-"{0}: failed to authenticate, retrying in one hour (code: authenticate.{1}, "
-"message: {2})"
+#: extensions/mylicorn/mylicorn.py:403
+msgid "{0}: our reachability state is now {1}."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:152
-msgid ""
-"{0}: sucessfully authenticated ourselves (code: authenticate.{1}, message: "
-"{2})"
+#: extensions/mylicorn/mylicorn.py:419
+msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:186
-msgid "{0}: exception while stopping updater thread"
-msgstr ""
-
-#: extensions/mylicorn/mylicorn.py:203
-msgid "{0}: error while noop()'ing; retrying in one hour."
+#: extensions/mylicorn/mylicorn.py:434
+msgid "{0}: successfully noop()'ed {1}."
 msgstr ""
 
 #: extensions/gloop.py:106
@@ -514,125 +559,125 @@ msgstr ""
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr ""
 
-#: extensions/simplesharing.py:66
+#: extensions/simplesharing.py:68
 msgid "{0}: \"{1}\" must be a directory!"
 msgstr ""
 
-#: extensions/simplesharing.py:93
-msgid "{0}: configuration file {1} is probably corrupt; removing it."
+#: extensions/simplesharing.py:97
+msgid "{0}: configuration file {1} seems corrupt; removing it."
 msgstr ""
 
-#: extensions/simplesharing.py:166
+#: extensions/simplesharing.py:173
 msgid "{0}: simple share upload state unchanged."
 msgstr ""
 
-#: extensions/simplesharing.py:172
+#: extensions/simplesharing.py:179
 msgid "Please set a password on the share first."
 msgstr ""
 
-#: extensions/simplesharing.py:213
+#: extensions/simplesharing.py:220
 msgid "Bad URI {0}"
 msgstr ""
 
-#: extensions/simplesharing.py:278
+#: extensions/simplesharing.py:285
 msgid "Not a file from that share."
 msgstr ""
 
-#: extensions/simplesharing.py:282
+#: extensions/simplesharing.py:289
 msgid "Unsafe absolute path for file \"{0}\"!"
 msgstr ""
 
-#: extensions/simplesharing.py:292
+#: extensions/simplesharing.py:299
 msgid "Unknown"
 msgstr ""
 
-#: extensions/simplesharing.py:311
+#: extensions/simplesharing.py:318
 msgid "{0}: requesting short URL…"
 msgstr ""
 
-#: extensions/simplesharing.py:318
+#: extensions/simplesharing.py:325
 msgid "{0}: short URL request failed, deferring next try."
 msgstr ""
 
-#: extensions/simplesharing.py:326
+#: extensions/simplesharing.py:333
 msgid "{0}: short URL successfully set to {1}."
 msgstr ""
 
-#: extensions/simplesharing.py:330
+#: extensions/simplesharing.py:337
 msgid ""
 "{0}: short URL request failed, deferring next try (was: code={1}, message="
 "{2})."
 msgstr ""
 
-#: extensions/simplesharing.py:338
+#: extensions/simplesharing.py:345
 msgid "{0}: {1} is not connected, deferring short URL request."
 msgstr ""
 
-#: extensions/simplesharing.py:379
+#: extensions/simplesharing.py:393
 msgid "Someone tried to switch simple shares on a non-standard user account!"
 msgstr ""
 
-#: extensions/simplesharing.py:383
+#: extensions/simplesharing.py:397
 msgid "{0}: shares status unchanged."
 msgstr ""
 
-#: extensions/simplesharing.py:394
+#: extensions/simplesharing.py:408
 msgid "{0}: simple shares status switched to {1}."
 msgstr ""
 
-#: extensions/simplesharing.py:395 core/_objects.py:264 core/groups.py:461
+#: extensions/simplesharing.py:409 core/_objects.py:264 core/groups.py:461
 msgid "activated"
 msgstr ""
 
-#: extensions/simplesharing.py:395 core/_objects.py:275 core/groups.py:464
+#: extensions/simplesharing.py:409 core/_objects.py:275 core/groups.py:464
 msgid "deactivated"
 msgstr ""
 
-#: extensions/simplesharing.py:417
+#: extensions/simplesharing.py:431
 msgid "{0}: checking shares…"
 msgstr ""
 
-#: extensions/simplesharing.py:424
+#: extensions/simplesharing.py:438
 msgid "{0}: shares check finished."
 msgstr ""
 
-#: extensions/simplesharing.py:428
+#: extensions/simplesharing.py:442
 msgid "{0}: no shares to check."
 msgstr ""
 
-#: extensions/simplesharing.py:432
+#: extensions/simplesharing.py:446
 msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
 msgstr ""
 
-#: extensions/simplesharing.py:441
+#: extensions/simplesharing.py:455
 msgid "Created directory {1} in user {0}'s home."
 msgstr ""
 
-#: extensions/simplesharing.py:448
+#: extensions/simplesharing.py:462
 msgid "User {0} does not accept simple shares, check skipped."
 msgstr ""
 
-#: extensions/simplesharing.py:472
+#: extensions/simplesharing.py:486
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:537
+#: extensions/simplesharing.py:552
 msgid "{1}: {0} extension enabled. Please report bugs at {2}."
 msgstr ""
 
-#: extensions/simplesharing.py:538
+#: extensions/simplesharing.py:553
 msgid "experimental"
 msgstr ""
 
-#: extensions/simplesharing.py:567
+#: extensions/simplesharing.py:582
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr ""
 
-#: extensions/simplesharing.py:575
+#: extensions/simplesharing.py:595
 msgid "{0}: checking all users' shares…"
 msgstr ""
 
-#: extensions/simplesharing.py:580
+#: extensions/simplesharing.py:600
 msgid "{0}: shares checks finished."
 msgstr ""
 
@@ -1064,7 +1109,7 @@ msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
 #: daemon/rwi.py:734 daemon/rwi.py:819 daemon/rwi.py:832 core/groups.py:1813
-#: core/configuration.py:689
+#: core/configuration.py:698
 msgid "group"
 msgstr ""
 
@@ -1545,32 +1590,32 @@ msgstr ""
 msgid "Successfully loaded gettext translations for language {0}."
 msgstr ""
 
-#: daemon/main.py:762
+#: daemon/main.py:764
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 
-#: daemon/main.py:767
+#: daemon/main.py:769
 msgid "{0}: joining threads."
 msgstr ""
 
-#: daemon/main.py:781
+#: daemon/main.py:783
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr ""
 
-#: daemon/main.py:784
+#: daemon/main.py:786
 #, python-format
 msgid " (currently working on %s)"
 msgstr ""
 
-#: daemon/main.py:825
+#: daemon/main.py:827
 msgid "{0}: restarting{1}."
 msgstr ""
 
-#: daemon/main.py:859 daemon/main.py:866
+#: daemon/main.py:861 daemon/main.py:868
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr ""
 
-#: daemon/main.py:869
+#: daemon/main.py:871
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr ""
 
@@ -4232,7 +4277,7 @@ msgstr ""
 msgid "— no membership —"
 msgstr ""
 
-#: core/users.py:1188 core/configuration.py:668
+#: core/users.py:1188 core/configuration.py:677
 msgid "user"
 msgstr ""
 
@@ -4947,26 +4992,26 @@ msgid ""
 "another process."
 msgstr ""
 
-#: core/configuration.py:270
+#: core/configuration.py:279
 msgid ""
 "Cannot create or change owner of {0}[/data]:\n"
 "\t{1}"
 msgstr ""
 
-#: core/configuration.py:323
+#: core/configuration.py:332
 msgid ""
 "You are running an unknown or unsupported non-LSB but POSIX Operating "
 "System. Please get in touch with {0} developpers, and consider submitting a "
 "patch to make your system officially supported."
 msgstr ""
 
-#: core/configuration.py:347
+#: core/configuration.py:356
 msgid ""
 "Your Ubuntu version \"{0}\" is no longer supported by {1} developpers nor "
 "Canonical. You should consider upgrading to a newer one."
 msgstr ""
 
-#: core/configuration.py:356
+#: core/configuration.py:365
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Ubuntu version "
 "\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Canonical "
@@ -4974,17 +5019,17 @@ msgid ""
 "consider upgrading to a newer version."
 msgstr ""
 
-#: core/configuration.py:367
+#: core/configuration.py:376
 msgid "This Ubuntu version \"{0}\" is not [yet] supported, sorry !"
 msgstr ""
 
-#: core/configuration.py:384
+#: core/configuration.py:393
 msgid ""
 "Your Debian version (\"{0}\") is no longer supported by {1} developpers nor "
 "Debian. You should consider upgrading to a newer one."
 msgstr ""
 
-#: core/configuration.py:393
+#: core/configuration.py:402
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Debian version "
 "\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Debian "
@@ -4992,250 +5037,250 @@ msgid ""
 "upgrading to a newer version."
 msgstr ""
 
-#: core/configuration.py:404
+#: core/configuration.py:413
 msgid "This Debian version \"{0}\" is not [yet] supported, sorry !"
 msgstr ""
 
-#: core/configuration.py:409
+#: core/configuration.py:418
 msgid ""
 "Your LSB distro is not yet supported. This should be trivial to implement, "
 "but this is still to be done, sorry!"
 msgstr ""
 
-#: core/configuration.py:455
+#: core/configuration.py:464
 msgid "MTA not installed or unsupported."
 msgstr ""
 
-#: core/configuration.py:514
+#: core/configuration.py:523
 msgid ""
 "Mail{box,dir} system not supported yet. Please get in touch with dev@licorn."
 "org."
 msgstr ""
 
-#: core/configuration.py:555
+#: core/configuration.py:564
 msgid ""
 "Custom skels must have at least {0} perms on dirs and {1} on files:\n"
 "\t{2}"
 msgstr ""
 
-#: core/configuration.py:669
+#: core/configuration.py:678
 msgid "users"
 msgstr ""
 
-#: core/configuration.py:690
+#: core/configuration.py:699
 msgid "groups"
 msgstr ""
 
-#: core/configuration.py:763
+#: core/configuration.py:772
 msgid "In {0}, directive {1} should be at least {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:773
+#: core/configuration.py:782
 msgid "In {0}, directive {1} should be set to {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:784
+#: core/configuration.py:793
 msgid "In {0}, directive {1} is missing. Setting it to {2}."
 msgstr ""
 
-#: core/configuration.py:794
+#: core/configuration.py:803
 msgid "{0} lacks mandatory configuration directive(s)."
 msgstr ""
 
-#: core/configuration.py:802 core/configuration.py:901
+#: core/configuration.py:811 core/configuration.py:910
 msgid "Altered {0} to match Licorn® pre-requisites."
 msgstr ""
 
-#: core/configuration.py:807 core/configuration.py:907
+#: core/configuration.py:816 core/configuration.py:916
 #, python-format
 msgid ""
 "Insufficient permissions. Are you root?\n"
 "\t%s"
 msgstr ""
 
-#: core/configuration.py:811
+#: core/configuration.py:820
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly with other "
 "system tools (adduser/useradd). Cannot continue without this, sorry!"
 msgstr ""
 
-#: core/configuration.py:863
+#: core/configuration.py:872
 #, python-format
 msgid "%s does not exist on this system!"
 msgstr ""
 
-#: core/configuration.py:873
+#: core/configuration.py:882
 msgid "In {0}, directive {1} should be {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:884
+#: core/configuration.py:893
 msgid "In {0}, directive {1} is not present but should be, with value {2}."
 msgstr ""
 
-#: core/configuration.py:893
+#: core/configuration.py:902
 msgid "{0} should be altered to work with Licorn®. Fix it?"
 msgstr ""
 
-#: core/configuration.py:912
+#: core/configuration.py:921
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly. Cannot "
 "continue without this, sorry!"
 msgstr ""
 
-#: core/configuration.py:957
+#: core/configuration.py:966
 #, python-format
 msgid "Bad CLI output format \"%s\"!"
 msgstr ""
 
-#: core/configuration.py:961
+#: core/configuration.py:970
 msgid "Application name"
 msgstr ""
 
-#: core/configuration.py:962
+#: core/configuration.py:971
 msgid "Storage backends for Core objects"
 msgstr ""
 
-#: core/configuration.py:963
+#: core/configuration.py:972
 msgid "Application main configuration directory"
 msgstr ""
 
-#: core/configuration.py:964
+#: core/configuration.py:973
 msgid "Filename of extended group data"
 msgstr ""
 
-#: core/configuration.py:965
+#: core/configuration.py:974
 msgid "Application extensions (available add-ons)"
 msgstr ""
 
-#: core/configuration.py:966
+#: core/configuration.py:975
 msgid "This current help"
 msgstr ""
 
-#: core/configuration.py:967
+#: core/configuration.py:976
 msgid "Application main configuration filename"
 msgstr ""
 
-#: core/configuration.py:968
+#: core/configuration.py:977
 msgid "System groups tagged as privileges"
 msgstr ""
 
-#: core/configuration.py:969
+#: core/configuration.py:978
 msgid "System valid shells when creating a new user"
 msgstr ""
 
-#: core/configuration.py:970
+#: core/configuration.py:979
 msgid "System valid skels to apply on a user account"
 msgstr ""
 
-#: core/configuration.py:971
+#: core/configuration.py:980
 msgid "Mandatory system groups for {0}"
 msgstr ""
 
-#: core/configuration.py:977
+#: core/configuration.py:986
 #, python-format
 msgid "Sorry, \"%s\" is not a recognized keyword."
 msgstr ""
 
-#: core/configuration.py:982
+#: core/configuration.py:991
 msgid "Valid keywords for {0} (fuzzy matching):"
 msgstr ""
 
-#: core/configuration.py:1149
+#: core/configuration.py:1158
 msgid ""
 "New hostname must be composed only of letters, digits and hyphens, but not "
 "starting nor ending with an hyphen !"
 msgstr ""
 
-#: core/configuration.py:1161
+#: core/configuration.py:1170
 #, python-format
 msgid ""
 "Cannot modify /etc/hostname, verify the file is still clean:\n"
 "\t%s)"
 msgstr ""
 
-#: core/configuration.py:1262
+#: core/configuration.py:1271
 #, python-format
 msgid ""
 "Filesystem must be mounted with \"acl\" option:\n"
 "\t%s"
 msgstr ""
 
-#: core/configuration.py:1334
+#: core/configuration.py:1343
 #, python-format
 msgid "Checking existence of group %s…"
 msgstr ""
 
-#: core/configuration.py:1340
+#: core/configuration.py:1349
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
 "does not exist yet."
 msgstr ""
 
-#: core/configuration.py:1356
+#: core/configuration.py:1365
 msgid ""
 "The system group \"{0}\" is mandatory but does not exist on your system !\n"
 "Use \"chk config\" or \"add group --system --name {0}\" to fix the problem "
 "before continuing."
 msgstr ""
 
-#: core/configuration.py:1392
+#: core/configuration.py:1401
 msgid "/etc/hosts must have at least o+r permissions."
 msgstr ""
 
-#: core/configuration.py:1398
+#: core/configuration.py:1407
 msgid "Current hostname and /etc/hostname are not in sync!"
 msgstr ""
 
-#: core/configuration.py:1407
+#: core/configuration.py:1416
 msgid ""
 "Hostname {0} does not resolve to 127.0.0.1 but to {1}, please check /etc/"
 "hosts!"
 msgstr ""
 
-#: core/configuration.py:1418
+#: core/configuration.py:1427
 #, python-format
 msgid ""
 "127.0.0.1 does not resolve back to hostname %s, please check /etc/hosts and/"
 "or DNS !"
 msgstr ""
 
-#: core/configuration.py:1462
+#: core/configuration.py:1471
 msgid ""
 "Cannot resolve {0} ({1}), is the DNS server running on 127.0.0.1? Else check "
 "DNS files syntax !"
 msgstr ""
 
-#: core/configuration.py:1469
+#: core/configuration.py:1478
 msgid "127.0.0.1 *must* be in /etc/resolv.conf on a Licorn® server."
 msgstr ""
 
-#: core/configuration.py:1475
+#: core/configuration.py:1484
 msgid ""
 "Problem while resolving {0}, please check your configuration:\n"
 "\terrno {1}, {2}"
 msgstr ""
 
-#: core/configuration.py:1490
+#: core/configuration.py:1499
 msgid ""
 "127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
 msgstr ""
 
-#: core/configuration.py:1495
+#: core/configuration.py:1504
 #, python-format
 msgid ""
 "DNS does not seem properly configured (%s does not resolve back to itself)."
 msgstr ""
 
-#: core/configuration.py:1500
+#: core/configuration.py:1509
 msgid ""
 "DNS is not properly configured ({0} does not resolve to {1}, but to {2})."
 msgstr ""
 
-#: core/configuration.py:1508
+#: core/configuration.py:1517
 msgid ""
 "127.0.0.1 should be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
@@ -5583,14 +5628,14 @@ msgid ""
 "deadblock!"
 msgstr ""
 
-#: foundations/bootstrap.py:172
+#: foundations/bootstrap.py:177
 msgid ""
 "You may want to install optional python module{0} {1} to benefit of full "
 "functionnality (debian package{2} {3}). As this is optional, you will not "
 "see this message again.\n"
 msgstr ""
 
-#: foundations/bootstrap.py:178
+#: foundations/bootstrap.py:183
 msgid ""
 "You must install required python module{0} {1} (Debian/PIP package{2} {3}) "
 "before continuing.\n"
@@ -6273,7 +6318,7 @@ msgstr ""
 msgid "Error while running « unattended-upgrades »!"
 msgstr ""
 
-#: foundations/hlstr.py:239 foundations/hlstr.py:258
+#: foundations/hlstr.py:241 foundations/hlstr.py:260
 msgid ""
 "Ambiguous word {0}, matches at least {1} and {2}. Please refine your query."
 msgstr ""
@@ -6283,81 +6328,81 @@ msgid "Event push to collector: {0} > {1}"
 msgstr ""
 
 #: foundations/events.py:73
-msgid "Exception while when pushing event {0} to collector {1}."
+msgid "Exception while when pushing event {0} to collector {1}"
 msgstr ""
 
-#: foundations/events.py:116
+#: foundations/events.py:117
 msgid "{0}: no {1} for event {2}."
 msgstr ""
 
-#: foundations/events.py:130
+#: foundations/events.py:131
 msgid ""
-"{0}: exception encountered while running {1} {2} for event {3}, skipping to "
-"next method."
+"{0}: exception encountered while running {1} {2} for event {3}, continuing "
+"with next method"
 msgstr ""
 
-#: foundations/events.py:150
+#: foundations/events.py:151
 msgid "Processing event {0}"
 msgstr ""
 
-#: foundations/events.py:152 foundations/events.py:289
-#: foundations/events.py:291
+#: foundations/events.py:154 foundations/events.py:292
+#: foundations/events.py:294
 msgid "event handler"
 msgstr ""
 
-#: foundations/events.py:153 foundations/events.py:285
-#: foundations/events.py:287
+#: foundations/events.py:155 foundations/events.py:288
+#: foundations/events.py:290
 msgid "event callback"
 msgstr ""
 
-#: foundations/events.py:310
+#: foundations/events.py:313
 msgid "{0}: {1} {2} already registered for event {3}."
 msgstr ""
 
-#: foundations/events.py:323
+#: foundations/events.py:326
 msgid "{0}: registered {1} as new {2} for event {3}."
 msgstr ""
 
-#: foundations/events.py:336
+#: foundations/events.py:339
 msgid "{0}: unregistered {2} {1} for event {3}."
 msgstr ""
 
-#: foundations/events.py:342
+#: foundations/events.py:345
 msgid "{0}: event \"{1}\" not found when trying to unregister {2} {3}."
 msgstr ""
 
-#: foundations/events.py:348
+#: foundations/events.py:352
 msgid "{0}: {1} {2} already not registered for event {3}."
 msgstr ""
 
-#: foundations/events.py:366
+#: foundations/events.py:371
 msgid "{0}: registered event collector {1}."
 msgstr ""
 
-#: foundations/events.py:381
+#: foundations/events.py:387
 msgid "{0}: unregistered event collector {0}."
 msgstr ""
 
-#: foundations/events.py:385
-msgid "Error while trying to unregister collector {0}."
+#: foundations/events.py:393
+msgid "Error while trying to unregister collector {0}"
 msgstr ""
 
-#: foundations/events.py:444
+#: foundations/events.py:453
 msgid "{0}: Licorn® Event Loop started."
 msgstr ""
 
-#: foundations/events.py:456
+#: foundations/events.py:466
 msgid "{0}: Licorn® Event Loop stopped."
 msgstr ""
 
-#: foundations/events.py:468
+#: foundations/events.py:479
 msgid ""
 "{0}{1}: {2} events, {3} handler(s) and {4} callback(s) registered,\n"
 "{5}\n"
 "{6}"
 msgstr ""
 
-#: foundations/events.py:484
+#: foundations/events.py:498
 msgid "{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)"
 msgstr ""
 

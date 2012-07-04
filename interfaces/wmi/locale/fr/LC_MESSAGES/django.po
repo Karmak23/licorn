@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-03 17:46+0200\n"
-"PO-Revision-Date: 2012-07-03 17:46+0200\n"
+"POT-Creation-Date: 2012-07-04 22:18+0200\n"
+"PO-Revision-Date: 2012-07-04 22:01+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -181,20 +181,20 @@ msgstr "Impossible d'éjecter le volume {0} (erreur : {1})"
 msgid "Volumes rescanned."
 msgstr "Volumes re-scannés."
 
-#: groups/event_handlers.py:15 system/views.py:184 system/views.py:319
+#: groups/event_handlers.py:15 system/views.py:184 system/views.py:320
 #: templates/groups/users_list.html:64 templates/users/groups_list.html:43
 #: users/views.py:393
 msgid "member"
 msgstr "membre"
 
 #: groups/event_handlers.py:16 groups/views.py:259 system/views.py:190
-#: system/views.py:325 templates/groups/users_list.html:59
+#: system/views.py:326 templates/groups/users_list.html:59
 #: templates/users/groups_list.html:38 users/views.py:398
 msgid "guest"
 msgstr "invité(e)"
 
 #: groups/event_handlers.py:17 groups/views.py:249 system/views.py:178
-#: system/views.py:313 templates/groups/users_list.html:68
+#: system/views.py:314 templates/groups/users_list.html:68
 #: templates/users/groups_list.html:47 users/views.py:388
 msgid "responsible"
 msgstr "responsable"
@@ -728,11 +728,11 @@ msgstr ""
 "Chargement dynamique des URLs pour l'application Django {0}, toutes les "
 "dépendances sont satisfaites."
 
-#: libs/utils.py:290
+#: libs/utils.py:300
 msgid "No rendered data in dyndata_merge() for index {0} but data is {1}"
 msgstr ""
 
-#: libs/utils.py:295
+#: libs/utils.py:305
 msgid "Licorn® version {0}."
 msgstr "Licorn® version {0}."
 
@@ -881,11 +881,11 @@ msgstr "Arrêt/redémarrage du système annulé."
 msgid "Licornd successfully started; Rock'n Roll again ;-)"
 msgstr "Licornd a redémarré ; la WMI est reconnectée ; Ça roxe de nouveau ;-)"
 
-#: system/views.py:70
+#: system/views.py:69
 msgid "unknown"
 msgstr "inconnu"
 
-#: system/views.py:89
+#: system/views.py:88
 msgid "Unhandled exception in Django WMI code for request {0}"
 msgstr ""
 "Exception non traitée dans le code Django de la WMI pour la requête {0}"
@@ -894,31 +894,31 @@ msgstr ""
 msgid "Edit user {0}"
 msgstr "Édition du compte {0}"
 
-#: system/views.py:176 system/views.py:311 users/views.py:387
+#: system/views.py:176 system/views.py:312 users/views.py:387
 msgid "Responsibilities"
 msgstr "Responsabilités"
 
-#: system/views.py:182 system/views.py:317 users/views.py:392
+#: system/views.py:182 system/views.py:318 users/views.py:392
 msgid "Memberships"
 msgstr "Appartenances"
 
-#: system/views.py:188 system/views.py:323 users/views.py:397
+#: system/views.py:188 system/views.py:324 users/views.py:397
 msgid "Invitations"
 msgstr "Invitations"
 
-#: system/views.py:194 system/views.py:329 users/views.py:402
+#: system/views.py:194 system/views.py:330 users/views.py:402
 msgid "Privileges"
 msgstr "Privilèges"
 
-#: system/views.py:196 system/views.py:331 users/views.py:403
+#: system/views.py:196 system/views.py:332 users/views.py:403
 msgid "privileged member"
 msgstr "membre privilégié"
 
-#: system/views.py:200 system/views.py:335 users/views.py:407
+#: system/views.py:200 system/views.py:336 users/views.py:407
 msgid "Other system groups"
 msgstr "Autres groupes système"
 
-#: system/views.py:202 system/views.py:337 users/views.py:408
+#: system/views.py:202 system/views.py:338 users/views.py:408
 msgid "system member"
 msgstr "membre système"
 
@@ -1286,53 +1286,64 @@ msgid "The volume <strong>{0}</strong> has been auto-selected for this backup."
 msgstr ""
 "Le volume <strong>{0}</strong> a été auto-sélectionné pour cette sauvegarde."
 
-#: templates/backup/widgets.html:8 templates/shares/widgets.html:6
+#: templates/backup/widgets.html:9 templates/shares/widgets.html:6
 msgid "Last backup age on this volume:"
 msgstr "Âge de la dernière sauvegarde sur ce volume :"
 
-#: templates/backup/widgets.html:13 templates/shares/widgets.html:11
+#: templates/backup/widgets.html:14 templates/shares/widgets.html:11
 msgid "No backup has occured yet."
 msgstr "Aucune sauvegarde n'a encore eu lieu."
 
-#: templates/backup/widgets.html:17
+#: templates/backup/widgets.html:18
 msgid "Next backup attempt will occur in {0}."
 msgstr "La prochaine sauvegarde sera tentée dans {0}."
 
-#: templates/backup/widgets.html:24 templates/shares/widgets.html:26
+#: templates/backup/widgets.html:25 templates/shares/widgets.html:26
 msgid "Operation in progress icon"
 msgstr "Icône d'opération en cours"
 
-#: templates/backup/widgets.html:25
+#: templates/backup/widgets.html:26
 msgid "Cannot eject, operation in progress on this volume."
 msgstr "Impossible d'éjecter, une opération est en cours sur ce volume."
 
-#: templates/backup/widgets.html:36
+#: templates/backup/widgets.html:37
 msgid "Cannot eject, {0} in progress"
 msgstr "Impossible d'éjecter, {0} en cours"
 
-#: templates/backup/widgets.html:45 templates/shares/widgets.html:53
+#: templates/backup/widgets.html:46 templates/shares/widgets.html:53
 msgid "Eject device icon"
 msgstr "Icône d'éjection"
 
-#: templates/backup/widgets.html:61 templates/shares/widgets.html:69
+#: templates/backup/widgets.html:62 templates/shares/widgets.html:69
 msgid "Eject the volume"
 msgstr "Éjecter le volume"
 
-#: templates/backup/widgets.html:81
-msgid "An error occured while computing space needed for next backup."
+#: templates/backup/widgets.html:82
+msgid ""
+"An error occured while computing space needed for next backup. Please "
+"contact your administrator or support person."
 msgstr ""
 "Une erreur est survenue pendant le calcul de l'espace nécessaire à la "
-"prochaine sauvegarde"
+"prochaine sauvegarde. Contactez votre admintrateur ou votre responsable du "
+"support."
 
-#: templates/backup/widgets.html:112
+#: templates/backup/widgets.html:86
+msgid "Space needed for next backup increment: {0}."
+msgstr "Espace nécessaire pour le prochain incrément de sauvegarde : {0}."
+
+#: templates/backup/widgets.html:91
+msgid "Space needed for a full backup: {0}."
+msgstr "Espace nécessaire pour une sauvegarde complète : {0}."
+
+#: templates/backup/widgets.html:109
 msgid "<strong>{0}</strong>"
 msgstr "<strong>{0}</strong>"
 
-#: templates/backup/widgets.html:116
+#: templates/backup/widgets.html:113
 msgid "(display log details)"
 msgstr "(afficher le journal)"
 
-#: templates/backup/widgets.html:121
+#: templates/backup/widgets.html:118
 msgid "(no details available)"
 msgstr "(pas d'information supplémentaire disponible)"
 
@@ -1359,6 +1370,14 @@ msgstr "Forcer le système à re-scanner et remonter les volumes connectés"
 #: templates/backup/parts/gettext.html:9
 msgid "Rescan volumes"
 msgstr "Rescanner"
+
+#: templates/backup/parts/status.html:7
+msgid "A backup is running on {0}."
+msgstr "Une sauvegarde est en cours sur {0}."
+
+#: templates/backup/parts/status.html:12
+msgid "Next backup planned in {0}."
+msgstr "Prochaine sauvegarde prévue dans {0}."
 
 #: templates/groups/delete_message.html:3
 msgid "Are you sure you want to remove group <strong>{0}</strong>?"
@@ -1485,31 +1504,31 @@ msgstr "Cliquez pour éditer la machine {0}"
 msgid "Shutdown this machine now."
 msgstr "Éteindre cette machine maintenant."
 
-#: templates/shares/index.html:6 templates/shares/index_main.html:51
+#: templates/shares/index.html:6 templates/shares/index_main.html:59
 msgid "My web shares"
 msgstr "Mes partages web"
 
-#: templates/shares/index_main.html:57 templates/users/view_groups.html:9
+#: templates/shares/index_main.html:65 templates/users/view_groups.html:9
 msgid "Name"
 msgstr "Nom"
 
-#: templates/shares/index_main.html:58
+#: templates/shares/index_main.html:66
 msgid "Actual contents"
 msgstr "Contenu actuel"
 
-#: templates/shares/index_main.html:59
+#: templates/shares/index_main.html:67
 msgid "Short URI"
 msgstr "URI courte"
 
-#: templates/shares/index_main.html:61
+#: templates/shares/index_main.html:69
 msgid "Writable"
 msgstr "Dépôt autorisé"
 
-#: templates/shares/index_main.html:62
+#: templates/shares/index_main.html:70
 msgid "Expires"
 msgstr "Expire"
 
-#: templates/shares/index_main.html:71
+#: templates/shares/index_main.html:79
 msgid ""
 "You can manage files in your shares with your prefered file-manager: "
 "<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
@@ -1519,11 +1538,11 @@ msgstr ""
 "fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
 "<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
 
-#: templates/shares/index_main.html:75
+#: templates/shares/index_main.html:83
 msgid "No web share"
 msgstr "Pas de partage web"
 
-#: templates/shares/index_main.html:77
+#: templates/shares/index_main.html:85
 msgid ""
 "You do not have any share yet. You can start one easily by making a new "
 "directory in \"~/Public/\" (just create it if it does not exist)."
@@ -1532,7 +1551,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:81
+#: templates/shares/index_main.html:89
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1540,11 +1559,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:85
+#: templates/shares/index_main.html:93
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:86
+#: templates/shares/index_main.html:94
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1553,7 +1572,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:90
+#: templates/shares/index_main.html:98
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1632,6 +1651,36 @@ msgid ""
 msgstr ""
 "Demandez à la personne qui vous a envoyé(e) à cette adresse de remplir son "
 "répertoire de partage."
+
+#: templates/shares/parts/disconnected.html:4
+msgid ""
+"Disconnected from <strong><a href=\"http://my.licorn.org/\" target=\"_blank"
+"\">My Licorn&reg;</a></strong> service. If the problem does not come from "
+"your internet connection, <a href=\"http://docs.licorn.org/extensions/"
+"mylicorn.en.html#extensions-mylicorn-disconnected-en\">more information is "
+"available</a>."
+msgstr ""
+"Service <strong><a href=\"http://my.licorn.org/\" target=\"_blank\">My "
+"Licorn&reg;</a></strong> déconnecté. Si le problème ne vient pas de votre "
+"connexion internet, <a href=\"http://docs.licorn.org/extensions/mylicorn.fr."
+"html#extensions-mylicorn-disconnected-fr\">plus d'informations sont "
+"accessibles</a>."
+
+#: templates/shares/parts/disconnected.html:8
+msgid ""
+"Short URLs cannot be obtained for technical reason. If the problem does not "
+"come from a failing internet connection <a href=\"http://docs.licorn.org/"
+"extensions/mylicorn.en.html#extensions-mylicorn-disconnected-en\" target="
+"\"_blank\">technical information is available</a>, but it is probably easier "
+"to contact your system manager or support provider."
+msgstr ""
+"Aucune adresse courte ne peut être temporairement obtenue pour des raisons "
+"techniques. Si le problème ne vient pas de la défaillance de la connexion "
+"internet, <a href=\"http://docs.licorn.org/extensions/mylicorn.fr."
+"html#extensions-mylicorn-disconnected-fr\" target=\"_blank\">des "
+"informations techniques sont disponibles</a>, mais c'est probablement plus "
+"simple de contacter votre gestionnaire informatique ou votre prestataire de "
+"support."
 
 #: templates/shares/parts/gettext.html:4
 msgid "My shares"
@@ -1712,6 +1761,34 @@ msgstr ""
 #: templates/shares/parts/share-view.html:138
 msgid "never"
 msgstr "jamais"
+
+#: templates/shares/parts/unreachable.html:4
+msgid ""
+"Your server is currently <a href=\"http://docs.licorn.org/extensions/"
+"mylicorn.en.html#extensions-mylicorn-unreachable-en\" target=\"_blank"
+"\">unreachable from the internet</a>. <em>No share will be accessible to "
+"your partners</em>. You should configure your firewall to forward port "
+"<strong>{0}</strong> to this machine <strong>{1}</strong>, or contact your "
+"support provider if you need any help or more information."
+msgstr ""
+"Votre serveur est actuellement <a href=\"http://docs.licorn.org/extensions/"
+"mylicorn.fr.html#extensions-mylicorn-unreachable-fr\" target=\"_blank"
+"\">inaccessible depuis internet</a>. <em>Aucun partage ne pourra être ouvert "
+"par vos partenaires extérieurs</em>. Vous devriez configurer votre pare-feu "
+"pour rediriger le port <strong>{0}</strong> vers cette machine <strong>{1}</"
+"strong>, ou contacter votre prestataire de support pour de l'aide ou plus "
+"d'informations."
+
+#: templates/shares/parts/unreachable.html:8
+msgid ""
+"This server is currently unreachable from the internet. <em>No share will be "
+"accessible to your partners</em>. Please contact your system manager or "
+"support provider to take the appropriate action."
+msgstr ""
+"Ce serveur est actuellement inaccessible depuis internet pour des raisons "
+"techniques. <em>Aucun partage ne peut être ouvert par vos partenaires "
+"externes</em>. Merci de contacter votre gestionnaire informatique ou votre "
+"prestataire de support pour qu'il prenne les dispositions nécessaires."
 
 #: templates/system/daemon_status_main.html:11
 msgid "Statistics"
@@ -2169,9 +2246,8 @@ msgid "Unable to add user"
 msgstr "Impossible d'ajouter l'utilisateur"
 
 #: users/views.py:256
-#, fuzzy
 msgid "Unable to add user: {0}."
-msgstr "Erreur lors de l'ajout du compte {0} : {1}."
+msgstr "Impossible d'ajouter le compte : {0}."
 
 #: users/views.py:300
 msgid "Add new user"
