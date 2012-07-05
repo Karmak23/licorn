@@ -9,7 +9,7 @@ from licorn.foundations.constants import priorities
 from licorn.core                  import LMC
 
 @events.handler_function
-def configuration_loads(*args, **kwargs):
+def configuration_initialises(*args, **kwargs):
 	""" Create the main directories if they don't exist.
 
 		.. note:: this callback will be run *before*
@@ -62,4 +62,4 @@ def groups_loaded(*args, **kwargs):
 			# full_display is already `True`.
 			pass
 
-__all__ =  ('configuration_loads', 'groups_loaded')
+__all__ =  ('configuration_initialises', 'groups_loaded')

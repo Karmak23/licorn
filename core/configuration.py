@@ -126,7 +126,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
 
-
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
