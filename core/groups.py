@@ -1045,7 +1045,8 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 
 			self._cli_invalidate()
 			return True
-	def check(self, initial=False, minimal=True, force=False, batch=False, auto_answer=None, full_display=True):
+	def check(self, initial=False, minimal=True, force=False, batch=False,
+										auto_answer=None, full_display=True):
 		""" Check a group.
 			Will verify the various needed
 			conditions for a Licorn® group to be valid, and then check all
