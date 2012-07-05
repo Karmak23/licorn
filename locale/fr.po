@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-05 15:50+0200\n"
-"PO-Revision-Date: 2012-07-05 15:50+0200\n"
+"POT-Creation-Date: 2012-07-05 16:01+0200\n"
+"PO-Revision-Date: 2012-07-05 16:02+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -6927,41 +6927,37 @@ msgid "{0}: bad character received on input, ignored."
 msgstr "{0} : caractères invalide reçu sur l'entrée standard, ignoré."
 
 #: foundations/_settings.py:79
-#, python-format
-msgid "Experimental features enabled. Have fun, but do not break anything%s."
+msgid ""
+"Experimental features enabled. Have fun, and hope it does not break anything."
 msgstr ""
-"Les fonctionnalités expérimentales sont activées. Éclatez-vous bien, mais ne "
-"cassez-rien%s."
+"Les fonctionnalités expérimentales sont activées. Éclatez-vous bien, et "
+"espérez que ça ne casse rien."
 
-#: foundations/_settings.py:81
-msgid " (hear me Nibor?)"
-msgstr " (compris Nibor ?)"
-
-#: foundations/_settings.py:140
+#: foundations/_settings.py:137
 msgid "{0}: internal debug enabled for {1}"
 msgstr "{0} : déboggage interne activé pour {1}"
 
-#: foundations/_settings.py:157
+#: foundations/_settings.py:154
 msgid ""
 "{0} is currently unset or invalid in {1}. Please set it to either {2} or {3} "
 "and retry."
 msgstr ""
 
-#: foundations/_settings.py:172
+#: foundations/_settings.py:169
 msgid "Trying to find our Licorn® server…"
 msgstr "Recherche de notre serveur Licorn®…"
 
-#: foundations/_settings.py:175
+#: foundations/_settings.py:172
 msgid ""
 "Could not find our Licorn® server via autodetection. Please contact your "
 "network administrator or set the {0} environment variable."
 msgstr ""
 
-#: foundations/_settings.py:179
+#: foundations/_settings.py:176
 msgid "Our Licorn® server is {0}"
 msgstr "Notre serveur Licorn® est {0}"
 
-#: foundations/_settings.py:186
+#: foundations/_settings.py:183
 msgid ""
 "\n"
 "\tinvalid value {0} for configuration directive {1}: must be an integer "
@@ -6971,16 +6967,16 @@ msgstr ""
 "\tValeur {0} invalide pour la directive de configuration {1} : doit être un "
 "entier compris entre {2} (une heure) et {3} (une semaine)."
 
-#: foundations/_settings.py:271
+#: foundations/_settings.py:268
 #, fuzzy
 msgid "Exception while loading {0}; no exclusions defined"
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: foundations/_settings.py:293
+#: foundations/_settings.py:290
 msgid "Unable to remove {0} from inotifier exclusions"
 msgstr ""
 
-#: foundations/_settings.py:308
+#: foundations/_settings.py:305
 #, fuzzy
 msgid "Exception while saving {0}!"
 msgstr "Exception rencontrée dans {0} : {1}."
@@ -7468,6 +7464,9 @@ msgstr ""
 "n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources "
 "propres (aucunes modifications locales). Sans ça, vos résultats de TS "
 "risquent fort de ne pas être fiables. "
+
+#~ msgid " (hear me Nibor?)"
+#~ msgstr " (compris Nibor ?)"
 
 #~ msgid "{1}: {0} extension enabled. Please report bugs at {2}."
 #~ msgstr "{1} : extension {0} activée. Rapportez les bugs à {2}."
