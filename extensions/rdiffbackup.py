@@ -906,8 +906,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		command = self.commands.ionice[:]
 		command.extend(self.commands.nice[:])
 
-		rdiff_command = [ self.paths.binary, '--verbosity', '2',
-										'/', self.backup_dir(volume) ]
+		rdiff_command = [ self.paths.binary, '--exclude-sockets',
+						'--exclude-fifos', '--exclude-device-files',
+						'--verbosity', '2', '/', self.backup_dir(volume) ]
 
 		# We list the local customized file first, in order to include it
 		# after the system one if both are present; the first takes precedence
@@ -919,7 +920,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				rdiff_command.insert(1, '--include-globbing-filelist')
 
 			else:
-				logging.warning2(_(u'{0}: Rdiff-backup configuration file {1} '
+				logging.warning(_(u'{0}: configuration file {1} '
 									u'does not exist.').format(
 										stylize(ST_NAME, self.name),
 										stylize(ST_PATH, config_file)))
