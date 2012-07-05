@@ -33,6 +33,7 @@ def remote_output(text_message, clear_terminal=False, *args, **kwargs):
 							clear_terminal=clear_terminal, **kwargs),
 			options.msgproc.getProxy())
 	except AttributeError:
+		import logging
 		logging.exception(_(u'{0}.remote_output() aborted (no listener '
 							u'registered).'), current_thread().name)
 class LicornMessage(Pyro.core.CallbackObjBase):
