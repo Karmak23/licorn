@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-04 22:16+0200\n"
-"PO-Revision-Date: 2012-07-04 22:18+0200\n"
+"POT-Creation-Date: 2012-07-05 15:21+0200\n"
+"PO-Revision-Date: 2012-07-05 15:34+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -505,11 +505,10 @@ msgid "%s: extension not available because yet to be written."
 msgstr "%s : extension indisponible car pas encore écrite."
 
 #: extensions/mylicorn/mylicorn.py:113
-#, fuzzy
 msgid "Bad API key \"{0}\", must match \"{1}/i\""
 msgstr ""
-"Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
-"l'expression rationnelle /{1}/."
+"Clef d'API « {0} » invalide : elle devrait respecter l'expression "
+"rationnelle « /{1}/i »"
 
 #: extensions/mylicorn/mylicorn.py:144
 msgid "{0}: using environment variable {1} pointing to {2}."
@@ -517,11 +516,12 @@ msgstr ""
 "{0} : utilisation de la variable d'environnement {1} pointant vers {2}."
 
 #: extensions/mylicorn/mylicorn.py:174
-#, fuzzy
 msgid "{0}: configuration file {1} seems corrupt; not using it."
-msgstr "{0}: le fichier de configuration {1} doit être modifié pour continuer."
+msgstr ""
+"{0} : le fichier de configuration {1} semble corrompu, il ne sera pas "
+"utilisé."
 
-#: extensions/mylicorn/mylicorn.py:189
+#: extensions/mylicorn/mylicorn.py:189 extensions/simplesharing.py:551
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 "{0} : extension inconditionnellement activée sauf si manuellement ignorée "
@@ -565,19 +565,16 @@ msgstr ""
 "authenticate.{1}, message : {2})"
 
 #: extensions/mylicorn/mylicorn.py:329
-#, fuzzy
 msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
-msgstr "{0} : authentifié avec succès (code : authenticate.{1}, message : {2})"
+msgstr "{0} : déconnecté avec succès (code : authenticate.{1}, message : {2})"
 
 #: extensions/mylicorn/mylicorn.py:338
-#, fuzzy
 msgid "{0}: already disconnected, not trying again."
-msgstr ""
-"{0} : déjà en train de s'arrêter; appel supplémentaire à terminate() ignoré."
+msgstr "{0} : déjà déconnecté, pas la peine de re-tenter."
 
 #: extensions/mylicorn/mylicorn.py:346
 msgid "{0}: already connected, not doing it again."
-msgstr ""
+msgstr "{0} : déjà connecté, pas la peine de re-tenter."
 
 #: extensions/mylicorn/mylicorn.py:351
 msgid ""
@@ -588,33 +585,29 @@ msgstr ""
 "quelque part, celà ne devrait pas arriver."
 
 #: extensions/mylicorn/mylicorn.py:366
-#, fuzzy
 msgid "{0}: failed to authenticate, will retry later (code: {1}, message: {2})"
 msgstr ""
-"{0} : impossible de s'authentifier, nouvel essai dans une heure (code : "
-"authenticate.{1}, message : {2})"
+"{0} : impossible de s'authentifier, nouvel essai plus tard (code : {1}, "
+"message : {2})"
 
 #: extensions/mylicorn/mylicorn.py:375
-#, fuzzy
 msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
-msgstr "{0} : authentifié avec succès (code : authenticate.{1}, message : {2})"
+msgstr "{0} : authentifié avec succès (code : {1}, message : {2})"
 
 #: extensions/mylicorn/mylicorn.py:403
-#, fuzzy
 msgid "{0}: our reachability state is now {1}."
-msgstr "{0} : réservation pour Licorn® effectuée sur {1}."
+msgstr ""
+"{0} : l'accéssibilité de cette machine depuis internet est maintenant {1}."
 
 #: extensions/mylicorn/mylicorn.py:419
-#, fuzzy
 msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
 msgstr ""
-"{0} : demande d'URL courte échouée, nouvel essai déféré (erreur : code={1}, "
-"message={2})."
+"{0} : problème pendant le « noop()'ing » de {1} (erreur : code={2}, message="
+"{3})."
 
 #: extensions/mylicorn/mylicorn.py:434
-#, fuzzy
 msgid "{0}: successfully noop()'ed {1}."
-msgstr "{1} {0} activé(e) avec succès."
+msgstr "{0} : {1} a été « noop()é » avec succès."
 
 #: extensions/gloop.py:106
 msgid ""
@@ -637,9 +630,9 @@ msgid "{0}: \"{1}\" must be a directory!"
 msgstr "{0} : \"{1}\" doit être un répertoire !"
 
 #: extensions/simplesharing.py:97
-#, fuzzy
 msgid "{0}: configuration file {1} seems corrupt; removing it."
-msgstr "{0}: le fichier de configuration {1} doit être modifié pour continuer."
+msgstr ""
+"{0} : le fichier de configuration {1} semble corrompu; il a été supprimé."
 
 #: extensions/simplesharing.py:173
 msgid "{0}: simple share upload state unchanged."
@@ -653,31 +646,31 @@ msgstr "Merci de configurer un mot de passe sur le partage d'abord."
 msgid "Bad URI {0}"
 msgstr "URL {0} invalide"
 
-#: extensions/simplesharing.py:285
+#: extensions/simplesharing.py:288
 msgid "Not a file from that share."
 msgstr "Pas un fichier de ce partage."
 
-#: extensions/simplesharing.py:289
+#: extensions/simplesharing.py:292
 msgid "Unsafe absolute path for file \"{0}\"!"
 msgstr "Chemin absolu pour le fichier \"{0}\" non-sécurisé !"
 
-#: extensions/simplesharing.py:299
+#: extensions/simplesharing.py:302
 msgid "Unknown"
 msgstr "Inconnu"
 
-#: extensions/simplesharing.py:318
+#: extensions/simplesharing.py:321
 msgid "{0}: requesting short URL…"
 msgstr "{0} : demande d'une URL courte…"
 
-#: extensions/simplesharing.py:325
+#: extensions/simplesharing.py:328
 msgid "{0}: short URL request failed, deferring next try."
 msgstr "{0} : la demande d'URL courte a échoué, nouvel essai déféré."
 
-#: extensions/simplesharing.py:333
+#: extensions/simplesharing.py:336
 msgid "{0}: short URL successfully set to {1}."
 msgstr "{0} : URL courte définie avec succès à {1}."
 
-#: extensions/simplesharing.py:337
+#: extensions/simplesharing.py:340
 msgid ""
 "{0}: short URL request failed, deferring next try (was: code={1}, message="
 "{2})."
@@ -685,81 +678,73 @@ msgstr ""
 "{0} : demande d'URL courte échouée, nouvel essai déféré (erreur : code={1}, "
 "message={2})."
 
-#: extensions/simplesharing.py:345
+#: extensions/simplesharing.py:348
 msgid "{0}: {1} is not connected, deferring short URL request."
 msgstr "{0} : {1} n'est pas connecté, demande d'URL courte déférée."
 
-#: extensions/simplesharing.py:393
+#: extensions/simplesharing.py:396
 msgid "Someone tried to switch simple shares on a non-standard user account!"
 msgstr ""
 
-#: extensions/simplesharing.py:397
+#: extensions/simplesharing.py:400
 msgid "{0}: shares status unchanged."
 msgstr "{0} : état des partages web inchangé."
 
-#: extensions/simplesharing.py:408
+#: extensions/simplesharing.py:411
 #, fuzzy
 msgid "{0}: simple shares status switched to {1}."
 msgstr "{0} : partition système {1} ignorée."
 
-#: extensions/simplesharing.py:409 core/_objects.py:264 core/groups.py:461
+#: extensions/simplesharing.py:412 core/_objects.py:264 core/groups.py:461
 msgid "activated"
 msgstr "activé(e)"
 
-#: extensions/simplesharing.py:409 core/_objects.py:275 core/groups.py:464
+#: extensions/simplesharing.py:412 core/_objects.py:275 core/groups.py:464
 msgid "deactivated"
 msgstr "désactivé(e)"
 
-#: extensions/simplesharing.py:431
+#: extensions/simplesharing.py:434
 msgid "{0}: checking shares…"
 msgstr "{0} : vérifications des partages…"
 
-#: extensions/simplesharing.py:438
+#: extensions/simplesharing.py:441
 msgid "{0}: shares check finished."
 msgstr "{0} : vérification des partages terminée."
 
-#: extensions/simplesharing.py:442
+#: extensions/simplesharing.py:445
 msgid "{0}: no shares to check."
 msgstr "{0} : aucun partage à vérifier."
 
-#: extensions/simplesharing.py:446
+#: extensions/simplesharing.py:449
 #, fuzzy
 msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
 msgstr ""
 "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}. Voulez-"
 "vous le créer ?"
 
-#: extensions/simplesharing.py:455
+#: extensions/simplesharing.py:458
 #, fuzzy
 msgid "Created directory {1} in user {0}'s home."
 msgstr "Le répertoire {0} a été créé."
 
-#: extensions/simplesharing.py:462
+#: extensions/simplesharing.py:465
 msgid "User {0} does not accept simple shares, check skipped."
 msgstr ""
 
-#: extensions/simplesharing.py:486
+#: extensions/simplesharing.py:489
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:552
-msgid "{1}: {0} extension enabled. Please report bugs at {2}."
-msgstr "{1} : extension {0} activée. Rapportez les bugs à {2}."
-
-#: extensions/simplesharing.py:553
-msgid "experimental"
-msgstr "expérimental"
-
-#: extensions/simplesharing.py:582
+#: extensions/simplesharing.py:577
 #, fuzzy
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
 
-#: extensions/simplesharing.py:595
+#: extensions/simplesharing.py:590
 msgid "{0}: checking all users' shares…"
 msgstr "{0} : vérification de tous les partages utilisateurs…"
 
-#: extensions/simplesharing.py:600
+#: extensions/simplesharing.py:595
 msgid "{0}: shares checks finished."
 msgstr "{0} : vérification des partages terminée."
 
@@ -1298,7 +1283,7 @@ msgstr ""
 msgid "Finished importing, creating summary HTML file: "
 msgstr ""
 
-#: daemon/rwi.py:925 foundations/fsapi.py:1365
+#: daemon/rwi.py:925 foundations/fsapi.py:1475
 msgid "%d %m %Y at %H:%M:%S"
 msgstr "%d %m %Y à %H:%M:%S"
 
@@ -3376,9 +3361,8 @@ msgid "no other link than machine yet"
 msgstr ""
 
 #: core/machines.py:262
-#, fuzzy
 msgid "{0}: Linked {1} to {2}."
-msgstr "{0} : la variable inotify {1} a été augmentée à {2}."
+msgstr "{0} : {1} a été lié à {2}."
 
 #: core/machines.py:299
 msgid ""
@@ -6300,9 +6284,8 @@ msgid "{0} year{1}"
 msgstr "{0} année{1}"
 
 #: foundations/pyutils.py:211
-#, fuzzy
 msgid "{0} month{1}"
-msgstr "{0} min{1}"
+msgstr "{0} moi{1}"
 
 #: foundations/pyutils.py:212
 msgid "{0} day{1}"
@@ -6564,7 +6547,7 @@ msgstr "Vérification des {1} de {0}…"
 msgid "ACLs"
 msgstr "ACLs"
 
-#: foundations/fsapi.py:750 foundations/fsapi.py:769 foundations/fsapi.py:945
+#: foundations/fsapi.py:750 foundations/fsapi.py:769
 msgid "posix perms"
 msgstr "des permissions posix"
 
@@ -6597,7 +6580,7 @@ msgstr " (nom de fichier utf8 invalide, copie {0})"
 msgid "Renamed file {0} to {1}."
 msgstr "Le fichier {0} été renommé {1}."
 
-#: foundations/fsapi.py:853
+#: foundations/fsapi.py:854
 msgid ""
 "File {0} has an invalid utf8 filename, it must be renamed before beiing "
 "checked further."
@@ -6605,27 +6588,41 @@ msgstr ""
 "Le fichier {0} a un nom utf8 invalide, il doit être renommé avant d'être "
 "vérifié plus avant."
 
-#: foundations/fsapi.py:868
+#: foundations/fsapi.py:863
+msgid "Do you want to try to continue checking {0} despite of this exception?"
+msgstr ""
+
+#: foundations/fsapi.py:895
 msgid "fsapi.check_perms(): exception while checking filename validity of {0}."
 msgstr ""
 
-#: foundations/fsapi.py:914
+#: foundations/fsapi.py:905
+msgid ""
+"fsapi.check_perms(): Error while checking filename validity of {0}, cannot "
+"continue."
+msgstr ""
+
+#: foundations/fsapi.py:937 foundations/fsapi.py:965
 msgid "fsapi.check_perms(): exception while `execbits2str()` on {0}."
 msgstr ""
 
-#: foundations/fsapi.py:943
-msgid "Checking {perm_type} of {path}."
-msgstr "Vérification {perm_type} de {path}."
+#: foundations/fsapi.py:999
+msgid "Checking {0} of {1}…"
+msgstr "Vérification {0} de {1}…"
 
-#: foundations/fsapi.py:944
-msgid "POSIX.1e ACL"
-msgstr "de l'ACL POSIX.1e"
+#: foundations/fsapi.py:1000
+msgid "posix.1e ACL"
+msgstr "de l'ACL posix.1e"
 
-#: foundations/fsapi.py:956
+#: foundations/fsapi.py:1002
+msgid "posix permissions"
+msgstr "des permissions posix"
+
+#: foundations/fsapi.py:1015
 msgid "Exception while getting the posix.1e ACL of {0}"
 msgstr ""
 
-#: foundations/fsapi.py:963
+#: foundations/fsapi.py:1030
 msgid ""
 "Invalid access ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
@@ -6633,19 +6630,19 @@ msgstr ""
 "ACL d'accès invalide sur {path} (actuellement {current_acl}, mais devrait "
 "être {access_acl})."
 
-#: foundations/fsapi.py:968 foundations/fsapi.py:1038
+#: foundations/fsapi.py:1035 foundations/fsapi.py:1112
 msgid "empty"
 msgstr "vide"
 
-#: foundations/fsapi.py:1001
+#: foundations/fsapi.py:1068
 msgid "Applyed access ACL {access_acl} on {path}."
 msgstr "L'ACL d'accès {access_acl} a été appliqué sur {path}."
 
-#: foundations/fsapi.py:1010
+#: foundations/fsapi.py:1077
 msgid "fsapi.check_perms(): Exception while setting a posix.1e ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1033
+#: foundations/fsapi.py:1107
 msgid ""
 "Invalid default ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
@@ -6653,60 +6650,60 @@ msgstr ""
 "ACL «défaut» invalide pour {path} (actuellement {current_acl}, mais devrait "
 "être {access_acl})."
 
-#: foundations/fsapi.py:1066
+#: foundations/fsapi.py:1140
 msgid "Applyed default ACL {access_acl} on {path}."
 msgstr "L'ACL héritable {access_acl} a été appliqué sur {path}."
 
-#: foundations/fsapi.py:1076
+#: foundations/fsapi.py:1150
 msgid "fsapi.check_perms(): exception while setting a default ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1091
+#: foundations/fsapi.py:1170 foundations/fsapi.py:1182
 msgid "Exception while looking for an ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1100
+#: foundations/fsapi.py:1193
 msgid "An ACL is present on {path}, but it should not."
 msgstr "Un ACL est présent sur {path}, mais il ne devrait pas."
 
-#: foundations/fsapi.py:1118
-msgid "Deleted default ACL from {path}."
-msgstr "L'ACL «défault» a été effacé de {path}."
+#: foundations/fsapi.py:1211
+msgid "Deleted default ACL from {0}."
+msgstr "L'ACL « défault » a été effacé de {0}."
 
-#: foundations/fsapi.py:1131
-msgid "Deleted access ACL from {path}."
-msgstr "L'ACL d'accès a été effacé de {path}."
+#: foundations/fsapi.py:1224
+msgid "Deleted access ACL from {0}."
+msgstr "L'ACL d'accès a été effacé de {0}."
 
-#: foundations/fsapi.py:1135
+#: foundations/fsapi.py:1228
 msgid "Exception while deleting the posix.1e ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1147 foundations/fsapi.py:1207
+#: foundations/fsapi.py:1240 foundations/fsapi.py:1312
 msgid "Exception while trying to `lstat()` {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1153
+#: foundations/fsapi.py:1251
 msgid ""
-"Invalid POSIX permissions for {path} (it is {current_mode} but should be "
+"Invalid posix permissions for {path} (it is {current_mode} but should be "
 "{wanted_mode})."
 msgstr ""
-"Permissions POSIX invalides sur {path} (actuellement {current_mode}, mais "
+"Permissions posix invalides sur {path} (actuellement {current_mode}, mais "
 "devraient être {wanted_mode})."
 
-#: foundations/fsapi.py:1171
-msgid "Applyed POSIX permissions {wanted_mode} on {path}."
-msgstr "Les permissions POSIX {wanted_mode} ont été appliquées sur {path}."
+#: foundations/fsapi.py:1269
+msgid "Applyed posix permissions {wanted_mode} on {path}."
+msgstr "Les permissions posix {wanted_mode} ont été appliquées sur {path}."
 
-#: foundations/fsapi.py:1178
+#: foundations/fsapi.py:1276
 msgid "Exception while trying to change posix permissions on {0}."
 msgstr ""
 
-#: foundations/fsapi.py:1194
+#: foundations/fsapi.py:1299
 #, python-format
 msgid "Checking POSIX uid/gid/perms of %s."
 msgstr "Vérification des propriétaire/groupe/permissions POSIX de %s."
 
-#: foundations/fsapi.py:1240
+#: foundations/fsapi.py:1350
 msgid ""
 "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}. Correct "
 "it?"
@@ -6714,21 +6711,21 @@ msgstr ""
 "Propriétaire invalide sur {0}: actuellement {1}:{2} mais devrait être {3}:"
 "{4}. Le corriger ?"
 
-#: foundations/fsapi.py:1264
+#: foundations/fsapi.py:1374
 msgid "Changed owner of {0} to {1}:{2}."
 msgstr "Le propriétaire de {0} est maintenant {1}:{2}"
 
-#: foundations/fsapi.py:1276
+#: foundations/fsapi.py:1387
 msgid "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}."
 msgstr ""
 "Les permissions sur {0} sont invalides: actuellement {1}:{2}, mais devraient "
 "être {3}:{4}."
 
-#: foundations/fsapi.py:1293
+#: foundations/fsapi.py:1403
 msgid "Created symlink {link}, pointing to {orig}."
 msgstr "Le lien symbolique {link}, pointant vers {orig}, a été créé."
 
-#: foundations/fsapi.py:1306
+#: foundations/fsapi.py:1416
 msgid ""
 "A symlink {link} already exists, but points to {dest}, instead of {good}. "
 "Correct it?"
@@ -6736,17 +6733,17 @@ msgstr ""
 "Un lien symbolique {link} existe déjà, mais pointe vers {dest} au lieu de "
 "{good}. Dois-je le corriger ?"
 
-#: foundations/fsapi.py:1319
+#: foundations/fsapi.py:1429
 msgid "Overwritten symlink {link} with destination {good} instead of {dest}."
 msgstr ""
 "Le lien symbolique {link} a été écrasé avec la nouvelle destination {good} "
 "au lieu de {dest}."
 
-#: foundations/fsapi.py:1328
+#: foundations/fsapi.py:1438
 msgid "Cannot create symlink {0} to {1}!"
 msgstr "Impossible de créer le lien symbolique {0} vers {1}!"
 
-#: foundations/fsapi.py:1334
+#: foundations/fsapi.py:1444
 msgid ""
 "Symlink {link} is currently broken, pointing to non-existing target {dest}); "
 "making it point to {good}."
@@ -6754,12 +6751,12 @@ msgstr ""
 "Le lien symbolique {link} était cassé et pointait vers la destination "
 "inexistante {dest} ; il pointe maintenant vers {good}."
 
-#: foundations/fsapi.py:1350
+#: foundations/fsapi.py:1460
 #, python-format
 msgid "Repaired vanished symlink %s."
 msgstr "Le lien symbolique disparu %s a été recréé."
 
-#: foundations/fsapi.py:1353
+#: foundations/fsapi.py:1463
 msgid ""
 "{link} already exists but it is not a symlink, thus it does not point to "
 "{dest}. Rename and replace it with a correct symlink?"
@@ -6767,18 +6764,18 @@ msgstr ""
 "{link} existe déjà mais n'est pas un lien symbolique, il ne pointe donc pas "
 "vers {dest}. Renommer et remplacer par un lien symbolique valide ?"
 
-#: foundations/fsapi.py:1364
+#: foundations/fsapi.py:1474
 msgid "{0} ({1} conflict){2}"
 msgstr "{0} (conflit du {1}){2}"
 
-#: foundations/fsapi.py:1369
+#: foundations/fsapi.py:1479
 msgid ""
 "Renamed {link} to {newname} and replaced it by a symlink pointing to {dest}."
 msgstr ""
 "{link} a été renommé en {newname}, et remplacé par un lien symbolique "
 "pointant vers {dest}."
 
-#: foundations/fsapi.py:1378
+#: foundations/fsapi.py:1488
 msgid ""
 "While making symlink to {dest}, the destination {link} already exists and is "
 "not a link."
@@ -6786,35 +6783,35 @@ msgstr ""
 "Pendant la création d'un lien symbolique pointant vers {dest}, la "
 "destination {link} existe déjà et n'est pas un lien."
 
-#: foundations/fsapi.py:1396
+#: foundations/fsapi.py:1506
 #, python-format
 msgid "Cannot remove %s, it does not exist!"
 msgstr "Impossible de supprimer %s, il n'existe pas !"
 
-#: foundations/fsapi.py:1420
+#: foundations/fsapi.py:1530
 msgid "Archived {0} as {1}."
 msgstr "{0} a été archivé en tant que {1}."
 
-#: foundations/fsapi.py:1428
+#: foundations/fsapi.py:1538
 #, python-format
 msgid "Cannot archive %s, it does not exist!"
 msgstr "Impossible d'archiver %s, il n'existe pas !"
 
-#: foundations/fsapi.py:1548
+#: foundations/fsapi.py:1658
 msgid "Cloning ACLs is not yet implemented in fsapi.clone_stat(), sorry."
 msgstr ""
 
-#: foundations/fsapi.py:1566
+#: foundations/fsapi.py:1676
 msgid "Backed up {orig} as {backup}."
 msgstr "Le fichier {orig} a été sauvegardé en tant que {backup}."
 
-#: foundations/fsapi.py:1784
+#: foundations/fsapi.py:1894
 msgid "Remounted {0} to apply new mount options."
 msgstr ""
 "Le système de fichiers {0} a été remonté pour appliquer les nouvelles "
 "options de montage."
 
-#: foundations/fsapi.py:1834
+#: foundations/fsapi.py:1944
 msgid "Added option(s) {0} to {1} permanently."
 msgstr ""
 
@@ -7467,6 +7464,18 @@ msgstr ""
 "n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources "
 "propres (aucunes modifications locales). Sans ça, vos résultats de TS "
 "risquent fort de ne pas être fiables. "
+
+#~ msgid "{1}: {0} extension enabled. Please report bugs at {2}."
+#~ msgstr "{1} : extension {0} activée. Rapportez les bugs à {2}."
+
+#~ msgid "experimental"
+#~ msgstr "expérimental"
+
+#~ msgid "Checking {perm_type} of {path}."
+#~ msgstr "Vérification {perm_type} de {path}."
+
+#~ msgid "POSIX.1e ACL"
+#~ msgstr "de l'ACL POSIX.1e"
 
 #~ msgid "{0}: error while authenticating; will retry in one hour."
 #~ msgstr "{0} : erreur d'authentification, nouvel essai dans une heure."
