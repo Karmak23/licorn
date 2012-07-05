@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-05 15:32+0200\n"
+"POT-Creation-Date: 2012-07-05 15:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -229,7 +229,7 @@ msgstr ""
 #: extensions/caldavd.py:604 extensions/caldavd.py:636
 #: extensions/caldavd.py:663 extensions/volumes.py:441
 #: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:645
-#: core/configuration.py:995
+#: core/configuration.py:1013
 msgid "{0}: {1}"
 msgstr ""
 
@@ -1101,7 +1101,7 @@ msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
 #: daemon/rwi.py:734 daemon/rwi.py:819 daemon/rwi.py:832 core/groups.py:1813
-#: core/configuration.py:698
+#: core/configuration.py:716
 msgid "group"
 msgstr ""
 
@@ -4269,7 +4269,7 @@ msgstr ""
 msgid "— no membership —"
 msgstr ""
 
-#: core/users.py:1188 core/configuration.py:677
+#: core/users.py:1188 core/configuration.py:695
 msgid "user"
 msgstr ""
 
@@ -4972,38 +4972,42 @@ msgstr ""
 msgid "{0:s}: machine {1:s} wants us to restart (condition={2:s}, delay={3:s})"
 msgstr ""
 
-#: core/configuration.py:105
+#: core/configuration.py:93
 #, python-format
 msgid "Configuration initialization failed: %s"
 msgstr ""
 
-#: core/configuration.py:161
+#: core/configuration.py:122 core/configuration.py:124
+msgid "Configuration initialization failed"
+msgstr ""
+
+#: core/configuration.py:177
 #, python-format
 msgid ""
 "Temporary directory %s has vanished during run, or already been wiped by "
 "another process."
 msgstr ""
 
-#: core/configuration.py:279
+#: core/configuration.py:297
 msgid ""
 "Cannot create or change owner of {0}[/data]:\n"
 "\t{1}"
 msgstr ""
 
-#: core/configuration.py:332
+#: core/configuration.py:350
 msgid ""
 "You are running an unknown or unsupported non-LSB but POSIX Operating "
 "System. Please get in touch with {0} developpers, and consider submitting a "
 "patch to make your system officially supported."
 msgstr ""
 
-#: core/configuration.py:356
+#: core/configuration.py:374
 msgid ""
 "Your Ubuntu version \"{0}\" is no longer supported by {1} developpers nor "
 "Canonical. You should consider upgrading to a newer one."
 msgstr ""
 
-#: core/configuration.py:365
+#: core/configuration.py:383
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Ubuntu version "
 "\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Canonical "
@@ -5011,17 +5015,17 @@ msgid ""
 "consider upgrading to a newer version."
 msgstr ""
 
-#: core/configuration.py:376
+#: core/configuration.py:394
 msgid "This Ubuntu version \"{0}\" is not [yet] supported, sorry !"
 msgstr ""
 
-#: core/configuration.py:393
+#: core/configuration.py:411
 msgid ""
 "Your Debian version (\"{0}\") is no longer supported by {1} developpers nor "
 "Debian. You should consider upgrading to a newer one."
 msgstr ""
 
-#: core/configuration.py:402
+#: core/configuration.py:420
 msgid ""
 "Greetings old-timer :-) Does {0} still run on your aged Debian version "
 "\"{1}\"? Anyway it is no longer supported by {0} developpers. Even Debian "
@@ -5029,250 +5033,250 @@ msgid ""
 "upgrading to a newer version."
 msgstr ""
 
-#: core/configuration.py:413
+#: core/configuration.py:431
 msgid "This Debian version \"{0}\" is not [yet] supported, sorry !"
 msgstr ""
 
-#: core/configuration.py:418
+#: core/configuration.py:436
 msgid ""
 "Your LSB distro is not yet supported. This should be trivial to implement, "
 "but this is still to be done, sorry!"
 msgstr ""
 
-#: core/configuration.py:464
+#: core/configuration.py:482
 msgid "MTA not installed or unsupported."
 msgstr ""
 
-#: core/configuration.py:523
+#: core/configuration.py:541
 msgid ""
 "Mail{box,dir} system not supported yet. Please get in touch with dev@licorn."
 "org."
 msgstr ""
 
-#: core/configuration.py:564
+#: core/configuration.py:582
 msgid ""
 "Custom skels must have at least {0} perms on dirs and {1} on files:\n"
 "\t{2}"
 msgstr ""
 
-#: core/configuration.py:678
+#: core/configuration.py:696
 msgid "users"
 msgstr ""
 
-#: core/configuration.py:699
+#: core/configuration.py:717
 msgid "groups"
 msgstr ""
 
-#: core/configuration.py:772
+#: core/configuration.py:790
 msgid "In {0}, directive {1} should be at least {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:782
+#: core/configuration.py:800
 msgid "In {0}, directive {1} should be set to {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:793
+#: core/configuration.py:811
 msgid "In {0}, directive {1} is missing. Setting it to {2}."
 msgstr ""
 
-#: core/configuration.py:803
+#: core/configuration.py:821
 msgid "{0} lacks mandatory configuration directive(s)."
 msgstr ""
 
-#: core/configuration.py:811 core/configuration.py:910
+#: core/configuration.py:829 core/configuration.py:928
 msgid "Altered {0} to match Licorn® pre-requisites."
 msgstr ""
 
-#: core/configuration.py:816 core/configuration.py:916
+#: core/configuration.py:834 core/configuration.py:934
 #, python-format
 msgid ""
 "Insufficient permissions. Are you root?\n"
 "\t%s"
 msgstr ""
 
-#: core/configuration.py:820
+#: core/configuration.py:838
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly with other "
 "system tools (adduser/useradd). Cannot continue without this, sorry!"
 msgstr ""
 
-#: core/configuration.py:872
+#: core/configuration.py:890
 #, python-format
 msgid "%s does not exist on this system!"
 msgstr ""
 
-#: core/configuration.py:882
+#: core/configuration.py:900
 msgid "In {0}, directive {1} should be {2}, but it is {3}."
 msgstr ""
 
-#: core/configuration.py:893
+#: core/configuration.py:911
 msgid "In {0}, directive {1} is not present but should be, with value {2}."
 msgstr ""
 
-#: core/configuration.py:902
+#: core/configuration.py:920
 msgid "{0} should be altered to work with Licorn®. Fix it?"
 msgstr ""
 
-#: core/configuration.py:921
+#: core/configuration.py:939
 #, python-format
 msgid ""
 "Modifications in %s are mandatory for Licorn® to work properly. Cannot "
 "continue without this, sorry!"
 msgstr ""
 
-#: core/configuration.py:966
+#: core/configuration.py:984
 #, python-format
 msgid "Bad CLI output format \"%s\"!"
 msgstr ""
 
-#: core/configuration.py:970
+#: core/configuration.py:988
 msgid "Application name"
 msgstr ""
 
-#: core/configuration.py:971
+#: core/configuration.py:989
 msgid "Storage backends for Core objects"
 msgstr ""
 
-#: core/configuration.py:972
+#: core/configuration.py:990
 msgid "Application main configuration directory"
 msgstr ""
 
-#: core/configuration.py:973
+#: core/configuration.py:991
 msgid "Filename of extended group data"
 msgstr ""
 
-#: core/configuration.py:974
+#: core/configuration.py:992
 msgid "Application extensions (available add-ons)"
 msgstr ""
 
-#: core/configuration.py:975
+#: core/configuration.py:993
 msgid "This current help"
 msgstr ""
 
-#: core/configuration.py:976
+#: core/configuration.py:994
 msgid "Application main configuration filename"
 msgstr ""
 
-#: core/configuration.py:977
+#: core/configuration.py:995
 msgid "System groups tagged as privileges"
 msgstr ""
 
-#: core/configuration.py:978
+#: core/configuration.py:996
 msgid "System valid shells when creating a new user"
 msgstr ""
 
-#: core/configuration.py:979
+#: core/configuration.py:997
 msgid "System valid skels to apply on a user account"
 msgstr ""
 
-#: core/configuration.py:980
+#: core/configuration.py:998
 msgid "Mandatory system groups for {0}"
 msgstr ""
 
-#: core/configuration.py:986
+#: core/configuration.py:1004
 #, python-format
 msgid "Sorry, \"%s\" is not a recognized keyword."
 msgstr ""
 
-#: core/configuration.py:991
+#: core/configuration.py:1009
 msgid "Valid keywords for {0} (fuzzy matching):"
 msgstr ""
 
-#: core/configuration.py:1158
+#: core/configuration.py:1183
 msgid ""
 "New hostname must be composed only of letters, digits and hyphens, but not "
 "starting nor ending with an hyphen !"
 msgstr ""
 
-#: core/configuration.py:1170
+#: core/configuration.py:1195
 #, python-format
 msgid ""
 "Cannot modify /etc/hostname, verify the file is still clean:\n"
 "\t%s)"
 msgstr ""
 
-#: core/configuration.py:1271
+#: core/configuration.py:1296
 #, python-format
 msgid ""
 "Filesystem must be mounted with \"acl\" option:\n"
 "\t%s"
 msgstr ""
 
-#: core/configuration.py:1343
+#: core/configuration.py:1368
 #, python-format
 msgid "Checking existence of group %s…"
 msgstr ""
 
-#: core/configuration.py:1349
+#: core/configuration.py:1374
 #, python-format
 msgid ""
 "The system group %s is mandatory for the system to work properly, but it "
 "does not exist yet."
 msgstr ""
 
-#: core/configuration.py:1365
+#: core/configuration.py:1390
 msgid ""
 "The system group \"{0}\" is mandatory but does not exist on your system !\n"
 "Use \"chk config\" or \"add group --system --name {0}\" to fix the problem "
 "before continuing."
 msgstr ""
 
-#: core/configuration.py:1401
+#: core/configuration.py:1426
 msgid "/etc/hosts must have at least o+r permissions."
 msgstr ""
 
-#: core/configuration.py:1407
+#: core/configuration.py:1432
 msgid "Current hostname and /etc/hostname are not in sync!"
 msgstr ""
 
-#: core/configuration.py:1416
+#: core/configuration.py:1441
 msgid ""
 "Hostname {0} does not resolve to 127.0.0.1 but to {1}, please check /etc/"
 "hosts!"
 msgstr ""
 
-#: core/configuration.py:1427
+#: core/configuration.py:1452
 #, python-format
 msgid ""
 "127.0.0.1 does not resolve back to hostname %s, please check /etc/hosts and/"
 "or DNS !"
 msgstr ""
 
-#: core/configuration.py:1471
+#: core/configuration.py:1496
 msgid ""
 "Cannot resolve {0} ({1}), is the DNS server running on 127.0.0.1? Else check "
 "DNS files syntax !"
 msgstr ""
 
-#: core/configuration.py:1478
+#: core/configuration.py:1503
 msgid "127.0.0.1 *must* be in /etc/resolv.conf on a Licorn® server."
 msgstr ""
 
-#: core/configuration.py:1484
+#: core/configuration.py:1509
 msgid ""
 "Problem while resolving {0}, please check your configuration:\n"
 "\terrno {1}, {2}"
 msgstr ""
 
-#: core/configuration.py:1499
+#: core/configuration.py:1524
 msgid ""
 "127.0.0.1 *must* be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
 msgstr ""
 
-#: core/configuration.py:1504
+#: core/configuration.py:1529
 #, python-format
 msgid ""
 "DNS does not seem properly configured (%s does not resolve back to itself)."
 msgstr ""
 
-#: core/configuration.py:1509
+#: core/configuration.py:1534
 msgid ""
 "DNS is not properly configured ({0} does not resolve to {1}, but to {2})."
 msgstr ""
 
-#: core/configuration.py:1517
+#: core/configuration.py:1542
 msgid ""
 "127.0.0.1 should be the only nameserver in /etc/resolv.conf on a Licorn® "
 "server."
