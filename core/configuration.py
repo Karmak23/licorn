@@ -59,6 +59,9 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# this lock is used only by inotifier for now.
 		self.lock = RLock()
 
+		# collect events now, we need them to finish the load.
+		events.collect(self)
+
 		self.mta = None
 
 		# THIS install_path is used in keywords / keywords gui, not elsewhere.
@@ -83,8 +86,24 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			self.FindUserDir()
 
-			LicornEvent('configuration_loads', configuration=self, synchronous=True).emit()
+			LicornEvent('configuration_loads', configuration=self,
+							minimal=minimal, synchronous=True).emit()
 
+		except exceptions.LicornException, e:
+			raise exceptions.BadConfigurationError(_(u'Configuration '
+										u'initialization failed: %s') % e)
+
+		LicornConfiguration.init_ok = True
+		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
+	def import_settings(self):
+		self.settings = settings
+
+	@events.callback_method
+	def configuration_loads(self, *args, **kwargs):
+
+		minimal = kwargs.pop('minimal', False)
+
+		try:
 			if not minimal:
 				self.load1(batch=batch)
 
@@ -99,18 +118,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if not minimal:
 				self.load3(batch=batch)
 
-			LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
-
 		except exceptions.LicornException, e:
+			logging.exception(_(u'Configuration initialization failed'))
+
 			raise exceptions.BadConfigurationError(_(u'Configuration '
-										u'initialization failed: %s') % e)
+													u'initialization failed'))
 
-		events.collect(self)
+		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
 
-		LicornConfiguration.init_ok = True
-		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
-	def import_settings(self):
-		self.settings = settings
+
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
@@ -205,8 +221,10 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			pass
 
 		else:
-			if w:
-				logging.warning2(w.replace('\n', '\n\t'))
+			if w and os.geteuid() == 0:
+				# remove the last '\n', and add \t to the
+				# others for pretty printing.
+				logging.warning2(w[:-1].replace('\n', '\n\t'))
 				dmidecode.clear_warnings()
 
 		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
@@ -1110,25 +1128,32 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
 
-			if aname in ('app_name', 'distro_version'):
+			if aname in ('app_name', 'distro_version', 'system_uuid'):
 				data += "%s\n" % stylize(ST_ATTRVALUE, attr)
+
 			elif aname is 'mta':
 				data += "%s\n" % stylize(ST_ATTRVALUE, servers[attr])
+
 			elif aname is 'distro':
-				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
+				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
+
 			elif aname.endswith('_dir') or aname.endswith('_file') \
 				or aname.endswith('_path') :
 				data += "%s\n" % stylize(ST_PATH, attr)
+
 			elif type(attr) == type(LicornConfigObject()):
 				data += "\n%s" % str(attr)
+
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
+
 			elif issubclass(attr.__class__, CoreModule):
 				data += "\n%s" % str(attr)
+
 			else:
 				data += ('%s, to be implemented in '
 					'licorn.core.configuration.Export()\n') % \
