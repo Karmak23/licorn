@@ -32,6 +32,7 @@ from ltrace    import *
 from ltraces   import *
 from styles    import *
 
+# circumvent the `import *` local namespace duplication limitation.
 stylize = styles.stylize
 
 from licorn.core import LMC
