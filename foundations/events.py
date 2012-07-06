@@ -3,7 +3,7 @@
 Licorn® foundations - events
 
 :copyright:
-	* 2010-2012 Olivier Cortès <olive@deep-ocean.net>
+	* 2010-2012 Olivier Cortès <olive@licorn.org>
 	* 2012 META IT - Olivier Cortès <oc@meta-it.fr>
 :license: GNU GPL version 2
 """
@@ -98,17 +98,8 @@ class RoundRobinEventLooper(LicornBasicThread):
 		if event is None:
 			return
 
-		if events_collectors != []:
-			workers.service_enqueue(priorities.HIGH,
-								self.push_event_to_collectors_thread, event)
-
-		if event.synchronous:
-			# stop the current processing by running the event methods here and now.
-			self.run_event(event)
-
-		else:
-			# process the event asynchronously in a service thread.
-			workers.service_enqueue(priority, self.run_event, event)
+		# process the event asynchronously in a service thread.
+		workers.service_enqueue(priority, self.run_event, event)
 	def run_methods(self, event, method_type_container, method_type):
 		try:
 			methods = method_type_container[event.name]
@@ -147,6 +138,10 @@ class RoundRobinEventLooper(LicornBasicThread):
 		"""
 
 		assert ltrace_func(TRACE_EVENTS)
+
+		if events_collectors != []:
+			workers.service_enqueue(priorities.HIGH,
+								self.push_event_to_collectors_thread, event)
 
 		logging.monitor(TRACE_EVENTS, TRACELEVEL_1, _('Processing event {0}'),
 														(ST_NAME, event.name))
@@ -190,12 +185,22 @@ class LicornEvent(NamedObject):
 	def emit(self, priority=None, delay=None):
 
 		if delay:
+			if self.synchronous:
+				raise exceptions.LicornRuntimeError(_(u'A synchronous event '
+						u'cannot be delayed! (on %s)').format(self.name))
+
 			t = Timer(delay, events_queue.put, args=((priority
 												or priorities.NORMAL, self), ))
 			t.start()
 
 		else:
-			events_queue.put((priority or priorities.NORMAL, self))
+			if self.synchronous:
+				# access the event manager to run the event *NOW*.
+				# The current method will return only when handlers
+				# and callbacks have been processed.
+				looper_thread.run_event(self)
+			else:
+				events_queue.put((priority or priorities.NORMAL, self))
 LicornEventType = type(LicornEvent('dummy_event'))
 
 def callback_function(func):
