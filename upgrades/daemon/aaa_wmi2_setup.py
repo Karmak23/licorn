@@ -12,20 +12,16 @@
 
 :license: GNU GPL version 2
 """
-import sys, os, glob, stat
+import sys, os, glob
 
 from apt_pkg   import version_compare
-from threading import current_thread
 
-from licorn.foundations           import logging, settings, process, packaging, fsapi, events, network
+from licorn.foundations           import logging, settings, process
+from licorn.foundations           import packaging, fsapi, events, network
 from licorn.foundations.styles    import *
 from licorn.foundations.constants import distros
 
 from licorn.core import LMC
-
-pip_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-pip'])
-# This one is for explanation purposes only, when on an unknown distro.
-pip_packages.setdefault(distros.UNKNOWN, 'PIP')
 
 ssl_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-openssl'])
 # This one is for explanation purposes only, when on an unknown distro.
@@ -46,9 +42,7 @@ django_packages = dict.fromkeys((distros.UBUNTU, distros.DEBIAN), ['python-djang
 # Do not modify it unless PIP package name changes.
 django_packages.setdefault(distros.UNKNOWN, 'Django')
 
-def check_and_install_pip():
-	if not os.path.exists('/usr/bin/pip'):
-		packaging.install_packages(pip_packages)
+
 def check_and_install_openssl():
 
 	if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
@@ -84,7 +78,7 @@ def check_and_install_django():
 		) or (LMC.configuration.distro == distros.DEBIAN
 			and version_compare(LMC.configuration.distro_version, '7.0') >= 0):
 
-		dj = glob.glob('/usr/share/pyshared/django')
+		dj = glob.glob('/usr/share/pyshared/django*')
 
 		if dj == []:
 			packaging.install_packages(django_packages)
@@ -135,36 +129,6 @@ def check_and_install_djinja():
 
 	if dj == []:
 		packaging.pip_install_packages(['Djinja'])
-def check_pip_perms():
-	""" Fix a PIP bug we don't notice if we are root. But normal developpers
-		could face it.
-
-		We've spotted this bug only on Ubuntu. But we didn't test other
-		distros. If you see it, just add more conditions in this 'if'.
-
-	"""
-
-	if LMC.configuration.distro in (distros.UBUNTU, distros.DEBIAN):
-		for python_path in glob.glob('/usr/local/lib/python*/dist-packages'):
-			logging.progress(_(u'Fixing permissions in {0}, this may take '
-							u'a while…').format(stylize(ST_PATH, python_path)))
-
-			# This is the Licorn® way of running these shell commands,
-			# but we do it in ONE pass without forking anything :-)
-			#
-			#	sudo find /usr/local/lib -print0 | sudo xargs -0 -n 1024 chown root:root
-			#	sudo find /usr/local/lib -type d -print0 | sudo xargs -0 -n 1024 chmod 755
-			#	sudo find /usr/local/lib -type f -print0 | sudo xargs -0 -n 1024 chmod 644
-			for uyp in fsapi.check_dirs_and_contents_perms_and_acls_new([
-								fsapi.FsapiObject(name='python_path',
-									path=python_path, uid=0, gid=0,
-									root_dir_perm=00755, dirs_perm=00755,
-									files_perm=00644)
-							], batch=True, full_display=False):
-				# TODO: we could count modified entries and display a nice
-				# information message. Left to contributors, we don't have
-				# enough time.
-				pass
 def check_django_wmi_database():
 	""" Check the first installation of the Django session database for the
 		WMI. If it doesn't exist, create it and sync it, for the WMI2 to work
@@ -264,13 +228,18 @@ def wmi_starts(*args, **kwargs):
 		.. versionadded:: 1.3
 	"""
 
-	check_and_install_pip()
+	from licorn.upgrades import common
+
+	common.check_and_install_pip()
+
 	check_and_install_openssl()
 	check_and_install_twisted()
 	check_and_install_django()
 	check_and_install_jinja2()
 	check_and_install_djinja()
-	check_pip_perms()
+
+	common.check_pip_perms()
+
 	check_django_wmi_database()
 	check_ssl_certificate()
 
