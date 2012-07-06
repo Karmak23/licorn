@@ -120,6 +120,10 @@ class ModulesManager(LockedController):
 				# class name is a convention, guessed from the file / dir name.
 				class_name  = module_name.title() + self.module_type.title()
 
+				LicornEvent('%s_%s_imports' % (
+									self.module_type, module_name),
+							synchronous=True).emit()
+
 				try:
 					python_module = __import__(self.module_sym_path
 												+ '.' + module_name,
@@ -195,12 +199,14 @@ class ModulesManager(LockedController):
 		gather_modules_and_dependancies()
 
 		assert ltrace(self._trace_name, 'resolved dependancies module order: %s.' %
-				', '.join(pyutils.resolve_dependancies_from_dict_strings(modules_dependancies)))
+				', '.join(pyutils.resolve_dependancies_from_dict_strings(
+														modules_dependancies)))
 
 		changed = False
 		depended_disabled_modules = []
 
-		for module_name in pyutils.resolve_dependancies_from_dict_strings(modules_dependancies):
+		for module_name in pyutils.resolve_dependancies_from_dict_strings(
+														modules_dependancies):
 
 			if module_name in depended_disabled_modules:
 				logging.warning(_(u'{0}: will not try to load {1} {2} because '
