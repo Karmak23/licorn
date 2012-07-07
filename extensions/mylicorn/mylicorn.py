@@ -25,7 +25,7 @@ from licorn.foundations.constants import services, svccmds, distros, priorities
 
 from licorn.daemon.threads        import LicornJobThread
 
-from licorn.core                  import LMC
+from licorn.core                  import LMC, version
 from licorn.extensions            import LicornExtension
 
 # local imports; get the constants in here for easy typing/using.
@@ -355,8 +355,15 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.service = jsonrpc.ServiceProxy(self.my_licorn_uri)
 
+		try:
+			system_start_time = time.time() - float(open('/proc/uptime').read().split(" ")[0])
+		except:
+			system_start_time = None
+
 		res = self.__remote_call(self.service.authenticate,
-									LMC.configuration.system_uuid, self.api_key)
+									LMC.configuration.system_uuid, self.api_key,
+									system_start_time, self.licornd.dstart_time,
+									version)
 
 		code = res['result']
 
