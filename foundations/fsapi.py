@@ -1016,7 +1016,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 			logging.exception(_(u'Exception while getting the posix.1e ACL '
 												u'of {0}'), (ST_PATH, path))
 
-			if e.errno == errno.errno.EOPNOTSUPP:
+			if e.errno == errno.EOPNOTSUPP:
 				acls_supported = False
 
 			if e.errno == errno.ENOENT:
@@ -1170,7 +1170,7 @@ def check_perms(dir_info, file_type=None, is_root_dir=False,
 		except (IOError, OSError), e:
 			logging.exception(_(u'Exception while looking for an ACL on {0}'), pretty_path)
 
-			if e.errno == errno.errno.EOPNOTSUPP:
+			if e.errno == errno.EOPNOTSUPP:
 				acls_supported = False
 
 			if e.errno == errno.ENOENT:
