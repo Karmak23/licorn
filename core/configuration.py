@@ -52,7 +52,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		LicornEvent('configuration_initialises', configuration=self, synchronous=True).emit()
+		LicornEvent('configuration_initialises', configuration=self,
+													synchronous=True).emit()
 
 		self.app_name = 'Licorn®'
 
@@ -89,21 +90,6 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			LicornEvent('configuration_loads', configuration=self,
 							minimal=minimal, synchronous=True).emit()
 
-		except exceptions.LicornException, e:
-			raise exceptions.BadConfigurationError(_(u'Configuration '
-										u'initialization failed: %s') % e)
-
-		LicornConfiguration.init_ok = True
-		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
-	def import_settings(self):
-		self.settings = settings
-
-	@events.callback_method
-	def configuration_loads(self, *args, **kwargs):
-
-		minimal = kwargs.pop('minimal', False)
-
-		try:
 			if not minimal:
 				self.load1(batch=batch)
 
@@ -119,12 +105,15 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 				self.load3(batch=batch)
 
 		except exceptions.LicornException, e:
-			logging.exception(_(u'Configuration initialization failed'))
-
 			raise exceptions.BadConfigurationError(_(u'Configuration '
-													u'initialization failed'))
+										u'initialization failed: %s') % e)
 
 		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
+
+		LicornConfiguration.init_ok = True
+		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
+	def import_settings(self):
+		self.settings = settings
 
 	def load(self, batch=False):
 		""" just a compatibility method. """

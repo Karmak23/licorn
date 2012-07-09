@@ -12,6 +12,15 @@ bootstrap - the very base.
 
 import sys, os, codecs, inspect, traceback
 
+try:
+	# avoid nasty and totally useless warnings (fixes #810)
+	# This is needed only on Ubuntu 10.10 (and perhaps other
+	# "old" distros I haven't tested yet.
+	import pkg_resources
+
+except:
+	pass
+
 def getcwd():
 	""" We can't rely on `os.getcwd()`: it will resolve the CWD if it is a
 	symlink. We don't always want that. For example in developer
@@ -202,7 +211,12 @@ def check_python_modules_dependancies():
 def bootstrap():
 	setup_utf8()
 	setup_gettext()
-	check_python_modules_dependancies()
+
+	if os.geteuid() == 0:
+		# test dependancies only if root. normal users in CLI
+		# commands don't need that bunch of imports, they should
+		# already be there when root (or equiv) installed Licorn®.
+		check_python_modules_dependancies()
 
 	# not needed in normal conditions.
 	#setup_sys_path()

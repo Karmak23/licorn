@@ -8,7 +8,7 @@ Copyright (C) 2005-2010 Olivier Cortès <olive@deep-ocean.net>
 Licensed under the terms of the GNU GPL version 2.
 """
 
-import sys, Pyro.errors, traceback
+import sys, os, signal, Pyro.errors, traceback
 
 from threading import current_thread
 from types     import *
@@ -73,7 +73,7 @@ def send_to_listener(message, verbose_level=verbose.QUIET):
 			return listener.process(message,
 					options.msgproc.getProxy())
 def error(mesg, returncode=1, full=False, tb=None):
-	""" Display a stylized error message and exit badly.	"""
+	""" Display a stylized error message and exit. """
 
 	text_message = '%s %s %s\n' % (stylize(ST_BAD, 'ERROR:'), ltrace_time(), mesg)
 
@@ -94,6 +94,33 @@ def error(mesg, returncode=1, full=False, tb=None):
 	monitor(TRACE_LOGGING, TRACELEVEL_1, 'ERR{0}', mesg)
 
 	sys.exit(returncode)
+def die(mesg, full=False, tb=None):
+	""" Display a stylized error message and kill the current process.
+		This is needed because in event handlers the daemon cannot be halted
+		properly with :func:`sys.exit` or a :class`SystemExit` exception
+		because the origin is not the ``MainThread``. """
+
+	text_message = '%s %s %s; %s\n' % (stylize(ST_BAD, 'DIE:'), ltrace_time(),
+		mesg, stylize(ST_BAD, _('Killing ourselves with KILL signal!')))
+
+	with output_lock:
+		if full:
+			if tb:
+				sys.stderr.write(tb + '\n')
+
+			else:
+				import traceback
+				sys.stderr.write ('''>>> %s:
+			''' 	% (stylize(ST_OK, "Call trace")))
+				traceback.print_tb( sys.exc_info()[2] )
+				sys.stderr.write("\n")
+
+		sys.stderr.write(text_message)
+		#sys.stderr.flush()
+
+	monitor(TRACE_LOGGING, TRACELEVEL_1, 'ERR{0}', mesg)
+
+	os.kill(os.getpid(), signal.SIGKILL)
 def warning(mesg, once=False, to_listener=True, to_local=True):
 	"""Display a stylized warning message on stderr."""
 

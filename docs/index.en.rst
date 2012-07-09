@@ -38,11 +38,9 @@
 Licorn® Documentation
 =====================
 
-.. warning:: The Licorn® documentation website is undergoing a big refresh to include upcoming functionnalities from version 1.3. Until then the site contents are going to change a lot, and possibly be broken at some point. Check `the developer's blog <http://dev.licorn.org/blog/>`_ to know when it's done!
-
 Licorn® is a set of concise programs aimed at GNU/Linux and Un*x system administrators. They help them deal with daily system-management tasks (managing users, groups, calendars, printers, backups, shares, and so on) in the most efficient manner possible.
 
-It is designed by long-standing GNU/Linux and \*BSD admins, and agile-implemented with the `Python <http://www.python.org/>`_ programming language, with flexibility and extensibility in mind.
+It is designed by long-standing GNU/Linux and \*BSD admins, and agile-implemented with the `Python <http://www.python.org/>`_ programming language, with flexibility and extensibility in mind. “Less-intrusive” is also part of the main concepts.
 
 As a beginning, I suggest you read the :ref:`installation process <install.en>`, then you'll be ready to :ref:`dive into the quickstarter <quickstart.en>` and enjoy the mystic-horse-powers of our beloved creation. Fasten your keyboard.
 

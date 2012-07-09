@@ -4,7 +4,7 @@
 .. highlight:: bash
 
 ==================================
-Quickstarter: Licorn® in 3 minutes
+Quickstarter: Licorn® in 3 minutes
 ==================================
 
 Licorn® is easy to use, you will usually not spend much time on it. This is what I expect from good software: **efficiency** (and sex appeal, but it's software, huh?). Licorn® is all about efficiency for the system manager.
@@ -21,7 +21,7 @@ CLI Quickstarter
 To be allowed to use Licorn® CLI tools you must be a members of ``admins`` group. if it's not already done::
 
 	sudo add user `whoami` admins
-	
+
 Creating 3 users and putting them together in a work group just created::
 
 	add user john --gecos "John Doe"

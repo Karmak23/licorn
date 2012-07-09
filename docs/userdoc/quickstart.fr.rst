@@ -3,15 +3,15 @@
 
 .. highlight:: bash
 
-===================================
-Prise en main: Licorn® en 3 minutes
-===================================
+====================================
+Prise en main : Licorn® en 3 minutes
+====================================
 
 Licorn® est très facile à utiliser, la plupart du temps on ne passe pas beaucoup de temps dessus. C'est la rançon d'un logiciel efficace, pas vrai ? On ne perd du temps qu'avec les logiciels mals conçus ou lorsqu'on les utilise en dehors de leur champ d'application.
 
-Vous pouvez démarrer avec la prise en main des outils :abbr:`CLI Command Line Interface` (Interface en ligne de commande), qui sont mes outils préférés car ils sont très conçis et essaient de deviner un maximum ce que vous voulez leur dire.
+Vous pouvez démarrer avec la prise en main des outils :abbr:`CLI (Command Line Interface)` (Interface en ligne de commande), qui sont mes outils préférés car ils sont très conçis et essaient de deviner un maximum ce que vous voulez leur dire.
 
-La :abbr:`WMI Web Management Interface` (Interface de Gestion par le Web) est parfaite pour les gens normaux: elle offre moins de fonctionnalité mais elle est totalement blindée (aucun accès root ou équivalent, impossible de casser le système avec) it has less functionnalities and is totally fool-proof (no root acces). Some say it's a nice piece of modern web interface.
+La :abbr:`WMI (Web Management Interface)` (Interface de Gestion par le Web) est parfaite pour les gens normaux: elle offre moins de fonctionnalité mais elle est totalement blindée (aucun accès root ou équivalent, impossible de casser le système avec). C'est une webapp moderne dont le contenu change en réponse immédiate aux modifications du système : il est inutile de « recharger la page » !
 
 .. _quickstart.cli.fr:
 

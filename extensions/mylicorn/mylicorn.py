@@ -21,11 +21,11 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.threads   import Event
 
 from licorn.foundations.base      import ObjectSingleton
-from licorn.foundations.constants import services, svccmds, distros, priorities
+from licorn.foundations.constants import services, svccmds, distros, host_types, priorities
 
 from licorn.daemon.threads        import LicornJobThread
 
-from licorn.core                  import LMC
+from licorn.core                  import LMC, version
 from licorn.extensions            import LicornExtension
 
 # local imports; get the constants in here for easy typing/using.
@@ -355,8 +355,32 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		self.service = jsonrpc.ServiceProxy(self.my_licorn_uri)
 
+		try:
+			system_start_time = time.time() - float(open('/proc/uptime').read().split(" ")[0])
+
+		except:
+			system_start_time = None
+
+		try:
+			os_version = open('/proc/version_signature').read().strip()
+
+		except:
+			os_version = '<undetermined>'
+
+		# NOTE: the arguments must match the ones from the
+		# My.Licorn.org `authenticate()` JSON-RPC method.
 		res = self.__remote_call(self.service.authenticate,
-									LMC.configuration.system_uuid, self.api_key)
+									LMC.configuration.system_uuid,
+									self.api_key,
+									system_start_time,
+									self.licornd.dstart_time,
+									version,
+									# TODO: do not hardcode this.
+									host_types.LINUX,
+									os_version,
+									LMC.configuration.distro,
+									LMC.configuration.distro_version,
+									LMC.configuration.distro_codename)
 
 		code = res['result']
 
