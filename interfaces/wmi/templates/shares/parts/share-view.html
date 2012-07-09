@@ -34,7 +34,6 @@
 		{%- endif -%}
 	{%- endif -%}
 	</td>
-	<!-- experimental -->
 	<td class="centered">
 		<form class="ajax-form" method="GET"
 			action="{# {{ url_for('wmi.shares.views.password', args=(share.name, )) }} #}"
@@ -58,7 +57,7 @@
 							<span id="check_pwds"></span>
 							<span id='save_password_{{ share.shid }}'>SAVE</span>
 							<!--<img id='save_password_{{ share.shid }}' src='/media/images/24x24/ajouter.png' alt='{{ _("Save the password for this share") }}'>-->
-						
+
 						</td>
 					</tr>
 					<tr>
@@ -103,7 +102,7 @@
 						// save click
 						popover_div.find('#save_password_{{ share.shid }}').click(function() {
 							pwd = popover_div.find(':input:first').val()
-							// save the password 
+							// save the password
 							$.get('/shares/{{ share.name }}/password/'+$.URLEncode(pwd), function() {
 								//reset password inputs
 								popover_div.find(':input').value = '';
@@ -113,7 +112,7 @@
 						});
 					}
 				}
-			
+
 				// init the password popover for this share
 				$('#popbutton_{{ share.shid }}').popover({
 					title : "{{ _('Protect this share') }}",
@@ -122,14 +121,14 @@
 					position: 'right',
 					hideOnHTMLClick: false,
 					closeEvent: popover_{{ share.shid }}_on_close,
-					openEvent: popover_{{ share.shid }}_on_open,		
+					openEvent: popover_{{ share.shid }}_on_open,
 				});
 
 
 
 				// bind our wrapper to the checkbox
-				$('#id_checkbox_{{ share.shid }}').change(function(event) {	
-					          	
+				$('#id_checkbox_{{ share.shid }}').change(function(event) {
+
 					if ($(this).is(':checked')) {
 						$('#popbutton_{{ share.shid }}').popover('show')
 					}
@@ -148,6 +147,7 @@
 			});
 		</script>
 	</td>
+	<!-- not yet
 	<td class="centered">
 		{%- if share.expired -%}
 
@@ -160,5 +160,6 @@
 
 		{%- endif -%}
 	</td>
+	-->
 </tr>
 
