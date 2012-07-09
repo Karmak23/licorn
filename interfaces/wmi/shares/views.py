@@ -36,8 +36,9 @@ from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import *
 
 
-from django.template.loader         import render_to_string
+from django.template.loader                import render_to_string
 
+from forms                                 import AskSharePasswordForm
 import wmi_data
 
 def return_for_request(request):
@@ -81,8 +82,6 @@ def accepts_uploads(request, shname, **kwargs):
 	login = request.user.username
 	share = LMC.users.by_login(login).find_share(shname)
 
-
-	
 	return HttpResponse(str(share.accepts_uploads))
 
 @login_required
@@ -134,8 +133,6 @@ def serve(request, login, shname):
 	user = LMC.users.by_login(login)
 	sh = user.find_share(shname)
 
-	print "serve"
-
 	if 'can_access_share_{0}'.format(shname) not in request.session:
 		request.session['can_access_share_{0}'.format(shname)] = False
 	
@@ -143,22 +140,24 @@ def serve(request, login, shname):
 	_d = wmi_data.base_data_dict(request)
 	_d.update({'share': sh })
 	
-
-
-
 	# if it is a POST Resquest, the user is sending the share password
 	if request.method == 'POST':
 
-		print "POST"
-		if sh.check_password(request.POST['share_password']) and \
-			not request.session['can_access_share_{0}'.format(shname)]:
+		form = AskSharePasswordForm(request.POST, share=sh)
+		if form.is_valid():
+			if sh.check_password(request.POST['password']) and \
+				not request.session['can_access_share_{0}'.format(shname)]:
 
-			request.session['can_access_share_{0}'.format(shname)] = True
+				request.session['can_access_share_{0}'.format(shname)] = True
 
-		# render the same page again :
-		# 	- in case of correct password, the user will see the regular page,
-		#	- else, the user will see the same password page
-		return HttpResponseRedirect(request.path)
+				return HttpResponseRedirect(request.path)
+		else:
+			# render the form again
+			return render(request, 'shares/parts/ask_password.html', {
+						'form' : form,
+						'shname' : sh.name
+					})
+		
 
 
 	# this is now a GET Request
@@ -179,12 +178,16 @@ def serve(request, login, shname):
 			if share.accepts_uploads:
 				if not request.session['can_access_share_{0}'.format(shname)]:
 					return render(request, 'shares/parts/ask_password.html', {
-						'share' : share,
-						'core_obj' : login
+						'form' : AskSharePasswordForm(share=share),
+						'shname' : share.name
 					})
 
 			# finally, if everything is OK, render the regular view	
-			return render(request, 'shares/serve-share.html',_d)
+			_d.update({ 
+				'number_of_uploaded_files' : share.contents()['uploads'],
+				'file_size_max' : 10240000  
+			})
+			return render(request, 'shares/serve-share.html', _d)
 
 	return HttpResponseNotFound(_('No Web share at this URI, sorry.'))
 def download(request, login, shname, filename):
@@ -227,12 +230,8 @@ def upload(request, login, shname, filename):
 		# make sure the public user can upload in this share
 		if request.session['can_access_share_{0}'.format(shname)]:
 
-			print "upload in ", share.path
 			if request.method == 'POST':
-				crash()
-				print "POST"
 				csv_file = request.FILES['file']
-				print csv_file
 
 				destination = open(os.path.join(share.uploads_directory, str(csv_file)), 'wb+')
 				t = ''
@@ -240,8 +239,11 @@ def upload(request, login, shname, filename):
 					destination.write(chunk)
 					t += chunk
 				destination.close()
-				#lprint(destination)
-				return HttpResponse(csv_file)
+
+				return HttpResponse(render_to_string(
+					'shares/parts/number_of_uploaded_file.html', {
+						'number_of_uploaded_files' : share.contents()['uploads']
+					}))
 
 		else: 
 			return HttpResponseForbidden('The password is not correct')

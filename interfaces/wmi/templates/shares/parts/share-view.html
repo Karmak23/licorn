@@ -42,13 +42,12 @@
 			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
 			<div id="popbutton_{{ share.shid }}">
 				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }}/>
-
 				<!--{{ icheckbox(share.shid, share.accepts_uploads) }}-->
-				
 			</div>
 		</form>
 		<div class="share_popover_password hidden" id="password_info_{{ share.shid }}">
 			<div class="centered smaller" style="width: 300px;">
+				<input type="hidden" id="share_id" value="{{ share.shid }}" name="{{ share.name }}">
 				<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
 				<hr />
 				<table class="vertical-space-small">
@@ -85,26 +84,25 @@
 					"off_text" : "{{ _('No') }}",
 				})
 
+
+				/************ POPOVER ************/
+
 				function popover_{{ share.shid }}_on_close(popover_div) {
-					// on close we need to be sure if a password has been set or not
-					console.log('onclose {{ share.name }}')
-					
+					// check if the checkbox state is ok
 				}
 
+
+
 				function popover_{{ share.shid }}_on_open(popover_div) {
-					console.log("onopen {{ share.name }}")
-					
 					if (! popover_div.hasClass('event_set')) {
 						popover_div.addClass('event_set')
 
 						// check password strength
 						password_helpers(popover_div)
 
-						// save the password if necessary
+						// save click
 						popover_div.find('#save_password_{{ share.shid }}').click(function() {
-							console.log('save pass')
 							pwd = popover_div.find(':input:first').val()
-							console.log("save pwd : ", pwd)
 							// save the password 
 							$.get('/shares/{{ share.name }}/password/'+$.URLEncode(pwd), function() {
 								//reset password inputs
@@ -124,13 +122,12 @@
 					position: 'right',
 					hideOnHTMLClick: false,
 					closeEvent: popover_{{ share.shid }}_on_close,
-					openEvent: popover_{{ share.shid }}_on_open,
-					//closeEvent: pop_{{ share.shid }}_chec				
+					openEvent: popover_{{ share.shid }}_on_open,		
 				});
 
 
 
-
+				// bind our wrapper to the checkbox
 				$('#id_checkbox_{{ share.shid }}').change(function(event) {	
 					          	
 					if ($(this).is(':checked')) {
@@ -148,36 +145,6 @@
 						})
 					}
 				})
-
-
-				// link it to the 'iphone checkbox'
-				/*$('#popbutton_{{ share.shid }}').click(function(event) {
-					
-								
-
-
-					//manually propagate the event to the checkbox
-					$('#id_checkbox_{{ share.shid }}').trigger('click')					
-
-					if ($('#id_checkbox_{{ share.shid }}').is(':checked')) {
-						$('#popbutton_{{ share.shid }}').popover('show')
-					}	
-					else {
-						$('#popbutton_{{ share.shid }}').popover('hide')
-						$.get('/share/{{ share.name }}/accepts_uploads/', function(data) {
-							if (data == 'True') {
-								$.get('/share/{{ share.name }}/password/')
-							}
-						})
-					}
-
-				});*/
-
-				
-				
-
-			
-
 			});
 		</script>
 	</td>
@@ -193,6 +160,5 @@
 
 		{%- endif -%}
 	</td>
-	<!-- -->
 </tr>
 

@@ -1,0 +1,24 @@
+.jquery_checkbox {
+	display:block;
+	width:60px;
+	height:20px;
+}
+
+.jquery_checkbox_on {
+	margin-left:10px;
+	color: white;
+}
+
+.jquery_checkbox_off {
+	margin-left:0;
+}
+
+.jquery_checkbox_text {
+	font-size:14px;
+	font-weight: bolder;
+	line-height:20px;
+	vertical-align:center;
+	-webkit-user-select: none; // webkit (safari, chrome) browsers
+    -moz-user-select: none; // mozilla browsers
+    -khtml-user-select: none; // webkit (konqueror) browsers
+}

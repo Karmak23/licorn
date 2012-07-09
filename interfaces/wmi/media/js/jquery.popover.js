@@ -163,11 +163,16 @@
 						if ("ontouchstart" in document.documentElement)
 							hideEvent = 'touchstart.popover';
 						$('html').unbind(hideEvent).bind(hideEvent, function(event) {
-							$('html').popover('fadeOutAll');
+							
 
-							if ($.isFunction(data.options.closeEvent)) {
-								data.options.closeEvent();
-							}
+							if ($.isFunction(data.options.closeEventHtmlClick)) {
+									console.log('closeEventHtmlClick')
+									data.options.closeEventHtmlClick(data.popover);
+								}
+								else {
+									$('html').popover('fadeOutAll');
+								}
+							
 						});
 
 

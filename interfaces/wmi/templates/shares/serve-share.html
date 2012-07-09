@@ -4,8 +4,6 @@
 {%- extends 'base.bootstrap.html' -%}
 {%- block base_media %}
 	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
-	<script type="text/javascript" src="/media/js/bootstrap.modal.js"></script>
-    <link rel="stylesheet" type="text/css" href="/media/css/jquery.upload_dnd.css" />
 {%- endblock %}
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
@@ -31,39 +29,23 @@
 
 	{%- if share.accepts_uploads -%}
 
-		<div class="span6 offset2 hero-unit">
+		<div class="span7 offset2 hero-unit">
 			<h2>{{ _('Upload documents') }}</h2>
 			<div class='row'>
-					
-				<div class='span4' id="upload_recap">
+				
+				<div class='span5' id="upload_recap">
 					&nbsp;
 				</div>
 				<div class='span2'>
 					{% csrf_token %}
 					<div id='file_upload'>
-						
-						
 					</div>
 				</div>
 			</div>
-
-			<!--<div class='row'>
-				<div id='upload_recap' class='span4'>
-					&nbsp;
-				</div>
-				<div class="span2">
-						{% csrf_token %}
-						<div id='output'>
-							{{ _('Upload a document &raquo;')}}
-						</div>				
-				</div>
-			</div>	-->	
 			<p>
-				{%- if contents_numbers.uploads -%}
-					{{ _('Contains {0} uploaded documents').format(contents_numbers.uploads) }}
-				{%- else -%}
-					{{ _('No documents uploaded') }}
-				{%- endif -%}
+				<span id="number_upload_file">
+					{%- include 'shares/parts/number_of_uploaded_file.html' -%}
+				</span>
 			</p>
 		</div>
 
@@ -115,61 +97,32 @@
 <script language="javascript">
 	$(document).ready(function() {
 		
-		//$('#file_upload').css({"height" : '200px'})
 		$('#file_upload').upload_dnd( {
 		
-			recap_element : $('#upload_recap'),
 			upload_action_url : "/share/robin/{{ share.name }}/upload/toto",
+			
 			upload_data : {
 				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 			},
-			// overwritte the run function in order to pass the password of the share
-			/*run_function : function(files, settings) {
-				console.log('custom run func')
-				$('#file_upload').popover('show')
-				$('#user_password_validate').click(function() {
-					console.log('password = ', $('#user_password').val())
-					if ('sharepassword' in settings.upload_data) {
-						console.log('old password '+ settings.upload_data.sharepassword+' detected')
-						settings.upload_data.sharepassword = $('#user_password').val()
-					}
-					else {
-						settings.upload_data = $.extend({'sharepassword' : $('#user_password').val()}, settings.upload_data)
-					}
-					$('#file_upload').popover('hide')
-					do_upload(files, settings)
-				})
-
-			},*/
-
+			
 			upload_box_style : { 'border' : '', 'background': 'url("/media/images/dropbox.png") no-repeat center', 'height' : '150px' },
 			upload_box_style_on_hover : { 'border' : '4px dotted red', 
 											'background': 'url("/media/images/dropbox.png") no-repeat center',
 											'height' : '150px' },
 
-			error_handler: function(error) {				
+			recap_element : $('#upload_recap'),
+			recap_line : '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>',
+
+			success_handler: function(data) {
+				$('#number_upload_file').html(data)
 			},
-			success_handler: function() {
-			}
+
+			file_size_max : "{{ file_size_max }}"
 
 		})
 	
 
-		$('.download_file').click(function(event) {
-
-
-			event.stopPropagation();
-			event.preventDefault();
-
-			console.log('download click')
-			$('#download_table').popover('show')
-			$('#user_password_validate').click(function() {
-					console.log('password = ', $('#user_password').val())
-					sharepassword = $('#user_password').val()
-					//do download
-					//$.get('/share/', {})
-				})
-		})
+		
 	
 
 	});
