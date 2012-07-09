@@ -41,7 +41,6 @@
 			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
 			<div id="popbutton_{{ share.shid }}">
 				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }}/>
-				<!--{{ icheckbox(share.shid, share.accepts_uploads) }}-->
 			</div>
 		</form>
 		<div class="share_popover_password hidden" id="password_info_{{ share.shid }}">
