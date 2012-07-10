@@ -1,21 +1,21 @@
-#max_size_file { 
-margin-top : 110px;
-font-size : 11;
-text-align : center;
+#max_size_file {
+	margin-top : 110px;
+	font-size : 11pt;
+	text-align : center;
 }
 
-.upload_area_default {	
+.upload_area_default {
 	border : 0;
 	border-radius: 5px;
 	-moz-box-shadow: 0 0 10px #aaa;
 	-webkit-box-shadow: 0 0 10px #aaa;
 	box-shadow: 0 0 10px #aaa;
 	padding : 15px 15px 28px;
-	background: #ddf url("/media/images/48x48/mail-attachment.png") no-repeat center;
+	background: #ddf url("/media/images/48x48/mail-inbox.png") no-repeat center;
 	height : 150px;
 }
 
 .upload_area_hover {
-	background: url("/media/images/48x48/mail-inbox.png") no-repeat center;
+	background: url("/media/images/48x48/mail-send-receive.png") no-repeat center;
 }
 
