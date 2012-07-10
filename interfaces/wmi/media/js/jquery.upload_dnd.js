@@ -131,7 +131,7 @@ function do_upload(files, settings) {
 			var recap_line = $(settings.recap_line)
 			$(recap_line).find('#recap_file_name').html(file.name)
 			$(recap_line).find('#recap_file_size').html(getReadableFileSizeString(file.size))
-			console.log(recap_line)
+			$(recap_line).addClass('upload-result')
 			$('#upload_recap').append(recap_line)
 		}
 
