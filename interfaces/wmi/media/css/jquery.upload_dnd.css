@@ -3,6 +3,10 @@
 	text-align : center;
 }
 
+#classic_upload {
+	min-width: 300px;
+}
+
 .upload_area_default {
 	border : 0;
 	border-radius: 5px;
