@@ -116,8 +116,8 @@ $(document).ready(function(){
     	$(this).css(settings.upload_box_style)
 
     	// append the help text :
-    	$(this).append(gettext("Drop files here to upload them to this share."));
-    	$(this).append("<div id='max_size_file'>" + gettext("maximum size: ")
+    	$(this).append("Drop files here to upload them to this share.");
+    	$(this).append("<div id='max_size_file'>" + "maximum size: "
 			+ getReadableFileSizeString(settings.file_size_max) + "</div>");
     	$('#max_size_file').css({ "margin-top" : "110px", "font-size" : 11, "text-align":"center"})
 

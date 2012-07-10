@@ -139,7 +139,7 @@ def serve(request, login, shname):
 
 	_d = wmi_data.base_data_dict(request)
 	_d.update({'share': sh })
-
+	
 	# if it is a POST Resquest, the user is sending the share password
 	if request.method == 'POST':
 
@@ -241,7 +241,7 @@ def upload(request, login, shname, filename):
 				destination.close()
 
 				return HttpResponse(render_to_string(
-					'shares/parts/number_of_uploaded_file.html', {
+					'shares/parts/uploaded_files.html', {
 						'number_of_uploaded_files' : share.contents()['uploads']
 					}))
 

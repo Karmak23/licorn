@@ -94,10 +94,9 @@
 </div>
 <script language="javascript">
 	$(document).ready(function() {
-
 		$('#file_upload').upload_dnd({
 
-			upload_action_url : "/share/robin/{{ share.name }}/upload/toto",
+			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/upload/toto",
 
 			upload_data : {
 				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
