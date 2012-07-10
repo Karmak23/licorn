@@ -33,7 +33,7 @@ $(document).ready(function(){
     	"recap_line" : '<div><span id="recap_file_name"></span><span id="recap_file_size"></span><span id="recap_file_progress"></span></div>',
 
 
-     	"error_image_url" : '/media/images/16x16/check_bad.png',
+     	"error_image_url" : '/media/images/16x16/emblem-important.png',
      	"file_size_max" : null,
     }, options);
 
