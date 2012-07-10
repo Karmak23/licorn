@@ -131,12 +131,15 @@ function do_upload(files, settings) {
 			var recap_line = $(settings.recap_line)
 			$(recap_line).find('#recap_file_name').html(file.name)
 			$(recap_line).find('#recap_file_size').html(getReadableFileSizeString(file.size))
-			console.log(recap_line)
+			$(recap_line).addClass('upload-result')
 			$('#upload_recap').append(recap_line)
 		}
 
 	  	// prepare the error_div
 	  	var error_div = $('<center><img src="'+settings.error_image_url+'"><center>')
+
+
+		var can_continue = true;
 
 	  	// check unknown file type (e.g. a public user drop a directory)
 	  	//console.log('checkfiletype ', file.type)
@@ -146,7 +149,7 @@ function do_upload(files, settings) {
 		    	.find('#recap_file_progress').html('').append(error_div.attr('title', "Unknown file type"));
 		    recap_line.addClass('upload-result-error')
 
-		    return false;
+		    can_continue = false;
 	  	}
 	  	else if( settings.file_size_max != null) {
 	  		console.log("max size set to ", settings.file_size_max)
@@ -154,94 +157,93 @@ function do_upload(files, settings) {
 	  			recap_line
 					.find('#recap_file_progress').html('').append(error_div.attr('title', "File too big, maximun allowed "+getReadableFileSizeString(settings.file_size_max)));
 				recap_line.addClass('upload-result-error')
-	  			return false;
+	  			can_continue = false;
 	  		}
 
 	  	}
 
 
+		if (can_continue) {
 
-	  	// AT this point, all should be ok
+			// bind upload events
+			var xhr = jQuery.ajaxSettings.xhr();
+			if(xhr.upload){
+				xhr.upload.addEventListener('progress', function (e) {
+					if (e.lengthComputable) {
+						var percentage = Math.round((e.loaded * 100) / e.total);
+						recap_line
+							.find('#recap_file_progress')
+								.html('<div class="progress progress-striped" style="display:\'inline\'"> <div class="bar" style="width: '+percentage+'%;">'+percentage+'%</div></div>')
+						recap_line.addClass('upload-result-success')
+						////console.log("Percentage loaded: ", percentage);
 
-
-		// bind upload events
-		var xhr = jQuery.ajaxSettings.xhr();
-		if(xhr.upload){
-			xhr.upload.addEventListener('progress', function (e) {
-				if (e.lengthComputable) {
-					var percentage = Math.round((e.loaded * 100) / e.total);
-					recap_line
-						.find('#recap_file_progress')
-							.html('<div class="progress progress-striped" style="display:\'inline\'"> <div class="bar" style="width: '+percentage+'%;">'+percentage+'%</div></div>')
-					recap_line.addClass('upload-result-success')
-					////console.log("Percentage loaded: ", percentage);
-
-				}
-				stop_event(e)
-			}, false);
-		}
-
-		xhr.upload.addEventListener("load", function(e) {
-				//console.log('LOAD EVENT', e)
-				stop_event(e)
-			}, false);
-		xhr.upload.addEventListener("error", function(e) {
-				//console.log('RROR EVENT')
-				stop_event(e)
-			}, false);
-		xhr.upload.addEventListener("abort", function() {
-				//console.log('CANCEL EVENT')
-				stop_event(e)
-			}, false);
-
-
-
-		provider=function(){ return xhr; };
-		
-		var csrf_token = {};
-		if ($('input[name$="csrfmiddlewaretoken"]') != null) {
-			csrf_token = { csrfmiddlewaretoken : $('input[name$="csrfmiddlewaretoken"]').attr('value') }
-		}
-
-
-		var datas = $.extend( {
-			'file': file,			// post upload action
-
-		}, csrf_token);
-
-		d = new FormData
-		$.map(datas, function(value, key) {
-			d.append(key, value)
-		})
-
-		////console.log('d', d)
-		////console.log('settings', settings)
-
-		// Requete ajax pour envoyer le fichier
-		$.ajax({
-			url:settings.upload_action_url,
-			type: 'POST',
-			data: d,
-			async: true,
-
-			xhr:provider,
-			processData:false,
-			contentType:false,
-			success:function(data) {
-				settings.success_handler(data)
-			},
-			error:function(error){
-				recap_line.find('#recap_file_progress').html('').append(error_div.attr('title', error.statusText))
-				recap_line.addClass('upload-result-error')
-				if (settings.error_handler != null) {
-					settings.error_handler()
-				}
-				
+					}
+					stop_event(e)
+				}, false);
 			}
-		});
 
+			xhr.upload.addEventListener("load", function(e) {
+					//console.log('LOAD EVENT', e)
+					stop_event(e)
+				}, false);
+			xhr.upload.addEventListener("error", function(e) {
+					//console.log('RROR EVENT')
+					stop_event(e)
+				}, false);
+			xhr.upload.addEventListener("abort", function() {
+					//console.log('CANCEL EVENT')
+					stop_event(e)
+				}, false);
+
+
+
+			provider=function(){ return xhr; };
+			
+			var csrf_token = {};
+			if ($('input[name$="csrfmiddlewaretoken"]') != null) {
+				csrf_token = { csrfmiddlewaretoken : $('input[name$="csrfmiddlewaretoken"]').attr('value') }
+			}
+
+
+			var datas = $.extend( {
+				'file': file,			// post upload action
+
+			}, csrf_token);
+
+			d = new FormData
+			$.map(datas, function(value, key) {
+				d.append(key, value)
+			})
+
+			////console.log('d', d)
+			////console.log('settings', settings)
+
+			// Requete ajax pour envoyer le fichier
+			$.ajax({
+				url:settings.upload_action_url,
+				type: 'POST',
+				data: d,
+				async: true,
+
+				xhr:provider,
+				processData:false,
+				contentType:false,
+				success:function(data) {
+					settings.success_handler(data)
+				},
+				error:function(error){
+					recap_line.find('#recap_file_progress').html('').append(error_div.attr('title', error.statusText))
+					recap_line.addClass('upload-result-error')
+					if (settings.error_handler != null) {
+						settings.error_handler()
+					}
+					
+				}
+			});
+
+		}
 	});
-
+	
 }
 
 // prevent default event and its propagation

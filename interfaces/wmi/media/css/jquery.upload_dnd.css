@@ -22,3 +22,6 @@
 	background: url("/media/images/48x48/mail-send-receive.png") no-repeat center;
 }
 
+.upload-result {
+	min-height: 36px;
+}
