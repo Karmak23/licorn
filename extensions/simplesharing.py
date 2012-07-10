@@ -168,11 +168,6 @@ class SimpleShare(PicklableObject):
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
 
-		if self.accepts_uploads == accepts:
-			logging.info(_(u'{0}: simple share upload state '
-								u'unchanged.').format(self))
-			return
-
 		if accepts:
 			if self.__password is None:
 				raise exceptions.LicornRuntimeException(_(u'Please set a '
