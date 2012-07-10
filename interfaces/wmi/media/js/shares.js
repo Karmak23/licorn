@@ -1,6 +1,7 @@
 
 function setup_popover_clicks() {
 	$(document).click(function(event) {
+		console.log('clickkkkkkkk ', event.target)
 
 		$('.popover').each(function(i, popover) {
 
@@ -18,7 +19,7 @@ function setup_popover_clicks() {
 
 					if (response == "False") {
 						// The popover has been close but the
-						// share still not accep uploads.
+						// share still not accept uploads.
 						checkbox.attr('checked', false);
 					}
 					else {
