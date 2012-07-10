@@ -40,7 +40,7 @@
 			id="share_{{ share.shid }}_accepts_uploads"
 			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
 			<div id="popbutton_{{ share.shid }}">
-				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }}/>
+				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }} class="no-click-event"/>
 			</div>
 		</form>
 		<div class="share_popover_password hidden" id="password_info_{{ share.shid }}">
@@ -48,28 +48,33 @@
 				<input type="hidden" id="share_id" value="{{ share.shid }}" name="{{ share.name }}">
 				<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
 				<hr />
-				<table class="vertical-space-small">
+				
+				<table>
 					<tr>
 						<td>{{ _('Password:') }}</td>
 						<td>{{ textinput('id_password1', True) }}</td>
-						<td rowspan="2">
-							<span id="check_pwds"></span>
-							<span id='save_password_{{ share.shid }}'>SAVE</span>
+						
+					</tr>
+					<tr>
+						<td>{{ _('Verify:') }}</td>
+						<td>{{ textinput('id_password2', True) }}</td>
+						<td>
+							<span id="check_pwds">&nbsp;</span>
+						</td>
+						<td>
+							
+							<button class="save_button" id='save_password_{{ share.shid }}' type="button"><img src="/media/images/ajouter_48.png" title='{{ _("Save password") }}' alt='{{ _("Save password") }}'></button> 
 							<!--<img id='save_password_{{ share.shid }}' src='/media/images/24x24/ajouter.png' alt='{{ _("Save the password for this share") }}'>-->
 
 						</td>
 					</tr>
 					<tr>
-						<td>{{ _('Verify:') }}</td>
-						<td>{{ textinput('id_password2', True) }}</td>
-					</tr>
-					<tr>
-						<td colspan="3" class="password_status_message smaller">
+						<td colspan="4" class="password_status_message smaller">
 							<span id="pwd_strenght"></span>
 						</td>
 					</tr>
 				</table>
-				<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
+				<p >{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
 			</div>
 		</div>
 
@@ -89,12 +94,23 @@
 				}
 
 				function popover_{{ share.shid }}_on_open(popover_div) {
+					// function called when the popover will open
+					
+					// during each "popover open", focus the first 
+					// password input
+					popover_div.find(':input[type="password"]:first').focus()
+					
+					// reset old password inputs
+					popover_div.find(':input[type="password"]').val('');
+						
+					// at the first "open event", set some actions
 					if (! popover_div.hasClass('event_set')) {
 						popover_div.addClass('event_set');
 
 						// check password strength
 						password_helpers(popover_div);
-
+						
+						
 						// save click
 						popover_div.find('#save_password_{{ share.shid }}').click(function() {
 							pwd = popover_div.find('#id_input_id_password1').val();
@@ -102,8 +118,6 @@
 							// save the password
 							$.get('/shares/{{ share.name }}/password/'
 									+ $.URLEncode(pwd), function() {
-								//reset password inputs
-								popover_div.find(':input[type="password"]').value = '';
 								$('#popbutton_{{ share.shid }}').popover('hide');
 							});
 						});

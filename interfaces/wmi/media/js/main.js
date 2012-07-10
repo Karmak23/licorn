@@ -198,10 +198,10 @@ function password_helpers(content) {
 					content.find('#check_pwds').html('<img src="/media/images/16x16/check_ok.png"/>');
 					$.get("/users/check_pwd_strenght/"+pwd, function(html) {
 						if (html != pwd) {
-							content.find('#pwd_strenght').html("<br /><span style='color:red;'>" + html +"</span>")
+							content.find('#pwd_strenght').html("<div class='check_pwd_recap' style='color:red;'>" + html +"</div>")
 						}
 						else {
-							content.find('#pwd_strenght').html("<br /><span style='color:green;'> Mot de passe sécurisé </span>" )
+							content.find('#pwd_strenght').html("<div class='check_pwd_recap' style='color:green;'> Mot de passe sécurisé </div>" )
 						}
 					});
 					passwords_match = true;
