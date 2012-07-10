@@ -1,0 +1,9 @@
+.save_button {
+	background-color: transparent;
+    border: 0;
+    cursor: pointer;   
+    margin-top: -20px;
+}
+.password_status_message {
+	height: 21px;
+}
