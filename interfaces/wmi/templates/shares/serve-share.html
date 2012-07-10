@@ -3,6 +3,12 @@
 
 {%- extends 'base.bootstrap.html' -%}
 
+{%- from 'widgets/common.html' import jquery_dnd_media -%}
+
+{%- block base_media %}
+	{{ jquery_dnd_media() }}
+{%- endblock %}
+
 {% block extended_media %}
 	<script type="text/javascript" src="/media/js/jquery.zclip.min.js"></script>
 {% endblock %}
@@ -10,8 +16,12 @@
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
 
 {%- block container -%}
+<style type="text/css">
+	.centered {
+		text-align: center;
+	}
+</style>
 <div class="row">
-
 	<div class="span5 offset3 alert alert-success">
 		<div class="centered" title="{{ _('Click the button to copy the URL to clipboard') }}">
 			{{ _('Public link for this share:') }}
@@ -27,35 +37,33 @@
 						}, 150);
 					}
 
+					function cleanup_zclip() {
+						$("#copy_message_success").focus();
+
+						setTimeout(function() {
+							// remove zclip to restore normal focus,
+							// else flash grabs it eternally.
+							$('a#copy_url').zclip('remove');
+						}, 150);
+
+						// restore zclip afterwards for the copy
+						// mechanism to continue working.
+						setTimeout(setup_zclip, 200);
+
+						return true;
+					}
+
 					function setup_zclip(){
 
 						$('a#copy_url').zclip({
 							path:'/media/images/ZeroClipboard.swf',
 							copy:$('a#copy_url').text(),
-							beforeCopy:success_message,
-							afterCopy:function(){
-								$("#copy_message_success").focus();
-
-
-								// remove zclip to restore normal focus,
-								// else flash grabs it eternally.
-								$('a#copy_url').zclip('remove');
-
-								// restore zclip afterwards for the copy
-								// mechanism to continue working.
-								setTimeout(setup_zclip, 50);
-								return true;
-							},
+							beforeCopy: success_message,
+							afterCopy: cleanup_zclip,
 						});
 					}
 
 					setup_zclip();
-					/*
-						beforeCopy:function(){
-							$('#callback-paragraph').css('background','yellow');
-							$(this).css('color','orange');
-						},
-					*/
 				</script>
 		</div>
 	</div>
@@ -72,25 +80,36 @@
 		{%- endif -%}
 
 		<h1>{{ _('Welcome to share <em>{0}</em>').format(share.name) }}</h1>
+		<div>&nbsp;</div>
 	</div>
 
 	{%- set contents_numbers = share.contents() -%}
 
 	{%- if share.accepts_uploads -%}
 
-		<div class="span6 offset2 hero-unit">
-		<h2>{{ _('Uploaded documents') }}</h2>
-		<div class="span2 offset4">
-				<a href="#" class="btn btn-primary btn-large">
-					{{ _('Upload a document &raquo;')}}</a>
-		</div>
-		<p>
-			{%- if contents_numbers.uploads -%}
-				{{ _('Contains {0} uploaded documents').format(contents_numbers.uploads) }}
-			{%- else -%}
-				{{ _('No documents uploaded') }}
-			{%- endif -%}
-		</p>
+		<div class="span8 offset1 hero-unit">
+			<h2>{{ _('Uploaded documents') }}</h2>
+			<div class='row'>
+
+				<div class='span5' id="upload_recap">
+					<input type='file' id='classic_upload'/>
+				</div>
+				<div class='span3'>
+					<div class="centered">
+						{% csrf_token %}
+						<div id='file_upload'>
+							{{ _("Drop files here to upload them to this share.") }}
+
+							<div id='max_size_file'>{{ _('maximum upload size: {0}').format(bytes_to_human(file_size_max)) }}</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<p>
+				<span id="uploaded_files">
+					{%- include 'shares/parts/uploaded_files.html' -%}
+				</span>
+			</p>
 		</div>
 
 	{# else:
@@ -104,7 +123,7 @@
 	<p class="span8 offset2">{{ _('Click on a filename to download it to your computer:') }}</p>
 
 		{%- set contents = share.contents(with_paths=True) -%}
-		<div class="span8 offset2">
+		<div class="span8 offset2" id='download_table'>
 		<table class="table table-striped">
 			<tr>
 				<th>{{_('File name')}}</th>
@@ -119,7 +138,7 @@
 				<tr>
 					<td class="nowrap"><i class="icon-file"></i> <a href="{{
 								url_for('wmi.shares.views.download',
-								args=(share.coreobj.name, share.name, pub_fname))}}">{{ pub_fname }}</a></td>
+								args=(share.coreobj.name, share.name, pub_fname))}}" class='download_file'>{{ pub_fname }}</a></td>
 					<td>{{ bytes_to_human(infos.size) }}</td>
 					<td>{{ format_time_delta(infos.mtime, use_neg=True, long_output=False) }}</td>
 					<td>{{ infos.mimetype }}</td>
@@ -130,11 +149,26 @@
 		</div>
 	{%- else -%}
 
-		<div class="span12">&nbsp;</div>
-		<div class="hero-unit span6 offset2">
+		<div class="hero-unit span8 offset1">
 			<h2>{{ _('No shared document') }}</h2>
 			<p>{{ _('Ask the person who sent you here to populate his share directory. Perhaps he has forgotten?') }}</p>
 		</div>
 	{%- endif -%}
 </div>
+<script language="javascript">
+	$(document).ready(function() {
+		$('#file_upload').upload_dnd({
+			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/+upload",
+			recap_line : get_recap_line(),
+			success_handler: function(data) {
+				$('#uploaded_files').html(data);
+			},
+			file_size_max : {{ file_size_max }}
+		})
+
+		function get_recap_line() {
+			return '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>'
+		}
+	});
+</script>
 {% endblock %}

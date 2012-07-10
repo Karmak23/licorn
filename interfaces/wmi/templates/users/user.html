@@ -66,7 +66,17 @@
 			// display only relevant groups
 			rel = $(this).attr('value');
 			$(this).find('.rel_'+rel).hide();
-			$(this).popover({content: $(this).find('.group_popover_content')});
+
+			var popover_content = $(this).find('.popover')
+			$(this).popover({
+				title : null,
+				content:  popover_content,
+				trigger: 'click',
+				position: 'top',	
+			});
+
+
+			//$(this).popover({content: $(this).find('.group_popover_content') });
 		});
 
 		$('.popover_item').click(function() {
@@ -84,7 +94,7 @@
 			{%- endif -%}
 
 			//close the popover
-			$(document).trigger('hideOpenPopover');
+			$('.click_item#'+group_id).popover('hide');
 		});
 
 		{%- if action == 'edit' -%}

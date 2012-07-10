@@ -3,9 +3,22 @@
 from django                     import forms
 from django.utils.translation   import ugettext as _
 
-class ForceBackupRunForm(forms.Form):
-	force = forms.BooleanField(label=_('Force a backup to be run even if the last is recent.'), required=False)
 
-	# not ready for production yet.
-	#volume = forms.ChoiceField(choices = ,	initial = ,
-	#			label=_('Volume on which to run backup'))
+class AskSharePasswordForm(forms.Form):
+
+	password = forms.CharField(widget=forms.PasswordInput, label="Password")
+
+	def __init__(self, *args, **kwargs):
+		self.share = kwargs.pop('share', None)
+		super(AskSharePasswordForm, self).__init__(*args, **kwargs)
+
+	def validate_password(self):
+		if not self.share.check_password(self.data['password']):
+			raise forms.ValidationError(_('Incorrect password'))
+
+		return self.data['password']
+
+	def clean(self,*args, **kwargs):
+		super(AskSharePasswordForm, self).clean(*args, **kwargs)
+
+		self.validate_password()

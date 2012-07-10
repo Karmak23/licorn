@@ -52,7 +52,7 @@
 			// display only relevant groups
 			rel = $(this).attr('value');
 			$(this).find('.rel_'+rel).hide();
-			$(this).popover({content: $(this).find('.user_popover_content')});
+			$(this).popover({content: $(this).find('.user_popover_content'), position: 'top'});
 		});
 
 		$('.popover_item').click(function() {
@@ -70,7 +70,7 @@
 			{%- endif -%}
 
 			//close the popover
-			$(document).trigger('hideOpenPopover');
+			$(".click_item#"+user_id).popover('hide');
 		});
 
 		{%- if edit_mod -%}

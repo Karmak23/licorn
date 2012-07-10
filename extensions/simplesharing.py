@@ -10,10 +10,10 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time, mimetypes, random
+import os, stat, time, mimetypes, random, errno
 
-from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import json, cache, fsapi, events, hlstr
+from licorn.foundations           import exceptions, logging, settings, events
+from licorn.foundations           import json, cache, fsapi, hlstr, pyutils
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -168,27 +168,35 @@ class SimpleShare(PicklableObject):
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
 
-		with self.lock:
-			if self.accepts_uploads == accepts:
-				logging.info(_(u'{0}: simple share upload state '
-									u'unchanged.').format(self.pretty_name))
-				return
+		if self.accepts_uploads == accepts:
+			logging.info(_(u'{0}: simple share upload state '
+								u'unchanged.').format(self))
+			return
 
-			if accepts:
-				if self.__password is None:
-					raise exceptions.LicornRuntimeException(_(u'Please set a '
-											u'password on the share first.'))
+		if accepts:
+			if self.__password is None:
+				raise exceptions.LicornRuntimeException(_(u'Please set a '
+										u'password on the share first.'))
 
+			try:
 				os.makedirs(self.uploads_directory)
 
-			else:
+			except (OSError, IOError), e:
+				if e.errno != errno.EEXIST:
+					raise
+		else:
+			try:
 				# Archive the uploads/ directory only if non-empty.
 				if os.listdir(self.uploads_directory) != []:
 					fsapi.archive_directory(self.uploads_directory,
-								orig_name='share_%s_%s_uploads' % (
-												self.coreobj.name, self.name))
+							orig_name='share_%s_%s_uploads' % (
+										self.coreobj.name, self.name))
 
-			LicornEvent('share_uploads_state_changed', share=self).emit()
+			except (IOError, OSError), e:
+				if e.errno != errno.ENOENT:
+					raise
+
+		LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
 	def password(self):
 		return self.__password
@@ -303,6 +311,12 @@ class SimpleShare(PicklableObject):
 			'mtime'    : fstat.st_mtime - curtime,
 			'ctime'    : fstat.st_ctime - curtime,
 		}
+	def check_password(self, pw_to_check):
+		""" Returns ``True`` if ``pw_to_check`` (a string) is equal to the
+			stored password, after having run the necessary ``crypt()``
+			mechanisms because the current password is always stored
+			encrypted. """
+		return self.__password == self.compute_password(pw_to_check, self.__password)
 	def __request_short_url(self):
 		""" request a short URL (http://lsha.re/xxxxxxxx) from the central
 			server.
@@ -555,7 +569,20 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 			# Enhance the core user with simple_sharing extensions.
 			User.__bases__ += (SimpleSharingUser, )
 
+		self.__load_factory_settings()
+
 		return self.available
+	def __load_factory_settings(self):
+
+		for setting_name, setting_value in (
+					('extensions.simplesharing.max_upload_size', 10485760),
+				):
+			try:
+				pyutils.resolve_attr(settings, setting_name)
+
+			except AttributeError:
+				settings.merge_settings({setting_name: setting_value})
+
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
@@ -593,4 +620,3 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 				user.check_shares(batch=True)
 
 			logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
-

@@ -1,322 +1,548 @@
-// Modified from version taken -> https://github.com/juggy/jquery-popover
 
-(function($) {
-	$.fn.popover = function(options) {
-		var KEY_ESC = 27;
-		
-		// settings stored options and state
-		var settings = $.extend({
-			id: '',						// id for created popover
-			openEvent: null,	// callback function to be called when popup opened
-			closeEvent: null, // callback function to be called when popup closed
-			offsetX: 0,				// fixed offset to correct popup X position
-			offsetY: 0,				// fixed offset to correct popup Y position
-			zindex: 100000,		// default z-index value
-			padding: 18,			// default settings.padding around popover from document edges
-			closeOnEsc: true, // change to false to disable ESC
-			preventLeft: true,		// pass true to prevent left popover
-			preventRight: true,	// pass true to prevent right popover
-			preventTop: false,		// pass true to prevent top popover
-			preventBottom: true, // pass true to prevent bottom popover
-			live: false						// popover created on live selector
-		}, options || {});
-		
-		// functions to claculate popover direction and position 
-		
-		function calcPopoverDirPossible(button, coord) {
-			var possibleDir = {
-				left: false,
-				right: false,
-				top: false,
-				bottom: false
+
+/**
+ * jQuery.popover plugin v1.1.0
+ * By Davey IJzermans
+ * See http://wp.me/p12l3P-gT for details
+ * http://daveyyzermans.nl/
+ * 
+ * Released under MIT License.
+ */
+
+;(function($) {
+	//define some default plugin options
+	var defaults = {
+		verticalOffset: 10, //offset the popover by y px vertically (movement depends on position of popover. If position == 'bottom', positive numbers are down)
+		horizontalOffset: 10, //offset the popover by x px horizontally (movement depends on position of popover. If position == 'right', positive numbers are right)
+		title: false, //heading, false for none
+		content: false, //content of the popover
+		url: false, //set to an url to load content via ajax
+		classes: '', //classes to give the popover, i.e. normal, wider or large
+		position: 'auto', //where should the popover be placed? Auto, top, right, bottom, left or absolute (i.e. { top: 4 }, { left: 4 })
+		fadeSpeed: 160, //how fast to fade out popovers when destroying or hiding
+		trigger: 'click', //how to trigger the popover: click, hover or manual
+		preventDefault: true, //preventDefault actions on the element on which the popover is called
+		stopChildrenPropagation: true, //prevent propagation on popover children
+		hideOnHTMLClick: true, //hides the popover when clicked outside of it
+		animateChange: true, //animate a popover reposition
+		autoReposition: true, //automatically reposition popover on popover change and window resize
+		anchor: false, //anchor the popover to a different element
+
+
+		closeEvent: null,	// callback function to be called when popup opened
+		openEvent: null,	// callback function to be called when popup opened
+	}
+	var popovers = [];
+	var _ = {
+		calc_position: function(popover, position) {
+			var data = popover.popover("getData");
+			var options = data.options;
+			var $anchor = options.anchor ? $(options.anchor) : popover;
+			var el = data.popover;
+			
+			var coordinates = $anchor.offset();
+			var y1, x1;
+			
+			if(position == 'top') {
+				y1 = coordinates.top - el.outerHeight();
+				x1 = coordinates.left - el.outerWidth() / 2 + $anchor.outerWidth() / 2;
+			} else if(position == 'right') {
+				y1 = coordinates.top + $anchor.outerHeight() / 2 - el.outerHeight() / 2;
+				x1 = coordinates.left	+ $anchor.outerWidth();
+			} else if(position == 'left') {
+				y1 = coordinates.top + $anchor.outerHeight() / 2 - el.outerHeight() / 2;
+				x1 = coordinates.left	- el.outerWidth();
+			} else {
+				//bottom
+				y1 = coordinates.top + $anchor.outerHeight();
+				x1 = coordinates.left - el.outerWidth() / 2 + $anchor.outerWidth() / 2;
 			}
 			
-			if (coord.buttonOffset.top + coord.buttonHeight + coord.triangleSize + coord.popoverHeight <= 
-									coord.docHeight - settings.padding) {
-				possibleDir.bottom = true;
-			}
-
-			if (coord.buttonOffset.top - coord.triangleSize - coord.popoverHeight >= settings.padding) {
-				possibleDir.top = true;
-			}
-
-			if (coord.buttonOffset.left + coord.buttonWidth + coord.triangleSize + coord.popoverWidth <= 
-									coord.docWidth - settings.padding) {
-				possibleDir.right = true;
-			}
-
-			if (coord.buttonOffset.left - coord.triangleSize - coord.popoverWidth >= settings.padding) {
-				possibleDir.left = true;
+			x2 = x1 + el.outerWidth();
+			y2 = y1 + el.outerHeight();
+			ret = {
+				x1: x1,
+				x2: x2,
+				y1: y1,
+				y2: y2
+			};
+			
+			return ret;
+		},
+		pop_position_class: function(popover, position) {
+			var remove = "popover-top popover-right popover-left";
+			var arrow = "top-arrow"
+			var arrow_remove = "right-arrow bottom-arrow left-arrow";
+			
+			if(position == 'top') {
+				remove = "popover-right popover-bottom popover-left";
+				arrow = 'bottom-arrow';
+				arrow_remove = "top-arrow right-arrow left-arrow";
+			} else if(position == 'right') {
+				remove = "popover-yop popover-bottom popover-left";
+				arrow = 'left-arrow';
+				arrow_remove = "top-arrow right-arrow bottom-arrow";
+			} else if(position == 'left') {
+				remove = "popover-top popover-right popover-bottom";
+				arrow = 'right-arrow';
+				arrow_remove = "top-arrow bottom-arrow left-arrow";
 			}
 			
-			return possibleDir;
-		}
-		
-		function chooseDir(possibleDir) {
-			// remove directions prevented by settings
-			if (settings.preventBottom)
-				possibleDir.bottom = false;
-			if (settings.preventTop)
-				possibleDir.top = false;
-			if (settings.preventLeft)
-				possibleDir.left = false;
-			if (settings.preventRight)
-				possibleDir.right = false;
-
-			// determine default direction if nothing works out
-			// make sure it is not one of the prevented directions
-			var dir = 'right';
-			if (settings.preventRight)
-				dir = 'bottom';
-			if (settings.preventBottom)
-				dir = 'top';
-			if (settings.preventTop)
-				dir = 'left';
-
-			if (possibleDir.right)
-				dir = 'right';
-			else if (possibleDir.bottom)
-					dir = 'bottom';
-			else if (possibleDir.left)
-					dir = 'left';
-			else if (possibleDir.top)
-					dir = 'top';
-			
-			return dir;
-		}
-	
-		function calcPopoverPos(button) {
-			// Set this first for the layout calculations to work.
-			settings.popover$.css('display', 'block');
-	
-			var coord = {
-				popoverDir: 'bottom',
-				popoverX: 0,
-				popoverY: 0,
-				deltaX: 0,
-				deltaY: 0,
-				triangleX: 0,
-				triangleY: 0,
-				triangleSize: 20, // needs to be updated if triangle changed in css
-				docWidth: $(window).width(),
-				docHeight: $(window).height(),
-				popoverWidth: settings.popover$.outerWidth(),
-				popoverHeight: settings.popover$.outerHeight(),
-				buttonWidth: button.outerWidth(),
-				buttonHeight: button.outerHeight(),
-				buttonOffset: button.offset()
-			}
-			
-			// calculate the possible directions based on popover size and button position
-			var possibleDir = calcPopoverDirPossible(button, coord);
-				
-			// choose selected direction
-			coord.popoverDir = chooseDir(possibleDir);
-
-			// Calculate popover top
-			if (coord.popoverDir == 'bottom')
-				coord.popoverY = coord.buttonOffset.top + coord.buttonHeight + coord.triangleSize;
-			else if (coord.popoverDir == 'top')
-				coord.popoverY = coord.buttonOffset.top - coord.triangleSize - coord.popoverHeight;
-			else // same Y for left & right
-				coord.popoverY = coord.buttonOffset.top + (coord.buttonHeight - coord.popoverHeight)/2;
-
-			// Calculate popover left
-			if ((coord.popoverDir == 'bottom') || (coord.popoverDir == 'top')) {
-				
-				coord.popoverX = coord.buttonOffset.left + (coord.buttonWidth - coord.popoverWidth)/2;
-
-				if (coord.popoverX < settings.padding) {
-					// out of the document at left
-					coord.deltaX = coord.popoverX - settings.padding;
-				} else if (coord.popoverX + coord.popoverWidth > coord.docWidth - settings.padding) {
-					// out of the document right
-					coord.deltaX = coord.popoverX + coord.popoverWidth - coord.docWidth + settings.padding;
-				}
-
-				// calc triangle pos
-				coord.triangleX = coord.popoverWidth/2 - coord.triangleSize + coord.deltaX;				
-				coord.triangleY = 0;	
-			}
-			else {	// left or right direction
-				
-				if (coord.popoverDir == 'right')
-					coord.popoverX = coord.buttonOffset.left + coord.buttonWidth + coord.triangleSize;
-				else // left
-					coord.popoverX = coord.buttonOffset.left - coord.triangleSize - coord.popoverWidth;
-				
-				if (coord.popoverY < settings.padding) {
-					// out of the document at top
-					coord.deltaY = coord.popoverY - settings.padding;
-				} else if (coord.popoverY + coord.popoverHeight > coord.docHeight - settings.padding) {
-					// out of the document bottom
-					coord.deltaY = coord.popoverY + coord.popoverHeight - coord.docHeight + settings.padding;
-				}
-
-				// calc triangle pos
-				coord.triangleX = 0;
-				coord.triangleY = coord.popoverHeight/2 - coord.triangleSize + coord.deltaY;				
-			}
-	
-			return coord;
-		}
-		
-		function positionPopover(coord) {
-			// set the triangle class for it's direction
-			settings.triangle$.removeClass("left top right bottom");
-			settings.triangle$.addClass(coord.popoverDir);
-
-			if (coord.triangleX > 0) {
-				settings.triangle$.css('left', coord.triangleX);
-			}
-			
-			if (coord.triangleY > 0) {
-				settings.triangle$.css('top', coord.triangleY);
-			}
-
-			// position popover
-			settings.popover$.offset({
-				top: coord.popoverY - coord.deltaY + settings.offsetY,
-				left: coord.popoverX - coord.deltaX + settings.offsetX
-			});
-	
-			// set popover css and show it
-			settings.popover$.css('z-index', settings.zindex).show();
-		}
-
-		// toggle a button popover. If show set to true do not toggle - always show
-		function togglePopover(button, show) {
-			// if this button popover is already open close it an return
-			if ($.fn.popover.openedPopup && 
-				($.fn.popover.openedPopup.get(0) === button.get(0))) {
-				if (!show)
-					hideOpenPopover();
-				return;
-			}
-	
-			// hide any open popover
-			hideOpenPopover();
-	
-			// clicking triangle will also close the popover
-			settings.triangle$.click(function() {
-				button.trigger('hidePopover') 
-			});
-	
-			// reset triangle
-			settings.triangle$.attr("style", "");
-	
-			// calculate all the coordinates needed for positioning the popover and position it 
-			positionPopover(calcPopoverPos(button));
-
-			//Timeout for webkit transitions to take effect
-			setTimeout(function() {
-				settings.popover$.addClass("active");
-			}, 0);
-	
-			if ($.isFunction(settings.openEvent)) {
-				settings.openEvent(button);
-			}
-				
-			$.fn.popover.openedPopup = button;
-			button.addClass('popover-on');
-			$(document).trigger('popoverOpened');
-		}
-	
-		// hide a button popover
-		function hidePopover(button) {
-			button.removeClass('popover-on');
-			$(document).trigger('popoverClosed');
-			settings.popover$.removeClass("active").attr("style", "").hide();
-			if ($.isFunction(settings.closeEvent)) {
-				settings.closeEvent(button);
-			}
-			$.fn.popover.openedPopup = null;			
-		}
-		
-		// hide the currently open popover if there is one
-		function hideOpenPopover() {
-			if ($.fn.popover.openedPopup != null)
-				$.fn.popover.openedPopup.trigger('hidePopover');			
-		}
-	
-		// build HTML popover
-		settings.popover$ = $('<div class="popover" id="' + settings.id + '">'
-					+ '<div class="triangle"></div>'
-					+ '<div class="content"></div>'
-					+ '</div>').appendTo('body');
-		$('.content', settings.popover$).append($(settings.content).detach());
-
-		settings.triangle$ = $('.triangle', settings.popover$);
-
-		// remember last opened popup
-		$.fn.popover.openedPopup = null;	
-
-		// setup global document bindings
-		$(document).unbind(".popover");
-
-		// document click closes active popover		
-		$(document).bind("click.popover", function(event) {
-			if (($(event.target).parents(".popover").length == 0)
-					&& (!$(event.target).hasClass('popover-button'))) {
-				hideOpenPopover();
-			}
-		});
-	
-		// document hidePopover event causes active popover to close
-		$(document).bind("hideOpenPopover.popover", hideOpenPopover);
-		
-		// document Esc key listener
-		var selector = this;
-		if (settings.closeOnEsc) {
-			$(document).bind('keydown', function(event) {
-				if (!event.altKey && !event.ctrlKey && !event.shiftKey
-							&& (event.keyCode == KEY_ESC)) {
-					selector.trigger('hidePopover');
-				}
-			});
-		}		
-
-		// setup callbacks for each popover button in wrapped set & return wrapped set
-		if (!settings.live) {
-			return this.each(function() {
-				var button = $(this);
-				button.addClass("popover-button");
-
-				button.bind('click', function() { 
-					togglePopover(button);
-					return false;
-				});
-
-				button.bind('showPopover', function() { 
-					togglePopover(button, true);
-					return false;
-				});
-
-				button.bind('hidePopover', function() {
-					hidePopover(button);
-					return false;
-				});
-			});
-		}
-		else { // live popover		
-			this.live('click', function(event) {
-				$(event.target).addClass("popover-button");
-				togglePopover($(event.target));
-				return false;
-			});
-
-			this.live('showPopover', function(event) { 
-				$(event.target).addClass("popover-button");
-				togglePopover($(event.target), true);
-				return false;
-			});
-
-			this.live('hidePopover', function(event) {
-				hidePopover($(event.target));
-				return false;
-			});
-			
-			return this;		
+			popover
+				.removeClass(remove)
+				.addClass('popover-' + position)
+				.find('.arrow')
+					.removeClass(arrow_remove)
+					.addClass(arrow);
 		}
 	};
+	var methods = {
+		/**
+		 * Initialization method
+		 * Merges parameters with defaults, makes the popover and saves data
+		 * 
+		 * @param object
+		 * @return jQuery
+		 */
+		init : function(params) {
+			return this.each(function() {
+				var options = $.extend({}, defaults, params);
+				
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(!data) {
+					var popover = $('<div class="popover" />')
+						.addClass(options.classes)
+						.append('<div class="arrow" />')
+						.append('<div class="wrap"></div>')
+						.appendTo('body')
+						.hide();
+					
+					if(options.stopChildrenPropagation)
+						popover.children().bind('click.popover', function(event) {
+							event.stopPropagation();
+						});
+					
+					$this.bind('click.popover', function(event) {
+						if(options.preventDefault)
+							event.preventDefault();
+						event.stopPropagation();
+					});
+					
+					if(options.anchor)
+						if(!options.anchor instanceof jQuery)
+							options.anchor = $(options.anchor)
+					
+					var data = {
+						target: $this,
+						popover: popover,
+						options: options
+					};
+					
+					if(options.title)
+						$('<div class="title" />')
+							.html(options.title instanceof jQuery ? options.title.html() : options.title)
+							.appendTo(popover.find('.wrap'));
+					if(options.content)
+						$('<div class="content" />')
+							.html(options.content instanceof jQuery ? options.content.html() : options.content)
+							.appendTo(popover.find('.wrap'));
+					
+					$this.data('popover', data);
+					popovers.push($this);
+					
+					if(options.url)
+						$this.popover('ajax', options.url);
+					
+					$this.popover('reposition');
+					$this.popover('setTrigger', options.trigger);
+					
+					if(options.hideOnHTMLClick) {
+						var hideEvent = "click.popover";
+						if ("ontouchstart" in document.documentElement)
+							hideEvent = 'touchstart.popover';
+						$('html').unbind(hideEvent).bind(hideEvent, function(event) {
+							
+
+							if ($.isFunction(data.options.closeEventHtmlClick)) {
+									console.log('closeEventHtmlClick')
+									data.options.closeEventHtmlClick(data.popover);
+								}
+								else {
+									$('html').popover('fadeOutAll');
+								}
+							
+						});
+
+
+
+					}
+					
+					if(options.autoReposition) {
+						var repos_function = function(event) {
+							$this.popover('reposition');
+						};
+						$(window)
+							.unbind('resize.popover').bind('resize.popover', repos_function)
+							.unbind('scroll.popover').bind('scroll.popover', repos_function);
+					}
+				}
+			});
+		},
+		/**
+		 * Reposition the popover
+		 * 
+		 * @return jQuery
+		 */
+		reposition: function() {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					var options = data.options;
+					var $anchor = options.anchor ? $(options.anchor) : $this;
+					var coordinates = $anchor.offset();
+					
+					var position = options.position;
+					if(!(position == 'top' || position == 'right' || position == 'left' || position == 'auto'))
+						position = 'bottom';
+					var calc;
+					
+					if(position == 'auto') {
+						var positions = ["bottom", "left", "top", "right"];
+						var scrollTop = $(window).scrollTop();
+						var scrollLeft = $(window).scrollLeft();
+						var windowHeight = $(window).outerHeight();
+						var windowWidth = $(window).outerWidth();
+						
+						$.each(positions, function(i, pos) {
+							calc = _.calc_position($this, pos);
+							
+							var x1 = calc.x1 - scrollLeft;
+							var x2 = calc.x2 - scrollLeft + options.horizontalOffset;
+							var y1 = calc.y1 - scrollTop;
+							var y2 = calc.y2 - scrollTop + options.verticalOffset;
+							
+							if(x1 < 0 || x2 < 0 || y1 < 0 || y2 < 0)
+								//popover is left off of the screen or above it
+								return true; //continue
+							
+							if(y2 > windowHeight)
+								//popover is under the window viewport
+								return true; //continue
+							
+							if(x2 > windowWidth)
+								//popover is right off of the screen
+								return true; //continue
+							
+							position = pos;
+							return false;
+						});
+						
+						if(position == 'auto')
+							//position is still auto
+							return;
+					}
+					
+					calc = _.calc_position($this, position);
+					var top = calc.top;
+					var left = calc.left;
+					_.pop_position_class(popover, position);
+					
+					var marginTop = 0;
+					var marginLeft = 0;
+					if(position == 'bottom')
+						marginTop = options.verticalOffset;
+					if(position == 'top')
+						marginTop = -options.verticalOffset;
+					if(position == 'right')
+						marginLeft = options.horizontalOffset;
+					if(position == 'left')
+						marginLeft = -options.horizontalOffset;
+					
+					var css = {
+						left: calc.x1,
+						top: calc.y1,
+						marginTop: marginTop,
+						marginLeft: marginLeft
+					};
+					
+					if(data.initd && options.animateChange)
+						popover.css(css); //TODO animate?
+					else {
+						data.initd = true;
+						popover.css(css);
+					}
+					$this.data('popover', data);
+				}
+			});
+		},
+		/**
+		 * Remove a popover from the DOM and clean up data associated with it.
+		 * 
+		 * @return jQuery
+		 */
+		destroy: function() {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				$this.unbind('.popover');
+				$(window).unbind('.popover');
+				data.popover.remove();
+				$this.removeData('popover');
+			});
+		},
+		/**
+		 * Show the popover
+		 * 
+		 * @return jQuery
+		 */
+		show: function() {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					$this.popover('reposition');
+					popover.clearQueue().css({ zIndex: 950 }).show();
+				}
+				if ($.isFunction(data.options.openEvent)) {
+					data.options.openEvent(data.popover);
+				}
+			});
+		},
+		/**
+		 * Hide the popover
+		 * 
+		 * @return jQuery
+		 */
+		hide: function() {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data)
+					data.popover.hide().css({ zIndex: 949 });
+				
+				if ($.isFunction(data.options.closeEvent)) {
+					data.options.closeEvent(data.popover);
+				}
+			});
+		},
+		/**
+		 * Fade out the popover
+		 * 
+		 * @return jQuery
+		 */
+		fadeOut: function(ms) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					var options = data.options;
+					popover.delay(100).css({ zIndex: 949 }).fadeOut(ms ? ms : options.fadeSpeed);
+				}
+			});
+		},
+		/**
+		 * Hide all popovers
+		 * 
+		 * @return jQuery
+		 */
+		hideAll: function() {
+			return $.each(popovers, function(i, pop) {
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					popover.hide();
+				}
+			});
+		},
+		/**
+		 * Fade out all popovers
+		 * 
+		 * @param int
+		 * @return jQuery
+		 */
+		fadeOutAll: function(ms) {
+			return $.each(popovers, function(i, pop) {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					var options = data.options;
+					popover.css({ zIndex: 949 }).fadeOut(ms ? ms : options.fadeSpeed);
+				}
+			});
+		},
+		/**
+		 * Set the event trigger for the popover. Also cleans the previous binding. 
+		 * 
+		 * @param string
+		 * @return jQuery
+		 */
+		setTrigger: function(trigger) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var popover = data.popover;
+					var options = data.options;
+					var $anchor = options.anchor ? $(options.anchor) : $this;
+					
+					if(trigger === 'click') {
+						$anchor.unbind('click').bind('click', function(event) {
+							event.preventDefault();
+							event.stopPropagation();
+							$this.popover('show');
+						});
+						popover.unbind('click.popover').bind('click.popover', function(event) {
+							event.stopPropagation();
+						});
+					} else {
+						$anchor.unbind('click');
+						popover.unbind('click.popover')
+					}
+					
+					if(trigger === 'hover') {
+						$anchor.add(popover).bind('mousemove.popover', function(event) {
+							$this.popover('show');
+						});
+						$anchor.add(popover).bind('mouseleave.popover', function(event) {
+							$this.popover('fadeOut');
+						});
+					} else {
+						$anchor.add(popover).unbind('mousemove.popover').unbind('mouseleave.popover');
+					}
+					
+					if(trigger === 'focus') {
+						$anchor.add(popover).bind('focus.popover', function(event) {
+							$this.popover('show');
+						});
+						$anchor.add(popover).bind('blur.popover', function(event) {
+							$this.popover('fadeOut');
+						});
+						$anchor.bind('click.popover', function(event) {
+							event.stopPropagation();
+						})
+					} else {
+						$anchor.add(popover).unbind('focus.popover').unbind('blur.popover').unbind('click.popover');
+					}
+				}
+			});
+		},
+		/**
+		 * Rename the popover's title
+		 * 
+		 * @param string
+		 * @return jQuery
+		 */
+		title: function(text) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var title = data.popover.find('.title');
+					var wrap = data.popover.find('.wrap');
+					if(title.length === 0)
+						title = $('<div class="title" />').appendTo(wrap);
+					title.html(text);
+				}
+			});
+		},
+		/**
+		 * Set the popover's content
+		 * 
+		 * @param html
+		 * @return jQuery
+		 */
+		content: function(html) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var content = data.popover.find('.content');
+					var wrap = data.popover.find('.wrap');
+					if(content.length === 0)
+						content = $('<div class="content" />').appendTo(wrap);
+					content.html(html);
+				}
+			});
+		},
+		/**
+		 * Read content with AJAX and set popover's content.
+		 * 
+		 * @param string
+		 * @param object
+		 * @return jQuery
+		 */
+		ajax: function(url, ajax_params) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					var ajax_defaults = {
+						url: url,
+						success: function(ajax_data) {
+							var content = data.popover.find('.content');
+							var wrap = data.popover.find('.wrap');
+							if(content.length === 0)
+								content = $('<div class="content" />').appendTo(wrap);
+							content.html(ajax_data);
+						}
+					}
+					var ajax_options = $.extend({}, ajax_defaults, ajax_params);
+					$.ajax(ajax_options);
+				}
+			});
+		},
+		setOption: function(option, value) {
+			return this.each(function() {
+				var $this = $(this);
+				var data = $this.popover('getData');
+				
+				if(data) {
+					data.options[option] = value;
+					$this.data('popover', data);
+				}
+			});
+		},
+		getData: function() {
+			var ret = [];
+			this.each(function() {
+				var $this = $(this);
+				var data = $this.data('popover');
+				
+				if(data) ret.push(data);
+			});
+			
+			if(ret.length == 0)
+				return;
+			if(ret.length == 1)
+				ret = ret[0];
+			return ret;
+		}
+	};
+
+	$.fn.popover = function(method) {
+		if(methods[method])
+			return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+		else if( typeof method === 'object' || !method)
+			return methods.init.apply(this, arguments);
+		else
+			$.error('Method ' + method + ' does not exist on jQuery.popover');
+	}
 })(jQuery);

@@ -1,90 +1,76 @@
 
 @popover-border-color: #777;
+/**
+ * jQuery.popover example stylesheet.
+ * By Davey IJzermans
+ * http://daveyyzermans.nl
+ * 
+ * License: public domain
+ */
 
-/* line 5, ../../app/stylesheets/popover.scss */
 .popover {
   position: absolute;
+  top: 0; left: 0;
+  
   display: none;
-  opacity: 0;
-  cursor: auto;
-  color: black;
-  background-color: @popover-border-color;
-  padding: 10px 5px;
+}
+.popover.wider {
+  width: 340px;
+}
+.popover.large {
+  width: 470px;
+  max-height: 350px;
+}
+.popover .arrow, .popover .top-arrow {
+  position: absolute;
+  top: 0; left: 50%;
+  margin: -10px 0 0 -3px;
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid @popover-border-color;
+}
+.popover .bottom-arrow {
+  top: 100%; left: 50%;
+  margin: 0 0 0 -3px;
+  border-top: 5px solid @popover-border-color;
+  border-bottom: 5px solid transparent;
+}
+.popover .left-arrow {
+  top: 50%; left: -10px;
+  margin: -3px 0 0;
+  border-right: 5px solid @popover-border-color;
+  border-bottom: 5px solid transparent;
+}
+.popover .right-arrow {
+  top: 50%; left: 100%;
+  margin: -3px 0 0;
+  border-left: 5px solid @popover-border-color;
+  border-bottom: 5px solid transparent;
+}
+.popover .wrap {
+  background: white;
   border: 3px solid @popover-border-color;
+  border-radius: 4px;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
-  -o-border-radius: 4px;
-  -ms-border-radius: 4px;
-  -khtml-border-radius: 4px;
-  border-radius: 4px;
-  -moz-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  -webkit-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  -o-box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  -moz-transition-property: opacity;
-  -webkit-transition-property: opacity;
-  -o-transition-property: opacity;
-  transition-property: opacity;
-  -moz-transition-duration: 0.25s;
-  -webkit-transition-duration: 0.25s;
-  -o-transition-duration: 0.25s;
-  transition-duration: 0.25s;
-  -moz-transition-timing-function: linear;
-  -webkit-transition-timing-function: linear;
-  -o-transition-timing-function: linear;
-  transition-timing-function: linear;
 }
-/* line 17, ../../app/stylesheets/popover.scss */
-.popover.active {
-  opacity: 1;
-}
-/* line 21, ../../app/stylesheets/popover.scss */
-.popover > .triangle {
-  position: absolute;
-  width: 0px;
-  border-bottom: 20px solid transparent;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-top: 20px solid transparent;
-}
-/* line 29, ../../app/stylesheets/popover.scss */
-.popover > .triangle.top {
-  bottom: -40px;
-  border-top: 20px solid @popover-border-color;
-}
-/* line 34, ../../app/stylesheets/popover.scss */
-.popover > .triangle.bottom {
-  top: -40px;
-  border-bottom: 20px solid @popover-border-color;
-}
-/* line 39, ../../app/stylesheets/popover.scss */
-.popover > .triangle.left {
-  right: -40px;
-  border-left: 20px solid @popover-border-color;
-}
-/* line 44, ../../app/stylesheets/popover.scss */
-.popover > .triangle.right {
-  left: -40px;
-  border-right: 20px solid @popover-border-color;
-}
-/* line 50, ../../app/stylesheets/popover.scss */
-.popover > .header {
-  font-weight: bold;
-  margin: 0;
-  padding: 3px;
-  height: 1.25em;
+.popover .title {
+  background-color: @popover-border-color;
   color: white;
-  background-color: black;
-  background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(20%, rgba(255, 255, 255, 0.4)), color-stop(50%, rgba(255, 255, 255, 0.2)), color-stop(50%, rgba(255, 255, 255, 0)), color-stop(100%, rgba(255, 255, 255, 0)));
-  background-image: -webkit-linear-gradient(rgba(255, 255, 255, 0.4) 20%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0));
-  background-image: -moz-linear-gradient(rgba(255, 255, 255, 0.4) 20%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0));
-  background-image: -o-linear-gradient(rgba(255, 255, 255, 0.4) 20%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0));
-  background-image: linear-gradient(rgba(255, 255, 255, 0.4) 20%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0));
+  font-size: 1.3em;
   text-align: center;
+  padding: 8px 0 0 0;
+  height: 27px;
 }
-/* line 64, ../../app/stylesheets/popover.scss */
-.popover > .content {
-  min-width: 5em;
-  overflow-x: hidden;
-  overflow-y: auto;
+.popover .content {
+  padding: 15px;
+  max-height: 175px;
+  overflow: auto;
+  line-height: 1.3em;
+  font-size: 0.9em;
+}
+.popover.large .content {
+  max-height: 285px;
 }

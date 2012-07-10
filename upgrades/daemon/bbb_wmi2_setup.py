@@ -12,7 +12,7 @@
 
 :license: GNU GPL version 2
 """
-import sys, os, glob
+import sys, os, glob, errno
 
 from apt_pkg   import version_compare
 
@@ -147,9 +147,13 @@ def check_django_wmi_database():
 
 		if not os.path.exists(dbfile):
 
-			# The directories should have been created by the Makefile or
-			# package, but this doesn't cost much to check anyway.
-			os.makedirs(os.path.dirname(dbfile))
+			try:
+				# The directories should have been created by the Makefile or
+				# package, but this doesn't cost much to check anyway.
+				os.makedirs(os.path.dirname(dbfile))
+			except (OSError, IOError), e:
+				if e.errno != errno.EEXIST:
+					raise
 
 			fsapi.touch(dbfile)
 
