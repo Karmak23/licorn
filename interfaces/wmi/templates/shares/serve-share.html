@@ -37,35 +37,33 @@
 						}, 150);
 					}
 
+					function cleanup_zclip() {
+						$("#copy_message_success").focus();
+
+						setTimeout(function() {
+							// remove zclip to restore normal focus,
+							// else flash grabs it eternally.
+							$('a#copy_url').zclip('remove');
+						}, 150);
+
+						// restore zclip afterwards for the copy
+						// mechanism to continue working.
+						setTimeout(setup_zclip, 200);
+
+						return true;
+					}
+
 					function setup_zclip(){
 
 						$('a#copy_url').zclip({
 							path:'/media/images/ZeroClipboard.swf',
 							copy:$('a#copy_url').text(),
-							beforeCopy:success_message,
-							afterCopy:function(){
-								$("#copy_message_success").focus();
-
-
-								// remove zclip to restore normal focus,
-								// else flash grabs it eternally.
-								$('a#copy_url').zclip('remove');
-
-								// restore zclip afterwards for the copy
-								// mechanism to continue working.
-								setTimeout(setup_zclip, 50);
-								return true;
-							},
+							beforeCopy: success_message,
+							afterCopy: cleanup_zclip,
 						});
 					}
 
 					setup_zclip();
-					/*
-						beforeCopy:function(){
-							$('#callback-paragraph').css('background','yellow');
-							$(this).css('color','orange');
-						},
-					*/
 				</script>
 		</div>
 	</div>
