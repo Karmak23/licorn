@@ -24,9 +24,6 @@ $(document).ready(function(){
 
     	'recap_element' : null,			// recap element, if null, will be added just after the upload_box
 
-    	'upload_box_style': {},
-    	'upload_box_style_on_hover': {},
-
     	'error_hanlder' : null,
     	'success_hanlder' : null,
 
@@ -113,14 +110,13 @@ $(document).ready(function(){
     	}
 
     	// apply default css
-    	$(this).css(settings.upload_box_style)
+    	$(this).addClass('upload_area_default');
 
     	// append the help text :
     	$(this).append("Drop files here to upload them to this share.");
     	$(this).append("<div id='max_size_file'>" + "maximum size: "
 			+ getReadableFileSizeString(settings.file_size_max) + "</div>");
-    	$('#max_size_file').css({ "margin-top" : "110px", "font-size" : 11, "text-align":"center"})
-
+    	
     	// append the "normal upload" form
     	normal_html = "<input type='file' id='classic_upload'/>"
     	$(settings.recap_element).append(normal_html)
@@ -156,7 +152,7 @@ function drag_enter(event) {
 	target = $(event.data.drag_target)
 
 	num_drag_event++;
-    target.css(settings.upload_box_style_on_hover);
+    target.removeClass('upload_area_default').addClass('upload_area_hover');
 
     stop_event(event)
 }
@@ -168,7 +164,7 @@ function drag_leave(event) {
 	num_drag_event--;
 	if (num_drag_event == 0) {
 		//console.log(settings.upload_box_style)
-		target.css(settings.upload_box_style);
+		target.removeClass('upload_area_hover').addClass('upload_area_default');
 	}
 
 	stop_event(event)

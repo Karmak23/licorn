@@ -1,0 +1,22 @@
+#max_size_file { 
+margin-top : 110px;
+font-size : 11;
+text-align : center;
+}
+
+.upload_area_default {
+border : 1px dotted white;
+border-radius: 5px;
+padding : 14px;
+background: url('/media/images/48x48/mail-attachment.png') no-repeat center;
+height : 150px;
+}
+
+.upload_area_hover {
+border: 1px dotted grey;
+border-radius: 5px;
+padding : 14px;
+background: url("/media/images/48x48/mail-inbox.png") no-repeat center;
+height' : 150px;
+}
+

@@ -3,7 +3,11 @@
 
 {%- extends 'base.bootstrap.html' -%}
 {%- block base_media %}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.upload_dnd.css" />
+	
+	
 	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
+	
 {%- endblock %}
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
@@ -107,19 +111,6 @@
 			upload_data : {
 				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 			},
-
-			upload_box_style : {
-				'border' : '1px dotted white',
-				'border-radius': '5px',
-				'padding' : '14px',
-				'background': 'url("/media/images/48x48/mail-attachment.png") no-repeat center',
-				'height' : '150px' },
-			upload_box_style_on_hover : {
-				'border' : '1px dotted grey',
-				'border-radius': '5px',
-				'padding' : '14px',
-				'background': 'url("/media/images/48x48/mail-inbox.png") no-repeat center',
-								'height' : '150px' },
 
 			recap_element : $('#upload_recap'),
 			recap_line : '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>',
