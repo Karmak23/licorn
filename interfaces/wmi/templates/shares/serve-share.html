@@ -2,12 +2,11 @@
     Distributed under the terms of the GNU GPL version 2. -#}
 
 {%- extends 'base.bootstrap.html' -%}
+
+{%- from 'widgets/common.html' import jquery_dnd_media -%}
+
 {%- block base_media %}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.upload_dnd.css" />
-
-
-	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
-
+	{{ jquery_dnd_media() }}
 {%- endblock %}
 
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
@@ -31,6 +30,7 @@
 		{%- endif -%}
 
 		<h1>{{ _('Welcome to share <em>{0}</em>').format(share.name) }}</h1>
+		<div>&nbsp;</div>
 	</div>
 
 	{%- set contents_numbers = share.contents() -%}
