@@ -1,7 +1,7 @@
 {#- Copyright 2012 META IT & Olivier Cortès <olive@licorn.org>
     Distributed under the terms of the GNU GPL version 2. -#}
 
-<tr>
+<tr id="{{ share.shid }}" class='share_table'>
 	<td><span title="{{ _('Full path on the Licorn&reg; server: {0}').format(share.path) }}"
 			class="bigger cursor-help"> {{ share.name }}</span>
 		<br /><small class="smaller"><a href="{{ url_for('wmi.shares.views.serve',
@@ -34,103 +34,145 @@
 		{%- endif -%}
 	{%- endif -%}
 	</td>
-	<td>
-		{%- if share.uri -%}
-			<a href="{{ share.uri }}" title="{{ _('Share this URI with your partners') }}" target="_blank">{{ share.uri.split('//', 1)[1] }}</a>
-		{%- else -%}
-
-		{%- endif -%}
-	</td>
-	<!-- experimental
 	<td class="centered">
 		<form class="ajax-form" method="GET"
 			action="{# {{ url_for('wmi.shares.views.password', args=(share.name, )) }} #}"
 			id="share_{{ share.shid }}_accepts_uploads"
 			title="{{ _('Can visitors upload documents to this share? Activating this feature requires setting a password on it (you will be prompted upon activation).') }}">
-			<div id="popbutton_{{ share.shid }}">
-
-				{{ icheckbox(share.shid, share.accepts_uploads) }}
-
-				<div class="share_popover_password hidden">
-					<div class="centered smaller" style="width: 300px;">
-						<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
-						<hr />
-						<table class="vertical-space-small">
-							<tr>
-								<td>{{ _('Password:') }}</td>
-								<td>{{ textinput('id_password1') }}</td>
-								<td rowspan="2">[{{ _('SET button') }}]</td>
-							</tr>
-							<tr>
-								<td>{{ _('Verify:') }}</td>
-								<td>{{ textinput('id_password2') }}</td>
-							</tr>
-							<tr>
-								<td colspan="3" class="password_status_message smaller">
-									{ {{ _('password_status_JS') }} }
-								</td>
-							</tr>
-						</table>
-						<p class="vertical-space">{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
-					</div>
-				</div>
+			<!-- WARNING: ugly hack below: the checkbox doesn't seem to set its
+				size correctly; using class="centered" on the div doesn't work
+				as expected. Thus, we use fixed-padding-left, which is not
+				cool but does the job. -->
+			<div id="popbutton_{{ share.shid }}" style="padding-left: 25px;">
+				<input type='checkbox' id="id_checkbox_{{ share.shid }}" {{ 'checked="checked"' if share.accepts_uploads else '' }} class="no-click-event" />
 			</div>
 		</form>
+		<div class="share_popover_password hidden" id="password_info_{{ share.shid }}">
+			<div class="centered smaller" style="width: 300px;">
+				<input type="hidden" id="share_id" value="{{ share.shid }}" name="{{ share.name }}">
+				<p class="bigger">{{ _('Please choose a password to protect this share against anonymous uploads.') }}</p>
+				<hr />
+
+				<table>
+					<tr>
+						<td>{{ _('Password:') }}</td>
+						<td>{{ textinput('id_password1', True) }}</td>
+
+					</tr>
+					<tr>
+						<td>{{ _('Verify:') }}</td>
+						<td>{{ textinput('id_password2', True) }}</td>
+						<td>
+							<span id="check_pwds">&nbsp;</span>
+						</td>
+						<td>
+
+							<button class="save_button" id='save_password_{{ share.shid }}' type="button"><img src="/media/images/ajouter_48.png" title='{{ _("Save password") }}' alt='{{ _("Save password") }}'></button>
+							<!--<img id='save_password_{{ share.shid }}' src='/media/images/24x24/ajouter.png' alt='{{ _("Save the password for this share") }}'>-->
+
+						</td>
+					</tr>
+					<tr>
+						<td colspan="4" class="password_status_message smaller">
+							<span id="pwd_strenght"></span>
+						</td>
+					</tr>
+				</table>
+				<p >{{ _('Note: you will not be able to see or recover the password once it is set, because it is stored encrypted. You will only be able to change it.') }}</p>
+			</div>
+		</div>
 
 		<script language="javascript">
-			function pop_{{ share.shid }}_check() {
-				//$.get();
-
-			}
-
-			function pop_{{ share.shid }}_hide() {
-				$("#popbutton_{{ share.shid }}").find('.share_popover_password').hide();
-			}
-
-			function pop_{{ share.shid }}_show() {
-
-				cbx = $("#popbutton_{{ share.shid }}");
-
-				cbx.find('.share_popover_password').show();
-
-				cbx.popover({
-						content: cbx.find('.share_popover_password'),
-						preventTop: true,
-						preventLeft: true,
-						preventRight: false,
-						preventBottom: false,
-						closeEvent: pop_{{ share.shid }}_check
-					});
-			}
-
-			function pop_{{ share.shid }}_toggle() {
-				if ($("#id_checkbox_{{ share.shid }}").is(':checked')) {
-					// prevent popover, we don't need a password.
-					console.log('hiding {{ share.shid }}');
-					pop_{{ share.shid }}_hide();
-
-				} else {
-					console.log('showing {{ share.shid }}');
-					pop_{{ share.shid }}_show();
-				}
-			}
-
 			$(document).ready(function() {
 
-				$("#popbutton_{{ share.shid }}").each(function() {
+				//init the checkbox
+				$('#id_checkbox_{{ share.shid }}').checkbox({
+					"on_text" : "{{ _('Yes') }}",
+					"off_text" : "{{ _('No') }}",
+				})
 
-					// Do the first toggle setup
-					pop_{{ share.shid }}_toggle();
+				/************ POPOVER ************/
 
-					$(this).click(function(){
-						// we need to wait a little because the ':checked' status
-						// changes only at the end of the checkbox animation.
-						pop_{{ share.shid }}_toggle();
-					});
+				function popover_{{ share.shid }}_on_close(popover_div) {
+					// check if the checkbox state is ok
+				}
+
+				function popover_{{ share.shid }}_on_open(popover_div) {
+					// function called when the popover will open
+
+					// during each "popover open", focus the first
+					// password input
+					popover_div.find(':input[type="password"]:first').focus()
+
+					// reset old password inputs
+					popover_div.find(':input[type="password"]').val('');
+
+					// at the first "open event", set some actions
+					if (! popover_div.hasClass('event_set')) {
+						popover_div.addClass('event_set');
+
+						// check password strength
+						password_helpers(popover_div);
+
+
+						// save click
+						popover_div.find('#save_password_{{ share.shid }}').click(function() {
+							pwd = popover_div.find('#id_input_id_password1').val();
+
+							// save the password
+							$.get('/shares/{{ share.name }}/password/'
+									+ $.URLEncode(pwd), function() {
+								$('#popbutton_{{ share.shid }}').popover('hide');
+								if (pwd == '') {
+									// trigger a click on the checkbox, no password has been set
+									$('#id_checkbox_{{ share.shid }}').trigger('click')
+								}
+							});
+						});
+					}
+				}
+
+				// init the password popover for this share
+				$('#popbutton_{{ share.shid }}').popover({
+					title : "{{ _('Protect this share') }}",
+					content: $('#password_info_{{ share.shid }}'),
+					trigger: 'manual',
+					position: 'right',
+					hideOnHTMLClick: false,
+					closeEvent: popover_{{ share.shid }}_on_close,
+					openEvent: popover_{{ share.shid }}_on_open,
 				});
+
+				// bind our wrapper to the checkbox
+				$('#id_checkbox_{{ share.shid }}').change(function(event) {
+
+					if ($(this).is(':checked')) {
+						$('#popbutton_{{ share.shid }}').popover('show');
+					}
+					else {
+						// hide the popover
+						$('#popbutton_{{ share.shid }}').popover('hide');
+
+						// remove the password if one has ben set
+						$.get('/share/{{ share.name }}/accepts_uploads/', function(data) {
+							if (data == 'True') {
+								$.get('/share/{{ share.name }}/password/');
+							}
+						})
+					}
+				})
 			});
 		</script>
 	</td>
+	<td>
+		{%- if share.uri -%}
+			<a href="{{ share.uri }}" title="{{ _('Share this URI with your partners') }}" target="_blank">{{ share.uri.split('//', 1)[1] }}</a>
+		{%- else -%}
+			<span title="{{ _('Reload this page from time to time; short URIs can take up to one hour to be obtained.') }}" class="cursor-help">{{ _('Not yet obtained') }}</span>
+		{%- endif -%}
+	</td>
+
+	<!-- not yet
 	<td class="centered">
 		{%- if share.expired -%}
 

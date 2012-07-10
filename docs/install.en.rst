@@ -37,8 +37,8 @@ Installation Licorn® from packages is quite simple:
 
 .. _install.sources_list.en:
 
-Sources d'installation pour `Debian` et `Ubuntu`
-------------------------------------------------
+Installation sources for `Debian` and `Ubuntu`
+----------------------------------------------
 
 The stable version of Licorn® is currently packaged for `Ubuntu` and `Debian`, for versions supported by their respective communities. The prefered distribution to install Licorn® on is `Ubuntu 12.04 LTS (Precise)`. Install the packages from this APT repository::
 

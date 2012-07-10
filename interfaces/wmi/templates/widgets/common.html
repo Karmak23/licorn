@@ -1,13 +1,20 @@
 {%- macro jquery_popover_media() -%}
-	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/jquery.popover.css" />
+	<!--<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/jquery.popover.css" />-->
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/popover.css" />
 	<link rel="stylesheet/less" type="text/css" media="screen,projection" href="/media/css/ug-popover.css" />
 	<script language="javascript" type="text/javascript" src="/media/js/jquery.popover.js"></script>
 {%- endmacro -%}
 
-{%- macro jquery_icheckbox_media() -%}
-	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/icheckbox.css" />
-	<script language="javascript" type="text/javascript" src="/media/js/icheckbox.min.js"></script>
+{%- macro jquery_checkbox_media() -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.checkbox.css" />
+	<script language="javascript" type="text/javascript" src="/media/js/jquery.checkbox.js"></script>
 {%- endmacro -%}
+
+{%- macro jquery_dnd_media() -%}
+	<link rel="stylesheet" type="text/css" media="screen,projection" href="/media/css/jquery.upload_dnd.css" />
+	<script type="text/javascript" src="/media/js/jquery.upload_dnd.js"></script>
+{%- endmacro -%}
+
 
 {# from http://stackoverflow.com/questions/1957466/how-to-create-an-on-off-switch-with-javascript-css #}
 {%- macro icheckbox(check_id, initial_state=False) -%}
