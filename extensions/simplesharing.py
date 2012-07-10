@@ -10,7 +10,7 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 """
 
-import os, stat, time, mimetypes
+import os, stat, time, mimetypes, errno
 
 from licorn.foundations           import exceptions, logging, settings
 from licorn.foundations           import json, cache, fsapi, events, hlstr
@@ -71,7 +71,8 @@ class SimpleShare(PicklableObject):
 		# We've got to create an ID which is somewhat unique, but non-moving
 		# when re-instanciating the share over time. The ctime makes a good
 		# canditate to help the name, which can collide if used alone.
-		self.__shid      = hlstr.validate_name(self.__name) + str(int(os.stat(directory).st_ctime))
+		self.__shid = hlstr.validate_name(self.__name) + str(
+											int(os.stat(directory).st_ctime))
 
 		# a method used to encrypt passwords
 		self.compute_password = coreobj.backend.compute_password
@@ -178,9 +179,12 @@ class SimpleShare(PicklableObject):
 			It can be an issue if the user places sensitive data in the share,
 			but then we can do nothing if the user is dumb or makes mistakes.
 		"""
-		self.__password = self.compute_password(newpass, salt='licorn') \
-			if newpass else None
-		
+
+		# salt='licorn' ??
+		self.__password = self.compute_password(newpass) if newpass else None
+
+		print '>> set pass %s\n%s' % (newpass, self.__password)
+
 		self.__save_share_configuration(password=self.__password)
 
 		if newpass is None:
@@ -278,7 +282,13 @@ class SimpleShare(PicklableObject):
 			'ctime'    : fstat.st_ctime - curtime,
 		}
 	def check_password(self, pw_to_check):
-		return (self.compute_password(pw_to_check, salt='licorn') == self.password)
+		# salt='licorn' ???
+
+		print '>> compare %s\n%s\n%s\n%s' % (pw_to_check, self.__password,
+						self.compute_password(pw_to_check, self.__password),
+						self.compute_password(pw_to_check))
+
+		return self.__password == self.compute_password(pw_to_check, self.__password)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
 		sharing support. See http://dev.licorn.org/wiki/ExternalFileSharing
