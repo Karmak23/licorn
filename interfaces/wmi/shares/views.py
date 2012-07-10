@@ -107,8 +107,8 @@ def password(request, shname, newpass, **kwargs):
 		share.password = newpass
 
 		if share.password in ('', None):
-
 			share.accepts_uploads = False
+
 			utils.notification(request, _(u'Password unset and uploads '
 						u'disabled for share <em>{0}</em>.').format(share.name))
 		else:
