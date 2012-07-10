@@ -127,42 +127,38 @@ def index(request, sort="date", order="asc", **kwargs):
 def serve(request, login, shname):
 	""" Serve a share to web visitors. """
 
-	user = LMC.users.by_login(login)
-	sh = user.find_share(shname)
+	user  = LMC.users.by_login(login)
+	share = user.find_share(shname)
 
-	if 'can_access_share_{0}'.format(shname) not in request.session:
-		request.session['can_access_share_{0}'.format(shname)] = False
+	session_key = 'can_access_share_{0}'.format(share.shid)
 
+	if session_key not in request.session:
+		request.session[session_key] = False
 
 	_d = wmi_data.base_data_dict(request)
-	_d.update({'share': sh })
+	_d.update({ 'share': share })
 
 	# if it is a POST Resquest, the user is sending the share password
 	if request.method == 'POST':
+		form = AskSharePasswordForm(request.POST, share=share)
 
-		form = AskSharePasswordForm(request.POST, share=sh)
 		if form.is_valid():
-			if sh.check_password(request.POST['password']) and \
-				not request.session['can_access_share_{0}'.format(shname)]:
+			if share.check_password(request.POST['password']) and \
+				not request.session[session_key]:
 
-				request.session['can_access_share_{0}'.format(shname)] = True
+				request.session[session_key] = True
 
 				return HttpResponseRedirect(request.path)
 		else:
 			# render the form again
 			return render(request, 'shares/parts/ask_password.html', {
-						'form' : form,
-						'shname' : sh.name
+						'form'   : form,
+						'shname' : shname
 					})
-
-
-
-	# this is now a GET Request
 
 	# if no share, return a 404
 	if not user.accepts_shares:
 		return HttpResponseNotFound(_('This user has no visible shares.'))
-
 
 	for share in user.list_shares():
 		if share.name == shname:
@@ -173,16 +169,16 @@ def serve(request, login, shname):
 
 			# if the share accept upload the user need a password to access it
 			if share.accepts_uploads:
-				if not request.session['can_access_share_{0}'.format(shname)]:
+				if not request.session[session_key]:
 					return render(request, 'shares/parts/ask_password.html', {
-						'form' : AskSharePasswordForm(share=share),
-						'shname' : share.name
+						'form'   : AskSharePasswordForm(share=share),
+						'shname' : shname,
 					})
 
 			# finally, if everything is OK, render the regular view
 			_d.update({
 				'uploaded_files' : share.contents()['uploads'],
-				'file_size_max' : 10240000,
+				'file_size_max'  : settings.extensions.simplesharing.max_upload_size,
 			})
 			return render(request, 'shares/serve-share.html', _d)
 
@@ -193,6 +189,8 @@ def download(request, login, shname, filename):
 	"""
 
 	share = LMC.users.by_login(login).find_share(shname)
+
+	session_key = 'can_access_share_{0}'.format(share.shid)
 
 	# NOTE: we cannot use `LMC.configuration.users.base_path` to test all
 	# download file paths, because some (standard) users have their home
@@ -206,6 +204,8 @@ def download(request, login, shname, filename):
 
 	if filename:
 		try:
+			# TODO: protect downloads with the share password if it has one ?
+
 			return utils.download_response(filename)
 
 		except:
@@ -216,16 +216,17 @@ def download(request, login, shname, filename):
 
 	else:
 		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
-
 def upload(request, login, shname, filename):
 	""" upload action """
 	share = LMC.users.by_login(login).find_share(shname)
+
+	session_key = 'can_access_share_{0}'.format(share.shid)
 
 	# make sure we can upload in this share
 	if share.accepts_uploads:
 
 		# make sure the public user can upload in this share
-		if request.session['can_access_share_{0}'.format(shname)]:
+		if request.session[session_key]:
 
 			if request.method == 'POST':
 				csv_file = request.FILES['file']
