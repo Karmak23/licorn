@@ -119,6 +119,10 @@
 							$.get('/shares/{{ share.name }}/password/'
 									+ $.URLEncode(pwd), function() {
 								$('#popbutton_{{ share.shid }}').popover('hide');
+								if (pwd == '') {
+									// trigger a click on the checkbox, no password has been set
+									$('#id_checkbox_{{ share.shid }}').trigger('click')
+								}
 							});
 						});
 					}
