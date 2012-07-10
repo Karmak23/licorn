@@ -151,7 +151,12 @@ class SimpleShare(PicklableObject):
 				raise exceptions.LicornRuntimeException(_(u'Please set a '
 										u'password on the share first.'))
 
-			os.makedirs(self.uploads_directory)
+			try:
+				os.makedirs(self.uploads_directory)
+
+			except (OSError, IOError), e:
+				if e.errno != errno.EEXIST:
+					raise
 
 		else:
 			# Archive the uploads/ directory only if non-empty.
