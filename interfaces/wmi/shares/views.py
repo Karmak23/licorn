@@ -240,7 +240,10 @@ def upload(request, login, shname, filename):
 
 				return HttpResponse(render_to_string(
 					'shares/parts/uploaded_files.html', {
-						'uploaded_files' : share.contents()['uploads']
+						# The contents are cached. to avoid messing the HDD.
+						# We need to force expire them because we are sure
+						# they changed (Howdy: we just uploaded a file!)
+						'uploaded_files' : share.contents(cache_force_expire=True)['uploads']
 					}))
 
 		else:
