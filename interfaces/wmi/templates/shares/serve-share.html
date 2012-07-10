@@ -158,7 +158,7 @@
 <script language="javascript">
 	$(document).ready(function() {
 		$('#file_upload').upload_dnd({
-			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/upload/toto",
+			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/+upload",
 			recap_line : get_recap_line(),
 			success_handler: function(data) {
 				$('#uploaded_files').html(data);

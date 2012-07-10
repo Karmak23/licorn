@@ -29,7 +29,6 @@ from licorn.foundations.ltrace      import *
 from licorn.foundations.ltraces     import *
 
 from licorn.core                           import LMC
-from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import *
 
@@ -59,7 +58,7 @@ def toggle_shares(request, state):
 		logging.exception(_(u'Could not toggle simple shares status to '
 										u'{0} for user {1}'), state, login)
 
-		wmi_event_app.enqueue_notification(request, _(u'Could not toggle '
+		utils.notification(request, _(u'Could not toggle '
 					u'shares status to {0} for user {1} (was: {2}).').format(
 						_(unicode(state)), login, e))
 
@@ -79,8 +78,21 @@ def accepts_uploads(request, shname, **kwargs):
 	login = request.user.username
 	share = LMC.users.by_login(login).find_share(shname)
 
-
 	return HttpResponse(str(share.accepts_uploads))
+
+@login_required
+def check_share(request, shname, **kwargs):
+
+	login = request.user.username
+	share = LMC.users.by_login(login).find_share(shname)
+
+	share.check()
+
+	if request.is_ajax():
+		utils.notification(request, _(u'Share <em>{0}</em> is beiing checked '
+			u'in the background. Please reload this page in a few seconds.'))
+
+	return HttpResponse('DONE')
 
 @login_required
 def password(request, shname, newpass, **kwargs):
@@ -97,23 +109,22 @@ def password(request, shname, newpass, **kwargs):
 		if share.password in ('', None):
 
 			share.accepts_uploads = False
-			wmi_event_app.enqueue_notification(request, _(u'Password unset and '
-				u'uploads disabled for share <em>{0}</em>.').format(share.name))
+			utils.notification(request, _(u'Password unset and uploads '
+						u'disabled for share <em>{0}</em>.').format(share.name))
 		else:
 			share.accepts_uploads = True
 
-			wmi_event_app.enqueue_notification(request, _(u'Password set for '
-				u'share <em>{0}</em>, uploads are now enabled.').format(share.name))
+			utils.notification(request, _(u'Password set for share '
+				u'<em>{0}</em>, uploads are now enabled.').format(share.name))
 
 	except Exception, e:
 		logging.exception(_(u'Could not change password of share {0} (user {1})'),
 															share.name, login)
 
-		wmi_event_app.enqueue_notification(request, _(u'Could not change '
-			u'password of your share {0} (was: {1}).').format(share.name, e))
+		utils.notification(request, _(u'Could not change password of your '
+							u'share {0} (was: {1}).').format(share.name, e))
 
 	return HttpResponse('PASSWORD')
-
 
 @login_required
 def index(request, sort="date", order="asc", **kwargs):
@@ -216,7 +227,7 @@ def download(request, login, shname, filename):
 
 	else:
 		return HttpResponseBadRequest(_(u'Bad file specification or path.'))
-def upload(request, login, shname, filename):
+def upload(request, login, shname):
 	""" upload action """
 	share = LMC.users.by_login(login).find_share(shname)
 
@@ -229,12 +240,12 @@ def upload(request, login, shname, filename):
 		if request.session[session_key]:
 
 			if request.method == 'POST':
-				csv_file = request.FILES['file']
+				uploaded_file = request.FILES['file']
 
 				destination = open(os.path.join(share.uploads_directory,
-												str(csv_file)), 'wb+')
+												str(uploaded_file)), 'wb+')
 				t = ''
-				for chunk in csv_file.chunks():
+				for chunk in uploaded_file.chunks():
 					destination.write(chunk)
 					t += chunk
 				destination.close()
