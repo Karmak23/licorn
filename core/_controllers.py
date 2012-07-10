@@ -31,6 +31,17 @@ class SelectableController(NamedObject, dict):
 	""" This class makes the current controller be selectable by
 		`daemon.rwi.select()`. This is used in many places across CLI tools,
 		WMI, and core internals.
+
+		The :class:`SelectableController` inherits :class:`dict` and indexes
+		held :class:`CoreUnitObjects` on their ID.
+
+		.. note:: the only **big** difference with the :class:`dict` behavior
+			is iteration: when you run `for object in controller`, it will
+			**iterate the values**, not the keys. This is the prefered way
+			in Licorn®.
+
+		.. versionadded:: long ago in the past. perhaps Licorn® 1.1 or 1.2, I
+			can't seem to remember.
 	"""
 
 	instances = {}
@@ -45,20 +56,32 @@ class SelectableController(NamedObject, dict):
 		super(SelectableController, self).__init__(*args, **kwargs)
 
 		SelectableController.instances[self.name] = self
-	def guess_one(self, value):
+	def guess_one(self, value, strong=True):
 		""" Try to guess everything of a user from a
-			single and unknown-typed info. """
+			single and unknown-typed info.
+
+			:param value: virutally anything that can lead to a core object,
+				like an ID, a name, a login, an hostname, an IP, whatever.
+				The asked controller will try to match core objects it holds
+				against it. Generally speaking, this argument will be a string,
+				but for specific controller it can be the same type of the
+				core object attribute type you want to match.
+
+			:param strong: get a strong reference to the guessed object
+				(default: ``True``) or a weak reference if ``False``.
+
+		"""
 		try:
-			return self.by_id(value)
+			return self.by_id(value, strong=strong)
 
 		except (TypeError, ValueError):
-				return self.by_name(value)
-	def guess_list(self, value_list):
+				return self.by_name(value, strong=strong)
+	def guess_list(self, value_list, strong=False):
 		objs = set()
 
 		for value in value_list:
 			try:
-				objs.add(self.guess_one(value))
+				objs.add(self.guess_one(value, strong=strong))
 
 			except (KeyError, exceptions.DoesntExistException):
 				logging.notice(_(u'Skipped non-existing {0} or {1} {2}.').format(

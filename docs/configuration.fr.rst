@@ -134,6 +134,8 @@ Directives liées à la WMI
 Utilisateurs et aux groupes
 ---------------------------
 
+.. warning:: Il faut vraiment avoir des besoins très spécifiques pour changer ces directives. De surcroît, il n'est recommandé de le faire que sur un système vierge de tout compte utilisateur et tout groupe, sans quoi les comptes ou groupes déjà présents pourraient ne plus fonctionner correctement.
+
 .. _settings.users.config_dir.fr:
 
 	**users.config_dir**
@@ -146,46 +148,49 @@ Utilisateurs et aux groupes
 
 
 
-Other directives
-----------------
+Autres directives
+-----------------
 
 .. glossary::
 
 .. _settings.experimental.enabled.fr:
 
 	**experimental.enabled**
-		turn on experimental features, depending on wich version of Licorn® you have installed. For example, in version 1.2.3, the experimental directive enables the `Machines` tab in the WMI (the wires are already enabled but non-sysadmins don't get the feature).
+		Activer les fonctionnalités expérimentales. Les fonctionnalités en question dépendent de la version de Licorn® installée. Par exemple dans la version 1.2.3, celà active les ``Machines`` dans la WMI pour utilisateurs avec pouvoirs, et dans la version 1.3 celà active aussi les partages web simplifiés.
 
 
-Check configuration files
-=========================
+Configuration du système de permissions
+=======================================
 
 
-System-wide configuration
--------------------------
+Configuration globale
+---------------------
 
-In the system directory :file:`/etc/licorn/check.d/`, `licornd` will look for files that match a certain naming criteria: the filenames must start with the name of a controller (e.g. `users` or `groups`) and end with the suffix `.conf`. Thus **these names are valid**::
+Dans le répertoire :file:`/etc/licorn/check.d/`, `licornd` recherchera des fichiers qui vérifient des critères de nommage : ceux qui commencent par le nom d'un contrôleur (c.a.d. `users` ou `groups`) et finissent par `.conf`. À titre d'exemples, **ces noms sont valides** ::
 
 	users.specific.conf
 	users.special_dirs.conf
 
-	# you can even put special punctuation in filenames...
+	# vous pouvez même mettre des caractères spéciaux…
 	users.dir_a and dir-B.conf
 
-But **these names are not**::
+But **ces noms sont invalides** ::
 
-	# lacks the 's' at the end of 'user'
+	# Il manque le « s » à la fin de « user »
 	user.dirs.conf
 
-	# suffix suggests it's disabled: it is!
+	# Le suffixe suggère que ce fichier est désactivé : c'est le cas !
 	users.specific.conf.disabled
 
 .. warning::
-	* the files :file:`users.00_default.conf` and :file:`groups.00_default.conf` are very special. **Never rename them**.
-	* the `*00_default*` files named above MUST contain **at least ONE line and at most TWO lines**, comments excluded (you can put as many as you want).
+	* Certains fichiers, comme :file:`users.00_default.conf` et :file:`groups.00_default.conf` sont spéciaux : ils sont la configuration d'usine minimale. **Ne les renommez jamais**. Vous pouvez les modifier selon vos besoins mais seulement si vous savez ce que vous faites !
+	* Ces fichiers `*00_default*` **DOIVENT** contenir **au moins UNE ligne au maximum DEUX**, en excluant les commentaires (qui peuvent être aussi nombreux que nécessaire). Les autres fichiers de configuration n'ont pas de restrictions de ce type.
 
-	If you don't follow these recommendations, a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault), or checks will not work at all, or the licorn daemon will just crash. You're warned.
+	Si vous n'observez pas ces recommendations, « a huge blue godzilla-like dinosaur will appear from another dimension to destroy the big-loved-teddybear of your damn-cute-face-looking little sister (and she will hate you if she happens to know it's all your fault) » (en anglais dans le texte), ou alors les vérifications et :ref:`chk` ne fonctionnera plus, ou le daemon Licorn® plantera. Vous êtes prévenu(e).
 
+
+
+.. note:: la suite n'est pas traduite. Le moindre volontarisme sera fortement apprécié, peut-être même récompensé…
 
 
 User-level customizations

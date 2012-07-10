@@ -9,9 +9,12 @@ from licorn.interfaces.wmi.libs   import utils
 
 def memberships(rel):
 	return {
-		relation.MEMBER      : _(u'member'),
-		relation.GUEST       : _(u'guest'),
-		relation.RESPONSIBLE : _(u'responsible'),
+		# this one should not be needed, else there is something
+		# wrong in `core.groups.*`.
+		#relation.NO_MEMBERSHIP : _(u'stranger'),
+		relation.MEMBER        : _(u'member'),
+		relation.GUEST         : _(u'guest'),
+		relation.RESPONSIBLE   : _(u'responsible'),
 	}[rel]
 def update_groups_number(request, event):
 	yield utils.format_RPC_JS('reload_div', '#groups_list_count',
@@ -21,7 +24,7 @@ def update_groups_number(request, event):
 								len(utils.select('groups', default_selection=filters.SYSTEM)))
 def group_added_handler(request, event):
 
-	group = utils.select('groups', [ event.kwargs['group'].gidNumber ])[0]
+	group = event.kwargs['group']
 
 	yield utils.notify(_(u'Group "{0}" added on the system.').format(group.name))
 	yield utils.format_RPC_JS('add_row',
@@ -34,10 +37,12 @@ def group_added_handler(request, event):
 		yield i
 def group_deleted_handler(request, event):
 
-	group = event.kwargs['group']
+	system = event.kwargs['system']
+	gid    = event.kwargs['gid']
+	name   = event.kwargs['name']
 
-	yield utils.notify(_(u'Group "{0}" deleted from the system.').format(group.name))
-	yield utils.format_RPC_JS('del_row', 'groups' if group.is_standard else 'sys_groups', group.gid)
+	yield utils.notify(_(u'Group "{0}" deleted from the system.').format(name))
+	yield utils.format_RPC_JS('del_row', 'sys_groups' if system else 'groups', gid)
 	for i in update_groups_number(request, event):
 		yield i
 def group_member_deleted_handler(request, event):

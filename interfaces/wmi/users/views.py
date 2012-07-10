@@ -47,7 +47,7 @@ def message(request, part, uid=None, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	if uid != None:
-		user = utils.select('users', [ uid ])[0]
+		user = LMC.users.by_uid(uid)
 
 	if part == 'delete':
 		html = render_to_string('users/delete_message.html', {
@@ -100,12 +100,12 @@ def mod(request, uid, action, value, *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
-	user = LMC.users.by_uid(int(uid))
+	user = LMC.users.by_uid(uid)
 
 	def mod_groups(group_id, rel_id):
 		# Typical request: /mod/user_id/groups/group_id/rel_id
 
-		group = utils.select('groups', [ group_id ])[0]
+		group = LMC.groups.by_gid(group_id)
 		if user.is_standard:
 			g_group = group.guest_group
 			r_group = group.responsible_group
@@ -254,7 +254,7 @@ def create(request, **kwargs):
 		except Exception, e:
 			logging.exception(_(u'Unable to add user'))
 			wmi_event_app.queue(request).put(utils.notify(_('Unable to add '
-									'user {0}: {1}.').format(login, e)))
+									'user: {0}.').format(e)))
 
 	return HttpResponse('DONE.')
 
@@ -267,7 +267,7 @@ def massive_import(uri, http_user, filename, firstname_col, lastname_col,
 	pass
 
 @staff_only
-def user(request, uid=None, login= None, action='edit', *args, **kwargs):
+def user(request, uid=None, login=None, action='edit', *args, **kwargs):
 
 	assert ltrace_func(TRACE_DJANGO)
 
@@ -276,8 +276,7 @@ def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 		#user = utils.select('users', [ uid ])[0]
 
 		# local:
-		user = LMC.users.by_uid(int(uid))
-
+		user = LMC.users.by_uid(uid)
 	except:
 		try:
 			# remote:
@@ -290,11 +289,12 @@ def user(request, uid=None, login= None, action='edit', *args, **kwargs):
 			user = None
 
 
-	if action=='edit':
+	if action == 'edit':
 		edit_mod = True
 		title    = _('Edit user {0}').format(user.login)
 		action   = 'edit'
 		user_id  = user.uidNumber
+
 	else:
 		edit_mod = False
 		title    = _('Add new user')
@@ -349,10 +349,10 @@ def view(request, uid=None, login=None, *args, **kwargs):
 	assert ltrace_func(TRACE_DJANGO)
 
 	if uid != None:
-		user = utils.select('users', include_id_lists=[(uid, 'by_uid')])[0]
+		user = LMC.users.by_uid(uid)
 
 	elif login != None:
-		user = utils.select('users', include_id_lists=[(login, 'by_login')])[0]
+		user = LMC.users.by_login(login)
 
 	try:
 		profile = user.primaryGroup.profile.name

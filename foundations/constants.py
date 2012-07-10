@@ -18,15 +18,15 @@ from base       import EnumDict
 stylize = styles.stylize
 
 roles = EnumDict('roles', from_dict={
-		'UNSET':  1,
+		'UNSET' : 1,
 		'SERVER': 2,
-		'CLIENT': 3
+		'CLIENT': 3,
 	})
 
 priorities = EnumDict('service_priorities', from_dict={
-		'LOW':  20,
-		'NORMAL': 10,
-		'HIGH': 0
+		'LOW'    : 20,
+		'NORMAL' : 10,
+		'HIGH'   : 0,
 	})
 
 # relationships between users and groups
@@ -197,8 +197,11 @@ backend_actions.DELETE = 3
 backend_actions.RENAME = 4
 
 reasons = EnumDict('reasons')
+reasons.UNKNOWN             = 0
 reasons.BACKENDS_CHANGED    = 1
 reasons.REMOTE_SYSTEM_ASKED = 2
+reasons.INTERNAL_LEAK       = 99
+
 
 conditions = EnumDict('conditions')
 conditions.WAIT_FOR_ME_BACK_ONLINE = 1

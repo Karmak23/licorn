@@ -6,7 +6,7 @@ This file should contain only variables.
 These variables must be altered manually,
 while using the GIT flow tools on a new "release":
 
-	# Example: release_name_and_number == 'licorn-1.3'
+	# Example: release_name_and_number == 'licorn-1.4.1'
 	git flow release start <release_name_and_number>
 
 	# alter the files… do work…
@@ -15,8 +15,8 @@ while using the GIT flow tools on a new "release":
 
 	# then package everything for release testing on daily.licorn.org
 
-:copyright: 2005-2010 Olivier Cortès <oc@meta-it.fr>
+:copyright: 2005-2012 Olivier Cortès <olive@licorn.org>
 :license: GNU GPL version 2
 """
 
-version = '1.3.2'
+version = '1.4.2.1+dev'

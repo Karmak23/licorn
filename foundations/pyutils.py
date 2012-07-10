@@ -208,7 +208,7 @@ def format_time_delta(delta_in_seconds, use_neg=False, long_output=True,
 		sep1            = ', '
 		sep2            = ' '
 		year_text       = _('{0} year{1}')
-		month_text      = _('{0}m{1}')
+		month_text      = _('{0} month{1}')
 		day_text        = _('{0} day{1}')
 		hour_text       = _('{0} hour{1}')
 		min_text        = _('{0} min{1}')

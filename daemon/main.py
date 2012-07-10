@@ -259,7 +259,7 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 			self.collect_and_start_threads()
 
-	def collect_and_start_threads(self):
+	def collect_and_start_threads(self, collect_only=False):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
@@ -268,7 +268,11 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		for module_manager in (LMC.backends, LMC.extensions):
 			for module in module_manager:
 				for thread in module.threads:
-					self.__threads[thread.name] = thread
+					if thread.name not in self.__threads:
+						self.__threads[thread.name] = thread
+
+		if collect_only:
+			return
 
 		# this first message has to come after having daemonized, else it doesn't
 		# show in the log, but on the terminal the daemon was launched.
@@ -432,6 +436,12 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			self.pid = process.daemonize(self.configuration.log_file,
 												process_name=self.name)
 
+		if self.opts.initial_check:
+			# disable the LAN scan during the initial check,
+			# without saving the setting for it to be still active
+			# at next launch, whatever the real-on-file-setting is.
+			settings.licornd.network.lan_scan = False
+
 		# if still here (not exited before), its time to signify we are going
 		# to stay: write the pid file.
 		process.write_pid_file(self.pid_file)
@@ -455,6 +465,9 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		if options.daemon:
 			logging.notice(_(u'{0}: all threads started, going to sleep '
 									u'waiting for signals.').format(self))
+
+			# This will trigger a lot of things.
+			LicornEvent('licornd_cruising').emit()
 			signal.pause()
 
 		elif self.opts.initial_check:
@@ -470,6 +483,10 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 			# handled by the global start / stop mechanism, to be able to start
 			# it before every other thread, and stop it after all other have
 			# been stopped.
+
+			# This will trigger a lot of things. Delay it until interactor is started.
+			LicornEvent('licornd_cruising').emit(delay=5.0)
+
 			self.interactor = LicornDaemonInteractor(daemon=self)
 			self.interactor.run()
 
@@ -720,6 +737,8 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 		current_thread()._ = __builtin__.__dict__['_orig__']
 	def daemon_shutdown(self):
 		""" stop threads and clear pid files. """
+
+		LicornEvent('daemon_shutdown', synchronous=True).emit(priorities.HIGH)
 
 		try:
 			# before stopping threads (notably cmdlistener), we've got to announce

@@ -13,7 +13,7 @@ Unified Configuration API for an entire linux server system
 
 """
 
-import sys, os, re, Pyro.core
+import sys, os, re, dmidecode, uuid, Pyro.core
 from licorn.foundations.threads import RLock
 
 from licorn.foundations           import logging, exceptions, settings
@@ -52,12 +52,16 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		Pyro.core.ObjBase.__init__(self)
 		MixedDictObject.__init__(self, name='configuration')
 
-		LicornEvent('configuration_initialises', configuration=self, synchronous=True).emit()
+		LicornEvent('configuration_initialises', configuration=self,
+													synchronous=True).emit()
 
 		self.app_name = 'Licorn®'
 
 		# this lock is used only by inotifier for now.
 		self.lock = RLock()
+
+		# collect events now, we need them to finish the load.
+		events.collect(self)
 
 		self.mta = None
 
@@ -65,6 +69,7 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 		# it is a hack to be able to test guis when Licorn is not installed.
 		# → this is for developers only.
 		self.install_path = os.getenv("LICORN_ROOT", "/usr")
+
 		if self.install_path == '.':
 			self.share_data_dir = '.'
 		else:
@@ -82,7 +87,8 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			self.FindUserDir()
 
-			LicornEvent('configuration_loads', configuration=self, synchronous=True).emit()
+			LicornEvent('configuration_loads', configuration=self,
+							minimal=minimal, synchronous=True).emit()
 
 			if not minimal:
 				self.load1(batch=batch)
@@ -98,24 +104,24 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 			if not minimal:
 				self.load3(batch=batch)
 
-			LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
-
 		except exceptions.LicornException, e:
 			raise exceptions.BadConfigurationError(_(u'Configuration '
-				u'initialization failed: %s') % e)
+										u'initialization failed: %s') % e)
 
-		events.collect(self)
+		LicornEvent('configuration_loaded', configuration=self, synchronous=True).emit()
 
 		LicornConfiguration.init_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< __init__()')
 	def import_settings(self):
 		self.settings = settings
+
 	def load(self, batch=False):
 		""" just a compatibility method. """
 		self.load1(batch=batch)
 		self.load2(batch=batch)
 		self.load3(batch=batch)
 	def load1(self, batch=False):
+		self.load_system_uuid()
 		self.LoadManagersConfiguration(batch=batch)
 		self.set_acl_defaults()
 	def load2(self, batch=False):
@@ -164,6 +170,77 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 		LicornConfiguration.del_ok = True
 		assert ltrace(TRACE_CONFIGURATION, '< CleanUp()')
+	def load_system_uuid(self):
+		""" Get the hardware system UUID from `dmidecode`, or generate a random
+			new one and store it for future uses. """
+
+		not_found = True
+
+		for root in dmidecode.system().itervalues():
+			try:
+				self.system_uuid = root['data']['UUID'].replace('-', '').lower()
+
+			except:
+				continue
+
+			else:
+				not_found = False
+				break
+
+		# Get warnings here, to avoid them beiing freely printed to console
+		# everywhere, from every call, which is purely annoying. Eg:
+		#
+		# del group 10000
+		# * [2012/01/07 11:57:09.8499] Le groupe ou GID "10000" inexistant ou invalide a été ignoré.
+		#
+		# ** COLLECTED WARNINGS **
+		# /dev/mem: Permission denied
+		# No SMBIOS nor DMI entry point found, sorry.
+		# ** END OF WARNINGS **
+		#
+		# NOTE: there is a similar call in `foundations.bootstrap`
+		try:
+			w = dmidecode.get_warnings()
+
+		except AttributeError:
+			# Old `dmidecode` modules don't have the `*_warnings()` functions.
+			# On Ubuntu 10.04 this is the case. BTW the warning would have
+			# already been printed, so don't bother.
+			pass
+
+		else:
+			if w and os.geteuid() == 0:
+				# remove the last '\n', and add \t to the
+				# others for pretty printing.
+				logging.warning2(w[:-1].replace('\n', '\n\t'))
+				dmidecode.clear_warnings()
+
+		uuid_data_file = os.path.join(settings.data_dir, 'system_uuid.txt')
+
+		if not_found:
+			if os.path.exists(uuid_data_file):
+				# fallback to the previously generated UUID.
+
+				self.system_uuid = open(uuid_data_file).read().strip()
+
+			else:
+				# If no previous already exists, create a new one and store it.
+
+				self.system_uuid = uuid.uuid4().hex
+
+				with open(uuid_data_file, 'w') as f:
+					f.write('%s\n' % self.system_uuid)
+
+		else:
+			# If a system UUID exists, be sure any unused file doesn't remain
+			# on disk, this could confuse the user thinking it is used but it
+			# is not.
+			try:
+				os.unlink(uuid_data_file)
+
+			except:
+				pass
+
 	def FindUserDir(self):
 		""" if ~/ is writable, use it as user_dir to store some data, else
 			use a tmp_dir."""
@@ -1039,25 +1116,32 @@ class LicornConfiguration(Singleton, MixedDictObject, Pyro.core.ObjBase):
 
 			data += u"\u21b3 %s: " % stylize(ST_ATTR, aname)
 
-			if aname in ('app_name', 'distro_version'):
+			if aname in ('app_name', 'distro_version', 'system_uuid'):
 				data += "%s\n" % stylize(ST_ATTRVALUE, attr)
+
 			elif aname is 'mta':
 				data += "%s\n" % stylize(ST_ATTRVALUE, servers[attr])
+
 			elif aname is 'distro':
-				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
 				# cf http://www.reportlab.com/i18n/python_unicode_tutorial.html
 				# and http://web.linuxfr.org/forums/29/9994.html#599760
 				# and http://evanjones.ca/python-utf8.html
+				data += "%s\n" % stylize(ST_ATTRVALUE, distros[attr])
+
 			elif aname.endswith('_dir') or aname.endswith('_file') \
 				or aname.endswith('_path') :
 				data += "%s\n" % stylize(ST_PATH, attr)
+
 			elif type(attr) == type(LicornConfigObject()):
 				data += "\n%s" % str(attr)
+
 			elif type(attr) in (
 				type([]), type(''), type(()), type({})):
 				data += "\n\t%s\n" % str(attr)
+
 			elif issubclass(attr.__class__, CoreModule):
 				data += "\n%s" % str(attr)
+
 			else:
 				data += ('%s, to be implemented in '
 					'licorn.core.configuration.Export()\n') % \

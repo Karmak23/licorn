@@ -9,6 +9,13 @@
 		margin-right: 10%;">
 
 	{%- if user.accepts_shares -%}
+		{%- if not myext.connected -%}
+			{%- include 'shares/parts/disconnected.html' with context -%}
+
+		{%- elif not myext.reachable -%}
+			{%- include 'shares/parts/unreachable.html' with context -%}
+
+		{%- endif -%}
 
 		{%- set shares = user.list_shares() -%}
 
@@ -24,7 +31,6 @@
 				<!-- not yet
 				<th>{{ _('Expires') }}</th>
 				-->
-
 			</tr>
 			{%- for share in shares|sort -%}
 				{%- include 'shares/parts/share-view.html' with context -%}

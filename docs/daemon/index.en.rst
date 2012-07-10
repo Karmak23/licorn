@@ -19,25 +19,12 @@ Daemon status
 At any moment you could want informations about the running daemon::
 
 	get status
-		État du daemon Licorn®: lancé depuis 1 heure 11 mins 32 secs, 16 threads, 11 controlleurs, 3 files, 0/8 Mlocks, 0/373 Ulocks
-		UC: utl 82.0s, sys 75.4s MÉM: rés 1.2e+02Mo prt 0.0Mo upr 0.0Mo pil 0.0Mo
-		Threads:   1/100 networkers     1/50 servicers     1/10 aclcheckers
-		Files d'attente:      serviceQ: 0         aclcheckQ: 0        networkQ: 0
-		DeadThreadCleaner [sleeping, wake up in 4 mins 3 secs]
-		EventManager (19 évènements & 5 callbacks enregistré(s))
-		GQWSchedulerThread for ACLCkeckerThread [1 workers; wake up in 0 sec]
-			ACLCkeckerThread-000 [idle]
-		GQWSchedulerThread for NetworkWorkerThread [1 workers; wake up in 1 secs]
-			NetworkWorkerThread-099& [idle]
-		GQWSchedulerThread for ServiceWorkerThread [1 workers; wake up in 0 sec]
-			ServiceWorkerThread-000 [idle]
-		INotifier (1148 répertoires observés, 11 fichiers de configuration, 0 événements en file d'attente)
-		extensions.volumes.UdevMonitor& (stop=False)
-		CommandListener(139700220770048) alive (21331 loops, 0 wakers)
-			Thread-16&: RWI calls for root(0) @127.0.0.1:49838 (started il y a 1h11m25s)
-			Thread-29&: RWI calls for root(0) @192.168.111.1:35387 (started il y a 1h11m24s)
-			Thread-128&: RWI calls for olive(1000) @127.0.0.1:49917 (started il y a 1s)
-		Thread extensions/Gloop.GobjectMainLooper&: alive, but no more info.
+
+Which brings this kind of output on my machine (in french):
+
+
+.. image:: ../screenshots/fr/daemon/daemon0001.png
+   :alt: ``get status`` output (or top-like interface)
 
 
 Start and auto-start
@@ -95,6 +82,9 @@ The daemon then stays attached to your terminal. You now have the **top-like int
 
 Top-like interface
 ------------------
+
+.. image:: ../screenshots/fr/daemon/daemon0001.png
+   :alt: top-like Interface (or ``get status`` output)
 
 If your daemon is not locally connected to you console, you can invoke the top-like interface remotely::
 

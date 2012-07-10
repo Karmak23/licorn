@@ -8,7 +8,7 @@ Licorn WMI2 utils
 :license: GNU GPL version 2
 """
 
-import os, time, types, json, mimetypes, uuid
+import os, time, types, json, mimetypes, uuid, socket
 
 #
 # WARNING: please don't import nothing from Django here.
@@ -16,7 +16,7 @@ import os, time, types, json, mimetypes, uuid
 # avoid it: we are in libs, this is a low-level module.
 #
 
-from licorn.foundations             import logging, pyutils, settings
+from licorn.foundations             import logging, pyutils, settings, cache
 from licorn.foundations.ltrace      import *
 from licorn.foundations.ltraces     import *
 from licorn.foundations.styles      import *
@@ -190,6 +190,17 @@ def dynamic_urlpatterns(dirname):
 
 # This must be done at least once.
 mimetypes.init()
+@cache.cached(cache.one_hour)
+def server_address(request):
+
+	name = request.META['SERVER_NAME']
+
+	ip = socket.gethostbyname(name)
+
+	if ip == name:
+		return name
+	else:
+		return '%s (%s)' % (name, ip)
 
 def download_response(filename):
 	""" Gets a filename from a string, returns an `HttpResponse` for the
@@ -211,8 +222,11 @@ def download_response(filename):
 							content_type=mtype or 'application/octet-stream')
 
 	response['Content-Length']      = os.path.getsize(filename)
-	response['Content-Disposition'] = 'attachment; filename={0}'.format(
-													os.path.basename(filename))
+	response['Content-Disposition'] = 'attachment; filename="{0}"'.format(
+								# Double quote are translated to simple ones.
+								# this is ugly, but simple, and avoid crashing
+								# the client with "double headers" error.
+								os.path.basename(filename).replace('"',"'"))
 
 	return response
 
@@ -233,7 +247,8 @@ def licorn_setting(key_name):
 
 	# local:
 	return pyutils.resolve_attr("settings.%s" % key_name, {'settings': settings})
-
+def get_lmc():
+	return LMC
 def now():
 	""" Jinja2 global, just returns `time.time()`. """
 	return time.time()
@@ -280,12 +295,10 @@ def dyndata_merge(data, rendered_data):
 	"""
 
 	for index, module_name in enumerate(data):
-		if module_name == '':
-			continue
-
 		try:
 			if rendered_data[index] is not None:
 				data[index] += rendered_data[index]
+
 		except:
 			logging.exception(_(u'No rendered data in dyndata_merge() for '
 								u'index {0} but data is {1}'), index, data)

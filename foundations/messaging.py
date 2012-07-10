@@ -33,8 +33,9 @@ def remote_output(text_message, clear_terminal=False, *args, **kwargs):
 							clear_terminal=clear_terminal, **kwargs),
 			options.msgproc.getProxy())
 	except AttributeError:
-		logging.exception(_(u'{0}.remote_output() aborted (no listener '
-							u'registered).'), current_thread().name)
+		import logging
+		logging.exception(_(u'{0}.remote_output() aborted, no listener '
+							u'registered'), current_thread().name)
 class LicornMessage(Pyro.core.CallbackObjBase):
 	""" Small message object pushed back and forth between Pyro instances on one
 		or more physical machines.
@@ -249,6 +250,7 @@ class ListenerObject(object):
 				'Event'         : Event,
 				'workers'       : workers,
 				'events'        : events,
+				'LicornEvent'   : events.LicornEvent,
 				}
 		self._console_interpreter = self.__class__.BufferedInterpreter(self._console_namespace)
 		self._console_completer   = rlcompleter.Completer(self._console_namespace)

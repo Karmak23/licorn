@@ -153,8 +153,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 							if os.path.exists(self.paths.pid_file)
 							else stylize(ST_COMMENT, _('Starting up'))))
 
-				events.collect(self)
-
 				return True
 			else:
 				assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
@@ -185,7 +183,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			assert ltrace(globals()['TRACE_' + self.name.upper()], '| enable() → True')
 			self.enabled = True
 
-			events.collect(self)
 			return True
 
 		except Exception, e:
@@ -207,7 +204,6 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			assert ltrace(globals()['TRACE_' + self.name.upper()], '| disable() → True')
 			self.enabled = False
 
-			events.uncollect(self)
 			return True
 
 		except Exception, e:

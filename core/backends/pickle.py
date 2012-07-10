@@ -17,6 +17,8 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.base      import Singleton
 from licorn.core.backends         import UsersBackend, GroupsBackend, MachinesBackend
 
+raise NotImplementedError(_('PickleBackend is not yet implemented.'))
+
 class PickleBackend(Singleton, UsersBackend, GroupsBackend, MachinesBackend):
 	""" A backend to cope with /etc/* UNIX shadow traditionnal files.
 

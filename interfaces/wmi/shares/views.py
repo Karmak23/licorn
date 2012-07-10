@@ -17,14 +17,12 @@ from django.http					import HttpResponse, \
 											HttpResponseRedirect, \
 											HttpResponseServerError, \
 											HttpResponseBadRequest
-
 from django.core.handlers.wsgi import WSGIRequest
 
 from django.shortcuts               import *
 from django.utils.translation       import ugettext as _
 
-from licorn.foundations                    import logging
-from licorn.foundations             import settings, fsapi
+from licorn.foundations             import logging, settings, fsapi
 from licorn.foundations.constants   import priorities
 from licorn.foundations.styles      import *
 from licorn.foundations.ltrace      import *
@@ -34,7 +32,6 @@ from licorn.core                           import LMC
 from licorn.interfaces.wmi.app             import wmi_event_app
 from licorn.interfaces.wmi.libs            import utils
 from licorn.interfaces.wmi.libs.decorators import *
-
 
 from django.template.loader                import render_to_string
 
@@ -82,6 +79,7 @@ def accepts_uploads(request, shname, **kwargs):
 	login = request.user.username
 	share = LMC.users.by_login(login).find_share(shname)
 
+
 	return HttpResponse(str(share.accepts_uploads))
 
 @login_required
@@ -106,7 +104,6 @@ def password(request, shname, newpass, **kwargs):
 
 			wmi_event_app.enqueue_notification(request, _(u'Password set for '
 				u'share <em>{0}</em>, uploads are now enabled.').format(share.name))
-
 
 	except Exception, e:
 		logging.exception(_(u'Could not change password of share {0} (user {1})'),

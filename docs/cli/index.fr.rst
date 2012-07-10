@@ -1,3 +1,4 @@
+.. _cli.fr:
 
 ============================================
 Licorn® CLI : interface en ligne de commande

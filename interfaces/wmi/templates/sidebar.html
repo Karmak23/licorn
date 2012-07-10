@@ -16,6 +16,7 @@
 	</div>
 	<div id="mainnav_list" class="nav">
 	<div id="dynamic_mainnav_list" class="nav">
+		{%- if request.user.is_authenticated() -%}
 		{#-
 			sub_item arguments: item_id, href, title, text, img_src, more_css=''
 			See 'widgets/common.html' for details.
@@ -163,7 +164,9 @@
 		{%- for name, ds_method in dynsidebars().iteritems() -%}
 			{{ ds_method(request) }}
 		{%- endfor -%}
+		{%- endif -%}{#- is_authenticated() -#}
 		</div><!-- dynamic_mainnav_list -->
+
 		{{
 			menu_item(
 				'documentation_menuitem',
@@ -182,6 +185,8 @@
 			)
 		}}
 	</div><!-- mainnav_list -->
+
+	{%- if request.user.is_authenticated() -%}
 	<div id="metanav" class="nav">
 		<ul>
 			<li>{{ request.user.username }}<!--,
@@ -191,6 +196,8 @@
 			<li class="last"><a href="/logout/" title="{{ _('Log out from the Licorn® WMI') }}">{{ _('logout') }}</a></li>
 		</ul>
 	</div><!-- metanav -->
+	{%- endif -%}{#- is_authenticated() -#}
+
 	{{ version_html() }}
 </div><!-- banner -->
 <script type="text/javascript">

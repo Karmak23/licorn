@@ -148,8 +148,9 @@ def ltrace_frame_informations(with_var_info=False, func=repr, full=False, level=
 			except:
 				length = ''
 
-			return '%s [class=%s%s]' % (stylize(ST_VALUE, func(var)),
-				stylize(ST_ATTR, var.__class__.__name__), length)
+			return '%s [type=%s, class=%s%s]' % (stylize(ST_VALUE, func(var)),
+							stylize(ST_ATTR, type(var).__name__),
+							stylize(ST_ATTR, var.__class__.__name__), length)
 	else:
 		def print_var(var):
 			return func(var)

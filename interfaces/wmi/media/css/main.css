@@ -247,6 +247,10 @@ tr a {
 	text-align: center;
 }
 
+.nowrap {
+	white-space: nowrap;
+}
+
 .wmi-table {
 	font-size: 80%;
 	width: 100%;
@@ -297,4 +301,36 @@ div.secflaw {
 	background-image: url('/media/images/16x16/online_help.png');
 	background-repeat: no-repeat;
 	background-position: right center;
+}
+
+/* =================================================== Alerts à la bootstrap */
+
+.alert {
+	.border_radius();
+	padding: 10px;
+	margin: 10px 0;
+	background-color: lightgrey;
+	vertical-align: center;
+}
+
+.alert-success {
+	min-height: 68px;
+	background-color: lightgreen;
+}
+
+.alert-warning {
+	min-height: 68px;
+	background-color: orange;
+	background-image: url('/media/images/48x48/dialog-warning.png');
+	background-repeat:no-repeat;
+	background-position: 10px center;
+	padding-left: 68px;
+}
+.alert-error {
+	min-height: 68px;
+	background-color: red;
+	background-image: url('/media/images/48x48/dialog-error.png');
+	background-repeat:no-repeat;
+	background-position: 10px center;
+	padding-left: 68px;
 }

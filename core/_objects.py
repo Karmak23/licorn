@@ -134,6 +134,9 @@ class CoreStoredObject(CoreUnitObject):
 		self.__lock    = self.__rw_lock
 
 	@property
+	def proxy(self):
+		return weakref.proxy(self)
+	@property
 	def weakref(self):
 		return self.__myref
 	@property
@@ -284,7 +287,7 @@ class CoreFSUnitObject(object):
 
 			# we need a kwargs named 'group' or 'user', thus the **{...}.
 			LicornEvent('%s_inotify_state_changed' % object_type_str,
-						**{ object_type_str: self }).emit(priorities.LOW)
+						**{ object_type_str: self.proxy }).emit(priorities.LOW)
 
 			if full_display:
 				logging.notice(_(u'Switched {0} {1} inotify state to {2} '
@@ -696,8 +699,8 @@ class CoreFSUnitObject(object):
 		except AttributeError:
 			# this happens when a CoreObject is deleted but has not been
 			# checked since daemon start. Rare, but happens.
-			logging.exception(_(u'Exception while deleting inotifier '
-								u'watches for {0}'), self.name)
+			logging.warning2(_(u'While deleting inotifier watches for {0}, '
+				u'it has never been checked (this is harmless).').format(self.name))
 
 		# we have no watches left. Reclaim some memory ;-)
 		self.__recently_deleted.clear()
@@ -744,8 +747,8 @@ class CoreFSUnitObject(object):
 					self.__watch_directory, self.homeDirectory, initial=True)
 
 		self.__watches_installed = True
-	def _standard_check(self, initial=False, minimal=True, skel_to_apply=None, force=False,
-							batch=False, auto_answer=None, full_display=True):
+	def _standard_check(self, initial=False, minimal=True, skel_to_apply=None,
+				force=False, batch=False, auto_answer=None, full_display=True):
 		""" Check a standard CoreFSUnitObject. This works for users and groups,
 			and generally speaking, any object which has a home directory.
 
@@ -784,8 +787,11 @@ class CoreFSUnitObject(object):
 				# because we set uid and gid to -1, and this implies the need to
 				# access to the path lstat() in ACLRule.check_dir().
 				if os.path.exists(self.homeDirectory):
-					if full_display and initial:
-						logging.info(_(u'{0} directory {1} already exists.').format(
+					if initial:
+						need_watches = True
+
+						if full_display:
+							logging.info(_(u'{0} directory {1} already exists.').format(
 											directory_type.title(),
 											stylize(ST_PATH, self.homeDirectory)))
 				else:

@@ -44,7 +44,9 @@ binary-install: build
 uninstall:
 	@rm -f "$(DESTDIR)"/usr/bin/{add,mod,del,get,chk}
 	@rm -f "$(DESTDIR)"/usr/sbin/licornd*
-	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)" "$(CONF_DIR)" /usr/lib/python*/{dist,site}-packages/licorn
+	@rm -rf "$(SHARE_DIR)" "$(CACHE_DIR)" "$(PROJECT_LIB_DIR)"
+	# don't delete CONF_DIR !! "$(CONF_DIR)"
+	@rm -rf /usr/lib/python*/{dist,site}-packages/licorn || true
 
 # In developer install, the first 'make lang' will fail because Django
 # is not yet installed. But this will go far enough to compile the PO
@@ -68,7 +70,8 @@ devinstall: devinstall_packages perms
 	@python contrib/dev_install.py --user-post-installation
 	@make lang  >/dev/null 2>&1
 	#
-	# You can play now :-)
+	# You should logout from your session and log back in to
+	# benefit from your new groups. After that you can play :-)
 	#
 
 devuninstall: uninstall

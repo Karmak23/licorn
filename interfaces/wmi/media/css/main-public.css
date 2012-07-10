@@ -1,0 +1,11 @@
+.centered {
+	text-align: center;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.hidden {
+	display: none;
+}

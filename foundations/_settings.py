@@ -54,6 +54,8 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		#self.defaults.quota_device = "/dev/hda1"
 
 		self.config_dir              = u'/etc/licorn'
+		self.data_dir                = u'/var/lib/licorn'
+		self.cache_dir               = u'/var/cache/licorn'
 		self.check_config_dir        = self.config_dir + u'/check.d'
 		self.main_config_file        = self.config_dir + u'/licorn.conf'
 		self.inotifier_exclude_file  = self.config_dir + u'/nowatch.conf'
@@ -74,13 +76,10 @@ class LicornSettings(ObjectSingleton, NamedObject, LicornConfigObject):
 		self.reload(emit_event=False)
 
 		if self.experimental.enabled and os.geteuid() == 0:
-			logging.notice(stylize(ST_ATTR, _(u'Experimental features enabled. '
-				u'Have fun, but do not break anything%s.') % (
-					stylize(ST_IMPORTANT, _(u' (hear me Nibor?)'))
-						if getpass.getuser() in ('robin', 'robin2', 'nibor', 'nibor2',
-							'lucbernet', 'rlucbernet', 'r.lucbernet', 'robin.lucbernet',
-							'tenrebcul', 'ntenrebcul', 'n.tenrebcul', 'nibor.tenrebcul')
-						else u'')))
+			logging.warning(stylize(ST_ATTR, _(u'Experimental features '
+												u'enabled. Have fun, and '
+												u'hope it does not break '
+												u'anything.')))
 
 		events.collect(self)
 	def __str__(self):
