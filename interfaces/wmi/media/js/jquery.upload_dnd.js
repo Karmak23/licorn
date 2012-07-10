@@ -132,7 +132,7 @@ function do_upload(files, settings) {
 			$(recap_line).find('#recap_file_name').html(file.name)
 			$(recap_line).find('#recap_file_size').html(getReadableFileSizeString(file.size))
 			$(recap_line).addClass('upload-result')
-			$('#upload_recap').append(recap_line)
+			$('#upload_recap').append(recap_line)			
 		}
 
 	  	// prepare the error_div
@@ -175,6 +175,9 @@ function do_upload(files, settings) {
 							.find('#recap_file_progress')
 								.html('<div class="progress progress-striped" style="display:\'inline\'"> <div class="bar" style="width: '+percentage+'%;">'+percentage+'%</div></div>')
 						recap_line.addClass('upload-result-success')
+						
+						// it succeed, show it and remove it after 5 seconds
+						setTimeout( function(){ recap_line.remove() }, 5000);
 						////console.log("Percentage loaded: ", percentage);
 
 					}
