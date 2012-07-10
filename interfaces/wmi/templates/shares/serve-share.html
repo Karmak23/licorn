@@ -42,7 +42,7 @@
 			<div class='row'>
 
 				<div class='span5' id="upload_recap">
-					&nbsp;
+					<input type='file' id='classic_upload'/>
 				</div>
 				<div class='span3'>
 					<div class="centered">
@@ -108,17 +108,11 @@
 <script language="javascript">
 	$(document).ready(function() {
 		$('#file_upload').upload_dnd({
-
 			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/upload/toto",
-
-
-			recap_element : $('#upload_recap'),
 			recap_line : get_recap_line(),
-
 			success_handler: function(data) {
 				$('#uploaded_files').html(data);
 			},
-
 			file_size_max : {{ file_size_max }}
 		})
 		
