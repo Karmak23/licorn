@@ -82,14 +82,11 @@
 					"off_text" : "{{ _('No') }}",
 				})
 
-
 				/************ POPOVER ************/
 
 				function popover_{{ share.shid }}_on_close(popover_div) {
 					// check if the checkbox state is ok
 				}
-
-
 
 				function popover_{{ share.shid }}_on_open(popover_div) {
 					if (! popover_div.hasClass('event_set')) {
@@ -101,6 +98,7 @@
 						// save click
 						popover_div.find('#save_password_{{ share.shid }}').click(function() {
 							pwd = popover_div.find(':input:first').val();
+
 							// save the password
 							$.get('/shares/{{ share.name }}/password/'
 									+ $.URLEncode(pwd), function() {
@@ -122,8 +120,6 @@
 					closeEvent: popover_{{ share.shid }}_on_close,
 					openEvent: popover_{{ share.shid }}_on_open,
 				});
-
-
 
 				// bind our wrapper to the checkbox
 				$('#id_checkbox_{{ share.shid }}').change(function(event) {

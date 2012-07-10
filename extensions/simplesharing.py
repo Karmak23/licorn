@@ -180,10 +180,7 @@ class SimpleShare(PicklableObject):
 			but then we can do nothing if the user is dumb or makes mistakes.
 		"""
 
-		# salt='licorn' ??
 		self.__password = self.compute_password(newpass) if newpass else None
-
-		print '>> set pass %s\n%s' % (newpass, self.__password)
 
 		self.__save_share_configuration(password=self.__password)
 
@@ -282,12 +279,10 @@ class SimpleShare(PicklableObject):
 			'ctime'    : fstat.st_ctime - curtime,
 		}
 	def check_password(self, pw_to_check):
-		# salt='licorn' ???
-
-		print '>> compare %s\n%s\n%s\n%s' % (pw_to_check, self.__password,
-						self.compute_password(pw_to_check, self.__password),
-						self.compute_password(pw_to_check))
-
+		""" Returns ``True`` if ``pw_to_check`` (a string) is equal to the
+			stored password, after having run the necessary ``crypt()``
+			mechanisms because the current password is always stored
+			encrypted. """
 		return self.__password == self.compute_password(pw_to_check, self.__password)
 class SimpleSharingUser(object):
 	""" A mix-in for :class:`~licorn.core.users.User` which add simple file
