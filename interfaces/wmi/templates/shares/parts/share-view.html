@@ -93,20 +93,20 @@
 
 				function popover_{{ share.shid }}_on_open(popover_div) {
 					if (! popover_div.hasClass('event_set')) {
-						popover_div.addClass('event_set')
+						popover_div.addClass('event_set');
 
 						// check password strength
-						password_helpers(popover_div)
+						password_helpers(popover_div);
 
 						// save click
 						popover_div.find('#save_password_{{ share.shid }}').click(function() {
-							pwd = popover_div.find(':input:first').val()
+							pwd = popover_div.find(':input:first').val();
 							// save the password
-							$.get('/shares/{{ share.name }}/password/'+$.URLEncode(pwd), function() {
+							$.get('/shares/{{ share.name }}/password/'
+									+ $.URLEncode(pwd), function() {
 								//reset password inputs
 								popover_div.find(':input').value = '';
-								$('#popbutton_{{ share.shid }}').popover('hide')
-
+								$('#popbutton_{{ share.shid }}').popover('hide');
 							});
 						});
 					}
@@ -129,16 +129,16 @@
 				$('#id_checkbox_{{ share.shid }}').change(function(event) {
 
 					if ($(this).is(':checked')) {
-						$('#popbutton_{{ share.shid }}').popover('show')
+						$('#popbutton_{{ share.shid }}').popover('show');
 					}
 					else {
 						// hide the popover
-						$('#popbutton_{{ share.shid }}').popover('hide')
+						$('#popbutton_{{ share.shid }}').popover('hide');
 
 						// remove the password if one has ben set
 						$.get('/share/{{ share.name }}/accepts_uploads/', function(data) {
 							if (data == 'True') {
-								$.get('/share/{{ share.name }}/password/')
+								$.get('/share/{{ share.name }}/password/');
 							}
 						})
 					}
