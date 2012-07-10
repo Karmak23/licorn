@@ -12,8 +12,8 @@ Licorn extensions: SimpleSharing - http://docs.licorn.org/extensions/
 
 import os, stat, time, mimetypes, random, errno
 
-from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import json, cache, fsapi, events, hlstr
+from licorn.foundations           import exceptions, logging, settings, events
+from licorn.foundations           import json, cache, fsapi, hlstr, pyutils
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -168,34 +168,33 @@ class SimpleShare(PicklableObject):
 	@accepts_uploads.setter
 	def accepts_uploads(self, accepts):
 
-		with self.lock:
-			if self.accepts_uploads == accepts:
-				logging.info(_(u'{0}: simple share upload state '
-									u'unchanged.').format(self.pretty_name))
-				return
+		if self.accepts_uploads == accepts:
+			logging.info(_(u'{0}: simple share upload state '
+								u'unchanged.').format(self))
+			return
 
-			if accepts:
-				if self.__password is None:
-					raise exceptions.LicornRuntimeException(_(u'Please set a '
-											u'password on the share first.'))
+		if accepts:
+			if self.__password is None:
+				raise exceptions.LicornRuntimeException(_(u'Please set a '
+										u'password on the share first.'))
 
-				try:
-					os.makedirs(self.uploads_directory)
+			try:
+				os.makedirs(self.uploads_directory)
 
-				except (OSError, IOError), e:
-					if e.errno != errno.EEXIST:
-						raise
-			else:
-				try:
-					# Archive the uploads/ directory only if non-empty.
-					if os.listdir(self.uploads_directory) != []:
-						fsapi.archive_directory(self.uploads_directory,
-								orig_name='share_%s_%s_uploads' % (
-											self.coreobj.name, self.name))
+			except (OSError, IOError), e:
+				if e.errno != errno.EEXIST:
+					raise
+		else:
+			try:
+				# Archive the uploads/ directory only if non-empty.
+				if os.listdir(self.uploads_directory) != []:
+					fsapi.archive_directory(self.uploads_directory,
+							orig_name='share_%s_%s_uploads' % (
+										self.coreobj.name, self.name))
 
-				except (IOError, OSError), e:
-					if e.errno != errno.ENOENT:
-						raise
+			except (IOError, OSError), e:
+				if e.errno != errno.ENOENT:
+					raise
 
 		LicornEvent('share_uploads_state_changed', share=self).emit()
 	@property
@@ -570,7 +569,20 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 			# Enhance the core user with simple_sharing extensions.
 			User.__bases__ += (SimpleSharingUser, )
 
+		self.__load_factory_settings()
+
 		return self.available
+	def __load_factory_settings(self):
+
+		for setting_name, setting_value in (
+					('extensions.simplesharing.max_upload_size', 10485760),
+				):
+			try:
+				pyutils.resolve_attr(settings, setting_name)
+
+			except AttributeError:
+				settings.merge_settings({setting_name: setting_value})
+
 	@events.handler_method
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
