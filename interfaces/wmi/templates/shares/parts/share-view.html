@@ -168,7 +168,7 @@
 		{%- if share.uri -%}
 			<a href="{{ share.uri }}" title="{{ _('Share this URI with your partners') }}" target="_blank">{{ share.uri.split('//', 1)[1] }}</a>
 		{%- else -%}
-
+			<span title="{{ _('Reload this page from time to time; short URIs can take up to one hour to be obtained.') }}" class="cursor-help">{{ _('Not yet obtained') }}</span>
 		{%- endif -%}
 	</td>
 
