@@ -8,7 +8,7 @@
 	min-width: 300px;
 }
 
-.upload_area_default {
+.upload-area {
 	border: 0;
 	padding: 15px 15px 28px;
 	background: #ddf url("/media/images/48x48/mail-inbox.png") no-repeat center;
@@ -20,7 +20,7 @@
 	box-shadow: 0 0 10px #aaa;
 }
 
-.upload_area_hover {
+.upload-area-hover {
 	background: url("/media/images/48x48/mail-send-receive.png") no-repeat center;
 }
 
