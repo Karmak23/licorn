@@ -30,7 +30,7 @@ $(document).ready(function(){
     	"recap_line" : '<div><span id="recap_file_name"></span><span id="recap_file_size"></span><span id="recap_file_progress"></span></div>',
 
 
-     	"error_image_url" : '/media/images/16x16/check_bad.png',
+     	"error_image_url" : '/media/images/16x16/emblem-important.png',
      	"file_size_max" : null,
     }, options);
 
@@ -152,7 +152,7 @@ function drag_enter(event) {
 	target = $(event.data.drag_target)
 
 	num_drag_event++;
-    target.removeClass('upload_area_default').addClass('upload_area_hover');
+    target.addClass('upload_area_hover');
 
     stop_event(event)
 }
@@ -164,7 +164,7 @@ function drag_leave(event) {
 	num_drag_event--;
 	if (num_drag_event == 0) {
 		//console.log(settings.upload_box_style)
-		target.removeClass('upload_area_hover').addClass('upload_area_default');
+		target.removeClass('upload_area_hover');
 	}
 
 	stop_event(event)
