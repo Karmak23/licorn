@@ -94,26 +94,28 @@ def password(request, shname, newpass, **kwargs):
 	share = LMC.users.by_login(login).find_share(shname)
 
 	try:
+		print '>> change', share, 'to', newpass
+
 		share.password = newpass
 
 		if share.password in ('', None):
 
-			share.accepts_uploads=False
-			wmi_event_app.enqueue_notification(request, _(u'The upload facilities '
-				'for the share <em>{0}</em> has been disabled.').format(share.name))
+			share.accepts_uploads = False
+			wmi_event_app.enqueue_notification(request, _(u'Password unset and '
+				u'uploads disabled for share <em>{0}</em>.').format(share.name))
 		else:
-			share.accepts_uploads=True
-		
-			wmi_event_app.enqueue_notification(request, _(u'A new password '
-				'has been set for the share <em>{0}</em>').format(share.name))
-		
+			share.accepts_uploads = True
+
+			wmi_event_app.enqueue_notification(request, _(u'Password set for '
+				u'share <em>{0}</em>, uploads are now enabled.').format(share.name))
+
 
 	except Exception, e:
 		logging.exception(_(u'Could not change password of share {0} (user {1})'),
 															share.name, login)
 
-		wmi_event_app.enqueue_notification(request, _(u'Could not change the '
-			u'password of you share {0} (was: {1}).').format(share.name, e))
+		wmi_event_app.enqueue_notification(request, _(u'Could not change '
+			u'password of your share {0} (was: {1}).').format(share.name, e))
 
 	return HttpResponse('PASSWORD')
 
@@ -135,11 +137,11 @@ def serve(request, login, shname):
 
 	if 'can_access_share_{0}'.format(shname) not in request.session:
 		request.session['can_access_share_{0}'.format(shname)] = False
-	
+
 
 	_d = wmi_data.base_data_dict(request)
 	_d.update({'share': sh })
-	
+
 	# if it is a POST Resquest, the user is sending the share password
 	if request.method == 'POST':
 
@@ -157,7 +159,7 @@ def serve(request, login, shname):
 						'form' : form,
 						'shname' : sh.name
 					})
-		
+
 
 
 	# this is now a GET Request
@@ -166,7 +168,7 @@ def serve(request, login, shname):
 	if not user.accepts_shares:
 		return HttpResponseNotFound(_('This user has no visible shares.'))
 
-	
+
 	for share in user.list_shares():
 		if share.name == shname:
 
@@ -182,10 +184,10 @@ def serve(request, login, shname):
 						'shname' : share.name
 					})
 
-			# finally, if everything is OK, render the regular view	
-			_d.update({ 
+			# finally, if everything is OK, render the regular view
+			_d.update({
 				'number_of_uploaded_files' : share.contents()['uploads'],
-				'file_size_max' : 10240000  
+				'file_size_max' : 10240000
 			})
 			return render(request, 'shares/serve-share.html', _d)
 
@@ -223,10 +225,10 @@ def download(request, login, shname, filename):
 def upload(request, login, shname, filename):
 	""" upload action """
 	share = LMC.users.by_login(login).find_share(shname)
-	
+
 	# make sure we can upload in this share
 	if share.accepts_uploads:
-	
+
 		# make sure the public user can upload in this share
 		if request.session['can_access_share_{0}'.format(shname)]:
 
@@ -245,7 +247,7 @@ def upload(request, login, shname, filename):
 						'number_of_uploaded_files' : share.contents()['uploads']
 					}))
 
-		else: 
+		else:
 			return HttpResponseForbidden('The password is not correct')
 
 	else:

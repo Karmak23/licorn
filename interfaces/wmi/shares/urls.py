@@ -4,7 +4,6 @@ from django.conf import settings
 urlpatterns = patterns('wmi.shares.views',
 	(r'^/?(?:index)?/?$', 'index'),
 
-
 	# management don't need the login, it's taken from the request
 	(r'^(?P<shname>[^/]+)/password/(?P<newpass>[^/]*)/?$', 'password'),
 	(r'^(?P<shname>[^/]+)/accepts_uploads/?$', 'accepts_uploads'),
