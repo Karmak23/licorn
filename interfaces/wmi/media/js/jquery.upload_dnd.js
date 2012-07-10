@@ -18,8 +18,7 @@ $(document).ready(function(){
     // Create some defaults, extending them with any options that were provided
     var settings = $.extend( {
     	'upload_action_url': '/',			// post upload action
-    	'upload_data' : {},					// additionnal data to pass to the action (ex: crf token)
-
+    	
     	'pre_function' : null,			// pre func to run before upload. return a dict of post argument sent during post upload action
 
     	'recap_element' : null,			// recap element, if null, will be added just after the upload_box
@@ -111,11 +110,6 @@ $(document).ready(function(){
 
     	// apply default css
     	$(this).addClass('upload_area_default');
-
-    	// append the help text :
-    	$(this).append("Drop files here to upload them to this share.");
-    	$(this).append("<div id='max_size_file'>" + "maximum size: "
-			+ getReadableFileSizeString(settings.file_size_max) + "</div>");
     	
     	// append the "normal upload" form
     	normal_html = "<input type='file' id='classic_upload'/>"
@@ -274,12 +268,17 @@ function do_upload(files, settings) {
 
 
 			provider=function(){ return xhr; };
+			
+			var csrf_token = {};
+			if ($('input[name$="csrfmiddlewaretoken"]') != null) {
+				csrf_token = { csrfmiddlewaretoken : $('input[name$="csrfmiddlewaretoken"]').attr('value') }
+			}
 
 
 			var datas = $.extend( {
 		    	'file': file,			// post upload action
 
-		    }, settings.upload_data);
+		    }, csrf_token);
 
 		    d = new FormData
 		  	$.map(datas, function(value, key) {

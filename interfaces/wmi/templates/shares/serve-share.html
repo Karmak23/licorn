@@ -48,6 +48,9 @@
 					<div class="centered">
 						{% csrf_token %}
 						<div id='file_upload'>
+							{{ _("Drop files here to upload them to this share.") }}
+							
+							<div id='max_size_file'> {{ _('maximum size:') }} <script language="javascript" type="text/javascript"> document.write(getReadableFileSizeString({{ file_size_max }}))</script></div>
 						</div>
 					</div>
 				</div>
@@ -108,24 +111,20 @@
 
 			upload_action_url : "/share/{{share.coreobj.login }}/{{ share.name }}/upload/toto",
 
-			upload_data : {
-				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
-			},
 
 			recap_element : $('#upload_recap'),
-			recap_line : '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>',
+			recap_line : get_recap_line(),
 
 			success_handler: function(data) {
 				$('#uploaded_files').html(data);
 			},
 
-			file_size_max : "{{ file_size_max }}"
+			file_size_max : {{ file_size_max }}
 		})
-
-
-
-
-
+		
+		function get_recap_line() {
+			return '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>'
+		}
 	});
 </script>
 
