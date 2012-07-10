@@ -32,7 +32,7 @@
 		<div class="span7 offset2 hero-unit">
 			<h2>{{ _('Upload documents') }}</h2>
 			<div class='row'>
-				
+
 				<div class='span5' id="upload_recap">
 					&nbsp;
 				</div>
@@ -96,19 +96,23 @@
 </div>
 <script language="javascript">
 	$(document).ready(function() {
-		
-		$('#file_upload').upload_dnd( {
-		
+
+		$('#file_upload').upload_dnd({
+
 			upload_action_url : "/share/robin/{{ share.name }}/upload/toto",
-			
+
 			upload_data : {
 				csrfmiddlewaretoken: $('input[name$="csrfmiddlewaretoken"]').attr('value'),
 			},
-			
-			upload_box_style : { 'border' : '', 'background': 'url("/media/images/dropbox.png") no-repeat center', 'height' : '150px' },
-			upload_box_style_on_hover : { 'border' : '4px dotted red', 
-											'background': 'url("/media/images/dropbox.png") no-repeat center',
-											'height' : '150px' },
+
+			upload_box_style : {
+				'border' : '',
+				'background': 'url("/media/images/48x48/mail-attachment.png") no-repeat center',
+				'height' : '150px' },
+			upload_box_style_on_hover : {
+				'border' : '1px dotted grey',
+				'background': 'url("/media/images/48x48/inbox.png") no-repeat center',
+								'height' : '150px' },
 
 			recap_element : $('#upload_recap'),
 			recap_line : '<div class="row"><div class="span3" style="overflow:hidden;" id="recap_file_name"></div><div id="recap_file_size" class="span1"></div><div class="span1" id="recap_file_progress"></div></div>',
@@ -118,12 +122,11 @@
 			},
 
 			file_size_max : "{{ file_size_max }}"
-
 		})
-	
 
-		
-	
+
+
+
 
 	});
 </script>

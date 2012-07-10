@@ -13,7 +13,7 @@ $(document).ready(function(){
 
 (function( $ ){
 
-  $.fn.upload_dnd = function( options ) {  
+  $.fn.upload_dnd = function( options ) {
 
     // Create some defaults, extending them with any options that were provided
     var settings = $.extend( {
@@ -31,31 +31,31 @@ $(document).ready(function(){
     	'success_hanlder' : null,
 
     	"recap_line" : '<div><span id="recap_file_name"></span><span id="recap_file_size"></span><span id="recap_file_progress"></span></div>',
-     	
+
 
      	"error_image_url" : '/media/images/16x16/check_bad.png',
      	"file_size_max" : null,
     }, options);
 
-    return this.each(function() {     
+    return this.each(function() {
     	////console.log('settings ,', settings)
-    	
+
     	// http://help.dottoro.com/ljccpmjk.php
     	// bind the drop event
-    	
+
     	/*this.ondrop=function() {
     		//console.log('droppppppppp')
     	}
-    	
+
 		dropbox = document.getElementById("file_upload");
-		
+
     	// init event handlers
 		dropbox.addEventListener("dragenter", dragEnter, false);
 		dropbox.addEventListener("dragexit", dragExit, false);
 		dropbox.addEventListener("dragleave", dragExit, false);
 		dropbox.addEventListener("dragover", dragOver, false);
 		dropbox.addEventListener("drop", drop, false);
-		
+
 
 		function dragEnter(evt)
 		{
@@ -65,19 +65,19 @@ $(document).ready(function(){
 		}
 		function dragExit(evt)
 		{
-		
+
 		//console.log("exit box")
 		evt.stopPropagation();
 		evt.preventDefault();
 		}
 		function dragOver(evt)
 		{
-		
+
 		//console.log("over box")
 		evt.stopPropagation();
 		evt.preventDefault();
 		}
-		
+
 		function droped(evt)
 		{
 		evt.stopPropagation();
@@ -92,7 +92,7 @@ $(document).ready(function(){
 		    //handleFiles(files);
 		}
 		}
-    	
+
 
     	//console.log(this)*/
 
@@ -103,7 +103,7 @@ $(document).ready(function(){
     	// bind the dragenter to apply a style when drag enter in the upload box
     	// NOTE : we use a counter, because in Chromium, a dragleave event is triggered when entering a child
     	$(this).bind('dragenter', { 'settings' : settings, 'drag_target': this }, drag_enter );
-   	
+
     	$(this).bind('dragleave', { 'settings' : settings, 'drag_target': this }, drag_leave);
 
     	// if recap_element is not set, add it after the upload box
@@ -116,14 +116,15 @@ $(document).ready(function(){
     	$(this).css(settings.upload_box_style)
 
     	// append the help text :
-    	$(this).append("<code>Drop files here !</code>")
-    	$(this).append("<div id='max_size_file'> maximum size : "+getReadableFileSizeString(settings.file_size_max)+"</div>")
+    	$(this).append(gettext("Drop files here to upload them to this share."));
+    	$(this).append("<div id='max_size_file'>" + gettext("maximum size: ")
+			+ getReadableFileSizeString(settings.file_size_max) + "</div>");
     	$('#max_size_file').css({ "margin-top" : "110px", "font-size" : 11, "text-align":"center"})
 
     	// append the "normal upload" form
     	normal_html = "<input type='file' id='classic_upload'/>"
     	$(settings.recap_element).append(normal_html)
-    	
+
     	// bind our events to the "normal" http file browser
 		$('#classic_upload').change(function(event){
 			// get files
@@ -134,8 +135,8 @@ $(document).ready(function(){
 				settings.run_function(files, settings)
 			}
 			else {
-				do_upload(files, settings)	
-			} 
+				do_upload(files, settings)
+			}
 		});
 
 
@@ -183,7 +184,7 @@ function drop(event){
 	//console.log(">> drop function")
 	// get settings
 	settings = event.data.settings
-	
+
 	// get upload files from event
 	var files = event.dataTransfer.files;
 	////console.log('>>>> files ', files)
@@ -191,15 +192,15 @@ function drop(event){
 	stop_event(event);
 	// drag leave
 	$(event.data.drag_target).trigger('dragleave')
-		
+
 	if (settings.run_function != null) {
 		// the default action is overwritten
 		settings.run_function(files, settings)
 	}
 	else {
-		do_upload(files, settings)	
+		do_upload(files, settings)
 	}
-	
+
 
 }
 
@@ -236,12 +237,12 @@ function do_upload(files, settings) {
 	  		if (file.size > settings.file_size_max) {
 	  			recap_line
 					.find('#recap_file_progress').html('').append(error_div.attr('title', "File too big, maximun allowed "+getReadableFileSizeString(settings.file_size_max)));
-					
+
 	  			return false;
 	  		}
 
 	  	}
-	  	
+
 
 
 	  	// AT this point, all should be ok
@@ -264,24 +265,24 @@ function do_upload(files, settings) {
 			xhr.upload.addEventListener("load", function(e) {
 					//console.log('LOAD EVENT', e)
 					stop_event(e)
-				}, false);  
+				}, false);
 			xhr.upload.addEventListener("error", function(e) {
 					//console.log('RROR EVENT')
 					stop_event(e)
-				}, false);  
+				}, false);
 			xhr.upload.addEventListener("abort", function() {
 					//console.log('CANCEL EVENT')
 					stop_event(e)
-				}, false);  
-			  
-			 
+				}, false);
+
+
 
 			provider=function(){ return xhr; };
-			
+
 
 			var datas = $.extend( {
 		    	'file': file,			// post upload action
-		    	
+
 		    }, settings.upload_data);
 
 		    d = new FormData
@@ -291,26 +292,26 @@ function do_upload(files, settings) {
 
 			////console.log('d', d)
 			////console.log('settings', settings)
-			
+
 			// Requete ajax pour envoyer le fichier
 			$.ajax({
 				url:settings.upload_action_url,
 				type: 'POST',
 				data: d,
 				async: true,
-				
+
 				xhr:provider,
 				processData:false,
 				contentType:false,
 				success:function(data) {
 					settings.success_handler(data)
 				},
-				error:function(error){ 
+				error:function(error){
 					recap_line.find('#recap_file_progress').html('').append(error_div.attr('title', error.statusText))
 					settings.error_handler()
 				}
 			});
-	
+
 
 
 
@@ -325,9 +326,9 @@ function do_upload(files, settings) {
 		for(var i in files){
 			// Si c'est bien un fichier
 			if(files[i].size!=undefined) {
-				
+
 				var fic=files[i];
-				
+
 				// On ajoute un listener progress sur l'objet xhr de jQuery
 				xhr = jQuery.ajaxSettings.xhr();
 				if(xhr.upload){
@@ -337,12 +338,12 @@ function do_upload(files, settings) {
 					},false);
 				}
 				provider=function(){ return xhr; };
-				
+
 				// On construit notre objet FormData
 				var fd=new FormData;
 				fd.append('file',fic);
 				fd.append('csrfmiddlewaretoken', $('input[name$="csrfmiddlewaretoken"]').attr('value'))
-				
+
 				// Requete ajax pour envoyer le fichier
 				$.ajax({
 					url:'/share/robin/UTT/upload/filename',
@@ -351,21 +352,21 @@ function do_upload(files, settings) {
 					xhr:provider,
 					processData:false,
 					contentType:false,
-					complete:function(data){ 
+					complete:function(data){
 						$('#'+data.responseText+' .percent').css('width', '100%');
 						$('#'+data.responseText+' .percent').html('100%');
 					}
 				});
-						
-				
+
+
 				// On prÃ©pare la barre de progression au dÃ©marrage
 				var id_tmp=fic.size;
 				$('#output').after('<div class="progress_bar loading" id="'+id_tmp+'"><div class="percent">0%</div></div>');
 				$('#output').addClass('output_on');
-				
+
 				// On ajoute notre fichier Ã  la liste
 				$('#output-listing').append('<li>'+files[i].name+'</li>');
-				
+
 			}
 		}
 	}*/
@@ -381,9 +382,9 @@ function stop_event(event){
 
 // Mise Ã  jour de la barre de progression
 function update_progress(evt,fic) {
-	
+
 	var id_tmp=fic.size;
-	
+
 	if (evt.lengthComputable) {
 		var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
 		if (percentLoaded <= 100) {
