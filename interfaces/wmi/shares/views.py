@@ -94,8 +94,6 @@ def password(request, shname, newpass, **kwargs):
 	share = LMC.users.by_login(login).find_share(shname)
 
 	try:
-		print '>> change', share, 'to', newpass
-
 		share.password = newpass
 
 		if share.password in ('', None):
