@@ -9,8 +9,12 @@
 {% block title %}{{ _('Web share {0}').format(share.name) }}{% endblock %}
 
 {%- block container -%}
+<style type="text/css">
+	.centered {
+		text-align: center;
+	}
+</style>
 <div class="row">
-
 	<div class="span8 offset2">
 		{%- if request.user.is_authenticated()
 						and request.user.username == share.coreobj.name -%}
@@ -36,9 +40,11 @@
 				<div class='span5' id="upload_recap">
 					&nbsp;
 				</div>
-				<div class='span2'>
-					{% csrf_token %}
-					<div id='file_upload'>
+				<div class='span3'>
+					<div class="centered">
+						{% csrf_token %}
+						<div id='file_upload'>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -104,13 +110,13 @@
 
 			upload_box_style : {
 				'border' : '',
-				'padding' : '1px',
+				'padding' : '15px',
 				'background': 'url("/media/images/48x48/mail-attachment.png") no-repeat center',
 				'height' : '150px' },
 			upload_box_style_on_hover : {
 				'border' : '1px dotted grey',
 				'border-radius': '5px',
-				'padding' : '0',
+				'padding' : '14px',
 				'background': 'url("/media/images/48x48/mail-inbox.png") no-repeat center',
 								'height' : '150px' },
 
