@@ -139,7 +139,7 @@ def serve(request, login, shname):
 
 	_d = wmi_data.base_data_dict(request)
 	_d.update({'share': sh })
-	
+
 	# if it is a POST Resquest, the user is sending the share password
 	if request.method == 'POST':
 
@@ -184,8 +184,8 @@ def serve(request, login, shname):
 
 			# finally, if everything is OK, render the regular view
 			_d.update({
-				'number_of_uploaded_files' : share.contents()['uploads'],
-				'file_size_max' : 10240000
+				'uploaded_files' : share.contents()['uploads'],
+				'file_size_max' : 10240000,
 			})
 			return render(request, 'shares/serve-share.html', _d)
 
@@ -233,7 +233,8 @@ def upload(request, login, shname, filename):
 			if request.method == 'POST':
 				csv_file = request.FILES['file']
 
-				destination = open(os.path.join(share.uploads_directory, str(csv_file)), 'wb+')
+				destination = open(os.path.join(share.uploads_directory,
+												str(csv_file)), 'wb+')
 				t = ''
 				for chunk in csv_file.chunks():
 					destination.write(chunk)
@@ -242,11 +243,11 @@ def upload(request, login, shname, filename):
 
 				return HttpResponse(render_to_string(
 					'shares/parts/uploaded_files.html', {
-						'number_of_uploaded_files' : share.contents()['uploads']
+						'uploaded_files' : share.contents()['uploads']
 					}))
 
 		else:
-			return HttpResponseForbidden('The password is not correct')
+			return HttpResponseForbidden(_(u'Incorrect password!'))
 
 	else:
-		return HttpResponse('cannot upload in this share !')
+		return HttpResponse(_(u'Uploads disabled for this share!'))
