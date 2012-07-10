@@ -16,7 +16,7 @@ $(document).ready(function(){
     // Create some defaults, extending them with any options that were provided
     var settings = $.extend( {
     	'upload_action_url': '/',			// post upload action
-    	
+
     	'pre_function' : null,			// pre func to run before upload. return a dict of post argument sent during post upload action
 
     	'error_hanlder' : null,
@@ -43,6 +43,7 @@ $(document).ready(function(){
     	// apply default css
     	$(this).addClass('upload_area_default');
     	
+    	    	
     	// bind our events to the "normal" http file browser, if found
     	if ($('#classic_upload') != []) {
 			$('#classic_upload').change(function(event){
@@ -162,6 +163,7 @@ function do_upload(files, settings) {
 
 	  	// AT this point, all should be ok
 
+
 		// bind upload events
 		var xhr = jQuery.ajaxSettings.xhr();
 		if(xhr.upload){
@@ -173,6 +175,7 @@ function do_upload(files, settings) {
 							.html('<div class="progress progress-striped" style="display:\'inline\'"> <div class="bar" style="width: '+percentage+'%;">'+percentage+'%</div></div>')
 					recap_line.addClass('upload-result-success')
 					////console.log("Percentage loaded: ", percentage);
+
 				}
 				stop_event(e)
 			}, false);
@@ -241,7 +244,7 @@ function do_upload(files, settings) {
 
 }
 
-// prevent default event and its propagationi
+// prevent default event and its propagation
 function stop_event(event){
 	event.stopPropagation();
 	event.preventDefault();
@@ -251,7 +254,7 @@ function stop_event(event){
 function getReadableFileSizeString(fileSizeInBytes) {
 
     var i = -1;
-    var byteUnits = [' kB', ' MB', ' GB', ' TB', 'PB', 'EB', 'ZB', 'YB'];
+    var byteUnits = [' kB', ' MB', ' GB', ' TB', ' PB', ' EB', ' ZB', ' YB'];
     do {
         fileSizeInBytes = fileSizeInBytes / 1024;
         i++;
