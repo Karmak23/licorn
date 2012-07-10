@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-10 16:12+0200\n"
-"PO-Revision-Date: 2012-07-10 16:12+0200\n"
+"POT-Creation-Date: 2012-07-10 16:27+0200\n"
+"PO-Revision-Date: 2012-07-10 16:26+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -1597,7 +1597,7 @@ msgstr "Glissez-déposez des fichiers ici pour les envoyer sur ce partage."
 
 #: templates/shares/serve-share.html:53
 msgid "maximum upload size: {0}"
-msgstr "Taille maximum des envois : {0}"
+msgstr "Taille maximum de chaque fichier envoyé : {0}"
 
 #: templates/shares/serve-share.html:73
 msgid "Click on a filename to download it to your computer:"

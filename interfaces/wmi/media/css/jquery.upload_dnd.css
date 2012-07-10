@@ -1,6 +1,7 @@
 #max_size_file {
-	margin-top : 110px;
-	text-align : center;
+	display: block;
+	margin: 85px 0 0;
+	text-align: center;
 }
 
 #classic_upload {
@@ -8,14 +9,15 @@
 }
 
 .upload_area_default {
-	border : 0;
+	border: 0;
+	padding: 15px 15px 28px;
+	background: #ddf url("/media/images/48x48/mail-inbox.png") no-repeat center;
+	height: 160px;
+	width: 180px;
 	border-radius: 5px;
 	-moz-box-shadow: 0 0 10px #aaa;
 	-webkit-box-shadow: 0 0 10px #aaa;
 	box-shadow: 0 0 10px #aaa;
-	padding : 15px 15px 28px;
-	background: #ddf url("/media/images/48x48/mail-inbox.png") no-repeat center;
-	height : 150px;
 }
 
 .upload_area_hover {
