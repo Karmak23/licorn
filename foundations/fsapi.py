@@ -1411,24 +1411,23 @@ def archive_directory(path, orig_name='unknown'):
 	# /home/archives must be OK before moving
 	LMC.configuration.check_base_dirs(minimal=True,	batch=True)
 
-	group_archive_dir = "%s/%s.deleted.%s" % (
+	archive_dir = "%s/%s.deleted.%s" % (
 		settings.home_archive_dir, orig_name,
 		time.strftime("%Y%m%d-%H%M%S", time.gmtime()))
 	try:
-		os.rename(path, group_archive_dir)
+		shutil.move(path, archive_dir)
 
-		logging.info(_(u"Archived {0} as {1}.").format(
-			stylize(ST_PATH, path),
-			stylize(ST_PATH, group_archive_dir)))
+		logging.info(_(u"Archived {0} as {1}.").format(stylize(ST_PATH, path),
+												stylize(ST_PATH, archive_dir)))
 
-		LMC.configuration.check_archive_dir(group_archive_dir, batch=True,
+		LMC.configuration.check_archive_dir(archive_dir, batch=True,
 													full_display=__debug__)
-	except OSError, e:
+	except (OSError, IOError), e:
 		if e.errno == errno.ENOENT:
 			logging.info(_(u'Cannot archive %s, it does not exist!') %
-				stylize(ST_PATH, path))
+														stylize(ST_PATH, path))
 		else:
-			raise e
+			raise
 def has_extended_acl(pathname):
 	# return True if the posix1e representation of pathname's ACL has a MASK.
 	for acl_entry in posix1e.ACL(file = pathname):
