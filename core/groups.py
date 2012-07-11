@@ -2336,7 +2336,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			group.responsible_group.add_Users(responsibles_to_add)
 
 		assert ltrace_func(TRACE_GROUPS, True)
-		return group
+		return group.proxy
 	def __add_group(self, name, manual_gid=None, system=False, description=None,
 						groupSkel=None, permissive=None, backend=None,
 						inotified=True, batch=False, force=False):
