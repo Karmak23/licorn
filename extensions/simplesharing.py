@@ -24,6 +24,7 @@ from licorn.foundations.constants import services, svccmds, distros, priorities
 
 from licorn.core                  import LMC
 from licorn.core.users            import User
+from licorn.core.classes          import only_if_enabled
 from licorn.extensions            import LicornExtension
 
 from licorn.extensions.mylicorn   import constants
@@ -579,6 +580,7 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 				settings.merge_settings({setting_name: setting_value})
 
 	@events.handler_method
+	@only_if_enabled
 	def user_post_add(self, *args, **kwargs):
 		""" On user creation, check its shares directory, this will create it
 			if needed.
@@ -600,18 +602,14 @@ class SimplesharingExtension(ObjectSingleton, LicornExtension):
 						u'user {1}'), self.pretty_name, (ST_LOGIN, user.login))
 			return False
 	@events.handler_method
+	@only_if_enabled
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
 		""" When the daemon has reached ``cruising`` state, we can start to
 			check shares, request short URLs, etc. """
 
-		# The event can occur even if the extension is disabled, because
-		# it is inconditionnaly registered. Avoid false-negatives by not
-		# doing anything if it is the case.
-		if self.enabled:
+		logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
 
-			logging.progress(_(u'{0}: checking all users\' shares…').format(self.pretty_name))
+		for user in LMC.users:
+			user.check_shares(batch=True)
 
-			for user in LMC.users:
-				user.check_shares(batch=True)
-
-			logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))
+		logging.progress(_(u'{0}: shares checks finished.').format(self.pretty_name))

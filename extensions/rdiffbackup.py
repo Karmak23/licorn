@@ -24,6 +24,7 @@ from licorn.foundations.constants import priorities
 from licorn.foundations.workers   import workers
 
 from licorn.core                import LMC
+from licorn.core.classes        import only_if_enabled
 from licorn.daemon.threads      import LicornJobThread
 from licorn.extensions          import LicornExtension
 
@@ -878,7 +879,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		# backup procedure releases the volume, because the operations status
 		# will re-acquire it.
 		workers.service_enqueue(priorities.LOW, self.operations_status, volume,
-								cache_force_expire=True, job_delay=1.0)
+										cache_force_expire=True, job_delay=1.0)
 
 		assert ltrace(self._trace_name, '< __backup_procedure()')
 	@if_not_already_running_on_this_volume
@@ -1130,6 +1131,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 				time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup())
 	@events.handler_method
+	@only_if_enabled
 	def volume_mounted(self, *args, **kwargs):
 		""" Trigerred when a volume is mounted on the system. It will check
 			if any of the connected (mounted or not) volumes is enabled for
@@ -1141,6 +1143,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes(complete=False) != []:
 			self.__create_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_unmounted(self, *args, **kwargs):
 		""" Trigerred when a volume is unmounted from the system. If no
 			Licorn® enabled volume remains connected (mounted or not), this
@@ -1156,6 +1159,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	# catch it. Any added but not compatible (thus not mounted) volume will
 	# be of no help, we can safely ignore it.
 	@events.handler_method
+	@only_if_enabled
 	def volume_removed(self, *args, **kwargs):
 		""" Trigerred when a volume is disconnected from the system. If no
 			other Licorn® enabled volume remains connected (mounted or not),
@@ -1167,6 +1171,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes(complete=False) == []:
 			self.__stop_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_enabled(self, *args, **kwargs):
 		""" Trigerred when a new volume is enabled on the system; will blindly
 			create the timer thread, if not already present.
@@ -1176,6 +1181,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		self.__create_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_disabled(self, *args, **kwargs):
 		""" Trigerred when a volume is disconnected from the system. If no
 			Licorn® enabled volume remains, this method will stop the timer
@@ -1187,6 +1193,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes() == []:
 				self.__stop_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def settings_changed(self, *args, **kwargs):
 		""" Trigerred when the Licorn® main configuration file changed. If the
 			:ref:`backup.interval <backup.interval.en>` changed and the
