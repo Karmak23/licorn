@@ -257,7 +257,7 @@ class SimpleShare(PicklableObject):
 		files   = []
 		uploads = []
 
-		uploads_dir = self.__class__.uploads_dir
+		uploads_dir = os.path.join(self.path, self.__class__.uploads_dir)
 
 		for subent, typ in fsapi.minifind(self.path, mindepth=1, yield_type=True):
 			if os.path.basename(subent)[0] == '.':
@@ -268,7 +268,7 @@ class SimpleShare(PicklableObject):
 				if fsapi.is_backup_file(subent):
 					continue
 
-				if uploads_dir in subent:
+				if subent.startswith(uploads_dir):
 					uploads.append(subent)
 
 				else:
