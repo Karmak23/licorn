@@ -341,14 +341,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes
 
-			if self.enabled_volumes() != []:
-				self.__create_timer_thread()
-
-			logging.info(_(u'{0}: started extension and auto-backup '
-				'timer.').format(stylize(ST_NAME, self.name)))
-
-			workers.service_enqueue(priorities.LOW, self.compute_total_space)
-
 			return True
 
 		return False
@@ -359,6 +351,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		#TODO: with self.activation_lock: ?
 		if not self.events.active.is_set():
 			self.events.active.set()
+
 			self.threads.auto_backup_timer = LicornJobThread(
 							target=self.backup,
 							delay=settings.backup.interval,
@@ -367,6 +360,12 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 							time=(time.time()+5.0)
 							)
 			self.threads.auto_backup_timer.start()
+
+			logging.info(_(u'{0}: started auto-backup timer.').format(
+															self.pretty_name))
+
+			self.licornd.collect_and_start_threads(collect_only=True,
+													full_display=False)
 	def __stop_timer_thread(self):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
@@ -388,6 +387,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		self.enabled = self.is_enabled()
+
+		if self.enabled:
+			self.licornd_cruising()
 
 		return self.enabled
 	def disable(self):
@@ -1130,6 +1132,21 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		return (self._last_backup_time(volume),
 				time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup())
+	@events.callback_method
+	@only_if_enabled
+	def licornd_cruising(self, *args, **kwargs):
+		""" When licornd is ready, create the timer thread and eventually
+			start a backup (the thread will decide).
+
+			Putting this code here in an event callback allow not starting
+			a backup during the daemon initial checks without doing convoluted
+			things.
+		"""
+		if self.enabled_volumes() != []:
+			self.__create_timer_thread()
+
+		workers.service_enqueue(priorities.LOW, self.compute_total_space)
+
 	@events.handler_method
 	@only_if_enabled
 	def volume_mounted(self, *args, **kwargs):
