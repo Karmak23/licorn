@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-10 17:26+0200\n"
-"PO-Revision-Date: 2012-07-10 17:33+0200\n"
+"POT-Creation-Date: 2012-07-11 10:51+0200\n"
+"PO-Revision-Date: 2012-07-11 10:52+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -821,74 +821,82 @@ msgstr ""
 msgid "Incorrect password"
 msgstr "Mot de passe incorrect"
 
-#: shares/views.py:59
+#: shares/views.py:58
 msgid "Could not toggle simple shares status to {0} for user {1}"
 msgstr ""
 "Impossible de basculer le status des partages web vers {0} pour "
 "l'utilisateur {1}"
 
-#: shares/views.py:62
+#: shares/views.py:61
 msgid "Could not toggle shares status to {0} for user {1} (was: {2})."
 msgstr ""
 "Impossible de basculer l'état des partages vers {0} pour l'utilisateur {1} "
 "(erreur : {2})."
 
-#: shares/views.py:100
+#: shares/views.py:92
+msgid ""
+"Share <em>{0}</em> is beiing checked in the background. Please reload this "
+"page in a few seconds."
+msgstr ""
+"Le partage <em>{0}</em> est vérifié en arrière-plan. Rechargez cette page "
+"dans quelques secondes."
+
+#: shares/views.py:112
 msgid "Password unset and uploads disabled for share <em>{0}</em>."
 msgstr ""
 "Mot de passe supprimé et dépôts interdits pour le partage <em>{0}</emp>."
 
-#: shares/views.py:105
+#: shares/views.py:117
 msgid "Password set for share <em>{0}</em>, uploads are now enabled."
 msgstr ""
 "Mot de passe enregistré pour le partage <em>{0}</em>, les dépôts sont "
 "maintenant autorisés."
 
-#: shares/views.py:109
+#: shares/views.py:121
 msgid "Could not change password of share {0} (user {1})"
 msgstr ""
 "Impossible de modifier le mot de passe du partage {0} (utilisateur {1})"
 
-#: shares/views.py:112
+#: shares/views.py:124
 msgid "Could not change password of your share {0} (was: {1})."
 msgstr ""
 "Impossible de modifier le mot de passe de votre partage {0} (erreur : {1})."
 
-#: shares/views.py:164
+#: shares/views.py:172
 msgid "This user has no visible shares."
 msgstr "Cet utilisateur n'a pas de partages publics."
 
-#: shares/views.py:171
+#: shares/views.py:178
 msgid "This share has expired. It is no more available."
 msgstr "Ce partage a expiré, il n'est plus disponible."
 
-#: shares/views.py:189
+#: shares/views.py:196
 msgid "No Web share at this URI, sorry."
 msgstr "Aucun partage à cette adresse, désolé."
 
-#: shares/views.py:205
+#: shares/views.py:214
 msgid "Uploaded files are not downloadable."
 msgstr "Les fichiers déposés ne sont pas téléchargeables."
 
-#: shares/views.py:212 system/views.py:245
+#: shares/views.py:223 system/views.py:245
 msgid "Error while sending file {0}"
 msgstr "Erreur pendant l'envoi du fichier {0}"
 
-#: shares/views.py:214 system/views.py:247
+#: shares/views.py:225 system/views.py:247
 msgid "Problem occured while sending file. Please try again later."
 msgstr ""
 "Un problème a eu lieu pendant l'envoi du fichier. Merci de ré-essayer plus "
 "tard."
 
-#: shares/views.py:218 system/views.py:251
+#: shares/views.py:229 system/views.py:251
 msgid "Bad file specification or path."
 msgstr "Mauvais chemin ou spécification de fichier."
 
-#: shares/views.py:247
+#: shares/views.py:262
 msgid "Incorrect password!"
 msgstr "Mot de passe incorrect !"
 
-#: shares/views.py:250
+#: shares/views.py:265
 msgid "Uploads disabled for this share!"
 msgstr "Les dépôts sont interdits sur ce partage !"
 
@@ -1167,7 +1175,7 @@ msgstr "Merci de saisir vos informations d'authentification&nbsp;:"
 msgid "Login:"
 msgstr "Identifiant&nbsp;:"
 
-#: templates/login.html:87 templates/shares/parts/share-view.html:62
+#: templates/login.html:87 templates/shares/parts/share-view.html:58
 msgid "Password:"
 msgstr "Mot de passe&nbsp;:"
 
@@ -1545,11 +1553,15 @@ msgstr "Contenu actuel"
 msgid "Writable"
 msgstr "Dépôt autorisé"
 
-#: templates/shares/index_main.html:32
+#: templates/shares/index_main.html:31
+msgid "Short URI"
+msgstr "URI courte"
+
+#: templates/shares/index_main.html:33
 msgid "Expires"
 msgstr "Expire"
 
-#: templates/shares/index_main.html:41
+#: templates/shares/index_main.html:42
 msgid ""
 "You can manage files in your shares with your prefered file-manager: "
 "<code>Nautilus</code> or <code>Dolphin</code> on Ubuntu, <code>Explorer</"
@@ -1559,11 +1571,11 @@ msgstr ""
 "fichiers préféré : <code>Nautilus</code> ou <code>Dolphin</code> sur Ubuntu, "
 "<code>Explorer</code> sous Windows et <code>Finder</code> sur un Mac."
 
-#: templates/shares/index_main.html:45
+#: templates/shares/index_main.html:46
 msgid "No web share"
 msgstr "Pas de partage web"
 
-#: templates/shares/index_main.html:47
+#: templates/shares/index_main.html:48
 msgid ""
 "You do not have any share yet. You can start one easily by making a new "
 "directory in \"~/Public/\" (just create it if it does not exist)."
@@ -1572,7 +1584,7 @@ msgstr ""
 "simplement en créant un nouveau répertoire dans votre dossier « $HOME/"
 "Public/ » (que vous n'avez qu'à le créer aussi s'il n'existe pas)."
 
-#: templates/shares/index_main.html:51
+#: templates/shares/index_main.html:52
 msgid ""
 "You can <a href=\"{0}\">disable web shares</a> for your account at any "
 "moment."
@@ -1580,11 +1592,11 @@ msgstr ""
 "Vous pouvez <a href=\"{0}\">désactiver tous les partages web</a> de votre "
 "compte à n'importe quel moment."
 
-#: templates/shares/index_main.html:55
+#: templates/shares/index_main.html:56
 msgid "Web shares turned off"
 msgstr "Partages web désactivés"
 
-#: templates/shares/index_main.html:56
+#: templates/shares/index_main.html:57
 msgid ""
 "You (or someone else) disabled the web sharing feature for your account. You "
 "can <a href=\"{0}\">enable them again</a> at any moment."
@@ -1593,7 +1605,7 @@ msgstr ""
 "pour votre compte. Vous pouvez <a href=\"{0}\">la réactiver simplement</a> à "
 "n'importe quel moment."
 
-#: templates/shares/index_main.html:60
+#: templates/shares/index_main.html:61
 msgid ""
 "If you want to manually re-enable them, just remove the file named <code>{0}"
 "</code>. This has exactly the same effect."
@@ -1617,51 +1629,51 @@ msgstr "Lien public pour ce partage :"
 msgid "Successfully copied to clipboard!"
 msgstr "Adresse copiée dans le presse-papier !"
 
-#: templates/shares/serve-share.html:79
+#: templates/shares/serve-share.html:77
 msgid "Configure your share&nbsp;&raquo;"
 msgstr "Configurer ce partage&nbsp;&raquo;"
 
-#: templates/shares/serve-share.html:84
+#: templates/shares/serve-share.html:82
 msgid "Welcome to share <em>{0}</em>"
 msgstr "Bienvenue sur le partage <em>{0}</em>"
 
-#: templates/shares/serve-share.html:93
+#: templates/shares/serve-share.html:91
 msgid "Uploaded documents"
 msgstr "Documents déposés"
 
-#: templates/shares/serve-share.html:103
+#: templates/shares/serve-share.html:101
 msgid "Drop files here to upload them to this share."
 msgstr "Glissez-déposez des fichiers ici pour les envoyer vers ce partage."
 
-#: templates/shares/serve-share.html:105
+#: templates/shares/serve-share.html:103
 msgid "maximum upload size: {0}"
 msgstr "Taille maximum de chaque fichier envoyé : {0}"
 
-#: templates/shares/serve-share.html:125
+#: templates/shares/serve-share.html:123
 msgid "Click on a filename to download it to your computer:"
 msgstr "Cliquez sur le nom d'un fichier pour le télécharger :"
 
-#: templates/shares/serve-share.html:131
+#: templates/shares/serve-share.html:129
 msgid "File name"
 msgstr "Nom de fichier"
 
-#: templates/shares/serve-share.html:132
+#: templates/shares/serve-share.html:130
 msgid "Size"
 msgstr "Taille"
 
-#: templates/shares/serve-share.html:133
+#: templates/shares/serve-share.html:131
 msgid "Last modified"
 msgstr "Dernière modification"
 
-#: templates/shares/serve-share.html:134
+#: templates/shares/serve-share.html:132
 msgid "Type"
 msgstr "Type"
 
-#: templates/shares/serve-share.html:155
+#: templates/shares/serve-share.html:153
 msgid "No shared document"
 msgstr "Aucun document partagé"
 
-#: templates/shares/serve-share.html:156
+#: templates/shares/serve-share.html:154
 msgid ""
 "Ask the person who sent you here to populate his share directory. Perhaps he "
 "has forgotten?"
@@ -1752,11 +1764,7 @@ msgstr "{0} fichier(s) déposé(s)"
 msgid "Nothing uploaded"
 msgstr "Aucun dépôt"
 
-#: templates/shares/parts/share-view.html:39
-msgid "Share this URI with your partners"
-msgstr "Partagez cette addresse courte avec vos partenaires"
-
-#: templates/shares/parts/share-view.html:49
+#: templates/shares/parts/share-view.html:41
 msgid ""
 "Can visitors upload documents to this share? Activating this feature "
 "requires setting a password on it (you will be prompted upon activation)."
@@ -1765,26 +1773,26 @@ msgstr ""
 "nécessite la définition d'un mot de passe pour le partage (il vous sera "
 "demandé à l'activation)."
 
-#: templates/shares/parts/share-view.html:57
+#: templates/shares/parts/share-view.html:53
 msgid ""
 "Please choose a password to protect this share against anonymous uploads."
 msgstr ""
 "Merci de choisir un mot de passe pour protéger le partage contre les dépôts "
 "anonymes."
 
-#: templates/shares/parts/share-view.html:67
+#: templates/shares/parts/share-view.html:63
 msgid "Verify:"
 msgstr "Vérification :"
 
-#: templates/shares/parts/share-view.html:74
+#: templates/shares/parts/share-view.html:70
 msgid "Save password"
 msgstr "Enregistrer le mot de passe"
 
-#: templates/shares/parts/share-view.html:75
+#: templates/shares/parts/share-view.html:71
 msgid "Save the password for this share"
 msgstr "Enregistrer le mot de passe de ce partage"
 
-#: templates/shares/parts/share-view.html:85
+#: templates/shares/parts/share-view.html:81
 msgid ""
 "Note: you will not be able to see or recover the password once it is set, "
 "because it is stored encrypted. You will only be able to change it."
@@ -1792,19 +1800,33 @@ msgstr ""
 "Note : vous ne pourrez pas afficher le mot de passe une fois saisi, retenez-"
 "le ou notez-le. Vous pourrez en revanche le changer sans restrictions."
 
-#: templates/shares/parts/share-view.html:94 templates/widgets/common.html:25
+#: templates/shares/parts/share-view.html:90 templates/widgets/common.html:25
 msgid "Yes"
 msgstr "Oui"
 
-#: templates/shares/parts/share-view.html:95 templates/widgets/common.html:26
+#: templates/shares/parts/share-view.html:91 templates/widgets/common.html:26
 msgid "No"
 msgstr "Non"
 
-#: templates/shares/parts/share-view.html:141
+#: templates/shares/parts/share-view.html:137
 msgid "Protect this share"
 msgstr "Protégez ce partage"
 
-#: templates/shares/parts/share-view.html:176
+#: templates/shares/parts/share-view.html:169
+msgid "Share this URI with your partners"
+msgstr "Partagez cette addresse courte avec vos partenaires"
+
+#: templates/shares/parts/share-view.html:171
+msgid ""
+"Reload this page from time to time; short URIs can take up to one hour to be "
+"obtained."
+msgstr ""
+
+#: templates/shares/parts/share-view.html:171
+msgid "Not yet obtained"
+msgstr ""
+
+#: templates/shares/parts/share-view.html:180
 msgid "never"
 msgstr "jamais"
 
@@ -2309,9 +2331,6 @@ msgstr "Compte standard"
 
 #~ msgid "Not implemented yet, sorry."
 #~ msgstr "Fonction pas encore implémentée, désolé."
-
-#~ msgid "Short URI"
-#~ msgstr "URI courte"
 
 #~ msgid "Upload a document &raquo;"
 #~ msgstr "Déposer un document &raquo;"
