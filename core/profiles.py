@@ -427,7 +427,7 @@ class Profile(CoreStoredObject):
 					group.link_Profile(self)
 					something_done = True
 
-					logging.info(_(u'Added group {0} to profile {1}.{2}').format(
+					logging.notice(_(u'Added group {0} to profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,
@@ -464,7 +464,7 @@ class Profile(CoreStoredObject):
 					self.__groups.remove(group.weakref)
 
 					logging.notice(_(u'Deleted group {0} '
-						'from profile {1}.{2}').format(
+						'from profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,

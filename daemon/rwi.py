@@ -2124,6 +2124,8 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 		assert ltrace(TRACE_MOD, '> mod_profile(%s)' % profiles_to_mod)
 
 		ggi = LMC.groups.guess_list
+		def gui(x):
+			return LMC.users.guess_one(x, True)
 
 		something_done = False
 
@@ -2160,12 +2162,12 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 				if opts.groups_to_del is not None:
 					something_done = True
-					profile.del_Groups(ggi(sorted(opts.groups_to_del.split(','))),
+					profile.del_Groups(ggi(sorted(opts.groups_to_del.split(',')), True),
 										instant_apply=opts.instant_apply)
 
 				if opts.groups_to_add is not None:
 					something_done = True
-					profile.add_Groups(ggi(sorted(opts.groups_to_add.split(','))),
+					profile.add_Groups(ggi(sorted(opts.groups_to_add.split(',')), True),
 										instant_apply=opts.instant_apply)
 
 				local_include_id_lists = []
@@ -2176,11 +2178,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 
 				if opts.apply_to_users is not None:
 					local_include_id_lists.append(
-						(opts.apply_to_users.split(','), LMC.users.guess_one))
+						(opts.apply_to_users.split(','), gui))
 
 				if opts.apply_to_groups is not None:
-					for group in LMC.groups.guess_list(
-											sorted(opts.apply_to_groups.split(','))):
+					for group in ggi(sorted(opts.apply_to_groups.split(','))):
 						local_include_id_lists.append(
 							(group.all_members, lambda x: x))
 
@@ -2189,7 +2190,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 					_users = self.select(LMC.users,
 							include_id_lists = local_include_id_lists,
 							exclude_id_lists = [
-								(opts.exclude, LMC.users.guess_one),
+								(opts.exclude, gui),
 								(opts.exclude_login, LMC.users.by_login),
 								(opts.exclude_uid, LMC.users.by_uid)
 							],
