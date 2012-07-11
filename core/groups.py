@@ -601,9 +601,13 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 	@is_privilege.setter
 	def is_privilege(self, is_privilege):
 		self.__is_privilege = is_privilege
+
 		# wipe the cache to force recomputation
-		try: del self.__cg_precalc_small
-		except: pass
+		self._cli_invalidate()
+
+		for user in self.__members:
+			user()._cli_invalidate()
+
 	@property
 	def gidMembers(self):
 		# turn the weakrefs into real objects before returning them.
