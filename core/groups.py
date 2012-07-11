@@ -221,9 +221,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.__groupSkel    = groupSkel
 		self.__userPassword = userPassword
 
-		# The weakref is used to link me to other core objects. My Controller
-		# will get a real reference anyway.
-
 		if memberUid:
 			# Transient variable that will be wiped by _setup_initial_links()
 			# after use. it contains logins, that will be expanded to real user
