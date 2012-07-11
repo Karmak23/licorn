@@ -625,12 +625,17 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		#~ none on /proc/fs/vmblock/mountPoint
 		#
 		self.excluded_mounts = ('/boot', '/home', '/var', '/tmp',
-								'/var/tmp')
+								'/var/tmp',)
+		self.excluded_size_mnts = ( '/proc', '/sysfs', '/selinux',
+								'/dev', '/sys', '/media', '/mnt', '/srv',)
+		self.excluded_devices = ('rootfs', 'none', 'binfmt_misc', 'fusectl',
+								'udev', 'gvfs-fuse-daemon', 'devpts', 'sysfs',
+								'cgroup', 'proc', 'tmpfs',)
 
 		# accepted FS must implement posix1e ACLs and user_xattr.
 		# 'vfat' doesn't, 'fuseblk' can be too much things.
 		self.accepted_fs = ('ext2', 'ext3', 'ext4', 'btrfs', 'xfs', 'jfs',
-																'reiserfs')
+																'reiserfs',)
 
 		# TODO: implement LVM2 handlers...
 		self.container_fs = ('LVM2_member')
@@ -864,7 +869,6 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		import platform
 
 		if platform.system() == 'Linux':
-
 			self.__update_cache_informations()
 
 			the_total = 0.0
@@ -872,10 +876,14 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# First, sum up the used size of all mounted partitions, except
 			# the ones that are directly or indirectly excluded.
 			for device, mount_point in self.cache.proc_mounts.iteritems():
-				# NOTE: we skip 'rootfs' because the real device is already
-				# present later in the /proc/mounts, and this is easier to match.
-				if device in ('rootfs', 'none', 'binfmt_misc', 'fusectl',
-							'gvfs-fuse-daemon') or device in self:
+
+				# Exclude external volumes, they should never be
+				# included in the backups, they *are* the backup :-)
+				# Also exclude cryptfs volumes, they are the same size
+				# as their holding device, but don't occupy this space.
+				if device in self.excluded_devices \
+					or device in self \
+					or device.endswith('/.Private'):
 					continue
 
 				skip_it = False
@@ -909,7 +917,7 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 			# without them, we will get a fairly good result.
 			for excluded in exclude:
 
-				if excluded in ('/media', '/mnt', '/srv'):
+				if excluded in self.excluded_size_mnts:
 					# don't take any time to `du` these: they contain only
 					# mount_points (no local directory nor file), and `du`
 					# mounted file-system will be very-time consuming and
@@ -927,7 +935,8 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 
 				the_total -= du_excl
 
-			assert ltrace(TRACE_VOLUMES, ' | global_system_size(): %s' % pyutils.bytes_to_human(the_total))
+			assert ltrace(TRACE_VOLUMES, ' | global_system_size(): %s'
+											% pyutils.bytes_to_human(the_total))
 			return the_total
 
 		else:
