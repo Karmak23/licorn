@@ -1593,8 +1593,6 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			desired_uid, repr(primary_group), repr(profile),
 			skel, gecos, firstname, lastname, home, shell, in_groups))
 
-		assert type(in_groups) == type([])
-
 		login, firstname, lastname, gecos, shell, skel = \
 			self.__validate_basic_fields(login, firstname, lastname,
 				gecos, shell, skel)
@@ -1607,7 +1605,7 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 			LicornEvent('user_pre_add', uid=uid, login=login,
 								system=system, password=password, synchronous=True).emit()
 
-			groups_to_add_user_to = in_groups
+			groups_to_add_user_to = in_groups or []
 
 			skel_to_apply = LMC.configuration.users.default_skel or None
 			homeDirectory = self.__validate_home_dir(home, login, system, force)

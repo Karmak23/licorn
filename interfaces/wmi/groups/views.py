@@ -211,10 +211,6 @@ def create(request, **kwargs):
 		description = request.POST.get('description')
 		groupSkel   = request.POST.get('skel')
 
-		guest_users = [ int(u) for u in request.POST.getlist('guest_users') if u != '' ]
-		std_users   = [ int(u) for u in request.POST.getlist('member_users') if u != '' ]
-		resp_users  = [ int(u) for u in request.POST.getlist('resp_users') if u != '' ]
-
 		try:
 			# remote:
 			#LMC.rwi.generic_controller_method_call('groups','add_Group',
@@ -223,11 +219,22 @@ def create(request, **kwargs):
 			#	guests_to_add=guest_users, responsibles_to_add=resp_users)
 
 			# local:
-			LMC.groups.add_Group(
+			group = LMC.groups.add_Group(
 				name=name, description=description,	groupSkel=groupSkel,
-				permissive=permissive, members_to_add=std_users,
-				guests_to_add=guest_users, responsibles_to_add=resp_users)
+				permissive=permissive,
+				# We don't use these directly, to avoid #771.
+				#members_to_add=std_users,
+				#guests_to_add=guest_users,
+				#responsibles_to_add=resp_users
+				)
 
+			for post_name, rel in (('guest_users', relation.GUEST),
+								('member_users', relation.MEMBER),
+								('resp_users', relation.RESPONSIBLE)):
+				for u in request.POST.getlist(post_name):
+					if u != '':
+						mod(request, gid=group.gid, action='users',
+											value='%s/%s' % (u, rel))
 		except Exception, e:
 			utils.wmi_exception(request, e, _(u'Error while adding group '
 											u'<strong>{0}</strong>'), name)

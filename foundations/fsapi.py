@@ -677,7 +677,6 @@ def check_dirs_and_contents_perms_and_acls_new(dirs_infos, batch=False,
 				raise exceptions.InsufficientPermissionsError(str(e))
 
 			elif e.errno == errno.ENOENT:
-
 				if batch or logging.ask_for_repair(_(u'Directory %s does not '
 								u'exist. Create it?') % stylize(ST_PATH, path),
 							auto_answer=auto_answer):

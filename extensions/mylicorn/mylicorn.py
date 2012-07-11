@@ -263,7 +263,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			self.threads.updater.start()
 
 			logging.info(_(u'{0}: updater thread started.').format(self.pretty_name))
-			self.licornd.collect_and_start_threads(collect_only=True)
+			self.licornd.collect_and_start_threads(collect_only=True,
+													full_display=False)
 	def __stop_updater_thread(self):
 
 		if self.events.connected.is_set():

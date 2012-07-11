@@ -259,11 +259,13 @@ class LicornDaemon(ObjectSingleton, LicornBaseDaemon):
 
 			self.collect_and_start_threads()
 
-	def collect_and_start_threads(self, collect_only=False):
+	def collect_and_start_threads(self, collect_only=False, full_display=True):
 		""" Collect and start extensions and backend threads; record them
 			in our threads list to stop them on daemon shutdown.
 		"""
-		logging.info(_(u'{0}: collecting all threads.').format(self))
+
+		if full_display:
+			logging.info(_(u'{0}: collecting all threads.').format(self))
 
 		for module_manager in (LMC.backends, LMC.extensions):
 			for module in module_manager:

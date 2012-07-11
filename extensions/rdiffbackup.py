@@ -24,6 +24,7 @@ from licorn.foundations.constants import priorities
 from licorn.foundations.workers   import workers
 
 from licorn.core                import LMC
+from licorn.core.classes        import only_if_enabled
 from licorn.daemon.threads      import LicornJobThread
 from licorn.extensions          import LicornExtension
 
@@ -340,14 +341,6 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 			# are individually locked anyway.
 			self.volumes = LMC.extensions.volumes
 
-			if self.enabled_volumes() != []:
-				self.__create_timer_thread()
-
-			logging.info(_(u'{0}: started extension and auto-backup '
-				'timer.').format(stylize(ST_NAME, self.name)))
-
-			workers.service_enqueue(priorities.LOW, self.compute_total_space)
-
 			return True
 
 		return False
@@ -358,6 +351,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		#TODO: with self.activation_lock: ?
 		if not self.events.active.is_set():
 			self.events.active.set()
+
 			self.threads.auto_backup_timer = LicornJobThread(
 							target=self.backup,
 							delay=settings.backup.interval,
@@ -366,6 +360,12 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 							time=(time.time()+5.0)
 							)
 			self.threads.auto_backup_timer.start()
+
+			logging.info(_(u'{0}: started auto-backup timer.').format(
+															self.pretty_name))
+
+			self.licornd.collect_and_start_threads(collect_only=True,
+													full_display=False)
 	def __stop_timer_thread(self):
 
 		assert ltrace_func(TRACE_RDIFFBACKUP)
@@ -387,6 +387,9 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		assert ltrace_func(TRACE_RDIFFBACKUP)
 
 		self.enabled = self.is_enabled()
+
+		if self.enabled:
+			self.licornd_cruising()
 
 		return self.enabled
 	def disable(self):
@@ -878,7 +881,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		# backup procedure releases the volume, because the operations status
 		# will re-acquire it.
 		workers.service_enqueue(priorities.LOW, self.operations_status, volume,
-								cache_force_expire=True, job_delay=1.0)
+										cache_force_expire=True, job_delay=1.0)
 
 		assert ltrace(self._trace_name, '< __backup_procedure()')
 	@if_not_already_running_on_this_volume
@@ -1129,7 +1132,23 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		return (self._last_backup_time(volume),
 				time.time() - self._last_backup_time(volume),
 				self.time_before_next_automatic_backup())
+	@events.callback_method
+	@only_if_enabled
+	def licornd_cruising(self, *args, **kwargs):
+		""" When licornd is ready, create the timer thread and eventually
+			start a backup (the thread will decide).
+
+			Putting this code here in an event callback allow not starting
+			a backup during the daemon initial checks without doing convoluted
+			things.
+		"""
+		if self.enabled_volumes() != []:
+			self.__create_timer_thread()
+
+		workers.service_enqueue(priorities.LOW, self.compute_total_space)
+
 	@events.handler_method
+	@only_if_enabled
 	def volume_mounted(self, *args, **kwargs):
 		""" Trigerred when a volume is mounted on the system. It will check
 			if any of the connected (mounted or not) volumes is enabled for
@@ -1141,6 +1160,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes(complete=False) != []:
 			self.__create_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_unmounted(self, *args, **kwargs):
 		""" Trigerred when a volume is unmounted from the system. If no
 			Licorn® enabled volume remains connected (mounted or not), this
@@ -1156,6 +1176,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 	# catch it. Any added but not compatible (thus not mounted) volume will
 	# be of no help, we can safely ignore it.
 	@events.handler_method
+	@only_if_enabled
 	def volume_removed(self, *args, **kwargs):
 		""" Trigerred when a volume is disconnected from the system. If no
 			other Licorn® enabled volume remains connected (mounted or not),
@@ -1167,6 +1188,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes(complete=False) == []:
 			self.__stop_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_enabled(self, *args, **kwargs):
 		""" Trigerred when a new volume is enabled on the system; will blindly
 			create the timer thread, if not already present.
@@ -1176,6 +1198,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 
 		self.__create_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def volume_disabled(self, *args, **kwargs):
 		""" Trigerred when a volume is disconnected from the system. If no
 			Licorn® enabled volume remains, this method will stop the timer
@@ -1187,6 +1210,7 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 		if self.enabled_volumes() == []:
 				self.__stop_timer_thread()
 	@events.handler_method
+	@only_if_enabled
 	def settings_changed(self, *args, **kwargs):
 		""" Trigerred when the Licorn® main configuration file changed. If the
 			:ref:`backup.interval <backup.interval.en>` changed and the
@@ -1208,74 +1232,3 @@ class RdiffbackupExtension(ObjectSingleton, LicornExtension):
 						stylize(ST_ATTR, settings.backup.interval)))
 				self.__stop_timer_thread()
 				self.__create_timer_thread()
-
-	# TODO: move this in the Django App.
-	def _wmi__status(self):
-		""" Method called from the WMI root, to nicely integrate backup
-			status and critical messages on the dashboard. """
-
-		messages = []
-
-		if self.events.running.is_set():
-
-			if self.events.backup.is_set():
-				messages.append((priorities.HIGH,
-					u'<p class="light_indicator backup_in_progress '
-					u'high_priority">%s</p>' % (
-						_(u'Backup in progress on volume {volume}…').format(
-							volume=self.current_operated_volume.mount_point))))
-			else:
-				messages.append((priorities.NORMAL,
-					u'<p class="light_indicator backup_stats_in_progress '
-					u'normal_priority">%s</p>' % (
-						_(u'Statistics computation or cleaning '
-							u'in progress on volume {volume}…').format(
-							volume=self.current_operated_volume.mount_point))))
-
-		else :
-			if self.events.active.is_set():
-				messages.append((priorities.NORMAL,
-					u'<p class="light_indicator normal_priority">%s</p>' % (
-					_(u'Next backup in {0}').format(
-						self._countdown('next_backup',
-						self.threads.auto_backup_timer.remaining_time(),
-						uri='/')
-					))))
-			else:
-				messages.append((priorities.NORMAL,
-					u'<p class="light_indicator normal_priority">'
-					u'<img src="/images/16x16/emblem-important.png" '
-					u'alt="Important emblem" width="16" height="16" '
-					u'style="margin-top: -5px" />'
-					u'&nbsp;%s</p>' % (_(u'No backup volume connected'))))
-
-		return messages
-	def _wmi__info(self):
-		""" Method called from WMI root, to nicely integrate backup
-			informations on the dashboard. """
-
-		messages = []
-		vprogress = ''
-
-		volumes = self.backup_enabled_volumes()
-
-		if volumes != []:
-
-			for volume in volumes:
-
-				if volume.mount_point:
-					free, total = volume.stats()
-					percent_used = (total - free) / total * 100.0
-					vprogress += ('<div>{1}'
-						'<div class="progressbar_overlay_content">{0}<span class="overlay_content_part">{2}</span></div></div>\n').format(
-						self._html_eject_status(volume, small=True),
-						self._progress_bar(
-							volume.device.rsplit('/', 1)[1], percent_used,
-							css_classes="progressbar_micro_indicator"),
-							_(u'{mount_point}: {used:.1f}% full').format(
-							mount_point=volume.mount_point,
-							used=percent_used))
-
-			messages.append((priorities.NORMAL, vprogress))
-
-		return messages

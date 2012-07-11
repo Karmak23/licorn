@@ -221,9 +221,6 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 		self.__groupSkel    = groupSkel
 		self.__userPassword = userPassword
 
-		# The weakref is used to link me to other core objects. My Controller
-		# will get a real reference anyway.
-
 		if memberUid:
 			# Transient variable that will be wiped by _setup_initial_links()
 			# after use. it contains logins, that will be expanded to real user
@@ -601,9 +598,13 @@ class Group(CoreStoredObject, CoreFSUnitObject):
 	@is_privilege.setter
 	def is_privilege(self, is_privilege):
 		self.__is_privilege = is_privilege
+
 		# wipe the cache to force recomputation
-		try: del self.__cg_precalc_small
-		except: pass
+		self._cli_invalidate()
+
+		for user in self.__members:
+			user()._cli_invalidate()
+
 	@property
 	def gidMembers(self):
 		# turn the weakrefs into real objects before returning them.
@@ -2335,7 +2336,7 @@ class GroupsController(DictSingleton, CoreFSController):
 			group.responsible_group.add_Users(responsibles_to_add)
 
 		assert ltrace_func(TRACE_GROUPS, True)
-		return group
+		return group.proxy
 	def __add_group(self, name, manual_gid=None, system=False, description=None,
 						groupSkel=None, permissive=None, backend=None,
 						inotified=True, batch=False, force=False):

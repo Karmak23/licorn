@@ -8,7 +8,7 @@ Licorn core modules base classes
 :license: GNU GPL version 2
 
 """
-import os
+import os, functools
 
 from licorn.foundations.threads import RLock
 
@@ -20,6 +20,7 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.constants import roles
 from licorn.foundations.base      import NamedObject, MixedDictObject, \
 											LicornConfigObject
+
 
 LicornEvent = events.LicornEvent
 
@@ -788,5 +789,23 @@ class CoreModule(CoreUnitObject, NamedObject):
 		Any configuration file containing these values, will be loaded
 		afterwards and will overwrite these attributes. """
 		pass
+    
+def only_if_enabled(func):
+	""" Event decorator. Run the method only if the module is enabled.
+	
+		The event can occur even if the extension is disabled, because
+		it is inconditionnaly registered. Avoid false-negatives by not
+		doing anything if it is the case.
+	"""
 
-__all__ = ('ModulesManager', 'CoreModule', )
+	@functools.wraps(func)
+	def decorated(self, *args, **kwargs):
+
+		if self.enabled:
+			return func(self, *args, **kwargs)
+
+	return decorated
+	
+	
+
+__all__ = ('ModulesManager', 'CoreModule', 'only_if_enabled')

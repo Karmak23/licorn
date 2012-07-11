@@ -124,24 +124,25 @@ class Profile(CoreStoredObject):
 		self.__groupName = group.name
 		self.__gidNumber = group.gidNumber
 
+		super(Profile, self).__init__(controller=LMC.profiles, backend=backend)
+
 		if groups is None:
 			self.__groups = []
 
 			if memberGid is not None:
 				for group_name in memberGid:
 					try:
-						group = LMC.groups.by_name(group_name)
+						loop_group = LMC.groups.by_name(group_name)
+
 					except KeyError:
 						logging.warning(_(u'profile {0}: group {1} does not '
-							'exist, ignored.').format(name, group_name))
+								u'exist, ignored.').format(name, group_name))
 						continue
 
-					self.__groups.append(group.weakref)
-					group.link_Profile(self)
+					self.__groups.append(loop_group.weakref)
+					loop_group.link_Profile(self)
 		else:
-			self.__groups = [ group.weakref for group in groups ]
-
-		super(Profile, self).__init__(controller=LMC.profiles, backend=backend)
+			self.__groups = [ loop_group.weakref for loop_group in groups ]
 
 		# NOTE: the 3 following assignations must be done after the super() call.
 
@@ -426,7 +427,7 @@ class Profile(CoreStoredObject):
 					group.link_Profile(self)
 					something_done = True
 
-					logging.info(_(u'Added group {0} to profile {1}.{2}').format(
+					logging.notice(_(u'Added group {0} to profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,
@@ -463,7 +464,7 @@ class Profile(CoreStoredObject):
 					self.__groups.remove(group.weakref)
 
 					logging.notice(_(u'Deleted group {0} '
-						'from profile {1}.{2}').format(
+						'from profile {1}. {2}').format(
 							stylize(ST_NAME, group.name),
 							stylize(ST_NAME, self.__name),
 							stylize(ST_EMPTY,
