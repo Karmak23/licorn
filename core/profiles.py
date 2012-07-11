@@ -124,6 +124,8 @@ class Profile(CoreStoredObject):
 		self.__groupName = group.name
 		self.__gidNumber = group.gidNumber
 
+		super(Profile, self).__init__(controller=LMC.profiles, backend=backend)
+
 		if groups is None:
 			self.__groups = []
 
@@ -141,7 +143,6 @@ class Profile(CoreStoredObject):
 		else:
 			self.__groups = [ group.weakref for group in groups ]
 
-		super(Profile, self).__init__(controller=LMC.profiles, backend=backend)
 
 		# NOTE: the 3 following assignations must be done after the super() call.
 
