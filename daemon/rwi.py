@@ -1083,7 +1083,7 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 			opts.in_backend = LMC.backends.guess_one(opts.in_backend)
 
 		if opts.in_groups:
-			opts.in_groups = LMC.groups.guess_list(opts.in_groups.split(','))
+			opts.in_groups = LMC.groups.guess_list(opts.in_groups.split(','), True)
 		else:
 			opts.in_groups = []
 
