@@ -132,17 +132,17 @@ class Profile(CoreStoredObject):
 			if memberGid is not None:
 				for group_name in memberGid:
 					try:
-						group = LMC.groups.by_name(group_name)
+						loop_group = LMC.groups.by_name(group_name)
+
 					except KeyError:
 						logging.warning(_(u'profile {0}: group {1} does not '
-							'exist, ignored.').format(name, group_name))
+								u'exist, ignored.').format(name, group_name))
 						continue
 
-					self.__groups.append(group.weakref)
-					group.link_Profile(self)
+					self.__groups.append(loop_group.weakref)
+					loop_group.link_Profile(self)
 		else:
-			self.__groups = [ group.weakref for group in groups ]
-
+			self.__groups = [ loop_group.weakref for loop_group in groups ]
 
 		# NOTE: the 3 following assignations must be done after the super() call.
 
