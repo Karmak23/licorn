@@ -220,18 +220,6 @@ def create(request, **kwargs):
 	if request.method == 'POST':
 
 		try:
-
-			gresolver = LMC.groups.by_gid
-
-			groups = [ int(g) for g in request.POST.getlist('member_groups')
-																	if g != '' ]
-
-			groups.extend(gresolver(int(gid)).guest_group.gidNumber
-					for gid in request.POST.getlist('guest_groups') if gid != '')
-
-			groups.extend(gresolver(int(gid)).responsible_group.gidNumber
-					for gid in request.POST.getlist('resp_groups') if gid != '')
-
 			profile     = LMC.profiles[
 								int(w.my_unquote(request.POST['profile']))
 							]
@@ -242,14 +230,26 @@ def create(request, **kwargs):
 			# XXX: why not unquote the password too ?
 			password    = request.POST['password']
 
-			LMC.users.add_User(
+			user, password = LMC.users.add_User(
 						login=login if login != '' else None,
 						gecos=gecos if gecos != '' else None,
 						password=password,
-						in_groups=groups,
+						# we don't use `in_groups` to
+						# avoid the #771 security issue.
+					 	#in_groups=…,
 						shell=LMC.configuration.users.default_shell
 										if shell is None else shell,
 						profile=profile)
+
+			# We call 'mod()' to make the needed checks
+			# and avoid URL/POST forgeries cf #771.
+			for post_name, rel in (('member_groups', relation.MEMBER),
+								('guest_groups', relation.GUEST),
+								('resp_groups', relation.RESPONSIBLE)):
+				for g in request.POST.getlist(post_name):
+					if g != '':
+						mod(request, uid=user.uid, action='groups',
+									value='%s/%s' % (g, rel))
 
 		except Exception, e:
 			logging.exception(_(u'Unable to add user'))
