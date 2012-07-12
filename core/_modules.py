@@ -241,17 +241,17 @@ class ModulesManager(LockedController):
 					continue
 
 			# module is not already loaded. Load and sync client/server
+			if not_manually_ignored(module_name):
 
-			assert ltrace(self._trace_name, 'importing %s %s' % (self.module_type,
-				stylize(ST_NAME, module_name)))
+				assert ltrace(self._trace_name, 'importing %s %s' % (
+												self.module_type,
+												stylize(ST_NAME, module_name)))
 
-			# the module instanciation, at last!
-			module = module_class()
+				# the module instanciation, at last!
+				module = module_class()
 
-			assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
-				self.module_type, stylize(ST_NAME, module_name)))
-
-			if not_manually_ignored(module.name):
+				assert ltrace(self._trace_name, 'imported %s %s, now loading.' % (
+					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (
 									self.module_type, module_name),
@@ -338,7 +338,7 @@ class ModulesManager(LockedController):
 					logging.warning(_(u'{0} {1} {2}, manually ignored in {3}.').format(
 									stylize(ST_DISABLED, _(u'Skipped')),
 									self.module_type,
-									stylize(ST_NAME, module.name),
+									stylize(ST_NAME, module_name),
 									stylize(ST_PATH,
 										settings.main_config_file)))
 
@@ -789,10 +789,10 @@ class CoreModule(CoreUnitObject, NamedObject):
 		Any configuration file containing these values, will be loaded
 		afterwards and will overwrite these attributes. """
 		pass
-    
+
 def only_if_enabled(func):
 	""" Event decorator. Run the method only if the module is enabled.
-	
+
 		The event can occur even if the extension is disabled, because
 		it is inconditionnaly registered. Avoid false-negatives by not
 		doing anything if it is the case.
@@ -805,7 +805,7 @@ def only_if_enabled(func):
 			return func(self, *args, **kwargs)
 
 	return decorated
-	
-	
+
+
 
 __all__ = ('ModulesManager', 'CoreModule', 'only_if_enabled')
