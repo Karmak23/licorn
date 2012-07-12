@@ -32,7 +32,10 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 	""" Handle energy and power-saving features on the local host, via multiple
 		methods.
 
-		.. versionadded:: 1.3
+		.. versionadded:: 1.4.5+ This extension was present but not implemented
+			at all before. In 1.4.5, the first implementation listens to
+			`upower` dbus signals and forwards them inside Licorn® by turning
+			them into :class:`~licorn.foundations.events.LicornEvent`.
 	"""
 	#: the environment variable used to override rdiff-backup configuration
 	#: during tests or real-life l33Tz runs.
