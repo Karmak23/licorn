@@ -13,7 +13,7 @@ import os, time, urllib2, random, errno
 from threading import Thread
 
 from licorn.foundations           import exceptions, logging, settings
-from licorn.foundations           import events, json, hlstr
+from licorn.foundations           import events, json, hlstr, pyutils
 from licorn.foundations.workers   import workers
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
@@ -21,11 +21,13 @@ from licorn.foundations.ltraces   import *
 from licorn.foundations.threads   import Event
 
 from licorn.foundations.base      import ObjectSingleton
-from licorn.foundations.constants import services, svccmds, distros, host_types, priorities
+from licorn.foundations.constants import services, svccmds, distros, \
+											host_types, priorities, host_status
 
 from licorn.daemon.threads        import LicornJobThread
 
 from licorn.core                  import LMC, version
+from licorn.core.classes          import only_if_enabled
 from licorn.extensions            import LicornExtension
 
 # local imports; get the constants in here for easy typing/using.
@@ -36,8 +38,8 @@ LicornEvent = events.LicornEvent
 # We communicate with MyLicorn® via the JSON-RPC protocol.
 from licorn.contrib import jsonrpc
 
-def random_delay(delay_max=5400):
-	return float(random.randint(1800, delay_max))
+def random_delay(delay_min=900, delay_max=5400):
+	return float(random.randint(delay_min, delay_max))
 def print_web_exception(e):
 
 	try:
@@ -186,6 +188,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		""" Module related method. Always returns ``True``, unless the extension
 			is manually ignored in the server configuration. """
 
+		self.service = jsonrpc.ServiceProxy(self.my_licorn_uri)
+
 		logging.info(_(u'{0}: extension always enabled unless manually '
 							u'ignored in {1}.').format(self.pretty_name,
 								stylize(ST_PATH, settings.main_config_file)))
@@ -205,20 +209,18 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		LicornEvent('extension_mylicorn_configuration_changed', **kwargs).emit()
 
 	@events.handler_method
+	@only_if_enabled
 	def licornd_cruising(self, *args, **kwargs):
 		""" Event handler that will start the authentication process when
 			Licornd is `cruising`, which means “ `everything is ready, boys` ”. """
 
-		if self.enabled:
-			self.authenticate()
-
+		self.authenticate()
 	@events.handler_method
 	def extension_mylicorn_authenticated(self, *args, **kwargs):
 		""" Event handler that will start the updater thread once we are
 			successfully authenticated on the central server. """
 
 		self.__start_updater_thread()
-
 	@events.handler_method
 	def extension_mylicorn_configuration_changed(self, *args, **kwargs):
 		""" Event handler triggered by an API key change; will call
@@ -228,8 +230,25 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		if 'api_key' in kwargs:
 			self.disconnect()
 			self.authenticate()
+	@events.handler_method
+	@only_if_enabled
+	def system_sleeping(self, *args, **kwargs):
+		self.disconnect(host_status.SLEEPING)
+	@events.handler_method
+	@only_if_enabled
+	def system_resuming(self, *args, **kwargs):
+		# wait a little for network interfaces to be back UP,
+		# even more if we are only on wifi, it can take ages.
+
+		self.retrigger_authenticate(short=True)
 
 	@events.handler_method
+	@only_if_enabled
+	def daemon_is_restarting(self, *args, **kwargs):
+		self.disconnect(host_status.BOOTING)
+
+	@events.handler_method
+	@only_if_enabled
 	def daemon_shutdown(self, *args, **kwargs):
 		""" Event handler that will disconnect from the central server when
 			the daemon shuts down.
@@ -239,12 +258,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 			Obviously, this handler runs only if the extension is enabled.
 		"""
 
-		if self.enabled:
-			try:
-				self.disconnect()
-
-			except:
-				logging.exception(_('{0}: exception while disconnecting'), self.pretty_name)
+		self.disconnect(host_status.OFFLINE)
 
 	def __start_updater_thread(self):
 
@@ -290,8 +304,13 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		except Exception, e:
 			if isinstance(e, urllib2.HTTPError):
-				print_web_exception(e)
+				try:
+					print_web_exception(e)
 
+				except:
+					logging.exception(_(u'{0}: error decoding web exception '
+										u'{1} from failed execution of {2}'),
+											self.pretty_name, e, rpc_func.__name__)
 			else:
 				logging.exception(_(u'{0}: error while executing {1}'),
 											self.pretty_name, rpc_func.__name__)
@@ -301,8 +320,19 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 		else:
 			return result
+	def retrigger_authenticate(self, short=False):
 
-	def disconnect(self):
+		if short:
+			delay = random_delay(15, 45)
+		else:
+			delay = random_delay(delay_max=3600)
+
+		logging.info(_(u'{0}: reprogramming authentication in {1}.').format(
+						self.pretty_name, pyutils.format_time_delta(delay)))
+
+		workers.network_enqueue(priorities.NORMAL, self.authenticate, job_delay=delay)
+
+	def disconnect(self, status=None):
 		""" Disconnect from the central server, and BTW stop advertising our
 			status regularly there. """
 		assert ltrace_func(TRACE_MYLICORN)
@@ -313,7 +343,8 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 
 			self.__stop_updater_thread()
 
-			res = self.__remote_call(self.service.disconnect)
+			res = self.__remote_call(self.service.disconnect,
+										status or host_status.SHUTTING_DOWN)
 
 			code = res['result']
 
@@ -330,7 +361,7 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 				logging.info(_(u'{0}: sucessfully disconnected (code: {1}, '
 								u'message: {2})').format(
 									self.pretty_name,
-									stylize(ST_UGID, authenticate[code]),
+									stylize(ST_UGID, disconnect[code]),
 									stylize(ST_COMMENT, res['message'])))
 
 				LicornEvent('extension_mylicorn_disconnected').emit()
@@ -354,10 +385,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									u'somewhere.').format(self.pretty_name))
 			return
 
-		self.service = jsonrpc.ServiceProxy(self.my_licorn_uri)
-
 		try:
-			system_start_time = time.time() - float(open('/proc/uptime').read().split(" ")[0])
+			system_start_time = time.time() - float(
+								open('/proc/uptime').read().split(" ")[0])
 
 		except:
 			system_start_time = None
@@ -388,18 +418,14 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 		if code < 0:
 			# if authentication goes wrong, we won't even try to do anything
 			# more. Every RPC call needs authentication.
-			logging.warning(_(u'{0}: failed to authenticate, will retry later '
-								u'(code: {1}, message: {2})').format(
-									self.pretty_name,
+			logging.warning(_(u'{0}: failed to authenticate (code: {1}, '
+								u'message: {2})').format(self.pretty_name,
 									stylize(ST_UGID, authenticate[code]),
 									stylize(ST_COMMENT, res['message'])))
-
-			workers.network_enqueue(priorities.NORMAL, self.authenticate,
-													job_delay=random_delay())
+			self.retrigger_authenticate()
 		else:
-			logging.info(_(u'{0}: sucessfully authenticated '
-							u'(code: {1}, message: {2})').format(
-								self.pretty_name,
+			logging.info(_(u'{0}: sucessfully authenticated (code: {1}, '
+							u'message: {2})').format(self.pretty_name,
 								stylize(ST_UGID, authenticate[code]),
 								stylize(ST_COMMENT, res['message'])))
 
