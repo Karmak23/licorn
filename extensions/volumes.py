@@ -661,10 +661,10 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		# methods a little later.
 		self.threads.udevmonitor = UdevMonitorThread()
 
-		gloop = LMC.extensions.gloop
+		system_bus = LMC.extensions.gloop.dbus.system_bus
 
 		try:
-			self.udisks.udisks_object = gloop.dbus.system_bus.get_object(
+			self.udisks.obj = system_bus.get_object(
 									"org.freedesktop.UDisks",
 									"/org/freedesktop/UDisks")
 		except:
