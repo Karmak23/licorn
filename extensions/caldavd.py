@@ -78,9 +78,11 @@ class CaldavdExtension(ObjectSingleton, ServiceExtension):
 			try:
 				self.__parse_files()
 				self.available = True
+
 			except ImportError, e:
 				logging.warning2(_(u'{0}: extension not available '
 					'because {1}.').format(stylize(ST_NAME, self.name), e))
+
 			except (IOError, OSError), e:
 				if e.errno == 2:
 					logging.warning2(_(u'{0}: extension not yet available '
