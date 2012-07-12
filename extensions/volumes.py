@@ -655,16 +655,16 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 		assert ltrace(self._trace_name, '> initialize()')
 
 		self.cache  = Enumeration('cache')
-		self.dbus   = Enumeration('dbus')
 		self.udisks = Enumeration('udisks')
 
 		# we need the thread to be created to eventually add udisks-related
 		# methods a little later.
 		self.threads.udevmonitor = UdevMonitorThread()
 
+		system_bus = LMC.extensions.gloop.dbus.system_bus
+
 		try:
-			self.dbus.system_bus      = dbus.SystemBus()
-			self.udisks.udisks_object = self.system_bus.get_object(
+			self.udisks.obj = system_bus.get_object(
 									"org.freedesktop.UDisks",
 									"/org/freedesktop/UDisks")
 		except:
@@ -1236,3 +1236,5 @@ class VolumesExtension(DictSingleton, LicornExtension, SelectableController):
 	def __getitem__(self, key):
 		with self.locks._global:
 			return self.volumes[key]
+
+__all__ = ('Volume', 'VolumesExtension', 'VolumeException', )
