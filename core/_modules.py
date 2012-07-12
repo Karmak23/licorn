@@ -254,7 +254,7 @@ class ModulesManager(LockedController):
 					self.module_type, stylize(ST_NAME, module_name)))
 
 				LicornEvent('%s_%s_loads' % (
-									self.module_type, module_name),
+								self.module_type, module_name),
 							synchronous=True).emit()
 
 				try:
@@ -265,9 +265,10 @@ class ModulesManager(LockedController):
 					events.collect(module)
 
 					LicornEvent('%s_%s_loaded' % (
-									self.module_type, module_name)).emit()
+									self.module_type, module_name),
+								synchronous=True).emit()
 
-				except Exception, e:
+				except Exception:
 					# an uncatched exception occured, the module is buggy or
 					# doesn't handle a very specific situation. The module
 					# didn't load, we must disable other modules which depend
