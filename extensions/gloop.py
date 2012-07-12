@@ -25,7 +25,7 @@ from licorn.foundations           import exceptions, logging
 from licorn.foundations.styles    import *
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
-from licorn.foundations.base      import ObjectSingleton
+from licorn.foundations.base      import ObjectSingleton, Enumeration
 from licorn.foundations.constants import services, svccmds, distros
 
 from licorn.core                  import LMC
@@ -105,6 +105,7 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 		if os.path.exists(self.paths.dbus_binary) \
 				and os.path.exists(self.paths.dbus_config):
 
+			self.__setup_messages_handlers()
 			self.available = True
 
 			# WE do not use the config file yet.
@@ -149,5 +150,18 @@ class GloopExtension(ObjectSingleton, ServiceExtension):
 
 		assert ltrace(globals()['TRACE_' + self.name.upper()], '| is_enabled() → True')
 		return True
+	def dbus_catchall_signal_handler(self, *args, **kwargs):
+		logging.progress(_(u'{0}: DBUS message {1} {2}.').format(
+				self.pretty_name,
+				u', '.join(stylize(ST_NAME, a) for a in args),
+				u', '.join('%s=%s' % (stylize(ST_KEY, k),
+										stylize(ST_VALUE, v))
+					for k,v in kwargs.iteritems())))
+	def __setup_messages_handlers(self):
+		if __debug__:
+			# The dbus catchall
+			self.bus.add_signal_receiver(self.dbus_catchall_signal_handler,
+							interface_keyword='dbus_interface',
+							member_keyword='member')
 
 __all__ = ('GloopExtension', )
