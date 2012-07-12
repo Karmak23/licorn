@@ -162,7 +162,7 @@ def serve(request, login, shname):
 				return HttpResponseRedirect(request.path)
 		else:
 			# render the form again
-			return render(request, 'shares/parts/ask_password.html', {
+			return render(request, 'shares/ask_password.html', {
 						'form'   : form,
 						'shname' : shname
 					})
@@ -181,7 +181,7 @@ def serve(request, login, shname):
 			# if the share accept upload the user need a password to access it
 			if share.accepts_uploads:
 				if not request.session[session_key]:
-					return render(request, 'shares/parts/ask_password.html', {
+					return render(request, 'shares/ask_password.html', {
 						'form'   : AskSharePasswordForm(share=share),
 						'shname' : shname,
 					})
