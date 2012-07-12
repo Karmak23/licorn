@@ -148,7 +148,7 @@ def get_inside(opts, args, listener):
 	history_file = os.path.expanduser('~/.licorn/interactor_history')
 
 	if history_file:
-		history_dir  = os.path.dirname(history_file)
+		history_dir = os.path.dirname(history_file)
 
 		if not os.path.exists(history_dir):
 			os.makedirs(history_dir)
@@ -168,13 +168,22 @@ def get_inside(opts, args, listener):
 
 	try:
 		try:
-			LMC.rwi.console_start()
-			sys.ps1 = u'licornd> '
+			is_tty = sys.stdin.isatty()
 
-			console.interact(banner=_(u'Licorn® {0}, Python {1} '
-							u'on {2}').format(version,
+			LMC.rwi.console_start(is_tty=is_tty)
+
+			if is_tty:
+				sys.ps1 = u'licornd> '
+				banner  =_(u'Licorn® {0}, Python {1} on {2}').format(
+								version,
 								sys.version.replace('\n', ''),
-								sys.platform))
+								sys.platform)
+
+			else:
+				sys.ps1 = u''
+				banner  = u''
+			console.interact(banner=banner)
+
 		except:
 			logging.exception('Error running the remote console!')
 
