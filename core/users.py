@@ -1620,14 +1620,19 @@ class UsersController(DictSingleton, CoreFSController, SelectableController):
 				primary_group = profile.group
 
 				groups_to_add_user_to.extend(profile.groups)
+
 			else:
 				logging.warning2('>> FIXME: UsersController.add_User: skel for '
 					'standard group ? system group ?', to_listener=False, to_local=True)
 
 				loginShell = LMC.configuration.users.default_shell
 
-				if primary_group and primary_group.is_standard:
-					skel_to_apply = primary_group.groupSkel
+				if primary_group:
+					if primary_group.is_standard:
+						skel_to_apply = primary_group.groupSkel
+
+					# implicit: else: primary_group is system
+					# no default skel to apply
 
 				else:
 					# get the primary group real object anyway, we need to
