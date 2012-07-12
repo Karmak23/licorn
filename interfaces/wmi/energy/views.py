@@ -7,14 +7,14 @@ Licorn® WMI - energy views
 :license: GNU GPL version 2
 """
 
-import json
+import json, types
 
-from django.contrib.auth.decorators     import login_required
-from django.shortcuts                   import *
+from django.contrib.auth.decorators import login_required
+from django.shortcuts               import *
 
-from licorn.foundations           import exceptions, hlstr, logging, settings, \
-										pyutils
-from licorn.foundations.constants import filters, relation, priorities, \
+from licorn.foundations             import exceptions, hlstr, logging, \
+										settings, pyutils
+from licorn.foundations.constants import filters, relation, priorities,\
 										host_status
 from licorn.foundations.ltrace    import *
 from licorn.foundations.ltraces   import *
@@ -46,17 +46,28 @@ days= {
 	'6' : _('Sunday'),
 	'*' : _('ALL'),}
 
+ALL_MACHINES = "LMC.machines.select(default_selection=host_status.ACTIVE)"
+
 def get_days(wd):
+	""" return an human readable string representings days """
+	
 	tab = wd.split(',')
 
-	if len(tab) > 4:
+	# if the rule has to be apply on 7 days, it is ALL days
+	if type(tab) == types.ListType and len(tab) == 7:
+		return _('ALL')
+	
+	# if > 4 days, represent "ALL except x,y"
+	if type(tab) == types.ListType and len(tab) > 4:	
 		# who is not present ?
 		not_present = []
 		for k, v in days.iteritems():
 			if k not in tab:
 				not_present.append(k)
 
-		return "ALL except {0}".format(', '.join([ days[d] for d in not_present if d != '*' ]))
+		return "ALL except {0}".format(', '.join(
+						[ days[d] for d in not_present if d != '*' ]))
+	
 	else:
 		dayz = []
 		for d in wd.split(','):
@@ -71,31 +82,46 @@ def policies(request, *args, **kwargs):
 	""" policies view """
 	return render(request, 'energy/policies.html', { 
 		'data_separators' : get_calendar_data(request, ret=False)})
+		
+def get_next_unset_id():
+	# get the next unsed id in order to generate the task name
+	max_num = 0
+	for task in [ t for t in LMC.tasks if isinstance(t, TaskExtinction)]:
+		num=int(task.name[16:])
+		if num > max_num:
+			max_num = num
 
+	return int(max_num) + 1
+	
 @staff_only
-def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
+def add_rule(request, new=None, who=None, hour=None, minute=None, 
+	day=None):
 	"""  add an extinction task in the TaskController """
 	try:
-		# get the next unsed id in order to generate the task name
-		max_num = 0
-		for task in [ t for t in LMC.tasks if isinstance(t, TaskExtinction) if '_extinction-cal_' in t.name]:
-			num=int(task.name[16:])
-			if num > max_num:
-				max_num = num
+		
 
-		name = "_extinction-cal_" + str(max_num + 1)
+		name = "_extinction-cal_" + str(get_next_unset_id())
 
-		# we have to translate each machine into its main IP address (accessible from the server)
+		# we have to translate each machine into its main IP address
+		# (accessible from the server)
 		machines_to_shutdown = []
 		for m in who.split(','):
 			if m.lower() == 'all':
-				machines_to_shutdown.append('LMC.machines.select(default_selection=host_status.ACTIVE)')
+				machines_to_shutdown.append(ALL_MACHINES)
 			else:
 				try:
-					mach = LMC.machines.guess_one(LMC.machines.word_match(m))
+					mach = LMC.machines.guess_one(
+											LMC.machines.word_match(m))
 				except KeyError:
-					wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : One machine cannot be resolved : {3}.').format(
-			who, ", ".join([ days[str(d) if d !='*' else d] for d in day.split(',')]), '{0}:{1}'.format(hour, minute), e))))
+					wmi_event_app.queue(request).put(notify((
+						_(u'Error while adding task for machines {0} on'
+							u' {1} at {2} : One machine cannot be '
+							u'resolved : {3}.').format(
+								who,
+								", ".join(
+									[ days[str(d) if d !='*' else d] \
+										for d in day.split(',')]), 
+								'{0}:{1}'.format(hour, minute), e))))
 
 				if mach.master_machine is not None:
 					machines_to_shutdown.append(mach.master_machine.mid)
@@ -116,13 +142,19 @@ def add_rule(request, new=None, who=None, hour=None, minute=None, day=None):
 
 		# add the task
 		LMC.tasks.add_task(name, 'LMC.machines.shutdown', 
-						args=machines_to_shutdown, hour=str(hour), minute=str(minute),
+						args=machines_to_shutdown, hour=str(hour), 
+						minute=str(minute),
 						week_day=','.join([ str(d) for d in _day]))
 		
 		return HttpResponse('add rule')
 	except exceptions.BadArgumentError, e:
-		wmi_event_app.queue(request).put(notify((_(u'Error while adding task for machines {0} on {1} at {2} : {3}.').format(
-			who, ", ".join([ days[str(d)] for d in day.split(',') if d != '']), '{0}:{1}'.format(hour, minute), e))))
+		wmi_event_app.queue(request).put(notify((
+			_(u'Error while adding task for machines {0} on {1} at {2} '
+				u': {3}.').format(
+					who, 
+					", ".join([ days[str(d)] \
+						for d in day.split(',') if d != '']), 
+					'{0}:{1}'.format(hour, minute), e))))
 		return HttpResponse(_('BadArgumentError while adding rule'))		
 	except:
 		logging.exception(_('Unknown error while adding extinction task'))
@@ -135,7 +167,7 @@ def del_rule(request, tid):
 	return HttpResponse(_('DEL OK.'))
 
 def generate_machine_html(mid, minimum=False):
-	if mid == "LMC.machines.select(default_selection=host_status.ACTIVE)":
+	if mid == ALL_MACHINES:
 		machine = { 'mtype': '', 'mname': "ALL", 'mstatus': '' }
 	else:
 		try:
@@ -160,7 +192,7 @@ def get_machine_list(request):
 		ret.append({'mid': str(m.mid), 'mname':str(m.name)})
 
 	# add a 'ALL' shortcut
-	ret.append({'mid': 'LMC.machines.select(default_selection=host_status.ACTIVE)', 'mname': 'ALL'})
+	ret.append({'mid': ALL_MACHINES, 'mname': 'ALL'})
 	return HttpResponse(json.dumps(ret))
 
 @staff_only

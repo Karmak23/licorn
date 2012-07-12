@@ -71,7 +71,6 @@
 		}
 
 		function update_recap() {
-			console.log('>> update_recap')
 			$.get('/energy/get_recap', function(recap_html) {
 				// load new table
 				$('#extinction_recap').html(recap_html)
@@ -84,10 +83,8 @@
 		}
 
 		function update_calendar(data_calendar) {
-			console.log(">> update_calendar")
 			$.get('/energy/get_calendar_data', function(data_calendar) {
 				//data_on_off = get_data_on_off(data_calendar);
-				console.log(data_calendar)
 				draw_extinction_calendar(data_calendar);	
 			}, "json")
 		}
@@ -103,7 +100,8 @@
 
 			
 			/* return the weekday number [0,1,..,6] of the specified day */
-			if (day == '*' || day == 'all' || day == 'ALL') { return "0,1,2,3,4,5,6"}
+			if (day == '*' || day == 'all' || day == 'ALL') { return "0,1,2,3,4,5,6" }
+			
 			if (day == '0' || day == '1' || day == '2' || day == '3' || day == '4' || day == '5' || day == '6') {
 				return parseInt(day);
 			}
@@ -146,7 +144,6 @@
 
 
 		function get_data_on_off(calendar_data) {
-			console.log("calendar_data " , calendar_data )
 			data_on_off = [
 				{'on': 6, 'off':6}, 
 				{'on': 6, 'off':6}, 
@@ -156,15 +153,12 @@
 				{'on': 6, 'off':6},
 				{'on': 6, 'off':6}, 
 			]
-			console.log(data_on_off)
 			for (i=0; i<calendar_data.length; i++) {
 				rule=calendar_data[i];
-				console.log(rule['day'])
 				if (rule.hour >= data_on_off[rule.day]['off']) {
 					data_on_off[rule.day]['off'] = rule.hour
 				} 
 			}	
-			console.log(data_on_off)		
 			return data_on_off 
 
 		}
@@ -182,20 +176,20 @@
 				day  = $.trim($(this).parent().find("#extinction_machine_day").val());
 
 				var t = split(day);
+				var result = []
 				for (i=0;i<t.length;i++){
-					t[i] = translate_day(t[i])
+					if (t[i] != '') {
+						result.push(translate_day(t[i]))
+					}
 				}
-				day = t.join(', ')
-				console.log('adding rule ', who, hour, minute, day)
+				if (result.length > 1) { day = result.join(', ') } else { day = result[0] }
 				
 				if (who == null || who == '' || hour == null || day == null || minute == null) {
 					show_message_through_notification(gettext("Cannot add rule : at least one of the required field is missing, please check information"))
 					return;
 				}
 
-				$.get("/energy/add_rule/"+who+'/'+hour+'/'+minute+'/'+day, function(data) {
-					console.log('success')
-				})
+				$.get("/energy/add_rule/"+who+'/'+hour+'/'+minute+'/'+day)
 			});
 
 			/* AUTOCOMPLETE BOX */
@@ -276,8 +270,6 @@
 					this.value = terms.join( "," );
 
 					result_terms = []
-					console.log('len '+terms.length)
-					console.log('terms[0] '+ terms[0])
 					
 					return false;
 				}

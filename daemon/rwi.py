@@ -530,14 +530,10 @@ class RealWorldInterface(NamedObject, ListenerObject, Pyro.core.ObjBase):
 				tid = LMC.tasks.by_name(args[1]).id
 
 			selection = tid
-		
-
-		print opts
 
 		if opts.all:
 			selection = filters.ALL
 		if opts.extinction:
-			print "ext"
 			selection = filters.EXTINCTION_TASK
 		else:
 			# Running, finished
