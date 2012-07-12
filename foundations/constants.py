@@ -90,7 +90,10 @@ host_status.UNKNOWN        = -0x00000001
 host_status.NONE           =  0x00000000
 host_status.ALL            =  0xffffffff
 host_status.OFFLINE        =  0x000000ff
+# The following 2 are the same
 host_status.GOING_TO_SLEEP =  0x00000001
+host_status.SLEEPING       =  0x00000001
+
 host_status.ASLEEP         =  0x00000002
 host_status.SHUTTING_DOWN  =  0x00000004
 host_status.PYRO_SHUTDOWN  =  0x00000008
