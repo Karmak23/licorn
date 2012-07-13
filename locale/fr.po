@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2012-07-11 10:32+0200\n"
-"PO-Revision-Date: 2012-07-11 10:51+0200\n"
+"PO-Revision-Date: 2012-07-13 16:33+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -541,7 +541,7 @@ msgstr ""
 
 #: extensions/mylicorn/mylicorn.py:329
 msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
-msgstr "{0} : déconnecté avec succès (code : authenticate.{1}, message : {2})"
+msgstr "{0} : déconnecté avec succès (code : {1}, message : {2})"
 
 #: extensions/mylicorn/mylicorn.py:338
 msgid "{0}: already disconnected, not trying again."
