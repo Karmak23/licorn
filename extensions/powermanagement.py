@@ -146,16 +146,17 @@ class PowermanagementExtension(ObjectSingleton, LicornExtension):
 		logging.progress(_(u'{0}: UPower message{1}: {2}').format(
 								self.pretty_name,
 								_(' for device {0}').format(
-										stylize(ST_NAME, device.rsplit('/', 1)[1])
+										stylize(ST_NAME, device)
 									) if device else u'',
 								stylize(ST_ATTR, member)))
 
 		if device is None and member != 'Changed':
 			sleeping = member == 'Sleeping'
-			logging.info(_(u'System is {0}, broadcasting information!').format(
+			logging.info(_(u'{0}: system is {1}, broadcasting information.').format(
+							self.pretty_name,
 							stylize(ST_BAD, _('going to sleep'))
-							if sleeping
-							else stylize(ST_OK, _(u'resuming from suspend'))))
+								if sleeping
+								else stylize(ST_OK, _(u'resuming from suspend'))))
 			LicornEvent('system_%s' % member.lower()).emit(priorities.HIGH)
 
 	def __setup_upower(self):
