@@ -8,7 +8,7 @@ Licorn extensions: mylicorn - http://docs.licorn.org/extensions/mylicorn
 
 """
 
-import os, time, urllib2, random, errno
+import os, time, urllib2, random, errno, socket
 
 from threading import Thread
 
@@ -331,7 +331,42 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 						self.pretty_name, pyutils.format_time_delta(delay)))
 
 		workers.network_enqueue(priorities.NORMAL, self.authenticate, job_delay=delay)
+	def __auth_infos(self):
+		""" Return all arguments for the `authenticate()` RPC call. """
 
+		try:
+			system_start_time = time.time() - float(
+								open('/proc/uptime').read().split(" ")[0])
+
+		except:
+			system_start_time = None
+
+		try:
+			os_version = open('/proc/version_signature').read().strip()
+
+		except:
+			os_version = '<undetermined>'
+
+		try:
+			hostname = socket.gethostname()
+
+		except:
+			hostname = '<undetermined>'
+
+		return 	(
+					LMC.configuration.system_uuid,
+					self.api_key,
+					system_start_time,
+					self.licornd.dstart_time,
+					version,
+					# TODO: do not hardcode this.
+					host_types.LINUX,
+					os_version,
+					LMC.configuration.distro,
+					LMC.configuration.distro_version,
+					LMC.configuration.distro_codename,
+					hostname
+				)
 	def disconnect(self, status=None):
 		""" Disconnect from the central server, and BTW stop advertising our
 			status regularly there. """
@@ -385,33 +420,9 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 									u'somewhere.').format(self.pretty_name))
 			return
 
-		try:
-			system_start_time = time.time() - float(
-								open('/proc/uptime').read().split(" ")[0])
-
-		except:
-			system_start_time = None
-
-		try:
-			os_version = open('/proc/version_signature').read().strip()
-
-		except:
-			os_version = '<undetermined>'
-
 		# NOTE: the arguments must match the ones from the
 		# My.Licorn.org `authenticate()` JSON-RPC method.
-		res = self.__remote_call(self.service.authenticate,
-									LMC.configuration.system_uuid,
-									self.api_key,
-									system_start_time,
-									self.licornd.dstart_time,
-									version,
-									# TODO: do not hardcode this.
-									host_types.LINUX,
-									os_version,
-									LMC.configuration.distro,
-									LMC.configuration.distro_version,
-									LMC.configuration.distro_codename)
+		res = self.__remote_call(self.service.authenticate, *self.__auth_infos())
 
 		code = res['result']
 
