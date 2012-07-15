@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Licorn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2012-07-11 10:32+0200\n"
-"PO-Revision-Date: 2012-07-13 16:33+0200\n"
+"POT-Creation-Date: 2012-07-15 10:27+0200\n"
+"PO-Revision-Date: 2012-07-15 10:28+0200\n"
 "Last-Translator: Olivier Cortès <olive@licorn.org>\n"
 "Language-Team: français <dev@licorn.org>\n"
 "Language: \n"
@@ -21,27 +21,28 @@ msgstr ""
 "X-Poedit-Bookmarks: -1,13,-1,-1,-1,-1,-1,-1,-1,-1\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: extensions/rdiffbackup.py:38
+#: extensions/rdiffbackup.py:39
 msgid "{0}: No default volume found, aborting call of {1}({2}, {3})"
 msgstr ""
 
-#: extensions/rdiffbackup.py:69
+#: extensions/rdiffbackup.py:70
 msgid "{0:s}: an operation is already in progress on {1:s}, aborting."
 msgstr "{0:s} : une opération est déjà en cours sur {1:s}, ABANDON."
 
-#: extensions/rdiffbackup.py:249
+#: extensions/rdiffbackup.py:250
 msgid ""
 "{0}: using environment variable {1} pointing to {2} for rdiff-backup "
 "configuration."
 msgstr ""
 
-#: extensions/rdiffbackup.py:346
-msgid "{0}: started extension and auto-backup timer."
+#: extensions/rdiffbackup.py:364
+#, fuzzy
+msgid "{0}: started auto-backup timer."
 msgstr ""
 "{0} : extension démarrée, avec le compte-à-rebours pour la sauvegarde "
 "automatique."
 
-#: extensions/rdiffbackup.py:399
+#: extensions/rdiffbackup.py:402
 msgid ""
 "{0}: cannot disable now, a backup is in progress. Please wait until the end "
 "and retry."
@@ -49,41 +50,41 @@ msgstr ""
 "{0} : impossible de désactiver maintenant, une sauvegarde est en cours. "
 "Merci d'en attendre la fin avant de ré-essayer."
 
-#: extensions/rdiffbackup.py:477
+#: extensions/rdiffbackup.py:480
 msgid "Last Backup"
 msgstr "Dernière sauvegarde"
 
-#: extensions/rdiffbackup.py:478
+#: extensions/rdiffbackup.py:481
 msgid "Increments listing"
 msgstr "Liste des incréments"
 
-#: extensions/rdiffbackup.py:479
+#: extensions/rdiffbackup.py:482
 msgid "Statistics computation"
 msgstr "Calcul des statistiques"
 
-#: extensions/rdiffbackup.py:505
+#: extensions/rdiffbackup.py:508
 msgid "{0}: no volume found!"
 msgstr "{0} : aucun volume détecté !"
 
-#: extensions/rdiffbackup.py:561
+#: extensions/rdiffbackup.py:564
 #, python-format
 msgid "Skipped disabled %s."
 msgstr "Le %s désactivé a été ignoré."
 
-#: extensions/rdiffbackup.py:599
+#: extensions/rdiffbackup.py:624
 msgid "{0}: Computing needed space for next backup, please wait…"
 msgstr ""
 "{0} : calcul de l'espace nécessaire à la prochaine sauvegarde, patientez SVP…"
 
-#: extensions/rdiffbackup.py:726
+#: extensions/rdiffbackup.py:751
 msgid "{0:s}: cleaning obsolete backup on {1:s}."
 msgstr "{0:s} : nettoyage des sauvegardes obsolètes sur {1:s}."
 
-#: extensions/rdiffbackup.py:731
+#: extensions/rdiffbackup.py:756
 msgid "{0:s}: obsolete backup cleaned on {1:s}."
 msgstr "{0:s} : sauvegardes obsolètes nettoyées sur {1:s}."
 
-#: extensions/rdiffbackup.py:802
+#: extensions/rdiffbackup.py:827
 msgid ""
 "Cannot run a backup on non-reserved volume {0}. Please reserve it first, or "
 "choose another one."
@@ -91,32 +92,32 @@ msgstr ""
 "Sauvegarde impossible sur le volume non-réservé {0}. Merci de le réserver "
 "d'abord, ou d'en choisir un autre."
 
-#: extensions/rdiffbackup.py:813
+#: extensions/rdiffbackup.py:838
 msgid "{0}: not backing up on {1}, last backup is less than {2}."
 msgstr ""
 "{0} : pas de sauvegarde à lancer sur {1}, la dernière date de moins de {2}."
 
-#: extensions/rdiffbackup.py:825
+#: extensions/rdiffbackup.py:850
 msgid "Sorry, no backup volumes available."
 msgstr "Désolé, aucun volume de backup n'est disponible."
 
-#: extensions/rdiffbackup.py:895
+#: extensions/rdiffbackup.py:920
 msgid "{0}: running backup on {1:s}, please wait…"
 msgstr "{0} : réalisation de la sauvegarde sur {1:s}, patientez SVP…"
 
-#: extensions/rdiffbackup.py:903
+#: extensions/rdiffbackup.py:928
 msgid "{0:s}: created directory {1}."
 msgstr "{0:s} : répertoire {1} créé."
 
-#: extensions/rdiffbackup.py:923
+#: extensions/rdiffbackup.py:948
 msgid "{0}: configuration file {1} does not exist."
 msgstr "{0} : le fichier de configuration {1} n'existe pas."
 
-#: extensions/rdiffbackup.py:963
+#: extensions/rdiffbackup.py:988
 msgid "{0}: backup procedure terminated on {1}."
 msgstr "{0} : procédure de sauvegarde terminée sur {1}."
 
-#: extensions/rdiffbackup.py:973
+#: extensions/rdiffbackup.py:998
 msgid ""
 "Forcing backup on volume {0}, free space ckeck ignored. This could lead to "
 "incomplete backups, please use with care!"
@@ -125,13 +126,13 @@ msgstr ""
 "libre ignorée. Ça pourrait résulter dans un backup incomplet, utilisez cette "
 "option avec prudence !"
 
-#: extensions/rdiffbackup.py:980
+#: extensions/rdiffbackup.py:1005
 msgid "{0:s}: computing needed space for next backup, please wait."
 msgstr ""
 "{0:s} : calcul de l'espace nécessaire à la prochaine sauvegarde, patientez "
 "SVP."
 
-#: extensions/rdiffbackup.py:986
+#: extensions/rdiffbackup.py:1011
 msgid ""
 "Volume {0:s} does not have enough free space or is not big enough to hold "
 "more than two backups. Space needed: {1}; free space: {2}."
@@ -140,19 +141,19 @@ msgstr ""
 "accueillir plus de deux sauvegardes. Espace nécessaire : {1} ; espace "
 "libre : {2}."
 
-#: extensions/rdiffbackup.py:1019
+#: extensions/rdiffbackup.py:1044
 msgid "{0}: updated last backup file {1}."
 msgstr "{0} : le fichier de dernière date de sauvegarde {1} a été mis à jour."
 
-#: extensions/rdiffbackup.py:1033
+#: extensions/rdiffbackup.py:1058
 msgid "{0}: computing statistics on {1}, please wait…"
 msgstr "{0} : calcul des statistiques de sauvegardes sur {1}, patientez SVP…"
 
-#: extensions/rdiffbackup.py:1087
+#: extensions/rdiffbackup.py:1112
 msgid "{0}: statistics computation finished on {1:s}."
 msgstr "{0} : calcul des statistiques terminé sur {1:s}."
 
-#: extensions/rdiffbackup.py:1205
+#: extensions/rdiffbackup.py:1251
 msgid "{0}: backup interval changed from {1} to {2}, restarting timer."
 msgstr ""
 "{0} : l'intervalle de sauvegarde a changé de {1} vers {2}, redémarrage du "
@@ -187,11 +188,11 @@ msgid "{0}: configuration file {1} must be altered to continue."
 msgstr ""
 "{0} : le fichier de configuration {1} doit être modifié pour continuer."
 
-#: extensions/caldavd.py:81
+#: extensions/caldavd.py:83
 msgid "{0}: extension not available because {1}."
 msgstr "{0} : extension non disponible car {1}."
 
-#: extensions/caldavd.py:85
+#: extensions/caldavd.py:88
 msgid ""
 "{0}: extension not yet available because {1} (calendarserver is probably "
 "installing, try again later)."
@@ -199,75 +200,75 @@ msgstr ""
 "{0} : extension non disponible car {1} (calendarserver est en cours "
 "d'installation, essayez plus tard)."
 
-#: extensions/caldavd.py:91
+#: extensions/caldavd.py:94
 msgid "{0}: extension not available because {1} not installed."
 msgstr "{0} : extension non disponible car {1} n'est pas installé(e)."
 
-#: extensions/caldavd.py:108
+#: extensions/caldavd.py:111
 msgid ""
 "**Please implement caldavd extension check for pre-existing users and groups."
 "**"
 msgstr ""
 
-#: extensions/caldavd.py:148 extensions/squid.py:236
+#: extensions/caldavd.py:151 extensions/squid.py:236
 msgid "{0}: started extension, managing {1} service ({2})."
 msgstr "{0} : extension démarrée, gérant le service {1} ({2})."
 
-#: extensions/caldavd.py:151 extensions/squid.py:240
+#: extensions/caldavd.py:154 extensions/squid.py:240
 #, python-format
 msgid "pid=%s"
 msgstr "pid=%s"
 
-#: extensions/caldavd.py:154 extensions/squid.py:243
+#: extensions/caldavd.py:157 extensions/squid.py:243
 msgid "Starting up"
 msgstr "démarrage en cours"
 
-#: extensions/caldavd.py:160
+#: extensions/caldavd.py:163
 msgid ""
 "{0}: extension disabled because service {1} disabled on the local system."
 msgstr ""
 "{0} : extension désactivée car le service {1} est désactivé lui-aussi sur le "
 "système local."
 
-#: extensions/caldavd.py:189 extensions/caldavd.py:210
-#: extensions/caldavd.py:453 extensions/caldavd.py:485
-#: extensions/caldavd.py:521 extensions/caldavd.py:574
-#: extensions/caldavd.py:604 extensions/caldavd.py:636
-#: extensions/caldavd.py:663 extensions/volumes.py:441
-#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:651
+#: extensions/caldavd.py:192 extensions/caldavd.py:213
+#: extensions/caldavd.py:458 extensions/caldavd.py:492
+#: extensions/caldavd.py:529 extensions/caldavd.py:584
+#: extensions/caldavd.py:615 extensions/caldavd.py:649
+#: extensions/caldavd.py:677 extensions/volumes.py:441
+#: extensions/volumes.py:487 core/machines.py:1224 core/_modules.py:653
 #: core/configuration.py:1001
 msgid "{0}: {1}"
 msgstr "{0} : {1}"
 
-#: extensions/caldavd.py:365
+#: extensions/caldavd.py:368
 msgid "{0}: unable to modify {1} for {2} {3}, not found in {4}."
 msgstr ""
 "{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
 "dans {4}."
 
-#: extensions/caldavd.py:380
+#: extensions/caldavd.py:383
 msgid "{0}: unable to delete {1} {2}, not found in {3}."
 msgstr ""
 "{0} : impossible de supprimer {1} {2}, car il n'a pas été trouvé dans {3}."
 
-#: extensions/caldavd.py:398
+#: extensions/caldavd.py:401
 msgid "{0}: unable to delete user {1} from group {2}, not found in {3}."
 msgstr ""
 "{0} : Impossible de supprimer l'utilisateur {1} du groupe {2}, non trouvé "
 "dans {3}."
 
-#: extensions/caldavd.py:439
+#: extensions/caldavd.py:444
 #, python-format
 msgid "R/O holder for user %s."
 msgstr ""
 "Emplacement pour les délégués en lecture-seule du calendrier de "
 "l'utilisateur %s."
 
-#: extensions/caldavd.py:684
+#: extensions/caldavd.py:699
 msgid "Personnal calendar URI"
 msgstr "URI de calendrier personnel"
 
-#: extensions/caldavd.py:698
+#: extensions/caldavd.py:713
 msgid "Group calendar URI"
 msgstr "URI de calendrier partagé"
 
@@ -367,62 +368,62 @@ msgstr "périphérique"
 msgid "No Volume by that device name, label, mount_point nor GUID \"{0}\"!"
 msgstr ""
 
-#: extensions/volumes.py:690
+#: extensions/volumes.py:695
 msgid "{0}: not available because"
 msgstr "{0} : non disponible, car"
 
-#: extensions/volumes.py:701
+#: extensions/volumes.py:706
 msgid "{0}: started extension with pyudev v{2} on top of udev v{1}."
 msgstr "{0} : extension démarrée avec pyudev v{2}, pilotant  udev v{1}."
 
-#: extensions/volumes.py:934
+#: extensions/volumes.py:943
 msgid ""
 "{0}: computing global system size is not implemented for systems other than "
 "Linux. Returning 0 and hoping this will be sufficient."
 msgstr ""
 
-#: extensions/volumes.py:958
+#: extensions/volumes.py:967
 msgid "{0}: skipped already known volume {1}."
 msgstr "{0} : le volume {1} a été ignoré car il est déjà connu."
 
-#: extensions/volumes.py:969
+#: extensions/volumes.py:978
 msgid "{0}: skipped LMV/extended partition {1}."
 msgstr "{0} : partition LVM/étendue {1} ignorée."
 
-#: extensions/volumes.py:975
+#: extensions/volumes.py:984
 msgid "{0}: skipped unformatted partition {1}."
 msgstr "{0} : partition non-formattée {1} ignorée."
 
-#: extensions/volumes.py:981
+#: extensions/volumes.py:990
 msgid "{0}: skipped system partition {1}."
 msgstr "{0} : partition système {1} ignorée."
 
-#: extensions/volumes.py:1001
+#: extensions/volumes.py:1010
 msgid "{0}: skipped partition {1} (excluded {2} filesystem)."
 msgstr "{0} : partition {1} ignorée (système de fichier {2} exclu)."
 
-#: extensions/volumes.py:1025
+#: extensions/volumes.py:1034
 msgid "{0}: added {1}."
 msgstr "{0} : {1} ajouté."
 
-#: extensions/volumes.py:1070
+#: extensions/volumes.py:1079
 msgid "{0}: removed {1}."
 msgstr "{0} : {1} supprimé."
 
-#: extensions/volumes.py:1114
+#: extensions/volumes.py:1123
 msgid "{0}: skipped non existing device or mount_point {1}."
 msgstr ""
 "{0} : le périphérique ou point de montage non-existant {1} a été ignoré."
 
-#: extensions/volumes.py:1186
+#: extensions/volumes.py:1195
 msgid ", {0} of {1} free ({2:.1%})"
 msgstr ", {0} sur {1} libre(s) ({2:.1%})"
 
-#: extensions/volumes.py:1194
+#: extensions/volumes.py:1203
 msgid " on {0}{1}"
 msgstr " sur {0}{1}"
 
-#: extensions/volumes.py:1197
+#: extensions/volumes.py:1206
 msgid " not mounted"
 msgstr " non monté"
 
@@ -479,79 +480,109 @@ msgstr ""
 "{0} : la commande {1} ne s'est pas terminée dans les {2} seconds, impossible "
 "d'en exécuter une autre. Merci de ré-essayer plus tard."
 
-#: extensions/powermanagement.py:57
-#, python-format
-msgid "%s: extension not available because yet to be written."
-msgstr "%s : extension indisponible car pas encore écrite."
+#: extensions/powermanagement.py:107
+msgid "{0}: extension enabled{1}, on top of {2} v{3}."
+msgstr "{0} : extension activée{1}, connectée à {2} v{3}."
 
-#: extensions/mylicorn/mylicorn.py:113
+#: extensions/powermanagement.py:109
+msgid " with laptop mode"
+msgstr " en mode laptop"
+
+#: extensions/powermanagement.py:116
+msgid ""
+"{0}: extension disabled because either {1} disabled or {2} not connected."
+msgstr ""
+"{0} : extension désactivée car {1} est désactivé ou {2} n'est pas connecté."
+
+#: extensions/powermanagement.py:146
+msgid "{0}: UPower message{1}: {2}"
+msgstr "{0} : message UPower{1} : {2}"
+
+#: extensions/powermanagement.py:148
+msgid " for device {0}"
+msgstr " du périphérique {0}"
+
+#: extensions/powermanagement.py:155
+msgid "{0}: system is {1}, broadcasting information."
+msgstr "{0} : le système {1}, diffusion de l'information."
+
+#: extensions/powermanagement.py:157
+msgid "going to sleep"
+msgstr "va se mettre en veille"
+
+#: extensions/powermanagement.py:159
+msgid "resuming from suspend"
+msgstr "est sorti de veille"
+
+#: extensions/mylicorn/mylicorn.py:115
 msgid "Bad API key \"{0}\", must match \"{1}/i\""
 msgstr ""
 "Clef d'API « {0} » invalide : elle devrait respecter l'expression "
 "rationnelle « /{1}/i »"
 
-#: extensions/mylicorn/mylicorn.py:144
+#: extensions/mylicorn/mylicorn.py:146
 msgid "{0}: using environment variable {1} pointing to {2}."
 msgstr ""
 "{0} : utilisation de la variable d'environnement {1} pointant vers {2}."
 
-#: extensions/mylicorn/mylicorn.py:174
+#: extensions/mylicorn/mylicorn.py:176
 msgid "{0}: configuration file {1} seems corrupt; not using it."
 msgstr ""
 "{0} : le fichier de configuration {1} semble corrompu, il ne sera pas "
 "utilisé."
 
-#: extensions/mylicorn/mylicorn.py:189 extensions/simplesharing.py:560
+#: extensions/mylicorn/mylicorn.py:193 extensions/simplesharing.py:561
 msgid "{0}: extension always enabled unless manually ignored in {1}."
 msgstr ""
 "{0} : extension inconditionnellement activée sauf si manuellement ignorée "
 "dans {1}."
 
-#: extensions/mylicorn/mylicorn.py:247
-msgid "{0}: exception while disconnecting"
-msgstr "{0} : exception pendant la déconnexion"
-
-#: extensions/mylicorn/mylicorn.py:265
+#: extensions/mylicorn/mylicorn.py:279
 msgid "{0}: updater thread started."
 msgstr "{0} : Thread de mise à jour d'état démarré."
 
-#: extensions/mylicorn/mylicorn.py:275
+#: extensions/mylicorn/mylicorn.py:290
 msgid "{0}: exception while stopping updater thread"
 msgstr "{0} : exception pendant l'arrêt du thread de mise à jour d'état"
 
-#: extensions/mylicorn/mylicorn.py:284
+#: extensions/mylicorn/mylicorn.py:299
 msgid "{0}: updater thread stopped."
 msgstr "{0} : Thread de mise à jour d'état stoppé."
 
-#: extensions/mylicorn/mylicorn.py:295
+#: extensions/mylicorn/mylicorn.py:311
+msgid "{0}: error decoding web exception {1} from failed execution of {2}"
+msgstr ""
+
+#: extensions/mylicorn/mylicorn.py:315
 msgid "{0}: error while executing {1}"
 msgstr "{0} : erreur pendant l'exécution de {1}"
 
-#: extensions/mylicorn/mylicorn.py:299
+#: extensions/mylicorn/mylicorn.py:319
 #, python-format
 msgid "RPC %s failed"
 msgstr ""
 
-#: extensions/mylicorn/mylicorn.py:322
-#, fuzzy
-msgid "{0}: failed to disconnect (code: {1}, message: {2})"
-msgstr ""
-"{0} : impossible de s'authentifier, nouvel essai dans une heure (code : "
-"authenticate.{1}, message : {2})"
+#: extensions/mylicorn/mylicorn.py:330
+msgid "{0}: reprogramming authentication in {1}."
+msgstr "{0} : re-programmation d'une authentification dans {1}."
 
-#: extensions/mylicorn/mylicorn.py:329
+#: extensions/mylicorn/mylicorn.py:389
+msgid "{0}: failed to disconnect (code: {1}, message: {2})"
+msgstr "{0} : impossible de se déconnecter (code : {1}, message : {2})"
+
+#: extensions/mylicorn/mylicorn.py:396
 msgid "{0}: sucessfully disconnected (code: {1}, message: {2})"
 msgstr "{0} : déconnecté avec succès (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:338
+#: extensions/mylicorn/mylicorn.py:405
 msgid "{0}: already disconnected, not trying again."
 msgstr "{0} : déjà déconnecté, pas la peine de re-tenter."
 
-#: extensions/mylicorn/mylicorn.py:346
+#: extensions/mylicorn/mylicorn.py:413
 msgid "{0}: already connected, not doing it again."
 msgstr "{0} : déjà connecté, pas la peine de re-tenter."
 
-#: extensions/mylicorn/mylicorn.py:351
+#: extensions/mylicorn/mylicorn.py:418
 msgid ""
 "{0}: system UUID not found, aborting. There may be a serious problem "
 "somewhere."
@@ -559,89 +590,95 @@ msgstr ""
 "{0} : UUID système non trouvé, abandon. Il doit y avoir un sacré problème "
 "quelque part, celà ne devrait pas arriver."
 
-#: extensions/mylicorn/mylicorn.py:390
-msgid "{0}: failed to authenticate, will retry later (code: {1}, message: {2})"
-msgstr ""
-"{0} : impossible de s'authentifier, nouvel essai plus tard (code : {1}, "
-"message : {2})"
+#: extensions/mylicorn/mylicorn.py:432
+msgid "{0}: failed to authenticate (code: {1}, message: {2})"
+msgstr "{0} : impossible de s'authentifier (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:399
+#: extensions/mylicorn/mylicorn.py:438
 msgid "{0}: sucessfully authenticated (code: {1}, message: {2})"
 msgstr "{0} : authentifié avec succès (code : {1}, message : {2})"
 
-#: extensions/mylicorn/mylicorn.py:427
+#: extensions/mylicorn/mylicorn.py:465
 msgid "{0}: our reachability state is now {1}."
 msgstr ""
 "{0} : l'accéssibilité de cette machine depuis internet est maintenant {1}."
 
-#: extensions/mylicorn/mylicorn.py:443
+#: extensions/mylicorn/mylicorn.py:481
 msgid "{0}: problem noop()'ing {1} (was: code={2}, message={3})."
 msgstr ""
 "{0} : problème pendant le « noop()'ing » de {1} (erreur : code={2}, message="
 "{3})."
 
-#: extensions/mylicorn/mylicorn.py:458
+#: extensions/mylicorn/mylicorn.py:496
 msgid "{0}: successfully noop()'ed {1}."
 msgstr "{0} : {1} a été « noop()é » avec succès."
 
-#: extensions/gloop.py:106
+#: extensions/gloop.py:113
 msgid ""
 "{0}: extension not available because {1} or {2} do not exist on the system."
 msgstr ""
 "{0} : extension non disponible car {1} ou {2} n'existe pas sur le système."
 
-#: extensions/gloop.py:132
+#: extensions/gloop.py:144
+msgid "{0}: could not acquire {1} system bus, disabling"
+msgstr "{0} : impossible de se connecter au bus système {1}, désactivation"
+
+#: extensions/gloop.py:148
 msgid "{0}: started extension and gobject mainloop thread."
 msgstr ""
 "{0} : extension démarrée, ainsi que le thread de boucle principale pour "
 "GObject."
 
+#: extensions/gloop.py:154
+msgid "{0}: DBUS message {1} {2}."
+msgstr "{0} : message DBUS {1} {2}."
+
 #: extensions/squid.py:214
 msgid "{0}: not available because {1} do not exist on the system."
 msgstr "{0} : non disponible, car {1} n'existe pas sur le système."
 
-#: extensions/simplesharing.py:68
+#: extensions/simplesharing.py:69
 msgid "{0}: \"{1}\" must be a directory!"
 msgstr "{0} : \"{1}\" doit être un répertoire !"
 
-#: extensions/simplesharing.py:97
+#: extensions/simplesharing.py:98
 msgid "{0}: configuration file {1} seems corrupt; removing it."
 msgstr ""
 "{0} : le fichier de configuration {1} semble corrompu; il a été supprimé."
 
-#: extensions/simplesharing.py:173
+#: extensions/simplesharing.py:174
 msgid "Please set a password on the share first."
 msgstr "Merci de configurer un mot de passe sur le partage d'abord."
 
-#: extensions/simplesharing.py:223
+#: extensions/simplesharing.py:224
 msgid "Bad URI {0}"
 msgstr "URL {0} invalide"
 
-#: extensions/simplesharing.py:291
+#: extensions/simplesharing.py:292
 msgid "Not a file from that share."
 msgstr "Pas un fichier de ce partage."
 
-#: extensions/simplesharing.py:295
+#: extensions/simplesharing.py:296
 msgid "Unsafe absolute path for file \"{0}\"!"
 msgstr "Chemin absolu pour le fichier \"{0}\" non-sécurisé !"
 
-#: extensions/simplesharing.py:305
+#: extensions/simplesharing.py:306
 msgid "Unknown"
 msgstr "Inconnu"
 
-#: extensions/simplesharing.py:330
+#: extensions/simplesharing.py:331
 msgid "{0}: requesting short URL…"
 msgstr "{0} : demande d'une URL courte…"
 
-#: extensions/simplesharing.py:337
+#: extensions/simplesharing.py:338
 msgid "{0}: short URL request failed, deferring next try."
 msgstr "{0} : la demande d'URL courte a échoué, nouvel essai déféré."
 
-#: extensions/simplesharing.py:345
+#: extensions/simplesharing.py:346
 msgid "{0}: short URL successfully set to {1}."
 msgstr "{0} : URL courte définie avec succès à {1}."
 
-#: extensions/simplesharing.py:349
+#: extensions/simplesharing.py:350
 msgid ""
 "{0}: short URL request failed, deferring next try (was: code={1}, message="
 "{2})."
@@ -649,73 +686,72 @@ msgstr ""
 "{0} : demande d'URL courte échouée, nouvel essai déféré (erreur : code={1}, "
 "message={2})."
 
-#: extensions/simplesharing.py:357
+#: extensions/simplesharing.py:358
 msgid "{0}: {1} is not connected, deferring short URL request."
 msgstr "{0} : {1} n'est pas connecté, demande d'URL courte déférée."
 
-#: extensions/simplesharing.py:405
+#: extensions/simplesharing.py:406
 msgid "Someone tried to switch simple shares on a non-standard user account!"
 msgstr ""
 
-#: extensions/simplesharing.py:409
+#: extensions/simplesharing.py:410
 msgid "{0}: shares status unchanged."
 msgstr "{0} : état des partages web inchangé."
 
-#: extensions/simplesharing.py:420
-#, fuzzy
+#: extensions/simplesharing.py:421
 msgid "{0}: simple shares status switched to {1}."
-msgstr "{0} : partition système {1} ignorée."
+msgstr "{0} : état des partages simplifiés maintenant {1}."
 
-#: extensions/simplesharing.py:421 core/_objects.py:264 core/groups.py:461
+#: extensions/simplesharing.py:422 core/_objects.py:264 core/groups.py:458
 msgid "activated"
 msgstr "activé(e)"
 
-#: extensions/simplesharing.py:421 core/_objects.py:275 core/groups.py:464
+#: extensions/simplesharing.py:422 core/_objects.py:275 core/groups.py:461
 msgid "deactivated"
 msgstr "désactivé(e)"
 
-#: extensions/simplesharing.py:443
+#: extensions/simplesharing.py:444
 msgid "{0}: checking shares…"
 msgstr "{0} : vérifications des partages…"
 
-#: extensions/simplesharing.py:450
+#: extensions/simplesharing.py:451
 msgid "{0}: shares check finished."
 msgstr "{0} : vérification des partages terminée."
 
-#: extensions/simplesharing.py:454
+#: extensions/simplesharing.py:455
 msgid "{0}: no shares to check."
 msgstr "{0} : aucun partage à vérifier."
 
-#: extensions/simplesharing.py:458
+#: extensions/simplesharing.py:459
 #, fuzzy
 msgid "User {0} home lacks the {1} directory to hold simple shares. Create it?"
 msgstr ""
 "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}. Voulez-"
 "vous le créer ?"
 
-#: extensions/simplesharing.py:467
+#: extensions/simplesharing.py:468
 #, fuzzy
 msgid "Created directory {1} in user {0}'s home."
 msgstr "Le répertoire {0} a été créé."
 
-#: extensions/simplesharing.py:474
+#: extensions/simplesharing.py:475
 msgid "User {0} does not accept simple shares, check skipped."
 msgstr ""
 
-#: extensions/simplesharing.py:498
+#: extensions/simplesharing.py:499
 msgid "{0}: error while listing shares, launching a check in the background."
 msgstr ""
 
-#: extensions/simplesharing.py:599
+#: extensions/simplesharing.py:601
 #, fuzzy
 msgid "{0}: Exception while setting up shares for user {1}"
 msgstr "{0} : Exception pendant la tentative d'exécution de {1}."
 
-#: extensions/simplesharing.py:612
+#: extensions/simplesharing.py:610
 msgid "{0}: checking all users' shares…"
 msgstr "{0} : vérification de tous les partages utilisateurs…"
 
-#: extensions/simplesharing.py:617
+#: extensions/simplesharing.py:615
 msgid "{0}: shares checks finished."
 msgstr "{0} : vérification des partages terminée."
 
@@ -739,28 +775,28 @@ msgstr ""
 msgid "{0}: Exception in user_pre_del({1})"
 msgstr ""
 
-#: daemon/base.py:83 interfaces/cli/__init__.py:49
+#: daemon/base.py:85 interfaces/cli/__init__.py:49
 msgid "{0}: switched long_output status to {1}."
 msgstr "{0} : l'état des sorties longues sur la console est {1}."
 
-#: daemon/base.py:85 interfaces/cli/__init__.py:51 core/_modules.py:672
+#: daemon/base.py:87 interfaces/cli/__init__.py:51 core/_modules.py:674
 msgid "enabled"
 msgstr "activé(e)"
 
-#: daemon/base.py:87 interfaces/cli/argparser.py:944
-#: interfaces/cli/__init__.py:53 core/_modules.py:672
+#: daemon/base.py:89 interfaces/cli/argparser.py:944
+#: interfaces/cli/__init__.py:53 core/_modules.py:674
 msgid "disabled"
 msgstr "désactivé(e)"
 
-#: daemon/base.py:88 interfaces/cli/__init__.py:54
+#: daemon/base.py:90 interfaces/cli/__init__.py:54
 msgid "toggle [dump status] long ouput on or off"
 msgstr "basculer la sortie longue ou courte [du dump d'état]"
 
-#: daemon/base.py:90
+#: daemon/base.py:92
 msgid "Console-initiated garbage collection and dead thread cleaning."
 msgstr "Ramassage des miettes et nettoyage des threads initié sur la console."
 
-#: daemon/base.py:95
+#: daemon/base.py:97
 msgid ""
 "operate a manual garbage collection in the daemon's memory, and run other "
 "clean-related things"
@@ -768,124 +804,124 @@ msgstr ""
 "Lancer un ramassage des miettes manuel dans la mémoire du daemon, et "
 "d'autres tâches relatives au nettoyage"
 
-#: daemon/base.py:104
+#: daemon/base.py:106
 msgid "show the INotifier watches (WARNING: this can flood your terminal)"
 msgstr ""
 "Afficher les observateurs de l'INotifier (ATTENTION : ça va probablement "
 "innonder votre terminal)"
 
-#: daemon/base.py:107
+#: daemon/base.py:109
 msgid "{0} active threads: {1}"
 msgstr "{0} threads actifs : {1}"
 
-#: daemon/base.py:110
+#: daemon/base.py:112
 msgid "show all threads names and their current status"
 msgstr "afficher les noms et l'état de tous les threads en cours"
 
-#: daemon/base.py:117 interfaces/cli/__init__.py:67
+#: daemon/base.py:119 interfaces/cli/__init__.py:67
 msgid "{0}: increased verbosity level to {1}."
 msgstr "{0} : le niveau de verbosité a été augmenté à la valeur {1}."
 
-#: daemon/base.py:124 interfaces/cli/__init__.py:74
+#: daemon/base.py:126 interfaces/cli/__init__.py:74
 msgid "{0}: verbosity level already at the maximum value ({1})."
 msgstr "{0} : le niveau de verbosité est déjà à la valeur maximum ({1})."
 
-#: daemon/base.py:129 interfaces/cli/__init__.py:79
+#: daemon/base.py:131 interfaces/cli/__init__.py:79
 msgid "increase the daemon console verbosity level"
 msgstr "augmenter le niveau de verbosité de la console du daemon"
 
-#: daemon/base.py:136 interfaces/cli/__init__.py:94
+#: daemon/base.py:138 interfaces/cli/__init__.py:94
 msgid "{0}: decreased verbosity level to {1}."
 msgstr "{0} : le niveau de verbosité a été diminué à la valeur {1}."
 
-#: daemon/base.py:143 interfaces/cli/__init__.py:101
+#: daemon/base.py:145 interfaces/cli/__init__.py:101
 msgid "{0}: verbosity level already at the minimum value ({1})."
 msgstr "{0} : le niveau de verbosité est déjà à la valeur minimum ({1})."
 
-#: daemon/base.py:148 interfaces/cli/__init__.py:106
+#: daemon/base.py:150 interfaces/cli/__init__.py:106
 msgid "decrease the daemon console verbosity level"
 msgstr "diminuer le niveau de verbosité de la console du daemon"
 
-#: daemon/base.py:153
+#: daemon/base.py:155
 msgid "{0}: Send URS1 signal (and consequently reload daemon)"
 msgstr "{0} : Envoyer un signal USR1 (et recharger le daemon, en conséquence)"
 
-#: daemon/base.py:159
+#: daemon/base.py:161
 msgid "{0}: dump daemon status"
 msgstr "{0} : Afficher l'état du daemon"
 
-#: daemon/base.py:165
+#: daemon/base.py:167
 msgid "{0} or {1}: dump daemon status after having cleared the screen"
 msgstr "{0} ou {1} : afficher l'état du daemon après avoir vidé l'écran"
 
-#: daemon/base.py:168
+#: daemon/base.py:170
 msgid "Space"
 msgstr "Espace"
 
-#: daemon/base.py:180
+#: daemon/base.py:182
 msgid "{0}({1})"
 msgstr "{0}({1})"
 
-#: daemon/base.py:276
+#: daemon/base.py:278
 #, fuzzy
 msgid "Problem getting interface {0} address (was: {1})."
 msgstr ""
 "Impossible de collecter les responsables du groupe {0} (problème initial : "
 "{1})."
 
-#: daemon/base.py:288
+#: daemon/base.py:290
 #, python-format
 msgid "Bad IP address or hostname %s. Please check syntax."
 msgstr ""
 
-#: daemon/base.py:340
+#: daemon/base.py:342
 msgid "{0}: execvp({1})"
 msgstr "{0} : execvp({1})"
 
-#: daemon/base.py:348
+#: daemon/base.py:350
 msgid "transient process {0}: cannot execvp() {1}."
 msgstr ""
 
-#: daemon/base.py:442
+#: daemon/base.py:444
 msgid "{0}: skipped process @{1} which is not in the same cgroup."
 msgstr ""
 
-#: daemon/base.py:461
+#: daemon/base.py:463
 msgid "{0}: killed aborted instance @pid {1}."
 msgstr "{0} : l'instance avortée @pid {1} a été tuée."
 
-#: daemon/base.py:505
+#: daemon/base.py:507
 msgid ""
 "Don't fork as a daemon, stay on the current terminal instead. Logs will be "
 "printed on standard output instead of beiing written into the logfile."
 msgstr ""
 
-#: daemon/base.py:511
+#: daemon/base.py:513
 msgid ""
 "Replace an existing daemon instance. A comfort flag to avoidkilling an "
 "existing daemon before relaunching a new one."
 msgstr ""
 
-#: daemon/base.py:516
+#: daemon/base.py:518
 msgid ""
 "Shutdown any currently running Licorn® daemon. We will try to terminate them "
 "nicely, before beiing more agressive after a given period of time."
 msgstr ""
 
-#: daemon/base.py:522
+#: daemon/base.py:524
 msgid ""
 "Specify an IP address or a hostname to bind to. Only {0} can be specified "
 "(the WMI cannot yet bind on multiple interfaces at the same time). This "
 "option takes precedence over the configuration directive, if present in {1}."
 msgstr ""
 
-#: daemon/base.py:531
+#: daemon/base.py:533
 #, python-format
 msgid "Don't fork the WMI. This flag overrides the setting in %s."
 msgstr ""
 "Ne pas lancer la WMI. Cet argument est prioritaire sur la directive de %s."
 
-#: daemon/base.py:544
+#: daemon/base.py:546
 msgid ""
 "Check the system for compliance with Licorn®. Meant to be used during first "
 "installation. The daemon will check, auto-repair and install everything "
@@ -901,35 +937,35 @@ msgstr ""
 "exécutera {1} ces vérifications au démarrage ; mais avec cette option il "
 "exécute {2} les vérifications et quitte immédiatement après."
 
-#: daemon/base.py:551
+#: daemon/base.py:553
 msgid "This option implies that the daemon will not fork into the background"
 msgstr "ette option implique que le daemon ne fourchera pas à l'arrière-plan"
 
-#: daemon/base.py:553
+#: daemon/base.py:555
 msgid "always"
 msgstr "toujours"
 
-#: daemon/base.py:554
+#: daemon/base.py:556
 msgid "only"
 msgstr "seulement"
 
-#: daemon/base.py:564
+#: daemon/base.py:566
 msgid "{0}: running initial checks in the foreground."
 msgstr "{0} : exécution des vérifications initiales à l'avant-plan."
 
-#: daemon/base.py:631
+#: daemon/base.py:633
 msgid "{0}: trying to {1} existing instance @pid {2}."
 msgstr "{0} : tentative de {1} de l'instance en cours d'exécution @pid {2}."
 
-#: daemon/base.py:632
+#: daemon/base.py:634
 msgid "replace"
 msgstr "remplacement"
 
-#: daemon/base.py:633
+#: daemon/base.py:635
 msgid "shutdown"
 msgstr "terminaison"
 
-#: daemon/base.py:644
+#: daemon/base.py:646
 msgid ""
 "{0}: existing instance still running, we're going to be more incisive in a "
 "few seconds."
@@ -937,7 +973,7 @@ msgstr ""
 "{0} : ancienne instance toujours en cours d'exécution, nous allons être plus "
 "incisifs dans quelques secondes."
 
-#: daemon/base.py:667
+#: daemon/base.py:669
 msgid ""
 "{0}: re-killing old instance softly with TERM signal and waiting a little "
 "more."
@@ -945,20 +981,20 @@ msgstr ""
 "{0} : un nouveau gentil signal TERM a été envoyé à l'ancienne instance, et "
 "nous attendons encore quelques instants."
 
-#: daemon/base.py:684
+#: daemon/base.py:686
 msgid ""
 "{0}: old instance has not terminated after 8 seconds. Sending KILL signal."
 msgstr ""
 "{0} : l'ancienne instance ne s'est pas terminée après 8 secondes. Envoi du "
 "signal KILL."
 
-#: daemon/base.py:712
+#: daemon/base.py:714
 #, python-format
 msgid "{0}: killing old instance's father (sudo, pid %s) without any mercy."
 msgstr ""
 "{0} : terminaison sans merci du père de l'ancienne instance (sudo, pid %s)."
 
-#: daemon/base.py:729
+#: daemon/base.py:731
 msgid ""
 "{0}: old instance has not terminated after 9 seconds and cannot be killed. "
 "We will not try to kill any other parent than \"{1}\", you are in a non-"
@@ -969,7 +1005,7 @@ msgstr ""
 "\"{1}\" car vous êtes dans une situation trop spécifique. C'est maintenant à "
 "vous de régler le problème."
 
-#: daemon/base.py:740
+#: daemon/base.py:742
 msgid ""
 "{0}: old instance has not terminated after 15 seconds and cannot be killed "
 "directly or by killing its direct parent, bailing out. You are in trouble on "
@@ -980,73 +1016,73 @@ msgstr ""
 "Abandon. Vous êtes sur un système où \"kill -9\" n'a pas les effets vendus "
 "par la pub. Désolé pour vous."
 
-#: daemon/base.py:750
+#: daemon/base.py:752
 msgid "{0}: old instance {1} terminated{2}"
 msgstr "{0} : l'ancienne instance a été terminée {1}{2}"
 
-#: daemon/base.py:751
+#: daemon/base.py:753
 msgid "nastily"
 msgstr "brutalement"
 
-#: daemon/base.py:751
+#: daemon/base.py:753
 msgid "successfully"
 msgstr "avec succès"
 
-#: daemon/base.py:752
+#: daemon/base.py:754
 msgid ", we can play now."
 msgstr ", on va pouvoir s'amuser."
 
-#: daemon/base.py:756
+#: daemon/base.py:758
 msgid "{0}: daemon already running (pid {1}), not restarting."
 msgstr ""
 "{0} : un daemon est déjà en cours d'exécution (pid {1}), démarrage avorté."
 
-#: daemon/base.py:770
+#: daemon/base.py:772
 msgid "{0}: must be run as {1} (was: {2})."
 msgstr "{0} : doit être lancé en tant que {1} (erreur initiale : {2})."
 
-#: daemon/base.py:778
+#: daemon/base.py:780
 msgid "{0}: unlinking PID file {1}."
 msgstr "{0} : effacement du fichier PID {1}."
 
-#: daemon/base.py:784
+#: daemon/base.py:786
 msgid "{0}: cannot unlink {1}."
 msgstr "{0} : impossible de supprimer {1}."
 
-#: daemon/base.py:790
+#: daemon/base.py:792
 msgid " (up {0})"
 msgstr " (démarré depuis {0})"
 
-#: daemon/base.py:797
+#: daemon/base.py:799
 msgid "{0}: already stopping, ignored another terminate() call."
 msgstr ""
 "{0} : déjà en train de s'arrêter; appel supplémentaire à terminate() ignoré."
 
-#: daemon/base.py:800
+#: daemon/base.py:802
 msgid "{0}: already stopping, ignored signal {1}."
 msgstr "{0} : déjà en train de s'arrêter, signal {1} ignoré."
 
-#: daemon/base.py:809
+#: daemon/base.py:811
 msgid "{0}: cleaning up and stopping threads…"
 msgstr "{0} : nettoyage et arrêt des threads…"
 
-#: daemon/base.py:812
+#: daemon/base.py:814
 msgid "{0}: signal {1} received, shutting down…"
 msgstr "{0} : signal {1} reçu, arrêt en cours…"
 
-#: daemon/base.py:826
+#: daemon/base.py:828
 msgid "{0}: remaining threads before exit: {1}."
 msgstr "{0} : threads restant avant la sortie définitive : {1}."
 
-#: daemon/base.py:829
+#: daemon/base.py:831
 msgid "{0}: exiting{1}."
 msgstr "{0} : arrêt{1}."
 
-#: daemon/base.py:852
+#: daemon/base.py:847
 msgid "{0}: SIGUSR1 received, preparing our restart."
 msgstr "{0} : signal SIGUSR1 reçu, préparation du redémarrage."
 
-#: daemon/base.py:855
+#: daemon/base.py:850
 msgid "{0}: restart needed, shutting everything down."
 msgstr "{0} : redémarrage nécessaire, arrêt de tous les services en cours."
 
@@ -1183,7 +1219,7 @@ msgstr "identifiant"
 msgid "Import error on line {0} (was: {1})."
 msgstr ""
 
-#: daemon/rwi.py:734 daemon/rwi.py:819 daemon/rwi.py:832 core/groups.py:1814
+#: daemon/rwi.py:734 daemon/rwi.py:819 daemon/rwi.py:832 core/groups.py:1815
 #: core/configuration.py:704
 msgid "group"
 msgstr "groupe"
@@ -1254,7 +1290,7 @@ msgstr ""
 msgid "Finished importing, creating summary HTML file: "
 msgstr ""
 
-#: daemon/rwi.py:925 foundations/fsapi.py:1476
+#: daemon/rwi.py:925 foundations/fsapi.py:1475
 msgid "%d %m %Y at %H:%M:%S"
 msgstr "%d %m %Y à %H:%M:%S"
 
@@ -1484,68 +1520,68 @@ msgstr "Que voulez-vous modifier sur le(s) groupe(s) %s ?"
 msgid "Are you sure you want to modify all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir modifier tous les profils ?"
 
-#: daemon/rwi.py:2132
+#: daemon/rwi.py:2134
 #, python-format
 msgid "Modify profile %s?"
 msgstr "Modifier le profil %s ?"
 
-#: daemon/rwi.py:2209
+#: daemon/rwi.py:2210
 #, python-format
 msgid "What do you want to modify about profile(s) %s?"
 msgstr "Que voulez-vous modifier sur le(s) profil(s) %s ?"
 
-#: daemon/rwi.py:2252 daemon/rwi.py:2271
+#: daemon/rwi.py:2253 daemon/rwi.py:2272
 msgid "not yet anymore."
 msgstr "plus maintenant."
 
-#: daemon/rwi.py:2327 daemon/rwi.py:2336
+#: daemon/rwi.py:2328 daemon/rwi.py:2337
 #, python-format
 msgid "Skipped non-existing backend %s."
 msgstr "Le backend non-existant %s a été ignoré."
 
-#: daemon/rwi.py:2345 daemon/rwi.py:2354
+#: daemon/rwi.py:2346 daemon/rwi.py:2355
 #, python-format
 msgid "Skipped non-existing extension %s."
 msgstr "L'extension inexistante %s a été ignorée."
 
-#: daemon/rwi.py:2397
+#: daemon/rwi.py:2398
 msgid "What do you want to modify on volumes? use --help to know!"
 msgstr ""
 "Que voulez-vous modifier sur les volumes ? Utilisez --help pour obtenir plus "
 "d'information."
 
-#: daemon/rwi.py:2416
+#: daemon/rwi.py:2417
 msgid "Are you sure you want to check all users?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les comptes utilisateurs ?"
 
-#: daemon/rwi.py:2438
+#: daemon/rwi.py:2439
 #, python-format
 msgid "Check account %s?"
 msgstr "Vérifier  le compte %s ?"
 
-#: daemon/rwi.py:2460
+#: daemon/rwi.py:2461
 msgid "Are you sure you want to check all groups?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les groupes ?"
 
-#: daemon/rwi.py:2483
+#: daemon/rwi.py:2484
 #, python-format
 msgid "Check group %s?"
 msgstr "Vérifier le groupe %s ?"
 
-#: daemon/rwi.py:2511
+#: daemon/rwi.py:2512
 msgid "Are you sure you want to check all profiles?"
 msgstr "Êtes-vous sûr(e) de vouloir vérifier tous les profils ?"
 
-#: daemon/rwi.py:2525
+#: daemon/rwi.py:2526
 #, python-format
 msgid "Check profile %s?"
 msgstr "Vérifier le profil %s ?"
 
-#: daemon/rwi.py:2528
+#: daemon/rwi.py:2529
 msgid "Sorry, not yet."
 msgstr "Désolé, pas encore."
 
-#: daemon/rwi.py:2549
+#: daemon/rwi.py:2550
 msgid ""
 "Django WMI tests are not meant to be run on a production system. If you "
 "really want to, set {0} in {1}, and prepare to see your daemon restart after "
@@ -1556,16 +1592,16 @@ msgstr ""
 "dans {1}, et préparez-vous à voir votre daemon redémarrer à la fin de chaque "
 "exécution de tests."
 
-#: daemon/rwi.py:2592
+#: daemon/rwi.py:2593
 msgid "Running WMI Django tests for app {0}, this may take a while…"
 msgstr ""
 "Exécution des tests WMI pour l'app Django {0}, ça va prendre un moment…"
 
-#: daemon/rwi.py:2613
+#: daemon/rwi.py:2614
 msgid "Could not run tests for app {0}"
 msgstr "Impossible d'exécuter les tests pour l'app Django {0}"
 
-#: daemon/rwi.py:2616
+#: daemon/rwi.py:2617
 msgid "Successfully ran Django WMI tests for app {0}."
 msgstr "Tests WMI pour l'app Django {0} exécutés avec succès."
 
@@ -1619,29 +1655,29 @@ msgstr ""
 msgid "{0}: {1} callbacks collected."
 msgstr "{0} : gestionnaires d'{1} collectés."
 
-#: daemon/main.py:266
+#: daemon/main.py:268
 msgid "{0}: collecting all threads."
 msgstr "{0} : ramassage de tous les threads."
 
-#: daemon/main.py:279
+#: daemon/main.py:281
 msgid "{0}: starting all threads."
 msgstr "{0} : démarrage de tous les threads."
 
-#: daemon/main.py:292
+#: daemon/main.py:294
 msgid "Could not start thread {0}"
 msgstr ""
 
-#: daemon/main.py:296
+#: daemon/main.py:298
 msgid "{0}: stopping threads."
 msgstr "{0} : arrêt des threads."
 
-#: daemon/main.py:311
+#: daemon/main.py:313
 msgid ""
 "{0}: thread {1} has no stop() nor cancel() method! It is probably still "
 "running."
 msgstr ""
 
-#: daemon/main.py:350
+#: daemon/main.py:352
 msgid ""
 "{0}: not starting WMI, disabled on command line or by configuration "
 "directive."
@@ -1649,31 +1685,31 @@ msgstr ""
 "{0} : la WMI ne sera pas lancée, elle est désactivée sur la ligne de "
 "commande ou par une directive de configuration."
 
-#: daemon/main.py:362
+#: daemon/main.py:364
 msgid "{0}: not starting the WMI because initial check in progress."
 msgstr ""
 "{0} : la WMI ne sera pas lancée car les vérifications initiales ont été "
 "demandées."
 
-#: daemon/main.py:384
+#: daemon/main.py:386
 msgid "{0}: initial check finished, terminating."
 msgstr "{0} : vérifications initiales terminées, arrêt en cours."
 
-#: daemon/main.py:466
+#: daemon/main.py:468
 msgid "{0}: all threads started, going to sleep waiting for signals."
 msgstr "{0} : tous les threads ont démarré. En attente de signaux."
 
-#: daemon/main.py:474
+#: daemon/main.py:476
 msgid "{0}: all threads started, waiting for the end of initial check."
 msgstr ""
 "{0} : tous les threads ont démarré. En attente de la fin des vérifications "
 "initiales."
 
-#: daemon/main.py:479
+#: daemon/main.py:481
 msgid "{0}: all threads started, ready for TTY interaction."
 msgstr "{0} : threads démarrés ; prêt pour l'intéraction sur le terminal."
 
-#: daemon/main.py:577
+#: daemon/main.py:579
 msgid ""
 "Licorn® {role} daemon {full}status: up {uptime}, {nb_threads} threads, "
 "{nb_controllers} controllers, {nb_queues} queues, {nb_locked}/{nb_locks} "
@@ -1687,62 +1723,62 @@ msgstr ""
 "UC: utl {ru_utime:.3}s, sys {ru_stime:.3}s MÉM: rés {mem_res:.2}Mo prt "
 "{mem_shr:.2}Mo upr {mem_ush:.2}Mo pil {mem_stk:.2}Mo\n"
 
-#: daemon/main.py:603
+#: daemon/main.py:605
 #, python-format
 msgid "Mlocks:  %s\n"
 msgstr "Mlocks:  %s\n"
 
-#: daemon/main.py:607
+#: daemon/main.py:609
 #, python-format
 msgid "Ulocks:  %s\n"
 msgstr "Ulocks:  %s\n"
 
-#: daemon/main.py:610
+#: daemon/main.py:612
 #, python-format
 msgid "Threads: %s\n"
 msgstr "Threads: %s\n"
 
-#: daemon/main.py:615
+#: daemon/main.py:617
 #, python-format
 msgid "Queues:  %s\n"
 msgstr "Files d'attente:  %s\n"
 
-#: daemon/main.py:722
+#: daemon/main.py:724
 msgid "Could not load gettext translations for language {0}"
 msgstr ""
 
-#: daemon/main.py:726
+#: daemon/main.py:728
 msgid "Successfully loaded gettext translations for language {0}."
 msgstr "Chargement des traductions pour la langue {0} effectué avec succès."
 
-#: daemon/main.py:764
+#: daemon/main.py:766
 msgid "{0}: cannot announce shutdown to remote hosts (was: {1})."
 msgstr ""
 "{0} : impossible d'annoncer notre fermeture aux hôtes distants (erreur : "
 "{1})."
 
-#: daemon/main.py:769
+#: daemon/main.py:771
 msgid "{0}: joining threads."
 msgstr "{0} : rappel des threads."
 
-#: daemon/main.py:783
+#: daemon/main.py:785
 msgid "{0}: waiting for thread {1} to finish{2}."
 msgstr "{0} : attente de terminaison du thread {1}{2}."
 
-#: daemon/main.py:786
+#: daemon/main.py:788
 #, python-format
 msgid " (currently working on %s)"
 msgstr " (actuellement sur %s)"
 
-#: daemon/main.py:827
+#: daemon/main.py:829
 msgid "{0}: restarting{1}."
 msgstr "{0} : redémarrage{1}."
 
-#: daemon/main.py:861 daemon/main.py:868
+#: daemon/main.py:863 daemon/main.py:870
 msgid "{0}: wiped dead thread {1} from memory."
 msgstr "{0} : le thread terminé {1} a été retiré de la mémoire."
 
-#: daemon/main.py:871
+#: daemon/main.py:873
 msgid "{0}: doing manual garbage collection on {1}."
 msgstr "{0} : réalisation d'un ramassage de miettes manuel de {1}."
 
@@ -2636,7 +2672,7 @@ msgstr ""
 msgid "required"
 msgstr "obligatoire"
 
-#: interfaces/cli/argparser.py:978 core/groups.py:2320
+#: interfaces/cli/argparser.py:978 core/groups.py:2321
 msgid "not permissive"
 msgstr "non permissif"
 
@@ -3354,11 +3390,11 @@ msgstr "Impossible de récupérer l'état du daemon"
 msgid "Could not obtain daemon status"
 msgstr "Impossible de récupérer l'état du daemon"
 
-#: interfaces/cli/get.py:174
+#: interfaces/cli/get.py:177
 msgid "Licorn® {0}, Python {1} on {2}"
 msgstr "Licorn® {0}, Python {1} sur {2}"
 
-#: interfaces/cli/get.py:190
+#: interfaces/cli/get.py:199
 msgid "unable to write history file!"
 msgstr "impossible de sauvegarde l'historique des commandes !"
 
@@ -3559,7 +3595,7 @@ msgstr ""
 msgid "{0} user rule that wanted to overwrite system default rule."
 msgstr ""
 
-#: core/_controllers.py:491 core/_modules.py:137 core/_modules.py:338
+#: core/_controllers.py:491 core/_modules.py:138 core/_modules.py:340
 msgid "Skipped"
 msgstr "Ignoré"
 
@@ -3582,7 +3618,7 @@ msgstr "Règle ACL {1} {0} : “{2}” pour {3}."
 msgid "Added"
 msgstr "Ajouté(e)"
 
-#: core/_controllers.py:535 core/users.py:1702
+#: core/_controllers.py:535 core/users.py:1705
 msgid "system"
 msgstr "système"
 
@@ -3625,7 +3661,7 @@ msgstr "{0} : erreur à la création des observateurs pour le {1} {2}."
 msgid "privilege"
 msgstr "privilège"
 
-#: core/privileges.py:50 core/groups.py:1817
+#: core/privileges.py:50 core/groups.py:1818
 msgid "GID"
 msgstr "GID"
 
@@ -3690,7 +3726,7 @@ msgstr ""
 msgid "Inotify state {0} for {1} {2}."
 msgstr "Surveillance inotify {0} pour le {1} {2}."
 
-#: core/_objects.py:255 core/groups.py:454
+#: core/_objects.py:255 core/groups.py:451
 msgid "unchanged"
 msgstr "inchangée"
 
@@ -3799,118 +3835,118 @@ msgstr ""
 msgid "{0}: problem while checking {1}, aborting"
 msgstr "{0} : problème pendant la vérification de {1}, opération annulée"
 
-#: core/_modules.py:54
+#: core/_modules.py:55
 msgid "module"
 msgstr "module"
 
-#: core/_modules.py:57
+#: core/_modules.py:58
 msgid "module name"
 msgstr "nom de module"
 
-#: core/_modules.py:135
+#: core/_modules.py:136
 msgid "{0} unusable {1} {2}, exception at import"
 msgstr ""
 
-#: core/_modules.py:212
+#: core/_modules.py:213
 msgid ""
 "{0}: will not try to load {1} {2} because one or more of its dependancies "
 "failed to load."
 msgstr ""
 
-#: core/_modules.py:279
+#: core/_modules.py:281
 #, fuzzy
 msgid "{0}: Exception in {1} {2} during load"
 msgstr ""
 "{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
 "dans {4}."
 
-#: core/_modules.py:285
+#: core/_modules.py:287
 msgid "Disabling dependant {0}(s) {1} to avoid further problems."
 msgstr ""
 
-#: core/_modules.py:307
+#: core/_modules.py:309
 #, fuzzy
 msgid "cannot disable non-existing {0} {1}."
 msgstr "Le {0} ou {1} \"{2}\" inexistant ou invalide a été ignoré."
 
-#: core/_modules.py:323
+#: core/_modules.py:325
 msgid ""
 "{0} {1} is enabled on the server side but not available locally, probably an "
 "installation problem."
 msgstr ""
 
-#: core/_modules.py:330
+#: core/_modules.py:332
 msgid ""
 "{0} {1} is enabled on the server side but manually ignored locally in {2}, "
 "please fix the problem before continuing."
 msgstr ""
 
-#: core/_modules.py:337
+#: core/_modules.py:339
 msgid "{0} {1} {2}, manually ignored in {3}."
 msgstr ""
 
-#: core/_modules.py:381 core/_modules.py:424
+#: core/_modules.py:383 core/_modules.py:426
 msgid "No {0} by that name \"{1}\"."
 msgstr "Aucun(e) {0} du nom de “{1}”."
 
-#: core/_modules.py:385
+#: core/_modules.py:387
 msgid "{0} {1} already enabled."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/_modules.py:394
+#: core/_modules.py:396
 msgid "successfully enabled {0} {1}."
 msgstr "{1} {0} activé(e) avec succès."
 
-#: core/_modules.py:399
+#: core/_modules.py:401
 #, fuzzy
 msgid "{0} {1} would not enable itself."
 msgstr "{1} {0} déjà activé(e)."
 
-#: core/_modules.py:404
+#: core/_modules.py:406
 #, fuzzy
 msgid "Exception while enabling {0} {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: core/_modules.py:429
+#: core/_modules.py:431
 msgid "{0} {1} already disabled."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/_modules.py:439
+#: core/_modules.py:441
 #, fuzzy
 msgid "Exception while unregistering events handlers/callbacks of {0} {1}"
 msgstr "{0} : erreur à la création des observateurs pour le {1} {2}."
 
-#: core/_modules.py:446
+#: core/_modules.py:448
 msgid "successfully disabled {0} {1}."
 msgstr "{1} {0} désactivé(e) avec succès."
 
-#: core/_modules.py:451
+#: core/_modules.py:453
 #, fuzzy
 msgid "{0} {1} would not disable itself."
 msgstr "{1} {0} déjà désactivé(e)."
 
-#: core/_modules.py:457
+#: core/_modules.py:459
 #, fuzzy
 msgid "Exception while disabling {0} {1}."
 msgstr "Exception rencontrée dans {0} : {1}."
 
-#: core/_modules.py:496
+#: core/_modules.py:498
 #, fuzzy
 msgid "{0}: unhandled exception during {1} {2} check. Disabling it."
 msgstr ""
 "{0} : impossible de modifier {1} pour {2} {3}, car il n'a pas été trouvé "
 "dans {4}."
 
-#: core/_modules.py:519
+#: core/_modules.py:521
 msgid "{0}: global check finished."
 msgstr ""
 
-#: core/_modules.py:527
+#: core/_modules.py:529
 #, fuzzy
 msgid "{0} {1} does not exist or is not enabled."
 msgstr "Le backend %s n'existe pas ou n'est pas activé."
 
-#: core/_modules.py:541
+#: core/_modules.py:543
 msgid ""
 "{name}: problem while installing inotifier watches for {type} {module} (was: "
 "{exc})."
@@ -3918,22 +3954,22 @@ msgstr ""
 "{name} : erreur lors de l'installation des observateurs pour {type} {module} "
 "(problème initial : {exc})."
 
-#: core/_modules.py:662
+#: core/_modules.py:664
 msgid ""
 "↳ {0} ({1} {2}):\n"
 "\t{3}\n"
 "{4}"
 msgstr ""
 
-#: core/_modules.py:665
+#: core/_modules.py:667
 msgid "client/server"
 msgstr "client/serveur"
 
-#: core/_modules.py:667
+#: core/_modules.py:669
 msgid "depends on: {0}"
 msgstr "dépend de : {0}"
 
-#: core/_modules.py:668
+#: core/_modules.py:670
 msgid "no dependancies"
 msgstr "aucune dépendance"
 
@@ -3996,115 +4032,117 @@ msgstr ""
 "Attente jusqu'à {0} secondes du démarrage du daemon… Ne raccrochez pas "
 "SVP :-)"
 
-#: core/profiles.py:135
+#: core/profiles.py:138
 msgid "profile {0}: group {1} does not exist, ignored."
 msgstr "profil {0} : le groupe {1} n'existe pas, il a été ignoré."
 
-#: core/profiles.py:197
+#: core/profiles.py:198
 msgid "A profile cannot have an empty name!"
 msgstr "Un profil ne peut pas avoir un nom vide !"
 
-#: core/profiles.py:201 core/profiles.py:807
+#: core/profiles.py:202 core/profiles.py:808
 msgid "Malformed profile name \"{0}\", must match /{1}/i."
 msgstr ""
 "Nom de profil “{0}” mal-formé : les noms de profil doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/profiles.py:217
+#: core/profiles.py:218
 msgid "Changed profile {0} name to {1}."
 msgstr "Le nom du profil {0} est maintenant {1}."
 
-#: core/profiles.py:237
+#: core/profiles.py:238
 msgid "You must specify a description (an empty text is OK, but not `None`)."
 msgstr ""
 "Vous devez spécifier une description (un texte vide est suffisant, mais pas "
 "`None`)."
 
-#: core/profiles.py:241 core/profiles.py:817
+#: core/profiles.py:242 core/profiles.py:818
 msgid "Malformed profile description \"{0}\", must match /{1}/i."
 msgstr "La description “{0}” est mal-formée car elle doit vérifier /{1}/i."
 
-#: core/profiles.py:249
+#: core/profiles.py:250
 msgid "Changed profile {0} description to \"{1}\"."
 msgstr "La description du profil {0} est maintenant “{1}”."
 
-#: core/profiles.py:325
+#: core/profiles.py:326
 msgid ""
 "You must specify a valid skel dir for the profile (use --help to know how)."
 msgstr ""
 "Vous devez spécifier un squelette valide pour le profil (utilisez --help "
 "pour obtenir plus d'informations)."
 
-#: core/profiles.py:329
+#: core/profiles.py:330
 msgid " Invalid skeleton \"{0}\". Valid skels are {1}."
 msgstr "Squelette “{0}” invalide. Les squelettes valides sont {1}."
 
-#: core/profiles.py:337
+#: core/profiles.py:338
 msgid "Changed profile {0} skeleton to {1}."
 msgstr "Le squelette par défaut du profil {0} est maintenant {1}."
 
-#: core/profiles.py:341
+#: core/profiles.py:342
 #, python-format
 msgid "Applying new skel to current members %s in the background."
 msgstr ""
 "Application du nouveau squelette aux membres actuels (%s) en arrière-plan."
 
-#: core/profiles.py:356
+#: core/profiles.py:357
 msgid ""
 "You must specify a valid shell for the profile (use --help to know how)."
 msgstr ""
 "Vous devez spécifier un interpréteur valide pour le profil (utilisez --help "
 "pour obtenir plus d'information)."
 
-#: core/profiles.py:360
+#: core/profiles.py:361
 msgid "Invalid shell \"{0}\". Allowed shells are {1}."
 msgstr "Interpréteur “{0}” invalide. Les interpréteurs valides sont {1}."
 
-#: core/profiles.py:368
+#: core/profiles.py:369
 msgid "Changed profile {0} shell to {1}."
 msgstr "L'interpréteur par défaut du profil {0} est maintenant {1}."
 
-#: core/profiles.py:385
+#: core/profiles.py:386
 msgid "You must specify a quota as integer, not \"{}\"."
 msgstr "Vous devez spécifier le quota en tant que nombre entier, pas “{}”."
 
-#: core/profiles.py:392
+#: core/profiles.py:393
 msgid "Changed profile {0} quota to {1}Mb."
 msgstr "Le quota du profil {0} est maintenant {1}Mo."
 
-#: core/profiles.py:406
+#: core/profiles.py:407
 msgid "You must specify a list of groups to add to the profile."
 msgstr "Vous devez spécifier une liste de groupes à ajouter au profil."
 
-#: core/profiles.py:415
+#: core/profiles.py:416
 msgid "Skipped group {0}, already in profile {1}."
 msgstr "Le groupe {0} est déjà présent dans le profil {1}."
 
-#: core/profiles.py:420
+#: core/profiles.py:421
 msgid "Cannot add group {0} to its own profile {1}."
 msgstr "Impossible d'ajouter le groupe {0} à son propre profil {1}."
 
-#: core/profiles.py:429
-msgid "Added group {0} to profile {1}.{2}"
+#: core/profiles.py:430
+#, fuzzy
+msgid "Added group {0} to profile {1}. {2}"
 msgstr "Le groupe {0} a été ajouté au profil {1}.{2}"
 
-#: core/profiles.py:433 core/profiles.py:470
+#: core/profiles.py:434 core/profiles.py:471
 msgid " Applying to current members in the background."
 msgstr "Application aux membres actuels en arrière-plan."
 
-#: core/profiles.py:451
+#: core/profiles.py:452
 msgid "You must specify a list of groups to delete from the profile."
 msgstr "Vous devez spécifier une liste de groupes à supprimer du profil."
 
-#: core/profiles.py:465
-msgid "Deleted group {0} from profile {1}.{2}"
+#: core/profiles.py:466
+#, fuzzy
+msgid "Deleted group {0} from profile {1}. {2}"
 msgstr "Le groupe {0} a été supprimé du profil {1}.{2}"
 
-#: core/profiles.py:478
+#: core/profiles.py:479
 msgid "Skipped group {0}, not in groups of profile {1}."
 msgstr "Le groupe {0} a été ignoré car il n'est pas dans le profil {1}."
 
-#: core/profiles.py:493
+#: core/profiles.py:494
 msgid ""
 "Not applying skel {0} of {1} profile on account {2} because this account is "
 "not in this profile."
@@ -4112,31 +4150,31 @@ msgstr ""
 "Le squelette {0} du profil {1} n'a pas été appliqué sur le compte {2} car ce "
 "compte n'est pas membre de ce profil."
 
-#: core/profiles.py:503
+#: core/profiles.py:504
 msgid "Applying skel {0} to user {1}."
 msgstr "Application du squelette {0} sur le compte utilisateur {1}."
 
-#: core/profiles.py:515
+#: core/profiles.py:516
 #, python-format
 msgid "Installing skel part %s."
 msgstr "Installation de la partie de squelette %s."
 
-#: core/profiles.py:578
+#: core/profiles.py:579
 msgid ""
 "Applyed skel {0} to user {1}, permissions are checked in the background."
 msgstr ""
 "Le squelette {0} a été appliqué au compte {1}, les permissions sont "
 "vérifiées en arrière-plan."
 
-#: core/profiles.py:583
+#: core/profiles.py:584
 msgid "Skel {0} already applied or skipped for user {1}."
 msgstr "Le squelette {0} est déjà appliqué ou a été sauté pour le compte {1}."
 
-#: core/profiles.py:592
+#: core/profiles.py:593
 msgid "{name} ({group}, gid={gid}): {descr}"
 msgstr "{name} ({group}, gid={gid}) : {descr}"
 
-#: core/profiles.py:597
+#: core/profiles.py:598
 msgid ""
 "\t{home_label} {home}, {skel_label} {skel}, {shell_label} {shell}, "
 "{quota_label} {quota}{quota_unit}{groups}"
@@ -4144,83 +4182,83 @@ msgstr ""
 "\t{home_label} {home}, {skel_label} {skel}, {shell_label} {shell}, "
 "{quota_label} {quota}{quota_unit}{groups}"
 
-#: core/profiles.py:600
+#: core/profiles.py:601
 msgid "Home:"
 msgstr "Répertoire maison :"
 
-#: core/profiles.py:602
+#: core/profiles.py:603
 msgid "skeleton:"
 msgstr "squelette :"
 
-#: core/profiles.py:604
+#: core/profiles.py:605
 msgid "shell:"
 msgstr "interpréteur :"
 
-#: core/profiles.py:606
+#: core/profiles.py:607
 msgid "quota:"
 msgstr "quota :"
 
-#: core/profiles.py:608
+#: core/profiles.py:609
 msgid "Mb"
 msgstr "Mo"
 
-#: core/profiles.py:610
+#: core/profiles.py:611
 msgid "Groups:"
 msgstr "Groupes :"
 
-#: core/profiles.py:660
+#: core/profiles.py:661
 msgid "profile"
 msgstr "profil"
 
-#: core/profiles.py:663
+#: core/profiles.py:664
 msgid "PrID"
 msgstr "PrID"
 
-#: core/profiles.py:729
+#: core/profiles.py:730
 msgid "Adding a default {0} profile on the system (this is mandatory)."
 msgstr "Ajout d'un profil {0} sur le système (c'est obligatoire)."
 
-#: core/profiles.py:731 core/profiles.py:737
+#: core/profiles.py:732 core/profiles.py:738
 msgid "Users"
 msgstr "Utilisateurs"
 
-#: core/profiles.py:740
+#: core/profiles.py:741
 msgid "Standard desktop users"
 msgstr "Utilisateurs des machines de bureau"
 
-#: core/profiles.py:791
+#: core/profiles.py:792
 #, python-format
 msgid "The %s profile"
 msgstr "Le profil des %s"
 
-#: core/profiles.py:797 core/users.py:418
+#: core/profiles.py:798 core/users.py:418
 msgid "Invalid shell \"{0}\". Valid shells are {1}."
 msgstr "Interpréteur \"{0}\" invalide. Les interpréteurs valides sont {1}."
 
-#: core/profiles.py:802
+#: core/profiles.py:803
 msgid "Invalid skeleton \"{0}\". Valid skels are {1}."
 msgstr "Squelette \"{0}\" invalide. Les squelettes valides sont {1}."
 
-#: core/profiles.py:812
+#: core/profiles.py:813
 msgid "Malformed profile group \"{0}\", must match /{1}/i."
 msgstr "Nom de groupe de profil “{0}” mal-formé ; il doit vérifier /{1}/i."
 
-#: core/profiles.py:829
+#: core/profiles.py:830
 msgid "Clamped negative quota value to absolute value {0}."
 msgstr "La valeur négative {0} du quota a été inversée."
 
-#: core/profiles.py:835
+#: core/profiles.py:836
 msgid "Clamped quota to maximum value {0}Mb."
 msgstr "La valeur maximum du quota a été limitée à {0}Mo."
 
-#: core/profiles.py:839
+#: core/profiles.py:840
 msgid ""
 "Malformed profile quota \"{0}\": must be an integer, specifying a size in Mb."
 msgstr ""
 "Quota invalide \"{0}\" : ça doit être un nombre entier, spécifiant une "
 "taille en Mo."
 
-#: core/profiles.py:862
+#: core/profiles.py:863
 #, python-format
 msgid ""
 "A profile with name \"%s\" already exists on the system. Please choose "
@@ -4229,13 +4267,13 @@ msgstr ""
 "Un profil avec le nom “%s” existe déjà sur le système. Merci de choisir un "
 "autre nom."
 
-#: core/profiles.py:868
+#: core/profiles.py:869
 msgid ""
 "The group {0} is already taken by profile {1}. Please choose another one."
 msgstr ""
 "Le groupe {0} est déjà utilisé par le profil {1}. Choisissez-en un autre SVP."
 
-#: core/profiles.py:881
+#: core/profiles.py:882
 #, python-format
 msgid ""
 "A system group named \"%s\" already exists. Please choose another group name "
@@ -4248,7 +4286,7 @@ msgstr ""
 "quand même (ce qui n'est pas recommandé car le groupe sera effacé si vous "
 "supprimez le profil)."
 
-#: core/profiles.py:901
+#: core/profiles.py:902
 msgid ""
 "The group {0} (gid={1}) is not a system group. It cannot be used as primary "
 "group for a profile. Please choose another one, or do not specify any, and a "
@@ -4258,25 +4296,25 @@ msgstr ""
 "groupe primaire de profil. Merci d'en choisir un autre, ou de n'en spécifier "
 "aucun, ce qui en créera un dédié, implicitement."
 
-#: core/profiles.py:921
+#: core/profiles.py:922
 msgid "Added profile {0} (group={1}, gid={2})."
 msgstr "Le profil {0} (groupe={1}, gid={2}) a été créé."
 
-#: core/profiles.py:944
+#: core/profiles.py:945
 #, python-format
 msgid "Kept restricted system group %s."
 msgstr "Le groupe système restreint %s a été conservé."
 
-#: core/profiles.py:971
+#: core/profiles.py:972
 #, python-format
 msgid "Deleted profile %s."
 msgstr "Le profil %s a été supprimé."
 
-#: core/profiles.py:992
+#: core/profiles.py:993
 msgid "You must choose to apply the groups or/and the skel"
 msgstr "Vous devez choisir d'appliquer les groupes et/ou le squelette"
 
-#: core/profiles.py:997
+#: core/profiles.py:998
 #, python-format
 msgid ""
 "Skipped system account %s (we do not reapply skels on them for safety "
@@ -4285,32 +4323,32 @@ msgstr ""
 "Le compte système restreint %s a été ignoré (on ne leur applique pas de "
 "squelette pour des raisons de sécurité)."
 
-#: core/profiles.py:1003
+#: core/profiles.py:1004
 #, python-format
 msgid "Skipped account %s, which has no profile."
 msgstr "Le compte %s a été ignoré car il n'a pas de profil."
 
-#: core/profiles.py:1070
+#: core/profiles.py:1071
 msgid "You must specify a groupname or a profile name to test existence of."
 msgstr ""
 "Vous devez spécifier un nom de groupe ou de profil dont vous voulez tester "
 "l'existence."
 
-#: core/profiles.py:1078
+#: core/profiles.py:1079
 #, python-format
 msgid "Profile group %s does not exist."
 msgstr "Le groupe %s du profil n'existe pas."
 
-#: core/profiles.py:1086
+#: core/profiles.py:1087
 #, python-format
 msgid "Profile %s does not exist."
 msgstr "Le profil %s n'existe pas."
 
-#: core/profiles.py:1117
+#: core/profiles.py:1118
 msgid "The tag <{0}> was not found in {1}."
 msgstr "L'étiquette <{0}> n'a pas été trouvée dans {1}."
 
-#: core/profiles.py:1129
+#: core/profiles.py:1130
 msgid "The tag <{0}> must not have an empty value (in {1})."
 msgstr "La valeur de l'étiquette <{0}> ne doit pas être vide (dans {1})."
 
@@ -4383,18 +4421,18 @@ msgstr "Le compte utilisateur {0} a été déverrouillé."
 msgid "Account {0} already unlocked."
 msgstr "Le compte utilisateur {0} est déjà déverrouillé."
 
-#: core/users.py:694 core/groups.py:951
+#: core/users.py:694 core/groups.py:952
 #, python-format
 msgid "Backend %s does not exist or is not enabled."
 msgstr "Le backend %s n'existe pas ou n'est pas activé."
 
-#: core/users.py:700 core/groups.py:957
+#: core/users.py:700 core/groups.py:958
 msgid "Skipped move of group {0}, already stored in backend {1}."
 msgstr ""
 "Le groupe {0} n'a pas été déplacé dans le backend {1} car il y est déjà "
 "stocké."
 
-#: core/users.py:707 core/groups.py:964
+#: core/users.py:707 core/groups.py:965
 msgid ""
 "Skipped move of restricted system group {0} (please use {1} if you really "
 "want to do this, but it is strongly not recommended)."
@@ -4411,7 +4449,7 @@ msgstr ""
 "standard aussi. Merci de plutôt déplacer le groupe standard, si c'est ce que "
 "vous voulez."
 
-#: core/users.py:724 core/groups.py:981
+#: core/users.py:724 core/groups.py:982
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated "
 "responsible system group failed."
@@ -4419,7 +4457,7 @@ msgstr ""
 "Le déplacement du groupe {0} vers le backend {1} a été annulé car le "
 "déplacement du groupe responsable associé a échoué."
 
-#: core/users.py:737 core/groups.py:994
+#: core/users.py:737 core/groups.py:995
 msgid ""
 "Skipped move of group {0} to backend {1} because move of associated system "
 "guest group failed."
@@ -4623,7 +4661,7 @@ msgstr "Vérification du compte système restreint %s…"
 msgid "account {0} already beiing ckecked, aborting."
 msgstr "Le compte utilisateur {0} est déjà en cours de vérification, abandon."
 
-#: core/users.py:1100 core/groups.py:1650
+#: core/users.py:1100 core/groups.py:1651
 msgid "(not watched)"
 msgstr "(non surveillé)"
 
@@ -4767,19 +4805,19 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les UIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/users.py:1692
+#: core/users.py:1695
 msgid "Autogenerated password for user {0} (uid={1}): {2}."
 msgstr "Mot de passe auto-généré pour l'utilisateur {0} (uid={1}) : {2}."
 
-#: core/users.py:1701
+#: core/users.py:1704
 msgid "Created {accttype} user {login} (uid={uid})."
 msgstr "Le compte utilisateur {accttype} {login} (uid={uid}) a été créé."
 
-#: core/users.py:1702
+#: core/users.py:1705
 msgid "standard"
 msgstr "standard"
 
-#: core/users.py:1751
+#: core/users.py:1754
 #, python-format
 msgid ""
 "Cannot delete restricted system account %s without the --force argument, "
@@ -4788,28 +4826,28 @@ msgstr ""
 "Impossible de supprimer le compte système protégé %s sans l'argument --"
 "force, c'est trop risqué."
 
-#: core/users.py:1779
+#: core/users.py:1782
 msgid "{0}: account {1} already not referenced in controller!"
 msgstr "{0} : compte {1} déjà non-référencé par le contrôleur !"
 
-#: core/users.py:1806
+#: core/users.py:1809
 msgid "Deleted user account {0}."
 msgstr "Compte utilisateur {0} supprimé."
 
-#: core/users.py:1954
+#: core/users.py:1957
 msgid "Some user(s) check(s) did not pass, or were not corrected."
 msgstr "Certaines vérifications ont échoué, ou n'ont pas été corrigées."
 
-#: core/users.py:1966
+#: core/users.py:1969
 msgid "You must specify an UID or a login to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/users.py:1975
+#: core/users.py:1978
 #, python-format
 msgid "User %s does not exist"
 msgstr "L'utilisateur %s n'existe pas."
 
-#: core/users.py:1983
+#: core/users.py:1986
 #, python-format
 msgid "UID %s does not exist"
 msgstr "L'UID %s n'existe pas."
@@ -4823,7 +4861,7 @@ msgstr ""
 "mais ça ne vérifie pas {1}) à partir de la chaîne que vous avez fourni "
 "\"{2}\"."
 
-#: core/groups.py:428
+#: core/groups.py:425
 msgid ""
 "group {0}: Cannot set a profile ({1}) which has not the same GID as me ({2} !"
 "= {3})!"
@@ -4831,11 +4869,11 @@ msgstr ""
 "groupe {0} : impossible d'assigner un profil {1} dont le GID est différent "
 "du mien ({2} != {3})."
 
-#: core/groups.py:452
+#: core/groups.py:449
 msgid "Permissive state {0} for group {1}."
 msgstr "La permissivité du groupe {1} est {0}."
 
-#: core/groups.py:478
+#: core/groups.py:475
 msgid ""
 "Switched group {0} permissive state to {1} (Shared content permissions are "
 "beiing checked in the background, this can take a while…)"
@@ -4843,67 +4881,67 @@ msgstr ""
 "La permissivité du groupe {0} est maintenant {1} (les données partagées sont "
 "modifiées en arrière-plan, celà peut prendre un certain temps…)"
 
-#: core/groups.py:497
+#: core/groups.py:494
 msgid "You must specify a description"
 msgstr "Vous devez spécifier une description"
 
-#: core/groups.py:501
+#: core/groups.py:498
 msgid "Malformed description \"{0}\", must match /{1}/i."
 msgstr "La description \"{0}\" est mal-formée car elle doit vérifier /{1}/i."
 
-#: core/groups.py:514
+#: core/groups.py:511
 msgid "Changed group {0} description to \"{1}\"."
 msgstr "La description du groupe {0} est maintenant \"{1}\"."
 
-#: core/groups.py:526
+#: core/groups.py:523
 msgid "You must specify a groupSkel"
 msgstr "Vous devez spécifier un squelette de groupe"
 
-#: core/groups.py:529 core/groups.py:2237
+#: core/groups.py:526 core/groups.py:2238
 msgid "Invalid skel {0}. Valid skels are: {1}."
 msgstr "Squelette {0} invalide. Les squelettes valides sont : {1}."
 
-#: core/groups.py:540
+#: core/groups.py:537
 msgid "Changed group {0} skel to {1}."
 msgstr "Le squelette du groupe {0} est maintenant {1}."
 
-#: core/groups.py:715
+#: core/groups.py:716
 msgid "group {0}: removed relationship for non-existing user {1}."
 msgstr "groupe {0} : la relation  au membre inexistant {1} a été supprimée."
 
-#: core/groups.py:723
+#: core/groups.py:724
 msgid "group {0}: removed duplicate relationship for member {1}."
 msgstr "groupe {0} : membre dupliqué {1} ignoré."
 
-#: core/groups.py:730
+#: core/groups.py:731
 msgid "group {0}: removed primary member {1} from auxilliary members list."
 msgstr ""
 "groupe {0} : le membre primaire {1} a été ignoré en tant que membre "
 "auxilliaire."
 
-#: core/groups.py:758 core/groups.py:859
+#: core/groups.py:759 core/groups.py:860
 msgid "You must specify a users list"
 msgstr "Vous devez spécifier une liste d'utilisateurs."
 
-#: core/groups.py:785
+#: core/groups.py:786
 msgid "User {0} is already a member of {1} (primary or not), skipped."
 msgstr ""
 "L'utilisateur {0} est déjà membre de {1} (en tant que groupe primaire ou "
 "non), ignoré."
 
-#: core/groups.py:820
+#: core/groups.py:821
 msgid "Added user {0} to members of group {1}."
 msgstr "L'utilisateur {0} a été ajouté au membres du groupe {1}."
 
-#: core/groups.py:886
+#: core/groups.py:887
 msgid "Removed user {0} from members of group {1}."
 msgstr "L'utilisateur {0} a été supprimé des membres du groupe {1}."
 
-#: core/groups.py:907
+#: core/groups.py:908
 msgid "Skipped user {0}, already not a member of group {1}"
 msgstr "L'utilisateur {0} n'est pas membre du groupe {1}, ignoré. "
 
-#: core/groups.py:972
+#: core/groups.py:973
 msgid ""
 "Cannot move an associated system group without moving its standard group "
 "too. Please move the standard group instead, if this is what you meant."
@@ -4912,7 +4950,7 @@ msgstr ""
 "standard aussi. Merci de plutôt déplacer le groupe standard, si c'est ce que "
 "vous voulez."
 
-#: core/groups.py:1005
+#: core/groups.py:1006
 msgid ""
 "Exception happened while trying to move group {0} from {1} to {2}, aborting "
 "(group left unchanged)"
@@ -4920,7 +4958,7 @@ msgstr ""
 "Exception pendant le déplacement du groupe {0} de {1} vers {2}, opération "
 "annulée (le groupe est dans l'état initial avant déplacement)"
 
-#: core/groups.py:1028
+#: core/groups.py:1029
 msgid ""
 "An error occured while trying to restore a stable situation during group {0} "
 "move, we could be in big trouble."
@@ -4929,65 +4967,65 @@ msgstr ""
 "au déplacement du groupe {0}. On est dans la panade, appelez-moi "
 "l'administrateur."
 
-#: core/groups.py:1041
+#: core/groups.py:1042
 msgid "Moved group {0} from {1} to {2}."
 msgstr "Le groupe {0} a été déplacé de {1} vers {2}."
 
-#: core/groups.py:1091
+#: core/groups.py:1092
 #, python-format
 msgid "Checking %s symlinks in members homes, this can be long…"
 msgstr ""
 "Vérification des liens symboliques %s dans les répertoires des membres, ça "
 "peut prendre un certain temps…"
 
-#: core/groups.py:1131 core/groups.py:1612
+#: core/groups.py:1132 core/groups.py:1613
 #, python-format
 msgid "Deleted symlink %s."
 msgstr "Le lien symbolique %s a été supprimé."
 
-#: core/groups.py:1136 core/groups.py:1616
+#: core/groups.py:1137 core/groups.py:1617
 msgid "Unable to delete symlink {0} (was: {1})."
 msgstr ""
 "Impossible de supprimer le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1149
+#: core/groups.py:1150
 #, python-format
 msgid "Deleted old symlink %s."
 msgstr "Le vieux lien symbolique %s a été supprimé."
 
-#: core/groups.py:1153
+#: core/groups.py:1154
 msgid "Unable to read symlink {0} (was: {1})."
 msgstr "Impossible de lire le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1161
+#: core/groups.py:1162
 msgid "User {0} lacks the symlink to group shared dir {1}. Create it?"
 msgstr ""
 "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}. Voulez-"
 "vous le créer ?"
 
-#: core/groups.py:1171
+#: core/groups.py:1172
 msgid "User {0} lacks the symlink to group shared dir {1}."
 msgstr "Le lien symbolique vers le groupe {1} manque à l'utilisateur {0}."
 
-#: core/groups.py:1196
+#: core/groups.py:1197
 msgid "Group {0} already in the list of profile {1}."
 msgstr "Le groupe {0} est déja dans la liste du profil {1}."
 
-#: core/groups.py:1232
+#: core/groups.py:1233
 msgid "Deleting group {0} from profile {1}."
 msgstr "Suppression du groupe {0} dans le profil {1}."
 
-#: core/groups.py:1242
+#: core/groups.py:1243
 msgid "Group {0} already absent from profile {1}."
 msgstr "Le groupe {0} est déjà absent du profil {1}."
 
-#: core/groups.py:1297
+#: core/groups.py:1298
 msgid "Shared dir {0} does not exist, please run \"chk group {1}\" to fix."
 msgstr ""
 "Le répertoire partagé {0} n'existe pas. Exécutez \"chk group {1}\" pour "
 "corriger le problème."
 
-#: core/groups.py:1350
+#: core/groups.py:1351
 #, python-format
 msgid ""
 "Cannot demote user %s from standard membership to guest without --force flag."
@@ -4995,14 +5033,14 @@ msgstr ""
 "Impossible de rétrograder l'utilisateur %s de membre standard à invité sans "
 "utiliser l'argument --force."
 
-#: core/groups.py:1364
+#: core/groups.py:1365
 #, python-format
 msgid "Cannot demote user %s from responsible to guest without --force flag."
 msgstr ""
 "Impossible de rétrograder l'utilisateur %s de responsable à invité sans "
 "utiliser l'argument --force."
 
-#: core/groups.py:1395
+#: core/groups.py:1396
 #, python-format
 msgid ""
 "Cannot demote user %s from responsible to standard membership without --"
@@ -5011,20 +5049,20 @@ msgstr ""
 "Impossible de rétrograder l'utilisateur %s de responsable à membre standard "
 "sans utiliser l'argument --force."
 
-#: core/groups.py:1438
+#: core/groups.py:1439
 msgid "responsibles"
 msgstr "Responsables"
 
-#: core/groups.py:1441
+#: core/groups.py:1442
 msgid "guests"
 msgstr "Invités"
 
-#: core/groups.py:1447
+#: core/groups.py:1448
 #, python-format
 msgid "Checking system group %s…"
 msgstr "Vérification du groupe système %s…"
 
-#: core/groups.py:1451
+#: core/groups.py:1452
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal. "
 "Create it?"
@@ -5032,145 +5070,145 @@ msgstr ""
 "Le groupe système {0} est requis pour que le groupe {1} soit pleinement "
 "opérationnel. Le créér ?"
 
-#: core/groups.py:1463
+#: core/groups.py:1464
 msgid "{0} of group “{1}”"
 msgstr "Les {0} du groupe « {1} »"
 
-#: core/groups.py:1489
+#: core/groups.py:1490
 msgid ""
 "The system group {0} is required for the group {1} to be fully operationnal."
 msgstr ""
 "Le groupe système {0} est requis pour que le groupe {1} soit pleinement "
 "opérationnel."
 
-#: core/groups.py:1511
+#: core/groups.py:1512
 msgid "Checking system specific attributes for group {0}…"
 msgstr "Vérification des attributs spécifiques aux groupes système pour {0}…"
 
-#: core/groups.py:1522
+#: core/groups.py:1523
 msgid "Removed superfluous attribute {0} of system group {1}"
 msgstr "L'attribut superflu {0} a été supprimé du groupe système {1}."
 
-#: core/groups.py:1532 core/groups.py:2225
+#: core/groups.py:1533 core/groups.py:2226
 #, python-format
 msgid "Members of group “%s”"
 msgstr "Les membres du groupe « %s »"
 
-#: core/groups.py:1534
+#: core/groups.py:1535
 msgid "Added missing {0} attribute with a default value for system group {1}."
 msgstr ""
 "L'attribut manquant {0} a été ajouté au groupe système {1} avec une valeur "
 "par défaut."
 
-#: core/groups.py:1541
+#: core/groups.py:1542
 msgid "Do you want to commit these changes to the system (highly recommended)?"
 msgstr ""
 "Voulez-vous enregistrer ces changements dans le système (hautement "
 "recommandé) ?"
 
-#: core/groups.py:1550
+#: core/groups.py:1551
 msgid "Corrections of system group {0} not commited"
 msgstr "Les corrections du groupe {0} n'ont pas été enregistrées."
 
-#: core/groups.py:1583
+#: core/groups.py:1584
 msgid "Unable to create symlink {0} (was: {1})."
 msgstr ""
 "Impossible de supprimer le lien symbolique {0} (problème initial : {1})."
 
-#: core/groups.py:1654
+#: core/groups.py:1655
 msgid "password:"
 msgstr "mot de passe:"
 
-#: core/groups.py:1658
+#: core/groups.py:1659
 msgid "skel:"
 msgstr "squelette :"
 
-#: core/groups.py:1667
+#: core/groups.py:1668
 msgid "UNKNOWN"
 msgstr "INCONNU"
 
-#: core/groups.py:1669 core/groups.py:2318
+#: core/groups.py:1670 core/groups.py:2319
 msgid "permissive"
 msgstr "permissif"
 
-#: core/groups.py:1671
+#: core/groups.py:1672
 msgid "NOT permissive"
 msgstr "NON permissif"
 
-#: core/groups.py:1681 core/groups.py:1714 core/groups.py:1730
+#: core/groups.py:1682 core/groups.py:1715 core/groups.py:1731
 msgid "— no member —"
 msgstr "— aucun membre —"
 
-#: core/groups.py:1692
+#: core/groups.py:1693
 msgid "Cannot collect responsibles for group {0} (was: {1})."
 msgstr ""
 "Impossible de collecter les responsables du groupe {0} (problème initial : "
 "{1})."
 
-#: core/groups.py:1701
+#: core/groups.py:1702
 msgid "Cannot collect guests for group {0} (was: {1})."
 msgstr ""
 "Impossible de collecter les invités du groupe {0} (problème initial: {1})."
 
-#: core/groups.py:1906
+#: core/groups.py:1907
 msgid "{0}.reload: Overwritten gid {1}."
 msgstr "{0}.reload : GID {1} écrasé."
 
-#: core/groups.py:1920
+#: core/groups.py:1921
 msgid "{0}: removing disapeared group {1}."
 msgstr "{0} : suppression du groupe disparu {1}."
 
-#: core/groups.py:1963
+#: core/groups.py:1964
 msgid "File-system {0} must be mounted with {1} option to continue!"
 msgstr ""
 "Le système de fichier {0} doit être monté avec l'option {1} pour continuer !"
 
-#: core/groups.py:1976
+#: core/groups.py:1977
 msgid "{0}: {1} does not exist and will be created later in the process."
 msgstr "{0} : {1} n'existe pas et sera créé plus tard dans le processus."
 
-#: core/groups.py:2122
+#: core/groups.py:2123
 #, python-format
 msgid "GID %s does not exist on the system."
 msgstr "Le GID %s n'existe pas sur le système."
 
-#: core/groups.py:2213
+#: core/groups.py:2214
 msgid "Malformed group name \"{0}\", must match /{1}/i."
 msgstr ""
 "Nom de groupe “{0}” mal-formé : les noms de groupes doivent respecter "
 "l'expression rationnelle /{1}/."
 
-#: core/groups.py:2218
+#: core/groups.py:2219
 msgid ""
 "Group name must be smaller than {0} characters (\"{1}\" is {2} chars long)."
 msgstr ""
 "La longueur du nom du groupe doit être inférieure ou égale à {0} caractères "
 "(\"{1}\" en compte {2})."
 
-#: core/groups.py:2228
+#: core/groups.py:2229
 msgid "Malformed group description \"{0}\", must match /{1}/i."
 msgstr ""
 "La description de groupe \"{0}\" est mal-formée ; elle doit vérifier /{1}/i."
 
-#: core/groups.py:2293
+#: core/groups.py:2294
 msgid "Created system group {0} (gid={1})."
 msgstr "Le groupe système {0} (gid={1}) a été créé."
 
-#: core/groups.py:2317
+#: core/groups.py:2318
 msgid "Created {0} group {1} (gid={2})."
 msgstr "Le groupe {0} {1} (gid={2}) a été créé."
 
-#: core/groups.py:2351
+#: core/groups.py:2352
 msgid "GID {0} is already taken by group {1}. Please choose another one."
 msgstr ""
 "Le GID {0} est déjà pris par le groupe {1}. Choisissez-en un autre SVP."
 
-#: core/groups.py:2364 core/groups.py:2377
+#: core/groups.py:2365 core/groups.py:2378
 #, python-format
 msgid "The group %s already exists."
 msgstr "Le groupe %s existe déjà."
 
-#: core/groups.py:2367
+#: core/groups.py:2368
 #, python-format
 msgid ""
 "The group %s already exists but has not the same type. Please choose another "
@@ -5179,7 +5217,7 @@ msgstr ""
 "Un groupe %s existe déjà, mais n'a pas le même type. Choisissez un autre nom "
 "pour ce groupe."
 
-#: core/groups.py:2380
+#: core/groups.py:2381
 #, python-format
 msgid ""
 "The group %s already exists with a different GID. Please check this is what "
@@ -5188,7 +5226,7 @@ msgstr ""
 "Le groupe %s existe déjà avec un GID différent. Merci de vérifier que c'est "
 "ce que vous voulez, et prenez une décision quant à son avenir."
 
-#: core/groups.py:2385
+#: core/groups.py:2386
 msgid ""
 "The group {0} already exists but has not the same type. Please choose "
 "another name for your group."
@@ -5196,7 +5234,7 @@ msgstr ""
 "Le groupe {0} existe déjà, mais n'a pas le même type. Choisissez un autre "
 "nom pour votre nouveau groupe."
 
-#: core/groups.py:2401
+#: core/groups.py:2402
 #, python-format
 msgid ""
 "A user account called %s already exists, this could trigger a bug in the "
@@ -5210,11 +5248,11 @@ msgstr ""
 "nom pour votre groupe, ou utilisez l'argument --force si vous voulez "
 "vraiment l'ajouter sur le système."
 
-#: core/groups.py:2419
+#: core/groups.py:2420
 msgid "Autogenerated GID for group {0}: {1}."
 msgstr "GID auto-généré pour le groupe {0} : {1}."
 
-#: core/groups.py:2426
+#: core/groups.py:2427
 msgid ""
 "GID out of range for the kind of group you specified. System GIDs must be "
 "between {0} and {1}, standard GIDs must be between {2} and {3}."
@@ -5223,7 +5261,7 @@ msgstr ""
 "systèmes doivent être compris entre {0} et {1}, et les GIDs standards "
 "doivent être compris entre {2} et {3}."
 
-#: core/groups.py:2487
+#: core/groups.py:2488
 msgid ""
 "Cannot delete group {0}, currently primary group of profile {1}. Please "
 "delete the profile instead, and the group will be deleted at the same time."
@@ -5232,7 +5270,7 @@ msgstr ""
 "profil {1}. Supprimez plutôt le profil, et le groupe sera effacé dans le "
 "même temps."
 
-#: core/groups.py:2498
+#: core/groups.py:2499
 msgid ""
 "The group still has members. You must delete them first, or use the --del-"
 "users argument. WARNING: this is usually a bad idea; use with caution."
@@ -5241,7 +5279,7 @@ msgstr ""
 "préalablement, ou utiliser l'argument --del-users. ATTENTION : en général "
 "c'est une mauvaise idée, utilisez-le avec beaucoup de précautions."
 
-#: core/groups.py:2510
+#: core/groups.py:2511
 #, python-format
 msgid ""
 "Cannot delete a helper group. Please delete the standard associated group %s "
@@ -5250,7 +5288,7 @@ msgstr ""
 "Impossible de supprimer un groupe système associé. Supprimez plutôt le "
 "groupe standard %s, et celui-là sera effacé dans le même temps."
 
-#: core/groups.py:2517
+#: core/groups.py:2518
 #, python-format
 msgid ""
 "Cannot delete restricted system group %s without the --force argument, this "
@@ -5259,19 +5297,19 @@ msgstr ""
 "Impossible de supprimer le groupe système restreint %s sans l'argument --"
 "force, c'est trop dangereux."
 
-#: core/groups.py:2625
+#: core/groups.py:2626
 msgid "{0}: group {1} already not referenced in controller!"
 msgstr "{0} : le groupe {1} est déjà non-référencé par le contrôleur !"
 
-#: core/groups.py:2650
+#: core/groups.py:2651
 msgid "Deleted {0}group {1}."
 msgstr "Le groupe {0}{1} a été supprimé."
 
-#: core/groups.py:2651
+#: core/groups.py:2652
 msgid "system "
 msgstr "système "
 
-#: core/groups.py:2728
+#: core/groups.py:2729
 #, python-format
 msgid ""
 "%s: inconsistency detected. Automatic check requested in the background."
@@ -5279,7 +5317,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes. Une vérification automatique a "
 "été lancée en arrière-plan."
 
-#: core/groups.py:2735
+#: core/groups.py:2736
 #, python-format
 msgid ""
 "%s: dangling helper group(s) detected. Automatic removal requested in the "
@@ -5288,7 +5326,7 @@ msgstr ""
 "%s : inconsistance détectée dans les groupes systèmes. Un nettoyage "
 "automatique a été lancé en arrière-plan."
 
-#: core/groups.py:2781
+#: core/groups.py:2782
 msgid ""
 "{0}: primary group is missing for user(s) {1}. This is harmless, but should "
 "be corrected manually by re-creating groups with fixed GIDs, or changing "
@@ -5300,21 +5338,21 @@ msgstr ""
 "en changeant le GID primaire des-dits utilisateurs vers un GID système "
 "existant. "
 
-#: core/groups.py:2786
+#: core/groups.py:2787
 msgid "{0}(gid={1})"
 msgstr "{0}(gid={1})"
 
-#: core/groups.py:2804
+#: core/groups.py:2805
 #, fuzzy
 msgid "You must specify a GID or a name to test existence of."
 msgstr "Vous devez spécifier un UID ou login pour tester son existence."
 
-#: core/groups.py:2811
+#: core/groups.py:2812
 #, python-format
 msgid "GID %s doesn't exist"
 msgstr "Le GID %s n'existe pas"
 
-#: core/groups.py:2820
+#: core/groups.py:2821
 #, fuzzy, python-format
 msgid "Group %s doesn't exist"
 msgstr "Le groupe %s n'existe pas (%s, %s)&#160;!"
@@ -6527,73 +6565,73 @@ msgstr ""
 msgid "minifind(): skipping link or mountpoint {0}."
 msgstr "minifind() : éviction du lien symbolique ou point de montage {0}."
 
-#: foundations/fsapi.py:681
+#: foundations/fsapi.py:680
 #, python-format
 msgid "Directory %s does not exist. Create it?"
 msgstr "Le répertoire %s n'existe pas. Le créer ?"
 
-#: foundations/fsapi.py:699
+#: foundations/fsapi.py:698
 msgid "Created directory {0}."
 msgstr "Le répertoire {0} a été créé."
 
-#: foundations/fsapi.py:703
+#: foundations/fsapi.py:702
 msgid "Cannot continue checks for directory {0} (was: {1})."
 msgstr ""
 "Impossible de continuer les vérifications dans le répertoire {0} (problème "
 "initial : {1})."
 
-#: foundations/fsapi.py:715
+#: foundations/fsapi.py:714
 #, python-format
 msgid "Checking file %s…"
 msgstr "Vérification du fichier %s…"
 
-#: foundations/fsapi.py:725
+#: foundations/fsapi.py:724
 #, python-format
 msgid "Checking directory %s…"
 msgstr "Vérification du répertoire %s…"
 
-#: foundations/fsapi.py:749
+#: foundations/fsapi.py:748
 msgid "Checking {1} on {0}…"
 msgstr "Vérification des {1} de {0}…"
 
-#: foundations/fsapi.py:750 foundations/fsapi.py:769
+#: foundations/fsapi.py:749 foundations/fsapi.py:768
 msgid "ACLs"
 msgstr "ACLs"
 
-#: foundations/fsapi.py:751 foundations/fsapi.py:770
+#: foundations/fsapi.py:750 foundations/fsapi.py:769
 msgid "posix perms"
 msgstr "des permissions posix"
 
-#: foundations/fsapi.py:768
+#: foundations/fsapi.py:767
 msgid "Checking {1} on {0} contents…"
 msgstr "Vérification des {1} dans le contenu de {0}…"
 
-#: foundations/fsapi.py:791
+#: foundations/fsapi.py:790
 #, python-format
 msgid "Not touching %s, it is not a file nor a directory."
 msgstr "%s est ignoré, ce n'est ni un fichier, ni un répertoire."
 
-#: foundations/fsapi.py:815
+#: foundations/fsapi.py:814
 msgid "You must pass something through dirs_infos to check!"
 msgstr ""
 
-#: foundations/fsapi.py:829
+#: foundations/fsapi.py:828
 msgid "Invalid utf8 filename \"{0}\". Rename it?"
 msgstr "Nom de fichier utf8 invalide « {0} ». Le renommer ?"
 
-#: foundations/fsapi.py:836
+#: foundations/fsapi.py:835
 msgid " (invalid utf8 filename)"
 msgstr " (nom de fichier utf8 invalide)"
 
-#: foundations/fsapi.py:842
+#: foundations/fsapi.py:841
 msgid " (invalid utf8 filename, copy #{0})"
 msgstr " (nom de fichier utf8 invalide, copie {0})"
 
-#: foundations/fsapi.py:849
+#: foundations/fsapi.py:848
 msgid "Renamed file {0} to {1}."
 msgstr "Le fichier {0} été renommé {1}."
 
-#: foundations/fsapi.py:855
+#: foundations/fsapi.py:854
 msgid ""
 "File {0} has an invalid utf8 filename, it must be renamed before beiing "
 "checked further."
@@ -6601,41 +6639,41 @@ msgstr ""
 "Le fichier {0} a un nom utf8 invalide, il doit être renommé avant d'être "
 "vérifié plus avant."
 
-#: foundations/fsapi.py:864
+#: foundations/fsapi.py:863
 msgid "Do you want to try to continue checking {0} despite of this exception?"
 msgstr ""
 
-#: foundations/fsapi.py:896
+#: foundations/fsapi.py:895
 msgid "fsapi.check_perms(): exception while checking filename validity of {0}."
 msgstr ""
 
-#: foundations/fsapi.py:906
+#: foundations/fsapi.py:905
 msgid ""
 "fsapi.check_perms(): Error while checking filename validity of {0}, cannot "
 "continue."
 msgstr ""
 
-#: foundations/fsapi.py:938 foundations/fsapi.py:966
+#: foundations/fsapi.py:937 foundations/fsapi.py:965
 msgid "fsapi.check_perms(): exception while `execbits2str()` on {0}."
 msgstr ""
 
-#: foundations/fsapi.py:1000
+#: foundations/fsapi.py:999
 msgid "Checking {0} of {1}…"
 msgstr "Vérification {0} de {1}…"
 
-#: foundations/fsapi.py:1001
+#: foundations/fsapi.py:1000
 msgid "posix.1e ACL"
 msgstr "de l'ACL posix.1e"
 
-#: foundations/fsapi.py:1003
+#: foundations/fsapi.py:1002
 msgid "posix permissions"
 msgstr "des permissions posix"
 
-#: foundations/fsapi.py:1016
+#: foundations/fsapi.py:1015
 msgid "Exception while getting the posix.1e ACL of {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1031
+#: foundations/fsapi.py:1030
 msgid ""
 "Invalid access ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
@@ -6643,19 +6681,19 @@ msgstr ""
 "ACL d'accès invalide sur {path} (actuellement {current_acl}, mais devrait "
 "être {access_acl})."
 
-#: foundations/fsapi.py:1036 foundations/fsapi.py:1113
+#: foundations/fsapi.py:1035 foundations/fsapi.py:1112
 msgid "empty"
 msgstr "vide"
 
-#: foundations/fsapi.py:1069
+#: foundations/fsapi.py:1068
 msgid "Applyed access ACL {access_acl} on {path}."
 msgstr "L'ACL d'accès {access_acl} a été appliqué sur {path}."
 
-#: foundations/fsapi.py:1078
+#: foundations/fsapi.py:1077
 msgid "fsapi.check_perms(): Exception while setting a posix.1e ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1108
+#: foundations/fsapi.py:1107
 msgid ""
 "Invalid default ACL for {path} (it is {current_acl} but should be "
 "{access_acl})."
@@ -6663,39 +6701,39 @@ msgstr ""
 "ACL «défaut» invalide pour {path} (actuellement {current_acl}, mais devrait "
 "être {access_acl})."
 
-#: foundations/fsapi.py:1141
+#: foundations/fsapi.py:1140
 msgid "Applyed default ACL {access_acl} on {path}."
 msgstr "L'ACL héritable {access_acl} a été appliqué sur {path}."
 
-#: foundations/fsapi.py:1151
+#: foundations/fsapi.py:1150
 msgid "fsapi.check_perms(): exception while setting a default ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1171 foundations/fsapi.py:1183
+#: foundations/fsapi.py:1170 foundations/fsapi.py:1182
 msgid "Exception while looking for an ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1194
+#: foundations/fsapi.py:1193
 msgid "An ACL is present on {path}, but it should not."
 msgstr "Un ACL est présent sur {path}, mais il ne devrait pas."
 
-#: foundations/fsapi.py:1212
+#: foundations/fsapi.py:1211
 msgid "Deleted default ACL from {0}."
 msgstr "L'ACL « défault » a été effacé de {0}."
 
-#: foundations/fsapi.py:1225
+#: foundations/fsapi.py:1224
 msgid "Deleted access ACL from {0}."
 msgstr "L'ACL d'accès a été effacé de {0}."
 
-#: foundations/fsapi.py:1229
+#: foundations/fsapi.py:1228
 msgid "Exception while deleting the posix.1e ACL on {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1241 foundations/fsapi.py:1313
+#: foundations/fsapi.py:1240 foundations/fsapi.py:1312
 msgid "Exception while trying to `lstat()` {0}"
 msgstr ""
 
-#: foundations/fsapi.py:1252
+#: foundations/fsapi.py:1251
 msgid ""
 "Invalid posix permissions for {path} (it is {current_mode} but should be "
 "{wanted_mode})."
@@ -6703,20 +6741,20 @@ msgstr ""
 "Permissions posix invalides sur {path} (actuellement {current_mode}, mais "
 "devraient être {wanted_mode})."
 
-#: foundations/fsapi.py:1270
+#: foundations/fsapi.py:1269
 msgid "Applyed posix permissions {wanted_mode} on {path}."
 msgstr "Les permissions posix {wanted_mode} ont été appliquées sur {path}."
 
-#: foundations/fsapi.py:1277
+#: foundations/fsapi.py:1276
 msgid "Exception while trying to change posix permissions on {0}."
 msgstr ""
 
-#: foundations/fsapi.py:1300
+#: foundations/fsapi.py:1299
 #, python-format
 msgid "Checking POSIX uid/gid/perms of %s."
 msgstr "Vérification des propriétaire/groupe/permissions POSIX de %s."
 
-#: foundations/fsapi.py:1351
+#: foundations/fsapi.py:1350
 msgid ""
 "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}. Correct "
 "it?"
@@ -6724,21 +6762,21 @@ msgstr ""
 "Propriétaire invalide sur {0} : actuellement {1}:{2} mais devrait être {3}:"
 "{4}. Le corriger ?"
 
-#: foundations/fsapi.py:1375
+#: foundations/fsapi.py:1374
 msgid "Changed owner of {0} to {1}:{2}."
 msgstr "Le propriétaire de {0} est maintenant {1}:{2}"
 
-#: foundations/fsapi.py:1388
+#: foundations/fsapi.py:1387
 msgid "Invalid owership for {0}: currently {1}:{2} but should be {3}:{4}."
 msgstr ""
 "Les permissions sur {0} sont invalides : actuellement {1}:{2}, mais "
 "devraient être {3}:{4}."
 
-#: foundations/fsapi.py:1404
+#: foundations/fsapi.py:1403
 msgid "Created symlink {link}, pointing to {orig}."
 msgstr "Le lien symbolique {link}, pointant vers {orig}, a été créé."
 
-#: foundations/fsapi.py:1417
+#: foundations/fsapi.py:1416
 msgid ""
 "A symlink {link} already exists, but points to {dest}, instead of {good}. "
 "Correct it?"
@@ -6746,17 +6784,17 @@ msgstr ""
 "Un lien symbolique {link} existe déjà, mais pointe vers {dest} au lieu de "
 "{good}. Dois-je le corriger ?"
 
-#: foundations/fsapi.py:1430
+#: foundations/fsapi.py:1429
 msgid "Overwritten symlink {link} with destination {good} instead of {dest}."
 msgstr ""
 "Le lien symbolique {link} a été écrasé avec la nouvelle destination {good} "
 "au lieu de {dest}."
 
-#: foundations/fsapi.py:1439
+#: foundations/fsapi.py:1438
 msgid "Cannot create symlink {0} to {1}!"
 msgstr "Impossible de créer le lien symbolique {0} vers {1}!"
 
-#: foundations/fsapi.py:1445
+#: foundations/fsapi.py:1444
 msgid ""
 "Symlink {link} is currently broken, pointing to non-existing target {dest}); "
 "making it point to {good}."
@@ -6764,12 +6802,12 @@ msgstr ""
 "Le lien symbolique {link} était cassé et pointait vers la destination "
 "inexistante {dest} ; il pointe maintenant vers {good}."
 
-#: foundations/fsapi.py:1461
+#: foundations/fsapi.py:1460
 #, python-format
 msgid "Repaired vanished symlink %s."
 msgstr "Le lien symbolique disparu %s a été recréé."
 
-#: foundations/fsapi.py:1464
+#: foundations/fsapi.py:1463
 msgid ""
 "{link} already exists but it is not a symlink, thus it does not point to "
 "{dest}. Rename and replace it with a correct symlink?"
@@ -6777,18 +6815,18 @@ msgstr ""
 "{link} existe déjà mais n'est pas un lien symbolique, il ne pointe donc pas "
 "vers {dest}. Renommer et remplacer par un lien symbolique valide ?"
 
-#: foundations/fsapi.py:1475
+#: foundations/fsapi.py:1474
 msgid "{0} ({1} conflict){2}"
 msgstr "{0} (conflit du {1}){2}"
 
-#: foundations/fsapi.py:1480
+#: foundations/fsapi.py:1479
 msgid ""
 "Renamed {link} to {newname} and replaced it by a symlink pointing to {dest}."
 msgstr ""
 "{link} a été renommé en {newname}, et remplacé par un lien symbolique "
 "pointant vers {dest}."
 
-#: foundations/fsapi.py:1489
+#: foundations/fsapi.py:1488
 msgid ""
 "While making symlink to {dest}, the destination {link} already exists and is "
 "not a link."
@@ -6796,35 +6834,35 @@ msgstr ""
 "Pendant la création d'un lien symbolique pointant vers {dest}, la "
 "destination {link} existe déjà et n'est pas un lien."
 
-#: foundations/fsapi.py:1507
+#: foundations/fsapi.py:1506
 #, python-format
 msgid "Cannot remove %s, it does not exist!"
 msgstr "Impossible de supprimer %s, il n'existe pas !"
 
-#: foundations/fsapi.py:1531
+#: foundations/fsapi.py:1530
 msgid "Archived {0} as {1}."
 msgstr "{0} a été archivé en tant que {1}."
 
-#: foundations/fsapi.py:1538
+#: foundations/fsapi.py:1537
 #, python-format
 msgid "Cannot archive %s, it does not exist!"
 msgstr "Impossible d'archiver %s, il n'existe pas !"
 
-#: foundations/fsapi.py:1658
+#: foundations/fsapi.py:1657
 msgid "Cloning ACLs is not yet implemented in fsapi.clone_stat(), sorry."
 msgstr ""
 
-#: foundations/fsapi.py:1676
+#: foundations/fsapi.py:1675
 msgid "Backed up {orig} as {backup}."
 msgstr "Le fichier {orig} a été sauvegardé en tant que {backup}."
 
-#: foundations/fsapi.py:1894
+#: foundations/fsapi.py:1893
 msgid "Remounted {0} to apply new mount options."
 msgstr ""
 "Le système de fichiers {0} a été remonté pour appliquer les nouvelles "
 "options de montage."
 
-#: foundations/fsapi.py:1944
+#: foundations/fsapi.py:1943
 msgid "Added option(s) {0} to {1} permanently."
 msgstr ""
 
@@ -7118,40 +7156,49 @@ msgid "{0}{1} ({2} events, {3} handler(s) and {4} callback(s) registered)"
 msgstr ""
 "{0}{1} ({2} évènements, {3} gestionnaires et {4} callbacks enregistré(s))"
 
-#: foundations/messaging.py:37
+#: foundations/messaging.py:38
 #, fuzzy
 msgid "{0}.remote_output() aborted, no listener registered"
 msgstr "{0}.remote_output() abandonnée (plus d'écouteur enregistré)."
 
-#: foundations/messaging.py:177
+#: foundations/messaging.py:178
 msgid "New trace session started with UUID {0}, facilities {1}."
 msgstr ""
 "Nouvelle session de trace démarrée avec l'UUID {0}, pour les facilités {1}."
 
-#: foundations/messaging.py:217
+#: foundations/messaging.py:218
 #, python-format
 msgid "Monitor listener with UUID %s not found!"
 msgstr "Le moniteur avec l'UUID %s est introuvable !"
 
-#: foundations/messaging.py:219
+#: foundations/messaging.py:220
 msgid "Trace session UUID {0} ended."
 msgstr "La session de trace avec l'UUID {0} est terminée."
 
-#: foundations/messaging.py:259
+#: foundations/messaging.py:264
 msgid "{0}: Interactive console requested by {1} from {2}."
 msgstr "{0} : console intéractive demandée par {1} depuis {2}."
 
-#: foundations/messaging.py:265
+#: foundations/messaging.py:271
 msgid "Welcome into licornd's arcanes…"
 msgstr "Bienvenue dans les arcanes de licornd…"
 
-#: foundations/messaging.py:277
+#: foundations/messaging.py:274
+msgid ">>> Entered batched remote console."
+msgstr ""
+
+#: foundations/messaging.py:282
 msgid "{0}: Interactive console terminated by {1} from {2}."
 msgstr "{0} : console intéractive terminée par {1} depuis {2}."
 
-#: foundations/messaging.py:284
+#: foundations/messaging.py:293
 msgid "Welcome back to Real World™. Have a nice day!"
 msgstr "Bon retour dans le Monde Réel™. Passez une bonne journée !"
+
+#: foundations/messaging.py:296
+#, fuzzy
+msgid ">>> batched remote console terminated."
+msgstr " (contrôle à distance activé)"
 
 #: contrib/apt_check.py:24
 msgid "Unknown Error: '{0}' ({1})"
@@ -7479,6 +7526,12 @@ msgstr ""
 "n'avez aucune donnée de TS préalable, et seulement sur un arbre de sources "
 "propres (aucunes modifications locales). Sans ça, vos résultats de TS "
 "risquent fort de ne pas être fiables. "
+
+#~ msgid "%s: extension not available because yet to be written."
+#~ msgstr "%s : extension indisponible car pas encore écrite."
+
+#~ msgid "{0}: exception while disconnecting"
+#~ msgstr "{0} : exception pendant la déconnexion"
 
 #~ msgid "Backup in progress on volume {volume}…"
 #~ msgstr "Sauvegarde en cours sur le volume {volume}…"
