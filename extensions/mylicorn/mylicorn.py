@@ -323,7 +323,12 @@ class MylicornExtension(ObjectSingleton, LicornExtension):
 	def retrigger_authenticate(self, short=False):
 
 		if short:
-			delay = random_delay(15, 45)
+			# We need to wait a little, wifi interface can take
+			# ages to reconnect on resume.
+			#
+			# TODO: use network-manager instead of just delaying
+			# after resume.
+			delay = random_delay(30, 60)
 		else:
 			delay = random_delay(delay_max=3600)
 
